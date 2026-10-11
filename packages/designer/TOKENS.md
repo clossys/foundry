@@ -451,7 +451,7 @@ border 3, elevation 4, ring 2, duration 6, z 9, alpha 1 (49, all `--ui-*`).
 55 + 20 + 29 + 49 = 153 tokens across 27 families, by this same
 1-family-added arithmetic. **Note:** this total (and the "128 tokens
 across 24 families" figure elsewhere in this README predating it) does not
-match `src/tokens.ts`'s real count (181 across 29 families) — a pre-existing
+match `src/tokens.ts`'s real count (183 across 30 families) — a pre-existing
 gap from the `chart` color family (22 tokens, added in `0.4.0`) never being
 folded into this reference table's totals. That gap predates this PR and is
 out of its scope; `src/tokens.ts`/`styles/tokens.css` are what `parity.test.ts`
@@ -652,3 +652,16 @@ in browser bundles. ESM only. No runtime dependencies.
 ## Licence
 
 MIT
+
+### Scene (`--ui-scene-*`, case 2)
+
+| Property | Default | Brandable |
+| --- | --- | --- |
+| `--ui-scene-tilt` | `1deg` | yes |
+| `--ui-scene-card-w` | `30rem` | yes |
+
+Both slots are theme invariant. The tilt controls seeded scatter around each
+part's wire anchor; the brand check requires a literal degree angle from zero
+through two. The card measure caps the linear HTML form. Container thresholds
+remain fixed per template. Scene adds two tokens and one semantic family;
+the source registry and CSS parity test verify 183 tokens across 30 families.

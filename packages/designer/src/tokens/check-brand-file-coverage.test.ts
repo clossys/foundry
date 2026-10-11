@@ -243,7 +243,7 @@ describe("checkBrandFileCoverage — defaults to this package's real TOKENS regi
     const declarations = Object.fromEntries(
       Object.values(TOKENS)
         .filter((def) => def.brandable)
-        .map((def) => [def.property, "red"]), // the specific value is irrelevant to coverage — only non-emptiness is
+        .map((def) => [def.property, def.property === "--ui-scene-tilt" ? "1deg" : "red"]), // coverage plus the bounded scene angle
     );
     const report = checkBrandFileCoverage(declarations);
     expect(report.ok).toBe(true);
@@ -252,4 +252,10 @@ describe("checkBrandFileCoverage — defaults to this package's real TOKENS regi
     expect(report.declarationsChecked).toBe(report.brandableSlotsChecked);
     expect(report.brandableSlotsChecked).toBeGreaterThan(0);
   });
+});
+
+describe("scene tilt bound", () => {
+  const tokens = { "--ui-scene-tilt": TOKENS["--ui-scene-tilt"]! };
+  it.each(["0deg", "0.5deg", "1deg", "2deg"])("accepts the literal angle %s", value => { expect(checkBrandFileCoverage({ "--ui-scene-tilt": value }, { tokens }).ok).toBe(true); });
+  it.each(["-1deg", "2.1deg", "3deg", "NaNdeg", "1rad", "var(--angle)", "calc(1deg + 1deg)"])("refuses unproven or out-of-bound angle %s", value => { expect(checkBrandFileCoverage({ "--ui-scene-tilt": value }, { tokens }).findings).toContainEqual(expect.objectContaining({ rule: "scene-tilt-bound", slot: "--ui-scene-tilt" })); });
 });

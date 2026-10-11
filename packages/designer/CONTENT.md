@@ -265,3 +265,13 @@ or footer in reading order, and disclose sample data with the caption. Author
 the figure and key labels; use a unique caller instance id. The figure comes
 before the key at every width. Use **FeatureGrid** for features without a
 product surface, and steps or a story for a process.
+
+Use **Scene** for a process or provenance story beside section copy: documents
+converging into a record, a result traced to cited sources, or prepared findings
+reaching a named decision role. Use a specimen for the record itself. Avoid
+scenes as decoration, feature lists or more than two instances on a page.
+Write a 12–25-word figure label describing what flows where; keep document
+titles factual. Author the relation label and mark illustrative data with a
+sample caption. An approval chain has exactly one subject. Keep source, row and
+finding ids unique within their slots, and give each figure a separate instance
+id even when two figures share the same seed.

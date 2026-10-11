@@ -107,13 +107,13 @@ surfaces and live in `@clossys/publisher/web`.
   `Separator`, `Chip`, `StatusMark`, `Meter`.
 - **`blocks`** — owns the internal layout of multiple named regions,
   typically by composing one or more atoms (and/or layout) into something
-  with a real job on a page. Thirty-one ship: `PageHeader`, `EmptyState`,
+  with a real job on a page. Thirty-two ship: `PageHeader`, `EmptyState`,
   `DataTable`, `DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`,
   `ConfirmDialog`, `Toolbar`, `NavGrid`, `LinkGrid`, `SectionHeader`, `Hero`,
-  `MarketingChapter`, `FeatureGrid`, `CardGrid`, `AnatomyCallouts`, `RecordLedger`, `LedgerTile`, `Comparison`, `TopicList`,
+  `MarketingChapter`, `FeatureGrid`, `CardGrid`, `AnatomyCallouts`, `RecordLedger`, `LedgerTile`, `Scene`, `Comparison`, `TopicList`,
   `Specimen`, `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`,
   `PricingTable`, `Testimonial`, `ArticleBody`, `ConsentBanner` — the last
-  seventeen are marketing/editorial
+  eighteen are marketing/editorial
   content blocks and a presentational consent notice, completing this layer
   (see "Blocks" below).
 - **`shell`** — the persistent frame around content (nav, layout chrome)
@@ -358,7 +358,7 @@ source file's own header for the exact probe and its result). Today that's:
 | Subpath | Server-safe members |
 | --- | --- |
 | `@clossys/designer/atoms/server` | `Avatar`, `Badge`, `Banner`, `Card`, `Field`, `Icon`, `Meter`, `Skeleton`, `Spinner`, `StatusMark`, `buttonLinkClassName`, `iconButtonClassName`, `iconButtonLinkClassName`, `mergeUiClasses` |
-| `@clossys/designer/blocks/server` | `AnatomyCallouts`, `ArticleBody`, `CardGrid`, `Comparison`, `ContentSection`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `LedgerTile`, `LinkGrid`, `MarketingChapter`, `MediaFigure`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `RecordLedger`, `SectionFrame`, `SectionHeader`, `SectionIntro`, `Specimen`, `SpecimenPanel`, `Stat`, `StatusList`, `TopicList` |
+| `@clossys/designer/blocks/server` | `AnatomyCallouts`, `ArticleBody`, `CardGrid`, `Comparison`, `ContentSection`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `LedgerTile`, `LinkGrid`, `MarketingChapter`, `MediaFigure`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `RecordLedger`, `Scene`, `SectionFrame`, `SectionHeader`, `SectionIntro`, `Specimen`, `SpecimenPanel`, `Stat`, `StatusList`, `TopicList` |
 | `@clossys/designer/shell/server` | `Shell`, `SiteFooter`, `SiteHeader`, `SkipLink` |
 | `@clossys/designer/charts/server` | `ChartFrame`, `Sparkline` |
 | `@clossys/designer/theme/server` | `getThemeInitScript` |
@@ -3470,6 +3470,39 @@ a full-row card or last), which takes the whole row instead of leaving an
 empty half; the 12-unit spans apply from `tablet-lg`, `gap-lg` apart.
 
 
+### Scene
+
+A static figure for a process or provenance story, accepted by the existing
+`ContentSection.media` React-node slot. `converge` brings three-to-eight
+documents into one record; `evidence-trail` traces a result to two-to-four
+cited documents; `approval-chain` brings two-to-four findings through a review
+node to one decision and a named role. Exactly one finding is the subject.
+
+Import `Scene`, `layoutScene`, `sceneRelationText` and their types from
+`@clossys/designer/blocks` or `/blocks/server`. Supply an explicit `input.seed`,
+a separate caller-unique `id`, an authored figure `label`. Optional `relationLabel` names row source lists.
+Reuse the seed across instances for the same geometry; each instance needs its
+own id. `sample` is an authored caption. Figure labels accept React nodes; data copy is plain text. Input accepts no
+coordinates, CSS, markup or classes. Invalid counts throw `RangeError`;
+invalid structure, dangling relations and unwired sources throw `TypeError`.
+Converge sources require one or two relations each, at most twelve total.
+
+`layoutScene` is pure and needs no measurements. SVG is decorative; complete
+linear HTML carries every source, origin, citation, status and subject path at
+all widths. Only SVG titles are shortened to fit the drawing; linear copy stays
+complete. The drawing appears at container widths of 800px, 520px and 900px for
+converge, evidence-trail and approval-chain, capped at 880px, 560px and 1000px.
+Below those thresholds the linear form is capped by `--ui-scene-card-w`
+(default `30rem`). At desktop widths the HTML is clipped, never removed.
+
+`--ui-scene-tilt` defaults to `1deg`; brand checking accepts literal angles from
+`0deg` through `2deg`. Disorder defaults to medium for converge and low for the
+other templates; none produces zero tilt and nudge. Tilt pivots at the wire
+anchor. All paints and radii read live theme tokens. A converge relation may
+have one emphasis accent; approval-chain uses primary ink for its subject and
+reserves its sole accent for the decider ring. Scenes have no controls, hooks,
+script, animation or focus stops.
+
 ### AnatomyCallouts
 
 A static specimen panel with numbered markers and an ordered explanatory key.
@@ -5630,6 +5663,29 @@ not a grab-bag).
 | `LedgerPairData` | type | `id`, `role` (`eyebrow`, `heading`, `description`) and `product` (`kind`, `subject`, `detail?`, `status?`); kind is a complete authored line. |
 | `LedgerTile` | component | A captioned two-to-five-row plate visual for rule cards. |
 | `LedgerTileProps` | type | `caption`, `rows`, `mobileRows?` (`3`), `flagLabel?`, `ground?`, `className?`. |
+| `Scene` | component | Static converge, evidence-trail or approval-chain figure with complete linear HTML. |
+| `SceneProps` | type | Caller-unique `id`, authored `label`, `input`; optional `relationLabel`, `sample`, `headingLevel` and `className`. |
+| `layoutScene` | function | Pure seeded geometry without DOM measurements. |
+| `sceneRelationText` | function | One authored relationship sentence per source wire. |
+| `SceneInput` | type | Closed union of the three launch templates, with an explicit geometry `seed`. |
+| `SceneConverge` | type | Documents, target rows and one-to-two relations per source; at most one emphasis. |
+| `SceneEvidenceTrail` | type | Cited documents, result rows, status and an optional person. |
+| `SceneApprovalChain` | type | Prepared findings, exactly one subject, a review node and a decision with a person. |
+| `SceneDisorder` | type | `none`, `low` or `medium`; medium is available only to converge. |
+| `SceneFormat` | type | `pdf`, `email`, `sheet`, `doc`, `note`, `scan` or `calendar`. |
+| `SceneDocument` | type | Stable `id`, document `format`, `title` and optional `origin`. |
+| `SceneRow` | type | Stable `id`, `label`, `value` and optional status, figure or quiet treatment. |
+| `SceneStatus` | type | Status tone and authored text. |
+| `ScenePerson` | type | Initials, name and role note. |
+| `SceneFinding` | type | Stable `id`, function label, title, subject line and status; one finding is the subject. |
+| `SceneLayout` | type | Intrinsic width/height and document, card, wire, terminal, tag, node and person geometry. |
+| `ScenePoint` | type | User-unit `x` and `y` coordinates. |
+| `ScenePart` | type | A layout part's id, bounds, tilt multiplier and horizontal nudge. |
+| `SceneWire` | type | Source/target ids, endpoints and rounded cubic path, with subject/emphasis flags. |
+| `SceneTerminal` | type | A receiving row's anchor and subject flag. |
+| `SceneTag` | type | Citation tag bounds and copy. |
+| `SceneNode` | type | Review-node bounds and copy. |
+| `ScenePersonLayout` | type | Person row bounds and decider-ring flag. |
 | `Comparison` | component | Before and after side by side: two labelled sections, the after side on a plate. |
 | `ComparisonProps` | type | Props for `Comparison`: `before`, `after`, `headingLevel`, `ground`, `className`, `style`, plus every native `<div>` attribute except `title`. |
 | `ComparisonSide` | type | One side: `label`, `heading?`, `description?`, `points?`, `visual?`. |
@@ -5956,7 +6012,7 @@ part of this package's public API" and reachable only by that one test.
   ratified from `contrast.test.ts`'s own hand-curated pair map rather than
   auto-derived from token names. An earlier design assumed this gate could
   self-extend, deriving one pair per `--<role>-on-<ground>`-shaped token
-  name; counted against this package's real 181 tokens, only 5 actually
+  name; counted against this package's real 183 tokens, only 5 actually
   follow that shape (`--color-ink-on-accent`, `--color-ink-on-inverse`,
   `--color-accent-on-inverse`, `--color-line-on-inverse`,
   `--ui-ring-on-inverse` — see `contrast-pairs.ts`'s own header for a 6th,
@@ -6318,10 +6374,10 @@ speculatively, just because a related component shipped, is the exact
 un-bounded growth this package's own "variant rule" warns against one level
 up. They get added here only once something real needs them.
 
-**Blocks:** thirty-one ship — `PageHeader`, `EmptyState`, `DataTable`,
+**Blocks:** thirty-two ship — `PageHeader`, `EmptyState`, `DataTable`,
 `DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`, `ConfirmDialog`,
 `Toolbar`, `NavGrid`, `LinkGrid`, `SectionHeader`, `Hero`, `MarketingChapter`,
-`FeatureGrid`, `CardGrid`, `AnatomyCallouts`, `RecordLedger`, `LedgerTile`, `Comparison`, `TopicList`, `Specimen`,
+`FeatureGrid`, `CardGrid`, `AnatomyCallouts`, `RecordLedger`, `LedgerTile`, `Scene`, `Comparison`, `TopicList`, `Specimen`,
 `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`, `PricingTable`,
 `Testimonial`, `ArticleBody`, `ConsentBanner` — completing this layer. No
 `FilterBar` block:

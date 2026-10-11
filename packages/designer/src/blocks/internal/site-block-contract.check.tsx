@@ -145,3 +145,22 @@ export const markedPanelContent: SpecimenPanelContent = { ...anatomyPanel, marke
 export const invalidAnatomyGround = <AnatomyCallouts id="sample" label="Sample exception record." panel={anatomyPanel} markers={[]} keyLabel="Key" ground="raised" />;
 // @ts-expect-error — key headings can only sit at section level plus one.
 export const invalidAnatomyHeading = <AnatomyCallouts id="sample" label="Sample exception record." panel={anatomyPanel} markers={[]} keyLabel="Key" headingLevel={2} />;
+
+import { Scene, layoutScene } from "../scene/index.js";
+import type { SceneInput, SceneLayout } from "../scene/index.js";
+const sceneInput: SceneInput = {
+  template: "converge", seed: "documents",
+  sources: { heading: "Documents", items: ["one", "two", "three"].map(id => ({ id, format: "pdf", title: id })) },
+  target: { heading: "Record", title: "Facility", rows: [{ id: "amount", label: "Amount", value: "12.0M" }, { id: "limit", label: "Limit", value: "15.0M" }] },
+  relations: ["one", "two", "three"].map(from => ({ from, to: "amount" })),
+};
+export const validScene = <Scene id="scene-record" input={sceneInput} label={<em>Document provenance</em>} headingLevel={4} />;
+export const sceneLayout: SceneLayout = layoutScene(sceneInput);
+// @ts-expect-error — instance identity is separate from the geometry seed.
+export const missingSceneId = <Scene input={sceneInput} label="Document provenance" />;
+// @ts-expect-error — launch templates are a closed union.
+export const invalidSceneTemplate: SceneInput = { ...sceneInput, template: "pipeline" };
+// @ts-expect-error — presentation coordinates are not caller data.
+export const invalidSceneCoordinate: SceneInput = { ...sceneInput, x: 20 };
+// @ts-expect-error — card title heading level is limited to the documented API.
+export const invalidSceneHeading = <Scene id="scene-record" input={sceneInput} label="Document provenance" headingLevel={2} />;

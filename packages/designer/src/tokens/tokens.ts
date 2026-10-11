@@ -2,7 +2,7 @@
  * The token catalog: every custom property this package declares in
  * `styles/tokens.css`, as data. This file is the JS/TS half of the package;
  * `styles/tokens.css` is the CSS half. Both are hand-authored and both are
- * meant to describe the exact same 181 tokens — a test in this package
+ * meant to describe the exact same 183 tokens — a test in this package
  * (`parity.test.ts`) parses `styles/tokens.css` and asserts its custom
  * property names and values match this file entry-for-entry, in both
  * directions. That test is what keeps this file honest; nothing generates
@@ -35,7 +35,7 @@
  */
 
 /**
- * The 29 semantic groups the 181 tokens fall into. Each maps to exactly one
+ * The 30 semantic groups the 183 tokens fall into. Each maps to exactly one
  * CSS custom property prefix — see `FAMILY_PREFIX` in `parity.test.ts` (and
  * the README's naming table) for the concrete mapping.
  */
@@ -68,13 +68,14 @@ export type TokenFamily =
   | "easing"
   | "z"
   | "breakpoint"
-  | "alpha";
+  | "alpha"
+  | "scene";
 
 /** One token: a CSS custom property, its default (unbranded) value, and where it belongs. */
 export interface TokenDefinition {
   /** The full CSS custom property name, including the leading `--`. */
   readonly property: string;
-  /** Which of the 29 semantic groups this token belongs to. */
+  /** Which of the 30 semantic groups this token belongs to. */
   readonly family: TokenFamily;
   /** The value declared for this property in `styles/tokens.css`'s `:root` block. */
   readonly value: string;
@@ -107,7 +108,7 @@ export interface TokenDefinition {
 }
 
 /**
- * All 181 tokens, keyed by their CSS custom property name. A `Record` rather
+ * All 183 tokens, keyed by their CSS custom property name. A `Record` rather
  * than an array because the natural question from JS — "what is
  * `--color-surface-raised` set to?" — is a lookup, not a scan.
  */
@@ -383,11 +384,15 @@ export const TOKENS: Readonly<Record<string, TokenDefinition>> = {
   "--breakpoint-desktop": { property: "--breakpoint-desktop", family: "breakpoint", value: "1280px", brandable: false, themeDependent: false },
   "--breakpoint-wide": { property: "--breakpoint-wide", family: "breakpoint", value: "1440px", brandable: false, themeDependent: false },
 
+  // Scene personality and linear-form measure; both are theme invariant.
+  "--ui-scene-tilt": { property: "--ui-scene-tilt", family: "scene", value: "1deg", brandable: true, themeDependent: false },
+  "--ui-scene-card-w": { property: "--ui-scene-card-w", family: "scene", value: "30rem", brandable: true, themeDependent: false },
+
   // ── UI · ALPHA ──────────────────────────────────────────────────────
   "--ui-alpha-disabled": { property: "--ui-alpha-disabled", family: "alpha", value: "0.5", brandable: false, themeDependent: false },
 };
 
-/** The 29 semantic families, in the order they appear in the README's reference table. */
+/** The 30 semantic families, in the order they appear in the README's reference table. */
 export const TOKEN_FAMILIES: readonly TokenFamily[] = [
   "surface",
   "ink",
@@ -418,4 +423,5 @@ export const TOKEN_FAMILIES: readonly TokenFamily[] = [
   "z",
   "breakpoint",
   "alpha",
+  "scene",
 ];

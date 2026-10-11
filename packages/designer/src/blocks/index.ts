@@ -206,3 +206,6 @@ export type { LedgerTileProps } from "./LedgerTile.js";
 
 export { AnatomyCallouts } from "./AnatomyCallouts.js";
 export type { AnatomyCalloutsProps, AnatomyCalloutsMarker } from "./AnatomyCallouts.js";
+
+export { Scene, layoutScene, sceneRelationText } from "./scene/index.js";
+export type { SceneProps, SceneInput, SceneConverge, SceneEvidenceTrail, SceneApprovalChain, SceneDisorder, SceneFormat, SceneDocument, SceneRow, SceneStatus, ScenePerson, SceneFinding, ScenePoint, ScenePart, SceneWire, SceneTerminal, SceneTag, SceneNode, ScenePersonLayout, SceneLayout } from "./scene/index.js";
