@@ -286,10 +286,16 @@ function Status({ status }: { status: SpecimenStatus | undefined }) {
   return status ? <StatusMark tone={status.tone}>{status.label}</StatusMark> : null;
 }
 
-function PartLabel({ children }: { children: ReactNode }) {
+/** Decorative number; the enclosing key list carries the accessible ordinal. */
+export function AnatomyMarker({ number }: { number: number | undefined }) {
+  return number === undefined ? null : <span data-anatomy-marker="" aria-hidden="true" className="anatomy-disc inline-flex shrink-0 items-center justify-center rounded-pill bg-ink-primary text-surface-raised font-body text-caption font-semibold tabular-nums leading-none">{number}</span>;
+}
+
+function PartLabel({ children, marker }: { children: ReactNode; marker?: number }) {
   if (children === undefined || children === null || children === false) return null;
   return (
-    <p data-specimen-part-label="" className={PART_LABEL_CLASSES}>
+    <p data-specimen-part-label="" className={cx(PART_LABEL_CLASSES, marker !== undefined ? "flex items-center gap-sm" : undefined)}>
+      <AnatomyMarker number={marker} />
       {children}
     </p>
   );
@@ -327,11 +333,11 @@ function StatusRowsBody({ part }: { part: SpecimenStatusRowsPart }) {
   );
 }
 
-function MeterBody({ part }: { part: SpecimenMeterPart }) {
+function MeterBody({ part, marker }: { part: SpecimenMeterPart; marker?: number }) {
   return (
     <div className="flex flex-col gap-sm">
       <div className={ROW_CLASSES}>
-        <span className={PRIMARY_TEXT}>{part.label}</span>
+        <span className={cx(PRIMARY_TEXT, marker !== undefined ? "flex items-center gap-sm" : undefined)}><AnatomyMarker number={marker} />{part.label}</span>
         <Status status={part.status} />
       </div>
       <Meter
@@ -459,14 +465,14 @@ function FilesBody({ part }: { part: SpecimenFilesPart }) {
   );
 }
 
-function PartBody({ part }: { part: SpecimenPart }) {
+function PartBody({ part, marker }: { part: SpecimenPart; marker?: number }) {
   switch (part.type) {
     case "fields":
       return <FieldsBody part={part} />;
     case "status-rows":
       return <StatusRowsBody part={part} />;
     case "meter":
-      return <MeterBody part={part} />;
+      return <MeterBody part={part} marker={marker} />;
     case "table":
       return <TableBody part={part} />;
     case "schedule":
@@ -482,12 +488,12 @@ function PartBody({ part }: { part: SpecimenPart }) {
  * One specimen part: an optional caption label (except a meter, whose
  * `label` names the measure) and its body. Internal to `SpecimenPanel`.
  */
-export function SpecimenPartView({ part }: { part: SpecimenPart }) {
+export function SpecimenPartView({ part, marker }: { part: SpecimenPart; marker?: number }) {
   assertSpecimenPart(part);
   return (
     <div data-specimen-part={part.type} className="flex min-w-0 flex-col gap-sm">
-      {part.type === "meter" ? null : <PartLabel>{part.label}</PartLabel>}
-      <PartBody part={part} />
+      {part.type === "meter" ? null : <PartLabel marker={marker}>{part.label}</PartLabel>}
+      <PartBody part={part} marker={marker} />
     </div>
   );
 }

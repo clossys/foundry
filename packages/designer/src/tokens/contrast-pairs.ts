@@ -70,10 +70,10 @@
  *     not a bare parseable color `color.ts` can score on its own (see
  *     `internal/resolve-token-value.ts`'s "WHAT COUNTS AS A WHOLE-VALUE
  *     ALIAS" for why this walker does not reach into a value like that).
- *     A focus indicator's own WCAG obligation is SC 2.4.13 (Focus
- *     Appearance), a different success criterion than the text/graphical-
- *     object contrast this gate checks — genuinely out of scope, not
- *     merely inconvenient to parse.
+ *     This gate does not parse composite shadows or measure focus geometry.
+ *     LinkGrid's outline uses bare `--color-accent` / `--color-accent-on-
+ *     inverse` colors instead: their 3:1 contrast against its grounds and
+ *     plates IS explicitly checked by the scoped pairs below.
  *
  * ============================================================================
  * EXCEPTIONS — WCAG 1.4.11's OWN relief, carried as DATA, never a bare
@@ -184,6 +184,53 @@ export interface ContrastPair {
 }
 
 export const CONTRAST_PAIRS: readonly ContrastPair[] = [
+  // Ledger labels are normal text on the base/sunken record ground and tile
+  // plates. Raised-surface status pairs already exist below. Inverse labels
+  // follow the separately checked ground-primary ink policy.
+  ...["success", "warning", "danger", "info"].flatMap(tone => ["base", "sunken"].map((surface): ContrastPair => ({
+    id: `ledger/status-${tone}-text/surface-${surface}`,
+    foreground: `--color-status-${tone}-text`,
+    background: `--color-surface-${surface}`,
+    level: "AA",
+    minimumRatio: AA,
+    description: "Ledger small status label on its record ground or work-product/tile plate.",
+  }))),
+  // LinkGrid uses body-scale titles and small descriptions on these five
+  // actual grounds/resting/hover plates. These scoped AA requirements do
+  // not change the legacy large-text or icon-only classifications below.
+  ...[
+    ["ink-primary", "surface-base"],
+    ["ink-primary", "surface-sunken"],
+    ["ink-primary", "surface-raised"],
+    ["ink-secondary", "surface-base"],
+    ["ink-secondary", "surface-sunken"],
+    ["ink-secondary", "surface-raised"],
+    ["ink-on-inverse", "surface-inverse"],
+    ["ink-on-inverse", "surface-inverse-raised"],
+    ["ink-on-inverse-muted", "surface-inverse"],
+    ["ink-on-inverse-muted", "surface-inverse-raised"],
+  ].map(([ink, surface]): ContrastPair => ({
+    id: `link-grid/${ink}/${surface}`,
+    foreground: `--color-${ink}`,
+    background: `--color-${surface}`,
+    level: "AA",
+    minimumRatio: AA,
+    description: "LinkGrid body-scale titles and small supporting copy on the ground or tile plate.",
+  })),
+  ...[
+    ["accent", "surface-base"],
+    ["accent", "surface-sunken"],
+    ["accent", "surface-raised"],
+    ["accent-on-inverse", "surface-inverse"],
+    ["accent-on-inverse", "surface-inverse-raised"],
+  ].map(([accent, surface]): ContrastPair => ({
+    id: `link-grid/${accent}/${surface}`,
+    foreground: `--color-${accent}`,
+    background: `--color-${surface}`,
+    level: "AA-large",
+    minimumRatio: AA_LARGE,
+    description: "LinkGrid focus outline color against both its surrounding ground and tile plate (non-text 3:1).",
+  })),
   // ── ink-primary (body text) on every surface: AA ──────────────────────
   {
     id: "ink-primary/surface-base",
@@ -498,6 +545,16 @@ export const CONTRAST_PAIRS: readonly ContrastPair[] = [
     minimumRatio: AA_LARGE,
     description: `Categorical chart mark slot ${n} on the chart surface. Mirrors the per-slot sweep in contrast.test.ts's "every categorical slot either clears the 3:1 mark-contrast floor, or is a documented WARN slot".`,
   })),
+  // Anatomy numerals are caption-sized text; every disc needs the normal-text floor.
+  ...(["base", "sunken", "raised", "inverse"] as const).map(surface => ({
+    id: `anatomy/surface-${surface}/${surface === "inverse" ? "ink-on-inverse" : "ink-primary"}`,
+    foreground: `--color-surface-${surface}`,
+    background: surface === "inverse" ? "--color-ink-on-inverse" : "--color-ink-primary",
+    level: "AA" as const,
+    minimumRatio: AA,
+    description: "Caption-sized numeral on an Anatomy marker or grounded key disc.",
+  })),
+
 ];
 
 /**

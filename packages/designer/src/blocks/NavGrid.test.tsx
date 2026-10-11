@@ -4,6 +4,32 @@ import userEvent from "@testing-library/user-event";
 import { NavGrid, type NavGridItem } from "./NavGrid.js";
 
 describe("NavGrid", () => {
+  it("delegates eligible all-linked grids to LinkGrid plate anatomy", () => {
+    const { container } = render(<NavGrid items={[{ id: "a", title: "Topic A", href: "/a" }, { id: "b", title: "Topic B", href: "/b" }]} />);
+    expect(container.querySelector("ul[data-link-grid][data-surface='plate']")).not.toBeNull();
+    expect(screen.getByRole("link", { name: "Topic A" })).toHaveClass("after:rounded-panel");
+  });
+
+  it("preserves empty and more-than-six legacy collections", () => {
+    const { rerender } = render(<NavGrid items={[]} />);
+    expect(screen.queryByRole("link")).not.toBeInTheDocument();
+    rerender(<NavGrid items={Array.from({ length: 7 }, (_, index) => ({ id: String(index), title: `Topic ${index}`, href: `/topics/${index}` }))} />);
+    expect(screen.getAllByRole("link")).toHaveLength(7);
+  });
+
+  it("preserves linked tiles with mixed icons without loosening LinkGrid's contract", () => {
+    const { container } = render(<NavGrid items={[{ id: "a", title: "Topic A", href: "/a", icon: <svg /> }, { id: "b", title: "Topic B", href: "/b" }]} />);
+    expect(screen.getAllByRole("link")).toHaveLength(2);
+    expect(container.querySelector("[data-link-grid]")).toBeNull();
+  });
+
+  it("preserves mixed link/button item order and the raised bordered control tile", () => {
+    const { container } = render(<NavGrid items={[{ id: "a", title: "Topic A", href: "/a" }, { id: "b", title: "Open B", onSelect: vi.fn() }, { id: "c", title: "Topic C", href: "/c" }]} />);
+    expect([...container.querySelectorAll("a,button")].map((element) => element.textContent?.replace(/\u00a0/g, "").trim())).toEqual(["Topic A", "Open B", "Topic C"]);
+    expect(screen.getByRole("button", { name: "Open B" })).toHaveClass("rounded-control", "border", "bg-surface-raised", "hover:border-line-strong", "hover:bg-surface-sunken");
+    expect(screen.getByRole("link", { name: "Topic A" })).not.toHaveClass("active:decoration-current", "link-grid-active");
+  });
+
   it("renders an optional heading above the grid", () => {
     render(
       <NavGrid
