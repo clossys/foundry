@@ -332,7 +332,7 @@ export type {
 export type { BrandmarkPlate } from "./shell/index.js";
 export { BADGE_INSET_SHARE, BADGE_RADIUS_SHARE, badgePlatePath } from "./shell/index.js";
 
-export { ChartFrame, BarChart, LineChart, Sparkline } from "./charts/index.js";
+export { ChartFrame, BarChart, LineChart, WaterfallChart, Sparkline } from "./charts/index.js";
 export type {
   ChartFrameProps,
   ChartMargin,
@@ -344,6 +344,7 @@ export type {
   BarChartSeries,
   LineChartProps,
   LineChartSeries,
+  WaterfallChartProps,
   SparklineProps,
 } from "./charts/index.js";
 

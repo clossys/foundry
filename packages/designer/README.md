@@ -129,7 +129,7 @@ surfaces and live in `@clossys/publisher/web`.
   See "Shell" below.
 - **`charts`** — dependency-free SVG chart primitives: `ChartFrame` (the
   shared plot/axes/grid/legend/table container), `BarChart`, `LineChart`,
-  and `Sparkline`. A sibling of `shell`, not a sixth rung of the ladder —
+  `WaterfallChart`, and `Sparkline`. A sibling of `shell`, not a sixth rung of the ladder —
   see "Charts" below.
 - **`theme`** — the JavaScript half of this package's theming contract
   (the CSS half already ships from `tokens.css`/`theme.css` — see "CSS
@@ -360,7 +360,7 @@ source file's own header for the exact probe and its result). Today that's:
 | `@clossys/designer/atoms/server` | `Avatar`, `Badge`, `Banner`, `Card`, `Field`, `Icon`, `Meter`, `Skeleton`, `Spinner`, `StatusMark`, `buttonLinkClassName`, `iconButtonClassName`, `iconButtonLinkClassName`, `mergeUiClasses` |
 | `@clossys/designer/blocks/server` | `AnatomyCallouts`, `ArticleBody`, `CardGrid`, `Comparison`, `ContentSection`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `LedgerTile`, `LinkGrid`, `MarketingChapter`, `MediaFigure`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `RecordLedger`, `Scene`, `SectionFrame`, `SectionHeader`, `SectionIntro`, `Specimen`, `SpecimenPanel`, `Stat`, `StatusList`, `TopicList` |
 | `@clossys/designer/shell/server` | `Shell`, `SiteFooter`, `SiteHeader`, `SkipLink` |
-| `@clossys/designer/charts/server` | `ChartFrame`, `BarChart`, `LineChart` (static), `Sparkline` |
+| `@clossys/designer/charts/server` | `ChartFrame`, `BarChart`, `LineChart` (static), `WaterfallChart`, `Sparkline` |
 | `@clossys/designer/theme/server` | `getThemeInitScript` |
 
 Everything not listed above stays reachable only from its original barrel,
@@ -5049,7 +5049,8 @@ imports from `charts` — see `src/ladder.test.ts`.
   `Sparkline`, holding the same data as an ordinary HTML `<table>`,
   always reachable, never gated behind a screen reader or a hover.
   `Sparkline`'s value column heading is `valueColumnLabel` (default
-  "Value").
+  "Value"). `WaterfallChart` instead requires authored `labels.table`,
+  `labels.category`, and `labels.value` for its disclosure and columns.
 - **Interactive charts ship a hover layer** — a crosshair
   + shared tooltip readout on `LineChart`, a per-mark tooltip on
   `BarChart` — with the same detail reachable on keyboard focus as on
@@ -5059,10 +5060,10 @@ imports from `charts` — see `src/ladder.test.ts`.
 
 ### `ChartFrame`
 
-The shared container `BarChart` and `LineChart` both compose: plot area,
+The shared container `BarChart`, `LineChart`, and `WaterfallChart` compose: plot area,
 axes, grid, an optional legend, an accessible SVG `<title>`/`<desc>`, and
 the table-view fallback. Only reached for directly when composing a new
-chart type this package doesn't ship; `BarChart`/`LineChart`/`Sparkline`
+chart type this package doesn't ship; `BarChart`/`LineChart`/`WaterfallChart`/`Sparkline`
 below are the components most consumers actually render.
 
 `fit` accepts `"fixed"` (default) or `"fluid"`. Fluid charts fill their
@@ -5149,6 +5150,62 @@ accessible name is `"${title}: ${keyboardHintLabel}"`; `keyboardHintLabel`
 defaults to `"use arrow keys to inspect values"` and is independently
 overridable — `title` itself is already consumer-supplied, so only the
 fixed instructional half needed a prop.
+
+### `WaterfallChart`
+
+An opening total, ordered signed changes, and a derived closing total. Each
+change begins at the previous running total; the opening and closing bars
+begin at zero. Connectors show the accumulation, while signed value labels
+and the matching table preserve meaning independently of color.
+
+```tsx
+import { WaterfallChart } from "@clossys/designer/charts/server";
+
+<WaterfallChart
+  title="Balance changes"
+  description="Opening balance, additions, and removals"
+  start={{ label: "Opening", value: 100 }}
+  steps={[
+    { id: "added", label: "Added", value: 30 },
+    { id: "removed", label: "Removed", value: -20 },
+    { id: "recovered", label: "Recovered", value: 10 },
+  ]}
+  end={{ label: "Closing", value: 120 }}
+  labels={{ table: "View values", category: "Stage", value: "Amount" }}
+/>
+```
+
+`labels.table`, `labels.category`, and `labels.value` are required, nonblank
+strings. Steps need nonblank, unique IDs; visible labels may repeat. Empty
+steps are supported. The chart rejects nonfinite values and closing totals
+that disagree with the accumulation beyond floating-point roundoff.
+
+`end.value` is optional and checks the derived total. Geometry, visible
+values, and table values always use that derived total. For example,
+`0.1 + 0.2` accepts an authored end of `0.3`; with `valueFormat={String}`,
+the visible closing value and table value display `+0.30000000000000004`. With no steps, an authored
+end must exactly equal the opening value.
+
+Every positive bar, including opening and closing totals, has a `+` label;
+negative bars use Unicode minus (`−`), and zero is unsigned. Table values use
+the same signs. `valueFormat` formats an unsigned magnitude and must omit its
+own sign; the chart supplies signs for marks, table values, and negative-axis
+ticks. Positive-axis ticks remain unsigned. For example,
+`valueFormat={value => "$" + value}` yields `+$100` for the opening total,
+`−$20` for a negative change, and `$0` for zero. The default formatter uses
+the existing en-US number formatting.
+
+Short stage names appear directly below their bars. Dense categories use
+numbered SVG anchors and an always-visible wrapping key containing each
+number and its complete authored stage name. Full names remain in the table,
+and every signed value stays by its mark. No category names are truncated.
+
+The default is `fit="fluid"` with a 360×280 coordinate space and a width cap
+of 540px. `fit="fixed"` keeps the intrinsic dimensions. Marks are static;
+the named graphic and native table disclosure work without JavaScript.
+Positive and negative changes use the existing diverging colors. Neutral
+totals have a contrasting, non-scaling hairline outline because their fill
+alone does not distinguish the bar boundary from the chart ground.
 
 ### `Sparkline`
 
@@ -5851,7 +5908,7 @@ not a grab-bag).
 | `ToastOptions` | type | Options for `toast(...)`: `description`, `timeout` (ms, or `null` to disable auto-dismiss), `onClose`. |
 | `ToastRecord` | type | The queued shape of one toast: `title`, `description?`, `variant`. |
 | `ToastVariant` | type | `"success" \| "danger" \| "info" \| "warning"`. |
-| `ChartFrame` | component | The shared plot/axes/grid/legend/table container `BarChart` and `LineChart` compose. |
+| `ChartFrame` | component | The shared plot/axes/grid/legend/table container `BarChart`, `LineChart`, and `WaterfallChart` compose. |
 | `ChartFrameProps` | type | Props for `ChartFrame`: `title`, `description`, `width`, `height`, `fit` (default `"fixed"`), `margin`, `xTicks`, `yTicks`, `legend`, `showSingleSeriesLegend` (default `false`), `table` (required), `tableFallbackLabel` (default `"View as table"`), `className`, `style`, `children` (render prop receiving the resolved `PlotArea`). |
 | `ChartMargin` | type | `{ top, right, bottom, left }`, all `number`. |
 | `ChartAxisTick` | type | `{ position, label }` — a pre-scaled pixel position plus its label. |
@@ -5864,6 +5921,8 @@ not a grab-bag).
 | `LineChart` | component | Change over time: one line per series, one shared x/y scale, a crosshair + tooltip hover layer. |
 | `LineChartProps` | type | Props for `LineChart`: `x`, `series`, `colorDomain`, `title`, `description`, `width`, `height`, `valueFormat`, `xFormat`, `keyboardHintLabel` (default `"use arrow keys to inspect values"`), `overlayLabel` (default `"{title}: {hint}"`), `xColumnLabel` (default `"X"`), `tableFallbackLabel`, `className`, `style`. |
 | `LineChartSeries` | type | `{ name, values, color? }`. |
+| `WaterfallChart` | component | Static accumulated changes from an opening total to a derived closing total, with signed value labels, connectors, and a required table fallback. |
+| `WaterfallChartProps` | type | Props for `WaterfallChart`: required `title`, `start: { label, value }`, `steps: readonly { id, label, value }[]`, `end: { label, value? }`, and `labels: { table, category, value }`; optional `description`, `fit` (default `"fluid"`), `width` (default `360`), `height` (default `280`), `valueFormat` (default en-US number formatting; receives unsigned magnitude), `className`, and `style`. |
 | `Sparkline` | component | A bare inline trend — no axes/grid/legend/hover, still ships a table-view fallback. |
 | `SparklineProps` | type | Props for `Sparkline`: `values`, `title`, `width`, `height`, `color`, `valueFormat`, `tableFallbackLabel` (default `"View as table"`), `valueColumnLabel` (default `"Value"`), `className`, `style`. |
 | `getThemeInitScript` | function | Returns a self-contained head script (string) that stamps `data-theme` before first paint. Takes `{ storageKey?, defaultTheme? }`. |
@@ -5880,6 +5939,9 @@ not a grab-bag).
 | `ThemeToggleProps` | type | Props for `ThemeToggle`: `preferenceLabels`, `toggleLabel`, `preferenceAnnouncement`, plus everything `Button` accepts except `children`/`onPress`. |
 
 ## Tests
+
+`WaterfallChart.test.tsx` covers accumulated totals, signed labels, connectors,
+and static fallback behavior. This source test does not ship with the package.
 
 Beyond render/interaction/keyboard/ARIA tests per atom (`Button.test.tsx`,
 `TextField.test.tsx`, `Badge.test.tsx`, `Card.test.tsx`,
@@ -6507,7 +6569,7 @@ No `AppNavItem`/`AppFooterColumn` or similar per-item component beyond
 `SiteFooter.Column` either, for the same reason atoms/blocks stay this
 short elsewhere in this README: added only once something real needs it.
 
-**Charts:** four ship — `ChartFrame`, `BarChart`, `LineChart`, `Sparkline`
+**Charts:** five ship — `ChartFrame`, `BarChart`, `LineChart`, `WaterfallChart`, `Sparkline`
 — no `PieChart`/`DonutChart` (part-to-whole reads reliably only up to
 about six segments and a bar communicates the same comparison more
 precisely at any count — see the dataviz reference's anti-patterns list),
@@ -6515,7 +6577,7 @@ no `ScatterChart`/`Heatmap` (neither was asked for by this rung), and
 deliberately **no dual-axis option on `BarChart`/`LineChart`** — that
 omission is not a gap to fill later, it's the one hard rule this layer
 does not bend on. No charting library is a dependency, and the scale/color
-helpers under `charts/internal/` stay unexported — this ships four
+helpers under `charts/internal/` stay unexported — this ships five
 components, not a general-purpose numerical or color library (see
 `atoms/internal/cx.ts`/`ui-vars.ts` for the same precedent one layer down).
 

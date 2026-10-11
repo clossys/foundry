@@ -375,3 +375,59 @@ describe("Anatomy numeral contrast", () => {
     }
   });
 });
+
+describe("Waterfall mark boundaries and divergent aliases", () => {
+  const css = readFileSync(resolve(sourceDir, "../../styles/tokens.css"), "utf8");
+  const expected = [
+    ["waterfall/diverging-positive/surface-base", "--color-chart-diverging-positive", "--color-surface-base"],
+    ["waterfall/diverging-positive/surface-sunken", "--color-chart-diverging-positive", "--color-surface-sunken"],
+    ["waterfall/diverging-negative/surface-base", "--color-chart-diverging-negative", "--color-surface-base"],
+    ["waterfall/diverging-negative/surface-sunken", "--color-chart-diverging-negative", "--color-surface-sunken"],
+    ["waterfall/neutral-outline/surface-base", "--color-ink-secondary", "--color-surface-base"],
+    ["waterfall/neutral-outline/surface-sunken", "--color-ink-secondary", "--color-surface-sunken"],
+    ["waterfall/neutral-outline/diverging-neutral", "--color-ink-secondary", "--color-chart-diverging-neutral"],
+  ] as const;
+
+  function actualTokens(theme: "light" | "dark") {
+    const declarations = parseRootDeclarations(css);
+    if (theme === "dark") {
+      for (const [key, value] of parseDeclarationsForSelector(css, ':root[data-theme="dark"]')) {
+        declarations.set(key, value);
+      }
+    }
+    return Object.fromEntries(Object.entries(TOKENS).map(([key, token]) => [
+      key, { ...token, value: declarations.get(key) ?? token.value },
+    ]));
+  }
+
+  it.each(["light", "dark"] as const)("checks seven real %s boundaries with no relief", theme => {
+    const pairs = contrastPairsForTheme(theme).filter(pair => pair.id.startsWith("waterfall/"));
+    expect(pairs.map(pair => pair.id).sort()).toEqual(expected.map(([id]) => id).sort());
+    for (const [id, foreground, background] of expected) {
+      expect(pairs.find(pair => pair.id === id)).toMatchObject({ id, foreground, background, minimumRatio: AA_LARGE });
+    }
+    expect(pairs.every(pair => pair.exception === undefined)).toBe(true);
+    const result = checkTokenContrast(pairs, { tokens: actualTokens(theme) });
+    expect(result.pairsChecked).toBe(7);
+    expect(result.unchecked).toEqual([]);
+    expect(result.findings).toEqual([]);
+    expect(result.relieved).toEqual([]);
+    expect(result.ok).toBe(true);
+  });
+
+  it.each(["light", "dark"] as const)("rejects actual %s alias or perimeter drift", theme => {
+    for (const [id, foreground, background] of expected) {
+      const tokens = { ...actualTokens(theme), [foreground]: def(foreground, `var(${background})`) };
+      const pairs = contrastPairsForTheme(theme).filter(pair => pair.id === id);
+      expect(pairs).toHaveLength(1);
+      const result = checkTokenContrast(pairs, { tokens });
+      expect(result.unchecked).toEqual([]);
+      expect(result.relieved).toEqual([]);
+      expect(result.findings).toEqual([
+        expect.objectContaining({ pairId: id, rule: "below-threshold", minimumRatio: AA_LARGE }),
+      ]);
+      expect(result.findings[0]?.ratio).toBeCloseTo(1, 10);
+      expect(result.ok).toBe(false);
+    }
+  });
+});

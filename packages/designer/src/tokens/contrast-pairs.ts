@@ -565,6 +565,33 @@ export const CONTRAST_PAIRS: readonly ContrastPair[] = [
       description: `Categorical slot ${slot} on an inline chart's ${ground} ground.`,
     })),
   ]),
+  // Waterfall changes and total perimeters must clear both transparent plot grounds.
+  ...(["base", "sunken"] as const).flatMap((ground): ContrastPair[] => [
+    ...(["positive", "negative"] as const).map((sign): ContrastPair => ({
+      id: `waterfall/diverging-${sign}/surface-${ground}`,
+      foreground: `--color-chart-diverging-${sign}`,
+      background: `--color-surface-${ground}`,
+      level: "AA-large",
+      minimumRatio: AA_LARGE,
+      description: `Signed Waterfall change against the ${ground} plot ground.`,
+    })),
+    {
+      id: `waterfall/neutral-outline/surface-${ground}`,
+      foreground: "--color-ink-secondary",
+      background: `--color-surface-${ground}`,
+      level: "AA-large",
+      minimumRatio: AA_LARGE,
+      description: `Waterfall total perimeter against the ${ground} plot ground.`,
+    },
+  ]),
+  {
+    id: "waterfall/neutral-outline/diverging-neutral",
+    foreground: "--color-ink-secondary",
+    background: "--color-chart-diverging-neutral",
+    level: "AA-large",
+    minimumRatio: AA_LARGE,
+    description: "Waterfall total perimeter against its neutral interior.",
+  },
   // Anatomy numerals are caption-sized text; every disc needs the normal-text floor.
   ...(["base", "sunken", "raised", "inverse"] as const).map(surface => ({
     id: `anatomy/surface-${surface}/${surface === "inverse" ? "ink-on-inverse" : "ink-primary"}`,
