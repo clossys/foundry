@@ -6031,7 +6031,7 @@ try {
         result.code === 0 && report.ok === true && report.findings.length === 0,
         `expected exit 0 without findings, got ${result.code}: ${result.out.slice(0, 600)}`,
       );
-      const escaped = classes.map((value) => `.${value.replace(/[@:/]/g, "\\$&")} { display: flex; }`);
+      const escaped = classes.map((value) => `.${[...value].map((char) => ["@", ":", "/", "\\"].includes(char) ? `\\${char}` : char).join("")} { display: flex; }`);
       const cssDir = makeTree("container-selectors", { docLines: escaped });
       const cssResult = run("node", [FOREIGN_REFS, cssDir, "--json"]);
       const cssReport = JSON.parse(cssResult.out);
