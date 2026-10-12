@@ -90,10 +90,14 @@ describe("NavGrid", () => {
     expect(link.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
   });
 
-  it("refuses an href card whose content holds another interactive element", () => {
-    expect(() =>
-      render(<NavGrid items={[{ id: "billing", title: "Billing", description: <a href="/help">Help</a>, href: "/billing" }]} />),
-    ).toThrow(TypeError);
+  it("keeps a previously accepted inline description link separate from the primary destination", () => {
+    render(<NavGrid items={[{ id: "billing", title: "Billing", description: <a href="/help">Help</a>, href: "/billing" }]} />);
+    const primary = screen.getByRole("link", { name: "Billing" });
+    const help = screen.getByRole("link", { name: "Help" });
+    expect(primary).toHaveAttribute("href", "/billing");
+    expect(help).toHaveAttribute("href", "/help");
+    expect(primary).not.toContainElement(help);
+    expect(primary.className).not.toMatch(/(?:^|\s)after:/);
   });
 
   it("renders the title, description, and icon inside the single button of an onSelect card (the whole card is the target)", () => {

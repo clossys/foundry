@@ -3,7 +3,8 @@ import { renderNavItems } from "./ItemsStatic.js";
 import type { ReactNode } from "react";
 import type { NavGridItem, NavGridProps } from "../NavGrid.js";
 import { cx } from "../../atoms/internal/cx.js";
-import { assertNoNestedInteractive, cardLinkContainerClassName } from "../stretched-link.js";
+import { UI_LAYOUT_TAP_TARGET } from "../../atoms/internal/ui-vars.js";
+import { assertNoNestedInteractive, cardLinkContainerClassName, hasInteractiveContent } from "../stretched-link.js";
 type LinkedNavItem = Extract<NavGridItem, { href: string }>;
 /** A linked tile's container: the tile is the hit area and carries the ring; tiles sit on the base ground. */
 const LINKED_TILE = cardLinkContainerClassName("control", "base");
@@ -16,6 +17,12 @@ function NavGridCardContent({ item }: { item: NavGridItem }) {
 }
 
 function LinkedCard({ item }: { item: LinkedNavItem }) {
+  if (hasInteractiveContent([item.description])) {
+    assertNoNestedInteractive("NavGrid", item.id, [item.icon, item.title]);
+    return <div data-nav-grid-card="" className={CARD_BASE}>
+      <ItemRenderer item={{ id: item.id, heading: <a href={item.href} className="inline-flex items-center text-inherit underline underline-offset-4 rounded-control focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent" style={{ minBlockSize: UI_LAYOUT_TAP_TARGET, minInlineSize: UI_LAYOUT_TAP_TARGET }}>{item.title}</a>, description: item.description, icon: item.icon }} treatment="plain" size="standard" ground="base" navigation="control" />
+    </div>;
+  }
   assertNoNestedInteractive("NavGrid", item.id, [item.icon, item.title, item.description]);
   return <div data-nav-grid-card="" className={cx(CARD_BASE, LINKED_TILE)}>
     <ItemRenderer item={{ id: item.id, heading: item.title, description: item.description, icon: item.icon, href: item.href }} treatment="plain" size="standard" ground="base" navigation="control" />
@@ -29,16 +36,16 @@ function LinkedCard({ item }: { item: LinkedNavItem }) {
  * hold two `NavGrid`s (two separate card groupings under two headings),
  * which is what makes this a block rather than a view.
  *
- * **Each card is a real `<a>` or `<button>`, not a `<div>` with an
- * `onClick`.** `items` is a discriminated union. An item with `href` is a
- * linked tile, the shared item anatomy: its title is
+ * Each item has a real link or button. `items` is a discriminated union.
+ * An ordinary item with `href` uses the shared linked-item anatomy: its title is
  * one plain `<a href>` (so the link's name is the title alone) with a
  * chevron at its end, visible at rest, and the anchor's hit area covers the
  * tile, so a click anywhere on it follows the link and Tab stops once, with
  * the focus ring around the whole tile. The icon and description sit
- * outside the anchor; a linked tile holding another link, button or field
- * throws a `TypeError`. An item with `onSelect` renders via this package's
- * own `Button` atom (`variant="ghost"`), with `icon`, `title` and
+ * outside the anchor. Previously accepted interactive descriptions use a
+ * separate title link without a stretched overlay, keeping their controls
+ * operable; linked titles and icons require noninteractive content.
+ * An item with `onSelect` renders via this package's own `Button` atom (`variant="ghost"`), with `icon`, `title` and
  * `description` inside the one `<button>`, so the whole tile is the target.
  * `href`/`onSelect` are mutually exclusive at the type level (`href?:
  * never` on the `onSelect` branch and vice versa) rather than both being
@@ -48,8 +55,9 @@ function LinkedCard({ item }: { item: LinkedNavItem }) {
  * screen reader needs to parse separately.
  *
  * All-linked collections of two to six items with consistent icon presence
- * compose the private linked-item plate list. Legacy single-item, larger, mixed-control,
- * and mixed-icon collections retain their control tiles and item order.
+ * and noninteractive descriptions compose the private linked-item plate list.
+ * Single-item, larger, mixed-control, mixed-icon and interactive-description
+ * collections retain their control tiles and item order.
  * Those cards lay out one per row on narrow viewports, two from the `tablet`
  * breakpoint, three from `desktop` — a plain Tailwind responsive grid
  * generated from this package's own breakpoint tokens, no JS breakpoint
@@ -59,7 +67,7 @@ function LinkedCard({ item }: { item: LinkedNavItem }) {
 export function CompatNavGrid({ heading, items, className, style, renderAction }: NavGridProps & { renderAction: (item: Extract<NavGridItem, { onSelect: () => void }>, className: string, children: ReactNode) => ReactNode }) {
   const linked = items.every(item => item.href !== undefined);
   const icons = items.filter((item) => Boolean(item.icon)).length;
-  const useLinkedItems = linked && items.length >= 2 && items.length <= 6 && (icons === 0 || icons === items.length);
+  const useLinkedItems = linked && items.length >= 2 && items.length <= 6 && (icons === 0 || icons === items.length) && !items.some(item => hasInteractiveContent([item.description]));
   return (
     <div className={cx("flex flex-col gap-md", className)} style={style}>
       {heading ? <h2 className="text-h2 font-display text-ink-primary">{heading}</h2> : null}

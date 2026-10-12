@@ -115,6 +115,11 @@ function interactiveIn(node: ReactNode): boolean {
   return found;
 }
 
+/** Private content probe; compatibility callers may choose separate controls instead of a stretched link. */
+export function hasInteractiveContent(parts: readonly ReactNode[]): boolean {
+  return parts.some((part) => interactiveIn(part));
+}
+
 /**
  * Throws a `TypeError` when any part of a linked item holds an interactive
  * element (a link, a button, a field, or an element with `href`, `onClick`
@@ -123,7 +128,7 @@ function interactiveIn(node: ReactNode): boolean {
  * output is not inspected.
  */
 export function assertNoNestedInteractive(block: string, id: string, parts: readonly ReactNode[]): void {
-  if (parts.some((part) => interactiveIn(part))) {
+  if (hasInteractiveContent(parts)) {
     throw new TypeError(`${block}: item "${id}" is linked (href), so it cannot hold another link, button or field; make its content plain text or drop the href.`);
   }
 }
