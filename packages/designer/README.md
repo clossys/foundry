@@ -3394,9 +3394,20 @@ group. List items own responsive grid spans.
 Link all items or none, up to six distinct normalized destinations. A linked
 item has one title-named anchor; description, badge, meta and visual remain
 outside it. Native controls, finite tabIndex targets (including -1), editable
-content and controlled media are refused in every linked slot. Passive SVG use and image resource references are allowed inside SVG elements; they do not create another target. The guard
-walks supplied arrays, fragments and element children; it does not execute
-opaque components to inspect their rendered output. Numeric zero is content
+content and controlled media are refused in every linked slot. Passive SVG
+`use` and `image` href references are allowed under a literal `<svg>` in the
+supplied element tree. Handlers, focus, editing and interactive descendants
+still make those resources targets. A `foreignObject` resets SVG context;
+a nested literal `<svg>` restores it. An opaque wrapper such as
+`<SpriteIcon><use href="#mark" /></SpriteIcon>` does not establish that
+context, even if it renders an SVG. Other SVG href carriers, including
+`linearGradient`, `radialGradient`, `pattern`, `textPath`, `feImage` and `mpath`,
+are conservatively refused; a refusal does not mean their references are
+intrinsically interactive. The guard walks supplied arrays, fragments and
+element children; it does not execute opaque components or inspect referenced
+symbol shadow trees. Consumers must ensure referenced symbols contain no
+interactive content. These supplied-tree limits also apply to NavGrid's
+private linked plate list (LinkGrid) and Specimen status-row copy. Numeric zero is content
 in every slot; optional whitespace-only copy is omitted. Stable IDs and
 nonblank headings are required.
 
