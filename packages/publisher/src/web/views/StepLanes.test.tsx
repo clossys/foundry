@@ -7,7 +7,7 @@ import { resolveSectionedViewDocument, type SectionedViewDocument, type Resolved
 import { assertRenderableSectionedViewDocument } from "./SectionedViewContent.js";
 import { createContentSectionBlock } from "./SectionedViewContentSection.js";
 
-const Content = createContentSectionBlock(() => null);
+const Content = createContentSectionBlock();
 const ref = (id: string) => ({ id: id === "steps.continues" ? id : `render-lanes.${id}` });
 const copy = createCopyResolver({ id: "render-lanes", locale: "en", revision: "1", source: { kind: "consumer", reference: "fixtures/lanes" }, entries: Object.entries({ heading: "Handover process", a: "Team", b: "Service", step: "Share", ordinal: "1", caption: "Sample data.", end: "Repeats monthly", "steps.continues": "Consumer continuation", panel: "Panel", field: "Field", value: "Value" }).map(([id, text]) => ({ id: ref(id).id, text, context: "fixture", status: "approved" as const })) });
 const section = (sequence: string, visual: boolean, withEndLabel: boolean) => {

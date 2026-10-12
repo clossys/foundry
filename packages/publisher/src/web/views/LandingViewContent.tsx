@@ -2,7 +2,6 @@ import { Children, isValidElement, type CSSProperties, type HTMLAttributes, type
 import { Icon, iconButtonLinkClassName, mergeUiClasses } from "@clossys/designer/atoms/server";
 import {
   ContentSection,
-  Faq,
   FeatureGrid,
   Hero,
   MediaFigure,
@@ -213,12 +212,6 @@ function bandBlocks(afterSection: Readonly<Record<string, ReactNode>>, canonical
         {after(id)}
       </ContentSection>
     ),
-    Faq: ({ id, eyebrow, heading, description, headingLevel, ground, items }) => (
-      <ContentSection id={id} eyebrow={eyebrow} heading={heading} description={description} headingLevel={headingLevel} ground={ground} className={BAND_ANCHOR_CLASS}>
-        <Faq items={items} headingLevel={headingLevel} ground={ground} />
-        {after(id)}
-      </ContentSection>
-    ),
     OrderedStepSequence: ({ id, eyebrow, heading, description, headingLevel, ground, items }) => (
       <ContentSection id={id} eyebrow={eyebrow} heading={heading} description={description} headingLevel={headingLevel} ground={ground} className={BAND_ANCHOR_CLASS}>
         <OrderedStepSequence items={items} headingLevel={headingLevel} ground={ground} />
@@ -231,9 +224,9 @@ function bandBlocks(afterSection: Readonly<Record<string, ReactNode>>, canonical
         {after(id)}
       </ContentSection>
     ),
-    ContentSection: ({ section, actions, publishedFaq }) => {
-      const Content = publishedFaq === undefined ? canonicalContentSection : sectionedViewBlocks.ContentSection;
-      return <Content section={section} actions={actions} publishedFaq={publishedFaq} after={after(section.id)} className={publishedFaq === undefined ? undefined : BAND_ANCHOR_CLASS} style={publishedFaq === undefined ? { scrollMarginTop: 0 } : undefined} />;
+    ContentSection: ({ section, actions, publishedKind }) => {
+      const Content = canonicalContentSection;
+      return <Content section={section} actions={actions} publishedKind={publishedKind} after={after(section.id)} className={publishedKind === undefined ? undefined : BAND_ANCHOR_CLASS} style={publishedKind === undefined ? { scrollMarginTop: 0 } : undefined} />;
     },
   };
 }

@@ -3,8 +3,7 @@ import { AnatomyCallouts, ContentSection, Items, Matrix, RecordLedger, Scene, Sp
 import type { ItemData, ItemsProps, MatrixSide, SpecimenPanelItem, SpecimenPart } from "@clossys/designer/blocks/server";
 import { Briefcase, Building2, Calendar, Clock, FileCheck, FileText, Folder, Globe, Landmark, Layers, Lock, Receipt, Scale, Search, ShieldCheck, Users } from "@clossys/designer/icons";
 import type { CSSProperties, ReactNode } from "react";
-import type { ContentIconName, ResolvedSectionedViewContentBlock, ResolvedSectionedViewContentSection, ResolvedSectionedViewSpecimenPanel, ResolvedSectionedViewSpecimenPart, ResolvedSectionedViewMedia, ResolvedSectionedViewSection, SectionedViewGround } from "../../core/sectioned-view.js";
-import { RenderError } from "../../internal/errors.js";
+import type { ContentIconName, ResolvedSectionedViewContentBlock, ResolvedSectionedViewContentSection, ResolvedSectionedViewSpecimenPanel, ResolvedSectionedViewSpecimenPart, ResolvedSectionedViewMedia } from "../../core/sectioned-view.js";
 
 /**
  * Each closed `ContentIconName` mapped to its Designer glyph by explicit
@@ -29,16 +28,14 @@ const CONTENT_ICONS: Readonly<Record<ContentIconName, IconNode>> = {
   users: Users,
 };
 
-/** Entry-specific published FAQ rows; ordinary and react-server keep their own implementation. */
-export type ContentSectionFaq = (props: { items: readonly { id: string; question: string; answer: string }[]; headingLevel: 2; ground: SectionedViewGround }) => ReactNode;
 export interface ContentSectionBlockProps {
   section: ResolvedSectionedViewContentSection;
   actions?: ReactNode;
   className?: string;
   style?: CSSProperties;
   after?: ReactNode;
-  /** Private compatibility bridge for the published top-level FAQ kind. */
-  publishedFaq?: Extract<ResolvedSectionedViewSection, { kind: "faq" }>;
+  /** Internal origin marker for published FAQ band spacing and fragment offsets. */
+  publishedKind?: "faq";
 }
 function matrixSideId(sectionId: string, sideId: string): string {
   const encode = (value: string) => { let result = ""; for (let index = 0; index < value.length; index++) result += value.charCodeAt(index).toString(16).padStart(4, "0"); return result; };
@@ -92,12 +89,8 @@ function renderBlock(block: ResolvedSectionedViewContentBlock, section: Resolved
   }
 }
 /** Canonical frame, entry-specific collections, Matrix and media adapters. */
-export function createContentSectionBlock(Faq: ContentSectionFaq, ItemsBlock: (props: ItemsProps) => ReactNode = Items) {
-  return function ContentSectionBlock({ section, actions, className, style, after, publishedFaq }: ContentSectionBlockProps) {
-    if (publishedFaq !== undefined) {
-      if (publishedFaq.kind !== "faq" || publishedFaq.layout !== "split" || publishedFaq.id !== section.id) throw new RenderError("resolution-failed", "Invalid published FAQ compatibility bridge.");
-      return <ContentSection id={publishedFaq.id} eyebrow={publishedFaq.eyebrow} heading={publishedFaq.heading} description={publishedFaq.description} headingLevel={2} ground={publishedFaq.ground} layout="split" media={<Faq items={publishedFaq.items} headingLevel={2} ground={publishedFaq.ground} />} data-content-section-faq="" className={[className, "tablet-lg:items-start"].filter(Boolean).join(" ")}>{after}</ContentSection>;
-    }
+export function createContentSectionBlock(ItemsBlock: (props: ItemsProps) => ReactNode = Items) {
+  return function ContentSectionBlock({ section, actions, className, style, after }: ContentSectionBlockProps) {
     const block = section.block === undefined ? null : renderBlock(section.block, section, ItemsBlock);
     const media = section.media === undefined ? undefined : renderMedia(section.media, section);
     const header = { id: section.id, headingId: section.heading === undefined ? undefined : `${section.id}:heading`, eyebrow: section.eyebrow, heading: section.heading, description: section.description, actions, footnote: renderFootnote(section.footnote), headingLevel: 2 as const, size: section.size, ground: section.ground, className, style };
