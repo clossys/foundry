@@ -133,7 +133,7 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
     const classes = new Set<string>();
     const tones = ["neutral", "success", "warning", "danger", "info"] as const;
     for (const ground of ["base", "sunken", "inverse"] as const) for (const treatment of ["plain", "rule", "plate"] as const) {
-      const tree = render(<Item id="one" heading="Title" size="display" treatment={treatment} ground={ground} href="/one" featured={treatment === "plate"} icon={<svg />} eyebrow="Area" meta="Actor" description="Support" visual={<div>Visual</div>} badge={{ label: "Beta", tone: "info" }} />);
+      const tree = render(<Item id="one" heading="Title" size="display" treatment={treatment} ground={ground} href="/one" icon={<svg />} eyebrow="Area" meta="Actor" description="Support" visual={<div>Visual</div>} badge={{ label: "Beta", tone: "info" }} />);
       for (const cls of collectClassNames(tree.container)) classes.add(cls); tree.unmount();
     }
     for (const tone of tones) { const tree = render(<Item id={tone} heading="Title" size="standard" treatment="plain" ground="base" badge={{ label: "State", tone }} />); for (const cls of collectClassNames(tree.container)) classes.add(cls); tree.unmount(); }

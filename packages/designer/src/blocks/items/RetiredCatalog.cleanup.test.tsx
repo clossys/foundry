@@ -140,7 +140,7 @@ describe("explicit migration of 49 retired catalog cases", () => {
       expectAuthoredItems(root, props.items, props.headingLevel!);
       expect(root.querySelector("[data-items]")).toHaveAttribute("data-treatment", props.treatment);
       if (disposition === "bento") expect([...root.querySelectorAll("[data-item]")].map(node => node.getAttribute("data-span"))).toEqual(props.items.map(item => item.span));
-      if (props.emphasis === "statement") for (const heading of root.querySelectorAll("[data-item-heading]")) expect(heading).toHaveClass("text-h2");
+      if (props.emphasis === "statement") for (const heading of root.querySelectorAll("[data-item-heading]")) expect(heading).toHaveClass("text-h0");
       if (name === "headless-three-blank-heading") expect(root.querySelectorAll("h3")).toHaveLength(3);
     }
   });

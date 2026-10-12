@@ -7,7 +7,7 @@ import { Check } from "../icons/Check.js";
 import { hasContent } from "./items/policies.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
 
-/** Heading element for each side's label. */
+/** Heading element for each side's primary heading. */
 export type MatrixHeadingLevel = 2 | 3 | 4 | 5 | 6;
 
 /** One side of a two-sided matrix. */
@@ -109,7 +109,8 @@ function SideBody({ side, featured, headingLevel, ground, shared }: {
   const emptyRow = shared.visual ? "hidden tablet-lg:block" : "hidden tablet:block";
   return <>
     <div className="flex flex-col gap-xs">
-      {hasNode(side.label) ? <><HeadingTag className={cx("text-body-s font-medium uppercase tracking-label", colors.secondary)}>{side.label}</HeadingTag>{hasNode(side.heading) ? <p className={cx("text-h2 font-display leading-heading text-balance", colors.primary)}>{side.heading}</p> : null}</> : <HeadingTag className={cx("text-h2 font-display leading-heading text-balance", colors.primary)}>{side.heading}</HeadingTag>}
+      {hasNode(side.label) ? <p className={cx("text-body-s font-medium uppercase tracking-label", colors.secondary)}>{side.label}</p> : null}
+      <HeadingTag className={cx("text-h2 font-display leading-heading text-balance", colors.primary)}>{side.heading}</HeadingTag>
     </div>
     {shared.description ? hasNode(side.description) ? <p data-matrix-description="" className={cx("text-body text-pretty", colors.primary)}>{side.description}</p> : <div aria-hidden="true" data-matrix-empty-row="description" className={emptyRow} /> : null}
     {shared.points ? side.points && side.points.length > 0 ? <ul className="flex flex-col gap-sm">

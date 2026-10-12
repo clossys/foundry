@@ -45,21 +45,18 @@ describe("Item", () => {
     const { container } = render(<Item {...base} ground="inverse" badge={{ label: "Neutral", tone }} />);
     expect(screen.getByText("Neutral").parentElement).toBe(container.querySelector("[data-item-meta]"));
   });
-  it.each(["base", "sunken", "inverse"] as const)("features a flat plate on %s", (ground) => {
-    const { container } = render(<Item {...base} ground={ground} treatment="plate" featured />);
-    expect(container.querySelector("[data-item]")).toHaveAttribute("data-featured", "true");
-    expect(container.querySelector("[data-item]")).toHaveClass(ground === "inverse" ? "border-t-accent-on-inverse" : "border-t-accent");
-    expect(container.innerHTML).not.toMatch(/(?:shadow-|rotate-|scale-)/);
+  it.each([true, false])("refuses retired featured=%s on standalone items", featured => {
+    expect(() => render(<Item {...({ ...base, featured } as unknown as ItemProps)} />)).toThrow(/featured.*retired/);
   });
   it.each(["plain", "rule"] as const)("keeps heading-only linked %s items at the tap-target minimum", (treatment) => {
     const { container } = render(<Item {...base} href="/one" treatment={treatment} />);
     expect(container.querySelector("[data-item]")).toHaveStyle({ minBlockSize: "var(--ui-layout-tap-target, 44px)" });
   });
-  it("keeps a transparent hairline edge on linked plates and only a featured top accent", () => {
-    const { container } = render(<Item {...base} href="/one" treatment="plate" featured />);
+  it("keeps a transparent hairline edge on linked plates", () => {
+    const { container } = render(<Item {...base} href="/one" treatment="plate" />);
     const plate = container.querySelector("[data-item]");
-    expect(plate).toHaveClass("border", "border-transparent", "border-t-accent");
-    expect(plate).not.toHaveClass("border-accent");
+    expect(plate).toHaveClass("border", "border-transparent");
+    expect(plate).not.toHaveClass("border-accent", "border-t-accent");
     expect(plate).toHaveStyle({ borderWidth: "var(--ui-border-hairline, 1px)" });
   });
   it("names its only link from the title and leaves other slots outside it", () => {

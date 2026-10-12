@@ -19,7 +19,7 @@ describe("Items arrangement policy", () => {
   it("defaults columns to three and item size to standard", () => {
     const { container } = draw({});
     expect(container.querySelector("[data-items]")).toHaveAttribute("data-columns", "3");
-    expect(screen.getByText("Title 0")).toHaveClass("text-body-l", "font-semibold");
+    expect(screen.getByText("Title 0")).toHaveClass("text-h2", "font-display");
   });
   it.each([2, 3, 4, 5, 6, 7, 8])("accepts %s one-column rows", (count) => {
     const { container } = draw({ arrangement: "rows", items: data(count) });
@@ -33,7 +33,7 @@ describe("Items arrangement policy", () => {
   it.each([2, 4, 6])("defaults %s bento spans to half", (count) => {
     const { container } = draw({ arrangement: "bento", items: data(count) });
     expect(container.querySelectorAll('[data-span="half"]')).toHaveLength(count);
-    expect(screen.getByText("Title 0")).toHaveClass("text-h3");
+    expect(screen.getByText("Title 0")).toHaveClass("text-h2");
   });
   it.each([3, 5])("refuses %s incomplete default bento spans", (count) => expect(() => draw({ arrangement: "bento", items: data(count) })).toThrow(RangeError));
   it.each([
@@ -47,10 +47,10 @@ describe("Items arrangement policy", () => {
     expect(lone).toHaveClass("tablet:col-span-12", "tablet-lg:col-span-4");
     expect([...nodes].map(node => node.textContent)).toEqual(data(spans.length).map(item => item.heading));
   });
-  it("renders statement headings at text-h2 with a semantic h4", () => {
+  it("renders statement headings at text-h0 with a semantic h4", () => {
     draw({ emphasis: "statement", treatment: "rule", headingLevel: 4 });
     expect(screen.getAllByRole("heading", { level: 4 })).toHaveLength(3);
-    expect(screen.getByText("Title 0")).toHaveClass("text-h2");
+    expect(screen.getByText("Title 0")).toHaveClass("text-h0");
   });
   it.each(["icon", "eyebrow", "meta", "visual", "href", "featured", "span", "lane"])("rejects statement slot %s", (slot) => {
     const items = data(3); items[0] = { ...items[0]!, [slot]: slot === "featured" ? false : "value" };
@@ -71,7 +71,7 @@ describe("Items arrangement policy", () => {
     [{ id: "a", label: "A", items: ["item-0", "item-1"] }, { id: "a", label: "B", items: ["item-2", "item-3"] }],
     [{ id: "a", label: " ", items: ["item-0", "item-1"] }, { id: "b", label: "B", items: ["item-2", "unknown"] }],
   ])("refuses malformed group partitions", (...groups) => expect(() => draw({ arrangement: "rows", items: data(4), groups })).toThrow());
-  it("permits only one featured item in columns or bento", () => {
+  it("refuses the retired featured item slot in every arrangement", () => {
     expect(() => draw({ items: data(3).map((item) => ({ ...item, featured: true })) })).toThrow(TypeError);
     for (const arrangement of ["rows", "stacked"] as const) expect(() => draw({ arrangement, items: data(2).map((item) => ({ ...item, featured: false })) })).toThrow(TypeError);
     expect(() => draw({ items: [{ ...data(3)[0]!, featured: "yes" } as unknown as ItemData, ...data(3).slice(1)] })).toThrow(TypeError);

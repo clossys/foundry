@@ -21,7 +21,7 @@ describe("Matrix", () => {
       expect(plate).toHaveClass("bg-surface-sunken", "rounded-panel");
       expect(within(side as HTMLElement).getAllByRole("listitem")[0]).toHaveClass("text-ink-primary");
     }
-    expect(screen.getByRole("heading", { name: "First option" }).tagName).toBe("H3");
+    expect(screen.getByRole("heading", { name: "A shared record" }).tagName).toBe("H3");
     expect(screen.getByText("A shared record")).toHaveClass("text-h2", "text-ink-primary");
   });
 
@@ -53,6 +53,20 @@ describe("Matrix", () => {
     expect(() => markup({ sides })).not.toThrow();
     const unlabeled = sides.map(side => ({ ...side, label: undefined })) as unknown as MatrixProps["sides"];
     expect(() => markup({ sides: unlabeled })).not.toThrow();
+  });
+
+  it("keeps supplied labels as captions and actual headings on both sides", () => {
+    const { container } = render(<Matrix sides={SIDES} />);
+    expect(screen.getAllByRole("heading", { level: 3 }).map(node => node.textContent)).toEqual(["A shared record", "A shared view"]);
+    expect(screen.getByText("A shared record").tagName).toBe("H3");
+    expect(container.querySelectorAll("h3")).toHaveLength(2);
+    for (const side of SIDES) {
+      const caption = screen.getByText(String(side.label));
+      expect(caption.tagName).toBe("P");
+      expect(caption).toHaveClass("text-body-s", "text-ink-secondary");
+      const shell = container.querySelector(`[data-matrix-side="${side.id}"]`) as HTMLElement;
+      expect(within(shell).getAllByRole("heading")).toHaveLength(1);
+    }
   });
 
   it.each(["first", "second"])("features only the selected %s plate without reordering sides", featured => {
@@ -136,7 +150,7 @@ describe("Matrix", () => {
     const fill = ground === "base" ? "bg-surface-sunken" : ground === "sunken" ? "bg-surface-raised" : "bg-surface-inverse-raised";
     for (const plate of container.querySelectorAll("[data-variant=plate]")) expect(plate).toHaveClass(fill);
     expect(container.querySelector('[data-featured="true"]')).toHaveClass(ground === "inverse" ? "border-t-accent-on-inverse" : "border-t-accent");
-    expect(screen.getByRole("heading", { name: "First option" }).tagName).toBe("H4");
+    expect(screen.getByRole("heading", { name: "A shared record" }).tagName).toBe("H4");
     expect(screen.getByLabelText("Options")).toHaveAttribute("id", "options");
     expect(screen.getByLabelText("Options")).toHaveStyle({ inlineSize: "100%" });
   });
@@ -183,9 +197,9 @@ describe("Matrix", () => {
     const visual: ReactNode = <svg aria-label="Sample diagram" />;
     expect(() => markup({ sides: SIDES.map(side => ({ ...side, points: undefined, visual })) as unknown as MatrixProps["sides"] })).not.toThrow();
   });
-  it.each([2, 3, 4, 5, 6] as const)("retains the supplied h%s side labels", headingLevel => {
+  it.each([2, 3, 4, 5, 6] as const)("retains the supplied h%s primary headings", headingLevel => {
     render(<Matrix sides={SIDES} headingLevel={headingLevel} />);
-    for (const side of SIDES) expect(screen.getByRole("heading", { name: String(side.label) }).tagName).toBe(`H${headingLevel}`);
+    for (const side of SIDES) expect(screen.getByRole("heading", { name: String(side.heading) }).tagName).toBe(`H${headingLevel}`);
   });
   it("retains description leads beside visual bodies in authored order without manufacturing points", () => {
     const sides: MatrixProps["sides"] = [

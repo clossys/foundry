@@ -3350,14 +3350,18 @@ function RelatedResources() {
 Optional `headingLevel={3}` or `headingLevel={4}` selects a semantic heading.
 `Items` defaults treatment
 to plain, ground to base, size to standard, and item heading elements to
-h3 (`headingLevel={4}` selects h4). Display size uses text-h3; statement
-uses text-h2; bento uses text-h3. These visual scales do not change heading
-elements. Rules are hairlines; decorative icons use secondary ink. Eyebrow,
+h3 (`headingLevel={4}` selects h4). Unordered columns, bento and stacked
+collections use text-h2 at standard size, text-h1 at display size, and text-h0
+for centred statements. Bento follows the supplied frame size. Rows use
+text-body headings and text-body-s descriptions with inline decorative icons;
+ordered collections and standalone Item retain their measured scale. These
+visual scales do not change heading elements. Rules are hairlines; decorative
+icons use secondary ink. Eyebrow,
 badge and meta share a wrapping row in every treatment. The four status tones
 use a rounded opaque base-surface backing, preserving the Badge text and tint
 pairing on each ground. Neutral keeps its own opaque fill. Badge tone maps to
 the existing Badge atom: neutral (default), success, warning, danger or info.
-A featured item uses a flat plate with an accent top rule.
+The item-level featured field is retired; select the collection treatment.
 
 | Arrangement | Columns | Counts |
 |---|---|---|
@@ -3365,6 +3369,7 @@ A featured item uses a flat plate with an accent top rule.
 | columns | 3 (default) | 3, 6 |
 | rows | 1 (default) | 2–8 |
 | rows | 2 | even counts from 2–8 |
+| rows | 3 | 3 or 6 ungrouped linked plates, unordered and fully revealed |
 | bento | omitted | 2–6, complete ordered 12-unit rows |
 | stacked | omitted | 2–4 |
 
@@ -3372,10 +3377,9 @@ Bento spans are third, half, two-thirds or full; an omitted span is half.
 An item cannot overflow its current row even when the total divides by 12.
 At tablet width, a lone third fills its row; desktop keeps its third span.
 Statement requires columns 3, exactly three items and plain or rule treatment;
-its items take heading, description and optional badge only. At most one
-item is featured, in columns or bento. Rows and stacked refuse the featured
-field, including false. Spans belong to bento; columns belong to columns
-and rows.
+its items take heading, description and optional badge only. Items refuse
+the retired featured field, including false. Spans belong to bento; columns
+belong to columns and rows.
 
 Rows may have 2–4 labelled groups, with 2–4 item IDs in each. Groups reference
 every item exactly once, and render members in each group's authored ID
@@ -3618,10 +3622,10 @@ import { Matrix } from "@clossys/designer/blocks";
 ```
 
 Exactly two sides on equal `Card` plates. Each side has a distinct,
-whitespace-free `id`, an optional `label` rendered as a real heading, and a
-required `heading` line. Label both sides or neither; mixed label presence
-is refused. Without labels, each side heading becomes the semantic heading
-at `headingLevel`. Supply the same primary form on both sides: two to
+whitespace-free `id`, an optional `label` rendered as a caption paragraph, and a
+required `heading` rendered at the selected semantic heading level. Label both
+sides or neither; mixed label presence is refused. Supply the same primary form
+on both sides: two to
 four points with equal counts, or a visual. An optional description supplies
 lead copy alongside points or a visual; description alone is refused. Points
 and visuals cannot be combined. Optional description rows stay aligned when
@@ -5649,7 +5653,7 @@ not a grab-bag).
 | `FeatureGridHeadingLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
 | `Item` | component | Standalone item with required treatment, size and ground; one title link and independent copy, badge, meta and visual slots. |
 | `Items` | component | Canonical bounded collection with labelled groups, numbered or connected order, two actor lanes, and independent disclosed rows. |
-| `ItemData` | type | Stable id and heading; optional description, eyebrow, icon, meta, visual, href, featured, span, badge and connected lane ID. |
+| `ItemData` | type | Stable id and heading; optional description, eyebrow, icon, meta, visual, href, span, badge and connected lane ID. |
 | `ItemProps` | type | ItemData plus required treatment, size and ground, and optional headingLevel (`3 \| 4`; omission keeps a paragraph). |
 | `ItemBadge` | type | ReactNode label and optional existing Badge tone. |
 | `ItemSize` | type | `"standard" \| "display"`. |

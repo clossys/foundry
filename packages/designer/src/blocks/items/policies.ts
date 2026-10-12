@@ -84,7 +84,7 @@ function hasControlIn(node: ReactNode, inSvg: boolean): boolean {
 /** The public item guard reads supplied elements recursively, without executing opaque components. */
 export function assertItemData(item: ItemData): void {
   if (!item || typeof item !== "object" || typeof item.id !== "string" || !item.id.trim() || !hasContent(item.heading)) throw new TypeError("Item: a stable id and nonblank heading are required.");
-  if (item.featured !== undefined && typeof item.featured !== "boolean") throw new TypeError("Item: featured must be a boolean.");
+  if ((item as ItemData & { featured?: unknown }).featured !== undefined) throw new TypeError("Item: featured is retired; select the collection's treatment instead.");
   if (item.badge !== undefined && (!item.badge || !hasContent(item.badge.label) || (item.badge.tone !== undefined && !["neutral", "success", "warning", "danger", "info"].includes(item.badge.tone)))) throw new TypeError("Item: badge needs a label and an existing Badge tone.");
   if (item.href !== undefined) {
     if (!isSanctionedHref(item.href)) throw new TypeError("Item: href must be an anchor, one-origin path, HTTP(S) URL or explicit mail link.");
@@ -106,6 +106,19 @@ function normalizedDestination(href: string): string {
 }
 export function assertItemAxes(treatment: unknown, size: unknown, ground: unknown): void {
   if (!["plain", "rule", "plate"].includes(treatment as string) || !["standard", "display"].includes(size as string) || !["base", "sunken", "inverse"].includes(ground as string)) throw new TypeError("Item: unknown treatment, size or ground.");
+}
+/** Private collection anatomy; ordered and disclosure behavior take precedence over shape. */
+export function collectionProfile(props: ItemsProps): "sequence" | "index" | "explain" {
+  if (props.order !== undefined && props.order !== "none") return "sequence";
+  if (props.reveal === "disclose" || props.arrangement === "rows") return "index";
+  return "explain";
+}
+/** Only the existing row/plate axes admit a third tile column. Other row contracts stay unchanged. */
+function admitsThreeColumnTiles(props: ItemsProps): boolean {
+  return props.arrangement === "rows" && props.treatment === "plate" &&
+    (props.order === undefined || props.order === "none") &&
+    (props.reveal === undefined || props.reveal === "all") && props.groups === undefined &&
+    props.items.every(item => item.href !== undefined);
 }
 export function assertItems(props: ItemsProps): number | undefined {
   const { items, arrangement, groups, emphasis = "item", treatment = "plain", size = "standard", ground = "base", order = "none", reveal = "all" } = props;
@@ -130,7 +143,9 @@ export function assertItems(props: ItemsProps): number | undefined {
     if (hasContent(props.caption) && !items.some(item => hasContent(item.visual))) throw new TypeError("Items: a connected caption requires a visual.");
   }
   if (arrangement === "columns" && order !== "connected" && !((columns === 2 && [2, 4, 6].includes(count)) || (columns === 3 && [3, 6].includes(count)))) throw new RangeError("Items: columns need two columns with 2/4/6 items or three columns with 3/6 items.");
-  if (arrangement === "rows" && (count < 2 || count > 8 || (columns !== 1 && columns !== 2) || (columns === 2 && count % 2 !== 0))) throw new RangeError("Items: rows need 2-8 items, even in two columns.");
+  if (arrangement === "rows" && columns === 3) {
+    if (!admitsThreeColumnTiles(props) || ![3, 6].includes(count)) throw new RangeError("Items: three-column rows need three or six ungrouped linked plates with no order or disclosure.");
+  } else if (arrangement === "rows" && (count < 2 || count > 8 || (columns !== 1 && columns !== 2) || (columns === 2 && count % 2 !== 0))) throw new RangeError("Items: rows need 2-8 items, even in two columns.");
   if (arrangement === "stacked" && order !== "connected" && (count < 2 || count > 4)) throw new RangeError("Items: stacked needs 2-4 items.");
   if (props.lanes !== undefined) {
     if (order !== "connected" || !["columns", "stacked"].includes(arrangement) || count < 3 || count > 5 || !Array.isArray(props.lanes) || props.lanes.length !== 2) throw new TypeError("Items: two lanes belong to connected columns or stacked sequences with three to five steps.");
@@ -150,7 +165,6 @@ export function assertItems(props: ItemsProps): number | undefined {
   }
   if (arrangement === "bento") assertOrderedRows(items.map((item) => item.span === undefined ? "half" : item.span), { count: (n) => `Items: bento needs 2-6 items, got ${n}.`, unknown: (i, span) => `Items: item ${i} has unknown span ${String(span)}.`, overflow: (i) => `Items: item ${i} overflows its 12-unit row.`, incomplete: "Items: bento must fill ordered 12-unit rows." });
   else if (items.some((item) => item.span !== undefined)) throw new TypeError("Items: spans belong to bento only.");
-  if (items.filter((item) => item.featured === true).length > 1 || ((arrangement === "rows" || arrangement === "stacked") && items.some((item) => item.featured !== undefined))) throw new TypeError("Items: at most one featured item, in columns or bento only.");
   if (emphasis === "statement") {
     if (arrangement !== "columns" || columns !== 3 || count !== 3 || treatment === "plate") throw new TypeError("Items: statement needs three columns, three items and plain or rule treatment.");
     const excluded = ["icon", "eyebrow", "meta", "visual", "href", "featured", "span", "lane"] as const;

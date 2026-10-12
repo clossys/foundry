@@ -27,3 +27,8 @@ void <Item {...item} treatment="plain" size="standard" ground="base" headingLeve
 void <Item {...item} treatment="plain" size="standard" ground="base" headingLevel={5} />;
 // @ts-expect-error Heading levels are numeric.
 void <Item {...item} treatment="plain" size="standard" ground="base" headingLevel="3" />;
+
+// @ts-expect-error Featured is retired from canonical Item data.
+void <Item {...item} treatment="plain" size="standard" ground="base" featured />;
+// @ts-expect-error Featured is retired from canonical collection entries.
+void <Items arrangement="columns" items={[{ ...item, featured: true }]} />;

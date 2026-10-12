@@ -23,8 +23,8 @@ describe("Items review regressions", () => {
       expect(label).not.toHaveClass("absolute");
     }
   });
-  it.each(["rule", "plate", "featured", "visual"] as const)("fills the numbered %s item body without shrinking to its copy", kind => {
-    const { container } = render(<Items arrangement="columns" order="numbered" treatment={kind === "rule" || kind === "plate" ? kind : "plain"} items={data(3).map((item, i) => ({ ...item, featured: kind === "featured" && i === 0 ? true : undefined, visual: kind === "visual" ? <div>Visual</div> : undefined }))} />);
+  it.each(["rule", "plate", "visual"] as const)("fills the numbered %s item body without shrinking to its copy", kind => {
+    const { container } = render(<Items arrangement="columns" order="numbered" treatment={kind === "rule" || kind === "plate" ? kind : "plain"} items={data(3).map((item, i) => ({ ...item, visual: kind === "visual" ? <div>Visual</div> : undefined }))} />);
     for (const li of container.querySelectorAll("li")) {
       expect(li.querySelector("[data-item]")).toHaveClass("min-w-0", "flex-1");
       expect(li.querySelector("[data-item-ordinal]")).toHaveClass("shrink-0");
