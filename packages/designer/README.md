@@ -56,8 +56,8 @@ mechanical gates (`designer-hero-css-check`, `designer-fold-check`, and
 full rubric — floor, authored great, review keep, and who certifies what — is
 in [PRE-AUTH-QUALITY.md](./PRE-AUTH-QUALITY.md).
 
-Band copy for the content blocks (`FeatureGrid`, `CardGrid`, `Comparison`,
-`TopicList`, `OrderedStepSequence`, `Faq`, `Specimen`) follows the content
+Band copy for the content blocks (`FeatureGrid`, `Items`, `Matrix`,
+`OrderedStepSequence`, `Faq`, `Specimen`) follows the content
 cookbook, [CONTENT.md](./CONTENT.md). It covers which block fits which
 information, what each slot holds and its word budget, and the page-variety
 rules. Publisher's `publisher-preview` writes `content-catalog.html`, which
@@ -107,15 +107,12 @@ surfaces and live in `@clossys/publisher/web`.
   `Separator`, `Chip`, `StatusMark`, `Meter`.
 - **`blocks`** — owns the internal layout of multiple named regions,
   typically by composing one or more atoms (and/or layout) into something
-  with a real job on a page. Thirty-five ship: `PageHeader`, `EmptyState`,
+  with a real job on a page. Thirty-four ship: `PageHeader`, `EmptyState`,
   `DataTable`, `DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`,
-  `ConfirmDialog`, `Toolbar`, `NavGrid`, `LinkGrid`, `SectionHeader`, `Hero`,
-  `MarketingChapter`, `FeatureGrid`, `Item`, `Items`, `CardGrid`, `AnatomyCallouts`, `RecordLedger`, `LedgerTile`, `Scene`, `Matrix`, `Comparison`, `TopicList`,
+  `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `SectionFrame`,
+  `MarketingChapter`, `FeatureGrid`, `Item`, `Items`, `AnatomyCallouts`, `RecordLedger`, `Scene`, `Matrix`,
   `Specimen`, `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`,
-  `PricingTable`, `Testimonial`, `ArticleBody`, `ConsentBanner` — the last
-  twenty-one are marketing/editorial
-  content blocks and a presentational consent notice, completing this layer
-  (see "Blocks" below).
+  `PricingTable`, `Testimonial`, `ArticleBody`, `ConsentBanner` (see "Blocks" below).
 - **`shell`** — the persistent frame around content (nav, layout chrome)
   that provides the slots content fills. One per app; survives route
   changes that swap out the content underneath it. `Shell` ships with five
@@ -358,7 +355,7 @@ source file's own header for the exact probe and its result). Today that's:
 | Subpath | Server-safe members |
 | --- | --- |
 | `@clossys/designer/atoms/server` | `Avatar`, `Badge`, `Banner`, `Card`, `Field`, `Icon`, `Meter`, `Skeleton`, `Spinner`, `StatusMark`, `buttonLinkClassName`, `iconButtonClassName`, `iconButtonLinkClassName`, `mergeUiClasses` |
-| `@clossys/designer/blocks/server` | `AnatomyCallouts`, `ArticleBody`, `CardGrid`, `Comparison`, `Matrix`, `ContentSection`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `Item`, `Items`, `LedgerTile`, `LinkGrid`, `MarketingChapter`, `MediaFigure`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `RecordLedger`, `Scene`, `SectionFrame`, `SectionHeader`, `SectionIntro`, `Specimen`, `SpecimenPanel`, `Stat`, `StatusList`, `TopicList` |
+| `@clossys/designer/blocks/server` | `AnatomyCallouts`, `ArticleBody`, `Matrix`, `ContentSection`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `Item`, `Items`, `MarketingChapter`, `MediaFigure`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `RecordLedger`, `Scene`, `SectionFrame`, `SectionHeader`, `SectionIntro`, `Specimen`, `SpecimenPanel`, `Stat`, `StatusList` |
 | `@clossys/designer/shell/server` | `Shell`, `SiteFooter`, `SiteHeader`, `SkipLink` |
 | `@clossys/designer/charts/server` | `ChartFrame`, `Sparkline` |
 | `@clossys/designer/theme/server` | `getThemeInitScript` |
@@ -2915,40 +2912,24 @@ region is `flex flex-wrap`, and `search` grows to fill the space between
 `leading` and `trailing`, falling onto its own row rather than overflowing
 once the three regions no longer fit on one line.
 
-### `LinkGrid`
+### Destination collections
 
-A list of two to six real destinations, on `surface="plate"` (the default)
-or `surface="rule"`. Each title is the tile's one link, with a decorative
-chevron, a whole-tile hit target and one focus ring. Descriptions and icons
-stay outside the link name. Nested interactive content and mixed icon
-presence throw a `TypeError`; counts outside two to six throw a `RangeError`.
-
-`ground` defaults to `base`; `sunken` and `inverse` select the matching ink,
-plate and ring tokens. Rule tiles on sunken ground use a base hover plate.
-Titles are body-scale paragraphs unless `headingLevel={3}` or `{4}` is set.
-Below tablet the grid has one column. From tablet, two/four items take halves,
-three/six take thirds, and five take three thirds followed by two halves.
-The component is exported from both blocks barrels and uses no hooks.
+Use `Items` for a bounded list of destinations. Each title is the item's one
+link; descriptions and icons stay outside its accessible name. Rows support
+plain, rule or plate treatment and preserve authored reading order.
 
 ```tsx
-import { LinkGrid } from "@clossys/designer/blocks/server";
+import { Items } from "@clossys/designer/blocks/server";
 
-<LinkGrid
-  headingLevel={3}
+<Items
+  arrangement="rows"
+  treatment="plate"
   items={[
-    { id: "guides", title: "Guides", description: "Find instructions by topic.", href: "/guides" },
-    { id: "support", title: "Support", description: "Get help with your next step.", href: "/support" },
+    { id: "guides", heading: "Guides", description: "Find instructions by topic.", href: "/guides" },
+    { id: "support", heading: "Support", description: "Get help with your next step.", href: "/support" },
   ]}
 />;
 ```
-
-For a status page, compose it in a navigation region named by that region's
-heading. Page-level StatusView slots belong to Publisher.
-
-NavGrid delegates all-linked collections of two to six items with all or no
-icons to LinkGrid's plate list. Its existing single-item, larger, mixed-icon
-and mixed link/button collections retain the control frame and item order;
-action tiles remain raised, bordered buttons.
 
 ### `NavGrid`
 
@@ -2976,8 +2957,7 @@ which is what makes this a block rather than a view.
 
 **Each card is a real `<a>` or `<button>`, not a `<div>` with an
 `onClick`.** `items` is a discriminated union. An item with `href` is a
-linked tile with the same anatomy as a linked content item (see "Linked
-items" under `TopicList`): its title is one `<a href>`, named by the title
+linked tile with the same anatomy as a linked content item (see `Item` and `Items`): its title is one `<a href>`, named by the title
 alone, with a chevron at its end, visible at rest, and the anchor's hit area
 covers the tile, so a click anywhere on it follows the link, Tab stops once,
 and the focus ring surrounds the whole tile. The icon and description sit
@@ -2989,8 +2969,8 @@ renders via this package's own `Button` atom (`variant="ghost"`), with
 convention. `icon` is `aria-hidden`, decorative reinforcement for a title
 that's already the card's real accessible name.
 
-Eligible all-linked collections of two to six items compose LinkGrid
-plates, with its six-unit layout from tablet. Legacy single-item, larger,
+Eligible all-linked collections of two to six items compose the shared item
+renderer with a private plate collection and its six-unit layout from tablet. Legacy single-item, larger,
 mixed-icon and mixed link/button collections retain their control tiles
 and item order: one per row below tablet, two from tablet and three from
 desktop. Action tiles keep their raised, bordered button style.
@@ -3060,7 +3040,7 @@ exactly that reason: this package owns visual vocabulary, never copy (see
 "Public contract" above — audience-facing words belong to
 `@clossys/writer`).
 
-`Hero`, `FeatureGrid`, `CardGrid`, `Comparison`, `TopicList`, `Faq`
+`Hero`, `FeatureGrid`, `Faq`
 (including its server implementation), `OrderedStepSequence`, and
 `StatusList` share one closed `ground` contract:
 `"base" | "sunken" | "inverse"` (default `"base"`). Base inherits the
@@ -3267,7 +3247,7 @@ The temporary `layout="split"` and `mediaSide="start" | "end"` aliases keep
 their existing DOM and still require media until callers migrate.
 
 ```tsx
-import { ContentSection, TopicList } from "@clossys/designer/blocks";
+import { ContentSection, Items } from "@clossys/designer/blocks";
 
 function SplitSection() {
   return (
@@ -3278,7 +3258,9 @@ function SplitSection() {
       heading="Section heading"
       media={<img src="/media.png" alt="Media description" />}
     >
-      <TopicList
+      <Items
+        arrangement="rows"
+        treatment="rule"
         columns={1}
         items={[
           { id: "one", heading: "Topic one" },
@@ -3406,15 +3388,14 @@ group. List items own responsive grid spans.
 Link all items or none, up to six distinct normalized destinations. A linked
 item has one title-named anchor; description, badge, meta and visual remain
 outside it. Native controls, finite tabIndex targets (including -1), editable
-content and controlled media are refused in every linked slot. The guard
+content and controlled media are refused in every linked slot. Passive SVG use and image resource references are allowed inside SVG elements; they do not create another target. The guard
 walks supplied arrays, fragments and element children; it does not execute
 opaque components to inspect their rendered output. Numeric zero is content
 in every slot; optional whitespace-only copy is omitted. Stable IDs and
 nonblank headings are required.
 
-The existing CardGrid, TopicList, LinkGrid and NavGrid wrappers preserve their
-private compatibility frames, counts and presence rules. NavGrid retains
-ownership of its Button controls. Public Item and Items do not expose those
+NavGrid preserves its published frames, counts and presence rules through
+the shared item renderer and retains ownership of its Button controls. Public Item and Items do not expose those
 private policies.
 
 `Items` keeps source reading order and accepts `order="none"` (the default),
@@ -3445,7 +3426,7 @@ checked recursively, while opaque component output is not executed by the
 guard. The ordinary entry uses independent disclosures; the server entry uses
 independent native details. Both start closed and retain their answer content.
 
-Items accepts the standard optional `aria-labelledby` string to name its actual list from an authored heading outside the collection. Grouped collections forward the reference to each list and retain their separate group labels. `ItemsLane` is exported with the Items types.
+Items accepts the standard optional `aria-labelledby` string to name its actual list from an authored heading outside the collection. Grouped inner lists are named by their own group label; the external reference names ungrouped lists. `ItemsLane` is exported with the Items types.
 
 ### `FeatureGrid`
 
@@ -3478,28 +3459,11 @@ different headings), which is what makes it a block rather than a view
 
 Each item's `icon` is optional and `aria-hidden` — decorative
 reinforcement for a heading that already carries the meaning, the same
-treatment `NavGrid`'s own `icon` slot gets. An item's optional `eyebrow`
-renders as a small uppercase caption in secondary ink directly above its
-heading (one tight group; without it the heading is emitted unchanged), for
-naming an item's area or role. Published default item titles are paragraphs; the grid's optional
-`heading` (via `headingLevel`, default `2`) supplies its heading region. Items lay out one per row on narrow viewports, two from `tablet`,
-three from `desktop` — the same responsive grid `NavGrid` uses.
-`ground` uses the shared closed section-ground contract above.
-
-**Catalog layout.** Setting `columns`, `treatment` or `emphasis` routes
-accepted canonical inputs to `Items` when the grid has a meaningful heading
-or an explicit `headingLevel`. Headless catalog calls with an omitted level
-keep their earlier paragraph titles and catalog markup during migration.
-Existing catalog inputs outside its
-bounds retain their earlier catalog rendering during migration, including
-four columns. Canonical two columns take 2, 4 or 6 items; three columns (the default) take
-3 or 6. Rules use `--ui-border-hairline`; icons use secondary ink. Item
-headings use body-l semibold and semantic h3 elements below a level-two
-collection heading, or h4 when the collection heading is level three or deeper. Statement uses
-three items in three columns, plain or rule treatment, and text-h2 visual
-scale. Statement items take heading, description and optional badge only.
-Leaving all catalog axes unset preserves the published default markup and
-its arbitrary item counts.
+treatment `NavGrid` gives its icons. Item titles are paragraphs; the optional
+collection heading uses `headingLevel` (default `2`). The published grid keeps
+arbitrary item counts and its automatic one-column, tablet two-column and
+desktop three-column layout. `ground` uses the shared section-ground contract.
+Use `Items` for authored columns, treatments, statements, links and visuals.
 
 ### `OrderedStepSequence`
 
@@ -3523,70 +3487,18 @@ row with a hairline running from one ordinal across to the next at `tablet`;
 the connector is `line-strong`, so it stays visible in light and dark
 schemes. The ordinal is a 32px disc in the accent tint with an
 `accent-text` numeral (an inverse-line ring with on-inverse ink on an
-inverse band). Step headings are item headings, set like `FeatureGrid` and
-`TopicList` item headings (`text-body-l`, body font, medium weight), the
+inverse band). Step headings use `text-body-l`, body font and medium weight, the
 `label` above as a small tracked label and the description at `text-body`;
-plate headings (`CardGrid`, `Comparison`) sit one step up at `text-h2` in the
-display font. Set
+Set
 `ground="sunken"` or `ground="inverse"` selects the shared matching painted
 surface, ink, border, and connector policy. Base inherits its surrounding
 surface. `headingLevel` controls the real heading
 elements (default `2`). `eyebrow` is the same optional label slot `Hero` and
 `FeatureGrid` ship, rendered above the heading when supplied.
 
-Each item's `label` is its actor tag ("Your team", "The reviewer"), set
-above the step heading. An item may carry a small `visual` (typically a
-one-panel `Specimen`) under its text. When any step has one, the row starts
-at `tablet-lg` instead of `tablet` (a visual needs the wider column; tablets
-keep the vertical list and its rail), and in the row each step spans three
-shared `subgrid` rows (ordinal, text, visual), so every visual starts on one
-top line even when one step's copy runs longer. Without `subgrid` support the
-parts still stack in order.
-
-
-`OrderedStepSequence` supports two-actor `lanes: { a, b }` with `lane` on
-every item: 3 or 5 steps, exactly 3 with visuals. Start in a, use both actors,
-and omit item labels. Three lane columns start at `tablet-lg`; five at
-`desktop`. Pass `labelledBy` the real section heading id. `caption` follows
-the list and requires a visual. Lanes or explicit `end`/`endLabel` add the
-final connector; the default is `ends` (node), while `continues` draws an
-arrow. An unlabelled continuing end needs consumer `continuesLabel` copy,
-rendered hidden. Legacy calls keep their existing DOM. `ContentSection` and
-`SectionIntro` accept `headingId` on their real heading.
-
-### `CardGrid`
-
-```tsx
-import { CardGrid } from "@clossys/designer/blocks";
-
-<CardGrid
-  headingLevel={3}
-  items={[
-    { id: "one", eyebrow: "Eyebrow", heading: "Wide card", description: "Card copy.", span: "two-thirds" },
-    { id: "two", heading: "Narrow card", description: "Card copy.", span: "third" },
-    { id: "three", heading: "Card three", span: "third" },
-    { id: "four", heading: "Card four", span: "third" },
-    { id: "five", heading: "Card five", span: "third" },
-  ]}
-/>;
-```
-
-A mixed grid of content cards where one item may deserve more room. Each
-card is an `<article>` holding a `Card` plate (the other ground,
-`rounded-panel`, no stroke, no shadow) with an optional `icon`
-(`aria-hidden`, in the brand accent), `eyebrow` (a `text-body-s` medium
-tracked label), a real heading at `headingLevel` (`CardGridHeadingLevel`,
-default `3`: one below the section heading), a `description` at
-`text-body`, and an optional `visual` pinned to the bottom of the card so
-headings line up across a row. `span` (`CardGridSpan`) is `"third"`,
-`"half"`, `"two-thirds"` or `"full"`; spans must fill whole 12-unit rows in
-order (two-thirds and a third in either order, three thirds, two halves, or
-one full card), 2 to 6 cards, or the block throws a `RangeError`. One
-column below `tablet`; at `tablet` a two-thirds card takes the full row and
-a third takes half, except a third left alone in its `tablet` row (beside
-a full-row card or last), which takes the whole row instead of leaving an
-empty half; the 12-unit spans apply from `tablet-lg`, `gap-lg` apart.
-
+Each item's optional `label` is its actor tag, set above the step heading.
+Ordinals remain authored strings or numbers. Use connected `Items` for lanes,
+visuals, item destinations, captions and explicit termination.
 
 ### Scene
 
@@ -3646,7 +3558,7 @@ number map. They sit first inline on the title, labelled part or footer line;
 unmarked panels keep their existing markup. Both components remain server-safe.
 
 
-### RecordLedger and rule card visuals
+### RecordLedger and item visuals
 
 RecordLedger shows one record in a named figure with `form="record"`.
 Record groups contain one-to-six rows or a final owner;
@@ -3655,7 +3567,7 @@ Provide a unique caller `id` seed for each record instance, even with identical
 data. The component generates length-prefixed DOM IDs for the figure, head and
 groups from that seed; the figure does not use the raw caller `id`:
 the title and group heading IDs derive from it. `headingLevel` is 3 or 4.
-Record titles and captions, and tile captions, require visible content: blank
+Record titles and captions require visible content: blank
 strings, booleans and empty recursive arrays are rejected; numeric zero is valid.
 
 Two columns are stacked below 768px and equal from 768px. Three columns become
@@ -3666,39 +3578,27 @@ page reveal integration awaits the shared reveal infrastructure. Inverse-ledger
 status labels use inverse primary ink for normal-text contrast; glyph colors and
 shapes remain the existing status marks. Other grounds retain toned label ink.
 
-A flag needs caller-owned `flagLabel` copy; at most one row per record or tile
-may be flagged. LedgerTile is static and rejects nested
-interactive nodes in its own caption and row fields. `mobileRows={3}` hides later
-rows only below 768px. Put meaningful warning/danger rows within that cap.
-
-CardGrid `treatment="rule"` replaces the plate with a top hairline and the rule
-link frame. Thirds and two-thirds take halves at tablet; from 1024px the normal
-12-unit spans apply, and two-thirds cards split text/visual internally at 1/1.3.
-The default plate treatment retains its original layout.
+A record flag needs caller-owned `flagLabel` copy; at most one row may be
+flagged. Use a `SpecimenPanel` status-rows part for a compact item visual.
+`mobileRows={3}` retains all rows and hides later rows only below tablet.
+Status-row labels, details and status copy reject native interactive nodes in
+their own supplied content, including when the panel is inside a linked Item.
 
 ```tsx
-import { CardGrid, LedgerTile, RecordLedger } from "@clossys/designer/blocks/server";
+import { Items, SpecimenPanel, RecordLedger } from "@clossys/designer/blocks/server";
 
 function LedgerExample() {
   const rows = [
-    { id: "one", label: "Record one", detail: "Due tomorrow" },
-    { id: "two", label: "Record two", detail: "Received today" },
+    { id: "one", label: "Record one", detail: "Due tomorrow", status: { tone: "neutral" as const, label: "Open" } },
+    { id: "two", label: "Record two", detail: "Received today", status: { tone: "success" as const, label: "Received" } },
   ];
-  return (
-    <>
-      <RecordLedger
-        id="example-ledger"
-        form="record"
-        head={{ title: "Review record", meta: "Current period" }}
-        groups={[{ id: "checks", label: "Checks", rows }]}
-        caption="Sample data."
-      />
-      <CardGrid treatment="rule" items={[
-        { id: "one", heading: "Review records", span: "two-thirds", href: "/records", visual: <LedgerTile caption="Sample records" rows={rows} /> },
-        { id: "two", heading: "Review guidance", span: "third", href: "/guidance" },
-      ]} />
-    </>
-  );
+  return <>
+    <RecordLedger id="example-ledger" form="record" head={{ title: "Review record" }} groups={[{ id: "checks", label: "Checks", rows }]} caption="Sample data." />
+    <Items arrangement="bento" treatment="rule" items={[
+      { id: "one", heading: "Review records", span: "two-thirds", href: "/records", visual: <SpecimenPanel parts={[{ id: "checks", type: "status-rows", label: "Sample records", items: rows }]} /> },
+      { id: "two", heading: "Review guidance", span: "third", href: "/guidance" },
+    ]} />
+  </>;
 }
 ```
 
@@ -3728,84 +3628,6 @@ reading order or either plate's fill. `headingLevel` defaults to `3`; `ground`
 defaults to `base`. Sides stack below `tablet`, or `tablet-lg` when they carry
 visuals, then share subgrid rows for aligned copy and visuals. All styling uses
 the existing plate, ground, typography and accent tokens. Server-safe.
-
-### `Comparison`
-
-```tsx
-import { Comparison } from "@clossys/designer/blocks";
-
-<Comparison
-  before={{ label: "Before", heading: "Side heading", points: ["Point one", "Point two"] }}
-  after={{ label: "After", heading: "Side heading", points: ["Point one", "Point two"] }}
-/>;
-```
-
-Before and after, side by side. Two `<section>`s, each named by its
-`label` as a real heading at `headingLevel` (`ComparisonHeadingLevel`,
-default `3`), with an optional `heading` line, then either a `description`
-or 2 to 4 `points` (the same form and count on both sides), and an optional
-`visual` (on both sides or neither) directly under the side's copy. Side by
-side, both sides span one set of shared `subgrid` rows (label group, copy,
-visual), so the labels, the copy and the visuals each start on one top line
-even when one side's description is longer, and the plate fills its column
-(the row count is on `data-comparison-rows`). Without `subgrid` support each
-side still stacks its parts in order. Both sides use the same `Matrix`
-plate renderer in primary ink. `before` retains its muted dash; `after`
-carries the featured accent top rule and check. The marks and the arrow between the columns are `aria-hidden`: the
-contrast is in the words. Two columns from `tablet` (from `tablet-lg` when
-the sides carry visuals), stacked below with `before` first; the arrow
-flips under `dir="rtl"`.
-
-### `TopicList`
-
-```tsx
-import { TopicList } from "@clossys/designer/blocks";
-
-<TopicList
-  items={[
-    { id: "one", heading: "Topic one", description: "A short line." },
-    { id: "two", heading: "Topic two", description: "A short line." },
-  ]}
-/>;
-```
-
-Many short, scannable topics where cards would be heavy. A real `<ul>`;
-each row is topped by a hairline rule in `line-base` and carries `py-lg`,
-with the `heading` at `text-body-l` in `font-medium` and an optional
-`description` at `text-body` in secondary ink. `columns` (`TopicListColumns`: `1`
-or `2`, default `2`) applies from `tablet` with `gap-x-3xl`; one column
-below. An even count reads best in two columns. No check marks: a topic
-list states coverage, not progress. Optional icons are `aria-hidden` and
-muted.
-
-**Grouped topics.** Use `groups` instead of `items`: 2-4 `TopicListGroup`s,
-each `{ id, label, items }` with 2-4 rows, at most 12 rows overall. Groups
-are categories readers scan for, with short labels. Two and four groups use
-two columns from `tablet`; three stay stacked until `tablet-lg`. Each group
-is named by its own heading (`headingLevel` 3 by default, or 4). Grouped
-lists refuse `columns`; the count determines the layout. The first row has
-no hairline, and the last has no bottom padding.
-
-**Linked items.** `FeatureGrid` (item emphasis), `CardGrid`, `TopicList` and
-`OrderedStepSequence` items each take an optional `href`. A linked item's
-title holds its one `<a href>` (`data-card-link`), so the link's accessible
-name is the title alone, followed by a no-break join and the T4 quiet
-action's `ChevronRight`, `aria-hidden` and visible at rest. The anchor's
-`::after` is stretched over the item (the item is `relative isolate`), so a
-click anywhere on the item follows the link and Tab stops once; the focus
-ring (`outline-accent`, `outline-accent-on-inverse` on an inverse band) is
-drawn on that `::after`, so it surrounds the whole item. The hit area is the
-plate itself for a plate card or feature; a bare item (a `plain` or `rule`
-feature, a topic row, a step) gains a hover plate in the band's other ground,
-inset so the text does not move. Hover underlines the title in its own ink
-and nudges the chevron (the `quiet-action` utility, whose nudge never runs
-under reduced motion); nothing else moves. A linked item whose parts hold another
-link, a button, a field or an `onClick` throws a `TypeError`, and a
-statement `FeatureGrid` item takes no `href`. Link every item in a group or
-none. Because the hit area covers the item, its text cannot be drag-selected.
-A linked `CardGrid` title drops the brand's horizontal display scale
-(`--font-display-scale-x`): a transformed heading would hold the stretched
-hit area inside the title.
 
 ### `Specimen`
 
@@ -5792,9 +5614,6 @@ not a grab-bag).
 | `NavGrid` | component | Grid of navigation cards: optional heading, the card grid. A linked card's title is its one `<a>`, stretched over the card; an action card is a `<button>`. |
 | `NavGridProps` | type | Props for `NavGrid`: `heading`, `items`, `className`, `style`. |
 | `NavGridItem` | type | One card, as data: `id`, `title`, `description?`, `icon?`, and either `href` or `onSelect` (mutually exclusive). |
-| `LinkGrid` | component | Server-safe list of two to six destinations; plate or rule tiles with one stretched title link per item. |
-| `LinkGridProps` | type | Props for `LinkGrid`: `items`, `surface`, `ground`, `headingLevel`, `className`. |
-| `LinkGridItem` | type | One destination: `id`, `title`, `description?`, `icon?`, and required `href`. |
 | `SectionHeader` | component | Heading for a section within a page (as opposed to the whole-page `PageHeader`): eyebrow, title, description, actions slot. `level` picks its heading element. |
 | `SectionHeaderProps` | type | Props for `SectionHeader`: `eyebrow`, `title`, `description`, `actions`, `level`, `className`, `style`, plus every native `<div>` attribute. |
 | `SectionHeaderLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
@@ -5821,12 +5640,9 @@ not a grab-bag).
 | `MediaFigureProps` | type | Props for `MediaFigure`: `children`, `caption`, `measure`, `framed`, `ground`, `className`, `style`, plus every native `<figure>` attribute. |
 | `MediaFigureMeasure` | type | `"column" \| "content"`. |
 | `FeatureGrid` | component | Titled collection of feature items: optional eyebrow/heading/description region, a grid of icon/heading/description items. |
-| `FeatureGridProps` | type | Props for `FeatureGrid`: `eyebrow`, `heading`, `description`, `items`, `headingLevel`, `ground`, `columns`, `treatment`, `emphasis`, `className`, `style`, plus every native `<div>` attribute. |
-| `FeatureGridItem` | type | One item: `id`, `icon?`, `eyebrow?` (a caption above the item heading), `heading`, `description?`, `href?` (a linked item; not on a statement grid). |
+| `FeatureGridProps` | type | Props for `FeatureGrid`: `eyebrow`, `heading`, `description`, `items`, `headingLevel`, `ground`, `className`, `style`, plus every native `<div>` attribute. |
+| `FeatureGridItem` | type | One item: `id`, `icon?`, `heading`, `description?`. |
 | `FeatureGridHeadingLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
-| `FeatureGridColumns` | type | `2 \| 3 \| 4`; four remains a compatibility input. |
-| `FeatureGridTreatment` | type | `"plain" \| "rule" \| "plate"`. |
-| `FeatureGridEmphasis` | type | `"item" \| "statement"`. |
 | `Item` | component | Standalone item with required treatment, size and ground; one title link and independent copy, badge, meta and visual slots. |
 | `Items` | component | Canonical bounded collection with labelled groups, numbered or connected order, two actor lanes, and independent disclosed rows. |
 | `ItemData` | type | Stable id and heading; optional description, eyebrow, icon, meta, visual, href, featured, span, badge and connected lane ID. |
@@ -5841,12 +5657,6 @@ not a grab-bag).
 | `ItemsEmphasis` | type | `"item" \| "statement"`. |
 | `ItemsLane` | type | Stable actor ID and authored ReactNode label; connected lanes require exactly two. |
 | `ItemsGroup` | type | Stable id, ReactNode label and an ordered list of canonical item IDs. |
-| `CardGrid` | component | Mixed grid of content cards on plates; spans fill whole 12-unit rows (validated); optional bottom-pinned visual per card. |
-| `CardGridProps` | type | Props for `CardGrid`: `items`, `headingLevel`, `ground`, `treatment`, `className`, `style`, plus every native `<div>` attribute except `title`. |
-| `CardGridItem` | type | One card: `id`, `icon?`, `eyebrow?`, `heading`, `description?`, `span`, `visual?`, `href?` (a linked card). |
-| `CardGridSpan` | type | `"third" \| "half" \| "two-thirds" \| "full"`. |
-| `CardGridHeadingLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
-| `CardGridTreatment` | type | `"plate" \| "rule"`; plate is the default. |
 | `AnatomyCallouts` | component | A specimen panel with 3 or 5 numbered markers and an ordered key. |
 | `AnatomyCalloutsProps` | type | Required caller instance `id`, `label`, `panel`, `markers`, `keyLabel`; optional `legendSide`, `sample`, `headingLevel`, `ground`, `className`, `style`. |
 | `AnatomyCalloutsMarker` | type | Stable `id`, labelled `target`, authored `heading` and `description`. |
@@ -5854,8 +5664,6 @@ not a grab-bag).
 | `RecordLedgerProps` | type | `form: "record"` takes unique instance seed `id`, `head`, `groups`, `columns?`, `caption`, `flagLabel?`; accepts `ground`, `headingLevel`, `className`. |
 | `LedgerRowData` | type | Static row: `id`, `label`, `detail?`, `status?` (`tone`, `label`), `flag?`. |
 | `LedgerGroupData` | type | `id`, `label`, either `rows` or last-group `owner` (`initials`, `name`, `note?`), with optional owner-group `note`. |
-| `LedgerTile` | component | A captioned two-to-five-row plate visual for rule cards. |
-| `LedgerTileProps` | type | `caption`, `rows`, `mobileRows?` (`3`), `flagLabel?`, `ground?`, `className?`. |
 | `Scene` | component | Static converge, evidence-trail or approval-chain figure with complete linear HTML. |
 | `SceneProps` | type | Caller-unique `id`, authored `label`, `input`; optional `relationLabel`, `sample`, `headingLevel` and `className`. |
 | `layoutScene` | function | Pure seeded geometry without DOM measurements. |
@@ -5883,15 +5691,6 @@ not a grab-bag).
 | `MatrixProps` | type | Two `sides`, optional `featured`, `headingLevel`, `ground`, and native div attributes except `title`. |
 | `MatrixSide` | type | One stable-id side with `label`, `heading`, and optional description, points or visual. |
 | `MatrixHeadingLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
-| `Comparison` | component | Before and after on equal Matrix plates; retains optional headings and its decorative arrow. |
-| `ComparisonProps` | type | Props for `Comparison`: `before`, `after`, `headingLevel`, `ground`, `className`, `style`, plus every native `<div>` attribute except `title`. |
-| `ComparisonSide` | type | One side: `label`, `heading?`, `description?`, `points?`, `visual?`. |
-| `ComparisonHeadingLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
-| `TopicList` | component | Hairline-ruled list of short topics in one or two columns. |
-| `TopicListProps` | type | Closed `items`/`groups` props; flat lists take `columns` and native `<ul>` attributes, groups take `headingLevel` and native `<div>` attributes; both take `ground`, `className`, `style`. |
-| `TopicListItem` | type | One topic: `id`, `icon?`, `heading`, `description?`, `href?` (a linked row). |
-| `TopicListColumns` | type | `1 \| 2`. |
-| `TopicListGroup` | type | A labelled category: `id`, `label`, and `items`. |
 | `Specimen` | component | Labelled figure of 1 to 3 static product-UI panels (`single`, `row`, `stack`, `flow`); budgets validated. |
 | `SpecimenProps` | type | Props for `Specimen`: `label`, `arrangement`, `connector`, `panels`, `className`, `style`, plus native `<figure>` attributes except `children`, `title`, `aria-label` and `aria-labelledby`. |
 | `SpecimenArrangement` | type | `"single" \| "row" \| "stack" \| "flow"`. |
@@ -5922,7 +5721,7 @@ not a grab-bag).
 | `SpecimenFile` | type | `id`, `format`, `name`, `source?`. |
 | `OrderedStepSequence` | component | Editorial ordered sequence: optional heading region, authored ordinal/label/heading/body steps, responsive decorative connectors. |
 | `OrderedStepSequenceProps` | type | Props for `OrderedStepSequence`: `eyebrow`, `heading`, `description`, `items`, `headingLevel`, `ground`, `className`, `style`, plus every native `<section>` attribute. |
-| `OrderedStepSequenceItem` | type | One step: `id`, `ordinal`, `label?` (the actor tag), `heading`, `description?`, `visual?`, `href?` (a linked step). |
+| `OrderedStepSequenceItem` | type | One step: `id`, `ordinal`, `label?` (the actor tag), `heading`, `description?`. |
 | `OrderedStepSequenceHeadingLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
 | `OrderedStepSequenceGround` | type | Sequence-specific alias of the shared `SectionGround`: `"base" \| "sunken" \| "inverse"`. |
 | `StatusList` | component | Grouped editorial status list: one legend and a definition list per group. |
@@ -6574,8 +6373,8 @@ up. They get added here only once something real needs them.
 
 **Blocks:** thirty-five ship — `PageHeader`, `EmptyState`, `DataTable`,
 `DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`, `ConfirmDialog`,
-`Toolbar`, `NavGrid`, `LinkGrid`, `SectionHeader`, `Hero`, `MarketingChapter`,
-`FeatureGrid`, `Item`, `Items`, `CardGrid`, `AnatomyCallouts`, `RecordLedger`, `LedgerTile`, `Scene`, `Matrix`, `Comparison`, `TopicList`, `Specimen`,
+`Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `SectionFrame`, `MarketingChapter`,
+`FeatureGrid`, `Item`, `Items`, `AnatomyCallouts`, `RecordLedger`, `Scene`, `Matrix`, `Specimen`,
 `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`, `PricingTable`,
 `Testimonial`, `ArticleBody`, `ConsentBanner` — completing this layer. No
 `FilterBar` block:

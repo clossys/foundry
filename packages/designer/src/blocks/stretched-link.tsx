@@ -5,9 +5,8 @@ import { ChevronRight } from "../icons/ChevronRight.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
 
 /*
- * The linked-card anatomy shared by `FeatureGrid`, `CardGrid`, `TopicList`,
- * `OrderedStepSequence` and `NavGrid` (internal: not exported from the
- * package). It lives beside the blocks rather than in `blocks/internal/`
+ * The linked-item anatomy shared by `Item`, `Items`, and `NavGrid`
+ * (internal: not exported from the package). It lives beside the blocks rather than in `blocks/internal/`
  * because the `compiled.css` scan skips `internal/`, and these class strings
  * must compile.
  *
@@ -27,16 +26,15 @@ import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js"
  * a filter or containment: any of those makes that element the containing
  * block of the `::after`, and the hit area shrinks to it. `font-display`
  * sets `transform: scaleX(--font-display-scale-x)`, so a display-face title
- * that holds the link adds `transform-none` (see `CardGrid`).
+ * that holds the link adds `transform-none` (see `Item`).
  */
 
 /**
  * The shape the hit area and ring take: the plate itself (`plate`), a bare
  * item with a hover plate around it (`plain`), a rule-topped item whose hover
- * plate starts under the rule (`rule`), a topic row between hairlines
- * (`topic`), or a `NavGrid` control tile (`control`).
+ * plate starts under the rule (`rule`), or a `NavGrid` control tile (`control`).
  */
-export type CardLinkFrame = "plate" | "plain" | "rule" | "topic" | "control";
+export type CardLinkFrame = "plate" | "plain" | "rule" | "control";
 
 /** The anchor: inherits the title's ink, no underline at rest, the T4 quiet-action chevron behaviour. */
 const ANCHOR_BASE =
@@ -47,7 +45,6 @@ const HIT_AREA_CLASSES: Record<CardLinkFrame, string> = {
   plate: "after:inset-0 after:rounded-panel",
   plain: "after:-inset-x-sm after:-inset-y-sm tablet:after:-inset-x-md tablet:after:-inset-y-md after:rounded-panel",
   rule: "after:-inset-x-sm after:top-0 after:-bottom-sm tablet:after:-inset-x-md tablet:after:-bottom-md after:rounded-panel",
-  topic: "after:-inset-x-md after:inset-y-xs after:rounded-panel",
   control: "after:inset-0 after:rounded-control",
 };
 
@@ -71,16 +68,13 @@ const HOVER_PLATE_INSET_CLASSES: Record<CardLinkFrame, string | undefined> = {
   plate: undefined,
   plain: "before:-inset-x-sm before:-inset-y-sm tablet:before:-inset-x-md tablet:before:-inset-y-md",
   rule: "before:-inset-x-sm before:top-0 before:-bottom-sm tablet:before:-inset-x-md tablet:before:-bottom-md",
-  topic: "before:-inset-x-md before:inset-y-xs",
   control: undefined,
 };
 
-/** The item container's classes and hover plate. LinkGrid alone uses the base plate on a sunken ground. */
-export function cardLinkContainerClassName(frame: CardLinkFrame, ground: SectionGround, sunkenPlate?: "base"): string {
+/** The item container and its hover plate on the matching section ground. */
+export function cardLinkContainerClassName(frame: CardLinkFrame, ground: SectionGround): string {
   const inset = HOVER_PLATE_INSET_CLASSES[frame];
-  const fill = ground === "sunken" && sunkenPlate === "base"
-    ? "before:absolute before:-z-10 before:rounded-panel hover:before:bg-surface-base has-focus-visible:before:bg-surface-base"
-    : HOVER_PLATE_FILL_CLASSES[ground];
+  const fill = HOVER_PLATE_FILL_CLASSES[ground];
   return cx("relative isolate", inset === undefined ? undefined : fill, inset);
 }
 

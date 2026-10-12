@@ -8,7 +8,7 @@ export function nativeDisclosureRow({ id, question, answer, recipe, colors, answ
   const label = <><span>{question}</span><Icon glyph={ChevronDown} decorative size="md" className={cx(recipe.chevron, recipe.chevronNative)} /></>;
   return <details key={id} className={cx(recipe.item, recipe.details, colors.border)} style={rowStyle}>
     <summary className={cx(recipe.trigger, colors.primary)}>
-      {headingLevel === undefined ? label : <Heading className="m-0 flex w-full items-center justify-between gap-lg">{label}</Heading>}
+      {headingLevel === undefined ? label : <Heading className="m-0 flex w-full items-center justify-between gap-lg font-medium">{label}</Heading>}
     </summary>
     <div className={cx(recipe.answer, colors.secondary)} style={answerStyle}>{answer}</div>
   </details>;

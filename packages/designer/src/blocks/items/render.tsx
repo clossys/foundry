@@ -21,10 +21,11 @@ const SCALE_CLASSES: Record<ItemScale, string> = {
   statement: "text-h2 font-display leading-heading text-balance",
 };
 /** One canonical item renderer, used by standalone Item and every Items arrangement. */
-export function ItemRenderer({ item, treatment, size, ground, headingLevel, statement = false, className: spanClassName, span, sharedVisualRow = false, orderClassName }: {
+export function ItemRenderer({ item, treatment, size, ground, headingLevel, statement = false, className: spanClassName, span, sharedVisualRow = false, orderClassName, navigation }: {
   item: ItemData; treatment: ItemTreatment; size: ItemSize; ground: SectionGround; headingLevel?: 3 | 4;
   statement?: boolean; className?: string; span?: string;
   sharedVisualRow?: boolean; orderClassName?: string;
+  navigation?: "plate" | "control" | "action";
 }) {
   const colors = SECTION_GROUND_CLASSES[ground];
   const plate = treatment === "plate" || item.featured === true;
@@ -36,16 +37,19 @@ export function ItemRenderer({ item, treatment, size, ground, headingLevel, stat
   const badge = item.badge !== undefined ? <Badge variant={item.badge.tone}>{item.badge.label}</Badge> : null;
   // Status tint/text pairs are checked on base, so give them that opaque backing on every ground.
   const statusBadge = item.badge?.tone !== undefined && item.badge.tone !== "neutral";
+  const legacy = navigation !== undefined;
+  const control = navigation === "control" || navigation === "action";
   const copy: ReactNode = <>
-    {hasContent(item.icon) ? <ItemIcon className={cx("inline-flex", colors.secondary)}>{item.icon}</ItemIcon> : null}
-    {hasContent(item.eyebrow) || hasContent(item.meta) || item.badge !== undefined ? <div data-item-meta="" className="flex flex-wrap items-center gap-sm">
+    {(legacy ? Boolean(item.icon) : hasContent(item.icon)) ? <ItemIcon className={legacy ? control ? "text-ink-muted" : cx("inline-flex link-grid-icon", colors.secondary) : cx("inline-flex", colors.secondary)}>{item.icon}</ItemIcon> : null}
+    {!legacy && (hasContent(item.eyebrow) || hasContent(item.meta) || item.badge !== undefined) ? <div data-item-meta="" className="flex flex-wrap items-center gap-sm">
       {hasContent(item.eyebrow) ? <p data-item-eyebrow="" className={cx("text-body-s font-medium uppercase tracking-label", colors.secondary)}>{item.eyebrow}</p> : null}
       {statusBadge ? <span className="inline-flex rounded-pill bg-surface-base">{badge}</span> : badge}
       {hasContent(item.meta) ? <p className={cx("text-caption font-body", colors.secondary)}>{item.meta}</p> : null}
     </div> : null}
-    <ItemHeading data-item-heading="" as={headingLevel === 4 ? "h4" : headingLevel === 3 ? "h3" : "p"} heading={item.heading} href={item.href} variant={frame} ground={ground} className={cx("m-0", scaleClassName, colors.primary, display && item.href !== undefined ? "transform-none" : undefined)} iconSize={display ? "md" : "sm"} />
-    {hasContent(item.description) ? <ItemDescription data-item-description="" className={cx("m-0 text-body text-pretty", colors.secondary)}>{item.description}</ItemDescription> : null}
+    <ItemHeading data-item-heading={legacy ? undefined : ""} as={legacy ? control ? "span" : "p" : headingLevel === 4 ? "h4" : headingLevel === 3 ? "h3" : "p"} heading={item.heading} href={item.href} variant={legacy ? control ? "control" : "plate" : frame} ground={ground} className={legacy ? cx("text-body font-body font-medium", control ? undefined : "m-0 leading-heading", colors.primary) : cx("m-0", scaleClassName, colors.primary, display && item.href !== undefined ? "transform-none" : undefined)} anchorClassName={navigation === "plate" ? "active:decoration-current link-grid-active" : undefined} iconSize={display && !legacy ? "md" : "sm"} />
+    {(legacy ? Boolean(item.description) : hasContent(item.description)) ? <ItemDescription as={control ? "span" : "p"} data-item-description={legacy ? undefined : ""} data-link-grid-description={legacy && navigation !== "action" ? "" : undefined} className={legacy ? cx("text-body-s", control ? undefined : "m-0", colors.secondary) : cx("m-0 text-body text-pretty", colors.secondary)}>{item.description}</ItemDescription> : null}
   </>;
+  if (legacy) return copy;
   const body = sharedVisualRow ? <>
     <div className="flex min-w-0 flex-col items-start gap-sm">{copy}</div>
     <div data-item-visual={hasContent(item.visual) ? "" : undefined} aria-hidden={hasContent(item.visual) ? undefined : true} className="w-full min-w-0 pt-md">{item.visual}</div>

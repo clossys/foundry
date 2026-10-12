@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
+import { assertNoNestedInteractive } from "../stretched-link.js";
 import { Meter, type MeterDirection } from "../../atoms/Meter.js";
 import { StatusMark, type StatusMarkTone } from "../../atoms/StatusMark.js";
 import { cx } from "../../atoms/internal/cx.js";
@@ -270,6 +271,7 @@ export function assertSpecimenPart(part: SpecimenPart): void {
     return;
   }
   assertCount(where, part.items.length, SPECIMEN_PART_MAX_ROWS);
+  if (part.type === "status-rows") assertNoNestedInteractive("Specimen", part.id, [part.label, ...part.items.flatMap(row => [row.label, row.detail, row.status.label])]);
   if (part.type === "shares") {
     for (const item of part.items) {
       if (!Number.isFinite(item.share) || item.share < 0 || item.share > 100) {

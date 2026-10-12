@@ -66,9 +66,6 @@ describe("server-safe entry points resolve under react-server (test 1)", () => {
       expectedExports: [
         "AnatomyCallouts",
         "ArticleBody",
-        "CardGrid",
-        "Comparison",
-        "Matrix",
         "ContentSection",
         "DetailView",
         "EmptyState",
@@ -78,12 +75,11 @@ describe("server-safe entry points resolve under react-server (test 1)", () => {
         "Hero",
         "Item",
         "Items",
-        "LinkGrid",
-        "LedgerTile",
         "RecordLedger",
         "Scene",
         "layoutScene",
         "sceneRelationText",
+        "Matrix",
         "MarketingChapter",
         "MediaFigure",
         "OrderedStepSequence",
@@ -97,7 +93,6 @@ describe("server-safe entry points resolve under react-server (test 1)", () => {
         "SpecimenPanel",
         "Stat",
         "StatusList",
-        "TopicList",
       ],
     },
     { distRelPath: "shell/server.js", expectedExports: ["BADGE_INSET_SHARE", "BADGE_RADIUS_SHARE", "Brandmark", "Shell", "SiteFooter", "SiteHeader", "SkipLink", "badgePlatePath"] },
@@ -132,9 +127,9 @@ describe("pure Item and Items compiled graphs", () => {
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.message).toMatch(/react|useContext|useState|createContext/i);
   });
-  it("calls native disclosure and the FeatureGrid catalog path under react-server", () => {
+  it("calls native disclosure and published FeatureGrid under react-server", () => {
     const absolute = join(distDir, "blocks", "server.js");
-    const script = `import(${JSON.stringify(absolute)}).then(m => { const items = [0,1,2,3].map(i => ({ id: String(i), heading: "Title " + i, description: "Answer " + i })); function nativeNodes(node) { if(Array.isArray(node)) return node.flatMap(nativeNodes); if(!node || typeof node !== "object" || !node.props) return []; if(typeof node.type === "function") return nativeNodes(node.type(node.props)); return [node,...nativeNodes(node.props.children)]; } const rows=nativeNodes(m.Items({arrangement:"rows",reveal:"disclose",items})); if(rows.filter(n=>n.type==="details").length!==4 || rows.filter(n=>n.type==="summary").length!==4) throw new Error("native disclosure anatomy"); const features=nativeNodes(m.FeatureGrid({heading:"Features",columns:3,items:items.slice(0,3)})); if(!features.some(n=>n.props["data-items"]!==undefined) || features.filter(n=>n.props["data-item"]!==undefined).length!==3) throw new Error("static catalog path missing"); process.stdout.write("OK"); }).catch(e => { console.error(e); process.exit(1); });`;
+    const script = `import(${JSON.stringify(absolute)}).then(m => { const items = [0,1,2,3].map(i => ({ id: String(i), heading: "Title " + i, description: "Answer " + i })); function nativeNodes(node) { if(Array.isArray(node)) return node.flatMap(nativeNodes); if(!node || typeof node !== "object" || !node.props) return []; if(typeof node.type === "function") return nativeNodes(node.type(node.props)); return [node,...nativeNodes(node.props.children)]; } const rows=nativeNodes(m.Items({arrangement:"rows",reveal:"disclose",items})); if(rows.filter(n=>n.type==="details").length!==4 || rows.filter(n=>n.type==="summary").length!==4) throw new Error("native disclosure anatomy"); const canonical=nativeNodes(m.Items({arrangement:"columns",columns:3,items:items.slice(0,3)})); if(canonical.filter(n=>n.props["data-item"]!==undefined).length!==3 || canonical.filter(n=>n.type==="ul" && n.props["data-items"]!==undefined).length!==1) throw new Error("canonical Items catalog path missing"); const features=nativeNodes(m.FeatureGrid({heading:"Features",items:items.slice(0,3)})); if(features.filter(n=>n.type==="p" && /^Title /.test(n.props.children)).length!==3 || features.filter(n=>n.type==="h2" && n.props.children==="Features").length!==1) throw new Error("published FeatureGrid path missing"); process.stdout.write("OK"); }).catch(e => { console.error(e); process.exit(1); });`;
     expect(execFileSync(process.execPath, ["--conditions=react-server", "-e", script], { encoding: "utf8", timeout: 10_000 })).toBe("OK");
   });
 });
@@ -166,7 +161,7 @@ describe("compiled grouped Items SSR", () => {
     const references = [...html.matchAll(/aria-labelledby="([^"]+)"/g)].map((match) => match[1]);
     expect(ids).toHaveLength(4);
     expect(new Set(ids).size).toBe(4);
-    expect(references).toEqual(ids);
+    expect(references).toEqual(ids.flatMap(id => [id, id]));
     expect(html).toContain("Beta"); expect(html).toContain("Actor");
     expect(html).toContain("inline-flex rounded-pill bg-surface-base");
     expect(html).toContain("bg-status-info-tint");

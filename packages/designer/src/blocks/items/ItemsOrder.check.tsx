@@ -44,3 +44,6 @@ const lane: PublicLane & NativeLane & PackageLane = { id: "team", label: "Team" 
 const invalidListName: ItemsProps = { ...named, "aria-labelledby": 3 }; void invalidListName;
 // @ts-expect-error Items has no invented list naming alias.
 void <Items {...named} labelledBy="sequence-heading" />;
+
+void <Items {...flow} endLabel={new Set(["Repeats ", "monthly"])} />;
+void <NativeItems {...flow} endLabel={new Set(["Repeats ", "monthly"])} />;
