@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { Items } from "./Items.js";
+import { Items as NativeItems } from "./Items.server.js";
 import { Item } from "./Item.js";
 import { Matrix } from "../Matrix.js";
 import type { ItemData, ItemsProps } from "./types.js";
@@ -12,6 +13,35 @@ const data = (count: number, linked = false): ItemData[] => Array.from({ length:
 const draw = (props: Partial<ItemsProps> = {}) => render(<Items arrangement="columns" items={data(3)} {...props} />);
 
 describe("collection render profiles", () => {
+  it.each([["client", Items], ["native", NativeItems]] as const)("uses the compact Index profile for unordered %s disclosure", (_entry, Component) => {
+    const { container } = render(<Component arrangement="rows" reveal="disclose" size="display" items={data(4)} />);
+    const heading = container.querySelector("[data-item-heading]")!;
+    expect(heading).toHaveClass("text-body", "font-medium");
+    expect(heading).not.toHaveClass("text-h3", "font-semibold");
+    const icon = container.querySelector("[data-icon]")!.parentElement!;
+    expect(icon.parentElement).toHaveClass("flex-row", "gap-lg");
+    expect(icon.parentElement).not.toHaveClass("flex-col");
+    expect(container.querySelector("[data-item-description]")?.parentElement).toHaveClass("text-body-s");
+    expect(container.querySelector(".bg-status-info-tint")?.parentElement).toHaveClass("bg-surface-base");
+    expect(container.querySelectorAll("[data-item-meta]")).toHaveLength(4);
+  });
+  it.each([["client", Items], ["native", NativeItems]] as const)("keeps numbered %s disclosure in the Sequence profile", (_entry, Component) => {
+    const { container } = render(<Component arrangement="rows" reveal="disclose" order="numbered" size="display" items={data(4)} />);
+    expect(container.querySelector("[data-item-heading]")).toHaveClass("text-h3", "font-display");
+    expect(container.querySelector("[data-icon]")?.parentElement?.parentElement).toHaveClass("flex-col");
+    expect(container.querySelectorAll("[data-item-ordinal]")).toHaveLength(4);
+  });
+  it("preserves eight nonlinked two-column rows", () => {
+    draw({ arrangement: "rows", columns: 2, items: data(8) });
+    expect(screen.getAllByRole("heading")).toHaveLength(8);
+  });
+  it("accepts explicit unordered fully revealed three-column linked plates", () => {
+    draw({ arrangement: "rows", columns: 3, treatment: "plate", order: "none", reveal: "all", items: data(3, true) });
+    expect(screen.getAllByRole("link")).toHaveLength(3);
+  });
+  it("refuses disclosure in the added three-column plate policy", () => {
+    expect(() => draw({ arrangement: "rows", columns: 3, treatment: "plate", reveal: "disclose", items: data(6, true) })).toThrow(RangeError);
+  });
   it.each(["columns", "bento", "stacked"] as const)("uses the frame size for Explain %s", arrangement => {
     const { container } = draw({ arrangement, items: data(arrangement === "columns" ? 3 : 2), treatment: "rule" });
     const heading = screen.getByRole("heading", { name: "Entry 0" });
