@@ -35,6 +35,7 @@ export function sectionWeight(section: SectionedViewSection | ResolvedSectionedV
   if (section.media?.type === "scene") return { weight: "A", shape: "specimen" };
   if (section.media !== undefined && !split) return { weight: "A", shape: "specimen" };
   switch (block?.type) {
+    case "prose": return split && section.media !== undefined ? { weight: "B", shape: "specimen" } : { weight: "C", shape: "reference" };
     case "matrix": {
       if (block.sides.some((side) => side.visual !== undefined)) return { weight: "A", shape: "compare" };
       if (split && section.media !== undefined) return { weight: "B", shape: "specimen" };

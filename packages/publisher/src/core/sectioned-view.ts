@@ -3,7 +3,7 @@ import type { CopyRef, CopyResolution, CopyResolver } from "@clossys/writer";
 import { isSanctionedHref } from "../internal/href.js";
 import type { ComposeFinding } from "./types.js";
 import { desugarRecipe, SECTIONED_VIEW_CONTENT_CONTRACT, SECTIONED_VIEW_ITEM_RECIPES } from "./content-contract.js";
-import type { FrameSize, FrameLayout, SectionedViewItemsBlock, CanonicalSectionedViewItemsBlock, SectionedViewMatrixBlock, SectionedViewItem, SectionedViewItemSpan, SectionedViewMedia, SectionedViewSpecimenMedia, SectionedViewSceneMedia, SectionedViewBadge } from "./content-contract.js";
+import type { FrameSize, FrameLayout, SectionedViewItemsBlock, CanonicalSectionedViewItemsBlock, SectionedViewMatrixBlock, SectionedViewProseBlock, SectionedViewItem, SectionedViewItemSpan, SectionedViewMedia, SectionedViewSpecimenMedia, SectionedViewSceneMedia, SectionedViewBadge } from "./content-contract.js";
 export * from "./content-contract.js";
 
 /** Resolved section grounds; canonical content sections author only inverse or omit ground. */
@@ -515,8 +515,8 @@ export interface SectionedViewSpecimenPanel {
   footer?: SectionedViewSpecimenFooter;
 }
 
-/** One canonical collection or comparison, independent of its rendering recipe. */
-export type SectionedViewContentBlock = SectionedViewItemsBlock | SectionedViewMatrixBlock;
+/** One canonical collection, comparison or ordered prose block. */
+export type SectionedViewContentBlock = SectionedViewItemsBlock | SectionedViewMatrixBlock | SectionedViewProseBlock;
 export type SectionedViewContentBlockType = SectionedViewContentBlock["type"];
 /** One band: a header, optional content and media, and a closing footnote. */
 export interface SectionedViewContentSection {
@@ -595,7 +595,8 @@ export type ResolvedSectionedViewSpecimenPanel = ResolvedCopyTree<SectionedViewS
 export type ResolvedSectionedViewSpecimenPart = ResolvedCopyTree<SectionedViewSpecimenPart>;
 export type ResolvedSectionedViewContentBlock =
   | (ResolvedCopyTree<CanonicalSectionedViewItemsBlock> & { /** Consumer-resolved hidden continuation copy. */ continuesLabel?: string })
-  | ResolvedCopyTree<SectionedViewMatrixBlock>;
+  | ResolvedCopyTree<SectionedViewMatrixBlock>
+  | ResolvedCopyTree<SectionedViewProseBlock>;
 export type ResolvedSectionedViewMedia = ResolvedCopyTree<SectionedViewMedia>;
 /** A content section with its copy resolved and its ground applied. Absent optional fields stay absent. */
 export type ResolvedSectionedViewContentSection = Omit<ResolvedCopyTree<SectionedViewContentSection>, "ground" | "block" | "size" | "layout"> & { ground: SectionedViewGround; size: FrameSize; layout: FrameLayout; block?: ResolvedSectionedViewContentBlock };
@@ -1123,7 +1124,7 @@ const ROLE_ACTION_EMPHASES: readonly SectionedViewActionEmphasis[] = ["primary",
 const CONTENT_ACTION_EMPHASES: readonly SectionedViewContentActionEmphasis[] = ["primary", "secondary", "tertiary", "quiet"];
 const CONTENT_ACTIONS_MAX = 2;
 const CONTENT_LAYOUTS = SECTIONED_VIEW_CONTENT_CONTRACT.layouts;
-const CONTENT_BLOCK_TYPES: readonly SectionedViewContentBlockType[] = ["items", "matrix"];
+const CONTENT_BLOCK_TYPES: readonly SectionedViewContentBlockType[] = ["items", "matrix", "prose"];
 const CARD_SPAN_UNITS = SECTIONED_VIEW_CONTENT_CONTRACT.spans;
 const CARD_ROW_UNITS = SECTIONED_VIEW_CONTENT_CONTRACT.counts.rowUnits;
 const SPECIMEN_TONES = SECTIONED_VIEW_CONTENT_CONTRACT.tones;
@@ -1300,12 +1301,39 @@ function validateBadge(value: unknown, path: string, findings: ComposeFinding[])
   validateCopy(value.label, `${path}.label`, findings);
   validateEnumField(value, "tone", SPECIMEN_TONES, "sectioned-view-badge-tone", path, findings);
 }
+function validateProse(block: Record<string, unknown>, path: string, findings: ComposeFinding[]): void {
+  const shape = "sectioned-view-content-prose-shape";
+  if (!hasOnlyOwnKeys(block, ["type", "paragraphs"]) || !hasOwn(block, "paragraphs")) findings.push(finding(shape, path, `${path} must hold only type and paragraphs.`));
+  const paragraphsPath = `${path}.paragraphs`;
+  if (!validateDenseArray(block.paragraphs, paragraphsPath, findings, shape, `${paragraphsPath} must be a non-empty data array.`)) return;
+  const budget = SECTIONED_VIEW_CONTENT_CONTRACT.prose;
+  if (block.paragraphs.length > budget.paragraphs) findings.push(countFinding(paragraphsPath, { min: 1, max: budget.paragraphs }, block.paragraphs.length, "paragraphs"));
+  block.paragraphs.forEach((paragraph, paragraphIndex) => {
+    const paragraphPath = `${paragraphsPath}.${paragraphIndex}`;
+    if (!validateDenseArray(paragraph, paragraphPath, findings, shape, `${paragraphPath} must be a non-empty data array of spans.`)) return;
+    let links = 0;
+    paragraph.forEach((span, spanIndex) => {
+      const spanPath = `${paragraphPath}.${spanIndex}`;
+      if (!isPlainObject(span) || !hasEnumerableOwnDataKeys(span)) { findings.push(finding(shape, spanPath, `${spanPath} must be a plain data span.`)); return; }
+      if (span.type !== "text" && span.type !== "link") { findings.push(finding(shape, `${spanPath}.type`, `${spanPath}.type must be text or link.`)); return; }
+      const keys = span.type === "link" ? ["type", "text", "href"] : ["type", "text"];
+      if (!hasOnlyOwnKeys(span, keys) || !hasOwnKeys(span, keys)) findings.push(finding(shape, spanPath, `${spanPath} must hold only ${keys.join(", ")}.`));
+      validateCopy(span.text, `${spanPath}.text`, findings);
+      if (span.type === "link") {
+        links += 1;
+        if (!isSanctionedHref(span.href)) findings.push(finding("sectioned-view-content-prose-href", `${spanPath}.href`, `${spanPath}.href must be a fragment, a one-origin path, an http(s) URL, or a mailto link.`));
+      }
+    });
+    if (links > budget.linksPerParagraph) findings.push(countFinding(paragraphPath, { min: 0, max: budget.linksPerParagraph }, links, "links"));
+  });
+}
 function validateContentBlock(value: unknown, path: string, findings: ComposeFinding[]): void {
   if (!isPlainObject(value) || !hasEnumerableOwnDataKeys(value)) { findings.push(finding("sectioned-view-content-block-shape", path, `${path} must be a plain data block.`)); return; }
+  if (value.type === "prose") { validateProse(value, path, findings); return; }
   const replacements: Readonly<Record<string, string>> = { "feature-grid": "features", "card-grid": "cards", "topic-list": "topics", "ordered-step-sequence": "steps", faq: "faq", comparison: "comparison" };
   if (typeof value.type === "string" && Object.hasOwn(replacements, value.type)) { findings.push(finding("sectioned-view-content-block-retired", `${path}.type`, `${path}.type ${value.type} is retired; use the ${replacements[value.type]} recipe on ${value.type === "comparison" ? "matrix" : "items"}.`)); return; }
   if (value.type === "matrix") { validateMatrix(value, path, findings); return; }
-  if (value.type !== "items") { findings.push(finding("sectioned-view-content-block-type", `${path}.type`, `${path}.type "${typeof value.type === "string" ? value.type : "unknown"}" must be items or matrix.`)); return; }
+  if (value.type !== "items") { findings.push(finding("sectioned-view-content-block-type", `${path}.type`, `${path}.type "${typeof value.type === "string" ? value.type : "unknown"}" must be items, matrix or prose.`)); return; }
   if (!hasOnlyOwnKeys(value, ["type", "recipe", "arrangement", "columns", "order", "reveal", "treatment", "scale", "items", "groups", "lanes", "end", "endLabel", "caption"]) || !hasOwn(value, "items")) findings.push(finding("sectioned-view-content-block-shape", path, `${path} has fields outside the items contract.`));
   let block: CanonicalSectionedViewItemsBlock;
   try { block = desugarRecipe(value as unknown as SectionedViewItemsBlock); }
@@ -1964,7 +1992,7 @@ function boundedText(ref: CopyRef, path: string, text: ResolveText, max: number,
   return resolved;
 }
 function resolveContentBlock(authored: SectionedViewContentBlock, path: string, text: ResolveText): ResolvedSectionedViewContentBlock {
-  if (authored.type === "matrix") return resolveCopyData(authored, path, text) as ResolvedSectionedViewContentBlock;
+  if (authored.type === "matrix" || authored.type === "prose") return resolveCopyData(authored, path, text) as ResolvedSectionedViewContentBlock;
   const block = desugarRecipe(authored);
   const items = block.items.map((item, index) => {
     const itemPath = `${path}.items.${index}`;

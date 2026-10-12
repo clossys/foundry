@@ -100,7 +100,7 @@ export const READER_PAGES: readonly CatalogPage[] = [
     {
         "id": "explain",
         "label": "Explain",
-        "purpose": "Make several parallel ideas understandable. Choose Index when the reader needs to find a short entry or answer.",
+        "purpose": "Explain parallel ideas or a passage of prose. Choose Index when the reader needs to find a short entry or answer.",
         "axes": [
             {
                 "name": "shape",
@@ -108,10 +108,11 @@ export const READER_PAGES: readonly CatalogPage[] = [
                     "grid-2",
                     "grid-3",
                     "bento",
-                    "stack"
+                    "stack",
+                    "prose"
                 ],
                 "effect": "Changes the rhythm and weight of parallel ideas.",
-                "when": "Grid for peers; bento for different weights; stack for one visual per idea."
+                "when": "Grid for peers; bento for different weights; stack for one visual per idea; prose for ordered paragraphs."
             },
             {
                 "name": "treatment",
@@ -325,6 +326,8 @@ function recipe(fixture: CatalogFixture): string {
     if (fixture.section.kind !== 'content-section')
         return 'published';
     const block = fixture.section.block;
+    if (block?.type === 'prose')
+        return 'prose';
     if (block?.type === 'matrix')
         return 'comparison';
     if (fixture.section.media && deriveCatalogFunction(fixture.section) === 'Show')
@@ -347,6 +350,7 @@ function axisValues(fixture: CatalogFixture, label: ReaderPage, resolved: Resolv
         return { visual: section.media?.type === 'specimen' ? (section.media.key ? 'specimen-key' : 'specimen') : section.media!.type, companion: block === undefined ? 'none' : block.arrangement === 'stacked' ? 'explain-stack' : 'index-rows', layout: section.layout };
     }
     if (section.block?.type === 'matrix') return { form: section.block.sides[0]?.visual ? 'visual' : 'points', featured: section.block.featured ? 'one-side' : 'none' };
+    if (section.block?.type === 'prose') return { shape: 'prose' };
     if (section.block?.type !== 'items') return {};
     const block = section.block;
     if (label === 'Sequence') return { shape: block.lanes ? 'lanes' : block.order === 'numbered' ? 'list' : 'line', ...(block.order === 'connected' ? { end: block.end ?? 'ends' } : {}) };
@@ -377,7 +381,7 @@ function rules(label: ReaderPage): string {
         Overview: [['Choose a function', 'Start with the reader’s job; recipes fill compatible defaults.'], ['Compose a page', 'Omit body ground for automatic cadence; inverse is a deliberate focal band.']],
         Introduce: [['Roles', 'Hero, intro, split intro, and close.'], ['Actions', '0–2 actions, at most one primary. A lone hero action is primary.']],
         Show: [['Scenes', 'Converge connects sources; evidence-trail traces a result; approval-chain shows checks leading to a decision.'], ['Specimen', 'One panel with 1–3 parts; a key names 3–5 distinct targets.'], ['Record', '1–3 groups; each has 1–6 rows, or the final group may contain an owner instead. Multi-column records use stacked frames.']],
-        Explain: [['Grid', '2, 4 or 6 entries in two columns; 3 or 6 in three columns.'], ['Bento / stack', 'Bento has 2–6 entries whose spans fill 12-unit rows; visual stacks have 2–4, with one part each.']],
+        Explain: [['Grid', '2, 4 or 6 entries in two columns; 3 or 6 in three columns.'], ['Bento / stack', 'Bento has 2–6 entries whose spans fill 12-unit rows; visual stacks have 2–4, with one part each.'], ['Prose', '1–8 non-empty paragraphs, each with at most 6 inline links. Text and link spans retain authored order.']],
         Index: [['Rows', '2–8 entries in one or two columns; 2–4 groups each have 2–4 members.'], ['FAQ', '4–6 answers; every answer needs a description.']],
         Sequence: [['Line', '3–5 steps; four warns. Visual steps need a Sample data caption.'], ['Lanes', 'Exactly two roles and 3–5 steps. Use a stacked frame with a columns or stacked arrangement, and name the continuation when relevant.']],
         Compare: [['Points', 'Two sides with 2–4 equal-count points each.'], ['Visuals', 'One panel per side with 1–3 parts; do not combine points and a panel.']],
@@ -454,7 +458,7 @@ function recipeTable(): string {
         const values = (value: object): string => Object.entries(value).map(([key, value]) => `${key}=${value}`).join(", ") || "—";
         return `<tr data-catalog-recipe="${recipe}"><th><a href="${READER_PAGES.find(page => page.label === readerPage(READER_SAMPLES.find(sample => sample.id === CATALOG_RECIPE_LINKS[recipe])!))!.id}.html#example-${CATALOG_RECIPE_LINKS[recipe]}">${recipe}</a></th><td data-recipe-fixed>${escape(values(definition.fixed))}</td><td data-recipe-defaults>${escape(values(definition.defaults ?? {}))}</td><td data-recipe-free>${escape([...axes, ...(["columns", "rows"].includes(String(definition.fixed.arrangement ?? definition.defaults?.arrangement)) ? ["columns"] : [])].filter(axis => !Object.hasOwn(definition.fixed, axis)).join(", "))}${definition.treatments === undefined ? "" : `<br />treatment: ${escape(definition.treatments.join(" / "))}`}</td><td data-recipe-slots>${escape(definition.slots.join(", ") || "—")}${definition.requiredSlot === undefined ? "" : `<br />required: ${escape(definition.requiredSlot)}`}</td><td>${escape(aliases[recipe] ?? "—")}</td></tr>`;
     }).join("");
-    return `<div class="catalog-table-wrap" role="region" aria-label="Recipe reference" tabindex="0"><table class="catalog-table"><thead><tr><th>Recipe</th><th>Fixed axes</th><th>Defaults</th><th>Free axes</th><th>Compatible slots</th><th>Published alias</th></tr></thead><tbody>${rows}<tr data-catalog-recipe="comparison"><th><a href="compare.html#example-matrix-points">comparison</a></th><td>two sides</td><td>—</td><td>primary form, featured</td><td>points or visual, optional description lead</td><td>—</td></tr></tbody></table></div>`;
+    return `<div class="catalog-table-wrap" role="region" aria-label="Recipe reference" tabindex="0"><table class="catalog-table"><thead><tr><th>Recipe</th><th>Fixed axes</th><th>Defaults</th><th>Free axes</th><th>Compatible slots</th><th>Published alias</th></tr></thead><tbody>${rows}<tr data-catalog-recipe="comparison"><th><a href="compare.html#example-matrix-points">comparison</a></th><td>two sides</td><td>—</td><td>primary form, featured</td><td>points or visual, optional description lead</td><td>—</td></tr><tr data-catalog-recipe="prose"><th><a href="explain.html#example-recipes-prose">prose</a></th><td>ordered paragraphs</td><td>—</td><td>—</td><td>text or link spans; 1–8 paragraphs, at most 6 links each</td><td>—</td></tr></tbody></table></div>`;
 }
 export function buildCatalogFunctionPages(sheets: ContentCatalogStylesheets): Array<{
     file: string;

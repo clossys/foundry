@@ -41,7 +41,7 @@ function renderedShape(fragment: Element): string {
 const expectedAxes: Record<string, Record<string, string[]>> = {
     introduce: { role: ['hero', 'intro', 'close'], 'hero-size': ['display', 'compact'], 'intro-layout': ['stacked', 'split'] },
     show: { visual: ['specimen', 'specimen-key', 'record', 'scene'], companion: ['none', 'index-rows', 'explain-stack'], layout: ['stacked', 'split-start', 'split-end'] },
-    explain: { shape: ['grid-2', 'grid-3', 'bento', 'stack'], treatment: ['plain', 'rule', 'plate'], scale: ['item', 'statement'] },
+    explain: { shape: ['grid-2', 'grid-3', 'bento', 'stack', 'prose'], treatment: ['plain', 'rule', 'plate'], scale: ['item', 'statement'] },
     'index-function': { shape: ['rows-1', 'rows-2', 'tiles'], reveal: ['all', 'disclose'], groups: ['off', 'on'] },
     sequence: { shape: ['list', 'line', 'lanes'], end: ['ends', 'continues'] },
     compare: { form: ['points', 'visual'], featured: ['none', 'one-side'] },
@@ -61,18 +61,18 @@ describe('reader function catalog', () => {
         expect(root.defaultView!.getComputedStyle(chooser).display).toBe('grid');
         expect(chooser.classList.contains('catalog-function-grid')).toBe(true);
     });
-    it('renders exactly 31 retained samples with reader-job captions and distinct headings', () => {
+    it('renders exactly 32 retained samples with reader-job captions and distinct headings', () => {
         const rendered = buildCatalogFunctionPages(sheets);
         expect(rendered.map(p => p.file)).toEqual(pages.map(id => `catalog/${id}.html`));
         const samples = rendered.flatMap(p => [...new JSDOM(p.content).window.document.querySelectorAll('[data-catalog-fixture]')]);
-        expect(samples).toHaveLength(31);
-        expect(Object.fromEntries(['Overview', 'Introduce', 'Show', 'Explain', 'Index', 'Sequence', 'Compare', 'Frame', 'Parts'].map(fn => [fn, READER_SAMPLES.filter(f => readerPage(f) === fn).length]))).toEqual({ Overview: 1, Introduce: 5, Show: 9, Explain: 5, Index: 5, Sequence: 3, Compare: 2, Frame: 1, Parts: 0 });
-        expect(new Set(samples.map(n => n.id)).size).toBe(31);
+        expect(samples).toHaveLength(32);
+        expect(Object.fromEntries(['Overview', 'Introduce', 'Show', 'Explain', 'Index', 'Sequence', 'Compare', 'Frame', 'Parts'].map(fn => [fn, READER_SAMPLES.filter(f => readerPage(f) === fn).length]))).toEqual({ Overview: 1, Introduce: 5, Show: 9, Explain: 6, Index: 5, Sequence: 3, Compare: 2, Frame: 1, Parts: 0 });
+        expect(new Set(samples.map(n => n.id)).size).toBe(32);
         for (const sample of samples)
             expect(sample.querySelector('[data-catalog-caption]')?.textContent).toMatch(/(?:Introduce|Show|Explain|Index|Sequence|Compare|Overview|Frame|Parts) › /);
         const headings = samples.map(n => n.querySelector('[data-catalog-native] h1, [data-catalog-native] h2')?.textContent);
         expect(headings.every(Boolean)).toBe(true);
-        expect(new Set(headings).size).toBe(31);
+        expect(new Set(headings).size).toBe(32);
     });
     it('files all nine unchanged published kinds under their actual reader jobs', () => {
         const rendered = buildCatalogFunctionPages(sheets);
@@ -114,7 +114,7 @@ describe('reader function catalog', () => {
                 }
             }
         }
-        expect(count).toBe(34);
+        expect(count).toBe(35);
         expect(count).toBeLessThanOrEqual(40);
         const parts = new JSDOM(rendered.find(page => page.file === 'catalog/parts.html')!.content).window.document;
         expect(parts.querySelectorAll('[data-config-native], [data-catalog-native]')).toHaveLength(0);
@@ -179,7 +179,7 @@ describe('reader function catalog', () => {
             expect(axes!.length, definition.id).toBeLessThanOrEqual(3);
             for (const axis of axes!) {
                 expect(axis.name).not.toBe(definition.id);
-                expect(axis.values.length, axis.name).toBeLessThanOrEqual(4);
+                expect(axis.values.length, axis.name).toBeLessThanOrEqual(definition.id === 'explain' && axis.name === 'shape' ? 5 : 4);
                 expect(axis.values.length, axis.name).toBeGreaterThan(0);
                 expect(new Set(axis.values).size).toBe(axis.values.length);
                 expect(axis.effect.trim()).toBeTruthy();
@@ -295,6 +295,7 @@ describe('reader function catalog', () => {
             if (label === 'Introduce') return { role: fixture.id === 'say-close' ? 'close' : 'intro', ...(fixture.id === 'say-close' ? {} : { 'intro-layout': section.layout === 'stacked' ? 'stacked' : 'split' }) };
             if (label === 'Show') return { visual: section.media?.type === 'specimen' ? (section.media.key ? 'specimen-key' : 'specimen') : section.media!.type, companion: block?.type === 'items' ? (block.arrangement === 'stacked' ? 'explain-stack' : 'index-rows') : 'none', layout: section.layout };
             if (block?.type === 'matrix') return { form: block.sides[0]!.visual ? 'visual' : 'points', featured: block.featured ? 'one-side' : 'none' };
+            if (block?.type === 'prose') return { shape: 'prose' };
             if (block?.type !== 'items') throw new Error('Expected items witness');
             if (label === 'Sequence') return { shape: block.lanes ? 'lanes' : block.order === 'numbered' ? 'list' : 'line', ...(block.order === 'connected' ? { end: block.end ?? 'ends' } : {}) };
             if (label === 'Index') return { shape: fixture.section.kind === 'content-section' && fixture.section.block?.type === 'items' && fixture.section.block.recipe === 'link-index' ? 'tiles' : `rows-${block.columns}`, reveal: block.reveal, groups: block.groups ? 'on' : 'off' };
@@ -339,6 +340,10 @@ describe('reader function catalog', () => {
                 const featured = matrix.querySelectorAll('[data-featured="true"]');
                 expect(featured.length).toBeLessThanOrEqual(1);
                 return { form: visual ? 'visual' : 'points', featured: featured.length ? 'one-side' : 'none' };
+            }
+            if (label === 'Explain' && section.querySelector('p[data-prose-paragraph]')) {
+                expect(section.querySelectorAll('p[data-prose-paragraph]').length).toBeGreaterThan(0);
+                return { shape: 'prose' };
             }
             const items = required('[data-items]');
             const details = items.querySelectorAll('details');
@@ -586,9 +591,9 @@ describe('reader automatic authored grounds and existing presentation', () => {
             const fresh = await import('./reader-renderer.js');
             const rendered = fresh.buildCatalogFunctionPages(sheets);
             const documents = rendered.map(page => new JSDOM(page.content).window.document);
-            expect(documents.reduce((count, document) => count + document.querySelectorAll('[data-catalog-fixture]').length, 0)).toBe(31);
+            expect(documents.reduce((count, document) => count + document.querySelectorAll('[data-catalog-fixture]').length, 0)).toBe(32);
             expect(documents.reduce((count, document) => count + document.querySelectorAll('[data-catalog-config-cell]').length, 0)).toBe(3);
-            expect(CATALOG_FIXTURES).toHaveLength(43);
+            expect(CATALOG_FIXTURES).toHaveLength(44);
             const frame = new JSDOM(rendered.find(page => page.file === 'catalog/frame.html')!.content).window.document;
             const sample = frame.querySelector('[data-catalog-fixture="frame-actions"]')!;
             expect(sample).not.toBeNull();
