@@ -15,7 +15,7 @@ export type MeterTone = "success" | "warning" | "danger" | "info" | "neutral" | 
 /**
  * `default`: value and limit as one row of body text above the bar.
  * `figure`: the value set large and light (`text-h1`, `text-h0` once its
- * container is `@md` wide, normal weight, tabular) as the panel's focal
+ * container reaches 28rem via `@md:text-h0`, normal weight, tabular) as the panel's focal
  * number, the limit beside it in secondary ink, the bar under both.
  */
 export type MeterEmphasis = "default" | "figure";

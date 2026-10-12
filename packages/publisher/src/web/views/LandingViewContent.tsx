@@ -165,7 +165,7 @@ const BAND_ANCHOR_CLASS = "scroll-mt-4xl tablet-lg:scroll-mt-5xl";
  * lacks scroll-driven animations the cue sits centred on the rail's top edge,
  * the edge between the two grounds, and scrolls away with the page.
  */
-const CUE_RAIL_CLASS = "relative z-[var(--ui-z-sticky)] h-0";
+const CUE_RAIL_CLASS = "relative z-[var(--ui-z-sticky,10)] h-0";
 
 /**
  * The cue itself (Designer `scroll-cue`): fixed to the bottom of the browser

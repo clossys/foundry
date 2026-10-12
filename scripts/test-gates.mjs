@@ -6017,6 +6017,75 @@ try {
 
     // ---- shapes that LOOK like a scope and are not
     {
+      const at = "@";
+      const sizes = ["3xs", "2xs", "xs", "sm", "md", "lg", "xl", "2xl", "3xl", "4xl", "5xl", "6xl", "7xl"];
+      const classes = sizes.flatMap((size) => [
+        `${at}${size}:flex-row`, `${at}max-${size}:flex-col`, `${at}min-${size}/main:grid-cols-4`,
+      ]);
+      classes.push("@sm:@max-md:flex-col", "@md/main:hover:flex-row", "hover:@lg:focus:grid-cols-4");
+      const dir = makeTree("container-classes", { docLines: [`<div class="${classes.join(" ")}"></div>`] });
+      const result = run("node", [FOREIGN_REFS, dir, "--json"]);
+      const report = JSON.parse(result.out);
+      check(
+        "complete built-in container variants, named containers and variant chains are syntax",
+        result.code === 0 && report.ok === true && report.findings.length === 0,
+        `expected exit 0 without findings, got ${result.code}: ${result.out.slice(0, 600)}`,
+      );
+      const escaped = classes.map((value) => `.${value.replace(/[@:/]/g, "\\$&")} { display: flex; }`);
+      const cssDir = makeTree("container-selectors", { docLines: escaped });
+      const cssResult = run("node", [FOREIGN_REFS, cssDir, "--json"]);
+      const cssReport = JSON.parse(cssResult.out);
+      check(
+        "complete backslash-escaped container CSS selectors are syntax",
+        cssResult.code === 0 && cssReport.ok === true && cssReport.findings.length === 0,
+        `expected exit 0 without findings, got ${cssResult.code}: ${cssResult.out.slice(0, 600)}`,
+      );
+    }
+    {
+      const at = "@";
+      const negative = [
+        ...["3xs", "2xs", "xs", "sm", "md", "lg", "xl", "2xl", "3xl", "4xl", "5xl", "6xl", "7xl", "max-md", "min-lg"].map((name) => [name, `${at}${name}`, "bare-scope"]),
+        ["md", `${at}md/account`, "npm-scope"], ["md", `${at}md/pkg`, "npm-scope"],
+        ["lg", `${at}lg/package`, "npm-scope"], ["md", `${at}md/main`, "npm-scope"],
+        ["md", `${at}md:`, "bare-scope"], ["lg", `${at}lg: flex-row`, "bare-scope"],
+        ["md", `${at}md/main:`, "npm-scope"], ["8xl", `${at}8xl:flex-row`, "bare-scope"],
+        [PLANTED_SCOPE_NAME, `${at}${PLANTED_SCOPE_NAME}:flex-row`, "bare-scope"],
+        ["md", `${at}md:flex_row`, "bare-scope"], ["md", `${at}md:flex/consumer`, "bare-scope"],
+        ["md", `${at}md:p-[32px]`, "bare-scope"], ["md", `${at}md:flex[bad]`, "bare-scope"],
+        ["md", `${at}md:flex!`, "bare-scope"], ["md", `${at}md:flex=account`, "bare-scope"],
+        ["md", `${at}md\\:flex-row`, "bare-scope"], ["lg", `${at}lg\\/main\\:flex-row`, "bare-scope"],
+      ];
+      for (const [index, [name, reference, kind]] of negative.entries()) {
+        const dir = makeTree(`container-account-${index}`, { docLines: [`Reference: \`${reference}\`.`] });
+        const result = run("node", [FOREIGN_REFS, dir, "--json"]);
+        const report = JSON.parse(result.out);
+        check(
+          `container recognition preserves unsupported or account-shaped reference ${index + 1}`,
+          result.code === 1 && report.findings.some((finding) => finding.file === "NOTES.md" && finding.kind === kind && finding.reference === `${at}${name}`),
+          `expected exit 1 naming the account shape, got ${result.code}: ${result.out.slice(0, 600)}`,
+        );
+      }
+    }
+    {
+      const at = "@";
+      const dir = makeTree("container-adjacent-accounts", {
+        docLines: [
+          `${at}md:flex-row ${at}md ${at}md/pkg ${at}${PLANTED_SCOPE_NAME}`,
+          `.\\${at}lg\\:grid-cols-4 {} See ${GH}${PLANTED_OWNER}/somewhere`,
+          `${at}md/main:flex-col ${at}md/account`,
+        ],
+      });
+      const result = run("node", [FOREIGN_REFS, dir, "--json"]);
+      const report = JSON.parse(result.out);
+      const actual = report.findings.map((finding) => `${finding.kind} ${finding.reference}`).sort();
+      const expected = [`bare-scope ${at}md`, `bare-scope ${at}${PLANTED_SCOPE_NAME}`, `npm-scope ${at}md`, `npm-scope ${at}md`, `forge-slug ${PLANTED_OWNER}/somewhere`].sort();
+      check(
+        "container syntax exempts only its own span and preserves exact adjacent bare, npm and forge findings",
+        result.code === 1 && JSON.stringify(actual) === JSON.stringify(expected),
+        `expected five exact adjacent findings, got ${result.code}: ${result.out.slice(0, 1200)}`,
+      );
+    }
+    {
       const dir = makeTree("not-scopes", {
         docLines: [
           "Reach the maintainers at someone@example.invalid/inbox if needed.",

@@ -369,7 +369,7 @@ export interface RenderedSectionedViewSection {
 
 /**
  * Validate a resolved document and render each of its sections through
- * `blocks`, without the stack wrapper or landmark. Package-internal: views
+ * `blocks`, without a page wrapper or landmark. Package-internal: views
  * that lay sections out themselves (`LandingView`) share the exact boundary
  * and block mapping `SectionedView` uses. A hero renders as `h1` only at
  * index 0, as in `SectionedView`; a view can pin the level in its own blocks.

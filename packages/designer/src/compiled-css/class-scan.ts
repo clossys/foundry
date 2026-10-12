@@ -94,7 +94,7 @@ export interface ClassScanResult {
  * anything absurdly long (a prose sentence with no spaces, e.g. a URL,
  * would never legitimately be a class). One leading `@` is allowed, and `@`
  * inside a variant, for Tailwind's container-query utilities: the
- * `@container` marker and `@md:`-style variants that size a block by its
+ * `@container` marker and variants such as `@md:flex-row` that size a block by its
  * own container rather than the viewport (Specimen panels use them).
  */
 const CANDIDATE_SHAPE_RE = /^@?[a-zA-Z][a-zA-Z0-9_:/.@-]*(\[[^\]\s()]*\])?$/;

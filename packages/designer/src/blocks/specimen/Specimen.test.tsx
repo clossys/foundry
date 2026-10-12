@@ -122,7 +122,7 @@ describe("Specimen", () => {
   it("requires an accessible name", () => {
     expect(() => render(<Specimen label="" panels={[PANEL]} />)).toThrow(TypeError);
     expect(() => render(<Specimen label="   " panels={[PANEL]} />)).toThrow(/label is required/);
-    // @ts-expect-error label is required
+    // Deliberately invalid runtime input; the required-label type is checked separately.
     expect(() => render(<Specimen panels={[PANEL]} />)).toThrow(TypeError);
   });
 
@@ -303,7 +303,7 @@ describe("Specimen parts", () => {
     expect(within(table).getAllByRole("cell")).toHaveLength(4);
   });
 
-  it("reflows the table into stacked records until the panel itself is wide (@md), whatever the viewport", () => {
+  it("reflows the table into stacked records until the panel reaches 28rem, whatever the viewport", () => {
     const { container } = render(<SpecimenPanel parts={[TABLE]} />);
     expect(container.querySelector("table")).toHaveClass("grid", "grid-cols-1", "@md:table");
     expect(container.querySelector("thead")).toHaveClass("sr-only", "@md:not-sr-only", "@md:table-header-group");

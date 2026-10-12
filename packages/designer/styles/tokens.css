@@ -202,7 +202,7 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
   --color-line-on-inverse:        oklch(0.9702 0 0 / 0.14);
   /* Panel identity: the edge colour of an outlined card or product panel.
    * Brandable; an alias of the base line, so it follows the theme. */
-  --color-line-panel:             var(--color-line-base);
+  --color-line-panel:             var(--color-line-base, oklch(0.8761 0 0));
 
   /* ════════════════════════════════════════════════════════════════
    * COLOR · ACCENT (5 · the interactive brand color)
@@ -226,7 +226,7 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
   --color-control-tonal-hover:           oklch(0.2178 0 0 / 0.12);
   --color-control-tonal-inverse:         oklch(0.9702 0 0 / 0.12);
   --color-control-tonal-inverse-hover:   oklch(0.9702 0 0 / 0.16);
-  --color-control-quiet:                 var(--color-ink-primary);
+  --color-control-quiet:                 var(--color-ink-primary, oklch(0.2178 0 0));
 
   /* ════════════════════════════════════════════════════════════════
    * COLOR · STATUS (12 · 4 states x {color, text, tint})
@@ -509,7 +509,7 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
   --radius-surface:               var(--radius-default, 3px);
   /* Panel identity: the corner of a card, plate or product panel.
    * Brandable; follows the surface radius until a brand sets it. */
-  --radius-panel:                 var(--radius-surface);
+  --radius-panel:                 var(--radius-surface, var(--radius-default, 3px));
 
   /* ════════════════════════════════════════════════════════════════
    * UI · BORDER (3 · no Tailwind namespace)
@@ -517,7 +517,7 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
   --ui-border-hairline:           1px;
   --ui-border-rule:               2px;      /* emphasis rule above a column or list */
   /* Panel identity: the edge width of an outlined card or product panel. */
-  --ui-border-panel:              var(--ui-border-hairline);   /* brandable */
+  --ui-border-panel:              var(--ui-border-hairline, 1px);   /* brandable */
 
   /* ════════════════════════════════════════════════════════════════
    * UI · ELEVATION (4 · no shadows beyond a hairline — no Tailwind namespace)
@@ -527,7 +527,7 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
   --ui-elevation-floating:        0 8px 24px rgba(0, 0, 0, 0.10);
   /* Panel identity: the lift under a product panel. Brandable; follows
    * the floating elevation (and its dark value) until a brand sets it. */
-  --ui-elevation-panel:           var(--ui-elevation-floating);
+  --ui-elevation-panel:           var(--ui-elevation-floating, 0 8px 24px rgba(0, 0, 0, 0.10));
 
   /* ════════════════════════════════════════════════════════════════
    * UI · RING (2 · focus + on-inverse rings — no Tailwind namespace)

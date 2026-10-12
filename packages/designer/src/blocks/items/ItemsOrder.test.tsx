@@ -129,3 +129,46 @@ describe("Items order", () => {
     await user.tab(); expect(screen.getByRole("button", { name: "After" })).toHaveFocus();
   });
 });
+
+
+describe("Items live layout fallback contract", () => {
+  it("keeps both actor offsets token-bound on narrow and wide routes", () => {
+    const props: ItemsProps = { arrangement: "stacked", order: "connected", lanes, items: laneData("aba"), end: "continues" };
+    const { container } = draw(props);
+    const list = container.querySelector<HTMLElement>("[data-items]")!;
+    expect(list.style.getPropertyValue("--items-gap-inline")).toBe("var(--spacing-2xl, 32px)");
+    expect(list.style.getPropertyValue("--items-gap-block")).toBe("var(--spacing-2xl, 32px)");
+    const offset = (node: HTMLElement, name: string) => node.style.getPropertyValue(name);
+    const cells = [...container.querySelectorAll<HTMLElement>("ol > li")];
+    expect(cells.map(node => offset(node, "--items-lane-narrow"))).toEqual(["0px", "var(--spacing-xl, 24px)", "0px"]);
+    expect(cells.map(node => offset(node, "--items-lane-wide"))).toEqual(["0px", "var(--spacing-4xl, 64px)", "0px"]);
+    expect(cells.map(node => offset(node, "--items-body-narrow"))).toEqual(Array(3).fill("var(--spacing-lg, 16px)"));
+    const narrow = [...container.querySelectorAll<HTMLElement>('[data-item-route="stacked"]')];
+    expect(narrow.map(node => [offset(node, "--items-from"), offset(node, "--items-to")])).toEqual([
+      ["0px", "var(--spacing-xl, 24px)"], ["var(--spacing-xl, 24px)", "0px"],
+    ]);
+    const wide = [...container.querySelectorAll<HTMLElement>('[data-item-route="columns-3"]')];
+    expect(wide.map(node => [offset(node, "--items-from"), offset(node, "--items-to"), offset(node, "--items-columns")])).toEqual([
+      ["0px", "var(--spacing-4xl, 64px)", "3"], ["var(--spacing-4xl, 64px)", "0px", "3"],
+    ]);
+    const markup = renderToStaticMarkup(<Items {...props} />);
+    expect(markup).toContain("inline-size:var(--ui-icon-sm, var(--spacing-lg, 16px))");
+    expect(markup).toContain("margin-inline-start:calc(var(--ui-icon-sm, var(--spacing-lg, 16px)) / -2)");
+  });
+
+  it("retains distinct responsive column parameters and the returning second-column join", () => {
+    const { container } = draw({ order: "connected" });
+    const list = container.querySelector<HTMLElement>("[data-items]")!;
+    expect(list).toHaveAttribute("data-columns", "3");
+    expect(list.style.getPropertyValue("--items-gap-block")).toBe("var(--spacing-3xl, 48px)");
+    const two = [...container.querySelectorAll<HTMLElement>('[data-item-route="columns-2"]')];
+    const three = [...container.querySelectorAll<HTMLElement>('[data-item-route="columns-3"]')];
+    expect(two).toHaveLength(2);
+    expect(three).toHaveLength(2);
+    expect(two.map(node => node.style.getPropertyValue("--items-columns"))).toEqual(["2", "2"]);
+    expect(three.map(node => node.style.getPropertyValue("--items-columns"))).toEqual(["3", "3"]);
+    expect(two[1]).toHaveClass("items-track-return");
+    expect(two[1]!.querySelector('[data-item-segment="return"]')).not.toBeNull();
+    expect(three.every(node => node.classList.contains("items-track-inline"))).toBe(true);
+  });
+});

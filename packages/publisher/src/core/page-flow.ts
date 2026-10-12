@@ -131,7 +131,7 @@ export function checkPageFlow(document: SectionedViewDocument, options: CheckPag
     band.section.actions?.forEach((action, actionIndex) => {
       if (action.emphasis !== "primary") return;
       const path = `${band.path}.actions.${actionIndex}`;
-      if (band.weight !== "A" || index >= n - 2) warn("primary-placement", path, "places a primary action outside an early set piece; use a lower tier or move it before the last two body bands.");
+      if (band.weight !== "A" || index >= n - 2) warn("primary-placement", path, "places a primary action outside an early set piece; use a quieter emphasis or move it before the last two body bands.");
       primaryTargets.push({ href: action.href, path: `${path}.href` });
     });
   });
@@ -144,11 +144,11 @@ export function checkPageFlow(document: SectionedViewDocument, options: CheckPag
     const actions = band.section.actions ?? [];
     const maxActions = band.weight === "A" ? 2 : 1;
     const ceiling = band.weight === "A" ? "primary or secondary, then quiet" : band.shape === "frame" || band.weight === "B" ? "tertiary or quiet" : "quiet";
-    if (actions.length > maxActions) warn("action-tier", `${band.path}.actions`, `has ${actions.length} actions; use at most ${maxActions} at tier ${ceiling}.`);
+    if (actions.length > maxActions) warn("action-weight", `${band.path}.actions`, `has ${actions.length} actions; use at most ${maxActions} section actions with ${ceiling} emphasis.`);
     actions.forEach((action, index) => {
       const emphasis = resolveActionEmphasis(band.section, index);
       const fits = band.weight === "A" ? (index === 0 || emphasis === "quiet") : band.weight === "B" || band.shape === "frame" ? emphasis === "tertiary" || emphasis === "quiet" : emphasis === "quiet";
-      if (!fits) warn("action-tier", `${band.path}.actions.${index}`, `exceeds this band's ceiling; use ${ceiling}, with at most ${maxActions} section actions.`);
+      if (!fits) warn("action-weight", `${band.path}.actions.${index}`, `exceeds this band's ceiling; use ${ceiling}, with at most ${maxActions} section actions.`);
     });
     // Linked cards are quiet (T4), allowed at every weight; their count is
     // independent of section actions and is governed by linked-item validation.

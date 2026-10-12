@@ -143,8 +143,8 @@ describe("content catalog fixture", () => {
       const route = transition.querySelector<HTMLElement>("[data-item-route=stacked]")!;
       const from = route.style.getPropertyValue("--items-from");
       const to = route.style.getPropertyValue("--items-to");
-      expect(["0px", "var(--spacing-xl)"]).toContain(from);
-      expect(["0px", "var(--spacing-xl)"]).toContain(to);
+      expect(["0px", "var(--spacing-xl, 24px)"]).toContain(from);
+      expect(["0px", "var(--spacing-xl, 24px)"]).toContain(to);
       return to === from ? "same" : from === "0px" ? "down" : "up";
     })).toEqual(["down", "same", "up", "same"]);
     expect(visual.querySelectorAll("[data-item-visual]")).toHaveLength(3);

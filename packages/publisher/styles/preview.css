@@ -2,8 +2,9 @@
  * @clossys/publisher · styles/preview.css
  * ────────────────────────────────────────────────────────────────────
  * GENERATED FILE — do not hand-edit. Regenerate with
- * `npm run generate:preview-css` (from packages/publisher); checked by
- * `src/preview/preview-css.test.ts`. See `scripts/preview-css.mjs`.
+ * `npm run generate:preview-css` from packages/publisher in a source checkout.
+ * The test, `src/preview/preview-css.test.ts`, and generator,
+ * `scripts/preview-css.mjs`, do not ship with this package.
  *
  * The utility stylesheet the publisher-preview pages link, in place of
  * Designer's compiled.css: Tailwind's preflight (layer foundry-ui-base),
@@ -309,81 +310,81 @@
     inset-block: 0px;
   }
   .items-order-lane-label {
-    inset-inline-start: calc(var(--items-wide) * (var(--spacing-2xl) + var(--spacing-sm)));
-    inset-block-start: calc(var(--items-wide) * (var(--items-lane-wide) + var(--spacing-2xl) / 2));
-    transform: translateY(calc(var(--items-wide) * (-100% - var(--spacing-sm))));
+    inset-inline-start: calc(var(--items-wide, 0) * (var(--spacing-2xl, 32px) + var(--spacing-sm, 8px)));
+    inset-block-start: calc(var(--items-wide, 0) * (var(--items-lane-wide, 0px) + var(--spacing-2xl, 32px) / 2));
+    transform: translateY(calc(var(--items-wide, 0) * (-100% - var(--spacing-sm, 8px))));
   }
   .items-track-return {
-    --items-return-start: calc(-1 * ((var(--items-columns) - 1) * (100% + var(--items-gap-inline)) + var(--items-gap-inline) / 2));
+    --items-return-start: calc(-1 * ((var(--items-columns, 1) - 1) * (100% + var(--items-gap-inline, var(--spacing-2xl, 32px))) + var(--items-gap-inline, var(--spacing-2xl, 32px)) / 2));
     & > [data-item-segment=outgoing] {
-      inset-inline-start: var(--spacing-2xl);
-      inset-block-start: calc(var(--spacing-2xl) / 2);
-      inline-size: calc(100% + var(--items-gap-inline) / 2 - var(--spacing-2xl));
+      inset-inline-start: var(--spacing-2xl, 32px);
+      inset-block-start: calc(var(--spacing-2xl, 32px) / 2);
+      inline-size: calc(100% + var(--items-gap-inline, var(--spacing-2xl, 32px)) / 2 - var(--spacing-2xl, 32px));
     }
     & > [data-item-segment=turn-out] {
-      inset-inline-start: calc(100% + var(--items-gap-inline) / 2);
-      inset-block-start: calc(var(--spacing-2xl) / 2);
-      block-size: calc(100% + var(--items-gap-block) / 2 - var(--spacing-2xl) / 2);
+      inset-inline-start: calc(100% + var(--items-gap-inline, var(--spacing-2xl, 32px)) / 2);
+      inset-block-start: calc(var(--spacing-2xl, 32px) / 2);
+      block-size: calc(100% + var(--items-gap-block, var(--spacing-2xl, 32px)) / 2 - var(--spacing-2xl, 32px) / 2);
     }
     & > [data-item-segment=return] {
-      inset-inline-start: var(--items-return-start);
-      inset-block-start: calc(100% + var(--items-gap-block) / 2);
-      inline-size: calc(var(--items-columns) * (100% + var(--items-gap-inline)));
+      inset-inline-start: var(--items-return-start, calc(-1 * ((var(--items-columns, 1) - 1) * (100% + var(--items-gap-inline, var(--spacing-2xl, 32px))) + var(--items-gap-inline, var(--spacing-2xl, 32px)) / 2)));
+      inset-block-start: calc(100% + var(--items-gap-block, var(--spacing-2xl, 32px)) / 2);
+      inline-size: calc(var(--items-columns, 1) * (100% + var(--items-gap-inline, var(--spacing-2xl, 32px))));
     }
     & > [data-item-segment=turn-in] {
-      inset-inline-start: var(--items-return-start);
-      inset-block-start: calc(100% + var(--items-gap-block) / 2);
-      block-size: calc(var(--items-gap-block) / 2 + var(--spacing-2xl) / 2);
+      inset-inline-start: var(--items-return-start, calc(-1 * ((var(--items-columns, 1) - 1) * (100% + var(--items-gap-inline, var(--spacing-2xl, 32px))) + var(--items-gap-inline, var(--spacing-2xl, 32px)) / 2)));
+      inset-block-start: calc(100% + var(--items-gap-block, var(--spacing-2xl, 32px)) / 2);
+      block-size: calc(var(--items-gap-block, var(--spacing-2xl, 32px)) / 2 + var(--spacing-2xl, 32px) / 2);
     }
     & > [data-item-segment=incoming] {
-      inset-inline-start: var(--items-return-start);
-      inset-block-start: calc(100% + var(--items-gap-block) + var(--spacing-2xl) / 2);
-      inline-size: calc(var(--items-gap-inline) / 2);
+      inset-inline-start: var(--items-return-start, calc(-1 * ((var(--items-columns, 1) - 1) * (100% + var(--items-gap-inline, var(--spacing-2xl, 32px))) + var(--items-gap-inline, var(--spacing-2xl, 32px)) / 2)));
+      inset-block-start: calc(100% + var(--items-gap-block, var(--spacing-2xl, 32px)) + var(--spacing-2xl, 32px) / 2);
+      inline-size: calc(var(--items-gap-inline, var(--spacing-2xl, 32px)) / 2);
     }
   }
   .items-track-inline > [data-item-segment=outgoing] {
-    inset-inline-start: var(--spacing-2xl);
-    inset-block-start: calc(var(--spacing-2xl) / 2 + var(--items-from));
-    inline-size: calc(100% + var(--items-gap-inline) / 2 - var(--spacing-2xl));
+    inset-inline-start: var(--spacing-2xl, 32px);
+    inset-block-start: calc(var(--spacing-2xl, 32px) / 2 + var(--items-from, 0px));
+    inline-size: calc(100% + var(--items-gap-inline, var(--spacing-2xl, 32px)) / 2 - var(--spacing-2xl, 32px));
   }
   .items-track-inline > [data-item-segment=handoff] {
-    inset-inline-start: calc(100% + var(--items-gap-inline) / 2);
-    inset-block-start: calc(var(--spacing-2xl) / 2);
-    block-size: var(--spacing-4xl);
+    inset-inline-start: calc(100% + var(--items-gap-inline, var(--spacing-2xl, 32px)) / 2);
+    inset-block-start: calc(var(--spacing-2xl, 32px) / 2);
+    block-size: var(--spacing-4xl, 64px);
   }
   .items-track-inline > [data-item-segment=incoming] {
-    inset-inline-start: calc(100% + var(--items-gap-inline) / 2);
-    inset-block-start: calc(var(--spacing-2xl) / 2 + var(--items-to));
-    inline-size: calc(var(--items-gap-inline) / 2);
+    inset-inline-start: calc(100% + var(--items-gap-inline, var(--spacing-2xl, 32px)) / 2);
+    inset-block-start: calc(var(--spacing-2xl, 32px) / 2 + var(--items-to, 0px));
+    inline-size: calc(var(--items-gap-inline, var(--spacing-2xl, 32px)) / 2);
   }
   .items-track-stacked > [data-item-segment=outgoing] {
-    inset-inline-start: calc(var(--spacing-2xl) / 2 + var(--items-from));
-    inset-block-start: var(--spacing-2xl);
-    block-size: calc(100% + var(--items-gap-block) / 2 - var(--spacing-2xl));
+    inset-inline-start: calc(var(--spacing-2xl, 32px) / 2 + var(--items-from, 0px));
+    inset-block-start: var(--spacing-2xl, 32px);
+    block-size: calc(100% + var(--items-gap-block, var(--spacing-2xl, 32px)) / 2 - var(--spacing-2xl, 32px));
   }
   .items-track-stacked > [data-item-segment=handoff] {
-    inset-inline-start: calc(var(--spacing-2xl) / 2);
-    inset-block-start: calc(100% + var(--items-gap-block) / 2);
-    inline-size: var(--spacing-xl);
+    inset-inline-start: calc(var(--spacing-2xl, 32px) / 2);
+    inset-block-start: calc(100% + var(--items-gap-block, var(--spacing-2xl, 32px)) / 2);
+    inline-size: var(--spacing-xl, 24px);
   }
   .items-track-stacked > [data-item-segment=incoming] {
-    inset-inline-start: calc(var(--spacing-2xl) / 2 + var(--items-to));
-    inset-block-start: calc(100% + var(--items-gap-block) / 2);
-    block-size: calc(var(--items-gap-block) / 2);
+    inset-inline-start: calc(var(--spacing-2xl, 32px) / 2 + var(--items-to, 0px));
+    inset-block-start: calc(100% + var(--items-gap-block, var(--spacing-2xl, 32px)) / 2);
+    block-size: calc(var(--items-gap-block, var(--spacing-2xl, 32px)) / 2);
   }
   .items-order-terminal-track {
-    inset-inline-start: calc((1 - var(--items-wide)) * (var(--spacing-2xl) / 2 + var(--items-lane-narrow)) + var(--items-wide) * var(--spacing-2xl));
-    inset-block-start: calc((1 - var(--items-wide)) * var(--spacing-2xl) + var(--items-wide) * (var(--spacing-2xl) / 2 + var(--items-lane-wide)));
-    inline-size: calc((1 - var(--items-wide)) * var(--ui-border-hairline) + var(--items-wide) * (100% - var(--spacing-2xl)));
-    block-size: calc((1 - var(--items-wide)) * (100% + var(--spacing-xl) - var(--spacing-2xl)) + var(--items-wide) * var(--ui-border-hairline));
+    inset-inline-start: calc((1 - var(--items-wide, 0)) * (var(--spacing-2xl, 32px) / 2 + var(--items-lane-narrow, 0px)) + var(--items-wide, 0) * var(--spacing-2xl, 32px));
+    inset-block-start: calc((1 - var(--items-wide, 0)) * var(--spacing-2xl, 32px) + var(--items-wide, 0) * (var(--spacing-2xl, 32px) / 2 + var(--items-lane-wide, 0px)));
+    inline-size: calc((1 - var(--items-wide, 0)) * var(--ui-border-hairline, 1px) + var(--items-wide, 0) * (100% - var(--spacing-2xl, 32px)));
+    block-size: calc((1 - var(--items-wide, 0)) * (100% + var(--spacing-xl, 24px) - var(--spacing-2xl, 32px)) + var(--items-wide, 0) * var(--ui-border-hairline, 1px));
   }
   .items-order-end {
-    inset-inline-start: calc((1 - var(--items-wide)) * (var(--spacing-2xl) / 2 + var(--items-lane-narrow)) + var(--items-wide) * 100%);
-    inset-block-start: calc((1 - var(--items-wide)) * (100% + var(--spacing-xl)) + var(--items-wide) * (var(--spacing-2xl) / 2 + var(--items-lane-wide)));
+    inset-inline-start: calc((1 - var(--items-wide, 0)) * (var(--spacing-2xl, 32px) / 2 + var(--items-lane-narrow, 0px)) + var(--items-wide, 0) * 100%);
+    inset-block-start: calc((1 - var(--items-wide, 0)) * (100% + var(--spacing-xl, 24px)) + var(--items-wide, 0) * (var(--spacing-2xl, 32px) / 2 + var(--items-lane-wide, 0px)));
   }
   .items-order-ordinal {
-    inset-inline-start: calc((1 - var(--items-wide)) * var(--items-lane-narrow));
-    inset-block-start: calc(var(--items-wide) * var(--items-lane-wide));
+    inset-inline-start: calc((1 - var(--items-wide, 0)) * var(--items-lane-narrow, 0px));
+    inset-block-start: calc(var(--items-wide, 0) * var(--items-lane-wide, 0px));
   }
   .start-0 {
     inset-inline-start: calc(var(--spacing, 0.25rem) * 0);
@@ -403,8 +404,8 @@
   .-z-10 {
     z-index: calc(10 * -1);
   }
-  .z-\[var\(--ui-z-sticky\)\] {
-    z-index: var(--ui-z-sticky);
+  .z-\[var\(--ui-z-sticky\,10\)\] {
+    z-index: var(--ui-z-sticky,10);
   }
   .ledger-columns-three {
     grid-template-columns: minmax(0, 1fr);
@@ -518,7 +519,7 @@
     margin-inline-start: auto;
   }
   .items-order-body {
-    margin-block-start: calc((1 - var(--items-wide)) * var(--items-body-narrow) + var(--items-wide) * (var(--spacing-2xl) + var(--spacing-lg) + var(--items-lane-wide)));
+    margin-block-start: calc((1 - var(--items-wide, 0)) * var(--items-body-narrow, 0px) + var(--items-wide, 0) * (var(--spacing-2xl, 32px) + var(--spacing-lg, 16px) + var(--items-lane-wide, 0px)));
   }
   .mt-0\.5 {
     margin-top: calc(var(--spacing, 0.25rem) * 0.5);
@@ -644,8 +645,8 @@
     aspect-ratio: 1 / 1;
   }
   .link-grid-icon {
-    inline-size: var(--ui-icon-md);
-    block-size: var(--ui-icon-md);
+    inline-size: var(--ui-icon-md, var(--spacing-xl, 24px));
+    block-size: var(--ui-icon-md, var(--spacing-xl, 24px));
     & > svg {
       width: 100%;
       height: 100%;
@@ -1570,7 +1571,7 @@
     padding-block: var(--spacing-xs, 4px);
   }
   .items-order-cell {
-    padding-inline-start: calc((1 - var(--items-wide)) * (var(--spacing-2xl) + var(--spacing-lg) + var(--items-lane-narrow)));
+    padding-inline-start: calc((1 - var(--items-wide, 0)) * (var(--spacing-2xl, 32px) + var(--spacing-lg, 16px) + var(--items-lane-narrow, 0px)));
   }
   .ps-lg {
     padding-inline-start: var(--spacing-lg, 16px);
@@ -1876,8 +1877,8 @@
   }
   .items-connected {
     --items-wide: 0;
-    --items-gap-inline: var(--spacing-2xl);
-    --items-gap-block: var(--spacing-2xl);
+    --items-gap-inline: var(--spacing-2xl, 32px);
+    --items-gap-block: var(--spacing-2xl, 32px);
     --items-lane-narrow: 0px;
     --items-lane-wide: 0px;
     --items-body-narrow: 0px;
@@ -1885,8 +1886,8 @@
     --items-to: 0px;
     --items-columns: 1;
     & :where([data-item-segment]) {
-      inline-size: var(--ui-border-hairline);
-      block-size: var(--ui-border-hairline);
+      inline-size: var(--ui-border-hairline, 1px);
+      block-size: var(--ui-border-hairline, 1px);
     }
   }
   .anatomy-disc {

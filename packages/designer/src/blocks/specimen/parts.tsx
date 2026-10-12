@@ -11,7 +11,7 @@ import { UI_BORDER_HAIRLINE } from "../../atoms/internal/ui-vars.js";
 /**
  * Field grids. Columns follow the PANEL's width, not the viewport's (the
  * panel is a size container, see `SpecimenPanel`): never more than two
- * columns until the panel itself is wide (`@lg`, 32rem), so a panel in a
+ * columns until `@lg:grid-cols-4` applies at a panel width of 32rem, so a panel in a
  * third-width card or at 390px stays readable.
  */
 const FIELDS_COLUMN_CLASSES: Record<1 | 2 | 4, string> = {
@@ -39,11 +39,11 @@ const DIVIDED_ROW = "border-t border-line-base pt-md";
 const LIST_RESET_CLASSES = "m-0 flex flex-col p-0";
 
 /**
- * Table classes. Until the PANEL is wide enough for real columns (`@md`,
- * 28rem, measured on the panel's own size container, not the viewport)
+ * Table classes. Until `@md:table` applies at a panel width of 28rem
+ * (measured on the panel's own size container, not the viewport)
  * each row reflows into a stacked record: the row header on its own line,
  * then one label/value pair per cell, with the column headers kept for
- * assistive technology only (`sr-only`). From `@md` it is an ordinary
+ * assistive technology only (`sr-only`). From `@md:table` it is an ordinary
  * table. So a table in a third-width card stacks at every viewport instead
  * of wrapping each cell over two lines.
  */

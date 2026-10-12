@@ -324,7 +324,7 @@ function reviewDocument(sections: SectionedViewContentSection[]) {
 }
 function landingHtml(doc: ResolvedSectionedViewDocument, server = false) {
   const page = { ...doc, sections: [{ id: "hero", kind: "hero" as const, ground: "inverse" as const, heading: copy.heading }, ...doc.sections] };
-  return renderToStaticMarkup(server ? <ServerLandingView document={page} peek={false} header="reserved" measure="prose" style={{ scrollPaddingTop: "var(--ui-height-site-header)" }} /> : <LandingView document={page} peek={false} header="reserved" measure="prose" style={{ scrollPaddingTop: "var(--ui-height-site-header)" }} />);
+  return renderToStaticMarkup(server ? <ServerLandingView document={page} peek={false} header="reserved" measure="prose" style={{ scrollPaddingTop: "var(--ui-height-site-header, 0px)" }} /> : <LandingView document={page} peek={false} header="reserved" measure="prose" style={{ scrollPaddingTop: "var(--ui-height-site-header, 0px)" }} />);
 }
 function expectCssZero(value: string) { expect(["0", "0px"]).toContain(value); }
 function cssUtility(name: string) {
@@ -391,7 +391,7 @@ describe("canonical renderer review regressions", () => {
       expectCssZero(inner.style.scrollMarginTop); expect(inner.className).not.toContain("scroll-mt-4xl"); expect(inner.className).not.toContain("scroll-mt-5xl");
       expectCssZero(outer.style.paddingBlock); expect(inner.className).toContain(size === "compact" ? "py-3xl" : size === "display" ? "py-5xl" : "py-4xl");
       expect(inner.parentElement?.style.maxWidth).toBe("var(--ui-width-prose-max, 48rem)"); expect(inner.parentElement?.style.paddingInline).toBe("var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))");
-      expect(root.querySelector('[data-landing-hero]')?.className).toContain("py-4xl"); expect(root.querySelector<HTMLElement>('[data-landing-view]')?.style.scrollPaddingTop).toBe("var(--ui-height-site-header)");
+      expect(root.querySelector('[data-landing-hero]')?.className).toContain("py-4xl"); expect(root.querySelector<HTMLElement>('[data-landing-view]')?.style.scrollPaddingTop).toBe("var(--ui-height-site-header, 0px)");
     }
   });
   it("retains legacy FAQ fragment offsets and band measure for both entries", () => {

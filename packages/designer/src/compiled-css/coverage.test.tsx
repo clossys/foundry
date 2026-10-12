@@ -394,10 +394,10 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
     const scan = scanCompiledCssSources(packageRoot);
     const generated = await generateCompiledCss({ stylesDir: resolve(packageRoot, "styles"), candidates: scan.candidates });
     const themeKeys = readFileSync(resolve(packageRoot, "styles/theme-keys.css"), "utf8");
-    expect(themeKeys).toMatch(/@utility link-grid-icon\s*\{\s*inline-size: var\(--ui-icon-md\);\s*block-size: var\(--ui-icon-md\);\s*& > svg\s*\{\s*width: 100%;\s*height: 100%;/);
+    expect(themeKeys).toMatch(/@utility link-grid-icon\s*\{\s*inline-size: var\(--ui-icon-md, var\(--spacing-xl, 24px\)\);\s*block-size: var\(--ui-icon-md, var\(--spacing-xl, 24px\)\);\s*& > svg\s*\{\s*width: 100%;\s*height: 100%;/);
     expect(generated.css).toContain(".link-grid-icon");
-    expect(generated.css).toContain("inline-size: var(--ui-icon-md)");
-    expect(generated.css).toContain("block-size: var(--ui-icon-md)");
+    expect(generated.css).toContain("inline-size: var(--ui-icon-md, var(--spacing-xl, 24px))");
+    expect(generated.css).toContain("block-size: var(--ui-icon-md, var(--spacing-xl, 24px))");
     for (const className of navActiveClasses) {
       const selector = toSelectorText(className) + ":active";
       expect(generated.css).toContain(selector);

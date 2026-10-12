@@ -168,7 +168,7 @@ describe("LandingView", () => {
     expect(rail.previousElementSibling?.hasAttribute("data-landing-hero")).toBe(true);
     expect(rail.nextElementSibling?.querySelector("#features")).not.toBeNull();
     expect(rail.parentElement).toBe(view);
-    expect(rail.className.split(/\s+/)).toEqual(["relative", "z-[var(--ui-z-sticky)]", "h-0"]);
+    expect(rail.className.split(/\s+/)).toEqual(["relative", "z-[var(--ui-z-sticky,10)]", "h-0"]);
     const cue = rail.querySelector("[data-landing-cue]") as HTMLElement;
     // Placement, fade and the fixed/fallback switch live in Designer's one `scroll-cue`
     // utility; the view adds no positioning of its own that could outlive the fade.

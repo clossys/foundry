@@ -1,4 +1,4 @@
-// GENERATED FILE — do not edit by hand. Run `node scripts/generate-icons.mjs`.
+// GENERATED FILE — do not edit by hand. Run `node scripts/generate-icons.mjs` from a source checkout; the generator does not ship with this package.
 export { AlertTriangle } from "./AlertTriangle.js";
 export { ArrowRight } from "./ArrowRight.js";
 export { BookOpen } from "./BookOpen.js";

@@ -137,7 +137,7 @@ export const TOKENS: Readonly<Record<string, TokenDefinition>> = {
   "--color-line-on-inverse": { property: "--color-line-on-inverse", family: "line", value: "oklch(0.9702 0 0 / 0.14)", brandable: true, themeDependent: true },
   // Panel identity: the edge colour of an outlined card or product panel
   // on a light ground. An alias of the base line, so it follows the theme.
-  "--color-line-panel": { property: "--color-line-panel", family: "line", value: "var(--color-line-base)", brandable: true, themeDependent: false },
+  "--color-line-panel": { property: "--color-line-panel", family: "line", value: "var(--color-line-base, oklch(0.8761 0 0))", brandable: true, themeDependent: false },
 
   // ── COLOR · ACCENT ───────────────────────────────────────────────────
   "--color-accent": { property: "--color-accent", family: "accent", value: "oklch(0.4748 0 0)", brandable: true, themeDependent: true },
@@ -156,7 +156,7 @@ export const TOKENS: Readonly<Record<string, TokenDefinition>> = {
   "--color-control-tonal-hover": { property: "--color-control-tonal-hover", family: "control", value: "oklch(0.2178 0 0 / 0.12)", brandable: true, themeDependent: true }, // token-gate:ignore the catalog declares this value
   "--color-control-tonal-inverse": { property: "--color-control-tonal-inverse", family: "control", value: "oklch(0.9702 0 0 / 0.12)", brandable: true, themeDependent: true }, // token-gate:ignore the catalog declares this value
   "--color-control-tonal-inverse-hover": { property: "--color-control-tonal-inverse-hover", family: "control", value: "oklch(0.9702 0 0 / 0.16)", brandable: true, themeDependent: true }, // token-gate:ignore the catalog declares this value
-  "--color-control-quiet": { property: "--color-control-quiet", family: "control", value: "var(--color-ink-primary)", brandable: true, themeDependent: false },
+  "--color-control-quiet": { property: "--color-control-quiet", family: "control", value: "var(--color-ink-primary, oklch(0.2178 0 0))", brandable: true, themeDependent: false },
 
   // ── COLOR · STATUS ───────────────────────────────────────────────────
   "--color-status-success": { property: "--color-status-success", family: "status", value: "oklch(0.6268 0 0)", brandable: true, themeDependent: true },
@@ -329,13 +329,13 @@ export const TOKENS: Readonly<Record<string, TokenDefinition>> = {
   // Panel identity: the corner of a card, plate or product panel. A brand
   // lever that defaults to the surface radius, so it changes nothing until
   // a brand sets it.
-  "--radius-panel": { property: "--radius-panel", family: "radius", value: "var(--radius-surface)", brandable: true, themeDependent: false },
+  "--radius-panel": { property: "--radius-panel", family: "radius", value: "var(--radius-surface, var(--radius-default, 3px))", brandable: true, themeDependent: false },
 
   // ── UI · BORDER ─────────────────────────────────────────────────────
   "--ui-border-hairline": { property: "--ui-border-hairline", family: "border", value: "1px", brandable: false, themeDependent: false },
   "--ui-border-rule": { property: "--ui-border-rule", family: "border", value: "2px", brandable: false, themeDependent: false },
   // Panel identity: the edge width of an outlined card or product panel.
-  "--ui-border-panel": { property: "--ui-border-panel", family: "border", value: "var(--ui-border-hairline)", brandable: true, themeDependent: false },
+  "--ui-border-panel": { property: "--ui-border-panel", family: "border", value: "var(--ui-border-hairline, 1px)", brandable: true, themeDependent: false },
 
   // ── UI · ELEVATION ──────────────────────────────────────────────────
   "--ui-elevation-none": { property: "--ui-elevation-none", family: "elevation", value: "none", brandable: false, themeDependent: false },
@@ -343,7 +343,7 @@ export const TOKENS: Readonly<Record<string, TokenDefinition>> = {
   "--ui-elevation-floating": { property: "--ui-elevation-floating", family: "elevation", value: "0 8px 24px rgba(0, 0, 0, 0.10)", brandable: false, themeDependent: true },
   // Panel identity: the lift under a product panel (Specimen). Follows the
   // floating elevation, and so its dark-theme value, until a brand sets it.
-  "--ui-elevation-panel": { property: "--ui-elevation-panel", family: "elevation", value: "var(--ui-elevation-floating)", brandable: true, themeDependent: false },
+  "--ui-elevation-panel": { property: "--ui-elevation-panel", family: "elevation", value: "var(--ui-elevation-floating, 0 8px 24px rgba(0, 0, 0, 0.10))", brandable: true, themeDependent: false },
 
   // ── UI · RING ───────────────────────────────────────────────────────
   "--ui-ring-focus": { property: "--ui-ring-focus", family: "ring", value: "0 0 0 2px var(--color-accent, oklch(0.4748 0 0))", brandable: false, themeDependent: false },

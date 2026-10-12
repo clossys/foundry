@@ -2298,7 +2298,7 @@ allocation, never a state). `warning` fills with diagonal hatching and
 `info` with a tinted bar inside a ring (both at the `--ui-border-rule`
 weight), so neither depends on colour alone; the other tones fill solid. `emphasis` (`MeterEmphasis`, default
 `"default"`) set to `"figure"` makes the value the focal number of its
-panel: `text-h1`, `text-h0` once its container is `@md` wide, normal weight,
+panel: `text-h1`, `text-h0` via `@md:text-h0` at container widths of 28rem or more, normal weight,
 tabular, with the limit beside it in secondary ink and the bar under both.
 
 The bar is `aria-hidden` and there is no `<meter>` element: the visible
@@ -3708,21 +3708,21 @@ on its own. Empty labels and unsupported tones are refused.
 
 The figure and each panel are size containers (`@container`), so a panel
 responds to its own width, not the viewport's: padding is `p-lg`, `p-xl`
-once the panel is `@md` (28rem) wide; a table is a stacked record until
-`@md`; four field columns wait for `@lg` (32rem). A panel in a third-width
+via `@md:p-xl` once the panel reaches 28rem; a table is a stacked record until
+`@md:table` applies at 28rem; four field columns use `@lg:grid-cols-4` at 32rem. A panel in a third-width
 card or a split column therefore keeps the narrow layout even on a wide
 screen.
 
 Parts (`SpecimenPart`, by `type`): `"fields"` (a `<dl>` in 1, 2 or 4
-columns, default 2, never more than two below the `@lg` container width); `"status-rows"`
+columns, default 2, with `@lg:grid-cols-4` only at container widths of 32rem or more); `"status-rows"`
 (a `<ul>` of label, detail and `StatusMark`; optional `mobileRows: 3` hides
 later rows below the 768px viewport breakpoint while retaining them in the
 DOM); `"meter"` (the `Meter` atom
 at `emphasis="figure"`, the value as the panel's focal number, with its
 label, state and note, forwarding optional paired `previous`/`previousText`
 to the same Meter); `"table"` (a real `<table>` of at most 4
-columns and 5 rows with a visually hidden `caption`; below the `@md`
-container width each row reflows to a stacked record of label/value pairs, with explicit table
+columns and 5 rows with a visually hidden `caption`; below the 28rem
+container width required by `@md:table` each row reflows to a stacked record of label/value pairs, with explicit table
 roles so the semantics survive the display change); `"schedule"` (an
 `<ol>` of dated rows on a hairline rail); `"shares"` (names with a
 percentage `Meter` on a scale of 100, in the accent, or in the share's

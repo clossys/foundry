@@ -141,23 +141,25 @@ it("checks explicit inverse at both body edges", () => {
   expect(rules(doc(A(), B(), statement), "inverse-weight")).toHaveLength(1);
 });
 
-it("fits explicit action tiers and counts without guessing omitted emphasis", () => {
+it("fits explicit action weight ceilings and counts without guessing omitted emphasis", () => {
   const action = (emphasis: "primary" | "secondary") => ({ id: "go", label: ref, href: "/guide", emphasis });
-  expect(rules(doc(actionA([action("primary")]), B(), C()), "action-tier")).toEqual([]);
-  expect(rules(doc(actionA([action("secondary")]), B(), C()), "action-tier")).toEqual([]);
-  expect(rules(doc(actionA([action("secondary"), { ...action("secondary"), id: "two" }]), B()), "action-tier")).toHaveLength(1);
-  expect(rules(doc(A(), section({ layout: "split-end", media, actions: [action("primary")] }), C()), "action-tier")).toHaveLength(1);
-  expect(rules(doc(A(), C({ actions: [action("secondary")] })), "action-tier")).toHaveLength(1);
-  expect(rules(doc(A(), C({ actions: [{ id: "one", label: ref, href: "/one" }, { id: "two", label: ref, href: "/two" }] })), "action-tier")).toHaveLength(1);
-  expect(rules(doc(A(), linked("links", "/guide")), "action-tier")).toEqual([]);
+  expect(rules(doc(actionA([action("primary")]), B(), C()), "action-weight")).toEqual([]);
+  expect(rules(doc(actionA([action("secondary")]), B(), C()), "action-weight")).toEqual([]);
+  expect(rules(doc(actionA([action("secondary"), { ...action("secondary"), id: "two" }]), B()), "action-weight")).toHaveLength(1);
+  expect(rules(doc(A(), section({ layout: "split-end", media, actions: [action("primary")] }), C()), "action-weight")).toHaveLength(1);
+  const overweight = doc(A(), C({ actions: [action("secondary")] }));
+  expect(rules(overweight, "action-weight")).toMatchObject([{ rule: "sectioned-view-flow-action-weight", path: "sections.2.actions.0", severity: "warning" }]);
+  expect(checkPageFlow(overweight).some((finding) => finding.rule === ["sectioned-view-flow-action", "tier"].join("-"))).toBe(false);
+  expect(rules(doc(A(), C({ actions: [{ id: "one", label: ref, href: "/one" }, { id: "two", label: ref, href: "/two" }] })), "action-weight")).toHaveLength(1);
+  expect(rules(doc(A(), linked("links", "/guide")), "action-weight")).toEqual([]);
 });
 
 it("matches the weight-resolved rendering defaults", () => {
   const omitted = { id: "go", label: ref, href: "/guide" };
-  expect(rules(doc(actionA([omitted]), B(), C()), "action-tier")).toEqual([]);
-  expect(rules(doc(actionA([omitted, { ...omitted, id: "two" }]), B()), "action-tier")).toEqual([]);
-  expect(rules(doc(A(), C({ actions: [omitted] })), "action-tier")).toEqual([]);
-  expect(rules(doc(A(), section({ layout: "split-end", media, actions: [omitted] }), C()), "action-tier")).toEqual([]);
+  expect(rules(doc(actionA([omitted]), B(), C()), "action-weight")).toEqual([]);
+  expect(rules(doc(actionA([omitted, { ...omitted, id: "two" }]), B()), "action-weight")).toEqual([]);
+  expect(rules(doc(A(), C({ actions: [omitted] })), "action-weight")).toEqual([]);
+  expect(rules(doc(A(), section({ layout: "split-end", media, actions: [omitted] }), C()), "action-weight")).toEqual([]);
 });
 
 it("compares hero and supplied close even when there are no body bands", () => {

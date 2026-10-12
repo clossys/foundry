@@ -104,7 +104,7 @@ export function assertSpecimenMarkerTargets(panel: SpecimenPanelContent, targets
  * `Card` outline lifted by `--ui-elevation-panel` (the floating elevation
  * by default): raised fill, one panel edge (`--ui-border-panel` in
  * `--color-line-panel`), `rounded-panel`, a soft shadow, never dark. The panel is
- * a size container: `p-lg`, `p-xl` once the panel itself is `@md` (28rem)
+ * a size container: `p-lg`, `p-xl` via `@md:p-xl` once the panel reaches 28rem
  * wide, and its parts reflow on the same measure. Text is `text-body`
  * with `text-body-s` secondary lines (never smaller); all secondary text is
  * secondary ink, which holds AA on the raised fill.

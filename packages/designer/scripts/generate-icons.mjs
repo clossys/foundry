@@ -119,7 +119,7 @@ for (const [kebabName, node] of Object.entries(data)) {
     // a human).
     .replace(/"([a-zA-Z][\w-]*)":/g, '"$1":');
 
-  const fileContents = `// GENERATED FILE — do not edit by hand. Run \`node scripts/generate-icons.mjs\`.
+  const fileContents = `// GENERATED FILE — do not edit by hand. Run \`node scripts/generate-icons.mjs\` from a source checkout; the generator does not ship with this package.
 // Source: kebab name "${kebabName}" — see THIRD-PARTY-NOTICES.md for the
 // origin of this path data.
 import type { IconNode } from "./types.js";
@@ -133,7 +133,7 @@ export const ${constName}: IconNode = ${nodeLiteral} as const;
 
 exportLines.sort();
 
-const indexContents = `// GENERATED FILE — do not edit by hand. Run \`node scripts/generate-icons.mjs\`.
+const indexContents = `// GENERATED FILE — do not edit by hand. Run \`node scripts/generate-icons.mjs\` from a source checkout; the generator does not ship with this package.
 ${exportLines.join("\n")}
 export type { IconNode } from "./types.js";
 `;

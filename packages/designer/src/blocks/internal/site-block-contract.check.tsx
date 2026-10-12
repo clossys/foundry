@@ -3,6 +3,8 @@
  * vocabularies. This is a `*.check.tsx` rather than a test because Vitest
  * transpiles test sources without checking `@ts-expect-error` assertions.
  */
+import { ContentSection } from "../ContentSection.js";
+import { Specimen } from "../specimen/Specimen.js";
 import { Faq } from "../Faq.js";
 import { FeatureGrid } from "../FeatureGrid.js";
 import { Hero } from "../Hero.js";
@@ -196,3 +198,15 @@ export const badgedPanelContent: BadgedPanelContent = { parts: [cappedStatusRows
 export const defaultPanelBadge: BadgedPanelContent = { parts: [cappedStatusRows], badge: { label: "Reviewed" } };
 // @ts-expect-error Panel badges use the existing five Badge tones.
 export const invalidPanelBadgeTone: BadgedPanelContent = { ...badgedPanelContent, badge: { label: "Reviewed", tone: "accent" } };
+
+// Canonical split layouts allow header-only bands; the temporary alias needs media.
+void <ContentSection layout="split-start" heading="Heading" />;
+void <ContentSection layout="split-end" heading="Heading" />;
+void <ContentSection layout="split" heading="Heading" media={<p>Visual</p>} />;
+// @ts-expect-error The temporary split alias still requires media.
+void <ContentSection layout="split" heading="Heading" />;
+
+const namedSpecimenPanel = { id: "sample", ...anatomyPanel };
+void <Specimen label="Sample record" panels={[namedSpecimenPanel]} />;
+// @ts-expect-error Every Specimen requires its accessible figure label.
+void <Specimen panels={[namedSpecimenPanel]} />;

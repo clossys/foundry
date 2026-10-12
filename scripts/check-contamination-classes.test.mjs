@@ -611,3 +611,141 @@ test("check-contamination-classes: declared packed copies are judged from their 
     assert.match(r.out, /cannot read the copy declaration/);
   });
 });
+
+
+test("check-contamination-classes: exact public data attributes preserve Class 2 detection", async (t) => {
+  const work = mkdtempSync(join(tmpdir(), "contam-public-attributes-"));
+  t.after(() => rmSync(work, { recursive: true, force: true }));
+  function attributesFixture(name, attributes, extra = "") {
+    const dir = cleanDir(work, name);
+    writeFileSync(join(dir, "component.ts"), `${extra}\nexport const markup = ${JSON.stringify(attributes.map(attribute => `${attribute}=""`).join(" "))};\n`);
+    return dir;
+  }
+  const publicAttributes = [
+    "data-link-grid", "data-link-grid-description", "data-card-link", "data-nav-grid-card",
+    "data-step-layout", "data-step-text", "data-step-connector", "data-step-end",
+    "data-hero-size", "data-faq-after",
+  ];
+  await t.test("the exact descriptive public hooks pass without citation waivers", async () => {
+    const dir = attributesFixture("exact", publicAttributes);
+    const result = await run([dir, "--class", "2", "--json"]);
+    assert.equal(result.code, 0, result.out);
+    const report = JSON.parse(result.out);
+    assert.deepEqual(report.findings, []);
+    assert.deepEqual(report.waived, []);
+  });
+  await t.test("unknown opaque names and unfamiliar variants of known names still fail", async () => {
+    const unknown = [
+      "data-xxq-value", "data-step-unrecognized", "data-step-layout-private",
+      "data-link-grid-private", "data-card-link-private", "data-nav-grid-card-private",
+      "data-step-layout_private", "data-link-grid_private",
+      "data-hero-size-private", "data-faq-after-private", "data-Step-layout",
+    ];
+    const dir = attributesFixture("unknown", unknown);
+    const result = await run([dir, "--class", "2", "--json"]);
+    assert.equal(result.code, 1, result.out);
+    const report = JSON.parse(result.out);
+    assert.equal(report.findings.length, unknown.length, result.out);
+    for (const attribute of unknown) {
+      assert.ok(report.findings.some(finding => finding.class === 2 && finding.detail.includes(`attribute "${attribute}"`)), result.out);
+    }
+  });
+  await t.test("ASCII punctuation continuations cannot borrow an exact-name exception", async () => {
+    const dir = attributesFixture("punctuation-continuations", ["data-step-layout.private", "data-link-grid:private"]);
+    const result = await run([dir, "--class", "2", "--json"]);
+    assert.equal(result.code, 1, result.out);
+    const report = JSON.parse(result.out);
+    assert.equal(report.findings.length, 2, result.out);
+    for (const [fragment, prefix] of [["data-step-layout", "step"], ["data-link-grid", "link"]]) {
+      assert.ok(report.findings.some(finding => finding.class === 2
+        && finding.detail.includes(`attribute "${fragment}"`)
+        && finding.detail.includes(`prefix "${prefix}"`)), result.out);
+    }
+    assert.deepEqual(report.waived, []);
+  });
+  await t.test("non-ASCII continuations cannot borrow an exact-name exception", async () => {
+    const dir = attributesFixture("unicode-continuations", ["data-step-layouté", "data-link-grid🧩"]);
+    const result = await run([dir, "--class", "2", "--json"]);
+    assert.equal(result.code, 1, result.out);
+    const report = JSON.parse(result.out);
+    assert.equal(report.findings.length, 2, result.out);
+    for (const fragment of ["data-step-layout", "data-link-grid"]) {
+      assert.ok(report.findings.some(finding => finding.class === 2 && finding.detail.includes(`attribute "${fragment}"`)), result.out);
+    }
+    assert.deepEqual(report.waived, []);
+  });
+  await t.test("closing brackets and non-HTML whitespace cannot terminate an attribute name", async () => {
+    const dir = attributesFixture("non-token-boundaries", ["data-step-layout]private", "data-link-grid\u00a0private"]);
+    const result = await run([dir, "--class", "2", "--json"]);
+    assert.equal(result.code, 1, result.out);
+    const report = JSON.parse(result.out);
+    assert.equal(report.findings.length, 2, result.out);
+    assert.deepEqual(report.waived, []);
+  });
+  await t.test("exact hooks in selectors, quoted strings and ASCII whitespace remain usable", async () => {
+    const dir = cleanDir(work, "token-boundaries");
+    writeFileSync(join(dir, "style.css"), "[data-step-layout] { display: block; }\n[data-link-grid=\"items\"] { display: grid; }\n");
+    writeFileSync(join(dir, "component.ts"), "export const hook = 'data-step-layout';\n// `data-link-grid` is a descriptive hook.\n// data-card-link data-step-text\n");
+    const result = await run([dir, "--class", "2", "--json"]);
+    assert.equal(result.code, 0, result.out);
+    assert.deepEqual(JSON.parse(result.out).findings, []);
+  });
+  await t.test("existing allowed prefixes and unsegmented attributes retain their behavior", async () => {
+    const defaults = [
+      "data-chart-point", "data-test-state", "data-aria-key", "data-grid-cell",
+      "data-menu-item", "data-item-heading", "data-root-state", "data-part-slot",
+      "data-series-line", "data-testid", "data-state", "data-slot", "data-side",
+    ];
+    const dir = attributesFixture("defaults", defaults);
+    const result = await run([dir, "--class", "2", "--json"]);
+    assert.equal(result.code, 0, result.out);
+    assert.deepEqual(JSON.parse(result.out).findings, []);
+  });
+  await t.test("allowing known hooks leaves real findings in the same file and other classes intact", async () => {
+    const dir = attributesFixture("mixed", [...publicAttributes, "data-step-private", "data-xxq-value"], "// See KIT-CONVENTIONS.md for details.");
+    const result = await run([dir, "--json"]);
+    assert.equal(result.code, 1, result.out);
+    const report = JSON.parse(result.out);
+    assert.equal(report.findings.filter(finding => finding.class === 2).length, 2, result.out);
+    assert.ok(report.findings.some(finding => finding.class === 1 && finding.file === "component.ts"), result.out);
+    assert.deepEqual(report.waived, []);
+  });
+});
+
+
+test("check-contamination-classes: missing-token fallbacks remain enforced by CLASS 6", async (t) => {
+  const work = mkdtempSync(join(tmpdir(), "contam-var-fallback-"));
+  t.after(() => rmSync(work, { recursive: true, force: true }));
+  const fixture = (name, value) => {
+    const dir = cleanDir(work, name);
+    writeFileSync(join(dir, "style.css"), `.example { inline-size: ${value}; }\n`);
+    return dir;
+  };
+  await t.test("a bare missing token still fails", async () => {
+    const result = await run([fixture("bare", "var(--missing-width-token)"), "--class", "6", "--no-allowlist", "--json"]);
+    assert.equal(result.code, 1, result.out);
+    const report = JSON.parse(result.out);
+    assert.equal(report.findings.length, 1);
+    assert.equal(report.findings[0].class, 6);
+    assert.equal(report.findings[0].severity, "high");
+    assert.match(report.findings[0].detail, /var\(--missing-width-token\) has no fallback/);
+  });
+  await t.test("a literal fallback supplies the missing token", async () => {
+    const result = await run([fixture("literal", "var(--missing-width-token, 16px)"), "--class", "6", "--no-allowlist", "--json"]);
+    assert.equal(result.code, 0, result.out);
+    assert.deepEqual(JSON.parse(result.out).findings, []);
+  });
+  await t.test("a bare missing inner token does not make a nested fallback safe", async () => {
+    const result = await run([fixture("nested-missing", "var(--missing-outer-token, var(--missing-inner-token))"), "--class", "6", "--no-allowlist", "--json"]);
+    assert.equal(result.code, 1, result.out);
+    const report = JSON.parse(result.out);
+    assert.equal(report.findings.length, 1);
+    assert.equal(report.findings[0].class, 6);
+    assert.match(report.findings[0].detail, /var\(--missing-inner-token\) has no fallback/);
+  });
+  await t.test("a terminal literal closes the nested fallback", async () => {
+    const result = await run([fixture("nested-literal", "var(--missing-outer-token, var(--missing-inner-token, 16px))"), "--class", "6", "--no-allowlist", "--json"]);
+    assert.equal(result.code, 0, result.out);
+    assert.deepEqual(JSON.parse(result.out).findings, []);
+  });
+});

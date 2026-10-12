@@ -287,7 +287,7 @@ grids. Weight never reads ground and has no authored override.
 
 Publisher's `checkPageFlow` checks opening impact, runs, repeated set-piece
 shapes, page-length counts, calm landing, inverse placement and primary actions.
-The `sectioned-view-flow-action-tier` finding names action emphasis or count
+The `sectioned-view-flow-action-weight` finding names action emphasis or count
 above the body's weight ceiling. Pages with fewer than three body bands are
 exempt from `opening-set-piece`; other flow rules still apply. Primary targets
 ignore trailing slashes and nonleading fragments, retaining distinct leading
@@ -298,7 +298,7 @@ Card links count as quiet actions for weight fit, independently of section
 button counts. These findings are advisory and never run during rendering.
 Omitted section actions use secondary then quiet on A, tertiary on B and frame C,
 and quiet on other C bands. Explicit emphasis wins; an action above the weight
-ceiling still renders as authored and receives an advisory `action-tier` warning.
+ceiling still renders as authored and receives an advisory `action-weight` warning.
 
 ## Closing copy
 

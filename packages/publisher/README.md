@@ -4247,8 +4247,9 @@ build: Tailwind's preflight in the `foundry-ui-base` layer, then one compile
 of Designer's component classes and every class Publisher's views emit
 (band padding, grids, gaps), which Designer's `compiled.css` alone does not
 cover. It is generated (`npm run generate:preview-css`), and
-`src/preview/preview-css.test.ts` fails when it is stale or when a class
-the preview pages render has no rule in it. It is for the preview only; an
+`src/preview/preview-css.test.ts` (a source-checkout test that does not ship
+with this package) fails when it is stale or when a class the preview pages
+render has no rule in it. It is for the preview only; an
 app styles Publisher's views with its own build (see
 `templates/site/app/globals.css`).
 
@@ -5061,7 +5062,7 @@ these `sectioned-view-flow-` rules:
 | `inverse-weight` | Inverse outside a middle statement set piece |
 | `primary-placement` | Primary action outside an A or in the last two body bands |
 | `primary-target` | Effective hero primary, body primary and supplied close targets differ |
-| `action-tier` | Action emphasis or count exceeds the body weight ceiling |
+| `action-weight` | Action emphasis or count exceeds the body weight ceiling |
 | `link-groups` | More than two linked body blocks |
 | `link-repeat` | Repeated destination across body item, action or footnote links |
 
@@ -5070,7 +5071,7 @@ nonleading fragments, as linked-item validation does. Leading fragments remain
 distinct destinations. Hero and close links do not count as body links.
 Omitted body-action emphasis follows `resolveActionEmphasis`: secondary then
 quiet on A, tertiary on B and frame C, and quiet on other C bands. Explicit
-emphasis renders as authored; `action-tier` warns when it exceeds the weight
+emphasis renders as authored; `action-weight` warns when it exceeds the weight
 ceiling. Linked cards are quiet and remain independent of section-action counts.
 `checkSectionVariety` compares effective visual families and treatments, so
 raw blocks and equivalent recipes produce the same warnings. Group membership

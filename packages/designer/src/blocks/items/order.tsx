@@ -8,17 +8,17 @@ import { hasContent } from "./policies.js";
 import { ORDER_LAYOUT_CLASSES } from "./order-classes.js";
 import type { ItemData, ItemsProps } from "./types.js";
 type OrderStyle = CSSProperties & { [key: `--items-${string}`]: string | number };
-const M = "var(--spacing-2xl)";
+const M = "var(--spacing-2xl, 32px)";
 const LINE = { base: "bg-line-strong", sunken: "bg-line-strong", inverse: "bg-line-on-inverse" } as const;
 const DISC = { base: "bg-accent-tint text-accent-text", sunken: "bg-accent-tint text-accent-text", inverse: "border border-line-on-inverse text-ink-on-inverse" } as const;
 export function orderLayout(props: ItemsProps): { className: string; style: OrderStyle } {
   const columns = props.arrangement === "columns";
   const wide = columns ? ORDER_LAYOUT_CLASSES.columns : props.lanes ? props.items.length === 3 ? ORDER_LAYOUT_CLASSES.lanes3 : ORDER_LAYOUT_CLASSES.lanes5 : undefined;
-  return { className: cx(ORDER_LAYOUT_CLASSES.root, wide), style: { "--items-gap-inline": M, "--items-gap-block": columns && props.treatment !== "plate" ? "var(--spacing-3xl)" : M } };
+  return { className: cx(ORDER_LAYOUT_CLASSES.root, wide), style: { "--items-gap-inline": M, "--items-gap-block": columns && props.treatment !== "plate" ? "var(--spacing-3xl, 48px)" : M } };
 }
 export function orderedItemStyle(item: ItemData, props: ItemsProps): OrderStyle {
   const second = props.lanes !== undefined && item.lane === props.lanes[1]!.id;
-  return { "--items-lane-narrow": second ? "var(--spacing-xl)" : "0px", "--items-lane-wide": second ? "var(--spacing-4xl)" : "0px", "--items-body-narrow": props.lanes ? "var(--spacing-lg)" : "0px" };
+  return { "--items-lane-narrow": second ? "var(--spacing-xl, 24px)" : "0px", "--items-lane-wide": second ? "var(--spacing-4xl, 64px)" : "0px", "--items-body-narrow": props.lanes ? "var(--spacing-lg, 16px)" : "0px" };
 }
 export function renderOrdinal({ ordinal, props, connected = false }: { ordinal: number; props: ItemsProps; connected?: boolean }) {
   const ground = props.ground ?? "base";
@@ -30,16 +30,16 @@ function segment(name: string, props: ItemsProps) {
   return <span data-item-segment={name} className={cx("absolute", LINE[ground], ORDER_LAYOUT_CLASSES.forcedLine)} style={{ borderWidth: UI_BORDER_HAIRLINE }} />;
 }
 function narrowTransition(item: ItemData, next: ItemData, props: ItemsProps) {
-  const from = props.lanes && item.lane === props.lanes[1]!.id ? "var(--spacing-xl)" : "0px";
-  const to = props.lanes && next.lane === props.lanes[1]!.id ? "var(--spacing-xl)" : "0px";
+  const from = props.lanes && item.lane === props.lanes[1]!.id ? "var(--spacing-xl, 24px)" : "0px";
+  const to = props.lanes && next.lane === props.lanes[1]!.id ? "var(--spacing-xl, 24px)" : "0px";
   const visibility = props.arrangement === "columns" ? ORDER_LAYOUT_CLASSES.narrowColumns : props.lanes ? props.items.length === 3 ? ORDER_LAYOUT_CLASSES.narrowLanes3 : ORDER_LAYOUT_CLASSES.narrowLanes5 : "contents";
   return <span data-item-route="stacked" className={cx(visibility, ORDER_LAYOUT_CLASSES.stackedTrack)} style={{ "--items-from": from, "--items-to": to } as OrderStyle}>
     {segment("outgoing", props)}{item.lane !== next.lane ? segment("handoff", props) : null}{segment("incoming", props)}
   </span>;
 }
 function wideTransition(item: ItemData, next: ItemData, index: number, columns: number, props: ItemsProps, className: string) {
-  const from = props.lanes && item.lane === props.lanes[1]!.id ? "var(--spacing-4xl)" : "0px";
-  const to = props.lanes && next.lane === props.lanes[1]!.id ? "var(--spacing-4xl)" : "0px";
+  const from = props.lanes && item.lane === props.lanes[1]!.id ? "var(--spacing-4xl, 64px)" : "0px";
+  const to = props.lanes && next.lane === props.lanes[1]!.id ? "var(--spacing-4xl, 64px)" : "0px";
   const rowEnd = (index + 1) % columns === 0;
   return <span data-item-route={`columns-${columns}`} data-item-handoff={rowEnd ? "" : undefined} className={cx(className, rowEnd ? "items-track-return" : "items-track-inline")} style={{ "--items-from": from, "--items-to": to, "--items-columns": columns } as OrderStyle}>
     {segment("outgoing", props)}
@@ -63,7 +63,7 @@ export function renderTerminal({ props }: { props: ItemsProps }) {
   const terminalClass = ends ? cx("rounded-pill", LINE[ground], ORDER_LAYOUT_CLASSES.forcedLine) : ground === "inverse" ? "text-line-on-inverse" : "text-line-strong";
   return <>
     <span data-item-connector="" aria-hidden="true" className={cx("pointer-events-none absolute items-order-terminal-track", LINE[ground], ORDER_LAYOUT_CLASSES.forcedLine)} style={{ borderWidth: UI_BORDER_HAIRLINE }} />
-    <span data-item-end={end} aria-hidden="true" className={cx("pointer-events-none absolute items-order-end border-none", terminalClass)} style={{ borderWidth: UI_BORDER_HAIRLINE, inlineSize: "var(--ui-icon-sm)", blockSize: "var(--ui-icon-sm)", marginInlineStart: "calc(var(--ui-icon-sm) / -2)", transform: "translateY(-50%)" }}>{ends ? null : <Icon glyph={ArrowRight} decorative size="sm" className={arrow} />}</span>
+    <span data-item-end={end} aria-hidden="true" className={cx("pointer-events-none absolute items-order-end border-none", terminalClass)} style={{ borderWidth: UI_BORDER_HAIRLINE, inlineSize: "var(--ui-icon-sm, var(--spacing-lg, 16px))", blockSize: "var(--ui-icon-sm, var(--spacing-lg, 16px))", marginInlineStart: "calc(var(--ui-icon-sm, var(--spacing-lg, 16px)) / -2)", transform: "translateY(-50%)" }}>{ends ? null : <Icon glyph={ArrowRight} decorative size="sm" className={arrow} />}</span>
     {hasContent(props.endLabel) ? <span data-item-end-label="" className={cx("block mt-xl text-body-s", colors.secondary)}>{props.endLabel}</span> : null}
   </>;
 }

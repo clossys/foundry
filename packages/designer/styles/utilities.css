@@ -4,7 +4,7 @@
 @source inline("@clossys/designer/blocks/server @clossys/designer/charts @clossys/designer/icons");
 @source inline("@clossys/designer/shell @clossys/designer/shell/server @clossys/designer/theme");
 @source inline("@clossys/designer/tokens @clossys/designer/tokens.css @container @default @deprecated @example/copy");
-@source inline("@example/surface @internationalized/date @lg @lg:grid-cols-4 @md @md:align-top @md:border-collapse");
+@source inline("@example/surface @internationalized/date @lg:grid-cols-4 @md:align-top @md:border-collapse");
 @source inline("@md:hidden @md:not-sr-only @md:p-xl @md:pe-md @md:ps-xl @md:py-md @md:table @md:table-cell");
 @source inline("@md:table-header-group @md:table-row @md:table-row-group @md:text-h0 @md:text-start @ts-expect-error");
 @source inline("A ACCESSIBILITY. ALSO API Accessible Accordion Acme ActionLink Activate Ada After Always");
