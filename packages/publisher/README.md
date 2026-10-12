@@ -557,7 +557,7 @@ these contracts with a local, approved Writer registry.
 | `reveal: "disclose"` | Rows only, 4–6 items |
 
 The `prose` recipe's configuration budget is **1–8 non-empty paragraphs,
-at most 6 links per paragraph**. Its closed shape is
+at most 24 inline spans, 6 links and 1,200 Unicode characters per paragraph**. Its closed shape is
 `{ type: "prose", paragraphs }`, where each paragraph is a dense, ordered
 array of `{ type: "text", text: CopyRef }` or
 `{ type: "link", text: CopyRef, href }` spans. Every visible span resolves
@@ -565,6 +565,9 @@ through the existing Writer CopyRef path, retaining resolution provenance;
 missing, stale, pending or production-refused copy stops resolution with
 the same field-path refusal as other content recipes. Preserve spaces in
 the span copy: rendering joins spans without inserting separators.
+The character count includes visible link text and inline spaces; the limit
+is checked after copy resolution and again at the resolved rendering boundary.
+Paragraphs use the `lg` spacing token and `ui-width-prose-max` readable measure.
 Link hrefs use Publisher's shared sanctioned set: fragments, one-origin
 paths, HTTP(S) URLs without credentials, and explicit mailto links.
 Unknown fields, empty paragraphs, unsafe schemes, protocol-relative URLs,
@@ -666,7 +669,7 @@ layout, block and visual; a split after a split on the same side or a third
 split in a row; a dense band right after a dense band; a specimen on an
 inverse ground or a second inverse body band; a second band of four or more
 cards; a second comparison; one block type repeated with the same
-treatment; and a second band holding a `primary` action
+treatment where that block offers treatment options (prose does not); and a second band holding a `primary` action
 (`sectioned-view-variety-primary-actions`): a page has one main call to
 action per run of bands; and a split whose block is linked and whose text
 column also holds actions (`sectioned-view-variety-link-competing`): two link
@@ -675,11 +678,53 @@ systems compete for one click.
 `SectionedView` is now the dedicated web renderer after that Designer floor is
 available. Resolve the CopyRef document first, retain its `resolutions` as the
 only publication provenance, and pass the resolved model directly:
-Here `resolveCopy` is the consumer's approved `CopyResolver`.
+
+#### Prose recipe example
+
+This example uses a local approved Writer registry for the prose band
+and a leading hero. Its `resolveCopy` supplies both documents.
 
 ```tsx
-import { resolveSectionedViewDocument } from "@clossys/publisher/core";
+import {
+  createCopyResolver,
+  type CopyRegistry,
+} from "@clossys/writer";
+import {
+  resolveSectionedViewDocument,
+  type SectionedViewDocument,
+} from "@clossys/publisher/core";
 import { SectionedView } from "@clossys/publisher/web";
+
+const registry = {
+  id: "prose-example", locale: "en", revision: "1",
+  source: { kind: "consumer", reference: "prose-example" },
+  entries: [
+    { id: "acme.home.heading", text: "Welcome", context: "Section example", status: "approved" },
+    { id: "acme.home.description", text: "A section of approved copy.", context: "Section example", status: "approved" },
+    { id: "prose.heading", text: "Reading guide", context: "Prose example", status: "approved" },
+    { id: "prose.before", text: "Read the ", context: "Prose example", status: "approved" },
+    { id: "prose.link", text: "writing guide", context: "Prose example", status: "approved" },
+    { id: "prose.after", text: " before continuing.", context: "Prose example", status: "approved" },
+    { id: "prose.second", text: "Keep source material beside the record.", context: "Prose example", status: "approved" },
+  ],
+} satisfies CopyRegistry;
+const document = {
+  id: "prose-example",
+  sections: [{
+    id: "reading", kind: "content-section", heading: { id: "prose.heading" },
+    block: { type: "prose", paragraphs: [
+      [
+        { type: "text", text: { id: "prose.before" } },
+        { type: "link", text: { id: "prose.link" }, href: "/guide" },
+        { type: "text", text: { id: "prose.after" } },
+      ],
+      [{ type: "text", text: { id: "prose.second" } }],
+    ] },
+  }],
+} satisfies SectionedViewDocument;
+const resolveCopy = createCopyResolver(registry);
+export const proseDocument = resolveSectionedViewDocument(document, resolveCopy);
+const prosePage = <SectionedView document={proseDocument} />;
 
 const resolved = resolveSectionedViewDocument({
   id: "acme-home",
@@ -5268,44 +5313,4 @@ if (findings.some((finding) => finding.severity === "error")) {
 }
 export const resolved = resolveSectionedViewDocument(document, resolveCopy);
 // resolved.resolutions retains the registry revision and source for every CopyRef.
-```
-
-## Runnable prose example
-
-```ts
-import {
-  createCopyResolver,
-  type CopyRegistry,
-} from "@clossys/writer";
-import {
-  resolveSectionedViewDocument,
-  type SectionedViewDocument,
-} from "@clossys/publisher/core";
-
-const registry = {
-  id: "prose-example", locale: "en", revision: "1",
-  source: { kind: "consumer", reference: "prose-example" },
-  entries: [
-    { id: "prose.heading", text: "Reading guide", context: "Prose example", status: "approved" },
-    { id: "prose.before", text: "Read the ", context: "Prose example", status: "approved" },
-    { id: "prose.link", text: "writing guide", context: "Prose example", status: "approved" },
-    { id: "prose.after", text: " before continuing.", context: "Prose example", status: "approved" },
-    { id: "prose.second", text: "Keep source material beside the record.", context: "Prose example", status: "approved" },
-  ],
-} satisfies CopyRegistry;
-const document = {
-  id: "prose-example",
-  sections: [{
-    id: "reading", kind: "content-section", heading: { id: "prose.heading" },
-    block: { type: "prose", paragraphs: [
-      [
-        { type: "text", text: { id: "prose.before" } },
-        { type: "link", text: { id: "prose.link" }, href: "/guide" },
-        { type: "text", text: { id: "prose.after" } },
-      ],
-      [{ type: "text", text: { id: "prose.second" } }],
-    ] },
-  }],
-} satisfies SectionedViewDocument;
-export const proseDocument = resolveSectionedViewDocument(document, createCopyResolver(registry));
 ```

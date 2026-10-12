@@ -2,7 +2,7 @@
 import { COPY_FINGERPRINT_ALGORITHM, computeCopyFingerprint, createCopyResolver, resolveCopyRef, type CopyRegistry } from "@clossys/writer";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { resolveSectionedViewDocument, validateSectionedViewDocument, type SectionedViewDocument } from "../../core/sectioned-view.js";
+import { checkSectionVariety, resolveSectionedViewDocument, validateSectionedViewDocument, type SectionedViewDocument } from "../../core/sectioned-view.js";
 import { SectionedView } from "./SectionedView.js";
 import { SectionedView as ServerSectionedView } from "./SectionedView.server.js";
 import { LandingView } from "./LandingView.js";
@@ -32,6 +32,63 @@ function resolvedWith(content: unknown) {
 describe("canonical prose recipe", () => {
   it("accepts ordered paragraphs with inline Writer text and links", () => {
     expect(validateSectionedViewDocument(authored())).toEqual([]);
+  });
+
+  it("uses paragraph-sized spacing and the prose measure in every frame layout", () => {
+    for (const layout of ["stacked", "split-start", "split-end"] as const) {
+      const input = authored();
+      input.sections[0] = { ...input.sections[0]!, layout } as SectionedViewDocument["sections"][number];
+      const resolved = resolveSectionedViewDocument(input, resolver);
+      for (const View of [SectionedView, ServerSectionedView]) {
+        const root = document.createElement("div");
+        root.innerHTML = renderToStaticMarkup(<View document={resolved} />);
+        expect(root.querySelector("[data-content-section]")?.hasAttribute("data-prose")).toBe(true);
+        expect(root.querySelector("style")?.textContent).toContain("gap: var(--spacing-lg, 16px)");
+        expect(root.querySelector("style")?.textContent).toContain("[data-content-section][data-prose] > [data-content-section-modules]");
+        document.body.append(root);
+        try {
+          const modules = root.querySelector("[data-content-section-modules]")!;
+          expect(getComputedStyle(modules).gap).toBe("var(--spacing-lg, 16px)");
+        } finally { root.remove(); }
+        for (const paragraph of root.querySelectorAll<HTMLElement>("p[data-prose-paragraph]")) {
+          expect(paragraph.style.maxWidth).toBe("var(--ui-width-prose-max, 48rem)");
+          expect(paragraph.parentElement?.hasAttribute("data-content-section-modules")).toBe(true);
+        }
+      }
+    }
+  });
+
+  it("does not suggest a different treatment for repeated prose on one page", () => {
+    const first = authored().sections[0]!;
+    const second = { ...first, id: "reading-more" };
+    for (const input of [{ id: "long-page", sections: [first, second] }, [authored(), { id: "more", sections: [second] }]]) {
+      const findings = checkSectionVariety(input);
+      expect(findings.filter(finding => finding.rule === "sectioned-view-variety-treatment")).toEqual([]);
+      expect(findings.some(finding => finding.rule === "sectioned-view-variety-repeat")).toBe(true);
+    }
+  });
+
+  it("caps all inline spans at 24 per paragraph at authored and resolved boundaries", () => {
+    const atLimit = { type: "prose", paragraphs: [Array.from({ length: 24 }, () => plain())] };
+    expect(validateSectionedViewDocument(authored(atLimit))).toEqual([]);
+    const resolved = resolveSectionedViewDocument(authored(atLimit), resolver);
+    for (const View of [SectionedView, ServerSectionedView]) expect(() => renderToStaticMarkup(<View document={resolved} />)).not.toThrow();
+    const invalid = { type: "prose", paragraphs: [Array.from({ length: 25 }, () => plain())] };
+    expect(validateSectionedViewDocument(authored(invalid))).toContainEqual(expect.objectContaining({ rule: "sectioned-view-content-count", path: "sections.0.block.paragraphs.0", severity: "error" }));
+    const rendered = { type: "prose", paragraphs: [Array.from({ length: 25 }, () => ({ type: "text", text: "Text." }))] };
+    for (const View of [SectionedView, ServerSectionedView]) expect(() => renderToStaticMarkup(<View document={resolvedWith(rendered)} />)).toThrow("sections.0.block.paragraphs.0 must hold 1-24 spans");
+  });
+
+  it("caps combined paragraph text at 1200 Unicode characters including link text and spaces", () => {
+    const content = { type: "prose", paragraphs: [[plain("before"), link()]] };
+    // A non-blank link label supplies the last two characters, including its leading space.
+    const atLimit = createCopyResolver({ ...registry, entries: registry.entries.map(entry => ({ ...entry, text: entry.id === ref("before").id ? "😀".repeat(1198) : entry.id === ref("link").id ? " g" : entry.text })) });
+    const resolved = resolveSectionedViewDocument(authored(content), atLimit);
+    for (const View of [SectionedView, ServerSectionedView]) expect(() => renderToStaticMarkup(<View document={resolved} />)).not.toThrow();
+    const tooLong = createCopyResolver({ ...registry, entries: registry.entries.map(entry => ({ ...entry, text: entry.id === ref("before").id ? "😀".repeat(1199) : entry.id === ref("link").id ? " g" : entry.text })) });
+    expect(() => resolveSectionedViewDocument(authored(content), tooLong)).toThrow("sectioned-view-content-prose-text-length: sections.0.block.paragraphs.0 holds at most 1200 characters; it holds 1201.");
+    const rendered = { type: "prose", paragraphs: [[{ type: "text", text: "😀".repeat(1199) }, { type: "link", text: " g", href: "/guide" }]] };
+    for (const View of [SectionedView, ServerSectionedView]) expect(() => renderToStaticMarkup(<View document={resolvedWith(rendered)} />)).toThrow("sectioned-view-content-prose-text-length: sections.0.block.paragraphs.0");
   });
 
   it("shows the prose catalog witness with an inline link on the Explain page", () => {

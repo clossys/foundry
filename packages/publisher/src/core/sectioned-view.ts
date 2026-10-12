@@ -1,6 +1,7 @@
 import { planContentGrounds } from "./content-ground.js";
 import type { CopyRef, CopyResolution, CopyResolver } from "@clossys/writer";
 import { isSanctionedHref } from "../internal/href.js";
+import { proseParagraphTextLength } from "../internal/prose-text.js";
 import type { ComposeFinding } from "./types.js";
 import { desugarRecipe, SECTIONED_VIEW_CONTENT_CONTRACT, SECTIONED_VIEW_ITEM_RECIPES } from "./content-contract.js";
 import type { FrameSize, FrameLayout, SectionedViewItemsBlock, CanonicalSectionedViewItemsBlock, SectionedViewMatrixBlock, SectionedViewProseBlock, SectionedViewItem, SectionedViewItemSpan, SectionedViewMedia, SectionedViewSpecimenMedia, SectionedViewSceneMedia, SectionedViewBadge } from "./content-contract.js";
@@ -1311,6 +1312,7 @@ function validateProse(block: Record<string, unknown>, path: string, findings: C
   block.paragraphs.forEach((paragraph, paragraphIndex) => {
     const paragraphPath = `${paragraphsPath}.${paragraphIndex}`;
     if (!validateDenseArray(paragraph, paragraphPath, findings, shape, `${paragraphPath} must be a non-empty data array of spans.`)) return;
+    if (paragraph.length > budget.spansPerParagraph) findings.push(countFinding(paragraphPath, { min: 1, max: budget.spansPerParagraph }, paragraph.length, "spans"));
     let links = 0;
     paragraph.forEach((span, spanIndex) => {
       const spanPath = `${paragraphPath}.${spanIndex}`;
@@ -1992,7 +1994,16 @@ function boundedText(ref: CopyRef, path: string, text: ResolveText, max: number,
   return resolved;
 }
 function resolveContentBlock(authored: SectionedViewContentBlock, path: string, text: ResolveText): ResolvedSectionedViewContentBlock {
-  if (authored.type === "matrix" || authored.type === "prose") return resolveCopyData(authored, path, text) as ResolvedSectionedViewContentBlock;
+  if (authored.type === "prose") {
+    const block = resolveCopyData(authored, path, text) as ResolvedCopyTree<SectionedViewProseBlock>;
+    const max = SECTIONED_VIEW_CONTENT_CONTRACT.prose.charactersPerParagraph;
+    block.paragraphs.forEach((paragraph, index) => {
+      const length = proseParagraphTextLength(paragraph);
+      if (length > max) throw new SectionedViewResolutionError("invalid-document", `sectioned-view-content-prose-text-length: ${path}.paragraphs.${index} holds at most ${max} characters; it holds ${length}.`);
+    });
+    return block;
+  }
+  if (authored.type === "matrix") return resolveCopyData(authored, path, text) as ResolvedSectionedViewContentBlock;
   const block = desugarRecipe(authored);
   const items = block.items.map((item, index) => {
     const itemPath = `${path}.items.${index}`;
@@ -2185,7 +2196,7 @@ function varietyWarning(rule: string, path: string, message: string): ComposeFin
  * 5. At most one band with four or more cards
  *    [`sectioned-view-variety-card-bands`], and at most one comparison
  *    [`sectioned-view-variety-comparison-count`].
- * 6. One block type used twice needs a different treatment
+ * 6. One block type with treatment options used twice needs a different treatment
  *    [`sectioned-view-variety-treatment`].
  * 7. At most one band carries a `primary` action
  *    [`sectioned-view-variety-primary-actions`]: the page converts in one
@@ -2273,7 +2284,7 @@ export function checkSectionVariety(input: SectionedViewDocument | readonly Sect
 
   const seen = new Map<string, BandShape>();
   for (const band of bands) {
-    if (band.kind !== "content-section" || band.block === "intro" || band.block === "none" || band.block === "matrix") continue;
+    if (band.kind !== "content-section" || band.block === "intro" || band.block === "none" || band.block === "matrix" || band.block === "prose") continue;
     const key = `${band.block}|${band.treatment}`;
     const first = seen.get(key);
     if (first !== undefined) findings.push(varietyWarning("sectioned-view-variety-treatment", band.path, `${band.path} uses the ${band.block} block with the same treatment as ${first.path}; give it a different treatment.`));

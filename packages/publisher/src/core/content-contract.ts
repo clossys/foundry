@@ -15,7 +15,7 @@ export const SECTIONED_VIEW_CONTENT_CONTRACT = Object.freeze({
   spans: Object.freeze({ third: 4, half: 6, "two-thirds": 8, full: 12 }),
   columnOptions: Object.freeze([2, 3] as const),
   rowColumnOptions: Object.freeze([1, 2] as const),
-  prose: Object.freeze({ paragraphs: 8, linksPerParagraph: 6 }),
+  prose: Object.freeze({ paragraphs: 8, linksPerParagraph: 6, spansPerParagraph: 24, charactersPerParagraph: 1200 }),
   counts: Object.freeze({ columns: Object.freeze([2, 6] as const), groups: Object.freeze([2, 4] as const), groupItems: Object.freeze([2, 4] as const), laneDefinitions: 2, columns2: Object.freeze([2, 4, 6]), columns3: Object.freeze([3, 6]), rows: Object.freeze([2, 8] as const), bento: Object.freeze([2, 6] as const), stacked: Object.freeze([2, 4] as const), connected: Object.freeze([3, 5] as const), disclose: Object.freeze([4, 6] as const), matrix: 2, points: Object.freeze([2, 4] as const), linked: 6, rowUnits: 12 }),
 });
 export type FrameSize = typeof SECTIONED_VIEW_CONTENT_CONTRACT.sizes[number];
@@ -79,7 +79,7 @@ export interface SectionedViewMatrixBlock { type: "matrix"; recipe?: "comparison
 export type SectionedViewProseSpan =
   | { type: "text"; text: CopyRef }
   | { type: "link"; text: CopyRef; href: string };
-/** One to eight ordered, non-empty paragraphs, each with at most six links. */
+/** One to eight paragraphs, each with at most 24 spans, six links and 1200 resolved characters. */
 export interface SectionedViewProseBlock { type: "prose"; paragraphs: SectionedViewProseSpan[][] }
 export interface SectionedViewSpecimenKeyItem { id: string; target: string; heading: CopyRef; description: CopyRef }
 export interface SectionedViewSpecimenKey { label: CopyRef; items: SectionedViewSpecimenKeyItem[] }

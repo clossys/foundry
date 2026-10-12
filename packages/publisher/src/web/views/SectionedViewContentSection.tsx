@@ -74,7 +74,7 @@ function renderMedia(media: ResolvedSectionedViewMedia, section: ResolvedSection
 }
 function renderBlock(block: ResolvedSectionedViewContentBlock, section: ResolvedSectionedViewContentSection, ItemsBlock: (props: ItemsProps) => ReactNode): ReactNode {
   switch (block.type) {
-    case "prose": return <>{block.paragraphs.map((paragraph, paragraphIndex) => <p key={paragraphIndex} data-prose-paragraph="" className={`text-body text-pretty ${SECTION_GROUND_CLASSES[section.ground].primary}`}>
+    case "prose": return <><style>{"[data-content-section][data-prose] > [data-content-section-modules], [data-content-section][data-prose] > [data-content-section-text] > [data-content-section-modules] { gap: var(--spacing-lg, 16px); }"}</style>{block.paragraphs.map((paragraph, paragraphIndex) => <p key={paragraphIndex} data-prose-paragraph="" className={`text-body text-pretty ${SECTION_GROUND_CLASSES[section.ground].primary}`} style={{ maxWidth: "var(--ui-width-prose-max, 48rem)" }}>
       {paragraph.map((span, spanIndex) => span.type === "text" ? span.text : <a key={spanIndex} href={span.href} className="text-inherit underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">{span.text}</a>)}
     </p>)}</>;
     case "matrix": {
@@ -96,7 +96,7 @@ export function createContentSectionBlock(ItemsBlock: (props: ItemsProps) => Rea
   return function ContentSectionBlock({ section, actions, className, style, after }: ContentSectionBlockProps) {
     const block = section.block === undefined ? null : renderBlock(section.block, section, ItemsBlock);
     const media = section.media === undefined ? undefined : renderMedia(section.media, section);
-    const header = { id: section.id, headingId: section.heading === undefined ? undefined : `${section.id}:heading`, eyebrow: section.eyebrow, heading: section.heading, description: section.description, actions, footnote: renderFootnote(section.footnote), headingLevel: 2 as const, size: section.size, ground: section.ground, className, style };
+    const header = { id: section.id, headingId: section.heading === undefined ? undefined : `${section.id}:heading`, eyebrow: section.eyebrow, heading: section.heading, description: section.description, actions, footnote: renderFootnote(section.footnote), headingLevel: 2 as const, size: section.size, ground: section.ground, className, style, "data-prose": section.block?.type === "prose" ? "" : undefined };
     if (section.layout !== "stacked") return <ContentSection {...header} layout={section.layout} media={media}>{block}{after}</ContentSection>;
     return <ContentSection {...header} layout="stacked" align={section.block?.type === "items" && section.block.scale === "statement" ? "center" : "start"} media={media}>{block}{after}</ContentSection>;
   };
