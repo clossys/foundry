@@ -358,8 +358,11 @@ describe("LandingView close copy", () => {
 
   it("preserves legacy markup when hero reuse is absent", () => {
     const html = renderToStaticMarkup(<LandingView document={PAGE} trailing={[SHARED]} callToAction={CALL_TO_ACTION} />);
-    // Pin the pre-option server output; the page and closing copy differ.
-    expect(createHash("sha256").update(html).digest("hex")).toBe(LEGACY_CLOSE_MARKUP_SHA256);
+    // Require the cue rail's token fallback; preserve every other pre-option byte.
+    const cueRail = 'class="relative z-[var(--ui-z-sticky,10)] h-0"';
+    expect(html.split(cueRail)).toHaveLength(2);
+    const legacyHtml = html.replace(cueRail, cueRail.replace(",10", ""));
+    expect(createHash("sha256").update(legacyHtml).digest("hex")).toBe(LEGACY_CLOSE_MARKUP_SHA256);
   });
 
   it("refuses a valid nonempty document without an opening hero using the dedicated reason, even with own copy or a trailing hero", () => {
