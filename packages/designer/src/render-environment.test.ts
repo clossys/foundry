@@ -275,21 +275,38 @@ describe("compiled collection scale retirement", () => {
 describe("actual emitted collection declarations", () => {
   it("imports ItemsScale and refuses retired alias/props across three emitted barrels", () => {
     const filename = join(packageRoot, "emitted-scale-consumer.check.ts");
-    const source = ["index.js", "blocks/index.js", "blocks/server.js"].map((entry, index) => `
+    const entries = ["index.js", "blocks/index.js", "blocks/server.js"];
+    const source = entries.map((entry, index) => `
       import type * as B${index} from ${JSON.stringify(join(distDir, entry))};
       const scale${index}: B${index}.ItemsScale = "statement";
       const valid${index}: B${index}.ItemsProps = { arrangement: "columns", items: [], scale: scale${index} };
-      // @ts-expect-error The retired type alias is absent from emitted declarations.
-      type Removed${index} = B${index}.ItemsEmphasis;
-      // @ts-expect-error The retired field is absent even when undefined.
-      const old${index}: B${index}.ItemsProps = { arrangement: "columns", items: [], emphasis: undefined };
     `).join("\n");
     const options = { strict: true, noEmit: true, skipLibCheck: true, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler };
-    const host = ts.createCompilerHost(options);
-    const original = host.getSourceFile.bind(host);
-    host.getSourceFile = (path, language, error, fresh) => path === filename ? ts.createSourceFile(path, source, language, true) : original(path, language, error, fresh);
-    const diagnostics = ts.getPreEmitDiagnostics(ts.createProgram([filename], options, host));
+    const diagnosticsFor = (consumer: string) => {
+      const host = ts.createCompilerHost(options);
+      const original = host.getSourceFile.bind(host);
+      host.getSourceFile = (path, language, error, fresh) => path === filename ? ts.createSourceFile(path, consumer, language, true) : original(path, language, error, fresh);
+      return ts.getPreEmitDiagnostics(ts.createProgram([filename], options, host));
+    };
+    const diagnostics = diagnosticsFor(source);
     expect(ts.formatDiagnosticsWithColorAndContext(diagnostics, { getCurrentDirectory: () => packageRoot, getCanonicalFileName: path => path, getNewLine: () => "\n" })).toBe("");
+    for (const entry of entries) {
+      const consumerImport = `import type * as B from ${JSON.stringify(join(distDir, entry))};`;
+      const alias = diagnosticsFor(`${consumerImport}\ntype Removed = B.ItemsEmphasis;`);
+      expect(alias.length, entry).toBe(1);
+      expect(alias[0]!.file?.fileName, entry).toBe(filename);
+      expect(alias[0]!.code, entry).toBe(2694);
+      const aliasMessage = ts.flattenDiagnosticMessageText(alias[0]!.messageText, "\n");
+      expect(aliasMessage, entry).toContain("has no exported member");
+      expect(aliasMessage, entry).toContain("ItemsEmphasis");
+      const property = diagnosticsFor(`${consumerImport}\nconst old: B.ItemsProps = { arrangement: "columns", items: [], emphasis: undefined };`);
+      expect(property.length, entry).toBe(1);
+      expect(property[0]!.file?.fileName, entry).toBe(filename);
+      expect(property[0]!.code, entry).toBe(2353);
+      const propertyMessage = ts.flattenDiagnosticMessageText(property[0]!.messageText, "\n");
+      expect(propertyMessage, entry).toContain("'emphasis' does not exist");
+      expect(propertyMessage, entry).toContain("ItemsProps");
+    }
   });
 });
 
