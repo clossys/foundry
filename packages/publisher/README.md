@@ -2379,21 +2379,16 @@ variables.
 #### `LegalView`
 
 `LegalView`, exported from `@clossys/publisher/web` next to `DocumentView`,
-renders a `LegalDocument` as a whole self-chromed page: Designer's
-`SiteHeader`, its own `<main>` holding the document in a prose-measure column
-with no card, then `SiteFooter`. It does not use the shared
-[page layout](#page-layout) and has no chrome-free mode, so it cannot sit
-inside a [`SiteFrame`](#site-frame--siteframe): it would add a second banner,
-`<main>` and contentinfo. It is server-safe and has no summary or in-page
-action props; its banner takes the same header slots as `HeroView`.
+renders a validated `LegalDocument`. Inside `SiteFrame`, use `<LegalView
+framed ... />`: the view renders its legal body and the frame owns the skip
+link, banner, single `<main>` and footer. Use `DocumentView` for ordinary
+structured documents and the framed legal path for terms and privacy so
+legal validation, both dates and the draft callout run together.
 
-**Inside a frame, use `DocumentView`.** A `LegalDocument` is a
-`StructuredDocument`, so a framed legal page renders it with `DocumentView`
-(the document title as the `<h1>`, the article in the card). `DocumentView`
-does not run the legal profile: call `validateLegalDocument` (and
-`gateLegalDocument` before publishing) yourself, and pass the effective date
-as `effectiveDate`. It does not render the last-updated date or the draft
-callout that `LegalView` adds; a framed legal view with those is a follow-up.
+For a self-chromed page, omit `framed` and supply `brand`, as below. Both
+paths share one body. LegalView is server-safe and has no summary or
+in-page action props; its legacy banner takes the same header slots as
+`HeroView`.
 
 ```tsx
 import { LegalView } from "@clossys/publisher/web";
@@ -2428,7 +2423,11 @@ export function TermsPage() {
 
 Props, in addition to the standard `div` attributes and `style`:
 
-- `brand`: the brand node placed in the page chrome.
+- `framed` (`true`): chrome-free legal content for `SiteFrame`. This branch
+  excludes `brand`, `headerAction`, `secondaryAction`, `nav`, `ground` and
+  `footerSecondary`; passing them at runtime refuses. Its content root also
+  refuses frame landmark roles and the frame's main id.
+- `brand`: required for the self-chromed path, placed in the page chrome.
 - `headerAction`, `secondaryAction`, `nav` (optional): the header slots, as on
   `HeroView`. `headerAction` is the banner call to action (Designer
   `SiteHeader`'s `actions`), `secondaryAction` sits just before it and `nav`
@@ -2473,6 +2472,28 @@ What it does:
 - Legal document text and date/draft labels come from caller `CopyRef`s.
   The related heading and item slots are caller-supplied values; the view
   adds no wording. Related links follow Designer's canonical item validation.
+
+A legal route inside the frame uses the same document, resolver and labels:
+
+```tsx
+import { LegalView, SiteFrame } from "@clossys/publisher/web";
+import type { LegalViewLabels } from "@clossys/publisher/web";
+import type { LegalDocument } from "@clossys/publisher/document";
+
+declare const frame: React.ComponentProps<typeof SiteFrame>;
+declare const document: LegalDocument;
+declare const labels: LegalViewLabels;
+declare const resolveCopyId: React.ComponentProps<typeof LegalView>["resolveCopyId"];
+
+export function FramedTermsPage() {
+  return (
+    <SiteFrame {...frame}>
+      <LegalView framed document={document} resolveCopyId={resolveCopyId}
+        labels={labels} locale="en-GB" />
+    </SiteFrame>
+  );
+}
+```
 
 **Soundness boundary.** `LegalView` guarantees the document's structure,
 section order, dates and a draft marker that cannot be suppressed. It says
