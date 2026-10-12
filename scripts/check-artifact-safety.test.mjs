@@ -380,3 +380,39 @@ test("artifact test paths: runtime JSON5 and partial snapshot or mock names rema
   assert.equal(result.code ?? 0, 0, JSON.stringify(report));
   assert.deepEqual(report.structural, []);
 });
+
+
+test("artifact test paths: standalone test declarations are refused without a runnable sibling", async (t) => {
+  for (const path of ["dist/a.test.d.ts", "dist/x.test.d.ts", "dist/a.spec.d.ts", "dist/a.test.d.mts", "dist/a.spec.d.cts", "dist/a.TEST.D.CTS", "dist/a.SpEc.D.MtS"]) {
+    await t.test(path, async (t) => {
+      const { result, report } = await scanShippedPaths(t, [path]);
+      assertShippedTestFindings(result, report, [path]);
+    });
+  }
+});
+
+test("artifact test paths: terminal test and spec script and declaration maps are refused", async (t) => {
+  const paths = ["dist/a.test.js.map", "dist/a.spec.mjs.map", "dist/a.test.cjs.map", "dist/a.spec.ts.map", "dist/a.test.tsx.map", "dist/a.SPEC.MTS.MAP", "dist/a.TEST.CTS.MAP", "dist/a.spec.jsx.map", "dist/a.test.d.ts.map", "dist/a.spec.d.cts.map", "dist/a.TEST.D.MTS.MAP"];
+  const { result, report } = await scanShippedPaths(t, paths);
+  assertShippedTestFindings(result, report, paths);
+});
+
+test("artifact test paths: terminal test and spec snapshots are refused", async (t) => {
+  const paths = ["src/a.test.ts.snap", "src/a.spec.js.snap", "src/a.TEST.TSX.SNAP", "src/a.SpEc.CtS.SnAp", "src/a.test.mjs.snap", "src/a.spec.jsx.snap", "src/a.test.json.snap", "src/a.spec.txt.snap", "src/a.test.d.ts.snap", "src/a.spec.d.mts.snap", "src/a.TEST.D.CTS.SNAP"];
+  const { result, report } = await scanShippedPaths(t, paths);
+  assertShippedTestFindings(result, report, paths);
+});
+
+test("artifact test paths: specification documents and nonterminal test suffixes remain publishable", async (t) => {
+  const paths = ["contracts/openapi.spec.yaml", "contracts/openapi.SPEC.YML", "docs/api.spec.md", "docs/legacy.SpEc.Md", "src/a.test.d.ts.backup", "src/a.spec.js.map.backup", "src/a.test.ts.snap.backup", "src/a.spec.json.schema.json", "src/a.test.d.ts.map.backup", "src/a.spec.d.cts.snap.backup", "src/a.test.d.mts.schema.json"];
+  const { result, report } = await scanShippedPaths(t, paths);
+  assert.equal(result.code ?? 0, 0, JSON.stringify(report));
+  assert.deepEqual(report.structural, []);
+});
+
+
+test("artifact test paths: specification document exceptions preserve other suffix and segment refusals", async (t) => {
+  const paths = ["docs/api.spec.html", "docs/api.spec.txt", "docs/legacy.SPEC.HTML", "docs/legacy.SPEC.TXT", "docs/api.test.yaml", "docs/api.test.md", "__tests__/api.spec.yaml", "src/__Fixtures__/api.spec.md", "src/__snapshots__/api.spec.yml", "src/__MOCKS__/api.SPEC.MD"];
+  const { result, report } = await scanShippedPaths(t, paths);
+  assertShippedTestFindings(result, report, paths);
+});
