@@ -582,51 +582,8 @@ with known lane ids on every item in a connected block of three to five
 items, using columns or stacked arrangement. The first item uses the first
 defined lane, and both lanes appear.
 
-#### Index configuration: status list
-
-A list of items with current status labels belongs to Index: the reader
-looks up readiness rather than following ordered steps. Use a
-`content-section` with the existing `topics` recipe and a `badge` on each
-item. The example uses Index's three existing axes: shape `rows-1`, reveal
-`all`, groups `off`; each axis has at most three values. Status labels are
-copy in the badge slot, and tones select existing semantic tokens.
-
-```tsx
-import { resolveSectionedViewDocument, type SectionedViewDocument } from "@clossys/publisher/core";
-import { SectionedView } from "@clossys/publisher/web";
-
-declare const resolveCopy: Parameters<typeof resolveSectionedViewDocument>[1]; // resolves approved registry entries
-
-const document: SectionedViewDocument = {
-  id: "feature-status-page",
-  sections: [{
-    id: "feature-status",
-    kind: "content-section",
-    heading: { id: "feature-status.heading" },
-    block: {
-      type: "items",
-      recipe: "topics",
-      columns: 1,
-      scale: "item",
-      items: [
-        { id: "search", heading: { id: "search.heading" }, badge: { label: { id: "status.live" }, tone: "success" } },
-        { id: "imports", heading: { id: "imports.heading" }, badge: { label: { id: "status.in-progress" }, tone: "info" } },
-        { id: "exports", heading: { id: "exports.heading" }, badge: { label: { id: "status.planned" }, tone: "neutral" } },
-      ],
-    },
-  }],
-};
-
-const page = <SectionedView document={resolveSectionedViewDocument(document, resolveCopy)} />;
-```
-
-Author the status copy as, for example, Live, In progress and Planned.
-Descriptions can explain individual items; optional `groups` reference
-their IDs. The existing rows limits apply: 2–8 items in one column, even
-counts in two columns, and 2–4 groups of 2–4 items within the total budget.
-Badge labels resolve through the document's ordinary copy provenance;
-an unresolved label refuses the document. The preview renders this
-configuration on `catalog/index-function.html` through `SectionedView`.
+For status-labelled lookup, use the [Index status-list configuration](#index-configuration-status-list)
+with the existing `topics` recipe and per-item badges.
 
 Matrix sides each have an id and heading, and either 2–4 points or one
 specimen panel. Labels are optional on both sides together; mixed label
@@ -5289,3 +5246,49 @@ if (findings.some((finding) => finding.severity === "error")) {
 export const resolved = resolveSectionedViewDocument(document, resolveCopy);
 // resolved.resolutions retains the registry revision and source for every CopyRef.
 ```
+
+## Index configuration: status list
+
+A list of items with current status labels belongs to Index: the reader
+looks up readiness rather than following ordered steps. Use a
+`content-section` with the existing `topics` recipe and a `badge` on each
+item. The example uses Index's three existing axes: shape `rows-1`, reveal
+`all`, groups `off`; each axis has at most three values. Status labels are
+copy in the badge slot, and tones select existing semantic tokens.
+
+```tsx
+import { resolveSectionedViewDocument, type SectionedViewDocument } from "@clossys/publisher/core";
+import { SectionedView } from "@clossys/publisher/web";
+
+declare const resolveCopy: Parameters<typeof resolveSectionedViewDocument>[1]; // resolves approved registry entries
+
+const document: SectionedViewDocument = {
+  id: "feature-status-page",
+  sections: [{
+    id: "feature-status",
+    kind: "content-section",
+    heading: { id: "feature-status.heading" },
+    block: {
+      type: "items",
+      recipe: "topics",
+      columns: 1,
+      scale: "item",
+      items: [
+        { id: "search", heading: { id: "search.heading" }, badge: { label: { id: "status.live" }, tone: "success" } },
+        { id: "imports", heading: { id: "imports.heading" }, badge: { label: { id: "status.in-progress" }, tone: "info" } },
+        { id: "exports", heading: { id: "exports.heading" }, badge: { label: { id: "status.planned" }, tone: "neutral" } },
+      ],
+    },
+  }],
+};
+
+const page = <SectionedView document={resolveSectionedViewDocument(document, resolveCopy)} />;
+```
+
+Author the status copy as, for example, Live, In progress and Planned.
+Descriptions can explain individual items; optional `groups` reference
+their IDs. The existing rows limits apply: 2–8 items in one column, even
+counts in two columns, and 2–4 groups of 2–4 items within the total budget.
+Badge labels resolve through the document's ordinary copy provenance;
+an unresolved label refuses the document. The preview renders this
+configuration on `catalog/index-function.html` through `SectionedView`.
