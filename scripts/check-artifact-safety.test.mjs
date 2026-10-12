@@ -354,3 +354,29 @@ test("artifact test paths: runtime JSON, examples, and partial fixture names rem
   assert.equal(result.code ?? 0, 0, JSON.stringify(report));
   assert.deepEqual(report.structural, []);
 });
+
+
+test("artifact test paths: JSON5 and JSONC test snapshots are refused from supplied tarballs", async (t) => {
+  const paths = ["src/catalog/legacy.test.json5", "src/catalog/legacy.spec.jsonc"];
+  const { result, report } = await scanShippedPaths(t, paths);
+  assertShippedTestFindings(result, report, paths);
+});
+
+test("artifact test paths: all terminal test extensions and case variants are refused", async (t) => {
+  const paths = ["src/a.test.html", "src/a.spec.snap", "src/a.test.txt", "src/a.TEST.JSON", "src/a.SpEc.JsOn5", "src/a.TEST.MTS", "src/a.SPEC.CTS", "src/a.TEST.TSX", "src/a.SPEC.CJS", "src/a.test.jsx", "src/a.spec.mjs"];
+  const { result, report } = await scanShippedPaths(t, paths);
+  assertShippedTestFindings(result, report, paths);
+});
+
+test("artifact test paths: whole snapshot and mock segments are refused case-insensitively", async (t) => {
+  const paths = ["__snapshots__/legacy.snap", "src/views/__snapshots__/nested/document.json5", "__mocks__/adapter.ts", "src/views/__mocks__/nested/copy.txt", "src/__Fixtures__/legal.html", "src/__Tests__/copy.json", "src/__Snapshots__/legacy.snap", "src/__MOCKS__/adapter.js"];
+  const { result, report } = await scanShippedPaths(t, paths);
+  assertShippedTestFindings(result, report, paths);
+});
+
+test("artifact test paths: runtime JSON5 and partial snapshot or mock names remain publishable", async (t) => {
+  const paths = ["src/runtime.json5", "src/runtime.jsonc", "templates/examples/document.json5", "src/contest.json5", "src/test.json5", "src/legacy.test.json5.schema.json", "src/legacy.TEST.JSON5.backup", "src/legacy.spec.html.template", "src/__snapshots__-catalog/document.json5", "src/prefix__snapshots__/document.json5", "src/__snapshots__.json5", "src/__mocks__-catalog/adapter.js", "src/prefix__mocks__/adapter.js", "src/__mocks__.json5", "src/__SNAPSHOTS__-examples/document.json5", "src/prefix__MOCKS__/document.json5"];
+  const { result, report } = await scanShippedPaths(t, paths);
+  assert.equal(result.code ?? 0, 0, JSON.stringify(report));
+  assert.deepEqual(report.structural, []);
+});

@@ -176,9 +176,9 @@ try {
     }
   }
 
-  // Refuse test suffixes and complete test/fixture directory segments;
-  // runtime JSON and similar-looking directory names remain publishable.
-  const testFiles = files.filter((f) => /\.(test|spec)\.(?:[cm]?[jt]sx?|json)$/.test(f) || /(^|\/)(?:__tests__|__fixtures__)\//.test(f));
+  // Refuse any terminal test/spec extension and complete test-data segments,
+  // regardless of case. Runtime data and partial segment names remain publishable.
+  const testFiles = files.filter((f) => /\.(test|spec)\.[^/.]+$/i.test(f) || /(^|\/)(?:__tests__|__fixtures__|__snapshots__|__mocks__)\//i.test(f));
   for (const f of testFiles) {
     structural.push({ kind: "test-file", detail: `test file shipped: ${f}`, severity: "high" });
   }
