@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { renderToStaticMarkup } from "react-dom/server";
+import { JSDOM } from "jsdom";
 import { describe, expect, it } from "vitest";
 import * as webServer from "../server.js";
 import type { ItemData } from "@clossys/designer/blocks/server";
@@ -24,12 +25,13 @@ describe("StatusView routes through the server entry", () => {
     expect(html.match(/<a /g)).toHaveLength(2);
     expect(html.indexOf('href="/"')).toBeLessThan(html.indexOf('href="/help"'));
     expect(html).not.toMatch(/<main\b|<header\b|<footer\b| routes=/);
-    // Remove only the canonical hidden NBSP and decorative ChevronRight SVG.
-    // Caller text and all other markup remain subject to the ASCII assertion.
-    const callerMarkup = html
-      .replace(/<span aria-hidden="true">\u00a0<\/span>/g, "")
-      .replace(/<svg\b(?=[^>]*\baria-hidden="true")[^>]*><path d="m9 18 6-6-6-6"><\/path><\/svg>/g, "");
-    expect(callerMarkup).not.toMatch(/[^\x00-\x7f]/);
-    expect(callerMarkup.replace(/<[^>]*>/g, "")).toBe("404Next destinationsHomeHelp");
+    const fragment = JSDOM.fragment(html);
+    const hiddenSpaces = fragment.querySelectorAll('span[aria-hidden="true"]');
+    expect(Array.from(hiddenSpaces, span => span.textContent)).toEqual(["\u00a0", "\u00a0"]);
+    expect(html.match(/\u00a0/g)).toHaveLength(2);
+    expect(html).not.toMatch(/[^\x00-\x7f\u00a0]/);
+    expect(Array.from(fragment.querySelectorAll('svg[aria-hidden="true"] > path'), path => path.getAttribute("d"))).toEqual(["m9 18 6-6-6-6", "m9 18 6-6-6-6"]);
+    expect(fragment.querySelector("script")).toBeNull();
+    expect(fragment.textContent).toBe("404Next destinationsHome\u00a0Help\u00a0");
   });
 });

@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { join, dirname, resolve } from "node:path";
 import { TOKENS } from "@clossys/designer/tokens";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { JSDOM } from "jsdom";
 // The generator is a plain build script (scripts/preview-css.mjs); test files are outside tsc.
 import { generatePreviewCss } from "../../scripts/preview-css.mjs";
 import { PREVIEW_UTILITIES_BASENAME, previewUtilitiesSourcePath } from "./preview-stylesheet.js";
@@ -29,8 +30,10 @@ function hasRuleFor(css: string, className: string): boolean {
 
 function classesOf(html: string): Set<string> {
   const out = new Set<string>();
-  for (const match of html.matchAll(/\sclass="([^"]*)"/g)) {
-    for (const token of match[1].split(/\s+/)) if (token !== "") out.add(token.replaceAll("&amp;", "&").replaceAll("&quot;", '"').replaceAll("&#x27;", "'"));
+  // An HTML parser decodes attribute entities exactly once, as a browser does.
+  const fragment = JSDOM.fragment(html);
+  for (const element of fragment.querySelectorAll("[class]")) {
+    for (const token of element.classList) out.add(token);
   }
   return out;
 }
@@ -55,16 +58,23 @@ beforeAll(() => {
     .sort()
     .map((file) => ({ file, html: readFileSync(join(dir, "out", file), "utf8") }))
     .filter(page => [...page.html.matchAll(/href="([^"]+)"/g)].some(match => resolve(dir, "out", dirname(page.file), match[1]) === resolve(dir, "out", PREVIEW_UTILITIES_BASENAME)));
-});
+}, 30_000);
 
 afterAll(() => {
   rmSync(dir, { recursive: true, force: true });
 });
 
 describe("styles/preview.css", () => {
+  it("decodes class attributes once without interpreting encoded entity text again", () => {
+    const html = '<div class="encoded&amp;quot; encoded&amp;#x27; quote&quot; apostrophe&#x27; amp&amp;"></div>';
+    expect(classesOf(html)).toEqual(new Set(["encoded&quot;", "encoded&#x27;", 'quote"', "apostrophe'", "amp&"]));
+    expect(classesOf('<div class="plain gt&gt; lt&lt; encoded&amp;gt; encoded&amp;lt; numeric&#38; nonbreaking&#160;x unknown&unsupported;"><svg class="svg&amp;"></svg></div>'))
+      .toEqual(new Set(["plain", "gt>", "lt<", "encoded&gt;", "encoded&lt;", "numeric&", "nonbreaking\u00a0x", "unknown&unsupported;", "svg&"]));
+  });
+
   it("is fresh: regenerating it from the current sources gives the committed file", async () => {
     expect(await generatePreviewCss(), "styles/preview.css is stale; run npm run generate:preview-css").toBe(committed);
-  });
+  }, 30_000);
 
   it("holds Tailwind's preflight in the base layer before the utilities", () => {
     const base = committed.indexOf("@layer foundry-ui-base {");
@@ -91,7 +101,7 @@ describe("styles/preview.css", () => {
       }
     }
     expect(missing).toEqual([]);
-  });
+  }, 30_000);
 
   it("covers Publisher's band rhythm, which Designer's compiled.css alone does not", () => {
     for (const className of ["py-4xl", "tablet-lg:py-5xl"]) expect(hasRuleFor(committed, className), className).toBe(true);

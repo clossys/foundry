@@ -4,8 +4,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { Meter } from "./Meter.js";
 
 function part(markup: string, name: string): string {
-  const match = markup.match(new RegExp(`<span data-part="${name}"[^>]*>`));
-  return match?.[0] ?? "";
+  return [...markup.matchAll(/<span\b[^>]*>/g)].find(match => match[0].includes(` data-part="${name}"`))?.[0] ?? "";
 }
 
 describe("Meter", () => {

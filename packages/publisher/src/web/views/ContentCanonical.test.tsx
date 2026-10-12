@@ -159,8 +159,8 @@ describe("canonical resolved boundary", () => {
   it.each(["size", "layout", "arrangement", "order", "reveal", "treatment", "scale", "columns"])("refuses missing resolved %s before default repair", key => {
     const doc: any = structuredClone(resolve(band({ block: columns(2) })));
     const target = key === "size" || key === "layout" ? doc.sections[0] : doc.sections[0].block;
-    delete target[key]; expect(() => assertRenderableSectionedViewDocument(doc)).toThrow(new RegExp(key));
-    target[key] = undefined; expect(() => assertRenderableSectionedViewDocument(doc)).toThrow(new RegExp(key));
+    delete target[key]; expect(() => assertRenderableSectionedViewDocument(doc)).toThrow(key);
+    target[key] = undefined; expect(() => assertRenderableSectionedViewDocument(doc)).toThrow(key);
   });
   it.each(["columns", "partial-links", "duplicate-links", "raw-copy", "recipe", "group", "badge", "provenance"])("refuses forged %s before invoking Designer", name => {
     const doc: any = structuredClone(resolve(band({ block: columns(2) }))); const block = doc.sections[0].block;
@@ -427,7 +427,7 @@ function landingHtml(doc: ResolvedSectionedViewDocument, server = false) {
 }
 function expectCssZero(value: string) { expect(["0", "0px"]).toContain(value); }
 function cssUtility(name: string) {
-  const css = readFileSync("../designer/styles/compiled.css", "utf8"); const found = css.match(new RegExp("\\." + name + "\\s*\\{[^{}]+\\}")); expect(found, name).not.toBeNull(); return found![0];
+  const css = readFileSync("../designer/styles/compiled.css", "utf8"); const found = [...css.matchAll(/\.[\w-]+\s*\{[^{}]+\}/g)].find(match => match[0].slice(0, match[0].indexOf("{")).trim() === `.${name}`); expect(found, name).not.toBeNull(); return found![0];
 }
 describe("canonical renderer review regressions", () => {
   it.each((["converge", "evidence", "approval"] as const).flatMap(name => (["heading", "meta"] as const).map(field => ({ name, field }))))("accepts long Items $field beside $name Scene through both entries", ({ name, field }) => {

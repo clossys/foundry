@@ -475,7 +475,7 @@ describe("LandingView reviewed action-pair and resolved copy contracts", () => {
     const css = readFileSync("styles/preview.css", "utf8");
     const foundation = document.createElement("style");
     foundation.textContent = ["flex", "flex-col", "items-center", "items-start", "w-full"].map(name => {
-      const rule = css.match(new RegExp("\\." + name + "\\s*\\{[^{}]+\\}"));
+      const rule = [...css.matchAll(/\.[\w-]+\s*\{[^{}]+\}/g)].find(match => match[0].slice(0, match[0].indexOf("{")).trim() === `.${name}`);
       expect(rule, `${name} structural utility exists`).not.toBeNull();
       return rule![0];
     }).join("\n");

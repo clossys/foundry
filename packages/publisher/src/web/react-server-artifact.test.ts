@@ -304,7 +304,7 @@ describe("packed Publisher web React-server boundary", () => {
     expect(ordinary).toMatch(/id="packed-statement"[^>]*class="[^"]*items-center/);
     for (const text of ["Packed before", "Packed after"]) {
       expect(nodes.filter(node => node.tag === "h3" && node.text === text)).toHaveLength(1);
-      expect(ordinary).toMatch(new RegExp("<h3[^>]*>" + text + "</h3>"));
+      expect([...ordinary.matchAll(/<h3\b[^>]*>([^<]*)<\/h3>/g)].map(match => match[1])).toContain(text);
     }
     expect(nodes.filter(node => node.item && node.variant === "plate")).toHaveLength(3);
     expect(ordinary.match(/data-treatment="plate"/g)).toHaveLength(4);
