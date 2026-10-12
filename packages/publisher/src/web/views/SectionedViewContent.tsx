@@ -1,4 +1,5 @@
 import { applyContentGrounds, planContentGrounds } from "../../core/content-ground.js";
+import { projectStatusListItems } from "../../core/status-list-catalog.js";
 import { assertClosedData, assertCanonicalContentSection } from "./SectionedViewCanonical.js";
 import { resolveActionEmphasis } from "../../core/page-flow.js";
 import { resolveRoleActionEmphasis } from "../../core/sectioned-view.js";
@@ -320,6 +321,7 @@ export function assertRenderableSectionedViewDocument(document: unknown): assert
       if (hasGroups === hasItems) throw new Error(`${path} must have exactly one of groups or items.`);
       if (hasItems) {
         assertStatusItems(record.items, `${path}.items`);
+        statusListSection(record as unknown as Extract<ResolvedSectionedViewSection, { kind: "status-list" }>, path);
         continue;
       }
       dense(record.groups, `${path}.groups`);
@@ -330,6 +332,7 @@ export function assertRenderableSectionedViewDocument(document: unknown): assert
         if (!nonBlank(group.heading)) throw new Error(`${path}.groups.${groupIndex}.heading must be resolved non-blank copy.`);
         assertStatusItems(group.items, `${path}.groups.${groupIndex}.items`);
       }
+      statusListSection(record as unknown as Extract<ResolvedSectionedViewSection, { kind: "status-list" }>, path);
       continue;
     }
     const sectionKeys = record.kind === "faq" ? ["id", "kind", "ground", "eyebrow", "heading", "description", "layout", "items"] : ["id", "kind", "ground", "eyebrow", "heading", "description", "items"];
@@ -525,6 +528,23 @@ function splitFaqSection(section: Extract<ResolvedSectionedViewSection, { kind: 
   };
 }
 
+/** Keep original status data and resolutions intact; only render its validated catalog projection. */
+function statusListSection(section: Extract<ResolvedSectionedViewSection, { kind: "status-list" }>, path = "status-list"): ResolvedSectionedViewContentSection {
+  const projected: ResolvedSectionedViewContentSection = {
+    id: section.id,
+    kind: "content-section",
+    ground: section.ground,
+    ...(section.eyebrow === undefined ? {} : { eyebrow: section.eyebrow }),
+    heading: section.heading,
+    ...(section.description === undefined ? {} : { description: section.description }),
+    size: "standard",
+    layout: "stacked",
+    block: projectStatusListItems(section),
+  };
+  assertCanonicalContentSection(projected as unknown as Record<string, unknown>, path);
+  return projected;
+}
+
 function renderSection(section: ResolvedSectionedViewSection, index: number, blocks: SectionedViewBlockSet, options: SectionedViewRenderOptions): ReactNode {
   const mediaPath = `sections.${index}.media`;
   switch (section.kind) {
@@ -551,7 +571,7 @@ function renderSection(section: ResolvedSectionedViewSection, index: number, blo
       if (section.layout === "split") return <blocks.ContentSection key={section.id} section={splitFaqSection(section)} publishedFaq={section} className={SECTION_GROUND_CLASSES[section.ground].surface || undefined} />;
       return <blocks.Faq key={section.id} id={section.id} eyebrow={section.eyebrow} heading={section.heading} description={section.description} items={section.items} headingLevel={2} ground={section.ground} />;
     case "ordered-step-sequence": return <blocks.OrderedStepSequence key={section.id} id={section.id} eyebrow={section.eyebrow} heading={section.heading} description={section.description} items={section.items} headingLevel={2} ground={section.ground} />;
-    case "status-list": return <blocks.StatusList key={section.id} id={section.id} eyebrow={section.eyebrow} heading={section.heading} description={section.description} labels={section.labels} groups={section.groups} items={section.items} legendLabel={section.heading} headingLevel={2} ground={section.ground} />;
+    case "status-list": return <blocks.ContentSection key={section.id} section={statusListSection(section)} className={SECTION_GROUND_CLASSES[section.ground].surface || undefined} />;
     case "stat-grid": return renderStatGrid(section, blocks);
     case "content-section":
       return <blocks.ContentSection key={section.id} section={section} actions={renderContentActions(section)} className={SECTION_GROUND_CLASSES[section.ground].surface || undefined} />;

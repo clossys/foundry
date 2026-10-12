@@ -8,6 +8,10 @@ export const CATALOG_COPY_REGISTRY = {
         "reference": "generic-preview-fixtures"
     },
     "entries": [
+        { "id": "catalog.sample.readiness.available", "text": "Available", "context": "Generic catalog readiness label", "status": "approved" },
+        { "id": "catalog.sample.readiness.partial", "text": "Partial", "context": "Generic catalog readiness label", "status": "approved" },
+        { "id": "catalog.sample.readiness.planned", "text": "Planned", "context": "Generic catalog readiness label", "status": "approved" },
+        { "id": "catalog.sample.readiness.not-offered", "text": "Not offered", "context": "Generic catalog readiness label", "status": "approved" },
         {
             "id": "catalog.sample.approval.decision",
             "text": "Sample decision",
