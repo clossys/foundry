@@ -284,6 +284,8 @@
     "src",
     "!src/**/*.test.ts",
     "!src/**/*.test.tsx",
+    "!src/**/*.test.json",
+    "!src/**/__fixtures__/**",
     "styles",
     "templates",
     "README.md",
