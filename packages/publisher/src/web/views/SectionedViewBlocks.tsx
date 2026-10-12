@@ -2,6 +2,7 @@ import {
   Faq,
   FeatureGrid,
   Hero,
+  Items,
   OrderedStepSequence,
   PricingTable as DesignerPricingTable,
   SECTION_GROUND_CLASSES,
@@ -51,5 +52,5 @@ export const sectionedViewBlocks: SectionedViewBlockSet = {
   Stat,
   PricingTable,
   Testimonial,
-  ContentSection: createContentSectionBlock(Faq),
+  ContentSection: createContentSectionBlock(Faq, Items),
 };

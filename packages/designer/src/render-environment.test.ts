@@ -120,18 +120,45 @@ describe("server-safe entry points resolve under react-server (test 1)", () => {
 
 describe("pure Item and Items compiled graphs", () => {
   it.each(["Item", "Items"])("imports and calls %s under react-server", (name) => {
-    const absolute = join(distDir, "blocks", "items", `${name}.js`);
+    const absolute = join(distDir, "blocks", "items", `${name === "Items" ? "Items.server" : name}.js`);
     const props = name === "Item"
       ? { id: "one", heading: "Title", treatment: "plate", size: "standard", ground: "base", badge: { label: "Beta", tone: "info" }, meta: "Actor", visual: "Visual" }
       : { arrangement: "rows", items: [{ id: "one", heading: "One", badge: { label: "Beta" }, meta: "Actor" }, { id: "two", heading: "Two" }, { id: "three", heading: "Three" }, { id: "four", heading: "Four" }], groups: [{ id: "a", label: "Group A", items: ["one", "two"] }, { id: "b", label: "Group B", items: ["three", "four"] }] };
     const script = `import(${JSON.stringify(absolute)}).then(m => { const tree = m[${JSON.stringify(name)}](${JSON.stringify(props)}); if (!tree || typeof tree !== "object" || !tree.props) throw new Error("missing rendered tree"); process.stdout.write("OK"); }).catch(e => { console.error(e); process.exit(1); });`;
     expect(execFileSync(process.execPath, ["--conditions=react-server", "-e", script], { encoding: "utf8", timeout: 10_000 })).toBe("OK");
   });
+  it("keeps ordinary React Aria Items out of the native server graph", () => {
+    const result = probeUnderReactServer("blocks/items/Items.js");
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.message).toMatch(/react|useContext|useState|createContext/i);
+  });
+  it("calls native disclosure and the FeatureGrid catalog path under react-server", () => {
+    const absolute = join(distDir, "blocks", "server.js");
+    const script = `import(${JSON.stringify(absolute)}).then(m => { const items = [0,1,2,3].map(i => ({ id: String(i), heading: "Title " + i, description: "Answer " + i })); function nativeNodes(node) { if(Array.isArray(node)) return node.flatMap(nativeNodes); if(!node || typeof node !== "object" || !node.props) return []; if(typeof node.type === "function") return nativeNodes(node.type(node.props)); return [node,...nativeNodes(node.props.children)]; } const rows=nativeNodes(m.Items({arrangement:"rows",reveal:"disclose",items})); if(rows.filter(n=>n.type==="details").length!==4 || rows.filter(n=>n.type==="summary").length!==4) throw new Error("native disclosure anatomy"); const features=nativeNodes(m.FeatureGrid({heading:"Features",columns:3,items:items.slice(0,3)})); if(!features.some(n=>n.props["data-items"]!==undefined) || features.filter(n=>n.props["data-item"]!==undefined).length!==3) throw new Error("static catalog path missing"); process.stdout.write("OK"); }).catch(e => { console.error(e); process.exit(1); });`;
+    expect(execFileSync(process.execPath, ["--conditions=react-server", "-e", script], { encoding: "utf8", timeout: 10_000 })).toBe("OK");
+  });
 });
 
 describe("compiled grouped Items SSR", () => {
+  it.each(["Items", "Items.server"])("retains disclosure answers and local references across duplicate compiled %s instances", name => {
+    const absolute = join(distDir, "blocks", "items", `${name}.js`);
+    const script = `import {createElement as h} from "react"; import {renderToStaticMarkup} from "react-dom/server"; import {Items} from ${JSON.stringify(absolute)}; const props={arrangement:"rows",reveal:"disclose",order:"numbered",items:[0,1,2,3].map(i=>({id:String(i),heading:"Question "+i,description:"Answer "+i})),groups:[{id:"a",label:"A",items:["2","0"]},{id:"b",label:"B",items:["3","1"]}]}; process.stdout.write(renderToStaticMarkup(h("div",null,h(Items,props),h(Items,props))));`;
+    const html = execFileSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8", timeout: 10_000, cwd: packageRoot });
+    const host = document.createElement("div"); host.innerHTML = html;
+    const ids = [...host.querySelectorAll("[id]")].map(node => node.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(host.querySelectorAll("[data-item-description]")).toHaveLength(8);
+    for (const trigger of host.querySelectorAll("[aria-controls]")) {
+      const target = host.querySelector(`[id="${trigger.getAttribute("aria-controls")}"]`);
+      expect(target).not.toBeNull(); expect(trigger.closest("li")?.contains(target)).toBe(true);
+      expect(target).toHaveAttribute("aria-labelledby", trigger.id);
+    }
+    expect([...host.querySelectorAll("[data-item-ordinal]")].map(node => node.textContent)).toEqual(["1", "2", "3", "4", "1", "2", "3", "4"]);
+    if (name === "Items.server") expect(host.querySelectorAll("details:not([open]) > summary:first-child")).toHaveLength(8);
+    else expect(host.querySelectorAll("button[aria-expanded=false]")).toHaveLength(8);
+  });
   it("gives duplicate instances unique heading IDs and resolves every reference", () => {
-    const absolute = join(distDir, "blocks", "items", "Items.js");
+    const absolute = join(distDir, "blocks", "items", "Items.server.js");
     const server = join(distDir, "blocks", "server.js");
     const script = `import { createElement as h } from "react"; import { renderToStaticMarkup } from "react-dom/server"; import { Items } from ${JSON.stringify(absolute)}; import * as barrel from ${JSON.stringify(server)}; const props = { arrangement: "rows", items: [0,1,2,3].map(i => ({ id: String(i), heading: "Title " + i, badge: { label: "Beta", tone: "info" }, meta: "Actor" })), groups: [{ id: "a", label: "A", items: ["1","0"] }, { id: "b", label: "B", items: ["3","2"] }] }; if(barrel.Items !== Items) throw new Error("server barrel identity"); process.stdout.write(renderToStaticMarkup(h("div", null, h(Items, props), h(Items, props))));`;
     const html = execFileSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8", timeout: 10_000, cwd: packageRoot });

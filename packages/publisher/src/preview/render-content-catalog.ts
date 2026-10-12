@@ -2,17 +2,17 @@ import { buttonLinkClassName } from "@clossys/designer/atoms/server";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { resolveSectionedViewDocument } from "../core/sectioned-view.js";
-import { LandingView } from "../web/views/LandingView.js";
+import { LandingView } from "../web/views/LandingView.server.js";
 import { PREVIEW_UTILITIES_BASENAME } from "./preview-stylesheet.js";
 import { CONTENT_CATALOG_CALL_TO_ACTION, CONTENT_CATALOG_CAPTIONS, contentCatalogCopyResolver, contentCatalogDocument, type ContentCatalogCaption } from "./fixture-content-catalog.js";
 
 /**
  * The content catalog (`content-catalog.html`): one long page that renders
  * every content-section block, specimen arrangement and ground through the
- * real Publisher path (`resolveSectionedViewDocument`, then `LandingView`),
+ * real Publisher path (`resolveSectionedViewDocument`, then native `LandingView`),
  * so a designer or writer can judge the blocks with a consumer brand applied.
  *
- * The page itself is LandingView's own markup, byte for byte. The catalog
+ * The page itself is the native server LandingView's markup, byte for byte. The catalog
  * only adds preview chrome around it: a header with a table of contents, and
  * one small caption between bands naming what the next band shows and
  * whether its copy is written at a typical length or at the cookbook's
@@ -50,7 +50,7 @@ export interface ContentCatalogRender {
   bands: ContentCatalogBand[];
 }
 
-/** Renders the catalog document through `LandingView` to static markup. */
+/** Renders the catalog through native `LandingView` for use without hydration. */
 export function renderContentCatalogMarkup(): string {
   const cta = CONTENT_CATALOG_CALL_TO_ACTION;
   return renderToStaticMarkup(
@@ -204,7 +204,7 @@ ${links}
 <header class="catalog-chrome-header" data-catalog-chrome="header">
   <div>
     <h1>Content catalog</h1>
-    <p>Every content-section block, specimen arrangement and ground, rendered by Publisher's LandingView with ${stylesheets.brand === null ? "Designer's default tokens" : "the linked brand stylesheet"}. Sample copy for an invented company; every name and figure is made up. Grey captions are preview chrome, not part of the page; each names the Designer block and its variant, and a document's <code>block.type</code> is that name in kebab case (FeatureGrid is <code>feature-grid</code>). Bands marked max budget use the longest copy the content cookbook (Designer CONTENT.md) allows. The page shows every block, so it breaks the page-variety rules on purpose.</p>
+    <p>Every content-section block, specimen arrangement and ground, rendered by Publisher's LandingView with ${stylesheets.brand === null ? "Designer's default tokens" : "the linked brand stylesheet"}. Sample copy for an invented company; every name and figure is made up. Grey captions are preview chrome, not part of the page; each names the collection or media shape and its variant. Collection blocks use <code>items</code> or <code>matrix</code>; recipes select presentation defaults. Bands marked max budget use the longest copy the content cookbook (Designer CONTENT.md) allows. The page shows every block, so it breaks the page-variety rules on purpose.</p>
     ${contentsHtml(captions)}
   </div>
 </header>

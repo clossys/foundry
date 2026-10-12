@@ -71,13 +71,44 @@ function runProbe(reactServer: boolean) {
             kind: "content-section",
             ground: "base",
             heading: "Content band",
-            layout: "split",
-            block: { type: "topic-list", columns: 1, items: [{ id: "a", heading: "Server topic" }, { id: "b", heading: "Second topic" }] },
-            media: { type: "specimen", label: "A placeholder record shown as native markup", panels: [{ id: "record", title: "Server record", parts: [{ id: "fields", type: "fields", items: [{ id: "a", label: "Server field", value: "Server value" }] }] }] },
+            size: "standard",
+            layout: "split-end",
+            block: { type: "items", arrangement: "rows", columns: 1, order: "none", reveal: "all", treatment: "rule", emphasis: "item", items: [{ id: "a", heading: "Server topic" }, { id: "b", heading: "Second topic" }] },
+            media: { type: "specimen", label: "A placeholder record shown as native markup", panel: { id: "record", title: "Server record", parts: [{ id: "fields", type: "fields", items: [{ id: "a", label: "Server field", value: "Server value" }] }] } },
           },
         ],
       },
     });
+
+    const { createCopyResolver } = await import("@clossys/writer");
+    const { resolveSectionedViewDocument } = await import("@clossys/publisher/core");
+    const copy = { heading:"Packed landing page", question:"Packed question?", answer:"Packed answer.", legacy:"Published questions" };
+    const ref = key => ({id:"landing."+key});
+    const resolver = createCopyResolver({id:"landing",locale:"en",revision:"1",source:{kind:"consumer",reference:"packed-proof"},entries:Object.entries(copy).map(([key,text])=>({id:ref(key).id,text,context:"Packed proof",status:"approved"}))});
+    const landingDocument = resolveSectionedViewDocument({id:"landing",sections:[{id:"landing-hero",kind:"hero",ground:"inverse",heading:ref("heading")},{id:"landing-content",kind:"content-section",ground:"base",heading:ref("heading"),block:{type:"items",recipe:"faq",items:["one","two","three","four"].map(id=>({id,heading:ref("question"),description:ref("answer")}))}},{id:"landing-legacy",kind:"faq",ground:"sunken",layout:"split",heading:ref("legacy"),items:["one","two","three","four"].map(id=>({id,question:ref("question"),answer:ref("answer")}))}]},resolver);
+    const landing = web.LandingView({document:landingDocument,header:"reserved",peek:false});
+    const landingCase = (kind, layout) => {
+      const sections = landingDocument.sections
+        .filter(section => section.kind === "hero" || section.kind === kind)
+        .map(section => section.kind === "faq" ? { ...section, layout } : section);
+      const ids = new Set(sections.map(section => section.id));
+      return web.LandingView({
+        document: {
+          ...landingDocument,
+          sections,
+          ...(landingDocument.viewGrounds === undefined ? {} : {
+            viewGrounds: landingDocument.viewGrounds.filter(id => ids.has(id)),
+          }),
+        },
+        header: "reserved",
+        peek: false,
+      });
+    };
+    const landingCases = {
+      canonical: landingCase("content-section"),
+      publishedSplit: landingCase("faq", "split"),
+      publishedStacked: landingCase("faq", "stacked"),
+    };
 
     const result = { keys: Object.keys(web).sort(), summaryClasses: [] };
     if (${reactServer ? "true" : "false"}) {
@@ -98,9 +129,36 @@ function runProbe(reactServer: boolean) {
       visit(sectioned);
       result.tags = tags;
       result.text = text;
+      const capture = node => {
+        const tagCount = tags.length;
+        const textCount = text.length;
+        const summaryCount = result.summaryClasses.length;
+        visit(node);
+        const value = {
+          tags: tags.slice(tagCount),
+          text: text.slice(textCount),
+          summaryClasses: result.summaryClasses.slice(summaryCount),
+        };
+        tags.length = tagCount;
+        text.length = textCount;
+        result.summaryClasses.length = summaryCount;
+        return value;
+      };
+      const combinedLanding = capture(landing);
+      result.landingTags = combinedLanding.tags;
+      result.landingText = combinedLanding.text;
+      result.landingCases = Object.fromEntries(
+        Object.entries(landingCases).map(([name, node]) => [name, capture(node)]),
+      );
     } else {
       const { renderToStaticMarkup } = await import("react-dom/server");
       result.html = renderToStaticMarkup([element, sectioned]);
+      result.landingHtml=renderToStaticMarkup(landing);
+      result.landingCases = Object.fromEntries(
+        Object.entries(landingCases).map(([name, node]) => [name, {
+          html: renderToStaticMarkup(node),
+        }]),
+      );
     }
     process.stdout.write(JSON.stringify(result));
   `;
@@ -113,6 +171,13 @@ function runProbe(reactServer: boolean) {
     text?: string[];
     html?: string;
     summaryClasses: string[];
+    landingHtml?: string; landingTags?: string[]; landingText?: string[];
+    landingCases?: Record<"canonical" | "publishedSplit" | "publishedStacked", {
+      html?: string;
+      tags?: string[];
+      text?: string[];
+      summaryClasses?: string[];
+    }>;
   };
 }
 
@@ -180,9 +245,53 @@ describe("packed Publisher web React-server boundary", () => {
   it("renders a packed content-section band (text block and specimen) through server-safe blocks on both targets", () => {
     expect(server.tags).toEqual(expect.arrayContaining(["figure", "ul"]));
     expect(server.text).toEqual(expect.arrayContaining(["Content band", "Server topic", "Server record", "Server field", "Server value"]));
-    expect(normal.html).toContain('data-layout="split"');
+    expect(normal.html).toContain('data-layout="split-end"');
     expect(normal.html).toMatch(/<figure[^>]*data-specimen/);
   });
+
+  it("keeps packed Landing disclosure entry-specific while preserving its native published FAQ bridge", () => {
+    expect(normal.landingHtml?.match(/<button /g)).toHaveLength(4);expect(normal.landingHtml?.match(/<summary /g)).toHaveLength(4);expect(normal.landingHtml).toContain("data-rac");
+    expect(server.landingTags?.filter(tag=>tag==="summary")).toHaveLength(8);expect(server.landingTags).not.toContain("button");
+    expect(server.landingText).toEqual(expect.arrayContaining(["Packed landing page","Packed question?","Packed answer.","Published questions"]));
+  });
+
+  it("renders canonical packed Landing disclosures through each entry", () => {
+    const ordinary = normal.landingCases!.canonical;
+    const native = server.landingCases!.canonical;
+    expect(ordinary.html?.match(/<button /g)).toHaveLength(4);
+    expect(ordinary.html).toContain("data-rac");
+    expect(ordinary.html).not.toContain("<summary");
+    expect(ordinary.html).not.toContain("<details");
+    expect(native.tags?.filter(tag => tag === "summary")).toHaveLength(4);
+    expect(native.tags?.filter(tag => tag === "details")).toHaveLength(4);
+    expect(native.tags).not.toContain("button");
+    expect(native.text).toEqual(expect.arrayContaining([
+      "Packed landing page", "Packed question?", "Packed answer.",
+    ]));
+    expect(ordinary.html).toContain("Packed question?");
+    expect(ordinary.html).toContain("Packed answer.");
+  });
+
+  it.each(["publishedSplit", "publishedStacked"] as const)(
+    "retains native packed Landing FAQ rows for %s on both entries",
+    name => {
+      const ordinary = normal.landingCases![name];
+      const native = server.landingCases![name];
+      expect(ordinary.html?.match(/<summary /g)).toHaveLength(4);
+      expect(ordinary.html?.match(/<details /g)).toHaveLength(4);
+      expect(ordinary.html).not.toContain("<button");
+      expect(ordinary.html).not.toContain("data-rac");
+      expect(ordinary.html).toContain("Published questions");
+      expect(ordinary.html).toContain("Packed question?");
+      expect(ordinary.html).toContain("Packed answer.");
+      expect(native.tags?.filter(tag => tag === "summary")).toHaveLength(4);
+      expect(native.tags?.filter(tag => tag === "details")).toHaveLength(4);
+      expect(native.tags).not.toContain("button");
+      expect(native.text).toEqual(expect.arrayContaining([
+        "Published questions", "Packed question?", "Packed answer.",
+      ]));
+    },
+  );
 
   it("rejects a packed Designer 0.2.5 graph that the former lower bound accepted before SectionedView's missing blocks fail at import", () => {
     const adversarialRoot = join(fixtureRoot, "designer-0.2.5");

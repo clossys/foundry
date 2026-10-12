@@ -3399,8 +3399,9 @@ Rows may have 2–4 labelled groups, with 2–4 item IDs in each. Groups referen
 every item exactly once, and render members in each group's authored ID
 order. Group labels are caption paragraphs naming `role="group"` containers
 through unique label IDs; item headings retain the selected h3/h4 level.
-Every arrangement uses a `ul` with `role="list"` and one `li` per item; grouped
-rows use a separate list in each group. List items own responsive grid spans.
+Unordered arrangements use a `ul` with `role="list"` and one `li` per item;
+ordered arrangements use an `ol`. Grouped rows use a separate list in each
+group. List items own responsive grid spans.
 
 Link all items or none, up to six distinct normalized destinations. A linked
 item has one title-named anchor; description, badge, meta and visual remain
@@ -3415,6 +3416,36 @@ The existing CardGrid, TopicList, LinkGrid and NavGrid wrappers preserve their
 private compatibility frames, counts and presence rules. NavGrid retains
 ownership of its Button controls. Public Item and Items do not expose those
 private policies.
+
+`Items` keeps source reading order and accepts `order="none"` (the default),
+`"numbered"`, or `"connected"`. Numbered items use ordered-list semantics;
+numbering continues across labelled groups in their rendered membership order.
+Connected items take three to five steps in columns or a stack. Four steps are
+accepted with a warning. Connected columns keep the authored two- or
+three-column layout, including an incomplete final row.
+
+Connected items can take `end="ends"` (the default) or `"continues"`, optional
+`endLabel`, and a caption when at least one item has a visual. The terminal comes
+after the final step. A continuation without an authored label is decorative;
+empty labels are omitted. End fields, captions, and lanes belong to connected
+order.
+
+For two actors, supply exactly two lane definitions as a readonly array of
+`{ id, label }` entries and give every item its lane ID. Lanes require a connected
+stack of three or five steps. The first step uses the first defined lane, both
+lanes appear, and each reference must match a definition. Lane definitions do
+not change step reading order.
+
+`reveal="all"` is the default. `reveal="disclose"` takes four to six rows with
+descriptions and supports numbered order and labelled groups. Disclosed items
+cannot take item `href`s, visuals, or connected order. Heading, icon, eyebrow, meta,
+and badge-label content must be phrasing content without authored controls;
+answers can contain links and other controls. Supplied native elements are
+checked recursively, while opaque component output is not executed by the
+guard. The ordinary entry uses independent disclosures; the server entry uses
+independent native details. Both start closed and retain their answer content.
+
+Items accepts the standard optional `aria-labelledby` string to name its actual list from an authored heading outside the collection. Grouped collections forward the reference to each list and retain their separate group labels. `ItemsLane` is exported with the Items types.
 
 ### `FeatureGrid`
 
@@ -5797,17 +5828,18 @@ not a grab-bag).
 | `FeatureGridTreatment` | type | `"plain" \| "rule" \| "plate"`. |
 | `FeatureGridEmphasis` | type | `"item" \| "statement"`. |
 | `Item` | component | Standalone item with required treatment, size and ground; one title link and independent copy, badge, meta and visual slots. |
-| `Items` | component | Canonical bounded columns, rows, bento or stacked collection, with labelled groups and at most one featured plate. |
-| `ItemData` | type | Stable id and heading; optional description, eyebrow, icon, meta, visual, href, featured, span and badge. |
+| `Items` | component | Canonical bounded collection with labelled groups, numbered or connected order, two actor lanes, and independent disclosed rows. |
+| `ItemData` | type | Stable id and heading; optional description, eyebrow, icon, meta, visual, href, featured, span, badge and connected lane ID. |
 | `ItemProps` | type | ItemData plus required treatment, size and ground, and optional headingLevel (`3 \| 4`; omission keeps a paragraph). |
 | `ItemBadge` | type | ReactNode label and optional existing Badge tone. |
 | `ItemSize` | type | `"standard" \| "display"`. |
 | `ItemTreatment` | type | `"plain" \| "rule" \| "plate"`. |
 | `ItemSpan` | type | `"third" \| "half" \| "two-thirds" \| "full"`. |
-| `ItemsProps` | type | Items, arrangement, columns, treatment, emphasis, size, groups, headingLevel, ground and className. |
+| `ItemsProps` | type | Items, arrangement, columns, treatment, emphasis, size, groups, headingLevel, ground, order, reveal, lanes, end, endLabel, caption, aria-labelledby and className. |
 | `ItemsArrangement` | type | `"columns" \| "rows" \| "bento" \| "stacked"`. |
 | `ItemsColumns` | type | `1 \| 2 \| 3`; arrangement determines validity. |
 | `ItemsEmphasis` | type | `"item" \| "statement"`. |
+| `ItemsLane` | type | Stable actor ID and authored ReactNode label; connected lanes require exactly two. |
 | `ItemsGroup` | type | Stable id, ReactNode label and an ordered list of canonical item IDs. |
 | `CardGrid` | component | Mixed grid of content cards on plates; spans fill whole 12-unit rows (validated); optional bottom-pinned visual per card. |
 | `CardGridProps` | type | Props for `CardGrid`: `items`, `headingLevel`, `ground`, `treatment`, `className`, `style`, plus every native `<div>` attribute except `title`. |

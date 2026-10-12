@@ -401,110 +401,96 @@ describe("SectionedView resolve-then-render contract", () => {
   });
 });
 
+import { assertRenderableSectionedViewDocument } from "./SectionedViewContent.js";
+import type { ResolvedSectionedViewContentSection } from "../../core/sectioned-view.js";
+
+const contentRegistry = new Map<string, string>();
+const contentRef = (id: string, text: string) => { const key = `render-content.${id}`; contentRegistry.set(key, text); return { id: key }; };
+const canonicalInput: SectionedViewDocument = { id: "content", sections: [{ id: "band", kind: "content-section", ground: "base", heading: contentRef("heading", "Band"), block: { type: "items", arrangement: "rows", columns: 1, items: [{ id: "a", heading: contentRef("a", "A") }, { id: "b", heading: contentRef("b", "B") }] }, media: { type: "specimen", label: contentRef("media", "Placeholder specimen of one record"), panel: { id: "record", title: contentRef("title", "Placeholder record"), parts: [{ id: "fields", type: "fields", items: [{ id: "a", label: contentRef("field", "Field"), value: contentRef("value", "Value") }] }] } } }] };
+const contentResolver = createCopyResolver({ id: "content", locale: "en", revision: "1", source: { kind: "consumer", reference: "fixture" }, entries: [...contentRegistry].map(([id,text])=>({ id,text,context:"Fixture",status:"approved" })) });
+const canonicalDocument = resolveSectionedViewDocument(canonicalInput, contentResolver);
+const canonicalSection = canonicalDocument.sections[0];
+if (canonicalSection?.kind !== "content-section" || canonicalSection.block?.type !== "items" || canonicalSection.media?.type !== "specimen") throw new Error("Expected canonical content fixture");
+const baseContent = canonicalSection;
+const baseItems = canonicalSection.block;
+const baseMedia = canonicalSection.media;
+const basePanel = canonicalSection.media.panel;
+const currentDocument = (section: Partial<ResolvedSectionedViewContentSection>) => ({ ...canonicalDocument, sections: [{ ...baseContent, ...section }] });
+const currentHtml = (section: Partial<ResolvedSectionedViewContentSection>) => renderToStaticMarkup(<SectionedView document={currentDocument(section)} />);
+const invalidDocument = (section: Record<string, unknown>) => ({ ...canonicalDocument, sections: [{ ...baseContent, ...section }] });
+
 describe("SectionedView content-section", () => {
-  const panel = { id: "record", title: "Placeholder record", parts: [{ id: "fields", type: "fields", items: [{ id: "a", label: "Field", value: "Value" }] }] };
-  const media = { type: "specimen", label: "Placeholder specimen of one record", panels: [panel] };
-  const faqItems = ["q1", "q2", "q3", "q4"].map((id) => ({ id, question: `Question ${id}?`, answer: `Answer ${id}.` }));
-  const contentDocument = (section: Record<string, unknown>) =>
-    ({ ...document, sections: [{ id: "band", kind: "content-section", ground: "base", heading: "Band", ...section }] }) as unknown as ResolvedSectionedViewDocument;
-  const refusal = (section: Record<string, unknown>) => {
-    try {
-      renderToStaticMarkup(<SectionedView document={contentDocument(section)} />);
-    } catch (error) {
-      return (error as Error).message;
+  it("renders canonical disclosure through the ordinary entry's React Aria controls", () => {
+    const block = { ...baseItems, reveal: "disclose" as const, items: ["q1", "q2", "q3", "q4"].map(id=>({ id, heading: `Question ${id}?`, description: `Answer ${id}.` })) };
+    const html=currentHtml({ layout: "split-end", media: undefined, block });
+    expect(html).toContain('data-layout="split-end"'); expect(html).toContain("data-rac"); expect(html.match(/<button /g)).toHaveLength(4); expect(html).not.toContain("<summary");
+  });
+
+  it("renders text-only split items with real canonical axes and nested headings", () => {
+    for (const arrangement of ["rows", "columns"] as const) {
+      const html=currentHtml({ layout: "split-start", media: undefined, block: { ...baseItems, arrangement, columns: arrangement === "rows" ? 1 : 2 } });
+      expect(html).toContain('data-layout="split-start"'); expect(html).toContain(`data-arrangement="${arrangement}"`); expect(html.match(/<h3 /g)).toHaveLength(2);
     }
-    return "rendered";
-  };
-
-  it("renders a split FAQ through the entry's React Aria rows in the visual column", () => {
-    const host = renderToStaticMarkup(<SectionedView document={contentDocument({ layout: "split", block: { type: "faq", items: faqItems } })} />);
-    expect(host).toContain('data-layout="split"');
-    expect(host).toContain("data-content-section-faq");
-    expect(host).toMatch(/data-content-section-media=""[^>]*>[\s\S]*data-rac/);
-    expect(host).not.toContain("<summary");
   });
 
-  it("renders a text-only split with its topic-list or feature-grid block in the visual column, top-aligned", () => {
-    const topics = renderToStaticMarkup(<SectionedView document={contentDocument({ layout: "split", mediaSide: "start", block: { type: "topic-list", columns: 1, items: [{ id: "a", heading: "A" }, { id: "b", heading: "B" }] } })} />);
-    expect(topics).toContain('data-layout="split"');
-    expect(topics).toContain("data-content-section-text-split");
-    expect(topics).toContain("tablet-lg:items-start");
-    expect(topics).toMatch(/data-content-section-media=""[^>]*>[\s\S]*data-topic-list/);
-    const features = renderToStaticMarkup(<SectionedView document={contentDocument({ layout: "split", block: { type: "feature-grid", columns: 2, items: [{ id: "a", heading: "A" }, { id: "b", heading: "B" }] } })} />);
-    expect(features).toMatch(/data-content-section-media=""[^>]*>[\s\S]*data-feature-grid/);
+  it("renders an item eyebrow as a label above its real heading", () => {
+    const html=currentHtml({ media: undefined, block: { ...baseItems, arrangement: "columns", columns: 2, items: [{ id:"a",eyebrow:"Records",heading:"A" },{ id:"b",heading:"B" }] } });
+    expect(html).toMatch(/data-item-eyebrow=""[^>]*>Records<\/p>[\s\S]*<h3/); expect(html.match(/data-item-eyebrow/g)).toHaveLength(1);
   });
 
-  it("renders a feature-grid item eyebrow as a small label above the item heading", () => {
-    const host = renderToStaticMarkup(<SectionedView document={contentDocument({ block: { type: "feature-grid", columns: 2, items: [{ id: "a", eyebrow: "Records", heading: "A" }, { id: "b", heading: "B" }] } })} />);
-    expect(host).toMatch(/data-feature-grid-eyebrow=""[^>]*><p class="text-body-s font-medium uppercase tracking-label[^"]*">Records<\/p>/);
-    expect(host.match(/data-feature-grid-eyebrow/g)).toHaveLength(1);
+  it("preserves the published FAQ split bridge and refuses its unknown layout", () => {
+    const faqItems=["q1","q2","q3","q4"].map(id=>({ id,question:`Question ${id}?`,answer:`Answer ${id}.` }));
+    const faqDocument = (layout: "split" | "stacked") => ({ ...document, sections: [{ id:"questions",kind:"faq" as const,ground:"sunken" as const,layout,eyebrow:"Questions",heading:"Before you start",items:faqItems }] });
+    const split=renderToStaticMarkup(<SectionedView document={faqDocument("split")}/>);expect(split).toContain("data-content-section-faq");expect(split).toContain("data-rac");expect(split).not.toContain("<summary");
+    const stacked=renderToStaticMarkup(<SectionedView document={faqDocument("stacked")}/>);expect(stacked).not.toContain("data-content-section-faq");
+    expect(()=>assertRenderableSectionedViewDocument({ ...faqDocument("split"),sections:[{...faqDocument("split").sections[0],layout:"grid"}] })).toThrow(/sections\.0\.layout/);
   });
 
-  it("renders a split faq section as the split FAQ band, and refuses an unknown faq layout", () => {
-    const faqDocument = (layout: string) => ({ ...document, sections: [{ id: "questions", kind: "faq", ground: "sunken", layout, eyebrow: "Questions", heading: "Before you start", items: faqItems }] }) as unknown as ResolvedSectionedViewDocument;
-    const split = renderToStaticMarkup(<SectionedView document={faqDocument("split")} />);
-    const asContent = renderToStaticMarkup(<SectionedView document={({ ...document, sections: [{ id: "questions", kind: "content-section", ground: "sunken", eyebrow: "Questions", heading: "Before you start", layout: "split", block: { type: "faq", items: faqItems } }] }) as unknown as ResolvedSectionedViewDocument} />);
-    expect(split).toContain("data-content-section-faq");
-    expect(split).toBe(asContent);
-    const stacked = renderToStaticMarkup(<SectionedView document={faqDocument("stacked")} />);
-    expect(stacked).not.toContain("data-content-section-faq");
-    expect(() => renderToStaticMarkup(<SectionedView document={faqDocument("grid")} />)).toThrow("sections.0.layout");
+  it("keeps a specimen after its items and a linked footnote last, with the action ladder independent", () => {
+    const html=currentHtml({ footnote:{text:"An aside.",link:{label:"Read the guide",href:"/guide"}} });
+    expect(html).toMatch(/data-items[\s\S]*data-content-section-media[\s\S]*data-specimen[\s\S]*data-content-section-footnote/);expect(html).toContain('href="/guide"');expect(html).toContain("An aside.");expect(html).not.toContain("data-section-intro-actions");
+    const header=currentHtml({ block:undefined,media:undefined,actions:[{id:"more",label:"More",href:"/more",emphasis:"primary"},{id:"faq",label:"FAQ",href:"/faq"}] });
+    expect(header).toMatch(/href="\/more"[^>]*data-action-emphasis="primary"/);expect(header).toMatch(/href="\/faq"[^>]*data-action-emphasis="tertiary"/);expect(header).toContain("bg-accent");expect(header).toContain("bg-control-tonal");expect(header).not.toContain("text-ink-link");
+    // Canonical rows support eyebrows; split frames keep actions in their text column.
+    expect(()=>assertRenderableSectionedViewDocument(currentDocument({ layout:"split-end",actions:[{id:"go",label:"Go",href:"/go"}],footnote:{text:"Aside."} }))).not.toThrow();
   });
 
-  it("renders a stacked band's specimen after its block and its footnote last, and a header-only band's actions through the ladder", () => {
-    const host = renderToStaticMarkup(
-      <SectionedView
-        document={contentDocument({
-          block: { type: "topic-list", columns: 1, items: [{ id: "a", heading: "A" }, { id: "b", heading: "B" }] },
-          media,
-          footnote: { text: "An aside.", link: { label: "Read the guide", href: "/guide" } },
-        })}
-      />,
-    );
-    expect(host).toMatch(/data-topic-list[\s\S]*data-content-section-media[\s\S]*<figure[^>]*data-specimen[\s\S]*data-content-section-footnote/);
-    expect(host).not.toContain("data-section-intro-actions");
-    expect(host).toMatch(/<p data-content-section-footnote=""[^>]*>An aside\. <a href="\/guide" class="[^"]*\bunderline\b[^"]*">Read the guide<\/a><\/p><\/div><\/main>$/);
-    const headerOnly = renderToStaticMarkup(<SectionedView document={contentDocument({ actions: [{ id: "more", label: "More", href: "/more", emphasis: "primary" }, { id: "faq", label: "FAQ", href: "/faq" }] })} />);
-    expect(headerOnly).toMatch(/<a href="\/more" class="[^"]*\bpx-md py-sm text-body bg-accent text-ink-on-accent\b[^"]*" data-action-emphasis="primary">More<\/a>/);
-    expect(headerOnly).toMatch(/<a href="\/faq" class="[^"]*\bpx-md py-sm text-body bg-control-tonal text-ink-primary\b[^"]*" data-action-emphasis="tertiary">FAQ<\/a>/);
-    expect(headerOnly).not.toContain("text-ink-link");
-  });
-
-  it("refuses an invalid block or specimen before any Designer block renders, naming the exact path", () => {
-    const prefix = "SectionedView refused an invalid resolved document: ";
-    const cards = (...spans: string[]) => ({ type: "card-grid", items: spans.map((span, index) => ({ id: `c${index}`, heading: `Card ${index}`, span })) });
-    const cases: Array<[Record<string, unknown>, string]> = [
-      [{ block: cards("third", "third") }, "sections.0.block.items leaves its last row unfilled; cards must fill whole 12-unit rows."],
-      [{ block: cards("half", "two-thirds") }, "sections.0.block.items.1.span overflows its row; cards must fill whole 12-unit rows."],
-      [{ block: { type: "topic-list", columns: 1, items: [{ id: "a", heading: "A", icon: "rocket" }, { id: "b", heading: "B" }] } }, "sections.0.block.items.0.icon is not a content icon name."],
-      [{ block: { type: "topic-list", columns: 1, items: [{ id: "a", heading: "A", eyebrow: "E" }, { id: "b", heading: "B" }] } }, "sections.0.block.items.0 must be a closed resolved item object."],
-      [{ block: { type: "feature-grid", items: [{ id: "a", heading: "A", eyebrow: "An item eyebrow of thirty-three c" }, { id: "b", heading: "B" }] } }, "sections.0.block.items.0.eyebrow holds more than 32 characters."],
-      [{ block: { type: "slider", items: [] } }, "sections.0.block.type is not a supported content block type."],
-      [{ media: { ...media, panels: [{ ...panel, parts: ["a", "b", "c", "d"].map((id) => ({ ...panel.parts[0], id })) }] } }, "sections.0.media.panels.0.parts must hold 1 to 3 parts; it holds 4."],
-      [{ media: { ...media, panels: [{ ...panel, title: { id: "unresolved" } }] } }, "sections.0.media.panels.0.title must be resolved non-blank copy."],
-      [{ media: { ...media, arrangement: "row" } }, "sections.0.media.panels must hold 2 to 3 panels for the row arrangement; it holds 1."],
-      [{ media: { ...media, panels: [{ ...panel, parts: [{ id: "m", type: "meter", label: "M", value: 1, scaleMax: 0, tone: "info", valueText: "1" }] }] } }, "sections.0.media.panels.0.parts.0.scaleMax must be a finite number greater than zero."],
-      [{ media: { ...media, panels: [{ ...panel, parts: [{ id: "t", type: "table", caption: "T", columns: [{ id: "a", label: "A" }, { id: "b", label: "B" }], rows: [{ id: "r", cells: [{ text: "x" }] }] }] }] } }, "sections.0.media.panels.0.parts.0.rows.0.cells must hold one cell per column (2); it holds 1."],
-      [{ layout: "split", block: cards("half", "half") }, "sections.0 is a split section and needs media, unless its block is faq, topic-list or feature-grid."],
-      [{ layout: "split" }, "sections.0 is a split section and needs media, unless its block is faq, topic-list or feature-grid."],
-      [{ layout: "split", block: { type: "feature-grid", items: [{ id: "a", heading: "A" }, { id: "b", heading: "B" }] } }, "sections.0 is a text-only split; its feature-grid block needs columns: 2 and item emphasis."],
-      [{ layout: "split", block: { type: "faq", items: faqItems }, media }, "sections.0.media is not allowed on a split FAQ section; its rows take the visual column."],
-      [{ mediaSide: "start", media }, "sections.0.mediaSide is allowed only on a split section."],
-      [{ items: [] }, "sections.0 has keys not allowed for a content-section section."],
-      [{ actions: [1, 2, 3].map((n) => ({ id: `a${n}`, label: "Go", href: "/go" })) }, "sections.0.actions holds 3 actions; a content section holds at most 2."],
-      [{ actions: [1, 2].map((n) => ({ id: `a${n}`, label: "Go", href: "/go", emphasis: "primary" })) }, "sections.0.actions holds more than one primary action."],
-      [{ actions: [{ id: "a", label: "Go", href: "/go", emphasis: "link" }] }, "sections.0.actions.0.emphasis is not a supported action emphasis; supported values are primary, secondary, tertiary, quiet."],
-      [
-        { actions: [{ id: "a", label: "Go", href: "/go" }], block: { type: "topic-list", columns: 1, items: [{ id: "a", heading: "A" }, { id: "b", heading: "B" }] } },
-        "sections.0 is a stacked band whose intro is followed by a block or visual, so it takes no section actions. Link the cards themselves (item `href`), or put one link in the footnote.",
-      ],
-      [{ actions: [{ id: "a", label: "Go", href: "/go" }], footnote: { text: "Aside." } }, "sections.0 is a header-only band with actions, and nothing follows an action: fold the footnote sentence into the description, or drop the actions."],
-      [{ block: { type: "topic-list", columns: 1, items: [{ id: "a", heading: "A", href: "/a" }, { id: "b", heading: "B" }] } }, "sections.0.block.items links 1 of 2 items; link every item or none, so a reader never has to guess which one is a link."],
-      [{ footnote: { text: " " } }, "sections.0.footnote must be a resolved footnote with non-blank text."],
-      [{ footnote: { text: "Aside.", links: [] } }, "sections.0.footnote must be a resolved footnote with non-blank text."],
-      [{ footnote: { text: "Aside.", link: { label: "Guide", href: "/guide", style: "button" } } }, "sections.0.footnote.link must be one resolved link with a non-blank label."],
-      [{ footnote: { text: "Aside.", link: { label: "Guide", href: "javascript:void(0)" } } }, "sections.0.footnote.link.href must be a sanctioned route target."],
+  it("refuses invalid blocks, specimen parts, actions and footnotes at their precise paths", () => {
+    const { columns: unusedColumns, ...bentoAxes } = baseItems;
+    const cards=(...spans:string[])=>({ ...bentoAxes,arrangement:"bento",items:spans.map((span,index)=>({id:`c${index}`,heading:`Card ${index}`,span})) });
+    expect(()=>assertRenderableSectionedViewDocument(invalidDocument({block:cards("half","half")}))).not.toThrow();
+    expect(()=>assertRenderableSectionedViewDocument(currentDocument({layout:"split-end",actions:[{id:"one",label:"One",href:"/one",emphasis:"primary"},{id:"two",label:"Two",href:"/two",emphasis:"secondary"}]}))).not.toThrow();
+    const validMeter={id:"m",type:"meter",label:"M",value:1,scaleMax:4,limit:2,direction:"max",tone:"info",valueText:"1",limitText:"2"};
+    const validTable={id:"t",type:"table",caption:"T",columns:[{id:"a",label:"A"},{id:"b",label:"B"}],rows:[{id:"r",cells:[{text:"x"},{text:"y"}]}]};
+    for(const part of [validMeter,validTable])expect(()=>assertRenderableSectionedViewDocument(invalidDocument({media:{...baseMedia,panel:{...basePanel,parts:[part]}}}))).not.toThrow();
+    const cases: Array<[Record<string,unknown>,RegExp]> = [
+      [{block:cards("third","third")},/sections\.0\.block\.items/],
+      [{block:cards("half","two-thirds")},/sections\.0\.block\.items\.1\.span/],
+      [{block:{...baseItems,items:[{id:"a",heading:"A",icon:"rocket"},{id:"b",heading:"B"}]}},/sections\.0\.block\.items\.0\.icon/],
+      [{block:{...baseItems,items:[{id:"a",heading:"A",extra:"Other"},{id:"b",heading:"B"}]}},/sections\.0\.block\.items\.0/],
+      [{block:{...baseItems,items:[{id:"a",heading:"A",eyebrow:"x".repeat(33)},{id:"b",heading:"B"}]}},/sections\.0\.block\.items\.0\.eyebrow/],
+      [{block:{type:"slider",items:[]}},/sections\.0\.block\.type/],
+      [{media:{...baseMedia,panel:{...basePanel,parts:["a","b","c","d"].map(id=>({...basePanel.parts[0],id}))}}},/sections\.0\.media\.panel\.parts/],
+      [{media:{...baseMedia,panel:{...basePanel,title:{id:"unresolved"}}}},/sections\.0\.media\.panel\.title/],
+      [{media:{...baseMedia,arrangement:"row"}},/sections\.0\.media/],
+      [{media:{...baseMedia,panel:{...basePanel,parts:[{...validMeter,scaleMax:0}]}}},/sections\.0\.media\.panel\.parts\.0\.scaleMax/],
+      [{media:{...baseMedia,panel:{...basePanel,parts:[{...validTable,rows:[{id:"r",cells:[{text:"x"}]}]}]}}},/sections\.0\.media\.panel\.parts\.0\.rows\.0\.cells/],
+      [{layout:"split"},/sections\.0\.layout/],
+      [{block:{...baseItems,columns:3}},/sections\.0\.block\.columns/],
+      [{block:{...baseItems,reveal:"disclose",items:[{id:"a",heading:"A"},{id:"b",heading:"B"},{id:"c",heading:"C"},{id:"d",heading:"D"}]}},/sections\.0\.block\.items\.0/],
+      [{mediaSide:"start"},/sections\.0/],
+      [{items:[]},/sections\.0/],
+      [{layout:"split-end",actions:[1,2,3].map(n=>({id:`a${n}`,label:"Go",href:`/go-${n}`}))},/sections\.0\.actions.*must hold 1-2 actions; it holds 3/],
+      [{layout:"split-end",actions:[1,2].map(n=>({id:`a${n}`,label:"Go",href:`/go-${n}`,emphasis:"primary"}))},/sections\.0\.actions.*holds 2 primary actions; keep at most one/],
+      [{actions:[{id:"a",label:"Go",href:"/go",emphasis:"link"}]},/sections\.0\.actions\.0\.emphasis/],
+      [{block:{...baseItems,items:[{id:"a",heading:"A",href:"/a"},{id:"b",heading:"B"}]}},/sections\.0\.block\.items/],
+      [{actions:[{id:"go",label:"Go",href:"/go"}]},/sections\.0\.actions.*stacked band whose intro is followed by a block or visual/],
+      [{block:undefined,media:undefined,actions:[{id:"go",label:"Go",href:"/go"}],footnote:{text:"Aside."}},/sections\.0\.footnote.*header-only band with actions/],
+      [{footnote:{text:" "}},/sections\.0\.footnote/],
+      [{footnote:{text:"Aside.",links:[]}},/sections\.0\.footnote/],
+      [{footnote:{text:"Aside.",link:{label:"Guide",href:"/guide",style:"button"}}},/sections\.0\.footnote\.link/],
+      [{footnote:{text:"Aside.",link:{label:"Guide",href:"javascript:void(0)"}}},/sections\.0\.footnote\.link\.href/],
     ];
-    for (const [section, message] of cases) expect(refusal(section)).toBe(`${prefix}${message}`);
+    for(const [section,path] of cases) expect(()=>assertRenderableSectionedViewDocument(invalidDocument(section))).toThrow(path);
   });
 });

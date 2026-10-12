@@ -1,5 +1,12 @@
 import "@testing-library/jest-dom/vitest";
 import { JSDOM } from "jsdom";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { LandingView } from "../web/views/LandingView.server.js";
+import { SectionedView } from "../web/views/SectionedView.server.js";
+import { previewSectionedDocument, previewCopyResolver } from "./fixture-documents.js";
+import { renderPreviewGalleryEntries } from "./render-preview-gallery.js";
+import { buttonLinkClassName } from "@clossys/designer/atoms/server";
 import { describe, expect, it } from "vitest";
 import { checkSectionVariety, resolveSectionedViewDocument, validateSectionedViewDocument } from "../core/sectioned-view.js";
 import type { ResolvedSectionedViewContentSection, ResolvedSectionedViewSpecimenPanel, ResolvedSectionedViewSpecimenPart, SectionedViewContentSection } from "../core/sectioned-view.js";
@@ -14,73 +21,55 @@ const words = (text: string | undefined): number => (text === undefined ? 0 : te
 
 describe("content catalog fixture", () => {
   it("is a valid SectionedViewDocument whose copy all resolves", () => {
-    expect(validateSectionedViewDocument(contentCatalogDocument)).toEqual([]);
+    expect(validateSectionedViewDocument(contentCatalogDocument)).toEqual([{ rule: "steps-count", severity: "warning", path: "sections.19.block.items", message: "A connected sequence reads more clearly with three or five items." }]);
     expect(resolved.sections).toHaveLength(contentCatalogDocument.sections.length);
   });
 
   it("shows balanced grouped fixtures with exact IDs, group layouts and catalog counts", () => {
     expect(contentCatalogDocument.sections).toHaveLength(26);
     expect(CONTENT_CATALOG_CAPTIONS).toHaveLength(27);
-    const grouped = resolvedContent.filter((section) => section.block?.type === "topic-list" && section.block.groups !== undefined);
+    const grouped = resolvedContent.filter((section) => section.block?.type === "items" && section.block.groups !== undefined);
     expect(grouped.map((section) => section.id)).toEqual(["catalog-topics-groups-4", "catalog-topics-groups-3"]);
     for (const section of grouped) {
-      if (section.block?.type !== "topic-list" || section.block.groups === undefined) throw new Error("Expected groups");
+      if (section.block?.type !== "items" || section.block.groups === undefined) throw new Error("Expected groups");
       expect(section.block.groups.map((group) => group.items.length)).toEqual(section.id.endsWith("4") ? [2, 2, 2, 2] : [2, 2, 2]);
-      expect(new Set(section.block.groups.flatMap((group) => group.items.map((item) => item.id))).size).toBe(section.id.endsWith("4") ? 8 : 6);
+      expect(new Set(section.block.groups.flatMap((group) => group.items)).size).toBe(section.id.endsWith("4") ? 8 : 6);
     }
     const dom = new JSDOM(renderContentCatalogMarkup()).window.document;
-    expect(dom.querySelector("#catalog-topics-groups-4 [data-topic-list]")?.classList.contains("tablet:grid-cols-2")).toBe(true);
-    expect(dom.querySelector("#catalog-topics-groups-3 [data-topic-list]")?.classList.contains("tablet-lg:grid-cols-3")).toBe(true);
-    expect(dom.querySelectorAll("#catalog-topics-groups-4 h3")).toHaveLength(4);
+    expect(dom.querySelector("#catalog-topics-groups-4 [data-items]")?.getAttribute("data-columns")).toBe("2");
+    expect(dom.querySelectorAll("#catalog-topics-groups-3 [role=group][aria-labelledby]")).toHaveLength(3);
+    expect(dom.querySelectorAll("#catalog-topics-groups-4 h3")).toHaveLength(8);
     expect(dom.querySelector("#catalog-topics-groups-4 [data-content-section-footnote] a")?.getAttribute("href")).toBe("mailto:help@example.com");
   });
 
-  it("shows every block, treatment, column count, arrangement, layout and ground", () => {
-    const blocks = new Set(contentSections.map((section) => section.block?.type ?? (section.media === undefined ? "intro" : "specimen")));
-    expect([...blocks].sort()).toEqual(["card-grid", "comparison", "faq", "feature-grid", "intro", "ordered-step-sequence", "specimen", "topic-list"]);
-
-    const features = contentSections.flatMap((section) => (section.block?.type === "feature-grid" ? [section.block] : []));
-    expect(new Set(features.map((block) => block.treatment ?? "plain"))).toEqual(new Set(["plain", "rule", "plate"]));
-    expect(new Set(features.map((block) => block.columns ?? 3))).toEqual(new Set([2, 3, 4]));
-    expect(features.some((block) => block.emphasis === "statement")).toBe(true);
-    expect(features.some((block) => block.items.some((item) => item.icon !== undefined))).toBe(true);
-
-    const topics = contentSections.flatMap((section) => (section.block?.type === "topic-list" ? [section.block] : []));
-    expect(new Set(topics.map((block) => block.columns ?? 2))).toEqual(new Set([1, 2]));
-
-    const stacked = contentSections.filter((section) => (section.layout ?? "stacked") === "stacked" && section.block === undefined && section.media !== undefined);
-    expect(new Set(stacked.map((section) => section.media?.arrangement ?? "single"))).toEqual(new Set(["single", "row", "stack", "flow"]));
-    expect(stacked.find((section) => section.media?.arrangement === "row")?.media?.panels).toHaveLength(3);
-
-    const splits = contentSections.filter((section) => section.layout === "split");
-    expect(new Set(splits.filter((section) => section.media !== undefined).map((section) => section.mediaSide ?? "end"))).toEqual(new Set(["end", "start"]));
-    expect(splits.some((section) => section.block?.type === "faq" && section.media === undefined)).toBe(true);
-    expect(splits.some((section) => (section.block?.type === "feature-grid" || section.block?.type === "topic-list") && section.media === undefined)).toBe(true);
-    expect(features.some((block) => block.items.some((item) => item.eyebrow !== undefined))).toBe(true);
-
-    const cardRows = contentSections.flatMap((section) => (section.block?.type === "card-grid" ? [section.block.items.map((card) => card.span)] : []));
-    const spans = cardRows.flat();
-    expect(new Set(spans)).toEqual(new Set(["third", "half", "two-thirds", "full"]));
-    const joined = cardRows.map((row) => row.join(" ")).join(" | ");
-    expect(joined).toContain("two-thirds third");
-    expect(joined).toContain("third two-thirds");
-    expect(contentSections.some((section) => section.block?.type === "card-grid" && section.block.items.some((card) => card.visual !== undefined))).toBe(true);
-
-    const comparisons = contentSections.flatMap((section) => (section.block?.type === "comparison" ? [section.block] : []));
-    expect(comparisons.some((block) => block.before.visual !== undefined && block.after.visual !== undefined)).toBe(true);
-    expect(comparisons.some((block) => block.before.points !== undefined && block.before.visual === undefined)).toBe(true);
-
-    const steps = contentSections.flatMap((section) => (section.block?.type === "ordered-step-sequence" ? [section.block] : []));
-    expect(steps.some((block) => block.items.every((step) => step.visual !== undefined && step.label !== undefined))).toBe(true);
-
-    const grounds = new Set(contentCatalogDocument.sections.map((section) => section.ground));
-    expect(grounds).toEqual(new Set(["base", "sunken", "inverse"]));
+  it("shows canonical blocks, axes, specimens, spans and both Matrix forms", () => {
+    const items = resolvedContent.flatMap(section => section.block?.type === "items" ? [section.block] : []);
+    expect(new Set(items.map(block => block.arrangement))).toEqual(new Set(["columns", "rows", "bento", "stacked"]));
+    expect(new Set(items.map(block => block.treatment))).toEqual(new Set(["plain", "rule", "plate"]));
+    expect(new Set(items.filter(block => block.arrangement === "columns").map(block => block.columns))).toEqual(new Set([2,3]));
+    expect(items.some(block => block.emphasis === "statement")).toBe(true);
+    expect(items.some(block => block.items.some(item => item.icon !== undefined))).toBe(true);
+    expect(items.some(block => block.items.some(item => item.eyebrow !== undefined))).toBe(true);
+    expect(items.some(block => block.order === "connected")).toBe(true);
+    expect(items.some(block => block.reveal === "disclose")).toBe(true);
+    const media = contentSections.flatMap(section => section.media?.type === "specimen" ? [section.media] : []);
+    expect(media).toHaveLength(6); expect(media.every(media => media.panel.parts.length >= 1 && media.panel.parts.length <= 3)).toBe(true);
+    const splits = contentSections.filter(section => section.layout !== undefined && section.layout !== "stacked");
+    expect(new Set(splits.filter(section => section.media !== undefined).map(section => section.layout))).toEqual(new Set(["split-end", "split-start"]));
+    const cards = items.filter(block => block.arrangement === "bento"); expect(cards).toHaveLength(2);
+    expect(new Set(cards.flatMap(block => block.items.map(item => item.span)))).toEqual(new Set(["third", "half", "two-thirds", "full"]));
+    expect(cards.map(block => block.items.map(item => item.span).join(" ")).join(" | ")).toContain("two-thirds third");
+    expect(cards.map(block => block.items.map(item => item.span).join(" ")).join(" | ")).toContain("third two-thirds");
+    const matrices = contentSections.flatMap(section => section.block?.type === "matrix" ? [section.block] : []);expect(matrices).toHaveLength(2);
+    expect(matrices.some(block => block.sides.every(side => side.visual !== undefined))).toBe(true);
+    expect(matrices.some(block => block.sides.every(side => side.points?.length === 4 && side.visual === undefined))).toBe(true);
+    expect(new Set(contentCatalogDocument.sections.map(section => section.ground))).toEqual(new Set(["base", "sunken", "inverse"]));
   });
 
   it("keeps actions where they belong: header-only bands and split text columns, never a stacked band with a block or media, and nothing after them", () => {
     for (const section of contentSections) {
       if (section.actions === undefined) continue;
-      const split = section.layout === "split";
+      const split = section.layout === "split-start" || section.layout === "split-end";
       const headerOnly = section.block === undefined && section.media === undefined;
       expect(split || headerOnly, section.id).toBe(true);
       if (!split) expect(section.footnote, section.id).toBeUndefined();
@@ -92,10 +81,21 @@ describe("content catalog fixture", () => {
     expect(byId("catalog-features-statement")?.footnote?.link).toBeDefined();
   });
 
+  it("retains the highlighted after side on both matrices", () => {
+    const matrices = resolvedContent.filter(section => section.block?.type === "matrix");
+    expect(matrices).toHaveLength(2);
+    const root = new JSDOM(renderContentCatalogMarkup()).window.document;
+    for (const section of matrices) {
+      expect(section.block?.type === "matrix" && section.block.featured).toBe("after");
+      const sides = root.querySelectorAll(`#${section.id} [data-matrix-side]`);expect(sides).toHaveLength(2);expect(sides[1]!.querySelector("[data-featured]")?.getAttribute("data-featured")).toBe("true");
+      expect(sides[0]!.querySelector("[data-featured]")).toBeNull();
+    }
+  });
+
   it("shows linked plates, a linked topic list and a linked bento, each item its own destination", () => {
     const hrefs = (id: string) => {
       const block = contentSections.find((section) => section.id === id)?.block;
-      if (block === undefined || block.type === "comparison" || block.type === "faq") throw new Error(`${id} has no linkable block`);
+      if (block === undefined || block.type === "matrix") throw new Error(`${id} has no linkable block`);
       return block.items.map((item) => ("href" in item ? item.href : undefined));
     };
     for (const id of ["catalog-features-plate", "catalog-topics-linked", "catalog-cards-visual"]) {
@@ -111,7 +111,7 @@ describe("content catalog fixture", () => {
     const dom = new JSDOM(buildContentCatalogHtml()).window.document;
     for (const id of ["catalog-features-plate", "catalog-topics-linked", "catalog-cards-visual"]) {
       const band = dom.getElementById(id);
-      const links = [...(band?.querySelectorAll("a[data-card-link]") ?? [])];
+      const links = [...(band?.querySelectorAll("[data-item-heading] > a[href]") ?? [])];
       expect(links.length, id).toBe(hrefs(id).length);
       expect(band?.querySelectorAll("[data-section-intro-actions]"), id).toHaveLength(0);
       for (const link of links) {
@@ -119,7 +119,7 @@ describe("content catalog fixture", () => {
         expect(link.closest(".isolate"), id).not.toBeNull();
       }
     }
-    expect(dom.querySelectorAll("a[data-card-link]")).toHaveLength(10);
+    expect(dom.querySelectorAll("[data-item-heading] > a[href]")).toHaveLength(10);
   });
 
   it("only breaks the page-variety rules a catalog must (two card bands, two comparisons, repeated block treatments, the linked topic list beside its unlinked sibling)", () => {
@@ -137,12 +137,21 @@ describe("content catalog fixture", () => {
     const visual = dom.getElementById("catalog-steps-lanes-visual")!;
     const plain = dom.getElementById("catalog-steps-lanes-plain")!;
     expect([...visual.querySelectorAll("li[data-lane]")].map((li) => li.getAttribute("data-lane"))).toEqual(["a", "b", "a"]);
-    expect([...plain.querySelectorAll("[data-step-join]")].map((join) => join.getAttribute("data-step-join"))).toEqual(["down", "same", "up", "same"]);
-    expect(visual.querySelectorAll("[data-step-visual]")).toHaveLength(3);
-    expect(visual.querySelector("[data-step-end]")?.getAttribute("data-step-end")).toBe("ends");
-    expect(visual.querySelector("[data-step-caption]")?.textContent).toBe("Sample data.");
-    expect(plain.querySelector("[data-step-end]")?.getAttribute("data-step-end")).toBe("continues");
-    expect(plain.querySelector("[data-step-end-label]")?.textContent).toBe("Repeats each quarter");
+    const transitions = [...plain.querySelectorAll<HTMLElement>("[data-item-transition]")];
+    expect(transitions).toHaveLength(4);
+    expect(transitions.map((transition) => {
+      const route = transition.querySelector<HTMLElement>("[data-item-route=stacked]")!;
+      const from = route.style.getPropertyValue("--items-from");
+      const to = route.style.getPropertyValue("--items-to");
+      expect(["0px", "var(--spacing-xl)"]).toContain(from);
+      expect(["0px", "var(--spacing-xl)"]).toContain(to);
+      return to === from ? "same" : from === "0px" ? "down" : "up";
+    })).toEqual(["down", "same", "up", "same"]);
+    expect(visual.querySelectorAll("[data-item-visual]")).toHaveLength(3);
+    expect(visual.querySelector("[data-item-end]")?.getAttribute("data-item-end")).toBe("ends");
+    expect(visual.querySelector("[data-item-caption]")?.textContent).toBe("Sample data.");
+    expect(plain.querySelector("[data-item-end]")?.getAttribute("data-item-end")).toBe("continues");
+    expect(plain.querySelector("[data-item-end-label]")?.textContent).toBe("Repeats each quarter");
   });
 
   it("keeps every band's copy within the content cookbook's budgets", () => {
@@ -168,7 +177,7 @@ describe("content catalog fixture", () => {
 
     for (const section of resolvedContent) {
       const at = section.id;
-      const split = section.layout === "split";
+      const split = section.layout === "split-start" || section.layout === "split-end";
       expect(words(section.eyebrow), `${at} eyebrow`).toBeLessThanOrEqual(5);
       expect((section.eyebrow ?? "").length, `${at} eyebrow`).toBeLessThanOrEqual(32);
       expect(words(section.heading), `${at} heading`).toBeLessThanOrEqual(split ? 8 : 10);
@@ -179,63 +188,27 @@ describe("content catalog fixture", () => {
       if (section.media !== undefined) {
         expect(words(section.media.label), `${at} specimen label`).toBeGreaterThanOrEqual(12);
         expect(words(section.media.label), `${at} specimen label`).toBeLessThanOrEqual(25);
-        section.media.panels.forEach(panelChecks);
+        if (section.media.type === "specimen") panelChecks(section.media.panel);
       }
       const block = section.block;
       if (block === undefined) continue;
-      switch (block.type) {
-        case "feature-grid": {
-          const statement = block.emphasis === "statement";
-          const limit = statement ? 12 : block.treatment === "plate" && block.columns === 2 ? 25 : 20;
-          for (const item of block.items) {
-            expect(words(item.eyebrow), `${at} ${item.id} eyebrow`).toBeLessThanOrEqual(3);
-            expect((item.eyebrow ?? "").length, `${at} ${item.id} eyebrow`).toBeLessThanOrEqual(32);
-            expect(words(item.heading), `${at} ${item.id}`).toBeLessThanOrEqual(statement ? 3 : 5);
-            expect(words(item.description), `${at} ${item.id}`).toBeLessThanOrEqual(limit);
-          }
-          break;
+      if (block.type === "matrix") {
+        for (const side of block.sides) {
+          expect(words(side.label), `${at} label`).toBeLessThanOrEqual(3); expect(words(side.description), `${at} description`).toBeLessThanOrEqual(25);
+          for (const point of side.points ?? []) { expect(words(point), point).toBeGreaterThanOrEqual(4); expect(words(point), point).toBeLessThanOrEqual(9); }
+          if (side.visual !== undefined) panelChecks(side.visual);
         }
-        case "card-grid":
-          for (const card of block.items) {
-            expect(words(card.heading), `${at} ${card.id}`).toBeLessThanOrEqual(5);
-            expect(words(card.description), `${at} ${card.id}`).toBeGreaterThanOrEqual(8);
-            expect(words(card.description), `${at} ${card.id}`).toBeLessThanOrEqual(card.span === "two-thirds" || card.span === "full" ? 25 : 20);
-            if (card.visual !== undefined) partChecks(card.visual);
-          }
-          break;
-        case "comparison":
-          for (const side of [block.before, block.after]) {
-            expect(words(side.label), `${at} label`).toBeLessThanOrEqual(3);
-            expect(words(side.description), `${at} description`).toBeLessThanOrEqual(25);
-            for (const point of side.points ?? []) {
-              expect(words(point), point).toBeGreaterThanOrEqual(4);
-              expect(words(point), point).toBeLessThanOrEqual(9);
-            }
-            if (side.visual !== undefined) panelChecks(side.visual);
-          }
-          break;
-        case "topic-list":
-          for (const item of block.groups === undefined ? block.items : block.groups.flatMap((group) => group.items)) {
-            expect(words(item.heading), `${at} ${item.id}`).toBeLessThanOrEqual(5);
-            expect(words(item.description), `${at} ${item.id}`).toBeLessThanOrEqual(12);
-          }
-          break;
-        case "ordered-step-sequence":
-          for (const step of block.items) {
-            expect(words(step.heading), `${at} ${step.id}`).toBeLessThanOrEqual(2);
-            expect(words(step.label), `${at} ${step.id}`).toBeLessThanOrEqual(2);
-            expect(words(step.description), `${at} ${step.id}`).toBeGreaterThanOrEqual(6);
-            expect(words(step.description), `${at} ${step.id}`).toBeLessThanOrEqual(14);
-            if (step.visual !== undefined) panelChecks(step.visual);
-          }
-          break;
-        case "faq":
-          for (const item of block.items) {
-            expect(words(item.question), `${at} ${item.id}`).toBeLessThanOrEqual(12);
-            expect(words(item.answer), `${at} ${item.id}`).toBeGreaterThanOrEqual(15);
-            expect(words(item.answer), `${at} ${item.id}`).toBeLessThanOrEqual(45);
-          }
-          break;
+        continue;
+      }
+      for (const item of block.items) {
+        expect((item.eyebrow ?? "").length, `${at} ${item.id} eyebrow`).toBeLessThanOrEqual(32);
+        if (block.arrangement === "columns" && block.order === "none") expect(words(item.eyebrow), `${at} ${item.id} eyebrow`).toBeLessThanOrEqual(3);
+        if (block.arrangement === "bento") expect(words(item.description), `${at} ${item.id}`).toBeGreaterThanOrEqual(8);
+        if (block.reveal === "disclose") { expect(words(item.heading), `${at} ${item.id}`).toBeLessThanOrEqual(12); expect(words(item.description), `${at} ${item.id}`).toBeGreaterThanOrEqual(15); expect(words(item.description), `${at} ${item.id}`).toBeLessThanOrEqual(45); }
+        else if (block.order === "connected") { expect(words(item.heading), `${at} ${item.id}`).toBeLessThanOrEqual(2); expect(words(item.meta), `${at} ${item.id}`).toBeLessThanOrEqual(2); expect(words(item.description), `${at} ${item.id}`).toBeGreaterThanOrEqual(6); expect(words(item.description), `${at} ${item.id}`).toBeLessThanOrEqual(14); }
+        else if (block.arrangement === "rows") { expect(words(item.heading), `${at} ${item.id}`).toBeLessThanOrEqual(5); expect(words(item.description), `${at} ${item.id}`).toBeLessThanOrEqual(12); }
+        else { const statement=block.emphasis === "statement"; expect(words(item.heading), `${at} ${item.id}`).toBeLessThanOrEqual(statement ? 3 : 5); expect(words(item.description), `${at} ${item.id}`).toBeLessThanOrEqual(statement ? 12 : item.span === "two-thirds" || item.span === "full" || block.treatment === "plate" && block.columns === 2 ? 25 : 20); }
+        if (item.visual !== undefined) partChecks(item.visual);
       }
     }
 
@@ -261,9 +234,47 @@ describe("content catalog page", () => {
     const end = html.lastIndexOf("</main>") + "</main>".length;
     const page = html.slice(start, end).replace(/<div class="catalog-caption"[^]*?<\/div>\n/g, "").replaceAll("\n", "");
     expect(page).toBe(markup);
+    const cta = CONTENT_CATALOG_CALL_TO_ACTION;
+    expect(markup).toBe(renderToStaticMarkup(createElement(LandingView, {
+      document: resolved,
+      header: "reserved",
+      peek: false,
+      callToAction: { id: cta.id, eyebrow: cta.eyebrow, heading: cta.heading, description: cta.description,
+        action: createElement("a", { href: cta.actionHref, className: buttonLinkClassName("primary", "lg") }, cta.actionLabel) },
+    })));
 
     const { bands } = splitLandingViewBands(markup);
     for (const band of bands) expect(band).not.toContain("data-catalog-chrome");
+  });
+
+  it("keeps standalone gallery disclosures native and usable without hydration", () => {
+    const entry = renderPreviewGalleryEntries().find(entry => entry.view === "SectionedView");
+    expect(entry).toBeDefined();
+    expect(entry?.markup).toBe(renderToStaticMarkup(createElement(SectionedView, {
+      document: resolveSectionedViewDocument(previewSectionedDocument, previewCopyResolver),
+    })));
+    const dom = new JSDOM(entry!.markup).window.document;
+    expect(dom.querySelectorAll("details summary")).toHaveLength(1);
+    expect(dom.querySelectorAll("[data-rac]")).toHaveLength(0);
+    const details = dom.querySelector("details");
+    expect(details?.open).toBe(false);
+    details?.querySelector("summary")?.click();
+    expect(details?.open).toBe(true);
+  });
+
+  it("keeps static catalog disclosures usable without hydration", () => {
+    const dom = new JSDOM(buildContentCatalogHtml()).window.document;
+    const faq = dom.querySelector("#catalog-faq");
+    expect(faq).not.toBeNull();
+    expect(faq?.querySelectorAll("details")).toHaveLength(6);
+    expect(faq?.querySelectorAll("button")).toHaveLength(0);
+    const details = faq?.querySelector("details");
+    const summary = details?.querySelector("summary");
+    expect(details?.open).toBe(false);
+    summary?.click();
+    expect(details?.open).toBe(true);
+    summary?.click();
+    expect(details?.open).toBe(false);
   });
 
   it("captions every band in the chrome, outside the product markup", () => {

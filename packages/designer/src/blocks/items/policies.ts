@@ -47,6 +47,18 @@ export function hasContent(node: ReactNode): boolean {
   });
 }
 const CONTROL_TAGS = new Set(["a", "button", "input", "select", "textarea", "summary", "details", "label", "iframe", "object", "embed"]);
+const PHRASING_TAGS = new Set(["abbr", "b", "bdi", "bdo", "br", "cite", "code", "data", "del", "dfn", "em", "i", "img", "ins", "kbd", "mark", "picture", "q", "ruby", "rp", "rt", "s", "samp", "small", "source", "span", "strong", "sub", "sup", "time", "u", "var", "wbr", "svg", "g", "path", "circle", "ellipse", "line", "polyline", "polygon", "rect", "text", "tspan", "defs", "symbol", "use", "clippath", "mask", "pattern", "lineargradient", "radialgradient", "stop", "filter", "fegaussianblur", "fecolormatrix", "feoffset", "feblend", "fecomposite", "femerge", "femergenode", "title", "desc", "foreignobject", "math", "mrow", "mi", "mo", "mn", "ms", "mtext", "msub", "msup", "msubsup", "mfrac", "msqrt", "mroot", "mstyle", "mpadded", "mphantom", "mfenced", "menclose", "semantics", "annotation"]);
+const TRIGGER_CONTROL_ROLES = new Set(["button", "link", "checkbox", "radio", "switch", "textbox", "combobox", "listbox", "option", "menuitem", "menuitemcheckbox", "menuitemradio", "slider", "spinbutton", "tab", "treeitem"]);
+function invalidTrigger(node: ReactNode): boolean {
+  return Children.toArray(node).some(child => {
+    if (!isValidElement(child)) return false;
+    const props = child.props as Record<string, unknown>;
+    const native = typeof child.type === "string" ? child.type.toLowerCase() : undefined;
+    const editable = props.contentEditable === true || (typeof props.contentEditable === "string" && ["", "true", "plaintext-only"].includes(props.contentEditable.toLowerCase()));
+    const focusable = (typeof props.tabIndex === "number" && Number.isFinite(props.tabIndex)) || (typeof props.tabIndex === "string" && props.tabIndex.trim() !== "" && Number.isFinite(Number(props.tabIndex)));
+    return (native !== undefined && !PHRASING_TAGS.has(native)) || editable || focusable || (typeof props.role === "string" && props.role.split(/\s+/).some(role => TRIGGER_CONTROL_ROLES.has(role))) || props.href !== undefined || props.onClick !== undefined || props.onPress !== undefined || invalidTrigger(props.children as ReactNode);
+  });
+}
 function hasControl(node: ReactNode): boolean {
   return Children.toArray(node).some((child) => {
     if (!isValidElement(child)) return false;
@@ -85,8 +97,11 @@ export function assertItemAxes(treatment: unknown, size: unknown, ground: unknow
   if (!["plain", "rule", "plate"].includes(treatment as string) || !["standard", "display"].includes(size as string) || !["base", "sunken", "inverse"].includes(ground as string)) throw new TypeError("Item: unknown treatment, size or ground.");
 }
 export function assertItems(props: ItemsProps): number | undefined {
-  const { items, arrangement, groups, emphasis = "item", treatment = "plain", size = "standard", ground = "base" } = props;
+  const { items, arrangement, groups, emphasis = "item", treatment = "plain", size = "standard", ground = "base", order = "none", reveal = "all" } = props;
   assertItemAxes(treatment, size, ground);
+  if (!["none", "numbered", "connected"].includes(order) || !["all", "disclose"].includes(reveal)) throw new TypeError("Items: unknown order or reveal.");
+  if (order !== "connected" && [props.lanes, props.end, props.endLabel, props.caption].some(value => value !== undefined)) throw new TypeError("Items: lanes, end and caption belong to connected order.");
+  if (props.end !== undefined && props.end !== "ends" && props.end !== "continues") throw new TypeError("Items: unknown end.");
   if (!["columns", "rows", "bento", "stacked"].includes(arrangement) || !["item", "statement"].includes(emphasis) || (props.headingLevel !== undefined && props.headingLevel !== 3 && props.headingLevel !== 4)) throw new TypeError("Items: unknown arrangement, emphasis or heading level.");
   if (!Array.isArray(items)) throw new TypeError("Items: items must be an array.");
   const ids = new Set<string>();
@@ -98,9 +113,30 @@ export function assertItems(props: ItemsProps): number | undefined {
   const columns = props.columns === undefined ? (arrangement === "columns" ? 3 : arrangement === "rows" ? 1 : undefined) : props.columns;
   if ((arrangement === "bento" || arrangement === "stacked") && props.columns !== undefined) throw new TypeError("Items: bento and stacked do not take columns.");
   const count = items.length;
-  if (arrangement === "columns" && !((columns === 2 && [2, 4, 6].includes(count)) || (columns === 3 && [3, 6].includes(count)))) throw new RangeError("Items: columns need two columns with 2/4/6 items or three columns with 3/6 items.");
+  if (order === "connected") {
+    if ((arrangement !== "columns" && arrangement !== "stacked") || count < 3 || count > 5 || (arrangement === "columns" && columns !== 2 && columns !== 3)) throw new RangeError("Items: connected order needs columns or stacked with 3-5 steps.");
+    if (count === 4) console.warn("Items: connected sequences read best with three or five steps.");
+    if (hasContent(props.caption) && !items.some(item => hasContent(item.visual))) throw new TypeError("Items: a connected caption requires a visual.");
+  }
+  if (arrangement === "columns" && order !== "connected" && !((columns === 2 && [2, 4, 6].includes(count)) || (columns === 3 && [3, 6].includes(count)))) throw new RangeError("Items: columns need two columns with 2/4/6 items or three columns with 3/6 items.");
   if (arrangement === "rows" && (count < 2 || count > 8 || (columns !== 1 && columns !== 2) || (columns === 2 && count % 2 !== 0))) throw new RangeError("Items: rows need 2-8 items, even in two columns.");
-  if (arrangement === "stacked" && (count < 2 || count > 4)) throw new RangeError("Items: stacked needs 2-4 items.");
+  if (arrangement === "stacked" && order !== "connected" && (count < 2 || count > 4)) throw new RangeError("Items: stacked needs 2-4 items.");
+  if (props.lanes !== undefined) {
+    if (order !== "connected" || arrangement !== "stacked" || (count !== 3 && count !== 5) || !Array.isArray(props.lanes) || props.lanes.length !== 2) throw new TypeError("Items: two lanes belong to stacked connected sequences with three or five steps.");
+    const laneIds = new Set<string>();
+    for (let i = 0; i < 2; i++) {
+      const lane = props.lanes[i];
+      if (!Object.hasOwn(props.lanes, i) || !lane || typeof lane.id !== "string" || !lane.id.trim() || laneIds.has(lane.id) || !hasContent(lane.label)) throw new TypeError("Items: lanes need two unique stable ids and nonblank labels.");
+      laneIds.add(lane.id);
+    }
+    if (items[0]!.lane !== props.lanes[0]!.id || items.some(item => !laneIds.has(item.lane!)) || new Set(items.map(item => item.lane)).size !== 2) throw new TypeError("Items: start in the first lane, use both lanes, and reference known lane ids.");
+  } else if (items.some(item => item.lane !== undefined)) throw new TypeError("Items: item lane references require lanes.");
+  if (reveal === "disclose") {
+    if (arrangement !== "rows" || count < 4 || count > 6 || order === "connected") throw new RangeError("Items: disclosure needs four to six rows.");
+    for (const item of items) {
+      if (!hasContent(item.description) || item.href !== undefined || item.visual !== undefined || [item.heading, item.icon, item.eyebrow, item.meta, item.badge?.label].some(invalidTrigger)) throw new TypeError("Items: disclosure needs an answer and phrasing-only trigger slots without controls, href or visual.");
+    }
+  }
   if (arrangement === "bento") assertOrderedRows(items.map((item) => item.span === undefined ? "half" : item.span), { count: (n) => `Items: bento needs 2-6 items, got ${n}.`, unknown: (i, span) => `Items: item ${i} has unknown span ${String(span)}.`, overflow: (i) => `Items: item ${i} overflows its 12-unit row.`, incomplete: "Items: bento must fill ordered 12-unit rows." });
   else if (items.some((item) => item.span !== undefined)) throw new TypeError("Items: spans belong to bento only.");
   if (items.filter((item) => item.featured === true).length > 1 || ((arrangement === "rows" || arrangement === "stacked") && items.some((item) => item.featured !== undefined))) throw new TypeError("Items: at most one featured item, in columns or bento only.");

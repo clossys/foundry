@@ -11,7 +11,7 @@ const primary = { id: "start", label: "Start", href: "/start", emphasis: "primar
 const secondary = { id: "read", label: "Read", href: "/guide", emphasis: "secondary" as const };
 const quiet = { ...secondary, emphasis: "quiet" as const };
 const documentWith = (actions: readonly ResolvedSectionedViewAction[], compact = false): ResolvedSectionedViewDocument => ({
-  id: "page", resolutions, sections: [{ id: "hero", kind: "hero", heading: "Begin here", ground: "inverse", actions: [...actions], ...(compact ? { compact: true } : {}) }],
+  id: "page", resolutions, sections: [{ id: "hero", kind: "hero", heading: "Begin here", ground: "inverse", actions: [...actions], ...(compact ? { size: "compact" as const } : {}) }],
 });
 const dom = (markup: string): HTMLElement => {
   const host = document.createElement("div");
@@ -52,7 +52,7 @@ describe("frame-owned uniform action group size", () => {
   });
 
   it.each(["base", "sunken", "inverse"] as const)("uses md for primary and tertiary body actions on %s", ground => {
-    const page: ResolvedSectionedViewDocument = { id: "page", resolutions, sections: [{ id: "body", kind: "content-section", heading: "Details", ground, actions: [primary, { ...secondary, emphasis: "tertiary" }] }] };
+    const page: ResolvedSectionedViewDocument = { id: "page", resolutions, sections: [{ id: "body", kind: "content-section", size: "standard", layout: "stacked", heading: "Details", ground, actions: [primary, { ...secondary, emphasis: "tertiary" }] }] };
     const host = dom(renderToStaticMarkup(<SectionedView document={page} />));
     const links = host.querySelectorAll<HTMLAnchorElement>('[data-action-emphasis]');
     size(links, "md");

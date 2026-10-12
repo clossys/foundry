@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { AriaAttributes, ReactNode } from "react";
 import type { BadgeVariant } from "../../atoms/Badge.js";
 import type { SectionGround } from "../section-ground.js";
 
@@ -19,6 +19,8 @@ export interface ItemData {
   featured?: boolean;
   span?: ItemSpan;
   badge?: ItemBadge;
+  /** Actor id in a connected, two-lane sequence. */
+  lane?: string;
 }
 /** Standalone items explicitly select their frame's scale, treatment and ground. */
 export interface ItemProps extends ItemData {
@@ -32,7 +34,8 @@ export type ItemsArrangement = "columns" | "rows" | "bento" | "stacked";
 export type ItemsColumns = 1 | 2 | 3;
 export type ItemsEmphasis = "item" | "statement";
 export interface ItemsGroup { id: string; label: ReactNode; items: readonly string[] }
-export interface ItemsProps {
+export interface ItemsLane { id: string; label: ReactNode }
+export interface ItemsProps extends Pick<AriaAttributes, "aria-labelledby"> {
   items: readonly ItemData[];
   arrangement: ItemsArrangement;
   /** Defaults to three for columns and one for rows. Absent for bento and stacked. */
@@ -42,6 +45,12 @@ export interface ItemsProps {
   /** Defaults to standard. A display frame passes display explicitly. */
   size?: ItemSize;
   groups?: readonly ItemsGroup[];
+  order?: "none" | "numbered" | "connected";
+  reveal?: "all" | "disclose";
+  lanes?: readonly ItemsLane[];
+  end?: "ends" | "continues";
+  endLabel?: ReactNode;
+  caption?: ReactNode;
   headingLevel?: 3 | 4;
   ground?: SectionGround;
   className?: string;

@@ -214,4 +214,4 @@ export type { SceneProps, SceneInput, SceneConverge, SceneEvidenceTrail, SceneAp
 
 export { Item } from "./items/Item.js";
 export { Items } from "./items/Items.js";
-export type { ItemData, ItemProps, ItemBadge, ItemSize, ItemTreatment, ItemSpan, ItemsProps, ItemsArrangement, ItemsColumns, ItemsEmphasis, ItemsGroup } from "./items/types.js";
+export type { ItemData, ItemProps, ItemBadge, ItemSize, ItemTreatment, ItemSpan, ItemsProps, ItemsArrangement, ItemsColumns, ItemsEmphasis, ItemsGroup, ItemsLane } from "./items/types.js";

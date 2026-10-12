@@ -1,34 +1,10 @@
 import { Icon, type IconNode } from "@clossys/designer/atoms/server";
-import { CardGrid, Comparison, ContentSection, FeatureGrid, OrderedStepSequence, Specimen, TopicList } from "@clossys/designer/blocks/server";
-import type { SpecimenPanelItem, SpecimenPart } from "@clossys/designer/blocks/server";
-import {
-  Briefcase,
-  Building2,
-  Calendar,
-  Clock,
-  FileCheck,
-  FileText,
-  Folder,
-  Globe,
-  Landmark,
-  Layers,
-  Lock,
-  Receipt,
-  Scale,
-  Search,
-  ShieldCheck,
-  Users,
-} from "@clossys/designer/icons";
-import type { ReactNode } from "react";
-import type {
-  ContentIconName,
-  ResolvedSectionedViewContentBlock,
-  ResolvedSectionedViewContentSection,
-  ResolvedSectionedViewSpecimenMedia,
-  ResolvedSectionedViewSpecimenPanel,
-  ResolvedSectionedViewSpecimenPart,
-  SectionedViewGround,
-} from "../../core/sectioned-view.js";
+import { AnatomyCallouts, ContentSection, Items, Matrix, RecordLedger, Scene, Specimen } from "@clossys/designer/blocks/server";
+import type { ItemData, ItemsProps, MatrixSide, SpecimenPanelItem, SpecimenPart } from "@clossys/designer/blocks/server";
+import { Briefcase, Building2, Calendar, Clock, FileCheck, FileText, Folder, Globe, Landmark, Layers, Lock, Receipt, Scale, Search, ShieldCheck, Users } from "@clossys/designer/icons";
+import type { CSSProperties, ReactNode } from "react";
+import type { ContentIconName, ResolvedSectionedViewContentBlock, ResolvedSectionedViewContentSection, ResolvedSectionedViewSpecimenPanel, ResolvedSectionedViewSpecimenPart, ResolvedSectionedViewMedia, ResolvedSectionedViewSection, SectionedViewGround } from "../../core/sectioned-view.js";
+import { RenderError } from "../../internal/errors.js";
 
 /**
  * Each closed `ContentIconName` mapped to its Designer glyph by explicit
@@ -53,190 +29,77 @@ const CONTENT_ICONS: Readonly<Record<ContentIconName, IconNode>> = {
   users: Users,
 };
 
-/** The FAQ rows a content section renders: the entry's own `Faq` (React Aria on the client entry, native disclosure on the server entry). */
+/** Entry-specific published FAQ rows; ordinary and react-server keep their own implementation. */
 export type ContentSectionFaq = (props: { items: readonly { id: string; question: string; answer: string }[]; headingLevel: 2; ground: SectionedViewGround }) => ReactNode;
-
 export interface ContentSectionBlockProps {
-  /** The validated, resolved section. */
   section: ResolvedSectionedViewContentSection;
-  /** The section's actions, already rendered through the emphasis ladder. */
   actions?: ReactNode;
-  /** Classes for the section root (SectionedView paints the section's ground here; a band leaves it to its frame). */
   className?: string;
-  /** Content placed after the text block, before any visual. */
+  style?: CSSProperties;
   after?: ReactNode;
+  /** Private compatibility bridge for the published top-level FAQ kind. */
+  publishedFaq?: Extract<ResolvedSectionedViewSection, { kind: "faq" }>;
 }
-
-/**
- * The footnote line's content: its text, then its one optional link,
- * underlined in the line's own ink (the only underlined link a section body
- * carries), with the package-standard focus outline.
- */
+function matrixSideId(sectionId: string, sideId: string): string {
+  const encode = (value: string) => { let result = ""; for (let index = 0; index < value.length; index++) result += value.charCodeAt(index).toString(16).padStart(4, "0"); return result; };
+  return `side-${encode(sectionId)}-${encode(sideId)}`;
+}
 function renderFootnote(footnote: ResolvedSectionedViewContentSection["footnote"]): ReactNode {
   if (footnote === undefined) return undefined;
   if (footnote.link === undefined) return footnote.text;
-  return (
-    <>
-      {footnote.text}{" "}
-      <a href={footnote.link.href} className="text-inherit underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
-        {footnote.link.label}
-      </a>
-    </>
-  );
+  return <>{footnote.text}{footnote.text === undefined ? null : " "}<a href={footnote.link.href} className="text-inherit underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">{footnote.link.label}</a></>;
+}
+function icon(name: ContentIconName | undefined): ReactNode { return name === undefined ? undefined : <Icon glyph={CONTENT_ICONS[name]} decorative size="md" />; }
+function partData(part: ResolvedSectionedViewSpecimenPart): SpecimenPart {
+  return part;
+}
+function panelData(panel: ResolvedSectionedViewSpecimenPanel): SpecimenPanelItem {
+  return { ...panel, parts: panel.parts.map(partData) };
 }
 
-function icon(name: ContentIconName | undefined): ReactNode {
-  return name === undefined ? undefined : <Icon glyph={CONTENT_ICONS[name]} decorative size="md" />;
-}
-
-/** A panel visual (a step or a comparison side) as its own labelled single-panel figure, named by the panel title. */
-function panelSpecimen(panel: ResolvedSectionedViewSpecimenPanel | undefined): ReactNode {
-  if (panel === undefined) return undefined;
-  const item: SpecimenPanelItem = panel;
-  return <Specimen label={panel.title} panels={[item]} />;
-}
-
-/** A card's one-part visual as a labelled single-panel figure without a title row: the card heading names the record. */
-function partSpecimen(part: ResolvedSectionedViewSpecimenPart | undefined, cardHeading: string): ReactNode {
+function partSpecimen(part: ResolvedSectionedViewSpecimenPart | undefined, id: string, heading: string): ReactNode {
   if (part === undefined) return undefined;
-  const designerPart: SpecimenPart = part;
-  return <Specimen label={part.label ?? cardHeading} panels={[{ id: part.id, parts: [designerPart] }]} />;
+  return <Specimen label={part.label ?? heading} panels={[{ id, parts: [partData(part)] }]} />;
 }
-
-function mediaSpecimen(media: ResolvedSectionedViewSpecimenMedia): ReactNode {
-  const panels: readonly SpecimenPanelItem[] = media.panels;
-  return <Specimen label={media.label} arrangement={media.arrangement} connector={media.connector} panels={panels} />;
-}
-
-/**
- * The contract's `feature-grid` defaults, passed explicitly: Designer's
- * `FeatureGrid` takes its catalog layout only when one of these is set.
- */
-const FEATURE_GRID_DEFAULTS = { columns: 3, treatment: "plain", emphasis: "item" } as const;
-
-function renderBlock(block: ResolvedSectionedViewContentBlock, ground: SectionedViewGround, Faq: ContentSectionFaq, headingId?: string): ReactNode {
-  switch (block.type) {
-    case "feature-grid":
-      return (
-        <FeatureGrid
-          items={block.items.map((item) => ({ id: item.id, icon: icon(item.icon), eyebrow: item.eyebrow, heading: item.heading, description: item.description, href: item.href }))}
-          columns={block.columns ?? FEATURE_GRID_DEFAULTS.columns}
-          treatment={block.treatment ?? FEATURE_GRID_DEFAULTS.treatment}
-          emphasis={block.emphasis ?? FEATURE_GRID_DEFAULTS.emphasis}
-          ground={ground}
-        />
-      );
-    case "card-grid":
-      return (
-        <CardGrid
-          items={block.items.map((card) => ({
-            id: card.id,
-            icon: icon(card.icon),
-            eyebrow: card.eyebrow,
-            heading: card.heading,
-            description: card.description,
-            span: card.span,
-            visual: partSpecimen(card.visual, card.heading),
-            href: card.href,
-          }))}
-          headingLevel={3}
-          ground={ground}
-        />
-      );
-    case "comparison": {
-      const side = (value: typeof block.before) => ({ label: value.label, heading: value.heading, description: value.description, points: value.points, visual: panelSpecimen(value.visual) });
-      return <Comparison before={side(block.before)} after={side(block.after)} headingLevel={3} ground={ground} />;
+function renderMedia(media: ResolvedSectionedViewMedia, section: ResolvedSectionedViewContentSection): ReactNode {
+  switch (media.type) {
+    case "specimen": {
+      const panel = panelData(media.panel);
+      return media.key === undefined ? <Specimen label={media.label} panels={[panel]} /> : <AnatomyCallouts id={`${section.id.length}:${section.id}:8:specimen`} label={media.label} panel={panel} markers={media.key.items} keyLabel={media.key.label} legendSide={media.key.side} headingLevel={3} ground={section.ground} />;
     }
-    case "topic-list":
-      if (block.groups !== undefined) return <TopicList groups={block.groups.map((group) => ({ id: group.id, label: group.label, items: group.items.map((item) => ({ id: item.id, icon: icon(item.icon), heading: item.heading, description: item.description, href: item.href })) }))} ground={ground} />;
-      return (
-        <TopicList
-          items={block.items.map((item) => ({ id: item.id, icon: icon(item.icon), heading: item.heading, description: item.description, href: item.href }))}
-          columns={block.columns ?? 2}
-          ground={ground}
-        />
-      );
-    case "ordered-step-sequence":
-      return (
-        <OrderedStepSequence
-          items={block.items.map((step) => ({ id: step.id, ordinal: step.ordinal, label: step.label, heading: step.heading, description: step.description, visual: panelSpecimen(step.visual), href: step.href, lane: step.lane }))}
-          headingLevel={2}
-          ground={ground}
-          lanes={block.lanes}
-          caption={block.caption}
-          end={block.end}
-          endLabel={block.endLabel}
-          continuesLabel={block.continuesLabel}
-          labelledBy={block.lanes === undefined ? undefined : headingId}
-        />
-      );
-    case "faq":
-      return <Faq items={block.items} headingLevel={2} ground={ground} />;
+    case "record": return <RecordLedger form="record" id={`${section.id.length}:${section.id}:${media.id.length}:${media.id}`} head={media.head} columns={media.columns} groups={media.groups} caption={media.caption} flagLabel={media.flagLabel} headingLevel={3} ground={section.ground} />;
+    case "scene": {
+      const scene = <Scene id={`${section.id.length}:${section.id}:5:scene`} input={media.input} label={media.label} relationLabel={media.relationLabel} />;
+      return section.ground === "inverse" ? <div data-scene-plate="" data-ground="base" className="min-w-0 w-full bg-surface-base text-ink-primary">{scene}</div> : scene;
+    }
+    default: { const exhaustive: never = media; return exhaustive; }
   }
 }
-
-/**
- * The `content-section` block for one entry's FAQ implementation. One
- * Designer `ContentSection` at `<h2>`: the header group (with the section's
- * button actions), then the text block and anything placed after it,
- * then the specimen, then the optional footnote line. A `split` puts the text beside the specimen; a split FAQ
- * block is the FAQ band, its rows taking the visual column beside a
- * top-aligned header, and a text-only split (topics or features, no media)
- * places its block in the visual column the same way. A stacked section
- * with no block, no media and nothing placed after it is a statement band: its heading takes the
- * `display` emphasis. Block item headings are one level below the section.
- *
- * Actions: a split keeps them in its text column; a stacked band takes them
- * only when it is header-only, so a stacked band with a block or media never
- * renders them. A linked block item (`href`) renders as Designer's stretched
- * link: the item's title is its one link.
- */
-export function createContentSectionBlock(Faq: ContentSectionFaq) {
-  return function ContentSectionBlock({ section, actions, className, after }: ContentSectionBlockProps) {
-    const { ground } = section;
-    const headingId = section.block?.type === "ordered-step-sequence" && section.block.lanes !== undefined ? `${section.id}:heading` : undefined;
-    const block = section.block === undefined ? null : renderBlock(section.block, ground, Faq, headingId);
-    const header = { id: section.id, headingId, eyebrow: section.eyebrow, heading: section.heading, description: section.description, actions, footnote: renderFootnote(section.footnote), headingLevel: 2 as const, ground };
-    if (section.layout === "split" && section.block?.type === "faq") {
-      return (
-        <ContentSection {...header} layout="split" mediaSide={section.mediaSide} media={block} data-content-section-faq="" className={[className, "tablet-lg:items-start"].filter(Boolean).join(" ")}>
-          {after}
-        </ContentSection>
-      );
+function renderBlock(block: ResolvedSectionedViewContentBlock, section: ResolvedSectionedViewContentSection, ItemsBlock: (props: ItemsProps) => ReactNode): ReactNode {
+  switch (block.type) {
+    case "matrix": {
+      const ids = new Map(block.sides.map(side => [side.id, matrixSideId(section.id, side.id)]));
+      const sideData = (side: typeof block.sides[number]): MatrixSide => ({ ...side, id: ids.get(side.id)!, visual: side.visual === undefined ? undefined : <Specimen label={side.heading} panels={[panelData(side.visual)]} /> });
+      return <Matrix aria-labelledby={section.heading === undefined ? undefined : `${section.id}:heading`} sides={[sideData(block.sides[0]!), sideData(block.sides[1]!)]} featured={block.featured === undefined ? undefined : ids.get(block.featured)} headingLevel={3} ground={section.ground} />;
     }
-    if (section.layout === "split" && section.media === undefined) {
-      // A text-only split: the topic-list or feature-grid block takes the visual column, top-aligned beside the header.
-      return (
-        <ContentSection {...header} layout="split" mediaSide={section.mediaSide} media={block} data-content-section-text-split="" className={[className, "tablet-lg:items-start"].filter(Boolean).join(" ")}>
-          {after}
-        </ContentSection>
-      );
+    case "items": {
+      const items: ItemData[] = block.items.map(item => ({ id: item.id, heading: item.heading, description: item.description, eyebrow: item.eyebrow, icon: icon(item.icon), meta: item.meta, badge: item.badge, href: item.href, featured: item.featured, span: item.span, lane: item.lane, visual: partSpecimen(item.visual, item.id, item.heading) }));
+      return <><ItemsBlock aria-labelledby={section.heading === undefined ? undefined : `${section.id}:heading`} items={items} order={block.order} reveal={block.reveal} lanes={block.lanes} end={block.end} endLabel={block.endLabel} caption={block.caption} arrangement={block.arrangement} columns={block.columns} treatment={block.treatment} emphasis={block.emphasis} size={section.size === "display" ? "display" : "standard"} groups={block.groups} headingLevel={3} ground={section.ground} />{block.end === "continues" && block.endLabel === undefined && block.continuesLabel !== undefined ? <span data-content-continuation="" className="sr-only">{block.continuesLabel}</span> : null}</>;
     }
-    if (section.layout === "split" && section.media !== undefined) {
-      return (
-        <ContentSection {...header} layout="split" mediaSide={section.mediaSide} media={mediaSpecimen(section.media)} className={className}>
-          {block}
-          {after}
-        </ContentSection>
-      );
+    default: { const exhaustive: never = block; return exhaustive; }
+  }
+}
+/** Canonical frame, entry-specific collections, Matrix and media adapters. */
+export function createContentSectionBlock(Faq: ContentSectionFaq, ItemsBlock: (props: ItemsProps) => ReactNode = Items) {
+  return function ContentSectionBlock({ section, actions, className, style, after, publishedFaq }: ContentSectionBlockProps) {
+    if (publishedFaq !== undefined) {
+      if (publishedFaq.kind !== "faq" || publishedFaq.layout !== "split" || publishedFaq.id !== section.id) throw new RenderError("resolution-failed", "Invalid published FAQ compatibility bridge.");
+      return <ContentSection id={publishedFaq.id} eyebrow={publishedFaq.eyebrow} heading={publishedFaq.heading} description={publishedFaq.description} headingLevel={2} ground={publishedFaq.ground} layout="split" media={<Faq items={publishedFaq.items} headingLevel={2} ground={publishedFaq.ground} />} data-content-section-faq="" className={[className, "tablet-lg:items-start"].filter(Boolean).join(" ")}>{after}</ContentSection>;
     }
-    // A statement band (no block, no media, nothing placed after it: a header and its actions) carries the page's display scale instead of repeating a thin section shape.
-    const statement = section.block === undefined && section.media === undefined && (after === undefined || after === null);
-    // A stacked band followed by a block or a visual takes no actions (the contract refuses them; this keeps the render honest too).
-    const headerOnly = section.block === undefined && section.media === undefined;
-    return (
-      <ContentSection
-        {...header}
-        actions={headerOnly ? actions : undefined}
-        align={section.align}
-        emphasis={statement ? "display" : "section"}
-        media={section.media === undefined ? undefined : mediaSpecimen(section.media)}
-        data-content-section-statement={statement ? "" : undefined}
-        className={className}
-      >
-        {block}
-        {after}
-      </ContentSection>
-    );
+    const block = section.block === undefined ? null : renderBlock(section.block, section, ItemsBlock);
+    const media = section.media === undefined ? undefined : renderMedia(section.media, section);
+    const header = { id: section.id, headingId: section.heading === undefined ? undefined : `${section.id}:heading`, eyebrow: section.eyebrow, heading: section.heading, description: section.description, actions, footnote: renderFootnote(section.footnote), headingLevel: 2 as const, size: section.size, ground: section.ground, className, style };
+    if (section.layout !== "stacked") return <ContentSection {...header} layout={section.layout} media={media}>{block}{after}</ContentSection>;
+    return <ContentSection {...header} layout="stacked" align={section.align} media={media}>{block}{after}</ContentSection>;
   };
 }

@@ -1139,8 +1139,8 @@ to action that carries its own fill, such as a `primary` Designer `Button` or
 The core hero contract uses `size: "compact"` for section-scale copy and
 `size: "display"` for its default. Compact hero media is refused, and
 `checkSectionVariety` warns for a lone compact hero unless known trailing
-content is supplied. The existing `hero-compact` gallery fixture and web
-view still await the canonical size-field migration.
+content is supplied. The web views use the canonical size field; the existing
+`hero-compact` gallery fixture awaits the catalog migration.
 
 `LandingView`, exported from `@clossys/publisher/web` and
 `@clossys/publisher/web/server`, is a sectioned landing page: a hero block
@@ -1278,32 +1278,40 @@ header group (an `<h2>`, never a second display heading) with its actions,
 and its media as the block. Other section kinds keep their block's own
 header region inside the same slot.
 
-**Content-section bands (renderer migration pending).** The existing web
-renderer still recognizes the earlier block shapes described below; these
-are not accepted canonical core input. A `content-section` band (the `records` document
-above) maps its block and specimen straight onto Designer blocks: `feature-grid`
-to `FeatureGrid`, `card-grid` to `CardGrid`, `comparison` to `Comparison`,
-`topic-list` to `TopicList`, `ordered-step-sequence` to
-`OrderedStepSequence`, `faq` to `Faq`, and `media` to a
-labelled `Specimen` figure. Item icons render their Designer icon; actions
-render through the shared emphasis ladder (`primary`, `outline`,
-ground-aware `tonal` and chevron `quiet`) at one `md` group size, and a `footnote` renders as a small
-muted line closing the text column, its one link underlined. A linked
-item's `href` passes to the Designer block, which renders the item's title as
-its one link with a chevron and stretches the hit area over the item; a
-stacked band with a block or media renders no section actions even if handed
-some (validation refuses them first). A `split` band puts the text beside the specimen on its
-`mediaSide`; a split FAQ puts its rows in the visual column beside a
-top-aligned header group. A stacked band takes its `align` and shows the
-specimen after the block. A stacked band with no block, no media and no
-`afterSection` content is a statement band: its header is its content, so
-it takes the Designer `ContentSection` `display` emphasis (the display
-heading step and rhythm) and carries `data-content-section-statement`.
-`afterSection` content follows the block (in a split FAQ, it closes the
-header group's column). Specimens are static
-records: they hold no links, buttons or other focusable content. A section
-that would not render as authored is refused with a `RenderError` naming its
-path.
+**Canonical content-section rendering (bounded integration).** The web views
+render canonical `items` with `order: "none"` and `reveal: "all"` through
+Designer `Items`, preserving icons, eyebrow, meta, badge, links, spans,
+featured items, group membership and static specimen visuals. The frame
+forwards its resolved `compact`, `standard` or `display` size and `stacked`,
+`split-start` or `split-end` layout. Item headings remain one level below the
+section heading. Frame size controls rhythm without a statement heuristic.
+Actions use the shared emphasis ladder at one `md` group size; a footnote
+supports text, one link, or both.
+
+Single-panel specimen media, its optional anatomy key, record groups and the
+three scene templates forward their resolved visible copy to the available
+Designer blocks. Matrix forwards labels, headings, descriptions, points, specimen visuals and
+the featured side. Its presentation IDs encode the section and each original
+side ID injectively, preserving authored identities and the featured relation.
+Panel badges remain independent of metadata and status; status-row mobile
+limits retain all authored rows, and Meter previous values keep their visible
+text and marker. Numbered, connected and disclosed Items use the collection
+renderer. Ordinary disclosure uses React Aria controls; the server entry uses
+native details. A supplied continuing end label stays visible; an omitted
+label retains the consumer-resolved continuation copy as hidden text.
+The published top-level FAQ keeps its existing implementation, including
+split FAQ layout: SectionedView selects its entry-specific controls, while
+LandingView retains native disclosure. Scene text limits stay local to media; inverse Scene media gets an opaque base plate and base ink. Record, Scene and anatomy identities are namespaced by section instance without changing authored copy or provenance. Canonical Landing fragments align with the unpadded band edge; published bands retain their padding offsets.
+
+The resolved boundary requires explicit canonical axes and closed plain data
+before reading discriminators. It checks the structural contract and text
+budgets without calling a consumer resolver or changing caller provenance.
+`afterSection` content follows the block. The content preview uses canonical
+collection and media data, including connected and disclosed examples.
+Standalone preview pages select the native server entry so disclosures work
+without hydration.
+Single-panel recomposition retains sample copy and state while changing the
+former multi-panel anatomy.
 
 **Measure and rhythm.** Centred copy, in the hero block and the call to
 action, is held to the prose measure (`--ui-width-prose-max`) inside the
@@ -5019,8 +5027,15 @@ approval implementation. It implements no authentication provider.
 
 `sectionWeight(section)` derives `{ weight, shape }` from authored structure.
 The hero has weight and shape `hero`; body weights are A (set piece), B
-(supporting) and C (breather). Ground never changes weight. The current block
-vocabulary determines shape; planned blocks receive no speculative contract.
+(supporting) and C (breather). Ground never changes weight. The effective
+Items axes and Matrix sides determine shape equally for raw blocks, recipes
+and resolved documents. Record media is B/table; Scene media
+is A/specimen. A stacked specimen is A/specimen; split specimens fall back
+to B/specimen after structural set pieces and the C/reference nonsequence
+disclosure carveout, before ordinary text block shapes. Numbered or connected Items use
+sequence shape, with visuals promoting them to A. Nonconnected stacked
+visual Items use A/specimen; visual rows, columns and bento use A/grid.
+Statement emphasis takes A/statement before other valid Items axes.
 
 `checkPageFlow(document, options?)` returns `SectionedViewFlowWarning[]` with
 `rule`, `severity: "warning"`, `path` and `message`. `CheckPageFlowOptions` takes
@@ -5058,7 +5073,10 @@ Omitted body-action emphasis follows `resolveActionEmphasis`: secondary then
 quiet on A, tertiary on B and frame C, and quiet on other C bands. Explicit
 emphasis renders as authored; `action-tier` warns when it exceeds the weight
 ceiling. Linked cards are quiet and remain independent of section-action counts.
-`checkSectionVariety` retains its existing output.
+`checkSectionVariety` compares effective visual families and treatments, so
+raw blocks and equivalent recipes produce the same warnings. Group membership
+keeps href diagnostics at the original flat `block.items.N.href` paths. The
+maximum set pieces and breathers is `ceil(bodyBandCount / 3)`.
 
 
 Canonical connected Items blocks may declare exactly two lane ids and

@@ -28,6 +28,7 @@ import { resolve } from "node:path";
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { render } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { Avatar } from "../atoms/Avatar.js";
 import { Badge } from "../atoms/Badge.js";
 import { Banner } from "../atoms/Banner.js";
@@ -48,6 +49,7 @@ import { Textarea } from "../atoms/Textarea.js";
 import { Hero } from "../blocks/Hero.js";
 import { Item } from "../blocks/items/Item.js";
 import { Items } from "../blocks/items/Items.js";
+import { Items as NativeItems } from "../blocks/items/Items.server.js";
 import { CardGrid } from "../blocks/CardGrid.js";
 import { Comparison } from "../blocks/Comparison.js";
 import { Matrix } from "../blocks/Matrix.js";
@@ -98,6 +100,39 @@ function toSelectorText(className: string): string {
 }
 
 describe("coverage: real rendered classes are all present in compiled.css", () => {
+  it("covers actual ordered tracks and native/React Aria disclosure states", async () => {
+    const classes = new Set<string>();
+    const user = userEvent.setup();
+    const collect = (tree: ReturnType<typeof render>) => { for (const cls of collectClassNames(tree.container)) classes.add(cls); tree.unmount(); };
+    for (const ground of ["base", "sunken", "inverse"] as const) {
+      for (const columns of [2, 3] as const) collect(render(<Items arrangement="columns" columns={columns} order="connected" ground={ground} end="continues" endLabel="Next" items={[0,1,2,3,4].map(i => ({ id: String(i), heading: "Step", description: "Support", visual: i === 1 ? <span>Visual</span> : undefined }))} />));
+      for (const count of [3, 5]) collect(render(<Items arrangement="stacked" order="connected" ground={ground} lanes={[{ id: "a", label: "First" }, { id: "b", label: "Second" }]} end="continues" endLabel="Next" items={Array.from({ length: count }, (_, i) => ({ id: String(i), heading: "Step", description: "Support", lane: i % 2 ? "b" : "a", visual: <span>Visual</span> }))} />));
+      for (const Component of [Items, NativeItems]) for (const treatment of ["plain", "rule", "plate"] as const) {
+        const tree = render(<Component arrangement="rows" columns={2} reveal="disclose" order="numbered" ground={ground} treatment={treatment} items={[0,1,2,3].map(i => ({ id: String(i), heading: "Question", description: "Answer", badge: { label: "Beta", tone: "info" }, meta: "Actor" }))} groups={[{ id: "a", label: "A", items: ["1","0"] }, { id: "b", label: "B", items: ["3","2"] }]} />);
+        if (Component === Items) await user.click(tree.container.querySelector("button")!);
+        else tree.container.querySelector("details")!.open = true;
+        collect(tree);
+      }
+    }
+    const scan = scanCompiledCssSources(packageRoot);
+    const generated = await generateCompiledCss({ stylesDir: resolve(packageRoot, "styles"), candidates: scan.candidates });
+    expect([...classes].filter(cls => !generated.css.includes(toSelectorText(cls)))).toEqual([]);
+    expect(generated.css).toContain("::details-content");
+    expect(generated.css).toContain("--disclosure-panel-height");
+    expect(generated.css).toContain("forced-colors: active");
+    for (const utility of ["details-motion", "disclosure-panel-motion", "disclosure-icon-motion"]) {
+      const start = generated.css.indexOf(`.${utility} {`); expect(start).toBeGreaterThanOrEqual(0);
+      let end = generated.css.indexOf("{", start) + 1, depth = 1;
+      while (depth && end < generated.css.length) { const ch = generated.css[end++]!; if (ch === "{") depth++; else if (ch === "}") depth--; }
+      const rule = generated.css.slice(start, end);
+      expect(rule, utility).toMatch(/@media\s*\(prefers-reduced-motion:\s*reduce\)/);
+      const mediaStart = rule.lastIndexOf("@media");
+      let mediaEnd = rule.indexOf("{", mediaStart) + 1, mediaDepth = 1;
+      while (mediaDepth && mediaEnd < rule.length) { const ch = rule[mediaEnd++]!; if (ch === "{") mediaDepth++; else if (ch === "}") mediaDepth--; }
+      expect(rule.slice(mediaStart, mediaEnd), utility).toMatch(/transition-duration:\s*0s/);
+      expect(rule.slice(0, mediaStart), utility).toMatch(/transition-duration:\s*var\(--ui-duration-default/);
+    }
+  });
   it("covers canonical item treatments, scales, badge tones and arrangements from actual rendering", async () => {
     const classes = new Set<string>();
     const tones = ["neutral", "success", "warning", "danger", "info"] as const;
