@@ -10,10 +10,10 @@ export const ORDER_LAYOUT_CLASSES = {
   transition: "pointer-events-none contents",
   narrowColumns: "contents tablet:hidden",
   narrowLanes3: "contents tablet-lg:hidden",
-  narrowLanes5: "contents desktop:hidden",
+  narrowLanesDesktop: "contents desktop:hidden",
   wideColumns2: "hidden tablet:contents",
   wideTablet2: "hidden tablet:contents tablet-lg:hidden",
   wideColumns3: "hidden tablet-lg:contents",
   wideLanes3: "hidden tablet-lg:contents",
-  wideLanes5: "hidden desktop:contents",
+  wideLanesDesktop: "hidden desktop:contents",
 } as const;

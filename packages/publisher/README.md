@@ -521,17 +521,19 @@ alternative to `StatusList`'s `groups`.
 `content-section` is one general band with a heading, optional eyebrow,
 description and actions, at most one content block and one media object, and
 an optional footnote. This canonical contract is validated and resolved in
-`core`; web rendering and the existing catalog fixtures are being migrated
-separately. Published section kinds, including `feature-grid`, `faq` and
+`core`; web views and the content preview render its collection and media data.
+Published section kinds, including `feature-grid`, `faq` and
 `ordered-step-sequence`, retain their own contracts.
 
 The frame has `size: "standard" | "display"` (default `standard`) and
 `layout: "stacked" | "split-start" | "split-end"` (default `stacked`).
 A split direction names the visual or block side; a split with neither is
-a header-only band. Statement bands derive centred alignment from scale
-instead of an authored align field. Hero sections accept
+a header-only band. Only stacked statement bands centre their header; split
+bands never centre. Alignment derives from scale and layout. Hero sections accept
 `size: "display" | "compact"`; the unreleased hero `compact` boolean and
 content-section `align`, `size: "compact"` and `mediaSide` are refused.
+For existing drafts, omit `align`, replace compact content size with
+`standard`, and replace `mediaSide` with a split direction.
 
 A block has one of two canonical types. `items` holds a flat list of
 `SectionedViewItem` objects; `matrix` holds exactly two id-bearing sides.
@@ -550,7 +552,7 @@ these contracts with a local, approved Writer registry.
 | `rows` | 2–8 items, 1 or 2 columns; 2 columns require an even count |
 | `bento` | 2–6 items; `third`, `half`, `two-thirds` and `full` spans fill 12-unit rows; omitted spans resolve to `half` |
 | `stacked` | 2–4 items |
-| `order: "connected"` | 3–5 items in columns or stacked; four emits the advisory `steps-count` warning |
+| `order: "connected"` | 3–5 items in columns or stacked; four without lanes emits the advisory `steps-count` warning |
 | `reveal: "disclose"` | Rows only, 4–6 items |
 
 The default axes are `order: "none"`, `reveal: "all"`,
@@ -559,7 +561,9 @@ columns and exactly three items. Recipes are `features`, `statement`,
 `cards`, `topics`, `link-index`, `faq`, `steps` and `specimen-stack`;
 Matrix's recipe is `comparison`. `link-index` fixes treatment to `plate`.
 `steps` defaults to columns and also accepts a stack; it takes optional lane
-definitions for two actors. The retired `flow` recipe is refused. Recipes
+definitions for two actors. The retired `flow` recipe is refused; migrate
+to `steps` with `arrangement: "stacked"`. Items `emphasis` is refused; use
+`scale` instead. Recipes
 constrain optional slots as well as axes. The six unreleased raw block types
 `feature-grid`, `card-grid`, `topic-list`, `ordered-step-sequence`, `faq` and `comparison`
 are refused with their replacement recipe named. The retired `module` field
@@ -567,7 +571,8 @@ is also refused; it has no alias.
 
 Each item has an id and heading, with optional description, eyebrow, icon,
 meta, one specimen-part visual, href, bento span, lane id and badge.
-Item `featured` is refused. The eyebrow resolves to at most
+Item `featured` is refused; remove it from drafts and select a block
+`treatment` for the collection. The eyebrow resolves to at most
 `CONTENT_ITEM_EYEBROW_MAX_CHARACTERS` (32) characters.
 Row groups are `{ id, label, items }`, where
 `items` contains ids referencing the flat list; every item must belong to
@@ -577,8 +582,10 @@ with known lane ids on every item in a connected block of three to five
 items, using columns or stacked arrangement. The first item uses the first
 defined lane, and both lanes appear.
 
-Matrix sides each have an id and heading, an optional label, and either
-2–4 points or one specimen panel. An optional description supplies lead copy
+Matrix sides each have an id and heading, and either 2–4 points or one
+specimen panel. Labels are optional on both sides together; mixed label
+presence is refused. Without labels, each side heading is its semantic heading.
+An optional description supplies lead copy
 alongside points or a panel; description alone is refused. Points and a
 panel cannot be combined. Both sides share a primary form (points or panel),
 with equal point counts. `featured` names an existing side id. Disclosed
@@ -590,7 +597,8 @@ Media is exactly one of:
 - `specimen`: an accessible label and one `panel`, optionally an ordered
   `key` of 3–5 items targeting labeled header, part or footer slots. Key
   placement derives from the frame layout: at the end of a stacked band,
-  below the panel in a split band; authored key `side` is refused. A keyed
+  below the panel in a split band; authored key `side` is refused, so remove
+  it from drafts and let the layout place the key. A keyed
   figure label uses 6–25 words. Panels
   retain their closed fields, status rows, meter, table, schedule, shares and
   files parts. A status-rows part may specify `mobileRows: 3`; meter
@@ -695,8 +703,8 @@ validates and renders exactly as it did before they existed.
 - **`layout` on the faq section.** `stacked` (the default, unchanged) or
   `split`: the header group in the narrow text column and the rows in the
   wide column beside it, top-aligned. It renders the same band as a
-  `content-section` with a split `faq` block, so the two read alike on one
-  page.
+  `content-section` with a split Items block using the `faq` recipe, so the
+  two read alike on one page.
 - **`detail` on a status-list item.** An optional `CopyRef` carrying that
   row's own explanation, including the reasoning behind a `not-offered`
   answer. It renders as a second description of the same row, so the
@@ -1278,8 +1286,8 @@ without the fade.
 
 **Section anatomy.** Every band with a feature grid, ordered steps, a status
 list, an FAQ, a hero or a `content-section` is one Designer `ContentSection`: the section's
-eyebrow, heading and description as the header group (start-aligned, held to
-the prose measure), then the content as a block rendered without its own
+eyebrow, heading and description as the header group (held to the prose
+measure), then the content as a block rendered without its own
 heading region, then the `afterSection` content. A hero in a later band is a
 header group (an `<h2>`, never a second display heading) with its actions,
 and its media as the block. Other section kinds keep their block's own
@@ -5092,9 +5100,10 @@ maximum set pieces and breathers is `ceil(bodyBandCount / 3)`.
 Canonical connected Items blocks may declare exactly two lane ids and
 CopyRef labels. Every item names a declared lane, the first item uses the
 first lane, and both lanes are used. Lanes require a stacked frame with a
-connected columns or stacked block of three to five items. Labels resolve to
-at most 20 characters. Four connected items produce the advisory
-`steps-count` warning; they still resolve.
+connected block of three to five items. Its arrangement is columns or
+stacked. Labels resolve to at most 20 characters. Four steps with lanes
+produce no count warning; four without lanes retain the advisory
+`steps-count` warning and still resolve.
 
 Connected `caption` requires a visual. Caption and `endLabel` copy is bounded
 to 120 and 40 characters.
@@ -5102,8 +5111,8 @@ An explicit `end: "continues"` without endLabel resolves consumer
 `steps.continues` through the existing CopyResolver and retains provenance;
 missing copy refuses resolution. `checkSectionVariety` warns about the absent
 visible endLabel. Its explicit catalog context checks sample captions on connected Items
-blocks with visuals. Web rendering and catalog fixtures retain their earlier
-shapes until the separate renderer migration.
+blocks with visuals. Web views and catalog fixtures use the canonical
+collection and media shapes.
 
 ## Runnable canonical example
 
@@ -5112,7 +5121,7 @@ public core entry point. It demonstrates equivalent raw axes and a recipe,
 Matrix lead descriptions with equal-length points, both frame sizes, both split
 directions, a specimen badge and prior measurement, record rows and owner copy,
 and a Scene whose visible strings come from the registry. Structural ids and
-numeric measurements stay data. Rendering and catalog migration are separate.
+numeric measurements stay data.
 
 ```ts
 import {

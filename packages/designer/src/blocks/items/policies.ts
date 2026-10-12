@@ -115,7 +115,7 @@ export function assertItems(props: ItemsProps): number | undefined {
   const count = items.length;
   if (order === "connected") {
     if ((arrangement !== "columns" && arrangement !== "stacked") || count < 3 || count > 5 || (arrangement === "columns" && columns !== 2 && columns !== 3)) throw new RangeError("Items: connected order needs columns or stacked with 3-5 steps.");
-    if (count === 4) console.warn("Items: connected sequences read best with three or five steps.");
+    if (count === 4 && props.lanes === undefined) console.warn("Items: connected sequences read best with three or five steps.");
     if (hasContent(props.caption) && !items.some(item => hasContent(item.visual))) throw new TypeError("Items: a connected caption requires a visual.");
   }
   if (arrangement === "columns" && order !== "connected" && !((columns === 2 && [2, 4, 6].includes(count)) || (columns === 3 && [3, 6].includes(count)))) throw new RangeError("Items: columns need two columns with 2/4/6 items or three columns with 3/6 items.");

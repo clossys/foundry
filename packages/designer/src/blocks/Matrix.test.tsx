@@ -26,7 +26,7 @@ describe("Matrix", () => {
     expect(screen.getByText("A shared record")).toHaveClass("text-h2", "text-ink-primary");
   });
 
-  it("preserves the published Comparison label slot even when its React content is empty", () => {
+  it("preserves Comparison compatibility for the label slot even when its React content is empty", () => {
     const { container } = render(<Comparison before={{ label: null, heading: "Existing heading", description: "Existing body" }} after={{ label: false, description: "Second body" }} />);
     expect([...container.querySelectorAll("h3")].map(node => node.textContent)).toEqual(["", ""]);
     expect(screen.getByText("Existing heading").tagName).toBe("P");
@@ -49,15 +49,18 @@ describe("Matrix", () => {
     expect(container.querySelector('[data-matrix-side="second"] > [data-featured="true"]')).not.toBeNull();
   });
 
-  it("supports label omission on one side while keeping the other side's existing heading anatomy", () => {
-    const { container } = render(<Matrix sides={[
-      SIDES[0],
-      { id: "second", heading: "A shared view", points: ["One view", "Clear owners"] },
-    ]} />);
-    expect(screen.getAllByRole("heading", { level: 3 }).map(node => node.textContent)).toEqual(["First option", "A shared view"]);
-    expect(screen.getByText("A shared record").tagName).toBe("P");
-    expect(container.querySelectorAll("h3")).toHaveLength(2);
-    expect(container.querySelector('[data-matrix-side="second"]')?.querySelectorAll("p")).toHaveLength(0);
+  it.each(["points", "visual"] as const)("refuses mixed label presence on either %s side", form => {
+    const sides: MatrixProps["sides"] = form === "points" ? SIDES : [
+      { id: "first", label: "First option", heading: "A shared record", visual: <svg aria-label="First sample" /> },
+      { id: "second", label: "Second option", heading: "A shared view", visual: <svg aria-label="Second sample" /> },
+    ];
+    for (const unlabeledSide of [0, 1]) {
+      const mixed = sides.map((side, index) => index === unlabeledSide ? { ...side, label: undefined } : side) as unknown as MatrixProps["sides"];
+      expect(() => markup({ sides: mixed })).toThrow(/both sides.*labels.*neither/);
+    }
+    expect(() => markup({ sides })).not.toThrow();
+    const unlabeled = sides.map(side => ({ ...side, label: undefined })) as unknown as MatrixProps["sides"];
+    expect(() => markup({ sides: unlabeled })).not.toThrow();
   });
 
   it.each(["first", "second"])("features only the selected %s plate without reordering sides", featured => {
@@ -164,7 +167,7 @@ describe("Matrix", () => {
     expect(() => markup({ sides: SIDES.map(side => ({ ...side, points: undefined, description })) as unknown as MatrixProps["sides"] })).toThrow(/needs points or visual/);
   });
 
-  it("preserves the published Comparison description-only form and optional headings", () => {
+  it("preserves Comparison compatibility for description-only bodies and optional headings", () => {
     const { container } = render(<Comparison
       before={{ label: "Before", description: "Earlier process." }}
       after={{ label: "After", description: "Improved process." }}
