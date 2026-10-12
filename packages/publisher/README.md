@@ -2959,7 +2959,8 @@ Props (`GlobalErrorDocumentFramedProps`):
 | `htmlClassName` | no | A class on `<html>`, rendered only when non-empty. |
 | `shell`, `resolveCopy`, `resolveAsset` | yes | The frame's inputs, exactly as `SiteFrame` takes them (`SiteFrameInput`). |
 | `status` | yes | The one `<h1>`, as on `StatusView`: a code such as `"500"`, or a short title. |
-| `subtitle` | no | One line of supporting copy. A diagnostic reference goes here as caller copy (`Error: <digest>.`); there is no digest prop. |
+| `subtitle` | no | One line of supporting caller copy. |
+| `reference` | no | `{ label: string; value: string }`, also accepted by `StatusView`: renders `Error: <code>…</code>.` when `label` is `"Error"`, after the subtitle. The label comes from caller copy or a resolved Writer record; the value is escaped text in selectable `<code>`. Omitted means no line or empty element. Requires the framed shape. |
 | `action` | no | The one primary call to action, such as a retry button. |
 | `notes` | no | A quiet line for a secondary link. |
 | `routes` | no | Caller-labelled destinations, forwarded unchanged to `StatusView`. |
@@ -2996,7 +2997,8 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
       resolveCopy={frame.resolveCopy}
       resolveAsset={frame.resolveAsset}
       status="500"
-      subtitle={error.digest ? `Something went wrong. Error: ${error.digest}.` : "Something went wrong."}
+      subtitle="Something went wrong."
+      reference={error.digest === undefined ? undefined : { label: "Error", value: error.digest }}
       action={<button type="button" onClick={reset}>Try again</button>}
     />
   );

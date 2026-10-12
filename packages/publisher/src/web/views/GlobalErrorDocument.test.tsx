@@ -9,6 +9,9 @@ import { SITE_MAIN_ID } from "../frame/types.js";
 import type { SiteShellInput } from "../frame/types.js";
 import { SiteMetadataError } from "../siteMetadata.js";
 import { GlobalErrorDocument } from "./GlobalErrorDocument.js";
+import { StatusView } from "./StatusView.js";
+import * as ordinary from "../../../dist/web/index.js";
+import * as server from "../../../dist/web/server.js";
 import type { GlobalErrorDocumentErrorViewProps, GlobalErrorDocumentFramedProps, GlobalErrorDocumentProps } from "./GlobalErrorDocument.js";
 
 const ALLOWED_IMPORTS = ["react", "../frame/SiteFrame.js", "../frame/types.js", "../siteMetadata.js", "./ErrorView.js", "./StatusView.js"];
@@ -263,5 +266,87 @@ describe("GlobalErrorDocument", () => {
       ].join("\n");
       expect(moduleSpecifiers(sample)).toEqual(["react", "next/head", "another-provider", "third-provider"]);
     });
+  });
+});
+
+const referenceFixture = {
+  label: "Error",
+  value: '<em data-reference="unsafe">&\'diagnostic</em>',
+};
+const referenceInputs = { status: "500", subtitle: "Something went wrong.", reference: referenceFixture, action: <button type="button">Try again</button> };
+
+function referenceDocument(markup: string): Document {
+  return new DOMParser().parseFromString(markup, "text/html");
+}
+
+const referenceSurfaces = [
+  { name: "StatusView", render: (reference = referenceFixture) => renderToStaticMarkup(<StatusView {...{ ...referenceInputs, reference }} />) },
+  { name: "GlobalErrorDocument", render: (reference = referenceFixture) => renderToStaticMarkup(<GlobalErrorDocument {...framedProps} {...{ ...referenceInputs, reference }} />) },
+];
+
+describe("shared diagnostic reference fixture", () => {
+  for (const surface of referenceSurfaces) {
+    it(`${surface.name} renders the escaped reference once after the description and before the action`, () => {
+      const doc = referenceDocument(surface.render());
+      const codes = doc.body.querySelectorAll("code");
+      expect(codes).toHaveLength(1);
+      const code = codes[0]!;
+      expect(code.textContent).toBe(referenceFixture.value);
+      expect(code.children).toHaveLength(0);
+      expect(code.classList.contains("select-all")).toBe(true);
+      expect(code.parentElement?.classList.contains("block")).toBe(true);
+      expect(doc.body.textContent?.split(referenceFixture.value)).toHaveLength(2);
+      expect(code.parentElement?.textContent).toBe(`Error: ${referenceFixture.value}.`);
+      expect(doc.body.querySelector("[data-reference]")).toBeNull();
+      const markup = surface.render();
+      expect(markup.indexOf("Something went wrong.")).toBeLessThan(markup.indexOf("<code"));
+      expect(markup.indexOf("<code")).toBeLessThan(markup.indexOf("<button"));
+      expect(doc.body.querySelectorAll("button")).toHaveLength(1);
+      if (surface.name === "GlobalErrorDocument") {
+        expect(doc.body.querySelectorAll("main")).toHaveLength(1);
+      } else {
+        expect(doc.body.querySelectorAll("main")).toHaveLength(0);
+      }
+    });
+
+    it(`${surface.name} uses caller labels without a default`, () => {
+      const doc = referenceDocument(surface.render({ label: "Incident", value: "xyz" }));
+      expect(doc.querySelector("code")?.parentElement?.textContent).toBe("Incident: xyz.");
+      expect(doc.body.textContent).not.toContain("Error:");
+    });
+  }
+
+  it("renders byte-identical lines on both surfaces from the shared fixture", () => {
+    const lines = referenceSurfaces.map((surface) => referenceDocument(surface.render()).querySelector("code")?.parentElement?.outerHTML);
+    expect(lines[0]).toBeDefined();
+    expect(lines[0]).toBe(lines[1]);
+  });
+
+  it("omits the entire reference line when absent, with no empty element", () => {
+    const status = referenceDocument(renderToStaticMarkup(<StatusView status="500" subtitle="Something went wrong." />));
+    const global = parse({ ...framedProps, subtitle: "Something went wrong." });
+    const emptyStatus = referenceDocument(renderToStaticMarkup(<StatusView status="500" />));
+    expect(emptyStatus.body.querySelector("p, code")).toBeNull();
+    for (const doc of [status, global]) {
+      expect(doc.querySelector("code")).toBeNull();
+      const description = [...doc.querySelectorAll("p")].find((p) => p.textContent === "Something went wrong.")!;
+      expect(description.children).toHaveLength(0);
+    }
+  });
+
+  it("renders the reference even without a description", () => {
+    const doc = referenceDocument(renderToStaticMarkup(<StatusView {...{ status: "500", reference: referenceFixture }} />));
+    expect(doc.querySelector("code")?.textContent).toBe(referenceFixture.value);
+  });
+
+  it("refuses reference on the deprecated unframed document shape", () => {
+    const legacy = { ...errorViewProps, reference: referenceFixture } as unknown as GlobalErrorDocumentProps;
+    expect(() => parse(legacy)).toThrow(/reference.*framed StatusView shape/);
+  });
+
+  it("renders equivalent markup through ordinary and react-server entries", () => {
+    expect(renderToStaticMarkup(<ordinary.StatusView {...referenceInputs} />)).toBe(renderToStaticMarkup(<server.StatusView {...referenceInputs} />));
+    const props = { ...framedProps, ...referenceInputs };
+    expect(renderToStaticMarkup(<ordinary.GlobalErrorDocument {...props} />)).toBe(renderToStaticMarkup(<server.GlobalErrorDocument {...props} />));
   });
 });
