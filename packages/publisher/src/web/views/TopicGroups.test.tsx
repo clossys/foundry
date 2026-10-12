@@ -6,7 +6,7 @@ import { createCopyResolver } from "@clossys/writer";
 import { resolveSectionedViewDocument, type SectionedViewDocument, type ResolvedSectionedViewContentSection } from "../../core/sectioned-view.js";
 import { createContentSectionBlock } from "./SectionedViewContentSection.js";
 import { assertRenderableSectionedViewDocument } from "./SectionedViewContent.js";
-const Content = createContentSectionBlock(() => null);
+const Content = createContentSectionBlock();
 const ref = (id: string) => ({ id: `topic-render.${id}` });
 const copy = createCopyResolver({ id: "topic-render", locale: "en", revision: "1", source: { kind: "consumer", reference: "fixtures/topics" }, entries: Object.entries({ heading: "Coverage", label: "Category", topic: "A topic", description: "One line." }).map(([id, text]) => ({ id: ref(id).id, text, context: "fixture", status: "approved" as const })) });
 const input: SectionedViewDocument = { id: "topics", sections: [{ id: "topics", kind: "content-section", ground: "inverse", heading: ref("heading"), block: { type: "items", arrangement: "rows", columns: 2, order: "none", reveal: "all", treatment: "rule", scale: "item", items: [0, 1].flatMap((g) => [0, 1].map((i) => ({ id: `i-${g}-${i}`, heading: ref("topic"), description: ref("description"), icon: "file-text", href: `/topics/${g}/${i}` }))), groups: [0, 1].map((g) => ({ id: `g ${g}`, label: ref("label"), items: [0, 1].map((i) => `i-${g}-${i}`) })) } }] };

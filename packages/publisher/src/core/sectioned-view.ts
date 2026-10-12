@@ -269,11 +269,11 @@ export interface SectionedViewFaqSection {
   /**
    * `split` sets the header group in the narrow text column and the rows in
    * the wide column beside it, top-aligned, the same band a `content-section`
-   * with a split `faq` block renders. Optional and additive: without it (or
-   * with `stacked`) the section renders exactly as it did before.
+   * with a split `faq` block renders. Omission selects a stacked band.
    * @default "stacked"
    */
   layout?: "stacked" | "split";
+  /** Four to six question/answer rows for the canonical Index FAQ recipe. */
   items: SectionedViewFaqItem[];
 }
 
@@ -854,6 +854,10 @@ export function validateSectionedViewDocument(value: unknown): ComposeFinding[] 
           validateCopy(item.question, `${itemPath}.question`, findings);
           validateCopy(item.answer, `${itemPath}.answer`, findings);
         });
+        if (Array.isArray(section.items)) {
+          const [min, max] = SECTIONED_VIEW_CONTENT_CONTRACT.counts.disclose;
+          if (section.items.length < min || section.items.length > max) findings.push(countFinding(`${path}.items`, { min, max }, section.items.length, "FAQ rows"));
+        }
         validateEnumField(section, "layout", ["stacked", "split"], "sectioned-view-faq-layout", path, findings);
         validateCopy(section.heading, `${path}.heading`, findings);
         if (section.eyebrow !== undefined) validateCopy(section.eyebrow, `${path}.eyebrow`, findings);

@@ -1,6 +1,7 @@
 import { applyContentGrounds, planContentGrounds } from "../../core/content-ground.js";
 import { assertClosedData, assertCanonicalContentSection } from "./SectionedViewCanonical.js";
 import { resolveActionEmphasis } from "../../core/page-flow.js";
+import { desugarRecipe, SECTIONED_VIEW_CONTENT_CONTRACT } from "../../core/content-contract.js";
 import { resolveRoleActionEmphasis } from "../../core/sectioned-view.js";
 import { renderAction, renderRoleActions } from "./SectionedViewActions.js";
 import { SECTION_GROUND_CLASSES } from "@clossys/designer/blocks/server";
@@ -20,7 +21,6 @@ type StatusListItemProps = { id: string; label: string; detail?: string; state: 
 export interface SectionedViewBlockSet {
   Hero(props: { id: string; eyebrow?: string; heading: string; description?: string; actions?: ReactNode; media?: ReactNode; composition?: "editorial" | "split"; size?: "default" | "compact"; headingLevel: 1 | 2; ground: SectionedViewGround }): ReactNode;
   FeatureGrid(props: GroundProps & { items: readonly { id: string; heading: string; description?: string }[] }): ReactNode;
-  Faq(props: GroundProps & { items: readonly { id: string; question: string; answer: string }[] }): ReactNode;
   OrderedStepSequence(props: GroundProps & { items: readonly { id: string; ordinal: string; label?: string; heading: string; description?: string }[] }): ReactNode;
   /** `groups` and `items` are each optional; the resolved document guarantees exactly one is present. */
   StatusList(props: GroundProps & { labels: Readonly<Record<SectionedViewStatus, string>> & { dispositions: Readonly<Record<SectionedViewStatusDisposition, string>> }; groups?: readonly { id: string; heading: string; items: readonly StatusListItemProps[] }[]; items?: readonly StatusListItemProps[]; legendLabel: string }): ReactNode;
@@ -336,6 +336,10 @@ export function assertRenderableSectionedViewDocument(document: unknown): assert
     if (!closed(record, sectionKeys)) throw new Error(`${path} has keys not allowed for its section kind.`);
     if (record.kind === "faq") oneOf(record.layout, ["stacked", "split"], `${path}.layout`, "faq layout");
     dense(record.items, `${path}.items`);
+    if (record.kind === "faq") {
+      const [min, max] = SECTIONED_VIEW_CONTENT_CONTRACT.counts.disclose;
+      if (record.items.length < min || record.items.length > max) throw new Error(`${path}.items must hold ${min}-${max} FAQ rows.`);
+    }
     const itemKeys = record.kind === "faq" ? ["id", "question", "answer"] : record.kind === "ordered-step-sequence" ? ["id", "ordinal", "label", "heading", "description"] : ["id", "heading", "description"];
     closedItems(record.items, `${path}.items`, itemKeys);
     itemIds(record.items, `${path}.items`);
@@ -386,7 +390,7 @@ export function renderSectionedViewSections(document: unknown, blocks: Sectioned
 }
 
 export function createSectionedView(blocks: SectionedViewBlockSet) {
-  const { Hero, FeatureGrid, Faq, OrderedStepSequence, StatusList, Stat, PricingTable, Testimonial, ContentSection } = blocks;
+  const { Hero, FeatureGrid, OrderedStepSequence, StatusList, Stat, PricingTable, Testimonial, ContentSection } = blocks;
   return function SectionedView({ document, landmark = "main", resolveAssetId, prefersReducedMotion }: SectionedViewProps) {
     try {
       assertRenderableSectionedViewDocument(document);
@@ -395,7 +399,7 @@ export function createSectionedView(blocks: SectionedViewBlockSet) {
       throw new RenderError("resolution-failed", `SectionedView refused an invalid resolved document: ${message}`);
     }
     const [planned] = applyContentGrounds(planContentGrounds([document]), [document]);
-    const sections = renderSectionedViewSections(planned!, { Hero, FeatureGrid, Faq, OrderedStepSequence, StatusList, Stat, PricingTable, Testimonial, ContentSection },{ resolveAssetId, prefersReducedMotion }).map(({ node }) => node);
+    const sections = renderSectionedViewSections(planned!, { Hero, FeatureGrid, OrderedStepSequence, StatusList, Stat, PricingTable, Testimonial, ContentSection },{ resolveAssetId, prefersReducedMotion }).map(({ node }) => node);
     if (!LANDMARKS.includes(landmark)) {
       throw new RenderError("resolution-failed", `SectionedView refused an invalid resolved document: landmark must be one of ${LANDMARKS.join(", ")}.`);
     }
@@ -506,12 +510,9 @@ const STAT_GRID_GROUND: Record<SectionedViewGround, { surface: string; primary: 
   inverse: { surface: "bg-surface-inverse", primary: "text-ink-on-inverse", secondary: "text-ink-on-inverse-muted", muted: "text-ink-on-inverse-muted" },
 };
 
-/**
- * A split `faq` section as the content-section band it reads as: the header
- * group in the text column and the rows, as a split `faq` block, in the
- * visual column. One renderer for both spellings keeps them identical.
- */
-function splitFaqSection(section: Extract<ResolvedSectionedViewSection, { kind: "faq" }>): ResolvedSectionedViewContentSection {
+/** Adapt the published question/answer shape to the canonical Index FAQ recipe. */
+function faqSection(section: Extract<ResolvedSectionedViewSection, { kind: "faq" }>): ResolvedSectionedViewContentSection {
+  const { arrangement, columns, order, reveal, treatment, scale } = desugarRecipe({ type: "items", recipe: "faq", items: [] });
   return {
     id: section.id,
     kind: "content-section",
@@ -520,8 +521,8 @@ function splitFaqSection(section: Extract<ResolvedSectionedViewSection, { kind: 
     heading: section.heading,
     ...(section.description === undefined ? {} : { description: section.description }),
     size: "standard",
-    layout: "split-end",
-    block: { type: "items", arrangement: "rows", columns: 1, order: "none", reveal: "disclose", treatment: "rule", scale: "item", items: section.items.map(item => ({ id: item.id, heading: item.question, description: item.answer })) },
+    layout: section.layout === "split" ? "split-end" : "stacked",
+    block: { type: "items", recipe: "faq", arrangement, columns, order, reveal, treatment, scale, items: section.items.map(item => ({ id: item.id, heading: item.question, description: item.answer })) },
   };
 }
 
@@ -548,8 +549,7 @@ function renderSection(section: ResolvedSectionedViewSection, index: number, blo
     }
     case "feature-grid": return <blocks.FeatureGrid key={section.id} id={section.id} eyebrow={section.eyebrow} heading={section.heading} description={section.description} items={section.items} headingLevel={2} ground={section.ground} />;
     case "faq":
-      if (section.layout === "split") return <blocks.ContentSection key={section.id} section={splitFaqSection(section)} publishedFaq={section} className={SECTION_GROUND_CLASSES[section.ground].surface || undefined} />;
-      return <blocks.Faq key={section.id} id={section.id} eyebrow={section.eyebrow} heading={section.heading} description={section.description} items={section.items} headingLevel={2} ground={section.ground} />;
+      return <blocks.ContentSection key={section.id} section={faqSection(section)} publishedKind="faq" className={SECTION_GROUND_CLASSES[section.ground].surface || undefined} />;
     case "ordered-step-sequence": return <blocks.OrderedStepSequence key={section.id} id={section.id} eyebrow={section.eyebrow} heading={section.heading} description={section.description} items={section.items} headingLevel={2} ground={section.ground} />;
     case "status-list": return <blocks.StatusList key={section.id} id={section.id} eyebrow={section.eyebrow} heading={section.heading} description={section.description} labels={section.labels} groups={section.groups} items={section.items} legendLabel={section.heading} headingLevel={2} ground={section.ground} />;
     case "stat-grid": return renderStatGrid(section, blocks);

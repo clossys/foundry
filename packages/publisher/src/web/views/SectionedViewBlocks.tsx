@@ -1,5 +1,4 @@
 import {
-  Faq,
   FeatureGrid,
   Hero,
   Items,
@@ -46,11 +45,10 @@ function Testimonial(props: TestimonialProps) {
 export const sectionedViewBlocks: SectionedViewBlockSet = {
   Hero,
   FeatureGrid,
-  Faq,
   OrderedStepSequence,
   StatusList,
   Stat,
   PricingTable,
   Testimonial,
-  ContentSection: createContentSectionBlock(Faq, Items),
+  ContentSection: createContentSectionBlock(Items),
 };

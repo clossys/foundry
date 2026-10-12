@@ -260,7 +260,7 @@ describe("content catalog page", () => {
       document: resolveSectionedViewDocument(previewSectionedDocument, previewCopyResolver),
     })));
     const dom = new JSDOM(entry!.markup).window.document;
-    expect(dom.querySelectorAll("details summary")).toHaveLength(1);
+    expect(dom.querySelectorAll("#faq [data-items] details summary")).toHaveLength(4);
     expect(dom.querySelectorAll("[data-rac]")).toHaveLength(0);
     const details = dom.querySelector("details");
     expect(details?.open).toBe(false);
