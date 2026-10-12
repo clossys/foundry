@@ -1,13 +1,7 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
-import {
-  Button as AriaButton,
-  Disclosure as AriaDisclosure,
-  DisclosurePanel as AriaDisclosurePanel,
-} from "react-aria-components";
-import { Icon } from "../atoms/Icon.js";
 import { cx } from "../atoms/internal/cx.js";
-import { ChevronDown } from "../icons/ChevronDown.js";
 import { FAQ_ANSWER_STYLE, FAQ_ROW_CLASSES } from "./Faq.server.js";
+import { disclosureRow } from "./internal/disclosure-row.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
 
 export type FaqHeadingLevel = 2 | 3 | 4 | 5 | 6;
@@ -109,28 +103,7 @@ export function Faq({
         </div>
       ) : null}
       <div className={cx(FAQ_ROW_CLASSES.list, colors.border)}>
-        {items.map((item) => (
-          <AriaDisclosure key={item.id} className={cx(FAQ_ROW_CLASSES.item, colors.border)}>
-            {({ isExpanded }) => (
-              <>
-                <AriaButton slot="trigger" className={cx(FAQ_ROW_CLASSES.trigger, colors.primary)}>
-                  <span>{item.question}</span>
-                  <Icon
-                    glyph={ChevronDown}
-                    decorative
-                    size="md"
-                    className={cx(FAQ_ROW_CLASSES.chevron, isExpanded ? FAQ_ROW_CLASSES.chevronOpen : undefined)}
-                  />
-                </AriaButton>
-                <AriaDisclosurePanel className={FAQ_ROW_CLASSES.panel}>
-                  <div className={cx(FAQ_ROW_CLASSES.answer, colors.secondary)} style={FAQ_ANSWER_STYLE}>
-                    {item.answer}
-                  </div>
-                </AriaDisclosurePanel>
-              </>
-            )}
-          </AriaDisclosure>
-        ))}
+        {items.map(item => disclosureRow({ id: item.id, question: item.question, answer: item.answer, recipe: FAQ_ROW_CLASSES, colors, answerStyle: FAQ_ANSWER_STYLE }))}
       </div>
     </div>
   );

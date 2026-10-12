@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { cx } from "../../atoms/internal/cx.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "../section-ground.js";
 import { assertNoNestedInteractive, cardLinkContainerClassName, type CardLinkFrame } from "../stretched-link.js";
-import { Items } from "./Items.js";
+import { ItemsStatic as Items } from "./ItemsStatic.js";
 import { assertItems, hasContent } from "./policies.js";
 import type { ItemsProps } from "./types.js";
 import { UI_BORDER_RULE } from "../../atoms/internal/ui-vars.js";

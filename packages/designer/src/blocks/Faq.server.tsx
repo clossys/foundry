@@ -1,8 +1,7 @@
-import { Icon } from "../atoms/Icon.js";
 import { cx } from "../atoms/internal/cx.js";
-import { ChevronDown } from "../icons/ChevronDown.js";
 import type { FaqHeadingLevel, FaqProps } from "./Faq.js";
 import { SECTION_MEASURE_MAX } from "./internal/block-vars.js";
+import { nativeDisclosureRow } from "./internal/disclosure-row.server.js";
 import { SECTION_GROUND_CLASSES } from "./section-ground.js";
 
 /**
@@ -37,6 +36,7 @@ export const FAQ_ROW_CLASSES = {
   panel: "disclosure-panel-motion",
   chevron: "shrink-0 disclosure-icon-motion",
   chevronOpen: "rotate-180",
+  chevronNative: "group-open/faq:rotate-180",
   answer: "pb-lg pe-2xl text-body text-pretty tablet:pb-xl",
 } as const;
 
@@ -79,22 +79,7 @@ export function Faq({
         </div>
       ) : null}
       <div className={cx(FAQ_ROW_CLASSES.list, colors.border)}>
-        {items.map((item) => (
-          <details key={item.id} className={cx(FAQ_ROW_CLASSES.item, FAQ_ROW_CLASSES.details, colors.border)}>
-            <summary className={cx(FAQ_ROW_CLASSES.trigger, colors.primary)}>
-              <span>{item.question}</span>
-              <Icon
-                glyph={ChevronDown}
-                decorative
-                size="md"
-                className={cx(FAQ_ROW_CLASSES.chevron, "group-open/faq:rotate-180")}
-              />
-            </summary>
-            <div className={cx(FAQ_ROW_CLASSES.answer, colors.secondary)} style={FAQ_ANSWER_STYLE}>
-              {item.answer}
-            </div>
-          </details>
-        ))}
+        {items.map(item => nativeDisclosureRow({ id: item.id, question: item.question, answer: item.answer, recipe: FAQ_ROW_CLASSES, colors, answerStyle: FAQ_ANSWER_STYLE }))}
       </div>
     </div>
   );
