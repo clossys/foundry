@@ -1,5 +1,5 @@
-import { buildFunctionalCatalogIndex } from "./render-functional-catalog.js";
-export { buildCatalogFunctionPages } from "./render-functional-catalog.js";
+import { buildFunctionalCatalogIndex } from "./catalog/reader-renderer.js";
+export { buildCatalogFunctionPages } from "./catalog/reader-renderer.js";
 import { buttonLinkClassName } from "@clossys/designer/atoms/server";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";

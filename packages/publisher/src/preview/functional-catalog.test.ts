@@ -6,18 +6,18 @@ import { TOKENS } from "@clossys/designer/tokens";
 import { describe, expect, it } from "vitest";
 import { SECTIONED_VIEW_CONTENT_CONTRACT as C, SECTIONED_VIEW_ITEM_RECIPES, desugarRecipe, resolveSectionedViewDocument, validateSectionedViewDocument } from "../core/index.js";
 import { CATALOG_FIXTURES, CATALOG_COPY_REGISTRY, CATALOG_COMPOSITIONS, OTHER_KIND_LINKS, OTHER_KIND_SOURCE, catalogCopyResolver } from "./catalog/index.js";
-import { buildCatalogFunctionPages, CATALOG_RECIPE_LINKS, renderCatalogFixture } from "./render-functional-catalog.js";
+import { buildFunctionalCatalogIndex as buildReferenceCatalogIndex, buildCatalogFunctionPages, CATALOG_RECIPE_LINKS, renderCatalogFixture } from "./render-functional-catalog.js";
 import { previewSectionedDocument, previewCopyResolver } from "./fixture-documents.js";
 import { buildContentCatalogHtml } from "./render-content-catalog.js";
 import { buildMinimalBrandCssFromTokens, buildPreviewGalleryHtml, renderPreviewGalleryEntries, writePreviewGallery } from "./render-preview-gallery.js";
 
-const functions = ["say", "items", "matrix", "frame", "media", "recipes", "other"];
+const functions = ["overview", "introduce", "show", "explain", "index", "sequence", "compare", "frame", "parts"];
 function filesAt(root: string, prefix = ""): string[] {
   return readdirSync(join(root, prefix), { withFileTypes: true }).flatMap(entry => entry.isDirectory() ? filesAt(root, `${prefix}${entry.name}/`) : [`${prefix}${entry.name}`]);
 }
 
 describe("functional content catalog", () => {
-  it("links seven distinct function pages with purposes and axis chips", () => {
+  it("links the reader jobs and shared references with purposes and axis chips", () => {
     const document = new JSDOM(buildContentCatalogHtml()).window.document;
     const entries = [...document.querySelectorAll("[data-catalog-function]")];
     expect(entries.map(entry => entry.getAttribute("data-catalog-function"))).toEqual(functions);
@@ -60,15 +60,16 @@ describe("functional content catalog", () => {
       const brand = join(dir, "input.css");
       writeFileSync(brand, buildMinimalBrandCssFromTokens({ TOKENS }));
       writePreviewGallery({ brandCssPath: brand, outputDir: join(dir, "out") });
-      const recipes = new JSDOM(readFileSync(join(dir, "out/catalog/recipes.html"), "utf8")).window.document;
+      const recipes = new JSDOM(readFileSync(join(dir, "out/catalog/overview.html"), "utf8")).window.document;
       const composition = recipes.querySelector("[data-catalog-composition] [data-landing-view]");
       expect(composition).not.toBeNull();
       expect(composition?.querySelectorAll(":scope > section")).toHaveLength(6);
       expect(composition?.querySelector('[data-template="approval-chain"]')).not.toBeNull();
-      const other = new JSDOM(readFileSync(join(dir, "out/catalog/other.html"), "utf8")).window.document;
-      expect([...other.querySelectorAll("[data-published-kind]")].map(entry => entry.getAttribute("data-published-kind"))).toEqual(["hero", "feature-grid", "faq", "ordered-step-sequence", "status-list", "stat-grid", "pricing", "testimonial", "stat"]);
+      const aliases = functions.flatMap(fn => [...new JSDOM(readFileSync(join(dir, `out/catalog/${fn}.html`), "utf8")).window.document.querySelectorAll("[data-published-kind]")]);
+      expect(new Set(aliases.map(entry => entry.getAttribute("data-published-kind")))).toEqual(new Set(["hero", "feature-grid", "faq", "ordered-step-sequence", "status-list", "stat-grid", "pricing", "testimonial", "stat"]));
       const gallery = new JSDOM(readFileSync(join(dir, "out/gallery.html"), "utf8")).window.document;
-      for (const link of other.querySelectorAll("[data-published-kind] a")) {
+      for (const entry of aliases) {
+        const link = entry.querySelector("a")!;
         const kind = link.parentElement!.getAttribute("data-published-kind")!;
         const descriptor = OTHER_KIND_LINKS.find(entry => entry.kind === kind)!;
         const target = gallery.getElementById(link.getAttribute("href")!.split("#")[1]!);
@@ -82,7 +83,7 @@ describe("functional content catalog", () => {
 });
 
 
-describe("catalog configuration data", () => {
+describe("retained contract configuration reference data", () => {
   const documents = CATALOG_FIXTURES.map(fixture => ({ id: `test-${fixture.id}`, sections: [fixture.section] }));
   const resolved = documents.map(document => resolveSectionedViewDocument(document, catalogCopyResolver));
   const content = resolved.flatMap(document => document.sections.filter(section => section.kind === "content-section"));
@@ -136,7 +137,7 @@ describe("catalog configuration data", () => {
   });
   it("resolves all local page and fragment links and groups every example by its named axis", () => {
     const sheets = { designerTokens: "designer-tokens.css", utilities: "publisher-preview.css", brand: null };
-    const pages = [{ file: "content-catalog.html", content: buildContentCatalogHtml(sheets) }, ...buildCatalogFunctionPages(sheets)];
+    const pages = [{ file: "content-catalog.html", content: buildReferenceCatalogIndex(sheets) }, ...buildCatalogFunctionPages(sheets)];
     const byFile = new Map(pages.map(page => [page.file, new JSDOM(page.content).window.document]));
     byFile.set("gallery.html", new JSDOM(buildPreviewGalleryHtml(renderPreviewGalleryEntries())).window.document);
     let exampleCount = 0;
