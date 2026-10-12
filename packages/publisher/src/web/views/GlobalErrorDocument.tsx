@@ -5,6 +5,7 @@ import { formatPageTitle } from "../siteMetadata.js";
 import { ErrorViewBody } from "./ErrorView.js";
 import type { ErrorViewProps } from "./ErrorView.js";
 import { StatusView } from "./StatusView.js";
+import type { StatusViewProps } from "./StatusView.js";
 
 /** The document-level props both shapes share: the root `<html>` and the `<head>`. */
 export interface GlobalErrorDocumentHeadProps {
@@ -41,6 +42,8 @@ export interface GlobalErrorDocumentFramedProps extends GlobalErrorDocumentHeadP
   action?: ReactNode;
   /** A quiet line under the action for a secondary link. */
   notes?: ReactNode;
+  /** Caller-labelled destinations forwarded unchanged to StatusView. */
+  routes?: StatusViewProps["routes"];
   title?: never;
   description?: never;
 }
@@ -61,6 +64,7 @@ export interface GlobalErrorDocumentErrorViewProps extends GlobalErrorDocumentHe
   resolveAsset?: never;
   subtitle?: never;
   notes?: never;
+  routes?: never;
 }
 
 /**
@@ -107,13 +111,16 @@ export function GlobalErrorDocument(props: GlobalErrorDocumentProps): ReactEleme
         "GlobalErrorDocument: `title` and `description` belong to the deprecated ErrorView shape; with `shell`, pass `status`, `subtitle`, `action` and `notes`.",
       );
     }
-    const { shell, resolveCopy, resolveAsset, status, subtitle, action, notes } = props;
+    const { shell, resolveCopy, resolveAsset, status, subtitle, action, notes, routes } = props;
     body = (
       <SiteFrame shell={shell} resolveCopy={resolveCopy} resolveAsset={resolveAsset}>
-        <StatusView status={status} subtitle={subtitle} action={action} notes={notes} />
+        <StatusView status={status} subtitle={subtitle} action={action} notes={notes} routes={routes} />
       </SiteFrame>
     );
   } else {
+    if ((props as { routes?: unknown }).routes !== undefined) {
+      throw new Error("GlobalErrorDocument: routes require the framed StatusView shape.");
+    }
     const {
       lang: _lang,
       documentTitle: _documentTitle,
@@ -124,6 +131,7 @@ export function GlobalErrorDocument(props: GlobalErrorDocumentProps): ReactEleme
       resolveAsset: _resolveAsset,
       subtitle: _subtitle,
       notes: _notes,
+      routes: _routes,
       ...errorViewProps
     } = props;
     body = <ErrorViewBody {...errorViewProps} />;

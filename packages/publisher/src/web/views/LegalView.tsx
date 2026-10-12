@@ -4,6 +4,7 @@ import { mergeUiClasses } from "@clossys/designer/atoms/server";
 import { ArticleBody, PageHeader } from "@clossys/designer/blocks/server";
 import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
 import type { SiteChromeGround } from "../internal/viewChromeGround.js";
+import { renderViewLinks, type ViewLinksInput } from "../internal/ViewLinks.js";
 import { RenderError } from "../../internal/errors.js";
 import { renderStructuredDocument } from "../../document/render.js";
 import { validateLegalDocument } from "../../document/legal.js";
@@ -48,6 +49,8 @@ export interface LegalViewProps extends HTMLAttributes<HTMLDivElement> {
   locale: string;
   /** Persistent footer content. */
   footerSecondary?: ReactNode;
+  /** Caller-labelled references after the legal body: one Item or two to six rows. Empty collections render nothing. */
+  related?: ViewLinksInput;
   style?: CSSProperties;
 }
 
@@ -102,7 +105,7 @@ function formatDate(formatter: Intl.DateTimeFormat, value: string): string {
  * of the sections. No prop can suppress or alter that callout.
  *
  * What it does not do: it says nothing about the legal adequacy of any text
- * (every word comes from the caller's copy registry), and it does not enforce
+ * (the legal document text comes from the caller's copy registry), and it does not enforce
  * the production gate. A caller must call gateLegalDocument(document,
  * "production") separately before publishing. The content variables
  * (entity, jurisdiction, contact) are not rendered and nothing is interpolated
@@ -119,6 +122,7 @@ export function LegalView({
   labels,
   locale,
   footerSecondary,
+  related,
   className,
   style,
   ...rest
@@ -144,6 +148,7 @@ export function LegalView({
   const formatter = createDateFormatter(locale);
   const { legal } = document;
   const facts = legal.status === "draft" ? (legal.factsToConfirm ?? []).map((fact, index) => resolveCopy(fact, `legal.factsToConfirm.${index}`, resolveCopyId)) : null;
+  const references = renderViewLinks(related, "LegalView");
 
   return (
     <div {...rest} className={mergeUiClasses("flex min-h-dvh flex-col", className)} style={style}>
@@ -177,6 +182,7 @@ export function LegalView({
           )}
           {rendered.element}
         </ArticleBody>
+        {references}
       </main>
       <SiteFooter ground={ground} secondary={footerSecondary} />
     </div>

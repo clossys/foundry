@@ -2442,6 +2442,11 @@ Props, in addition to the standard `div` attributes and `style`:
   `lastUpdated` and `draftHeading`.
 - `locale` (required): the locale passed to `Intl.DateTimeFormat`.
 - `footerSecondary` (optional): extra footer content.
+- `related` (optional): `{ label, items }`, placed after the legal body inside
+  the existing main, before the footer. The caller supplies a plain string
+  label and one to six linked `ItemData` entries with required `href`.
+  One reference renders as a standard `Item`; two to six render as `Items`
+  rows. An omitted collection or an empty array adds no markup.
 
 What it does:
 
@@ -2461,8 +2466,9 @@ What it does:
   off, and a `counsel-reviewed` document renders without it.
 - The content variables (`entity`, `jurisdiction`, `contact`) are not
   displayed and no interpolation is applied to copy.
-- Every visible string comes from a caller `CopyRef`, so the caller supplies
-  a `locale` and the text for every label.
+- Legal document text and date/draft labels come from caller `CopyRef`s.
+  The related heading and item slots are caller-supplied values; the view
+  adds no wording. Related links follow Designer's canonical item validation.
 
 **Soundness boundary.** `LegalView` guarantees the document's structure,
 section order, dates and a draft marker that cannot be suppressed. It says
@@ -2877,6 +2883,15 @@ are absent from the markup when their slot is empty. The column uses the
 | Header subtitle | `subtitle` (optional) |
 | Action | `action` (optional) |
 | Notes | `notes` (optional) |
+| Destinations | `routes` (optional): `{ label: string, items: readonly (ItemData & { href: string })[] }` |
+
+`routes` follows the existing content with a visible h2 and a region named
+by the caller's label. One destination renders as a standard `Item`; two
+to six render as one-column `Items` rows in authored order. An omitted
+collection or empty array adds no wrapper or heading. Nonempty collections
+require a nonblank label and a dense array of linked items. Designer's
+canonical item validation checks destinations, repeated links and supplied
+native controls; opaque component output is not inspected.
 
 For an error or not-found page, the intended shape is a code, one subtitle and
 one primary action. The props are optional so the same view also serves a page
@@ -2889,6 +2904,10 @@ but not built yet.
     status={404}
     subtitle="This page does not exist."
     action={<a href="/">Back to home</a>}
+    routes={{ label: "Useful destinations", items: [
+      { id: "help", heading: "Help", href: "/help" },
+      { id: "contact", heading: "Contact", href: "/contact" },
+    ] }}
   />
 </SiteFrame>
 
@@ -2901,8 +2920,9 @@ but not built yet.
 </SiteFrame>
 ```
 
-The view is chrome-free only: it takes no header, footer or `mainId` prop and
-renders no landmark, and every string is a prop. Answer a status page with the
+The frame owns the header, footer and main. The view renders its content
+and the optional named destination region, with every string supplied
+through props. Answer a status page with the
 matching HTTP status from the host's own route. Give a placeholder route the
 `construction` page kind of `buildSiteMetadata`, which marks it
 `noindex, nofollow`; that page kind is metadata only and does not depend on
@@ -2938,6 +2958,7 @@ Props (`GlobalErrorDocumentFramedProps`):
 | `subtitle` | no | One line of supporting copy. A diagnostic reference goes here as caller copy (`Error: <digest>.`); there is no digest prop. |
 | `action` | no | The one primary call to action, such as a retry button. |
 | `notes` | no | A quiet line for a secondary link. |
+| `routes` | no | Caller-labelled destinations, forwarded unchanged to `StatusView`. |
 
 `GlobalErrorDocumentHeadProps` names the first four, which both shapes share.
 The frame fails closed here as everywhere: a shell the frame refuses throws.
@@ -2992,8 +3013,9 @@ renders an `ErrorView` as the whole body, with no frame and no `<main>`. To
 move to the framed shape, add `shell`, `resolveCopy` and `resolveAsset`, and
 fold `title` and `description` into `subtitle`, keeping their sentences.
 Passing `shell` together with `title` or `description` throws, so a
-half-migrated call site cannot drop copy silently. `GlobalErrorDocumentProps`
-is the union of the two shapes.
+half-migrated call site cannot drop copy silently. `routes` belongs only
+to the framed shape; the deprecated shape refuses a supplied collection.
+`GlobalErrorDocumentProps` is the union of the two shapes.
 
 ### From a mirrored or self-chromed copy to the published view
 

@@ -2,6 +2,7 @@ import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { mergeUiClasses } from "@clossys/designer/atoms/server";
 import { CARDLESS_PAGE_COLUMN_CLASSES, CardlessPageLayout, pageColumnStyle } from "../internal/PageLayout.js";
 import { assertViewContentRoot } from "../internal/viewContentRoot.js";
+import { renderViewLinks, type ViewLinksInput } from "../internal/ViewLinks.js";
 
 export interface StatusViewProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> {
   /**
@@ -24,6 +25,8 @@ export interface StatusViewProps extends Omit<HTMLAttributes<HTMLDivElement>, "t
   action?: ReactNode;
   /** A quiet line under the action for secondary links. Absent from the markup when omitted. */
   notes?: ReactNode;
+  /** Caller-labelled destinations: one Item or two to six rows. Omitted or empty collections render nothing. */
+  routes?: ViewLinksInput;
   /** Merged onto the content root's inline style, after the column measure. */
   style?: CSSProperties;
 }
@@ -49,11 +52,13 @@ export interface StatusViewProps extends Omit<HTMLAttributes<HTMLDivElement>, "t
  * Server-safe: no client hooks, no router. `action` is a plain slot, so the
  * caller supplies its own link or button.
  */
-export function StatusView({ status, subtitle, action, notes, className, style, ...rest }: StatusViewProps) {
+export function StatusView({ status, subtitle, action, notes, routes, className, style, ...rest }: StatusViewProps) {
   assertViewContentRoot("StatusView", rest);
+  const destinations = renderViewLinks(routes, "StatusView");
   return (
     <div {...rest} className={mergeUiClasses(CARDLESS_PAGE_COLUMN_CLASSES, className)} style={pageColumnStyle("form", style)}>
       <CardlessPageLayout title={status} subtitle={subtitle} action={action} notes={notes} />
+      {destinations}
     </div>
   );
 }

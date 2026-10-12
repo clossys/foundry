@@ -1,4 +1,7 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { renderToStaticMarkup } from "react-dom/server";
+import { Item, Items } from "@clossys/designer/blocks/server";
 import { describe, expect, it, vi } from "vitest";
 import type { CopyRegistry, CopyResolver } from "@clossys/writer";
 import { createCopyResolver } from "@clossys/writer";
@@ -7,7 +10,12 @@ import { RenderError } from "../../internal/errors.js";
 import { LEGAL_SECTION_IDS } from "../../document/legal.js";
 import type { LegalDocument, LegalDocumentKind } from "../../document/legal.js";
 import { LegalView } from "./LegalView.js";
-import type { LegalViewLabels } from "./LegalView.js";
+import type { LegalViewLabels, LegalViewProps } from "./LegalView.js";
+
+vi.mock("@clossys/designer/blocks/server", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@clossys/designer/blocks/server")>();
+  return { ...actual, Item: vi.fn(actual.Item), Items: vi.fn(actual.Items) };
+});
 
 vi.mock("../../document/render.js", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../document/render.js")>();
@@ -97,9 +105,15 @@ function buildRegistry(): CopyRegistry {
 
 const resolver: CopyResolver = createCopyResolver(buildRegistry());
 
-function render(document: LegalDocument, overrides: { labels?: LegalViewLabels; locale?: string; resolveCopyId?: CopyResolver } = {}): string {
+type RenderOverrides = Partial<Pick<LegalViewProps,
+  "labels" | "locale" | "resolveCopyId" | "related" | "footerSecondary" |
+  "headerAction" | "secondaryAction" | "nav" | "ground"
+>>;
+function render(document: LegalDocument, overrides: RenderOverrides = {}): string {
   return renderToStaticMarkup(
-    <LegalView brand="Acme" document={document} resolveCopyId={overrides.resolveCopyId ?? resolver} labels={overrides.labels ?? LABELS} locale={overrides.locale ?? "en"} />,
+    <LegalView brand="Acme" document={document} {...overrides}
+      resolveCopyId={overrides.resolveCopyId ?? resolver}
+      labels={overrides.labels ?? LABELS} locale={overrides.locale ?? "en"} />,
   );
 }
 
@@ -391,5 +405,158 @@ describe("LegalView exports", () => {
   it("is exported from the server entry", async () => {
     const server = await import("../server.js");
     expect(typeof server.LegalView).toBe("function");
+  });
+});
+
+
+// Additive contract: preserve every existing legal/date/chrome assertion above.
+type Related = NonNullable<LegalViewProps["related"]>;
+type RelatedItem = Related["items"][number];
+const RELATED_LABEL = "Placeholder related heading";
+const relatedItem = (id: string): RelatedItem => ({
+  id, heading: `Placeholder related ${id}`, description: `Placeholder description ${id}`,
+  href: `/placeholder/${id}`,
+});
+const relatedItems = (count: number) => Array.from({ length: count }, (_, i) => relatedItem(`link-${i}`));
+const withRelated = (items: readonly RelatedItem[]): Related => ({ label: RELATED_LABEL, items });
+const RELATED_FRAME = { treatment: "plain", size: "standard", ground: "base", headingLevel: 3 } as const;
+function relatedSection(html: string) {
+  const articleEnd = html.indexOf("</article>");
+  expect(articleEnd).toBeGreaterThan(-1);
+  const section = /<section\b([^>]*)>([\s\S]*?)<\/section>/.exec(html.slice(articleEnd + "</article>".length));
+  expect(section).not.toBeNull();
+  expect(section![1]).toContain(`aria-label="${RELATED_LABEL}"`);
+  expect(section![1]).not.toContain("aria-labelledby");
+  return { markup: section![0], attributes: section![1], body: section![2] };
+}
+
+describe("LegalView related references", () => {
+  it("preserves the pre-implementation omitted-view bytes", () => {
+    // Capture this file from the unchanged source BEFORE implementing related.
+    // readFileSync fails if absent; this test never creates/updates the baseline.
+    const baseline = readFileSync(resolve(import.meta.dirname, "__fixtures__/legal-view-before-related-terms.html"), "utf8");
+    expect(baseline.length).toBeGreaterThan(0);
+    expect(render(legalDoc("terms"))).toBe(baseline);
+  });
+  it("omits the region for omitted, explicit undefined and empty related input", () => {
+    const doc = legalDoc("terms");
+    const omitted = render(doc);
+    expect(render(doc, { related: undefined })).toBe(omitted);
+    expect(render(doc, { related: withRelated([]) })).toBe(omitted);
+    expect(omitted).not.toContain(RELATED_LABEL);
+  });
+  it("forwards one linked item to canonical Item after ArticleBody and before the footer", () => {
+    vi.mocked(Item).mockClear(); vi.mocked(Items).mockClear();
+    const item = Object.freeze({ ...relatedItem("single"), eyebrow: "Placeholder eyebrow", meta: "Placeholder meta",
+      icon: <svg aria-hidden="true"><path d="M0 0h1" /></svg>, badge: { label: "Placeholder badge" } });
+    const html = render(legalDoc("terms"), { related: withRelated(Object.freeze([item])), footerSecondary: <span>FOOTER-SENTINEL</span> });
+    expect(vi.mocked(Item).mock.calls).toHaveLength(1);
+    expect(vi.mocked(Item).mock.calls[0]![0]).toMatchObject({ ...item, ...RELATED_FRAME });
+    expect(vi.mocked(Items).mock.calls).toHaveLength(0);
+    const section = relatedSection(html);
+    expect(section.body).toContain('href="/placeholder/single"');
+    expect(section.body).toMatch(/<h2\b[^>]*>Placeholder related heading<\/h2>/);
+    expect(html.indexOf(section.markup)).toBeGreaterThan(html.indexOf("</article>"));
+    expect(html.indexOf(section.markup) + section.markup.length).toBeLessThanOrEqual(html.indexOf("</main>"));
+    expect(html.indexOf(section.markup)).toBeLessThan(html.indexOf("<footer"));
+    expect(section.body).not.toContain("FOOTER-SENTINEL");
+  });
+  for (const count of [2, 3, 4, 5, 6]) {
+    it(`forwards ${count} linked references to canonical rows Items in authored order`, () => {
+      vi.mocked(Item).mockClear(); vi.mocked(Items).mockClear();
+      const items = Object.freeze(relatedItems(count).reverse().map(item => Object.freeze(item)));
+      const html = render(legalDoc("privacy"), { related: withRelated(items) });
+      expect(vi.mocked(Items).mock.calls).toHaveLength(1);
+      expect(vi.mocked(Item).mock.calls).toHaveLength(0);
+      expect(vi.mocked(Items).mock.calls[0]![0]).toMatchObject({
+        items, arrangement: "rows", columns: 1, emphasis: "item", ...RELATED_FRAME,
+      });
+      const section = relatedSection(html);
+      expect([...section.body.matchAll(/<a\b[^>]*href="([^"]+)"/g)].map(match => match[1])).toEqual(items.map(item => item.href));
+      expect((section.body.match(/<li\b/g) ?? []).length).toBe(count);
+      expect(section.body).toMatch(/<h2\b[^>]*>Placeholder related heading<\/h2>/);
+    });
+  }
+  it("names the region directly from the caller without generated heading IDs", () => {
+    const section = relatedSection(render(legalDoc("terms"), { related: withRelated(relatedItems(2)) }));
+    const heading = /<h2\b([^>]*)>Placeholder related heading<\/h2>/.exec(section.body);
+    expect(heading).not.toBeNull();
+    expect(heading![1]).not.toMatch(/\bid=/);
+    expect(section.attributes).not.toMatch(/\bid=/);
+  });
+  it("renders the caller's label as both the region name and visible heading", () => {
+    const label = "Caller supplied related label";
+    const html = render(legalDoc("terms"), { related: { label, items: [relatedItem("a")] } });
+    expect(html).toContain(`aria-label="${label}"`);
+    expect(html).toMatch(/<h2\b[^>]*>Caller supplied related label<\/h2>/);
+    expect(html).not.toContain(RELATED_LABEL);
+  });
+  it("preserves the current header and footer bytes with all chrome slots", () => {
+    const overrides = { headerAction: <a href="/contact">HEADER-SENTINEL</a>, secondaryAction: <a href="/sign-in">SECONDARY-SENTINEL</a>,
+      nav: <nav aria-label="Primary">NAV-SENTINEL</nav>, ground: "transparent" as const, footerSecondary: <span>FOOTER-SENTINEL</span> };
+    const old = render(legalDoc("terms"), overrides);
+    const html = render(legalDoc("terms"), { ...overrides, related: withRelated(relatedItems(2)) });
+    const banner = (value: string) => /^<div[^>]*>(<header\b[\s\S]*?<\/header>)<main/.exec(value)?.[1];
+    const footer = (value: string) => /(<footer\b[\s\S]*<\/footer>)<\/div>$/.exec(value)?.[1];
+    expect(banner(html)).toBeTruthy(); expect(footer(html)).toBeTruthy();
+    expect(banner(html)).toBe(banner(old)); expect(footer(html)).toBe(footer(old));
+  });
+  it("refuses a seventh linked item", () => {
+    expect(() => render(legalDoc("terms"), { related: withRelated(relatedItems(7)) })).toThrow();
+  });
+  for (const label of ["", " ", 42]) {
+    it(`refuses invalid nonempty-region label ${JSON.stringify(label)}`, () => {
+      expect(() => render(legalDoc("terms"), { related: { label: label as string, items: [relatedItem("a")] } })).toThrow();
+    });
+  }
+  for (const count of [1, 2]) {
+    it(`requires href on every related item, including the ${count}-item route`, () => {
+      const items = relatedItems(count); items[0] = { ...items[0]!, href: undefined as unknown as string };
+      expect(() => render(legalDoc("terms"), { related: withRelated(items) })).toThrow();
+    });
+    for (const href of ["", "//example.test/path", "javascript:alert(1)", " /placeholder/a "]) {
+      it(`delegates malformed href ${JSON.stringify(href)} on the ${count}-item route`, () => {
+        const items = relatedItems(count); items[0] = { ...items[0]!, href };
+        expect(() => render(legalDoc("terms"), { related: withRelated(items) })).toThrow(/Item: href must be/);
+      });
+    }
+    for (const slot of ["heading", "description", "eyebrow", "icon", "meta", "visual"] as const) {
+      it(`delegates native nested-control refusal in ${slot} on the ${count}-item route`, () => {
+        const items = relatedItems(count); items[0] = { ...items[0]!, [slot]: <button>CONTROL-SENTINEL</button> };
+        expect(() => render(legalDoc("terms"), { related: withRelated(items) })).toThrow(/cannot contain another interactive target/);
+      });
+    }
+    it(`delegates native nested-control refusal in the badge on the ${count}-item route`, () => {
+      const items = relatedItems(count); items[0] = { ...items[0]!, badge: { label: <a href="/nested">CONTROL-SENTINEL</a> } };
+      expect(() => render(legalDoc("terms"), { related: withRelated(items) })).toThrow(/cannot contain another interactive target/);
+    });
+  }
+  it("delegates duplicate id and normalized destination refusals to Items", () => {
+    expect(() => render(legalDoc("terms"), { related: withRelated([relatedItem("a"), relatedItem("a")]) })).toThrow(/item ids must be unique/);
+    const items = [relatedItem("a"), { ...relatedItem("b"), href: "/placeholder/a/#part" }];
+    expect(() => render(legalDoc("terms"), { related: withRelated(items) })).toThrow(/linked destinations must be unique/);
+  });
+  for (const href of ["#details", "/placeholder/a", "https://example.test/placeholder", "mailto:placeholder@example.test"]) {
+    it(`retains canonical sanctioned href ${JSON.stringify(href)}`, () => {
+      const html = render(legalDoc("terms"), { related: withRelated([{ ...relatedItem("a"), href }]) });
+      expect(relatedSection(html).body).toContain(`href="${href}"`);
+    });
+  }
+  it("keeps legal dates and draft facts ahead of the related region", () => {
+    const html = render(draftDoc("terms"), { related: withRelated(relatedItems(2)), locale: "de" });
+    const section = relatedSection(html);
+    expect(html).toContain(`<time dateTime="2026-01-15">${formatted("de", 2026, 1, 15)}</time>`);
+    expect(html).toContain(`<time dateTime="2026-02-01">${formatted("de", 2026, 2, 1)}</time>`);
+    for (const marker of ["Placeholder label draft", "Placeholder fact A", "Placeholder fact B"]) {
+      expect(html.indexOf(marker)).toBeGreaterThan(-1);
+      expect(html.indexOf(marker)).toBeLessThan(html.indexOf(section.markup));
+    }
+    expect(html.indexOf('role="note"')).toBeLessThan(html.indexOf("<section"));
+  });
+  it("still refuses invalid legal content and unresolved labels with related present", () => {
+    expect(() => render(legalDoc("terms", { legal: { effectiveDate: "2026-02-30" } }),
+      { related: withRelated(relatedItems(2)) })).toThrow(/legal-date-invalid/);
+    expect(() => render(legalDoc("terms"), { related: withRelated(relatedItems(2)),
+      labels: { ...LABELS, effectiveDate: ref("acme.label.missing") } })).toThrow(/labels\.effectiveDate/);
   });
 });
