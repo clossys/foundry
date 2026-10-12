@@ -1,17 +1,10 @@
 import { createCopyResolver } from "@clossys/writer";
 import type { CopyRef } from "@clossys/writer";
-import type {
-  SectionedViewContentSection,
-  SectionedViewDocument,
-  SectionedViewHeroSection,
-  SectionedViewSpecimenPanel,
-  SectionedViewSpecimenStatus,
-  SectionedViewSpecimenTone,
-} from "../core/sectioned-view.js";
+import type { SectionedViewContentSection, SectionedViewDocument, SectionedViewHeroSection, SectionedViewSpecimenPanel, SectionedViewSpecimenMeterPart, SectionedViewSpecimenStatus, SectionedViewSpecimenTone, } from "../core/sectioned-view.js";
 
 /**
- * The content catalog's fixture: one `SectionedViewDocument` that shows every
- * content-section block and specimen arrangement, rendered by
+ * The content catalog's fixture: one `SectionedViewDocument` that shows canonical
+ * content-section blocks and specimen parts, rendered by
  * `render-content-catalog.ts` through `LandingView`. All copy is sample copy
  * for an invented facilities-maintenance product; every name and figure is
  * made up. Each band is written either at a realistic length (`typical`) or
@@ -23,9 +16,18 @@ const CATALOG_COPY = new Map<string, string>();
 /** Registers `text` under `id` and returns its `CopyRef`. An id is registered once. */
 function copy(id: string, text: string): CopyRef {
   const key = `catalog.${id}`;
-  if (CATALOG_COPY.has(key)) throw new Error(`content catalog fixture registers ${key} twice`);
+  if (CATALOG_COPY.has(key))
+    throw new Error(`content catalog fixture registers ${key} twice`);
   CATALOG_COPY.set(key, text);
   return { id: key };
+}
+function existingCopy(id: string): CopyRef {
+  const key = `catalog.${id}`;
+  if (!CATALOG_COPY.has(key)) throw new Error("Missing catalog copy");
+  return { id: key };
+}
+function joinedCopy(id: string, ...refs: CopyRef[]): CopyRef {
+  return copy(id, refs.map(ref => { const text = CATALOG_COPY.get(ref.id); if (text === undefined) throw new Error("Missing catalog copy"); return text; }).join(" · "));
 }
 
 function status(id: string, tone: SectionedViewSpecimenTone, text: string): SectionedViewSpecimenStatus {
@@ -33,7 +35,10 @@ function status(id: string, tone: SectionedViewSpecimenTone, text: string): Sect
 }
 
 /** A fields part from `[label, value]` pairs. */
-function fields(id: string, pairs: readonly (readonly [string, string])[], columns?: 1 | 2 | 4) {
+function fields(id: string, pairs: readonly (readonly [
+  string,
+  string
+])[], columns?: 1 | 2 | 4) {
   return {
     id,
     type: "fields" as const,
@@ -49,7 +54,7 @@ export type ContentCatalogBudget = "typical" | "max";
 export interface ContentCatalogCaption {
   /** The band's section id (the call to action's `id` for the closing band). */
   sectionId: string;
-  /** The Designer block the band shows and its variant, for example "FeatureGrid, rule, 4 columns". */
+  /** The Designer block the band shows and its variant, for example "Items, rule, 2 columns". */
   title: string;
   /** Layout, ground and treatment details. */
   detail: string;
@@ -66,11 +71,8 @@ const hero: SectionedViewHeroSection = {
   ground: "inverse",
   eyebrow: copy("hero.eyebrow", "Facilities maintenance records"),
   heading: copy("hero.heading", "Every work order, inspection and repair in one record"),
-  description: copy(
-    "hero.description",
-    "Fieldmark keeps each site's work orders, inspection results and service history in one place, so supervisors can see what is open, what is overdue and who holds each job before the week starts.",
-  ),
-  actions: [{ id: "walkthrough", label: copy("hero.action", "Book a walkthrough"), href: "#catalog-close" }],
+  description: copy("hero.description", "Fieldmark keeps each site's work orders, inspection results and service history in one place, so supervisors can see what is open, what is overdue and who holds each job before the week starts."),
+  actions: [{ id: "walkthrough", label: copy("hero.action", "Book a walkthrough"), href: "#catalog-close" }]
 };
 
 /** A short, inverse opening for a page whose body is its main task. */
@@ -79,11 +81,11 @@ export const heroCompactCatalogDocument: SectionedViewDocument = {
   sections: [{
     id: "hero-compact",
     kind: "hero",
-    compact: true,
+    size: "compact",
     ground: "inverse",
     eyebrow: copy("hero-compact.eyebrow", "Service request"),
     heading: copy("hero-compact.heading", "Tell us what needs attention"),
-    description: copy("hero-compact.description", "Share the details so the team can review the next step."),
+    description: copy("hero-compact.description", "Share the details so the team can review the next step.")
   }],
 };
 
@@ -97,14 +99,11 @@ const introMax: SectionedViewContentSection = {
   ground: "base",
   eyebrow: copy("intro.eyebrow", "How the record works"),
   heading: copy("intro.heading", "One record replaces the binder, the inbox and the spreadsheet"),
-  description: copy(
-    "intro.description",
-    "Technicians log work where it happens, supervisors assign and close it, and the record keeps every reading, photo and signature against the asset it belongs to. Records already kept in a spreadsheet import as they are, so nothing is retyped.",
-  ),
+  description: copy("intro.description", "Technicians log work where it happens, supervisors assign and close it, and the record keeps every reading, photo and signature against the asset it belongs to. Records already kept in a spreadsheet import as they are, so nothing is retyped."),
   actions: [
     { id: "record", label: copy("intro.action.record", "See an example"), href: "#catalog-specimen-single", emphasis: "primary" },
     { id: "faq", label: copy("intro.action.faq", "Read the FAQ"), href: "#catalog-faq" },
-  ],
+  ]
 };
 
 const workOrderPanel: SectionedViewSpecimenPanel = {
@@ -154,19 +153,12 @@ const specimenSingle: SectionedViewContentSection = {
   ground: "sunken",
   eyebrow: copy("single.eyebrow", "Work orders"),
   heading: copy("single.heading", "Each job carries its own evidence from open to close"),
-  description: copy(
-    "single.description",
-    "A work order holds the asset, the fault, the readings taken and the sign-off, so the person who closes it and the person who audits it see the same thing.",
-  ),
+  description: copy("single.description", "A work order holds the asset, the fault, the readings taken and the sign-off, so the person who closes it and the person who audits it see the same thing."),
   media: {
     type: "specimen",
-    label: copy(
-      "single.label",
-      "A work order for a rooftop air handler, showing its fields, three inspection checks, a pressure reading against its limit and the assigned technician.",
-    ),
-    arrangement: "single",
-    panels: [workOrderPanel],
-  },
+    label: copy("single.label", "A work order for a rooftop air handler, showing its fields, three inspection checks, a pressure reading against its limit and the assigned technician."),
+    panel: workOrderPanel
+  }
 };
 
 const featuresPlain: SectionedViewContentSection = {
@@ -177,15 +169,16 @@ const featuresPlain: SectionedViewContentSection = {
   heading: copy("plain.heading", "Less chasing, more time on the floor"),
   description: copy("plain.description", "The three things a site team does every day, each recorded once and visible to everyone who needs it."),
   block: {
-    type: "feature-grid",
+    type: "items",
+    arrangement: "columns",
     columns: 3,
     treatment: "plain",
     items: [
       { id: "log", icon: "clock", heading: copy("plain.log.heading", "Log in seconds"), description: copy("plain.log.description", "Technicians record a reading or a photo from the asset tag, offline if needed.") },
       { id: "assign", icon: "users", heading: copy("plain.assign.heading", "Assign by skill"), description: copy("plain.assign.description", "Supervisors route each job to the trade and shift that can close it.") },
       { id: "close", icon: "file-check", heading: copy("plain.close.heading", "Close with proof"), description: copy("plain.close.description", "A job closes only with its readings, its sign-off and its parts recorded.") },
-    ],
-  },
+    ]
+  }
 };
 
 const scheduleRow = (id: string, date: string, label: string, amount: string, tone: SectionedViewSpecimenTone, state: string) => ({
@@ -200,8 +193,7 @@ const splitEnd: SectionedViewContentSection = {
   id: "catalog-split-end",
   kind: "content-section",
   ground: "sunken",
-  layout: "split",
-  mediaSide: "end",
+  layout: "split-end",
   eyebrow: copy("split-end.eyebrow", "Inspections"),
   heading: copy("split-end.heading", "Overdue checks surface before they become findings"),
   description: copy("split-end.description", "Each recurring inspection carries its interval and its last result, so the schedule shows what is due this week."),
@@ -209,8 +201,7 @@ const splitEnd: SectionedViewContentSection = {
   media: {
     type: "specimen",
     label: copy("split-end.label", "An inspection schedule for one site, listing five recurring checks with their due dates and current results."),
-    panels: [
-      {
+    panel: {
         id: "schedule",
         title: copy("split-end.panel.title", "Inspection schedule · East yard"),
         meta: copy("split-end.panel.meta", "Week 11"),
@@ -227,9 +218,8 @@ const splitEnd: SectionedViewContentSection = {
             ],
           },
         ],
-      },
-    ],
-  },
+    }
+  }
 };
 
 const featuresRule: SectionedViewContentSection = {
@@ -238,13 +228,11 @@ const featuresRule: SectionedViewContentSection = {
   ground: "base",
   eyebrow: copy("rule.eyebrow", "Built for multi-site teams"),
   heading: copy("rule.heading", "The same record works for one building or for forty"),
-  description: copy(
-    "rule.description",
-    "Sites share one asset register and one set of procedures, while each keeps its own schedule and team, and reports roll up across sites without anyone rebuilding them.",
-  ),
+  description: copy("rule.description", "Sites share one asset register and one set of procedures, while each keeps its own schedule and team, and reports roll up across sites without anyone rebuilding them."),
   block: {
-    type: "feature-grid",
-    columns: 4,
+    type: "items",
+    arrangement: "columns",
+    columns: 2,
     treatment: "rule",
     items: [
       {
@@ -267,8 +255,8 @@ const featuresRule: SectionedViewContentSection = {
         heading: copy("rule.reports.heading", "Reports without the monthly rebuild"),
         description: copy("rule.reports.description", "Completion rates, overdue checks and spend by site come from the record itself, ready to send on the first day."),
       },
-    ],
-  },
+    ]
+  }
 };
 
 const historyRow = (id: string, field: string, person: string, when: string, tone: SectionedViewSpecimenTone, state: string) => ({
@@ -285,31 +273,25 @@ const splitStart: SectionedViewContentSection = {
   id: "catalog-split-start",
   kind: "content-section",
   ground: "sunken",
-  layout: "split",
-  mediaSide: "start",
+  layout: "split-start",
   eyebrow: copy("split-start.eyebrow", "Audit trail"),
   heading: copy("split-start.heading", "Every change is kept, so audits take hours"),
-  description: copy(
-    "split-start.description",
-    "When an inspector asks who changed a reading and why, the answer is already in the record, with the time, the person and the reason they gave.",
-  ),
+  description: copy("split-start.description", "When an inspector asks who changed a reading and why, the answer is already in the record, with the time, the person and the reason they gave."),
   block: {
-    type: "topic-list",
+    type: "items",
+    arrangement: "rows",
+    treatment: "rule",
     columns: 1,
     items: [
       { id: "locked", icon: "lock", heading: copy("split-start.locked.heading", "Locked once signed"), description: copy("split-start.locked.description", "A signed record can be amended, never overwritten.") },
       { id: "search", icon: "search", heading: copy("split-start.search.heading", "Search by asset or person"), description: copy("split-start.search.description", "Find every change to one asset in seconds.") },
       { id: "export", icon: "file-text", heading: copy("split-start.export.heading", "Export for the auditor"), description: copy("split-start.export.description", "One file with the history, signatures and attachments.") },
-    ],
+    ]
   },
   media: {
     type: "specimen",
-    label: copy(
-      "split-start.label",
-      "A change history for one inspection record, listing four edits with the field changed, the person who changed it and the review state.",
-    ),
-    panels: [
-      {
+    label: copy("split-start.label", "A change history for one inspection record, listing four edits with the field changed, the person who changed it and the review state."),
+    panel: {
         id: "history",
         title: copy("split-start.panel.title", "History · Fire door audit FD-07"),
         meta: copy("split-start.panel.meta", "Signed 10 Mar by A. Novak"),
@@ -332,9 +314,8 @@ const splitStart: SectionedViewContentSection = {
             ],
           },
         ],
-      },
-    ],
-  },
+    }
+  }
 };
 
 const featuresStatement: SectionedViewContentSection = {
@@ -350,50 +331,32 @@ const featuresStatement: SectionedViewContentSection = {
     link: { label: copy("statement.footnote.link", "Read their stories"), href: "#catalog-cards-text" },
   },
   block: {
-    type: "feature-grid",
+    type: "items",
+    arrangement: "columns",
     columns: 3,
     emphasis: "statement",
     items: [
       { id: "missed", heading: copy("statement.missed.heading", "Fewer missed checks"), description: copy("statement.missed.description", "Due dates surface before they pass, not after.") },
       { id: "handover", heading: copy("statement.handover.heading", "Faster handovers"), description: copy("statement.handover.description", "The next shift reads the record, not a note.") },
       { id: "audits", heading: copy("statement.audits.heading", "Calmer audits"), description: copy("statement.audits.description", "The evidence is already filed against each asset.") },
-    ],
-  },
+    ]
+  }
 };
-
-function assetPanel(id: string, title: string, meta: string, tone: SectionedViewSpecimenTone, state: string, meter: { label: string; value: number; scaleMax: number; limit: number; valueText: string; limitText: string }, openJobs: string): SectionedViewSpecimenPanel {
-  return {
-    id,
-    title: copy(`row.${id}.title`, title),
-    meta: copy(`row.${id}.meta`, meta),
-    status: status(`row.${id}`, tone, state),
-    parts: [
-      {
-        id: "reading",
-        type: "meter",
-        label: copy(`row.${id}.meter.label`, meter.label),
-        value: meter.value,
-        scaleMax: meter.scaleMax,
-        limit: meter.limit,
-        tone,
-        valueText: copy(`row.${id}.meter.value`, meter.valueText),
-        limitText: copy(`row.${id}.meter.limit`, meter.limitText),
-      },
-      fields(`row.${id}.fields`, [["Open jobs", openJobs]], 1),
-    ],
-  };
+function assetReading(id: string, title: string, meta: string, tone: SectionedViewSpecimenTone, state: string, meter: { label: string; value: number; scaleMax: number; limit: number; valueText: string; limitText: string }, openJobs: string): SectionedViewSpecimenMeterPart {
+  return { id, type: "meter", label: joinedCopy(`row.${id}.label`, copy(`row.${id}.title`, title), copy(`row.${id}.meter.label`, meter.label)), value: meter.value, scaleMax: meter.scaleMax, limit: meter.limit, tone, valueText: copy(`row.${id}.meter.value`, meter.valueText), limitText: copy(`row.${id}.meter.limit`, meter.limitText), status: status(`row.${id}`, tone, state), note: joinedCopy(`row.${id}.note`, copy(`row.${id}.meta`, meta), copy(`row.${id}.fields.f1.label`, "Open jobs"), copy(`row.${id}.fields.f1.value`, openJobs)) };
 }
 
 const splitText: SectionedViewContentSection = {
   id: "catalog-split-text",
   kind: "content-section",
   ground: "base",
-  layout: "split",
+  layout: "split-end",
   eyebrow: copy("split-text.eyebrow", "Reporting"),
   heading: copy("split-text.heading", "Every audit question has a record behind it"),
   description: copy("split-text.description", "Reports are built from the records your team already keeps each day, so nothing is retyped for an auditor or a client."),
   block: {
-    type: "feature-grid",
+    type: "items",
+    arrangement: "columns",
     columns: 2,
     treatment: "plain",
     items: [
@@ -401,8 +364,8 @@ const splitText: SectionedViewContentSection = {
       { id: "spend", eyebrow: copy("split-text.spend.eyebrow", "Spend"), heading: copy("split-text.spend.heading", "Cost per asset and site"), description: copy("split-text.spend.description", "Labour and parts roll up from each job, so budgets follow the work.") },
       { id: "workload", eyebrow: copy("split-text.workload.eyebrow", "Workload"), heading: copy("split-text.workload.heading", "Backlog by trade"), description: copy("split-text.workload.description", "Open jobs grouped by trade and age show where to add a shift.") },
       { id: "reliability", eyebrow: copy("split-text.reliability.eyebrow", "Reliability"), heading: copy("split-text.reliability.heading", "Repeat failures flagged"), description: copy("split-text.reliability.description", "Assets that fail twice in ninety days rise to the top of the list.") },
-    ],
-  },
+    ]
+  }
 };
 
 const specimenRow: SectionedViewContentSection = {
@@ -414,14 +377,17 @@ const specimenRow: SectionedViewContentSection = {
   description: copy("row.description", "Three assets at one site, each with its last reading and the work open against it."),
   media: {
     type: "specimen",
-    label: copy("row.label", "Three asset cards from one site, each showing its last reading against a limit and its open work."),
-    arrangement: "row",
-    panels: [
-      assetPanel("boiler", "Boiler B-1", "Plant room", "success", "In service", { label: "Flue temperature", value: 182, scaleMax: 260, limit: 220, valueText: "182 °C", limitText: "Limit 220 °C" }, "0"),
-      assetPanel("chiller", "Chiller C-2", "Roof, block A", "warning", "Watch", { label: "Discharge pressure", value: 15.8, scaleMax: 20, limit: 17, valueText: "15.8 bar", limitText: "Limit 17 bar" }, "1"),
-      assetPanel("pump", "Pump P-4", "Plant room", "danger", "Out of service", { label: "Vibration", value: 7.4, scaleMax: 10, limit: 6, valueText: "7.4 mm/s", limitText: "Limit 6 mm/s" }, "2"),
-    ],
-  },
+    label: copy("row.label", "Three asset readings from one site, each showing its last reading against a limit and its open work."),
+    panel: {
+      id: "assets",
+      title: existingCopy("row.eyebrow"),
+      parts: [
+        assetReading("boiler", "Boiler B-1", "Plant room", "success", "In service", { label: "Flue temperature", value: 182, scaleMax: 260, limit: 220, valueText: "182 °C", limitText: "Limit 220 °C" }, "0"),
+        assetReading("chiller", "Chiller C-2", "Roof, block A", "warning", "Watch", { label: "Discharge pressure", value: 15.8, scaleMax: 20, limit: 17, valueText: "15.8 bar", limitText: "Limit 17 bar" }, "1"),
+        assetReading("pump", "Pump P-4", "Plant room", "danger", "Out of service", { label: "Vibration", value: 7.4, scaleMax: 10, limit: 6, valueText: "7.4 mm/s", limitText: "Limit 6 mm/s" }, "2"),
+      ]
+    }
+  }
 };
 
 const featuresPlate: SectionedViewContentSection = {
@@ -430,12 +396,10 @@ const featuresPlate: SectionedViewContentSection = {
   ground: "base",
   eyebrow: copy("plate.eyebrow", "Field and office"),
   heading: copy("plate.heading", "The floor and the office finally read the same record"),
-  description: copy(
-    "plate.description",
-    "Technicians get a short list and large buttons on a phone; supervisors get the schedule, the backlog and the spend on a desktop, and both edit one record underneath.",
-  ),
+  description: copy("plate.description", "Technicians get a short list and large buttons on a phone; supervisors get the schedule, the backlog and the spend on a desktop, and both edit one record underneath."),
   block: {
-    type: "feature-grid",
+    type: "items",
+    arrangement: "columns",
     columns: 2,
     treatment: "plate",
     items: [
@@ -444,23 +408,17 @@ const featuresPlate: SectionedViewContentSection = {
         icon: "briefcase",
         href: "/product/technicians",
         heading: copy("plate.floor.heading", "For technicians on the floor"),
-        description: copy(
-          "plate.floor.description",
-          "Open today's jobs, scan an asset tag, record readings and photos, and close the job with a signature from one phone, with or without signal.",
-        ),
+        description: copy("plate.floor.description", "Open today's jobs, scan an asset tag, record readings and photos, and close the job with a signature from one phone, with or without signal."),
       },
       {
         id: "office",
         icon: "building-2",
         href: "/product/supervisors",
         heading: copy("plate.office.heading", "For supervisors in the office"),
-        description: copy(
-          "plate.office.description",
-          "Plan the week across sites, move jobs between technicians, approve parts spend and see every overdue check before it turns into a finding at audit.",
-        ),
+        description: copy("plate.office.description", "Plan the week across sites, move jobs between technicians, approve parts spend and see every overdue check before it turns into a finding at audit."),
       },
-    ],
-  },
+    ]
+  }
 };
 
 const specimenStack: SectionedViewContentSection = {
@@ -473,9 +431,7 @@ const specimenStack: SectionedViewContentSection = {
   media: {
     type: "specimen",
     label: copy("stack.label", "One site's maintenance spend against its monthly budget, above the parts drawn for a single repair."),
-    arrangement: "stack",
-    panels: [
-      {
+    panel: {
         id: "spend",
         title: copy("stack.spend.title", "Spend · North depot"),
         meta: copy("stack.spend.meta", "March to date"),
@@ -502,12 +458,6 @@ const specimenStack: SectionedViewContentSection = {
               { id: "contractors", name: copy("stack.spend.contractors", "Contractors"), share: 12, shareText: copy("stack.spend.contractors.share", "12%") },
             ],
           },
-        ],
-      },
-      {
-        id: "parts",
-        title: copy("stack.parts.title", "Parts drawn · WO-2214"),
-        parts: [
           {
             id: "drawn",
             type: "table",
@@ -522,12 +472,12 @@ const specimenStack: SectionedViewContentSection = {
               { id: "filter", cells: [{ text: copy("stack.parts.filter", "Filter set") }, { text: copy("stack.parts.filter.qty", "1") }, { text: copy("stack.parts.filter.cost", "126") }] },
               { id: "bearing", cells: [{ text: copy("stack.parts.bearing", "Bearing 6204") }, { text: copy("stack.parts.bearing.qty", "2") }, { text: copy("stack.parts.bearing.cost", "38") }] },
             ],
-          },
+          label: copy("stack.parts.title", "Parts drawn · WO-2214")
+        }
         ],
-        footer: { note: copy("stack.parts.note", "Posted to cost code MNT-04") },
-      },
-    ],
-  },
+      footer: { note: copy("stack.parts.note", "Posted to cost code MNT-04") }
+    }
+  }
 };
 
 const topicsTwo: SectionedViewContentSection = {
@@ -536,12 +486,11 @@ const topicsTwo: SectionedViewContentSection = {
   ground: "base",
   eyebrow: copy("topics.eyebrow", "What it covers"),
   heading: copy("topics.heading", "The everyday records a maintenance team keeps, in one place"),
-  description: copy(
-    "topics.description",
-    "Each of these is a record type in its own right, with its own fields and history, and each links back to the assets and the sites it concerns.",
-  ),
+  description: copy("topics.description", "Each of these is a record type in its own right, with its own fields and history, and each links back to the assets and the sites it concerns."),
   block: {
-    type: "topic-list",
+    type: "items",
+    arrangement: "rows",
+    treatment: "rule",
     columns: 2,
     items: [
       { id: "orders", icon: "file-text", heading: copy("topics.orders.heading", "Work orders and requests"), description: copy("topics.orders.description", "Every job from first report to signed close, with its full history.") },
@@ -552,23 +501,21 @@ const topicsTwo: SectionedViewContentSection = {
       { id: "contractors", icon: "users", heading: copy("topics.contractors.heading", "Contractors and their permits"), description: copy("topics.contractors.description", "Approved contractors, their insurance dates and the permits each visit needs.") },
       { id: "documents", icon: "folder", heading: copy("topics.documents.heading", "Manuals, drawings and certificates"), description: copy("topics.documents.description", "Documents filed against the asset they describe, with their review dates.") },
       { id: "incidents", icon: "shield-check", heading: copy("topics.incidents.heading", "Incidents and corrective actions"), description: copy("topics.incidents.description", "What happened, what was done and who confirmed the fix held.") },
-    ],
-  },
+    ]
+  }
 };
 
 function topicGroups(count: 3 | 4, ground: "base" | "sunken"): SectionedViewContentSection {
   const prefix = `topics-groups-${count}`;
   const labels = ["Access", "Location", "Models", "Oversight"].slice(0, count);
+  const groups = labels.map((label, g) => ({ id: `category-${g}`, label: copy(`${prefix}.group-${g}.label`, label), items: [0, 1].map(i => ({ id: `topic-${g}-${i}`, heading: copy(`${prefix}.group-${g}.item-${i}.heading`, i === 0 ? "Current records" : "Review history"), description: copy(`${prefix}.group-${g}.item-${i}.description`, i === 0 ? "See the details kept with every active record." : "Follow earlier changes and the evidence behind each decision.") })) }));
   return {
     id: `catalog-${prefix}`, kind: "content-section", ground,
     eyebrow: copy(`${prefix}.eyebrow`, "Coverage"),
     heading: copy(`${prefix}.heading`, "Find the records for each part of the work"),
     description: copy(`${prefix}.description`, "Browse the categories to see what each record holds."),
-    block: { type: "topic-list", groups: labels.map((label, g) => ({
-      id: `category-${g}`, label: copy(`${prefix}.group-${g}.label`, label),
-      items: [0, 1].map((i) => ({ id: `topic-${g}-${i}`, heading: copy(`${prefix}.group-${g}.item-${i}.heading`, i === 0 ? "Current records" : "Review history"), description: copy(`${prefix}.group-${g}.item-${i}.description`, i === 0 ? "See the details kept with every active record." : "Follow earlier changes and the evidence behind each decision.") })),
-    })) },
-    ...(count === 4 ? { footnote: { text: copy(`${prefix}.footnote`, "Need help finding a record?"), link: { label: copy(`${prefix}.link`, "Ask the team"), href: "mailto:help@example.com" } } } : {}),
+    block: { type: "items", recipe: "topics", columns: count === 4 ? 2 : 1, items: groups.flatMap(group => group.items), groups: groups.map(group => ({ id: group.id, label: group.label, items: group.items.map(item => item.id) })) },
+    ...(count === 4 ? { footnote: { text: copy(`${prefix}.footnote`, "Need help finding a record?"), link: { label: copy(`${prefix}.link`, "Ask the team"), href: "mailto:help@example.com" } } } : {})
   };
 }
 const topicsGroupsFour = topicGroups(4, "sunken");
@@ -582,15 +529,17 @@ const topicsLinked: SectionedViewContentSection = {
   heading: copy("topics-linked.heading", "Start with the guide for your role"),
   description: copy("topics-linked.description", "Each guide walks one role through its first week in the record."),
   block: {
-    type: "topic-list",
+    type: "items",
+    arrangement: "rows",
+    treatment: "rule",
     columns: 2,
     items: [
       { id: "technicians", icon: "briefcase", href: "/guides/technicians", heading: copy("topics-linked.technicians.heading", "Technicians"), description: copy("topics-linked.technicians.description", "Open a job, record readings and close it from a phone.") },
       { id: "supervisors", icon: "users", href: "/guides/supervisors", heading: copy("topics-linked.supervisors.heading", "Supervisors"), description: copy("topics-linked.supervisors.description", "Plan the week, assign by trade and review evidence.") },
       { id: "managers", icon: "building-2", href: "/guides/site-managers", heading: copy("topics-linked.managers.heading", "Site managers"), description: copy("topics-linked.managers.description", "Sign off work and follow spend across sites.") },
       { id: "auditors", icon: "file-check", href: "/guides/auditors", heading: copy("topics-linked.auditors.heading", "Auditors"), description: copy("topics-linked.auditors.description", "Find the signed history behind any asset.") },
-    ],
-  },
+    ]
+  }
 };
 
 const specimenFlow: SectionedViewContentSection = {
@@ -603,45 +552,18 @@ const specimenFlow: SectionedViewContentSection = {
   media: {
     type: "specimen",
     label: copy("flow.label", "A fault report from a site worker and the work order a supervisor created from it, with an owner and a due date."),
-    arrangement: "flow",
-    connector: copy("flow.connector", "Reviewed and assigned"),
-    panels: [
-      {
-        id: "request",
-        title: copy("flow.request.title", "Request R-0418"),
-        meta: copy("flow.request.meta", "Reported 11 Mar, 07:52"),
-        status: status("flow.request", "info", "New"),
-        parts: [
-          fields(
-            "flow.request.fields",
-            [
-              ["Location", "Loading bay 2"],
-              ["Issue", "Door won't close"],
-              ["Reported by", "Shift lead"],
-            ],
-            1,
-          ),
-        ],
-      },
-      {
-        id: "order",
-        title: copy("flow.order.title", "WO-2231 · Dock door DD-2"),
-        meta: copy("flow.order.meta", "Created 11 Mar, 08:10"),
-        status: status("flow.order", "warning", "Assigned"),
-        parts: [
-          fields(
-            "flow.order.fields",
-            [
-              ["Priority", "1 · Same day"],
-              ["Trade", "Mechanical"],
-              ["Due", "11 Mar, 14:00"],
-            ],
-            1,
-          ),
-        ],
-        footer: { assignee: { initials: copy("flow.order.initials", "SM"), name: copy("flow.order.name", "S. Mensah"), note: copy("flow.order.assignee-note", "Day shift") } },
-      },
-    ],
+    panel: {
+      id: "request-order",
+      title: copy("flow.request.title", "Request R-0418"),
+      meta: copy("flow.request.meta", "Reported 11 Mar, 07:52"),
+      status: status("flow.request", "info", "New"),
+      parts: [
+        fields("flow.request.fields", [["Location", "Loading bay 2"], ["Issue", "Door won't close"], ["Reported by", "Shift lead"]], 1),
+        { ...fields("flow.order.fields", [["Priority", "1 · Same day"], ["Trade", "Mechanical"], ["Due", "11 Mar, 14:00"]], 1), label: copy("flow.order.title", "WO-2231 · Dock door DD-2") },
+        { id: "handoff-state", type: "status-rows", items: [{ id: "assigned", label: copy("flow.order.meta", "Created 11 Mar, 08:10"), status: status("flow.order", "warning", "Assigned") }] },
+      ],
+      footer: { note: copy("flow.connector", "Reviewed and assigned"), assignee: { initials: copy("flow.order.initials", "SM"), name: copy("flow.order.name", "S. Mensah"), note: copy("flow.order.assignee-note", "Day shift") } },
+    },
   },
 };
 
@@ -651,19 +573,35 @@ const stepsPlain: SectionedViewContentSection = {
   ground: "base",
   eyebrow: copy("steps-plain.eyebrow", "Getting started"),
   heading: copy("steps-plain.heading", "From a spreadsheet to a live record in four steps"),
-  description: copy(
-    "steps-plain.description",
-    "A team starts with one site and the records it already keeps, then adds sites once the first runs on the new record without the old spreadsheet beside it.",
-  ),
+  description: copy("steps-plain.description", "A team starts with one site and the records it already keeps, then adds sites once the first runs on the new record without the old spreadsheet beside it."),
   block: {
-    type: "ordered-step-sequence",
+    type: "items",
+    arrangement: "columns",
+    order: "connected",
+    treatment: "plain",
     items: [
-      { id: "import", ordinal: copy("steps-plain.import.ordinal", "01"), label: copy("steps-plain.import.actor", "Your team"), heading: copy("steps-plain.import.heading", "Import"), description: copy("steps-plain.import.description", "Bring in the asset list and open jobs from the spreadsheets you already keep.") },
-      { id: "map", ordinal: copy("steps-plain.map.ordinal", "02"), label: copy("steps-plain.map.actor", "Fieldmark"), heading: copy("steps-plain.map.heading", "Map sites"), description: copy("steps-plain.map.description", "We nest assets under sites and systems and flag any asset without a location.") },
-      { id: "schedule", ordinal: copy("steps-plain.schedule.ordinal", "03"), label: copy("steps-plain.schedule.actor", "Supervisors"), heading: copy("steps-plain.schedule.heading", "Set schedules"), description: copy("steps-plain.schedule.description", "Set intervals and shifts per site, and the first month of work plans itself.") },
-      { id: "live", ordinal: copy("steps-plain.live.ordinal", "04"), label: copy("steps-plain.live.actor", "Technicians"), heading: copy("steps-plain.live.heading", "Go live"), description: copy("steps-plain.live.description", "Record work on phones while the old spreadsheet stays read-only for a month.") },
-    ],
+      {
+        id: "import",
+        meta: copy("steps-plain.import.actor", "Your team"),
+        heading: copy("steps-plain.import.heading", "Import"), description: copy("steps-plain.import.description", "Bring in the asset list and open jobs from the spreadsheets you already keep.")
   },
+      {
+        id: "map",
+        meta: copy("steps-plain.map.actor", "Fieldmark"),
+        heading: copy("steps-plain.map.heading", "Map sites"), description: copy("steps-plain.map.description", "We nest assets under sites and systems and flag any asset without a location.")
+      },
+      {
+        id: "schedule",
+        meta: copy("steps-plain.schedule.actor", "Supervisors"),
+        heading: copy("steps-plain.schedule.heading", "Set schedules"), description: copy("steps-plain.schedule.description", "Set intervals and shifts per site, and the first month of work plans itself.")
+      },
+      {
+        id: "live",
+        meta: copy("steps-plain.live.actor", "Technicians"),
+        heading: copy("steps-plain.live.heading", "Go live"), description: copy("steps-plain.live.description", "Record work on phones while the old spreadsheet stays read-only for a month.")
+      }
+    ]
+  }
 };
 
 const cardsVisual: SectionedViewContentSection = {
@@ -674,7 +612,9 @@ const cardsVisual: SectionedViewContentSection = {
   heading: copy("cards-a.heading", "The same record, read four ways"),
   description: copy("cards-a.description", "Each role sees the part of the record it acts on, without a separate report to build."),
   block: {
-    type: "card-grid",
+    type: "items",
+    arrangement: "bento",
+    treatment: "plate",
     items: [
       {
         id: "technician",
@@ -755,8 +695,8 @@ const cardsVisual: SectionedViewContentSection = {
           ],
         },
       },
-    ],
-  },
+    ]
+  }
 };
 
 const cardsText: SectionedViewContentSection = {
@@ -765,12 +705,11 @@ const cardsText: SectionedViewContentSection = {
   ground: "base",
   eyebrow: copy("cards-b.eyebrow", "Integrations and data"),
   heading: copy("cards-b.heading", "Your records stay yours and move where you need them"),
-  description: copy(
-    "cards-b.description",
-    "Fieldmark reads from and writes to the systems a facilities team already runs, and every record can leave in an open format the day you ask for it.",
-  ),
+  description: copy("cards-b.description", "Fieldmark reads from and writes to the systems a facilities team already runs, and every record can leave in an open format the day you ask for it."),
   block: {
-    type: "card-grid",
+    type: "items",
+    arrangement: "bento",
+    treatment: "plate",
     items: [
       {
         id: "sign-on",
@@ -806,10 +745,7 @@ const cardsText: SectionedViewContentSection = {
         icon: "layers",
         eyebrow: copy("cards-b.export.eyebrow", "Open by default"),
         heading: copy("cards-b.export.heading", "Every record exports in full"),
-        description: copy(
-          "cards-b.export.description",
-          "Assets, jobs, readings, signatures and attachments export as plain files with their history intact, on demand or on any schedule your team sets.",
-        ),
+        description: copy("cards-b.export.description", "Assets, jobs, readings, signatures and attachments export as plain files with their history intact, on demand or on any schedule your team sets."),
       },
       {
         id: "hosting",
@@ -817,13 +753,10 @@ const cardsText: SectionedViewContentSection = {
         icon: "shield-check",
         eyebrow: copy("cards-b.hosting.eyebrow", "Hosting"),
         heading: copy("cards-b.hosting.heading", "Regional hosting, daily backups"),
-        description: copy(
-          "cards-b.hosting.description",
-          "Records are stored in the region you choose, encrypted at rest and in transit, and backed up every day to a second location.",
-        ),
+        description: copy("cards-b.hosting.description", "Records are stored in the region you choose, encrypted at rest and in transit, and backed up every day to a second location."),
       },
-    ],
-  },
+    ]
+  }
 };
 
 const comparisonVisual: SectionedViewContentSection = {
@@ -834,9 +767,13 @@ const comparisonVisual: SectionedViewContentSection = {
   heading: copy("compare-a.heading", "The same week, before and after the record"),
   description: copy("compare-a.description", "One site's inspection week, as it looked in the spreadsheet and as it looks now."),
   block: {
-    type: "comparison",
-    before: {
-      label: copy("compare-a.before.label", "Spreadsheet"),
+    type: "matrix",
+    featured: "after",
+    sides: [
+      {
+        id: "before",
+        heading: copy("compare-a.before.label", "Spreadsheet"),
+        label: existingCopy("compare-a.before.label"),
       description: copy("compare-a.before.description", "Checks live in tabs per month; overdue items are found when someone scrolls past them."),
       visual: {
         id: "sheet",
@@ -850,10 +787,12 @@ const comparisonVisual: SectionedViewContentSection = {
             ["Last check", "Not recorded"],
           ]),
         ],
+        }
       },
-    },
-    after: {
-      label: copy("compare-a.after.label", "Fieldmark"),
+      {
+        id: "after",
+        heading: copy("compare-a.after.label", "Fieldmark"),
+        label: existingCopy("compare-a.after.label"),
       description: copy("compare-a.after.description", "Checks carry their own due dates; overdue items are listed first, with an owner."),
       visual: {
         id: "record",
@@ -871,9 +810,10 @@ const comparisonVisual: SectionedViewContentSection = {
           },
         ],
         footer: { assignee: { initials: copy("compare-a.after.initials", "AN"), name: copy("compare-a.after.name", "A. Novak") } },
-      },
-    },
-  },
+        }
+      }
+    ]
+  }
 };
 
 const comparisonPoints: SectionedViewContentSection = {
@@ -882,31 +822,35 @@ const comparisonPoints: SectionedViewContentSection = {
   ground: "base",
   eyebrow: copy("compare-b.eyebrow", "Handover"),
   heading: copy("compare-b.heading", "What the next shift inherits, with and without the record"),
-  description: copy(
-    "compare-b.description",
-    "A shift handover is where maintenance knowledge gets lost; here is what the incoming technician receives in each case, on the same Monday morning at the same site.",
-  ),
+  description: copy("compare-b.description", "A shift handover is where maintenance knowledge gets lost; here is what the incoming technician receives in each case, on the same Monday morning at the same site."),
   block: {
-    type: "comparison",
-    before: {
-      label: copy("compare-b.before.label", "Without the record"),
+    type: "matrix",
+    featured: "after",
+    sides: [
+      {
+        id: "before",
+        heading: copy("compare-b.before.label", "Without the record"),
+        label: existingCopy("compare-b.before.label"),
       points: [
         copy("compare-b.before.note", "A handwritten note, if the last shift left one"),
         copy("compare-b.before.readings", "Readings kept in a notebook in someone's locker"),
         copy("compare-b.before.parts", "Parts on order known only to the buyer"),
         copy("compare-b.before.overdue", "Overdue checks discovered when an inspector asks for them"),
-      ],
+        ]
     },
-    after: {
-      label: copy("compare-b.after.label", "With the record"),
+      {
+        id: "after",
+        heading: copy("compare-b.after.label", "With the record"),
+        label: existingCopy("compare-b.after.label"),
       points: [
         copy("compare-b.after.jobs", "Every open job with its last note and owner"),
         copy("compare-b.after.readings", "Every reading filed against its asset, with the time"),
         copy("compare-b.after.parts", "Parts on order shown on the job itself"),
         copy("compare-b.after.overdue", "Overdue checks listed first, each with a named owner"),
-      ],
-    },
-  },
+        ]
+      }
+    ]
+  }
 };
 
 const stepsVisual: SectionedViewContentSection = {
@@ -917,38 +861,33 @@ const stepsVisual: SectionedViewContentSection = {
   heading: copy("steps-visual.heading", "How a repair is signed off"),
   description: copy("steps-visual.description", "Three people touch a typical repair; each step leaves its evidence in the record."),
   block: {
-    type: "ordered-step-sequence",
+    type: "items",
+    arrangement: "columns",
+    order: "connected",
+    treatment: "plain",
     items: [
       {
         id: "record",
-        ordinal: copy("steps-visual.record.ordinal", "01"),
-        label: copy("steps-visual.record.actor", "Technician"),
+        meta: copy("steps-visual.record.actor", "Technician"),
         heading: copy("steps-visual.record.heading", "Record"),
         description: copy("steps-visual.record.description", "Readings, photos and parts used, captured at the asset."),
         visual: {
-          id: "readings",
-          title: copy("steps-visual.record.title", "WO-2214 · Readings"),
-          parts: [
-            fields("steps-visual.record.fields", [
+          ...fields("steps-visual.record.fields", [
               ["Belt tension", "42 Hz"],
               ["Photos", "3 attached"],
               ["Parts", "2 drawn"],
               ["Time on job", "1 h 20 min"],
             ]),
-          ],
-        },
+          label: joinedCopy("canonical.part-2.label", copy("steps-visual.record.title", "WO-2214 · Readings"))
+        }
       },
       {
         id: "review",
-        ordinal: copy("steps-visual.review.ordinal", "02"),
-        label: copy("steps-visual.review.actor", "Supervisor"),
+        meta: copy("steps-visual.review.actor", "Supervisor"),
         heading: copy("steps-visual.review.heading", "Review"),
         description: copy("steps-visual.review.description", "Checks the evidence and returns anything incomplete to the technician."),
         visual: {
-          id: "checklist",
-          title: copy("steps-visual.review.title", "Review checklist"),
-          parts: [
-            {
+          ...{
               id: "checks",
               type: "status-rows",
               items: [
@@ -957,69 +896,51 @@ const stepsVisual: SectionedViewContentSection = {
                 { id: "parts", label: copy("steps-visual.review.parts", "Parts posted"), status: status("steps-visual.review.parts", "warning", "1 pending") },
               ],
             },
-          ],
-        },
+          label: joinedCopy("canonical.part-3.label", copy("steps-visual.review.title", "Review checklist"))
+        }
       },
       {
         id: "sign",
-        ordinal: copy("steps-visual.sign.ordinal", "03"),
-        label: copy("steps-visual.sign.actor", "Site manager"),
+        badge: { tone: "success", label: status("steps-visual.sign", "success", "Signed").label },
+        meta: copy("steps-visual.sign.actor", "Site manager"),
         heading: copy("steps-visual.sign.heading", "Sign off"),
         description: copy("steps-visual.sign.description", "Signs the job closed, and its history is locked."),
         visual: {
-          id: "closed",
-          title: copy("steps-visual.sign.title", "WO-2214 · Closed"),
-          status: status("steps-visual.sign", "success", "Signed"),
-          parts: [
-            fields(
-              "steps-visual.sign.fields",
-              [
+          ...fields("steps-visual.sign.fields", [
                 ["Signed by", "Site manager"],
                 ["Signed at", "6 Mar, 16:05"],
+          ], 1),
+          label: joinedCopy("canonical.part-4.label", copy("steps-visual.sign.title", "WO-2214 · Closed"), copy("steps-visual.sign.initials", "LR"), copy("steps-visual.sign.name", "L. Romano"), copy("steps-visual.sign.role", "Site manager"))
+        }
+      }
               ],
-              1,
-            ),
-          ],
-          footer: { assignee: { initials: copy("steps-visual.sign.initials", "LR"), name: copy("steps-visual.sign.name", "L. Romano"), note: copy("steps-visual.sign.role", "Site manager") } },
-        },
-      },
-    ],
-  },
+    caption: copy("steps-visual.caption", "Sample data.")
+  }
 };
-
-const faqItem = (id: string, question: string, answer: string) => ({ id, question: copy(`faq.${id}.question`, question), answer: copy(`faq.${id}.answer`, answer) });
+const faqItem = (id: string, question: string, answer: string) => ({ id, heading: copy(`faq.${id}.question`, question), description: copy(`faq.${id}.answer`, answer) });
 
 const faqSplit: SectionedViewContentSection = {
   id: "catalog-faq",
   kind: "content-section",
   ground: "base",
-  layout: "split",
+  layout: "split-end",
   eyebrow: copy("faq.eyebrow", "Questions"),
   heading: copy("faq.heading", "What teams ask before they switch"),
   description: copy("faq.description", "Short answers to the questions facilities leads raise most often in a first call."),
   block: {
-    type: "faq",
+    type: "items",
+    arrangement: "rows",
+    reveal: "disclose",
+    treatment: "rule",
     items: [
       faqItem("offline", "Does it work without a phone signal?", "Yes. Technicians can open their jobs, record readings and take photos offline, and the record syncs as soon as the phone reconnects."),
-      faqItem(
-        "import",
-        "Can we import the asset list we already keep in our spreadsheets?",
-        "Yes. You upload the spreadsheet as it is, map its columns to asset fields once, and review every row that is missing a location or a type before anything is created, so the register starts clean rather than inheriting the old gaps from earlier years.",
-      ),
+      faqItem("import", "Can we import the asset list we already keep in our spreadsheets?", "Yes. You upload the spreadsheet as it is, map its columns to asset fields once, and review every row that is missing a location or a type before anything is created, so the register starts clean rather than inheriting the old gaps from earlier years."),
       faqItem("contractors", "Who can see contractor records?", "Only people with a role on that site. A contractor sees the jobs assigned to them and nothing else."),
       faqItem("signed", "What happens to a record after it is signed?", "It is locked. Anyone with the right role can add an amendment with a reason, and the original stays visible beside it."),
-      faqItem(
-        "setup",
-        "How long does it take to set up one site?",
-        "That depends on how many assets the site has and how complete its existing records are; the import step shows the gaps it found before you schedule anything.",
-      ),
-      faqItem(
-        "export",
-        "Can we export everything if we stop using the product later on?",
-        "Yes. Every asset, job, reading, signature and attachment exports as plain files with its history intact, at any time and without asking anyone, and the export keeps the links between records so another system can rebuild the same structure from it.",
-      ),
-    ],
-  },
+      faqItem("setup", "How long does it take to set up one site?", "That depends on how many assets the site has and how complete its existing records are; the import step shows the gaps it found before you schedule anything."),
+      faqItem("export", "Can we export everything if we stop using the product later on?", "Yes. Every asset, job, reading, signature and attachment exports as plain files with its history intact, at any time and without asking anyone, and the export keeps the links between records so another system can rebuild the same structure from it."),
+    ]
+  }
 };
 
 /** Two generic handoff examples: one visual track and one plain cycle. */
@@ -1033,19 +954,21 @@ const stepsLanes = (visual: boolean): SectionedViewContentSection => {
     heading: copy(`${key}.heading`, "Who acts at each step"),
     description: copy(`${key}.description`, "Two actors pass a record between them until the work is complete."),
     block: {
-      type: "ordered-step-sequence",
-      lanes: { a: copy(`${key}.a`, "Your team"), b: copy(`${key}.b`, "The service") },
+      type: "items",
+      arrangement: "stacked",
+      order: "connected",
+      treatment: "plain",
+      lanes: [{ id: "a", label: copy(`${key}.a`, "Your team") }, { id: "b", label: copy(`${key}.b`, "The service") }],
       end: visual ? "ends" : "continues",
       ...(visual ? { caption: copy(`${key}.caption`, "Sample data.") } : { endLabel: copy(`${key}.end-label`, "Repeats each quarter") }),
       items: [...(visual ? "aba" : "abbaa")].map((lane, index) => ({
         id: `handoff-${index}`,
         lane: lane as "a" | "b",
-        ordinal: copy(`${key}.${index}.ordinal`, String(index + 1).padStart(2, "0")),
         heading: copy(`${key}.${index}.heading`, ["Share", "Review", "Confirm", "Act", "Repeat"][index]!),
         description: copy(`${key}.${index}.description`, "Pass the current record onward with the evidence this actor needs."),
-        ...(visual ? { visual: { id: `record-${index}`, title: copy(`${key}.${index}.title`, "Record status"), parts: [fields(`${key}.${index}.fields`, [["Status", "Ready"]])] } } : {}),
-      })),
-    },
+        ...(visual ? { visual: { ...fields(`${key}.${index}.fields`, [["Status", "Ready"]]), label: copy(`${key}.${index}.title`, "Record status") } } : {}),
+      }))
+    }
   };
 };
 const stepsLanesVisual = stepsLanes(true);
@@ -1103,29 +1026,29 @@ export const CONTENT_CATALOG_CAPTIONS: readonly ContentCatalogCaption[] = [
   { sectionId: "catalog-hero", title: "Hero", detail: "inverse ground · eyebrow, heading, description · one primary action", budget: "max" },
   { sectionId: "catalog-intro", title: "Intro band", detail: "stacked, start-aligned · no block, no media · primary and tertiary buttons as the band's last element, no footnote", budget: "max" },
   { sectionId: "catalog-specimen-single", title: "Specimen, stacked, single", detail: "sunken · one panel: fields (6 rows), status rows, meter with limit, assignee footer", budget: "max" },
-  { sectionId: "catalog-features-plain", title: "FeatureGrid, plain, 3 columns, icons", detail: "base · item emphasis", budget: "typical" },
+  { sectionId: "catalog-features-plain", title: "Items, plain, 3 columns, icons", detail: "base · item emphasis", budget: "typical" },
   { sectionId: "catalog-split-end", title: "Specimen, split, media end", detail: "sunken · header and one tertiary button in the text column, beside a schedule panel", budget: "typical" },
-  { sectionId: "catalog-features-rule", title: "FeatureGrid, rule, 4 columns", detail: "base · no icons (rule takes none)", budget: "max" },
-  { sectionId: "catalog-split-start", title: "TopicList, 1 column, split beside a Specimen, media start", detail: "sunken · the topic list in the text column · table panel", budget: "max" },
-  { sectionId: "catalog-features-statement", title: "FeatureGrid, statement emphasis", detail: "inverse (the one inverse body band) · centred header, no actions · exactly 3 items · a centred footnote with one link", budget: "typical" },
-  { sectionId: "catalog-split-text", title: "FeatureGrid, 2 columns, text-only split", detail: "base · no media · the grid takes the visual column, top-aligned beside the header · item eyebrows", budget: "typical" },
-  { sectionId: "catalog-specimen-row", title: "Specimen, stacked, row of 3", detail: "sunken · three panels, each a meter and one field", budget: "typical" },
-  { sectionId: "catalog-features-plate", title: "FeatureGrid, plate, 2 columns, icons, linked", detail: "base · each plate is one link (its title), the whole plate clickable · 2-column plates take the longest item copy", budget: "max" },
-  { sectionId: "catalog-specimen-stack", title: "Specimen, stacked, stack", detail: "sunken · two panels: meter and shares, then a table with a footer note", budget: "typical" },
-  { sectionId: "catalog-topics-two", title: "TopicList, 2 columns, icons", detail: "base · 8 items", budget: "max" },
-  { sectionId: "catalog-topics-linked", title: "TopicList, 2 columns, linked", detail: "sunken · 4 rows, each one link (its title) with a chevron", budget: "typical" },
-  { sectionId: "catalog-topics-groups-4", title: "TopicList, 4 labelled groups", detail: "sunken · 2 topics per group · two-by-two from tablet · footnote contact", budget: "typical" },
-  { sectionId: "catalog-topics-groups-3", title: "TopicList, 3 labelled groups", detail: "base · 2 topics per group · three columns from tablet-lg", budget: "typical" },
-  { sectionId: "catalog-specimen-flow", title: "Specimen, stacked, flow", detail: "sunken · two panels with a connector caption", budget: "typical" },
-  { sectionId: "catalog-cards-text", title: "CardGrid (bento), text", detail: "base · rows three thirds, third + two-thirds, full · icons and card eyebrows", budget: "max" },
-  { sectionId: "catalog-comparison-visual", title: "Comparison, visuals", detail: "sunken · a description and a panel on each side", budget: "typical" },
-  { sectionId: "catalog-steps-plain", title: "OrderedStepSequence, 4 steps, actor labels", detail: "base · no visuals", budget: "max" },
-  { sectionId: "catalog-cards-visual", title: "CardGrid (bento), visuals, linked", detail: "sunken · rows half + half, two-thirds + third · each card one link (its title) · status rows, shares, table, files", budget: "typical" },
-  { sectionId: "catalog-comparison-points", title: "Comparison, points", detail: "base · 4 points a side, no visuals", budget: "max" },
-  { sectionId: "catalog-steps-lanes-visual", title: "OrderedStepSequence, visual lanes", detail: "base · three steps, two actors, terminal node · Sample data.", budget: "typical" },
-  { sectionId: "catalog-steps-lanes-plain", title: "OrderedStepSequence, plain lanes", detail: "sunken · five steps, two actors, continuing arrow and visible end label", budget: "typical" },
-  { sectionId: "catalog-steps-visual", title: "OrderedStepSequence, 3 steps, visuals and actor labels", detail: "sunken · one panel per step", budget: "typical" },
-  { sectionId: "catalog-faq", title: "Faq, split band", detail: "base, the closing band · 6 rows beside a top-aligned header", budget: "max" },
+  { sectionId: "catalog-features-rule", title: "Items, rule, 2 columns", detail: "base · no icons (rule takes none)", budget: "max" },
+  { sectionId: "catalog-split-start", title: "Items, rows, 1 column, split beside a Specimen, media start", detail: "sunken · the topic list in the text column · table panel", budget: "max" },
+  { sectionId: "catalog-features-statement", title: "Items, statement emphasis", detail: "inverse (the one inverse body band) · centred header, no actions · exactly 3 items · a centred footnote with one link", budget: "typical" },
+  { sectionId: "catalog-split-text", title: "Items, 2 columns, text-only split", detail: "base · no media · the grid takes the visual column, top-aligned beside the header · item eyebrows", budget: "typical" },
+  { sectionId: "catalog-specimen-row", title: "Specimen, three asset readings", detail: "sunken · one panel with three meters, asset labels and open-job notes", budget: "typical" },
+  { sectionId: "catalog-features-plate", title: "Items, plate, 2 columns, icons, linked", detail: "base · each plate is one link (its title), the whole plate clickable · 2-column plates take the longest item copy", budget: "max" },
+  { sectionId: "catalog-specimen-stack", title: "Specimen, stacked, stack", detail: "sunken · one panel: meter, shares and a labelled table with a footer note", budget: "typical" },
+  { sectionId: "catalog-topics-two", title: "Items, rows, 2 columns, icons", detail: "base · 8 items", budget: "max" },
+  { sectionId: "catalog-topics-linked", title: "Items, rows, 2 columns, linked", detail: "sunken · 4 rows, each one link (its title) with a chevron", budget: "typical" },
+  { sectionId: "catalog-topics-groups-4", title: "Items, 4 labelled groups", detail: "sunken · 2 topics per group · 2-column group grid · footnote contact", budget: "typical" },
+  { sectionId: "catalog-topics-groups-3", title: "Items, 3 labelled groups", detail: "base · 2 topics per group · one column", budget: "typical" },
+  { sectionId: "catalog-specimen-flow", title: "Specimen, stacked, flow", detail: "sunken · one panel with two labelled field groups and a handoff footer", budget: "typical" },
+  { sectionId: "catalog-cards-text", title: "Items, bento, text", detail: "base · rows three thirds, third + two-thirds, full · icons and card eyebrows", budget: "max" },
+  { sectionId: "catalog-comparison-visual", title: "Matrix, visuals", detail: "sunken · a description and a panel on each side", budget: "typical" },
+  { sectionId: "catalog-steps-plain", title: "Items, connected, 4 steps, actor labels", detail: "base · no visuals", budget: "max" },
+  { sectionId: "catalog-cards-visual", title: "Items, bento, visuals, linked", detail: "sunken · rows half + half, two-thirds + third · each card one link (its title) · status rows, shares, table, files", budget: "typical" },
+  { sectionId: "catalog-comparison-points", title: "Matrix, points", detail: "base · 4 points a side, no visuals", budget: "max" },
+  { sectionId: "catalog-steps-lanes-visual", title: "Items, connected, visual lanes", detail: "base · three steps, two actors, terminal node · Sample data.", budget: "typical" },
+  { sectionId: "catalog-steps-lanes-plain", title: "Items, connected, plain lanes", detail: "sunken · five steps, two actors, continuing arrow and visible end label", budget: "typical" },
+  { sectionId: "catalog-steps-visual", title: "Items, connected, 3 steps, visuals and actor labels", detail: "sunken · one labelled specimen part per step", budget: "typical" },
+  { sectionId: "catalog-faq", title: "Items, disclosed split band", detail: "base, the closing band · 6 rows beside a top-aligned header", budget: "max" },
   { sectionId: CONTENT_CATALOG_CALL_TO_ACTION.id, title: "Close band", detail: "inverse, fixed by the view · one primary action", budget: "max" },
 ];
 

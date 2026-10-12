@@ -7,7 +7,7 @@ import { describe, expect, it, vi } from "vitest";
 import { resolveSectionedViewDocument, validateSectionedViewDocument, type SectionedViewContentSection, type SectionedViewDocument, type SectionedViewItemsBlock, type ResolvedSectionedViewDocument, type SectionedViewMedia, type SectionedViewSpecimenPart } from "../../core/sectioned-view.js";
 import { previewSectionedDocument, previewCopyResolver } from "../../preview/fixture-documents.js";
 import { LandingView } from "./LandingView.js";
-import { LandingView as ServerLandingView } from "../server.js";
+import { LandingView as ServerLandingView } from "./LandingView.server.js";
 import { SectionedView } from "./SectionedView.js";
 import { SectionedView as ServerSectionedView } from "./SectionedView.server.js";
 import { assertRenderableSectionedViewDocument, renderSectionedViewSections } from "./SectionedViewContent.js";
@@ -26,6 +26,16 @@ function html(document: ResolvedSectionedViewDocument, server = false) { return 
 function dom(markup: string) { const root = document.createElement("div"); root.innerHTML = markup; return root; }
 const columns = (count: 2 | 3): SectionedViewItemsBlock => ({ type: "items", arrangement: "columns", columns: count, items: [item("first"), item("second", "second"), ...(count === 3 ? [item("third", "third")] : [])] });
 describe("canonical available renderer", () => {
+  it("keeps consumer continuation copy hidden without creating a visible end-label row", () => {
+    const section=band({block:{type:"items",arrangement:"stacked",order:"connected",end:"continues",items:[item("first"),item("second","second"),item("third","third")]}});
+    const input: SectionedViewDocument={id:"continuation",sections:[section]};expect(validateSectionedViewDocument(input).filter(f=>f.severity==="error")).toEqual([]);
+    const continueResolver=createCopyResolver({...registry,entries:[...registry.entries,{id:"steps.continues",text:"Consumer continuation",context:"Fixture",status:"approved"}]});
+    const doc=resolveSectionedViewDocument(input,continueResolver);
+    for(const server of [false,true]) {const root=dom(html(doc,server));expect(root.querySelector("[data-item-end-label]")).toBeNull();const continuation=root.querySelector<HTMLElement>("[data-content-continuation]")!;expect(continuation).not.toBeNull();expect(continuation.textContent).toBe("Consumer continuation");expect(continuation.className).toBe("sr-only");expect(continuation.previousElementSibling?.tagName).toBe("OL");}
+    const block=doc.sections[0];if(block?.kind!=="content-section"||block.block?.type!=="items")throw new Error("Expected connected items");expect(block.block.continuesLabel).toBe("Consumer continuation");expect(doc.resolutions.some(entry=>entry.ref.id==="steps.continues"&&entry.text==="Consumer continuation")).toBe(true);
+    const visible=resolveSectionedViewDocument({ ...input,sections:[{...section,block:{...section.block!,endLabel:ref("link")}}]},continueResolver);
+    for(const server of [false,true]) {const root=dom(html(visible,server));expect(root.querySelector("[data-item-end-label]")?.textContent).toBe(copy.link);expect(root.querySelector("[data-content-continuation]")).toBeNull();}
+  });
   it.each([2, 3] as const)("renders actual unordered Items with %i columns through both entries", count => {
     const section = band({ block: columns(count) }); const resolved = resolve(section);
     const markup = html(resolved); expect(html(resolved, true)).toBe(markup);
@@ -105,13 +115,24 @@ describe("canonical resolved boundary", () => {
     expect(() => assertRenderableSectionedViewDocument(doc)).toThrow(); expect(calls).not.toHaveBeenCalled();
   });
 });
-describe("valid canonical dependency capabilities", () => {
-  it.each(["numbered", "connected", "disclose"])("names the unavailable renderer capability for %s without forbidding the core contract", name => {
-    let section = band({ block: columns(2) }); let capability = "ordered or disclosed items";
-    if (name === "numbered") section = band({ block: { ...columns(2), order: "numbered" } });
+describe("canonical ordered and disclosed collections", () => {
+  it.each(["numbered", "connected", "disclose"])("renders ordered or disclosed %s items through their actual entry", name => {
+    let section = band({ block: { ...columns(2), order: "numbered" } });
     if (name === "connected") section = band({ block: { type: "items", recipe: "flow", items: [item("first"), item("second"), item("third")] } });
     if (name === "disclose") section = band({ block: { type: "items", recipe: "faq", items: [item("first"), item("second"), item("third"), item("fourth")] } });
-    const doc = resolve(section); expect(() => assertRenderableSectionedViewDocument(doc)).not.toThrow(); expect(() => html(doc)).toThrow(new RegExp(`renderer capability unavailable for ${capability}`));
+    const doc = resolve(section); const before = JSON.stringify(doc); const resolutions = doc.resolutions;
+    for (const server of [false, true]) {
+      const root = dom(html(doc, server)); expect(root.textContent).toContain(copy.first); expect(root.textContent).toContain(copy.detail);
+      const heading = root.querySelector("h2")!; const collection = root.querySelector("[data-items]")!;
+      expect(heading.id).toBe("content:heading"); expect(collection).not.toBeNull(); expect(collection.getAttribute("aria-labelledby")).toBe(heading.id);
+      expect([...root.querySelectorAll("[id]")].filter(node => node.id === heading.id)).toHaveLength(1);
+      if (name === "disclose") {
+        expect(root.querySelectorAll(server ? "details" : "[data-rac][data-expanded]").length || root.querySelectorAll(server ? "summary" : "button").length).toBe(4);
+        expect(root.querySelector("summary") !== null).toBe(server);
+        expect(root.querySelector("[data-rac]") !== null).toBe(!server);
+      } else { expect(root.querySelector("ol[data-items]")).not.toBeNull(); expect(root.querySelectorAll("[data-item-ordinal]")).toHaveLength(name === "connected" ? 3 : 2); }
+    }
+    expect(JSON.stringify(doc)).toBe(before); expect(doc.resolutions).toBe(resolutions);
   });
 });
 
@@ -360,7 +381,7 @@ describe("canonical renderer review regressions", () => {
   it.each((["converge", "evidence", "approval"] as const).flatMap(name => (["base", "sunken"] as const).map(ground => ({ name, ground }))))("keeps $name Scene on $ground free of an added plate", ({ name, ground }) => {
     const doc = reviewDocument([band({ ground, media: { type: "scene", label: ref("scene"), input: scenes[name] } })]);
     const media = doc.sections[0]!.kind === "content-section" ? doc.sections[0].media : undefined; if (media?.type !== "scene") throw new Error("Expected scene media");
-    const direct = dom(renderToStaticMarkup(<Scene id="content-scene" input={media.input} label={media.label} relationLabel={media.relationLabel} />)).querySelector(".scene-root")!.outerHTML;
+    const direct = dom(renderToStaticMarkup(<Scene id="7:content:5:scene" input={media.input} label={media.label} relationLabel={media.relationLabel} />)).querySelector(".scene-root")!.outerHTML;
     for (const server of [false, true]) { const root = dom(html(doc, server)); expect(root.querySelector("[data-scene-plate]")).toBeNull(); expect(root.querySelector('.scene-root')?.outerHTML).toBe(direct); expect(root.querySelector('.scene-root')?.textContent).toContain(copy.scene); }
   });
   it.each(["compact", "standard", "display"] as const)("aligns the %s canonical fragment with its zero-padding outer band", size => {
@@ -396,8 +417,8 @@ describe("canonical matrix and specimen metadata integration", () => {
   }
   it.each(["base", "sunken", "inverse"] as const)("forwards description Matrix identity, feature and %s ground", ground => {
     const doc = resolve({ ...matrix(), ground }); const root = preserve(doc);
-    expect([...root.querySelectorAll("[data-matrix-side]")].map(node => node.getAttribute("data-matrix-side"))).toEqual(["left", "right"]);
-    expect(root.querySelector('[data-matrix-side="right"] [data-featured="true"]')).not.toBeNull(); expect(root.querySelectorAll("h3")).toHaveLength(2);
+    expect([...root.querySelectorAll("[data-matrix-side]")].map(node => node.getAttribute("data-matrix-side"))).toEqual(["side-0063006f006e00740065006e0074-006c006500660074", "side-0063006f006e00740065006e0074-00720069006700680074"]);
+    expect(root.querySelectorAll('[data-matrix-side]')[1]!.querySelector('[data-featured="true"]')).not.toBeNull(); expect(root.querySelectorAll("h3")).toHaveLength(2); const matrixRoot=root.querySelector("[data-matrix]")!;expect(matrixRoot.getAttribute("aria-labelledby")).toBe("content:heading");expect(root.querySelectorAll('[id="content:heading"]')).toHaveLength(1);expect(root.querySelector('[id="content:heading"]')?.textContent).toBe(copy.heading);
     const sides = [...root.querySelectorAll("[data-matrix-side]")]; sides.forEach((side, index) => { expect(side.querySelector("h3")?.textContent).toBe(index === 0 ? copy.short : copy.group); expect(side.textContent).toContain(index === 0 ? copy.first : copy.second); expect(side.textContent).toContain(index === 0 ? copy.detail : copy.meta); const plate = side.querySelector('[data-variant="plate"]')!; expect(plate.classList.contains(ground === "base" ? "bg-surface-sunken" : ground === "sunken" ? "bg-surface-raised" : "bg-surface-inverse-raised")).toBe(true); expect(side.querySelector("h3")!.classList.contains(ground === "inverse" ? "text-ink-on-inverse-muted" : "text-ink-secondary")).toBe(true); });
   });
   it("renders equal point rows and descriptions without dropping either", () => { const root = preserve(resolve(matrix(undefined, true))); expect(root.querySelectorAll("[data-matrix] li")).toHaveLength(4); [...root.querySelectorAll("[data-matrix-side]")].forEach((side, index) => { expect([...side.querySelectorAll("li")].map(node => node.textContent)).toEqual(index === 0 ? [copy.first, copy.detail] : [copy.second, copy.meta]); expect(side.textContent).toContain(index === 0 ? copy.detail : copy.meta); expect(side.querySelectorAll("p")[1]?.textContent).toBe(index === 0 ? copy.detail : copy.meta); }); });
@@ -415,9 +436,18 @@ describe("canonical matrix and specimen metadata integration", () => {
     const doc: any = structuredClone(resolve(section)); if (name === "foreign-featured") doc.sections[0].block.featured = "foreign"; else { const panel = doc.sections[0].media.panel; if (name === "badge-tone") panel.badge.tone = "accent"; if (name === "badge-copy") panel.badge.label = ref("badge"); if (name === "mobile-limit") panel.parts[0].mobileRows = 4; if (name === "orphan-previous") delete panel.parts[0].previousText; }
     const called = vi.fn(); expect(() => renderSectionedViewSections(doc, { ...sectionedViewBlocks, ContentSection: called }, {})).toThrow(/sections\.0/); expect(called).not.toHaveBeenCalled(); for (const server of [false, true]) expect(() => html(doc, server)).toThrow(/invalid resolved document/);
   });
-  it("keeps valid whitespace Matrix IDs explicit as an unavailable renderer capability without rewriting", () => {
-    const section = matrix(); if (section.block?.type !== "matrix") throw new Error("Expected Matrix"); section.block.sides[0]!.id = "left side"; const doc = resolve(section); const before = JSON.stringify(doc);
-    expect(() => assertRenderableSectionedViewDocument(doc)).not.toThrow(); for (const server of [false, true]) expect(() => html(doc, server)).toThrow(/section\.content\.block\.sides\.0\.id: renderer capability unavailable for matrix side IDs/); expect(JSON.stringify(doc)).toBe(before);
+  it("preserves whitespace and UTF-16 Matrix IDs through injective presentation namespaces", () => {
+    for (const ids of [["left side", "left-side"], ["\ud800", "\ud801"]]) {
+      const section = matrix(); if (section.block?.type !== "matrix") throw new Error("Expected Matrix"); section.block.sides[0]!.id = ids[0]!; section.block.sides[1]!.id = ids[1]!; section.block.featured = ids[0]; const doc = resolve(section); const before = JSON.stringify(doc); const resolutions = doc.resolutions;
+      expect(() => assertRenderableSectionedViewDocument(doc)).not.toThrow();
+      for (const server of [false, true]) {
+        const root = dom(html(doc, server)); const sides = [...root.querySelectorAll("[data-matrix-side]")]; expect(sides).toHaveLength(2);
+        const adapted = sides.map(side => side.getAttribute("data-matrix-side")); expect(new Set(adapted).size).toBe(2); adapted.forEach(id => expect(id).not.toMatch(/\s/));
+        expect(sides[0]!.querySelector('[data-featured="true"]')).not.toBeNull(); expect(sides[1]!.querySelector('[data-featured="true"]')).toBeNull();
+        expect(root.textContent).toContain(copy.first); expect(root.textContent).toContain(copy.second);
+      }
+      expect(JSON.stringify(doc)).toBe(before); expect(doc.resolutions).toBe(resolutions);
+    }
   });
   it.each(["neutral", "success", "warning", "danger", "info"] as const)("passes panel %s badge independently of metadata and status", tone => {
     const doc = resolve(band({ media: { ...specimen, panel: { ...panel, meta: ref("meta"), status: { tone: "warning", label: ref("field") }, badge: { tone, label: ref("badge") } } } })); const root = preserve(doc);
@@ -428,5 +458,24 @@ describe("canonical matrix and specimen metadata integration", () => {
   });
   it.each([0, 100])("forwards previous Meter marker %i and its visible text with unchanged value/limit domain", previous => {
     const doc = resolve(band({ media: { ...specimen, panel: { ...panel, parts: [{ id: "meter", type: "meter", label: short, tone: "info", value: 140, limit: 180, scaleMax: 100, valueText: ref("measurement"), limitText: ref("limit"), previous, previousText: ref("amount") }] } } })); const root = preserve(doc); const marker = root.querySelector<HTMLElement>('[data-part="previous"]')!; expect(marker).not.toBeNull(); expect(marker.style.insetInlineStart).toContain(`${previous}%`); expect(root.textContent).toContain(copy.amount); expect(root.textContent).toContain(copy.measurement); expect(root.textContent).toContain(copy.limit);
+  });
+});
+
+
+describe("media DOM identity namespace", () => {
+  it.each(["scene", "specimen"] as const)("keeps %s labels separate from valid section fragments through both entries", kind => {
+    const targets = kind === "scene" ? ["intro-scene-label"] : ["intro-specimen-label", "intro-specimen-key", "intro-specimen-key-name"];
+    const media: SectionedViewMedia = kind === "scene" ? { type: "scene", label: ref("scene"), input: scenes.converge } : { ...specimen, key: { label: short, items: ["header", "fields", "footer"].map((target, index) => ({ id: `marker-${index}`, target, heading: short, description: ref("detail") })) } };
+    const authored: SectionedViewDocument = { id: "namespaced-media", sections: [band({ id: "intro", media }), ...targets.map(id => band({ id, block: columns(2), footnote: { link: { label: ref("link"), href: `#${id}` } } }))] };
+    expect(validateSectionedViewDocument(authored).filter(f => f.severity === "error")).toEqual([]);
+    const resolved = resolveSectionedViewDocument(authored, resolver); const before = JSON.stringify(resolved); const resolutions = resolved.resolutions;
+    for (const ordered of [resolved, { ...resolved, sections: [...resolved.sections].reverse() }]) for (const server of [false, true]) for (const markup of [html(ordered, server), landingHtml(ordered, server)]) {
+      const root = dom(markup); const ids = [...root.querySelectorAll("[id]")].map(node => node.id);
+      expect(new Set(ids).size, "unique DOM IDs").toBe(ids.length);
+      for (const target of targets) { const matching = [...root.querySelectorAll("[id]")].filter(node => node.id === target); expect(matching).toHaveLength(1); expect(matching[0]?.matches("[data-content-section]")).toBe(true); expect(root.querySelector(`a[href="#${target}"]`)).not.toBeNull(); }
+      for (const node of root.querySelectorAll("[aria-labelledby]")) for (const id of node.getAttribute("aria-labelledby")!.split(/\s+/)) expect([...root.querySelectorAll("[id]")].filter(candidate => candidate.id === id)).toHaveLength(1);
+      expect(root.textContent).toContain(copy.heading); expect(root.textContent).toContain(kind === "scene" ? copy.short : copy.value);
+    }
+    expect(resolved.resolutions).toBe(resolutions); expect(JSON.stringify(resolved)).toBe(before);
   });
 });

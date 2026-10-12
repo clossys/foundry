@@ -9,7 +9,7 @@ describe("compact catalog fixture", () => {
   it("uses generic inverse copy without actions and renders through LandingView", () => {
     expect(validateSectionedViewDocument(heroCompactCatalogDocument)).toEqual([]);
     const hero = heroCompactCatalogDocument.sections[0];
-    expect(hero).toMatchObject({ id: "hero-compact", ground: "inverse", compact: true });
+    expect(hero).toMatchObject({ id: "hero-compact", ground: "inverse", size: "compact" });
     expect(hero).not.toHaveProperty("actions");
     const root = dom({ document: resolveSectionedViewDocument(heroCompactCatalogDocument, contentCatalogCopyResolver), header: "reserved" });
     expect(root.querySelector("[data-hero-size=compact]")).not.toBeNull();

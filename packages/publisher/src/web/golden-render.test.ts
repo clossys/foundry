@@ -499,12 +499,33 @@ const holdersPanel = (id: string): SectionedViewSpecimenPanel => ({
   ],
 });
 
-const specimenMedia = (label: string, panels: SectionedViewSpecimenPanel[], arrangement?: SectionedViewSpecimenMedia["arrangement"]): SectionedViewSpecimenMedia => ({
-  type: "specimen",
-  label: copy(`golden.specimen.${label}`, `Placeholder specimen showing ${label}`),
-  ...(arrangement === undefined ? {} : { arrangement }),
-  ...(arrangement === "flow" ? { connector: copy(`golden.specimen.${label}.connector`, "Placeholder connector") } : {}),
-  panels,
+const joined = (id: string, refs: CopyRef[]): CopyRef => copy(id, refs.map(ref => contentCopy.get(ref.id)!).join(" · "));
+/** Recompose retired multi-panel examples into one legal panel without discarding their visible copy or status cells. */
+const combinePanels = (id: string, panels: SectionedViewSpecimenPanel[], connector?: CopyRef): SectionedViewSpecimenPanel => {
+  const rows: Extract<SectionedViewSpecimenPart, { type: "table" }>["rows"][number][] = [];
+  const parts: SectionedViewSpecimenPart[] = [];
+  const labels: CopyRef[] = [];
+  let table: Extract<SectionedViewSpecimenPart, { type: "table" }> | undefined;
+  for (const panel of panels) for (const part of panel.parts) {
+    if (part.label !== undefined) labels.push(part.label);
+    if (part.type === "table") { table = part; rows.push(...part.rows); }
+    else if (part.type === "fields") {
+      if (part.items.length !== 2) throw new Error("Expected the original two field pairs");
+      rows.push({ id: part.id, cells: part.items.map(item => ({ text: joined(`golden.${id}.${part.id}.${item.id}`, [item.label, item.value]) })) });
+    }
+    else if (part.type === "schedule") rows.push(...part.items.map(item => ({ id: `${part.id}-${item.id}`, cells: [{ text: joined(`golden.${id}.${part.id}.${item.id}`, [item.date, item.label]) }, { text: item.amount }] })));
+    else if (part.type === "shares") rows.push(...part.items.map(item => ({ id: `${part.id}-${item.id}`, cells: [{ text: item.name }, { text: item.shareText }] })));
+    else if (part.type === "files") rows.push(...part.items.map(item => ({ id: `${part.id}-${item.id}`, cells: [{ text: item.name }, { text: item.format }] })));
+    else parts.push(part);
+  }
+  if (table === undefined) throw new Error("Expected original two-column table");
+  const first = panels[0]!;
+  return { id, title: joined(`golden.${id}.title`, panels.map(panel => panel.title)), meta: first.meta, status: first.status,
+    parts: [{ ...table, id: "combined", label: labels.length === 0 ? undefined : joined(`golden.${id}.labels`, labels), rows }, ...parts],
+    footer: connector === undefined ? first.footer : { ...first.footer, note: joined(`golden.${id}.footer`, [first.footer!.note!, connector]) } };
+};
+const specimenMedia = (label: string, panel: SectionedViewSpecimenPanel): SectionedViewSpecimenMedia => ({
+  type: "specimen", label: copy(`golden.specimen.${label}`, `Placeholder specimen showing ${label}`), panel,
 });
 
 const textItem = (id: string, extra: Record<string, unknown> = {}) => ({ id, heading: copy(`golden.item.${id}.heading`, `Item ${id}`), description: copy(`golden.item.${id}.description`, `Placeholder description ${id}.`), ...extra });
@@ -512,9 +533,9 @@ const textItem = (id: string, extra: Record<string, unknown> = {}) => ({ id, hea
 const contentBand = (id: string, extra: Partial<SectionedViewContentSection> = {}): SectionedViewContentSection => ({ id, kind: "content-section", heading: copy(`golden.${id}.heading`, `Heading ${id}`), ...extra });
 
 const BLOCKS = {
-  features: { type: "feature-grid", columns: 3, treatment: "plate", items: [textItem("fa", { icon: "landmark" }), textItem("fb", { icon: "scale" }), textItem("fc", { icon: "globe" })] },
+  features: { type: "items", arrangement: "columns", columns: 3, treatment: "plate", items: [textItem("fa", { icon: "landmark" }), textItem("fb", { icon: "scale" }), textItem("fc", { icon: "globe" })] },
   cards: {
-    type: "card-grid",
+    type: "items", arrangement: "bento", treatment: "plate",
     items: [
       { ...textItem("wide"), span: "two-thirds", icon: "layers", eyebrow: copy("golden.item.wide.eyebrow", "Placeholder eyebrow"), visual: fieldsVisual("wide-visual", 3) },
       { ...textItem("narrow"), span: "third" },
@@ -523,21 +544,20 @@ const BLOCKS = {
       { ...textItem("t3"), span: "third" },
     ],
   },
-  comparison: {
-    type: "comparison",
-    before: { label: copy("golden.before.label", "Before"), points: [copy("golden.before.p1", "Placeholder point one"), copy("golden.before.p2", "Placeholder point two")], visual: holdersPanel("holders-before") },
-    after: { label: copy("golden.after.label", "After"), points: [copy("golden.after.p1", "Placeholder point three"), copy("golden.after.p2", "Placeholder point four")], visual: holdersPanel("holders-after") },
-  },
-  topics: { type: "topic-list", columns: 2, items: [textItem("ta", { icon: "file-check" }), textItem("tb"), textItem("tc"), textItem("td")] },
+  comparison: { type: "matrix", featured: "after", sides: [
+    { id: "before", label: copy("golden.before.label", "Before"), heading: copy("golden.before.heading", "Before"), description: copy("golden.before.description", "Placeholder point one · Placeholder point two"), visual: holdersPanel("holders-before") },
+    { id: "after", label: copy("golden.after.label", "After"), heading: copy("golden.after.heading", "After"), description: copy("golden.after.description", "Placeholder point three · Placeholder point four"), visual: holdersPanel("holders-after") },
+  ] },
+  topics: { type: "items", arrangement: "rows", treatment: "rule", columns: 2, items: [textItem("ta", { icon: "file-check" }), textItem("tb"), textItem("tc"), textItem("td")] },
   steps: {
-    type: "ordered-step-sequence",
+    type: "items", arrangement: "columns", order: "connected", caption: copy("golden.steps.caption", "Sample data."),
     items: [
-      { id: "one", ordinal: copy("golden.step.one.ordinal", "01"), heading: copy("golden.step.one.heading", "Step one"), visual: ledgerPanel("ledger-step") },
-      { id: "two", ordinal: copy("golden.step.two.ordinal", "02"), heading: copy("golden.step.two.heading", "Step two") },
-      { id: "three", ordinal: copy("golden.step.three.ordinal", "03"), heading: copy("golden.step.three.heading", "Step three") },
+      { id: "one", heading: copy("golden.step.one.heading", "Step one"), visual: (() => { const panel = combinePanels("ledger-step-merged", [ledgerPanel("ledger-step")]); const part = panel.parts[0]!; return { ...part, label: panel.title }; })() },
+      { id: "two", heading: copy("golden.step.two.heading", "Step two") },
+      { id: "three", heading: copy("golden.step.three.heading", "Step three") },
     ],
   },
-  faq: { type: "faq", items: ["q1", "q2", "q3", "q4"].map((id) => ({ id, question: copy(`golden.faq.${id}.q`, `Placeholder question ${id}?`), answer: copy(`golden.faq.${id}.a`, `Placeholder answer ${id}.`) })) },
+  faq: { type: "items", arrangement: "rows", reveal: "disclose", treatment: "rule", items: ["q1", "q2", "q3", "q4"].map((id) => ({ id, heading: copy(`golden.faq.${id}.q`, `Placeholder question ${id}?`), description: copy(`golden.faq.${id}.a`, `Placeholder answer ${id}.`) })) },
 } satisfies Record<string, SectionedViewContentBlock>;
 
 function renderContent(...sections: SectionedViewSection[]): { html: string; root: Document } {
@@ -560,7 +580,7 @@ const band = (root: Document, id: string): HTMLElement => {
 };
 
 describe("golden: SectionedView content-section", () => {
-  it("renders an intro band (header, a primary and a secondary button, no block) as a statement band, byte for byte", () => {
+  it("renders an intro band (header, a primary and a secondary button, no block) as a standard frame, byte for byte", () => {
     const { html } = renderContent(
       contentBand("intro", {
         description: copy("golden.intro.description", "Placeholder intro."),
@@ -578,24 +598,24 @@ describe("golden: SectionedView content-section", () => {
     const section = band(root, "features");
     expect(section.getAttribute("data-content-section")).toBe("");
     expect(section.querySelector("[data-content-section-header] h2")?.textContent).toBe("Heading features");
-    const grid = section.querySelector("[data-content-section-modules] [data-feature-grid-columns]");
-    expect(grid?.getAttribute("data-feature-grid-columns")).toBe("3");
+    const grid = section.querySelector("[data-content-section-modules] [data-items][data-arrangement=columns]");
+    expect(grid?.getAttribute("data-columns")).toBe("3");
     expect(grid?.getAttribute("data-treatment")).toBe("plate");
-    expect(grid?.getAttribute("data-emphasis")).toBe("item");
-    const items = [...section.querySelectorAll("[data-feature-grid-item]")];
-    // Item headings are emphasised text, not headings: the band's h2 is the one heading stop.
-    expect(items.map((item) => item.querySelector("p")?.textContent)).toEqual(["Item fa", "Item fb", "Item fc"]);
-    expect(section.querySelectorAll("h3")).toHaveLength(0);
+    expect(grid?.querySelectorAll("h3")).toHaveLength(3);
+    const items = [...section.querySelectorAll("[data-item]")];
+    // Canonical items expose their real nested heading outline.
+    expect(items.map((item) => item.querySelector("h3")?.textContent)).toEqual(["Item fa", "Item fb", "Item fc"]);
+    expect(section.querySelectorAll("h3")).toHaveLength(3);
     expect(items.every((item) => item.querySelector('svg[aria-hidden="true"]') !== null)).toBe(true);
   });
 
   it("renders a card-grid bento: spans in order, a card eyebrow, and a card visual named by its part label", () => {
     const { root } = renderContent(contentBand("cards", { block: BLOCKS.cards }));
-    const cards = [...band(root, "cards").querySelectorAll("[data-card-grid] [data-card-grid-item]")];
+    const cards = [...band(root, "cards").querySelectorAll("[data-items][data-arrangement=bento] [data-item]")];
     expect(cards.map((card) => card.getAttribute("data-span"))).toEqual(["two-thirds", "third", "third", "third", "third"]);
     expect(cards.map((card) => card.querySelector("h3")?.textContent)).toEqual(["Item wide", "Item narrow", "Item t1", "Item t2", "Item t3"]);
     expect(cards[0]?.textContent).toContain("Placeholder eyebrow");
-    const visual = cards[0]?.querySelector("[data-card-grid-visual] figure[data-specimen]");
+    const visual = cards[0]?.querySelector("[data-item-visual] figure[data-specimen]");
     expect(visual?.getAttribute("aria-label")).toBe("Placeholder record fields");
     expect(cards.slice(1).every((card) => card.querySelector("[data-specimen]") === null)).toBe(true);
   });
@@ -603,15 +623,19 @@ describe("golden: SectionedView content-section", () => {
   it("renders a comparison with a panel visual on each side, each figure named by its panel title", () => {
     const { root } = renderContent(contentBand("comparison", { block: BLOCKS.comparison }));
     const section = band(root, "comparison");
-    expect(section.querySelectorAll("[data-comparison-side]")).toHaveLength(2);
-    const visuals = [...section.querySelectorAll("[data-comparison-visual] figure[data-specimen]")];
-    expect(visuals.map((figure) => figure.getAttribute("aria-label"))).toEqual(["Placeholder holders", "Placeholder holders"]);
+    expect(section.querySelectorAll("[data-matrix-side]")).toHaveLength(2);
+    const visuals = [...section.querySelectorAll("[data-matrix-side] figure[data-specimen]")];
+    expect(visuals.map((figure) => figure.getAttribute("aria-label"))).toEqual(["Before", "After"]);
     expect(section.textContent).toContain("Placeholder point four");
   });
 
+  it("preserves comparison points as a separate supported form with equal lists", () => {
+    const { root } = renderContent(contentBand("points", { block: { type:"matrix",featured:"after",sides:[{id:"before",label:copy("golden.points.before.label","Before"),heading:copy("golden.points.before.heading","Before"),points:[copy("golden.points.one","Placeholder point one"),copy("golden.points.two","Placeholder point two")]},{id:"after",label:copy("golden.points.after.label","After"),heading:copy("golden.points.after.heading","After"),points:[copy("golden.points.three","Placeholder point three"),copy("golden.points.four","Placeholder point four")]}] } }));
+    const sides=[...band(root,"points").querySelectorAll("[data-matrix-side]")];expect(sides).toHaveLength(2);expect([...sides[0]!.querySelectorAll("li")].map(node=>node.textContent)).toEqual(["Placeholder point one","Placeholder point two"]);expect([...sides[1]!.querySelectorAll("li")].map(node=>node.textContent)).toEqual(["Placeholder point three","Placeholder point four"]);expect(sides[1]!.querySelector('[data-featured="true"]')).not.toBeNull();
+  });
   it("renders a topic-list block as a two-column list", () => {
     const { root } = renderContent(contentBand("topics", { block: BLOCKS.topics }));
-    const list = band(root, "topics").querySelector("ul[data-topic-list]");
+    const list = band(root, "topics").querySelector("ul[data-items][data-arrangement=rows]");
     expect(list?.getAttribute("data-columns")).toBe("2");
     expect(list?.querySelectorAll(":scope > li")).toHaveLength(4);
   });
@@ -620,54 +644,58 @@ describe("golden: SectionedView content-section", () => {
     const { root } = renderContent(contentBand("steps", { block: BLOCKS.steps }));
     const section = band(root, "steps");
     expect(section.querySelector("[data-content-section-modules] ol")?.querySelectorAll(":scope > li")).toHaveLength(3);
-    const visual = section.querySelector("[data-step-visual] figure[data-specimen]");
+    const visual = section.querySelector("[data-item-visual] figure[data-specimen]");
     expect(visual?.getAttribute("aria-label")).toBe("Placeholder ledger");
-    expect(visual?.querySelector("table caption")?.textContent).toBe("Placeholder table");
+    expect(visual?.textContent).toContain("Placeholder table");
+    for(const text of ["Day 1","Placeholder milestone","100 units","Received"])expect(visual?.textContent).toContain(text);
+    expect([...section.querySelectorAll("[data-item-ordinal]")].map(node=>node.textContent)).toEqual(["1","2","3"]);
   });
 
   it("renders a specimen split: the text column, then the media column, on the start side", () => {
-    const { root } = renderContent(contentBand("split", { layout: "split", mediaSide: "start", block: { type: "topic-list", columns: 1, items: [textItem("sa"), textItem("sb")] }, media: specimenMedia("split", [recordPanel("record", "Placeholder record")]) }));
+    const { root } = renderContent(contentBand("split", { layout: "split-start", block: { type: "items", arrangement: "rows", treatment: "rule", columns: 1, items: [textItem("sa"), textItem("sb")] }, media: specimenMedia("split", recordPanel("record", "Placeholder record")) }));
     const section = band(root, "split");
-    expect(section.getAttribute("data-layout")).toBe("split");
-    expect(section.getAttribute("data-media-side")).toBe("start");
-    expect(section.querySelector("[data-content-section-text] ul[data-topic-list]")).not.toBeNull();
+    expect(section.getAttribute("data-layout")).toBe("split-start");
+    expect(section.hasAttribute("data-media-side")).toBe(false);
+    expect(section.querySelector("[data-content-section-text] ul[data-items][data-arrangement=rows]")).not.toBeNull();
     const figure = section.querySelector("[data-content-section-media] > figure[data-specimen]");
     expect(figure?.getAttribute("data-arrangement")).toBe("single");
     expect(figure?.getAttribute("aria-label")).toBe("Placeholder specimen showing split");
     expect(figure?.querySelectorAll("[data-specimen-part]")).toHaveLength(3);
   });
 
-  it("renders a specimen row and a flow with its connector below a stacked header", () => {
+  it("recomposes prior multi-panel examples into bounded single panels with their copy, states and connector", () => {
     const { root } = renderContent(
-      contentBand("row", { media: specimenMedia("row", [ledgerPanel("ledger-row"), holdersPanel("holders-row")], "row") }),
-      contentBand("flow", { media: specimenMedia("flow", [recordPanel("record-flow", "Placeholder first"), ledgerPanel("ledger-flow"), holdersPanel("holders-flow")], "flow") }),
+      contentBand("row", { media: specimenMedia("row", combinePanels("row-merged", [ledgerPanel("ledger-row"), holdersPanel("holders-row")])) }),
+      contentBand("flow", { media: specimenMedia("flow", combinePanels("flow-merged", [recordPanel("record-flow", "Placeholder first"), ledgerPanel("ledger-flow"), holdersPanel("holders-flow")], copy("golden.specimen.flow.connector", "Placeholder connector"))) }),
     );
     const row = band(root, "row").querySelector("[data-content-section-media] figure[data-specimen]");
-    expect(row?.getAttribute("data-arrangement")).toBe("row");
-    expect(row?.querySelectorAll("[data-specimen-panel]").length).toBeGreaterThanOrEqual(2);
+    expect(row?.getAttribute("data-arrangement")).toBe("single");
+    expect(row?.querySelectorAll("[data-specimen-panel]")).toHaveLength(1);
+    for (const text of ["Placeholder ledger", "Placeholder holders", "Placeholder table", "Row one", "Received", "Day 1", "Placeholder milestone", "100 units", "Placeholder holder", "60%", "PDF", "Placeholder file"]) expect(row?.textContent).toContain(text);
     const flow = band(root, "flow").querySelector("[data-content-section-media] figure[data-specimen]");
-    expect(flow?.getAttribute("data-arrangement")).toBe("flow");
-    expect(flow?.querySelector("[data-specimen-connector]")?.textContent).toContain("Placeholder connector");
+    expect(flow?.getAttribute("data-arrangement")).toBe("single");
+    const fieldRow = [...flow!.querySelectorAll("tr")].find(row => row.textContent?.includes("Field 1"))!;
+    expect(fieldRow.querySelector('th[scope="row"]')?.textContent).toBe("Field 1 · Value 1");
+    expect(fieldRow.querySelector("td > span:last-child")?.textContent).toBe("Field 2 · Value 2");
+    for (const text of ["Placeholder first", "Placeholder meta", "In review", "Placeholder record fields", "Field 1", "Value 1", "Field 2", "Value 2", "Placeholder check", "Within range", "Placeholder ratio", "2.0", "Limit 3.0", "Placeholder ledger", "Placeholder holders", "Placeholder table", "Row one", "Received", "Day 1", "Placeholder milestone", "100 units", "Placeholder holder", "60%", "PDF", "Placeholder file", "Placeholder assignee", "Placeholder note", "Placeholder connector"]) expect(flow?.textContent).toContain(text);
   });
 
-  it("renders a split FAQ as the FAQ band: a top-aligned header beside native disclosure rows", () => {
-    const { root } = renderContent(contentBand("questions", { layout: "split", eyebrow: copy("golden.questions.eyebrow", "Placeholder eyebrow"), block: BLOCKS.faq }));
+  it("renders disclosed items in a split frame with native server rows", () => {
+    const { root } = renderContent(contentBand("questions", { layout: "split-end", eyebrow: copy("golden.questions.eyebrow", "Placeholder eyebrow"), block: BLOCKS.faq }));
     const section = band(root, "questions");
-    expect(section.getAttribute("data-layout")).toBe("split");
-    expect(section.hasAttribute("data-content-section-faq")).toBe(true);
-    expect(section.className.split(" ")).toContain("tablet-lg:items-start");
-    expect(section.className.split(" ")).not.toContain("tablet-lg:items-center");
+    expect(section.getAttribute("data-layout")).toBe("split-end");
+    expect(section.hasAttribute("data-content-section-faq")).toBe(false);
     expect(section.querySelector("[data-content-section-text] h2")?.textContent).toBe("Heading questions");
-    const rows = section.querySelectorAll("[data-content-section-media] details > summary");
+    const rows = section.querySelectorAll("[data-content-section-modules] details > summary");
     expect([...rows].map((summary) => summary.textContent)).toEqual(["Placeholder question q1?", "Placeholder question q2?", "Placeholder question q3?", "Placeholder question q4?"]);
-    expect(section.querySelector("[data-content-section-modules]")).toBeNull();
+    expect(section.querySelectorAll("[data-content-section-modules] details")).toHaveLength(4);
   });
 
   it("resolves an omitted second set-piece action to quiet with a decorative trailing chevron", () => {
     const { root } = renderContent(contentBand("chapter", {
-      layout: "split",
-      media: specimenMedia("chapter", [recordPanel("chapter-record", "Placeholder record")]),
-      block: { ...BLOCKS.features, emphasis: "statement", treatment: "plain" },
+      layout: "split-end",
+      media: specimenMedia("chapter", recordPanel("chapter-record", "Placeholder record")),
+      block: { type: "items", arrangement: "columns", columns: 3, emphasis: "statement", treatment: "plain", items: [textItem("fa"), textItem("fb"), textItem("fc")] },
       actions: [{ id: "lead", label: copy("golden.chapter.lead", "Read the guide"), href: "/guide" }, { id: "more", label: copy("golden.chapter.more", "See details"), href: "/details" }],
     }));
     const [lead, more] = [...band(root, "chapter").querySelectorAll<HTMLElement>("[data-section-intro-actions] > a")];
@@ -703,7 +731,7 @@ describe("golden: SectionedView content-section", () => {
 
   it("closes a split band's text column with the footnote, its one link underlined, and renders none when absent", () => {
     const { root } = renderContent(
-      contentBand("aside", { layout: "split", block: BLOCKS.topics, footnote: { text: copy("golden.aside.footnote", "Placeholder aside."), link: { label: copy("golden.aside.link", "Placeholder link"), href: "/aside" } } }),
+      contentBand("aside", { layout: "split-end", block: BLOCKS.topics, footnote: { text: copy("golden.aside.footnote", "Placeholder aside."), link: { label: copy("golden.aside.link", "Placeholder link"), href: "/aside" } } }),
       contentBand("plain", { block: BLOCKS.topics }),
     );
     const note = band(root, "aside").querySelector<HTMLElement>("[data-content-section-footnote]");
@@ -721,7 +749,7 @@ describe("golden: SectionedView content-section", () => {
     const linkedTopics = { ...BLOCKS.topics, items: BLOCKS.topics.items.map((item) => ({ ...item, href: `/topics/${item.id}` })) };
     const linkedSteps = { ...BLOCKS.steps, items: BLOCKS.steps.items.map((step) => ({ ...step, href: `/steps/${step.id}` })) };
     const { root } = renderContent(contentBand("linked-topics", { block: linkedTopics }), contentBand("linked-steps", { block: linkedSteps }));
-    const topicLinks = [...band(root, "linked-topics").querySelectorAll<HTMLAnchorElement>("ul[data-topic-list] > li a")];
+    const topicLinks = [...band(root, "linked-topics").querySelectorAll<HTMLAnchorElement>("ul[data-items][data-arrangement=rows] > li a")];
     expect(topicLinks.map((link) => [link.getAttribute("href"), link.textContent?.trim()])).toEqual([
       ["/topics/ta", "Item ta"],
       ["/topics/tb", "Item tb"],
@@ -740,7 +768,7 @@ describe("golden: SectionedView content-section", () => {
       contentBand("cards", { block: BLOCKS.cards }),
       contentBand("comparison", { block: BLOCKS.comparison }),
       contentBand("steps", { block: BLOCKS.steps }),
-      contentBand("flow", { media: specimenMedia("flow", [recordPanel("record-flow", "Placeholder first"), ledgerPanel("ledger-flow"), holdersPanel("holders-flow")], "flow") }),
+      contentBand("flow", { media: specimenMedia("flow", combinePanels("flow-merged", [recordPanel("record-flow", "Placeholder first"), ledgerPanel("ledger-flow"), holdersPanel("holders-flow")], copy("golden.specimen.flow.connector", "Placeholder connector"))) }),
     );
     const figures = [...root.querySelectorAll("[data-specimen]")];
     expect(figures.length).toBe(5);
@@ -764,14 +792,18 @@ const OUTLINE_MD =
  * with actions takes no footnote.
  */
 const INTRO_BAND_HTML =
-  '<div class="flex flex-col gap-2xl py-2xl">' +
-  '<div id="intro" data-content-section-statement="" data-content-section="" class="flex w-full flex-col gap-2xl tablet-lg:gap-3xl items-start">' +
-  '<div data-content-section-header="" data-section-intro="display" class="flex w-full flex-col items-start" style="max-width:var(--ui-width-prose-max, 48rem)">' +
-  '<h2 class="text-display-m tablet:text-display-l font-display leading-display text-balance text-ink-primary">Heading intro</h2>' +
-  '<p class="text-body-l text-pretty text-ink-secondary mt-2xl">Placeholder intro.</p>' +
-  '<div data-section-intro-actions="" class="flex flex-wrap items-center gap-x-lg gap-y-sm text-ink-primary mt-3xl">' +
-  `<a href="/start" class="${PRIMARY_MD}" data-action-emphasis="primary">Start a record</a>` +
-  `<a href="/more" class="${OUTLINE_MD}" data-action-emphasis="secondary">Read the guide</a>` +
+  "<div class=\"flex flex-col gap-2xl py-2xl\">" +
+  "<div id=\"intro\" data-content-section=\"\" class=\"flex w-full flex-col gap-2xl tablet-lg:gap-3xl items-start py-4xl tablet:py-5xl desktop:py-6xl\">" +
+  "<div data-content-section-header=\"\" data-section-intro=\"section\" class=\"flex w-full flex-col items-start\" style=\"max-width:var(--ui-width-prose-max, 48rem)\">" +
+  "<h2 id=\"intro:heading\" class=\"text-h1 tablet:text-h0 tablet-lg:text-display-m font-display leading-heading text-balance text-ink-primary\">Heading intro" +
+  "</h2>" +
+  "<p class=\"text-body-l text-pretty text-ink-secondary mt-xl\">Placeholder intro." +
+  "</p>" +
+  "<div data-section-intro-actions=\"\" class=\"flex flex-wrap items-center gap-x-lg gap-y-sm text-ink-primary mt-2xl\">" +
+  "<a href=\"/start\" class=\"inline-flex items-center justify-center gap-sm rounded-control text-body font-body transition-colors motion-reduce:transition-none px-md py-sm text-body bg-accent text-ink-on-accent hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent\" data-action-emphasis=\"primary\">Start a record" +
+  "</a>" +
+  "<a href=\"/more\" class=\"inline-flex items-center justify-center gap-sm rounded-control text-body font-body transition-colors motion-reduce:transition-none px-md py-sm text-body bg-transparent ring-inset ring-current ring-1 hover:ring-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent\" data-action-emphasis=\"secondary\">Read the guide" +
+  "</a>" +
   "</div>" +
   "</div>" +
   "</div>" +

@@ -1290,24 +1290,28 @@ supports text, one link, or both.
 
 Single-panel specimen media, its optional anatomy key, record groups and the
 three scene templates forward their resolved visible copy to the available
-Designer blocks. Matrix forwards side IDs, labels, headings, descriptions,
-points, specimen visuals and the featured side without rewriting identities.
+Designer blocks. Matrix forwards labels, headings, descriptions, points, specimen visuals and
+the featured side. Its presentation IDs encode the section and each original
+side ID injectively, preserving authored identities and the featured relation.
 Panel badges remain independent of metadata and status; status-row mobile
 limits retain all authored rows, and Meter previous values keep their visible
-text and marker. Matrix side IDs containing whitespace remain valid core data
-but currently refuse with a named renderer capability error because the
-underlying Matrix requires whitespace-free IDs. Numbered, connected and
-disclosure Items still await their renderer capability. These are valid core
-contracts; rendering names the unavailable capability and path instead of
-dropping authored fields. The published top-level FAQ
-keeps its entry-specific implementation, including split FAQ layout. Scene text limits stay local to media; inverse Scene media gets an opaque base plate and base ink. Reusable record IDs are namespaced by section instance without changing authored copy or provenance. Canonical Landing fragments align with the unpadded band edge; published bands retain their padding offsets.
+text and marker. Numbered, connected and disclosed Items use the collection
+renderer. Ordinary disclosure uses React Aria controls; the server entry uses
+native details. A supplied continuing end label stays visible; an omitted
+label retains the consumer-resolved continuation copy as hidden text.
+The published top-level FAQ keeps its existing implementation, including
+split FAQ layout: SectionedView selects its entry-specific controls, while
+LandingView retains native disclosure. Scene text limits stay local to media; inverse Scene media gets an opaque base plate and base ink. Record, Scene and anatomy identities are namespaced by section instance without changing authored copy or provenance. Canonical Landing fragments align with the unpadded band edge; published bands retain their padding offsets.
 
 The resolved boundary requires explicit canonical axes and closed plain data
 before reading discriminators. It checks the structural contract and text
 budgets without calling a consumer resolver or changing caller provenance.
-`afterSection` content follows the block. The existing catalog fixtures await
-a separate migration; this bounded renderer integration does not qualify the
-complete canonical gallery.
+`afterSection` content follows the block. The content preview uses canonical
+collection and media data, including connected and disclosed examples.
+Standalone preview pages select the native server entry so disclosures work
+without hydration.
+Single-panel recomposition retains sample copy and state while changing the
+former multi-panel anatomy.
 
 **Measure and rhythm.** Centred copy, in the hero block and the call to
 action, is held to the prose measure (`--ui-width-prose-max`) inside the

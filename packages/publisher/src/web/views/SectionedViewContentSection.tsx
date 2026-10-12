@@ -1,6 +1,6 @@
 import { Icon, type IconNode } from "@clossys/designer/atoms/server";
 import { AnatomyCallouts, ContentSection, Items, Matrix, RecordLedger, Scene, Specimen } from "@clossys/designer/blocks/server";
-import type { ItemData, MatrixSide, SpecimenPanelItem, SpecimenPart } from "@clossys/designer/blocks/server";
+import type { ItemData, ItemsProps, MatrixSide, SpecimenPanelItem, SpecimenPart } from "@clossys/designer/blocks/server";
 import { Briefcase, Building2, Calendar, Clock, FileCheck, FileText, Folder, Globe, Landmark, Layers, Lock, Receipt, Scale, Search, ShieldCheck, Users } from "@clossys/designer/icons";
 import type { CSSProperties, ReactNode } from "react";
 import type { ContentIconName, ResolvedSectionedViewContentBlock, ResolvedSectionedViewContentSection, ResolvedSectionedViewSpecimenPanel, ResolvedSectionedViewSpecimenPart, ResolvedSectionedViewMedia, ResolvedSectionedViewSection, SectionedViewGround } from "../../core/sectioned-view.js";
@@ -40,8 +40,9 @@ export interface ContentSectionBlockProps {
   /** Private compatibility bridge for the published top-level FAQ kind. */
   publishedFaq?: Extract<ResolvedSectionedViewSection, { kind: "faq" }>;
 }
-function dependency(capability: "ordered or disclosed items" | "matrix side IDs", path: string): never {
-  throw new RenderError("resolution-failed", `${path}: renderer capability unavailable for ${capability}.`);
+function matrixSideId(sectionId: string, sideId: string): string {
+  const encode = (value: string) => { let result = ""; for (let index = 0; index < value.length; index++) result += value.charCodeAt(index).toString(16).padStart(4, "0"); return result; };
+  return `side-${encode(sectionId)}-${encode(sideId)}`;
 }
 function renderFootnote(footnote: ResolvedSectionedViewContentSection["footnote"]): ReactNode {
   if (footnote === undefined) return undefined;
@@ -64,43 +65,40 @@ function renderMedia(media: ResolvedSectionedViewMedia, section: ResolvedSection
   switch (media.type) {
     case "specimen": {
       const panel = panelData(media.panel);
-      return media.key === undefined ? <Specimen label={media.label} panels={[panel]} /> : <AnatomyCallouts id={`${section.id}-specimen`} label={media.label} panel={panel} markers={media.key.items} keyLabel={media.key.label} legendSide={media.key.side} headingLevel={3} ground={section.ground} />;
+      return media.key === undefined ? <Specimen label={media.label} panels={[panel]} /> : <AnatomyCallouts id={`${section.id.length}:${section.id}:8:specimen`} label={media.label} panel={panel} markers={media.key.items} keyLabel={media.key.label} legendSide={media.key.side} headingLevel={3} ground={section.ground} />;
     }
     case "record": return <RecordLedger form="record" id={`${section.id.length}:${section.id}:${media.id.length}:${media.id}`} head={media.head} columns={media.columns} groups={media.groups} caption={media.caption} flagLabel={media.flagLabel} headingLevel={3} ground={section.ground} />;
     case "scene": {
-      const scene = <Scene id={`${section.id}-scene`} input={media.input} label={media.label} relationLabel={media.relationLabel} />;
+      const scene = <Scene id={`${section.id.length}:${section.id}:5:scene`} input={media.input} label={media.label} relationLabel={media.relationLabel} />;
       return section.ground === "inverse" ? <div data-scene-plate="" data-ground="base" className="min-w-0 w-full bg-surface-base text-ink-primary">{scene}</div> : scene;
     }
     default: { const exhaustive: never = media; return exhaustive; }
   }
 }
-function renderBlock(block: ResolvedSectionedViewContentBlock, section: ResolvedSectionedViewContentSection): ReactNode {
+function renderBlock(block: ResolvedSectionedViewContentBlock, section: ResolvedSectionedViewContentSection, ItemsBlock: (props: ItemsProps) => ReactNode): ReactNode {
   switch (block.type) {
     case "matrix": {
-      block.sides.forEach((side, index) => {
-        if (/\s/.test(side.id)) dependency("matrix side IDs", `section.${section.id}.block.sides.${index}.id`);
-      });
-      const sideData = (side: typeof block.sides[number]): MatrixSide => ({ ...side, visual: side.visual === undefined ? undefined : <Specimen label={side.heading} panels={[panelData(side.visual)]} /> });
-      return <Matrix sides={[sideData(block.sides[0]!), sideData(block.sides[1]!)]} featured={block.featured} headingLevel={3} ground={section.ground} />;
+      const ids = new Map(block.sides.map(side => [side.id, matrixSideId(section.id, side.id)]));
+      const sideData = (side: typeof block.sides[number]): MatrixSide => ({ ...side, id: ids.get(side.id)!, visual: side.visual === undefined ? undefined : <Specimen label={side.heading} panels={[panelData(side.visual)]} /> });
+      return <Matrix aria-labelledby={section.heading === undefined ? undefined : `${section.id}:heading`} sides={[sideData(block.sides[0]!), sideData(block.sides[1]!)]} featured={block.featured === undefined ? undefined : ids.get(block.featured)} headingLevel={3} ground={section.ground} />;
     }
     case "items": {
-      if (block.order !== "none" || block.reveal !== "all") dependency("ordered or disclosed items", `section.${section.id}.block`);
-      const items: ItemData[] = block.items.map(item => ({ id: item.id, heading: item.heading, description: item.description, eyebrow: item.eyebrow, icon: icon(item.icon), meta: item.meta, badge: item.badge, href: item.href, featured: item.featured, span: item.span, visual: partSpecimen(item.visual, item.id, item.heading) }));
-      return <Items items={items} arrangement={block.arrangement} columns={block.columns} treatment={block.treatment} emphasis={block.emphasis} size={section.size === "display" ? "display" : "standard"} groups={block.groups} headingLevel={3} ground={section.ground} />;
+      const items: ItemData[] = block.items.map(item => ({ id: item.id, heading: item.heading, description: item.description, eyebrow: item.eyebrow, icon: icon(item.icon), meta: item.meta, badge: item.badge, href: item.href, featured: item.featured, span: item.span, lane: item.lane, visual: partSpecimen(item.visual, item.id, item.heading) }));
+      return <><ItemsBlock aria-labelledby={section.heading === undefined ? undefined : `${section.id}:heading`} items={items} order={block.order} reveal={block.reveal} lanes={block.lanes} end={block.end} endLabel={block.endLabel} caption={block.caption} arrangement={block.arrangement} columns={block.columns} treatment={block.treatment} emphasis={block.emphasis} size={section.size === "display" ? "display" : "standard"} groups={block.groups} headingLevel={3} ground={section.ground} />{block.end === "continues" && block.endLabel === undefined && block.continuesLabel !== undefined ? <span data-content-continuation="" className="sr-only">{block.continuesLabel}</span> : null}</>;
     }
     default: { const exhaustive: never = block; return exhaustive; }
   }
 }
-/** Canonical frame and available unordered Items/Matrix/media adapters. Pending capabilities refuse explicitly. */
-export function createContentSectionBlock(Faq: ContentSectionFaq) {
+/** Canonical frame, entry-specific collections, Matrix and media adapters. */
+export function createContentSectionBlock(Faq: ContentSectionFaq, ItemsBlock: (props: ItemsProps) => ReactNode = Items) {
   return function ContentSectionBlock({ section, actions, className, style, after, publishedFaq }: ContentSectionBlockProps) {
     if (publishedFaq !== undefined) {
       if (publishedFaq.kind !== "faq" || publishedFaq.layout !== "split" || publishedFaq.id !== section.id) throw new RenderError("resolution-failed", "Invalid published FAQ compatibility bridge.");
       return <ContentSection id={publishedFaq.id} eyebrow={publishedFaq.eyebrow} heading={publishedFaq.heading} description={publishedFaq.description} headingLevel={2} ground={publishedFaq.ground} layout="split" media={<Faq items={publishedFaq.items} headingLevel={2} ground={publishedFaq.ground} />} data-content-section-faq="" className={[className, "tablet-lg:items-start"].filter(Boolean).join(" ")}>{after}</ContentSection>;
     }
-    const block = section.block === undefined ? null : renderBlock(section.block, section);
+    const block = section.block === undefined ? null : renderBlock(section.block, section, ItemsBlock);
     const media = section.media === undefined ? undefined : renderMedia(section.media, section);
-    const header = { id: section.id, eyebrow: section.eyebrow, heading: section.heading, description: section.description, actions, footnote: renderFootnote(section.footnote), headingLevel: 2 as const, size: section.size, ground: section.ground, className, style };
+    const header = { id: section.id, headingId: section.heading === undefined ? undefined : `${section.id}:heading`, eyebrow: section.eyebrow, heading: section.heading, description: section.description, actions, footnote: renderFootnote(section.footnote), headingLevel: 2 as const, size: section.size, ground: section.ground, className, style };
     if (section.layout !== "stacked") return <ContentSection {...header} layout={section.layout} media={media}>{block}{after}</ContentSection>;
     return <ContentSection {...header} layout="stacked" align={section.align} media={media}>{block}{after}</ContentSection>;
   };

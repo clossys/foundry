@@ -1,6 +1,7 @@
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { JSDOM } from "jsdom";
 import { TOKENS } from "@clossys/designer/tokens";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CliInputError, main } from "./cli.js";
@@ -65,7 +66,7 @@ describe("publisher-preview main — brand coverage gate", () => {
   it("writes gallery.html when brand.css passes coverage", () => {
     const brandPath = writeBrandCss(buildMinimalBrandCssFromTokens({ TOKENS }));
     const outDir = join(dir, "out");
-    expect(main([brandPath, outDir])).toBe(0);
+    expect(main([brandPath, outDir]), JSON.stringify(vi.mocked(console.error).mock.calls)).toBe(0);
     const galleryPath = join(outDir, PREVIEW_GALLERY_FILENAME);
     expect(existsSync(galleryPath)).toBe(true);
     const html = readFileSync(galleryPath, "utf8");
@@ -73,6 +74,15 @@ describe("publisher-preview main — brand coverage gate", () => {
     expect(html).toContain("SectionedView");
     expect(html).toContain("AuthView");
     expect(html).toContain("CollectionView");
+    const page = new JSDOM(html).window.document;
+    const sectioned = page.querySelector('main[aria-label="publisher-preview-sectioned"]');
+    expect(sectioned).not.toBeNull();
+    expect(sectioned?.querySelectorAll("details summary")).toHaveLength(1);
+    expect(sectioned?.querySelectorAll("[data-rac]")).toHaveLength(0);
+    const details = sectioned?.querySelector("details");
+    expect(details?.open).toBe(false);
+    details?.querySelector("summary")?.click();
+    expect(details?.open).toBe(true);
   });
 
   it("returns 1 and does not write gallery.html when coverage fails", () => {
