@@ -48,12 +48,14 @@ const expectedAxes: Record<string, Record<string, string[]>> = {
     frame: { layout: ['stacked', 'split-start', 'split-end'], size: ['standard', 'display'], ground: ['base', 'sunken', 'inverse'] },
     overview: {}, parts: {},
 };
-const expectedCells: Record<string, string[]> = { Show: ['show-companion', 'keyed-stack'], Explain: ['features-plate'], Compare: ['comparison-unfeatured'] };
+const expectedCells: Record<string, string[]> = { Show: ['keyed-stack'], Explain: ['features-plate'], Compare: ['comparison-unfeatured'] };
 describe('reader function catalog', () => {
     it('offers six reader jobs with overview and shared references', () => {
         const root = new JSDOM(buildContentCatalogHtml(sheets)).window.document;
         expect([...root.querySelectorAll('[data-catalog-function]')].map(n => n.getAttribute('data-catalog-function'))).toEqual(pages);
-        expect(root.body.textContent).toContain('The information is');
+        expect(root.body.textContent).toContain('What does the reader need to do with this information?');
+        const link = root.querySelector('[data-catalog-function] > a')!;
+        expect(root.defaultView!.getComputedStyle(link).textDecorationLine).toBe('underline');
         expect(root.body.textContent).not.toContain('Other kinds');
         const chooser = root.querySelector('nav[aria-label="Catalog functions"] ul')!;
         expect(root.defaultView!.getComputedStyle(chooser).display).toBe('grid');
@@ -112,7 +114,7 @@ describe('reader function catalog', () => {
                 }
             }
         }
-        expect(count).toBe(35);
+        expect(count).toBe(34);
         expect(count).toBeLessThanOrEqual(40);
         const parts = new JSDOM(rendered.find(page => page.file === 'catalog/parts.html')!.content).window.document;
         expect(parts.querySelectorAll('[data-config-native], [data-catalog-native]')).toHaveLength(0);
@@ -125,7 +127,8 @@ describe('reader function catalog', () => {
             expect(node, id).not.toBeNull();
             return node!;
         };
-        const rows = cell('show', 'show-companion');
+        expect(byFile.get('catalog/show.html')!.querySelector('[data-catalog-config-cell="show-companion"]')).toBeNull();
+        const rows = byFile.get('catalog/show.html')!.querySelector('#example-items-badge-meta')!;
         expect(rows.querySelector('[data-specimen-panel]')).not.toBeNull();
         expect(rows.querySelector('[data-items][data-arrangement="rows"]')).not.toBeNull();
         const stack = cell('show', 'keyed-stack');
@@ -146,7 +149,7 @@ describe('reader function catalog', () => {
         expect(sequence.querySelector('#example-items-flow-five [data-item-end-label]')?.textContent).toContain('Returns to review');
         const show = byFile.get('catalog/show.html')!;
         expect(show.querySelector('#example-media-meter-previous [data-part="previous"]')).not.toBeNull();
-        expect(show.querySelector('#example-media-meter-previous')?.textContent).toContain('Previously 30 units');
+        expect(show.querySelector('#example-media-meter-previous')?.textContent).toContain('Previously 30 GB');
         expect(show.querySelectorAll('#example-items-badge-meta [data-item-meta]')).toHaveLength(6);
         expect(show.querySelector('[data-catalog-rules]')?.textContent).toContain('final group may contain an owner instead');
         for (const page of byFile.values()) {
@@ -279,6 +282,163 @@ describe('reader function catalog', () => {
                         expect(Object.hasOwn(item, 'featured')).toBe(false);
                 }
             }
+    });
+    it('gives every declared axis value a genuine rendered witness with matching caption vocabulary', () => {
+        const rendered = new Map(buildCatalogFunctionPages(sheets).map(page => [page.file, new JSDOM(page.content).window.document]));
+        // Independently derive the existing model's effective axes, without trusting caption attributes.
+        const values = (fixture: typeof READER_SAMPLES[number], label: string): Record<string, string> => {
+            const section = resolveSectionedViewDocument({ id: 'axis-witness', sections: [fixture.section] }, readerCopyResolver).sections[0]!;
+            if (section.kind === 'hero') return label === 'Introduce' ? { role: 'hero', 'hero-size': section.size ?? 'display' } : {};
+            if (section.kind !== 'content-section') throw new Error('Expected canonical witness');
+            if (label === 'Frame') return { layout: section.layout, size: section.size, ground: section.ground };
+            const block = section.block;
+            if (label === 'Introduce') return { role: fixture.id === 'say-close' ? 'close' : 'intro', ...(fixture.id === 'say-close' ? {} : { 'intro-layout': section.layout === 'stacked' ? 'stacked' : 'split' }) };
+            if (label === 'Show') return { visual: section.media?.type === 'specimen' ? (section.media.key ? 'specimen-key' : 'specimen') : section.media!.type, companion: block?.type === 'items' ? (block.arrangement === 'stacked' ? 'explain-stack' : 'index-rows') : 'none', layout: section.layout };
+            if (block?.type === 'matrix') return { form: block.sides[0]!.visual ? 'visual' : 'points', featured: block.featured ? 'one-side' : 'none' };
+            if (block?.type !== 'items') throw new Error('Expected items witness');
+            if (label === 'Sequence') return { shape: block.lanes ? 'lanes' : block.order === 'numbered' ? 'list' : 'line', ...(block.order === 'connected' ? { end: block.end ?? 'ends' } : {}) };
+            if (label === 'Index') return { shape: fixture.section.kind === 'content-section' && fixture.section.block?.type === 'items' && fixture.section.block.recipe === 'link-index' ? 'tiles' : `rows-${block.columns}`, reveal: block.reveal, groups: block.groups ? 'on' : 'off' };
+            return { shape: block.arrangement === 'columns' ? `grid-${block.columns}` : block.arrangement === 'stacked' ? 'stack' : block.arrangement, treatment: block.treatment, scale: block.scale };
+        };
+        const observeNative = (wrapper: Element, label: string): Record<string, string> => {
+            const required = (selector: string, scope: Element = wrapper): Element => {
+                const element = scope.querySelector(selector);
+                expect(element, `native witness ${label}: ${selector}`).not.toBeNull();
+                return element!;
+            };
+            if (label === 'Introduce' && wrapper.querySelector('[data-landing-hero]')) {
+                const hero = required('[data-landing-hero]');
+                return { role: 'hero', 'hero-size': hero.getAttribute('data-hero-size') ?? 'display' };
+            }
+            if (label === 'Introduce' && wrapper.querySelector('[data-landing-call-to-action]')) return { role: 'close' };
+            const section = required('[data-content-section]');
+            const layout = section.getAttribute('data-layout') ?? 'stacked';
+            if (layout === 'stacked') expect(section.classList.contains('flex-col')).toBe(true);
+            if (label === 'Frame') {
+                const size = section.classList.contains('desktop:py-frame-display') ? 'display' : 'standard';
+                expect(section.classList.contains(size === 'display' ? 'py-5xl' : 'py-4xl')).toBe(true);
+                const ground = section.classList.contains('bg-surface-inverse') ? 'inverse' : section.classList.contains('bg-surface-sunken') ? 'sunken' : 'base';
+                expect(required('h2', section).className).toContain(ground === 'inverse' ? 'text-ink-on-inverse' : 'text-ink-primary');
+                return { layout, size, ground };
+            }
+            if (label === 'Introduce') return { role: 'intro', 'intro-layout': layout === 'stacked' ? 'stacked' : 'split' };
+            if (label === 'Show') {
+                const media = required('[data-content-section-media]', section);
+                const visual = media.querySelector('[data-anatomy-callouts]') ? 'specimen-key' : media.querySelector('[data-specimen-panel]') ? 'specimen' : media.querySelector('[data-record-ledger]') ? 'record' : media.querySelector('figure.scene-root[data-template]') ? 'scene' : undefined;
+                expect(visual).toBeDefined();
+                const companions = [...section.querySelectorAll('[data-items]')].filter(node => !media.contains(node));
+                expect(companions.length).toBeLessThanOrEqual(1);
+                return { visual: visual!, companion: companions.length === 0 ? 'none' : companions[0]!.getAttribute('data-arrangement') === 'stacked' ? 'explain-stack' : 'index-rows', layout };
+            }
+            if (label === 'Compare') {
+                const matrix = required('[data-matrix]');
+                const sides = [...matrix.querySelectorAll('[data-matrix-side]')];
+                expect(sides).toHaveLength(2);
+                const visual = sides.every(side => side.querySelector('[data-matrix-visual]'));
+                if (!visual) for (const side of sides) expect(side.querySelectorAll('ul > li').length).toBeGreaterThanOrEqual(2);
+                const featured = matrix.querySelectorAll('[data-featured="true"]');
+                expect(featured.length).toBeLessThanOrEqual(1);
+                return { form: visual ? 'visual' : 'points', featured: featured.length ? 'one-side' : 'none' };
+            }
+            const items = required('[data-items]');
+            const details = items.querySelectorAll('details');
+            const headings = [...items.querySelectorAll(details.length ? 'summary [data-item-heading]' : '[data-item-heading]')];
+            expect(headings.length).toBeGreaterThan(0);
+            if (details.length) for (const detail of details) { required('summary [data-item-heading]', detail); expect(detail.textContent!.trim().length).toBeGreaterThan(detail.querySelector('summary')!.textContent!.trim().length); }
+            const arrangement = items.getAttribute('data-arrangement');
+            const columns = items.getAttribute('data-columns');
+            if (label === 'Sequence') {
+                expect(items.tagName).toBe('OL');
+                expect(items.querySelectorAll('[data-item-ordinal]').length).toBeGreaterThan(0);
+                const end = items.querySelector('[data-item-end]');
+                const lanes = items.querySelectorAll('li[data-lane]');
+                if (lanes.length) expect(new Set([...lanes].map(node => node.getAttribute('data-lane')))).toEqual(new Set(['sender', 'reviewer']));
+                return { shape: lanes.length ? 'lanes' : end ? 'line' : 'list', ...(end ? { end: end.getAttribute('data-item-end')! } : {}) };
+            }
+            if (label === 'Index') {
+                if (details.length) expect(details.length).toBe(headings.length);
+                if (arrangement === 'columns') for (const heading of headings) required('a[href]', heading);
+                return { shape: arrangement === 'columns' ? 'tiles' : `rows-${columns}`, reveal: details.length ? 'disclose' : 'all', groups: items.querySelector('[role="group"]') ? 'on' : 'off' };
+            }
+            const treatment = items.getAttribute('data-treatment');
+            expect(treatment).not.toBeNull();
+            const statement = headings.every(heading => heading.classList.contains('text-h2'));
+            if (!statement) for (const heading of headings) expect(heading.className).toMatch(/text-body-l|text-h3/);
+            return { shape: arrangement === 'columns' ? `grid-${columns}` : arrangement === 'stacked' ? 'stack' : arrangement!, treatment: treatment!, scale: statement ? 'statement' : 'item' };
+        };
+        for (const definition of READER_PAGES) {
+            const page = rendered.get(`catalog/${definition.id}.html`)!;
+            const fixtures = [...READER_SAMPLES.filter(sample => readerPage(sample) === definition.label), ...readerConfigCells(definition.label).map(cell => cell.fixture)];
+            if (definition.axes.length) for (const wrapper of page.querySelectorAll('[data-catalog-fixture], [data-catalog-config-cell]')) {
+                const sampleId = wrapper.getAttribute('data-catalog-fixture');
+                const cellId = wrapper.getAttribute('data-catalog-config-cell');
+                const fixture = sampleId ? READER_SAMPLES.find(sample => sample.id === sampleId)! : readerConfigCells(definition.label).find(cell => cell.id === cellId)!.fixture;
+                const expected = values(fixture, definition.label);
+                const native = observeNative(wrapper, definition.label);
+                expect(native, `${definition.label}: ${sampleId ?? cellId}`).toEqual(expected);
+                const claims = [...wrapper.querySelectorAll('[data-catalog-axis-witness]')];
+                expect(claims.length).toBe(Object.keys(expected).length);
+                expect(Object.fromEntries(claims.map(claim => { const pair = claim.getAttribute('data-catalog-axis-witness')!.split(':'); expect(claim.closest('[data-catalog-caption], [data-config-caption]')).not.toBeNull(); expect(claim.textContent).toBe(`${pair[0]}: ${pair[1]}`); return pair; }))).toEqual(expected);
+                for (const [name, value] of Object.entries(expected)) expect(definition.axes.find(axis => axis.name === name)?.values, `${name}: ${value}`).toContain(value);
+            }
+            for (const axis of definition.axes) for (const value of axis.values) {
+                if (definition.label === 'Frame') {
+                    const reference = page.querySelector(`[data-catalog-axis-reference="${axis.name}:${value}"]`);
+                    expect(reference, `Frame ${axis.name}:${value}`).not.toBeNull();
+                    const [file, id] = reference!.getAttribute('href')!.split('#');
+                    const example = rendered.get(`catalog/${file}`)!.querySelector(`#${id}`);
+                    expect(example, reference!.getAttribute('href')!).not.toBeNull();
+                    const fixture = READER_SAMPLES.find(sample => `example-${sample.id}` === id)!;
+                    expect(values(fixture, 'Frame')[axis.name]).toBe(value);
+                    expect(observeNative(example!, 'Frame')[axis.name]).toBe(value);
+                    expect(reference!.textContent).toBe(`${axis.name}: ${value}`);
+                    expect(example!.querySelector('[data-content-section]')).not.toBeNull();
+                } else {
+                    const witnesses = fixtures.filter(fixture => values(fixture, definition.label)[axis.name] === value);
+                    expect(witnesses.length, `${definition.label} ${axis.name}:${value}`).toBeGreaterThan(0);
+                    const nodes = [...page.querySelectorAll(`[data-catalog-axis-witness="${axis.name}:${value}"]`)];
+                    expect(nodes.length, `${definition.label} ${axis.name}:${value}`).toBeGreaterThan(0);
+                    for (const node of nodes) {
+                        expect(node.textContent).toBe(`${axis.name}: ${value}`);
+                        const wrapper = node.closest('[data-catalog-fixture], [data-catalog-config-cell]')!;
+                        expect(wrapper.querySelector('[data-catalog-native], [data-config-native]')).not.toBeNull();
+                        const sampleId = wrapper.getAttribute('data-catalog-fixture');
+                        const cellId = wrapper.getAttribute('data-catalog-config-cell');
+                        const fixture = sampleId ? READER_SAMPLES.find(sample => sample.id === sampleId)! : readerConfigCells(definition.label).find(cell => cell.id === cellId)!.fixture;
+                        expect(values(fixture, definition.label)[axis.name]).toBe(value);
+                        expect(observeNative(wrapper, definition.label)[axis.name]).toBe(value);
+                    }
+                }
+            }
+        }
+    });
+    it('insets actual standalone bands and configuration cells without doubling Landing frame gutters', () => {
+        for (const page of buildCatalogFunctionPages(sheets)) {
+            const root = new JSDOM(page.content).window.document;
+            const rules = [...root.styleSheets[0]!.cssRules].filter(rule => 'selectorText' in rule) as CSSStyleRule[];
+            const insetRule = rules.find(rule => rule.selectorText === ':is([data-catalog-native],[data-config-native])>div:not([data-landing-view])>[data-content-section]');
+            expect(insetRule, page.file).toBeDefined();
+            expect(insetRule!.style.getPropertyValue('padding-inline')).toBe('var(--ui-width-page-padding-x)');
+            expect(rules.find(rule => rule.selectorText === '.catalog-example>div')!.style.getPropertyValue('padding-inline')).toBe('');
+            for (const wrapper of root.querySelectorAll('[data-catalog-native], [data-config-native]')) {
+                const landing = wrapper.querySelector('[data-landing-hero], [data-landing-call-to-action]') || wrapper.hasAttribute('data-catalog-composition');
+                const band = wrapper.querySelector(':is([data-catalog-native],[data-config-native])>div:not([data-landing-view])>[data-content-section]');
+                expect(band !== null, wrapper.parentElement?.id).toBe(!landing);
+            }
+            expect(rules.find(rule => rule.selectorText === '.catalog-note')?.style.getPropertyValue('overflow-wrap')).toBe('break-word');
+        }
+    });
+    it('uses distinct library-health and storage-history panel copy on Show', () => {
+        const show = new JSDOM(buildCatalogFunctionPages(sheets).find(page => page.file === 'catalog/show.html')!.content).window.document;
+        const health = show.querySelector('#example-items-badge-meta')!;
+        const history = show.querySelector('#example-media-meter-previous')!;
+        expect(health.textContent).toContain('Library health');
+        expect(health.textContent).toContain('Index owner');
+        expect(history.textContent).toContain('Document storage');
+        expect(history.textContent).toContain('Previously 30 GB');
+        expect(health.textContent).not.toContain('Review capacity');
+        expect(history.textContent).not.toContain('Workspace health');
+        expect(history.querySelector('[data-part="previous"]')).not.toBeNull();
     });
     it('derives reader jobs from effective content with sequence and comparison precedence', () => {
         const companion = structuredClone(READER_SAMPLES.find(f => f.id === 'frame-split-end')!.section);

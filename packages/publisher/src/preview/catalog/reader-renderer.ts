@@ -264,7 +264,7 @@ export const READER_PAGES: readonly CatalogPage[] = [
     }
 ];
 const escape = (text: string): string => text.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
-const chrome = `body{margin:0;background:var(--color-surface-base);color:var(--color-ink-primary);font-family:var(--font-body);font-size:var(--text-body-s);line-height:1.5}.catalog-nav,.catalog-note{padding:var(--spacing-xl);background:var(--color-surface-sunken);overflow-wrap:anywhere}.catalog-nav h1{font-size:var(--text-h2)}.catalog-nav ul,.catalog-config-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,var(--ui-width-prose-max)),1fr));gap:var(--spacing-lg);padding:0;list-style:none}.catalog-function-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,calc(var(--ui-width-prose-max)/2)),1fr));gap:var(--spacing-lg);margin:0;padding:var(--spacing-xl);list-style:none}.catalog-function-grid>li{padding:var(--spacing-lg);border:var(--ui-border-hairline) solid var(--color-line-base);background:var(--color-surface-base)}.catalog-compact-nav{display:flex;flex-wrap:wrap;gap:var(--spacing-sm)}.catalog-nav a,.catalog-note a{color:inherit}.catalog-chip{display:inline-block;font-family:var(--font-mono);font-size:var(--text-caption);border:var(--ui-border-hairline) solid var(--color-line-base);padding:var(--spacing-xs) var(--spacing-sm);margin:var(--spacing-xs)}.catalog-example>div{min-width:0;padding-inline:var(--ui-width-page-padding-x)}.catalog-config-grid{margin:var(--spacing-xl)}.catalog-config-cell{min-width:0;border:var(--ui-border-hairline) solid var(--color-line-base)}.catalog-config-cell>header{padding:var(--spacing-md)}.catalog-config-cell [data-content-section]{padding-block:var(--spacing-xl)}.catalog-config-cell [data-landing-hero]{min-height:0!important}.catalog-table-wrap{overflow-x:auto}.catalog-table{min-width:var(--ui-width-content-max)}.catalog-note table{width:100%;border-collapse:collapse}.catalog-note th,.catalog-note td{text-align:start;vertical-align:top;padding:var(--spacing-sm);border-block-end:var(--ui-border-hairline) solid var(--color-line-base)}.catalog-published{font-family:var(--font-mono);font-size:var(--text-caption)}`;
+const chrome = `body{margin:0;background:var(--color-surface-base);color:var(--color-ink-primary);font-family:var(--font-body);font-size:var(--text-body-s);line-height:1.5}.catalog-nav,.catalog-note{padding:var(--spacing-xl);background:var(--color-surface-sunken);overflow-wrap:break-word}.catalog-nav h1{font-size:var(--text-h2)}.catalog-nav ul,.catalog-config-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,var(--ui-width-prose-max)),1fr));gap:var(--spacing-lg);padding:0;list-style:none}.catalog-function-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,calc(var(--ui-width-prose-max)/2)),1fr));gap:var(--spacing-lg);margin:0;padding:var(--spacing-xl);list-style:none}.catalog-function-grid>li{padding:var(--spacing-lg);border:var(--ui-border-hairline) solid var(--color-line-base);background:var(--color-surface-base)}.catalog-compact-nav{display:flex;flex-wrap:wrap;gap:var(--spacing-sm)}.catalog-nav a,.catalog-note a{color:inherit}.catalog-function-grid>li>a,[data-published-kind]>a{text-decoration-line:underline}.catalog-note{overflow-wrap:break-word}.catalog-chip{display:inline-block;font-family:var(--font-mono);font-size:var(--text-caption);border:var(--ui-border-hairline) solid var(--color-line-base);padding:var(--spacing-xs) var(--spacing-sm);margin:var(--spacing-xs)}.catalog-example>div{min-width:0}:is([data-catalog-native],[data-config-native])>div:not([data-landing-view])>[data-content-section]{padding-inline:var(--ui-width-page-padding-x)}.catalog-config-grid{margin:var(--spacing-xl)}.catalog-config-cell{min-width:0;border:var(--ui-border-hairline) solid var(--color-line-base)}.catalog-config-cell>header{padding:var(--spacing-md)}.catalog-config-cell [data-content-section]{padding-block:var(--spacing-xl)}.catalog-config-cell [data-landing-hero]{min-height:0!important}.catalog-table-wrap{overflow-x:auto}.catalog-table{min-width:var(--ui-width-content-max)}.catalog-note table{width:100%;border-collapse:collapse}.catalog-note th,.catalog-note td{text-align:start;vertical-align:top;padding:var(--spacing-sm);border-block-end:var(--ui-border-hairline) solid var(--color-line-base)}.catalog-published{font-family:var(--font-mono);font-size:var(--text-caption)}`;
 function page(title: string, body: string, sheets: ContentCatalogStylesheets): string {
     const links = [sheets.designerTokens, sheets.utilities, ...(sheets.brand === null ? [] : [sheets.brand])].map(h => `<link rel="stylesheet" href="${escape(h)}" />`).join('\n');
     return `<!DOCTYPE html><html lang="en" data-brand-bound><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><title>${escape(title === 'Content catalog' ? title : `${title} — Content catalog`)}</title>${links}<style>${chrome}</style></head><body>${body}</body></html>\n`;
@@ -274,7 +274,7 @@ function nav(current?: string): string {
         return `<nav aria-label="Catalog functions" class="catalog-compact-nav">${READER_PAGES.map(p => `<a href="${p.id}.html"${p.id === current ? ' aria-current="page"' : ''}>${p.label}</a>`).join(' · ')}</nav>`;
     return `<nav aria-label="Catalog functions"><ul role="list" class="catalog-function-grid">${READER_PAGES.map(p => `<li data-catalog-function="${p.id}"><a href="catalog/${p.id}.html">${p.label}</a><p>${p.purpose}</p>${p.axes.map(axis => `<span class="catalog-chip" data-catalog-axis="${axis.name}">${axis.name.replaceAll('-', ' ')}</span>`).join('')}</li>`).join('')}</ul></nav>`;
 }
-export function buildFunctionalCatalogIndex(sheets: ContentCatalogStylesheets): string { return page('Content catalog', `<header class="catalog-nav"><h1>Content catalog</h1><p>The information is… Choose its reader job, then a recipe and configuration.</p></header><main id="catalog-page">${nav()}</main>`, sheets); }
+export function buildFunctionalCatalogIndex(sheets: ContentCatalogStylesheets): string { return page('Content catalog', `<header class="catalog-nav"><h1>Content catalog</h1><p>What does the reader need to do with this information? Choose its reader job, then a recipe and configuration.</p></header><main id="catalog-page">${nav()}</main>`, sheets); }
 function closeProps(section: ResolvedSectionedViewContentSection): NonNullable<LandingViewProps['callToAction']> {
     const actions = (section.actions ?? []).map(action => {
         if (action.emphasis === 'tertiary')
@@ -333,51 +333,39 @@ function recipe(fixture: CatalogFixture): string {
     }
     return fixture.section.media ? 'showcase' + (fixture.section.layout === 'stacked' ? '' : '-split') : fixture.section.layout === 'stacked' ? 'intro' : 'intro-split';
 }
-function caption(fixture: CatalogFixture): string {
-    const section = fixture.section;
-    if (fixture.id === 'recipes-nav-composition')
-        return 'six-band page';
-    if (section.kind === 'hero')
-        return section.size === 'compact' ? 'hero-compact' : 'hero · display';
-    if (section.kind !== 'content-section')
-        throw new Error('A catalog caption needs a canonical section.');
-    const block = section.block;
-    if (block?.type === 'matrix')
-        return block.sides[0]?.visual ? 'comparison · visual' : 'comparison · featured points';
-    if (block?.type === 'items') {
-        const effective = desugarRecipe(block);
-        if (fixture.id === 'items-badge-meta')
-            return 'badge and metadata beside a health panel';
-        if (effective.lanes)
-            return 'lanes · two-role hand-off';
-        if (effective.order === 'connected')
-            return 'steps · connected line';
-        if (effective.order === 'numbered')
-            return 'numbered · list';
-        if (effective.reveal === 'disclose')
-            return 'faq · disclosed answers';
-        if (effective.groups)
-            return 'topics · grouped rows';
-        if (fixture.id === 'frame-actions')
-            return 'actions and footnote';
-        if (fixture.id === 'frame-split-end')
-            return 'topics · split lookup rows';
-        return `${recipe(fixture)} · ${effective.arrangement === 'columns' ? `grid-${effective.columns}` : effective.arrangement === 'rows' ? `rows-${effective.columns}` : effective.arrangement} · ${effective.treatment}`;
+/** Effective, existing configuration values demonstrated by one native example. */
+function axisValues(fixture: CatalogFixture, label: ReaderPage): Record<string, string> {
+    const section = resolveSectionedViewDocument({ id: `axis-${fixture.id}`, sections: [fixture.section] }, readerCopyResolver).sections[0]!;
+    if (section.kind === 'hero') return label === 'Introduce' ? { role: 'hero', 'hero-size': section.size ?? 'display' } : {};
+    if (section.kind !== 'content-section') throw new Error('Expected a canonical axis witness.');
+    if (label === 'Frame') return { layout: section.layout, size: section.size, ground: section.ground };
+    if (label === 'Introduce') return { role: fixture.id === 'say-close' ? 'close' : 'intro', ...(fixture.id === 'say-close' ? {} : { 'intro-layout': section.layout === 'stacked' ? 'stacked' : 'split' }) };
+    if (label === 'Show') {
+        const block = section.block?.type === 'items' ? section.block : undefined;
+        return { visual: section.media?.type === 'specimen' ? (section.media.key ? 'specimen-key' : 'specimen') : section.media!.type, companion: block === undefined ? 'none' : block.arrangement === 'stacked' ? 'explain-stack' : 'index-rows', layout: section.layout };
     }
-    if (section.media?.type === 'record')
-        return `${recipe(fixture)} · record · ${section.media.columns ?? 1} column${(section.media.columns ?? 1) === 1 ? '' : 's'}`;
-    if (section.media?.type === 'scene')
-        return `showcase · ${section.media.input.template}`;
-    if (fixture.id === 'frame-split-start')
-        return 'showcase-split · source files with a key';
-    if (section.media?.type === 'specimen')
-        return fixture.id === 'media-meter-previous' ? 'meter history' : section.media.key ? 'showcase · keyed specimen' : 'showcase · specimen';
-    return fixture.id === 'say-close' ? 'close · action' : section.layout === 'stacked' ? 'intro' : 'intro-split';
+    if (section.block?.type === 'matrix') return { form: section.block.sides[0]?.visual ? 'visual' : 'points', featured: section.block.featured ? 'one-side' : 'none' };
+    if (section.block?.type !== 'items') return {};
+    const block = section.block;
+    if (label === 'Sequence') return { shape: block.lanes ? 'lanes' : block.order === 'numbered' ? 'list' : 'line', ...(block.order === 'connected' ? { end: block.end ?? 'ends' } : {}) };
+    if (label === 'Index') return { shape: section.block.recipe === 'link-index' ? 'tiles' : `rows-${block.columns}`, reveal: block.reveal, groups: block.groups ? 'on' : 'off' };
+    if (label === 'Explain') return { shape: block.arrangement === 'columns' ? `grid-${block.columns}` : block.arrangement === 'stacked' ? 'stack' : block.arrangement, treatment: block.treatment, scale: block.scale };
+    return {};
+}
+function caption(fixture: CatalogFixture, label: ReaderPage, context?: string): string {
+    const name = context ?? (fixture.id === 'recipes-nav-composition' ? 'six-band page' : recipe(fixture));
+    const contextNote = fixture.section.kind === 'content-section' && fixture.section.media?.type === 'record' ? ` · ${fixture.section.media.columns ?? 1} column${(fixture.section.media.columns ?? 1) === 1 ? '' : 's'}` : fixture.section.kind === 'content-section' && fixture.section.media?.type === 'scene' ? ` · ${fixture.section.media.input.template}` : '';
+    return `${escape(name)}${escape(contextNote)}${Object.entries(axisValues(fixture, label)).map(([axis, value]) => ` · <span data-catalog-axis-witness="${escape(axis)}:${escape(value)}">${escape(axis)}: ${escape(value)}</span>`).join('')}`;
+}
+function frameReference(axis: string, value: string): CatalogFixture {
+    const fixture = READER_SAMPLES.find(sample => sample.section.kind === 'content-section' && !['say-close', 'recipes-nav-composition'].includes(sample.id) && axisValues(sample, 'Frame')[axis] === value);
+    if (!fixture) throw new Error(`Missing existing Frame witness for ${axis}: ${value}.`);
+    return fixture;
 }
 function axisTable(definition: CatalogPage): string {
     if (definition.axes.length === 0)
         return '';
-    return `<section class="catalog-note"><h2>Configuration reference</h2><div class="catalog-table-wrap" role="region" aria-label="${escape(definition.label)} configuration reference" tabindex="0"><table class="catalog-table" data-catalog-axes><thead><tr><th scope="col">Axis</th><th scope="col">Values</th><th scope="col">Effect</th><th scope="col">When</th></tr></thead><tbody>${definition.axes.map(axis => `<tr data-catalog-axis="${axis.name}"><th scope="row">${escape(axis.name.replaceAll('-', ' '))}</th><td>${axis.values.map(escape).join(' / ')}</td><td>${escape(axis.effect)}</td><td>${escape(axis.when)}</td></tr>`).join('')}</tbody></table></div></section>`;
+    return `<section class="catalog-note"><h2>Configuration reference</h2><div class="catalog-table-wrap" role="region" aria-label="${escape(definition.label)} configuration reference" tabindex="0"><table class="catalog-table" data-catalog-axes><thead><tr><th scope="col">Axis</th><th scope="col">Values</th><th scope="col">Effect</th><th scope="col">When</th></tr></thead><tbody>${definition.axes.map(axis => `<tr data-catalog-axis="${axis.name}"><th scope="row">${escape(axis.name.replaceAll('-', ' '))}</th><td>${axis.values.map(value => { if (definition.label !== 'Frame') return escape(value); const fixture = frameReference(axis.name, value); const target = READER_PAGES.find(page => page.label === readerPage(fixture))!; return `<a data-catalog-axis-reference="${escape(axis.name)}:${escape(value)}" href="${target.id}.html#example-${fixture.id}">${escape(axis.name)}: ${escape(value)}</a>`; }).join(' / ')}</td><td>${escape(axis.effect)}</td><td>${escape(axis.when)}</td></tr>`).join('')}</tbody></table></div></section>`;
 }
 function rules(label: ReaderPage): string {
     const content: Record<ReaderPage, [
@@ -394,7 +382,7 @@ function rules(label: ReaderPage): string {
         Frame: [['Directions', 'Stacked, split-start, or split-end.'], ['Ground', 'Choose explicit base, sunken, or inverse; reserve inverse for a focal band.']],
         Parts: [['Specimen', 'Fields, status rows, meter, table, schedule, shares, and files.'], ['Independent copy', 'Badge and metadata coexist; meter history retains previous value and text.']],
     };
-    return `<section class="catalog-note"><h2>Count and slot rules</h2><table data-catalog-rules><thead><tr><th scope="col">Recipe or configuration</th><th scope="col">Counts and slots</th></tr></thead><tbody>${content[label].map(([a, b]) => `<tr><th scope="row">${escape(a)}</th><td>${escape(b)}</td></tr>`).join('')}</tbody></table></section>`;
+    return `<section class="catalog-note"><h2>Count and slot rules</h2><table data-catalog-rules><thead><tr><th scope="col">Recipe</th><th scope="col">Counts and slots</th></tr></thead><tbody>${content[label].map(([a, b]) => `<tr><th scope="row">${escape(a)}</th><td>${escape(b)}</td></tr>`).join('')}</tbody></table></section>`;
 }
 /** Scope trusted native fragments when several independent renders share a preview page. */
 export function namespaceNativeMarkup(html: string, prefix: string): string {
@@ -426,17 +414,13 @@ export function readerConfigCells(label: ReaderPage): ConfigCell[] {
         return structuredClone(sample);
     };
     if (label === 'Show') {
-        const rows = clone('say-media-stacked');
         const stack = clone('media-key');
-        const companion = clone('frame-split-end');
         const explanation = clone('items-stacked');
-        if (rows.section.kind !== 'content-section' || stack.section.kind !== 'content-section' || companion.section.kind !== 'content-section' || explanation.section.kind !== 'content-section')
+        if (stack.section.kind !== 'content-section' || explanation.section.kind !== 'content-section')
             throw new Error('Show variants need canonical sections.');
-        rows.section.layout = 'split-end';
-        rows.section.block = companion.section.block;
         stack.section.layout = 'split-start';
         stack.section.block = explanation.section.block;
-        return [{ id: 'show-companion', fixture: rows, caption: 'specimen with index companion' }, { id: 'keyed-stack', fixture: stack, caption: 'keyed specimen with explain stack' }];
+        return [{ id: 'keyed-stack', fixture: stack, caption: 'showcase-split' }];
     }
     if (label === 'Explain') {
         const fixture = clone('items-plain');
@@ -480,14 +464,14 @@ export function buildCatalogFunctionPages(sheets: ContentCatalogStylesheets): Ar
         const header = `<header class="catalog-nav"><a href="../content-catalog.html">Content catalog</a><h1>${label}</h1><p>${definition.purpose}</p>${nav(definition.id)}</header>`;
         let body = '';
         for (const sample of READER_SAMPLES.filter(fixture => readerPage(fixture) === label)) {
-            body += `<article class="catalog-example" id="example-${sample.id}" data-catalog-fixture="${sample.id}"><header class="catalog-note"><p data-catalog-caption>${label} › ${caption(sample)}</p></header><div data-catalog-native${label === 'Overview' ? ' data-catalog-composition' : ''}>${embeddedNative(sample, `sample-${definition.id}-${sample.id}`)}</div></article>`;
+            body += `<article class="catalog-example" id="example-${sample.id}" data-catalog-fixture="${sample.id}"><header class="catalog-note"><p data-catalog-caption>${label} › ${caption(sample, label)}</p></header><div data-catalog-native${label === 'Overview' ? ' data-catalog-composition' : ''}>${embeddedNative(sample, `sample-${definition.id}-${sample.id}`)}</div></article>`;
         }
         if (label === 'Overview')
             body += `<section class="catalog-note"><h2>Recipe reference</h2>${recipeTable()}</section>`;
         body += axisTable(definition);
         const cells = readerConfigCells(label);
         if (cells.length)
-            body += `<div class="catalog-config-grid">${cells.map(cell => `<article class="catalog-config-cell" data-catalog-config-cell="${cell.id}"><header><p data-config-caption>${label} › ${cell.caption}</p></header><div data-config-native>${embeddedNative(cell.fixture, `config-${definition.id}-${cell.id}`)}</div></article>`).join('')}</div>`;
+            body += `<div class="catalog-config-grid">${cells.map(cell => `<article class="catalog-config-cell" data-catalog-config-cell="${cell.id}"><header><p data-config-caption>${label} › ${caption(cell.fixture, label, cell.caption)}</p></header><div data-config-native>${embeddedNative(cell.fixture, `config-${definition.id}-${cell.id}`)}</div></article>`).join('')}</div>`;
         if (label === 'Parts')
             body += `<section class="catalog-note"><h2>Complete examples</h2><ul><li><a href="show.html#example-say-media-stacked">Fields and review states</a></li><li><a href="show.html#example-media-key">Table, schedule, shares, and a specimen key</a></li><li><a href="show.html#example-frame-split-start">Files and source details</a></li><li><a href="show.html#example-media-record-three">Grouped record context</a></li><li><a href="show.html#example-items-badge-meta">Independent badge and metadata</a></li><li><a href="show.html#example-media-meter-previous">Meter history</a></li><li><a href="overview.html#example-recipes-nav-composition">Approval checks</a></li></ul></section>`;
         body += rules(label);

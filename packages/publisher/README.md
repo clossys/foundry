@@ -4215,7 +4215,7 @@ and the catalog copy registries in `src/preview/catalog/` (never hardcoded in a 
   Explain, Index, Sequence or Compare, then use a recipe and configuration
   reference. Overview shows a six-band page. Frame covers shared layout,
   size and grounds; Parts links to complete Show examples. The nine pages
-  under `catalog/` render 31 retained examples once, with four distinct
+  under `catalog/` render 31 retained examples once, with three distinct
   configuration variants, text axis tables and concise count and slot rules.
   The Index function lives at `catalog/index-function.html`. Published kinds
   link to their existing examples in the web-view gallery.
