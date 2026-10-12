@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { AriaAttributes, ReactNode } from "react";
 import type { BadgeVariant } from "../../atoms/Badge.js";
 import type { SectionGround } from "../section-ground.js";
 
@@ -35,7 +35,7 @@ export type ItemsColumns = 1 | 2 | 3;
 export type ItemsEmphasis = "item" | "statement";
 export interface ItemsGroup { id: string; label: ReactNode; items: readonly string[] }
 export interface ItemsLane { id: string; label: ReactNode }
-export interface ItemsProps {
+export interface ItemsProps extends Pick<AriaAttributes, "aria-labelledby"> {
   items: readonly ItemData[];
   arrangement: ItemsArrangement;
   /** Defaults to three for columns and one for rows. Absent for bento and stacked. */

@@ -9,7 +9,10 @@ const data = (count: number): ItemData[] => Array.from({ length: count }, (_, i)
 const lanes = [{ id: "team", label: "Team" }, { id: "review", label: "Review" }] as const;
 const laneData = (sequence: string) => [...sequence].map((lane, i) => ({ ...data(sequence.length)[i]!, lane: lane === "a" ? "team" : "review" }));
 const draw = (props: Partial<ItemsProps>) => render(<Items arrangement="columns" items={data(3)} {...props} />);
-const assertRefused = (props: Partial<ItemsProps>) => expect(() => renderToStaticMarkup(<Items arrangement="columns" items={data(3)} {...props} />)).toThrow();
+const assertRefused = (props: Partial<ItemsProps>, type: typeof TypeError | typeof RangeError = TypeError, message: RegExp = /^Items:/) => {
+  const attempt = () => renderToStaticMarkup(<Items arrangement="columns" items={data(3)} {...props} />);
+  expect(attempt).toThrowError(type); expect(attempt).toThrowError(message);
+};
 
 describe("Items order", () => {
   it("numbers an ordered list in item reading order without changing the body heading", () => {
@@ -34,11 +37,14 @@ describe("Items order", () => {
     else expect(warn).not.toHaveBeenCalled();
     warn.mockRestore();
   });
-  it.each([2, 6])("refuses %s connected steps", count => assertRefused({ order: "connected", items: data(count) }));
-  it.each(["rows", "bento"] as const)("refuses connected %s", arrangement => assertRefused({ arrangement, order: "connected", items: data(4) }));
+  it.each([2, 6])("refuses %s connected steps", count => assertRefused({ order: "connected", items: data(count) }, RangeError, /connected order needs/));
+  it.each(["rows", "bento"] as const)("refuses connected %s", arrangement => assertRefused({ arrangement, order: "connected", items: data(4) }, RangeError, /connected order needs/));
   it.each([3, 4, 5])("accepts a connected stacked sequence of %s", count => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-    draw({ arrangement: "stacked", order: "connected", items: data(count) });
+    const { container } = draw({ arrangement: "stacked", order: "connected", items: data(count) });
+    expect(container.querySelectorAll("ol > li")).toHaveLength(count);
+    expect(container.querySelectorAll("[data-item-transition]")).toHaveLength(count - 1);
+    expect(container.querySelectorAll("[data-item-end]")).toHaveLength(1);
     if (count === 4) expect(warn).toHaveBeenCalled();
     warn.mockRestore();
   });
@@ -76,7 +82,7 @@ describe("Items order", () => {
     const caption = container.querySelector("[data-item-caption]")!;
     expect(caption.previousElementSibling?.tagName).toBe("OL");
     expect(caption.closest("ol")).toBeNull();
-    assertRefused({ order: "connected", caption: "Example" });
+    assertRefused({ order: "connected", caption: "Example" }, TypeError, /^Items: a connected caption requires a visual\.$/);
   });
   it.each(["aba", "abbaa"])("uses array lane ids for %s without reordering steps", sequence => {
     const { container } = draw({ arrangement: "stacked", order: "connected", lanes, items: laneData(sequence) });
@@ -84,7 +90,12 @@ describe("Items order", () => {
     expect([...container.querySelectorAll("[data-item-lane-label]")].map(node => node.textContent)).toEqual([...sequence].map(lane => lane === "a" ? "Team" : "Review"));
     expect([...container.querySelectorAll("[data-item-heading]")].map(node => node.textContent)).toEqual(data(sequence.length).map(item => item.heading));
   });
-  it("accepts visuals in five lane steps", () => draw({ arrangement: "stacked", order: "connected", lanes, items: laneData("abbaa").map(item => ({ ...item, visual: <span>Panel</span> })) }));
+  it("accepts visuals in five lane steps", () => {
+    const { container } = draw({ arrangement: "stacked", order: "connected", lanes, items: laneData("abbaa").map(item => ({ ...item, visual: <span>Panel</span> })) });
+    expect(container.querySelectorAll("[data-item-visual]")).toHaveLength(5);
+    expect([...container.querySelectorAll("[data-item-ordinal]")].map(node => node.textContent)).toEqual(["1", "2", "3", "4", "5"]);
+    expect(container.querySelectorAll("[data-item-end]")).toHaveLength(1);
+  });
   it("refuses unknown, absent, first-second or unused lane ids", () => {
     for (const sequence of ["baa", "aaa"]) assertRefused({ arrangement: "stacked", order: "connected", lanes, items: laneData(sequence) });
     assertRefused({ arrangement: "stacked", order: "connected", lanes, items: data(3) });
@@ -97,8 +108,8 @@ describe("Items order", () => {
   it("refuses malformed lane definitions and closed-axis runtime violations", () => {
     for (const value of [[], [lanes[0]], [...lanes, { id: "extra", label: "Extra" }], [null, lanes[1]], [undefined, lanes[1]], Array(2), [{ id: "", label: "Team" }, lanes[1]], [{ id: " ", label: "Team" }, lanes[1]], [{ id: 7, label: "Team" }, lanes[1]], [{ id: "team", label: "Team" }, { id: "team", label: "Review" }], [{ id: "team", label: " " }, lanes[1]], [{ id: "team", label: <span /> }, lanes[1]], { a: "Team", b: "Review" }]) assertRefused({ arrangement: "stacked", order: "connected", lanes: value as unknown as ItemsProps["lanes"], items: laneData("aba") });
     for (const value of [null, "unknown"]) {
-      assertRefused({ order: value as ItemsProps["order"] });
-      assertRefused({ order: "connected", end: value as ItemsProps["end"] });
+      assertRefused({ order: value as ItemsProps["order"] }, TypeError, /^Items: unknown order or reveal\.$/);
+      assertRefused({ order: "connected", end: value as ItemsProps["end"] }, TypeError, /^Items: unknown end\.$/);
     }
   });
   it("uses opaque lane ids as map keys without inherited-name collisions", () => {
