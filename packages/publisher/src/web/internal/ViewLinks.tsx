@@ -42,6 +42,6 @@ export function renderViewLinks(value: ViewLinksInput | undefined, owner: keyof 
     <h2 className="text-h3 font-display text-ink-primary">{value.label}</h2>
     {value.items.length === 1
       ? <Item {...value.items[0]!} treatment="plain" size="standard" ground="base" headingLevel={3} />
-      : <Items items={value.items} arrangement="rows" columns={1} treatment="plain" size="standard" emphasis="item" ground="base" headingLevel={3} />}
+      : <Items items={value.items} arrangement="rows" columns={1} treatment="plain" size="standard" scale="item" ground="base" headingLevel={3} />}
   </section>;
 }

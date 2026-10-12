@@ -486,7 +486,7 @@ named kinds: `hero`, `feature-grid`, `faq`, `ordered-step-sequence`,
 `status-list`, `stat-grid`, `pricing` (a heading and plan items, each with a
 name, a price, features and an optional call to action), `testimonial`
 (quotes with an attributor name and optional role), `stat` (label and value
-items with an optional delta) or `content-section` (see below). Grounds are the closed `base`/`sunken`/`inverse` vocabulary;
+items with an optional delta) or `content-section` (see below). Legacy kinds use the closed `base`/`sunken`/`inverse` ground vocabulary; canonical content sections omit ground for automatic cadence or author `inverse`;
 status values are the closed `available`/`partial`/`planned` readiness axis,
 with a separate `not-offered` disposition for deliberate non-capabilities.
 Every audience-facing label, heading, description, question, answer, ordinal,
@@ -1341,18 +1341,18 @@ omit a hero's `actions` for a message-only opening.
 The view paints the base surface on its root, so a band on the `base`
 ground shows the base surface whatever the page behind it is.
 
-**Grounds.** The view decides the grounds near the end of the page and,
-under the `"view"` rhythm, between the bands:
+**Grounds.** The view plans automatic canonical bands and legacy bands
+under the `"view"` rhythm across the page:
 
 - the hero keeps its own ground;
-- with a `callToAction`, the last band is on `base`
-  (`LANDING_VIEW_CLOSING_GROUND`) and the call to action on `inverse`
-  (`LANDING_VIEW_CALL_TO_ACTION_GROUND`), whatever the documents say;
-- a document authored with `sectionGroundRhythm: "view"` resolves with
-  `viewGrounds`, the ids of the sections that omitted `ground`; the view
-  assigns those, counting upward from the last band, so each takes the one
-  of `base` and `sunken` that differs from the band below it;
-- an explicit section ground wins, outside the closing pair.
+- the last automatic body band defaults to `base`; with a `callToAction`,
+  a final legacy band is forced to `base` (`LANDING_VIEW_CLOSING_GROUND`),
+  while an explicit canonical `inverse` remains its anchor;
+- the call to action is on `inverse` (`LANDING_VIEW_CALL_TO_ACTION_GROUND`);
+- canonical omitted grounds and legacy omissions under `sectionGroundRhythm: "view"`
+  resolve with `viewGrounds`; counting upward, an automatic band above `base`
+  takes `sunken`, and one above `sunken` or `inverse` takes `base`;
+- explicit grounds win except for the final legacy band before a call to action.
 
 The view draws no rule at either edge of the call to action: the ground
 change from the band above is its top seam, and the site footer's own top
@@ -5191,11 +5191,11 @@ export const recipeAxes = canonicalRecipeAxes;
 export const document = {
   id: "canonical-guide",
   sections: [
-    { id: "raw", kind: "content-section", ground: "base", heading: ref("heading"),
+    { id: "raw", kind: "content-section", heading: ref("heading"),
       size: "standard", layout: "stacked", block: raw },
-    { id: "recipe", kind: "content-section", ground: "base", heading: ref("heading"),
+    { id: "recipe", kind: "content-section", heading: ref("heading"),
       size: "standard", layout: "stacked", block: recipe },
-    { id: "matrix", kind: "content-section", ground: "base", heading: ref("heading"),
+    { id: "matrix", kind: "content-section", heading: ref("heading"),
       size: "display", layout: "stacked", block: {
         type: "matrix", recipe: "comparison", featured: "after",
         sides: ["before", "after"].map((id) => ({
@@ -5203,7 +5203,7 @@ export const document = {
           points: [ref("source"), ref("result")],
         })),
       } },
-    { id: "specimen", kind: "content-section", ground: "base", heading: ref("heading"),
+    { id: "specimen", kind: "content-section", heading: ref("heading"),
       size: "standard", layout: "split-start", media: {
         type: "specimen", label: ref("figure"), panel: {
           id: "sample", title: ref("heading"), badge: { label: ref("label"), tone: "info" },
@@ -5212,7 +5212,7 @@ export const document = {
             previous: 30, previousText: ref("previous") }],
         },
       } },
-    { id: "record", kind: "content-section", ground: "base", heading: ref("heading"),
+    { id: "record", kind: "content-section", heading: ref("heading"),
       size: "standard", layout: "split-end", media: {
         type: "record", id: "sample-record", head: { title: ref("heading") }, columns: 1,
         groups: [
@@ -5220,7 +5220,7 @@ export const document = {
           { id: "owner", label: ref("label"), owner: { initials: ref("initials"), name: ref("heading") } },
         ], caption: ref("detail"),
       } },
-    { id: "scene", kind: "content-section", ground: "base", heading: ref("heading"),
+    { id: "scene", kind: "content-section", heading: ref("heading"),
       size: "display", layout: "stacked", media: {
         type: "scene", label: ref("scene"), input: {
           template: "converge", seed: "example-scene",

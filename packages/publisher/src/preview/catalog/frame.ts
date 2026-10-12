@@ -11,7 +11,6 @@ export const FRAME_FIXTURES = [
     "section": {
         "id": "frame-ground-base",
         "kind": "content-section",
-        "ground": "base",
         "size": "standard",
         "layout": "stacked",
         "heading": {
@@ -28,7 +27,6 @@ export const FRAME_FIXTURES = [
     "section": {
         "id": "frame-ground-sunken",
         "kind": "content-section",
-        "ground": "sunken",
         "size": "standard",
         "layout": "stacked",
         "heading": {
@@ -62,7 +60,6 @@ export const FRAME_FIXTURES = [
     "section": {
         "id": "frame-size-standard",
         "kind": "content-section",
-        "ground": "base",
         "size": "standard",
         "layout": "stacked",
         "heading": {
@@ -79,7 +76,6 @@ export const FRAME_FIXTURES = [
     "section": {
         "id": "frame-split-start",
         "kind": "content-section",
-        "ground": "base",
         "size": "standard",
         "layout": "split-start",
         "heading": {
@@ -183,7 +179,6 @@ export const FRAME_FIXTURES = [
     "section": {
         "id": "frame-split-end",
         "kind": "content-section",
-        "ground": "base",
         "size": "standard",
         "layout": "split-end",
         "heading": {
@@ -228,7 +223,6 @@ export const FRAME_FIXTURES = [
     "section": {
         "id": "frame-stacked",
         "kind": "content-section",
-        "ground": "sunken",
         "size": "standard",
         "layout": "stacked",
         "heading": {
@@ -248,7 +242,6 @@ export const FRAME_FIXTURES = [
     "section": {
         "id": "frame-actions",
         "kind": "content-section",
-        "ground": "base",
         "size": "display",
         "layout": "split-end",
         "heading": {

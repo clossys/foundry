@@ -24,7 +24,7 @@ const BENTO_SPAN_CLASSES: Record<ItemSpan, string> = {
   third: "tablet:col-span-6 tablet-lg:col-span-4", half: "tablet:col-span-6", [TWO_THIRDS]: "tablet:col-span-12 tablet-lg:col-span-8", full: "tablet:col-span-12"
 };
 function renderItems(props: ItemsProps, columns: number | undefined, disclosure?: DisclosureRenderer, start = 1) {
-  const { arrangement, treatment = "plain", size = "standard", ground = "base", emphasis = "item", headingLevel = 3 } = props;
+  const { arrangement, treatment = "plain", size = "standard", ground = "base", scale = "item", headingLevel = 3 } = props;
   const spans = arrangement === "bento" ? props.items.map(item => item.span === undefined ? "half" : item.span) : [];
   const tabletLone = loneTabletThirds(spans);
   const connected = props.order === "connected";
@@ -40,7 +40,7 @@ function renderItems(props: ItemsProps, columns: number | undefined, disclosure?
     const finalRow = (count: number) => index >= Math.floor((props.items.length - 1) / count) * count;
     const labelRows = sharedBody === undefined || !hasContent(props.endLabel) ? undefined : arrangement === "columns" ? cx(finalRow(2) ? "tablet:row-span-3" : undefined, columns === 3 ? finalRow(3) ? "tablet-lg:row-span-3" : "tablet-lg:row-span-2" : undefined) : props.items.length === 3 ? "tablet-lg:row-span-3" : "desktop:row-span-3";
     const sharedRows = cx(sharedBody, labelRows);
-    const body = props.reveal === "disclose" ? disclosure!(item, props) : <ItemRenderer item={item} treatment={treatment} size={size} ground={ground} statement={emphasis === "statement"} profile={profile} headingLevel={headingLevel} span={span} sharedVisualRow={withVisuals} orderClassName={cx(sharedBody, connected ? "h-auto items-order-body" : ordered ? "min-w-0 flex-1" : undefined)} />;
+    const body = props.reveal === "disclose" ? disclosure!(item, props) : <ItemRenderer item={item} treatment={treatment} size={size} ground={ground} statement={scale === "statement"} profile={profile} headingLevel={headingLevel} span={span} sharedVisualRow={withVisuals} orderClassName={cx(sharedBody, connected ? "h-auto items-order-body" : ordered ? "min-w-0 flex-1" : undefined)} />;
     const disclosureBody = props.reveal === "disclose" && treatment === "plate" ? <ItemPlate ground={ground} className="w-full min-w-0">{body}</ItemPlate> : body;
     return <li key={item.id} data-lane={connected ? item.lane : undefined} className={cx("h-full min-w-0", spanClassName, connected ? "relative items-order-cell" : ordered ? "flex items-start gap-lg" : undefined, sharedRows)} style={connected ? orderedItemStyle(item, props) : undefined}>
       {ordered ? renderOrdinal({ ordinal: start + index, props, connected }) : null}

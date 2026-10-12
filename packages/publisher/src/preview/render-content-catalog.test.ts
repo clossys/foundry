@@ -1,3 +1,4 @@
+import { planContentGrounds } from "../core/content-ground.js";
 import "@testing-library/jest-dom/vitest";
 import { JSDOM } from "jsdom";
 import { createElement } from "react";
@@ -63,7 +64,10 @@ describe("content catalog fixture", () => {
     const matrices = contentSections.flatMap(section => section.block?.type === "matrix" ? [section.block] : []);expect(matrices).toHaveLength(2);
     expect(matrices.some(block => block.sides.every(side => side.visual !== undefined))).toBe(true);
     expect(matrices.some(block => block.sides.every(side => side.points?.length === 4 && side.visual === undefined))).toBe(true);
-    expect(new Set(contentCatalogDocument.sections.map(section => section.ground))).toEqual(new Set(["base", "sunken", "inverse"]));
+    const planned = planContentGrounds([resolved], { callToAction: true });
+    expect(new Set(planned.bands.map(band => band.ground))).toEqual(new Set(["base", "sunken", "inverse"]));
+    const rendered = new JSDOM(renderContentCatalogMarkup()).window.document;
+    expect(new Set([...rendered.querySelectorAll("[data-landing-ground]")].map(band => band.getAttribute("data-landing-ground")))).toEqual(new Set(["base", "sunken", "inverse"]));
   });
 
   it("keeps actions where they belong: header-only bands and split text columns, never a stacked band with a block or media, and nothing after them", () => {

@@ -63,7 +63,7 @@ interface DecodedCatalog {
   groups?: readonly { id: string; label: ReactNode; items: readonly ItemData[] }[];
   ground?: ItemsProps["ground"]; surface?: ItemsProps["treatment"];
   treatment?: ItemsProps["treatment"]; columns?: ItemsProps["columns"];
-  emphasis?: ItemsProps["emphasis"]; headingLevel?: ItemsProps["headingLevel"];
+  emphasis?: ItemsProps["scale"]; headingLevel?: ItemsProps["headingLevel"];
 }
 function migrate(fixture: FrozenCase, disposition: Disposition): ItemsProps {
   const input = decode(fixture.props) as DecodedCatalog;
@@ -71,7 +71,7 @@ function migrate(fixture: FrozenCase, disposition: Disposition): ItemsProps {
   const items = source.map(item => ({ ...item, heading: item.heading ?? item.title }));
   return {
     items, ground: input.ground, treatment: input.treatment ?? input.surface ?? (fixture.block === "TopicList" ? "rule" : "plain"),
-    headingLevel: input.headingLevel ?? 3, emphasis: input.emphasis,
+    headingLevel: input.headingLevel ?? 3, scale: input.emphasis,
     arrangement: disposition === "bento" ? "bento" : disposition === "columns" || disposition === "statement-refusal" || fixture.block === "FeatureGrid" && disposition === "columns-refusal" ? "columns" : "rows",
     columns: disposition === "bento" ? undefined : disposition === "rows" || disposition === "groups-refusal" ? 1 : input.columns,
     groups: input.groups?.map(group => ({ id: group.id, label: group.label, items: group.items.map(item => item.id) })),
@@ -134,13 +134,13 @@ describe("explicit migration of 49 retired catalog cases", () => {
       expectAuthoredItems(markup({ ...props, arrangement: "rows", columns: 1 }), props.items, props.headingLevel!);
     } else if (disposition === "statement-refusal") {
       expect(() => markup(props)).toThrow(TypeError);
-      expectAuthoredItems(markup({ ...props, emphasis: "item" }), props.items, props.headingLevel!);
+      expectAuthoredItems(markup({ ...props, scale: "item" }), props.items, props.headingLevel!);
     } else {
       const root = markup(props);
       expectAuthoredItems(root, props.items, props.headingLevel!);
       expect(root.querySelector("[data-items]")).toHaveAttribute("data-treatment", props.treatment);
       if (disposition === "bento") expect([...root.querySelectorAll("[data-item]")].map(node => node.getAttribute("data-span"))).toEqual(props.items.map(item => item.span));
-      if (props.emphasis === "statement") for (const heading of root.querySelectorAll("[data-item-heading]")) expect(heading).toHaveClass("text-h0");
+      if (props.scale === "statement") for (const heading of root.querySelectorAll("[data-item-heading]")) expect(heading).toHaveClass("text-h0");
       if (name === "headless-three-blank-heading") expect(root.querySelectorAll("h3")).toHaveLength(3);
     }
   });

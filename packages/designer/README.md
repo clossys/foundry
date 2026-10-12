@@ -5659,10 +5659,10 @@ not a grab-bag).
 | `ItemSize` | type | `"standard" \| "display"`. |
 | `ItemTreatment` | type | `"plain" \| "rule" \| "plate"`. |
 | `ItemSpan` | type | `"third" \| "half" \| "two-thirds" \| "full"`. |
-| `ItemsProps` | type | Items, arrangement, columns, treatment, emphasis, size, groups, headingLevel, ground, order, reveal, lanes, end, endLabel, caption, aria-labelledby and className. |
+| `ItemsProps` | type | Items, arrangement, columns, treatment, scale, size, groups, headingLevel, ground, order, reveal, lanes, end, endLabel, caption, aria-labelledby and className. |
 | `ItemsArrangement` | type | `"columns" \| "rows" \| "bento" \| "stacked"`. |
 | `ItemsColumns` | type | `1 \| 2 \| 3`; arrangement determines validity. |
-| `ItemsEmphasis` | type | `"item" \| "statement"`. |
+| `ItemsScale` | type | `"item" \| "statement"`. |
 | `ItemsLane` | type | Stable actor ID and authored ReactNode label; connected lanes require exactly two. |
 | `ItemsGroup` | type | Stable id, ReactNode label and an ordered list of canonical item IDs. |
 | `AnatomyCallouts` | component | A specimen panel with 3 or 5 numbered markers and an ordered key. |

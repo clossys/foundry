@@ -469,7 +469,7 @@ describe("LegalView related references", () => {
       expect(vi.mocked(Items).mock.calls).toHaveLength(1);
       expect(vi.mocked(Item).mock.calls).toHaveLength(0);
       expect(vi.mocked(Items).mock.calls[0]![0]).toMatchObject({
-        items, arrangement: "rows", columns: 1, emphasis: "item", ...RELATED_FRAME,
+        items, arrangement: "rows", columns: 1, scale: "item", ...RELATED_FRAME,
       });
       const section = relatedSection(html);
       expect([...section.body.matchAll(/<a\b[^>]*href="([^"]+)"/g)].map(match => match[1])).toEqual(items.map(item => item.href));

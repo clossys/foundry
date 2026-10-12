@@ -27,7 +27,7 @@ void <OrderedStepSequence items={[{ id: "one", ordinal: <span>1</span>, heading:
 void <FeatureGrid items={[]} columns={3} />;
 // @ts-expect-error Catalog treatment belongs to Items.
 void <FeatureGrid items={[]} treatment="plate" />;
-// @ts-expect-error Statement emphasis belongs to Items.
+// @ts-expect-error Published FeatureGrid omits retired collection emphasis.
 void <FeatureGrid items={[]} emphasis="statement" />;
 // @ts-expect-error Item eyebrows belong to ItemData.
 void <FeatureGrid items={[{ id: "one", heading: "One", eyebrow: "Label" }]} />;
@@ -211,3 +211,25 @@ void <Blocks.NavGrid items={Object.freeze([{ id: "one", title: 0, href: "relativ
 void <Blocks.NavGrid items={[{ id: "one", title: "One", href: "/one", onSelect: () => {} }]} />;
 // @ts-expect-error A navigation entry needs its published activation mechanism.
 void <Blocks.NavGrid items={[{ id: "one", title: "One" }]} />;
+
+// Collection scale is present on all source and emitted public type surfaces.
+export type OrdinaryItemsScale = Expect<Equal<Blocks.ItemsScale, "item" | "statement">>;
+export type NativeItemsScale = Expect<Equal<ServerBlocks.ItemsScale, Blocks.ItemsScale>>;
+export type InventoryItemsScale = Expect<Equal<PackageInventory.ItemsScale, Blocks.ItemsScale>>;
+// @ts-expect-error The retired collection alias is absent.
+export type RemovedItemsEmphasis = Blocks.ItemsEmphasis;
+// @ts-expect-error The retired collection alias is absent from native blocks.
+export type RemovedNativeItemsEmphasis = ServerBlocks.ItemsEmphasis;
+// @ts-expect-error The retired collection alias is absent from package inventory.
+export type RemovedInventoryItemsEmphasis = PackageInventory.ItemsEmphasis;
+void <Blocks.Items arrangement="columns" items={[]} scale="statement" />;
+void <ServerBlocks.Items arrangement="columns" items={[]} scale="item" />;
+void <PackageInventory.Items arrangement="rows" items={[]} scale={undefined} />;
+// @ts-expect-error Collection emphasis is retired.
+void <Blocks.Items arrangement="columns" items={[]} emphasis={undefined} />;
+// @ts-expect-error Collection emphasis is retired from native blocks.
+void <ServerBlocks.Items arrangement="columns" items={[]} emphasis="statement" />;
+// @ts-expect-error Collection emphasis is retired from package inventory.
+void <PackageInventory.Items arrangement="rows" items={[]} emphasis="item" />;
+// @ts-expect-error Published FeatureGrid has no collection scale.
+void <FeatureGrid items={[]} scale="statement" />;

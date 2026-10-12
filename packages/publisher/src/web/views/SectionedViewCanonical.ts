@@ -35,6 +35,7 @@ function axis(value: Record<string, unknown>, key: string, allowed: readonly unk
 /** Reuse authored structural validation with private placeholder refs; public text and provenance never change. */
 export function assertCanonicalContentSection(section: Record<string, unknown>, path: string): void {
   assertClosedData(section, path);
+  axis(section, "ground", ["base", "sunken", "inverse"], path);
   axis(section, "size", CONTRACT.sizes, path); axis(section, "layout", CONTRACT.layouts, path);
   const block = section.block;
   if (record(block) && block.type === "items") {
@@ -99,7 +100,7 @@ export function assertCanonicalContentSection(section: Record<string, unknown>, 
       const localPath = fieldPath.slice(path.length + 1);
       // Only specimen parts own these copy fields; Scene formats and source records stay structural.
       const childPartType = /^(media\.panel\.parts\.\d+|block\.items\.\d+\.visual|block\.sides\.\d+\.visual\.parts\.\d+)$/.test(localPath) && typeof value.type === "string" ? value.type : partType;
-      return Object.fromEntries(Object.entries(value).filter(([key]) => !(fieldPath === `${path}.block` && key === "continuesLabel")).map(([key, entry]) => [key, project(entry, `${fieldPath}.${key}`, key, childPartType)]));
+      return Object.fromEntries(Object.entries(value).filter(([key, entry]) => !(fieldPath === `${path}.block` && key === "continuesLabel") && !(fieldPath === path && key === "ground" && entry !== "inverse")).map(([key, entry]) => [key, project(entry, `${fieldPath}.${key}`, key, childPartType)]));
     }
     return value;
   }
