@@ -67,6 +67,10 @@ describe("publisher-preview main — brand coverage gate", () => {
     const brandPath = writeBrandCss(buildMinimalBrandCssFromTokens({ TOKENS }));
     const outDir = join(dir, "out");
     expect(main([brandPath, outDir]), JSON.stringify(vi.mocked(console.error).mock.calls)).toBe(0);
+    for (const fn of ["say", "items", "matrix", "frame", "media", "recipes", "other"]) {
+      expect(existsSync(join(outDir, `catalog/${fn}.html`))).toBe(true);
+      expect(vi.mocked(console.log).mock.calls.flat().join("\n")).toContain(`catalog/${fn}.html`);
+    }
     const galleryPath = join(outDir, PREVIEW_GALLERY_FILENAME);
     expect(existsSync(galleryPath)).toBe(true);
     const html = readFileSync(galleryPath, "utf8");

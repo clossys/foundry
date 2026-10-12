@@ -11,7 +11,7 @@ import { describe, expect, it } from "vitest";
 import { checkSectionVariety, resolveSectionedViewDocument, validateSectionedViewDocument } from "../core/sectioned-view.js";
 import type { ResolvedSectionedViewContentSection, ResolvedSectionedViewSpecimenPanel, ResolvedSectionedViewSpecimenPart, SectionedViewContentSection } from "../core/sectioned-view.js";
 import { CONTENT_CATALOG_CALL_TO_ACTION, CONTENT_CATALOG_CAPTIONS, contentCatalogCopyResolver, contentCatalogDocument } from "./fixture-content-catalog.js";
-import { buildContentCatalogHtml, renderContentCatalog, renderContentCatalogMarkup, splitLandingViewBands } from "./render-content-catalog.js";
+import { buildHistoricalContentCatalogHtml as buildContentCatalogHtml, renderContentCatalog, renderContentCatalogMarkup, splitLandingViewBands } from "./render-content-catalog.js";
 
 const contentSections = contentCatalogDocument.sections.filter((section): section is SectionedViewContentSection => section.kind === "content-section");
 const resolved = resolveSectionedViewDocument(contentCatalogDocument, contentCatalogCopyResolver);
@@ -250,7 +250,9 @@ describe("content catalog page", () => {
   it("keeps standalone gallery disclosures native and usable without hydration", () => {
     const entry = renderPreviewGalleryEntries().find(entry => entry.view === "SectionedView");
     expect(entry).toBeDefined();
-    expect(entry?.markup).toBe(renderToStaticMarkup(createElement(SectionedView, {
+    const annotations = /<span id="published-kind-[^"]+" data-published-kind="[^"]+" data-published-section="[^"]+" class="sr-only" aria-hidden="true"><\/span>/g;
+    expect(entry!.markup.match(annotations)).toHaveLength(9);
+    expect(entry!.markup.replace(annotations, "")).toBe(renderToStaticMarkup(createElement(SectionedView, {
       document: resolveSectionedViewDocument(previewSectionedDocument, previewCopyResolver),
     })));
     const dom = new JSDOM(entry!.markup).window.document;

@@ -17,7 +17,7 @@ import { SectionedView } from "../web/views/SectionedView.server.js";
 import { BrandGuideView } from "../web/views/BrandGuideView.js";
 import { SystemAuditView } from "../web/views/SystemAuditView.js";
 import { CERTIFICATION_FIXTURE_COPY } from "./certification-fixtures.js";
-import { buildContentCatalogHtml, CONTENT_CATALOG_FILENAME } from "./render-content-catalog.js";
+import { buildCatalogFunctionPages, buildContentCatalogHtml, CONTENT_CATALOG_FILENAME } from "./render-content-catalog.js";
 import { PREVIEW_UTILITIES_BASENAME, previewUtilitiesSourcePath } from "./preview-stylesheet.js";
 import {
   previewAuthDocument,
@@ -90,11 +90,20 @@ export interface PreviewGalleryEntry {
 
 export function renderPreviewGalleryEntries(): PreviewGalleryEntry[] {
   const marketing = renderToStaticMarkup(renderWebDocument(previewMarketingDocument, { groups: previewMarketingGroups }).element);
-  const sectioned = renderToStaticMarkup(
+  let sectioned = renderToStaticMarkup(
     createElement(SectionedView, {
       document: resolveSectionedViewDocument(previewSectionedDocument, previewCopyResolver),
     }),
   );
+  // Stable, nonvisual fragment targets belong to this preview, not the document.
+  for (const section of previewSectionedDocument.sections) {
+    const target = `id="${section.id}"`;
+    const anchor = `published-kind-${section.id}`;
+    if (sectioned.split(target).length !== 2 || sectioned.includes(`id="${anchor}"`)) throw new Error(`Published preview needs one unique ${section.id} target.`);
+    const end = sectioned.indexOf(">", sectioned.indexOf(target));
+    if (end < 0) throw new Error("Published preview target needs an opening element.");
+    sectioned = sectioned.slice(0, end + 1) + `<span id="${anchor}" data-published-kind="${section.kind}" data-published-section="${section.id}" class="sr-only" aria-hidden="true"></span>` + sectioned.slice(end + 1);
+  }
   const auth = renderToStaticMarkup(renderWebDocument(previewAuthDocument).element);
   const error = renderToStaticMarkup(renderWebDocument(previewErrorDocument).element);
   const capture = renderToStaticMarkup(createElement(CaptureView, previewCaptureViewProps));
@@ -249,7 +258,7 @@ export interface WritePreviewGalleryOptions {
   outputDir: string;
   /**
    * Path to a brand-asset roster JSON file (`BrandAssetEntry[]`). Optional:
-   * when omitted, only `gallery.html` is written. When given and the roster
+   * when omitted, the gallery, catalog and Launch-pack pages are written. When given and the roster
    * is complete, the public brand guide (`guide.html`) and the internal
    * system audit (`audit.html`) are written beside it.
    */
@@ -262,11 +271,11 @@ export interface WritePreviewGalleryResult {
   entryCount: number;
   guidePath?: string;
   auditPath?: string;
-  /** Path to the content catalog (`content-catalog.html`): every content-section block, specimen arrangement and ground through `LandingView`, against the same copied stylesheets. */
+  /** Path to the function index (`content-catalog.html`), linking the nested catalog pages. */
   contentCatalogPath: string;
   /** Path to the Launch-pack index (issue #1204's own "views branded ... rendered templates" ask) — links every file this call wrote. */
   indexPath: string;
-  /** Every file this call wrote, as basenames relative to `outputDir`, in write order — `PREVIEW_GALLERY_FILENAME` first, then `CONTENT_CATALOG_FILENAME`, `LAUNCH_PACK_INDEX_FILENAME` last. Does not include the three copied stylesheets. */
+  /** Every file this call wrote, as paths relative to `outputDir`, in write order — `PREVIEW_GALLERY_FILENAME` first, then `CONTENT_CATALOG_FILENAME`, `LAUNCH_PACK_INDEX_FILENAME` last. Does not include the three copied stylesheets. */
   writtenFiles: string[];
 }
 
@@ -331,6 +340,12 @@ export function writePreviewGallery(options: WritePreviewGalleryOptions): WriteP
   const contentCatalogPath = join(outputDir, CONTENT_CATALOG_FILENAME);
   writeFileSync(contentCatalogPath, buildContentCatalogHtml(), "utf8");
   const writtenFiles: string[] = [PREVIEW_GALLERY_FILENAME, CONTENT_CATALOG_FILENAME];
+  const catalogPages = buildCatalogFunctionPages({ designerTokens: DESIGNER_TOKENS_BASENAME, utilities: PREVIEW_UTILITIES_BASENAME, brand: BRAND_COPY_BASENAME });
+  mkdirSync(join(outputDir, "catalog"), { recursive: true });
+  for (const entry of catalogPages) {
+    writeFileSync(join(outputDir, entry.file), entry.content, "utf8");
+    writtenFiles.push(entry.file);
+  }
 
   const result: WritePreviewGalleryResult = {
     galleryPath,
@@ -349,8 +364,8 @@ export function writePreviewGallery(options: WritePreviewGalleryOptions): WriteP
     },
     {
       heading: "Content catalog",
-      description: "Every content-section block, specimen arrangement and ground through LandingView, at typical and maximum copy lengths, each band captioned in the preview chrome.",
-      links: [{ file: CONTENT_CATALOG_FILENAME, label: CONTENT_CATALOG_FILENAME }],
+      description: "Seven function pages with axis examples, compatible recipes and a complete composition.",
+      links: [{ file: CONTENT_CATALOG_FILENAME, label: CONTENT_CATALOG_FILENAME }, ...catalogPages.map(entry => ({ file: entry.file, label: entry.file }))],
     },
   ];
 

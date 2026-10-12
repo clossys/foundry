@@ -772,8 +772,8 @@ const comparisonVisual: SectionedViewContentSection = {
     sides: [
       {
         id: "before",
-        heading: copy("compare-a.before.label", "Spreadsheet"),
-        label: existingCopy("compare-a.before.label"),
+        heading: copy("compare-a.before.heading", "Rows and reminders"),
+        label: copy("compare-a.before.label", "Spreadsheet"),
       description: copy("compare-a.before.description", "Checks live in tabs per month; overdue items are found when someone scrolls past them."),
       visual: {
         id: "sheet",
@@ -791,8 +791,8 @@ const comparisonVisual: SectionedViewContentSection = {
       },
       {
         id: "after",
-        heading: copy("compare-a.after.label", "Fieldmark"),
-        label: existingCopy("compare-a.after.label"),
+        heading: copy("compare-a.after.heading", "One shared work record"),
+        label: copy("compare-a.after.label", "Fieldmark"),
       description: copy("compare-a.after.description", "Checks carry their own due dates; overdue items are listed first, with an owner."),
       visual: {
         id: "record",
@@ -829,8 +829,8 @@ const comparisonPoints: SectionedViewContentSection = {
     sides: [
       {
         id: "before",
-        heading: copy("compare-b.before.label", "Without the record"),
-        label: existingCopy("compare-b.before.label"),
+        heading: copy("compare-b.before.heading", "Find the missing context"),
+        label: copy("compare-b.before.label", "Without the record"),
       points: [
         copy("compare-b.before.note", "A handwritten note, if the last shift left one"),
         copy("compare-b.before.readings", "Readings kept in a notebook in someone's locker"),
@@ -840,8 +840,8 @@ const comparisonPoints: SectionedViewContentSection = {
     },
       {
         id: "after",
-        heading: copy("compare-b.after.label", "With the record"),
-        label: existingCopy("compare-b.after.label"),
+        heading: copy("compare-b.after.heading", "See the complete history"),
+        label: copy("compare-b.after.label", "With the record"),
       points: [
         copy("compare-b.after.jobs", "Every open job with its last note and owner"),
         copy("compare-b.after.readings", "Every reading filed against its asset, with the time"),
@@ -1042,7 +1042,7 @@ export const CONTENT_CATALOG_CAPTIONS: readonly ContentCatalogCaption[] = [
   { sectionId: "catalog-specimen-flow", title: "Specimen, stacked, flow", detail: "sunken · one panel with two labelled field groups and a handoff footer", budget: "typical" },
   { sectionId: "catalog-cards-text", title: "Items, bento, text", detail: "base · rows three thirds, third + two-thirds, full · icons and card eyebrows", budget: "max" },
   { sectionId: "catalog-comparison-visual", title: "Matrix, visuals", detail: "sunken · a description and a panel on each side", budget: "typical" },
-  { sectionId: "catalog-steps-plain", title: "Items, connected, 4 steps, actor labels", detail: "base · no visuals", budget: "max" },
+  { sectionId: "catalog-steps-plain", title: "Items, connected, 4 steps, actor labels", detail: "base · no visuals · demonstrates the four-step count warning", budget: "max" },
   { sectionId: "catalog-cards-visual", title: "Items, bento, visuals, linked", detail: "sunken · rows half + half, two-thirds + third · each card one link (its title) · status rows, shares, table, files", budget: "typical" },
   { sectionId: "catalog-comparison-points", title: "Matrix, points", detail: "base · 4 points a side, no visuals", budget: "max" },
   { sectionId: "catalog-steps-lanes-visual", title: "Items, connected, visual lanes", detail: "base · three steps, two actors, terminal node · Sample data.", budget: "typical" },

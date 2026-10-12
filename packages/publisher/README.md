@@ -4184,32 +4184,32 @@ publisher-preview <brand.css> <output-directory> [roster.json]
 The Launch pack's v0 preview: every off-the-shelf boilerplate view a
 consumer relies on until they build custom views, rendered against one
 real `brand.css` after Designer's brand-file coverage check passes, into
-one flat output directory whose `index.html` links every file written.
+root pages and a `catalog/` directory. The root `index.html` links every file written.
 Nothing here makes a network call, and the same inputs always produce
 byte-identical output. Exit codes are unchanged: `0` = output written,
 `1` = the brand file or roster failed its own check (nothing is written),
 `2` = bad arguments or an unexpected error.
 
-What it renders, all from fixture copy in `src/preview/fixture-copy-
-registry.ts` (never hardcoded in a renderer):
+What it renders, from approved fixture copy in `src/preview/fixture-copy-registry.ts`
+and `src/preview/catalog/copy.ts` (never hardcoded in a renderer):
 
 - **Web views** (`gallery.html`) — every shipped view: `MarketingView`,
   `SectionedView`, `AuthView`, `ErrorView`, `CaptureView`, `DocumentView`,
-  `CollectionView`.
-- **Content catalog** (`content-catalog.html`): one `LandingView` page
-  rendered from a full `content-section` document, through
-  `resolveSectionedViewDocument`. It shows every block (FeatureGrid in each
-  treatment, column count and emphasis, CardGrid bento cards in every span
-  row, Comparison with and without visuals, TopicList in 1 and 2 columns,
-  OrderedStepSequence with and without visuals and actor labels, the Faq
-  split band), every specimen arrangement stacked and split on both sides, an
-  intro band, the close band, and base, sunken and inverse grounds. Each band
-  is written at a typical length or at the maximum budget in Designer's
-  `CONTENT.md`. A small numbered caption in the preview chrome, outside the
-  page markup, names the next band's Designer block and its variant (for
-  example "FeatureGrid, rule, 4 columns"), and the contents list uses the
-  same names. Its sample copy (`src/preview/fixture-content-catalog.ts`) is for an
-  invented company.
+  `CollectionView`, and `LandingView (hero-compact)`.
+- **Content catalog** (`content-catalog.html`): a function index for Say,
+  Items, Matrix, Frame, Media, Recipes and Other. Each entry explains its
+  purpose and links to a page under `catalog/`. The pages show configurations
+  grouped by axis, with captions beside generic sample copy. Recipes link to
+  compatible examples and describe fixed, default and configurable axes;
+  a composed page shows a hero, three topic bands, an approval Scene, FAQ and
+  closing call to action. Other links to nine existing published-kind examples
+  in the web-view gallery, without adding replacement fixtures.
+
+  The catalog has 43 configuration/composition fixtures. Media distinguishes
+  three Scene templates from seven source-document formats. Navigation and
+  captions are preview chrome outside the rendered examples. The historical
+  multi-band fixture remains independently tested, including its deliberate
+  four-step count warning and original variety findings.
 - **Site** (`site-*.html`) — fixtures for `templates/site`'s routes,
   rendered through `MarketingView` for home/about/contact/privacy/terms and
   a direct `ErrorView` call for `not-found`. The template's own routes now
@@ -4243,7 +4243,8 @@ cosmetic gap.
 Every page links three copied stylesheets, in this order: Designer's
 `tokens.css` (as `designer-tokens.css`), this package's
 `styles/preview.css` (as `publisher-preview.css`), then the brand file (as
-`brand.css`). `styles/preview.css` stands in for a consumer's own Tailwind
+`brand.css`). Nested catalog pages use `../` for these same three files.
+`styles/preview.css` stands in for a consumer's own Tailwind
 build: Tailwind's preflight in the `foundry-ui-base` layer, then one compile
 of Designer's component classes and every class Publisher's views emit
 (band padding, grids, gaps), which Designer's `compiled.css` alone does not

@@ -80,7 +80,7 @@ function renderBlock(block: ResolvedSectionedViewContentBlock, section: Resolved
     case "matrix": {
       const ids = new Map(block.sides.map(side => [side.id, matrixSideId(section.id, side.id)]));
       const sideData = (side: typeof block.sides[number]): MatrixSide => ({ ...side, id: ids.get(side.id)!, visual: side.visual === undefined ? undefined : <Specimen label={side.heading} panels={[panelData(side.visual)]} /> });
-      return <Matrix aria-labelledby={section.heading === undefined ? undefined : `${section.id}:heading`} sides={[sideData(block.sides[0]!), sideData(block.sides[1]!)]} featured={block.featured === undefined ? undefined : ids.get(block.featured)} headingLevel={3} ground={section.ground} />;
+      return <Matrix sides={[sideData(block.sides[0]!), sideData(block.sides[1]!)]} featured={block.featured === undefined ? undefined : ids.get(block.featured)} headingLevel={3} ground={section.ground} />;
     }
     case "items": {
       const items: ItemData[] = block.items.map(item => ({ id: item.id, heading: item.heading, description: item.description, eyebrow: item.eyebrow, icon: icon(item.icon), meta: item.meta, badge: item.badge, href: item.href, featured: item.featured, span: item.span, lane: item.lane, visual: partSpecimen(item.visual, item.id, item.heading) }));

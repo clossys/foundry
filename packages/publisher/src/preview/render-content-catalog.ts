@@ -1,3 +1,5 @@
+import { buildFunctionalCatalogIndex } from "./render-functional-catalog.js";
+export { buildCatalogFunctionPages } from "./render-functional-catalog.js";
 import { buttonLinkClassName } from "@clossys/designer/atoms/server";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -7,17 +9,9 @@ import { PREVIEW_UTILITIES_BASENAME } from "./preview-stylesheet.js";
 import { CONTENT_CATALOG_CALL_TO_ACTION, CONTENT_CATALOG_CAPTIONS, contentCatalogCopyResolver, contentCatalogDocument, type ContentCatalogCaption } from "./fixture-content-catalog.js";
 
 /**
- * The content catalog (`content-catalog.html`): one long page that renders
- * every content-section block, specimen arrangement and ground through the
- * real Publisher path (`resolveSectionedViewDocument`, then native `LandingView`),
- * so a designer or writer can judge the blocks with a consumer brand applied.
- *
- * The page itself is the native server LandingView's markup, byte for byte. The catalog
- * only adds preview chrome around it: a header with a table of contents, and
- * one small caption between bands naming what the next band shows and
- * whether its copy is written at a typical length or at the cookbook's
- * longest. The chrome uses its own neutral system styling, never brand
- * tokens, so it never reads as part of the page.
+ * Historical band composition retained for compatibility checks. The public
+ * content-catalog.html entry is now a function index; each nested page renders
+ * its resolved samples through the native Publisher views.
  */
 
 export const CONTENT_CATALOG_FILENAME = "content-catalog.html";
@@ -182,7 +176,7 @@ const CHROME_STYLE = `
  * stylesheet, then the brand file when given), the chrome header, and the
  * LandingView root with one chrome caption before each band.
  */
-export function buildContentCatalogHtml(stylesheets: ContentCatalogStylesheets = DEFAULT_CONTENT_CATALOG_STYLESHEETS): string {
+export function buildHistoricalContentCatalogHtml(stylesheets: ContentCatalogStylesheets = DEFAULT_CONTENT_CATALOG_STYLESHEETS): string {
   const render = renderContentCatalog();
   const links = [stylesheets.designerTokens, stylesheets.utilities, ...(stylesheets.brand === null ? [] : [stylesheets.brand])]
     .map((href) => `  <link rel="stylesheet" href="${escapeHtml(href)}" />`)
@@ -214,4 +208,9 @@ ${render.rootClose}
 </body>
 </html>
 `;
+}
+
+/** Function index for the nested catalog pages. */
+export function buildContentCatalogHtml(stylesheets: ContentCatalogStylesheets = DEFAULT_CONTENT_CATALOG_STYLESHEETS): string {
+  return buildFunctionalCatalogIndex(stylesheets);
 }
