@@ -2666,9 +2666,12 @@ links its legal row to the public site's `/privacy` and `/terms` on
 
 **Which views fit inside the frame.**
 
-| Safe inside `SiteFrame` (no `<main>` of their own when no chrome prop is passed) | Still render their own `<main>` |
+| Safe inside `SiteFrame` (no `<main>` of their own) | Still render their own `<main>` |
 | --- | --- |
-| `AuthView`, `CaptureView`, `DocumentView`, `StatusView`; deprecated: `BoundaryView`, `ErrorView` | `HeroView`, `LandingView`, `MarketingView`, `CollectionView`, `LegalView`, `ContactView`, `PackReviewView`, `BrandGuideView`, `SystemAuditView` |
+| `AuthView`, `CaptureView`, `DocumentView`, `StatusView` without chrome props; `LegalView` with `framed`; deprecated: `BoundaryView`, `ErrorView` without chrome props | `HeroView`, `LandingView`, `MarketingView`, `CollectionView`, `ContactView`, `PackReviewView`, `BrandGuideView`, `SystemAuditView` |
+
+`LegalView framed` renders its legal body inside `SiteFrame`; the frame owns
+the single `<main>`. Omitting `framed` keeps the self-chromed legal page.
 
 `SectionedView` and `LandingView` render their own `<main>` by default; pass
 `landmark="none"` to place either inside the frame. The built-in registry `AuthView` template
