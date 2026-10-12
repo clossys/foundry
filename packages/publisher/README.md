@@ -1375,6 +1375,11 @@ header or footer around it.
 
 ### `ContactView`
 
+**Deprecated:** use `SiteFrame` > `CaptureView` > `ContactForm` for contact
+pages; see the [framed contact example](#contactform--framed-contact-example).
+`ContactView` retains its compatibility page API and composes the same
+`ContactForm`, with its legacy frame. Do not nest that page inside `SiteFrame`.
+
 `ContactView`, exported from `@clossys/publisher/web`, is a single-screen
 contact page: a transparent banner, a page header, one form in a card, and a
 transparent legal footer. The form asks for a topic, a name, an
@@ -5246,4 +5251,70 @@ if (findings.some((finding) => finding.severity === "error")) {
 }
 export const resolved = resolveSectionedViewDocument(document, resolveCopy);
 // resolved.resolutions retains the registry revision and source for every CopyRef.
+```
+
+
+### `ContactForm` — framed contact example
+
+`ContactForm` fills `CaptureView`'s `form` slot and renders no page landmarks,
+card or `h1`. `SiteFrame` owns the page's single `main`; `CaptureView` owns
+its heading and card. Pass `formLabel` to name the card with caller copy.
+
+The form is exported from `@clossys/publisher/web`,
+`@clossys/publisher/web/client` and the web views entry, alongside
+`SignInForm` and `ActivateForm`. Import it from a host client boundary;
+the `react-server` entry exports a throwing `wrong-channel` stub, as the
+other client forms do. Both page entries compose equivalent frame and
+capture markup around that client form.
+
+`ContactFormCopy`, `ContactFormTopic`, `ContactFormValues`,
+`ContactFormProps` and `ContactFormDevPreview` are exported types.
+`ContactFormCopy` has ContactView's form copy keys, excluding `heading` and
+`description`: every label, placeholder, validation message, result message
+and button word must resolve from a Writer `CopyRef`. No wording is shipped.
+Topics have unique kebab-case ids and CopyRef labels. Unknown `initialTopic`
+ids are ignored. A literal `honeypotField` gives `ContactFormValues` that key
+in addition to `topic`, `name`, `email`, `phone` and `message`; it defaults to
+`website` and must match the handler configuration.
+
+`onSubmit` answers the existing `ContactResult` contract. Required-field or
+email validation refuses submission, renders one linked error summary and
+focuses the first invalid field. The form owns this summary; omit
+CaptureView's `errorSummary` and `submitted` slots when using ContactForm.
+`accepted` replaces the form with a status confirmation and focuses its `h2`.
+`invalid`, `rate-limited`, `unavailable`, rejected submissions and unknown
+answers retain entered values and focus submit, with one failure alert.
+The submit button is pending while sending. The honeypot is visually hidden,
+aria-hidden, out of the tab order and autocomplete-off, and its value reaches
+the handler. `devPreview` pins one of the existing closed review states and
+makes submission inert; production callers omit it.
+
+```tsx
+"use client";
+
+import { CaptureView, SiteFrame } from "@clossys/publisher/web";
+import { ContactForm } from "@clossys/publisher/web/client";
+import type { ContactFormProps, SiteFrameInput } from "@clossys/publisher/web";
+
+type CopyRef = Parameters<SiteFrameInput["resolveCopy"]>[0];
+declare const frame: SiteFrameInput;
+declare const form: ContactFormProps;
+declare const pageCopy: { heading: CopyRef; description: CopyRef; formLabel: CopyRef };
+
+export function FramedContactPage() {
+  // The host resolves its page copy; the form resolves its own approved refs.
+  const heading = frame.resolveCopy(pageCopy.heading)!.text;
+  const description = frame.resolveCopy(pageCopy.description)!.text;
+  const formLabel = frame.resolveCopy(pageCopy.formLabel)!.text;
+  return (
+    <SiteFrame {...frame}>
+      <CaptureView
+        heading={heading}
+        description={description}
+        formLabel={formLabel}
+        form={<ContactForm {...form} />}
+      />
+    </SiteFrame>
+  );
+}
 ```
