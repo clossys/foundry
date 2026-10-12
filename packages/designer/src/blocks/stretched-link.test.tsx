@@ -142,6 +142,6 @@ describe("linked items (stretched link)", () => {
   });
 
   it("refuses href on statement feature items: headlines, not destinations", () => {
-    expect(() => render(<Items arrangement="columns" emphasis="statement" items={features("plain")} />)).toThrow(TypeError);
+    expect(() => render(<Items arrangement="columns" scale="statement" items={features("plain")} />)).toThrow(TypeError);
   });
 });

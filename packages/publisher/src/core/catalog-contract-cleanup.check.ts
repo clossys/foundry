@@ -22,3 +22,10 @@ const description: SectionedViewMatrixSide = { id: "example", heading: ref, desc
 // @ts-expect-error Matrix points and visual cannot be combined.
 const mixed: SectionedViewMatrixSide = { ...side, visual: { id: "panel", title: ref, parts: [] } };
 void [section, item, items, side, key, align, compact, featured, emphasis, flow, placement, description, mixed];
+
+const inverseGround: SectionedViewContentSection = { ...section, ground: "inverse" };
+// @ts-expect-error Authored canonical ground is inverse or omitted.
+const authoredBase: SectionedViewContentSection = { ...section, ground: "base" };
+// @ts-expect-error Sunken is a resolved renderer ground, not an authored choice.
+const authoredSunken: SectionedViewContentSection = { ...section, ground: "sunken" };
+void [inverseGround, authoredBase, authoredSunken];

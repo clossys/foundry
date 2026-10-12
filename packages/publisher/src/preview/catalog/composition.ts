@@ -33,7 +33,6 @@ export const CATALOG_COMPOSITIONS: Record<string, SectionedViewDocument> = {
             {
                 "id": "recipe-topic-1",
                 "kind": "content-section",
-                "ground": "base",
                 "size": "standard",
                 "layout": "stacked",
                 "heading": {
@@ -140,7 +139,6 @@ export const CATALOG_COMPOSITIONS: Record<string, SectionedViewDocument> = {
             {
                 "id": "recipes-nav-composition",
                 "kind": "content-section",
-                "ground": "sunken",
                 "size": "standard",
                 "layout": "stacked",
                 "heading": {
@@ -349,7 +347,6 @@ export const CATALOG_COMPOSITIONS: Record<string, SectionedViewDocument> = {
             {
                 "id": "recipe-topic-3",
                 "kind": "content-section",
-                "ground": "base",
                 "size": "standard",
                 "layout": "stacked",
                 "heading": {
@@ -456,7 +453,6 @@ export const CATALOG_COMPOSITIONS: Record<string, SectionedViewDocument> = {
             {
                 "id": "recipe-faq",
                 "kind": "content-section",
-                "ground": "base",
                 "size": "standard",
                 "layout": "stacked",
                 "heading": {

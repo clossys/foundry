@@ -22,6 +22,13 @@ const doc = (...bands: SectionedViewSection[]): SectionedViewDocument => ({ id: 
 const rules = (document: SectionedViewDocument, code: string, options?: { callToAction?: { href: string } }) => checkPageFlow(document, options).filter((finding) => finding.rule === `sectioned-view-flow-${code}`);
 const linked = (id: string, href: string) => B({ id, block: { type: "items", recipe: "topics", items: [{ ...item, href }, { ...item, id: "two", href: `/${id}-other` }] } });
 
+it("weighs inverse on the effective close ground while preserving canonical anchors", () => {
+  const legacy: SectionedViewSection = { id: "legacy-close", kind: "faq", ground: "inverse", heading: ref, items: [{ id: "question", question: ref, answer: ref }] };
+  expect(rules(doc(B(), legacy), "inverse-weight")).toHaveLength(1);
+  expect(rules(doc(B(), legacy), "inverse-weight", { callToAction: { href: "/start" } })).toEqual([]);
+  expect(rules(doc(B(), section({ ground: "inverse", block: statementBlock })), "inverse-weight", { callToAction: { href: "/start" } })).toHaveLength(1);
+});
+
 describe("sectionWeight derivation", () => {
   const rows: [string, SectionedViewSection, string, string][] = [
     ["hero", hero, "hero", "hero"],

@@ -11,7 +11,6 @@ export const RECIPES_FIXTURES = [
     "section": {
         "id": "recipes-nav-composition",
         "kind": "content-section",
-        "ground": "sunken",
         "size": "standard",
         "layout": "stacked",
         "heading": {

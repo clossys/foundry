@@ -1,3 +1,4 @@
+import { planContentGrounds } from "./content-ground.js";
 import { desugarRecipe, resolveRoleActionEmphasis } from "./sectioned-view.js";
 import type { ComposeFinding } from "./types.js";
 import type { SectionedViewDocument, SectionedViewSection, SectionedViewContentSection, ResolvedSectionedViewSection, SectionedViewContentActionEmphasis } from "./sectioned-view.js";
@@ -91,6 +92,7 @@ function destination(href: string): string {
  */
 export function checkPageFlow(document: SectionedViewDocument, options: CheckPageFlowOptions = {}): SectionedViewFlowWarning[] {
   if (document.sections[0]?.kind !== "hero") return [];
+  const grounds = planContentGrounds([document], { callToAction: options.callToAction === undefined ? false : true }).bands;
   const body = document.sections.slice(1).map((section, index) => ({ section, ...sectionWeight(section), path: `sections.${index + 1}` }));
   const findings: SectionedViewFlowWarning[] = [];
   const warn = (code: string, path: string, message: string) => findings.push({ rule: `sectioned-view-flow-${code}`, severity: "warning", path, message: `${path} ${message}` });
@@ -119,8 +121,7 @@ export function checkPageFlow(document: SectionedViewDocument, options: CheckPag
   const last = body[n - 1];
   if (last?.weight === "A" && last.shape !== "proof") warn("closing-band", last.path, "competes with the close; end on a supporting band, breather or proof set piece.");
   body.forEach((band, index) => {
-    // Rhythm only assigns base/sunken; inverse is always explicit, as in variety.
-    if (band.section.ground === "inverse" && (band.weight !== "A" || band.shape !== "statement" || index === 0 || index === n - 1)) warn("inverse-weight", band.path, "uses inverse outside a middle statement set piece; change the ground or move the statement away from the first and last body bands.");
+    if (grounds[index + 1]?.ground === "inverse" && (band.weight !== "A" || band.shape !== "statement" || index === 0 || index === n - 1)) warn("inverse-weight", band.path, "uses inverse outside a middle statement set piece; change the ground or move the statement away from the first and last body bands.");
   });
   const primaryTargets: { href: string; path: string }[] = [];
   document.sections[0].actions?.forEach((action, index) => {

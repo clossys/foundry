@@ -96,7 +96,6 @@ export const heroCompactCatalogDocument: SectionedViewDocument = {
 const introMax: SectionedViewContentSection = {
   id: "catalog-intro",
   kind: "content-section",
-  ground: "base",
   eyebrow: copy("intro.eyebrow", "How the record works"),
   heading: copy("intro.heading", "One record replaces the binder, the inbox and the spreadsheet"),
   description: copy("intro.description", "Technicians log work where it happens, supervisors assign and close it, and the record keeps every reading, photo and signature against the asset it belongs to. Records already kept in a spreadsheet import as they are, so nothing is retyped."),
@@ -150,7 +149,6 @@ const workOrderPanel: SectionedViewSpecimenPanel = {
 const specimenSingle: SectionedViewContentSection = {
   id: "catalog-specimen-single",
   kind: "content-section",
-  ground: "sunken",
   eyebrow: copy("single.eyebrow", "Work orders"),
   heading: copy("single.heading", "Each job carries its own evidence from open to close"),
   description: copy("single.description", "A work order holds the asset, the fault, the readings taken and the sign-off, so the person who closes it and the person who audits it see the same thing."),
@@ -164,7 +162,6 @@ const specimenSingle: SectionedViewContentSection = {
 const featuresPlain: SectionedViewContentSection = {
   id: "catalog-features-plain",
   kind: "content-section",
-  ground: "base",
   eyebrow: copy("plain.eyebrow", "Daily work"),
   heading: copy("plain.heading", "Less chasing, more time on the floor"),
   description: copy("plain.description", "The three things a site team does every day, each recorded once and visible to everyone who needs it."),
@@ -192,7 +189,6 @@ const scheduleRow = (id: string, date: string, label: string, amount: string, to
 const splitEnd: SectionedViewContentSection = {
   id: "catalog-split-end",
   kind: "content-section",
-  ground: "sunken",
   layout: "split-end",
   eyebrow: copy("split-end.eyebrow", "Inspections"),
   heading: copy("split-end.heading", "Overdue checks surface before they become findings"),
@@ -225,7 +221,6 @@ const splitEnd: SectionedViewContentSection = {
 const featuresRule: SectionedViewContentSection = {
   id: "catalog-features-rule",
   kind: "content-section",
-  ground: "base",
   eyebrow: copy("rule.eyebrow", "Built for multi-site teams"),
   heading: copy("rule.heading", "The same record works for one building or for forty"),
   description: copy("rule.description", "Sites share one asset register and one set of procedures, while each keeps its own schedule and team, and reports roll up across sites without anyone rebuilding them."),
@@ -272,7 +267,6 @@ const historyRow = (id: string, field: string, person: string, when: string, ton
 const splitStart: SectionedViewContentSection = {
   id: "catalog-split-start",
   kind: "content-section",
-  ground: "sunken",
   layout: "split-start",
   eyebrow: copy("split-start.eyebrow", "Audit trail"),
   heading: copy("split-start.heading", "Every change is kept, so audits take hours"),
@@ -348,7 +342,6 @@ function assetReading(id: string, title: string, meta: string, tone: SectionedVi
 const splitText: SectionedViewContentSection = {
   id: "catalog-split-text",
   kind: "content-section",
-  ground: "base",
   layout: "split-end",
   eyebrow: copy("split-text.eyebrow", "Reporting"),
   heading: copy("split-text.heading", "Every audit question has a record behind it"),
@@ -370,7 +363,6 @@ const splitText: SectionedViewContentSection = {
 const specimenRow: SectionedViewContentSection = {
   id: "catalog-specimen-row",
   kind: "content-section",
-  ground: "sunken",
   eyebrow: copy("row.eyebrow", "Assets"),
   heading: copy("row.heading", "See an asset's condition at a glance"),
   description: copy("row.description", "Three assets at one site, each with its last reading and the work open against it."),
@@ -392,7 +384,6 @@ const specimenRow: SectionedViewContentSection = {
 const featuresPlate: SectionedViewContentSection = {
   id: "catalog-features-plate",
   kind: "content-section",
-  ground: "base",
   eyebrow: copy("plate.eyebrow", "Field and office"),
   heading: copy("plate.heading", "The floor and the office finally read the same record"),
   description: copy("plate.description", "Technicians get a short list and large buttons on a phone; supervisors get the schedule, the backlog and the spend on a desktop, and both edit one record underneath."),
@@ -423,7 +414,6 @@ const featuresPlate: SectionedViewContentSection = {
 const specimenStack: SectionedViewContentSection = {
   id: "catalog-specimen-stack",
   kind: "content-section",
-  ground: "sunken",
   eyebrow: copy("stack.eyebrow", "Parts and spend"),
   heading: copy("stack.heading", "Know what each repair cost before the invoice arrives"),
   description: copy("stack.description", "Parts and labour post to the job as they are used, so spend tracks against each site's budget."),
@@ -482,7 +472,6 @@ const specimenStack: SectionedViewContentSection = {
 const topicsTwo: SectionedViewContentSection = {
   id: "catalog-topics-two",
   kind: "content-section",
-  ground: "base",
   eyebrow: copy("topics.eyebrow", "What it covers"),
   heading: copy("topics.heading", "The everyday records a maintenance team keeps, in one place"),
   description: copy("topics.description", "Each of these is a record type in its own right, with its own fields and history, and each links back to the assets and the sites it concerns."),
@@ -504,12 +493,12 @@ const topicsTwo: SectionedViewContentSection = {
   }
 };
 
-function topicGroups(count: 3 | 4, ground: "base" | "sunken"): SectionedViewContentSection {
+function topicGroups(count: 3 | 4): SectionedViewContentSection {
   const prefix = `topics-groups-${count}`;
   const labels = ["Access", "Location", "Models", "Oversight"].slice(0, count);
   const groups = labels.map((label, g) => ({ id: `category-${g}`, label: copy(`${prefix}.group-${g}.label`, label), items: [0, 1].map(i => ({ id: `topic-${g}-${i}`, heading: copy(`${prefix}.group-${g}.item-${i}.heading`, i === 0 ? "Current records" : "Review history"), description: copy(`${prefix}.group-${g}.item-${i}.description`, i === 0 ? "See the details kept with every active record." : "Follow earlier changes and the evidence behind each decision.") })) }));
   return {
-    id: `catalog-${prefix}`, kind: "content-section", ground,
+    id: `catalog-${prefix}`, kind: "content-section",
     eyebrow: copy(`${prefix}.eyebrow`, "Coverage"),
     heading: copy(`${prefix}.heading`, "Find the records for each part of the work"),
     description: copy(`${prefix}.description`, "Browse the categories to see what each record holds."),
@@ -517,13 +506,12 @@ function topicGroups(count: 3 | 4, ground: "base" | "sunken"): SectionedViewCont
     ...(count === 4 ? { footnote: { text: copy(`${prefix}.footnote`, "Need help finding a record?"), link: { label: copy(`${prefix}.link`, "Ask the team"), href: "mailto:help@example.com" } } } : {})
   };
 }
-const topicsGroupsFour = topicGroups(4, "sunken");
-const topicsGroupsThree = topicGroups(3, "base");
+const topicsGroupsFour = topicGroups(4);
+const topicsGroupsThree = topicGroups(3);
 
 const topicsLinked: SectionedViewContentSection = {
   id: "catalog-topics-linked",
   kind: "content-section",
-  ground: "sunken",
   eyebrow: copy("topics-linked.eyebrow", "Guides"),
   heading: copy("topics-linked.heading", "Start with the guide for your role"),
   description: copy("topics-linked.description", "Each guide walks one role through its first week in the record."),
@@ -544,7 +532,6 @@ const topicsLinked: SectionedViewContentSection = {
 const specimenFlow: SectionedViewContentSection = {
   id: "catalog-specimen-flow",
   kind: "content-section",
-  ground: "sunken",
   eyebrow: copy("flow.eyebrow", "Requests"),
   heading: copy("flow.heading", "A reported fault becomes a planned job"),
   description: copy("flow.description", "Anyone on site can report a fault; a supervisor turns it into a work order with an owner and a date."),
@@ -569,7 +556,6 @@ const specimenFlow: SectionedViewContentSection = {
 const stepsPlain: SectionedViewContentSection = {
   id: "catalog-steps-plain",
   kind: "content-section",
-  ground: "base",
   eyebrow: copy("steps-plain.eyebrow", "Getting started"),
   heading: copy("steps-plain.heading", "From a spreadsheet to a live record in four steps"),
   description: copy("steps-plain.description", "A team starts with one site and the records it already keeps, then adds sites once the first runs on the new record without the old spreadsheet beside it."),
@@ -606,7 +592,6 @@ const stepsPlain: SectionedViewContentSection = {
 const cardsVisual: SectionedViewContentSection = {
   id: "catalog-cards-visual",
   kind: "content-section",
-  ground: "sunken",
   eyebrow: copy("cards-a.eyebrow", "Views"),
   heading: copy("cards-a.heading", "The same record, read four ways"),
   description: copy("cards-a.description", "Each role sees the part of the record it acts on, without a separate report to build."),
@@ -701,7 +686,6 @@ const cardsVisual: SectionedViewContentSection = {
 const cardsText: SectionedViewContentSection = {
   id: "catalog-cards-text",
   kind: "content-section",
-  ground: "base",
   eyebrow: copy("cards-b.eyebrow", "Integrations and data"),
   heading: copy("cards-b.heading", "Your records stay yours and move where you need them"),
   description: copy("cards-b.description", "Fieldmark reads from and writes to the systems a facilities team already runs, and every record can leave in an open format the day you ask for it."),
@@ -761,7 +745,6 @@ const cardsText: SectionedViewContentSection = {
 const comparisonVisual: SectionedViewContentSection = {
   id: "catalog-comparison-visual",
   kind: "content-section",
-  ground: "sunken",
   eyebrow: copy("compare-a.eyebrow", "Before and after"),
   heading: copy("compare-a.heading", "The same week, before and after the record"),
   description: copy("compare-a.description", "One site's inspection week, as it looked in the spreadsheet and as it looks now."),
@@ -818,7 +801,6 @@ const comparisonVisual: SectionedViewContentSection = {
 const comparisonPoints: SectionedViewContentSection = {
   id: "catalog-comparison-points",
   kind: "content-section",
-  ground: "base",
   eyebrow: copy("compare-b.eyebrow", "Handover"),
   heading: copy("compare-b.heading", "What the next shift inherits, with and without the record"),
   description: copy("compare-b.description", "A shift handover is where maintenance knowledge gets lost; here is what the incoming technician receives in each case, on the same Monday morning at the same site."),
@@ -855,7 +837,6 @@ const comparisonPoints: SectionedViewContentSection = {
 const stepsVisual: SectionedViewContentSection = {
   id: "catalog-steps-visual",
   kind: "content-section",
-  ground: "sunken",
   eyebrow: copy("steps-visual.eyebrow", "Closing a job"),
   heading: copy("steps-visual.heading", "How a repair is signed off"),
   description: copy("steps-visual.description", "Three people touch a typical repair; each step leaves its evidence in the record."),
@@ -921,7 +902,6 @@ const faqItem = (id: string, question: string, answer: string) => ({ id, heading
 const faqSplit: SectionedViewContentSection = {
   id: "catalog-faq",
   kind: "content-section",
-  ground: "base",
   layout: "split-end",
   eyebrow: copy("faq.eyebrow", "Questions"),
   heading: copy("faq.heading", "What teams ask before they switch"),
@@ -948,7 +928,6 @@ const stepsLanes = (visual: boolean): SectionedViewContentSection => {
   return {
     id: `catalog-${key}`,
     kind: "content-section",
-    ground: visual ? "base" : "sunken",
     eyebrow: copy(`${key}.eyebrow`, "Handover"),
     heading: copy(`${key}.heading`, "Who acts at each step"),
     description: copy(`${key}.description`, "Two actors pass a record between them until the work is complete."),

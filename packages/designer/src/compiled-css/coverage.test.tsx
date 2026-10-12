@@ -284,7 +284,7 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
           trees.push(render(<Items arrangement="columns" ground={ground} columns={columns} treatment={treatment} items={Array.from({ length: columns }, (_, i) => item(String(i)))} />));
         }
       }
-      trees.push(render(<Items arrangement="columns" ground={ground} emphasis="statement" items={["a", "b", "c"].map(id => ({ id, heading: `Heading ${id}`, description: "Description." }))} />));
+      trees.push(render(<Items arrangement="columns" ground={ground} scale="statement" items={["a", "b", "c"].map(id => ({ id, heading: `Heading ${id}`, description: "Description." }))} />));
       trees.push(render(<Items arrangement="columns" ground={ground} columns={2} treatment="plate" items={[{ ...item("a"), eyebrow: "E" }, item("b")]} />));
       trees.push(
         render(

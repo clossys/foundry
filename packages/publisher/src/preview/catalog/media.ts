@@ -11,7 +11,6 @@ export const MEDIA_FIXTURES = [
     "section": {
         "id": "media-specimen",
         "kind": "content-section",
-        "ground": "base",
         "size": "standard",
         "layout": "stacked",
         "heading": {
@@ -151,7 +150,6 @@ export const MEDIA_FIXTURES = [
     "section": {
         "id": "media-key",
         "kind": "content-section",
-        "ground": "base",
         "size": "standard",
         "layout": "stacked",
         "heading": {
@@ -312,7 +310,6 @@ export const MEDIA_FIXTURES = [
     "section": {
         "id": "media-record-one",
         "kind": "content-section",
-        "ground": "base",
         "size": "standard",
         "layout": "stacked",
         "heading": {
@@ -374,7 +371,6 @@ export const MEDIA_FIXTURES = [
     "section": {
         "id": "media-record-three",
         "kind": "content-section",
-        "ground": "base",
         "size": "standard",
         "layout": "stacked",
         "heading": {
@@ -470,7 +466,6 @@ export const MEDIA_FIXTURES = [
     "section": {
         "id": "media-converge",
         "kind": "content-section",
-        "ground": "base",
         "size": "standard",
         "layout": "stacked",
         "heading": {
@@ -647,7 +642,6 @@ export const MEDIA_FIXTURES = [
     "section": {
         "id": "media-evidence",
         "kind": "content-section",
-        "ground": "base",
         "size": "standard",
         "layout": "split-end",
         "heading": {
@@ -741,7 +735,6 @@ export const MEDIA_FIXTURES = [
     "section": {
         "id": "media-meter-previous",
         "kind": "content-section",
-        "ground": "base",
         "size": "standard",
         "layout": "stacked",
         "heading": {

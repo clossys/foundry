@@ -266,13 +266,16 @@ function bandBlocks(afterSection: Readonly<Record<string, ReactNode>>, canonical
  * (`py-5xl`, `py-6xl` from `tablet-lg`).
  *
  * Grounds (`planLandingViewGrounds`): the hero keeps its section's ground.
- * With a call to action, the closing pair is fixed by the view: the last
- * band on `base`, the call to action on `inverse`. The view draws no rule
+ * The last automatic body band defaults to `base`; a final legacy band
+ * before a call to action is forced to `base`, while canonical explicit
+ * `inverse` remains an anchor. The call to action is on `inverse`.
+ * The view draws no rule
  * at either edge of the call to action: the ground change from the band
  * above is its top seam, and the frame footer's own top hairline (Designer
  * `SiteFooter`) is its foot, so the seam is drawn once. Sections that omit
- * `ground` under the `"view"` rhythm alternate `base`/`sunken` counting
- * upward from the last band, so no page needs an even or odd section count;
+ * canonical `ground`, or legacy `ground` under the `"view"` rhythm, take
+ * `sunken` above `base`, and `base` above `sunken` or `inverse`, counting
+ * upward from the last body band;
  * an explicit ground still wins. Each band carries `data-landing-ground`.
  * The view paints the `base` ground itself (on its root), so a band on
  * `base` never shows a page or document background through it.

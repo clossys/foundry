@@ -1,3 +1,4 @@
+import { planContentGrounds } from "./content-ground.js";
 import type { CopyRef, CopyResolution, CopyResolver } from "@clossys/writer";
 import { isSanctionedHref } from "../internal/href.js";
 import type { ComposeFinding } from "./types.js";
@@ -521,7 +522,8 @@ export type SectionedViewContentBlockType = SectionedViewContentBlock["type"];
 export interface SectionedViewContentSection {
   id: string;
   kind: "content-section";
-  ground?: SectionedViewGround;
+  /** Omission lets the view plan the body cadence; inverse is an authored anchor. */
+  ground?: "inverse";
   size?: FrameSize;
   layout?: FrameLayout;
   eyebrow?: CopyRef;
@@ -743,16 +745,20 @@ function rhythmGroundForSectionIndex(index: number): SectionedViewGround {
 /** The ground a `"view"` rhythm resolves an omitted section to, before a view assigns its own. */
 const VIEW_RHYTHM_RESOLVED_GROUND: SectionedViewGround = "base";
 
-function applySectionGroundRhythm(document: SectionedViewDocument): SectionedViewDocument {
-  if (document.sectionGroundRhythm === undefined) return document;
-  if (document.sectionGroundRhythm === "view") {
-    return { ...document, sections: document.sections.map((section) => ({ ...section, ground: section.ground ?? VIEW_RHYTHM_RESOLVED_GROUND })) };
-  }
+/** Internal effective grounds deliberately widen the authored canonical inverse-only field. */
+type GroundableContentSection = Omit<SectionedViewContentSection, "ground"> & { ground?: SectionedViewGround };
+type GroundableSection = Exclude<SectionedViewSection, SectionedViewContentSection> | GroundableContentSection;
+type GroundedSection = GroundableSection & { ground: SectionedViewGround };
+type GroundableDocument = Omit<SectionedViewDocument, "sections"> & { sections: GroundableSection[] };
+
+function applySectionGroundRhythm(document: SectionedViewDocument): GroundableDocument {
   return {
     ...document,
     sections: document.sections.map((section, index) => ({
       ...section,
-      ground: section.ground ?? rhythmGroundForSectionIndex(index),
+      ground: section.ground ?? (section.kind === "content-section" || document.sectionGroundRhythm === "view"
+        ? VIEW_RHYTHM_RESOLVED_GROUND
+        : document.sectionGroundRhythm === "base-then-sunken" ? rhythmGroundForSectionIndex(index) : undefined),
     })),
   };
 }
@@ -808,11 +814,12 @@ export function validateSectionedViewDocument(value: unknown): ComposeFinding[] 
       continue;
     }
     const hasGround = hasOwn(section, "ground");
-    if (!hasGround && !rhythmFillsGround) {
+    if (!hasGround && !rhythmFillsGround && section.kind !== "content-section") {
       findings.push(finding("sectioned-view-ground-required", `${path}.ground`, `${path}.ground is required when the document does not set sectionGroundRhythm.`));
     }
-    if (hasGround && (!isNonWhitespaceString(section.ground) || !GROUNDS.includes(section.ground as SectionedViewGround))) {
-      findings.push(finding("sectioned-view-ground", `${path}.ground`, `${path}.ground must be one of ${GROUNDS.join(", ")}.`));
+    const authoredGrounds = section.kind === "content-section" ? ["inverse"] : GROUNDS;
+    if (hasGround && (!isNonWhitespaceString(section.ground) || !authoredGrounds.includes(section.ground as SectionedViewGround))) {
+      findings.push(finding("sectioned-view-ground", `${path}.ground`, section.kind === "content-section" ? `${path}.ground must be inverse or omitted for automatic cadence.` : `${path}.ground must be one of ${GROUNDS.join(", ")}.`));
     }
     if (!FRAGMENT_ID.test(section.id)) findings.push(finding("sectioned-view-section-id-fragment", `${path}.id`, `${path}.id must be a lowercase, fragment-safe identifier (letters, digits, and hyphens; starting with a letter).`));
     if (sectionIds.has(section.id)) findings.push(finding("sectioned-view-section-id-duplicate", `${path}.id`, `${path}.id duplicates another section id.`));
@@ -1165,6 +1172,7 @@ function validateRecords(
   keys: readonly string[],
   required: readonly string[],
   validateRecord: (record: Record<string, unknown>, recordPath: string) => void,
+  itemRetirementHint = false,
 ): Record<string, unknown>[] {
   if (!validateDenseArray(value, path, findings, "sectioned-view-items-shape", `${path} must be a non-empty array.`)) return [];
   if (value.length < bounds.min || value.length > bounds.max) findings.push(countFinding(path, bounds, value.length));
@@ -1174,7 +1182,7 @@ function validateRecords(
     const record = value[index];
     const recordPath = `${path}.${index}`;
     if (!isPlainObject(record) || !hasOnlyOwnKeys(record, keys) || !hasOwnKeys(record, ["id", ...required]) || !isNonWhitespaceString(record.id)) {
-      const hint = isPlainObject(record) && hasOwn(record, "featured") && !keys.includes("featured") ? " Item featured is retired; remove featured." : "";
+      const hint = itemRetirementHint && isPlainObject(record) && hasOwn(record, "featured") && !keys.includes("featured") ? " Item featured is retired; remove featured." : "";
       findings.push(finding("sectioned-view-item-shape", recordPath, `${recordPath} must be a plain item with a non-whitespace id, its required fields, and only its own fields.${hint}`));
       continue;
     }
@@ -1326,7 +1334,7 @@ function validateContentBlock(value: unknown, path: string, findings: ComposeFin
       if (recipe.requiredSlot !== undefined && item[recipe.requiredSlot] === undefined) findings.push(finding("recipe-slot", itemPath, `${block.recipe} requires ${recipe.requiredSlot} on every item.`));
     }
     if (block.scale === "statement" && ["icon", "eyebrow", "meta", "visual", "lane"].some((slot) => item[slot] !== undefined)) findings.push(finding("sectioned-view-content-statement", itemPath, "Statement items take heading, description and optional badge only."));
-  });
+  }, true);
   if (block.order === "connected" && block.caption !== undefined && !itemRecords.some((item) => item.visual !== undefined)) findings.push(finding("sectioned-view-content-steps-caption", `${path}.caption`, "A connected caption requires a step visual."));
   if (!Array.isArray(block.items)) return;
   const count = block.items.length;
@@ -1352,7 +1360,7 @@ function validateContentBlock(value: unknown, path: string, findings: ComposeFin
   }
   if (block.lanes !== undefined) {
     const lanes = validateRecords(block.lanes, `${path}.lanes`, findings, { min: C.laneDefinitions, max: C.laneDefinitions }, ["id", "label"], ["label"], (lane, lanePath) => validateCopy(lane.label, `${lanePath}.label`, findings));
-    if (lanes.length !== C.laneDefinitions || !["columns", "stacked"].includes(block.arrangement) || block.order !== "connected") findings.push(finding("sectioned-view-content-steps-lanes-shape", `${path}.lanes`, "Two lanes require connected columns or stacked items with three to five steps."));
+    if (lanes.length !== C.laneDefinitions || !["columns", "stacked"].includes(block.arrangement) || block.order !== "connected") findings.push(finding("sectioned-view-content-steps-lanes-shape", `${path}.lanes`, "Two lanes require connected columns or stacked items."));
     const ids = lanes.map((lane) => lane.id);
     if (itemRecords.some((item) => !ids.includes(item.lane)) || itemRecords[0]?.lane !== ids[0] || ids.some((id) => !itemRecords.some((item) => item.lane === id))) findings.push(finding("sectioned-view-content-steps-lanes-shape", `${path}.items`, "Every step names a known lane; start in the first lane and use both lanes."));
   }
@@ -1729,18 +1737,16 @@ export function resolveSectionedViewDocument(document: SectionedViewDocument, re
   const optional = (ref: CopyRef | undefined, path: string): string | undefined => (ref === undefined ? undefined : text(ref, path));
   const withGrounds = applySectionGroundRhythm(document);
   const sections = withGrounds.sections.map((section, sectionIndex) => resolveSection(assertResolvedSectionGround(section, `sections.${sectionIndex}`), `sections.${sectionIndex}`, text, optional));
-  if (document.sectionGroundRhythm === "view") {
-    const viewGrounds = document.sections.filter((section) => section.ground === undefined).map((section) => section.id);
-    return { id: document.id, sections, resolutions, viewGrounds };
-  }
+  const viewGrounds = document.sections.filter((section) => section.ground === undefined && (section.kind === "content-section" || document.sectionGroundRhythm === "view")).map((section) => section.id);
+  if (viewGrounds.length > 0 || document.sectionGroundRhythm === "view") return { id: document.id, sections, resolutions, viewGrounds };
   return { id: document.id, sections, resolutions };
 }
 
-function assertResolvedSectionGround(section: SectionedViewSection, path: string): SectionedViewSection & { ground: SectionedViewGround } {
+function assertResolvedSectionGround(section: GroundableSection, path: string): GroundedSection {
   if (section.ground === undefined) {
     throw new SectionedViewResolutionError("invalid-document", `resolveSectionedViewDocument refused invalid document: ${path}.ground is required after section ground rhythm resolution.`);
   }
-  return section as SectionedViewSection & { ground: SectionedViewGround };
+  return section as GroundedSection;
 }
 
 /** Resolves one status item's label and optional detail; shared between a group's items and a section's flat items. */
@@ -1748,7 +1754,7 @@ function resolveStatusItem(item: SectionedViewStatusItem, path: string, text: (r
   return { ...item, label: text(item.label, `${path}.label`), detail: optional(item.detail, `${path}.detail`) } as ResolvedSectionedViewStatusItem;
 }
 
-function resolveSection(section: SectionedViewSection & { ground: SectionedViewGround }, path: string, text: (ref: CopyRef, path: string) => string, optional: (ref: CopyRef | undefined, path: string) => string | undefined): ResolvedSectionedViewSection {
+function resolveSection(section: GroundedSection, path: string, text: (ref: CopyRef, path: string) => string, optional: (ref: CopyRef | undefined, path: string) => string | undefined): ResolvedSectionedViewSection {
   switch (section.kind) {
     case "hero": {
       const { media: sourceMedia, ...heroBase } = section;
@@ -2022,7 +2028,7 @@ function resolveRecordMedia(media: Extract<SectionedViewMedia, { type: "record" 
     const max = budgets[field]; return max === undefined ? text(ref, fieldPath) : boundedText(ref, fieldPath, text, max, "sectioned-view-record-text-length");
   }) as ResolvedCopyTree<typeof media>;
 }
-function resolveContentSection(section: SectionedViewContentSection & { ground: SectionedViewGround }, path: string, text: ResolveText): ResolvedSectionedViewContentSection {
+function resolveContentSection(section: GroundableContentSection & { ground: SectionedViewGround }, path: string, text: ResolveText): ResolvedSectionedViewContentSection {
   const { block, media, actions, footnote, ...base } = section;
   return {
     ...base,
@@ -2166,12 +2172,17 @@ export function checkSectionVariety(input: SectionedViewDocument | readonly Sect
   const documents = Array.isArray(input) ? (input as readonly SectionedViewDocument[]) : [input as SectionedViewDocument];
   const many = Array.isArray(input);
   const bands: BandShape[] = [];
+  const structurallyValid = documents.every(document => isPlainObject(document) && Array.isArray(document.sections) && document.sections.every(section => isPlainObject(section) && SECTION_KINDS.includes(section.kind)));
+  const planned = structurallyValid ? planContentGrounds(documents).bands : [];
+  const grounds = new Map(planned.map(band => [`${band.documentIndex}:${band.sectionIndex}`, band.ground]));
   documents.forEach((document, documentIndex) => {
     if (!isPlainObject(document) || !Array.isArray(document.sections)) return;
     document.sections.forEach((section, sectionIndex) => {
       if (!isPlainObject(section) || !SECTION_KINDS.includes(section.kind)) return;
       const path = many ? `documents.${documentIndex}.sections.${sectionIndex}` : `sections.${sectionIndex}`;
-      bands.push(bandShape(section, path, bands.length));
+      const band = bandShape(section, path, bands.length);
+      band.ground = grounds.get(`${documentIndex}:${sectionIndex}`) ?? band.ground;
+      bands.push(band);
     });
   });
 

@@ -11,7 +11,6 @@ export const MATRIX_FIXTURES = [
     "section": {
         "id": "matrix-points",
         "kind": "content-section",
-        "ground": "base",
         "size": "standard",
         "layout": "stacked",
         "heading": {
@@ -68,7 +67,6 @@ export const MATRIX_FIXTURES = [
     "section": {
         "id": "matrix-visuals",
         "kind": "content-section",
-        "ground": "base",
         "size": "standard",
         "layout": "stacked",
         "heading": {
@@ -160,7 +158,6 @@ export const MATRIX_FIXTURES = [
     "section": {
         "id": "matrix-featured-points",
         "kind": "content-section",
-        "ground": "base",
         "size": "standard",
         "layout": "stacked",
         "heading": {

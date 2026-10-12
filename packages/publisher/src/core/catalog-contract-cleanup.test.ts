@@ -4,7 +4,7 @@ import { desugarRecipe, SECTIONED_VIEW_CONTENT_CONTRACT, resolveSectionedViewDoc
 const ref = { id: "example.copy" };
 const items = (count: number) => Array.from({ length: count }, (_, index) => ({ id: `item-${index}`, heading: ref, description: ref }));
 const block = { type: "items", recipe: "features", items: items(3) };
-const section = { id: "example", kind: "content-section", ground: "base", heading: ref, block };
+const section = { id: "example", kind: "content-section", heading: ref, block };
 const errors = (band: unknown) => validateSectionedViewDocument({ id: "example", sections: [band] }).filter(finding => finding.severity === "error");
 
 describe("unreleased catalog contract cleanup", () => {
@@ -89,3 +89,18 @@ describe("unreleased catalog contract cleanup", () => {
     expect(errors({ ...section, block: undefined, media }).map(finding => finding.message).join(" ")).toMatch(/Key placement is derived; remove side/);
   });
 });
+
+  it.each(["base", "sunken"])("refuses authored canonical %s while legacy grounds remain valid", ground => {
+    expect(errors({ ...section, ground })).toEqual(expect.arrayContaining([expect.objectContaining({ rule: "sectioned-view-ground", path: "sections.0.ground" })]));
+    expect(errors({ id: "hero", kind: "hero", ground, heading: ref })).toEqual([]);
+    expect(errors({ ...section, ground: "inverse" })).toEqual([]);
+    const { ground: omitted, ...automatic } = section;
+    expect(errors(automatic)).toEqual([]);
+  });
+  it("keeps the Item retirement hint out of Matrix-side unknown fields", () => {
+    const matrix = { type: "matrix", sides: ["before", "after"].map(id => ({ id, heading: ref, points: [ref, ref], featured: false })) };
+    const findings = errors({ ...section, block: matrix });
+    expect(findings).toEqual(expect.arrayContaining([expect.objectContaining({ rule: "sectioned-view-item-shape", path: "sections.0.block.sides.0" })]));
+    expect(findings.map(finding => finding.message).join(" ")).not.toMatch(/Item featured is retired/);
+    expect(errors({ ...section, block: { ...block, items: items(3).map(item => ({ ...item, featured: false })) } }).map(finding => finding.message).join(" ")).toMatch(/Item featured is retired/);
+  });

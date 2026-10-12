@@ -11,7 +11,6 @@ export const ITEMS_FIXTURES = [
     "section": {
         "id": "items-columns",
         "kind": "content-section",
-        "ground": "base",
         "size": "standard",
         "layout": "stacked",
         "heading": {
@@ -61,7 +60,6 @@ export const ITEMS_FIXTURES = [
     "section": {
         "id": "items-rows",
         "kind": "content-section",
-        "ground": "base",
         "size": "standard",
         "layout": "stacked",
         "heading": {
@@ -109,7 +107,6 @@ export const ITEMS_FIXTURES = [
     "section": {
         "id": "items-bento",
         "kind": "content-section",
-        "ground": "base",
         "size": "standard",
         "layout": "stacked",
         "heading": {
@@ -182,7 +179,6 @@ export const ITEMS_FIXTURES = [
     "section": {
         "id": "items-stacked",
         "kind": "content-section",
-        "ground": "base",
         "size": "standard",
         "layout": "stacked",
         "heading": {
@@ -253,7 +249,6 @@ export const ITEMS_FIXTURES = [
     "section": {
         "id": "items-numbered",
         "kind": "content-section",
-        "ground": "base",
         "size": "standard",
         "layout": "stacked",
         "heading": {
@@ -296,7 +291,6 @@ export const ITEMS_FIXTURES = [
     "section": {
         "id": "items-connected",
         "kind": "content-section",
-        "ground": "base",
         "size": "standard",
         "layout": "stacked",
         "heading": {
@@ -404,7 +398,6 @@ export const ITEMS_FIXTURES = [
     "section": {
         "id": "items-flow-five",
         "kind": "content-section",
-        "ground": "base",
         "size": "standard",
         "layout": "stacked",
         "heading": {
@@ -496,7 +489,6 @@ export const ITEMS_FIXTURES = [
     "section": {
         "id": "items-disclose",
         "kind": "content-section",
-        "ground": "base",
         "size": "standard",
         "layout": "stacked",
         "heading": {
@@ -555,7 +547,6 @@ export const ITEMS_FIXTURES = [
     "section": {
         "id": "items-plain",
         "kind": "content-section",
-        "ground": "base",
         "size": "standard",
         "layout": "stacked",
         "heading": {
@@ -599,7 +590,6 @@ export const ITEMS_FIXTURES = [
     "section": {
         "id": "items-rule",
         "kind": "content-section",
-        "ground": "base",
         "size": "standard",
         "layout": "stacked",
         "heading": {
@@ -636,7 +626,6 @@ export const ITEMS_FIXTURES = [
     "section": {
         "id": "items-plate",
         "kind": "content-section",
-        "ground": "base",
         "size": "standard",
         "layout": "stacked",
         "heading": {
@@ -680,7 +669,6 @@ export const ITEMS_FIXTURES = [
     "section": {
         "id": "items-parallel-columns",
         "kind": "content-section",
-        "ground": "base",
         "size": "standard",
         "layout": "stacked",
         "heading": {
@@ -721,7 +709,6 @@ export const ITEMS_FIXTURES = [
     "section": {
         "id": "items-eyebrow",
         "kind": "content-section",
-        "ground": "base",
         "size": "standard",
         "layout": "stacked",
         "heading": {
@@ -768,7 +755,6 @@ export const ITEMS_FIXTURES = [
     "section": {
         "id": "items-icon-groups",
         "kind": "content-section",
-        "ground": "base",
         "size": "standard",
         "layout": "stacked",
         "heading": {
@@ -889,7 +875,6 @@ export const ITEMS_FIXTURES = [
     "section": {
         "id": "items-visual",
         "kind": "content-section",
-        "ground": "base",
         "size": "standard",
         "layout": "stacked",
         "heading": {
@@ -960,7 +945,6 @@ export const ITEMS_FIXTURES = [
     "section": {
         "id": "items-link",
         "kind": "content-section",
-        "ground": "base",
         "size": "standard",
         "layout": "stacked",
         "heading": {
@@ -1010,7 +994,6 @@ export const ITEMS_FIXTURES = [
     "section": {
         "id": "items-badge-meta",
         "kind": "content-section",
-        "ground": "base",
         "size": "standard",
         "layout": "split-end",
         "heading": {
@@ -1240,7 +1223,6 @@ export const ITEMS_FIXTURES = [
     "section": {
         "id": "items-two-lane-list",
         "kind": "content-section",
-        "ground": "base",
         "size": "standard",
         "layout": "stacked",
         "heading": {

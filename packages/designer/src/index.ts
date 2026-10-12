@@ -382,4 +382,4 @@ export {
 
 export { Item } from "./blocks/items/Item.js";
 export { Items } from "./blocks/items/Items.js";
-export type { ItemData, ItemProps, ItemBadge, ItemSize, ItemTreatment, ItemSpan, ItemsProps, ItemsArrangement, ItemsColumns, ItemsEmphasis, ItemsGroup, ItemsLane } from "./blocks/items/types.js";
+export type { ItemData, ItemProps, ItemBadge, ItemSize, ItemTreatment, ItemSpan, ItemsProps, ItemsArrangement, ItemsColumns, ItemsScale, ItemsGroup, ItemsLane } from "./blocks/items/types.js";

@@ -6,7 +6,7 @@ const ref = (id: string): CopyRef => ({ id: `topics.${id}` });
 const groups = (counts = [2, 2]) => counts.map((count, g) => ({ id: `group ${g}`, label: ref(`label-${g}`), items: Array.from({ length: count }, (_, i) => ({ id: `topic-${g}-${i}`, heading: ref("item"), description: ref("description") })) }));
 const fromGroups = (value: ReturnType<typeof groups>): SectionedViewItemsBlock => ({ type: "items", recipe: "topics", items: value.flatMap((group) => group.items), groups: value.map((group) => ({ ...group, items: group.items.map((item) => item.id) })) });
 const block = (counts?: number[]): SectionedViewItemsBlock => fromGroups(groups(counts));
-const doc = (value: unknown, extra = {}): SectionedViewDocument => ({ id: "topics", sections: [{ id: "topics", kind: "content-section", ground: "base", heading: ref("heading"), block: value, ...extra }] } as SectionedViewDocument);
+const doc = (value: unknown, extra = {}): SectionedViewDocument => ({ id: "topics", sections: [{ id: "topics", kind: "content-section", heading: ref("heading"), block: value, ...extra }] } as SectionedViewDocument);
 const rules = (value: unknown, extra = {}) => validateSectionedViewDocument(doc(value, extra)).map((f) => f.rule);
 const code = (suffix: string) => `sectioned-view-content-topics-groups-${suffix}`;
 const resolver = (label = "Category") => createCopyResolver({ id: "topics", locale: "en", revision: "1", source: { kind: "consumer", reference: "fixtures/topics" }, entries: ["heading", "item", "description", "footnote", "label-0", "label-1", "label-2", "label-3"].map((id) => ({ id: ref(id).id, text: id.startsWith("label-") ? label : "Short copy", context: "fixture", status: "approved" as const })) });

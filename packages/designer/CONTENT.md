@@ -55,7 +55,7 @@ shapes marked "No".
 
 ### Linked items
 
-Cards (`card-grid`), features (`feature-grid`, item emphasis), topics
+Cards (`card-grid`), features (`feature-grid`, item scale), topics
 (`topic-list`) and steps (`ordered-step-sequence`) may each carry an `href`.
 The item's title becomes its one link and its accessible name; a chevron
 follows the title at rest, and the whole item is the click target. Statement
@@ -143,7 +143,7 @@ another page. Do not put a list into the description.
 **Items — features.** Two columns take 2, 4 or 6 items; three columns take
 3 or 6. Heading 2-5 words; description 6-20 words (up to 25 for a longer plate).
 Items are parallel: same grammar, length and one idea each. Optional icons and
-eyebrows identify roles; they do not repeat the heading. Statement emphasis
+eyebrows identify roles; they do not repeat the heading. Statement scale
 uses exactly three items in three columns, plain or rule treatment, with no
 icon, eyebrow or destination. Statement headings use 2-3 words and support at
 most 12 words.

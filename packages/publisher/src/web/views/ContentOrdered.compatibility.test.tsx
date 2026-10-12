@@ -10,10 +10,11 @@ const copy = { heading: "Example heading", first: "First question", second: "Sec
 const ref = (key: keyof typeof copy) => ({ id: `compatibility.${key}` });
 const registry = { id: "compatibility", revision: "1", locale: "en", source: { kind: "consumer", reference: "test" }, entries: Object.entries(copy).map(([key,text])=>({ id: `compatibility.${key}`, text, context: "Compatibility fixture", status: "approved" })) } satisfies CopyRegistry;
 const resolver = createCopyResolver(registry);
-const authored = (disclosed: boolean): SectionedViewDocument => ({ id: "compatibility", sections: [{ id: "hero", kind: "hero", ground: "inverse", heading: ref("heading") }, { id: "topics", kind: "content-section", ground: "sunken", heading: ref("heading"), block: { type: "items", recipe: disclosed ? "faq" : "topics", items: (["first","second","third","fourth"] as const).map(id=>({ id, heading: ref(id), description: ref("detail") })) } }] });
+const authored = (disclosed: boolean): SectionedViewDocument => ({ id: "compatibility", sections: [{ id: "hero", kind: "hero", ground: "inverse", heading: ref("heading") }, { id: "topics", kind: "content-section", heading: ref("heading"), block: { type: "items", recipe: disclosed ? "faq" : "topics", items: (["first","second","third","fourth"] as const).map(id=>({ id, heading: ref(id), description: ref("detail") })) } }] });
 describe("canonical content anatomy compatibility", () => {
   it("renders current unordered topics in their own band through both entries", () => {
     const input=authored(false);expect(validateSectionedViewDocument(input)).toEqual([]);const resolved=resolveSectionedViewDocument(input,resolver);
+    resolved.sections = resolved.sections.map(section => section.id === "topics" ? { ...section, ground: "sunken" as const } : section); resolved.viewGrounds = resolved.viewGrounds?.filter(id => id !== "topics");
     for(const View of [LandingView,ServerLandingView]) {
       const host=document.createElement("div");host.innerHTML=renderToStaticMarkup(<View document={resolved} header="reserved" peek={false} afterSection={{ topics: <p data-after="">After content</p> }} />);
       const topics=host.querySelector("#topics")!;expect(topics.matches("[data-content-section]")).toBe(true);expect(topics.parentElement?.closest("[data-content-section]")).toBeNull();
@@ -31,7 +32,7 @@ describe("canonical content anatomy compatibility", () => {
     }
   });
   it("keeps quiet actions unfilled in the split text column and appends consumer content after the block", () => {
-    const input: SectionedViewDocument = { ...authored(false), sections: [authored(false).sections[0]!, { id:"split",kind:"content-section",ground:"base",layout:"split-end",heading:ref("heading"),actions:[{id:"more",label:ref("link"),href:"/more",emphasis:"quiet"}],block:{type:"items",arrangement:"rows",items:[{id:"first",heading:ref("first")},{id:"second",heading:ref("second")}]},media:{type:"specimen",label:ref("heading"),panel:{id:"record",title:ref("heading"),parts:[{id:"fields",type:"fields",items:[{id:"one",label:ref("first"),value:ref("second")}] }]}} }] };
+    const input: SectionedViewDocument = { ...authored(false), sections: [authored(false).sections[0]!, { id:"split",kind:"content-section",layout:"split-end",heading:ref("heading"),actions:[{id:"more",label:ref("link"),href:"/more",emphasis:"quiet"}],block:{type:"items",arrangement:"rows",items:[{id:"first",heading:ref("first")},{id:"second",heading:ref("second")}]},media:{type:"specimen",label:ref("heading"),panel:{id:"record",title:ref("heading"),parts:[{id:"fields",type:"fields",items:[{id:"one",label:ref("first"),value:ref("second")}] }]}} }] };
     const findings = validateSectionedViewDocument(input); expect(findings, JSON.stringify(findings)).toEqual([]); const resolved=resolveSectionedViewDocument(input,resolver);
     for(const View of [LandingView,ServerLandingView]) {
       const host=document.createElement("div");host.innerHTML=renderToStaticMarkup(<View document={resolved} header="reserved" peek={false} afterSection={{split:<p data-after="">After content</p>}}/>);

@@ -1,3 +1,4 @@
+import { applyContentGrounds, planContentGrounds } from "../../core/content-ground.js";
 import { assertClosedData, assertCanonicalContentSection } from "./SectionedViewCanonical.js";
 import { resolveActionEmphasis } from "../../core/page-flow.js";
 import { resolveRoleActionEmphasis } from "../../core/sectioned-view.js";
@@ -387,7 +388,14 @@ export function renderSectionedViewSections(document: unknown, blocks: Sectioned
 export function createSectionedView(blocks: SectionedViewBlockSet) {
   const { Hero, FeatureGrid, Faq, OrderedStepSequence, StatusList, Stat, PricingTable, Testimonial, ContentSection } = blocks;
   return function SectionedView({ document, landmark = "main", resolveAssetId, prefersReducedMotion }: SectionedViewProps) {
-    const sections = renderSectionedViewSections(document, { Hero, FeatureGrid, Faq, OrderedStepSequence, StatusList, Stat, PricingTable, Testimonial, ContentSection },{ resolveAssetId, prefersReducedMotion }).map(({ node }) => node);
+    try {
+      assertRenderableSectionedViewDocument(document);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "unknown invalid resolved model";
+      throw new RenderError("resolution-failed", `SectionedView refused an invalid resolved document: ${message}`);
+    }
+    const [planned] = applyContentGrounds(planContentGrounds([document]), [document]);
+    const sections = renderSectionedViewSections(planned!, { Hero, FeatureGrid, Faq, OrderedStepSequence, StatusList, Stat, PricingTable, Testimonial, ContentSection },{ resolveAssetId, prefersReducedMotion }).map(({ node }) => node);
     if (!LANDMARKS.includes(landmark)) {
       throw new RenderError("resolution-failed", `SectionedView refused an invalid resolved document: landmark must be one of ${LANDMARKS.join(", ")}.`);
     }

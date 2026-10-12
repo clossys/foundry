@@ -3,7 +3,7 @@ import * as contract from "./sectioned-view.js";
 import type { SectionedViewDocument } from "./sectioned-view.js";
 const ref = (id = "copy") => ({ id });
 const items = (count: number) => Array.from({ length: count }, (_, index) => ({ id: `item-${index}`, heading: ref(), description: ref() }));
-const findings = (fields: Record<string, unknown>) => contract.validateSectionedViewDocument({ id: "page", sections: [{ id: "band", kind: "content-section", ground: "base", heading: ref(), ...fields }] } as SectionedViewDocument);
+const findings = (fields: Record<string, unknown>) => contract.validateSectionedViewDocument({ id: "page", sections: [{ id: "band", kind: "content-section", heading: ref(), ...fields }] } as SectionedViewDocument);
 const errors = (block: unknown) => findings({ block }).filter((entry) => entry.severity === "error");
 const part = { id: "fields", type: "fields", items: [{ id: "field", label: ref(), value: ref() }] };
 const panel = { id: "panel", title: ref(), parts: [part] };

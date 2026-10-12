@@ -85,7 +85,7 @@ function runProbe(reactServer: boolean) {
     const copy = { heading:"Packed landing page", question:"Packed question?", answer:"Packed answer.", legacy:"Published questions" };
     const ref = key => ({id:"landing."+key});
     const resolver = createCopyResolver({id:"landing",locale:"en",revision:"1",source:{kind:"consumer",reference:"packed-proof"},entries:Object.entries(copy).map(([key,text])=>({id:ref(key).id,text,context:"Packed proof",status:"approved"}))});
-    const landingDocument = resolveSectionedViewDocument({id:"landing",sections:[{id:"landing-hero",kind:"hero",ground:"inverse",heading:ref("heading")},{id:"landing-content",kind:"content-section",ground:"base",heading:ref("heading"),block:{type:"items",recipe:"faq",items:["one","two","three","four"].map(id=>({id,heading:ref("question"),description:ref("answer")}))}},{id:"landing-legacy",kind:"faq",ground:"sunken",layout:"split",heading:ref("legacy"),items:["one","two","three","four"].map(id=>({id,question:ref("question"),answer:ref("answer")}))}]},resolver);
+    const landingDocument = resolveSectionedViewDocument({id:"landing",sections:[{id:"landing-hero",kind:"hero",ground:"inverse",heading:ref("heading")},{id:"landing-content",kind:"content-section",heading:ref("heading"),block:{type:"items",recipe:"faq",items:["one","two","three","four"].map(id=>({id,heading:ref("question"),description:ref("answer")}))}},{id:"landing-legacy",kind:"faq",ground:"sunken",layout:"split",heading:ref("legacy"),items:["one","two","three","four"].map(id=>({id,question:ref("question"),answer:ref("answer")}))}]},resolver);
     const landing = web.LandingView({document:landingDocument,header:"reserved",peek:false});
     const landingCase = (kind, layout) => {
       const sections = landingDocument.sections
@@ -119,7 +119,7 @@ function runProbe(reactServer: boolean) {
     const contractRef = key => ({ id: "contract." + key });
     const contractResolver = createCopyResolver({ id: "contract", locale: "en", revision: "1", source: { kind: "consumer", reference: "packed-contract-proof" }, entries: Object.entries(contractCopy).map(([key, text]) => ({ id: contractRef(key).id, text, context: "Packed contract proof", status: "approved" })) });
     const contractItems = ["step1", "step2", "step3"].map(id => ({ id, heading: contractRef(id) }));
-    const contractBand = (id, fields) => ({ id, kind: "content-section", ground: "base", heading: contractRef("heading"), ...fields });
+    const contractBand = (id, fields) => ({ id, kind: "content-section", heading: contractRef("heading"), ...fields });
     const contractLanes = (arrangement, columns) => contractBand("packed-lanes-" + arrangement + (columns ?? ""), {
       block: { type: "items", recipe: "steps", arrangement, ...(columns === undefined ? {} : { columns }),
         lanes: [{ id: "team", label: contractRef("team") }, { id: "service", label: contractRef("service") }],

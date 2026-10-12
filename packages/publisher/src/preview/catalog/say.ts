@@ -61,7 +61,6 @@ export const SAY_FIXTURES = [
     "section": {
         "id": "say-intro",
         "kind": "content-section",
-        "ground": "base",
         "size": "standard",
         "layout": "stacked",
         "heading": {
@@ -116,7 +115,6 @@ export const SAY_FIXTURES = [
     "section": {
         "id": "say-media-stacked",
         "kind": "content-section",
-        "ground": "base",
         "size": "standard",
         "layout": "stacked",
         "heading": {
@@ -256,7 +254,6 @@ export const SAY_FIXTURES = [
     "section": {
         "id": "say-header-split",
         "kind": "content-section",
-        "ground": "base",
         "size": "standard",
         "layout": "split-start",
         "heading": {

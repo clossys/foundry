@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Items } from "./Items.js";
+import { Items as NativeItems } from "./Items.server.js";
 import type { ItemData, ItemsProps } from "./types.js";
 
 const data = (count: number): ItemData[] => Array.from({ length: count }, (_, i) => ({ id: `item-${i}`, heading: `Title ${i}` }));
@@ -48,17 +49,17 @@ describe("Items arrangement policy", () => {
     expect([...nodes].map(node => node.textContent)).toEqual(data(spans.length).map(item => item.heading));
   });
   it("renders statement headings at text-h0 with a semantic h4", () => {
-    draw({ emphasis: "statement", treatment: "rule", headingLevel: 4 });
+    draw({ scale: "statement", treatment: "rule", headingLevel: 4 });
     expect(screen.getAllByRole("heading", { level: 4 })).toHaveLength(3);
     expect(screen.getByText("Title 0")).toHaveClass("text-h0");
   });
   it.each(["icon", "eyebrow", "meta", "visual", "href", "featured", "span", "lane"])("rejects statement slot %s", (slot) => {
     const items = data(3); items[0] = { ...items[0]!, [slot]: slot === "featured" ? false : "value" };
-    expect(() => draw({ emphasis: "statement", items })).toThrow(TypeError);
+    expect(() => draw({ scale: "statement", items })).toThrow(TypeError);
   });
   it("rejects statement plates and non-three columns", () => {
-    expect(() => draw({ emphasis: "statement", treatment: "plate" })).toThrow(TypeError);
-    expect(() => draw({ emphasis: "statement", columns: 2, items: data(4) })).toThrow(TypeError);
+    expect(() => draw({ scale: "statement", treatment: "plate" })).toThrow(TypeError);
+    expect(() => draw({ scale: "statement", columns: 2, items: data(4) })).toThrow(TypeError);
   });
   it("renders groups in stable authored membership order with named groups", () => {
     const { container } = draw({ arrangement: "rows", items: data(4), groups: [{ id: "b", label: "Second", items: ["item-2", "item-0"] }, { id: "a", label: "First", items: ["item-3", "item-1"] }] });
@@ -107,7 +108,7 @@ describe("Items arrangement policy", () => {
   it("refuses blank native group labels", () => {
     expect(() => draw({ arrangement: "rows", items: data(4), groups: [{ id: "a", label: <span />, items: ["item-0", "item-1"] }, { id: "b", label: "B", items: ["item-2", "item-3"] }] })).toThrow(TypeError);
   });
-  it("treats explicit undefined optional axes as omission", () => draw({ columns: undefined, treatment: undefined, emphasis: undefined, groups: undefined, size: undefined }));
+  it("treats explicit undefined optional axes as omission", () => draw({ columns: undefined, treatment: undefined, scale: undefined, groups: undefined, size: undefined }));
 });
 
 
@@ -136,5 +137,21 @@ describe("canonical collection semantics", () => {
     expect(screen.getByRole("group", { name: "First" })).toBe(groups[0]);
     expect(within(groups[0]!).getAllByRole("listitem").map(node => node.textContent)).toEqual(["Title 1", "Title 0"]);
     expect(screen.getAllByRole("list")).toHaveLength(2);
+  });
+});
+
+
+describe("collection scale boundary", () => {
+  it.each([Items, NativeItems])("uses scale for statement anatomy and defaults omitted or undefined scale", View => {
+    const { container } = render(<View arrangement="columns" scale="statement" treatment="rule" items={data(3)} />);
+    expect(container.querySelectorAll("[data-item-heading]")).toHaveLength(3);
+    for (const heading of container.querySelectorAll("[data-item-heading]")) expect(heading).toHaveClass("text-h0");
+    for (const fields of [{}, { scale: undefined }]) {
+      const standard = render(<View arrangement="columns" items={data(3)} {...fields} />);
+      for (const heading of standard.container.querySelectorAll("[data-item-heading]")) expect(heading).toHaveClass("text-h2");
+    }
+  });
+  it.each([{ emphasis: undefined }, { emphasis: "item" }, { emphasis: "statement", scale: "statement" }])("rejects own retired emphasis even when undefined", fields => {
+    for (const View of [Items, NativeItems]) expect(() => render(<View arrangement="columns" items={data(3)} {...fields} />)).toThrow("Items: emphasis is retired; use scale instead.");
   });
 });

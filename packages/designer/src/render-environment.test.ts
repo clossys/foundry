@@ -4,6 +4,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { RENDER_ENVIRONMENT } from "./render-environment.js";
+import ts from "typescript";
 
 /**
  * Real subprocess integration tests, the same shape
@@ -258,5 +259,45 @@ describe("render-environment declaration exhaustiveness (test 4)", () => {
       const original = subpath.slice(0, -"/server".length);
       expect(RENDER_ENVIRONMENT[original]).toBe(original === "./tokens" ? "server-safe" : "client-only");
     }
+  });
+});
+
+
+describe("compiled collection scale retirement", () => {
+  it.each(["index.js", "blocks/index.js", "blocks/server.js"])("accepts scale and rejects own retired emphasis in %s", entry => {
+    const absolute = join(distDir, entry);
+    const script = `import {createElement as h} from "react"; import {renderToStaticMarkup} from "react-dom/server"; import {Items} from ${JSON.stringify(absolute)}; const items=[0,1,2].map(i=>({id:String(i),heading:"Title "+i})); const props={arrangement:"columns",items}; const markup=renderToStaticMarkup(h(Items,{...props,scale:"statement"})); if(!markup.includes("text-h0")) throw new Error("scale statement lost"); renderToStaticMarkup(h(Items,{...props,scale:undefined})); for(const fields of [{emphasis:undefined},{emphasis:"item"},{emphasis:"statement",scale:"statement"}]) { let refused=false; try { renderToStaticMarkup(h(Items,{...props,...fields})); } catch(e) { if(e.message!=="Items: emphasis is retired; use scale instead.") throw e; refused=true; } if(!refused)throw new Error("retired emphasis accepted"); } process.stdout.write("OK");`;
+    expect(execFileSync(process.execPath, ["-e", script], { encoding: "utf8", timeout: 10_000 })).toBe("OK");
+  });
+});
+
+
+describe("actual emitted collection declarations", () => {
+  it("imports ItemsScale and refuses retired alias/props across three emitted barrels", () => {
+    const filename = join(packageRoot, "emitted-scale-consumer.check.ts");
+    const source = ["index.js", "blocks/index.js", "blocks/server.js"].map((entry, index) => `
+      import type * as B${index} from ${JSON.stringify(join(distDir, entry))};
+      const scale${index}: B${index}.ItemsScale = "statement";
+      const valid${index}: B${index}.ItemsProps = { arrangement: "columns", items: [], scale: scale${index} };
+      // @ts-expect-error The retired type alias is absent from emitted declarations.
+      type Removed${index} = B${index}.ItemsEmphasis;
+      // @ts-expect-error The retired field is absent even when undefined.
+      const old${index}: B${index}.ItemsProps = { arrangement: "columns", items: [], emphasis: undefined };
+    `).join("\n");
+    const options = { strict: true, noEmit: true, skipLibCheck: true, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler };
+    const host = ts.createCompilerHost(options);
+    const original = host.getSourceFile.bind(host);
+    host.getSourceFile = (path, language, error, fresh) => path === filename ? ts.createSourceFile(path, source, language, true) : original(path, language, error, fresh);
+    const diagnostics = ts.getPreEmitDiagnostics(ts.createProgram([filename], options, host));
+    expect(ts.formatDiagnosticsWithColorAndContext(diagnostics, { getCurrentDirectory: () => packageRoot, getCanonicalFileName: path => path, getNewLine: () => "\n" })).toBe("");
+  });
+});
+
+
+describe("native compiled collection scale boundary", () => {
+  it("preserves scale and refuses own undefined or combined retired emphasis under react-server", () => {
+    const absolute = join(distDir, "blocks/server.js");
+    const script = `import {Items} from ${JSON.stringify(absolute)}; const items=[0,1,2].map(i=>({id:String(i),heading:"Title "+i})); const props={arrangement:"columns",items}; function nodes(node){if(Array.isArray(node))return node.flatMap(nodes);if(!node||typeof node!=="object"||!node.props)return [];if(typeof node.type==="function")return nodes(node.type(node.props));return [node,...nodes(node.props.children)];} const headings=nodes(Items({...props,scale:"statement"})).filter(n=>n.props["data-item-heading"]!==undefined); if(headings.length!==3||headings.some(n=>!n.props.className.split(" ").includes("text-h0")))throw new Error("native scale lost"); Items({...props,scale:undefined}); for(const fields of [{emphasis:undefined},{emphasis:"item"},{emphasis:"statement",scale:"statement"}]) { let refused=false; try { Items({...props,...fields}); } catch(e) { if(e.message!=="Items: emphasis is retired; use scale instead.")throw e; refused=true;} if(!refused)throw new Error("native retired emphasis accepted"); } process.stdout.write("OK");`;
+    expect(execFileSync(process.execPath, ["--conditions=react-server", "-e", script], { encoding: "utf8", timeout: 10_000 })).toBe("OK");
   });
 });

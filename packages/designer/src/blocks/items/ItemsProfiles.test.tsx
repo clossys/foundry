@@ -56,7 +56,7 @@ describe("collection render profiles", () => {
     expect(screen.getByRole("heading", { name: "Entry 0" })).toHaveClass("text-h1");
   });
   it("uses a centred statement scale without adding slots", () => {
-    draw({ emphasis: "statement", items: data(3).map(({ id, heading, description }) => ({ id, heading, description })) });
+    draw({ scale: "statement", items: data(3).map(({ id, heading, description }) => ({ id, heading, description })) });
     const heading = screen.getByRole("heading", { name: "Entry 0" });
     expect(heading).toHaveClass("text-h0");
     expect(heading.closest("[data-item]")).toHaveClass("items-center", "text-center");

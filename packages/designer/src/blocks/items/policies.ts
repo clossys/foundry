@@ -121,12 +121,13 @@ function admitsThreeColumnTiles(props: ItemsProps): boolean {
     props.items.every(item => item.href !== undefined);
 }
 export function assertItems(props: ItemsProps): number | undefined {
-  const { items, arrangement, groups, emphasis = "item", treatment = "plain", size = "standard", ground = "base", order = "none", reveal = "all" } = props;
+  if (Object.hasOwn(props, "emphasis")) throw new TypeError("Items: emphasis is retired; use scale instead.");
+  const { items, arrangement, groups, scale = "item", treatment = "plain", size = "standard", ground = "base", order = "none", reveal = "all" } = props;
   assertItemAxes(treatment, size, ground);
   if (!["none", "numbered", "connected"].includes(order) || !["all", "disclose"].includes(reveal)) throw new TypeError("Items: unknown order or reveal.");
   if (order !== "connected" && [props.lanes, props.end, props.endLabel, props.caption].some(value => value !== undefined)) throw new TypeError("Items: lanes, end and caption belong to connected order.");
   if (props.end !== undefined && props.end !== "ends" && props.end !== "continues") throw new TypeError("Items: unknown end.");
-  if (!["columns", "rows", "bento", "stacked"].includes(arrangement) || !["item", "statement"].includes(emphasis) || (props.headingLevel !== undefined && props.headingLevel !== 3 && props.headingLevel !== 4)) throw new TypeError("Items: unknown arrangement, emphasis or heading level.");
+  if (!["columns", "rows", "bento", "stacked"].includes(arrangement) || !["item", "statement"].includes(scale) || (props.headingLevel !== undefined && props.headingLevel !== 3 && props.headingLevel !== 4)) throw new TypeError("Items: unknown arrangement, scale or heading level.");
   if (!Array.isArray(items)) throw new TypeError("Items: items must be an array.");
   const ids = new Set<string>();
   for (let i = 0; i < items.length; i++) {
@@ -148,7 +149,7 @@ export function assertItems(props: ItemsProps): number | undefined {
   } else if (arrangement === "rows" && (count < 2 || count > 8 || (columns !== 1 && columns !== 2) || (columns === 2 && count % 2 !== 0))) throw new RangeError("Items: rows need 2-8 items, even in two columns.");
   if (arrangement === "stacked" && order !== "connected" && (count < 2 || count > 4)) throw new RangeError("Items: stacked needs 2-4 items.");
   if (props.lanes !== undefined) {
-    if (order !== "connected" || !["columns", "stacked"].includes(arrangement) || count < 3 || count > 5 || !Array.isArray(props.lanes) || props.lanes.length !== 2) throw new TypeError("Items: two lanes belong to connected columns or stacked sequences with three to five steps.");
+    if (order !== "connected" || !["columns", "stacked"].includes(arrangement) || count < 3 || count > 5 || !Array.isArray(props.lanes) || props.lanes.length !== 2) throw new TypeError("Items: two lanes belong to connected columns or stacked sequences.");
     const laneIds = new Set<string>();
     for (let i = 0; i < 2; i++) {
       const lane = props.lanes[i];
@@ -165,7 +166,7 @@ export function assertItems(props: ItemsProps): number | undefined {
   }
   if (arrangement === "bento") assertOrderedRows(items.map((item) => item.span === undefined ? "half" : item.span), { count: (n) => `Items: bento needs 2-6 items, got ${n}.`, unknown: (i, span) => `Items: item ${i} has unknown span ${String(span)}.`, overflow: (i) => `Items: item ${i} overflows its 12-unit row.`, incomplete: "Items: bento must fill ordered 12-unit rows." });
   else if (items.some((item) => item.span !== undefined)) throw new TypeError("Items: spans belong to bento only.");
-  if (emphasis === "statement") {
+  if (scale === "statement") {
     if (arrangement !== "columns" || columns !== 3 || count !== 3 || treatment === "plate") throw new TypeError("Items: statement needs three columns, three items and plain or rule treatment.");
     const excluded = ["icon", "eyebrow", "meta", "visual", "href", "featured", "span", "lane"] as const;
     if (items.some((item) => excluded.some((key) => (item as unknown as Record<string, unknown>)[key] !== undefined))) throw new TypeError("Items: statement items take heading, description and optional badge only.");
