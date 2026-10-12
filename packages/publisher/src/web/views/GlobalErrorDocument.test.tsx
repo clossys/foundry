@@ -12,6 +12,7 @@ import { GlobalErrorDocument } from "./GlobalErrorDocument.js";
 import { StatusView } from "./StatusView.js";
 import * as ordinary from "../../../dist/web/index.js";
 import * as server from "../../../dist/web/server.js";
+import type { StatusViewProps } from "./StatusView.js";
 import type { GlobalErrorDocumentErrorViewProps, GlobalErrorDocumentFramedProps, GlobalErrorDocumentProps } from "./GlobalErrorDocument.js";
 
 const ALLOWED_IMPORTS = ["react", "../frame/SiteFrame.js", "../frame/types.js", "../siteMetadata.js", "./ErrorView.js", "./StatusView.js"];
@@ -280,8 +281,8 @@ function referenceDocument(markup: string): Document {
 }
 
 const referenceSurfaces = [
-  { name: "StatusView", render: (reference = referenceFixture) => renderToStaticMarkup(<StatusView {...{ ...referenceInputs, reference }} />) },
-  { name: "GlobalErrorDocument", render: (reference = referenceFixture) => renderToStaticMarkup(<GlobalErrorDocument {...framedProps} {...{ ...referenceInputs, reference }} />) },
+  { name: "StatusView", render: (reference: StatusViewProps["reference"] = referenceFixture) => renderToStaticMarkup(<StatusView {...{ ...referenceInputs, reference }} />) },
+  { name: "GlobalErrorDocument", render: (reference: StatusViewProps["reference"] = referenceFixture) => renderToStaticMarkup(<GlobalErrorDocument {...framedProps} {...{ ...referenceInputs, reference }} />) },
 ];
 
 describe("shared diagnostic reference fixture", () => {
@@ -307,6 +308,32 @@ describe("shared diagnostic reference fixture", () => {
       } else {
         expect(doc.body.querySelectorAll("main")).toHaveLength(0);
       }
+    });
+
+    for (const field of ["label", "value"] as const) {
+      it.each(["", " \t\n", "\u00a0"])(`${surface.name} refuses a blank reference ${field}: %j`, (blank) => {
+        expect(() => surface.render({ ...referenceFixture, [field]: blank })).toThrow(
+          new TypeError(`StatusView: reference needs a nonblank ${field}.`),
+        );
+      });
+      it.each([undefined, null, 7])(`${surface.name} refuses a non-text reference ${field}: %j`, (invalid) => {
+        const reference = { ...referenceFixture, [field]: invalid } as unknown as StatusViewProps["reference"];
+        expect(() => surface.render(reference)).toThrow(
+          new TypeError(`StatusView: reference needs a nonblank ${field}.`),
+        );
+      });
+    }
+
+    it(`${surface.name} treats a plain JavaScript null reference as absent`, () => {
+      const absent = { ...referenceInputs, reference: undefined };
+      const expected = surface.name === "StatusView"
+        ? renderToStaticMarkup(<StatusView {...absent} />)
+        : renderToStaticMarkup(<GlobalErrorDocument {...framedProps} {...absent} />);
+      expect(surface.render(null as unknown as StatusViewProps["reference"])).toBe(expected);
+      const doc = referenceDocument(surface.render(null as unknown as StatusViewProps["reference"]));
+      expect(doc.querySelector("code")).toBeNull();
+      const description = [...doc.querySelectorAll("p")].find((p) => p.textContent === referenceInputs.subtitle)!;
+      expect(description.children).toHaveLength(0);
     });
 
     it(`${surface.name} uses caller labels without a default`, () => {
@@ -337,6 +364,11 @@ describe("shared diagnostic reference fixture", () => {
   it("renders the reference even without a description", () => {
     const doc = referenceDocument(renderToStaticMarkup(<StatusView {...{ status: "500", reference: referenceFixture }} />));
     expect(doc.querySelector("code")?.textContent).toBe(referenceFixture.value);
+  });
+
+  it("treats a plain JavaScript null reference on the deprecated document as absent", () => {
+    const props = { ...errorViewProps, reference: null } as unknown as GlobalErrorDocumentProps;
+    expect(renderToStaticMarkup(<GlobalErrorDocument {...props} />)).toBe(renderToStaticMarkup(<GlobalErrorDocument {...errorViewProps} />));
   });
 
   it("refuses reference on the deprecated unframed document shape", () => {

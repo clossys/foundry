@@ -3,7 +3,7 @@ import { mergeUiClasses } from "@clossys/designer/atoms/server";
 import { CARDLESS_PAGE_COLUMN_CLASSES, CardlessPageLayout, pageColumnStyle } from "../internal/PageLayout.js";
 import { assertViewContentRoot } from "../internal/viewContentRoot.js";
 import { renderViewLinks, type ViewLinksInput } from "../internal/ViewLinks.js";
-import { renderReference } from "./renderReference.js";
+import { renderReference } from "../internal/renderReference.js";
 
 export interface StatusViewProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> {
   /**
@@ -17,8 +17,8 @@ export interface StatusViewProps extends Omit<HTMLAttributes<HTMLDivElement>, "t
    * Absent from the markup when omitted.
    */
   subtitle?: ReactNode;
-  /** A caller-labelled diagnostic line after the subtitle; the value is escaped text inside `<code>`. Omitted means no line. */
-  reference?: { label: string; value: string };
+  /** A caller-labelled diagnostic line after the subtitle; the value is escaped text inside `<code>`. Omitted or null means no line; label and value must be nonblank strings. */
+  reference?: { label: string; value: string } | null;
   /**
    * The primary call to action, on the page background with no card around
    * it: a link home or a retry button. An error page should offer one; a 403,

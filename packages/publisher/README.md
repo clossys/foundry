@@ -2885,6 +2885,7 @@ are absent from the markup when their slot is empty. The column uses the
 | --- | --- |
 | Header title | `status` (required): a code such as `404`, or a short title |
 | Header subtitle | `subtitle` (optional) |
+| Diagnostic reference | `reference` (optional): `{ label: string; value: string }`; both fields must be nonblank strings. Renders a caller-labelled line after the subtitle with an escaped, selectable `<code>` value. Omitted or `null` adds no line or empty element. |
 | Action | `action` (optional) |
 | Notes | `notes` (optional) |
 | Destinations | `routes` (optional): `{ label: string, items: readonly (ItemData & { href: string })[] }` |
@@ -2960,7 +2961,7 @@ Props (`GlobalErrorDocumentFramedProps`):
 | `shell`, `resolveCopy`, `resolveAsset` | yes | The frame's inputs, exactly as `SiteFrame` takes them (`SiteFrameInput`). |
 | `status` | yes | The one `<h1>`, as on `StatusView`: a code such as `"500"`, or a short title. |
 | `subtitle` | no | One line of supporting caller copy. |
-| `reference` | no | `{ label: string; value: string }`, also accepted by `StatusView`: renders `Error: <code>…</code>.` when `label` is `"Error"`, after the subtitle. The label comes from caller copy or a resolved Writer record; the value is escaped text in selectable `<code>`. Omitted means no line or empty element. Requires the framed shape. |
+| `reference` | no | `{ label: string; value: string }`, also accepted by `StatusView`: renders `Error: <code>…</code>.` when `label` is `"Error"`, after the subtitle. The label comes from caller copy or a resolved Writer record; the value is escaped text in selectable `<code>`. Both fields must be nonblank strings. Omitted or `null` means no line or empty element. A non-null reference requires the framed shape. |
 | `action` | no | The one primary call to action, such as a retry button. |
 | `notes` | no | A quiet line for a secondary link. |
 | `routes` | no | Caller-labelled destinations, forwarded unchanged to `StatusView`. |

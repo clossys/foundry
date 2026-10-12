@@ -121,7 +121,7 @@ export function GlobalErrorDocument(props: GlobalErrorDocumentProps): ReactEleme
       </SiteFrame>
     );
   } else {
-    if ((props as { reference?: unknown }).reference !== undefined) {
+    if ((props as { reference?: unknown }).reference != null) {
       throw new Error("GlobalErrorDocument: reference requires the framed StatusView shape.");
     }
     if ((props as { routes?: unknown }).routes !== undefined) {
