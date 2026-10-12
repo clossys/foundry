@@ -11,8 +11,8 @@ import type { ResolvedSectionedViewContentSection, SectionedViewDocument } from 
 export const CATALOG_FUNCTIONS = [
   { id: "say", label: "Say", purpose: "Introduce, explain and invite the next action.", axes: ["role", "size", "actions"] },
   { id: "items", label: "Items", purpose: "Arrange a set of related ideas and steps.", axes: ["arrangement", "order", "reveal", "treatment", "slots"] },
-  { id: "matrix", label: "Matrix", purpose: "Compare two sides using the same primary form.", axes: ["points", "visual", "description", "featured"] },
-  { id: "frame", label: "Frame", purpose: "Choose a ground, measure and direction for a section.", axes: ["ground", "size", "layout", "align", "actions"] },
+  { id: "matrix", label: "Matrix", purpose: "Compare two sides using the same primary form.", axes: ["points", "visual", "featured"] },
+  { id: "frame", label: "Frame", purpose: "Choose a ground, measure and direction for a section.", axes: ["ground", "size", "layout", "actions"] },
   { id: "media", label: "Media", purpose: "Show sample panels, records and connected scenes.", axes: ["specimen", "key", "record", "scene", "previous"] },
   { id: "recipes", label: "Recipes", purpose: "Start from compatible defaults and compose a complete page.", axes: ["fixed", "defaults", "free", "composition"] },
   { id: "other", label: "Other kinds", purpose: "Visit the existing published section examples.", axes: ["published kinds"] },
@@ -65,13 +65,13 @@ export const CATALOG_RECIPE_LINKS = Object.fromEntries(SECTIONED_VIEW_CONTENT_CO
 }));
 function recipeTable(): string {
   const aliases: Partial<Record<string, string>> = { features: "feature-grid", faq: "faq", steps: "ordered-step-sequence" };
-  const axes = ["arrangement", "order", "reveal", "treatment", "emphasis"];
+  const axes = ["arrangement", "order", "reveal", "treatment", "scale"];
   const rows = SECTIONED_VIEW_CONTENT_CONTRACT.recipes.map(recipe => {
     const definition = SECTIONED_VIEW_ITEM_RECIPES[recipe];
     const values = (value: object): string => Object.entries(value).map(([key, value]) => `${key}=${value}`).join(", ") || "—";
-    return `<tr data-catalog-recipe="${recipe}"><th><a href="items.html#example-${CATALOG_RECIPE_LINKS[recipe]}">${recipe}</a></th><td data-recipe-fixed>${escape(values(definition.fixed))}</td><td data-recipe-defaults>${escape(values(definition.defaults ?? {}))}</td><td data-recipe-free>${escape([...axes, ...(["columns", "rows"].includes(String(definition.fixed.arrangement)) ? ["columns"] : [])].filter(axis => !Object.hasOwn(definition.fixed, axis)).join(", "))}${definition.treatments === undefined ? "" : `<br />treatment: ${escape(definition.treatments.join(" / "))}`}</td><td data-recipe-slots>${escape(definition.slots.join(", ") || "—")}${definition.requiredSlot === undefined ? "" : `<br />required: ${escape(definition.requiredSlot)}`}</td><td>${escape(aliases[recipe] ?? "—")}</td></tr>`;
+    return `<tr data-catalog-recipe="${recipe}"><th><a href="items.html#example-${CATALOG_RECIPE_LINKS[recipe]}">${recipe}</a></th><td data-recipe-fixed>${escape(values(definition.fixed))}</td><td data-recipe-defaults>${escape(values(definition.defaults ?? {}))}</td><td data-recipe-free>${escape([...axes, ...(["columns", "rows"].includes(String(definition.fixed.arrangement ?? definition.defaults?.arrangement)) ? ["columns"] : [])].filter(axis => !Object.hasOwn(definition.fixed, axis)).join(", "))}${definition.treatments === undefined ? "" : `<br />treatment: ${escape(definition.treatments.join(" / "))}`}</td><td data-recipe-slots>${escape(definition.slots.join(", ") || "—")}${definition.requiredSlot === undefined ? "" : `<br />required: ${escape(definition.requiredSlot)}`}</td><td>${escape(aliases[recipe] ?? "—")}</td></tr>`;
   }).join("");
-  return `<div class="catalog-table-wrap" role="region" aria-label="Recipe reference" tabindex="0"><table class="catalog-table"><thead><tr><th>Recipe</th><th>Fixed axes</th><th>Defaults</th><th>Free axes</th><th>Compatible slots</th><th>Published alias</th></tr></thead><tbody>${rows}<tr data-catalog-recipe="comparison"><th><a href="matrix.html#example-matrix-points">comparison</a></th><td>two sides</td><td>—</td><td>primary form, featured</td><td>description, points or visual</td><td>—</td></tr></tbody></table></div>`;
+  return `<div class="catalog-table-wrap" role="region" aria-label="Recipe reference" tabindex="0"><table class="catalog-table"><thead><tr><th>Recipe</th><th>Fixed axes</th><th>Defaults</th><th>Free axes</th><th>Compatible slots</th><th>Published alias</th></tr></thead><tbody>${rows}<tr data-catalog-recipe="comparison"><th><a href="matrix.html#example-matrix-points">comparison</a></th><td>two sides</td><td>—</td><td>primary form, featured</td><td>points or visual, optional description lead</td><td>—</td></tr></tbody></table></div>`;
 }
 export function buildCatalogFunctionPages(sheets: ContentCatalogStylesheets): Array<{ file: string; content: string }> {
   const nested = { designerTokens: `../${sheets.designerTokens}`, utilities: `../${sheets.utilities}`, brand: sheets.brand === null ? null : `../${sheets.brand}` };

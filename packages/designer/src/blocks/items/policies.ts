@@ -122,7 +122,7 @@ export function assertItems(props: ItemsProps): number | undefined {
   if (arrangement === "rows" && (count < 2 || count > 8 || (columns !== 1 && columns !== 2) || (columns === 2 && count % 2 !== 0))) throw new RangeError("Items: rows need 2-8 items, even in two columns.");
   if (arrangement === "stacked" && order !== "connected" && (count < 2 || count > 4)) throw new RangeError("Items: stacked needs 2-4 items.");
   if (props.lanes !== undefined) {
-    if (order !== "connected" || arrangement !== "stacked" || (count !== 3 && count !== 5) || !Array.isArray(props.lanes) || props.lanes.length !== 2) throw new TypeError("Items: two lanes belong to stacked connected sequences with three or five steps.");
+    if (order !== "connected" || !["columns", "stacked"].includes(arrangement) || count < 3 || count > 5 || !Array.isArray(props.lanes) || props.lanes.length !== 2) throw new TypeError("Items: two lanes belong to connected columns or stacked sequences with three to five steps.");
     const laneIds = new Set<string>();
     for (let i = 0; i < 2; i++) {
       const lane = props.lanes[i];

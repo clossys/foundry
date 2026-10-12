@@ -593,8 +593,8 @@ describe("golden: SectionedView content-section", () => {
     expect(html).toBe(INTRO_BAND_HTML);
   });
 
-  it("renders a feature-grid block in a stacked, centred band, with explicit icons and no item eyebrow", () => {
-    const { root } = renderContent(contentBand("features", { align: "center", block: BLOCKS.features }));
+  it("renders a feature-grid block in a stacked band, with explicit icons and no item eyebrow", () => {
+    const { root } = renderContent(contentBand("features", { block: BLOCKS.features }));
     const section = band(root, "features");
     expect(section.getAttribute("data-content-section")).toBe("");
     expect(section.querySelector("[data-content-section-header] h2")?.textContent).toBe("Heading features");
@@ -695,7 +695,7 @@ describe("golden: SectionedView content-section", () => {
     const { root } = renderContent(contentBand("chapter", {
       layout: "split-end",
       media: specimenMedia("chapter", recordPanel("chapter-record", "Placeholder record")),
-      block: { type: "items", arrangement: "columns", columns: 3, emphasis: "statement", treatment: "plain", items: [textItem("fa"), textItem("fb"), textItem("fc")] },
+      block: { type: "items", arrangement: "columns", columns: 3, scale: "statement", treatment: "plain", items: [textItem("fa"), textItem("fb"), textItem("fc")] },
       actions: [{ id: "lead", label: copy("golden.chapter.lead", "Read the guide"), href: "/guide" }, { id: "more", label: copy("golden.chapter.more", "See details"), href: "/details" }],
     }));
     const [lead, more] = [...band(root, "chapter").querySelectorAll<HTMLElement>("[data-section-intro-actions] > a")];

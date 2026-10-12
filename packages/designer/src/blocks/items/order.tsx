@@ -13,7 +13,7 @@ const LINE = { base: "bg-line-strong", sunken: "bg-line-strong", inverse: "bg-li
 const DISC = { base: "bg-accent-tint text-accent-text", sunken: "bg-accent-tint text-accent-text", inverse: "border border-line-on-inverse text-ink-on-inverse" } as const;
 export function orderLayout(props: ItemsProps): { className: string; style: OrderStyle } {
   const columns = props.arrangement === "columns";
-  const wide = columns ? ORDER_LAYOUT_CLASSES.columns : props.lanes ? props.items.length === 3 ? ORDER_LAYOUT_CLASSES.lanes3 : ORDER_LAYOUT_CLASSES.lanes5 : undefined;
+  const wide = columns ? ORDER_LAYOUT_CLASSES.columns : props.lanes ? props.items.length === 3 ? ORDER_LAYOUT_CLASSES.lanes3 : props.items.length === 4 ? ORDER_LAYOUT_CLASSES.lanes4 : ORDER_LAYOUT_CLASSES.lanes5 : undefined;
   return { className: cx(ORDER_LAYOUT_CLASSES.root, wide), style: { "--items-gap-inline": M, "--items-gap-block": columns && props.treatment !== "plate" ? "var(--spacing-3xl)" : M } };
 }
 export function orderedItemStyle(item: ItemData, props: ItemsProps): OrderStyle {
@@ -48,9 +48,9 @@ function wideTransition(item: ItemData, next: ItemData, index: number, columns: 
   </span>;
 }
 export function renderConnectedTrack({ item, index, props }: { item: ItemData; index: number; props: ItemsProps }) {
-  const next = props.items[index + 1], lane = props.lanes?.find(lane => lane.id === item.lane), ground = props.ground ?? "base";
+  const next = props.items[index + 1], lane = props.lanes?.find(lane => lane.id === item.lane), ground = props.ground ?? "base", columns = props.arrangement === "columns";
   return <>
-    {lane ? <span data-item-lane-label="" className={cx("relative block items-order-lane-label text-body-s font-medium uppercase tracking-label", props.items.length === 3 ? "tablet-lg:absolute" : "desktop:absolute", SECTION_GROUND_CLASSES[ground].secondary)}>{lane.label}</span> : null}
+    {lane ? <span data-item-lane-label="" className={cx("relative block items-order-lane-label text-body-s font-medium uppercase tracking-label", columns ? "tablet:absolute" : props.items.length === 3 ? "tablet-lg:absolute" : "desktop:absolute", SECTION_GROUND_CLASSES[ground].secondary)}>{lane.label}</span> : null}
     {next ? <span data-item-connector="" data-item-transition={index} aria-hidden="true" className={ORDER_LAYOUT_CLASSES.transition}>
       {narrowTransition(item, next, props)}
       {props.arrangement === "columns" ? props.columns === 2 ? wideTransition(item, next, index, 2, props, ORDER_LAYOUT_CLASSES.wideColumns2) : <>{wideTransition(item, next, index, 2, props, ORDER_LAYOUT_CLASSES.wideTablet2)}{wideTransition(item, next, index, 3, props, ORDER_LAYOUT_CLASSES.wideColumns3)}</> : props.lanes ? wideTransition(item, next, index, props.items.length, props, props.items.length === 3 ? ORDER_LAYOUT_CLASSES.wideLanes3 : ORDER_LAYOUT_CLASSES.wideLanes5) : null}

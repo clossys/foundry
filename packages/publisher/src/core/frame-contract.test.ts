@@ -10,7 +10,7 @@ const resolver = (value: { id: string }) => ({ ref: value, text: value.id === "s
 
 describe("canonical frame", () => {
   it("accepts header-only split directions and all frame sizes, resolving defaults", () => {
-    for (const size of ["compact", "standard", "display"]) for (const layout of ["stacked", "split-start", "split-end"]) expect(contract.validateSectionedViewDocument(document({ size, layout, align: "center" }))).toEqual([]);
+    for (const size of ["standard", "display"]) for (const layout of ["stacked", "split-start", "split-end"]) expect(contract.validateSectionedViewDocument(document({ size, layout }))).toEqual([]);
     expect(contract.resolveSectionedViewDocument(document({}), resolver).sections[0]).toMatchObject({ size: "standard", layout: "stacked" });
   });
   it("replaces only unreleased hero compact boolean with compact/display size", () => {

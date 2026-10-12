@@ -12,11 +12,11 @@ describe("canonical items contract", () => {
   it("exports one closed enum/count table and desugars minimal recipes", () => {
     expect(contract.SECTIONED_VIEW_CONTENT_CONTRACT.arrangements).toEqual(["columns", "rows", "bento", "stacked"]);
     const result = contract.desugarRecipe({ type: "items", recipe: "features", items: items(3) });
-    expect(result).toMatchObject({ arrangement: "columns", columns: 3, order: "none", reveal: "all", treatment: "plain", emphasis: "item" });
+    expect(result).toMatchObject({ arrangement: "columns", columns: 3, order: "none", reveal: "all", treatment: "plain", scale: "item" });
     expect(errors({ type: "items", recipe: "features", items: items(3) })).toEqual([]);
   });
-  it.each(["features", "statement", "cards", "topics", "link-index", "faq", "steps", "flow", "specimen-stack"])("refuses an explicit conflicting axis for %s", (recipe) => {
-    expect(findings({ type: "items", recipe, arrangement: "invalid", items: items(3) }).some((entry) => entry.rule === "recipe-axis")).toBe(true);
+  it.each(["features", "statement", "cards", "topics", "link-index", "faq", "steps", "specimen-stack"])("refuses an explicit conflicting axis for %s", (recipe) => {
+    expect(findings({ type: "items", recipe, order: "invalid", items: items(3) }).some((entry) => entry.rule === "recipe-axis")).toBe(true);
   });
   it.each([[2, 2], [2, 4], [2, 6], [3, 3], [3, 6]])("accepts columns %i with %i items", (columns, count) => {
     expect(errors({ type: "items", arrangement: "columns", columns, items: items(count) })).toEqual([]);
@@ -35,11 +35,11 @@ describe("canonical items contract", () => {
   });
   it("treats explicitly undefined optional axes as omission without erasing canonical defaults", () => {
     for (const fields of [{ arrangement: "columns" }, { recipe: "features" }, { recipe: "cards", items: items(2) }]) {
-      const block = { type: "items", items: items(3), order: undefined, reveal: undefined, treatment: undefined, emphasis: undefined, ...fields };
+      const block = { type: "items", items: items(3), order: undefined, reveal: undefined, treatment: undefined, scale: undefined, ...fields };
       expect(errors(block)).toEqual([]);
-      expect(contract.desugarRecipe(block as contract.SectionedViewItemsBlock)).toMatchObject({ order: "none", reveal: "all", treatment: fields.recipe === "cards" ? "rule" : "plain", emphasis: "item" });
+      expect(contract.desugarRecipe(block as contract.SectionedViewItemsBlock)).toMatchObject({ order: "none", reveal: "all", treatment: fields.recipe === "cards" ? "rule" : "plain", scale: "item" });
       const section = contract.resolveSectionedViewDocument(document({ block }), resolver).sections[0];
-      expect(section?.kind === "content-section" ? section.block : undefined).toMatchObject({ order: "none", reveal: "all", emphasis: "item" });
+      expect(section?.kind === "content-section" ? section.block : undefined).toMatchObject({ order: "none", reveal: "all", scale: "item" });
     }
   });
   it("requires arrangement without a recipe and refuses every retired raw type with a named replacement", () => {
@@ -69,16 +69,16 @@ describe("canonical items contract", () => {
   });
   it("refuses three declared lanes with the named lane-shape finding", () => {
     const ids = ["sender", "reviewer", "observer"];
-    const block = { type: "items", recipe: "flow", lanes: ids.map((id) => ({ id, label: ref(id) })), items: items(3).map((item, index) => ({ ...item, lane: ids[index] })) };
+    const block = { type: "items", recipe: "steps", arrangement: "stacked", lanes: ids.map((id) => ({ id, label: ref(id) })), items: items(3).map((item, index) => ({ ...item, lane: ids[index] })) };
     expect(errors(block)).toContainEqual(expect.objectContaining({ rule: "sectioned-view-content-steps-lanes-shape" }));
   });
-  it("uses two authored lane ids, requires both, and refuses unknown ids and four steps", () => {
-    const block = { type: "items", recipe: "flow", lanes: [{ id: "sender", label: ref("Sender") }, { id: "reviewer", label: ref("Reviewer") }], items: items(3).map((item, index) => ({ ...item, lane: index === 1 ? "reviewer" : "sender" })) };
+  it("uses two authored lane ids, requires both, and refuses unknown ids while accepting four steps", () => {
+    const block = { type: "items", recipe: "steps", arrangement: "stacked", lanes: [{ id: "sender", label: ref("Sender") }, { id: "reviewer", label: ref("Reviewer") }], items: items(3).map((item, index) => ({ ...item, lane: index === 1 ? "reviewer" : "sender" })) };
     expect(errors(block)).toEqual([]);
     expect(errors({ ...block, items: block.items.map((item) => ({ ...item, lane: "foreign" })) }).some((entry) => entry.rule === "sectioned-view-content-steps-lanes-shape")).toBe(true);
-    expect(errors({ ...block, items: [...block.items, { ...block.items[0], id: "four" }] }).length).toBeGreaterThan(0);
+    expect(errors({ ...block, items: [...block.items, { ...block.items[0], id: "four" }] })).toEqual([]);
     expect(errors({ ...block, lanes: [block.lanes[0]] }).length).toBeGreaterThan(0);
-    expect(errors({ ...block, arrangement: "columns" }).length).toBeGreaterThan(0);
+    expect(errors({ ...block, arrangement: "columns" })).toEqual([]);
   });
   it("defaults omitted bento spans to half while requiring whole rows", () => {
     for (const count of [2, 4, 6]) {
@@ -90,7 +90,7 @@ describe("canonical items contract", () => {
     for (const count of [3, 5]) expect(errors({ type: "items", arrangement: "bento", items: items(count) }).length).toBeGreaterThan(0);
   });
   it("keeps spans bento-only, validates complete explicit rows and featured placement", () => {
-    expect(errors({ type: "items", arrangement: "bento", items: items(2).map((item) => ({ ...item, span: "half", featured: item.id === "item-0" })) })).toEqual([]);
+    expect(errors({ type: "items", arrangement: "bento", items: items(2).map((item) => ({ ...item, span: "half" })) })).toEqual([]);
     expect(errors({ type: "items", arrangement: "bento", items: items(2).map((item) => ({ ...item, span: "third" })) }).length).toBeGreaterThan(0);
     expect(errors({ type: "items", arrangement: "rows", items: items(2).map((item) => ({ ...item, span: "half" })) }).length).toBeGreaterThan(0);
     expect(errors({ type: "items", arrangement: "columns", items: items(3).map((item) => ({ ...item, featured: true })) }).length).toBeGreaterThan(0);

@@ -15,7 +15,7 @@ const mediaErrors = (media: unknown, fields: Record<string, unknown> = {}) => co
 const sceneInput = { template: "converge", seed: "stable", sources: { heading: ref(), items: ["a", "b", "c"].map((id) => ({ id, format: "pdf", title: ref(), origin: ref() })) }, target: { heading: ref(), title: ref(), meta: ref(), rows: ["one", "two"].map((id) => ({ id, label: ref(), value: ref() })) }, relations: ["a", "b", "c"].map((from) => ({ from, to: "one" })) };
 describe("canonical media data and CopyRef boundary", () => {
   it("accepts one specimen panel and a key targeting its actual parts/header/footer", () => {
-    const media = { type: "specimen", label: ref("specimen-label"), panel: { ...panel, footer: { note: ref() } }, key: { label: ref(), side: "below", items: ["header", "field-part", "footer"].map((target) => ({ id: target, target, heading: ref(), description: ref() })) } };
+    const media = { type: "specimen", label: ref("specimen-label"), panel: { ...panel, footer: { note: ref() } }, key: { label: ref(), items: ["header", "field-part", "footer"].map((target) => ({ id: target, target, heading: ref(), description: ref() })) } };
     expect(mediaErrors(media)).toEqual([]);
     expect(contract.resolveSectionedViewDocument(document({ media }), resolver).resolutions.map((entry) => entry.ref.id)).toContain("Beta");
     expect(mediaErrors({ ...media, key: { ...media.key, items: [{ id: "marker", target: "foreign", heading: ref(), description: ref() }] } }).length).toBeGreaterThan(0);

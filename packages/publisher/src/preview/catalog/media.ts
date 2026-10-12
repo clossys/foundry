@@ -145,8 +145,8 @@ export const MEDIA_FIXTURES = [
 {
     "id": "media-key" as const,
     "fn": "Media",
-    "axis": "keySide",
-    "value": "end",
+    "axis": "layout",
+    "value": "stacked",
     "caption": "Labeled key targets in reading order",
     "section": {
         "id": "media-key",
@@ -267,7 +267,6 @@ export const MEDIA_FIXTURES = [
                 "label": {
                     "id": "catalog.sample.key.end.label"
                 },
-                "side": "end",
                 "items": [
                     {
                         "id": "key-0",

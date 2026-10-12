@@ -122,7 +122,6 @@ describe("Specimen", () => {
   it("requires an accessible name", () => {
     expect(() => render(<Specimen label="" panels={[PANEL]} />)).toThrow(TypeError);
     expect(() => render(<Specimen label="   " panels={[PANEL]} />)).toThrow(/label is required/);
-    // @ts-expect-error label is required
     expect(() => render(<Specimen panels={[PANEL]} />)).toThrow(TypeError);
   });
 

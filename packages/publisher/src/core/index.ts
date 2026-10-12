@@ -148,7 +148,6 @@ export type {
   ResolvedSectionedViewSpecimenPart,
   SectionedViewContentAction,
   SectionedViewContentActionEmphasis,
-  SectionedViewContentAlign,
   SectionedViewContentFootnote,
   SectionedViewContentFootnoteLink,
   SectionedViewContentLayout,

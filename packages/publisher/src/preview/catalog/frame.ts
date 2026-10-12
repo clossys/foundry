@@ -17,7 +17,6 @@ export const FRAME_FIXTURES = [
         "heading": {
             "id": "catalog.sample.frame-standard.heading"
         },
-        "align": "start"
     } satisfies SectionedViewSection
 },
 {
@@ -35,7 +34,6 @@ export const FRAME_FIXTURES = [
         "heading": {
             "id": "catalog.sample.frame-standard.heading"
         },
-        "align": "start"
     } satisfies SectionedViewSection
 },
 {
@@ -53,25 +51,23 @@ export const FRAME_FIXTURES = [
         "heading": {
             "id": "catalog.sample.frame-display.heading"
         },
-        "align": "center"
     } satisfies SectionedViewSection
 },
 {
     "id": "frame-compact" as const,
     "fn": "Frame",
     "axis": "size",
-    "value": "compact",
-    "caption": "Compact frame",
+    "value": "standard",
+    "caption": "Standard frame",
     "section": {
         "id": "frame-compact",
         "kind": "content-section",
         "ground": "base",
-        "size": "compact",
+        "size": "standard",
         "layout": "stacked",
         "heading": {
             "id": "catalog.sample.frame-compact.heading"
         },
-        "align": "start"
     } satisfies SectionedViewSection
 },
 {
@@ -132,7 +128,6 @@ export const FRAME_FIXTURES = [
                 "label": {
                     "id": "catalog.sample.key.below.label"
                 },
-                "side": "below",
                 "items": [
                     {
                         "id": "below-key-0",
@@ -227,9 +222,9 @@ export const FRAME_FIXTURES = [
 {
     "id": "frame-center" as const,
     "fn": "Frame",
-    "axis": "align",
-    "value": "center",
-    "caption": "Centered frame",
+    "axis": "layout",
+    "value": "stacked",
+    "caption": "Stacked frame",
     "section": {
         "id": "frame-center",
         "kind": "content-section",
@@ -239,7 +234,6 @@ export const FRAME_FIXTURES = [
         "heading": {
             "id": "catalog.sample.frame-standard.heading"
         },
-        "align": "center"
     } satisfies SectionedViewSection
 },
 {

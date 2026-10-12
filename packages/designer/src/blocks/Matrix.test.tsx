@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { Matrix, type MatrixProps, type MatrixSide } from "./Matrix.js";
+import { Comparison } from "./Comparison.js";
 
 const SIDES: readonly [MatrixSide, MatrixSide] = [
   { id: "first", label: "First option", heading: "A shared record", points: ["One source", "Clear dates"] },
@@ -23,6 +24,40 @@ describe("Matrix", () => {
     }
     expect(screen.getByRole("heading", { name: "First option" }).tagName).toBe("H3");
     expect(screen.getByText("A shared record")).toHaveClass("text-h2", "text-ink-primary");
+  });
+
+  it("preserves the published Comparison label slot even when its React content is empty", () => {
+    const { container } = render(<Comparison before={{ label: null, heading: "Existing heading", description: "Existing body" }} after={{ label: false, description: "Second body" }} />);
+    expect([...container.querySelectorAll("h3")].map(node => node.textContent)).toEqual(["", ""]);
+    expect(screen.getByText("Existing heading").tagName).toBe("P");
+    expect(screen.getByText("Existing body")).toHaveAttribute("data-matrix-description");
+  });
+
+  it("uses the required heading when labels are omitted, without adding empty or duplicate headings", () => {
+    const sides: MatrixProps["sides"] = [
+      { id: "first", heading: "A shared record", description: "Supporting lead.", points: ["One source", "Clear dates"] },
+      { id: "second", heading: "A shared view", points: ["One view", "Clear owners"] },
+    ];
+    const { container } = render(<Matrix sides={sides} headingLevel={4} featured="second" />);
+    expect(screen.getAllByRole("heading", { level: 4 }).map(node => node.textContent)).toEqual(["A shared record", "A shared view"]);
+    for (const side of container.querySelectorAll<HTMLElement>("[data-matrix-side]")) {
+      expect(within(side).getAllByRole("heading")).toHaveLength(1);
+      expect(within(side).getByRole("heading", { level: 4 })).toHaveClass("text-h2", "text-ink-primary");
+      expect(side.querySelectorAll("li")).toHaveLength(2);
+    }
+    expect(screen.getByText("Supporting lead.")).toHaveAttribute("data-matrix-description");
+    expect(container.querySelector('[data-matrix-side="second"] > [data-featured="true"]')).not.toBeNull();
+  });
+
+  it("supports label omission on one side while keeping the other side's existing heading anatomy", () => {
+    const { container } = render(<Matrix sides={[
+      SIDES[0],
+      { id: "second", heading: "A shared view", points: ["One view", "Clear owners"] },
+    ]} />);
+    expect(screen.getAllByRole("heading", { level: 3 }).map(node => node.textContent)).toEqual(["First option", "A shared view"]);
+    expect(screen.getByText("A shared record").tagName).toBe("P");
+    expect(container.querySelectorAll("h3")).toHaveLength(2);
+    expect(container.querySelector('[data-matrix-side="second"]')?.querySelectorAll("p")).toHaveLength(0);
   });
 
   it.each(["first", "second"])("features only the selected %s plate without reordering sides", featured => {
@@ -114,9 +149,9 @@ describe("Matrix", () => {
   });
   it("refuses points alongside a visual or mixed primary forms", () => {
     expect(() => markup({ sides: [{ ...SIDES[0], visual: <div /> }, SIDES[1]] })).toThrow(/points.*visual/);
-    expect(() => markup({ sides: [SIDES[0], { ...SIDES[1], points: undefined, description: "Other form" }] })).toThrow(/same.*form/);
+    expect(() => markup({ sides: [SIDES[0], { ...SIDES[1], points: undefined, visual: <div>Other form</div> }] })).toThrow(/same.*form/);
   });
-  it.each(["label", "heading"] as const)("requires nonempty %s and a body form", field => {
+  it.each(["label", "heading"] as const)("refuses nonempty-slot violations in supplied %s", field => {
     expect(() => markup({ sides: [{ ...SIDES[0], [field]: " " }, SIDES[1]] })).toThrow(/label|heading/);
     expect(() => markup({ sides: [{ ...SIDES[0], points: undefined }, { ...SIDES[1], points: undefined }] })).toThrow(/description|points|visual/);
   });
@@ -125,6 +160,24 @@ describe("Matrix", () => {
     expect(() => markup({ ground: "other" as MatrixProps["ground"] })).toThrow(/ground/);
     expect(() => markup({ headingLevel: 1 as MatrixProps["headingLevel"] })).toThrow(/heading/);
   });
+  it.each([undefined, "A complete paragraph.", <p key="lead">A complete paragraph.</p>].map(description => ({ description })))("requires points or a visual even with a description lead %j", ({ description }) => {
+    expect(() => markup({ sides: SIDES.map(side => ({ ...side, points: undefined, description })) as unknown as MatrixProps["sides"] })).toThrow(/needs points or visual/);
+  });
+
+  it("preserves the published Comparison description-only form and optional headings", () => {
+    const { container } = render(<Comparison
+      before={{ label: "Before", description: "Earlier process." }}
+      after={{ label: "After", description: "Improved process." }}
+      headingLevel={4}
+    />);
+    expect(screen.getAllByRole("heading", { level: 4 }).map(node => node.textContent)).toEqual(["Before", "After"]);
+    expect(screen.getByText("Earlier process.")).toHaveAttribute("data-matrix-description");
+    expect(screen.getByText("Improved process.")).toHaveAttribute("data-matrix-description");
+    expect(container.querySelectorAll("[data-matrix-description]")).toHaveLength(2);
+    expect(container.querySelectorAll("[data-matrix-visual], li")).toHaveLength(0);
+    expect(container.querySelector('[data-comparison-side="after"] > [data-featured="true"]')).not.toBeNull();
+  });
+
   it.each(["", " ", true, [], <span key="empty" />, <></>].map(description => ({ description })))("refuses empty description-only bodies %j", ({ description }) => {
     expect(() => markup({ sides: SIDES.map(side => ({ ...side, points: undefined, description })) as unknown as MatrixProps["sides"] })).toThrow(/description|points|visual/);
   });

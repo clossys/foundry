@@ -340,7 +340,6 @@ export interface SectionedViewStatusListSection {
 
 /** A band's spacing and arrangement. Split direction names its visual side. */
 export type SectionedViewContentLayout = FrameLayout;
-export type SectionedViewContentAlign = "start" | "center";
 
 /** The closed status tones a specimen may show; the product's own data states, never availability or roadmap. */
 export type SectionedViewSpecimenTone = "success" | "warning" | "danger" | "info" | "neutral";
@@ -525,7 +524,6 @@ export interface SectionedViewContentSection {
   ground?: SectionedViewGround;
   size?: FrameSize;
   layout?: FrameLayout;
-  align?: SectionedViewContentAlign;
   eyebrow?: CopyRef;
   heading: CopyRef;
   description?: CopyRef;
@@ -1107,12 +1105,11 @@ function validateStatusItems(value: unknown, path: string, findings: ComposeFind
 // content-section validation
 // ---------------------------------------------------------------------------
 
-const CONTENT_SECTION_KEYS = ["id", "kind", "ground", "size", "eyebrow", "heading", "description", "actions", "layout", "align", "block", "media", "footnote"] as const;
+const CONTENT_SECTION_KEYS = ["id", "kind", "ground", "size", "eyebrow", "heading", "description", "actions", "layout", "block", "media", "footnote"] as const;
 const ROLE_ACTION_EMPHASES: readonly SectionedViewActionEmphasis[] = ["primary", "secondary", "quiet"];
 const CONTENT_ACTION_EMPHASES: readonly SectionedViewContentActionEmphasis[] = ["primary", "secondary", "tertiary", "quiet"];
 const CONTENT_ACTIONS_MAX = 2;
 const CONTENT_LAYOUTS = SECTIONED_VIEW_CONTENT_CONTRACT.layouts;
-const CONTENT_ALIGNS = ["start", "center"] as const;
 const CONTENT_BLOCK_TYPES: readonly SectionedViewContentBlockType[] = ["items", "matrix"];
 const CARD_SPAN_UNITS = SECTIONED_VIEW_CONTENT_CONTRACT.spans;
 const CARD_ROW_UNITS = SECTIONED_VIEW_CONTENT_CONTRACT.counts.rowUnits;
@@ -1195,7 +1192,6 @@ function validateContentSection(section: Record<string, unknown>, path: string, 
   if (section.footnote !== undefined) validateContentFootnote(section.footnote, `${path}.footnote`, findings);
   validateEnumField(section, "size", SECTIONED_VIEW_CONTENT_CONTRACT.sizes, "sectioned-view-content-size", path, findings);
   validateEnumField(section, "layout", CONTENT_LAYOUTS, "sectioned-view-content-layout", path, findings);
-  validateEnumField(section, "align", CONTENT_ALIGNS, "sectioned-view-content-layout", path, findings);
   validateContentActionPlacement(section, path, findings);
   if (section.block !== undefined) validateContentBlock(section.block, `${path}.block`, findings);
   if (section.media !== undefined) {
@@ -1295,41 +1291,40 @@ function validateContentBlock(value: unknown, path: string, findings: ComposeFin
   if (typeof value.type === "string" && Object.hasOwn(replacements, value.type)) { findings.push(finding("sectioned-view-content-block-retired", `${path}.type`, `${path}.type ${value.type} is retired; use the ${replacements[value.type]} recipe on ${value.type === "comparison" ? "matrix" : "items"}.`)); return; }
   if (value.type === "matrix") { validateMatrix(value, path, findings); return; }
   if (value.type !== "items") { findings.push(finding("sectioned-view-content-block-type", `${path}.type`, `${path}.type "${typeof value.type === "string" ? value.type : "unknown"}" must be items or matrix.`)); return; }
-  if (!hasOnlyOwnKeys(value, ["type", "recipe", "arrangement", "columns", "order", "reveal", "treatment", "emphasis", "items", "groups", "lanes", "end", "endLabel", "caption"]) || !hasOwn(value, "items")) findings.push(finding("sectioned-view-content-block-shape", path, `${path} has fields outside the items contract.`));
+  if (!hasOnlyOwnKeys(value, ["type", "recipe", "arrangement", "columns", "order", "reveal", "treatment", "scale", "items", "groups", "lanes", "end", "endLabel", "caption"]) || !hasOwn(value, "items")) findings.push(finding("sectioned-view-content-block-shape", path, `${path} has fields outside the items contract.`));
   let block: CanonicalSectionedViewItemsBlock;
   try { block = desugarRecipe(value as unknown as SectionedViewItemsBlock); }
   catch (error) { findings.push(finding("recipe-axis", path, error instanceof Error ? error.message : "recipe-axis: invalid recipe.")); return; }
   const record = block as unknown as Record<string, unknown>;
-  for (const [key, allowed] of [["arrangement", SECTIONED_VIEW_CONTENT_CONTRACT.arrangements], ["order", SECTIONED_VIEW_CONTENT_CONTRACT.orders], ["reveal", SECTIONED_VIEW_CONTENT_CONTRACT.reveals], ["treatment", SECTIONED_VIEW_CONTENT_CONTRACT.treatments], ["emphasis", SECTIONED_VIEW_CONTENT_CONTRACT.emphases]] as const) validateEnumField(record, key, allowed, "sectioned-view-content-module-option", path, findings);
+  for (const [key, allowed] of [["arrangement", SECTIONED_VIEW_CONTENT_CONTRACT.arrangements], ["order", SECTIONED_VIEW_CONTENT_CONTRACT.orders], ["reveal", SECTIONED_VIEW_CONTENT_CONTRACT.reveals], ["treatment", SECTIONED_VIEW_CONTENT_CONTRACT.treatments], ["scale", SECTIONED_VIEW_CONTENT_CONTRACT.scales]] as const) validateEnumField(record, key, allowed, "sectioned-view-content-module-option", path, findings);
   if (block.arrangement === undefined) findings.push(finding("sectioned-view-content-arrangement", `${path}.arrangement`, `${path}.arrangement is required without a recipe.`));
   if (block.arrangement === "columns") validateEnumField(record, "columns", SECTIONED_VIEW_CONTENT_CONTRACT.columnOptions, "sectioned-view-content-columns", path, findings);
   else if (block.arrangement === "rows") validateEnumField(record, "columns", SECTIONED_VIEW_CONTENT_CONTRACT.rowColumnOptions, "sectioned-view-content-columns", path, findings);
   else if (block.columns !== undefined) findings.push(finding("sectioned-view-content-columns", `${path}.columns`, "Only columns and rows arrangements take columns."));
   if (block.order === "connected" && !["columns", "stacked"].includes(block.arrangement)) findings.push(finding("sectioned-view-content-order", `${path}.order`, "Connected order requires columns or stacked."));
   if (block.reveal === "disclose" && block.arrangement !== "rows") findings.push(finding("sectioned-view-content-reveal", `${path}.reveal`, "Disclosure requires rows."));
-  if (block.emphasis === "statement" && (block.arrangement !== "columns" || block.columns !== 3 || !["plain", "rule"].includes(block.treatment))) findings.push(finding("sectioned-view-content-statement", path, "Statement emphasis needs three plain or ruled columns."));
+  if (block.scale === "statement" && (block.arrangement !== "columns" || block.columns !== 3 || !["plain", "rule"].includes(block.treatment))) findings.push(finding("sectioned-view-content-statement", path, "Statement scale needs three plain or ruled columns."));
   validateOptionalCopyFields(record, ["endLabel", "caption"], path, findings);
   validateEnumField(record, "end", ["ends", "continues"], "sectioned-view-content-module-option", path, findings);
   if (block.order !== "connected" && ["lanes", "end", "endLabel", "caption"].some((key) => record[key] !== undefined)) findings.push(finding("sectioned-view-content-order", path, "Lanes, end and caption belong to connected items."));
   const C = SECTIONED_VIEW_CONTENT_CONTRACT.counts;
   const bounds = block.order === "connected" ? C.connected : block.reveal === "disclose" ? C.disclose : block.arrangement === "rows" ? C.rows : block.arrangement === "bento" ? C.bento : block.arrangement === "stacked" ? C.stacked : C.columns;
-  const itemRecords = validateRecords(block.items, `${path}.items`, findings, { min: bounds[0], max: bounds[1] }, ["id", "heading", "description", "eyebrow", "icon", "meta", "visual", "href", "featured", "span", "lane", "badge"], ["heading"], (item, itemPath) => {
+  const itemRecords = validateRecords(block.items, `${path}.items`, findings, { min: bounds[0], max: bounds[1] }, ["id", "heading", "description", "eyebrow", "icon", "meta", "visual", "href", "span", "lane", "badge"], ["heading"], (item, itemPath) => {
     validateCopy(item.heading, `${itemPath}.heading`, findings);
     validateOptionalCopyFields(item, ["description", "eyebrow", "meta"], itemPath, findings);
     if (block.reveal === "disclose" && (item.description === undefined || item.href !== undefined || item.visual !== undefined)) findings.push(finding("sectioned-view-content-disclosure", itemPath, "Disclosed items require a description and cannot take href or visual."));
     if (item.icon !== undefined) validateIcon(item.icon, `${itemPath}.icon`, findings);
-    validateItemHref(item, itemPath, findings, block.emphasis === "statement");
+    validateItemHref(item, itemPath, findings, block.scale === "statement");
     if (item.badge !== undefined) validateBadge(item.badge, `${itemPath}.badge`, findings);
     if (item.visual !== undefined) validateSpecimenPart(item.visual, `${itemPath}.visual`, findings, CARD_VISUAL_MAX_ROWS);
-    if (item.featured !== undefined && (typeof item.featured !== "boolean" || !["columns", "bento"].includes(block.arrangement))) findings.push(finding("sectioned-view-content-featured", `${itemPath}.featured`, "Featured is a boolean on columns or bento only."));
     if (item.span !== undefined && (block.arrangement !== "bento" || typeof item.span !== "string" || !Object.hasOwn(CARD_SPAN_UNITS, item.span))) findings.push(finding("sectioned-view-content-card-spans", `${itemPath}.span`, "Span is a closed bento-only field."));
     if (item.lane !== undefined && (block.order !== "connected" || block.lanes === undefined || !isNonWhitespaceString(item.lane))) findings.push(finding("sectioned-view-content-steps-lanes-shape", `${itemPath}.lane`, "Lane requires connected items with declared lanes."));
     const recipe = block.recipe === undefined ? undefined : SECTIONED_VIEW_ITEM_RECIPES[block.recipe];
     if (recipe !== undefined) {
-      for (const slot of ["icon", "eyebrow", "href", "meta", "visual", "featured", "span", "lane"]) if (item[slot] !== undefined && !recipe.slots.includes(slot)) findings.push(finding("recipe-slot", `${itemPath}.${slot}`, `${block.recipe} does not take ${slot}.`));
+      for (const slot of ["icon", "eyebrow", "href", "meta", "visual", "span", "lane"]) if (item[slot] !== undefined && !recipe.slots.includes(slot)) findings.push(finding("recipe-slot", `${itemPath}.${slot}`, `${block.recipe} does not take ${slot}.`));
       if (recipe.requiredSlot !== undefined && item[recipe.requiredSlot] === undefined) findings.push(finding("recipe-slot", itemPath, `${block.recipe} requires ${recipe.requiredSlot} on every item.`));
     }
-    if (block.emphasis === "statement" && ["icon", "eyebrow", "meta", "visual", "lane", "featured"].some((slot) => item[slot] !== undefined)) findings.push(finding("sectioned-view-content-statement", itemPath, "Statement items take heading, description and optional badge only."));
+    if (block.scale === "statement" && ["icon", "eyebrow", "meta", "visual", "lane"].some((slot) => item[slot] !== undefined)) findings.push(finding("sectioned-view-content-statement", itemPath, "Statement items take heading, description and optional badge only."));
   });
   if (block.order === "connected" && block.caption !== undefined && !itemRecords.some((item) => item.visual !== undefined)) findings.push(finding("sectioned-view-content-steps-caption", `${path}.caption`, "A connected caption requires a step visual."));
   if (!Array.isArray(block.items)) return;
@@ -1337,8 +1332,7 @@ function validateContentBlock(value: unknown, path: string, findings: ComposeFin
   if (block.order === "connected" && count === 4) findings.push({ rule: "steps-count", severity: "warning", path: `${path}.items`, message: "A connected sequence reads more clearly with three or five items." });
   if (block.order !== "connected" && block.arrangement === "columns" && !(block.columns === 2 ? C.columns2 : C.columns3).includes(count)) findings.push(finding("sectioned-view-content-count", `${path}.items`, "Columns must fill complete rows."));
   if (block.arrangement === "rows" && block.columns === 2 && count % 2 !== 0) findings.push(finding("sectioned-view-content-count", `${path}.items`, "Two-column rows need an even item count."));
-  if (block.emphasis === "statement" && count !== 3) findings.push(finding("sectioned-view-content-count", `${path}.items`, "Statement emphasis needs exactly three items."));
-  if (itemRecords.filter((item) => item.featured === true).length > 1) findings.push(finding("sectioned-view-content-featured", `${path}.items`, "At most one item may be featured."));
+  if (block.scale === "statement" && count !== 3) findings.push(finding("sectioned-view-content-count", `${path}.items`, "Statement scale needs exactly three items."));
   validateLinkGroup(itemRecords, `${path}.items`, findings);
   if (block.arrangement === "bento" && itemRecords.length === count && itemRecords.every((item) => item.span === undefined || (typeof item.span === "string" && Object.hasOwn(CARD_SPAN_UNITS, item.span)))) validateCardRows(itemRecords.map((item) => (item.span ?? "half") as SectionedViewItemSpan), `${path}.items`, findings);
   if (block.groups !== undefined) {
@@ -1357,7 +1351,7 @@ function validateContentBlock(value: unknown, path: string, findings: ComposeFin
   }
   if (block.lanes !== undefined) {
     const lanes = validateRecords(block.lanes, `${path}.lanes`, findings, { min: C.laneDefinitions, max: C.laneDefinitions }, ["id", "label"], ["label"], (lane, lanePath) => validateCopy(lane.label, `${lanePath}.label`, findings));
-    if (lanes.length !== C.laneDefinitions || block.arrangement !== "stacked" || block.order !== "connected" || !C.lanes.includes(count)) findings.push(finding("sectioned-view-content-steps-lanes-shape", `${path}.lanes`, "Two lanes require stacked connected items with three or five steps."));
+    if (lanes.length !== C.laneDefinitions || !["columns", "stacked"].includes(block.arrangement) || block.order !== "connected" || !C.lanes.includes(count)) findings.push(finding("sectioned-view-content-steps-lanes-shape", `${path}.lanes`, "Two lanes require connected columns or stacked items with three to five steps."));
     const ids = lanes.map((lane) => lane.id);
     if (itemRecords.some((item) => !ids.includes(item.lane)) || itemRecords[0]?.lane !== ids[0] || ids.some((id) => !itemRecords.some((item) => item.lane === id))) findings.push(finding("sectioned-view-content-steps-lanes-shape", `${path}.items`, "Every step names a known lane; start in the first lane and use both lanes."));
   }
@@ -1365,14 +1359,14 @@ function validateContentBlock(value: unknown, path: string, findings: ComposeFin
 function validateMatrix(block: Record<string, unknown>, path: string, findings: ComposeFinding[]): void {
   if (!hasOnlyOwnKeys(block, ["type", "recipe", "sides", "featured"]) || !hasOwn(block, "sides")) findings.push(finding("sectioned-view-content-matrix-shape", path, "A matrix holds sides and optionally recipe and featured."));
   validateEnumField(block, "recipe", ["comparison"], "recipe-axis", path, findings);
-  const sides = validateRecords(block.sides, `${path}.sides`, findings, { min: SECTIONED_VIEW_CONTENT_CONTRACT.counts.matrix, max: SECTIONED_VIEW_CONTENT_CONTRACT.counts.matrix }, ["id", "label", "heading", "description", "points", "visual"], ["label", "heading"], (side, sidePath) => {
-    validateCopy(side.label, `${sidePath}.label`, findings); validateCopy(side.heading, `${sidePath}.heading`, findings);
-    if (["description", "points", "visual"].every((key) => side[key] === undefined) || (side.points !== undefined && side.visual !== undefined)) findings.push(finding("sectioned-view-content-matrix-form", sidePath, "A side needs description, points or visual; points and visual cannot be combined."));
+  const sides = validateRecords(block.sides, `${path}.sides`, findings, { min: SECTIONED_VIEW_CONTENT_CONTRACT.counts.matrix, max: SECTIONED_VIEW_CONTENT_CONTRACT.counts.matrix }, ["id", "label", "heading", "description", "points", "visual"], ["heading"], (side, sidePath) => {
+    validateOptionalCopyFields(side, ["label"], sidePath, findings); validateCopy(side.heading, `${sidePath}.heading`, findings);
+    if (["points", "visual"].every((key) => side[key] === undefined) || (side.points !== undefined && side.visual !== undefined)) findings.push(finding("sectioned-view-content-matrix-form", sidePath, "A side needs points or visual; description is an optional lead and points and visual cannot be combined."));
     validateOptionalCopyFields(side, ["description"], sidePath, findings);
     if (side.points !== undefined && validateDenseArray(side.points, `${sidePath}.points`, findings, "sectioned-view-items-shape", "Points must be CopyRefs.")) { const [min, max] = SECTIONED_VIEW_CONTENT_CONTRACT.counts.points; if (side.points.length < min || side.points.length > max) findings.push(countFinding(`${sidePath}.points`, { min, max }, side.points.length, "points")); side.points.forEach((point, index) => validateCopy(point, `${sidePath}.points.${index}`, findings)); }
     if (side.visual !== undefined) validateSpecimenPanel(side.visual, `${sidePath}.visual`, findings);
   });
-  const form = (side: Record<string, unknown>) => ["visual", "points", "description"].find((key) => side[key] !== undefined);
+  const form = (side: Record<string, unknown>) => ["visual", "points"].find((key) => side[key] !== undefined);
   if (sides.some((side) => form(side) !== form(sides[0]!) || (Array.isArray(side.points) && Array.isArray(sides[0]?.points) && side.points.length !== sides[0].points.length))) findings.push(finding("sectioned-view-content-matrix-form", `${path}.sides`, "Sides must share a primary form and an equal point count."));
   if (block.featured !== undefined && (!isNonWhitespaceString(block.featured) || !sides.some((side) => side.id === block.featured))) findings.push(finding("sectioned-view-content-featured", `${path}.featured`, "Featured must name a matrix side id."));
 }
@@ -1427,9 +1421,9 @@ function validateSpecimenMedia(value: unknown, path: string, findings: ComposeFi
   if (media === undefined) return;
   validateCopy(media.label, `${path}.label`, findings); validateSpecimenPanel(media.panel, `${path}.panel`, findings);
   if (media.key === undefined) return;
-  const key = contentShape(media.key, `${path}.key`, findings, ["label", "side", "items"], ["label", "items"], "sectioned-view-specimen-key-shape");
+  const key = contentShape(media.key, `${path}.key`, findings, ["label", "items"], ["label", "items"], "sectioned-view-specimen-key-shape");
   if (key === undefined) return;
-  validateCopy(key.label, `${path}.key.label`, findings); validateEnumField(key, "side", ["end", "below"], "sectioned-view-specimen-key-shape", `${path}.key`, findings);
+  validateCopy(key.label, `${path}.key.label`, findings);
   const order = ["header"]; const labeled = new Set<string>(["header"]);
   if (isPlainObject(media.panel) && hasEnumerableOwnDataKeys(media.panel)) {
     if (validateDenseArray(media.panel.parts, `${path}.panel.parts`, findings, "sectioned-view-items-shape", "Keyed panel parts must be a non-empty data array.")) for (const part of media.panel.parts) if (isPlainObject(part) && hasEnumerableOwnDataKeys(part) && typeof part.id === "string") {
@@ -2091,7 +2085,7 @@ function blockTreatment(block: SectionedViewContentBlock, axes: CanonicalSection
   if (axes.reveal === "disclose") return axes.treatment;
   if (axes.order === "connected" || axes.order === "numbered") return `${axes.lanes === undefined ? "" : "lanes/"}${hasBlockVisual(block) ? "visual" : "plain"}`;
   if (axes.arrangement === "rows") return `${axes.treatment}/${axes.groups === undefined ? `columns-${axes.columns}` : `groups-${axes.groups.length}`}`;
-  return `${axes.treatment}/${axes.emphasis}`;
+  return `${axes.treatment}/${axes.scale}`;
 }
 
 function bandShape(section: SectionedViewSection, path: string, index: number): BandShape {

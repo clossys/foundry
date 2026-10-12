@@ -7,7 +7,7 @@ export const ITEMS_FIXTURES = [
     "fn": "Items",
     "axis": "arrangement",
     "value": "columns",
-    "caption": "Three columns with statement emphasis",
+    "caption": "Three columns with statement scale",
     "section": {
         "id": "items-columns",
         "kind": "content-section",
@@ -412,7 +412,8 @@ export const ITEMS_FIXTURES = [
         },
         "block": {
             "type": "items",
-            "recipe": "flow",
+            "recipe": "steps",
+            "arrangement": "stacked",
             "lanes": [
                 {
                     "id": "sender",
@@ -673,9 +674,9 @@ export const ITEMS_FIXTURES = [
 {
     "id": "items-featured" as const,
     "fn": "Items",
-    "axis": "featured",
-    "value": true,
-    "caption": "One featured column",
+    "axis": "arrangement",
+    "value": "columns",
+    "caption": "Three parallel columns",
     "section": {
         "id": "items-featured",
         "kind": "content-section",
@@ -693,8 +694,7 @@ export const ITEMS_FIXTURES = [
                     "id": "featured-item-1",
                     "heading": {
                         "id": "catalog.sample.featured.0.heading"
-                    },
-                    "featured": true
+                    }
                 },
                 {
                     "id": "featured-item-2",
@@ -1248,7 +1248,8 @@ export const ITEMS_FIXTURES = [
         },
         "block": {
             "type": "items",
-            "recipe": "flow",
+            "recipe": "steps",
+            "arrangement": "stacked",
             "lanes": [
                 {
                     "id": "sender",

@@ -513,7 +513,7 @@ function splitFaqSection(section: Extract<ResolvedSectionedViewSection, { kind: 
     ...(section.description === undefined ? {} : { description: section.description }),
     size: "standard",
     layout: "split-end",
-    block: { type: "items", arrangement: "rows", columns: 1, order: "none", reveal: "disclose", treatment: "rule", emphasis: "item", items: section.items.map(item => ({ id: item.id, heading: item.question, description: item.answer })) },
+    block: { type: "items", arrangement: "rows", columns: 1, order: "none", reveal: "disclose", treatment: "rule", scale: "item", items: section.items.map(item => ({ id: item.id, heading: item.question, description: item.answer })) },
   };
 }
 

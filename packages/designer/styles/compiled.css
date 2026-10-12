@@ -2092,6 +2092,9 @@
       clip-path: none;
       white-space: normal;
     }
+    .tablet\:absolute {
+      position: absolute;
+    }
     .tablet\:relative {
       position: relative;
     }

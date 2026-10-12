@@ -11,7 +11,7 @@ const panel = { id: "panel", title: ref, parts: [part] };
 const media = { type: "specimen" as const, label: ref, panel };
 const features = { type: "items" as const, arrangement: "columns" as const, columns: 2 as const, items: items(2) };
 const statementBlock = { type: "items" as const, recipe: "statement" as const, items: items(3) };
-const matrix = (visual = false) => ({ type: "matrix" as const, sides: ["before", "after"].map((id) => ({ id, label: ref, heading: ref, description: ref, ...(visual ? { visual: panel } : {}) })) });
+const matrix = (visual = false) => ({ type: "matrix" as const, sides: ["before", "after"].map((id) => ({ id, label: ref, heading: ref, description: ref, ...(visual ? { visual: panel } : { points: [ref, ref] }) })) });
 const hero: SectionedViewSection = { id: "hero", kind: "hero", heading: ref, actions: [{ id: "start", label: ref, href: "/start" }] };
 const section = (extra: Partial<SectionedViewContentSection> = {}): SectionedViewContentSection => ({ id: "band", kind: "content-section", heading: ref, ...extra });
 const A = (extra: Partial<SectionedViewContentSection> = {}) => section({ media, ...extra });

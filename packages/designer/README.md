@@ -3431,9 +3431,9 @@ empty labels are omitted. End fields, captions, and lanes belong to connected
 order.
 
 For two actors, supply exactly two lane definitions as a readonly array of
-`{ id, label }` entries and give every item its lane ID. Lanes require a connected
-stack of three or five steps. The first step uses the first defined lane, both
-lanes appear, and each reference must match a definition. Lane definitions do
+`{ id, label }` entries and give every item its lane ID. Lanes require connected
+columns or a stack of three to five steps. The first step uses the first
+defined lane, both lanes appear, and each reference must match a definition. Lane definitions do
 not change step reading order.
 
 `reveal="all"` is the default. `reveal="disclose"` takes four to six rows with
@@ -3717,11 +3717,12 @@ import { Matrix } from "@clossys/designer/blocks";
 ```
 
 Exactly two sides on equal `Card` plates. Each side has a distinct,
-whitespace-free `id`, a `label` rendered as a real heading, and a required
-`heading` line. Supply the same primary form on both sides: a description,
-two to four points with equal counts, or a visual. A description may also
-accompany points or a visual; points and visuals cannot be combined. Optional
-description rows stay aligned when only one side has supporting copy.
+whitespace-free `id`, an optional `label` rendered as a real heading, and a
+required `heading` line. Supply the same primary form on both sides: two to
+four points with equal counts, or a visual. An optional description supplies
+lead copy alongside points or a visual; description alone is refused. Points
+and visuals cannot be combined. Optional description rows stay aligned when
+only one side has supporting copy.
 
 `featured` names one side's id and adds the accent top rule without changing
 reading order or either plate's fill. `headingLevel` defaults to `3`; `ground`
@@ -5881,7 +5882,7 @@ not a grab-bag).
 | `ScenePersonLayout` | type | Person row bounds and decider-ring flag. |
 | `Matrix` | component | Exactly two parallel sides on equal plates, optionally featuring one side by id. |
 | `MatrixProps` | type | Two `sides`, optional `featured`, `headingLevel`, `ground`, and native div attributes except `title`. |
-| `MatrixSide` | type | One stable-id side with `label`, `heading`, and optional description, points or visual. |
+| `MatrixSide` | type | One stable-id side with required `heading`, optional `label`, points or visual, and an optional description lead. |
 | `MatrixHeadingLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
 | `Comparison` | component | Before and after on equal Matrix plates; retains optional headings and its decorative arrow. |
 | `ComparisonProps` | type | Props for `Comparison`: `before`, `after`, `headingLevel`, `ground`, `className`, `style`, plus every native `<div>` attribute except `title`. |

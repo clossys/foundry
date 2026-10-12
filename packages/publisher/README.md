@@ -525,18 +525,19 @@ an optional footnote. This canonical contract is validated and resolved in
 separately. Published section kinds, including `feature-grid`, `faq` and
 `ordered-step-sequence`, retain their own contracts.
 
-The frame has `size: "compact" | "standard" | "display"` (default
-`standard`), `layout: "stacked" | "split-start" | "split-end"` (default
-`stacked`) and `align: "start" | "center"`. A split direction names the
-visual or block side; a split with neither is a header-only band. Hero
-sections accept `size: "display" | "compact"`; the unreleased `compact`
-boolean and content-section `mediaSide` field are refused.
+The frame has `size: "standard" | "display"` (default `standard`) and
+`layout: "stacked" | "split-start" | "split-end"` (default `stacked`).
+A split direction names the visual or block side; a split with neither is
+a header-only band. Statement bands derive centred alignment from scale
+instead of an authored align field. Hero sections accept
+`size: "display" | "compact"`; the unreleased hero `compact` boolean and
+content-section `align`, `size: "compact"` and `mediaSide` are refused.
 
 A block has one of two canonical types. `items` holds a flat list of
 `SectionedViewItem` objects; `matrix` holds exactly two id-bearing sides.
 Recipes expand into the same canonical axes through `desugarRecipe`. A
-recipe may omit its fixed arrangement. A block without a recipe must name
-its arrangement. Explicit fixed-axis conflicts are refused with
+recipe may omit an arrangement supplied by its fixed axes or defaults. A
+block without a recipe must name its arrangement. Explicit fixed-axis conflicts are refused with
 `recipe-axis`. `SECTIONED_VIEW_CONTENT_CONTRACT` exports the shared closed
 vocabulary and count table.
 
@@ -553,37 +554,43 @@ these contracts with a local, approved Writer registry.
 | `reveal: "disclose"` | Rows only, 4–6 items |
 
 The default axes are `order: "none"`, `reveal: "all"`,
-`treatment: "plain"` and `emphasis: "item"`. Statement emphasis requires
-three columns and exactly three items. Recipes are `features`, `statement`,
-`cards`, `topics`, `link-index`, `faq`, `steps`, `flow` and
-`specimen-stack`; Matrix's recipe is `comparison`. Recipes constrain optional
-slots as well as axes. The six unreleased raw block types `feature-grid`,
-`card-grid`, `topic-list`, `ordered-step-sequence`, `faq` and `comparison`
+`treatment: "plain"` and `scale: "item"`. Statement scale requires three
+columns and exactly three items. Recipes are `features`, `statement`,
+`cards`, `topics`, `link-index`, `faq`, `steps` and `specimen-stack`;
+Matrix's recipe is `comparison`. `link-index` fixes treatment to `plate`.
+`steps` defaults to columns and also accepts a stack; it takes optional lane
+definitions for two actors. The retired `flow` recipe is refused. Recipes
+constrain optional slots as well as axes. The six unreleased raw block types
+`feature-grid`, `card-grid`, `topic-list`, `ordered-step-sequence`, `faq` and `comparison`
 are refused with their replacement recipe named. The retired `module` field
 is also refused; it has no alias.
 
 Each item has an id and heading, with optional description, eyebrow, icon,
-meta, one specimen-part visual, href, featured flag, bento span, lane id and
-badge. The eyebrow resolves to at most
-`CONTENT_ITEM_EYEBROW_MAX_CHARACTERS` (32) characters. At most one item may
-be featured, in columns or bento. Row groups are `{ id, label, items }`, where
+meta, one specimen-part visual, href, bento span, lane id and badge.
+Item `featured` is refused. The eyebrow resolves to at most
+`CONTENT_ITEM_EYEBROW_MAX_CHARACTERS` (32) characters.
+Row groups are `{ id, label, items }`, where
 `items` contains ids referencing the flat list; every item must belong to
 exactly one group, and each group contains 2–4 item ids. Arrays contain only
-ordinary dense data items. Lanes are exactly two `{ id, label }` objects, with known
-lane ids on every item in a stacked connected block of three or five items.
+ordinary dense data items. Lanes are exactly two `{ id, label }` objects,
+with known lane ids on every item in a connected block of three to five
+items, using columns or stacked arrangement. The first item uses the first
+defined lane, and both lanes appear.
 
-Matrix sides each have an id, label and heading, and at least one of a
-description, 2–4 points or one specimen panel. A description may accompany
-points or a panel; points and a panel cannot be combined. Both sides share
-a primary form (panel, then points, then description), with equal point counts.
-`featured` names an existing side id. Disclosed items require a description
-on every item and cannot take href or visual. Recipe constraints are deeply
-immutable; the features recipe fixes item emphasis.
+Matrix sides each have an id and heading, an optional label, and either
+2–4 points or one specimen panel. An optional description supplies lead copy
+alongside points or a panel; description alone is refused. Points and a
+panel cannot be combined. Both sides share a primary form (points or panel),
+with equal point counts. `featured` names an existing side id. Disclosed
+items require a description on every item and cannot take href or visual.
+Recipe constraints are deeply immutable; the features recipe fixes item scale.
 
 Media is exactly one of:
 
 - `specimen`: an accessible label and one `panel`, optionally an ordered
-  `key` of 3–5 items targeting labeled header, part or footer slots. A keyed
+  `key` of 3–5 items targeting labeled header, part or footer slots. Key
+  placement derives from the frame layout: at the end of a stacked band,
+  below the panel in a split band; authored key `side` is refused. A keyed
   figure label uses 6–25 words. Panels
   retain their closed fields, status rows, meter, table, schedule, shares and
   files parts. A status-rows part may specify `mobileRows: 3`; meter
@@ -1281,8 +1288,8 @@ header region inside the same slot.
 **Canonical content-section rendering (bounded integration).** The web views
 render canonical `items` with `order: "none"` and `reveal: "all"` through
 Designer `Items`, preserving icons, eyebrow, meta, badge, links, spans,
-featured items, group membership and static specimen visuals. The frame
-forwards its resolved `compact`, `standard` or `display` size and `stacked`,
+group membership and static specimen visuals. The frame forwards its
+resolved `standard` or `display` size and `stacked`,
 `split-start` or `split-end` layout. Item headings remain one level below the
 section heading. Frame size controls rhythm without a statement heuristic.
 Actions use the shared emphasis ladder at one `md` group size; a footnote
@@ -1290,9 +1297,9 @@ supports text, one link, or both.
 
 Single-panel specimen media, its optional anatomy key, record groups and the
 three scene templates forward their resolved visible copy to the available
-Designer blocks. Matrix forwards labels, headings, descriptions, points, specimen visuals and
-the featured side. Its presentation IDs encode the section and each original
-side ID injectively, preserving authored identities and the featured relation.
+Designer blocks. Matrix forwards optional labels, headings, lead descriptions,
+points, specimen visuals and the featured side. Its presentation IDs encode
+the section and each original side ID injectively, preserving authored identities and the featured relation.
 Panel badges remain independent of metadata and status; status-row mobile
 limits retain all authored rows, and Meter previous values keep their visible
 text and marker. Numbered, connected and disclosed Items use the collection
@@ -4298,14 +4305,14 @@ app styles Publisher's views with its own build (see
   `SectionedViewStatSectionItem`, `SectionedViewSectionGroundRhythm`, the
   content-section types `ContentIconName`, `FrameSize`, `FrameLayout`,
   `ItemsRecipe`, `SectionedViewContentSection`, `SectionedViewContentLayout`,
-  `SectionedViewContentAlign`, `SectionedViewContentAction`,
+  `SectionedViewContentAction`,
   `SectionedViewContentActionEmphasis`, `SectionedViewContentFootnote`,
   `SectionedViewContentFootnoteLink`, `SectionedViewItem`,
   `SectionedViewItemSpan`, `SectionedViewItemGroup`, `SectionedViewItemLane`,
   `SectionedViewBadge`, `SectionedViewItemsBlock`,
   `CanonicalSectionedViewItemsBlock`, `SectionedViewItemsArrangement`,
   `SectionedViewItemsOrder`, `SectionedViewItemsReveal`,
-  `SectionedViewItemsTreatment`, `SectionedViewItemsEmphasis`,
+  `SectionedViewItemsTreatment`, `SectionedViewItemsScale`,
   `SectionedViewMatrixBlock`, `SectionedViewMatrixSide`,
   `SectionedViewContentBlock`, `SectionedViewContentBlockType`,
   `SectionedViewMedia`, `ResolvedSectionedViewMedia`,
@@ -5036,7 +5043,7 @@ to B/specimen after structural set pieces and the C/reference nonsequence
 disclosure carveout, before ordinary text block shapes. Numbered or connected Items use
 sequence shape, with visuals promoting them to A. Nonconnected stacked
 visual Items use A/specimen; visual rows, columns and bento use A/grid.
-Statement emphasis takes A/statement before other valid Items axes.
+Statement scale takes A/statement before other valid Items axes.
 
 `checkPageFlow(document, options?)` returns `SectionedViewFlowWarning[]` with
 `rule`, `severity: "warning"`, `path` and `message`. `CheckPageFlowOptions` takes
@@ -5082,9 +5089,10 @@ maximum set pieces and breathers is `ceil(bodyBandCount / 3)`.
 
 Canonical connected Items blocks may declare exactly two lane ids and
 CopyRef labels. Every item names a declared lane, the first item uses the
-first lane, and both lanes are used. Lanes require a stacked frame and three
-or five items. Labels resolve to at most 20 characters. Four connected items
-without lanes produce the advisory `steps-count` warning; they still resolve.
+first lane, and both lanes are used. Lanes require a stacked frame with a
+connected columns or stacked block of three to five items. Labels resolve to
+at most 20 characters. Four connected items produce the advisory
+`steps-count` warning; they still resolve.
 
 Connected `caption` requires a visual. Caption and `endLabel` copy is bounded
 to 120 and 40 characters.
@@ -5099,7 +5107,7 @@ shapes until the separate renderer migration.
 
 This self-contained example validates and resolves canonical data through the
 public core entry point. It demonstrates equivalent raw axes and a recipe,
-Matrix descriptions with equal-length points, all three frame sizes, both split
+Matrix lead descriptions with equal-length points, both frame sizes, both split
 directions, a specimen badge and prior measurement, record rows and owner copy,
 and a Scene whose visible strings come from the registry. Structural ids and
 numeric measurements stay data. Rendering and catalog migration are separate.
@@ -5143,7 +5151,7 @@ const items = ["one", "two", "three"].map((id) => ({
 }));
 const raw = {
   type: "items", arrangement: "columns", columns: 3,
-  order: "none", reveal: "all", treatment: "plain", emphasis: "item", items,
+  order: "none", reveal: "all", treatment: "plain", scale: "item", items,
 } satisfies SectionedViewItemsBlock;
 const recipe = { type: "items", recipe: "features", items } satisfies SectionedViewItemsBlock;
 export const rawAxes = desugarRecipe(raw);
@@ -5154,7 +5162,7 @@ export const document = {
   id: "canonical-guide",
   sections: [
     { id: "raw", kind: "content-section", ground: "base", heading: ref("heading"),
-      size: "compact", layout: "stacked", block: raw },
+      size: "standard", layout: "stacked", block: raw },
     { id: "recipe", kind: "content-section", ground: "base", heading: ref("heading"),
       size: "standard", layout: "stacked", block: recipe },
     { id: "matrix", kind: "content-section", ground: "base", heading: ref("heading"),
@@ -5175,7 +5183,7 @@ export const document = {
         },
       } },
     { id: "record", kind: "content-section", ground: "base", heading: ref("heading"),
-      size: "compact", layout: "split-end", media: {
+      size: "standard", layout: "split-end", media: {
         type: "record", id: "sample-record", head: { title: ref("heading") }, columns: 1,
         groups: [
           { id: "details", label: ref("label"), rows: [{ id: "row", label: ref("label"), detail: ref("detail") }] },

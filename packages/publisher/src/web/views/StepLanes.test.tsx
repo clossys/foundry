@@ -45,13 +45,15 @@ describe("content section lane plumbing", () => {
     const b = resolved.block;
     const check = (block: unknown, extra = {}) => () => assertRenderableSectionedViewDocument({ id: "forged", resolutions: [copy(ref("heading"))!], sections: [{ ...resolved, block, ...extra }] });
     expect(check(b)).not.toThrow();
+    const four = { ...b, items: [...b.items, { ...b.items[0]!, id: "four" }] };
+    expect(check(four)).not.toThrow();
+    for (const columns of [2, 3]) expect(check({ ...four, arrangement: "columns", columns })).not.toThrow();
     for (const [value, reason] of [
       [{ ...b, lanes: [{ id: "a", label: "x".repeat(21) }, { id: "b", label: "Service" }] }, /sections\.0\.block\.lanes\.0\.label holds at most 20 characters/],
       [{ ...b, lanes: [{ id: "a", label: "Team" }, { id: "b", label: "Service" }, { id: "c", label: "Other" }] }, /sections\.0\.block\.lanes.*must hold exactly 2 items; it holds 3/],
       [{ ...b, caption: "x".repeat(121) }, /sections\.0\.block\.caption holds at most 120 characters/],
       [{ ...b, items: b.items.map((step) => ({ ...step, lane: "b" })) }, /sections\.0\.block\.items.*Every step names a known lane; start in the first lane and use both lanes/],
       [{ ...b, items: b.items.slice(0, 2) }, /sections\.0\.block\.items.*must hold 3-5 items; it holds 2/],
-      [{ ...b, items: [...b.items, { ...b.items[0]!, id: "four" }] }, /sections\.0\.block\.lanes.*Two lanes require stacked connected items with three or five steps/],
       [{ ...b, items: Array.from({length:6},(_,index)=>({...b.items[index%3]!,id:`six-${index}`})) }, /sections\.0\.block\.items.*must hold 3-5 items; it holds 6/],
       [{ ...b, items: b.items.map((step) => ({ ...step, label: "Other" })) }, /sections\.0\.block\.items\.0.*must be a plain item with a non-whitespace id/],
     ] as const) expect(check(value)).toThrow(reason);

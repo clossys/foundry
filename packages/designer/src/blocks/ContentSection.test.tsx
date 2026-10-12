@@ -118,7 +118,6 @@ describe("ContentSection layouts", () => {
   it("refuses a split without media", () => {
     expect(() =>
       render(
-        // @ts-expect-error a split requires media
         <ContentSection layout="split" heading="Heading" />,
       ),
     ).toThrow(TypeError);

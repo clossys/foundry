@@ -38,7 +38,7 @@ export function assertCanonicalContentSection(section: Record<string, unknown>, 
   axis(section, "size", CONTRACT.sizes, path); axis(section, "layout", CONTRACT.layouts, path);
   const block = section.block;
   if (record(block) && block.type === "items") {
-    for (const [key, values] of [["arrangement", CONTRACT.arrangements], ["order", CONTRACT.orders], ["reveal", CONTRACT.reveals], ["treatment", CONTRACT.treatments], ["emphasis", CONTRACT.emphases]] as const) axis(block, key, values, `${path}.block`);
+    for (const [key, values] of [["arrangement", CONTRACT.arrangements], ["order", CONTRACT.orders], ["reveal", CONTRACT.reveals], ["treatment", CONTRACT.treatments], ["scale", CONTRACT.scales]] as const) axis(block, key, values, `${path}.block`);
     if (block.arrangement === "columns") axis(block, "columns", CONTRACT.columnOptions, `${path}.block`);
     if (block.arrangement === "rows") axis(block, "columns", CONTRACT.rowColumnOptions, `${path}.block`);
     if (block.arrangement === "bento" && Array.isArray(block.items)) block.items.forEach((item, index) => { if (record(item)) axis(item, "span", Object.keys(CONTRACT.spans), `${path}.block.items.${index}`); });

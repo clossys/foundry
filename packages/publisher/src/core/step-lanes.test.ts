@@ -26,7 +26,7 @@ describe("step lane contract", () => {
   });
   it("refuses conflicting lane labels", () => expect(rules({ ...block(), items: block().items.map((step) => ({ ...step, label: ref("a") })) })).toContain("sectioned-view-item-shape"));
   it("refuses first-b and unused lane", () => { for (const sequence of ["baa", "aaa"]) expect(rules(block(sequence))).toContain(laneCode("lanes-shape")); });
-  it("refuses four lanes with exact lanes-count finding", () => expect(rules(block("abba"))).toContain(laneCode("lanes-shape")));
+  it("accepts four lanes with only the existing count advisory", () => expect(rules(block("abba"))).toEqual(["steps-count"]));
   it("accepts five visual lanes under the connected count override", () => expect(rules(block("abbaa", true))).toEqual([]));
   it("refuses split lanes and caption without a visual", () => {
     expect(rules(block(), { layout: "split-end" })).toContain(laneCode("lanes-layout"));
@@ -81,7 +81,7 @@ describe("step lane contract", () => {
   });
   it("leaves invalid recipe axes to validation in catalog context", () => {
     const items = block("aba", true).items.map(({ lane: _lane, ...item }) => item);
-    const invalid = { type: "items", recipe: "steps", arrangement: "rows", items } satisfies SectionedViewItemsBlock;
+    const invalid = { type: "items", recipe: "steps", arrangement: "rows", order: "none", items } satisfies SectionedViewItemsBlock;
     expect(rules(invalid)).toContain("recipe-axis");
     expect(() => checkSectionVariety(doc(invalid), { catalog: true })).not.toThrow();
     expect(checkSectionVariety(doc(invalid), { catalog: true }).map((f) => f.rule)).not.toContain(laneCode("caption-sample"));
