@@ -4227,25 +4227,24 @@ byte-identical output. Exit codes are unchanged: `0` = output written,
 `2` = bad arguments or an unexpected error.
 
 What it renders, from approved fixture copy in `src/preview/fixture-copy-registry.ts`
-and `src/preview/catalog/copy.ts` (never hardcoded in a renderer):
+and the catalog copy registries in `src/preview/catalog/` (never hardcoded in a renderer):
 
 - **Web views** (`gallery.html`) — every shipped view: `MarketingView`,
   `SectionedView`, `AuthView`, `ErrorView`, `CaptureView`, `DocumentView`,
   `CollectionView`, and `LandingView (hero-compact)`.
-- **Content catalog** (`content-catalog.html`): a function index for Say,
-  Items, Matrix, Frame, Media, Recipes and Other. Each entry explains its
-  purpose and links to a page under `catalog/`. The pages show configurations
-  grouped by axis, with captions beside generic sample copy. Recipes link to
-  compatible examples and describe fixed, default and configurable axes;
-  a composed page shows a hero, three topic bands, an approval Scene, FAQ and
-  closing call to action. Other links to nine existing published-kind examples
-  in the web-view gallery, without adding replacement fixtures.
+- **Content catalog** (`content-catalog.html`): choose Introduce, Show,
+  Explain, Index, Sequence or Compare, then use a recipe and configuration
+  reference. Overview shows a six-band page. Frame covers shared layout,
+  size and grounds; Parts links to complete Show examples. The nine pages
+  under `catalog/` render 31 retained examples once, with three distinct
+  configuration variants, text axis tables and concise count and slot rules.
+  The Index function lives at `catalog/index-function.html`. Published kinds
+  link to their existing examples in the web-view gallery.
 
-  The catalog has 43 configuration/composition fixtures. Media distinguishes
-  three Scene templates from seven source-document formats. Navigation and
-  captions are preview chrome outside the rendered examples. The historical
-  multi-band fixture remains independently tested, including its deliberate
-  four-step count warning and original variety findings.
+  Approved copy describes concrete workspace scenarios. Three Scene templates
+  remain distinct from seven source-document formats. The historical multi-band
+  fixture remains independently tested, including its deliberate four-step
+  count warning and original variety findings.
 - **Site** (`site-*.html`) — fixtures for `templates/site`'s routes,
   rendered through `MarketingView` for home/about/contact/privacy/terms and
   a direct `ErrorView` call for `not-found`. The template's own routes now
