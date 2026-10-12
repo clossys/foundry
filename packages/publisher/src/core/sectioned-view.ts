@@ -1200,7 +1200,7 @@ function validateRecords(
 }
 
 function validateContentSection(section: Record<string, unknown>, path: string, findings: ComposeFinding[]): void {
-  if (hasOwn(section, "module")) findings.push(finding("sectioned-view-content-module-retired", `${path}.module`, `${path}.module is retired; use block with items or matrix.`));
+  if (hasOwn(section, "module")) findings.push(finding("sectioned-view-content-module-retired", `${path}.module`, `${path}.module is retired; use block with items, matrix or prose.`));
   if (!hasOnlyOwnKeys(section, CONTENT_SECTION_KEYS) || !hasOwn(section, "heading")) findings.push(finding("sectioned-view-section-keys", path, `${path} has keys not allowed for content-section.${hasOwn(section, "align") ? " Alignment is derived; remove align." : ""}`));
   validateCopy(section.heading, `${path}.heading`, findings);
   validateOptionalCopyFields(section, ["eyebrow", "description"], path, findings);

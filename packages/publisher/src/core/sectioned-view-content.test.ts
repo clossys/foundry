@@ -224,7 +224,7 @@ describe("content-section — validation", () => {
 
   it("names canonical block types in an unknown-block refusal", () => {
     const message = validateSectionedViewDocument(blockDoc({ type: "slider" }))[0]?.message ?? "";
-    expect(message).toContain("slider"); expect(message).toContain("items or matrix");
+    expect(message).toBe('sections.0.block.type "slider" must be items, matrix or prose.');
   });
 
   it("refuses the retired module key and never reads it as a block alias", () => {
@@ -232,6 +232,7 @@ describe("content-section — validation", () => {
       const findings = validateSectionedViewDocument(docWith({ ...section("a", { block }), module: topicsBlock } as unknown as SectionedViewSection));
       expect(findings).toContainEqual(expect.objectContaining({ rule: "sectioned-view-content-module-retired", path: "sections.0.module" }));
       expect(findings.find((entry) => entry.rule === "sectioned-view-content-module-retired")?.message).toContain("block");
+      expect(findings.find((entry) => entry.rule === "sectioned-view-content-module-retired")?.message).toContain("items, matrix or prose");
     }
   });
 
