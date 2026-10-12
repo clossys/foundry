@@ -262,18 +262,18 @@ export interface SectionedViewFaqSection {
   id: string;
   kind: "faq";
   ground?: SectionedViewGround;
-  /** Optional label above the section heading. Optional and additive: a section without one renders exactly as it did before. */
+  /** Optional caller label above the section heading. */
   eyebrow?: CopyRef;
   heading: CopyRef;
   description?: CopyRef;
   /**
-   * `split` sets the header group in the narrow text column and the rows in
-   * the wide column beside it, top-aligned, the same band a `content-section`
-   * with a split `faq` block renders. Optional and additive: without it (or
-   * with `stacked`) the section renders exactly as it did before.
+   * Render the catalog FAQ recipe in a stacked frame (default), or with
+   * `split` mapped to its split-end frame. The published question/answer
+   * CopyRef shape is retained; the view now uses Items disclosure rows.
    * @default "stacked"
    */
   layout?: "stacked" | "split";
+  /** Four to six questions, in caller-authored order. */
   items: SectionedViewFaqItem[];
 }
 
@@ -854,6 +854,10 @@ export function validateSectionedViewDocument(value: unknown): ComposeFinding[] 
           validateCopy(item.question, `${itemPath}.question`, findings);
           validateCopy(item.answer, `${itemPath}.answer`, findings);
         });
+        if (Array.isArray(section.items)) {
+          const [min, max] = SECTIONED_VIEW_CONTENT_CONTRACT.counts.disclose;
+          if (section.items.length < min || section.items.length > max) findings.push(finding("sectioned-view-faq-count", `${path}.items`, `${path}.items must hold ${min}-${max} FAQ items; it holds ${section.items.length}.`));
+        }
         validateEnumField(section, "layout", ["stacked", "split"], "sectioned-view-faq-layout", path, findings);
         validateCopy(section.heading, `${path}.heading`, findings);
         if (section.eyebrow !== undefined) validateCopy(section.eyebrow, `${path}.eyebrow`, findings);

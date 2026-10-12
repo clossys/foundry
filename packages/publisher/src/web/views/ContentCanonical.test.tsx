@@ -283,11 +283,11 @@ describe("published kind preservation", () => {
     expect(validateSectionedViewDocument(authoredDoc)).toEqual([]); const doc = resolveSectionedViewDocument(authoredDoc, resolver);
     expect(dom(html(doc)).querySelectorAll("p.font-medium.text-body")).toHaveLength(4); expect(html(doc, true)).toBe(html(doc));
   });
-  it("keeps published split FAQ native and React Aria factories separate", () => {
-    const authoredDoc: SectionedViewDocument = { id: "faq", sections: [{ id: "faq", kind: "faq", ground: "base", layout: "split", heading: short, description: ref("detail"), items: [{ id: "one", question: short, answer: ref("detail") }] }] };
+  it("projects published split FAQ onto entry-specific canonical Items", () => {
+    const authoredDoc: SectionedViewDocument = { id: "faq", sections: [{ id: "faq", kind: "faq", ground: "base", layout: "split", heading: short, description: ref("detail"), items: ["one", "two", "three", "four"].map(id => ({ id, question: short, answer: ref("detail") })) }] };
     expect(validateSectionedViewDocument(authoredDoc)).toEqual([]); const doc = resolveSectionedViewDocument(authoredDoc, resolver);
     const ordinary = dom(html(doc)); const server = dom(html(doc, true)); expect(server.querySelector("details summary")?.textContent).toContain(copy.short); expect(ordinary.querySelector("details")).toBeNull();
-    expect(ordinary.querySelector("button")?.textContent).toContain(copy.short); expect(server.textContent).toContain(copy.detail);
+    expect(ordinary.querySelector("button")?.textContent).toContain(copy.short); expect(server.textContent).toContain(copy.detail); expect(ordinary.querySelectorAll("[data-items] h3 button")).toHaveLength(4); expect(server.querySelectorAll("[data-items] details summary")).toHaveLength(4);
   });
   it.each(["retired-block", "private-bridge"])("refuses external canonical %s spoof before Designer", name => {
     const doc: any = structuredClone(resolve(band({ block: columns(2) }))); if (name === "retired-block") doc.sections[0].block = { type: "faq", items: [{ id: "one", question: copy.short, answer: copy.detail }] }; else doc.sections[0].publishedFaq = { kind: "faq", layout: "split", id: "content", items: [] };
@@ -363,11 +363,16 @@ describe("canonical LandingView integration", () => {
     expect(inner.classList.contains(size === "display" ? "py-5xl" : "py-4xl")).toBe(true);
     expect(root.querySelectorAll("#content")).toHaveLength(1); expect(inner.parentElement?.closest("[data-content-section]")).toBeNull();
   });
-  it("forwards the private published split FAQ bridge through LandingView", () => {
-    const authoredDoc: SectionedViewDocument = { id: "landing-faq", sections: [{ id: "hero", kind: "hero", ground: "inverse", heading: ref("heading") }, { id: "faq", kind: "faq", ground: "base", layout: "split", heading: short, items: [{ id: "one", question: short, answer: ref("detail") }] }] };
+  it("forwards catalog FAQ Items and caller appendices through both Landing entries", () => {
+    const authoredDoc: SectionedViewDocument = { id: "landing-faq", sections: [{ id: "hero", kind: "hero", ground: "inverse", heading: ref("heading") }, { id: "faq", kind: "faq", ground: "base", layout: "split", heading: short, items: ["one", "two", "three", "four"].map(id => ({ id, question: short, answer: ref("detail") })) }] };
     expect(validateSectionedViewDocument(authoredDoc)).toEqual([]); const doc = resolveSectionedViewDocument(authoredDoc, resolver);
-    const markup = renderToStaticMarkup(<LandingView document={doc} peek={false} afterSection={{ faq: <p data-faq-after="">After FAQ</p> }} />); expect(renderToStaticMarkup(<ServerLandingView document={doc} peek={false} afterSection={{ faq: <p data-faq-after="">After FAQ</p> }} />)).toBe(markup);
-    const root = dom(markup); expect(root.querySelector("#faq")?.closest<HTMLElement>("[data-landing-ground]")?.style.paddingBlock).toBe(""); expect(root.querySelector("#faq details summary")?.textContent).toContain(copy.short); expect(root.querySelector("#faq")?.textContent).toContain(copy.detail); expect(root.querySelector("#faq [data-content-section-text] [data-faq-after]")?.textContent).toBe("After FAQ");
+    for (const [View, native] of [[LandingView, false], [ServerLandingView, true]] as const) {
+      const root = dom(renderToStaticMarkup(<View document={doc} peek={false} afterSection={{ faq: <p data-faq-after="">After FAQ</p> }} />));
+      expectCssZero(root.querySelector("#faq")!.closest<HTMLElement>("[data-landing-ground]")!.style.paddingBlock);
+      expect(root.querySelector(native ? "#faq [data-items] details summary" : "#faq [data-items] h3 button")?.textContent).toContain(copy.short);
+      expect(root.querySelector("#faq")?.textContent).toContain(copy.detail); expect(root.querySelector("#faq [data-content-section-modules] [data-faq-after]")?.textContent).toBe("After FAQ");
+      expect(root.querySelector("#faq [data-content-section-modules] [data-faq-after]")?.previousElementSibling?.hasAttribute("data-items")).toBe(true);
+    }
   });
 });
 
@@ -493,12 +498,13 @@ describe("canonical renderer review regressions", () => {
       expect(root.querySelector('[data-landing-hero]')?.className).toContain("py-4xl"); expect(root.querySelector<HTMLElement>('[data-landing-view]')?.style.scrollPaddingTop).toBe("var(--ui-height-site-header, 0px)");
     }
   });
-  it("retains legacy FAQ fragment offsets and band measure for both entries", () => {
-    const authored: SectionedViewDocument = { id: "legacy-anchors", sections: [{ id: "hero", kind: "hero", ground: "inverse", heading: short }, { id: "faq", kind: "faq", ground: "base", layout: "split", heading: short, items: [{ id: "one", question: short, answer: ref("detail") }] }, { id: "features", kind: "feature-grid", ground: "base", heading: short, items: [item("first"), item("second", "second")] }] };
+  it("retains FeatureGrid offsets and canonical FAQ fragment geometry in both entries", () => {
+    const authored: SectionedViewDocument = { id: "legacy-anchors", sections: [{ id: "hero", kind: "hero", ground: "inverse", heading: short }, { id: "faq", kind: "faq", ground: "base", layout: "split", heading: short, items: ["one", "two", "three", "four"].map(id => ({ id, question: short, answer: ref("detail") })) }, { id: "features", kind: "feature-grid", ground: "base", heading: short, items: [item("first"), item("second", "second")] }] };
     expect(validateSectionedViewDocument(authored)).toEqual([]); const doc = resolveSectionedViewDocument(authored, resolver);
     for (const server of [false, true]) {
       const root = dom(renderToStaticMarkup(server ? <ServerLandingView document={doc} peek={false} header="reserved" measure="prose" /> : <LandingView document={doc} peek={false} header="reserved" measure="prose" />));
-      for (const id of ["faq", "features"]) { const inner = root.querySelector<HTMLElement>(`#${id}`)!; expect(inner.className).toContain("scroll-mt-4xl"); expect(inner.className).toContain("tablet-lg:scroll-mt-5xl"); expect(inner.style.scrollMarginTop).toBe(""); expect(inner.closest<HTMLElement>("[data-landing-ground]")?.style.paddingBlock).toBe(""); }
+      const features = root.querySelector<HTMLElement>("#features")!; expect(features.className).toContain("scroll-mt-4xl"); expect(features.className).toContain("tablet-lg:scroll-mt-5xl"); expect(features.style.scrollMarginTop).toBe(""); expect(features.closest<HTMLElement>("[data-landing-ground]")?.style.paddingBlock).toBe("");
+      const faq = root.querySelector<HTMLElement>("#faq")!; expect(faq.className).not.toContain("scroll-mt-4xl"); expect(faq.className).not.toContain("scroll-mt-5xl"); expectCssZero(faq.style.scrollMarginTop); expectCssZero(faq.closest<HTMLElement>("[data-landing-ground]")!.style.paddingBlock);
     }
   });
 });

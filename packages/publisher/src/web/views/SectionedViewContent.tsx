@@ -1,7 +1,7 @@
 import { applyContentGrounds, planContentGrounds } from "../../core/content-ground.js";
 import { assertClosedData, assertCanonicalContentSection } from "./SectionedViewCanonical.js";
 import { resolveActionEmphasis } from "../../core/page-flow.js";
-import { resolveRoleActionEmphasis } from "../../core/sectioned-view.js";
+import { resolveRoleActionEmphasis, SECTIONED_VIEW_CONTENT_CONTRACT } from "../../core/sectioned-view.js";
 import { renderAction, renderRoleActions } from "./SectionedViewActions.js";
 import { SECTION_GROUND_CLASSES } from "@clossys/designer/blocks/server";
 import type { ReactNode } from "react";
@@ -336,6 +336,10 @@ export function assertRenderableSectionedViewDocument(document: unknown): assert
     if (!closed(record, sectionKeys)) throw new Error(`${path} has keys not allowed for its section kind.`);
     if (record.kind === "faq") oneOf(record.layout, ["stacked", "split"], `${path}.layout`, "faq layout");
     dense(record.items, `${path}.items`);
+    if (record.kind === "faq") {
+      const [min, max] = SECTIONED_VIEW_CONTENT_CONTRACT.counts.disclose;
+      if (record.items.length < min || record.items.length > max) throw new Error(`${path}.items must hold ${min}-${max} FAQ items.`);
+    }
     const itemKeys = record.kind === "faq" ? ["id", "question", "answer"] : record.kind === "ordered-step-sequence" ? ["id", "ordinal", "label", "heading", "description"] : ["id", "heading", "description"];
     closedItems(record.items, `${path}.items`, itemKeys);
     itemIds(record.items, `${path}.items`);
@@ -506,12 +510,8 @@ const STAT_GRID_GROUND: Record<SectionedViewGround, { surface: string; primary: 
   inverse: { surface: "bg-surface-inverse", primary: "text-ink-on-inverse", secondary: "text-ink-on-inverse-muted", muted: "text-ink-on-inverse-muted" },
 };
 
-/**
- * A split `faq` section as the content-section band it reads as: the header
- * group in the text column and the rows, as a split `faq` block, in the
- * visual column. One renderer for both spellings keeps them identical.
- */
-function splitFaqSection(section: Extract<ResolvedSectionedViewSection, { kind: "faq" }>): ResolvedSectionedViewContentSection {
+/** Retain published copy fields while projecting both FAQ layouts onto the catalog recipe. */
+function catalogFaqSection(section: Extract<ResolvedSectionedViewSection, { kind: "faq" }>): ResolvedSectionedViewContentSection {
   return {
     id: section.id,
     kind: "content-section",
@@ -520,8 +520,8 @@ function splitFaqSection(section: Extract<ResolvedSectionedViewSection, { kind: 
     heading: section.heading,
     ...(section.description === undefined ? {} : { description: section.description }),
     size: "standard",
-    layout: "split-end",
-    block: { type: "items", arrangement: "rows", columns: 1, order: "none", reveal: "disclose", treatment: "rule", scale: "item", items: section.items.map(item => ({ id: item.id, heading: item.question, description: item.answer })) },
+    layout: section.layout === "split" ? "split-end" : "stacked",
+    block: { type: "items", recipe: "faq", arrangement: "rows", columns: 1, order: "none", reveal: "disclose", treatment: "rule", scale: "item", items: section.items.map(item => ({ id: item.id, heading: item.question, description: item.answer })) },
   };
 }
 
@@ -548,8 +548,7 @@ function renderSection(section: ResolvedSectionedViewSection, index: number, blo
     }
     case "feature-grid": return <blocks.FeatureGrid key={section.id} id={section.id} eyebrow={section.eyebrow} heading={section.heading} description={section.description} items={section.items} headingLevel={2} ground={section.ground} />;
     case "faq":
-      if (section.layout === "split") return <blocks.ContentSection key={section.id} section={splitFaqSection(section)} publishedFaq={section} className={SECTION_GROUND_CLASSES[section.ground].surface || undefined} />;
-      return <blocks.Faq key={section.id} id={section.id} eyebrow={section.eyebrow} heading={section.heading} description={section.description} items={section.items} headingLevel={2} ground={section.ground} />;
+      return <blocks.ContentSection key={section.id} section={catalogFaqSection(section)} className={SECTION_GROUND_CLASSES[section.ground].surface || undefined} />;
     case "ordered-step-sequence": return <blocks.OrderedStepSequence key={section.id} id={section.id} eyebrow={section.eyebrow} heading={section.heading} description={section.description} items={section.items} headingLevel={2} ground={section.ground} />;
     case "status-list": return <blocks.StatusList key={section.id} id={section.id} eyebrow={section.eyebrow} heading={section.heading} description={section.description} labels={section.labels} groups={section.groups} items={section.items} legendLabel={section.heading} headingLevel={2} ground={section.ground} />;
     case "stat-grid": return renderStatGrid(section, blocks);

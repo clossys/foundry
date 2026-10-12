@@ -20,7 +20,7 @@ describe("canonical frame", () => {
   });
   it("refuses retired frame keys/enums while preserving published FAQ split", () => {
     for (const fields of [{ layout: "split" }, { mediaSide: "start" }, { size: "huge" }]) expect(contract.validateSectionedViewDocument(document(fields)).length).toBeGreaterThan(0);
-    expect(contract.validateSectionedViewDocument({ id: "page", sections: [{ id: "faq", kind: "faq", ground: "base", heading: ref(), layout: "split", items: [{ id: "question", question: ref(), answer: ref() }] }] })).toEqual([]);
+    expect(contract.validateSectionedViewDocument({ id: "page", sections: [{ id: "faq", kind: "faq", ground: "base", heading: ref(), layout: "split", items: ["one", "two", "three", "four"].map(id => ({ id, question: ref(), answer: ref() })) }] })).toEqual([]);
   });
   it("accepts text-only and link-only footnotes, refusing empty and malformed targets", () => {
     for (const footnote of [{ text: ref() }, { link: { label: ref(), href: "/learn" } }]) expect(contract.validateSectionedViewDocument(document({ footnote }))).toEqual([]);

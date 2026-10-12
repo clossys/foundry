@@ -522,8 +522,9 @@ alternative to `StatusList`'s `groups`.
 description and actions, at most one content block and one media object, and
 an optional footnote. This canonical contract is validated and resolved in
 `core`; web views and the content preview render its collection and media data.
-Published section kinds, including `feature-grid`, `faq` and
-`ordered-step-sequence`, retain their own contracts.
+Published `feature-grid` and `ordered-step-sequence` retain their own contracts.
+The published `faq` spelling retains its question/answer CopyRefs and maps to
+the catalog FAQ recipe: four to six questions, with no item href or node slot.
 
 The frame has `size: "standard" | "display"` (default `standard`) and
 `layout: "stacked" | "split-start" | "split-end"` (default `stacked`).
@@ -700,11 +701,15 @@ validates and renders exactly as it did before they existed.
   (`up` | `down` | `neutral`, only with `delta`), and optional `description`.
   The view maps each row onto Designer `Stat`; do not flatten metrics into
   `feature-grid`.
-- **`layout` on the faq section.** `stacked` (the default, unchanged) or
-  `split`: the header group in the narrow text column and the rows in the
-  wide column beside it, top-aligned. It renders the same band as a
-  `content-section` with a split Items block using the `faq` recipe, so the
-  two read alike on one page.
+- **`layout` on the faq section.** `stacked` (the default) or `split`, which
+  maps to the catalog frame's `split-end`: header in the narrow column,
+  disclosure rows beside it. Both layouts now use the Items `faq` recipe
+  with four to six questions. This changes the view's previous FAQ markup;
+  one to three or seven-plus questions are refused. CopyRefs still resolve
+  in authored order with their original provenance. Ordinary web uses React
+  Aria disclosures; the server entry uses native details. Answers remain
+  plain resolved text. Use a supported adjacent action or caller appendix
+  for links, rather than nesting controls in a question trigger.
 - **`detail` on a status-list item.** An optional `CopyRef` carrying that
   row's own explanation, including the reasoning behind a `not-offered`
   answer. It renders as a second description of the same row, so the

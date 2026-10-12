@@ -64,7 +64,7 @@ const document: SectionedViewDocument = {
   sections: [
     { id: "hero", kind: "hero", ground: "base", eyebrow: ref("acme.hero.eyebrow"), heading: ref("acme.hero.heading"), description: ref("acme.hero.description") },
     { id: "features", kind: "feature-grid", ground: "sunken", heading: ref("acme.features.heading"), description: ref("acme.features.description"), items: [{ id: "one", heading: ref("acme.features.one.heading"), description: ref("acme.features.one.description") }, { id: "two", heading: ref("acme.features.two.heading") }] },
-    { id: "faq", kind: "faq", ground: "base", heading: ref("acme.faq.heading"), description: ref("acme.faq.description"), items: [{ id: "one", question: ref("acme.faq.one.question"), answer: ref("acme.faq.one.answer") }] },
+    { id: "faq", kind: "faq", ground: "base", heading: ref("acme.faq.heading"), description: ref("acme.faq.description"), items: ["one", "two", "three", "four"].map(id => ({ id, question: ref("acme.faq.one.question"), answer: ref("acme.faq.one.answer") })) },
     { id: "steps", kind: "ordered-step-sequence", ground: "inverse", heading: ref("acme.steps.heading"), items: [{ id: "one", ordinal: ref("acme.steps.one.ordinal"), label: ref("acme.steps.one.label"), heading: ref("acme.steps.one.heading"), description: ref("acme.steps.one.description") }] },
     { id: "status", kind: "status-list", ground: "base", heading: ref("acme.status.heading"), labels: { available: ref("acme.status.available"), partial: ref("acme.status.partial"), planned: ref("acme.status.planned"), dispositions: { "not-offered": ref("acme.status.not-offered") } }, groups: [{ id: "core", heading: ref("acme.status.group.heading"), items: [{ id: "capability", label: ref("acme.status.item.label"), state: "available" }, { id: "unavailable", label: ref("acme.status.item.label"), disposition: "not-offered" }] }] },
   ],
@@ -78,11 +78,11 @@ describe("SectionedViewDocument core contract", () => {
   it("resolves all audience copy in depth-first authored order and preserves data-only sections", () => {
     const resolved = resolveSectionedViewDocument(document, resolver);
     expect(resolved.sections[0]).toMatchObject({ id: "hero", kind: "hero", ground: "base", heading: "A placeholder home page" });
-    expect(resolved.sections[2]).toMatchObject({ id: "faq", items: [{ question: "Why this?", answer: "Because it is validated." }] });
+    expect(resolved.sections[2]).toMatchObject({ id: "faq", items: ["one", "two", "three", "four"].map(id => ({ id, question: "Why this?", answer: "Because it is validated." })) });
     expect(resolved.resolutions.map((resolution) => resolution.entryId)).toEqual([
       "acme.hero.eyebrow", "acme.hero.heading", "acme.hero.description",
       "acme.features.heading", "acme.features.description", "acme.features.one.heading", "acme.features.one.description", "acme.features.two.heading",
-      "acme.faq.heading", "acme.faq.description", "acme.faq.one.question", "acme.faq.one.answer",
+      "acme.faq.heading", "acme.faq.description", ...Array.from({ length: 4 }, () => ["acme.faq.one.question", "acme.faq.one.answer"]).flat(),
       "acme.steps.heading", "acme.steps.one.ordinal", "acme.steps.one.label", "acme.steps.one.heading", "acme.steps.one.description",
       "acme.status.heading", "acme.status.available", "acme.status.partial", "acme.status.planned", "acme.status.not-offered", "acme.status.group.heading", "acme.status.item.label", "acme.status.item.label",
     ]);
@@ -287,7 +287,7 @@ describe("SectionedViewDocument optional additive fields", () => {
     expect(resolved.resolutions.map((resolution) => resolution.entryId)).toEqual([
       "acme.hero.eyebrow", "acme.hero.heading", "acme.hero.description", "acme.hero.action.start", "acme.hero.action.docs",
       "acme.features.eyebrow", "acme.features.heading", "acme.features.description", "acme.features.one.heading", "acme.features.one.description", "acme.features.two.heading",
-      "acme.faq.eyebrow", "acme.faq.heading", "acme.faq.description", "acme.faq.one.question", "acme.faq.one.answer",
+      "acme.faq.eyebrow", "acme.faq.heading", "acme.faq.description", ...Array.from({ length: 4 }, () => ["acme.faq.one.question", "acme.faq.one.answer"]).flat(),
       "acme.steps.eyebrow", "acme.steps.heading", "acme.steps.one.ordinal", "acme.steps.one.label", "acme.steps.one.heading", "acme.steps.one.description",
       "acme.status.eyebrow", "acme.status.heading", "acme.status.available", "acme.status.partial", "acme.status.planned", "acme.status.not-offered", "acme.status.group.heading",
       "acme.status.item.label", "acme.status.item.detail", "acme.status.item.label", "acme.status.none.detail",
@@ -510,7 +510,7 @@ describe("SectionedViewDocument section ground rhythm (#1105)", () => {
     sections: [
       { id: "hero", kind: "hero", heading: ref("acme.hero.heading") },
       { id: "features", kind: "feature-grid", heading: ref("acme.features.heading"), items: [{ id: "one", heading: ref("acme.features.one.heading") }] },
-      { id: "faq", kind: "faq", heading: ref("acme.faq.heading"), items: [{ id: "one", question: ref("acme.faq.one.question"), answer: ref("acme.faq.one.answer") }] },
+      { id: "faq", kind: "faq", heading: ref("acme.faq.heading"), items: ["one", "two", "three", "four"].map(id => ({ id, question: ref("acme.faq.one.question"), answer: ref("acme.faq.one.answer") })) },
     ],
   };
 

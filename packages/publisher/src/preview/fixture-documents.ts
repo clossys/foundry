@@ -114,7 +114,7 @@ export const previewSectionedDocument: SectionedViewDocument = {
       ground: "base",
       heading: ref("preview.sectioned.faq.heading"),
       description: ref("preview.sectioned.faq.description"),
-      items: [{ id: "one", question: ref("preview.sectioned.faq.one.question"), answer: ref("preview.sectioned.faq.one.answer") }],
+      items: ["one", "two", "three", "four"].map(id => ({ id, question: ref(`preview.sectioned.faq.${id}.question`), answer: ref(`preview.sectioned.faq.${id}.answer`) })),
     },
     {
       id: "steps",

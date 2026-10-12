@@ -7,6 +7,9 @@ import { describe, expect, it } from "vitest";
 import type { ResolvedSectionedViewDocument } from "../../core/sectioned-view.js";
 import { LandingView } from "./LandingView.js";
 import { RenderError } from "../../internal/errors.js";
+import { Icon, iconButtonLinkClassName } from "@clossys/designer/atoms/server";
+import { ContentSection, Faq, FeatureGrid, Hero, SectionFrame } from "@clossys/designer/blocks/server";
+import { ChevronDown } from "@clossys/designer/icons";
 import { planLandingViewGrounds } from "./landingViewGrounds.js";
 import type { LandingViewProps } from "./LandingView.js";
 import * as webEntry from "../index.js";
@@ -27,10 +30,15 @@ const PAGE: ResolvedSectionedViewDocument = {
   ],
 };
 
-const SHARED: ResolvedSectionedViewDocument = {
+const LEGACY_SHARED: ResolvedSectionedViewDocument = {
   id: "acme-shared",
   resolutions: RESOLUTIONS,
   sections: [{ id: "faq", kind: "faq", ground: "base", heading: "FAQ-SENTINEL", items: [{ id: "q", question: "QUESTION-SENTINEL", answer: "ANSWER-SENTINEL" }] }],
+};
+
+const SHARED: ResolvedSectionedViewDocument = {
+  ...LEGACY_SHARED,
+  sections: LEGACY_SHARED.sections.map(section => section.kind === "faq" ? { ...section, items: ["one", "two", "three", "four"].map(id => ({ ...section.items[0]!, id })) } : section),
 };
 
 const CALL_TO_ACTION: LandingViewProps["callToAction"] = {
@@ -39,6 +47,29 @@ const CALL_TO_ACTION: LandingViewProps["callToAction"] = {
   description: "CLOSE-LEDE-SENTINEL",
   action: <a href="/go">ACTION-SENTINEL</a>,
 };
+
+
+/** Test-only pre-recut retained-block assembly for the existing closing hash. */
+function HistoricalLandingCloseWitness() {
+  const hero = PAGE.sections[0]!, features = PAGE.sections[1]!, faq = LEGACY_SHARED.sections[0]!;
+  if (hero.kind !== "hero" || features.kind !== "feature-grid" || faq.kind !== "faq") throw new Error("Unexpected historical witness kinds.");
+  return <main data-landing-view="" className="flex flex-col bg-surface-base">
+    <SectionFrame data-landing-hero="" data-landing-ground={hero.ground} ground={hero.ground} measure="wide" className="relative isolate flex flex-col justify-center py-5xl" style={{ minHeight: "calc(100dvh - var(--spacing-5xl, 6rem))" }}>
+      <Hero id={hero.id} eyebrow={hero.eyebrow} heading={hero.heading} description={hero.description} ground={hero.ground} headingLevel={1} align="center" />
+    </SectionFrame>
+    <div data-landing-cue-rail="" className="relative z-[var(--ui-z-sticky)] h-0">
+      <a href={`#${features.id}`} aria-label="Scroll to next section" data-landing-cue="" className={`${iconButtonLinkClassName(features.ground === "inverse" ? "inverse" : "base")} scroll-cue motion-safe:[html:has(&)]:scroll-smooth`}><Icon glyph={ChevronDown} decorative size="md" /></a>
+    </div>
+    {[features, faq].map(section => <SectionFrame key={section.id} data-landing-ground={section.ground} ground={section.ground} measure="wide" className="py-4xl tablet-lg:py-5xl">
+      <ContentSection id={section.id} eyebrow={section.eyebrow} heading={section.heading} description={section.description} headingLevel={2} ground={section.ground} className="scroll-mt-4xl tablet-lg:scroll-mt-5xl">
+        {section.kind === "feature-grid" ? <FeatureGrid items={section.items} headingLevel={2} ground={section.ground} /> : <Faq items={section.items} headingLevel={2} ground={section.ground} />}
+      </ContentSection>
+    </SectionFrame>)}
+    <SectionFrame id={CALL_TO_ACTION!.id} data-landing-call-to-action="" data-landing-ground="inverse" ground="inverse" measure="wide" className="py-5xl tablet-lg:py-6xl">
+      <ContentSection headingLevel={2} align="center" ground="inverse" heading={CALL_TO_ACTION!.heading} description={CALL_TO_ACTION!.description} actions={CALL_TO_ACTION!.action} />
+    </SectionFrame>
+  </main>;
+}
 
 function dom(props: LandingViewProps): HTMLElement {
   const host = document.createElement("div");
@@ -98,7 +129,7 @@ describe("LandingView", () => {
     expect(blocks.lastElementChild?.hasAttribute("data-after")).toBe(true);
     const faq = root.querySelector("#faq") as HTMLElement;
     expect(faq.querySelector("[data-content-section-header] h2")?.textContent).toBe("FAQ-SENTINEL");
-    expect(faq.querySelector("[data-content-section-modules] details")).not.toBeNull();
+    expect(faq.querySelector("[data-content-section-modules] [data-items] h3 button")).not.toBeNull();
   });
 
 
@@ -177,12 +208,14 @@ describe("LandingView", () => {
     expect(root.querySelector("[data-landing-hero] [data-landing-cue]")).toBeNull();
   });
 
-  it("gives every band's section a scroll margin equal to the band's top padding", () => {
+  it("retains FeatureGrid offsets while canonical FAQ owns its band padding", () => {
     const root = dom({ document: PAGE, trailing: [SHARED] });
-    for (const id of ["features", "faq"]) {
-      const section = root.querySelector(`#${id}`) as HTMLElement;
-      expect(section.className.split(/\s+/)).toEqual(expect.arrayContaining(["scroll-mt-4xl", "tablet-lg:scroll-mt-5xl"]));
-    }
+    const features = root.querySelector("#features") as HTMLElement;
+    expect(features.className.split(/\s+/)).toEqual(expect.arrayContaining(["scroll-mt-4xl", "tablet-lg:scroll-mt-5xl"]));
+    const faq = root.querySelector("#faq") as HTMLElement;
+    expect(faq.className).not.toContain("scroll-mt-4xl"); expect(faq.className).not.toContain("scroll-mt-5xl");
+    expect(Number.parseFloat(faq.style.scrollMarginTop)).toBe(0);
+    expect(Number.parseFloat((faq.closest("[data-landing-ground]") as HTMLElement).style.paddingBlock)).toBe(0);
   });
 
   it("targets the call to action when no band follows the hero, and renders no cue without a target", () => {
@@ -356,13 +389,12 @@ describe("LandingView close copy", () => {
     expect(close.textContent).toBe("HERO-SENTINELCLOSE-ACTION-SENTINEL");
   });
 
-  it("preserves legacy markup when hero reuse is absent", () => {
-    const html = renderToStaticMarkup(<LandingView document={PAGE} trailing={[SHARED]} callToAction={CALL_TO_ACTION} />);
-    // Require the cue rail's token fallback; preserve every other pre-option byte.
-    const cueRail = 'class="relative z-[var(--ui-z-sticky,10)] h-0"';
-    expect(html.split(cueRail)).toHaveLength(2);
-    const legacyHtml = html.replace(cueRail, cueRail.replace(",10", ""));
-    expect(createHash("sha256").update(legacyHtml).digest("hex")).toBe(LEGACY_CLOSE_MARKUP_SHA256);
+  it("preserves the historical closing hash and independently checks current FAQ and cue fallback", () => {
+    const historical = renderToStaticMarkup(<HistoricalLandingCloseWitness />);
+    expect(createHash("sha256").update(historical).digest("hex")).toBe(LEGACY_CLOSE_MARKUP_SHA256);
+    const current = renderToStaticMarkup(<LandingView document={PAGE} trailing={[SHARED]} callToAction={CALL_TO_ACTION} />);
+    expect(current.split('class="relative z-[var(--ui-z-sticky,10)] h-0"')).toHaveLength(2);
+    expect(dom({ document: PAGE, trailing: [SHARED], callToAction: CALL_TO_ACTION }).querySelector("#faq [data-items]")).not.toBeNull();
   });
 
   it("refuses a valid nonempty document without an opening hero using the dedicated reason, even with own copy or a trailing hero", () => {

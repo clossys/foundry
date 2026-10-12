@@ -417,7 +417,7 @@ return function LandingView({
         </div>
       ) : null}
       {bands.map(({ section, node }) => (
-        <SectionFrame key={section.id} data-landing-ground={section.ground} ground={section.ground} measure={measure} className={BAND_CLASS} style={section.kind === "content-section" ? { paddingBlock: 0 } : undefined}>
+        <SectionFrame key={section.id} data-landing-ground={section.ground} ground={section.ground} measure={measure} className={BAND_CLASS} style={section.kind === "content-section" || section.kind === "faq" ? { paddingBlock: 0 } : undefined}>
           {ANATOMY_KINDS.has(section.kind) ? (
             node
           ) : (
