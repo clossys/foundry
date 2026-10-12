@@ -385,6 +385,7 @@ describe('reader function catalog', () => {
                 if (definition.label === 'Frame') {
                     const reference = page.querySelector(`[data-catalog-axis-reference="${axis.name}:${value}"]`);
                     expect(reference, `Frame ${axis.name}:${value}`).not.toBeNull();
+                    expect(page.defaultView!.getComputedStyle(reference!).textDecorationLine, `Frame ${axis.name}:${value} link affordance`).toBe('underline');
                     const [file, id] = reference!.getAttribute('href')!.split('#');
                     const example = rendered.get(`catalog/${file}`)!.querySelector(`#${id}`);
                     expect(example, reference!.getAttribute('href')!).not.toBeNull();
