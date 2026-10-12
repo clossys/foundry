@@ -2,4 +2,4 @@
 designer: minor
 ---
 
-Add RecordLedger for named records and role handovers on rules, LedgerTile for static captioned card visuals, and CardGrid rule treatment with tablet halves and wide-card text/visual splits. Caller-owned lead-ins and instance IDs support accessible reading, while row budgets, single flags and tile control checks reject malformed data. Mobile tile caps apply below tablet; status-label contrast checks cover ledger grounds and plates.
+Add server-safe RecordLedger for named records on rules, with one to three labelled groups, optional final owner details and a caller-supplied caption. Caller-owned instance IDs name the figure and groups. Row budgets and a single caller-labelled flag refuse malformed data, and grounded status labels retain their contrast. SpecimenPanel status rows provide static record visuals with optional mobile row caps and nested-control checks.

@@ -2,4 +2,4 @@
 publisher: patch
 ---
 
-Render canonical unordered Items and frame sizes with resolved metadata, grouping and existing specimen, record and scene media. Reject executable resolved data before rendering and name pending Designer capabilities instead of dropping authored fields. Compact heroes use the canonical size field in both web views.
+Render canonical `content-section` bands in `SectionedView` and `LandingView` through Designer ContentSection, Items and Matrix, with resolved metadata, grouping, numbered and connected order, disclosures, and specimen, record and Scene media. Render item-title links and action buttons, support header-only splits, and render published split FAQs with the header beside the rows. Refuse invalid or executable resolved data with a path-bearing RenderError. Compact heroes use the canonical size field in both web views.

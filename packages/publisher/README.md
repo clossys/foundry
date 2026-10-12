@@ -521,8 +521,7 @@ alternative to `StatusList`'s `groups`.
 `content-section` is one general band with a heading, optional eyebrow,
 description and actions, at most one content block and one media object, and
 an optional footnote. This canonical contract is validated and resolved in
-`core`; web rendering and the existing catalog fixtures are being migrated
-separately. Published section kinds, including `feature-grid`, `faq` and
+`core` and rendered by the web views and catalog fixtures. Published section kinds, including `feature-grid`, `faq` and
 `ordered-step-sequence`, retain their own contracts.
 
 The frame has `size: "compact" | "standard" | "display"` (default
@@ -1139,8 +1138,7 @@ to action that carries its own fill, such as a `primary` Designer `Button` or
 The core hero contract uses `size: "compact"` for section-scale copy and
 `size: "display"` for its default. Compact hero media is refused, and
 `checkSectionVariety` warns for a lone compact hero unless known trailing
-content is supplied. The web views use the canonical size field; the existing
-`hero-compact` gallery fixture awaits the catalog migration.
+content is supplied. The web views and gallery fixtures use the canonical size field.
 
 `LandingView`, exported from `@clossys/publisher/web` and
 `@clossys/publisher/web/server`, is a sectioned landing page: a hero block

@@ -190,7 +190,6 @@ export type RemovedInventoryFeatureGridTreatment = PackageInventory.FeatureGridT
 // @ts-expect-error FeatureGridEmphasis is retired from this public surface.
 export type RemovedInventoryFeatureGridEmphasis = PackageInventory.FeatureGridEmphasis;
 
-// Positive supplier expectations remain red until the reviewed Matrix BASE arrives.
 type OrdinaryMatrixProps = ComponentProps<typeof Blocks.Matrix>;
 type NativeMatrixProps = ComponentProps<typeof ServerBlocks.Matrix>;
 type InventoryMatrixProps = ComponentProps<typeof PackageInventory.Matrix>;
