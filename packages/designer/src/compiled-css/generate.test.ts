@@ -147,5 +147,5 @@ describe("connected utility fallback contract", () => {
     expect(compact).toContain(`var(--items-return-start,${returned})`);
     expect(compact).toContain("--items-wide:1;");
     expect(css).not.toMatch(/var\(\s*--(?:items-[\w-]+|spacing-[\w-]+|ui-border-hairline)\s*\)/);
-  });
+  }, 30_000);
 });

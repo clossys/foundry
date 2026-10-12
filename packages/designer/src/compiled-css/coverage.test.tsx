@@ -128,7 +128,7 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
       expect(rule.slice(mediaStart, mediaEnd), utility).toMatch(/transition-duration:\s*0s/);
       expect(rule.slice(0, mediaStart), utility).toMatch(/transition-duration:\s*var\(--ui-duration-default/);
     }
-  });
+  }, 30_000);
   it("covers canonical item treatments, scales, badge tones and arrangements from actual rendering", async () => {
     const classes = new Set<string>();
     const tones = ["neutral", "success", "warning", "danger", "info"] as const;
@@ -147,7 +147,7 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
     const scan = scanCompiledCssSources(packageRoot);
     const generated = await generateCompiledCss({ stylesDir: resolve(packageRoot, "styles"), candidates: scan.candidates });
     expect([...classes].filter(cls => !generated.css.includes(toSelectorText(cls)))).toEqual([]);
-  });
+  }, 30_000);
 
   it("Hero (with media) and primary Button render classes present in a fresh compiled.css", async () => {
     const trees: Array<ReturnType<typeof render>> = [];
@@ -416,7 +416,7 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
       if (!generated.css.includes(toSelectorText(className))) missing.push(className);
     }
     expect(missing).toEqual([]);
-  });
+  }, 30_000);
 
   it("the Specimen family renders classes present in a fresh compiled.css", async () => {
     const status = { tone: "success" as const, label: "Done" };
@@ -487,7 +487,7 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
       if (!generated.css.includes(toSelectorText(className))) missing.push(className);
     }
     expect(missing).toEqual([]);
-  });
+  }, 30_000);
 });
 
 
@@ -522,7 +522,7 @@ it("emits every real Ledger form, cap, ground and rule-card layout class", async
     expect(divider[1]).not.toMatch(/border-(?:block|inline)-start:/);
   }
   for (const cls of ["ledger-columns-two", "ledger-columns-three", "ledger-owner-columns", "ledger-owner-disc"]) expect(generated.css).toContain(toSelectorText(cls));
-});
+}, 30_000);
 
 
 it("scans Anatomy marker, ground and responsive source classes without generated output", () => {

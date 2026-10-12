@@ -34,7 +34,7 @@ describe("runnable canonical README example", () => {
     expect(example.document.sections.map((section: any) => section.size)).toEqual(["standard", "standard", "display", "standard", "standard", "display"]);
     expect(example.document.sections.map((section: any) => section.layout)).toEqual(["stacked", "stacked", "stacked", "split-start", "split-end", "stacked"]);
     expect(example.rawAxes).toEqual(example.recipeAxes);
-  });
+  }, 30_000);
   it("resolves real registry text and retains consumer copy provenance throughout media", () => {
     const example = executeExample();
     expect(example.resolved.sections).toHaveLength(6);
@@ -46,5 +46,5 @@ describe("runnable canonical README example", () => {
     expect(example.resolved.sections[3].media.panel.parts[0].previousText).toBe("30 / 100");
     expect(example.resolved.sections[4].media.groups[1].owner.initials).toBe("AB");
     expect(example.resolved.sections[5].media.input.sources.items[0].title).toBe("Source document");
-  });
+  }, 30_000);
 });

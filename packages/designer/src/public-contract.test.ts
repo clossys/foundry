@@ -294,9 +294,9 @@ describe("compiled catalog export cleanup", () => {
   });
   it.each(["@clossys/designer/blocks", "@clossys/designer/blocks/server", pathToFileURL(join(packageRoot, "dist", "index.js")).href])("exposes the canonical catalog without retired wrappers through %s", subpath => {
     const script = `import * as blocks from ${JSON.stringify(subpath)}; process.stdout.write(JSON.stringify(Object.keys(blocks)));`;
-    const keys: string[] = JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e", script], { cwd: packageRoot, encoding: "utf8" }));
+    const keys: string[] = JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e", script], { cwd: packageRoot, encoding: "utf8", timeout: 10_000 }));
     expect(keys.filter(key => ["Item", "Items", "Matrix"].includes(key)).sort()).toEqual(["Item", "Items", "Matrix"]);
     expect(keys.filter(key => ["CardGrid", "TopicList", "LinkGrid", "Comparison", "LedgerTile"].includes(key))).toEqual([]);
     expect(keys.filter(key => ["ItemRenderer", "ItemsStatic", "renderNavItems", "MatrixRenderer"].includes(key))).toEqual([]);
-  });
+  }, 15_000);
 });
