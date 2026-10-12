@@ -5262,14 +5262,13 @@ resolved alt; decorative art has empty alt, `aria-hidden` and no focus targets.
 The filler reserves media geometry and fits the containing backdrop layer.
 It carries no copy, controls, handlers or art of its own.
 
-Use `slot: "media"` in the existing `Hero.media`, `ContentSection.media` or
-`MediaFigure` seam. Use `slot: "backdrop"` in `LandingView.backdrop` (or
-`HeroView.backdrop`), and `slot: "section-backdrop"` inside a consumer's
-existing positioned section backdrop layer. A consumer `BackdropLayer` may
-mount the checked filler; that name is not an exported component on this
-catalog head. The filler does not add a section prop or change existing
-blocks. Keep the layer behind text, provide a token scrim where needed, and
-run Designer's existing backdrop contrast/DOM checks on that composition.
+Use `slot: "media"` in the existing Clossys `Hero.media`,
+`ContentSection.media` or `MediaFigure` seam. Use `slot: "backdrop"` in the
+Clossys `LandingView.backdrop` or `HeroView.backdrop` seam. Clossys owns the
+positioned layer and its utility classes; consumers fill it with art. Section
+backdrops are deferred until Clossys ships their section seam. Hero backdrops
+can declare eager loading for the first viewport; the slot also honors an
+explicit lazy declaration for deferred art.
 
 This is an art slot within the six-function catalog, not a new function,
 recipe or configuration axis. Compose the page's blocks within the catalog
@@ -5293,7 +5292,10 @@ const visual = <ConsumerArtSlot contract={art} />;
 ```
 
 The check evaluates supplied declarations without fetching their source.
-Consumer builds verify actual dimensions, static format, byte size and rights;
-token paints re-theme inline illustrations and scenes, while photographs
-retain their source pixels. Existing image/video registry contracts continue
-to govern those registered assets.
+It verifies declared values only. File-level verification is not yet shipped;
+Clossys owns the follow-up gate for actual file dimensions, format, static
+content and byte size, tracked in
+[#2066](https://github.com/clossys/foundry/pull/2066). Consumers supply art and
+usage rights. Token paints re-theme inline illustrations and scenes, while
+photographs retain their source pixels. Existing image/video registry contracts
+continue to govern those registered assets.

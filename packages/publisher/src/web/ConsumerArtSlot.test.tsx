@@ -11,7 +11,7 @@ const art: ConsumerArtContract = {
 function root(contract: ConsumerArtContract) {
   const host = document.createElement("div");
   host.innerHTML = renderToStaticMarkup(<ConsumerArtSlot contract={contract} />);
-  return host.firstElementChild!;
+  return host.querySelector("[data-consumer-art-slot]")!;
 }
 describe("Publisher checked consumer art slot", () => {
   it("renders media alt, intrinsic dimensions, asynchronous decoding and lazy loading", () => {
@@ -24,14 +24,43 @@ describe("Publisher checked consumer art slot", () => {
     expect(image.getAttribute("decoding")).toBe("async");
     expect((el as HTMLElement).style.aspectRatio).toBe("1600 / 900");
   });
-  it("makes both backdrop positions decorative and noninteractive", () => {
-    for (const slot of ["backdrop", "section-backdrop"] as const) {
-      const el = root({ ...art, slot, purpose: "decorative", alt: "", fit: "cover" });
-      expect(el.getAttribute("aria-hidden")).toBe("true");
-      expect((el as HTMLElement).style.pointerEvents).toBe("none");
-      expect(el.querySelector("img")!.getAttribute("alt")).toBe("");
-      expect(el.querySelector("[tabindex],a,button")).toBeNull();
+  it("keeps the Clossys hero backdrop decorative, covered and noninteractive", () => {
+    const el = root({ ...art, slot: "backdrop", purpose: "decorative", alt: "", fit: "cover", loading: "eager" });
+    expect(el.getAttribute("aria-hidden")).toBe("true");
+    expect(el.classList.contains("pointer-events-none")).toBe(true);
+    expect(el.classList.contains("absolute")).toBe(true);
+    expect(el.classList.contains("inset-0")).toBe(true);
+    expect(el.classList.contains("h-full")).toBe(true);
+    expect(el.classList.contains("w-full")).toBe(true);
+    expect(el.classList.contains("overflow-hidden")).toBe(true);
+    const image = el.querySelector("img")!;
+    expect(image.getAttribute("alt")).toBe("");
+    expect(image.getAttribute("loading")).toBe("eager");
+    expect(image.classList.contains("object-cover")).toBe(true);
+    expect(el.querySelector("[tabindex],a,button")).toBeNull();
+  });
+  it("uses existing utility classes for fixed media geometry", () => {
+    const el = root(art);
+    expect(el.classList.contains("relative")).toBe(true);
+    expect(el.classList.contains("w-full")).toBe(true);
+    const image = el.querySelector("img")!;
+    for (const token of ["block", "w-full", "h-full"]) expect(image.classList.contains(token)).toBe(true);
+    for (const property of ["position", "inset", "width", "height", "overflow", "pointer-events"]) {
+      expect((el as HTMLElement).style.getPropertyValue(property)).toBe("");
     }
+    expect(image.style.display).toBe("");
+    expect(image.style.width).toBe("");
+    expect(image.style.height).toBe("");
+    expect(image.style.objectFit).toBe("contain");
+  });
+  it("uses the shipped square utility for square media", () => {
+    const el = root({ ...art, width: 900, height: 900, aspect: "1:1" });
+    expect(el.classList.contains("aspect-square")).toBe(true);
+    expect((el as HTMLElement).style.aspectRatio).toBe("");
+  });
+  it("preserves explicit deferred loading for a backdrop", () => {
+    const el = root({ ...art, slot: "backdrop", purpose: "decorative", alt: "", fit: "cover", loading: "lazy" });
+    expect(el.querySelector("img")!.getAttribute("loading")).toBe("lazy");
   });
   it("renders inline SVG with live tokens and a meaningful accessible name", () => {
     const accentToken = "--color-accent";
@@ -40,6 +69,8 @@ describe("Publisher checked consumer art slot", () => {
     expect(svg.getAttribute("role")).toBe("img");
     expect(svg.getAttribute("aria-label")).toBe(art.alt);
     expect(svg.getAttribute("viewBox")).toBe("0 0 1600 900");
+    for (const token of ["block", "w-full", "h-full"]) expect(svg.classList.contains(token)).toBe(true);
+    expect(svg.getAttribute("style")).toBeNull();
     expect(svg.querySelector("path")!.getAttribute("fill")).toBe(`var(${accentToken})`);
   });
   it("refuses invalid art before producing markup", () => {

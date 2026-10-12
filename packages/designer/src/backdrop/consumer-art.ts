@@ -2,7 +2,7 @@ import { TOKENS } from "../tokens/tokens.js";
 import { BACKDROP_BUDGET_CEILING_BYTES } from "./contract.js";
 
 /** Placement within the existing art seams; these are not catalog function axes. */
-export type ConsumerArtPosition = "backdrop" | "section-backdrop" | "media";
+export type ConsumerArtPosition = "backdrop" | "media";
 /** Fixed reserved geometry, independent of the consumer's brand. */
 export type ConsumerArtAspect = "1:1" | "4:3" | "3:2" | "16:9";
 /** Static raster formats for photographs; SVG uses token-painted path data. */
@@ -34,7 +34,7 @@ interface ConsumerArtBase {
 export type ConsumerArtContract = ConsumerArtBase & (
   | { slot: "media"; purpose: "meaningful"; alt: string; loading: "lazy" | "eager" }
   | { slot: "media"; purpose: "decorative"; alt: ""; loading: "lazy" | "eager" }
-  | { slot: "backdrop" | "section-backdrop"; purpose: "decorative"; alt: ""; loading: "lazy" }
+  | { slot: "backdrop"; purpose: "decorative"; alt: ""; loading: "lazy" | "eager" }
 );
 /** A declaration refused before rendering; paths refer to contract fields. */
 export interface ConsumerArtFinding {
@@ -85,7 +85,7 @@ export function checkConsumerArtContract(value: unknown): ConsumerArtReport {
   try {
     if (shape(value, "art", ["slot", "purpose", "alt", "width", "height", "aspect", "fit", "loading", "bytes", "backgroundToken", "source"])) {
       const art = value;
-      if (!["backdrop", "section-backdrop", "media"].includes(String(art.slot))) fail("art.slot", "Expected backdrop, section-backdrop or media.");
+      if (!["backdrop", "media"].includes(String(art.slot))) fail("art.slot", "Expected backdrop or media.");
       if (art.purpose !== "decorative" && art.purpose !== "meaningful") fail("art.purpose", "Declare decorative or meaningful.");
       if (art.slot !== "media" && art.purpose !== "decorative") fail("art.purpose", "Backdrops must be decorative.");
       if (typeof art.alt !== "string" || (art.purpose === "decorative" ? art.alt !== "" : art.alt.trim() === "")) fail("art.alt", "Decorative art needs empty alt; meaningful art needs descriptive alt.");
@@ -96,7 +96,7 @@ export function checkConsumerArtContract(value: unknown): ConsumerArtReport {
       else if (typeof art.width === "number" && typeof art.height === "number" && art.width * ratio[1] !== art.height * ratio[0]) fail("art.aspect", "Intrinsic dimensions must match the declared aspect ratio.");
       if (art.fit !== "contain" && art.fit !== "cover") fail("art.fit", "Expected contain or cover.");
       if (art.slot !== "media" && art.fit !== "cover") fail("art.fit", "Backdrops must cover their layer.");
-      if (art.loading !== "lazy" && !(art.slot === "media" && art.loading === "eager")) fail("art.loading", "Backdrops load lazily; media may explicitly load eagerly.");
+      if (art.loading !== "lazy" && art.loading !== "eager") fail("art.loading", "Declare lazy or eager loading for the art placement.");
       if (!positiveInteger(art.bytes, BACKDROP_BUDGET_CEILING_BYTES)) fail("art.bytes", "Declare transferred bytes from 1 through 2097152.");
       if (!colorToken(art.backgroundToken)) fail("art.backgroundToken", "Expected a registered color token name.");
       if (dataRecord(art.source) && art.source.format === "svg") {

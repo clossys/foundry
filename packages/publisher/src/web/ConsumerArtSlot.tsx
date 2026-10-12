@@ -1,5 +1,4 @@
 import { checkConsumerArtContract, type ConsumerArtContract } from "@clossys/designer/tokens";
-import type { CSSProperties } from "react";
 import { RenderError } from "../internal/errors.js";
 
 /** Checked consumer-owned static art for an existing backdrop or media seam. */
@@ -19,19 +18,15 @@ export function ConsumerArtSlot({ contract }: ConsumerArtSlotProps) {
   }
   const backdrop = contract.slot !== "media";
   const decorative = contract.purpose === "decorative";
-  const mediaStyle: CSSProperties = { display: "block", width: "100%", height: "100%", objectFit: contract.fit };
+  const squareMedia = !backdrop && contract.aspect === "1:1";
+  const mediaClasses = "block h-full w-full";
   return (
     <div
       data-consumer-art-slot={contract.slot}
       aria-hidden={decorative ? true : undefined}
+      className={`pointer-events-none w-full overflow-hidden ${backdrop ? "absolute inset-0 h-full" : "relative"}${squareMedia ? " aspect-square" : ""}`}
       style={{
-        position: backdrop ? "absolute" : "relative",
-        inset: backdrop ? 0 : undefined,
-        width: "100%",
-        height: backdrop ? "100%" : undefined,
-        aspectRatio: backdrop ? undefined : `${contract.width} / ${contract.height}`,
-        overflow: "hidden",
-        pointerEvents: "none",
+        aspectRatio: backdrop || squareMedia ? undefined : `${contract.width} / ${contract.height}`,
         backgroundColor: `var(${contract.backgroundToken})`,
       }}
     >
@@ -46,7 +41,7 @@ export function ConsumerArtSlot({ contract }: ConsumerArtSlotProps) {
           aria-hidden={decorative ? true : undefined}
           aria-label={decorative ? undefined : contract.alt}
           focusable="false"
-          style={mediaStyle}
+          className={mediaClasses}
         >
           {contract.source.paths.map((path, index) => (
             <path
@@ -67,7 +62,9 @@ export function ConsumerArtSlot({ contract }: ConsumerArtSlotProps) {
           loading={contract.loading}
           decoding="async"
           draggable={false}
-          style={mediaStyle}
+          className={`${mediaClasses}${contract.fit === "cover" ? " object-cover" : ""}`}
+          // The shipped stylesheets contain object-cover; contain is still an inline fit.
+          style={contract.fit === "contain" ? { objectFit: "contain" } : undefined}
         />
       )}
     </div>

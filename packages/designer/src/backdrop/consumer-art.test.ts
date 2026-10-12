@@ -19,14 +19,44 @@ describe("consumer art contract", () => {
     for (const format of ["avif", "webp", "png", "jpeg"]) expect(ok({ ...photo, source: { format, src: `/art/photo.${format}` } })).toBe(true);
     for (const [aspect, width, height] of [["1:1", 800, 800], ["4:3", 1200, 900], ["3:2", 1200, 800], ["16:9", 1600, 900]]) expect(ok({ ...photo, aspect, width, height })).toBe(true);
   });
-  it("requires meaningful alt and keeps every backdrop decorative and inert", () => {
+  it("requires meaningful alt and keeps hero backdrops decorative", () => {
     expect(ok({ ...photo, alt: " " })).toBe(false);
-    for (const slot of ["backdrop", "section-backdrop"]) {
-      expect(ok({ ...photo, slot })).toBe(false);
-      expect(ok({ ...photo, slot, purpose: "decorative", alt: "", fit: "cover" })).toBe(true);
-      expect(ok({ ...photo, slot, purpose: "decorative", alt: "", loading: "eager" })).toBe(false);
+    expect(ok({ ...photo, slot: "backdrop" })).toBe(false);
+    for (const loading of ["lazy", "eager"]) {
+      expect(ok({ ...photo, slot: "backdrop", purpose: "decorative", alt: "", fit: "cover", loading })).toBe(true);
     }
     expect(ok({ ...photo, purpose: "decorative", alt: photo.alt })).toBe(false);
+  });
+  it("refuses a section backdrop before Clossys provides its seam", () => {
+    const report = checkConsumerArtContract({ ...photo, slot: "section-backdrop", purpose: "decorative", alt: "", fit: "cover" });
+    expect(report.ok).toBe(false);
+    expect(report.findings).toContainEqual(expect.objectContaining({ path: "art.slot" }));
+  });
+  it("accepts registered strokes with an implicit width or a positive width up to 64", () => {
+    for (const stroke of [{ strokeToken: "--color-accent" }, { strokeToken: "--color-accent", strokeWidth: 0.25 }, { strokeToken: "--color-accent", strokeWidth: 64 }]) {
+      expect(ok({ ...vector, source: { format: "svg", paths: [{ d: "M0 0L10 10", fillToken: "--color-accent", ...stroke }] } })).toBe(true);
+    }
+  });
+  it.each([
+    { strokeWidth: 1 }, { strokeToken: "#fff" }, { strokeToken: "--color-imaginary" },
+    { strokeToken: "--spacing-md" },
+    ...[0, -1, 64.01, Infinity, NaN, "1", null].map(strokeWidth => ({ strokeToken: "--color-accent", strokeWidth })),
+  ])("refuses invalid stroke declarations: %j", stroke => {
+    expect(ok({ ...vector, source: { format: "svg", paths: [{ d: "M0 0L10 10", fillToken: "--color-accent", ...stroke }] } })).toBe(false);
+  });
+  it("accepts credential-free HTTPS but rejects HTTP", () => {
+    expect(ok({ ...photo, source: { format: "webp", src: "https://example.com/photo.webp" } })).toBe(true);
+    const report = checkConsumerArtContract({ ...photo, source: { format: "webp", src: "http://example.com/photo.webp" } });
+    expect(report.ok).toBe(false);
+    expect(report.findings).toContainEqual(expect.objectContaining({ path: "art.source.src" }));
+  });
+  it.each(["username", "password", "both"])("refuses HTTPS with %s credentials", kind => {
+    const url = new URL("https://example.com/photo.webp");
+    if (kind !== "password") url.username = "art";
+    if (kind !== "username") url.password = "placeholder";
+    const report = checkConsumerArtContract({ ...photo, source: { format: "webp", src: url.href } });
+    expect(report.ok).toBe(false);
+    expect(report.findings).toContainEqual(expect.objectContaining({ path: "art.source.src" }));
   });
   it.each([
     { width: 0 }, { height: -1 }, { width: 1.5 }, { width: Infinity },
