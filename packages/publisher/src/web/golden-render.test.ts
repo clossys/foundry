@@ -545,8 +545,8 @@ const BLOCKS = {
     ],
   },
   comparison: { type: "matrix", featured: "after", sides: [
-    { id: "before", label: copy("golden.before.label", "Before"), heading: copy("golden.before.heading", "Before"), description: copy("golden.before.description", "Placeholder point one · Placeholder point two"), visual: holdersPanel("holders-before") },
-    { id: "after", label: copy("golden.after.label", "After"), heading: copy("golden.after.heading", "After"), description: copy("golden.after.description", "Placeholder point three · Placeholder point four"), visual: holdersPanel("holders-after") },
+    { id: "before", label: copy("golden.before.label", "Before"), heading: copy("golden.before.heading", "Earlier state"), description: copy("golden.before.description", "Placeholder point one · Placeholder point two"), visual: holdersPanel("holders-before") },
+    { id: "after", label: copy("golden.after.label", "After"), heading: copy("golden.after.heading", "Later state"), description: copy("golden.after.description", "Placeholder point three · Placeholder point four"), visual: holdersPanel("holders-after") },
   ] },
   topics: { type: "items", arrangement: "rows", treatment: "rule", columns: 2, items: [textItem("ta", { icon: "file-check" }), textItem("tb"), textItem("tc"), textItem("td")] },
   steps: {
@@ -620,17 +620,17 @@ describe("golden: SectionedView content-section", () => {
     expect(cards.slice(1).every((card) => card.querySelector("[data-specimen]") === null)).toBe(true);
   });
 
-  it("renders a comparison with a panel visual on each side, each figure named by its panel title", () => {
+  it("renders a comparison with a panel visual on each side, each figure named by its side heading", () => {
     const { root } = renderContent(contentBand("comparison", { block: BLOCKS.comparison }));
     const section = band(root, "comparison");
     expect(section.querySelectorAll("[data-matrix-side]")).toHaveLength(2);
     const visuals = [...section.querySelectorAll("[data-matrix-side] figure[data-specimen]")];
-    expect(visuals.map((figure) => figure.getAttribute("aria-label"))).toEqual(["Before", "After"]);
+    expect(visuals.map((figure) => figure.getAttribute("aria-label"))).toEqual(["Earlier state", "Later state"]);
     expect(section.textContent).toContain("Placeholder point four");
   });
 
   it("preserves comparison points as a separate supported form with equal lists", () => {
-    const { root } = renderContent(contentBand("points", { block: { type:"matrix",featured:"after",sides:[{id:"before",label:copy("golden.points.before.label","Before"),heading:copy("golden.points.before.heading","Before"),points:[copy("golden.points.one","Placeholder point one"),copy("golden.points.two","Placeholder point two")]},{id:"after",label:copy("golden.points.after.label","After"),heading:copy("golden.points.after.heading","After"),points:[copy("golden.points.three","Placeholder point three"),copy("golden.points.four","Placeholder point four")]}] } }));
+    const { root } = renderContent(contentBand("points", { block: { type:"matrix",featured:"after",sides:[{id:"before",label:copy("golden.points.before.label","Before"),heading:copy("golden.points.before.heading","Earlier state"),points:[copy("golden.points.one","Placeholder point one"),copy("golden.points.two","Placeholder point two")]},{id:"after",label:copy("golden.points.after.label","After"),heading:copy("golden.points.after.heading","Later state"),points:[copy("golden.points.three","Placeholder point three"),copy("golden.points.four","Placeholder point four")]}] } }));
     const sides=[...band(root,"points").querySelectorAll("[data-matrix-side]")];expect(sides).toHaveLength(2);expect([...sides[0]!.querySelectorAll("li")].map(node=>node.textContent)).toEqual(["Placeholder point one","Placeholder point two"]);expect([...sides[1]!.querySelectorAll("li")].map(node=>node.textContent)).toEqual(["Placeholder point three","Placeholder point four"]);expect(sides[1]!.querySelector('[data-featured="true"]')).not.toBeNull();
   });
   it("renders a topic-list block as a two-column list", () => {

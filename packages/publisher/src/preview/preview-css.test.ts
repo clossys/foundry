@@ -1,6 +1,6 @@
 import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, dirname, resolve } from "node:path";
 import { TOKENS } from "@clossys/designer/tokens";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 // The generator is a plain build script (scripts/preview-css.mjs); test files are outside tsc.
@@ -47,11 +47,14 @@ beforeAll(() => {
   const brandPath = join(dir, "input-brand.css");
   writeFileSync(brandPath, buildMinimalBrandCssFromTokens({ TOKENS }));
   writePreviewGallery({ brandCssPath: brandPath, outputDir: join(dir, "out") });
-  pages = readdirSync(join(dir, "out"))
+  function htmlFiles(prefix = ""): string[] {
+    return readdirSync(join(dir, "out", prefix), { withFileTypes: true }).flatMap(entry => entry.isDirectory() ? htmlFiles(`${prefix}${entry.name}/`) : [`${prefix}${entry.name}`]);
+  }
+  pages = htmlFiles()
     .filter((file) => file.endsWith(".html"))
     .sort()
     .map((file) => ({ file, html: readFileSync(join(dir, "out", file), "utf8") }))
-    .filter((page) => page.html.includes(`href="${PREVIEW_UTILITIES_BASENAME}"`));
+    .filter(page => [...page.html.matchAll(/href="([^"]+)"/g)].some(match => resolve(dir, "out", dirname(page.file), match[1]) === resolve(dir, "out", PREVIEW_UTILITIES_BASENAME)));
 });
 
 afterAll(() => {
@@ -74,7 +77,7 @@ describe("styles/preview.css", () => {
   it("is copied into the preview output and linked by the gallery, the content catalog and the site pages", () => {
     expect(readFileSync(join(dir, "out", PREVIEW_UTILITIES_BASENAME), "utf8")).toBe(committed);
     const linking = pages.map((page) => page.file);
-    expect(linking).toEqual(expect.arrayContaining(["gallery.html", "content-catalog.html", "site-home.html"]));
+    expect(linking).toEqual(expect.arrayContaining(["gallery.html", "content-catalog.html", "site-home.html", ...["say", "items", "matrix", "frame", "media", "recipes", "other"].map(fn => `catalog/${fn}.html`)]));
     for (const page of pages) expect(page.html, page.file).not.toContain("designer-compiled.css");
   });
 
