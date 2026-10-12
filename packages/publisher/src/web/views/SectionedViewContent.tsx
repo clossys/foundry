@@ -61,9 +61,9 @@ export interface SectionedViewProps {
    */
   landmark?: SectionedViewLandmark;
   /**
-   * Resolves hero `media.assetId` into a paintable asset — the same seam
+   * Resolves hero and canonical content `media.assetId` into a paintable asset — the same seam
    * `renderWebDocument` uses for `heroMedia`. Required whenever the
-   * resolved document carries hero media; unresolved ids fail closed at
+   * resolved document carries asset media; unresolved ids fail closed at
    * render time and name the authored path.
    */
   resolveAssetId?: AssetResolver;
@@ -554,7 +554,7 @@ function renderSection(section: ResolvedSectionedViewSection, index: number, blo
     case "status-list": return <blocks.StatusList key={section.id} id={section.id} eyebrow={section.eyebrow} heading={section.heading} description={section.description} labels={section.labels} groups={section.groups} items={section.items} legendLabel={section.heading} headingLevel={2} ground={section.ground} />;
     case "stat-grid": return renderStatGrid(section, blocks);
     case "content-section":
-      return <blocks.ContentSection key={section.id} section={section} actions={renderContentActions(section)} className={SECTION_GROUND_CLASSES[section.ground].surface || undefined} />;
+      return <blocks.ContentSection key={section.id} section={section} actions={renderContentActions(section)} resolveAssetId={options.resolveAssetId} prefersReducedMotion={options.prefersReducedMotion} className={SECTION_GROUND_CLASSES[section.ground].surface || undefined} />;
     case "pricing":
       return (
         <blocks.PricingTable

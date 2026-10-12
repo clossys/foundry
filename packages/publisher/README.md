@@ -594,6 +594,12 @@ Recipe constraints are deeply immutable; the features recipe fixes item scale.
 
 Media is exactly one of:
 
+- `asset`: a consumer-owned image or video addressed by `assetId`, with a
+  closed `ContentAssetContract`, meaningful or decorative intent, and an
+  optional caption CopyRef. Meaningful alt is a CopyRef; decorative images
+  omit authored alt and render empty alt with `aria-hidden`. Videos are
+  meaningful, captioned, user-controlled media. See Consumer-owned content
+  below for the contract and a complete example.
 - `specimen`: an accessible label and one `panel`, optionally an ordered
   `key` of 3–5 items targeting labeled header, part or footer slots. Key
   placement derives from the frame layout: at the end of a stacked band,
@@ -1219,7 +1225,8 @@ Props, in addition to the standard `<main>` attributes (minus `children`),
   after `document`, for example a shared FAQ.
 - `afterSection` (optional): content placed in a section's content slot,
   after its own content, keyed by section id. An id that names no rendered
-  section is refused with a `RenderError`, not dropped.
+  section is refused with a `RenderError`, not dropped. This node seam is
+  separate from the checked, data-only `asset` media slot.
 - `callToAction` (optional): the closing band: `id`, `eyebrow`, `heading`
   (an `<h2>`), `description`, and one required `action` slot (pass a
   button-styled link; it is not restyled). Add `copy: "hero"` to reuse the
@@ -4344,7 +4351,9 @@ app styles Publisher's views with its own build (see
   `SectionedViewItemsTreatment`, `SectionedViewItemsScale`,
   `SectionedViewMatrixBlock`, `SectionedViewMatrixSide`,
   `SectionedViewContentBlock`, `SectionedViewContentBlockType`,
-  `SectionedViewMedia`, `ResolvedSectionedViewMedia`,
+  `SectionedViewMedia`, `ResolvedSectionedViewMedia`, `SectionedViewAssetMedia`,
+  `ContentAssetContract`, `ContentAssetReport`, `CONTENT_ASSET_FORMATS`,
+  `CONTENT_ASSET_RATIOS`, `checkContentAssetContract`, `checkContentAssetFill`,
   `SectionedViewRecordMedia`, `SectionedViewLedgerGroup`, `SectionedViewLedgerRow`,
   `SectionedViewSceneMedia`, `SectionedViewSceneInput`,
   `SectionedViewSceneConvergeInput`, `SectionedViewSceneEvidenceTrailInput`,
@@ -5242,4 +5251,115 @@ if (findings.some((finding) => finding.severity === "error")) {
 }
 export const resolved = resolveSectionedViewDocument(document, resolveCopy);
 // resolved.resolutions retains the registry revision and source for every CopyRef.
+```
+
+
+## Consumer-owned content
+
+Consumer repositories own their brand art, illustrations, photographs and
+art scenes. Publisher supplies a data slot and renderer; Designer's Specimen
+and Scene remain product visuals made from components. Put consumer content
+in a canonical `content-section`'s `media`, then supply the existing
+`resolveAssetId` prop to SectionedView or LandingView. The ordinary and server
+entries use the same fill check and markup, including stacked and split
+layouts. No custom view or additional design tokens are required.
+
+`ContentAssetContract` requires positive safe-integer intrinsic `width` and
+`height`, `aspectRatio` from `CONTENT_ASSET_RATIOS` (`1:1`, `4:3`, `3:4`,
+`16:9`), a MIME `format` from `CONTENT_ASSET_FORMATS`, and `loading: "lazy"`
+or `"eager"`. Dimensions must match the ratio without cropping. Supported
+image formats are PNG, JPEG, WebP, AVIF and external SVG; video formats are
+MP4 and WebM. The fallback image must state a matching `mimeType`, and each
+responsive source must state a supported image MIME `format` and positive
+safe-integer width. Video sources use supported MIME types and include the
+declared format. Missing, throwing or unmatched asset resolution refuses
+rendering instead of omitting the media.
+
+Meaningful media requires approved alt CopyRef text. Decorative media is
+image-only and omits the alt field; it renders `alt=""` and `aria-hidden`.
+The registry's own description stays nonblank. Optional caption copy resolves
+through Writer and renders as MediaFigure's figcaption. Content videos require
+captions, retain the existing reduced-motion validation and poster behavior,
+and render controls without autoplay. Images reserve their intrinsic ratio,
+fit the column, and emit async decoding plus the declared loading hint.
+Videos fit the column and use `preload="none"` for lazy loading or
+`preload="metadata"` for eager loading; the browser controls when it fetches.
+
+`checkContentAssetContract` checks declarations, and
+`checkContentAssetFill` checks a resolved fill's paintability, dimensions,
+formats, matching asset id and video accessibility metadata. Pass the requested
+asset id as the third fill-check argument; resolved fills must carry that id. Both accept unknown data and return
+`ContentAssetReport` with `ok` and error findings. Accessors, unsupported
+declaration fields or values, and missing fills fail. Fill records
+may retain registry metadata; it is not applied as styling. Neither reads files, makes requests,
+measures transferred bytes, decodes media, judges alt adequacy, or proves the
+actual file's size or MIME. Responsive-source heights are not supplied by the
+existing asset shape, so their ratios are not checked. A metadata agreement is
+not a measurement of the referenced bytes.
+
+The slot accepts no style, color, class or markup fields. Its surrounding
+chrome uses Designer token classes. Intrinsic photograph and video colors are
+consumer-owned content; no metadata gate can certify those pixels. External
+SVG is rendered as an image, not inserted as markup, and its declared MIME
+cannot prove its paint values use tokens. Consumer asset preflight must inspect
+SVG and other authored styling with the existing Designer source-token checks;
+this fill report does not certify uninspected source colors or browser output.
+
+The existing LandingView `backdrop` and `afterSection` ReactNode seams remain
+separate compatibility paths. The hero decoration contract is Designer's
+`BackdropContract`, checked with `checkBackdropContract` for its declarations
+and `checkBackdropElement` for rendered inertness. Those checks do not read
+asset bytes either; a ReactNode alone is not evidence that either check ran.
+
+This complete example validates and resolves a generic declaration. Replace
+the asset URL and registry entries with the consumer's own content.
+
+```ts
+import { createElement } from "react";
+import {
+  createCopyResolver,
+  type CopyRegistry,
+} from "@clossys/writer";
+import {
+  checkContentAssetFill, resolveSectionedViewDocument,
+  validateSectionedViewDocument, type SectionedViewDocument,
+} from "@clossys/publisher/core";
+import { LandingView } from "@clossys/publisher/web";
+
+const registry = {
+  id: "content-example", revision: "1", locale: "en",
+  source: { kind: "consumer", reference: "example" },
+  entries: [
+    { id: "example.heading", text: "A place to explore", context: "Heading", status: "approved" },
+    { id: "example.alt", text: "A landscape beside a walking path", context: "Image description", status: "approved" },
+  ],
+} satisfies CopyRegistry;
+const contract = {
+  width: 1600, height: 900, aspectRatio: "16:9",
+  format: "image/webp", loading: "lazy",
+} as const;
+const fill = {
+  id: "example.image", type: "image", src: "/media/example.webp", mimeType: "image/webp",
+  width: 1600, height: 900, alt: "Registry description",
+};
+export const document = {
+  id: "content-example", sectionGroundRhythm: "base-then-sunken",
+  sections: [
+    { id: "opening", kind: "hero", heading: { id: "example.heading" } },
+    { id: "photograph", kind: "content-section", layout: "split-end",
+      heading: { id: "example.heading" },
+      media: { type: "asset", assetId: "example.image", purpose: "meaningful",
+        alt: { id: "example.alt" }, contract } },
+  ],
+} satisfies SectionedViewDocument;
+export const findings = validateSectionedViewDocument(document);
+export const fillReport = checkContentAssetFill(contract, fill, "example.image");
+if (findings.some(finding => finding.severity === "error") || !fillReport.ok) {
+  throw new Error("Invalid content declaration or fill metadata");
+}
+export const resolved = resolveSectionedViewDocument(document, createCopyResolver(registry));
+export const element = createElement(LandingView, {
+  document: resolved,
+  resolveAssetId: id => id === "example.image" ? fill : undefined,
+});
 ```

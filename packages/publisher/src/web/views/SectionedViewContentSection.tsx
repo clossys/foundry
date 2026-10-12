@@ -1,10 +1,14 @@
 import { Icon, type IconNode } from "@clossys/designer/atoms/server";
-import { AnatomyCallouts, ContentSection, Items, Matrix, RecordLedger, Scene, Specimen } from "@clossys/designer/blocks/server";
+import { AnatomyCallouts, ContentSection, Items, Matrix, MediaFigure, RecordLedger, Scene, Specimen } from "@clossys/designer/blocks/server";
 import type { ItemData, ItemsProps, MatrixSide, SpecimenPanelItem, SpecimenPart } from "@clossys/designer/blocks/server";
 import { Briefcase, Building2, Calendar, Clock, FileCheck, FileText, Folder, Globe, Landmark, Layers, Lock, Receipt, Scale, Search, ShieldCheck, Users } from "@clossys/designer/icons";
 import type { CSSProperties, ReactNode } from "react";
 import type { ContentIconName, ResolvedSectionedViewContentBlock, ResolvedSectionedViewContentSection, ResolvedSectionedViewSpecimenPanel, ResolvedSectionedViewSpecimenPart, ResolvedSectionedViewMedia, ResolvedSectionedViewSection, SectionedViewGround } from "../../core/sectioned-view.js";
 import { RenderError } from "../../internal/errors.js";
+import { checkContentAssetFill } from "../../core/content-asset.js";
+import type { RenderAsset } from "../../internal/assets.js";
+import type { AssetResolver } from "../types.js";
+import { buildAssetElement } from "../buildAssetElement.js";
 
 /**
  * Each closed `ContentIconName` mapped to its Designer glyph by explicit
@@ -37,6 +41,8 @@ export interface ContentSectionBlockProps {
   className?: string;
   style?: CSSProperties;
   after?: ReactNode;
+  resolveAssetId?: AssetResolver;
+  prefersReducedMotion?: boolean;
   /** Private compatibility bridge for the published top-level FAQ kind. */
   publishedFaq?: Extract<ResolvedSectionedViewSection, { kind: "faq" }>;
 }
@@ -61,8 +67,16 @@ function partSpecimen(part: ResolvedSectionedViewSpecimenPart | undefined, id: s
   if (part === undefined) return undefined;
   return <Specimen label={part.label ?? heading} panels={[{ id, parts: [partData(part)] }]} />;
 }
-function renderMedia(media: ResolvedSectionedViewMedia, section: ResolvedSectionedViewContentSection): ReactNode {
+function renderMedia(media: ResolvedSectionedViewMedia, section: ResolvedSectionedViewContentSection, options: Pick<ContentSectionBlockProps, "resolveAssetId" | "prefersReducedMotion">): ReactNode {
   switch (media.type) {
+    case "asset": {
+      let asset: unknown;
+      try { asset = options.resolveAssetId?.(media.assetId); }
+      catch { throw new RenderError("resolution-failed", `${section.id}.media.assetId could not be resolved.`); }
+      const report = checkContentAssetFill(media.contract, asset, media.assetId);
+      if (!report.ok) throw new RenderError("resolution-failed", `${section.id}.media: ${report.findings.map(finding => finding.message).join(" ")}`);
+      return <MediaFigure ground={section.ground} caption={media.caption}>{buildAssetElement(asset as RenderAsset, { prefersReducedMotion: options.prefersReducedMotion, altOverride: media.purpose === "decorative" ? "" : media.alt, contentPresentation: { loading: media.contract.loading, decorative: media.purpose === "decorative" } })}</MediaFigure>;
+    }
     case "specimen": {
       const panel = panelData(media.panel);
       return media.key === undefined ? <Specimen label={media.label} panels={[panel]} /> : <AnatomyCallouts id={`${section.id.length}:${section.id}:8:specimen`} label={media.label} panel={panel} markers={media.key.items} keyLabel={media.key.label} legendSide={section.layout === "stacked" ? "end" : "below"} headingLevel={3} ground={section.ground} />;
@@ -93,13 +107,13 @@ function renderBlock(block: ResolvedSectionedViewContentBlock, section: Resolved
 }
 /** Canonical frame, entry-specific collections, Matrix and media adapters. */
 export function createContentSectionBlock(Faq: ContentSectionFaq, ItemsBlock: (props: ItemsProps) => ReactNode = Items) {
-  return function ContentSectionBlock({ section, actions, className, style, after, publishedFaq }: ContentSectionBlockProps) {
+  return function ContentSectionBlock({ section, actions, className, style, after, publishedFaq, resolveAssetId, prefersReducedMotion }: ContentSectionBlockProps) {
     if (publishedFaq !== undefined) {
       if (publishedFaq.kind !== "faq" || publishedFaq.layout !== "split" || publishedFaq.id !== section.id) throw new RenderError("resolution-failed", "Invalid published FAQ compatibility bridge.");
       return <ContentSection id={publishedFaq.id} eyebrow={publishedFaq.eyebrow} heading={publishedFaq.heading} description={publishedFaq.description} headingLevel={2} ground={publishedFaq.ground} layout="split" media={<Faq items={publishedFaq.items} headingLevel={2} ground={publishedFaq.ground} />} data-content-section-faq="" className={[className, "tablet-lg:items-start"].filter(Boolean).join(" ")}>{after}</ContentSection>;
     }
     const block = section.block === undefined ? null : renderBlock(section.block, section, ItemsBlock);
-    const media = section.media === undefined ? undefined : renderMedia(section.media, section);
+    const media = section.media === undefined ? undefined : renderMedia(section.media, section, { resolveAssetId, prefersReducedMotion });
     const header = { id: section.id, headingId: section.heading === undefined ? undefined : `${section.id}:heading`, eyebrow: section.eyebrow, heading: section.heading, description: section.description, actions, footnote: renderFootnote(section.footnote), headingLevel: 2 as const, size: section.size, ground: section.ground, className, style };
     if (section.layout !== "stacked") return <ContentSection {...header} layout={section.layout} media={media}>{block}{after}</ContentSection>;
     return <ContentSection {...header} layout="stacked" align={section.block?.type === "items" && section.block.scale === "statement" ? "center" : "start"} media={media}>{block}{after}</ContentSection>;

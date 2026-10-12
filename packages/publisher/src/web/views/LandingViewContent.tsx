@@ -121,7 +121,7 @@ export interface LandingViewProps extends Omit<HTMLAttributes<HTMLElement>, "chi
    * `"none"` when the frame already owns `main`.
    */
   landmark?: SectionedViewLandmark;
-  /** Resolves hero `media.assetId`, as for `SectionedView`. */
+  /** Resolves hero and canonical content `media.assetId`, as for `SectionedView`. */
   resolveAssetId?: AssetResolver;
   /** When `true`, applies each video asset's `reducedMotion` policy. */
   prefersReducedMotion?: boolean;
@@ -231,9 +231,9 @@ function bandBlocks(afterSection: Readonly<Record<string, ReactNode>>, canonical
         {after(id)}
       </ContentSection>
     ),
-    ContentSection: ({ section, actions, publishedFaq }) => {
+    ContentSection: ({ section, actions, publishedFaq, resolveAssetId, prefersReducedMotion }) => {
       const Content = publishedFaq === undefined ? canonicalContentSection : sectionedViewBlocks.ContentSection;
-      return <Content section={section} actions={actions} publishedFaq={publishedFaq} after={after(section.id)} className={publishedFaq === undefined ? undefined : BAND_ANCHOR_CLASS} style={publishedFaq === undefined ? { scrollMarginTop: 0 } : undefined} />;
+      return <Content section={section} actions={actions} publishedFaq={publishedFaq} resolveAssetId={resolveAssetId} prefersReducedMotion={prefersReducedMotion} after={after(section.id)} className={publishedFaq === undefined ? undefined : BAND_ANCHOR_CLASS} style={publishedFaq === undefined ? { scrollMarginTop: 0 } : undefined} />;
     },
   };
 }
