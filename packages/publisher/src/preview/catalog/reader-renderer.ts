@@ -4,11 +4,11 @@ import { resolveSectionedViewDocument, desugarRecipe, SECTIONED_VIEW_ITEM_RECIPE
 import { LandingView } from '../../web/views/LandingView.server.js';
 import type { LandingViewProps } from '../../web/views/LandingView.js';
 import { SectionedView } from '../../web/views/SectionedView.server.js';
-import type { ResolvedSectionedViewContentSection } from '../../core/sectioned-view.js';
+import type { ResolvedSectionedViewContentSection, ResolvedSectionedViewDocument } from '../../core/sectioned-view.js';
 import type { ContentCatalogStylesheets } from '../render-content-catalog.js';
 import { OTHER_KIND_LINKS, type CatalogFixture } from './index.js';
 import { CATALOG_RECIPE_LINKS } from './contract-reference.js';
-import { READER_SAMPLES, READER_COMPOSITION, readerCopyResolver, readerPage, deriveCatalogFunction, type ReaderPage } from './reader-data.js';
+import { READER_SAMPLES, readerCopyResolver, readerPage, deriveCatalogFunction, resolveReaderSampleDocument, type ReaderPage } from './reader-data.js';
 type CatalogAxis = {
     name: string;
     values: readonly string[];
@@ -252,7 +252,7 @@ export const READER_PAGES: readonly CatalogPage[] = [
                     "inverse"
                 ],
                 "effect": "Changes surface and contrast.",
-                "when": "Alternate base and sunken deliberately; reserve inverse for a focal band."
+                "when": "Omit ground for automatic base and sunken cadence; reserve inverse for a focal band."
             }
         ]
     },
@@ -284,9 +284,11 @@ function closeProps(section: ResolvedSectionedViewContentSection): NonNullable<L
     return { id: section.id, eyebrow: section.eyebrow, heading: section.heading, description: section.description, actions, footnote: section.footnote === undefined ? undefined : section.footnote.text === undefined ? { text: createElement('a', { href: section.footnote.link.href }, section.footnote.link.label) } : section.footnote };
 }
 export function renderReaderSample(fixture: CatalogFixture): string {
+    return renderResolvedReaderSample(fixture, resolveReaderSampleDocument(fixture));
+}
+function renderResolvedReaderSample(fixture: CatalogFixture, resolved: ResolvedSectionedViewDocument): string {
     const composition = fixture.id === 'recipes-nav-composition';
-    const document = composition ? READER_COMPOSITION : { id: `reader-${fixture.id}`, sections: [fixture.section] };
-    const resolved = resolveSectionedViewDocument(document, readerCopyResolver);
+
     if (composition) {
         const close = resolved.sections.at(-1);
         if (close?.kind !== 'content-section')
@@ -334,8 +336,8 @@ function recipe(fixture: CatalogFixture): string {
     return fixture.section.media ? 'showcase' + (fixture.section.layout === 'stacked' ? '' : '-split') : fixture.section.layout === 'stacked' ? 'intro' : 'intro-split';
 }
 /** Effective, existing configuration values demonstrated by one native example. */
-function axisValues(fixture: CatalogFixture, label: ReaderPage): Record<string, string> {
-    const section = resolveSectionedViewDocument({ id: `axis-${fixture.id}`, sections: [fixture.section] }, readerCopyResolver).sections[0]!;
+function axisValues(fixture: CatalogFixture, label: ReaderPage, resolved: ResolvedSectionedViewDocument = resolveReaderSampleDocument(fixture)): Record<string, string> {
+    const section = resolved.sections[0]!;
     if (section.kind === 'hero') return label === 'Introduce' ? { role: 'hero', 'hero-size': section.size ?? 'display' } : {};
     if (section.kind !== 'content-section') throw new Error('Expected a canonical axis witness.');
     if (label === 'Frame') return { layout: section.layout, size: section.size, ground: section.ground };
@@ -352,10 +354,10 @@ function axisValues(fixture: CatalogFixture, label: ReaderPage): Record<string, 
     if (label === 'Explain') return { shape: block.arrangement === 'columns' ? `grid-${block.columns}` : block.arrangement === 'stacked' ? 'stack' : block.arrangement, treatment: block.treatment, scale: block.scale };
     return {};
 }
-function caption(fixture: CatalogFixture, label: ReaderPage, context?: string): string {
+function caption(fixture: CatalogFixture, label: ReaderPage, context?: string, resolved: ResolvedSectionedViewDocument = resolveReaderSampleDocument(fixture)): string {
     const name = context ?? (fixture.id === 'recipes-nav-composition' ? 'six-band page' : recipe(fixture));
     const contextNote = fixture.section.kind === 'content-section' && fixture.section.media?.type === 'record' ? ` · ${fixture.section.media.columns ?? 1} column${(fixture.section.media.columns ?? 1) === 1 ? '' : 's'}` : fixture.section.kind === 'content-section' && fixture.section.media?.type === 'scene' ? ` · ${fixture.section.media.input.template}` : '';
-    return `${escape(name)}${escape(contextNote)}${Object.entries(axisValues(fixture, label)).map(([axis, value]) => ` · <span data-catalog-axis-witness="${escape(axis)}:${escape(value)}">${escape(axis)}: ${escape(value)}</span>`).join('')}`;
+    return `${escape(name)}${escape(contextNote)}${Object.entries(axisValues(fixture, label, resolved)).map(([axis, value]) => ` · <span data-catalog-axis-witness="${escape(axis)}:${escape(value)}">${escape(axis)}: ${escape(value)}</span>`).join('')}`;
 }
 function frameReference(axis: string, value: string): CatalogFixture {
     const fixture = READER_SAMPLES.find(sample => sample.section.kind === 'content-section' && !['say-close', 'recipes-nav-composition'].includes(sample.id) && axisValues(sample, 'Frame')[axis] === value);
@@ -372,14 +374,14 @@ function rules(label: ReaderPage): string {
         string,
         string
     ][]> = {
-        Overview: [['Choose a function', 'Start with the reader’s job; recipes fill compatible defaults.'], ['Compose a page', 'Alternate explicit base and sunken grounds; inverse is a deliberate focal band.']],
+        Overview: [['Choose a function', 'Start with the reader’s job; recipes fill compatible defaults.'], ['Compose a page', 'Omit body ground for automatic cadence; inverse is a deliberate focal band.']],
         Introduce: [['Roles', 'Hero, intro, split intro, and close.'], ['Actions', '0–2 actions, at most one primary. A lone hero action is primary.']],
         Show: [['Scenes', 'Converge connects sources; evidence-trail traces a result; approval-chain shows checks leading to a decision.'], ['Specimen', 'One panel with 1–3 parts; a key names 3–5 distinct targets.'], ['Record', '1–3 groups; each has 1–6 rows, or the final group may contain an owner instead. Multi-column records use stacked frames.']],
         Explain: [['Grid', '2, 4 or 6 entries in two columns; 3 or 6 in three columns.'], ['Bento / stack', 'Bento has 2–6 entries whose spans fill 12-unit rows; visual stacks have 2–4, with one part each.']],
         Index: [['Rows', '2–8 entries in one or two columns; 2–4 groups each have 2–4 members.'], ['FAQ', '4–6 answers; every answer needs a description.']],
         Sequence: [['Line', '3–5 steps; four warns. Visual steps need a Sample data caption.'], ['Lanes', 'Exactly two roles and 3–5 steps. Use a stacked frame with a columns or stacked arrangement, and name the continuation when relevant.']],
         Compare: [['Points', 'Two sides with 2–4 equal-count points each.'], ['Visuals', 'One panel per side with 1–3 parts; do not combine points and a panel.']],
-        Frame: [['Directions', 'Stacked, split-start, or split-end.'], ['Ground', 'Choose explicit base, sunken, or inverse; reserve inverse for a focal band.']],
+        Frame: [['Directions', 'Stacked, split-start, or split-end.'], ['Ground', 'Base and sunken are automatic; choose inverse for a focal band.']],
         Parts: [['Specimen', 'Fields, status rows, meter, table, schedule, shares, and files.'], ['Independent copy', 'Badge and metadata coexist; meter history retains previous value and text.']],
     };
     return `<section class="catalog-note"><h2>Count and slot rules</h2><table data-catalog-rules><thead><tr><th scope="col">Recipe</th><th scope="col">Counts and slots</th></tr></thead><tbody>${content[label].map(([a, b]) => `<tr><th scope="row">${escape(a)}</th><td>${escape(b)}</td></tr>`).join('')}</tbody></table></section>`;
@@ -438,8 +440,8 @@ export function readerConfigCells(label: ReaderPage): ConfigCell[] {
     }
     return [];
 }
-function embeddedNative(fixture: CatalogFixture, prefix: string): string {
-    const html = renderReaderSample(fixture)
+function embeddedNative(fixture: CatalogFixture, prefix: string, resolved: ResolvedSectionedViewDocument): string {
+    const html = renderResolvedReaderSample(fixture, resolved)
         .replace(/ href="\/catalog\/([a-z-]+\.html#example-[a-z-]+)"/g, ' href="$1"')
         .replace(/<h1(?=\s|>)/g, '<h2').replaceAll('</h1>', '</h2>');
     return namespaceNativeMarkup(html, prefix);
@@ -464,14 +466,18 @@ export function buildCatalogFunctionPages(sheets: ContentCatalogStylesheets): Ar
         const header = `<header class="catalog-nav"><a href="../content-catalog.html">Content catalog</a><h1>${label}</h1><p>${definition.purpose}</p>${nav(definition.id)}</header>`;
         let body = '';
         for (const sample of READER_SAMPLES.filter(fixture => readerPage(fixture) === label)) {
-            body += `<article class="catalog-example" id="example-${sample.id}" data-catalog-fixture="${sample.id}"><header class="catalog-note"><p data-catalog-caption>${label} › ${caption(sample, label)}</p></header><div data-catalog-native${label === 'Overview' ? ' data-catalog-composition' : ''}>${embeddedNative(sample, `sample-${definition.id}-${sample.id}`)}</div></article>`;
+            const resolved = resolveReaderSampleDocument(sample);
+            body += `<article class="catalog-example" id="example-${sample.id}" data-catalog-fixture="${sample.id}"><header class="catalog-note"><p data-catalog-caption>${label} › ${caption(sample, label, undefined, resolved)}</p></header><div data-catalog-native${label === 'Overview' ? ' data-catalog-composition' : ''}>${embeddedNative(sample, `sample-${definition.id}-${sample.id}`, resolved)}</div></article>`;
         }
         if (label === 'Overview')
             body += `<section class="catalog-note"><h2>Recipe reference</h2>${recipeTable()}</section>`;
         body += axisTable(definition);
         const cells = readerConfigCells(label);
         if (cells.length)
-            body += `<div class="catalog-config-grid">${cells.map(cell => `<article class="catalog-config-cell" data-catalog-config-cell="${cell.id}"><header><p data-config-caption>${label} › ${caption(cell.fixture, label, cell.caption)}</p></header><div data-config-native>${embeddedNative(cell.fixture, `config-${definition.id}-${cell.id}`)}</div></article>`).join('')}</div>`;
+            body += `<div class="catalog-config-grid">${cells.map(cell => {
+                const resolved = resolveReaderSampleDocument(cell.fixture);
+                return `<article class="catalog-config-cell" data-catalog-config-cell="${cell.id}"><header><p data-config-caption>${label} › ${caption(cell.fixture, label, cell.caption, resolved)}</p></header><div data-config-native>${embeddedNative(cell.fixture, `config-${definition.id}-${cell.id}`, resolved)}</div></article>`;
+            }).join('')}</div>`;
         if (label === 'Parts')
             body += `<section class="catalog-note"><h2>Complete examples</h2><ul><li><a href="show.html#example-say-media-stacked">Fields and review states</a></li><li><a href="show.html#example-media-key">Table, schedule, shares, and a specimen key</a></li><li><a href="show.html#example-frame-split-start">Files and source details</a></li><li><a href="show.html#example-media-record-three">Grouped record context</a></li><li><a href="show.html#example-items-badge-meta">Independent badge and metadata</a></li><li><a href="show.html#example-media-meter-previous">Meter history</a></li><li><a href="overview.html#example-recipes-nav-composition">Approval checks</a></li></ul></section>`;
         body += rules(label);

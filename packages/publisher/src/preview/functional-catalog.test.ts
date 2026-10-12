@@ -6,7 +6,7 @@ import { TOKENS } from "@clossys/designer/tokens";
 import { describe, expect, it } from "vitest";
 import { SECTIONED_VIEW_CONTENT_CONTRACT as C, SECTIONED_VIEW_ITEM_RECIPES, desugarRecipe, resolveSectionedViewDocument, validateSectionedViewDocument } from "../core/index.js";
 import { CATALOG_FIXTURES, CATALOG_COPY_REGISTRY, CATALOG_COMPOSITIONS, OTHER_KIND_LINKS, OTHER_KIND_SOURCE, catalogCopyResolver } from "./catalog/index.js";
-import { CATALOG_RECIPE_LINKS, renderCatalogFixture } from "./catalog/contract-reference.js";
+import { CATALOG_RECIPE_LINKS, renderCatalogFixture, resolveCatalogFixtureDocument, resolveCatalogPresentationDocument } from "./catalog/contract-reference.js";
 import { previewSectionedDocument, previewCopyResolver } from "./fixture-documents.js";
 import { buildContentCatalogHtml, buildCatalogFunctionPages } from "./render-content-catalog.js";
 import { buildMinimalBrandCssFromTokens, buildPreviewGalleryHtml, renderPreviewGalleryEntries, writePreviewGallery } from "./render-preview-gallery.js";
@@ -85,7 +85,7 @@ describe("functional content catalog", () => {
 
 describe("retained contract configuration reference data", () => {
   const documents = CATALOG_FIXTURES.map(fixture => ({ id: `test-${fixture.id}`, sections: [fixture.section] }));
-  const resolved = documents.map(document => resolveSectionedViewDocument(document, catalogCopyResolver));
+  const resolved = CATALOG_FIXTURES.map(fixture => resolveCatalogFixtureDocument(fixture));
   const content = resolved.flatMap(document => document.sections.filter(section => section.kind === "content-section"));
   const items = content.flatMap(section => section.block?.type === "items" ? [section.block] : []);
   it("uses exactly public fixture descriptors and validates and resolves all sample copy", () => {
@@ -206,7 +206,7 @@ describe("catalog copy and rendered additions", () => {
   });
   it("matches displayed descriptors to actual effective axes", () => {
     for (const fixture of CATALOG_FIXTURES) {
-      const section = resolveSectionedViewDocument({ id: "descriptor", sections: [fixture.section] }, catalogCopyResolver).sections[0]!;
+      const section = resolveCatalogFixtureDocument(fixture).sections[0]!;
       if (["ground", "size", "layout"].includes(fixture.axis)) expect(section[fixture.axis as "ground" | "size" | "layout"], fixture.id).toBe(fixture.value);
       if (section.kind !== "content-section") continue;
       const block = section.block;
@@ -244,5 +244,40 @@ describe("catalog copy and rendered additions", () => {
     expect(new Set([...laneRoot.querySelectorAll("li[data-lane]")].map(node => node.getAttribute("data-lane")))).toEqual(new Set(["sender", "reviewer"]));
     const close = new JSDOM(renderCatalogFixture(byId("say-close"))).window.document;
     expect(close.body.children.length).toBe(1); expect(close.body.firstElementChild?.tagName).toBe("SECTION"); expect(close.querySelectorAll("h2")).toHaveLength(1);
+  });
+});
+
+describe("validated catalog ground presentation", () => {
+  it("refuses original invalid authored ground and unresolved copy before projection", () => {
+    const fixture = CATALOG_FIXTURES.find(entry => entry.id === "frame-ground-sunken")!;
+    const invalid = { ...fixture, section: { ...fixture.section, ground: "base" } } as unknown as typeof fixture;
+    expect(() => resolveCatalogFixtureDocument(invalid)).toThrow(/ground must be inverse or omitted/);
+    expect(() => resolveCatalogFixtureDocument(fixture, () => undefined)).toThrow(/could not resolve a CopyRef/);
+  });
+  it("removes only the presented id from automatic grounds and preserves source and provenance", () => {
+    const first = CATALOG_FIXTURES.find(entry => entry.id === "frame-ground-base")!;
+    const second = CATALOG_FIXTURES.find(entry => entry.id === "frame-ground-sunken")!;
+    const document = { id: "catalog-ground-presentation", sections: [first.section, second.section] };
+    const before = JSON.stringify(document);
+    const original = resolveSectionedViewDocument(document, catalogCopyResolver);
+    expect(original.viewGrounds).toEqual([first.section.id, second.section.id]);
+    const presented = resolveCatalogPresentationDocument(document, catalogCopyResolver, first.section.id, "sunken");
+    expect(presented.viewGrounds).toEqual([second.section.id]);
+    expect(presented.sections[0]!.ground).toBe("sunken");
+    expect(presented.sections[1]).toEqual(original.sections[1]);
+    expect(presented.id).toBe(original.id);
+    expect(presented.resolutions).toEqual(original.resolutions);
+    expect(JSON.stringify(document)).toBe(before);
+  });
+  it.each(["base", "sunken", "inverse"] as const)("renders the retained %s descriptor through the actual native view", ground => {
+    const fixture = CATALOG_FIXTURES.find(entry => entry.id === `frame-ground-${ground}`)!;
+    const native = new JSDOM(renderCatalogFixture(fixture)).window.document.querySelector("[data-content-section]")!;
+    expect(native).not.toBeNull();
+    if (ground === "base") {
+      expect(native.classList.contains("bg-surface-sunken")).toBe(false);
+      expect(native.classList.contains("bg-surface-inverse")).toBe(false);
+    } else expect(native.classList.contains(`bg-surface-${ground}`)).toBe(true);
+    expect(native.querySelector("h2")!.classList.contains(ground === "inverse" ? "text-ink-on-inverse" : "text-ink-primary")).toBe(true);
+    expect(resolveCatalogFixtureDocument(fixture).sections[0]!.ground).toBe(ground);
   });
 });

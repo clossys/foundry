@@ -1,6 +1,7 @@
 import { createCopyResolver, type CopyRef, type CopyRegistryEntry } from '@clossys/writer';
 import { READER_COPY } from './reader-copy.js';
 import { desugarRecipe } from '../../core/content-contract.js';
+import { resolveCatalogPresentationDocument } from './contract-reference.js';
 import type { SectionedViewSection } from '../../core/sectioned-view.js';
 import { CATALOG_FIXTURES, CATALOG_COPY_REGISTRY, CATALOG_COMPOSITIONS, catalogCopyResolver, type CatalogFixture } from './index.js';
 export const READER_FUNCTIONS = ['Introduce', 'Show', 'Explain', 'Index', 'Sequence', 'Compare'] as const;
@@ -119,11 +120,15 @@ const grounds: Record<string, 'base' | 'sunken' | 'inverse'> = {
     "media-meter-previous": "base"
 };
 function prepare(fixture: CatalogFixture): CatalogFixture {
+    // Refuse invalid original fixtures before preparing reader copy or authored grounds.
+    resolveCatalogPresentationDocument({ id: `reader-source-${fixture.id}`, sections: [fixture.section] }, catalogCopyResolver);
     const section = structuredClone(fixture.section);
     rewrite(section, fixture.id);
     if (section.kind === 'content-section') {
         section.size = ['say-media-stacked', 'media-converge', 'items-connected'].includes(fixture.id) ? 'display' : 'standard';
-        section.ground = grounds[fixture.id] ?? 'base';
+        // Canonical authored ground is inverse or omitted; the map is preview presentation.
+        if (grounds[fixture.id] === 'inverse') section.ground = 'inverse';
+        else delete section.ground;
         if (section.media?.type === 'scene' && section.media.input.template === 'evidence-trail' && section.media.input.result.person !== undefined)
             section.media.input.result.person.initials = 'RT';
         if (fixture.id === 'items-badge-meta')
@@ -167,3 +172,17 @@ READER_COMPOSITION.sections.forEach((section, index) => {
 export const READER_SAMPLES = CATALOG_FIXTURES.filter(f => !READER_PRUNED.some(id => id === f.id)).map(f => f.id === 'recipes-nav-composition' ? { ...f, section: READER_COMPOSITION.sections[0]! } : prepare(f));
 export const READER_COPY_REGISTRY = { ...CATALOG_COPY_REGISTRY, id: 'reader-catalog', entries };
 export const readerCopyResolver = createCopyResolver(READER_COPY_REGISTRY);
+
+/** Resolve valid authored data before presenting the existing reader ground choices. */
+export function resolveReaderSampleDocument(fixture: CatalogFixture) {
+    if (fixture.id === 'recipes-nav-composition') {
+        // Validate the supplied fixture before selecting its existing full composition.
+        resolveCatalogPresentationDocument({ id: `reader-${fixture.id}`, sections: [fixture.section] }, readerCopyResolver);
+        return resolveCatalogPresentationDocument(READER_COMPOSITION, readerCopyResolver);
+    }
+    const ground = fixture.section.kind === 'content-section' ? grounds[fixture.id] : undefined;
+    return resolveCatalogPresentationDocument(
+        { id: `reader-${fixture.id}`, sections: [fixture.section] }, readerCopyResolver,
+        ground === undefined ? undefined : fixture.section.id, ground,
+    );
+}

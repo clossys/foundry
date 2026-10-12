@@ -1,11 +1,43 @@
 import { createElement } from "react";
+import type { CopyResolver } from "@clossys/writer";
 import { renderToStaticMarkup } from "react-dom/server";
 import { SECTIONED_VIEW_CONTENT_CONTRACT, resolveSectionedViewDocument } from "../../core/index.js";
 import { LandingView } from "../../web/views/LandingView.server.js";
 import type { LandingViewProps } from "../../web/views/LandingView.js";
 import { SectionedView } from "../../web/views/SectionedView.server.js";
 import { CATALOG_FIXTURES, CATALOG_COMPOSITIONS, catalogCopyResolver, type CatalogFixture } from "./index.js";
-import type { ResolvedSectionedViewContentSection, SectionedViewDocument } from "../../core/sectioned-view.js";
+import type { ResolvedSectionedViewContentSection, ResolvedSectionedViewDocument, SectionedViewDocument, SectionedViewGround } from "../../core/sectioned-view.js";
+/** Package-private preview projection; original authored validation and copy resolution run first. */
+export function resolveCatalogPresentationDocument(
+    document: SectionedViewDocument,
+    resolver: CopyResolver,
+    sectionId?: string,
+    ground?: SectionedViewGround,
+): ResolvedSectionedViewDocument {
+    const resolved = resolveSectionedViewDocument(document, resolver);
+    if (ground === undefined || sectionId === undefined) return resolved;
+    if (!resolved.sections.some(section => section.id === sectionId && section.kind === "content-section"))
+        throw new Error("Catalog presentation needs an existing canonical section.");
+    return {
+        ...resolved,
+        sections: resolved.sections.map(section => section.id === sectionId ? { ...section, ground } : section),
+        ...(resolved.viewGrounds === undefined ? {} : { viewGrounds: resolved.viewGrounds.filter(id => id !== sectionId) }),
+    };
+}
+
+/** Existing ground descriptors affect only the resolved preview model. */
+export function resolveCatalogFixtureDocument(
+    fixture: CatalogFixture,
+    resolver: CopyResolver = catalogCopyResolver,
+): ResolvedSectionedViewDocument {
+    const ground = fixture.axis === "ground" ? fixture.value : undefined;
+    const presentation = fixture.section.kind === "content-section" && (ground === "base" || ground === "sunken" || ground === "inverse") ? ground : undefined;
+    return resolveCatalogPresentationDocument(
+        { id: `catalog-${fixture.id}`, sections: [fixture.section] }, resolver,
+        presentation === undefined ? undefined : fixture.section.id, presentation,
+    );
+}
+
 /** Native qualification for the complete retained contract fixture inventory. */
 function closeProps(section: ResolvedSectionedViewContentSection): NonNullable<LandingViewProps["callToAction"]> {
     const actions = (section.actions ?? []).map(action => {
@@ -28,8 +60,7 @@ export function renderCatalogComposition(id: string): string {
 export function renderCatalogFixture(fixture: CatalogFixture): string {
     if (fixture.fn === "Recipes")
         return renderCatalogComposition(fixture.id);
-    const document: SectionedViewDocument = { id: `catalog-${fixture.id}`, sections: [fixture.section] };
-    const resolved = resolveSectionedViewDocument(document, catalogCopyResolver);
+    const resolved = resolveCatalogFixtureDocument(fixture);
     if (fixture.section.kind === "hero")
         return renderToStaticMarkup(createElement(LandingView, { document: resolved, header: "reserved", peek: false, landmark: "none" }));
     if (fixture.id === "say-close") {

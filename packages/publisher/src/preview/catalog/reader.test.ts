@@ -1,8 +1,8 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { JSDOM } from 'jsdom';
 import { resolveSectionedViewDocument, validateSectionedViewDocument } from '../../core/index.js';
-import { READER_SAMPLES, READER_COMPOSITION, readerCopyResolver, readerPage, deriveCatalogFunction } from './reader-data.js';
-import { readerConfigCells, READER_PAGES } from './reader-renderer.js';
+import { READER_SAMPLES, READER_COMPOSITION, readerCopyResolver, readerPage, deriveCatalogFunction, resolveReaderSampleDocument } from './reader-data.js';
+import { readerConfigCells, READER_PAGES, renderReaderSample } from './reader-renderer.js';
 import { CATALOG_FIXTURES, CATALOG_COMPOSITIONS } from './index.js';
 import { buildContentCatalogHtml, buildCatalogFunctionPages } from '../render-content-catalog.js';
 const sheets = { designerTokens: 'tokens.css', utilities: 'preview.css', brand: 'brand.css' };
@@ -287,7 +287,7 @@ describe('reader function catalog', () => {
         const rendered = new Map(buildCatalogFunctionPages(sheets).map(page => [page.file, new JSDOM(page.content).window.document]));
         // Independently derive the existing model's effective axes, without trusting caption attributes.
         const values = (fixture: typeof READER_SAMPLES[number], label: string): Record<string, string> => {
-            const section = resolveSectionedViewDocument({ id: 'axis-witness', sections: [fixture.section] }, readerCopyResolver).sections[0]!;
+            const section = resolveReaderSampleDocument(fixture).sections[0]!;
             if (section.kind === 'hero') return label === 'Introduce' ? { role: 'hero', 'hero-size': section.size ?? 'display' } : {};
             if (section.kind !== 'content-section') throw new Error('Expected canonical witness');
             if (label === 'Frame') return { layout: section.layout, size: section.size, ground: section.ground };
@@ -357,13 +357,29 @@ describe('reader function catalog', () => {
             }
             if (label === 'Index') {
                 if (details.length) expect(details.length).toBe(headings.length);
-                if (arrangement === 'columns') for (const heading of headings) required('a[href]', heading);
-                return { shape: arrangement === 'columns' ? 'tiles' : `rows-${columns}`, reveal: details.length ? 'disclose' : 'all', groups: items.querySelector('[role="group"]') ? 'on' : 'off' };
+                expect(arrangement).toBe('rows');
+                const tiles = columns === '3';
+                if (tiles) {
+                    expect(items.getAttribute('data-treatment')).toBe('plate');
+                    expect(details.length).toBe(0);
+                    const plates = [...items.querySelectorAll(':scope > li > [data-item][data-variant="plate"]')];
+                    expect(plates.length).toBe(headings.length);
+                    for (const heading of headings) {
+                        expect(plates.includes(heading.closest('[data-item][data-variant="plate"]')!)).toBe(true);
+                        expect(heading.querySelectorAll('a[href]')).toHaveLength(1);
+                    }
+                } else expect(['1', '2']).toContain(columns);
+                return { shape: tiles ? 'tiles' : `rows-${columns}`, reveal: details.length ? 'disclose' : 'all', groups: items.querySelector('[role="group"]') ? 'on' : 'off' };
             }
             const treatment = items.getAttribute('data-treatment');
             expect(treatment).not.toBeNull();
-            const statement = headings.every(heading => heading.classList.contains('text-h2'));
-            if (!statement) for (const heading of headings) expect(heading.className).toMatch(/text-body-l|text-h3/);
+            const statement = headings.every(heading => heading.classList.contains('text-h0'));
+            const headingScale = statement ? 'text-h0' : section.classList.contains('desktop:py-frame-display') ? 'text-h1' : 'text-h2';
+            for (const heading of headings) {
+                expect(heading.classList.contains(headingScale)).toBe(true);
+                for (const otherScale of ['text-h0', 'text-h1', 'text-h2', 'text-h3', 'text-body-l'])
+                    if (otherScale !== headingScale) expect(heading.classList.contains(otherScale)).toBe(false);
+            }
             return { shape: arrangement === 'columns' ? `grid-${columns}` : arrangement === 'stacked' ? 'stack' : arrangement!, treatment: treatment!, scale: statement ? 'statement' : 'item' };
         };
         for (const definition of READER_PAGES) {
@@ -514,5 +530,103 @@ describe('reader function catalog', () => {
         const sequence = new JSDOM(buildCatalogFunctionPages(sheets).find(page => page.file === 'catalog/sequence.html')!.content).window.document;
         expect(sequence.querySelector('[data-item-caption]')?.textContent).toBe('Sample data. Each step leaves context for the next person.');
         expect(sequence.querySelector('[data-catalog-rules]')?.textContent).toContain('stacked frame with a columns or stacked arrangement');
+    });
+});
+
+describe('reader automatic authored grounds and existing presentation', () => {
+    it('refuses invalid retained originals before reader preparation can delete their ground', async () => {
+        vi.resetModules();
+        try {
+            vi.doMock('./index.js', async () => {
+                const actual = await vi.importActual<typeof import('./index.js')>('./index.js');
+                return {
+                    ...actual,
+                    CATALOG_FIXTURES: actual.CATALOG_FIXTURES.map(fixture => fixture.id === 'items-disclose'
+                        ? { ...fixture, section: { ...fixture.section, ground: 'base' as never } }
+                        : fixture),
+                };
+            });
+            await expect(import('./reader-data.js')).rejects.toThrow(/ground must be inverse or omitted/);
+        } finally {
+            vi.doUnmock('./index.js');
+            vi.resetModules();
+        }
+    });
+
+    it('refuses invalid supplied composition input before selecting the full composition', () => {
+        const fixture = READER_SAMPLES.find(entry => entry.id === 'recipes-nav-composition')!;
+        const before = JSON.stringify(READER_COMPOSITION);
+        const invalid = { ...fixture, section: { ...fixture.section, ground: 'invalid' as never } };
+        expect(() => resolveReaderSampleDocument(invalid)).toThrow(/ground must be one of base, sunken, inverse/);
+        expect(JSON.stringify(READER_COMPOSITION)).toBe(before);
+    });
+
+    it('shares the existing Frame presentation model between its caption and native band', async () => {
+        vi.resetModules();
+        try {
+            vi.doMock('./reader-data.js', async () => {
+                const actual = await vi.importActual<typeof import('./reader-data.js')>('./reader-data.js');
+                return {
+                    ...actual,
+                    resolveReaderSampleDocument: (fixture: Parameters<typeof actual.resolveReaderSampleDocument>[0]) => {
+                        const resolved = actual.resolveReaderSampleDocument(fixture);
+                        if (fixture.id !== 'frame-actions') return resolved;
+                        // Instrument an existing sample's resolved presentation, never its authored input.
+                        return {
+                            ...resolved,
+                            sections: resolved.sections.map(section => section.id === fixture.section.id
+                                ? { ...section, ground: 'sunken' as const } : section),
+                            ...(resolved.viewGrounds === undefined ? {} : {
+                                viewGrounds: resolved.viewGrounds.filter(id => id !== fixture.section.id),
+                            }),
+                        };
+                    },
+                };
+            });
+            const fresh = await import('./reader-renderer.js');
+            const rendered = fresh.buildCatalogFunctionPages(sheets);
+            const documents = rendered.map(page => new JSDOM(page.content).window.document);
+            expect(documents.reduce((count, document) => count + document.querySelectorAll('[data-catalog-fixture]').length, 0)).toBe(31);
+            expect(documents.reduce((count, document) => count + document.querySelectorAll('[data-catalog-config-cell]').length, 0)).toBe(3);
+            expect(CATALOG_FIXTURES).toHaveLength(43);
+            const frame = new JSDOM(rendered.find(page => page.file === 'catalog/frame.html')!.content).window.document;
+            const sample = frame.querySelector('[data-catalog-fixture="frame-actions"]')!;
+            expect(sample).not.toBeNull();
+            const groundClaims = [...sample.querySelectorAll('[data-catalog-caption] [data-catalog-axis-witness^="ground:"]')];
+            expect(groundClaims).toHaveLength(1);
+            expect(groundClaims[0]!.getAttribute('data-catalog-axis-witness')).toBe('ground:sunken');
+            expect(groundClaims[0]!.textContent).toBe('ground: sunken');
+            const native = sample.querySelector('[data-catalog-native] [data-content-section]')!;
+            expect(native).not.toBeNull();
+            expect(native.classList.contains('bg-surface-sunken')).toBe(true);
+            expect(native.classList.contains('bg-surface-inverse')).toBe(false);
+        } finally {
+            vi.doUnmock('./reader-data.js');
+            vi.resetModules();
+        }
+    });
+
+    it('authors only inverse or omission on canonical reader samples', () => {
+        for (const fixture of READER_SAMPLES) {
+            if (fixture.section.kind !== 'content-section') continue;
+            if (Object.hasOwn(fixture.section, 'ground')) expect(fixture.section.ground, fixture.id).toBe('inverse');
+        }
+    });
+    it('keeps an existing sunken reader sample through the real singleton planner', () => {
+        const fixture = READER_SAMPLES.find(entry => entry.id === 'items-disclose')!;
+        const original = resolveSectionedViewDocument({ id: 'reader-automatic-ground', sections: [fixture.section] }, readerCopyResolver);
+        expect(original.sections[0]!.ground).toBe('base');
+        expect(original.viewGrounds).toContain(fixture.section.id);
+        const presented = resolveReaderSampleDocument(fixture);
+        expect(presented.sections[0]!.ground).toBe('sunken');
+        expect(presented.viewGrounds ?? []).not.toContain(fixture.section.id);
+        const native = new JSDOM(renderReaderSample(fixture)).window.document.querySelector('[data-content-section]')!;
+        expect(native).not.toBeNull();
+        expect(native.classList.contains('bg-surface-sunken')).toBe(true);
+    });
+    it('does not repair invalid original reader data with its presentation map', () => {
+        const fixture = READER_SAMPLES.find(entry => entry.id === 'items-disclose')!;
+        const invalid = { ...fixture, section: { ...fixture.section, ground: 'base' } } as unknown as typeof fixture;
+        expect(() => resolveReaderSampleDocument(invalid)).toThrow(/ground must be inverse or omitted/);
     });
 });
