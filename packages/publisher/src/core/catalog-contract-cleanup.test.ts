@@ -54,15 +54,30 @@ describe("unreleased catalog contract cleanup", () => {
     expect(() => resolveSectionedViewDocument({ id: "example", sections: [{ ...section, align: undefined }] } as any, copy)).toThrow(/sections.0/);
     expect(copy).not.toHaveBeenCalled();
   });
+  it("gives migration hints for retired frame and item fields", () => {
+    expect(errors({ ...section, align: "center" }).map(finding => finding.message).join(" ")).toMatch(/Alignment is derived; remove align/);
+    expect(errors({ ...section, size: "compact" }).map(finding => finding.message).join(" ")).toMatch(/use standard or display/);
+    expect(errors({ ...section, block: { ...block, items: items(3).map(item => ({ ...item, featured: false })) } }).map(finding => finding.message).join(" ")).toMatch(/remove featured/);
+    expect(() => desugarRecipe({ ...block, recipe: "flow" } as any)).toThrow(/use steps with arrangement: stacked/);
+  });
   it.each([2, 6])("refuses %i lane steps", count => {
     const steps = { type: "items", recipe: "steps", arrangement: "stacked", lanes: [{ id: "first", label: ref }, { id: "second", label: ref }], items: items(count).map((item, index) => ({ ...item, lane: index % 2 === 0 ? "first" : "second" })) };
-    expect(errors({ ...section, block: steps }).length).toBeGreaterThan(0);
+    expect(errors({ ...section, block: steps })).toEqual(expect.arrayContaining([expect.objectContaining({ rule: "sectioned-view-content-count", path: "sections.0.block.items", message: `sections.0.block.items must hold 3-5 items; it holds ${count}.` })]));
   });
   it("allows comparison label omission and a description lead, retaining featured", () => {
     const matrix = { type: "matrix", recipe: "comparison", featured: "before", sides: ["before", "after"].map(id => ({ id, heading: ref, description: ref, points: [ref, ref] })) };
     expect(errors({ ...section, block: matrix })).toEqual([]);
     expect(errors({ ...section, block: { ...matrix, featured: "unknown" } }).length).toBeGreaterThan(0);
     expect(errors({ ...section, block: { ...matrix, sides: matrix.sides.map(({ points, ...side }) => side) } })).toEqual(expect.arrayContaining([expect.objectContaining({ rule: "sectioned-view-content-matrix-form" })]));
+  });
+  it.each(["points", "visual"] as const)("requires both Matrix %s sides to have labels or neither", form => {
+    const matrix = { type: "matrix", sides: ["before", "after"].map(id => ({ id, heading: ref, description: ref, ...(form === "points" ? { points: [ref, ref] } : { visual: { id: `${id}-panel`, title: ref, parts: [{ id: "fields", type: "fields", label: ref, items: [{ id: "value", label: ref, value: ref }] }] } }) })) };
+    expect(errors({ ...section, block: matrix })).toEqual([]);
+    expect(errors({ ...section, block: { ...matrix, sides: matrix.sides.map(side => ({ ...side, label: ref })) } })).toEqual([]);
+    for (const labeledSide of [0, 1]) {
+      const mixed = { ...matrix, sides: matrix.sides.map((side, index) => index === labeledSide ? { ...side, label: ref } : side) };
+      expect(errors({ ...section, block: mixed })).toEqual(expect.arrayContaining([expect.objectContaining({ rule: "sectioned-view-content-matrix-labels", path: "sections.0.block.sides" })]));
+    }
   });
   it("refuses description as the primary Matrix body even when labels are supplied", () => {
     const matrix = { type: "matrix", sides: ["before", "after"].map(id => ({ id, label: ref, heading: ref, description: ref })) };
@@ -71,5 +86,6 @@ describe("unreleased catalog contract cleanup", () => {
   it.each(["end", "below", undefined])("refuses the authored specimen key side %s", side => {
     const media = { type: "specimen", label: ref, panel: { id: "panel", title: ref, parts: [{ id: "fields", type: "fields", label: ref, items: [{ id: "value", label: ref, value: ref }] }], footer: { note: ref } }, key: { label: ref, side, items: ["header", "fields", "footer"].map(target => ({ id: target, target, heading: ref, description: ref })) } };
     expect(errors({ ...section, block: undefined, media })).toEqual(expect.arrayContaining([expect.objectContaining({ rule: "sectioned-view-specimen-key-shape", path: "sections.0.media.key" })]));
+    expect(errors({ ...section, block: undefined, media }).map(finding => finding.message).join(" ")).toMatch(/Key placement is derived; remove side/);
   });
 });

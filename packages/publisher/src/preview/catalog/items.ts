@@ -672,40 +672,40 @@ export const ITEMS_FIXTURES = [
     } satisfies SectionedViewSection
 },
 {
-    "id": "items-featured" as const,
+    "id": "items-parallel-columns" as const,
     "fn": "Items",
     "axis": "arrangement",
     "value": "columns",
     "caption": "Three parallel columns",
     "section": {
-        "id": "items-featured",
+        "id": "items-parallel-columns",
         "kind": "content-section",
         "ground": "base",
         "size": "standard",
         "layout": "stacked",
         "heading": {
-            "id": "catalog.sample.items-featured.heading"
+            "id": "catalog.sample.items-parallel-columns.heading"
         },
         "block": {
             "type": "items",
             "arrangement": "columns",
             "items": [
                 {
-                    "id": "featured-item-1",
+                    "id": "parallel-column-item-1",
                     "heading": {
-                        "id": "catalog.sample.featured.0.heading"
+                        "id": "catalog.sample.parallel-columns.0.heading"
                     }
                 },
                 {
-                    "id": "featured-item-2",
+                    "id": "parallel-column-item-2",
                     "heading": {
-                        "id": "catalog.sample.featured.1.heading"
+                        "id": "catalog.sample.parallel-columns.1.heading"
                     }
                 },
                 {
-                    "id": "featured-item-3",
+                    "id": "parallel-column-item-3",
                     "heading": {
-                        "id": "catalog.sample.featured.2.heading"
+                        "id": "catalog.sample.parallel-columns.2.heading"
                     }
                 }
             ]

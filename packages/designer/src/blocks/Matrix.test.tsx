@@ -41,15 +41,18 @@ describe("Matrix", () => {
     expect(container.querySelector('[data-matrix-side="second"] > [data-featured="true"]')).not.toBeNull();
   });
 
-  it("supports label omission on one side while keeping the actual headings on both sides", () => {
-    const { container } = render(<Matrix sides={[
-      SIDES[0],
-      { id: "second", heading: "A shared view", points: ["One view", "Clear owners"] },
-    ]} />);
-    expect(screen.getAllByRole("heading", { level: 3 }).map(node => node.textContent)).toEqual(["A shared record", "A shared view"]);
-    expect(screen.getByText("A shared record").tagName).toBe("H3");
-    expect(container.querySelectorAll("h3")).toHaveLength(2);
-    expect(container.querySelector('[data-matrix-side="second"]')?.querySelectorAll("p")).toHaveLength(0);
+  it.each(["points", "visual"] as const)("refuses mixed label presence on either %s side", form => {
+    const sides: MatrixProps["sides"] = form === "points" ? SIDES : [
+      { id: "first", label: "First option", heading: "A shared record", visual: <svg aria-label="First sample" /> },
+      { id: "second", label: "Second option", heading: "A shared view", visual: <svg aria-label="Second sample" /> },
+    ];
+    for (const unlabeledSide of [0, 1]) {
+      const mixed = sides.map((side, index) => index === unlabeledSide ? { ...side, label: undefined } : side) as unknown as MatrixProps["sides"];
+      expect(() => markup({ sides: mixed })).toThrow(/both sides.*labels.*neither/);
+    }
+    expect(() => markup({ sides })).not.toThrow();
+    const unlabeled = sides.map(side => ({ ...side, label: undefined })) as unknown as MatrixProps["sides"];
+    expect(() => markup({ sides: unlabeled })).not.toThrow();
   });
 
   it.each(["first", "second"])("features only the selected %s plate without reordering sides", featured => {

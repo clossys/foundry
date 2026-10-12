@@ -117,10 +117,13 @@ describe("collection render profiles", () => {
     draw({ arrangement: "rows", treatment: "plate", columns: 1, items: data(2, true) });
     expect(screen.getAllByRole("link")).toHaveLength(2);
   });
-  it("uses the actual Matrix heading when a label is present", () => {
-    render(<Matrix sides={[{ id: "a", label: "Before", heading: "Manual", points: ["One", "Two"] }, { id: "b", heading: "Automatic", points: ["One", "Two"] }]} />);
+  it.each([true, false])("uses actual Matrix headings with symmetric labels=%s", labeled => {
+    render(<Matrix sides={[{ id: "a", ...(labeled ? { label: "Before" } : {}), heading: "Manual", points: ["One", "Two"] }, { id: "b", ...(labeled ? { label: "After" } : {}), heading: "Automatic", points: ["One", "Two"] }]} />);
     expect(screen.getAllByRole("heading", { level: 3 }).map(node => node.textContent)).toEqual(["Manual", "Automatic"]);
-    expect(screen.getByText("Before").tagName).toBe("P");
+    for (const label of ["Before", "After"]) {
+      if (labeled) expect(screen.getByText(label).tagName).toBe("P");
+      else expect(screen.queryByText(label)).toBeNull();
+    }
   });
   it.each([3, 4, 5])("aligns %s lane visuals with their own staggered body", count => {
     const { container } = draw({ arrangement: "stacked", order: "connected", lanes: [{ id: "a", label: "First" }, { id: "b", label: "Second" }], items: data(count).map((item, i) => ({ ...item, lane: i === 1 || i === 2 ? "b" : "a", visual: <div>Visual {i}</div> })) });

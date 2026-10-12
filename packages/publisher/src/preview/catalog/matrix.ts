@@ -152,13 +152,13 @@ export const MATRIX_FIXTURES = [
     } satisfies SectionedViewSection
 },
 {
-    "id": "matrix-featured-description" as const,
+    "id": "matrix-featured-points" as const,
     "fn": "Matrix",
     "axis": "form",
     "value": "points",
     "caption": "Featured comparison with description leads",
     "section": {
-        "id": "matrix-featured-description",
+        "id": "matrix-featured-points",
         "kind": "content-section",
         "ground": "base",
         "size": "standard",
