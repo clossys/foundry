@@ -3153,11 +3153,17 @@ The host selects `front-door.sign-in-invite-only.description` or
 `front-door.sign-in-staff-only.description` for the surrounding view.
 
 ```tsx
-import { AuthView, SignInForm } from "@clossys/publisher/web";
+import { AuthView, SignInForm, type SignInFormProps } from "@clossys/publisher/web";
 import {
   resolveFrontDoorCopy,
   type FrontDoorKey,
 } from "@clossys/writer";
+
+// The host supplies these handlers and the provider availability state.
+declare const identify: SignInFormProps["identify"];
+declare const verify: SignInFormProps["verify"];
+declare const goHome: SignInFormProps["onSignedIn"];
+declare const unavailable: boolean;
 
 const nouns = { surface: "Acme Console" };
 function copy(id: FrontDoorKey) {
@@ -3175,11 +3181,6 @@ const signIn = <AuthView
     unavailable={unavailable} />}
 />;
 
-// A host test can copy these assertions:
-const { container } = render(signIn);
-expect(container.textContent).not.toMatch(/request access|sign up|no account|don’t have an account/i);
-expect(screen.getAllByRole("button")).toHaveLength(1);
-expect(container.querySelector("main, a:empty, p:empty")).toBeNull();
 ```
 
 For not-authorized, use the matching
