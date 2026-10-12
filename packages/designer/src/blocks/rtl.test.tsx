@@ -5,9 +5,8 @@ import { SearchField } from "../atoms/SearchField.js";
 import { Chip } from "../atoms/Chip.js";
 import { Toolbar } from "./Toolbar.js";
 import { ContentSection } from "./ContentSection.js";
-import { Comparison } from "./Comparison.js";
-import { TopicList } from "./TopicList.js";
-import { FeatureGrid } from "./FeatureGrid.js";
+import { Matrix } from "./Matrix.js";
+import { Items } from "./items/Items.js";
 import { Specimen } from "./specimen/Specimen.js";
 import { UI_BORDER_HAIRLINE } from "../atoms/internal/ui-vars.js";
 
@@ -78,28 +77,28 @@ describe("blocks and atoms RTL logical-direction utilities (#951)", () => {
     for (const el of root.querySelectorAll<HTMLElement>("[class]")) expect(el.className).not.toMatch(PHYSICAL);
   });
 
-  it("flips the Comparison arrow under dir=rtl and uses no physical utilities", () => {
+  it("keeps Matrix source order under dir=rtl and uses no physical utilities", () => {
     const { container } = render(
       <div dir="rtl">
-        <Comparison before={{ label: "Before", points: ["One", "Two"] }} after={{ label: "After", points: ["One", "Two"] }} />
+        <Matrix sides={[{ id: "before", label: "Before", heading: "First", points: ["One", "Two"] }, { id: "after", label: "After", heading: "Second", points: ["One", "Two"] }]} />
       </div>,
     );
-    const arrow = container.querySelector("[data-comparison-arrow] svg") as SVGElement;
-    expect(arrow.classList.contains("rtl:-scale-x-100")).toBe(true);
-    for (const el of container.querySelectorAll<HTMLElement>("[data-comparison] [class]")) {
+    expect(container.querySelector("[data-comparison-arrow]")).toBeNull();
+    expect([...container.querySelectorAll("[data-matrix-side]")].map(node => node.getAttribute("data-matrix-side"))).toEqual(["before", "after"]);
+    for (const el of container.querySelectorAll<HTMLElement>("[data-matrix] [class]")) {
       const classes = el.getAttribute("class") ?? "";
       expect(classes).not.toMatch(PHYSICAL);
     }
   });
 
-  it("rules TopicList and rule-treatment FeatureGrid items on the block axis only", () => {
+  it("rules canonical row and column items on the block axis only", () => {
     const { container } = render(
       <div dir="rtl">
-        <TopicList items={[{ id: "a", heading: "A" }, { id: "b", heading: "B" }]} />
-        <FeatureGrid headingLevel={2} columns={2} treatment="rule" items={[{ id: "a", heading: "A" }, { id: "b", heading: "B" }]} />
+        <Items arrangement="rows" treatment="rule" items={[{ id: "a", heading: "A" }, { id: "b", heading: "B" }]} />
+        <Items arrangement="columns" columns={2} treatment="rule" items={[{ id: "a", heading: "A" }, { id: "b", heading: "B" }]} />
       </div>,
     );
-    const rules = container.querySelectorAll<HTMLElement>("[data-topic-list] > li, [data-items] > li > [data-item]");
+    const rules = container.querySelectorAll<HTMLElement>("[data-items] > li > [data-item]");
     expect(rules).toHaveLength(4);
     for (const el of rules) {
       expect(el).toHaveClass("border-t");

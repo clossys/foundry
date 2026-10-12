@@ -3,7 +3,6 @@ import { describe, expect, it } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { Matrix, type MatrixProps, type MatrixSide } from "./Matrix.js";
-import { Comparison } from "./Comparison.js";
 
 const SIDES: readonly [MatrixSide, MatrixSide] = [
   { id: "first", label: "First option", heading: "A shared record", points: ["One source", "Clear dates"] },
@@ -22,15 +21,8 @@ describe("Matrix", () => {
       expect(plate).toHaveClass("bg-surface-sunken", "rounded-panel");
       expect(within(side as HTMLElement).getAllByRole("listitem")[0]).toHaveClass("text-ink-primary");
     }
-    expect(screen.getByRole("heading", { name: "First option" }).tagName).toBe("H3");
+    expect(screen.getByRole("heading", { name: "A shared record" }).tagName).toBe("H3");
     expect(screen.getByText("A shared record")).toHaveClass("text-h2", "text-ink-primary");
-  });
-
-  it("preserves the published Comparison label slot even when its React content is empty", () => {
-    const { container } = render(<Comparison before={{ label: null, heading: "Existing heading", description: "Existing body" }} after={{ label: false, description: "Second body" }} />);
-    expect([...container.querySelectorAll("h3")].map(node => node.textContent)).toEqual(["", ""]);
-    expect(screen.getByText("Existing heading").tagName).toBe("P");
-    expect(screen.getByText("Existing body")).toHaveAttribute("data-matrix-description");
   });
 
   it("uses the required heading when labels are omitted, without adding empty or duplicate headings", () => {
@@ -49,13 +41,13 @@ describe("Matrix", () => {
     expect(container.querySelector('[data-matrix-side="second"] > [data-featured="true"]')).not.toBeNull();
   });
 
-  it("supports label omission on one side while keeping the other side's existing heading anatomy", () => {
+  it("supports label omission on one side while keeping the actual headings on both sides", () => {
     const { container } = render(<Matrix sides={[
       SIDES[0],
       { id: "second", heading: "A shared view", points: ["One view", "Clear owners"] },
     ]} />);
-    expect(screen.getAllByRole("heading", { level: 3 }).map(node => node.textContent)).toEqual(["First option", "A shared view"]);
-    expect(screen.getByText("A shared record").tagName).toBe("P");
+    expect(screen.getAllByRole("heading", { level: 3 }).map(node => node.textContent)).toEqual(["A shared record", "A shared view"]);
+    expect(screen.getByText("A shared record").tagName).toBe("H3");
     expect(container.querySelectorAll("h3")).toHaveLength(2);
     expect(container.querySelector('[data-matrix-side="second"]')?.querySelectorAll("p")).toHaveLength(0);
   });
@@ -77,6 +69,14 @@ describe("Matrix", () => {
     for (const item of screen.getAllByRole("listitem")) expect(item.firstElementChild).toHaveAttribute("aria-hidden", "true");
   });
 
+  it("shares the two point-form rows across each shell and its plate", () => {
+    const { container } = render(<Matrix sides={SIDES} />);
+    expect(container.querySelector("[data-matrix]")).not.toHaveClass("items-start");
+    for (const shell of container.querySelectorAll("[data-matrix-side]")) {
+      expect(shell).toHaveClass("tablet:row-span-2", "tablet:grid", "tablet:grid-rows-subgrid");
+      expect(shell.firstElementChild).toHaveClass("tablet:row-span-2", "tablet:grid", "tablet:grid-rows-subgrid");
+    }
+  });
   it("shares rows from tablet and keeps point order with optional descriptions", () => {
     const { container } = render(<Matrix sides={SIDES.map(side => ({ ...side, description: "Parallel supporting copy." })) as unknown as MatrixProps["sides"]} />);
     expect(container.querySelector("[data-matrix]")).toHaveClass("grid-cols-1", "tablet:grid-cols-2");
@@ -94,6 +94,8 @@ describe("Matrix", () => {
     for (const plate of container.querySelectorAll("[data-variant=plate]")) {
       expect(plate).toHaveClass("tablet-lg:row-span-3", "tablet-lg:grid-rows-subgrid");
       expect(plate.lastElementChild).toHaveAttribute("data-matrix-visual");
+      expect(plate.lastElementChild).toHaveClass("w-full", "min-w-0", "pt-md");
+      expect(plate.lastElementChild).not.toHaveClass("mt-auto");
     }
   });
 
@@ -131,7 +133,7 @@ describe("Matrix", () => {
     const fill = ground === "base" ? "bg-surface-sunken" : ground === "sunken" ? "bg-surface-raised" : "bg-surface-inverse-raised";
     for (const plate of container.querySelectorAll("[data-variant=plate]")) expect(plate).toHaveClass(fill);
     expect(container.querySelector('[data-featured="true"]')).toHaveClass(ground === "inverse" ? "border-t-accent-on-inverse" : "border-t-accent");
-    expect(screen.getByRole("heading", { name: "First option" }).tagName).toBe("H4");
+    expect(screen.getByRole("heading", { name: "A shared record" }).tagName).toBe("H4");
     expect(screen.getByLabelText("Options")).toHaveAttribute("id", "options");
     expect(screen.getByLabelText("Options")).toHaveStyle({ inlineSize: "100%" });
   });
@@ -164,20 +166,6 @@ describe("Matrix", () => {
     expect(() => markup({ sides: SIDES.map(side => ({ ...side, points: undefined, description })) as unknown as MatrixProps["sides"] })).toThrow(/needs points or visual/);
   });
 
-  it("preserves the published Comparison description-only form and optional headings", () => {
-    const { container } = render(<Comparison
-      before={{ label: "Before", description: "Earlier process." }}
-      after={{ label: "After", description: "Improved process." }}
-      headingLevel={4}
-    />);
-    expect(screen.getAllByRole("heading", { level: 4 }).map(node => node.textContent)).toEqual(["Before", "After"]);
-    expect(screen.getByText("Earlier process.")).toHaveAttribute("data-matrix-description");
-    expect(screen.getByText("Improved process.")).toHaveAttribute("data-matrix-description");
-    expect(container.querySelectorAll("[data-matrix-description]")).toHaveLength(2);
-    expect(container.querySelectorAll("[data-matrix-visual], li")).toHaveLength(0);
-    expect(container.querySelector('[data-comparison-side="after"] > [data-featured="true"]')).not.toBeNull();
-  });
-
   it.each(["", " ", true, [], <span key="empty" />, <></>].map(description => ({ description })))("refuses empty description-only bodies %j", ({ description }) => {
     expect(() => markup({ sides: SIDES.map(side => ({ ...side, points: undefined, description })) as unknown as MatrixProps["sides"] })).toThrow(/description|points|visual/);
   });
@@ -191,5 +179,20 @@ describe("Matrix", () => {
   it("renders text-free visuals as a valid body form", () => {
     const visual: ReactNode = <svg aria-label="Sample diagram" />;
     expect(() => markup({ sides: SIDES.map(side => ({ ...side, points: undefined, visual })) as unknown as MatrixProps["sides"] })).not.toThrow();
+  });
+  it.each([2, 3, 4, 5, 6] as const)("retains the supplied h%s primary headings", headingLevel => {
+    render(<Matrix sides={SIDES} headingLevel={headingLevel} />);
+    for (const side of SIDES) expect(screen.getByRole("heading", { name: String(side.heading) }).tagName).toBe(`H${headingLevel}`);
+  });
+  it.each(["base", "sunken", "inverse"] as const)("keeps both %s plates in primary body ink", ground => {
+    const { container } = render(<Matrix sides={SIDES} featured="second" ground={ground} />);
+    for (const side of container.querySelectorAll("[data-matrix-side]")) {
+      expect(side.firstElementChild).toHaveAttribute("data-variant", "plate");
+      for (const point of side.querySelectorAll("li")) {
+        expect(point).toHaveClass(ground === "inverse" ? "text-ink-on-inverse" : "text-ink-primary");
+        expect(point.firstElementChild).toHaveAttribute("aria-hidden", "true");
+      }
+    }
+    expect(container.querySelector("[data-comparison-arrow]")).toBeNull();
   });
 });

@@ -46,7 +46,7 @@ describe("native Items disclosure", () => {
     expect(ids.length).toBeGreaterThanOrEqual(groups.length * 2); expect(new Set(ids).size).toBe(ids.length);
     for (const node of container.querySelectorAll("[aria-labelledby]")) {
       const label = container.querySelector(`[id="${node.getAttribute("aria-labelledby")}"]`);
-      expect(label).not.toBeNull(); expect(node.contains(label)).toBe(true);
+      expect(label).not.toBeNull(); expect(node.closest('[role="group"]')!.contains(label)).toBe(true);
     }
     expect([...container.querySelectorAll("[data-item-ordinal]")].map(node => node.textContent)).toEqual(["1", "2", "3", "4", "1", "2", "3", "4"]);
   });

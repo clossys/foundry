@@ -16,7 +16,6 @@ export interface ItemData {
   meta?: ReactNode;
   visual?: ReactNode;
   href?: string;
-  featured?: boolean;
   span?: ItemSpan;
   badge?: ItemBadge;
   /** Actor id in a connected, two-lane sequence. */

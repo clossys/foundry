@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { NavGrid, type NavGridItem } from "./NavGrid.js";
 
 describe("NavGrid", () => {
-  it("delegates eligible all-linked grids to LinkGrid plate anatomy", () => {
+  it("delegates eligible all-linked grids to shared item plate anatomy", () => {
     const { container } = render(<NavGrid items={[{ id: "a", title: "Topic A", href: "/a" }, { id: "b", title: "Topic B", href: "/b" }]} />);
     expect(container.querySelector("ul[data-link-grid][data-surface='plate']")).not.toBeNull();
     expect(screen.getByRole("link", { name: "Topic A" })).toHaveClass("after:rounded-panel");
@@ -17,7 +17,7 @@ describe("NavGrid", () => {
     expect(screen.getAllByRole("link")).toHaveLength(7);
   });
 
-  it("preserves linked tiles with mixed icons without loosening LinkGrid's contract", () => {
+  it("preserves linked tiles with mixed icons without loosening canonical Items' contract", () => {
     const { container } = render(<NavGrid items={[{ id: "a", title: "Topic A", href: "/a", icon: <svg /> }, { id: "b", title: "Topic B", href: "/b" }]} />);
     expect(screen.getAllByRole("link")).toHaveLength(2);
     expect(container.querySelector("[data-link-grid]")).toBeNull();

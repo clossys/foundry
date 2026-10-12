@@ -451,7 +451,6 @@
 @utility ledger-owner-columns { @media (width >= 64rem) { grid-template-columns: minmax(0, 4fr) minmax(0, 4fr) minmax(0, 3fr); } }
 @utility ledger-group-divided { border-block-start-width: var(--ui-border-hairline, 1px); border-block-start-style: solid; }
 @utility ledger-owner-disc { inline-size: var(--ui-icon-md, var(--spacing-xl, 24px)); block-size: var(--ui-icon-md, var(--spacing-xl, 24px)); }
-@utility ledger-rule-wide { display: flex; @media (width >= 64rem) { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); column-gap: var(--spacing-2xl, 32px); align-items: start; } }
 
 @utility ledger-row-grid { grid-template-columns: minmax(0, 1fr) auto; }
 

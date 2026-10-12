@@ -3,12 +3,11 @@ import { Card } from "../atoms/Card.js";
 import { Icon } from "../atoms/Icon.js";
 import { cx } from "../atoms/internal/cx.js";
 import { UI_BORDER_HAIRLINE } from "../atoms/internal/ui-vars.js";
-import { ArrowRight } from "../icons/ArrowRight.js";
 import { Check } from "../icons/Check.js";
 import { hasContent } from "./items/policies.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
 
-/** Heading element for each side's label. */
+/** Heading element for each side's primary heading. */
 export type MatrixHeadingLevel = 2 | 3 | 4 | 5 | 6;
 
 /** One side of a two-sided matrix. */
@@ -66,7 +65,6 @@ function hasNode(node: ReactNode): boolean {
   return node !== undefined && node !== null && node !== false;
 }
 
-interface RenderSide extends Omit<MatrixSide, "heading"> { heading?: ReactNode }
 interface SharedRows { description: boolean; points: boolean; visual: boolean }
 
 function assertMatrix({ sides, featured, ground = "base", headingLevel = 3 }: MatrixProps): void {
@@ -99,15 +97,16 @@ function assertMatrix({ sides, featured, ground = "base", headingLevel = 3 }: Ma
   if (featured !== undefined && !ids.has(featured)) throw new TypeError("Matrix: featured must name a side id.");
 }
 
-function SideBody({ side, featured, headingLevel, ground, shared, comparison }: {
-  side: RenderSide; featured: boolean; headingLevel: MatrixHeadingLevel; ground: SectionGround; shared: SharedRows; comparison: boolean;
+function SideBody({ side, featured, headingLevel, ground, shared }: {
+  side: MatrixSide; featured: boolean; headingLevel: MatrixHeadingLevel; ground: SectionGround; shared: SharedRows;
 }) {
   const HeadingTag = HEADING_TAGS[headingLevel];
   const colors = SECTION_GROUND_CLASSES[ground];
   const emptyRow = shared.visual ? "hidden tablet-lg:block" : "hidden tablet:block";
   return <>
     <div className="flex flex-col gap-xs">
-      {comparison || hasNode(side.label) ? <><HeadingTag className={cx("text-body-s font-medium uppercase tracking-label", colors.secondary)}>{side.label}</HeadingTag>{hasNode(side.heading) ? <p className={cx("text-h2 font-display leading-heading text-balance", colors.primary)}>{side.heading}</p> : null}</> : <HeadingTag className={cx("text-h2 font-display leading-heading text-balance", colors.primary)}>{side.heading}</HeadingTag>}
+      {hasNode(side.label) ? <p className={cx("text-body-s font-medium uppercase tracking-label", colors.secondary)}>{side.label}</p> : null}
+      <HeadingTag className={cx("text-h2 font-display leading-heading text-balance", colors.primary)}>{side.heading}</HeadingTag>
     </div>
     {shared.description ? hasNode(side.description) ? <p data-matrix-description="" className={cx("text-body text-pretty", colors.primary)}>{side.description}</p> : <div aria-hidden="true" data-matrix-empty-row="description" className={emptyRow} /> : null}
     {shared.points ? side.points && side.points.length > 0 ? <ul className="flex flex-col gap-sm">
@@ -118,14 +117,12 @@ function SideBody({ side, featured, headingLevel, ground, shared, comparison }: 
         <span className="min-w-0">{point}</span>
       </li>)}
     </ul> : <div aria-hidden="true" data-matrix-empty-row="points" className={emptyRow} /> : null}
-    {shared.visual ? hasNode(side.visual) ? <div data-matrix-visual="" data-comparison-visual={comparison ? "" : undefined} className="w-full min-w-0 pt-md">{side.visual}</div> : <div aria-hidden="true" data-matrix-empty-row="visual" className={emptyRow} /> : null}
+    {shared.visual ? hasNode(side.visual) ? <div data-matrix-visual="" className="w-full min-w-0 pt-md">{side.visual}</div> : <div aria-hidden="true" data-matrix-empty-row="visual" className={emptyRow} /> : null}
   </>;
 }
 
-/** Internal shared renderer; Comparison retains its optional heading and supplied-node API. */
-export function MatrixRenderer({ sides, featured, headingLevel = 3, ground = "base", comparison = false, className, style, ...rest }: Omit<MatrixProps, "sides"> & {
-  sides: readonly [RenderSide, RenderSide]; comparison?: boolean;
-}) {
+/** Private layout renderer for the validated two-sided matrix. */
+export function MatrixRenderer({ sides, featured, headingLevel = 3, ground = "base", className, style, ...rest }: MatrixProps) {
   const shared: SharedRows = {
     description: sides.some(side => hasNode(side.description)),
     points: sides.some(side => side.points !== undefined && side.points.length > 0),
@@ -133,17 +130,14 @@ export function MatrixRenderer({ sides, featured, headingLevel = 3, ground = "ba
   };
   const rows = (1 + Number(shared.description) + Number(shared.points) + Number(shared.visual)) as 1 | 2 | 3 | 4;
   const sideGrid = SIDE_ROW_CLASSES[shared.visual ? "visual" : "plain"][rows];
-  return <div {...rest} data-matrix="" data-matrix-rows={rows} data-comparison={comparison ? "" : undefined} data-comparison-rows={comparison ? rows : undefined} className={cx(
+  return <div {...rest} data-matrix="" data-matrix-rows={rows} className={cx(
     shared.visual ? "relative grid grid-cols-1 gap-lg tablet-lg:grid-cols-2 tablet-lg:gap-x-4xl" : "relative grid grid-cols-1 gap-lg tablet:grid-cols-2 tablet:gap-x-4xl", className,
   )} style={style}>
-    {sides.map(side => <section key={side.id} data-matrix-side={side.id} data-comparison-side={comparison ? side.id : undefined} className={cx("flex min-w-0 flex-col gap-md", sideGrid)}>
+    {sides.map(side => <section key={side.id} data-matrix-side={side.id} className={cx("flex min-w-0 flex-col gap-md", sideGrid)}>
       <Card variant="plate" ground={ground} data-featured={side.id === featured ? "true" : undefined} className={cx("flex flex-1 flex-col gap-md tablet:p-xl", sideGrid, side.id === featured ? "border-t" : undefined, side.id === featured ? FEATURED_CLASSES[ground] : undefined)} style={side.id === featured ? { borderBlockStartWidth: UI_BORDER_HAIRLINE } : undefined}>
-        <SideBody side={side} featured={side.id === featured} headingLevel={headingLevel} ground={ground} shared={shared} comparison={comparison} />
+        <SideBody side={side} featured={side.id === featured} headingLevel={headingLevel} ground={ground} shared={shared} />
       </Card>
     </section>)}
-    {comparison ? <span aria-hidden="true" data-comparison-arrow="" className={cx("pointer-events-none absolute inset-0 hidden items-center justify-center", shared.visual ? "tablet-lg:flex" : "tablet:flex", SECTION_GROUND_CLASSES[ground].muted)}>
-      <Icon glyph={ArrowRight} decorative size="sm" className="rtl:-scale-x-100" />
-    </span> : null}
   </div>;
 }
 

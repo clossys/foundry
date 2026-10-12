@@ -1,9 +1,11 @@
 import { useId, type ReactNode } from "react";
 import { cx } from "../../atoms/internal/cx.js";
 import { SECTION_GROUND_CLASSES } from "../section-ground.js";
-import { assertItems, loneTabletThirds } from "./policies.js";
+import { assertItems, collectionProfile, loneTabletThirds } from "./policies.js";
 import { ItemRenderer } from "./render.js";
 import { ItemPlate } from "./anatomy.js";
+import { UI_BORDER_HAIRLINE, UI_LAYOUT_TAP_TARGET } from "../../atoms/internal/ui-vars.js";
+import { assertNoNestedInteractive, cardLinkContainerClassName } from "../stretched-link.js";
 import { renderConnectedTrack, renderOrdinal, renderTerminal, orderLayout, orderedItemStyle } from "./order.js";
 import { hasContent } from "./policies.js";
 import type { ItemData, ItemSpan, ItemsProps } from "./types.js";
@@ -12,8 +14,9 @@ const COLUMN_CLASSES: Record<2 | 3, string> = {
   2: "grid grid-cols-1 gap-x-2xl gap-y-3xl tablet:grid-cols-2",
   3: "grid grid-cols-1 gap-x-2xl gap-y-3xl tablet:grid-cols-2 tablet-lg:grid-cols-3",
 };
-const ROW_CLASSES: Record<1 | 2, string> = {
-  1: "grid grid-cols-1 gap-y-lg", 2: "grid grid-cols-1 gap-y-lg tablet:grid-cols-2 tablet:gap-x-3xl"
+const ROW_CLASSES: Record<1 | 2 | 3, string> = {
+  1: "grid grid-cols-1 gap-y-lg", 2: "grid grid-cols-1 gap-y-lg tablet:grid-cols-2 tablet:gap-x-3xl",
+  3: "grid grid-cols-1 gap-lg tablet:grid-cols-2 tablet-lg:grid-cols-3",
 };
 type DisclosureRenderer = (item: ItemData, props: ItemsProps) => ReactNode;
 const TWO_THIRDS = "two-thirds" as const;
@@ -26,7 +29,9 @@ function renderItems(props: ItemsProps, columns: number | undefined, disclosure?
   const tabletLone = loneTabletThirds(spans);
   const connected = props.order === "connected";
   const ordered = props.order !== undefined && props.order !== "none";
-  const withVisuals = connected && (arrangement === "columns" || props.lanes !== undefined) && props.items.some(item => hasContent(item.visual));
+  const profile = collectionProfile(props);
+  // Lane bodies carry their own offset. A shared visual subgrid would cancel that stagger.
+  const withVisuals = connected && arrangement === "columns" && props.lanes === undefined && props.items.some(item => hasContent(item.visual));
   return props.items.map((item, index) => {
     const span = spans[index];
     const lone = arrangement === "columns" && columns === 3 && props.items.length % 2 === 1 && index === props.items.length - 1;
@@ -35,7 +40,7 @@ function renderItems(props: ItemsProps, columns: number | undefined, disclosure?
     const finalRow = (count: number) => index >= Math.floor((props.items.length - 1) / count) * count;
     const labelRows = sharedBody === undefined || !hasContent(props.endLabel) ? undefined : arrangement === "columns" ? cx(finalRow(2) ? "tablet:row-span-3" : undefined, columns === 3 ? finalRow(3) ? "tablet-lg:row-span-3" : "tablet-lg:row-span-2" : undefined) : props.items.length === 3 ? "tablet-lg:row-span-3" : "desktop:row-span-3";
     const sharedRows = cx(sharedBody, labelRows);
-    const body = props.reveal === "disclose" ? disclosure!(item, props) : <ItemRenderer item={item} treatment={treatment} size={arrangement === "bento" ? "display" : size} ground={ground} statement={emphasis === "statement"} headingLevel={headingLevel} span={span} sharedVisualRow={withVisuals} orderClassName={cx(sharedBody, connected ? "h-auto items-order-body" : ordered ? "min-w-0 flex-1" : undefined)} />;
+    const body = props.reveal === "disclose" ? disclosure!(item, props) : <ItemRenderer item={item} treatment={treatment} size={size} ground={ground} statement={emphasis === "statement"} profile={profile} headingLevel={headingLevel} span={span} sharedVisualRow={withVisuals} orderClassName={cx(sharedBody, connected ? "h-auto items-order-body" : ordered ? "min-w-0 flex-1" : undefined)} />;
     const disclosureBody = props.reveal === "disclose" && treatment === "plate" ? <ItemPlate ground={ground} className="w-full min-w-0">{body}</ItemPlate> : body;
     return <li key={item.id} data-lane={connected ? item.lane : undefined} className={cx("h-full min-w-0", spanClassName, connected ? "relative items-order-cell" : ordered ? "flex items-start gap-lg" : undefined, sharedRows)} style={connected ? orderedItemStyle(item, props) : undefined}>
       {ordered ? renderOrdinal({ ordinal: start + index, props, connected }) : null}
@@ -61,7 +66,7 @@ function GroupedItems({ props, columns, disclosure }: { props: ItemsProps; colum
       start += group.items.length;
       return <div key={group.id} role="group" aria-labelledby={id} className="flex min-w-0 flex-col gap-md">
         <p id={id} className={cx("m-0 text-caption font-mono uppercase tracking-label", groupColors.secondary)}>{group.label}</p>
-        <List role="list" aria-labelledby={props["aria-labelledby"]} start={List === "ol" ? groupStart : undefined} className="m-0 flex list-none flex-col gap-lg p-0">{renderItems(groupProps, 1, disclosure, groupStart)}</List>
+        <List role="list" aria-labelledby={id} start={List === "ol" ? groupStart : undefined} className="m-0 flex list-none flex-col gap-lg p-0">{renderItems(groupProps, 1, disclosure, groupStart)}</List>
       </div>;
     })}
   </div>;
@@ -72,10 +77,24 @@ export function ItemsStatic(props: ItemsProps, disclosure?: DisclosureRenderer) 
   if (props.reveal === "disclose" && !disclosure) throw new TypeError("Items: a disclosure renderer is required.");
   if (props.groups !== undefined) return <GroupedItems props={props} columns={columns!} disclosure={disclosure} />;
   const { arrangement, treatment = "plain", ground = "base" } = props;
-  const layout = arrangement === "columns" ? COLUMN_CLASSES[columns as 2 | 3] : arrangement === "rows" ? ROW_CLASSES[columns as 1 | 2] : arrangement === "bento" ? "grid grid-cols-1 gap-lg tablet:grid-cols-12" : "flex flex-col gap-2xl";
+  const layout = arrangement === "columns" ? COLUMN_CLASSES[columns as 2 | 3] : arrangement === "rows" ? ROW_CLASSES[columns as 1 | 2 | 3] : arrangement === "bento" ? "grid grid-cols-1 gap-xl tablet:grid-cols-12" : props.order === "connected" ? "flex flex-col gap-2xl" : "flex flex-col gap-3xl";
   const plateGap = arrangement === "columns" && treatment === "plate" ? "gap-y-2xl" : undefined;
   const List = props.order === "numbered" || props.order === "connected" ? "ol" : "ul";
   const order = props.order === "connected" ? orderLayout(props) : undefined;
   const list = <List role="list" aria-labelledby={props["aria-labelledby"]} data-items="" data-arrangement={arrangement} data-columns={columns} data-treatment={treatment} className={cx("m-0 list-none p-0", layout, plateGap, order?.className, props.className)} style={order?.style}>{renderItems(props, columns, disclosure)}</List>;
   return hasContent(props.caption) ? <div className="flex flex-col gap-lg">{list}<p data-item-caption="" className={cx("m-0 text-caption", SECTION_GROUND_CLASSES[ground].secondary)}>{props.caption}</p></div> : list;
+}
+
+/** Private NavGrid collection policy; public Items counts and validation remain separate. */
+export function renderNavItems(items: readonly ItemData[]) {
+  const linked = cardLinkContainerClassName("plate", "base");
+  const frame = "border border-transparent rounded-panel p-lg tablet-lg:p-xl bg-surface-sunken hover:bg-surface-raised active:bg-surface-raised";
+  return <ul data-link-grid="" data-count={items.length} data-surface="plate" className="m-0 list-none p-0 grid grid-cols-1 gap-lg tablet:grid-cols-6">
+    {items.map((item, index) => {
+      assertNoNestedInteractive("LinkGrid", item.id, [item.icon, item.heading, item.description]);
+      return <li key={item.id} style={{ minBlockSize: UI_LAYOUT_TAP_TARGET, borderWidth: UI_BORDER_HAIRLINE }} className={cx("flex min-w-0 flex-col gap-sm", linked, items.length === 2 || items.length === 4 || (items.length === 5 && index >= 3) ? "tablet:col-span-3" : "tablet:col-span-2", frame)}>
+        <ItemRenderer item={item} treatment="plate" size="standard" ground="base" navigation="plate" />
+      </li>;
+    })}
+  </ul>;
 }
