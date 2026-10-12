@@ -16,7 +16,7 @@ afterEach(cleanup);
 type Routes = { label: string; items: readonly (ItemData & { href: string })[] };
 const route = (id: string): ItemData & { href: string } => ({ id, heading: `Destination ${id}`, description: `Support ${id}`, href: `/destination/${id}` });
 const routes = (count: number): Routes => ({ label: "Next destinations", items: Object.freeze(Array.from({ length: count }, (_, index) => Object.freeze(route(String(index))))) });
-// The intersection lets Vitest reach the runtime red assertions before the API exists.
+// Exercise runtime boundary inputs that the static props deliberately reject.
 function draw(input?: unknown) {
   const props = { status: "404", subtitle: "This page is unavailable.", action: <button>Try again</button>, notes: <a href="/contact">Contact us</a>, ...(input === undefined ? {} : { routes: input }) } as StatusViewProps & { routes?: Routes };
   return render(<StatusView {...props} />);

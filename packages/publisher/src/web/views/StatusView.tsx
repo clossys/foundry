@@ -37,7 +37,8 @@ export interface StatusViewProps extends Omit<HTMLAttributes<HTMLDivElement>, "t
  * a sign-in boundary state, or a placeholder for a route that is linked but
  * not built yet. The status is the one `<h1>`, then an optional subtitle, an
  * optional primary action on the page background and optional notes, centered
- * in the form-measure column.
+ * in the form-measure column. Optional caller-labelled destinations follow
+ * these slots as one Item or two to six rows.
  *
  * The intended shape for an error page is a code, one subtitle and one primary
  * action; that is guidance for the caller, not a requirement, so only `status`

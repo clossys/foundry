@@ -432,7 +432,7 @@ function relatedSection(html: string) {
 
 describe("LegalView related references", () => {
   it("preserves the pre-implementation omitted-view bytes", () => {
-    // Capture this file from the unchanged source BEFORE implementing related.
+    // Recorded from unchanged pre-related source; this assertion never updates it.
     // readFileSync fails if absent; this test never creates/updates the baseline.
     const baseline = readFileSync(resolve(import.meta.dirname, "__fixtures__/legal-view-before-related-terms.html"), "utf8");
     expect(baseline.length).toBeGreaterThan(0);
