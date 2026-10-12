@@ -50,18 +50,14 @@ import { Hero } from "../blocks/Hero.js";
 import { Item } from "../blocks/items/Item.js";
 import { Items } from "../blocks/items/Items.js";
 import { Items as NativeItems } from "../blocks/items/Items.server.js";
-import { CardGrid } from "../blocks/CardGrid.js";
-import { Comparison } from "../blocks/Comparison.js";
 import { Matrix } from "../blocks/Matrix.js";
 import { ContentSection } from "../blocks/ContentSection.js";
 import { FeatureGrid } from "../blocks/FeatureGrid.js";
 import { NavGrid } from "../blocks/NavGrid.js";
 import { RecordLedger } from "../blocks/RecordLedger.js";
-import { LedgerTile } from "../blocks/LedgerTile.js";
-import { LinkGrid } from "../blocks/LinkGrid.js";
 import { OrderedStepSequence } from "../blocks/OrderedStepSequence.js";
-import { TopicList } from "../blocks/TopicList.js";
 import { Specimen } from "../blocks/specimen/Specimen.js";
+import { SpecimenPanel } from "../blocks/specimen/SpecimenPanel.js";
 import type { SpecimenPanelItem } from "../blocks/specimen/SpecimenPanel.js";
 import { scanCompiledCssSources } from "./scan-sources.js";
 import { generateCompiledCss } from "./generate.js";
@@ -174,7 +170,7 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
     }
 
     for (const required of ["text-display-m", "tablet:text-display-l", "font-display", "bg-accent", "rounded-control", "tablet:grid-cols-2"]) {
-      expect(renderedClasses.has(required)).toBe(true);
+      expect(renderedClasses.has(required), required).toBe(true);
     }
 
     const scan = scanCompiledCssSources(packageRoot);
@@ -281,17 +277,18 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
         );
       }
       trees.push(render(<ContentSection ground={ground} heading="H" media={<div>M</div>} />));
+      trees.push(render(<FeatureGrid ground={ground} heading="Features" items={[item("a"), item("b"), item("c")]} />));
       trees.push(render(<ContentSection ground={ground} align="center" heading="H" actions={<a href="/a">A</a>} footnote={<>Aside.</>} />));
       for (const columns of [2, 3] as const) {
         for (const treatment of ["plain", "rule", "plate"] as const) {
-          trees.push(render(<FeatureGrid ground={ground} columns={columns} treatment={treatment} items={Array.from({ length: columns }, (_, i) => item(String(i)))} />));
+          trees.push(render(<Items arrangement="columns" ground={ground} columns={columns} treatment={treatment} items={Array.from({ length: columns }, (_, i) => item(String(i)))} />));
         }
       }
-      trees.push(render(<FeatureGrid ground={ground} emphasis="statement" items={["a", "b", "c"].map(id => ({ id, heading: `Heading ${id}`, description: "Description." }))} />));
-      trees.push(render(<FeatureGrid ground={ground} columns={2} treatment="plate" items={[{ ...item("a"), eyebrow: "E" }, item("b")]} />));
+      trees.push(render(<Items arrangement="columns" ground={ground} emphasis="statement" items={["a", "b", "c"].map(id => ({ id, heading: `Heading ${id}`, description: "Description." }))} />));
+      trees.push(render(<Items arrangement="columns" ground={ground} columns={2} treatment="plate" items={[{ ...item("a"), eyebrow: "E" }, item("b")]} />));
       trees.push(
         render(
-          <CardGrid
+          <Items arrangement="bento" treatment="plate"
             ground={ground}
             items={[
               { ...item("a"), eyebrow: "E", span: "two-thirds", visual: <div>V</div> },
@@ -312,53 +309,50 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
         }
         trees.push(
           render(
-            <Comparison
-              ground={ground}
-              before={{ label: "B", heading: "H", points: ["One", "Two"], visual }}
-              after={{ label: "A", heading: "H", points: ["One", "Two"], visual }}
-            />,
-          ),
-        );
-        trees.push(
-          render(
             <OrderedStepSequence
               ground={ground}
               items={[
-                { id: "1", ordinal: "01", label: "L", heading: "H", description: "D", visual },
+                { id: "1", ordinal: "01", label: "L", heading: "H", description: "D" },
                 { id: "2", ordinal: "02", heading: "H" },
               ]}
             />,
           ),
         );
       }
-      trees.push(render(<TopicList ground={ground} items={[item("a"), item("b")]} />));
-      trees.push(render(<TopicList ground={ground} columns={1} items={[item("a"), item("b")]} />));
+      trees.push(render(<Items arrangement="rows" treatment="rule" ground={ground} items={[item("a"), item("b")]} />));
+      trees.push(render(<Items arrangement="rows" treatment="rule" ground={ground} columns={1} items={[item("a"), item("b")]} />));
       // Linked items: the stretched-link anchor, its hit area and ring, and a bare item's hover plate.
       const linked = (id: string) => ({ ...item(id), href: `/${id}` });
       for (const surface of ["plate", "rule"] as const) {
         for (const count of [2, 3, 4, 5, 6]) {
-          trees.push(render(<LinkGrid ground={ground} surface={surface} items={Array.from({ length: count }, (_, index) => ({ id: String(index), title: "Topic", description: "Details.", icon: <svg />, href: `/topics/${index}` }))} />));
+          trees.push(render(<Items arrangement="rows" ground={ground} treatment={surface} items={Array.from({ length: count }, (_, index) => ({ id: String(index), heading: "Topic", description: "Details.", icon: <svg />, href: `/topics/${index}` }))} />));
         }
       }
       for (const treatment of ["plain", "rule", "plate"] as const) {
-        trees.push(render(<FeatureGrid ground={ground} columns={2} treatment={treatment} items={[linked("a"), linked("b")]} />));
+        trees.push(render(<Items arrangement="columns" ground={ground} columns={2} treatment={treatment} items={[linked("a"), linked("b")]} />));
       }
-      trees.push(render(<CardGrid ground={ground} items={[{ ...linked("a"), span: "half" }, { ...linked("b"), span: "half" }]} />));
-      trees.push(render(<TopicList ground={ground} items={[linked("a"), linked("b")]} />));
+      trees.push(render(<Items arrangement="bento" treatment="plate" ground={ground} items={[{ ...linked("a"), span: "half" }, { ...linked("b"), span: "half" }]} />));
+      trees.push(render(<Items arrangement="rows" treatment="rule" ground={ground} items={[linked("a"), linked("b")]} />));
       trees.push(
         render(
           <OrderedStepSequence
             ground={ground}
             items={[
-              { id: "1", ordinal: "01", heading: "H", href: "/1" },
-              { id: "2", ordinal: "02", heading: "H", href: "/2" },
+              { id: "1", ordinal: "01", heading: "H" },
+              { id: "2", ordinal: "02", heading: "H" },
             ]}
           />,
         ),
       );
     }
-    trees.push(render(<NavGrid items={[{ id: "a", title: "A", description: "D", href: "/a" }, { id: "b", title: "B", href: "/b" }]} />));
-    trees.push(render(<NavGrid items={[{ id: "a", title: "A", href: "/a" }]} />));
+    const navTrees = [
+      render(<NavGrid items={[{ id: "a", title: "A", description: "D", href: "/a" }, { id: "b", title: "B", href: "/b" }]} />),
+      render(<NavGrid items={[{ id: "a", title: "A", href: "/a" }]} />),
+      render(<NavGrid items={["a", "b", "c"].map(id => ({ id, title: id, icon: <svg />, href: `/${id}` }))} />),
+    ];
+    trees.push(...navTrees);
+    const navActiveClasses = [...new Set(navTrees.flatMap(tree => [...collectClassNames(tree.container)]).filter(className => className.startsWith("active:")))].sort();
+    expect(navActiveClasses).toEqual(["active:bg-surface-raised", "active:decoration-current"]);
 
     const renderedClasses = new Set<string>();
     for (const result of trees) {
@@ -370,10 +364,8 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
       "tablet-lg:col-span-7",
       "tablet-lg:col-start-8",
       "gap-y-3xl",
-      "rtl:-scale-x-100",
       "tablet-lg:col-span-8",
       "after:absolute",
-      "after:-inset-x-md",
       "after:-inset-x-sm",
       "tablet:after:-inset-x-md",
       "after:-inset-y-sm",
@@ -392,17 +384,11 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
       "tablet:grid-cols-6",
       "tablet:col-span-2",
       "tablet:col-span-3",
-      "hover:before:bg-surface-base",
-      "has-focus-visible:before:bg-surface-base",
       "link-grid-icon",
-      "active:bg-surface-raised",
-      "active:before:bg-surface-sunken",
-      "active:before:bg-surface-base",
-      "active:before:bg-surface-inverse-raised",
-      "active:decoration-current",
       "link-grid-active",
+      ...navActiveClasses,
     ]) {
-      expect(renderedClasses.has(required)).toBe(true);
+      expect(renderedClasses.has(required), required).toBe(true);
     }
 
     const scan = scanCompiledCssSources(packageRoot);
@@ -412,7 +398,7 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
     expect(generated.css).toContain(".link-grid-icon");
     expect(generated.css).toContain("inline-size: var(--ui-icon-md)");
     expect(generated.css).toContain("block-size: var(--ui-icon-md)");
-    for (const className of ["active:bg-surface-raised", "active:before:bg-surface-sunken", "active:before:bg-surface-base", "active:before:bg-surface-inverse-raised", "active:decoration-current"]) {
+    for (const className of navActiveClasses) {
       const selector = toSelectorText(className) + ":active";
       expect(generated.css).toContain(selector);
       const offset = generated.css.indexOf(selector);
@@ -491,7 +477,7 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
       result.unmount();
     }
     for (const required of ["@container", "@md:table", "@md:not-sr-only", "@md:table-cell", "@lg:grid-cols-4", "desktop:grid-cols-3", "size-2xl", "font-mono", "max-tablet:hidden", "border-s", "border-dashed", "border-ink-secondary", "bg-surface-sunken", "text-ink-secondary", "bg-status-success-tint", "text-status-success-text", "bg-status-warning-tint", "text-status-warning-text", "bg-status-danger-tint", "text-status-danger-text", "bg-status-info-tint", "text-status-info-text"]) {
-      expect(renderedClasses.has(required)).toBe(true);
+      expect(renderedClasses.has(required), required).toBe(true);
     }
 
     const scan = scanCompiledCssSources(packageRoot);
@@ -520,13 +506,14 @@ it("emits every real Ledger form, cap, ground and rule-card layout class", async
         tree.unmount();
       }
     }
-    const tile = <LedgerTile ground={ground} caption="Record" mobileRows={3} flagLabel="Attention:" rows={Array.from({ length: 5 }, (_, i) => row(String(i), i === 0))} />;
-    const cards = render(<CardGrid treatment="rule" ground={ground} items={[{ id: "wide", span: "two-thirds", heading: "Record", eyebrow: "Function", description: "Details", href: "/one", visual: tile }, { id: "small", span: "third", heading: "Another", href: "/two", visual: tile }]} />);
+    const tile = <SpecimenPanel ground={ground} parts={[{ id: "checks", type: "status-rows", label: "Record", mobileRows: 3, items: Array.from({ length: 5 }, (_, i) => row(String(i))) }]} />;
+    const cards = render(<Items arrangement="bento" treatment="rule" ground={ground} items={[{ id: "wide", span: "two-thirds", heading: "Record", eyebrow: "Function", description: "Details", href: "/one", visual: tile }, { id: "small", span: "third", heading: "Another", href: "/two", visual: tile }]} />);
     for (const cls of collectClassNames(cards.container)) classes.add(cls);
     cards.unmount();
   }
   const generated = await generateCompiledCss({ stylesDir: resolve(packageRoot, "styles"), candidates: scanCompiledCssSources(packageRoot).candidates });
   expect([...classes].filter(cls => !generated.css.includes(toSelectorText(cls)))).toEqual([]);
+  expect(classes.has("max-tablet:hidden")).toBe(true);
   expect(generated.css).toContain(toSelectorText("max-tablet:hidden"));
   const groupDividers = [...generated.css.matchAll(/[^{}]*\.ledger-group-divided[^{}]*\{([^}]*)\}/g)];
   expect(groupDividers).toHaveLength(3);
@@ -534,7 +521,7 @@ it("emits every real Ledger form, cap, ground and rule-card layout class", async
     // Width and style must retain the rendered ground line-color utility.
     expect(divider[1]).not.toMatch(/border-(?:block|inline)-start:/);
   }
-  for (const cls of ["ledger-columns-two", "ledger-columns-three", "ledger-owner-columns", "ledger-rule-wide", "ledger-owner-disc"]) expect(generated.css).toContain(toSelectorText(cls));
+  for (const cls of ["ledger-columns-two", "ledger-columns-three", "ledger-owner-columns", "ledger-owner-disc"]) expect(generated.css).toContain(toSelectorText(cls));
 });
 
 

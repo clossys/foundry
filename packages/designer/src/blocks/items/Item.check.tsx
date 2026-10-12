@@ -15,6 +15,7 @@ void <Item {...item} treatment="plain" size="standard" ground="base" legacy />;
 // @ts-expect-error Items does not expose an action callback.
 void <Items arrangement="rows" items={[item, { ...item, id: "two" }]} onSelect={() => {}} />;
 
+// @ts-expect-error FeatureGrid keeps its published props; catalog columns belong to Items.
 void <FeatureGrid items={[item]} columns={4} />;
 // @ts-expect-error Canonical Items does not accept the legacy four-column seam.
 void <Items arrangement="columns" items={[item]} columns={4} />;

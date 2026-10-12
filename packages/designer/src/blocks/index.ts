@@ -84,8 +84,6 @@ export type { ToolbarProps } from "./Toolbar.js";
 export { NavGrid } from "./NavGrid.js";
 export type { NavGridProps, NavGridItem } from "./NavGrid.js";
 
-export { LinkGrid } from "./LinkGrid.js";
-export type { LinkGridProps, LinkGridItem } from "./LinkGrid.js";
 
 export { SectionHeader } from "./SectionHeader.js";
 export type { SectionHeaderProps, SectionHeaderLevel } from "./SectionHeader.js";
@@ -118,18 +116,9 @@ export type {
   FeatureGridProps,
   FeatureGridItem,
   FeatureGridHeadingLevel,
-  FeatureGridColumns,
-  FeatureGridTreatment,
-  FeatureGridEmphasis,
 } from "./FeatureGrid.js";
-export { CardGrid } from "./CardGrid.js";
-export type { CardGridProps, CardGridItem, CardGridSpan, CardGridHeadingLevel, CardGridTreatment } from "./CardGrid.js";
 export { Matrix } from "./Matrix.js";
 export type { MatrixProps, MatrixSide, MatrixHeadingLevel } from "./Matrix.js";
-export { Comparison } from "./Comparison.js";
-export type { ComparisonProps, ComparisonSide, ComparisonHeadingLevel } from "./Comparison.js";
-export { TopicList } from "./TopicList.js";
-export type { TopicListProps, TopicListItem, TopicListColumns, TopicListGroup } from "./TopicList.js";
 export { Specimen } from "./specimen/Specimen.js";
 export type { SpecimenProps, SpecimenArrangement } from "./specimen/Specimen.js";
 export { SpecimenPanel } from "./specimen/SpecimenPanel.js";
@@ -203,8 +192,6 @@ export type { ConsentBannerProps } from "./ConsentBanner.js";
 
 export { RecordLedger } from "./RecordLedger.js";
 export type { RecordLedgerProps, LedgerRowData, LedgerGroupData } from "./RecordLedger.js";
-export { LedgerTile } from "./LedgerTile.js";
-export type { LedgerTileProps } from "./LedgerTile.js";
 
 export { AnatomyCallouts } from "./AnatomyCallouts.js";
 export type { AnatomyCalloutsProps, AnatomyCalloutsMarker } from "./AnatomyCallouts.js";

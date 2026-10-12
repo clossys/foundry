@@ -4,6 +4,8 @@ import { SECTION_GROUND_CLASSES } from "../section-ground.js";
 import { assertItems, loneTabletThirds } from "./policies.js";
 import { ItemRenderer } from "./render.js";
 import { ItemPlate } from "./anatomy.js";
+import { UI_BORDER_HAIRLINE, UI_LAYOUT_TAP_TARGET } from "../../atoms/internal/ui-vars.js";
+import { assertNoNestedInteractive, cardLinkContainerClassName } from "../stretched-link.js";
 import { renderConnectedTrack, renderOrdinal, renderTerminal, orderLayout, orderedItemStyle } from "./order.js";
 import { hasContent } from "./policies.js";
 import type { ItemData, ItemSpan, ItemsProps } from "./types.js";
@@ -61,7 +63,7 @@ function GroupedItems({ props, columns, disclosure }: { props: ItemsProps; colum
       start += group.items.length;
       return <div key={group.id} role="group" aria-labelledby={id} className="flex min-w-0 flex-col gap-md">
         <p id={id} className={cx("m-0 text-caption font-mono uppercase tracking-label", groupColors.secondary)}>{group.label}</p>
-        <List role="list" aria-labelledby={props["aria-labelledby"]} start={List === "ol" ? groupStart : undefined} className="m-0 flex list-none flex-col gap-lg p-0">{renderItems(groupProps, 1, disclosure, groupStart)}</List>
+        <List role="list" aria-labelledby={id} start={List === "ol" ? groupStart : undefined} className="m-0 flex list-none flex-col gap-lg p-0">{renderItems(groupProps, 1, disclosure, groupStart)}</List>
       </div>;
     })}
   </div>;
@@ -78,4 +80,18 @@ export function ItemsStatic(props: ItemsProps, disclosure?: DisclosureRenderer) 
   const order = props.order === "connected" ? orderLayout(props) : undefined;
   const list = <List role="list" aria-labelledby={props["aria-labelledby"]} data-items="" data-arrangement={arrangement} data-columns={columns} data-treatment={treatment} className={cx("m-0 list-none p-0", layout, plateGap, order?.className, props.className)} style={order?.style}>{renderItems(props, columns, disclosure)}</List>;
   return hasContent(props.caption) ? <div className="flex flex-col gap-lg">{list}<p data-item-caption="" className={cx("m-0 text-caption", SECTION_GROUND_CLASSES[ground].secondary)}>{props.caption}</p></div> : list;
+}
+
+/** Private NavGrid collection policy; public Items counts and validation remain separate. */
+export function renderNavItems(items: readonly ItemData[]) {
+  const linked = cardLinkContainerClassName("plate", "base");
+  const frame = "border border-transparent rounded-panel p-lg tablet-lg:p-xl bg-surface-sunken hover:bg-surface-raised active:bg-surface-raised";
+  return <ul data-link-grid="" data-count={items.length} data-surface="plate" className="m-0 list-none p-0 grid grid-cols-1 gap-lg tablet:grid-cols-6">
+    {items.map((item, index) => {
+      assertNoNestedInteractive("LinkGrid", item.id, [item.icon, item.heading, item.description]);
+      return <li key={item.id} style={{ minBlockSize: UI_LAYOUT_TAP_TARGET, borderWidth: UI_BORDER_HAIRLINE }} className={cx("flex min-w-0 flex-col gap-sm", linked, items.length === 2 || items.length === 4 || (items.length === 5 && index >= 3) ? "tablet:col-span-3" : "tablet:col-span-2", frame)}>
+        <ItemRenderer item={item} treatment="plate" size="standard" ground="base" navigation="plate" />
+      </li>;
+    })}
+  </ul>;
 }

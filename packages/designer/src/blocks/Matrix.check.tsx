@@ -6,7 +6,7 @@ void <Matrix sides={[side, { ...side, id: "right" }]} featured="right" ground="i
 void <Matrix sides={[side]} />;
 // @ts-expect-error Every side needs a stable id.
 const missingId: MatrixSide = { label: "First", heading: "A shared view", points: ["One", "Two"] };
-// @ts-expect-error Matrix headings are required even though Comparison headings remain optional.
+// @ts-expect-error Matrix side headings are required.
 const missingHeading: MatrixSide = { id: "left", label: "First", points: ["One", "Two"] };
 // @ts-expect-error Every side needs a label.
 const missingLabel: MatrixSide = { id: "left", heading: "A shared view", points: ["One", "Two"] };

@@ -47,9 +47,33 @@ describe("Items review regressions", () => {
   });
   it.each([Items, NativeItems])("names each actual grouped list and keeps group labels distinct", Component => {
     render(<><h2 id="collection-heading">Collection heading</h2><Component arrangement="rows" order="numbered" aria-labelledby="collection-heading" items={data(4)} groups={[{ id: "a", label: "First", items: ["0", "1"] }, { id: "b", label: "Second", items: ["2", "3"] }]} /></>);
-    expect(screen.getAllByRole("list", { name: "Collection heading" })).toHaveLength(2);
+    expect(screen.queryByRole("list", { name: "Collection heading" })).toBeNull();
+    for (const label of ["First", "Second"]) {
+      const list = screen.getByRole("list", { name: label });
+      const group = screen.getByRole("group", { name: label });
+      expect(group).toContainElement(list);
+      expect(list).toHaveAttribute("aria-labelledby", group.querySelector("p")!.id);
+    }
     expect(screen.getByRole("group", { name: "First" })).toBeInTheDocument();
     expect(screen.getByRole("group", { name: "Second" })).toBeInTheDocument();
+  });
+  it.each([Items, NativeItems])("keeps same-named grouped list references local across two instances", Component => {
+    const groups = [{ id: "a", label: "Actor", items: ["0", "1"] }, { id: "b", label: "Actor", items: ["2", "3"] }];
+    const { container } = render(<><Component arrangement="rows" items={data(4)} groups={groups} /><Component arrangement="rows" order="numbered" reveal="disclose" items={data(4)} groups={groups} /></>);
+    const ids = new Set<string>();
+    for (const list of container.querySelectorAll('[role="group"] > ul, [role="group"] > ol')) {
+      const label = list.parentElement!.querySelector("p")!;
+      expect(list).toHaveAccessibleName("Actor");
+      expect(list).toHaveAttribute("aria-labelledby", label.id);
+      expect(document.getElementById(label.id)).toBe(label);
+      expect(ids.has(label.id)).toBe(false); ids.add(label.id);
+    }
+    expect(ids.size).toBe(4);
+  });
+  it.each([Items, NativeItems])("renders an authored iterable final label in the actual terminal track", Component => {
+    const { container } = render(<Component arrangement="columns" order="connected" items={data(3)} end="continues" endLabel={new Set(["Repeats ", "monthly"])} />);
+    expect(container.querySelector("[data-item-end-label]")).toHaveTextContent("Repeats monthly");
+    expect(container.querySelectorAll("[data-item-end-label]")).toHaveLength(1);
   });
   it.each([Items, NativeItems])("leaves omitted list naming byte-identical to explicit undefined", Component => {
     const props: ItemsProps = { arrangement: "columns", items: data(3) };

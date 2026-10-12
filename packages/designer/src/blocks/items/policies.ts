@@ -50,16 +50,24 @@ const CONTROL_TAGS = new Set(["a", "button", "input", "select", "textarea", "sum
 const PHRASING_TAGS = new Set(["abbr", "b", "bdi", "bdo", "br", "cite", "code", "data", "del", "dfn", "em", "i", "img", "ins", "kbd", "mark", "picture", "q", "ruby", "rp", "rt", "s", "samp", "small", "source", "span", "strong", "sub", "sup", "time", "u", "var", "wbr", "svg", "g", "path", "circle", "ellipse", "line", "polyline", "polygon", "rect", "text", "tspan", "defs", "symbol", "use", "clippath", "mask", "pattern", "lineargradient", "radialgradient", "stop", "filter", "fegaussianblur", "fecolormatrix", "feoffset", "feblend", "fecomposite", "femerge", "femergenode", "title", "desc", "foreignobject", "math", "mrow", "mi", "mo", "mn", "ms", "mtext", "msub", "msup", "msubsup", "mfrac", "msqrt", "mroot", "mstyle", "mpadded", "mphantom", "mfenced", "menclose", "semantics", "annotation"]);
 const TRIGGER_CONTROL_ROLES = new Set(["button", "link", "checkbox", "radio", "switch", "textbox", "combobox", "listbox", "option", "menuitem", "menuitemcheckbox", "menuitemradio", "slider", "spinbutton", "tab", "treeitem"]);
 function invalidTrigger(node: ReactNode): boolean {
+  return invalidTriggerIn(node, false);
+}
+function invalidTriggerIn(node: ReactNode, inSvg: boolean): boolean {
   return Children.toArray(node).some(child => {
     if (!isValidElement(child)) return false;
     const props = child.props as Record<string, unknown>;
     const native = typeof child.type === "string" ? child.type.toLowerCase() : undefined;
     const editable = props.contentEditable === true || (typeof props.contentEditable === "string" && ["", "true", "plaintext-only"].includes(props.contentEditable.toLowerCase()));
     const focusable = (typeof props.tabIndex === "number" && Number.isFinite(props.tabIndex)) || (typeof props.tabIndex === "string" && props.tabIndex.trim() !== "" && Number.isFinite(Number(props.tabIndex)));
-    return (native !== undefined && !PHRASING_TAGS.has(native)) || editable || focusable || (typeof props.role === "string" && props.role.split(/\s+/).some(role => TRIGGER_CONTROL_ROLES.has(role))) || props.href !== undefined || props.onClick !== undefined || props.onPress !== undefined || invalidTrigger(props.children as ReactNode);
+    const svg = native === "svg" || inSvg;
+    const resource = svg && (native === "use" || native === "image");
+    return (native !== undefined && !PHRASING_TAGS.has(native) && !(native === "image" && svg)) || editable || focusable || (typeof props.role === "string" && props.role.split(/\s+/).some(role => TRIGGER_CONTROL_ROLES.has(role))) || (props.href !== undefined && !resource) || props.onClick !== undefined || props.onPress !== undefined || invalidTriggerIn(props.children as ReactNode, native === "foreignobject" ? false : svg);
   });
 }
 function hasControl(node: ReactNode): boolean {
+  return hasControlIn(node, false);
+}
+function hasControlIn(node: ReactNode, inSvg: boolean): boolean {
   return Children.toArray(node).some((child) => {
     if (!isValidElement(child)) return false;
     const props = child.props as Record<string, unknown>;
@@ -67,7 +75,10 @@ function hasControl(node: ReactNode): boolean {
     const editable = props.contentEditable === true || (typeof props.contentEditable === "string" && ["", "true", "plaintext-only"].includes(props.contentEditable.toLowerCase()));
     const focusable = (typeof props.tabIndex === "number" && Number.isFinite(props.tabIndex)) || (typeof props.tabIndex === "string" && props.tabIndex.trim() !== "" && Number.isFinite(Number(props.tabIndex)));
     const media = (child.type === "audio" || child.type === "video") && Boolean(props.controls);
-    return (native && (CONTROL_TAGS.has(child.type as string) || editable || focusable || media)) || props.href !== undefined || props.onClick !== undefined || props.onPress !== undefined || hasControl(props.children as ReactNode);
+    const tag = native ? (child.type as string).toLowerCase() : undefined;
+    const svg = tag === "svg" || inSvg;
+    const resource = svg && (tag === "use" || tag === "image");
+    return (native && (CONTROL_TAGS.has(child.type as string) || editable || focusable || media)) || (props.href !== undefined && !resource) || props.onClick !== undefined || props.onPress !== undefined || hasControlIn(props.children as ReactNode, tag === "foreignobject" ? false : svg);
   });
 }
 /** The public item guard reads supplied elements recursively, without executing opaque components. */

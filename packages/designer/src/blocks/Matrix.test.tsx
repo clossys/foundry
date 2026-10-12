@@ -42,6 +42,14 @@ describe("Matrix", () => {
     for (const item of screen.getAllByRole("listitem")) expect(item.firstElementChild).toHaveAttribute("aria-hidden", "true");
   });
 
+  it("shares the two point-form rows across each shell and its plate", () => {
+    const { container } = render(<Matrix sides={SIDES} />);
+    expect(container.querySelector("[data-matrix]")).not.toHaveClass("items-start");
+    for (const shell of container.querySelectorAll("[data-matrix-side]")) {
+      expect(shell).toHaveClass("tablet:row-span-2", "tablet:grid", "tablet:grid-rows-subgrid");
+      expect(shell.firstElementChild).toHaveClass("tablet:row-span-2", "tablet:grid", "tablet:grid-rows-subgrid");
+    }
+  });
   it("shares rows from tablet and keeps point order with optional descriptions", () => {
     const { container } = render(<Matrix sides={SIDES.map(side => ({ ...side, description: "Parallel supporting copy." })) as unknown as MatrixProps["sides"]} />);
     expect(container.querySelector("[data-matrix]")).toHaveClass("grid-cols-1", "tablet:grid-cols-2");
@@ -59,6 +67,8 @@ describe("Matrix", () => {
     for (const plate of container.querySelectorAll("[data-variant=plate]")) {
       expect(plate).toHaveClass("tablet-lg:row-span-3", "tablet-lg:grid-rows-subgrid");
       expect(plate.lastElementChild).toHaveAttribute("data-matrix-visual");
+      expect(plate.lastElementChild).toHaveClass("w-full", "min-w-0", "pt-md");
+      expect(plate.lastElementChild).not.toHaveClass("mt-auto");
     }
   });
 
@@ -138,5 +148,29 @@ describe("Matrix", () => {
   it("renders text-free visuals as a valid body form", () => {
     const visual: ReactNode = <svg aria-label="Sample diagram" />;
     expect(() => markup({ sides: SIDES.map(side => ({ ...side, points: undefined, visual })) as unknown as MatrixProps["sides"] })).not.toThrow();
+  });
+  it.each([2, 3, 4, 5, 6] as const)("retains the supplied h%s side labels", headingLevel => {
+    render(<Matrix sides={SIDES} headingLevel={headingLevel} />);
+    for (const side of SIDES) expect(screen.getByRole("heading", { name: String(side.label) }).tagName).toBe(`H${headingLevel}`);
+  });
+  it("retains description-only sides in authored order without manufacturing points", () => {
+    const sides: MatrixProps["sides"] = [
+      { ...SIDES[0], points: undefined, description: "Work moves between inboxes." },
+      { ...SIDES[1], points: undefined, description: "Work stays in one record." },
+    ];
+    const { container } = render(<Matrix sides={sides} />);
+    expect(screen.queryByRole("list")).toBeNull();
+    expect([...container.querySelectorAll("[data-matrix-description]")].map(node => node.textContent)).toEqual(sides.map(side => side.description));
+  });
+  it.each(["base", "sunken", "inverse"] as const)("keeps both %s plates in primary body ink", ground => {
+    const { container } = render(<Matrix sides={SIDES} featured="second" ground={ground} />);
+    for (const side of container.querySelectorAll("[data-matrix-side]")) {
+      expect(side.firstElementChild).toHaveAttribute("data-variant", "plate");
+      for (const point of side.querySelectorAll("li")) {
+        expect(point).toHaveClass(ground === "inverse" ? "text-ink-on-inverse" : "text-ink-primary");
+        expect(point.firstElementChild).toHaveAttribute("aria-hidden", "true");
+      }
+    }
+    expect(container.querySelector("[data-comparison-arrow]")).toBeNull();
   });
 });

@@ -42,7 +42,7 @@ interface ContentSectionBaseProps extends Omit<HTMLAttributes<HTMLDivElement>, "
    * go depends on the shape:
    * - A stacked section with modules or media after its header takes none,
    *   neither under the header nor after the modules: link the module's
-   *   items (`href` on a `FeatureGrid`, `CardGrid`, `TopicList` or
+   *   items (`href` on an `Item`, `Items` collection or
    *   `OrderedStepSequence` item), or put one link in the footnote.
    * - A header-only stacked section (a statement or frame band) takes them
    *   directly after its description, as its last element.
@@ -78,7 +78,7 @@ interface ContentSectionBaseProps extends Omit<HTMLAttributes<HTMLDivElement>, "
   ground?: SectionGround;
   /**
    * The module slot: one or more text modules (a `FeatureGrid`, a
-   * `CardGrid`, a `Comparison`, a `TopicList`, an `OrderedStepSequence`, an
+   * `Items`, a `Matrix`, an `OrderedStepSequence`, an
    * `Faq`, a `StatusList`, or a combination), each rendered without its own
    * heading region.
    */
