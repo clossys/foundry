@@ -292,3 +292,91 @@ test("opaque content: a sha256-pinned governance/opaque-content-exemptions.json 
   assert.match(out, /ARTIFACT PASS/);
   assert.match(out, /opaque-content-exemptions\.json/, "the PASS message should still name the exemption registry rather than claiming a blanket clean tarball");
 });
+
+
+// Structural shipped-test regressions use supplied synthetic tarballs. The
+// fixture's fake npm executable fails if this scan ever tries to repack.
+async function scanShippedPaths(t, paths) {
+  const item = await fixture();
+  t.after(() => rm(item.root, { recursive: true, force: true }));
+  const registry = "https://registry.example.test";
+  await writeFile(join(item.root, "package-scope.json"), JSON.stringify({ scope: "@example", registry }));
+  const denylist = join(item.root, "denylist.json");
+  await writeFile(denylist, JSON.stringify({ version: "synthetic-artifact-test", terms: [{ pattern: "syntheticneverpresentcanary", why: "synthetic test canary", severity: "high" }], neutralize: [] }));
+  const manifest = JSON.stringify({ name: "@example/artifact", version: "1.0.0", license: "MIT", publishConfig: { registry } });
+  await writeFile(join(item.pkg, "package.json"), manifest);
+  const archive = join(item.root, "archive", "package");
+  await mkdir(archive, { recursive: true });
+  await writeFile(join(archive, "package.json"), manifest);
+  await writeFile(join(archive, "README.md"), "# Example package\n");
+  await writeFile(join(archive, "LICENSE"), "MIT\n");
+  for (const path of paths) {
+    const file = join(archive, path);
+    await mkdir(join(file, ".."), { recursive: true });
+    await writeFile(file, path.endsWith(".json") ? '{"example":true}\n' : "example\n");
+  }
+  const tarball = join(item.root, "shipped-paths.tgz");
+  await execFile("tar", ["-czf", tarball, "-C", join(item.root, "archive"), "package"]);
+  const result = await run(item, ["--tarball", tarball, "--denylist", denylist, "--require-denylist", "--json"]);
+  assert.equal(existsSync(item.marker), false, "supplied tarball scans must not invoke npm");
+  const report = JSON.parse(result.stdout);
+  assert.equal(report.contentExit, 0, report.contentScan);
+  return { result, report };
+}
+
+function assertShippedTestFindings(result, report, paths) {
+  assert.equal(result.code, 1, JSON.stringify(report));
+  assert.deepEqual(report.structural.map(({ kind, detail, severity }) => ({ kind, detail, severity })).sort((a, b) => a.detail.localeCompare(b.detail)),
+    paths.map((path) => ({ kind: "test-file", detail: `test file shipped: ${path}`, severity: "high" })).sort((a, b) => a.detail.localeCompare(b.detail)));
+}
+
+test("artifact test paths: JSON test and spec snapshots are refused from supplied tarballs", async (t) => {
+  const paths = ["src/catalog/legacy.test.json", "src/catalog/legacy.spec.json"];
+  const { result, report } = await scanShippedPaths(t, paths);
+  assertShippedTestFindings(result, report, paths);
+});
+
+test("artifact test paths: whole fixture directory segments are refused regardless of file extension", async (t) => {
+  const paths = ["__fixtures__/legal.html", "src/views/__fixtures__/document.json", "src/views/__fixtures__/nested/copy.txt"];
+  const { result, report } = await scanShippedPaths(t, paths);
+  assertShippedTestFindings(result, report, paths);
+});
+
+test("artifact test paths: existing TypeScript, JavaScript, and __tests__ refusals remain high severity", async (t) => {
+  const paths = ["src/a.test.ts", "src/a.test.tsx", "src/a.spec.js", "src/a.spec.mjs", "src/a.test.cjs", "src/__tests__/copy.txt"];
+  const { result, report } = await scanShippedPaths(t, paths);
+  assertShippedTestFindings(result, report, paths);
+});
+
+test("artifact test paths: runtime JSON, examples, and partial fixture names remain publishable", async (t) => {
+  const paths = ["src/runtime.json", "templates/examples/document.json", "src/contest.json", "src/test.json", "src/legacy.test.json.schema.json", "src/legacy.test.json.backup", "src/__fixtures__-catalog/document.json", "src/prefix__fixtures__/document.json", "src/__fixtures__.json", "src/__tests__-examples/document.json"];
+  const { result, report } = await scanShippedPaths(t, paths);
+  assert.equal(result.code ?? 0, 0, JSON.stringify(report));
+  assert.deepEqual(report.structural, []);
+});
+
+
+test("artifact test paths: JSON5 and JSONC test snapshots are refused from supplied tarballs", async (t) => {
+  const paths = ["src/catalog/legacy.test.json5", "src/catalog/legacy.spec.jsonc"];
+  const { result, report } = await scanShippedPaths(t, paths);
+  assertShippedTestFindings(result, report, paths);
+});
+
+test("artifact test paths: all terminal test extensions and case variants are refused", async (t) => {
+  const paths = ["src/a.test.html", "src/a.spec.snap", "src/a.test.txt", "src/a.TEST.JSON", "src/a.SpEc.JsOn5", "src/a.TEST.MTS", "src/a.SPEC.CTS", "src/a.TEST.TSX", "src/a.SPEC.CJS", "src/a.test.jsx", "src/a.spec.mjs"];
+  const { result, report } = await scanShippedPaths(t, paths);
+  assertShippedTestFindings(result, report, paths);
+});
+
+test("artifact test paths: whole snapshot and mock segments are refused case-insensitively", async (t) => {
+  const paths = ["__snapshots__/legacy.snap", "src/views/__snapshots__/nested/document.json5", "__mocks__/adapter.ts", "src/views/__mocks__/nested/copy.txt", "src/__Fixtures__/legal.html", "src/__Tests__/copy.json", "src/__Snapshots__/legacy.snap", "src/__MOCKS__/adapter.js"];
+  const { result, report } = await scanShippedPaths(t, paths);
+  assertShippedTestFindings(result, report, paths);
+});
+
+test("artifact test paths: runtime JSON5 and partial snapshot or mock names remain publishable", async (t) => {
+  const paths = ["src/runtime.json5", "src/runtime.jsonc", "templates/examples/document.json5", "src/contest.json5", "src/test.json5", "src/legacy.test.json5.schema.json", "src/legacy.TEST.JSON5.backup", "src/legacy.spec.html.template", "src/__snapshots__-catalog/document.json5", "src/prefix__snapshots__/document.json5", "src/__snapshots__.json5", "src/__mocks__-catalog/adapter.js", "src/prefix__mocks__/adapter.js", "src/__mocks__.json5", "src/__SNAPSHOTS__-examples/document.json5", "src/prefix__MOCKS__/document.json5"];
+  const { result, report } = await scanShippedPaths(t, paths);
+  assert.equal(result.code ?? 0, 0, JSON.stringify(report));
+  assert.deepEqual(report.structural, []);
+});

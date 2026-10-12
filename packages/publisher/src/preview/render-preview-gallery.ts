@@ -11,10 +11,14 @@ import { renderWebDocument } from "../web/renderWebDocument.js";
 import { CaptureView } from "../web/views/CaptureView.js";
 import { CollectionView } from "../web/views/CollectionView.js";
 import { DocumentView } from "../web/views/DocumentView.js";
-import { SectionedView } from "../web/views/SectionedView.js";
+import { LandingView } from "../web/views/LandingView.server.js";
+import { heroCompactCatalogDocument, contentCatalogCopyResolver } from "./fixture-content-catalog.js";
+import { SectionedView } from "../web/views/SectionedView.server.js";
 import { BrandGuideView } from "../web/views/BrandGuideView.js";
 import { SystemAuditView } from "../web/views/SystemAuditView.js";
 import { CERTIFICATION_FIXTURE_COPY } from "./certification-fixtures.js";
+import { buildCatalogFunctionPages, buildContentCatalogHtml, CONTENT_CATALOG_FILENAME } from "./render-content-catalog.js";
+import { PREVIEW_UTILITIES_BASENAME, previewUtilitiesSourcePath } from "./preview-stylesheet.js";
 import {
   previewAuthDocument,
   previewCaptureViewProps,
@@ -44,7 +48,6 @@ export const PREVIEW_GALLERY_FILENAME = "gallery.html";
 export const BRAND_GUIDE_FILENAME = "guide.html";
 export const SYSTEM_AUDIT_FILENAME = "audit.html";
 const DESIGNER_TOKENS_BASENAME = "designer-tokens.css";
-const DESIGNER_COMPILED_BASENAME = "designer-compiled.css";
 const BRAND_COPY_BASENAME = "brand.css";
 
 export interface PreviewBrandValidationFailure {
@@ -87,11 +90,20 @@ export interface PreviewGalleryEntry {
 
 export function renderPreviewGalleryEntries(): PreviewGalleryEntry[] {
   const marketing = renderToStaticMarkup(renderWebDocument(previewMarketingDocument, { groups: previewMarketingGroups }).element);
-  const sectioned = renderToStaticMarkup(
+  let sectioned = renderToStaticMarkup(
     createElement(SectionedView, {
       document: resolveSectionedViewDocument(previewSectionedDocument, previewCopyResolver),
     }),
   );
+  // Stable, nonvisual fragment targets belong to this preview, not the document.
+  for (const section of previewSectionedDocument.sections) {
+    const target = `id="${section.id}"`;
+    const anchor = `published-kind-${section.id}`;
+    if (sectioned.split(target).length !== 2 || sectioned.includes(`id="${anchor}"`)) throw new Error(`Published preview needs one unique ${section.id} target.`);
+    const end = sectioned.indexOf(">", sectioned.indexOf(target));
+    if (end < 0) throw new Error("Published preview target needs an opening element.");
+    sectioned = sectioned.slice(0, end + 1) + `<span id="${anchor}" data-published-kind="${section.kind}" data-published-section="${section.id}" class="sr-only" aria-hidden="true"></span>` + sectioned.slice(end + 1);
+  }
   const auth = renderToStaticMarkup(renderWebDocument(previewAuthDocument).element);
   const error = renderToStaticMarkup(renderWebDocument(previewErrorDocument).element);
   const capture = renderToStaticMarkup(createElement(CaptureView, previewCaptureViewProps));
@@ -110,6 +122,7 @@ export function renderPreviewGalleryEntries(): PreviewGalleryEntry[] {
   return [
     { view: "MarketingView", markup: marketing },
     { view: "SectionedView", markup: sectioned },
+    { view: "LandingView (hero-compact)", markup: renderToStaticMarkup(createElement(LandingView, { document: resolveSectionedViewDocument(heroCompactCatalogDocument, contentCatalogCopyResolver), header: "reserved", peek: false })) },
     { view: "AuthView", markup: auth },
     { view: "ErrorView", markup: error },
     { view: "CaptureView", markup: capture },
@@ -144,7 +157,7 @@ export function buildPreviewGalleryHtml(entries: PreviewGalleryEntry[]): string 
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Publisher shipped view preview</title>
   <link rel="stylesheet" href="${DESIGNER_TOKENS_BASENAME}" />
-  <link rel="stylesheet" href="${DESIGNER_COMPILED_BASENAME}" />
+  <link rel="stylesheet" href="${PREVIEW_UTILITIES_BASENAME}" />
   <link rel="stylesheet" href="${BRAND_COPY_BASENAME}" />
   <style>
     body { margin: 0; font-family: system-ui, sans-serif; background: var(--color-surface-base, #f5f5f5); }
@@ -245,7 +258,7 @@ export interface WritePreviewGalleryOptions {
   outputDir: string;
   /**
    * Path to a brand-asset roster JSON file (`BrandAssetEntry[]`). Optional:
-   * when omitted, only `gallery.html` is written. When given and the roster
+   * when omitted, the gallery, catalog and Launch-pack pages are written. When given and the roster
    * is complete, the public brand guide (`guide.html`) and the internal
    * system audit (`audit.html`) are written beside it.
    */
@@ -258,9 +271,11 @@ export interface WritePreviewGalleryResult {
   entryCount: number;
   guidePath?: string;
   auditPath?: string;
+  /** Path to the function index (`content-catalog.html`), linking the nested catalog pages. */
+  contentCatalogPath: string;
   /** Path to the Launch-pack index (issue #1204's own "views branded ... rendered templates" ask) — links every file this call wrote. */
   indexPath: string;
-  /** Every file this call wrote, as basenames relative to `outputDir`, in write order — `PREVIEW_GALLERY_FILENAME` first, `LAUNCH_PACK_INDEX_FILENAME` last. Does not include the three copied stylesheets. */
+  /** Every file this call wrote, as paths relative to `outputDir`, in write order — `PREVIEW_GALLERY_FILENAME` first, then `CONTENT_CATALOG_FILENAME`, `LAUNCH_PACK_INDEX_FILENAME` last. Does not include the three copied stylesheets. */
   writtenFiles: string[];
 }
 
@@ -317,17 +332,26 @@ export function writePreviewGallery(options: WritePreviewGalleryOptions): WriteP
 
   copyFileSync(validation.brandCssPath, join(outputDir, BRAND_COPY_BASENAME));
   copyFileSync(resolveDesignerStylesheet("tokens.css"), join(outputDir, DESIGNER_TOKENS_BASENAME));
-  copyFileSync(resolveDesignerStylesheet("compiled.css"), join(outputDir, DESIGNER_COMPILED_BASENAME));
+  copyFileSync(previewUtilitiesSourcePath(), join(outputDir, PREVIEW_UTILITIES_BASENAME));
 
   const entries = renderPreviewGalleryEntries();
   const galleryPath = join(outputDir, PREVIEW_GALLERY_FILENAME);
   writeFileSync(galleryPath, buildPreviewGalleryHtml(entries), "utf8");
-  const writtenFiles: string[] = [PREVIEW_GALLERY_FILENAME];
+  const contentCatalogPath = join(outputDir, CONTENT_CATALOG_FILENAME);
+  writeFileSync(contentCatalogPath, buildContentCatalogHtml(), "utf8");
+  const writtenFiles: string[] = [PREVIEW_GALLERY_FILENAME, CONTENT_CATALOG_FILENAME];
+  const catalogPages = buildCatalogFunctionPages({ designerTokens: DESIGNER_TOKENS_BASENAME, utilities: PREVIEW_UTILITIES_BASENAME, brand: BRAND_COPY_BASENAME });
+  mkdirSync(join(outputDir, "catalog"), { recursive: true });
+  for (const entry of catalogPages) {
+    writeFileSync(join(outputDir, entry.file), entry.content, "utf8");
+    writtenFiles.push(entry.file);
+  }
 
   const result: WritePreviewGalleryResult = {
     galleryPath,
     brandCssPath: validation.brandCssPath,
     entryCount: entries.length,
+    contentCatalogPath,
     indexPath: join(outputDir, LAUNCH_PACK_INDEX_FILENAME),
     writtenFiles,
   };
@@ -337,6 +361,11 @@ export function writePreviewGallery(options: WritePreviewGalleryOptions): WriteP
       heading: "Web views",
       description: "Every shipped web view, rendered with fixture copy.",
       links: [{ file: PREVIEW_GALLERY_FILENAME, label: PREVIEW_GALLERY_FILENAME }],
+    },
+    {
+      heading: "Content catalog",
+      description: "Seven function pages with axis examples, compatible recipes and a complete composition.",
+      links: [{ file: CONTENT_CATALOG_FILENAME, label: CONTENT_CATALOG_FILENAME }, ...catalogPages.map(entry => ({ file: entry.file, label: entry.file }))],
     },
   ];
 

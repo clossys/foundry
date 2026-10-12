@@ -593,6 +593,30 @@ const SCOPE_RE = /(?<![A-Za-z0-9._%+-])@([a-z0-9][a-z0-9._-]*)\/[a-z0-9][a-z0-9.
 // end, so this never fires on the slashed form the previous pattern owns.
 const BARE_SCOPE_RE = /(?<![A-Za-z0-9._%+-])@([a-z0-9][a-z0-9._-]*)(?![A-Za-z0-9._/-])/g;
 
+// A container size word can also name an account. Exempt only a complete
+// qualified Tailwind class, such as `@md:flex-row`, or its escaped CSS selector.
+// Built-in sizes, optional min/max and a lowercase named container are covered.
+// Arbitrary/custom sizes, utilities with brackets and hex escapes stay outside
+// this lexical subset. An adjacent account or forge URL is still scanned.
+const CONTAINER_SIZE = "(?:3xs|2xs|xs|sm|md|lg|xl|[2-7]xl)";
+const CONTAINER_VARIANT = `@(?:(?:min|max)-)?${CONTAINER_SIZE}(?:/[a-z][a-z0-9_-]*)?`;
+const ESCAPED_CONTAINER_VARIANT = String.raw`\\@(?:(?:min|max)-)?${CONTAINER_SIZE}(?:\\/[a-z][a-z0-9_-]*)?`;
+const CONTAINER_CLASS_END = String.raw`(?=$|[\s"'<>(){},;]|\x60)`;
+const CONTAINER_CLASS_RE = new RegExp(
+  String.raw`(?<![A-Za-z0-9._%+/\\-])${CONTAINER_VARIANT}:(?:(?:${CONTAINER_VARIANT}|[a-z][a-z0-9-]*):)*[a-z][a-z0-9-]*${CONTAINER_CLASS_END}`,
+  "g",
+);
+const ESCAPED_CONTAINER_CLASS_RE = new RegExp(
+  String.raw`\.(?:[a-z][a-z0-9-]*\\:)*${ESCAPED_CONTAINER_VARIANT}\\:(?:(?:${ESCAPED_CONTAINER_VARIANT}|[a-z][a-z0-9-]*)\\:)*[a-z][a-z0-9-]*${CONTAINER_CLASS_END}`,
+  "g",
+);
+
+function containerClassSpans(line) {
+  return [CONTAINER_CLASS_RE, ESCAPED_CONTAINER_CLASS_RE].flatMap((re) =>
+    [...line.matchAll(re)].map((match) => [match.index, match.index + match[0].length]),
+  );
+}
+
 // The account-and-repository half of a GitHub URL — web, ssh, raw content and
 // API. A trailing `.git` is part of the clone URL, not part of the repository
 // name, and is stripped before comparison (see `normalizeRepo`).
@@ -662,6 +686,10 @@ for (const file of files) {
   contents = contents.replace(/[\u0000\u200B\u200C\u200D\u2060\u180E\u00AD\uFEFF]/g, "");
 
   contents.split("\n").forEach((line, index) => {
+    const syntaxSpans = containerClassSpans(line);
+    const isContainerSyntax = (match) => syntaxSpans.some(([start, end]) =>
+      match.index >= start && match.index + match[0].length <= end,
+    );
     const record = (kind, reference, name) => {
       referenceCount++;
       if (name !== null) return;
@@ -700,9 +728,11 @@ for (const file of files) {
     };
 
     for (const match of line.matchAll(SCOPE_RE)) {
+      if (isContainerSyntax(match)) continue;
       record("npm-scope", `@${match[1]}`, admittedScope(match[1], rel));
     }
     for (const match of line.matchAll(BARE_SCOPE_RE)) {
+      if (isContainerSyntax(match)) continue;
       if (NON_ACCOUNT_AT_TOKENS.has(match[1].toLowerCase())) continue;
       record("bare-scope", `@${match[1]}`, admittedScope(match[1], rel));
     }

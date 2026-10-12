@@ -110,6 +110,32 @@ describe("renderStructuredDocument — happy path", () => {
   });
 });
 
+describe("renderStructuredDocument — section bodies", () => {
+  it("returns each top-level section's blocks by id, without its wrapper or heading, from the same render", () => {
+    const { sectionBodies, resolutions } = renderStructuredDocument(fullDoc, { resolveCopyId: fakeResolver(fullDocCopy) });
+
+    expect(Object.keys(sectionBodies)).toEqual(["overview", "pricing"]);
+    const overview = renderToStaticMarkup(sectionBodies.overview);
+    expect(overview).not.toContain('<section id="overview">');
+    expect(overview).not.toContain("<h2>Overview</h2>");
+    expect(overview.startsWith("<p>Read this first.")).toBe(true);
+    // A nested section is one of the body's blocks and keeps its own heading.
+    expect(overview).toContain('<section id="overview-details"><h3>More detail</h3>');
+    const pricing = renderToStaticMarkup(sectionBodies.pricing);
+    expect(pricing.startsWith("<table>")).toBe(true);
+    expect(pricing).not.toContain("Pricing</h2>");
+    // Nothing is resolved twice: one resolution per CopyRef, headings included.
+    expect(resolutions.filter((resolution) => resolution.ref.id === "acme.overview.p1")).toHaveLength(1);
+    expect(resolutions.map((resolution) => resolution.ref.id)).toContain("acme.pricing.heading");
+  });
+
+  it("returns an empty body for a section with no blocks", () => {
+    const doc: StructuredDocument = { id: "d", title: ref("t"), sections: [{ kind: "section", id: "only", level: 2, heading: ref("h"), blocks: [] }] };
+    const { sectionBodies } = renderStructuredDocument(doc, { resolveCopyId: fakeResolver({ t: "T", h: "H" }) });
+    expect(renderToStaticMarkup(sectionBodies.only)).toBe("");
+  });
+});
+
 describe("renderStructuredDocument — inline emphasis and column styles", () => {
   const emphasisCopy: Record<string, string> = {
     "acme.title": "Emphasis",

@@ -71,10 +71,10 @@
  *
  *   :root[data-brand-bound][data-theme="dark"] { ... }
  *
- * Only the 33 tokens tokens.css itself marks BOTH brandable and
+ * Only the 37 tokens tokens.css itself marks BOTH brandable and
  * theme-dependent need a value in the two dark blocks: every SURFACE,
- * INK (except the ink-on-accent alias), LINE, and ACCENT token, and all
- * 12 STATUS tokens. FONT and RADIUS stay in the light block only — a
+ * INK (except the ink-on-accent alias), LINE, and ACCENT token, the four
+ * CONTROL tonal fills, and all 12 STATUS tokens. FONT and RADIUS stay in the light block only — a
  * typeface or a corner radius is a brand decision, not a theme one, so
  * the same value serves both themes and needs no restating.
  * `src/dark-mode-cascade.test.ts` in this package verifies the resulting
@@ -122,6 +122,19 @@
   --color-accent-tint:             ;
   --color-accent-on-inverse:       ;
 
+  /* ─── CONTROL (4 required, 1 optional — the tonal and quiet button
+   * tiers). The tonal fills are your primary ink at low alpha (8%, 12%
+   * on hover); the inverse pair is your on-inverse ink at 12% and 16%.
+   * Primary ink on a tonal fill, and on-inverse ink on an inverse tonal
+   * fill, must hit WCAG AA. --color-control-quiet is the chevron text
+   * button's ink; it defaults to your primary ink, so set it only to
+   * point it at your accent ink (it must still hit AA on every ground). */
+  --color-control-tonal:               ;
+  --color-control-tonal-hover:         ;
+  --color-control-tonal-inverse:       ;
+  --color-control-tonal-inverse-hover: ;
+  /* --color-control-quiet: var(--color-ink-primary); */
+
   /* ─── STATUS (12 required — 4 states x {color, text, tint}) ───── */
   --color-status-success:          ;
   --color-status-success-text:     ;
@@ -154,6 +167,15 @@
    * stay as shipped. */
   --radius-default:                ;
 
+  /* ─── PANEL (4 optional — the identity of cards, plates and product
+       panels. Each defaults to today's look: the surface radius, a
+       hairline edge in the base line, and the floating lift. Bind them
+       to roles, not raw colours, where you can) ─────────────────────── */
+  /* --radius-panel:       var(--radius-surface); */
+  /* --ui-border-panel:    var(--ui-border-hairline); */
+  /* --color-line-panel:   var(--color-line-base); */
+  /* --ui-elevation-panel: var(--ui-elevation-floating); */
+
   /* ─── WIDTH (3 optional — override only if your brand uses
        non-default reading/content widths) ───────────────────────── */
   /* --ui-width-content-max: 64rem; */
@@ -174,9 +196,9 @@
 /* ════════════════════════════════════════════════════════════════════
  * DARK · OS PREFERENCE
  * ────────────────────────────────────────────────────────────────────
- * Same 33 required slots as the light block above — every SURFACE, INK
- * (except the `-on-accent` alias, which inherits), LINE, ACCENT, and
- * STATUS token — filled in with this brand's dark values. See
+ * Same 37 required slots as the light block above — every SURFACE, INK
+ * (except the `-on-accent` alias, which inherits), LINE, ACCENT, CONTROL
+ * tonal, and STATUS token — filled in with this brand's dark values. See
  * tokens.css's header comment for why the `:not([data-theme="light"])`
  * guard is load-bearing, not decorative.
  * ════════════════════════════════════════════════════════════════════ */
@@ -212,6 +234,12 @@
     --color-accent-tint:             ;
     --color-accent-on-inverse:       ;
 
+    /* ─── CONTROL (4 required) ─────────────────────────────────── */
+    --color-control-tonal:               ;
+    --color-control-tonal-hover:         ;
+    --color-control-tonal-inverse:       ;
+    --color-control-tonal-inverse-hover: ;
+
     /* ─── STATUS (12 required) ─────────────────────────────────── */
     --color-status-success:          ;
     --color-status-success-text:     ;
@@ -232,7 +260,7 @@
 /* ════════════════════════════════════════════════════════════════════
  * DARK · EXPLICIT OVERRIDE
  * ────────────────────────────────────────────────────────────────────
- * Same 33 slots, same values, as the media-query block above — forces
+ * Same 37 slots, same values, as the media-query block above — forces
  * this brand's dark theme even on a light-OS device. Keep the two dark
  * blocks identical; nothing enforces that for a brand's own file the way
  * `src/theme-parity.test.ts` does for this package's own tokens.css.
@@ -267,6 +295,12 @@
   --color-accent-hover:            ;
   --color-accent-tint:             ;
   --color-accent-on-inverse:       ;
+
+  /* ─── CONTROL (4 required) ───────────────────────────────────── */
+  --color-control-tonal:               ;
+  --color-control-tonal-hover:         ;
+  --color-control-tonal-inverse:       ;
+  --color-control-tonal-inverse-hover: ;
 
   /* ─── STATUS (12 required) ───────────────────────────────────── */
   --color-status-success:          ;

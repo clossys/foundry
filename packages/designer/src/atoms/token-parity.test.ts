@@ -244,6 +244,11 @@ const ANY_RECORD_MAP_RE = /const\s+([A-Za-z_]+)\s*:\s*Record</g;
  * escape both.
  */
 const KNOWN_NON_CLASS_MAPS = new Set([
+  // blocks/scene/Scene.tsx — document-format labels, never class names.
+  "formats",
+  // blocks/FeatureGrid.tsx — treatment -> linked-item frame name (a
+  // stretched-link.tsx key), not a class string.
+  "LINK_FRAMES",
   "TREND_GLYPH",
   "TREND_LABEL",
   // charts/internal/chart-vars.ts — slot-number -> fallback-hex lookups fed
@@ -256,6 +261,11 @@ const KNOWN_NON_CLASS_MAPS = new Set([
   // read via `style.width`/`style.height`, never a Tailwind class name (the
   // same reason `CHART_*_FALLBACK` above is non-class, not a scan gap).
   "SIZE_VARS",
+  // atoms/StatusMark.tsx — tone -> shape name (rendered as `data-shape`)
+  // and shape name -> SVG element; the mark's colour class lives in
+  // `MARK_CLASSES`, which is scanned.
+  "SHAPES",
+  "SHAPE_PATHS",
   // token-gate.ts — StyleCandidateKind -> human-readable report label
   // ("hex color", "arbitrary-value class", ...), interpolated into a
   // TokenGateFinding's `message` string, never a Tailwind class name.

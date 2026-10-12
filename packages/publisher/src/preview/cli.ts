@@ -2,9 +2,10 @@
 /**
  * `publisher-preview` — the launch pack's v0 preview gallery: every shipped
  * web view, the site template's own routes, the materials mini-site
- * (company overviews and pitch deck), the email kit, and every share/
- * social card, all rendered against a consumer `brand.css` after
- * Designer's brand-file coverage check passes (issue #1204/#1207/#1208).
+ * (company overviews and pitch deck), the email kit, every share/
+ * social card, and the content catalog (a function index and seven pages of native examples), all rendered against a
+ * consumer `brand.css` after Designer's brand-file coverage check passes
+ * (issue #1204/#1207/#1208).
  * Fixture copy lives in this package; Writer and Strategist are unchanged.
  * When a brand-asset roster JSON file is also given, and it is complete,
  * also writes the public brand guide (`guide.html`) and the internal
@@ -22,7 +23,7 @@ import { loadBrandAssetRoster, PREVIEW_GALLERY_FILENAME, validateBrandForPreview
 const USAGE = `Usage: publisher-preview <brand.css> <output-directory> [roster.json]
 
   brand.css            Path to the consumer brand stylesheet. Required.
-  output-directory     Directory where gallery.html and copied styles are written. Required.
+  output-directory     Directory where gallery.html, content-catalog.html, catalog/ pages and copied styles are written. Required.
   roster.json           Path to a brand-asset roster (BrandAssetEntry[]). Optional: when given
                         and complete, also writes guide.html and audit.html.
 
@@ -124,6 +125,8 @@ export function main(argv: string[]): number {
     const result = writePreviewGallery({ brandCssPath: brandPath, outputDir: resolve(args.outputDir), rosterPath });
     console.log(`Wrote ${PREVIEW_GALLERY_FILENAME} (${result.entryCount} views) to ${resolve(args.outputDir)}`);
     console.log(`Brand file: ${result.brandCssPath}`);
+    console.log(`Wrote the content catalog: ${result.contentCatalogPath}`);
+    for (const file of result.writtenFiles.filter(file => file.startsWith("catalog/"))) console.log(`Wrote ${file}`);
     if (result.guidePath && result.auditPath) {
       console.log(`Wrote brand guide and system audit: ${result.guidePath}, ${result.auditPath}`);
     }

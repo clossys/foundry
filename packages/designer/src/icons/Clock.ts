@@ -1,4 +1,4 @@
-// GENERATED FILE — do not edit by hand. Run `node scripts/generate-icons.mjs`.
+// GENERATED FILE — do not edit by hand. Run `node scripts/generate-icons.mjs` from a source checkout; the generator does not ship with this package.
 // Source: kebab name "clock" — see THIRD-PARTY-NOTICES.md for the
 // origin of this path data.
 import type { IconNode } from "./types.js";

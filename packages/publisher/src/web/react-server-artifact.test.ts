@@ -66,14 +66,86 @@ function runProbe(reactServer: boolean) {
           { id: "hero", kind: "hero", ground: "base", heading: "Server-safe sections" },
           { id: "steps", kind: "ordered-step-sequence", ground: "sunken", heading: "Steps", items: [{ id: "one", ordinal: "1", heading: "Start" }] },
           { id: "status", kind: "status-list", ground: "inverse", heading: "Status", labels: { available: "Available", partial: "Partial", planned: "Planned", dispositions: { "not-offered": "Not offered" } }, groups: [{ id: "core", heading: "Core", items: [{ id: "one", label: "Sections", state: "available" }] }] },
+          {
+            id: "content",
+            kind: "content-section",
+            ground: "base",
+            heading: "Content band",
+            size: "standard",
+            layout: "split-end",
+            block: { type: "items", arrangement: "rows", columns: 1, order: "none", reveal: "all", treatment: "rule", scale: "item", items: [{ id: "a", heading: "Server topic" }, { id: "b", heading: "Second topic" }] },
+            media: { type: "specimen", label: "A placeholder record shown as native markup", panel: { id: "record", title: "Server record", parts: [{ id: "fields", type: "fields", items: [{ id: "a", label: "Server field", value: "Server value" }] }] } },
+          },
         ],
       },
     });
+
+    const { createCopyResolver } = await import("@clossys/writer");
+    const { resolveSectionedViewDocument } = await import("@clossys/publisher/core");
+    const copy = { heading:"Packed landing page", question:"Packed question?", answer:"Packed answer.", legacy:"Published questions" };
+    const ref = key => ({id:"landing."+key});
+    const resolver = createCopyResolver({id:"landing",locale:"en",revision:"1",source:{kind:"consumer",reference:"packed-proof"},entries:Object.entries(copy).map(([key,text])=>({id:ref(key).id,text,context:"Packed proof",status:"approved"}))});
+    const landingDocument = resolveSectionedViewDocument({id:"landing",sections:[{id:"landing-hero",kind:"hero",ground:"inverse",heading:ref("heading")},{id:"landing-content",kind:"content-section",heading:ref("heading"),block:{type:"items",recipe:"faq",items:["one","two","three","four"].map(id=>({id,heading:ref("question"),description:ref("answer")}))}},{id:"landing-legacy",kind:"faq",ground:"sunken",layout:"split",heading:ref("legacy"),items:["one","two","three","four"].map(id=>({id,question:ref("question"),answer:ref("answer")}))}]},resolver);
+    const landing = web.LandingView({document:landingDocument,header:"reserved",peek:false});
+    const landingCase = (kind, layout) => {
+      const sections = landingDocument.sections
+        .filter(section => section.kind === "hero" || section.kind === kind)
+        .map(section => section.kind === "faq" ? { ...section, layout } : section);
+      const ids = new Set(sections.map(section => section.id));
+      return web.LandingView({
+        document: {
+          ...landingDocument,
+          sections,
+          ...(landingDocument.viewGrounds === undefined ? {} : {
+            viewGrounds: landingDocument.viewGrounds.filter(id => ids.has(id)),
+          }),
+        },
+        header: "reserved",
+        peek: false,
+      });
+    };
+    const landingCases = {
+      canonical: landingCase("content-section"),
+      publishedSplit: landingCase("faq", "split"),
+      publishedStacked: landingCase("faq", "stacked"),
+    };
+
+    const contractCopy = {
+      heading: "Packed contract band", before: "Packed before", after: "Packed after", lead: "Optional supporting lead.",
+      point: "One shared source", other: "Clear ownership", team: "Team", service: "Service",
+      step1: "Share", step2: "Check", step3: "Review", step4: "Return", key: "Record anatomy",
+      label: "A sample record showing labeled fields and a visible footer for this packed contract proof.",
+    };
+    const contractRef = key => ({ id: "contract." + key });
+    const contractResolver = createCopyResolver({ id: "contract", locale: "en", revision: "1", source: { kind: "consumer", reference: "packed-contract-proof" }, entries: Object.entries(contractCopy).map(([key, text]) => ({ id: contractRef(key).id, text, context: "Packed contract proof", status: "approved" })) });
+    const contractItems = ["step1", "step2", "step3"].map(id => ({ id, heading: contractRef(id) }));
+    const contractBand = (id, fields) => ({ id, kind: "content-section", heading: contractRef("heading"), ...fields });
+    const contractLanes = (arrangement, columns) => contractBand("packed-lanes-" + arrangement + (columns ?? ""), {
+      block: { type: "items", recipe: "steps", arrangement, ...(columns === undefined ? {} : { columns }),
+        lanes: [{ id: "team", label: contractRef("team") }, { id: "service", label: contractRef("service") }],
+        items: ["step1", "step2", "step3", "step4"].map((id, index) => ({ id, heading: contractRef(id), lane: index === 1 || index === 2 ? "service" : "team" })),
+      },
+    });
+    const contractKey = layout => contractBand("packed-key-" + layout, {
+      layout, media: { type: "specimen", label: contractRef("label"),
+        panel: { id: "record", title: contractRef("key"), parts: [{ id: "fields", type: "fields", label: contractRef("point"), items: [{ id: "field", label: contractRef("point"), value: contractRef("other") }] }], footer: { note: contractRef("lead") } },
+        key: { label: contractRef("key"), items: ["header", "fields", "footer"].map(target => ({ id: target, target, heading: contractRef("key"), description: contractRef("lead") })) },
+      },
+    });
+    const contractDocument = resolveSectionedViewDocument({ id: "packed-contract", sections: [
+      contractBand("packed-statement", { block: { type: "items", recipe: "statement", items: contractItems } }),
+      contractBand("packed-index", { block: { type: "items", recipe: "link-index", items: contractItems.map(item => ({ ...item, href: "/packed/" + item.id })) } }),
+      contractBand("packed-matrix", { block: { type: "matrix", featured: "after", sides: ["before", "after"].map(id => ({ id, heading: contractRef(id), description: contractRef("lead"), points: [contractRef("point"), contractRef("other")] })) } }),
+      contractLanes("stacked"), contractLanes("columns", 2), contractLanes("columns", 3),
+      ...["stacked", "split-start", "split-end"].map(contractKey),
+    ] }, contractResolver);
+    const contractView = web.SectionedView({ document: contractDocument });
 
     const result = { keys: Object.keys(web).sort(), summaryClasses: [] };
     if (${reactServer ? "true" : "false"}) {
       const tags = [];
       const text = [];
+      const nodes = [];
       const visit = (node) => {
         if (node === null || node === undefined || typeof node === "boolean") return;
         if (typeof node === "string" || typeof node === "number") { text.push(String(node)); return; }
@@ -81,6 +153,11 @@ function runProbe(reactServer: boolean) {
         if (typeof node.type === "function") { visit(node.type(node.props)); return; }
         if (typeof node.type === "string") {
           tags.push(node.type);
+          nodes.push({ tag: node.type, id: node.props?.id, text: typeof node.props?.children === "string" ? node.props.children : undefined,
+            className: node.props?.className, items: Object.hasOwn(node.props ?? {}, "data-items"), arrangement: node.props?.["data-arrangement"], columns: node.props?.["data-columns"],
+            legendSide: node.props?.["data-legend-side"], variant: node.props?.["data-variant"], item: Object.hasOwn(node.props ?? {}, "data-item"),
+            laneLabel: Object.hasOwn(node.props ?? {}, "data-item-lane-label"), featured: node.props?.["data-featured"],
+          });
           if (node.type === "summary") result.summaryClasses.push(node.props?.className ?? "");
         }
         visit(node.props?.children);
@@ -89,9 +166,41 @@ function runProbe(reactServer: boolean) {
       visit(sectioned);
       result.tags = tags;
       result.text = text;
+      const capture = node => {
+        const tagCount = tags.length;
+        const textCount = text.length;
+        const summaryCount = result.summaryClasses.length;
+        const nodeCount = nodes.length;
+        visit(node);
+        const value = {
+          tags: tags.slice(tagCount),
+          text: text.slice(textCount),
+          summaryClasses: result.summaryClasses.slice(summaryCount),
+          nodes: nodes.slice(nodeCount),
+        };
+        tags.length = tagCount;
+        text.length = textCount;
+        result.summaryClasses.length = summaryCount;
+        nodes.length = nodeCount;
+        return value;
+      };
+      result.contract = capture(contractView);
+      const combinedLanding = capture(landing);
+      result.landingTags = combinedLanding.tags;
+      result.landingText = combinedLanding.text;
+      result.landingCases = Object.fromEntries(
+        Object.entries(landingCases).map(([name, node]) => [name, capture(node)]),
+      );
     } else {
       const { renderToStaticMarkup } = await import("react-dom/server");
       result.html = renderToStaticMarkup([element, sectioned]);
+      result.contract = { html: renderToStaticMarkup(contractView) };
+      result.landingHtml=renderToStaticMarkup(landing);
+      result.landingCases = Object.fromEntries(
+        Object.entries(landingCases).map(([name, node]) => [name, {
+          html: renderToStaticMarkup(node),
+        }]),
+      );
     }
     process.stdout.write(JSON.stringify(result));
   `;
@@ -104,6 +213,19 @@ function runProbe(reactServer: boolean) {
     text?: string[];
     html?: string;
     summaryClasses: string[];
+    contract?: {
+      html?: string;
+      tags?: string[];
+      text?: string[];
+      nodes?: Array<{ tag: string; id?: string; text?: string; className?: string; items: boolean; arrangement?: string; columns?: number; legendSide?: string; variant?: string; item: boolean; laneLabel: boolean; featured?: string }>;
+    };
+    landingHtml?: string; landingTags?: string[]; landingText?: string[];
+    landingCases?: Record<"canonical" | "publishedSplit" | "publishedStacked", {
+      html?: string;
+      tags?: string[];
+      text?: string[];
+      summaryClasses?: string[];
+    }>;
   };
 }
 
@@ -144,9 +266,12 @@ describe("packed Publisher web React-server boundary", () => {
     expect(server.summaryClasses[0]).toContain("focus-visible:outline-accent");
   });
 
-  it("keeps the packed native summary's list-item disclosure marker", () => {
+  it("hides the packed native summary's marker in favour of the Designer chevron", () => {
     expect(server.summaryClasses).toHaveLength(1);
-    expect(server.summaryClasses[0]).not.toMatch(/\b(?:flex|inline-flex|block|list-none)\b/);
+    expect(server.summaryClasses[0]).toContain("summary-marker-none");
+    // The chevron is the Designer Icon (a forwardRef the probe does not
+    // descend into); what must not ship is a text-glyph marker.
+    expect(server.text ?? []).not.toContain("▸");
   });
 
   it("keeps the ordinary packed entry on the React Aria FAQ implementation", () => {
@@ -164,6 +289,80 @@ describe("packed Publisher web React-server boundary", () => {
     expect(server.tags).toEqual(expect.arrayContaining(["ol", "dl"]));
     expect(server.text).toEqual(expect.arrayContaining(["Server-safe sections", "Steps", "Status"]));
   });
+
+  it("renders a packed content-section band (text block and specimen) through server-safe blocks on both targets", () => {
+    expect(server.tags).toEqual(expect.arrayContaining(["figure", "ul"]));
+    expect(server.text).toEqual(expect.arrayContaining(["Content band", "Server topic", "Server record", "Server field", "Server value"]));
+    expect(normal.html).toContain('data-layout="split-end"');
+    expect(normal.html).toMatch(/<figure[^>]*data-specimen/);
+  });
+
+  it("renders the pruned catalog contract from packed ordinary and real react-server entries", () => {
+    const nodes = server.contract!.nodes!; const ordinary = normal.contract!.html!;
+    const statement = nodes.find(node => node.id === "packed-statement")!;
+    expect(statement.className?.split(" ")).toContain("items-center");
+    expect(ordinary).toMatch(/id="packed-statement"[^>]*class="[^"]*items-center/);
+    for (const text of ["Packed before", "Packed after"]) {
+      expect(nodes.filter(node => node.tag === "h3" && node.text === text)).toHaveLength(1);
+      expect([...ordinary.matchAll(/<h3\b[^>]*>([^<]*)<\/h3>/g)].map(match => match[1])).toContain(text);
+    }
+    expect(nodes.filter(node => node.item && node.variant === "plate")).toHaveLength(3);
+    expect(ordinary.match(/data-treatment="plate"/g)).toHaveLength(4);
+    const laneLists = nodes.filter(node => node.items && node.tag === "ol");
+    expect(laneLists).toHaveLength(3);
+    expect(laneLists.map(node => [node.arrangement, node.columns])).toEqual([["stacked", undefined], ["columns", 2], ["columns", 3]]);
+    expect(laneLists[0]!.className?.split(" ")).toContain("desktop:grid-cols-4");
+    expect(laneLists[0]!.className?.split(" ")).not.toContain("desktop:grid-cols-5");
+    expect(nodes.filter(node => node.laneLabel).map(node => node.text)).toEqual(Array.from({ length: 3 }, () => ["Team", "Service", "Service", "Team"]).flat());
+    expect(nodes.flatMap(node => node.legendSide === undefined ? [] : [node.legendSide])).toEqual(["end", "below", "below"]);
+    expect(ordinary.match(/data-legend-side="end"/g)).toHaveLength(1);
+    expect(ordinary.match(/data-legend-side="below"/g)).toHaveLength(2);
+    expect(server.contract!.text).toEqual(expect.arrayContaining(["Share", "Check", "Review", "Return", "Optional supporting lead."]));
+  });
+
+  it("keeps packed Landing disclosure entry-specific while preserving its native published FAQ bridge", () => {
+    expect(normal.landingHtml?.match(/<button /g)).toHaveLength(4);expect(normal.landingHtml?.match(/<summary /g)).toHaveLength(4);expect(normal.landingHtml).toContain("data-rac");
+    expect(server.landingTags?.filter(tag=>tag==="summary")).toHaveLength(8);expect(server.landingTags).not.toContain("button");
+    expect(server.landingText).toEqual(expect.arrayContaining(["Packed landing page","Packed question?","Packed answer.","Published questions"]));
+  });
+
+  it("renders canonical packed Landing disclosures through each entry", () => {
+    const ordinary = normal.landingCases!.canonical;
+    const native = server.landingCases!.canonical;
+    expect(ordinary.html?.match(/<button /g)).toHaveLength(4);
+    expect(ordinary.html).toContain("data-rac");
+    expect(ordinary.html).not.toContain("<summary");
+    expect(ordinary.html).not.toContain("<details");
+    expect(native.tags?.filter(tag => tag === "summary")).toHaveLength(4);
+    expect(native.tags?.filter(tag => tag === "details")).toHaveLength(4);
+    expect(native.tags).not.toContain("button");
+    expect(native.text).toEqual(expect.arrayContaining([
+      "Packed landing page", "Packed question?", "Packed answer.",
+    ]));
+    expect(ordinary.html).toContain("Packed question?");
+    expect(ordinary.html).toContain("Packed answer.");
+  });
+
+  it.each(["publishedSplit", "publishedStacked"] as const)(
+    "retains native packed Landing FAQ rows for %s on both entries",
+    name => {
+      const ordinary = normal.landingCases![name];
+      const native = server.landingCases![name];
+      expect(ordinary.html?.match(/<summary /g)).toHaveLength(4);
+      expect(ordinary.html?.match(/<details /g)).toHaveLength(4);
+      expect(ordinary.html).not.toContain("<button");
+      expect(ordinary.html).not.toContain("data-rac");
+      expect(ordinary.html).toContain("Published questions");
+      expect(ordinary.html).toContain("Packed question?");
+      expect(ordinary.html).toContain("Packed answer.");
+      expect(native.tags?.filter(tag => tag === "summary")).toHaveLength(4);
+      expect(native.tags?.filter(tag => tag === "details")).toHaveLength(4);
+      expect(native.tags).not.toContain("button");
+      expect(native.text).toEqual(expect.arrayContaining([
+        "Published questions", "Packed question?", "Packed answer.",
+      ]));
+    },
+  );
 
   it("rejects a packed Designer 0.2.5 graph that the former lower bound accepted before SectionedView's missing blocks fail at import", () => {
     const adversarialRoot = join(fixtureRoot, "designer-0.2.5");
@@ -268,7 +467,10 @@ describe("packed Publisher web React-server boundary", () => {
       const failure = error as { stdout?: string; stderr?: string; message?: string };
       legacyImportFailure = `${failure.stdout ?? ""}\n${failure.stderr ?? ""}\n${failure.message ?? ""}`;
     }
-    expect(legacyImportFailure).toMatch(/Faq/);
+    // Which gap Node reports first follows the module graph: a missing block
+    // (`Faq`), or the `./icons` entry (absent from this shape) that
+    // `LandingView` reads its scroll cue's glyph from.
+    expect(legacyImportFailure).toMatch(/Faq|Package subpath '\.\/icons' is not defined/);
 
     const corrected = install(publisherTarball, join(fixtureRoot, "corrected-range-consumer"));
     expect(corrected.ok).toBe(false);
@@ -409,7 +611,12 @@ describe("packed Publisher web React-server boundary", () => {
       const failure = error as { stdout?: string; stderr?: string; message?: string };
       formerRangeImportFailure = `${failure.stdout ?? ""}\n${failure.stderr ?? ""}\n${failure.message ?? ""}`;
     }
-    expect(formerRangeImportFailure).toMatch(/MarketingChapter/);
+    // Which missing Designer export Node reports first follows the module
+    // graph's link order: `MarketingChapter`, or `SkipLink` now that the
+    // global-error document reaches the frame from the views barrel. Entry
+    // resolution precedes linking, so the `./icons` entry this shape lacks
+    // (read by `LandingView`) can surface first.
+    expect(formerRangeImportFailure).toMatch(/does not provide an export named '(?:MarketingChapter|SkipLink)'|Package subpath '\.\/icons' is not defined/);
 
     // The corrected `^0.4.12` range (the packed manifest's actual declared
     // range) refuses to install against this same 0.4.7-shaped tarball at

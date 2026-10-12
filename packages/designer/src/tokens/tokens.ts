@@ -2,7 +2,7 @@
  * The token catalog: every custom property this package declares in
  * `styles/tokens.css`, as data. This file is the JS/TS half of the package;
  * `styles/tokens.css` is the CSS half. Both are hand-authored and both are
- * meant to describe the exact same 168 tokens — a test in this package
+ * meant to describe the exact same 183 tokens — a test in this package
  * (`parity.test.ts`) parses `styles/tokens.css` and asserts its custom
  * property names and values match this file entry-for-entry, in both
  * directions. That test is what keeps this file honest; nothing generates
@@ -35,7 +35,7 @@
  */
 
 /**
- * The 27 semantic groups the 168 tokens fall into. Each maps to exactly one
+ * The 30 semantic groups the 183 tokens fall into. Each maps to exactly one
  * CSS custom property prefix — see `FAMILY_PREFIX` in `parity.test.ts` (and
  * the README's naming table) for the concrete mapping.
  */
@@ -44,6 +44,7 @@ export type TokenFamily =
   | "ink"
   | "line"
   | "accent"
+  | "control"
   | "status"
   | "chart"
   | "neutral"
@@ -52,6 +53,7 @@ export type TokenFamily =
   | "text"
   | "font"
   | "tracking"
+  | "leading"
   | "spacing"
   | "width"
   | "layout"
@@ -66,13 +68,14 @@ export type TokenFamily =
   | "easing"
   | "z"
   | "breakpoint"
-  | "alpha";
+  | "alpha"
+  | "scene";
 
 /** One token: a CSS custom property, its default (unbranded) value, and where it belongs. */
 export interface TokenDefinition {
   /** The full CSS custom property name, including the leading `--`. */
   readonly property: string;
-  /** Which of the 25 semantic groups this token belongs to. */
+  /** Which of the 30 semantic groups this token belongs to. */
   readonly family: TokenFamily;
   /** The value declared for this property in `styles/tokens.css`'s `:root` block. */
   readonly value: string;
@@ -105,7 +108,7 @@ export interface TokenDefinition {
 }
 
 /**
- * All 150 tokens, keyed by their CSS custom property name. A `Record` rather
+ * All 183 tokens, keyed by their CSS custom property name. A `Record` rather
  * than an array because the natural question from JS — "what is
  * `--color-surface-raised` set to?" — is a lookup, not a scan.
  */
@@ -132,6 +135,9 @@ export const TOKENS: Readonly<Record<string, TokenDefinition>> = {
   "--color-line-base": { property: "--color-line-base", family: "line", value: "oklch(0.8761 0 0)", brandable: true, themeDependent: true },
   "--color-line-strong": { property: "--color-line-strong", family: "line", value: "oklch(0.7763 0 0)", brandable: true, themeDependent: true },
   "--color-line-on-inverse": { property: "--color-line-on-inverse", family: "line", value: "oklch(0.9702 0 0 / 0.14)", brandable: true, themeDependent: true },
+  // Panel identity: the edge colour of an outlined card or product panel
+  // on a light ground. An alias of the base line, so it follows the theme.
+  "--color-line-panel": { property: "--color-line-panel", family: "line", value: "var(--color-line-base, oklch(0.8761 0 0))", brandable: true, themeDependent: false },
 
   // ── COLOR · ACCENT ───────────────────────────────────────────────────
   "--color-accent": { property: "--color-accent", family: "accent", value: "oklch(0.4748 0 0)", brandable: true, themeDependent: true },
@@ -139,6 +145,18 @@ export const TOKENS: Readonly<Record<string, TokenDefinition>> = {
   "--color-accent-hover": { property: "--color-accent-hover", family: "accent", value: "oklch(0.36 0 0)", brandable: true, themeDependent: true },
   "--color-accent-tint": { property: "--color-accent-tint", family: "accent", value: "oklch(0.4748 0 0 / 0.1)", brandable: true, themeDependent: true },
   "--color-accent-on-inverse": { property: "--color-accent-on-inverse", family: "accent", value: "oklch(0.7763 0 0)", brandable: true, themeDependent: true },
+
+  // ── COLOR · CONTROL ──────────────────────────────────────────────────
+  // The tonal (T3) and quiet (T4) button tiers. Tonal is the primary ink
+  // at low alpha (8%, 12% on hover) over whatever ground it sits on; on the
+  // inverse ground it is the on-inverse ink at 12% (16% on hover). Quiet is
+  // the text ink of a chevron text button: an alias of the primary ink, so
+  // it follows the theme, and a brand may point it at its accent ink.
+  "--color-control-tonal": { property: "--color-control-tonal", family: "control", value: "oklch(0.2178 0 0 / 0.08)", brandable: true, themeDependent: true }, // token-gate:ignore the catalog declares this value
+  "--color-control-tonal-hover": { property: "--color-control-tonal-hover", family: "control", value: "oklch(0.2178 0 0 / 0.12)", brandable: true, themeDependent: true }, // token-gate:ignore the catalog declares this value
+  "--color-control-tonal-inverse": { property: "--color-control-tonal-inverse", family: "control", value: "oklch(0.9702 0 0 / 0.12)", brandable: true, themeDependent: true }, // token-gate:ignore the catalog declares this value
+  "--color-control-tonal-inverse-hover": { property: "--color-control-tonal-inverse-hover", family: "control", value: "oklch(0.9702 0 0 / 0.16)", brandable: true, themeDependent: true }, // token-gate:ignore the catalog declares this value
+  "--color-control-quiet": { property: "--color-control-quiet", family: "control", value: "var(--color-ink-primary, oklch(0.2178 0 0))", brandable: true, themeDependent: false },
 
   // ── COLOR · STATUS ───────────────────────────────────────────────────
   "--color-status-success": { property: "--color-status-success", family: "status", value: "oklch(0.6268 0 0)", brandable: true, themeDependent: true },
@@ -217,7 +235,7 @@ export const TOKENS: Readonly<Record<string, TokenDefinition>> = {
   // ── TEXT (font-size ramp — fixed scale, not brand-bound) ──────────────
   "--text-display-xl": { property: "--text-display-xl", family: "text", value: "72px", brandable: false, themeDependent: false },
   "--text-display-l": { property: "--text-display-l", family: "text", value: "56px", brandable: false, themeDependent: false },
-  "--text-display-m": { property: "--text-display-m", family: "text", value: "40px", brandable: false, themeDependent: false },
+  "--text-display-m": { property: "--text-display-m", family: "text", value: "44px", brandable: false, themeDependent: false },
   "--text-h0": { property: "--text-h0", family: "text", value: "32px", brandable: false, themeDependent: false },
   "--text-h1": { property: "--text-h1", family: "text", value: "28px", brandable: false, themeDependent: false },
   "--text-h2": { property: "--text-h2", family: "text", value: "18px", brandable: false, themeDependent: false },
@@ -235,10 +253,14 @@ export const TOKENS: Readonly<Record<string, TokenDefinition>> = {
   "--font-mono": { property: "--font-mono", family: "font", value: "ui-monospace, \"SF Mono\", Menlo, Consolas, monospace", brandable: true, themeDependent: false },
 
   // ── TRACKING (fixed role scale) ────────────────────────────────────
-  "--tracking-tight": { property: "--tracking-tight", family: "tracking", value: "-0.01em", brandable: false, themeDependent: false },
+  "--tracking-tight": { property: "--tracking-tight", family: "tracking", value: "-0.02em", brandable: false, themeDependent: false },
   "--tracking-meta": { property: "--tracking-meta", family: "tracking", value: "0.06em", brandable: false, themeDependent: false },
   "--tracking-nav": { property: "--tracking-nav", family: "tracking", value: "0.12em", brandable: false, themeDependent: false },
   "--tracking-label": { property: "--tracking-label", family: "tracking", value: "0.18em", brandable: false, themeDependent: false },
+
+  // ── LEADING (fixed heading line-height role scale) ─────────────────
+  "--leading-display": { property: "--leading-display", family: "leading", value: "1.05", brandable: false, themeDependent: false },
+  "--leading-heading": { property: "--leading-heading", family: "leading", value: "1.15", brandable: false, themeDependent: false },
 
   // ── SPACING (fixed 4px-rooted scale) ───────────────────────────────
   "--spacing-xs": { property: "--spacing-xs", family: "spacing", value: "4px", brandable: false, themeDependent: false },
@@ -303,14 +325,25 @@ export const TOKENS: Readonly<Record<string, TokenDefinition>> = {
   "--radius-default": { property: "--radius-default", family: "radius", value: "3px", brandable: true, themeDependent: false },
   "--radius-control": { property: "--radius-control", family: "radius", value: "6px", brandable: false, themeDependent: false },
   "--radius-pill": { property: "--radius-pill", family: "radius", value: "999px", brandable: false, themeDependent: false },
+  "--radius-surface": { property: "--radius-surface", family: "radius", value: "var(--radius-default, 3px)", brandable: false, themeDependent: false },
+  // Panel identity: the corner of a card, plate or product panel. A brand
+  // lever that defaults to the surface radius, so it changes nothing until
+  // a brand sets it.
+  "--radius-panel": { property: "--radius-panel", family: "radius", value: "var(--radius-surface, var(--radius-default, 3px))", brandable: true, themeDependent: false },
 
   // ── UI · BORDER ─────────────────────────────────────────────────────
   "--ui-border-hairline": { property: "--ui-border-hairline", family: "border", value: "1px", brandable: false, themeDependent: false },
+  "--ui-border-rule": { property: "--ui-border-rule", family: "border", value: "2px", brandable: false, themeDependent: false },
+  // Panel identity: the edge width of an outlined card or product panel.
+  "--ui-border-panel": { property: "--ui-border-panel", family: "border", value: "var(--ui-border-hairline, 1px)", brandable: true, themeDependent: false },
 
   // ── UI · ELEVATION ──────────────────────────────────────────────────
   "--ui-elevation-none": { property: "--ui-elevation-none", family: "elevation", value: "none", brandable: false, themeDependent: false },
   "--ui-elevation-raised": { property: "--ui-elevation-raised", family: "elevation", value: "0 1px 0 var(--color-line-base, oklch(0.8761 0 0))", brandable: false, themeDependent: false },
   "--ui-elevation-floating": { property: "--ui-elevation-floating", family: "elevation", value: "0 8px 24px rgba(0, 0, 0, 0.10)", brandable: false, themeDependent: true },
+  // Panel identity: the lift under a product panel (Specimen). Follows the
+  // floating elevation, and so its dark-theme value, until a brand sets it.
+  "--ui-elevation-panel": { property: "--ui-elevation-panel", family: "elevation", value: "var(--ui-elevation-floating, 0 8px 24px rgba(0, 0, 0, 0.10))", brandable: true, themeDependent: false },
 
   // ── UI · RING ───────────────────────────────────────────────────────
   "--ui-ring-focus": { property: "--ui-ring-focus", family: "ring", value: "0 0 0 2px var(--color-accent, oklch(0.4748 0 0))", brandable: false, themeDependent: false },
@@ -351,16 +384,20 @@ export const TOKENS: Readonly<Record<string, TokenDefinition>> = {
   "--breakpoint-desktop": { property: "--breakpoint-desktop", family: "breakpoint", value: "1280px", brandable: false, themeDependent: false },
   "--breakpoint-wide": { property: "--breakpoint-wide", family: "breakpoint", value: "1440px", brandable: false, themeDependent: false },
 
+  // Structural Scene personality and linear-form measure; both are theme invariant.
+  "--ui-scene-card-w": { property: "--ui-scene-card-w", family: "scene", value: "30rem", brandable: false, themeDependent: false },
+
   // ── UI · ALPHA ──────────────────────────────────────────────────────
   "--ui-alpha-disabled": { property: "--ui-alpha-disabled", family: "alpha", value: "0.5", brandable: false, themeDependent: false },
 };
 
-/** The 27 semantic families, in the order they appear in the README's reference table. */
+/** The 30 semantic families, in the order they appear in the README's reference table. */
 export const TOKEN_FAMILIES: readonly TokenFamily[] = [
   "surface",
   "ink",
   "line",
   "accent",
+  "control",
   "status",
   "chart",
   "neutral",
@@ -369,6 +406,7 @@ export const TOKEN_FAMILIES: readonly TokenFamily[] = [
   "text",
   "font",
   "tracking",
+  "leading",
   "spacing",
   "width",
   "layout",
@@ -384,4 +422,5 @@ export const TOKEN_FAMILIES: readonly TokenFamily[] = [
   "z",
   "breakpoint",
   "alpha",
+  "scene",
 ];

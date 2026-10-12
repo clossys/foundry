@@ -7,9 +7,14 @@
  * Pure, no I/O: pass the stylesheet text (or grep a path in the CLI).
  */
 
-/** Class names `Hero` and primary `Button` emit — see `src/blocks/Hero.tsx` and `src/atoms/Button.tsx`. */
+/**
+ * Class names `Hero` and primary `Button` emit — see `src/blocks/Hero.tsx`
+ * (its heading is `SectionIntro`'s display step: display-m on a phone,
+ * display-l from tablet) and `src/atoms/Button.tsx`.
+ */
 export const HERO_BUTTON_REQUIRED_UTILITIES = [
-  "text-display-l",
+  "text-display-m",
+  "tablet:text-display-l",
   "font-display",
   "bg-accent",
   "rounded-control",
@@ -36,7 +41,8 @@ export interface HeroCssResult {
  * CodeQL `js/bad-code-sanitization` refuses (backslash not escaped first).
  */
 const UTILITY_RULE_NEEDLES: Record<HeroCssRequiredUtility, readonly [string, string]> = {
-  "text-display-l": [".text-display-l {", ".text-display-l{"],
+  "text-display-m": [".text-display-m {", ".text-display-m{"],
+  "tablet:text-display-l": [".tablet\\:text-display-l {", ".tablet\\:text-display-l{"],
   "font-display": [".font-display {", ".font-display{"],
   "bg-accent": [".bg-accent {", ".bg-accent{"],
   "rounded-control": [".rounded-control {", ".rounded-control{"],

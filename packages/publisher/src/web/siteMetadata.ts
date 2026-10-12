@@ -12,7 +12,8 @@
  * TITLE RULE. A `home` page is `${name} · ${tagline}`; every other kind is
  * `${label} · ${name}`. The separator is U+00B7 with one space on each side.
  *
- * ROBOTS. `notFound` is `noindex, nofollow`. `legal` is `noindex, nofollow`
+ * ROBOTS. `notFound` and `construction` (a linked page that is not built
+ * yet) are `noindex, nofollow`. `legal` is `noindex, nofollow`
  * until the page's `status` is `"counsel-reviewed"`; a legal page with no
  * `status` is treated as a draft. `home`, `contact` and `custom` are
  * `index, follow`. This module only maps the `status` it is given to a
@@ -42,7 +43,7 @@
 
 import { OG_SHARE_CARD_SPEC } from "../templates/channelSpecs.js";
 
-export type SitePageKind = "home" | "contact" | "legal" | "notFound" | "custom";
+export type SitePageKind = "home" | "contact" | "legal" | "notFound" | "construction" | "custom";
 
 /** Whether a legal page's text has been through counsel review. Only meaningful for `kind: "legal"`. */
 export type SiteLegalStatus = "draft" | "counsel-reviewed";
@@ -128,7 +129,7 @@ export class SiteMetadataError extends Error {
   }
 }
 
-const PAGE_KINDS: readonly SitePageKind[] = ["home", "contact", "legal", "notFound", "custom"];
+const PAGE_KINDS: readonly SitePageKind[] = ["home", "contact", "legal", "notFound", "construction", "custom"];
 const TITLE_SEPARATOR = " · ";
 const NOINDEX = "noindex, nofollow";
 const INDEX = "index, follow";
@@ -293,7 +294,7 @@ function requireShareCard(value: unknown, origin: string): SiteShareCard {
 }
 
 function robotsFor(kind: SitePageKind, status: SiteLegalStatus | undefined): string {
-  if (kind === "notFound") return NOINDEX;
+  if (kind === "notFound" || kind === "construction") return NOINDEX;
   if (kind === "legal") return status === "counsel-reviewed" ? INDEX : NOINDEX;
   return INDEX;
 }

@@ -37,7 +37,8 @@ const themeCssPath = resolve(packageRoot, "styles", "theme.css");
 const sourceRelativeToFixture = "../../../dist";
 
 const UNSTYLED_HERO_MARKERS: (typeof HERO_BUTTON_REQUIRED_UTILITIES)[number][] = [
-  "text-display-l",
+  "text-display-m",
+  "tablet:text-display-l",
   "font-display",
   "tablet:grid-cols-2",
 ];

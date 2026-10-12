@@ -45,9 +45,9 @@ import { SITE_PAGE_FIXTURES, buildNotFoundElement } from "./fixture-site.js";
 import { COMPANY_OVERVIEW_LENGTHS, PITCH_DECK_DEFAULT_AUDIENCE_SELECTIONS, buildMaterialsIndexEntries, buildOverviewDocument, buildPitchDeck } from "./fixture-materials.js";
 import { FOLLOW_UP_EMAIL, LAUNCH_ANNOUNCEMENT_EMAIL, WELCOME_EMAIL, buildSignaturePerson } from "./fixture-email.js";
 import { buildCardFixtures } from "./fixture-cards.js";
+import { PREVIEW_UTILITIES_BASENAME } from "./preview-stylesheet.js";
 
 const DESIGNER_TOKENS_BASENAME = "designer-tokens.css";
-const DESIGNER_COMPILED_BASENAME = "designer-compiled.css";
 const BRAND_COPY_BASENAME = "brand.css";
 
 export const LAUNCH_PACK_INDEX_FILENAME = "index.html";
@@ -86,7 +86,7 @@ function wrapStandalonePage(title: string, bodyHtml: string): string {
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>${escapeHtml(title)}</title>
   <link rel="stylesheet" href="${DESIGNER_TOKENS_BASENAME}" />
-  <link rel="stylesheet" href="${DESIGNER_COMPILED_BASENAME}" />
+  <link rel="stylesheet" href="${PREVIEW_UTILITIES_BASENAME}" />
   <link rel="stylesheet" href="${BRAND_COPY_BASENAME}" />
   <style>
     body { margin: 0; font-family: system-ui, sans-serif; background: var(--color-surface-base, #f5f5f5); }

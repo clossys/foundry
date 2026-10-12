@@ -1,17 +1,12 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { cx } from "../atoms/internal/cx.js";
-import { DISPLAY_HEADING_CLASS } from "./internal/block-vars.js";
+import { SectionIntro } from "./SectionIntro.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
 
-/**
- * `class-scan.ts` skips `blocks/internal/` (where `DISPLAY_HEADING_CLASS`
- * lives). This literal keeps `text-display-l` in the compiled.css candidate
- * set so display headings stay styled on the tokens.css + compiled.css path.
- */
-const COMPILED_CSS_CLASS_SCAN_ANCHOR = "text-display-l";
-void COMPILED_CSS_CLASS_SCAN_ANCHOR;
-
 export type HeroHeadingLevel = 1 | 2;
+
+/** How the hero's text lines up: along the start edge, or centred on the column. */
+export type HeroAlign = "start" | "center";
 
 /** Layout composition when `media` is present — media presence is not a layout. */
 export type HeroComposition = "editorial" | "split";
@@ -54,8 +49,20 @@ export interface HeroProps extends HTMLAttributes<HTMLElement> {
    * @default 1
    */
   headingLevel?: HeroHeadingLevel;
+  /** Heading scale; `default` is a supported alias for `display`. @default "display" */
+  size?: "display" | "compact" | "default";
   /** Semantic section ground; selects the complete matching surface and foreground policy. @default "base" */
   ground?: SectionGround;
+  /**
+   * How the eyebrow, heading, description and actions line up. `"center"`
+   * centres each line and the actions row on the hero's column (an opening
+   * hero over a backdrop). The text block is a `SectionIntro` at the
+   * `display` emphasis, so it keeps to the prose measure with a balanced
+   * heading either way. It applies to the text block only; a `split`
+   * composition keeps its two columns.
+   * @default "start"
+   */
+  align?: HeroAlign;
   className?: string;
   style?: CSSProperties;
 }
@@ -64,7 +71,9 @@ export interface HeroProps extends HTMLAttributes<HTMLElement> {
  * A page's primary above-the-fold message: an optional eyebrow, a heading,
  * an optional description, and an optional row of calls to action — the
  * same title/description/actions shape `PageHeader` gives an application
- * page, sized and composed for a marketing/content page instead.
+ * page, sized and composed for a marketing/content page instead. The copy is
+ * a `SectionIntro` at the `display` emphasis, the same anatomy every later
+ * section uses at the `section` emphasis; `Hero` adds the ground and media.
  */
 export function Hero({
   eyebrow,
@@ -74,28 +83,28 @@ export function Hero({
   media,
   composition = "editorial",
   headingLevel = 1,
+  size = "display",
   ground = "base",
+  align = "start",
   className,
   style,
   ...rest
 }: HeroProps) {
-  const HeadingTag = headingLevel === 1 ? "h1" : "h2";
   const colors = SECTION_GROUND_CLASSES[ground];
   const splitLayout = Boolean(media) && composition === "split";
+  const centred = align === "center";
 
   const content = (
-    <div className="flex flex-col items-start gap-md">
-      {eyebrow ? (
-        <p className={cx("text-caption uppercase tracking-label", colors.muted)}>{eyebrow}</p>
-      ) : null}
-      <HeadingTag className={cx(DISPLAY_HEADING_CLASS, colors.primary)}>{heading}</HeadingTag>
-      {description ? (
-        <p className={cx("text-body-l max-w-display", colors.secondary)}>{description}</p>
-      ) : null}
-      {actions ? (
-        <div className="flex flex-wrap items-center gap-sm">{actions}</div>
-      ) : null}
-    </div>
+    <SectionIntro
+      emphasis={size === "compact" ? "section" : "display"}
+      headingLevel={headingLevel}
+      align={align}
+      ground={ground}
+      eyebrow={eyebrow}
+      heading={heading}
+      description={description}
+      actions={actions}
+    />
   );
 
   return (
@@ -111,7 +120,7 @@ export function Hero({
       style={style}
     >
       {content}
-      {media ? <div className={cx("w-full", splitLayout ? "" : "max-w-display")}>{media}</div> : null}
+      {media ? <div className={cx("w-full", splitLayout ? "" : "max-w-display", centred && !splitLayout ? "mx-auto" : "")}>{media}</div> : null}
     </section>
   );
 }

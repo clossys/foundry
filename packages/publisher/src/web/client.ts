@@ -13,3 +13,5 @@ export { AuthView } from "./views/AuthView.js";
 export type { AuthViewProps } from "./views/AuthView.js";
 export { BoundaryView } from "./views/BoundaryView.js";
 export type { BoundaryViewProps } from "./views/BoundaryView.js";
+export { StatusView } from "./views/StatusView.js";
+export type { StatusViewProps } from "./views/StatusView.js";
