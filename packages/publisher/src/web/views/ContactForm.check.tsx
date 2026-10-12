@@ -19,6 +19,10 @@ export const unknownResult = <ContactForm {...props} onSubmit={async () => ({ st
 export const unknownPreview = <ContactForm {...props} devPreview="unknown" />;
 // @ts-expect-error the form owns no frame or arbitrary HTML props
 export const frameRole = <ContactForm {...props} role="main" />;
+// @ts-expect-error callers cannot override the native submission method
+export const methodOverride = <ContactForm {...props} method="get" />;
+// @ts-expect-error callers cannot set a native submission destination
+export const actionOverride = <ContactForm {...props} action="/other" />;
 declare const customBase: Omit<ContactFormProps<"url">, "honeypotField">;
 // @ts-expect-error a caller must name a custom honeypot
 export const missingCustomHoneypot: ContactFormProps<"url"> = customBase;

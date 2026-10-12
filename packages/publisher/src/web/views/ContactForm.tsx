@@ -259,6 +259,7 @@ export function ContactForm({
     </div>
   ) : (
     <Form
+      method="post"
       validation={binding}
       errorSummaryMessage={() => text.errorSummary}
       submitError={failure}

@@ -44,6 +44,22 @@ describe("ContactForm extraction", () => {
     expect(typeof server.ContactForm).toBe("function");
     expect(client.ContactForm).toBe(web.ContactForm);
   });
+  it("renders POST before hydration so contact values stay out of the URL", () => {
+    const host = document.createElement("div");
+    host.innerHTML = renderToStaticMarkup(page());
+    const form = host.querySelector("form")!;
+    expect(form).toHaveAttribute("method", "post");
+    expect(form.method).toBe("post");
+    expect(form).not.toHaveAttribute("action");
+  });
+  it("keeps method and action fixed even when passed through untyped caller props", () => {
+    const host = document.createElement("div");
+    const attempted = { ...formProps(), method: "get", action: "/other" };
+    host.innerHTML = renderToStaticMarkup(<client.ContactForm {...attempted} />);
+    const form = host.querySelector("form")!;
+    expect(form).toHaveAttribute("method", "post");
+    expect(form).not.toHaveAttribute("action");
+  });
   it("renders a framed CaptureView with one frame-owned main and one h1, passing checkFrontDoor", () => {
     const { container } = render(page());
     expect(container.querySelectorAll("main")).toHaveLength(1);
