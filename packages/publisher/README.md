@@ -700,7 +700,7 @@ validates and renders exactly as it did before they existed.
   (`up` | `down` | `neutral`, only with `delta`), and optional `description`.
   The view maps each row onto Designer `Stat`; do not flatten metrics into
   `feature-grid`.
-- **`layout` on the faq section.** `stacked` (the default, unchanged) or
+- **`layout` on the faq section.** `stacked` (the default) or
   `split`: the header group in the narrow text column and the rows in the
   wide column beside it, top-aligned. It renders the same band as a
   `content-section` with a split Items block using the `faq` recipe, so the
@@ -1313,9 +1313,13 @@ text and marker. Numbered, connected and disclosed Items use the collection
 renderer. Ordinary disclosure uses React Aria controls; the server entry uses
 native details. A supplied continuing end label stays visible; an omitted
 label retains the consumer-resolved continuation copy as hidden text.
-The published top-level FAQ keeps its existing implementation, including
-split FAQ layout: SectionedView selects its entry-specific controls, while
-LandingView retains native disclosure. Scene text limits stay local to media; inverse Scene media gets an opaque base plate and base ink. Record, Scene and anatomy identities are namespaced by section instance without changing authored copy or provenance. Canonical Landing fragments align with the unpadded band edge; published bands retain their padding offsets.
+The published `faq` section renders the Index function’s Items-based `faq`
+recipe through the canonical content-section path: one column of rows with
+`reveal: "disclose"`. Its authored `{ id, question, answer }` items and copy
+provenance are retained, with the recipe’s four-to-six-row budget checked at
+authoring and rendering. Omitted or `stacked` layout selects a stacked band;
+`split` selects `split-end`. SectionedView and LandingView use React Aria
+controls in the ordinary entry and native disclosure in the server entry. Scene text limits stay local to media; inverse Scene media gets an opaque base plate and base ink. Record, Scene and anatomy identities are namespaced by section instance without changing authored copy or provenance. Canonical Landing fragments align with the unpadded band edge; published bands retain their padding offsets.
 
 The resolved boundary requires explicit canonical axes and closed plain data
 before reading discriminators. It checks the structural contract and text

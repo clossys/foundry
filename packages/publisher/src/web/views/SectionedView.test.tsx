@@ -11,7 +11,7 @@ const document: ResolvedSectionedViewDocument = {
   sections: [
     { id: "hero", kind: "hero", ground: "base", heading: "Welcome" },
     { id: "features", kind: "feature-grid", ground: "sunken", heading: "Features", items: [{ id: "first", heading: "First" }] },
-    { id: "faq", kind: "faq", ground: "inverse", heading: "Questions", items: [{ id: "one", question: "Why?", answer: "Because." }] },
+    { id: "faq", kind: "faq", ground: "inverse", heading: "Questions", items: ["one", "two", "three", "four"].map(id => ({ id, question: "Why?", answer: "Because." })) },
     { id: "steps", kind: "ordered-step-sequence", ground: "base", heading: "Steps", items: [{ id: "one", ordinal: "1", heading: "Start" }] },
     { id: "status", kind: "status-list", ground: "sunken", heading: "Readiness", labels: { available: "Available", partial: "Partial", planned: "Planned", dispositions: { "not-offered": "Not offered" } }, groups: [{ id: "core", heading: "Core", items: [{ id: "one", label: "Feature", state: "available" }, { id: "none", label: "No certifications", disposition: "not-offered" }] }] },
   ],
@@ -54,12 +54,20 @@ describe("SectionedView", () => {
  * by rendering that release's own code before the optional eyebrow, hero
  * action, status detail, and landmark additions existed. It is frozen here so
  * "additive" is a measurement rather than a claim: a document that carries
- * none of the new fields must still produce these bytes exactly. Designer
+ * none of the new fields retains the measured bytes outside the migrated FAQ. Designer
  * block restyles realign it (most recently the ordered steps: item-heading
  * type, a line-strong ordinal ring and a connector running from one ordinal
  * to the next); the view's own structure does not move.
  */
 const LEGACY_MARKUP = `<main aria-label="acme-home" class="flex flex-col gap-2xl py-2xl"><section id="hero" class="flex flex-col gap-xl"><div data-section-intro="display" class="flex w-full flex-col items-start" style="max-width:var(--ui-width-prose-max, 48rem)"><p class="text-body-s font-medium uppercase tracking-label text-accent-text">New</p><h1 class="text-display-m tablet:text-display-l font-display leading-display text-balance text-ink-primary mt-sm">Welcome</h1><p class="text-body-l text-pretty text-ink-secondary mt-2xl">A fixture hero.</p></div></section><div id="features" class="flex flex-col gap-lg bg-surface-sunken"><div class="flex flex-col gap-xs"><h2 class="text-h2 font-display text-ink-primary">Features</h2><p class="text-body text-ink-secondary">A fixture grid.</p></div><div class="grid grid-cols-1 gap-lg tablet:grid-cols-2 desktop:grid-cols-3"><div class="flex flex-col items-start gap-sm"><p class="text-body font-body font-medium text-ink-primary">First</p><p class="text-body-s text-ink-secondary">First feature.</p></div><div class="flex flex-col items-start gap-sm"><p class="text-body font-body font-medium text-ink-primary">Second</p></div></div></div><div id="faq" class="flex flex-col gap-lg bg-surface-inverse"><div class="flex flex-col gap-xs"><h2 class="text-h2 font-display leading-heading text-ink-on-inverse">Questions</h2><p class="text-body text-ink-on-inverse-muted">A fixture FAQ.</p></div><div class="flex flex-col border-t border-line-on-inverse"><div class="group/faq block border-b border-line-on-inverse" data-rac=""><button id="react-aria-_R_1jH1_" class="flex w-full cursor-pointer items-center justify-between gap-lg rounded-default py-lg text-start text-body-l font-medium tablet:py-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent summary-marker-none text-ink-on-inverse" data-rac="" type="button" tabindex="0" data-react-aria-pressable="true" aria-expanded="false" aria-controls="react-aria-_R_1jH2_" slot="trigger"><span>Why?</span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 disclosure-icon-motion" style="width:var(--ui-icon-md, var(--spacing-xl, 24px));height:var(--ui-icon-md, var(--spacing-xl, 24px));flex-shrink:0;stroke-width:var(--ui-icon-stroke, 2)" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></button><div class="disclosure-panel-motion" data-rac="" id="react-aria-_R_1jH2_" role="group" aria-labelledby="react-aria-_R_1jH1_" aria-hidden="true" hidden=""><div class="pb-lg pe-2xl text-body text-pretty tablet:pb-xl text-ink-on-inverse-muted" style="max-width:var(--ui-width-prose-max, 48rem)">Because.</div></div></div></div></div><section id="steps" class="flex flex-col gap-lg"><div class="flex flex-col gap-xs"><h2 class="text-h2 font-display text-ink-primary">Steps</h2></div><ol data-step-layout="plain" class="flex flex-col tablet:flex-row tablet:gap-x-xl"><li class="flex min-w-0 flex-1 flex-row gap-md tablet:flex-col tablet:gap-lg"><div class="flex shrink-0 flex-col items-center tablet:flex-row"><span class="flex size-2xl shrink-0 items-center justify-center rounded-pill text-body font-body font-medium tabular-nums bg-accent-tint text-accent-text">1</span><span aria-hidden="true" data-step-connector="" class="my-sm w-px flex-1 tablet:my-0 tablet:ms-md tablet:-me-md tablet:h-px tablet:w-auto bg-line-strong"></span></div><div data-step-text="" class="flex min-w-0 flex-col gap-sm pb-2xl tablet:pb-0"><p class="text-body-s font-medium uppercase tracking-label text-ink-secondary">First</p><h3 class="text-body-l font-body font-medium text-ink-primary">Start</h3><p class="text-body text-pretty text-ink-secondary">Start here.</p></div></li><li class="flex min-w-0 flex-1 flex-row gap-md tablet:flex-col tablet:gap-lg"><div class="flex shrink-0 flex-col items-center tablet:flex-row"><span class="flex size-2xl shrink-0 items-center justify-center rounded-pill text-body font-body font-medium tabular-nums bg-accent-tint text-accent-text">2</span></div><div data-step-text="" class="flex min-w-0 flex-col gap-sm"><h3 class="text-body-l font-body font-medium text-ink-primary">Finish</h3></div></li></ol></section><section id="status" class="flex flex-col gap-lg bg-surface-sunken"><div class="flex flex-col gap-xs"><h2 class="text-h2 font-display text-ink-primary">Readiness</h2><p class="text-body text-ink-secondary">A fixture status list.</p></div><div class="flex flex-col gap-xs"><p class="text-caption font-body font-medium text-ink-primary">Readiness</p><ul aria-label="Readiness" class="flex flex-wrap gap-md"><li class="flex items-center gap-xs text-body-s text-ink-primary"><span aria-hidden="true" class="size-xs shrink-0 rounded-pill bg-status-success ring-2 ring-ink-primary"></span>Available</li><li class="flex items-center gap-xs text-body-s text-ink-primary"><span aria-hidden="true" class="size-xs shrink-0 rounded-pill bg-status-warning ring-2 ring-ink-primary"></span>Partial</li><li class="flex items-center gap-xs text-body-s text-ink-primary"><span aria-hidden="true" class="size-xs shrink-0 rounded-pill bg-status-info ring-2 ring-ink-primary"></span>Planned</li><li class="flex items-center gap-xs text-body-s text-ink-primary"><span aria-hidden="true" class="size-xs shrink-0 rounded-pill bg-ink-muted ring-2 ring-ink-primary"></span>Not offered</li></ul></div><div class="flex flex-col gap-lg"><section class="flex flex-col gap-sm"><h3 class="text-h3 font-display text-ink-primary">Core</h3><dl class="flex flex-col"><div class="flex items-center justify-between gap-md py-sm"><dt class="text-body text-ink-primary">Feature</dt><dd class="flex shrink-0 items-center gap-xs text-body-s text-ink-primary"><span aria-hidden="true" class="size-xs shrink-0 rounded-pill bg-status-success ring-2 ring-ink-primary"></span>Available</dd></div><div class="flex items-center justify-between gap-md py-sm border-t border-line-base"><dt class="text-body text-ink-primary">No certifications</dt><dd class="flex shrink-0 items-center gap-xs text-body-s text-ink-primary"><span aria-hidden="true" class="size-xs shrink-0 rounded-pill bg-ink-muted ring-2 ring-ink-primary"></span>Not offered</dd></div></dl></section></div></section></main>`;
+
+// FAQ now has a canonical recipe; retain the frozen measurement for its siblings.
+function withoutFaq(markup: string): string {
+  const start = markup.indexOf('id="faq"');
+  const end = markup.indexOf('<section id="steps"', start);
+  const open = markup.lastIndexOf("<", start);
+  return markup.slice(0, open) + markup.slice(end);
+}
 
 const LEGACY_DOCUMENT: ResolvedSectionedViewDocument = {
   id: "acme-home",
@@ -67,7 +75,7 @@ const LEGACY_DOCUMENT: ResolvedSectionedViewDocument = {
   sections: [
     { id: "hero", kind: "hero", ground: "base", eyebrow: "New", heading: "Welcome", description: "A fixture hero." },
     { id: "features", kind: "feature-grid", ground: "sunken", heading: "Features", description: "A fixture grid.", items: [{ id: "first", heading: "First", description: "First feature." }, { id: "second", heading: "Second" }] },
-    { id: "faq", kind: "faq", ground: "inverse", heading: "Questions", description: "A fixture FAQ.", items: [{ id: "one", question: "Why?", answer: "Because." }] },
+    { id: "faq", kind: "faq", ground: "inverse", heading: "Questions", description: "A fixture FAQ.", items: ["one", "two", "three", "four"].map(id => ({ id, question: "Why?", answer: "Because." })) },
     { id: "steps", kind: "ordered-step-sequence", ground: "base", heading: "Steps", items: [{ id: "one", ordinal: "1", label: "First", heading: "Start", description: "Start here." }, { id: "two", ordinal: "2", heading: "Finish" }] },
     { id: "status", kind: "status-list", ground: "sunken", heading: "Readiness", description: "A fixture status list.", labels: { available: "Available", partial: "Partial", planned: "Planned", dispositions: { "not-offered": "Not offered" } }, groups: [{ id: "core", heading: "Core", items: [{ id: "one", label: "Feature", state: "available" }, { id: "none", label: "No certifications", disposition: "not-offered" }] }] },
   ],
@@ -90,7 +98,7 @@ const expressive: ResolvedSectionedViewDocument = {
 
 describe("SectionedView optional additive fields", () => {
   it("renders a document carrying none of them exactly as 0.2.1 did, byte for byte", () => {
-    expect(renderToStaticMarkup(<SectionedView document={LEGACY_DOCUMENT} />)).toBe(LEGACY_MARKUP);
+    expect(withoutFaq(renderToStaticMarkup(<SectionedView document={LEGACY_DOCUMENT} />))).toBe(withoutFaq(LEGACY_MARKUP));
   });
 
   it("renders every non-hero eyebrow instead of dropping it", () => {
@@ -127,7 +135,7 @@ describe("SectionedView optional additive fields", () => {
   });
 
   it("keeps rendering the same document identically when landmark is passed explicitly", () => {
-    expect(renderToStaticMarkup(<SectionedView document={LEGACY_DOCUMENT} landmark="main" />)).toBe(LEGACY_MARKUP);
+    expect(withoutFaq(renderToStaticMarkup(<SectionedView document={LEGACY_DOCUMENT} landmark="main" />))).toBe(withoutFaq(LEGACY_MARKUP));
   });
 
   it("fails closed on an unsanctioned action href, a malformed action, a blank detail, and an unsupported landmark", () => {
@@ -222,10 +230,10 @@ describe("SectionedView hero media and stat-grid (issue #1028)", () => {
 });
 
 describe("SectionedView gap 2 and gap 7 relaxations", () => {
-  it("still renders a document with a single leading hero and grouped status-list items byte for byte", () => {
+  it("retains the frozen sibling sections around the canonical FAQ", () => {
     // Same proof technique as the LEGACY_MARKUP assertion above: this is the
     // exact shape gaps 2 and 7 relax around, not merely near it.
-    expect(renderToStaticMarkup(<SectionedView document={LEGACY_DOCUMENT} />)).toBe(LEGACY_MARKUP);
+    expect(withoutFaq(renderToStaticMarkup(<SectionedView document={LEGACY_DOCUMENT} />))).toBe(withoutFaq(LEGACY_MARKUP));
   });
 
   it("renders a document with zero hero sections, with no h1 anywhere", () => {
@@ -438,11 +446,11 @@ describe("SectionedView content-section", () => {
     expect(html).toMatch(/data-item-eyebrow=""[^>]*>Records<\/p>[\s\S]*<h3/); expect(html.match(/data-item-eyebrow/g)).toHaveLength(1);
   });
 
-  it("preserves the published FAQ split bridge and refuses its unknown layout", () => {
+  it("renders the published FAQ through canonical frames and refuses its unknown layout", () => {
     const faqItems=["q1","q2","q3","q4"].map(id=>({ id,question:`Question ${id}?`,answer:`Answer ${id}.` }));
     const faqDocument = (layout: "split" | "stacked") => ({ ...document, sections: [{ id:"questions",kind:"faq" as const,ground:"sunken" as const,layout,eyebrow:"Questions",heading:"Before you start",items:faqItems }] });
-    const split=renderToStaticMarkup(<SectionedView document={faqDocument("split")}/>);expect(split).toContain("data-content-section-faq");expect(split).toContain("data-rac");expect(split).not.toContain("<summary");
-    const stacked=renderToStaticMarkup(<SectionedView document={faqDocument("stacked")}/>);expect(stacked).not.toContain("data-content-section-faq");
+    const split=renderToStaticMarkup(<SectionedView document={faqDocument("split")}/>);expect(split).toContain('data-layout="split-end"');expect(split).toContain("data-rac");expect(split).not.toContain("<summary");
+    const stacked=renderToStaticMarkup(<SectionedView document={faqDocument("stacked")}/>);expect(stacked).toContain("data-items");expect(stacked).not.toContain("data-layout");
     expect(()=>assertRenderableSectionedViewDocument({ ...faqDocument("split"),sections:[{...faqDocument("split").sections[0],layout:"grid"}] })).toThrow(/sections\.0\.layout/);
   });
 

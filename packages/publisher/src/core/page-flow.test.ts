@@ -23,7 +23,7 @@ const rules = (document: SectionedViewDocument, code: string, options?: { callTo
 const linked = (id: string, href: string) => B({ id, block: { type: "items", recipe: "topics", items: [{ ...item, href }, { ...item, id: "two", href: `/${id}-other` }] } });
 
 it("weighs inverse on the effective close ground while preserving canonical anchors", () => {
-  const legacy: SectionedViewSection = { id: "legacy-close", kind: "faq", ground: "inverse", heading: ref, items: [{ id: "question", question: ref, answer: ref }] };
+  const legacy: SectionedViewSection = { id: "legacy-close", kind: "faq", ground: "inverse", heading: ref, items: ["one", "two", "three", "four"].map(id => ({ id, question: ref, answer: ref })) };
   expect(rules(doc(B(), legacy), "inverse-weight")).toHaveLength(1);
   expect(rules(doc(B(), legacy), "inverse-weight", { callToAction: { href: "/start" } })).toEqual([]);
   expect(rules(doc(B(), section({ ground: "inverse", block: statementBlock })), "inverse-weight", { callToAction: { href: "/start" } })).toHaveLength(1);
@@ -49,7 +49,7 @@ describe("sectionWeight derivation", () => {
     ["topics", B(), "B", "list"],
     ["frame", C(), "C", "frame"],
     ["block FAQ", section({ block: { type: "items", recipe: "faq", items: items(4) } }), "C", "reference"],
-    ["faq", { id: "faq", kind: "faq", heading: ref, items: [{ id: "q", question: ref, answer: ref }] }, "C", "reference"],
+    ["faq", { id: "faq", kind: "faq", heading: ref, items: ["one", "two", "three", "four"].map(id => ({ id, question: ref, answer: ref })) }, "C", "reference"],
     ["feature-grid", { id: "features", kind: "feature-grid", heading: ref, items: [item] }, "C", "list"],
     ["ordered-step-sequence", { id: "steps", kind: "ordered-step-sequence", heading: ref, items: [{ ...item, ordinal: ref }] }, "B", "sequence"],
     ["status-list", { id: "status", kind: "status-list", heading: ref, labels: { available: ref, partial: ref, planned: ref, dispositions: { "not-offered": ref } }, items: [{ id: "state", label: ref, state: "available" }] }, "B", "table"],

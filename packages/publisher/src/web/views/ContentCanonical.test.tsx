@@ -284,7 +284,7 @@ describe("published kind preservation", () => {
     expect(dom(html(doc)).querySelectorAll("p.font-medium.text-body")).toHaveLength(4); expect(html(doc, true)).toBe(html(doc));
   });
   it("keeps published split FAQ native and React Aria factories separate", () => {
-    const authoredDoc: SectionedViewDocument = { id: "faq", sections: [{ id: "faq", kind: "faq", ground: "base", layout: "split", heading: short, description: ref("detail"), items: [{ id: "one", question: short, answer: ref("detail") }] }] };
+    const authoredDoc: SectionedViewDocument = { id: "faq", sections: [{ id: "faq", kind: "faq", ground: "base", layout: "split", heading: short, description: ref("detail"), items: ["one", "two", "three", "four"].map(id => ({ id, question: short, answer: ref("detail") })) }] };
     expect(validateSectionedViewDocument(authoredDoc)).toEqual([]); const doc = resolveSectionedViewDocument(authoredDoc, resolver);
     const ordinary = dom(html(doc)); const server = dom(html(doc, true)); expect(server.querySelector("details summary")?.textContent).toContain(copy.short); expect(ordinary.querySelector("details")).toBeNull();
     expect(ordinary.querySelector("button")?.textContent).toContain(copy.short); expect(server.textContent).toContain(copy.detail);
@@ -363,11 +363,16 @@ describe("canonical LandingView integration", () => {
     expect(inner.classList.contains(size === "display" ? "py-5xl" : "py-4xl")).toBe(true);
     expect(root.querySelectorAll("#content")).toHaveLength(1); expect(inner.parentElement?.closest("[data-content-section]")).toBeNull();
   });
-  it("forwards the private published split FAQ bridge through LandingView", () => {
-    const authoredDoc: SectionedViewDocument = { id: "landing-faq", sections: [{ id: "hero", kind: "hero", ground: "inverse", heading: ref("heading") }, { id: "faq", kind: "faq", ground: "base", layout: "split", heading: short, items: [{ id: "one", question: short, answer: ref("detail") }] }] };
+  it("renders the published split FAQ through canonical LandingView collections", () => {
+    const authoredDoc: SectionedViewDocument = { id: "landing-faq", sections: [{ id: "hero", kind: "hero", ground: "inverse", heading: ref("heading") }, { id: "faq", kind: "faq", ground: "base", layout: "split", heading: short, items: ["one", "two", "three", "four"].map(id => ({ id, question: short, answer: ref("detail") })) }] };
     expect(validateSectionedViewDocument(authoredDoc)).toEqual([]); const doc = resolveSectionedViewDocument(authoredDoc, resolver);
-    const markup = renderToStaticMarkup(<LandingView document={doc} peek={false} afterSection={{ faq: <p data-faq-after="">After FAQ</p> }} />); expect(renderToStaticMarkup(<ServerLandingView document={doc} peek={false} afterSection={{ faq: <p data-faq-after="">After FAQ</p> }} />)).toBe(markup);
-    const root = dom(markup); expect(root.querySelector("#faq")?.closest<HTMLElement>("[data-landing-ground]")?.style.paddingBlock).toBe(""); expect(root.querySelector("#faq details summary")?.textContent).toContain(copy.short); expect(root.querySelector("#faq")?.textContent).toContain(copy.detail); expect(root.querySelector("#faq [data-content-section-text] [data-faq-after]")?.textContent).toBe("After FAQ");
+    for (const [View, server] of [[LandingView, false], [ServerLandingView, true]] as const) {
+      const root = dom(renderToStaticMarkup(<View document={doc} peek={false} afterSection={{ faq: <p data-faq-after="">After FAQ</p> }} />));
+      expect(root.querySelector("#faq")?.closest<HTMLElement>("[data-landing-ground]")?.style.paddingBlock).toBe("");
+      expect(root.querySelectorAll(`#faq [data-items] ${server ? "summary" : "button"}`)).toHaveLength(4);
+      expect(root.querySelector("#faq")?.textContent).toContain(copy.detail);
+      expect(root.querySelector("#faq [data-content-section-modules]")?.lastElementChild?.hasAttribute("data-faq-after")).toBe(true);
+    }
   });
 });
 
@@ -494,7 +499,7 @@ describe("canonical renderer review regressions", () => {
     }
   });
   it("retains legacy FAQ fragment offsets and band measure for both entries", () => {
-    const authored: SectionedViewDocument = { id: "legacy-anchors", sections: [{ id: "hero", kind: "hero", ground: "inverse", heading: short }, { id: "faq", kind: "faq", ground: "base", layout: "split", heading: short, items: [{ id: "one", question: short, answer: ref("detail") }] }, { id: "features", kind: "feature-grid", ground: "base", heading: short, items: [item("first"), item("second", "second")] }] };
+    const authored: SectionedViewDocument = { id: "legacy-anchors", sections: [{ id: "hero", kind: "hero", ground: "inverse", heading: short }, { id: "faq", kind: "faq", ground: "base", layout: "split", heading: short, items: ["one", "two", "three", "four"].map(id => ({ id, question: short, answer: ref("detail") })) }, { id: "features", kind: "feature-grid", ground: "base", heading: short, items: [item("first"), item("second", "second")] }] };
     expect(validateSectionedViewDocument(authored)).toEqual([]); const doc = resolveSectionedViewDocument(authored, resolver);
     for (const server of [false, true]) {
       const root = dom(renderToStaticMarkup(server ? <ServerLandingView document={doc} peek={false} header="reserved" measure="prose" /> : <LandingView document={doc} peek={false} header="reserved" measure="prose" />));

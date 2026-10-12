@@ -320,8 +320,8 @@ describe("packed Publisher web React-server boundary", () => {
     expect(server.contract!.text).toEqual(expect.arrayContaining(["Share", "Check", "Review", "Return", "Optional supporting lead."]));
   });
 
-  it("keeps packed Landing disclosure entry-specific while preserving its native published FAQ bridge", () => {
-    expect(normal.landingHtml?.match(/<button /g)).toHaveLength(4);expect(normal.landingHtml?.match(/<summary /g)).toHaveLength(4);expect(normal.landingHtml).toContain("data-rac");
+  it("renders packed canonical and published Landing FAQs through entry-specific Items", () => {
+    expect(normal.landingHtml?.match(/<button /g)).toHaveLength(8);expect(normal.landingHtml).not.toContain("<summary");expect(normal.landingHtml).toContain("data-rac");
     expect(server.landingTags?.filter(tag=>tag==="summary")).toHaveLength(8);expect(server.landingTags).not.toContain("button");
     expect(server.landingText).toEqual(expect.arrayContaining(["Packed landing page","Packed question?","Packed answer.","Published questions"]));
   });
@@ -344,14 +344,15 @@ describe("packed Publisher web React-server boundary", () => {
   });
 
   it.each(["publishedSplit", "publishedStacked"] as const)(
-    "retains native packed Landing FAQ rows for %s on both entries",
+    "renders packed published FAQ %s with canonical entry-specific controls",
     name => {
       const ordinary = normal.landingCases![name];
       const native = server.landingCases![name];
-      expect(ordinary.html?.match(/<summary /g)).toHaveLength(4);
-      expect(ordinary.html?.match(/<details /g)).toHaveLength(4);
-      expect(ordinary.html).not.toContain("<button");
-      expect(ordinary.html).not.toContain("data-rac");
+      expect(ordinary.html?.match(/<button /g)).toHaveLength(4);
+      expect(ordinary.html).not.toContain("<summary");
+      expect(ordinary.html).not.toContain("<details");
+      expect(ordinary.html).toContain("data-rac");
+      expect(ordinary.html).toContain('data-items="" data-arrangement="rows" data-columns="1"');
       expect(ordinary.html).toContain("Published questions");
       expect(ordinary.html).toContain("Packed question?");
       expect(ordinary.html).toContain("Packed answer.");
