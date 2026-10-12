@@ -103,14 +103,20 @@ export function CardLinkTitle({ href, frame, ground, iconSize = "sm", children, 
 
 const INTERACTIVE_TAGS = new Set(["a", "button", "input", "select", "textarea", "summary", "details", "label", "iframe"]);
 
-function interactiveIn(node: ReactNode): boolean {
+function interactiveIn(node: ReactNode, inSvg = false): boolean {
   let found = false;
   Children.forEach(node, (child) => {
     if (found || !isValidElement(child)) return;
     const props = (child.props ?? {}) as Record<string, unknown>;
+    const tag = typeof child.type === "string" ? child.type.toLowerCase() : undefined;
+    const svg = tag === "svg" || inSvg;
+    const resource = svg && (tag === "use" || tag === "image");
+    const editable = props.contentEditable === true || (typeof props.contentEditable === "string" && ["", "true", "plaintext-only"].includes(props.contentEditable.toLowerCase()));
+    const focusable = (typeof props.tabIndex === "number" && Number.isFinite(props.tabIndex)) || (typeof props.tabIndex === "string" && props.tabIndex.trim() !== "" && Number.isFinite(Number(props.tabIndex)));
+    // A passive SVG reference is not a link; authored handlers, focus and editing still create targets.
     if (typeof child.type === "string" && INTERACTIVE_TAGS.has(child.type)) found = true;
-    else if (props.href !== undefined || props.onClick !== undefined || props.onPress !== undefined) found = true;
-    else found = interactiveIn(props.children as ReactNode);
+    else if ((props.href !== undefined && !resource) || props.onClick !== undefined || props.onPress !== undefined || (resource && (editable || focusable))) found = true;
+    else found = interactiveIn(props.children as ReactNode, tag === "foreignobject" ? false : svg);
   });
   return found;
 }
