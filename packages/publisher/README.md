@@ -357,10 +357,11 @@ Name a shipped template when its slots cover the page:
   `notes` (the alternate-step lines, such as "Forgot password?" or
   "No account? Join the waitlist") renders below it, before the footnote, and
   is always the site's copy. `secondaryAction` is the deprecated name of
-  `notes` and renders in the same place; passing both throws. An invitation or activation step never offers
-  request-access or sign-up: the view has no mode and no `requestAccess`
-  prop, so each site's activation-page test should assert no request-access or
-  sign-up link. Pass each `notes` line as one element: text plus a
+  `notes` and renders in the same place; passing both throws. Optional
+  `noAccountPrompt` and `requestAccessLabel` hold caller copy and a labeled
+  link. Invitation-only sign-in and activation omit both props and
+  request-access/sign-up notes; each site's page test should assert no
+  request-access or sign-up text. Pass each `notes` line as one element: text plus a
   link in one fragment splits onto two lines. When the sign-in provider is
   unavailable, `isDisabled` keeps the form on screen inside a disabled
   `<fieldset>` with the typed values still shown; the explanation goes in the
@@ -3142,14 +3143,21 @@ Keep the form's single primary action and `front-door.unavailable.notice`.
 `SignInForm.access` is the closed optional union `"open" | "invite-only" |
 "staff-only"` (default `"open"`); restricted values use
 `front-door.identifier-not-found-neutral.notice` for identifier failures.
-This copy selection does not enforce authorization; the host's handlers do.
+The neutral notice avoids confirming account existence only in its wording;
+it does not hide differences in the flow. An identifier accepted by the host
+advances to the password step, while a rejected identifier stays on the first
+step; response timing can also differ. The host must address those signals
+if it needs to conceal account existence. This copy selection does not
+enforce authorization; the host's handlers do.
 The host selects `front-door.sign-in-invite-only.description` or
 `front-door.sign-in-staff-only.description` for the surrounding view.
 
 ```tsx
 import { AuthView, SignInForm } from "@clossys/publisher/web";
-import { resolveFrontDoorCopy } from "@clossys/writer";
-import type { FrontDoorKey } from "@clossys/writer";
+import {
+  resolveFrontDoorCopy,
+  type FrontDoorKey,
+} from "@clossys/writer";
 
 const nouns = { surface: "Acme Console" };
 function copy(id: FrontDoorKey) {

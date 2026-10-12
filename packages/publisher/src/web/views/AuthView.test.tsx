@@ -552,7 +552,7 @@ describe("invitation-only AuthView composition", () => {
     const copy = (key: Parameters<typeof resolveFrontDoorCopy>[0]) => resolveFrontDoorCopy(key, { surface: "Acme Console" }).text;
     const { container } = render(<AuthView heading={copy("front-door.sign-in.title")}
       description={copy("front-door.sign-in-invite-only.description")}
-      form={<SignInForm nouns={{ surface: "Acme Console" }} unavailable identify={vi.fn()} verify={vi.fn()} onSignedIn={vi.fn()} />} />);
+      form={<SignInForm access="invite-only" nouns={{ surface: "Acme Console" }} unavailable identify={vi.fn()} verify={vi.fn()} onSignedIn={vi.fn()} />} />);
     expect(container.textContent).not.toMatch(/request access|sign up|no account|don’t have an account/i);
     expect(screen.getByText("Sign-in is by invitation to Acme Console.")).toBeInTheDocument();
     expect(screen.getAllByRole("button")).toHaveLength(1);
@@ -566,6 +566,11 @@ describe("invitation-only AuthView composition", () => {
     const copy = (slot: "title" | "description" | "primary") => resolveFrontDoorCopy(`front-door.not-authorized-${access}.${slot}`, { surface: "Acme Console" }).text;
     const { container } = render(<AuthView heading={copy("title")} description={copy("description")}
       form={<button type="button">{copy("primary")}</button>} />);
+    const expected = access === "staff-only"
+      ? { title: "Staff access required", description: "This account doesn’t have staff access to Acme Console." }
+      : { title: "Invitation required", description: "This account doesn’t have an invitation to Acme Console." };
+    expect(screen.getByRole("heading", { level: 1, name: expected.title })).toBeInTheDocument();
+    expect(screen.getByText(expected.description)).toBeInTheDocument();
     expect(screen.getAllByRole("button")).toHaveLength(1);
     expect(screen.getByRole("button", { name: "Switch account" })).toBeInTheDocument();
     expect(container.textContent).not.toMatch(/sign out|request access|sign up/i);

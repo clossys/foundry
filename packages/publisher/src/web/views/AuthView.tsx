@@ -119,8 +119,8 @@ export interface AuthViewProps extends HTMLAttributes<HTMLDivElement> {
    * own line, so wrap each line in one element: text plus a link in one
    * fragment splits onto two lines. The card holds
    * only the form and its one primary action. The text is always the site's
-   * copy: this view has no `requestAccess` prop and no built-in link. An
-   * invitation-only sign-in omits `noAccountPrompt`, `requestAccessLabel`
+   * copy. Optional `noAccountPrompt` and `requestAccessLabel` hold caller
+   * copy and a labeled link. Invitation-only sign-in omits both props
    * and sign-up notes. Keep one primary form action and the form's unavailable
    * notice. The README documents this composition and a host assertion.
    */
