@@ -3127,6 +3127,62 @@ it("renders one frame around the not-found view", () => {
 });
 ```
 
+### Invitation-only and staff-only sign-in
+
+Compose this mode inside the host's `SiteFrame`, without deprecated chrome
+props. Omit `AuthView.noAccountPrompt`, `AuthView.requestAccessLabel` and
+sign-up/request-access `notes`. Both copy fields are optional independently;
+absent or empty fields leave no row or link. For an open surface, the caller
+may pass the prompt and a labeled link as those two props, resolving
+`front-door.request-access.*` only when needed. Restricted sign-in does not
+need a `requestAccessLabel` noun. Omit self-service recovery notes if the host
+chooses to keep recovery outside this surface.
+
+Keep the form's single primary action and `front-door.unavailable.notice`.
+`SignInForm.access` is the closed optional union `"open" | "invite-only" |
+"staff-only"` (default `"open"`); restricted values use
+`front-door.identifier-not-found-neutral.notice` for identifier failures.
+This copy selection does not enforce authorization; the host's handlers do.
+The host selects `front-door.sign-in-invite-only.description` or
+`front-door.sign-in-staff-only.description` for the surrounding view.
+
+```tsx
+import { AuthView, SignInForm } from "@clossys/publisher/web";
+import { resolveFrontDoorCopy } from "@clossys/writer";
+import type { FrontDoorKey } from "@clossys/writer";
+
+const nouns = { surface: "Acme Console" };
+function copy(id: FrontDoorKey) {
+  const result = resolveFrontDoorCopy(id, nouns);
+  if (!result.complete) throw new Error("Front-door copy is unavailable.");
+  return result.text;
+}
+
+// Render inside the layout's SiteFrame; handlers belong to the host.
+const signIn = <AuthView
+  heading={copy("front-door.sign-in.title")}
+  description={copy("front-door.sign-in-invite-only.description")}
+  form={<SignInForm access="invite-only" nouns={nouns}
+    identify={identify} verify={verify} onSignedIn={goHome}
+    unavailable={unavailable} />}
+/>;
+
+// A host test can copy these assertions:
+const { container } = render(signIn);
+expect(container.textContent).not.toMatch(/request access|sign up|no account|don’t have an account/i);
+expect(screen.getAllByRole("button")).toHaveLength(1);
+expect(container.querySelector("main, a:empty, p:empty")).toBeNull();
+```
+
+For not-authorized, use the matching
+`front-door.not-authorized-invite-only.{title,description,primary}` or
+`front-door.not-authorized-staff-only.{title,description,primary}` in an
+`AuthView` with a single switch-account control in `form` and no `notes`.
+There is no separate sign-out action in this composition. Both variants
+require only `surface`; neither discloses the account identifier. The same
+`AuthView` composition renders equivalent markup from ordinary and
+react-server entries. Interactive forms belong in the host's client boundary.
+
 ### `SignInForm`
 
 `SignInForm`, exported from `@clossys/publisher/web`, is an identifier-first

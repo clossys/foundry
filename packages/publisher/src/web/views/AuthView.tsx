@@ -1,7 +1,7 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { mergeUiClasses } from "@clossys/designer/atoms/server";
 import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
-import { PAGE_COLUMN_CLASSES, PageLayout, pageColumnStyle } from "../internal/PageLayout.js";
+import { PAGE_COLUMN_CLASSES, PageLayout, hasContent, pageColumnStyle } from "../internal/PageLayout.js";
 import type { SiteChromeGround } from "../internal/viewChromeGround.js";
 import { assertViewContentRoot, usesLegacyChrome } from "../internal/viewContentRoot.js";
 
@@ -120,12 +120,15 @@ export interface AuthViewProps extends HTMLAttributes<HTMLDivElement> {
    * fragment splits onto two lines. The card holds
    * only the form and its one primary action. The text is always the site's
    * copy: this view has no `requestAccess` prop and no built-in link. An
-   * invitation or activation step never offers request-access or sign-up -
-   * the view has no mode and cannot tell it from sign-in, so the site keeps
-   * that rule, and its activation-page test should assert there is no
-   * request-access link.
+   * invitation-only sign-in omits `noAccountPrompt`, `requestAccessLabel`
+   * and sign-up notes. Keep one primary form action and the form's unavailable
+   * notice. The README documents this composition and a host assertion.
    */
   notes?: ReactNode;
+  /** Optional caller copy before the request-access label; omitted or empty renders no prompt. */
+  noAccountPrompt?: ReactNode;
+  /** Optional caller label or labeled link; omitted or empty renders no label or link. No noun is resolved by the view. */
+  requestAccessLabel?: ReactNode;
   /**
    * @deprecated Use `notes`. The same slot under its earlier name, rendered
    * in the same place; passing both throws.
@@ -194,6 +197,8 @@ export function AuthView({
   description,
   form,
   notes,
+  noAccountPrompt,
+  requestAccessLabel,
   secondaryAction,
   footnote,
   isDisabled,
@@ -219,6 +224,13 @@ export function AuthView({
           form
         )}
       </PageLayout>
+      {hasContent(noAccountPrompt) || hasContent(requestAccessLabel) ? (
+        <p className="text-center text-body-s text-ink-secondary">
+          {noAccountPrompt}
+          {hasContent(noAccountPrompt) && hasContent(requestAccessLabel) ? " " : null}
+          {requestAccessLabel}
+        </p>
+      ) : null}
       {footnote ? <p className="text-center text-body-s text-ink-muted">{footnote}</p> : null}
     </>
   );

@@ -16,6 +16,8 @@ export type SignInFailure = "credential" | "notFound" | "rateLimited" | "locked"
 export type SignInResult = { status: "ok" } | { status: "needsCode" } | { status: SignInFailure };
 
 export interface SignInFormProps {
+  /** Selects the neutral identifier-failure notice for restricted sign-in. The host selects its AuthView description and omits access prompts. */
+  access?: "open" | "staff-only" | "invite-only";
   /** Looks the identifier up. Receives it trimmed. A rejection is read as `unavailable`. */
   identify: (identifier: string) => Promise<SignInResult>;
   /**
@@ -111,7 +113,7 @@ export function createSignInForm(resolveCopy: FrontDoorResolver) {
    * What it guarantees: nothing is validated before a submit or on blur, and an
    * empty submit shows its notice inline, moves focus to the step's field and
    * calls no handler; `credential` and `notFound` show inline on the step's own
-   * field, which takes focus (the identify step reads both as "no account", the
+   * field, which takes focus (the identify step uses a neutral notice for restricted access, the
    * password step as "wrong password", the code step as "wrong or expired
    * code"), and `rateLimited`, `locked`, `network` and `unavailable` show in
    * the form's one `submitError` alert, so a failure is never shown twice; an
@@ -133,7 +135,13 @@ export function createSignInForm(resolveCopy: FrontDoorResolver) {
    * What it does not do: no passkey, SSO, sign-up or one-time-code first
    * factor, no redirect, no resend cooldown, and no password reset link.
    */
-  return function SignInForm({ identify, verify, verifyCode, resendCode, unavailable = false, onSignedIn, nouns }: SignInFormProps) {
+  return function SignInForm({ identify, verify, verifyCode, resendCode, unavailable = false, onSignedIn, nouns, access = "open" }: SignInFormProps) {
+    if (access !== "open" && access !== "staff-only" && access !== "invite-only") {
+      throw new RenderError("resolution-failed", "SignInForm access must be open, staff-only or invite-only.");
+    }
+    const identifierNotice: FrontDoorKey = access === "open"
+      ? "front-door.identifier-not-found.notice"
+      : "front-door.identifier-not-found-neutral.notice";
     const [step, setStep] = useState<Step>("identify");
     const [identifier, setIdentifier] = useState("");
     const [secret, setSecret] = useState("");
@@ -175,7 +183,7 @@ export function createSignInForm(resolveCopy: FrontDoorResolver) {
       identifierRequired: copyFor("front-door.identifier-required.notice", known),
       passwordRequired: copyFor("front-door.password-required.notice", known),
       codeRequired: copyFor("front-door.code-required.notice", known),
-      identifierNotFound: copyFor("front-door.identifier-not-found.notice", known),
+      identifierNotFound: copyFor(identifierNotice, known),
       passwordNotice: copyFor("front-door.password.notice", known),
       codeNotice: copyFor("front-door.code.notice", known),
       rateLimited: copyFor("front-door.rate-limited.notice", known),
@@ -189,7 +197,7 @@ export function createSignInForm(resolveCopy: FrontDoorResolver) {
       "front-door.identifier-required.notice": text.identifierRequired,
       "front-door.password-required.notice": text.passwordRequired,
       "front-door.code-required.notice": text.codeRequired,
-      "front-door.identifier-not-found.notice": text.identifierNotFound,
+      [identifierNotice]: text.identifierNotFound,
       "front-door.password.notice": text.passwordNotice,
       "front-door.code.notice": text.codeNotice,
       "front-door.rate-limited.notice": text.rateLimited,
@@ -241,7 +249,7 @@ export function createSignInForm(resolveCopy: FrontDoorResolver) {
         setCode("");
         setStep("code");
       } else if (status === "credential" || status === "notFound") {
-        setFieldNotice(FIELD_ERROR_FOR_STEP[step]);
+        setFieldNotice(step === "identify" ? identifierNotice : FIELD_ERROR_FOR_STEP[step]);
         focus(step);
       } else {
         // Anything else, including a stray `needsCode` or a status outside the union, is a failure to sign in, never silence.
