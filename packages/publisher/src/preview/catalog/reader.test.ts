@@ -55,6 +55,9 @@ describe('reader function catalog', () => {
         expect([...root.querySelectorAll('[data-catalog-function]')].map(n => n.getAttribute('data-catalog-function'))).toEqual(pages);
         expect(root.body.textContent).toContain('The information is');
         expect(root.body.textContent).not.toContain('Other kinds');
+        const chooser = root.querySelector('nav[aria-label="Catalog functions"] ul')!;
+        expect(root.defaultView!.getComputedStyle(chooser).display).toBe('grid');
+        expect(chooser.classList.contains('catalog-function-grid')).toBe(true);
     });
     it('renders exactly 31 retained samples with reader-job captions and distinct headings', () => {
         const rendered = buildCatalogFunctionPages(sheets);
@@ -186,6 +189,11 @@ describe('reader function catalog', () => {
                 continue;
             }
             expect(table, definition.id).not.toBeNull();
+            const region = table!.closest('[role="region"]');
+            expect(region, definition.id).not.toBeNull();
+            expect(region?.getAttribute('aria-label')).toBe(`${definition.label} configuration reference`);
+            expect(region?.getAttribute('tabindex')).toBe('0');
+            expect(table!.classList.contains('catalog-table')).toBe(true);
             expect([...table!.querySelectorAll('thead th')].map(node => node.textContent)).toEqual(['Axis', 'Values', 'Effect', 'When']);
             for (const axis of axes!) {
                 const row = table!.querySelector(`[data-catalog-axis="${axis.name}"]`);
