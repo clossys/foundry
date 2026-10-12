@@ -6,19 +6,19 @@ import { desugarRecipe, SECTIONED_VIEW_CONTENT_CONTRACT, SECTIONED_VIEW_ITEM_REC
 import type { FrameSize, FrameLayout, SectionedViewItemsBlock, CanonicalSectionedViewItemsBlock, SectionedViewMatrixBlock, SectionedViewItem, SectionedViewItemSpan, SectionedViewMedia, SectionedViewSpecimenMedia, SectionedViewSceneMedia, SectionedViewBadge } from "./content-contract.js";
 export * from "./content-contract.js";
 
-/** The only grounds a section may name. Rendering maps this vocabulary to design tokens later. */
+/** Resolved section grounds; canonical content sections author only inverse or omit ground. */
 export type SectionedViewGround = "base" | "sunken" | "inverse";
 
 /**
- * Document-level rhythm for sections that omit `ground`. `inverse` is never
- * applied by rhythm, and an explicit `ground` always wins.
+ * Document-level rhythm for published section kinds that omit `ground`.
+ * Canonical content sections always delegate omitted grounds to the view,
+ * independently of this setting. An explicit ground always wins.
  *
  * - `"base-then-sunken"`: `base`, then `sunken`, in document order.
- * - `"view"`: the rendering view assigns them, from where each section lands
- *   on the page (`LandingView` alternates them upward from its closing band,
- *   across every document it renders). Resolution fills them with `base`,
- *   what a view without its own rhythm renders, and lists their ids in the
- *   resolved document's `viewGrounds`.
+ * - `"view"`: the rendering view assigns grounds from page position
+ *   (`LandingView` plans cadence across every document and its closing band).
+ *   Resolution uses `base` as a placeholder and lists delegated section ids
+ *   in the resolved document's `viewGrounds`.
  */
 export type SectionedViewSectionGroundRhythm = "base-then-sunken" | "view";
 
@@ -618,8 +618,10 @@ export interface ResolvedSectionedViewDocument {
   /** Every resolved CopyRef in depth-first authored order; pass directly to collectCopyProvenance. */
   resolutions: CopyResolution[];
   /**
-   * Present only for `sectionGroundRhythm: "view"`: the ids of the sections
-   * that omitted `ground`, whose ground the rendering view may assign.
+   * Ids of canonical content sections that omitted `ground`, plus omitted
+   * grounds on published section kinds when `sectionGroundRhythm` is `"view"`.
+   * The view assigns their effective grounds; resolved `base` is a placeholder.
+   * The `"view"` rhythm also preserves this field when the list is empty.
    */
   viewGrounds?: string[];
 }

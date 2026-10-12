@@ -1,4 +1,4 @@
-import type { ReactElement } from "react";
+import { useId, type ReactElement } from "react";
 import { Item, Items } from "@clossys/designer/blocks/server";
 import type { ItemData } from "@clossys/designer/blocks/server";
 
@@ -38,8 +38,14 @@ export function renderViewLinks(value: ViewLinksInput | undefined, owner: keyof 
     const item = value.items[index];
     if (!item || typeof item !== "object" || typeof item.href !== "string") throw new TypeError(messages.destination);
   }
-  return <section aria-label={value.label} className="flex flex-col gap-lg">
-    <h2 className="text-h3 font-display text-ink-primary">{value.label}</h2>
+  return <ViewLinksSection value={value} />;
+}
+
+/** Allocate the label reference only for a rendered collection; omitted-view bytes stay unchanged. */
+function ViewLinksSection({ value }: { value: ViewLinksInput }): ReactElement {
+  const headingId = useId();
+  return <section aria-labelledby={headingId} className="flex flex-col gap-lg">
+    <h2 id={headingId} className="text-h3 font-display text-ink-primary">{value.label}</h2>
     {value.items.length === 1
       ? <Item {...value.items[0]!} treatment="plain" size="standard" ground="base" headingLevel={3} />
       : <Items items={value.items} arrangement="rows" columns={1} treatment="plain" size="standard" scale="item" ground="base" headingLevel={3} />}

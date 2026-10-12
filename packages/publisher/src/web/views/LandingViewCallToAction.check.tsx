@@ -32,3 +32,10 @@ export const tertiaryHero: SectionedViewAction = { ...heroQuiet, emphasis: "tert
 export const unknownBody: SectionedViewContentAction = { ...bodyTertiary, emphasis: "ghost" };
 
 export const composedClose: LandingViewProps["callToAction"] = { heading: "Close", actions: [{ id: "start", href: "/start", label: ["Start ", [null, false, <em key="now">now</em>]] }], footnote: { text: ["Note ", <strong key="detail">detail</strong>], link: { label: ["Read ", <em key="guide">guide</em>], href: "/guide" } } };
+
+// Consumers may name the resolved action through either public web barrel.
+import type { LandingViewAction as PublicLandingViewAction } from "../index.js";
+import type { LandingViewAction as ServerLandingViewAction } from "../server.js";
+export const publicNamedAction: PublicLandingViewAction = { id: "start", href: "/start", label: <em>Start</em>, emphasis: "primary" };
+export const serverNamedAction: ServerLandingViewAction = { ...publicNamedAction, id: "guide", href: "/guide", label: "Guide", emphasis: "quiet" };
+export const namedConsumerClose: LandingViewProps["callToAction"] = { heading: "Close", actions: [publicNamedAction, serverNamedAction] };

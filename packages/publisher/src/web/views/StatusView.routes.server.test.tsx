@@ -13,7 +13,11 @@ describe("StatusView routes through the server entry", () => {
     const routes: Routes = { label: "Next destinations", items: Object.freeze([{ id: "home", heading: "Home", href: "/" }, { id: "help", heading: "Help", href: "/help" }]) };
     const props = { status: "404", routes } as StatusViewProps & { routes: Routes };
     const html = renderToStaticMarkup(<webServer.StatusView {...props} />);
-    expect(html).toContain('aria-label="Next destinations"');
+    const region = /<section\b([^>]*)>([\s\S]*?)<\/section>/.exec(html)!;
+    const labelId = /aria-labelledby="([^"]+)"/.exec(region[1]!)?.[1];
+    expect(labelId).toBeTruthy();
+    expect(region[2]).toContain(`id="${labelId}"`);
+    expect(region[1]).not.toContain('aria-label=');
     expect(html).toMatch(/<h2\b[^>]*>Next destinations<\/h2>/);
     expect(html).toContain('data-arrangement="rows"');
     expect(html).toContain('data-treatment="plain"');

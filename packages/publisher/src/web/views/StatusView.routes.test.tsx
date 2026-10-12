@@ -38,7 +38,10 @@ describe("StatusView next destinations", () => {
     const { container } = draw(routes(1));
     const region = screen.getByRole("region", { name: "Next destinations" });
     expect(region.tagName).toBe("SECTION");
-    expect(region).toHaveAttribute("aria-label", "Next destinations");
+    expect(region).not.toHaveAttribute("aria-label");
+    const labelId = region.getAttribute("aria-labelledby");
+    expect(labelId).toBeTruthy();
+    expect(within(region).getByRole("heading", { level: 2, name: "Next destinations" })).toHaveAttribute("id", labelId);
     expect(within(region).getByRole("heading", { level: 2, name: "Next destinations" })).toBeVisible();
     expect(region.querySelectorAll("[data-item]")).toHaveLength(1);
     expect(region.querySelector("[data-items]")).toBeNull();
@@ -158,9 +161,11 @@ describe("GlobalErrorDocument framed routes", () => {
     const doc = errorDocument(routes(count));
     expect(doc.querySelectorAll("main")).toHaveLength(1);
     const main = doc.querySelector(`main#${SITE_MAIN_ID}`)!;
-    const region = main.querySelector('section[aria-label="Next destinations"]')!;
+    const region = main.querySelector('section[aria-labelledby]')!;
     expect(region).not.toBeNull();
     expect(region.querySelector("h2")?.textContent).toBe("Next destinations");
+    expect(region.getAttribute("aria-labelledby")).toBe(region.querySelector("h2")?.id);
+    expect(region.hasAttribute("aria-label")).toBe(false);
     expect(region.querySelectorAll("[data-item]")).toHaveLength(count);
     expect(main.querySelectorAll("h1")).toHaveLength(1);
     expect(main.querySelector("h1")?.textContent).toBe("500");

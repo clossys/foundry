@@ -425,8 +425,10 @@ function relatedSection(html: string) {
   expect(articleEnd).toBeGreaterThan(-1);
   const section = /<section\b([^>]*)>([\s\S]*?)<\/section>/.exec(html.slice(articleEnd + "</article>".length));
   expect(section).not.toBeNull();
-  expect(section![1]).toContain(`aria-label="${RELATED_LABEL}"`);
-  expect(section![1]).not.toContain("aria-labelledby");
+  const labelId = /aria-labelledby="([^"]+)"/.exec(section![1])?.[1];
+  expect(labelId).toBeTruthy();
+  expect(section![2]).toContain(`id="${labelId}"`);
+  expect(section![1]).not.toContain("aria-label=");
   return { markup: section![0], attributes: section![1], body: section![2] };
 }
 
@@ -477,17 +479,20 @@ describe("LegalView related references", () => {
       expect(section.body).toMatch(/<h2\b[^>]*>Placeholder related heading<\/h2>/);
     });
   }
-  it("names the region directly from the caller without generated heading IDs", () => {
+  it("names the region by its visible caller heading", () => {
     const section = relatedSection(render(legalDoc("terms"), { related: withRelated(relatedItems(2)) }));
     const heading = /<h2\b([^>]*)>Placeholder related heading<\/h2>/.exec(section.body);
     expect(heading).not.toBeNull();
-    expect(heading![1]).not.toMatch(/\bid=/);
+    const headingId = /\bid="([^"]+)"/.exec(heading![1])?.[1];
+    expect(headingId).toBeTruthy();
+    expect(section.attributes).toContain(`aria-labelledby="${headingId}"`);
     expect(section.attributes).not.toMatch(/\bid=/);
   });
   it("renders the caller's label as both the region name and visible heading", () => {
     const label = "Caller supplied related label";
     const html = render(legalDoc("terms"), { related: { label, items: [relatedItem("a")] } });
-    expect(html).toContain(`aria-label="${label}"`);
+    expect(html).toContain("aria-labelledby=");
+    expect(html).not.toContain(`aria-label="${label}"`);
     expect(html).toMatch(/<h2\b[^>]*>Caller supplied related label<\/h2>/);
     expect(html).not.toContain(RELATED_LABEL);
   });
