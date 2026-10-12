@@ -6,12 +6,12 @@ import { TOKENS } from "@clossys/designer/tokens";
 import { describe, expect, it } from "vitest";
 import { SECTIONED_VIEW_CONTENT_CONTRACT as C, SECTIONED_VIEW_ITEM_RECIPES, desugarRecipe, resolveSectionedViewDocument, validateSectionedViewDocument } from "../core/index.js";
 import { CATALOG_FIXTURES, CATALOG_COPY_REGISTRY, CATALOG_COMPOSITIONS, OTHER_KIND_LINKS, OTHER_KIND_SOURCE, catalogCopyResolver } from "./catalog/index.js";
-import { buildFunctionalCatalogIndex as buildReferenceCatalogIndex, buildCatalogFunctionPages, CATALOG_RECIPE_LINKS, renderCatalogFixture } from "./render-functional-catalog.js";
+import { CATALOG_RECIPE_LINKS, renderCatalogFixture } from "./catalog/contract-reference.js";
 import { previewSectionedDocument, previewCopyResolver } from "./fixture-documents.js";
-import { buildContentCatalogHtml } from "./render-content-catalog.js";
+import { buildContentCatalogHtml, buildCatalogFunctionPages } from "./render-content-catalog.js";
 import { buildMinimalBrandCssFromTokens, buildPreviewGalleryHtml, renderPreviewGalleryEntries, writePreviewGallery } from "./render-preview-gallery.js";
 
-const functions = ["overview", "introduce", "show", "explain", "index", "sequence", "compare", "frame", "parts"];
+const functions = ["overview", "introduce", "show", "explain", "index-function", "sequence", "compare", "frame", "parts"];
 function filesAt(root: string, prefix = ""): string[] {
   return readdirSync(join(root, prefix), { withFileTypes: true }).flatMap(entry => entry.isDirectory() ? filesAt(root, `${prefix}${entry.name}/`) : [`${prefix}${entry.name}`]);
 }
@@ -24,7 +24,7 @@ describe("functional content catalog", () => {
     for (const entry of entries) {
       expect(entry.querySelector("a")?.getAttribute("href")).toBe(`catalog/${entry.getAttribute("data-catalog-function")}.html`);
       expect(entry.querySelector("p")?.textContent?.trim()).toBeTruthy();
-      expect(entry.querySelectorAll("[data-catalog-axis]").length).toBeGreaterThan(0);
+      if (!["overview", "parts"].includes(entry.getAttribute("data-catalog-function")!)) expect(entry.querySelectorAll("[data-catalog-axis]").length).toBeGreaterThan(0);
     }
   });
 
@@ -135,9 +135,9 @@ describe("retained contract configuration reference data", () => {
       expect(desugarRecipe(fixture.section.block)).toMatchObject(SECTIONED_VIEW_ITEM_RECIPES[recipe].fixed);
     }
   });
-  it("resolves all local page and fragment links and groups every example by its named axis", () => {
+  it("resolves emitted reader links and retains recipe defaults, slots and real composition", () => {
     const sheets = { designerTokens: "designer-tokens.css", utilities: "publisher-preview.css", brand: null };
-    const pages = [{ file: "content-catalog.html", content: buildReferenceCatalogIndex(sheets) }, ...buildCatalogFunctionPages(sheets)];
+    const pages = [{ file: "content-catalog.html", content: buildContentCatalogHtml(sheets) }, ...buildCatalogFunctionPages(sheets)];
     const byFile = new Map(pages.map(page => [page.file, new JSDOM(page.content).window.document]));
     byFile.set("gallery.html", new JSDOM(buildPreviewGalleryHtml(renderPreviewGalleryEntries())).window.document);
     let exampleCount = 0;
@@ -145,33 +145,30 @@ describe("retained contract configuration reference data", () => {
       const document = byFile.get(page.file)!;
       expect(document.querySelectorAll("main")).toHaveLength(1);
       expect(document.querySelector('link[href$="brand.css"]')).toBeNull();
-      for (const link of document.querySelectorAll(".catalog-nav a, .catalog-table a")) {
+      for (const link of document.querySelectorAll("a[href]")) {
         const url = new URL(link.getAttribute("href")!, `https://example.test/${page.file}`);
         const target = byFile.get(url.pathname.slice(1));
         expect(target, `${page.file}: ${link.getAttribute("href")}`).toBeDefined();
         if (url.hash) expect(target?.getElementById(url.hash.slice(1))).not.toBeNull();
       }
-      for (const example of document.querySelectorAll("[data-catalog-fixture]")) {
-        const fixture = CATALOG_FIXTURES.find(fixture => fixture.id === example.getAttribute("data-catalog-fixture"))!;
-        expect(example.closest("[data-catalog-axis-group]")?.getAttribute("data-catalog-axis-group")).toBe(fixture.axis);
-        exampleCount++;
-      }
+      exampleCount += document.querySelectorAll("[data-catalog-fixture]").length;
     }
-    expect(exampleCount).toBe(43);
-    const recipes = byFile.get("catalog/recipes.html")!;
-    expect([...recipes.querySelectorAll("[data-catalog-recipe]")].map(row => row.getAttribute("data-catalog-recipe"))).toEqual([...C.recipes, "comparison"]);
+    expect(exampleCount).toBe(31);
+    const overview = byFile.get("catalog/overview.html")!;
+    expect([...overview.querySelectorAll("[data-catalog-recipe]")].map(row => row.getAttribute("data-catalog-recipe"))).toEqual([...C.recipes, "comparison"]);
     for (const recipe of C.recipes) {
-      const row = recipes.querySelector(`[data-catalog-recipe="${recipe}"]`)!;
-      expect(row.querySelector("a")?.getAttribute("href")).toBe(`items.html#example-${CATALOG_RECIPE_LINKS[recipe]}`);
+      const row = overview.querySelector(`[data-catalog-recipe="${recipe}"]`)!;
+      expect(row.querySelector("a")?.getAttribute("href")).toContain(`#example-${CATALOG_RECIPE_LINKS[recipe]}`);
       for (const slot of SECTIONED_VIEW_ITEM_RECIPES[recipe].slots) expect(row.querySelector("[data-recipe-slots]")?.textContent).toContain(slot);
       if (SECTIONED_VIEW_ITEM_RECIPES[recipe].requiredSlot !== undefined) expect(row.querySelector("[data-recipe-slots]")?.textContent).toContain(`required: ${SECTIONED_VIEW_ITEM_RECIPES[recipe].requiredSlot}`);
       for (const [axis, value] of Object.entries(SECTIONED_VIEW_ITEM_RECIPES[recipe].fixed)) expect(row.querySelector("[data-recipe-fixed]")?.textContent).toContain(`${axis}=${value}`);
+      for (const [axis, value] of Object.entries(SECTIONED_VIEW_ITEM_RECIPES[recipe].defaults ?? {})) expect(row.querySelector("[data-recipe-defaults]")?.textContent).toContain(`${axis}=${value}`);
     }
-    const composition = recipes.querySelector("[data-catalog-composition] [data-landing-view]")!;
+    const composition = overview.querySelector("[data-catalog-composition] [data-landing-view]")!;
     const authored = Object.values(CATALOG_COMPOSITIONS)[0]!;
     const bands = [...composition.querySelectorAll(":scope > section")];
     expect(bands).toHaveLength(6);
-    bands.forEach((band, index) => expect(band.id === authored.sections[index]!.id || band.querySelector(`[id="${authored.sections[index]!.id}"]`) !== null).toBe(true));
+    bands.forEach((band, index) => expect(band.id.endsWith(`:${authored.sections[index]!.id}`) || band.querySelector(`[id$=":${authored.sections[index]!.id}"]`) !== null).toBe(true));
     expect(authored.sections[0]?.kind).toBe("hero");
     expect(authored.sections.slice(1, 4).every(section => section.kind === "content-section" && section.block?.type === "items" && section.block.recipe === "topics")).toBe(true);
     expect(authored.sections[4]?.kind === "content-section" && authored.sections[4].block?.type === "items" && authored.sections[4].block.recipe).toBe("faq");

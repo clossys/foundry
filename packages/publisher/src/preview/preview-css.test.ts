@@ -77,7 +77,7 @@ describe("styles/preview.css", () => {
   it("is copied into the preview output and linked by the gallery, the content catalog and the site pages", () => {
     expect(readFileSync(join(dir, "out", PREVIEW_UTILITIES_BASENAME), "utf8")).toBe(committed);
     const linking = pages.map((page) => page.file);
-    expect(linking).toEqual(expect.arrayContaining(["gallery.html", "content-catalog.html", "site-home.html", ...["overview", "introduce", "show", "explain", "index", "sequence", "compare", "frame", "parts"].map(fn => `catalog/${fn}.html`)]));
+    expect(linking).toEqual(expect.arrayContaining(["gallery.html", "content-catalog.html", "site-home.html", ...["overview", "introduce", "show", "explain", "index-function", "sequence", "compare", "frame", "parts"].map(fn => `catalog/${fn}.html`)]));
     for (const page of pages) expect(page.html, page.file).not.toContain("designer-compiled.css");
   });
 

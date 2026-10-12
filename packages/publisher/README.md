@@ -4211,22 +4211,19 @@ and the catalog copy registries in `src/preview/catalog/` (never hardcoded in a 
 - **Web views** (`gallery.html`) — every shipped view: `MarketingView`,
   `SectionedView`, `AuthView`, `ErrorView`, `CaptureView`, `DocumentView`,
   `CollectionView`, and `LandingView (hero-compact)`.
-- **Content catalog** (`content-catalog.html`): choose a reader job —
-  Introduce, Show, Explain, Index, Sequence or Compare — then a recipe and
-  configuration. Overview demonstrates a six-band page; Frame and Parts
-  provide shared references. The nine pages under `catalog/` show 31 distinct
-  samples, real configuration thumbnails and concise count and slot rules.
-  Published kinds are filed under the same reader jobs and link to their
-  existing examples in the web-view gallery.
+- **Content catalog** (`content-catalog.html`): choose Introduce, Show,
+  Explain, Index, Sequence or Compare, then use a recipe and configuration
+  reference. Overview shows a six-band page. Frame covers shared layout,
+  size and grounds; Parts links to complete Show examples. The nine pages
+  under `catalog/` render 31 retained examples once, with four distinct
+  configuration variants, text axis tables and concise count and slot rules.
+  The Index function lives at `catalog/index-function.html`. Published kinds
+  link to their existing examples in the web-view gallery.
 
-  The sample copy describes separate generic workspace scenarios, with
-  explicit grounds and compatible current configurations. Three Scene
-  templates remain distinct from seven source-document formats. Navigation
-  and configuration captions are preview chrome outside the native examples.
-  This presentation does not remove contract fields or choose grounds
-  automatically. The historical multi-band fixture remains independently
-  tested, including its deliberate four-step count warning and original
-  variety findings.
+  Approved copy describes concrete workspace scenarios. Three Scene templates
+  remain distinct from seven source-document formats. The historical multi-band
+  fixture remains independently tested, including its deliberate four-step
+  count warning and original variety findings.
 - **Site** (`site-*.html`) — fixtures for `templates/site`'s routes,
   rendered through `MarketingView` for home/about/contact/privacy/terms and
   a direct `ErrorView` call for `not-found`. The template's own routes now

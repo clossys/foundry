@@ -67,7 +67,7 @@ describe("publisher-preview main — brand coverage gate", () => {
     const brandPath = writeBrandCss(buildMinimalBrandCssFromTokens({ TOKENS }));
     const outDir = join(dir, "out");
     expect(main([brandPath, outDir]), JSON.stringify(vi.mocked(console.error).mock.calls)).toBe(0);
-    for (const fn of ["overview", "introduce", "show", "explain", "index", "sequence", "compare", "frame", "parts"]) {
+    for (const fn of ["overview", "introduce", "show", "explain", "index-function", "sequence", "compare", "frame", "parts"]) {
       expect(existsSync(join(outDir, `catalog/${fn}.html`))).toBe(true);
       expect(vi.mocked(console.log).mock.calls.flat().join("\n")).toContain(`catalog/${fn}.html`);
     }
