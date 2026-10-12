@@ -403,16 +403,47 @@ test("artifact test paths: terminal test and spec snapshots are refused", async 
   assertShippedTestFindings(result, report, paths);
 });
 
-test("artifact test paths: specification documents and nonterminal test suffixes remain publishable", async (t) => {
-  const paths = ["contracts/openapi.spec.yaml", "contracts/openapi.SPEC.YML", "docs/api.spec.md", "docs/legacy.SpEc.Md", "src/a.test.d.ts.backup", "src/a.spec.js.map.backup", "src/a.test.ts.snap.backup", "src/a.spec.json.schema.json", "src/a.test.d.ts.map.backup", "src/a.spec.d.cts.snap.backup", "src/a.test.d.mts.schema.json"];
+test("artifact test paths: YAML and Markdown spec artifacts remain refused", async (t) => {
+  const paths = ["contracts/openapi.spec.yaml", "contracts/openapi.SPEC.YML", "docs/api.spec.md", "docs/legacy.SpEc.Md"];
+  const { result, report } = await scanShippedPaths(t, paths);
+  assertShippedTestFindings(result, report, paths);
+});
+
+test("artifact test paths: ordinary declarations, maps, and nonterminal test suffixes remain publishable", async (t) => {
+  const paths = ["dist/index.d.ts", "dist/latest.d.ts", "dist/contest.map", "dist/contest-d.ts", "dist/retrospec-d.ts", "src/catalog.test.css/runtime.map", "src/catalog.spec.d.css/runtime.ts", "dist/test.d.ts", "dist/spec.d.ts", "dist/latest.d.ts.map", "dist/styles.d.css.ts", "dist/config.d.json.ts", "src/a.test.d.ts.backup", "src/a.spec.js.map.backup", "src/a.test.ts.snap.backup", "src/a.spec.json.schema.json", "src/a.test.d.ts.map.backup", "src/a.spec.d.cts.snap.backup", "src/a.test.d.mts.schema.json", "src/a.test-d.ts.backup", "src/a.e2e-spec.ts.schema.json", "src/a.test.css.map.backup", "src/a.test.d.css.ts.backup", "src/a.spec.d.json.ts.schema.json"];
   const { result, report } = await scanShippedPaths(t, paths);
   assert.equal(result.code ?? 0, 0, JSON.stringify(report));
   assert.deepEqual(report.structural, []);
 });
 
 
-test("artifact test paths: specification document exceptions preserve other suffix and segment refusals", async (t) => {
+test("artifact test paths: terminal spec suffix and whole test segment refusals remain high severity", async (t) => {
   const paths = ["docs/api.spec.html", "docs/api.spec.txt", "docs/legacy.SPEC.HTML", "docs/legacy.SPEC.TXT", "docs/api.test.yaml", "docs/api.test.md", "__tests__/api.spec.yaml", "src/__Fixtures__/api.spec.md", "src/__snapshots__/api.spec.yml", "src/__MOCKS__/api.SPEC.MD"];
+  const { result, report } = await scanShippedPaths(t, paths);
+  assertShippedTestFindings(result, report, paths);
+});
+
+
+test("artifact test paths: repeated test/spec suffixes and conventional fixture specs are refused", async (t) => {
+  const paths = ["dist/x.test.spec.md", "dist/x.test.spec.yaml", "test/fixtures/data.spec.yml", "fixtures/x.spec.yaml", "dist/x.spec.spec.md", "dist/x.spec.spec.yaml", "src/x.test.spec.spec.yml", "dist/deep/a/b/x.TEST.SPEC.MD"];
+  const { result, report } = await scanShippedPaths(t, paths);
+  assertShippedTestFindings(result, report, paths);
+});
+
+test("artifact test paths: type tests and e2e spec conventions are refused", async (t) => {
+  const paths = ["src/a.test-d.ts", "dist/a.spec-d.ts", "src/a.e2e-spec.ts", "src/b.test-d.tsx", "src/b.spec-d.mts", "src/b.e2e-spec.cts", "src/c.test-d.mts", "src/c.spec-d.cts", "src/c.e2e-spec.tsx", "dist/types.TEST-D.CTS", "dist/types.SPEC-D.TSX", "src/deep/a.E2E-SPEC.MTS"];
+  const { result, report } = await scanShippedPaths(t, paths);
+  assertShippedTestFindings(result, report, paths);
+});
+
+test("artifact test paths: source maps for arbitrary single test extensions are refused", async (t) => {
+  const paths = ["dist/a.test.css.map", "dist/a.spec.json.map", "dist/a.test.vue.map", "dist/a.spec.svelte.map", "dist/b.TEST.JSON.MAP", "dist/b.SPEC.CSS.MAP", "dist/deep/a/b/x.test.css.map"];
+  const { result, report } = await scanShippedPaths(t, paths);
+  assertShippedTestFindings(result, report, paths);
+});
+
+test("artifact test paths: arbitrary-extension test declarations and their maps and snapshots are refused", async (t) => {
+  const paths = ["dist/a.test.d.css.ts", "dist/a.spec.d.json.ts", "dist/a.test.d.vue.mts", "dist/a.spec.d.svelte.cts", "dist/b.TEST.D.CSS.TS", "dist/b.SpEc.D.JsOn.Ts", "dist/a.test.d.css.ts.map", "dist/a.spec.d.json.ts.snap", "dist/deep/a/b/x.test.d.css.ts"];
   const { result, report } = await scanShippedPaths(t, paths);
   assertShippedTestFindings(result, report, paths);
 });
