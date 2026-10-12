@@ -6631,3 +6631,56 @@ MIT
 ## Changelog
 
 Release notes for every version are in the [changelog](https://github.com/clossys/foundry/blob/main/docs/changelogs/designer.md), kept in the public repository rather than in the installed package.
+
+## Consumer-owned art slots
+
+Consumer repositories own brand art, illustrations, photographs and authored
+scenes, including their files and usage rights. Clossys owns the slot geometry,
+contract and check. `Specimen` and `Scene` remain Clossys-owned product visuals;
+they are not consumer brand art.
+
+`ConsumerArtContract` and `checkConsumerArtContract` are browser-safe exports
+from `@clossys/designer/tokens`. Publisher's `ConsumerArtSlot` calls the check
+before rendering into an existing art seam. The contract adds no catalog
+function or configuration axis: compose catalog blocks through Introduce, Show,
+Explain, Index, Sequence and Compare, within three axes per function and four
+values per axis. Art fills a slot within that composition.
+
+| Contract field | Rule |
+| --- | --- |
+| `slot` (`ConsumerArtPosition`) | `backdrop`, `section-backdrop` or `media`; the surrounding section owns placement and text contrast. |
+| `width`, `height`, `aspect` (`ConsumerArtAspect`) | Intrinsic integers from 1 through 8192, matching `1:1`, `4:3`, `3:2` or `16:9` without rounding. Media reserves that ratio at fluid column width. A backdrop covers its containing layer and may crop. |
+| `fit` | `contain` preserves the full visual; `cover` fills and crops. Backdrops require `cover`. Keep essential information out of cropped edges. |
+| `purpose`, `alt` | Decorative art has empty alt and is hidden from assistive technology. Meaningful media has descriptive, nonblank resolved alt. Backdrops are decorative; information must also appear in the section's accessible content. |
+| `source` (`ConsumerArtSource`) | Static AVIF, WebP, PNG or JPEG photographs (`ConsumerArtFormat`), or inline SVG geometry as 1–256 `ConsumerArtPath` entries. Each path has `d`, `fillToken` and optional paired stroke paint/width. Raw SVG markup, external SVG images, embeds and animation are outside this contract. |
+| `backgroundToken`, path paint | Registered `--color-*` names only; Publisher emits live `var(...)` references. No literal colors, style overrides or arbitrary markup. Inline vector art re-themes with the surrounding brand; photographs retain their pixels, while their background follows the token. Use vector geometry for illustrations or authored brand scenes that must re-theme. |
+| `loading`, `bytes` | Raster backdrops use native lazy loading; media defaults by explicit declaration and may opt into eager loading for a first-viewport visual. Images decode asynchronously. Declare 1–2097152 transferred bytes, including all required resources. Inline SVG is static server-rendered geometry with no separate fetch; its bytes count toward the document budget. |
+
+The check accepts plain data, rejects unknown fields, and returns a
+`ConsumerArtReport` with path-bearing `ConsumerArtFinding` entries. It checks
+declarations offline; the consumer build verifies actual source dimensions,
+format, static content, transfer size and usage rights. Images render with
+intrinsic dimensions. Hidden layers contain no controls or focus targets;
+meaningful SVG receives `role="img"` and its resolved alt as the accessible
+name. Static geometry needs no reduced-motion alternate. Moving art continues
+to require the existing backdrop reduced-motion contract.
+
+When text overlays art, also apply `checkBackdropContract` to the scrim and
+worst-case background in light and dark themes, and `checkBackdropElement` to
+the rendered hidden layer. This declaration check does not measure that
+contrast. Keep a legible token ground while lazy art loads or fails.
+
+A minimal declaration references a file in the consumer repository; it ships
+no art in Designer:
+
+```ts
+import { checkConsumerArtContract, type ConsumerArtContract } from "@clossys/designer/tokens";
+
+const art: ConsumerArtContract = {
+  slot: "media", purpose: "meaningful", alt: "A tree beside a walking path",
+  width: 1600, height: 900, aspect: "16:9", fit: "contain",
+  loading: "lazy", bytes: 100000, backgroundToken: "--color-surface-base",
+  source: { format: "webp", src: "/art/photo.webp" },
+};
+const report = checkConsumerArtContract(art);
+```

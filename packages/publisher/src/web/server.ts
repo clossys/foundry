@@ -174,3 +174,6 @@ export type {
 } from "./shareCard.js";
 export { createShareCardRoute } from "./shareCardRoute.js";
 export type { ShareCardRoute, ShareCardRouteInput } from "./shareCardRoute.js";
+
+export { ConsumerArtSlot } from "./ConsumerArtSlot.js";
+export type { ConsumerArtSlotProps } from "./ConsumerArtSlot.js";

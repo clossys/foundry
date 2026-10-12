@@ -5243,3 +5243,57 @@ if (findings.some((finding) => finding.severity === "error")) {
 export const resolved = resolveSectionedViewDocument(document, resolveCopy);
 // resolved.resolutions retains the registry revision and source for every CopyRef.
 ```
+
+## Checked consumer art
+
+`ConsumerArtSlot` from `@clossys/publisher/web` (including its React server
+entry) accepts `ConsumerArtSlotProps`: one Designer `ConsumerArtContract`.
+It calls `checkConsumerArtContract` before building markup and throws a
+path-bearing `RenderError` with reason `resolution-failed` on refusal.
+Consumer repositories supply the art and rights; Clossys supplies the contract
+and check. `Specimen` and `Scene` remain product visuals owned by Clossys.
+
+See Designer's [consumer art contract](../designer/README.md#consumer-owned-art-slots)
+for dimensions, four aspect ratios, static formats, token paint, loading,
+byte limits and accessibility. Raster images use intrinsic dimensions,
+`decoding="async"` and the declared loading strategy. Inline SVG contains
+static paths whose paints use live theme tokens. Meaningful art exposes the
+resolved alt; decorative art has empty alt, `aria-hidden` and no focus targets.
+The filler reserves media geometry and fits the containing backdrop layer.
+It carries no copy, controls, handlers or art of its own.
+
+Use `slot: "media"` in the existing `Hero.media`, `ContentSection.media` or
+`MediaFigure` seam. Use `slot: "backdrop"` in `LandingView.backdrop` (or
+`HeroView.backdrop`), and `slot: "section-backdrop"` inside a consumer's
+existing positioned section backdrop layer. A consumer `BackdropLayer` may
+mount the checked filler; that name is not an exported component on this
+catalog head. The filler does not add a section prop or change existing
+blocks. Keep the layer behind text, provide a token scrim where needed, and
+run Designer's existing backdrop contrast/DOM checks on that composition.
+
+This is an art slot within the six-function catalog, not a new function,
+recipe or configuration axis. Compose the page's blocks within the catalog
+budget of three axes per function and four values per axis. Retired frozen
+blocks are not art sources. Preserve the page's reading order, accessible
+copy and token ground if the art fails to load.
+
+Minimal consumer usage (the source file belongs to that repository; resolve
+real alt copy through Writer):
+
+```tsx
+import { ConsumerArtSlot, type ConsumerArtSlotProps } from "@clossys/publisher/web";
+
+const art: ConsumerArtSlotProps["contract"] = {
+  slot: "media", purpose: "meaningful", alt: "A tree beside a walking path",
+  width: 1600, height: 900, aspect: "16:9", fit: "contain",
+  loading: "lazy", bytes: 100000, backgroundToken: "--color-surface-base",
+  source: { format: "webp", src: "/art/photo.webp" },
+};
+const visual = <ConsumerArtSlot contract={art} />;
+```
+
+The check evaluates supplied declarations without fetching their source.
+Consumer builds verify actual dimensions, static format, byte size and rights;
+token paints re-theme inline illustrations and scenes, while photographs
+retain their source pixels. Existing image/video registry contracts continue
+to govern those registered assets.

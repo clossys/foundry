@@ -18,11 +18,21 @@ it("bundles real installed packed client/views and rejects an actual Writer-root
   for (const path of [home, packs, consumer]) mkdirSync(path);
   const userconfig = join(fixture, "user.npmrc"), globalconfig = join(fixture, "global.npmrc");
   writeFileSync(userconfig, ""); writeFileSync(globalconfig, "");
-  const env = {
+  const env: NodeJS.ProcessEnv = {
     PATH: process.env.PATH!, HOME: home, TMPDIR: fixture,
     NPM_CONFIG_USERCONFIG: userconfig, NPM_CONFIG_GLOBALCONFIG: globalconfig,
     NPM_CONFIG_CACHE: join(fixture, "cache"), NPM_CONFIG_REGISTRY: "https://registry.npmjs.org",
   };
+  // Keep the isolated native installer on the environment's configured
+  // transport and CA trust, including cloud executors that require a proxy.
+  for (const key of [
+    "HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "NO_PROXY",
+    "http_proxy", "https_proxy", "all_proxy", "no_proxy",
+    "NODE_EXTRA_CA_CERTS", "NODE_USE_SYSTEM_CA", "NODE_USE_ENV_PROXY",
+    "SSL_CERT_FILE", "SSL_CERT_DIR",
+  ]) {
+    if (process.env[key] !== undefined) env[key] = process.env[key];
+  }
   const npm = (args: string[], cwd: string) => execFileSync(process.execPath, [nativeNpm, ...args], { cwd, env, encoding: "utf8", timeout: 180_000, stdio: ["ignore", "pipe", "pipe"] });
   try {
     const receipts: { name: string; version: string; integrity: string; installedManifestSha256?: string; realpathJoined?: boolean }[] = [];
