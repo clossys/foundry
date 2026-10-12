@@ -115,7 +115,7 @@ describe("ContentSection layouts", () => {
     expect(root.lastElementChild).toHaveClass("tablet-lg:col-start-1", "tablet-lg:row-start-1");
   });
 
-  it("refuses the temporary split alias without media", () => {
+  it("requires media for the supported split alias", () => {
     expect(() =>
       render(
         // Deliberately invalid runtime input; the alias contract is checked separately.

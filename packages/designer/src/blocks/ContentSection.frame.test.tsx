@@ -141,7 +141,7 @@ describe("ContentSection frame", () => {
     expect(container.querySelector("[data-content-section-support]")).toHaveTextContent("0");
   });
 
-  it("keeps the temporary legacy split and side aliases in their existing DOM", () => {
+  it("preserves the supported split and mediaSide alias rendering", () => {
     const { container } = render(<ContentSection layout="split" mediaSide="start" heading="Heading" media={<p>Visual</p>} />);
     const root = container.querySelector("[data-content-section]") as HTMLElement;
     expect(root).toHaveAttribute("data-layout", "split");

@@ -49,7 +49,7 @@ export interface HeroProps extends HTMLAttributes<HTMLElement> {
    * @default 1
    */
   headingLevel?: HeroHeadingLevel;
-  /** Heading scale; `default` temporarily aliases display while callers migrate. @default "display" */
+  /** Heading scale; `default` is a supported alias for `display`. @default "display" */
   size?: "display" | "compact" | "default";
   /** Semantic section ground; selects the complete matching surface and foreground policy. @default "base" */
   ground?: SectionGround;

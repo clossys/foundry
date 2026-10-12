@@ -9,7 +9,7 @@ export type ContentSectionHeadingLevel = 2 | 3 | 4 | 5 | 6;
 /** How the header group lines up: along the start edge (a body section), or centred (an opening or closing band). */
 export type ContentSectionAlign = "start" | "center";
 
-/** One column, or a companion on the start/end side. `split` is a temporary compatibility alias. */
+/** One column, or a companion on the start/end side. `split` is a supported media-based alias. */
 export type ContentSectionLayout = "stacked" | "split-start" | "split-end" | "split";
 
 /** Which side of a `split` the visual sits on, from `tablet-lg` up. */
@@ -111,7 +111,7 @@ export type ContentSectionSplitProps = ContentSectionBaseProps & { align?: undef
       mediaSide?: undefined;
     }
   | {
-      /** Temporary alias until callers migrate to `split-start` or `split-end`. */
+      /** Supported media-based alias; `mediaSide` selects the visual side. */
       layout: "split";
       media: ReactNode;
       mediaSide?: ContentSectionMediaSide;
@@ -148,7 +148,7 @@ function hasContent(node: ReactNode): boolean {
  * the full column. The
  * band around it (ground and column) is the caller's `SectionFrame`.
  * An explicit `size` owns vertical padding; omitted size preserves the
- * outer frame's padding until callers migrate.
+ * outer frame's padding.
  *
  * Unlike `SectionHeader` (settings scale, `text-h3`, a title row with
  * trailing actions) this is marketing scale (the section-title step); unlike
@@ -165,8 +165,8 @@ function hasContent(node: ReactNode): boolean {
  * so the reading order never changes. Without media, children occupy the
  * companion column. Without either, the eyebrow and heading keep the 5/12
  * column while description, actions and footnote occupy the 7/12 column.
- * The temporary `split`/`mediaSide` aliases keep their existing rendering
- * and still require media.
+ * The supported `split`/`mediaSide` aliases render media beside the header
+ * and module, and require media.
  *
  * An optional `footnote` is the band's last line (the end of the column when
  * stacked, the end of the text column when split), one module step after
