@@ -8,8 +8,15 @@ void <Matrix sides={[side]} />;
 const missingId: MatrixSide = { label: "First", heading: "A shared view", points: ["One", "Two"] };
 // @ts-expect-error Matrix side headings are required.
 const missingHeading: MatrixSide = { id: "left", label: "First", points: ["One", "Two"] };
-// @ts-expect-error Every side needs a label.
-const missingLabel: MatrixSide = { id: "left", heading: "A shared view", points: ["One", "Two"] };
+// A side may omit the label; its required heading supplies the semantic heading.
+const unlabeled: MatrixSide = { id: "left", heading: "A shared view", points: ["One", "Two"] };
+void <Matrix sides={[unlabeled, { ...unlabeled, id: "right" }]} headingLevel={4} />;
+const visual: MatrixSide = { id: "left", heading: "A shared view", visual: <svg aria-label="Sample view" /> };
+void <Matrix sides={[visual, { ...visual, id: "right" }]} />;
+// @ts-expect-error A description is a lead, never a standalone Matrix body.
+const descriptionOnly: MatrixSide = { id: "left", heading: "A shared view", description: "Supporting lead." };
+// @ts-expect-error Matrix points and visual cannot be combined.
+const mixedForms: MatrixSide = { id: "left", heading: "A shared view", points: ["One", "Two"], visual: <svg aria-label="Sample view" /> };
 // @ts-expect-error A third side is outside the current contract.
 void <Matrix sides={[side, side, side]} />;
 // @ts-expect-error Grounds are closed.
@@ -18,4 +25,6 @@ void <Matrix sides={[side, side]} ground="other" />;
 void <Matrix sides={[side, side]} headingLevel={1} />;
 void missingId;
 void missingHeading;
-void missingLabel;
+void unlabeled;
+void descriptionOnly;
+void mixedForms;

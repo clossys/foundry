@@ -17,7 +17,6 @@ export const FRAME_FIXTURES = [
         "heading": {
             "id": "catalog.sample.frame-standard.heading"
         },
-        "align": "start"
     } satisfies SectionedViewSection
 },
 {
@@ -35,7 +34,6 @@ export const FRAME_FIXTURES = [
         "heading": {
             "id": "catalog.sample.frame-standard.heading"
         },
-        "align": "start"
     } satisfies SectionedViewSection
 },
 {
@@ -53,25 +51,23 @@ export const FRAME_FIXTURES = [
         "heading": {
             "id": "catalog.sample.frame-display.heading"
         },
-        "align": "center"
     } satisfies SectionedViewSection
 },
 {
-    "id": "frame-compact" as const,
+    "id": "frame-size-standard" as const,
     "fn": "Frame",
     "axis": "size",
-    "value": "compact",
-    "caption": "Compact frame",
+    "value": "standard",
+    "caption": "Standard frame",
     "section": {
-        "id": "frame-compact",
+        "id": "frame-size-standard",
         "kind": "content-section",
         "ground": "base",
-        "size": "compact",
+        "size": "standard",
         "layout": "stacked",
         "heading": {
-            "id": "catalog.sample.frame-compact.heading"
+            "id": "catalog.sample.frame-size-standard.heading"
         },
-        "align": "start"
     } satisfies SectionedViewSection
 },
 {
@@ -132,7 +128,6 @@ export const FRAME_FIXTURES = [
                 "label": {
                     "id": "catalog.sample.key.below.label"
                 },
-                "side": "below",
                 "items": [
                     {
                         "id": "below-key-0",
@@ -225,13 +220,13 @@ export const FRAME_FIXTURES = [
     } satisfies SectionedViewSection
 },
 {
-    "id": "frame-center" as const,
+    "id": "frame-stacked" as const,
     "fn": "Frame",
-    "axis": "align",
-    "value": "center",
-    "caption": "Centered frame",
+    "axis": "layout",
+    "value": "stacked",
+    "caption": "Stacked frame",
     "section": {
-        "id": "frame-center",
+        "id": "frame-stacked",
         "kind": "content-section",
         "ground": "sunken",
         "size": "standard",
@@ -239,7 +234,6 @@ export const FRAME_FIXTURES = [
         "heading": {
             "id": "catalog.sample.frame-standard.heading"
         },
-        "align": "center"
     } satisfies SectionedViewSection
 },
 {

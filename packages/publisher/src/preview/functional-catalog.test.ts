@@ -109,10 +109,10 @@ describe("catalog configuration data", () => {
     expect(new Set(resolved.flatMap(document => document.sections.map(section => section.ground)))).toEqual(new Set(["base", "sunken", "inverse"]));
     expect(new Set(content.map(section => section.size))).toEqual(new Set(C.sizes));
     expect(new Set(content.map(section => section.layout))).toEqual(new Set(C.layouts));
-    for (const [axis, values] of [["arrangement", C.arrangements], ["order", C.orders], ["reveal", C.reveals], ["treatment", C.treatments], ["emphasis", C.emphases]] as const) expect(new Set(items.map(block => block[axis])), axis).toEqual(new Set(values));
+    for (const [axis, values] of [["arrangement", C.arrangements], ["order", C.orders], ["reveal", C.reveals], ["treatment", C.treatments], ["scale", C.scales]] as const) expect(new Set(items.map(block => block[axis])), axis).toEqual(new Set(values));
     expect(new Set(items.flatMap(block => block.items.flatMap(item => item.span ? [item.span] : [])))).toEqual(new Set(Object.keys(C.spans)));
     expect(new Set(items.flatMap(block => block.items.flatMap(item => item.badge ? [item.badge.tone ?? "neutral"] : [])))).toEqual(new Set(C.tones));
-    for (const slot of ["eyebrow", "icon", "visual", "href", "featured", "meta", "badge"]) expect(items.some(block => block.items.some(item => Object.hasOwn(item, slot))), slot).toBe(true);
+    for (const slot of ["eyebrow", "icon", "visual", "href", "meta", "badge"]) expect(items.some(block => block.items.some(item => Object.hasOwn(item, slot))), slot).toBe(true);
     const scenes = content.flatMap(section => section.media?.type === "scene" ? [section.media.input] : []);
     const composition = resolveSectionedViewDocument(Object.values(CATALOG_COMPOSITIONS)[0]!, catalogCopyResolver);
     const allScenes = [...scenes, ...composition.sections.flatMap(section => section.kind === "content-section" && section.media?.type === "scene" ? [section.media.input] : [])];
@@ -195,9 +195,9 @@ describe("catalog copy and rendered additions", () => {
       const block = section.block;
       if (block?.type === "items") for (const item of block.items) {
         expect(words(item.eyebrow), `${section.id}.${item.id}`).toBeLessThanOrEqual(3);
-        expect(words(item.heading), `${section.id}.${item.id}`).toBeLessThanOrEqual(block.reveal === "disclose" ? 12 : block.order === "connected" ? 2 : block.emphasis === "statement" ? 3 : 5);
+        expect(words(item.heading), `${section.id}.${item.id}`).toBeLessThanOrEqual(block.reveal === "disclose" ? 12 : block.order === "connected" ? 2 : block.scale === "statement" ? 3 : 5);
         expect(words(item.meta), `${section.id}.${item.id}`).toBeLessThanOrEqual(block.order === "connected" ? 2 : 5);
-        expect(words(item.description), `${section.id}.${item.id}`).toBeLessThanOrEqual(block.reveal === "disclose" ? 45 : block.order === "connected" ? 14 : block.emphasis === "statement" || block.arrangement === "rows" ? 12 : item.span === "full" || item.span === "two-thirds" ? 25 : 20);
+        expect(words(item.description), `${section.id}.${item.id}`).toBeLessThanOrEqual(block.reveal === "disclose" ? 45 : block.order === "connected" ? 14 : block.scale === "statement" || block.arrangement === "rows" ? 12 : item.span === "full" || item.span === "two-thirds" ? 25 : 20);
         if (block.reveal === "disclose") expect(words(item.description)).toBeGreaterThanOrEqual(15);
       }
       if (block?.type === "matrix") for (const side of block.sides) { expect(words(side.label)).toBeLessThanOrEqual(3); expect(words(side.heading)).toBeLessThanOrEqual(8); expect(words(side.description)).toBeLessThanOrEqual(25); for (const point of side.points ?? []) expect(words(point)).toBeLessThanOrEqual(9); }
@@ -209,19 +209,20 @@ describe("catalog copy and rendered additions", () => {
   it("matches displayed descriptors to actual effective axes", () => {
     for (const fixture of CATALOG_FIXTURES) {
       const section = resolveSectionedViewDocument({ id: "descriptor", sections: [fixture.section] }, catalogCopyResolver).sections[0]!;
-      if (["ground", "size", "layout", "align"].includes(fixture.axis)) expect(section[fixture.axis as "ground" | "size" | "layout" | "align"], fixture.id).toBe(fixture.value);
+      if (["ground", "size", "layout"].includes(fixture.axis)) expect(section[fixture.axis as "ground" | "size" | "layout"], fixture.id).toBe(fixture.value);
       if (section.kind !== "content-section") continue;
       const block = section.block;
       if (block?.type === "items") {
         if (["arrangement", "order", "reveal", "treatment"].includes(fixture.axis)) expect(block[fixture.axis as "arrangement" | "order" | "reveal" | "treatment"], fixture.id).toBe(fixture.value);
-        if (fixture.axis === "featured") expect(block.items.some(item => item.featured === fixture.value)).toBe(true);
         if (fixture.axis === "slot") expect(block.items.some(item => Object.hasOwn(item, String(fixture.value))), fixture.id).toBe(true);
         if (fixture.axis === "badgeTone") expect(new Set(block.items.flatMap(item => item.badge ? [item.badge.tone ?? "neutral"] : []))).toEqual(new Set(fixture.value));
       }
-      if (block?.type === "matrix" && fixture.axis === "form") expect(block.sides.every(side => fixture.value === "visual" ? side.visual !== undefined : fixture.value === "points" ? side.points !== undefined : side.description !== undefined && side.points === undefined && side.visual === undefined)).toBe(true);
+      if (block?.type === "matrix" && fixture.axis === "form") {
+        expect(["points", "visual"]).toContain(fixture.value);
+        expect(block.sides.every(side => fixture.value === "visual" ? side.visual !== undefined : side.points !== undefined)).toBe(true);
+      }
       if (section.media?.type === "scene" && fixture.axis === "sceneTemplate") expect(section.media.input.template).toBe(fixture.value);
       if (section.media?.type === "record" && fixture.axis === "columns") expect(section.media.columns).toBe(fixture.value);
-      if (section.media?.type === "specimen" && fixture.axis === "keySide") expect(section.media.key?.side).toBe(fixture.value);
     }
   });
   it("renders independent badge metadata, previous marker text and real lane relationships", () => {

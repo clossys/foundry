@@ -11,16 +11,19 @@ import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js"
 export type MatrixHeadingLevel = 2 | 3 | 4 | 5 | 6;
 
 /** One side of a two-sided matrix. */
-export interface MatrixSide {
+interface MatrixSideBase {
   id: string;
-  label: ReactNode;
+  label?: ReactNode;
   heading: ReactNode;
   description?: ReactNode;
-  /** Two to four points, with the same count on both sides. */
-  points?: readonly ReactNode[];
-  /** A supplied visual; cannot accompany points. */
-  visual?: ReactNode;
 }
+
+export type MatrixSide = MatrixSideBase & (
+  /** Two to four points, with the same count on both sides. */
+  | { points: readonly ReactNode[]; visual?: never }
+  /** A supplied visual; cannot accompany points. */
+  | { visual: ReactNode; points?: never }
+);
 
 export interface MatrixProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> {
   sides: readonly [MatrixSide, MatrixSide];
@@ -79,7 +82,7 @@ function assertMatrix({ sides, featured, ground = "base", headingLevel = 3 }: Ma
     if (!side || typeof side !== "object" || Array.isArray(side)) throw new TypeError("Matrix: each side must be an object.");
     if (typeof side.id !== "string" || !side.id || /\s/.test(side.id) || ids.has(side.id)) throw new TypeError("Matrix: side ids must be distinct and whitespace-free.");
     ids.add(side.id);
-    if (!hasContent(side.label) || !hasContent(side.heading)) throw new TypeError("Matrix: each side needs a label and heading.");
+    if ((side.label !== undefined && !hasContent(side.label)) || !hasContent(side.heading)) throw new TypeError("Matrix: each side needs a heading and any supplied label must have content.");
     if (side.points !== undefined) {
       if (!Array.isArray(side.points) || side.points.length < 2 || side.points.length > 4) throw new TypeError("Matrix: points must contain two to four entries.");
       for (let point = 0; point < side.points.length; point++) {
@@ -88,10 +91,11 @@ function assertMatrix({ sides, featured, ground = "base", headingLevel = 3 }: Ma
       if (hasNode(side.visual)) throw new TypeError("Matrix: points and visual cannot be combined.");
     }
     if (hasNode(side.visual) && !hasContent(side.visual)) throw new TypeError("Matrix: visual must contain content.");
-    const form = hasContent(side.visual) ? "visual" : side.points !== undefined ? "points" : hasContent(side.description) ? "description" : undefined;
-    if (form === undefined) throw new TypeError("Matrix: each side needs description, points or visual.");
+    const form = hasContent(side.visual) ? "visual" : side.points !== undefined ? "points" : undefined;
+    if (form === undefined) throw new TypeError("Matrix: each side needs points or visual; description is an optional lead.");
     forms.push(form);
   }
+  if (sides.some(side => (side.label !== undefined) !== (sides[0].label !== undefined))) throw new TypeError("Matrix: both sides must have labels or neither side may have a label.");
   if (forms[0] !== forms[1]) throw new TypeError("Matrix: sides must share the same primary form.");
   if (sides[0].points?.length !== sides[1].points?.length) throw new TypeError("Matrix: sides need an equal point count.");
   if (featured !== undefined && !ids.has(featured)) throw new TypeError("Matrix: featured must name a side id.");
@@ -105,8 +109,7 @@ function SideBody({ side, featured, headingLevel, ground, shared }: {
   const emptyRow = shared.visual ? "hidden tablet-lg:block" : "hidden tablet:block";
   return <>
     <div className="flex flex-col gap-xs">
-      <HeadingTag className={cx("text-body-s font-medium uppercase tracking-label", colors.secondary)}>{side.label}</HeadingTag>
-      {hasNode(side.heading) ? <p className={cx("text-h2 font-display leading-heading text-balance", colors.primary)}>{side.heading}</p> : null}
+      {hasNode(side.label) ? <><HeadingTag className={cx("text-body-s font-medium uppercase tracking-label", colors.secondary)}>{side.label}</HeadingTag>{hasNode(side.heading) ? <p className={cx("text-h2 font-display leading-heading text-balance", colors.primary)}>{side.heading}</p> : null}</> : <HeadingTag className={cx("text-h2 font-display leading-heading text-balance", colors.primary)}>{side.heading}</HeadingTag>}
     </div>
     {shared.description ? hasNode(side.description) ? <p data-matrix-description="" className={cx("text-body text-pretty", colors.primary)}>{side.description}</p> : <div aria-hidden="true" data-matrix-empty-row="description" className={emptyRow} /> : null}
     {shared.points ? side.points && side.points.length > 0 ? <ul className="flex flex-col gap-sm">

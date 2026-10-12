@@ -47,7 +47,7 @@ describe("content catalog fixture", () => {
     expect(new Set(items.map(block => block.arrangement))).toEqual(new Set(["columns", "rows", "bento", "stacked"]));
     expect(new Set(items.map(block => block.treatment))).toEqual(new Set(["plain", "rule", "plate"]));
     expect(new Set(items.filter(block => block.arrangement === "columns").map(block => block.columns))).toEqual(new Set([2,3]));
-    expect(items.some(block => block.emphasis === "statement")).toBe(true);
+    expect(items.some(block => block.scale === "statement")).toBe(true);
     expect(items.some(block => block.items.some(item => item.icon !== undefined))).toBe(true);
     expect(items.some(block => block.items.some(item => item.eyebrow !== undefined))).toBe(true);
     expect(items.some(block => block.order === "connected")).toBe(true);
@@ -207,7 +207,7 @@ describe("content catalog fixture", () => {
         if (block.reveal === "disclose") { expect(words(item.heading), `${at} ${item.id}`).toBeLessThanOrEqual(12); expect(words(item.description), `${at} ${item.id}`).toBeGreaterThanOrEqual(15); expect(words(item.description), `${at} ${item.id}`).toBeLessThanOrEqual(45); }
         else if (block.order === "connected") { expect(words(item.heading), `${at} ${item.id}`).toBeLessThanOrEqual(2); expect(words(item.meta), `${at} ${item.id}`).toBeLessThanOrEqual(2); expect(words(item.description), `${at} ${item.id}`).toBeGreaterThanOrEqual(6); expect(words(item.description), `${at} ${item.id}`).toBeLessThanOrEqual(14); }
         else if (block.arrangement === "rows") { expect(words(item.heading), `${at} ${item.id}`).toBeLessThanOrEqual(5); expect(words(item.description), `${at} ${item.id}`).toBeLessThanOrEqual(12); }
-        else { const statement=block.emphasis === "statement"; expect(words(item.heading), `${at} ${item.id}`).toBeLessThanOrEqual(statement ? 3 : 5); expect(words(item.description), `${at} ${item.id}`).toBeLessThanOrEqual(statement ? 12 : item.span === "two-thirds" || item.span === "full" || block.treatment === "plate" && block.columns === 2 ? 25 : 20); }
+        else { const statement=block.scale === "statement"; expect(words(item.heading), `${at} ${item.id}`).toBeLessThanOrEqual(statement ? 3 : 5); expect(words(item.description), `${at} ${item.id}`).toBeLessThanOrEqual(statement ? 12 : item.span === "two-thirds" || item.span === "full" || block.treatment === "plate" && block.columns === 2 ? 25 : 20); }
         if (item.visual !== undefined) partChecks(item.visual);
       }
     }

@@ -25,6 +25,36 @@ describe("Matrix", () => {
     expect(screen.getByText("A shared record")).toHaveClass("text-h2", "text-ink-primary");
   });
 
+  it("uses the required heading when labels are omitted, without adding empty or duplicate headings", () => {
+    const sides: MatrixProps["sides"] = [
+      { id: "first", heading: "A shared record", description: "Supporting lead.", points: ["One source", "Clear dates"] },
+      { id: "second", heading: "A shared view", points: ["One view", "Clear owners"] },
+    ];
+    const { container } = render(<Matrix sides={sides} headingLevel={4} featured="second" />);
+    expect(screen.getAllByRole("heading", { level: 4 }).map(node => node.textContent)).toEqual(["A shared record", "A shared view"]);
+    for (const side of container.querySelectorAll<HTMLElement>("[data-matrix-side]")) {
+      expect(within(side).getAllByRole("heading")).toHaveLength(1);
+      expect(within(side).getByRole("heading", { level: 4 })).toHaveClass("text-h2", "text-ink-primary");
+      expect(side.querySelectorAll("li")).toHaveLength(2);
+    }
+    expect(screen.getByText("Supporting lead.")).toHaveAttribute("data-matrix-description");
+    expect(container.querySelector('[data-matrix-side="second"] > [data-featured="true"]')).not.toBeNull();
+  });
+
+  it.each(["points", "visual"] as const)("refuses mixed label presence on either %s side", form => {
+    const sides: MatrixProps["sides"] = form === "points" ? SIDES : [
+      { id: "first", label: "First option", heading: "A shared record", visual: <svg aria-label="First sample" /> },
+      { id: "second", label: "Second option", heading: "A shared view", visual: <svg aria-label="Second sample" /> },
+    ];
+    for (const unlabeledSide of [0, 1]) {
+      const mixed = sides.map((side, index) => index === unlabeledSide ? { ...side, label: undefined } : side) as unknown as MatrixProps["sides"];
+      expect(() => markup({ sides: mixed })).toThrow(/both sides.*labels.*neither/);
+    }
+    expect(() => markup({ sides })).not.toThrow();
+    const unlabeled = sides.map(side => ({ ...side, label: undefined })) as unknown as MatrixProps["sides"];
+    expect(() => markup({ sides: unlabeled })).not.toThrow();
+  });
+
   it.each(["first", "second"])("features only the selected %s plate without reordering sides", featured => {
     const { container } = render(<Matrix sides={SIDES} featured={featured} />);
     const plates = container.querySelectorAll("[data-matrix-side] > [data-variant=plate]");
@@ -124,9 +154,9 @@ describe("Matrix", () => {
   });
   it("refuses points alongside a visual or mixed primary forms", () => {
     expect(() => markup({ sides: [{ ...SIDES[0], visual: <div /> }, SIDES[1]] })).toThrow(/points.*visual/);
-    expect(() => markup({ sides: [SIDES[0], { ...SIDES[1], points: undefined, description: "Other form" }] })).toThrow(/same.*form/);
+    expect(() => markup({ sides: [SIDES[0], { ...SIDES[1], points: undefined, visual: <div>Other form</div> }] })).toThrow(/same.*form/);
   });
-  it.each(["label", "heading"] as const)("requires nonempty %s and a body form", field => {
+  it.each(["label", "heading"] as const)("refuses nonempty-slot violations in supplied %s", field => {
     expect(() => markup({ sides: [{ ...SIDES[0], [field]: " " }, SIDES[1]] })).toThrow(/label|heading/);
     expect(() => markup({ sides: [{ ...SIDES[0], points: undefined }, { ...SIDES[1], points: undefined }] })).toThrow(/description|points|visual/);
   });
@@ -135,6 +165,10 @@ describe("Matrix", () => {
     expect(() => markup({ ground: "other" as MatrixProps["ground"] })).toThrow(/ground/);
     expect(() => markup({ headingLevel: 1 as MatrixProps["headingLevel"] })).toThrow(/heading/);
   });
+  it.each([undefined, "A complete paragraph.", <p key="lead">A complete paragraph.</p>].map(description => ({ description })))("requires points or a visual even with a description lead %j", ({ description }) => {
+    expect(() => markup({ sides: SIDES.map(side => ({ ...side, points: undefined, description })) as unknown as MatrixProps["sides"] })).toThrow(/needs points or visual/);
+  });
+
   it.each(["", " ", true, [], <span key="empty" />, <></>].map(description => ({ description })))("refuses empty description-only bodies %j", ({ description }) => {
     expect(() => markup({ sides: SIDES.map(side => ({ ...side, points: undefined, description })) as unknown as MatrixProps["sides"] })).toThrow(/description|points|visual/);
   });
@@ -153,10 +187,10 @@ describe("Matrix", () => {
     render(<Matrix sides={SIDES} headingLevel={headingLevel} />);
     for (const side of SIDES) expect(screen.getByRole("heading", { name: String(side.label) }).tagName).toBe(`H${headingLevel}`);
   });
-  it("retains description-only sides in authored order without manufacturing points", () => {
+  it("retains description leads beside visual bodies in authored order without manufacturing points", () => {
     const sides: MatrixProps["sides"] = [
-      { ...SIDES[0], points: undefined, description: "Work moves between inboxes." },
-      { ...SIDES[1], points: undefined, description: "Work stays in one record." },
+      { ...SIDES[0], points: undefined, description: "Work moves between inboxes.", visual: <svg role="img" aria-label="Inbox handoff diagram"><path d="M4 4h6v6H4zM14 14h6v6h-6zM10 7h7v7" /></svg> },
+      { ...SIDES[1], points: undefined, description: "Work stays in one record.", visual: <svg role="img" aria-label="Shared record diagram"><path d="M6 3h12v18H6zM9 7h6M9 11h6M9 15h6" /></svg> },
     ];
     const { container } = render(<Matrix sides={sides} />);
     expect(screen.queryByRole("list")).toBeNull();

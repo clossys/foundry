@@ -31,7 +31,7 @@ describe("runnable canonical README example", () => {
     const example = executeExample();
     expect(example.findings).toEqual([]);
     expect(example.document.sections).toHaveLength(6);
-    expect(example.document.sections.map((section: any) => section.size)).toEqual(["compact", "standard", "display", "standard", "compact", "display"]);
+    expect(example.document.sections.map((section: any) => section.size)).toEqual(["standard", "standard", "display", "standard", "standard", "display"]);
     expect(example.document.sections.map((section: any) => section.layout)).toEqual(["stacked", "stacked", "stacked", "split-start", "split-end", "stacked"]);
     expect(example.rawAxes).toEqual(example.recipeAxes);
   });

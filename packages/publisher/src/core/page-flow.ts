@@ -41,7 +41,7 @@ export function sectionWeight(section: SectionedViewSection | ResolvedSectionedV
     }
     case "items": {
       // Only structural axes enter desugaring; resolved copy has the same weight.
-      const structural = { type: "items" as const, items: [], columns: block.columns, order: block.order, reveal: block.reveal, treatment: block.treatment, emphasis: block.emphasis };
+      const structural = { type: "items" as const, items: [], columns: block.columns, order: block.order, reveal: block.reveal, treatment: block.treatment, scale: block.scale };
       let axes;
       if (block.recipe !== undefined) axes = desugarRecipe({ ...structural, recipe: block.recipe, arrangement: block.arrangement });
       else {
@@ -49,7 +49,7 @@ export function sectionWeight(section: SectionedViewSection | ResolvedSectionedV
         axes = desugarRecipe({ ...structural, arrangement: block.arrangement });
       }
       const visual = block.items.some((item) => item.visual !== undefined);
-      if (axes.emphasis === "statement") return { weight: "A", shape: "statement" };
+      if (axes.scale === "statement") return { weight: "A", shape: "statement" };
       if (axes.order === "connected" || axes.order === "numbered") {
         if (visual) return { weight: "A", shape: "sequence" };
         if (split && section.media !== undefined) return { weight: "B", shape: "specimen" };

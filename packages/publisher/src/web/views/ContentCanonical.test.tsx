@@ -44,9 +44,47 @@ describe("canonical available renderer", () => {
     expect(root.textContent).toContain(copy.detail);
     const recipe = resolve(band({ block: { ...columns(count), recipe: "features" } })); expect(html(recipe)).toBe(markup);
   });
-  it.each(["compact", "standard", "display"] as const)("forwards frame and collection scale %s", size => {
+  it.each((["stacked", "split-start", "split-end"] as const).flatMap(layout => (["base", "inverse"] as const).map(ground => ({ layout, ground }))))("derives statement centering for $layout on $ground while forwarding the statement scale", ({ layout, ground }) => {
+    const section = band({ layout, ground, block: { type: "items", recipe: "statement", items: columns(3).items } });
+    const resolved = resolve(section); const before = JSON.stringify(resolved);
+    for (const server of [false, true]) {
+      const root = dom(html(resolved, server)); const header = root.querySelector("[data-content-section-header]")!;
+      expect(header.classList.contains("text-center")).toBe(layout === "stacked");
+      expect(header.classList.contains(layout === "stacked" ? "items-center" : "items-start")).toBe(true);
+      expect(root.querySelector("h2")?.textContent).toBe(copy.heading);
+      expect([...root.querySelectorAll("[data-item-heading]")].map(node => node.textContent)).toEqual([copy.first, copy.second, copy.third]);
+      for (const heading of root.querySelectorAll("[data-item-heading]")) { expect(heading.tagName).toBe("H3"); expect(heading.classList.contains("text-h2")).toBe(true); }
+    }
+    const raw = resolve(band({ layout, ground, block: { ...columns(3), scale: "statement" } }));
+    expect(html(raw)).toBe(html(resolved));
+    expect(JSON.stringify(resolved)).toBe(before);
+  });
+  it("keeps an ordinary inverse feature header start-aligned", () => {
+    const doc = resolve(band({ ground: "inverse", block: { type: "items", recipe: "features", items: columns(3).items } }));
+    for (const server of [false, true]) {
+      const header = dom(html(doc, server)).querySelector("[data-content-section-header]")!;
+      expect(header.classList.contains("items-start")).toBe(true); expect(header.classList.contains("text-center")).toBe(false);
+    }
+  });
+  it("renders the link-index recipe as linked plates and rejects a forged ruled variant before rendering", () => {
+    const doc = resolve(band({ block: { type: "items", recipe: "link-index", items: columns(3).items.map((item, index) => ({ ...item, href: `/index-${index}` })) } }));
+    const before = JSON.stringify(doc);
+    for (const server of [false, true]) {
+      const root = dom(html(doc, server)); const list = root.querySelector("[data-items]")!;
+      expect(list.getAttribute("data-treatment")).toBe("plate");
+      expect([...list.querySelectorAll("[data-item-heading] > a")].map(node => node.getAttribute("href"))).toEqual(["/index-0", "/index-1", "/index-2"]);
+      expect(list.querySelectorAll('[data-item][data-variant="plate"]')).toHaveLength(3);
+    }
+    expect(JSON.stringify(doc)).toBe(before);
+    const forged: any = structuredClone(doc); forged.sections[0].block.treatment = "rule";
+    const called = vi.fn();
+    expect(() => renderSectionedViewSections(forged, { ...sectionedViewBlocks, ContentSection: called }, {})).toThrow(/link-index fixes treatment/);
+    expect(called).not.toHaveBeenCalled();
+    for (const server of [false, true]) expect(() => html(forged, server)).toThrow(/link-index fixes treatment/);
+  });
+  it.each(["standard", "display"] as const)("forwards frame and collection scale %s", size => {
     const root = dom(html(resolve(band({ size, block: columns(2) }))));
-    expect(root.querySelector("[data-content-section]")?.classList.contains(size === "compact" ? "py-3xl" : size === "display" ? "py-5xl" : "py-4xl")).toBe(true);
+    expect(root.querySelector("[data-content-section]")?.classList.contains(size === "display" ? "py-5xl" : "py-4xl")).toBe(true);
     expect(root.querySelector("[data-item-heading]")?.classList.contains(size === "display" ? "text-h3" : "text-body-l")).toBe(true);
   });
   it.each(["split-start", "split-end"] as const)("keeps %s directions, actions and link-only footnote", layout => {
@@ -56,9 +94,9 @@ describe("canonical available renderer", () => {
     expect(root.textContent).not.toContain("undefined");
   });
   it("preserves item slots, independent badge/meta and bento span", () => {
-    const root = dom(html(resolve(band({ block: { type: "items", arrangement: "bento", treatment: "plate", items: [{ ...item("first"), span: "half", featured: true, eyebrow: ref("eyebrow"), meta: ref("meta"), badge: { label: ref("badge"), tone: "success" }, visual: field }, { ...item("second", "second"), span: "half" }] } }))));
+    const root = dom(html(resolve(band({ block: { type: "items", arrangement: "bento", treatment: "plate", items: [{ ...item("first"), span: "half", eyebrow: ref("eyebrow"), meta: ref("meta"), badge: { label: ref("badge"), tone: "success" }, visual: field }, { ...item("second", "second"), span: "half" }] } }))));
     for (const value of [copy.eyebrow, copy.meta, copy.badge, copy.field, copy.value]) expect(root.textContent).toContain(value);
-    expect(root.querySelector('[data-featured="true"]')).not.toBeNull(); expect(root.querySelectorAll('[data-span="half"]').length).toBe(2);
+    expect(root.querySelectorAll('[data-span="half"]').length).toBe(2);
   });
   it("keeps flat source IDs and group membership through linked rows", () => {
     const doc = resolve(band({ block: { type: "items", arrangement: "rows", columns: 2, treatment: "rule", items: ["first", "second", "third", "fourth"].map((id, index) => ({ ...item(id, id as "first" | "second" | "third" | "fourth"), href: `/item-${index}` })), groups: [{ id: "one", label: ref("group"), items: ["first", "second"] }, { id: "two", label: ref("group"), items: ["third", "fourth"] }] } }));
@@ -86,7 +124,7 @@ describe("canonical resolved boundary", () => {
     doc.resolutions = [resolutions[0]!]; doc.sections = doc.sections.map(section => Object.assign(Object.create(null), section));
     const before = JSON.stringify(doc); expect(() => html(doc)).not.toThrow(); expect(doc.resolutions[0]).toBe(resolutions[0]); expect(JSON.stringify(doc)).toBe(before);
   });
-  it.each(["size", "layout", "arrangement", "order", "reveal", "treatment", "emphasis", "columns"])("refuses missing resolved %s before default repair", key => {
+  it.each(["size", "layout", "arrangement", "order", "reveal", "treatment", "scale", "columns"])("refuses missing resolved %s before default repair", key => {
     const doc: any = structuredClone(resolve(band({ block: columns(2) })));
     const target = key === "size" || key === "layout" ? doc.sections[0] : doc.sections[0].block;
     delete target[key]; expect(() => assertRenderableSectionedViewDocument(doc)).toThrow(new RegExp(key));
@@ -98,7 +136,7 @@ describe("canonical resolved boundary", () => {
     if (name === "partial-links") block.items[0].href = "/one";
     if (name === "duplicate-links") { block.items[0].href = "/one/"; block.items[1].href = "/one#more"; }
     if (name === "raw-copy") block.items[0].heading = ref("first");
-    if (name === "recipe") { block.recipe = "features"; block.emphasis = "statement"; }
+    if (name === "recipe") { block.recipe = "features"; block.scale = "statement"; }
     if (name === "group") block.groups = [{ id: "group", label: copy.group, items: ["foreign"] }];
     if (name === "badge") block.items[0].badge = { label: copy.badge, tone: "accent" };
     if (name === "provenance") doc.resolutions[0].source.reference = "";
@@ -116,9 +154,37 @@ describe("canonical resolved boundary", () => {
   });
 });
 describe("canonical ordered and disclosed collections", () => {
+  it.each([
+    { arrangement: "stacked", columns: undefined, grid: "desktop:grid-cols-4", actorPosition: "desktop:absolute" },
+    { arrangement: "columns", columns: 2, grid: "tablet:grid-cols-2", actorPosition: "tablet:absolute" },
+    { arrangement: "columns", columns: 3, grid: "tablet-lg:grid-cols-3", actorPosition: "tablet:absolute" },
+  ] as const)("renders four resolved lane steps in $arrangement with $columns columns through both entries", ({ arrangement, columns: count, grid, actorPosition }) => {
+    const doc = resolve(band({ block: {
+      type: "items", recipe: "steps", arrangement, ...(count === undefined ? {} : { columns: count }),
+      lanes: [{ id: "team", label: ref("group") }, { id: "service", label: ref("meta") }], end: "ends", endLabel: ref("link"),
+      items: (["first", "second", "third", "fourth"] as const).map((id, index) => ({ ...item(id, id), lane: index === 1 || index === 2 ? "service" : "team" })),
+    } }));
+    const before = JSON.stringify(doc); const resolutions = doc.resolutions;
+    for (const server of [false, true]) {
+      const root = dom(html(doc, server)); const list = root.querySelector("ol[data-items]")!;
+      expect(list.classList.contains(grid)).toBe(true);
+      expect(list.getAttribute("aria-labelledby")).toBe(root.querySelector("h2")!.id);
+      expect([...list.querySelectorAll(":scope > li")].map(node => node.getAttribute("data-lane"))).toEqual(["team", "service", "service", "team"]);
+      expect([...list.querySelectorAll("[data-item-heading]")].map(node => node.textContent)).toEqual([copy.first, copy.second, copy.third, copy.fourth]);
+      const actors = [...list.querySelectorAll("[data-item-lane-label]")];
+      expect(actors.map(node => node.textContent)).toEqual([copy.group, copy.meta, copy.meta, copy.group]);
+      for (const actor of actors) expect(actor.classList.contains(actorPosition)).toBe(true);
+      expect(list.querySelectorAll("[data-item-transition]")).toHaveLength(3);
+      expect(list.querySelectorAll("[data-item-end]")).toHaveLength(1);
+      expect(list.querySelector("li:last-child [data-item-end]")?.getAttribute("data-item-end")).toBe("ends");
+      expect(list.querySelector("li:last-child [data-item-end-label]")?.textContent).toBe(copy.link);
+      if (arrangement === "stacked") { expect(list.classList.contains("desktop:grid-cols-5")).toBe(false); expect(list.querySelectorAll('[data-item-route="columns-4"]')).toHaveLength(3); }
+    }
+    expect(html(doc, true)).toBe(html(doc)); expect(JSON.stringify(doc)).toBe(before); expect(doc.resolutions).toBe(resolutions);
+  });
   it.each(["numbered", "connected", "disclose"])("renders ordered or disclosed %s items through their actual entry", name => {
     let section = band({ block: { ...columns(2), order: "numbered" } });
-    if (name === "connected") section = band({ block: { type: "items", recipe: "flow", items: [item("first"), item("second"), item("third")] } });
+    if (name === "connected") section = band({ block: { type: "items", recipe: "steps", arrangement: "stacked", items: [item("first"), item("second"), item("third")] } });
     if (name === "disclose") section = band({ block: { type: "items", recipe: "faq", items: [item("first"), item("second"), item("third"), item("fourth")] } });
     const doc = resolve(section); const before = JSON.stringify(doc); const resolutions = doc.resolutions;
     for (const server of [false, true]) {
@@ -153,9 +219,10 @@ describe("canonical existing media mappings", () => {
     expect(markup).toContain("data-scene"); if (name !== "converge") expect(dom(markup).textContent).toContain("AB");
     expect(JSON.stringify(doc)).toBe(before);
   });
-  it.each(["below", "end"] as const)("forwards keyed specimen %s with all three marker targets", side => {
-    const media: SectionedViewMedia = { ...specimen, key: { label: short, side, items: ["header", "fields", "footer"].map((target, index) => ({ id: `marker-${index}`, target, heading: short, description: ref("detail") })) } };
-    const doc = resolve(band({ media })); const markup = html(doc); expect(html(doc, true)).toBe(markup);
+  it.each(["stacked", "split-start", "split-end"] as const)("derives keyed specimen placement from %s with all three marker targets", layout => {
+    const media: SectionedViewMedia = { ...specimen, key: { label: short, items: ["header", "fields", "footer"].map((target, index) => ({ id: `marker-${index}`, target, heading: short, description: ref("detail") })) } };
+    const doc = resolve(band({ media, layout })); const markup = html(doc); expect(html(doc, true)).toBe(markup);
+    expect(dom(markup).querySelector("[data-anatomy-callouts]")?.getAttribute("data-legend-side")).toBe(layout === "stacked" ? "end" : "below");
     expect(markup).toContain("data-anatomy"); expect(dom(markup).querySelectorAll("li")).toHaveLength(3);
     for (const value of [copy.panel, copy.value, copy.owner, copy.short, copy.detail]) expect(dom(markup).textContent).toContain(value);
   });
@@ -206,7 +273,7 @@ describe("canonical media and copy refusal paths", () => {
     if (name === "key-target" || name === "key-order" || name === "part-id") {
       section.media = structuredClone(resolve(band({ media: specimen })).sections[0]!.media);
       if (name === "part-id") section.media.panel.parts[0].id = {};
-      else section.media.key = { label: copy.short, side: "below", items: ["header", "fields", "footer"].map((target, index) => ({ id: `marker-${index}`, target, heading: copy.short, description: copy.detail })) };
+      else section.media.key = { label: copy.short, items: ["header", "fields", "footer"].map((target, index) => ({ id: `marker-${index}`, target, heading: copy.short, description: copy.detail })) };
       if (name === "key-target") section.media.key.items[1].target = "foreign";
       if (name === "key-order") section.media.key.items.reverse();
     }
@@ -255,13 +322,13 @@ describe("resolved Writer approval metadata", () => {
 });
 
 describe("canonical LandingView integration", () => {
-  it.each(["compact", "standard", "display"] as const)("gives the %s canonical frame sole ownership of vertical padding", size => {
+  it.each(["standard", "display"] as const)("gives the %s canonical frame sole ownership of vertical padding", size => {
     const authoredDoc: SectionedViewDocument = { id: "landing", sections: [{ id: "hero", kind: "hero", ground: "inverse", heading: ref("heading") }, band({ size, block: columns(2) })] };
     expect(validateSectionedViewDocument(authoredDoc)).toEqual([]); const doc = resolveSectionedViewDocument(authoredDoc, resolver);
     const markup = renderToStaticMarkup(<LandingView document={doc} peek={false} />); expect(renderToStaticMarkup(<ServerLandingView document={doc} peek={false} />)).toBe(markup);
     const root = dom(markup); const inner = root.querySelector("#content")!; const outer = inner.closest("[data-landing-ground]")!;
     expect(["0", "0px"]).toContain(window.getComputedStyle(outer).paddingBlock);
-    expect(inner.classList.contains(size === "compact" ? "py-3xl" : size === "display" ? "py-5xl" : "py-4xl")).toBe(true);
+    expect(inner.classList.contains(size === "display" ? "py-5xl" : "py-4xl")).toBe(true);
     expect(root.querySelectorAll("#content")).toHaveLength(1); expect(inner.parentElement?.closest("[data-content-section]")).toBeNull();
   });
   it("forwards the private published split FAQ bridge through LandingView", () => {
@@ -384,12 +451,12 @@ describe("canonical renderer review regressions", () => {
     const direct = dom(renderToStaticMarkup(<Scene id="7:content:5:scene" input={media.input} label={media.label} relationLabel={media.relationLabel} />)).querySelector(".scene-root")!.outerHTML;
     for (const server of [false, true]) { const root = dom(html(doc, server)); expect(root.querySelector("[data-scene-plate]")).toBeNull(); expect(root.querySelector('.scene-root')?.outerHTML).toBe(direct); expect(root.querySelector('.scene-root')?.textContent).toContain(copy.scene); }
   });
-  it.each(["compact", "standard", "display"] as const)("aligns the %s canonical fragment with its zero-padding outer band", size => {
+  it.each(["standard", "display"] as const)("aligns the %s canonical fragment with its zero-padding outer band", size => {
     const doc = reviewDocument([band({ size, block: columns(2) })]);
     for (const server of [false, true]) {
       const root = dom(landingHtml(doc, server)); const inner = root.querySelector<HTMLElement>("#content")!; const outer = inner.closest<HTMLElement>("[data-landing-ground]")!;
       expectCssZero(inner.style.scrollMarginTop); expect(inner.className).not.toContain("scroll-mt-4xl"); expect(inner.className).not.toContain("scroll-mt-5xl");
-      expectCssZero(outer.style.paddingBlock); expect(inner.className).toContain(size === "compact" ? "py-3xl" : size === "display" ? "py-5xl" : "py-4xl");
+      expectCssZero(outer.style.paddingBlock); expect(inner.className).toContain(size === "display" ? "py-5xl" : "py-4xl");
       expect(inner.parentElement?.style.maxWidth).toBe("var(--ui-width-prose-max, 48rem)"); expect(inner.parentElement?.style.paddingInline).toBe("var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))");
       expect(root.querySelector('[data-landing-hero]')?.className).toContain("py-4xl"); expect(root.querySelector<HTMLElement>('[data-landing-view]')?.style.scrollPaddingTop).toBe("var(--ui-height-site-header, 0px)");
     }
@@ -406,7 +473,7 @@ describe("canonical renderer review regressions", () => {
 
 
 describe("canonical matrix and specimen metadata integration", () => {
-  function matrix(part?: SectionedViewSpecimenPart, points = false): SectionedViewContentSection {
+  function matrix(part?: SectionedViewSpecimenPart, points = true): SectionedViewContentSection {
     return band({ block: { type: "matrix", featured: "right", sides: ["left", "right"].map(id => ({ id, label: ref(id === "left" ? "short" : "group"), heading: ref(id === "left" ? "first" : "second"), description: ref(id === "left" ? "detail" : "meta"), ...(part ? { visual: { ...panel, id: `${id}-panel`, meta: ref("meta"), status: { tone: "warning", label: ref("field") }, badge: { tone: "info", label: ref("badge") }, parts: [{ ...part, id: `${id}-${part.id}` }] } } : points ? { points: [ref(id === "left" ? "first" : "second"), ref(id === "left" ? "detail" : "meta")] } : {}) })) } });
   }
   function preserve(doc: ResolvedSectionedViewDocument) {
@@ -415,11 +482,44 @@ describe("canonical matrix and specimen metadata integration", () => {
     expect(doc.sections).toBe(sections); expect(doc.resolutions).toBe(resolutions); originals.forEach((value, index) => { expect(doc.resolutions[index]).toBe(value); expect(doc.resolutions[index]!.source).toBe(sources[index]); }); expect(JSON.stringify(doc)).toBe(before);
     return dom(markup);
   }
-  it.each(["base", "sunken", "inverse"] as const)("forwards description Matrix identity, feature and %s ground", ground => {
+  it.each(["base", "sunken", "inverse"] as const)("forwards points Matrix identity, feature and %s ground", ground => {
     const doc = resolve({ ...matrix(), ground }); const root = preserve(doc);
     expect([...root.querySelectorAll("[data-matrix-side]")].map(node => node.getAttribute("data-matrix-side"))).toEqual(["side-0063006f006e00740065006e0074-006c006500660074", "side-0063006f006e00740065006e0074-00720069006700680074"]);
     expect(root.querySelectorAll('[data-matrix-side]')[1]!.querySelector('[data-featured="true"]')).not.toBeNull(); expect(root.querySelectorAll("h3")).toHaveLength(2); const matrixRoot=root.querySelector("[data-matrix]")!;expect(matrixRoot.hasAttribute("aria-labelledby")).toBe(false);expect(root.querySelectorAll('[id="content:heading"]')).toHaveLength(1);expect(root.querySelector('[id="content:heading"]')?.textContent).toBe(copy.heading);
     const sides = [...root.querySelectorAll("[data-matrix-side]")]; sides.forEach((side, index) => { expect(side.querySelector("h3")?.textContent).toBe(index === 0 ? copy.short : copy.group); expect(side.textContent).toContain(index === 0 ? copy.first : copy.second); expect(side.textContent).toContain(index === 0 ? copy.detail : copy.meta); const plate = side.querySelector('[data-variant="plate"]')!; expect(plate.classList.contains(ground === "base" ? "bg-surface-sunken" : ground === "sunken" ? "bg-surface-raised" : "bg-surface-inverse-raised")).toBe(true); expect(side.querySelector("h3")!.classList.contains(ground === "inverse" ? "text-ink-on-inverse-muted" : "text-ink-secondary")).toBe(true); });
+  });
+  it.each(["points", "visual"] as const)("renders unlabeled Matrix %s headings and retained featured identity through both views", form => {
+    const section = matrix(form === "visual" ? field : undefined);
+    if (section.block?.type !== "matrix") throw new Error("Expected Matrix");
+    for (const side of section.block.sides) delete side.label;
+    const doc = resolve(section); const before = JSON.stringify(doc); const resolutions = doc.resolutions;
+    for (const server of [false, true]) for (const markup of [html(doc, server), landingHtml(doc, server)]) {
+      const root = dom(markup); const sides = [...root.querySelectorAll("[data-matrix-side]")];
+      expect(sides).toHaveLength(2);
+      expect(sides.map(side => side.querySelector("h3")?.textContent)).toEqual([copy.first, copy.second]);
+      for (const side of sides) { expect(side.querySelectorAll("h3")).toHaveLength(1); expect(side.querySelector("h3")!.classList.contains("text-h2")).toBe(true); }
+      expect(sides[0]!.querySelector("[data-featured]")).toBeNull(); expect(sides[1]!.querySelector('[data-featured="true"]')).not.toBeNull();
+      expect([...root.querySelectorAll("[data-matrix-description]")].map(node => node.textContent)).toEqual([copy.detail, copy.meta]);
+      expect(root.querySelectorAll(form === "visual" ? "[data-matrix-visual] figure" : "[data-matrix] li")).toHaveLength(form === "visual" ? 2 : 4);
+    }
+    expect(JSON.stringify(doc)).toBe(before); expect(doc.resolutions).toBe(resolutions);
+  });
+  it.each((["points", "visual"] as const).flatMap(form => [0, 1].map(unlabeledSide => ({ form, unlabeledSide }))))("refuses forged mixed labels on $form side $unlabeledSide before the adapter", ({ form, unlabeledSide }) => {
+    const doc: any = structuredClone(resolve(matrix(form === "visual" ? field : undefined)));
+    delete doc.sections[0].block.sides[unlabeledSide].label;
+    const called = vi.fn();
+    expect(() => renderSectionedViewSections(doc, { ...sectionedViewBlocks, ContentSection: called }, {})).toThrow(/Both sides must have labels or neither/);
+    expect(called).not.toHaveBeenCalled();
+    for (const server of [false, true]) {
+      expect(() => html(doc, server)).toThrow(/Both sides must have labels or neither/);
+      expect(() => landingHtml(doc, server)).toThrow(/Both sides must have labels or neither/);
+    }
+  });
+  it("refuses a forged description-only Matrix before either rendering entry invokes the adapter", () => {
+    const doc: any = structuredClone(resolve(matrix()));
+    for (const side of doc.sections[0].block.sides) delete side.points;
+    const called = vi.fn(); expect(() => renderSectionedViewSections(doc, { ...sectionedViewBlocks, ContentSection: called }, {})).toThrow(/points or visual/); expect(called).not.toHaveBeenCalled();
+    for (const server of [false, true]) expect(() => html(doc, server)).toThrow(/points or visual/);
   });
   it("keeps the section heading without labelling a generic Matrix div", () => { const root = preserve(resolve(matrix())); const collection = root.querySelector("[data-matrix]")!; expect(collection.tagName).toBe("DIV"); expect(collection.hasAttribute("aria-labelledby")).toBe(false); expect(root.querySelector('[id="content:heading"]')?.textContent).toBe(copy.heading); });
   it("renders equal point rows and descriptions without dropping either", () => { const root = preserve(resolve(matrix(undefined, true))); expect(root.querySelectorAll("[data-matrix] li")).toHaveLength(4); [...root.querySelectorAll("[data-matrix-side]")].forEach((side, index) => { expect([...side.querySelectorAll("li")].map(node => node.textContent)).toEqual(index === 0 ? [copy.first, copy.detail] : [copy.second, copy.meta]); expect(side.textContent).toContain(index === 0 ? copy.detail : copy.meta); expect(side.querySelectorAll("p")[1]?.textContent).toBe(index === 0 ? copy.detail : copy.meta); }); });

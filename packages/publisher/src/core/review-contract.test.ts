@@ -46,10 +46,10 @@ describe("reviewed canonical contract boundaries", () => {
     expect(errors({ type: "items", arrangement: "rows", reveal: "disclose", ...(recipe === undefined ? {} : { recipe }), items: items(4).map((item, index) => index === 2 ? { ...item, [slot!]: slot === "href" ? "/next" : part } : item) })).toContainEqual(expect.objectContaining({ rule: "sectioned-view-content-disclosure" }));
   });
   it("refuses a featured statement item", () => {
-    expect(errors({ type: "items", arrangement: "columns", columns: 3, emphasis: "statement", items: items(3).map((item, index) => ({ ...item, ...(index === 1 ? { featured: true } : {}) })) })).toContainEqual(expect.objectContaining({ rule: "sectioned-view-content-statement" }));
+    expect(errors({ type: "items", arrangement: "columns", columns: 3, scale: "statement", items: items(3).map((item, index) => ({ ...item, ...(index === 1 ? { featured: true } : {}) })) })).toContainEqual(expect.objectContaining({ rule: "sectioned-view-item-shape" }));
   });
   it("refuses an unknown lane only in a later item", () => {
-    const block = { type: "items", recipe: "flow", lanes: [{ id: "first", label: ref() }, { id: "second", label: ref() }], items: items(3).map((item, index) => ({ ...item, lane: index === 0 ? "first" : index === 1 ? "second" : "foreign" })) };
+    const block = { type: "items", recipe: "steps", arrangement: "stacked", lanes: [{ id: "first", label: ref() }, { id: "second", label: ref() }], items: items(3).map((item, index) => ({ ...item, lane: index === 0 ? "first" : index === 1 ? "second" : "foreign" })) };
     expect(errors(block)).toContainEqual(expect.objectContaining({ rule: "sectioned-view-content-steps-lanes-shape" }));
   });
   it("bounds the previous meter marker by scaleMax", () => {
@@ -67,7 +67,7 @@ describe("reviewed canonical contract boundaries", () => {
     expect(findings({ media: { type: "specimen", label: ref(), panel: { ...panel, badge } } })).toContainEqual(expect.objectContaining({ rule, path: `sections.0.media.panel.badge${suffix}` }));
   });
   it("fixes features emphasis to item", () => {
-    expect(errors({ type: "items", recipe: "features", emphasis: "statement", items: items(3) })).toContainEqual(expect.objectContaining({ rule: "recipe-axis" }));
+    expect(errors({ type: "items", recipe: "features", scale: "statement", items: items(3) })).toContainEqual(expect.objectContaining({ rule: "recipe-axis" }));
   });
   it("deep-freezes every recipe object and nested constraints", () => {
     for (const recipe of Object.values(contract.SECTIONED_VIEW_ITEM_RECIPES)) {
@@ -75,12 +75,12 @@ describe("reviewed canonical contract boundaries", () => {
       for (const value of Object.values(recipe)) if (value !== null && typeof value === "object") expect(Object.isFrozen(value)).toBe(true);
     }
   });
-  it.each(["description", "points", "visual", "description+points", "description+visual"])("supports matrix form %s", (form) => {
+  it.each(["points", "visual", "description+points", "description+visual"])("supports matrix form %s", (form) => {
     const block = { type: "matrix", sides: sides.map((side) => ({ ...side, ...(form.includes("description") ? { description: ref() } : {}), ...(form.includes("points") ? { points: [ref(), ref()] } : {}), ...(form.includes("visual") ? { visual: panel } : {}) })) };
     expect(errors(block)).toEqual([]);
   });
   it("refuses empty matrix forms and points combined with visual", () => {
-    for (const extra of [{}, { points: [ref(), ref()], visual: panel }, { description: ref(), points: [ref(), ref()], visual: panel }]) expect(errors({ type: "matrix", sides: sides.map((side) => ({ ...side, ...extra })) })).toContainEqual(expect.objectContaining({ rule: "sectioned-view-content-matrix-form" }));
+    for (const extra of [{}, { description: ref() }, { points: [ref(), ref()], visual: panel }, { description: ref(), points: [ref(), ref()], visual: panel }]) expect(errors({ type: "matrix", sides: sides.map((side) => ({ ...side, ...extra })) })).toContainEqual(expect.objectContaining({ rule: "sectioned-view-content-matrix-form" }));
   });
   it("compares the primary visual/points form before optional description", () => {
     for (const extra of [{ points: [ref(), ref()] }, { visual: panel }]) expect(errors({ type: "matrix", sides: [{ ...sides[0], ...extra, description: ref() }, { ...sides[1], ...extra }] })).toEqual([]);

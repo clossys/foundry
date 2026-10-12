@@ -126,14 +126,14 @@ export function assertItems(props: ItemsProps): number | undefined {
   const count = items.length;
   if (order === "connected") {
     if ((arrangement !== "columns" && arrangement !== "stacked") || count < 3 || count > 5 || (arrangement === "columns" && columns !== 2 && columns !== 3)) throw new RangeError("Items: connected order needs columns or stacked with 3-5 steps.");
-    if (count === 4) console.warn("Items: connected sequences read best with three or five steps.");
+    if (count === 4 && props.lanes === undefined) console.warn("Items: connected sequences read best with three or five steps.");
     if (hasContent(props.caption) && !items.some(item => hasContent(item.visual))) throw new TypeError("Items: a connected caption requires a visual.");
   }
   if (arrangement === "columns" && order !== "connected" && !((columns === 2 && [2, 4, 6].includes(count)) || (columns === 3 && [3, 6].includes(count)))) throw new RangeError("Items: columns need two columns with 2/4/6 items or three columns with 3/6 items.");
   if (arrangement === "rows" && (count < 2 || count > 8 || (columns !== 1 && columns !== 2) || (columns === 2 && count % 2 !== 0))) throw new RangeError("Items: rows need 2-8 items, even in two columns.");
   if (arrangement === "stacked" && order !== "connected" && (count < 2 || count > 4)) throw new RangeError("Items: stacked needs 2-4 items.");
   if (props.lanes !== undefined) {
-    if (order !== "connected" || arrangement !== "stacked" || (count !== 3 && count !== 5) || !Array.isArray(props.lanes) || props.lanes.length !== 2) throw new TypeError("Items: two lanes belong to stacked connected sequences with three or five steps.");
+    if (order !== "connected" || !["columns", "stacked"].includes(arrangement) || count < 3 || count > 5 || !Array.isArray(props.lanes) || props.lanes.length !== 2) throw new TypeError("Items: two lanes belong to connected columns or stacked sequences with three to five steps.");
     const laneIds = new Set<string>();
     for (let i = 0; i < 2; i++) {
       const lane = props.lanes[i];

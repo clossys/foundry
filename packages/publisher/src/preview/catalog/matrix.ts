@@ -152,13 +152,13 @@ export const MATRIX_FIXTURES = [
     } satisfies SectionedViewSection
 },
 {
-    "id": "matrix-featured-description" as const,
+    "id": "matrix-featured-points" as const,
     "fn": "Matrix",
     "axis": "form",
-    "value": "description",
-    "caption": "Featured side with description-primary form",
+    "value": "points",
+    "caption": "Featured comparison with description leads",
     "section": {
-        "id": "matrix-featured-description",
+        "id": "matrix-featured-points",
         "kind": "content-section",
         "ground": "base",
         "size": "standard",
@@ -181,7 +181,8 @@ export const MATRIX_FIXTURES = [
                     },
                     "description": {
                         "id": "catalog.sample.example.matrix.before.description"
-                    }
+                    },
+                    "points": [{ "id": "catalog.sample.matrix.before.point0" }, { "id": "catalog.sample.matrix.before.point1" }]
                 },
                 {
                     "id": "after",
@@ -193,7 +194,8 @@ export const MATRIX_FIXTURES = [
                     },
                     "description": {
                         "id": "catalog.sample.example.matrix.after.description"
-                    }
+                    },
+                    "points": [{ "id": "catalog.sample.matrix.after.point0" }, { "id": "catalog.sample.matrix.after.point1" }]
                 }
             ]
         }

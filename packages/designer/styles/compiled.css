@@ -1991,6 +1991,9 @@
       clip-path: none;
       white-space: normal;
     }
+    .tablet\:absolute {
+      position: absolute;
+    }
     .tablet\:col-span-2 {
       grid-column: span 2 / span 2;
     }

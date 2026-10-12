@@ -24,15 +24,15 @@ const weightCases: [string, SectionedViewContentSection, "A" | "B" | "C", string
   ...(["columns", "rows", "bento"] as const).map((arrangement): [string, SectionedViewContentSection, "A" | "B" | "C", string] => [`${arrangement} raw visual`, section({ block: { type: "items", arrangement, ...(arrangement === "columns" ? { columns: 2 } : {}), items: items(2, true) } }), "A", "grid"]),
   ["numbered text", section({ block: { type: "items", arrangement: "columns", columns: 3, order: "numbered", items: items(3) } }), "B", "sequence"],
   ["numbered visual", section({ block: { type: "items", arrangement: "columns", columns: 3, order: "numbered", items: items(3, true) } }), "A", "sequence"],
-  ["statement numbered overlap", section({ block: { type: "items", arrangement: "columns", columns: 3, order: "numbered", emphasis: "statement", items: items(3) } }), "A", "statement"],
-  ["statement connected overlap", section({ block: { type: "items", arrangement: "columns", columns: 3, order: "connected", emphasis: "statement", items: items(3) } }), "A", "statement"],
+  ["statement numbered overlap", section({ block: { type: "items", arrangement: "columns", columns: 3, order: "numbered", scale: "statement", items: items(3) } }), "A", "statement"],
+  ["statement connected overlap", section({ block: { type: "items", arrangement: "columns", columns: 3, order: "connected", scale: "statement", items: items(3) } }), "A", "statement"],
   ["record before visual block", section({ media: record, block: { type: "matrix", sides: ["a", "b"].map((id) => ({ id, label: ref, heading: ref, visual: panel })) } }), "B", "table"],
   ["scene before statement", section({ media: scene, block: { type: "items", recipe: "statement", items: items(3) } }), "A", "specimen"],
   ["split specimen visual Matrix", section({ layout: "split-start", media: specimen, block: { type: "matrix", sides: ["a", "b"].map((id) => ({ id, label: ref, heading: ref, visual: panel })) } }), "A", "compare"],
 ];
 describe("canonical page-flow structure", () => {
   it.each(["split-start", "split-end"] as const)("preserves specimen fallback after structural A and disclosure on %s", (layout) => {
-    const matrix = (visual = false): SectionedViewContentBlock => ({ type: "matrix", sides: ["before", "after"].map((id) => ({ id, label: ref, heading: ref, description: ref, ...(visual ? { visual: panel } : {}) })) });
+    const matrix = (visual = false): SectionedViewContentBlock => ({ type: "matrix", sides: ["before", "after"].map((id) => ({ id, label: ref, heading: ref, description: ref, ...(visual ? { visual: panel } : { points: [ref, ref] }) })) });
     const ordinary = section({ block: { type: "items", arrangement: "rows", order: "numbered", reveal: "disclose", items: items(4) } });
     expect(validateSectionedViewDocument(document(ordinary))).toEqual([]);
     expect(sectionWeight(ordinary)).toEqual({ weight: "B", shape: "sequence" });
@@ -40,7 +40,7 @@ describe("canonical page-flow structure", () => {
       [matrix(), "B", "specimen"], [matrix(true), "A", "compare"],
       [{ type: "items", arrangement: "rows", order: "numbered", reveal: "disclose", items: items(4) }, "B", "specimen"],
       [{ type: "items", recipe: "steps", items: items(3) }, "B", "specimen"],
-      [{ type: "items", recipe: "flow", items: items(3) }, "B", "specimen"],
+      [{ type: "items", recipe: "steps", arrangement: "stacked", items: items(3) }, "B", "specimen"],
       [{ type: "items", recipe: "statement", items: items(3) }, "A", "statement"],
       [{ type: "items", arrangement: "columns", columns: 3, order: "numbered", items: items(3) }, "B", "specimen"],
       [{ type: "items", recipe: "steps", items: items(3, true) }, "A", "sequence"],
@@ -77,7 +77,7 @@ describe("canonical page-flow structure", () => {
       [{ type: "items", recipe: "topics", items: items(2) }, "B", "list"],
       [{ type: "items", recipe: "faq", items: items(4) }, "C", "reference"],
       [{ type: "items", recipe: "steps", items: items(3, true) }, "A", "sequence"],
-      [{ type: "items", recipe: "flow", items: items(3) }, "B", "sequence"],
+      [{ type: "items", recipe: "steps", arrangement: "stacked", items: items(3) }, "B", "sequence"],
       [{ type: "items", recipe: "specimen-stack", items: items(2, true) }, "A", "specimen"],
       [{ type: "items", recipe: "link-index", items: items(3).map((item, i) => ({ ...item, href: `/guide/${i}` })) }, "B", "grid"],
     ];

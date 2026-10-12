@@ -39,6 +39,7 @@ describe("Items order", () => {
   });
   it.each([2, 6])("refuses %s connected steps", count => assertRefused({ order: "connected", items: data(count) }, RangeError, /connected order needs/));
   it.each(["rows", "bento"] as const)("refuses connected %s", arrangement => assertRefused({ arrangement, order: "connected", items: data(4) }, RangeError, /connected order needs/));
+  it.each(["rows", "bento"] as const)("refuses actor lanes in connected %s", arrangement => assertRefused({ arrangement, order: "connected", lanes, items: laneData("aba") }, RangeError, /connected order needs/));
   it.each([3, 4, 5])("accepts a connected stacked sequence of %s", count => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     const { container } = draw({ arrangement: "stacked", order: "connected", items: data(count) });
@@ -84,12 +85,72 @@ describe("Items order", () => {
     expect(caption.closest("ol")).toBeNull();
     assertRefused({ order: "connected", caption: "Example" }, TypeError, /^Items: a connected caption requires a visual\.$/);
   });
-  it.each(["aba", "abbaa"])("uses array lane ids for %s without reordering steps", sequence => {
+  it.each(["aba", "abba", "abbaa"])("uses array lane ids for %s without reordering steps", sequence => {
     const { container } = draw({ arrangement: "stacked", order: "connected", lanes, items: laneData(sequence) });
     expect([...container.querySelectorAll("li")].map(node => node.getAttribute("data-lane"))).toEqual([...sequence].map(lane => lane === "a" ? "team" : "review"));
     expect([...container.querySelectorAll("[data-item-lane-label]")].map(node => node.textContent)).toEqual([...sequence].map(lane => lane === "a" ? "Team" : "Review"));
     expect([...container.querySelectorAll("[data-item-heading]")].map(node => node.textContent)).toEqual(data(sequence.length).map(item => item.heading));
   });
+  it.each([
+    { arrangement: "stacked", sequence: "aba", columns: undefined, grid: "tablet-lg:grid-cols-3", actorPosition: "tablet-lg:absolute" },
+    { arrangement: "stacked", sequence: "abba", columns: undefined, grid: "desktop:grid-cols-4", actorPosition: "desktop:absolute" },
+    { arrangement: "stacked", sequence: "abbaa", columns: undefined, grid: "desktop:grid-cols-5", actorPosition: "desktop:absolute" },
+    { arrangement: "columns", sequence: "aba", columns: 2, grid: "tablet:grid-cols-2", actorPosition: "tablet:absolute" },
+    { arrangement: "columns", sequence: "abba", columns: 2, grid: "tablet:grid-cols-2", actorPosition: "tablet:absolute" },
+    { arrangement: "columns", sequence: "abbaa", columns: 2, grid: "tablet:grid-cols-2", actorPosition: "tablet:absolute" },
+    { arrangement: "columns", sequence: "aba", columns: 3, grid: "tablet-lg:grid-cols-3", actorPosition: "tablet:absolute" },
+    { arrangement: "columns", sequence: "abba", columns: 3, grid: "tablet-lg:grid-cols-3", actorPosition: "tablet:absolute" },
+    { arrangement: "columns", sequence: "abbaa", columns: 3, grid: "tablet-lg:grid-cols-3", actorPosition: "tablet:absolute" },
+  ] as const)("keeps $sequence lanes in $arrangement with $columns columns and actors at the connector breakpoint", ({ arrangement, sequence, columns, grid, actorPosition }) => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      const { container } = draw({ arrangement, columns, order: "connected", lanes, items: laneData(sequence), end: "continues", endLabel: "Next handoff" });
+      const list = container.querySelector("ol")!;
+      expect(list).toHaveClass(grid);
+      expect(list.querySelectorAll(":scope > li")).toHaveLength(sequence.length);
+      expect([...list.querySelectorAll("[data-item-heading]")].map(node => node.textContent)).toEqual(data(sequence.length).map(item => item.heading));
+      const actors = list.querySelectorAll("[data-item-lane-label]");
+      expect([...actors].map(node => node.textContent)).toEqual([...sequence].map(actor => actor === "a" ? "Team" : "Review"));
+      for (const actor of actors) {
+        expect(actor).toHaveClass(actorPosition);
+        const otherPositions = ["tablet:absolute", "tablet-lg:absolute", "desktop:absolute"].filter(value => value !== actorPosition);
+        for (const value of otherPositions) expect(actor).not.toHaveClass(value);
+      }
+      expect(list.querySelectorAll("[data-item-transition]")).toHaveLength(sequence.length - 1);
+      expect(list.querySelectorAll("[data-item-end]")).toHaveLength(1);
+      expect(list.querySelector(":scope > li:last-child [data-item-end]")).toHaveAttribute("data-item-end", "continues");
+      expect(list.querySelector(":scope > li:last-child [data-item-end-label]")).toHaveTextContent("Next handoff");
+      expect(warn).not.toHaveBeenCalled();
+      if (arrangement === "stacked" && sequence.length === 4) {
+        expect(list).not.toHaveClass("desktop:grid-cols-5");
+        expect(list.querySelectorAll('[data-item-route="columns-4"]')).toHaveLength(3);
+        expect(list.querySelector('[data-item-route="columns-5"]')).toBeNull();
+      }
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  it("preserves actor transfers across a wrapped four-step column sequence", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      const { container } = draw({ order: "connected", columns: 2, lanes, items: laneData("abba") });
+      const routes = [...container.querySelectorAll<HTMLElement>('[data-item-route="columns-2"]')];
+      expect(routes).toHaveLength(3);
+      expect(routes.map(route => [route.style.getPropertyValue("--items-from"), route.style.getPropertyValue("--items-to")])).toEqual([
+        ["0px", "var(--spacing-4xl, 64px)"],
+        ["var(--spacing-4xl, 64px)", "var(--spacing-4xl, 64px)"],
+        ["var(--spacing-4xl, 64px)", "0px"],
+      ]);
+      expect(routes[1]).toHaveAttribute("data-item-handoff");
+      expect(routes[1]!.querySelector('[data-item-segment="return"]')).not.toBeNull();
+      expect(routes[0]!.querySelector('[data-item-segment="return"]')).toBeNull();
+      expect(routes[2]!.querySelector('[data-item-segment="return"]')).toBeNull();
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
   it("accepts visuals in five lane steps", () => {
     const { container } = draw({ arrangement: "stacked", order: "connected", lanes, items: laneData("abbaa").map(item => ({ ...item, visual: <span>Panel</span> })) });
     expect(container.querySelectorAll("[data-item-visual]")).toHaveLength(5);
@@ -100,8 +161,6 @@ describe("Items order", () => {
     for (const sequence of ["baa", "aaa"]) assertRefused({ arrangement: "stacked", order: "connected", lanes, items: laneData(sequence) });
     assertRefused({ arrangement: "stacked", order: "connected", lanes, items: data(3) });
     assertRefused({ arrangement: "stacked", order: "connected", lanes, items: laneData("aba").map((item, i) => i === 1 ? { ...item, lane: "unknown" } : item) });
-    assertRefused({ order: "connected", lanes, items: laneData("aba") });
-    assertRefused({ arrangement: "stacked", order: "connected", lanes, items: laneData("abba") });
     assertRefused({ arrangement: "stacked", order: "connected", items: laneData("aba") });
     assertRefused({ items: laneData("aba") });
   });

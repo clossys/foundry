@@ -129,7 +129,7 @@ const fullDocument: SectionedViewDocument = {
   sections: [
     { id: "welcome", kind: "hero", heading: ref("acme.hero.heading") },
     section("evidence", { eyebrow: ref("acme.evidence.eyebrow"), description: ref("acme.evidence.description"), layout: "split-start", block: topicsBlock, media: specimen(panelA) }),
-    section("principles", { align: "center", block: featuresBlock }),
+    section("principles", { block: featuresBlock }),
     section("capabilities", { block: cardsBlock }),
     section("questions", { block: faqBlock }),
     section("problem", { block: comparisonBlock }),
@@ -174,7 +174,7 @@ describe("content-section — validation", () => {
 
   it("refuses old frame fields and layout values, while accepting split alignment and header-only splits", () => {
     expect(rules(docWith(section("a", { mediaSide: "end" } as never)))).toContain("sectioned-view-section-keys");
-    expect(rules(docWith(section("a", { layout: "split-end", align: "center", media: specimen(panelB) })))).toEqual([]);
+    expect(rules(docWith(section("a", { layout: "split-end", media: specimen(panelB) })))).toEqual([]);
     for (const block of [undefined, cardsBlock, stepsBlock, comparisonBlock]) expect(rules(docWith(section("a", { layout: "split-end", block })))).toEqual([]);
     expect(rules(docWith(section("a", { layout: "split" as never })))).toContain("sectioned-view-content-layout");
   });
@@ -271,7 +271,7 @@ describe("content-section — validation", () => {
     const side = (id: string, extra: Record<string, unknown>) => ({ id, label: ref("acme.side.label"), heading: ref("acme.side.heading"), ...extra });
     const points = (count: number) => Array.from({ length: count }, (_, index) => ref(`acme.point.${index}`));
     const matrix = (before: Record<string, unknown>, after: Record<string, unknown>) => blockDoc({ type: "matrix", sides: [side("before", before), side("after", after)] });
-    expect(rules(matrix({ description: ref("acme.d") }, { description: ref("acme.d") }))).toEqual([]);
+    expect(rules(matrix({ description: ref("acme.d") }, { description: ref("acme.d") }))).toContain("sectioned-view-content-matrix-form");
     expect(rules(matrix({ visual: panelB }, { visual: panelC }))).toEqual([]);
     expect(rules(matrix({ description: ref("acme.d") }, { points: points(2) }))).toContain("sectioned-view-content-matrix-form");
     expect(rules(matrix({ points: points(2) }, { points: points(3) }))).toContain("sectioned-view-content-matrix-form");
@@ -408,7 +408,7 @@ describe("content-section — the stacked-action rule and card links", () => {
 
   it("refuses actions on a stacked band whose intro is followed by a block or media", () => {
     expect(rules(docWith(section("a", { actions: [action("one")], block: topicsBlock })))).toEqual(["sectioned-view-content-stacked-actions"]);
-    expect(rules(docWith(section("a", { align: "center", actions: [action("one")], block: featuresBlock })))).toEqual(["sectioned-view-content-stacked-actions"]);
+    expect(rules(docWith(section("a", { actions: [action("one")], block: featuresBlock })))).toEqual(["sectioned-view-content-stacked-actions"]);
     expect(rules(docWith(section("a", { actions: [action("one")], media: specimen(panelB) })))).toEqual(["sectioned-view-content-stacked-actions"]);
     expect(rules(docWith(section("a", { layout: "stacked", actions: [action("one")], block: stepsBlock, media: specimen(panelB) })))).toEqual(["sectioned-view-content-stacked-actions"]);
     const message = validateSectionedViewDocument(docWith(section("a", { actions: [action("one")], block: topicsBlock })))[0]?.message ?? "";
@@ -514,7 +514,7 @@ describe("content-section — resolution", () => {
       type: "items", arrangement: "columns",
       columns: 3,
       treatment: "plate",
-      order: "none", reveal: "all", emphasis: "item",
+      order: "none", reveal: "all", scale: "item",
       items: [
         { id: "a", icon: "landmark", heading: "Text for acme.item.a.heading", description: "Text for acme.item.a.description" },
         { id: "b", icon: "scale", heading: "Text for acme.item.b.heading", description: "Text for acme.item.b.description" },

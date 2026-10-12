@@ -3,19 +3,19 @@ import type { ContentIconName, SectionedViewSpecimenPanel, SectionedViewSpecimen
 
 /** Shared authored and renderer-facing vocabulary; recipes resolve into these axes. */
 export const SECTIONED_VIEW_CONTENT_CONTRACT = Object.freeze({
-  sizes: Object.freeze(["compact", "standard", "display"] as const),
+  sizes: Object.freeze(["standard", "display"] as const),
   layouts: Object.freeze(["stacked", "split-start", "split-end"] as const),
   arrangements: Object.freeze(["columns", "rows", "bento", "stacked"] as const),
   orders: Object.freeze(["none", "numbered", "connected"] as const),
   reveals: Object.freeze(["all", "disclose"] as const),
   treatments: Object.freeze(["plain", "rule", "plate"] as const),
-  emphases: Object.freeze(["item", "statement"] as const),
+  scales: Object.freeze(["item", "statement"] as const),
   tones: Object.freeze(["neutral", "success", "warning", "danger", "info"] as const),
-  recipes: Object.freeze(["features", "statement", "cards", "topics", "link-index", "faq", "steps", "flow", "specimen-stack"] as const),
+  recipes: Object.freeze(["features", "statement", "cards", "topics", "link-index", "faq", "steps", "specimen-stack"] as const),
   spans: Object.freeze({ third: 4, half: 6, "two-thirds": 8, full: 12 }),
   columnOptions: Object.freeze([2, 3] as const),
   rowColumnOptions: Object.freeze([1, 2] as const),
-  counts: Object.freeze({ columns: Object.freeze([2, 6] as const), groups: Object.freeze([2, 4] as const), groupItems: Object.freeze([2, 4] as const), laneDefinitions: 2, columns2: Object.freeze([2, 4, 6]), columns3: Object.freeze([3, 6]), rows: Object.freeze([2, 8] as const), bento: Object.freeze([2, 6] as const), stacked: Object.freeze([2, 4] as const), connected: Object.freeze([3, 5] as const), disclose: Object.freeze([4, 6] as const), lanes: Object.freeze([3, 5]), matrix: 2, points: Object.freeze([2, 4] as const), linked: 6, rowUnits: 12 }),
+  counts: Object.freeze({ columns: Object.freeze([2, 6] as const), groups: Object.freeze([2, 4] as const), groupItems: Object.freeze([2, 4] as const), laneDefinitions: 2, columns2: Object.freeze([2, 4, 6]), columns3: Object.freeze([3, 6]), rows: Object.freeze([2, 8] as const), bento: Object.freeze([2, 6] as const), stacked: Object.freeze([2, 4] as const), connected: Object.freeze([3, 5] as const), disclose: Object.freeze([4, 6] as const), matrix: 2, points: Object.freeze([2, 4] as const), linked: 6, rowUnits: 12 }),
 });
 export type FrameSize = typeof SECTIONED_VIEW_CONTENT_CONTRACT.sizes[number];
 export type FrameLayout = typeof SECTIONED_VIEW_CONTENT_CONTRACT.layouts[number];
@@ -24,7 +24,7 @@ export type SectionedViewItemsArrangement = typeof SECTIONED_VIEW_CONTENT_CONTRA
 export type SectionedViewItemsOrder = typeof SECTIONED_VIEW_CONTENT_CONTRACT.orders[number];
 export type SectionedViewItemsReveal = typeof SECTIONED_VIEW_CONTENT_CONTRACT.reveals[number];
 export type SectionedViewItemsTreatment = typeof SECTIONED_VIEW_CONTENT_CONTRACT.treatments[number];
-export type SectionedViewItemsEmphasis = typeof SECTIONED_VIEW_CONTENT_CONTRACT.emphases[number];
+export type SectionedViewItemsScale = typeof SECTIONED_VIEW_CONTENT_CONTRACT.scales[number];
 export type SectionedViewItemSpan = keyof typeof SECTIONED_VIEW_CONTENT_CONTRACT.spans;
 export interface SectionedViewBadge { label: CopyRef; tone?: SectionedViewSpecimenTone }
 /** One data-only item. Arrangement and recipe determine which optional slots apply. */
@@ -37,7 +37,6 @@ export interface SectionedViewItem {
   meta?: CopyRef;
   visual?: SectionedViewSpecimenPart;
   href?: string;
-  featured?: boolean;
   span?: SectionedViewItemSpan;
   lane?: string;
   badge?: SectionedViewBadge;
@@ -50,7 +49,7 @@ interface ItemsFields {
   order?: SectionedViewItemsOrder;
   reveal?: SectionedViewItemsReveal;
   treatment?: SectionedViewItemsTreatment;
-  emphasis?: SectionedViewItemsEmphasis;
+  scale?: SectionedViewItemsScale;
   items: SectionedViewItem[];
   groups?: SectionedViewItemGroup[];
   lanes?: SectionedViewItemLane[];
@@ -63,17 +62,20 @@ export type SectionedViewItemsBlock = ItemsFields & (
   | { recipe?: never; arrangement: SectionedViewItemsArrangement }
 );
 /** Canonical recipe output always names every layout axis. */
-export type CanonicalSectionedViewItemsBlock = Omit<SectionedViewItemsBlock, "arrangement" | "order" | "reveal" | "treatment" | "emphasis"> & {
+export type CanonicalSectionedViewItemsBlock = Omit<SectionedViewItemsBlock, "arrangement" | "order" | "reveal" | "treatment" | "scale"> & {
   arrangement: SectionedViewItemsArrangement;
   order: SectionedViewItemsOrder;
   reveal: SectionedViewItemsReveal;
   treatment: SectionedViewItemsTreatment;
-  emphasis: SectionedViewItemsEmphasis;
+  scale: SectionedViewItemsScale;
 };
-export interface SectionedViewMatrixSide { id: string; label: CopyRef; heading: CopyRef; description?: CopyRef; points?: CopyRef[]; visual?: SectionedViewSpecimenPanel }
+export type SectionedViewMatrixSide = { id: string; label?: CopyRef; heading: CopyRef; description?: CopyRef } & (
+  | { points: CopyRef[]; visual?: never }
+  | { visual: SectionedViewSpecimenPanel; points?: never }
+);
 export interface SectionedViewMatrixBlock { type: "matrix"; recipe?: "comparison"; sides: SectionedViewMatrixSide[]; featured?: string }
 export interface SectionedViewSpecimenKeyItem { id: string; target: string; heading: CopyRef; description: CopyRef }
-export interface SectionedViewSpecimenKey { label: CopyRef; side?: "end" | "below"; items: SectionedViewSpecimenKeyItem[] }
+export interface SectionedViewSpecimenKey { label: CopyRef; items: SectionedViewSpecimenKeyItem[] }
 export interface SectionedViewSpecimenMedia { type: "specimen"; label: CopyRef; panel: SectionedViewSpecimenPanel; key?: SectionedViewSpecimenKey }
 export interface SectionedViewLedgerRow { id: string; label: CopyRef; detail?: CopyRef; status?: SectionedViewSpecimenStatus; flag?: boolean }
 export type SectionedViewLedgerGroup = { id: string; label: CopyRef } & (
@@ -109,8 +111,8 @@ export interface SectionedViewSceneMedia { type: "scene"; label: CopyRef; relati
 export type SectionedViewMedia = SectionedViewSpecimenMedia | SectionedViewRecordMedia | SectionedViewSceneMedia;
 
 interface Recipe {
-  readonly fixed: Readonly<Partial<Record<"arrangement" | "order" | "reveal" | "treatment" | "emphasis" | "columns", string | number>>>;
-  readonly defaults?: Readonly<Partial<Record<"columns" | "treatment", string | number>>>;
+  readonly fixed: Readonly<Partial<Record<"arrangement" | "order" | "reveal" | "treatment" | "scale" | "columns", string | number>>>;
+  readonly defaults?: Readonly<Partial<Record<"arrangement" | "columns" | "treatment", string | number>>>;
   readonly treatments?: readonly string[];
   readonly slots: readonly string[];
   readonly requiredSlot?: "href" | "visual";
@@ -127,14 +129,13 @@ function freezeRecipes(recipes: Record<ItemsRecipe, Recipe>): Readonly<Record<It
 }
 /** Recipe constraints are shared by desugaring and slot validation. Badge is independent metadata. */
 export const SECTIONED_VIEW_ITEM_RECIPES: Readonly<Record<ItemsRecipe, Recipe>> = freezeRecipes({
-  features: { fixed: { arrangement: "columns", order: "none", reveal: "all", emphasis: "item" }, defaults: { columns: 3 }, slots: ["icon", "eyebrow", "href"] },
-  statement: { fixed: { arrangement: "columns", columns: 3, order: "none", reveal: "all", emphasis: "statement" }, treatments: ["plain", "rule"], slots: [] },
-  cards: { fixed: { arrangement: "bento", order: "none", reveal: "all" }, defaults: { treatment: "rule" }, treatments: ["rule", "plate"], slots: ["eyebrow", "visual", "href", "meta", "featured", "span"] },
+  features: { fixed: { arrangement: "columns", order: "none", reveal: "all", scale: "item" }, defaults: { columns: 3 }, slots: ["icon", "eyebrow", "href"] },
+  statement: { fixed: { arrangement: "columns", columns: 3, order: "none", reveal: "all", scale: "statement" }, treatments: ["plain", "rule"], slots: [] },
+  cards: { fixed: { arrangement: "bento", order: "none", reveal: "all" }, defaults: { treatment: "rule" }, treatments: ["rule", "plate"], slots: ["eyebrow", "visual", "href", "meta", "span"] },
   topics: { fixed: { arrangement: "rows", order: "none", reveal: "all", treatment: "rule" }, defaults: { columns: 1 }, slots: ["icon", "href", "groups"] },
-  "link-index": { fixed: { arrangement: "columns", order: "none", reveal: "all" }, defaults: { columns: 3, treatment: "plate" }, treatments: ["plate", "rule"], slots: ["href", "icon"], requiredSlot: "href" },
+  "link-index": { fixed: { arrangement: "columns", order: "none", reveal: "all", treatment: "plate" }, defaults: { columns: 3 }, slots: ["href", "icon"], requiredSlot: "href" },
   faq: { fixed: { arrangement: "rows", order: "none", reveal: "disclose", treatment: "rule" }, slots: [] },
-  steps: { fixed: { arrangement: "columns", order: "connected", reveal: "all", treatment: "plain" }, defaults: { columns: 3 }, slots: ["meta", "visual"] },
-  flow: { fixed: { arrangement: "stacked", order: "connected", reveal: "all", treatment: "plain" }, slots: ["meta", "lane"] },
+  steps: { fixed: { order: "connected", reveal: "all", treatment: "plain" }, defaults: { arrangement: "columns" }, slots: ["meta", "visual", "lane"] },
   "specimen-stack": { fixed: { arrangement: "stacked", order: "none", reveal: "all", treatment: "rule" }, slots: ["visual"], requiredSlot: "visual" },
 });
 
@@ -142,11 +143,13 @@ export const SECTIONED_VIEW_ITEM_RECIPES: Readonly<Record<ItemsRecipe, Recipe>> 
 export function desugarRecipe(block: SectionedViewItemsBlock): CanonicalSectionedViewItemsBlock {
   if (block === null || typeof block !== "object" || ![Object.prototype, null].includes(Object.getPrototypeOf(block))) throw new Error("recipe-axis: expected a plain items block.");
   if (Reflect.ownKeys(block).some((key) => typeof key !== "string" || !Object.getOwnPropertyDescriptor(block, key)?.enumerable || !("value" in Object.getOwnPropertyDescriptor(block, key)!))) throw new Error("recipe-axis: expected own enumerable data fields.");
+  if (Object.hasOwn(block, "emphasis")) throw new Error("recipe-axis: emphasis is retired; use scale.");
+  if ((block as { recipe?: unknown }).recipe === "flow") throw new Error("recipe-axis: flow is retired; use steps with arrangement: stacked.");
   if (block.recipe !== undefined && typeof block.recipe !== "string") throw new Error("recipe-axis: recipe must be a known string.");
   const recipe = block.recipe === undefined ? undefined : Object.hasOwn(SECTIONED_VIEW_ITEM_RECIPES, block.recipe) ? SECTIONED_VIEW_ITEM_RECIPES[block.recipe] : undefined;
   if (block.recipe !== undefined && recipe === undefined) throw new Error(`recipe-axis: unknown recipe ${String(block.recipe)}.`);
   for (const [axis, value] of Object.entries(recipe?.fixed ?? {})) if ((block as unknown as Record<string, unknown>)[axis] !== undefined && (block as unknown as Record<string, unknown>)[axis] !== value) throw new Error(`recipe-axis: ${block.recipe} fixes ${axis} to ${value}.`);
-  const canonical = { order: "none", reveal: "all", treatment: "plain", emphasis: "item", ...recipe?.defaults, ...recipe?.fixed, ...Object.fromEntries(Object.entries(block).filter(([, value]) => value !== undefined)) } as CanonicalSectionedViewItemsBlock;
+  const canonical = { order: "none", reveal: "all", treatment: "plain", scale: "item", ...recipe?.defaults, ...recipe?.fixed, ...Object.fromEntries(Object.entries(block).filter(([, value]) => value !== undefined)) } as CanonicalSectionedViewItemsBlock;
   if (canonical.arrangement === "columns" && canonical.columns === undefined) canonical.columns = 3;
   if (canonical.arrangement === "rows" && canonical.columns === undefined) canonical.columns = 1;
   if (recipe?.treatments !== undefined && !recipe.treatments.includes(canonical.treatment)) throw new Error(`recipe-axis: ${block.recipe} treatment must be ${recipe.treatments.join(" or ")}.`);
