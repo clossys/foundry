@@ -2,4 +2,4 @@
 "publisher": patch
 ---
 
-Bound sparse-array diagnostics, centralize content counts, and freeze recipe constraints in runtime and types. Disclosure items require descriptions; canonical Items reject item featured flags. Cap previous meter markers by their scale. Matrix descriptions may accompany points or panels while preserving shared primary forms.
+Validate dense content arrays and bounded counts, and share frozen recipe constraints between runtime resolution and types. Disclosure items require descriptions. Previous meter markers stay within their scale. Matrix descriptions can accompany matched point lists or specimen panels, with the same primary form on both sides.

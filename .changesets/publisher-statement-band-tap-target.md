@@ -2,4 +2,4 @@
 publisher: patch
 ---
 
-`SectionedView` renders a content section that has only a header and its actions as a statement band at display scale (`data-content-section-statement`).
+SectionedView renders canonical header-only content bands through ContentSection with the resolved standard or display frame size. Body actions use medium button groups with accessible tap targets.

@@ -2,4 +2,4 @@
 designer: minor
 ---
 
-Content blocks read larger and carry the brand accent: section headings use `--text-display-m` at 44px with `--tracking-tight` at -0.02em, eyebrows are small accent labels, item headings and descriptions move up one type step, and step ordinals, feature and card icons take the accent. `Meter` adds an `accent` tone and `emphasis="figure"`, and `ContentSection` adds an `emphasis` prop. Specimen panels are lifted with the floating elevation and respond to their own width, so tables stack and fields drop to two columns when narrow. A row's lone last card or feature takes the full row at `tablet`, and plates are spaced evenly in both directions.
+Content blocks use responsive SectionIntro heading scales, accent eyebrows and ground-aware item typography. Step ordinals and content icons carry the accent. Meter supports accent tone and figure emphasis. Designer ContentSection supports section or display emphasis when no explicit frame size is supplied. Specimen panels use floating elevation and respond to their own width, so tables stack and fields reduce columns when narrow. A lone last feature or card fills the row at tablet.

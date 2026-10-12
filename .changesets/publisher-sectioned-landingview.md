@@ -2,5 +2,4 @@
 publisher: minor
 ---
 
-Breaking: the single-screen hero view `LandingView` is renamed `HeroView`, with its types renamed to `HeroViewProps`, `HeroViewGround` and `HeroViewFooter`; replace the import and the element name to keep the same page.
-`LandingView` is now a sectioned landing page: a first-screen hero block with an optional peek and backdrop, the document's other sections as full-bleed bands in one centred column, each band one Designer `ContentSection`, content placed into a section through `afterSection`, and a closing call to action on the inverse ground.
+The published single-screen LandingView is now HeroView, with HeroViewProps, HeroViewGround and HeroViewFooter; change the import and element name to keep that page. LandingView now composes a sectioned landing page: an opening hero with optional peek and backdrop, document body bands in a centred column, afterSection slots and an optional inverse closing call to action. It renders page content inside a caller-provided SiteFrame.

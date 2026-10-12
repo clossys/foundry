@@ -2,4 +2,4 @@
 publisher: patch
 ---
 
-Stretch the enclosing intro action row for structured hero and closing pairs so mobile large buttons fill the prose column. Accept visible composed ReactNode collections in closing action labels and footnotes while retaining empty-copy and invalid-target refusals. Legacy single actions and action slots retain their markup.
+Structured hero and closing pairs stretch the enclosing intro action row so mobile large buttons fill the prose column. Closing action labels and footnotes accept visible composed ReactNode collections, with copy and target validation. Closing bands also support a single action or a caller-owned action slot.

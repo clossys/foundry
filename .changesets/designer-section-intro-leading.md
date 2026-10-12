@@ -2,4 +2,4 @@
 designer: minor
 ---
 
-New `--leading-display` (1.05) and `--leading-heading` (1.15) tokens and `leading-display` / `leading-heading` utilities set display and section headings. New `SectionIntro` block: a section's eyebrow, heading, description and actions, where each gap exceeds the heading's line gap and grows toward the action. `display` emphasis is the opening (`text-display-m`, `text-display-l` from `tablet`); `section` is every band after it. `Hero` and `ContentSection` compose it, and `designer-hero-css-check` now requires `text-display-m` and `tablet:text-display-l` instead of `text-display-l`.
+Add --leading-display (1.05) and --leading-heading (1.15) tokens and matching utilities. SectionIntro composes an eyebrow, heading, description and actions with progressively larger gaps. Display emphasis uses text-display-m, then text-display-l from tablet; section emphasis uses text-h1, text-h0 from tablet and text-display-m from tablet-lg. Hero and ContentSection share this anatomy while keeping semantic heading levels independent of visual scale.

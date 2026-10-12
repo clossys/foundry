@@ -2,4 +2,4 @@
 designer: minor
 ---
 
-`Faq` rows are built out in both implementations. Each question sits between ground-matched hairlines. The whole row is the hit area, and the question is set at `body-l`. A `ChevronDown` turns when open, and does not animate under reduced motion. The server `summary` hides its native marker with the new `summary-marker-none` utility. `ContentSection` titles now scale from `h1` through `h0` to `display-m`, with `leading-tight`.
+`Faq` questions sit between ground-matched hairlines, use body-l type and expose the whole row as the hit area. A ChevronDown turns when open and remains still under reduced motion. Server summaries hide the native marker with summary-marker-none. ContentSection uses SectionIntro headings: section emphasis scales from h1 through h0 to display-m with leading-heading; display emphasis uses display-m and display-l with leading-display.

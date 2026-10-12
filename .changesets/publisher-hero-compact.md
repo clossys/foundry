@@ -2,5 +2,4 @@
 "publisher": minor
 ---
 
-Add a compact hero heading treatment for pages that lead into task content.
-LandingView omits viewport fill and scroll cues; document validation refuses compact hero media.
+Add compact hero headings for pages that lead into task content. A compact LandingView hero omits viewport fill and scroll cues and has no media; display heroes retain their opening presentation.

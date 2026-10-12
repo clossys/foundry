@@ -2,4 +2,4 @@
 publisher: minor
 ---
 
-A `content-section` action takes an optional `emphasis` (`primary` or `secondary`, the default), and the section an optional `footnote` (`{ text, link? }`, one link at most). Validation refuses a third action, a second primary, an unknown emphasis and a malformed footnote. In-section actions now render as full-size buttons on every site (a filled primary, an outline secondary at the same size); the text-link rendering is removed. `checkSectionVariety` warns on a second band holding a primary action. The content catalog shows both buttons and a footnote.
+Canonical content-section actions support primary, secondary, tertiary and quiet emphasis, with omitted emphasis derived from band weight. Groups hold at most two actions and one primary and render medium buttons. A footnote holds text and at most one link, or a link alone, with validated copy and destinations. Stacked bands with a block or media have no section actions; header-only actions exclude a footnote. checkSectionVariety advises on repeated primary-action bands.

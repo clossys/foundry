@@ -3,4 +3,4 @@
 "publisher": patch
 ---
 
-Items uses scale for collection emphasis and rejects the retired emphasis prop, including an explicitly undefined value. Publisher renders link-index recipes as plate rows while preserving raw linked columns. Canonical body sections omit ground for automatic page cadence or author inverse; LandingView, SectionedView and diagnostics share the same effective grounds, with explicit canonical inverse preserved before a close.
+Designer Items selects collection scale with item or statement. Publisher renders link-index recipes as plate rows while retaining raw linked columns. Authored canonical content-section grounds are inverse or omitted; omission delegates base/sunken cadence to the view. LandingView and SectionedView plan automatic body grounds while preserving explicit inverse anchors. LandingView planning also accounts for trailing documents and its optional closing call to action.

@@ -2955,25 +2955,27 @@ and the card grid itself: two regions that differ in kind, and a page can
 hold two `NavGrid`s (two separate card groupings under two headings),
 which is what makes this a block rather than a view.
 
-**Each card is a real `<a>` or `<button>`, not a `<div>` with an
-`onClick`.** `items` is a discriminated union. An item with `href` is a
-linked tile with the same anatomy as a linked content item (see `Item` and `Items`): its title is one `<a href>`, named by the title
-alone, with a chevron at its end, visible at rest, and the anchor's hit area
-covers the tile, so a click anywhere on it follows the link, Tab stops once,
-and the focus ring surrounds the whole tile. The icon and description sit
-outside the anchor; a linked tile whose icon, title or description holds
-another link, button or field throws a `TypeError`. An item with `onSelect`
-renders via this package's own `Button` atom (`variant="ghost"`), with
-`icon`, `title` and `description` inside the one `<button>`.
-`href`/`onSelect` are mutually exclusive at the type level, not just by
-convention. `icon` is `aria-hidden`, decorative reinforcement for a title
-that's already the card's real accessible name.
+**Each item has a real link or button.** `items` is a discriminated union.
+An ordinary item with `href` has one title-named `<a href>` with a visible
+chevron and a stretched hit area covering the tile. The icon and description
+sit outside the anchor. Tab reaches the title link once, and its focus ring
+surrounds the tile.
 
-Eligible all-linked collections of two to six items compose the shared item
-renderer with a private plate collection and its six-unit layout from tablet. Legacy single-item, larger,
-mixed-icon and mixed link/button collections retain their control tiles
-and item order: one per row below tablet, two from tablet and three from
-desktop. Action tiles keep their raised, bordered button style.
+If a linked item's description contains a link, button or field, NavGrid
+renders a separate title link without a stretched overlay. The title link
+has its own focus outline; description controls retain their own hit areas
+and keyboard stops. Interactive content in a linked item's title or icon
+throws a `TypeError`. An item with `onSelect` renders through the package's
+`Button` atom (`variant="ghost"`), with its icon, title and description inside
+the one button. `href` and `onSelect` are mutually exclusive at the type
+level. Icons are decorative reinforcement for the title.
+
+Eligible all-linked collections of two to six items with consistent icon
+presence and noninteractive descriptions use the shared linked-item layout.
+Single-item, larger, mixed-icon, mixed link/button and interactive-description
+collections retain control tiles and authored order: one per row below
+tablet, two from tablet and three from desktop. Action tiles keep their
+raised, bordered button style.
 
 ### `SectionHeader`
 
@@ -3578,8 +3580,8 @@ strings, booleans and empty recursive arrays are rejected; numeric zero is valid
 Two columns are stacked below 768px and equal from 768px. Three columns become
 two plus a full-width third at 768px, then three from 1024px; a final owner gets
 4/4/3 shares, otherwise the columns are equal. All native margins and list
-padding are reset by these components. Motion is static, including reduced motion;
-page reveal integration awaits the shared reveal infrastructure. Inverse-ledger
+padding are reset by these components. Motion is static, including reduced motion.
+RecordLedger does not reveal on scroll. Inverse-ledger
 status labels use inverse primary ink for normal-text contrast; glyph colors and
 shapes remain the existing status marks. Other grounds retain toned label ink.
 
@@ -5619,7 +5621,7 @@ not a grab-bag).
 | `ConfirmDialogTone` | type | `"neutral" \| "destructive"`. |
 | `Toolbar` | component | Action bar built on react-aria-components' own `Toolbar`: leading actions, search/filter slot, trailing actions, with real roving-focus arrow-key navigation. |
 | `ToolbarProps` | type | Props for `Toolbar`: `leading`, `search`, `trailing`, `className`, `style`, plus most of react-aria-components' own `Toolbar` props (`orientation`, `aria-label`, ...). |
-| `NavGrid` | component | Grid of navigation cards: optional heading, the card grid. A linked card's title is its one `<a>`, stretched over the card; an action card is a `<button>`. |
+| `NavGrid` | component | Grid of navigation cards with an optional heading. Ordinary linked tiles stretch their title link; interactive descriptions keep separate title links and controls. Action tiles use a `<button>`. |
 | `NavGridProps` | type | Props for `NavGrid`: `heading`, `items`, `className`, `style`. |
 | `NavGridItem` | type | One card, as data: `id`, `title`, `description?`, `icon?`, and either `href` or `onSelect` (mutually exclusive). |
 | `SectionHeader` | component | Heading for a section within a page (as opposed to the whole-page `PageHeader`): eyebrow, title, description, actions slot. `level` picks its heading element. |
