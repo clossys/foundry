@@ -3420,8 +3420,9 @@ private policies.
 `Items` keeps source reading order and accepts `order="none"` (the default),
 `"numbered"`, or `"connected"`. Numbered items use ordered-list semantics;
 numbering continues across labelled groups in their rendered membership order.
-Connected items take three to five steps in columns or a stack. Four steps are
-accepted with a warning. Connected columns keep the authored two- or
+Connected items take three to five steps in columns or a stack. Four steps
+without lanes are accepted with a warning; four with lanes produce no count
+warning. Connected columns keep the authored two- or
 three-column layout, including an incomplete final row.
 
 Connected items can take `end="ends"` (the default) or `"continues"`, optional
@@ -3718,7 +3719,9 @@ import { Matrix } from "@clossys/designer/blocks";
 
 Exactly two sides on equal `Card` plates. Each side has a distinct,
 whitespace-free `id`, an optional `label` rendered as a real heading, and a
-required `heading` line. Supply the same primary form on both sides: two to
+required `heading` line. Label both sides or neither; mixed label presence
+is refused. Without labels, each side heading becomes the semantic heading
+at `headingLevel`. Supply the same primary form on both sides: two to
 four points with equal counts, or a visual. An optional description supplies
 lead copy alongside points or a visual; description alone is refused. Points
 and visuals cannot be combined. Optional description rows stay aligned when
@@ -5882,7 +5885,7 @@ not a grab-bag).
 | `ScenePersonLayout` | type | Person row bounds and decider-ring flag. |
 | `Matrix` | component | Exactly two parallel sides on equal plates, optionally featuring one side by id. |
 | `MatrixProps` | type | Two `sides`, optional `featured`, `headingLevel`, `ground`, and native div attributes except `title`. |
-| `MatrixSide` | type | One stable-id side with required `heading`, optional `label`, points or visual, and an optional description lead. |
+| `MatrixSide` | type | Stable id, required heading and optional label/description; a union requiring points or visual, never both. Labels appear on both sides or neither. |
 | `MatrixHeadingLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
 | `Comparison` | component | Before and after on equal Matrix plates; retains optional headings and its decorative arrow. |
 | `ComparisonProps` | type | Props for `Comparison`: `before`, `after`, `headingLevel`, `ground`, `className`, `style`, plus every native `<div>` attribute except `title`. |

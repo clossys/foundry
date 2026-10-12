@@ -26,7 +26,7 @@ describe("step lane contract", () => {
   });
   it("refuses conflicting lane labels", () => expect(rules({ ...block(), items: block().items.map((step) => ({ ...step, label: ref("a") })) })).toContain("sectioned-view-item-shape"));
   it("refuses first-b and unused lane", () => { for (const sequence of ["baa", "aaa"]) expect(rules(block(sequence))).toContain(laneCode("lanes-shape")); });
-  it("accepts four lanes with only the existing count advisory", () => expect(rules(block("abba"))).toEqual(["steps-count"]));
+  it("accepts four lane steps without a count advisory", () => expect(rules(block("abba"))).toEqual([]));
   it("accepts five visual lanes under the connected count override", () => expect(rules(block("abbaa", true))).toEqual([]));
   it("refuses split lanes and caption without a visual", () => {
     expect(rules(block(), { layout: "split-end" })).toContain(laneCode("lanes-layout"));

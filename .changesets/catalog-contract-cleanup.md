@@ -1,6 +1,5 @@
 ---
 "publisher": patch
-"designer": patch
 ---
 
-Simplify canonical content sections to standard/display frames and derive statement alignment and specimen-key placement from content and layout. Publisher Items use `scale`, `steps` covers connected columns and stacks with two actor lanes across three to five steps, and `link-index` uses plate treatment. Publisher retires authored content alignment, compact content frames, item `featured`, key-side selection and the `flow` recipe. Matrix labels are optional, with descriptions serving as leads alongside points or visuals. Refresh the corresponding renderer validation, fixtures, type assertions and runnable documentation.
+Canonical content frames now use standard/display sizes: replace compact with standard and omit align. Only stacked statement bands centre; split bands keep start alignment. Items refuse emphasis; use scale. Item featured is refused. Replace flow with steps and arrangement: "stacked"; steps also supports columns and two actor lanes across 3–5 steps, including four without a count warning. Link-index uses plates. Matrix labels must appear on both sides or neither; each side needs points or a panel, with description as optional lead copy. Specimen key side is refused; omit it for placement at the end of stacked bands or below split panels.

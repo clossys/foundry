@@ -1140,8 +1140,8 @@ function isNonNegativeNumber(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value) && value >= 0;
 }
 
-function validateEnumField(record: Record<string, unknown>, key: string, allowed: readonly unknown[], rule: string, path: string, findings: ComposeFinding[], required = false): void {
-  if ((required || record[key] !== undefined) && !allowed.includes(record[key])) findings.push(finding(rule, `${path}.${key}`, `${path}.${key} must be one of ${allowed.join(", ")}.`));
+function validateEnumField(record: Record<string, unknown>, key: string, allowed: readonly unknown[], rule: string, path: string, findings: ComposeFinding[], required = false, hint = ""): void {
+  if ((required || record[key] !== undefined) && !allowed.includes(record[key])) findings.push(finding(rule, `${path}.${key}`, `${path}.${key} must be one of ${allowed.join(", ")}.${hint}`));
 }
 
 function validateOptionalCopyFields(record: Record<string, unknown>, keys: readonly string[], path: string, findings: ComposeFinding[]): void {
@@ -1174,7 +1174,8 @@ function validateRecords(
     const record = value[index];
     const recordPath = `${path}.${index}`;
     if (!isPlainObject(record) || !hasOnlyOwnKeys(record, keys) || !hasOwnKeys(record, ["id", ...required]) || !isNonWhitespaceString(record.id)) {
-      findings.push(finding("sectioned-view-item-shape", recordPath, `${recordPath} must be a plain item with a non-whitespace id, its required fields, and only its own fields.`));
+      const hint = isPlainObject(record) && hasOwn(record, "featured") && !keys.includes("featured") ? " Item featured is retired; remove featured." : "";
+      findings.push(finding("sectioned-view-item-shape", recordPath, `${recordPath} must be a plain item with a non-whitespace id, its required fields, and only its own fields.${hint}`));
       continue;
     }
     validateRecord(record, recordPath);
@@ -1185,12 +1186,12 @@ function validateRecords(
 
 function validateContentSection(section: Record<string, unknown>, path: string, findings: ComposeFinding[]): void {
   if (hasOwn(section, "module")) findings.push(finding("sectioned-view-content-module-retired", `${path}.module`, `${path}.module is retired; use block with items or matrix.`));
-  if (!hasOnlyOwnKeys(section, CONTENT_SECTION_KEYS) || !hasOwn(section, "heading")) findings.push(finding("sectioned-view-section-keys", path, `${path} has keys not allowed for content-section.`));
+  if (!hasOnlyOwnKeys(section, CONTENT_SECTION_KEYS) || !hasOwn(section, "heading")) findings.push(finding("sectioned-view-section-keys", path, `${path} has keys not allowed for content-section.${hasOwn(section, "align") ? " Alignment is derived; remove align." : ""}`));
   validateCopy(section.heading, `${path}.heading`, findings);
   validateOptionalCopyFields(section, ["eyebrow", "description"], path, findings);
   if (section.actions !== undefined) validateContentActions(section.actions, `${path}.actions`, findings);
   if (section.footnote !== undefined) validateContentFootnote(section.footnote, `${path}.footnote`, findings);
-  validateEnumField(section, "size", SECTIONED_VIEW_CONTENT_CONTRACT.sizes, "sectioned-view-content-size", path, findings);
+  validateEnumField(section, "size", SECTIONED_VIEW_CONTENT_CONTRACT.sizes, "sectioned-view-content-size", path, findings, false, section.size === "compact" ? " Compact content frames are retired; use standard or display." : "");
   validateEnumField(section, "layout", CONTENT_LAYOUTS, "sectioned-view-content-layout", path, findings);
   validateContentActionPlacement(section, path, findings);
   if (section.block !== undefined) validateContentBlock(section.block, `${path}.block`, findings);
@@ -1329,7 +1330,7 @@ function validateContentBlock(value: unknown, path: string, findings: ComposeFin
   if (block.order === "connected" && block.caption !== undefined && !itemRecords.some((item) => item.visual !== undefined)) findings.push(finding("sectioned-view-content-steps-caption", `${path}.caption`, "A connected caption requires a step visual."));
   if (!Array.isArray(block.items)) return;
   const count = block.items.length;
-  if (block.order === "connected" && count === 4) findings.push({ rule: "steps-count", severity: "warning", path: `${path}.items`, message: "A connected sequence reads more clearly with three or five items." });
+  if (block.order === "connected" && block.lanes === undefined && count === 4) findings.push({ rule: "steps-count", severity: "warning", path: `${path}.items`, message: "A connected sequence reads more clearly with three or five items." });
   if (block.order !== "connected" && block.arrangement === "columns" && !(block.columns === 2 ? C.columns2 : C.columns3).includes(count)) findings.push(finding("sectioned-view-content-count", `${path}.items`, "Columns must fill complete rows."));
   if (block.arrangement === "rows" && block.columns === 2 && count % 2 !== 0) findings.push(finding("sectioned-view-content-count", `${path}.items`, "Two-column rows need an even item count."));
   if (block.scale === "statement" && count !== 3) findings.push(finding("sectioned-view-content-count", `${path}.items`, "Statement scale needs exactly three items."));
@@ -1351,7 +1352,7 @@ function validateContentBlock(value: unknown, path: string, findings: ComposeFin
   }
   if (block.lanes !== undefined) {
     const lanes = validateRecords(block.lanes, `${path}.lanes`, findings, { min: C.laneDefinitions, max: C.laneDefinitions }, ["id", "label"], ["label"], (lane, lanePath) => validateCopy(lane.label, `${lanePath}.label`, findings));
-    if (lanes.length !== C.laneDefinitions || !["columns", "stacked"].includes(block.arrangement) || block.order !== "connected" || !C.lanes.includes(count)) findings.push(finding("sectioned-view-content-steps-lanes-shape", `${path}.lanes`, "Two lanes require connected columns or stacked items with three to five steps."));
+    if (lanes.length !== C.laneDefinitions || !["columns", "stacked"].includes(block.arrangement) || block.order !== "connected") findings.push(finding("sectioned-view-content-steps-lanes-shape", `${path}.lanes`, "Two lanes require connected columns or stacked items with three to five steps."));
     const ids = lanes.map((lane) => lane.id);
     if (itemRecords.some((item) => !ids.includes(item.lane)) || itemRecords[0]?.lane !== ids[0] || ids.some((id) => !itemRecords.some((item) => item.lane === id))) findings.push(finding("sectioned-view-content-steps-lanes-shape", `${path}.items`, "Every step names a known lane; start in the first lane and use both lanes."));
   }
@@ -1366,6 +1367,7 @@ function validateMatrix(block: Record<string, unknown>, path: string, findings: 
     if (side.points !== undefined && validateDenseArray(side.points, `${sidePath}.points`, findings, "sectioned-view-items-shape", "Points must be CopyRefs.")) { const [min, max] = SECTIONED_VIEW_CONTENT_CONTRACT.counts.points; if (side.points.length < min || side.points.length > max) findings.push(countFinding(`${sidePath}.points`, { min, max }, side.points.length, "points")); side.points.forEach((point, index) => validateCopy(point, `${sidePath}.points.${index}`, findings)); }
     if (side.visual !== undefined) validateSpecimenPanel(side.visual, `${sidePath}.visual`, findings);
   });
+  if (sides.some((side) => (side.label !== undefined) !== (sides[0]!.label !== undefined))) findings.push(finding("sectioned-view-content-matrix-labels", `${path}.sides`, "Both sides must have labels or neither side may have a label."));
   const form = (side: Record<string, unknown>) => ["visual", "points"].find((key) => side[key] !== undefined);
   if (sides.some((side) => form(side) !== form(sides[0]!) || (Array.isArray(side.points) && Array.isArray(sides[0]?.points) && side.points.length !== sides[0].points.length))) findings.push(finding("sectioned-view-content-matrix-form", `${path}.sides`, "Sides must share a primary form and an equal point count."));
   if (block.featured !== undefined && (!isNonWhitespaceString(block.featured) || !sides.some((side) => side.id === block.featured))) findings.push(finding("sectioned-view-content-featured", `${path}.featured`, "Featured must name a matrix side id."));
@@ -1403,8 +1405,8 @@ function validateOptionalStatus(record: Record<string, unknown>, path: string, f
 }
 
 /** Refuse non-data properties before inspecting any nested field. */
-function contentShape(value: unknown, path: string, findings: ComposeFinding[], keys: readonly string[], required: readonly string[], rule = "sectioned-view-content-media-shape"): Record<string, unknown> | undefined {
-  if (!isPlainObject(value) || !hasOnlyOwnKeys(value, keys) || !hasOwnKeys(value, required)) { findings.push(finding(rule, path, `${path} must be a closed data object with ${required.join(", ")}.`)); return undefined; }
+function contentShape(value: unknown, path: string, findings: ComposeFinding[], keys: readonly string[], required: readonly string[], rule = "sectioned-view-content-media-shape", hint = ""): Record<string, unknown> | undefined {
+  if (!isPlainObject(value) || !hasOnlyOwnKeys(value, keys) || !hasOwnKeys(value, required)) { findings.push(finding(rule, path, `${path} must be a closed data object with ${required.join(", ")}.${hint}`)); return undefined; }
   return value;
 }
 function validateContentMedia(value: unknown, path: string, findings: ComposeFinding[]): void {
@@ -1421,7 +1423,7 @@ function validateSpecimenMedia(value: unknown, path: string, findings: ComposeFi
   if (media === undefined) return;
   validateCopy(media.label, `${path}.label`, findings); validateSpecimenPanel(media.panel, `${path}.panel`, findings);
   if (media.key === undefined) return;
-  const key = contentShape(media.key, `${path}.key`, findings, ["label", "items"], ["label", "items"], "sectioned-view-specimen-key-shape");
+  const key = contentShape(media.key, `${path}.key`, findings, ["label", "items"], ["label", "items"], "sectioned-view-specimen-key-shape", isPlainObject(media.key) && hasOwn(media.key, "side") ? " Key placement is derived; remove side." : "");
   if (key === undefined) return;
   validateCopy(key.label, `${path}.key.label`, findings);
   const order = ["header"]; const labeled = new Set<string>(["header"]);

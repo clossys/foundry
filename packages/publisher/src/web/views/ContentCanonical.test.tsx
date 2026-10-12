@@ -504,6 +504,17 @@ describe("canonical matrix and specimen metadata integration", () => {
     }
     expect(JSON.stringify(doc)).toBe(before); expect(doc.resolutions).toBe(resolutions);
   });
+  it.each((["points", "visual"] as const).flatMap(form => [0, 1].map(unlabeledSide => ({ form, unlabeledSide }))))("refuses forged mixed labels on $form side $unlabeledSide before the adapter", ({ form, unlabeledSide }) => {
+    const doc: any = structuredClone(resolve(matrix(form === "visual" ? field : undefined)));
+    delete doc.sections[0].block.sides[unlabeledSide].label;
+    const called = vi.fn();
+    expect(() => renderSectionedViewSections(doc, { ...sectionedViewBlocks, ContentSection: called }, {})).toThrow(/Both sides must have labels or neither/);
+    expect(called).not.toHaveBeenCalled();
+    for (const server of [false, true]) {
+      expect(() => html(doc, server)).toThrow(/Both sides must have labels or neither/);
+      expect(() => landingHtml(doc, server)).toThrow(/Both sides must have labels or neither/);
+    }
+  });
   it("refuses a forged description-only Matrix before either rendering entry invokes the adapter", () => {
     const doc: any = structuredClone(resolve(matrix()));
     for (const side of doc.sections[0].block.sides) delete side.points;

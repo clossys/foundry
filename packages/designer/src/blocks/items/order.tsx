@@ -32,7 +32,7 @@ function segment(name: string, props: ItemsProps) {
 function narrowTransition(item: ItemData, next: ItemData, props: ItemsProps) {
   const from = props.lanes && item.lane === props.lanes[1]!.id ? "var(--spacing-xl)" : "0px";
   const to = props.lanes && next.lane === props.lanes[1]!.id ? "var(--spacing-xl)" : "0px";
-  const visibility = props.arrangement === "columns" ? ORDER_LAYOUT_CLASSES.narrowColumns : props.lanes ? props.items.length === 3 ? ORDER_LAYOUT_CLASSES.narrowLanes3 : ORDER_LAYOUT_CLASSES.narrowLanes5 : "contents";
+  const visibility = props.arrangement === "columns" ? ORDER_LAYOUT_CLASSES.narrowColumns : props.lanes ? props.items.length === 3 ? ORDER_LAYOUT_CLASSES.narrowLanes3 : ORDER_LAYOUT_CLASSES.narrowLanesDesktop : "contents";
   return <span data-item-route="stacked" className={cx(visibility, ORDER_LAYOUT_CLASSES.stackedTrack)} style={{ "--items-from": from, "--items-to": to } as OrderStyle}>
     {segment("outgoing", props)}{item.lane !== next.lane ? segment("handoff", props) : null}{segment("incoming", props)}
   </span>;
@@ -53,7 +53,7 @@ export function renderConnectedTrack({ item, index, props }: { item: ItemData; i
     {lane ? <span data-item-lane-label="" className={cx("relative block items-order-lane-label text-body-s font-medium uppercase tracking-label", columns ? "tablet:absolute" : props.items.length === 3 ? "tablet-lg:absolute" : "desktop:absolute", SECTION_GROUND_CLASSES[ground].secondary)}>{lane.label}</span> : null}
     {next ? <span data-item-connector="" data-item-transition={index} aria-hidden="true" className={ORDER_LAYOUT_CLASSES.transition}>
       {narrowTransition(item, next, props)}
-      {props.arrangement === "columns" ? props.columns === 2 ? wideTransition(item, next, index, 2, props, ORDER_LAYOUT_CLASSES.wideColumns2) : <>{wideTransition(item, next, index, 2, props, ORDER_LAYOUT_CLASSES.wideTablet2)}{wideTransition(item, next, index, 3, props, ORDER_LAYOUT_CLASSES.wideColumns3)}</> : props.lanes ? wideTransition(item, next, index, props.items.length, props, props.items.length === 3 ? ORDER_LAYOUT_CLASSES.wideLanes3 : ORDER_LAYOUT_CLASSES.wideLanes5) : null}
+      {props.arrangement === "columns" ? props.columns === 2 ? wideTransition(item, next, index, 2, props, ORDER_LAYOUT_CLASSES.wideColumns2) : <>{wideTransition(item, next, index, 2, props, ORDER_LAYOUT_CLASSES.wideTablet2)}{wideTransition(item, next, index, 3, props, ORDER_LAYOUT_CLASSES.wideColumns3)}</> : props.lanes ? wideTransition(item, next, index, props.items.length, props, props.items.length === 3 ? ORDER_LAYOUT_CLASSES.wideLanes3 : ORDER_LAYOUT_CLASSES.wideLanesDesktop) : null}
     </span> : null}
   </>;
 }

@@ -322,7 +322,6 @@ const featuresStatement: SectionedViewContentSection = {
   id: "catalog-features-statement",
   kind: "content-section",
   ground: "inverse",
-
   eyebrow: copy("statement.eyebrow", "What changes"),
   heading: copy("statement.heading", "Three things teams notice in the first month"),
   description: copy("statement.description", "Teams describe the same three changes once the record replaces their spreadsheets."),

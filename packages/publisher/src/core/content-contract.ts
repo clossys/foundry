@@ -15,7 +15,7 @@ export const SECTIONED_VIEW_CONTENT_CONTRACT = Object.freeze({
   spans: Object.freeze({ third: 4, half: 6, "two-thirds": 8, full: 12 }),
   columnOptions: Object.freeze([2, 3] as const),
   rowColumnOptions: Object.freeze([1, 2] as const),
-  counts: Object.freeze({ columns: Object.freeze([2, 6] as const), groups: Object.freeze([2, 4] as const), groupItems: Object.freeze([2, 4] as const), laneDefinitions: 2, columns2: Object.freeze([2, 4, 6]), columns3: Object.freeze([3, 6]), rows: Object.freeze([2, 8] as const), bento: Object.freeze([2, 6] as const), stacked: Object.freeze([2, 4] as const), connected: Object.freeze([3, 5] as const), disclose: Object.freeze([4, 6] as const), lanes: Object.freeze([3, 4, 5]), matrix: 2, points: Object.freeze([2, 4] as const), linked: 6, rowUnits: 12 }),
+  counts: Object.freeze({ columns: Object.freeze([2, 6] as const), groups: Object.freeze([2, 4] as const), groupItems: Object.freeze([2, 4] as const), laneDefinitions: 2, columns2: Object.freeze([2, 4, 6]), columns3: Object.freeze([3, 6]), rows: Object.freeze([2, 8] as const), bento: Object.freeze([2, 6] as const), stacked: Object.freeze([2, 4] as const), connected: Object.freeze([3, 5] as const), disclose: Object.freeze([4, 6] as const), matrix: 2, points: Object.freeze([2, 4] as const), linked: 6, rowUnits: 12 }),
 });
 export type FrameSize = typeof SECTIONED_VIEW_CONTENT_CONTRACT.sizes[number];
 export type FrameLayout = typeof SECTIONED_VIEW_CONTENT_CONTRACT.layouts[number];
@@ -143,7 +143,8 @@ export const SECTIONED_VIEW_ITEM_RECIPES: Readonly<Record<ItemsRecipe, Recipe>> 
 export function desugarRecipe(block: SectionedViewItemsBlock): CanonicalSectionedViewItemsBlock {
   if (block === null || typeof block !== "object" || ![Object.prototype, null].includes(Object.getPrototypeOf(block))) throw new Error("recipe-axis: expected a plain items block.");
   if (Reflect.ownKeys(block).some((key) => typeof key !== "string" || !Object.getOwnPropertyDescriptor(block, key)?.enumerable || !("value" in Object.getOwnPropertyDescriptor(block, key)!))) throw new Error("recipe-axis: expected own enumerable data fields.");
-  if (Object.hasOwn(block, "emphasis")) throw new Error("recipe-axis: items use scale, not emphasis.");
+  if (Object.hasOwn(block, "emphasis")) throw new Error("recipe-axis: emphasis is retired; use scale.");
+  if ((block as { recipe?: unknown }).recipe === "flow") throw new Error("recipe-axis: flow is retired; use steps with arrangement: stacked.");
   if (block.recipe !== undefined && typeof block.recipe !== "string") throw new Error("recipe-axis: recipe must be a known string.");
   const recipe = block.recipe === undefined ? undefined : Object.hasOwn(SECTIONED_VIEW_ITEM_RECIPES, block.recipe) ? SECTIONED_VIEW_ITEM_RECIPES[block.recipe] : undefined;
   if (block.recipe !== undefined && recipe === undefined) throw new Error(`recipe-axis: unknown recipe ${String(block.recipe)}.`);

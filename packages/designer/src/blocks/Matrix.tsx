@@ -12,16 +12,19 @@ import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js"
 export type MatrixHeadingLevel = 2 | 3 | 4 | 5 | 6;
 
 /** One side of a two-sided matrix. */
-export interface MatrixSide {
+interface MatrixSideBase {
   id: string;
   label?: ReactNode;
   heading: ReactNode;
   description?: ReactNode;
-  /** Two to four points, with the same count on both sides. */
-  points?: readonly ReactNode[];
-  /** A supplied visual; cannot accompany points. */
-  visual?: ReactNode;
 }
+
+export type MatrixSide = MatrixSideBase & (
+  /** Two to four points, with the same count on both sides. */
+  | { points: readonly ReactNode[]; visual?: never }
+  /** A supplied visual; cannot accompany points. */
+  | { visual: ReactNode; points?: never }
+);
 
 export interface MatrixProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> {
   sides: readonly [MatrixSide, MatrixSide];
@@ -66,7 +69,11 @@ function hasNode(node: ReactNode): boolean {
   return node !== undefined && node !== null && node !== false;
 }
 
-interface RenderSide extends Omit<MatrixSide, "heading"> { heading?: ReactNode }
+interface RenderSide extends Omit<MatrixSideBase, "heading"> {
+  heading?: ReactNode;
+  points?: readonly ReactNode[];
+  visual?: ReactNode;
+}
 interface SharedRows { description: boolean; points: boolean; visual: boolean }
 
 function assertMatrix({ sides, featured, ground = "base", headingLevel = 3 }: MatrixProps): void {
@@ -94,6 +101,7 @@ function assertMatrix({ sides, featured, ground = "base", headingLevel = 3 }: Ma
     if (form === undefined) throw new TypeError("Matrix: each side needs points or visual; description is an optional lead.");
     forms.push(form);
   }
+  if (sides.some(side => (side.label !== undefined) !== (sides[0].label !== undefined))) throw new TypeError("Matrix: both sides must have labels or neither side may have a label.");
   if (forms[0] !== forms[1]) throw new TypeError("Matrix: sides must share the same primary form.");
   if (sides[0].points?.length !== sides[1].points?.length) throw new TypeError("Matrix: sides need an equal point count.");
   if (featured !== undefined && !ids.has(featured)) throw new TypeError("Matrix: featured must name a side id.");

@@ -543,19 +543,19 @@ export const CATALOG_COPY_REGISTRY = {
             "status": "approved"
         },
         {
-            "id": "catalog.sample.featured.0.heading",
+            "id": "catalog.sample.parallel-columns.0.heading",
             "text": "Sample heading",
             "context": "Generic preview placeholder",
             "status": "approved"
         },
         {
-            "id": "catalog.sample.featured.1.heading",
+            "id": "catalog.sample.parallel-columns.1.heading",
             "text": "Sample heading",
             "context": "Generic preview placeholder",
             "status": "approved"
         },
         {
-            "id": "catalog.sample.featured.2.heading",
+            "id": "catalog.sample.parallel-columns.2.heading",
             "text": "Sample heading",
             "context": "Generic preview placeholder",
             "status": "approved"
@@ -585,7 +585,7 @@ export const CATALOG_COPY_REGISTRY = {
             "status": "approved"
         },
         {
-            "id": "catalog.sample.frame-compact.heading",
+            "id": "catalog.sample.frame-size-standard.heading",
             "text": "Sample heading",
             "context": "Generic preview placeholder",
             "status": "approved"
@@ -645,7 +645,7 @@ export const CATALOG_COPY_REGISTRY = {
             "status": "approved"
         },
         {
-            "id": "catalog.sample.items-featured.heading",
+            "id": "catalog.sample.items-parallel-columns.heading",
             "text": "Sample heading",
             "context": "Generic preview placeholder",
             "status": "approved"

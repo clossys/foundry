@@ -79,10 +79,13 @@ function renderBlock(block: ResolvedSectionedViewContentBlock, section: Resolved
   switch (block.type) {
     case "matrix": {
       const ids = new Map(block.sides.map(side => [side.id, matrixSideId(section.id, side.id)]));
-      const sideData = (side: typeof block.sides[number]): MatrixSide => ({ ...side, id: ids.get(side.id)!, visual: side.visual === undefined ? undefined : <Specimen label={side.heading} panels={[panelData(side.visual)]} /> });
+      const sideData = (side: typeof block.sides[number]): MatrixSide => side.visual === undefined
+        ? { ...side, id: ids.get(side.id)!, points: side.points }
+        : { id: ids.get(side.id)!, label: side.label, heading: side.heading, description: side.description, visual: <Specimen label={side.heading} panels={[panelData(side.visual)]} /> };
       return <Matrix sides={[sideData(block.sides[0]!), sideData(block.sides[1]!)]} featured={block.featured === undefined ? undefined : ids.get(block.featured)} headingLevel={3} ground={section.ground} />;
     }
     case "items": {
+      // Publisher's scale maps to the current Designer emphasis prop until its API follow-through.
       const items: ItemData[] = block.items.map(item => ({ id: item.id, heading: item.heading, description: item.description, eyebrow: item.eyebrow, icon: icon(item.icon), meta: item.meta, badge: item.badge, href: item.href, span: item.span, lane: item.lane, visual: partSpecimen(item.visual, item.id, item.heading) }));
       return <><ItemsBlock aria-labelledby={section.heading === undefined ? undefined : `${section.id}:heading`} items={items} order={block.order} reveal={block.reveal} lanes={block.lanes} end={block.end} endLabel={block.endLabel} caption={block.caption} arrangement={block.arrangement} columns={block.columns} treatment={block.treatment} emphasis={block.scale} size={section.size === "display" ? "display" : "standard"} groups={block.groups} headingLevel={3} ground={section.ground} />{block.end === "continues" && block.endLabel === undefined && block.continuesLabel !== undefined ? <span data-content-continuation="" className="sr-only">{block.continuesLabel}</span> : null}</>;
     }
