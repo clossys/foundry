@@ -91,6 +91,12 @@ describe("collection render profiles", () => {
   ])("does not extend three-column rows beyond the narrow plate policy %j", override => {
     expect(() => draw({ arrangement: "rows", treatment: "plate", columns: 3, items: data(6, true), ...override })).toThrow(RangeError);
   });
+  it.each(["columns", "bento", "stacked"] as const)("keeps the stretched hit area on standard linked Explain %s", arrangement => {
+    draw({ arrangement, treatment: "plate", items: data(arrangement === "columns" ? 3 : 2, true) });
+    const heading = screen.getByRole("heading", { name: "Entry 0" });
+    expect(heading).toHaveClass("text-h2", "font-display", "transform-none");
+    expect(screen.getByRole("link", { name: "Entry 0" }).closest("[data-item]")).toHaveClass("relative", "isolate");
+  });
   it("keeps linked Explain plates distinct from Index tiles", () => {
     draw({ treatment: "plate", items: data(3, true) });
     expect(screen.getByRole("heading", { name: "Entry 0" })).toHaveClass("text-h2");
