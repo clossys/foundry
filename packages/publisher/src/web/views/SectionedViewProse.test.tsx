@@ -82,7 +82,7 @@ describe("canonical prose recipe", () => {
     expect(validateSectionedViewDocument(authored({ type: "prose", paragraphs: [[link(href)]] }))).toEqual([]);
   });
 
-  it.each(["javascript:alert(1)", "data:text/html,unsafe", "//example.com/guide", "/\\example.com", "https://user:pass@example.com", "tel:123", " /guide", "/guide\n"])("refuses unsafe or unsanctioned href %s at both boundaries", href => {
+  it.each(["javascript:alert(1)", "JAVASCRIPT:alert(1)", "mailto:", "data:text/html,unsafe", "//example.com/guide", "/\\example.com", "https://user:pass@example.com", "tel:123", " /guide", "/guide\n"])("refuses unsafe or unsanctioned href %s at both boundaries", href => {
     expect(validateSectionedViewDocument(authored({ type: "prose", paragraphs: [[link(href)]] }))).toContainEqual(expect.objectContaining({ severity: "error", path: "sections.0.block.paragraphs.0.0.href" }));
     for (const View of [SectionedView, ServerSectionedView]) expect(() => renderToStaticMarkup(<View document={resolvedWith({ type: "prose", paragraphs: [[{ type: "link", text: copy.link, href }]] })} />)).toThrow(/invalid resolved document.*paragraphs\.0\.0\.href/);
   });
@@ -92,11 +92,14 @@ describe("canonical prose recipe", () => {
     expect(validateSectionedViewDocument(authored(atLimit))).toEqual([]);
     const valid = resolveSectionedViewDocument(authored(atLimit), resolver);
     for (const View of [SectionedView, ServerSectionedView]) expect(renderToStaticMarkup(<View document={valid} />).match(/data-prose-paragraph/g)).toHaveLength(8);
-    for (const paragraphs of [Array.from({ length: 9 }, () => [plain()]), [Array.from({ length: 7 }, () => link())]]) {
+    for (const [paragraphs, path] of [
+      [Array.from({ length: 9 }, () => [plain()]), "sections.0.block.paragraphs"],
+      [[Array.from({ length: 7 }, () => link())], "sections.0.block.paragraphs.0"],
+    ] as const) {
       const invalid = { type: "prose", paragraphs };
-      expect(validateSectionedViewDocument(authored(invalid))).toContainEqual(expect.objectContaining({ severity: "error" }));
+      expect(validateSectionedViewDocument(authored(invalid))).toContainEqual(expect.objectContaining({ rule: "sectioned-view-content-count", severity: "error", path }));
       const rendered = { type: "prose", paragraphs: paragraphs.map(p => p.map(span => ({ ...span, text: copy.second }))) };
-      for (const View of [SectionedView, ServerSectionedView]) expect(() => renderToStaticMarkup(<View document={resolvedWith(rendered)} />)).toThrow(/invalid resolved document/);
+      for (const View of [SectionedView, ServerSectionedView]) expect(() => renderToStaticMarkup(<View document={resolvedWith(rendered)} />)).toThrow(`${path}: ${path} must hold`);
     }
   });
 

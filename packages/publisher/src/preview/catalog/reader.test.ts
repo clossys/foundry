@@ -41,7 +41,7 @@ function renderedShape(fragment: Element): string {
 const expectedAxes: Record<string, Record<string, string[]>> = {
     introduce: { role: ['hero', 'intro', 'close'], 'hero-size': ['display', 'compact'], 'intro-layout': ['stacked', 'split'] },
     show: { visual: ['specimen', 'specimen-key', 'record', 'scene'], companion: ['none', 'index-rows', 'explain-stack'], layout: ['stacked', 'split-start', 'split-end'] },
-    explain: { shape: ['grid-2', 'grid-3', 'bento', 'stack', 'prose'], treatment: ['plain', 'rule', 'plate'], scale: ['item', 'statement'] },
+    explain: { shape: ['grid-2', 'grid-3', 'bento', 'stack'], treatment: ['plain', 'rule', 'plate'], scale: ['item', 'statement'] },
     'index-function': { shape: ['rows-1', 'rows-2', 'tiles'], reveal: ['all', 'disclose'], groups: ['off', 'on'] },
     sequence: { shape: ['list', 'line', 'lanes'], end: ['ends', 'continues'] },
     compare: { form: ['points', 'visual'], featured: ['none', 'one-side'] },
@@ -73,6 +73,19 @@ describe('reader function catalog', () => {
         const headings = samples.map(n => n.querySelector('[data-catalog-native] h1, [data-catalog-native] h2')?.textContent);
         expect(headings.every(Boolean)).toBe(true);
         expect(new Set(headings).size).toBe(32);
+    });
+    it('shows prose as a sample without adding axis or configuration values', () => {
+        const rendered = buildCatalogFunctionPages(sheets);
+        const root = new JSDOM(rendered.find(page => page.file === 'catalog/explain.html')!.content).window.document;
+        const sample = root.querySelector('[data-catalog-fixture="recipes-prose"]');
+        expect(sample).not.toBeNull();
+        expect(sample?.querySelectorAll('p[data-prose-paragraph]')).toHaveLength(2);
+        expect(sample?.querySelectorAll('[data-catalog-axis-witness]')).toHaveLength(0);
+        const documents = rendered.map(page => new JSDOM(page.content).window.document);
+        expect(documents.reduce((count, page) => count + page.querySelectorAll('[data-catalog-fixture]').length, 0)).toBe(32);
+        expect(documents.reduce((count, page) => count + page.querySelectorAll('[data-catalog-config-cell]').length, 0)).toBe(3);
+        const overview = documents[0]!;
+        expect(overview.querySelector('[data-catalog-recipe="prose"] a')?.getAttribute('href')).toBe('explain.html#example-recipes-prose');
     });
     it('files all nine unchanged published kinds under their actual reader jobs', () => {
         const rendered = buildCatalogFunctionPages(sheets);
@@ -179,7 +192,7 @@ describe('reader function catalog', () => {
             expect(axes!.length, definition.id).toBeLessThanOrEqual(3);
             for (const axis of axes!) {
                 expect(axis.name).not.toBe(definition.id);
-                expect(axis.values.length, axis.name).toBeLessThanOrEqual(definition.id === 'explain' && axis.name === 'shape' ? 5 : 4);
+                expect(axis.values.length, axis.name).toBeLessThanOrEqual(4);
                 expect(axis.values.length, axis.name).toBeGreaterThan(0);
                 expect(new Set(axis.values).size).toBe(axis.values.length);
                 expect(axis.effect.trim()).toBeTruthy();
@@ -295,7 +308,7 @@ describe('reader function catalog', () => {
             if (label === 'Introduce') return { role: fixture.id === 'say-close' ? 'close' : 'intro', ...(fixture.id === 'say-close' ? {} : { 'intro-layout': section.layout === 'stacked' ? 'stacked' : 'split' }) };
             if (label === 'Show') return { visual: section.media?.type === 'specimen' ? (section.media.key ? 'specimen-key' : 'specimen') : section.media!.type, companion: block?.type === 'items' ? (block.arrangement === 'stacked' ? 'explain-stack' : 'index-rows') : 'none', layout: section.layout };
             if (block?.type === 'matrix') return { form: block.sides[0]!.visual ? 'visual' : 'points', featured: block.featured ? 'one-side' : 'none' };
-            if (block?.type === 'prose') return { shape: 'prose' };
+            if (block?.type === 'prose') return {};
             if (block?.type !== 'items') throw new Error('Expected items witness');
             if (label === 'Sequence') return { shape: block.lanes ? 'lanes' : block.order === 'numbered' ? 'list' : 'line', ...(block.order === 'connected' ? { end: block.end ?? 'ends' } : {}) };
             if (label === 'Index') return { shape: fixture.section.kind === 'content-section' && fixture.section.block?.type === 'items' && fixture.section.block.recipe === 'link-index' ? 'tiles' : `rows-${block.columns}`, reveal: block.reveal, groups: block.groups ? 'on' : 'off' };
@@ -343,7 +356,7 @@ describe('reader function catalog', () => {
             }
             if (label === 'Explain' && section.querySelector('p[data-prose-paragraph]')) {
                 expect(section.querySelectorAll('p[data-prose-paragraph]').length).toBeGreaterThan(0);
-                return { shape: 'prose' };
+                return {};
             }
             const items = required('[data-items]');
             const details = items.querySelectorAll('details');

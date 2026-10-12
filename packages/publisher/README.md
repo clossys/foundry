@@ -572,6 +572,10 @@ and over-budget data are refused at authored and resolved boundaries.
 Both web entries render one `<p>` per paragraph and inline `<a>` elements
 through the existing Frame, using Designer tokens. The Explain catalog
 includes the `prose` witness; no consumer JSX is needed.
+Prose is a catalog sample with no configurable axis values. Explain's
+`shape` axis retains `grid-2`, `grid-3`, `bento` and `stack`. The catalog
+contains 32 reader samples and 3 configuration examples, including prose
+among Explain's 6 samples.
 
 The default axes are `order: "none"`, `reveal: "all"`,
 `treatment: "plain"` and `scale: "item"`. Statement scale requires three
@@ -5266,10 +5270,13 @@ export const resolved = resolveSectionedViewDocument(document, resolveCopy);
 // resolved.resolutions retains the registry revision and source for every CopyRef.
 ```
 
-### Prose recipe example
+## Runnable prose example
 
 ```ts
-import { createCopyResolver, type CopyRegistry } from "@clossys/writer";
+import {
+  createCopyResolver,
+  type CopyRegistry,
+} from "@clossys/writer";
 import {
   resolveSectionedViewDocument,
   type SectionedViewDocument,

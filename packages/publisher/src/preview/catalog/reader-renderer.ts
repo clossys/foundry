@@ -108,11 +108,10 @@ export const READER_PAGES: readonly CatalogPage[] = [
                     "grid-2",
                     "grid-3",
                     "bento",
-                    "stack",
-                    "prose"
+                    "stack"
                 ],
                 "effect": "Changes the rhythm and weight of parallel ideas.",
-                "when": "Grid for peers; bento for different weights; stack for one visual per idea; prose for ordered paragraphs."
+                "when": "Grid for peers; bento for different weights; stack for one visual per idea."
             },
             {
                 "name": "treatment",
@@ -350,7 +349,7 @@ function axisValues(fixture: CatalogFixture, label: ReaderPage, resolved: Resolv
         return { visual: section.media?.type === 'specimen' ? (section.media.key ? 'specimen-key' : 'specimen') : section.media!.type, companion: block === undefined ? 'none' : block.arrangement === 'stacked' ? 'explain-stack' : 'index-rows', layout: section.layout };
     }
     if (section.block?.type === 'matrix') return { form: section.block.sides[0]?.visual ? 'visual' : 'points', featured: section.block.featured ? 'one-side' : 'none' };
-    if (section.block?.type === 'prose') return { shape: 'prose' };
+    if (section.block?.type === 'prose') return {};
     if (section.block?.type !== 'items') return {};
     const block = section.block;
     if (label === 'Sequence') return { shape: block.lanes ? 'lanes' : block.order === 'numbered' ? 'list' : 'line', ...(block.order === 'connected' ? { end: block.end ?? 'ends' } : {}) };
