@@ -19,6 +19,10 @@ describe("native Items disclosure", () => {
       expect(row.firstElementChild?.firstElementChild?.tagName).toBe("H4");
       expect(row.firstElementChild?.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
       expect(row).toHaveClass("details-motion");
+      expect(row.querySelector(".disclosure-icon-motion")).toHaveAttribute("aria-hidden", "true");
+      row.open = true; expect(row).toHaveAttribute("open");
+      expect(row.querySelector(".disclosure-icon-motion")).toHaveClass("group-open/faq:rotate-180");
+      row.open = false;
       expect(row.style.borderTopWidth).toContain("var(--ui-border-hairline");
       expect(row.lastElementChild).toHaveTextContent(`Answer ${i}`);
       expect(row.lastElementChild?.tagName).toBe("DIV");

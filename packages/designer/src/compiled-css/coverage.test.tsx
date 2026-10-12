@@ -120,8 +120,18 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
     expect(generated.css).toContain("::details-content");
     expect(generated.css).toContain("--disclosure-panel-height");
     expect(generated.css).toContain("forced-colors: active");
-    expect(generated.css).toMatch(/prefers-reduced-motion:\s*reduce/);
-    expect(generated.css).toMatch(/transition-duration:\s*0s/);
+    for (const utility of ["details-motion", "disclosure-panel-motion", "disclosure-icon-motion"]) {
+      const start = generated.css.indexOf(`.${utility} {`); expect(start).toBeGreaterThanOrEqual(0);
+      let end = generated.css.indexOf("{", start) + 1, depth = 1;
+      while (depth && end < generated.css.length) { const ch = generated.css[end++]!; if (ch === "{") depth++; else if (ch === "}") depth--; }
+      const rule = generated.css.slice(start, end);
+      expect(rule, utility).toMatch(/@media\s*\(prefers-reduced-motion:\s*reduce\)/);
+      const mediaStart = rule.lastIndexOf("@media");
+      let mediaEnd = rule.indexOf("{", mediaStart) + 1, mediaDepth = 1;
+      while (mediaDepth && mediaEnd < rule.length) { const ch = rule[mediaEnd++]!; if (ch === "{") mediaDepth++; else if (ch === "}") mediaDepth--; }
+      expect(rule.slice(mediaStart, mediaEnd), utility).toMatch(/transition-duration:\s*0s/);
+      expect(rule.slice(0, mediaStart), utility).toMatch(/transition-duration:\s*var\(--ui-duration-default/);
+    }
   });
   it("covers canonical item treatments, scales, badge tones and arrangements from actual rendering", async () => {
     const classes = new Set<string>();

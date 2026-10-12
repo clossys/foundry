@@ -33,3 +33,14 @@ void <Items arrangement="rows" variant="faq" items={items} />;
 void <Items arrangement="rows" renderRow={() => null} items={items} />;
 // @ts-expect-error Validation cannot be disabled.
 void <Items arrangement="rows" validate={false} items={items} />;
+
+import type { ItemsLane as PublicLane } from "../index.js";
+import type { ItemsLane as NativeLane } from "../server.js";
+import type { ItemsLane as PackageLane } from "../../index.js";
+const named: ItemsProps = { arrangement: "columns", order: "connected", items: answers.slice(0, 3), "aria-labelledby": "sequence-heading" };
+void <Items {...named} />; void <NativeItems {...named} />;
+const lane: PublicLane & NativeLane & PackageLane = { id: "team", label: "Team" }; void lane;
+// @ts-expect-error List naming uses the standard string-valued ARIA field.
+const invalidListName: ItemsProps = { ...named, "aria-labelledby": 3 }; void invalidListName;
+// @ts-expect-error Items has no invented list naming alias.
+void <Items {...named} labelledBy="sequence-heading" />;

@@ -18,11 +18,12 @@ export function orderLayout(props: ItemsProps): { className: string; style: Orde
 }
 export function orderedItemStyle(item: ItemData, props: ItemsProps): OrderStyle {
   const second = props.lanes !== undefined && item.lane === props.lanes[1]!.id;
-  return { "--items-lane-narrow": second ? "var(--spacing-xl)" : "0px", "--items-lane-wide": second ? "var(--spacing-4xl)" : "0px", "--items-body-narrow": props.lanes ? M : "0px" };
+  return { "--items-lane-narrow": second ? "var(--spacing-xl)" : "0px", "--items-lane-wide": second ? "var(--spacing-4xl)" : "0px", "--items-body-narrow": props.lanes ? "var(--spacing-lg)" : "0px" };
 }
 export function renderOrdinal({ ordinal, props, connected = false }: { ordinal: number; props: ItemsProps; connected?: boolean }) {
   const ground = props.ground ?? "base";
-  return <span data-item-ordinal="" aria-hidden="true" className={cx("flex shrink-0 items-center justify-center rounded-pill text-body-s font-mono", connected ? ORDER_LAYOUT_CLASSES.ordinal : undefined, DISC[ground], ORDER_LAYOUT_CLASSES.forcedLine)} style={{ inlineSize: M, blockSize: M, borderWidth: UI_BORDER_HAIRLINE }}>{ordinal}</span>;
+  const outline = ground === "inverse" ? ORDER_LAYOUT_CLASSES.inverseOutline : ORDER_LAYOUT_CLASSES.forcedLine;
+  return <span data-item-ordinal="" aria-hidden="true" className={cx("flex shrink-0 items-center justify-center rounded-pill text-body-s font-mono", connected ? ORDER_LAYOUT_CLASSES.ordinal : undefined, DISC[ground], outline)} style={{ inlineSize: M, blockSize: M, borderWidth: UI_BORDER_HAIRLINE }}>{ordinal}</span>;
 }
 function segment(name: string, props: ItemsProps) {
   const ground = props.ground ?? "base";
@@ -49,7 +50,7 @@ function wideTransition(item: ItemData, next: ItemData, index: number, columns: 
 export function renderConnectedTrack({ item, index, props }: { item: ItemData; index: number; props: ItemsProps }) {
   const next = props.items[index + 1], lane = props.lanes?.find(lane => lane.id === item.lane), ground = props.ground ?? "base";
   return <>
-    {lane ? <span data-item-lane-label="" className={cx("absolute items-order-lane-label text-body-s font-medium uppercase tracking-label", SECTION_GROUND_CLASSES[ground].secondary)}>{lane.label}</span> : null}
+    {lane ? <span data-item-lane-label="" className={cx("relative block items-order-lane-label text-body-s font-medium uppercase tracking-label", props.items.length === 3 ? "tablet-lg:absolute" : "desktop:absolute", SECTION_GROUND_CLASSES[ground].secondary)}>{lane.label}</span> : null}
     {next ? <span data-item-connector="" data-item-transition={index} aria-hidden="true" className={ORDER_LAYOUT_CLASSES.transition}>
       {narrowTransition(item, next, props)}
       {props.arrangement === "columns" ? props.columns === 2 ? wideTransition(item, next, index, 2, props, ORDER_LAYOUT_CLASSES.wideColumns2) : <>{wideTransition(item, next, index, 2, props, ORDER_LAYOUT_CLASSES.wideTablet2)}{wideTransition(item, next, index, 3, props, ORDER_LAYOUT_CLASSES.wideColumns3)}</> : props.lanes ? wideTransition(item, next, index, props.items.length, props, props.items.length === 3 ? ORDER_LAYOUT_CLASSES.wideLanes3 : ORDER_LAYOUT_CLASSES.wideLanes5) : null}
@@ -62,7 +63,7 @@ export function renderTerminal({ props }: { props: ItemsProps }) {
   const terminalClass = ends ? cx("rounded-pill", LINE[ground], ORDER_LAYOUT_CLASSES.forcedLine) : ground === "inverse" ? "text-line-on-inverse" : "text-line-strong";
   return <>
     <span data-item-connector="" aria-hidden="true" className={cx("pointer-events-none absolute items-order-terminal-track", LINE[ground], ORDER_LAYOUT_CLASSES.forcedLine)} style={{ borderWidth: UI_BORDER_HAIRLINE }} />
-    <span data-item-end={end} aria-hidden="true" className={cx("pointer-events-none absolute items-order-end", terminalClass)} style={{ borderWidth: UI_BORDER_HAIRLINE, inlineSize: "var(--ui-icon-sm)", blockSize: "var(--ui-icon-sm)", marginInlineStart: "calc(var(--ui-icon-sm) / -2)", transform: "translateY(-50%)" }}>{ends ? null : <Icon glyph={ArrowRight} decorative size="sm" className={arrow} />}</span>
+    <span data-item-end={end} aria-hidden="true" className={cx("pointer-events-none absolute items-order-end border-none", terminalClass)} style={{ borderWidth: UI_BORDER_HAIRLINE, inlineSize: "var(--ui-icon-sm)", blockSize: "var(--ui-icon-sm)", marginInlineStart: "calc(var(--ui-icon-sm) / -2)", transform: "translateY(-50%)" }}>{ends ? null : <Icon glyph={ArrowRight} decorative size="sm" className={arrow} />}</span>
     {hasContent(props.endLabel) ? <span data-item-end-label="" className={cx("block mt-xl text-body-s", colors.secondary)}>{props.endLabel}</span> : null}
   </>;
 }

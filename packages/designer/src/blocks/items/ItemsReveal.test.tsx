@@ -9,7 +9,10 @@ import { assertItems } from "./policies.js";
 
 const data = (count = 4): ItemData[] => Array.from({ length: count }, (_, i) => ({ id: `item-${i}`, heading: `Question ${i}`, description: `Answer ${i}` }));
 const draw = (props: Partial<ItemsProps> = {}) => render(<Items arrangement="rows" reveal="disclose" items={data()} {...props} />);
-const assertRefused = (props: Partial<ItemsProps>) => expect(() => renderToStaticMarkup(<Items arrangement="rows" reveal="disclose" items={data()} {...props} />)).toThrow();
+const assertRefused = (props: Partial<ItemsProps>, type: typeof TypeError | typeof RangeError = TypeError, message: RegExp = /^Items:/) => {
+  const attempt = () => renderToStaticMarkup(<Items arrangement="rows" reveal="disclose" items={data()} {...props} />);
+  expect(attempt).toThrowError(type); expect(attempt).toThrowError(message);
+};
 
 describe("Items disclosure", () => {
   it("starts every independent row collapsed with its answer retained and wired", () => {
@@ -67,8 +70,12 @@ describe("Items disclosure", () => {
     expect(trigger.querySelector(".bg-surface-base")).not.toBeNull();
   });
   it.each([4, 5, 6])("accepts %s rows", count => draw({ items: data(count) }));
-  it.each([2, 3, 7, 8])("refuses %s disclosed rows", count => assertRefused({ items: data(count) }));
-  it.each(["columns", "bento", "stacked"] as const)("refuses disclosure in %s", arrangement => assertRefused({ arrangement }));
+  it.each([2, 3, 7, 8])("refuses %s disclosed rows", count => assertRefused({ items: data(count) }, RangeError, /disclosure needs four to six rows/));
+  it.each(["columns", "bento", "stacked"] as const)("refuses disclosure in %s", arrangement => {
+    const items = data(arrangement === "columns" ? 6 : 4);
+    expect(() => renderToStaticMarkup(<Items arrangement={arrangement} items={items} />)).not.toThrow();
+    assertRefused({ arrangement, items }, RangeError, /^Items: disclosure needs four to six rows\.$/);
+  });
   it("permits numbered disclosure and labelled groups without constraining each group to four rows", () => {
     const { container } = draw({ order: "numbered", groups: [{ id: "first", label: "First", items: ["item-2", "item-0"] }, { id: "second", label: "Second", items: ["item-3", "item-1"] }] });
     expect(screen.getAllByRole("button").map(button => button.textContent)).toEqual(["Question 2", "Question 0", "Question 3", "Question 1"]);
@@ -114,7 +121,19 @@ describe("Items disclosure", () => {
     const { container } = render(<Items arrangement="rows" items={data()} />);
     expect(screen.queryAllByRole("button")).toHaveLength(0);
     expect(container.querySelectorAll("[data-item]")).toHaveLength(4);
-    for (const value of [null, "tabs", "carousel"]) assertRefused({ reveal: value as ItemsProps["reveal"] });
-    assertRefused({ order: "connected" });
+    for (const value of [null, "tabs", "carousel"]) assertRefused({ reveal: value as ItemsProps["reveal"] }, TypeError, /^Items: unknown order or reveal\.$/);
+    assertRefused({ order: "connected" }, RangeError, /connected order needs/);
   });
+});
+
+
+it("binds reveal panel and chevron motion policies to actual closed and open Items", async () => {
+  const user = userEvent.setup(); const { container } = draw();
+  const trigger = screen.getByRole("button", { name: "Question 0" });
+  const panel = document.getElementById(trigger.getAttribute("aria-controls")!)!;
+  const chevron = trigger.querySelector(".disclosure-icon-motion")!;
+  expect(panel).toHaveClass("disclosure-panel-motion"); expect(chevron).toHaveClass("disclosure-icon-motion");
+  await user.click(trigger);
+  expect(panel).toBeVisible(); expect(chevron).toHaveClass("rotate-180", "disclosure-icon-motion");
+  expect(container.querySelectorAll(".disclosure-panel-motion")).toHaveLength(4);
 });

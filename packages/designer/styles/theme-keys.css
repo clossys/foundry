@@ -387,8 +387,9 @@
 @utility items-order-body { margin-block-start: calc((1 - var(--items-wide)) * var(--items-body-narrow) + var(--items-wide) * (var(--spacing-2xl) + var(--spacing-lg) + var(--items-lane-wide))); }
 @utility items-order-ordinal { inset-inline-start: calc((1 - var(--items-wide)) * var(--items-lane-narrow)); inset-block-start: calc(var(--items-wide) * var(--items-lane-wide)); }
 @utility items-order-lane-label {
-  inset-inline-start: calc((1 - var(--items-wide)) * (var(--spacing-2xl) + var(--spacing-lg) + var(--items-lane-narrow)) + var(--items-wide) * (var(--spacing-2xl) + var(--spacing-sm)));
-  inset-block-start: calc(var(--items-wide) * var(--items-lane-wide));
+  inset-inline-start: calc(var(--items-wide) * (var(--spacing-2xl) + var(--spacing-sm)));
+  inset-block-start: calc(var(--items-wide) * (var(--items-lane-wide) + var(--spacing-2xl) / 2));
+  transform: translateY(calc(var(--items-wide) * (-100% - var(--spacing-sm))));
 }
 @utility items-track-stacked {
   & > [data-item-segment=outgoing] { inset-inline-start: calc(var(--spacing-2xl) / 2 + var(--items-from)); inset-block-start: var(--spacing-2xl); block-size: calc(100% + var(--items-gap-block) / 2 - var(--spacing-2xl)); }

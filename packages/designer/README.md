@@ -3445,6 +3445,8 @@ checked recursively, while opaque component output is not executed by the
 guard. The ordinary entry uses independent disclosures; the server entry uses
 independent native details. Both start closed and retain their answer content.
 
+Items accepts the standard optional `aria-labelledby` string to name its actual list from an authored heading outside the collection. Grouped collections forward the reference to each list and retain their separate group labels. `ItemsLane` is exported with the Items types.
+
 ### `FeatureGrid`
 
 ```tsx
@@ -5833,10 +5835,11 @@ not a grab-bag).
 | `ItemSize` | type | `"standard" \| "display"`. |
 | `ItemTreatment` | type | `"plain" \| "rule" \| "plate"`. |
 | `ItemSpan` | type | `"third" \| "half" \| "two-thirds" \| "full"`. |
-| `ItemsProps` | type | Items, arrangement, columns, treatment, emphasis, size, groups, headingLevel, ground, order, reveal, lanes, end, endLabel, caption and className. |
+| `ItemsProps` | type | Items, arrangement, columns, treatment, emphasis, size, groups, headingLevel, ground, order, reveal, lanes, end, endLabel, caption, aria-labelledby and className. |
 | `ItemsArrangement` | type | `"columns" \| "rows" \| "bento" \| "stacked"`. |
 | `ItemsColumns` | type | `1 \| 2 \| 3`; arrangement determines validity. |
 | `ItemsEmphasis` | type | `"item" \| "statement"`. |
+| `ItemsLane` | type | Stable actor ID and authored ReactNode label; connected lanes require exactly two. |
 | `ItemsGroup` | type | Stable id, ReactNode label and an ordered list of canonical item IDs. |
 | `CardGrid` | component | Mixed grid of content cards on plates; spans fill whole 12-unit rows (validated); optional bottom-pinned visual per card. |
 | `CardGridProps` | type | Props for `CardGrid`: `items`, `headingLevel`, `ground`, `treatment`, `className`, `style`, plus every native `<div>` attribute except `title`. |

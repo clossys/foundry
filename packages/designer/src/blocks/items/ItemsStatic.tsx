@@ -32,8 +32,10 @@ function renderItems(props: ItemsProps, columns: number | undefined, disclosure?
     const lone = arrangement === "columns" && columns === 3 && props.items.length % 2 === 1 && index === props.items.length - 1;
     const spanClassName = span !== undefined ? (tabletLone[index] ? "tablet:col-span-12 tablet-lg:col-span-4" : BENTO_SPAN_CLASSES[span]) : lone ? "tablet:col-span-2 tablet-lg:col-span-1" : undefined;
     const sharedBody = withVisuals ? arrangement === "columns" ? "tablet:row-span-2 tablet:grid tablet:grid-rows-subgrid" : props.lanes ? props.items.length === 3 ? "tablet-lg:row-span-2 tablet-lg:grid tablet-lg:grid-rows-subgrid" : "desktop:row-span-2 desktop:grid desktop:grid-rows-subgrid" : undefined : undefined;
-    const sharedRows = sharedBody === undefined || !hasContent(props.endLabel) ? sharedBody : arrangement === "columns" ? "tablet:row-span-3 tablet:grid tablet:grid-rows-subgrid" : props.items.length === 3 ? "tablet-lg:row-span-3 tablet-lg:grid tablet-lg:grid-rows-subgrid" : "desktop:row-span-3 desktop:grid desktop:grid-rows-subgrid";
-    const body = props.reveal === "disclose" ? disclosure!(item, props) : <ItemRenderer item={item} treatment={treatment} size={arrangement === "bento" ? "display" : size} ground={ground} statement={emphasis === "statement"} headingLevel={headingLevel} span={span} sharedVisualRow={withVisuals} orderClassName={cx(sharedBody, connected ? "h-auto items-order-body" : undefined)} />;
+    const finalRow = (count: number) => index >= Math.floor((props.items.length - 1) / count) * count;
+    const labelRows = sharedBody === undefined || !hasContent(props.endLabel) ? undefined : arrangement === "columns" ? cx(finalRow(2) ? "tablet:row-span-3" : undefined, columns === 3 ? finalRow(3) ? "tablet-lg:row-span-3" : "tablet-lg:row-span-2" : undefined) : props.items.length === 3 ? "tablet-lg:row-span-3" : "desktop:row-span-3";
+    const sharedRows = cx(sharedBody, labelRows);
+    const body = props.reveal === "disclose" ? disclosure!(item, props) : <ItemRenderer item={item} treatment={treatment} size={arrangement === "bento" ? "display" : size} ground={ground} statement={emphasis === "statement"} headingLevel={headingLevel} span={span} sharedVisualRow={withVisuals} orderClassName={cx(sharedBody, connected ? "h-auto items-order-body" : ordered ? "min-w-0 flex-1" : undefined)} />;
     const disclosureBody = props.reveal === "disclose" && treatment === "plate" ? <ItemPlate ground={ground} className="w-full min-w-0">{body}</ItemPlate> : body;
     return <li key={item.id} data-lane={connected ? item.lane : undefined} className={cx("h-full min-w-0", spanClassName, connected ? "relative items-order-cell" : ordered ? "flex items-start gap-lg" : undefined, sharedRows)} style={connected ? orderedItemStyle(item, props) : undefined}>
       {ordered ? renderOrdinal({ ordinal: start + index, props, connected }) : null}
@@ -59,7 +61,7 @@ function GroupedItems({ props, columns, disclosure }: { props: ItemsProps; colum
       start += group.items.length;
       return <div key={group.id} role="group" aria-labelledby={id} className="flex min-w-0 flex-col gap-md">
         <p id={id} className={cx("m-0 text-caption font-mono uppercase tracking-label", groupColors.secondary)}>{group.label}</p>
-        <List role="list" start={List === "ol" ? groupStart : undefined} className="m-0 flex list-none flex-col gap-lg p-0">{renderItems(groupProps, 1, disclosure, groupStart)}</List>
+        <List role="list" aria-labelledby={props["aria-labelledby"]} start={List === "ol" ? groupStart : undefined} className="m-0 flex list-none flex-col gap-lg p-0">{renderItems(groupProps, 1, disclosure, groupStart)}</List>
       </div>;
     })}
   </div>;
@@ -74,6 +76,6 @@ export function ItemsStatic(props: ItemsProps, disclosure?: DisclosureRenderer) 
   const plateGap = arrangement === "columns" && treatment === "plate" ? "gap-y-2xl" : undefined;
   const List = props.order === "numbered" || props.order === "connected" ? "ol" : "ul";
   const order = props.order === "connected" ? orderLayout(props) : undefined;
-  const list = <List role="list" data-items="" data-arrangement={arrangement} data-columns={columns} data-treatment={treatment} className={cx("m-0 list-none p-0", layout, plateGap, order?.className, props.className)} style={order?.style}>{renderItems(props, columns, disclosure)}</List>;
+  const list = <List role="list" aria-labelledby={props["aria-labelledby"]} data-items="" data-arrangement={arrangement} data-columns={columns} data-treatment={treatment} className={cx("m-0 list-none p-0", layout, plateGap, order?.className, props.className)} style={order?.style}>{renderItems(props, columns, disclosure)}</List>;
   return hasContent(props.caption) ? <div className="flex flex-col gap-lg">{list}<p data-item-caption="" className={cx("m-0 text-caption", SECTION_GROUND_CLASSES[ground].secondary)}>{props.caption}</p></div> : list;
 }
