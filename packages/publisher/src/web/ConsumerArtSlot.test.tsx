@@ -34,12 +34,13 @@ describe("Publisher checked consumer art slot", () => {
     }
   });
   it("renders inline SVG with live tokens and a meaningful accessible name", () => {
-    const el = root({ ...art, source: { format: "svg", paths: [{ d: "M0 0H1600V900H0Z", fillToken: "--color-accent" }] } });
+    const accentToken = "--color-accent";
+    const el = root({ ...art, source: { format: "svg", paths: [{ d: "M0 0H1600V900H0Z", fillToken: accentToken }] } });
     const svg = el.querySelector("svg")!;
     expect(svg.getAttribute("role")).toBe("img");
     expect(svg.getAttribute("aria-label")).toBe(art.alt);
     expect(svg.getAttribute("viewBox")).toBe("0 0 1600 900");
-    expect(svg.querySelector("path")!.getAttribute("fill")).toBe("var(--color-accent)");
+    expect(svg.querySelector("path")!.getAttribute("fill")).toBe(`var(${accentToken})`);
   });
   it("refuses invalid art before producing markup", () => {
     expect(() => root({ ...art, backgroundToken: "#fff" })).toThrow(/backgroundToken/);
