@@ -138,6 +138,67 @@ describe("SiteHeader", () => {
     });
   });
 
+  describe("placement", () => {
+    const FLOW_MARKUP =
+      '<header class="bg-surface-raised py-sm border-b border-line-base" style="position:relative;z-index:var(--ui-z-shell, 20);border-bottom-width:var(--ui-border-hairline, 1px)"><div class="mx-auto flex w-full flex-wrap items-center justify-between gap-md" style="padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))"><div class="flex items-center gap-lg"><span>Acme</span></div></div></header>';
+
+    it("defaults to flow, byte-identical to a header given no placement, tone or menu props", () => {
+      const html = renderToStaticMarkup(<SiteHeader brand={<span>Acme</span>} />);
+      expect(html).toBe(FLOW_MARKUP);
+      expect(renderToStaticMarkup(<SiteHeader brand={<span>Acme</span>} placement="flow" />)).toBe(FLOW_MARKUP);
+    });
+
+    it("ignores tone and menuOpen in flow", () => {
+      expect(renderToStaticMarkup(<SiteHeader brand={<span>Acme</span>} tone="inverse" menuOpen />)).toBe(FLOW_MARKUP);
+    });
+
+    it("overlay fixes the header to the top of the viewport, out of flow, over the shell z-index", () => {
+      render(<SiteHeader brand={<span>Acme</span>} placement="overlay" />);
+      const banner = screen.getByRole("banner");
+      expect(banner.style.position).toBe("fixed");
+      expect(banner.style.insetBlockStart).toBe("0");
+      expect(banner.style.insetInline).toBe("0");
+      expect(banner.style.zIndex).toBe("var(--ui-z-shell, 20)");
+      expect(banner).toHaveAttribute("data-placement", "overlay");
+    });
+
+    it("overlay paints through the site-header-overlay utility, with no ground plate or border classes", () => {
+      render(<SiteHeader brand={<span>Acme</span>} placement="overlay" ground="inverse" />);
+      const classes = screen.getByRole("banner").className.split(" ");
+      expect(classes).toEqual(["site-header-overlay", "text-ink-primary", "py-sm"]);
+      expect(screen.getByRole("banner").style.borderBottomWidth).toBe("");
+    });
+
+    it("overlay tone sets the ink and data-tone, defaulting to base", () => {
+      const { unmount } = render(<SiteHeader brand={<span>Acme</span>} placement="overlay" />);
+      expect(screen.getByRole("banner")).toHaveAttribute("data-tone", "base");
+      unmount();
+      render(<SiteHeader brand={<span>Acme</span>} placement="overlay" tone="inverse" />);
+      const banner = screen.getByRole("banner");
+      expect(banner).toHaveAttribute("data-tone", "inverse");
+      expect(banner.className).toContain("text-ink-on-inverse");
+      expect(banner.className).not.toContain("text-ink-primary");
+    });
+
+    it("overlay renders data-menu-open only while menuOpen is set", () => {
+      const { unmount } = render(<SiteHeader brand={<span>Acme</span>} placement="overlay" />);
+      expect(screen.getByRole("banner")).not.toHaveAttribute("data-menu-open");
+      unmount();
+      render(<SiteHeader brand={<span>Acme</span>} placement="overlay" menuOpen />);
+      expect(screen.getByRole("banner")).toHaveAttribute("data-menu-open", "");
+    });
+
+    it("overlay keeps the caller's className and style, and renders on the server entry", () => {
+      const html = renderToStaticMarkup(
+        <ServerSiteHeader brand={<span>Acme</span>} placement="overlay" className="my-header" style={{ zIndex: 5 }} />,
+      );
+      expect(html).toContain('class="site-header-overlay text-ink-primary py-sm my-header"');
+      expect(html).toContain("position:fixed");
+      expect(html).toContain("z-index:5");
+      expect(html).toContain('data-placement="overlay"');
+    });
+  });
+
   describe("SiteHeader.ActionLink", () => {
     function renderEnvironments(current: "app" | "admin" | null = "admin") {
       return render(

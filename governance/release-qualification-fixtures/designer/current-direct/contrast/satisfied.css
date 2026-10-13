@@ -39,5 +39,7 @@
   --color-control-tonal-inverse-hover: oklch(0.9702 0 0 / 0.16);
   --color-control-quiet: oklch(0.2178 0 0);
   --color-surface-inverse-raised: oklch(0.285 0 0);
+  --color-surface-glass: oklch(1 0 0 / 0.88);
+  --color-surface-glass-inverse: oklch(0.2178 0 0 / 0.88);
   --color-accent-on-inverse: oklch(0.7763 0 0);
 }

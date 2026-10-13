@@ -4687,6 +4687,51 @@ import { Home, Settings } from "@clossys/designer/icons";
 looks as `Button` at its small size. `ActionLink` is a server-safe component
 from both `@clossys/designer/shell` and `@clossys/designer/shell/server`.
 
+`placement` (`"flow"` by default) decides where the header sits. `"flow"` is
+the header in normal document flow, unchanged from earlier releases.
+`"overlay"` fixes the header to the top of the viewport over the first block,
+taking no height in the document: transparent at the top of the page, then a
+glass plate once the page scrolls beneath it. The glass is
+`--color-surface-glass` (or `--color-surface-glass-inverse`) behind a
+`--blur-glass` backdrop blur, over a hairline in the matching line role.
+
+- `tone` (`"base"` by default, or `"inverse"`) names the ground under the
+  header at the top of the page. It sets the header's ink (`ink-primary` or
+  `ink-on-inverse`) and the matching glass, so the ink stays the same as the
+  header turns to glass. In `"overlay"`, `ground` is not read.
+- `menuOpen` holds the glass at any scroll position while a menu belonging to
+  the header is open (`data-menu-open`). A descendant with
+  `aria-expanded="true"`, such as an open `NavShell` trigger, does the same
+  in CSS with no prop.
+- The glass state is a scroll-driven CSS animation over the first
+  `--spacing-3xl` of root scrolling, so it needs no JavaScript. An engine
+  without scroll-driven animations shows glass at every scroll position.
+  Reduced motion replaces the fade with one step. Reduced transparency, or an
+  engine without backdrop blur, replaces the glass with the opaque
+  `surface-raised` (or `surface-inverse`) plate. Only paint changes between
+  states, so the header never shifts layout.
+- The contrast gate checks each glass with its ink composited over white and
+  over black, the two extremes a blurred backdrop can average to, in both
+  themes.
+
+The header is fixed rather than absolutely positioned (which would scroll
+away before it could turn to glass) or stuck (which reserves its height in
+flow). That asks four things of the page: the first block reserves the
+header's height itself, the page scrolls on the root, no ancestor of the
+header is transformed or filtered, and the root sets `scroll-padding-top` so
+in-page anchors land below the header. The glass blur also makes the header
+the containing block for fixed-position descendants, so a full-screen menu
+panel must portal out of the header.
+
+```tsx
+<SiteHeader
+  placement="overlay"
+  tone="inverse"
+  brand={<Link href="/" variant="standalone">Acme</Link>}
+  actions={<Link href="/sign-in" variant="standalone">Sign in</Link>}
+/>
+```
+
 `NavShell` is the responsive half: an ordinary inline `<nav>` from the
 `tablet` breakpoint up, and a trigger-plus-drawer below it — CSS-only
 breakpoint switching, no JS media-query state, so the correct layout is
@@ -6064,8 +6109,11 @@ part of this package's public API" and reachable only by that one test.
   `relativeLuminance`, `parseOklch`** (from `@clossys/designer/tokens`,
   promoted from that internal module — no behavior change, only
   visibility) — the WCAG colour math itself, pure and zero-dependency.
-- **`CONTRAST_PAIRS`** (same subpath) — an EXPLICIT, checked-in list of 25
-  `{ foreground, background, level, minimumRatio, compositeOver? }` pairs,
+- **`CONTRAST_PAIRS`** (same subpath) — an EXPLICIT, checked-in list of 37
+  `{ foreground, background, level, minimumRatio, compositeOver? }` pairs
+  (`compositeOver` is a token, or a literal colour such as `oklch(0 0 0)`
+  for a backdrop no token names, which is how the four glass pairs check
+  the overlay header's glass over a white and a black backdrop),
   ratified from `contrast.test.ts`'s own hand-curated pair map rather than
   auto-derived from token names. An earlier design assumed this gate could
   self-extend, deriving one pair per `--<role>-on-<ground>`-shaped token

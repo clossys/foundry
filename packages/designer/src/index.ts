@@ -300,6 +300,8 @@ export type {
   ToastVariant,
   SkipLinkProps,
   SiteHeaderProps,
+  SiteHeaderPlacement,
+  SiteHeaderTone,
   SiteHeaderActionLinkProps,
   SiteHeaderActionLinkVariant,
   NavShellProps,

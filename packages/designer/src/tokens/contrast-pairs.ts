@@ -168,6 +168,11 @@ export interface ContrastPair {
    * token first (matching `color.ts`'s `contrastRatio`'s own third
    * argument) — required whenever either carries alpha < 1, e.g. this
    * package's status `-tint` family, which is always translucent.
+   *
+   * A value that does not start with `--` is a literal opaque color rather
+   * than a token: the backdrop a translucent surface floats over when that
+   * backdrop is arbitrary page content, not a token (the glass pairs check
+   * over `oklch(1 0 0)` and `oklch(0 0 0)`, the two extremes).
    */
   readonly compositeOver?: string;
   /** Human-readable rationale, referencing the `contrast.test.ts` assertion this pair ratifies. */
@@ -418,6 +423,49 @@ export const CONTRAST_PAIRS: readonly ContrastPair[] = [
     minimumRatio: AA_LARGE,
     description:
       "An icon-only control's glyph on its inverse fill: the glyph is the only thing that says what the control does, so it meets the 3:1 non-text floor (WCAG 1.4.11). On the light grounds the glyph is ink-primary on surface-raised, checked above at AA.",
+  },
+
+  // ── glass: overlay SiteHeader ink on its translucent plate, AA ─────────
+  // The backdrop under the glass is arbitrary page content, blurred. A blur
+  // averages that content, so the composite stays between the glass over
+  // pure white and the glass over pure black; checking both extremes (in
+  // linear light, the stricter of the two compositing spaces) bounds every
+  // backdrop. The ink is the one the header sets for the tone.
+  {
+    id: "ink-primary/surface-glass@backdrop-white",
+    foreground: "--color-ink-primary",
+    background: "--color-surface-glass",
+    compositeOver: "oklch(1 0 0)",
+    level: "AA",
+    minimumRatio: AA,
+    description: "An overlay SiteHeader (tone base) after scrolling, over a white backdrop.",
+  },
+  {
+    id: "ink-primary/surface-glass@backdrop-black",
+    foreground: "--color-ink-primary",
+    background: "--color-surface-glass",
+    compositeOver: "oklch(0 0 0)",
+    level: "AA",
+    minimumRatio: AA,
+    description: "An overlay SiteHeader (tone base) after scrolling, over a black backdrop.",
+  },
+  {
+    id: "ink-on-inverse/surface-glass-inverse@backdrop-white",
+    foreground: "--color-ink-on-inverse",
+    background: "--color-surface-glass-inverse",
+    compositeOver: "oklch(1 0 0)",
+    level: "AA",
+    minimumRatio: AA,
+    description: "An overlay SiteHeader (tone inverse) after scrolling, over a white backdrop.",
+  },
+  {
+    id: "ink-on-inverse/surface-glass-inverse@backdrop-black",
+    foreground: "--color-ink-on-inverse",
+    background: "--color-surface-glass-inverse",
+    compositeOver: "oklch(0 0 0)",
+    level: "AA",
+    minimumRatio: AA,
+    description: "An overlay SiteHeader (tone inverse) after scrolling, over a black backdrop.",
   },
 
   // ── status -text on its own -tint, composited over surface-base: AA ───

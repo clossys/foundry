@@ -21,7 +21,7 @@ const tokensDarkExplicit = parseDeclarationsForSelector(tokensCss, DARK_EXPLICIT
  * The other half of the dark-mode contract (see `src/dark-mode-cascade.test.ts`
  * for the cascade/specificity half): `src/tokens.ts`'s `themeDependent` flag
  * and `styles/tokens.css`'s two dark blocks are two independently-maintained
- * descriptions of the same 48-token split, exactly the way `src/tokens.ts`
+ * descriptions of the same 50-token split, exactly the way `src/tokens.ts`
  * and the light `:root` block are two independent descriptions of the same
  * 150 tokens (see `parity.test.ts`). Nothing generates one from the other,
  * so this is what actually keeps them in sync, checked in both directions:
@@ -69,10 +69,10 @@ describe("tokens.css dark blocks <-> src/tokens.ts `themeDependent` parity", () 
     expect(wronglyInExplicit).toEqual([]);
   });
 
-  it("the dark blocks declare exactly the 48 tokens this package's design marks theme-dependent", () => {
-    expect(tokensDarkMedia.size).toBe(48);
-    expect(tokensDarkExplicit.size).toBe(48);
-    expect(Object.values(TOKENS).filter((def) => def.themeDependent).length).toBe(48);
+  it("the dark blocks declare exactly the 50 tokens this package's design marks theme-dependent", () => {
+    expect(tokensDarkMedia.size).toBe(50);
+    expect(tokensDarkExplicit.size).toBe(50);
+    expect(Object.values(TOKENS).filter((def) => def.themeDependent).length).toBe(50);
   });
 });
 
@@ -92,11 +92,11 @@ describe("brand-template.css dark blocks cover every brandable + theme-dependent
     expect(missing).toEqual([]);
   });
 
-  it("the dark blocks contain exactly the 37 tokens that are both brandable and theme-dependent", () => {
+  it("the dark blocks contain exactly the 39 tokens that are both brandable and theme-dependent", () => {
     const media = parseDeclarationsForSelector(brandTemplateCss, BRAND_DARK_MEDIA_SELECTOR);
     const explicit = parseDeclarationsForSelector(brandTemplateCss, BRAND_DARK_EXPLICIT_SELECTOR);
-    expect(media.size).toBe(37);
-    expect(explicit.size).toBe(37);
+    expect(media.size).toBe(39);
+    expect(explicit.size).toBe(39);
     expect([...media.keys()].sort()).toEqual(brandableAndDependent.map((def) => def.property).sort());
     expect([...explicit.keys()].sort()).toEqual(brandableAndDependent.map((def) => def.property).sort());
   });

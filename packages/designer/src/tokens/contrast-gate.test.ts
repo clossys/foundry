@@ -224,6 +224,29 @@ describe("checkTokenContrast", () => {
     expect(result.ok).toBe(true);
   });
 
+  it("treats a compositeOver that is not a custom property as a literal backdrop color", () => {
+    const pair = (over: string): ContrastPair => ({
+      id: `glass@${over}`,
+      foreground: "--color-ink-primary",
+      background: "--color-surface-glass",
+      compositeOver: over,
+      level: "AA",
+      minimumRatio: AA,
+      description: "test fixture",
+    });
+    const passing = checkTokenContrast([pair("oklch(1 0 0)"), pair("oklch(0 0 0)")], { tokens: TOKENS });
+    expect(passing.unchecked).toEqual([]);
+    expect(passing.ok).toBe(true);
+    // The literal really is the backdrop: a mostly clear glass over black fails, over white passes.
+    const clear = { ...TOKENS, "--color-surface-glass": { ...TOKENS["--color-surface-glass"]!, value: "oklch(1 0 0 / 0.2)" } };
+    const mixed = checkTokenContrast([pair("oklch(1 0 0)"), pair("oklch(0 0 0)")], { tokens: clear });
+    expect(mixed.findings.map((f) => f.pairId)).toEqual(["glass@oklch(0 0 0)"]);
+    // A malformed literal is reported, never skipped.
+    const malformed = checkTokenContrast([pair("not-a-color")], { tokens: TOKENS });
+    expect(malformed.ok).toBe(false);
+    expect(malformed.unchecked.map((u) => u.reason)).toEqual(["unparseable-color-value"]);
+  });
+
   it("defaults to this package's real TOKENS when no tokens option is supplied", () => {
     const onePair = [CONTRAST_PAIRS[0] as ContrastPair];
     const result = checkTokenContrast(onePair);

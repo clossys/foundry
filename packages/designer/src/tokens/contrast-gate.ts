@@ -232,8 +232,16 @@ export function checkTokenContrast(
   for (const pair of pairs) {
     const fg = resolveOrReport(pair.foreground, tokens, pair.id, "foreground", unchecked);
     const bg = resolveOrReport(pair.background, tokens, pair.id, "background", unchecked);
+    // A `compositeOver` that is not a custom property is a literal backdrop
+    // color (the white and black extremes a glass pair is checked over),
+    // used as written; a malformed one fails in `contrastRatio` below and is
+    // reported as unparseable, never skipped.
     const over =
-      pair.compositeOver !== undefined ? resolveOrReport(pair.compositeOver, tokens, pair.id, "compositeOver", unchecked) : undefined;
+      pair.compositeOver === undefined
+        ? undefined
+        : pair.compositeOver.startsWith("--")
+          ? resolveOrReport(pair.compositeOver, tokens, pair.id, "compositeOver", unchecked)
+          : pair.compositeOver;
     if (fg === undefined || bg === undefined || (pair.compositeOver !== undefined && over === undefined)) {
       continue; // already reported to `unchecked` above
     }
