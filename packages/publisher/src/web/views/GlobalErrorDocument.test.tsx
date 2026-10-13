@@ -2,6 +2,9 @@
 
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import type { ReactElement } from "react";
+import * as jsxRuntime from "react/jsx-runtime";
+import ts from "typescript";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import type { CopyRef, CopyResolver } from "@clossys/writer";
@@ -380,5 +383,40 @@ describe("shared diagnostic reference fixture", () => {
     expect(renderToStaticMarkup(<ordinary.StatusView {...referenceInputs} />)).toBe(renderToStaticMarkup(<server.StatusView {...referenceInputs} />));
     const props = { ...framedProps, ...referenceInputs };
     expect(renderToStaticMarkup(<ordinary.GlobalErrorDocument {...props} />)).toBe(renderToStaticMarkup(<server.GlobalErrorDocument {...props} />));
+  });
+});
+
+
+describe("README global-error example", () => {
+  const readme = readFileSync(join(import.meta.dirname, "../../../README.md"), "utf8");
+  const example = [...readme.matchAll(/```tsx\n([\s\S]*?)\n```/g)]
+    .map((match) => match[1]!)
+    .find((code) => code.includes("export default function GlobalError("))!;
+  const compiled = ts.transpileModule(example, {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX },
+  });
+  const exports: { default?: (props: { error: Error & { digest?: string }; reset: () => void }) => ReactElement } = {};
+  const requireExample = (specifier: string) => {
+    if (specifier === "react/jsx-runtime") return jsxRuntime;
+    if (specifier === "@clossys/publisher/web") return { GlobalErrorDocument };
+    throw new Error(`Unexpected README example import: ${specifier}`);
+  };
+  // Run the actual documented component with the shared frame fixture, so its guard is tested rather than duplicated.
+  new Function("require", "exports", "frame", compiled.outputText)(requireExample, exports, { shell, resolveCopy, resolveAsset });
+
+  it("renders an empty digest without a reference or an exception", () => {
+    const error = Object.assign(new Error("fixture"), { digest: "" });
+    const markup = renderToStaticMarkup(exports.default!({ error, reset: () => {} }));
+    const doc = referenceDocument(markup);
+    expect(doc.querySelector("code")).toBeNull();
+    expect(doc.querySelector("main")?.textContent).toBe("500Something went wrong.Try again");
+    expect(doc.querySelectorAll("button")).toHaveLength(1);
+  });
+
+  it("renders a nonempty digest with the caller-labelled reference", () => {
+    const error = Object.assign(new Error("fixture"), { digest: referenceFixture.value });
+    const doc = referenceDocument(renderToStaticMarkup(exports.default!({ error, reset: () => {} })));
+    expect(doc.querySelector("code")?.textContent).toBe(referenceFixture.value);
+    expect(doc.querySelector("code")?.parentElement?.textContent).toBe(`Error: ${referenceFixture.value}.`);
   });
 });

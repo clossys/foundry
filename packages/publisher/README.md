@@ -2999,7 +2999,7 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
       resolveAsset={frame.resolveAsset}
       status="500"
       subtitle="Something went wrong."
-      reference={error.digest === undefined ? undefined : { label: "Error", value: error.digest }}
+      reference={error.digest ? { label: "Error", value: error.digest } : undefined}
       action={<button type="button" onClick={reset}>Try again</button>}
     />
   );
