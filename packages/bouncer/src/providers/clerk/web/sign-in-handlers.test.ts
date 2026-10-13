@@ -109,20 +109,24 @@ describe("Clerk sign-in handlers", () => {
     await passwordStep(f);
   });
 
-  it("picks the first supported valid second factor in provider order", async () => {
+  it.each([
+    [["backup_code", "email_code", "phone_code", "totp"], "totp"],
+    [["backup_code", "email_code", "phone_code"], "phone_code"],
+    [["backup_code", "email_code"], "email_code"],
+    [["backup_code"], "backup_code"],
+  ])("prefers totp, then phone_code, then email_code, then backup_code (%j)", async (strategies, expected) => {
     const f = fake();
     f.resource.supportedSecondFactors = [
-      { strategy: "email_link" }, { strategy: "email_code" },
-      { strategy: "phone_code", phoneNumberId: "" },
-      { strategy: "backup_code" }, { strategy: "totp" },
-      { strategy: "email_code", emailAddressId: "address-fixture" },
+      { strategy: "email_link" }, { strategy: "email_code" }, { strategy: "phone_code", phoneNumberId: "" },
+      ...strategies.map(strategy => ({ strategy, emailAddressId: "address-fixture", phoneNumberId: "phone-fixture" })),
     ];
     vi.mocked(f.resource.attemptFirstFactor).mockResolvedValue({ ...f.resource, status: "needs_second_factor" });
     await passwordStep(f);
     expect(await f.handlers.verify("password-fixture")).toEqual(NEEDS_CODE);
     expect(await f.handlers.verifyCode("code-fixture")).toEqual(OK);
-    expect(vi.mocked(f.resource.attemptSecondFactor).mock.calls[0]?.[0].strategy).toBe("backup_code");
-    expect(vi.mocked(f.resource.prepareSecondFactor).mock.calls.length).toBe(0);
+    expect(vi.mocked(f.resource.attemptSecondFactor).mock.calls[0]?.[0].strategy).toBe(expected);
+    const prepared = vi.mocked(f.resource.prepareSecondFactor).mock.calls.map(([params]) => params.strategy);
+    expect(prepared).toEqual(expected === "phone_code" || expected === "email_code" ? [expected] : []);
   });
 
   it.each([null, [], [{ strategy: "email_code" }], [{ strategy: "phone_code" }], [{ strategy: "email_link" }]])(
@@ -368,9 +372,12 @@ describe("Clerk sign-in handlers", () => {
     expect(vi.mocked(f.provider.setActive).mock.calls.length).toBe(0);
   });
 
-  it.each(["prepare", "resend"])("never answers a %s rejection as credential", async operation => {
+  it.each([
+    ["prepare", "form_param_format_invalid"], ["resend", "form_param_format_invalid"],
+    ["prepare", "form_identifier_not_found"], ["resend", "form_identifier_not_found"],
+  ])("never answers a %s rejection %s as credential or notFound", async (operation, code) => {
     const f = fake();
-    const failure = { errors: [{ code: "form_param_format_invalid" }], message: "provider detail fixture" };
+    const failure = { errors: [{ code }], message: "provider detail fixture" };
     if (operation === "prepare") {
       await passwordStep(f);
       vi.mocked(f.resource.attemptFirstFactor).mockResolvedValueOnce({ ...f.resource, status: "needs_second_factor",
@@ -385,6 +392,33 @@ describe("Clerk sign-in handlers", () => {
     expect(await f.handlers.verifyCode("code-fixture")).toEqual(UNAVAILABLE);
     expect(vi.mocked(f.resource.attemptSecondFactor).mock.calls.length).toBe(0);
     expect(vi.mocked(f.provider.setActive).mock.calls.length).toBe(0);
+  });
+
+  it.each([
+    ["clerk_offline", undefined], [undefined, 429],
+  ])("moves to the code step with resend after a recoverable send failure (%s, %s)", async (code, status) => {
+    const f = fake();
+    await passwordStep(f);
+    vi.mocked(f.resource.attemptFirstFactor).mockResolvedValueOnce({ ...f.resource, status: "needs_second_factor",
+      supportedSecondFactors: [{ strategy: "email_code", emailAddressId: "address-fixture" }] });
+    vi.mocked(f.resource.prepareSecondFactor).mockRejectedValueOnce({ code, status, message: "provider detail fixture" });
+    expect(await f.handlers.verify("password-fixture")).toEqual(NEEDS_CODE);
+    expect(f.handlers.canResendCode()).toBe(true);
+    expect(await f.handlers.resendCode()).toEqual(OK);
+    expect(vi.mocked(f.resource.prepareSecondFactor).mock.calls.length).toBe(2);
+    expect(await f.handlers.verifyCode("code-fixture")).toEqual(OK);
+    expect(vi.mocked(f.resource.attemptFirstFactor).mock.calls.length).toBe(1);
+    expect(vi.mocked(f.provider.setActive).mock.calls.length).toBe(1);
+  });
+
+  it("keeps the code step and resend after a recoverable resend failure", async () => {
+    const f = fake();
+    await codeStep(f);
+    vi.mocked(f.resource.prepareSecondFactor).mockRejectedValueOnce({ code: "clerk_offline" });
+    expect(await f.handlers.resendCode()).toEqual({ status: "network" });
+    expect(f.handlers.canResendCode()).toBe(true);
+    expect(await f.handlers.resendCode()).toEqual(OK);
+    expect(await f.handlers.verifyCode("code-fixture")).toEqual(OK);
   });
 
   it.each(["user_locked", "form_identifier_not_found", "unrecognised"])("requires identify after terminal failure %s", async code => {

@@ -159,6 +159,7 @@ describe("peer guard coverage (#889) — derived from package.json's own exports
       "./providers/clerk/web/client",
       "./providers/clerk/web/proxy",
       "./providers/clerk/web/server",
+      "./providers/clerk/web/sign-in-handlers",
     ]);
     expect(OPTIONAL_PEERS.sort()).toEqual(["@clerk/nextjs", "next", "react", "react-dom", "svix"]);
   });

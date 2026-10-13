@@ -68,19 +68,28 @@ const cancelled = Symbol("unavailable");
 const preparationRejected = Symbol("unavailable");
 type Phase = "identify" | "password" | "code" | "done";
 
+/** Second factors in preference order; Clerk's own list order is ignored. */
+const CODE_FACTOR_ORDER = ["totp", "phone_code", "email_code", "backup_code"] as const;
+
+function toCodeFactor(factor: ClerkSignInFactor): ClerkSignInCodeFactor | undefined {
+  switch (factor.strategy) {
+    case "totp":
+    case "backup_code":
+      return { strategy: factor.strategy };
+    case "email_code":
+      return factor.emailAddressId ? { strategy: "email_code", emailAddressId: factor.emailAddressId } : undefined;
+    case "phone_code":
+      return factor.phoneNumberId ? { strategy: "phone_code", phoneNumberId: factor.phoneNumberId } : undefined;
+    default:
+      return undefined;
+  }
+}
+
 function selectCodeFactor(resource: ClerkSignInResource): ClerkSignInCodeFactor | undefined {
-  for (const factor of resource.supportedSecondFactors ?? []) {
-    switch (factor.strategy) {
-      case "totp":
-      case "backup_code":
-        return { strategy: factor.strategy };
-      case "email_code":
-        if (factor.emailAddressId) return { strategy: "email_code", emailAddressId: factor.emailAddressId };
-        break;
-      case "phone_code":
-        if (factor.phoneNumberId) return { strategy: "phone_code", phoneNumberId: factor.phoneNumberId };
-        break;
-    }
+  const supported = (resource.supportedSecondFactors ?? []).map(toCodeFactor);
+  for (const strategy of CODE_FACTOR_ORDER) {
+    const selected = supported.find(factor => factor?.strategy === strategy);
+    if (selected) return selected;
   }
   return undefined;
 }
@@ -162,8 +171,9 @@ export function createClerkSignInHandlers(provider: ClerkSignInProvider): ClerkS
   }
 
   /**
-   * Sends a message code. A `credential` rejection here says nothing about the
-   * password or code entered, so it answers `unavailable` instead: `run`
+   * Sends a message code. A `credential` or `notFound` rejection here says
+   * nothing about the password or code entered and must not tell the visitor
+   * whether an account exists, so it answers `unavailable` instead: `run`
    * classifies the thrown symbol as `unknown`, which ends the flow.
    */
   async function prepareCode(
@@ -174,11 +184,16 @@ export function createClerkSignInHandlers(provider: ClerkSignInProvider): ClerkS
     try {
       return await call(() => from.prepareSecondFactor(factor));
     } catch (failure: unknown) {
-      if (classifySignInFailure(failure, { codes: CLERK_SIGN_IN_FAILURE_CODES }) === "credential") {
-        throw preparationRejected;
-      }
+      const failureClass = classifySignInFailure(failure, { codes: CLERK_SIGN_IN_FAILURE_CODES });
+      if (failureClass === "credential" || failureClass === "notFound") throw preparationRejected;
       throw failure;
     }
+  }
+
+  /** The code could not be sent for a reason a resend may clear. */
+  function isRecoverableSendFailure(failure: unknown): boolean {
+    const failureClass = classifySignInFailure(failure, { codes: CLERK_SIGN_IN_FAILURE_CODES });
+    return failureClass === "rateLimited" || failureClass === "network";
   }
 
   async function activate(
@@ -222,9 +237,16 @@ export function createClerkSignInHandlers(provider: ClerkSignInProvider): ClerkS
         }
         const selected = selectCodeFactor(first);
         if (!selected) return { status: "unavailable" };
-        // Retain this resource even if preparation is rejected recoverably.
         resource = first;
-        if (isMessageFactor(selected)) resource = await prepareCode(first, selected, call);
+        if (isMessageFactor(selected)) {
+          try {
+            resource = await prepareCode(first, selected, call);
+          } catch (failure: unknown) {
+            // The password was accepted but the code was not sent. Move to the
+            // code step anyway, where resendCode can send it again.
+            if (!isRecoverableSendFailure(failure)) throw failure;
+          }
+        }
         codeFactor = selected;
         phase = "code";
         return { status: "needsCode" };
