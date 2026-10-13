@@ -195,11 +195,14 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
   --color-ink-on-accent:           var(--color-ink-on-inverse, oklch(0.9702 0 0));
 
   /* ════════════════════════════════════════════════════════════════
-   * COLOR · LINE (3 · hairlines and dividers)
+   * COLOR · LINE (4 · hairlines and dividers)
    * ════════════════════════════════════════════════════════════════ */
   --color-line-base:              oklch(0.8761 0 0);
   --color-line-strong:            oklch(0.7763 0 0);
   --color-line-on-inverse:        oklch(0.9702 0 0 / 0.14);
+  /* Panel identity: the edge colour of an outlined card or product panel.
+   * Brandable; an alias of the base line, so it follows the theme. */
+  --color-line-panel:             var(--color-line-base, oklch(0.8761 0 0));
 
   /* ════════════════════════════════════════════════════════════════
    * COLOR · ACCENT (5 · the interactive brand color)
@@ -209,6 +212,21 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
   --color-accent-hover:           oklch(0.36 0 0);
   --color-accent-tint:            oklch(0.4748 0 0 / 0.1);
   --color-accent-on-inverse:      oklch(0.7763 0 0);
+
+  /* ════════════════════════════════════════════════════════════════
+   * COLOR · CONTROL (5 · the tonal and quiet button tiers)
+   * Tonal (T3) is the primary ink at low alpha over whatever ground it
+   * sits on: 8% at rest, 12% on hover. On the inverse ground it is the
+   * on-inverse ink at 12%, 16% on hover. Quiet (T4) is the ink of a
+   * chevron text button: an alias of the primary ink, so it follows the
+   * theme; a brand may point it at its accent ink. Every text pair on
+   * these meets AA (see src/tokens/contrast-pairs.ts).
+   * ════════════════════════════════════════════════════════════════ */
+  --color-control-tonal:                 oklch(0.2178 0 0 / 0.08);
+  --color-control-tonal-hover:           oklch(0.2178 0 0 / 0.12);
+  --color-control-tonal-inverse:         oklch(0.9702 0 0 / 0.12);
+  --color-control-tonal-inverse-hover:   oklch(0.9702 0 0 / 0.16);
+  --color-control-quiet:                 var(--color-ink-primary, oklch(0.2178 0 0));
 
   /* ════════════════════════════════════════════════════════════════
    * COLOR · STATUS (12 · 4 states x {color, text, tint})
@@ -348,13 +366,13 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
   --color-chart-diverging-neutral:  var(--color-line-base, oklch(0.8761 0 0));
 
   /* ════════════════════════════════════════════════════════════════
-   * TEXT (13 · fixed font-size ramp — pair with your own line-height
-   * or Tailwind's `leading-*` scale; this package doesn't bundle one,
-   * see the README)
+   * TEXT (13 · fixed font-size ramp — font-size only; headings pair it
+   * with the LEADING role tokens below, body copy with Tailwind's
+   * `leading-*` scale or the inherited body leading, see the README)
    * ════════════════════════════════════════════════════════════════ */
   --text-display-xl:              72px;
   --text-display-l:               56px;
-  --text-display-m:               40px;
+  --text-display-m:               44px;
   --text-h0:                      32px;
   --text-h1:                      28px;
   --text-h2:                      18px;
@@ -383,10 +401,17 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
   /* ════════════════════════════════════════════════════════════════
    * TRACKING (4 · fixed letter-spacing role scale)
    * ════════════════════════════════════════════════════════════════ */
-  --tracking-tight:               -0.01em;  /* large display/headings */
+  --tracking-tight:               -0.02em;  /* large display/headings */
   --tracking-meta:                0.06em;   /* dates, counts, mono metadata */
   --tracking-nav:                 0.12em;   /* nav links, tabs, badges */
   --tracking-label:               0.18em;   /* section labels, mono caps */
+
+  /* ════════════════════════════════════════════════════════════════
+   * LEADING (2 · fixed heading line-height role scale: the `--text-*`
+   * ramp stays font-size only, so a heading names its leading role)
+   * ════════════════════════════════════════════════════════════════ */
+  --leading-display:              1.05;     /* display steps: hero headings */
+  --leading-heading:              1.15;     /* section titles and smaller headings */
 
   /* ════════════════════════════════════════════════════════════════
    * SPACING (10 · 4px-rooted scale, t-shirt names — deliberately NOT
@@ -472,25 +497,37 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
   --ui-brandmark-gap-lg:          8px;
 
   /* ════════════════════════════════════════════════════════════════
-   * RADIUS (5 · Tailwind `--radius-*` namespace)
+   * RADIUS (7 · Tailwind `--radius-*` namespace)
    * ════════════════════════════════════════════════════════════════ */
   --radius-sharp:                 0px;
   --radius-subtle:                2px;
   --radius-default:               3px;     /* brandable — the one radius most brands change */
   --radius-control:               6px;
   --radius-pill:                  999px;
+  /* Content surfaces (plates, product panels) follow the brand radius,
+   * while controls keep --radius-control. A role alias, not a brand lever. */
+  --radius-surface:               var(--radius-default, 3px);
+  /* Panel identity: the corner of a card, plate or product panel.
+   * Brandable; follows the surface radius until a brand sets it. */
+  --radius-panel:                 var(--radius-surface, var(--radius-default, 3px));
 
   /* ════════════════════════════════════════════════════════════════
-   * UI · BORDER (1 · no Tailwind namespace)
+   * UI · BORDER (3 · no Tailwind namespace)
    * ════════════════════════════════════════════════════════════════ */
   --ui-border-hairline:           1px;
+  --ui-border-rule:               2px;      /* emphasis rule above a column or list */
+  /* Panel identity: the edge width of an outlined card or product panel. */
+  --ui-border-panel:              var(--ui-border-hairline, 1px);   /* brandable */
 
   /* ════════════════════════════════════════════════════════════════
-   * UI · ELEVATION (3 · no shadows beyond a hairline — no Tailwind namespace)
+   * UI · ELEVATION (4 · no shadows beyond a hairline — no Tailwind namespace)
    * ════════════════════════════════════════════════════════════════ */
   --ui-elevation-none:            none;
   --ui-elevation-raised:          0 1px 0 var(--color-line-base, oklch(0.8761 0 0));
   --ui-elevation-floating:        0 8px 24px rgba(0, 0, 0, 0.10);
+  /* Panel identity: the lift under a product panel. Brandable; follows
+   * the floating elevation (and its dark value) until a brand sets it. */
+  --ui-elevation-panel:           var(--ui-elevation-floating, 0 8px 24px rgba(0, 0, 0, 0.10));
 
   /* ════════════════════════════════════════════════════════════════
    * UI · RING (2 · focus + on-inverse rings — no Tailwind namespace)
@@ -546,6 +583,9 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
   /* ════════════════════════════════════════════════════════════════
    * UI · ALPHA (1 · no Tailwind namespace)
    * ════════════════════════════════════════════════════════════════ */
+  /* Static scene personality and linear-form measure. */
+  --ui-scene-card-w:               30rem;
+
   --ui-alpha-disabled:            0.5;
 }
 }
@@ -596,6 +636,12 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
     --color-accent-hover:           oklch(0.70 0 0);
     --color-accent-tint:            oklch(0.62 0 0 / 0.18);
     --color-accent-on-inverse:      oklch(0.42 0 0);
+
+    /* ── COLOR · CONTROL — the dark inks at the same alphas ──────── */
+    --color-control-tonal:                 oklch(0.97 0 0 / 0.08);
+    --color-control-tonal-hover:           oklch(0.97 0 0 / 0.12);
+    --color-control-tonal-inverse:         oklch(0.2178 0 0 / 0.12);
+    --color-control-tonal-inverse-hover:   oklch(0.2178 0 0 / 0.16);
 
     /* ── COLOR · STATUS — raised lightness, not the light-mode value ─
      * (each stays recognisable as its own role; see this file's header
@@ -694,6 +740,12 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
   --color-accent-tint:            oklch(0.62 0 0 / 0.18);
   --color-accent-on-inverse:      oklch(0.42 0 0);
 
+  /* ── COLOR · CONTROL ──────────────────────────────────────────── */
+  --color-control-tonal:                 oklch(0.97 0 0 / 0.08);
+  --color-control-tonal-hover:           oklch(0.97 0 0 / 0.12);
+  --color-control-tonal-inverse:         oklch(0.2178 0 0 / 0.12);
+  --color-control-tonal-inverse-hover:   oklch(0.2178 0 0 / 0.16);
+
   /* ── COLOR · STATUS ───────────────────────────────────────────── */
   --color-status-success:         oklch(0.72 0 0);
   --color-status-success-text:    oklch(0.80 0 0);
@@ -744,7 +796,7 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
  * parse-css.ts`, used by `parity.test.ts`, `contrast.test.ts`, and
  * `dark-mode-cascade.test.ts`) parses only the FIRST top-level `:root {`
  * block in this file as "the real token layer" and asserts it declares
- * exactly this package's curated 168 tokens; this sentinel is not a
+ * exactly this package's curated 183 tokens; this sentinel is not a
  * design token — it is a structural presence marker — so it stays out
  * of `src/tokens/tokens.ts`'s registry and out of that block entirely,
  * in a second `:root` rule the browser cascades in fine (CSS allows any

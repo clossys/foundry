@@ -211,6 +211,12 @@ raw string before trimming, is refused. The result is
 `ok: false` with reason `refused-source`, and the refused token is absent
 from the emitted policy.
 
+Extending `img-src`, `font-src`, `connect-src`, `media-src` or `worker-src`
+starts that directive with `'self'` in both variants, then appends the caller's
+extension sources. A caller-listed `'self'` is deduplicated. Extending
+`frame-src` includes only the caller's sources; it does not imply same-origin
+framing.
+
 The development variant adds `'unsafe-eval'` to `script-src`. The production
 variant from the same call does not contain it.
 

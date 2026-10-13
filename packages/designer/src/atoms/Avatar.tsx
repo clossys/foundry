@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { HTMLAttributes } from "react";
 import { cx } from "./internal/cx.js";
+import { AVATAR_BASE_CLASSES, AVATAR_IMAGE_CLASSES, AVATAR_SIZE_CLASSES, avatarInitials } from "./Avatar.server.js";
 
 export type AvatarSize = "sm" | "md" | "lg";
 
@@ -21,24 +22,6 @@ export interface AvatarProps extends Omit<HTMLAttributes<HTMLSpanElement>, "chil
   size?: AvatarSize;
 }
 
-// No dimension token exists for a control's own affordance size (the
-// circle itself, as opposed to spacing around it) — see Checkbox and
-// Switch for the same reasoning. These are Tailwind's own built-in scale,
-// not this package's token scale, used only for this reason.
-const SIZE_CLASSES: Record<AvatarSize, { box: string; text: string }> = {
-  sm: { box: "h-6 w-6", text: "text-caption" },
-  md: { box: "h-8 w-8", text: "text-body-s" },
-  lg: { box: "h-10 w-10", text: "text-body" },
-};
-
-function initialsFrom(name: string): string {
-  const words = name.trim().split(/\s+/).filter(Boolean);
-  if (words.length === 0) return "";
-  const first = words[0]?.[0] ?? "";
-  const last = words.length > 1 ? (words[words.length - 1]?.[0] ?? "") : "";
-  return (first + last).toUpperCase();
-}
-
 /**
  * A person's (or thing's) picture, with an initials fallback when there's
  * no image, no `src` was given, or the image fails to load. Not interactive
@@ -52,33 +35,32 @@ function initialsFrom(name: string): string {
  * `role="img"` + `aria-label` instead — the same accessible name either way,
  * on whichever element is actually presenting it, rather than announcing
  * both at once.
+ *
+ * Not server-safe (the load-failure fallback is state). The server-safe
+ * variant, without that fallback, is `Avatar.server.tsx`, re-exported as
+ * `Avatar` from `atoms/server.ts`.
  */
 export function Avatar({ alt, src, size = "md", className, ...rest }: AvatarProps) {
   const [imageFailed, setImageFailed] = useState(false);
   const showImage = Boolean(src) && !imageFailed;
-  const { box, text } = SIZE_CLASSES[size];
+  const { box, text } = AVATAR_SIZE_CLASSES[size];
 
   return (
     <span
       {...rest}
       role={showImage ? undefined : "img"}
       aria-label={showImage ? undefined : alt}
-      className={cx(
-        "inline-flex shrink-0 items-center justify-center overflow-hidden rounded-pill bg-surface-sunken text-ink-secondary font-body",
-        box,
-        text,
-        className,
-      )}
+      className={cx(AVATAR_BASE_CLASSES, box, text, className)}
     >
       {showImage ? (
         <img
           src={src}
           alt={alt}
-          className="h-full w-full object-cover"
+          className={AVATAR_IMAGE_CLASSES}
           onError={() => setImageFailed(true)}
         />
       ) : (
-        <span aria-hidden="true">{initialsFrom(alt)}</span>
+        <span aria-hidden="true">{avatarInitials(alt)}</span>
       )}
     </span>
   );

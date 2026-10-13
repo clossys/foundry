@@ -21,7 +21,7 @@
 export const UI_WIDTH_PROSE_MAX = "var(--ui-width-prose-max, 48rem)";
 
 /** Tailwind classes every display-sized marketing heading should carry (measure + brand display signature). */
-export const DISPLAY_HEADING_CLASS = "text-display-l font-display max-w-display";
+export const DISPLAY_HEADING_CLASS = "text-display-l font-display leading-display max-w-display";
 
 /** Default marketing column width — the same cap `Shell.Main` centers on. */
 export const UI_WIDTH_CONTENT_MAX = "var(--ui-width-content-max, 64rem)";

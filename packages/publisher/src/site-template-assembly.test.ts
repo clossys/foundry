@@ -611,7 +611,7 @@ describe("the template manifest", () => {
   });
 
   it("routes each page to its view, and each route file imports that view", () => {
-    expect(route("/")?.template).toBe("LandingView");
+    expect(route("/")?.template).toBe("HeroView");
     expect(route("/about")?.template).toBe("MarketingView");
     expect(route("/contact")?.template).toBe("ContactView");
     expect(route("/terms")?.template).toBe("LegalView");

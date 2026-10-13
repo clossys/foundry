@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { Hero } from "./Hero.js";
 
 describe("Hero", () => {
@@ -60,9 +61,12 @@ describe("Hero", () => {
     expect(section.className).toContain("tablet:grid-cols-2");
   });
 
-  it("caps display heading width", () => {
-    render(<Hero heading="Heading text" />);
-    expect(screen.getByRole("heading")).toHaveClass("max-w-display");
+  it("holds the copy to the prose measure, the heading at the display step with its own leading", () => {
+    const { container } = render(<Hero heading="Heading text" />);
+    const block = container.querySelector("section > div") as HTMLElement;
+    expect(block).toHaveAttribute("data-section-intro", "display");
+    expect(block.style.maxWidth).toBe("var(--ui-width-prose-max, 48rem)");
+    expect(screen.getByRole("heading")).toHaveClass("text-display-m", "tablet:text-display-l", "font-display", "leading-display", "text-balance");
   });
 
   it("omits the media region entirely when none is given", () => {
@@ -112,5 +116,49 @@ describe("Hero", () => {
     else expect(root.className).not.toMatch(/\bbg-surface-/);
     expect(screen.getByRole("heading")).toHaveClass(primary);
     expect(screen.getByText("Description")).toHaveClass(secondary);
+  });
+});
+
+describe("Hero align", () => {
+  it("lines the text block up along the start edge by default", () => {
+    const { container } = render(<Hero heading="Heading text" actions={<a href="/x">Action</a>} />);
+    const block = container.querySelector("section > div") as HTMLElement;
+    expect(block).toHaveClass("items-start");
+    expect(block).not.toHaveClass("text-center");
+    expect(block.style.maxWidth).toBe("var(--ui-width-prose-max, 48rem)");
+  });
+
+  it("centres every line and the actions row when align is center", () => {
+    const { container } = render(<Hero heading="Heading text" description="Description" actions={<a href="/x">Action</a>} align="center" />);
+    const block = container.querySelector("section > div") as HTMLElement;
+    expect(block).toHaveClass("items-center", "text-center");
+    expect(screen.getByRole("link").parentElement).toHaveClass("justify-center");
+  });
+
+  it("narrows a centred text block to the prose measure, balanced, so it wraps before the column does", () => {
+    const { container } = render(<Hero heading="Heading text" description="Description" align="center" />);
+    const block = container.querySelector("section > div") as HTMLElement;
+    expect(block.style.maxWidth).toBe("var(--ui-width-prose-max, 48rem)");
+    expect(block).toHaveClass("mx-auto");
+    expect(screen.getByRole("heading")).toHaveClass("text-balance");
+    expect(screen.getByText("Description")).toHaveClass("text-pretty");
+  });
+});
+
+describe("Hero compact size", () => {
+  it("uses the section heading ramp while retaining h1 and existing h2 compatibility", () => {
+    const { container } = render(<Hero heading="Compact heading" size="compact" />);
+    const heading = screen.getByRole("heading", { name: "Compact heading" });
+    expect(heading.tagName).toBe("H1");
+    expect(heading).toHaveClass("text-h1", "tablet:text-h0", "tablet-lg:text-display-m", "leading-heading");
+    expect(heading).not.toHaveClass("leading-display");
+    expect(container.querySelector("section")).not.toHaveAttribute("size");
+  });
+  it("keeps omitted and default size byte-identical", () => {
+    expect(renderToStaticMarkup(<Hero heading="Sample heading" size="default" />)).toBe(renderToStaticMarkup(<Hero heading="Sample heading" />));
+  });
+  it("keeps an explicitly requested h2 with compact size", () => {
+    render(<Hero heading="Later heading" size="compact" headingLevel={2} />);
+    expect(screen.getByRole("heading").tagName).toBe("H2");
   });
 });

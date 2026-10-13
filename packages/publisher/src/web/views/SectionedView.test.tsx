@@ -11,7 +11,7 @@ const document: ResolvedSectionedViewDocument = {
   sections: [
     { id: "hero", kind: "hero", ground: "base", heading: "Welcome" },
     { id: "features", kind: "feature-grid", ground: "sunken", heading: "Features", items: [{ id: "first", heading: "First" }] },
-    { id: "faq", kind: "faq", ground: "inverse", heading: "Questions", items: [{ id: "one", question: "Why?", answer: "Because." }] },
+    { id: "faq", kind: "faq", ground: "inverse", heading: "Questions", items: ["one", "two", "three", "four"].map(id => ({ id, question: "Why?", answer: "Because." })) },
     { id: "steps", kind: "ordered-step-sequence", ground: "base", heading: "Steps", items: [{ id: "one", ordinal: "1", heading: "Start" }] },
     { id: "status", kind: "status-list", ground: "sunken", heading: "Readiness", labels: { available: "Available", partial: "Partial", planned: "Planned", dispositions: { "not-offered": "Not offered" } }, groups: [{ id: "core", heading: "Core", items: [{ id: "one", label: "Feature", state: "available" }, { id: "none", label: "No certifications", disposition: "not-offered" }] }] },
   ],
@@ -54,9 +54,20 @@ describe("SectionedView", () => {
  * by rendering that release's own code before the optional eyebrow, hero
  * action, status detail, and landmark additions existed. It is frozen here so
  * "additive" is a measurement rather than a claim: a document that carries
- * none of the new fields must still produce these bytes exactly.
+ * none of the new fields retains the measured bytes outside the migrated FAQ. Designer
+ * block restyles realign it (most recently the ordered steps: item-heading
+ * type, a line-strong ordinal ring and a connector running from one ordinal
+ * to the next); the view's own structure does not move.
  */
-const LEGACY_MARKUP = `<main aria-label="acme-home" class="flex flex-col gap-2xl py-2xl"><section id="hero" class="flex flex-col gap-xl"><div class="flex flex-col items-start gap-md"><p class="text-caption uppercase tracking-label text-ink-muted">New</p><h1 class="text-display-l font-display max-w-display text-ink-primary">Welcome</h1><p class="text-body-l max-w-display text-ink-secondary">A fixture hero.</p></div></section><div id="features" class="flex flex-col gap-lg bg-surface-sunken"><div class="flex flex-col gap-xs"><h2 class="text-h2 font-display text-ink-primary">Features</h2><p class="text-body text-ink-secondary">A fixture grid.</p></div><div class="grid grid-cols-1 gap-lg tablet:grid-cols-2 desktop:grid-cols-3"><div class="flex flex-col items-start gap-sm"><p class="text-body font-body font-medium text-ink-primary">First</p><p class="text-body-s text-ink-secondary">First feature.</p></div><div class="flex flex-col items-start gap-sm"><p class="text-body font-body font-medium text-ink-primary">Second</p></div></div></div><div id="faq" class="flex flex-col gap-lg bg-surface-inverse"><div class="flex flex-col gap-xs"><h2 class="text-h2 font-display text-ink-on-inverse">Questions</h2><p class="text-body text-ink-on-inverse-muted">A fixture FAQ.</p></div><div class="flex flex-col"><div class="flex flex-col" data-rac=""><button id="react-aria-_R_1jH1_" class="flex w-full items-center gap-sm rounded-default py-sm text-start text-body text-ink-on-inverse outline-none disabled:cursor-not-allowed" data-rac="" type="button" tabindex="0" data-react-aria-pressable="true" aria-expanded="false" aria-controls="react-aria-_R_1jH2_" slot="trigger"><span aria-hidden="true" class="inline-block transition-transform motion-reduce:transition-none">▸</span>Why?</button><div class="ps-lg text-body-s text-ink-on-inverse-muted" data-rac="" id="react-aria-_R_1jH2_" role="group" aria-labelledby="react-aria-_R_1jH1_" aria-hidden="true" hidden="">Because.</div></div></div></div><section id="steps" class="flex flex-col gap-lg"><div class="flex flex-col gap-xs"><h2 class="text-h2 font-display text-ink-primary">Steps</h2></div><ol class="flex flex-col tablet:flex-row"><li class="flex min-w-0 flex-1 flex-col tablet:flex-row"><div class="flex min-w-0 flex-1 flex-row gap-md tablet:flex-col"><span class="flex size-xl shrink-0 items-center justify-center rounded-pill border text-body-s font-body font-medium border-line-base text-ink-primary">1</span><div class="flex min-w-0 flex-col gap-xs"><p class="text-caption uppercase tracking-label text-ink-secondary">First</p><h3 class="text-h3 font-display text-ink-primary">Start</h3><p class="text-body-s text-ink-secondary">Start here.</p></div></div><span aria-hidden="true" class="ms-lg my-sm block h-lg w-px shrink-0 tablet:mx-md tablet:my-xl tablet:h-px tablet:w-lg bg-line-base"></span></li><li class="flex min-w-0 flex-1 flex-col tablet:flex-row"><div class="flex min-w-0 flex-1 flex-row gap-md tablet:flex-col"><span class="flex size-xl shrink-0 items-center justify-center rounded-pill border text-body-s font-body font-medium border-line-base text-ink-primary">2</span><div class="flex min-w-0 flex-col gap-xs"><h3 class="text-h3 font-display text-ink-primary">Finish</h3></div></div></li></ol></section><section id="status" class="flex flex-col gap-lg bg-surface-sunken"><div class="flex flex-col gap-xs"><h2 class="text-h2 font-display text-ink-primary">Readiness</h2><p class="text-body text-ink-secondary">A fixture status list.</p></div><div class="flex flex-col gap-xs"><p class="text-caption font-body font-medium text-ink-primary">Readiness</p><ul aria-label="Readiness" class="flex flex-wrap gap-md"><li class="flex items-center gap-xs text-body-s text-ink-primary"><span aria-hidden="true" class="size-xs shrink-0 rounded-pill bg-status-success ring-2 ring-ink-primary"></span>Available</li><li class="flex items-center gap-xs text-body-s text-ink-primary"><span aria-hidden="true" class="size-xs shrink-0 rounded-pill bg-status-warning ring-2 ring-ink-primary"></span>Partial</li><li class="flex items-center gap-xs text-body-s text-ink-primary"><span aria-hidden="true" class="size-xs shrink-0 rounded-pill bg-status-info ring-2 ring-ink-primary"></span>Planned</li><li class="flex items-center gap-xs text-body-s text-ink-primary"><span aria-hidden="true" class="size-xs shrink-0 rounded-pill bg-ink-muted ring-2 ring-ink-primary"></span>Not offered</li></ul></div><div class="flex flex-col gap-lg"><section class="flex flex-col gap-sm"><h3 class="text-h3 font-display text-ink-primary">Core</h3><dl class="flex flex-col"><div class="flex items-center justify-between gap-md py-sm"><dt class="text-body text-ink-primary">Feature</dt><dd class="flex shrink-0 items-center gap-xs text-body-s text-ink-primary"><span aria-hidden="true" class="size-xs shrink-0 rounded-pill bg-status-success ring-2 ring-ink-primary"></span>Available</dd></div><div class="flex items-center justify-between gap-md py-sm border-t border-line-base"><dt class="text-body text-ink-primary">No certifications</dt><dd class="flex shrink-0 items-center gap-xs text-body-s text-ink-primary"><span aria-hidden="true" class="size-xs shrink-0 rounded-pill bg-ink-muted ring-2 ring-ink-primary"></span>Not offered</dd></div></dl></section></div></section></main>`;
+const LEGACY_MARKUP = `<main aria-label="acme-home" class="flex flex-col gap-2xl py-2xl"><section id="hero" class="flex flex-col gap-xl"><div data-section-intro="display" class="flex w-full flex-col items-start" style="max-width:var(--ui-width-prose-max, 48rem)"><p class="text-body-s font-medium uppercase tracking-label text-accent-text">New</p><h1 class="text-display-m tablet:text-display-l font-display leading-display text-balance text-ink-primary mt-sm">Welcome</h1><p class="text-body-l text-pretty text-ink-secondary mt-2xl">A fixture hero.</p></div></section><div id="features" class="flex flex-col gap-lg bg-surface-sunken"><div class="flex flex-col gap-xs"><h2 class="text-h2 font-display text-ink-primary">Features</h2><p class="text-body text-ink-secondary">A fixture grid.</p></div><div class="grid grid-cols-1 gap-lg tablet:grid-cols-2 desktop:grid-cols-3"><div class="flex flex-col items-start gap-sm"><p class="text-body font-body font-medium text-ink-primary">First</p><p class="text-body-s text-ink-secondary">First feature.</p></div><div class="flex flex-col items-start gap-sm"><p class="text-body font-body font-medium text-ink-primary">Second</p></div></div></div><div id="faq" class="flex flex-col gap-lg bg-surface-inverse"><div class="flex flex-col gap-xs"><h2 class="text-h2 font-display leading-heading text-ink-on-inverse">Questions</h2><p class="text-body text-ink-on-inverse-muted">A fixture FAQ.</p></div><div class="flex flex-col border-t border-line-on-inverse"><div class="group/faq block border-b border-line-on-inverse" data-rac=""><button id="react-aria-_R_1jH1_" class="flex w-full cursor-pointer items-center justify-between gap-lg rounded-default py-lg text-start text-body-l font-medium tablet:py-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent summary-marker-none text-ink-on-inverse" data-rac="" type="button" tabindex="0" data-react-aria-pressable="true" aria-expanded="false" aria-controls="react-aria-_R_1jH2_" slot="trigger"><span>Why?</span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 disclosure-icon-motion" style="width:var(--ui-icon-md, var(--spacing-xl, 24px));height:var(--ui-icon-md, var(--spacing-xl, 24px));flex-shrink:0;stroke-width:var(--ui-icon-stroke, 2)" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></button><div class="disclosure-panel-motion" data-rac="" id="react-aria-_R_1jH2_" role="group" aria-labelledby="react-aria-_R_1jH1_" aria-hidden="true" hidden=""><div class="pb-lg pe-2xl text-body text-pretty tablet:pb-xl text-ink-on-inverse-muted" style="max-width:var(--ui-width-prose-max, 48rem)">Because.</div></div></div></div></div><section id="steps" class="flex flex-col gap-lg"><div class="flex flex-col gap-xs"><h2 class="text-h2 font-display text-ink-primary">Steps</h2></div><ol data-step-layout="plain" class="flex flex-col tablet:flex-row tablet:gap-x-xl"><li class="flex min-w-0 flex-1 flex-row gap-md tablet:flex-col tablet:gap-lg"><div class="flex shrink-0 flex-col items-center tablet:flex-row"><span class="flex size-2xl shrink-0 items-center justify-center rounded-pill text-body font-body font-medium tabular-nums bg-accent-tint text-accent-text">1</span><span aria-hidden="true" data-step-connector="" class="my-sm w-px flex-1 tablet:my-0 tablet:ms-md tablet:-me-md tablet:h-px tablet:w-auto bg-line-strong"></span></div><div data-step-text="" class="flex min-w-0 flex-col gap-sm pb-2xl tablet:pb-0"><p class="text-body-s font-medium uppercase tracking-label text-ink-secondary">First</p><h3 class="text-body-l font-body font-medium text-ink-primary">Start</h3><p class="text-body text-pretty text-ink-secondary">Start here.</p></div></li><li class="flex min-w-0 flex-1 flex-row gap-md tablet:flex-col tablet:gap-lg"><div class="flex shrink-0 flex-col items-center tablet:flex-row"><span class="flex size-2xl shrink-0 items-center justify-center rounded-pill text-body font-body font-medium tabular-nums bg-accent-tint text-accent-text">2</span></div><div data-step-text="" class="flex min-w-0 flex-col gap-sm"><h3 class="text-body-l font-body font-medium text-ink-primary">Finish</h3></div></li></ol></section><section id="status" class="flex flex-col gap-lg bg-surface-sunken"><div class="flex flex-col gap-xs"><h2 class="text-h2 font-display text-ink-primary">Readiness</h2><p class="text-body text-ink-secondary">A fixture status list.</p></div><div class="flex flex-col gap-xs"><p class="text-caption font-body font-medium text-ink-primary">Readiness</p><ul aria-label="Readiness" class="flex flex-wrap gap-md"><li class="flex items-center gap-xs text-body-s text-ink-primary"><span aria-hidden="true" class="size-xs shrink-0 rounded-pill bg-status-success ring-2 ring-ink-primary"></span>Available</li><li class="flex items-center gap-xs text-body-s text-ink-primary"><span aria-hidden="true" class="size-xs shrink-0 rounded-pill bg-status-warning ring-2 ring-ink-primary"></span>Partial</li><li class="flex items-center gap-xs text-body-s text-ink-primary"><span aria-hidden="true" class="size-xs shrink-0 rounded-pill bg-status-info ring-2 ring-ink-primary"></span>Planned</li><li class="flex items-center gap-xs text-body-s text-ink-primary"><span aria-hidden="true" class="size-xs shrink-0 rounded-pill bg-ink-muted ring-2 ring-ink-primary"></span>Not offered</li></ul></div><div class="flex flex-col gap-lg"><section class="flex flex-col gap-sm"><h3 class="text-h3 font-display text-ink-primary">Core</h3><dl class="flex flex-col"><div class="flex items-center justify-between gap-md py-sm"><dt class="text-body text-ink-primary">Feature</dt><dd class="flex shrink-0 items-center gap-xs text-body-s text-ink-primary"><span aria-hidden="true" class="size-xs shrink-0 rounded-pill bg-status-success ring-2 ring-ink-primary"></span>Available</dd></div><div class="flex items-center justify-between gap-md py-sm border-t border-line-base"><dt class="text-body text-ink-primary">No certifications</dt><dd class="flex shrink-0 items-center gap-xs text-body-s text-ink-primary"><span aria-hidden="true" class="size-xs shrink-0 rounded-pill bg-ink-muted ring-2 ring-ink-primary"></span>Not offered</dd></div></dl></section></div></section></main>`;
+
+// FAQ now has a canonical recipe; retain the frozen measurement for its siblings.
+function withoutFaq(markup: string): string {
+  const start = markup.indexOf('id="faq"');
+  const end = markup.indexOf('<section id="steps"', start);
+  const open = markup.lastIndexOf("<", start);
+  return markup.slice(0, open) + markup.slice(end);
+}
 
 const LEGACY_DOCUMENT: ResolvedSectionedViewDocument = {
   id: "acme-home",
@@ -64,7 +75,7 @@ const LEGACY_DOCUMENT: ResolvedSectionedViewDocument = {
   sections: [
     { id: "hero", kind: "hero", ground: "base", eyebrow: "New", heading: "Welcome", description: "A fixture hero." },
     { id: "features", kind: "feature-grid", ground: "sunken", heading: "Features", description: "A fixture grid.", items: [{ id: "first", heading: "First", description: "First feature." }, { id: "second", heading: "Second" }] },
-    { id: "faq", kind: "faq", ground: "inverse", heading: "Questions", description: "A fixture FAQ.", items: [{ id: "one", question: "Why?", answer: "Because." }] },
+    { id: "faq", kind: "faq", ground: "inverse", heading: "Questions", description: "A fixture FAQ.", items: ["one", "two", "three", "four"].map(id => ({ id, question: "Why?", answer: "Because." })) },
     { id: "steps", kind: "ordered-step-sequence", ground: "base", heading: "Steps", items: [{ id: "one", ordinal: "1", label: "First", heading: "Start", description: "Start here." }, { id: "two", ordinal: "2", heading: "Finish" }] },
     { id: "status", kind: "status-list", ground: "sunken", heading: "Readiness", description: "A fixture status list.", labels: { available: "Available", partial: "Partial", planned: "Planned", dispositions: { "not-offered": "Not offered" } }, groups: [{ id: "core", heading: "Core", items: [{ id: "one", label: "Feature", state: "available" }, { id: "none", label: "No certifications", disposition: "not-offered" }] }] },
   ],
@@ -87,7 +98,7 @@ const expressive: ResolvedSectionedViewDocument = {
 
 describe("SectionedView optional additive fields", () => {
   it("renders a document carrying none of them exactly as 0.2.1 did, byte for byte", () => {
-    expect(renderToStaticMarkup(<SectionedView document={LEGACY_DOCUMENT} />)).toBe(LEGACY_MARKUP);
+    expect(withoutFaq(renderToStaticMarkup(<SectionedView document={LEGACY_DOCUMENT} />))).toBe(withoutFaq(LEGACY_MARKUP));
   });
 
   it("renders every non-hero eyebrow instead of dropping it", () => {
@@ -124,7 +135,7 @@ describe("SectionedView optional additive fields", () => {
   });
 
   it("keeps rendering the same document identically when landmark is passed explicitly", () => {
-    expect(renderToStaticMarkup(<SectionedView document={LEGACY_DOCUMENT} landmark="main" />)).toBe(LEGACY_MARKUP);
+    expect(withoutFaq(renderToStaticMarkup(<SectionedView document={LEGACY_DOCUMENT} landmark="main" />))).toBe(withoutFaq(LEGACY_MARKUP));
   });
 
   it("fails closed on an unsanctioned action href, a malformed action, a blank detail, and an unsupported landmark", () => {
@@ -219,10 +230,10 @@ describe("SectionedView hero media and stat-grid (issue #1028)", () => {
 });
 
 describe("SectionedView gap 2 and gap 7 relaxations", () => {
-  it("still renders a document with a single leading hero and grouped status-list items byte for byte", () => {
+  it("retains the frozen sibling sections around the canonical FAQ", () => {
     // Same proof technique as the LEGACY_MARKUP assertion above: this is the
     // exact shape gaps 2 and 7 relax around, not merely near it.
-    expect(renderToStaticMarkup(<SectionedView document={LEGACY_DOCUMENT} />)).toBe(LEGACY_MARKUP);
+    expect(withoutFaq(renderToStaticMarkup(<SectionedView document={LEGACY_DOCUMENT} />))).toBe(withoutFaq(LEGACY_MARKUP));
   });
 
   it("renders a document with zero hero sections, with no h1 anywhere", () => {
@@ -395,5 +406,99 @@ describe("SectionedView resolve-then-render contract", () => {
     expect(html).toContain("<dl");
     expect(html).not.toContain("<h3");
     expect(html).toContain("Fixture capability");
+  });
+});
+
+import { assertRenderableSectionedViewDocument } from "./SectionedViewContent.js";
+import type { ResolvedSectionedViewContentSection } from "../../core/sectioned-view.js";
+
+const contentRegistry = new Map<string, string>();
+const contentRef = (id: string, text: string) => { const key = `render-content.${id}`; contentRegistry.set(key, text); return { id: key }; };
+const canonicalInput: SectionedViewDocument = { id: "content", sections: [{ id: "band", kind: "content-section", heading: contentRef("heading", "Band"), block: { type: "items", arrangement: "rows", columns: 1, items: [{ id: "a", heading: contentRef("a", "A") }, { id: "b", heading: contentRef("b", "B") }] }, media: { type: "specimen", label: contentRef("media", "Placeholder specimen of one record"), panel: { id: "record", title: contentRef("title", "Placeholder record"), parts: [{ id: "fields", type: "fields", items: [{ id: "a", label: contentRef("field", "Field"), value: contentRef("value", "Value") }] }] } } }] };
+const contentResolver = createCopyResolver({ id: "content", locale: "en", revision: "1", source: { kind: "consumer", reference: "fixture" }, entries: [...contentRegistry].map(([id,text])=>({ id,text,context:"Fixture",status:"approved" })) });
+const canonicalDocument = resolveSectionedViewDocument(canonicalInput, contentResolver);
+const canonicalSection = canonicalDocument.sections[0];
+if (canonicalSection?.kind !== "content-section" || canonicalSection.block?.type !== "items" || canonicalSection.media?.type !== "specimen") throw new Error("Expected canonical content fixture");
+const baseContent = canonicalSection;
+const baseItems = canonicalSection.block;
+const baseMedia = canonicalSection.media;
+const basePanel = canonicalSection.media.panel;
+const currentDocument = (section: Partial<ResolvedSectionedViewContentSection>) => ({ ...canonicalDocument, sections: [{ ...baseContent, ...section }] });
+const currentHtml = (section: Partial<ResolvedSectionedViewContentSection>) => renderToStaticMarkup(<SectionedView document={currentDocument(section)} />);
+const invalidDocument = (section: Record<string, unknown>) => ({ ...canonicalDocument, sections: [{ ...baseContent, ...section }] });
+
+describe("SectionedView content-section", () => {
+  it("renders canonical disclosure through the ordinary entry's React Aria controls", () => {
+    const block = { ...baseItems, reveal: "disclose" as const, items: ["q1", "q2", "q3", "q4"].map(id=>({ id, heading: `Question ${id}?`, description: `Answer ${id}.` })) };
+    const html=currentHtml({ layout: "split-end", media: undefined, block });
+    expect(html).toContain('data-layout="split-end"'); expect(html).toContain("data-rac"); expect(html.match(/<button /g)).toHaveLength(4); expect(html).not.toContain("<summary");
+  });
+
+  it("renders text-only split items with real canonical axes and nested headings", () => {
+    for (const arrangement of ["rows", "columns"] as const) {
+      const html=currentHtml({ layout: "split-start", media: undefined, block: { ...baseItems, arrangement, columns: arrangement === "rows" ? 1 : 2 } });
+      expect(html).toContain('data-layout="split-start"'); expect(html).toContain(`data-arrangement="${arrangement}"`); expect(html.match(/<h3 /g)).toHaveLength(2);
+    }
+  });
+
+  it("renders an item eyebrow as a label above its real heading", () => {
+    const html=currentHtml({ media: undefined, block: { ...baseItems, arrangement: "columns", columns: 2, items: [{ id:"a",eyebrow:"Records",heading:"A" },{ id:"b",heading:"B" }] } });
+    expect(html).toMatch(/data-item-eyebrow=""[^>]*>Records<\/p>[\s\S]*<h3/); expect(html.match(/data-item-eyebrow/g)).toHaveLength(1);
+  });
+
+  it("renders the published FAQ through canonical frames and refuses its unknown layout", () => {
+    const faqItems=["q1","q2","q3","q4"].map(id=>({ id,question:`Question ${id}?`,answer:`Answer ${id}.` }));
+    const faqDocument = (layout: "split" | "stacked") => ({ ...document, sections: [{ id:"questions",kind:"faq" as const,ground:"sunken" as const,layout,eyebrow:"Questions",heading:"Before you start",items:faqItems }] });
+    const split=renderToStaticMarkup(<SectionedView document={faqDocument("split")}/>);expect(split).toContain('data-layout="split-end"');expect(split).toContain("data-rac");expect(split).not.toContain("<summary");
+    const stacked=renderToStaticMarkup(<SectionedView document={faqDocument("stacked")}/>);expect(stacked).toContain("data-items");expect(stacked).not.toContain("data-layout");
+    expect(()=>assertRenderableSectionedViewDocument({ ...faqDocument("split"),sections:[{...faqDocument("split").sections[0],layout:"grid"}] })).toThrow(/sections\.0\.layout/);
+  });
+
+  it("keeps a specimen after its items and a linked footnote last, with the action ladder independent", () => {
+    const html=currentHtml({ footnote:{text:"An aside.",link:{label:"Read the guide",href:"/guide"}} });
+    expect(html).toMatch(/data-items[\s\S]*data-content-section-media[\s\S]*data-specimen[\s\S]*data-content-section-footnote/);expect(html).toContain('href="/guide"');expect(html).toContain("An aside.");expect(html).not.toContain("data-section-intro-actions");
+    const header=currentHtml({ block:undefined,media:undefined,actions:[{id:"more",label:"More",href:"/more",emphasis:"primary"},{id:"faq",label:"FAQ",href:"/faq"}] });
+    expect(header).toMatch(/href="\/more"[^>]*data-action-emphasis="primary"/);expect(header).toMatch(/href="\/faq"[^>]*data-action-emphasis="tertiary"/);expect(header).toContain("bg-accent");expect(header).toContain("bg-control-tonal");expect(header).not.toContain("text-ink-link");
+    // Canonical rows support eyebrows; split frames keep actions in their text column.
+    expect(()=>assertRenderableSectionedViewDocument(currentDocument({ layout:"split-end",actions:[{id:"go",label:"Go",href:"/go"}],footnote:{text:"Aside."} }))).not.toThrow();
+  });
+
+  it("refuses invalid blocks, specimen parts, actions and footnotes at their precise paths", () => {
+    const { columns: unusedColumns, ...bentoAxes } = baseItems;
+    const cards=(...spans:string[])=>({ ...bentoAxes,arrangement:"bento",items:spans.map((span,index)=>({id:`c${index}`,heading:`Card ${index}`,span})) });
+    expect(()=>assertRenderableSectionedViewDocument(invalidDocument({block:cards("half","half")}))).not.toThrow();
+    expect(()=>assertRenderableSectionedViewDocument(currentDocument({layout:"split-end",actions:[{id:"one",label:"One",href:"/one",emphasis:"primary"},{id:"two",label:"Two",href:"/two",emphasis:"secondary"}]}))).not.toThrow();
+    const validMeter={id:"m",type:"meter",label:"M",value:1,scaleMax:4,limit:2,direction:"max",tone:"info",valueText:"1",limitText:"2"};
+    const validTable={id:"t",type:"table",caption:"T",columns:[{id:"a",label:"A"},{id:"b",label:"B"}],rows:[{id:"r",cells:[{text:"x"},{text:"y"}]}]};
+    for(const part of [validMeter,validTable])expect(()=>assertRenderableSectionedViewDocument(invalidDocument({media:{...baseMedia,panel:{...basePanel,parts:[part]}}}))).not.toThrow();
+    const cases: Array<[Record<string,unknown>,RegExp]> = [
+      [{block:cards("third","third")},/sections\.0\.block\.items/],
+      [{block:cards("half","two-thirds")},/sections\.0\.block\.items\.1\.span/],
+      [{block:{...baseItems,items:[{id:"a",heading:"A",icon:"rocket"},{id:"b",heading:"B"}]}},/sections\.0\.block\.items\.0\.icon/],
+      [{block:{...baseItems,items:[{id:"a",heading:"A",extra:"Other"},{id:"b",heading:"B"}]}},/sections\.0\.block\.items\.0/],
+      [{block:{...baseItems,items:[{id:"a",heading:"A",eyebrow:"x".repeat(33)},{id:"b",heading:"B"}]}},/sections\.0\.block\.items\.0\.eyebrow/],
+      [{block:{type:"slider",items:[]}},/sections\.0\.block\.type/],
+      [{media:{...baseMedia,panel:{...basePanel,parts:["a","b","c","d"].map(id=>({...basePanel.parts[0],id}))}}},/sections\.0\.media\.panel\.parts/],
+      [{media:{...baseMedia,panel:{...basePanel,title:{id:"unresolved"}}}},/sections\.0\.media\.panel\.title/],
+      [{media:{...baseMedia,arrangement:"row"}},/sections\.0\.media: sections\.0\.media must be a closed data object with type, label, panel/],
+      [{media:{...baseMedia,panel:{...basePanel,parts:[{...validMeter,scaleMax:0}]}}},/sections\.0\.media\.panel\.parts\.0\.scaleMax/],
+      [{media:{...baseMedia,panel:{...basePanel,parts:[{...validTable,rows:[{id:"r",cells:[{text:"x"}]}]}]}}},/sections\.0\.media\.panel\.parts\.0\.rows\.0\.cells/],
+      [{layout:"split"},/sections\.0\.layout/],
+      [{block:{...baseItems,columns:3}},/sections\.0\.block\.columns/],
+      [{block:{...baseItems,reveal:"disclose",items:[{id:"a",heading:"A"},{id:"b",heading:"B"},{id:"c",heading:"C"},{id:"d",heading:"D"}]}},/sections\.0\.block\.items\.0/],
+      [{mediaSide:"start"},/sections\.0: sections\.0 has keys not allowed for content-section/],
+      [{items:[]},/sections\.0: sections\.0 has keys not allowed for content-section/],
+      [{layout:"split-end",actions:[1,2,3].map(n=>({id:`a${n}`,label:"Go",href:`/go-${n}`}))},/sections\.0\.actions.*must hold 1-2 actions; it holds 3/],
+      [{layout:"split-end",actions:[1,2].map(n=>({id:`a${n}`,label:"Go",href:`/go-${n}`,emphasis:"primary"}))},/sections\.0\.actions.*holds 2 primary actions; keep at most one/],
+      [{actions:[{id:"a",label:"Go",href:"/go",emphasis:"link"}]},/sections\.0\.actions\.0\.emphasis/],
+      [{block:{...baseItems,items:[{id:"a",heading:"A",href:"/a"},{id:"b",heading:"B"}]}},/sections\.0\.block\.items/],
+      [{actions:[{id:"go",label:"Go",href:"/go"}]},/sections\.0\.actions.*stacked band whose intro is followed by a block or visual/],
+      [{block:undefined,media:undefined,actions:[{id:"go",label:"Go",href:"/go"}],footnote:{text:"Aside."}},/sections\.0\.footnote.*header-only band with actions/],
+      [{footnote:{text:" "}},/sections\.0\.footnote/],
+      [{footnote:{text:"Aside.",links:[]}},/sections\.0\.footnote/],
+      [{footnote:{text:"Aside.",link:{label:"Guide",href:"/guide",style:"button"}}},/sections\.0\.footnote\.link/],
+      [{footnote:{text:"Aside.",link:{label:"Guide",href:"javascript:void(0)"}}},/sections\.0\.footnote\.link\.href/],
+    ];
+    for(const [section,path] of cases) expect(()=>assertRenderableSectionedViewDocument(invalidDocument(section))).toThrow(path);
   });
 });

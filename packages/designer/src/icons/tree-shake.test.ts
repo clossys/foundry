@@ -21,9 +21,9 @@ import * as esbuild from "esbuild";
  * version of this test) lists every module esbuild PARSED while resolving
  * the dependency graph, whether or not that module's code survived dead-
  * code elimination into the final output. A barrel (`src/icons/index.ts`)
- * re-exporting all 32 names is always parsed to discover what it exports,
+ * re-exporting all 40 names is always parsed to discover what it exports,
  * even when only one of those names is actually used — so `metafile.inputs`
- * reports all 32 modules regardless of tree-shaking. The only thing that
+ * reports all 40 modules regardless of tree-shaking. The only thing that
  * actually proves tree-shaking happened is the bundled OUTPUT TEXT.
  *
  * ### The marker changed shape from the component-era version
@@ -39,7 +39,7 @@ import * as esbuild from "esbuild";
  * this directory already has a distinct name).
  *
  * A BARE identifier (just `"Clock"`, no `var ... = [` wrapper) was
- * considered and rejected: three of this directory's 32 names are a
+ * considered and rejected: three of this directory's 40 names are a
  * literal PREFIX of another (`Check` of `CheckCircle`, `User` of `Users`,
  * `X` of `XCircle`) — a collision the pre-merge package's own `Icon`-
  * suffixed names happened to avoid (`"UserIcon"` is not a contiguous
@@ -75,8 +75,8 @@ async function bundleOutput(code: string): Promise<string> {
 }
 
 describe("tree-shaking (measured against real bundler OUTPUT, not import graph)", () => {
-  it("ships exactly the 32 icons this test sweeps over (sanity on the test's own setup)", () => {
-    expect(iconNames).toHaveLength(32);
+  it("ships exactly the 40 icons this test sweeps over (sanity on the test's own setup)", () => {
+    expect(iconNames).toHaveLength(40);
   });
 
   it("markers are unique — no icon name's marker is a substring of another's", () => {
@@ -103,7 +103,7 @@ describe("tree-shaking (measured against real bundler OUTPUT, not import graph)"
     expect(present).toBe(1);
   });
 
-  it("sanity: every marker DOES appear when the full 32-icon barrel is imported — proving a marker's absence above is real tree-shaking, not a marker that could never appear", async () => {
+  it("sanity: every marker DOES appear when the full 40-icon barrel is imported — proving a marker's absence above is real tree-shaking, not a marker that could never appear", async () => {
     const text = await bundleOutput(`export * from "./index.js";`);
     for (const name of iconNames) {
       expect(text.includes(marker(name)), `${name}'s marker should be present in the full bundle`).toBe(true);
@@ -121,7 +121,7 @@ describe("tree-shaking (measured against real bundler OUTPUT, not import graph)"
   it("the single-glyph bundle is meaningfully smaller than the full-barrel bundle", async () => {
     const single = await bundleOutput(`export { Clock } from "./index.js";`);
     const full = await bundleOutput(`export * from "./index.js";`);
-    // 32 icons in, 1 icon out — the single bundle should be well under a
+    // 40 icons in, 1 icon out — the single bundle should be well under a
     // third of the full one, not just nominally smaller.
     expect(single.length).toBeLessThan(full.length / 3);
   });

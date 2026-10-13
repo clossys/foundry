@@ -3,6 +3,12 @@ import { mergeUiClasses } from "@clossys/designer/atoms/server";
 import { EmptyState } from "@clossys/designer/blocks/server";
 import { assertViewContentRoot } from "../internal/viewContentRoot.js";
 
+/**
+ * `ErrorView`'s props.
+ *
+ * @deprecated Use `StatusViewProps` (`status`, `subtitle`, `action`, `notes`)
+ * with `StatusView`. Kept, unchanged, for existing call sites.
+ */
 export interface ErrorViewProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> {
   /**
    * The error's status — `404`, `"500"`, `"403"`, or any short code/label a
@@ -61,6 +67,14 @@ export interface ErrorViewProps extends Omit<HTMLAttributes<HTMLDivElement>, "ti
  * consumer passes their own router's link/button ("Go home") rather than
  * this component importing or assuming one. See the README for why this
  * package never bundles routing.
+ *
+ * @deprecated Use `StatusView` (cardless: `status`, `subtitle`, one `action`,
+ * optional `notes`) for a whole-page status, or `AuthView` when the state
+ * needs a card.
+ * Rule of thumb: a title, a subtitle and one action is `StatusView`; content
+ * that needs a card to house it takes the card view for that content
+ * (`AuthView`, `CaptureView`, `DocumentView`).
+ * `ErrorView` still renders as before and is not removed.
  */
 export function ErrorView(props: ErrorViewProps) {
   assertViewContentRoot("ErrorView", { role: props.role, id: props.id });
@@ -69,9 +83,10 @@ export function ErrorView(props: ErrorViewProps) {
 
 /**
  * The error page's markup without the content-root guard. Internal to this
- * package, not exported from its entry points: `GlobalErrorDocument` renders
- * this as the whole `<body>`, with no page frame and no `<main>`, so a host
- * may give its content root `role="main"` there.
+ * package, not exported from its entry points: `GlobalErrorDocument`'s
+ * deprecated `ErrorView` shape renders this as the whole `<body>`, with no
+ * page frame and no `<main>`, so a host may give its content root
+ * `role="main"` there.
  */
 export function ErrorViewBody({
   status,

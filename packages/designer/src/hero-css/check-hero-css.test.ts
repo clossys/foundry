@@ -10,7 +10,8 @@ describe("checkHeroCss", () => {
 
   it("passes when every required utility has a rule", () => {
     const css = `
-.text-display-l { font-size: 1rem; }
+.text-display-m { font-size: 1rem; }
+.tablet\\:text-display-l { font-size: 2rem; }
 .font-display { font-family: sans-serif; }
 .bg-accent { background-color: red; }
 .rounded-control { border-radius: 4px; }

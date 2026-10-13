@@ -81,6 +81,14 @@ export interface RenderStructuredDocumentResult {
   element: ReactNode;
   /** Every `CopyResolution` this render actually used, in resolution order — feed this to `surface/core`'s `collectCopyProvenance` exactly as `ResolvedSurfaceDocument.resolutions` already is. */
   resolutions: CopyResolution[];
+  /**
+   * Each top-level section's blocks, keyed by section id, without the
+   * section's `<section>` wrapper or heading: for a view that draws each
+   * section's heading itself (a band's header group) and places the body
+   * under it. The same elements `element` holds, from the same validated,
+   * resolved render; nothing here is resolved twice.
+   */
+  sectionBodies: Readonly<Record<string, ReactNode>>;
 }
 
 type TextFn = (ref: CopyRef, path: string) => string;
@@ -172,13 +180,11 @@ function renderBlock(block: DocumentBlock, path: string, text: TextFn): ReactNod
   }
 }
 
-function renderSection(section: DocumentSection, path: string, text: TextFn): ReactNode {
-  return createElement(
-    "section",
-    { id: section.id, key: path },
-    createElement(headingTag(section.level), { key: `${path}.heading` }, text(section.heading, `${path}.heading`)),
-    ...section.blocks.map((block, index) => renderBlock(block, `${path}.blocks.${index}`, text)),
-  );
+function renderSection(section: DocumentSection, path: string, text: TextFn, onBlocks?: (blocks: ReactNode[]) => void): ReactNode {
+  const heading = createElement(headingTag(section.level), { key: `${path}.heading` }, text(section.heading, `${path}.heading`));
+  const blocks = section.blocks.map((block, index) => renderBlock(block, `${path}.blocks.${index}`, text));
+  onBlocks?.(blocks);
+  return createElement("section", { id: section.id, key: path }, heading, ...blocks);
 }
 
 /**
@@ -213,7 +219,16 @@ export function renderStructuredDocument(doc: StructuredDocument, options: Rende
   // Resolved for provenance only — never rendered. See this file's own top comment.
   text(doc.title, "title");
 
-  const element = createElement(Fragment, null, ...doc.sections.map((section, index) => renderSection(section, `sections.${index}`, text)));
+  const sectionBodies: Record<string, ReactNode> = {};
+  const element = createElement(
+    Fragment,
+    null,
+    ...doc.sections.map((section, index) => {
+      return renderSection(section, `sections.${index}`, text, (blocks) => {
+        sectionBodies[section.id] = createElement(Fragment, null, ...blocks);
+      });
+    }),
+  );
 
-  return { element, resolutions };
+  return { element, resolutions, sectionBodies };
 }

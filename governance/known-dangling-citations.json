@@ -293,7 +293,6 @@
         "src/icons/icons.test.ts",
         "src/icons/tree-shake.test.ts",
         "src/ladder.test.ts",
-        "src/theme/theme-script-parity.test.ts",
         "theme/theme-script-parity.test.ts",
         "token-parity.test.ts"
       ],
@@ -371,105 +370,6 @@
       "src/gate-index.ts": [
         "scripts/check-readme-parity.mjs"
       ],
-      "src/icons/AlertTriangle.ts": [
-        "scripts/generate-icons.mjs"
-      ],
-      "src/icons/BookOpen.ts": [
-        "scripts/generate-icons.mjs"
-      ],
-      "src/icons/Box.ts": [
-        "scripts/generate-icons.mjs"
-      ],
-      "src/icons/Building2.ts": [
-        "scripts/generate-icons.mjs"
-      ],
-      "src/icons/Calendar.ts": [
-        "scripts/generate-icons.mjs"
-      ],
-      "src/icons/Check.ts": [
-        "scripts/generate-icons.mjs"
-      ],
-      "src/icons/CheckCircle.ts": [
-        "scripts/generate-icons.mjs"
-      ],
-      "src/icons/ChevronDown.ts": [
-        "scripts/generate-icons.mjs"
-      ],
-      "src/icons/ChevronLeft.ts": [
-        "scripts/generate-icons.mjs"
-      ],
-      "src/icons/ChevronRight.ts": [
-        "scripts/generate-icons.mjs"
-      ],
-      "src/icons/ChevronUp.ts": [
-        "scripts/generate-icons.mjs"
-      ],
-      "src/icons/Clock.ts": [
-        "scripts/generate-icons.mjs"
-      ],
-      "src/icons/CreditCard.ts": [
-        "scripts/generate-icons.mjs"
-      ],
-      "src/icons/ExternalLink.ts": [
-        "scripts/generate-icons.mjs"
-      ],
-      "src/icons/FileText.ts": [
-        "scripts/generate-icons.mjs"
-      ],
-      "src/icons/Folder.ts": [
-        "scripts/generate-icons.mjs"
-      ],
-      "src/icons/Grid3x3.ts": [
-        "scripts/generate-icons.mjs"
-      ],
-      "src/icons/Home.ts": [
-        "scripts/generate-icons.mjs"
-      ],
-      "src/icons/Info.ts": [
-        "scripts/generate-icons.mjs"
-      ],
-      "src/icons/List.ts": [
-        "scripts/generate-icons.mjs"
-      ],
-      "src/icons/Lock.ts": [
-        "scripts/generate-icons.mjs"
-      ],
-      "src/icons/Monitor.ts": [
-        "scripts/generate-icons.mjs"
-      ],
-      "src/icons/Moon.ts": [
-        "scripts/generate-icons.mjs"
-      ],
-      "src/icons/Plug.ts": [
-        "scripts/generate-icons.mjs"
-      ],
-      "src/icons/Receipt.ts": [
-        "scripts/generate-icons.mjs"
-      ],
-      "src/icons/Search.ts": [
-        "scripts/generate-icons.mjs"
-      ],
-      "src/icons/Settings.ts": [
-        "scripts/generate-icons.mjs"
-      ],
-      "src/icons/Sun.ts": [
-        "scripts/generate-icons.mjs"
-      ],
-      "src/icons/User.ts": [
-        "scripts/generate-icons.mjs"
-      ],
-      "src/icons/Users.ts": [
-        "scripts/generate-icons.mjs"
-      ],
-      "src/icons/X.ts": [
-        "scripts/generate-icons.mjs"
-      ],
-      "src/icons/XCircle.ts": [
-        "scripts/generate-icons.mjs"
-      ],
-      "src/icons/index.ts": [
-        "scripts/generate-icons.mjs"
-      ],
       "src/icons/types.ts": [
         "ladder.test.ts",
         "src/ladder.test.ts"
@@ -518,7 +418,6 @@
         "theme-script-parity.test.ts"
       ],
       "src/theme/internal/theme-core.ts": [
-        "theme-core.test.ts",
         "theme-script-parity.test.ts"
       ],
       "src/theme/server.ts": [

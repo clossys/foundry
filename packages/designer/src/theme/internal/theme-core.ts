@@ -1,35 +1,8 @@
 /**
- * The one place this package's THREE-STATE theme contract is expressed as
- * runtime logic — everything else under `theme/` (`ThemeProvider`,
- * `ThemeToggle`, `initScript.ts`) builds on the two functions below rather
- * than re-deciding the rule each has its own copy of. The rule itself lives
- * in `styles/tokens.css` (see that file's own header comment, "DARK · OS
- * PREFERENCE" and "DARK · EXPLICIT OVERRIDE" blocks) and this package's
- * README theming section:
- *
- *   - attribute ABSENT       -> the OS decides, via `prefers-color-scheme`
- *   - `data-theme="dark"`    -> forced dark, even on a light OS
- *   - `data-theme="light"`   -> forced light, even on a dark OS
- *
- * A stored value that is not one of the three states is malformed input,
- * not a fourth state — `readStoredPreference` below folds it into
- * `"system"`, the same safe fallback every other decline path
- * (storage unavailable, no storage at all) already resolves to.
- *
- * SELF-CONTAINED ON PURPOSE. Both `readStoredPreference` and
- * `applyThemeDom` reference nothing outside their own parameters — no
- * import, no closed-over module state, no call to any other function in
- * this file or package. That is what lets `initScript.ts` embed their own
- * `.toString()`'d source directly into the string it generates for a
- * consumer's `<head>`, where no bundler, module system, or import exists
- * yet: the function text has to run standalone. `ThemeProvider` imports
- * and calls these same two functions directly instead (no stringifying),
- * so the init script and the provider are never two independent
- * implementations of the rule, drifting apart silently — they are the
- * SAME implementation, used two different ways. `theme-script-parity.test.ts`
- * asserts this by literally executing the stringified form and comparing
- * its result to calling the function directly, across every input this
- * module's own `theme-core.test.ts` exercises.
+ * Runtime helpers for the three-state theme contract: system removes the
+ * override, while light and dark force that register. The standalone literal
+ * template in initScript.ts follows this rule; theme-script-parity.test.ts
+ * checks its behavior against these helpers across storage and fallback cases.
  */
 
 /** The three states a consumer's theme preference can hold. */
@@ -54,7 +27,7 @@ export function isThemePreference(value: unknown): value is ThemePreference {
 
 /**
  * Reads the stored preference for `storageKey`, falling back to
- * `"system"` — the safe default — on every decline path:
+ * the supplied fallback (default `"system"`) on every decline path:
  *
  *   - `localStorage` throws (private browsing in some browsers, blocked
  *     cookies/storage, a disabled-storage enterprise policy) — caught,
@@ -69,7 +42,7 @@ export function isThemePreference(value: unknown): value is ThemePreference {
  * states — there is no undefined/null "we don't know yet" result to
  * forget to handle at a call site.
  */
-export function readStoredPreference(storageKey: string): ThemePreference {
+export function readStoredPreference(storageKey: string, fallback: ThemePreference = "system"): ThemePreference {
   try {
     const stored = window.localStorage.getItem(storageKey);
     if (stored === "system" || stored === "light" || stored === "dark") {
@@ -78,7 +51,7 @@ export function readStoredPreference(storageKey: string): ThemePreference {
   } catch {
     // Storage unavailable — fall through to the safe default below.
   }
-  return "system";
+  return fallback;
 }
 
 /**

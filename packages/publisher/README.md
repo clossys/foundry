@@ -170,7 +170,8 @@ its own.
 The web condition changes only the implementation selected for server
 rendering, not the API. `MarketingView` keeps the same props and regional
 layout; its server target uses Designer's native `details`/`summary` FAQ while
-the ordinary target keeps Designer's React Aria FAQ. `AuthView`, `ErrorView`,
+the ordinary target keeps Designer's React Aria FAQ. `SiteFrame`, `AuthView`,
+`StatusView`, `GlobalErrorDocument`, `ErrorView`,
 `CaptureView`, `CollectionView`, `DocumentView`, `LegalView`, the renderer functions,
 template helpers, error class, and all runtime export names are present in
 both targets.
@@ -348,8 +349,8 @@ Name a shipped template when its slots cover the page:
 - **`MarketingView`** — pre-auth marketing landing (hero, features, optional
   FAQ, CTA).
 - **`SectionedView`** — long public pages whose sections are exactly the
-  closed six kinds (`hero`, `feature-grid`, `faq`, `ordered-step-sequence`,
-  `status-list`, `stat-grid`).
+  closed nine kinds (`hero`, `feature-grid`, `faq`, `ordered-step-sequence`,
+  `status-list`, `stat-grid`, `pricing`, `testimonial`, `stat`).
 - **`AuthView`** — one shell for every authentication step (sign-in, sign-up,
   password reset, verification): the page header and the form inside
   Designer's `Card`, rendered chrome-free inside a
@@ -384,14 +385,16 @@ Name a shipped template when its slots cover the page:
   auth pages are single-locale. `SignInForm` fills the
   form slot of a sign-in page. The header slots are listed under
   [Front-door shell](#front-door-shell).
-- **`ErrorView`** — error shell, including the sign-in-boundary states: not
+- **`ErrorView`** (deprecated; use `StatusView`, or `AuthView` when the
+  state needs a card) — error shell, including the sign-in-boundary states: not
   authorized (403), pending, revoked, and provider unavailable (503). It takes
   the same props for each; the status, title, description, and recovery
   action are the caller's copy. A diagnostic reference goes inline in the
   description (`"Something went wrong. Error: 8f2a91c0."`), there is no
   details disclosure, and `action` holds one primary control: a secondary
   destination is a text link inside the description.
-- **`BoundaryView`** — a boundary page: the page header block (`status`,
+- **`BoundaryView`** (deprecated; use `StatusView`, or `AuthView` when the
+  state needs a card) — a boundary page: the page header block (`status`,
   `title`, `description`), the `action` in a `Card` and the `notes` below
   it. Inside a `SiteFrame` it renders that content only; passing any
   deprecated chrome prop (`brand` is optional) selects the legacy page, which
@@ -400,6 +403,11 @@ Name a shipped template when its slots cover the page:
   `ErrorViewProps` key, so a site deletes its private copy of the
   header/error/footer shell. It also frames the sign-in-boundary states. It
   is not a built-in web template. See [Boundary pages](#boundary-pages).
+- **`StatusView`** — a whole-page status (not found, server error, no access,
+  expired link, unavailable, or a placeholder for a page that is not built
+  yet) on the [card-free layout](#card-free-layout): `status` as the one
+  `<h1>` (a code or a short title), plus optional `subtitle`, `action` and
+  `notes`. Chrome-free only. It replaces `ErrorView` and `BoundaryView`.
 - **`PackReviewView`** — the dev-only review index: the pack's strategy
   brief, brand kit (through `BrandGuideView`) and voice and copy, then a
   site's pages, their forced states, its exported artifacts and a lazy
@@ -407,8 +415,15 @@ Name a shipped template when its slots cover the page:
   `approved` badge. It uses the same frame as `AuthView`. See
   [`PackReviewView`](#packreviewview).
 
+**Rule of thumb for a whole-page state.** A title, a subtitle and one action
+is `StatusView` (cardless). Content that needs a card to house it takes the
+card view for that content: `AuthView` (a form, or a signed-in state that
+shows the account and a switch-account control), `CaptureView` (a capture
+form) or `DocumentView` (a document). `ErrorView` and `BoundaryView` still
+render and are not removed, but new pages do not use them.
+
 If a required band is not a slot on any shipped template and not one of the
-six `SectionedView` kinds, **do not flatten** it into a one-item
+nine `SectionedView` kinds, **do not flatten** it into a one-item
 `feature-grid` or any other shipped kind — that produces a document that
 validates while the page is wrong. Register `defineWebTemplate` in the
 consumer instead; its `build` function maps resolved slots to Designer
@@ -419,6 +434,39 @@ a one-off, but it is a workaround: it bypasses the template registry,
 `validateSurfaceDocument`/`resolveSurfaceDocument`, and copy provenance for
 that page shape. Prefer `defineWebTemplate` + `createWebRenderer` so the
 page stays provable.
+
+### View vocabulary
+
+Three words describe how a page uses a view:
+
+- **Standard.** A published Clossys view used as it ships, through its props,
+  slots and copy references only, such as `StatusView` with a status, a
+  subtitle and a link home.
+- **Custom.** A published view customized through its sanctioned extension
+  points: extra slot content (a form in `AuthView`'s form slot, a notes
+  line), theme tokens, `SectionedView` section kinds and copy. It still
+  conforms to the framework and stays inside the catalog contract. A thin
+  wrapper that fixes some props is a custom use, not a new view.
+- **Unique.** A one-off view owned by a single consumer, for a page no
+  published view can express. It is built from Clossys assets
+  (`defineWebTemplate`, Designer blocks, Publisher's page layouts), checked
+  with `checkFrontDoor` (and `publisher-web-route-check` for the route
+  manifest), and exported from the consumer, not from a Clossys package. It
+  is never hand-built in a route file.
+
+All copy reaches a view as a `CopyRef` or as a string resolved through
+`@clossys/writer`; consumer code passes no literal copy in view props. The
+examples in this README use literal strings for brevity only.
+
+**Catalog direction.** Every main-navigation page, the home page included, is
+to be one view, `LandingView`: a hero alone fills the screen; a hero with
+content below it shows a sliver of that content and a scroll hint.
+`LandingView` now ships as a sectioned page (documented below), and
+`HeroView` is the single-screen hero-only page (the view named `LandingView`
+before this release). `MarketingView` and `SectionedView` still ship as
+documented below; `SectionedView` is to stay as an internal engine rather
+than a catalog entry, and `MarketingView` folding into `LandingView` lands
+in a later release.
 
 ### Pre-auth marketing pages — `MarketingView` first
 
@@ -436,9 +484,12 @@ that document assembler is not the pre-auth path.
 
 `@clossys/publisher/core` now owns the closed, data-only source model for a
 long public site page: `SectionedViewDocument`. It requires one or more
-ordered sections with unique lowercase fragment-safe ids and one of six
+ordered sections with unique lowercase fragment-safe ids and one of ten
 named kinds: `hero`, `feature-grid`, `faq`, `ordered-step-sequence`,
-`status-list`, or `stat-grid`. Grounds are the closed `base`/`sunken`/`inverse` vocabulary;
+`status-list`, `stat-grid`, `pricing` (a heading and plan items, each with a
+name, a price, features and an optional call to action), `testimonial`
+(quotes with an attributor name and optional role), `stat` (label and value
+items with an optional delta) or `content-section` (see below). Legacy kinds use the closed `base`/`sunken`/`inverse` ground vocabulary; canonical content sections omit ground for automatic cadence or author `inverse`;
 status values are the closed `available`/`partial`/`planned` readiness axis,
 with a separate `not-offered` disposition for deliberate non-capabilities.
 Every audience-facing label, heading, description, question, answer, ordinal,
@@ -468,6 +519,143 @@ uses Designer `0.4.0`'s server-safe site-block API, including the separate
 the non-hero `eyebrow` slot, the per-row `detail` slot, and the flat `items`
 alternative to `StatusList`'s `groups`.
 
+#### `content-section` and content icons
+
+`content-section` is one general band with a heading, optional eyebrow,
+description and actions, at most one content block and one media object, and
+an optional footnote. This canonical contract is validated and resolved in
+`core`; web views and the content preview render its collection and media data.
+Published section kinds, including `feature-grid`, `faq` and
+`ordered-step-sequence`, retain their own contracts.
+
+The frame has `size: "standard" | "display"` (default `standard`) and
+`layout: "stacked" | "split-start" | "split-end"` (default `stacked`).
+A split direction names the visual or block side; a split with neither is
+a header-only band. Only stacked statement bands centre their header; split
+bands never centre. Alignment derives from scale and layout. Hero sections accept
+`size: "display" | "compact"`; the unreleased hero `compact` boolean and
+content-section `align`, `size: "compact"` and `mediaSide` are refused.
+For existing drafts, omit `align`, replace compact content size with
+`standard`, and replace `mediaSide` with a split direction.
+
+A block has one of two canonical types. `items` holds a flat list of
+`SectionedViewItem` objects; `matrix` holds exactly two id-bearing sides.
+Recipes expand into the same canonical axes through `desugarRecipe`. A
+recipe may omit an arrangement supplied by its fixed axes or defaults. A
+block without a recipe must name its arrangement. Explicit fixed-axis conflicts are refused with
+`recipe-axis`. `SECTIONED_VIEW_CONTENT_CONTRACT` exports the shared closed
+vocabulary and count table.
+
+The [runnable canonical example](#runnable-canonical-example) below combines
+these contracts with a local, approved Writer registry.
+
+| Items arrangement | Counts and options |
+| --- | --- |
+| `columns` | 2 columns with 2/4/6 items, or 3 columns with 3/6 items; defaults to 3 columns |
+| `rows` | 2–8 items, 1 or 2 columns; 2 columns require an even count |
+| `bento` | 2–6 items; `third`, `half`, `two-thirds` and `full` spans fill 12-unit rows; omitted spans resolve to `half` |
+| `stacked` | 2–4 items |
+| `order: "connected"` | 3–5 items in columns or stacked; four without lanes emits the advisory `steps-count` warning |
+| `reveal: "disclose"` | Rows only, 4–6 items |
+
+The default axes are `order: "none"`, `reveal: "all"`,
+`treatment: "plain"` and `scale: "item"`. Statement scale requires three
+columns and exactly three items. Recipes are `features`, `statement`,
+`cards`, `topics`, `link-index`, `faq`, `steps` and `specimen-stack`;
+Matrix's recipe is `comparison`. `link-index` fixes treatment to `plate`.
+`steps` defaults to columns and also accepts a stack; it takes optional lane
+definitions for two actors. The retired `flow` recipe is refused; migrate
+to `steps` with `arrangement: "stacked"`. Items `emphasis` is refused; use
+`scale` instead. Recipes
+constrain optional slots as well as axes. The six unreleased raw block types
+`feature-grid`, `card-grid`, `topic-list`, `ordered-step-sequence`, `faq` and `comparison`
+are refused with their replacement recipe named. The retired `module` field
+is also refused; it has no alias.
+
+Each item has an id and heading, with optional description, eyebrow, icon,
+meta, one specimen-part visual, href, bento span, lane id and badge.
+Item `featured` is refused; remove it from drafts and select a block
+`treatment` for the collection. The eyebrow resolves to at most
+`CONTENT_ITEM_EYEBROW_MAX_CHARACTERS` (32) characters.
+Row groups are `{ id, label, items }`, where
+`items` contains ids referencing the flat list; every item must belong to
+exactly one group, and each group contains 2–4 item ids. Arrays contain only
+ordinary dense data items. Lanes are exactly two `{ id, label }` objects,
+with known lane ids on every item in a connected block of three to five
+items, using columns or stacked arrangement. The first item uses the first
+defined lane, and both lanes appear.
+
+For status-labelled lookup, use the [Index status-list configuration](#index-configuration-status-list)
+with the existing `topics` recipe and per-item badges.
+
+Matrix sides each have an id and heading, and either 2–4 points or one
+specimen panel. Labels are optional on both sides together; mixed label
+presence is refused. Without labels, each side heading is its semantic heading.
+An optional description supplies lead copy
+alongside points or a panel; description alone is refused. Points and a
+panel cannot be combined. Both sides share a primary form (points or panel),
+with equal point counts. `featured` names an existing side id. Disclosed
+items require a description on every item and cannot take href or visual.
+Recipe constraints are deeply immutable; the features recipe fixes item scale.
+
+Media is exactly one of:
+
+- `specimen`: an accessible label and one `panel`, optionally an ordered
+  `key` of 3–5 items targeting labeled header, part or footer slots. Key
+  placement derives from the frame layout: at the end of a stacked band,
+  below the panel in a split band; authored key `side` is refused, so remove
+  it from drafts and let the layout place the key. A keyed
+  figure label uses 6–25 words. Panels
+  retain their closed fields, status rows, meter, table, schedule, shares and
+  files parts. A status-rows part may specify `mobileRows: 3`; meter
+  `previous` and `previousText` are authored together alongside the existing
+  `value`, `scaleMax` and `limit` fields. The previous marker cannot exceed
+  `scaleMax`.
+- `record`: an id, head, groups and caption, optionally columns and flag
+  label. A group holds rows or an owner; the owner group is last. All visible
+  copy, including owner initials, is a CopyRef. Multi-column records require
+  a stacked frame.
+- `scene`: `{ type: "scene", label, relationLabel?, input }`, where `input`
+  is a closed `converge`, `evidence-trail` or `approval-chain` data object.
+  Every visible input field uses CopyRefs except person initials. Structural
+  ids, seed, formats and relationships remain data. Converge and approval
+  scenes require a stacked frame. There is no authored sample field.
+
+Item and panel badges are independent of meta. Their label is a CopyRef and
+their tone is one of `neutral`, `success`, `warning`, `danger` or `info`.
+Status tones use the same closed set; meter numbers remain finite and
+non-negative. Content icons use the sixteen `CONTENT_ICON_NAMES`, rather
+than authored nodes or arbitrary names.
+
+Actions retain one or two `{ id, label, href, emphasis? }` records, at most
+one primary, with `primary`, `secondary`, `tertiary` and `quiet` emphasis.
+Group size follows the frame independently of emphasis. A stacked band with
+a block or media takes no section actions; a header-only band with actions
+takes no footnote after them. A split takes actions in its text column.
+Hero actions retain their primary/secondary/quiet subset and effective
+primary rules. A footnote holds text, one `{ label, href }` link, or both;
+an empty footnote is refused.
+
+Item links remain all-or-none, at most six, with unique normalized
+sanctioned destinations. Statement items and recipes without a link slot
+refuse hrefs. Every CopyRef resolves through the caller's CopyResolver,
+retaining provenance and naming the exact path of unavailable copy. Optional
+fields stay absent when omitted, while canonical frame and block defaults
+are materialized in the resolved model. Warnings do not prevent resolution.
+
+`checkSectionVariety(document | documents[])` is an advisory page-rhythm lint
+over one or more documents read as one page. It returns `warning` findings
+only and never changes validation: neighbouring bands that repeat the same
+layout, block and visual; a split after a split on the same side or a third
+split in a row; a dense band right after a dense band; a specimen on an
+inverse ground or a second inverse body band; a second band of four or more
+cards; a second comparison; one block type repeated with the same
+treatment; and a second band holding a `primary` action
+(`sectioned-view-variety-primary-actions`): a page has one main call to
+action per run of bands; and a split whose block is linked and whose text
+column also holds actions (`sectioned-view-variety-link-competing`): two link
+systems compete for one click.
+
 `SectionedView` is now the dedicated web renderer after that Designer floor is
 available. Resolve the CopyRef document first, retain its `resolutions` as the
 only publication provenance, and pass the resolved model directly:
@@ -494,7 +682,7 @@ const page = <SectionedView document={resolved} />;
 
 #### Optional fields the document may also carry
 
-Four slots are optional and additive: a document written without them
+These slots are optional and additive: a document written without them
 validates and renders exactly as it did before they existed.
 
 - **`eyebrow` on every section kind.** `hero` always had one; `feature-grid`,
@@ -518,6 +706,11 @@ validates and renders exactly as it did before they existed.
   (`up` | `down` | `neutral`, only with `delta`), and optional `description`.
   The view maps each row onto Designer `Stat`; do not flatten metrics into
   `feature-grid`.
+- **`layout` on the faq section.** `stacked` (the default) or
+  `split`: the header group in the narrow text column and the rows in the
+  wide column beside it, top-aligned. It renders the same band as a
+  `content-section` with a split Items block using the `faq` recipe, so the
+  two read alike on one page.
 - **`detail` on a status-list item.** An optional `CopyRef` carrying that
   row's own explanation, including the reasoning behind a `not-offered`
   answer. It renders as a second description of the same row, so the
@@ -751,7 +944,7 @@ missing/unknown single-slot binding already produces for `AuthView`/
 `ErrorView`.
 
 Rendered directly as a component, `MarketingView` also takes the header
-slots `LandingView`'s banner uses. They are props, not template slots, so a
+slots `HeroView`'s banner uses. They are props, not template slots, so a
 `SurfaceDocument` cannot bind them:
 
 - `headerAction` (optional): the site's call to action in the banner,
@@ -761,7 +954,7 @@ slots `LandingView`'s banner uses. They are props, not template slots, so a
 - `nav` (optional): the primary navigation, beside the brand.
 - `ground` (`"base"`, `"inverse"` or `"transparent"`, default `"base"`): the
   plate of both the header and the footer. `"transparent"` matches
-  `LandingView`. The section bands keep their own `*Ground` props.
+  `HeroView`. The section bands keep their own `*Ground` props.
 
 Each slot is absent from the markup when omitted, so a page that passes none
 renders exactly as before.
@@ -864,22 +1057,22 @@ This is the narrow disposition for entry pages; it does not add CMS, parser,
 or taxonomy behavior. A future Designer-block integration is separately
 staged and is not part of these publisher shells.
 
-### `LandingView`
+### `HeroView`
 
-`LandingView`, exported from `@clossys/publisher/web`, is a single-screen
+`HeroView`, exported from `@clossys/publisher/web`, is a single-screen
 landing page: a transparent banner, one hero centred both ways, and a
 transparent legal footer, over an optional backdrop. It is server-safe (it
 imports only Designer's `/shell/server`, `/atoms/server` and `/blocks/server`
 barrels) and ships no wording of its own: every visible word comes from a prop.
 
 ```tsx
-import { LandingView } from "@clossys/publisher/web";
+import { HeroView } from "@clossys/publisher/web";
 
 declare const brand: React.ReactNode; // the caller's brand mark, for example a Designer `Brandmark`
 
 export function HomePage() {
   return (
-    <LandingView
+    <HeroView
       brand={brand}
       headerAction={<a href="/start">Start</a>}
       heading="A page that says one thing"
@@ -905,7 +1098,7 @@ Props, in addition to the standard `div` attributes (minus `children`) and `styl
   with `aria-hidden="true"` and `pointer-events-none`. It is absent from the
   markup when not supplied.
 - `legal`: the props of Designer's `SiteFooter.Legal`, passed straight through.
-- `ground` (`LandingViewGround`: `"base"` or `"inverse"`, default `"base"`): the
+- `ground` (`HeroViewGround`: `"base"` or `"inverse"`, default `"base"`): the
   page's ground. Unlike the `ground` on the other views, which sets only the
   header and footer plate, this one sets the ground of the whole page.
   `"inverse"` paints `bg-surface-inverse` on the page root and gives every text
@@ -915,14 +1108,14 @@ Props, in addition to the standard `div` attributes (minus `children`) and `styl
   footer get Designer's `ground="transparent-inverse"`, so they stay plate-less
   over the backdrop and the footer's legal row takes
   `text-ink-on-inverse-muted`.
-- `footer` (`LandingViewFooter`: `"transparent"` or `"surface"`, default
+- `footer` (`HeroViewFooter`: `"transparent"` or `"surface"`, default
   `"transparent"`): the footer's plate. `"surface"` gives the footer Designer's
   `ground="base"` plate (`bg-surface-raised` with the base ink) across the full
   width, with a hairline on its top edge only, stacked above the backdrop. The
   banner and the hero are unchanged, on either `ground`.
 
 ```tsx
-import { LandingView } from "@clossys/publisher/web";
+import { HeroView } from "@clossys/publisher/web";
 
 declare const brand: React.ReactNode; // the caller's brand mark, for example a Designer `Brandmark`
 declare const backdrop: React.ReactNode; // a dark visual, for example a scrimmed image
@@ -930,7 +1123,7 @@ declare const Link: React.FC<{ href: string; buttonVariant: "primary"; children:
 
 export function DarkHomePage() {
   return (
-    <LandingView
+    <HeroView
       brand={brand}
       headerAction={
         <Link href="/start" buttonVariant="primary">
@@ -962,7 +1155,236 @@ to action that carries its own fill, such as a `primary` Designer `Button` or
 `Link`; a bare link inherits the on-inverse ink. Keep focusable content out of
 `backdrop`.
 
+### `LandingView`
+
+The core hero contract uses `size: "compact"` for section-scale copy and
+`size: "display"` for its default. Compact hero media is refused, and
+`checkSectionVariety` warns for a lone compact hero unless known trailing
+content is supplied. The web views and gallery fixtures use the canonical size field.
+
+`LandingView`, exported from `@clossys/publisher/web` and
+`@clossys/publisher/web/server`, is a sectioned landing page: a hero block
+that fills the first screen, the document's other sections as full-bleed
+bands, and an optional closing call to action. Every band's content, the hero
+copy and the call to action sit in one centred column (Designer
+`SectionFrame`'s `measure`, default `"wide"`); grounds run the full width. It
+is server-safe and ships no visible wording of its own: every visible word
+comes from the resolved documents or a prop. The only built-in string is the
+scroll cue's accessible name, which `cueLabel` replaces.
+
+```tsx
+import { resolveSectionedViewDocument, type ResolvedSectionedViewDocument } from "@clossys/publisher/core";
+import { LandingView } from "@clossys/publisher/web";
+
+declare const page: ResolvedSectionedViewDocument; // from resolveSectionedViewDocument; its first section is a hero
+declare const faq: ResolvedSectionedViewDocument; // a shared FAQ document
+declare const screenshot: React.ReactNode; // for example a Designer `MediaFigure`
+declare const resolveCopy: Parameters<typeof resolveSectionedViewDocument>[1];
+
+// One content-section band: topics beside a one-panel specimen.
+const records = resolveSectionedViewDocument({
+  id: "records",
+  sectionGroundRhythm: "view",
+  sections: [{
+    id: "records",
+    kind: "content-section",
+    heading: { id: "records.heading" },
+    layout: "split-end",
+    block: { type: "items", recipe: "topics", items: [
+      { id: "kept", icon: "folder", heading: { id: "records.kept" } },
+      { id: "shared", icon: "users", heading: { id: "records.shared" } },
+    ] },
+    media: { type: "specimen", label: { id: "records.label" }, panel: {
+      id: "record",
+      title: { id: "records.panel" },
+      parts: [{ id: "fields", type: "fields", items: [
+        { id: "owner", label: { id: "records.owner" }, value: { id: "records.owner.value" } },
+      ] }],
+    } },
+  }],
+}, resolveCopy);
+
+export function ProductPage() {
+  return (
+    <LandingView
+      document={page}
+      trailing={[records, faq]}
+      afterSection={{ features: screenshot }}
+      callToAction={{ copy: "hero", action: <a href="/start">Start</a> }}
+    />
+  );
+}
+```
+
+Props, in addition to the standard `<main>` attributes (minus `children`),
+`className` and `style`:
+
+- `document`: the page's resolved document. Its first section must be a
+  `hero`; it renders as the hero block and the page's only `<h1>`.
+- `trailing` (optional): further resolved documents rendered as more bands
+  after `document`, for example a shared FAQ.
+- `afterSection` (optional): content placed in a section's content slot,
+  after its own content, keyed by section id. An id that names no rendered
+  section is refused with a `RenderError`, not dropped.
+- `callToAction` (optional): the closing band: `id`, `eyebrow`, `heading`
+  (an `<h2>`), `description`, and one required `action` slot (pass a
+  button-styled link; it is not restyled). Add `copy: "hero"` to reuse the
+  first main hero's heading and description; heading can then be omitted.
+  Own copy values win, including `null` and `false`; only `undefined` falls
+  back. The close retains its own eyebrow and action. A trailing hero is
+  not a copy source. A valid nonempty main document without an opening hero
+  is refused with `RenderError` reason `missing-hero-copy`; malformed input
+  and unknown copy options use `resolution-failed`. Omitting `copy` retains
+  the close's authored copy. The exported `LandingViewCallToAction` interface
+  retains its required heading and action for existing consumers. As an
+  alternative to the `action` slot, pass `actions` containing one or two
+  resolved `{ id, label, href, emphasis? }` records with the hero emphasis
+  subset and effective-primary rules. The two props are mutually exclusive.
+  `footnote` takes resolved `{ text, link?: { label, href } }` copy. Labels and
+  note copy accept visible composed ReactNodes, including nested arrays; empty
+  collections and unresolved copy references are refused. Hero and
+  closing groups use one size for every emphasis: `lg` for a display hero or
+  close, and `md` for a compact hero. Pairs put the primary first in DOM order;
+  their primary and
+  secondary buttons stack full width below the tablet breakpoint, while quiet
+  actions keep automatic width.
+- `backdrop` (optional): decoration behind the hero block, `aria-hidden` and
+  inert to the pointer, over the hero section's own ground.
+- `header` (`LandingViewHeader`: `"overlay"` or `"reserved"`, default
+  `"overlay"`): whether the site header floats over the hero block or sits
+  in flow above the view.
+- `peek` (default `true`): with an overlay header and content after the hero,
+  the hero block stops short of the fold so the next band shows, and a
+  scroll cue links to that band (see **Scroll cue**).
+- `cueLabel` (default `"Scroll to next section"`): the scroll cue's
+  accessible name. Pass translated copy; a blank label is refused with a
+  `RenderError`.
+- `align` (Designer `HeroAlign`, default `"center"`) and `measure` (Designer
+  `SectionMeasure`, default `"wide"`).
+- `landmark` (`"main"` or `"none"`, default `"main"`), `resolveAssetId` and
+  `prefersReducedMotion`, as for `SectionedView`.
+
+**Scroll cue.** When the hero peeks, the view renders a real link,
+`href="#<first band's section id>"`, styled as a circular Designer icon button
+(`iconButtonLinkClassName`). If no band follows the hero, it links to the
+`callToAction`'s `id` instead. With neither, no cue renders. The cue is fixed to
+the bottom of the browser window, centred and clear of the safe-area inset, so
+it does not slide with the page; it sits over the peeking band, whose ground it
+takes: the inverse treatment on an `inverse` band, otherwise the base
+treatment. It carries `data-landing-cue`.
+
+Clicking the cue uses native fragment scrolling, with no client script.
+Scrolling is smooth only under `prefers-reduced-motion: no-preference`. Each
+band section has a scroll margin equal to its own top padding (`scroll-mt-4xl`,
+or `scroll-mt-5xl` from `tablet-lg`). Combined with the `scroll-padding-top`
+that a sticky or fixed site header sets on the root, this lands the band's top
+edge flush under the header. The view does not set `scroll-padding-top`
+itself. The cue fades out over the first 132px of page scroll (three tap
+targets; the fade follows the scroll position, not the clock) and is then
+hidden, so it leaves the tab order and ignores the pointer (Designer
+`scroll-cue`). Under reduced motion it hides in one step rather than fading.
+Browsers without scroll-driven animations (`animation-timeline`) instead
+centre the cue on the hero's bottom edge, in a zero-height rail between the
+hero and the next band at `--ui-z-sticky` (below a site header at
+`--ui-z-shell`), where it scrolls away with the page; it is never fixed
+without the fade.
+
+**Section anatomy.** Every band with a feature grid, ordered steps, a status
+list, an FAQ, a hero or a `content-section` is one Designer `ContentSection`: the section's
+eyebrow, heading and description as the header group (held to the prose
+measure), then the content as a block rendered without its own
+heading region, then the `afterSection` content. A hero in a later band is a
+header group (an `<h2>`, never a second display heading) with its actions,
+and its media as the block. Other section kinds keep their block's own
+header region inside the same slot.
+
+**Canonical content-section rendering (bounded integration).** The web views
+render canonical `items` with `order: "none"` and `reveal: "all"` through
+Designer `Items`, preserving icons, eyebrow, meta, badge, links, spans,
+group membership and static specimen visuals. The frame forwards its
+resolved `standard` or `display` size and `stacked`,
+`split-start` or `split-end` layout. Item headings remain one level below the
+section heading. Frame size controls rhythm without a statement heuristic.
+Actions use the shared emphasis ladder at one `md` group size; a footnote
+supports text, one link, or both.
+
+Single-panel specimen media, its optional anatomy key, record groups and the
+three scene templates forward their resolved visible copy to the available
+Designer blocks. Matrix forwards optional labels, headings, lead descriptions,
+points, specimen visuals and the featured side. Its presentation IDs encode
+the section and each original side ID injectively, preserving authored identities and the featured relation.
+Panel badges remain independent of metadata and status; status-row mobile
+limits retain all authored rows, and Meter previous values keep their visible
+text and marker. Numbered, connected and disclosed Items use the collection
+renderer. Ordinary disclosure uses React Aria controls; the server entry uses
+native details. A supplied continuing end label stays visible; an omitted
+label retains the consumer-resolved continuation copy as hidden text.
+The published `faq` section renders the Index function’s Items-based `faq`
+recipe through the canonical content-section path: one column of rows with
+`reveal: "disclose"`. Its authored `{ id, question, answer }` items and copy
+provenance are retained, with the recipe’s four-to-six-row budget checked at
+authoring and rendering. Omitted or `stacked` layout selects a stacked band;
+`split` selects `split-end`. SectionedView and LandingView use React Aria
+controls in the ordinary entry and native disclosure in the server entry. Scene text limits stay local to media; inverse Scene media gets an opaque base plate and base ink. Record, Scene and anatomy identities are namespaced by section instance without changing authored copy or provenance. Canonical Landing fragments align with the unpadded band edge; published bands retain their padding offsets.
+
+The resolved boundary requires explicit canonical axes and closed plain data
+before reading discriminators. It checks the structural contract and text
+budgets without calling a consumer resolver or changing caller provenance.
+`afterSection` content follows the block. The content preview uses canonical
+collection and media data, including connected and disclosed examples.
+Standalone preview pages select the native server entry so disclosures work
+without hydration.
+Single-panel recomposition retains sample copy and state while changing the
+former multi-panel anatomy.
+
+**Measure and rhythm.** Centred copy, in the hero block and the call to
+action, is held to the prose measure (`--ui-width-prose-max`) inside the
+column, so its lines wrap sooner than the column. Body bands take `py-4xl`
+(`py-5xl` from `tablet-lg`); the call to action stands one step above them
+at every width, `py-5xl` (`py-6xl` from `tablet-lg`); the hero block takes
+`py-5xl` under an overlay header. Both copy blocks are Designer
+`SectionIntro`: the hero at the `display` emphasis (the page's one `<h1>`),
+the call to action at the `section` emphasis like every band heading. A
+hero section's document actions render through the primary, outline and
+quiet ladder;
+omit a hero's `actions` for a message-only opening.
+The view paints the base surface on its root, so a band on the `base`
+ground shows the base surface whatever the page behind it is.
+
+**Grounds.** The view plans automatic canonical bands and legacy bands
+under the `"view"` rhythm across the page:
+
+- the hero keeps its own ground;
+- the last automatic body band defaults to `base`; with a `callToAction`,
+  a final legacy band is forced to `base` (`LANDING_VIEW_CLOSING_GROUND`),
+  while an explicit canonical `inverse` remains its anchor;
+- the call to action is on `inverse` (`LANDING_VIEW_CALL_TO_ACTION_GROUND`);
+- canonical omitted grounds and legacy omissions under `sectionGroundRhythm: "view"`
+  resolve with `viewGrounds`; counting upward, an automatic band above `base`
+  takes `sunken`, and one above `sunken` or `inverse` takes `base`;
+- explicit grounds win except for the final legacy band before a call to action.
+
+The view draws no rule at either edge of the call to action: the ground
+change from the band above is its top seam, and the site footer's own top
+hairline (Designer `SiteFooter`) is its foot, so the seam is drawn once.
+
+`planLandingViewGrounds(document, trailing, { callToAction })` returns the
+same plan as a `LandingViewGroundPlan`: each band's `id`, `role`
+(`LandingViewBandRole`), `ground` and whether the view `assigned` it, plus
+`repeats`, the neighbouring bands left on the same ground (only possible
+through explicit grounds). A consumer can assert `repeats` is empty in its
+own tests.
+
+What it does not do: check the contrast of the hero copy over your
+backdrop, restyle the action you pass, or decide the grounds of a site
+header or footer around it.
+
 ### `ContactView`
+
+**Deprecated:** use `SiteFrame` > `CaptureView` > `ContactForm` for contact
+pages; see the [framed contact example](#contactform--framed-contact-example).
+`ContactView` retains its compatibility page API and composes the same
+`ContactForm`, with its legacy frame. Do not nest that page inside `SiteFrame`.
 
 `ContactView`, exported from `@clossys/publisher/web`, is a single-screen
 contact page: a transparent banner, a page header, one form in a card, and a
@@ -1007,7 +1429,7 @@ Props, in addition to the standard `div` attributes (minus `children` and
 
 - `brand`: the identity slot in the banner.
 - `headerAction`, `secondaryAction`, `nav` (optional): the header slots, as on
-  `LandingView`. `headerAction` is the banner call to action (Designer
+  `HeroView`. `headerAction` is the banner call to action (Designer
   `SiteHeader`'s `actions`), `secondaryAction` sits just before it and `nav`
   sits beside the brand. Each is absent from the markup when omitted, so the
   banner then holds the brand alone.
@@ -1268,6 +1690,7 @@ package.
   | --- | --- | --- |
   | `home`, `contact`, `custom` | not allowed | `index, follow` |
   | `notFound` | not allowed | `noindex, nofollow` |
+  | `construction` | not allowed | `noindex, nofollow` |
   | `legal` | missing or `draft` | `noindex, nofollow` |
   | `legal` | `counsel-reviewed` | `index, follow` |
 
@@ -1794,6 +2217,15 @@ provenance) but is **never rendered into the output tree** — the page's
 own `<h1>` stays the caller's job, the same discipline `ErrorView` already
 holds between its own `<h1>` and `EmptyState`'s `<h2>`.
 
+The result also carries `sectionBodies`: each top-level section's blocks,
+keyed by section id, without the `<section>` wrapper or its heading. Use it
+when a view draws each section's heading itself — for example a
+`LandingView` band, whose header group (eyebrow, heading, description)
+comes from a sectioned document while the document's prose, lists and
+links go in that band's content slot (`afterSection`), inside Designer's
+`ArticleBody`. It holds the same elements as `element`, from the same
+validated render; nothing is resolved twice.
+
 **`resolveCopyId`'s type, and the `{ element, resolutions }` return
 shape.** `RenderStructuredDocumentOptions.resolveCopyId` is
 `@clossys/writer`'s own ref-based `CopyResolver` —
@@ -1958,9 +2390,21 @@ variables.
 #### `LegalView`
 
 `LegalView`, exported from `@clossys/publisher/web` next to `DocumentView`,
-renders a `LegalDocument` in the same site chrome and layout as
-`DocumentView`. It is server-safe and has no summary or in-page action
-props; its banner takes the same header slots as `LandingView`.
+renders a `LegalDocument` as a whole self-chromed page: Designer's
+`SiteHeader`, its own `<main>` holding the document in a prose-measure column
+with no card, then `SiteFooter`. It does not use the shared
+[page layout](#page-layout) and has no chrome-free mode, so it cannot sit
+inside a [`SiteFrame`](#site-frame--siteframe): it would add a second banner,
+`<main>` and contentinfo. It is server-safe and has no summary or in-page
+action props; its banner takes the same header slots as `HeroView`.
+
+**Inside a frame, use `DocumentView`.** A `LegalDocument` is a
+`StructuredDocument`, so a framed legal page renders it with `DocumentView`
+(the document title as the `<h1>`, the article in the card). `DocumentView`
+does not run the legal profile: call `validateLegalDocument` (and
+`gateLegalDocument` before publishing) yourself, and pass the effective date
+as `effectiveDate`. It does not render the last-updated date or the draft
+callout that `LegalView` adds; a framed legal view with those is a follow-up.
 
 ```tsx
 import { LegalView } from "@clossys/publisher/web";
@@ -1997,12 +2441,12 @@ Props, in addition to the standard `div` attributes and `style`:
 
 - `brand`: the brand node placed in the page chrome.
 - `headerAction`, `secondaryAction`, `nav` (optional): the header slots, as on
-  `LandingView`. `headerAction` is the banner call to action (Designer
+  `HeroView`. `headerAction` is the banner call to action (Designer
   `SiteHeader`'s `actions`), `secondaryAction` sits just before it and `nav`
   sits beside the brand. Each is absent from the markup when omitted.
 - `ground` (`"base"`, `"inverse"` or `"transparent"`, default `"base"`): the
   plate of both the header and the footer. `"transparent"` matches
-  `LandingView`.
+  `HeroView`.
 - `document`: the `LegalDocument` to render.
 - `resolveCopyId`: `@clossys/writer`'s ref-based `CopyResolver`
   (`(ref: CopyRef) => CopyResolution | undefined`) that turns every `CopyRef`
@@ -2013,6 +2457,11 @@ Props, in addition to the standard `div` attributes and `style`:
   `lastUpdated` and `draftHeading`.
 - `locale` (required): the locale passed to `Intl.DateTimeFormat`.
 - `footerSecondary` (optional): extra footer content.
+- `related` (optional): `{ label, items }`, placed after the legal body inside
+  the existing main, before the footer. The caller supplies a plain string
+  label and one to six linked `ItemData` entries with required `href`.
+  One reference renders as a standard `Item`; two to six render as `Items`
+  rows. An omitted collection or an empty array adds no markup.
 
 What it does:
 
@@ -2032,8 +2481,9 @@ What it does:
   off, and a `counsel-reviewed` document renders without it.
 - The content variables (`entity`, `jurisdiction`, `contact`) are not
   displayed and no interpolation is applied to copy.
-- Every visible string comes from a caller `CopyRef`, so the caller supplies
-  a `locale` and the text for every label.
+- Legal document text and date/draft labels come from caller `CopyRef`s.
+  The related heading and item slots are caller-supplied values; the view
+  adds no wording. Related links follow Designer's canonical item validation.
 
 **Soundness boundary.** `LegalView` guarantees the document's structure,
 section order, dates and a draft marker that cannot be suppressed. It says
@@ -2041,6 +2491,12 @@ nothing about the legal adequacy of any text. It does not enforce the
 production gate: call `gateLegalDocument` separately before publishing.
 
 ### Boundary pages
+
+Deprecated: `BoundaryView` and `ErrorView` still render and are not removed,
+but new pages use [`StatusView`](#card-free-layout) for a title, a subtitle
+and one action, and `AuthView` when the state needs a card (for example a
+signed-in 403 that shows the account and a switch-account control). See
+[From a mirrored or self-chromed copy to the published view](#from-a-mirrored-or-self-chromed-copy-to-the-published-view).
 
 `BoundaryView` is the whole page for a 500, a 404 or a sign-in boundary state: one
 retry action, and any second destination as a text link in the description.
@@ -2051,8 +2507,6 @@ import { BoundaryView } from "@clossys/publisher/web";
 export function ServerErrorPage({ reference }: { reference: string }) {
   return (
     <BoundaryView
-      brand="Example Studio"
-      headerAction={<a href="/contact">Contact</a>}
       status={500}
       title="Something went wrong"
       description={
@@ -2080,7 +2534,7 @@ Breaking change: `BoundaryView` no longer renders `ErrorView`. `className`,
 owns `min-h-dvh`, instead of an inner `ErrorView` root, and the status, title
 and action are left-aligned in the column instead of centred.
 
-The deprecated header slots are the ones `LandingView`'s banner uses, so a
+The deprecated header slots are the ones `HeroView`'s banner uses, so a
 legacy boundary page can carry the same header as the rest of the site:
 
 - `headerAction` (optional): the banner call to action, passed to Designer
@@ -2090,7 +2544,7 @@ legacy boundary page can carry the same header as the rest of the site:
 - `nav` (optional): the primary navigation, beside the brand.
 - `ground` (`"base"`, `"inverse"` or `"transparent"`, default `"base"`): the
   plate of both the header and the footer. `"transparent"` matches
-  `LandingView`.
+  `HeroView`.
 
 Each slot is absent from the markup when omitted.
 
@@ -2100,9 +2554,10 @@ Each slot is absent from the markup when omitted.
 `<main>`, in this order: a skip link, the banner (Designer's `SiteHeader`
 with a `Brandmark`), `<main id={SITE_MAIN_ID} tabIndex={-1}>` holding the
 view, then the contentinfo (Designer's `SiteFooter`). The view passed as
-`children` renders chrome-free: `AuthView`, `CaptureView`, `DocumentView`,
-`BoundaryView` and `ErrorView` carry no `<main>`, no banner and no contentinfo of their own when
-no chrome prop is passed, so a framed page has exactly one of each.
+`children` renders chrome-free: `AuthView`, `CaptureView`, `DocumentView` and
+`StatusView` (and the deprecated `BoundaryView` and `ErrorView`) carry no
+`<main>`, no banner and no contentinfo of their own when no chrome prop is
+passed, so a framed page has one of each.
 
 ```tsx
 import { AuthView, SiteFrame, siteShellFor } from "@clossys/publisher/web";
@@ -2203,17 +2658,16 @@ links its legal row to the public site's `/privacy` and `/terms` on
 
 | Safe inside `SiteFrame` (no `<main>` of their own when no chrome prop is passed) | Still render their own `<main>` |
 | --- | --- |
-| `AuthView`, `CaptureView`, `DocumentView`, `BoundaryView`, `ErrorView` | `LandingView`, `MarketingView`, `CollectionView`, `LegalView`, `ContactView`, `PackReviewView`, `BrandGuideView`, `SystemAuditView` |
+| `AuthView`, `CaptureView`, `DocumentView`, `StatusView`; deprecated: `BoundaryView`, `ErrorView` | `HeroView`, `LandingView`, `MarketingView`, `CollectionView`, `LegalView`, `ContactView`, `PackReviewView`, `BrandGuideView`, `SystemAuditView` |
 
-`SectionedView` renders its own `<main>` by default; pass `landmark="none"`
-to place it inside the frame. The built-in registry `AuthView` template
+`SectionedView` and `LandingView` render their own `<main>` by default; pass
+`landmark="none"` to place either inside the frame. The built-in registry `AuthView` template
 always passes `brand`, so a registry-rendered sign-in page is still the
 legacy full page, not a framed one.
 
-`ErrorView`'s root keeps its `min-h-dvh` (full viewport height) class, so
-inside the frame the page is taller than the viewport and scrolls past the
-footer. A frame-aware `ErrorView` root is a follow-up; it is listed as
-deferred under layer 8.
+The deprecated `ErrorView`'s root keeps its `min-h-dvh` (full viewport
+height) class, so inside the frame the page is taller than the viewport and
+scrolls past the footer. `StatusView` has no such root; use it instead.
 
 **Known gaps.** The `Brandmark` links to `/` on the current host and does not
 follow `origin`, so on a sign-in or admin host the logo goes to that host's
@@ -2247,16 +2701,26 @@ Designer, not a local fork of the frame or a view.
 
 **Chrome props inside a frame.** Never pass a legacy chrome prop (`brand`,
 `header`, `footer`, `mainId`, ...) to a view that sits inside `SiteFrame`: the
-view then renders its own `<main>` and banner, nested inside the frame's. At
-runtime, `brand={undefined}` counts as not passed and selects the chrome-free
-content, while `brand={null}` counts as passed and selects the legacy page. The
-`AuthView` web template always passes `brand`, so it renders the legacy page
-only and is not for use inside a frame.
+view then renders its own `<main>` and banner, nested inside the frame's. The
+chrome-free form is the one with the prop left out:
+
+```tsx
+<SiteFrame shell={shell} resolveCopy={resolveCopy} resolveAsset={resolveAsset}>
+  <AuthView heading="Sign in" description="Use your work email." form={form} />
+</SiteFrame>
+```
+
+Setting a chrome prop to `null` is not the chrome-free form: `brand={null}`
+(or `header={null}`) counts as passed and selects the legacy page. Only an
+omitted prop, or one that is `undefined`, selects the chrome-free content.
+The `AuthView` web template always passes `brand`, so it renders the legacy
+page only and is not for use inside a frame.
 
 A chrome-free view's content root refuses a landmark `role` (`main`, `banner`,
 `contentinfo`, `navigation`) and the frame's main id, because the frame owns
-those. `GlobalErrorDocument` is the exception: its body is an `ErrorView` with
-no frame and no `<main>`, so that root may carry `role="main"`.
+those. `GlobalErrorDocument` renders `SiteFrame` and `StatusView` when given a
+`shell`, so the same rule holds there; only its deprecated `ErrorView` shape
+has no frame and no `<main>`, and that shape's root may carry `role="main"`.
 
 **Deprecated view chrome.** The chrome props on `AuthView`, `CaptureView`,
 `DocumentView` and `BoundaryView` (`brand`, `header`, `footer`, `mainId`, `nav`,
@@ -2419,17 +2883,100 @@ after the document, as the notes line.
 The title block (`PageLayoutHeader`) is a Publisher-internal component, so a
 sibling layout without the card shares its header and spacing.
 
+### Card-free layout
+
+`StatusView` renders the second standard layout: the same header as the page
+layout above (the title as the one `<h1>`, then the subtitle), followed by a
+primary call to action on the page background with no card around it, and an
+optional notes line for quiet secondary links. The action and notes elements
+are absent from the markup when their slot is empty. The column uses the
+`--ui-width-form-max` measure and centres its content in the frame's `<main>`.
+
+| Slot | `StatusView` prop |
+| --- | --- |
+| Header title | `status` (required): a code such as `404`, or a short title |
+| Header subtitle | `subtitle` (optional) |
+| Action | `action` (optional) |
+| Notes | `notes` (optional) |
+| Destinations | `routes` (optional): `{ label: string, items: readonly (ItemData & { href: string })[] }` |
+
+`routes` follows the existing content with a visible h2 and a region named
+by the caller's label. One destination renders as a standard `Item`; two
+to six render as one-column `Items` rows in authored order. An omitted
+collection or empty array adds no wrapper or heading. Nonempty collections
+require a nonblank label and a dense array of linked items. Designer's
+canonical item validation checks destinations, repeated links and supplied
+native controls; opaque component output is not inspected.
+
+For an error or not-found page, the intended shape is a code, one subtitle and
+one primary action. The props are optional so the same view also serves a page
+with no recovery control (a 403) and a placeholder for a route that is linked
+but not built yet.
+
+```tsx
+<SiteFrame shell={shell} resolveCopy={resolveCopy} resolveAsset={resolveAsset}>
+  <StatusView
+    status={404}
+    subtitle="This page does not exist."
+    action={<a href="/">Back to home</a>}
+    routes={{ label: "Useful destinations", items: [
+      { id: "help", heading: "Help", href: "/help" },
+      { id: "contact", heading: "Contact", href: "/contact" },
+    ] }}
+  />
+</SiteFrame>
+
+<SiteFrame shell={shell} resolveCopy={resolveCopy} resolveAsset={resolveAsset}>
+  <StatusView
+    status="Careers"
+    subtitle="This page is on its way."
+    action={<a href="/">Back to home</a>}
+  />
+</SiteFrame>
+```
+
+The frame owns the header, footer and main. The view renders its content
+and the optional named destination region, with every string supplied
+through props. Answer a status page with the
+matching HTTP status from the host's own route. Give a placeholder route the
+`construction` page kind of `buildSiteMetadata`, which marks it
+`noindex, nofollow`; that page kind is metadata only and does not depend on
+which view the route renders. `StatusView` replaces `ErrorView` and
+`BoundaryView`, which are deprecated and keep their earlier markup.
+
 ### Global error document — `GlobalErrorDocument`
 
 `GlobalErrorDocument`, exported from `@clossys/publisher/web` and its server
 entry, is the whole document for a framework's global-error boundary. That
 boundary replaces the root layout, so it renders its own `<html>`, `<head>` and
-`<body>` and gets none of the layout's stylesheet, theme script or copy. The
-component renders a `<title>` built by `formatPageTitle` (`<page> · <brand>`,
-and a part with surrounding whitespace throws `SiteMetadataError`), a
-`noindex, nofollow` robots meta, one icon link, and an `ErrorView` with every
-other prop. It is a component, not a template: it is not in the template
-registry, takes no router, and is not a client module.
+`<body>` and gets none of the layout's stylesheet, theme script, copy or
+frame. The document renders a `<title>` built by `formatPageTitle`
+(`<page> · <brand>`, and a part with surrounding whitespace throws
+`SiteMetadataError`), a `noindex, nofollow` robots meta and one icon link,
+then a body that is the same page every other route gets:
+[`SiteFrame`](#site-frame--siteframe) (skip link, banner, the page's one
+`<main>`, contentinfo) around a [`StatusView`](#card-free-layout) inside that
+`<main>`. The page has one `<h1>` (the status) and no card. It is a
+component, not a template: it is not in the template registry, takes no
+router, and is not a client module.
+
+Props (`GlobalErrorDocumentFramedProps`):
+
+| Prop | Required | What it does |
+| --- | --- | --- |
+| `lang` | yes | The `lang` of `<html>`. |
+| `documentTitle` | yes | `{ page, brand }`, joined by `formatPageTitle`. |
+| `icon` | yes | `{ href, type? }` for the one `<link rel="icon">`. |
+| `htmlClassName` | no | A class on `<html>`, rendered only when non-empty. |
+| `shell`, `resolveCopy`, `resolveAsset` | yes | The frame's inputs, exactly as `SiteFrame` takes them (`SiteFrameInput`). |
+| `status` | yes | The one `<h1>`, as on `StatusView`: a code such as `"500"`, or a short title. |
+| `subtitle` | no | One line of supporting copy. A diagnostic reference goes here as caller copy (`Error: <digest>.`); there is no digest prop. |
+| `action` | no | The one primary call to action, such as a retry button. |
+| `notes` | no | A quiet line for a secondary link. |
+| `routes` | no | Caller-labelled destinations, forwarded unchanged to `StatusView`. |
+
+`GlobalErrorDocumentHeadProps` names the first four, which both shapes share.
+The frame fails closed here as everywhere: a shell the frame refuses throws.
 
 No theme script runs in this document, so it is pinned to the light theme
 (`data-theme="light"` and `color-scheme: light`) and marked `data-brand-bound`.
@@ -2446,6 +2993,9 @@ layout. Pass that class as the optional `htmlClassName` prop; it is rendered as
 "use client";
 
 import { GlobalErrorDocument } from "@clossys/publisher/web";
+import type { SiteFrameInput } from "@clossys/publisher/web";
+
+declare const frame: SiteFrameInput; // the same shell and resolvers the root layout passes to SiteFrame
 
 export default function GlobalError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   return (
@@ -2453,9 +3003,11 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
       lang="en"
       documentTitle={{ page: "Something went wrong", brand: "Example Studio" }}
       icon={{ href: "/icon.svg", type: "image/svg+xml" }}
-      status={500}
-      title="Something went wrong"
-      description={error.digest ? `Something went wrong. Error: ${error.digest}.` : "Something went wrong."}
+      shell={frame.shell}
+      resolveCopy={frame.resolveCopy}
+      resolveAsset={frame.resolveAsset}
+      status="500"
+      subtitle={error.digest ? `Something went wrong. Error: ${error.digest}.` : "Something went wrong."}
       action={<button type="button" onClick={reset}>Try again</button>}
     />
   );
@@ -2463,9 +3015,128 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
 ```
 
 Next requires the global-error file to be a client module, so it starts with
-`"use client"`; the component itself is not one. The digest has no prop of
-its own: put it in `description` as caller copy (`Error: <digest>.`). A
-segment `error` boundary keeps the layout, so use `ErrorView` there instead.
+`"use client"`; the component itself is not one. Because that file is a
+client module, the shell and the two resolvers it passes are bundled for the
+browser: build them from modules with no server-only imports and nothing
+secret in them. A segment `error` boundary and `not-found` page keep their
+layout, and so its frame: they render `StatusView` alone, not this document.
+
+**Deprecated `ErrorView` shape** (`GlobalErrorDocumentErrorViewProps`, kept for
+one release). Without `shell`, the document takes the earlier props (`status`,
+`title`, `description`, `action` and the `div` attributes of `ErrorView`) and
+renders an `ErrorView` as the whole body, with no frame and no `<main>`. To
+move to the framed shape, add `shell`, `resolveCopy` and `resolveAsset`, and
+fold `title` and `description` into `subtitle`, keeping their sentences.
+Passing `shell` together with `title` or `description` throws, so a
+half-migrated call site cannot drop copy silently. `routes` belongs only
+to the framed shape; the deprecated shape refuses a supplied collection.
+`GlobalErrorDocumentProps` is the union of the two shapes.
+
+### From a mirrored or self-chromed copy to the published view
+
+A site that carries its own copy of a front-door page (a mirrored view file,
+a page with its own header, `<main>` and footer, or a published view given
+chrome props) moves to the published view in the same steps for every page.
+
+1. **Mount `SiteFrame` once, in a layout.** Put it in the root layout, or in
+   the segment layout of each surface (a route group per surface when the site
+   and its sign-in pages need different shells). Pass
+   `siteShellFor(config, kind)` from one `SiteFrameConfig` per brand. Do not
+   mount a second frame below a layout that already has one: one banner, one
+   `<main>`, one contentinfo per page.
+2. **Pages render the view only.** `page.tsx`, `error.tsx` and `not-found.tsx`
+   render inside their segment layout, so each renders the view with no frame
+   wrapper, no `<main>` and no header or footer of its own.
+3. **Only `global-error` owns a document.** It replaces the root layout, so it
+   renders [`GlobalErrorDocument`](#global-error-document--globalerrordocument),
+   which brings its own frame.
+4. **Drop every deprecated chrome prop.** Delete `brand`, `header`, `footer`,
+   `mainId`, `nav`, `headerAction`, `headerSecondaryAction` (`AuthView`,
+   `CaptureView`), `secondaryAction` (`BoundaryView`), `ground`,
+   `footerSecondary` and `surfaceLabel` (`AuthView`) from the call site.
+   Delete the prop: `null` still counts as passed and selects the legacy page.
+   Delete the local header, footer, skip link and main id with it.
+5. **Move what the chrome showed into the shell.** Each piece has a place in
+   `SiteFrameConfig`, and `siteShellFor` shows it on the surfaces it belongs to:
+
+| The page showed | It goes to |
+| --- | --- |
+| the brand mark or lockup | `brand` (an image asset id and copy references) |
+| the skip link and main id | `skipLink` (copy); the frame owns `SITE_MAIN_ID` |
+| a surface badge (`surfaceLabel`) | `environments`, with the page's own surface marked current by `siteShellFor`; or `surfaceLabel` on a hand-built shell |
+| the banner call to action (`headerAction`) | `site.actions` |
+| a secondary banner action | `site.secondaryAction` |
+| primary navigation (`nav`) | `site.nav` |
+| footer link columns | `site.columns` |
+| the legal row (`footerSecondary`) | `legal` (`entity`, `links`, optional `linksLabel`), on every surface |
+| `ground` | `ground` |
+| a second destination under the page's action | the view's `notes`, as a quiet link |
+
+6. **Swap the view.**
+
+| Mirrored or deprecated | Published view | How |
+| --- | --- | --- |
+| a sign-in, activation or reset page with its own shell, or `AuthView` with chrome props | `AuthView` | `heading`, `description`, `form`, `notes`, `isDisabled`; nothing else. |
+| `BoundaryView` or `ErrorView` with a title, a line and one action | `StatusView` | `status` stays; `title` and `description` become `subtitle`, keeping their sentences; `action` stays one control; a second destination moves to `notes`. |
+| a boundary state that needs a card (a signed-in 403 with the account and a switch-account control) | `AuthView` | the card content in `form`, the alternate step in `notes`. |
+| `GlobalErrorDocument` with the `ErrorView` props | `GlobalErrorDocument` with `shell` | add `shell`, `resolveCopy`, `resolveAsset`; `title` and `description` become `subtitle`. |
+| a mirrored sign-in form | `SignInForm` | `identify`, `verify`, optional `verifyCode` and `resendCode`, `onSignedIn`, `nouns`. Keep a consumer form only when its props or behaviour cannot be matched, and record why. |
+
+7. **Import from the right entry.** `@clossys/publisher/web` resolves a
+   server-safe target under React's `react-server` condition;
+   `@clossys/publisher/web/client` is the browser entry for the forms and
+   the front-door views, with no mixed renderer and no Writer registry.
+
+| Next file | Module | Imports |
+| --- | --- | --- |
+| `layout.tsx` | server | `SiteFrame`, `siteShellFor` from `@clossys/publisher/web` |
+| `page.tsx`, `not-found.tsx` | server | the view (`AuthView`, `StatusView`, `CaptureView`, `DocumentView`) from `@clossys/publisher/web` |
+| a form file (`"use client"`) | client | `SignInForm`, `ActivateForm`, `ResetForm` from `@clossys/publisher/web/client` (package copy) or `@clossys/publisher/web` (your copy registry), with the handlers; the server page renders this file in `AuthView`'s `form` |
+| `error.tsx` (`"use client"`, as Next requires) | client | `StatusView` from `@clossys/publisher/web/client` |
+| `global-error.tsx` (`"use client"`, as Next requires) | client | `GlobalErrorDocument` from `@clossys/publisher/web`; the client entry does not export it or `SiteFrame` yet |
+
+   Under `react-server`, the `/web` form names are stubs that throw a
+   `RenderError` when called, so a server page never renders a form directly;
+   it renders the client form file. A server layout passes `resolveCopy` and
+   `resolveAsset` to `SiteFrame` on the server; only strings reach the skip
+   link's client island.
+
+8. **Test the page as it ships.** Render the page inside its frame with
+   `renderToStaticMarkup` and assert one `<h1>`, one `<main>`, the banner and
+   contentinfo once (from the frame), one primary action, and, for
+   `StatusView`, no card inside `<main>`. Run
+   [`checkFrontDoor` or `expectFrontDoorConformance`](#front-door-conformance)
+   over the same renders: the `form-measure` rule finds the measure on a
+   framed view's content root inside the frame's `<main>`.
+
+```tsx
+// @vitest-environment jsdom
+import { renderToStaticMarkup } from "react-dom/server";
+import { SiteFrame, StatusView } from "@clossys/publisher/web";
+import type { SiteFrameInput } from "@clossys/publisher/web";
+import { expectFrontDoorConformance } from "@clossys/publisher/testing";
+import { expect, it } from "vitest";
+
+declare const frame: SiteFrameInput; // the shell and resolvers the layout passes
+
+const notFound = () => (
+  <SiteFrame {...frame}>
+    <StatusView status="404" subtitle="This page does not exist." action={<a href="/" className="bg-accent">Back to home</a>} />
+  </SiteFrame>
+);
+
+it("renders one frame around the not-found view", () => {
+  const doc = new DOMParser().parseFromString(renderToStaticMarkup(notFound()), "text/html");
+  expect(doc.querySelectorAll("h1")).toHaveLength(1);
+  expect(doc.querySelectorAll("main")).toHaveLength(1);
+  expect(doc.querySelectorAll("header")).toHaveLength(1);
+  expect(doc.querySelectorAll("footer")).toHaveLength(1);
+  expect(doc.querySelector("main .rounded-control")).toBeNull();
+  expectFrontDoorConformance({
+    surfaces: [{ surface: "not-found", title: { page: "Page not found", brand: "Example Studio" }, render: notFound }],
+  });
+});
+```
 
 ### `SignInForm`
 
@@ -2482,17 +3153,16 @@ page's `<h1>` stays `AuthView`'s.
 import { AuthView, SignInForm } from "@clossys/publisher/web";
 import type { SignInResult } from "@clossys/publisher/web";
 
-declare const brand: React.ReactNode;
 declare function lookUp(identifier: string): Promise<SignInResult>; // your handler
 declare function check(secret: string): Promise<SignInResult>; // your handler
 declare function checkCode(code: string): Promise<SignInResult>; // optional, for the code step
 declare function sendNewCode(): Promise<SignInResult>; // optional, for the code step
 declare function goToApp(): void;
 
+// Rendered inside the SiteFrame its layout mounts, so it passes no chrome prop.
 export function SignInPage() {
   return (
     <AuthView
-      brand={brand}
       heading="Sign in"
       description="Continue to Acme Console."
       form={
@@ -2651,7 +3321,7 @@ Props:
   `rules`, `pitch` and `boilerplate` are `{ name, value }[]`; `faq` is
   `{ question, answer }[]`.
 - `headerAction`, `secondaryAction`, `nav` (optional): the header slots, as on
-  `LandingView`. `headerAction` is a banner call to action (Designer
+  `HeroView`. `headerAction` is a banner call to action (Designer
   `SiteHeader`'s `actions`), shown before the surface badge;
   `secondaryAction` sits just before it and `nav` sits beside the brand. Each
   is absent from the markup when omitted.
@@ -3565,22 +4235,35 @@ publisher-preview <brand.css> <output-directory> [roster.json]
 The Launch pack's v0 preview: every off-the-shelf boilerplate view a
 consumer relies on until they build custom views, rendered against one
 real `brand.css` after Designer's brand-file coverage check passes, into
-one flat output directory whose `index.html` links every file written.
+root pages and a `catalog/` directory. The root `index.html` links every file written.
 Nothing here makes a network call, and the same inputs always produce
 byte-identical output. Exit codes are unchanged: `0` = output written,
 `1` = the brand file or roster failed its own check (nothing is written),
 `2` = bad arguments or an unexpected error.
 
-What it renders, all from fixture copy in `src/preview/fixture-copy-
-registry.ts` (never hardcoded in a renderer):
+What it renders, from approved fixture copy in `src/preview/fixture-copy-registry.ts`
+and the catalog copy registries in `src/preview/catalog/` (never hardcoded in a renderer):
 
 - **Web views** (`gallery.html`) — every shipped view: `MarketingView`,
   `SectionedView`, `AuthView`, `ErrorView`, `CaptureView`, `DocumentView`,
-  `CollectionView`.
+  `CollectionView`, and `LandingView (hero-compact)`.
+- **Content catalog** (`content-catalog.html`): choose Introduce, Show,
+  Explain, Index, Sequence or Compare, then use a recipe and configuration
+  reference. Overview shows a six-band page. Frame covers shared layout,
+  size and grounds; Parts links to complete Show examples. The nine pages
+  under `catalog/` render 31 retained examples once, with three distinct
+  configuration variants, text axis tables and concise count and slot rules.
+  The Index function lives at `catalog/index-function.html`. Published kinds
+  link to their existing examples in the web-view gallery.
+
+  Approved copy describes concrete workspace scenarios. Three Scene templates
+  remain distinct from seven source-document formats. The historical multi-band
+  fixture remains independently tested, including its deliberate four-step
+  count warning and original variety findings.
 - **Site** (`site-*.html`) — fixtures for `templates/site`'s routes,
   rendered through `MarketingView` for home/about/contact/privacy/terms and
   a direct `ErrorView` call for `not-found`. The template's own routes now
-  render `LandingView` for home, `ContactView` for contact and `LegalView`
+  render `HeroView` for home, `ContactView` for contact and `LegalView`
   for terms and privacy (`templates/site/web-route-manifest.json`), and the
   gallery keeps rendering the earlier fixtures until it is updated.
   `templates/site/app/robots.ts`/`templates/site/app/sitemap.ts` are Next.js
@@ -3606,6 +4289,21 @@ registry.ts` (never hardcoded in a renderer):
 `index.html` links every file above by exact filename — a broken link
 there means a file this command claims to write is missing, not a
 cosmetic gap.
+
+Every page links three copied stylesheets, in this order: Designer's
+`tokens.css` (as `designer-tokens.css`), this package's
+`styles/preview.css` (as `publisher-preview.css`), then the brand file (as
+`brand.css`). Nested catalog pages use `../` for these same three files.
+`styles/preview.css` stands in for a consumer's own Tailwind
+build: Tailwind's preflight in the `foundry-ui-base` layer, then one compile
+of Designer's component classes and every class Publisher's views emit
+(band padding, grids, gaps), which Designer's `compiled.css` alone does not
+cover. It is generated (`npm run generate:preview-css`), and
+`src/preview/preview-css.test.ts` (a source-checkout test that does not ship
+with this package) fails when it is stale or when a class the preview pages
+render has no rule in it. It is for the preview only; an
+app styles Publisher's views with its own build (see
+`templates/site/app/globals.css`).
 
 ## Browser consent
 
@@ -3732,7 +4430,9 @@ Three further usage requirements, not numbered in the specification:
   `createOutputManifest`,
   `collectCopyProvenance`, `createResolvedOutputManifest`,
   `resolveSurfaceDocument`, `validateSectionedViewDocument`,
-  `resolveSectionedViewDocument`,
+  `resolveSectionedViewDocument`, `checkSectionVariety`, `CONTENT_ICON_NAMES`,
+  `CONTENT_ITEM_EYEBROW_MAX_CHARACTERS`, `desugarRecipe`,
+  `SECTIONED_VIEW_CONTENT_CONTRACT`, `SECTIONED_VIEW_ITEM_RECIPES`,
   `resolveDocument`, `resolveCopy`, `resolveAssets`, `frameToInches`,
   `frameToPercent`, `getSlotSpec`, `listSlotKeys`, `requiredSlotKeys`, and
   the `Channel`, `ChannelMeta`, `ComposeDocument`, `ComposeFinding`,
@@ -3754,8 +4454,47 @@ Three further usage requirements, not numbered in the specification:
   `SectionedViewOrderedStep`, `SectionedViewStatusListSection`,
   `SectionedViewStatusGroup`, `SectionedViewStatusItem`, `SectionedViewStatus`,
   `SectionedViewStatusDisposition`,
-  `ResolvedSectionedViewAction`, `ResolvedSectionedViewDocument`,
-  `ResolvedSectionedViewSection`, and
+  `ResolvedSectionedViewAction`, `ResolvedSectionedViewContentAction`,
+  `ResolvedSectionedViewDocument`,
+  `ResolvedSectionedViewSection`, `SectionedViewPricingSection`,
+  `SectionedViewPricingItem`, `SectionedViewTestimonialSection`,
+  `SectionedViewTestimonialItem`, `SectionedViewStatSection`,
+  `SectionedViewStatSectionItem`, `SectionedViewSectionGroundRhythm`, the
+  content-section types `ContentIconName`, `FrameSize`, `FrameLayout`,
+  `ItemsRecipe`, `SectionedViewContentSection`, `SectionedViewContentLayout`,
+  `SectionedViewContentAction`,
+  `SectionedViewContentActionEmphasis`, `SectionedViewContentFootnote`,
+  `SectionedViewContentFootnoteLink`, `SectionedViewItem`,
+  `SectionedViewItemSpan`, `SectionedViewItemGroup`, `SectionedViewItemLane`,
+  `SectionedViewBadge`, `SectionedViewItemsBlock`,
+  `CanonicalSectionedViewItemsBlock`, `SectionedViewItemsArrangement`,
+  `SectionedViewItemsOrder`, `SectionedViewItemsReveal`,
+  `SectionedViewItemsTreatment`, `SectionedViewItemsScale`,
+  `SectionedViewMatrixBlock`, `SectionedViewMatrixSide`,
+  `SectionedViewContentBlock`, `SectionedViewContentBlockType`,
+  `SectionedViewMedia`, `ResolvedSectionedViewMedia`,
+  `SectionedViewRecordMedia`, `SectionedViewLedgerGroup`, `SectionedViewLedgerRow`,
+  `SectionedViewSceneMedia`, `SectionedViewSceneInput`,
+  `SectionedViewSceneConvergeInput`, `SectionedViewSceneEvidenceTrailInput`,
+  `SectionedViewSceneApprovalChainInput`, `SectionedViewSceneDocument`,
+  `SectionedViewSceneRow`, `SectionedViewSceneStatus`, `SectionedViewScenePerson`,
+  `SectionedViewSceneFormat`, `SectionedViewSpecimenKey`,
+  `SectionedViewSpecimenKeyItem`,
+  `ResolvedSectionedViewContentSection`, `ResolvedSectionedViewContentBlock`,
+  the specimen types `SectionedViewSpecimenMedia`,
+  `SectionedViewSpecimenPanel`,
+  `SectionedViewSpecimenFooter`, `SectionedViewSpecimenAssignee`,
+  `SectionedViewSpecimenPart`, `SectionedViewSpecimenPartType`,
+  `SectionedViewSpecimenFieldsPart`, `SectionedViewSpecimenField`,
+  `SectionedViewSpecimenStatusRowsPart`, `SectionedViewSpecimenStatusRow`,
+  `SectionedViewSpecimenMeterPart`, `SectionedViewSpecimenTablePart`,
+  `SectionedViewSpecimenTableColumn`, `SectionedViewSpecimenTableRow`,
+  `SectionedViewSpecimenTableCell`, `SectionedViewSpecimenSchedulePart`,
+  `SectionedViewSpecimenScheduleItem`, `SectionedViewSpecimenSharesPart`,
+  `SectionedViewSpecimenShare`, `SectionedViewSpecimenFilesPart`,
+  `SectionedViewSpecimenFile`, `SectionedViewSpecimenStatus`,
+  `SectionedViewSpecimenTone`, `ResolvedSectionedViewSpecimenMedia`,
+  `ResolvedSectionedViewSpecimenPanel`, `ResolvedSectionedViewSpecimenPart`, and
   `SectionedViewResolutionReason` types. `SurfaceResolutionError` and
   `SectionedViewResolutionError` are thrown when their canonical resolution
   paths fail closed.
@@ -4245,7 +4984,6 @@ that throws a `RenderError` when called. The page's `<h1>` stays `AuthView`'s.
 import { ActivateForm, AuthView, ResetForm } from "@clossys/publisher/web";
 import type { ActivateDetails, ActivateResult, ResetDetails, ResetResult } from "@clossys/publisher/web";
 
-declare const brand: React.ReactNode;
 declare function setPassword(details: ActivateDetails): Promise<ActivateResult>; // your handler
 declare function sendCode(identifier: string): Promise<ResetResult>; // your handler
 declare function changePassword(details: ResetDetails): Promise<ResetResult>; // your handler
@@ -4254,10 +4992,10 @@ declare function goToSignIn(): void;
 declare function goToApp(): void;
 declare const identityServiceIsConfigured: boolean;
 
+// Both pages render inside the SiteFrame their layout mounts, so they pass no chrome prop.
 export function ActivatePage() {
   return (
     <AuthView
-      brand={brand}
       heading="Set up your account"
       description="You’re invited to Acme Console. Choose a password to finish."
       isDisabled={!identityServiceIsConfigured}
@@ -4269,7 +5007,6 @@ export function ActivatePage() {
 export function ResetPage() {
   return (
     <AuthView
-      brand={brand}
       heading="Reset your password"
       description="Enter your email and we’ll send you a code."
       form={<ResetForm request={sendCode} reset={changePassword} resendCode={sendCodeAgain} onReset={goToSignIn} nouns={{ surface: "Acme Console" }} />}
@@ -4370,7 +5107,7 @@ builds no view and no copy: each `render` returns the consumer's own element.
 | Rule | Asks |
 | --- | --- |
 | `one-h1` | Exactly one `<h1>`. |
-| `form-measure` | The `<main>` of a sign-in, activation or reset surface carries `max-width:var(--ui-width-form-max, none)`. |
+| `form-measure` | The `<main>` of a sign-in, activation or reset surface, or the view's content root directly inside it, carries `max-width:var(--ui-width-form-max, none)`. |
 | `one-primary-action` | Exactly one button, link or `[role=button]` with class token `bg-accent` (`PRIMARY_ACTION_CLASS`), inside `<main>` or, when there is none, the body. |
 | `page-title` | `formatPageTitle(title)` does not throw and, when `title.actual` is given, equals it. `title` is required on every surface except `global-error`. |
 | `global-error-head` | A `global-error` document has exactly one `<title>` equal to `formatPageTitle(title)` (or matching `<page> · <brand>` when no `title` is given), a robots meta containing `noindex`, and exactly one `link[rel=icon]`. |
@@ -4383,11 +5120,19 @@ nothing else. It needs a `DOMParser`, which the caller's DOM test environment
 (for example jsdom) provides, and throws a plain `Error` saying so when there
 is none.
 
+Render each surface as it ships: the view inside the `SiteFrame` its layout
+mounts, with no chrome prop. The `form-measure` rule accepts the measure on
+the `<main>` (the legacy page) or on the view's content root directly inside
+it (a view inside `SiteFrame`).
+
 ```tsx
 // @vitest-environment jsdom
-import { AuthView, BoundaryView } from "@clossys/publisher/web";
+import { AuthView, SiteFrame, StatusView } from "@clossys/publisher/web";
+import type { SiteFrameInput } from "@clossys/publisher/web";
 import { PRIMARY_ACTION_CLASS, expectFrontDoorConformance } from "@clossys/publisher/testing";
 import { expect, it } from "vitest";
+
+declare const frame: SiteFrameInput; // the shell and resolvers the layout passes
 
 it("keeps the front door conformant", () => {
   expect(() =>
@@ -4397,30 +5142,121 @@ it("keeps the front door conformant", () => {
           surface: "sign-in",
           title: { page: "Sign in", brand: "Example Studio" },
           render: () => (
-            <AuthView
-              brand="Example Studio"
-              heading="Sign in"
-              description="Welcome back."
-              form={<button type="submit" className={PRIMARY_ACTION_CLASS}>Sign in</button>}
-            />
+            <SiteFrame {...frame}>
+              <AuthView
+                heading="Sign in"
+                description="Welcome back."
+                form={<button type="submit" className={PRIMARY_ACTION_CLASS}>Sign in</button>}
+              />
+            </SiteFrame>
           ),
         },
         {
           surface: "not-found",
           title: { page: "Page not found", brand: "Example Studio" },
           render: () => (
-            <BoundaryView
-              brand="Example Studio"
-              status="404"
-              title="Page not found"
-              action={<a href="/" className={PRIMARY_ACTION_CLASS}>Go home</a>}
-            />
+            <SiteFrame {...frame}>
+              <StatusView status="404" subtitle="This page does not exist." action={<a href="/" className={PRIMARY_ACTION_CLASS}>Go home</a>} />
+            </SiteFrame>
           ),
         },
       ],
     }),
   ).not.toThrow();
 });
+```
+
+### `ContactForm` — framed contact example
+
+`ContactForm` fills `CaptureView`'s `form` slot and renders no page landmarks,
+card or `h1`. `SiteFrame` owns the page's single `main`; `CaptureView` owns
+its heading and card. Pass `formLabel` to name the card with caller copy.
+
+The form is exported from `@clossys/publisher/web`,
+`@clossys/publisher/web/client` and the web views entry, alongside
+`SignInForm` and `ActivateForm`. Import it from a host client boundary;
+the `react-server` entry exports a throwing `wrong-channel` stub, as the
+other client forms do. Both page entries compose equivalent frame and
+capture markup around that client form.
+
+`ContactFormCopy`, `ContactFormTopic`, `ContactFormValues`,
+`ContactFormProps` and `ContactFormDevPreview` are exported types.
+`ContactFormCopy` has ContactView's form copy keys, excluding `heading` and
+`description`: every label, placeholder, validation message, result message
+and button word must resolve from a Writer `CopyRef`. No wording is shipped.
+Topics have unique kebab-case ids and CopyRef labels. Unknown `initialTopic`
+ids are ignored. A literal `honeypotField` gives `ContactFormValues` that key
+in addition to `topic`, `name`, `email`, `phone` and `message`; it defaults to
+`website` and must match the handler configuration.
+
+`onSubmit` answers the existing `ContactResult` contract. Required-field or
+email validation refuses submission, renders one linked error summary and
+focuses the first invalid field. The form owns this summary; omit
+CaptureView's `errorSummary` and `submitted` slots when using ContactForm.
+`accepted` replaces the form with a status confirmation and focuses its `h2`.
+`invalid`, `rate-limited`, `unavailable`, rejected submissions and unknown
+answers retain entered values and focus submit, with one failure alert.
+The native form renders `method="post"` and has no `action`; callers cannot
+set either attribute. Before hydration, or with JavaScript disabled, a native
+submit posts the named fields in the request body to the current URL and
+navigates to the host's response. The host must handle that POST if it needs a
+no-JavaScript submission path; ContactForm does not provide a fallback route.
+After hydration, the existing client submit handler prevents native navigation
+and calls `onSubmit` as before.
+
+The submit button is pending while sending. The honeypot is visually hidden,
+aria-hidden, out of the tab order and autocomplete-off, and its value reaches
+the handler. `devPreview` pins one of the existing closed review states and
+makes submission inert; production callers omit it.
+
+`checkFrontDoor` currently has no contact page type. The contact test passes
+through `surface: "boundary"` as a stand-in, applying the generic one-h1,
+primary-action and page-title checks. That pass does not apply the auth
+form-measure rule or establish contact-specific conformance.
+
+Keep the page and frame on the server. Only `contact-form.client.tsx` is a
+client boundary; bind the approved-copy resolver and submit transport there:
+
+```tsx
+"use client";
+
+import { ContactForm } from "@clossys/publisher/web/client";
+import type { ContactFormProps } from "@clossys/publisher/web/client";
+
+declare const form: ContactFormProps; // the host's resolver, approved refs and submit transport
+
+export function ContactFormIsland() {
+  return <ContactForm {...form} />;
+}
+```
+
+In the server page, import `ContactFormIsland` from that local file (represented
+by its declaration below) and pass it to `CaptureView`:
+
+```tsx
+import { CaptureView, SiteFrame } from "@clossys/publisher/web";
+import type { SiteFrameInput } from "@clossys/publisher/web";
+
+type CopyRef = Parameters<SiteFrameInput["resolveCopy"]>[0];
+declare const frame: SiteFrameInput;
+declare const pageCopy: { heading: CopyRef; description: CopyRef; formLabel: CopyRef };
+declare function ContactFormIsland(): React.ReactElement;
+
+export function FramedContactPage() {
+  const heading = frame.resolveCopy(pageCopy.heading)!.text;
+  const description = frame.resolveCopy(pageCopy.description)!.text;
+  const formLabel = frame.resolveCopy(pageCopy.formLabel)!.text;
+  return (
+    <SiteFrame {...frame}>
+      <CaptureView
+        heading={heading}
+        description={description}
+        formLabel={formLabel}
+        form={<ContactFormIsland />}
+      />
+    </SiteFrame>
+  );
+}
 ```
 
 ## Licence
@@ -4434,7 +5270,8 @@ Release notes for every version are in the [changelog](https://github.com/clossy
 ## Browser front-door client
 
 `@clossys/publisher/web/client` exports `SignInForm`, `ActivateForm`,
-`ResetForm`, `AuthView`, `BoundaryView` and their props/result types.
+`ResetForm`, `AuthView`, `StatusView`, the deprecated `BoundaryView` and their
+props/result types. It does not export `SiteFrame` or `GlobalErrorDocument`.
 The forms bind immutable Writer package defaults once when the module loads;
 consumer registry mutations cannot change or authorize those defaults.
 Use the existing `@clossys/publisher/web` forms for strict mutable registry
@@ -4451,9 +5288,239 @@ const form = <SignInForm
   verify={async () => ({ status: "ok" })}
   onSignedIn={() => {}}
 />;
-const page = <AuthView brand="Example" heading="Sign in" description="Continue" form={form} />;
+const page = <AuthView heading="Sign in" description="Continue" form={form} />; // inside the layout's SiteFrame
 ```
 
 This entry requires the same declared React and Designer peers as the existing
 web forms. It does not import the mixed web renderer or any Writer registry
 approval implementation. It implements no authentication provider.
+
+### Advisory page flow
+
+`sectionWeight(section)` derives `{ weight, shape }` from authored structure.
+The hero has weight and shape `hero`; body weights are A (set piece), B
+(supporting) and C (breather). Ground never changes weight. The effective
+Items axes and Matrix sides determine shape equally for raw blocks, recipes
+and resolved documents. Record media is B/table; Scene media
+is A/specimen. A stacked specimen is A/specimen; split specimens fall back
+to B/specimen after structural set pieces and the C/reference nonsequence
+disclosure carveout, before ordinary text block shapes. Numbered or connected Items use
+sequence shape, with visuals promoting them to A. Nonconnected stacked
+visual Items use A/specimen; visual rows, columns and bento use A/grid.
+Statement scale takes A/statement before other valid Items axes.
+
+`checkPageFlow(document, options?)` returns `SectionedViewFlowWarning[]` with
+`rule`, `severity: "warning"`, `path` and `message`. `CheckPageFlowOptions` takes
+an optional `callToAction: { href }` for the close. Consumers call this advisory
+lint in document tests; rendering never runs it. Pages without a first hero
+produce no flow findings. Only the effective primary hero action participates
+in primary target matching. Header target matching remains caller-owned.
+
+`SectionShape` and `SectionWeight` describe the derived result. The lint checks
+these `sectioned-view-flow-` rules:
+
+| Suffix | Finding |
+| --- | --- |
+| `opening-set-piece` | No set piece in the first two body bands of a page with at least three body bands |
+| `opening-crowded` | More than one set piece in the first three body bands |
+| `opening-pause` | An early breather outside a frame followed by a set piece |
+| `set-piece-run` | Two adjacent set pieces |
+| `support-run` | Three adjacent supporting bands |
+| `pause-run` | Two adjacent breathers |
+| `set-piece-shape` | Consecutive set pieces repeat a shape |
+| `set-piece-count` | Set-piece count outside the page-length range |
+| `pause-count` | Breather count outside the page-length range |
+| `closing-band` | A non-proof set piece immediately before the close |
+| `inverse-weight` | Inverse outside a middle statement set piece |
+| `primary-placement` | Primary action outside an A or in the last two body bands |
+| `primary-target` | Effective hero primary, body primary and supplied close targets differ |
+| `action-weight` | Action emphasis or count exceeds the body weight ceiling |
+| `link-groups` | More than two linked body blocks |
+| `link-repeat` | Repeated destination across body item, action or footnote links |
+
+Primary targets and body link destinations ignore trailing slashes and
+nonleading fragments, as linked-item validation does. Leading fragments remain
+distinct destinations. Hero and close links do not count as body links.
+Omitted body-action emphasis follows `resolveActionEmphasis`: secondary then
+quiet on A, tertiary on B and frame C, and quiet on other C bands. Explicit
+emphasis renders as authored; `action-weight` warns when it exceeds the weight
+ceiling. Linked cards are quiet and remain independent of section-action counts.
+`checkSectionVariety` compares effective visual families and treatments, so
+raw blocks and equivalent recipes produce the same warnings. Group membership
+keeps href diagnostics at the original flat `block.items.N.href` paths. The
+maximum set pieces and breathers is `ceil(bodyBandCount / 3)`.
+
+
+Canonical connected Items blocks may declare exactly two lane ids and
+CopyRef labels. Every item names a declared lane, the first item uses the
+first lane, and both lanes are used. Lanes require a stacked frame with a
+connected block of three to five items. Its arrangement is columns or
+stacked. Labels resolve to at most 20 characters. Four steps with lanes
+produce no count warning; four without lanes retain the advisory
+`steps-count` warning and still resolve.
+
+Connected `caption` requires a visual. Caption and `endLabel` copy is bounded
+to 120 and 40 characters.
+An explicit `end: "continues"` without endLabel resolves consumer
+`steps.continues` through the existing CopyResolver and retains provenance;
+missing copy refuses resolution. `checkSectionVariety` warns about the absent
+visible endLabel. Its explicit catalog context checks sample captions on connected Items
+blocks with visuals. Web views and catalog fixtures use the canonical
+collection and media shapes.
+
+## Runnable canonical example
+
+This self-contained example validates and resolves canonical data through the
+public core entry point. It demonstrates equivalent raw axes and a recipe,
+Matrix lead descriptions with equal-length points, both frame sizes, both split
+directions, a specimen badge and prior measurement, record rows and owner copy,
+and a Scene whose visible strings come from the registry. Structural ids and
+numeric measurements stay data.
+
+```ts
+import {
+  desugarRecipe,
+  resolveSectionedViewDocument,
+  validateSectionedViewDocument,
+  type SectionedViewDocument,
+  type SectionedViewItemsBlock,
+  type SectionedViewSceneDocument,
+} from "@clossys/publisher/core";
+import {
+  createCopyResolver,
+  type CopyRef,
+  type CopyRegistry,
+  type CopyRegistryEntry,
+} from "@clossys/writer";
+
+// Replace this local registry with your own reviewed copy registry.
+const copy = {
+  heading: "Example", detail: "Sample content.", label: "Ready",
+  source: "Source document", result: "Result", value: "40 / 100",
+  previous: "30 / 100", initials: "AB",
+  figure: "Sample panel showing labeled details and status.",
+  scene: "Sample documents connect to a shared result with labeled rows and clear relationships.",
+};
+const ref = (key: keyof typeof copy): CopyRef => ({ id: `example.${key}` });
+const registry = {
+  id: "canonical-example", locale: "en", revision: "1",
+  source: { kind: "consumer", reference: "example-v1" },
+  entries: Object.entries(copy).map(([key, text]) => ({
+    id: `example.${key}`, text, context: "Canonical README example", status: "approved",
+  } satisfies CopyRegistryEntry)),
+} satisfies CopyRegistry;
+const resolveCopy = createCopyResolver(registry);
+
+const items = ["one", "two", "three"].map((id) => ({
+  id, heading: ref("heading"), description: ref("detail"),
+}));
+const raw = {
+  type: "items", arrangement: "columns", columns: 3,
+  order: "none", reveal: "all", treatment: "plain", scale: "item", items,
+} satisfies SectionedViewItemsBlock;
+const recipe = { type: "items", recipe: "features", items } satisfies SectionedViewItemsBlock;
+export const rawAxes = desugarRecipe(raw);
+const { recipe: recipeName, ...canonicalRecipeAxes } = desugarRecipe(recipe);
+export const recipeAxes = canonicalRecipeAxes;
+
+export const document = {
+  id: "canonical-guide",
+  sections: [
+    { id: "raw", kind: "content-section", heading: ref("heading"),
+      size: "standard", layout: "stacked", block: raw },
+    { id: "recipe", kind: "content-section", heading: ref("heading"),
+      size: "standard", layout: "stacked", block: recipe },
+    { id: "matrix", kind: "content-section", heading: ref("heading"),
+      size: "display", layout: "stacked", block: {
+        type: "matrix", recipe: "comparison", featured: "after",
+        sides: ["before", "after"].map((id) => ({
+          id, label: ref("label"), heading: ref("heading"), description: ref("detail"),
+          points: [ref("source"), ref("result")],
+        })),
+      } },
+    { id: "specimen", kind: "content-section", heading: ref("heading"),
+      size: "standard", layout: "split-start", media: {
+        type: "specimen", label: ref("figure"), panel: {
+          id: "sample", title: ref("heading"), badge: { label: ref("label"), tone: "info" },
+          parts: [{ id: "measurement", type: "meter", label: ref("label"),
+            value: 40, scaleMax: 100, tone: "success", valueText: ref("value"),
+            previous: 30, previousText: ref("previous") }],
+        },
+      } },
+    { id: "record", kind: "content-section", heading: ref("heading"),
+      size: "standard", layout: "split-end", media: {
+        type: "record", id: "sample-record", head: { title: ref("heading") }, columns: 1,
+        groups: [
+          { id: "details", label: ref("label"), rows: [{ id: "row", label: ref("label"), detail: ref("detail") }] },
+          { id: "owner", label: ref("label"), owner: { initials: ref("initials"), name: ref("heading") } },
+        ], caption: ref("detail"),
+      } },
+    { id: "scene", kind: "content-section", heading: ref("heading"),
+      size: "display", layout: "stacked", media: {
+        type: "scene", label: ref("scene"), input: {
+          template: "converge", seed: "example-scene",
+          sources: { heading: ref("heading"), items: ["a", "b", "c"].map((id) => ({
+            id, format: "pdf", title: ref("source"),
+          } satisfies SectionedViewSceneDocument)) },
+          target: { heading: ref("heading"), title: ref("result"), rows: ["one", "two"].map((id) => ({
+            id, label: ref("label"), value: ref("value"),
+          })) },
+          relations: [{ from: "a", to: "one" }, { from: "b", to: "one" }, { from: "c", to: "two" }],
+        },
+      } },
+  ],
+} satisfies SectionedViewDocument;
+
+export const findings = validateSectionedViewDocument(document);
+if (findings.some((finding) => finding.severity === "error")) {
+  throw new Error(findings.map((finding) => finding.rule).join(", "));
+}
+export const resolved = resolveSectionedViewDocument(document, resolveCopy);
+// resolved.resolutions retains the registry revision and source for every CopyRef.
+```
+
+## Index configuration: status list
+
+A list of items with current status labels belongs to Index: the reader
+looks up readiness rather than following ordered steps. Use a
+`content-section` with the existing `topics` recipe and a `badge` on each
+item. The example uses Index's three existing axes: shape `rows-1`, reveal
+`all`, groups `off`; each axis has at most three values. Status labels are
+copy in the badge slot, and tones select existing semantic tokens.
+
+```tsx
+import { resolveSectionedViewDocument, type SectionedViewDocument } from "@clossys/publisher/core";
+import { SectionedView } from "@clossys/publisher/web";
+
+declare const resolveCopy: Parameters<typeof resolveSectionedViewDocument>[1]; // resolves approved registry entries
+
+const document: SectionedViewDocument = {
+  id: "feature-status-page",
+  sections: [{
+    id: "feature-status",
+    kind: "content-section",
+    heading: { id: "feature-status.heading" },
+    block: {
+      type: "items",
+      recipe: "topics",
+      columns: 1,
+      scale: "item",
+      items: [
+        { id: "search", heading: { id: "search.heading" }, badge: { label: { id: "status.live" }, tone: "success" } },
+        { id: "imports", heading: { id: "imports.heading" }, badge: { label: { id: "status.in-progress" }, tone: "info" } },
+        { id: "exports", heading: { id: "exports.heading" }, badge: { label: { id: "status.planned" }, tone: "neutral" } },
+      ],
+    },
+  }],
+};
+
+const page = <SectionedView document={resolveSectionedViewDocument(document, resolveCopy)} />;
+```
+
+Author the status copy as, for example, Live, In progress and Planned.
+Descriptions can explain individual items; optional `groups` reference
+their IDs. The existing rows limits apply: 2–8 items in one column, even
+counts in two columns, and 2–4 groups of 2–4 items within the total budget.
+Badge labels resolve through the document's ordinary copy provenance;
+an unresolved label refuses the document. The preview renders this
+configuration on `catalog/index-function.html` through `SectionedView`.

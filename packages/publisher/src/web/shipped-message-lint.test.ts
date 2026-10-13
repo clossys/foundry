@@ -6399,6 +6399,11 @@ function checkRenderedLocalReferences(
   }
 
   function visit(node: ts.Node): void {
+    // Exclude CSS children while still checking user-facing style-element attributes.
+    if (ts.isJsxElement(node) && node.openingElement.tagName.getText(source) === "style") {
+      visit(node.openingElement);
+      return;
+    }
     if (ts.isCallExpression(node) && isCreateElementCall(node)) {
       for (let index = 1; index < node.arguments.length; index++) {
         const argument = node.arguments[index];
@@ -6452,7 +6457,7 @@ function checkRenderedLocalReferences(
         }
       }
       if (node.initializer !== undefined && ts.isJsxExpression(node.initializer)) {
-        if (NON_COPY_JSX_ATTRS.has(attrName) || attrName === "id") return;
+        if (NON_COPY_JSX_ATTRS.has(attrName) || attrName === "id" || isStylingJsxAttribute(attrName)) return;
         const expression = node.initializer.expression;
         if (expression !== undefined) {
           const literalBranches = MESSAGE_JSX_ATTRS.has(attrName) || NAMING_ARIA.has(attrName) || attrName === "children";
@@ -6621,6 +6626,11 @@ export function findShippedMessageViolations(fileName: string, sourceText: strin
   }
 
   function visit(node: ts.Node): void {
+    // Exclude CSS children while still checking user-facing style-element attributes.
+    if (ts.isJsxElement(node) && node.openingElement.tagName.getText(source) === "style") {
+      visit(node.openingElement);
+      return;
+    }
     const entersFunctionLike =
       ts.isFunctionDeclaration(node) ||
       ts.isArrowFunction(node) ||
@@ -6869,6 +6879,29 @@ export function scanShippedMessageTree(root: string): ShippedMessageViolation[] 
 const SRC_ROOT = path.dirname(fileURLToPath(import.meta.url));
 
 describe("shipped message lint", () => {
+  it("keeps styling metadata and style-element CSS out of message copy while checking visible copy", () => {
+    const metadata = `const end = "ends"; const join = "down";
+      export function Example({ children }) {
+        return <span data-end={end} data-join={join} className={cx(end === "ends" ? "rounded-pill" : undefined)}>{children}</span>;
+      }`;
+    expect(findShippedMessageViolations("Example.tsx", metadata)).toEqual([]);
+    expect(findShippedMessageViolations("Example.tsx", metadata.replace("{children}</span>", "{end}</span>"))).toEqual(
+      expect.arrayContaining([expect.objectContaining({ kind: "rendered-local", text: "end" })]),
+    );
+    const css = `const STYLES = ".sample { display: grid; }";
+      export function Example() { return <style>{STYLES}</style>; }`;
+    expect(findShippedMessageViolations("Example.tsx", css)).toEqual([]);
+    expect(findShippedMessageViolations("Example.tsx", css.replace("<style>", "<p>").replace("</style>", "</p>"))).toEqual(
+      expect.arrayContaining([expect.objectContaining({ kind: "rendered-local", text: "STYLES" })]),
+    );
+    expect(findShippedMessageViolations("Example.tsx", css.replace("<style>", '<style title="Alternate stylesheet">'))).toEqual(
+      expect.arrayContaining([expect.objectContaining({ kind: "jsx-attribute" })]),
+    );
+    const namedStylesheet = css.replace("const STYLES", 'const title = "Alternate stylesheet"; const STYLES').replace("<style>", "<style title={title}>");
+    expect(findShippedMessageViolations("Example.tsx", namedStylesheet)).toEqual(
+      expect.arrayContaining([expect.objectContaining({ kind: "rendered-local", text: "title" })]),
+    );
+  });
   it("fails a JSX text node and an aria attribute set to a string literal", () => {
     const source = `export function Example() {\n  return <section aria-label="Capture form">There is 1 error</section>;\n}\n`;
     const violations = findShippedMessageViolations("Example.tsx", source);

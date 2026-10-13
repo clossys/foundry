@@ -28,6 +28,10 @@ and closes re-read, evidence-order and parsing gaps found while building
 C-54. Revision 7 keeps every decision of revision 6 and adds two
 optional, consent-gated capture classes to the Observer provider adapter,
 autocapture and session replay (decision 7, C-62 to C-69, unit F).
+Revision 7 also records the compact corner-card presentation of the
+notice (C-70, unit G): the title becomes visually hidden but keeps naming
+the region, and C-47 is tightened so that focus on reopen lands on that
+named region.
 
 1. **One compact notice with two equal actions.** There is no preferences
    dialog and no secondary reopen control in the footer. Reopening is a link
@@ -84,7 +88,7 @@ autocapture and session replay (decision 7, C-62 to C-69, unit F).
 | Browser storage adapter | Butler | `packages/butler/src/browser-consent/adapters/` | #1938 |
 | Analytics transport and provider adapter | Observer | `packages/observer/src/browser-analytics/` | #1940 |
 | Autocapture and session replay in the provider adapter | Observer | `packages/observer/src/browser-analytics/providers/` | unit F |
-| Notice presentation | Designer | `ConsentBanner` block | existing, plus unit D |
+| Notice presentation | Designer | `ConsentBanner` block | existing, plus unit D and unit G |
 | Assembly, hooks, transport binding, reopen, review seam, preview | Publisher | `packages/publisher/src/web/consent/` | #1941 |
 | Copy resolution against Writer approval | Publisher | `packages/publisher/src/consent-copy/` | #1941 |
 | Butler and Observer subpath exports, structural port conformance | Butler, Observer | manifests and public entry modules | unit E |
@@ -92,7 +96,7 @@ autocapture and session replay (decision 7, C-62 to C-69, unit F).
 | Security headers, sign-out storage clearing | Bouncer | `packages/bouncer/src/` | #1947, independent |
 | Versions and changelogs for the cohort | release preparation | manifests, changelogs | #1942 |
 
-Unit D, unit E and unit F have no ticket yet (see "Unowned work").
+Unit D, unit E, unit F and unit G have no ticket yet (see "Unowned work").
 
 - **O-1 Butler owns the lifecycle and nothing visual.** Butler owns the
   record, the decision rules, expiry, withdrawal, the storage port and the
@@ -1110,12 +1114,24 @@ by-value read-back still matches.
 
 ### Presentation (Designer)
 
-`ConsentBanner` keeps its current contract: a region landmark named by its
-title, one body, an optional policy-link slot, and accept and reject as two
-`Button`s of the same variant and size. It is not a dialog and has no focus
-trap, autofocus, Escape handling, portal or timer. Actions stack at the base
-size and sit in a row from `tablet`. Logical properties keep it correct in
-right-to-left layouts.
+`ConsentBanner` is a region landmark named by its title, one body, an
+optional policy-link slot, and accept and reject as two `Button`s of the
+same variant and size. It is a compact corner card, not a modal dialog, and
+has no focus trap, autofocus, Escape handling, portal or timer. Actions
+stack at the base size and sit in a row from `tablet`. Logical properties
+keep it correct in right-to-left layouts. Unit D adds the status line
+(C-21); unit G makes the title visually hidden (C-70).
+
+Presentation note (guidance, not a rule): the host pins the card at the
+bottom-start corner of the viewport with logical properties, and on mobile
+it spans the full width minus the page gutter. Its visible content is the
+one-sentence body (C-28), the privacy-policy link only when the host passes
+one (`policyLink` is optional), the status line (C-21) whenever one is
+passed, and the two actions. The title is hidden and the rest is shown: a
+failed withdrawal (C-29, C-55) is always shown to a sighted visitor in the
+notice itself. A pinned card can cover keyboard-focused content (WCAG 2.4.11
+Focus Not Obscured); the host reserves `scroll-padding-bottom` at least as
+tall as the card.
 
 - **C-21 A status line is presentation, not state.** Unit D adds one
   optional prop, `status?: ReactNode`. The block always renders a polite
@@ -1123,6 +1139,21 @@ right-to-left layouts.
   empty when `status` is absent, so that a status added later is announced.
   Neither action is ever disabled. The assembly decides which status to
   pass (C-25).
+- **C-70 The title names the region without being shown.** Unit G
+  renders the `title` prop inside a heading that carries Designer's
+  visually hidden utility (`sr-only`), and the region keeps its name
+  through `aria-labelledby` pointing at that heading. No visible title is
+  rendered. The prop keeps its name, its `ReactNode` type and its
+  requiredness, and its value still comes from the copy's `title` field
+  (C-35), so no consumer changes; an `aria-label` string is not used,
+  because a `ReactNode` title cannot become one. The region is never given
+  `role="dialog"` or `aria-modal`. The region is the block's root element
+  (the one that carries `data-consent-banner`) and Designer gives it no
+  `tabindex`. Focus on reopen lands on that named element: C-47's wrapper
+  does not take focus itself; the assembly sets `tabindex="-1"` on the
+  `[data-consent-banner]` element inside its wrapper and focuses it, so the
+  focused element carries `aria-labelledby` and its accessible name equals
+  the title. No focus-target prop is added to `ConsentBannerProps`.
 
 ### Assembly (Publisher)
 
@@ -1266,7 +1297,8 @@ conformance test imports them from (C-53).
 - **C-47 Focus on open.** A notice that opens by itself does not move
   focus. A notice opened by the fragment or the event receives focus on
   its region, through a wrapper the assembly owns, so Designer still has no
-  autofocus.
+  autofocus. The assembly focuses the region element itself (C-70), not the
+  wrapper, so that focus lands on a named element.
 - **C-48 Hooks and lifecycle ownership.** Outside a `ConsentExperience`,
   `useAnalyticsAllowed()` returns `false` and `useConsentStatus()` returns
   the no-decision status. The assembly creates the lifecycle in a mount
@@ -1584,6 +1616,9 @@ Dependency order for builders:
    **#1940 Observer transport** depends on this document. The two are
    independent of each other and may run in parallel.
 3. **Unit D Designer status slot.** Depends on this document.
+   **Unit G Designer notice naming** depends on unit D and is stacked
+   after it. Only #1942 depends on unit G: the `title` prop keeps its
+   type, so #1941 does not wait for it.
 4. **#1941 Publisher assembly and Publisher exports.** Depends on this
    document and unit D only. It builds against its own structural ports
    and the preview, so presentation never waits for a backend.
@@ -1592,7 +1627,7 @@ Dependency order for builders:
 6. **Unit F Observer autocapture and session replay.** Depends on this
    document (revision 7) and #1940 only.
 7. **#1942 release preparation.** Depends on #1978, #1938, #1940, unit D,
-   #1941, unit E and unit F.
+   unit G, #1941, unit E and unit F.
 8. **#1947 Bouncer.** Independent of every unit above.
 
 #1981 is a behaviour issue, not a build unit. Its record, decision and
@@ -1673,6 +1708,18 @@ expiry behaviour is built in #1938, and its reopen seam and copy in #1941.
 - API: `ConsentBannerProps.status?: ReactNode`, rendered per C-21. Every
   other prop is unchanged.
 - Proof: P-14.
+
+### Unit G Designer notice naming
+
+- Paths: the `ConsentBanner` block source in `packages/designer/src/blocks/`,
+  its test, its README entry, and one `.changesets/` entry for `designer`
+  at `minor`, which ships in the cohort release with #1942. It uses the
+  `sr-only` utility already present in Designer's compiled stylesheet.
+- API: `ConsentBannerProps.title` keeps its name, type and requiredness;
+  only its rendering changes, per C-70. Every other prop is unchanged.
+- Stacking: it is built after unit D, on the same block source, so the two
+  never edit the block at the same time; P-14 keeps passing.
+- Proof: P-44.
 
 ### #1941 Publisher assembly and exports
 
@@ -1821,6 +1868,8 @@ expiry behaviour is built in #1938, and its reopen seam and copy in #1941.
 
 - **Unit D** has no ticket. The `ConsentBanner` block source is outside the
   paths #1941 lists.
+- **Unit G** has no ticket. It is the Designer change specified by C-70,
+  stacked after unit D.
 - **Unit E** has no ticket. #1938 and #1940 forbid their package index and
   manifests, #1941 forbids both packages, and #1942 forbids source. Hosts
   cannot import Butler's or Observer's new subpaths until unit E lands.
@@ -1859,7 +1908,7 @@ passes. "Covers" lists the rules each proof holds.
 | P-15 | #1941 | `ConsentExperience` :: `required={false}` creates no lifecycle, binds no transport and ignores reopen; `onChange` fires on an acted-on choice only and never for a no-op accept | C-23, C-24, C-39 | fire `onChange` on mount or on a stored read; fire `onChange("granted")` for a no-op accept |
 | P-16 | #1941 | `ConsentExperience` :: Escape records nothing and returns focus; Escape does nothing while a withdrawal has failed; withdrawal stays enabled while a grant is pending; a lifecycle whose snapshot has `withdrawal: "failed"` at mount shows the notice open with its status; a failed withdrawal keeps the notice open through a repeated refusal and a re-read; other statuses close with the choice | C-13, C-15, C-25, C-26, C-55 | persist Escape; close on a failed withdrawal; let Escape hide a failed-withdrawal notice; open the failed-withdrawal notice only after a refusal in this render |
 | P-17 | #1941 | `ConsentExperience` :: server and initial client render match the no-decision snapshot | C-22 | read storage during render |
-| P-18 | #1941 | `reopen` :: fragment and event open once, a leading `#` is ignored, the fragment is cleared, focus moves to the reopened notice, and `refresh()` runs on reopen, on `visibilitychange` and on `pageshow` | C-27, C-46, C-47 | open a second notice on a repeated trigger; skip `refresh()` on reopen |
+| P-18 | #1941 | `reopen` :: fragment and event open once, a leading `#` is ignored, the fragment is cleared, focus moves to the reopened notice: `document.activeElement` is the `[data-consent-banner]` element; and `refresh()` runs on reopen, on `visibilitychange` and on `pageshow` | C-27, C-46, C-47 | open a second notice on a repeated trigger; skip `refresh()` on reopen; focus the wrapper `div` instead of the region |
 | P-19 | #1941 | `review-seam` :: each value on loopback; ignored elsewhere; the factory receives the in-memory port, `evidence: false` and `simulated: true`; a factory whose lifecycle does not report `simulated: true` is disposed before any `grant()` or `refuse()` reaches it, nothing is written under the real key or any other; a factory that reports `simulated: true` but wires the host's storage, so the in-memory port records no mount `read()`, is disposed the same way before any seeding call and the host storage records no write; in both cases the fixed no-decision notice renders; a seed whose write the in-memory port did not receive disables the seam the same way; the real key is never written; the transport is never bound; `useAnalyticsAllowed()` is `false` under `granted`; the value lasts for the tab | C-23, C-30, C-31, C-32, C-50 | accept a non-loopback host; seed before checking `simulated`; bind the transport to a seeded lifecycle; check only `simulated` and not the mount `read()` on the in-memory port |
 | P-20 | #1941 | `consent-copy/resolve` :: both leads and every status key required; draft, stale, expired-delegate, out-of-scope, wrong-locale, blank and placeholder copy refused; under `production`, unapproved, delegate-approved and generated-source copy refused; with `NODE_ENV` set to `production`, a declared `preview` target throws and delegate-approved copy that a preview-bound resolver returned is refused; with no `process` global, or with `NODE_ENV` absent, nothing throws on the read and the declared target decides | C-35, C-52 | omit the `notice` lead; accept generated-source copy under `production`; trust the declared target when `NODE_ENV` is `production` |
 | P-21 | #1941 | `preview/adapter` :: each of the fifteen states produces its table row; zero I/O and no timers; explicit settle; `expired` identical to `fresh-prompt`; no `saved` from the preview; `production` refused | C-33, C-34, C-51 | auto-settle; return `saved`; give `withdrawal-failed` the `withdrawn` snapshot |
@@ -1885,6 +1934,7 @@ passes. "Covers" lists the rules each proof holds.
 | P-41 | F | `posthog-replay` :: payload check, over the snapshot corpus: a `$snapshot` whose payload holds a compressed or string-encoded record, a record carrying a compression marker, a mutation whose data is an object but whose adds, text changes or attributes are an encoded string, an unparsable record, a record of an unlisted kind, a console plugin or log record, a network plugin record, a canvas mutation record, an unmasked text node (in a full snapshot, in a mutation's added nodes, inside a shadow root or inside a same-origin iframe document), an unmasked text change, an unmasked input record or an unmasked `value` attribute is dropped whole; a fully masked payload passes with its custom records removed and `style` text kept; no corpus string other than masked text reaches the fake seam | C-68 | accept a compressed record; accept a record whose fields, not its data, are encoded; skip a field whose type is not the expected one instead of dropping the event; check text nodes only in full snapshots, not in mutation adds or text changes; skip shadow roots or iframe documents; accept an unlisted record kind; accept a console, network or canvas record; skip the masked-form check for input records or for `value` attributes; pass custom records through |
 | P-42 | F | `posthog-replay` :: query and fragment check: with the page address carrying a non-empty query or a non-empty fragment, a clean page address but a load address (navigation entry) carrying one, or a meta or custom address in the payload carrying one, the `$snapshot` is dropped, and every later `$snapshot` of that grant is dropped even after the address is clean; on a page with neither, a payload whose attribute values hold a link is accepted; a new grant on a clean address records again | C-68, C-20 | check only the meta `href`; ignore the load address; check the address after the rewrite; accept later `$snapshot` events of the same grant once the address is clean; ignore the fragment |
 | P-43 | F | `posthog-block-selectors` :: each host block selector is checked against `BLOCK_SELECTOR_GRAMMAR`: one with a top-level comma, a pseudo-class, a parenthesis, an escape, a `~` or `+` combinator, an unbalanced bracket, a space at the start, or a long adversarial string (tens of thousands of repeated `.a` or `[a="` fragments ending in an invalid character, tested against the expression directly and returning promptly) leaves replay off with no `startSessionRecording` call and no throw, while pageviews and autocapture still run; valid selectors (`aside`, `.card [data-x="a b"]`, `main > #pane`) follow the private selectors in the joined block selector | C-63, C-68 | skip the grammar check; skip the length cap before the expression; accept a comma; throw instead of leaving replay off; place host selectors before the private ones |
+| P-44 | G | `ConsentBanner` :: the region's accessible name is the `title` content, through a structural `aria-labelledby` that resolves to a heading carrying `sr-only`; the title text appears exactly once, inside that heading, and nowhere visible; the region has no `role="dialog"`, no `aria-modal` (not `"true"`, not `"false"`) and no `tabindex`; a `ReactNode` title with markup keeps its markup and still names the region; with a status and a policy link passed, both render visibly; both actions stay two `Button`s of the same variant and size (P-14) | C-70, C-21 | render the heading without `sr-only`; name the region with an `aria-label` string, or `String(title)`, or drop non-text children; drop `aria-labelledby`; add `role="dialog"`; add `aria-modal="true"`; render the title a second time outside the hidden heading; hide the status line or the policy link with the title |
 
 ### Review proofs for this document
 

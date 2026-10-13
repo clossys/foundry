@@ -70,10 +70,10 @@
  *     not a bare parseable color `color.ts` can score on its own (see
  *     `internal/resolve-token-value.ts`'s "WHAT COUNTS AS A WHOLE-VALUE
  *     ALIAS" for why this walker does not reach into a value like that).
- *     A focus indicator's own WCAG obligation is SC 2.4.13 (Focus
- *     Appearance), a different success criterion than the text/graphical-
- *     object contrast this gate checks — genuinely out of scope, not
- *     merely inconvenient to parse.
+ *     This gate does not parse composite shadows or measure focus geometry.
+ *     LinkGrid's outline uses bare `--color-accent` / `--color-accent-on-
+ *     inverse` colors instead: their 3:1 contrast against its grounds and
+ *     plates IS explicitly checked by the scoped pairs below.
  *
  * ============================================================================
  * EXCEPTIONS — WCAG 1.4.11's OWN relief, carried as DATA, never a bare
@@ -184,6 +184,53 @@ export interface ContrastPair {
 }
 
 export const CONTRAST_PAIRS: readonly ContrastPair[] = [
+  // Ledger labels are normal text on the base/sunken record ground and tile
+  // plates. Raised-surface status pairs already exist below. Inverse labels
+  // follow the separately checked ground-primary ink policy.
+  ...["success", "warning", "danger", "info"].flatMap(tone => ["base", "sunken"].map((surface): ContrastPair => ({
+    id: `ledger/status-${tone}-text/surface-${surface}`,
+    foreground: `--color-status-${tone}-text`,
+    background: `--color-surface-${surface}`,
+    level: "AA",
+    minimumRatio: AA,
+    description: "Ledger small status label on its record ground or work-product/tile plate.",
+  }))),
+  // LinkGrid uses body-scale titles and small descriptions on these five
+  // actual grounds/resting/hover plates. These scoped AA requirements do
+  // not change the legacy large-text or icon-only classifications below.
+  ...[
+    ["ink-primary", "surface-base"],
+    ["ink-primary", "surface-sunken"],
+    ["ink-primary", "surface-raised"],
+    ["ink-secondary", "surface-base"],
+    ["ink-secondary", "surface-sunken"],
+    ["ink-secondary", "surface-raised"],
+    ["ink-on-inverse", "surface-inverse"],
+    ["ink-on-inverse", "surface-inverse-raised"],
+    ["ink-on-inverse-muted", "surface-inverse"],
+    ["ink-on-inverse-muted", "surface-inverse-raised"],
+  ].map(([ink, surface]): ContrastPair => ({
+    id: `link-grid/${ink}/${surface}`,
+    foreground: `--color-${ink}`,
+    background: `--color-${surface}`,
+    level: "AA",
+    minimumRatio: AA,
+    description: "LinkGrid body-scale titles and small supporting copy on the ground or tile plate.",
+  })),
+  ...[
+    ["accent", "surface-base"],
+    ["accent", "surface-sunken"],
+    ["accent", "surface-raised"],
+    ["accent-on-inverse", "surface-inverse"],
+    ["accent-on-inverse", "surface-inverse-raised"],
+  ].map(([accent, surface]): ContrastPair => ({
+    id: `link-grid/${accent}/${surface}`,
+    foreground: `--color-${accent}`,
+    background: `--color-${surface}`,
+    level: "AA-large",
+    minimumRatio: AA_LARGE,
+    description: "LinkGrid focus outline color against both its surrounding ground and tile plate (non-text 3:1).",
+  })),
   // ── ink-primary (body text) on every surface: AA ──────────────────────
   {
     id: "ink-primary/surface-base",
@@ -298,6 +345,81 @@ export const CONTRAST_PAIRS: readonly ContrastPair[] = [
     description: "Secondary and muted site-block text on the inverse section ground.",
   },
 
+  // ── the CTA ladder: tonal (T3), quiet (T4) and icon-only controls ─────
+  // The tonal fills are translucent, so each is composited over the ground
+  // it sits on first. Quiet on the inverse ground uses the on-inverse ink,
+  // already checked by "ink-on-inverse/surface-inverse" above.
+  {
+    id: "ink-primary/control-tonal@surface-base",
+    foreground: "--color-ink-primary",
+    background: "--color-control-tonal",
+    compositeOver: "--color-surface-base",
+    level: "AA",
+    minimumRatio: AA,
+    description: "A tonal button's label on its fill, on the page ground.",
+  },
+  {
+    id: "ink-primary/control-tonal@surface-sunken",
+    foreground: "--color-ink-primary",
+    background: "--color-control-tonal",
+    compositeOver: "--color-surface-sunken",
+    level: "AA",
+    minimumRatio: AA,
+    description: "A tonal button's label on its fill, on a sunken ground.",
+  },
+  {
+    id: "ink-primary/control-tonal-hover@surface-sunken",
+    foreground: "--color-ink-primary",
+    background: "--color-control-tonal-hover",
+    compositeOver: "--color-surface-sunken",
+    level: "AA",
+    minimumRatio: AA,
+    description: "A hovered tonal button's label on its denser fill, on the darker of the two light grounds.",
+  },
+  {
+    id: "ink-on-inverse/control-tonal-inverse@surface-inverse",
+    foreground: "--color-ink-on-inverse",
+    background: "--color-control-tonal-inverse",
+    compositeOver: "--color-surface-inverse",
+    level: "AA",
+    minimumRatio: AA,
+    description: "A tonal button's label on its inverse fill, on the inverse ground.",
+  },
+  {
+    id: "ink-on-inverse/control-tonal-inverse-hover@surface-inverse",
+    foreground: "--color-ink-on-inverse",
+    background: "--color-control-tonal-inverse-hover",
+    compositeOver: "--color-surface-inverse",
+    level: "AA",
+    minimumRatio: AA,
+    description: "A hovered tonal button's label on its denser inverse fill, on the inverse ground.",
+  },
+  {
+    id: "control-quiet/surface-base",
+    foreground: "--color-control-quiet",
+    background: "--color-surface-base",
+    level: "AA",
+    minimumRatio: AA,
+    description: "A quiet (chevron text) button's label on the page ground.",
+  },
+  {
+    id: "control-quiet/surface-sunken",
+    foreground: "--color-control-quiet",
+    background: "--color-surface-sunken",
+    level: "AA",
+    minimumRatio: AA,
+    description: "A quiet (chevron text) button's label on a sunken ground.",
+  },
+  {
+    id: "ink-on-inverse/surface-inverse-raised",
+    foreground: "--color-ink-on-inverse",
+    background: "--color-surface-inverse-raised",
+    level: "AA-large",
+    minimumRatio: AA_LARGE,
+    description:
+      "An icon-only control's glyph on its inverse fill: the glyph is the only thing that says what the control does, so it meets the 3:1 non-text floor (WCAG 1.4.11). On the light grounds the glyph is ink-primary on surface-raised, checked above at AA.",
+  },
+
   // ── status -text on its own -tint, composited over surface-base: AA ───
   {
     id: "status-success-text/status-success-tint",
@@ -334,6 +456,40 @@ export const CONTRAST_PAIRS: readonly ContrastPair[] = [
     level: "AA",
     minimumRatio: AA,
     description: "An info banner/badge. Mirrors contrast.test.ts's \"info-text / info-tint\".",
+  },
+
+  // ── status -text on the raised surface (StatusMark, no tint): AA ──────
+  {
+    id: "status-success-text/surface-raised",
+    foreground: "--color-status-success-text",
+    background: "--color-surface-raised",
+    level: "AA",
+    minimumRatio: AA,
+    description: "StatusMark's success label: status text with no tint behind it, on a card or panel surface.",
+  },
+  {
+    id: "status-warning-text/surface-raised",
+    foreground: "--color-status-warning-text",
+    background: "--color-surface-raised",
+    level: "AA",
+    minimumRatio: AA,
+    description: "StatusMark's warning label: status text with no tint behind it, on a card or panel surface.",
+  },
+  {
+    id: "status-danger-text/surface-raised",
+    foreground: "--color-status-danger-text",
+    background: "--color-surface-raised",
+    level: "AA",
+    minimumRatio: AA,
+    description: "StatusMark's danger label: status text with no tint behind it, on a card or panel surface.",
+  },
+  {
+    id: "status-info-text/surface-raised",
+    foreground: "--color-status-info-text",
+    background: "--color-surface-raised",
+    level: "AA",
+    minimumRatio: AA,
+    description: "StatusMark's info label: status text with no tint behind it, on a card or panel surface.",
   },
 
   // ── status dots on the page ground: WCAG non-text contrast ───────────
@@ -389,6 +545,16 @@ export const CONTRAST_PAIRS: readonly ContrastPair[] = [
     minimumRatio: AA_LARGE,
     description: `Categorical chart mark slot ${n} on the chart surface. Mirrors the per-slot sweep in contrast.test.ts's "every categorical slot either clears the 3:1 mark-contrast floor, or is a documented WARN slot".`,
   })),
+  // Anatomy numerals are caption-sized text; every disc needs the normal-text floor.
+  ...(["base", "sunken", "raised", "inverse"] as const).map(surface => ({
+    id: `anatomy/surface-${surface}/${surface === "inverse" ? "ink-on-inverse" : "ink-primary"}`,
+    foreground: `--color-surface-${surface}`,
+    background: surface === "inverse" ? "--color-ink-on-inverse" : "--color-ink-primary",
+    level: "AA" as const,
+    minimumRatio: AA,
+    description: "Caption-sized numeral on an Anatomy marker or grounded key disc.",
+  })),
+
 ];
 
 /**

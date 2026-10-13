@@ -243,7 +243,7 @@ describe("checkBrandFileCoverage — defaults to this package's real TOKENS regi
     const declarations = Object.fromEntries(
       Object.values(TOKENS)
         .filter((def) => def.brandable)
-        .map((def) => [def.property, "red"]), // the specific value is irrelevant to coverage — only non-emptiness is
+        .map((def) => [def.property, "red"]), // coverage only requires non-empty values
     );
     const report = checkBrandFileCoverage(declarations);
     expect(report.ok).toBe(true);
@@ -251,5 +251,17 @@ describe("checkBrandFileCoverage — defaults to this package's real TOKENS regi
     expect(report.unchecked).toEqual([]);
     expect(report.declarationsChecked).toBe(report.brandableSlotsChecked);
     expect(report.brandableSlotsChecked).toBeGreaterThan(0);
+  });
+});
+
+describe("scene structural overrides", () => {
+  const tokens = { "--ui-scene-card-w": TOKENS["--ui-scene-card-w"]! };
+  it.each(["30rem", "24rem", "0", "var(--measure, 30rem)", "calc(30rem - 1rem)"])("refuses the structural card-width override %s", value => {
+    expect(checkBrandFileCoverage({ "--ui-scene-card-w": value }, { tokens }).findings).toContainEqual(expect.objectContaining({ rule: "non-brandable-override", slot: "--ui-scene-card-w" }));
+  });
+  it("classifies the retired Scene tilt slot as unknown against the real registry", () => {
+    const findings = checkBrandFileCoverage({ "--ui-scene-tilt": "1deg" }, { tokens: TOKENS }).findings;
+    expect(findings).toContainEqual(expect.objectContaining({ rule: "unknown-slot", slot: "--ui-scene-tilt" }));
+    expect(findings).not.toContainEqual(expect.objectContaining({ rule: "non-brandable-override", slot: "--ui-scene-tilt" }));
   });
 });

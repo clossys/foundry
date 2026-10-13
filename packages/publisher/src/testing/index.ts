@@ -86,7 +86,12 @@ function checkSurface(parser: typeof DOMParser, entry: FrontDoorSurfaceCase): Fr
   if (FORM_SURFACES.includes(surface)) {
     const main = doc.querySelector("main");
     if (!main) add("form-measure", "expected a <main> carrying the form measure, found none");
-    else if (main.style.maxWidth !== FORM_MEASURE) {
+    // The legacy page puts the measure on its own `<main>`; a view inside
+    // `SiteFrame` puts it on its content root, a direct child of the frame's `<main>`.
+    else if (
+      main.style.maxWidth !== FORM_MEASURE &&
+      ![...main.children].some((child) => (child as HTMLElement).style?.maxWidth === FORM_MEASURE)
+    ) {
       add("form-measure", `expected <main> to carry max-width:${FORM_MEASURE}, found "${main.style.maxWidth}"`);
     }
   }
