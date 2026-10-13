@@ -17,8 +17,11 @@ const publisherOmissionRow = ({ rejected = [], web = "imports", client = "import
   ...omissionRow(publisherExports, rejected),
   "@clossys/publisher/web": typeof web === "string" ? web : conditionOutcomes(web.default, web.reactServer),
   "@clossys/publisher/web/client": client,
-  "@clossys/publisher/web/consent": conditionOutcomes(consent, "rejects"),
-  "@clossys/publisher/web/consent/preview": conditionOutcomes("rejects", "rejects"),
+  // #1941's consent subpaths: every `refuses` cell is declared in
+  // BY_DESIGN_REFUSALS below and throws its refusal whatever is installed.
+  "@clossys/publisher/consent-copy": { browser: "refuses", default: "imports" },
+  "@clossys/publisher/web/consent": conditionOutcomes(consent, "refuses"),
+  "@clossys/publisher/web/consent/preview": { default: "refuses", development: "imports", "react-server": "refuses" },
 });
 
 const bouncerExports = [
@@ -191,16 +194,11 @@ export const OPTIONAL_PEER_POLICY = {
   "@clossys/publisher": {
     // #1941's consent subpaths. `consent` is the measured default outcome of
     // `./web/consent` (the client entry reaches Designer's atoms and blocks).
-    // The other consent cells are refusals that throw at import whatever is
-    // installed, so they read `rejects` in every row: `react-server` on
-    // `./web/consent` and `./web/consent/preview`, and the preview's `default`,
-    // because its real entry sits under `development`, which this matrix never
-    // sets. `./consent-copy` maps `browser` to a refusal, which this matrix
-    // folds into `default`, so only its server entry is measured (`imports`).
-    // Neither the `development` nor the `browser` target is measured here.
-    // These rows close the policy, but `check:packed-consumer` still refuses
-    // a refusal cell: it requires every declared target to import with all
-    // peers present, and a peer-omission failure to name the omitted peer.
+    // The refusal cells read `refuses` in every row (declared in
+    // BY_DESIGN_REFUSALS): `react-server` on `./web/consent` and
+    // `./web/consent/preview`, the preview's `default` (its real entry sits
+    // under `development`, measured as `imports`) and `browser` on
+    // `./consent-copy` (its server entry is `default`, measured as `imports`).
     "@internationalized/date": publisherOmissionRow({ web: { default: "rejects", reactServer: "imports" }, client: "rejects", consent: "rejects" }),
     react: publisherOmissionRow({ rejected: ["@clossys/publisher/document", "@clossys/publisher/testing"], web: { default: "rejects", reactServer: "rejects" }, client: "rejects", consent: "rejects" }),
     "react-aria-components": publisherOmissionRow({ web: { default: "rejects", reactServer: "imports" }, client: "rejects", consent: "rejects" }),
@@ -267,7 +265,22 @@ export const OPTIONAL_PEER_POLICY = {
  * one refusal message cannot stand in for another condition's. Only literal
  * export keys can be declared; wildcard and Next-context subpaths cannot.
  */
-export const BY_DESIGN_REFUSALS = {};
+export const BY_DESIGN_REFUSALS = {
+  // #1941: the browser consent subpaths. Each marker is a fragment of the
+  // message its refusal module throws.
+  "@clossys/publisher": {
+    "@clossys/publisher/consent-copy": {
+      browser: 'The consent-copy subpath of the publisher package is server-only and refuses the "browser" condition',
+    },
+    "@clossys/publisher/web/consent": {
+      "react-server": 'The web/consent subpath of the publisher package is client-only and refuses the "react-server" condition',
+    },
+    "@clossys/publisher/web/consent/preview": {
+      default: 'The web/consent/preview subpath of the publisher package resolves only under the "development" condition',
+      "react-server": 'The web/consent/preview subpath of the publisher package is client-only and refuses the "react-server" condition',
+    },
+  },
+};
 export const MIN_REFUSAL_MARKER_LENGTH = 16;
 
 const IMPORT_CONDITIONS = ["default", "react-server", "development", "browser"];

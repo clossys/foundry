@@ -325,7 +325,8 @@ test("the repository omission matrix is closed against every current publishable
     if (manifest.private !== true) expectedNames.push(manifest.name);
   }
   assert.deepEqual(packages.map((entry) => entry.manifest.name).sort(), expectedNames.sort());
-  assert.deepEqual(validateOptionalPeerPolicy(packages, OPTIONAL_PEER_POLICY), []);
+  // Publisher's `refuses` cells close only against their declared refusals (#1941).
+  assert.notDeepEqual(validateOptionalPeerPolicy(packages, OPTIONAL_PEER_POLICY), []);
   assert.deepEqual(validateByDesignRefusals(packages, BY_DESIGN_REFUSALS), []);
   assert.deepEqual(validateOptionalPeerPolicy(packages, OPTIONAL_PEER_POLICY, { refusals: BY_DESIGN_REFUSALS }), []);
 });
@@ -352,16 +353,18 @@ test("Publisher's optional-peer matrix binds both default and react-server web o
     "@clossys/publisher/web/consent",
     "@clossys/publisher/web/consent/preview",
   ];
-  // The consent refusal cells (`react-server` on both consent subpaths, and the
-  // preview's `default`) throw at import whatever is installed (#1941).
+  // The consent refusal cells (`react-server` on both consent subpaths, the
+  // preview's `default` and `browser` on consent-copy) throw at import whatever
+  // is installed, so they read `refuses` in every row (#1941).
   const expected = (rejected = [], web = { default: "imports", "react-server": "imports" }, client = "imports", consent = "imports") => ({
     ...Object.fromEntries(
     publisherExports.map((specifier) => [specifier, rejected.includes(specifier) ? "rejects" : "imports"]),
     ),
+    "@clossys/publisher/consent-copy": { browser: "refuses", default: "imports" },
     "@clossys/publisher/web": web,
     "@clossys/publisher/web/client": client,
-    "@clossys/publisher/web/consent": { default: consent, "react-server": "rejects" },
-    "@clossys/publisher/web/consent/preview": { default: "rejects", "react-server": "rejects" },
+    "@clossys/publisher/web/consent": { default: consent, "react-server": "refuses" },
+    "@clossys/publisher/web/consent/preview": { default: "refuses", development: "imports", "react-server": "refuses" },
   });
   const rows = OPTIONAL_PEER_POLICY["@clossys/publisher"];
 
