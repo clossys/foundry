@@ -3365,6 +3365,45 @@ pairing on each ground. Neutral keeps its own opaque fill. Badge tone maps to
 the existing Badge atom: neutral (default), success, warning, danger or info.
 The item-level featured field is retired; select the collection treatment.
 
+#### Index configuration: status list
+
+Use unordered `Items` rows when readers look up an item's current status.
+Put each visible status label in `badge`; the optional description explains
+that item. This configuration uses Index's existing shape, reveal and groups
+axes: `rows-1`, `all`, `off` in the example. Labels are authored copy,
+and the badge uses existing semantic tokens. The list follows the row count
+and grouping limits below.
+
+```tsx
+import { Items } from "@clossys/designer/blocks/server";
+
+function FeatureStatus() {
+  return (
+    <section>
+      <h2 id="feature-status-heading">Feature status</h2>
+      <Items
+        aria-labelledby="feature-status-heading"
+        arrangement="rows"
+        columns={1}
+        order="none"
+        reveal="all"
+        treatment="rule"
+        scale="item"
+        items={[
+          { id: "search", heading: "Search", description: "Find a record.", badge: { label: "Live", tone: "success" } },
+          { id: "imports", heading: "Imports", description: "Bring records together.", badge: { label: "In progress", tone: "info" } },
+          { id: "exports", heading: "Exports", description: "Take a copy with you.", badge: { label: "Planned", tone: "neutral" } },
+        ]}
+      />
+    </section>
+  );
+}
+```
+
+Publisher selects this configuration with `kind: "content-section"` and
+an `items` block using `recipe: "topics"`, with `badge.label` as a `CopyRef`.
+Its preview example appears on `catalog/index-function.html`.
+
 | Arrangement | Columns | Counts |
 |---|---|---|
 | columns | 2 | 2, 4, 6 |
@@ -3394,9 +3433,20 @@ group. List items own responsive grid spans.
 Link all items or none, up to six distinct normalized destinations. A linked
 item has one title-named anchor; description, badge, meta and visual remain
 outside it. Native controls, finite tabIndex targets (including -1), editable
-content and controlled media are refused in every linked slot. Passive SVG use and image resource references are allowed inside SVG elements; they do not create another target. The guard
-walks supplied arrays, fragments and element children; it does not execute
-opaque components to inspect their rendered output. Numeric zero is content
+content and controlled media are refused in every linked slot. Passive SVG
+`use` and `image` href references are allowed under a literal `<svg>` in the
+supplied element tree. Handlers, focus, editing and interactive descendants
+still make those resources targets. A `foreignObject` resets SVG context;
+a nested literal `<svg>` restores it. An opaque wrapper such as
+`<SpriteIcon><use href="#mark" /></SpriteIcon>` does not establish that
+context, even if it renders an SVG. Other SVG href carriers, including
+`linearGradient`, `radialGradient`, `pattern`, `textPath`, `feImage` and `mpath`,
+are conservatively refused; a refusal does not mean their references are
+intrinsically interactive. The guard walks supplied arrays, fragments and
+element children; it does not execute opaque components or inspect referenced
+symbol shadow trees. Consumers must ensure referenced symbols contain no
+interactive content. These supplied-tree limits also apply to NavGrid's
+private linked plate list (LinkGrid) and Specimen status-row copy. Numeric zero is content
 in every slot; optional whitespace-only copy is omitted. Stable IDs and
 nonblank headings are required.
 

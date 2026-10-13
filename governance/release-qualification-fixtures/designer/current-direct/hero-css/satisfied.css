@@ -9,8 +9,13 @@
   .bg-accent {
     background-color: var(--color-accent, oklch(0.4748 0 0));
   }
-  .text-display-l {
-    font-size: var(--text-display-l, 56px);
+  .text-display-m {
+    font-size: var(--text-display-m, 48px);
+  }
+  .tablet\:text-display-l {
+    @media (width >= 48rem) {
+      font-size: var(--text-display-l, 56px);
+    }
   }
   .tablet\:grid-cols-2 {
     @media (width >= 48rem) {

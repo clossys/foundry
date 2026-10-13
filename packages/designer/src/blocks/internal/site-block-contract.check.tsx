@@ -139,7 +139,7 @@ import { AnatomyCallouts } from "../AnatomyCallouts.js";
 import type { SpecimenPanelContent } from "../specimen/SpecimenPanel.js";
 const anatomyPanel: SpecimenPanelContent = { parts: [{ id: "result", type: "fields", label: "Result", items: [{ id: "latest", label: "Latest result", value: "3.00x" }] }] };
 
-// @ts-expect-error The legacy split alias requires media.
+// @ts-expect-error The supported split alias requires media.
 export const missingSplitMedia = <ContentSection layout="split" heading="Heading" />;
 // @ts-expect-error Specimen requires its accessible-name label.
 export const missingSpecimenLabel = <Specimen panels={[{ id: "panel", ...anatomyPanel }]} />;
@@ -205,11 +205,11 @@ export const defaultPanelBadge: BadgedPanelContent = { parts: [cappedStatusRows]
 // @ts-expect-error Panel badges use the existing five Badge tones.
 export const invalidPanelBadgeTone: BadgedPanelContent = { ...badgedPanelContent, badge: { label: "Reviewed", tone: "accent" } };
 
-// Canonical split layouts allow header-only bands; the temporary alias needs media.
+// Canonical split layouts allow header-only bands; the supported alias needs media.
 void <ContentSection layout="split-start" heading="Heading" />;
 void <ContentSection layout="split-end" heading="Heading" />;
 void <ContentSection layout="split" heading="Heading" media={<p>Visual</p>} />;
-// @ts-expect-error The temporary split alias still requires media.
+// @ts-expect-error The supported split alias requires media.
 void <ContentSection layout="split" heading="Heading" />;
 
 const namedSpecimenPanel = { id: "sample", ...anatomyPanel };

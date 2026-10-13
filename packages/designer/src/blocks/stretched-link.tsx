@@ -130,8 +130,14 @@ export function hasInteractiveContent(parts: readonly ReactNode[]): boolean {
  * Throws a `TypeError` when any part of a linked item holds an interactive
  * element (a link, a button, a field, or an element with `href`, `onClick`
  * or `onPress`): the item is one link, so nothing inside it may be another
- * target. Reads the React elements as passed; a component's own rendered
- * output is not inspected.
+ * target. Passive `use` and `image` href references under a literal `<svg>`
+ * in the supplied tree are allowed; handlers, focus, editing and interactive
+ * descendants still make those resources targets. `<foreignObject>` resets
+ * SVG context, and a nested literal `<svg>` restores it. Other SVG href
+ * carriers are conservatively refused, even when their references are passive.
+ * Reads the React elements as passed: an opaque wrapper does not establish
+ * SVG context, and its own rendered output is not inspected. Referenced
+ * symbol content is also uninspected; callers must keep it noninteractive.
  */
 export function assertNoNestedInteractive(block: string, id: string, parts: readonly ReactNode[]): void {
   if (hasInteractiveContent(parts)) {
