@@ -315,8 +315,9 @@
  * States change paint only (background, border colour, backdrop filter):
  * the border width is constant, so no state moves layout.
  *
- * Fallbacks, all of which land on a readable plate rather than on
- * transparency:
+ * Fallbacks. The first two replace the glass plate, which is what the
+ * header shows once the page scrolls (and at every position where the
+ * third applies); they do not touch the transparent top:
  *   - no backdrop-filter: the glass becomes the opaque raised (or inverse)
  *     plate, since an unblurred translucent plate does not hold contrast
  *     over busy content;
@@ -325,7 +326,10 @@
  *     whole `animation-timeline` block is skipped and the header is glass at
  *     every scroll position, including the top.
  * Where scroll-driven animations exist, the header is transparent at the
- * top and reaches glass over the first `--spacing-3xl` of root scrolling;
+ * top in every case, including under the first two fallbacks. That is
+ * intentional: the top is no surface at all, not a translucent one, and
+ * the page supplies its own scrim and tone there (see `SiteHeaderTone`).
+ * The header reaches glass over the first `--spacing-3xl` of root scrolling;
  * reduced motion swaps the ramp for one step over the first pixel, so the
  * glass arrives with the first scroll.
  * `data-menu-open` (the `menuOpen` prop), any descendant with
