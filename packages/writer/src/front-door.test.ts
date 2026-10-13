@@ -80,6 +80,15 @@ const EXPECTED_IDS = [
   "front-door.activation-first-name.label",
   "front-door.activation-last-name.label",
   "front-door.name-required.notice",
+  "front-door.sign-in-staff-only.description",
+  "front-door.sign-in-invite-only.description",
+  "front-door.not-authorized-staff-only.title",
+  "front-door.not-authorized-staff-only.description",
+  "front-door.not-authorized-staff-only.primary",
+  "front-door.not-authorized-invite-only.title",
+  "front-door.not-authorized-invite-only.description",
+  "front-door.not-authorized-invite-only.primary",
+  "front-door.identifier-not-found-neutral.notice",
 ] as const;
 
 /** The entries the reset and activation forms added, with the exact text they ship. */
@@ -105,7 +114,7 @@ describe("catalog shape", () => {
     expect(validateCopyRegistryShape(FRONT_DOOR_COPY_EN)).toEqual([]);
     expect(FRONT_DOOR_COPY_IDS).toEqual(EXPECTED_IDS);
     expect(FRONT_DOOR_COPY_EN.entries.map((entry) => entry.id)).toEqual([...FRONT_DOOR_COPY_IDS]);
-    expect(FRONT_DOOR_COPY_EN.entries).toHaveLength(63);
+    expect(FRONT_DOOR_COPY_EN.entries).toHaveLength(72);
   });
 
   it("identifies itself as the shipped English revision 1 catalog", () => {
@@ -158,7 +167,7 @@ describe("catalog file", () => {
   it("parses as a registry and deep-equals the shipped catalog", () => {
     const data: unknown = JSON.parse(readFileSync(filePath, "utf8"));
     expect(() => parseCopyRegistry(data)).not.toThrow();
-    expect(parseCopyRegistry(data).entries).toHaveLength(63);
+    expect(parseCopyRegistry(data).entries).toHaveLength(72);
     expect(data).toEqual(FRONT_DOOR_COPY_EN);
   });
 
@@ -189,7 +198,7 @@ describe("voice", () => {
   it("has no error finding under the test voice", () => {
     const report = checkCopyRecord(FRONT_DOOR_COPY_EN, voice);
     expect(report.complete).toBe(true);
-    expect(report.checkedCount).toBe(63);
+    expect(report.checkedCount).toBe(72);
     expect(report.findings.filter((finding) => finding.severity === "error")).toEqual([]);
   });
 
@@ -383,5 +392,30 @@ describe("capability-neutral verification defaults", () => {
     expect(result.resolution?.ref.values).toEqual({});
     expect(FRONT_DOOR_COPY_EN.entries.find(entry => entry.id === "front-door.code.description")).not.toHaveProperty("placeholders");
     expect(resolveFrontDoorCopy("front-door.code.notice", {}).text).toBe("That code isn’t right or has expired. Try again.");
+  });
+});
+
+
+describe("restricted front-door variants", () => {
+  it.each(["staff-only", "invite-only"] as const)("resolves %s copy without an identifier or request-access noun", access => {
+    const nouns = { surface: "Acme Console" };
+    const keys = [`front-door.sign-in-${access}.description`, ...["title", "description", "primary"].map(slot => `front-door.not-authorized-${access}.${slot}`)] as FrontDoorKey[];
+    for (const key of keys) {
+      const result = resolveFrontDoorCopy(key, nouns);
+      expect(result.complete, key).toBe(true);
+      expect(result.resolution?.ref.id).toBe(key);
+      const entry = FRONT_DOOR_COPY_EN.entries.find(e => e.id === key)!;
+      expect(entry.context).toBeTruthy();
+      expect(entry.status).toBe("approved");
+      expect(result.text).not.toMatch(/\{|request access|sign up|sign out/i);
+    }
+    expect(resolveFrontDoorCopy(`front-door.not-authorized-${access}.primary`, nouns).text).toBe("Switch account");
+    expect(FRONT_DOOR_COPY_IDS).not.toContain(`front-door.not-authorized-${access}.secondary`);
+  });
+  it("uses a neutral notice that does not confirm account existence", () => {
+    const result = resolveFrontDoorCopy("front-door.identifier-not-found-neutral.notice", {});
+    expect(result.complete).toBe(true);
+    expect(result.text).toBe("Sign-in couldn’t continue. Check your details and try again.");
+    expect(result.text).not.toMatch(/\b(we|we’ll|we’re|our|ours|us|account)\b/i);
   });
 });

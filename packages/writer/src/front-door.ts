@@ -12,7 +12,7 @@
  *
  * - F1: an id is `front-door.<state>.<slot>`, where the slot is one of
  *   `title`, `description`, `label`, `primary`, `secondary`, `notice` or
- *   `alt`. This version ships 63 ids; `FRONT_DOOR_COPY_IDS` is
+ *   `alt`. This version ships 72 ids; `FRONT_DOOR_COPY_IDS` is
  *   the closed list and `FrontDoorKey` its element union.
  * - F2: a `{token}` in a default text is a noun from `FRONT_DOOR_NOUNS`
  *   and is declared in the entry's `placeholders`. The nouns are a closed

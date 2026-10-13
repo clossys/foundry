@@ -360,10 +360,12 @@ Name a shipped template when its slots cover the page:
   `notes` (the alternate-step lines, such as "Forgot password?" or
   "No account? Join the waitlist") renders below it, before the footnote, and
   is always the site's copy. `secondaryAction` is the deprecated name of
-  `notes` and renders in the same place; passing both throws. An invitation or activation step never offers
-  request-access or sign-up: the view has no mode and no `requestAccess`
-  prop, so each site's activation-page test should assert no request-access or
-  sign-up link. Pass each `notes` line as one element: text plus a
+  `notes` and renders in the same place; passing both throws. Optional
+  `noAccountPrompt` and `requestAccessLabel` hold caller copy and a labeled
+  link. The view has no access mode and renders whatever prompt, label or
+  notes it is given, so invitation-only sign-in and activation pages omit
+  both props and request-access/sign-up notes, and each site's page test
+  should assert no request-access or sign-up text. Pass each `notes` line as one element: text plus a
   link in one fragment splits onto two lines. When the sign-in provider is
   unavailable, `isDisabled` keeps the form on screen inside a disabled
   `<fieldset>` with the typed values still shown; the explanation goes in the
@@ -3297,6 +3299,76 @@ it("renders one frame around the not-found view", () => {
 });
 ```
 
+### Invitation-only and staff-only sign-in
+
+Compose this mode inside the host's `SiteFrame`, without deprecated chrome
+props. Omit `AuthView.noAccountPrompt`, `AuthView.requestAccessLabel` and
+sign-up/request-access `notes`. `AuthView` cannot tell restricted sign-in
+from open sign-in: it renders any prompt, label or notes the host passes, so
+the host keeps this rule and its page test asserts that no request-access or
+sign-up text renders. Both copy fields are optional independently; absent or
+empty fields leave no row or link. For an open surface, the caller
+may pass the prompt and a labeled link as those two props, resolving
+`front-door.request-access.*` only when needed. Restricted sign-in does not
+need a `requestAccessLabel` noun. Omit self-service recovery notes if the host
+chooses to keep recovery outside this surface.
+
+Keep the form's single primary action and `front-door.unavailable.notice`.
+`SignInForm.access` is the closed optional union `"open" | "invite-only" |
+"staff-only"` (default `"open"`); restricted values use
+`front-door.identifier-not-found-neutral.notice` for identifier-step
+`credential` and `notFound`, and `front-door.rate-limited.notice` for
+`locked`, matching Bouncer's `hideAccountExistence` reading of `notFound` as
+`credential` and `locked` as `rateLimited`.
+The neutral notice avoids confirming account existence only in its wording;
+it does not hide differences in the flow. An identifier accepted by the host
+advances to the password step, while a rejected identifier stays on the first
+step; response timing can also differ. The host must address those signals
+if it needs to conceal account existence. This copy selection does not
+enforce authorization; the host's handlers do.
+The host selects `front-door.sign-in-invite-only.description` or
+`front-door.sign-in-staff-only.description` for the surrounding view.
+
+```tsx
+import { AuthView, SignInForm, type SignInFormProps } from "@clossys/publisher/web";
+import {
+  resolveFrontDoorCopy,
+  type FrontDoorKey,
+} from "@clossys/writer";
+
+// The host supplies these handlers and the provider availability state.
+declare const identify: SignInFormProps["identify"];
+declare const verify: SignInFormProps["verify"];
+declare const goHome: SignInFormProps["onSignedIn"];
+declare const unavailable: boolean;
+
+const nouns = { surface: "Acme Console" };
+function copy(id: FrontDoorKey) {
+  const result = resolveFrontDoorCopy(id, nouns);
+  if (!result.complete) throw new Error("Front-door copy is unavailable.");
+  return result.text;
+}
+
+// Render inside the layout's SiteFrame; handlers belong to the host.
+const signIn = <AuthView
+  heading={copy("front-door.sign-in.title")}
+  description={copy("front-door.sign-in-invite-only.description")}
+  form={<SignInForm access="invite-only" nouns={nouns}
+    identify={identify} verify={verify} onSignedIn={goHome}
+    unavailable={unavailable} />}
+/>;
+
+```
+
+For not-authorized, use the matching
+`front-door.not-authorized-invite-only.{title,description,primary}` or
+`front-door.not-authorized-staff-only.{title,description,primary}` in an
+`AuthView` with a single switch-account control in `form` and no `notes`.
+This composition has no separate sign-out action. Both variants take only
+the `surface` noun, so their copy has no slot for the account identifier. The same
+`AuthView` composition renders equivalent markup from ordinary and
+react-server entries. Interactive forms belong in the host's client boundary.
+
 ### `SignInForm`
 
 `SignInForm`, exported from `@clossys/publisher/web`, is an identifier-first
@@ -3394,11 +3466,11 @@ Where each failure shows, on the step it happened in:
 | empty identifier | inline on the field | `front-door.identifier-required.notice` |
 | empty password | inline on the field | `front-door.password-required.notice` |
 | empty code | inline on the field | `front-door.code-required.notice` |
-| `credential` or `notFound`, identifier step | inline on the field | `front-door.identifier-not-found.notice` |
+| `credential` or `notFound`, identifier step | inline on the field | `front-door.identifier-not-found.notice`; `front-door.identifier-not-found-neutral.notice` when `access` is restricted |
 | `credential` or `notFound`, password step | inline on the field | `front-door.password.notice` |
 | `credential` or `notFound`, code step | inline on the field | `front-door.code.notice` |
 | `rateLimited` | the form's one `role="alert"` | `front-door.rate-limited.notice` |
-| `locked` | the form's one `role="alert"` | `front-door.locked.notice` |
+| `locked` | the form's one `role="alert"` | `front-door.locked.notice`; `front-door.rate-limited.notice` when `access` is restricted |
 | `network` | the form's one `role="alert"` | `front-door.network.notice` |
 | `unavailable`, a stray `needsCode`, a throw, an unknown answer, or the `unavailable` prop | the form's one `role="alert"` | `front-door.unavailable.notice` |
 

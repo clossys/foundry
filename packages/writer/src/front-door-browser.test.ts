@@ -5,8 +5,8 @@ import { resolveFrontDoorCopy as browser } from "./front-door-browser.js";
 const nouns = { brand: "Brand", surface: "Surface", identifier: "visitor", digest: "trace", requestAccessLabel: "Request access" };
 
 describe("immutable browser front-door defaults", () => {
-  it("matches pristine strict-root resolutions for all 63 keys, pruning unused nouns", () => {
-    expect(FRONT_DOOR_COPY_IDS).toHaveLength(63);
+  it("matches pristine strict-root resolutions for all 72 keys, pruning unused nouns", () => {
+    expect(FRONT_DOOR_COPY_IDS).toHaveLength(72);
     for (const key of FRONT_DOOR_COPY_IDS) {
       const result = browser(key, nouns);
       expect(result).toEqual(legacy(key, nouns));

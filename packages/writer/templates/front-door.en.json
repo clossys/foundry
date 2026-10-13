@@ -418,6 +418,72 @@
       "text": "Enter your first and last name.",
       "context": "activation page: notice when a name field is empty",
       "status": "approved"
+    },
+    {
+      "id": "front-door.sign-in-staff-only.description",
+      "text": "Sign-in is for staff with access to {surface}.",
+      "context": "staff-only sign-in page: line under the heading",
+      "status": "approved",
+      "placeholders": [
+        "surface"
+      ]
+    },
+    {
+      "id": "front-door.sign-in-invite-only.description",
+      "text": "Sign-in is by invitation to {surface}.",
+      "context": "invite-only sign-in page: line under the heading",
+      "status": "approved",
+      "placeholders": [
+        "surface"
+      ]
+    },
+    {
+      "id": "front-door.not-authorized-staff-only.title",
+      "text": "Staff access required",
+      "context": "staff-only not-authorized page: heading",
+      "status": "approved"
+    },
+    {
+      "id": "front-door.not-authorized-staff-only.description",
+      "text": "This account doesn’t have staff access to {surface}.",
+      "context": "staff-only not-authorized page: line under the heading",
+      "status": "approved",
+      "placeholders": [
+        "surface"
+      ]
+    },
+    {
+      "id": "front-door.not-authorized-staff-only.primary",
+      "text": "Switch account",
+      "context": "staff-only not-authorized page: single primary action",
+      "status": "approved"
+    },
+    {
+      "id": "front-door.not-authorized-invite-only.title",
+      "text": "Invitation required",
+      "context": "invite-only not-authorized page: heading",
+      "status": "approved"
+    },
+    {
+      "id": "front-door.not-authorized-invite-only.description",
+      "text": "This account doesn’t have an invitation to {surface}.",
+      "context": "invite-only not-authorized page: line under the heading",
+      "status": "approved",
+      "placeholders": [
+        "surface"
+      ]
+    },
+    {
+      "id": "front-door.not-authorized-invite-only.primary",
+      "text": "Switch account",
+      "context": "invite-only not-authorized page: single primary action",
+      "status": "approved"
+    },
+    {
+      "id": "front-door.identifier-not-found-neutral.notice",
+      "text": "Sign-in couldn’t continue. Check your details and try again.",
+      "context": "restricted sign-in page: neutral failure notice without confirming account existence",
+      "status": "approved"
     }
   ]
 }
