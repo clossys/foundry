@@ -2567,7 +2567,6 @@ const frame: SiteFrameConfig = {
   site: {
     nav: { label: { id: "nav.label" }, links: [{ href: "/pricing", label: { id: "nav.pricing" } }] },
     actions: [{ href: "/contact", label: { id: "nav.contact" } }],
-    iconActions: [{ href: "/contact", label: { id: "nav.contact" }, icon: Home }],
     footerLinks: [{ href: "/about", label: { id: "footer.about" } }],
     social: { label: { id: "footer.profiles" }, links: [{ href: "https://social.example/profile", label: { id: "social.profile" }, icon: Home }] },
   },

@@ -719,6 +719,43 @@ describe("SiteFrame icon slots", () => {
     }
   });
 
+  it("emits no wrapper, list, navigation or divider for empty slots on a shell without columns or actions", () => {
+    const bare: SiteShellInput = { brand: CONFIG.brand, skipLink: CONFIG.skipLink, footer: { legal: CONFIG.legal } };
+    const baseline = renderToStaticMarkup(frame(bare, <p>content</p>));
+    for (const social of [{ links: [] }, { label: ref("social.label"), links: [] }]) {
+      const shell: SiteShellInput = { ...bare, iconActions: [], footer: { ...bare.footer!, links: [], social } };
+      expect(renderToStaticMarkup(frame(shell, <p>content</p>))).toBe(baseline);
+      const { container, unmount } = render(frame(shell, <p>content</p>));
+      // Banner: the brand group only, no empty trailing actions wrapper.
+      expect(container.querySelector("header > div")!.children).toHaveLength(1);
+      // Footer: the secondary row only, no empty column grid, and no divider above it.
+      const footer = container.querySelector("footer")!;
+      expect(footer.querySelector(".grid")).toBeNull();
+      expect(footer.firstElementChild!.children).toHaveLength(1);
+      const secondary = footer.firstElementChild!.firstElementChild!;
+      expect(secondary.className).not.toContain("border-t");
+      // The secondary row holds the legal row alone: no empty social list or navigation.
+      expect(secondary.children).toHaveLength(1);
+      expect(within(footer).getAllByRole("navigation").map((nav) => nav.getAttribute("aria-label"))).toEqual(["Legal"]);
+      for (const list of container.querySelectorAll("ul")) expect(list.children.length).toBeGreaterThan(0);
+      unmount();
+    }
+  });
+
+  it("keeps the social list from shrinking beside the legal row and gives icon links a square tap target", () => {
+    const named = render(frame(ALL_SLOTS, <p>content</p>));
+    expect(named.getByRole("navigation", { name: "Profiles" })).toHaveClass("shrink-0");
+    for (const name of ["Contact", "Profile"]) {
+      const link = named.getByRole("link", { name });
+      expect(link.style.minHeight).toBe("var(--ui-layout-tap-target, 44px)");
+      expect(link.style.minWidth).toBe("var(--ui-layout-tap-target, 44px)");
+      expect(link).toHaveClass("justify-center");
+    }
+    named.unmount();
+    const unnamed = render(frame({ ...ALL_SLOTS, footer: { ...ALL_SLOTS.footer!, social: { links: ALL_SLOTS.footer!.social!.links } } }, <p>content</p>));
+    expect(unnamed.getByRole("link", { name: "Profile" }).closest("ul")).toHaveClass("shrink-0");
+  });
+
   it("renders ungrouped links alone and unnamed social without a navigation wrapper", () => {
     const { getByRole } = render(frame({ ...ALL_SLOTS, footer: { ...ALL_SLOTS.footer!, columns: [], social: { links: ALL_SLOTS.footer!.social!.links } } }, <p>content</p>));
     const footer = getByRole("contentinfo");

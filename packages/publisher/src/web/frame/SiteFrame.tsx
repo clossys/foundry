@@ -9,7 +9,12 @@ import type { SiteFrameProps } from "./types.js";
 
 const LINK_CLASSES =
   "inline-flex items-center px-xs text-inherit no-underline hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
-const LINK_STYLE = { minHeight: "var(--ui-layout-tap-target, 44px)" } as const;
+// Designer's tap-target token, the value SiteHeader.ActionLink and SiteFooter.Legal size their links with.
+const TAP_TARGET = "var(--ui-layout-tap-target, 44px)";
+const LINK_STYLE = { minHeight: TAP_TARGET } as const;
+// An icon-only link has no text to widen it, so it takes the tap target in both axes, icon centred.
+const ICON_LINK_CLASSES = `${LINK_CLASSES} justify-center`;
+const ICON_LINK_STYLE = { minHeight: TAP_TARGET, minWidth: TAP_TARGET } as const;
 
 function TextLink({ link }: { readonly link: ResolvedSiteLink }) {
   return (
@@ -21,15 +26,17 @@ function TextLink({ link }: { readonly link: ResolvedSiteLink }) {
 
 function IconLink({ link }: { readonly link: ResolvedSiteIconLink }) {
   return (
-    <a href={link.href} aria-label={link.label} className={LINK_CLASSES} style={LINK_STYLE}>
+    <a href={link.href} aria-label={link.label} className={ICON_LINK_CLASSES} style={ICON_LINK_STYLE}>
       <Icon glyph={link.icon} decorative />
     </a>
   );
 }
 
-function IconLinkList({ links }: { readonly links: readonly ResolvedSiteIconLink[] }) {
+const ICON_LIST_CLASSES = "m-0 flex list-none flex-wrap items-center gap-sm p-0";
+
+function IconLinkList({ links, className }: { readonly links: readonly ResolvedSiteIconLink[]; readonly className: string }) {
   return (
-    <ul role="list" className="m-0 flex list-none flex-wrap items-center gap-sm p-0">
+    <ul role="list" className={className}>
       {links.map((link, index) => (
         <li key={index}>
           <IconLink link={link} />
@@ -140,12 +147,14 @@ export function SiteFrame({ shell, resolveCopy, resolveAsset, children }: SiteFr
           }
           secondary={
             <>
+              {/* The social list sits beside SiteFooter.Legal (a `w-full` flex item) in the
+                  footer's `secondary` row; it must not shrink, or its icons wrap. */}
               {footer.social && footer.social.links.length > 0 ? (
                 footer.social.label === undefined ? (
-                  <IconLinkList links={footer.social.links} />
+                  <IconLinkList links={footer.social.links} className={`shrink-0 ${ICON_LIST_CLASSES}`} />
                 ) : (
-                  <nav aria-label={footer.social.label}>
-                    <IconLinkList links={footer.social.links} />
+                  <nav aria-label={footer.social.label} className="shrink-0">
+                    <IconLinkList links={footer.social.links} className={ICON_LIST_CLASSES} />
                   </nav>
                 )
               ) : null}
