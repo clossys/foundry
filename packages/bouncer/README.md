@@ -549,21 +549,26 @@ const provider = {
   create: (params: { identifier: string }) => signIn.create(params),
   setActive: (params: { session: string }) => clerk.setActive(params),
   operationOwner: clerk,
-  isCurrent: () => isScreenCurrent() && clerk.client?.signIn === signIn,
+  isCurrent: () => isScreenCurrent(),
   signal: screenAbortController.signal,
 };
 ```
 
 The caller owns `isScreenCurrent()` and aborts `screenAbortController` when
-the screen is disposed. Recreate the provider when its SignIn resource changes.
-Use the shared Clerk instance as `operationOwner` across screens or handler
+the screen is disposed. The handlers call `isCurrent` before and after every
+Clerk call; an answer of `false`, a throw or an aborted `signal` ends the
+operation as `unavailable`. That is the only currency check: the handlers do
+not compare SignIn resources or watch `clerk.client`. Use the shared Clerk instance as `operationOwner` across screens or handler
 sets; without it the provider object is the owner. One operation runs per
 owner. Every `identify`, including one refused while busy, invalidates older
 flows. An invalidated or aborted operation cannot start its next Clerk call or
 activate a session. Calls made out of phase answer `unavailable` without
 calling Clerk. After `unavailable`, `locked` or `notFound`, restart with
 `identify`. Session activation is attempted once per flow, and a rejected
-activation never answers `ok`.
+activation never answers `ok`. Set `hideAccountExistence: true` on the
+provider to answer `notFound` as `credential` and `locked` as `rateLimited`,
+with the same limits as the `classifySignInFailure` option above; the flow
+still restarts at `identify` after either.
 
 `verify` alone can answer `needsCode`. It selects the first supported valid
 second factor in Clerk's order: `totp`, `backup_code`, `email_code` with an

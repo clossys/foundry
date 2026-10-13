@@ -46,6 +46,11 @@ export interface ClerkSignInProvider {
   readonly signal?: AbortSignal;
   /** Share the Clerk instance across handler sets. Defaults to provider. */
   readonly operationOwner?: object;
+  /**
+   * Answer `notFound` as `credential` and `locked` as `rateLimited`, as
+   * `classifySignInFailure` does. The flow still restarts at identify.
+   */
+  readonly hideAccountExistence?: boolean;
 }
 
 /** Fits Publisher SignInForm's four handlers without importing Publisher. */
@@ -102,6 +107,7 @@ export function createClerkSignInHandlers(provider: ClerkSignInProvider): ClerkS
     owners.set(owner, state);
   }
   const ownerState = state;
+  const hideAccountExistence = provider.hideAccountExistence === true;
   let epoch = ownerState.epoch;
   let revision = 0;
   let phase: Phase = "identify";
@@ -153,6 +159,7 @@ export function createClerkSignInHandlers(provider: ClerkSignInProvider): ClerkS
         phase = "identify";
         resource = undefined;
         codeFactor = undefined;
+        if (hideAccountExistence) return { status: failureClass === "notFound" ? "credential" : "rateLimited" };
       }
       return { status: failureClass };
     } finally {

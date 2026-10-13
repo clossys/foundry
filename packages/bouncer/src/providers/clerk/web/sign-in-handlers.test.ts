@@ -392,6 +392,31 @@ describe("Clerk sign-in handlers", () => {
     await passwordStep(f);
   });
 
+  it.each([
+    ["form_identifier_not_found", "credential"], ["user_locked", "rateLimited"],
+    ["form_password_incorrect", "credential"], ["clerk_offline", "network"],
+  ] as const)("hideAccountExistence answers %s as %s", async (code, expected) => {
+    const f = fake();
+    const handlers = createClerkSignInHandlers({ ...f.provider, hideAccountExistence: true });
+    f.provider.create.mockRejectedValueOnce({ code, message: "provider detail fixture" });
+    const result = await handlers.identify("identifier-fixture");
+    expect(result.status === expected).toBe(true);
+    expect(Object.keys(result).join(",") === "status").toBe(true);
+  });
+
+  it.each([
+    ["user_locked", "rateLimited"], ["form_identifier_not_found", "credential"],
+  ] as const)("hideAccountExistence still requires identify after %s", async (code, expected) => {
+    const f = fake();
+    const handlers = createClerkSignInHandlers({ ...f.provider, hideAccountExistence: true });
+    expect(await handlers.identify("identifier-fixture")).toEqual(OK);
+    vi.mocked(f.resource.attemptFirstFactor).mockRejectedValueOnce({ code });
+    expect((await handlers.verify("password-fixture")).status === expected).toBe(true);
+    const before = calls(f);
+    expect(await handlers.verify("password-fixture")).toEqual(UNAVAILABLE);
+    expect(calls(f)).toEqual(before);
+  });
+
   it.each(["form_password_incorrect", "clerk_offline"])("allows retry after recoverable rejection %s", async code => {
     const f = fake();
     await passwordStep(f);
