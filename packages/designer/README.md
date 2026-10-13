@@ -6699,9 +6699,9 @@ The check accepts plain data, rejects unknown fields, and returns a
 `ConsumerArtReport` with path-bearing `ConsumerArtFinding` entries. It checks
 declared dimensions, aspect ratio, format, byte budget, URL, loading,
 accessibility purpose and token paint offline. File-level verification is not
-yet shipped. A Clossys follow-up gate, tracked in
-[#2066](https://github.com/clossys/foundry/pull/2066), will verify actual file
-dimensions, format, static content and byte size against the declaration.
+yet shipped: photographs' actual file dimensions, format, static content and
+byte size are not read or compared with the declaration. For inline SVG, the
+declared `bytes` must be at least the combined length of all path `d` strings.
 Consumers supply the art and its usage rights. Images render with declared
 intrinsic dimensions. Hidden layers contain no controls or focus targets;
 meaningful SVG receives `role="img"` and its resolved alt as the accessible

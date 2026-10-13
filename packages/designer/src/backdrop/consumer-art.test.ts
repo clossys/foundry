@@ -44,6 +44,15 @@ describe("consumer art contract", () => {
   ])("refuses invalid stroke declarations: %j", stroke => {
     expect(ok({ ...vector, source: { format: "svg", paths: [{ d: "M0 0L10 10", fillToken: "--color-accent", ...stroke }] } })).toBe(false);
   });
+  it("requires inline SVG declared bytes to cover the path data", () => {
+    const d = "M0 0H1600V900H0Z";
+    const paths = [{ d, fillToken: "--color-accent" }, { d, fillToken: "--color-accent" }];
+    expect(ok({ ...vector, bytes: d.length * 2, source: { format: "svg", paths } })).toBe(true);
+    const report = checkConsumerArtContract({ ...vector, bytes: d.length * 2 - 1, source: { format: "svg", paths } });
+    expect(report.ok).toBe(false);
+    expect(report.findings).toContainEqual(expect.objectContaining({ path: "art.bytes" }));
+    expect(ok({ ...vector, bytes: 1, source: { format: "svg", paths: [{ d: "M0 0L10 10 L20 20", fillToken: "--color-accent" }] } })).toBe(false);
+  });
   it("accepts credential-free HTTPS but rejects HTTP", () => {
     expect(ok({ ...photo, source: { format: "webp", src: "https://example.com/photo.webp" } })).toBe(true);
     const report = checkConsumerArtContract({ ...photo, source: { format: "webp", src: "http://example.com/photo.webp" } });

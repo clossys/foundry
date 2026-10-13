@@ -5443,10 +5443,8 @@ const visual = <ConsumerArtSlot contract={art} />;
 ```
 
 The check evaluates supplied declarations without fetching their source.
-It verifies declared values only. File-level verification is not yet shipped;
-Clossys owns the follow-up gate for actual file dimensions, format, static
-content and byte size, tracked in
-[#2066](https://github.com/clossys/foundry/pull/2066). Consumers supply art and
-usage rights. Token paints re-theme inline illustrations and scenes, while
+It verifies declared values only. File-level verification of actual file
+dimensions, format, static content and byte size is not yet shipped. Consumers
+supply art and usage rights. Token paints re-theme inline illustrations and scenes, while
 photographs retain their source pixels. Existing image/video registry contracts
 continue to govern those registered assets.

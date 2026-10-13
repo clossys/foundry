@@ -116,6 +116,8 @@ export function checkConsumerArtContract(value: unknown): ConsumerArtReport {
             if (path.strokeToken !== undefined && !colorToken(path.strokeToken)) fail(`${field}.strokeToken`, "Expected a registered color token name.");
             if (path.strokeWidth !== undefined && (path.strokeToken === undefined || typeof path.strokeWidth !== "number" || !Number.isFinite(path.strokeWidth) || path.strokeWidth <= 0 || path.strokeWidth > 64)) fail(`${field}.strokeWidth`, "A stroke needs a token and a finite width greater than zero and at most 64.");
           }
+          const content = paths.reduce((total: number, entry: unknown) => total + (dataRecord(entry) && typeof entry.d === "string" ? entry.d.length : 0), 0);
+          if (positiveInteger(art.bytes, BACKDROP_BUDGET_CEILING_BYTES) && art.bytes < content) fail("art.bytes", `Declared bytes understate the inline SVG: at least ${content} are needed for the path data.`);
           if (Reflect.ownKeys(paths).some(key => key !== "length" && (typeof key !== "string" || !/^(0|[1-9]\d*)$/.test(key) || Number(key) >= paths.length))) fail("art.source.paths", "Unsupported array fields.");
         }
       } else if (shape(art.source, "art.source", ["format", "src"])) {
