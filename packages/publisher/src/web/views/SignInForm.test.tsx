@@ -642,6 +642,25 @@ describe("restricted sign-in copy", () => {
     expect(await screen.findByText("Sign-in couldn’t continue. Check your details and try again.")).toBeInTheDocument();
     expect(screen.queryByText(/We couldn’t find an account/)).not.toBeInTheDocument();
   });
+  // Mirrors Bouncer's hideAccountExistence, which reads `locked` as `rateLimited`.
+  it.each([
+    ["staff-only", SignInForm], ["invite-only", SignInForm],
+    ["staff-only", BrowserSignInForm], ["invite-only", BrowserSignInForm],
+  ] as const)("shows the rate-limited notice for locked on %s", async (access, RestrictedSignInForm) => {
+    const user = userEvent.setup();
+    render(<RestrictedSignInForm nouns={{ surface: "Acme Console" }} access={access} identify={async () => ({ status: "locked" })} verify={vi.fn()} onSignedIn={vi.fn()} />);
+    await user.type(screen.getByRole("textbox", { name: "Email" }), "visitor@example.test");
+    await user.click(screen.getByRole("button", { name: "Continue" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent(defaultText("rate-limited.notice"));
+    expect(screen.queryByText(defaultText("locked.notice"))).not.toBeInTheDocument();
+  });
+  it("keeps the locked notice on an open surface", async () => {
+    const user = userEvent.setup();
+    render(<SignInForm nouns={{ surface: "Acme Console" }} access="open" identify={async () => ({ status: "locked" })} verify={vi.fn()} onSignedIn={vi.fn()} />);
+    await user.type(screen.getByRole("textbox", { name: "Email" }), "visitor@example.test");
+    await user.click(screen.getByRole("button", { name: "Continue" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent(defaultText("locked.notice"));
+  });
   it("refuses an unknown access value without echoing it", () => {
     expect(() => render(<SignInForm nouns={{ surface: "Acme Console" }} access={"untrusted-value" as never} identify={vi.fn()} verify={vi.fn()} onSignedIn={vi.fn()} />))
       .toThrow("SignInForm access must be open, staff-only or invite-only.");

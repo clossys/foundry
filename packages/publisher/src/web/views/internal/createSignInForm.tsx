@@ -16,7 +16,11 @@ export type SignInFailure = "credential" | "notFound" | "rateLimited" | "locked"
 export type SignInResult = { status: "ok" } | { status: "needsCode" } | { status: SignInFailure };
 
 export interface SignInFormProps {
-  /** Selects the neutral identifier-failure notice for restricted sign-in. The host selects its AuthView description and omits access prompts. */
+  /**
+   * Restricted values select notices that do not confirm an account: the neutral notice for an identifier-step `credential` or
+   * `notFound`, and the rate-limited notice for `locked`. Copy only; the host's handlers enforce access. The host selects its
+   * AuthView description and omits access prompts.
+   */
   access?: "open" | "staff-only" | "invite-only";
   /** Looks the identifier up. Receives it trimmed. A rejection is read as `unavailable`. */
   identify: (identifier: string) => Promise<SignInResult>;
@@ -71,8 +75,12 @@ const REQUIRED_FOR_STEP: Record<Step, FrontDoorKey> = {
   code: "front-door.code-required.notice",
 };
 
-/** The alert for a status that is neither `ok` nor a field error. Anything outside the union, `needsCode` included, is `unavailable`. */
-function alertFor(status: unknown): FrontDoorKey {
+/**
+ * The alert for a status that is neither `ok` nor a field error. Anything outside the union, `needsCode` included, is `unavailable`.
+ * On a restricted surface `locked` shows the rate-limited notice, as Bouncer's `hideAccountExistence` reads `locked` as `rateLimited`.
+ */
+function alertFor(status: unknown, restricted: boolean): FrontDoorKey {
+  if (status === "locked" && restricted) return FAILURE_NOTICE.rateLimited;
   return status === "rateLimited" || status === "locked" || status === "network" ? FAILURE_NOTICE[status] : FAILURE_NOTICE.unavailable;
 }
 
@@ -113,10 +121,12 @@ export function createSignInForm(resolveCopy: FrontDoorResolver) {
    * What it guarantees: nothing is validated before a submit or on blur, and an
    * empty submit shows its notice inline, moves focus to the step's field and
    * calls no handler; `credential` and `notFound` show inline on the step's own
-   * field, which takes focus (the identify step uses a neutral notice for restricted access, the
-   * password step as "wrong password", the code step as "wrong or expired
-   * code"), and `rateLimited`, `locked`, `network` and `unavailable` show in
-   * the form's one `submitError` alert, so a failure is never shown twice; an
+   * field, which takes focus (the identify step reads both as "no account",
+   * or with a neutral notice when `access` is restricted, the password step as
+   * "wrong password", the code step as "wrong or expired code"), and
+   * `rateLimited`, `locked`, `network` and `unavailable` show in the form's one
+   * `submitError` alert (`locked` with the rate-limited notice when `access` is
+   * restricted), so a failure is never shown twice; an
    * inline error clears when its field changes; the submit and resend buttons
    * are pending, never `disabled`, while a call is in flight, and a second
    * submit or resend is ignored; a resend that answers `ok` clears the code and
@@ -139,7 +149,8 @@ export function createSignInForm(resolveCopy: FrontDoorResolver) {
     if (access !== "open" && access !== "staff-only" && access !== "invite-only") {
       throw new RenderError("resolution-failed", "SignInForm access must be open, staff-only or invite-only.");
     }
-    const identifierNotice: FrontDoorKey = access === "open"
+    const restricted = access !== "open";
+    const identifierNotice: FrontDoorKey = !restricted
       ? "front-door.identifier-not-found.notice"
       : "front-door.identifier-not-found-neutral.notice";
     const [step, setStep] = useState<Step>("identify");
@@ -253,7 +264,7 @@ export function createSignInForm(resolveCopy: FrontDoorResolver) {
         focus(step);
       } else {
         // Anything else, including a stray `needsCode` or a status outside the union, is a failure to sign in, never silence.
-        setAlertNotice(alertFor(status));
+        setAlertNotice(alertFor(status, restricted));
       }
       inFlight.current = false;
       setPending(false);
@@ -273,7 +284,7 @@ export function createSignInForm(resolveCopy: FrontDoorResolver) {
         setFieldNotice(null);
         focus("code");
       } else {
-        setAlertNotice(alertFor(status));
+        setAlertNotice(alertFor(status, restricted));
       }
       inFlight.current = false;
       setResending(false);

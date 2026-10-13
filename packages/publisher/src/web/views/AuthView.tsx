@@ -120,9 +120,11 @@ export interface AuthViewProps extends HTMLAttributes<HTMLDivElement> {
    * fragment splits onto two lines. The card holds
    * only the form and its one primary action. The text is always the site's
    * copy. Optional `noAccountPrompt` and `requestAccessLabel` hold caller
-   * copy and a labeled link. Invitation-only sign-in omits both props
-   * and sign-up notes. Keep one primary form action and the form's unavailable
-   * notice. The README documents this composition and a host assertion.
+   * copy and a labeled link. The view has no access mode and renders whatever
+   * prompt, label or notes it is given, so an invitation-only sign-in page
+   * omits both props and sign-up notes, and its page test should assert there
+   * is no request-access or sign-up text. Keep one primary form action and the
+   * form's unavailable notice. The README documents this composition.
    */
   notes?: ReactNode;
   /** Optional caller copy before the request-access label; omitted or empty renders no prompt. */

@@ -359,9 +359,10 @@ Name a shipped template when its slots cover the page:
   is always the site's copy. `secondaryAction` is the deprecated name of
   `notes` and renders in the same place; passing both throws. Optional
   `noAccountPrompt` and `requestAccessLabel` hold caller copy and a labeled
-  link. Invitation-only sign-in and activation omit both props and
-  request-access/sign-up notes; each site's page test should assert no
-  request-access or sign-up text. Pass each `notes` line as one element: text plus a
+  link. The view has no access mode and renders whatever prompt, label or
+  notes it is given, so invitation-only sign-in and activation pages omit
+  both props and request-access/sign-up notes, and each site's page test
+  should assert no request-access or sign-up text. Pass each `notes` line as one element: text plus a
   link in one fragment splits onto two lines. When the sign-in provider is
   unavailable, `isDisabled` keeps the form on screen inside a disabled
   `<fieldset>` with the typed values still shown; the explanation goes in the
@@ -3140,8 +3141,11 @@ it("renders one frame around the not-found view", () => {
 
 Compose this mode inside the host's `SiteFrame`, without deprecated chrome
 props. Omit `AuthView.noAccountPrompt`, `AuthView.requestAccessLabel` and
-sign-up/request-access `notes`. Both copy fields are optional independently;
-absent or empty fields leave no row or link. For an open surface, the caller
+sign-up/request-access `notes`. `AuthView` cannot tell restricted sign-in
+from open sign-in: it renders any prompt, label or notes the host passes, so
+the host keeps this rule and its page test asserts that no request-access or
+sign-up text renders. Both copy fields are optional independently; absent or
+empty fields leave no row or link. For an open surface, the caller
 may pass the prompt and a labeled link as those two props, resolving
 `front-door.request-access.*` only when needed. Restricted sign-in does not
 need a `requestAccessLabel` noun. Omit self-service recovery notes if the host
@@ -3150,7 +3154,10 @@ chooses to keep recovery outside this surface.
 Keep the form's single primary action and `front-door.unavailable.notice`.
 `SignInForm.access` is the closed optional union `"open" | "invite-only" |
 "staff-only"` (default `"open"`); restricted values use
-`front-door.identifier-not-found-neutral.notice` for identifier failures.
+`front-door.identifier-not-found-neutral.notice` for identifier-step
+`credential` and `notFound`, and `front-door.rate-limited.notice` for
+`locked`, matching Bouncer's `hideAccountExistence` reading of `notFound` as
+`credential` and `locked` as `rateLimited`.
 The neutral notice avoids confirming account existence only in its wording;
 it does not hide differences in the flow. An identifier accepted by the host
 advances to the password step, while a rejected identifier stays on the first
@@ -3195,8 +3202,8 @@ For not-authorized, use the matching
 `front-door.not-authorized-invite-only.{title,description,primary}` or
 `front-door.not-authorized-staff-only.{title,description,primary}` in an
 `AuthView` with a single switch-account control in `form` and no `notes`.
-There is no separate sign-out action in this composition. Both variants
-require only `surface`; neither discloses the account identifier. The same
+This composition has no separate sign-out action. Both variants take only
+the `surface` noun, so their copy has no slot for the account identifier. The same
 `AuthView` composition renders equivalent markup from ordinary and
 react-server entries. Interactive forms belong in the host's client boundary.
 
@@ -3297,11 +3304,11 @@ Where each failure shows, on the step it happened in:
 | empty identifier | inline on the field | `front-door.identifier-required.notice` |
 | empty password | inline on the field | `front-door.password-required.notice` |
 | empty code | inline on the field | `front-door.code-required.notice` |
-| `credential` or `notFound`, identifier step | inline on the field | `front-door.identifier-not-found.notice` |
+| `credential` or `notFound`, identifier step | inline on the field | `front-door.identifier-not-found.notice`; `front-door.identifier-not-found-neutral.notice` when `access` is restricted |
 | `credential` or `notFound`, password step | inline on the field | `front-door.password.notice` |
 | `credential` or `notFound`, code step | inline on the field | `front-door.code.notice` |
 | `rateLimited` | the form's one `role="alert"` | `front-door.rate-limited.notice` |
-| `locked` | the form's one `role="alert"` | `front-door.locked.notice` |
+| `locked` | the form's one `role="alert"` | `front-door.locked.notice`; `front-door.rate-limited.notice` when `access` is restricted |
 | `network` | the form's one `role="alert"` | `front-door.network.notice` |
 | `unavailable`, a stray `needsCode`, a throw, an unknown answer, or the `unavailable` prop | the form's one `role="alert"` | `front-door.unavailable.notice` |
 
