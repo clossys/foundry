@@ -132,7 +132,7 @@ export function hasInteractiveContent(parts: readonly ReactNode[]): boolean {
  * or `onPress`): the item is one link, so nothing inside it may be another
  * target. Passive `use` and `image` href references under a literal `<svg>`
  * in the supplied tree are allowed; handlers, focus, editing and interactive
- * descendants still make those resources targets. `foreignObject` resets
+ * descendants still make those resources targets. `<foreignObject>` resets
  * SVG context, and a nested literal `<svg>` restores it. Other SVG href
  * carriers are conservatively refused, even when their references are passive.
  * Reads the React elements as passed: an opaque wrapper does not establish

@@ -3365,6 +3365,45 @@ pairing on each ground. Neutral keeps its own opaque fill. Badge tone maps to
 the existing Badge atom: neutral (default), success, warning, danger or info.
 The item-level featured field is retired; select the collection treatment.
 
+#### Index configuration: status list
+
+Use unordered `Items` rows when readers look up an item's current status.
+Put each visible status label in `badge`; the optional description explains
+that item. This configuration uses Index's existing shape, reveal and groups
+axes: `rows-1`, `all`, `off` in the example. Labels are authored copy,
+and the badge uses existing semantic tokens. The list follows the row count
+and grouping limits below.
+
+```tsx
+import { Items } from "@clossys/designer/blocks/server";
+
+function FeatureStatus() {
+  return (
+    <section>
+      <h2 id="feature-status-heading">Feature status</h2>
+      <Items
+        aria-labelledby="feature-status-heading"
+        arrangement="rows"
+        columns={1}
+        order="none"
+        reveal="all"
+        treatment="rule"
+        scale="item"
+        items={[
+          { id: "search", heading: "Search", description: "Find a record.", badge: { label: "Live", tone: "success" } },
+          { id: "imports", heading: "Imports", description: "Bring records together.", badge: { label: "In progress", tone: "info" } },
+          { id: "exports", heading: "Exports", description: "Take a copy with you.", badge: { label: "Planned", tone: "neutral" } },
+        ]}
+      />
+    </section>
+  );
+}
+```
+
+Publisher selects this configuration with `kind: "content-section"` and
+an `items` block using `recipe: "topics"`, with `badge.label` as a `CopyRef`.
+Its preview example appears on `catalog/index-function.html`.
+
 | Arrangement | Columns | Counts |
 |---|---|---|
 | columns | 2 | 2, 4, 6 |
