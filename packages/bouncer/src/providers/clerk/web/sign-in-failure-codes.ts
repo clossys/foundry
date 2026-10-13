@@ -10,7 +10,9 @@ export const CLERK_SIGN_IN_FAILURE_CODES = {
   form_password_incorrect: "credential",
   form_password_or_identifier_incorrect: "credential",
   form_code_incorrect: "credential",
+  form_param_format_invalid: "credential",
   form_identifier_not_found: "notFound",
+  invitation_account_not_exists: "notFound",
   user_locked: "locked",
   clerk_offline: "network",
 } as const satisfies SignInFailureCodeTable;

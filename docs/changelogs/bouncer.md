@@ -3,6 +3,9 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## Unreleased
+
+- Add `createClerkSignInHandlers` to the Clerk web client exports for Publisher's `SignInForm`, with password and second-factor verification, message-code resend, shared-owner concurrency and stale-flow guards, and classified failures that omit provider text.
 
 ## 0.2.0 - 2026-10-02
 
