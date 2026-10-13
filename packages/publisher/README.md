@@ -5759,3 +5759,57 @@ counts in two columns, and 2–4 groups of 2–4 items within the total budget.
 Badge labels resolve through the document's ordinary copy provenance;
 an unresolved label refuses the document. The preview renders this
 configuration on `catalog/index-function.html` through `SectionedView`.
+
+## Checked consumer art
+
+`ConsumerArtSlot` from `@clossys/publisher/web` (including its React server
+entry) accepts `ConsumerArtSlotProps`: one Designer `ConsumerArtContract`.
+It calls `checkConsumerArtContract` before building markup and throws a
+path-bearing `RenderError` with reason `resolution-failed` on refusal.
+Consumer repositories supply the art and rights; Clossys supplies the contract
+and check. `Specimen` and `Scene` remain product visuals owned by Clossys.
+
+See Designer's [consumer art contract](../designer/README.md#consumer-owned-art-slots)
+for dimensions, four aspect ratios, static formats, token paint, loading,
+byte limits and accessibility. Raster images use intrinsic dimensions,
+`decoding="async"` and the declared loading strategy. Inline SVG contains
+static paths whose paints use live theme tokens. Meaningful art exposes the
+resolved alt; decorative art has empty alt, `aria-hidden` and no focus targets.
+The filler reserves media geometry and fits the containing backdrop layer.
+It carries no copy, controls, handlers or art of its own.
+
+Use `slot: "media"` in the existing Clossys `Hero.media`,
+`ContentSection.media` or `MediaFigure` seam. Use `slot: "backdrop"` in the
+Clossys `LandingView.backdrop` or `HeroView.backdrop` seam. Clossys owns the
+positioned layer and its utility classes; consumers fill it with art. Section
+backdrops are deferred until Clossys ships their section seam. Hero backdrops
+can declare eager loading for the first viewport; the slot also honors an
+explicit lazy declaration for deferred art.
+
+This is an art slot within the six-function catalog, not a new function,
+recipe or configuration axis. Compose the page's blocks within the catalog
+budget of three axes per function and four values per axis. Retired frozen
+blocks are not art sources. Preserve the page's reading order, accessible
+copy and token ground if the art fails to load.
+
+Minimal consumer usage (the source file belongs to that repository; resolve
+real alt copy through Writer):
+
+```tsx
+import { ConsumerArtSlot, type ConsumerArtSlotProps } from "@clossys/publisher/web";
+
+const art: ConsumerArtSlotProps["contract"] = {
+  slot: "media", purpose: "meaningful", alt: "A tree beside a walking path",
+  width: 1600, height: 900, aspect: "16:9", fit: "contain",
+  loading: "lazy", bytes: 100000, backgroundToken: "--color-surface-base",
+  source: { format: "webp", src: "/art/photo.webp" },
+};
+const visual = <ConsumerArtSlot contract={art} />;
+```
+
+The check evaluates supplied declarations without fetching their source.
+It verifies declared values only. File-level verification of actual file
+dimensions, format, static content and byte size is not yet shipped. Consumers
+supply art and usage rights. Token paints re-theme inline illustrations and scenes, while
+photographs retain their source pixels. Existing image/video registry contracts
+continue to govern those registered assets.

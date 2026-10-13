@@ -216,7 +216,7 @@ describe("public UI contract", () => {
   });
 });
 
-// Pinned before the split: 57 values, subtract only the two Node helpers.
+// Pure namespace with the consumer art checker; file helpers remain Node-only.
 const PURE_TOKEN_VALUES = [
   "AA",
   "AA_LARGE",
@@ -245,6 +245,7 @@ const PURE_TOKEN_VALUES = [
   "checkBackdropElement",
   "checkBrandFileCoverage",
   "checkClearSpace",
+  "checkConsumerArtContract",
   "checkIdentityContrast",
   "checkMinimumSize",
   "checkSingleColourLegibility",
