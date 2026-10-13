@@ -350,7 +350,7 @@ describe("Clerk sign-in handlers", () => {
     expect(Object.keys(result).join(",") === "status").toBe(true);
   });
 
-  it.each(["password", "prepare", "code", "resend"])("classifies rejection from %s", async operation => {
+  it.each(["password", "code"])("classifies rejection from %s", async operation => {
     const f = fake();
     const failure = { errors: [{ code: "form_code_incorrect" }], message: "provider detail fixture" };
     let result;
@@ -358,24 +358,32 @@ describe("Clerk sign-in handlers", () => {
       await passwordStep(f);
       vi.mocked(f.resource.attemptFirstFactor).mockRejectedValueOnce(failure);
       result = await f.handlers.verify("password-fixture");
-    } else if (operation === "prepare") {
-      await passwordStep(f);
-      vi.mocked(f.resource.attemptFirstFactor).mockResolvedValueOnce({ ...f.resource, status: "needs_second_factor",
-        supportedSecondFactors: [{ strategy: "email_code", emailAddressId: "address-fixture" }] });
-      vi.mocked(f.resource.prepareSecondFactor).mockRejectedValueOnce(failure);
-      result = await f.handlers.verify("password-fixture");
     } else {
       await codeStep(f);
-      if (operation === "code") {
-        vi.mocked(f.resource.attemptSecondFactor).mockRejectedValueOnce(failure);
-        result = await f.handlers.verifyCode("code-fixture");
-      } else {
-        vi.mocked(f.resource.prepareSecondFactor).mockRejectedValueOnce(failure);
-        result = await f.handlers.resendCode();
-      }
+      vi.mocked(f.resource.attemptSecondFactor).mockRejectedValueOnce(failure);
+      result = await f.handlers.verifyCode("code-fixture");
     }
     expect(result.status === "credential").toBe(true);
     expect(Object.keys(result).join(",") === "status").toBe(true);
+    expect(vi.mocked(f.provider.setActive).mock.calls.length).toBe(0);
+  });
+
+  it.each(["prepare", "resend"])("never answers a %s rejection as credential", async operation => {
+    const f = fake();
+    const failure = { errors: [{ code: "form_param_format_invalid" }], message: "provider detail fixture" };
+    if (operation === "prepare") {
+      await passwordStep(f);
+      vi.mocked(f.resource.attemptFirstFactor).mockResolvedValueOnce({ ...f.resource, status: "needs_second_factor",
+        supportedSecondFactors: [{ strategy: "email_code", emailAddressId: "address-fixture" }] });
+    } else {
+      await codeStep(f);
+    }
+    vi.mocked(f.resource.prepareSecondFactor).mockRejectedValueOnce(failure);
+    const result = operation === "prepare" ? await f.handlers.verify("password-fixture") : await f.handlers.resendCode();
+    expect(result).toEqual(UNAVAILABLE);
+    expect(f.handlers.canResendCode()).toBe(false);
+    expect(await f.handlers.verifyCode("code-fixture")).toEqual(UNAVAILABLE);
+    expect(vi.mocked(f.resource.attemptSecondFactor).mock.calls.length).toBe(0);
     expect(vi.mocked(f.provider.setActive).mock.calls.length).toBe(0);
   });
 
@@ -390,31 +398,6 @@ describe("Clerk sign-in handlers", () => {
     expect(await f.handlers.resendCode()).toEqual(UNAVAILABLE);
     expect(calls(f)).toEqual(before);
     await passwordStep(f);
-  });
-
-  it.each([
-    ["form_identifier_not_found", "credential"], ["user_locked", "rateLimited"],
-    ["form_password_incorrect", "credential"], ["clerk_offline", "network"],
-  ] as const)("hideAccountExistence answers %s as %s", async (code, expected) => {
-    const f = fake();
-    const handlers = createClerkSignInHandlers({ ...f.provider, hideAccountExistence: true });
-    f.provider.create.mockRejectedValueOnce({ code, message: "provider detail fixture" });
-    const result = await handlers.identify("identifier-fixture");
-    expect(result.status === expected).toBe(true);
-    expect(Object.keys(result).join(",") === "status").toBe(true);
-  });
-
-  it.each([
-    ["user_locked", "rateLimited"], ["form_identifier_not_found", "credential"],
-  ] as const)("hideAccountExistence still requires identify after %s", async (code, expected) => {
-    const f = fake();
-    const handlers = createClerkSignInHandlers({ ...f.provider, hideAccountExistence: true });
-    expect(await handlers.identify("identifier-fixture")).toEqual(OK);
-    vi.mocked(f.resource.attemptFirstFactor).mockRejectedValueOnce({ code });
-    expect((await handlers.verify("password-fixture")).status === expected).toBe(true);
-    const before = calls(f);
-    expect(await handlers.verify("password-fixture")).toEqual(UNAVAILABLE);
-    expect(calls(f)).toEqual(before);
   });
 
   it.each(["form_password_incorrect", "clerk_offline"])("allows retry after recoverable rejection %s", async code => {
@@ -434,6 +417,34 @@ describe("Clerk sign-in handlers", () => {
     f.provider.isCurrent.mockReturnValue(false);
     pending.reject({ code: "user_locked", message: "provider detail fixture" });
     expect(await identifying).toEqual(UNAVAILABLE);
+  });
+
+  it("ignores a result from an older revision", async () => {
+    const f = fake();
+    await passwordStep(f);
+    const pending = deferred<ClerkSignInResource>();
+    vi.mocked(f.resource.attemptFirstFactor).mockReturnValueOnce(pending.promise);
+    const verifying = f.handlers.verify("password-fixture");
+    // Refused while busy, so the flow moves to a new revision without identify.
+    expect(await f.handlers.verifyCode("code-fixture")).toEqual(UNAVAILABLE);
+    pending.resolve(f.complete());
+    expect(await verifying).toEqual(UNAVAILABLE);
+    expect(vi.mocked(f.provider.setActive).mock.calls.length).toBe(0);
+  });
+
+  it("treats a throwing isCurrent as not current", async () => {
+    const f = fake();
+    f.provider.isCurrent.mockImplementation(() => { throw new Error("isCurrent fixture"); });
+    expect(await f.handlers.identify("identifier-fixture")).toEqual(UNAVAILABLE);
+    expect(f.handlers.canResendCode()).toBe(false);
+    expect(calls(f)).toEqual([0, 0, 0, 0, 0]);
+  });
+
+  it("treats a truthy non-boolean isCurrent as not current", async () => {
+    const f = fake();
+    f.provider.isCurrent.mockReturnValue(1 as unknown as boolean);
+    expect(await f.handlers.identify("identifier-fixture")).toEqual(UNAVAILABLE);
+    expect(calls(f)).toEqual([0, 0, 0, 0, 0]);
   });
 
   it("canResendCode is pure and makes no Clerk calls", async () => {

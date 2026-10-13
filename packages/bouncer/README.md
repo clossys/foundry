@@ -541,13 +541,23 @@ status. Unknown failures become `unavailable`; recognised rejections go through
 `classifySignInFailure` with `CLERK_SIGN_IN_FAILURE_CODES`.
 
 Pass a stable `ClerkSignInProvider` for the current screen. Bind `create` to
-the loaded `clerk.client.signIn.create` and `setActive` to `clerk.setActive`:
+the loaded `clerk.client.signIn.create` and `setActive` to `clerk.setActive`.
+The declarations stand in for the caller's own Clerk instance and screen state:
 
 ```ts
+import type { ClerkSignInProvider, ClerkSignInResource } from "@clossys/bouncer/providers/clerk/web/client";
+
+declare const clerk: {
+  client: { signIn: { create: (params: { identifier: string }) => Promise<ClerkSignInResource> } };
+  setActive: (params: { session: string }) => Promise<void>;
+};
+declare function isScreenCurrent(): boolean;
+declare const screenAbortController: AbortController;
+
 const signIn = clerk.client.signIn;
-const provider = {
-  create: (params: { identifier: string }) => signIn.create(params),
-  setActive: (params: { session: string }) => clerk.setActive(params),
+export const provider: ClerkSignInProvider = {
+  create: params => signIn.create(params),
+  setActive: params => clerk.setActive(params),
   operationOwner: clerk,
   isCurrent: () => isScreenCurrent(),
   signal: screenAbortController.signal,
@@ -555,34 +565,44 @@ const provider = {
 ```
 
 The caller owns `isScreenCurrent()` and aborts `screenAbortController` when
-the screen is disposed. The handlers call `isCurrent` before and after every
-Clerk call; an answer of `false`, a throw or an aborted `signal` ends the
-operation as `unavailable`. That is the only currency check: the handlers do
-not compare SignIn resources or watch `clerk.client`. Use the shared Clerk instance as `operationOwner` across screens or handler
+the screen is disposed. The handlers call `isCurrent` when a handler starts and
+before and after every Clerk call. Any answer other than `true`, a throw or an
+aborted `signal` ends the operation as `unavailable`. That is the only currency
+check: the handlers do not compare SignIn resources or watch `clerk.client`.
+Use the shared Clerk instance as `operationOwner` across screens or handler
 sets; without it the provider object is the owner. One operation runs per
 owner. Every `identify`, including one refused while busy, invalidates older
-flows. An invalidated or aborted operation cannot start its next Clerk call or
-activate a session. Calls made out of phase answer `unavailable` without
-calling Clerk. After `unavailable`, `locked` or `notFound`, restart with
-`identify`. Session activation is attempted once per flow, and a rejected
-activation never answers `ok`. Set `hideAccountExistence: true` on the
-provider to answer `notFound` as `credential` and `locked` as `rateLimited`,
-with the same limits as the `classifySignInFailure` option above; the flow
-still restarts at `identify` after either.
+flows on the same owner. An invalidated or aborted operation makes no further
+Clerk call and answers `unavailable`. The handlers do not cancel a Clerk call
+that is already in flight, including `setActive`; when such a call settles
+after the operation was invalidated or aborted, the handler answers
+`unavailable`, never `ok`.
 
-`verify` alone can answer `needsCode`. It selects the first supported valid
-second factor in Clerk's order: `totp`, `backup_code`, `email_code` with an
-`emailAddressId`, or `phone_code` with a `phoneNumberId`. Message factors are
-prepared before `needsCode`; authenticator and backup codes need no preparation.
+`identify` may be called in any step and always starts a new flow. Other calls
+made out of step answer `unavailable` without calling Clerk. After
+`unavailable`, `locked` or `notFound`, `verify`, `verifyCode` and `resendCode`
+answer `unavailable` until `identify` runs again. After `credential`,
+`rateLimited` or `network` from any Clerk call except `setActive`, the step is
+unchanged and the same handler may be called again. Session activation is
+attempted once per flow: a rejected activation never answers `ok`, and only
+`identify` continues after it.
+
+`verify` alone can answer `needsCode`. It takes the first entry of Clerk's
+`supportedSecondFactors`, in Clerk's order, that is `totp`, `backup_code`,
+`email_code` with an `emailAddressId`, or `phone_code` with a `phoneNumberId`;
+other entries are skipped. Message factors are prepared before `needsCode`;
+authenticator and backup codes need no preparation. A rejection while sending
+a message code, from `verify` or `resendCode`, never answers `credential`: it
+answers `unavailable`. Other classes keep their meaning.
 `canResendCode()` is a pure query and is true only for a current, idle message
 code step. Refresh that capability after verification so `SignInForm` can show
-its resend control. In this example `SignInForm` is the caller's component
-imported from `@clossys/publisher/web/views`:
+its resend control:
 
 ```tsx
 import { useMemo, useState } from "react";
 import { createClerkSignInHandlers } from "@clossys/bouncer/providers/clerk/web/client";
 import type { ClerkSignInProvider } from "@clossys/bouncer/providers/clerk/web/client";
+import { SignInForm } from "@clossys/publisher/web/client";
 
 export function ClerkPasswordForm({ provider, onSignedIn }: {
   provider: ClerkSignInProvider;

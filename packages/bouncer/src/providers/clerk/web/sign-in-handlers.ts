@@ -46,11 +46,6 @@ export interface ClerkSignInProvider {
   readonly signal?: AbortSignal;
   /** Share the Clerk instance across handler sets. Defaults to provider. */
   readonly operationOwner?: object;
-  /**
-   * Answer `notFound` as `credential` and `locked` as `rateLimited`, as
-   * `classifySignInFailure` does. The flow still restarts at identify.
-   */
-  readonly hideAccountExistence?: boolean;
 }
 
 /** Fits Publisher SignInForm's four handlers without importing Publisher. */
@@ -70,6 +65,7 @@ interface OwnerState {
 
 const owners = new WeakMap<object, OwnerState>();
 const cancelled = Symbol("unavailable");
+const preparationRejected = Symbol("unavailable");
 type Phase = "identify" | "password" | "code" | "done";
 
 function selectCodeFactor(resource: ClerkSignInResource): ClerkSignInCodeFactor | undefined {
@@ -107,7 +103,6 @@ export function createClerkSignInHandlers(provider: ClerkSignInProvider): ClerkS
     owners.set(owner, state);
   }
   const ownerState = state;
-  const hideAccountExistence = provider.hideAccountExistence === true;
   let epoch = ownerState.epoch;
   let revision = 0;
   let phase: Phase = "identify";
@@ -118,7 +113,7 @@ export function createClerkSignInHandlers(provider: ClerkSignInProvider): ClerkS
   function current(expectedEpoch = epoch, expectedRevision = revision): boolean {
     try {
       return ownerState.epoch === expectedEpoch && revision === expectedRevision
-        && !provider.signal?.aborted && provider.isCurrent() !== false;
+        && !provider.signal?.aborted && provider.isCurrent() === true;
     } catch {
       return false;
     }
@@ -159,11 +154,30 @@ export function createClerkSignInHandlers(provider: ClerkSignInProvider): ClerkS
         phase = "identify";
         resource = undefined;
         codeFactor = undefined;
-        if (hideAccountExistence) return { status: failureClass === "notFound" ? "credential" : "rateLimited" };
       }
       return { status: failureClass };
     } finally {
       ownerState.busy = false;
+    }
+  }
+
+  /**
+   * Sends a message code. A `credential` rejection here says nothing about the
+   * password or code entered, so it answers `unavailable` instead: `run`
+   * classifies the thrown symbol as `unknown`, which ends the flow.
+   */
+  async function prepareCode(
+    from: ClerkSignInResource,
+    factor: Extract<ClerkSignInCodeFactor, { strategy: "email_code" | "phone_code" }>,
+    call: <T>(method: () => Promise<T>) => Promise<T>,
+  ): Promise<ClerkSignInResource> {
+    try {
+      return await call(() => from.prepareSecondFactor(factor));
+    } catch (failure: unknown) {
+      if (classifySignInFailure(failure, { codes: CLERK_SIGN_IN_FAILURE_CODES }) === "credential") {
+        throw preparationRejected;
+      }
+      throw failure;
     }
   }
 
@@ -210,7 +224,7 @@ export function createClerkSignInHandlers(provider: ClerkSignInProvider): ClerkS
         if (!selected) return { status: "unavailable" };
         // Retain this resource even if preparation is rejected recoverably.
         resource = first;
-        if (isMessageFactor(selected)) resource = await call(() => first.prepareSecondFactor(selected));
+        if (isMessageFactor(selected)) resource = await prepareCode(first, selected, call);
         codeFactor = selected;
         phase = "code";
         return { status: "needsCode" };
@@ -228,7 +242,7 @@ export function createClerkSignInHandlers(provider: ClerkSignInProvider): ClerkS
       return run("code", async call => {
         const selected = codeFactor;
         if (!isMessageFactor(selected)) return { status: "unavailable" };
-        resource = await call(() => resource!.prepareSecondFactor(selected));
+        resource = await prepareCode(resource!, selected, call);
         return { status: "ok" };
       });
     },
