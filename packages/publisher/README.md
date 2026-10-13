@@ -2709,7 +2709,7 @@ nothing shipped for it yet; `out-of-scope`, not part of the page contract.
 | 2. Document and head | Publisher | `supplier` | the document function (`html`, `body`, `lang`, `dir`, fonts, theme bootstrap, viewport) |
 | 3. Providers and runtime | their owning packages (telemetry contracts: Observer) | `contract-only` | provider mount points |
 | 4. Shell and chrome | Designer, mounted by the Publisher frame | `implemented` | signature slot (`defineSiteSignature`), consent card, locale switcher, backdrop |
-| 5. View | Publisher | `implemented` | chrome-free versions of the views in the right-hand column above |
+| 5. View | Publisher | `implemented` | chrome-free `HeroView`, `MarketingView`, `CollectionView`, `PackReviewView`, `BrandGuideView` and `SystemAuditView` |
 | 6. Per-page head | Publisher | `contract-only` | `pageHead` |
 | 7. Machine surfaces | Publisher | `contract-only` | robots, sitemap from the route manifest, web manifest, icons, health |
 | 8. System states | Publisher views | `implemented` | loading state, degraded state, frame-aware `ErrorView` root |
