@@ -46,4 +46,13 @@
   --ui-layout-sidebar-w: 256px;
   --ui-icon-stroke: 2;
   --radius-default: 3px;
+  --color-control-tonal: oklch(0.2178 0 0 / 0.08);
+  --color-control-tonal-hover: oklch(0.2178 0 0 / 0.12);
+  --color-control-tonal-inverse: oklch(0.9702 0 0 / 0.12);
+  --color-control-tonal-inverse-hover: oklch(0.9702 0 0 / 0.16);
+  --color-control-quiet: oklch(0.2178 0 0);
+  --radius-panel: var(--radius-default, 3px);
+  --ui-border-panel: 1px;
+  --color-line-panel: var(--color-line-base);
+  --ui-elevation-panel: 0 8px 24px rgba(0, 0, 0, 0.10);
 }

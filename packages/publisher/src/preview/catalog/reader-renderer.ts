@@ -8,7 +8,7 @@ import type { ResolvedSectionedViewContentSection, ResolvedSectionedViewDocument
 import type { ContentCatalogStylesheets } from '../render-content-catalog.js';
 import { OTHER_KIND_LINKS, type CatalogFixture } from './index.js';
 import { CATALOG_RECIPE_LINKS } from './contract-reference.js';
-import { READER_SAMPLES, readerCopyResolver, readerPage, deriveCatalogFunction, resolveReaderSampleDocument, type ReaderPage } from './reader-data.js';
+import { READER_SAMPLES, READER_STATUS_LIST, readerCopyResolver, readerPage, deriveCatalogFunction, resolveReaderSampleDocument, type ReaderPage } from './reader-data.js';
 type CatalogAxis = {
     name: string;
     values: readonly string[];
@@ -378,7 +378,7 @@ function rules(label: ReaderPage): string {
         Introduce: [['Roles', 'Hero, intro, split intro, and close.'], ['Actions', '0–2 actions, at most one primary. A lone hero action is primary.']],
         Show: [['Scenes', 'Converge connects sources; evidence-trail traces a result; approval-chain shows checks leading to a decision.'], ['Specimen', 'One panel with 1–3 parts; a key names 3–5 distinct targets.'], ['Record', '1–3 groups; each has 1–6 rows, or the final group may contain an owner instead. Multi-column records use stacked frames.']],
         Explain: [['Grid', '2, 4 or 6 entries in two columns; 3 or 6 in three columns.'], ['Bento / stack', 'Bento has 2–6 entries whose spans fill 12-unit rows; visual stacks have 2–4, with one part each.']],
-        Index: [['Rows', '2–8 entries in one or two columns; 2–4 groups each have 2–4 members.'], ['FAQ', '4–6 answers; every answer needs a description.']],
+        Index: [['Rows', '2–8 entries in one or two columns; 2–4 groups each have 2–4 members.'], ['Status list', 'Use topics rows with a visible badge label on every item. Live, In progress and Planned are authored copy; tones use existing tokens.'], ['FAQ', '4–6 answers; every answer needs a description.']],
         Sequence: [['Line', '3–5 steps; four warns. Visual steps need a Sample data caption.'], ['Lanes', 'Exactly two roles and 3–5 steps. Use a stacked frame with a columns or stacked arrangement, and name the continuation when relevant.']],
         Compare: [['Points', 'Two sides with 2–4 equal-count points each.'], ['Visuals', 'One panel per side with 1–3 parts; do not combine points and a panel.']],
         Frame: [['Directions', 'Stacked, split-start, or split-end.'], ['Ground', 'Base and sunken are automatic; choose inverse for a focal band.']],
@@ -409,6 +409,8 @@ type ConfigCell = {
     caption: string;
 };
 export function readerConfigCells(label: ReaderPage): ConfigCell[] {
+    if (label === 'Index')
+        return [{ id: 'status-list', fixture: structuredClone(READER_STATUS_LIST), caption: 'status list' }];
     const clone = (id: string): CatalogFixture => {
         const sample = READER_SAMPLES.find(f => f.id === id);
         if (!sample)
