@@ -27,6 +27,13 @@ describe("SITE_PAGE_LAYERS", () => {
     expect(SITE_PAGE_LAYERS.filter((layer) => layer.implementationScope === "implemented").map((layer) => layer.id)).toEqual([4, 5, 8]);
   });
 
+  it("defers chrome-free HeroView without deferring LegalView or ContactView", () => {
+    const deferred = SITE_PAGE_LAYERS.find((layer) => layer.id === 5)?.deferred.join(" ");
+    expect(deferred).toContain("HeroView");
+    expect(deferred).not.toContain("LegalView");
+    expect(deferred).not.toContain("ContactView");
+  });
+
   it("is deeply frozen", () => {
     expect(Object.isFrozen(SITE_PAGE_LAYERS)).toBe(true);
     for (const layer of SITE_PAGE_LAYERS) {

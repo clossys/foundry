@@ -24,3 +24,14 @@ export const withWriterResolver = <LegalView brand="Acme" document={document} re
 
 // @ts-expect-error the web CopyResolver is string-keyed and carries no CopyResolution provenance
 export const withWebResolver = <LegalView brand="Acme" document={document} resolveCopyId={webResolver} labels={labels} locale="en" />;
+
+export const insideFrame = <LegalView framed document={document} resolveCopyId={writerResolver} labels={labels} locale="en" />;
+
+// @ts-expect-error framed content cannot take legacy site chrome
+export const framedWithBrand = <LegalView framed brand="Acme" document={document} resolveCopyId={writerResolver} labels={labels} locale="en" />;
+// @ts-expect-error the self-chromed path still requires its brand
+export const missingLegacyBrand = <LegalView document={document} resolveCopyId={writerResolver} labels={labels} locale="en" />;
+// @ts-expect-error the draft marker has no suppression prop
+export const suppressedDraft = <LegalView framed hideDraft document={document} resolveCopyId={writerResolver} labels={labels} locale="en" />;
+// @ts-expect-error framed content has the same ref-based Writer resolver contract
+export const framedWithWebResolver = <LegalView framed document={document} resolveCopyId={webResolver} labels={labels} locale="en" />;

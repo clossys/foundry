@@ -5,11 +5,13 @@ import { Item, Items } from "@clossys/designer/blocks/server";
 import { describe, expect, it, vi } from "vitest";
 import type { CopyRegistry, CopyResolver } from "@clossys/writer";
 import { createCopyResolver } from "@clossys/writer";
-import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
+import { Brandmark, SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
 import { RenderError } from "../../internal/errors.js";
 import { LEGAL_SECTION_IDS } from "../../document/legal.js";
 import type { LegalDocument, LegalDocumentKind } from "../../document/legal.js";
 import { LegalView } from "./LegalView.js";
+import { SITE_MAIN_ID, SiteFrame } from "../frame/index.js";
+import type { SiteShellInput } from "../frame/index.js";
 import type { LegalViewLabels, LegalViewProps } from "./LegalView.js";
 
 vi.mock("@clossys/designer/blocks/server", async (importOriginal) => {
@@ -109,18 +111,32 @@ type RenderOverrides = Partial<Pick<LegalViewProps,
   "labels" | "locale" | "resolveCopyId" | "related" | "footerSecondary" |
   "headerAction" | "secondaryAction" | "nav" | "ground"
 >>;
-function render(document: LegalDocument, overrides: RenderOverrides = {}): string {
-  return renderToStaticMarkup(
-    <LegalView brand="Acme" document={document} {...overrides}
-      resolveCopyId={overrides.resolveCopyId ?? resolver}
-      labels={overrides.labels ?? LABELS} locale={overrides.locale ?? "en"} />,
-  );
-}
 
 function formatted(locale: string, y: number, m: number, d: number): string {
   return new Intl.DateTimeFormat(locale, { dateStyle: "long", timeZone: "UTC" }).format(new Date(Date.UTC(y, m - 1, d)));
 }
 
+describe.each(["self-chromed", "framed"] as const)("LegalView %s path", (mode) => {
+  const shell: SiteShellInput = {
+    brand: { assetId: "placeholder-mark", label: LABELS.effectiveDate, size: "md", variant: "mark" },
+    skipLink: LABELS.lastUpdated,
+    footer: { legal: { entity: ref("fixture.entity"), links: [] } },
+  };
+  const asset = () => ({ type: "image", src: "/placeholder.svg", width: 48, height: 48, alt: "Placeholder mark" });
+  function frame(content: React.ReactNode, footerSecondary?: React.ReactNode, chrome: Partial<SiteShellInput> = {}) {
+    const framedShell = footerSecondary === undefined ? shell : { ...shell, footer: { legal: { entity: ref("fixture.footer"), links: [] } } };
+    const words: Record<string, string> = { "fixture.footer": "FOOTER-SENTINEL", "fixture.entity": "Placeholder footer entity",
+      "fixture.header": "HEADER-ACTION-SENTINEL", "fixture.secondary": "SECONDARY-ACTION-SENTINEL", "fixture.nav": "NAV-SENTINEL" };
+    const copy: CopyResolver = (r) => words[r.id] === undefined ? resolver(r) : { ...resolver(LABELS.effectiveDate)!, text: words[r.id]! };
+    return <SiteFrame shell={{ ...framedShell, ...chrome }} resolveCopy={copy} resolveAsset={asset}>{content}</SiteFrame>;
+  }
+  function render(document: LegalDocument, overrides: RenderOverrides = {}): string {
+    const props = { document, resolveCopyId: overrides.resolveCopyId ?? resolver,
+      labels: overrides.labels ?? LABELS, locale: overrides.locale ?? "en", related: overrides.related };
+    return renderToStaticMarkup(mode === "self-chromed"
+      ? <LegalView brand="Acme" {...overrides} {...props} />
+      : frame(<LegalView framed {...props} />, overrides.footerSecondary));
+  }
 describe("LegalView refuses an invalid document", () => {
   it("throws RenderError naming the rule and path for a missing section", () => {
     const doc = legalDoc("terms");
@@ -288,7 +304,8 @@ describe("LegalView dates", () => {
 
   it("caps the content width with the prose-max token and a non-length fallback", () => {
     const html = render(legalDoc("terms"));
-    const mainTag = html.slice(html.indexOf("<main"), html.indexOf(">", html.indexOf("<main")) + 1);
+    const start = mode === "self-chromed" ? html.indexOf("<main") : html.indexOf("<div", html.indexOf("<main"));
+    const mainTag = html.slice(start, html.indexOf(">", start) + 1);
     expect(mainTag).toContain("max-width:var(--ui-width-prose-max, none)");
   });
 
@@ -305,7 +322,7 @@ describe("LegalView dates", () => {
       try {
         const attempt = () =>
           renderToStaticMarkup(
-            <LegalView brand="Acme" document={legalDoc("terms")} resolveCopyId={resolver} labels={LABELS} locale={value as string} />,
+            <LegalView {...(mode === "self-chromed" ? { brand: "Acme" } : { framed: true as const })} document={legalDoc("terms")} resolveCopyId={resolver} labels={LABELS} locale={value as string} />,
           );
         expect(attempt).toThrow(RenderError);
         expect(attempt).toThrow(/locale/);
@@ -362,7 +379,7 @@ describe("LegalView title", () => {
   });
 });
 
-describe("LegalView header slots", () => {
+if (mode === "self-chromed") describe("LegalView header slots", () => {
   const doc = legalDoc("terms");
   const view = (props: Partial<Parameters<typeof LegalView>[0]> = {}) =>
     renderToStaticMarkup(<LegalView brand="Acme" document={doc} resolveCopyId={resolver} labels={LABELS} locale="en" {...props} />);
@@ -438,7 +455,9 @@ describe("LegalView related references", () => {
     // readFileSync fails if absent; this test never creates/updates the baseline.
     const baseline = readFileSync(resolve(import.meta.dirname, "__fixtures__/legal-view-before-related-terms.html"), "utf8");
     expect(baseline.length).toBeGreaterThan(0);
-    expect(render(legalDoc("terms"))).toBe(baseline);
+    const html = render(legalDoc("terms"));
+    const body = (value: string) => /<h1\b[\s\S]*<\/article>/.exec(value)?.[0];
+    expect(mode === "self-chromed" ? html : body(html)).toBe(mode === "self-chromed" ? baseline : body(baseline));
   });
   it("omits the region for omitted, explicit undefined and empty related input", () => {
     const doc = legalDoc("terms");
@@ -496,7 +515,7 @@ describe("LegalView related references", () => {
     expect(html).toMatch(/<h2\b[^>]*>Caller supplied related label<\/h2>/);
     expect(html).not.toContain(RELATED_LABEL);
   });
-  it("preserves the current header and footer bytes with all chrome slots", () => {
+  if (mode === "self-chromed") it("preserves the current header and footer bytes with all chrome slots", () => {
     const overrides = { headerAction: <a href="/contact">HEADER-SENTINEL</a>, secondaryAction: <a href="/sign-in">SECONDARY-SENTINEL</a>,
       nav: <nav aria-label="Primary">NAV-SENTINEL</nav>, ground: "transparent" as const, footerSecondary: <span>FOOTER-SENTINEL</span> };
     const old = render(legalDoc("terms"), overrides);
@@ -564,4 +583,90 @@ describe("LegalView related references", () => {
     expect(() => render(legalDoc("terms"), { related: withRelated(relatedItems(2)),
       labels: { ...LABELS, effectiveDate: ref("acme.label.missing") } })).toThrow(/labels\.effectiveDate/);
   });
+});
+
+if (mode === "framed") describe("LegalView header slots owned by SiteFrame", () => {
+  const content = <LegalView framed document={legalDoc("terms")} resolveCopyId={resolver} labels={LABELS} locale="en" />;
+  const mark = <Brandmark variant="mark" size="md" label="Placeholder label effective" markSrc="/placeholder.svg" />;
+  const banner = (html: string) => /(<header\b[\s\S]*?<\/header>)/.exec(html)?.[1] ?? "";
+  const footer = (html: string) => /(<footer\b[\s\S]*<\/footer>)<\/div>$/.exec(html)?.[1] ?? "";
+  const chrome: Partial<SiteShellInput> = {
+    actions: [{ href: "/contact", label: ref("fixture.header") }],
+    secondaryAction: { href: "/sign-in", label: ref("fixture.secondary") },
+    nav: { label: LABELS.effectiveDate, links: [{ href: "/placeholder-nav", label: ref("fixture.nav") }] },
+    ground: "transparent",
+  };
+  it("renders headerAction, secondaryAction and nav inside the banner landmark and nowhere else", () => {
+    const html = renderToStaticMarkup(frame(content, undefined, chrome));
+    const header = banner(html);
+    for (const sentinel of ["HEADER-ACTION-SENTINEL", "SECONDARY-ACTION-SENTINEL", "NAV-SENTINEL"]) {
+      expect(header).toContain(sentinel);
+      expect(html.split(sentinel)).toHaveLength(2);
+    }
+    expect(header.indexOf("SECONDARY-ACTION-SENTINEL")).toBeLessThan(header.indexOf("HEADER-ACTION-SENTINEL"));
+  });
+  it("renders the same header and footer as a bare SiteHeader and SiteFooter when every slot is omitted", () => {
+    const html = renderToStaticMarkup(frame(content, <span>FOOTER-SENTINEL</span>));
+    expect(banner(html)).toBe(banner(renderToStaticMarkup(<SiteHeader brand={mark} />)));
+    expect(footer(html)).toBe(renderToStaticMarkup(<SiteFooter secondary={<SiteFooter.Legal entity="FOOTER-SENTINEL" links={[]} />} />));
+  });
+  it("passes ground to both the header and the footer", () => {
+    const html = renderToStaticMarkup(frame(content, undefined, { ground: "transparent" }));
+    expect(banner(html)).toBe(banner(renderToStaticMarkup(<SiteHeader ground="transparent" brand={mark} />)));
+    expect(footer(html)).toBe(renderToStaticMarkup(<SiteFooter ground="transparent" secondary={<SiteFooter.Legal entity="Placeholder footer entity" links={[]} />} />));
+  });
+  it("preserves the current header and footer bytes with all chrome slots", () => {
+    const old = renderToStaticMarkup(frame(content, <span>FOOTER-SENTINEL</span>, chrome));
+    const html = renderToStaticMarkup(frame(<LegalView framed document={legalDoc("terms")} resolveCopyId={resolver} labels={LABELS} locale="en" related={withRelated(relatedItems(2))} />, <span>FOOTER-SENTINEL</span>, chrome));
+    expect(banner(html)).toBeTruthy(); expect(footer(html)).toBeTruthy();
+    expect(banner(html)).toBe(banner(old)); expect(footer(html)).toBe(footer(old));
+  });
+});
+
+if (mode === "framed") describe("frame ownership", () => {
+  it("renders no view landmarks, and SiteFrame owns the only main", () => {
+    const content = <LegalView framed document={draftDoc()} resolveCopyId={resolver} labels={LABELS} locale="en" />;
+    const body = renderToStaticMarkup(content);
+    expect(body).not.toMatch(/<(?:main|footer)\b/);
+    expect(body.match(/<header\b/g)).toHaveLength(1); // PageHeader, inside the content root.
+    const html = renderToStaticMarkup(frame(content));
+    expect(html.match(/<main\b/g)).toHaveLength(1);
+    expect(html).toContain(`<main id="${SITE_MAIN_ID}" tabindex="-1"`);
+    expect(html.match(/<footer\b/g)).toHaveLength(1);
+    expect(html.match(/<h1\b/g)).toHaveLength(1);
+    expect(html).toContain('role="note"');
+    expect(html).toContain('<time dateTime="2026-01-15"');
+    expect(html).toContain('<time dateTime="2026-02-01"');
+  });
+  for (const role of ["main", "banner", "contentinfo", "navigation", "region MAIN"]) {
+    it(`refuses a frame landmark role ${role}`, () => {
+      expect(() => renderToStaticMarkup(<LegalView framed role={role} document={draftDoc()} resolveCopyId={resolver} labels={LABELS} locale="en" />)).toThrow(/content root cannot take a landmark role/);
+    });
+  }
+  it("refuses the frame main id", () => {
+    expect(() => renderToStaticMarkup(<LegalView framed id={SITE_MAIN_ID} document={draftDoc()} resolveCopyId={resolver} labels={LABELS} locale="en" />)).toThrow(/content root cannot take the frame's main id/);
+  });
+  for (const key of ["brand", "headerAction", "secondaryAction", "nav", "ground", "footerSecondary"]) {
+    it(`refuses legacy chrome ${key} past the types`, () => {
+      const illegal = { [key]: "sentinel-chrome-value" };
+      const attempt = () => renderToStaticMarkup(<LegalView framed document={draftDoc()} resolveCopyId={resolver} labels={LABELS} locale="en" {...illegal} />);
+      expect(attempt).toThrow(/framed content cannot take chrome props/);
+      expect(attempt).not.toThrow(/sentinel-chrome-value/);
+    });
+  }
+  it("keeps frame chrome bytes with related content", () => {
+    const bare = renderToStaticMarkup(frame(null));
+    const html = render(legalDoc("terms"), { related: withRelated(relatedItems(2)) });
+    const banner = (value: string) => /<header\b[\s\S]*?<\/header>/.exec(value)?.[0];
+    const footer = (value: string) => /<footer\b[\s\S]*?<\/footer>/.exec(value)?.[0];
+    expect(banner(html)).toBe(banner(bare));
+    expect(footer(html)).toBe(footer(bare));
+  });
+  it("renders equivalent body markup through the ordinary and server entries", async () => {
+    const ordinary = await import("../index.js");
+    const server = await import("../server.js");
+    const props = { framed: true as const, document: draftDoc(), resolveCopyId: resolver, labels: LABELS, locale: "de", related: withRelated(relatedItems(2)) };
+    expect(renderToStaticMarkup(<ordinary.LegalView {...props} />)).toBe(renderToStaticMarkup(<server.LegalView {...props} />));
+  });
+});
 });
