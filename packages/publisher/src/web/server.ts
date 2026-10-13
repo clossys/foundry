@@ -177,3 +177,6 @@ export type { ShareCardRoute, ShareCardRouteInput } from "./shareCardRoute.js";
 
 export { constructionStatusProps } from "#publisher-web-views";
 export type { ConstructionStatusInput } from "#publisher-web-views";
+
+export { ContactForm } from "#publisher-web-views";
+export type { ContactFormCopy, ContactFormDevPreview, ContactFormProps, ContactFormTopic, ContactFormValues } from "#publisher-web-views";
