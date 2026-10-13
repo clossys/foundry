@@ -1,6 +1,6 @@
 {
   "name": "@clossys/publisher",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -408,8 +408,8 @@
     "check:preview-css": "node scripts/preview-css.mjs --check"
   },
   "dependencies": {
-    "@clossys/writer": "^0.5.1",
-    "@clossys/designer": "^0.8.0",
+    "@clossys/writer": "^0.6.0",
+    "@clossys/designer": "^0.9.0",
     "@clossys/controller": "^0.10.0"
   },
   "peerDependencies": {

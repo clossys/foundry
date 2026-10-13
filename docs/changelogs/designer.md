@@ -3,6 +3,12 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## 0.9.0 - 2026-10-13
+
+- Consumers can validate static art declarations with Designer's typed slot contract and render checked photos or token-painted vectors into Publisher backdrop and media seams.
+- Document the literal-SVG and referenced-symbol limits of passive use/image references in NavGrid, its private LinkGrid plate list, and Specimen status rows.
+- Consumers can compose status lists with Index rows and per-item badges using the topics recipe, with a Publisher preview example and configuration guidance.
+
 ## 0.8.0 - 2026-10-12
 
 - Give connected item geometry, panel aliases and catalog styling explicit token fallbacks while preserving live theme overrides. Document how source-checkout generators relate to installed packages, and check required labels and supported split media layouts through compiled type assertions.

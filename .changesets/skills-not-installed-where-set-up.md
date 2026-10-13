@@ -1,6 +1,5 @@
 ---
 architect: minor
-butler: minor
 customer: minor
 giver: minor
 influencer: minor
