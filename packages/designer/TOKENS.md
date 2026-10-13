@@ -163,7 +163,7 @@ rather than only a test a human has to remember to keep in sync:
 npx designer-contrast-check
 ```
 
-checks this package's own `styles/tokens.css` (both themes) against 37
+checks this package's own `styles/tokens.css` (both themes) against 76
 checked-in pairs and exits `0`. It is not silent about the light-mode
 categorical chart marks at slots 3/4/5, which DO measure below the 3:1
 AA-large floor against the chart surface — a real, currently-shipping
@@ -551,7 +551,7 @@ import migration in the pending minor release, unavailable in published `0.7.1`.
 | `relativeLuminance` | function | `(rgb) => number` — WCAG relative luminance from linear-sRGB channels. |
 | `parseOklch` | function | `(value) => Oklch` — parses the first `oklch(...)` function in a CSS value string. |
 | `Oklch` | type | `{ L, C, H, A }` — one parsed `oklch()` value. |
-| `CONTRAST_PAIRS` | const | `readonly ContrastPair[]` — this package's checked-in WCAG contrast policy, 37 pairs, theme-agnostic (no `exception` attached). See "Contrast is enforced, not assumed", above. |
+| `CONTRAST_PAIRS` | const | `readonly ContrastPair[]` — this package's checked-in WCAG contrast policy, 76 pairs, theme-agnostic (no `exception` attached). See "Contrast is enforced, not assumed", above. |
 | `contrastPairsForTheme` | function | `(theme: "light" \| "dark") => readonly ContrastPair[]` — `CONTRAST_PAIRS` with this package's real, theme-scoped categorical-mark relief attached to the matching pairs' `exception` field. |
 | `ContrastPair` | type | `{ id, foreground, background, level, minimumRatio, compositeOver?, description, exception? }` — one entry of `CONTRAST_PAIRS`. `compositeOver` names a token, or is a literal colour when it does not start with `--`. |
 | `ContrastException` | type | `{ wcagClause, compensatingMechanism, rationale }` — the required justification for a `ContrastPair.exception`; all three fields must be non-blank or `checkTokenContrast` reports `"invalid-exception"`. |

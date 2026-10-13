@@ -475,6 +475,50 @@ export const CONTRAST_PAIRS: readonly ContrastPair[] = [
     description: "An overlay SiteHeader (tone inverse) after scrolling, over a black backdrop.",
   },
 
+  // ── glass: overlay SiteHeader focus indicator on its plate, 3:1 ────────
+  // The focus ring (`--ui-ring-focus`) and every `:focus-visible` outline
+  // inside an overlay header take the tone's ink, not `--color-accent`
+  // (`theme-keys.css`, `site-header-overlay`): accent on the base glass
+  // over a white backdrop is 1.55:1 in the dark theme, and on the opaque
+  // light-theme inverse plate it is 2.60:1. The ring is non-text, so it is
+  // held to the 3:1 floor (WCAG 1.4.11), over the same two backdrops.
+  {
+    id: "focus-ring/surface-glass@backdrop-white",
+    foreground: "--color-ink-primary",
+    background: "--color-surface-glass",
+    compositeOver: "oklch(1 0 0)",
+    level: "AA-large",
+    minimumRatio: AA_LARGE,
+    description: "The keyboard focus indicator in an overlay SiteHeader (tone base) after scrolling, over a white backdrop: the tone's ink, at the 3:1 non-text floor (WCAG 1.4.11).",
+  },
+  {
+    id: "focus-ring/surface-glass@backdrop-black",
+    foreground: "--color-ink-primary",
+    background: "--color-surface-glass",
+    compositeOver: "oklch(0 0 0)",
+    level: "AA-large",
+    minimumRatio: AA_LARGE,
+    description: "The keyboard focus indicator in an overlay SiteHeader (tone base) after scrolling, over a black backdrop: the tone's ink, at the 3:1 non-text floor (WCAG 1.4.11).",
+  },
+  {
+    id: "focus-ring/surface-glass-inverse@backdrop-white",
+    foreground: "--color-ink-on-inverse",
+    background: "--color-surface-glass-inverse",
+    compositeOver: "oklch(1 0 0)",
+    level: "AA-large",
+    minimumRatio: AA_LARGE,
+    description: "The keyboard focus indicator in an overlay SiteHeader (tone inverse) after scrolling, over a white backdrop: the tone's ink, at the 3:1 non-text floor (WCAG 1.4.11).",
+  },
+  {
+    id: "focus-ring/surface-glass-inverse@backdrop-black",
+    foreground: "--color-ink-on-inverse",
+    background: "--color-surface-glass-inverse",
+    compositeOver: "oklch(0 0 0)",
+    level: "AA-large",
+    minimumRatio: AA_LARGE,
+    description: "The keyboard focus indicator in an overlay SiteHeader (tone inverse) after scrolling, over a black backdrop: the tone's ink, at the 3:1 non-text floor (WCAG 1.4.11).",
+  },
+
   // ── status -text on its own -tint, composited over surface-base: AA ───
   {
     id: "status-success-text/status-success-tint",

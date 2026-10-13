@@ -25,8 +25,12 @@ export type SiteHeaderPlacement = "flow" | "overlay";
  *
  * The tone governs inherited ink only. A child that sets its own ink (a
  * `Link` in any variant, `Brandmark`, the `ghost` look of
- * `SiteHeader.ActionLink`) keeps it, so choose children that inherit, carry
- * their own fill, or whose own ink matches the tone.
+ * `SiteHeader.ActionLink`) keeps it. The contrast gate checks only the
+ * tone's own ink on the glass (`ink-primary` or `ink-on-inverse`); no other
+ * ink is checked there, and `ink-link`, `ink-secondary` and `ink-muted` fall
+ * short of AA on it. Give header text the inherited ink or a child that
+ * carries its own fill. Focus indicators inside the header take the tone's
+ * ink instead of `--color-accent`, which falls below 3:1 on the glass.
  *
  * At the top of the page the header is transparent, with no scrim and no
  * contrast gate: the gate covers the glass, not the hero under it. Over

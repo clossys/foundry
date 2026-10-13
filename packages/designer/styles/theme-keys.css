@@ -312,6 +312,13 @@
  * The contrast gate pins each glass alpha against its ink over a white and
  * a black backdrop, the two extremes a blurred backdrop can average to.
  *
+ * Focus indicators inside the header take the tone's ink rather than
+ * `--color-accent`: the `--ui-ring-focus` ring and the colour of every
+ * `:focus-visible` outline. Accent falls below the 3:1 non-text floor on
+ * the glass (dark theme, base glass over a white backdrop, 1.55:1), while
+ * the tone's ink is the one ink the gate checks on the glass, and the one
+ * the page guarantees reads over its hero at the transparent top.
+ *
  * States change paint only (background, border colour, backdrop filter):
  * the border width is constant, so no state moves layout.
  *
@@ -356,9 +363,15 @@
   border-block-end-color: var(--site-header-glass-line, oklch(0.8761 0 0));
   -webkit-backdrop-filter: var(--site-header-glass-blur, blur(16px));
   backdrop-filter: var(--site-header-glass-blur, blur(16px));
+  --site-header-focus: var(--color-ink-primary, oklch(0.2178 0 0));
+  --ui-ring-focus: 0 0 0 2px var(--site-header-focus, oklch(0.2178 0 0));
   &[data-tone="inverse"] {
     --site-header-glass-fill: var(--color-surface-glass-inverse, oklch(0.2178 0 0 / 0.88));
     --site-header-glass-line: var(--color-line-on-inverse, oklch(0.9702 0 0 / 0.14));
+    --site-header-focus: var(--color-ink-on-inverse, oklch(0.9702 0 0));
+  }
+  &[data-placement="overlay"] :focus-visible {
+    outline-color: var(--site-header-focus, oklch(0.2178 0 0));
   }
   @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
     --site-header-glass-fill: var(--color-surface-raised, oklch(1 0 0));

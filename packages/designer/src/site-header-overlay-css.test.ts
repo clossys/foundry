@@ -85,6 +85,17 @@ describe("site-header-overlay utility (theme-keys.css)", () => {
     );
   });
 
+  it("draws focus indicators in the tone's ink, not accent, so they clear 3:1 on the glass", () => {
+    const outside = block.slice(0, block.indexOf("@supports not"));
+    expect(outside).toContain("--site-header-focus: var(--color-ink-primary, oklch(0.2178 0 0));");
+    expect(outside).toContain("--ui-ring-focus: 0 0 0 2px var(--site-header-focus, oklch(0.2178 0 0));");
+    expect(outside).toMatch(/&\[data-tone="inverse"\] \{[^}]*--site-header-focus: var\(--color-ink-on-inverse, oklch\(0\.9702 0 0\)\);[^}]*\}/);
+    // Higher specificity than a `focus-visible:outline-*` utility (0,2,0),
+    // so the outline colour is the tone's ink whatever the rule order.
+    expect(outside).toMatch(/&\[data-placement="overlay"\] :focus-visible \{\s*outline-color: var\(--site-header-focus, oklch\(0\.2178 0 0\)\);\s*\}/);
+    expect(outside).not.toContain("--color-accent");
+  });
+
   it("changes paint only between states: no state rule or keyframe touches layout", () => {
     expect(keyframes).not.toMatch(LAYOUT_PROPERTIES);
     expect(scrollDriven).not.toMatch(LAYOUT_PROPERTIES);
@@ -102,5 +113,7 @@ describe("site-header-overlay utility (theme-keys.css)", () => {
     expect(compiled).toContain("prefers-reduced-transparency: reduce");
     expect(compiled).toContain("--color-surface-glass");
     expect(compiled).toContain("--blur-glass");
+    expect(compiled).toContain("--ui-ring-focus: 0 0 0 2px var(--site-header-focus, oklch(0.2178 0 0));");
+    expect(compiled).toContain('&[data-placement="overlay"] :focus-visible {');
   });
 });

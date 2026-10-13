@@ -4702,12 +4702,25 @@ glass plate once the page scrolls beneath it. The glass is
   In `"overlay"`, `ground` is not read.
 - `tone` governs inherited ink only. A child that sets its own ink keeps it:
   `Link` in every variant (`standalone` is `ink-primary`, `default` is
-  `ink-link`), `Brandmark` (`ink-primary`) and `SiteHeader.ActionLink`'s
-  `ghost` look (`ink-primary` with no plate). With `tone="inverse"` those
-  read dark on dark glass. `ActionLink`'s `primary` and `secondary` looks
-  carry their own fill, so they read on either tone. Choose children that
-  inherit (an `<a>` with `text-inherit`, as below), carry their own fill, or
-  whose own ink matches the tone.
+  `ink-link`, `muted` is `ink-muted`), `Brandmark` (`ink-primary`) and
+  `SiteHeader.ActionLink`'s `ghost` look (`ink-primary` with no plate). With
+  `tone="inverse"` those read dark on dark glass. `ActionLink`'s `primary`
+  and `secondary` looks carry their own fill, so they read on either tone.
+- The contrast gate checks only the tone's own ink on the glass:
+  `ink-primary` on `surface-glass` and `ink-on-inverse` on
+  `surface-glass-inverse`. A child whose ink is exactly that token (with
+  `tone="base"`, `Link`'s `standalone` look or `Brandmark`) is covered by
+  those pairs. No other ink is checked on the glass, and the softer inks
+  fall short of AA there: `ink-link` (`Link` `default`) and `ink-secondary`
+  in the dark theme over a white backdrop, and `ink-muted` (`Link` `muted`)
+  in both themes. Give header text the inherited ink (an `<a>` with
+  `text-inherit`, as below) or a child that carries its own fill.
+- Focus indicators inside the header take the tone's ink instead of
+  `--color-accent`: the `--ui-ring-focus` ring (`Link`, `Button`) and the
+  colour of every `:focus-visible` outline (`ActionLink`). Accent does not
+  reach the 3:1 non-text floor on the glass (dark theme, base glass over a
+  white backdrop: 1.55:1), and the gate checks the ring in the tone's ink
+  on each glass at 3:1.
 - `menuOpen` holds the glass at any scroll position while a menu belonging to
   the header is open (`data-menu-open`). A descendant with
   `aria-expanded="true"`, such as an open `NavShell` trigger, or an open
@@ -4719,8 +4732,8 @@ glass plate once the page scrolls beneath it. The glass is
   Reduced transparency, or an engine without backdrop blur, replaces the
   glass with the opaque `surface-raised` (or `surface-inverse`) plate. Only
   paint changes between states, so the header never shifts layout.
-- The contrast gate checks each glass with its ink composited over white and
-  over black, the two extremes a blurred backdrop can average to, in both
+- The contrast gate checks each glass with its ink and its focus indicator
+  composited over white and over black, the two extremes a blurred backdrop can average to, in both
   themes, scoring the lower of a linear-light and a browser (gamma-encoded
   sRGB) blend. It does not check the transparent top state: over
   photographic or arbitrary hero art the page supplies its own top scrim and
@@ -6136,11 +6149,12 @@ part of this package's public API" and reachable only by that one test.
   `relativeLuminance`, `parseOklch`** (from `@clossys/designer/tokens`,
   promoted from that internal module — no behavior change, only
   visibility) — the WCAG colour math itself, pure and zero-dependency.
-- **`CONTRAST_PAIRS`** (same subpath) — an EXPLICIT, checked-in list of 37
+- **`CONTRAST_PAIRS`** (same subpath) — an EXPLICIT, checked-in list of 76
   `{ foreground, background, level, minimumRatio, compositeOver? }` pairs
   (`compositeOver` is a token, or a literal colour such as `oklch(0 0 0)`
-  for a backdrop no token names, which is how the four glass pairs check
-  the overlay header's glass over a white and a black backdrop),
+  for a backdrop no token names, which is how the eight glass pairs check
+  the overlay header's ink and focus indicator on its glass over a white
+  and a black backdrop),
   ratified from `contrast.test.ts`'s own hand-curated pair map rather than
   auto-derived from token names. An earlier design assumed this gate could
   self-extend, deriving one pair per `--<role>-on-<ground>`-shaped token

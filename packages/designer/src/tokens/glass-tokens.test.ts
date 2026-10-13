@@ -23,11 +23,20 @@ const GLASS_PAIR_IDS = [
   "ink-on-inverse/surface-glass-inverse@backdrop-black",
 ] as const;
 
+/** The overlay header's focus indicator on each glass: the tone's ink at the 3:1 non-text floor. */
+const FOCUS_PAIR_IDS = [
+  "focus-ring/surface-glass@backdrop-white",
+  "focus-ring/surface-glass@backdrop-black",
+  "focus-ring/surface-glass-inverse@backdrop-white",
+  "focus-ring/surface-glass-inverse@backdrop-black",
+] as const;
+
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const tokensCss = readFileSync(join(packageRoot, "styles", "tokens.css"), "utf8");
 const brandTemplateCss = readFileSync(join(packageRoot, "styles", "brand-template.css"), "utf8");
 
 const glassPairs = CONTRAST_PAIRS.filter((pair) => (GLASS_PAIR_IDS as readonly string[]).includes(pair.id));
+const focusPairs = CONTRAST_PAIRS.filter((pair) => (FOCUS_PAIR_IDS as readonly string[]).includes(pair.id));
 
 /** The shipped registry with every theme-dependent token set to its dark value from tokens.css. */
 function darkTokens(): Readonly<Record<string, TokenDefinition>> {
@@ -86,6 +95,28 @@ describe("glass tokens", () => {
     expect(result.unchecked).toEqual([]);
     expect(result.findings).toEqual([]);
     expect(result.ok).toBe(true);
+  });
+
+  it.each(THEMES)("checks the focus indicator on each glass in the tone's ink at 3:1, and it passes on the shipped %s tokens", (_theme, tokens) => {
+    expect(focusPairs.map((pair) => pair.id).sort()).toEqual([...FOCUS_PAIR_IDS].sort());
+    for (const pair of focusPairs) {
+      expect(pair.minimumRatio, pair.id).toBe(3);
+      expect(pair.foreground, pair.id).toBe(pair.background === "--color-surface-glass" ? "--color-ink-primary" : "--color-ink-on-inverse");
+    }
+    const result = checkTokenContrast(focusPairs, { tokens });
+    expect(result.unchecked).toEqual([]);
+    expect(result.findings).toEqual([]);
+    expect(result.ok).toBe(true);
+  });
+
+  it.each([
+    ["light", TOKENS, ["focus-ring/surface-glass-inverse@backdrop-white", "focus-ring/surface-glass-inverse@backdrop-black"]],
+    ["dark", darkTokens(), ["focus-ring/surface-glass@backdrop-white", "focus-ring/surface-glass-inverse@backdrop-black"]],
+  ] as const)("mutation proof: an accent focus ring fails on the glass in the %s theme", (_theme, tokens, failing) => {
+    const accentPairs = focusPairs.map((pair) => ({ ...pair, foreground: "--color-accent" }));
+    const result = checkTokenContrast(accentPairs, { tokens });
+    expect(result.ok).toBe(false);
+    expect(result.findings.map((f) => f.pairId).sort()).toEqual([...failing].sort());
   });
 
   describe("mutation proof: a seeded failing alpha fails the gate", () => {
