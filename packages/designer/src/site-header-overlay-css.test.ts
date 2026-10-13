@@ -40,9 +40,9 @@ describe("site-header-overlay utility (theme-keys.css)", () => {
     const outside = block.slice(0, block.indexOf("@supports (animation-timeline: scroll())"));
     expect(outside).toContain("--site-header-glass-fill: var(--color-surface-glass, oklch(1 0 0 / 0.88));");
     expect(outside).toContain("--site-header-glass-blur: blur(var(--blur-glass, 16px));");
-    expect(outside).toContain("background-color: var(--site-header-glass-fill);");
-    expect(outside).toContain("backdrop-filter: var(--site-header-glass-blur);");
-    expect(outside).toContain("-webkit-backdrop-filter: var(--site-header-glass-blur);");
+    expect(outside).toContain("background-color: var(--site-header-glass-fill, oklch(1 0 0 / 0.88));");
+    expect(outside).toContain("backdrop-filter: var(--site-header-glass-blur, blur(16px));");
+    expect(outside).toContain("-webkit-backdrop-filter: var(--site-header-glass-blur, blur(16px));");
     expect(outside).toContain("border-block-end-width: var(--ui-border-hairline, 1px);");
     expect(outside).toMatch(/&\[data-tone="inverse"\] \{\s*--site-header-glass-fill: var\(--color-surface-glass-inverse, oklch\(0\.2178 0 0 \/ 0\.88\)\);\s*--site-header-glass-line: var\(--color-line-on-inverse/);
   });
@@ -77,7 +77,7 @@ describe("site-header-overlay utility (theme-keys.css)", () => {
 
   it("forces glass while a menu is open, by prop or by an expanded toggle", () => {
     expect(scrollDriven).toMatch(
-      /&\[data-menu-open\],\s*&:has\(\[aria-expanded="true"\]\) \{\s*animation-name: none;\s*background-color: var\(--site-header-glass-fill\);/,
+      /&\[data-menu-open\],\s*&:has\(\[aria-expanded="true"\]\) \{\s*animation-name: none;\s*background-color: var\(--site-header-glass-fill, oklch\(1 0 0 \/ 0\.88\)\);/,
     );
   });
 
@@ -86,8 +86,8 @@ describe("site-header-overlay utility (theme-keys.css)", () => {
     expect(scrollDriven).not.toMatch(LAYOUT_PROPERTIES);
     expect(noBackdrop).not.toMatch(LAYOUT_PROPERTIES);
     expect(reducedTransparency).not.toMatch(LAYOUT_PROPERTIES);
-    expect(keyframes).toContain("background-color: var(--site-header-glass-fill);");
-    expect(keyframes).toContain("backdrop-filter: var(--site-header-glass-blur);");
+    expect(keyframes).toContain("background-color: var(--site-header-glass-fill, oklch(1 0 0 / 0.88));");
+    expect(keyframes).toContain("backdrop-filter: var(--site-header-glass-blur, blur(16px));");
   });
 
   it("is carried into compiled.css with the fallback, the reduced-preference branches and the keyframes", () => {

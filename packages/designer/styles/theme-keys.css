@@ -333,10 +333,10 @@
  */
 @keyframes site-header-glass {
   to {
-    background-color: var(--site-header-glass-fill);
-    border-block-end-color: var(--site-header-glass-line);
-    -webkit-backdrop-filter: var(--site-header-glass-blur);
-    backdrop-filter: var(--site-header-glass-blur);
+    background-color: var(--site-header-glass-fill, oklch(1 0 0 / 0.88));
+    border-block-end-color: var(--site-header-glass-line, oklch(0.8761 0 0));
+    -webkit-backdrop-filter: var(--site-header-glass-blur, blur(16px));
+    backdrop-filter: var(--site-header-glass-blur, blur(16px));
   }
 }
 
@@ -346,10 +346,10 @@
   --site-header-glass-blur: blur(var(--blur-glass, 16px));
   border-block-end-width: var(--ui-border-hairline, 1px);
   border-block-end-style: solid;
-  background-color: var(--site-header-glass-fill);
-  border-block-end-color: var(--site-header-glass-line);
-  -webkit-backdrop-filter: var(--site-header-glass-blur);
-  backdrop-filter: var(--site-header-glass-blur);
+  background-color: var(--site-header-glass-fill, oklch(1 0 0 / 0.88));
+  border-block-end-color: var(--site-header-glass-line, oklch(0.8761 0 0));
+  -webkit-backdrop-filter: var(--site-header-glass-blur, blur(16px));
+  backdrop-filter: var(--site-header-glass-blur, blur(16px));
   &[data-tone="inverse"] {
     --site-header-glass-fill: var(--color-surface-glass-inverse, oklch(0.2178 0 0 / 0.88));
     --site-header-glass-line: var(--color-line-on-inverse, oklch(0.9702 0 0 / 0.14));
@@ -384,10 +384,10 @@
     &[data-menu-open],
     &:has([aria-expanded="true"]) {
       animation-name: none;
-      background-color: var(--site-header-glass-fill);
-      border-block-end-color: var(--site-header-glass-line);
-      -webkit-backdrop-filter: var(--site-header-glass-blur);
-      backdrop-filter: var(--site-header-glass-blur);
+      background-color: var(--site-header-glass-fill, oklch(1 0 0 / 0.88));
+      border-block-end-color: var(--site-header-glass-line, oklch(0.8761 0 0));
+      -webkit-backdrop-filter: var(--site-header-glass-blur, blur(16px));
+      backdrop-filter: var(--site-header-glass-blur, blur(16px));
     }
   }
 }
