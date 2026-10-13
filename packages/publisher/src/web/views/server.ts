@@ -54,3 +54,6 @@ export { ResetForm } from "./ResetForm.server.js";
 export type { ResetDetails, ResetFailure, ResetFormProps, ResetResult } from "./ResetForm.js";
 
 export type { LandingViewAction } from "./SectionedViewActions.js";
+
+export { ContactForm } from "./ContactForm.server.js";
+export type { ContactFormCopy, ContactFormDevPreview, ContactFormProps, ContactFormTopic, ContactFormValues } from "./ContactForm.js";

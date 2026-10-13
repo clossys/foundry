@@ -177,6 +177,29 @@ READER_COMPOSITION.sections.forEach((section, index) => {
         section.media.input.decision.person.initials = 'RT';
 });
 export const READER_SAMPLES = CATALOG_FIXTURES.filter(f => !READER_PRUNED.some(id => id === f.id)).map(f => f.id === 'recipes-nav-composition' ? { ...f, section: READER_COMPOSITION.sections[0]! } : prepare(f));
+
+/** Index lookup: existing topics rows, with each status in the badge copy slot. */
+function statusListRef(slot: string): CopyRef {
+    const text = READER_COPY['status-list']?.[slot];
+    if (text === undefined) throw new Error(`Missing status-list reader copy for ${slot}.`);
+    return ref('status-list', text);
+}
+export const READER_STATUS_LIST: CatalogFixture = {
+    id: 'status-list', fn: 'Items', axis: 'recipe', value: 'topics', caption: 'status list',
+    section: {
+        id: 'feature-status', kind: 'content-section', size: 'standard', layout: 'stacked',
+        heading: statusListRef('.heading'), description: statusListRef('.description'),
+        block: {
+            type: 'items', recipe: 'topics', columns: 1, scale: 'item',
+            items: (['success', 'info', 'neutral'] as const).map((tone, index) => ({
+                id: ['search', 'imports', 'exports'][index]!,
+                heading: statusListRef(`.block.items.${index}.heading`),
+                description: statusListRef(`.block.items.${index}.description`),
+                badge: { tone, label: statusListRef(`.block.items.${index}.badge.label`) },
+            })),
+        },
+    },
+};
 export const READER_COPY_REGISTRY = { ...CATALOG_COPY_REGISTRY, id: 'reader-catalog', entries };
 export const readerCopyResolver = createCopyResolver(READER_COPY_REGISTRY);
 

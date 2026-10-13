@@ -176,9 +176,14 @@ try {
     }
   }
 
-  // Refuse any terminal test/spec extension and complete test-data segments,
-  // regardless of case. Runtime data and partial segment names remain publishable.
-  const testFiles = files.filter((f) => /\.(test|spec)\.[^/.]+$/i.test(f) || /(^|\/)(?:__tests__|__fixtures__|__snapshots__|__mocks__)\//i.test(f));
+  // Refuse terminal test/spec suffixes, generated artifacts, type/e2e test
+  // conventions, and complete test-data segments regardless of case.
+  // Ordinary declarations, backups, and partial segment names remain publishable.
+  const testSuffix = /\.(?:test|spec)\.[^/.]+$/i;
+  const generatedTestSuffix = /\.(?:test|spec)\.(?:d\.(?:[^/.]+\.)?[cm]?ts(?:\.(?:map|snap))?|[^/.]+\.(?:map|snap))$/i;
+  const conventionalTestSuffix = /\.(?:test-d|spec-d|e2e-spec)\.(?:[cm]?ts|tsx)$/i;
+  const testSegment = /(^|\/)(?:__tests__|__fixtures__|__snapshots__|__mocks__)\//i;
+  const testFiles = files.filter((f) => testSuffix.test(f) || generatedTestSuffix.test(f) || conventionalTestSuffix.test(f) || testSegment.test(f));
   for (const f of testFiles) {
     structural.push({ kind: "test-file", detail: `test file shipped: ${f}`, severity: "high" });
   }
