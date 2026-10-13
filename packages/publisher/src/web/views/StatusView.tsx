@@ -3,6 +3,7 @@ import { mergeUiClasses } from "@clossys/designer/atoms/server";
 import { CARDLESS_PAGE_COLUMN_CLASSES, CardlessPageLayout, pageColumnStyle } from "../internal/PageLayout.js";
 import { assertViewContentRoot } from "../internal/viewContentRoot.js";
 import { renderViewLinks, type ViewLinksInput } from "../internal/ViewLinks.js";
+import { renderReference } from "../internal/renderReference.js";
 
 export interface StatusViewProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> {
   /**
@@ -12,10 +13,12 @@ export interface StatusViewProps extends Omit<HTMLAttributes<HTMLDivElement>, "t
   status: ReactNode;
   /**
    * One line of supporting copy under the status, such as "This page does not
-   * exist." A diagnostic reference belongs in this line as caller copy.
+   * exist."
    * Absent from the markup when omitted.
    */
   subtitle?: ReactNode;
+  /** A caller-labelled diagnostic line after the subtitle; the value is escaped text inside `<code>`. Omitted or null means no line; label and value must be nonblank strings. */
+  reference?: { label: string; value: string } | null;
   /**
    * The primary call to action, on the page background with no card around
    * it: a link home or a retry button. An error page should offer one; a 403,
@@ -53,12 +56,14 @@ export interface StatusViewProps extends Omit<HTMLAttributes<HTMLDivElement>, "t
  * Server-safe: no client hooks, no router. `action` is a plain slot, so the
  * caller supplies its own link or button.
  */
-export function StatusView({ status, subtitle, action, notes, routes, className, style, ...rest }: StatusViewProps) {
+export function StatusView({ status, subtitle, reference, action, notes, routes, className, style, ...rest }: StatusViewProps) {
   assertViewContentRoot("StatusView", rest);
   const destinations = renderViewLinks(routes, "StatusView");
+  const referenceLine = renderReference(reference);
+  const supportingCopy = referenceLine === null ? subtitle : <>{subtitle}{referenceLine}</>;
   return (
     <div {...rest} className={mergeUiClasses(CARDLESS_PAGE_COLUMN_CLASSES, className)} style={pageColumnStyle("form", style)}>
-      <CardlessPageLayout title={status} subtitle={subtitle} action={action} notes={notes} />
+      <CardlessPageLayout title={status} subtitle={supportingCopy} action={action} notes={notes} />
       {destinations}
     </div>
   );

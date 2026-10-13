@@ -2987,6 +2987,7 @@ are absent from the markup when their slot is empty. The column uses the
 | --- | --- |
 | Header title | `status` (required): a code such as `404`, or a short title |
 | Header subtitle | `subtitle` (optional) |
+| Diagnostic reference | `reference` (optional): `{ label: string; value: string }`; both fields must be nonblank strings. Renders a caller-labelled line after the subtitle with an escaped, selectable `<code>` value. Omitted or `null` adds no line or empty element. |
 | Action | `action` (optional) |
 | Notes | `notes` (optional) |
 | Destinations | `routes` (optional): `{ label: string, items: readonly (ItemData & { href: string })[] }` |
@@ -3123,7 +3124,8 @@ Props (`GlobalErrorDocumentFramedProps`):
 | `htmlClassName` | no | A class on `<html>`, rendered only when non-empty. |
 | `shell`, `resolveCopy`, `resolveAsset` | yes | The frame's inputs, exactly as `SiteFrame` takes them (`SiteFrameInput`). |
 | `status` | yes | The one `<h1>`, as on `StatusView`: a code such as `"500"`, or a short title. |
-| `subtitle` | no | One line of supporting copy. A diagnostic reference goes here as caller copy (`Error: <digest>.`); there is no digest prop. |
+| `subtitle` | no | One line of supporting caller copy. |
+| `reference` | no | `{ label: string; value: string }`, also accepted by `StatusView`: renders `Error: <code>…</code>.` when `label` is `"Error"`, after the subtitle. The label comes from caller copy or a resolved Writer record; the value is escaped text in selectable `<code>`. Both fields must be nonblank strings. Omitted or `null` means no line or empty element. A non-null reference requires the framed shape. |
 | `action` | no | The one primary call to action, such as a retry button. |
 | `notes` | no | A quiet line for a secondary link. |
 | `routes` | no | Caller-labelled destinations, forwarded unchanged to `StatusView`. |
@@ -3160,7 +3162,8 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
       resolveCopy={frame.resolveCopy}
       resolveAsset={frame.resolveAsset}
       status="500"
-      subtitle={error.digest ? `Something went wrong. Error: ${error.digest}.` : "Something went wrong."}
+      subtitle="Something went wrong."
+      reference={error.digest ? { label: "Error", value: error.digest } : undefined}
       action={<button type="button" onClick={reset}>Try again</button>}
     />
   );
