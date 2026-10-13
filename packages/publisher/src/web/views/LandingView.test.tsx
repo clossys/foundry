@@ -30,7 +30,7 @@ const PAGE: ResolvedSectionedViewDocument = {
 const SHARED: ResolvedSectionedViewDocument = {
   id: "acme-shared",
   resolutions: RESOLUTIONS,
-  sections: [{ id: "faq", kind: "faq", ground: "base", heading: "FAQ-SENTINEL", items: [{ id: "q", question: "QUESTION-SENTINEL", answer: "ANSWER-SENTINEL" }] }],
+  sections: [{ id: "faq", kind: "faq", ground: "base", heading: "FAQ-SENTINEL", items: ["one", "two", "three", "four"].map(id => ({ id, question: "QUESTION-SENTINEL", answer: "ANSWER-SENTINEL" })) }],
 };
 
 const CALL_TO_ACTION: LandingViewProps["callToAction"] = {
@@ -98,7 +98,7 @@ describe("LandingView", () => {
     expect(blocks.lastElementChild?.hasAttribute("data-after")).toBe(true);
     const faq = root.querySelector("#faq") as HTMLElement;
     expect(faq.querySelector("[data-content-section-header] h2")?.textContent).toBe("FAQ-SENTINEL");
-    expect(faq.querySelector("[data-content-section-modules] details")).not.toBeNull();
+    expect(faq.querySelector("[data-content-section-modules] [data-items] button")).not.toBeNull();
   });
 
 
@@ -356,7 +356,7 @@ describe("LandingView close copy", () => {
     expect(close.textContent).toBe("HERO-SENTINELCLOSE-ACTION-SENTINEL");
   });
 
-  it("preserves legacy markup when hero reuse is absent", () => {
+  it("renders closing markup with canonical FAQ rows when hero reuse is absent", () => {
     const html = renderToStaticMarkup(<LandingView document={PAGE} trailing={[SHARED]} callToAction={CALL_TO_ACTION} />);
     // Require the cue rail's token fallback; preserve every other pre-option byte.
     const cueRail = 'class="relative z-[var(--ui-z-sticky,10)] h-0"';
@@ -399,7 +399,7 @@ describe("LandingView close copy", () => {
   });
 });
 
-const LEGACY_CLOSE_MARKUP_SHA256 = "c7612c0e8dccc6bba0f05d7fca77d7e801d578e2ef55c415d992aab396e315d1";
+const LEGACY_CLOSE_MARKUP_SHA256 = "84380478f6fa9f7b040b6e7a4780ee3389bbb1224d6b916df1489e28a8febd0d";
 
 
 describe("LandingView action ladder", () => {

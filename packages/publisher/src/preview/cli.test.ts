@@ -81,7 +81,7 @@ describe("publisher-preview main — brand coverage gate", () => {
     const page = new JSDOM(html).window.document;
     const sectioned = page.querySelector('main[aria-label="publisher-preview-sectioned"]');
     expect(sectioned).not.toBeNull();
-    expect(sectioned?.querySelectorAll("details summary")).toHaveLength(1);
+    expect(sectioned?.querySelectorAll("#faq [data-items] details summary")).toHaveLength(4);
     expect(sectioned?.querySelectorAll("[data-rac]")).toHaveLength(0);
     const details = sectioned?.querySelector("details");
     expect(details?.open).toBe(false);

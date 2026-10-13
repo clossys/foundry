@@ -582,6 +582,9 @@ with known lane ids on every item in a connected block of three to five
 items, using columns or stacked arrangement. The first item uses the first
 defined lane, and both lanes appear.
 
+For status-labelled lookup, use the [Index status-list configuration](#index-configuration-status-list)
+with the existing `topics` recipe and per-item badges.
+
 Matrix sides each have an id and heading, and either 2–4 points or one
 specimen panel. Labels are optional on both sides together; mixed label
 presence is refused. Without labels, each side heading is its semantic heading.
@@ -700,7 +703,7 @@ validates and renders exactly as it did before they existed.
   (`up` | `down` | `neutral`, only with `delta`), and optional `description`.
   The view maps each row onto Designer `Stat`; do not flatten metrics into
   `feature-grid`.
-- **`layout` on the faq section.** `stacked` (the default, unchanged) or
+- **`layout` on the faq section.** `stacked` (the default) or
   `split`: the header group in the narrow text column and the rows in the
   wide column beside it, top-aligned. It renders the same band as a
   `content-section` with a split Items block using the `faq` recipe, so the
@@ -1313,9 +1316,13 @@ text and marker. Numbered, connected and disclosed Items use the collection
 renderer. Ordinary disclosure uses React Aria controls; the server entry uses
 native details. A supplied continuing end label stays visible; an omitted
 label retains the consumer-resolved continuation copy as hidden text.
-The published top-level FAQ keeps its existing implementation, including
-split FAQ layout: SectionedView selects its entry-specific controls, while
-LandingView retains native disclosure. Scene text limits stay local to media; inverse Scene media gets an opaque base plate and base ink. Record, Scene and anatomy identities are namespaced by section instance without changing authored copy or provenance. Canonical Landing fragments align with the unpadded band edge; published bands retain their padding offsets.
+The published `faq` section renders the Index function’s Items-based `faq`
+recipe through the canonical content-section path: one column of rows with
+`reveal: "disclose"`. Its authored `{ id, question, answer }` items and copy
+provenance are retained, with the recipe’s four-to-six-row budget checked at
+authoring and rendering. Omitted or `stacked` layout selects a stacked band;
+`split` selects `split-end`. SectionedView and LandingView use React Aria
+controls in the ordinary entry and native disclosure in the server entry. Scene text limits stay local to media; inverse Scene media gets an opaque base plate and base ink. Record, Scene and anatomy identities are namespaced by section instance without changing authored copy or provenance. Canonical Landing fragments align with the unpadded band edge; published bands retain their padding offsets.
 
 The resolved boundary requires explicit canonical axes and closed plain data
 before reading discriminators. It checks the structural contract and text
@@ -5243,6 +5250,52 @@ if (findings.some((finding) => finding.severity === "error")) {
 export const resolved = resolveSectionedViewDocument(document, resolveCopy);
 // resolved.resolutions retains the registry revision and source for every CopyRef.
 ```
+
+## Index configuration: status list
+
+A list of items with current status labels belongs to Index: the reader
+looks up readiness rather than following ordered steps. Use a
+`content-section` with the existing `topics` recipe and a `badge` on each
+item. The example uses Index's three existing axes: shape `rows-1`, reveal
+`all`, groups `off`; each axis has at most three values. Status labels are
+copy in the badge slot, and tones select existing semantic tokens.
+
+```tsx
+import { resolveSectionedViewDocument, type SectionedViewDocument } from "@clossys/publisher/core";
+import { SectionedView } from "@clossys/publisher/web";
+
+declare const resolveCopy: Parameters<typeof resolveSectionedViewDocument>[1]; // resolves approved registry entries
+
+const document: SectionedViewDocument = {
+  id: "feature-status-page",
+  sections: [{
+    id: "feature-status",
+    kind: "content-section",
+    heading: { id: "feature-status.heading" },
+    block: {
+      type: "items",
+      recipe: "topics",
+      columns: 1,
+      scale: "item",
+      items: [
+        { id: "search", heading: { id: "search.heading" }, badge: { label: { id: "status.live" }, tone: "success" } },
+        { id: "imports", heading: { id: "imports.heading" }, badge: { label: { id: "status.in-progress" }, tone: "info" } },
+        { id: "exports", heading: { id: "exports.heading" }, badge: { label: { id: "status.planned" }, tone: "neutral" } },
+      ],
+    },
+  }],
+};
+
+const page = <SectionedView document={resolveSectionedViewDocument(document, resolveCopy)} />;
+```
+
+Author the status copy as, for example, Live, In progress and Planned.
+Descriptions can explain individual items; optional `groups` reference
+their IDs. The existing rows limits apply: 2–8 items in one column, even
+counts in two columns, and 2–4 groups of 2–4 items within the total budget.
+Badge labels resolve through the document's ordinary copy provenance;
+an unresolved label refuses the document. The preview renders this
+configuration on `catalog/index-function.html` through `SectionedView`.
 
 ## Checked consumer art
 
