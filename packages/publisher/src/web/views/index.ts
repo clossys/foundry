@@ -42,7 +42,7 @@ export { PackReviewView } from "./PackReviewView.js";
 export type { PackReviewViewBrandKit, PackReviewViewExport, PackReviewViewFact, PackReviewViewFaqItem, PackReviewViewLabels, PackReviewViewPage, PackReviewViewProps, PackReviewViewState, PackReviewViewStrategy, PackReviewViewVoice } from "./PackReviewView.js";
 
 export { LegalView } from "./LegalView.js";
-export type { LegalViewLabels, LegalViewProps } from "./LegalView.js";
+export type { LegalViewFramedLabels, LegalViewLabels, LegalViewProps } from "./LegalView.js";
 export { HeroView } from "./HeroView.js";
 export type { HeroViewFooter, HeroViewGround, HeroViewProps } from "./HeroView.js";
 export { LandingView } from "./LandingView.js";

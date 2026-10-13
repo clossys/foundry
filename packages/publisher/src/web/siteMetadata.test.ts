@@ -151,6 +151,48 @@ describe("buildSiteMetadata robots", () => {
   });
 });
 
+describe("buildSiteMetadata legal indexing", () => {
+  const legal = (extra: Partial<SitePageInput> = {}) => page({ kind: "legal", label: "Terms", path: "/terms", ...extra });
+
+  it("indexes a legal page that says index, with no status and so no review claim", () => {
+    expect(build(site(), legal({ indexing: "index" })).robots).toBe("index, follow");
+  });
+
+  it("indexes a draft legal page that says index", () => {
+    expect(build(site(), legal({ status: "draft", indexing: "index" })).robots).toBe("index, follow");
+  });
+
+  it("keeps a legal page that says noindex out of the index, even when counsel-reviewed", () => {
+    expect(build(site(), legal({ indexing: "noindex" })).robots).toBe("noindex, nofollow");
+    expect(build(site(), legal({ status: "counsel-reviewed", indexing: "noindex" })).robots).toBe("noindex, nofollow");
+  });
+
+  it("falls back to the status rule when indexing is omitted", () => {
+    expect(build(site(), legal({ status: "counsel-reviewed", indexing: undefined })).robots).toBe("index, follow");
+    expect(build(site(), legal({ status: "draft", indexing: undefined })).robots).toBe("noindex, nofollow");
+  });
+
+  it("changes only robots: the rest of the head set is identical for every indexing value", () => {
+    const { robots: indexed, ...indexedRest } = build(site(), legal({ indexing: "index" }));
+    const { robots: hidden, ...hiddenRest } = build(site(), legal({ indexing: "noindex" }));
+    expect([indexed, hidden]).toEqual(["index, follow", "noindex, nofollow"]);
+    expect(indexedRest).toEqual(hiddenRest);
+  });
+
+  it("refuses indexing on a non-legal kind", () => {
+    for (const kind of ["home", "contact", "notFound", "construction", "custom"] as const) {
+      expect(reasonOf(() => build(site(), page({ kind, indexing: "index" })))).toBe("invalid-indexing");
+      expect(reasonOf(() => build(site(), page({ kind, indexing: "noindex" })))).toBe("invalid-indexing");
+    }
+  });
+
+  it("refuses an unknown indexing value on a legal page", () => {
+    for (const value of ["follow", "INDEX", "", null, true, 1]) {
+      expect(reasonOf(() => build(site(), legal({ indexing: value as never })))).toBe("invalid-indexing");
+    }
+  });
+});
+
 describe("buildSiteMetadata refusals", () => {
   it.each([
     ["undefined", undefined],

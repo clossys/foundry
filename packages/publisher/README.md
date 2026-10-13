@@ -1762,9 +1762,21 @@ package.
   | `construction` | not allowed | `noindex, nofollow` |
   | `legal` | missing or `draft` | `noindex, nofollow` |
   | `legal` | `counsel-reviewed` | `index, follow` |
+  | `legal` | any, with `indexing: "index"` | `index, follow` |
+  | `legal` | any, with `indexing: "noindex"` | `noindex, nofollow` |
 
-  `buildSiteMetadata` only maps the `status` it is given to a robots value; it
-  does not record or verify counsel review.
+  A legal page can also say directly whether it is indexable, with
+  `page.indexing` (`"index"` or `"noindex"`). When `indexing` is given it decides
+  `robots` by itself, whatever `status` is, and it states no review claim: a
+  site that wants its terms and privacy pages in search results without
+  recording counsel review passes `indexing: "index"`, and a counsel-reviewed
+  page can still pass `indexing: "noindex"`. With no `indexing`, the `status`
+  rule above applies unchanged. `indexing` changes only `robots`; every other
+  field of the head set is the same. `buildSiteMetadata` only maps the
+  `indexing` and `status` it is given to a robots value; it does not record or
+  verify counsel review, and `indexing` is not the sitemap: the site
+  template's sitemap still lists a legal route only for a counsel-reviewed
+  document.
 - **Refusals.** It throws `SiteMetadataError` (with a closed `reason`) for a
   non-object input, a blank text field, a `name`, `tagline`, or `label` that
   starts or ends with whitespace or contains a control character (a tab or a
@@ -1776,7 +1788,9 @@ package.
   be in normal form, so it cannot resolve to another address; a non-ASCII path
   such as `/café` is refused, and its percent-encoded form `/caf%C3%A9` is
   accepted), an unknown
-  `kind`, a `status` on a non-legal page or outside `draft`/`counsel-reviewed`,
+  `kind`, a `status` on a non-legal page or outside `draft`/`counsel-reviewed`
+  (reason `invalid-status`), an `indexing` on a non-legal page or outside
+  `index`/`noindex` (reason `invalid-indexing`),
   a share-card `url` that is neither root-relative nor an absolute `http(s)`
   URL exactly as `new URL(url).href` writes it (`https:foo.png` is refused),
   and a share card whose `width` and `height` are not integers equal to
@@ -2428,8 +2442,9 @@ lists are exported as `LEGAL_SECTION_IDS`, keyed by kind.
 - `variables`: `entity`, `jurisdiction` and `contact`, each a required
   non-empty string.
 - `factsToConfirm` (optional): a list of `CopyRef`s naming facts a person
-  still has to confirm. A draft needs a non-empty list. `LegalView` renders
-  it in a draft callout.
+  still has to confirm. A draft needs a non-empty list. The self-chromed
+  `LegalView` renders it in a draft callout; the framed `LegalView` renders no
+  draft text.
 - `notApplicable` (optional): a record from section id to a `CopyRef`. A
   section that does not apply keeps its heading and states so through that
   reference, and the section's only block is a paragraph carrying it.
@@ -2464,14 +2479,19 @@ variables.
 `LegalView`, exported from `@clossys/publisher/web` next to `DocumentView`,
 renders a validated `LegalDocument`. Inside `SiteFrame`, use `<LegalView
 framed ... />`: the view renders its legal body and the frame owns the skip
-link, banner, single `<main>` and footer. Use `DocumentView` for ordinary
-structured documents and the framed legal path for terms and privacy so
-legal validation, both dates and the draft callout run together.
+link, banner, single `<main>` and footer, and the view renders the
+[page layout](#page-layout) that `CaptureView` and `DocumentView` share: the
+document title (and an optional `summary` as its subtitle), one card holding
+both dates and the document body, and the `related` references as the notes
+region below the card. Use `DocumentView` for ordinary structured documents
+and the framed legal path for terms and privacy so legal validation and both
+dates run together.
 
-For a self-chromed page, omit `framed` and supply `brand`, as below. Both
-paths share one body. LegalView is server-safe and has no summary or
-in-page action props; its legacy banner takes the same header slots as
-`HeroView`.
+For a self-chromed page, omit `framed` and supply `brand`, as below. That
+page keeps its own structure (title, dates, article, then `related`, with a
+draft callout for a draft document) and its output is unchanged. LegalView is
+server-safe and has no in-page action props; its legacy banner takes the same
+header slots as `HeroView`.
 
 ```tsx
 import { LegalView } from "@clossys/publisher/web";
@@ -2525,11 +2545,16 @@ Props, in addition to the standard `div` attributes and `style`:
   the string-keyed `CopyResolver` exported from `@clossys/publisher/web`, which
   carries no provenance and does not type-check here.
 - `labels`: `LegalViewLabels`, three `CopyRef`s named `effectiveDate`,
-  `lastUpdated` and `draftHeading`.
+  `lastUpdated` and `draftHeading`. The framed page renders no draft text, so
+  there `draftHeading` is optional (`LegalViewFramedLabels`) and is never
+  resolved; a full `LegalViewLabels` is still accepted.
+- `summary` (optional, framed only): a `CopyRef` for the subtitle under the
+  title. Absent from the markup when omitted; the self-chromed page refuses it.
 - `locale` (required): the locale passed to `Intl.DateTimeFormat`.
 - `footerSecondary` (optional): extra footer content.
-- `related` (optional): `{ label, items }`, placed after the legal body inside
-  the existing main, before the footer. The caller supplies a plain string
+- `related` (optional): `{ label, items }`, placed after the legal body: on the
+  framed page it is the notes region below the card, and on the self-chromed
+  page it follows the article inside the existing main, before the footer. The caller supplies a plain string
   label and one to six linked `ItemData` entries with required `href`.
   One reference renders as a standard `Item`; two to six render as `Items`
   rows. An omitted collection or an empty array adds no markup.
@@ -2546,10 +2571,16 @@ What it does:
   `<time dateTime="YYYY-MM-DD">`, formatted with
   `Intl.DateTimeFormat(locale)` in UTC and labelled by the `labels` copy
   references, resolved with `resolveCopyId`.
-- A `draft` document renders a `role="note"` callout before the first
-  section. Its heading comes from `labels.draftHeading` and it holds one
-  list item per resolved `factsToConfirm` entry. No prop turns the callout
-  off, and a `counsel-reviewed` document renders without it.
+- On the self-chromed page, a `draft` document renders a `role="note"` callout
+  before the first section. Its heading comes from `labels.draftHeading` and it
+  holds one list item per resolved `factsToConfirm` entry. No prop turns the
+  callout off, and a `counsel-reviewed` document renders without it.
+- The framed page is public, so it renders no draft or status text: a draft and
+  a `counsel-reviewed` document produce the same markup, and the facts to
+  confirm are validated but not resolved or shown. Keeping a draft off
+  production is `gateLegalDocument`'s job, and whether the page is indexed is
+  the explicit `indexing` option of `buildSiteMetadata` (above), not an
+  inference from the document's status.
 - The content variables (`entity`, `jurisdiction`, `contact`) are not
   displayed and no interpolation is applied to copy.
 - Legal document text and date/draft labels come from caller `CopyRef`s.
@@ -2579,9 +2610,11 @@ export function FramedTermsPage() {
 ```
 
 **Soundness boundary.** `LegalView` guarantees the document's structure,
-section order, dates and a draft marker that cannot be suppressed. It says
-nothing about the legal adequacy of any text. It does not enforce the
-production gate: call `gateLegalDocument` separately before publishing.
+section order and dates, and on the self-chromed page a draft marker that
+cannot be suppressed. The framed page shows no draft marker, so a caller that
+renders a draft there must keep it off a public target itself. It says nothing
+about the legal adequacy of any text. It does not enforce the production gate:
+call `gateLegalDocument` separately before publishing.
 
 ### Boundary pages
 
@@ -2932,29 +2965,32 @@ page's `<main>` that `id` and `tabIndex={-1}`, so a skip link in the host's
 own chrome can point at it and move focus there. When `mainId` is unset (or
 empty) the markup is unchanged: no `id` and no `tabindex`.
 
-`LegalView` keeps its current structure.
+The self-chromed `LegalView` keeps its current structure; only `LegalView
+framed` uses the page layout.
 
 ### Page layout
 
-`CaptureView`, `DocumentView` and `AuthView` share one page layout, so a
-site's contact, document and sign-in pages read the same way. It has three
+`CaptureView`, `DocumentView`, `AuthView` and the framed `LegalView` share one
+page layout, so a site's contact, document, legal and sign-in pages read the
+same way. It has three
 slots, centered in one column:
 
 1. **Header.** The page title, which is the page's one `<h1>`, and an
    optional subtitle under it.
 2. **Body card.** The page content inside Designer's `Card`, start-aligned for
    reading: the form on `CaptureView` and `AuthView`, the document on
-   `DocumentView` (its effective date first, then the article).
+   `DocumentView` (its effective date first, then the article) and on the
+   framed `LegalView` (both dates first, then the article).
 3. **Notes.** An optional footnote-like line under the card, usually one
    alternative link. The element is absent from the markup when the slot is
    empty (`null`, `undefined`, `false`, an empty string or an empty list).
 
-| Slot | `CaptureView` | `DocumentView` | `AuthView` |
-| --- | --- | --- | --- |
-| Header title | `heading` | the document's title | `heading` |
-| Header subtitle | `description` | `summary` | `description` |
-| Body card | `form` (or `submitted`) | `document` and `effectiveDate` | `form` |
-| Notes | `notes` | `action` | `notes` |
+| Slot | `CaptureView` | `DocumentView` | `AuthView` | `LegalView framed` |
+| --- | --- | --- | --- | --- |
+| Header title | `heading` | the document's title | `heading` | the document's title |
+| Header subtitle | `description` | `summary` | `description` | `summary` |
+| Body card | `form` (or `submitted`) | `document` and `effectiveDate` | `form` | `document` and both dates |
+| Notes | `notes` | `action` | `notes` | `related` |
 
 ```tsx
 <SiteFrame shell={shell} resolveCopy={resolveCopy} resolveAsset={resolveAsset}>
@@ -2991,7 +3027,7 @@ the frame's one banner, one `<main>` and one contentinfo, and the layout adds
 only its title block, which holds the one `<h1>`. The header and notes are
 centered and the card's own content is not. The column takes the
 `--ui-width-form-max` measure on `AuthView` and `--ui-width-prose-max` on the
-other two, with no fallback length: a host without the token gets an
+other three, with no fallback length: a host without the token gets an
 unconstrained column.
 
 The deprecated chrome props still select the legacy page, which renders its
@@ -4768,7 +4804,7 @@ Three further usage requirements, not numbered in the specification:
   `CaptureViewProps`, `CollectionViewEmptyState`, `CollectionViewEntry`,
   `CollectionViewLink`, `CollectionViewPagination`, `CollectionViewProps`,
   `DocumentViewEffectiveDate`, `DocumentViewProps`,
-  `ErrorViewProps`, `LegalViewLabels`, `LegalViewProps`, `MarketingViewProps`, `MarketingFeatureItem`, `MarketingFaqItem`,
+  `ErrorViewProps`, `LegalViewFramedLabels`, `LegalViewLabels`, `LegalViewProps`, `MarketingViewProps`, `MarketingFeatureItem`, `MarketingFaqItem`,
   `SignInFailure`, `SignInFormProps`, `SignInResult`,
   `PackReviewViewBrandKit`, `PackReviewViewExport`, `PackReviewViewFact`, `PackReviewViewFaqItem`, `PackReviewViewLabels`,
   `PackReviewViewPage`, `PackReviewViewProps`, `PackReviewViewState`, `PackReviewViewStrategy`, `PackReviewViewVoice`,
@@ -4778,7 +4814,7 @@ Three further usage requirements, not numbered in the specification:
   `WebSlotContentKind`, `WebTemplate`, `DefineWebTemplateOptions`,
   `CreateWebRendererOptions`, `WebRenderer`, `WebHeadMetadata`,
   `WebOpenGraphMetadata`, `WebTwitterMetadata`, `SiteIdentityInput`,
-  `SiteLegalStatus`, `SiteMetadata`, `SiteMetadataErrorReason`,
+  `SiteIndexing`, `SiteLegalStatus`, `SiteMetadata`, `SiteMetadataErrorReason`,
   `SiteOpenGraphMetadata`, `SitePageInput`, `SitePageKind`, `SiteShareCard`,
   `SiteTwitterMetadata`, `SiteMetadataLintFinding`, `SiteMetadataLintResult`,
   `SiteMetadataLintRule`, `SiteMetadataRequiredTag`, and
