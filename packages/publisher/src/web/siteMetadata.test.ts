@@ -158,8 +158,14 @@ describe("buildSiteMetadata legal indexing", () => {
     expect(build(site(), legal({ indexing: "index" })).robots).toBe("index, follow");
   });
 
-  it("indexes a draft legal page that says index", () => {
-    expect(build(site(), legal({ status: "draft", indexing: "index" })).robots).toBe("index, follow");
+  it("refuses index on a page whose status is draft", () => {
+    expect(reasonOf(() => build(site(), legal({ status: "draft", indexing: "index" })))).toBe("invalid-indexing");
+  });
+
+  it("allows noindex on a draft, and index with no status or a counsel-reviewed status", () => {
+    expect(build(site(), legal({ status: "draft", indexing: "noindex" })).robots).toBe("noindex, nofollow");
+    expect(build(site(), legal({ indexing: "index" })).robots).toBe("index, follow");
+    expect(build(site(), legal({ status: "counsel-reviewed", indexing: "index" })).robots).toBe("index, follow");
   });
 
   it("keeps a legal page that says noindex out of the index, even when counsel-reviewed", () => {

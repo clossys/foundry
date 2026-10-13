@@ -1762,15 +1762,18 @@ package.
   | `construction` | not allowed | `noindex, nofollow` |
   | `legal` | missing or `draft` | `noindex, nofollow` |
   | `legal` | `counsel-reviewed` | `index, follow` |
-  | `legal` | any, with `indexing: "index"` | `index, follow` |
+  | `legal` | missing or `counsel-reviewed`, with `indexing: "index"` | `index, follow` |
+  | `legal` | `draft`, with `indexing: "index"` | refused (`invalid-indexing`) |
   | `legal` | any, with `indexing: "noindex"` | `noindex, nofollow` |
 
   A legal page can also say directly whether it is indexable, with
   `page.indexing` (`"index"` or `"noindex"`). When `indexing` is given it decides
-  `robots` by itself, whatever `status` is, and it states no review claim: a
-  site that wants its terms and privacy pages in search results without
-  recording counsel review passes `indexing: "index"`, and a counsel-reviewed
-  page can still pass `indexing: "noindex"`. With no `indexing`, the `status`
+  `robots` by itself and states no review claim: a site that wants its terms
+  and privacy pages in search results without recording counsel review passes
+  `indexing: "index"` and no `status`, and a counsel-reviewed page can still
+  pass `indexing: "noindex"`. A page whose `status` is `draft` cannot ask to be
+  indexed: `indexing: "index"` with `status: "draft"` is refused, while
+  `"noindex"` on a draft is fine. With no `indexing`, the `status`
   rule above applies unchanged. `indexing` changes only `robots`; every other
   field of the head set is the same. `buildSiteMetadata` only maps the
   `indexing` and `status` it is given to a robots value; it does not record or
@@ -1790,7 +1793,8 @@ package.
   accepted), an unknown
   `kind`, a `status` on a non-legal page or outside `draft`/`counsel-reviewed`
   (reason `invalid-status`), an `indexing` on a non-legal page or outside
-  `index`/`noindex` (reason `invalid-indexing`),
+  `index`/`noindex`, or `indexing: "index"` on a `draft` page (reason
+  `invalid-indexing`),
   a share-card `url` that is neither root-relative nor an absolute `http(s)`
   URL exactly as `new URL(url).href` writes it (`https:foo.png` is refused),
   and a share card whose `width` and `height` are not integers equal to

@@ -18,7 +18,9 @@
  * `"noindex"`) decides the robots value by itself and asserts nothing about
  * review, and with no `indexing` the page is indexable only when its `status`
  * is `"counsel-reviewed"` (a legal page with no `status` is treated as a
- * draft). `home`, `contact` and `custom` are `index, follow`. This module only
+ * draft). `indexing: "index"` on a page whose `status` is `"draft"` is refused
+ * (`invalid-indexing`): a page that says it is a draft cannot also ask to be
+ * indexed. `"noindex"` on a draft, and `"index"` with no `status`, are fine. `home`, `contact` and `custom` are `index, follow`. This module only
  * maps the `indexing` and `status` it is given to a robots value; it does not
  * decide, verify, or store whether counsel reviewed anything.
  *
@@ -85,8 +87,9 @@ export interface SitePageInput {
   /**
    * Allowed only on `kind: "legal"`. An explicit indexing choice for the page:
    * `"index"` yields `index, follow` and `"noindex"` yields `noindex, nofollow`,
-   * whatever `status` is. It makes no claim about counsel review; leave it out
-   * to keep the `status` rule.
+   * whatever `status` is, except that `"index"` with `status: "draft"` is
+   * refused. It makes no claim about counsel review; leave it out to keep the
+   * `status` rule.
    */
   indexing?: SiteIndexing;
 }
@@ -344,6 +347,9 @@ export function buildSiteMetadata(input: { site: SiteIdentityInput; page: SitePa
   const path = requirePath(page["path"], origin);
   const status = requireStatus(kind, page["status"]);
   const indexing = requireIndexing(kind, page["indexing"]);
+  if (status === "draft" && indexing === "index") {
+    throw new SiteMetadataError("invalid-indexing", 'page.indexing "index" is refused on a page whose status is "draft".');
+  }
   const shareCard = requireShareCard(site["shareCard"], origin);
 
   const title = kind === "home" ? `${name}${TITLE_SEPARATOR}${tagline}` : formatPageTitle({ page: label, brand: name });
