@@ -21,6 +21,14 @@ export interface SiteLinkInput {
   readonly label: CopyRef;
 }
 
+/** An icon-only link: its copy reference supplies the accessible name. */
+export type SiteIconLinkInput = {
+  readonly href: string;
+  readonly label: CopyRef;
+  /** Plain SVG shape data validated against the same allowlist as environment icons. */
+  readonly icon: IconNode;
+};
+
 /**
  * The brand in the banner, as data: an asset id the frame resolves to an image
  * through `resolveAsset`, and copy references for the link's accessible name
@@ -51,9 +59,11 @@ export interface SiteEnvironmentLinkInput {
 export { SITE_CHROME_GROUNDS } from "../internal/viewChromeGround.js";
 export type { SiteChromeGround } from "../internal/viewChromeGround.js";
 
-/** The footer: optional link columns, then the legal row. */
+/** The footer: optional headed columns, ungrouped links and social profiles, then the legal row. */
 export interface SiteFooterInput {
   readonly columns?: readonly { readonly heading: CopyRef; readonly links: readonly SiteLinkInput[] }[];
+  readonly links?: readonly SiteLinkInput[];
+  readonly social?: { readonly label?: CopyRef; readonly links: readonly SiteIconLinkInput[] };
   readonly legal: {
     readonly entity: CopyRef;
     readonly links: readonly SiteLinkInput[];
@@ -74,9 +84,11 @@ export interface SiteShellInput {
   readonly nav?: { readonly label: CopyRef; readonly links: readonly SiteLinkInput[] };
   /** Calls to action at the trailing end of the banner. */
   readonly actions?: readonly SiteLinkInput[];
+  /** Icon-only links after text actions and before environments. */
+  readonly iconActions?: readonly SiteIconLinkInput[];
   /** A secondary call to action, just before `actions`. */
   readonly secondaryAction?: SiteLinkInput;
-  /** Environment links, after `actions`. */
+  /** Environment links, after text and icon actions. */
   readonly environments?: readonly SiteEnvironmentLinkInput[];
   /** A text badge naming the surface. Prefer `environments` with `isCurrent`. */
   readonly surfaceLabel?: CopyRef;
@@ -122,6 +134,9 @@ export interface SiteFrameConfig {
   readonly site?: {
     readonly nav?: SiteShellInput["nav"];
     readonly actions?: SiteShellInput["actions"];
+    readonly iconActions?: SiteShellInput["iconActions"];
+    readonly footerLinks?: SiteFooterInput["links"];
+    readonly social?: SiteFooterInput["social"];
     readonly secondaryAction?: SiteShellInput["secondaryAction"];
     readonly navPlacement?: SiteShellInput["navPlacement"];
     readonly columns?: SiteFooterInput["columns"];

@@ -2663,6 +2663,8 @@ const frame: SiteFrameConfig = {
   site: {
     nav: { label: { id: "nav.label" }, links: [{ href: "/pricing", label: { id: "nav.pricing" } }] },
     actions: [{ href: "/contact", label: { id: "nav.contact" } }],
+    footerLinks: [{ href: "/about", label: { id: "footer.about" } }],
+    social: { label: { id: "footer.profiles" }, links: [{ href: "https://social.example/profile", label: { id: "social.profile" }, icon: Home }] },
   },
   environments: [
     { surface: "front-door", href: "https://app.example.com/", label: { id: "env.app" }, icon: Home },
@@ -2694,7 +2696,8 @@ export function SignInPage() {
   mark slot. Labels resolve through `resolveCopy` (Writer's `CopyResolver`);
   the brand mark resolves through `resolveAsset` and must be an image asset.
   A `lockup` brand takes a `wordmark` copy reference; a `mark` brand takes
-  none.
+  none. Icon actions and social links use copy references for accessible
+  names (`aria-label`); their labels are never visible text.
 - **Fails closed.** An unknown field, copy that does not resolve (or resolves
   blank), a non-image brand asset, a disallowed link, icon data that is not
   plain SVG shape data, a malformed `origin`, a `ground` outside `base`,
@@ -2713,17 +2716,22 @@ export function SignInPage() {
   returned normalised (`HTTPS://Example.COM/a` becomes
   `https://example.com/a`), and with an `origin` a root-relative link becomes
   an absolute URL on that origin, in every slot of a shell that sets one:
-  nav, actions, columns, environments and the legal row.
+  nav, text and icon actions, columns, ungrouped footer links, social links,
+  environments and the legal row.
 - **Origin.** `origin` is a bare `https:` origin; `http:` is accepted only for
   `localhost`, `127.0.0.1` and `[::1]`, for local development.
-- **Icons.** An environment `icon` is Designer `IconNode` data: `path`,
+- **Icons.** An environment, icon action or social `icon` is Designer
+  `IconNode` data: `path`,
   `circle`, `line`, `rect`, `polyline`, `polygon`, `ellipse` or `g` nodes whose
   attributes come from an allowlist of SVG shape attributes (geometry, fill,
   stroke and opacity) with string values. `style`, `href`, event handlers,
   `ref`, `children`, `dangerouslySetInnerHTML` and any `url(...)` value are
   refused. The string `key` Designer's generated icons carry is dropped. The
   frame renders a frozen copy, so changing the caller's data afterwards has
-  no effect.
+  no effect. Icon actions render after text actions and before environments.
+  Social links render before the legal row, in a named navigation when
+  `social.label` is given. Ungrouped footer links render after headed columns
+  without a heading. Empty slot arrays render nothing.
 - **One main.** The main id is fixed (`SITE_MAIN_ID`); the frame takes no
   main-id prop and the skip link always targets it. A chrome-free view
   (`ErrorView` included) refuses a `role` holding `main`, `banner`,
@@ -2733,13 +2741,29 @@ export function SignInPage() {
   focus on activation, is a small `"use client"` island that receives strings
   only.
 
+```tsx
+import type { SiteFrameConfig, SiteIconLinkInput } from "@clossys/publisher/web";
+
+const profile: SiteIconLinkInput = {
+  href: "https://social.example/profile",
+  label: { id: "social.profile" },
+  icon: [["path", { d: "M3 12h18" }]],
+};
+
+export const publicChrome: SiteFrameConfig["site"] = {
+  iconActions: [{ ...profile, href: "/contact", label: { id: "nav.contact" } }],
+  footerLinks: [{ href: "/about", label: { id: "footer.about" } }],
+  social: { label: { id: "footer.profiles" }, links: [profile] },
+};
+```
+
 **Per surface kind.** One brand declares one `SiteFrameConfig`;
 `siteShellFor(config, kind)` returns the shell for each of the four
 `SITE_SURFACE_KINDS`:
 
 | Kind | Banner | Footer | Links |
 | --- | --- | --- | --- |
-| `"site"` | brand, `site.nav`, `site.actions`, `site.secondaryAction` | `site.columns`, then the legal row | as given (`siteShellFor` sets no `origin` for the site itself) |
+| `"site"` | brand, `site.nav`, `site.secondaryAction`, `site.actions`, `site.iconActions` | `site.columns`, `site.footerLinks`, `site.social`, then the legal row | as given (`siteShellFor` sets no `origin` for the site itself) |
 | `"front-door"`, `"admin"`, `"demo"` | brand, the `environments` links (the one whose `surface` matches marked current) | the legal row only | root-relative links resolve against `origin` |
 
 Every kind shares the brand, the skip link, the ground and the legal row. A
@@ -2768,8 +2792,8 @@ scrolls past the footer. `StatusView` has no such root; use it instead.
 **Known gaps.** The `Brandmark` links to `/` on the current host and does not
 follow `origin`, so on a sign-in or admin host the logo goes to that host's
 home, not the public site; that is a Designer follow-up. A call-to-action is
-text only (no icon), and Designer has no server-safe link component yet, so
-the frame renders plain anchors.
+either text or an icon-only link, and Designer has no server-safe link
+component yet, so the frame renders plain anchors.
 
 **Page layers.** `SITE_PAGE_LAYERS` is the page-assembly contract as frozen
 data: nine layers, each with its owning package, who mounts it, its
@@ -4758,7 +4782,7 @@ Three further usage requirements, not numbered in the specification:
   `SiteOpenGraphMetadata`, `SitePageInput`, `SitePageKind`, `SiteShareCard`,
   `SiteTwitterMetadata`, `SiteMetadataLintFinding`, `SiteMetadataLintResult`,
   `SiteMetadataLintRule`, `SiteMetadataRequiredTag`, and
-  `SiteMetadataTagSelector` types, plus `GlobalErrorDocument` and `GlobalErrorDocumentProps`, and `SiteFrame`, `siteShellFor`, `SITE_SURFACE_KINDS`, `SITE_PAGE_LAYERS`, `SITE_MAIN_ID` and the `SiteBrandInput`, `SiteChromeGround`, `SiteEnvironmentLinkInput`, `SiteFooterInput`, `SiteFrameConfig`, `SiteFrameInput`, `SiteFrameProps`, `SiteLinkInput`, `SitePageLayer`, `SiteShellInput` and `SiteSurfaceKind` types (see "Site frame"), and `ActivateForm`, `ResetForm`, `ActivateDetails`, `ActivateFailure`, `ActivateFormProps`, `ActivateResult`, `ResetDetails`, `ResetFailure`, `ResetFormProps` and `ResetResult` (see "Activation and reset forms").
+  `SiteMetadataTagSelector` types, plus `GlobalErrorDocument` and `GlobalErrorDocumentProps`, and `SiteFrame`, `siteShellFor`, `SITE_SURFACE_KINDS`, `SITE_PAGE_LAYERS`, `SITE_MAIN_ID` and the `SiteBrandInput`, `SiteChromeGround`, `SiteEnvironmentLinkInput`, `SiteFooterInput`, `SiteFrameConfig`, `SiteFrameInput`, `SiteFrameProps`, `SiteIconLinkInput`, `SiteLinkInput`, `SitePageLayer`, `SiteShellInput` and `SiteSurfaceKind` types (see "Site frame"), and `ActivateForm`, `ResetForm`, `ActivateDetails`, `ActivateFailure`, `ActivateFormProps`, `ActivateResult`, `ResetDetails`, `ResetFailure`, `ResetFormProps` and `ResetResult` (see "Activation and reset forms").
 - `document`: `validateStructuredDocument`, `renderStructuredDocument`,
   `RenderError`, and the `DocumentBlock`, `DocumentCallout`,
   `DocumentColumnStyle`, `DocumentDefinitionList`, `DocumentInline`, `DocumentList`,

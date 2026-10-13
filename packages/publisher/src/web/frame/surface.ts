@@ -7,13 +7,14 @@ export const SITE_SURFACE_KINDS: readonly SiteSurfaceKind[] = Object.freeze(["si
  * The shell for one surface kind, from the brand's one frame configuration.
  *
  * - `"site"`, the public site on the canonical origin: the brand, the
- *   configured navigation, calls to action and footer columns, and the legal
- *   row, all with links as given.
+ *   configured navigation, text and icon calls to action, footer columns,
+ *   ungrouped footer links and social links, and the legal row, all with
+ *   links as given.
  * - `"front-door"`, `"admin"` and `"demo"`, surfaces on other hosts: the same
- *   brand and legal row with no navigation, calls to action or columns; the
- *   environment links instead, the one whose `surface` matches marked
- *   current; and `origin` set, so root-relative legal links point at the
- *   public site.
+ *   brand and legal row with no navigation, calls to action, columns,
+ *   ungrouped footer links or social links; the environment links instead,
+ *   the one whose `surface` matches marked current; and `origin` set, so
+ *   root-relative legal links point at the public site.
  *
  * Every kind shares the brand, the skip link, the ground and the legal row, so
  * a visitor sees one header and one footer across the brand's surfaces.
@@ -32,10 +33,16 @@ export function siteShellFor(config: SiteFrameConfig, kind: SiteSurfaceKind): Si
     return {
       ...shared,
       ...(site.nav === undefined ? {} : { nav: site.nav }),
+      ...(site.iconActions === undefined ? {} : { iconActions: site.iconActions }),
       ...(site.actions === undefined ? {} : { actions: site.actions }),
       ...(site.secondaryAction === undefined ? {} : { secondaryAction: site.secondaryAction }),
       ...(site.navPlacement === undefined ? {} : { navPlacement: site.navPlacement }),
-      footer: { ...(site.columns === undefined ? {} : { columns: site.columns }), legal: config.legal },
+      footer: {
+        ...(site.columns === undefined ? {} : { columns: site.columns }),
+        ...(site.footerLinks === undefined ? {} : { links: site.footerLinks }),
+        ...(site.social === undefined ? {} : { social: site.social }),
+        legal: config.legal,
+      },
     };
   }
   return {

@@ -8,7 +8,7 @@ import type { CopyResolver } from "@clossys/writer";
 import type { AssetResolver } from "../types.js";
 import { SiteFrame } from "./SiteFrame.js";
 import { siteShellFor } from "./surface.js";
-import type { SiteBrandInput, SiteFrameConfig, SiteShellInput } from "./types.js";
+import type { SiteBrandInput, SiteFrameConfig, SiteIconLinkInput, SiteShellInput } from "./types.js";
 
 declare const resolveCopy: CopyResolver;
 declare const resolveAsset: AssetResolver;
@@ -55,3 +55,20 @@ export const withMainId = (
 // Only the four surface kinds exist.
 // @ts-expect-error unknown surface kind
 export const unknownKind = siteShellFor(config, "intranet");
+
+
+// @ts-expect-error an icon link requires a copy reference label
+export const iconWithoutLabel: SiteIconLinkInput = { href: "/contact", icon: [["path", { d: "M0 0" }]] };
+// @ts-expect-error an icon link requires SVG shape data
+export const iconWithoutGlyph: SiteIconLinkInput = { href: "/contact", label: { id: "contact" } };
+// @ts-expect-error an icon link cannot take a React node as its icon
+export const iconWithNode: SiteIconLinkInput = { href: "/contact", label: { id: "contact" }, icon: <svg /> };
+// @ts-expect-error social navigation label is a copy reference
+export const socialWithLiteralLabel: SiteShellInput = { ...shell, footer: { legal: config.legal, social: { label: "Profiles", links: [] } } };
+
+// The type is available from each public frame entry.
+export type IconLinkEntryParity = [
+  import("./index.js").SiteIconLinkInput,
+  import("../index.js").SiteIconLinkInput,
+  import("../server.js").SiteIconLinkInput,
+];

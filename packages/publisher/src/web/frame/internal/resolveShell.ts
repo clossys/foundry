@@ -10,6 +10,10 @@ export interface ResolvedSiteLink {
   readonly label: string;
 }
 
+export interface ResolvedSiteIconLink extends ResolvedSiteLink {
+  readonly icon: IconNode;
+}
+
 export interface ResolvedSiteShell {
   readonly brand: {
     readonly markSrc: string;
@@ -21,6 +25,7 @@ export interface ResolvedSiteShell {
   readonly skipLink: string;
   readonly nav?: { readonly label: string; readonly links: readonly ResolvedSiteLink[] };
   readonly actions: readonly ResolvedSiteLink[];
+  readonly iconActions: readonly ResolvedSiteIconLink[];
   readonly secondaryAction?: ResolvedSiteLink;
   readonly environments: readonly (ResolvedSiteLink & { readonly icon: IconNode; readonly isCurrent: boolean })[];
   readonly surfaceLabel?: string;
@@ -28,6 +33,8 @@ export interface ResolvedSiteShell {
   readonly ground: SiteChromeGround;
   readonly footer?: {
     readonly columns: readonly { readonly heading: string; readonly links: readonly ResolvedSiteLink[] }[];
+    readonly links: readonly ResolvedSiteLink[];
+    readonly social?: { readonly label?: string; readonly links: readonly ResolvedSiteIconLink[] };
     readonly legal: { readonly entity: string; readonly links: readonly ResolvedSiteLink[]; readonly linksLabel?: string };
   };
 }
@@ -37,6 +44,7 @@ const SHELL_KEYS = new Set([
   "skipLink",
   "nav",
   "actions",
+  "iconActions",
   "secondaryAction",
   "environments",
   "surfaceLabel",
@@ -49,7 +57,9 @@ const BRAND_KEYS = new Set(["assetId", "label", "size", "plate", "variant", "wor
 const NAV_KEYS = new Set(["label", "links"]);
 const LINK_KEYS = new Set(["href", "label"]);
 const ENVIRONMENT_KEYS = new Set(["href", "label", "icon", "isCurrent"]);
-const FOOTER_KEYS = new Set(["columns", "legal"]);
+const ICON_LINK_KEYS = new Set(["href", "label", "icon"]);
+const SOCIAL_KEYS = new Set(["label", "links"]);
+const FOOTER_KEYS = new Set(["columns", "links", "social", "legal"]);
 const COLUMN_KEYS = new Set(["heading", "links"]);
 const LEGAL_KEYS = new Set(["entity", "links", "linksLabel"]);
 
@@ -228,6 +238,16 @@ export function resolveShell(input: SiteShellInput, resolveCopy: CopyResolver, r
   };
   const links = (value: unknown, path: string) => list(value, path).map((entry, index) => link(entry, `${path}[${index}]`));
 
+  const iconLink = (value: unknown, path: string): ResolvedSiteIconLink => {
+    const fields = record(value, path, ICON_LINK_KEYS);
+    return {
+      href: href(fields.href, `${path}.href`, base),
+      label: copy(fields.label, `${path}.label`, resolveCopy),
+      icon: icon(fields.icon, `${path}.icon`),
+    };
+  };
+  const iconLinks = (value: unknown, path: string) => list(value, path).map((entry, index) => iconLink(entry, `${path}[${index}]`));
+
   const brandFields = record(shell.brand, "shell.brand", BRAND_KEYS);
   const variant = oneOf(brandFields.variant, "shell.brand.variant", ["mark", "lockup"] as const);
   const size = oneOf(brandFields.size, "shell.brand.size", ["sm", "md", "lg"] as const);
@@ -269,7 +289,17 @@ export function resolveShell(input: SiteShellInput, resolveCopy: CopyResolver, r
   if (shell.footer !== undefined) {
     const footerFields = record(shell.footer, "shell.footer", FOOTER_KEYS);
     const legalFields = record(footerFields.legal, "shell.footer.legal", LEGAL_KEYS);
+    let social: NonNullable<ResolvedSiteShell["footer"]>["social"];
+    if (footerFields.social !== undefined) {
+      const fields = record(footerFields.social, "shell.footer.social", SOCIAL_KEYS);
+      social = {
+        ...(fields.label === undefined ? {} : { label: copy(fields.label, "shell.footer.social.label", resolveCopy) }),
+        links: iconLinks(fields.links, "shell.footer.social.links"),
+      };
+    }
     footer = {
+      links: footerFields.links === undefined ? [] : links(footerFields.links, "shell.footer.links"),
+      ...(social === undefined ? {} : { social }),
       columns:
         footerFields.columns === undefined
           ? []
@@ -291,6 +321,7 @@ export function resolveShell(input: SiteShellInput, resolveCopy: CopyResolver, r
     skipLink: copy(shell.skipLink, "shell.skipLink", resolveCopy),
     ...(nav === undefined ? {} : { nav }),
     actions: shell.actions === undefined ? [] : links(shell.actions, "shell.actions"),
+    iconActions: shell.iconActions === undefined ? [] : iconLinks(shell.iconActions, "shell.iconActions"),
     ...(shell.secondaryAction === undefined ? {} : { secondaryAction: link(shell.secondaryAction, "shell.secondaryAction") }),
     environments,
     ...(shell.surfaceLabel === undefined ? {} : { surfaceLabel: copy(shell.surfaceLabel, "shell.surfaceLabel", resolveCopy) }),

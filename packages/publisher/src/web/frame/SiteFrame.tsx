@@ -1,20 +1,48 @@
 import type { ReactElement } from "react";
+import { Icon } from "@clossys/designer/atoms/server";
 import { Brandmark, SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
 import { SiteSkipLink } from "./SkipLink.client.js";
 import { resolveShell } from "./internal/resolveShell.js";
-import type { ResolvedSiteLink } from "./internal/resolveShell.js";
+import type { ResolvedSiteIconLink, ResolvedSiteLink } from "./internal/resolveShell.js";
 import { SITE_MAIN_ID } from "./types.js";
 import type { SiteFrameProps } from "./types.js";
 
 const LINK_CLASSES =
   "inline-flex items-center px-xs text-inherit no-underline hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
-const LINK_STYLE = { minHeight: "var(--ui-layout-tap-target, 44px)" } as const;
+// Designer's tap-target token, the value SiteHeader.ActionLink and SiteFooter.Legal size their links with.
+const TAP_TARGET = "var(--ui-layout-tap-target, 44px)";
+const LINK_STYLE = { minHeight: TAP_TARGET } as const;
+// An icon-only link has no text to widen it, so it takes the tap target in both axes, icon centred.
+const ICON_LINK_CLASSES = `${LINK_CLASSES} justify-center`;
+const ICON_LINK_STYLE = { minHeight: TAP_TARGET, minWidth: TAP_TARGET } as const;
 
 function TextLink({ link }: { readonly link: ResolvedSiteLink }) {
   return (
     <a href={link.href} className={LINK_CLASSES} style={LINK_STYLE}>
       {link.label}
     </a>
+  );
+}
+
+function IconLink({ link }: { readonly link: ResolvedSiteIconLink }) {
+  return (
+    <a href={link.href} aria-label={link.label} className={ICON_LINK_CLASSES} style={ICON_LINK_STYLE}>
+      <Icon glyph={link.icon} decorative />
+    </a>
+  );
+}
+
+const ICON_LIST_CLASSES = "m-0 flex list-none flex-wrap items-center gap-sm p-0";
+
+function IconLinkList({ links, className }: { readonly links: readonly ResolvedSiteIconLink[]; readonly className: string }) {
+  return (
+    <ul role="list" className={className}>
+      {links.map((link, index) => (
+        <li key={index}>
+          <IconLink link={link} />
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -63,10 +91,13 @@ export function SiteFrame({ shell, resolveCopy, resolveAsset, children }: SiteFr
   ) : undefined;
 
   const actions =
-    resolved.actions.length > 0 || resolved.environments.length > 0 ? (
+    resolved.actions.length > 0 || resolved.iconActions.length > 0 || resolved.environments.length > 0 ? (
       <>
         {resolved.actions.map((link, index) => (
           <TextLink key={`action-${index}`} link={link} />
+        ))}
+        {resolved.iconActions.map((link, index) => (
+          <IconLink key={`icon-action-${index}`} link={link} />
         ))}
         {resolved.environments.map((environment, index) => (
           <SiteHeader.ActionLink
@@ -99,22 +130,40 @@ export function SiteFrame({ shell, resolveCopy, resolveAsset, children }: SiteFr
         <SiteFooter
           ground={resolved.ground}
           columns={
-            footer.columns.length > 0
-              ? footer.columns.map((column, columnIndex) => (
+            footer.columns.length > 0 || footer.links.length > 0 ? (
+              <>
+                {footer.columns.map((column, columnIndex) => (
                   <SiteFooter.Column key={columnIndex} heading={column.heading}>
                     {column.links.map((link, linkIndex) => (
                       <TextLink key={linkIndex} link={link} />
                     ))}
                   </SiteFooter.Column>
-                ))
-              : undefined
+                ))}
+                {footer.links.length > 0 ? (
+                  <LinkList links={footer.links} className="m-0 flex list-none flex-wrap items-center gap-sm p-0" />
+                ) : null}
+              </>
+            ) : undefined
           }
           secondary={
-            <SiteFooter.Legal
-              entity={footer.legal.entity}
-              links={footer.legal.links}
-              {...(footer.legal.linksLabel === undefined ? {} : { linksLabel: footer.legal.linksLabel })}
-            />
+            <>
+              {/* The social list sits beside SiteFooter.Legal (a `w-full` flex item) in the
+                  footer's `secondary` row; it must not shrink, or its icons wrap. */}
+              {footer.social && footer.social.links.length > 0 ? (
+                footer.social.label === undefined ? (
+                  <IconLinkList links={footer.social.links} className={`shrink-0 ${ICON_LIST_CLASSES}`} />
+                ) : (
+                  <nav aria-label={footer.social.label} className="shrink-0">
+                    <IconLinkList links={footer.social.links} className={ICON_LIST_CLASSES} />
+                  </nav>
+                )
+              ) : null}
+              <SiteFooter.Legal
+                entity={footer.legal.entity}
+                links={footer.legal.links}
+                {...(footer.legal.linksLabel === undefined ? {} : { linksLabel: footer.legal.linksLabel })}
+              />
+            </>
           }
         />
       ) : null}
