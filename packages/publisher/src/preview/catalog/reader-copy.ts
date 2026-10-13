@@ -1,4 +1,17 @@
 export const READER_COPY: Record<string, Record<string, string>> = {
+    "status-list": {
+        ".heading": "Feature status",
+        ".description": "See what is ready and what comes next.",
+        ".block.items.0.heading": "Search",
+        ".block.items.0.description": "Find a record.",
+        ".block.items.0.badge.label": "Live",
+        ".block.items.1.heading": "Imports",
+        ".block.items.1.description": "Bring records together.",
+        ".block.items.1.badge.label": "In progress",
+        ".block.items.2.heading": "Exports",
+        ".block.items.2.description": "Take a copy with you.",
+        ".block.items.2.badge.label": "Planned"
+    },
     "say-hero-display": {
         ".heading": "Bring scattered work into focus",
         ".actions.0.label": "View workspace example",
