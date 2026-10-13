@@ -35,35 +35,27 @@ export interface OrderedStepSequenceProps extends Omit<HTMLAttributes<HTMLElemen
   style?: CSSProperties;
 }
 
-/**
- * An editorial sequence of ordered steps, not a progress control: it has no
- * current step, completion state, or interaction. A real `<ol>` preserves
- * the order for every reader; `ordinal` remains authored text instead of a
- * generated counter so it is available to assistive technology too.
- *
- * The connector is decorative (`aria-hidden`) because the list semantics and
- * ordinal already communicate sequence. It is emitted only between adjacent
- * items, then switches from a vertical rule to a horizontal rule at the same
- * `tablet` breakpoint where the list changes from a column to a row. `ground`
- * is deliberately closed so the connector never borrows a base-ground line
- * token when it sits on the inverse surface.
- */
-export function OrderedStepSequence({
-  eyebrow,
-  heading,
-  description,
-  items,
-  headingLevel = 2,
-  ground = "base",
-  className,
-  style,
-  ...rest
-}: OrderedStepSequenceProps) {
+const STEP_LINE_CLASSES: Record<SectionGround, { line: string; border: string; ink: string; ordinal: string }> = {
+  base: { line: "bg-line-strong", border: "border-line-strong", ink: "text-line-strong", ordinal: "bg-accent-tint text-accent-text" },
+  sunken: { line: "bg-line-strong", border: "border-line-strong", ink: "text-line-strong", ordinal: "bg-accent-tint text-accent-text" },
+  inverse: { line: "bg-line-on-inverse", border: "border-line-on-inverse", ink: "text-line-on-inverse", ordinal: "border border-line-on-inverse text-ink-on-inverse" },
+};
+
+const LAYOUT_CLASSES = {
+  list: "flex flex-col tablet:flex-row tablet:gap-x-xl",
+  item: "flex min-w-0 flex-1 flex-row gap-md tablet:flex-col tablet:gap-lg",
+  marker: "flex shrink-0 flex-col items-center tablet:flex-row",
+  connector: "my-sm w-px flex-1 tablet:my-0 tablet:ms-md tablet:-me-md tablet:h-px tablet:w-auto",
+  gap: "pb-2xl tablet:pb-0",
+} as const;
+
+/** Authored editorial order with decorative connectors only between adjacent steps. */
+export function OrderedStepSequence({ eyebrow, heading, description, items, headingLevel = 2, ground = "base", className, style, ...rest }: OrderedStepSequenceProps) {
   const HeadingTag = `h${headingLevel}` as `h${OrderedStepSequenceHeadingLevel}`;
   const ItemHeadingTag = `h${Math.min(headingLevel + 1, 6)}` as `h${OrderedStepSequenceHeadingLevel}`;
   const colors = SECTION_GROUND_CLASSES[ground];
+  const lines = STEP_LINE_CLASSES[ground];
   const hasHeadingRegion = eyebrow !== undefined || heading !== undefined || description !== undefined;
-
   return (
     <section {...rest} className={cx("flex flex-col gap-lg", colors.surface, className)} style={style}>
       {hasHeadingRegion ? (
@@ -73,33 +65,26 @@ export function OrderedStepSequence({
           {description ? <p className={cx("text-body", colors.secondary)}>{description}</p> : null}
         </div>
       ) : null}
-      <ol className="flex flex-col tablet:flex-row">
-        {items.map((item, index) => (
-          <li key={item.id} className="flex min-w-0 flex-1 flex-col tablet:flex-row">
-            <div className="flex min-w-0 flex-1 flex-row gap-md tablet:flex-col">
-              <span
-                className={cx(
-                  "flex size-xl shrink-0 items-center justify-center rounded-pill border text-body-s font-body font-medium",
-                  colors.border,
-                  colors.primary,
-                )}
-              >
-                {item.ordinal}
-              </span>
-              <div className="flex min-w-0 flex-col gap-xs">
-                {item.label ? <p className={cx("text-caption uppercase tracking-label", colors.secondary)}>{item.label}</p> : null}
-                <ItemHeadingTag className={cx("text-h3 font-display", colors.primary)}>{item.heading}</ItemHeadingTag>
-                {item.description ? <p className={cx("text-body-s", colors.secondary)}>{item.description}</p> : null}
-              </div>
+      <ol data-step-layout="plain" className={LAYOUT_CLASSES.list}>
+        {items.map((item, index) => {
+          const last = index === items.length - 1;
+          const text = (
+            <div data-step-text="" className={cx("flex min-w-0 flex-col gap-sm", last ? undefined : LAYOUT_CLASSES.gap)}>
+              {item.label ? <p className={cx("text-body-s font-medium uppercase tracking-label", colors.secondary)}>{item.label}</p> : null}
+              <ItemHeadingTag className={cx("text-body-l font-body font-medium", colors.primary)}>{item.heading}</ItemHeadingTag>
+              {item.description ? <p className={cx("text-body text-pretty", colors.secondary)}>{item.description}</p> : null}
             </div>
-            {index < items.length - 1 ? (
-              <span
-                aria-hidden="true"
-                className={cx("ms-lg my-sm block h-lg w-px shrink-0 tablet:mx-md tablet:my-xl tablet:h-px tablet:w-lg", colors.line)}
-              />
-            ) : null}
-          </li>
-        ))}
+          );
+          return (
+            <li key={item.id} className={LAYOUT_CLASSES.item}>
+              <div className={LAYOUT_CLASSES.marker}>
+                <span className={cx("flex size-2xl shrink-0 items-center justify-center rounded-pill text-body font-body font-medium tabular-nums", lines.ordinal)}>{item.ordinal}</span>
+                {last ? null : <span aria-hidden="true" data-step-connector="" className={cx(LAYOUT_CLASSES.connector, lines.line)} />}
+              </div>
+              {text}
+            </li>
+          );
+        })}
       </ol>
     </section>
   );

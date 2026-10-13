@@ -255,7 +255,7 @@ import `theme.css` — nothing else in this package needs it.
 is expected to override it. Everything else is a fixed structural scale —
 shipped as-is regardless of brand.
 
-### Color (49 tokens, case 1 — `--color-*`)
+### Color (55 tokens, case 1 — `--color-*`)
 
 | Token | Default | Brandable |
 | --- | --- | --- |
@@ -276,11 +276,17 @@ shipped as-is regardless of brand.
 | `--color-line-base` | `oklch(0.8761 0 0)` | yes |
 | `--color-line-strong` | `oklch(0.7763 0 0)` | yes |
 | `--color-line-on-inverse` | `oklch(0.9702 0 0 / 0.14)` | yes |
+| `--color-line-panel` | alias of `--color-line-base` | **yes** (panel identity) |
 | `--color-accent` | `oklch(0.4748 0 0)` | yes |
 | `--color-accent-text` | `oklch(0.36 0 0)` | yes |
 | `--color-accent-hover` | `oklch(0.36 0 0)` | yes |
 | `--color-accent-tint` | `oklch(0.4748 0 0 / 0.1)` | yes |
 | `--color-accent-on-inverse` | `oklch(0.7763 0 0)` | yes |
+| `--color-control-tonal` | `oklch(0.2178 0 0 / 0.08)` | yes |
+| `--color-control-tonal-hover` | `oklch(0.2178 0 0 / 0.12)` | yes |
+| `--color-control-tonal-inverse` | `oklch(0.9702 0 0 / 0.12)` | yes |
+| `--color-control-tonal-inverse-hover` | `oklch(0.9702 0 0 / 0.16)` | yes |
+| `--color-control-quiet` | alias of `--color-ink-primary` | yes |
 | `--color-status-success` | `oklch(0.6268 0 0)` | yes |
 | `--color-status-success-text` | `oklch(0.4748 0 0)` | yes |
 | `--color-status-success-tint` | `oklch(0.6268 0 0 / 0.1)` | yes |
@@ -299,13 +305,13 @@ shipped as-is regardless of brand.
 | `--color-overlay-scrim` | `oklch(0 0 0 / 0.4)` | no |
 | `--color-skeleton-fill` | alias of `--color-surface-sunken` | no (inherits) |
 
-### Text, font, tracking (20 tokens, case 1)
+### Text, font, tracking, leading (22 tokens, case 1)
 
 | Token | Default | Brandable |
 | --- | --- | --- |
 | `--text-display-xl` | `72px` | no (fixed ramp) |
 | `--text-display-l` | `56px` | no |
-| `--text-display-m` | `40px` | no |
+| `--text-display-m` | `44px` | no |
 | `--text-h0` | `32px` | no |
 | `--text-h1` | `28px` | no |
 | `--text-h2` | `18px` | no |
@@ -319,17 +325,22 @@ shipped as-is regardless of brand.
 | `--font-display` | system-sans stack | yes |
 | `--font-body` | system-sans stack | yes |
 | `--font-mono` | system-mono stack | yes |
-| `--tracking-tight` | `-0.01em` | no |
+| `--tracking-tight` | `-0.02em` | no |
 | `--tracking-meta` | `0.06em` | no |
 | `--tracking-nav` | `0.12em` | no |
 | `--tracking-label` | `0.18em` | no |
+| `--leading-display` | `1.05` | no |
+| `--leading-heading` | `1.15` | no |
 
 `--text-*` is font-size only, deliberately — it does not bundle a
-line-height. Pair it with your own value, or with Tailwind's own
-`leading-*` scale if you're using `theme.css`; see "What didn't translate
-cleanly" below for why.
+line-height. Headings pair it with a `--leading-*` role (`leading-display`
+for the display steps, `leading-heading` for section titles and smaller
+headings, utilities via `theme.css`); without one a heading inherits the
+body's leading, which reads far too open at display sizes. Body copy uses
+your own value or Tailwind's `leading-*` scale; see "What didn't translate
+cleanly" below for why the ramp carries no line-height.
 
-### Spacing, radius, breakpoint, easing (27 tokens, case 1)
+### Spacing, radius, breakpoint, easing (29 tokens, case 1)
 
 | Token | Default | Brandable |
 | --- | --- | --- |
@@ -339,6 +350,8 @@ cleanly" below for why.
 | `--radius-default` | `3px` | **yes** |
 | `--radius-control` | `6px` | no |
 | `--radius-pill` | `999px` | no |
+| `--radius-surface` | alias of `--radius-default` | no (inherits) |
+| `--radius-panel` | alias of `--radius-surface` | **yes** (panel identity) |
 | `--ease-default` | `cubic-bezier(.2, 0, 0, 1)` | no |
 | `--ease-decelerate` | `cubic-bezier(0, 0, .2, 1)` | no |
 | `--ease-accelerate` | `cubic-bezier(.4, 0, 1, 1)` | no |
@@ -352,7 +365,28 @@ cleanly" below for why.
 | `--breakpoint-desktop` | `1280px` | no |
 | `--breakpoint-wide` | `1440px` | no |
 
-### `--ui-*` (46 tokens, case 2 — no Tailwind utility, raw `var()` only)
+`--radius-surface` (`rounded-surface`) is the corner for content surfaces:
+plates, product panels, anything that is not a control. It aliases
+`--radius-default`, so it follows the brand radius, while controls keep
+`--radius-control`. `--ui-border-rule` (below) is the 2px emphasis rule a
+column or list may carry on its top edge; dividers stay on
+`--ui-border-hairline`.
+
+**Panel identity.** Four brandable slots set how cards, plates and
+product panels look, independent of the rest of the brand:
+`--radius-panel` (`rounded-panel`, the corner of `Card`'s `plate` and
+`outline` variants and so of `CardGrid`, `FeatureGrid`, `Comparison`,
+`PricingTable` and `SpecimenPanel`), `--ui-border-panel` and
+`--color-line-panel` (`border-line-panel`; the outline edge's width and
+colour on a light ground — an inverse ground keeps `--color-line-on-inverse`),
+and `--ui-elevation-panel` (the lift under a `SpecimenPanel`). Each is an
+alias of today's value (`--radius-surface`, `--ui-border-hairline`,
+`--color-line-base`, `--ui-elevation-floating`), so an unbranded page does
+not change, and the line and elevation aliases follow the dark theme. They
+are optional slots in `brand-template.css`; bind them to roles (a panel
+edge in `var(--color-line-strong)`) rather than raw values where you can.
+
+### `--ui-*` (49 tokens, case 2 — no Tailwind utility, raw `var()` only)
 
 | Token | Default | Brandable |
 | --- | --- | --- |
@@ -381,9 +415,12 @@ cleanly" below for why.
 | `--ui-brandmark-gap-md` | `6px` | no |
 | `--ui-brandmark-gap-lg` | `8px` | no |
 | `--ui-border-hairline` | `1px` | no |
+| `--ui-border-rule` | `2px` | no |
+| `--ui-border-panel` | alias of `--ui-border-hairline` | **yes** (panel identity) |
 | `--ui-elevation-none` | `none` | no |
 | `--ui-elevation-raised` | `0 1px 0 var(--color-line-base)` | no |
 | `--ui-elevation-floating` | `0 8px 24px rgba(0, 0, 0, 0.10)` | no |
+| `--ui-elevation-panel` | alias of `--ui-elevation-floating` | **yes** (panel identity) |
 | `--ui-ring-focus` | `0 0 0 2px var(--color-accent)` | no |
 | `--ui-ring-on-inverse` | `0 0 0 1px rgba(245, 245, 245, 0.12)` | no |
 | `--ui-duration-instant` | `80ms` | no |
@@ -406,14 +443,15 @@ cleanly" below for why.
 The `--spacing-*` and `--color-neutral-*` ranges above are each written as
 one row per family rather than one row per step, so the row count in each
 table is lower than its token count. Per-family totals: surface 7, ink 7,
-line 3, accent 5, status 12, neutral 11, overlay 3, skeleton 1 (color, 49);
-text 13, font 3, tracking 4 (20); spacing 10, radius 5, easing 6,
-breakpoint 6 (27); width 6, layout 5, density 3, icon 4, brandmark 6,
-border 1, elevation 3, ring 2, duration 6, z 9, alpha 1 (46, all `--ui-*`).
-49 + 20 + 27 + 46 = 142 tokens across 26 families, by this same
+line 4, accent 5, control 5, status 12, neutral 11, overlay 3, skeleton 1
+(color, 55);
+text 13, font 3, tracking 4 (20); spacing 10, radius 7, easing 6,
+breakpoint 6 (29); width 6, layout 5, density 3, icon 4, brandmark 6,
+border 3, elevation 4, ring 2, duration 6, z 9, alpha 1 (49, all `--ui-*`).
+55 + 20 + 29 + 49 = 153 tokens across 27 families, by this same
 1-family-added arithmetic. **Note:** this total (and the "128 tokens
 across 24 families" figure elsewhere in this README predating it) does not
-match `src/tokens.ts`'s real count (168 across 27 families) — a pre-existing
+match `src/tokens.ts`'s real count (182 across 30 families) — a pre-existing
 gap from the `chart` color family (22 tokens, added in `0.4.0`) never being
 folded into this reference table's totals. That gap predates this PR and is
 out of its scope; `src/tokens.ts`/`styles/tokens.css` are what `parity.test.ts`
@@ -432,6 +470,11 @@ of ones it does:
 /* A translucent variant of an existing color */
 background: color-mix(in oklch, var(--color-accent), transparent 90%);
 
+/* A lighter or darker step of an existing color: mix in oklab, not oklch.
+   White and black have no hue; Chromium keeps that missing hue through an
+   oklch/lch/hsl/hwb mix and paints the result at hue 0 (a red cast). */
+background: color-mix(in oklab, var(--color-surface-inverse) 94%, white);
+
 /* Placeholder text on an inverse surface */
 color: rgb(from var(--color-ink-on-inverse) r g b / 0.4);
 
@@ -441,7 +484,7 @@ font-size: clamp(var(--text-h1), 5vw, var(--text-display-m));
 /* A spacing step half-way between two scale steps */
 gap: calc((var(--spacing-lg) + var(--spacing-xl)) / 2);
 
-/* A custom radius not in the 5-step scale */
+/* A custom radius not in the radius scale */
 border-radius: calc(var(--radius-control) * 2);
 
 /* A one-off motion duration */
@@ -609,3 +652,15 @@ in browser bundles. ESM only. No runtime dependencies.
 ## Licence
 
 MIT
+
+### Scene (`--ui-scene-*`, case 2)
+
+| Property | Default | Brandable |
+| --- | --- | --- |
+| `--ui-scene-card-w` | `30rem` | no |
+
+The card measure is structural, non-brandable and theme invariant; brand
+overrides are refused. It caps the linear HTML form. Documents remain flat
+with deterministic seeded horizontal nudge. Container thresholds remain fixed
+per template. Scene contributes one token and one semantic family;
+the source registry and CSS parity test verify 182 tokens across 30 families.

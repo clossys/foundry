@@ -102,12 +102,14 @@ export { getSlotSpec, listSlotKeys, requiredSlotKeys } from "./slots.js";
 export { collectCopyProvenance, createOutputManifest, createResolvedOutputManifest } from "./output-manifest.js";
 
 export { resolveSurfaceDocument, SurfaceResolutionError } from "./resolve-surface.js";
-export { resolveSectionedViewDocument, SectionedViewResolutionError, validateSectionedViewDocument } from "./sectioned-view.js";
+export { checkSectionVariety, CONTENT_ICON_NAMES, CONTENT_ITEM_EYEBROW_MAX_CHARACTERS, resolveSectionedViewDocument, SectionedViewResolutionError, validateSectionedViewDocument } from "./sectioned-view.js";
 export type {
   ResolvedSectionedViewAction,
+  ResolvedSectionedViewContentAction,
   ResolvedSectionedViewDocument,
   ResolvedSectionedViewSection,
   SectionedViewAction,
+  SectionedViewActionEmphasis,
   SectionedViewDocument,
   SectionedViewFaqItem,
   SectionedViewFaqSection,
@@ -137,5 +139,48 @@ export type {
   SectionedViewStatusGroup,
   SectionedViewStatusItem,
   SectionedViewStatusListSection,
+  ContentIconName,
+  ResolvedSectionedViewContentBlock,
+  ResolvedSectionedViewContentSection,
+  ResolvedSectionedViewSpecimenMedia,
+  ResolvedSectionedViewMedia,
+  ResolvedSectionedViewSpecimenPanel,
+  ResolvedSectionedViewSpecimenPart,
+  SectionedViewContentAction,
+  SectionedViewContentActionEmphasis,
+  SectionedViewContentFootnote,
+  SectionedViewContentFootnoteLink,
+  SectionedViewContentLayout,
+  SectionedViewContentBlock,
+  SectionedViewContentBlockType,
+  SectionedViewContentSection,
+  SectionedViewSpecimenAssignee,
+  SectionedViewSpecimenField,
+  SectionedViewSpecimenFieldsPart,
+  SectionedViewSpecimenFile,
+  SectionedViewSpecimenFilesPart,
+  SectionedViewSpecimenFooter,
+  SectionedViewSpecimenMedia,
+  SectionedViewSpecimenMeterPart,
+  SectionedViewSpecimenPanel,
+  SectionedViewSpecimenPart,
+  SectionedViewSpecimenPartType,
+  SectionedViewSpecimenScheduleItem,
+  SectionedViewSpecimenSchedulePart,
+  SectionedViewSpecimenShare,
+  SectionedViewSpecimenSharesPart,
+  SectionedViewSpecimenStatus,
+  SectionedViewSpecimenStatusRow,
+  SectionedViewSpecimenStatusRowsPart,
+  SectionedViewSpecimenTableCell,
+  SectionedViewSpecimenTableColumn,
+  SectionedViewSpecimenTablePart,
+  SectionedViewSpecimenTableRow,
+  SectionedViewSpecimenTone,
 } from "./sectioned-view.js";
 export type { ResolvedSurfaceDocument, ResolvedSurfaceGroup, ResolvedSurfaceGroupField, ResolvedSurfaceGroupItem, ResolvedSurfaceNode, ResolveSurfaceDocumentOptions, SurfaceResolutionReason } from "./resolve-surface.js";
+
+export { checkPageFlow, sectionWeight, resolveActionEmphasis } from "./page-flow.js";
+export type { CheckPageFlowOptions, SectionShape, SectionWeight, SectionedViewFlowWarning } from "./page-flow.js";
+
+export * from "./content-contract.js";

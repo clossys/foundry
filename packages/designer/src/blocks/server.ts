@@ -50,7 +50,44 @@ export { EmptyState } from "./EmptyState.js";
 export type { EmptyStateProps } from "./EmptyState.js";
 
 export { FeatureGrid } from "./FeatureGrid.js";
-export type { FeatureGridProps, FeatureGridItem, FeatureGridHeadingLevel } from "./FeatureGrid.js";
+export type {
+  FeatureGridProps,
+  FeatureGridItem,
+  FeatureGridHeadingLevel,
+} from "./FeatureGrid.js";
+export { Matrix } from "./Matrix.js";
+export type { MatrixProps, MatrixSide, MatrixHeadingLevel } from "./Matrix.js";
+export { Specimen } from "./specimen/Specimen.js";
+export type { SpecimenProps, SpecimenArrangement } from "./specimen/Specimen.js";
+export { SpecimenPanel } from "./specimen/SpecimenPanel.js";
+export type {
+  SpecimenPanelProps,
+  SpecimenPanelContent,
+  SpecimenPanelItem,
+  SpecimenFooter,
+  SpecimenAssignee,
+} from "./specimen/SpecimenPanel.js";
+export type {
+  SpecimenTone,
+  SpecimenStatus,
+  SpecimenPart,
+  SpecimenPartType,
+  SpecimenFieldsPart,
+  SpecimenField,
+  SpecimenStatusRowsPart,
+  SpecimenStatusRow,
+  SpecimenMeterPart,
+  SpecimenTablePart,
+  SpecimenTableColumn,
+  SpecimenTableRow,
+  SpecimenTableCell,
+  SpecimenSchedulePart,
+  SpecimenScheduleItem,
+  SpecimenSharesPart,
+  SpecimenShare,
+  SpecimenFilesPart,
+  SpecimenFile,
+} from "./specimen/parts.js";
 
 export { OrderedStepSequence } from "./OrderedStepSequence.js";
 export type {
@@ -80,7 +117,24 @@ export { FieldGroup } from "./FieldGroup.js";
 export type { FieldGroupProps, FieldGroupLayout } from "./FieldGroup.js";
 
 export { Hero } from "./Hero.js";
-export type { HeroProps, HeroHeadingLevel, HeroComposition } from "./Hero.js";
+export type { HeroProps, HeroHeadingLevel, HeroComposition, HeroAlign } from "./Hero.js";
+
+export { ContentSection } from "./ContentSection.js";
+export type {
+  ContentSectionProps,
+  ContentSectionStackedProps,
+  ContentSectionSplitProps,
+  ContentSectionHeadingLevel,
+  ContentSectionAlign,
+  ContentSectionLayout,
+  ContentSectionMediaSide,
+  ContentSectionEmphasis,
+} from "./ContentSection.js";
+export { SectionIntro } from "./SectionIntro.js";
+export type { SectionIntroProps, SectionIntroHeadingLevel, SectionIntroEmphasis, SectionIntroAlign } from "./SectionIntro.js";
+
+export { MediaFigure } from "./MediaFigure.js";
+export type { MediaFigureProps, MediaFigureMeasure } from "./MediaFigure.js";
 
 export { MarketingChapter } from "./MarketingChapter.js";
 export type { MarketingChapterProps, MarketingChapterHeadingLevel } from "./MarketingChapter.js";
@@ -99,3 +153,16 @@ export type { SectionFrameProps, SectionMeasure } from "./SectionFrame.js";
 
 export { Stat } from "./Stat.js";
 export type { StatProps, StatTrend } from "./Stat.js";
+
+export { RecordLedger } from "./RecordLedger.js";
+export type { RecordLedgerProps, LedgerRowData, LedgerGroupData } from "./RecordLedger.js";
+
+export { AnatomyCallouts } from "./AnatomyCallouts.js";
+export type { AnatomyCalloutsProps, AnatomyCalloutsMarker } from "./AnatomyCallouts.js";
+
+export { Scene, layoutScene, sceneRelationText } from "./scene/index.js";
+export type { SceneProps, SceneInput, SceneConverge, SceneEvidenceTrail, SceneApprovalChain, SceneDisorder, SceneFormat, SceneDocument, SceneRow, SceneStatus, ScenePerson, SceneFinding, ScenePoint, ScenePart, SceneWire, SceneTerminal, SceneTag, SceneNode, ScenePersonLayout, SceneLayout } from "./scene/index.js";
+
+export { Item } from "./items/Item.js";
+export { Items } from "./items/Items.server.js";
+export type { ItemData, ItemProps, ItemBadge, ItemSize, ItemTreatment, ItemSpan, ItemsProps, ItemsArrangement, ItemsColumns, ItemsScale, ItemsGroup, ItemsLane } from "./items/types.js";

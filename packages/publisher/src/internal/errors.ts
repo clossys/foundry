@@ -87,6 +87,11 @@
  *     (across `templates` and, when `includeBuiltins` is `true`, the
  *     built-ins) sharing the same `WebTemplate.name`. Never silently
  *     keeps the last one registered.
+ *
+ * LandingView adds a rendering-time copy refusal:
+ *
+ *   - "missing-hero-copy" — a LandingView close requests hero copy but
+ *     the valid main document does not open with a hero.
  */
 export type RenderErrorReason =
   | "unknown-template"
@@ -104,7 +109,8 @@ export type RenderErrorReason =
   | "unknown-style-role"
   | "inconsistent-deck-aspect"
   | "invalid-template-definition"
-  | "duplicate-template";
+  | "duplicate-template"
+  | "missing-hero-copy";
 
 export class RenderError extends Error {
   readonly reason: RenderErrorReason;

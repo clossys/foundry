@@ -4,6 +4,32 @@ import userEvent from "@testing-library/user-event";
 import { NavGrid, type NavGridItem } from "./NavGrid.js";
 
 describe("NavGrid", () => {
+  it("delegates eligible all-linked grids to shared item plate anatomy", () => {
+    const { container } = render(<NavGrid items={[{ id: "a", title: "Topic A", href: "/a" }, { id: "b", title: "Topic B", href: "/b" }]} />);
+    expect(container.querySelector("ul[data-link-grid][data-surface='plate']")).not.toBeNull();
+    expect(screen.getByRole("link", { name: "Topic A" })).toHaveClass("after:rounded-panel");
+  });
+
+  it("preserves empty and more-than-six legacy collections", () => {
+    const { rerender } = render(<NavGrid items={[]} />);
+    expect(screen.queryByRole("link")).not.toBeInTheDocument();
+    rerender(<NavGrid items={Array.from({ length: 7 }, (_, index) => ({ id: String(index), title: `Topic ${index}`, href: `/topics/${index}` }))} />);
+    expect(screen.getAllByRole("link")).toHaveLength(7);
+  });
+
+  it("preserves linked tiles with mixed icons without loosening canonical Items' contract", () => {
+    const { container } = render(<NavGrid items={[{ id: "a", title: "Topic A", href: "/a", icon: <svg /> }, { id: "b", title: "Topic B", href: "/b" }]} />);
+    expect(screen.getAllByRole("link")).toHaveLength(2);
+    expect(container.querySelector("[data-link-grid]")).toBeNull();
+  });
+
+  it("preserves mixed link/button item order and the raised bordered control tile", () => {
+    const { container } = render(<NavGrid items={[{ id: "a", title: "Topic A", href: "/a" }, { id: "b", title: "Open B", onSelect: vi.fn() }, { id: "c", title: "Topic C", href: "/c" }]} />);
+    expect([...container.querySelectorAll("a,button")].map((element) => element.textContent?.replace(/\u00a0/g, "").trim())).toEqual(["Topic A", "Open B", "Topic C"]);
+    expect(screen.getByRole("button", { name: "Open B" })).toHaveClass("rounded-control", "border", "bg-surface-raised", "hover:border-line-strong", "hover:bg-surface-sunken");
+    expect(screen.getByRole("link", { name: "Topic A" })).not.toHaveClass("active:decoration-current", "link-grid-active");
+  });
+
   it("renders an optional heading above the grid", () => {
     render(
       <NavGrid
@@ -38,8 +64,8 @@ describe("NavGrid", () => {
     expect(onSelect).toHaveBeenCalledTimes(1);
   });
 
-  it("renders the title, description, and icon inside the single card element (the whole card is the target)", () => {
-    render(
+  it("an href card: one anchor on the title alone (its name), the icon and description outside it, the hit area stretched over the tile", () => {
+    const { container } = render(
       <NavGrid
         items={[
           {
@@ -52,10 +78,45 @@ describe("NavGrid", () => {
         ]}
       />,
     );
-    const card = screen.getByRole("link", { name: /Billing/ });
-    expect(card).toHaveTextContent("Billing");
-    expect(card).toHaveTextContent("Manage your plan and invoices.");
-    expect(card.querySelector('[data-testid="billing-icon"]')).not.toBeNull();
+    const link = screen.getByRole("link", { name: "Billing" });
+    expect(container.querySelectorAll("a")).toHaveLength(1);
+    expect(link).toHaveAttribute("data-card-link");
+    expect(link).not.toHaveTextContent("Manage your plan and invoices.");
+    expect(link.querySelector('[data-testid="billing-icon"]')).toBeNull();
+    expect(link).toHaveClass("after:absolute", "after:inset-0", "after:rounded-control", "focus-visible:after:outline-2", "focus-visible:after:outline-accent");
+    const tile = container.querySelector("[data-nav-grid-card]") as HTMLElement;
+    expect(tile).toHaveClass("relative", "isolate");
+    expect(tile).toHaveTextContent("Manage your plan and invoices.");
+    expect(link.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
+  });
+
+  it("keeps a previously accepted inline description link separate from the primary destination", () => {
+    render(<NavGrid items={[{ id: "billing", title: "Billing", description: <a href="/help">Help</a>, href: "/billing" }]} />);
+    const primary = screen.getByRole("link", { name: "Billing" });
+    const help = screen.getByRole("link", { name: "Help" });
+    expect(primary).toHaveAttribute("href", "/billing");
+    expect(help).toHaveAttribute("href", "/help");
+    expect(primary).not.toContainElement(help);
+    expect(primary.className).not.toMatch(/(?:^|\s)after:/);
+  });
+
+  it("renders the title, description, and icon inside the single button of an onSelect card (the whole card is the target)", () => {
+    render(
+      <NavGrid
+        items={[
+          {
+            id: "invite",
+            title: "Invite teammates",
+            description: "Bring your team on board.",
+            icon: <svg data-testid="invite-icon" />,
+            onSelect: vi.fn(),
+          },
+        ]}
+      />,
+    );
+    const card = screen.getByRole("button", { name: /Invite teammates/ });
+    expect(card).toHaveTextContent("Bring your team on board.");
+    expect(card.querySelector('[data-testid="invite-icon"]')).not.toBeNull();
   });
 
   it("clicking the description text (not just the title) still activates the card", async () => {

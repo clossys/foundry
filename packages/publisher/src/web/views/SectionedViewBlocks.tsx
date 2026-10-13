@@ -1,7 +1,7 @@
 import {
-  Faq,
   FeatureGrid,
   Hero,
+  Items,
   OrderedStepSequence,
   PricingTable as DesignerPricingTable,
   SECTION_GROUND_CLASSES,
@@ -10,6 +10,7 @@ import {
   Testimonial as DesignerTestimonial,
 } from "@clossys/designer/blocks";
 import type { SectionedViewBlockSet } from "./SectionedViewContent.js";
+import { createContentSectionBlock } from "./SectionedViewContentSection.js";
 
 type PricingTableProps = Parameters<SectionedViewBlockSet["PricingTable"]>[0];
 type TestimonialProps = Parameters<SectionedViewBlockSet["Testimonial"]>[0];
@@ -44,10 +45,10 @@ function Testimonial(props: TestimonialProps) {
 export const sectionedViewBlocks: SectionedViewBlockSet = {
   Hero,
   FeatureGrid,
-  Faq,
   OrderedStepSequence,
   StatusList,
   Stat,
   PricingTable,
   Testimonial,
+  ContentSection: createContentSectionBlock(Items),
 };

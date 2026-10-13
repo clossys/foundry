@@ -64,3 +64,35 @@ export const UI_Z_MODAL = "var(--ui-z-modal, 50)";
  * tooltip.
  */
 export const UI_Z_TOOLTIP = "var(--ui-z-tooltip, 80)";
+
+/**
+ * Hairline edge width for `Card`'s `outline` variant. Tailwind's `border`
+ * utility only ever reaches its own hardcoded `1px`; this reads the token
+ * so a brand that changes `--ui-border-hairline` changes the edge too.
+ * Border COLOR stays a Tailwind class (`border-line-base`).
+ */
+export const UI_BORDER_HAIRLINE = "var(--ui-border-hairline, 1px)";
+
+/** Minimum interactive target size, including linked tiles. */
+export const UI_LAYOUT_TAP_TARGET = "var(--ui-layout-tap-target, 44px)";
+
+/**
+ * Emphasis rule width (`--ui-border-rule`). `Meter` uses it as the width
+ * of its limit tick, so the tick and a rule-topped column share one
+ * weight.
+ */
+export const UI_BORDER_RULE = "var(--ui-border-rule, 2px)";
+
+/**
+ * Panel edge width (`--ui-border-panel`): the edge of `Card`'s `outline`
+ * variant and so of every product panel built on it. A brand lever that
+ * defaults to the hairline, so the fallback composes the hairline read.
+ */
+export const UI_BORDER_PANEL = `var(--ui-border-panel, ${UI_BORDER_HAIRLINE})`;
+
+/**
+ * Panel lift (`--ui-elevation-panel`): the shadow under a product panel
+ * (`SpecimenPanel`). A brand lever that defaults to the floating elevation,
+ * so the fallback composes the floating read.
+ */
+export const UI_ELEVATION_PANEL = `var(--ui-elevation-panel, ${UI_ELEVATION_FLOATING})`;

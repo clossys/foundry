@@ -61,6 +61,7 @@ describe("buildSiteMetadata titles", () => {
     ["contact", "Contact"],
     ["legal", "Terms"],
     ["notFound", "Page not found"],
+    ["construction", "Careers"],
     ["custom", "Pricing"],
   ])("builds a %s title as label then name", (kind, label) => {
     const meta = build(site(), page({ kind, label }));
@@ -127,6 +128,10 @@ describe("buildSiteMetadata fields", () => {
 describe("buildSiteMetadata robots", () => {
   it("marks notFound noindex", () => {
     expect(build(site(), page({ kind: "notFound", label: "Not found", path: "/404" })).robots).toBe("noindex, nofollow");
+  });
+
+  it("marks a construction page noindex", () => {
+    expect(build(site(), page({ kind: "construction", label: "Careers", path: "/careers" })).robots).toBe("noindex, nofollow");
   });
 
   it("marks a draft legal page noindex", () => {
@@ -271,7 +276,7 @@ describe("buildSiteMetadata refusals", () => {
   });
 
   it("refuses a status on a non-legal kind", () => {
-    for (const kind of ["home", "contact", "notFound", "custom"] as const) {
+    for (const kind of ["home", "contact", "notFound", "construction", "custom"] as const) {
       expect(reasonOf(() => build(site(), page({ kind, status: "counsel-reviewed" })))).toBe("invalid-status");
       expect(reasonOf(() => build(site(), page({ kind, status: "draft" })))).toBe("invalid-status");
     }
@@ -358,7 +363,7 @@ describe("buildSiteMetadata determinism", () => {
   });
 
   it("yields the same complete key set for every page kind with no undefined values", () => {
-    const kinds: SitePageKind[] = ["home", "contact", "legal", "notFound", "custom"];
+    const kinds: SitePageKind[] = ["home", "contact", "legal", "notFound", "construction", "custom"];
     const shapes = kinds.map((kind) => {
       const meta = build(site(), page({ kind, path: kind === "home" ? "/" : `/${kind}` }));
       const walk = (value: unknown, prefix: string): string[] => {

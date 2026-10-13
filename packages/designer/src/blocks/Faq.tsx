@@ -1,6 +1,7 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
-import { Disclosure } from "../atoms/Disclosure.js";
 import { cx } from "../atoms/internal/cx.js";
+import { FAQ_ANSWER_STYLE, FAQ_ROW_CLASSES } from "./Faq.server.js";
+import { disclosureRow } from "./internal/disclosure-row.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
 
 export type FaqHeadingLevel = 2 | 3 | 4 | 5 | 6;
@@ -45,16 +46,19 @@ export interface FaqProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> 
  * product-specific one further down the same page), which is what makes it
  * a block rather than a view (test 3).
  *
- * **Built on this package's own `Disclosure` atom, one per item, rather
- * than a hand-rolled expand/collapse mechanism.** `Disclosure` already
- * supplies everything a single expand/collapse section needs — real
+ * **Built on react-aria-components' own `Disclosure`/`DisclosurePanel`, one
+ * per item, rather than a hand-rolled expand/collapse mechanism** (the same
+ * primitives this package's `Disclosure` atom wraps). They supply real
  * `aria-expanded`/`aria-controls` wiring, Enter/Space-and-click toggling,
- * and keeping collapsed content in the DOM (`hidden`, not unmounted) so
- * browser find-in-page can still reach it — built on
- * react-aria-components' own `Disclosure`/`DisclosurePanel` (see
- * `Disclosure`'s own doc comment for the full accounting of what it
- * supplies). None of that is reimplemented here: `Faq` renders `items.map`
- * straight into one `Disclosure` per question, nothing more. Each
+ * and keep collapsed content in the DOM (`hidden`, not unmounted) so
+ * browser find-in-page can still reach it. `Faq` composes them directly,
+ * not through the atom, so the row can take the FAQ recipe
+ * (`FAQ_ROW_CLASSES`, shared with the server implementation): the whole row
+ * as the hit area, the question at the body-l step, and a Designer
+ * `ChevronDown` at the end that turns when open, and the answer's height
+ * eases open and shut (`disclosure-panel-motion`, CSS on the
+ * `--disclosure-panel-height` React Aria sets; instant under reduced
+ * motion). Each
  * question/answer pair expands and collapses INDEPENDENTLY — `Faq` renders
  * no `DisclosureGroup` and holds no shared "which one is open" state of its
  * own, so opening one question never closes another (the single-section
@@ -64,11 +68,11 @@ export interface FaqProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> 
  * isn't what a FAQ list needs: a reader routinely wants two answers open
  * at once to compare them).
  *
- * Items render inside a plain list with a hairline divider between them
- * (a ground-matched `border-t` on every item after the first) — visual
- * grouping only; the real structure a screen reader needs comes from each
- * `Disclosure`'s own trigger/panel wiring, not from a `role="list"` this
- * block would otherwise have to fake.
+ * Items render inside a plain list between ground-matched hairlines (one
+ * above the first question, one below each) — visual grouping only; the
+ * real structure a screen reader needs comes from each disclosure's own
+ * trigger/panel wiring, not from a `role="list"` this block would otherwise
+ * have to fake.
  */
 export function Faq({
   eyebrow,
@@ -91,25 +95,15 @@ export function Faq({
         <div className="flex flex-col gap-xs">
           {eyebrow ? <p className={cx("text-caption uppercase tracking-label", colors.muted)}>{eyebrow}</p> : null}
           {heading ? (
-            <HeadingTag className={cx("text-h2 font-display", colors.primary)}>{heading}</HeadingTag>
+            <HeadingTag className={cx("text-h2 font-display leading-heading", colors.primary)}>{heading}</HeadingTag>
           ) : null}
           {description ? (
             <p className={cx("text-body", colors.secondary)}>{description}</p>
           ) : null}
         </div>
       ) : null}
-      <div className="flex flex-col">
-        {items.map((item, index) => (
-          <Disclosure
-            key={item.id}
-            title={item.question}
-            className={index > 0 ? cx("border-t pt-xs", colors.border) : undefined}
-            triggerClassName={colors.primary}
-            panelClassName={colors.secondary}
-          >
-            {item.answer}
-          </Disclosure>
-        ))}
+      <div className={cx(FAQ_ROW_CLASSES.list, colors.border)}>
+        {items.map(item => disclosureRow({ id: item.id, question: item.question, answer: item.answer, recipe: FAQ_ROW_CLASSES, colors, answerStyle: FAQ_ANSWER_STYLE }))}
       </div>
     </div>
   );

@@ -9,6 +9,10 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { AuthView } from "../web/views/AuthView.js";
 import { BoundaryView } from "../web/views/BoundaryView.js";
 import { GlobalErrorDocument } from "../web/views/GlobalErrorDocument.js";
+import { StatusView } from "../web/views/StatusView.js";
+import { SiteFrame } from "../web/frame/SiteFrame.js";
+import type { SiteShellInput } from "../web/frame/types.js";
+import type { CopyResolver } from "@clossys/writer";
 import {
   PRIMARY_ACTION_CLASS,
   checkFrontDoor,
@@ -95,6 +99,60 @@ describe("conforming surfaces", () => {
 
   it("does not throw from expectFrontDoorConformance", () => {
     expect(() => expectFrontDoorConformance({ surfaces: conforming })).not.toThrow();
+  });
+
+  it("gives no findings for framed surfaces: AuthView and StatusView inside SiteFrame, and the framed GlobalErrorDocument", () => {
+    const COPY: Readonly<Record<string, string>> = { brand: "Example home", skip: "Skip to content", entity: "Example Ltd", privacy: "Privacy" };
+    const resolveCopy: CopyResolver = (copyRef) => {
+      const text = COPY[copyRef.id];
+      return text === undefined
+        ? undefined
+        : { ref: copyRef, text, recordId: copyRef.id, revision: "1", locale: "en-US", source: { kind: "consumer", reference: "fixture" }, entryId: copyRef.id };
+    };
+    const resolveAsset = (assetId: string): unknown =>
+      assetId === "mark" ? { type: "image", src: "/mark.svg", width: 48, height: 48, alt: "Example mark" } : undefined;
+    const shell: SiteShellInput = {
+      brand: { assetId: "mark", label: { id: "brand" }, size: "md", variant: "mark" },
+      skipLink: { id: "skip" },
+      footer: { legal: { entity: { id: "entity" }, links: [{ href: "/privacy", label: { id: "privacy" } }] } },
+    };
+    const framed: FrontDoorSurfaceCase[] = [
+      {
+        surface: "sign-in",
+        title,
+        render: () => (
+          <SiteFrame shell={shell} resolveCopy={resolveCopy} resolveAsset={resolveAsset}>
+            <AuthView heading="Sign in" description="Welcome back." form={<Button type="submit">Sign in</Button>} />
+          </SiteFrame>
+        ),
+      },
+      {
+        surface: "not-found",
+        title: { page: "Page not found", brand: "Example Studio" },
+        render: () => (
+          <SiteFrame shell={shell} resolveCopy={resolveCopy} resolveAsset={resolveAsset}>
+            <StatusView status="404" subtitle="That page does not exist." action={<Button>Go home</Button>} />
+          </SiteFrame>
+        ),
+      },
+      {
+        surface: "global-error",
+        render: () => (
+          <GlobalErrorDocument
+            lang="en"
+            documentTitle={{ page: "Something went wrong", brand: "Example Studio" }}
+            icon={{ href: "/icon.svg", type: "image/svg+xml" }}
+            shell={shell}
+            resolveCopy={resolveCopy}
+            resolveAsset={resolveAsset}
+            status="500"
+            subtitle="Something went wrong. Error: 8f2a91c0."
+            action={<Button>Try again</Button>}
+          />
+        ),
+      },
+    ];
+    expect(checkFrontDoor({ surfaces: framed })).toEqual([]);
   });
 
   it("returns no findings for an empty surface list", () => {

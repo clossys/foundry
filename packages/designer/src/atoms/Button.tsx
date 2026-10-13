@@ -2,23 +2,43 @@ import {
   Button as AriaButton,
   type ButtonProps as AriaButtonProps,
 } from "react-aria-components";
-import { buttonClassName } from "./button-classes.js";
+import { ChevronRight } from "../icons/ChevronRight.js";
+import type { IconNode } from "../icons/types.js";
+import { buttonClassName, type ControlGround } from "./button-classes.js";
+import { Icon } from "./Icon.js";
 import { cx } from "./internal/cx.js";
 import { UI_ALPHA_DISABLED, UI_RING_FOCUS } from "./internal/ui-vars.js";
 
-export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
+export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger" | "outline" | "tonal" | "quiet";
 export type ButtonSize = "sm" | "md" | "lg";
 
 export interface ButtonProps extends AriaButtonProps {
   /**
    * Visual treatment. `primary` is the accent-filled default action;
    * `secondary` is a bordered lower-emphasis action; `ghost` has no fill
-   * or border until hovered; `danger` marks a destructive action.
+   * or border until hovered; `danger` marks a destructive action;
+   * `outline` is a page's secondary call to action: no fill, a hairline
+   * inset edge in the surrounding ink, the same box as `primary`;
+   * `tonal` is a tertiary call to action: a neutral tonal fill, no edge;
+   * `quiet` is a chevron text button: no box, a trailing icon, a 44px tap
+   * block, underlined on hover.
    * @default "primary"
    */
   variant?: ButtonVariant;
   /** @default "md" */
   size?: ButtonSize;
+  /**
+   * The ground the button sits on. Only `tonal` and `quiet` change with it
+   * (the inverse plate takes the on-inverse ink and fill).
+   * @default "base"
+   */
+  ground?: ControlGround;
+  /**
+   * `quiet` only: the trailing icon, decorative, after the label. Defaults
+   * to `ChevronRight` from this package's icon set; `null` renders none.
+   * Ignored by every other variant.
+   */
+  trailingIcon?: IconNode | null;
 }
 
 /**
@@ -36,13 +56,23 @@ export interface ButtonProps extends AriaButtonProps {
  * property the consumer sets always wins over this component's default for
  * that same property.
  */
-export function Button({ variant = "primary", size = "md", className, style, ...rest }: ButtonProps) {
+export function Button({
+  variant = "primary",
+  size = "md",
+  ground = "base",
+  trailingIcon,
+  className,
+  style,
+  children,
+  ...rest
+}: ButtonProps) {
+  const trailing = variant === "quiet" ? (trailingIcon === undefined ? ChevronRight : trailingIcon) : null;
   return (
     <AriaButton
       {...rest}
       className={(renderProps) =>
         cx(
-          buttonClassName(variant, size),
+          buttonClassName(variant, size, ground),
           typeof className === "function" ? className(renderProps) : className,
         )
       }
@@ -51,6 +81,15 @@ export function Button({ variant = "primary", size = "md", className, style, ...
         boxShadow: renderProps.isFocusVisible ? UI_RING_FOCUS : undefined,
         ...(typeof style === "function" ? style(renderProps) : style),
       })}
-    />
+    >
+      {trailing === null
+        ? children
+        : (renderProps) => (
+            <>
+              {typeof children === "function" ? children(renderProps) : children}
+              <Icon glyph={trailing} decorative size="sm" />
+            </>
+          )}
+    </AriaButton>
   );
 }

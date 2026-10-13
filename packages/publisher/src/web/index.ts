@@ -37,8 +37,8 @@ export { defineWebTemplate } from "./internal/defineWebTemplate.js";
 export { createWebRenderer } from "./internal/createWebRenderer.js";
 export { evaluateWebRouteManifest, evaluateWebRouteManifestWithSources, scanRouteSourceForDirectComposition } from "./checkWebRoutes.js";
 export type { WebRouteCheckResult, WebRouteFinding, WebRouteManifest, WebRouteManifestEntry } from "./checkWebRoutes.js";
-export { AuthView, BoundaryView, BrandGuideView, CaptureView, CollectionView, DocumentView, ErrorView, MarketingView, PackReviewView, SectionedView, SystemAuditView } from "./views/index.js";
-export type { AuthViewProps, BoundaryViewProps, BrandGuideAssetLink, BrandGuideFact, BrandGuideSpecimen, BrandGuideViewProps, CaptureViewProps, CollectionViewEmptyState, CollectionViewEntry, CollectionViewLink, CollectionViewPagination, CollectionViewProps, DocumentViewEffectiveDate, DocumentViewProps, ErrorViewProps, MarketingFaqItem, MarketingFeatureItem, MarketingViewProps, PackReviewViewBrandKit, PackReviewViewExport, PackReviewViewFact, PackReviewViewFaqItem, PackReviewViewLabels, PackReviewViewPage, PackReviewViewProps, PackReviewViewState, PackReviewViewStrategy, PackReviewViewVoice, SectionedViewLandmark, SectionedViewProps, SystemAuditViewProps } from "./views/index.js";
+export { AuthView, BoundaryView, BrandGuideView, CaptureView, CollectionView, DocumentView, ErrorView, MarketingView, PackReviewView, SectionedView, StatusView, SystemAuditView } from "./views/index.js";
+export type { AuthViewProps, BoundaryViewProps, BrandGuideAssetLink, BrandGuideFact, BrandGuideSpecimen, BrandGuideViewProps, CaptureViewProps, CollectionViewEmptyState, CollectionViewEntry, CollectionViewLink, CollectionViewPagination, CollectionViewProps, DocumentViewEffectiveDate, DocumentViewProps, ErrorViewProps, MarketingFaqItem, MarketingFeatureItem, MarketingViewProps, PackReviewViewBrandKit, PackReviewViewExport, PackReviewViewFact, PackReviewViewFaqItem, PackReviewViewLabels, PackReviewViewPage, PackReviewViewProps, PackReviewViewState, PackReviewViewStrategy, PackReviewViewVoice, SectionedViewLandmark, SectionedViewProps, StatusViewProps, SystemAuditViewProps } from "./views/index.js";
 
 export { RenderError } from "../internal/errors.js";
 export type { RenderErrorReason } from "../internal/errors.js";
@@ -97,14 +97,16 @@ export type {
   StubContactDelivery,
 } from "./contact/index.js";
 
-export { LandingView } from "./views/index.js";
-export type { LandingViewFooter, LandingViewGround, LandingViewProps } from "./views/index.js";
+export { HeroView, LandingView } from "./views/index.js";
+export type { HeroViewFooter, HeroViewGround, HeroViewProps, LandingViewAction, LandingViewCallToAction, LandingViewHeader, LandingViewProps } from "./views/index.js";
+export { LANDING_VIEW_CALL_TO_ACTION_GROUND, LANDING_VIEW_CLOSING_GROUND, planLandingViewGrounds } from "./views/index.js";
+export type { LandingViewBandGround, LandingViewBandRole, LandingViewGroundPlan, LandingViewGroundRepeat } from "./views/index.js";
 export { ContactView } from "./views/index.js";
 export type { ContactViewCopy, ContactViewDevPreview, ContactViewProps, ContactViewTopic, ContactViewValues } from "./views/index.js";
 export { SignInForm } from "./views/index.js";
 export type { SignInFailure, SignInFormProps, SignInResult } from "./views/index.js";
 export { GlobalErrorDocument } from "./views/index.js";
-export type { GlobalErrorDocumentProps } from "./views/index.js";
+export type { GlobalErrorDocumentErrorViewProps, GlobalErrorDocumentFramedProps, GlobalErrorDocumentHeadProps, GlobalErrorDocumentProps } from "./views/index.js";
 export { ActivateForm, ResetForm } from "./views/index.js";
 export type { ActivateDetails, ActivateFailure, ActivateFormProps, ActivateResult, ResetDetails, ResetFailure, ResetFormProps, ResetResult } from "./views/index.js";
 
@@ -145,3 +147,6 @@ export type {
 } from "./shareCard.js";
 export { createShareCardRoute } from "./shareCardRoute.js";
 export type { ShareCardRoute, ShareCardRouteInput } from "./shareCardRoute.js";
+
+export { ContactForm } from "./views/ContactForm.js";
+export type { ContactFormCopy, ContactFormDevPreview, ContactFormProps, ContactFormTopic, ContactFormValues } from "./views/ContactForm.js";

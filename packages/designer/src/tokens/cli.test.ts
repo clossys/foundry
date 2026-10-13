@@ -118,11 +118,17 @@ function writeProductFile(rel: string, content: string): void {
 
 // Every brandable slot declared, so the coverage check itself is clean and a
 // non-zero exit can only come from something else. Only non-emptiness matters
-// to coverage, so one placeholder value serves every slot.
+// to coverage; structural slots are excluded.
 const FULLY_COVERED_BRAND_CSS = `:root {\n${Object.values(TOKENS)
   .filter((def) => def.brandable)
   .map((def) => `  ${def.property}: red;\n`)
   .join("")}}\n`;
+
+describe("main — complete brand fixture", () => {
+  it("accepts every brandable slot from source", () => {
+    expect(main([writeBrandCss(FULLY_COVERED_BRAND_CSS)])).toBe(0);
+  });
+});
 
 describe("command line — one brand overlay under apps/", () => {
   it("a fully covered brand file exits 0 without a second binder and 1 once apps/ adds one", () => {

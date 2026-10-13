@@ -6,9 +6,11 @@ separate package", for the tree-shaking and upstream-churn/rename
 reasoning (this glyph set previously shipped as this scope's own standalone
 `icons` package; this notice, and the data it covers, moved into this
 package's own `./icons` subpath along with it — see this package's changelog).
-The 32 glyphs at `@clossys/designer/icons` are, however, **visually
+The 40 glyphs at `@clossys/designer/icons` are, however, **visually
 derived from [Lucide](https://lucide.dev)**: their SVG path data was
-copied from `lucide-react`'s published source (version 1.23.0) into
+copied from `lucide-react`'s published source (version 1.23.0 for the
+original 32; version 1.24.0 for `arrow-right`, `briefcase`, `file-check`,
+`globe`, `landmark`, `layers`, `scale` and `shield-check`, added later) into
 `scripts/icon-source-data.json`, then compiled into this package's own
 plain `IconNode` data constants by `scripts/generate-icons.mjs`. This file
 exists to satisfy Lucide's license attribution requirement for that copied
@@ -17,7 +19,7 @@ data, per both licenses that cover it below.
 Four of this package's glyph names resolve to a Lucide glyph published
 under a different (but still current) name in Lucide 1.23.0 — the semantic
 name here matches this repository's own consumer-evidence naming (see
-README.md, "Icon glyph data" → "How the 32 were chosen"), not a renaming
+README.md, "Icon glyph data" → "How the 40 were chosen"), not a renaming
 of the underlying artwork:
 
 | This package | Lucide 1.23.0 source name |
@@ -51,7 +53,8 @@ The following icons this package ships are, per Lucide's own upstream
 attribution, originally derived from the [Feather](https://feathericons.com)
 project: `alert-triangle`, `calendar`, `check`, `chevron-down`,
 `chevron-left`, `chevron-right`, `chevron-up`, `clock`, `external-link`,
-`info`, `lock`, `monitor`, `moon`, `search`, `x`, `x-circle`.
+`info`, `lock`, `monitor`, `moon`, `search`, `x`, `x-circle`, and the
+later additions `arrow-right`, `briefcase`, `globe`, `layers`.
 
 The MIT License (MIT)
 

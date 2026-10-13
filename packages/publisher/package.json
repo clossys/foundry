@@ -1,6 +1,6 @@
 {
   "name": "@clossys/publisher",
-  "version": "0.8.1",
+  "version": "0.9.0",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -374,9 +374,12 @@
     "src",
     "!src/**/*.test.ts",
     "!src/**/*.test.tsx",
+    "!src/**/*.test.json",
+    "!src/**/__fixtures__/**",
     "README.md",
     "LICENSE",
     "skill",
+    "styles",
     "templates",
     "fit-signals.json"
   ],
@@ -384,11 +387,13 @@
     "build": "tsc -p tsconfig.json",
     "prepublishOnly": "node ../../scripts/check-name-collision.mjs . && npm run build",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "generate:preview-css": "node scripts/preview-css.mjs --write",
+    "check:preview-css": "node scripts/preview-css.mjs --check"
   },
   "dependencies": {
     "@clossys/writer": "^0.5.1",
-    "@clossys/designer": "^0.7.1",
+    "@clossys/designer": "^0.8.0",
     "@clossys/controller": "^0.10.0"
   },
   "peerDependencies": {

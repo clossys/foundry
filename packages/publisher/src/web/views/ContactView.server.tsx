@@ -2,6 +2,8 @@ import { RenderError } from "../../internal/errors.js";
 import type { ContactViewProps } from "./ContactView.js";
 
 /**
+ * @deprecated Use CaptureView with ContactForm from a client module.
+ *
  * React-server stub for ContactView. The form needs React Aria fields and
  * client state, neither of which can load under the `react-server` condition,
  * so this same-named export exists only to keep both entries' runtime names

@@ -53,7 +53,7 @@ applies at its cascade scope, or that the template builds.
 - `app/layout.tsx` — root layout: sets `data-brand-bound` on `<html>`,
   injects Designer's theme init script into `<head>`, and sets `metadataBase`
   from `NEXT_PUBLIC_SITE_URL` (see "`NEXT_PUBLIC_SITE_URL`" below).
-- `app/page.tsx` — the landing route (`LandingView`). Its header call to
+- `app/page.tsx` — the landing route (`HeroView`). Its header call to
   action, a link to `/contact` worded by `site.landing.contact-action`, is
   passed as `headerAction` on every framed route: landing, about, contact,
   terms and privacy.

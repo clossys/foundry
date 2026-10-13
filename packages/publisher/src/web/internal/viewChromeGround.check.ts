@@ -9,7 +9,7 @@ import type { AuthViewProps } from "../views/AuthView.js";
 import type { BoundaryViewProps } from "../views/BoundaryView.js";
 import type { CaptureViewProps } from "../views/CaptureView.js";
 import type { ContactViewProps } from "../views/ContactView.js";
-import type { LandingViewProps } from "../views/LandingView.js";
+import type { HeroViewProps } from "../views/HeroView.js";
 import type { LegalViewProps } from "../views/LegalView.js";
 import type { MarketingViewProps } from "../views/MarketingView.js";
 import type { PackReviewViewProps } from "../views/PackReviewView.js";
@@ -32,5 +32,5 @@ export const marketingTransparentInverse: MarketingViewProps["ground"] = "transp
 // @ts-expect-error PackReviewView keeps the base surface
 export const packReviewTransparentInverse: PackReviewViewProps["ground"] = "transparent-inverse";
 
-// @ts-expect-error LandingView's ground is the page's own, and its chrome ground is derived, never passed
-export const landingTransparentInverse: LandingViewProps["ground"] = "transparent-inverse";
+// @ts-expect-error HeroView's ground is the page's own, and its chrome ground is derived, never passed
+export const landingTransparentInverse: HeroViewProps["ground"] = "transparent-inverse";

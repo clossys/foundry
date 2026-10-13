@@ -1,7 +1,7 @@
 {
-  "registeredTemplates": ["MarketingView", "LandingView", "ContactView", "LegalView"],
+  "registeredTemplates": ["MarketingView", "HeroView", "ContactView", "LegalView"],
   "routes": [
-    { "id": "/", "template": "LandingView", "file": "app/page.tsx" },
+    { "id": "/", "template": "HeroView", "file": "app/page.tsx" },
     { "id": "/about", "template": "MarketingView", "file": "app/about/page.tsx" },
     { "id": "/contact", "template": "ContactView", "file": "app/contact/page.tsx" },
     { "id": "/privacy", "template": "LegalView", "file": "app/privacy/page.tsx" },

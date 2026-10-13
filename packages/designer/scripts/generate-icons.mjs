@@ -1,20 +1,21 @@
 #!/usr/bin/env node
 /**
  * One-time/repeatable codegen: reads `icon-source-data.json` (this
- * package's own vendored copy of 32 icons' SVG path data — see
+ * package's own vendored copy of 40 icons' SVG path data — see
  * THIRD-PARTY-NOTICES.md for provenance) and writes one
  * `src/icons/<PascalName>.ts` file per entry (plain `IconNode` DATA, not a
  * component — see `src/icons/types.ts` and `README.md`'s "Icon glyph data"
  * section for why), plus `src/icons/index.ts`. Not part of the package's
  * build (`tsc` compiles the already-generated `.ts` files, same as every
- * other generated artifact in this repo) — this script exists so the 32
+ * other generated artifact in this repo) — this script exists so the 40
  * files stay mechanically regenerable rather than hand-copied if the source
  * data ever changes.
  *
  * ### Refreshing against a newer Lucide release
  *
- * This package's data is pinned at Lucide 1.23.0 (see THIRD-PARTY-NOTICES.md
- * for why — insulation from upstream glyph renames and churn, not staleness
+ * This package's data is pinned at Lucide 1.23.0, apart from eight content
+ * glyphs added later from Lucide 1.24.0 (see THIRD-PARTY-NOTICES.md for the
+ * list and for why — insulation from upstream glyph renames and churn, not staleness
  * for its own sake). To pull a newer Lucide release for an EXISTING name in
  * `NAME_MAP` below:
  *
@@ -34,7 +35,7 @@
  *
  * Adding a NEW glyph name: add its kebab source name and PascalCase target
  * name to `NAME_MAP` below, add its path data to `icon-source-data.json`,
- * then re-run this script. Follow this package's own README ("How the 32
+ * then re-run this script. Follow this package's own README ("How the 40
  * were chosen") evidence method before adding one — this set is
  * deliberately curated, not a grab-bag.
  *
@@ -58,8 +59,10 @@ const outDir = join(root, "src", "icons");
  */
 const NAME_MAP = {
   "alert-triangle": "AlertTriangle",
+  "arrow-right": "ArrowRight",
   "book-open": "BookOpen",
   "box": "Box",
+  "briefcase": "Briefcase",
   "building-2": "Building2",
   "calendar": "Calendar",
   "check": "Check",
@@ -71,19 +74,25 @@ const NAME_MAP = {
   "clock": "Clock",
   "credit-card": "CreditCard",
   "external-link": "ExternalLink",
+  "file-check": "FileCheck",
   "file-text": "FileText",
   "folder": "Folder",
+  "globe": "Globe",
   "grid-3x3": "Grid3x3",
   "home": "Home",
   "info": "Info",
+  "landmark": "Landmark",
+  "layers": "Layers",
   "list": "List",
   "lock": "Lock",
   "monitor": "Monitor",
   "moon": "Moon",
   "plug": "Plug",
   "receipt": "Receipt",
+  "scale": "Scale",
   "search": "Search",
   "settings": "Settings",
+  "shield-check": "ShieldCheck",
   "sun": "Sun",
   "user": "User",
   "users": "Users",
@@ -110,7 +119,7 @@ for (const [kebabName, node] of Object.entries(data)) {
     // a human).
     .replace(/"([a-zA-Z][\w-]*)":/g, '"$1":');
 
-  const fileContents = `// GENERATED FILE — do not edit by hand. Run \`node scripts/generate-icons.mjs\`.
+  const fileContents = `// GENERATED FILE — do not edit by hand. Run \`node scripts/generate-icons.mjs\` from a source checkout; the generator does not ship with this package.
 // Source: kebab name "${kebabName}" — see THIRD-PARTY-NOTICES.md for the
 // origin of this path data.
 import type { IconNode } from "./types.js";
@@ -124,7 +133,7 @@ export const ${constName}: IconNode = ${nodeLiteral} as const;
 
 exportLines.sort();
 
-const indexContents = `// GENERATED FILE — do not edit by hand. Run \`node scripts/generate-icons.mjs\`.
+const indexContents = `// GENERATED FILE — do not edit by hand. Run \`node scripts/generate-icons.mjs\` from a source checkout; the generator does not ship with this package.
 ${exportLines.join("\n")}
 export type { IconNode } from "./types.js";
 `;

@@ -33,9 +33,16 @@ const LIGHT_PROPERTY_LINES = `  --color-ink-primary: oklch(0.2178 0 0);
   --color-ink-link: oklch(0.36 0 0);
   --color-ink-on-accent: oklch(0.9702 0 0);
   --color-accent: oklch(0.4748 0 0);
+  --color-accent-on-inverse: oklch(0.7763 0 0);
   --color-ink-on-inverse: oklch(0.9702 0 0);
   --color-ink-on-inverse-muted: oklch(0.7763 0 0);
   --color-surface-inverse: oklch(0.2178 0 0);
+  --color-surface-inverse-raised: oklch(0.285 0 0);
+  --color-control-tonal: oklch(0.2178 0 0 / 0.08);
+  --color-control-tonal-hover: oklch(0.2178 0 0 / 0.12);
+  --color-control-tonal-inverse: oklch(0.9702 0 0 / 0.12);
+  --color-control-tonal-inverse-hover: oklch(0.9702 0 0 / 0.16);
+  --color-control-quiet: oklch(0.2178 0 0);
   --color-status-success-text: oklch(0.4748 0 0);
   --color-status-success: oklch(0.6268 0 0);
   --color-status-success-tint: oklch(0.6268 0 0 / 0.1);
@@ -143,6 +150,28 @@ describe("main — a light-only file (no dark block) is a valid, non-degraded in
 });
 
 describe("main — real runs", () => {
+  it.each(["light", "dark"])("rejects a LinkGrid inverse raised overlay in the %s theme", (theme) => {
+    const light = theme === "light" ? LIGHT_PROPERTY_LINES.replace("--color-surface-inverse-raised: oklch(0.285 0 0);", "--color-surface-inverse-raised: oklch(0.6 0 0);") : LIGHT_PROPERTY_LINES;
+    const dark = theme === "dark" ? DARK_PROPERTY_LINES.replace("--color-surface-inverse-raised: oklch(0.285 0 0);", "--color-surface-inverse-raised: oklch(0.6 0 0);") : DARK_PROPERTY_LINES;
+    expect(main([writeCss(`:root {\n${light}\n}\n:root[data-theme="dark"] {\n${dark}\n}\n`)])).toBe(1);
+    expect(vi.mocked(console.log).mock.calls.flat().join(" ")).toContain("link-grid/ink-on-inverse/surface-inverse-raised");
+  });
+
+  it.each(["light", "dark"])("rejects LinkGrid secondary-copy and focus-color overlays in the %s theme", (theme) => {
+    for (const [property, value, pair] of [
+      ["--color-ink-secondary", "oklch(0.6 0 0)", "link-grid/ink-secondary/surface-raised"],
+      ["--color-accent", "oklch(0.9702 0 0)", "link-grid/accent/surface-base"],
+      ["--color-accent-on-inverse", "oklch(0.2178 0 0)", "link-grid/accent-on-inverse/surface-inverse"],
+    ]) {
+      const overlay = `\n  ${property}: ${value};`;
+      const light = LIGHT_PROPERTY_LINES + (theme === "light" ? overlay : "");
+      const dark = DARK_PROPERTY_LINES + (theme === "dark" ? overlay : "");
+      expect(main([writeCss(`:root {\n${light}\n}\n:root[data-theme="dark"] {\n${dark}\n}\n`)])).toBe(1);
+      expect(vi.mocked(console.log).mock.calls.flat().join(" ")).toContain(pair);
+      vi.mocked(console.log).mockClear();
+    }
+  });
+
   it("returns 1 for a real WCAG threshold miss (ink-primary too close to surface-base) — never a false clean pass", () => {
     const nearWhiteInk = CLEAN_LIGHT_ROOT.replace(
       "--color-ink-primary: oklch(0.2178 0 0);",

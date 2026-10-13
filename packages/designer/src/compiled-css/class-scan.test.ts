@@ -29,6 +29,13 @@ describe("scanClassCandidates", () => {
     expect(result.candidates).toContain("px-sm");
   });
 
+  it("keeps container-query utilities: the @container marker and @-size variants", () => {
+    writeFileSync(join(dir, "Panel.tsx"), `const PANEL = "@container p-lg @md:p-xl";\nconst CELL = "flex @md:table-cell @lg:grid-cols-4";\n`);
+    const result = scanClassCandidates(dir);
+    expect(result.candidates).toEqual(expect.arrayContaining(["@container", "@md:p-xl", "@md:table-cell", "@lg:grid-cols-4"]));
+    expect(result.candidates).not.toContain("@");
+  });
+
   it("returns a sorted, deduplicated list", () => {
     writeFileSync(join(dir, "A.tsx"), `"bg-accent bg-accent"`);
     writeFileSync(join(dir, "B.tsx"), `"bg-accent"`);

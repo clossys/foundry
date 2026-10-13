@@ -97,6 +97,26 @@ describe("Faq", () => {
     expect(second).toHaveAttribute("aria-expanded", "true");
   });
 
+  it("turns the trigger's decorative chevron when the question opens", async () => {
+    const user = userEvent.setup();
+    render(<Faq items={ITEMS} />);
+    const trigger = screen.getByRole("button", { name: "Question one text" });
+    const chevron = trigger.querySelector("svg") as SVGElement;
+
+    expect(chevron).toHaveAttribute("aria-hidden", "true");
+    expect(chevron).toHaveClass("disclosure-icon-motion");
+    expect(chevron).not.toHaveClass("rotate-180");
+    await user.click(trigger);
+    expect(chevron).toHaveClass("rotate-180");
+  });
+
+  it("makes the whole row the hit area with the question at body-l and the focus-visible outline", () => {
+    render(<Faq items={ITEMS} />);
+    const trigger = screen.getByRole("button", { name: "Question one text" });
+    expect(trigger).toHaveClass("w-full", "py-lg", "tablet:py-xl", "text-body-l", "focus-visible:outline-2", "focus-visible:outline-accent");
+    expect(trigger).not.toHaveClass("outline-none");
+  });
+
   it("aria-controls on the trigger points at the answer panel's own id", () => {
     render(<Faq items={ITEMS} />);
     const trigger = screen.getByRole("button", { name: "Question one text" });
@@ -124,7 +144,9 @@ describe("Faq", () => {
     const firstTrigger = screen.getByRole("button", { name: "Question one text" });
     const secondTrigger = screen.getByRole("button", { name: "Question two text" });
     expect(firstTrigger).toHaveClass(primary);
-    expect(document.getElementById(firstTrigger.getAttribute("aria-controls") as string)).toHaveClass(secondary);
+    const panel = document.getElementById(firstTrigger.getAttribute("aria-controls") as string) as HTMLElement;
+    expect(panel).toHaveClass("disclosure-panel-motion");
+    expect(panel.firstElementChild).toHaveClass(secondary);
     expect(secondTrigger.parentElement).toHaveClass(border);
   });
 });

@@ -56,6 +56,13 @@ mechanical gates (`designer-hero-css-check`, `designer-fold-check`, and
 full rubric — floor, authored great, review keep, and who certifies what — is
 in [PRE-AUTH-QUALITY.md](./PRE-AUTH-QUALITY.md).
 
+Band copy for the content blocks (`FeatureGrid`, `Items`, `Matrix`,
+`OrderedStepSequence`, `Faq`, `Specimen`) follows the content
+cookbook, [CONTENT.md](./CONTENT.md). It covers which block fits which
+information, what each slot holds and its word budget, and the page-variety
+rules. Publisher's `publisher-preview` writes `content-catalog.html`, which
+shows every block filled at a typical length and at the maximum budget.
+
 Onboarding discovers that declaration from the installed manifest and never
 infers a surface. The four existing designer bins remain gates and are not
 the assessment surface. Designer is not a required first-day role; Advisor
@@ -79,31 +86,33 @@ same way `tokens` sits below all of `ui`). See "Placement rules" below for
 what distinguishes reusable atoms and blocks. Whole-page compositions are
 surfaces and live in `@clossys/publisher/web`.
 
-- **`icons`** — glyph data only, no components: 32 `IconNode` exports
-  (`AlertTriangle`, `BookOpen`, `Box`, `Building2`, `Calendar`, `Check`,
-  `CheckCircle`, `ChevronDown`, `ChevronLeft`, `ChevronRight`, `ChevronUp`,
-  `Clock`, `CreditCard`, `ExternalLink`, `FileText`, `Folder`, `Grid3x3`,
-  `Home`, `Info`, `List`, `Lock`, `Monitor`, `Moon`, `Plug`, `Receipt`,
-  `Search`, `Settings`, `Sun`, `User`, `Users`, `X`, `XCircle`) — each a
+- **`icons`** — glyph data only, no components: 40 `IconNode` exports
+  (`AlertTriangle`, `ArrowRight`, `BookOpen`, `Box`, `Briefcase`,
+  `Building2`, `Calendar`, `Check`, `CheckCircle`, `ChevronDown`,
+  `ChevronLeft`, `ChevronRight`, `ChevronUp`, `Clock`, `CreditCard`,
+  `ExternalLink`, `FileCheck`, `FileText`, `Folder`, `Globe`, `Grid3x3`,
+  `Home`, `Info`, `Landmark`, `Layers`, `List`, `Lock`, `Monitor`, `Moon`,
+  `Plug`, `Receipt`, `Scale`, `Search`, `Settings`, `ShieldCheck`, `Sun`,
+  `User`, `Users`, `X`, `XCircle`) — each a
   `ReadonlyArray<readonly [tag: string, attrs: Record<string, string>]>`,
   meant to be passed to the `Icon` atom's `glyph` prop. See "Icon glyph
   data" below.
 - **`atoms`** — single-purpose: composes no other atom, or its parts are
-  homogeneous repeats rather than named regions. Thirty-one ship, the
-  complete set for this layer: `Button`, `Icon`, `TextField`, `Badge`,
+  homogeneous repeats rather than named regions. Thirty-three ship:
+  `Button`, `Icon`, `TextField`, `Badge`,
   `Card`, `Breadcrumb`, `Link`, `Checkbox`, `Switch`, `Select`, `Textarea`,
   `Avatar`, `Spinner`, `Menu`, `Dialog`, `Tabs`, `Table`, `Field`,
   `Skeleton`, `Tooltip`, `Banner`, `RadioGroup`, `Popover`, `DateField`,
   `ComboBox`, `SearchField`, `FileTrigger`, `Disclosure`, `ProgressBar`,
-  `Separator`, `Chip`.
+  `Separator`, `Chip`, `StatusMark`, `Meter`.
 - **`blocks`** — owns the internal layout of multiple named regions,
   typically by composing one or more atoms (and/or layout) into something
-  with a real job on a page. Twenty-two ship: `PageHeader`, `EmptyState`,
+  with a real job on a page. Thirty-four ship: `PageHeader`, `EmptyState`,
   `DataTable`, `DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`,
-  `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`,
-  `MarketingChapter`, `FeatureGrid`, `OrderedStepSequence`, `StatusList`, `Faq`, `PricingTable`, `Testimonial`, `ArticleBody`, `ConsentBanner` — the
-  last nine are marketing/editorial content blocks and a presentational
-  consent notice, completing this layer (see "Blocks" below).
+  `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `SectionFrame`,
+  `MarketingChapter`, `FeatureGrid`, `Item`, `Items`, `AnatomyCallouts`, `RecordLedger`, `Scene`, `Matrix`,
+  `Specimen`, `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`,
+  `PricingTable`, `Testimonial`, `ArticleBody`, `ConsentBanner` (see "Blocks" below).
 - **`shell`** — the persistent frame around content (nav, layout chrome)
   that provides the slots content fills. One per app; survives route
   changes that swap out the content underneath it. `Shell` ships with five
@@ -345,8 +354,8 @@ source file's own header for the exact probe and its result). Today that's:
 
 | Subpath | Server-safe members |
 | --- | --- |
-| `@clossys/designer/atoms/server` | `Badge`, `Banner`, `Card`, `Field`, `Icon`, `Skeleton`, `Spinner`, `mergeUiClasses` |
-| `@clossys/designer/blocks/server` | `ArticleBody`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `MarketingChapter`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `SectionFrame`, `SectionHeader`, `Stat`, `StatusList` |
+| `@clossys/designer/atoms/server` | `Avatar`, `Badge`, `Banner`, `Card`, `Field`, `Icon`, `Meter`, `Skeleton`, `Spinner`, `StatusMark`, `buttonLinkClassName`, `iconButtonClassName`, `iconButtonLinkClassName`, `mergeUiClasses` |
+| `@clossys/designer/blocks/server` | `AnatomyCallouts`, `ArticleBody`, `Matrix`, `ContentSection`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `Item`, `Items`, `MarketingChapter`, `MediaFigure`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `RecordLedger`, `Scene`, `SectionFrame`, `SectionHeader`, `SectionIntro`, `Specimen`, `SpecimenPanel`, `Stat`, `StatusList` |
 | `@clossys/designer/shell/server` | `Shell`, `SiteFooter`, `SiteHeader`, `SkipLink` |
 | `@clossys/designer/charts/server` | `ChartFrame`, `Sparkline` |
 | `@clossys/designer/theme/server` | `getThemeInitScript` |
@@ -461,7 +470,12 @@ sets `box-sizing: border-box`, and `input, textarea, select, button` sets
 `font: inherit`. The Tailwind-native path gets both from Tailwind's own
 preflight; this layer gives the `tokens.css` + `compiled.css` path the same
 two behaviors while preflight itself stays out, so margin, list and color
-resets remain your choice. `foundry-ui-base` is declared before
+resets remain your choice. The blocks set their own spacing and are drawn
+against zero default margins on headings, paragraphs, lists and figures, the
+way Tailwind's preflight leaves them; on the `compiled.css` path without a
+reset, browser default margins add to that spacing (`Specimen` resets its
+own). Publisher's preview pages link a preflight copy for this
+reason. `foundry-ui-base` is declared before
 `foundry-ui-compiled`, so a utility class wins over it, and your own
 unlayered CSS wins over both. To override a base rule, write a rule for the
 same selector in unlayered CSS, or in a named layer declared after
@@ -1017,10 +1031,143 @@ function SaveButton() {
 }
 ```
 
-`variant`: `"primary" | "secondary" | "ghost" | "danger"` (default
-`"primary"`). `size`: `"sm" | "md" | "lg"` (default `"md"`). Accepts every
-prop react-aria-components' own `Button` does — `isDisabled`, `onPress`,
-`type`, and so on.
+`variant`: `"primary" | "secondary" | "ghost" | "danger" | "outline" |
+"tonal" | "quiet"` (default `"primary"`). `size`: `"sm" | "md" | "lg"`
+(default `"md"`). `ground`: `"base" | "sunken" | "inverse"` (default
+`"base"`), the ground the button sits on; only `tonal` and `quiet` change
+with it. Accepts every prop react-aria-components' own `Button` does —
+`isDisabled`, `onPress`, `type`, and so on.
+
+The call-to-action ladder, strongest first. Use one T1 per view, and step
+down the ladder for every further action:
+
+| Tier | Look | For |
+| --- | --- | --- |
+| T1 | `primary` | the one main action of a view |
+| T2 | `outline` (or `secondary` on a panel) | the second action beside a T1 |
+| T3 | `tonal` | a supporting action that still needs a target: a neutral tonal fill, no edge |
+| T4 | `quiet` | a low-weight "more" action: a chevron text button |
+| text link | `Link` | navigation inside running text |
+| icon-only | `IconButton` | a control whose glyph says what it does |
+
+`tonal` (T3) fills the box with the primary ink at low alpha
+(`--color-control-tonal`, `--color-control-tonal-hover` on hover), so one
+token reads on `base` and `sunken` alike; on `ground="inverse"` it takes the
+on-inverse ink at low alpha (`--color-control-tonal-inverse`,
+`--color-control-tonal-inverse-hover`) and the on-inverse ink. It draws no
+edge.
+
+`quiet` (T4) is a text button with no fill, edge or inline padding, so it
+aligns with the text edge. It is set in `--color-control-quiet` (the on-inverse
+ink on `ground="inverse"`), keeps a 44px tap block
+(`--ui-layout-tap-target`), and ends in a decorative `ChevronRight`. Hover
+underlines the label and nudges the chevron 2px toward the inline end (the
+other way in a right-to-left page); under reduced motion the chevron does not
+move. `trailingIcon` swaps the glyph (any `@clossys/designer/icons` data) or,
+as `null`, removes it; other variants ignore it.
+
+```tsx
+import { Button } from "@clossys/designer/atoms";
+
+function SupportingActions() {
+  return (
+    <>
+      <Button variant="tonal" onPress={() => compare()}>
+        Compare
+      </Button>
+      <Button variant="quiet" onPress={() => showAll()}>
+        See all
+      </Button>
+    </>
+  );
+}
+```
+
+`outline` is the second call to action beside a `primary` one: a transparent
+button with the same box, size, radius and type as `primary`, edged by an
+inset ring (one pixel, the `--ui-border-hairline` value; two on hover, the
+`--ui-border-rule` value) drawn in the surrounding ink (`currentColor`). It sets no ink of its own, so put it where
+the text ink already reads against the ground (a `SectionIntro` actions row
+carries its ground's primary ink): the edge then meets the 3:1 non-text
+contrast floor on light and dark grounds alike. On `Button`, React Aria's
+focus ring replaces the edge while it shows; a link keeps both.
+
+A call to action that navigates is a link, not a button. Give a plain `<a>`
+the button look with `buttonLinkClassName(variant, size, ground)` (server-safe, from
+`@clossys/designer/atoms` or `/atoms/server`): the same variant and size
+classes, the package-standard `focus-visible` outline, and none of the
+disabled styling a link never needs.
+
+```tsx
+import { buttonLinkClassName } from "@clossys/designer/atoms/server";
+
+<a href="/contact" className={buttonLinkClassName("primary", "lg")}>Book a call</a>;
+```
+
+A quiet link carries no chevron of its own (a class string renders no
+glyph): put a decorative `Icon` last inside it, and the hover nudge applies
+to it.
+
+An icon-only link that navigates (a scroll cue, a back-to-top link) takes
+the round look, `iconButtonLinkClassName(ground)` (server-safe, same
+entries): a 44px circle (`--ui-layout-tap-target`) on the pill radius with
+a hairline edge, drawn for a light (`"base"`, the default), sunken
+(`"sunken"`) or dark (`"inverse"`) ground. It is
+`iconButtonClassName({ size: "md", shape: "circle", ground })`. Hover shifts the surface and lifts the edge, pressed
+takes the ground's strongest edge, and colours ease on
+`--ui-duration-fast` (instant under reduced motion). The focus outline is
+the package-standard accent outline over a 2px halo in the link's own
+surface, so it reads where the circle overlaps a ground of the other tone.
+It ships no copy: give the link an accessible name.
+
+```tsx
+import { Icon, iconButtonLinkClassName } from "@clossys/designer/atoms/server";
+import { ChevronDown } from "@clossys/designer/icons";
+
+<a href="#next" aria-label="Scroll to next section" className={iconButtonLinkClassName("base")}>
+  <Icon glyph={ChevronDown} decorative size="md" />
+</a>;
+```
+
+`scroll-cue` (a `theme.css` utility, Tailwind path) fixes such a cue to the
+bottom of the browser window, centred and clear of
+`env(safe-area-inset-bottom)` by `--spacing-xl`, so it does not move with the
+page. It fades out over the first three tap targets of page scrolling
+(132px), using a CSS scroll-driven animation, so the fade follows the scroll
+position rather than the clock. At the end it is `visibility: hidden`, so it
+leaves the tab order, and inert to the pointer; it never lingers over a later
+section. Under reduced motion it does not fade: it stays visible over the same
+range, then hides in one step. An engine without scroll-driven animations
+(`animation-timeline`) skips the fixed placement and the fade together: the
+cue is centred on the top edge of its nearest positioned ancestor and scrolls
+away with the page, so it is never fixed without a fade.
+
+### `IconButton`
+
+```tsx
+import { IconButton } from "@clossys/designer/atoms";
+import { ChevronRight } from "@clossys/designer/icons";
+
+function NextSlide({ onNext }: { onNext: () => void }) {
+  return <IconButton icon={ChevronRight} label="Next slide" onPress={onNext} />;
+}
+```
+
+An icon-only control on react-aria-components' `Button`: one decorative
+glyph in a box with a hairline edge. `label` is required and is the
+accessible name (the package ships no default copy; `aria-label` and
+`aria-labelledby` are not accepted in its place). `icon` is
+`@clossys/designer/icons` data. `size`: `"md"` (default, a 44px box, the
+`md` icon) or `"sm"` (a 36px box, the `sm` icon, with its hit area padded
+back to 44px). `shape`: `"circle"` (default, pill radius) or `"square"`
+(control radius). `ground`: `"base" | "sunken" | "inverse"` (default
+`"base"`). Pass `aria-pressed` or `aria-expanded` for a toggle: the selected
+state fills the box with the ground's opposite surface. Colours ease on
+`--ui-duration-fast`, instantly under reduced motion.
+
+The look is `iconButtonClassName({ size, shape, ground })` (server-safe,
+from `@clossys/designer/atoms` or `/atoms/server`), for a plain element that
+needs it; that element still needs an accessible name.
 
 ### `Icon`
 
@@ -1147,8 +1294,40 @@ function Panel() {
 }
 ```
 
-Accepts every prop a plain `<div>` does. No variants — a single raised
-surface, styled with this package's elevation token.
+Accepts every prop a plain `<div>` does, plus `variant` and `ground`:
+
+- `variant="raised"` (default, unchanged): raised fill, `rounded-control`,
+  the hairline elevation shadow.
+- `variant="plate"`: a content plate. It takes the other ground from the
+  section it sits on (on a base section a sunken fill, on a sunken section
+  a raised fill, on an inverse section the inverse raised fill), with
+  `rounded-panel` and no stroke or shadow. The card is made by the change
+  of ground, not by a box.
+- `variant="outline"`: a product panel. Raised fill, one panel edge
+  (`--ui-border-panel` in `line-panel`, or `line-on-inverse` on an inverse
+  section), `rounded-panel`, never a shadow of its own.
+
+Plate and outline read the panel identity slots (`--radius-panel`,
+`--ui-border-panel`, `--color-line-panel`; see TOKENS.md). Each defaults
+to the surface radius and a hairline in the base line, so a brand that
+leaves them unset looks exactly as before.
+
+`ground` (`"base" | "sunken" | "inverse"`, default `"base"`) names the
+section the card sits on. An atom cannot see its section, so the block
+that places a plate passes the ground it already knows.
+
+```tsx
+import { Card } from "@clossys/designer/atoms/server";
+
+function Plates() {
+  return (
+    <div className="grid gap-lg">
+      <Card variant="plate" ground="sunken">A plate on a sunken band.</Card>
+      <Card variant="outline">A product panel.</Card>
+    </div>
+  );
+}
+```
 
 ### `Breadcrumb`
 
@@ -1347,6 +1526,11 @@ function UserAvatar() {
 `src` is omitted, or the image fails to load, falls back to initials
 derived from `alt`. Not interactive and composes no other atom — plain
 markup, like `Badge`/`Card`.
+
+`@clossys/designer/atoms/server` exports a hook-free `Avatar` with the same
+props and markup. It shows the image when `src` is given and the initials
+otherwise; it cannot switch to initials when an image fails to load (that
+needs state), so use the client `Avatar` for image URLs that may break.
 
 ### `Spinner`
 
@@ -2064,6 +2248,66 @@ control is react-aria-components' own `Button` (not this package's own
 own sections already document), for the same keyboard/focus-visible
 handling every other interactive control in this package gets.
 
+### `StatusMark`
+
+```tsx
+import { StatusMark } from "@clossys/designer/atoms/server";
+
+function ReportState() {
+  return <StatusMark tone="success">Received</StatusMark>;
+}
+```
+
+A small tone mark and a label for one data state in a row, a table cell or
+a panel header. `tone`: `"success" | "warning" | "danger" | "info" |
+"neutral"`. Each tone has its own shape as well as its own colour (success
+a filled circle, warning a triangle, danger a diamond, info an open circle,
+neutral a dash), so the states stay apart in a greyscale brand or for a
+reader who cannot tell the colours apart. The label is required and always
+visible; the mark is an `aria-hidden` SVG, so colour and shape only repeat
+what the words say. The label uses
+the tone's `status-*-text` colour (neutral: `ink-secondary`), checked at AA
+against the raised surface in both themes (`designer-contrast-check`).
+Lighter than `Badge`, which has a tinted pill: use `StatusMark` where
+several states sit close together. Server-safe.
+
+### `Meter`
+
+```tsx
+import { Meter } from "@clossys/designer/atoms/server";
+
+function LeverageRow() {
+  return (
+    <Meter value={3.4} scaleMax={5} limit={3} direction="max" tone="danger" valueText="3.4x" limitText="limit 3.0x" />
+  );
+}
+```
+
+A value drawn against a scale, optionally against a limit. One row of
+visible text (`valueText`, then `limitText`) above a thin bar. `limit`
+draws a tick at the `--ui-border-rule` width and shades the disallowed
+side: after the limit for `direction="max"` (a cap, the default), before it
+for `direction="min"` (a floor). Without a limit it reads as a share.
+Supply `previous` with nonblank `previousText` to show a prior measurement.
+The prior value must be finite and within zero and `scaleMax`; a dashed
+hairline marks its position and the authored history text stays visible
+outside the decorative bar. Orphaned history fields are refused.
+`tone` (`MeterTone`) is a status tone, `"neutral"` for a plain quantity, or
+`"accent"` for a plain quantity in the brand accent (a share or an
+allocation, never a state). `warning` fills with diagonal hatching and
+`info` with a tinted bar inside a ring (both at the `--ui-border-rule`
+weight), so neither depends on colour alone; the other tones fill solid. `emphasis` (`MeterEmphasis`, default
+`"default"`) set to `"figure"` makes the value the focal number of its
+panel: `text-h1`, `text-h0` via `@md:text-h0` at container widths of 28rem or more, normal weight,
+tabular, with the limit beside it in secondary ink and the bar under both.
+
+The bar is `aria-hidden` and there is no `<meter>` element: the visible
+text carries the meaning for every reader. Positions use logical inline
+properties, so the bar fills from the inline start in both directions. A
+value beyond `scaleMax` draws a full bar. A non-finite or non-positive
+`scaleMax`, or a non-finite or negative `value`/`limit`, throws a
+`RangeError`. Server-safe.
+
 ## Blocks
 
 A block owns the internal layout of multiple named regions — regions that
@@ -2668,6 +2912,25 @@ region is `flex flex-wrap`, and `search` grows to fill the space between
 `leading` and `trailing`, falling onto its own row rather than overflowing
 once the three regions no longer fit on one line.
 
+### Destination collections
+
+Use `Items` for a bounded list of destinations. Each title is the item's one
+link; descriptions and icons stay outside its accessible name. Rows support
+plain, rule or plate treatment and preserve authored reading order.
+
+```tsx
+import { Items } from "@clossys/designer/blocks/server";
+
+<Items
+  arrangement="rows"
+  treatment="plate"
+  items={[
+    { id: "guides", heading: "Guides", description: "Find instructions by topic.", href: "/guides" },
+    { id: "support", heading: "Support", description: "Get help with your next step.", href: "/support" },
+  ]}
+/>;
+```
+
 ### `NavGrid`
 
 ```tsx
@@ -2692,23 +2955,27 @@ and the card grid itself: two regions that differ in kind, and a page can
 hold two `NavGrid`s (two separate card groupings under two headings),
 which is what makes this a block rather than a view.
 
-**Each card is a real `<a>` or `<button>`, not a `<div>` with an
-`onClick`.** `items` is a discriminated union: an item with `href` renders
-via this package's own `Link` atom (`variant="standalone"` — the variant
-this README's own `Link` section already documents for exactly this case,
-"a link that IS the whole clickable unit on its own... a nav item"); an
-item with `onSelect` renders via this package's own `Button` atom
-(`variant="ghost"`). `href`/`onSelect` are mutually exclusive at the type
-level, not just by convention. `icon`, `title`, and `description` are all
-rendered INSIDE that single element (not a wrapping `<div>` around a
-smaller link), so clicking or tabbing to anywhere on the card — not just
-the title text — activates it; `icon` is `aria-hidden`, decorative
-reinforcement for a title that's already the card's real accessible name.
+**Each item has a real link or button.** `items` is a discriminated union.
+An ordinary item with `href` has one title-named `<a href>` with a visible
+chevron and a stretched hit area covering the tile. The icon and description
+sit outside the anchor. Tab reaches the title link once, and its focus ring
+surrounds the tile.
 
-Cards lay out one per row on narrow viewports, two from the `tablet`
-breakpoint, three from `desktop` — a plain Tailwind responsive grid
-generated from this package's own breakpoint tokens, no JS breakpoint
-state, the same pattern `DetailView`'s own responsive field grid uses.
+If a linked item's description contains a link, button or field, NavGrid
+renders a separate title link without a stretched overlay. The title link
+has its own focus outline; description controls retain their own hit areas
+and keyboard stops. Interactive content in a linked item's title or icon
+throws a `TypeError`. An item with `onSelect` renders through the package's
+`Button` atom (`variant="ghost"`), with its icon, title and description inside
+the one button. `href` and `onSelect` are mutually exclusive at the type
+level. Icons are decorative reinforcement for the title.
+
+Eligible all-linked collections of two to six items with consistent icon
+presence and noninteractive descriptions use the shared linked-item layout.
+Single-item, larger, mixed-icon, mixed link/button and interactive-description
+collections retain control tiles and authored order: one per row below
+tablet, two from tablet and three from desktop. Action tiles keep their
+raised, bordered button style.
 
 ### `SectionHeader`
 
@@ -2775,8 +3042,9 @@ exactly that reason: this package owns visual vocabulary, never copy (see
 "Public contract" above — audience-facing words belong to
 `@clossys/writer`).
 
-`Hero`, `FeatureGrid`, `Faq` (including its server implementation),
-`OrderedStepSequence`, and `StatusList` share one closed `ground` contract:
+`Hero`, `FeatureGrid`, `Faq`
+(including its server implementation), `OrderedStepSequence`, and
+`StatusList` share one closed `ground` contract:
 `"base" | "sunken" | "inverse"` (default `"base"`). Base inherits the
 ambient page surface, preserving existing composition and markup, while
 sunken and inverse paint their semantic surfaces explicitly. Every ground
@@ -2790,6 +3058,11 @@ contrast boundary, while the adjacent visible label remains the meaning-bearing
 channel.
 
 ### `Hero`
+
+`Hero size="compact"` uses the section heading ramp and rhythm. Its heading
+remains an `h1` by default; `headingLevel={2}` still supports a later hero.
+`size="display"` is the default. Omitting `size` or selecting the supported
+`"default"` alias keeps the same display treatment.
 
 ```tsx
 import { Hero } from "@clossys/designer/blocks";
@@ -2851,6 +3124,184 @@ Use `ground="sunken"` or `ground="inverse"` for those semantic section
 grounds; the block applies the matching painted surface and ink policy as one
 unit. The default base ground inherits the surrounding base surface.
 
+`align` (`HeroAlign`: `"start"` or `"center"`, default `"start"`) sets how the
+text block lines up. `"center"` centres each line and the actions row, holds
+the text block to the prose measure (`--ui-width-prose-max`), balances the
+heading's lines and pretty-wraps the description, so a centred opening or
+closing message wraps sooner than the column it sits in. A `split`
+composition keeps its two columns.
+
+```tsx
+<Hero heading="Heading text" description="Subheading copy goes here." actions={<Button>CTA label</Button>} align="center" />
+```
+
+### `SectionIntro`
+
+```tsx
+import { SectionIntro } from "@clossys/designer/blocks/server";
+
+<SectionIntro eyebrow="Eyebrow" heading="Section heading" description="One line of how." />;
+```
+
+A section's header group: eyebrow, heading, description and optional
+actions, in that order, with one rhythm. The eyebrow says what the section
+is, the heading why it matters, the description how; the module (a grid,
+a figure, a list) follows the intro. `emphasis="display"` is a page's
+opening (`text-display-m`, `text-display-l` from `tablet`, `leading-display`;
+gaps `mt-sm` / `mt-2xl` / `mt-3xl`), `emphasis="section"` (the default)
+every band after it (the section-title step, `leading-heading`; gaps
+`mt-sm` / `mt-xl` / `mt-2xl`). Each gap is larger than the heading's own
+line gap and grows toward the action, so the group reads as one unit. The
+eyebrow is a small tracked label (`text-body-s`, medium, uppercase) in the
+ground's accent ink (`accent-text`, `accent-on-inverse` on an inverse band).
+The actions row (`data-section-intro-actions`) carries the ground's primary
+ink, so an `outline` button in it takes a readable edge on every ground.
+`Hero` and `ContentSection` both compose it; use it directly only for a
+header group outside those blocks. It paints no surface: `ground` picks the
+ink only.
+
+### `ContentSection`
+
+```tsx
+import { ContentSection, FeatureGrid, MediaFigure } from "@clossys/designer/blocks";
+
+function ProductSection() {
+  return (
+    <ContentSection eyebrow="Eyebrow text" heading="Section heading" description="One supporting line.">
+      <FeatureGrid items={[{ id: "one", heading: "Item heading", description: "Item copy." }]} />
+      <MediaFigure caption="Caption text">
+        <img src="/media.png" alt="Media description" />
+      </MediaFigure>
+    </ContentSection>
+  );
+}
+```
+
+One section anatomy for long-form marketing pages: a header group (an
+optional eyebrow, heading, description and actions row) followed by a
+module slot holding one or more content modules — a `FeatureGrid`,
+`StatusList`, `OrderedStepSequence` or `Faq` rendered without its own
+heading region, a `MediaFigure`, or any combination. Spacing is fixed by the
+block so sections composed with it do not drift: the header group is a
+`SectionIntro` at the section emphasis (eyebrow `mt-sm` to the heading,
+heading `mt-xl` to the description, `mt-2xl` to the actions, each gap wider
+than the one before it) and never runs wider than the prose measure
+(`--ui-width-prose-max`); the header group and each module sit one step
+apart (`gap-2xl`, `gap-3xl` from `tablet-lg`); modules take the full column.
+
+`headingLevel` (`ContentSectionHeadingLevel`: `2` to `6`, default `2`) picks
+the heading element; at every level the heading is a section title in the
+display face that scales with the viewport (`text-h1`, `text-h0` from
+`tablet`, `text-display-m` from `tablet-lg`, with `leading-heading`), one
+display step under `Hero`'s, and the description sits at `text-body-l`. `align` (`ContentSectionAlign`: `"start"` or `"center"`, default
+`"start"`) lines the header group up; modules always take the full column.
+`ground` selects the header group's ink and paints no surface. The band
+around it (ground surface and column) is a `SectionFrame`'s.
+An explicit `size` owns the section's vertical padding and header scale:
+
+| Size | Below 768px | From 768px | From 1280px | Header scale |
+| --- | --- | --- | --- | --- |
+| `compact` | 48px | 64px | 96px | section |
+| `standard` | 64px | 96px | 128px | section |
+| `display` | 96px | 128px | 160px | display |
+
+The largest step composes the existing 128px and 32px spacing tokens.
+Omitting `size` leaves vertical padding to the outer `SectionFrame` and
+lets `emphasis` set the header scale. When supplying `size`,
+remove outer vertical padding so the two frames do not add their spacing.
+`emphasis` (`ContentSectionEmphasis`: `"section"` or `"display"`, default
+`"section"`) sets the header group's scale when `size` is omitted; `"display"` gives a statement
+band (a header and its actions, no module or media) the `SectionIntro`
+display step and rhythm. `headingLevel` still sets the element.
+
+`actions` holds one or two button-styled links (`buttonLinkClassName`), at
+most one `primary`, the other `outline`. Where they belong depends on the
+shape, and the component renders what it is given: a stacked section with
+modules or media after its header takes none (link the module's items with
+`href`, or put one link in the footnote); a header-only section takes them
+as its last element, with no footnote after them; a split takes them in its
+text column, never under the visual. Publisher's content contract refuses
+the other shapes. `footnote` (`ReactNode`) is an
+optional one-sentence aside closing the band: `text-body-s` in the ground's
+secondary ink, at most the prose measure, following `align`, and holding at
+most one underlined link. It renders as the last child of the section (in a
+split, the last line of the text column) with `data-content-section-footnote`.
+Never put a call to action in it.
+
+Use it instead of `SectionHeader` (settings scale, `text-h3`) for a
+marketing section, and instead of `MarketingChapter` when the section needs
+an eyebrow, actions, or modules other than prose, or already sits in a
+`SectionFrame`. Props are `ContentSectionProps`: the regions above, plus
+`children`, `className`, `style` and every native `<div>` attribute except
+`title`.
+
+**Layouts.** `layout` (`ContentSectionLayout`) is `"stacked"` (the default),
+`"split-start"` or `"split-end"`. A stacked section may take `media`, rendered
+after its text module. From `tablet-lg` (1024px), a split puts the header
+group in a 5/12 column and its companion in a 7/12 column, `gap-x-4xl` apart.
+Media takes the companion column; without media, children take it. Without
+either, the eyebrow and heading take 5/12 and description, actions and
+footnote take 7/12. Header-only splits align at the top; media splits centre
+vertically. Below 1024px they stack in DOM reading order: heading first,
+then supporting content. `split-start` moves the companion with grid
+placement only. `align` is stacked only; split headers line up at the start.
+The supported `layout="split"` and `mediaSide="start" | "end"` aliases
+use a media-based split layout and require media.
+
+```tsx
+import { ContentSection, Items } from "@clossys/designer/blocks";
+
+function SplitSection() {
+  return (
+    <ContentSection
+      layout="split-start"
+      size="standard"
+      eyebrow="Eyebrow text"
+      heading="Section heading"
+      media={<img src="/media.png" alt="Media description" />}
+    >
+      <Items
+        arrangement="rows"
+        treatment="rule"
+        columns={1}
+        items={[
+          { id: "one", heading: "Topic one" },
+          { id: "two", heading: "Topic two" },
+        ]}
+      />
+    </ContentSection>
+  );
+}
+```
+
+### `MediaFigure`
+
+```tsx
+import { MediaFigure } from "@clossys/designer/blocks";
+
+function Screenshot() {
+  return (
+    <MediaFigure caption="Caption text" measure="content">
+      <img src="/media.png" alt="Media description" />
+    </MediaFigure>
+  );
+}
+```
+
+Large media as a section module: the media straight on the section ground
+(no panel, fill, padding or shadow) and an optional caption underneath as the
+`<figcaption>`, `gap-sm` below the media in the ground's muted ink. `framed`
+(default `false`) draws one hairline, the ground's line with rounded corners,
+around the media; use it only when the media has no edge of its own. Give
+the media a fluid width so it fits the column at every width and never
+scrolls inside the figure.
+`measure` (`MediaFigureMeasure`: `"column"` or `"content"`, default
+`"column"`) runs it across the whole column or holds it to the content
+measure (`--ui-width-content-max`). `ground` selects the hairline and the
+caption ink. Props are `MediaFigureProps`: those, plus `children` (the
+media), `className`, `style` and every native `<figure>` attribute. Give an
+image its own alt text.
+
 ### `MarketingChapter`
 
 ```tsx
@@ -2872,6 +3323,167 @@ description, and a prose slot for long-form content. Use when the page hero
 already consumed `<h1>` and the next major section needs marketing heading
 scale. `headingLevel` (`2 | 3`, default `2`) picks the title element; `ground`
 follows the same `SectionGround` contract as `Hero` and `FeatureGrid`.
+
+### `Item` and `Items`
+
+```tsx
+import { Item, Items } from "@clossys/designer/blocks/server";
+
+function RelatedResources() {
+  return (
+    <div>
+      <Item id="notice" heading="Reference" meta="Updated" badge={{ label: "Live", tone: "success" }} treatment="plain" size="standard" ground="base" />
+      <Items
+        arrangement="columns"
+        columns={2}
+        treatment="plate"
+        headingLevel={3}
+        items={[
+          { id: "guide", heading: "Guide", description: "Read the reference.", href: "/guide", badge: { label: "Live" } },
+          { id: "examples", heading: "Examples", description: "Explore examples.", href: "/examples", meta: "Reference" },
+        ]}
+      />
+    </div>
+  );
+}
+```
+
+`Item` requires `treatment`, `size` and `ground`; its title defaults to a paragraph.
+Optional `headingLevel={3}` or `headingLevel={4}` selects a semantic heading.
+`Items` defaults treatment
+to plain, ground to base, size to standard, and item heading elements to
+h3 (`headingLevel={4}` selects h4). Unordered columns, bento and stacked
+collections use text-h2 at standard size, text-h1 at display size, and text-h0
+for centred statements. Bento follows the supplied frame size. Rows use
+text-body headings and text-body-s descriptions with inline decorative icons;
+ordered collections and standalone Item retain their measured scale. These
+visual scales do not change heading elements. Rules are hairlines; decorative
+icons use secondary ink. Eyebrow,
+badge and meta share a wrapping row in every treatment. The four status tones
+use a rounded opaque base-surface backing, preserving the Badge text and tint
+pairing on each ground. Neutral keeps its own opaque fill. Badge tone maps to
+the existing Badge atom: neutral (default), success, warning, danger or info.
+The item-level featured field is retired; select the collection treatment.
+
+#### Index configuration: status list
+
+Use unordered `Items` rows when readers look up an item's current status.
+Put each visible status label in `badge`; the optional description explains
+that item. This configuration uses Index's existing shape, reveal and groups
+axes: `rows-1`, `all`, `off` in the example. Labels are authored copy,
+and the badge uses existing semantic tokens. The list follows the row count
+and grouping limits below.
+
+```tsx
+import { Items } from "@clossys/designer/blocks/server";
+
+function FeatureStatus() {
+  return (
+    <section>
+      <h2 id="feature-status-heading">Feature status</h2>
+      <Items
+        aria-labelledby="feature-status-heading"
+        arrangement="rows"
+        columns={1}
+        order="none"
+        reveal="all"
+        treatment="rule"
+        scale="item"
+        items={[
+          { id: "search", heading: "Search", description: "Find a record.", badge: { label: "Live", tone: "success" } },
+          { id: "imports", heading: "Imports", description: "Bring records together.", badge: { label: "In progress", tone: "info" } },
+          { id: "exports", heading: "Exports", description: "Take a copy with you.", badge: { label: "Planned", tone: "neutral" } },
+        ]}
+      />
+    </section>
+  );
+}
+```
+
+Publisher selects this configuration with `kind: "content-section"` and
+an `items` block using `recipe: "topics"`, with `badge.label` as a `CopyRef`.
+Its preview example appears on `catalog/index-function.html`.
+
+| Arrangement | Columns | Counts |
+|---|---|---|
+| columns | 2 | 2, 4, 6 |
+| columns | 3 (default) | 3, 6 |
+| rows | 1 (default) | 2–8 |
+| rows | 2 | even counts from 2–8 |
+| rows | 3 | 3 or 6 ungrouped linked plates, unordered and fully revealed |
+| bento | omitted | 2–6, complete ordered 12-unit rows |
+| stacked | omitted | 2–4 |
+
+Bento spans are third, half, two-thirds or full; an omitted span is half.
+An item cannot overflow its current row even when the total divides by 12.
+At tablet width, a lone third fills its row; desktop keeps its third span.
+Statement requires columns 3, exactly three items and plain or rule treatment;
+its items take heading, description and optional badge only. Items refuse
+the retired featured field, including false. Spans belong to bento; columns
+belong to columns and rows.
+
+Rows may have 2–4 labelled groups, with 2–4 item IDs in each. Groups reference
+every item exactly once, and render members in each group's authored ID
+order. Group labels are caption paragraphs naming `role="group"` containers
+through unique label IDs; item headings retain the selected h3/h4 level.
+Unordered arrangements use a `ul` with `role="list"` and one `li` per item;
+ordered arrangements use an `ol`. Grouped rows use a separate list in each
+group. List items own responsive grid spans.
+
+Link all items or none, up to six distinct normalized destinations. A linked
+item has one title-named anchor; description, badge, meta and visual remain
+outside it. Native controls, finite tabIndex targets (including -1), editable
+content and controlled media are refused in every linked slot. Passive SVG
+`use` and `image` href references are allowed under a literal `<svg>` in the
+supplied element tree. Handlers, focus, editing and interactive descendants
+still make those resources targets. A `foreignObject` resets SVG context;
+a nested literal `<svg>` restores it. An opaque wrapper such as
+`<SpriteIcon><use href="#mark" /></SpriteIcon>` does not establish that
+context, even if it renders an SVG. Other SVG href carriers, including
+`linearGradient`, `radialGradient`, `pattern`, `textPath`, `feImage` and `mpath`,
+are conservatively refused; a refusal does not mean their references are
+intrinsically interactive. The guard walks supplied arrays, fragments and
+element children; it does not execute opaque components or inspect referenced
+symbol shadow trees. Consumers must ensure referenced symbols contain no
+interactive content. These supplied-tree limits also apply to NavGrid's
+private linked plate list (LinkGrid) and Specimen status-row copy. Numeric zero is content
+in every slot; optional whitespace-only copy is omitted. Stable IDs and
+nonblank headings are required.
+
+NavGrid preserves its published frames, counts and presence rules through
+the shared item renderer and retains ownership of its Button controls. Public Item and Items do not expose those
+private policies.
+
+`Items` keeps source reading order and accepts `order="none"` (the default),
+`"numbered"`, or `"connected"`. Numbered items use ordered-list semantics;
+numbering continues across labelled groups in their rendered membership order.
+Connected items take three to five steps in columns or a stack. Four steps
+without lanes are accepted with a warning; four with lanes produce no count
+warning. Connected columns keep the authored two- or
+three-column layout, including an incomplete final row.
+
+Connected items can take `end="ends"` (the default) or `"continues"`, optional
+`endLabel`, and a caption when at least one item has a visual. The terminal comes
+after the final step. A continuation without an authored label is decorative;
+empty labels are omitted. End fields, captions, and lanes belong to connected
+order.
+
+For two actors, supply exactly two lane definitions as a readonly array of
+`{ id, label }` entries and give every item its lane ID. Lanes require connected
+columns or a stack of three to five steps. The first step uses the first
+defined lane, both lanes appear, and each reference must match a definition. Lane definitions do
+not change step reading order.
+
+`reveal="all"` is the default. `reveal="disclose"` takes four to six rows with
+descriptions and supports numbered order and labelled groups. Disclosed items
+cannot take item `href`s, visuals, or connected order. Heading, icon, eyebrow, meta,
+and badge-label content must be phrasing content without authored controls;
+answers can contain links and other controls. Supplied native elements are
+checked recursively, while opaque component output is not executed by the
+guard. The ordinary entry uses independent disclosures; the server entry uses
+independent native details. Both start closed and retain their answer content.
+
+Items accepts the standard optional `aria-labelledby` string to name its actual list from an authored heading outside the collection. Grouped inner lists are named by their own group label; the external reference names ungrouped lists. `ItemsLane` is exported with the Items types.
 
 ### `FeatureGrid`
 
@@ -2904,13 +3516,11 @@ different headings), which is what makes it a block rather than a view
 
 Each item's `icon` is optional and `aria-hidden` — decorative
 reinforcement for a heading that already carries the meaning, the same
-treatment `NavGrid`'s own `icon` slot gets. Item headings are deliberately
-NOT real heading elements (a homogeneous repeat, not named regions, the
-same reasoning `NavGrid`'s cards apply) — the grid's own optional
-`heading` (via `headingLevel`, default `2`) is the only real heading
-region. Items lay out one per row on narrow viewports, two from `tablet`,
-three from `desktop` — the same responsive grid `NavGrid` uses.
-`ground` uses the shared closed section-ground contract above.
+treatment `NavGrid` gives its icons. Item titles are paragraphs; the optional
+collection heading uses `headingLevel` (default `2`). The published grid keeps
+arbitrary item counts and its automatic one-column, tablet two-column and
+desktop three-column layout. `ground` uses the shared section-ground contract.
+Use `Items` for authored columns, treatments, statements, links and visuals.
 
 ### `OrderedStepSequence`
 
@@ -2929,12 +3539,267 @@ import { OrderedStepSequence } from "@clossys/designer/blocks";
 An editorial `<ol>`, not a stepper or progress indicator. Each ordinal remains
 authored text, while decorative connectors are hidden from assistive technology
 and render only between adjacent items. The sequence changes from a vertical
-column/connector to a horizontal row/connector at `tablet`. Set
+column with a rail running from one ordinal down to the next to a horizontal
+row with a hairline running from one ordinal across to the next at `tablet`;
+the connector is `line-strong`, so it stays visible in light and dark
+schemes. The ordinal is a 32px disc in the accent tint with an
+`accent-text` numeral (an inverse-line ring with on-inverse ink on an
+inverse band). Step headings use `text-body-l`, body font and medium weight, the
+`label` above as a small tracked label and the description at `text-body`;
+Set
 `ground="sunken"` or `ground="inverse"` selects the shared matching painted
 surface, ink, border, and connector policy. Base inherits its surrounding
 surface. `headingLevel` controls the real heading
 elements (default `2`). `eyebrow` is the same optional label slot `Hero` and
 `FeatureGrid` ship, rendered above the heading when supplied.
+
+Each item's optional `label` is its actor tag, set above the step heading.
+Ordinals remain authored strings or numbers. Use connected `Items` for lanes,
+visuals, item destinations, captions and explicit termination.
+
+### Scene
+
+A static figure for a process or provenance story, accepted by the existing
+`ContentSection.media` React-node slot. `converge` brings three-to-eight
+documents into one record; `evidence-trail` traces a result to two-to-four
+cited documents; `approval-chain` brings two-to-four findings through a review
+node to one decision and a named role. Exactly one finding is the subject.
+
+Import `Scene`, `layoutScene`, `sceneRelationText` and their types from
+`@clossys/designer/blocks` or `/blocks/server`. Supply an explicit `input.seed`,
+a separate caller-unique `id`, an authored figure `label`. Optional `relationLabel` names row source lists.
+Reuse the seed across instances for the same geometry; each instance needs its
+own id. `sample` is an authored caption. Figure labels accept React nodes; data copy is plain text. Input accepts no
+coordinates, CSS, markup or classes. Invalid counts throw `RangeError`;
+invalid structure, dangling relations and unwired sources throw `TypeError`.
+Converge sources require one or two relations each, at most twelve total.
+
+`layoutScene` is pure and needs no measurements. SVG is decorative; complete
+linear HTML carries every source, origin, citation, status and subject path at
+all widths. Only SVG titles are shortened to fit the drawing; linear copy stays
+complete. The drawing appears at container widths of 800px, 520px and 900px for
+converge, evidence-trail and approval-chain, capped at 880px, 560px and 1000px.
+Below those thresholds the linear form is capped by `--ui-scene-card-w`
+(default `30rem`). At desktop widths the HTML is clipped, never removed.
+
+Documents remain flat. Seeded disorder controls horizontal nudge, defaulting
+to medium for converge and low for the other templates; none produces zero
+nudge. `--ui-scene-card-w` is structural and non-brandable; brand overrides
+are refused. Wire anchors follow each document's right-edge midpoint.
+All paints and radii read live theme tokens. A converge relation may
+have one emphasis accent; approval-chain uses primary ink for its subject and
+reserves its sole accent for the decider ring. Scenes have no controls, hooks,
+script, animation or focus stops.
+
+### AnatomyCallouts
+
+A static specimen panel with numbered markers and an ordered explanatory key.
+Supply a unique instance `id`, the figure `label`, its `panel`, three to five
+`markers`, and the authored `keyLabel`. Prefer three or five markers. Each
+marker targets the panel title (`header`), one labelled part id, or `footer`,
+in that reading order. Duplicate ids, duplicate targets and reordered markers
+throw `TypeError`; unknown targets or targets without label lines throw
+`RangeError`, as do counts outside three to five.
+
+`legendSide="end"` is the default: figure then key below 1024px, an 8:4 grid
+from 1024px. `legendSide="below"` keeps the key below at the prose measure.
+Each key row composes the public `Item` at its standard text scale.
+Key headings use `headingLevel` 3 by default, or 4. `ground` selects base,
+sunken or inverse key colors. Pass authored sample disclosure as the `sample`
+caption whenever the panel contains illustrative figures. Labels accept React
+nodes and derive accessible names from rendered content, with no English
+fallback. The component is exported from blocks and blocks/server.
+
+`SpecimenPanel` also accepts optional rendering-only `markers`, a target-to-
+number map. They sit first inline on the title, labelled part or footer line;
+unmarked panels keep their existing markup. Both components remain server-safe.
+
+
+### RecordLedger and item visuals
+
+RecordLedger shows one record in a named figure with `form="record"`.
+Record groups contain one-to-six rows or a final owner;
+one-to-three groups are allowed. Multi-column records have one group per column.
+Provide a unique caller `id` seed for each record instance, even with identical
+data. The component generates length-prefixed DOM IDs for the figure, head and
+groups from that seed; the figure does not use the raw caller `id`:
+the title and group heading IDs derive from it. `headingLevel` is 3 or 4.
+Record titles and captions require visible content: blank
+strings, booleans and empty recursive arrays are rejected; numeric zero is valid.
+
+Two columns are stacked below 768px and equal from 768px. Three columns become
+two plus a full-width third at 768px, then three from 1024px; a final owner gets
+4/4/3 shares, otherwise the columns are equal. All native margins and list
+padding are reset by these components. Motion is static, including reduced motion.
+RecordLedger does not reveal on scroll. Inverse-ledger
+status labels use inverse primary ink for normal-text contrast; glyph colors and
+shapes remain the existing status marks. Other grounds retain toned label ink.
+
+A record flag needs caller-owned `flagLabel` copy; at most one row may be
+flagged. Use a `SpecimenPanel` status-rows part for a compact item visual.
+`mobileRows={3}` retains all rows and hides later rows only below tablet.
+Status-row labels, details and status copy reject native interactive nodes in
+their own supplied content, including when the panel is inside a linked Item.
+
+```tsx
+import { Items, SpecimenPanel, RecordLedger } from "@clossys/designer/blocks/server";
+
+function LedgerExample() {
+  const rows = [
+    { id: "one", label: "Record one", detail: "Due tomorrow", status: { tone: "neutral" as const, label: "Open" } },
+    { id: "two", label: "Record two", detail: "Received today", status: { tone: "success" as const, label: "Received" } },
+  ];
+  return <>
+    <RecordLedger id="example-ledger" form="record" head={{ title: "Review record" }} groups={[{ id: "checks", label: "Checks", rows }]} caption="Sample data." />
+    <Items arrangement="bento" treatment="rule" items={[
+      { id: "one", heading: "Review records", span: "two-thirds", href: "/records", visual: <SpecimenPanel parts={[{ id: "checks", type: "status-rows", label: "Sample records", items: rows }]} /> },
+      { id: "two", heading: "Review guidance", span: "third", href: "/guidance" },
+    ]} />
+  </>;
+}
+```
+
+### `Matrix`
+
+```tsx
+import { Matrix } from "@clossys/designer/blocks";
+
+<Matrix
+  sides={[
+    { id: "first", label: "First option", heading: "A shared record", points: ["One source", "Clear dates"] },
+    { id: "second", label: "Second option", heading: "A shared view", points: ["One view", "Clear owners"] },
+  ]}
+  featured="second"
+/>;
+```
+
+Exactly two sides on equal `Card` plates. Each side has a distinct,
+whitespace-free `id`, an optional `label` rendered as a caption paragraph, and a
+required `heading` rendered at the selected semantic heading level. Label both
+sides or neither; mixed label presence is refused. Supply the same primary form
+on both sides: two to
+four points with equal counts, or a visual. An optional description supplies
+lead copy alongside points or a visual; description alone is refused. Points
+and visuals cannot be combined. Optional description rows stay aligned when
+only one side has supporting copy.
+
+`featured` names one side's id and adds the accent top rule without changing
+reading order or either plate's fill. `headingLevel` defaults to `3`; `ground`
+defaults to `base`. Sides stack below `tablet`, or `tablet-lg` when they carry
+visuals, then share subgrid rows for aligned copy and visuals. All styling uses
+the existing plate, ground, typography and accent tokens. Server-safe.
+
+### `Specimen`
+
+```tsx
+import { Specimen } from "@clossys/designer/blocks/server";
+
+<Specimen
+  label="An order record with its delivery fields, two checks and the stock level against its floor."
+  panels={[
+    {
+      id: "order",
+      title: "Order 1042",
+      meta: "Placed 1 March",
+      status: { tone: "info", label: "Open" },
+      parts: [
+        {
+          id: "fields",
+          type: "fields",
+          items: [
+            { id: "qty", label: "Quantity", value: "240 units" },
+            { id: "due", label: "Due", value: "12 March" },
+          ],
+        },
+        {
+          id: "checks",
+          type: "status-rows",
+          label: "Checks",
+          items: [
+            { id: "count", label: "Stock count", status: { tone: "warning", label: "In progress" } },
+            { id: "labels", label: "Labels printed", status: { tone: "success", label: "Done" } },
+          ],
+        },
+        {
+          id: "stock",
+          type: "meter",
+          label: "Stock level",
+          value: 38,
+          scaleMax: 100,
+          limit: 25,
+          direction: "min",
+          tone: "success",
+          valueText: "38 units",
+          limitText: "floor 25",
+        },
+      ],
+      footer: { assignee: { initials: "AL", name: "Alex Lane", note: "owner" } },
+    },
+  ]}
+/>;
+```
+
+Native product-UI evidence for a marketing band, in place of screenshots
+and iframes: a `<figure>` named by the required `label` (its
+`aria-label`: what the specimen shows, 12 to 25 words, no claims), holding
+1 to 3 `SpecimenPanel`s built from atoms and tokens and rendered on the
+server. Every word and number arrives through props, so the specimen is
+real text, the size of its content, and reflows at 390px.
+
+`arrangement` (`SpecimenArrangement`) is `"single"` (the default, exactly
+one panel), `"row"` (two or three panels side by side from `tablet`, three
+across from `desktop`: put a row of three in a stacked band, not in a
+split's visual column), `"stack"` (one column) or `"flow"` (one column
+joined by a hairline connector; `connector` is the short caption after the
+first panel, allowed only with `flow`). A `SpecimenPanel` is the `Card`
+outline lifted by the panel elevation (raised fill, one panel edge,
+`rounded-panel`, the `--ui-elevation-panel` shadow, which defaults to
+`--ui-elevation-floating`), so it reads as
+product UI on a stage: a title row (`title` at `text-body-l`, `meta`,
+`status`, optional `badge`), 1 to 3 `parts` and an optional `footer` (an assignee's initials
+on an accent-tint disc beside their name, a note), each separated by a
+hairline. Body text is `text-body`, labels and secondary lines
+`text-body-s`; part labels are sentence case. Badge labels use the atom's
+`text-caption` scale. Secondary lines use secondary ink, which holds AA
+on the raised fill. A badge has an authored
+`label` and optional existing Badge `tone`: neutral (the default), success,
+warning, danger or info. It can appear alongside the state or name a header
+on its own. Empty labels and unsupported tones are refused.
+
+The figure and each panel are size containers (`@container`), so a panel
+responds to its own width, not the viewport's: padding is `p-lg`, `p-xl`
+via `@md:p-xl` once the panel reaches 28rem; a table is a stacked record until
+`@md:table` applies at 28rem; four field columns use `@lg:grid-cols-4` at 32rem. A panel in a third-width
+card or a split column therefore keeps the narrow layout even on a wide
+screen.
+
+Parts (`SpecimenPart`, by `type`): `"fields"` (a `<dl>` in 1, 2 or 4
+columns, default 2, with `@lg:grid-cols-4` only at container widths of 32rem or more); `"status-rows"`
+(a `<ul>` of label, detail and `StatusMark`; optional `mobileRows: 3` hides
+later rows below the 768px viewport breakpoint while retaining them in the
+DOM); `"meter"` (the `Meter` atom
+at `emphasis="figure"`, the value as the panel's focal number, with its
+label, state and note, forwarding optional paired `previous`/`previousText`
+to the same Meter); `"table"` (a real `<table>` of at most 4
+columns and 5 rows with a visually hidden `caption`; below the 28rem
+container width required by `@md:table` each row reflows to a stacked record of label/value pairs, with explicit table
+roles so the semantics survive the display change); `"schedule"` (an
+`<ol>` of dated rows on a hairline rail); `"shares"` (names with a
+percentage `Meter` on a scale of 100, in the accent, or in the share's
+`status` tone when it has one); `"files"` (a mono format tag, a
+name and a source).
+
+Static by design: no link, button, input, hover state or focus stop, no
+internal or horizontal scroll, and no `ground` prop: specimens never sit
+on an inverse band. Budgets are validated and throw rather than crowd the
+panel: 3 panels, 3 parts per panel, 6 rows per part, a 4 by 5 table with
+one cell per column, shares from 0 to 100, and a non-blank `label`
+(`TypeError`).
+
+A specimen resets its own user-agent spacing (`m-0` on the figure,
+paragraphs, `<dl>`/`<dd>` and lists, `p-0` on lists and table cells), so it
+renders the same with or without a CSS reset; its list rows are flex boxes,
+so no marker shows either way.
 
 ### `StatusList`
 
@@ -2998,12 +3863,24 @@ are a homogeneous repeat. A page can hold two `Faq`s (a general FAQ block
 and a product-specific one further down the page), which is what makes it
 a block rather than a view (test 3).
 
-**Built on this package's own `Disclosure` atom, one per item** — see
-`Disclosure`'s own section above for the accessibility contract it already
-supplies (real `aria-expanded`/`aria-controls` wiring, Enter/Space-and-
-click toggling, collapsed content kept in the DOM rather than unmounted).
-None of that is reimplemented here: `Faq` renders one `Disclosure` per
-question and nothing more. Each pair expands and collapses
+**Built on react-aria-components' own `Disclosure`/`DisclosurePanel`, one
+per item** — the primitives the `Disclosure` atom wraps, with the same
+accessibility contract (real `aria-expanded`/`aria-controls` wiring,
+Enter/Space-and-click toggling, collapsed content kept in the DOM rather
+than unmounted). `Faq` composes them directly so each row takes the FAQ
+recipe, shared with the server implementation: the whole row is the hit
+area (full width, generous vertical padding), the question sits at the
+`body-l` step, a Designer `ChevronDown` at the row's end turns half a turn
+when open (no transition under reduced motion), and the answer wraps at
+the prose measure. Questions sit between ground-matched hairlines, and
+the trigger carries the package-standard focus-visible outline. The
+server implementation hides `summary`'s native marker so the chevron is
+the one open/closed cue. The answer's height eases open and shut, CSS
+only, on the motion tokens and instant under reduced motion: the server
+rows ease `::details-content` (`details-motion`; a row must stay in block
+flow, since a flex `details` does not ease its content height), the client
+rows ease React Aria's `--disclosure-panel-height`
+(`disclosure-panel-motion`). Each pair expands and collapses
 INDEPENDENTLY — `Faq` holds no shared "which one is open" state and
 renders no `DisclosureGroup`, so opening one question never closes
 another, unlike a coordinated accordion.
@@ -4444,10 +5321,10 @@ import { Search } from "@clossys/designer/icons";
 <Icon glyph={Search} label="Search" />;
 ```
 
-32 `IconNode` exports — plain data, no components, no rendering logic of
+40 `IconNode` exports — plain data, no components, no rendering logic of
 any kind. See "Icon" (above, under "Atoms") for the render contract that
 consumes this data; this section covers the data itself: where it came
-from, how the 32 were chosen, and how to keep it current.
+from, how the 40 were chosen, and how to keep it current.
 
 ### A subpath of `ui`, not a separate package
 
@@ -4474,7 +5351,7 @@ it is not repeated here.
 **The argument that DOES hold, and is why this data is still vendored
 rather than a direct `lucide-react` dependency:** insulation from upstream
 renaming and churn. This set already crossed one Lucide rename in the
-version it's pinned at — four of its 32 names resolve to a Lucide glyph
+version it's pinned at — four of its 40 names resolve to a Lucide glyph
 published under a *different* name in the pinned release (`AlertTriangle`
 → `triangle-alert`, `Home` → `house`, `CheckCircle` → `circle-check-big`,
 `XCircle` → `circle-x`; see "Third-party notices" below for the full
@@ -4483,11 +5360,14 @@ Lucide's own renames as they happen (churn a consumer of THIS package never
 asked for) or pinning a `lucide-react` version directly (which still drifts
 from whatever else in a consumer's own tree might depend on a newer one).
 Vendoring the path data once, under this package's own stable names, means
-this set's 32 names never move under a consumer's feet regardless of what
+this set's 40 names never move under a consumer's feet regardless of what
 Lucide does next — Lucide itself has moved on to 1.30 already; this data
-stays pinned at 1.23.0 until a deliberate refresh (see below).
+stays pinned at 1.23.0 until a deliberate refresh (see below). The eight
+content glyphs added later (see the last tier below) were copied from
+Lucide 1.24.0, the release current when they were added; the original
+32 were not refreshed.
 
-### How the 32 were chosen
+### How the 40 were chosen
 
 The standing instruction for this program is explicit: don't build a
 design asset just because an existing consumer repo happens to use it — an
@@ -4560,10 +5440,21 @@ concept `SearchField` is named after), and `ExternalLink` complete this
 tier on the same "present in both full registries, and an unambiguous
 interaction primitive rather than domain vocabulary" basis.
 
+A third tier, added later, serves content lists rather than interface
+chrome: a feature or topic list on a marketing page where a small line
+glyph tells items apart (one per item, muted, never on a heading).
+`Landmark`, `Briefcase`, `Globe`, `ShieldCheck`, `Scale`, `ArrowRight`,
+`FileCheck` and `Layers` are the glyphs such lists actually needed and the
+set above could not supply (a bank or institution, a client role, a
+cross-border topic, a safeguard, a rule or balance, a next step, a
+verified document, a layered stack). They exist because the sectioned
+content blocks name them as allowed item icons, not because one site
+asked for them; a content list may use only that named subset.
+
 22 (3-way intersection) + 2 (status-family completion) + 8 (interaction
-primitives) = **32** — the exact number every count in this section and
-every test in `src/icons/` checks against; nothing was added and then
-quietly dropped to make the arithmetic round.
+primitives) + 8 (content-list disambiguation) = **40** — the exact number
+every count in this section and every test in `src/icons/` checks against;
+nothing was added and then quietly dropped to make the arithmetic round.
 
 Bias throughout was toward leaving an icon OUT rather than in: every name
 above either survived a genuine 3-way intersection, completes a family this
@@ -4589,7 +5480,7 @@ No `Icon` suffix (`Clock`, not `ClockIcon`) — two reasons, both deliberate:
    instead of the redundant `<Icon glyph={ClockIcon} label="..." />`.
 
 The one place this convention has a real cost, not just a stylistic one:
-three of the 32 names are now a literal prefix of another (`Check` of
+three of the 40 names are now a literal prefix of another (`Check` of
 `CheckCircle`, `User` of `Users`, `X` of `XCircle`) — a collision the old
 `*Icon`-suffixed names happened to avoid (`UserIcon` is not a contiguous
 substring of `UsersIcon`, because the plural's extra `s` sits between
@@ -4599,11 +5490,12 @@ these three pairs) and the fix used instead.
 
 ### Third-party notices
 
-The 32 glyphs here are visually derived from [Lucide](https://lucide.dev)
+The 40 glyphs here are visually derived from [Lucide](https://lucide.dev)
 (ISC License) and, for a subset of those, [Feather](https://feathericons.com)
 (MIT License) before that — this package does not depend on `lucide-react`
 at runtime (see "A subpath of `ui`, not a separate package" above), but the
-SVG path data was copied from it, pinned at Lucide **1.23.0**. Full
+SVG path data was copied from it, pinned at Lucide **1.23.0** (the eight
+content-list glyphs at **1.24.0**). Full
 attribution, the rename table, and both license texts:
 [THIRD-PARTY-NOTICES.md](./THIRD-PARTY-NOTICES.md) — required reading
 before touching `scripts/icon-source-data.json`, and shipped in this
@@ -4625,18 +5517,26 @@ changelog, then run `node scripts/generate-icons.mjs` and `npm test`
 — `src/icons/icons.test.ts` and `src/icons/tree-shake.test.ts` both
 re-verify the regenerated data. See `scripts/generate-icons.mjs`'s own
 header comment for the full procedure, including adding a genuinely new
-name (follow "How the 32 were chosen" above first — this set is curated,
+name (follow "How the 40 were chosen" above first — this set is curated,
 not a grab-bag).
 
 ## API
 
 | Export | Kind | Description |
 | --- | --- | --- |
-| `AlertTriangle`, `BookOpen`, `Box`, `Building2`, `Calendar`, `Check`, `CheckCircle`, `ChevronDown`, `ChevronLeft`, `ChevronRight`, `ChevronUp`, `Clock`, `CreditCard`, `ExternalLink`, `FileText`, `Folder`, `Grid3x3`, `Home`, `Info`, `List`, `Lock`, `Monitor`, `Moon`, `Plug`, `Receipt`, `Search`, `Settings`, `Sun`, `User`, `Users`, `X`, `XCircle` | data | The 32 shipped icon glyphs, each an `IconNode` — see "Icon glyph data" above. |
+| `AlertTriangle`, `ArrowRight`, `BookOpen`, `Box`, `Briefcase`, `Building2`, `Calendar`, `Check`, `CheckCircle`, `ChevronDown`, `ChevronLeft`, `ChevronRight`, `ChevronUp`, `Clock`, `CreditCard`, `ExternalLink`, `FileCheck`, `FileText`, `Folder`, `Globe`, `Grid3x3`, `Home`, `Info`, `Landmark`, `Layers`, `List`, `Lock`, `Monitor`, `Moon`, `Plug`, `Receipt`, `Scale`, `Search`, `Settings`, `ShieldCheck`, `Sun`, `User`, `Users`, `X`, `XCircle` | data | The 40 shipped icon glyphs, each an `IconNode` — see "Icon glyph data" above. |
 | `Button` | component | Pressable action built on react-aria-components' `Button`. |
-| `ButtonProps` | type | Props for `Button`: `variant`, `size`, plus everything react-aria-components' own `Button` accepts. |
-| `ButtonVariant` | type | `"primary" \| "secondary" \| "ghost" \| "danger"`. |
+| `ButtonProps` | type | Props for `Button`: `variant`, `size`, `ground`, `trailingIcon` (`quiet` only), plus everything react-aria-components' own `Button` accepts. |
+| `ButtonVariant` | type | `"primary" \| "secondary" \| "ghost" \| "danger" \| "outline" \| "tonal" \| "quiet"`. |
 | `ButtonSize` | type | `"sm" \| "md" \| "lg"`. |
+| `ControlGround` | type | `"base" \| "sunken" \| "inverse"`: the ground a control sits on. |
+| `IconButton` | component | Icon-only control built on react-aria-components' `Button`, named by a required `label`. |
+| `IconButtonProps` | type | Props for `IconButton`: `label` (required), `icon`, `size`, `shape`, `ground`, plus react-aria-components' own `Button` props except `children`, `aria-label` and `aria-labelledby`. |
+| `IconButtonSize` | type | `"sm" \| "md"`: a 36px box with a 44px hit area, or a 44px box. |
+| `IconButtonShape` | type | `"circle" \| "square"`. |
+| `IconButtonClassOptions` | type | `{ size?, shape?, ground? }` for `iconButtonClassName`. |
+| `IconButtonLinkGround` | type | The `ground` of `iconButtonLinkClassName`; the same union as `ControlGround`. |
+| `iconButtonClassName` | function | `(options?: IconButtonClassOptions) => string`: the icon-only control look, server-safe. |
 | `Icon` | component | The glyph render contract: size, colour, accessibility, applied to either `glyph` (structured `IconNode` data) or `children` (raw SVG/a component). |
 | `IconProps` | type | `IconAccessibilityProps & { glyph: IconNode; children?: undefined } \| { glyph?: undefined; children: ReactNode } & { size?: IconSize; className?: string; style?: CSSProperties } & Omit<SVGProps<SVGSVGElement>, ...>`. |
 | `IconSize` | type | `"sm" \| "md" \| "lg"`. |
@@ -4647,8 +5547,10 @@ not a grab-bag).
 | `Badge` | component | Small status/label pill. Plain markup — not interactive, composes no other atom. |
 | `BadgeProps` | type | Props for `Badge`: `variant`, plus every native `<span>` attribute. |
 | `BadgeVariant` | type | `"neutral" \| "success" \| "warning" \| "danger" \| "info"`. |
-| `Card` | component | Raised content surface. Plain markup — not interactive, composes no other atom. |
-| `CardProps` | type | Props for `Card`: every native `<div>` attribute. |
+| `Card` | component | Content surface: `raised` (default), `plate` (ground-relative fill) or `outline` (hairline panel). Plain markup — not interactive, composes no other atom. |
+| `CardProps` | type | Props for `Card`: `variant`, `ground`, plus every native `<div>` attribute. |
+| `CardVariant` | type | `"raised" \| "plate" \| "outline"`. |
+| `CardGround` | type | `"base" \| "sunken" \| "inverse"`: the section ground a `Card` sits on. |
 | `Breadcrumb` | component | Breadcrumb trail built on react-aria-components' `Breadcrumbs`/`Breadcrumb`/`Link`. Carries `Breadcrumb.Item`. An atom: its items are a homogeneous repeat, not distinct named regions. |
 | `BreadcrumbProps` | type | Props for `Breadcrumb`: `children`, `className`, `aria-label`, plus react-aria-components' own `Breadcrumbs` props. |
 | `BreadcrumbItemProps` | type | Props for `Breadcrumb.Item`: `href`, `children`, `className`. |
@@ -4725,6 +5627,13 @@ not a grab-bag).
 | `SeparatorProps` | type | Props for `Separator`: `orientation`, `decorative`, `className`, `style`, plus most of react-aria-components' own `Separator` props. |
 | `Chip` | component | A removable label: a label region plus a remove-affordance region. Distinct from `Badge`, which is static. |
 | `ChipProps` | type | Props for `Chip`: `children`, `isDisabled`, `className`, `style`, plus `onRemove`/`removeLabel` (typed together — `removeLabel` is required whenever `onRemove` is supplied). |
+| `StatusMark` | component | A tone mark (a shape per tone) and a visible label for one data state. Server-safe. |
+| `StatusMarkProps` | type | Props for `StatusMark`: `tone`, `children` (required), plus every native `<span>` attribute. |
+| `StatusMarkTone` | type | `"success" \| "warning" \| "danger" \| "info" \| "neutral"`. |
+| `Meter` | component | A value against a scale and an optional limit, with visible value and limit text and a decorative bar. Server-safe. |
+| `MeterProps` | type | Props for `Meter`: `value`, `scaleMax`, `limit`, `direction`, `tone`, `valueText`, `limitText`, `emphasis`, optional paired `previous`/`previousText`, plus every native `<div>` attribute except `children`. |
+| `MeterTone` | type | `"success" \| "warning" \| "danger" \| "info" \| "neutral"`. |
+| `MeterDirection` | type | `"max" \| "min"`: whether the limit is a cap or a floor. |
 | `PageHeader` | component | Page banner: breadcrumb slot, title, description, actions slot. |
 | `PageHeaderProps` | type | Props for `PageHeader`: `title`, `description`, `actions`, `breadcrumb`, plus every native `<header>` attribute. |
 | `EmptyState` | component | Zero-item placeholder: icon slot, title, description, action slot. |
@@ -4762,7 +5671,7 @@ not a grab-bag).
 | `ConfirmDialogTone` | type | `"neutral" \| "destructive"`. |
 | `Toolbar` | component | Action bar built on react-aria-components' own `Toolbar`: leading actions, search/filter slot, trailing actions, with real roving-focus arrow-key navigation. |
 | `ToolbarProps` | type | Props for `Toolbar`: `leading`, `search`, `trailing`, `className`, `style`, plus most of react-aria-components' own `Toolbar` props (`orientation`, `aria-label`, ...). |
-| `NavGrid` | component | Grid of navigation cards: optional heading, the card grid. Each card is a real `<a>` or `<button>`. |
+| `NavGrid` | component | Grid of navigation cards with an optional heading. Ordinary linked tiles stretch their title link; interactive descriptions keep separate title links and controls. Action tiles use a `<button>`. |
 | `NavGridProps` | type | Props for `NavGrid`: `heading`, `items`, `className`, `style`. |
 | `NavGridItem` | type | One card, as data: `id`, `title`, `description?`, `icon?`, and either `href` or `onSelect` (mutually exclusive). |
 | `SectionHeader` | component | Heading for a section within a page (as opposed to the whole-page `PageHeader`): eyebrow, title, description, actions slot. `level` picks its heading element. |
@@ -4773,18 +5682,106 @@ not a grab-bag).
 | `SectionGround` | type | `"base" \| "sunken" \| "inverse"`. |
 | `SectionGroundClasses` | type | The complete class-map shape for one section ground, including readiness `status` and separately named neutral `offAxis` mark. |
 | `SectionStatusTone` | type | `"success" \| "warning" \| "info"`; closed readiness-dot tones. A separate off-axis disposition uses neutral structural ink. |
-| `HeroProps` | type | Props for `Hero`: `eyebrow`, `heading`, `description`, `actions`, `media`, `headingLevel`, `ground`, `className`, `style`, plus every native `<section>` attribute. |
+| `HeroProps` | type | Props for `Hero`: `eyebrow`, `heading`, `description`, `actions`, `media`, `composition`, `headingLevel`, `size` (`display` or `compact`, with supported `default` alias), `ground`, `align`, `className`, `style`, plus every native `<section>` attribute. |
+| `HeroAlign` | type | `"start" \| "center"`. |
 | `HeroHeadingLevel` | type | `1 \| 2`. |
 | `MarketingChapter` | component | Full-bleed marketing chapter band: marketing-scale title, optional description, prose slot. `headingLevel` picks its heading element. |
 | `MarketingChapterProps` | type | Props for `MarketingChapter`: `title`, `description`, `children`, `headingLevel`, `ground`, `className`, `style`, plus every native `<section>` attribute except `title`. |
 | `MarketingChapterHeadingLevel` | type | `2 \| 3`. |
+| `ContentSection` | component | One marketing section anatomy: a header group (eyebrow, heading, description, actions) held to the prose measure, then a module slot for one or more content modules, at fixed spacing; stacked, or split with a visual in a 7/12 column. |
+| `ContentSectionProps` | type | `ContentSectionStackedProps \| ContentSectionSplitProps`: `eyebrow`, `heading`, `description`, `actions`, `footnote`, `headingLevel`, `size`, `emphasis`, `ground`, `layout`, `media`, `mediaSide` (supported split alias), `align` (stacked), `children`, `className`, `style`, plus every native `<div>` attribute except `title`. |
+| `ContentSectionStackedProps` | type | Stacked section: `layout?: "stacked"`, `align?`, optional `media` after the text module. |
+| `ContentSectionSplitProps` | type | Split section: `layout: "split-start" \| "split-end"`, optional `media`; supported `layout: "split"` alias requires `media` and accepts `mediaSide?`. |
+| `ContentSectionLayout` | type | `"stacked" \| "split-start" \| "split-end" \| "split"` (supported alias). |
+| `ContentSectionMediaSide` | type | `"end" \| "start"`. |
+| `ContentSectionHeadingLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
+| `ContentSectionAlign` | type | `"start" \| "center"`. |
+| `MediaFigure` | component | Large media as a section module: framed media with an optional caption underneath. |
+| `MediaFigureProps` | type | Props for `MediaFigure`: `children`, `caption`, `measure`, `framed`, `ground`, `className`, `style`, plus every native `<figure>` attribute. |
+| `MediaFigureMeasure` | type | `"column" \| "content"`. |
 | `FeatureGrid` | component | Titled collection of feature items: optional eyebrow/heading/description region, a grid of icon/heading/description items. |
 | `FeatureGridProps` | type | Props for `FeatureGrid`: `eyebrow`, `heading`, `description`, `items`, `headingLevel`, `ground`, `className`, `style`, plus every native `<div>` attribute. |
 | `FeatureGridItem` | type | One item: `id`, `icon?`, `heading`, `description?`. |
 | `FeatureGridHeadingLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
+| `Item` | component | Standalone item with required treatment, size and ground; one title link and independent copy, badge, meta and visual slots. |
+| `Items` | component | Canonical bounded collection with labelled groups, numbered or connected order, two actor lanes, and independent disclosed rows. |
+| `ItemData` | type | Stable id and heading; optional description, eyebrow, icon, meta, visual, href, span, badge and connected lane ID. |
+| `ItemProps` | type | ItemData plus required treatment, size and ground, and optional headingLevel (`3 \| 4`; omission keeps a paragraph). |
+| `ItemBadge` | type | ReactNode label and optional existing Badge tone. |
+| `ItemSize` | type | `"standard" \| "display"`. |
+| `ItemTreatment` | type | `"plain" \| "rule" \| "plate"`. |
+| `ItemSpan` | type | `"third" \| "half" \| "two-thirds" \| "full"`. |
+| `ItemsProps` | type | Items, arrangement, columns, treatment, scale, size, groups, headingLevel, ground, order, reveal, lanes, end, endLabel, caption, aria-labelledby and className. |
+| `ItemsArrangement` | type | `"columns" \| "rows" \| "bento" \| "stacked"`. |
+| `ItemsColumns` | type | `1 \| 2 \| 3`; arrangement determines validity. |
+| `ItemsScale` | type | `"item" \| "statement"`. |
+| `ItemsLane` | type | Stable actor ID and authored ReactNode label; connected lanes require exactly two. |
+| `ItemsGroup` | type | Stable id, ReactNode label and an ordered list of canonical item IDs. |
+| `AnatomyCallouts` | component | A specimen panel with 3 or 5 numbered markers and an ordered key. |
+| `AnatomyCalloutsProps` | type | Required caller instance `id`, `label`, `panel`, `markers`, `keyLabel`; optional `legendSide`, `sample`, `headingLevel`, `ground`, `className`, `style`. |
+| `AnatomyCalloutsMarker` | type | Stable `id`, labelled `target`, authored `heading` and `description`. |
+| `RecordLedger` | component | A record on rules, without a panel. |
+| `RecordLedgerProps` | type | `form: "record"` takes unique instance seed `id`, `head`, `groups`, `columns?`, `caption`, `flagLabel?`; accepts `ground`, `headingLevel`, `className`. |
+| `LedgerRowData` | type | Static row: `id`, `label`, `detail?`, `status?` (`tone`, `label`), `flag?`. |
+| `LedgerGroupData` | type | `id`, `label`, either `rows` or last-group `owner` (`initials`, `name`, `note?`), with optional owner-group `note`. |
+| `Scene` | component | Static converge, evidence-trail or approval-chain figure with complete linear HTML. |
+| `SceneProps` | type | Caller-unique `id`, authored `label`, `input`; optional `relationLabel`, `sample`, `headingLevel` and `className`. |
+| `layoutScene` | function | Pure seeded geometry without DOM measurements. |
+| `sceneRelationText` | function | One authored relationship sentence per source wire. |
+| `SceneInput` | type | Closed union of the three launch templates, with an explicit geometry `seed`. |
+| `SceneConverge` | type | Documents, target rows and one-to-two relations per source; at most one emphasis. |
+| `SceneEvidenceTrail` | type | Cited documents, result rows, status and an optional person. |
+| `SceneApprovalChain` | type | Prepared findings, exactly one subject, a review node and a decision with a person. |
+| `SceneDisorder` | type | `none`, `low` or `medium`; medium is available only to converge. |
+| `SceneFormat` | type | `pdf`, `email`, `sheet`, `doc`, `note`, `scan` or `calendar`. |
+| `SceneDocument` | type | Stable `id`, document `format`, `title` and optional `origin`. |
+| `SceneRow` | type | Stable `id`, `label`, `value` and optional status, figure or quiet treatment. |
+| `SceneStatus` | type | Status tone and authored text. |
+| `ScenePerson` | type | Initials, name and role note. |
+| `SceneFinding` | type | Stable `id`, function label, title, subject line and status; one finding is the subject. |
+| `SceneLayout` | type | Intrinsic width/height and document, card, wire, terminal, tag, node and person geometry. |
+| `ScenePoint` | type | User-unit `x` and `y` coordinates. |
+| `ScenePart` | type | A layout part's id, bounds and deterministic horizontal nudge. |
+| `SceneWire` | type | Source/target ids, endpoints and rounded cubic path, with subject/emphasis flags. |
+| `SceneTerminal` | type | A receiving row's anchor and subject flag. |
+| `SceneTag` | type | Citation tag bounds and copy. |
+| `SceneNode` | type | Review-node bounds and copy. |
+| `ScenePersonLayout` | type | Person row bounds and decider-ring flag. |
+| `Matrix` | component | Exactly two parallel sides on equal plates, optionally featuring one side by id. |
+| `MatrixProps` | type | Two `sides`, optional `featured`, `headingLevel`, `ground`, and native div attributes except `title`. |
+| `MatrixSide` | type | Stable id, required heading and optional label/description; a union requiring points or visual, never both. Labels appear on both sides or neither. |
+| `MatrixHeadingLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
+| `Specimen` | component | Labelled figure of 1 to 3 static product-UI panels (`single`, `row`, `stack`, `flow`); budgets validated. |
+| `SpecimenProps` | type | Props for `Specimen`: `label`, `arrangement`, `connector`, `panels`, `className`, `style`, plus native `<figure>` attributes except `children`, `title`, `aria-label` and `aria-labelledby`. |
+| `SpecimenArrangement` | type | `"single" \| "row" \| "stack" \| "flow"`. |
+| `SpecimenPanel` | component | One specimen panel: an outline card with a title row, 1 to 3 parts and an optional footer. |
+| `SpecimenPanelProps` | type | Props for `SpecimenPanel`: `SpecimenPanelContent` plus native `<div>` attributes except `title` and `children`. |
+| `SpecimenPanelContent` | type | What one panel shows: `title?`, `meta?`, `status?`, `badge?`, `parts`, `footer?`. |
+| `SpecimenPanelItem` | type | One entry of `Specimen`'s `panels`: `SpecimenPanelContent` plus `id`. |
+| `SpecimenFooter` | type | A panel footer: `assignee?`, `note?`. |
+| `SpecimenAssignee` | type | `initials` (decorative), `name`, `note?`. |
+| `SpecimenTone` | type | `"success" \| "warning" \| "danger" \| "info" \| "neutral"`. |
+| `SpecimenStatus` | type | A state in words: `tone`, `label`. |
+| `SpecimenPart` | type | Union of the seven part shapes, keyed by `type`. |
+| `SpecimenPartType` | type | `"fields" \| "status-rows" \| "meter" \| "table" \| "schedule" \| "shares" \| "files"`. |
+| `SpecimenFieldsPart` | type | `type: "fields"`: `label?`, `columns?` (`1 \| 2 \| 4`), `items` (1 to 6). |
+| `SpecimenField` | type | `id`, `label`, `value`. |
+| `SpecimenStatusRowsPart` | type | `type: "status-rows"`: `label?`, `items` (1 to 6), optional `mobileRows: 3`. |
+| `SpecimenStatusRow` | type | `id`, `label`, `detail?`, `status`. |
+| `SpecimenMeterPart` | type | `type: "meter"`: `label`, `value`, `scaleMax`, `limit?`, `direction?`, `tone`, `valueText`, `limitText?`, paired `previous?`/`previousText?`, `status?`, `note?`. |
+| `SpecimenTablePart` | type | `type: "table"`: `label?`, `caption`, `columns` (1 to 4), `rows` (1 to 5). |
+| `SpecimenTableColumn` | type | `id`, `label`. |
+| `SpecimenTableRow` | type | `id`, `cells` (one per column; the first is the row header). |
+| `SpecimenTableCell` | type | `{ text }` or `{ status }`. |
+| `SpecimenSchedulePart` | type | `type: "schedule"`: `label?`, `items` (1 to 6). |
+| `SpecimenScheduleItem` | type | `id`, `date`, `label`, `amount?`, `status?`. |
+| `SpecimenSharesPart` | type | `type: "shares"`: `label?`, `items` (1 to 6). |
+| `SpecimenShare` | type | `id`, `name`, `share` (0 to 100), `shareText`, `status?`. |
+| `SpecimenFilesPart` | type | `type: "files"`: `label?`, `items` (1 to 6). |
+| `SpecimenFile` | type | `id`, `format`, `name`, `source?`. |
 | `OrderedStepSequence` | component | Editorial ordered sequence: optional heading region, authored ordinal/label/heading/body steps, responsive decorative connectors. |
 | `OrderedStepSequenceProps` | type | Props for `OrderedStepSequence`: `eyebrow`, `heading`, `description`, `items`, `headingLevel`, `ground`, `className`, `style`, plus every native `<section>` attribute. |
-| `OrderedStepSequenceItem` | type | One step: `id`, `ordinal`, `label?`, `heading`, `description?`. |
+| `OrderedStepSequenceItem` | type | One step: `id`, `ordinal`, `label?` (the actor tag), `heading`, `description?`. |
 | `OrderedStepSequenceHeadingLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
 | `OrderedStepSequenceGround` | type | Sequence-specific alias of the shared `SectionGround`: `"base" \| "sunken" \| "inverse"`. |
 | `StatusList` | component | Grouped editorial status list: one legend and a definition list per group. |
@@ -4797,7 +5794,7 @@ not a grab-bag).
 | `StatusListState` | type | `"available" \| "partial" \| "planned"`. |
 | `StatusListDisposition` | type | `"not-offered"`, a deliberate non-capability outside the readiness axis. |
 | `StatusListHeadingLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
-| `Faq` | component | Expand/collapse question/answer list, under an optional heading region. Each item is this package's own `Disclosure` atom — independent, not a coordinated accordion. |
+| `Faq` | component | Expand/collapse question/answer list, under an optional heading region. Each item is a react-aria-components disclosure (native `details`/`summary` from `blocks/server`) with a turning `ChevronDown` — independent, not a coordinated accordion. |
 | `FaqProps` | type | Props for `Faq`: `eyebrow`, `heading`, `description`, `items`, `headingLevel`, `ground`, `className`, `style`, plus every native `<div>` attribute. |
 | `FaqItem` | type | One item: `id`, `question`, `answer`. |
 | `FaqHeadingLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
@@ -5072,7 +6069,7 @@ part of this package's public API" and reachable only by that one test.
   ratified from `contrast.test.ts`'s own hand-curated pair map rather than
   auto-derived from token names. An earlier design assumed this gate could
   self-extend, deriving one pair per `--<role>-on-<ground>`-shaped token
-  name; counted against this package's real 168 tokens, only 5 actually
+  name; counted against this package's real 182 tokens, only 5 actually
   follow that shape (`--color-ink-on-accent`, `--color-ink-on-inverse`,
   `--color-accent-on-inverse`, `--color-line-on-inverse`,
   `--ui-ring-on-inverse` — see `contrast-pairs.ts`'s own header for a 6th,
@@ -5414,12 +6411,14 @@ over the IDENTICAL fixture in the same test, exits `0`.
 
 ## What's deliberately not here
 
-**Atoms:** thirty-one ship, and this is the FINAL rung of this layer —
+**Atoms:** thirty-three ship —
 `Button`, `Icon`, `TextField`, `Badge`, `Card`, `Breadcrumb`, `Link`,
 `Checkbox`, `Switch`, `Select`, `Textarea`, `Avatar`, `Spinner`, `Menu`,
 `Dialog`, `Tabs`, `Table`, `Field`, `Skeleton`, `Tooltip`, `Banner`,
 `RadioGroup`, `Popover`, `DateField`, `ComboBox`, `SearchField`,
-`FileTrigger`, `Disclosure`, `ProgressBar`, `Separator`, `Chip`. No `Modal` exposed as a public atom of
+`FileTrigger`, `Disclosure`, `ProgressBar`, `Separator`, `Chip`,
+`StatusMark`, `Meter` (the last two added for data shown inside content
+specimens). No `Modal` exposed as a public atom of
 its own beyond what `Dialog` and `Popover` already compose internally —
 that gets added here only once something real needs a bare modal overlay
 with neither `Dialog`'s fixed trigger/content shape nor `Popover`'s
@@ -5432,10 +6431,12 @@ speculatively, just because a related component shipped, is the exact
 un-bounded growth this package's own "variant rule" warns against one level
 up. They get added here only once something real needs them.
 
-**Blocks:** twenty-two ship — `PageHeader`, `EmptyState`, `DataTable`,
+**Blocks:** thirty-five ship — `PageHeader`, `EmptyState`, `DataTable`,
 `DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`, `ConfirmDialog`,
-`Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `MarketingChapter`, `FeatureGrid`, `OrderedStepSequence`, `StatusList`, `Faq`,
-`PricingTable`, `Testimonial`, `ArticleBody`, `ConsentBanner` — completing this layer. No
+`Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `SectionFrame`, `MarketingChapter`,
+`FeatureGrid`, `Item`, `Items`, `AnatomyCallouts`, `RecordLedger`, `Scene`, `Matrix`, `Specimen`,
+`SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`, `PricingTable`,
+`Testimonial`, `ArticleBody`, `ConsentBanner` — completing this layer. No
 `FilterBar` block:
 `DataTable`'s own `toolbar` slot (and `Toolbar`'s own `search` slot) are
 deliberately plain `ReactNode`s, not a block with its own opinion about

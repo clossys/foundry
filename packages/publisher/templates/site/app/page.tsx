@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { LandingView } from "@clossys/publisher/web";
+import { HeroView } from "@clossys/publisher/web";
 import { LANDING_COPY_IDS, landingCopyIds, requireCopy, siteFooterLegal } from "./site-copy";
 import { createSiteCopyResolver, loadBrandFacts, siteTarget } from "./site-records";
 
@@ -21,7 +21,7 @@ export function generateMetadata(): Metadata {
 export default function HomePage() {
   const { facts, headingId, copy } = load();
   return (
-    <LandingView
+    <HeroView
       brand={facts.brandLabel}
       headerAction={<a href="/contact">{copy[LANDING_COPY_IDS.contactAction]}</a>}
       heading={copy[headingId]}

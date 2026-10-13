@@ -39,14 +39,29 @@ describe("OrderedStepSequence", () => {
     expect(connectors).toHaveLength(2);
   });
 
-  it("changes the decorative connector axis with the same responsive breakpoint as the list", () => {
+  it("runs the connector from one ordinal to the next: a rail in the column, a hairline in the row", () => {
     const { container } = render(<OrderedStepSequence items={ITEMS} />);
     const connector = container.querySelector('span[aria-hidden="true"]') as HTMLElement;
-    expect(connector.className).toContain("h-lg");
-    expect(connector.className).toContain("w-px");
-    expect(connector.className).toContain("tablet:h-px");
-    expect(connector.className).toContain("tablet:w-lg");
-    expect((container.querySelector("ol") as HTMLElement).className).toContain("tablet:flex-row");
+    expect(connector).toHaveAttribute("data-step-connector");
+    expect(connector).toHaveClass("w-px", "flex-1", "tablet:h-px", "tablet:w-auto", "tablet:ms-md", "tablet:-me-md");
+    expect(connector.previousElementSibling).toHaveTextContent("01");
+    expect(connector.parentElement).toHaveClass("flex-col", "items-center", "tablet:flex-row");
+    expect(container.querySelector("ol")).toHaveClass("tablet:flex-row", "tablet:gap-x-xl");
+  });
+
+  it("sets authored step headings in the body font and medium weight", () => {
+    render(<OrderedStepSequence items={ITEMS} />);
+    const heading = screen.getByRole("heading", { name: "Discover" });
+    expect(heading).toHaveClass("text-body-l", "font-body", "font-medium");
+    expect(heading.className).not.toMatch(/font-display|text-h\d/);
+    expect(screen.getByText("Understand the need.")).toHaveClass("text-body", "text-pretty");
+  });
+
+  it("draws the connector in line-strong and the ordinal as an accent-tint disc on the light grounds", () => {
+    const { container } = render(<OrderedStepSequence items={ITEMS} />);
+    expect(container.querySelector("[data-step-connector]")).toHaveClass("bg-line-strong");
+    expect(screen.getByText("01")).toHaveClass("bg-accent-tint", "text-accent-text", "rounded-pill", "size-2xl", "tabular-nums");
+    expect(screen.getByText("01").className).not.toMatch(/\bborder\b/);
   });
 
   it("uses inverse ink and line tokens only when explicitly placed on the inverse ground", () => {
@@ -56,8 +71,8 @@ describe("OrderedStepSequence", () => {
   });
 
   it.each([
-    ["base", "", "text-ink-primary", "bg-line-base"],
-    ["sunken", "bg-surface-sunken", "text-ink-primary", "bg-line-base"],
+    ["base", "", "text-ink-primary", "bg-line-strong"],
+    ["sunken", "bg-surface-sunken", "text-ink-primary", "bg-line-strong"],
     ["inverse", "bg-surface-inverse", "text-ink-on-inverse", "bg-line-on-inverse"],
   ] as const)("selects the complete %s ground policy", (ground, surface, primary, line) => {
     const { container } = render(<OrderedStepSequence items={ITEMS} ground={ground} />);

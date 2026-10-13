@@ -80,6 +80,7 @@ const twMerge = await (async () => {
     const { extendTailwindMerge } = await import("tailwind-merge");
     return extendTailwindMerge({
       extend: {
+        classGroups: { py: ["py-frame-display"] },
         theme: {
           spacing: tokenSuffixes("--spacing-"),
           radius: tokenSuffixes("--radius-"),
