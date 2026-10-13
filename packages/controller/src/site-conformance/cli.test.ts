@@ -41,6 +41,15 @@ describe("site-conformance-check exit codes", () => {
     expect(log.mock.calls[0]?.[0]).not.toContain("a1b2c3");
   });
 
+  it("returns 0 and reports a missing route manifest as a finding", () => {
+    put("apps/site/app/page.tsx", `import { V } from "@clossys/publisher/web";\nexport default V;\n`);
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    expect(main([root])).toBe(0);
+    expect(JSON.parse(log.mock.calls[0]?.[0] as string).findings).toEqual([
+      { rule: "site/manifest-missing", file: "apps/site/web-route-manifest.json", line: 1 },
+    ]);
+  });
+
   it("returns 2 for a missing site dir, --enforce, an unknown flag, no repo and a bad waiver", () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     expect(main([root])).toBe(2);
