@@ -14,11 +14,24 @@ import { UI_BORDER_HAIRLINE, UI_LAYOUT_TAP_TARGET, UI_WIDTH_PAGE_PADDING_X, UI_Z
 export type SiteHeaderPlacement = "flow" | "overlay";
 
 /**
- * The ink polarity of an overlay `SiteHeader`: `base` for a light ground
- * under it (primary ink, `--color-surface-glass`), `inverse` for a dark one
- * (on-inverse ink, `--color-surface-glass-inverse`). The tone names the
- * ground the header sits on at the top of the page; the glass it turns into
- * after scrolling matches the same ink, so the ink never changes on scroll.
+ * The ink polarity of an overlay `SiteHeader`: `base` sets primary ink over
+ * `--color-surface-glass`, `inverse` sets on-inverse ink over
+ * `--color-surface-glass-inverse`. Tones are theme-relative, like the
+ * tokens they name: `base` matches the base ground and `inverse` the
+ * inverse ground in the current theme. `base` means dark ink on a light
+ * ground only in the light theme; in the dark theme it is light ink on a
+ * dark ground, and `inverse` flips with it. The glass the header turns into after scrolling
+ * matches the same ink, so the ink never changes on scroll.
+ *
+ * The tone governs inherited ink only. A child that sets its own ink (a
+ * `Link` in any variant, `Brandmark`, the `ghost` look of
+ * `SiteHeader.ActionLink`) keeps it, so choose children that inherit, carry
+ * their own fill, or whose own ink matches the tone.
+ *
+ * At the top of the page the header is transparent, with no scrim and no
+ * contrast gate: the gate covers the glass, not the hero under it. Over
+ * photographic or arbitrary hero art, the page supplies its own top scrim
+ * and a tone that reads over it in both themes.
  */
 export type SiteHeaderTone = "base" | "inverse";
 
@@ -120,9 +133,10 @@ export interface SiteHeaderProps extends Omit<HTMLAttributes<HTMLElement>, "chil
   placement?: SiteHeaderPlacement;
   /**
    * Overlay only: the ink polarity for the ground under the header at the
-   * top of the page. Sets the header's ink (`text-ink-primary` or
+   * top of the page. Sets the header's inherited ink (`text-ink-primary` or
    * `text-ink-on-inverse`) and the matching glass, and renders as
-   * `data-tone`. Not read in `flow`, where the header sets no ink.
+   * `data-tone`. Children that set their own ink are not changed; see
+   * `SiteHeaderTone`. Not read in `flow`, where the header sets no ink.
    * @default "base"
    */
   tone?: SiteHeaderTone;

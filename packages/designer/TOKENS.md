@@ -399,10 +399,14 @@ once the page scrolls under it. `--color-surface-glass` sits under
 `ink-primary` and `--color-surface-glass-inverse` under `ink-on-inverse`;
 both are translucent, theme-dependent and required in a brand file, and
 the contrast gate checks each with its ink composited over white and over
-black, the two extremes a blurred backdrop can average to. Lower the alpha
-far enough and `designer-contrast-check` fails. `--blur-glass` sits in
-Tailwind's own `--blur-*` namespace (so `backdrop-blur-glass` and
-`blur-glass` work), is theme-invariant and is an optional brand slot.
+black, the two extremes a blurred backdrop can average to, scoring each
+both as a linear-light blend and as the gamma-encoded sRGB blend browsers
+paint, and keeping the lower ratio. Lower the alpha far enough and
+`designer-contrast-check` fails. `--blur-glass` sits in Tailwind's own
+`--blur-*` namespace (so `backdrop-blur-glass` and `blur-glass` work), is
+theme-invariant and, like every brandable token, a required brand slot:
+`brand-template.css` lists it in the light block only. A brand file
+missing any of the three fails `designer-brand-check`.
 Where backdrop blur is unsupported, or under
 `prefers-reduced-transparency: reduce`, the header uses the opaque
 `surface-raised` or `surface-inverse` plate instead.

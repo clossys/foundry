@@ -984,8 +984,9 @@
       animation-range: 0 var(--spacing-3xl, 48px);
       @media (prefers-reduced-motion: reduce) {
         animation-timing-function: steps(1, jump-end);
+        animation-range: 0 1px;
       }
-      &[data-menu-open], &:has([aria-expanded="true"]) {
+      &[data-menu-open], &:has([aria-expanded="true"]), &:has(details[open]) {
         animation-name: none;
         background-color: var(--site-header-glass-fill, oklch(1 0 0 / 0.88));
         border-block-end-color: var(--site-header-glass-line, oklch(0.8761 0 0));

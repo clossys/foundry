@@ -1,9 +1,13 @@
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { Home, Settings } from "../icons/index.js";
 import { SiteHeader } from "./SiteHeader.js";
 import { SiteHeader as ServerSiteHeader } from "./server.js";
+import { CONTRAST_PAIRS } from "../tokens/contrast-pairs.js";
 
 describe("SiteHeader", () => {
   it("renders the brand, nav, and actions slots", () => {
@@ -139,6 +143,31 @@ describe("SiteHeader", () => {
   });
 
   describe("placement", () => {
+    it("documents an inverse overlay whose children inherit the gated ink", () => {
+      const readme = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "..", "..", "README.md"), "utf8");
+      const blocks = [...readme.matchAll(/```tsx\n([\s\S]*?)```/g)].map((match) => match[1] ?? "");
+      const example = blocks.find((block) => block.includes('placement="overlay"') && block.includes('tone="inverse"'));
+      expect(example).toBeDefined();
+      // tone sets inherited ink only: no child in the example may set its own.
+      expect(example).not.toMatch(/<Link\b|<Brandmark\b|ActionLink|text-ink-/);
+      const anchors = example?.match(/<a\b[^>]*>/g) ?? [];
+      expect(anchors.length).toBeGreaterThan(0);
+      for (const anchor of anchors) expect(anchor).toContain('className="text-inherit"');
+      // ...so every child reads in the header's own ink, which the gate checks over the inverse glass.
+      const { container } = render(
+        <SiteHeader
+          placement="overlay"
+          tone="inverse"
+          brand={<a href="/" className="text-inherit">Acme</a>}
+          actions={<a href="/sign-in" className="text-inherit">Sign in</a>}
+        />,
+      );
+      expect(container.querySelector("header")?.classList.contains("text-ink-on-inverse")).toBe(true);
+      for (const link of container.querySelectorAll("a")) expect(link.className).toBe("text-inherit");
+      const gated = CONTRAST_PAIRS.filter((pair) => pair.background === "--color-surface-glass-inverse").map((pair) => pair.foreground);
+      expect(new Set(gated)).toEqual(new Set(["--color-ink-on-inverse"]));
+    });
+
     const FLOW_MARKUP =
       '<header class="bg-surface-raised py-sm border-b border-line-base" style="position:relative;z-index:var(--ui-z-shell, 20);border-bottom-width:var(--ui-border-hairline, 1px)"><div class="mx-auto flex w-full flex-wrap items-center justify-between gap-md" style="padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))"><div class="flex items-center gap-lg"><span>Acme</span></div></div></header>';
 

@@ -87,7 +87,7 @@
 
 import type { TokenDefinition } from "./tokens.js";
 import { TOKENS } from "./tokens.js";
-import { contrastRatio } from "./color.js";
+import { colorAlpha, contrastRatio, contrastRatioEncodedBlend } from "./color.js";
 import { resolveTokenValue } from "./internal/resolve-token-value.js";
 import type { ContrastException, ContrastPair } from "./contrast-pairs.js";
 
@@ -234,21 +234,51 @@ export function checkTokenContrast(
     const bg = resolveOrReport(pair.background, tokens, pair.id, "background", unchecked);
     // A `compositeOver` that is not a custom property is a literal backdrop
     // color (the white and black extremes a glass pair is checked over),
-    // used as written; a malformed one fails in `contrastRatio` below and is
-    // reported as unparseable, never skipped.
+    // parsed here before any ratio is computed. A literal that does not
+    // parse, or that is translucent (compositing reads a backdrop's color
+    // and would silently drop its alpha), lands on `unchecked` as
+    // "unparseable-color-value" rather than being scored.
+    const literalBackdrop = pair.compositeOver !== undefined && !pair.compositeOver.startsWith("--");
+    let literalRefused = false;
+    if (literalBackdrop) {
+      const alpha = colorAlpha(pair.compositeOver as string);
+      if (alpha === undefined || alpha < 1) {
+        literalRefused = true;
+        unchecked.push({
+          pairId: pair.id,
+          reason: "unparseable-color-value",
+          detail:
+            alpha === undefined
+              ? `literal compositeOver "${pair.compositeOver}" is neither oklch(...) nor a 6-digit hex color`
+              : `literal compositeOver "${pair.compositeOver}" is translucent (alpha ${alpha}); a literal backdrop must be opaque`,
+        });
+      }
+    }
     const over =
       pair.compositeOver === undefined
         ? undefined
         : pair.compositeOver.startsWith("--")
           ? resolveOrReport(pair.compositeOver, tokens, pair.id, "compositeOver", unchecked)
           : pair.compositeOver;
-    if (fg === undefined || bg === undefined || (pair.compositeOver !== undefined && over === undefined)) {
+    if (
+      fg === undefined ||
+      bg === undefined ||
+      (pair.compositeOver !== undefined && over === undefined) ||
+      literalRefused
+    ) {
       continue; // already reported to `unchecked` above
     }
 
     let ratio: number;
     try {
-      ratio = contrastRatio(fg, bg, over);
+      // Over a literal backdrop (arbitrary page content), score the pair
+      // with translucent values blended both in linear light and in
+      // gamma-encoded sRGB (how browsers paint alpha) and keep the lower
+      // ratio: neither space is stricter for every ink/plate polarity.
+      // Token backdrops keep the linear blend alone.
+      ratio = literalBackdrop
+        ? Math.min(contrastRatio(fg, bg, over), contrastRatioEncodedBlend(fg, bg, over))
+        : contrastRatio(fg, bg, over);
     } catch (error) {
       unchecked.push({
         pairId: pair.id,

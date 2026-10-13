@@ -326,9 +326,11 @@
  *     every scroll position, including the top.
  * Where scroll-driven animations exist, the header is transparent at the
  * top and reaches glass over the first `--spacing-3xl` of root scrolling;
- * reduced motion swaps the ramp for one step at the end of that range.
- * `data-menu-open` (the `menuOpen` prop) or any descendant with
- * `aria-expanded="true"` (an open menu toggle) forces glass at any scroll
+ * reduced motion swaps the ramp for one step over the first pixel, so the
+ * glass arrives with the first scroll.
+ * `data-menu-open` (the `menuOpen` prop), any descendant with
+ * `aria-expanded="true"` (an open menu toggle) or an open `<details>`
+ * (a disclosure menu) forces glass at any scroll
  * position, so an open menu never sits on a transparent bar.
  */
 @keyframes site-header-glass {
@@ -379,10 +381,15 @@
     animation-timeline: scroll(root block);
     animation-range: 0 var(--spacing-3xl, 48px);
     @media (prefers-reduced-motion: reduce) {
+      /* One step over the first pixel: transparent only at the very top,
+         glass from the first scroll. (steps(1, jump-start) would sit at
+         its end value already at progress 0, so never transparent.) */
       animation-timing-function: steps(1, jump-end);
+      animation-range: 0 1px;
     }
     &[data-menu-open],
-    &:has([aria-expanded="true"]) {
+    &:has([aria-expanded="true"]),
+    &:has(details[open]) {
       animation-name: none;
       background-color: var(--site-header-glass-fill, oklch(1 0 0 / 0.88));
       border-block-end-color: var(--site-header-glass-line, oklch(0.8761 0 0));

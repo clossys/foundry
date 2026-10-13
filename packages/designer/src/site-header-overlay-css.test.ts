@@ -71,13 +71,17 @@ describe("site-header-overlay utility (theme-keys.css)", () => {
     expect(scrollDriven).toContain("animation-fill-mode: both;");
   });
 
-  it("steps instead of fading under reduced motion", () => {
-    expect(scrollDriven).toMatch(/@media \(prefers-reduced-motion: reduce\) \{\s*animation-timing-function: steps\(1, jump-end\);/);
+  it("steps to glass at the first scroll instead of fading under reduced motion", () => {
+    const reducedMotion = nestedBlock(scrollDriven, "@media (prefers-reduced-motion: reduce)");
+    // One step over the first pixel, not over the whole 48px ramp: the header
+    // is transparent only at the very top and glass from the first scroll.
+    expect(reducedMotion).toContain("animation-timing-function: steps(1, jump-end);");
+    expect(reducedMotion).toContain("animation-range: 0 1px;");
   });
 
-  it("forces glass while a menu is open, by prop or by an expanded toggle", () => {
+  it("forces glass while a menu is open, by prop, by an expanded toggle or by an open details", () => {
     expect(scrollDriven).toMatch(
-      /&\[data-menu-open\],\s*&:has\(\[aria-expanded="true"\]\) \{\s*animation-name: none;\s*background-color: var\(--site-header-glass-fill, oklch\(1 0 0 \/ 0\.88\)\);/,
+      /&\[data-menu-open\],\s*&:has\(\[aria-expanded="true"\]\),\s*&:has\(details\[open\]\) \{\s*animation-name: none;\s*background-color: var\(--site-header-glass-fill, oklch\(1 0 0 \/ 0\.88\)\);/,
     );
   });
 

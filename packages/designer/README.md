@@ -4695,40 +4695,67 @@ glass plate once the page scrolls beneath it. The glass is
 `--color-surface-glass` (or `--color-surface-glass-inverse`) behind a
 `--blur-glass` backdrop blur, over a hairline in the matching line role.
 
-- `tone` (`"base"` by default, or `"inverse"`) names the ground under the
-  header at the top of the page. It sets the header's ink (`ink-primary` or
-  `ink-on-inverse`) and the matching glass, so the ink stays the same as the
-  header turns to glass. In `"overlay"`, `ground` is not read.
+- `tone` (`"base"` by default, or `"inverse"`) sets the header's inherited
+  ink (`ink-primary` or `ink-on-inverse`) and the matching glass, so the ink
+  stays the same as the header turns to glass. Tones are theme-relative, like
+  the tokens: `base` is dark ink on a light ground only in the light theme.
+  In `"overlay"`, `ground` is not read.
+- `tone` governs inherited ink only. A child that sets its own ink keeps it:
+  `Link` in every variant (`standalone` is `ink-primary`, `default` is
+  `ink-link`), `Brandmark` (`ink-primary`) and `SiteHeader.ActionLink`'s
+  `ghost` look (`ink-primary` with no plate). With `tone="inverse"` those
+  read dark on dark glass. `ActionLink`'s `primary` and `secondary` looks
+  carry their own fill, so they read on either tone. Choose children that
+  inherit (an `<a>` with `text-inherit`, as below), carry their own fill, or
+  whose own ink matches the tone.
 - `menuOpen` holds the glass at any scroll position while a menu belonging to
   the header is open (`data-menu-open`). A descendant with
-  `aria-expanded="true"`, such as an open `NavShell` trigger, does the same
-  in CSS with no prop.
+  `aria-expanded="true"`, such as an open `NavShell` trigger, or an open
+  `<details>` does the same in CSS with no prop.
 - The glass state is a scroll-driven CSS animation over the first
   `--spacing-3xl` of root scrolling, so it needs no JavaScript. An engine
   without scroll-driven animations shows glass at every scroll position.
-  Reduced motion replaces the fade with one step. Reduced transparency, or an
-  engine without backdrop blur, replaces the glass with the opaque
-  `surface-raised` (or `surface-inverse`) plate. Only paint changes between
-  states, so the header never shifts layout.
+  Reduced motion replaces the fade with a single step at the first scroll.
+  Reduced transparency, or an engine without backdrop blur, replaces the
+  glass with the opaque `surface-raised` (or `surface-inverse`) plate. Only
+  paint changes between states, so the header never shifts layout.
 - The contrast gate checks each glass with its ink composited over white and
   over black, the two extremes a blurred backdrop can average to, in both
-  themes.
+  themes, scoring the lower of a linear-light and a browser (gamma-encoded
+  sRGB) blend. It does not check the transparent top state: over
+  photographic or arbitrary hero art the page supplies its own top scrim and
+  a tone that reads over it in both themes.
 
 The header is fixed rather than absolutely positioned (which would scroll
 away before it could turn to glass) or stuck (which reserves its height in
-flow). That asks four things of the page: the first block reserves the
-header's height itself, the page scrolls on the root, no ancestor of the
-header is transformed or filtered, and the root sets `scroll-padding-top` so
-in-page anchors land below the header. The glass blur also makes the header
-the containing block for fixed-position descendants, so a full-screen menu
-panel must portal out of the header.
+flow). That asks this of the page:
+
+- **The root scrolls.** The fade follows `scroll(root block)`. If the page
+  scrolls inside a container instead, the root never scrolls and the header
+  stays transparent over content.
+- **The first block reserves the header's height.** No header-height value is
+  exported; the height changes with wrapping, text zoom and `surfaceLabel`,
+  so measure it in the page or pad generously.
+- **The root sets `scroll-padding-top`** to at least the header's height. It
+  lands in-page anchors below the header, and it keeps a focused element
+  from scrolling under it (WCAG 2.2 Focus Not Obscured, 2.4.11).
+- **No ancestor of the header creates a containing block** for fixed
+  elements: no `transform`, `filter`, `perspective`, `will-change: transform`
+  or `will-change: filter`, and no `contain: layout` or `contain: paint`.
+  Any of them pins the header to that ancestor instead of the viewport.
+- **Page content stays below the shell layer.** The header sits at the
+  shell's `z-index` (20); content with a higher `z-index` paints over it.
+- **Menus portal out of the header.** In the glass state the backdrop blur
+  makes the header the containing block for fixed-position descendants, so
+  a full-screen menu panel rendered inside it is clipped to the header.
+  Always render one through a portal.
 
 ```tsx
 <SiteHeader
   placement="overlay"
   tone="inverse"
-  brand={<Link href="/" variant="standalone">Acme</Link>}
-  actions={<Link href="/sign-in" variant="standalone">Sign in</Link>}
+  brand={<a href="/" className="text-inherit">Acme</a>}
+  actions={<a href="/sign-in" className="text-inherit">Sign in</a>}
 />
 ```
 

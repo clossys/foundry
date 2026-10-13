@@ -109,6 +109,20 @@ describe("glass tokens", () => {
       ]);
     });
 
+    it("a light base glass at 40% alpha fails over black in the light theme, as a browser paints it", () => {
+      // A linear-light blend alone would pass this; the gate also scores the
+      // gamma-encoded sRGB blend browsers use and keeps the lower ratio.
+      const result = checkTokenContrast(glassPairs, { tokens: withValue(TOKENS, "--color-surface-glass", "oklch(1 0 0 / 0.4)") });
+      expect(result.findings.map((f) => f.pairId)).toEqual(["ink-primary/surface-glass@backdrop-black"]);
+    });
+
+    it("a light inverse glass at 40% alpha fails over black in the dark theme, as a browser paints it", () => {
+      const result = checkTokenContrast(glassPairs, {
+        tokens: withValue(darkTokens(), "--color-surface-glass-inverse", "oklch(0.96 0 0 / 0.4)"),
+      });
+      expect(result.findings.map((f) => f.pairId)).toEqual(["ink-on-inverse/surface-glass-inverse@backdrop-black"]);
+    });
+
     it("a modest cut from 88% to 80% alpha already fails", () => {
       const result = checkTokenContrast(glassPairs, { tokens: withValue(TOKENS, "--color-surface-glass-inverse", "oklch(0.2178 0 0 / 0.8)") });
       expect(result.findings.map((f) => f.pairId)).toEqual(["ink-on-inverse/surface-glass-inverse@backdrop-white"]);

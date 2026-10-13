@@ -172,6 +172,12 @@
    * stay as shipped. */
   --radius-default:                ;
 
+  /* ─── BLUR (1 required — the backdrop blur behind the two glass
+   * plates in SURFACE above, the overlay SiteHeader's scrolled state.
+   * Theme invariant, so it stays in this light block; 16px is the
+   * shipped value) ──────────────────────────────────────────────── */
+  --blur-glass:                    ;
+
   /* ─── PANEL (4 optional — the identity of cards, plates and product
        panels. Each defaults to today's look: the surface radius, a
        hairline edge in the base line, and the floating lift. Bind them
@@ -181,9 +187,6 @@
   /* --color-line-panel:   var(--color-line-base); */
   /* --ui-elevation-panel: var(--ui-elevation-floating); */
 
-  /* ─── GLASS (1 optional — the backdrop blur behind the glass plates
-       above; theme invariant) ──────────────────────────────────────── */
-  /* --blur-glass: 16px; */
 
   /* ─── WIDTH (3 optional — override only if your brand uses
        non-default reading/content widths) ───────────────────────── */
