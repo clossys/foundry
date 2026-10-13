@@ -355,12 +355,27 @@ describe("refusals and exports", () => {
       expect(derived({ wordmark: "Example Studio.", kicker: "Note:", headline: "Sign in", supporting: undefined })).toBe("Example Studio. Note: Sign in");
     });
 
+    it("does not double wider terminal punctuation or punctuation before closing quotes and brackets", () => {
+      const punctuation = [".", "!", "?", ":", ";", "…", "。", "！", "？", "；"];
+      const closers = ['"', "'", "”", "’", ")", "]", "»", "」", "』", "）", "】"];
+      for (const ending of [...punctuation, ...closers.map((closer) => `.${closer}`), "?)", "！」", '。）」']) {
+        const headline = `Ready${ending}`;
+        expect(derived({ kicker: undefined, headline, supporting: "Staff only" })).toBe(`Example Studio. ${headline} Staff only`);
+      }
+      expect(derived({ kicker: undefined, headline: "Ready", supporting: "Staff only" })).toBe("Example Studio. Ready. Staff only");
+      expect(derived({ kicker: undefined, headline: 'Ready")', supporting: "Staff only" })).toBe('Example Studio. Ready"). Staff only');
+    });
+
     it("is the headline alone without a wordmark, kicker or supporting line", () => {
       expect(derived({ wordmark: undefined, kicker: undefined, supporting: undefined, headline: "Sign in" })).toBe("Sign in");
     });
   });
 
   describe("explicit alt wins", () => {
+    it("refuses an explicit null alt with invalid-input", () => {
+      expect(reasonOf(() => buildBrandShareCard(input({ alt: null as unknown as string })))).toBe("invalid-input");
+    });
+
     it("returns a supplied alt verbatim", () => {
       expect(buildBrandShareCard(input({ alt: "Custom" })).shareCard.alt).toBe("Custom");
     });

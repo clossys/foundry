@@ -3,7 +3,7 @@
  * card. A route file reads each export by name, so it assigns them one by one:
  *
  * ```ts
- * const route = createShareCardRoute({ ImageResponse, card, alt });
+ * const route = createShareCardRoute({ ImageResponse, card });
  * export const alt = route.alt;
  * export const size = route.size;
  * export const contentType = route.contentType;
@@ -17,7 +17,8 @@
  * WORDING STAYS THE CALLER'S. Every word on the card and its alternative text
  * come from `card`, `title` and `alt`; none is built in here. When `title` is
  * given it replaces `card.headline`, and a function `alt` is called with the
- * headline actually drawn.
+ * headline actually drawn. When `alt` is omitted, the card derives it from
+ * its visible text in reading order.
  *
  * BUILD-TIME FAILURE. The card is built when `createShareCardRoute` is called,
  * so a bad input fails when the route module loads, not when an image is
@@ -33,12 +34,12 @@ import type { SiteShareCard } from "./siteMetadata.js";
 export interface ShareCardRouteInput {
   /** The caller's image-response class, such as the one a framework provides. Publisher imports none. */
   ImageResponse: new (element: ReactElement, init: { width: number; height: number }) => Response;
-  /** The brand share card to draw. `headline` stays required here; `alt` is given beside it. */
+  /** The brand share card to draw. `headline` stays required here; optional `alt` is given beside it. */
   card: Omit<BrandShareCardInput, "alt">;
   /** Replaces `card.headline` when given. A blank title is refused. */
   title?: string;
-  /** The image's alternative text, or a function of the headline actually drawn. The caller writes every word. */
-  alt: string | ((headline: string) => string);
+  /** The image's alternative text, or a function of the headline actually drawn. Omit to derive it from visible text. */
+  alt?: string | ((headline: string) => string);
 }
 
 export interface ShareCardRoute {
@@ -60,14 +61,15 @@ export function createShareCardRoute(input: ShareCardRouteInput): ShareCardRoute
   const { ImageResponse, card, title, alt } = input;
   if (typeof ImageResponse !== "function") throw new ShareCardError("invalid-input");
   if (!isRecord(card)) throw new ShareCardError("invalid-input");
-  if (typeof alt !== "string" && typeof alt !== "function") throw new ShareCardError("invalid-input");
+  if (alt !== undefined && typeof alt !== "string" && typeof alt !== "function") throw new ShareCardError("invalid-input");
 
   const headline = title === undefined ? card["headline"] : title;
   // `alt` is read by the card builder only after it has accepted the headline,
   // so a function `alt` is never called with a refused headline.
-  const built = buildBrandShareCard({
-    ...card,
-    headline: headline as string,
+  const { alt: _cardAlt, ...cardInput } = card as BrandShareCardInput;
+  const cardWithHeadline = { ...cardInput, headline: headline as string };
+  const built = buildBrandShareCard(alt === undefined ? cardWithHeadline : {
+    ...cardWithHeadline,
     get alt(): string {
       return typeof alt === "function" ? alt(headline as string) : alt;
     },

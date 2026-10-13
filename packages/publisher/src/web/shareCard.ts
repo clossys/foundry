@@ -395,7 +395,7 @@ function deriveAlt(parts: ReadonlyArray<string | undefined>): string {
   let alt = "";
   for (const part of parts) {
     if (part === undefined) continue;
-    alt = alt === "" ? part : /[.!?:]$/.test(alt) ? `${alt} ${part}` : `${alt}. ${part}`;
+    alt = alt === "" ? part : /[.!?:;…。！？；]["'”’)\]»」』）】]*$/u.test(alt) ? `${alt} ${part}` : `${alt}. ${part}`;
   }
   return alt;
 }
