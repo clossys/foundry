@@ -161,7 +161,7 @@ records, and one file, `app/site-records.ts`, reads them:
   registry must hold an entry for each. An approved entry resolves on every target; on `production` an entry
   approved only by a delegate is refused, and so is any approval that is
   stale or expired. That refusal comes from the `target` option of Writer's
-  resolver, which Writer 0.5.0 added; the range `^0.5.0` in `package.json`
+  resolver, which Writer 0.5.0 added; the range `^0.6.0` in `package.json`
   requires it.
 - `clossys/publisher/legal/terms.json` and `privacy.json` — the two legal
   documents, whose text is copy ids into the same registry.
@@ -240,7 +240,7 @@ things:
   `production` the Writer resolver also refuses an entry approved only by a
   delegate; a stale or expired approval is refused on every target. The
   `target` option and the delegate refusal on `production` come from Writer
-  0.5.0, which the range `^0.5.0` in `package.json` requires.
+  0.5.0, which the range `^0.6.0` in `package.json` includes.
 - **Crawling and the sitemap**, below.
 - **Contact delivery**, below.
 
