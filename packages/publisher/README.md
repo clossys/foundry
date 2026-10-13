@@ -4969,16 +4969,17 @@ with `AuthView`'s `isDisabled`, as above.
 
 `@clossys/publisher/testing` is a test-support entry for the test step a
 consumer already has. It renders the consumer's own sign-in, activation,
-sign-out landing, reset, boundary, not-found, global-error and
+sign-out landing, reset, contact, boundary, not-found, global-error and
 service-unavailable surfaces with `renderToStaticMarkup`, parses each with the
 caller's `DOMParser`, and reports every invariant a surface breaks. The kit
 builds no view and no copy: each `render` returns the consumer's own element.
 
 | Rule | Asks |
 | --- | --- |
-| `one-h1` | Exactly one `<h1>`. |
+| `one-h1` | Every surface has exactly one `<h1>`. |
 | `form-measure` | The `<main>` of a sign-in, activation or reset surface, or the view's content root directly inside it, carries `max-width:var(--ui-width-form-max, none)`. |
-| `one-primary-action` | Exactly one button, link or `[role=button]` with class token `bg-accent` (`PRIMARY_ACTION_CLASS`), inside `<main>` or, when there is none, the body. |
+| `contact-form` | A `contact` surface has exactly one `<main>` containing exactly one `<form>`, whose `method` attribute is `post` (case-insensitive). |
+| `one-primary-action` | Every surface has exactly one button, link or `[role=button]` with class token `bg-accent` (`PRIMARY_ACTION_CLASS`), inside `<main>` or, when there is none, the body. |
 | `page-title` | `formatPageTitle(title)` does not throw and, when `title.actual` is given, equals it. `title` is required on every surface except `global-error`. |
 | `global-error-head` | A `global-error` document has exactly one `<title>` equal to `formatPageTitle(title)` (or matching `<page> · <brand>` when no `title` is given), a robots meta containing `noindex`, and exactly one `link[rel=icon]`. |
 
@@ -5079,10 +5080,9 @@ aria-hidden, out of the tab order and autocomplete-off, and its value reaches
 the handler. `devPreview` pins one of the existing closed review states and
 makes submission inert; production callers omit it.
 
-`checkFrontDoor` currently has no contact page type. The contact test passes
-through `surface: "boundary"` as a stand-in, applying the generic one-h1,
-primary-action and page-title checks. That pass does not apply the auth
-form-measure rule or establish contact-specific conformance.
+Pass `surface: "contact"` to `checkFrontDoor` for the framed contact page.
+It checks one h1, one primary action, the required page title and the contact
+form's main ownership and POST method, without imposing an auth form measure.
 
 Keep the page and frame on the server. Only `contact-form.client.tsx` is a
 client boundary; bind the approved-copy resolver and submit transport there:
