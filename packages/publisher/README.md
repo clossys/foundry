@@ -3008,6 +3008,68 @@ matching HTTP status from the host's own route. Give a placeholder route the
 which view the route renders. `StatusView` replaces `ErrorView` and
 `BoundaryView`, which are deprecated and keep their earlier markup.
 
+#### CopyRef construction composition — `constructionStatusProps`
+
+`constructionStatusProps(input, resolveCopyId)` returns `status`, `subtitle`,
+and the supplied `action` and/or `routes` for `StatusView`. Its closed
+`ConstructionStatusInput` shape accepts Writer `CopyRef`s for `title`,
+`description`, the action label, the destination label, and each destination's
+heading and optional description. Pass Writer's `CopyResolver`; this is the
+same resolver that the frame takes as `resolveCopy`.
+
+The caller's approved registry owns every visible word. For this example,
+resolve these references to neutral visitor copy:
+
+| CopyRef id | Resolved text |
+| --- | --- |
+| `construction.title` | Careers |
+| `construction.description` | This page is not available yet. |
+| `construction.action` | Back to home |
+| `construction.destinations` | Useful destinations |
+| `construction.help` | Help |
+| `construction.helpDescription` | Find answers to common questions. |
+| `construction.contact` | Contact |
+
+```tsx
+import { constructionStatusProps, SiteFrame, StatusView } from "@clossys/publisher/web";
+import type { ConstructionStatusInput, SiteFrameInput } from "@clossys/publisher/web";
+
+export function ConstructionPage({ shell, resolveCopy, resolveAsset }: SiteFrameInput) {
+  const input: ConstructionStatusInput = {
+    title: { id: "construction.title" },
+    description: { id: "construction.description" },
+    action: { label: { id: "construction.action" }, href: "/" },
+  };
+  return (
+    <SiteFrame shell={shell} resolveCopy={resolveCopy} resolveAsset={resolveAsset}>
+      <StatusView {...constructionStatusProps(input, resolveCopy)} />
+    </SiteFrame>
+  );
+}
+```
+
+For destinations, supply `destinations: { label: { id:
+"construction.destinations" }, items: [{ id: "help", heading: { id:
+"construction.help" }, description: { id: "construction.helpDescription" },
+href: "/help" }, { id: "contact", heading: { id: "construction.contact" },
+href: "/contact" }] }`. One destination uses a canonical Item; two to six
+use rows in authored order. Destinations can accompany or replace the action.
+
+At least one action or destination collection is required. A collection must
+contain one to six items with unique, nonblank ids. Every link uses Publisher's
+sanctioned-href policy; the action uses the primary button-link treatment at
+the base ground and medium size, through Designer tokens. Missing or blank
+copy and malformed input throw `RenderError` with reason `resolution-failed`;
+messages name only the input position. The composition supplies no fallback
+copy and adds no visible words.
+
+Public copy describes the page's availability neutrally and gives one way
+onward. Keep editorial and implementation status out of visitor text. Pair
+the host route with `kind: "construction"` in `buildSiteMetadata` so it receives
+`noindex, nofollow`. `SiteFrame` owns the page's one `<main>`; this composition
+only fills `StatusView`'s content. The ordinary and `react-server` web entries
+and `@clossys/publisher/web/client` expose the same composition and input type.
+
 ### Global error document — `GlobalErrorDocument`
 
 `GlobalErrorDocument`, exported from `@clossys/publisher/web` and its server
