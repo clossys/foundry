@@ -3,6 +3,34 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## 0.10.0 - 2026-10-13
+
+- Consumers can validate static art declarations with Designer's typed slot contract and render checked photos or token-painted vectors into Publisher backdrop and media seams.
+- Adds `./web/consent` (the client-only `ConsentExperience` notice assembly, `bindTransport`, `useAnalyticsAllowed` and `useConsentStatus`), `./web/consent/preview` (a fixed-clock `createConsentPreview` resolved under the `development` condition) and `./consent-copy` (server-only `resolveConsentCopy`), each of which throws at import under the condition it refuses.
+- Add `constructionStatusProps` to compose `StatusView` from caller-owned Writer CopyRefs, with validated onward links and guidance for construction routes.
+- Add ContactForm for CaptureView's form slot inside SiteFrame, with caller-approved copy, topic and contact fields, a configurable honeypot, client validation and ContactResult states.
+Native contact submissions use POST to keep contact fields out of URL query parameters.
+Deprecate ContactView in favor of CaptureView plus ContactForm while retaining its compatibility page API.
+- Add a contact surface and contact-form rule to the front-door test kit, requiring one main containing one form with a POST method.
+Use the contact surface in the framed ContactForm conformance test and document its rules.
+- `StatusView` and framed `GlobalErrorDocument` accept an optional caller-labelled `reference` that renders after the subtitle with an escaped, selectable code value.
+- Simplify FAQ band prop forwarding after landing-page fragment spacing is resolved.
+- Compose invitation-only sign-in with optional no-account and request-access copy and a restricted access selector for neutral identifier-failure and lockout notices.
+- Render LegalView inside SiteFrame with the shared validated legal body, effective and last-updated dates, draft callout and canonical related links.
+
+Update the page-layer contract to stop deferring framed LegalView or the deprecated ContactView.
+- Add prose as a new canonical content block type for ordered paragraphs and inline links with Writer copy provenance, sanctioned destinations, and matching ordinary and server markup. Paragraphs use readable measures and spacing, with at most 24 spans, six links and 1,200 Unicode characters each. Consumers with exhaustive block-type switches must handle `prose`.
+- Share card routes can omit alt to derive alternative text from the card's visible text.
+Derived alternative text joins parts with a single space instead of ". " after a part ending in ".", "!", "?", ":", ";", "…", "。", "！", "？" or "；", optionally followed by closing quotes or brackets (`"`, `'`, `”`, `’`, `)`, `]`, `»`, `」`, `』`, `）`, `】`).
+- Add copy-reference-backed icon actions, social profile links and ungrouped footer links to SiteFrame.
+Validate the new slots as closed data using the existing link and SVG shape allowlists, omit empty lists, and map them only to the public site surface.
+- Consumers can compose status lists with Index rows and per-item badges using the topics recipe, with a Publisher preview example and configuration guidance.
+- Updated dependency @clossys/writer to ^0.6.0
+- Updated dependency @clossys/designer to ^0.9.0
+- Updated templates/site dependency @clossys/designer to ^0.9.0
+- Updated templates/site dependency @clossys/publisher to ^0.10.0
+- Updated templates/site dependency @clossys/writer to ^0.6.0
+
 ## 0.9.0 - 2026-10-12
 
 - Give connected item geometry, panel aliases and catalog styling explicit token fallbacks while preserving live theme overrides. Document how source-checkout generators relate to installed packages, and check required labels and supported split media layouts through compiled type assertions.
