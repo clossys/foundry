@@ -1,9 +1,12 @@
 // @vitest-environment jsdom
+import { createHash } from "node:crypto";
 import { createCopyResolver, type CopyRegistry } from "@clossys/writer";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import { resolveSectionedViewDocument, validateSectionedViewDocument, type SectionedViewDocument } from "../../core/sectioned-view.js";
 import { previewCopyResolver, previewSectionedDocument } from "../../preview/fixture-documents.js";
+import { LandingView } from "./LandingView.js";
+import { LandingView as ServerLandingView } from "./LandingView.server.js";
 import { SectionedView } from "./SectionedView.js";
 import { SectionedView as ServerSectionedView } from "./SectionedView.server.js";
 
@@ -43,7 +46,35 @@ function authored(count: number, layout?: "stacked" | "split"): SectionedViewDoc
   };
 }
 
+// Captured from the accepted FAQ recipe before adapter-only cleanup. Keep the
+// generated IDs: their bytes and accessibility references belong to this proof.
+const FAQ_MARKUP_SHA256 = {
+  "sectioned-stacked": ["b7eeb935c83f79f7a4c628748325ff4dacf629674b735eebcf74521f3fca72f6", "f72069c29ece305ab4d69a80dd9dd444c68babe2309991a7e8af24392e151b58"],
+  "sectioned-split": ["03d015060f47406c2de6c13c04030aab2630b265735da8c67c20c79d9c5d45a5", "f5c76a0ed7e21d0dc5d49a35b1bd664bbefcea9040886a27fd2b92e4991f804b"],
+  "landing-stacked": ["b2bcac8358dca7d9a7e6572e0b9368be58d4e5cf7416a14af83de5e4b4d96461", "13210d8e1ed0c1ec75cdfb69b77be17f4aa84b786dc71f59fc09055650f8f838"],
+  "landing-split": ["cb98ac8fb507c7e93bbf84bb26f37e2b3c9f40cbd0f7caf886d8936d999c38a9", "e445d1ac0afb7d3d2ce4e5a6b29e470e1e2bb27df05a77538ad8a43479790117"],
+} as const;
+
 describe("published FAQ uses the Index disclosure recipe", () => {
+  it.each(["stacked", "split"] as const)("pins FAQ recipe markup bytes for %s in both views and entries", layout => {
+    const resolved = resolveSectionedViewDocument(authored(4, layout), resolver);
+    const hero = resolveSectionedViewDocument({ id: "faq-intro", sections: [{ id: "intro", kind: "hero", ground: "base", heading: ref("heading") }] }, resolver);
+    const afterSection = { questions: <p>After the questions.</p> };
+    for (const [entry, [Sectioned, Landing]] of ([
+      [SectionedView, LandingView],
+      [ServerSectionedView, ServerLandingView],
+    ] as const).entries()) {
+      const markup = {
+        sectioned: renderToStaticMarkup(<Sectioned document={resolved} />, { identifierPrefix: "faq-proof-" }),
+        landing: renderToStaticMarkup(<Landing document={hero} trailing={[resolved]} afterSection={afterSection} />, { identifierPrefix: "faq-proof-" }),
+      };
+      for (const view of ["sectioned", "landing"] as const) {
+        const hash = createHash("sha256").update(markup[view]).digest("hex");
+        expect.soft(hash, `${view}-${layout} entry ${entry}: ${hash}`).toBe(FAQ_MARKUP_SHA256[`${view}-${layout}`][entry]);
+      }
+    }
+  });
+
   it.each([undefined, "stacked", "split"] as const)("renders layout %s through Items in both entries and retains copy provenance", layout => {
     for (const count of [4, 6]) {
       const input = authored(count, layout);

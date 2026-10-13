@@ -226,7 +226,7 @@ function bandBlocks(afterSection: Readonly<Record<string, ReactNode>>, canonical
     ),
     ContentSection: ({ section, actions, publishedKind }) => {
       const Content = canonicalContentSection;
-      return <Content section={section} actions={actions} publishedKind={publishedKind} after={after(section.id)} className={publishedKind === undefined ? undefined : BAND_ANCHOR_CLASS} style={publishedKind === undefined ? { scrollMarginTop: 0 } : undefined} />;
+      return <Content section={section} actions={actions} after={after(section.id)} className={publishedKind === undefined ? undefined : BAND_ANCHOR_CLASS} style={publishedKind === undefined ? { scrollMarginTop: 0 } : undefined} />;
     },
   };
 }
