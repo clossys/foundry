@@ -33,4 +33,11 @@
   --color-chart-categorical-6: #008300;
   --color-chart-categorical-7: #4a3aa7;
   --color-chart-categorical-8: #e34948;
+  --color-control-tonal: oklch(0.2178 0 0 / 0.08);
+  --color-control-tonal-hover: oklch(0.2178 0 0 / 0.12);
+  --color-control-tonal-inverse: oklch(0.9702 0 0 / 0.12);
+  --color-control-tonal-inverse-hover: oklch(0.9702 0 0 / 0.16);
+  --color-control-quiet: oklch(0.2178 0 0);
+  --color-surface-inverse-raised: oklch(0.285 0 0);
+  --color-accent-on-inverse: oklch(0.7763 0 0);
 }

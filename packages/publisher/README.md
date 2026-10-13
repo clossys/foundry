@@ -582,6 +582,9 @@ with known lane ids on every item in a connected block of three to five
 items, using columns or stacked arrangement. The first item uses the first
 defined lane, and both lanes appear.
 
+For status-labelled lookup, use the [Index status-list configuration](#index-configuration-status-list)
+with the existing `topics` recipe and per-item badges.
+
 Matrix sides each have an id and heading, and either 2–4 points or one
 specimen panel. Labels are optional on both sides together; mixed label
 presence is refused. Without labels, each side heading is its semantic heading.
@@ -1374,6 +1377,11 @@ backdrop, restyle the action you pass, or decide the grounds of a site
 header or footer around it.
 
 ### `ContactView`
+
+**Deprecated:** use `SiteFrame` > `CaptureView` > `ContactForm` for contact
+pages; see the [framed contact example](#contactform--framed-contact-example).
+`ContactView` retains its compatibility page API and composes the same
+`ContactForm`, with its legacy frame. Do not nest that page inside `SiteFrame`.
 
 `ContactView`, exported from `@clossys/publisher/web`, is a single-screen
 contact page: a transparent banner, a page header, one form in a card, and a
@@ -5052,6 +5060,99 @@ it("keeps the front door conformant", () => {
 });
 ```
 
+### `ContactForm` — framed contact example
+
+`ContactForm` fills `CaptureView`'s `form` slot and renders no page landmarks,
+card or `h1`. `SiteFrame` owns the page's single `main`; `CaptureView` owns
+its heading and card. Pass `formLabel` to name the card with caller copy.
+
+The form is exported from `@clossys/publisher/web`,
+`@clossys/publisher/web/client` and the web views entry, alongside
+`SignInForm` and `ActivateForm`. Import it from a host client boundary;
+the `react-server` entry exports a throwing `wrong-channel` stub, as the
+other client forms do. Both page entries compose equivalent frame and
+capture markup around that client form.
+
+`ContactFormCopy`, `ContactFormTopic`, `ContactFormValues`,
+`ContactFormProps` and `ContactFormDevPreview` are exported types.
+`ContactFormCopy` has ContactView's form copy keys, excluding `heading` and
+`description`: every label, placeholder, validation message, result message
+and button word must resolve from a Writer `CopyRef`. No wording is shipped.
+Topics have unique kebab-case ids and CopyRef labels. Unknown `initialTopic`
+ids are ignored. A literal `honeypotField` gives `ContactFormValues` that key
+in addition to `topic`, `name`, `email`, `phone` and `message`; it defaults to
+`website` and must match the handler configuration.
+
+`onSubmit` answers the existing `ContactResult` contract. Required-field or
+email validation refuses submission, renders one linked error summary and
+focuses the first invalid field. The form owns this summary; omit
+CaptureView's `errorSummary` and `submitted` slots when using ContactForm.
+`accepted` replaces the form with a status confirmation and focuses its `h2`.
+`invalid`, `rate-limited`, `unavailable`, rejected submissions and unknown
+answers retain entered values and focus submit, with one failure alert.
+The native form renders `method="post"` and has no `action`; callers cannot
+set either attribute. Before hydration, or with JavaScript disabled, a native
+submit posts the named fields in the request body to the current URL and
+navigates to the host's response. The host must handle that POST if it needs a
+no-JavaScript submission path; ContactForm does not provide a fallback route.
+After hydration, the existing client submit handler prevents native navigation
+and calls `onSubmit` as before.
+
+The submit button is pending while sending. The honeypot is visually hidden,
+aria-hidden, out of the tab order and autocomplete-off, and its value reaches
+the handler. `devPreview` pins one of the existing closed review states and
+makes submission inert; production callers omit it.
+
+`checkFrontDoor` currently has no contact page type. The contact test passes
+through `surface: "boundary"` as a stand-in, applying the generic one-h1,
+primary-action and page-title checks. That pass does not apply the auth
+form-measure rule or establish contact-specific conformance.
+
+Keep the page and frame on the server. Only `contact-form.client.tsx` is a
+client boundary; bind the approved-copy resolver and submit transport there:
+
+```tsx
+"use client";
+
+import { ContactForm } from "@clossys/publisher/web/client";
+import type { ContactFormProps } from "@clossys/publisher/web/client";
+
+declare const form: ContactFormProps; // the host's resolver, approved refs and submit transport
+
+export function ContactFormIsland() {
+  return <ContactForm {...form} />;
+}
+```
+
+In the server page, import `ContactFormIsland` from that local file (represented
+by its declaration below) and pass it to `CaptureView`:
+
+```tsx
+import { CaptureView, SiteFrame } from "@clossys/publisher/web";
+import type { SiteFrameInput } from "@clossys/publisher/web";
+
+type CopyRef = Parameters<SiteFrameInput["resolveCopy"]>[0];
+declare const frame: SiteFrameInput;
+declare const pageCopy: { heading: CopyRef; description: CopyRef; formLabel: CopyRef };
+declare function ContactFormIsland(): React.ReactElement;
+
+export function FramedContactPage() {
+  const heading = frame.resolveCopy(pageCopy.heading)!.text;
+  const description = frame.resolveCopy(pageCopy.description)!.text;
+  const formLabel = frame.resolveCopy(pageCopy.formLabel)!.text;
+  return (
+    <SiteFrame {...frame}>
+      <CaptureView
+        heading={heading}
+        description={description}
+        formLabel={formLabel}
+        form={<ContactFormIsland />}
+      />
+    </SiteFrame>
+  );
+}
+```
+
 ## Licence
 
 MIT
@@ -5271,3 +5372,49 @@ if (findings.some((finding) => finding.severity === "error")) {
 export const resolved = resolveSectionedViewDocument(document, resolveCopy);
 // resolved.resolutions retains the registry revision and source for every CopyRef.
 ```
+
+## Index configuration: status list
+
+A list of items with current status labels belongs to Index: the reader
+looks up readiness rather than following ordered steps. Use a
+`content-section` with the existing `topics` recipe and a `badge` on each
+item. The example uses Index's three existing axes: shape `rows-1`, reveal
+`all`, groups `off`; each axis has at most three values. Status labels are
+copy in the badge slot, and tones select existing semantic tokens.
+
+```tsx
+import { resolveSectionedViewDocument, type SectionedViewDocument } from "@clossys/publisher/core";
+import { SectionedView } from "@clossys/publisher/web";
+
+declare const resolveCopy: Parameters<typeof resolveSectionedViewDocument>[1]; // resolves approved registry entries
+
+const document: SectionedViewDocument = {
+  id: "feature-status-page",
+  sections: [{
+    id: "feature-status",
+    kind: "content-section",
+    heading: { id: "feature-status.heading" },
+    block: {
+      type: "items",
+      recipe: "topics",
+      columns: 1,
+      scale: "item",
+      items: [
+        { id: "search", heading: { id: "search.heading" }, badge: { label: { id: "status.live" }, tone: "success" } },
+        { id: "imports", heading: { id: "imports.heading" }, badge: { label: { id: "status.in-progress" }, tone: "info" } },
+        { id: "exports", heading: { id: "exports.heading" }, badge: { label: { id: "status.planned" }, tone: "neutral" } },
+      ],
+    },
+  }],
+};
+
+const page = <SectionedView document={resolveSectionedViewDocument(document, resolveCopy)} />;
+```
+
+Author the status copy as, for example, Live, In progress and Planned.
+Descriptions can explain individual items; optional `groups` reference
+their IDs. The existing rows limits apply: 2–8 items in one column, even
+counts in two columns, and 2–4 groups of 2–4 items within the total budget.
+Badge labels resolve through the document's ordinary copy provenance;
+an unresolved label refuses the document. The preview renders this
+configuration on `catalog/index-function.html` through `SectionedView`.
