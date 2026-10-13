@@ -549,6 +549,7 @@ function renderSection(section: ResolvedSectionedViewSection, index: number, blo
     }
     case "feature-grid": return <blocks.FeatureGrid key={section.id} id={section.id} eyebrow={section.eyebrow} heading={section.heading} description={section.description} items={section.items} headingLevel={2} ground={section.ground} />;
     case "faq":
+      // LandingView consumes publishedKind for band anchors; the canonical adapter ignores it.
       return <blocks.ContentSection key={section.id} section={faqSection(section)} publishedKind="faq" className={SECTION_GROUND_CLASSES[section.ground].surface || undefined} />;
     case "ordered-step-sequence": return <blocks.OrderedStepSequence key={section.id} id={section.id} eyebrow={section.eyebrow} heading={section.heading} description={section.description} items={section.items} headingLevel={2} ground={section.ground} />;
     case "status-list": return <blocks.StatusList key={section.id} id={section.id} eyebrow={section.eyebrow} heading={section.heading} description={section.description} labels={section.labels} groups={section.groups} items={section.items} legendLabel={section.heading} headingLevel={2} ground={section.ground} />;
