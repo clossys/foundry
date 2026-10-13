@@ -174,3 +174,6 @@ export type {
 } from "./shareCard.js";
 export { createShareCardRoute } from "./shareCardRoute.js";
 export type { ShareCardRoute, ShareCardRouteInput } from "./shareCardRoute.js";
+
+export { constructionStatusProps } from "#publisher-web-views";
+export type { ConstructionStatusInput } from "#publisher-web-views";
