@@ -535,11 +535,12 @@ content-section `align`, `size: "compact"` and `mediaSide` are refused.
 For existing drafts, omit `align`, replace compact content size with
 `standard`, and replace `mediaSide` with a split direction.
 
-A block has one of two canonical types. `items` holds a flat list of
-`SectionedViewItem` objects; `matrix` holds exactly two id-bearing sides.
-Recipes expand into the same canonical axes through `desugarRecipe`. A
-recipe may omit an arrangement supplied by its fixed axes or defaults. A
-block without a recipe must name its arrangement. Explicit fixed-axis conflicts are refused with
+A block has one of three canonical types. `items` holds a flat list of
+`SectionedViewItem` objects; `matrix` holds exactly two id-bearing sides;
+`prose` holds ordered paragraphs of inline text and link spans.
+Items recipes expand into the same canonical axes through `desugarRecipe`. A
+recipe may omit an arrangement supplied by its fixed axes or defaults. An
+Items block without a recipe must name its arrangement. Explicit fixed-axis conflicts are refused with
 `recipe-axis`. `SECTIONED_VIEW_CONTENT_CONTRACT` exports the shared closed
 vocabulary and count table.
 
@@ -554,6 +555,30 @@ these contracts with a local, approved Writer registry.
 | `stacked` | 2–4 items |
 | `order: "connected"` | 3–5 items in columns or stacked; four without lanes emits the advisory `steps-count` warning |
 | `reveal: "disclose"` | Rows only, 4–6 items |
+
+The `prose` recipe's configuration budget is **1–8 non-empty paragraphs,
+at most 24 inline spans, 6 links and 1,200 Unicode characters per paragraph**. Its closed shape is
+`{ type: "prose", paragraphs }`, where each paragraph is a dense, ordered
+array of `{ type: "text", text: CopyRef }` or
+`{ type: "link", text: CopyRef, href }` spans. Every visible span resolves
+through the existing Writer CopyRef path, retaining resolution provenance;
+missing, stale, pending or production-refused copy stops resolution with
+the same field-path refusal as other content recipes. Preserve spaces in
+the span copy: rendering joins spans without inserting separators.
+The character count includes visible link text and inline spaces; the limit
+is checked after copy resolution and again at the resolved rendering boundary.
+Paragraphs use the `lg` spacing token and `ui-width-prose-max` readable measure.
+Link hrefs use Publisher's shared sanctioned set: fragments, one-origin
+paths, HTTP(S) URLs without credentials, and explicit mailto links.
+Unknown fields, empty paragraphs, unsafe schemes, protocol-relative URLs,
+and over-budget data are refused at authored and resolved boundaries.
+Both web entries render one `<p>` per paragraph and inline `<a>` elements
+through the existing Frame, using Designer tokens. The Explain catalog
+includes the `prose` witness; no consumer JSX is needed.
+Prose is a catalog sample with no configurable axis values. Explain's
+`shape` axis retains `grid-2`, `grid-3`, `bento` and `stack`. The catalog
+contains 32 reader samples and 4 configuration examples, including prose
+among Explain's 6 samples.
 
 The default axes are `order: "none"`, `reveal: "all"`,
 `treatment: "plain"` and `scale: "item"`. Statement scale requires three
@@ -647,7 +672,7 @@ layout, block and visual; a split after a split on the same side or a third
 split in a row; a dense band right after a dense band; a specimen on an
 inverse ground or a second inverse body band; a second band of four or more
 cards; a second comparison; one block type repeated with the same
-treatment; and a second band holding a `primary` action
+treatment where that block offers treatment options (prose does not); and a second band holding a `primary` action
 (`sectioned-view-variety-primary-actions`): a page has one main call to
 action per run of bands; and a split whose block is linked and whose text
 column also holds actions (`sectioned-view-variety-link-competing`): two link
@@ -656,11 +681,53 @@ systems compete for one click.
 `SectionedView` is now the dedicated web renderer after that Designer floor is
 available. Resolve the CopyRef document first, retain its `resolutions` as the
 only publication provenance, and pass the resolved model directly:
-Here `resolveCopy` is the consumer's approved `CopyResolver`.
+
+#### Prose recipe example
+
+This example uses a local approved Writer registry for the prose band
+and a leading hero. Its `resolveCopy` supplies both documents.
 
 ```tsx
-import { resolveSectionedViewDocument } from "@clossys/publisher/core";
+import {
+  createCopyResolver,
+  type CopyRegistry,
+} from "@clossys/writer";
+import {
+  resolveSectionedViewDocument,
+  type SectionedViewDocument,
+} from "@clossys/publisher/core";
 import { SectionedView } from "@clossys/publisher/web";
+
+const registry = {
+  id: "prose-example", locale: "en", revision: "1",
+  source: { kind: "consumer", reference: "prose-example" },
+  entries: [
+    { id: "acme.home.heading", text: "Welcome", context: "Section example", status: "approved" },
+    { id: "acme.home.description", text: "A section of approved copy.", context: "Section example", status: "approved" },
+    { id: "prose.heading", text: "Reading guide", context: "Prose example", status: "approved" },
+    { id: "prose.before", text: "Read the ", context: "Prose example", status: "approved" },
+    { id: "prose.link", text: "writing guide", context: "Prose example", status: "approved" },
+    { id: "prose.after", text: " before continuing.", context: "Prose example", status: "approved" },
+    { id: "prose.second", text: "Keep source material beside the record.", context: "Prose example", status: "approved" },
+  ],
+} satisfies CopyRegistry;
+const document = {
+  id: "prose-example",
+  sections: [{
+    id: "reading", kind: "content-section", heading: { id: "prose.heading" },
+    block: { type: "prose", paragraphs: [
+      [
+        { type: "text", text: { id: "prose.before" } },
+        { type: "link", text: { id: "prose.link" }, href: "/guide" },
+        { type: "text", text: { id: "prose.after" } },
+      ],
+      [{ type: "text", text: { id: "prose.second" } }],
+    ] },
+  }],
+} satisfies SectionedViewDocument;
+const resolveCopy = createCopyResolver(registry);
+export const proseDocument = resolveSectionedViewDocument(document, resolveCopy);
+const prosePage = <SectionedView document={proseDocument} />;
 
 const resolved = resolveSectionedViewDocument({
   id: "acme-home",
