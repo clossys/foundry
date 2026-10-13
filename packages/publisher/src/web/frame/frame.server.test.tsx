@@ -14,6 +14,10 @@ const COPY: Readonly<Record<string, string>> = {
   "brand.label": "Example home",
   "skip": "Skip to content",
   "env.app": "App",
+  "icon.contact": "Contact",
+  "social.label": "Profiles",
+  "social.profile": "Profile",
+  "footer.help": "Help",
   "legal.entity": "Example Ltd",
   "legal.privacy": "Privacy",
 };
@@ -80,4 +84,25 @@ describe("frame exports", () => {
       expect((webIndex as Record<string, unknown>)[name]).toBe((frameIndex as Record<string, unknown>)[name]);
     }
   });
+});
+
+
+it("renders identical all-slots markup through ordinary and server entries", () => {
+  const icon = [["path", { d: "M3 12h18" }]] as const;
+  const shell = {
+    ...siteShellFor(CONFIG, "site"),
+    iconActions: [{ href: "/contact", label: ref("icon.contact"), icon }],
+    footer: {
+      legal: CONFIG.legal,
+      links: [{ href: "/help", label: ref("footer.help") }],
+      social: { label: ref("social.label"), links: [{ href: "https://social.example/profile", label: ref("social.profile"), icon }] },
+    },
+  };
+  const ordinary = renderToStaticMarkup(<webIndex.SiteFrame shell={shell} resolveCopy={resolveCopy} resolveAsset={resolveAsset}><p>content</p></webIndex.SiteFrame>);
+  const server = renderToStaticMarkup(<webServer.SiteFrame shell={shell} resolveCopy={resolveCopy} resolveAsset={resolveAsset}><p>content</p></webServer.SiteFrame>);
+  expect(ordinary).toBe(server);
+  expect(server).toContain('aria-label="Contact"');
+  expect(server).toContain('aria-label="Profiles"');
+  expect(server).toContain('aria-label="Profile"');
+  expect(server).toContain('href="/help"');
 });

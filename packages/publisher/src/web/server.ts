@@ -147,6 +147,7 @@ export type {
   SiteFrameConfig,
   SiteFrameInput,
   SiteFrameProps,
+  SiteIconLinkInput,
   SiteLinkInput,
   SitePageLayer,
   SiteShellInput,

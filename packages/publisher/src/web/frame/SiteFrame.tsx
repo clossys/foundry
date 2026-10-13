@@ -1,8 +1,9 @@
 import type { ReactElement } from "react";
+import { Icon } from "@clossys/designer/atoms/server";
 import { Brandmark, SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
 import { SiteSkipLink } from "./SkipLink.client.js";
 import { resolveShell } from "./internal/resolveShell.js";
-import type { ResolvedSiteLink } from "./internal/resolveShell.js";
+import type { ResolvedSiteIconLink, ResolvedSiteLink } from "./internal/resolveShell.js";
 import { SITE_MAIN_ID } from "./types.js";
 import type { SiteFrameProps } from "./types.js";
 
@@ -15,6 +16,26 @@ function TextLink({ link }: { readonly link: ResolvedSiteLink }) {
     <a href={link.href} className={LINK_CLASSES} style={LINK_STYLE}>
       {link.label}
     </a>
+  );
+}
+
+function IconLink({ link }: { readonly link: ResolvedSiteIconLink }) {
+  return (
+    <a href={link.href} aria-label={link.label} className={LINK_CLASSES} style={LINK_STYLE}>
+      <Icon glyph={link.icon} decorative />
+    </a>
+  );
+}
+
+function IconLinkList({ links }: { readonly links: readonly ResolvedSiteIconLink[] }) {
+  return (
+    <ul role="list" className="m-0 flex list-none flex-wrap items-center gap-sm p-0">
+      {links.map((link, index) => (
+        <li key={index}>
+          <IconLink link={link} />
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -63,10 +84,13 @@ export function SiteFrame({ shell, resolveCopy, resolveAsset, children }: SiteFr
   ) : undefined;
 
   const actions =
-    resolved.actions.length > 0 || resolved.environments.length > 0 ? (
+    resolved.actions.length > 0 || resolved.iconActions.length > 0 || resolved.environments.length > 0 ? (
       <>
         {resolved.actions.map((link, index) => (
           <TextLink key={`action-${index}`} link={link} />
+        ))}
+        {resolved.iconActions.map((link, index) => (
+          <IconLink key={`icon-action-${index}`} link={link} />
         ))}
         {resolved.environments.map((environment, index) => (
           <SiteHeader.ActionLink
@@ -99,22 +123,38 @@ export function SiteFrame({ shell, resolveCopy, resolveAsset, children }: SiteFr
         <SiteFooter
           ground={resolved.ground}
           columns={
-            footer.columns.length > 0
-              ? footer.columns.map((column, columnIndex) => (
+            footer.columns.length > 0 || footer.links.length > 0 ? (
+              <>
+                {footer.columns.map((column, columnIndex) => (
                   <SiteFooter.Column key={columnIndex} heading={column.heading}>
                     {column.links.map((link, linkIndex) => (
                       <TextLink key={linkIndex} link={link} />
                     ))}
                   </SiteFooter.Column>
-                ))
-              : undefined
+                ))}
+                {footer.links.length > 0 ? (
+                  <LinkList links={footer.links} className="m-0 flex list-none flex-wrap items-center gap-sm p-0" />
+                ) : null}
+              </>
+            ) : undefined
           }
           secondary={
-            <SiteFooter.Legal
-              entity={footer.legal.entity}
-              links={footer.legal.links}
-              {...(footer.legal.linksLabel === undefined ? {} : { linksLabel: footer.legal.linksLabel })}
-            />
+            <>
+              {footer.social && footer.social.links.length > 0 ? (
+                footer.social.label === undefined ? (
+                  <IconLinkList links={footer.social.links} />
+                ) : (
+                  <nav aria-label={footer.social.label}>
+                    <IconLinkList links={footer.social.links} />
+                  </nav>
+                )
+              ) : null}
+              <SiteFooter.Legal
+                entity={footer.legal.entity}
+                links={footer.legal.links}
+                {...(footer.legal.linksLabel === undefined ? {} : { linksLabel: footer.legal.linksLabel })}
+              />
+            </>
           }
         />
       ) : null}

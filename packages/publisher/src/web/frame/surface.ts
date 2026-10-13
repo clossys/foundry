@@ -32,10 +32,16 @@ export function siteShellFor(config: SiteFrameConfig, kind: SiteSurfaceKind): Si
     return {
       ...shared,
       ...(site.nav === undefined ? {} : { nav: site.nav }),
+      ...(site.iconActions === undefined ? {} : { iconActions: site.iconActions }),
       ...(site.actions === undefined ? {} : { actions: site.actions }),
       ...(site.secondaryAction === undefined ? {} : { secondaryAction: site.secondaryAction }),
       ...(site.navPlacement === undefined ? {} : { navPlacement: site.navPlacement }),
-      footer: { ...(site.columns === undefined ? {} : { columns: site.columns }), legal: config.legal },
+      footer: {
+        ...(site.columns === undefined ? {} : { columns: site.columns }),
+        ...(site.footerLinks === undefined ? {} : { links: site.footerLinks }),
+        ...(site.social === undefined ? {} : { social: site.social }),
+        legal: config.legal,
+      },
     };
   }
   return {

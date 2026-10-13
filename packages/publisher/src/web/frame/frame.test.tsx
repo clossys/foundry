@@ -6,7 +6,7 @@ import { join } from "node:path";
 import type { ReactElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render } from "@testing-library/react";
+import { cleanup, fireEvent, render, within } from "@testing-library/react";
 import type { CopyRef, CopyResolution, CopyResolver } from "@clossys/writer";
 import type { IconNode } from "@clossys/designer/atoms/server";
 import { AuthView } from "../views/AuthView.js";
@@ -44,6 +44,11 @@ const COPY: Readonly<Record<string, string>> = {
   "legal.terms": "Terms",
   "legal.label": "Legal",
   "surface.admin": "Admin",
+  "icon.contact": "Contact",
+  "social.label": "Profiles",
+  "social.profile": "Profile",
+  "footer.help": "Help",
+  "blank": "   ",
   "doc.title": "Privacy notice",
   "doc.section": "Details",
   "doc.body": "Document body.",
@@ -658,6 +663,136 @@ describe("SiteFrame list keys", () => {
       expect([...container.querySelectorAll("a")].filter((link) => link.textContent === "About")).toHaveLength(2 + 2 + 2 + 1);
     } finally {
       consoleError.mockRestore();
+    }
+  });
+});
+
+
+// Icon actions, ungrouped links and social profiles are closed shell data.
+const ICON_LINK = { href: "/contact", label: ref("icon.contact"), icon: ICON };
+const ALL_SLOTS: SiteShellInput = {
+  ...siteShellFor(CONFIG, "site"),
+  iconActions: [ICON_LINK],
+  environments: [{ href: "/app", label: ref("env.app"), icon: ICON }],
+  footer: {
+    ...siteShellFor(CONFIG, "site").footer!,
+    links: [{ href: "/help", label: ref("footer.help") }],
+    social: { label: ref("social.label"), links: [{ href: "/profile", label: ref("social.profile"), icon: ICON }] },
+  },
+};
+
+describe("SiteFrame icon slots", () => {
+  it("renders all slots with semantic landmarks, resolved accessible names and decorative icons", () => {
+    const { getByRole } = render(frame(ALL_SLOTS, <p>content</p>));
+    const banner = getByRole("banner");
+    const contact = within(banner).getByRole("link", { name: "Contact" });
+    expect(contact).toHaveAttribute("href", "/contact");
+    expect(contact.textContent).toBe("");
+    expect(contact.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
+    const footer = getByRole("contentinfo");
+    const social = within(footer).getByRole("navigation", { name: "Profiles" });
+    const profile = within(social).getByRole("link", { name: "Profile" });
+    expect(profile).toHaveAttribute("href", "/profile");
+    expect(profile.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
+    expect(within(social).getByRole("list")).toContainElement(profile);
+    const ungrouped = within(footer).getByRole("link", { name: "Help" }).closest("ul")!;
+    expect(ungrouped).toHaveAttribute("role", "list");
+    expect(ungrouped.querySelector("h1,h2,h3,h4,h5,h6")).toBeNull();
+    expect(within(footer).getAllByRole("heading").map((heading) => heading.textContent)).toEqual(["Company"]);
+  });
+
+  it("keeps all slots in document tab order", () => {
+    const { container } = render(frame(ALL_SLOTS, <p>content</p>));
+    const focusable = [...container.querySelectorAll<HTMLElement>('a[href],button,input,select,textarea,[tabindex]')]
+      .filter((element) => element.tabIndex >= 0);
+    expect(focusable.map((element) => element.getAttribute("aria-label") ?? element.textContent)).toEqual([
+      "Skip to content", "Example home", "Pricing", "Docs", "Sign in", "Get started", "Contact", "App",
+      "About", "Help", "Profile", "Privacy", "Terms",
+    ]);
+  });
+
+  it("omits empty slots byte for byte", () => {
+    const shell = siteShellFor(CONFIG, "site");
+    const omitted = renderToStaticMarkup(frame(shell, <p>content</p>));
+    for (const social of [{ links: [] }, { label: ref("social.label"), links: [] }]) {
+      expect(renderToStaticMarkup(frame({ ...shell, iconActions: [], footer: { ...shell.footer!, links: [], social } }, <p>content</p>))).toBe(omitted);
+    }
+  });
+
+  it("renders ungrouped links alone and unnamed social without a navigation wrapper", () => {
+    const { getByRole } = render(frame({ ...ALL_SLOTS, footer: { ...ALL_SLOTS.footer!, columns: [], social: { links: ALL_SLOTS.footer!.social!.links } } }, <p>content</p>));
+    const footer = getByRole("contentinfo");
+    expect(within(footer).queryByRole("heading")).toBeNull();
+    expect(within(footer).getByRole("link", { name: "Help" }).closest("ul")).not.toBeNull();
+    expect(within(footer).getByRole("link", { name: "Profile" }).closest("nav")).toBeNull();
+  });
+
+  it("resolves root-relative hrefs in all three slots against origin", () => {
+    const { getByRole } = render(frame({ ...ALL_SLOTS, origin: "https://example.com" }, <p>content</p>));
+    for (const [name, path] of [["Contact", "/contact"], ["Help", "/help"], ["Profile", "/profile"]]) {
+      expect(getByRole("link", { name })).toHaveAttribute("href", `https://example.com${path}`);
+    }
+  });
+
+  describe("fails closed", () => {
+    const resolve = (shell: unknown) => () => resolveShell(shell as SiteShellInput, resolveCopy, resolveAsset);
+    const assertRefusal = (shell: unknown, path: string, hidden: string) => {
+      const call = resolve(shell);
+      expect(call).toThrow(`SiteFrame: ${path}`);
+      try { call(); } catch (error) { expect((error as Error).message).not.toContain(hidden); }
+    };
+    const withIconLink = (entry: unknown, social = false) => social
+      ? { ...ALL_SLOTS, footer: { ...ALL_SLOTS.footer, social: { links: [entry] } } }
+      : { ...ALL_SLOTS, iconActions: [entry] };
+
+    it("refuses unknown icon-link and social keys without echoing values", () => {
+      for (const social of [false, true]) {
+        assertRefusal(withIconLink({ ...ICON_LINK, extra: "private-value" }, social), social ? "shell.footer.social.links[0]" : "shell.iconActions[0]", "private-value");
+      }
+      assertRefusal({ ...ALL_SLOTS, footer: { ...ALL_SLOTS.footer, social: { links: [], extra: "private-value" } } }, "shell.footer.social", "private-value");
+    });
+
+    it.each(["javascript:alert(1)", "//unsafe.example/path", "/unsafe\u0000path"])("refuses unsafe href %j in each new slot", (value) => {
+      assertRefusal(withIconLink({ ...ICON_LINK, href: value }), "shell.iconActions[0].href", value);
+      assertRefusal(withIconLink({ ...ICON_LINK, href: value }, true), "shell.footer.social.links[0].href", value);
+      assertRefusal({ ...ALL_SLOTS, footer: { ...ALL_SLOTS.footer, links: [{ href: value, label: ref("footer.help") }] } }, "shell.footer.links[0].href", value);
+    });
+
+    it.each([undefined, ref("unresolved-label"), ref("blank"), "literal-label"])("refuses missing unresolved blank or literal label %j", (label) => {
+      for (const social of [false, true]) {
+        assertRefusal(withIconLink({ ...ICON_LINK, label }, social), social ? "shell.footer.social.links[0].label" : "shell.iconActions[0].label", typeof label === "string" ? label : label?.id ?? "missing-label");
+      }
+    });
+
+    it.each([ref("unresolved-label"), ref("blank"), "literal-label"])("refuses invalid social navigation label %j", (label) => {
+      assertRefusal({ ...ALL_SLOTS, footer: { ...ALL_SLOTS.footer, social: { label, links: [ICON_LINK] } } }, "shell.footer.social.label", typeof label === "string" ? label : label.id);
+    });
+
+    it.each([
+      [["script", { src: "forbidden-value" }]],
+      [["path", { href: "forbidden-value" }]],
+      [["path", { fill: "url(forbidden-value)" }]],
+    ])("refuses non-shape icon data %j", (node) => {
+      // Wrap parameterised tuples so each case remains an IconNode array.
+      for (const social of [false, true]) {
+        assertRefusal(withIconLink({ ...ICON_LINK, icon: [node] }, social), social ? "shell.footer.social.links[0].icon" : "shell.iconActions[0].icon", "forbidden-value");
+      }
+    });
+  });
+});
+
+describe("siteShellFor icon slots", () => {
+  const config: SiteFrameConfig = { ...CONFIG, site: { ...CONFIG.site, iconActions: ALL_SLOTS.iconActions, footerLinks: ALL_SLOTS.footer!.links, social: ALL_SLOTS.footer!.social } };
+  it("passes all three slots only to the site", () => {
+    const site = siteShellFor(config, "site");
+    expect(site.iconActions).toEqual(ALL_SLOTS.iconActions);
+    expect(site.footer?.links).toEqual(ALL_SLOTS.footer!.links);
+    expect(site.footer?.social).toEqual(ALL_SLOTS.footer!.social);
+    for (const kind of ["front-door", "admin", "demo"] as const) {
+      const shell = siteShellFor(config, kind);
+      expect(shell).not.toHaveProperty("iconActions");
+      expect(shell.footer).not.toHaveProperty("links");
+      expect(shell.footer).not.toHaveProperty("social");
     }
   });
 });
