@@ -535,11 +535,12 @@ content-section `align`, `size: "compact"` and `mediaSide` are refused.
 For existing drafts, omit `align`, replace compact content size with
 `standard`, and replace `mediaSide` with a split direction.
 
-A block has one of two canonical types. `items` holds a flat list of
-`SectionedViewItem` objects; `matrix` holds exactly two id-bearing sides.
-Recipes expand into the same canonical axes through `desugarRecipe`. A
-recipe may omit an arrangement supplied by its fixed axes or defaults. A
-block without a recipe must name its arrangement. Explicit fixed-axis conflicts are refused with
+A block has one of three canonical types. `items` holds a flat list of
+`SectionedViewItem` objects; `matrix` holds exactly two id-bearing sides;
+`prose` holds ordered paragraphs of inline text and link spans.
+Items recipes expand into the same canonical axes through `desugarRecipe`. A
+recipe may omit an arrangement supplied by its fixed axes or defaults. An
+Items block without a recipe must name its arrangement. Explicit fixed-axis conflicts are refused with
 `recipe-axis`. `SECTIONED_VIEW_CONTENT_CONTRACT` exports the shared closed
 vocabulary and count table.
 
@@ -554,6 +555,30 @@ these contracts with a local, approved Writer registry.
 | `stacked` | 2–4 items |
 | `order: "connected"` | 3–5 items in columns or stacked; four without lanes emits the advisory `steps-count` warning |
 | `reveal: "disclose"` | Rows only, 4–6 items |
+
+The `prose` recipe's configuration budget is **1–8 non-empty paragraphs,
+at most 24 inline spans, 6 links and 1,200 Unicode characters per paragraph**. Its closed shape is
+`{ type: "prose", paragraphs }`, where each paragraph is a dense, ordered
+array of `{ type: "text", text: CopyRef }` or
+`{ type: "link", text: CopyRef, href }` spans. Every visible span resolves
+through the existing Writer CopyRef path, retaining resolution provenance;
+missing, stale, pending or production-refused copy stops resolution with
+the same field-path refusal as other content recipes. Preserve spaces in
+the span copy: rendering joins spans without inserting separators.
+The character count includes visible link text and inline spaces; the limit
+is checked after copy resolution and again at the resolved rendering boundary.
+Paragraphs use the `lg` spacing token and `ui-width-prose-max` readable measure.
+Link hrefs use Publisher's shared sanctioned set: fragments, one-origin
+paths, HTTP(S) URLs without credentials, and explicit mailto links.
+Unknown fields, empty paragraphs, unsafe schemes, protocol-relative URLs,
+and over-budget data are refused at authored and resolved boundaries.
+Both web entries render one `<p>` per paragraph and inline `<a>` elements
+through the existing Frame, using Designer tokens. The Explain catalog
+includes the `prose` witness; no consumer JSX is needed.
+Prose is a catalog sample with no configurable axis values. Explain's
+`shape` axis retains `grid-2`, `grid-3`, `bento` and `stack`. The catalog
+contains 32 reader samples and 4 configuration examples, including prose
+among Explain's 6 samples.
 
 The default axes are `order: "none"`, `reveal: "all"`,
 `treatment: "plain"` and `scale: "item"`. Statement scale requires three
@@ -647,7 +672,7 @@ layout, block and visual; a split after a split on the same side or a third
 split in a row; a dense band right after a dense band; a specimen on an
 inverse ground or a second inverse body band; a second band of four or more
 cards; a second comparison; one block type repeated with the same
-treatment; and a second band holding a `primary` action
+treatment where that block offers treatment options (prose does not); and a second band holding a `primary` action
 (`sectioned-view-variety-primary-actions`): a page has one main call to
 action per run of bands; and a split whose block is linked and whose text
 column also holds actions (`sectioned-view-variety-link-competing`): two link
@@ -656,11 +681,53 @@ systems compete for one click.
 `SectionedView` is now the dedicated web renderer after that Designer floor is
 available. Resolve the CopyRef document first, retain its `resolutions` as the
 only publication provenance, and pass the resolved model directly:
-Here `resolveCopy` is the consumer's approved `CopyResolver`.
+
+#### Prose recipe example
+
+This example uses a local approved Writer registry for the prose band
+and a leading hero. Its `resolveCopy` supplies both documents.
 
 ```tsx
-import { resolveSectionedViewDocument } from "@clossys/publisher/core";
+import {
+  createCopyResolver,
+  type CopyRegistry,
+} from "@clossys/writer";
+import {
+  resolveSectionedViewDocument,
+  type SectionedViewDocument,
+} from "@clossys/publisher/core";
 import { SectionedView } from "@clossys/publisher/web";
+
+const registry = {
+  id: "prose-example", locale: "en", revision: "1",
+  source: { kind: "consumer", reference: "prose-example" },
+  entries: [
+    { id: "acme.home.heading", text: "Welcome", context: "Section example", status: "approved" },
+    { id: "acme.home.description", text: "A section of approved copy.", context: "Section example", status: "approved" },
+    { id: "prose.heading", text: "Reading guide", context: "Prose example", status: "approved" },
+    { id: "prose.before", text: "Read the ", context: "Prose example", status: "approved" },
+    { id: "prose.link", text: "writing guide", context: "Prose example", status: "approved" },
+    { id: "prose.after", text: " before continuing.", context: "Prose example", status: "approved" },
+    { id: "prose.second", text: "Keep source material beside the record.", context: "Prose example", status: "approved" },
+  ],
+} satisfies CopyRegistry;
+const document = {
+  id: "prose-example",
+  sections: [{
+    id: "reading", kind: "content-section", heading: { id: "prose.heading" },
+    block: { type: "prose", paragraphs: [
+      [
+        { type: "text", text: { id: "prose.before" } },
+        { type: "link", text: { id: "prose.link" }, href: "/guide" },
+        { type: "text", text: { id: "prose.after" } },
+      ],
+      [{ type: "text", text: { id: "prose.second" } }],
+    ] },
+  }],
+} satisfies SectionedViewDocument;
+const resolveCopy = createCopyResolver(registry);
+export const proseDocument = resolveSectionedViewDocument(document, resolveCopy);
+const prosePage = <SectionedView document={proseDocument} />;
 
 const resolved = resolveSectionedViewDocument({
   id: "acme-home",
@@ -2387,21 +2454,16 @@ variables.
 #### `LegalView`
 
 `LegalView`, exported from `@clossys/publisher/web` next to `DocumentView`,
-renders a `LegalDocument` as a whole self-chromed page: Designer's
-`SiteHeader`, its own `<main>` holding the document in a prose-measure column
-with no card, then `SiteFooter`. It does not use the shared
-[page layout](#page-layout) and has no chrome-free mode, so it cannot sit
-inside a [`SiteFrame`](#site-frame--siteframe): it would add a second banner,
-`<main>` and contentinfo. It is server-safe and has no summary or in-page
-action props; its banner takes the same header slots as `HeroView`.
+renders a validated `LegalDocument`. Inside `SiteFrame`, use `<LegalView
+framed ... />`: the view renders its legal body and the frame owns the skip
+link, banner, single `<main>` and footer. Use `DocumentView` for ordinary
+structured documents and the framed legal path for terms and privacy so
+legal validation, both dates and the draft callout run together.
 
-**Inside a frame, use `DocumentView`.** A `LegalDocument` is a
-`StructuredDocument`, so a framed legal page renders it with `DocumentView`
-(the document title as the `<h1>`, the article in the card). `DocumentView`
-does not run the legal profile: call `validateLegalDocument` (and
-`gateLegalDocument` before publishing) yourself, and pass the effective date
-as `effectiveDate`. It does not render the last-updated date or the draft
-callout that `LegalView` adds; a framed legal view with those is a follow-up.
+For a self-chromed page, omit `framed` and supply `brand`, as below. Both
+paths share one body. LegalView is server-safe and has no summary or
+in-page action props; its legacy banner takes the same header slots as
+`HeroView`.
 
 ```tsx
 import { LegalView } from "@clossys/publisher/web";
@@ -2436,7 +2498,11 @@ export function TermsPage() {
 
 Props, in addition to the standard `div` attributes and `style`:
 
-- `brand`: the brand node placed in the page chrome.
+- `framed` (`true`): chrome-free legal content for `SiteFrame`. This branch
+  excludes `brand`, `headerAction`, `secondaryAction`, `nav`, `ground` and
+  `footerSecondary`; passing them at runtime refuses. Its content root also
+  refuses frame landmark roles and the frame's main id.
+- `brand`: required for the self-chromed path, placed in the page chrome.
 - `headerAction`, `secondaryAction`, `nav` (optional): the header slots, as on
   `HeroView`. `headerAction` is the banner call to action (Designer
   `SiteHeader`'s `actions`), `secondaryAction` sits just before it and `nav`
@@ -2481,6 +2547,28 @@ What it does:
 - Legal document text and date/draft labels come from caller `CopyRef`s.
   The related heading and item slots are caller-supplied values; the view
   adds no wording. Related links follow Designer's canonical item validation.
+
+A legal route inside the frame uses the same document, resolver and labels:
+
+```tsx
+import { LegalView, SiteFrame } from "@clossys/publisher/web";
+import type { LegalViewLabels } from "@clossys/publisher/web";
+import type { LegalDocument } from "@clossys/publisher/document";
+
+declare const frame: React.ComponentProps<typeof SiteFrame>;
+declare const document: LegalDocument;
+declare const labels: LegalViewLabels;
+declare const resolveCopyId: React.ComponentProps<typeof LegalView>["resolveCopyId"];
+
+export function FramedTermsPage() {
+  return (
+    <SiteFrame {...frame}>
+      <LegalView framed document={document} resolveCopyId={resolveCopyId}
+        labels={labels} locale="en-GB" />
+    </SiteFrame>
+  );
+}
+```
 
 **Soundness boundary.** `LegalView` guarantees the document's structure,
 section order, dates and a draft marker that cannot be suppressed. It says
@@ -2653,9 +2741,12 @@ links its legal row to the public site's `/privacy` and `/terms` on
 
 **Which views fit inside the frame.**
 
-| Safe inside `SiteFrame` (no `<main>` of their own when no chrome prop is passed) | Still render their own `<main>` |
+| Safe inside `SiteFrame` (no `<main>` of their own) | Still render their own `<main>` |
 | --- | --- |
-| `AuthView`, `CaptureView`, `DocumentView`, `StatusView`; deprecated: `BoundaryView`, `ErrorView` | `HeroView`, `LandingView`, `MarketingView`, `CollectionView`, `LegalView`, `ContactView`, `PackReviewView`, `BrandGuideView`, `SystemAuditView` |
+| `AuthView`, `CaptureView`, `DocumentView`, `StatusView` without chrome props; `LegalView` with `framed`; deprecated: `BoundaryView`, `ErrorView` without chrome props | `HeroView`, `LandingView`, `MarketingView`, `CollectionView`, `ContactView`, `PackReviewView`, `BrandGuideView`, `SystemAuditView` |
+
+`LegalView framed` renders its legal body inside `SiteFrame`; the frame owns
+the single `<main>`. Omitting `framed` keeps the self-chromed legal page.
 
 `SectionedView` and `LandingView` render their own `<main>` by default; pass
 `landmark="none"` to place either inside the frame. The built-in registry `AuthView` template
@@ -2685,7 +2776,7 @@ nothing shipped for it yet; `out-of-scope`, not part of the page contract.
 | 2. Document and head | Publisher | `supplier` | the document function (`html`, `body`, `lang`, `dir`, fonts, theme bootstrap, viewport) |
 | 3. Providers and runtime | their owning packages (telemetry contracts: Observer) | `contract-only` | provider mount points |
 | 4. Shell and chrome | Designer, mounted by the Publisher frame | `implemented` | signature slot (`defineSiteSignature`), consent card, locale switcher, backdrop |
-| 5. View | Publisher | `implemented` | chrome-free versions of the views in the right-hand column above |
+| 5. View | Publisher | `implemented` | chrome-free `HeroView`, `MarketingView`, `CollectionView`, `PackReviewView`, `BrandGuideView` and `SystemAuditView` |
 | 6. Per-page head | Publisher | `contract-only` | `pageHead` |
 | 7. Machine surfaces | Publisher | `contract-only` | robots, sitemap from the route manifest, web manifest, icons, health |
 | 8. System states | Publisher views | `implemented` | loading state, degraded state, frame-aware `ErrorView` root |
@@ -2940,6 +3031,68 @@ matching HTTP status from the host's own route. Give a placeholder route the
 `noindex, nofollow`; that page kind is metadata only and does not depend on
 which view the route renders. `StatusView` replaces `ErrorView` and
 `BoundaryView`, which are deprecated and keep their earlier markup.
+
+#### CopyRef construction composition — `constructionStatusProps`
+
+`constructionStatusProps(input, resolveCopyId)` returns `status`, `subtitle`,
+and the supplied `action` and/or `routes` for `StatusView`. Its closed
+`ConstructionStatusInput` shape accepts Writer `CopyRef`s for `title`,
+`description`, the action label, the destination label, and each destination's
+heading and optional description. Pass Writer's `CopyResolver`; this is the
+same resolver that the frame takes as `resolveCopy`.
+
+The caller's approved registry owns every visible word. For this example,
+resolve these references to neutral visitor copy:
+
+| CopyRef id | Resolved text |
+| --- | --- |
+| `construction.title` | Careers |
+| `construction.description` | This page is not available yet. |
+| `construction.action` | Back to home |
+| `construction.destinations` | Useful destinations |
+| `construction.help` | Help |
+| `construction.helpDescription` | Find answers to common questions. |
+| `construction.contact` | Contact |
+
+```tsx
+import { constructionStatusProps, SiteFrame, StatusView } from "@clossys/publisher/web";
+import type { ConstructionStatusInput, SiteFrameInput } from "@clossys/publisher/web";
+
+export function ConstructionPage({ shell, resolveCopy, resolveAsset }: SiteFrameInput) {
+  const input: ConstructionStatusInput = {
+    title: { id: "construction.title" },
+    description: { id: "construction.description" },
+    action: { label: { id: "construction.action" }, href: "/" },
+  };
+  return (
+    <SiteFrame shell={shell} resolveCopy={resolveCopy} resolveAsset={resolveAsset}>
+      <StatusView {...constructionStatusProps(input, resolveCopy)} />
+    </SiteFrame>
+  );
+}
+```
+
+For destinations, supply `destinations: { label: { id:
+"construction.destinations" }, items: [{ id: "help", heading: { id:
+"construction.help" }, description: { id: "construction.helpDescription" },
+href: "/help" }, { id: "contact", heading: { id: "construction.contact" },
+href: "/contact" }] }`. One destination uses a canonical Item; two to six
+use rows in authored order. Destinations can accompany or replace the action.
+
+At least one action or destination collection is required. A collection must
+contain one to six items with unique, nonblank ids. Every link uses Publisher's
+sanctioned-href policy; the action uses the primary button-link treatment at
+the base ground and medium size, through Designer tokens. Missing or blank
+copy and malformed input throw `RenderError` with reason `resolution-failed`;
+messages name only the input position. The composition supplies no fallback
+copy and adds no visible words.
+
+Public copy describes the page's availability neutrally and gives one way
+onward. Keep editorial and implementation status out of visitor text. Pair
+the host route with `kind: "construction"` in `buildSiteMetadata` so it receives
+`noindex, nofollow`. `SiteFrame` owns the page's one `<main>`; this composition
+only fills `StatusView`'s content. The ordinary and `react-server` web entries
+and `@clossys/publisher/web/client` expose the same composition and input type.
 
 ### Global error document — `GlobalErrorDocument`
 
@@ -4969,16 +5122,17 @@ with `AuthView`'s `isDisabled`, as above.
 
 `@clossys/publisher/testing` is a test-support entry for the test step a
 consumer already has. It renders the consumer's own sign-in, activation,
-sign-out landing, reset, boundary, not-found, global-error and
+sign-out landing, reset, contact, boundary, not-found, global-error and
 service-unavailable surfaces with `renderToStaticMarkup`, parses each with the
 caller's `DOMParser`, and reports every invariant a surface breaks. The kit
 builds no view and no copy: each `render` returns the consumer's own element.
 
 | Rule | Asks |
 | --- | --- |
-| `one-h1` | Exactly one `<h1>`. |
+| `one-h1` | Every surface has exactly one `<h1>`. |
 | `form-measure` | The `<main>` of a sign-in, activation or reset surface, or the view's content root directly inside it, carries `max-width:var(--ui-width-form-max, none)`. |
-| `one-primary-action` | Exactly one button, link or `[role=button]` with class token `bg-accent` (`PRIMARY_ACTION_CLASS`), inside `<main>` or, when there is none, the body. |
+| `contact-form` | A `contact` surface has exactly one `<main>` containing exactly one `<form>`, whose `method` attribute is `post` (case-insensitive). |
+| `one-primary-action` | Every surface has exactly one button, link or `[role=button]` with class token `bg-accent` (`PRIMARY_ACTION_CLASS`), inside `<main>` or, when there is none, the body. |
 | `page-title` | `formatPageTitle(title)` does not throw and, when `title.actual` is given, equals it. `title` is required on every surface except `global-error`. |
 | `global-error-head` | A `global-error` document has exactly one `<title>` equal to `formatPageTitle(title)` (or matching `<page> · <brand>` when no `title` is given), a robots meta containing `noindex`, and exactly one `link[rel=icon]`. |
 
@@ -5079,10 +5233,9 @@ aria-hidden, out of the tab order and autocomplete-off, and its value reaches
 the handler. `devPreview` pins one of the existing closed review states and
 makes submission inert; production callers omit it.
 
-`checkFrontDoor` currently has no contact page type. The contact test passes
-through `surface: "boundary"` as a stand-in, applying the generic one-h1,
-primary-action and page-title checks. That pass does not apply the auth
-form-measure rule or establish contact-specific conformance.
+Pass `surface: "contact"` to `checkFrontDoor` for the framed contact page.
+It checks one h1, one primary action, the required page title and the contact
+form's main ownership and POST method, without imposing an auth form measure.
 
 Keep the page and frame on the server. Only `contact-form.client.tsx` is a
 client boundary; bind the approved-copy resolver and submit transport there:

@@ -3,6 +3,7 @@ import type { CopyRef, CopyResolver } from "@clossys/writer";
 import { mergeUiClasses } from "@clossys/designer/atoms/server";
 import { ArticleBody, PageHeader } from "@clossys/designer/blocks/server";
 import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
+import { assertViewContentRoot } from "../internal/viewContentRoot.js";
 import type { SiteChromeGround } from "../internal/viewChromeGround.js";
 import { renderViewLinks, type ViewLinksInput } from "../internal/ViewLinks.js";
 import { RenderError } from "../../internal/errors.js";
@@ -20,7 +21,7 @@ export interface LegalViewLabels {
   draftHeading: CopyRef;
 }
 
-export interface LegalViewProps extends HTMLAttributes<HTMLDivElement> {
+interface LegalViewChromeProps {
   /** Persistent site identity, rendered in the page banner. */
   brand: ReactNode;
   /** The site's call to action, rendered in the banner (`SiteHeader`'s `actions`). Absent from the markup when omitted. */
@@ -35,6 +36,11 @@ export interface LegalViewProps extends HTMLAttributes<HTMLDivElement> {
    * @default "base"
    */
   ground?: SiteChromeGround;
+  /** Persistent footer content. */
+  footerSecondary?: ReactNode;
+}
+
+interface LegalViewBodyProps extends HTMLAttributes<HTMLDivElement> {
   /**
    * The legal document. LegalView always validates it with
    * validateLegalDocument and renders it through renderStructuredDocument
@@ -47,12 +53,16 @@ export interface LegalViewProps extends HTMLAttributes<HTMLDivElement> {
   labels: LegalViewLabels;
   /** BCP 47 locale used to format both dates. Required: there is no default. */
   locale: string;
-  /** Persistent footer content. */
-  footerSecondary?: ReactNode;
   /** Caller-labelled references after the legal body: one Item or two to six rows. Empty collections render nothing. */
   related?: ViewLinksInput;
   style?: CSSProperties;
 }
+
+/** One shared legal body, either inside SiteFrame or surrounded by legacy chrome. */
+export type LegalViewProps = LegalViewBodyProps & (
+  | ({ framed: true } & { [Key in keyof LegalViewChromeProps]?: never })
+  | ({ framed?: false } & LegalViewChromeProps)
+);
 
 const NOT_APPLICABLE_PATH_PREFIX = "legal.notApplicable.";
 
@@ -95,7 +105,9 @@ function formatDate(formatter: Intl.DateTimeFormat, value: string): string {
 }
 
 /**
- * A site page for one LegalDocument (terms or privacy).
+ * A site page for one LegalDocument (terms or privacy). Pass `framed` inside
+ * SiteFrame: it renders the shared legal body with no site chrome or main.
+ * Omit `framed` and supply `brand` for the existing self-chromed page.
  *
  * What it guarantees: the document is validated first (any finding throws a
  * RenderError before anything renders), the top-level sections appear in the
@@ -112,11 +124,12 @@ function formatDate(formatter: Intl.DateTimeFormat, value: string): string {
  * into the copy.
  */
 export function LegalView({
+  framed = false,
   brand,
   headerAction,
   secondaryAction,
   nav,
-  ground = "base",
+  ground,
   document,
   resolveCopyId,
   labels,
@@ -127,6 +140,12 @@ export function LegalView({
   style,
   ...rest
 }: LegalViewProps) {
+  if (framed) {
+    if ([brand, headerAction, secondaryAction, nav, ground, footerSecondary].some((value) => value !== undefined)) {
+      throw new RenderError("resolution-failed", "LegalView: framed content cannot take chrome props; SiteFrame owns the chrome.");
+    }
+    assertViewContentRoot("LegalView", rest);
+  }
   const findings = validateLegalDocument(document);
   if (findings.length > 0) {
     throw new RenderError(
@@ -150,41 +169,55 @@ export function LegalView({
   const facts = legal.status === "draft" ? (legal.factsToConfirm ?? []).map((fact, index) => resolveCopy(fact, `legal.factsToConfirm.${index}`, resolveCopyId)) : null;
   const references = renderViewLinks(related, "LegalView");
 
+  const content = (
+    <>
+      <PageHeader title={title} />
+      <dl className="flex flex-col gap-xs text-body-s text-ink-secondary">
+        <div className="flex flex-wrap gap-sm">
+          <dt>{effectiveLabel}</dt>
+          <dd>
+            <time dateTime={legal.effectiveDate}>{formatDate(formatter, legal.effectiveDate)}</time>
+          </dd>
+        </div>
+        <div className="flex flex-wrap gap-sm">
+          <dt>{updatedLabel}</dt>
+          <dd>
+            <time dateTime={legal.lastUpdated}>{formatDate(formatter, legal.lastUpdated)}</time>
+          </dd>
+        </div>
+      </dl>
+      <ArticleBody>
+        {facts === null ? null : (
+          <aside role="note" data-callout-tone="warning" className="flex flex-col gap-sm rounded-lg border border-status-warning bg-surface-sunken p-lg">
+            <h2>{draftHeading}</h2>
+            <ul>
+              {facts.map((fact, index) => (
+                <li key={index}>{fact}</li>
+              ))}
+            </ul>
+          </aside>
+        )}
+        {rendered.element}
+      </ArticleBody>
+      {references}
+    </>
+  );
+
+  if (framed) {
+    return (
+      <div {...rest} className={mergeUiClasses("mx-auto flex w-full flex-1 flex-col gap-xl px-lg py-2xl", className)} style={{ maxWidth: "var(--ui-width-prose-max, none)", ...style }}>
+        {content}
+      </div>
+    );
+  }
+
   return (
     <div {...rest} className={mergeUiClasses("flex min-h-dvh flex-col", className)} style={style}>
-      <SiteHeader ground={ground} brand={brand} nav={nav} secondaryAction={secondaryAction} actions={headerAction} />
+      <SiteHeader ground={ground === undefined ? "base" : ground} brand={brand} nav={nav} secondaryAction={secondaryAction} actions={headerAction} />
       <main className="mx-auto flex w-full flex-1 flex-col gap-xl px-lg py-2xl" style={{ maxWidth: "var(--ui-width-prose-max, none)" }}>
-        <PageHeader title={title} />
-        <dl className="flex flex-col gap-xs text-body-s text-ink-secondary">
-          <div className="flex flex-wrap gap-sm">
-            <dt>{effectiveLabel}</dt>
-            <dd>
-              <time dateTime={legal.effectiveDate}>{formatDate(formatter, legal.effectiveDate)}</time>
-            </dd>
-          </div>
-          <div className="flex flex-wrap gap-sm">
-            <dt>{updatedLabel}</dt>
-            <dd>
-              <time dateTime={legal.lastUpdated}>{formatDate(formatter, legal.lastUpdated)}</time>
-            </dd>
-          </div>
-        </dl>
-        <ArticleBody>
-          {facts === null ? null : (
-            <aside role="note" data-callout-tone="warning" className="flex flex-col gap-sm rounded-lg border border-status-warning bg-surface-sunken p-lg">
-              <h2>{draftHeading}</h2>
-              <ul>
-                {facts.map((fact, index) => (
-                  <li key={index}>{fact}</li>
-                ))}
-              </ul>
-            </aside>
-          )}
-          {rendered.element}
-        </ArticleBody>
-        {references}
+        {content}
       </main>
-      <SiteFooter ground={ground} secondary={footerSecondary} />
+      <SiteFooter ground={ground === undefined ? "base" : ground} secondary={footerSecondary} />
     </div>
   );
 }

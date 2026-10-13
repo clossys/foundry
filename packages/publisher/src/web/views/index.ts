@@ -62,5 +62,8 @@ export type { ResetDetails, ResetFailure, ResetFormProps, ResetResult } from "./
 
 export type { LandingViewAction } from "./SectionedViewActions.js";
 
+export { constructionStatusProps } from "./constructionStatus.js";
+export type { ConstructionStatusInput } from "./constructionStatus.js";
+
 export { ContactForm } from "./ContactForm.js";
 export type { ContactFormCopy, ContactFormDevPreview, ContactFormProps, ContactFormTopic, ContactFormValues } from "./ContactForm.js";

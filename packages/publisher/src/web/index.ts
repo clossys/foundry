@@ -150,5 +150,9 @@ export type { ShareCardRoute, ShareCardRouteInput } from "./shareCardRoute.js";
 
 export { ConsumerArtSlot } from "./ConsumerArtSlot.js";
 export type { ConsumerArtSlotProps } from "./ConsumerArtSlot.js";
+
+export { constructionStatusProps } from "./views/index.js";
+export type { ConstructionStatusInput } from "./views/index.js";
+
 export { ContactForm } from "./views/ContactForm.js";
 export type { ContactFormCopy, ContactFormDevPreview, ContactFormProps, ContactFormTopic, ContactFormValues } from "./views/ContactForm.js";

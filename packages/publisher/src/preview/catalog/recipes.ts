@@ -3,6 +3,25 @@ import type { CatalogFixture } from './types.js';
 
 export const RECIPES_FIXTURES = [
 {
+    id: "recipes-prose",
+    fn: "Recipes",
+    axis: "content",
+    value: "prose",
+    caption: "Ordered paragraphs with an inline link",
+    section: {
+        id: "recipes-prose", kind: "content-section", size: "standard", layout: "stacked",
+        heading: { id: "catalog.sample.prose.heading" },
+        block: { type: "prose", paragraphs: [
+            [
+                { type: "text", text: { id: "catalog.sample.prose.before" } },
+                { type: "link", text: { id: "catalog.sample.prose.link" }, href: "/guide" },
+                { type: "text", text: { id: "catalog.sample.prose.after" } },
+            ],
+            [{ type: "text", text: { id: "catalog.sample.prose.second" } }],
+        ] },
+    } satisfies SectionedViewSection,
+},
+{
     "id": "recipes-nav-composition" as const,
     "fn": "Recipes",
     "axis": "composition",

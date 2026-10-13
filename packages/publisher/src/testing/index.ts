@@ -11,6 +11,7 @@ export type FrontDoorSurface =
   | "activation"
   | "sign-out-landing"
   | "reset"
+  | "contact"
   | "boundary"
   | "not-found"
   | "global-error"
@@ -20,6 +21,7 @@ export type FrontDoorSurface =
 export type FrontDoorRule =
   | "one-h1"
   | "form-measure"
+  | "contact-form"
   | "one-primary-action"
   | "page-title"
   | "global-error-head";
@@ -93,6 +95,20 @@ function checkSurface(parser: typeof DOMParser, entry: FrontDoorSurfaceCase): Fr
       ![...main.children].some((child) => (child as HTMLElement).style?.maxWidth === FORM_MEASURE)
     ) {
       add("form-measure", `expected <main> to carry max-width:${FORM_MEASURE}, found "${main.style.maxWidth}"`);
+    }
+  }
+
+  if (surface === "contact") {
+    const mains = doc.querySelectorAll("main");
+    if (mains.length !== 1) {
+      add("contact-form", `expected exactly one <main>, found ${mains.length}`);
+    } else {
+      const forms = mains[0]!.querySelectorAll("form");
+      if (forms.length !== 1) {
+        add("contact-form", `expected exactly one <form> inside <main>, found ${forms.length}`);
+      } else if (forms[0]!.getAttribute("method")?.toLowerCase() !== "post") {
+        add("contact-form", "expected the contact form method attribute to be post");
+      }
     }
   }
 
