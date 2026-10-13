@@ -72,6 +72,8 @@ function sourceUrl(value: unknown): boolean {
   } catch { return false; }
 }
 
+const utf8 = new TextEncoder();
+
 /** Checks plain declarations offline. It does not fetch bytes, measure rendered contrast, or certify rights. */
 export function checkConsumerArtContract(value: unknown): ConsumerArtReport {
   const findings: ConsumerArtFinding[] = [];
@@ -85,7 +87,7 @@ export function checkConsumerArtContract(value: unknown): ConsumerArtReport {
   try {
     if (shape(value, "art", ["slot", "purpose", "alt", "width", "height", "aspect", "fit", "loading", "bytes", "backgroundToken", "source"])) {
       const art = value;
-      if (!["backdrop", "media"].includes(String(art.slot))) fail("art.slot", "Expected backdrop or media.");
+      if (art.slot !== "backdrop" && art.slot !== "media") fail("art.slot", "Expected backdrop or media.");
       if (art.purpose !== "decorative" && art.purpose !== "meaningful") fail("art.purpose", "Declare decorative or meaningful.");
       if (art.slot !== "media" && art.purpose !== "decorative") fail("art.purpose", "Backdrops must be decorative.");
       if (typeof art.alt !== "string" || (art.purpose === "decorative" ? art.alt !== "" : art.alt.trim() === "")) fail("art.alt", "Decorative art needs empty alt; meaningful art needs descriptive alt.");
@@ -111,17 +113,17 @@ export function checkConsumerArtContract(value: unknown): ConsumerArtReport {
             if (!descriptor || !("value" in descriptor)) { fail(field, "Expected a dense array of data paths."); continue; }
             const path: unknown = descriptor.value;
             if (!shape(path, field, ["d", "fillToken"], ["strokeToken", "strokeWidth"])) continue;
-            if (typeof path.d !== "string" || path.d.length > 65536 || !/^[Mm][\s\d.,+\-eEMmLlHhVvCcSsQqTtAaZz]*$/.test(path.d)) fail(`${field}.d`, "Expected bounded SVG path geometry starting with a move.");
+            if (typeof path.d !== "string" || path.d.length > 65536 || !/^[Mm][ \t\r\n\f\d.,+\-eEMmLlHhVvCcSsQqTtAaZz]*$/.test(path.d)) fail(`${field}.d`, "Expected bounded SVG path geometry starting with a move.");
             if (!colorToken(path.fillToken)) fail(`${field}.fillToken`, "Expected a registered color token name.");
             if (path.strokeToken !== undefined && !colorToken(path.strokeToken)) fail(`${field}.strokeToken`, "Expected a registered color token name.");
             if (path.strokeWidth !== undefined && (path.strokeToken === undefined || typeof path.strokeWidth !== "number" || !Number.isFinite(path.strokeWidth) || path.strokeWidth <= 0 || path.strokeWidth > 64)) fail(`${field}.strokeWidth`, "A stroke needs a token and a finite width greater than zero and at most 64.");
           }
-          const content = paths.reduce((total: number, entry: unknown) => total + (dataRecord(entry) && typeof entry.d === "string" ? entry.d.length : 0), 0);
+          const content = paths.reduce((total: number, entry: unknown) => total + (dataRecord(entry) && typeof entry.d === "string" ? utf8.encode(entry.d).length : 0), 0);
           if (positiveInteger(art.bytes, BACKDROP_BUDGET_CEILING_BYTES) && art.bytes < content) fail("art.bytes", `Declared bytes understate the inline SVG: at least ${content} are needed for the path data.`);
           if (Reflect.ownKeys(paths).some(key => key !== "length" && (typeof key !== "string" || !/^(0|[1-9]\d*)$/.test(key) || Number(key) >= paths.length))) fail("art.source.paths", "Unsupported array fields.");
         }
       } else if (shape(art.source, "art.source", ["format", "src"])) {
-        if (!["avif", "webp", "png", "jpeg"].includes(String(art.source.format))) fail("art.source.format", "Expected a static avif, webp, png or jpeg photo, or inline token SVG.");
+        if (art.source.format !== "avif" && art.source.format !== "webp" && art.source.format !== "png" && art.source.format !== "jpeg") fail("art.source.format", "Expected a static avif, webp, png or jpeg photo, or inline token SVG.");
         if (!sourceUrl(art.source.src)) fail("art.source.src", "Expected a root-relative path or credential-free HTTPS URL.");
       }
     }

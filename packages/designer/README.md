@@ -6704,7 +6704,7 @@ values per axis. Art fills a slot within that composition.
 | `purpose`, `alt` | Decorative art has empty alt and is hidden from assistive technology. Meaningful media has descriptive, nonblank resolved alt. Backdrops are decorative; information must also appear in the section's accessible content. |
 | `source` (`ConsumerArtSource`) | Static AVIF, WebP, PNG or JPEG photographs (`ConsumerArtFormat`), or inline SVG geometry as 1–256 `ConsumerArtPath` entries. Each path has `d`, `fillToken` and optional paired stroke paint/width. Raw SVG markup, external SVG images, embeds and animation are outside this contract. |
 | `backgroundToken`, path paint | Registered `--color-*` names only; Publisher emits live `var(...)` references. No literal colors, style overrides or arbitrary markup. Inline vector art re-themes with the surrounding brand; photographs retain their pixels, while their background follows the token. Use vector geometry for illustrations or authored brand scenes that must re-theme. |
-| `loading`, `bytes` | Declare `eager` for a first-viewport hero visual or `lazy` for deferred art; the Clossys slot honors that declaration for both supported positions. Images decode asynchronously. Declare 1–2097152 transferred bytes, including all required resources. Inline SVG is static server-rendered geometry with no separate fetch; its bytes count toward the document budget. |
+| `loading`, `bytes` | Declare `eager` for a first-viewport hero visual or `lazy` for deferred art; the Clossys slot honors that declaration for both supported positions. Images decode asynchronously. Declare 1–2097152 transferred bytes, including all required resources; the offline check enforces only a minimum (a floor on inline path data), not an exact size. Inline SVG is static server-rendered geometry with no separate fetch; its bytes count toward the document budget. |
 
 The check accepts plain data, rejects unknown fields, and returns a
 `ConsumerArtReport` with path-bearing `ConsumerArtFinding` entries. It checks
@@ -6712,7 +6712,10 @@ declared dimensions, aspect ratio, format, byte budget, URL, loading,
 accessibility purpose and token paint offline. File-level verification is not
 yet shipped: photographs' actual file dimensions, format, static content and
 byte size are not read or compared with the declaration. For inline SVG, the
-declared `bytes` must be at least the combined length of all path `d` strings.
+declared `bytes` must be at least the combined UTF-8 length of all path `d` strings.
+This is a minimum, a floor on the path data alone: it ignores markup overhead
+and every other required resource, so it does not establish an exact or
+complete size.
 Consumers supply the art and its usage rights. Images render with declared
 intrinsic dimensions. Hidden layers contain no controls or focus targets;
 meaningful SVG receives `role="img"` and its resolved alt as the accessible

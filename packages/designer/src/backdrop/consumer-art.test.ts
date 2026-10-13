@@ -53,6 +53,23 @@ describe("consumer art contract", () => {
     expect(report.findings).toContainEqual(expect.objectContaining({ path: "art.bytes" }));
     expect(ok({ ...vector, bytes: 1, source: { format: "svg", paths: [{ d: "M0 0L10 10 L20 20", fillToken: "--color-accent" }] } })).toBe(false);
   });
+  it("accepts only SVG path whitespace: space, tab, CR, LF and FF", () => {
+    for (const space of [" ", "\t", "\r", "\n", "\f"]) {
+      expect(ok({ ...vector, source: { format: "svg", paths: [{ d: `M0${space}0${space}L10${space}10`, fillToken: "--color-accent" }] } })).toBe(true);
+    }
+  });
+  it.each([["U+00A0", "\u00a0"], ["U+3000", "\u3000"], ["U+2028", "\u2028"], ["U+FEFF", "\ufeff"], ["VT", "\v"]])("refuses non-SVG whitespace %s in path data", (_name, space) => {
+    const report = checkConsumerArtContract({ ...vector, source: { format: "svg", paths: [{ d: `M0${space}0L10${space}10`, fillToken: "--color-accent" }] } });
+    expect(report.ok).toBe(false);
+    expect(report.findings).toContainEqual(expect.objectContaining({ path: "art.source.paths.0.d" }));
+  });
+  it("requires exact string enum values, not coerced ones", () => {
+    let evaluated = false;
+    const sneaky = { toString: () => { evaluated = true; return "media"; } };
+    for (const slot of [["media"], ["backdrop"], sneaky]) expect(ok({ ...photo, slot })).toBe(false);
+    for (const format of [["webp"], ["png"], sneaky]) expect(ok({ ...photo, source: { format, src: "/art/photo.webp" } })).toBe(false);
+    expect(evaluated).toBe(false);
+  });
   it("accepts credential-free HTTPS but rejects HTTP", () => {
     expect(ok({ ...photo, source: { format: "webp", src: "https://example.com/photo.webp" } })).toBe(true);
     const report = checkConsumerArtContract({ ...photo, source: { format: "webp", src: "http://example.com/photo.webp" } });
