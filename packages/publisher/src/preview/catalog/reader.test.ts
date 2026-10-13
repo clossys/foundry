@@ -48,7 +48,7 @@ const expectedAxes: Record<string, Record<string, string[]>> = {
     frame: { layout: ['stacked', 'split-start', 'split-end'], size: ['standard', 'display'], ground: ['base', 'sunken', 'inverse'] },
     overview: {}, parts: {},
 };
-const expectedCells: Record<string, string[]> = { Show: ['keyed-stack'], Explain: ['features-plate'], Compare: ['comparison-unfeatured'] };
+const expectedCells: Record<string, string[]> = { Show: ['keyed-stack'], Explain: ['features-plate'], Index: ['status-list'], Compare: ['comparison-unfeatured'] };
 describe('reader function catalog', () => {
     it('offers six reader jobs with overview and shared references', () => {
         const root = new JSDOM(buildContentCatalogHtml(sheets)).window.document;
@@ -114,7 +114,7 @@ describe('reader function catalog', () => {
                 }
             }
         }
-        expect(count).toBe(34);
+        expect(count).toBe(35);
         expect(count).toBeLessThanOrEqual(40);
         const parts = new JSDOM(rendered.find(page => page.file === 'catalog/parts.html')!.content).window.document;
         expect(parts.querySelectorAll('[data-config-native], [data-catalog-native]')).toHaveLength(0);
@@ -587,7 +587,7 @@ describe('reader automatic authored grounds and existing presentation', () => {
             const rendered = fresh.buildCatalogFunctionPages(sheets);
             const documents = rendered.map(page => new JSDOM(page.content).window.document);
             expect(documents.reduce((count, document) => count + document.querySelectorAll('[data-catalog-fixture]').length, 0)).toBe(31);
-            expect(documents.reduce((count, document) => count + document.querySelectorAll('[data-catalog-config-cell]').length, 0)).toBe(3);
+            expect(documents.reduce((count, document) => count + document.querySelectorAll('[data-catalog-config-cell]').length, 0)).toBe(4);
             expect(CATALOG_FIXTURES).toHaveLength(43);
             const frame = new JSDOM(rendered.find(page => page.file === 'catalog/frame.html')!.content).window.document;
             const sample = frame.querySelector('[data-catalog-fixture="frame-actions"]')!;
