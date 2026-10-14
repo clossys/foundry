@@ -71,12 +71,31 @@ describe("R1 and R2", () => {
     expect(result.site).toBe("web");
   });
 
-  it("refuses a missing or invalid manifest", () => {
+  it("reports a missing route manifest as a finding and keeps scanning", () => {
+    put("apps/site/app/page.tsx", `${VIEW_PAGE}const a = "#a1b2c3";\n`);
+    put("apps/site/app/privacy/page.tsx", VIEW_PAGE);
+    const result = scanSiteConformance(root);
+    expect(result.filesScanned).toBe(2);
+    expect(result.findings).toEqual([
+      { rule: "site/raw-style-literal", file: "apps/site/app/page.tsx", line: 3 },
+      { rule: "site/template-route-duplicate", file: "apps/site/app/privacy/page.tsx", line: 1 },
+      { rule: "site/manifest-missing", file: "apps/site/web-route-manifest.json", line: 1 },
+    ]);
+  });
+
+  it("still refuses a manifest that is present but invalid", () => {
     put("apps/site/app/page.tsx", VIEW_PAGE);
-    expect(() => scanSiteConformance(root)).toThrow(SiteConformanceError);
     put("apps/site/web-route-manifest.json", "{");
     expect(() => scanSiteConformance(root)).toThrow(SiteConformanceError);
     put("apps/site/web-route-manifest.json", JSON.stringify({ routes: [{ nope: 1 }] }));
+    expect(() => scanSiteConformance(root)).toThrow(SiteConformanceError);
+    put("apps/site/web-route-manifest.json", JSON.stringify({}));
+    expect(() => scanSiteConformance(root)).toThrow(/no routes array/);
+  });
+
+  it("does not let a waiver vouch for a missing route manifest", () => {
+    put("apps/site/app/page.tsx", VIEW_PAGE);
+    put("clossys/conformance-waivers.json", JSON.stringify({ version: 1, waivers: [{ rule: "site/manifest-missing", path: "apps/site/web-route-manifest.json", reason: "r" }] }));
     expect(() => scanSiteConformance(root)).toThrow(SiteConformanceError);
   });
 
