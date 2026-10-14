@@ -8,8 +8,9 @@ import { DEFAULT_SITE, SiteConformanceError, WAIVERS_PATH, scanSiteConformance }
 
 const USAGE = `Usage: site-conformance-check <repoRoot> [--site <dir>]
 
-Report-mode scan of a site's Next.js app directory (<dir>/app, default
-${DEFAULT_SITE}; .ts and .tsx files, skipping node_modules and .next).
+Report-mode scan of a site's Next.js app directory (<dir>/app, or <dir>/src/app
+when <dir>/app is not a directory; default site ${DEFAULT_SITE}; .ts and
+.tsx files, skipping node_modules and .next).
 Rules:
   site/route-not-publisher-view   page.tsx, not-found.tsx and error.tsx must
                                   import @clossys/publisher/web, directly or
@@ -19,8 +20,9 @@ Rules:
                                   contact) outside <dir>/web-route-manifest.json
   site/raw-style-literal          a hex colour or rgb(, hsl(, oklch( on a
                                   line; a same-line token-gate:ignore skips it
-  site/symlink-unscanned          a symlink under <dir>/app that points at a
-                                  .ts/.tsx file, a directory or nothing; it
+  site/symlink-unscanned          a symlink under the selected app directory
+                                  that points at a .ts/.tsx file, a directory
+                                  or nothing; it
                                   is not followed, so what it names was not
                                   scanned (never waivable)
   site/manifest-missing           <dir>/web-route-manifest.json does not
