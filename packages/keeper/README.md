@@ -397,13 +397,17 @@ not paper over an unstable one, because doing so would make a runaway read
 invisible rather than impossible.
 
 Correction and erasure calls go to the client they were made with, including
-calls a child makes from its own effect, layout effects included, before the
-hook's own effects have run. Whether a reply updates the surface is decided
-when it arrives: it applies only if the hook is, at that moment, mounted and
-not hidden, with the same client and subject the call was made with. A reply
-from a replaced client or an earlier subject, one arriving after unmount or
-while an `Activity` boundary hides the hook, and one arriving before the hook
-has ever been shown are ignored, including errors and erasure effects.
+calls a child makes from its own effect before the hook's own effects have
+run. Whether a reply updates the surface is decided when it arrives, against
+the client and subject the hook most recently committed: a reply from a
+replaced client or for an earlier subject is ignored, including errors and
+erasure effects, and so is one arriving after unmount. A reply to the current
+client is applied even while an `Activity` boundary hides the hook or its
+content has re-suspended, and is there once it is shown again. The exception
+is `error`: every read clears it as the read starts, so a failure that lands
+before a read starts is cleared by it. That can happen to a failure from a
+child's layout-effect call on first mount, and to one that lands while
+`Activity` hides the hook, because the read runs again when it is shown.
 
 ## Requirements
 

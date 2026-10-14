@@ -13,7 +13,7 @@
  *      whole role exists to prevent.
  */
 import { act, render as renderComponent, renderHook, waitFor } from "@testing-library/react";
-import { Activity, createElement, startTransition, useEffect, useLayoutEffect } from "react";
+import { Activity, StrictMode, Suspense, createElement, startTransition, use, useEffect, useLayoutEffect } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { describe, expect, it, vi } from "vitest";
 import type { DeletionEffect, HeldItem } from "../schema.js";
@@ -99,15 +99,51 @@ function childCaller(callWhen: (c: HeldRecordClient) => boolean, call: Mutation)
   return { seen, Parent };
 }
 
-/** The hook inside an `Activity` boundary, whose effects are torn down while hidden but whose state is kept. */
+/**
+ * The hook inside an `Activity` boundary, whose effects are torn down while
+ * hidden but whose state is kept. The probe renders one element labelled with
+ * `label`, so a test can see when a commit made while hidden has landed.
+ */
 function inActivity() {
+  const seen: { current: UseHeldRecordResult | undefined } = { current: undefined };
+  function Probe({ c, label }: { c: HeldRecordClient; label: string }) {
+    seen.current = useHeldRecord(options(c));
+    return createElement("span", { "data-client": label });
+  }
+  const tree = (c: HeldRecordClient, mode: "visible" | "hidden", label = "") =>
+    createElement(Activity, { mode, children: createElement(Probe, { c, label }) });
+  return { seen, tree };
+}
+
+/**
+ * The hook inside a `Suspense` boundary next to a sibling that suspends while
+ * `wait` is pending. Rendering with a pending `wait` after the content has
+ * been shown re-suspends it: React shows the fallback and tears down the
+ * hidden content's layout effects, but keeps its passive effects, so the read
+ * does not run again when the content returns.
+ */
+function inSuspense() {
   const seen: { current: UseHeldRecordResult | undefined } = { current: undefined };
   function Probe({ c }: { c: HeldRecordClient }) {
     seen.current = useHeldRecord(options(c));
+    return createElement("span");
+  }
+  function Gate({ wait }: { wait: Promise<void> | undefined }) {
+    if (wait) use(wait);
     return null;
   }
-  const tree = (c: HeldRecordClient, mode: "visible" | "hidden") => createElement(Activity, { mode, children: createElement(Probe, { c }) });
+  const tree = (c: HeldRecordClient, wait?: Promise<void>) =>
+    createElement(Suspense, {
+      fallback: createElement("p", null, "fallback"),
+      children: [createElement(Probe, { key: "probe", c }), createElement(Gate, { key: "gate", wait })],
+    });
   return { seen, tree };
+}
+
+function probe(container: HTMLElement): HTMLElement {
+  const span = container.querySelector("span");
+  if (!span) throw new Error("the probe has not rendered");
+  return span;
 }
 
 function deferredMutations(entries: readonly HeldRecordEntry[] = [entry()]) {
@@ -120,6 +156,129 @@ function deferredMutations(entries: readonly HeldRecordEntry[] = [entry()]) {
   };
   return { c, corrections, erasures };
 }
+
+/**
+ * A client backed by a small store, whose corrections and erasures stay
+ * pending until the test settles them. A stored correction or a confirmed
+ * erasure also changes what the next `read` returns, as a host's store would,
+ * so a read that runs again after the reply does not undo it. `reads` records
+ * every read, so a test can tell the hook's own state from a fresh read.
+ */
+function heldStore(initial: readonly HeldRecordEntry[] = [entry()]) {
+  let held = [...initial];
+  let gate: Promise<void> | undefined;
+  const reads: string[] = [];
+  const corrections: Array<{ resolve: (stored: HeldItem) => void; reject: (error: Error) => void }> = [];
+  const erasures: Array<{ resolve: (effect: DeletionEffect) => void; reject: (error: Error) => void }> = [];
+  const c: HeldRecordClient = {
+    read: async (subjectId) => {
+      reads.push(subjectId);
+      if (gate) await gate;
+      return held;
+    },
+    correct: () =>
+      new Promise((resolve, reject) => {
+        corrections.push({
+          resolve: (stored) => {
+            held = held.map((each) => (each.item.itemId === stored.itemId ? { ...each, item: stored } : each));
+            resolve(stored);
+          },
+          reject,
+        });
+      }),
+    forget: (_subjectId, itemId) =>
+      new Promise((resolve, reject) => {
+        erasures.push({
+          resolve: (effect) => {
+            if (effect === "erased") held = held.filter((each) => each.item.itemId !== itemId);
+            resolve(effect);
+          },
+          reject,
+        });
+      }),
+  };
+  /** Holds every later read until the returned function is called. */
+  const holdReads = () => {
+    let release!: () => void;
+    gate = new Promise((resolve) => {
+      release = resolve;
+    });
+    return () => {
+      gate = undefined;
+      release();
+    };
+  };
+  return { c, reads, corrections, erasures, holdReads };
+}
+
+/**
+ * Every reply the current client can give to a pending call, each with what
+ * the person must be shown once it lands: the effect an erasure observed, the
+ * stored correction, or the failure. `failure` marks the replies that land in
+ * `error`, which a read that runs again clears as it starts, as it does on
+ * every read.
+ */
+const pendingReplies: ReadonlyArray<{
+  name: string;
+  call: Mutation;
+  reply: (store: ReturnType<typeof heldStore>) => void;
+  check: (record: UseHeldRecordResult) => void;
+  failure?: true;
+}> = [
+  {
+    name: "a confirmed erasure",
+    call: (record) => record.forget("item_1"),
+    reply: (store) => store.erasures[0]!.resolve("erased"),
+    check: (record) => {
+      expect(record.lastForgetEffect).toBe("erased");
+      expect(record.rows).toHaveLength(0);
+    },
+  },
+  {
+    name: "an erasure nobody confirmed",
+    call: (record) => record.forget("item_1"),
+    reply: (store) => store.erasures[0]!.resolve("unknown"),
+    check: (record) => {
+      expect(record.lastForgetEffect).toBe("unknown");
+      expect(record.rows).toHaveLength(1);
+    },
+  },
+  {
+    name: "a failed erasure",
+    call: (record) => record.forget("item_1"),
+    reply: (store) => store.erasures[0]!.resolve("failed"),
+    check: (record) => {
+      expect(record.lastForgetEffect).toBe("failed");
+      expect(record.rows).toHaveLength(1);
+    },
+  },
+  {
+    name: "a rejected erasure",
+    call: (record) => record.forget("item_1"),
+    reply: (store) => store.erasures[0]!.reject(new Error("erasure failed")),
+    failure: true,
+    check: (record) => {
+      expect((record.error as Error | undefined)?.message).toBe("erasure failed");
+      expect(record.rows).toHaveLength(1);
+    },
+  },
+  {
+    name: "a stored correction",
+    call: (record) => record.correct(item({ holdingClass: "corrected-notes" })),
+    reply: (store) => store.corrections[0]!.resolve(item({ holdingClass: "corrected-notes" })),
+    check: (record) => expect(record.rows[0]?.entry.item.holdingClass).toBe("corrected-notes"),
+  },
+  {
+    name: "a rejected correction",
+    call: (record) => record.correct(item({ holdingClass: "corrected-notes" })),
+    reply: (store) => store.corrections[0]!.reject(new Error("correction failed")),
+    failure: true,
+    check: (record) => {
+      expect((record.error as Error | undefined)?.message).toBe("correction failed");
+      expect(record.rows[0]?.entry.item.holdingClass).toBe("authored-notes");
+    },
+  },
+];
 
 /**
  * Replies to the CURRENT client that must reach the surface. Each is a reply
@@ -167,13 +326,14 @@ const currentClientReplies: ReadonlyArray<{ name: string; make: () => HeldRecord
  * run before any reply can arrive, which hides a reply that settles in
  * between — the window a client answering within microtasks lands in.
  */
-async function outsideAct(scenario: (root: Root) => Promise<void>): Promise<void> {
+async function outsideAct(scenario: (root: Root, container: HTMLElement) => Promise<void>): Promise<void> {
   const environment = globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean };
   const previous = environment.IS_REACT_ACT_ENVIRONMENT;
   environment.IS_REACT_ACT_ENVIRONMENT = false;
-  const root = createRoot(document.createElement("div"));
+  const container = document.createElement("div");
+  const root = createRoot(container);
   try {
-    await scenario(root);
+    await scenario(root, container);
   } finally {
     root.unmount();
     environment.IS_REACT_ACT_ENVIRONMENT = previous;
@@ -500,31 +660,30 @@ describe("useHeldRecord", () => {
     }
   });
 
-  it.each(["correct", "forget"] as const)("ignores a %s reply that arrives while hidden, after the read was cancelled", async (mutation) => {
-    // `Activity` tears the read effect down while hidden and keeps the
-    // hook's state, so a reply applied to a cancelled read would show.
-    const { c, corrections, erasures } = deferredMutations();
+  it.each(pendingReplies)("applies the current client's reply that arrives while an Activity boundary hides the hook: $name", async ({ call, reply, check }) => {
+    // `Activity` tears the hook's effects down while hidden and keeps its
+    // state. The client has not changed, so the reply is still this
+    // surface's to show.
+    const store = heldStore();
     const { seen, tree } = inActivity();
-    const { rerender } = renderComponent(tree(c, "visible"));
+    const { rerender } = renderComponent(tree(store.c, "visible"));
     await waitFor(() => expect(seen.current?.loading).toBe(false));
     let pending!: Promise<void>;
     act(() => {
-      pending = mutation === "correct" ? seen.current!.correct(item({ holdingClass: "hidden-reply-notes" })) : seen.current!.forget("item_1");
+      pending = call(seen.current!);
     });
-    rerender(tree(c, "hidden"));
+    rerender(tree(store.c, "hidden"));
     await act(async () => {
-      if (mutation === "correct") corrections[0]!(item({ holdingClass: "hidden-reply-notes" }));
-      else erasures[0]!("erased");
+      reply(store);
       await pending;
     });
-    expect(seen.current?.rows).toHaveLength(1);
-    expect(seen.current?.rows[0]?.entry.item.holdingClass).toBe("authored-notes");
-    expect(seen.current?.lastForgetEffect).toBeUndefined();
+    check(seen.current!);
   });
 
-  it.each(currentClientReplies)("ignores a reply that arrives before the read has ever started, then applies one after: $name", async ({ make, call, check }) => {
-    // Rendered hidden from the start, the hook's read effect has not run, so
-    // there is no live read for the reply to belong to.
+  it.each(currentClientReplies)("applies the current client's reply to a call made before the hook has ever been shown: $name", async ({ make, call, check }) => {
+    // Rendered hidden from the start, the hook's effects have not run, but
+    // the client it was rendered with is committed, so the reply is that
+    // client's to show.
     const c = make();
     const { seen, tree } = inActivity();
     const { rerender } = renderComponent(tree(c, "hidden"));
@@ -532,8 +691,7 @@ describe("useHeldRecord", () => {
     await act(async () => {
       await call(seen.current!);
     });
-    expect(seen.current?.lastForgetEffect).toBeUndefined();
-    expect(seen.current?.error).toBeUndefined();
+    check(seen.current!);
 
     rerender(tree(c, "visible"));
     await waitFor(() => expect(seen.current?.loading).toBe(false));
@@ -541,6 +699,29 @@ describe("useHeldRecord", () => {
       await call(seen.current!);
     });
     check(seen.current!);
+  });
+
+  it("applies the reply to a call made before a client swap and back, once the original client is current again", async () => {
+    // The guard compares the client a call went to with the client that is
+    // committed when the reply lands. After A, B and A again, A is the
+    // current client, so its reply is shown.
+    const first = heldStore();
+    const second = client([entry({ item: item({ holdingClass: "second-client-notes" }) })]);
+    const { result, rerender } = renderHook(({ c }) => useHeldRecord(options(c)), { initialProps: { c: first.c } });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    let pending!: Promise<void>;
+    act(() => {
+      pending = result.current.forget("item_1");
+    });
+    rerender({ c: second });
+    await waitFor(() => expect(result.current.rows[0]?.entry.item.holdingClass).toBe("second-client-notes"));
+    rerender({ c: first.c });
+    await waitFor(() => expect(result.current.rows[0]?.entry.item.holdingClass).toBe("authored-notes"));
+    await act(async () => {
+      first.erasures[0]!.resolve("unknown");
+      await pending;
+    });
+    expect(result.current.lastForgetEffect).toBe("unknown");
   });
 
   it("removes the row on a confirmed erasure", async () => {
@@ -710,6 +891,199 @@ describe("useHeldRecord outside act, where a reply can land between a commit and
       await settle(() => expect(seen.current?.loading).toBe(false));
       root.render(createElement(Parent, { c, showChild: true }));
       await settle(() => check(seen.current!));
+    });
+  });
+
+  it("applies a stored correction a child requests from a layout effect on first mount", async () => {
+    await outsideAct(async (root) => {
+      const store = heldStore();
+      const { seen, Parent } = layoutCaller(() => true, (record) => record.correct(item({ holdingClass: "corrected-notes" })));
+      root.render(createElement(Parent, { c: store.c }));
+      await settle(() => expect(seen.current?.loading).toBe(false));
+      expect(store.corrections).toHaveLength(1);
+      store.corrections[0]!.resolve(item({ holdingClass: "corrected-notes" }));
+      await settle(() => expect(seen.current?.rows[0]?.entry.item.holdingClass).toBe("corrected-notes"));
+      expect(store.reads).toHaveLength(1);
+    });
+  });
+
+  it.each(swaps)("applies a stored correction a child requests from a layout effect in the same commit as a client swap made by %s", async (_name, swap) => {
+    await outsideAct(async (root) => {
+      const oldClient = client([entry()]);
+      const oldCorrect = vi.spyOn(oldClient, "correct");
+      const replacement = heldStore([entry({ item: item({ holdingClass: "new-client-notes" }) })]);
+      const { seen, Parent } = layoutCaller((c) => c === replacement.c, (record) => record.correct(item({ holdingClass: "corrected-notes" })));
+      root.render(createElement(Parent, { c: oldClient }));
+      await settle(() => expect(seen.current?.loading).toBe(false));
+      swap(() => root.render(createElement(Parent, { c: replacement.c })));
+      await settle(() => expect(seen.current?.rows[0]?.entry.item.holdingClass).toBe("new-client-notes"));
+      expect(replacement.corrections).toHaveLength(1);
+      expect(oldCorrect).not.toHaveBeenCalled();
+      replacement.corrections[0]!.resolve(item({ holdingClass: "corrected-notes" }));
+      await settle(() => expect(seen.current?.rows[0]?.entry.item.holdingClass).toBe("corrected-notes"));
+      expect(replacement.reads).toHaveLength(1);
+    });
+  });
+});
+
+describe("useHeldRecord outside act, while the hook is hidden or its content has re-suspended", () => {
+  it.each(pendingReplies)("applies the current client's reply that lands while an Activity boundary hides the hook, and keeps it once shown again: $name", async ({ call, reply, check, failure }) => {
+    await outsideAct(async (root, container) => {
+      const store = heldStore();
+      const { seen, tree } = inActivity();
+      root.render(tree(store.c, "visible"));
+      await settle(() => expect(seen.current?.loading).toBe(false));
+      const pending = call(seen.current!);
+      root.render(tree(store.c, "hidden"));
+      await settle(() => expect(probe(container).style.display).toBe("none"));
+      reply(store);
+      await pending;
+      // Applied while hidden: the hidden hook renders again with the reply.
+      await settle(() => check(seen.current!));
+
+      // Shown again, `Activity` runs the read effect again. The read is held
+      // until the hook has started it, so the check below sees its result.
+      const releaseRead = store.holdReads();
+      root.render(tree(store.c, "visible"));
+      await settle(() => expect(probe(container).style.display).toBe(""));
+      await settle(() => expect(seen.current?.loading).toBe(true));
+      expect(store.reads).toHaveLength(2);
+      releaseRead();
+      await settle(() => expect(seen.current?.loading).toBe(false));
+      if (failure) {
+        // The new read's start clears `error`, as every read does; the row
+        // the failed call left in place is still shown.
+        expect(seen.current?.rows).toHaveLength(1);
+        expect(seen.current?.rows[0]?.entry.item.holdingClass).toBe("authored-notes");
+      } else {
+        check(seen.current!);
+      }
+    });
+  });
+
+  it.each(pendingReplies)("applies the current client's reply that lands while the hook's content has re-suspended, and keeps it once the content returns: $name", async ({ call, reply, check }) => {
+    await outsideAct(async (root, container) => {
+      const store = heldStore();
+      const { seen, tree } = inSuspense();
+      root.render(tree(store.c));
+      await settle(() => expect(seen.current?.loading).toBe(false));
+      const pending = call(seen.current!);
+      let release!: () => void;
+      const wait = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      root.render(tree(store.c, wait));
+      await settle(() => expect(container.querySelector("p")?.textContent).toBe("fallback"));
+      reply(store);
+      await pending;
+      release();
+      await settle(() => expect(container.querySelector("p")).toBeNull());
+      await settle(() => check(seen.current!));
+      // The read did not run again, so what is shown is the hook's own record
+      // of the reply rather than a fresh read.
+      expect(store.reads).toHaveLength(1);
+    });
+  });
+
+  it.each(["correct", "forget"] as const)("ignores a replaced client's %s reply when the swap and the reply both happen while an Activity boundary hides the hook", async (mutation) => {
+    await outsideAct(async (root, container) => {
+      const first = heldStore();
+      let releaseRead: (() => void) | undefined;
+      const replacement: HeldRecordClient = {
+        read: () =>
+          new Promise((resolve) => {
+            releaseRead = () => resolve([entry({ item: item({ holdingClass: "new-client-notes" }) })]);
+          }),
+        correct: async (_subjectId, next) => next,
+        forget: async () => "erased",
+      };
+      const { seen, tree } = inActivity();
+      root.render(tree(first.c, "visible", "first"));
+      await settle(() => expect(seen.current?.loading).toBe(false));
+      const pending = mutation === "correct" ? seen.current!.correct(item({ holdingClass: "old-client-notes" })) : seen.current!.forget("item_1");
+      root.render(tree(first.c, "hidden", "first"));
+      await settle(() => expect(probe(container).style.display).toBe("none"));
+      root.render(tree(replacement, "hidden", "replacement"));
+      // The swap has committed inside the hidden boundary.
+      await settle(() => expect(probe(container).dataset.client).toBe("replacement"));
+      if (mutation === "correct") first.corrections[0]!.resolve(item({ holdingClass: "old-client-notes" }));
+      else first.erasures[0]!.resolve("erased");
+      await pending;
+
+      root.render(tree(replacement, "visible", "replacement"));
+      await settle(() => expect(probe(container).style.display).toBe(""));
+      // Until the replacement's read lands the surface still shows what it
+      // held before; the replaced client's reply has not changed it.
+      expect(seen.current?.rows).toHaveLength(1);
+      expect(seen.current?.rows[0]?.entry.item.holdingClass).toBe("authored-notes");
+      expect(seen.current?.lastForgetEffect).toBeUndefined();
+      await settle(() => expect(releaseRead).toBeDefined());
+      releaseRead!();
+      await settle(() => expect(seen.current?.rows[0]?.entry.item.holdingClass).toBe("new-client-notes"));
+      expect(seen.current?.rows).toHaveLength(1);
+      expect(seen.current?.lastForgetEffect).toBeUndefined();
+      expect(seen.current?.error).toBeUndefined();
+    });
+  });
+
+  it("under StrictMode, applies the current client's reply and ignores a replaced client's", async () => {
+    await outsideAct(async (root) => {
+      const first = heldStore();
+      const replacement = client([entry({ item: item({ holdingClass: "new-client-notes" }) })]);
+      const seen: { current: UseHeldRecordResult | undefined; tick: number } = { current: undefined, tick: -1 };
+      function Probe({ c, tick }: { c: HeldRecordClient; tick: number }) {
+        seen.current = useHeldRecord(options(c));
+        seen.tick = tick;
+        return null;
+      }
+      const tree = (c: HeldRecordClient, tick: number) => createElement(StrictMode, null, createElement(Probe, { c, tick }));
+      root.render(tree(first.c, 0));
+      await settle(() => expect(seen.current?.loading).toBe(false));
+      const applied = seen.current!.forget("item_1");
+      first.erasures[0]!.resolve("unknown");
+      await applied;
+      await settle(() => expect(seen.current?.lastForgetEffect).toBe("unknown"));
+
+      const ignored = seen.current!.forget("item_1");
+      root.render(tree(replacement, 1));
+      await settle(() => expect(seen.current?.rows[0]?.entry.item.holdingClass).toBe("new-client-notes"));
+      first.erasures[1]!.resolve("erased");
+      await ignored;
+      // A later render processes any update the reply scheduled.
+      root.render(tree(replacement, 2));
+      await settle(() => expect(seen.tick).toBe(2));
+      expect(seen.current?.lastForgetEffect).toBeUndefined();
+      expect(seen.current?.rows).toHaveLength(1);
+    });
+  });
+
+  it("ignores the reply to a call made during a render that has not committed", async () => {
+    // A hook rendered by a transition that is still suspended has no
+    // committed client, so there is no surface for the reply to update yet.
+    await outsideAct(async (root) => {
+      const logged = vi.spyOn(console, "error").mockImplementation(() => undefined);
+      try {
+        const c = client([entry()], "erased");
+        const never = new Promise<void>(() => undefined);
+        let pending: Promise<void> | undefined;
+        function UncommittedCaller() {
+          const record = useHeldRecord(options(c));
+          if (!pending) pending = record.forget("item_1");
+          use(never);
+          return null;
+        }
+        function Shell({ show }: { show: boolean }) {
+          return show ? createElement(UncommittedCaller) : null;
+        }
+        root.render(createElement(Shell, { show: false }));
+        startTransition(() => root.render(createElement(Shell, { show: true })));
+        await settle(() => expect(pending).toBeDefined());
+        await pending;
+        expect(c.forget).toHaveBeenCalledTimes(1);
+        expect(logged).not.toHaveBeenCalled();
+      } finally {
+        logged.mockRestore();
+      }
     });
   });
 });

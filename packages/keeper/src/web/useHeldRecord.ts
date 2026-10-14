@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useInsertionEffect, useRef, useState } from "react";
 import { decideHolding } from "../contract.js";
 import type { DispositionRead, Holding, ReachRead, RetentionRead, SourceRead } from "../contract.js";
 import type { DeletionEffect, HeldItem } from "../schema.js";
@@ -101,27 +101,25 @@ export interface UseHeldRecordResult {
   forget(itemId: string): Promise<void>;
 }
 
-/** One committed pairing of client and subject, and whether React has since torn it down. */
+/** The client and subject of the hook's most recent commit. */
 interface CommittedTarget {
   client: HeldRecordClient;
   subjectId: string;
-  cancelled: boolean;
 }
 
 /**
  * Whether a correction or erasure reply still belongs on this surface,
- * decided when the reply ARRIVES rather than when the call was made. A
- * child's effects run before this hook's — on first mount, and in the same
- * commit as a client or subject change — so the target recorded at call time
- * can be missing or already replaced even though the call went to the
- * current client. A reply always arrives after the synchronous commit it was
- * made in has finished, so by then the target records what is committed, and
- * the reply applies only if that target has not been torn down and is the
- * client and subject the call was made with. A reply from a replaced client,
- * an earlier subject, or a torn-down target is ignored.
+ * decided when the reply ARRIVES rather than when the call was made, by
+ * comparing the client and subject the call was made with against the ones
+ * the hook has most recently committed. A reply from a replaced client or
+ * for an earlier subject is ignored, and so is one that arrives before the
+ * hook has ever committed, or after it has unmounted. A reply to the current
+ * client applies even while the hook is hidden by an `Activity` boundary or
+ * its content has re-suspended, because hiding changes neither: the reply is
+ * still this surface's to show once it is visible again.
  */
 function replyIsLive(live: CommittedTarget | null, client: HeldRecordClient, subjectId: string): boolean {
-  return live !== null && !live.cancelled && live.client === client && live.subjectId === subjectId;
+  return live !== null && live.client === client && live.subjectId === subjectId;
 }
 
 /**
@@ -157,17 +155,25 @@ export function useHeldRecord(options: UseHeldRecordOptions): UseHeldRecordResul
   const [lastForgetEffect, setLastForgetEffect] = useState<DeletionEffect | undefined>(undefined);
   const committed = useRef<CommittedTarget | null>(null);
 
-  // Recorded in a LAYOUT effect, which React runs inside the commit itself,
-  // rather than in the passive read effect below, which can run a task later.
-  // A client answering within microtasks replies in that gap, and a marker
-  // set by the read effect would then still name the previous client, or no
-  // client at all on first mount. The cleanup runs before the next commit's
-  // marker is set, and on unmount or when an `Activity` boundary hides the hook.
-  useLayoutEffect(() => {
-    const target: CommittedTarget = { client, subjectId, cancelled: false };
+  // Recorded in an INSERTION effect, the earliest point in a commit, because
+  // React runs it for every commit of this hook, including one made while an
+  // `Activity` boundary hides it, and does not tear it down when the hook is
+  // hidden or its content re-suspends. Layout effects are torn down in both
+  // cases, and an `Activity` boundary also holds back every layout and
+  // passive effect of a commit made while it hides the hook, so a target kept
+  // by either effect would go missing for the current client, or keep naming
+  // a client replaced while hidden. It also runs before any child's layout or
+  // passive effect in the same commit, so a call those effects make, and a
+  // reply that settles before this commit's passive effects, is judged
+  // against this commit's client and subject. Only a ref is written here; no
+  // state is updated. The cleanup runs when the client or subject changes,
+  // just before the next target is recorded, and on unmount, after which no
+  // reply applies.
+  useInsertionEffect(() => {
+    const target: CommittedTarget = { client, subjectId };
     committed.current = target;
     return () => {
-      target.cancelled = true;
+      if (committed.current === target) committed.current = null;
     };
   }, [client, subjectId]);
 
