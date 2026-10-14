@@ -1,5 +1,4 @@
 ---
-butler: minor
 observer: minor
 ---
 
