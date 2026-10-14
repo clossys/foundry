@@ -50,8 +50,8 @@ export interface SiteHeaderProps extends Omit<HTMLAttributes<HTMLElement>, "chil
    */
   brand: ReactNode;
   /**
-   * The primary navigation — typically a `NavShell`, but any `ReactNode`
-   * works (a short, static site with no drawer needs might pass a plain
+   * The primary navigation — typically a `NavDisclosure` or `NavShell`, but any `ReactNode`
+   * works (a short, static site with no disclosure needs might pass a plain
    * `<nav>` of `Link`s directly).
    */
   nav?: ReactNode;
@@ -271,13 +271,13 @@ export interface SiteHeaderActionLinkProps
   /** The destination, rendered as a real `<a href>`. Required: the component assumes no route. */
   href: string;
   /**
-   * The link's words, supplied by the caller. Visible beside the icon from the
-   * `tablet` breakpoint up; below it the text is visually hidden and stays the
-   * link's accessible name, so the icon-only link is still announced.
+   * The link's words, supplied by the caller. With an icon, visible beside it
+   * from `tablet` up and visually hidden below it, still naming the link.
+   * Without an icon, plain visible text at every width.
    */
   label: string;
-  /** The glyph shown before the label, at every width. Decorative: `label` names the link. */
-  icon: IconNode;
+  /** Optional glyph before the label. Decorative: `label` names the link. */
+  icon?: IconNode;
   /**
    * Marks this link as the current item of its set, for example the
    * environment the page belongs to. Renders `aria-current="true"` and an
@@ -295,8 +295,8 @@ export interface SiteHeaderActionLinkProps
 
 /**
  * A call-to-action link for `SiteHeader`'s `actions` or `secondaryAction`
- * slot: an icon plus a label from the `tablet` breakpoint up, the icon alone
- * below it. Built for an environment switcher - one link per environment (an
+ * slot: a visible text label, or an icon plus a label from `tablet` up and
+ * the icon alone below it. Built for an environment switcher - one link per environment (an
  * app, an admin, a demo), each to that environment's home, with `isCurrent`
  * on the one the page belongs to - but nothing in it is specific to
  * environments.
@@ -311,7 +311,7 @@ export interface SiteHeaderActionLinkProps
  * This component imports no react-aria-components, so it ships from
  * `@clossys/designer/shell/server` as well.
  *
- * It ships no copy and no route: `href`, `label` and `icon` are required props.
+ * It ships no copy and no route: `href` and `label` are required props.
  */
 function SiteHeaderActionLink({
   href,
@@ -337,8 +337,7 @@ function SiteHeaderActionLink({
         ...style,
       }}
     >
-      <Icon glyph={icon} decorative size="sm" />
-      <span className="sr-only tablet:not-sr-only">{label}</span>
+      {icon ? <><Icon glyph={icon} decorative size="sm" /><span className="sr-only tablet:not-sr-only">{label}</span></> : label}
     </a>
   );
 }
