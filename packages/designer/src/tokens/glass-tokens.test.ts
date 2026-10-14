@@ -2,8 +2,9 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { contrastRatio, contrastRatioEncodedBlend } from "./color.js";
 import { checkTokenContrast } from "./contrast-gate.js";
-import { CONTRAST_PAIRS } from "./contrast-pairs.js";
+import { AA, CONTRAST_PAIRS, contrastPairsForTheme } from "./contrast-pairs.js";
 import { findAllCustomPropertyNames, parseDeclarationsForSelector } from "./internal/parse-css.js";
 import { TOKENS, type TokenDefinition } from "./tokens.js";
 
@@ -152,6 +153,39 @@ describe("glass tokens", () => {
         tokens: withValue(darkTokens(), "--color-surface-glass-inverse", "oklch(0.96 0 0 / 0.4)"),
       });
       expect(result.findings.map((f) => f.pairId)).toEqual(["ink-on-inverse/surface-glass-inverse@backdrop-black"]);
+    });
+
+    it("an ink inside the plate's backdrop range fails at 1:1, though both extremes clear their floors", () => {
+      // A near-clear plate of the ink's own color, on an otherwise white
+      // palette: over white the plate is lighter than the ink, over black it
+      // is darker, so some page content in between makes it exactly as light
+      // as the ink. Scored on the two extremes alone, every pair passes.
+      const ink = "oklch(0.565 0 0)";
+      const glass = "oklch(0.565 0 0 / 0.001)";
+      let tokens = withValue(withValue(TOKENS, "--color-ink-primary", ink), "--color-surface-glass", glass);
+      for (const property of ["--color-surface-base", "--color-surface-sunken", "--color-control-tonal", "--color-control-tonal-hover"]) {
+        tokens = withValue(tokens, property, "oklch(1 0 0)");
+      }
+      for (const backdrop of ["oklch(1 0 0)", "oklch(0 0 0)"]) {
+        expect(Math.min(contrastRatio(ink, glass, backdrop), contrastRatioEncodedBlend(ink, glass, backdrop)), backdrop).toBeGreaterThan(AA);
+      }
+      const result = checkTokenContrast(contrastPairsForTheme("light"), { tokens });
+      expect(result.ok).toBe(false);
+      expect(result.reason).toBe("contrast-gap");
+      expect(result.unchecked).toEqual([]);
+      expect(result.findings.map((f) => f.pairId).sort()).toEqual(
+        [
+          "ink-primary/surface-glass@backdrop-white",
+          "ink-primary/surface-glass@backdrop-black",
+          "focus-ring/surface-glass@backdrop-white",
+          "focus-ring/surface-glass@backdrop-black",
+        ].sort(),
+      );
+      for (const finding of result.findings) {
+        expect(finding.rule, finding.pairId).toBe("below-threshold");
+        expect(finding.ratio, finding.pairId).toBe(1);
+        expect(finding.message, finding.pairId).toContain("intermediate backdrop");
+      }
     });
 
     it("a modest cut from 88% to 80% alpha already fails", () => {

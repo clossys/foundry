@@ -176,7 +176,11 @@ export interface ContrastPair {
    * must parse and be opaque, or the pair is reported unchecked. Over a
    * literal backdrop the ratio is the lower of a linear-light blend and a
    * gamma-encoded sRGB blend (the browser's); a token backdrop keeps the
-   * linear blend alone.
+   * linear blend alone. Because a literal stands for any page content, a
+   * pair over one also fails at 1:1 when the foreground's luminance lies
+   * between the background over black and over white (some backdrop then
+   * matches it), and its foreground must be opaque or it is reported
+   * unchecked.
    */
   readonly compositeOver?: string;
   /** Human-readable rationale, referencing the `contrast.test.ts` assertion this pair ratifies. */
@@ -432,8 +436,11 @@ export const CONTRAST_PAIRS: readonly ContrastPair[] = [
   // ── glass: overlay SiteHeader ink on its translucent plate, AA ─────────
   // The backdrop under the glass is arbitrary page content, blurred. A blur
   // averages that content, so the composite stays between the glass over
-  // pure white and the glass over pure black; checking both extremes bounds
-  // every backdrop. Over a literal backdrop the gate blends the glass both in
+  // pure white and the glass over pure black. The two extremes bound every
+  // backdrop only while the ink's luminance lies outside that range; when it
+  // lies inside, some backdrop matches the ink, and the gate fails the pair
+  // at 1:1 (`contrast-gate.ts`, `backdropCanMatchForeground`). Over a literal
+  // backdrop the gate blends the glass both in
   // linear light and in gamma-encoded sRGB (how browsers paint alpha) and
   // keeps the lower ratio, since neither space is stricter for every
   // polarity. The ink is the one the header sets for the tone; a child that

@@ -199,6 +199,43 @@ function exceptionIsValid(exception: ContrastException | undefined): exception i
   );
 }
 
+const BACKDROP_WHITE = "oklch(1 0 0)";
+const BACKDROP_BLACK = "oklch(0 0 0)";
+
+/**
+ * Over a literal backdrop (arbitrary page content), whether SOME opaque
+ * backdrop makes the opaque foreground `fg` and the plate `bg` composited
+ * over it equally light, under either blend the gate scores: then the true
+ * minimum contrast over all backdrops is 1:1, whatever the two extremes
+ * measure.
+ *
+ * Why the extremes alone do not bound it: contrast against a fixed `fg` is
+ * not monotonic in the backdrop. The plate composited over a backdrop `b`
+ * has a luminance that rises with every channel of `b`, in linear light
+ * (`a*plate + (1-a)*b`) and in the gamma-encoded blend alike, so over all
+ * of sRGB it sweeps exactly the interval from the plate over black to the
+ * plate over white. Contrast is `(Lmax + 0.05) / (Lmin + 0.05)`, so against
+ * a fixed foreground luminance `Lf` it falls toward `Lf` and rises past it.
+ * If `Lf` lies outside that interval, the minimum is at the nearer extreme,
+ * which the white and black pairs already score. If `Lf` lies inside it,
+ * some backdrop lands exactly on `Lf` and the minimum is 1:1. This is the
+ * second case, detected as the foreground being lighter than the plate over
+ * one extreme and not lighter over the other.
+ *
+ * Lightness is compared through each blend's ratio against opaque black:
+ * black's luminance is 0, so `(L + 0.05) / 0.05` orders composited
+ * luminances exactly, without reimplementing either blend here.
+ */
+function backdropCanMatchForeground(fg: string, bg: string): boolean {
+  for (const ratioOf of [contrastRatio, contrastRatioEncodedBlend]) {
+    const foreground = ratioOf(fg, BACKDROP_BLACK);
+    const overWhite = foreground - ratioOf(bg, BACKDROP_BLACK, BACKDROP_WHITE);
+    const overBlack = foreground - ratioOf(bg, BACKDROP_BLACK, BACKDROP_BLACK);
+    if (overWhite * overBlack <= 0) return true;
+  }
+  return false;
+}
+
 /**
  * Evaluates `pairs` against `options.tokens` (defaults to this package's
  * real `TOKENS`). Never throws — every decline path (a missing token, a
@@ -269,16 +306,44 @@ export function checkTokenContrast(
       continue; // already reported to `unchecked` above
     }
 
+    // Over a literal backdrop the foreground must be opaque: a translucent
+    // ink would take on the backdrop's color too, and the extremes check
+    // below (`backdropCanMatchForeground`) bounds every backdrop only for an
+    // ink of fixed luminance. Refused as unchecked, never scored on the
+    // extremes alone.
+    if (literalBackdrop) {
+      const fgAlpha = colorAlpha(fg);
+      if (fgAlpha !== undefined && fgAlpha < 1) {
+        unchecked.push({
+          pairId: pair.id,
+          reason: "unparseable-color-value",
+          detail: `foreground "${pair.foreground}" resolves to translucent "${fg}" (alpha ${fgAlpha}); over a literal backdrop the foreground must be opaque`,
+        });
+        continue;
+      }
+    }
+
     let ratio: number;
+    // Set when some backdrop between the literal extremes makes the plate
+    // exactly as light as the ink: the pair's true minimum is then 1:1.
+    let backdropMatchesForeground = false;
     try {
       // Over a literal backdrop (arbitrary page content), score the pair
       // with translucent values blended both in linear light and in
       // gamma-encoded sRGB (how browsers paint alpha) and keep the lower
       // ratio: neither space is stricter for every ink/plate polarity.
       // Token backdrops keep the linear blend alone.
+      // A literal backdrop stands for any page content, so the pair also
+      // fails at 1:1 when an intermediate backdrop can match the ink (see
+      // `backdropCanMatchForeground`); otherwise the listed extreme's ratio
+      // is reported unchanged.
       ratio = literalBackdrop
         ? Math.min(contrastRatio(fg, bg, over), contrastRatioEncodedBlend(fg, bg, over))
         : contrastRatio(fg, bg, over);
+      if (literalBackdrop && backdropCanMatchForeground(fg, bg)) {
+        backdropMatchesForeground = true;
+        ratio = 1;
+      }
     } catch (error) {
       unchecked.push({
         pairId: pair.id,
@@ -314,7 +379,9 @@ export function checkTokenContrast(
           pairId: pair.id,
           ratio,
           minimumRatio: pair.minimumRatio,
-          message: `"${pair.id}" measures ${ratio.toFixed(2)}:1, below its ${pair.level} minimum of ${pair.minimumRatio}:1 — ${pair.description}`,
+          message: backdropMatchesForeground
+            ? `"${pair.id}" measures 1.00:1 over an intermediate backdrop: the foreground's luminance lies between the plate over black and the plate over white, so some page content makes the plate exactly as light as the foreground. Below its ${pair.level} minimum of ${pair.minimumRatio}:1 — ${pair.description}`
+            : `"${pair.id}" measures ${ratio.toFixed(2)}:1, below its ${pair.level} minimum of ${pair.minimumRatio}:1 — ${pair.description}`,
         });
       }
     } else if (hasValidException) {
