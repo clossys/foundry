@@ -610,6 +610,76 @@ test("a declared refusal that imports or throws another error is red, and an und
   assert.ok(red.mismatches.includes("import:react-server:@acme/synthetic"));
 });
 
+// The refusal probe runs under the refusal's own condition for every
+// condition a refusal can be declared under, not only react-server. A
+// declared `default` refusal is the target a plain Node consumer resolves and
+// a declared `browser` refusal is never Node-imported otherwise, so a probe
+// skipped for either would let a target that imports normally or is broken
+// for another reason qualify on file presence alone.
+const CONDITION_REFUSALS = {
+  default: {
+    exports: { ".": { types: "./index.d.ts", development: "./index.js", default: "./refuse.js" } },
+    marker: "resolves only under the development condition",
+    imports: [],
+  },
+  browser: {
+    exports: { ".": { types: "./index.d.ts", browser: "./refuse.js", default: "./index.js" } },
+    marker: "is server-only and refuses the browser condition",
+    imports: ["import:default:@acme/synthetic"],
+  },
+};
+
+test("a declared default or browser refusal that imports or throws another error is red, and a correct one qualifies", async (t) => {
+  for (const [condition, { exports, marker, imports }] of Object.entries(CONDITION_REFUSALS)) {
+    const [stale, different, correct] = await Promise.all([
+      "export const synthetic = 'imports normally';\n",
+      refusalModule("something else broke"),
+      refusalModule(`The root ${marker}.`),
+    ].map((body) => syntheticPackage({ exports, extraFiles: { "refuse.js": body } })));
+    t.after(() => Promise.all([stale, different, correct].map((item) => rm(item.root, { recursive: true, force: true }))));
+    const refusals = { "@acme/synthetic": { "@acme/synthetic": { [condition]: marker } } };
+    for (const [label, fixture] of [["stale", stale], ["different", different]]) {
+      const transcript = await runCandidateQualification({ ...fixture, refusals });
+      const where = `${condition} ${label}`;
+      assert.equal(transcript.ok, false, where);
+      assert.deepEqual(transcript.mismatches.filter((item) => item.startsWith("refusal:")), [`refusal:${condition}:@acme/synthetic`], where);
+      assert.ok(transcript.mismatches.includes("export-coverage"), where);
+      assert.equal(transcript.coverage.failed, 1, where);
+      assert.deepEqual(importIds(transcript), imports, where);
+    }
+    const green = await runCandidateQualification({ ...correct, refusals });
+    assert.deepEqual(green.mismatches, [], `${condition} correct`);
+    assert.equal(green.ok, true, `${condition} correct`);
+    assert.equal(green.coverage.failed, 0, `${condition} correct`);
+    assert.deepEqual(importIds(green), imports, `${condition} correct`);
+  }
+});
+
+test("a declared refusal that hangs fails coverage at the probe bound, and a slow one that refuses within that bound qualifies", async (t) => {
+  const { exports, marker } = CONDITION_REFUSALS.default;
+  // The hanging module keeps its process alive (an unsettled top-level await
+  // alone would end it with exit 13) so only the probe timeout can end it.
+  // The slow module refuses after the import helper's own 5 s default and well
+  // within the runner's reviewed probe bound, so it qualifies only while the
+  // runner passes that bound to the probe.
+  const [hang, slow] = await Promise.all([
+    "setInterval(() => {}, 1000);\nawait new Promise(() => {});\nexport {};\n",
+    `await new Promise((resolveDelay) => setTimeout(resolveDelay, 6000));\nthrow new Error(${JSON.stringify(`The root ${marker}.`)});\nexport {};\n`,
+  ].map((body) => syntheticPackage({ exports, extraFiles: { "refuse.js": body } })));
+  t.after(() => Promise.all([hang, slow].map((item) => rm(item.root, { recursive: true, force: true }))));
+  const refusals = { "@acme/synthetic": { "@acme/synthetic": { default: marker } } };
+  const started = Date.now();
+  const [red, green] = await Promise.all([hang, slow].map((fixture) => runCandidateQualification({ ...fixture, refusals })));
+  const elapsed = Date.now() - started;
+  assert.equal(red.ok, false, "hanging refusal");
+  assert.deepEqual(red.mismatches.filter((item) => item.startsWith("refusal:")), ["refusal:default:@acme/synthetic"], "hanging refusal");
+  assert.ok(red.mismatches.includes("export-coverage"), "hanging refusal");
+  assert.equal(red.coverage.failed, 1, "hanging refusal");
+  assert.deepEqual(green.mismatches, [], "slow refusal within the probe bound");
+  assert.equal(green.ok, true, "slow refusal within the probe bound");
+  assert.ok(elapsed >= QUALIFICATION_PHASE_TIMEOUTS.probe, "the hanging refusal is ended by the probe bound, not sooner");
+});
+
 // A refusal covers exactly one package, one specifier and one condition. Each
 // near-miss declaration below names a marker the refusing module really
 // throws, so only an exact-key lookup keeps the undeclared target an ordinary
@@ -681,6 +751,36 @@ test("a refusal declared for another condition does not cover an undeclared refu
   await assertUndeclaredRefusalsFail(fixture, only("react-server"), ["import:default:@acme/synthetic"]);
   // Declared default (honored) against the undeclared react-server target.
   await assertUndeclaredRefusalsFail(fixture, only("default"), ["import:react-server:@acme/synthetic"]);
+});
+
+test("a refusal declared for a specifier a wildcard export expands to is not honored", async (t) => {
+  // Refusals cover exact, non-wildcard exports only; a wildcard-expanded
+  // target stays an ordinary runtime import even when its concrete specifier
+  // is named and the module throws the named marker.
+  const fixture = await syntheticPackage({
+    exports: { ".": { types: "./index.d.ts", import: "./index.js" }, "./refuse-*": { default: "./refuse-*.js" } },
+    extraFiles: { "refuse-one.js": sharedRefusal("expanded subpath") },
+  });
+  t.after(() => rm(fixture.root, { recursive: true, force: true }));
+  await assertUndeclaredRefusalsFail(
+    fixture,
+    { "@acme/synthetic": { "@acme/synthetic/refuse-one": { default: SHARED_MARKER } } },
+    ["import:default:@acme/synthetic/refuse-one"],
+  );
+});
+
+test("an empty or whitespace-only refusal marker declares no refusal", async (t) => {
+  // Every message contains the empty string and this one contains a space, so
+  // honoring either blank marker would turn the broken target into a passing
+  // refusal probe.
+  const fixture = await syntheticPackage({
+    exports: { ".": { types: "./index.d.ts", "react-server": "./refuse.js", default: "./index.js" } },
+    extraFiles: { "refuse.js": refusalModule("The root is broken in some other way.") },
+  });
+  t.after(() => rm(fixture.root, { recursive: true, force: true }));
+  for (const marker of ["", " "]) {
+    await assertUndeclaredRefusalsFail(fixture, { "@acme/synthetic": { "@acme/synthetic": { "react-server": marker } } }, ["import:react-server:@acme/synthetic"]);
+  }
 });
 
 test("conditions outside the closed set still refuse, as does an entry with no ordinary import or default target", async (t) => {
