@@ -610,6 +610,79 @@ test("a declared refusal that imports or throws another error is red, and an und
   assert.ok(red.mismatches.includes("import:react-server:@acme/synthetic"));
 });
 
+// A refusal covers exactly one package, one specifier and one condition. Each
+// near-miss declaration below names a marker the refusing module really
+// throws, so only an exact-key lookup keeps the undeclared target an ordinary
+// runtime import that fails; any looser match would turn it into a passing
+// refusal probe and let a broken target qualify.
+const SHARED_MARKER = "refuses this condition by design";
+const sharedRefusal = (where) => refusalModule(`The ${where} ${SHARED_MARKER}.`);
+async function assertUndeclaredRefusalsFail(fixture, refusals, failingImports) {
+  const transcript = await runCandidateQualification({ ...fixture, refusals });
+  const label = JSON.stringify(refusals);
+  assert.equal(transcript.ok, false, label);
+  for (const id of failingImports) {
+    assert.ok(importIds(transcript).includes(id), `${label} must import ${id} as runtime evidence`);
+    assert.ok(transcript.mismatches.includes(id), `${label} must report the failed ${id}`);
+  }
+  assert.ok(transcript.mismatches.includes("export-coverage"), label);
+  assert.equal(transcript.coverage.failed, failingImports.length, label);
+  assert.deepEqual(transcript.mismatches.filter((item) => item.startsWith("refusal:")), [], label);
+}
+
+test("a refusal declared under another package name does not cover the candidate's undeclared refusing target", async (t) => {
+  const fixture = await syntheticPackage({
+    exports: { ".": { types: "./index.d.ts", "react-server": "./refuse.js", default: "./index.js" } },
+    extraFiles: { "refuse.js": sharedRefusal("root") },
+  });
+  t.after(() => rm(fixture.root, { recursive: true, force: true }));
+  const entry = { "@acme/synthetic": { "react-server": SHARED_MARKER } };
+  for (const packageName of ["@acme/other", "@acme/synthetic-extra", "@acme/synth", "@acme/SYNTHETIC"]) {
+    await assertUndeclaredRefusalsFail(fixture, { [packageName]: entry }, ["import:react-server:@acme/synthetic"]);
+  }
+});
+
+test("a refusal declared for another specifier, including a prefix either way, does not cover an undeclared refusing target", async (t) => {
+  const fixture = await syntheticPackage({
+    exports: {
+      ".": { types: "./index.d.ts", "react-server": "./root-refuse.js", default: "./index.js" },
+      "./sub": { types: "./index.d.ts", "react-server": "./sub-refuse.js", default: "./index.js" },
+    },
+    extraFiles: { "root-refuse.js": sharedRefusal("root"), "sub-refuse.js": sharedRefusal("sub subpath") },
+  });
+  t.after(() => rm(fixture.root, { recursive: true, force: true }));
+  const only = (...specifiers) => ({ "@acme/synthetic": Object.fromEntries(specifiers.map((specifier) => [specifier, { "react-server": SHARED_MARKER }])) });
+  // Declared pkg/sub (honored) against the undeclared target of pkg.
+  await assertUndeclaredRefusalsFail(fixture, only("@acme/synthetic/sub"), ["import:react-server:@acme/synthetic"]);
+  // Declared pkg (honored) against the undeclared target of pkg/sub.
+  await assertUndeclaredRefusalsFail(fixture, only("@acme/synthetic"), ["import:react-server:@acme/synthetic/sub"]);
+  // Siblings, a trailing separator and a case variant cover neither target.
+  for (const specifier of ["@acme/synthetic/other", "@acme/synthetic/", "@acme/synthetic/SUB"]) {
+    await assertUndeclaredRefusalsFail(fixture, only(specifier), ["import:react-server:@acme/synthetic", "import:react-server:@acme/synthetic/sub"]);
+  }
+});
+
+test("a refusal declared for another condition does not cover an undeclared refusing target under its own condition", async (t) => {
+  // A browser target is never imported, so the direction opposite to
+  // "declared browser, refusing react-server" uses the plain default import.
+  const fixture = await syntheticPackage({
+    exports: { ".": { types: "./index.d.ts", "react-server": "./refuse-react-server.js", browser: "./refuse-browser.js", default: "./refuse-default.js" } },
+    extraFiles: {
+      "refuse-react-server.js": sharedRefusal("root under react-server"),
+      "refuse-browser.js": sharedRefusal("root under browser"),
+      "refuse-default.js": sharedRefusal("root by default"),
+    },
+  });
+  t.after(() => rm(fixture.root, { recursive: true, force: true }));
+  const only = (condition) => ({ "@acme/synthetic": { "@acme/synthetic": { [condition]: SHARED_MARKER } } });
+  // Declared browser (honored) against undeclared react-server and default targets.
+  await assertUndeclaredRefusalsFail(fixture, only("browser"), ["import:react-server:@acme/synthetic", "import:default:@acme/synthetic"]);
+  // Declared react-server (honored) against the undeclared default target.
+  await assertUndeclaredRefusalsFail(fixture, only("react-server"), ["import:default:@acme/synthetic"]);
+  // Declared default (honored) against the undeclared react-server target.
+  await assertUndeclaredRefusalsFail(fixture, only("default"), ["import:react-server:@acme/synthetic"]);
+});
+
 test("conditions outside the closed set still refuse, as does an entry with no ordinary import or default target", async (t) => {
   const shapes = [
     { ".": { worker: "./index.js", default: "./index.js" } },
