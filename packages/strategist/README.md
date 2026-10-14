@@ -123,6 +123,11 @@ runs the same projection and then `validateStrategyContract` in one step.
 `validateStrategyContract` and `createStrategyProvenance` remain exported for
 adapters and Publisher seals.
 
+Projected `observed-fact` evidence takes its `observedAt` date from the
+referenced fact's `lastUpdatedAt`. Contract provenance uses the latest fact
+or direction date in the bundle, so unrelated newer records can advance
+`provenance.recordedAt` while each fact retains its own observation date.
+
 Every record has a kebab-case `id`, semantic-version `revision`, and source
 `provenance`. The contract covers `product`, `brand`, `audience`,
 `positioning`, `claim`, `evidence`, and `constraint` records. Validation
