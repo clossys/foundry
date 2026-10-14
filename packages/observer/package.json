@@ -11,6 +11,14 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./browser-analytics": {
+      "types": "./dist/browser-analytics/index.d.ts",
+      "import": "./dist/browser-analytics/index.js"
+    },
+    "./browser-analytics/posthog": {
+      "types": "./dist/browser-analytics/providers/index.d.ts",
+      "import": "./dist/browser-analytics/providers/index.js"
     }
   },
   "bin": {

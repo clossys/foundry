@@ -318,9 +318,11 @@ describe("P-11 posthog: initialization and event names (C-18, C-44)", () => {
     const fake = fakeSdk();
     const provider = createPostHogProvider(fake.sdk, HOST_CONFIG);
     provider.init({ sanitizeUrl: (href) => href, eventNames: ["$pageview", "signup_started"] });
+    // The capture gate opens with the grant (C-67); the transport always opts in before it captures.
+    provider.optIn();
     provider.capture({ kind: "conversion", name: "unlisted_event", url: "https://example.test/", properties: {} });
     provider.capture({ kind: "conversion", name: "signup_started", url: "https://example.test/", properties: {} });
-    expect(fake.dropped).toEqual(["unlisted_event"]);
+    expect(fake.dropped).toEqual(["$opt_in", "unlisted_event"]);
     expect(fake.sent.map((r) => r.event)).toEqual(["signup_started"]);
   });
 });
@@ -412,7 +414,7 @@ const context = { sanitizeUrl: (href: string) => href, eventNames: ["$pageview"]
 describe("P-12 posthog: forced configuration and owned instance (C-3, C-43, C-44)", () => {
   it("the init configuration holds every forced key with its value, and no host value except key and host", () => {
     const fake = fakeSdk();
-    const hostConfig = { ...HOST_CONFIG, autocapture: true, persistence: "localStorage", loaded: () => {} };
+    const hostConfig = { ...HOST_CONFIG, session_recording: { maskAllInputs: false }, persistence: "localStorage", loaded: () => {} };
     createPostHogProvider(fake.sdk, hostConfig as typeof HOST_CONFIG).init(context);
     expect(fake.inits).toHaveLength(1);
     const { apiKey, config } = fake.inits[0]!;
