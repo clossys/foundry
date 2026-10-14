@@ -1,6 +1,0 @@
-{
-  "package": "publisher",
-  "version": "0.10.0",
-  "reason": "This source release acknowledges merge before qualification. No candidate qualification record has been retained yet for publisher@0.10.0. Qualification remains pending on the approved pinned CI runtime. Merge acknowledgement, never publication: this version may not be published before its matching qualification record is retained.",
-  "issue": 948
-}
