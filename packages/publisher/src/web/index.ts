@@ -14,6 +14,7 @@ export { buildWebHeadMetadata } from "./headMetadata.js";
 export { SiteMetadataError, buildSiteMetadata, formatPageTitle } from "./siteMetadata.js";
 export type {
   SiteIdentityInput,
+  SiteIndexing,
   SiteLegalStatus,
   SiteMetadata,
   SiteMetadataErrorReason,
@@ -65,7 +66,7 @@ export type {
 } from "./types.js";
 
 export { LegalView } from "./views/index.js";
-export type { LegalViewLabels, LegalViewProps } from "./views/index.js";
+export type { LegalViewFramedLabels, LegalViewLabels, LegalViewProps } from "./views/index.js";
 
 // The contact handler is server-only: import it from server code, never a client bundle.
 export {

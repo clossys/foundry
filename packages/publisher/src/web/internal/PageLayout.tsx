@@ -66,9 +66,9 @@ export interface PageLayoutProps extends PageLayoutHeaderProps {
 }
 
 /**
- * The layout shared by `CaptureView`, `DocumentView` and `AuthView`: the
- * header (title and subtitle), the body card and the optional notes, centered
- * in that order. It returns the three slots only, for the view to place in its
+ * The layout shared by `CaptureView`, `DocumentView`, `AuthView` and the framed
+ * `LegalView`: the header (title and subtitle), the body card and the optional
+ * notes, centered in that order. It returns the three slots only, for the view to place in its
  * own column, and renders no header, footer or `<main>` landmark: the page frame
  * owns those. Every string is a prop.
  */

@@ -35,7 +35,7 @@ export type { PackReviewViewBrandKit, PackReviewViewExport, PackReviewViewFact, 
 export type { SectionedViewLandmark, SectionedViewProps } from "./SectionedView.js";
 
 export { LegalView } from "./LegalView.js";
-export type { LegalViewLabels, LegalViewProps } from "./LegalView.js";
+export type { LegalViewFramedLabels, LegalViewLabels, LegalViewProps } from "./LegalView.js";
 export { HeroView } from "./HeroView.js";
 export type { HeroViewFooter, HeroViewGround, HeroViewProps } from "./HeroView.js";
 export { LandingView } from "./LandingView.server.js";

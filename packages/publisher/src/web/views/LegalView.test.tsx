@@ -10,6 +10,8 @@ import { RenderError } from "../../internal/errors.js";
 import { LEGAL_SECTION_IDS } from "../../document/legal.js";
 import type { LegalDocument, LegalDocumentKind } from "../../document/legal.js";
 import { LegalView } from "./LegalView.js";
+import { CaptureView } from "./CaptureView.js";
+import { DocumentView } from "./DocumentView.js";
 import { SITE_MAIN_ID, SiteFrame } from "../frame/index.js";
 import type { SiteShellInput } from "../frame/index.js";
 import type { LegalViewLabels, LegalViewProps } from "./LegalView.js";
@@ -204,25 +206,57 @@ describe("LegalView refuses an invalid document", () => {
 });
 
 describe("LegalView draft marker", () => {
-  it("renders a warning note with the heading and every fact, before the first section", () => {
-    const html = render(draftDoc("terms"));
-    expect(html).toContain('role="note"');
-    expect(html).toContain('data-callout-tone="warning"');
-    const aside = /<aside[^>]*role="note"[^>]*>(.*?)<\/aside>/s.exec(html);
-    expect(aside).not.toBeNull();
-    expect(aside![1]).toMatch(/<h2[^>]*>Placeholder label draft<\/h2>/);
-    expect(aside![1]).toContain("Placeholder fact A");
-    expect(aside![1]).toContain("Placeholder fact B");
-    expect((aside![1]!.match(/<li/g) ?? []).length).toBe(2);
-    expect(html.indexOf('role="note"')).toBeLessThan(html.indexOf("<section"));
-  });
+  if (mode === "self-chromed") {
+    it("renders a warning note with the heading and every fact, before the first section", () => {
+      const html = render(draftDoc("terms"));
+      expect(html).toContain('role="note"');
+      expect(html).toContain('data-callout-tone="warning"');
+      const aside = /<aside[^>]*role="note"[^>]*>(.*?)<\/aside>/s.exec(html);
+      expect(aside).not.toBeNull();
+      expect(aside![1]).toMatch(/<h2[^>]*>Placeholder label draft<\/h2>/);
+      expect(aside![1]).toContain("Placeholder fact A");
+      expect(aside![1]).toContain("Placeholder fact B");
+      expect((aside![1]!.match(/<li/g) ?? []).length).toBe(2);
+      expect(html.indexOf('role="note"')).toBeLessThan(html.indexOf("<section"));
+    });
 
-  it("throws when a fact does not resolve", () => {
-    const doc = legalDoc("terms", { legal: { status: "draft", factsToConfirm: [ref("acme.fact.unknown")] } });
-    expect(() => render(doc)).toThrow(RenderError);
-    expect(() => render(doc)).toThrow(/legal\.factsToConfirm\.0/);
-    expect(() => render(doc)).not.toThrow(/acme\.fact\.unknown/);
-  });
+    it("throws when a fact does not resolve", () => {
+      const doc = legalDoc("terms", { legal: { status: "draft", factsToConfirm: [ref("acme.fact.unknown")] } });
+      expect(() => render(doc)).toThrow(RenderError);
+      expect(() => render(doc)).toThrow(/legal\.factsToConfirm\.0/);
+      expect(() => render(doc)).not.toThrow(/acme\.fact\.unknown/);
+    });
+  } else {
+    it("renders no draft or status text for a draft document", () => {
+      const html = render(draftDoc("terms"));
+      expect(html).not.toContain("role=\"note\"");
+      expect(html).not.toContain("data-callout-tone");
+      expect(html).not.toContain("<aside");
+      expect(html).not.toContain("Placeholder label draft");
+      expect(html).not.toContain("Placeholder fact");
+      expect(html).not.toMatch(/draft|counsel|reviewed|status/i);
+    });
+
+    it("renders a draft document and a counsel-reviewed one with the same markup", () => {
+      expect(render(draftDoc("terms"))).toBe(render(legalDoc("terms")));
+      expect(render(draftDoc("privacy"))).toBe(render(legalDoc("privacy")));
+    });
+
+    it("never resolves the facts to confirm, so an unresolved fact does not throw or leak", () => {
+      const doc = legalDoc("terms", { legal: { status: "draft", factsToConfirm: [ref("acme.fact.unknown")] } });
+      expect(() => render(doc)).not.toThrow();
+      expect(render(doc)).not.toContain("acme.fact.unknown");
+    });
+
+    it("does not need a draft heading label", () => {
+      const labels = { effectiveDate: LABELS.effectiveDate, lastUpdated: LABELS.lastUpdated };
+      expect(render(draftDoc("terms"), { labels })).toBe(render(draftDoc("terms")));
+    });
+
+    it("still refuses a draft document with no facts to confirm", () => {
+      expect(() => render(legalDoc("terms", { legal: { status: "draft" } }))).toThrow(/legal-draft-facts-missing/);
+    });
+  }
 
   it("renders no callout element for a counsel-reviewed document", () => {
     const html = render(legalDoc("terms"));
@@ -336,7 +370,7 @@ describe("LegalView dates", () => {
 });
 
 describe("LegalView labels", () => {
-  for (const key of ["effectiveDate", "lastUpdated", "draftHeading"] as const) {
+  for (const key of (mode === "framed" ? ["effectiveDate", "lastUpdated"] : ["effectiveDate", "lastUpdated", "draftHeading"]) as Array<keyof LegalViewLabels>) {
     it(`throws RenderError naming the CopyRef when ${key} is unresolved, even for a reviewed document`, () => {
       const labels = { ...LABELS, [key]: ref("acme.label.missing") };
       expect(() => render(legalDoc("terms"), { labels })).toThrow(RenderError);
@@ -344,6 +378,11 @@ describe("LegalView labels", () => {
       expect(() => render(legalDoc("terms"), { labels })).toThrow(new RegExp(`labels\\.${key}`));
     });
   }
+
+  if (mode === "framed") it("ignores an unresolved draftHeading, which the framed page never renders", () => {
+    const labels = { ...LABELS, draftHeading: ref("acme.label.missing") };
+    expect(render(legalDoc("terms"), { labels })).toBe(render(legalDoc("terms")));
+  });
 
   it("throws when a label resolves to blank text", () => {
     const blank: CopyResolver = (r) => (r.id === LABELS.lastUpdated.id ? { ...resolver(ref(LABELS.lastUpdated.id))!, text: "  " } : resolver(r));
@@ -456,8 +495,16 @@ describe("LegalView related references", () => {
     const baseline = readFileSync(resolve(import.meta.dirname, "__fixtures__/legal-view-before-related-terms.html"), "utf8");
     expect(baseline.length).toBeGreaterThan(0);
     const html = render(legalDoc("terms"));
-    const body = (value: string) => /<h1\b[\s\S]*<\/article>/.exec(value)?.[0];
-    expect(mode === "self-chromed" ? html : body(html)).toBe(mode === "self-chromed" ? baseline : body(baseline));
+    if (mode === "self-chromed") {
+      expect(html).toBe(baseline);
+      return;
+    }
+    // The framed page moved to the shared page layout on purpose (see "shared page layout" below), so its bytes differ from the
+    // pre-layout baseline; the title, dates and article body inside it are the same.
+    const part = (value: string, pattern: RegExp) => pattern.exec(value)?.[0];
+    expect(part(html, /<article\b[\s\S]*<\/article>/)).toBe(part(baseline, /<article\b[\s\S]*<\/article>/));
+    expect(part(html, /<dl\b[\s\S]*<\/dl>/)).toBe(part(baseline, /<dl\b[\s\S]*<\/dl>/));
+    expect(part(html, /<h1\b[^>]*>[^<]*<\/h1>/)?.replace(/<h1[^>]*>/, "")).toBe(part(baseline, /<h1\b[^>]*>[^<]*<\/h1>/)?.replace(/<h1[^>]*>/, ""));
   });
   it("omits the region for omitted, explicit undefined and empty related input", () => {
     const doc = legalDoc("terms");
@@ -566,16 +613,20 @@ describe("LegalView related references", () => {
       expect(relatedSection(html).body).toContain(`href="${href}"`);
     });
   }
-  it("keeps legal dates and draft facts ahead of the related region", () => {
+  it("keeps legal dates (and, self-chromed, draft facts) ahead of the related region", () => {
     const html = render(draftDoc("terms"), { related: withRelated(relatedItems(2)), locale: "de" });
     const section = relatedSection(html);
     expect(html).toContain(`<time dateTime="2026-01-15">${formatted("de", 2026, 1, 15)}</time>`);
     expect(html).toContain(`<time dateTime="2026-02-01">${formatted("de", 2026, 2, 1)}</time>`);
     for (const marker of ["Placeholder label draft", "Placeholder fact A", "Placeholder fact B"]) {
+      if (mode === "framed") {
+        expect(html).not.toContain(marker);
+        continue;
+      }
       expect(html.indexOf(marker)).toBeGreaterThan(-1);
       expect(html.indexOf(marker)).toBeLessThan(html.indexOf(section.markup));
     }
-    expect(html.indexOf('role="note"')).toBeLessThan(html.indexOf("<section"));
+    if (mode === "self-chromed") expect(html.indexOf('role="note"')).toBeLessThan(html.indexOf("<section"));
   });
   it("still refuses invalid legal content and unresolved labels with related present", () => {
     expect(() => render(legalDoc("terms", { legal: { effectiveDate: "2026-02-30" } }),
@@ -628,13 +679,13 @@ if (mode === "framed") describe("frame ownership", () => {
     const content = <LegalView framed document={draftDoc()} resolveCopyId={resolver} labels={LABELS} locale="en" />;
     const body = renderToStaticMarkup(content);
     expect(body).not.toMatch(/<(?:main|footer)\b/);
-    expect(body.match(/<header\b/g)).toHaveLength(1); // PageHeader, inside the content root.
+    expect(body).not.toMatch(/<(?:header|nav)\b/); // The title block is a div inside the content root, not a banner.
     const html = renderToStaticMarkup(frame(content));
     expect(html.match(/<main\b/g)).toHaveLength(1);
     expect(html).toContain(`<main id="${SITE_MAIN_ID}" tabindex="-1"`);
     expect(html.match(/<footer\b/g)).toHaveLength(1);
     expect(html.match(/<h1\b/g)).toHaveLength(1);
-    expect(html).toContain('role="note"');
+    expect(html).not.toContain('role="note"');
     expect(html).toContain('<time dateTime="2026-01-15"');
     expect(html).toContain('<time dateTime="2026-02-01"');
   });
@@ -669,4 +720,118 @@ if (mode === "framed") describe("frame ownership", () => {
     expect(renderToStaticMarkup(<ordinary.LegalView {...props} />)).toBe(renderToStaticMarkup(<server.LegalView {...props} />));
   });
 });
+});
+
+
+// ---------------------------------------------------------------------------
+// Shared page layout: framed LegalView renders the same structure as CaptureView and DocumentView.
+
+const VOID_TAGS = new Set(["area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"]);
+
+/** The root element's open tag and each of its direct children as `{ open, inner }`, from static markup. */
+function skeleton(html: string): { root: string; children: Array<{ open: string; inner: string }> } {
+  const tag = /<(\/?)([a-zA-Z][a-zA-Z0-9-]*)\b[^>]*?(\/?)>/g;
+  const stack: string[] = [];
+  const children: Array<{ open: string; inner: string; start: number }> = [];
+  let root = "";
+  for (let match = tag.exec(html); match !== null; match = tag.exec(html)) {
+    const [whole, closing, name, selfClosing] = match as unknown as [string, string, string, string];
+    const lower = name.toLowerCase();
+    if (closing === "/") {
+      stack.pop();
+      if (stack.length === 1) {
+        const child = children[children.length - 1]!;
+        child.inner = html.slice(child.start, match.index);
+      }
+      continue;
+    }
+    if (stack.length === 0) root = whole;
+    else if (stack.length === 1) children.push({ open: whole, inner: "", start: match.index + whole.length });
+    if (selfClosing !== "/" && !VOID_TAGS.has(lower)) stack.push(lower);
+    else if (stack.length === 1) children[children.length - 1]!.inner = "";
+  }
+  return { root, children: children.map(({ open, inner }) => ({ open, inner })) };
+}
+
+describe("LegalView shared page layout", () => {
+  const TITLE = "Placeholder title terms";
+  const SUMMARY = "Placeholder summary marker";
+  const NOTE = "Placeholder note marker";
+  const summaryRef = ref("acme.summary");
+  const withSummary: CopyResolver = (r) => (r.id === summaryRef.id ? { ...resolver(LABELS.effectiveDate)!, text: SUMMARY } : resolver(r));
+  const common = { document: legalDoc("terms"), resolveCopyId: withSummary, labels: LABELS, locale: "en" };
+  const legal = (props: Record<string, unknown> = {}) => renderToStaticMarkup(<LegalView framed {...common} summary={summaryRef} {...props} />);
+  const capture = () => renderToStaticMarkup(<CaptureView heading={TITLE} description={SUMMARY} form={<p>FORM</p>} notes={<a href="/n">{NOTE}</a>} />);
+  const document = () => renderToStaticMarkup(<DocumentView document={legalDoc("terms")} resolveCopyId={withSummary} summary={summaryRef} action={<a href="/n">{NOTE}</a>} />);
+  const related = { label: "Placeholder related heading", items: [{ id: "a", heading: "Placeholder related a", href: "/placeholder/a" }] };
+
+  /** The card's own open tag: CaptureView puts the card in a labelled region, so look through that wrapper. */
+  const cardOpen = (child: { open: string; inner: string }) => (child.open.startsWith("<section") ? /^<[^>]*>/.exec(child.inner)![0] : child.open);
+
+  it("has the same root, header block, card and notes region as CaptureView, in the same order", () => {
+    const l = skeleton(legal({ related }));
+    const c = skeleton(capture());
+    expect(l.root).toBe(c.root);
+    expect([l.children[0]!.open, cardOpen(l.children[1]!), l.children[2]!.open]).toEqual([c.children[0]!.open, cardOpen(c.children[1]!), c.children[2]!.open]);
+    expect(l.children).toHaveLength(3); // header, card, notes
+    expect(l.children[0]!.inner).toBe(c.children[0]!.inner); // title, subtitle: byte-identical
+    expect(l.children[0]!.inner).toBe(
+      `<h1 class="text-h1 font-display text-ink-primary">${TITLE}</h1><p class="text-body text-ink-secondary">${SUMMARY}</p>`,
+    );
+  });
+
+  it("has the same root, header block, card and notes region as DocumentView", () => {
+    const l = skeleton(legal({ related }));
+    const d = skeleton(document());
+    expect(l.root).toBe(d.root);
+    expect(l.children.map((child) => child.open)).toEqual(d.children.map((child) => child.open));
+    expect(l.children[0]!.inner).toBe(d.children[0]!.inner);
+  });
+
+  it("holds the dates and the whole document body in the one card", () => {
+    const { children } = skeleton(legal());
+    expect(children).toHaveLength(2); // header, card: no notes region without related
+    const card = children[1]!.inner;
+    expect(card.match(/<h1\b/g)).toBeNull();
+    expect((card.match(/<time\b/g) ?? []).length).toBe(2);
+    expect((card.match(/<article\b/g) ?? []).length).toBe(1);
+    expect(card.indexOf("<time")).toBeLessThan(card.indexOf("<article"));
+    expect(children[0]!.inner).not.toContain("<time");
+  });
+
+  it("renders the subtitle only when a summary is given", () => {
+    expect(legal()).toContain(SUMMARY);
+    const without = renderToStaticMarkup(<LegalView framed {...common} />);
+    expect(without).not.toContain(SUMMARY);
+    expect(skeleton(without).children[0]!.inner).toBe(`<h1 class="text-h1 font-display text-ink-primary">${TITLE}</h1>`);
+  });
+
+  it("puts the related references in the notes region below the card and omits the region without them", () => {
+    const { children } = skeleton(legal({ related }));
+    expect(children[2]!.inner).toContain("Placeholder related heading");
+    expect(children[2]!.inner).toContain('href="/placeholder/a"');
+    expect(children[1]!.inner).not.toContain("Placeholder related heading");
+    expect(skeleton(legal()).children).toHaveLength(2);
+    expect(skeleton(legal({ related: { label: "Placeholder related heading", items: [] } })).children).toHaveLength(2);
+  });
+
+  it("keeps every section id and heading, in order, for both kinds", () => {
+    for (const kind of ["terms", "privacy"] as const) {
+      const html = renderToStaticMarkup(<LegalView framed document={legalDoc(kind)} resolveCopyId={resolver} labels={LABELS} locale="en" />);
+      expect([...html.matchAll(/<section id="([^"]+)"/g)].map((match) => match[1])).toEqual([...LEGAL_SECTION_IDS[kind]]);
+      const headings = [...html.matchAll(/<h2\b[^>]*>([^<]*)<\/h2>/g)].map((match) => match[1]);
+      expect(headings).toEqual(LEGAL_SECTION_IDS[kind].map((id) => `Placeholder heading ${kind} ${id}`));
+    }
+  });
+
+  it("refuses a summary on the self-chromed page", () => {
+    expect(() => renderToStaticMarkup(<LegalView {...({ brand: "Acme", summary: summaryRef } as object)} {...common} />)).toThrow(/summary is only available on the framed page/);
+  });
+
+  it("refuses an unresolved or blank summary without echoing its id", () => {
+    const missing = () => renderToStaticMarkup(<LegalView framed {...common} summary={ref("acme.summary.missing")} />);
+    expect(missing).toThrow(RenderError);
+    expect(missing).toThrow(/CopyRef at summary/);
+    expect(missing).not.toThrow(/acme\.summary\.missing/);
+  });
 });
