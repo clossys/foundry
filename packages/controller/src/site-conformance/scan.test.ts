@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, renameSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -24,6 +24,39 @@ const VIEW_PAGE = `import { LandingView } from "@clossys/publisher/web";\nexport
 function baseSite(): void {
   put("apps/site/web-route-manifest.json", MANIFEST);
 }
+
+describe("app layouts", () => {
+  it("finds the same findings for a src/app layout as for an app layout", () => {
+    baseSite();
+    put("apps/site/app/page.tsx", `export default function Page() { return null; }\n`);
+    put("apps/site/app/privacy/page.tsx", VIEW_PAGE);
+    put("apps/site/app/(legal)/terms-of-use/page.tsx", VIEW_PAGE);
+    put("apps/site/app/styles.ts", `export const colour = "#a1b2c3";\n`);
+    put("clossys/conformance-waivers.json", JSON.stringify({ version: 1, waivers: [{
+      rule: "site/raw-style-literal", path: "apps/site/app/styles.ts", reason: "brand asset",
+    }] }));
+    const appResult = scanSiteConformance(root);
+    mkdirSync(join(root, "apps/site/src"));
+    renameSync(join(root, "apps/site/app"), join(root, "apps/site/src/app"));
+    put("clossys/conformance-waivers.json", JSON.stringify({ version: 1, waivers: [{
+      rule: "site/raw-style-literal", path: "apps/site/src/app/styles.ts", reason: "brand asset",
+    }] }));
+    const srcResult = scanSiteConformance(root);
+    expect(srcResult).toEqual({
+      ...appResult,
+      findings: appResult.findings.map((finding) => ({ ...finding, file: finding.file.replace("/app/", "/src/app/") })),
+      waived: appResult.waived.map((finding) => ({ ...finding, file: finding.file.replace("/app/", "/src/app/") })),
+    });
+  });
+
+  it("still refuses a symlinked src/app directory", () => {
+    baseSite();
+    put("elsewhere/page.tsx", VIEW_PAGE);
+    mkdirSync(join(root, "apps/site/src"));
+    symlinkSync(join(root, "elsewhere"), join(root, "apps/site/src/app"));
+    expect(() => scanSiteConformance(root)).toThrow(/site app directory.*symlink/);
+  });
+});
 
 describe("R1 and R2", () => {
   it("flags a page with no Publisher view and a template route outside the manifest", () => {

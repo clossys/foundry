@@ -427,7 +427,8 @@ export function scanSiteConformance(repoRoot: string, options: { readonly site?:
   const manifestIds = loadManifestRouteIds(root, siteDir);
   const waivers = loadWaivers(root);
 
-  const appDir = join(siteDir, "app");
+  const rootAppDir = join(siteDir, "app");
+  const appDir = isDirectory(rootAppDir) ? rootAppDir : join(siteDir, "src", "app");
   const files: string[] = [];
   const links: string[] = [];
   if (isDirectory(appDir)) {

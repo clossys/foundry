@@ -2460,7 +2460,8 @@ mismatch (or another binding finding), `2` when it could not run. Use
 
 `site-conformance-check <repoRoot> [--site <dir>]` is a report-mode conformance
 scan of a site's Next.js app directory (slice 1 of #1515). `<dir>` defaults to
-`apps/site`; it scans `<dir>/app/**` `.ts` and `.tsx` files, skipping
+`apps/site`; it scans `<dir>/app/**` when `<dir>/app` is a directory,
+otherwise `<dir>/src/app/**`, for `.ts` and `.tsx` files, skipping
 `node_modules` and `.next`, and prints one JSON report
 `{ mode, site, filesScanned, findings: [{ rule, file, line }], waived }`. It
 never echoes matched source text and imports nothing from another package.
@@ -2478,8 +2479,8 @@ never echoes matched source text and imports nothing from another package.
   linear pass per line), or `rgb(`, `hsl(` or `oklch(`, on a line. Comment
   lines are skipped and a same-line `token-gate:ignore` marker suppresses the
   finding.
-- `site/symlink-unscanned`: a symlink under `<dir>/app` that names a `.ts` or
-  `.tsx` file, a directory, or nothing (a dangling link). It is not followed,
+- `site/symlink-unscanned`: a symlink under the selected app directory that
+  names a `.ts` or `.tsx` file, a directory, or nothing (a dangling link). It is not followed,
   so what it names was not scanned. This finding cannot be waived.
 
 Waivers live in one file, `clossys/conformance-waivers.json`:
@@ -2493,8 +2494,8 @@ could not run: a missing repository or site directory, no files, a missing or
 invalid manifest, an empty-reason, unknown-rule or duplicate waiver, bad JSON,
 a source file or directory that cannot be read, a source file, or a `.ts` or
 `.tsx` file reached by a relative import, that is not valid UTF-8, a `--site`
-or `<dir>/app` that is, or is reached through, a symlink, a route manifest or
-waiver file that is itself a symlink, any other unexpected failure, or an
+or the selected app directory that is, or is reached through, a symlink, a
+route manifest or waiver file that is itself a symlink, any other unexpected failure, or an
 unknown flag (including `--enforce`, which this slice does not offer). A
 relative import of any other file type, such as an image, is not read. The scan
 matches source with line and token rules, not a full parse of the language;
