@@ -452,6 +452,10 @@ const unobservedSurface = computeUnobservedSurface(declaredSubjects, presenceRea
 
 ## API
 
+Everything in the table below is exported from the package root. The
+`./browser-analytics` and `./browser-analytics/posthog` subpaths are
+documented in their own sections after it; the root never imports either.
+
 | Export | Kind | Description |
 | --- | --- | --- |
 | `ObservationState` | type | `"observed" \| "unobserved" \| "could-not-read"`. |
@@ -523,6 +527,47 @@ const unobservedSurface = computeUnobservedSurface(declaredSubjects, presenceRea
 | `HubPlacementCellKind` / `HubPlacementCellInput` | type | The three cell kinds this adapter emits, and the advisor-mirroring cell shape (structural, not imported). |
 | `RepositoryPackageObservation` / `HubPlacementObservationBundle` | type | One package observation, and the bundle this adapter accepts. |
 
+## The `./browser-analytics` subpath
+
+A consent-controlled analytics transport and the event sanitizer it runs
+every event through. Constructing a transport performs no I/O and its
+permission starts `false`. It loads a provider only after the host calls
+`setPermission(true)`, through a loader the host supplies, so this package
+never imports an analytics SDK.
+
+```ts
+import { createAnalyticsTransport } from "@clossys/observer/browser-analytics";
+```
+
+| Export | Kind | Description |
+| --- | --- | --- |
+| `createAnalyticsTransport(options)` | function | Creates a transport with `setPermission`, `pageview`, `conversion` and `dispose`. `setPermission` matches the structural `AnalyticsPermissionPort` that `@clossys/publisher/web/consent` declares. |
+| `sanitizeAnalyticsEvent(input, allow)` | function | Reduces a pageview or an allowlisted conversion to its sendable form (origin and path only, referrer origin only, allowlisted bounded properties), or `null` when it must be dropped. |
+| `MAX_PROPERTY_STRING_LENGTH` | value | Longest string property value kept; a longer value is dropped. |
+| `ANALYTICS_RETRY_DELAY_MS` / `DEFAULT_MAX_QUEUED` | value | The delay before the one retry of a failed provider load, and the default size of the memory queue used while a provider loads. |
+| `AnalyticsTransport` / `AnalyticsTransportOptions` / `AnalyticsTransportState` | type | The transport, its options, and its load states. |
+| `AnalyticsProviderPort` / `ProviderInitContext` / `AnalyticsScheduler` | type | The provider adapter port, what the transport hands a provider at `init`, and the timer port. |
+| `AnalyticsLocation` / `AnalyticsEventInput` / `AnalyticsAllowlist` / `NormalizePath` / `SanitizedAnalyticsEvent` | type | Sanitizer input, rules and output. |
+
+## The `./browser-analytics/posthog` subpath
+
+The PostHog provider adapter, alone, in its own subpath so that importing
+the transport never reaches it. The host passes the SDK object it loaded
+itself, plus its own key and API host. The adapter sets the SDK's automatic
+capture, session replay, survey, feature flag and persistent storage options
+to off, and its `before_send` hook drops every event the transport did not
+send.
+
+```ts
+import { createPostHogProvider } from "@clossys/observer/browser-analytics/posthog";
+```
+
+| Export | Kind | Description |
+| --- | --- | --- |
+| `createPostHogProvider(sdk, config)` | function | Returns an `AnalyticsProviderPort` for the transport's `loadProvider`. |
+| `PostHogLike` / `PostHogProviderConfig` | type | The structural subset of the SDK the adapter calls, and the host's `key` and `apiHost`. |
+| `POSTHOG_INSTANCE_PREFIX` / `POSTHOG_PROPERTY_ALLOWLIST` / `POSTHOG_EVENT_FIELDS` | value | The adapter's instance-name prefix, the SDK-set properties allowed to leave the browser, and the event fields kept. |
+
 ## Non-Goals
 
 - **Does not implement a run-history reader.** `RunHistoryReader` is a port;
@@ -549,7 +594,9 @@ const unobservedSurface = computeUnobservedSurface(declaredSubjects, presenceRea
 
 Node.js >= 20. Zero runtime dependencies. The library (everything except
 `cli.ts`/`bin.ts` and `unobserved-outcome-cli.ts`) is zero I/O — every
-function is a pure function of its arguments. This package ships two CLIs:
+function is a pure function of its arguments. The `./browser-analytics`
+subpath is the one exception: its transport reaches the network only
+through the provider the host loads and passes in. This package ships two CLIs:
 `observer-coverage-check` grades a caller-assembled fleet coverage document
 through an injected `CliPort` (`cli.ts`); `observer-check` prints the
 `unobserved outcome rate` assessment as JSON. Each reads one input file and

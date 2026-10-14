@@ -1992,6 +1992,13 @@ jobs:
       # dependency-free safety job.
       - name: Launcher help
         run: npm run check:launcher-help
+      # Proof P-31 (docs/browser-consent-analytics.md, C-53): the built
+      # Butler and Observer consent and analytics subpaths still assign to
+      # Publisher's structural ports, and the reference host factory
+      # type-checks with no cast. Needs the build above and typescript, so
+      # it is excluded from check:gates by name.
+      - name: Consent port conformance
+        run: npm run check:consent-port-conformance
       # check:strategist-subject moved to `prose quality` (issue #1420
       # review round 3): it scans docs/*.md (excluding docs/contracts/**,
       # docs/changelogs/**, and every OTHER root-style docs/*.md file --

@@ -1,7 +1,8 @@
 /**
- * Browser storage adapter for the consent lifecycle. Isolated: no core
- * module imports it, and nothing constructs it except a host's explicit
- * call. It touches browser globals only inside the functions it returns.
+ * Browser storage adapter for the consent lifecycle, shipped alone as the
+ * `./browser-consent/local-storage` subpath. Isolated: no core module
+ * imports it, and nothing constructs it except a host's explicit call. It
+ * touches browser globals only inside the functions it returns.
  *
  * It returns the raw stored value and performs no migration; parsing and
  * legacy handling belong to `parseStoredChoice`. It writes nothing except

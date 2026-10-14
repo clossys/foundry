@@ -137,11 +137,15 @@ export const OPTIONAL_PEER_POLICY = {
   "@clossys/butler": {
     react: {
       "@clossys/butler": "imports",
+      "@clossys/butler/browser-consent": "imports",
+      "@clossys/butler/browser-consent/local-storage": "imports",
       "@clossys/butler/inbound": "imports",
       "@clossys/butler/web": "rejects",
     },
     "react-dom": {
       "@clossys/butler": "imports",
+      "@clossys/butler/browser-consent": "imports",
+      "@clossys/butler/browser-consent/local-storage": "imports",
       "@clossys/butler/inbound": "imports",
       "@clossys/butler/web": "imports",
     },
