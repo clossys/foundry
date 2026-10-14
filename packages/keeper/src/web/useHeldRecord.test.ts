@@ -12,10 +12,11 @@
  *      someone their data is gone when nobody checked is the failure this
  *      whole role exists to prevent.
  */
-import { act, renderHook, waitFor } from "@testing-library/react";
+import { act, render as renderComponent, renderHook, waitFor } from "@testing-library/react";
+import { createElement, useEffect } from "react";
 import { describe, expect, it, vi } from "vitest";
 import type { DeletionEffect, HeldItem } from "../schema.js";
-import { useHeldRecord, type HeldRecordClient, type HeldRecordEntry } from "./useHeldRecord.js";
+import { useHeldRecord, type HeldRecordClient, type HeldRecordEntry, type UseHeldRecordResult } from "./useHeldRecord.js";
 
 const NOW = "2026-08-22T12:00:00.000Z";
 
@@ -119,6 +120,42 @@ describe("useHeldRecord", () => {
     expect(result.current.rows[0]?.entry.item.holdingClass).toBe("corrected-notes");
   });
 
+  it.each(["correct", "forget"] as const)("calls the current client for a %s from a child mount effect", async (mutation) => {
+    const currentClient = client([entry()]);
+    const correct = vi.spyOn(currentClient, "correct");
+    function Child({ record }: { record: UseHeldRecordResult }) {
+      useEffect(() => {
+        void (mutation === "correct" ? record.correct(item()) : record.forget("item_1"));
+      }, []);
+      return null;
+    }
+    function Parent() {
+      return createElement(Child, { record: useHeldRecord(options(currentClient)) });
+    }
+    renderComponent(createElement(Parent));
+    await waitFor(() => expect(mutation === "correct" ? correct : currentClient.forget).toHaveBeenCalledTimes(1));
+  });
+
+  it.each(["correct", "forget"] as const)("calls the replacement client for a %s from a child effect after a client swap", async (mutation) => {
+    const oldClient = client([entry()]);
+    const replacement = client([entry()]);
+    const oldCorrect = vi.spyOn(oldClient, "correct");
+    const replacementCorrect = vi.spyOn(replacement, "correct");
+    function Child({ record, c }: { record: UseHeldRecordResult; c: HeldRecordClient }) {
+      useEffect(() => {
+        if (c === replacement) void (mutation === "correct" ? record.correct(item()) : record.forget("item_1"));
+      }, [c]);
+      return null;
+    }
+    function Parent({ c }: { c: HeldRecordClient }) {
+      return createElement(Child, { record: useHeldRecord(options(c)), c });
+    }
+    const { rerender } = renderComponent(createElement(Parent, { c: oldClient }));
+    rerender(createElement(Parent, { c: replacement }));
+    await waitFor(() => expect(mutation === "correct" ? replacementCorrect : replacement.forget).toHaveBeenCalledTimes(1));
+    expect(mutation === "correct" ? oldCorrect : oldClient.forget).not.toHaveBeenCalled();
+  });
+
   it.each(["correct", "forget"] as const)("a deferred mutation reply from a replaced client is ignored (%s)", async (mutation) => {
     let resolveCorrection!: (stored: HeldItem) => void;
     let resolveForget!: (effect: DeletionEffect) => void;
@@ -169,6 +206,33 @@ describe("useHeldRecord", () => {
     });
     expect(result.current.error).toBeUndefined();
     expect(result.current.rows[0]?.entry.item.holdingClass).toBe("new-client-notes");
+    expect(result.current.lastForgetEffect).toBeUndefined();
+  });
+
+  it.each(["correct", "forget"] as const)("ignores a deferred %s reply after the subject changes", async (mutation) => {
+    let resolveCorrection!: (stored: HeldItem) => void;
+    let resolveForget!: (effect: DeletionEffect) => void;
+    const currentClient: HeldRecordClient = {
+      read: async (subjectId) => [entry({ item: item({ subjectId }) })],
+      correct: () => new Promise((resolve) => { resolveCorrection = resolve; }),
+      forget: () => new Promise((resolve) => { resolveForget = resolve; }),
+    };
+    const { result, rerender } = renderHook(({ subjectId }) => useHeldRecord({ ...options(currentClient), subjectId }), {
+      initialProps: { subjectId: "sub_1" },
+    });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    let pending!: Promise<void>;
+    act(() => {
+      pending = mutation === "correct" ? result.current.correct(item()) : result.current.forget("item_1");
+    });
+    rerender({ subjectId: "sub_2" });
+    await waitFor(() => expect(result.current.rows[0]?.entry.item.subjectId).toBe("sub_2"));
+    await act(async () => {
+      if (mutation === "correct") resolveCorrection(item({ holdingClass: "old-subject-notes" }));
+      else resolveForget("erased");
+      await pending;
+    });
+    expect(result.current.rows[0]?.entry.item.subjectId).toBe("sub_2");
     expect(result.current.lastForgetEffect).toBeUndefined();
   });
 

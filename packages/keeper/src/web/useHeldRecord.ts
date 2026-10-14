@@ -149,8 +149,9 @@ export function useHeldRecord(options: UseHeldRecordOptions): UseHeldRecordResul
 
   const correct = useCallback(
     async (item: HeldItem) => {
+      // Capture the reply's lifetime without suppressing the host call: a
+      // child's effect can run before this hook's read effect has started.
       const request = activeRead.current;
-      if (!request || request.cancelled || request.client !== client || request.subjectId !== subjectId) return;
       // Cleared before the call, not after it. `error` is documented as the
       // most recent client call's failure, and leaving a previous one standing
       // through a successful call would show the person a stale failure about
@@ -158,10 +159,11 @@ export function useHeldRecord(options: UseHeldRecordOptions): UseHeldRecordResul
       setError(undefined);
       try {
         const stored = await client.correct(subjectId, item);
-        if (request.cancelled) return;
+        if (!request) return;
+        if (request.cancelled || request.client !== client || request.subjectId !== subjectId) return;
         setEntries((previous) => previous.map((entry) => (entry.item.itemId === stored.itemId ? { ...entry, item: stored } : entry)));
       } catch (caught: unknown) {
-        if (!request.cancelled) setError(caught);
+        if (request && !request.cancelled && request.client === client && request.subjectId === subjectId) setError(caught);
       }
     },
     [client, subjectId],
@@ -170,7 +172,6 @@ export function useHeldRecord(options: UseHeldRecordOptions): UseHeldRecordResul
   const forget = useCallback(
     async (itemId: string) => {
       const request = activeRead.current;
-      if (!request || request.cancelled || request.client !== client || request.subjectId !== subjectId) return;
       setError(undefined);
       // Cleared before the call for the same reason, and this one matters
       // more: a stale `"erased"` left standing through a later failed attempt
@@ -179,7 +180,8 @@ export function useHeldRecord(options: UseHeldRecordOptions): UseHeldRecordResul
       setLastForgetEffect(undefined);
       try {
         const effect = await client.forget(subjectId, itemId);
-        if (request.cancelled) return;
+        if (!request) return;
+        if (request.cancelled || request.client !== client || request.subjectId !== subjectId) return;
         setLastForgetEffect(effect);
         // Only a confirmed erasure removes the row. A failed one, and an
         // erasure nobody observed, leave the item on screen with its effect
@@ -187,7 +189,7 @@ export function useHeldRecord(options: UseHeldRecordOptions): UseHeldRecordResul
         // promise is gone has told the person something nobody checked.
         if (effect === "erased") setEntries((previous) => previous.filter((entry) => entry.item.itemId !== itemId));
       } catch (caught: unknown) {
-        if (!request.cancelled) setError(caught);
+        if (request && !request.cancelled && request.client === client && request.subjectId === subjectId) setError(caught);
       }
     },
     [client, subjectId],

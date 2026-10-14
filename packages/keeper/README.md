@@ -396,9 +396,12 @@ The client port is read on identity, so memoize or hoist it — this hook does
 not paper over an unstable one, because doing so would make a runaway read
 invisible rather than impossible.
 
-Correction and erasure replies share the read's cancellation lifetime. When
-the client or subject changes, or the hook unmounts, pending mutation replies
-from the previous read are ignored, including errors and erasure effects.
+Correction and erasure calls reach the client even before the hook's read
+effect starts, including calls made by a child's effect. Their replies update
+the surface only when the read lifetime captured at call time is active and
+matches the client and subject. Replies without a matching lifetime, or from
+a lifetime cancelled by a client or subject change or unmount, are ignored,
+including errors and erasure effects.
 
 ## Requirements
 
