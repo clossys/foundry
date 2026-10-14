@@ -6,6 +6,7 @@ import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "nod
 import { validateReleaseQualificationContract } from "./release-qualification-contract.mjs";
 import { parseStrictJson } from "./candidate-qualification.mjs";
 import { assertReleaseRuntime } from "./release-runtime.mjs";
+import { BY_DESIGN_REFUSALS, byDesignRefusalFinding, importSpecifier } from "./packed-consumer-readiness.mjs";
 
 const hash = (algorithm, value) => createHash(algorithm).update(value).digest("hex");
 export function normalizedStream(root, value, kind) {
@@ -534,7 +535,32 @@ async function packedManifest(tarball) {
 }
 
 const JS_TARGET = /\.(?:m?js|cjs)$/;
-const KNOWN_CONDITIONS = new Set(["types", "import", "default", "react-server"]);
+/*
+ * Export conditions and what this runner does with each target. The one
+ * import probe is plain Node (its own `node`, `import` and `default`
+ * conditions) plus the explicit `--conditions=react-server` probe, and every
+ * import it records must succeed under one of the labels the qualification
+ * record admits (`string`, `import`, `default`, `react-server`).
+ *
+ * - `import`, or `default` when the entry has no `import`: the target an
+ *   ordinary Node consumer resolves. Runtime: imported and recorded.
+ * - `react-server`: runtime, imported under that condition and recorded.
+ * - `types`, `development`, `browser`: never imported. Each target must still
+ *   be a contained regular file in the installed package and is counted in
+ *   `staticTargets`; a missing one fails export coverage. `browser` is what a
+ *   bundler resolves, never Node; `development` is resolved only by a build
+ *   that sets that condition, which this probe does not model.
+ * - A target that BY_DESIGN_REFUSALS (packed-consumer-readiness.mjs) declares
+ *   for that exact specifier and condition throws its refusal by design, so
+ *   it is never recorded as runtime evidence either. It is counted static and
+ *   probed under its own condition instead: anything other than throwing the
+ *   declared refusal (importing, another error, a timeout) fails coverage
+ *   with a `refusal:<condition>:<specifier>` mismatch.
+ *
+ * Any other condition, or an entry with neither `import` nor `default`, is
+ * refused as unsupported export conditions.
+ */
+const KNOWN_CONDITIONS = new Set(["types", "import", "default", "react-server", "development", "browser"]);
 const RUNTIME_CONDITIONS = new Set(["string", "import", "default", "react-server"]);
 const FRAMEWORK_SUBPATH = /^[A-Za-z0-9@._~+-]+(?:\/[A-Za-z0-9@._~+-]+)*$/;
 
@@ -671,7 +697,14 @@ export async function writeNextFixture(root, contexts) {
   ]);
 }
 
-async function exportCoverage(manifest, installed, root) {
+function declaredRefusal(refusals, packageName, specifier, condition) {
+  const packageRefusals = refusals && hasOwn(refusals, packageName) ? refusals[packageName] : undefined;
+  const conditions = packageRefusals && hasOwn(packageRefusals, specifier) ? packageRefusals[specifier] : undefined;
+  const marker = conditions && hasOwn(conditions, condition) ? conditions[condition] : undefined;
+  return typeof marker === "string" && marker.trim() !== "" ? marker : undefined;
+}
+
+async function exportCoverage(manifest, installed, root, refusals) {
   const files = await packageFiles(installed);
   const declared = entriesFromExports(manifest.exports);
   const concreteTargets = [];
@@ -686,7 +719,9 @@ async function exportCoverage(manifest, installed, root) {
     if (concrete.length === 0) throw new Error("export wildcard has no packaged files");
     for (const item of concrete) {
       const suffix = entry.key === "." ? "" : `/${entry.key.slice(2).replaceAll("*", item.capture)}`;
-      concreteTargets.push({ condition: descriptor.condition, target: item.target, runtime: descriptor.runtime, specifier: `${manifest.name}${suffix}` });
+      const specifier = `${manifest.name}${suffix}`;
+      const refusal = stars === 0 ? declaredRefusal(refusals, manifest.name, specifier, descriptor.condition) : undefined;
+      concreteTargets.push({ condition: descriptor.condition, target: item.target, runtime: descriptor.runtime && refusal === undefined, refusal, specifier });
     }
   }
   const runtimeSpecifiers = [...new Set(concreteTargets.filter((item) => item.runtime && item.condition !== "react-server").map((item) => item.specifier))];
@@ -705,6 +740,7 @@ async function exportCoverage(manifest, installed, root) {
     installedManifestSha256: hash("sha256", await readFile(join(installed, "package.json"))),
   };
   const operations = [];
+  const mismatches = [];
   for (const item of concreteTargets) {
     const target = await containedRegularFile(installed, item.target);
     if (!item.runtime) coverage.staticTargets += 1;
@@ -714,6 +750,13 @@ async function exportCoverage(manifest, installed, root) {
       if (item.condition === "react-server") coverage.reactServerImports += 1;
     }
     if (!target) { coverage.failed += 1; continue; }
+    if (item.refusal !== undefined) {
+      const result = await importSpecifier(item.specifier, root, sanitizedEnv(root), item.condition, { refusalProbe: true, timeout: QUALIFICATION_PHASE_TIMEOUTS.probe });
+      if (byDesignRefusalFinding(result, item.refusal) !== null) {
+        coverage.failed += 1;
+        mismatches.push(`refusal:${item.condition}:${item.specifier}`);
+      }
+    }
     if (item.runtime && (item.condition === "react-server" || !frameworkRoles.has(item.specifier))) {
       const result = await runProcess(process.execPath, runtimeImportArguments(item.condition, item.specifier, target, installed), { cwd: root, env: sanitizedEnv(root), timeout: QUALIFICATION_PHASE_TIMEOUTS.probe });
       operations.push({ id: `import:${item.condition}:${item.specifier}`, kind: "import", result });
@@ -746,7 +789,7 @@ async function exportCoverage(manifest, installed, root) {
     }
     if (result.exitCode !== 0 || result.signal || result.launchError) coverage.failed += framework.all.length;
   }
-  return { coverage, operations };
+  return { coverage, operations, mismatches };
 }
 
 /** Execute the fixed, data-only contract against exactly one local tarball. */
@@ -791,7 +834,7 @@ export function candidateNotInstalledMessage(install) {
   return `candidate package was not installed from the supplied tarball (npm install ${how}${stderrTail})${certChainHint(install.stderr)}`;
 }
 
-export async function runCandidateQualification({ tarball, policy, adapter, fixtures, manifestBins, registry, consumerRoot = null, skipRollback = false, restoreConsumerOverlay = false, releaseRuntimeRun }) {
+export async function runCandidateQualification({ tarball, policy, adapter, fixtures, manifestBins, registry, consumerRoot = null, skipRollback = false, restoreConsumerOverlay = false, releaseRuntimeRun, refusals = BY_DESIGN_REFUSALS }) {
   assertCredentialFree();
   assertReleaseRuntime(releaseRuntimeRun ? { run: releaseRuntimeRun } : {});
   const bytes = await readFile(tarball);
@@ -924,11 +967,12 @@ export async function runCandidateQualification({ tarball, policy, adapter, fixt
       if (!linkedBin) transcript.mismatches.push(`installed-bin:${bin}`);
       else linkedBins[bin] = linkedBin;
     }
-    const exported = await exportCoverage(manifest, installed, root);
+    const exported = await exportCoverage(manifest, installed, root, refusals);
     for (const operation of exported.operations) {
       transcript.observations.push(observation(root, operation.id, operation.kind, 0, operation.result));
       if (operation.result.exitCode !== 0 || operation.result.signal || operation.result.launchError) transcript.mismatches.push(operation.id);
     }
+    transcript.mismatches.push(...exported.mismatches);
     if (exported.coverage.failed !== 0) transcript.mismatches.push("export-coverage");
     for (const bin of Object.keys(adapter.bins).sort()) {
       const linkedBin = linkedBins[bin];

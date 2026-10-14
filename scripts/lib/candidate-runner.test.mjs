@@ -16,7 +16,7 @@ const releaseRuntimeRun = (file, args) => {
   if (args[0] === "-p") return { status: 0, stdout: `${RELEASE_RUNTIME.zlib}\n`, stderr: "" };
   throw new Error(`unexpected release runtime probe ${file} ${args.join(" ")}`);
 };
-async function syntheticPackage({ mismatch = false, exports = undefined, runtimePeer = false, peerInstall = undefined, rawStarter = false, mutateCaseEvidence = null, unresolvedArgvGuard = false, binName = "synthetic-check" } = {}) {
+async function syntheticPackage({ mismatch = false, exports = undefined, runtimePeer = false, peerInstall = undefined, rawStarter = false, mutateCaseEvidence = null, unresolvedArgvGuard = false, binName = "synthetic-check", extraFiles = {} } = {}) {
   const root = await mkdtemp(join(tmpdir(), "foundry-runner-test-"));
   const source = join(root, "source");
   const fixturesDir = join(root, "fixtures");
@@ -30,7 +30,7 @@ async function syntheticPackage({ mismatch = false, exports = undefined, runtime
     version: "1.0.0",
     type: "module",
     exports: exports ?? { ".": { types: "./index.d.ts", import: "./index.js" }, "./asset": "./asset.txt", "./static/*": "./static/*.txt" },
-    files: ["index.js", "react-server.js", "index.d.ts", "cli.js", "asset.txt", "static"],
+    files: ["index.js", "react-server.js", "index.d.ts", "cli.js", "asset.txt", "static", ...Object.keys(extraFiles)],
     bin: { [binName]: "cli.js" },
     scripts: { preinstall: "node -e \"require('fs').writeFileSync('preinstall-marker','ran')\"" },
     ...(runtimePeer ? { peerDependencies: { typescript: "~6.0.0" }, peerDependenciesMeta: { typescript: { optional: true } } } : {}),
@@ -39,6 +39,7 @@ async function syntheticPackage({ mismatch = false, exports = undefined, runtime
   await writeFile(join(source, "react-server.js"), "export const synthetic = 'react-server';\n");
   await writeFile(join(source, "index.d.ts"), "export declare const synthetic: boolean;\n");
   await writeFile(join(source, "asset.txt"), "static asset\n");
+  for (const [name, body] of Object.entries(extraFiles)) await writeFile(join(source, name), body);
   await mkdir(join(source, "static"));
   await writeFile(join(source, "static", "one.txt"), "one\n");
   await writeFile(join(source, "static", "two.txt"), "two\n");
@@ -498,6 +499,127 @@ test("optional peer runtime exports stay red until an exact compatible peer is i
   assert.equal(green.ok, true);
   assert.deepEqual(green.peerInstall, { typescript: "6.0.3" });
   assert.equal(green.observations.find((item) => item.id === "install").expectedExitCode, 0);
+});
+
+// A module that must never be evaluated by the qualification runner's plain
+// Node import probe: if it is, the probe exits non-zero and the run goes red.
+const NEVER_EVALUATED = "throw new Error('evaluated under plain node');\nexport {};\n";
+const refusalModule = (message) => `throw new Error(${JSON.stringify(message)});\nexport {};\n`;
+const importIds = (transcript) => transcript.observations.filter((item) => item.kind === "import").map((item) => item.id).sort();
+
+test("development and browser targets are verified packaged files but never Node-imported; the entry's default target is the import", async (t) => {
+  const fixture = await syntheticPackage({
+    exports: {
+      ".": { types: "./index.d.ts", import: "./index.js" },
+      "./copy": { types: "./index.d.ts", browser: "./browser-only.js", default: "./server.js" },
+      "./dev": { types: "./index.d.ts", development: "./dev-only.js", default: "./index.js" },
+    },
+    extraFiles: { "browser-only.js": NEVER_EVALUATED, "dev-only.js": NEVER_EVALUATED, "server.js": "export const server = true;\n" },
+  });
+  t.after(() => rm(fixture.root, { recursive: true, force: true }));
+  const transcript = await runCandidateQualification({ ...fixture, refusals: {} });
+  assert.deepEqual(transcript.mismatches, []);
+  assert.equal(transcript.ok, true);
+  assert.deepEqual(importIds(transcript), ["import:default:@acme/synthetic/copy", "import:default:@acme/synthetic/dev", "import:import:@acme/synthetic"]);
+  assert.deepEqual({ ...transcript.coverage, installedManifestSha256: null }, {
+    declaredExportKeys: 3,
+    concreteTargets: 8,
+    runtimeImports: 3,
+    reactServerImports: 0,
+    staticTargets: 5,
+    frameworkExports: 0,
+    frameworkBuilds: 0,
+    failed: 0,
+    installedManifestSha256: null,
+    bins: 1,
+    lifecycleScriptsDisabled: true,
+  });
+});
+
+test("a missing development or browser target fails export coverage rather than being skipped", async (t) => {
+  const browser = await syntheticPackage({ exports: { ".": { browser: "./missing-browser.js", default: "./index.js" } } });
+  const development = await syntheticPackage({ exports: { ".": { development: "./missing-development.js", default: "./index.js" } } });
+  t.after(() => Promise.all([browser, development].map((item) => rm(item.root, { recursive: true, force: true }))));
+  for (const fixture of [browser, development]) {
+    const transcript = await runCandidateQualification({ ...fixture, refusals: {} });
+    assert.equal(transcript.ok, false);
+    assert.ok(transcript.mismatches.includes("export-coverage"));
+    assert.equal(transcript.coverage.failed, 1);
+    assert.deepEqual(importIds(transcript), ["import:default:@acme/synthetic"]);
+  }
+});
+
+test("declared by-design refusal targets are probed to throw their declared refusal instead of being imported as runtime evidence", async (t) => {
+  const messages = {
+    previewDefault: "The preview subpath resolves only under the development condition; this build did not set it.",
+    previewReactServer: "The preview subpath is client-only and refuses the react-server condition.",
+    consentReactServer: "The consent subpath is client-only and refuses the react-server condition.",
+    copyBrowser: "The copy subpath is server-only and refuses the browser condition.",
+  };
+  const fixture = await syntheticPackage({
+    exports: {
+      ".": { types: "./index.d.ts", import: "./index.js" },
+      "./preview": { types: "./index.d.ts", "react-server": "./preview-refuse-react-server.js", development: "./index.js", default: "./preview-refuse-default.js" },
+      "./consent": { types: "./index.d.ts", "react-server": "./consent-refuse-react-server.js", default: "./index.js" },
+      "./copy": { types: "./index.d.ts", browser: "./copy-refuse-browser.js", default: "./index.js" },
+    },
+    extraFiles: {
+      "preview-refuse-default.js": refusalModule(messages.previewDefault),
+      "preview-refuse-react-server.js": refusalModule(messages.previewReactServer),
+      "consent-refuse-react-server.js": refusalModule(messages.consentReactServer),
+      "copy-refuse-browser.js": refusalModule(messages.copyBrowser),
+    },
+  });
+  t.after(() => rm(fixture.root, { recursive: true, force: true }));
+  const refusals = { "@acme/synthetic": {
+    "@acme/synthetic/preview": { default: "resolves only under the development condition", "react-server": "is client-only and refuses the react-server condition" },
+    "@acme/synthetic/consent": { "react-server": "is client-only and refuses the react-server condition" },
+    "@acme/synthetic/copy": { browser: "is server-only and refuses the browser condition" },
+  } };
+  const transcript = await runCandidateQualification({ ...fixture, refusals });
+  assert.deepEqual(transcript.mismatches, []);
+  assert.equal(transcript.ok, true);
+  // Every import observation is a successful ordinary import; a refusal is
+  // never recorded as runtime import evidence, and no react-server import
+  // remains to pair with an ordinary one.
+  assert.deepEqual(importIds(transcript), ["import:default:@acme/synthetic/consent", "import:default:@acme/synthetic/copy", "import:import:@acme/synthetic"]);
+  assert.equal(transcript.coverage.runtimeImports, 3);
+  assert.equal(transcript.coverage.reactServerImports, 0);
+  assert.equal(transcript.coverage.staticTargets, 9);
+  assert.equal(transcript.coverage.concreteTargets, 12);
+  assert.equal(transcript.coverage.failed, 0);
+});
+
+test("a declared refusal that imports or throws another error is red, and an undeclared refusing target still fails its import", async (t) => {
+  const marker = "is client-only and refuses the react-server condition";
+  const exports = { ".": { types: "./index.d.ts", "react-server": "./refuse.js", default: "./index.js" } };
+  const stale = await syntheticPackage({ exports: { ".": { types: "./index.d.ts", "react-server": "./react-server.js", default: "./index.js" } } });
+  const different = await syntheticPackage({ exports, extraFiles: { "refuse.js": refusalModule("something else broke") } });
+  const undeclared = await syntheticPackage({ exports, extraFiles: { "refuse.js": refusalModule(`The root ${marker}.`) } });
+  t.after(() => Promise.all([stale, different, undeclared].map((item) => rm(item.root, { recursive: true, force: true }))));
+  const declared = { "@acme/synthetic": { "@acme/synthetic": { "react-server": marker } } };
+  for (const fixture of [stale, different]) {
+    const transcript = await runCandidateQualification({ ...fixture, refusals: declared });
+    assert.equal(transcript.ok, false);
+    assert.ok(transcript.mismatches.includes("refusal:react-server:@acme/synthetic"));
+    assert.ok(transcript.mismatches.includes("export-coverage"));
+    assert.equal(transcript.coverage.failed, 1);
+  }
+  const red = await runCandidateQualification({ ...undeclared, refusals: {} });
+  assert.equal(red.ok, false);
+  assert.ok(red.mismatches.includes("import:react-server:@acme/synthetic"));
+});
+
+test("conditions outside the closed set still refuse, as does an entry with no ordinary import or default target", async (t) => {
+  const shapes = [
+    { ".": { worker: "./index.js", default: "./index.js" } },
+    { ".": { custom: "./index.js", import: "./index.js" } },
+    { ".": { node: "./index.js", default: "./index.js" } },
+    { ".": { types: "./index.d.ts", development: "./index.js", browser: "./index.js" } },
+  ];
+  const fixtures = await Promise.all(shapes.map((exports) => syntheticPackage({ exports })));
+  t.after(() => Promise.all(fixtures.map((item) => rm(item.root, { recursive: true, force: true }))));
+  for (const fixture of fixtures) await assert.rejects(() => runCandidateQualification({ ...fixture, refusals: {} }), /unsupported export conditions/);
 });
 
 
