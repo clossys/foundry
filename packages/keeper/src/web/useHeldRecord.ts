@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useInsertionEffect, useRef, useState } from "react";
 import { decideHolding } from "../contract.js";
 import type { DispositionRead, Holding, ReachRead, RetentionRead, SourceRead } from "../contract.js";
 import type { DeletionEffect, HeldItem } from "../schema.js";
@@ -101,6 +101,41 @@ export interface UseHeldRecordResult {
   forget(itemId: string): Promise<void>;
 }
 
+/** The client and subject of the hook's most recent commit. */
+interface CommittedTarget {
+  client: HeldRecordClient;
+  subjectId: string;
+}
+
+/**
+ * Whether a correction or erasure reply still belongs on this surface,
+ * decided when the reply ARRIVES rather than when the call was made, by
+ * comparing the client and subject the call was made with against the ones
+ * the hook has most recently committed. A reply from a replaced client or
+ * for an earlier subject is ignored, and so is one that arrives before the
+ * hook has ever committed, or after it has unmounted. A reply to the current
+ * client applies even while the hook is hidden by an `Activity` boundary or
+ * its content has re-suspended, because hiding changes neither: the reply is
+ * still this surface's to show once it is visible again.
+ *
+ * The same check, made when a call STARTS, decides whether the call may clear
+ * the surface's previous result: a callback kept from before a client or
+ * subject change still calls its own client, but leaves the current
+ * surface's `error` and `lastForgetEffect` alone.
+ */
+function replyIsLive(live: CommittedTarget | null, client: HeldRecordClient, subjectId: string): boolean {
+  return live !== null && live.client === client && live.subjectId === subjectId;
+}
+
+/**
+ * Calls the client now, but delivers a synchronous throw as a rejection, so
+ * that failure is judged by `replyIsLive` once the current commit has
+ * finished, like any other reply, rather than in the middle of it.
+ */
+function settled<T>(call: () => Promise<T>): Promise<T> {
+  return new Promise<T>((resolve) => resolve(call()));
+}
+
 /**
  * Reads everything held about one person, renders each item's verdict, and
  * exposes correction and erasure as identically-shaped async functions.
@@ -123,6 +158,29 @@ export function useHeldRecord(options: UseHeldRecordOptions): UseHeldRecordResul
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<unknown>(undefined);
   const [lastForgetEffect, setLastForgetEffect] = useState<DeletionEffect | undefined>(undefined);
+  const committed = useRef<CommittedTarget | null>(null);
+
+  // Recorded in an INSERTION effect, the earliest point in a commit, because
+  // React runs it for every commit of this hook, including one made while an
+  // `Activity` boundary hides it, and does not tear it down when the hook is
+  // hidden or its content re-suspends. Layout effects are torn down in both
+  // cases, and an `Activity` boundary also holds back every layout and
+  // passive effect of a commit made while it hides the hook, so a target kept
+  // by either effect would go missing for the current client, or keep naming
+  // a client replaced while hidden. It also runs before any child's layout or
+  // passive effect in the same commit, so a call those effects make, and a
+  // reply that settles before this commit's passive effects, is judged
+  // against this commit's client and subject. Only a ref is written here; no
+  // state is updated. The cleanup runs when the client or subject changes,
+  // just before the next target is recorded, and on unmount, after which no
+  // reply applies.
+  useInsertionEffect(() => {
+    const target: CommittedTarget = { client, subjectId };
+    committed.current = target;
+    return () => {
+      if (committed.current === target) committed.current = null;
+    };
+  }, [client, subjectId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -150,13 +208,17 @@ export function useHeldRecord(options: UseHeldRecordOptions): UseHeldRecordResul
       // Cleared before the call, not after it. `error` is documented as the
       // most recent client call's failure, and leaving a previous one standing
       // through a successful call would show the person a stale failure about
-      // their own record.
-      setError(undefined);
+      // their own record. Only a call to the current client and subject
+      // clears it: an outdated callback's reply is ignored, so a clear it made
+      // would remove a failure the person has not seen with nothing to replace
+      // it.
+      if (replyIsLive(committed.current, client, subjectId)) setError(undefined);
       try {
-        const stored = await client.correct(subjectId, item);
+        const stored = await settled(() => client.correct(subjectId, item));
+        if (!replyIsLive(committed.current, client, subjectId)) return;
         setEntries((previous) => previous.map((entry) => (entry.item.itemId === stored.itemId ? { ...entry, item: stored } : entry)));
       } catch (caught: unknown) {
-        setError(caught);
+        if (replyIsLive(committed.current, client, subjectId)) setError(caught);
       }
     },
     [client, subjectId],
@@ -164,14 +226,18 @@ export function useHeldRecord(options: UseHeldRecordOptions): UseHeldRecordResul
 
   const forget = useCallback(
     async (itemId: string) => {
-      setError(undefined);
-      // Cleared before the call for the same reason, and this one matters
-      // more: a stale `"erased"` left standing through a later failed attempt
-      // would tell somebody their record is gone on the strength of a
-      // different call.
-      setLastForgetEffect(undefined);
+      // Cleared before the call for the same reason, and the erasure effect
+      // matters more: a stale `"erased"` left standing through a later failed
+      // attempt would tell somebody their record is gone on the strength of a
+      // different call. As in `correct`, only a call to the current client
+      // and subject clears either.
+      if (replyIsLive(committed.current, client, subjectId)) {
+        setError(undefined);
+        setLastForgetEffect(undefined);
+      }
       try {
-        const effect = await client.forget(subjectId, itemId);
+        const effect = await settled(() => client.forget(subjectId, itemId));
+        if (!replyIsLive(committed.current, client, subjectId)) return;
         setLastForgetEffect(effect);
         // Only a confirmed erasure removes the row. A failed one, and an
         // erasure nobody observed, leave the item on screen with its effect
@@ -179,7 +245,7 @@ export function useHeldRecord(options: UseHeldRecordOptions): UseHeldRecordResul
         // promise is gone has told the person something nobody checked.
         if (effect === "erased") setEntries((previous) => previous.filter((entry) => entry.item.itemId !== itemId));
       } catch (caught: unknown) {
-        setError(caught);
+        if (replyIsLive(committed.current, client, subjectId)) setError(caught);
       }
     },
     [client, subjectId],
