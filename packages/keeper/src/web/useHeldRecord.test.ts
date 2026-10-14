@@ -119,6 +119,59 @@ describe("useHeldRecord", () => {
     expect(result.current.rows[0]?.entry.item.holdingClass).toBe("corrected-notes");
   });
 
+  it.each(["correct", "forget"] as const)("a deferred mutation reply from a replaced client is ignored (%s)", async (mutation) => {
+    let resolveCorrection!: (stored: HeldItem) => void;
+    let resolveForget!: (effect: DeletionEffect) => void;
+    const oldClient: HeldRecordClient = {
+      read: async () => [entry()],
+      correct: () => new Promise((resolve) => { resolveCorrection = resolve; }),
+      forget: () => new Promise((resolve) => { resolveForget = resolve; }),
+    };
+    const replacement = client([entry({ item: item({ holdingClass: "new-client-notes" }) })]);
+    const { result, rerender } = renderHook(({ c }) => useHeldRecord(options(c)), { initialProps: { c: oldClient } });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    let pending!: Promise<void>;
+    act(() => {
+      pending = mutation === "correct" ? result.current.correct(item()) : result.current.forget("item_1");
+    });
+    rerender({ c: replacement });
+    await waitFor(() => expect(result.current.rows[0]?.entry.item.holdingClass).toBe("new-client-notes"));
+
+    await act(async () => {
+      if (mutation === "correct") resolveCorrection(item({ holdingClass: "old-client-notes" }));
+      else resolveForget("erased");
+      await pending;
+    });
+    expect(result.current.rows[0]?.entry.item.holdingClass).toBe("new-client-notes");
+    expect(result.current.rows).toHaveLength(1);
+    expect(result.current.lastForgetEffect).toBeUndefined();
+    expect(result.current.error).toBeUndefined();
+  });
+
+  it.each(["correct", "forget"] as const)("ignores a deferred %s error from a replaced client", async (mutation) => {
+    let rejectMutation!: (error: Error) => void;
+    const deferred = () => new Promise<never>((_resolve, reject) => { rejectMutation = reject; });
+    const oldClient: HeldRecordClient = { read: async () => [entry()], correct: deferred, forget: deferred };
+    const replacement = client([entry({ item: item({ holdingClass: "new-client-notes" }) })]);
+    const { result, rerender } = renderHook(({ c }) => useHeldRecord(options(c)), { initialProps: { c: oldClient } });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    let pending!: Promise<void>;
+    act(() => {
+      pending = mutation === "correct" ? result.current.correct(item()) : result.current.forget("item_1");
+    });
+    rerender({ c: replacement });
+    await waitFor(() => expect(result.current.rows[0]?.entry.item.holdingClass).toBe("new-client-notes"));
+    await act(async () => {
+      rejectMutation(new Error("old client failed"));
+      await pending;
+    });
+    expect(result.current.error).toBeUndefined();
+    expect(result.current.rows[0]?.entry.item.holdingClass).toBe("new-client-notes");
+    expect(result.current.lastForgetEffect).toBeUndefined();
+  });
+
   it("removes the row on a confirmed erasure", async () => {
     const c = client([entry()], "erased");
     const { result } = render(c);

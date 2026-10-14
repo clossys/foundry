@@ -396,6 +396,10 @@ The client port is read on identity, so memoize or hoist it — this hook does
 not paper over an unstable one, because doing so would make a runaway read
 invisible rather than impossible.
 
+Correction and erasure replies share the read's cancellation lifetime. When
+the client or subject changes, or the hook unmounts, pending mutation replies
+from the previous read are ignored, including errors and erasure effects.
+
 ## Requirements
 
 Node 20 or newer. Zero runtime dependencies.
