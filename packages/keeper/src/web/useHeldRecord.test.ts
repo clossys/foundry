@@ -13,7 +13,8 @@
  *      whole role exists to prevent.
  */
 import { act, render as renderComponent, renderHook, waitFor } from "@testing-library/react";
-import { Activity, createElement, useEffect } from "react";
+import { Activity, createElement, startTransition, useEffect, useLayoutEffect } from "react";
+import { createRoot, type Root } from "react-dom/client";
 import { describe, expect, it, vi } from "vitest";
 import type { DeletionEffect, HeldItem } from "../schema.js";
 import { useHeldRecord, type HeldRecordClient, type HeldRecordEntry, type UseHeldRecordResult } from "./useHeldRecord.js";
@@ -159,6 +160,62 @@ const currentClientReplies: ReadonlyArray<{ name: string; make: () => HeldRecord
   },
 ];
 
+/**
+ * Runs a scenario on a real root OUTSIDE `act`, so React schedules work the
+ * way it does in a browser: a commit runs its layout effects synchronously and
+ * leaves its passive effects to a later task. Inside `act` every effect has
+ * run before any reply can arrive, which hides a reply that settles in
+ * between — the window a client answering within microtasks lands in.
+ */
+async function outsideAct(scenario: (root: Root) => Promise<void>): Promise<void> {
+  const environment = globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean };
+  const previous = environment.IS_REACT_ACT_ENVIRONMENT;
+  environment.IS_REACT_ACT_ENVIRONMENT = false;
+  const root = createRoot(document.createElement("div"));
+  try {
+    await scenario(root);
+  } finally {
+    root.unmount();
+    environment.IS_REACT_ACT_ENVIRONMENT = previous;
+  }
+}
+
+/** Polls on timers, never inside `act`, until `check` stops throwing. */
+function settle(check: () => void): Promise<void> {
+  return vi.waitFor(check, { timeout: 2_000, interval: 1 });
+}
+
+/**
+ * Like `childCaller`, but the child calls from a LAYOUT effect, which React
+ * runs inside the commit, before any passive effect of that commit. With
+ * `"after-commit"` the call is made from a microtask once the commit is done,
+ * standing for code that calls through the fresh callback before passive
+ * effects have run. `showChild: false` renders the hook without the child, so
+ * a test can mount the child in a later commit.
+ */
+function layoutCaller(callWhen: (c: HeldRecordClient) => boolean, call: Mutation, timing: "in-commit" | "after-commit" = "in-commit") {
+  const seen: { current: UseHeldRecordResult | undefined } = { current: undefined };
+  function Child({ record, c }: { record: UseHeldRecordResult; c: HeldRecordClient }) {
+    useLayoutEffect(() => {
+      if (!callWhen(c)) return;
+      if (timing === "in-commit") void call(record);
+      else queueMicrotask(() => void call(record));
+    }, [c]);
+    return null;
+  }
+  function Parent({ c, showChild = true }: { c: HeldRecordClient; showChild?: boolean }) {
+    const record = useHeldRecord(options(c));
+    seen.current = record;
+    return showChild ? createElement(Child, { record, c }) : null;
+  }
+  return { seen, Parent };
+}
+
+const swaps = [
+  ["an ordinary update", (update: () => void) => update()],
+  ["a transition", (update: () => void) => startTransition(update)],
+] as const;
+
 describe("useHeldRecord", () => {
   it("reads everything held about the person and renders a verdict per item", async () => {
     const { result } = render(client([entry()]));
@@ -205,40 +262,58 @@ describe("useHeldRecord", () => {
     expect(result.current.rows[0]?.entry.item.holdingClass).toBe("corrected-notes");
   });
 
-  it.each(["correct", "forget"] as const)("calls the current client for a %s from a child mount effect", async (mutation) => {
-    const currentClient = client([entry()]);
-    const correct = vi.spyOn(currentClient, "correct");
-    function Child({ record }: { record: UseHeldRecordResult }) {
-      useEffect(() => {
-        void (mutation === "correct" ? record.correct(item()) : record.forget("item_1"));
-      }, []);
-      return null;
+  it.each(["correct", "forget"] as const)("applies the current client's reply to a %s from a child mount effect", async (mutation) => {
+    const held = deferredMutations();
+    let pending: Promise<void> | undefined;
+    const { seen, Parent } = childCaller(
+      () => true,
+      (record) => (pending = mutation === "correct" ? record.correct(item({ holdingClass: "corrected-notes" })) : record.forget("item_1")),
+    );
+    renderComponent(createElement(Parent, { c: held.c }));
+    await waitFor(() => expect(seen.current?.loading).toBe(false));
+    expect(mutation === "correct" ? held.corrections : held.erasures).toHaveLength(1);
+
+    // Replied after the read has landed, so the reply has a row to apply to.
+    await act(async () => {
+      if (mutation === "correct") held.corrections[0]!(item({ holdingClass: "corrected-notes" }));
+      else held.erasures[0]!("erased");
+      await pending;
+    });
+    if (mutation === "correct") {
+      expect(seen.current?.rows[0]?.entry.item.holdingClass).toBe("corrected-notes");
+    } else {
+      expect(seen.current?.lastForgetEffect).toBe("erased");
+      expect(seen.current?.rows).toHaveLength(0);
     }
-    function Parent() {
-      return createElement(Child, { record: useHeldRecord(options(currentClient)) });
-    }
-    renderComponent(createElement(Parent));
-    await waitFor(() => expect(mutation === "correct" ? correct : currentClient.forget).toHaveBeenCalledTimes(1));
   });
 
-  it.each(["correct", "forget"] as const)("calls the replacement client for a %s from a child effect after a client swap", async (mutation) => {
+  it.each(["correct", "forget"] as const)("applies the replacement client's reply to a %s from a child effect after a client swap", async (mutation) => {
     const oldClient = client([entry()]);
-    const replacement = client([entry()]);
     const oldCorrect = vi.spyOn(oldClient, "correct");
-    const replacementCorrect = vi.spyOn(replacement, "correct");
-    function Child({ record, c }: { record: UseHeldRecordResult; c: HeldRecordClient }) {
-      useEffect(() => {
-        if (c === replacement) void (mutation === "correct" ? record.correct(item()) : record.forget("item_1"));
-      }, [c]);
-      return null;
-    }
-    function Parent({ c }: { c: HeldRecordClient }) {
-      return createElement(Child, { record: useHeldRecord(options(c)), c });
-    }
+    const replacement = deferredMutations([entry({ item: item({ holdingClass: "new-client-notes" }) })]);
+    let pending: Promise<void> | undefined;
+    const { seen, Parent } = childCaller(
+      (c) => c === replacement.c,
+      (record) => (pending = mutation === "correct" ? record.correct(item({ holdingClass: "corrected-notes" })) : record.forget("item_1")),
+    );
     const { rerender } = renderComponent(createElement(Parent, { c: oldClient }));
-    rerender(createElement(Parent, { c: replacement }));
-    await waitFor(() => expect(mutation === "correct" ? replacementCorrect : replacement.forget).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(seen.current?.loading).toBe(false));
+    rerender(createElement(Parent, { c: replacement.c }));
+    await waitFor(() => expect(seen.current?.rows[0]?.entry.item.holdingClass).toBe("new-client-notes"));
+    expect(mutation === "correct" ? replacement.corrections : replacement.erasures).toHaveLength(1);
     expect(mutation === "correct" ? oldCorrect : oldClient.forget).not.toHaveBeenCalled();
+
+    await act(async () => {
+      if (mutation === "correct") replacement.corrections[0]!(item({ holdingClass: "corrected-notes" }));
+      else replacement.erasures[0]!("erased");
+      await pending;
+    });
+    if (mutation === "correct") {
+      expect(seen.current?.rows[0]?.entry.item.holdingClass).toBe("corrected-notes");
+    } else {
+      expect(seen.current?.lastForgetEffect).toBe("erased");
+      expect(seen.current?.rows).toHaveLength(0);
+    }
   });
 
   it.each(["correct", "forget"] as const)("a deferred mutation reply from a replaced client is ignored (%s)", async (mutation) => {
@@ -406,7 +481,7 @@ describe("useHeldRecord", () => {
     expect(result.current.error).toBeUndefined();
   });
 
-  it("settles a pending reply after unmount without updating or logging", async () => {
+  it("settles a pending reply after unmount without throwing or logging", async () => {
     const { c, erasures } = deferredMutations();
     const logged = vi.spyOn(console, "error").mockImplementation(() => undefined);
     try {
@@ -419,7 +494,6 @@ describe("useHeldRecord", () => {
       unmount();
       erasures[0]!("erased");
       await expect(pending).resolves.toBeUndefined();
-      expect(result.current.lastForgetEffect).toBeUndefined();
       expect(logged).not.toHaveBeenCalled();
     } finally {
       logged.mockRestore();
@@ -564,5 +638,78 @@ describe("useHeldRecord", () => {
     const { result } = render(client([old]));
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.rows[0]?.holding.kind).toBe("forgotten");
+  });
+});
+
+describe("useHeldRecord outside act, where a reply can land between a commit and its passive effects", () => {
+  it.each(["erased", "unknown", "failed"] as const)("applies the effect of an erasure a child requests from a layout effect on first mount (%s)", async (effect) => {
+    await outsideAct(async (root) => {
+      const { seen, Parent } = layoutCaller(() => true, (record) => record.forget("item_1"));
+      root.render(createElement(Parent, { c: client([entry()], effect) }));
+      await settle(() => expect(seen.current?.loading).toBe(false));
+      expect(seen.current?.lastForgetEffect).toBe(effect);
+    });
+  });
+
+  it.each(swaps)("applies the erasure a child requests from a layout effect in the same commit as a client swap made by %s", async (_name, swap) => {
+    await outsideAct(async (root) => {
+      const oldClient = client([entry()]);
+      const replacement = client([entry({ item: item({ holdingClass: "new-client-notes" }) })], "erased");
+      const { seen, Parent } = layoutCaller((c) => c === replacement, (record) => record.forget("item_1"));
+      root.render(createElement(Parent, { c: oldClient }));
+      await settle(() => expect(seen.current?.loading).toBe(false));
+      swap(() => root.render(createElement(Parent, { c: replacement })));
+      await settle(() => expect(seen.current?.rows[0]?.entry.item.holdingClass).toBe("new-client-notes"));
+      expect(replacement.forget).toHaveBeenCalledTimes(1);
+      expect(oldClient.forget).not.toHaveBeenCalled();
+      expect(seen.current?.lastForgetEffect).toBe("erased");
+    });
+  });
+
+  it.each(swaps)("applies an erasure called through the fresh callback after a swap made by %s commits, before its passive effects", async (_name, swap) => {
+    await outsideAct(async (root) => {
+      const oldClient = client([entry()]);
+      const replacement = client([entry({ item: item({ holdingClass: "new-client-notes" }) })], "erased");
+      const { seen, Parent } = layoutCaller((c) => c === replacement, (record) => record.forget("item_1"), "after-commit");
+      root.render(createElement(Parent, { c: oldClient }));
+      await settle(() => expect(seen.current?.loading).toBe(false));
+      swap(() => root.render(createElement(Parent, { c: replacement })));
+      await settle(() => expect(seen.current?.rows[0]?.entry.item.holdingClass).toBe("new-client-notes"));
+      expect(replacement.forget).toHaveBeenCalledTimes(1);
+      expect(seen.current?.lastForgetEffect).toBe("erased");
+    });
+  });
+
+  it.each(swaps)("ignores a replaced client's erasure that lands after a swap made by %s commits, before its passive effects", async (_name, swap) => {
+    await outsideAct(async (root) => {
+      const first = deferredMutations();
+      const replacement = client([entry({ item: item({ holdingClass: "new-client-notes" }) })]);
+      // The replaced client answers from inside the swap's commit, so its
+      // reply is judged after that commit and before its passive effects.
+      const { seen, Parent } = layoutCaller(
+        (c) => c === replacement,
+        async () => first.erasures[0]!("erased"),
+      );
+      root.render(createElement(Parent, { c: first.c }));
+      await settle(() => expect(seen.current?.loading).toBe(false));
+      const pending = seen.current!.forget("item_1");
+      expect(first.erasures).toHaveLength(1);
+      swap(() => root.render(createElement(Parent, { c: replacement })));
+      await pending;
+      await settle(() => expect(seen.current?.rows[0]?.entry.item.holdingClass).toBe("new-client-notes"));
+      expect(seen.current?.lastForgetEffect).toBeUndefined();
+      expect(seen.current?.rows).toHaveLength(1);
+    });
+  });
+
+  it.each(currentClientReplies)("applies the reply to a layout-effect call from a child mounted after the read landed: $name", async ({ make, call, check }) => {
+    await outsideAct(async (root) => {
+      const c = make();
+      const { seen, Parent } = layoutCaller(() => true, call);
+      root.render(createElement(Parent, { c, showChild: false }));
+      await settle(() => expect(seen.current?.loading).toBe(false));
+      root.render(createElement(Parent, { c, showChild: true }));
+      await settle(() => check(seen.current!));
+    });
   });
 });

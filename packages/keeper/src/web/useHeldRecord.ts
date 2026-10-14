@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { decideHolding } from "../contract.js";
 import type { DispositionRead, Holding, ReachRead, RetentionRead, SourceRead } from "../contract.js";
 import type { DeletionEffect, HeldItem } from "../schema.js";
@@ -101,8 +101,8 @@ export interface UseHeldRecordResult {
   forget(itemId: string): Promise<void>;
 }
 
-/** One run of the hook's read effect: the client and subject it read, and whether it has been torn down. */
-interface ReadLifetime {
+/** One committed pairing of client and subject, and whether React has since torn it down. */
+interface CommittedTarget {
   client: HeldRecordClient;
   subjectId: string;
   cancelled: boolean;
@@ -111,22 +111,23 @@ interface ReadLifetime {
 /**
  * Whether a correction or erasure reply still belongs on this surface,
  * decided when the reply ARRIVES rather than when the call was made. A
- * child's effect runs before this hook's read effect — on first mount, and in
- * the same commit as a client or subject change — so the read live at call
- * time can be missing or already replaced even though the call went to the
- * current client. By the time a reply arrives that commit's effects have run,
- * and the reply applies only if the live read has not been torn down and is
- * for the client and subject the call was made with. A reply from a replaced
- * client, an earlier subject, or a torn-down read is ignored.
+ * child's effects run before this hook's — on first mount, and in the same
+ * commit as a client or subject change — so the target recorded at call time
+ * can be missing or already replaced even though the call went to the
+ * current client. A reply always arrives after the synchronous commit it was
+ * made in has finished, so by then the target records what is committed, and
+ * the reply applies only if that target has not been torn down and is the
+ * client and subject the call was made with. A reply from a replaced client,
+ * an earlier subject, or a torn-down target is ignored.
  */
-function replyIsLive(live: ReadLifetime | null, client: HeldRecordClient, subjectId: string): boolean {
+function replyIsLive(live: CommittedTarget | null, client: HeldRecordClient, subjectId: string): boolean {
   return live !== null && !live.cancelled && live.client === client && live.subjectId === subjectId;
 }
 
 /**
  * Calls the client now, but delivers a synchronous throw as a rejection, so
- * that failure is judged by `replyIsLive` after the current commit's effects
- * like any other reply rather than before them.
+ * that failure is judged by `replyIsLive` once the current commit has
+ * finished, like any other reply, rather than in the middle of it.
  */
 function settled<T>(call: () => Promise<T>): Promise<T> {
   return new Promise<T>((resolve) => resolve(call()));
@@ -154,27 +155,40 @@ export function useHeldRecord(options: UseHeldRecordOptions): UseHeldRecordResul
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<unknown>(undefined);
   const [lastForgetEffect, setLastForgetEffect] = useState<DeletionEffect | undefined>(undefined);
-  const liveRead = useRef<ReadLifetime | null>(null);
+  const committed = useRef<CommittedTarget | null>(null);
+
+  // Recorded in a LAYOUT effect, which React runs inside the commit itself,
+  // rather than in the passive read effect below, which can run a task later.
+  // A client answering within microtasks replies in that gap, and a marker
+  // set by the read effect would then still name the previous client, or no
+  // client at all on first mount. The cleanup runs before the next commit's
+  // marker is set, and on unmount or when an `Activity` boundary hides the hook.
+  useLayoutEffect(() => {
+    const target: CommittedTarget = { client, subjectId, cancelled: false };
+    committed.current = target;
+    return () => {
+      target.cancelled = true;
+    };
+  }, [client, subjectId]);
 
   useEffect(() => {
-    const request: ReadLifetime = { client, subjectId, cancelled: false };
-    liveRead.current = request;
+    let cancelled = false;
     setLoading(true);
     setError(undefined);
     client
       .read(subjectId)
       .then((all) => {
-        if (request.cancelled) return;
+        if (cancelled) return;
         setEntries(all);
       })
       .catch((caught: unknown) => {
-        if (!request.cancelled) setError(caught);
+        if (!cancelled) setError(caught);
       })
       .finally(() => {
-        if (!request.cancelled) setLoading(false);
+        if (!cancelled) setLoading(false);
       });
     return () => {
-      request.cancelled = true;
+      cancelled = true;
     };
   }, [client, subjectId]);
 
@@ -187,10 +201,10 @@ export function useHeldRecord(options: UseHeldRecordOptions): UseHeldRecordResul
       setError(undefined);
       try {
         const stored = await settled(() => client.correct(subjectId, item));
-        if (!replyIsLive(liveRead.current, client, subjectId)) return;
+        if (!replyIsLive(committed.current, client, subjectId)) return;
         setEntries((previous) => previous.map((entry) => (entry.item.itemId === stored.itemId ? { ...entry, item: stored } : entry)));
       } catch (caught: unknown) {
-        if (replyIsLive(liveRead.current, client, subjectId)) setError(caught);
+        if (replyIsLive(committed.current, client, subjectId)) setError(caught);
       }
     },
     [client, subjectId],
@@ -206,7 +220,7 @@ export function useHeldRecord(options: UseHeldRecordOptions): UseHeldRecordResul
       setLastForgetEffect(undefined);
       try {
         const effect = await settled(() => client.forget(subjectId, itemId));
-        if (!replyIsLive(liveRead.current, client, subjectId)) return;
+        if (!replyIsLive(committed.current, client, subjectId)) return;
         setLastForgetEffect(effect);
         // Only a confirmed erasure removes the row. A failed one, and an
         // erasure nobody observed, leave the item on screen with its effect
@@ -214,7 +228,7 @@ export function useHeldRecord(options: UseHeldRecordOptions): UseHeldRecordResul
         // promise is gone has told the person something nobody checked.
         if (effect === "erased") setEntries((previous) => previous.filter((entry) => entry.item.itemId !== itemId));
       } catch (caught: unknown) {
-        if (replyIsLive(liveRead.current, client, subjectId)) setError(caught);
+        if (replyIsLive(committed.current, client, subjectId)) setError(caught);
       }
     },
     [client, subjectId],
