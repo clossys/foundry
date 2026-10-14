@@ -701,27 +701,60 @@ describe("useHeldRecord", () => {
     check(seen.current!);
   });
 
-  it("applies the reply to a call made before a client swap and back, once the original client is current again", async () => {
+  it.each(pendingReplies)("applies the reply to a call made before a client swap and back, once the original client is current again: $name", async ({ call, reply, check }) => {
     // The guard compares the client a call went to with the client that is
     // committed when the reply lands. After A, B and A again, A is the
-    // current client, so its reply is shown.
+    // current client, so its reply is shown, whatever kind of reply it is.
     const first = heldStore();
     const second = client([entry({ item: item({ holdingClass: "second-client-notes" }) })]);
     const { result, rerender } = renderHook(({ c }) => useHeldRecord(options(c)), { initialProps: { c: first.c } });
     await waitFor(() => expect(result.current.loading).toBe(false));
     let pending!: Promise<void>;
     act(() => {
-      pending = result.current.forget("item_1");
+      pending = call(result.current);
     });
     rerender({ c: second });
     await waitFor(() => expect(result.current.rows[0]?.entry.item.holdingClass).toBe("second-client-notes"));
     rerender({ c: first.c });
     await waitFor(() => expect(result.current.rows[0]?.entry.item.holdingClass).toBe("authored-notes"));
     await act(async () => {
-      first.erasures[0]!.resolve("unknown");
+      reply(first);
       await pending;
     });
-    expect(result.current.lastForgetEffect).toBe("unknown");
+    check(result.current);
+  });
+
+  it.each(pendingReplies)("applies the reply to a call made before a subject change and back, once the original subject is current again: $name", async ({ call, reply, check }) => {
+    // The same comparison for the subject: after sub_1, sub_2 and sub_1
+    // again, sub_1 is the current subject, so the reply to a call made for
+    // it is shown. The store's items are all about sub_1, so the surface
+    // shows no rows while sub_2 is the subject.
+    const store = heldStore();
+    const { result, rerender } = renderHook(({ subjectId }) => useHeldRecord({ ...options(store.c), subjectId }), {
+      initialProps: { subjectId: "sub_1" },
+    });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    let pending!: Promise<void>;
+    act(() => {
+      pending = call(result.current);
+    });
+    rerender({ subjectId: "sub_2" });
+    await waitFor(() => {
+      expect(store.reads).toEqual(["sub_1", "sub_2"]);
+      expect(result.current.loading).toBe(false);
+      expect(result.current.rows).toHaveLength(0);
+    });
+    rerender({ subjectId: "sub_1" });
+    await waitFor(() => {
+      expect(store.reads).toEqual(["sub_1", "sub_2", "sub_1"]);
+      expect(result.current.loading).toBe(false);
+      expect(result.current.rows).toHaveLength(1);
+    });
+    await act(async () => {
+      reply(store);
+      await pending;
+    });
+    check(result.current);
   });
 
   it("removes the row on a confirmed erasure", async () => {
