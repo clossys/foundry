@@ -101,6 +101,37 @@ export interface UseHeldRecordResult {
   forget(itemId: string): Promise<void>;
 }
 
+/** One run of the hook's read effect: the client and subject it read, and whether it has been torn down. */
+interface ReadLifetime {
+  client: HeldRecordClient;
+  subjectId: string;
+  cancelled: boolean;
+}
+
+/**
+ * Whether a correction or erasure reply still belongs on this surface,
+ * decided when the reply ARRIVES rather than when the call was made. A
+ * child's effect runs before this hook's read effect — on first mount, and in
+ * the same commit as a client or subject change — so the read live at call
+ * time can be missing or already replaced even though the call went to the
+ * current client. By the time a reply arrives that commit's effects have run,
+ * and the reply applies only if the live read has not been torn down and is
+ * for the client and subject the call was made with. A reply from a replaced
+ * client, an earlier subject, or a torn-down read is ignored.
+ */
+function replyIsLive(live: ReadLifetime | null, client: HeldRecordClient, subjectId: string): boolean {
+  return live !== null && !live.cancelled && live.client === client && live.subjectId === subjectId;
+}
+
+/**
+ * Calls the client now, but delivers a synchronous throw as a rejection, so
+ * that failure is judged by `replyIsLive` after the current commit's effects
+ * like any other reply rather than before them.
+ */
+function settled<T>(call: () => Promise<T>): Promise<T> {
+  return new Promise<T>((resolve) => resolve(call()));
+}
+
 /**
  * Reads everything held about one person, renders each item's verdict, and
  * exposes correction and erasure as identically-shaped async functions.
@@ -123,11 +154,11 @@ export function useHeldRecord(options: UseHeldRecordOptions): UseHeldRecordResul
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<unknown>(undefined);
   const [lastForgetEffect, setLastForgetEffect] = useState<DeletionEffect | undefined>(undefined);
-  const activeRead = useRef<{ client: HeldRecordClient; subjectId: string; cancelled: boolean } | null>(null);
+  const liveRead = useRef<ReadLifetime | null>(null);
 
   useEffect(() => {
-    const request = { client, subjectId, cancelled: false };
-    activeRead.current = request;
+    const request: ReadLifetime = { client, subjectId, cancelled: false };
+    liveRead.current = request;
     setLoading(true);
     setError(undefined);
     client
@@ -149,21 +180,17 @@ export function useHeldRecord(options: UseHeldRecordOptions): UseHeldRecordResul
 
   const correct = useCallback(
     async (item: HeldItem) => {
-      // Capture the reply's lifetime without suppressing the host call: a
-      // child's effect can run before this hook's read effect has started.
-      const request = activeRead.current;
       // Cleared before the call, not after it. `error` is documented as the
       // most recent client call's failure, and leaving a previous one standing
       // through a successful call would show the person a stale failure about
       // their own record.
       setError(undefined);
       try {
-        const stored = await client.correct(subjectId, item);
-        if (!request) return;
-        if (request.cancelled || request.client !== client || request.subjectId !== subjectId) return;
+        const stored = await settled(() => client.correct(subjectId, item));
+        if (!replyIsLive(liveRead.current, client, subjectId)) return;
         setEntries((previous) => previous.map((entry) => (entry.item.itemId === stored.itemId ? { ...entry, item: stored } : entry)));
       } catch (caught: unknown) {
-        if (request && !request.cancelled && request.client === client && request.subjectId === subjectId) setError(caught);
+        if (replyIsLive(liveRead.current, client, subjectId)) setError(caught);
       }
     },
     [client, subjectId],
@@ -171,7 +198,6 @@ export function useHeldRecord(options: UseHeldRecordOptions): UseHeldRecordResul
 
   const forget = useCallback(
     async (itemId: string) => {
-      const request = activeRead.current;
       setError(undefined);
       // Cleared before the call for the same reason, and this one matters
       // more: a stale `"erased"` left standing through a later failed attempt
@@ -179,9 +205,8 @@ export function useHeldRecord(options: UseHeldRecordOptions): UseHeldRecordResul
       // different call.
       setLastForgetEffect(undefined);
       try {
-        const effect = await client.forget(subjectId, itemId);
-        if (!request) return;
-        if (request.cancelled || request.client !== client || request.subjectId !== subjectId) return;
+        const effect = await settled(() => client.forget(subjectId, itemId));
+        if (!replyIsLive(liveRead.current, client, subjectId)) return;
         setLastForgetEffect(effect);
         // Only a confirmed erasure removes the row. A failed one, and an
         // erasure nobody observed, leave the item on screen with its effect
@@ -189,7 +214,7 @@ export function useHeldRecord(options: UseHeldRecordOptions): UseHeldRecordResul
         // promise is gone has told the person something nobody checked.
         if (effect === "erased") setEntries((previous) => previous.filter((entry) => entry.item.itemId !== itemId));
       } catch (caught: unknown) {
-        if (request && !request.cancelled && request.client === client && request.subjectId === subjectId) setError(caught);
+        if (replyIsLive(liveRead.current, client, subjectId)) setError(caught);
       }
     },
     [client, subjectId],
