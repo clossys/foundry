@@ -155,6 +155,7 @@ export const GATED_SCRIPT_PROSE_INPUTS = {
   "node:packages/controller/dist/repository/bin.js": { prose: false, reason: "governance/repository-profile.json structural check only" },
   "node:packages/locksmith/dist/infisical/cli.js": { prose: false, reason: "governance/locksmith-catalog.json only" },
   "node:packages/launcher/dist/cli.js": { prose: false, reason: "--help output only, no file reads beyond its own compiled bundle" },
+  "node:scripts/consent-port-conformance.test.mjs": { prose: false, reason: "type-checks scripts/fixtures/consent-port-conformance/*.ts against built packages/*/dist declarations and imports the built subpaths; reads no docs/ or .changesets/ path" },
   "node:packages/integrator/dist/cli.js": { prose: false, reason: "package.json and governance/foundry-supersession-map.json only" },
   "node:scripts/check-schema-versions.mjs": { prose: false, reason: "reads clossys/** JSON records and their declared schema versions only" },
   "node:scripts/check-heartbeat.mjs": { prose: false, reason: "reads clossys/** heartbeat digest records only" },

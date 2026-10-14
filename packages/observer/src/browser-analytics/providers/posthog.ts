@@ -1,5 +1,6 @@
 /**
- * PostHog provider adapter for the analytics transport (C-44).
+ * PostHog provider adapter for the analytics transport (C-44), shipped
+ * alone as the `./browser-analytics/posthog` subpath.
  *
  * The package never imports the SDK (C-3). The host passes the SDK object it
  * loaded itself, typed by the structural `PostHogLike` subset below, plus its
