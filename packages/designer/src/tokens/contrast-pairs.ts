@@ -168,6 +168,19 @@ export interface ContrastPair {
    * token first (matching `color.ts`'s `contrastRatio`'s own third
    * argument) — required whenever either carries alpha < 1, e.g. this
    * package's status `-tint` family, which is always translucent.
+   *
+   * A value that does not start with `--` is a literal opaque color rather
+   * than a token: the backdrop a translucent surface floats over when that
+   * backdrop is arbitrary page content, not a token (the glass pairs check
+   * over `oklch(1 0 0)` and `oklch(0 0 0)`, the two extremes). A literal
+   * must parse and be opaque, or the pair is reported unchecked. Over a
+   * literal backdrop the ratio is the lower of a linear-light blend and a
+   * gamma-encoded sRGB blend (the browser's); a token backdrop keeps the
+   * linear blend alone. Because a literal stands for any page content, a
+   * pair over one also fails at 1:1 when the foreground's luminance lies
+   * between the background over black and over white (some backdrop then
+   * matches it), and its foreground must be opaque or it is reported
+   * unchecked.
    */
   readonly compositeOver?: string;
   /** Human-readable rationale, referencing the `contrast.test.ts` assertion this pair ratifies. */
@@ -418,6 +431,99 @@ export const CONTRAST_PAIRS: readonly ContrastPair[] = [
     minimumRatio: AA_LARGE,
     description:
       "An icon-only control's glyph on its inverse fill: the glyph is the only thing that says what the control does, so it meets the 3:1 non-text floor (WCAG 1.4.11). On the light grounds the glyph is ink-primary on surface-raised, checked above at AA.",
+  },
+
+  // ── glass: overlay SiteHeader ink on its translucent plate, AA ─────────
+  // The backdrop under the glass is arbitrary page content, blurred. A blur
+  // averages that content, so the composite stays between the glass over
+  // pure white and the glass over pure black. The two extremes bound every
+  // backdrop only while the ink's luminance lies outside that range; when it
+  // lies inside, some backdrop matches the ink, and the gate fails the pair
+  // at 1:1 (`contrast-gate.ts`, `backdropCanMatchForeground`). Over a literal
+  // backdrop the gate blends the glass both in
+  // linear light and in gamma-encoded sRGB (how browsers paint alpha) and
+  // keeps the lower ratio, since neither space is stricter for every
+  // polarity. The ink is the one the header sets for the tone; a child that
+  // sets its own ink is outside these pairs.
+  {
+    id: "ink-primary/surface-glass@backdrop-white",
+    foreground: "--color-ink-primary",
+    background: "--color-surface-glass",
+    compositeOver: "oklch(1 0 0)",
+    level: "AA",
+    minimumRatio: AA,
+    description: "An overlay SiteHeader (tone base) after scrolling, over a white backdrop.",
+  },
+  {
+    id: "ink-primary/surface-glass@backdrop-black",
+    foreground: "--color-ink-primary",
+    background: "--color-surface-glass",
+    compositeOver: "oklch(0 0 0)",
+    level: "AA",
+    minimumRatio: AA,
+    description: "An overlay SiteHeader (tone base) after scrolling, over a black backdrop.",
+  },
+  {
+    id: "ink-on-inverse/surface-glass-inverse@backdrop-white",
+    foreground: "--color-ink-on-inverse",
+    background: "--color-surface-glass-inverse",
+    compositeOver: "oklch(1 0 0)",
+    level: "AA",
+    minimumRatio: AA,
+    description: "An overlay SiteHeader (tone inverse) after scrolling, over a white backdrop.",
+  },
+  {
+    id: "ink-on-inverse/surface-glass-inverse@backdrop-black",
+    foreground: "--color-ink-on-inverse",
+    background: "--color-surface-glass-inverse",
+    compositeOver: "oklch(0 0 0)",
+    level: "AA",
+    minimumRatio: AA,
+    description: "An overlay SiteHeader (tone inverse) after scrolling, over a black backdrop.",
+  },
+
+  // ── glass: overlay SiteHeader focus indicator on its plate, 3:1 ────────
+  // The focus ring (`--ui-ring-focus`) and every `:focus-visible` outline
+  // inside an overlay header take the tone's ink, not `--color-accent`
+  // (`theme-keys.css`, `site-header-overlay`): accent on the base glass
+  // over a white backdrop is 1.55:1 in the dark theme, and on the opaque
+  // light-theme inverse plate it is 2.60:1. The ring is non-text, so it is
+  // held to the 3:1 floor (WCAG 1.4.11), over the same two backdrops.
+  {
+    id: "focus-ring/surface-glass@backdrop-white",
+    foreground: "--color-ink-primary",
+    background: "--color-surface-glass",
+    compositeOver: "oklch(1 0 0)",
+    level: "AA-large",
+    minimumRatio: AA_LARGE,
+    description: "The keyboard focus indicator in an overlay SiteHeader (tone base) after scrolling, over a white backdrop: the tone's ink, at the 3:1 non-text floor (WCAG 1.4.11).",
+  },
+  {
+    id: "focus-ring/surface-glass@backdrop-black",
+    foreground: "--color-ink-primary",
+    background: "--color-surface-glass",
+    compositeOver: "oklch(0 0 0)",
+    level: "AA-large",
+    minimumRatio: AA_LARGE,
+    description: "The keyboard focus indicator in an overlay SiteHeader (tone base) after scrolling, over a black backdrop: the tone's ink, at the 3:1 non-text floor (WCAG 1.4.11).",
+  },
+  {
+    id: "focus-ring/surface-glass-inverse@backdrop-white",
+    foreground: "--color-ink-on-inverse",
+    background: "--color-surface-glass-inverse",
+    compositeOver: "oklch(1 0 0)",
+    level: "AA-large",
+    minimumRatio: AA_LARGE,
+    description: "The keyboard focus indicator in an overlay SiteHeader (tone inverse) after scrolling, over a white backdrop: the tone's ink, at the 3:1 non-text floor (WCAG 1.4.11).",
+  },
+  {
+    id: "focus-ring/surface-glass-inverse@backdrop-black",
+    foreground: "--color-ink-on-inverse",
+    background: "--color-surface-glass-inverse",
+    compositeOver: "oklch(0 0 0)",
+    level: "AA-large",
+    minimumRatio: AA_LARGE,
+    description: "The keyboard focus indicator in an overlay SiteHeader (tone inverse) after scrolling, over a black backdrop: the tone's ink, at the 3:1 non-text floor (WCAG 1.4.11).",
   },
 
   // ── status -text on its own -tint, composited over surface-base: AA ───

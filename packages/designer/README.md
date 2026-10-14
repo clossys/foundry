@@ -4687,6 +4687,91 @@ import { Home, Settings } from "@clossys/designer/icons";
 looks as `Button` at its small size. `ActionLink` is a server-safe component
 from both `@clossys/designer/shell` and `@clossys/designer/shell/server`.
 
+`placement` (`"flow"` by default) decides where the header sits. `"flow"` is
+the header in normal document flow, unchanged from earlier releases.
+`"overlay"` fixes the header to the top of the viewport over the first block,
+taking no height in the document: transparent at the top of the page, then a
+glass plate once the page scrolls beneath it. The glass is
+`--color-surface-glass` (or `--color-surface-glass-inverse`) behind a
+`--blur-glass` backdrop blur, over a hairline in the matching line role.
+
+- `tone` (`"base"` by default, or `"inverse"`) sets the header's inherited
+  ink (`ink-primary` or `ink-on-inverse`) and the matching glass, so the ink
+  stays the same as the header turns to glass. Tones are theme-relative, like
+  the tokens: `base` is dark ink on a light ground only in the light theme.
+  In `"overlay"`, `ground` is not read.
+- `tone` governs inherited ink only. A child that sets its own ink keeps it:
+  `Link` in every variant (`standalone` is `ink-primary`, `default` is
+  `ink-link`, `muted` is `ink-muted`), `Brandmark` (`ink-primary`) and
+  `SiteHeader.ActionLink`'s `ghost` look (`ink-primary` with no plate). With
+  `tone="inverse"` those read dark on dark glass. `ActionLink`'s `primary`
+  and `secondary` looks carry their own fill, so they read on either tone.
+- The contrast gate checks only the tone's own ink on the glass:
+  `ink-primary` on `surface-glass` and `ink-on-inverse` on
+  `surface-glass-inverse`. A child whose ink is exactly that token (with
+  `tone="base"`, `Link`'s `standalone` look or `Brandmark`) is covered by
+  those pairs. No other ink is checked on the glass, and the softer inks
+  fall short of AA there: `ink-link` (`Link` `default`) and `ink-secondary`
+  in the dark theme over a white backdrop, and `ink-muted` (`Link` `muted`)
+  in both themes. Give header text the inherited ink (an `<a>` with
+  `text-inherit`, as below) or a child that carries its own fill.
+- Focus indicators inside the header take the tone's ink instead of
+  `--color-accent`: the `--ui-ring-focus` ring (`Link`, `Button`) and the
+  colour of every `:focus-visible` outline (`ActionLink`). Accent does not
+  reach the 3:1 non-text floor on the glass (dark theme, base glass over a
+  white backdrop: 1.55:1), and the gate checks the ring in the tone's ink
+  on each glass at 3:1.
+- `menuOpen` holds the glass at any scroll position while a menu belonging to
+  the header is open (`data-menu-open`). A descendant with
+  `aria-expanded="true"`, such as an open `NavShell` trigger, or an open
+  `<details>` does the same in CSS with no prop.
+- The glass state is a scroll-driven CSS animation over the first
+  `--spacing-3xl` of root scrolling, so it needs no JavaScript. An engine
+  without scroll-driven animations shows glass at every scroll position.
+  Reduced motion replaces the fade with a single step at the first scroll.
+  Reduced transparency, or an engine without backdrop blur, replaces the
+  glass with the opaque `surface-raised` (or `surface-inverse`) plate. Only
+  paint changes between states, so the header never shifts layout.
+- The contrast gate checks each glass with its ink and its focus indicator
+  composited over white and over black, the two extremes a blurred backdrop can average to, in both
+  themes, scoring the lower of a linear-light and a browser (gamma-encoded
+  sRGB) blend. It does not check the transparent top state: over
+  photographic or arbitrary hero art the page supplies its own top scrim and
+  a tone that reads over it in both themes.
+
+The header is fixed rather than absolutely positioned (which would scroll
+away before it could turn to glass) or stuck (which reserves its height in
+flow). That asks this of the page:
+
+- **The root scrolls.** The fade follows `scroll(root block)`. If the page
+  scrolls inside a container instead, the root never scrolls and the header
+  stays transparent over content.
+- **The first block reserves the header's height.** No header-height value is
+  exported; the height changes with wrapping, text zoom and `surfaceLabel`,
+  so measure it in the page or pad generously.
+- **The root sets `scroll-padding-top`** to at least the header's height. It
+  lands in-page anchors below the header, and it keeps a focused element
+  from scrolling under it (WCAG 2.2 Focus Not Obscured, 2.4.11).
+- **No ancestor of the header creates a containing block** for fixed
+  elements: no `transform`, `filter`, `perspective`, `will-change: transform`
+  or `will-change: filter`, and no `contain: layout` or `contain: paint`.
+  Any of them pins the header to that ancestor instead of the viewport.
+- **Page content stays below the shell layer.** The header sits at the
+  shell's `z-index` (20); content with a higher `z-index` paints over it.
+- **Menus portal out of the header.** In the glass state the backdrop blur
+  makes the header the containing block for fixed-position descendants, so
+  a full-screen menu panel rendered inside it is clipped to the header.
+  Always render one through a portal.
+
+```tsx
+<SiteHeader
+  placement="overlay"
+  tone="inverse"
+  brand={<a href="/" className="text-inherit">Acme</a>}
+  actions={<a href="/sign-in" className="text-inherit">Sign in</a>}
+/>
+```
+
 `NavShell` is the responsive half: an ordinary inline `<nav>` from the
 `tablet` breakpoint up, and a trigger-plus-drawer below it — CSS-only
 breakpoint switching, no JS media-query state, so the correct layout is
@@ -6064,8 +6149,12 @@ part of this package's public API" and reachable only by that one test.
   `relativeLuminance`, `parseOklch`** (from `@clossys/designer/tokens`,
   promoted from that internal module — no behavior change, only
   visibility) — the WCAG colour math itself, pure and zero-dependency.
-- **`CONTRAST_PAIRS`** (same subpath) — an EXPLICIT, checked-in list of 25
-  `{ foreground, background, level, minimumRatio, compositeOver? }` pairs,
+- **`CONTRAST_PAIRS`** (same subpath) — an EXPLICIT, checked-in list of 76
+  `{ foreground, background, level, minimumRatio, compositeOver? }` pairs
+  (`compositeOver` is a token, or a literal colour such as `oklch(0 0 0)`
+  for a backdrop no token names, which is how the eight glass pairs check
+  the overlay header's ink and focus indicator on its glass over a white
+  and a black backdrop),
   ratified from `contrast.test.ts`'s own hand-curated pair map rather than
   auto-derived from token names. An earlier design assumed this gate could
   self-extend, deriving one pair per `--<role>-on-<ground>`-shaped token

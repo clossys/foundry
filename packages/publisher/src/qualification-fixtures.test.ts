@@ -93,6 +93,9 @@ it.each([
   "--ui-border-panel",
   "--color-line-panel",
   "--ui-elevation-panel",
+  "--color-surface-glass",
+  "--color-surface-glass-inverse",
+  "--blur-glass",
 ])("refuses covered preview after removing %s", slot => {
   const original = readFileSync(new URL("preview-brand-covered.css", fixtures), "utf8");
   const declaration = new RegExp(`^  ${slot}: [^\\n]*\\n`, "gm");

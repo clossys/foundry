@@ -122,7 +122,7 @@ dark theme.
 Only theme-dependent ones: colors, and `--ui-elevation-*` (a shadow reads
 as a color choice, and reads differently on a dark surface). Every
 structural scale — spacing, radius, z-index, motion duration, easing,
-breakpoint, font size, tracking, layout width, density, border width —
+breakpoint, font size, tracking, layout width, density, border width, blur —
 is theme-invariant and never appears in a dark block; `src/tokens.ts`'s
 `TokenDefinition.themeDependent` field records this per token, and a test
 (`src/theme-parity.test.ts`) enforces it against the real CSS in both
@@ -163,7 +163,7 @@ rather than only a test a human has to remember to keep in sync:
 npx designer-contrast-check
 ```
 
-checks this package's own `styles/tokens.css` (both themes) against 25
+checks this package's own `styles/tokens.css` (both themes) against 76
 checked-in pairs and exits `0`. It is not silent about the light-mode
 categorical chart marks at slots 3/4/5, which DO measure below the 3:1
 AA-large floor against the chart surface — a real, currently-shipping
@@ -205,7 +205,7 @@ two cases:
 
 | Case | Rule | Example | Generates a Tailwind utility? |
 | --- | --- | --- | --- |
-| **1. Tailwind namespace** | Uses Tailwind v4's own `@theme` prefix, unmodified — `--color-*`, `--text-*`, `--font-*`, `--tracking-*`, `--spacing-*`, `--radius-*`, `--ease-*`, `--breakpoint-*` | `--color-surface-raised` | Yes, via `theme.css`: `bg-surface-raised`, `text-surface-raised`, ... |
+| **1. Tailwind namespace** | Uses Tailwind v4's own `@theme` prefix, unmodified — `--color-*`, `--text-*`, `--font-*`, `--tracking-*`, `--spacing-*`, `--radius-*`, `--ease-*`, `--breakpoint-*`, `--blur-*` | `--color-surface-raised` | Yes, via `theme.css`: `bg-surface-raised`, `text-surface-raised`, ... |
 | **2. No Tailwind namespace** | Prefixed `--ui-` — z-index, elevation, motion duration, layout widths, density, ring, border width, disabled alpha | `--ui-z-modal` | No. Read it with `var(--ui-z-modal)`; there is no `z-modal` utility. |
 
 Case 1 exists because Tailwind only turns a custom property into a utility
@@ -255,7 +255,7 @@ import `theme.css` — nothing else in this package needs it.
 is expected to override it. Everything else is a fixed structural scale —
 shipped as-is regardless of brand.
 
-### Color (55 tokens, case 1 — `--color-*`)
+### Color (57 tokens, case 1 — `--color-*`)
 
 | Token | Default | Brandable |
 | --- | --- | --- |
@@ -266,6 +266,8 @@ shipped as-is regardless of brand.
 | `--color-surface-inverse-raised` | `oklch(0.285 0 0)` | yes |
 | `--color-surface-aside` | `oklch(0.9612 0 0)` | yes |
 | `--color-surface-selected` | `oklch(0.4748 0 0 / 0.1)` | yes |
+| `--color-surface-glass` | `oklch(1 0 0 / 0.88)` | yes |
+| `--color-surface-glass-inverse` | `oklch(0.2178 0 0 / 0.88)` | yes |
 | `--color-ink-primary` | `oklch(0.2178 0 0)` | yes |
 | `--color-ink-secondary` | `oklch(0.36 0 0)` | yes |
 | `--color-ink-muted` | `oklch(0.5658 0 0)` | yes |
@@ -386,6 +388,29 @@ not change, and the line and elevation aliases follow the dark theme. They
 are optional slots in `brand-template.css`; bind them to roles (a panel
 edge in `var(--color-line-strong)`) rather than raw values where you can.
 
+### Glass (2 colors above, plus 1 blur token, case 1 — `--blur-*`)
+
+| Token | Default | Brandable |
+| --- | --- | --- |
+| `--blur-glass` | `16px` | yes |
+
+The glass plate an overlay `SiteHeader` (`placement="overlay"`) turns to
+once the page scrolls under it. `--color-surface-glass` sits under
+`ink-primary` and `--color-surface-glass-inverse` under `ink-on-inverse`;
+both are translucent, theme-dependent and required in a brand file, and
+the contrast gate checks each with its ink composited over white and over
+black, the two extremes a blurred backdrop can average to, scoring each
+both as a linear-light blend and as the gamma-encoded sRGB blend browsers
+paint, and keeping the lower ratio. Lower the alpha far enough and
+`designer-contrast-check` fails. `--blur-glass` sits in Tailwind's own
+`--blur-*` namespace (so `backdrop-blur-glass` and `blur-glass` work), is
+theme-invariant and, like every brandable token, a required brand slot:
+`brand-template.css` lists it in the light block only. A brand file
+missing any of the three fails `designer-brand-check`.
+Where backdrop blur is unsupported, or under
+`prefers-reduced-transparency: reduce`, the header uses the opaque
+`surface-raised` or `surface-inverse` plate instead.
+
 ### `--ui-*` (49 tokens, case 2 — no Tailwind utility, raw `var()` only)
 
 | Token | Default | Brandable |
@@ -451,7 +476,7 @@ border 3, elevation 4, ring 2, duration 6, z 9, alpha 1 (49, all `--ui-*`).
 55 + 20 + 29 + 49 = 153 tokens across 27 families, by this same
 1-family-added arithmetic. **Note:** this total (and the "128 tokens
 across 24 families" figure elsewhere in this README predating it) does not
-match `src/tokens.ts`'s real count (182 across 30 families) — a pre-existing
+match `src/tokens.ts`'s real count (185 across 31 families) — a pre-existing
 gap from the `chart` color family (22 tokens, added in `0.4.0`) never being
 folded into this reference table's totals. That gap predates this PR and is
 out of its scope; `src/tokens.ts`/`styles/tokens.css` are what `parity.test.ts`
@@ -526,9 +551,9 @@ import migration in the pending minor release, unavailable in published `0.7.1`.
 | `relativeLuminance` | function | `(rgb) => number` — WCAG relative luminance from linear-sRGB channels. |
 | `parseOklch` | function | `(value) => Oklch` — parses the first `oklch(...)` function in a CSS value string. |
 | `Oklch` | type | `{ L, C, H, A }` — one parsed `oklch()` value. |
-| `CONTRAST_PAIRS` | const | `readonly ContrastPair[]` — this package's checked-in WCAG contrast policy, 25 pairs, theme-agnostic (no `exception` attached). See "Contrast is enforced, not assumed", above. |
+| `CONTRAST_PAIRS` | const | `readonly ContrastPair[]` — this package's checked-in WCAG contrast policy, 76 pairs, theme-agnostic (no `exception` attached). See "Contrast is enforced, not assumed", above. |
 | `contrastPairsForTheme` | function | `(theme: "light" \| "dark") => readonly ContrastPair[]` — `CONTRAST_PAIRS` with this package's real, theme-scoped categorical-mark relief attached to the matching pairs' `exception` field. |
-| `ContrastPair` | type | `{ id, foreground, background, level, minimumRatio, compositeOver?, description, exception? }` — one entry of `CONTRAST_PAIRS`. |
+| `ContrastPair` | type | `{ id, foreground, background, level, minimumRatio, compositeOver?, description, exception? }` — one entry of `CONTRAST_PAIRS`. `compositeOver` names a token, or is a literal colour when it does not start with `--`. |
 | `ContrastException` | type | `{ wcagClause, compensatingMechanism, rationale }` — the required justification for a `ContrastPair.exception`; all three fields must be non-blank or `checkTokenContrast` reports `"invalid-exception"`. |
 | `ContrastLevel` | type | `"AA" \| "AA-large"`. |
 | `AA` / `AA_LARGE` | const | `4.5` / `3.0` — the two WCAG minimums `CONTRAST_PAIRS` checks against. |
@@ -663,4 +688,4 @@ The card measure is structural, non-brandable and theme invariant; brand
 overrides are refused. It caps the linear HTML form. Documents remain flat
 with deterministic seeded horizontal nudge. Container thresholds remain fixed
 per template. Scene contributes one token and one semantic family;
-the source registry and CSS parity test verify 182 tokens across 30 families.
+the source registry and CSS parity test verify 185 tokens across 31 families.

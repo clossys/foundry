@@ -6,6 +6,39 @@ import { cx } from "../atoms/internal/cx.js";
 import { SITE_CHROME_GROUND_CLASSES, siteChromeHasBorder, type SiteChromeGround } from "./internal/shell-ground.js";
 import { UI_BORDER_HAIRLINE, UI_LAYOUT_TAP_TARGET, UI_WIDTH_PAGE_PADDING_X, UI_Z_SHELL } from "./internal/shell-vars.js";
 
+/**
+ * Where a `SiteHeader` sits: `flow` in normal document flow (the shipped
+ * behaviour), or `overlay` fixed over the top of the page, transparent over
+ * the first block and glass once the page scrolls beneath it.
+ */
+export type SiteHeaderPlacement = "flow" | "overlay";
+
+/**
+ * The ink polarity of an overlay `SiteHeader`: `base` sets primary ink over
+ * `--color-surface-glass`, `inverse` sets on-inverse ink over
+ * `--color-surface-glass-inverse`. Tones are theme-relative, like the
+ * tokens they name: `base` matches the base ground and `inverse` the
+ * inverse ground in the current theme. `base` means dark ink on a light
+ * ground only in the light theme; in the dark theme it is light ink on a
+ * dark ground, and `inverse` flips with it. The glass the header turns into after scrolling
+ * matches the same ink, so the ink never changes on scroll.
+ *
+ * The tone governs inherited ink only. A child that sets its own ink (a
+ * `Link` in any variant, `Brandmark`, the `ghost` look of
+ * `SiteHeader.ActionLink`) keeps it. The contrast gate checks only the
+ * tone's own ink on the glass (`ink-primary` or `ink-on-inverse`); no other
+ * ink is checked there, and `ink-link`, `ink-secondary` and `ink-muted` fall
+ * short of AA on it. Give header text the inherited ink or a child that
+ * carries its own fill. Focus indicators inside the header take the tone's
+ * ink instead of `--color-accent`, which falls below 3:1 on the glass.
+ *
+ * At the top of the page the header is transparent, with no scrim and no
+ * contrast gate: the gate covers the glass, not the hero under it. Over
+ * photographic or arbitrary hero art, the page supplies its own top scrim
+ * and a tone that reads over it in both themes.
+ */
+export type SiteHeaderTone = "base" | "inverse";
+
 export interface SiteHeaderProps extends Omit<HTMLAttributes<HTMLElement>, "children"> {
   /**
    * The site's identity — a wordmark, a logo image/link, or both. Required:
@@ -65,7 +98,69 @@ export interface SiteHeaderProps extends Omit<HTMLAttributes<HTMLElement>, "chil
    * @default "base"
    */
   ground?: SiteChromeGround;
+  /**
+   * `"flow"` renders the header in normal flow (`position: relative`), as it
+   * always has. `"overlay"` fixes it to the top of the viewport over the
+   * first block, without taking any height in the document: transparent at
+   * the top of the page, a glass plate (`--color-surface-glass` or its
+   * inverse, behind a `--blur-glass` backdrop blur) once the page scrolls.
+   *
+   * Fixed to the viewport rather than absolutely positioned or stuck to its
+   * scroll edge: the header must stay on screen to become glass after
+   * scrolling, which an absolute header cannot do (it scrolls away with the
+   * first block), and a stuck header reserves its height in flow, which is
+   * what an overlay must not do. What `fixed` asks of the page:
+   * - The first block reserves the header's height itself (padding, not a
+   *   spacer), or its content starts under the header.
+   * - The page scrolls on the root. The glass state follows root scrolling
+   *   (`scroll(root block)`); a header inside its own scroll container does
+   *   not turn glass.
+   * - No ancestor is transformed, filtered or contained, which would make
+   *   that ancestor the fixed header's containing block.
+   * - In-page anchors need `scroll-padding-top` on the root for the header
+   *   height, so a jump target does not land under it.
+   * - The glass backdrop blur makes the header the containing block for
+   *   `position: fixed` descendants: a full-screen menu panel rendered
+   *   inside the header must portal out of it.
+   *
+   * The glass state needs no JavaScript: it is a scroll-driven CSS
+   * animation, and an engine without scroll-driven animations shows glass
+   * at every scroll position. Only paint changes between states, so the
+   * header never shifts layout. Reduced motion swaps the fade for one step;
+   * reduced transparency, or no backdrop blur support, swaps the glass for the
+   * opaque raised (or inverse) plate.
+   *
+   * In `overlay`, `ground` is not read: the overlay surface is transparent
+   * or glass, and `tone` picks the ink.
+   * @default "flow"
+   */
+  placement?: SiteHeaderPlacement;
+  /**
+   * Overlay only: the ink polarity for the ground under the header at the
+   * top of the page. Sets the header's inherited ink (`text-ink-primary` or
+   * `text-ink-on-inverse`) and the matching glass, and renders as
+   * `data-tone`. Children that set their own ink are not changed; see
+   * `SiteHeaderTone`. Not read in `flow`, where the header sets no ink.
+   * @default "base"
+   */
+  tone?: SiteHeaderTone;
+  /**
+   * Overlay only: signals that a menu belonging to the header is open, so the
+   * header shows glass at any scroll position instead of sitting transparent
+   * over the page. Renders as `data-menu-open`. A descendant with
+   * `aria-expanded="true"` (an open menu toggle) has the same effect in CSS
+   * with no prop, so a client menu inside a server-rendered header needs no
+   * wiring. Not read in `flow`.
+   * @default false
+   */
+  menuOpen?: boolean;
 }
+
+/** The ink an overlay header sets for each tone; it matches the glass the contrast gate pairs it with. */
+const OVERLAY_INK_CLASSES: Record<SiteHeaderTone, string> = {
+  base: "text-ink-primary",
+  inverse: "text-ink-on-inverse",
+};
 
 /**
  * The persistent top chrome a public site needs: a brand slot, the primary
@@ -91,7 +186,8 @@ export interface SiteHeaderProps extends Omit<HTMLAttributes<HTMLElement>, "chil
  * same `nav` slot within the row (layout), where a mode would swap what
  * fills it. The secondary call to action is a filling, so it is the
  * `secondaryAction` slot. A single `nav` slot keeps the header at one
- * navigation landmark by construction.
+ * navigation landmark by construction. `placement` and `tone` are not modes
+ * either: they position and paint the same fillings, the way `ground` does.
  */
 function SiteHeaderRoot({
   brand,
@@ -101,23 +197,36 @@ function SiteHeaderRoot({
   surfaceLabel,
   navPlacement = "leading",
   ground = "base",
+  placement = "flow",
+  tone = "base",
+  menuOpen = false,
   className,
   style,
   ...rest
 }: SiteHeaderProps) {
+  const overlay = placement === "overlay";
   const colors = SITE_CHROME_GROUND_CLASSES[ground];
   const bordered = siteChromeHasBorder(ground);
 
   return (
     <header
       {...rest}
-      className={cx(colors.surface, "py-sm", bordered ? cx("border-b", colors.border) : "", className)}
-      style={{
-        position: "relative",
-        zIndex: UI_Z_SHELL,
-        ...(bordered ? { borderBottomWidth: UI_BORDER_HAIRLINE } : {}),
-        ...style,
-      }}
+      {...(overlay ? { "data-placement": "overlay", "data-tone": tone, "data-menu-open": menuOpen ? "" : undefined } : {})}
+      className={
+        overlay
+          ? cx("site-header-overlay", OVERLAY_INK_CLASSES[tone], "py-sm", className)
+          : cx(colors.surface, "py-sm", bordered ? cx("border-b", colors.border) : "", className)
+      }
+      style={
+        overlay
+          ? { position: "fixed", insetBlockStart: 0, insetInline: 0, zIndex: UI_Z_SHELL, ...style }
+          : {
+              position: "relative",
+              zIndex: UI_Z_SHELL,
+              ...(bordered ? { borderBottomWidth: UI_BORDER_HAIRLINE } : {}),
+              ...style,
+            }
+      }
     >
       {navPlacement === "centered" ? (
         <div

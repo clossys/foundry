@@ -235,6 +235,59 @@ export function luminanceOf(value: string, backgroundValue?: string): number {
   return relativeLuminance(composited);
 }
 
+/** Linear channel -> sRGB gamma-encoded channel, sign-preserving (the inverse of `srgbChannelToLinear`). */
+function linearChannelToSrgb(c: number): number {
+  const magnitude = Math.abs(c);
+  const encoded = magnitude <= 0.0031308 ? 12.92 * magnitude : 1.055 * magnitude ** (1 / 2.4) - 0.055;
+  return Math.sign(c) * encoded;
+}
+
+/**
+ * The alpha of a CSS color value `luminanceOf` can read (`oklch(...)` or a
+ * bare 6-digit hex), or `undefined` when it is neither. Internal: the
+ * contrast gate uses it to refuse a translucent literal backdrop up front,
+ * since compositing reads a backdrop's color and ignores its alpha.
+ */
+export function colorAlpha(value: string): number | undefined {
+  try {
+    return parseColorToLinearSRGB(value).A;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * `luminanceOf`, compositing in gamma-encoded sRGB instead of linear light:
+ * the space browsers blend `background-color` alpha in. Internal; see
+ * `contrastRatioEncodedBlend`.
+ */
+function luminanceOfEncodedBlend(value: string, backgroundValue?: string): number {
+  const fg = parseColorToLinearSRGB(value);
+  if (fg.A >= 1) return relativeLuminance(fg.rgb);
+  if (backgroundValue === undefined) {
+    throw new Error(`luminanceOf: ${JSON.stringify(value)} has alpha < 1 and needs a backgroundValue to composite over`);
+  }
+  const bg = parseColorToLinearSRGB(backgroundValue);
+  const composited = [0, 1, 2].map((i) =>
+    srgbChannelToLinear(fg.A * linearChannelToSrgb(fg.rgb[i]!) + (1 - fg.A) * linearChannelToSrgb(bg.rgb[i]!)),
+  ) as [number, number, number];
+  return relativeLuminance(composited);
+}
+
+/**
+ * `contrastRatio` with translucent values composited in gamma-encoded sRGB,
+ * the way a browser paints them, rather than in linear light. Neither space
+ * is uniformly stricter: linear blending is stricter for light ink but more
+ * lenient for dark ink on a light translucent plate over a dark backdrop.
+ * Internal: the contrast gate scores a pair over a literal backdrop both
+ * ways and keeps the lower ratio.
+ */
+export function contrastRatioEncodedBlend(a: string, b: string, compositeBackground?: string): number {
+  const l1 = luminanceOfEncodedBlend(a, compositeBackground);
+  const l2 = luminanceOfEncodedBlend(b, compositeBackground);
+  return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+}
+
 /**
  * WCAG contrast ratio between two CSS values (each optionally translucent,
  * each composited over `compositeBackground` if so — pass the token both

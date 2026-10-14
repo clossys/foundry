@@ -159,7 +159,7 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
 :root {
 
   /* ════════════════════════════════════════════════════════════════
-   * COLOR · SURFACE (7 · depth model — brandable)
+   * COLOR · SURFACE (9 · depth model — brandable)
    * ════════════════════════════════════════════════════════════════ */
   --color-surface-base:           oklch(0.9702 0 0);   /* page ground */
   --color-surface-sunken:         oklch(0.9401 0 0);   /* below base: wells, banded sections, inputs */
@@ -172,6 +172,12 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
   --color-surface-inverse-raised: oklch(0.285 0 0);     /* raised content within --color-surface-inverse */
   --color-surface-aside:          oklch(0.9612 0 0);    /* right-rail panel */
   --color-surface-selected:       oklch(0.4748 0 0 / 0.1); /* selected-row/option wash */
+  /* Glass identity: the translucent plate an overlay SiteHeader takes once
+   * the page scrolls beneath it, one per ink polarity. The alpha is pinned
+   * by the contrast gate: the matching ink must clear AA over the glass
+   * composited on both a white and a black backdrop. */
+  --color-surface-glass:          oklch(1 0 0 / 0.88);
+  --color-surface-glass-inverse:  oklch(0.2178 0 0 / 0.88);
 
   /* ════════════════════════════════════════════════════════════════
    * COLOR · INK (7 · text on surfaces)
@@ -530,6 +536,13 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
   --ui-elevation-panel:           var(--ui-elevation-floating, 0 8px 24px rgba(0, 0, 0, 0.10));
 
   /* ════════════════════════════════════════════════════════════════
+   * BLUR (1 · Tailwind `--blur-*` namespace)
+   * ════════════════════════════════════════════════════════════════ */
+  /* Glass identity: the backdrop blur behind a glass plate. Brandable,
+   * theme invariant. */
+  --blur-glass:                   16px;
+
+  /* ════════════════════════════════════════════════════════════════
    * UI · RING (2 · focus + on-inverse rings — no Tailwind namespace)
    * ════════════════════════════════════════════════════════════════ */
   --ui-ring-focus:                0 0 0 2px var(--color-accent, oklch(0.4748 0 0));
@@ -616,6 +629,8 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
     --color-surface-inverse-raised: oklch(1 0 0);
     --color-surface-aside:          oklch(0.165 0 0);
     --color-surface-selected:       oklch(0.9702 0 0 / 0.1);
+    --color-surface-glass:          oklch(0.26 0 0 / 0.88);
+    --color-surface-glass-inverse:  oklch(0.96 0 0 / 0.88);
 
     /* ── COLOR · INK ────────────────────────────────────────────── */
     --color-ink-primary:            oklch(0.97 0 0);      /* flips: near-black to near-white */
@@ -719,6 +734,8 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
   --color-surface-inverse-raised: oklch(1 0 0);
   --color-surface-aside:          oklch(0.165 0 0);
   --color-surface-selected:       oklch(0.9702 0 0 / 0.1);
+  --color-surface-glass:          oklch(0.26 0 0 / 0.88);
+  --color-surface-glass-inverse:  oklch(0.96 0 0 / 0.88);
 
   /* ── COLOR · INK ──────────────────────────────────────────────── */
   --color-ink-primary:            oklch(0.97 0 0);
@@ -796,7 +813,7 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
  * parse-css.ts`, used by `parity.test.ts`, `contrast.test.ts`, and
  * `dark-mode-cascade.test.ts`) parses only the FIRST top-level `:root {`
  * block in this file as "the real token layer" and asserts it declares
- * exactly this package's curated 183 tokens; this sentinel is not a
+ * exactly this package's curated 185 tokens; this sentinel is not a
  * design token — it is a structural presence marker — so it stays out
  * of `src/tokens/tokens.ts`'s registry and out of that block entirely,
  * in a second `:root` rule the browser cascades in fine (CSS allows any
