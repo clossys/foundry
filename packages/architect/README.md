@@ -167,6 +167,9 @@ indeterminate because no valid measurement can be computed.
 the role. Its public model and snapshot API is compatible with the former
 standalone domain package.
 
+Model and snapshot normalization sort identifiers and snapshot tie-breaks in
+UTF-16 code-unit order, so their serialized JSON does not depend on the host locale.
+
 | Export | Kind | Purpose |
 | --- | --- | --- |
 | `defineDomainModel(definition)` | function | Returns a detached domain model for authoring. |
