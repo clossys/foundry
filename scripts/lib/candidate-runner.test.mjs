@@ -7,6 +7,7 @@ import { join } from "node:path";
 import test from "node:test";
 import { promisify } from "node:util";
 import { QUALIFICATION_PHASE_TIMEOUTS, WINDOWS_BIN_LAUNCH_REASON, assertCredentialFree, candidateNotInstalledMessage, containedRegularFile, installNpmrc, normalizedStream, packedFrameworkContexts, runCandidateQualification, runProcess, runtimeImportArguments, wildcardCapture } from "./candidate-runner.mjs";
+import { BY_DESIGN_REFUSALS } from "./packed-consumer-readiness.mjs";
 import { RELEASE_RUNTIME } from "./release-runtime.mjs";
 
 const execFile = promisify(execFileCallback);
@@ -16,7 +17,7 @@ const releaseRuntimeRun = (file, args) => {
   if (args[0] === "-p") return { status: 0, stdout: `${RELEASE_RUNTIME.zlib}\n`, stderr: "" };
   throw new Error(`unexpected release runtime probe ${file} ${args.join(" ")}`);
 };
-async function syntheticPackage({ mismatch = false, exports = undefined, runtimePeer = false, peerInstall = undefined, rawStarter = false, mutateCaseEvidence = null, unresolvedArgvGuard = false, binName = "synthetic-check", extraFiles = {} } = {}) {
+async function syntheticPackage({ mismatch = false, exports = undefined, runtimePeer = false, peerInstall = undefined, rawStarter = false, mutateCaseEvidence = null, unresolvedArgvGuard = false, binName = "synthetic-check", extraFiles = {}, name = undefined } = {}) {
   const root = await mkdtemp(join(tmpdir(), "foundry-runner-test-"));
   const source = join(root, "source");
   const fixturesDir = join(root, "fixtures");
@@ -24,7 +25,11 @@ async function syntheticPackage({ mismatch = false, exports = undefined, runtime
   await mkdir(source);
   await mkdir(fixturesDir);
   await mkdir(packed);
-  const packageName = rawStarter ? "@clossys/starter" : "@acme/synthetic";
+  const packageName = name ?? (rawStarter ? "@clossys/starter" : "@acme/synthetic");
+  // The policy bindings follow the package name: scope "@acme" and key
+  // "synthetic" give recordStem "acme-synthetic" and packageDir
+  // "packages/synthetic", exactly as before this option existed.
+  const [packageScope, packageKey] = packageName.slice(1).split("/");
   await writeFile(join(source, "package.json"), JSON.stringify({
     name: packageName,
     version: "1.0.0",
@@ -90,7 +95,7 @@ async function syntheticPackage({ mismatch = false, exports = undefined, runtime
   })));
   const policy = {
     schemaVersion: 1, protocol: "foundry-candidate-qualification-v1", packages: { [packageName]: {
-    packageKey: rawStarter ? "starter" : "synthetic", recordStem: rawStarter ? "clossys-starter" : "acme-synthetic", packageDir: rawStarter ? "packages/starter" : "packages/synthetic", adapterPath: `governance/release-qualification-adapters/${rawStarter ? "starter" : "synthetic"}/current-direct.json`, fixturePath: `governance/release-qualification-fixtures/${rawStarter ? "starter" : "synthetic"}/current-direct`, archetypes: {
+    packageKey, recordStem: `${packageScope}-${packageKey}`, packageDir: `packages/${packageKey}`, adapterPath: `governance/release-qualification-adapters/${packageKey}/current-direct.json`, fixturePath: `governance/release-qualification-fixtures/${packageKey}/current-direct`, archetypes: {
       "current-direct": { status: "required" },
       "prior-minor": { status: "unsupported", reason: "not supplied" },
       "oldest-supported": { status: "unsupported", reason: "not supplied" },
@@ -124,7 +129,7 @@ async function syntheticPackage({ mismatch = false, exports = undefined, runtime
     ],
     dimensionEvidence: { rollback: "restoration", duplicate: "authority" },
   };
-  return { root, source, tarball, policy, adapter, fixtures, manifestBins: { [binName]: "cli.js" }, registry: { scope: rawStarter ? "@clossys" : "@acme", registry: "https://registry.npmjs.org/" }, releaseRuntimeRun };
+  return { root, source, tarball, policy, adapter, fixtures, manifestBins: { [binName]: "cli.js" }, registry: { scope: `@${packageScope}`, registry: "https://registry.npmjs.org/" }, releaseRuntimeRun };
 }
 
 test("runner isolates a packed candidate and produces a deterministic complete transcript", async (t) => {
@@ -780,6 +785,161 @@ test("an empty or whitespace-only refusal marker declares no refusal", async (t)
   t.after(() => rm(fixture.root, { recursive: true, force: true }));
   for (const marker of ["", " "]) {
     await assertUndeclaredRefusalsFail(fixture, { "@acme/synthetic": { "@acme/synthetic": { "react-server": marker } } }, ["import:react-server:@acme/synthetic"]);
+  }
+});
+
+// Several declared refusals in one candidate, across three specifiers and
+// three conditions, the way Publisher declares four. Exports and conditions
+// are visited in sorted order, so the refusals are probed in exactly this
+// order: copy/browser, consent/react-server, preview/default,
+// preview/react-server. Breaking each position alone shows that every
+// declared refusal is probed, not only the first or the last one, and that a
+// failing probe does not stop the targets after it from being checked.
+const MULTI_REFUSALS = [
+  { specifier: "@acme/synthetic/copy", condition: "browser", file: "copy-refuse-browser.js", marker: "is server-only and refuses the browser condition" },
+  { specifier: "@acme/synthetic/web/consent", condition: "react-server", file: "consent-refuse-react-server.js", marker: "the consent subpath is client-only and refuses the react-server condition" },
+  { specifier: "@acme/synthetic/web/consent/preview", condition: "default", file: "preview-refuse-default.js", marker: "resolves only under the development condition" },
+  { specifier: "@acme/synthetic/web/consent/preview", condition: "react-server", file: "preview-refuse-react-server.js", marker: "the preview subpath is client-only and refuses the react-server condition" },
+];
+const MULTI_REFUSAL_EXPORTS = {
+  ".": { types: "./index.d.ts", import: "./index.js" },
+  "./copy": { types: "./index.d.ts", browser: "./copy-refuse-browser.js", default: "./index.js" },
+  "./web/consent": { types: "./index.d.ts", "react-server": "./consent-refuse-react-server.js", default: "./index.js" },
+  "./web/consent/preview": { types: "./index.d.ts", "react-server": "./preview-refuse-react-server.js", development: "./index.js", default: "./preview-refuse-default.js" },
+};
+const MULTI_REFUSAL_IMPORTS = ["import:default:@acme/synthetic/copy", "import:default:@acme/synthetic/web/consent", "import:import:@acme/synthetic"];
+const multiRefusalTable = () => {
+  const table = {};
+  for (const { specifier, condition, marker } of MULTI_REFUSALS) (table[specifier] ??= {})[condition] = marker;
+  return { "@acme/synthetic": table };
+};
+// `broken` maps a refusal's index to the body that replaces its module.
+const multiRefusalPackage = (broken = {}) => syntheticPackage({
+  exports: MULTI_REFUSAL_EXPORTS,
+  extraFiles: Object.fromEntries(MULTI_REFUSALS.map(({ file, marker }, index) => [file, broken[index] ?? refusalModule(`The module ${marker}.`)])),
+});
+const IMPORTS_NORMALLY = "export const synthetic = 'imports normally';\n";
+
+test("every one of several declared refusals is probed: a broken first, middle or last refusal is red on its own", async (t) => {
+  const cases = [
+    { label: "all correct", broken: {} },
+    { label: "first imports normally", broken: { 0: IMPORTS_NORMALLY } },
+    { label: "second throws another error", broken: { 1: refusalModule("something else broke") } },
+    { label: "third imports normally", broken: { 2: IMPORTS_NORMALLY } },
+    { label: "last throws another error", broken: { 3: refusalModule("something else broke") } },
+    { label: "first and last broken", broken: { 0: refusalModule("something else broke"), 3: IMPORTS_NORMALLY } },
+  ];
+  const fixtures = await Promise.all(cases.map(({ broken }) => multiRefusalPackage(broken)));
+  t.after(() => Promise.all(fixtures.map((item) => rm(item.root, { recursive: true, force: true }))));
+  const refusals = multiRefusalTable();
+  for (const [index, { label, broken }] of cases.entries()) {
+    const transcript = await runCandidateQualification({ ...fixtures[index], refusals });
+    const expected = Object.keys(broken).map(Number).sort((left, right) => left - right).map((position) => `refusal:${MULTI_REFUSALS[position].condition}:${MULTI_REFUSALS[position].specifier}`);
+    assert.deepEqual(transcript.mismatches.filter((item) => item.startsWith("refusal:")), expected, label);
+    assert.equal(transcript.coverage.failed, expected.length, label);
+    assert.equal(transcript.ok, expected.length === 0, label);
+    assert.equal(transcript.mismatches.includes("export-coverage"), expected.length !== 0, label);
+    // Only the refusal mismatches and export coverage: every ordinary target
+    // around the broken refusal, before and after it, is still imported.
+    assert.deepEqual(transcript.mismatches.filter((item) => !item.startsWith("refusal:") && item !== "export-coverage"), [], label);
+    assert.deepEqual(importIds(transcript), MULTI_REFUSAL_IMPORTS, label);
+    assert.equal(transcript.coverage.staticTargets, 9, label);
+    assert.equal(transcript.coverage.runtimeImports, 3, label);
+  }
+});
+
+// The real CLI (scripts/run-candidate-qualification.mjs) passes no
+// `refusals`, so the runner's default is the only way BY_DESIGN_REFUSALS
+// reaches a qualification. This candidate carries the table's own package
+// name, specifiers, conditions and markers, read from the table itself; each
+// refusal module throws its declared marker exactly.
+const TABLE_PACKAGE = "@clossys/publisher";
+const TABLE_REFUSALS = Object.entries(BY_DESIGN_REFUSALS[TABLE_PACKAGE]).flatMap(([specifier, conditions]) => (
+  Object.entries(conditions).map(([condition, marker]) => ({ specifier, condition, marker, file: `${specifier.slice(TABLE_PACKAGE.length + 1).replaceAll("/", "-")}-refuse-${condition}.js` }))
+));
+function tableRefusalPackage(broken = {}) {
+  const exports = { ".": { types: "./index.d.ts", import: "./index.js" } };
+  for (const { specifier, condition, file } of TABLE_REFUSALS) {
+    const key = `./${specifier.slice(TABLE_PACKAGE.length + 1)}`;
+    exports[key] ??= { types: "./index.d.ts" };
+    exports[key][condition] = `./${file}`;
+  }
+  // Each entry still has an ordinary target where it does not refuse: its
+  // default, or its development target when the default itself refuses.
+  // Node resolves conditions in key order, so `default` goes last, as in the
+  // real package; ahead of a refusing `react-server` it would be what the
+  // react-server probe resolves.
+  const ORDER = ["types", "import", "react-server", "browser", "development", "default"];
+  for (const [key, entry] of Object.entries(exports)) {
+    if (!Object.hasOwn(entry, "import") && !Object.hasOwn(entry, "default")) entry.default = "./index.js";
+    else if (!Object.hasOwn(entry, "import") && entry.default !== "./index.js") entry.development = "./index.js";
+    exports[key] = Object.fromEntries(ORDER.filter((condition) => Object.hasOwn(entry, condition)).map((condition) => [condition, entry[condition]]));
+  }
+  return syntheticPackage({
+    name: TABLE_PACKAGE,
+    exports,
+    extraFiles: Object.fromEntries(TABLE_REFUSALS.map(({ file, marker }, index) => [file, broken[index] ?? refusalModule(`${marker}.`)])),
+  });
+}
+
+test("with no refusals option the runner honours the default BY_DESIGN_REFUSALS table", async (t) => {
+  // The table this test reads must still declare refusals for the package,
+  // across more than one condition, for the default to be exercised at all.
+  assert.ok(TABLE_REFUSALS.length >= 2, "BY_DESIGN_REFUSALS declares the refusals this test relies on");
+  assert.ok(new Set(TABLE_REFUSALS.map((item) => item.condition)).size >= 2, "BY_DESIGN_REFUSALS declares refusals under more than one condition");
+  const browserIndex = TABLE_REFUSALS.findIndex((item) => item.condition === "browser");
+  assert.notEqual(browserIndex, -1, "BY_DESIGN_REFUSALS declares a browser refusal");
+  const [correct, brokenBrowser] = await Promise.all([tableRefusalPackage(), tableRefusalPackage({ [browserIndex]: IMPORTS_NORMALLY })]);
+  t.after(() => Promise.all([correct, brokenBrowser].map((item) => rm(item.root, { recursive: true, force: true }))));
+  // Neither fixture carries a refusals option; each run below that omits one
+  // reaches the runner's default.
+  assert.ok([correct, brokenBrowser].every((fixture) => !Object.hasOwn(fixture, "refusals")));
+
+  // Default table: every declared refusal is probed, none is imported, and
+  // the candidate qualifies.
+  const green = await runCandidateQualification(correct);
+  assert.deepEqual(green.mismatches, []);
+  assert.equal(green.ok, true);
+  assert.equal(green.coverage.failed, 0);
+  assert.equal(green.coverage.reactServerImports, 0);
+  assert.ok(importIds(green).every((id) => !TABLE_REFUSALS.some(({ specifier, condition }) => id === `import:${condition}:${specifier}`)));
+
+  // The same candidate with an explicitly empty table is red: the refusing
+  // react-server and default targets become failed runtime imports.
+  const red = await runCandidateQualification({ ...correct, refusals: {} });
+  assert.equal(red.ok, false);
+  for (const { specifier, condition } of TABLE_REFUSALS.filter((item) => item.condition !== "browser")) {
+    assert.ok(red.mismatches.includes(`import:${condition}:${specifier}`), `${condition} ${specifier} is a failed import without the table`);
+  }
+
+  // And the default table drives the probe itself, not only the exclusion:
+  // a declared browser refusal that imports normally is red with no
+  // refusals option, although a browser target is otherwise never imported.
+  const broken = await runCandidateQualification(brokenBrowser);
+  assert.equal(broken.ok, false);
+  assert.deepEqual(broken.mismatches.filter((item) => item.startsWith("refusal:")), [`refusal:browser:${TABLE_REFUSALS[browserIndex].specifier}`]);
+  assert.equal(broken.coverage.failed, 1);
+});
+
+test("a development or browser target that is a directory fails coverage, and one that escapes the package is refused", async (t) => {
+  // A missing development or browser file is covered above. A target that
+  // exists but is not a regular file (the packaged `static` directory) is
+  // no more acceptable, and an escaping target is refused outright.
+  const shapes = ["development", "browser"].map((condition) => ({
+    condition,
+    directory: { ".": { [condition]: "./static", default: "./index.js" } },
+    escaping: { ".": { [condition]: "../outside.js", default: "./index.js" } },
+  }));
+  const fixtures = await Promise.all(shapes.flatMap(({ directory, escaping }) => [directory, escaping].map((exports) => syntheticPackage({ exports }))));
+  t.after(() => Promise.all(fixtures.map((item) => rm(item.root, { recursive: true, force: true }))));
+  for (const [index, { condition }] of shapes.entries()) {
+    const [directory, escaping] = fixtures.slice(index * 2, index * 2 + 2);
+    const transcript = await runCandidateQualification({ ...directory, refusals: {} });
+    assert.equal(transcript.ok, false, `${condition} directory`);
+    assert.deepEqual(transcript.mismatches, ["export-coverage"], `${condition} directory`);
+    assert.equal(transcript.coverage.failed, 1, `${condition} directory`);
+    assert.deepEqual(importIds(transcript), ["import:default:@acme/synthetic"], `${condition} directory`);
+    await assert.rejects(() => runCandidateQualification({ ...escaping, refusals: {} }), /invalid export target/, `${condition} escaping`);
   }
 });
 
