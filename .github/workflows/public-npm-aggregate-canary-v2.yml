@@ -77,7 +77,7 @@ jobs:
             node scripts/run-public-npm-aggregate-canary-v2.mjs --closure "$CLOSURE"
 
       - name: Upload generated transcript
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: public-npm-aggregate-canary-v2-transcript
           path: governance/public-npm-aggregate-transcripts-v2/*.json
