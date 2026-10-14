@@ -117,6 +117,11 @@ interface CommittedTarget {
  * client applies even while the hook is hidden by an `Activity` boundary or
  * its content has re-suspended, because hiding changes neither: the reply is
  * still this surface's to show once it is visible again.
+ *
+ * The same check, made when a call STARTS, decides whether the call may clear
+ * the surface's previous result: a callback kept from before a client or
+ * subject change still calls its own client, but leaves the current
+ * surface's `error` and `lastForgetEffect` alone.
  */
 function replyIsLive(live: CommittedTarget | null, client: HeldRecordClient, subjectId: string): boolean {
   return live !== null && live.client === client && live.subjectId === subjectId;
@@ -203,8 +208,11 @@ export function useHeldRecord(options: UseHeldRecordOptions): UseHeldRecordResul
       // Cleared before the call, not after it. `error` is documented as the
       // most recent client call's failure, and leaving a previous one standing
       // through a successful call would show the person a stale failure about
-      // their own record.
-      setError(undefined);
+      // their own record. Only a call to the current client and subject
+      // clears it: an outdated callback's reply is ignored, so a clear it made
+      // would remove a failure the person has not seen with nothing to replace
+      // it.
+      if (replyIsLive(committed.current, client, subjectId)) setError(undefined);
       try {
         const stored = await settled(() => client.correct(subjectId, item));
         if (!replyIsLive(committed.current, client, subjectId)) return;
@@ -218,12 +226,15 @@ export function useHeldRecord(options: UseHeldRecordOptions): UseHeldRecordResul
 
   const forget = useCallback(
     async (itemId: string) => {
-      setError(undefined);
-      // Cleared before the call for the same reason, and this one matters
-      // more: a stale `"erased"` left standing through a later failed attempt
-      // would tell somebody their record is gone on the strength of a
-      // different call.
-      setLastForgetEffect(undefined);
+      // Cleared before the call for the same reason, and the erasure effect
+      // matters more: a stale `"erased"` left standing through a later failed
+      // attempt would tell somebody their record is gone on the strength of a
+      // different call. As in `correct`, only a call to the current client
+      // and subject clears either.
+      if (replyIsLive(committed.current, client, subjectId)) {
+        setError(undefined);
+        setLastForgetEffect(undefined);
+      }
       try {
         const effect = await settled(() => client.forget(subjectId, itemId));
         if (!replyIsLive(committed.current, client, subjectId)) return;

@@ -376,6 +376,102 @@ const swaps = [
   ["a transition", (update: () => void) => startTransition(update)],
 ] as const;
 
+/**
+ * A client whose corrections and erasures stay pending until the test
+ * settles them, each recorded with the subject it was made for. Its read
+ * labels every item with the subject and `label`, so a test can tell which
+ * read is shown.
+ */
+function pendingCalls(label: string) {
+  const corrections: Array<{ subjectId: string; resolve: (stored: HeldItem) => void; reject: (error: Error) => void }> = [];
+  const erasures: Array<{ subjectId: string; resolve: (effect: DeletionEffect) => void; reject: (error: Error) => void }> = [];
+  const c: HeldRecordClient = {
+    read: async (subjectId) => [entry({ item: item({ subjectId, holdingClass: label }) })],
+    correct: (subjectId) => new Promise((resolve, reject) => { corrections.push({ subjectId, resolve, reject }); }),
+    forget: (subjectId) => new Promise((resolve, reject) => { erasures.push({ subjectId, resolve, reject }); }),
+  };
+  return { c, corrections, erasures };
+}
+
+function last<T>(calls: readonly T[]): T {
+  const call = calls[calls.length - 1];
+  if (call === undefined) throw new Error("no call has been made");
+  return call;
+}
+
+/**
+ * What the current surface can be showing when a later call is made, each
+ * left by a real call to the current client: the erasure effect it reports,
+ * or the failure in `error`.
+ */
+const shownStates: ReadonlyArray<{
+  shown: string;
+  show: (record: UseHeldRecordResult, calls: ReturnType<typeof pendingCalls>) => Promise<void>;
+  error?: string;
+  effect?: DeletionEffect;
+}> = [
+  ...(["erased", "unknown", "failed"] as const).map((effect) => ({
+    shown: `the erasure effect "${effect}"`,
+    show: (record: UseHeldRecordResult, calls: ReturnType<typeof pendingCalls>) => {
+      const pending = record.forget("item_1");
+      last(calls.erasures).resolve(effect);
+      return pending;
+    },
+    effect,
+  })),
+  {
+    shown: "a rejected erasure's error",
+    show: (record, calls) => {
+      const pending = record.forget("item_1");
+      last(calls.erasures).reject(new Error("erasure failed"));
+      return pending;
+    },
+    error: "erasure failed",
+  },
+  {
+    shown: "a rejected correction's error",
+    show: (record, calls) => {
+      const pending = record.correct(item({ holdingClass: "corrected-notes" }));
+      last(calls.corrections).reject(new Error("correction failed"));
+      return pending;
+    },
+    error: "correction failed",
+  },
+];
+
+const callTimeCases = (["client", "subject"] as const).flatMap((change) =>
+  (["correct", "forget"] as const).flatMap((mutation) => shownStates.map((state) => ({ change, mutation, ...state }))),
+);
+
+/**
+ * Renders the hook with one client and subject, keeps the callbacks of that
+ * commit, then changes the client or the subject. For a subject change the
+ * same client serves both subjects.
+ */
+async function afterChange(change: "client" | "subject") {
+  const first = pendingCalls("first-client-notes");
+  const current = change === "client" ? pendingCalls("current-client-notes") : first;
+  const subjectId = change === "client" ? "sub_1" : "sub_2";
+  const { result, rerender } = renderHook(({ c, subjectId: subject }) => useHeldRecord({ ...options(c), subjectId: subject }), {
+    initialProps: { c: first.c, subjectId: "sub_1" },
+  });
+  await waitFor(() => expect(result.current.loading).toBe(false));
+  const outdated = result.current;
+  rerender({ c: current.c, subjectId });
+  await waitFor(() => {
+    expect(result.current.loading).toBe(false);
+    expect(result.current.rows[0]?.entry.item).toMatchObject({
+      subjectId,
+      holdingClass: change === "client" ? "current-client-notes" : "first-client-notes",
+    });
+  });
+  return { result, outdated, first, current };
+}
+
+function failure(record: UseHeldRecordResult): string | undefined {
+  return (record.error as Error | undefined)?.message;
+}
+
 describe("useHeldRecord", () => {
   it("reads everything held about the person and renders a verdict per item", async () => {
     const { result } = render(client([entry()]));
@@ -609,6 +705,93 @@ describe("useHeldRecord", () => {
     expect(result.current.rows).toHaveLength(1);
     expect(result.current.rows[0]?.entry.item).toEqual(before);
     expect(result.current.lastForgetEffect).toBeUndefined();
+  });
+
+  it.each(callTimeCases)(
+    "leaves the current surface's state alone when an outdated $mutation is called after a $change change: $shown",
+    async ({ change, mutation, show, error, effect }) => {
+      const { result, outdated, first, current } = await afterChange(change);
+      await act(async () => {
+        await show(result.current, current);
+      });
+      expect(failure(result.current)).toBe(error);
+      expect(result.current.lastForgetEffect).toBe(effect);
+      const rows = result.current.rows;
+
+      // Called through a callback kept from before the change. The call
+      // still goes to the client and subject it was made with, but it is not
+      // the current surface's call, so it clears nothing the person is shown.
+      const calls: ReadonlyArray<{ subjectId: string }> = mutation === "correct" ? first.corrections : first.erasures;
+      const made = calls.length;
+      let pending!: Promise<void>;
+      act(() => {
+        pending = mutation === "correct" ? outdated.correct(item({ holdingClass: "outdated-notes" })) : outdated.forget("item_1");
+      });
+      expect(calls).toHaveLength(made + 1);
+      expect(last(calls).subjectId).toBe("sub_1");
+      expect(failure(result.current)).toBe(error);
+      expect(result.current.lastForgetEffect).toBe(effect);
+
+      await act(async () => {
+        if (mutation === "correct") last(first.corrections).resolve(item({ holdingClass: "outdated-notes" }));
+        else last(first.erasures).resolve("erased");
+        await pending;
+      });
+      expect(failure(result.current)).toBe(error);
+      expect(result.current.lastForgetEffect).toBe(effect);
+      expect(result.current.rows).toEqual(rows);
+    },
+  );
+
+  it.each(callTimeCases)(
+    "clears the current surface's state when the current $mutation is called after a $change change: $shown",
+    async ({ change, mutation, show, error, effect }) => {
+      const { result, current } = await afterChange(change);
+      await act(async () => {
+        await show(result.current, current);
+      });
+      expect(failure(result.current)).toBe(error);
+      expect(result.current.lastForgetEffect).toBe(effect);
+
+      // A call through the current callback clears `error`, and a forget
+      // also clears `lastForgetEffect`, as the call is made rather than when
+      // its reply arrives.
+      let pending!: Promise<void>;
+      act(() => {
+        pending = mutation === "correct" ? result.current.correct(item({ holdingClass: "corrected-notes" })) : result.current.forget("item_1");
+      });
+      expect(result.current.error).toBeUndefined();
+      expect(result.current.lastForgetEffect).toBe(mutation === "forget" ? undefined : effect);
+
+      await act(async () => {
+        if (mutation === "correct") last(current.corrections).resolve(item({ holdingClass: "corrected-notes" }));
+        else last(current.erasures).resolve("unknown");
+        await pending;
+      });
+      expect(result.current.error).toBeUndefined();
+      expect(result.current.lastForgetEffect).toBe(mutation === "forget" ? "unknown" : effect);
+    },
+  );
+
+  it("clears the replaced client's erasure effect when a child requests an erasure from its own effect in the same commit as a client swap", async () => {
+    const oldClient = client([entry()], "erased");
+    const replacement = deferredMutations([entry({ item: item({ holdingClass: "new-client-notes" }) })]);
+    const { seen, Parent } = childCaller((c) => c === replacement.c, (record) => record.forget("item_1"));
+    const { rerender } = renderComponent(createElement(Parent, { c: oldClient }));
+    await waitFor(() => expect(seen.current?.loading).toBe(false));
+    await act(async () => {
+      await seen.current!.forget("item_1");
+    });
+    expect(seen.current?.lastForgetEffect).toBe("erased");
+
+    rerender(createElement(Parent, { c: replacement.c }));
+    await waitFor(() => expect(seen.current?.rows[0]?.entry.item.holdingClass).toBe("new-client-notes"));
+    expect(replacement.erasures).toHaveLength(1);
+    expect(seen.current?.lastForgetEffect).toBeUndefined();
+    await act(async () => {
+      replacement.erasures[0]!("unknown");
+    });
+    expect(seen.current?.lastForgetEffect).toBe("unknown");
   });
 
   it("ignores pending replies from every client replaced in rapid succession", async () => {
@@ -877,6 +1060,25 @@ describe("useHeldRecord outside act, where a reply can land between a commit and
       expect(replacement.forget).toHaveBeenCalledTimes(1);
       expect(oldClient.forget).not.toHaveBeenCalled();
       expect(seen.current?.lastForgetEffect).toBe("erased");
+    });
+  });
+
+  it.each(swaps)("clears the replaced client's erasure effect when a child requests an erasure from a layout effect in the same commit as a client swap made by %s", async (_name, swap) => {
+    await outsideAct(async (root) => {
+      const oldClient = client([entry()], "erased");
+      const replacement = deferredMutations([entry({ item: item({ holdingClass: "new-client-notes" }) })]);
+      const { seen, Parent } = layoutCaller((c) => c === replacement.c, (record) => record.forget("item_1"));
+      root.render(createElement(Parent, { c: oldClient }));
+      await settle(() => expect(seen.current?.loading).toBe(false));
+      await seen.current!.forget("item_1");
+      await settle(() => expect(seen.current?.lastForgetEffect).toBe("erased"));
+
+      swap(() => root.render(createElement(Parent, { c: replacement.c })));
+      await settle(() => expect(replacement.erasures).toHaveLength(1));
+      // Cleared by the call itself: the replacement has not replied yet.
+      await settle(() => expect(seen.current?.lastForgetEffect).toBeUndefined());
+      replacement.erasures[0]!("unknown");
+      await settle(() => expect(seen.current?.lastForgetEffect).toBe("unknown"));
     });
   });
 
