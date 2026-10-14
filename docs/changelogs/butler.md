@@ -6,7 +6,7 @@ All notable changes to this package are documented here. Format follows
 
 ## 0.3.0 - 2026-10-14
 
-- Hosts can now import the browser consent lifecycle from `@clossys/butler/browser-consent`, its storage adapter from `@clossys/butler/browser-consent/local-storage`, the consent-controlled analytics transport from `@clossys/observer/browser-analytics` and its PostHog provider adapter from `@clossys/observer/browser-analytics/posthog`.
+- Hosts can now import the browser consent lifecycle from `@clossys/butler/browser-consent` and its storage adapter from `@clossys/butler/browser-consent/local-storage`.
 
 ## 0.2.0 - 2026-10-13
 
