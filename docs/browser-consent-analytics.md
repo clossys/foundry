@@ -34,7 +34,11 @@ the region, and C-47 is tightened so that focus on reopen lands on that
 named region. Revision 8 keeps every revision 7 decision and adds the
 opt-in flags class of decision 8 (C-71 to C-79, unit H), with a separate
 host-named experiments purpose. The bounded extensions of C-44, C-62,
-C-64 and C-65 apply only to that class.
+C-63, C-64 and C-65 apply only to that class. The later planner amendment
+on #2147 makes flags client-only on the transport's already initialized
+instance: both its open capture gate and the experiments grant are needed.
+It defers the earlier server-bootstrap decision; decision 5 still controls
+server rendering and hydration.
 
 1. **One compact notice with two equal actions.** There is no preferences
    dialog and no secondary reopen control in the footer. Reopening is a link
@@ -84,14 +88,16 @@ C-64 and C-65 apply only to that class.
    separate, opt-in revision 8 extension.
 8. **Feature flags and experiments are a separate opt-in class.** The
    `flags` option is off by default and independent of autocapture and
-   replay. Only a grant for the host-named experiments purpose permits
-   evaluation or exposure. Refused, undecided, loading and failed states
-   return the host's control value. Assignments stay in memory only and
+   replay. Evaluation and exposure require the instance already initialized
+   by the analytics transport, its open capture gate, and a separate grant
+   for the host-named experiments purpose. Refused, undecided, loading and
+   failed states return the host's control value. Assignments stay in memory only and
    withdrawal clears them. Exposure has one closed event/property class;
-   host server bootstrap requires an existing experiments grant. Analytics
-   permission alone grants nothing to this class. Surveys and no-code web
-   experiments remain forced off. All five decisions in the numbered
-   decision record below are DECIDED by ANS 2147-1 (#2147).
+   this revision accepts no server bootstrap and server HTML/hydration use
+   control regardless of a stored choice. Analytics permission alone grants
+   nothing to this class, and an experiments-only grant has no load path.
+   Surveys and no-code web experiments remain forced off. The five decisions
+   below are DECIDED by ANS 2147-1 and its later planner amendment (#2147).
 
 ## Ownership
 
@@ -772,10 +778,11 @@ provider through `init(context)`.
     A referrer value the SDK set by itself, such as a direct-entry marker
     or a full referrer URL, never passes through.
   - *Revision 8 extension.* With `flags` off, every forced option above
-    stays unchanged. Only C-64's two feature-flag disables may vary while
-    `flags` is on and its separate experiments purpose is granted; C-65
-    adds only the exposure class of C-75. The existing transport path and
-    its permission remain unchanged.
+    stays unchanged. With `flags` on, evaluation-enabling changes to only
+    C-64's two feature-flag disables may be initiated, only while C-72's
+    three eligibility conditions hold; disabling cleanup follows C-77.
+    C-65 adds only the exposure class of C-75. The existing transport path
+    and its permission remain unchanged.
   - Whether these option and property names behave as named in the SDK
     version a host installs is separate evidence (see "Separate
     evidence").
@@ -887,8 +894,13 @@ by-value read-back still matches.
   the separate experiments-purpose gate and C-65's one exposure class. No
   analytics grant implies an experiments grant.
 - **C-63 Configuration fails closed.** `createPostHogProvider` validates
-  both blocks when it is called. A block must be a plain object holding
-  only the keys in the type above, with those types. Under `replay` with
+  both revision 7 blocks when it is called and, for unit H, the optional
+  `PostHogProviderConfig.flags` block of C-71. Each block must be a plain
+  object holding only the keys in its declared type, with those types.
+  The flags block and its definitions admit no accessors; malformed flags
+  configuration throws `TypeError` before any SDK initialization, following
+  the same loader-failure path below. The existing two blocks' validation
+  is unchanged. Under `replay` with
   `enabled: true`, `sampleRate` must be a finite number from 0 to 1,
   `probe` must be a function, and `blockSelectors`, when present, an array
   of at most 50 non-empty strings of at most `MAX_PROPERTY_STRING_LENGTH`
@@ -912,9 +924,15 @@ by-value read-back still matches.
   `opt_out_capturing_by_default` and `before_send`. With `flags` off, all
   four autocapture/replay configurations are byte-identical to revision 7.
   With `flags` on, only `advanced_disable_feature_flags` and
-  `advanced_disable_feature_flags_on_first_load` may additionally vary,
-  only as C-73 specifies after the separate experiments grant. Columns
-  compose; no column grants another class permission.
+  `advanced_disable_feature_flags_on_first_load` may receive evaluation-
+  enabling changes, initiated only as C-73 specifies while C-72's three
+  conditions hold; disabling cleanup follows C-77. Columns compose; no
+  column grants another class permission. The cells below describe initial
+  values and permission to initiate enablement changes, not an obligation
+  to call the SDK on gate closure. Analytics withdrawal follows unchanged
+  C-67 with no additional option-restore call; retained SDK settings
+  authorize no activity and still require C-73's request-isolation evidence
+  and C-77's untrusted-state handling.
 
   | Option | All flags off (C-44) | `autocapture` on | `replay` on | `flags` on |
   | --- | --- | --- | --- | --- |
@@ -924,8 +942,8 @@ by-value read-back still matches.
   | `disable_session_recording` | `true` | unchanged | unchanged, `true` at `init`; replay starts only by the adapter's explicit call (C-68) | unchanged |
   | `session_recording` | not set | unchanged | `REPLAY_RECORDING_OPTIONS`, with the host's `blockSelectors` appended to the private ones | unchanged |
   | `enable_recording_console_log` | not set | unchanged | `false` | unchanged |
-  | `advanced_disable_feature_flags` | `true` | unchanged | unchanged | `true` until experiments grant; only then `false` for gated evaluation (C-73) |
-  | `advanced_disable_feature_flags_on_first_load` | `true` | unchanged | unchanged | `true` until experiments grant; only then `false` (C-73) |
+  | `advanced_disable_feature_flags` | `true` | unchanged | unchanged | initially `true`; enablement change to `false` only under C-72 (C-73); cleanup per C-77 |
+  | `advanced_disable_feature_flags_on_first_load` | `true` | unchanged | unchanged | initially `true`; enablement change to `false` only under C-72 (C-73); cleanup per C-77 |
   | `disable_web_experiments` | `true` | unchanged | unchanged | unchanged, `true` |
   | `disable_surveys` | `true` | unchanged | unchanged | unchanged, `true` |
 
@@ -955,8 +973,11 @@ by-value read-back still matches.
     and `$snapshot` while replay has started for the current grant
     (C-68), each only while the capture gate (C-67) is open;
   - a **flag exposure**: only `$feature_flag_called` meeting C-75, while
-    the separate experiments-purpose gate is open. This grants no transport,
-    autocapture or replay permission and the other arms grant it none.
+    the transport has already initialized this instance, its capture gate
+    (C-67) is open and the separate experiments-purpose grant holds. An
+    analytics withdrawal closes this arm without changing C-67. This arm
+    grants no transport, autocapture or replay permission; their permission
+    alone never grants flag exposure.
 
   Every accepted event then takes the same final steps, in this order, and
   no class skips one: the event is rebuilt from `POSTHOG_EVENT_FIELDS`
@@ -1151,46 +1172,81 @@ by-value read-back still matches.
 
 Unit H is a specification, not an implemented capability. It adds a third
 optional `flags` block to the revision 7 provider configuration described
-above, plus an isolated flags handle that the host binds to its separately
-named experiments-purpose lifecycle. The analytics transport's ports,
+above, plus a flags handle bound to its separately named experiments-purpose
+lifecycle. The handle uses the instance the analytics transport has already
+initialized and starts no separate loader. The analytics transport's ports,
 loader, sanitizer and permission rules are unchanged. No SDK is imported
 by a package (C-3), and importing this extension performs no I/O (C-1).
 
+Unit H extends the existing configuration type (the revision 7 declaration
+above stays its baseline):
+
+```ts
+type PostHogFlagValue = boolean | string;
+interface PostHogFlagsConfig {
+  enabled: boolean;
+  purpose: string;
+  definitions: Readonly<Record<string, {
+    control: PostHogFlagValue;
+    variants: readonly PostHogFlagValue[];
+  }>>;
+}
+interface PostHogProviderConfig {
+  flags?: PostHogFlagsConfig;
+}
+```
+
+C-63 validates this optional extension before initialization, including its
+closed property sets, plain-data definitions and C-74's value constraints.
+It introduces no bootstrap, identity, person-property or groups option.
+
 - **C-71 Flags are a separate, closed opt-in option.** A missing `flags`
-  block, or `enabled` other than `true`, leaves every revision 7 behavior
-  unchanged. A block has only `enabled`, `purpose` and `definitions`:
+  block, or a valid block with `enabled: false`, leaves every revision 7
+  behavior unchanged. A block has only `enabled`, `purpose` and
+  `definitions`:
   `purpose` is the host's non-empty experiments-purpose name, distinct
   from its analytics purpose; `definitions` is a closed host map from
   flag key to `{ control, variants }`. Configuration is plain data with no
-  accessors; unknown properties or malformed enabled configuration refuse
-  the flags capability without initializing it. Autocapture and replay
-  neither enable nor configure flags. The flags handle exposes lookup and
+  accessors; C-63 rejects unknown properties, a non-boolean `enabled` or
+  malformed configuration with `TypeError` before initialization; this
+  fails the shared provider load under C-43, rather than disabling only
+  flags. Autocapture and replay neither enable nor configure flags. The flags handle exposes lookup and
   an explicit experiments-permission input; no `identify` method, person
   properties or targeting-profile input exists.
-- **C-72 Only the experiments grant permits flag work.** Permission starts
-  false. Unknown, undecided, refused, expired, unreadable, simulated or
-  withdrawn experiments permission means control and no evaluation request
-  or flag event. The host binds the separate purpose's effective grant,
-  never analytics `allowed`, `onChange`, a `notice` regime, a stored record's
-  mere presence or an enabled configuration. A lookup before the grant,
-  during loading or after a load/evaluation failure returns the declared
-  control synchronously; it is not queued for later exposure. A grant may
-  load/evaluate; permission becoming false closes evaluation and exposure
-  synchronously before any SDK stop/cleanup call. No analytics grant is
-  required for this separate class, and its grant enables no analytics.
-- **C-73 No evaluation request runs ahead of the grant.** Both C-64
-  feature-flag disables stay `true` until the experiments-purpose grant,
-  including when analytics has already initialized the SDK. Only after
-  that grant may the flags handle enable those two options and explicitly
-  request evaluation. Initialization, reload, polling, callbacks and SDK
-  automatic first-load behavior must make zero flag requests before grant
-  or after refusal/withdrawal; the adapter never starts polling. If the
-  installed SDK cannot preserve that invariant, flags remain unavailable
-  and return control, while existing analytics behavior remains unchanged.
-  Withdrawal advances a generation and discards outstanding evaluation
-  results; a response or deferred loader from an older generation never
-  enables evaluation, fills a cache, changes a lookup or emits exposure.
-  No request already sent is claimed to be retractable.
+- **C-72 Three conditions permit flag work.** Flags require the SDK
+  instance already initialized by the analytics transport, its capture gate
+  open under C-67, and an effective grant for the separately named
+  experiments purpose. An experiments-only grant has no load path in this
+  revision: it never calls the transport's loader or initializes an SDK.
+  Experiments permission starts false. Unknown, undecided, refused,
+  expired, unreadable, simulated or withdrawn experiments permission means
+  control and no evaluation or exposure. The host binds that separate
+  grant, never inferring it from analytics `allowed`, `onChange`, a
+  `notice` regime, a stored record's presence or enabled configuration.
+  Analytics permission alone is insufficient. Before all three conditions
+  hold, during pending evaluation or after failure, lookup returns declared
+  control synchronously and queues no exposure. Losing either permission
+  closes evaluation/exposure synchronously and invalidates pending work.
+  C-17 and C-67 are unchanged: after analytics withdrawal, no flag
+  evaluation, exposure or additional flags SDK call occurs until analytics
+  has opted in again, its capture gate is open and experiments is granted.
+- **C-73 Evaluation waits for eligibility and separate request evidence.**
+  Both C-64 feature-flag disables are `true` at initialization. Enabling
+  evaluation by changing those two options requires all C-72 conditions;
+  disabling cleanup follows C-77. Only while eligible may the flags handle
+  explicitly request evaluation on the transport's existing instance.
+  The evaluation request carries no person properties, groups, URL or
+  referrer. Separate evidence for the installed SDK version must establish
+  that request shape and that automatic first-load behavior, reloads,
+  callbacks and retained SDK state initiate no flag request when either
+  gate is closed. Without that evidence, flags remain unavailable/control.
+  The adapter starts no polling and imports or initializes no extra SDK.
+  Loss of either grant advances the flags generation; old evaluation
+  replies cannot enable work, fill a cache, change a lookup or expose after
+  withdrawal or re-grant. An experiments grant cannot revive a provider
+  discarded by the unchanged transport's generation (C-19). No request
+  already sent is claimed to be retractable. The evaluation-request rule
+  is distinct from C-65's sanitized URL fields on an exposure event.
 - **C-74 Keys and variants form a closed host allowlist.** Each declared
   key is a non-empty string matching `^[a-zA-Z0-9][a-zA-Z0-9._-]{0,63}$`.
   Each control and variant is a boolean or a non-empty string of at most
@@ -1204,8 +1260,9 @@ by a package (C-3), and importing this extension performs no I/O (C-1).
   map becomes a flag, variant, targeting property or exposure property.
 - **C-75 One exposure class passes the final gate.** The exposure
   event name is `$feature_flag_called`; an exposure is admitted only for a
-  successful lookup of an allowlisted evaluated or bootstrapped variant in
-  the current grant.
+  successful lookup of an allowlisted evaluated variant in the current
+  jointly eligible generation (C-72). Server bootstrap supplies no values
+  in this revision (C-78).
   Control fallbacks caused by refusal, loading, failure or invalid data
   emit nothing. The adapter admits only its own lookup's exposure, once
   per key/variant pair per grant; unsolicited SDK exposure events drop.
@@ -1214,8 +1271,12 @@ by a package (C-3), and importing this extension performs no I/O (C-1).
   C-65 adds only its existing delivery fields and rebuilt URL fields;
   all other properties, person payloads and event names drop. Values come
   from the validated lookup, never arbitrary SDK event properties. The
-  experiments-purpose gate is checked again at final send; withdrawal
-  drops queued or delayed exposure, even if analytics remains allowed.
+  transport-instance eligibility, open capture gate and experiments grant
+  are checked again at final send. Withdrawal of either purpose drops
+  adapter-pending exposure; analytics withdrawal admits no further flags
+  SDK call. An SDK send queue that already holds an accepted event remains
+  subject to C-67's separate-evidence limitation; this rule does not claim
+  to retract an event the SDK already accepted.
   A missing/invalid sanitized URL drops the event by the same C-20/C-65
   URL rebuild; queries and fragments never pass. Provider option behavior
   is separate SDK-version evidence, not a claim this document proves.
@@ -1227,40 +1288,40 @@ by a package (C-3), and importing this extension performs no I/O (C-1).
   off, all four existing forced configurations stay byte-identical; with
   flags on, no additional forced option besides C-64's two disables varies.
 - **C-77 Assignments persist only in memory and withdrawal clears them.**
-  The flags cache, validated bootstrap values, lookup/exposure deduplication
-  set and pending work belong to the current experiments grant. Nothing is
-  written to cookies, `localStorage`, `sessionStorage` or other durable
-  storage by this capability. Withdrawal closes both gates first, advances
-  the generation, clears all adapter-owned values and attempts to clear
-  the SDK's flag cache and restore both feature-flag disables to `true`.
-  Throwing cleanup cannot reopen a gate or preserve an adapter lookup
-  value. If SDK cache clearing or request isolation cannot be established,
-  flags remain unavailable and return control until both are established;
-  a thrown cleanup is never evidence that SDK-held bytes were cleared.
-  A re-grant starts empty with a new generation, never an old assignment.
-  A full page load also starts empty: cross-load variant stability is not
-  promised. This
-  supplements C-69 for flags state without changing its autocapture/replay
-  reset or session rules: flags-only cleanup does not call `reset()` or
-  disturb an independently granted analytics/replay session. An SDK that
-  cannot isolate and clear its flag state leaves flags unavailable (C-73).
-- **C-78 Server bootstrap requires an existing experiments grant.** The
-  host may supply only the allowlisted key/variant map, after establishing
-  an effective grant for the separately named experiments purpose. It may
-  supply no identifier, person properties or targeting profile. The flags
-  handle accepts bootstrap only in its current granted generation, using
-  the same key/variant validation as evaluation. Bootstrap arriving before
-  grant or after withdrawal is discarded, never saved for a future grant;
-  invalid or unknown values read as control and cannot emit exposure.
-  Deferred bootstrap is bound to the generation that requested it; an
-  older grant's bootstrap stays discarded even after a later re-grant.
-- **C-79 Server HTML and undecided hydration use control.** Without
-  an already-established experiments grant, server HTML, hydration and
-  client lookups render the host's declared control and perform no flag
-  request. With a grant but without validated values, control remains until
-  evaluation or valid bootstrap is ready. Only the host renders a selected
-  variant; the SDK never rewrites the page. H-12 owns any layout change or
-  flicker and grants no exception to the request or exposure gates.
+  The local flags cache, exposure deduplication set and pending work belong
+  to the current jointly eligible generation. Nothing is written to
+  cookies, `localStorage`, `sessionStorage` or other durable storage by
+  this capability. Losing either permission closes flag evaluation and
+  exposure first, advances the generation and clears all adapter-owned
+  values. When experiments is withdrawn while the analytics capture gate
+  remains open, flags cleanup may attempt to clear the SDK's flag cache
+  and restore both feature-flag disables to `true`. Once analytics closes
+  its capture gate, flags make no additional SDK call: no SDK-cache clear,
+  option restore or deferred cleanup runs after analytics withdrawal.
+  C-67's existing stop sequence alone controls that withdrawal, unchanged.
+  SDK-held flag state is then untrusted and never reused; a later jointly
+  eligible grant must establish cache clearing and request isolation before
+  evaluation resumes. A forbidden or throwing cleanup is never evidence
+  that SDK-held bytes were cleared; flags remain unavailable/control until
+  clearing and isolation are established. A re-grant or full page load
+  starts with empty adapter state and no old assignment; cross-load variant
+  stability is not promised. This supplements C-69 for flags state without
+  changing its reset/session rules. Experiments-only withdrawal does not
+  reset or disturb an independently granted analytics/replay session.
+- **C-78 Server bootstrap is deferred beyond this revision.** Unit H is
+  client-only and accepts no server-supplied flag assignment or bootstrap
+  map, regardless of a stored choice or grant. The earlier ANS 2147-1
+  bootstrap decision is deferred by the later planner amendment on #2147;
+  it is future scope requiring a separate specification, not a current API
+  or permission exception. Such input is refused and never cached or used
+  for lookup/exposure, including before grant and after re-grant.
+- **C-79 Server HTML and hydration always use control.** Decision 5 stays
+  unchanged: server HTML never depends on storage or a stored choice, and
+  the server and hydration render the host's declared control with no flag
+  evaluation. Only after client mount and C-72 eligibility may a validated
+  evaluation result select a host-rendered variant. Loading, unavailable or
+  failed client evaluation keeps control. The SDK never rewrites the page;
+  H-12 owns any later layout change or flicker, with no gate exception.
 
 ### Presentation (Designer)
 
@@ -1718,15 +1779,17 @@ that exposes the relevant API.
   whichever regime or region it serves, whether to pass each flag; the
   package never does (O-7, C-62).
 
-- **H-12 The host binds experiments and owns rendering.** The host names
-  and binds a separate experiments-purpose grant, supplies non-personal
-  flag keys/variants and a control for every lookup, and renders control
-  on the server and through hydration until an existing grant and validated
-  values permit another variant (C-72, C-78, C-79). It supplies server
-  bootstrap only after that grant, never as evidence of one. The host owns
-  any post-grant flicker or layout shift and may keep control until ready;
-  it must not prefetch flags, hide control while undecided or use SDK page
-  rewriting to avoid flicker. Analytics permission is not this grant.
+- **H-12 The host binds experiments and owns client rendering.** The host
+  names and binds a separate experiments-purpose grant and supplies
+  non-personal keys/variants and a control for every lookup. Flags run
+  solely on the analytics transport's already initialized instance with
+  its capture gate open and the separate experiments grant (C-72).
+  Server HTML and hydration render control regardless of stored choices
+  (decision 5); no server bootstrap is supported (C-78, C-79). The host
+  owns post-mount, post-grant layout changes or flicker and may keep control
+  until evaluation is ready. It must not prefetch flags, hide control while
+  undecided or use SDK page rewriting to avoid flicker. Analytics permission
+  alone is insufficient, and experiments alone cannot load an SDK.
 
 ## Superseded ticket text
 
@@ -2035,18 +2098,22 @@ expiry behaviour is built in #1938, and its reopen seam and copy in #1941.
   `packages/observer/src/browser-analytics/`; the Observer README documents
   the new capability. One Observer minor changeset accompanies that future
   implementation. This document changes none of those files.
-- API: the closed `flags` block, an isolated lookup/experiments-permission
-  handle, and `POSTHOG_FLAG_EXPOSURE_PROPERTIES` on the existing posthog
+- API: the optional `PostHogProviderConfig.flags?: PostHogFlagsConfig` type
+  extension and its C-63 validation, a lookup/experiments-permission handle
+  using the already initialized transport instance, and
+  `POSTHOG_FLAG_EXPOSURE_PROPERTIES` on the existing posthog
   subpath. No root export, SDK dependency, manifest, compiler, transport,
   sanitizer, Butler, Publisher or Designer change is part of unit H.
 - Fixtures: a fake SDK and deferred loader/evaluation replies; explicit
   separate analytics/experiments grants; allowlisted and poisoned variants;
-  server bootstrap before/after grant; a call log observing gate state and
-  all evaluation/cleanup/exposure operations. No real SDK or network.
+  rejected server bootstrap, control-only server/hydration fixtures, and a
+  call log observing both gates, request payloads and all evaluation,
+  cleanup and exposure operations. No real SDK or network.
 - Proof: P-45 to P-53, plus the bounded P-34/P-35 extensions. Run each named
   mutation without weakening the original autocapture/replay mutations.
   A real SDK's disable options, manual evaluation, flag-cache clearing and
-  same-instance independent permission behavior require separate host
+  same-instance joint permission gating and absence of person properties,
+  groups, URLs and referrers in evaluation requests require separate host
   evidence before this capability runs against it (C-73, C-75, H-12).
 
 ### Unowned work
@@ -2109,8 +2176,8 @@ passes. "Covers" lists the rules each proof holds.
 | P-31 | E | `consent-port-conformance` :: type-level assignability of each real implementation to its structural port, and the reference host factory compiling with no cast | O-3, C-53 | rename or retype one `ConsentSnapshot` field in Butler; narrow Butler's `evidence` option to `ConsentEvidencePort` only; drop the test's `GATE_TEST_EXCLUSIONS` entry, so `check:gates` sweeps in a suite that imports workspace packages and the workflow reference test fails |
 | P-32 | #1938 | `refusal-floor` :: under `notice`, a refusal stored this visit and then a denial another tab wrote under another `policy.version` (no choice here): the re-read keeps `denied`, `allowed: false`, no automatic prompt, `memory`; under `notice`, a refusal stored this visit, the storage then cleared from outside and `refresh()`: the same; unreadable at mount, `refuse()` whose write reports `ok`, a read that then returns empty, and `refresh()`: still `denied`, `memory`; only a live grant dated after the refusal and not after `now` lifts the floor; a grant made this visit still moves to `denied` when another tab's denial arrives, with persistence `stored`; a refusal held in memory that a re-read replaces with another tab's live, newer denial reports `stored`; a grant dated T0 plus a day stored while the clock reads T0, `refuse()` whose write fails, the clock corrected past T0 plus a day and `refresh()`: still `denied`, not allowed, `withdrawal: "failed"` | C-54, C-56, C-57 | re-evaluate a stored refusal made this visit from storage alone; lift the floor with a record that parses as no choice; lift the floor with a future-dated grant; hold a grant made this visit against another tab's denial; report `memory` when another tab's live denial replaces the choice; classify the read-back at the call with plain `isAllowed` |
 | P-33 | F | `posthog-config` :: with no block, or `enabled` not `true`, the `init` configuration equals C-44's exactly; an unknown key (including `maskAll`, `maskAllInputs: false` or an unmask list), a wrong type, a missing or out-of-range `sampleRate` (`NaN`, `-0.1`, `1.1`) or a missing `probe` under `enabled: true` makes `createPostHogProvider` throw; through the transport, that loader failure retries once and ends `failed`, with no `init` and no capture | C-62, C-63 | accept an unknown key; default a missing `sampleRate` to 1; initialize the SDK when a block is invalid |
-| P-34 | F | `posthog-forced-options` :: with `flags` off, for each of the four autocapture/replay combinations, every key of the `init` configuration has exactly the value of C-44 and the C-64 table, the experiment and feature-flag disables included; the host's block selectors follow the private ones and never replace them; with `flags` on, all four corresponding combinations differ only in the two C-64 feature-flag disables after the separate experiments grant, and surveys/no-code web experiments stay disabled | C-64 | omit `respect_dnt`; set `disable_session_recording: false` under replay; drop `capture_copied_text: false`; set `recordHeaders`, `recordBody`, `recordCanvas` or `enable_recording_console_log` to `true`, or `compressEvents` to `true`, under replay; let host selectors replace `PRIVATE_SUBTREE_SELECTORS` |
-| P-35 | F | `posthog-gate` :: a `$pageview`, a conversion, an `$autocapture` and a `$snapshot`, each with SDK-added `$set`, an unlisted property and a `$current_url` carrying a query, leave with only `POSTHOG_EVENT_FIELDS`, the delivery fields, their class's list and URL fields rebuilt from the sanitized URL; an `$autocapture` with the flag off, a `$snapshot` before replay started, any SDK-originated event while the gate is closed, and a flag-called event with `flags` off or experiments permission absent are dropped; the one granted flag-exposure class keeps only its validated key/variant plus existing delivery and rebuilt URL fields, with every other event still dropped | C-65 | skip the URL rebuild for an SDK-originated class; let an SDK-originated class bypass the property allowlist; accept `$autocapture` while its flag is off |
+| P-34 | F | `posthog-forced-options` :: with `flags` off, for each of the four autocapture/replay combinations, every key of the `init` configuration has exactly the value of C-44 and the C-64 table, the experiment and feature-flag disables included; the host's block selectors follow the private ones and never replace them; with `flags` on, all four corresponding combinations differ only in the two C-64 feature-flag disables after C-72's joint eligibility, and surveys/no-code web experiments stay disabled | C-64 | omit `respect_dnt`; set `disable_session_recording: false` under replay; drop `capture_copied_text: false`; set `recordHeaders`, `recordBody`, `recordCanvas` or `enable_recording_console_log` to `true`, or `compressEvents` to `true`, under replay; let host selectors replace `PRIVATE_SUBTREE_SELECTORS` |
+| P-35 | F | `posthog-gate` :: a `$pageview`, a conversion, an `$autocapture` and a `$snapshot`, each with SDK-added `$set`, an unlisted property and a `$current_url` carrying a query, leave with only `POSTHOG_EVENT_FIELDS`, the delivery fields, their class's list and URL fields rebuilt from the sanitized URL; an `$autocapture` with the flag off, a `$snapshot` before replay started, any SDK-originated event while the gate is closed, and a flag-called event with `flags` off, an uninitialized transport instance, a closed capture gate or experiments permission absent are dropped; the one jointly eligible flag-exposure class keeps only its validated key/variant plus existing delivery and rebuilt URL fields, with every other event still dropped | C-65 | skip the URL rebuild for an SDK-originated class; let an SDK-originated class bypass the property allowlist; accept `$autocapture` while its flag is off |
 | P-36 | F | `posthog-autocapture` :: test obligation (d): over the corpus, no output holds element text, an `href`, a query or a token; `$elements_chain` holds only the target's tag and allowlisted attribute; targets inside `data-private`, `data-consent-banner`, a `password` field or a `cc-` autocomplete field, form-field targets, a missing or invalid attribute value, a `change` event, unparseable element data and an overlong value are dropped; no raw input value reaches the fake seam in any recorded call or hook output | C-66 | keep `$el_text`; take the URL fields from the element's `href`; keep ancestors in the rebuilt chain; accept a `change` event; skip the private-ancestor check |
 | P-37 | F | `posthog-lifecycle` :: test obligations (a) to (c): zero SDK calls before any grant and after the stop steps return, under every flag combination; a deferred load resolving after a withdrawal makes no `init`, `opt_in_capturing` or `startSessionRecording` call; the gate is already closed at every SDK call `optOut()` makes; a throwing `stopSessionRecording`, `opt_out_capturing` or `reset` leaves the gate closed and the later steps still run; an `optIn()` re-entered during the stop steps runs only after them, as a re-grant; an `optOut()` during `optIn()` stops it before `startSessionRecording` | C-67 | close the gate after `opt_out_capturing`; skip later stop steps after a throw; apply a re-entrant grant in the middle of the stop steps; start replay after a withdrawal during `optIn()` |
 | P-38 | F | `posthog-replay` :: replay starts only when all five C-68 eligibility conditions hold; a missing, throwing, promise-returning or any-`false` or non-boolean probe (each of the eight fields in turn), a read-back with one masking key altered, a missing method, `sampleRate: 0` or an unselected draw never calls `startSessionRecording`, and pageviews and autocapture still work; on a re-grant, a read-back altered after `init` skips that start and every later one; a `$snapshot` meta `href` is rewritten to the sanitized URL, and one that cannot be rewritten drops the event | C-68 | skip the read-back; read back only at `init`; treat a missing probe as success; accept a probe field of `"true"`; ignore `recordsNoCanvas`; ignore `recordsNavigationAddress`; pass `$snapshot_data` without rewriting the meta `href` |
@@ -2120,15 +2187,15 @@ passes. "Covers" lists the rules each proof holds.
 | P-42 | F | `posthog-replay` :: query and fragment check: with the page address carrying a non-empty query or a non-empty fragment, a clean page address but a load address (navigation entry) carrying one, or a meta or custom address in the payload carrying one, the `$snapshot` is dropped, and every later `$snapshot` of that grant is dropped even after the address is clean; on a page with neither, a payload whose attribute values hold a link is accepted; a new grant on a clean address records again | C-68, C-20 | check only the meta `href`; ignore the load address; check the address after the rewrite; accept later `$snapshot` events of the same grant once the address is clean; ignore the fragment |
 | P-43 | F | `posthog-block-selectors` :: each host block selector is checked against `BLOCK_SELECTOR_GRAMMAR`: one with a top-level comma, a pseudo-class, a parenthesis, an escape, a `~` or `+` combinator, an unbalanced bracket, a space at the start, or a long adversarial string (tens of thousands of repeated `.a` or `[a="` fragments ending in an invalid character, tested against the expression directly and returning promptly) leaves replay off with no `startSessionRecording` call and no throw, while pageviews and autocapture still run; valid selectors (`aside`, `.card [data-x="a b"]`, `main > #pane`) follow the private selectors in the joined block selector | C-63, C-68 | skip the grammar check; skip the length cap before the expression; accept a comma; throw instead of leaving replay off; place host selectors before the private ones |
 | P-44 | G | `ConsentBanner` :: the region's accessible name is the `title` content, through a structural `aria-labelledby` that resolves to a heading carrying `sr-only`; the title text appears exactly once, inside that heading, and nowhere visible; the region has no `role="dialog"`, no `aria-modal` (not `"true"`, not `"false"`) and no `tabindex`; a `ReactNode` title with markup keeps its markup and still names the region; with a status and a policy link passed, both render visibly; both actions stay two `Button`s of the same variant and size (P-14) | C-70, C-21 | render the heading without `sr-only`; name the region with an `aria-label` string, or `String(title)`, or drop non-text children; drop `aria-labelledby`; add `role="dialog"`; add `aria-modal="true"`; render the title a second time outside the hidden heading; hide the status line or the policy link with the title |
-| P-45 | H | `posthog-flags-config` :: absent/disabled flags preserve the four original configurations; malformed blocks, accessors, unknown properties or an empty/malformed purpose refuse flags; the host-reference binding uses a distinct experiments purpose rather than analytics; autocapture/replay never enable flags and no identify/profile API exists | C-71 | default missing flags to enabled; accept an extra configuration property; bind the host reference to its analytics grant |
-| P-46 | H | `posthog-flags-permission` :: zero evaluation requests and zero exposures for undecided/refused/expired/unreadable/simulated/withdrawn experiments states, including analytics granted and notice regime; each lookup returns control; grant/loading/failure returns control without queued exposure | C-72 | request flags before grant; infer experiments grant from analytics allowed; expose a pre-grant lookup after load |
-| P-47 | H | `posthog-flags-loading` :: both disables stay true before experiments grant even after analytics init; withdrawal immediately blocks new requests and stale loaders/responses cannot cache or emit; an unsupported SDK stays on control; no polling starts | C-73 | enable first-load requests before grant; accept an old-generation response; start SDK polling |
+| P-45 | H | `posthog-flags-config` :: absent/disabled flags preserve the four original configurations; C-63 rejects malformed blocks, accessors, unknown properties or an empty/malformed purpose with TypeError before initialization, failing the shared provider load through C-43; the PostHogProviderConfig flags? extension type-checks, and the host-reference binding uses a separate experiments grant without enabling a loader | C-71, C-63 | default missing flags to enabled; accept an extra configuration property; bind the host reference to its analytics grant |
+| P-46 | H | `posthog-flags-permission` :: no evaluation, exposure or SDK load with an experiments-only grant; flags require the transport-initialized instance, open capture gate and separate experiments grant; every ineligible/loading/failed lookup returns control, including notice, refused/expired/unreadable/simulated states; analytics withdrawal synchronously stops flags and no later flags SDK call occurs | C-72 | request flags before grant; infer experiments grant from analytics allowed; expose a pre-grant lookup after load; load an SDK for experiments alone; evaluate after analytics withdrawal |
+| P-47 | H | `posthog-flags-loading` :: both disables start true and evaluation-enabling changes require joint eligibility; retained SDK settings after withdrawal initiate no request; evaluation requests carry no person properties, groups, URL or referrer; missing separate SDK evidence leaves flags unavailable/control; losing either grant invalidates replies, including after re-grant; no polling starts | C-73 | enable first-load requests before grant; accept an old-generation response; start SDK polling; include a URL or person property in the evaluation request; include groups or referrer in the evaluation request |
 | P-48 | H | `posthog-flags-allowlist` :: valid declared key/variant pairs resolve; unknown keys return supplied control without requests/events; unknown variants return declared control; malformed keys, duplicate variants, accessors and mismatched controls refuse | C-74 | accept an unlisted key; return an unlisted provider variant; invoke a definition getter |
-| P-49 | H | `posthog-flags-exposure` :: one exposure per valid key/variant per granted generation; no fallback or unsolicited SDK exposure; extra properties/person fields drop, key/variant come from the validated lookup and URL fields are rebuilt without query/fragment; withdrawal before flush drops the event even while analytics remains granted | C-75 | expose a loading fallback; accept an unsolicited exposure; retain an extra property; skip the experiments gate at final send |
-| P-50 | H | `posthog-flags-options` :: all eight combinations keep surveys and no-code experiments off; the four flags-off configurations are byte-identical and flags-on changes only the two named disables after grant | C-76 | enable surveys under flags; enable web experiments; change persistence or a replay option when flags is enabled |
-| P-51 | H | `posthog-flags-withdrawal` :: gate closure precedes cleanup; withdrawal always clears adapter caches, bootstrap, deduplication and pending work; a throwing SDK cache clear keeps flags unavailable/control until SDK clearing and request isolation are established; re-grant/page load starts empty, stale replies drop, no durable storage is touched and flags-only cleanup never resets an independently granted analytics/replay session | C-77 | retain an assignment after withdrawal; reuse an old exposure set; write localStorage; reset the shared session during flags-only withdrawal |
-| P-52 | H | `posthog-flags-bootstrap` :: bootstrap before grant or after withdrawal is discarded, not deferred; old-generation bootstrap after re-grant is discarded; current granted allowlisted values resolve; unknown/invalid variants return control and no identity/profile data passes | C-78 | cache pre-grant bootstrap for re-grant; accept a stale bootstrap response; accept targeting properties |
-| P-53 | H | `posthog-flags-rendering` :: host-reference server and hydration fixtures use control before grant and while loading; valid post-grant bootstrap/evaluation enables only host-rendered variants, with no request or SDK rewrite to avoid flicker | C-79 | render a provider variant on the undecided server; request flags during hydration before grant; let the SDK rewrite control markup |
+| P-49 | H | `posthog-flags-exposure` :: one exposure per valid key/variant per jointly eligible generation; no fallback or unsolicited exposure; extra/person properties drop, key/variant come from the validated lookup and URL fields are rebuilt without query/fragment; either permission lost before the hook drops adapter-pending exposure, without claiming SDK-queued events are retracted | C-75 | expose a loading fallback; accept an unsolicited exposure; retain an extra property; skip the experiments gate at final send; skip the analytics capture gate at final send |
+| P-50 | H | `posthog-flags-options` :: all eight combinations keep surveys and no-code experiments off; the four flags-off configurations are byte-identical and flags-on enablement changes target only the two named disables during joint eligibility, with disabling cleanup governed by C-77 | C-76 | enable surveys under flags; enable web experiments; change persistence or a replay option when flags is enabled |
+| P-51 | H | `posthog-flags-withdrawal` :: either withdrawal synchronously clears local caches/deduplication/pending work; experiments withdrawal with analytics open may clear SDK flag state without resetting the shared session; analytics withdrawal performs no additional flags SDK clear/config call and leaves SDK state untrusted; unavailable or throwing cleanup keeps control until clearing/isolation is established at a later joint grant; re-grant/page load cannot reuse old local state | C-77 | retain an assignment after withdrawal; reuse an old exposure set; write localStorage; reset the shared session during flags-only withdrawal; clear SDK flags or restore options after analytics withdrawal |
+| P-52 | H | `posthog-flags-bootstrap` :: server bootstrap is refused and never cached, evaluated or exposed in every grant state, including an already-granted host and after re-grant; the API admits no bootstrap map | C-78 | accept server assignments after a grant; cache server bootstrap for a future grant |
+| P-53 | H | `posthog-flags-rendering` :: host-reference server/hydration fixtures render control regardless of a stored choice or grant and make no flag request; after mount only joint eligibility plus validated client evaluation permits a host-rendered variant; loading/failure stays control with no SDK rewrite | C-79 | render a provider variant on the server after a stored grant; request flags during hydration; let the SDK rewrite control markup |
 
 ### Review proofs for this document
 
@@ -2153,7 +2220,10 @@ Covers cell.
 
 Revision 8 self-check: every new C rule (C-71 to C-79) is cited by at least
 one P row (P-45 to P-53). No revision 7 rule text changed except the header,
-decision list, C-44, C-62, and the bounded C-64/C-65/P-34/P-35 edits above.
+decision list, C-44, C-62, the optional-flags validation extension of C-63,
+and the bounded C-64/C-65/P-34/P-35 edits above. C-17 and C-67 remain
+byte-identical to revision 7; the later planner amendment on #2147 does not
+relax either rule.
 Compare those preserved rules and proof rows with the base byte for byte;
 the existing P-34/P-35 mutation cells remain unchanged. Delete P-46: the
 Covers-cell check must report C-72 as unproven, then restore P-46. The new
@@ -2264,19 +2334,24 @@ that builders follow until the owner decides otherwise.
 
 ### Revision 8 decision record (all DECIDED)
 
-ANS 2147-1 on #2147 settles these five items; none waits for another owner
-answer before unit H is built. Their proposed defaults are now the decisions:
+ANS 2147-1 and the later planner amendment on #2147 settle these five
+items. The later amendment controls joint eligibility and defers server
+bootstrap; none is an open question before unit H is built:
 
 11. **DECIDED — persistence after grant:** memory only, nothing in
     `localStorage`; withdrawal clears flag state (C-77). Neither durable
     local assignment nor cross-load stability is promised.
 12. **DECIDED — refused or undecided visitor:** show the host's declared
     control value, including while loading or unavailable (C-72, C-79).
-13. **DECIDED — exposure:** send only while the separately named experiments
-    purpose is granted, under the closed C-75 event/property allowlist.
-14. **DECIDED — server bootstrap:** the host may supply values only for a
-    visitor with an already-established experiments grant; before that,
-    control and no cached bootstrap (C-78, H-12).
+13. **DECIDED — exposure:** send only on the already initialized transport
+    instance with its capture gate open and the separately named experiments
+    purpose granted, under the closed C-75 event/property allowlist.
+14. **DECIDED — server bootstrap deferred:** the later planner amendment
+    defers the earlier grant-only bootstrap allowance. This revision is
+    client-only, accepts no bootstrap and renders server HTML/hydration as
+    control regardless of stored choices or grants (decision 5, C-78, H-12).
 15. **DECIDED — purpose:** flags follow a separate host-named experiments
-    purpose, not the analytics grant (#1987, C-71, C-72). Surveys and no-code
-    web experiments remain forced off (C-76).
+    purpose (#1987, C-71, C-72); analytics alone never grants it. Both the
+    transport's open analytics capture gate and this additional experiments
+    grant are required; experiments alone has no load path. Surveys and
+    no-code web experiments remain forced off (C-76).
