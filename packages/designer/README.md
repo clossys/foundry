@@ -4801,8 +4801,10 @@ import { NavDisclosure, SiteHeader } from "@clossys/designer/shell";
 />
 ```
 
-`NavDisclosure` and `NavDisclosureProps` are exported from the root and
-`@clossys/designer/shell` client entries, outside `shell/server`.
+`NavDisclosure` and `NavDisclosureProps` are exported from the public
+`@clossys/designer/shell` client entry, outside `shell/server`. The package
+declares no root (`"."`) export; `src/index.ts` re-exports them only for
+internal tooling and is not an import path.
 The props are `children` (required), `aria-label` (default `"Primary"`),
 `triggerLabel` (default `"Menu"`) and `className` on the landmark.
 

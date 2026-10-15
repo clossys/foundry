@@ -1,8 +1,9 @@
 import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
-const styles = join(import.meta.dirname, "..", "styles");
+const styles = join(dirname(fileURLToPath(import.meta.url)), "..", "styles");
 const css = readFileSync(join(styles, "theme-keys.css"), "utf8");
 
 function block(text: string, opening: string): string {
