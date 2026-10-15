@@ -335,10 +335,11 @@ or throwing storage reads as `unavailable` rather than throwing.
 import { createLocalStorageConsentPort } from "@clossys/butler/browser-consent/local-storage";
 ```
 
-`createLocalStorageConsentPort({ key, storage? })` returns a
-`ConsentStoragePort` that stores the current record shape under the key the
-host chooses. `storage` defaults to reading `globalThis.localStorage` at each
-call.
+`createLocalStorageConsentPort(options: LocalStorageConsentPortOptions)` returns
+a `ConsentStoragePort` that stores the current record shape under the `key` the
+host chooses. The optional `storage` option has type `() => Storage | undefined`;
+the adapter reads it at each call. When omitted, it reads
+`globalThis.localStorage` at each call.
 
 ## Requirements
 
