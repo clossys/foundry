@@ -61,6 +61,8 @@ export type { SiteChromeGround } from "../internal/viewChromeGround.js";
 
 /** The footer: optional headed columns, ungrouped links and social profiles, then the legal row. */
 export interface SiteFooterInput {
+  /** Defaults to the shell ground, independently of the header ground. */
+  readonly ground?: SiteChromeGround;
   readonly columns?: readonly { readonly heading: CopyRef; readonly links: readonly SiteLinkInput[] }[];
   readonly links?: readonly SiteLinkInput[];
   readonly social?: { readonly label?: CopyRef; readonly links: readonly SiteIconLinkInput[] };
@@ -81,7 +83,12 @@ export interface SiteShellInput {
   /** The skip link's words. Its target is always {@link SITE_MAIN_ID}. */
   readonly skipLink: CopyRef;
   /** Primary navigation in the banner, in a `<nav>` named by `label`. */
-  readonly nav?: { readonly label: CopyRef; readonly links: readonly SiteLinkInput[] };
+  readonly nav?: {
+    readonly label: CopyRef;
+    /** The disclosure toggle copy; defaults to the resolved navigation label. */
+    readonly triggerLabel?: CopyRef;
+    readonly links: readonly SiteLinkInput[];
+  };
   /** Calls to action at the trailing end of the banner. */
   readonly actions?: readonly SiteLinkInput[];
   /** Icon-only links after text actions and before environments. */
