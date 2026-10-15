@@ -10,6 +10,17 @@ import { SiteHeader as ServerSiteHeader } from "./server.js";
 import { CONTRAST_PAIRS } from "../tokens/contrast-pairs.js";
 
 describe("SiteHeader", () => {
+  it("preserves the main branch's flow markup with a plain nav and icon action", () => {
+    const html = renderToStaticMarkup(
+      <SiteHeader
+        brand={<a href="/">Example</a>}
+        nav={<nav aria-label="Primary"><a href="/about">About</a></nav>}
+        actions={<SiteHeader.ActionLink href="/app" label="App" icon={Home} />}
+      />,
+    );
+    expect(html).toBe('<header class="bg-surface-raised py-sm border-b border-line-base" style="position:relative;z-index:var(--ui-z-shell, 20);border-bottom-width:var(--ui-border-hairline, 1px)"><div class="mx-auto flex w-full flex-wrap items-center justify-between gap-md" style="padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))"><div class="flex items-center gap-lg"><a href="/">Example</a><nav aria-label="Primary"><a href="/about">About</a></nav></div><div class="flex items-center gap-sm"><a href="/app" class="inline-flex items-center justify-center gap-sm rounded-control font-body transition-colors motion-reduce:transition-none px-sm py-xs text-body-s bg-surface-raised text-ink-primary border border-line-base hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent" style="min-height:var(--ui-layout-tap-target, 44px);min-width:var(--ui-layout-tap-target, 44px)"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="width:var(--ui-icon-sm, var(--spacing-lg, 16px));height:var(--ui-icon-sm, var(--spacing-lg, 16px));flex-shrink:0;stroke-width:var(--ui-icon-stroke, 2)" aria-hidden="true"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"></path><path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg><span class="sr-only tablet:not-sr-only">App</span></a></div></div></header>');
+  });
+
   it("renders the brand, nav, and actions slots", () => {
     render(
       <SiteHeader
@@ -229,6 +240,19 @@ describe("SiteHeader", () => {
   });
 
   describe("SiteHeader.ActionLink", () => {
+    it("without an icon shows its label at every width and keeps the tap target", () => {
+      render(<SiteHeader.ActionLink href="/start" label="Get started" variant="primary" />);
+      const link = screen.getByRole("link", { name: "Get started" });
+      expect(link.textContent).toBe("Get started");
+      expect(link.querySelector("svg")).toBeNull();
+      expect(link.querySelector(".sr-only")).toBeNull();
+      expect(link.childNodes).toHaveLength(1);
+      expect(link.firstChild?.nodeType).toBe(Node.TEXT_NODE);
+      expect(link.className).toContain("bg-accent");
+      expect(link.style.minHeight).toBe("var(--ui-layout-tap-target, 44px)");
+      expect(link.style.minWidth).toBe("var(--ui-layout-tap-target, 44px)");
+    });
+
     function renderEnvironments(current: "app" | "admin" | null = "admin") {
       return render(
         <SiteHeader

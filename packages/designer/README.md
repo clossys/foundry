@@ -4540,7 +4540,7 @@ site to site, which is what makes it worth shipping as a real component
 rather than always-bespoke consumer code — see `SiteHeader`'s own doc
 comment for the placement reasoning in full.
 
-### Site chrome: `SkipLink`, `SiteHeader`, `NavShell`, `SiteFooter`
+### Site chrome: `SkipLink`, `SiteHeader`, `NavDisclosure`, `NavShell`, `SiteFooter`
 
 `Shell` above is the app-shell frame — five slots, arbitrary consumer
 content in each, built for the header/side-nav/rail/footer shape an
@@ -4659,7 +4659,8 @@ host omits it.
 
 `surfaceLabel` is superseded by environment links and stays for existing
 callers. `SiteHeader.ActionLink` is one header call to action: a real
-`<a>` with a caller-supplied `IconNode` glyph and a `label`. From the
+`<a>` with a `label` and an optional caller-supplied `IconNode` glyph. Without
+an icon, the label is plain visible text at every width. With an icon, from the
 `tablet` breakpoint up it shows the icon and the label; below it the label is
 visually hidden and stays the link's accessible name, so the icon-only link
 still announces its label. `isCurrent` sets `aria-current="true"` and adds
@@ -4772,7 +4773,42 @@ flow). That asks this of the page:
 />
 ```
 
-`NavShell` is the responsive half: an ordinary inline `<nav>` from the
+`NavDisclosure` is the non-modal navigation for `SiteHeader`'s `nav` slot.
+It renders one navigation landmark and one set of links: below `tablet`
+(`48rem`) a Menu button opens a sheet directly under the header; from
+`tablet` up the same panel is an inline row and the button hides. The
+server-rendered state is collapsed. With scripting unavailable, CSS shows
+the panel inline and hides the button at every width. The toggle keeps
+focus when activated; Escape while open closes the sheet and returns focus
+to the toggle, and activating an `a[href]` within the panel closes it.
+There is no focus trap or portal, and the disclosure has no animation.
+`SiteHeader` supplies the positioned containing block for the mobile sheet.
+Use `NavShell` when the menu needs a modal drawer and managed focus instead;
+its drawer requires JavaScript.
+
+```tsx
+import { NavDisclosure, SiteHeader } from "@clossys/designer/shell";
+
+<SiteHeader
+  brand={<a href="/">Example</a>}
+  nav={
+    <NavDisclosure aria-label="Primary" triggerLabel="Menu">
+      <a href="/about">About</a>
+      <a href="/contact">Contact</a>
+    </NavDisclosure>
+  }
+  actions={<SiteHeader.ActionLink href="/start" label="Get started" variant="primary" />}
+/>
+```
+
+`NavDisclosure` and `NavDisclosureProps` are exported from the public
+`@clossys/designer/shell` client entry, outside `shell/server`. The package
+declares no root (`"."`) export; `src/index.ts` re-exports them only for
+internal tooling and is not an import path.
+The props are `children` (required), `aria-label` (default `"Primary"`),
+`triggerLabel` (default `"Menu"`) and `className` on the landmark.
+
+`NavShell` is the modal responsive half: an ordinary inline `<nav>` from the
 `tablet` breakpoint up, and a trigger-plus-drawer below it — CSS-only
 breakpoint switching, no JS media-query state, so the correct layout is
 already there on first paint before hydration ever runs. The drawer is
@@ -5909,6 +5945,8 @@ not a grab-bag).
 | `SiteHeader` | component | Public-site top chrome: brand slot, primary navigation slot (leading or centered), secondary action slot, actions slot. Renders the page's `banner` landmark. |
 | `SiteHeaderProps` | type | Props for `SiteHeader`: `brand` (required), `nav`, `navPlacement` (`"leading"` default, or `"centered"`), `secondaryAction`, `actions`, `surfaceLabel` (text-only badge, last in the trailing region), plus every native `<header>` attribute. |
 | `NavShell` | component | The responsive half of a public site's navigation: an inline `<nav>` from `tablet` up, a trigger-plus-drawer below it. |
+| `NavDisclosure` | component | A non-modal navigation: a mobile sheet below `tablet`, an inline row from `tablet` up, and inline links when scripting is unavailable. |
+| `NavDisclosureProps` | type | Props for `NavDisclosure`: required `children`, `aria-label` (default `"Primary"`), `triggerLabel` (default `"Menu"`), and landmark `className`. |
 | `NavShellProps` | type | Props for `NavShell`: `children` (the nav links, rendered in both the desktop row and the drawer), `aria-label` (default `"Primary"`), `triggerLabel` (default `"Menu"`), `closeLabel` (default `"Close menu"`), `className`, plus most of react-aria-components' own `DialogTrigger` props (`isOpen`, `defaultOpen`, `onOpenChange`). |
 | `SiteFooter` | component | Public-site bottom chrome: grouped link columns, a secondary/legal row. Carries `SiteFooter.Column` and `SiteFooter.Legal`. Renders the page's `contentinfo` landmark. |
 | `SiteFooterProps` | type | Props for `SiteFooter`: `columns`, `secondary`, plus every native `<footer>` attribute. |
