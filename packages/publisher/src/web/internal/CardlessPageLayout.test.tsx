@@ -163,8 +163,8 @@ describe("card-free layout: header, action and notes", () => {
     it("refuses a landmark role or the frame's main id on its content root", () => {
       const element = fixture.build();
       const View = element.type as (props: object) => ReactElement;
-      expect(() => render(<View {...(element.props as object)} role="main" />)).toThrow(new RegExp(`${fixture.name}: the content root`));
-      expect(() => render(<View {...(element.props as object)} id={SITE_MAIN_ID} />)).toThrow(new RegExp(`${fixture.name}: the content root`));
+      expect(() => render(<View {...(element.props as object)} role="main" />)).toThrow(`${fixture.name}: the content root`);
+      expect(() => render(<View {...(element.props as object)} id={SITE_MAIN_ID} />)).toThrow(`${fixture.name}: the content root`);
     });
   });
 

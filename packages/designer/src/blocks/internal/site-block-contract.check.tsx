@@ -3,6 +3,8 @@
  * vocabularies. This is a `*.check.tsx` rather than a test because Vitest
  * transpiles test sources without checking `@ts-expect-error` assertions.
  */
+import { ContentSection } from "../ContentSection.js";
+import { Specimen } from "../specimen/Specimen.js";
 import { Faq } from "../Faq.js";
 import { FeatureGrid } from "../FeatureGrid.js";
 import { Hero } from "../Hero.js";
@@ -136,6 +138,12 @@ export const incompleteStatusLabels = (
 import { AnatomyCallouts } from "../AnatomyCallouts.js";
 import type { SpecimenPanelContent } from "../specimen/SpecimenPanel.js";
 const anatomyPanel: SpecimenPanelContent = { parts: [{ id: "result", type: "fields", label: "Result", items: [{ id: "latest", label: "Latest result", value: "3.00x" }] }] };
+
+// @ts-expect-error The supported split alias requires media.
+export const missingSplitMedia = <ContentSection layout="split" heading="Heading" />;
+// @ts-expect-error Specimen requires its accessible-name label.
+export const missingSpecimenLabel = <Specimen panels={[{ id: "panel", ...anatomyPanel }]} />;
+
 export const validAnatomy = <AnatomyCallouts id="sample-record" label="Sample exception record." panel={anatomyPanel} markers={[]} keyLabel={<em>Key</em>} headingLevel={4} ground="inverse" legendSide="below" />;
 // @ts-expect-error — Anatomy ids belong to the caller, never a hook or global counter.
 export const missingAnatomyId = <AnatomyCallouts label="Sample exception record." panel={anatomyPanel} markers={[]} keyLabel="Key" />;
@@ -169,3 +177,42 @@ export const validCompactHero = <Hero heading="Hero" size="compact" />;
 export const validDefaultHero = <Hero heading="Hero" size="default" />;
 // @ts-expect-error — hero sizing has two closed choices.
 export const invalidHeroSize = <Hero heading="Hero" size="small" />;
+
+
+// Existing public interfaces carry history, row caps and badges through both barrels.
+import { Meter as HistoryMeter, type MeterProps as HistoryMeterProps } from "../../atoms/server.js";
+import type { SpecimenStatusRowsPart as HistoryStatusRowsPart, SpecimenMeterPart as HistoryMeterPart } from "../server.js";
+import type { SpecimenPanelContent as BadgedPanelContent } from "../index.js";
+
+const meterHistoryProps: HistoryMeterProps = { value: 1, scaleMax: 2, tone: "neutral", valueText: "Now 1", previous: 0, previousText: "Previously 0" };
+export const validMeterHistory = <HistoryMeter {...meterHistoryProps} />;
+export const validMeterWithoutHistory = <HistoryMeter value={1} scaleMax={2} tone="neutral" valueText="Now 1" />;
+// @ts-expect-error Previous measurement is numeric.
+export const invalidMeterPrevious = <HistoryMeter {...meterHistoryProps} previous="0" />;
+// @ts-expect-error Visible history is authored text.
+export const invalidMeterPreviousText = <HistoryMeter {...meterHistoryProps} previousText={0} />;
+
+export const cappedStatusRows: HistoryStatusRowsPart = { id: "checks", type: "status-rows", mobileRows: 3, items: [{ id: "one", label: "First", status: { tone: "info", label: "Open" } }] };
+// @ts-expect-error The mobile cap is the closed value 3.
+export const invalidStatusRowCap: HistoryStatusRowsPart = { ...cappedStatusRows, mobileRows: 2 };
+export const meterHistoryPart: HistoryMeterPart = { id: "quantity", type: "meter", label: "Quantity", ...meterHistoryProps, tone: "neutral" };
+// @ts-expect-error Specimen history follows the same numeric measurement contract.
+export const invalidPartPrevious: HistoryMeterPart = { ...meterHistoryPart, previous: "0" };
+// @ts-expect-error Resolved history is visible text rather than a numeric value.
+export const invalidPartPreviousText: HistoryMeterPart = { ...meterHistoryPart, previousText: 0 };
+export const badgedPanelContent: BadgedPanelContent = { parts: [cappedStatusRows], badge: { label: "Reviewed", tone: "success" } };
+export const defaultPanelBadge: BadgedPanelContent = { parts: [cappedStatusRows], badge: { label: "Reviewed" } };
+// @ts-expect-error Panel badges use the existing five Badge tones.
+export const invalidPanelBadgeTone: BadgedPanelContent = { ...badgedPanelContent, badge: { label: "Reviewed", tone: "accent" } };
+
+// Canonical split layouts allow header-only bands; the supported alias needs media.
+void <ContentSection layout="split-start" heading="Heading" />;
+void <ContentSection layout="split-end" heading="Heading" />;
+void <ContentSection layout="split" heading="Heading" media={<p>Visual</p>} />;
+// @ts-expect-error The supported split alias requires media.
+void <ContentSection layout="split" heading="Heading" />;
+
+const namedSpecimenPanel = { id: "sample", ...anatomyPanel };
+void <Specimen label="Sample record" panels={[namedSpecimenPanel]} />;
+// @ts-expect-error Every Specimen requires its accessible figure label.
+void <Specimen panels={[namedSpecimenPanel]} />;

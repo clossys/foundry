@@ -1,10 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import type { ReactElement } from "react";
-import { CardGrid } from "./CardGrid.js";
-import { FeatureGrid } from "./FeatureGrid.js";
-import { OrderedStepSequence } from "./OrderedStepSequence.js";
-import { TopicList } from "./TopicList.js";
+import { Items } from "./items/Items.js";
 import { assertNoNestedInteractive, cardLinkContainerClassName } from "./stretched-link.js";
 
 const TITLES = ["Ownership records", "Signed agreements", "Insurance"] as const;
@@ -14,36 +11,36 @@ const features = (treatment: "plain" | "rule" | "plate", linked = true) =>
   TITLES.map((heading, index) => ({ id: `f${index}`, heading, description: "One line of supporting copy.", ...(linked ? { href: HREFS[index] } : {}) }));
 
 /** Every linked block, rendered on each ground, with the container class it must carry. */
-const LINKED_BLOCKS: ReadonlyArray<{ name: string; frame: "plate" | "plain" | "rule" | "topic"; render: (ground: "base" | "sunken" | "inverse") => ReactElement }> = [
-  { name: "FeatureGrid plate", frame: "plate", render: (ground) => <FeatureGrid ground={ground} columns={3} treatment="plate" items={features("plate")} /> },
-  { name: "FeatureGrid plain", frame: "plain", render: (ground) => <FeatureGrid ground={ground} columns={3} treatment="plain" items={features("plain")} /> },
-  { name: "FeatureGrid rule", frame: "rule", render: (ground) => <FeatureGrid ground={ground} columns={3} treatment="rule" items={features("rule")} /> },
+const LINKED_BLOCKS: ReadonlyArray<{ name: string; frame: "plate" | "plain" | "rule"; render: (ground: "base" | "sunken" | "inverse") => ReactElement }> = [
+  { name: "Items plate", frame: "plate", render: (ground) => <Items arrangement="columns" ground={ground} columns={3} treatment="plate" items={features("plate")} /> },
+  { name: "Items plain", frame: "plain", render: (ground) => <Items arrangement="columns" ground={ground} columns={3} treatment="plain" items={features("plain")} /> },
+  { name: "Items rule", frame: "rule", render: (ground) => <Items arrangement="columns" ground={ground} columns={3} treatment="rule" items={features("rule")} /> },
   {
-    name: "CardGrid",
+    name: "Items bento",
     frame: "plate",
     render: (ground) => (
-      <CardGrid
+      <Items arrangement="bento" treatment="plate"
         ground={ground}
         items={TITLES.map((heading, index) => ({ id: `c${index}`, heading, description: "One line.", span: "third" as const, href: HREFS[index], visual: <figure aria-label="A record">Static</figure> }))}
       />
     ),
   },
   {
-    name: "TopicList",
-    frame: "topic",
-    render: (ground) => <TopicList ground={ground} columns={1} items={TITLES.map((heading, index) => ({ id: `t${index}`, heading, description: "One line.", href: HREFS[index] }))} />,
+    name: "Items rows",
+    frame: "rule",
+    render: (ground) => <Items arrangement="rows" treatment="rule" ground={ground} columns={1} items={TITLES.map((heading, index) => ({ id: `t${index}`, heading, description: "One line.", href: HREFS[index] }))} />,
   },
   {
-    name: "OrderedStepSequence",
+    name: "Items connected",
     frame: "plain",
-    render: (ground) => <OrderedStepSequence ground={ground} items={TITLES.map((heading, index) => ({ id: `s${index}`, ordinal: `0${index + 1}`, heading, description: "One line.", href: HREFS[index] }))} />,
+    render: (ground) => <Items arrangement="stacked" order="connected" ground={ground} items={TITLES.map((heading, index) => ({ id: `s${index}`, ordinal: `0${index + 1}`, heading, description: "One line.", href: HREFS[index] }))} />,
   },
 ];
 
 describe("linked items (stretched link)", () => {
   for (const frame of ["plain", "rule"] as const) {
     it(`${frame} frames use the smaller outset below tablet for both the hit area and hover plate`, () => {
-      const { container } = render(<FeatureGrid columns={3} treatment={frame} items={features(frame)} />);
+      const { container } = render(<Items arrangement="columns" columns={3} treatment={frame} items={features(frame)} />);
       for (const link of container.querySelectorAll("a")) {
         expect(link).toHaveClass("after:-inset-x-sm", "tablet:after:-inset-x-md");
         expect(link).not.toHaveClass("after:-inset-x-md");
@@ -95,10 +92,10 @@ describe("linked items (stretched link)", () => {
     }
   }
 
-  it("gives bare items (plain, rule, topic, step) a hover plate in the band's other ground, and plates none", () => {
+  it("gives bare items (plain, rule, connected) a hover plate in the band's other ground, and plates none", () => {
     expect(cardLinkContainerClassName("plain", "base")).toContain("hover:before:bg-surface-sunken");
     expect(cardLinkContainerClassName("rule", "sunken")).toContain("hover:before:bg-surface-raised");
-    expect(cardLinkContainerClassName("topic", "inverse")).toContain("has-focus-visible:before:bg-surface-inverse-raised");
+    expect(cardLinkContainerClassName("rule", "inverse")).toContain("has-focus-visible:before:bg-surface-inverse-raised");
     expect(cardLinkContainerClassName("plate", "base")).toBe("relative isolate");
     expect(cardLinkContainerClassName("control", "base")).toBe("relative isolate");
   });
@@ -106,8 +103,8 @@ describe("linked items (stretched link)", () => {
   it("renders no anchor, chevron or link container for unlinked items", () => {
     const { container } = render(
       <>
-        <FeatureGrid columns={3} treatment="plain" items={features("plain", false)} />
-        <TopicList items={TITLES.slice(0, 2).map((heading, index) => ({ id: `t${index}`, heading }))} />
+        <Items arrangement="columns" columns={3} treatment="plain" items={features("plain", false)} />
+        <Items arrangement="rows" treatment="rule" items={TITLES.slice(0, 2).map((heading, index) => ({ id: `t${index}`, heading }))} />
       </>,
     );
     expect(container.querySelector("a")).toBeNull();
@@ -116,7 +113,7 @@ describe("linked items (stretched link)", () => {
   });
 
   it("keeps the card grid heading a real heading whose link carries the title", () => {
-    render(<CardGrid items={TITLES.slice(0, 2).map((heading, index) => ({ id: `c${index}`, heading, span: "half" as const, href: HREFS[index] }))} />);
+    render(<Items arrangement="bento" treatment="plate" items={TITLES.slice(0, 2).map((heading, index) => ({ id: `c${index}`, heading, span: "half" as const, href: HREFS[index] }))} />);
     const heading = screen.getByRole("heading", { name: TITLES[0] });
     expect(heading.tagName).toBe("H3");
     expect(within(heading).getByRole("link", { name: TITLES[0] })).toBeInTheDocument();
@@ -125,26 +122,26 @@ describe("linked items (stretched link)", () => {
   });
 
   it("keeps the display scale on an unlinked card heading", () => {
-    render(<CardGrid items={TITLES.slice(0, 2).map((heading, index) => ({ id: `c${index}`, heading, span: "half" as const }))} />);
+    render(<Items arrangement="bento" treatment="plate" items={TITLES.slice(0, 2).map((heading, index) => ({ id: `c${index}`, heading, span: "half" as const }))} />);
     expect(screen.getByRole("heading", { name: TITLES[0] })).not.toHaveClass("transform-none");
   });
 
   it("throws a TypeError when a linked item holds another link, button or field", () => {
     const nested = <span>Read <a href="/more">more</a></span>;
-    expect(() => render(<FeatureGrid columns={2} treatment="plate" items={[{ id: "a", heading: "A", description: nested, href: "/a" }, { id: "b", heading: "B", href: "/b" }]} />)).toThrow(TypeError);
+    expect(() => render(<Items arrangement="columns" columns={2} treatment="plate" items={[{ id: "a", heading: "A", description: nested, href: "/a" }, { id: "b", heading: "B", href: "/b" }]} />)).toThrow(TypeError);
     expect(() =>
-      render(<CardGrid items={[{ id: "a", heading: "A", span: "half", href: "/a", visual: <div><button type="button">Open</button></div> }, { id: "b", heading: "B", span: "half", href: "/b" }]} />),
+      render(<Items arrangement="bento" treatment="plate" items={[{ id: "a", heading: "A", span: "half", href: "/a", visual: <div><button type="button">Open</button></div> }, { id: "b", heading: "B", span: "half", href: "/b" }]} />),
     ).toThrow(TypeError);
-    expect(() => render(<TopicList items={[{ id: "a", heading: "A", description: <input aria-label="x" />, href: "/a" }, { id: "b", heading: "B", href: "/b" }]} />)).toThrow(TypeError);
+    expect(() => render(<Items arrangement="rows" treatment="rule" items={[{ id: "a", heading: "A", description: <input aria-label="x" />, href: "/a" }, { id: "b", heading: "B", href: "/b" }]} />)).toThrow(TypeError);
     expect(() =>
-      render(<OrderedStepSequence items={[{ id: "a", ordinal: 1, heading: "A", visual: <span onClick={() => undefined}>x</span>, href: "/a" }, { id: "b", ordinal: 2, heading: "B", href: "/b" }, { id: "c", ordinal: 3, heading: "C", href: "/c" }]} />),
+      render(<Items arrangement="stacked" order="connected" items={[{ id: "a", ordinal: 1, heading: "A", visual: <span onClick={() => undefined}>x</span>, href: "/a" }, { id: "b", ordinal: 2, heading: "B", href: "/b" }, { id: "c", ordinal: 3, heading: "C", href: "/c" }]} />),
     ).toThrow(TypeError);
     // The same content is fine on an unlinked item.
-    expect(() => render(<TopicList items={[{ id: "a", heading: "A", description: nested }, { id: "b", heading: "B" }]} />)).not.toThrow();
+    expect(() => render(<Items arrangement="rows" treatment="rule" items={[{ id: "a", heading: "A", description: nested }, { id: "b", heading: "B" }]} />)).not.toThrow();
     expect(() => assertNoNestedInteractive("Block", "a", ["Plain", <strong key="s">bold</strong>])).not.toThrow();
   });
 
   it("refuses href on statement feature items: headlines, not destinations", () => {
-    expect(() => render(<FeatureGrid emphasis="statement" items={features("plain")} />)).toThrow(TypeError);
+    expect(() => render(<Items arrangement="columns" scale="statement" items={features("plain")} />)).toThrow(TypeError);
   });
 });

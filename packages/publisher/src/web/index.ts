@@ -14,6 +14,7 @@ export { buildWebHeadMetadata } from "./headMetadata.js";
 export { SiteMetadataError, buildSiteMetadata, formatPageTitle } from "./siteMetadata.js";
 export type {
   SiteIdentityInput,
+  SiteIndexing,
   SiteLegalStatus,
   SiteMetadata,
   SiteMetadataErrorReason,
@@ -65,7 +66,7 @@ export type {
 } from "./types.js";
 
 export { LegalView } from "./views/index.js";
-export type { LegalViewLabels, LegalViewProps } from "./views/index.js";
+export type { LegalViewFramedLabels, LegalViewLabels, LegalViewProps } from "./views/index.js";
 
 // The contact handler is server-only: import it from server code, never a client bundle.
 export {
@@ -98,7 +99,7 @@ export type {
 } from "./contact/index.js";
 
 export { HeroView, LandingView } from "./views/index.js";
-export type { HeroViewFooter, HeroViewGround, HeroViewProps, LandingViewCallToAction, LandingViewHeader, LandingViewProps } from "./views/index.js";
+export type { HeroViewFooter, HeroViewGround, HeroViewProps, LandingViewAction, LandingViewCallToAction, LandingViewHeader, LandingViewProps } from "./views/index.js";
 export { LANDING_VIEW_CALL_TO_ACTION_GROUND, LANDING_VIEW_CLOSING_GROUND, planLandingViewGrounds } from "./views/index.js";
 export type { LandingViewBandGround, LandingViewBandRole, LandingViewGroundPlan, LandingViewGroundRepeat } from "./views/index.js";
 export { ContactView } from "./views/index.js";
@@ -120,6 +121,7 @@ export type {
   SiteFrameConfig,
   SiteFrameInput,
   SiteFrameProps,
+  SiteIconLinkInput,
   SiteLinkInput,
   SitePageLayer,
   SiteShellInput,
@@ -147,3 +149,12 @@ export type {
 } from "./shareCard.js";
 export { createShareCardRoute } from "./shareCardRoute.js";
 export type { ShareCardRoute, ShareCardRouteInput } from "./shareCardRoute.js";
+
+export { ConsumerArtSlot } from "./ConsumerArtSlot.js";
+export type { ConsumerArtSlotProps } from "./ConsumerArtSlot.js";
+
+export { constructionStatusProps } from "./views/index.js";
+export type { ConstructionStatusInput } from "./views/index.js";
+
+export { ContactForm } from "./views/ContactForm.js";
+export type { ContactFormCopy, ContactFormDevPreview, ContactFormProps, ContactFormTopic, ContactFormValues } from "./views/ContactForm.js";

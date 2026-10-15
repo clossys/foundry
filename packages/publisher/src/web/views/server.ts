@@ -35,10 +35,10 @@ export type { PackReviewViewBrandKit, PackReviewViewExport, PackReviewViewFact, 
 export type { SectionedViewLandmark, SectionedViewProps } from "./SectionedView.js";
 
 export { LegalView } from "./LegalView.js";
-export type { LegalViewLabels, LegalViewProps } from "./LegalView.js";
+export type { LegalViewFramedLabels, LegalViewLabels, LegalViewProps } from "./LegalView.js";
 export { HeroView } from "./HeroView.js";
 export type { HeroViewFooter, HeroViewGround, HeroViewProps } from "./HeroView.js";
-export { LandingView } from "./LandingView.js";
+export { LandingView } from "./LandingView.server.js";
 export type { LandingViewCallToAction, LandingViewHeader, LandingViewProps } from "./LandingView.js";
 export { LANDING_VIEW_CALL_TO_ACTION_GROUND, LANDING_VIEW_CLOSING_GROUND, planLandingViewGrounds } from "./landingViewGrounds.js";
 export type { LandingViewBandGround, LandingViewBandRole, LandingViewGroundPlan, LandingViewGroundRepeat } from "./landingViewGrounds.js";
@@ -54,3 +54,9 @@ export { ResetForm } from "./ResetForm.server.js";
 export type { ResetDetails, ResetFailure, ResetFormProps, ResetResult } from "./ResetForm.js";
 
 export type { LandingViewAction } from "./SectionedViewActions.js";
+
+export { constructionStatusProps } from "./constructionStatus.js";
+export type { ConstructionStatusInput } from "./constructionStatus.js";
+
+export { ContactForm } from "./ContactForm.server.js";
+export type { ContactFormCopy, ContactFormDevPreview, ContactFormProps, ContactFormTopic, ContactFormValues } from "./ContactForm.js";

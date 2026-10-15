@@ -14,11 +14,15 @@
  *
  * ROBOTS. `notFound` and `construction` (a linked page that is not built
  * yet) are `noindex, nofollow`. `legal` is `noindex, nofollow`
- * until the page's `status` is `"counsel-reviewed"`; a legal page with no
- * `status` is treated as a draft. `home`, `contact` and `custom` are
- * `index, follow`. This module only maps the `status` it is given to a
- * robots value; it does not decide, verify, or store whether counsel
- * reviewed anything.
+ * until the page says otherwise: an explicit `indexing` (`"index"` or
+ * `"noindex"`) decides the robots value by itself and asserts nothing about
+ * review, and with no `indexing` the page is indexable only when its `status`
+ * is `"counsel-reviewed"` (a legal page with no `status` is treated as a
+ * draft). `indexing: "index"` on a page whose `status` is `"draft"` is refused
+ * (`invalid-indexing`): a page that says it is a draft cannot also ask to be
+ * indexed. `"noindex"` on a draft, and `"index"` with no `status`, are fine. `home`, `contact` and `custom` are `index, follow`. This module only
+ * maps the `indexing` and `status` it is given to a robots value; it does not
+ * decide, verify, or store whether counsel reviewed anything.
  *
  * FAIL CLOSED, NEVER GUESS. Every input problem throws a
  * `SiteMetadataError` carrying a closed `reason`; nothing is repaired or
@@ -48,6 +52,9 @@ export type SitePageKind = "home" | "contact" | "legal" | "notFound" | "construc
 /** Whether a legal page's text has been through counsel review. Only meaningful for `kind: "legal"`. */
 export type SiteLegalStatus = "draft" | "counsel-reviewed";
 
+/** Whether search engines may index a legal page, stated directly and with no review claim. Only meaningful for `kind: "legal"`. */
+export type SiteIndexing = "index" | "noindex";
+
 export interface SiteShareCard {
   /** An absolute `http(s)` URL exactly as `new URL(url).href` serialises it, or a root-relative path starting with a single `/` (resolved against the site origin). */
   url: string;
@@ -75,8 +82,16 @@ export interface SitePageInput {
   description: string;
   /** Starts with a single `/`; no `?`, `#`, whitespace, `.` or `..` segment, or empty segment except a trailing slash; already in `new URL` normal form. */
   path: string;
-  /** Allowed only on `kind: "legal"`; a missing status there is a draft. */
+  /** Allowed only on `kind: "legal"`; a missing status there is a draft. With no `indexing`, only `"counsel-reviewed"` is indexable. */
   status?: SiteLegalStatus;
+  /**
+   * Allowed only on `kind: "legal"`. An explicit indexing choice for the page:
+   * `"index"` yields `index, follow` and `"noindex"` yields `noindex, nofollow`,
+   * whatever `status` is, except that `"index"` with `status: "draft"` is
+   * refused. It makes no claim about counsel review; leave it out to keep the
+   * `status` rule.
+   */
+  indexing?: SiteIndexing;
 }
 
 export interface SiteOpenGraphMetadata {
@@ -117,7 +132,8 @@ export type SiteMetadataErrorReason =
   | "invalid-share-card"
   | "share-card-size"
   | "invalid-kind"
-  | "invalid-status";
+  | "invalid-status"
+  | "invalid-indexing";
 
 export class SiteMetadataError extends Error {
   readonly reason: SiteMetadataErrorReason;
@@ -243,6 +259,17 @@ function requireStatus(kind: SitePageKind, value: unknown): SiteLegalStatus | un
   return value;
 }
 
+function requireIndexing(kind: SitePageKind, value: unknown): SiteIndexing | undefined {
+  if (value === undefined) return undefined;
+  if (kind !== "legal") {
+    throw new SiteMetadataError("invalid-indexing", `page.indexing is only allowed on a legal page, not on "${kind}".`);
+  }
+  if (value !== "index" && value !== "noindex") {
+    throw new SiteMetadataError("invalid-indexing", 'page.indexing must be "index" or "noindex".');
+  }
+  return value;
+}
+
 /** Resolves a share card url to an absolute one: an absolute http(s) url as given, or a root-relative path joined to the origin. */
 function resolveShareCardUrl(value: unknown, origin: string): string {
   const refuse = (): never => {
@@ -293,9 +320,12 @@ function requireShareCard(value: unknown, origin: string): SiteShareCard {
   return { url, alt, width: widthPx, height: heightPx };
 }
 
-function robotsFor(kind: SitePageKind, status: SiteLegalStatus | undefined): string {
+function robotsFor(kind: SitePageKind, status: SiteLegalStatus | undefined, indexing: SiteIndexing | undefined): string {
   if (kind === "notFound" || kind === "construction") return NOINDEX;
-  if (kind === "legal") return status === "counsel-reviewed" ? INDEX : NOINDEX;
+  if (kind === "legal") {
+    if (indexing !== undefined) return indexing === "index" ? INDEX : NOINDEX;
+    return status === "counsel-reviewed" ? INDEX : NOINDEX;
+  }
   return INDEX;
 }
 
@@ -316,6 +346,10 @@ export function buildSiteMetadata(input: { site: SiteIdentityInput; page: SitePa
   const kind = requireKind(page["kind"]);
   const path = requirePath(page["path"], origin);
   const status = requireStatus(kind, page["status"]);
+  const indexing = requireIndexing(kind, page["indexing"]);
+  if (status === "draft" && indexing === "index") {
+    throw new SiteMetadataError("invalid-indexing", 'page.indexing "index" is refused on a page whose status is "draft".');
+  }
   const shareCard = requireShareCard(site["shareCard"], origin);
 
   const title = kind === "home" ? `${name}${TITLE_SEPARATOR}${tagline}` : formatPageTitle({ page: label, brand: name });
@@ -325,7 +359,7 @@ export function buildSiteMetadata(input: { site: SiteIdentityInput; page: SitePa
     title,
     description,
     canonical,
-    robots: robotsFor(kind, status),
+    robots: robotsFor(kind, status, indexing),
     themeColor,
     metadataBase: origin,
     locale,

@@ -49,7 +49,7 @@ describe("OrderedStepSequence", () => {
     expect(container.querySelector("ol")).toHaveClass("tablet:flex-row", "tablet:gap-x-xl");
   });
 
-  it("sets step headings as item headings, the same type as FeatureGrid and TopicList items", () => {
+  it("sets authored step headings in the body font and medium weight", () => {
     render(<OrderedStepSequence items={ITEMS} />);
     const heading = screen.getByRole("heading", { name: "Discover" });
     expect(heading).toHaveClass("text-body-l", "font-body", "font-medium");
@@ -107,56 +107,3 @@ describe("OrderedStepSequence eyebrow", () => {
     expect((bare.firstElementChild as HTMLElement).firstElementChild?.tagName).toBe("OL");
   });
 });
-
-describe("OrderedStepSequence visuals", () => {
-  const steps = [
-    { id: "one", ordinal: "01", label: "Your team", heading: "Send", description: "Share the documents you have." },
-    { id: "two", ordinal: "02", label: "The reviewer", heading: "Check", description: "Each item is checked.", visual: <div data-testid="visual-two">VISUAL</div> },
-    { id: "three", ordinal: "03", label: "Your team", heading: "Decide", description: "Act on the findings." },
-  ];
-
-  it("keeps the tablet row when no step has a visual", () => {
-    const { container } = render(<OrderedStepSequence items={steps.map(({ visual: _visual, ...step }) => step)} />);
-    expect(container.querySelector("ol")).toHaveClass("tablet:flex-row");
-    expect(container.querySelector("ol")?.className).not.toMatch(/items-start/);
-    expect(container.querySelector("[data-step-visual]")).toBeNull();
-  });
-
-  it("moves the row to tablet-lg and puts every visual on one top line through subgrid rows", () => {
-    const { container } = render(<OrderedStepSequence items={steps} />);
-    const list = container.querySelector("ol") as HTMLElement;
-    expect(list).toHaveAttribute("data-step-layout", "visual");
-    expect(list).toHaveClass("flex", "flex-col", "tablet-lg:grid", "tablet-lg:grid-flow-col", "tablet-lg:auto-cols-fr", "tablet-lg:gap-x-xl");
-    expect(list.className).not.toMatch(/(^|\s)tablet:/);
-    for (const item of Array.from(list.children)) {
-      expect(item).toHaveClass("tablet-lg:row-span-3", "tablet-lg:grid", "tablet-lg:grid-rows-subgrid");
-    }
-    const visual = container.querySelector("[data-step-visual]") as HTMLElement;
-    expect(visual).toHaveClass("w-full", "min-w-0");
-    expect(visual).not.toHaveClass("mt-auto");
-    // The text and the visual share a wrapper that becomes display: contents in the row,
-    // so each is its own subgrid row: ordinal, text, visual.
-    const body = visual.parentElement as HTMLElement;
-    expect(body).toHaveClass("tablet-lg:contents");
-    expect(body.firstElementChild).toHaveAttribute("data-step-text");
-    expect(body.parentElement?.tagName).toBe("LI");
-    const connector = container.querySelector("li [data-step-connector]") as HTMLElement;
-    expect(connector).toHaveClass("tablet-lg:h-px", "tablet-lg:w-auto");
-  });
-
-  it("degrades to stacked parts in source order: marker, text, visual", () => {
-    const { container } = render(<OrderedStepSequence items={steps} />);
-    const second = container.querySelectorAll("ol > li")[1] as HTMLElement;
-    expect(second.firstElementChild?.textContent).toBe("02");
-    const parts = Array.from((second.children[1] as HTMLElement).children).map((child) => child.getAttribute("data-step-text") !== null ? "text" : child.getAttribute("data-step-visual") !== null ? "visual" : "other");
-    expect(parts).toEqual(["text", "visual"]);
-  });
-
-  it("renders the actor label above the step heading", () => {
-    render(<OrderedStepSequence items={steps} headingLevel={2} />);
-    const heading = screen.getByRole("heading", { name: "Check" });
-    expect(heading.tagName).toBe("H3");
-    expect(heading.previousElementSibling).toHaveTextContent("The reviewer");
-  });
-});
-

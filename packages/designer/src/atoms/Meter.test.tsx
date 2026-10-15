@@ -4,8 +4,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { Meter } from "./Meter.js";
 
 function part(markup: string, name: string): string {
-  const match = markup.match(new RegExp(`<span data-part="${name}"[^>]*>`));
-  return match?.[0] ?? "";
+  return [...markup.matchAll(/<span\b[^>]*>/g)].find(match => match[0].includes(` data-part="${name}"`))?.[0] ?? "";
 }
 
 describe("Meter", () => {
@@ -118,5 +117,65 @@ describe("Meter", () => {
     const root = document.getElementById("m");
     expect(root?.className).toContain("gap-sm");
     expect(root?.className).not.toContain("gap-xs");
+  });
+});
+
+
+describe("Meter previous measurement", () => {
+  it("shows authored history text outside the decorative bar and draws the previous position", () => {
+    const { container } = render(<Meter value={6} scaleMax={8} previous={2} previousText="Previously 2 units" tone="neutral" valueText="6 units" />);
+    const history = screen.getByText("Previously 2 units");
+    expect(history).toBeVisible();
+    expect(history.closest("[aria-hidden='true']")).toBeNull();
+    const prior = container.querySelector<HTMLElement>("[data-part='previous']");
+    expect(prior).not.toBeNull();
+    expect(prior).toHaveClass("border-s", "border-dashed", "border-ink-secondary");
+    // A backing surface makes dash gaps visible even inside the identical neutral fill.
+    expect(prior).toHaveClass("bg-surface-base");
+    expect(prior?.style.borderInlineStartWidth).toBe("var(--ui-border-hairline, 1px)");
+    expect(prior?.style.inlineSize).toBe("var(--ui-border-hairline, 1px)");
+    expect(prior?.closest("[aria-hidden='true']")).not.toBeNull();
+    expect(prior?.style.insetInlineStart).toContain("25%");
+    expect(prior?.textContent).toBe("");
+    expect(container.querySelector("[role='meter'], [role='progressbar'], meter")).toBeNull();
+  });
+
+  it.each([0, 8])("keeps a previous value of %s at its valid scale endpoint", previous => {
+    const markup = renderToStaticMarkup(<Meter value={4} scaleMax={8} previous={previous} previousText={`Previous ${previous}`} tone="info" valueText="4 units" />);
+    expect(part(markup, "previous")).toContain("inset-inline-start:");
+    expect(part(markup, "previous")).toContain(previous === 0 ? "0%" : "100%");
+    expect(markup).not.toMatch(/\b(left|right):/);
+    expect(markup).toContain(`Previous ${previous}`);
+  });
+
+  it("retains both the previous marker and limit when positions coincide", () => {
+    const markup = renderToStaticMarkup(<Meter value={2} scaleMax={4} limit={2} limitText="Limit 2" previous={2} previousText="Previous 2" tone="warning" valueText="Now 2" />);
+    expect(part(markup, "previous")).toContain("50%");
+    expect(part(markup, "limit")).toContain("50%");
+    expect(part(markup, "fill")).toContain("inline-size:50%");
+    expect(markup).toContain("Now 2");
+    expect(markup).toContain("Limit 2");
+    expect(markup).toContain("Previous 2");
+  });
+
+  it("leaves no history marker or text when history is omitted", () => {
+    const markup = renderToStaticMarkup(<Meter value={1} scaleMax={2} tone="neutral" valueText="Now 1" />);
+    expect(part(markup, "previous")).toBe("");
+    expect(markup).not.toContain("Previous");
+  });
+
+  it.each([
+    { previous: 1 },
+    { previousText: "Previous 1" },
+  ])("refuses orphaned history fields %j", props => {
+    expect(() => renderToStaticMarkup(<Meter value={1} scaleMax={2} tone="info" valueText="Now 1" {...props} />)).toThrow(/previous/i);
+  });
+
+  it.each([-1, Number.NaN, Number.POSITIVE_INFINITY, 3])("refuses previous outside the finite scale: %s", previous => {
+    expect(() => renderToStaticMarkup(<Meter value={1} scaleMax={2} tone="info" valueText="Now 1" previous={previous} previousText="Previous value" />)).toThrow(RangeError);
+  });
+
+  it.each(["", " "])("refuses history with no visible authored text %j", previousText => {
+    expect(() => renderToStaticMarkup(<Meter value={1} scaleMax={2} tone="info" valueText="Now 1" previous={0} previousText={previousText} />)).toThrow(/previous/i);
   });
 });

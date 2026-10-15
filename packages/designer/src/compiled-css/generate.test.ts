@@ -123,3 +123,29 @@ describe("generateCompiledCss", () => {
     expect(result.css).toMatch(/background-color:\s*var\(--color-accent,\s*oklch\(0\.4748 0 0\)\);/);
   });
 });
+
+
+describe("connected utility fallback contract", () => {
+  it("compiles live token and scoped layout defaults without requiring the token root", async () => {
+    const { css } = await generateCompiledCss({
+      stylesDir,
+      candidates: ["items-connected", "items-order-cell", "items-track-return", "tablet:[--items-wide:1]"],
+    });
+    expect(css).toContain(".items-connected");
+    expect(css).toContain(".items-order-cell");
+    expect(css).toContain(".items-track-return");
+    const compact = css.replace(/\s+/g, "");
+    expect(compact).toContain("--items-wide:0;");
+    expect(compact).toContain("--items-columns:1;");
+    expect(compact).toContain("--items-lane-narrow:0px;");
+    expect(compact).toContain("--items-gap-inline:var(--spacing-2xl,32px);");
+    expect(compact).toContain("var(--items-wide,0)");
+    expect(compact).toContain("var(--items-lane-narrow,0px)");
+    expect(compact).toContain("var(--ui-border-hairline,1px)");
+    const returned = /--items-return-start:([^;]+);/.exec(compact)?.[1];
+    expect(returned).toBe("calc(-1*((var(--items-columns,1)-1)*(100%+var(--items-gap-inline,var(--spacing-2xl,32px)))+var(--items-gap-inline,var(--spacing-2xl,32px))/2))");
+    expect(compact).toContain(`var(--items-return-start,${returned})`);
+    expect(compact).toContain("--items-wide:1;");
+    expect(css).not.toMatch(/var\(\s*--(?:items-[\w-]+|spacing-[\w-]+|ui-border-hairline)\s*\)/);
+  }, 30_000);
+});

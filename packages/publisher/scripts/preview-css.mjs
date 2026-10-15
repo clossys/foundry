@@ -50,8 +50,9 @@ const HEADER = `/* ════════════════════�
  * @clossys/publisher · styles/preview.css
  * ────────────────────────────────────────────────────────────────────
  * GENERATED FILE — do not hand-edit. Regenerate with
- * \`npm run generate:preview-css\` (from packages/publisher); checked by
- * \`src/preview/preview-css.test.ts\`. See \`scripts/preview-css.mjs\`.
+ * \`npm run generate:preview-css\` from packages/publisher in a source checkout.
+ * The test, \`src/preview/preview-css.test.ts\`, and generator,
+ * \`scripts/preview-css.mjs\`, do not ship with this package.
  *
  * The utility stylesheet the publisher-preview pages link, in place of
  * Designer's compiled.css: Tailwind's preflight (layer foundry-ui-base),

@@ -52,7 +52,7 @@ describe("CTA ladder tokens", () => {
       expect(def?.family).toBe("control");
       expect(def?.brandable).toBe(true);
     }
-    expect(TOKENS["--color-control-quiet"]?.value).toBe("var(--color-ink-primary)");
+    expect(TOKENS["--color-control-quiet"]?.value).toBe("var(--color-ink-primary, oklch(0.2178 0 0))");
     expect(TOKENS["--color-control-quiet"]?.themeDependent).toBe(false);
     for (const property of CONTROL_TOKENS.slice(0, 4)) {
       expect(TOKENS[property]?.themeDependent, property).toBe(true);

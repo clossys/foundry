@@ -1576,14 +1576,34 @@ function reportStaleAllowlistEntries() {
 // enough to fall outside 2-4 characters (`chart`, `series`) and passes
 // naturally; ALLOWED_PREFIXES exists only as a belt-and-braces list for short
 // real words that might otherwise trip the length heuristic.
-const DATA_ATTR_RE = /data-([a-zA-Z][a-zA-Z0-9]{1,3})-([a-zA-Z][a-zA-Z0-9-]*)/g;
+const DATA_ATTR_RE = /data-([a-zA-Z][a-zA-Z0-9]{1,3})-([a-zA-Z][a-zA-Z0-9_-]*)/g;
 const ALLOWED_PREFIXES = new Set(["chart", "test", "aria", "grid", "menu", "item", "root", "part"]);
+// Public descriptive hooks whose short English prefixes match the opaque-token heuristic.
+// Exact names only: an unfamiliar suffix still needs a finding.
+const PUBLIC_DATA_ATTRIBUTES = new Set([
+  "data-link-grid",
+  "data-link-grid-description",
+  "data-card-link",
+  "data-nav-grid-card",
+  "data-step-layout",
+  "data-step-text",
+  "data-step-connector",
+  "data-step-end",
+  "data-hero-size",
+  "data-faq-after",
+]);
 
 function checkClass2(file, lines) {
   lines.forEach((text, i) => {
     for (const m of text.matchAll(DATA_ATTR_RE)) {
       const prefix = m[1].toLowerCase();
-      if (ALLOWED_PREFIXES.has(prefix)) continue;
+      // A known hook is exempt only when the matched name ends at a token boundary.
+      const nextChar = text[m.index + m[0].length] ?? "";
+      const selectorEnd = nextChar === "]" && text[m.index - 1] === "[";
+      const publicNameEnd = nextChar === "" || /[\t\n\f\r ]/.test(nextChar)
+        || "\"'`=/>".includes(nextChar) || selectorEnd;
+      const exactPublicName = PUBLIC_DATA_ATTRIBUTES.has(m[0]) && publicNameEnd;
+      if (ALLOWED_PREFIXES.has(prefix) || exactPublicName) continue;
       report(2, "high", file, i + 1, text, `attribute "${m[0]}" — prefix "${prefix}" is a short opaque token, not a self-explanatory word; unreadable to an outside consumer`);
     }
   });

@@ -2,7 +2,7 @@
  * The token catalog: every custom property this package declares in
  * `styles/tokens.css`, as data. This file is the JS/TS half of the package;
  * `styles/tokens.css` is the CSS half. Both are hand-authored and both are
- * meant to describe the exact same 183 tokens — a test in this package
+ * meant to describe the exact same 185 tokens — a test in this package
  * (`parity.test.ts`) parses `styles/tokens.css` and asserts its custom
  * property names and values match this file entry-for-entry, in both
  * directions. That test is what keeps this file honest; nothing generates
@@ -12,10 +12,10 @@
  *
  *   1. If Tailwind v4 has a `@theme` namespace for this kind of value —
  *      color, font size, font family, letter-spacing, spacing, radius,
- *      easing, breakpoint — the property uses that namespace's exact
+ *      easing, breakpoint, blur — the property uses that namespace's exact
  *      prefix, unmodified: `--color-*`, `--text-*`, `--font-*`,
  *      `--tracking-*`, `--spacing-*`, `--radius-*`, `--ease-*`,
- *      `--breakpoint-*`. `styles/theme.css` wires these into Tailwind's
+ *      `--breakpoint-*`, `--blur-*`. `styles/theme.css` wires these into Tailwind's
  *      `@theme inline` block so utilities like `bg-surface-raised` exist.
  *   2. If Tailwind has no namespace for it — z-index, elevation, motion
  *      duration, layout widths, density, ring, border width, disabled
@@ -35,7 +35,7 @@
  */
 
 /**
- * The 30 semantic groups the 183 tokens fall into. Each maps to exactly one
+ * The 31 semantic groups the 185 tokens fall into. Each maps to exactly one
  * CSS custom property prefix — see `FAMILY_PREFIX` in `parity.test.ts` (and
  * the README's naming table) for the concrete mapping.
  */
@@ -63,6 +63,7 @@ export type TokenFamily =
   | "radius"
   | "border"
   | "elevation"
+  | "blur"
   | "ring"
   | "duration"
   | "easing"
@@ -75,7 +76,7 @@ export type TokenFamily =
 export interface TokenDefinition {
   /** The full CSS custom property name, including the leading `--`. */
   readonly property: string;
-  /** Which of the 30 semantic groups this token belongs to. */
+  /** Which of the 31 semantic groups this token belongs to. */
   readonly family: TokenFamily;
   /** The value declared for this property in `styles/tokens.css`'s `:root` block. */
   readonly value: string;
@@ -108,7 +109,7 @@ export interface TokenDefinition {
 }
 
 /**
- * All 183 tokens, keyed by their CSS custom property name. A `Record` rather
+ * All 185 tokens, keyed by their CSS custom property name. A `Record` rather
  * than an array because the natural question from JS — "what is
  * `--color-surface-raised` set to?" — is a lookup, not a scan.
  */
@@ -121,6 +122,13 @@ export const TOKENS: Readonly<Record<string, TokenDefinition>> = {
   "--color-surface-inverse-raised": { property: "--color-surface-inverse-raised", family: "surface", value: "oklch(0.285 0 0)", brandable: true, themeDependent: true },
   "--color-surface-aside": { property: "--color-surface-aside", family: "surface", value: "oklch(0.9612 0 0)", brandable: true, themeDependent: true },
   "--color-surface-selected": { property: "--color-surface-selected", family: "surface", value: "oklch(0.4748 0 0 / 0.1)", brandable: true, themeDependent: true },
+  // Glass identity: the translucent plate an overlay `SiteHeader` takes once
+  // the page scrolls beneath it, one per ink polarity. The alpha is a literal
+  // rather than `color-mix()` of the raised/inverse plate because the
+  // contrast gate pins it: `ink-primary` and `ink-on-inverse` must clear AA
+  // over each glass composited on both a white and a black backdrop.
+  "--color-surface-glass": { property: "--color-surface-glass", family: "surface", value: "oklch(1 0 0 / 0.88)", brandable: true, themeDependent: true },
+  "--color-surface-glass-inverse": { property: "--color-surface-glass-inverse", family: "surface", value: "oklch(0.2178 0 0 / 0.88)", brandable: true, themeDependent: true },
 
   // ── COLOR · INK ──────────────────────────────────────────────────────
   "--color-ink-primary": { property: "--color-ink-primary", family: "ink", value: "oklch(0.2178 0 0)", brandable: true, themeDependent: true },
@@ -137,7 +145,7 @@ export const TOKENS: Readonly<Record<string, TokenDefinition>> = {
   "--color-line-on-inverse": { property: "--color-line-on-inverse", family: "line", value: "oklch(0.9702 0 0 / 0.14)", brandable: true, themeDependent: true },
   // Panel identity: the edge colour of an outlined card or product panel
   // on a light ground. An alias of the base line, so it follows the theme.
-  "--color-line-panel": { property: "--color-line-panel", family: "line", value: "var(--color-line-base)", brandable: true, themeDependent: false },
+  "--color-line-panel": { property: "--color-line-panel", family: "line", value: "var(--color-line-base, oklch(0.8761 0 0))", brandable: true, themeDependent: false },
 
   // ── COLOR · ACCENT ───────────────────────────────────────────────────
   "--color-accent": { property: "--color-accent", family: "accent", value: "oklch(0.4748 0 0)", brandable: true, themeDependent: true },
@@ -156,7 +164,7 @@ export const TOKENS: Readonly<Record<string, TokenDefinition>> = {
   "--color-control-tonal-hover": { property: "--color-control-tonal-hover", family: "control", value: "oklch(0.2178 0 0 / 0.12)", brandable: true, themeDependent: true }, // token-gate:ignore the catalog declares this value
   "--color-control-tonal-inverse": { property: "--color-control-tonal-inverse", family: "control", value: "oklch(0.9702 0 0 / 0.12)", brandable: true, themeDependent: true }, // token-gate:ignore the catalog declares this value
   "--color-control-tonal-inverse-hover": { property: "--color-control-tonal-inverse-hover", family: "control", value: "oklch(0.9702 0 0 / 0.16)", brandable: true, themeDependent: true }, // token-gate:ignore the catalog declares this value
-  "--color-control-quiet": { property: "--color-control-quiet", family: "control", value: "var(--color-ink-primary)", brandable: true, themeDependent: false },
+  "--color-control-quiet": { property: "--color-control-quiet", family: "control", value: "var(--color-ink-primary, oklch(0.2178 0 0))", brandable: true, themeDependent: false },
 
   // ── COLOR · STATUS ───────────────────────────────────────────────────
   "--color-status-success": { property: "--color-status-success", family: "status", value: "oklch(0.6268 0 0)", brandable: true, themeDependent: true },
@@ -329,13 +337,13 @@ export const TOKENS: Readonly<Record<string, TokenDefinition>> = {
   // Panel identity: the corner of a card, plate or product panel. A brand
   // lever that defaults to the surface radius, so it changes nothing until
   // a brand sets it.
-  "--radius-panel": { property: "--radius-panel", family: "radius", value: "var(--radius-surface)", brandable: true, themeDependent: false },
+  "--radius-panel": { property: "--radius-panel", family: "radius", value: "var(--radius-surface, var(--radius-default, 3px))", brandable: true, themeDependent: false },
 
   // ── UI · BORDER ─────────────────────────────────────────────────────
   "--ui-border-hairline": { property: "--ui-border-hairline", family: "border", value: "1px", brandable: false, themeDependent: false },
   "--ui-border-rule": { property: "--ui-border-rule", family: "border", value: "2px", brandable: false, themeDependent: false },
   // Panel identity: the edge width of an outlined card or product panel.
-  "--ui-border-panel": { property: "--ui-border-panel", family: "border", value: "var(--ui-border-hairline)", brandable: true, themeDependent: false },
+  "--ui-border-panel": { property: "--ui-border-panel", family: "border", value: "var(--ui-border-hairline, 1px)", brandable: true, themeDependent: false },
 
   // ── UI · ELEVATION ──────────────────────────────────────────────────
   "--ui-elevation-none": { property: "--ui-elevation-none", family: "elevation", value: "none", brandable: false, themeDependent: false },
@@ -343,7 +351,12 @@ export const TOKENS: Readonly<Record<string, TokenDefinition>> = {
   "--ui-elevation-floating": { property: "--ui-elevation-floating", family: "elevation", value: "0 8px 24px rgba(0, 0, 0, 0.10)", brandable: false, themeDependent: true },
   // Panel identity: the lift under a product panel (Specimen). Follows the
   // floating elevation, and so its dark-theme value, until a brand sets it.
-  "--ui-elevation-panel": { property: "--ui-elevation-panel", family: "elevation", value: "var(--ui-elevation-floating)", brandable: true, themeDependent: false },
+  "--ui-elevation-panel": { property: "--ui-elevation-panel", family: "elevation", value: "var(--ui-elevation-floating, 0 8px 24px rgba(0, 0, 0, 0.10))", brandable: true, themeDependent: false },
+
+  // ── BLUR (Tailwind `--blur-*` namespace) ───────────────────────────
+  // Glass identity: the backdrop blur behind a glass plate. Theme invariant;
+  // a brand lever like the panel tokens.
+  "--blur-glass": { property: "--blur-glass", family: "blur", value: "16px", brandable: true, themeDependent: false },
 
   // ── UI · RING ───────────────────────────────────────────────────────
   "--ui-ring-focus": { property: "--ui-ring-focus", family: "ring", value: "0 0 0 2px var(--color-accent, oklch(0.4748 0 0))", brandable: false, themeDependent: false },
@@ -385,14 +398,13 @@ export const TOKENS: Readonly<Record<string, TokenDefinition>> = {
   "--breakpoint-wide": { property: "--breakpoint-wide", family: "breakpoint", value: "1440px", brandable: false, themeDependent: false },
 
   // Structural Scene personality and linear-form measure; both are theme invariant.
-  "--ui-scene-tilt": { property: "--ui-scene-tilt", family: "scene", value: "1deg", brandable: false, themeDependent: false },
   "--ui-scene-card-w": { property: "--ui-scene-card-w", family: "scene", value: "30rem", brandable: false, themeDependent: false },
 
   // ── UI · ALPHA ──────────────────────────────────────────────────────
   "--ui-alpha-disabled": { property: "--ui-alpha-disabled", family: "alpha", value: "0.5", brandable: false, themeDependent: false },
 };
 
-/** The 30 semantic families, in the order they appear in the README's reference table. */
+/** The 31 semantic families, in the order they appear in the README's reference table. */
 export const TOKEN_FAMILIES: readonly TokenFamily[] = [
   "surface",
   "ink",
@@ -417,6 +429,7 @@ export const TOKEN_FAMILIES: readonly TokenFamily[] = [
   "radius",
   "border",
   "elevation",
+  "blur",
   "ring",
   "duration",
   "easing",

@@ -396,6 +396,22 @@ The client port is read on identity, so memoize or hoist it — this hook does
 not paper over an unstable one, because doing so would make a runaway read
 invisible rather than impossible.
 
+Correction and erasure calls go to the client they were made with, including
+calls a child makes from its own effect before the hook's own effects have
+run. Whether a reply updates the surface is decided when it arrives, against
+the client and subject the hook most recently committed: a reply from a
+replaced client or for an earlier subject is ignored, including errors and
+erasure effects, and so is one arriving after unmount. A correction or erasure
+called through a callback bound to a replaced client or an earlier subject
+still goes to the client it was made with, and leaves the current surface's
+`error` and `lastForgetEffect` as they were. A reply to the current client is
+applied even while an `Activity` boundary hides the hook or its content has
+re-suspended, and is there once it is shown again. The exception is `error`:
+every read clears it as the read starts, so a failure that lands before a read
+starts is cleared by it. That can happen to a failure from a child's
+layout-effect call on first mount, and to one that lands while `Activity`
+hides the hook, because the read runs again when it is shown.
+
 ## Requirements
 
 Node 20 or newer. Zero runtime dependencies.

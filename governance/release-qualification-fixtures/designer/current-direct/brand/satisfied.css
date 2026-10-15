@@ -7,6 +7,8 @@
   --color-surface-inverse-raised: oklch(0.285 0 0);
   --color-surface-aside: oklch(0.9612 0 0);
   --color-surface-selected: oklch(0.48 0.12 250 / 0.1);
+  --color-surface-glass: oklch(1 0 0 / 0.88);
+  --color-surface-glass-inverse: oklch(0.2178 0 0 / 0.88);
   --color-ink-primary: oklch(0.2178 0 0);
   --color-ink-secondary: oklch(0.36 0 0);
   --color-ink-muted: oklch(0.54 0 0);
@@ -47,4 +49,14 @@
   --ui-layout-sidebar-w: 256px;
   --ui-icon-stroke: 1.75;
   --radius-default: 4px;
+  --color-control-tonal: oklch(0.2178 0 0 / 0.08);
+  --color-control-tonal-hover: oklch(0.2178 0 0 / 0.12);
+  --color-control-tonal-inverse: oklch(0.9702 0 0 / 0.12);
+  --color-control-tonal-inverse-hover: oklch(0.9702 0 0 / 0.16);
+  --color-control-quiet: oklch(0.2178 0 0);
+  --radius-panel: var(--radius-default, 4px);
+  --ui-border-panel: 1px;
+  --color-line-panel: var(--color-line-base);
+  --ui-elevation-panel: 0 8px 24px rgba(0, 0, 0, 0.10);
+  --blur-glass: 16px;
 }

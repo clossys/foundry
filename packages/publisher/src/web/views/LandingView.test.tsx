@@ -30,7 +30,7 @@ const PAGE: ResolvedSectionedViewDocument = {
 const SHARED: ResolvedSectionedViewDocument = {
   id: "acme-shared",
   resolutions: RESOLUTIONS,
-  sections: [{ id: "faq", kind: "faq", ground: "base", heading: "FAQ-SENTINEL", items: [{ id: "q", question: "QUESTION-SENTINEL", answer: "ANSWER-SENTINEL" }] }],
+  sections: [{ id: "faq", kind: "faq", ground: "base", heading: "FAQ-SENTINEL", items: ["one", "two", "three", "four"].map(id => ({ id, question: "QUESTION-SENTINEL", answer: "ANSWER-SENTINEL" })) }],
 };
 
 const CALL_TO_ACTION: LandingViewProps["callToAction"] = {
@@ -98,39 +98,9 @@ describe("LandingView", () => {
     expect(blocks.lastElementChild?.hasAttribute("data-after")).toBe(true);
     const faq = root.querySelector("#faq") as HTMLElement;
     expect(faq.querySelector("[data-content-section-header] h2")?.textContent).toBe("FAQ-SENTINEL");
-    expect(faq.querySelector("[data-content-section-modules] details")).not.toBeNull();
+    expect(faq.querySelector("[data-content-section-modules] [data-items] button")).not.toBeNull();
   });
 
-  it("renders a content-section band as its own anatomy: no nested section, the band paints its ground, afterSection in the text column", () => {
-    const faqItems = ["q1", "q2", "q3", "q4"].map((id) => ({ id, question: `Q-${id}-SENTINEL`, answer: `A-${id}-SENTINEL` }));
-    const content: ResolvedSectionedViewDocument = {
-      ...SHARED,
-      id: "acme-content",
-      sections: [
-        { id: "topics", kind: "content-section", ground: "sunken", heading: "TOPICS-SENTINEL", block: { type: "topic-list", columns: 1, items: [{ id: "a", heading: "A-SENTINEL" }, { id: "b", heading: "B-SENTINEL" }] } },
-        { id: "questions", kind: "content-section", ground: "base", heading: "QUESTIONS-SENTINEL", actions: [{ id: "more", label: "MORE-SENTINEL", href: "/more" }], layout: "split", block: { type: "faq", items: faqItems } },
-      ],
-    };
-    const root = dom({ document: PAGE, trailing: [content], afterSection: { topics: <p data-after="">AFTER</p>, questions: <p data-after="">AFTER</p> } });
-    const topics = root.querySelector("#topics") as HTMLElement;
-    const frame = topics.closest("[data-landing-ground]") as HTMLElement;
-    expect(frame.getAttribute("data-landing-ground")).toBe("sunken");
-    expect(frame.className.split(/\s+/).filter((name) => /(^|:)py-/.test(name))).toEqual(["py-4xl", "tablet-lg:py-5xl"]);
-    expect(topics.closest("[data-content-section]")).toBe(topics);
-    expect(topics.parentElement?.closest("[data-content-section]")).toBeNull();
-    expect(topics.className).not.toContain("bg-surface-");
-    expect(topics.querySelector("a")).toBeNull();
-    expect((topics.querySelector("[data-content-section-modules]") as HTMLElement).lastElementChild?.hasAttribute("data-after")).toBe(true);
-    const questions = root.querySelector("#questions") as HTMLElement;
-    // A split keeps its actions in the text column.
-    const more = questions.querySelector('[data-content-section-text] a[href="/more"]') as HTMLElement;
-    expect(more.getAttribute("data-action-emphasis")).toBe("quiet");
-    expect(more.className.split(" ")).toEqual(expect.arrayContaining(["text-body", "text-control-quiet", "quiet-action"]));
-    expect(more.className.split(" ")).not.toContain("underline");
-    expect(questions.getAttribute("data-layout")).toBe("split");
-    expect(questions.querySelectorAll("[data-content-section-media] details")).toHaveLength(4);
-    expect(questions.querySelector("[data-content-section-text] [data-after]")).not.toBeNull();
-  });
 
   it("renders a hero section in a band as a header group, not a second display heading", () => {
     const closing: ResolvedSectionedViewDocument = { ...SHARED, id: "acme-closing", sections: [{ id: "closing", kind: "hero", ground: "base", eyebrow: "E-SENTINEL", heading: "CLOSING-SENTINEL", description: "D-SENTINEL" }] };
@@ -198,7 +168,7 @@ describe("LandingView", () => {
     expect(rail.previousElementSibling?.hasAttribute("data-landing-hero")).toBe(true);
     expect(rail.nextElementSibling?.querySelector("#features")).not.toBeNull();
     expect(rail.parentElement).toBe(view);
-    expect(rail.className.split(/\s+/)).toEqual(["relative", "z-[var(--ui-z-sticky)]", "h-0"]);
+    expect(rail.className.split(/\s+/)).toEqual(["relative", "z-[var(--ui-z-sticky,10)]", "h-0"]);
     const cue = rail.querySelector("[data-landing-cue]") as HTMLElement;
     // Placement, fade and the fixed/fallback switch live in Designer's one `scroll-cue`
     // utility; the view adds no positioning of its own that could outlive the fade.
@@ -386,10 +356,13 @@ describe("LandingView close copy", () => {
     expect(close.textContent).toBe("HERO-SENTINELCLOSE-ACTION-SENTINEL");
   });
 
-  it("preserves legacy markup when hero reuse is absent", () => {
+  it("renders closing markup with canonical FAQ rows when hero reuse is absent", () => {
     const html = renderToStaticMarkup(<LandingView document={PAGE} trailing={[SHARED]} callToAction={CALL_TO_ACTION} />);
-    // Pin the pre-option server output; the page and closing copy differ.
-    expect(createHash("sha256").update(html).digest("hex")).toBe(LEGACY_CLOSE_MARKUP_SHA256);
+    // Require the cue rail's token fallback; preserve every other pre-option byte.
+    const cueRail = 'class="relative z-[var(--ui-z-sticky,10)] h-0"';
+    expect(html.split(cueRail)).toHaveLength(2);
+    const legacyHtml = html.replace(cueRail, cueRail.replace(",10", ""));
+    expect(createHash("sha256").update(legacyHtml).digest("hex")).toBe(LEGACY_CLOSE_MARKUP_SHA256);
   });
 
   it("refuses a valid nonempty document without an opening hero using the dedicated reason, even with own copy or a trailing hero", () => {
@@ -426,7 +399,7 @@ describe("LandingView close copy", () => {
   });
 });
 
-const LEGACY_CLOSE_MARKUP_SHA256 = "c7612c0e8dccc6bba0f05d7fca77d7e801d578e2ef55c415d992aab396e315d1";
+const LEGACY_CLOSE_MARKUP_SHA256 = "84380478f6fa9f7b040b6e7a4780ee3389bbb1224d6b916df1489e28a8febd0d";
 
 
 describe("LandingView action ladder", () => {
@@ -472,13 +445,13 @@ describe("LandingView action ladder", () => {
 
 it("renders all body tiers with authored emphasis, size and ground, including decorative quiet chevrons", () => {
   for (const ground of ["base", "sunken", "inverse"] as const) for (const emphasis of ["primary", "secondary", "tertiary", "quiet"] as const) {
-    const band = { id: "frame", kind: "content-section" as const, ground, heading: "FRAME-SENTINEL", actions: [{ id: "go", label: "GO-SENTINEL", href: "/go", emphasis }] };
+    const band = { id: "frame", kind: "content-section" as const, size: "standard" as const, layout: "stacked" as const, ground, heading: "FRAME-SENTINEL", actions: [{ id: "go", label: "GO-SENTINEL", href: "/go", emphasis }] };
     const page: ResolvedSectionedViewDocument = { ...PAGE, sections: [PAGE.sections[0]!, band] };
     const link = dom({ document: page, peek: false }).querySelector('a[href="/go"]')!;
     expect(link.getAttribute("data-action-emphasis")).toBe(emphasis);
-    const large = emphasis === "primary" || emphasis === "secondary";
-    expect(link.className.split(" ")).toContain(large ? "text-body-l" : "text-body");
-    if (large) expect(link.className.split(" ")).toEqual(expect.arrayContaining(["px-lg", "py-md"]));
+    expect(link.className.split(" ")).toContain("text-body");
+    expect(link.className.split(" ")).not.toContain("text-body-l");
+    if (emphasis !== "quiet") expect(link.className.split(" ")).toEqual(expect.arrayContaining(["px-md", "py-sm"]));
     if (emphasis === "tertiary") expect(link.className.split(" ")).toEqual(expect.arrayContaining(["px-md", "py-sm"]));
     if (emphasis === "secondary") expect(link.className.split(" ")).toEqual(expect.arrayContaining(["ring-current", "ring-inset"]));
     if (emphasis === "tertiary") expect(link.className.split(" ")).toContain(ground === "inverse" ? "bg-control-tonal-inverse" : "bg-control-tonal");
@@ -502,8 +475,8 @@ describe("LandingView reviewed action-pair and resolved copy contracts", () => {
     const css = readFileSync("styles/preview.css", "utf8");
     const foundation = document.createElement("style");
     foundation.textContent = ["flex", "flex-col", "items-center", "items-start", "w-full"].map(name => {
-      const rule = css.match(new RegExp("\\." + name + "\\s*\\{[^{}]+\\}"));
-      expect(rule, `${name} structural utility exists`).not.toBeNull();
+      const rule = [...css.matchAll(/\.[\w-]+\s*\{[^{}]+\}/g)].find(match => match[0].slice(0, match[0].indexOf("{")).trim() === `.${name}`);
+      expect(rule, `${name} structural utility exists`).toBeDefined();
       return rule![0];
     }).join("\n");
     const host = dom({ document: page, align, peek: false, callToAction: { copy: "hero", actions: pair } });

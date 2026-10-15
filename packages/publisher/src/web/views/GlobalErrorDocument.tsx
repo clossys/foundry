@@ -5,6 +5,7 @@ import { formatPageTitle } from "../siteMetadata.js";
 import { ErrorViewBody } from "./ErrorView.js";
 import type { ErrorViewProps } from "./ErrorView.js";
 import { StatusView } from "./StatusView.js";
+import type { StatusViewProps } from "./StatusView.js";
 
 /** The document-level props both shapes share: the root `<html>` and the `<head>`. */
 export interface GlobalErrorDocumentHeadProps {
@@ -35,12 +36,16 @@ export interface GlobalErrorDocumentHeadProps {
 export interface GlobalErrorDocumentFramedProps extends GlobalErrorDocumentHeadProps, SiteFrameInput {
   /** The page's one `<h1>`, as on `StatusView`: a status code such as `"500"`, or a short title. */
   status: ReactNode;
-  /** One line of supporting copy under the status. A diagnostic reference (`Error: <digest>.`) belongs here as caller copy. */
+  /** One line of supporting copy under the status. */
   subtitle?: ReactNode;
+  /** A caller-labelled diagnostic line after the subtitle, forwarded unchanged to StatusView. */
+  reference?: StatusViewProps["reference"];
   /** The one primary call to action, such as a retry button, on the page background. */
   action?: ReactNode;
   /** A quiet line under the action for a secondary link. */
   notes?: ReactNode;
+  /** Caller-labelled destinations forwarded unchanged to StatusView. */
+  routes?: StatusViewProps["routes"];
   title?: never;
   description?: never;
 }
@@ -60,7 +65,9 @@ export interface GlobalErrorDocumentErrorViewProps extends GlobalErrorDocumentHe
   resolveCopy?: never;
   resolveAsset?: never;
   subtitle?: never;
+  reference?: never;
   notes?: never;
+  routes?: never;
 }
 
 /**
@@ -82,8 +89,8 @@ function isFramed(props: GlobalErrorDocumentProps): props is GlobalErrorDocument
  * meta and one icon link. With `shell`, the body is the same page every other
  * route gets: `SiteFrame` (skip link, banner, the page's one `<main>`,
  * contentinfo) around a `StatusView`, so the document has one `<main>`, one
- * `<h1>` and no card. A diagnostic reference such as a digest belongs in
- * `subtitle` as caller copy (`Error: <digest>.`); there is no digest prop.
+ * `<h1>` and no card. The optional `reference` renders a caller-labelled line
+ * after `subtitle`, with the value escaped inside `<code>`.
  *
  * Without `shell` it renders the deprecated earlier shape: an `ErrorView` as
  * the whole body, with no frame and no `<main>`. Passing `shell` together with
@@ -107,13 +114,19 @@ export function GlobalErrorDocument(props: GlobalErrorDocumentProps): ReactEleme
         "GlobalErrorDocument: `title` and `description` belong to the deprecated ErrorView shape; with `shell`, pass `status`, `subtitle`, `action` and `notes`.",
       );
     }
-    const { shell, resolveCopy, resolveAsset, status, subtitle, action, notes } = props;
+    const { shell, resolveCopy, resolveAsset, status, subtitle, reference, action, notes, routes } = props;
     body = (
       <SiteFrame shell={shell} resolveCopy={resolveCopy} resolveAsset={resolveAsset}>
-        <StatusView status={status} subtitle={subtitle} action={action} notes={notes} />
+        <StatusView status={status} subtitle={subtitle} reference={reference} action={action} notes={notes} routes={routes} />
       </SiteFrame>
     );
   } else {
+    if ((props as { reference?: unknown }).reference != null) {
+      throw new Error("GlobalErrorDocument: reference requires the framed StatusView shape.");
+    }
+    if ((props as { routes?: unknown }).routes !== undefined) {
+      throw new Error("GlobalErrorDocument: routes require the framed StatusView shape.");
+    }
     const {
       lang: _lang,
       documentTitle: _documentTitle,
@@ -123,7 +136,9 @@ export function GlobalErrorDocument(props: GlobalErrorDocumentProps): ReactEleme
       resolveCopy: _resolveCopy,
       resolveAsset: _resolveAsset,
       subtitle: _subtitle,
+      reference: _reference,
       notes: _notes,
+      routes: _routes,
       ...errorViewProps
     } = props;
     body = <ErrorViewBody {...errorViewProps} />;

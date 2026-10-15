@@ -55,7 +55,7 @@ shapes marked "No".
 
 ### Linked items
 
-Cards (`card-grid`), features (`feature-grid`, item emphasis), topics
+Cards (`card-grid`), features (`feature-grid`, item scale), topics
 (`topic-list`) and steps (`ordered-step-sequence`) may each carry an `href`.
 The item's title becomes its one link and its accessible name; a chevron
 follows the title at rest, and the whole item is the click target. Statement
@@ -101,22 +101,21 @@ write its label:
 
 ## Choose the block from the information
 
-A content section holds at most one block in its `block` field. The block's
-`type` is the Designer block name in kebab case: **FeatureGrid** is
-`feature-grid`. The pieces inside a block (items, cards, steps, specimen
-parts) are its parts, not blocks.
+A content section holds at most one block in its `block` field. Canonical content uses `type: "items"` with a recipe or authored arrangement,
+or `type: "matrix"` for two-sided content. Recipes select existing Designer
+axes; the pieces inside a block are its parts, not blocks.
 
 Pick the block from what the information is. Write the copy after that.
 
 | The information is | Block | Notes |
 |---|---|---|
 | A framing statement, or a band that only points elsewhere | intro band (no block, no media) | up to 40 words; 1-2 buttons |
-| 2-4 parallel capabilities or audiences of equal weight | **FeatureGrid** (`feature-grid`) | `plain` by default; `rule` for a quieter 4-up; `plate` for 2 longer items |
-| 3 short beliefs or outcomes that should land as statements | **FeatureGrid** (`feature-grid`), `emphasis: "statement"` | exactly 3 items |
-| A mix of items of unequal weight, some with product evidence | **CardGrid** (`card-grid`, bento) | the wide card holds the main point |
-| A before and after, or a without and with | **Comparison** (`comparison`) | at most one per page |
-| A checklist of 4-8 short topics | **TopicList** (`topic-list`) | 2 columns; 1 column beside a specimen |
-| An ordered process with a hand-off between people | **OrderedStepSequence** (`ordered-step-sequence`) | 3-4 ordinary steps; two-actor lanes use 3 or 5 |
+| 2-4 parallel capabilities or audiences of equal weight | **Items** (`items`, recipe `features`) | 2 or 3 columns with complete rows; plain, rule or plate treatment |
+| 3 short beliefs or outcomes that should land as statements | **Items** (`items`, recipe `statement`) | exactly 3 items |
+| A mix of items of unequal weight, some with product evidence | **Items** (`items`, recipe `cards`, bento) | the wide card holds the main point |
+| A before and after, or a without and with | **Matrix** (`matrix`, recipe `comparison`) | at most one per page |
+| A checklist of 4-8 short topics | **Items** (`items`, recipe `topics`) | 2 columns; 1 column beside a specimen |
+| An ordered process with a hand-off between people | **Items** (`items`, recipe `flow`) | connected 3-5 steps; two-actor lanes use 3 or 5 |
 | Questions a buyer asks before acting | **Faq** (`faq`) | split band: header beside the rows (the legacy `faq` section opts in with `layout: "split"`) |
 | What the product shows on screen: a record, a matrix, a schedule, a result | specimen media | `single`, `row` (2-3 peers), `stack` (2-3 related views), `flow` (a hand-off from one panel to the next) |
 
@@ -125,11 +124,8 @@ each other: the header and a short block sit in the text column, and the
 specimen sits beside them. Use stacked when the specimen needs the full width
 or the block stands alone.
 
-A split may also go without media when its block is `faq`, `topic-list`, or
-2-column `feature-grid` with item emphasis: the block takes the visual column,
-top-aligned beside the header. Use it when the items are the evidence and
-there is no specimen to show. CardGrid, OrderedStepSequence and Comparison always need media in
-a split.
+A split can use its items or matrix as the companion when there is no media.
+Keep the authored reading order and use a specimen when product evidence helps.
 
 ## Blocks
 
@@ -144,58 +140,47 @@ fit any product.
 it has no buttons. Description up to 40 words; buttons of 2-4 words. Use it to frame the next run of bands or to point to
 another page. Do not put a list into the description.
 
-**FeatureGrid** (`feature-grid`). 2-4 items, each a heading and a description. Heading 2-5
-words; description 6-20 words (up to 25 for 2-column `plate`). Statement
-emphasis: exactly 3 items, heading 2-3 words, description at most 12 words.
-Items are parallel: same grammar, same length, one idea each. Icons go with
-`plain` and `plate` only, and only when they tell items apart. An item may
-carry an optional eyebrow above its heading: 1-3 words, at most 32
-characters (Publisher refuses a longer one), naming the item's area or role ("Compliance", "Spend"). Give every
-item an eyebrow or none, and do not pair an eyebrow with an icon.
+**Items — features.** Two columns take 2, 4 or 6 items; three columns take
+3 or 6. Heading 2-5 words; description 6-20 words (up to 25 for a longer plate).
+Items are parallel: same grammar, length and one idea each. Optional icons and
+eyebrows identify roles; they do not repeat the heading. Statement scale
+uses exactly three items in three columns, plain or rule treatment, with no
+icon, eyebrow or destination. Statement headings use 2-3 words and support at
+most 12 words.
 
-**CardGrid** (`card-grid`, bento). 2-6 cards whose spans fill whole rows. A row is
-two-thirds + third (either order), three thirds, two halves, or one full card.
-Heading 2-5 words; description 8-20 words (25 on a two-thirds or full card);
-optional eyebrow (cards only) naming the role or area; optional visual of one
-specimen part with at most 5 rows. Put the main point on the widest card. Do
-not give every card a visual.
+**Items — cards.** Two to six bento items fill ordered 12-unit rows: two-thirds
+plus third (either order), three thirds, two halves or a full item. Heading
+2-5 words; support 8-20 words (25 on a wide item). Put the main point in the
+widest item and use supplied visuals only where they add evidence.
 
-**LinkGrid** (`link-grid`). Two to six real next destinations, including a
-navigation list on a status page. Titles name the destination, at most 32
-characters; descriptions say what the reader will find, at most 100
-characters. Use plate or rule tiles and give every tile an icon or none.
-For one destination, use a footnote link or a button. Use buttons for
-actions that do not navigate. Avoid vague titles such as "Learn more".
+**Items — link index.** Link every item or none, up to six unique destinations.
+Titles name the destination; support says what the reader will find. Use plate
+or rule treatment. For one destination, use a footnote link or button. Avoid
+vague titles such as "Learn more".
 
-**Comparison** (`comparison`). Two sides with labels of 1-3 words. Give each side either a
-description of at most 25 words or 2-4 points of 4-9 words, with the same form
-and the same count on both sides. Visuals go on both sides or on neither.
-Write facts on both sides. Do not caricature the "before" side.
+**Matrix.** Exactly two sides with labels of 1-3 words and required heading
+lines. Use the same primary form on both sides: descriptions up to 25 words,
+2-4 points of 4-9 words with equal counts, or visuals. Both sides use plates;
+optional `featured` names one side's ID. Write facts without caricature.
 
-**TopicList** (`topic-list`). Each item is a heading of 2-5 words and a line of 4-12 words. In 2
-columns, use 4-8 items, an even count. In 1 column beside a specimen, use 3-4
-items. Use a topic list for scannable coverage. Do not use them for arguments.
-Use labelled `groups` when categories matter or the list has more than six
-items: 2-4 groups, 2-4 items each, at most 12 overall. Labels are one or two
-words, at most 24 resolved characters. Balance counts within each row.
-Groups require a stacked section; two and four groups use two columns from
-tablet, three use three columns from tablet-lg. Link all rows or none across
-the whole block, at most six unique destinations.
+**Items — topics.** Two to eight short rows: headings 2-5 words, support
+4-12 words. Two columns require an even count. Labelled groups take 2-4 groups
+of 2-4 item IDs, within the collection's eight-item budget. Groups retain
+membership reading order and each inner list is named by its group label.
 
-**OrderedStepSequence** (`ordered-step-sequence`). 3-4 steps. Each step has an ordinal ("01"), a heading of 1-2
-words (a verb), a line of 6-14 words, an optional actor of 1-2 words and an
-optional visual panel. Name the actor whenever the work changes hands. Give
-every step a visual or none of them.
-Use `lanes` for two actors handing work back and forth: 3 or 5 steps,
-exactly 3 with visuals. Name each lane as an actor (at most 20 characters),
-start in lane a, use both lanes, and omit item labels. Each step describes
-what its actor does. Use ordinary steps for one actor; use another form for
-three or more actors or dated events. Lane rows start at 1024px for 3 steps
-and 1280px for 5. A visual caption holds at most 120 characters; catalog
-examples say “Sample data.” Lanes end in a node by default. `end="continues"`
-uses an arrow, with visible `endLabel` (at most 40 characters) or consumer
-continuation copy. Ordinary sequences keep their existing shape until end
-options are supplied.
+**Items — processes.** Numbered order follows rendered item order. Connected
+order takes 3-5 steps in authored columns or a stack; four warns. Headings use
+1-2 verb words and support 6-14 words. For two actors, use exactly two lane
+`{ id, label }` definitions and known item lane IDs on a stacked 3- or 5-step
+sequence. Start in the first lane and use both. Three lane columns begin at
+1024px; five at 1280px. Optional visuals and a visual caption retain reading
+order. A terminal follows the last step; `end="continues"` uses a decorative
+arrow unless authored `endLabel` copy is supplied. Do not synthesize copy.
+
+Published **FeatureGrid** retains its automatic grid, arbitrary counts and
+paragraph item titles. Published **OrderedStepSequence** retains authored
+ordinals, labels and adjacent decorative connectors. Canonical recipe bounds
+and lane, visual, link and termination fields belong to Items.
 
 **Faq** (`faq`). 4-6 items. Question at most 12 words, in the buyer's words; answer
 15-45 words. Lead with the answer ("Yes.", "Only people with a role on that
@@ -259,18 +244,16 @@ keep.
 
 ## Records on rules
 
-Use **RecordLedger** (`record-ledger`) for one record or three-to-four role
-handovers that should read as ledger data, especially when the page has already
-spent its panel. Use a specimen for a full product view. A dated event history
+Use **RecordLedger** (`record-ledger`) for one record, especially when the page
+has already spent its panel. Use a specimen for a full product view. A dated event history
 needs a separately designed timeline form.
 
 Rows carry names, figures and statuses without repeating the surrounding copy.
 Record groups hold one-to-six rows; an owner is a separate final group. Keep one
-flag per record, with authored hidden lead-in copy. Pair kind lines and hidden
-product lead-ins belong to the consumer's copy.
+flag per record, with authored hidden lead-in copy.
 
-For book-like cards, use CardGrid `treatment: "rule"` with a LedgerTile visual.
-Tiles hold two-to-five rows. A three-row mobile cap hides later rows below tablet
+For book-like items, use Items `treatment: "rule"` with a SpecimenPanel
+status-rows visual holding one-to-six rows. A three-row mobile cap hides later rows below tablet
 for every reader; put the row that matters, especially warning or danger, within
 the first three. Ledger rows are static; linked cards have only their title link.
 
@@ -280,7 +263,7 @@ areas worth naming. Prefer three or five markers, with a short heading and
 one sentence per key item. Attach markers to the panel title, labelled parts
 or footer in reading order, and disclose sample data with the caption. Author
 the figure and key labels; use a unique caller instance id. The figure comes
-before the key at every width. Use **FeatureGrid** for features without a
+before the key at every width. Use **Items** for features without a
 product surface, and steps or a story for a process.
 
 Use **Scene** for a process or provenance story beside section copy: documents
@@ -304,7 +287,7 @@ grids. Weight never reads ground and has no authored override.
 
 Publisher's `checkPageFlow` checks opening impact, runs, repeated set-piece
 shapes, page-length counts, calm landing, inverse placement and primary actions.
-The `sectioned-view-flow-action-tier` finding names action emphasis or count
+The `sectioned-view-flow-action-weight` finding names action emphasis or count
 above the body's weight ceiling. Pages with fewer than three body bands are
 exempt from `opening-set-piece`; other flow rules still apply. Primary targets
 ignore trailing slashes and nonleading fragments, retaining distinct leading
@@ -315,7 +298,7 @@ Card links count as quiet actions for weight fit, independently of section
 button counts. These findings are advisory and never run during rendering.
 Omitted section actions use secondary then quiet on A, tertiary on B and frame C,
 and quiet on other C bands. Explicit emphasis wins; an action above the weight
-ceiling still renders as authored and receives an advisory `action-tier` warning.
+ceiling still renders as authored and receives an advisory `action-weight` warning.
 
 ## Closing copy
 

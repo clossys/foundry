@@ -1,5 +1,6 @@
 /**
- * Compile-time proof that `SiteHeaderProps["surfaceLabel"]` (`../SiteHeader.tsx`)
+ * Compile-time proofs for `SiteHeaderProps` (`../SiteHeader.tsx`): `placement`
+ * and `tone` take only their named values, and `surfaceLabel`
  * is text only: a staff or demo host names its surface with a plain string, so
  * no link, button or icon can be passed and the badge is never interactive.
  *
@@ -14,3 +15,11 @@ export const surfaceLabelAcceptsText = <SiteHeader brand="Acme" surfaceLabel="ad
 
 // @ts-expect-error surfaceLabel is text only
 export const surfaceLabelRejectsElements = <SiteHeader brand="Acme" surfaceLabel={<a href="/x">admin</a>} />;
+
+export const placementAcceptsOverlay = <SiteHeader brand="Acme" placement="overlay" tone="inverse" menuOpen />;
+
+// @ts-expect-error placement is flow or overlay
+export const placementRejectsSticky = <SiteHeader brand="Acme" placement="sticky" />;
+
+// @ts-expect-error tone is base or inverse; a ground name is not a tone
+export const toneRejectsGround = <SiteHeader brand="Acme" placement="overlay" tone="transparent" />;

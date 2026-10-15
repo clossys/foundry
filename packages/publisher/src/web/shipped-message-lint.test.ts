@@ -8697,6 +8697,8 @@ describe("shipped message lint", () => {
     );
   });
 
+  // A whole-tree scan, like Designer's: its time grows with src/web, so it
+  // takes the same explicit timeout instead of the 5 s default.
   it("finds no shipped message literals under publisher src/web", () => {
     const allowedRenderedLocalPaths = new Set([
       path.join(SRC_ROOT, "internal/compileConsumerTemplateBlocks.ts"),
@@ -8705,7 +8707,7 @@ describe("shipped message lint", () => {
     expect(
       scanShippedMessageTree(SRC_ROOT).filter((violation) => !allowedRenderedLocalPaths.has(violation.file)),
     ).toEqual([]);
-  });
+  }, 60_000);
 
   it("notes fix round 22 inline calls, exempt members, and copied slices", () => {
     const inlineRangeSummary = [

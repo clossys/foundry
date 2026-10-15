@@ -2,4 +2,4 @@
 observer: patch
 ---
 
-Add an internal consent-controlled analytics transport that is not yet exported from the package.
+Add a consent-controlled analytics transport with a PostHog provider adapter.

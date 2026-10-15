@@ -25,6 +25,8 @@
   --color-surface-inverse-raised: var(--color-surface-inverse-raised, oklch(0.285 0 0));
   --color-surface-aside:          var(--color-surface-aside, oklch(0.9612 0 0));
   --color-surface-selected:       var(--color-surface-selected, oklch(0.4748 0 0 / 0.1));
+  --color-surface-glass:          var(--color-surface-glass, oklch(1 0 0 / 0.88));
+  --color-surface-glass-inverse:  var(--color-surface-glass-inverse, oklch(0.2178 0 0 / 0.88));
 
   /* ── COLOR · INK ──────────────────────────────────────────────── */
   --color-ink-primary:            var(--color-ink-primary, oklch(0.2178 0 0));
@@ -141,6 +143,9 @@
   --radius-surface:                var(--radius-surface, var(--radius-default, 3px));
   --radius-panel:                  var(--radius-panel, var(--radius-surface, var(--radius-default, 3px)));
 
+  /* ── BLUR ─────────────────────────────────────────────────────── */
+  --blur-glass:                    var(--blur-glass, 16px);
+
   /* ── EASING ───────────────────────────────────────────────────── */
   --ease-default:                  var(--ease-default, cubic-bezier(.2, 0, 0, 1));
   --ease-decelerate:               var(--ease-decelerate, cubic-bezier(0, 0, .2, 1));
@@ -180,6 +185,11 @@
   &::-webkit-details-marker {
     display: none;
   }
+}
+
+/* The largest frame step composes existing spacing tokens; it is not a new token. */
+@utility py-frame-display {
+  padding-block: calc(var(--spacing-6xl, 128px) + var(--spacing-2xl, 32px));
 }
 
 /*
@@ -357,6 +367,122 @@
 }
 
 /*
+ * Overlay site header surface (`SiteHeader` with `placement="overlay"`):
+ * transparent over the first block at the top of the page, a glass plate
+ * once the page scrolls beneath it. The component positions the header
+ * (`position: fixed`, inline); this utility owns only paint.
+ *
+ * Glass = `--color-surface-glass` (tone base) or
+ * `--color-surface-glass-inverse` (`data-tone="inverse"`), behind a
+ * `--blur-glass` backdrop blur, over a hairline in the matching line role.
+ * The contrast gate pins each glass alpha against its ink over a white and
+ * a black backdrop, the two extremes a blurred backdrop can average to.
+ *
+ * Focus indicators inside the header take the tone's ink rather than
+ * `--color-accent`: the `--ui-ring-focus` ring and the colour of every
+ * `:focus-visible` outline. Accent falls below the 3:1 non-text floor on
+ * the glass (dark theme, base glass over a white backdrop, 1.55:1), while
+ * the tone's ink is the one ink the gate checks on the glass, and the one
+ * the page guarantees reads over its hero at the transparent top.
+ *
+ * States change paint only (background, border colour, backdrop filter):
+ * the border width is constant, so no state moves layout.
+ *
+ * Fallbacks. The first two replace the glass plate, which is what the
+ * header shows once the page scrolls (and at every position where the
+ * third applies); they do not touch the transparent top:
+ *   - no backdrop-filter: the glass becomes the opaque raised (or inverse)
+ *     plate, since an unblurred translucent plate does not hold contrast
+ *     over busy content;
+ *   - prefers-reduced-transparency: the same opaque plate, no blur;
+ *   - no scroll-driven animations (and so no JavaScript requirement): the
+ *     whole `animation-timeline` block is skipped and the header is glass at
+ *     every scroll position, including the top.
+ * Where scroll-driven animations exist, the header is transparent at the
+ * top in every case, including under the first two fallbacks. That is
+ * intentional: the top is no surface at all, not a translucent one, and
+ * the page supplies its own scrim and tone there (see `SiteHeaderTone`).
+ * The header reaches glass over the first `--spacing-3xl` of root scrolling;
+ * reduced motion swaps the ramp for one step over the first pixel, so the
+ * glass arrives with the first scroll.
+ * `data-menu-open` (the `menuOpen` prop), any descendant with
+ * `aria-expanded="true"` (an open menu toggle) or an open `<details>`
+ * (a disclosure menu) forces glass at any scroll
+ * position, so an open menu never sits on a transparent bar.
+ */
+@keyframes site-header-glass {
+  to {
+    background-color: var(--site-header-glass-fill, oklch(1 0 0 / 0.88));
+    border-block-end-color: var(--site-header-glass-line, oklch(0.8761 0 0));
+    -webkit-backdrop-filter: var(--site-header-glass-blur, blur(16px));
+    backdrop-filter: var(--site-header-glass-blur, blur(16px));
+  }
+}
+
+@utility site-header-overlay {
+  --site-header-glass-fill: var(--color-surface-glass, oklch(1 0 0 / 0.88));
+  --site-header-glass-line: var(--color-line-base, oklch(0.8761 0 0));
+  --site-header-glass-blur: blur(var(--blur-glass, 16px));
+  border-block-end-width: var(--ui-border-hairline, 1px);
+  border-block-end-style: solid;
+  background-color: var(--site-header-glass-fill, oklch(1 0 0 / 0.88));
+  border-block-end-color: var(--site-header-glass-line, oklch(0.8761 0 0));
+  -webkit-backdrop-filter: var(--site-header-glass-blur, blur(16px));
+  backdrop-filter: var(--site-header-glass-blur, blur(16px));
+  --site-header-focus: var(--color-ink-primary, oklch(0.2178 0 0));
+  --ui-ring-focus: 0 0 0 2px var(--site-header-focus, oklch(0.2178 0 0));
+  &[data-tone="inverse"] {
+    --site-header-glass-fill: var(--color-surface-glass-inverse, oklch(0.2178 0 0 / 0.88));
+    --site-header-glass-line: var(--color-line-on-inverse, oklch(0.9702 0 0 / 0.14));
+    --site-header-focus: var(--color-ink-on-inverse, oklch(0.9702 0 0));
+  }
+  &[data-placement="overlay"] :focus-visible {
+    outline-color: var(--site-header-focus, oklch(0.2178 0 0));
+  }
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    --site-header-glass-fill: var(--color-surface-raised, oklch(1 0 0));
+    &[data-tone="inverse"] {
+      --site-header-glass-fill: var(--color-surface-inverse, oklch(0.2178 0 0));
+    }
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    --site-header-glass-fill: var(--color-surface-raised, oklch(1 0 0));
+    --site-header-glass-blur: none;
+    &[data-tone="inverse"] {
+      --site-header-glass-fill: var(--color-surface-inverse, oklch(0.2178 0 0));
+    }
+  }
+  @supports (animation-timeline: scroll()) {
+    background-color: transparent;
+    border-block-end-color: transparent;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    animation-name: site-header-glass;
+    animation-duration: auto;
+    animation-timing-function: linear;
+    animation-fill-mode: both;
+    animation-timeline: scroll(root block);
+    animation-range: 0 var(--spacing-3xl, 48px);
+    @media (prefers-reduced-motion: reduce) {
+      /* One step over the first pixel: transparent only at the very top,
+         glass from the first scroll. (steps(1, jump-start) would sit at
+         its end value already at progress 0, so never transparent.) */
+      animation-timing-function: steps(1, jump-end);
+      animation-range: 0 1px;
+    }
+    &[data-menu-open],
+    &:has([aria-expanded="true"]),
+    &:has(details[open]) {
+      animation-name: none;
+      background-color: var(--site-header-glass-fill, oklch(1 0 0 / 0.88));
+      border-block-end-color: var(--site-header-glass-line, oklch(0.8761 0 0));
+      -webkit-backdrop-filter: var(--site-header-glass-blur, blur(16px));
+      backdrop-filter: var(--site-header-glass-blur, blur(16px));
+    }
+  }
+}
+
+/*
  * The quiet call to action (T4, `buttonClassName("quiet", …)`): a chevron
  * text button with no box. The block pads to the 44px tap target
  * (`--ui-layout-tap-target`) so it stays easy to hit while aligning to the
@@ -403,8 +529,8 @@
 
 /* LinkGrid's decorative icon slot also sizes a supplied SVG with intrinsic dimensions. */
 @utility link-grid-icon {
-  inline-size: var(--ui-icon-md);
-  block-size: var(--ui-icon-md);
+  inline-size: var(--ui-icon-md, var(--spacing-xl, 24px));
+  block-size: var(--ui-icon-md, var(--spacing-xl, 24px));
   & > svg {
     width: 100%;
     height: 100%;
@@ -438,6 +564,48 @@
   }
 }
 
+/* Scoped layout parameters, not brand tokens; every length reads the token root. */
+@utility items-connected {
+  --items-wide: 0; --items-gap-inline: var(--spacing-2xl, 32px); --items-gap-block: var(--spacing-2xl, 32px);
+  --items-lane-narrow: 0px; --items-lane-wide: 0px; --items-body-narrow: 0px; --items-from: 0px; --items-to: 0px; --items-columns: 1;
+  & :where([data-item-segment]) { inline-size: var(--ui-border-hairline, 1px); block-size: var(--ui-border-hairline, 1px); }
+}
+@utility items-order-cell { padding-inline-start: calc((1 - var(--items-wide, 0)) * (var(--spacing-2xl, 32px) + var(--spacing-lg, 16px) + var(--items-lane-narrow, 0px))); }
+@utility items-order-body { margin-block-start: calc((1 - var(--items-wide, 0)) * var(--items-body-narrow, 0px) + var(--items-wide, 0) * (var(--spacing-2xl, 32px) + var(--spacing-lg, 16px) + var(--items-lane-wide, 0px))); }
+@utility items-order-ordinal { inset-inline-start: calc((1 - var(--items-wide, 0)) * var(--items-lane-narrow, 0px)); inset-block-start: calc(var(--items-wide, 0) * var(--items-lane-wide, 0px)); }
+@utility items-order-lane-label {
+  inset-inline-start: calc(var(--items-wide, 0) * (var(--spacing-2xl, 32px) + var(--spacing-sm, 8px)));
+  inset-block-start: calc(var(--items-wide, 0) * (var(--items-lane-wide, 0px) + var(--spacing-2xl, 32px) / 2));
+  transform: translateY(calc(var(--items-wide, 0) * (-100% - var(--spacing-sm, 8px))));
+}
+@utility items-track-stacked {
+  & > [data-item-segment=outgoing] { inset-inline-start: calc(var(--spacing-2xl, 32px) / 2 + var(--items-from, 0px)); inset-block-start: var(--spacing-2xl, 32px); block-size: calc(100% + var(--items-gap-block, var(--spacing-2xl, 32px)) / 2 - var(--spacing-2xl, 32px)); }
+  & > [data-item-segment=handoff] { inset-inline-start: calc(var(--spacing-2xl, 32px) / 2); inset-block-start: calc(100% + var(--items-gap-block, var(--spacing-2xl, 32px)) / 2); inline-size: var(--spacing-xl, 24px); }
+  & > [data-item-segment=incoming] { inset-inline-start: calc(var(--spacing-2xl, 32px) / 2 + var(--items-to, 0px)); inset-block-start: calc(100% + var(--items-gap-block, var(--spacing-2xl, 32px)) / 2); block-size: calc(var(--items-gap-block, var(--spacing-2xl, 32px)) / 2); }
+}
+@utility items-track-inline {
+  & > [data-item-segment=outgoing] { inset-inline-start: var(--spacing-2xl, 32px); inset-block-start: calc(var(--spacing-2xl, 32px) / 2 + var(--items-from, 0px)); inline-size: calc(100% + var(--items-gap-inline, var(--spacing-2xl, 32px)) / 2 - var(--spacing-2xl, 32px)); }
+  & > [data-item-segment=handoff] { inset-inline-start: calc(100% + var(--items-gap-inline, var(--spacing-2xl, 32px)) / 2); inset-block-start: calc(var(--spacing-2xl, 32px) / 2); block-size: var(--spacing-4xl, 64px); }
+  & > [data-item-segment=incoming] { inset-inline-start: calc(100% + var(--items-gap-inline, var(--spacing-2xl, 32px)) / 2); inset-block-start: calc(var(--spacing-2xl, 32px) / 2 + var(--items-to, 0px)); inline-size: calc(var(--items-gap-inline, var(--spacing-2xl, 32px)) / 2); }
+}
+@utility items-track-return {
+  --items-return-start: calc(-1 * ((var(--items-columns, 1) - 1) * (100% + var(--items-gap-inline, var(--spacing-2xl, 32px))) + var(--items-gap-inline, var(--spacing-2xl, 32px)) / 2));
+  & > [data-item-segment=outgoing] { inset-inline-start: var(--spacing-2xl, 32px); inset-block-start: calc(var(--spacing-2xl, 32px) / 2); inline-size: calc(100% + var(--items-gap-inline, var(--spacing-2xl, 32px)) / 2 - var(--spacing-2xl, 32px)); }
+  & > [data-item-segment=turn-out] { inset-inline-start: calc(100% + var(--items-gap-inline, var(--spacing-2xl, 32px)) / 2); inset-block-start: calc(var(--spacing-2xl, 32px) / 2); block-size: calc(100% + var(--items-gap-block, var(--spacing-2xl, 32px)) / 2 - var(--spacing-2xl, 32px) / 2); }
+  & > [data-item-segment=return] { inset-inline-start: var(--items-return-start, calc(-1 * ((var(--items-columns, 1) - 1) * (100% + var(--items-gap-inline, var(--spacing-2xl, 32px))) + var(--items-gap-inline, var(--spacing-2xl, 32px)) / 2))); inset-block-start: calc(100% + var(--items-gap-block, var(--spacing-2xl, 32px)) / 2); inline-size: calc(var(--items-columns, 1) * (100% + var(--items-gap-inline, var(--spacing-2xl, 32px)))); }
+  & > [data-item-segment=turn-in] { inset-inline-start: var(--items-return-start, calc(-1 * ((var(--items-columns, 1) - 1) * (100% + var(--items-gap-inline, var(--spacing-2xl, 32px))) + var(--items-gap-inline, var(--spacing-2xl, 32px)) / 2))); inset-block-start: calc(100% + var(--items-gap-block, var(--spacing-2xl, 32px)) / 2); block-size: calc(var(--items-gap-block, var(--spacing-2xl, 32px)) / 2 + var(--spacing-2xl, 32px) / 2); }
+  & > [data-item-segment=incoming] { inset-inline-start: var(--items-return-start, calc(-1 * ((var(--items-columns, 1) - 1) * (100% + var(--items-gap-inline, var(--spacing-2xl, 32px))) + var(--items-gap-inline, var(--spacing-2xl, 32px)) / 2))); inset-block-start: calc(100% + var(--items-gap-block, var(--spacing-2xl, 32px)) + var(--spacing-2xl, 32px) / 2); inline-size: calc(var(--items-gap-inline, var(--spacing-2xl, 32px)) / 2); }
+}
+@utility items-order-terminal-track {
+  inset-inline-start: calc((1 - var(--items-wide, 0)) * (var(--spacing-2xl, 32px) / 2 + var(--items-lane-narrow, 0px)) + var(--items-wide, 0) * var(--spacing-2xl, 32px));
+  inset-block-start: calc((1 - var(--items-wide, 0)) * var(--spacing-2xl, 32px) + var(--items-wide, 0) * (var(--spacing-2xl, 32px) / 2 + var(--items-lane-wide, 0px)));
+  inline-size: calc((1 - var(--items-wide, 0)) * var(--ui-border-hairline, 1px) + var(--items-wide, 0) * (100% - var(--spacing-2xl, 32px))); block-size: calc((1 - var(--items-wide, 0)) * (100% + var(--spacing-xl, 24px) - var(--spacing-2xl, 32px)) + var(--items-wide, 0) * var(--ui-border-hairline, 1px));
+}
+@utility items-order-end {
+  inset-inline-start: calc((1 - var(--items-wide, 0)) * (var(--spacing-2xl, 32px) / 2 + var(--items-lane-narrow, 0px)) + var(--items-wide, 0) * 100%);
+  inset-block-start: calc((1 - var(--items-wide, 0)) * (100% + var(--spacing-xl, 24px)) + var(--items-wide, 0) * (var(--spacing-2xl, 32px) / 2 + var(--items-lane-wide, 0px)));
+}
+
 /* Ledger geometry uses existing spacing, rule and icon slots. Each native
    element resets its own margins in the component, without a page reset. */
 @utility ledger-columns-two {
@@ -469,10 +637,7 @@
 }
 @utility ledger-owner-columns { @media (width >= 64rem) { grid-template-columns: minmax(0, 4fr) minmax(0, 4fr) minmax(0, 3fr); } }
 @utility ledger-group-divided { border-block-start-width: var(--ui-border-hairline, 1px); border-block-start-style: solid; }
-@utility ledger-pair { grid-template-columns: minmax(0, 1fr); @media (width >= 48rem) { grid-template-columns: minmax(0, 5fr) var(--spacing-2xl, 32px) minmax(0, 6fr); align-items: start; } }
-@utility ledger-wire-dot { inset-inline-end: 0; inset-block-start: 50%; translate: 50% -50%; }
 @utility ledger-owner-disc { inline-size: var(--ui-icon-md, var(--spacing-xl, 24px)); block-size: var(--ui-icon-md, var(--spacing-xl, 24px)); }
-@utility ledger-rule-wide { display: flex; @media (width >= 64rem) { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); column-gap: var(--spacing-2xl, 32px); align-items: start; } }
 
 @utility ledger-row-grid { grid-template-columns: minmax(0, 1fr) auto; }
 
@@ -486,7 +651,6 @@
 @utility scene-root { container: scene / inline-size; margin: 0; inline-size: 100%; min-inline-size: 0; font-family: var(--font-body, ui-sans-serif, system-ui, sans-serif); }
 @utility scene-desktop { display: none; }
 @utility scene-svg { display: block; inline-size: 100%; block-size: auto; max-inline-size: calc(var(--sc-w, 880) * 1px); overflow: visible; }
-@utility scene-tilt { transform-box: fill-box; transform-origin: 100% 50%; rotate: calc(var(--k, 0) * var(--ui-scene-tilt, 1deg)); }
 @utility scene-document { fill: var(--color-surface-raised, oklch(1 0 0)); stroke: var(--color-line-strong, oklch(0.7763 0 0)); stroke-width: var(--ui-border-hairline, 1px); rx: var(--radius-default, 3px); }
 @utility scene-fold { fill: var(--color-surface-sunken, oklch(0.9401 0 0)); stroke: var(--color-line-strong, oklch(0.7763 0 0)); stroke-width: var(--ui-border-hairline, 1px); stroke-linejoin: round; }
 @utility scene-chip { fill: var(--color-surface-sunken, oklch(0.9401 0 0)); rx: var(--radius-subtle, 2px); }

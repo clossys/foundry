@@ -1,7 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { describe, expect, it } from "vitest";
 
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -216,7 +216,7 @@ describe("public UI contract", () => {
   });
 });
 
-// Pinned before the split: 57 values, subtract only the two Node helpers.
+// Pure namespace with the consumer art checker; file helpers remain Node-only.
 const PURE_TOKEN_VALUES = [
   "AA",
   "AA_LARGE",
@@ -245,6 +245,7 @@ const PURE_TOKEN_VALUES = [
   "checkBackdropElement",
   "checkBrandFileCoverage",
   "checkClearSpace",
+  "checkConsumerArtContract",
   "checkIdentityContrast",
   "checkMinimumSize",
   "checkSingleColourLegibility",
@@ -285,4 +286,18 @@ describe("compiled public token namespaces", () => {
     expect(publicKeys("@clossys/designer/tokens")).toEqual(PURE_TOKEN_VALUES);
     expect(publicKeys("@clossys/designer/tokens/server")).toEqual(["assertTailwindMergeVersion", "readBrandCss"]);
   });
+});
+
+
+describe("compiled catalog export cleanup", () => {
+  it.each(["CardGrid", "TopicList", "LinkGrid", "Comparison", "LedgerTile"])("deletes the retired %s source entrypoint", name => {
+    expect(existsSync(join(packageRoot, "src", "blocks", `${name}.tsx`))).toBe(false);
+  });
+  it.each(["@clossys/designer/blocks", "@clossys/designer/blocks/server", pathToFileURL(join(packageRoot, "dist", "index.js")).href])("exposes the canonical catalog without retired wrappers through %s", subpath => {
+    const script = `import * as blocks from ${JSON.stringify(subpath)}; process.stdout.write(JSON.stringify(Object.keys(blocks)));`;
+    const keys: string[] = JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e", script], { cwd: packageRoot, encoding: "utf8", timeout: 10_000 }));
+    expect(keys.filter(key => ["Item", "Items", "Matrix"].includes(key)).sort()).toEqual(["Item", "Items", "Matrix"]);
+    expect(keys.filter(key => ["CardGrid", "TopicList", "LinkGrid", "Comparison", "LedgerTile"].includes(key))).toEqual([]);
+    expect(keys.filter(key => ["ItemRenderer", "ItemsStatic", "renderNavItems", "MatrixRenderer"].includes(key))).toEqual([]);
+  }, 15_000);
 });

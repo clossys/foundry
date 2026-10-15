@@ -16,12 +16,6 @@ export interface LedgerGroupData {
   owner?: { initials: ReactNode; name: ReactNode; note?: ReactNode };
   note?: ReactNode;
 }
-export interface LedgerPairData {
-  id: string;
-  role: { eyebrow: ReactNode; heading: ReactNode; description: ReactNode };
-  /** kind is the complete authored line, including any lead-in or separator. */
-  product: { kind: ReactNode; subject: ReactNode; detail?: ReactNode; status?: LedgerRowData["status"] };
-}
 
 export function hasLedgerContent(node: ReactNode): boolean {
   if (node === undefined || node === null || typeof node === "boolean") return false;

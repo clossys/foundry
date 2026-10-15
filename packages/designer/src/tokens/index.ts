@@ -255,3 +255,9 @@ export type {
   MinimumSizeResult,
   SingleColourLegibilityResult,
 } from "./identity-checks.js";
+
+export { checkConsumerArtContract } from "../backdrop/consumer-art.js";
+export type {
+  ConsumerArtPosition, ConsumerArtAspect, ConsumerArtFormat, ConsumerArtPath,
+  ConsumerArtSource, ConsumerArtContract, ConsumerArtFinding, ConsumerArtReport,
+} from "../backdrop/consumer-art.js";

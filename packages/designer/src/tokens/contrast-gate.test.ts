@@ -5,6 +5,7 @@ import { parseRootDeclarations, parseDeclarationsForSelector } from "./internal/
 import { describe, expect, it } from "vitest";
 import { TOKENS, type TokenDefinition } from "./tokens.js";
 import { checkTokenContrast } from "./contrast-gate.js";
+import { contrastRatio, contrastRatioEncodedBlend } from "./color.js";
 import { AA, AA_LARGE, CONTRAST_PAIRS, contrastPairsForTheme, type ContrastException, type ContrastPair } from "./contrast-pairs.js";
 
 const sourceDir = dirname(fileURLToPath(import.meta.url));
@@ -222,6 +223,119 @@ describe("checkTokenContrast", () => {
     expect(result.unchecked).toEqual([]);
     expect(result.findings).toEqual([]);
     expect(result.ok).toBe(true);
+  });
+
+  it("treats a compositeOver that is not a custom property as a literal backdrop color", () => {
+    const pair = (over: string): ContrastPair => ({
+      id: `glass@${over}`,
+      foreground: "--color-ink-primary",
+      background: "--color-surface-glass",
+      compositeOver: over,
+      level: "AA",
+      minimumRatio: AA,
+      description: "test fixture",
+    });
+    const passing = checkTokenContrast([pair("oklch(1 0 0)"), pair("oklch(0 0 0)")], { tokens: TOKENS });
+    expect(passing.unchecked).toEqual([]);
+    expect(passing.ok).toBe(true);
+    // The literal really is the backdrop: a mostly clear glass over black fails, over white passes.
+    const clear = { ...TOKENS, "--color-surface-glass": { ...TOKENS["--color-surface-glass"]!, value: "oklch(1 0 0 / 0.2)" } };
+    const mixed = checkTokenContrast([pair("oklch(1 0 0)"), pair("oklch(0 0 0)")], { tokens: clear });
+    expect(mixed.findings.map((f) => f.pairId)).toEqual(["glass@oklch(0 0 0)"]);
+    // A malformed literal is reported unchecked, not scored.
+    const malformed = checkTokenContrast([pair("not-a-color")], { tokens: TOKENS });
+    expect(malformed.ok).toBe(false);
+    expect(malformed.unchecked.map((u) => u.reason)).toEqual(["unparseable-color-value"]);
+    // A translucent literal is refused rather than having its alpha silently dropped.
+    const translucent = checkTokenContrast([pair("oklch(0 0 0 / 0.5)")], { tokens: TOKENS });
+    expect(translucent.ok).toBe(false);
+    expect(translucent.findings).toEqual([]);
+    expect(translucent.unchecked).toHaveLength(1);
+    expect(translucent.unchecked[0]?.reason).toBe("unparseable-color-value");
+    expect(translucent.unchecked[0]?.detail).toContain("translucent");
+  });
+
+  it("scores a pair over a literal backdrop by the lower of a linear and a gamma-encoded (browser) blend", () => {
+    const pair: ContrastPair = {
+      id: "glass@black",
+      foreground: "--color-ink-primary",
+      background: "--color-surface-glass",
+      compositeOver: "oklch(0 0 0)",
+      level: "AA",
+      minimumRatio: AA,
+      description: "test fixture",
+    };
+    // Dark ink on a light 30% glass over black: a linear blend reads it as
+    // passing, the browser's sRGB blend paints it far below AA.
+    const glass = "oklch(1 0 0 / 0.3)";
+    const ink = TOKENS["--color-ink-primary"]!.value;
+    expect(contrastRatio(ink, glass, "oklch(0 0 0)")).toBeGreaterThan(AA);
+    expect(contrastRatioEncodedBlend(ink, glass, "oklch(0 0 0)")).toBeLessThan(3);
+    const tokens = { ...TOKENS, "--color-surface-glass": { ...TOKENS["--color-surface-glass"]!, value: glass } };
+    const result = checkTokenContrast([pair], { tokens });
+    expect(result.findings.map((f) => f.pairId)).toEqual(["glass@black"]);
+    expect(result.findings[0]?.ratio).toBeCloseTo(contrastRatioEncodedBlend(ink, glass, "oklch(0 0 0)"), 10);
+  });
+
+  it("fails a literal-backdrop pair at 1:1 when an intermediate backdrop matches the ink under the browser's blend only", () => {
+    // Gray ink of luminance ~0.30 on a white 50% plate. In linear light the
+    // plate spans 0.50 (over black) to 1 (over white), above the ink; in the
+    // gamma-encoded blend it spans ~0.21 to 1, which contains the ink. The
+    // black extreme alone measures ~1.3:1, so 1:1 can only come from the
+    // interval check, and only from its encoded half.
+    const ink = "oklch(0.669 0 0)";
+    const glass = "oklch(1 0 0 / 0.5)";
+    const pair: ContrastPair = {
+      id: "glass@black",
+      foreground: "--color-ink-primary",
+      background: "--color-surface-glass",
+      compositeOver: "oklch(0 0 0)",
+      level: "AA",
+      minimumRatio: AA,
+      description: "test fixture",
+    };
+    const endpoint = Math.min(contrastRatio(ink, glass, "oklch(0 0 0)"), contrastRatioEncodedBlend(ink, glass, "oklch(0 0 0)"));
+    expect(endpoint).toBeGreaterThan(1.2);
+    const tokens = {
+      ...TOKENS,
+      "--color-ink-primary": { ...TOKENS["--color-ink-primary"]!, value: ink },
+      "--color-surface-glass": { ...TOKENS["--color-surface-glass"]!, value: glass },
+    };
+    const result = checkTokenContrast([pair], { tokens });
+    expect(result.unchecked).toEqual([]);
+    expect(result.findings).toHaveLength(1);
+    expect(result.findings[0]?.ratio).toBe(1);
+    expect(result.findings[0]?.message).toContain("intermediate backdrop");
+  });
+
+  it("refuses a translucent foreground over a literal backdrop as unchecked rather than scoring the extremes", () => {
+    const pair: ContrastPair = {
+      id: "glass@white",
+      foreground: "--color-ink-primary",
+      background: "--color-surface-glass",
+      compositeOver: "oklch(1 0 0)",
+      level: "AA",
+      minimumRatio: AA,
+      description: "test fixture",
+    };
+    const tokens = { ...TOKENS, "--color-ink-primary": { ...TOKENS["--color-ink-primary"]!, value: "oklch(0.2178 0 0 / 0.9)" } };
+    const result = checkTokenContrast([pair], { tokens });
+    expect(result.ok).toBe(false);
+    expect(result.findings).toEqual([]);
+    expect(result.unchecked).toHaveLength(1);
+    expect(result.unchecked[0]?.reason).toBe("unparseable-color-value");
+    expect(result.unchecked[0]?.detail).toContain("must be opaque");
+  });
+
+  it("keeps the linear blend alone for a token backdrop, so token-composited pairs do not move", () => {
+    const statusPair = CONTRAST_PAIRS.find((p) => p.id === "status-success-text/status-success-tint") as ContrastPair;
+    const result = checkTokenContrast([{ ...statusPair, minimumRatio: 100 }], { tokens: TOKENS });
+    const linear = contrastRatio(
+      TOKENS["--color-status-success-text"]!.value,
+      TOKENS["--color-status-success-tint"]!.value,
+      TOKENS["--color-surface-base"]!.value,
+    );
+    expect(result.findings[0]?.ratio).toBe(linear);
   });
 
   it("defaults to this package's real TOKENS when no tokens option is supplied", () => {

@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { NavGrid, type NavGridItem } from "./NavGrid.js";
 
 describe("NavGrid", () => {
-  it("delegates eligible all-linked grids to LinkGrid plate anatomy", () => {
+  it("delegates eligible all-linked grids to shared item plate anatomy", () => {
     const { container } = render(<NavGrid items={[{ id: "a", title: "Topic A", href: "/a" }, { id: "b", title: "Topic B", href: "/b" }]} />);
     expect(container.querySelector("ul[data-link-grid][data-surface='plate']")).not.toBeNull();
     expect(screen.getByRole("link", { name: "Topic A" })).toHaveClass("after:rounded-panel");
@@ -17,7 +17,7 @@ describe("NavGrid", () => {
     expect(screen.getAllByRole("link")).toHaveLength(7);
   });
 
-  it("preserves linked tiles with mixed icons without loosening LinkGrid's contract", () => {
+  it("preserves linked tiles with mixed icons without loosening canonical Items' contract", () => {
     const { container } = render(<NavGrid items={[{ id: "a", title: "Topic A", href: "/a", icon: <svg /> }, { id: "b", title: "Topic B", href: "/b" }]} />);
     expect(screen.getAllByRole("link")).toHaveLength(2);
     expect(container.querySelector("[data-link-grid]")).toBeNull();
@@ -90,10 +90,14 @@ describe("NavGrid", () => {
     expect(link.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
   });
 
-  it("refuses an href card whose content holds another interactive element", () => {
-    expect(() =>
-      render(<NavGrid items={[{ id: "billing", title: "Billing", description: <a href="/help">Help</a>, href: "/billing" }]} />),
-    ).toThrow(TypeError);
+  it("keeps a previously accepted inline description link separate from the primary destination", () => {
+    render(<NavGrid items={[{ id: "billing", title: "Billing", description: <a href="/help">Help</a>, href: "/billing" }]} />);
+    const primary = screen.getByRole("link", { name: "Billing" });
+    const help = screen.getByRole("link", { name: "Help" });
+    expect(primary).toHaveAttribute("href", "/billing");
+    expect(help).toHaveAttribute("href", "/help");
+    expect(primary).not.toContainElement(help);
+    expect(primary.className).not.toMatch(/(?:^|\s)after:/);
   });
 
   it("renders the title, description, and icon inside the single button of an onSelect card (the whole card is the target)", () => {

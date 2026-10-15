@@ -306,14 +306,18 @@ function normalizeRelation(relation: DomainRelationDefinition): DomainRelation {
   return { type: relation.type, from: relation.from, to: relation.to, values: normalizeValue(copyValues(relation.values)) as Record<string, unknown> };
 }
 
+function compareCodeUnits(left: string, right: string): number {
+  return left < right ? -1 : left > right ? 1 : 0;
+}
+
 /** Returns one canonical ordering and property layout for the same snapshot value. */
 export function normalizeDomainSnapshot(snapshot: DomainSnapshotDefinition): DomainSnapshot {
   const copied = defineDomainSnapshot(snapshot);
   const records = copied.records.map(normalizeRecord).sort((left, right) =>
-    left.id.localeCompare(right.id) || left.type.localeCompare(right.type) || comparable(left.values).localeCompare(comparable(right.values)),
+    compareCodeUnits(left.id, right.id) || compareCodeUnits(left.type, right.type) || compareCodeUnits(comparable(left.values), comparable(right.values)),
   );
   const relations = copied.relations.map(normalizeRelation).sort((left, right) =>
-    left.type.localeCompare(right.type) || left.from.localeCompare(right.from) || left.to.localeCompare(right.to) || comparable(left.values).localeCompare(comparable(right.values)),
+    compareCodeUnits(left.type, right.type) || compareCodeUnits(left.from, right.from) || compareCodeUnits(left.to, right.to) || compareCodeUnits(comparable(left.values), comparable(right.values)),
   );
   return { records, relations };
 }

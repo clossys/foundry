@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
+import { assertNoNestedInteractive } from "../stretched-link.js";
 import { Meter, type MeterDirection } from "../../atoms/Meter.js";
 import { StatusMark, type StatusMarkTone } from "../../atoms/StatusMark.js";
 import { cx } from "../../atoms/internal/cx.js";
@@ -10,7 +11,7 @@ import { UI_BORDER_HAIRLINE } from "../../atoms/internal/ui-vars.js";
 /**
  * Field grids. Columns follow the PANEL's width, not the viewport's (the
  * panel is a size container, see `SpecimenPanel`): never more than two
- * columns until the panel itself is wide (`@lg`, 32rem), so a panel in a
+ * columns until `@lg:grid-cols-4` applies at a panel width of 32rem, so a panel in a
  * third-width card or at 390px stays readable.
  */
 const FIELDS_COLUMN_CLASSES: Record<1 | 2 | 4, string> = {
@@ -38,11 +39,11 @@ const DIVIDED_ROW = "border-t border-line-base pt-md";
 const LIST_RESET_CLASSES = "m-0 flex flex-col p-0";
 
 /**
- * Table classes. Until the PANEL is wide enough for real columns (`@md`,
- * 28rem, measured on the panel's own size container, not the viewport)
+ * Table classes. Until `@md:table` applies at a panel width of 28rem
+ * (measured on the panel's own size container, not the viewport)
  * each row reflows into a stacked record: the row header on its own line,
  * then one label/value pair per cell, with the column headers kept for
- * assistive technology only (`sr-only`). From `@md` it is an ordinary
+ * assistive technology only (`sr-only`). From `@md:table` it is an ordinary
  * table. So a table in a third-width card stacks at every viewport instead
  * of wrapping each cell over two lines.
  */
@@ -110,6 +111,8 @@ export interface SpecimenStatusRow {
 
 /** Rows of a label, an optional detail and a state, in a `<ul>`. */
 export interface SpecimenStatusRowsPart {
+  /** Retain all rows; show only the first three below tablet when supplied. */
+  mobileRows?: 3;
   id: string;
   type: "status-rows";
   label?: ReactNode;
@@ -132,6 +135,8 @@ export interface SpecimenMeterPart {
   /** The value as visible text; the bar is decoration. */
   valueText: string;
   limitText?: string;
+  previous?: number;
+  previousText?: string;
   status?: SpecimenStatus;
   /** One short line under the bar (the headroom, say). */
   note?: ReactNode;
@@ -251,6 +256,7 @@ function assertCount(what: string, count: number, max: number): void {
  */
 export function assertSpecimenPart(part: SpecimenPart): void {
   const where = "the " + part.type + ' part "' + part.id + '"';
+  if (part.type === "status-rows" && part.mobileRows !== undefined && part.mobileRows !== 3) throw new TypeError("Specimen: mobileRows must be 3 when supplied.");
   if (part.type === "meter") return; // One value; the Meter atom validates its numbers.
   if (part.type === "table") {
     assertCount(where + " columns", part.columns.length, SPECIMEN_TABLE_MAX_COLUMNS);
@@ -265,6 +271,7 @@ export function assertSpecimenPart(part: SpecimenPart): void {
     return;
   }
   assertCount(where, part.items.length, SPECIMEN_PART_MAX_ROWS);
+  if (part.type === "status-rows") assertNoNestedInteractive("Specimen", part.id, [part.label, ...part.items.flatMap(row => [row.label, row.detail, row.status.label])]);
   if (part.type === "shares") {
     for (const item of part.items) {
       if (!Number.isFinite(item.share) || item.share < 0 || item.share > 100) {
@@ -320,7 +327,7 @@ function StatusRowsBody({ part }: { part: SpecimenStatusRowsPart }) {
       {part.items.map((row, index) => {
         const divided = dividedRow(index, part.items.length);
         return (
-          <li key={row.id} className={cx(ROW_CLASSES, divided.className)} style={divided.style}>
+          <li key={row.id} className={cx(ROW_CLASSES, divided.className, part.mobileRows === 3 && index >= 3 ? "max-tablet:hidden" : undefined)} style={divided.style}>
             <div className={ROW_TEXT_CLASSES}>
               <span className={PRIMARY_TEXT}>{row.label}</span>
               {row.detail ? <span className={cx(SECONDARY_CAPTION, "tabular-nums")}>{row.detail}</span> : null}
@@ -348,6 +355,8 @@ function MeterBody({ part, marker }: { part: SpecimenMeterPart; marker?: number 
         tone={part.tone}
         valueText={part.valueText}
         limitText={part.limitText}
+        previous={part.previous}
+        previousText={part.previousText}
         emphasis="figure"
       />
       {part.note ? <p className={cx(SECONDARY_CAPTION, "m-0")}>{part.note}</p> : null}

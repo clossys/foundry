@@ -5,9 +5,8 @@ import { ChevronRight } from "../icons/ChevronRight.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
 
 /*
- * The linked-card anatomy shared by `FeatureGrid`, `CardGrid`, `TopicList`,
- * `OrderedStepSequence` and `NavGrid` (internal: not exported from the
- * package). It lives beside the blocks rather than in `blocks/internal/`
+ * The linked-item anatomy shared by `Item`, `Items`, and `NavGrid`
+ * (internal: not exported from the package). It lives beside the blocks rather than in `blocks/internal/`
  * because the `compiled.css` scan skips `internal/`, and these class strings
  * must compile.
  *
@@ -27,16 +26,15 @@ import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js"
  * a filter or containment: any of those makes that element the containing
  * block of the `::after`, and the hit area shrinks to it. `font-display`
  * sets `transform: scaleX(--font-display-scale-x)`, so a display-face title
- * that holds the link adds `transform-none` (see `CardGrid`).
+ * that holds the link adds `transform-none` (see `Item`).
  */
 
 /**
  * The shape the hit area and ring take: the plate itself (`plate`), a bare
  * item with a hover plate around it (`plain`), a rule-topped item whose hover
- * plate starts under the rule (`rule`), a topic row between hairlines
- * (`topic`), or a `NavGrid` control tile (`control`).
+ * plate starts under the rule (`rule`), or a `NavGrid` control tile (`control`).
  */
-export type CardLinkFrame = "plate" | "plain" | "rule" | "topic" | "control";
+export type CardLinkFrame = "plate" | "plain" | "rule" | "control";
 
 /** The anchor: inherits the title's ink, no underline at rest, the T4 quiet-action chevron behaviour. */
 const ANCHOR_BASE =
@@ -47,7 +45,6 @@ const HIT_AREA_CLASSES: Record<CardLinkFrame, string> = {
   plate: "after:inset-0 after:rounded-panel",
   plain: "after:-inset-x-sm after:-inset-y-sm tablet:after:-inset-x-md tablet:after:-inset-y-md after:rounded-panel",
   rule: "after:-inset-x-sm after:top-0 after:-bottom-sm tablet:after:-inset-x-md tablet:after:-bottom-md after:rounded-panel",
-  topic: "after:-inset-x-md after:inset-y-xs after:rounded-panel",
   control: "after:inset-0 after:rounded-control",
 };
 
@@ -71,16 +68,13 @@ const HOVER_PLATE_INSET_CLASSES: Record<CardLinkFrame, string | undefined> = {
   plate: undefined,
   plain: "before:-inset-x-sm before:-inset-y-sm tablet:before:-inset-x-md tablet:before:-inset-y-md",
   rule: "before:-inset-x-sm before:top-0 before:-bottom-sm tablet:before:-inset-x-md tablet:before:-bottom-md",
-  topic: "before:-inset-x-md before:inset-y-xs",
   control: undefined,
 };
 
-/** The item container's classes and hover plate. LinkGrid alone uses the base plate on a sunken ground. */
-export function cardLinkContainerClassName(frame: CardLinkFrame, ground: SectionGround, sunkenPlate?: "base"): string {
+/** The item container and its hover plate on the matching section ground. */
+export function cardLinkContainerClassName(frame: CardLinkFrame, ground: SectionGround): string {
   const inset = HOVER_PLATE_INSET_CLASSES[frame];
-  const fill = ground === "sunken" && sunkenPlate === "base"
-    ? "before:absolute before:-z-10 before:rounded-panel hover:before:bg-surface-base has-focus-visible:before:bg-surface-base"
-    : HOVER_PLATE_FILL_CLASSES[ground];
+  const fill = HOVER_PLATE_FILL_CLASSES[ground];
   return cx("relative isolate", inset === undefined ? undefined : fill, inset);
 }
 
@@ -109,27 +103,44 @@ export function CardLinkTitle({ href, frame, ground, iconSize = "sm", children, 
 
 const INTERACTIVE_TAGS = new Set(["a", "button", "input", "select", "textarea", "summary", "details", "label", "iframe"]);
 
-function interactiveIn(node: ReactNode): boolean {
+function interactiveIn(node: ReactNode, inSvg = false): boolean {
   let found = false;
   Children.forEach(node, (child) => {
     if (found || !isValidElement(child)) return;
     const props = (child.props ?? {}) as Record<string, unknown>;
+    const tag = typeof child.type === "string" ? child.type.toLowerCase() : undefined;
+    const svg = tag === "svg" || inSvg;
+    const resource = svg && (tag === "use" || tag === "image");
+    const editable = props.contentEditable === true || (typeof props.contentEditable === "string" && ["", "true", "plaintext-only"].includes(props.contentEditable.toLowerCase()));
+    const focusable = (typeof props.tabIndex === "number" && Number.isFinite(props.tabIndex)) || (typeof props.tabIndex === "string" && props.tabIndex.trim() !== "" && Number.isFinite(Number(props.tabIndex)));
+    // A passive SVG reference is not a link; authored handlers, focus and editing still create targets.
     if (typeof child.type === "string" && INTERACTIVE_TAGS.has(child.type)) found = true;
-    else if (props.href !== undefined || props.onClick !== undefined || props.onPress !== undefined) found = true;
-    else found = interactiveIn(props.children as ReactNode);
+    else if ((props.href !== undefined && !resource) || props.onClick !== undefined || props.onPress !== undefined || (resource && (editable || focusable))) found = true;
+    else found = interactiveIn(props.children as ReactNode, tag === "foreignobject" ? false : svg);
   });
   return found;
+}
+
+/** Private content probe; compatibility callers may choose separate controls instead of a stretched link. */
+export function hasInteractiveContent(parts: readonly ReactNode[]): boolean {
+  return parts.some((part) => interactiveIn(part));
 }
 
 /**
  * Throws a `TypeError` when any part of a linked item holds an interactive
  * element (a link, a button, a field, or an element with `href`, `onClick`
  * or `onPress`): the item is one link, so nothing inside it may be another
- * target. Reads the React elements as passed; a component's own rendered
- * output is not inspected.
+ * target. Passive `use` and `image` href references under a literal `<svg>`
+ * in the supplied tree are allowed; handlers, focus, editing and interactive
+ * descendants still make those resources targets. `<foreignObject>` resets
+ * SVG context, and a nested literal `<svg>` restores it. Other SVG href
+ * carriers are conservatively refused, even when their references are passive.
+ * Reads the React elements as passed: an opaque wrapper does not establish
+ * SVG context, and its own rendered output is not inspected. Referenced
+ * symbol content is also uninspected; callers must keep it noninteractive.
  */
 export function assertNoNestedInteractive(block: string, id: string, parts: readonly ReactNode[]): void {
-  if (parts.some((part) => interactiveIn(part))) {
+  if (hasInteractiveContent(parts)) {
     throw new TypeError(`${block}: item "${id}" is linked (href), so it cannot hold another link, button or field; make its content plain text or drop the href.`);
   }
 }

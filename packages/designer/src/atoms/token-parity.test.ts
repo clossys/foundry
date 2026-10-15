@@ -244,6 +244,8 @@ const ANY_RECORD_MAP_RE = /const\s+([A-Za-z_]+)\s*:\s*Record</g;
  * escape both.
  */
 const KNOWN_NON_CLASS_MAPS = new Set([
+  // backdrop/consumer-art.ts — aspect -> intrinsic geometry pair, not classes.
+  "aspects",
   // blocks/scene/Scene.tsx — document-format labels, never class names.
   "formats",
   // blocks/FeatureGrid.tsx — treatment -> linked-item frame name (a

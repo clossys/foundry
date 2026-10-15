@@ -10,7 +10,7 @@ import type { CopyRef, CopyRegistry } from "@clossys/writer";
 import {
   checkSectionVariety,
   CONTENT_ICON_NAMES,
-  FEATURE_GRID_ITEM_EYEBROW_MAX_CHARACTERS,
+  CONTENT_ITEM_EYEBROW_MAX_CHARACTERS,
   resolveSectionedViewDocument,
   SectionedViewResolutionError,
   validateSectionedViewDocument,
@@ -80,19 +80,13 @@ const panelC: SectionedViewSpecimenPanel = {
   ],
 };
 
-const specimen = (panels: SectionedViewSpecimenPanel[], arrangement?: SectionedViewSpecimenMedia["arrangement"]): SectionedViewSpecimenMedia => ({
-  type: "specimen",
-  label: ref("acme.specimen.label"),
-  ...(arrangement === undefined ? {} : { arrangement }),
-  ...(arrangement === "flow" ? { connector: ref("acme.specimen.connector") } : {}),
-  panels,
-});
+const specimen = (panel: SectionedViewSpecimenPanel): SectionedViewSpecimenMedia => ({ type: "specimen", label: ref("acme.specimen.label"), panel });
 
 const item = (id: string, extra: Record<string, unknown> = {}) => ({ id, heading: ref(`acme.item.${id}.heading`), description: ref(`acme.item.${id}.description`), ...extra });
 
-const featuresBlock: SectionedViewContentBlock = { type: "feature-grid", columns: 3, treatment: "plate", items: [item("a", { icon: "landmark" }), item("b", { icon: "scale" }), item("c")] };
+const featuresBlock: SectionedViewContentBlock = { type: "items", arrangement: "columns", columns: 3, treatment: "plate", items: [item("a", { icon: "landmark" }), item("b", { icon: "scale" }), item("c")] };
 const cardsBlock: SectionedViewContentBlock = {
-  type: "card-grid",
+  type: "items", arrangement: "bento",
   items: [
     { ...item("wide"), span: "two-thirds", icon: "layers", eyebrow: ref("acme.item.wide.eyebrow"), visual: fieldsPart("wide-visual", 5) },
     { ...item("narrow"), span: "third" },
@@ -102,23 +96,24 @@ const cardsBlock: SectionedViewContentBlock = {
   ],
 };
 const comparisonBlock: SectionedViewContentBlock = {
-  type: "comparison",
-  before: { label: ref("acme.before.label"), heading: ref("acme.before.heading"), points: [ref("acme.before.p1"), ref("acme.before.p2")], visual: panelC },
-  after: { label: ref("acme.after.label"), points: [ref("acme.after.p1"), ref("acme.after.p2")], visual: { ...panelC, id: "owners-after" } },
+  type: "matrix", sides: [
+    { id: "before", label: ref("acme.before.label"), heading: ref("acme.before.heading"), visual: panelC },
+    { id: "after", label: ref("acme.after.label"), heading: ref("acme.after.heading"), visual: { ...panelC, id: "owners-after" } },
+  ],
 };
-const topicsBlock: SectionedViewContentBlock = { type: "topic-list", columns: 2, items: [item("ta", { icon: "file-check" }), item("tb"), item("tc"), item("td")] };
+const topicsBlock: SectionedViewContentBlock = { type: "items", arrangement: "rows", columns: 2, items: [item("ta", { icon: "file-check" }), item("tb"), item("tc"), item("td")] };
 const stepsBlock: SectionedViewContentBlock = {
-  type: "ordered-step-sequence",
+  type: "items", arrangement: "columns", order: "connected",
   items: [
-    { id: "one", ordinal: ref("acme.step.one.ordinal"), label: ref("acme.step.one.actor"), heading: ref("acme.step.one.heading"), description: ref("acme.step.one.description"), visual: panelB },
-    { id: "two", ordinal: ref("acme.step.two.ordinal"), heading: ref("acme.step.two.heading") },
-    { id: "three", ordinal: ref("acme.step.three.ordinal"), heading: ref("acme.step.three.heading") },
+    { id: "one", meta: ref("acme.step.one.actor"), heading: ref("acme.step.one.heading"), description: ref("acme.step.one.description"), visual: panelB.parts[0] },
+    { id: "two", heading: ref("acme.step.two.heading"), visual: panelB.parts[1] },
+    { id: "three", heading: ref("acme.step.three.heading") },
   ],
 };
 type SectionedViewFaqItemShape = { id: string; question: CopyRef; answer: CopyRef };
 const faqBlock: SectionedViewContentBlock = {
-  type: "faq",
-  items: ["q1", "q2", "q3", "q4"].map((id) => ({ id, question: ref(`acme.faq.${id}.question`), answer: ref(`acme.faq.${id}.answer`) })),
+  type: "items", arrangement: "rows", reveal: "disclose",
+  items: ["q1", "q2", "q3", "q4"].map((id) => ({ id, heading: ref(`acme.faq.${id}.question`), description: ref(`acme.faq.${id}.answer`) })),
 };
 
 const section = (id: string, extra: Partial<SectionedViewContentSection> = {}): SectionedViewContentSection => ({
@@ -133,8 +128,8 @@ const fullDocument: SectionedViewDocument = {
   sectionGroundRhythm: "view",
   sections: [
     { id: "welcome", kind: "hero", heading: ref("acme.hero.heading") },
-    section("evidence", { eyebrow: ref("acme.evidence.eyebrow"), description: ref("acme.evidence.description"), layout: "split", mediaSide: "start", block: topicsBlock, media: specimen([panelA, panelB, panelC], "flow") }),
-    section("principles", { align: "center", block: featuresBlock }),
+    section("evidence", { eyebrow: ref("acme.evidence.eyebrow"), description: ref("acme.evidence.description"), layout: "split-start", block: topicsBlock, media: specimen(panelA) }),
+    section("principles", { block: featuresBlock }),
     section("capabilities", { block: cardsBlock }),
     section("questions", { block: faqBlock }),
     section("problem", { block: comparisonBlock }),
@@ -150,7 +145,7 @@ function registryFor(ids: Iterable<string>, omit: readonly string[] = []): CopyR
     locale: "en",
     revision: "1",
     source: { kind: "consumer", reference: "fixtures/acme-content" },
-    entries: [...ids].filter((id) => !omit.includes(id)).map((id) => ({ id, text: `Text for ${id}`, context: "fixture", status: "approved" as const })),
+    entries: [...ids].filter((id) => !omit.includes(id)).map((id) => ({ id, text: id === "acme.specimen.label" ? "A sample panel showing its labeled parts" : `Text for ${id}`, context: "fixture", status: "approved" as const })),
   };
 }
 
@@ -158,7 +153,7 @@ const docWith = (...sections: SectionedViewSection[]): SectionedViewDocument => 
 const rules = (document: unknown) => validateSectionedViewDocument(document).map((entry) => entry.rule);
 /** A one-section document holding `block`, for block-level refusals. */
 const blockDoc = (block: unknown) => docWith(section("only", { block: block as SectionedViewContentBlock }));
-const partDoc = (part: unknown) => docWith(section("only", { media: specimen([{ id: "p", title: ref("acme.p.title"), parts: [part as SectionedViewSpecimenPart] }]) }));
+const partDoc = (part: unknown) => docWith(section("only", { media: specimen({ id: "p", title: ref("acme.p.title"), parts: [part as SectionedViewSpecimenPart] }) }));
 
 describe("content-section — validation", () => {
   it("accepts a document using every block type, every specimen part, and an intro band", () => {
@@ -170,48 +165,42 @@ describe("content-section — validation", () => {
     expect(new Set(CONTENT_ICON_NAMES).size).toBe(16);
     const legacy = docWith({ id: "legacy", kind: "feature-grid", heading: ref("acme.legacy.heading"), items: [{ id: "one", icon: "rocket" as never, heading: ref("acme.legacy.one.heading") }] });
     expect(rules(legacy)).toEqual(["sectioned-view-content-icon"]);
-    expect(rules(blockDoc({ type: "topic-list", columns: 1, items: [item("a", { icon: "sparkles" }), item("b")] }))).toEqual(["sectioned-view-content-icon"]);
+    expect(rules(blockDoc({ type: "items", arrangement: "rows", columns: 1, items: [item("a", { icon: "sparkles" }), item("b")] }))).toEqual(["sectioned-view-content-icon"]);
   });
 
   it("keeps a feature-grid item without an icon valid, unchanged from before", () => {
     expect(rules(docWith({ id: "legacy", kind: "feature-grid", heading: ref("acme.legacy.heading"), items: [{ id: "one", heading: ref("acme.legacy.one.heading") }] }))).toEqual([]);
   });
 
-  it("refuses mediaSide without split, align on a split, and a split without media", () => {
-    expect(rules(docWith(section("a", { mediaSide: "end" })))).toEqual(["sectioned-view-content-media-side"]);
-    expect(rules(docWith(section("a", { layout: "split", align: "center", media: specimen([panelB]) })))).toEqual(["sectioned-view-content-align"]);
-    expect(rules(docWith(section("a", { layout: "split" })))).toEqual(["sectioned-view-content-split-media"]);
-    expect(rules(docWith(section("a", { layout: "split", block: cardsBlock })))).toEqual(["sectioned-view-content-split-media"]);
-    expect(rules(docWith(section("a", { layout: "split", block: stepsBlock })))).toEqual(["sectioned-view-content-split-media"]);
-    expect(rules(docWith(section("a", { layout: "split", block: comparisonBlock })))).toEqual(["sectioned-view-content-split-media"]);
-    expect(rules(docWith(section("a", { layout: "grid" as never })))).toEqual(["sectioned-view-content-layout"]);
+  it("refuses old frame fields and layout values, while accepting split alignment and header-only splits", () => {
+    expect(rules(docWith(section("a", { mediaSide: "end" } as never)))).toContain("sectioned-view-section-keys");
+    expect(rules(docWith(section("a", { layout: "split-end", media: specimen(panelB) })))).toEqual([]);
+    for (const block of [undefined, cardsBlock, stepsBlock, comparisonBlock]) expect(rules(docWith(section("a", { layout: "split-end", block })))).toEqual([]);
+    expect(rules(docWith(section("a", { layout: "split" as never })))).toContain("sectioned-view-content-layout");
   });
 
   it("accepts a text-only split: topic-list, or two-column item feature-grid, taking the visual column without media", () => {
-    expect(rules(docWith(section("a", { layout: "split", block: topicsBlock })))).toEqual([]);
-    expect(rules(docWith(section("a", { layout: "split", mediaSide: "start", block: { type: "topic-list", columns: 1, items: [item("a"), item("b"), item("c")] } })))).toEqual([]);
-    expect(rules(docWith(section("a", { layout: "split", block: { type: "feature-grid", columns: 2, treatment: "rule", items: [item("a"), item("b")] } })))).toEqual([]);
+    expect(rules(docWith(section("a", { layout: "split-end", block: topicsBlock })))).toEqual([]);
+    expect(rules(docWith(section("a", { layout: "split-start", block: { type: "items", arrangement: "rows", columns: 1, items: [item("a"), item("b"), item("c")] } })))).toEqual([]);
+    expect(rules(docWith(section("a", { layout: "split-end", block: { type: "items", arrangement: "columns", columns: 2, treatment: "rule", items: [item("a"), item("b")] } })))).toEqual([]);
     // A text-only split still takes media when it has some: then the block stays in the text column.
-    expect(rules(docWith(section("a", { layout: "split", block: topicsBlock, media: specimen([panelB]) })))).toEqual([]);
+    expect(rules(docWith(section("a", { layout: "split-end", block: topicsBlock, media: specimen(panelB) })))).toEqual([]);
   });
 
-  it("holds a text-only split's feature-grid to two columns with item emphasis", () => {
-    expect(rules(docWith(section("a", { layout: "split", block: featuresBlock })))).toEqual(["sectioned-view-content-text-split"]);
-    expect(rules(docWith(section("a", { layout: "split", block: { type: "feature-grid", items: [item("a"), item("b")] } })))).toEqual(["sectioned-view-content-text-split"]);
-    expect(rules(docWith(section("a", { layout: "split", block: { type: "feature-grid", columns: 2, emphasis: "statement", items: [item("a"), item("b"), item("c")] } })))).toEqual(["sectioned-view-content-text-split"]);
-    // With media the feature-grid block is in the text column, so any column count stays valid.
-    expect(rules(docWith(section("a", { layout: "split", block: featuresBlock, media: specimen([panelB]) })))).toEqual([]);
+  it("allows canonical block arrangements in either split direction without a media prerequisite", () => {
+    for (const layout of ["split-start", "split-end"] as const) for (const block of [featuresBlock, topicsBlock, cardsBlock, stepsBlock, comparisonBlock]) expect(rules(docWith(section("a", { layout, block })))).toEqual([]);
+    expect(rules(docWith(section("a", { layout: "split-end", block: featuresBlock, media: specimen(panelB) })))).toEqual([]);
   });
 
-  it("accepts a split FAQ without media, its rows taking the visual column, and refuses one with media", () => {
-    expect(rules(docWith(section("a", { layout: "split", block: faqBlock })))).toEqual([]);
-    expect(rules(docWith(section("a", { layout: "split", mediaSide: "start", block: faqBlock })))).toEqual([]);
-    expect(rules(docWith(section("a", { layout: "split", block: faqBlock, media: specimen([panelB]) })))).toEqual(["sectioned-view-content-faq-split-media"]);
-    expect(rules(docWith(section("a", { block: faqBlock, media: specimen([panelB]) })))).toEqual([]);
+  it("accepts disclosed rows with optional single media in split or stacked frames", () => {
+    for (const layout of ["stacked", "split-start", "split-end"] as const) {
+      expect(rules(docWith(section("a", { layout, block: faqBlock })))).toEqual([]);
+      expect(rules(docWith(section("a", { layout, block: faqBlock, media: specimen(panelB) })))).toEqual([]);
+    }
   });
 
   it("lets a faq section opt into the split layout, stacked staying the default", () => {
-    const faq = (extra: Record<string, unknown>) => docWith({ id: "q", kind: "faq", heading: ref("acme.q.heading"), items: (faqBlock as { items: SectionedViewFaqItemShape[] }).items, ...extra } as SectionedViewSection);
+    const faq = (extra: Record<string, unknown>) => docWith({ id: "q", kind: "faq", heading: ref("acme.q.heading"), items: (faqBlock as { items: { id: string; heading: CopyRef; description: CopyRef }[] }).items.map((entry) => ({ id: entry.id, question: entry.heading, answer: entry.description })), ...extra } as SectionedViewSection);
     expect(rules(faq({}))).toEqual([]);
     expect(rules(faq({ layout: "stacked" }))).toEqual([]);
     expect(rules(faq({ layout: "split" }))).toEqual([]);
@@ -219,104 +208,94 @@ describe("content-section — validation", () => {
     expect(rules(faq({ layout: "split", mediaSide: "start" }))).toEqual(["sectioned-view-section-keys"]);
   });
 
-  it("allows an item eyebrow on card-grid and feature-grid items, not on topic-list items", () => {
-    expect(rules(blockDoc({ type: "feature-grid", items: [item("a", { eyebrow: ref("acme.e") }), item("b")] }))).toEqual([]);
-    expect(rules(blockDoc({ type: "feature-grid", treatment: "rule", items: [item("a", { eyebrow: ref("acme.e") }), item("b", { eyebrow: ref("acme.e") })] }))).toEqual([]);
-    expect(rules(blockDoc({ type: "feature-grid", items: [item("a", { eyebrow: "Area" }), item("b")] }))).toEqual(["sectioned-view-copy-ref-shape"]);
-    expect(rules(blockDoc({ type: "topic-list", columns: 1, items: [item("a", { eyebrow: ref("acme.e") }), item("b")] }))).toEqual(["sectioned-view-content-item-eyebrow"]);
-    expect(rules(blockDoc({ type: "card-grid", items: [{ ...item("a", { eyebrow: ref("acme.e") }), span: "half" }, { ...item("b"), span: "half" }] }))).toEqual([]);
+  it("allows canonical eyebrow copy and enforces recipe-specific slots", () => {
+    for (const treatment of ["plain", "rule", "plate"] as const) expect(rules(blockDoc({ type: "items", recipe: "features", columns: 2, treatment, items: [item("a", { eyebrow: ref("acme.e") }), item("b")] }))).toEqual([]);
+    expect(rules(blockDoc({ type: "items", recipe: "features", columns: 2, items: [item("a", { eyebrow: "Area" }), item("b")] }))).toContain("sectioned-view-copy-ref-shape");
+    expect(rules(blockDoc({ type: "items", recipe: "topics", items: [item("a", { eyebrow: ref("acme.e") }), item("b")] }))).toContain("recipe-slot");
+    expect(rules(blockDoc({ type: "items", recipe: "cards", items: [item("a", { eyebrow: ref("acme.e") }), item("b")] }))).toEqual([]);
   });
 
-  it("refuses keys a content section, a block, or an item does not own", () => {
+  it("refuses keys outside the canonical frame, block and item contracts", () => {
     expect(rules(docWith({ ...section("a"), className: "x" } as SectionedViewSection))).toEqual(["sectioned-view-section-keys"]);
-    expect(rules(blockDoc({ ...topicsBlock, treatment: "rule" }))).toEqual(["sectioned-view-content-block-shape"]);
-    expect(rules(blockDoc({ type: "topic-list", items: [item("a", { url: "/x" }), item("b")] }))).toEqual(["sectioned-view-item-shape"]);
+    expect(rules(blockDoc({ ...topicsBlock, className: "x" }))).toContain("sectioned-view-content-block-shape");
+    expect(rules(blockDoc({ type: "items", arrangement: "rows", items: [item("a", { url: "/x" }), item("b")] }))).toContain("sectioned-view-item-shape");
     expect(rules(blockDoc({ type: "slider", items: [] }))).toEqual(["sectioned-view-content-block-type"]);
   });
 
-  it("names the supported block types when it refuses an unknown one", () => {
+  it("names canonical block types in an unknown-block refusal", () => {
     const message = validateSectionedViewDocument(blockDoc({ type: "slider" }))[0]?.message ?? "";
-    expect(message).toContain('"slider"');
-    expect(message).toContain("feature-grid, card-grid, comparison, topic-list, ordered-step-sequence, faq");
+    expect(message).toBe('sections.0.block.type "slider" must be items, matrix or prose.');
   });
 
-  it("refuses the retired `module` key with one finding that names `block` and every block type", () => {
-    const retired = docWith({ ...section("a"), module: { type: "features", items: [item("a"), item("b")] } } as unknown as SectionedViewSection);
-    const findings = validateSectionedViewDocument(retired);
-    expect(findings.map((entry) => entry.rule)).toEqual(["sectioned-view-content-module-retired"]);
-    expect(findings[0]?.path).toBe("sections.0.module");
-    expect(findings[0]?.message).toContain("`block`");
-    expect(findings[0]?.message).toContain("feature-grid, card-grid, comparison, topic-list, ordered-step-sequence, faq");
-    // Both keys at once: still refused, never read as an alias.
-    const both = docWith({ ...section("a", { block: topicsBlock }), module: topicsBlock } as unknown as SectionedViewSection);
-    expect(rules(both)).toEqual(["sectioned-view-content-module-retired"]);
-  });
-
-  it("refuses a retired short block type name, naming its new name", () => {
-    for (const [retired, current] of [["features", "feature-grid"], ["cards", "card-grid"], ["topics", "topic-list"], ["steps", "ordered-step-sequence"]] as const) {
-      const findings = validateSectionedViewDocument(blockDoc({ type: retired, items: [item("a"), item("b")] }));
-      expect(findings.map((entry) => entry.rule)).toEqual(["sectioned-view-content-block-type"]);
-      expect(findings[0]?.message).toContain(`"${retired}" is now "${current}".`);
+  it("refuses the retired module key and never reads it as a block alias", () => {
+    for (const block of [undefined, topicsBlock]) {
+      const findings = validateSectionedViewDocument(docWith({ ...section("a", { block }), module: topicsBlock } as unknown as SectionedViewSection));
+      expect(findings).toContainEqual(expect.objectContaining({ rule: "sectioned-view-content-module-retired", path: "sections.0.module" }));
+      expect(findings.find((entry) => entry.rule === "sectioned-view-content-module-retired")?.message).toContain("block");
+      expect(findings.find((entry) => entry.rule === "sectioned-view-content-module-retired")?.message).toContain("items, matrix or prose");
     }
-    expect(validateSectionedViewDocument(blockDoc({ type: "constructor" }))[0]?.message).not.toContain("is now");
   });
 
-  it("holds feature-grid to 2-4 items, exactly 3 with statement emphasis, and icons to plain and plate", () => {
-    expect(rules(blockDoc({ type: "feature-grid", items: [item("a")] }))).toEqual(["sectioned-view-content-count"]);
-    expect(rules(blockDoc({ type: "feature-grid", items: ["a", "b", "c", "d", "e"].map((id) => item(id)) }))).toEqual(["sectioned-view-content-count"]);
-    expect(rules(blockDoc({ type: "feature-grid", emphasis: "statement", items: ["a", "b", "c", "d"].map((id) => item(id)) }))).toEqual(["sectioned-view-content-count"]);
-    expect(rules(blockDoc({ type: "feature-grid", emphasis: "statement", items: ["a", "b", "c"].map((id) => item(id)) }))).toEqual([]);
-    expect(rules(blockDoc({ type: "feature-grid", treatment: "rule", items: [item("a", { icon: "globe" }), item("b")] }))).toEqual(["sectioned-view-content-icon-treatment"]);
-    expect(rules(blockDoc({ type: "feature-grid", columns: 5, items: [item("a"), item("b")] }))).toEqual(["sectioned-view-content-block-option"]);
+  it("refuses old raw block types with replacement recipes, without prototype lookup", () => {
+    for (const [retired, recipe] of [["feature-grid", "features"], ["card-grid", "cards"], ["topic-list", "topics"], ["ordered-step-sequence", "steps"], ["faq", "faq"], ["comparison", "comparison"]]) {
+      const findings = validateSectionedViewDocument(blockDoc({ type: retired, items: [item("a"), item("b")] }));
+      expect(findings).toContainEqual(expect.objectContaining({ rule: "sectioned-view-content-block-retired", path: "sections.0.block.type" }));
+      expect(findings[0]?.message).toContain(recipe!);
+    }
+    expect(rules(blockDoc({ type: "constructor" }))).toEqual(["sectioned-view-content-block-type"]);
+  });
+
+  it("holds columns to complete rows and statement emphasis to exactly three unadorned items", () => {
+    for (const count of [1, 4, 5]) expect(rules(blockDoc({ type: "items", arrangement: "columns", items: Array.from({ length: count }, (_, i) => item(`f${i}`)) }))).toContain("sectioned-view-content-count");
+    expect(rules(blockDoc({ type: "items", recipe: "statement", items: [item("a"), item("b"), item("c")] }))).toEqual([]);
+    expect(rules(blockDoc({ type: "items", recipe: "statement", items: [item("a", { icon: "globe" }), item("b"), item("c")] }))).toContain("recipe-slot");
+    expect(rules(blockDoc({ type: "items", recipe: "features", columns: 2, treatment: "rule", items: [item("a", { icon: "globe" }), item("b")] }))).toEqual([]);
+    expect(rules(blockDoc({ type: "items", arrangement: "columns", columns: 4, items: [item("a"), item("b")] }))).toContain("sectioned-view-content-columns");
   });
 
   it("holds card spans to whole rows: two-thirds + third, three thirds, two halves, or one full card", () => {
-    const cards = (...spans: string[]) => blockDoc({ type: "card-grid", items: spans.map((span, index) => ({ ...item(`c${index}`), span })) });
+    const cards = (...spans: string[]) => blockDoc({ type: "items", arrangement: "bento", items: spans.map((span, index) => ({ ...item(`c${index}`), span })) });
     expect(rules(cards("third", "two-thirds"))).toEqual([]);
     expect(rules(cards("half", "half", "full"))).toEqual([]);
     expect(rules(cards("half", "third", "third"))).toEqual(["sectioned-view-content-card-spans"]);
     expect(rules(cards("third", "third"))).toEqual(["sectioned-view-content-card-spans"]);
     expect(rules(cards("full"))).toEqual(["sectioned-view-content-count"]);
     expect(rules(cards("third", "third", "third", "third", "third", "third", "half", "half"))).toEqual(["sectioned-view-content-count"]);
-    expect(rules(cards("third", "wide" as never, "third"))).toEqual(["sectioned-view-content-card-span"]);
+    expect(rules(cards("third", "wide" as never, "third"))).toEqual(["sectioned-view-content-card-spans"]);
   });
 
   it("holds a card's visual to one part of at most 5 rows", () => {
-    expect(rules(blockDoc({ type: "card-grid", items: [{ ...item("a"), span: "half", visual: fieldsPart("v", 6) }, { ...item("b"), span: "half" }] }))).toEqual(["sectioned-view-content-count"]);
+    expect(rules(blockDoc({ type: "items", arrangement: "bento", items: [{ ...item("a"), span: "half", visual: fieldsPart("v", 6) }, { ...item("b"), span: "half" }] }))).toEqual(["sectioned-view-content-count"]);
   });
 
-  it("holds a comparison's sides to the same form, the same point count, and a visual on both or neither", () => {
-    const side = (extra: Record<string, unknown>) => ({ label: ref("acme.side.label"), ...extra });
+  it("holds matrix sides to exactly one shared form and equal point counts", () => {
+    const side = (id: string, extra: Record<string, unknown>) => ({ id, label: ref("acme.side.label"), heading: ref("acme.side.heading"), ...extra });
     const points = (count: number) => Array.from({ length: count }, (_, index) => ref(`acme.point.${index}`));
-    const comparison = (before: unknown, after: unknown) => blockDoc({ type: "comparison", before, after });
-    expect(rules(comparison(side({ description: ref("acme.d") }), side({ description: ref("acme.d") })))).toEqual([]);
-    expect(rules(comparison(side({ description: ref("acme.d") }), side({ points: points(2) })))).toEqual(["sectioned-view-content-comparison-sides"]);
-    expect(rules(comparison(side({ points: points(2) }), side({ points: points(3) })))).toEqual(["sectioned-view-content-comparison-sides"]);
-    expect(rules(comparison(side({ points: points(5) }), side({ points: points(5) })))).toEqual(["sectioned-view-content-count", "sectioned-view-content-count"]);
-    expect(rules(comparison(side({ description: ref("acme.d"), visual: panelB }), side({ description: ref("acme.d") })))).toEqual(["sectioned-view-content-comparison-sides"]);
-    expect(rules(comparison(side({ description: ref("acme.d"), points: points(2) }), side({ description: ref("acme.d") })))).toContain("sectioned-view-content-comparison-side");
-    expect(rules(comparison(side({}), side({ description: ref("acme.d") })))).toContain("sectioned-view-content-comparison-side");
+    const matrix = (before: Record<string, unknown>, after: Record<string, unknown>) => blockDoc({ type: "matrix", sides: [side("before", before), side("after", after)] });
+    expect(rules(matrix({ description: ref("acme.d") }, { description: ref("acme.d") }))).toContain("sectioned-view-content-matrix-form");
+    expect(rules(matrix({ visual: panelB }, { visual: panelC }))).toEqual([]);
+    expect(rules(matrix({ description: ref("acme.d") }, { points: points(2) }))).toContain("sectioned-view-content-matrix-form");
+    expect(rules(matrix({ points: points(2) }, { points: points(3) }))).toContain("sectioned-view-content-matrix-form");
+    expect(rules(matrix({ points: points(5) }, { points: points(5) }))).toEqual(["sectioned-view-content-count", "sectioned-view-content-count"]);
+    expect(rules(matrix({ description: ref("acme.d"), visual: panelB }, { description: ref("acme.d") }))).toContain("sectioned-view-content-matrix-form");
+    expect(rules(matrix({}, { description: ref("acme.d") }))).toContain("sectioned-view-content-matrix-form");
   });
 
-  it("holds topic-list to 2-8 items, an even count in 2 columns, ordered-step-sequence to 3-4 and faq to 4-6", () => {
-    const topics = (count: number, columns?: 1 | 2) => blockDoc({ type: "topic-list", ...(columns ? { columns } : {}), items: Array.from({ length: count }, (_, index) => item(`t${index}`)) });
-    expect(rules(topics(3))).toEqual(["sectioned-view-content-count"]);
-    expect(rules(topics(3, 1))).toEqual([]);
-    expect(rules(topics(10))).toEqual(["sectioned-view-content-count"]);
-    expect(rules(blockDoc({ type: "ordered-step-sequence", items: stepsBlock.type === "ordered-step-sequence" ? stepsBlock.items.slice(0, 2) : [] }))).toEqual(["sectioned-view-content-count"]);
-    expect(rules(blockDoc({ type: "faq", items: faqBlock.type === "faq" ? faqBlock.items.slice(0, 3) : [] }))).toEqual(["sectioned-view-content-count"]);
+  it("holds rows, connected sequences and disclosures to canonical count bounds", () => {
+    const rows = (count: number, columns = 1) => blockDoc({ type: "items", arrangement: "rows", columns, items: Array.from({ length: count }, (_, index) => item(`t${index}`)) });
+    expect(rules(rows(3, 2))).toContain("sectioned-view-content-count"); expect(rules(rows(3))).toEqual([]); expect(rules(rows(9))).toContain("sectioned-view-content-count");
+    expect(rules(blockDoc({ ...stepsBlock, items: stepsBlock.type === "items" ? stepsBlock.items.slice(0, 2) : [] }))).toContain("sectioned-view-content-count");
+    expect(rules(blockDoc({ ...faqBlock, items: faqBlock.type === "items" ? faqBlock.items.slice(0, 3) : [] }))).toContain("sectioned-view-content-count");
   });
 
-  it("holds a specimen's panels to its arrangement and its connector to flow", () => {
-    expect(rules(docWith(section("a", { media: specimen([panelB, panelC]) })))).toEqual(["sectioned-view-content-count"]);
-    expect(rules(docWith(section("a", { media: specimen([panelB], "row") })))).toEqual(["sectioned-view-content-count"]);
-    expect(rules(docWith(section("a", { media: { ...specimen([panelB, panelC], "row"), connector: ref("acme.connector") } })))).toEqual(["sectioned-view-specimen-connector"]);
-    expect(rules(docWith(section("a", { media: { ...specimen([panelB]), type: "video" as never } })))).toEqual(["sectioned-view-content-media-type"]);
-    expect(rules(docWith(section("a", { media: specimen([panelB, { ...panelB }], "row") })))).toEqual(["sectioned-view-item-id-duplicate"]);
+  it("refuses retired multi-panel arrangements and accepts exactly one panel", () => {
+    expect(rules(docWith(section("a", { media: specimen(panelB) })))).toEqual([]);
+    for (const media of [{ type: "specimen", label: ref("acme.specimen.label"), panels: [panelB, panelC], arrangement: "row" }, { ...specimen(panelB), connector: ref("acme.connector") }, { ...specimen(panelB), panel: [panelB] }]) expect(rules(docWith(section("a", { media: media as never })))).not.toEqual([]);
+    expect(rules(docWith(section("a", { media: { ...specimen(panelB), type: "video" as never } })))).toEqual(["sectioned-view-content-media-type"]);
   });
 
   it("holds a panel to 1-3 parts and a footer to an assignee, a note, or both", () => {
-    const panel = (extra: Record<string, unknown>) => docWith(section("a", { media: specimen([{ ...panelB, ...extra } as SectionedViewSpecimenPanel]) }));
+    const panel = (extra: Record<string, unknown>) => docWith(section("a", { media: specimen({ ...panelB, ...extra } as SectionedViewSpecimenPanel) }));
     expect(rules(panel({ parts: [fieldsPart("a"), fieldsPart("b"), fieldsPart("c"), fieldsPart("d")] }))).toEqual(["sectioned-view-content-count"]);
     expect(rules(panel({ footer: {} }))).toEqual(["sectioned-view-specimen-footer-shape"]);
     expect(rules(panel({ footer: { assignee: { name: ref("acme.n") } } }))).toEqual(["sectioned-view-specimen-footer-shape"]);
@@ -387,9 +366,9 @@ describe("content-section — actions and footnote", () => {
     expect(rules(docWith({ id: "welcome", kind: "hero", heading: ref("acme.hero.heading"), actions: [action("one", { emphasis: "primary" })] } as SectionedViewSection))).toEqual([]);
   });
 
-  it("refuses a footnote that is not closed, has no text, holds more than one link, or links outside the sanctioned hrefs", () => {
+  it("refuses a footnote that is not closed, has no visible field, holds more than one link, or links outside the sanctioned hrefs", () => {
     expect(rules(docWith(section("a", { footnote: "Already keep records elsewhere?" as never })))).toEqual(["sectioned-view-content-footnote-shape"]);
-    expect(rules(docWith(section("a", { footnote: { link: { label: ref("acme.note.link"), href: "/guide" } } as never })))).toEqual(["sectioned-view-content-footnote-shape"]);
+    expect(rules(docWith(section("a", { footnote: {} as never })))).toEqual(["sectioned-view-content-footnote-shape"]);
     expect(rules(docWith(section("a", { footnote: footnote({ links: [] }) as never })))).toEqual(["sectioned-view-content-footnote-shape"]);
     expect(rules(docWith(section("a", { footnote: footnote({ link: [{ label: ref("acme.note.link"), href: "/guide" }] }) as never })))).toEqual(["sectioned-view-content-footnote-shape"]);
     expect(rules(docWith(section("a", { footnote: footnote({ link: { label: ref("acme.note.link") } }) as never })))).toEqual(["sectioned-view-content-footnote-shape"]);
@@ -402,8 +381,8 @@ describe("content-section — actions and footnote", () => {
       section("closing", {
         description: ref("acme.closing.description"),
         actions: [action("start", { emphasis: "primary" }), action("faq")],
-        layout: "split",
-        media: specimen([panelB]),
+        layout: "split-end",
+        media: specimen(panelB),
         footnote: footnote(),
       }),
     );
@@ -426,22 +405,22 @@ describe("content-section — the stacked-action rule and card links", () => {
   const footnote = () => ({ text: ref("acme.note.text"), link: { label: ref("acme.note.link"), href: "/guide" } });
   const linked = (block: SectionedViewContentBlock, hrefs: readonly (string | undefined)[]): SectionedViewContentBlock =>
     ({ ...block, items: (block as { items: Record<string, unknown>[] }).items.map((entry, index) => (hrefs[index] === undefined ? entry : { ...entry, href: hrefs[index] })) }) as SectionedViewContentBlock;
-  const topics = (count: number): SectionedViewContentBlock => ({ type: "topic-list", columns: 2, items: Array.from({ length: count }, (_, index) => item(`t${index}`)) });
+  const topics = (count: number): SectionedViewContentBlock => ({ type: "items", arrangement: "rows", columns: 2, items: Array.from({ length: count }, (_, index) => item(`t${index}`)) });
 
   it("refuses actions on a stacked band whose intro is followed by a block or media", () => {
     expect(rules(docWith(section("a", { actions: [action("one")], block: topicsBlock })))).toEqual(["sectioned-view-content-stacked-actions"]);
-    expect(rules(docWith(section("a", { align: "center", actions: [action("one")], block: featuresBlock })))).toEqual(["sectioned-view-content-stacked-actions"]);
-    expect(rules(docWith(section("a", { actions: [action("one")], media: specimen([panelB]) })))).toEqual(["sectioned-view-content-stacked-actions"]);
-    expect(rules(docWith(section("a", { layout: "stacked", actions: [action("one")], block: stepsBlock, media: specimen([panelB]) })))).toEqual(["sectioned-view-content-stacked-actions"]);
+    expect(rules(docWith(section("a", { actions: [action("one")], block: featuresBlock })))).toEqual(["sectioned-view-content-stacked-actions"]);
+    expect(rules(docWith(section("a", { actions: [action("one")], media: specimen(panelB) })))).toEqual(["sectioned-view-content-stacked-actions"]);
+    expect(rules(docWith(section("a", { layout: "stacked", actions: [action("one")], block: stepsBlock, media: specimen(panelB) })))).toEqual(["sectioned-view-content-stacked-actions"]);
     const message = validateSectionedViewDocument(docWith(section("a", { actions: [action("one")], block: topicsBlock })))[0]?.message ?? "";
     expect(message).toContain("Link the cards themselves (item `href`), or put one link in the footnote.");
   });
 
   it("keeps actions on a header-only band and in a split's text column", () => {
     expect(rules(docWith(section("a", { actions: [action("one", { emphasis: "primary" }), action("two")] })))).toEqual([]);
-    expect(rules(docWith(section("a", { layout: "split", actions: [action("one")], media: specimen([panelB]) })))).toEqual([]);
-    expect(rules(docWith(section("a", { layout: "split", actions: [action("one")], block: topicsBlock })))).toEqual([]);
-    expect(rules(docWith(section("a", { layout: "split", actions: [action("one")], block: topicsBlock, media: specimen([panelB]), footnote: footnote() })))).toEqual([]);
+    expect(rules(docWith(section("a", { layout: "split-end", actions: [action("one")], media: specimen(panelB) })))).toEqual([]);
+    expect(rules(docWith(section("a", { layout: "split-end", actions: [action("one")], block: topicsBlock })))).toEqual([]);
+    expect(rules(docWith(section("a", { layout: "split-end", actions: [action("one")], block: topicsBlock, media: specimen(panelB), footnote: footnote() })))).toEqual([]);
     expect(rules(docWith(section("a", { block: topicsBlock, footnote: footnote() })))).toEqual([]);
   });
 
@@ -452,7 +431,7 @@ describe("content-section — the stacked-action rule and card links", () => {
 
   it("accepts href on every item of a feature-grid, card-grid, topic-list or ordered-step-sequence", () => {
     expect(rules(blockDoc(linked(featuresBlock, ["/one", "/two", "/three"])))).toEqual([]);
-    expect(rules(blockDoc(linked({ ...featuresBlock, treatment: "rule", items: [item("a"), item("b")] } as SectionedViewContentBlock, ["/one", "#two"])))).toEqual([]);
+    expect(rules(blockDoc(linked({ ...featuresBlock, columns: 2, treatment: "rule", items: [item("a"), item("b")] } as SectionedViewContentBlock, ["/one", "#two"])))).toEqual([]);
     expect(rules(blockDoc(linked(cardsBlock, ["/a", "/b", "/c", "/d", "https://example.com/e"])))).toEqual([]);
     expect(rules(blockDoc(linked(topicsBlock, ["/a", "/b", "/c", "mailto:team@example.com"])))).toEqual([]);
     expect(rules(blockDoc(linked(stepsBlock, ["/one", "/two", "/three"])))).toEqual([]);
@@ -485,17 +464,14 @@ describe("content-section — the stacked-action rule and card links", () => {
     expect(rules(blockDoc(linked(stepsBlock, ["/product", "/product", "/product"])))).toEqual(["sectioned-view-content-link-duplicate"]);
   });
 
-  it("refuses href on a statement feature grid, a comparison side and a FAQ row", () => {
-    const statement = { type: "feature-grid", emphasis: "statement", items: [item("a"), item("b"), item("c")] } as SectionedViewContentBlock;
-    expect(rules(blockDoc(linked(statement, ["/a", "/b", "/c"])))).toEqual(["sectioned-view-content-link-statement", "sectioned-view-content-link-statement", "sectioned-view-content-link-statement"]);
-    const comparison = comparisonBlock as { before: Record<string, unknown> };
-    expect(rules(blockDoc({ ...comparisonBlock, before: { ...comparison.before, href: "/a" } }))).toEqual(["sectioned-view-content-comparison-side"]);
-    expect(rules(blockDoc({ type: "faq", items: (faqBlock as { items: Record<string, unknown>[] }).items.map((row, index) => ({ ...row, href: `/q${index}` })) }))).toEqual([
-      "sectioned-view-item-shape",
-      "sectioned-view-item-shape",
-      "sectioned-view-item-shape",
-      "sectioned-view-item-shape",
-    ]);
+  it("refuses links on statements, matrix sides and the FAQ recipe", () => {
+    const statement = { type: "items", recipe: "statement", items: [item("a"), item("b"), item("c")] } as SectionedViewContentBlock;
+    const statementFindings = validateSectionedViewDocument(blockDoc(linked(statement, ["/a", "/b", "/c"])));
+    expect(statementFindings.filter((entry) => entry.rule === "sectioned-view-content-link-statement").map((entry) => entry.path)).toEqual([0, 1, 2].map((index) => `sections.0.block.items.${index}.href`));
+    const matrix = comparisonBlock as { type: "matrix"; sides: Record<string, unknown>[] };
+    expect(rules(blockDoc({ ...matrix, sides: [{ ...matrix.sides[0], href: "/a" }, matrix.sides[1]] }))).toContain("sectioned-view-item-shape");
+    const faqFindings = validateSectionedViewDocument(blockDoc({ ...faqBlock, recipe: "faq", treatment: "rule", items: (faqBlock as { items: Record<string, unknown>[] }).items.map((row, index) => ({ ...row, href: `/q${index}` })) }));
+    expect(faqFindings.filter((entry) => entry.rule === "recipe-slot").map((entry) => entry.path)).toEqual([0, 1, 2, 3].map((index) => `sections.0.block.items.${index}.href`));
   });
 
   it("resolves href unchanged on items, cards and steps, and leaves it absent when unset", () => {
@@ -524,24 +500,22 @@ describe("content-section — resolution", () => {
     expect(evidence.kind).toBe("content-section");
     expect(evidence.ground).toBe("base");
     expect(evidence.heading).toBe("Text for acme.evidence.heading");
-    expect(evidence.layout).toBe("split");
-    expect(evidence.mediaSide).toBe("start");
+    expect(evidence.layout).toBe("split-start");
     const media = evidence.media!;
-    expect(media.label).toBe("Text for acme.specimen.label");
-    expect(media.connector).toBe("Text for acme.specimen.connector");
-    expect(media.arrangement).toBe("flow");
-    const meter = media.panels[0]!.parts[2]!;
+    expect(media.label).toBe("A sample panel showing its labeled parts");
+    const meter = media.panel.parts[2]!;
     expect(meter).toEqual({ id: "ratio", type: "meter", label: "Text for acme.ratio.label", value: 3.4, scaleMax: 5, limit: 3, direction: "max", tone: "danger", valueText: "Text for acme.ratio.value", limitText: "Text for acme.ratio.limit", status: { tone: "danger", label: "Text for acme.status.outside" }, note: "Text for acme.ratio.note" });
-    expect(media.panels[1]!.parts[0]).toEqual({ id: "matrix", type: "table", caption: "Text for acme.matrix.caption", columns: [{ id: "name", label: "Text for acme.matrix.col.name" }, { id: "state", label: "Text for acme.matrix.col.state" }], rows: [{ id: "q1", cells: [{ text: "Text for acme.matrix.q1.name" }, { status: { tone: "info", label: "Text for acme.status.received" } }] }] });
-    expect(media.panels[0]!.footer).toEqual({ assignee: { initials: "Text for acme.assignee.initials", name: "Text for acme.assignee.name", note: "Text for acme.assignee.note" }, note: "Text for acme.footer.note" });
+    expect(((resolved.sections[7] as ResolvedSectionedViewContentSection).block as { items: { visual: unknown }[] }).items[0]!.visual).toEqual({ id: "matrix", type: "table", caption: "Text for acme.matrix.caption", columns: [{ id: "name", label: "Text for acme.matrix.col.name" }, { id: "state", label: "Text for acme.matrix.col.state" }], rows: [{ id: "q1", cells: [{ text: "Text for acme.matrix.q1.name" }, { status: { tone: "info", label: "Text for acme.status.received" } }] }] });
+    expect(media.panel.footer).toEqual({ assignee: { initials: "Text for acme.assignee.initials", name: "Text for acme.assignee.name", note: "Text for acme.assignee.note" }, note: "Text for acme.footer.note" });
 
     const principles = resolved.sections[2] as ResolvedSectionedViewContentSection;
     expect(Object.hasOwn(principles, "eyebrow")).toBe(false);
     expect(Object.hasOwn(principles, "media")).toBe(false);
     expect(principles.block).toEqual({
-      type: "feature-grid",
+      type: "items", arrangement: "columns",
       columns: 3,
       treatment: "plate",
+      order: "none", reveal: "all", scale: "item",
       items: [
         { id: "a", icon: "landmark", heading: "Text for acme.item.a.heading", description: "Text for acme.item.a.description" },
         { id: "b", icon: "scale", heading: "Text for acme.item.b.heading", description: "Text for acme.item.b.description" },
@@ -549,8 +523,8 @@ describe("content-section — resolution", () => {
       ],
     });
     const cards = (resolved.sections[3] as ResolvedSectionedViewContentSection).block;
-    expect(cards?.type === "card-grid" && cards.items[0]!.visual?.type).toBe("fields");
-    expect(cards?.type === "card-grid" && cards.items[0]!.eyebrow).toBe("Text for acme.item.wide.eyebrow");
+    expect(cards?.type === "items" && cards.items[0]!.visual?.type).toBe("fields");
+    expect(cards?.type === "items" && cards.items[0]!.eyebrow).toBe("Text for acme.item.wide.eyebrow");
     const intro = resolved.sections[6] as ResolvedSectionedViewContentSection;
     expect(intro.actions).toEqual([{ id: "more", label: "Text for acme.intro.more", href: "/more" }]);
     expect(Object.hasOwn(intro, "block")).toBe(false);
@@ -563,7 +537,7 @@ describe("content-section — resolution", () => {
   });
 
   it("records one resolution per CopyRef, in field order, ready for provenance", () => {
-    const small = docWith(section("small", { eyebrow: ref("acme.small.eyebrow"), description: ref("acme.small.description"), block: { type: "topic-list", columns: 1, items: [item("x"), item("y")] } }));
+    const small = docWith(section("small", { eyebrow: ref("acme.small.eyebrow"), description: ref("acme.small.description"), block: { type: "items", arrangement: "rows", columns: 1, items: [item("x"), item("y")] } }));
     // `small` registers its own ids, so it needs a registry built after it.
     const resolved = resolveSectionedViewDocument(small, createCopyResolver(registryFor(copyIds)));
     expect(resolved.resolutions.map((resolution) => resolution.ref.id)).toEqual([
@@ -587,18 +561,18 @@ describe("content-section — resolution", () => {
     } catch (error) {
       expect(error).toBeInstanceOf(SectionedViewResolutionError);
       expect((error as SectionedViewResolutionError).reason).toBe("unresolved-copy");
-      expect((error as Error).message).toContain("sections.1.media.panels.0.parts.2.valueText");
+      expect((error as Error).message).toContain("sections.1.media.panel.parts.2.valueText");
     }
   });
 
   it("resolves a feature-grid item eyebrow and holds it to the eyebrow budget", () => {
-    expect(FEATURE_GRID_ITEM_EYEBROW_MAX_CHARACTERS).toBe(32);
-    const features = (eyebrowId: string) => docWith(section("bounded", { block: { type: "feature-grid", columns: 2, items: [item("ea", { eyebrow: ref(eyebrowId) }), item("eb")] } }));
+    expect(CONTENT_ITEM_EYEBROW_MAX_CHARACTERS).toBe(32);
+    const features = (eyebrowId: string) => docWith(section("bounded", { block: { type: "items", arrangement: "columns", columns: 2, items: [item("ea", { eyebrow: ref(eyebrowId) }), item("eb")] } }));
     const short = features("acme.e.short");
     const resolved = resolveSectionedViewDocument(short, createCopyResolver(registryFor(copyIds)));
     const block = (resolved.sections[0] as ResolvedSectionedViewContentSection).block;
-    expect(block?.type === "feature-grid" && block.items[0]!.eyebrow).toBe("Text for acme.e.short");
-    expect(block?.type === "feature-grid" && Object.hasOwn(block.items[1]!, "eyebrow")).toBe(false);
+    expect(block?.type === "items" && block.items[0]!.eyebrow).toBe("Text for acme.e.short");
+    expect(block?.type === "items" && Object.hasOwn(block.items[1]!, "eyebrow")).toBe(false);
     // "Text for " plus a 24-character id is 33 characters: one over.
     const long = features("acme.e.twenty-four-chars");
     try {
@@ -658,7 +632,7 @@ describe("checkSectionVariety", () => {
   });
 
   it("warns on a split after a split with the same side, and on three splits in a row", () => {
-    const split = (id: string, mediaSide: "start" | "end", block: SectionedViewContentBlock) => section(id, { layout: "split", mediaSide, block, media: specimen([panelB]) });
+    const split = (id: string, side: "start" | "end", block: SectionedViewContentBlock) => section(id, { layout: side === "start" ? "split-start" : "split-end", block, media: specimen(panelB) });
     expect(ruleList(split("a", "end", topicsBlock), section("gap", { block: featuresBlock }), split("b", "end", faqBlock))).toEqual([]);
     expect(ruleList(split("a", "end", topicsBlock), split("b", "end", faqBlock))).toEqual(["sectioned-view-variety-split-side", "sectioned-view-variety-density"]);
     expect(ruleList(split("a", "end", topicsBlock), split("b", "start", faqBlock), split("c", "end", featuresBlock))).toEqual([
@@ -674,40 +648,40 @@ describe("checkSectionVariety", () => {
   });
 
   it("warns on a specimen on an inverse ground and on a second inverse body band", () => {
-    expect(ruleList(section("a", { ground: "inverse", media: specimen([panelB]) }))).toEqual(["sectioned-view-variety-specimen-ground"]);
+    expect(ruleList(section("a", { ground: "inverse", media: specimen(panelB) }))).toEqual(["sectioned-view-variety-specimen-ground"]);
     expect(ruleList(section("a", { ground: "inverse" }), section("b", { block: faqBlock }), section("c", { ground: "inverse", block: topicsBlock }))).toEqual(["sectioned-view-variety-inverse-bands"]);
     expect(checkSectionVariety(docWith({ ...hero, ground: "inverse" }, section("a", { ground: "inverse" }))).map((entry) => entry.rule)).toEqual([]);
   });
 
   it("warns on a second band of four or more cards and on a second comparison", () => {
     expect(ruleList(section("a", { block: cardsBlock }), section("gap", { block: faqBlock }), section("b", { block: cardsBlock }))).toEqual(["sectioned-view-variety-card-bands", "sectioned-view-variety-treatment"]);
-    const plainComparison: SectionedViewContentBlock = { type: "comparison", before: { label: ref("acme.b"), description: ref("acme.d") }, after: { label: ref("acme.a"), description: ref("acme.d") } };
+    const plainComparison: SectionedViewContentBlock = { type: "matrix", sides: [{ id: "before", label: ref("acme.b"), heading: ref("acme.b.heading"), description: ref("acme.d") }, { id: "after", label: ref("acme.a"), heading: ref("acme.a.heading"), description: ref("acme.d") }] };
     expect(ruleList(section("a", { block: plainComparison }), section("gap", { block: faqBlock }), section("b", { block: plainComparison }))).toEqual(["sectioned-view-variety-comparison-count"]);
   });
 
   it("warns when one block type repeats with the same treatment, not with a different one", () => {
-    const rule: SectionedViewContentBlock = { ...featuresBlock, treatment: "rule", items: featuresBlock.type === "feature-grid" ? featuresBlock.items.map(({ icon: _icon, ...rest }) => rest) : [] };
+    const rule: SectionedViewContentBlock = { ...featuresBlock, treatment: "rule", items: featuresBlock.type === "items" ? featuresBlock.items.map(({ icon: _icon, ...rest }) => rest) : [] };
     expect(ruleList(section("a", { block: featuresBlock }), section("gap", { block: faqBlock }), section("b", { block: rule }))).toEqual([]);
     expect(ruleList(section("a", { block: featuresBlock }), section("gap", { block: faqBlock }), section("b", { block: featuresBlock }))).toEqual(["sectioned-view-variety-treatment"]);
   });
 
   it("reads a text-only split as a split without a visual, and a split legacy FAQ as a split on the end side", () => {
-    const textSplit = section("t", { layout: "split", block: topicsBlock });
+    const textSplit = section("t", { layout: "split-end", block: topicsBlock });
     // Not dense (no specimen), so it may sit beside a dense band; still a split for the side rules.
     expect(ruleList(section("a", { block: cardsBlock }), textSplit)).toEqual([]);
-    const faqSplit: SectionedViewSection = { id: "q", kind: "faq", layout: "split", heading: ref("acme.q.heading"), items: (faqBlock as { items: SectionedViewFaqItemShape[] }).items };
+    const faqSplit: SectionedViewSection = { id: "q", kind: "faq", layout: "split", heading: ref("acme.q.heading"), items: (faqBlock as { items: { id: string; heading: CopyRef; description: CopyRef }[] }).items.map((entry) => ({ id: entry.id, question: entry.heading, answer: entry.description })) };
     expect(ruleList(textSplit, faqSplit)).toEqual(["sectioned-view-variety-split-side"]);
-    expect(ruleList(section("t2", { layout: "split", mediaSide: "start", block: topicsBlock }), faqSplit)).toEqual([]);
+    expect(ruleList(section("t2", { layout: "split-start", block: topicsBlock }), faqSplit)).toEqual([]);
     const stackedFaq: SectionedViewSection = { ...faqSplit, layout: "stacked" };
     expect(ruleList(textSplit, stackedFaq)).toEqual([]);
-    expect(ruleList(section("a", { layout: "split", media: specimen([panelB]) }), section("b", { layout: "split", mediaSide: "start", block: topicsBlock }), faqSplit)).toEqual(["sectioned-view-variety-split-run"]);
+    expect(ruleList(section("a", { layout: "split-end", media: specimen(panelB) }), section("b", { layout: "split-start", block: topicsBlock }), faqSplit)).toEqual(["sectioned-view-variety-split-run"]);
   });
 
   it("warns on a second band holding a primary action, not on secondary-only bands", () => {
     const withActions = (id: string, emphasis?: "primary" | "secondary") => section(id, { actions: [{ id: "go", label: ref("acme.go"), href: "/go", ...(emphasis === undefined ? {} : { emphasis }) }] });
     // Actions sit on header-only bands and in split text columns: a stacked band with a block takes none.
-    const textSplit = { layout: "split", block: topicsBlock } as const;
-    const mediaSplit = { layout: "split", mediaSide: "start", block: featuresBlock, media: specimen([panelB]) } as const;
+    const textSplit = { layout: "split-end", block: topicsBlock } as const;
+    const mediaSplit = { layout: "split-start", block: featuresBlock, media: specimen(panelB) } as const;
     expect(ruleList({ ...withActions("a", "primary"), ...textSplit }, withActions("b"), { ...withActions("c", "secondary"), ...mediaSplit })).toEqual([]);
     expect(ruleList({ ...withActions("a", "primary"), ...textSplit }, withActions("b", "primary"))).toEqual(["sectioned-view-variety-primary-actions"]);
     expect(warnings({ ...withActions("a", "primary"), ...textSplit }, withActions("b", "primary"))[0]!.path).toBe("sections.2");
@@ -717,9 +691,9 @@ describe("checkSectionVariety", () => {
   it("warns on a split whose block links its items and that also carries actions", () => {
     const linkedTopics = { ...topicsBlock, items: (topicsBlock as { items: Record<string, unknown>[] }).items.map((entry, index) => ({ ...entry, href: `/topic-${index}` })) } as SectionedViewContentBlock;
     const action = [{ id: "go", label: ref("acme.go"), href: "/go" }];
-    expect(ruleList(section("a", { layout: "split", block: linkedTopics, actions: action }))).toEqual(["sectioned-view-variety-link-competing"]);
-    expect(ruleList(section("a", { layout: "split", block: linkedTopics }))).toEqual([]);
-    expect(ruleList(section("a", { layout: "split", block: topicsBlock, actions: action }))).toEqual([]);
+    expect(ruleList(section("a", { layout: "split-end", block: linkedTopics, actions: action }))).toEqual(["sectioned-view-variety-link-competing"]);
+    expect(ruleList(section("a", { layout: "split-end", block: linkedTopics }))).toEqual([]);
+    expect(ruleList(section("a", { layout: "split-end", block: topicsBlock, actions: action }))).toEqual([]);
     expect(ruleList(section("a", { block: linkedTopics }))).toEqual([]);
   });
 

@@ -219,6 +219,9 @@ jobs:
       - name: Build
         run: npm run build
 
+      # The npm pack --json listing goes to a file and node reads it on
+      # stdin: passed to node as an argument, a large package's listing
+      # exceeds the OS argument-size limit ("Argument list too long", #2111).
       - name: Pack one pre-publication candidate
         working-directory: packages/${{ inputs.package }}
         env:
@@ -227,8 +230,8 @@ jobs:
           set -euo pipefail
           destination="$RUNNER_TEMP/qualification/$PKG"
           mkdir -p "$destination"
-          result="$(npm pack --ignore-scripts --json --pack-destination "$destination")"
-          filename="$(node -e 'console.log(JSON.parse(process.argv[1])[0].filename)' "$result")"
+          npm pack --ignore-scripts --json --pack-destination "$destination" > "$destination/pack.json"
+          filename="$(node -e 'console.log(JSON.parse(require("fs").readFileSync(0, "utf8"))[0].filename)' < "$destination/pack.json")"
           mv "$destination/$filename" "$destination/candidate.tgz"
 
       - name: Run fixed candidate qualification credential-free

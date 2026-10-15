@@ -8,6 +8,7 @@ export { buildWebHeadMetadata } from "./headMetadata.js";
 export { SiteMetadataError, buildSiteMetadata, formatPageTitle } from "./siteMetadata.js";
 export type {
   SiteIdentityInput,
+  SiteIndexing,
   SiteLegalStatus,
   SiteMetadata,
   SiteMetadataErrorReason,
@@ -92,7 +93,7 @@ export type {
 } from "./types.js";
 
 export { LegalView } from "#publisher-web-views";
-export type { LegalViewLabels, LegalViewProps } from "#publisher-web-views";
+export type { LegalViewFramedLabels, LegalViewLabels, LegalViewProps } from "#publisher-web-views";
 
 // The contact handler is server-only: import it from server code, never a client bundle.
 export {
@@ -125,7 +126,7 @@ export type {
 } from "./contact/index.js";
 
 export { HeroView, LandingView } from "#publisher-web-views";
-export type { HeroViewFooter, HeroViewGround, HeroViewProps, LandingViewCallToAction, LandingViewHeader, LandingViewProps } from "#publisher-web-views";
+export type { HeroViewFooter, HeroViewGround, HeroViewProps, LandingViewAction, LandingViewCallToAction, LandingViewHeader, LandingViewProps } from "#publisher-web-views";
 export { LANDING_VIEW_CALL_TO_ACTION_GROUND, LANDING_VIEW_CLOSING_GROUND, planLandingViewGrounds } from "#publisher-web-views";
 export type { LandingViewBandGround, LandingViewBandRole, LandingViewGroundPlan, LandingViewGroundRepeat } from "#publisher-web-views";
 export { ContactView } from "#publisher-web-views";
@@ -147,6 +148,7 @@ export type {
   SiteFrameConfig,
   SiteFrameInput,
   SiteFrameProps,
+  SiteIconLinkInput,
   SiteLinkInput,
   SitePageLayer,
   SiteShellInput,
@@ -174,3 +176,12 @@ export type {
 } from "./shareCard.js";
 export { createShareCardRoute } from "./shareCardRoute.js";
 export type { ShareCardRoute, ShareCardRouteInput } from "./shareCardRoute.js";
+
+export { ConsumerArtSlot } from "./ConsumerArtSlot.js";
+export type { ConsumerArtSlotProps } from "./ConsumerArtSlot.js";
+
+export { constructionStatusProps } from "#publisher-web-views";
+export type { ConstructionStatusInput } from "#publisher-web-views";
+
+export { ContactForm } from "#publisher-web-views";
+export type { ContactFormCopy, ContactFormDevPreview, ContactFormProps, ContactFormTopic, ContactFormValues } from "#publisher-web-views";

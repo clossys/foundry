@@ -1,7 +1,7 @@
 import {
-  Faq,
   FeatureGrid,
   Hero,
+  Items,
   OrderedStepSequence,
   PricingTable as DesignerPricingTable,
   SECTION_GROUND_CLASSES,
@@ -45,11 +45,10 @@ function Testimonial(props: TestimonialProps) {
 export const sectionedViewBlocks: SectionedViewBlockSet = {
   Hero,
   FeatureGrid,
-  Faq,
   OrderedStepSequence,
   StatusList,
   Stat,
   PricingTable,
   Testimonial,
-  ContentSection: createContentSectionBlock(Faq),
+  ContentSection: createContentSectionBlock(Items),
 };

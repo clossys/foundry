@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import { describe, expect, it } from "vitest";
 import {
   compareDomainModels,
@@ -116,6 +117,57 @@ describe("normalization and serialization", () => {
     });
     expect(serializeDomainModel(first)).toBe(serializeDomainModel(second));
     expect(serializeDomainModel(first).endsWith("\n")).toBe(true);
+  });
+
+  it("serializes identically across locales (en-US vs da-DK ordering)", () => {
+    // A fresh process reads its default locale at startup. The package's
+    // global setup builds these serializers before this test runs.
+    const ontologyUrl = new URL("../../dist/ontology/index.js", import.meta.url).href;
+    const script = `
+      import { serializeDomainModel, serializeDomainSnapshot } from ${JSON.stringify(ontologyUrl)};
+      const model = {
+        id: "example", schemaVersion: "1.0.0",
+        valueTypes: ["z", "aa"].map(id => ({ id: "example." + id, primitive: "string" })),
+        vocabularies: ["zState", "aaState"].map(id => ({ id: "example." + id, values: ["z", "aa"] })),
+        types: ["z", "aa"].map(id => ({
+          id: "example." + id,
+          fields: ["z", "aa"].map(field => ({ id: "example." + id + "." + field, valueType: "string" })),
+        })),
+        relations: ["zLink", "aaLink"].map(id => ({
+          id: "example." + id, from: "example.aa", to: "example.z", cardinality: "many-to-many",
+          properties: ["z", "aa"].map(field => ({ id: "example." + id + "." + field, valueType: "string" })),
+        })),
+      };
+      // Repeated record ids exercise normalization's type/value tie-breaks;
+      // normalization orders authoring inputs without validating them.
+      const snapshot = {
+        records: [
+          ...["z", "aa"].map(id => ({ id, type: "example.aa" })),
+          ...["z", "aa"].map(type => ({ id: "same", type: "example." + type })),
+          ...["z", "aa"].map(note => ({ id: "ties", type: "example.aa", values: { note } })),
+        ],
+        relations: [
+          ...["z", "aa"].map(type => ({ type: "example." + type, from: "same", to: "same" })),
+          ...["z", "aa"].map(from => ({ type: "example.same", from, to: "same" })),
+          ...["z", "aa"].map(to => ({ type: "example.same", from: "same", to })),
+          ...["z", "aa"].map(note => ({ type: "example.same", from: "same", to: "same", values: { note } })),
+        ],
+      };
+      console.log(JSON.stringify({
+        locale: Intl.DateTimeFormat().resolvedOptions().locale,
+        model: serializeDomainModel(model), snapshot: serializeDomainSnapshot(snapshot),
+      }));
+    `;
+    const results = ["en_US.UTF-8", "da_DK.UTF-8"].map((locale) => JSON.parse(execFileSync(
+      process.execPath, ["--input-type=module", "--eval", script],
+      { encoding: "utf8", env: { ...process.env, LANG: locale, LC_ALL: locale } },
+    )) as { locale: string; model: string; snapshot: string });
+
+    expect(results.map((result) => result.locale)).toEqual(["en-US", "da-DK"]);
+    expect(results[1]?.model).toBe(results[0]?.model);
+    expect(results[1]?.snapshot).toBe(results[0]?.snapshot);
+    expect(JSON.parse(results[0]?.model ?? "").valueTypes.map((entry: ValueTypeDefinition) => entry.id)).toEqual(["example.aa", "example.z"]);
+    expect(JSON.parse(results[0]?.snapshot ?? "").records.slice(0, 2).map((entry: { id: string }) => entry.id)).toEqual(["aa", "same"]);
   });
 });
 
