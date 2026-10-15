@@ -95,6 +95,10 @@ export interface SiteShellInput {
   readonly navPlacement?: "leading" | "centered";
   /** @default "base" */
   readonly ground?: SiteChromeGround;
+  /** Reserved chrome may choose its own ground; an overlay inherits the selected ink tone over the page. */
+  readonly header?:
+    | { readonly placement?: "reserved"; readonly ground?: SiteChromeGround; readonly tone?: never }
+    | { readonly placement: "overlay"; readonly tone?: "base" | "inverse"; readonly ground?: never };
   readonly footer?: SiteFooterInput;
   /**
    * The canonical public origin (`https://example.com`), for a surface served
@@ -132,6 +136,7 @@ export interface SiteFrameConfig {
   readonly origin: string;
   /** Chrome the public site shows and the other surfaces do not. */
   readonly site?: {
+    readonly header?: SiteShellInput["header"];
     readonly nav?: SiteShellInput["nav"];
     readonly actions?: SiteShellInput["actions"];
     readonly iconActions?: SiteShellInput["iconActions"];

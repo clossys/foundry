@@ -31,6 +31,9 @@ export interface ResolvedSiteShell {
   readonly surfaceLabel?: string;
   readonly navPlacement: "leading" | "centered";
   readonly ground: SiteChromeGround;
+  readonly header:
+    | { readonly placement: "reserved"; readonly ground: SiteChromeGround }
+    | { readonly placement: "overlay"; readonly tone: "base" | "inverse" };
   readonly footer?: {
     readonly columns: readonly { readonly heading: string; readonly links: readonly ResolvedSiteLink[] }[];
     readonly links: readonly ResolvedSiteLink[];
@@ -50,9 +53,11 @@ const SHELL_KEYS = new Set([
   "surfaceLabel",
   "navPlacement",
   "ground",
+  "header",
   "footer",
   "origin",
 ]);
+const HEADER_KEYS = new Set(["placement", "ground", "tone"]);
 const BRAND_KEYS = new Set(["assetId", "label", "size", "plate", "variant", "wordmark"]);
 const NAV_KEYS = new Set(["label", "links"]);
 const LINK_KEYS = new Set(["href", "label"]);
@@ -316,6 +321,20 @@ export function resolveShell(input: SiteShellInput, resolveCopy: CopyResolver, r
     };
   }
 
+  const ground = shell.ground === undefined ? "base" : oneOf(shell.ground, "shell.ground", SITE_CHROME_GROUNDS);
+  let header: ResolvedSiteShell["header"] = { placement: "reserved", ground };
+  if (shell.header !== undefined) {
+    const fields = record(shell.header, "shell.header", HEADER_KEYS);
+    const placement = fields.placement === undefined ? "reserved" : oneOf(fields.placement, "shell.header.placement", ["reserved", "overlay"] as const);
+    if (placement === "overlay") {
+      if ("ground" in fields) fail("shell.header.ground is only for reserved placement.");
+      header = { placement, tone: fields.tone === undefined ? "base" : oneOf(fields.tone, "shell.header.tone", ["base", "inverse"] as const) };
+    } else {
+      if ("tone" in fields) fail("shell.header.tone is only for overlay placement.");
+      header = { placement, ground: fields.ground === undefined ? ground : oneOf(fields.ground, "shell.header.ground", SITE_CHROME_GROUNDS) };
+    }
+  }
+
   return {
     brand,
     skipLink: copy(shell.skipLink, "shell.skipLink", resolveCopy),
@@ -326,7 +345,8 @@ export function resolveShell(input: SiteShellInput, resolveCopy: CopyResolver, r
     environments,
     ...(shell.surfaceLabel === undefined ? {} : { surfaceLabel: copy(shell.surfaceLabel, "shell.surfaceLabel", resolveCopy) }),
     navPlacement: shell.navPlacement === undefined ? "leading" : oneOf(shell.navPlacement, "shell.navPlacement", ["leading", "centered"] as const),
-    ground: shell.ground === undefined ? "base" : oneOf(shell.ground, "shell.ground", SITE_CHROME_GROUNDS),
+    ground,
+    header,
     ...(footer === undefined ? {} : { footer }),
   };
 }
