@@ -541,3 +541,48 @@ describe("LandingView reviewed action-pair and resolved copy contracts", () => {
     expect(ordinary).not.toContain("<style");
   });
 });
+
+
+describe("LandingView frame fit", () => {
+  const heroAlone: ResolvedSectionedViewDocument = { ...PAGE, sections: [PAGE.sections[0]!] };
+
+  it("fit frame with the hero alone fills the frame instead of 100dvh", () => {
+    const root = dom({ document: heroAlone, fit: "frame", landmark: "none" });
+    const view = root.querySelector<HTMLElement>("[data-landing-view]")!;
+    const hero = root.querySelector<HTMLElement>("[data-landing-hero]")!;
+    expect(view.classList.contains("flex-1")).toBe(true);
+    expect(hero.classList.contains("flex-1")).toBe(true);
+    expect(hero.style.minHeight).toBe("");
+    expect(view.hasAttribute("fit")).toBe(false);
+    expect(root.querySelector("[data-landing-cue]")).toBeNull();
+    const viewport = dom({ document: heroAlone });
+    expect(viewport.querySelector<HTMLElement>("[data-landing-hero]")!.style.minHeight).toBe("100dvh");
+  });
+
+  it.each([
+    { document: PAGE },
+    { document: heroAlone, trailing: [SHARED] },
+    { document: heroAlone, callToAction: CALL_TO_ACTION },
+  ])("fit frame with content after the hero keeps the peek and cue: %j", (props) => {
+    const root = dom({ ...props, fit: "frame" });
+    const hero = root.querySelector<HTMLElement>("[data-landing-hero]")!;
+    expect(hero.style.minHeight).toBe("calc(100dvh - var(--spacing-5xl, 6rem))");
+    expect(hero.classList.contains("flex-1")).toBe(false);
+    expect(root.querySelector("[data-landing-cue]")).not.toBeNull();
+    expect(root.innerHTML).toBe(dom({ ...props, fit: "viewport" }).innerHTML);
+  });
+
+  it("fit is ignored under a reserved header or for a compact hero", () => {
+    const compact: ResolvedSectionedViewDocument = { ...heroAlone, sections: [{ ...heroAlone.sections[0]!, size: "compact" }] };
+    for (const props of [
+      { document: heroAlone, header: "reserved" as const },
+      { document: compact, header: "overlay" as const },
+      { document: compact, header: "reserved" as const },
+    ]) {
+      expect(dom({ ...props, fit: "frame" }).innerHTML).toBe(dom({ ...props, fit: "viewport" }).innerHTML);
+      const hero = dom({ ...props, fit: "frame" }).querySelector<HTMLElement>("[data-landing-hero]")!;
+      expect(hero.style.minHeight).toBe("");
+      expect(hero.classList.contains("flex-1")).toBe(false);
+    }
+  });
+});

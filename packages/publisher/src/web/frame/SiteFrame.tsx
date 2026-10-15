@@ -115,7 +115,9 @@ export function SiteFrame({ shell, resolveCopy, resolveAsset, children }: SiteFr
     <div className="flex min-h-dvh flex-col">
       <SiteSkipLink targetId={SITE_MAIN_ID} label={resolved.skipLink} />
       <SiteHeader
-        ground={resolved.ground}
+        {...(resolved.header.placement === "overlay"
+          ? { placement: "overlay" as const, tone: resolved.header.tone }
+          : { ground: resolved.header.ground })}
         brand={brandmark}
         nav={nav}
         navPlacement={resolved.navPlacement}
