@@ -1202,9 +1202,10 @@ by a package (C-3), and importing this extension performs no I/O (C-1).
   An unknown key returns that supplied control without requesting,
   caching or emitting. No provider value or response property outside this
   map becomes a flag, variant, targeting property or exposure property.
-- **C-75 One exposure class passes the final gate.** The only exposure
-  event name is `$feature_flag_called`, only for a successful lookup of an
-  allowlisted evaluated or bootstrapped variant in the current grant.
+- **C-75 One exposure class passes the final gate.** The exposure
+  event name is `$feature_flag_called`; an exposure is admitted only for a
+  successful lookup of an allowlisted evaluated or bootstrapped variant in
+  the current grant.
   Control fallbacks caused by refusal, loading, failure or invalid data
   emit nothing. The adapter admits only its own lookup's exposure, once
   per key/variant pair per grant; unsolicited SDK exposure events drop.
@@ -1253,7 +1254,7 @@ by a package (C-3), and importing this extension performs no I/O (C-1).
   invalid or unknown values read as control and cannot emit exposure.
   Deferred bootstrap is bound to the generation that requested it; an
   older grant's bootstrap stays discarded even after a later re-grant.
-- **C-79 Server HTML and the first undecided render use control.** Without
+- **C-79 Server HTML and undecided hydration use control.** Without
   an already-established experiments grant, server HTML, hydration and
   client lookups render the host's declared control and perform no flag
   request. With a grant but without validated values, control remains until
