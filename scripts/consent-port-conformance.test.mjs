@@ -17,7 +17,8 @@
 //
 // each resolved by package name through its export map, exactly as a host
 // resolves it. A renamed or retyped snapshot field, a narrowed factory
-// option or a missing export key fails here.
+// option or a missing export key fails here. AST checks reject fixture escape
+// hatches, and built relative-import graphs keep adapters out of both roots.
 //
 // It needs `npm ci` (typescript) and `npm run build` (the declarations), so
 // it is excluded from check:gates by name in scripts/lib/gate-test-set.mjs
@@ -60,7 +61,7 @@ function format(diagnostic) {
   return `${file}:${line + 1}:${character + 1} TS${diagnostic.code}: ${message}`;
 }
 
-test("the fixture compiles under strict settings, including exactOptionalPropertyTypes", () => {
+test("the fixture pins strict and exactOptionalPropertyTypes on and skipLibCheck off", () => {
   const { parsed } = loadProgram();
   assert.equal(parsed.options.strict, true, "fixture tsconfig must keep strict on");
   assert.equal(parsed.options.exactOptionalPropertyTypes, true, "fixture tsconfig must keep exactOptionalPropertyTypes on");
@@ -68,18 +69,61 @@ test("the fixture compiles under strict settings, including exactOptionalPropert
   assert.ok(parsed.fileNames.length > 0, "fixture tsconfig includes no file");
 });
 
+function fixtureSources(directory) {
+  return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    const path = join(directory, entry.name);
+    return entry.isDirectory() ? fixtureSources(path) : /\.(?:[cm]?ts|tsx)$/.test(entry.name) ? [path] : [];
+  });
+}
+
 test("the fixture uses no cast, no any and no compiler directive", () => {
   const offenders = [];
-  for (const name of readdirSync(fixtureDir).filter((file) => file.endsWith(".ts"))) {
-    const lines = readFileSync(join(fixtureDir, name), "utf8").split("\n");
-    lines.forEach((text, index) => {
-      const code = text.replace(/\/\/.*$/, "");
-      if (/\bas\s+(?!const\b)[A-Za-z_{[(]/.test(code)) offenders.push(`${name}:${index + 1} cast`);
-      if (/\bany\b/.test(code)) offenders.push(`${name}:${index + 1} any`);
-      if (/[@]ts[-](ignore|expect-error|nocheck)\b/.test(text)) offenders.push(`${name}:${index + 1} directive`);
+  for (const path of fixtureSources(fixtureDir)) {
+    const name = relative(fixtureDir, path);
+    if (/\.d\.[cm]?ts$/.test(name)) offenders.push(`${name} declaration file`);
+    const text = readFileSync(path, "utf8");
+    const source = ts.createSourceFile(path, text, ts.ScriptTarget.Latest, true);
+    function visit(node) {
+      const { line } = source.getLineAndCharacterOfPosition(node.getStart(source));
+      const report = (kind) => offenders.push(`${name}:${line + 1} ${kind}`);
+      if (ts.isAsExpression(node) && !(ts.isTypeReferenceNode(node.type) && node.type.typeName.getText(source) === "const")) report("cast");
+      if (ts.isTypeAssertionExpression(node)) report("cast");
+      if (ts.isNonNullExpression(node)) report("non-null assertion");
+      if (node.kind === ts.SyntaxKind.AnyKeyword) report("any");
+      if (ts.isModuleDeclaration(node)) report("module declaration");
+      ts.forEachChild(node, visit);
+    }
+    visit(source);
+    text.split("\n").forEach((line, index) => {
+      if (/[@]ts[-](ignore|expect-error|nocheck)\b/.test(line)) offenders.push(`${name}:${index + 1} directive`);
     });
   }
   assert.deepEqual(offenders, []);
+});
+
+function assertAdapterFreeGraph(entry) {
+  const visited = new Set();
+  function visit(path) {
+    if (visited.has(path)) return;
+    visited.add(path);
+    const name = relative(repoRoot, path).split(sep).join("/");
+    assert.ok(!name.split("/").includes("adapters") && !name.endsWith("/providers/posthog.js"), `root module graph reaches adapter: ${name}`);
+    const source = ts.createSourceFile(path, readFileSync(path, "utf8"), ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+    function imports(node) {
+      let specifier;
+      if (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) specifier = node.moduleSpecifier;
+      if (ts.isCallExpression(node) && (node.expression.kind === ts.SyntaxKind.ImportKeyword || (ts.isIdentifier(node.expression) && node.expression.text === "require"))) specifier = node.arguments[0];
+      if (specifier && ts.isStringLiteralLike(specifier) && specifier.text.startsWith(".")) visit(resolve(dirname(path), specifier.text));
+      ts.forEachChild(node, imports);
+    }
+    imports(source);
+  }
+  visit(entry);
+}
+
+test("O-5: neither root subpath's built module graph reaches an adapter module", () => {
+  assertAdapterFreeGraph(join(repoRoot, "packages/butler/dist/browser-consent/index.js"));
+  assertAdapterFreeGraph(join(repoRoot, "packages/observer/dist/browser-analytics/index.js"));
 });
 
 test("each public specifier resolves to its built declaration through the export map", () => {
@@ -110,5 +154,5 @@ test("O-5: each root subpath exposes no adapter, and each adapter subpath expose
   assert.equal(typeof analytics.sanitizeAnalyticsEvent, "function");
   assert.equal("createPostHogProvider" in analytics, false, "the browser-analytics entry must not expose the provider adapter");
   assert.equal(typeof posthog.createPostHogProvider, "function");
-  assert.equal("createAnalyticsTransport" in posthog, false, "the provider subpath must expose the adapter alone");
+  assert.deepEqual(Object.keys(posthog).sort(), ["POSTHOG_EVENT_FIELDS", "POSTHOG_INSTANCE_PREFIX", "POSTHOG_PROPERTY_ALLOWLIST", "createPostHogProvider"]);
 });
