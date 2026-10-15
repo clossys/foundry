@@ -228,7 +228,14 @@ describe("P-38 posthog-replay: eligibility (C-68)", () => {
     const fake = createFake();
     const provider = createPostHogProvider(fake.sdk, configFor(BOTH));
     provider.init({
-      sanitizeUrl: (href) => (href.startsWith("https://example.test") ? "https://example.test/rewritten" : null),
+      sanitizeUrl: (href) => {
+        try {
+          const url = new URL(href);
+          return url.protocol === "https:" && url.host === "example.test" ? "https://example.test/rewritten" : null;
+        } catch {
+          return null;
+        }
+      },
       eventNames: ["$pageview"],
     });
     provider.optIn();

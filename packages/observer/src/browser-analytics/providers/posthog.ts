@@ -416,13 +416,12 @@ export function createPostHogProvider(sdk: PostHogLike, config: PostHogProviderC
 
     // 2 and 3. The payload decodes and every value that can hold page text is masked.
     const scanned = scanReplayPayload(sdkProperties.$snapshot_data);
-    if (!scanned.decoded || !scanned.masked) return null;
-
-    // 4 (second half). Every address the payload carries, read before any rewrite.
+    // 4 (second half). Latch unsafe navigation even if another payload check fails.
     if (scanned.addresses.some(addressHasQueryOrFragment)) {
       tainted = true;
       return null;
     }
+    if (!scanned.decoded || !scanned.masked) return null;
 
     // 5. Meta addresses are rewritten; custom records are removed.
     const records = finishReplayPayload(scanned.records, (href) => sanitizeUrl(href));

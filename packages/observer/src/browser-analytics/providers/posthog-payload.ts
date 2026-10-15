@@ -74,8 +74,11 @@ function unmaskedText(value: string): boolean {
   return !MASKED_TEXT_PATTERN.test(value);
 }
 
-/** Checks one `value` attribute: a string in masked form, or the format's removal marker `null` when allowed. */
+/** Validates attribute value types, then checks masking of `value`; mutations may remove an attribute with `null`. */
 function valueAttributeOk(attributes: PlainRecord, allowNull: boolean): "ok" | "unmasked" | "type" {
+  for (const value of Object.values(attributes)) {
+    if (typeof value !== "string" && !(allowNull && value === null)) return "type";
+  }
   if (!Object.prototype.hasOwnProperty.call(attributes, "value")) return "ok";
   const value = attributes.value;
   if (value === null && allowNull) return "ok";
@@ -191,10 +194,8 @@ function scanRecord(record: PlainRecord, kind: string, scan: Scan): boolean {
       return scanNodes([data.node], scan);
     case "meta":
       if (typeof data.href !== "string") return false;
-      scan.addresses.push(data.href);
       return true;
     case "custom":
-      collectAddresses(data, scan.addresses);
       return true;
     case "mutation":
       return scanMutation(data, scan);
@@ -222,6 +223,13 @@ export function scanReplayPayload(payload: unknown): ScannedPayload {
   const scan: Scan = { decoded: true, masked: true, addresses: [] };
   const failed: ScannedPayload = { records: [], decoded: false, masked: false, addresses: scan.addresses };
   if (!Array.isArray(payload) || payload.length === 0) return failed;
+  // Navigation taint survives another record's decode or masking failure.
+  // Read addresses across the payload before a decoding check can return early.
+  for (const entry of payload as unknown[]) {
+    if (!isPlainRecord(entry) || !isPlainRecord(entry.data)) continue;
+    if (entry.type === 4 && typeof entry.data.href === "string") scan.addresses.push(entry.data.href);
+    if (entry.type === 5) collectAddresses(entry.data, scan.addresses);
+  }
   const records: PlainRecord[] = [];
   for (const entry of payload as unknown[]) {
     if (!isPlainRecord(entry)) return failed;

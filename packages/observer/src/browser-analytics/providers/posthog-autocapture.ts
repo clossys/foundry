@@ -124,7 +124,10 @@ export function elementsFromList(list: unknown): ChainElement[] | null {
     if (typeof tag !== "string" || tag === "") return null;
     const attributes = new Map<string, string>();
     for (const [key, value] of Object.entries(record)) {
-      if (key.startsWith(ATTRIBUTE_PREFIX) && typeof value === "string") attributes.set(key, value);
+      if (key.startsWith(ATTRIBUTE_PREFIX)) {
+        if (typeof value !== "string") return null;
+        attributes.set(key, value);
+      }
     }
     elements.push({ tag, attributes });
   }
