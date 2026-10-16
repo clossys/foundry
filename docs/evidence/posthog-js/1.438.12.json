@@ -6096,5 +6096,128 @@
     "meaning": "SDK-level cancellation: the earlier evaluation response cannot populate the cache or arrive through the later subscription.",
     "transportCancellationObserved": false,
     "reason": "With reset, the old HTTP response completed but its variant reached neither B nor the cache; a fresh reply reached B. Without reset, the old variant reached B."
+  },
+  "measured_at": "2026-10-16T19:35:10.798Z",
+  "measured_at_basis": "Completion timestamp from the original recorded-result file modification time; individual observations were taken during the preceding real-Chromium run.",
+  "original_result_sha256": "fb48ca0553dc0c270f39776f4efb6d62d49458b543944dd74c897e6c6bab5de8",
+  "attestationObservations": {
+    "clearsFlagCache": {
+      "value": false,
+      "cache": {
+        "beforeReset": "warm-response",
+        "afterFeatureFlagsReset": "warm-response",
+        "afterSdkReset": null
+      },
+      "sourceItems": [
+        "E15"
+      ]
+    },
+    "requestCarriesNoPersonData": {
+      "value": false,
+      "targetingOrAddressFields": [
+        {
+          "key": "groups",
+          "value": {}
+        },
+        {
+          "key": "person_properties",
+          "value": {
+            "$initial_referrer": "$direct",
+            "$initial_referring_domain": "$direct",
+            "$initial_current_url": "http://127.0.0.1:PORT/fixture",
+            "$initial_host": "127.0.0.1:PORT",
+            "$initial_pathname": "/fixture",
+            "$initial_utm_source": null,
+            "$initial_utm_medium": null,
+            "$initial_utm_campaign": null,
+            "$initial_utm_content": null,
+            "$initial_utm_term": null,
+            "$initial_gad_source": null,
+            "$initial_mc_cid": null,
+            "$initial_gclid": null,
+            "$initial_gclsrc": null,
+            "$initial_dclid": null,
+            "$initial_gbraid": null,
+            "$initial_wbraid": null,
+            "$initial_fbclid": null,
+            "$initial_msclkid": null,
+            "$initial_twclid": null,
+            "$initial_li_fat_id": null,
+            "$initial_igshid": null,
+            "$initial_ttclid": null,
+            "$initial_rdt_cid": null,
+            "$initial_epik": null,
+            "$initial_qclid": null,
+            "$initial_sccid": null,
+            "$initial_oppref": null,
+            "$initial_bfcid": null,
+            "$initial_irclid": null,
+            "$initial__kx": null,
+            "$lib": "web",
+            "$lib_version": "1.438.12"
+          }
+        }
+      ],
+      "sourceItems": [
+        "E15"
+      ]
+    },
+    "resetCancelsPendingRequests": {
+      "answer": true,
+      "observedSequence": [
+        {
+          "step": "A starts under the first grant; its local response is held",
+          "observed": true
+        },
+        {
+          "step": "Withdraw analytics, call featureFlags.reset, re-grant and register subscription B",
+          "resetCalled": true
+        },
+        {
+          "step": "Release A after B exists",
+          "httpResponseCompleted": true,
+          "transportFailure": null,
+          "deliveredOldVariantToB": false,
+          "cacheBeforeFreshRequest": null
+        },
+        {
+          "step": "Request a fresh value through B",
+          "deliveredFreshVariantToB": true
+        },
+        {
+          "step": "Repeat without featureFlags.reset",
+          "deliveredOldVariantToB": true
+        }
+      ],
+      "meaning": "SDK-level cancellation: the earlier evaluation response cannot populate the cache or arrive through the later subscription.",
+      "transportCancellationObserved": false,
+      "reason": "With reset, the old HTTP response completed but its variant reached neither B nor the cache; a fresh reply reached B. Without reset, the old variant reached B."
+    },
+    "masksAllText": {
+      "value": false,
+      "reason": "E10/E11 found unmasked non-style text; recorded script strings include [\"SCRIPT_PLACEHOLDER\"].",
+      "items": [
+        "E10",
+        "E11"
+      ]
+    },
+    "recordsNavigationAddress": {
+      "value": false,
+      "reason": "E9 recorded the exact address, including any query/fragment, after 2 of 6 navigations; stripped addresses cannot establish C-68's query/fragment check.",
+      "items": [
+        "E9"
+      ]
+    },
+    "localStorageConsentWrite": {
+      "value": true,
+      "store": "localStorage",
+      "method": "setItem",
+      "key": "__ph_opt_in_out_evidence-only-project",
+      "afterOptIn": "1",
+      "afterSdkOptOut": "0",
+      "sourceItems": [
+        "E5"
+      ]
+    }
   }
 }
