@@ -8,7 +8,8 @@
  * events, and calls back into the adapter from inside any method. For unit
  * H it also models the flag members: `set_config`, `reloadFeatureFlags`
  * (each call records the request the SDK would build), `onFeatureFlags`
- * with replies the test delivers, and `featureFlags.reset`. Nothing
+ * with replies the test delivers, and `featureFlags.reset`, which cancels
+ * pending requests unless `flagState.resetCancels` is false. Nothing
  * here imports or installs the real SDK, and nothing reads the environment.
  *
  * This file is a test file (`*.test.ts`) so that it is neither compiled into
@@ -142,6 +143,11 @@ export interface Fake {
   flagState: FlagState;
   /** Delivers an evaluation reply to every registered, still-subscribed callback. */
   flagReply(variants: unknown, context?: unknown): void;
+  /**
+   * Delivers the response to the `index`th `reloadFeatureFlags()` request, as the SDK would: to every
+   * callback subscribed now, unless that request is settled. Returns whether it was delivered.
+   */
+  pendingReply(index: number, variants: unknown): boolean;
   /** The hook the adapter installed. */
   hook(): ((result: unknown) => unknown) | undefined;
   names(): string[];
@@ -163,6 +169,10 @@ export interface FlagState {
   groups: Record<string, unknown>;
   /** The SDK's own flag cache; `onFeatureFlags` replays it at once when set, as the SDK does. */
   loaded: unknown;
+  /** Whether each `reloadFeatureFlags()` request, by index, is settled: answered, or cancelled by `featureFlags.reset()`. */
+  settled: boolean[];
+  /** Whether `featureFlags.reset()` cancels pending requests (default true). */
+  resetCancels: boolean;
 }
 
 export function createFake(options: FakeOptions = {}): Fake {
@@ -187,7 +197,7 @@ export function createFake(options: FakeOptions = {}): Fake {
     reportedConsoleLog: null,
     inside: {},
     session: { id: "session-1", rotateOnReset: true, counter: 1 },
-    flagState: { requests: [], configUpdates: [], callbacks: [], personProperties: {}, groups: {}, loaded: null },
+    flagState: { requests: [], configUpdates: [], callbacks: [], personProperties: {}, groups: {}, loaded: null, settled: [], resetCancels: true },
   } as unknown as Fake;
 
   const hook = () => storedConfig.before_send as ((result: unknown) => unknown) | undefined;
@@ -277,6 +287,7 @@ export function createFake(options: FakeOptions = {}): Fake {
         person_properties: { ...fake.flagState.personProperties },
         groups: { ...fake.flagState.groups },
       });
+      fake.flagState.settled.push(false);
     },
     onFeatureFlags(callback: FlagCallback["callback"]) {
       record("onFeatureFlags");
@@ -303,6 +314,7 @@ export function createFake(options: FakeOptions = {}): Fake {
     reset() {
       record("featureFlags.reset");
       fake.flagState.loaded = null;
+      if (fake.flagState.resetCancels) fake.flagState.settled = fake.flagState.settled.map(() => true);
     },
   };
 
@@ -322,7 +334,7 @@ export function createFake(options: FakeOptions = {}): Fake {
     for (const [name, method] of Object.entries(methods)) {
       if (!omit.has(name)) instance[name] = method;
     }
-    if (!omit.has("featureFlags")) instance.featureFlags = featureFlags;
+    if (!omit.has("featureFlags")) instance.featureFlags = omit.has("featureFlags.reset") ? {} : featureFlags;
     return instance as unknown as PostHogLike;
   }
 
@@ -353,6 +365,14 @@ export function createFake(options: FakeOptions = {}): Fake {
       for (const entry of [...fake.flagState.callbacks]) {
         if (entry.subscribed) entry.callback(Object.keys((variants as object) ?? {}), variants, context);
       }
+    },
+    pendingReply(index: number, variants: unknown) {
+      if (index >= fake.flagState.settled.length || fake.flagState.settled[index]) return false;
+      fake.flagState.settled[index] = true;
+      for (const entry of [...fake.flagState.callbacks]) {
+        if (entry.subscribed) entry.callback(Object.keys((variants as object) ?? {}), variants, { errorsLoading: false });
+      }
+      return true;
     },
     emitRaw: (value: unknown) => run(value, "raw"),
     hook,

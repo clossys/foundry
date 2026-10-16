@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { FLAGS_CAPABILITY_FIELDS } from "./providers/posthog-flags.js";
-import { createPostHogProvider } from "./providers/posthog.js";
+import { createPostHogProvider, type PostHogProvider } from "./providers/posthog.js";
 import { CONTEXT, configFor, createFake, setPage } from "./posthog-fake.test.js";
 import { FLAGS_BLOCK, GOOD_FLAGS_PROBE, exposures, flagCalls, flagsEligible, flagsEvaluated, flagsInit } from "./posthog-flags-host.test.js";
 
@@ -107,12 +107,15 @@ describe("P-47 posthog-flags-loading: evaluation is requested only while jointly
     expect(calls).toBe(1);
   });
 
-  it("a missing evaluation method leaves flags at control with no enabling change", () => {
-    for (const method of ["set_config", "reloadFeatureFlags", "onFeatureFlags"]) {
+  it("a missing evaluation method, a missing featureFlags or a missing reset leaves flags at control with no SDK flag call", () => {
+    for (const method of ["set_config", "reloadFeatureFlags", "onFeatureFlags", "featureFlags", "featureFlags.reset"]) {
       const { fake, provider } = flagsEligible({ fakeOptions: { omit: [method] } });
+      expect(flagCalls(fake), method).toEqual([]);
       expect(fake.flagState.configUpdates, method).toEqual([]);
       expect(fake.flagState.requests, method).toEqual([]);
+      fake.flagReply({ "hero-copy": "short" });
       expect(provider.flags.lookup("hero-copy", "control"), method).toBe("control");
+      expect(exposures(fake), method).toEqual([]);
     }
   });
 
@@ -135,6 +138,46 @@ describe("P-47 posthog-flags-loading: evaluation is requested only while jointly
     expect(provider.flags.lookup("hero-copy", "control")).toBe("control");
     fake.flagState.callbacks[1]!.callback(["hero-copy"], { "hero-copy": "short" }, { errorsLoading: false });
     expect(provider.flags.lookup("hero-copy", "control")).toBe("short");
+  });
+
+  const REGRANTS: Array<[string, (provider: PostHogProvider) => void]> = [
+    ["an experiments re-grant", (provider) => {
+      provider.flags.setExperimentsPermission(false);
+      provider.flags.setExperimentsPermission(true);
+    }],
+    ["an analytics re-grant", (provider) => {
+      provider.optOut();
+      provider.optIn();
+    }],
+  ];
+
+  it("an old request's response through the new subscription is refused when cancellation is not attested", () => {
+    for (const [name, regrant] of REGRANTS) {
+      const { fake, provider } = flagsEligible({
+        probe: () => ({ ...GOOD_FLAGS_PROBE, resetCancelsPendingRequests: false }),
+      });
+      fake.flagState.resetCancels = false;
+      regrant(provider);
+      fake.pendingReply(0, { "hero-copy": "short" });
+      expect(provider.flags.lookup("hero-copy", "control"), name).toBe("control");
+      expect(exposures(fake), name).toEqual([]);
+      expect(fake.flagState.requests, name).toEqual([]);
+    }
+  });
+
+  it("with cancellation attested, the reset between eligible periods keeps an old response from the new subscription", () => {
+    for (const [name, regrant] of REGRANTS) {
+      const { fake, provider } = flagsEligible();
+      expect(fake.flagState.requests, name).toHaveLength(1);
+      regrant(provider);
+      expect(fake.flagState.requests, name).toHaveLength(2);
+      expect(fake.pendingReply(0, { "hero-copy": "short" }), name).toBe(false);
+      expect(provider.flags.lookup("hero-copy", "control"), name).toBe("control");
+      expect(exposures(fake), name).toEqual([]);
+      // The new request's own response still resolves.
+      expect(fake.pendingReply(1, { "hero-copy": "short" }), name).toBe(true);
+      expect(provider.flags.lookup("hero-copy", "control"), name).toBe("short");
+    }
   });
 
   it("a reply that reports a loading error, or carries no plain object, is refused", () => {

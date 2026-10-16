@@ -33,6 +33,7 @@ export const GOOD_FLAGS_PROBE: PostHogFlagsCapability = Object.freeze({
   requestCarriesNoPersonData: true,
   evaluatesOnReload: true,
   clearsFlagCache: true,
+  resetCancelsPendingRequests: true,
 });
 
 export const FLAG_CALLS = ["onFeatureFlags", "set_config", "reloadFeatureFlags", "offFeatureFlags", "featureFlags.reset", "setPersonPropertiesForFlags", "group"];

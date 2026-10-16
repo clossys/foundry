@@ -13,7 +13,7 @@
  *   bootstrap map; a definition is closed to `control` and `variants`;
  * - the returned provider carries the `flags` handle, whose lookup takes and
  *   returns only a boolean or a string;
- * - the evidence probe reports exactly the five capability fields.
+ * - the evidence probe reports exactly the six capability fields.
  *
  * Each `@ts-expect-error` line fails the build if the line below it starts
  * to type-check.
@@ -49,7 +49,7 @@ export const definitionKeysAreClosed: Equal<keyof PostHogFlagDefinition, "contro
 export const valuesAreBooleanOrString: Equal<PostHogFlagValue, boolean | string> = true;
 export const capabilityFields: Equal<
   keyof PostHogFlagsCapability,
-  "holdsRequestsWhileDisabled" | "retainedOptionsStartNoRequest" | "requestCarriesNoPersonData" | "evaluatesOnReload" | "clearsFlagCache"
+  "holdsRequestsWhileDisabled" | "retainedOptionsStartNoRequest" | "requestCarriesNoPersonData" | "evaluatesOnReload" | "clearsFlagCache" | "resetCancelsPendingRequests"
 > = true;
 export const handleMembers: Equal<keyof PostHogFlagsHandle, "purpose" | "attest" | "setExperimentsPermission" | "lookup" | "subscribe"> = true;
 

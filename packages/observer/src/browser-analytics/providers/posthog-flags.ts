@@ -51,15 +51,22 @@ export interface PostHogFlagsCapability {
   evaluatesOnReload: boolean;
   /** `featureFlags.reset()` removes every assignment the SDK holds, without resetting its session. */
   clearsFlagCache: boolean;
+  /**
+   * `featureFlags.reset()` cancels every pending evaluation request, so a response to a request made
+   * before it never reaches a callback registered after it. The adapter calls it between any two
+   * eligible periods that request evaluation; it cannot itself tell one response from another.
+   */
+  resetCancelsPendingRequests: boolean;
 }
 
-/** The five capability fields, in declaration order. */
+/** The six capability fields, in declaration order. */
 export const FLAGS_CAPABILITY_FIELDS: readonly (keyof PostHogFlagsCapability)[] = Object.freeze([
   "holdsRequestsWhileDisabled",
   "retainedOptionsStartNoRequest",
   "requestCarriesNoPersonData",
   "evaluatesOnReload",
   "clearsFlagCache",
+  "resetCancelsPendingRequests",
 ]);
 
 /**
@@ -340,6 +347,15 @@ export function createFlagsController(settings: FlagsSettings, link: FlagsLink):
     const reload = target.reloadFeatureFlags;
     const onFlags = target.onFeatureFlags;
     if (typeof setConfig !== "function" || typeof reload !== "function" || typeof onFlags !== "function") return;
+    // The cache clear is required before the first enablement too: without it no later grant could be isolated.
+    let canReset = false;
+    try {
+      const flagsState: unknown = target.featureFlags;
+      canReset = flagsState !== null && typeof flagsState === "object" && typeof (flagsState as { reset?: unknown }).reset === "function";
+    } catch {
+      canReset = false;
+    }
+    if (!canReset || active || cleaning || !eligible() || link.instance() !== target) return;
 
     const grant = ++generation;
     active = true;

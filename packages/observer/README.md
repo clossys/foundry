@@ -579,7 +579,7 @@ const provider = createPostHogProvider(sdk, {
 - **Each grant starts a new session.** Withdrawal and each re-grant call `reset()` when either feature is on. A session id equal to an earlier one on the page leaves replay off for that grant, and a snapshot with an earlier session id is dropped.
 - **Withdrawal closes the capture gate before any SDK call.** A snapshot flushed after the stop is dropped.
 
-Feature flags need three things at once: the instance the transport initialized, its open capture gate, and a separate experiments permission that the host grants through `provider.flags`. Analytics permission does not grant experiments. The host also attests, from its own evidence for the SDK version it installed, how that version's flag requests behave; without a passing attestation every lookup returns control and nothing is requested.
+Feature flags need three things at once: the instance the transport initialized, its open capture gate, and a separate experiments permission that the host grants through `provider.flags`. Analytics permission does not grant experiments. The host also attests, from its own evidence for the SDK version it installed, how that version's flag requests behave, including that `featureFlags.reset()` cancels a pending evaluation request; without a passing attestation every lookup returns control and nothing is requested.
 
 ```ts
 import {
@@ -610,7 +610,7 @@ const heroCopy = flagged.flags.lookup("hero-copy", "control");
 ```
 
 - **The flags block is closed and checked when the adapter is created.** It has `enabled`, `purpose` and `definitions` and no other key. A key outside `[a-zA-Z0-9][a-zA-Z0-9._-]{0,63}`, a variant that is not a boolean or a non-empty string of at most 200 characters, a duplicate variant, a control that is not one of its variants or an accessor throws a `TypeError` before any SDK call. There is no bootstrap map.
-- **Evaluation starts when all three conditions hold and the attestation passed.** The adapter subscribes to results, sets the two feature-flag disables to `false` and requests one evaluation. It sets no person properties or groups. It does not poll.
+- **Evaluation starts when all three conditions hold, the attestation passed and the instance has `set_config`, `reloadFeatureFlags`, `onFeatureFlags` and `featureFlags.reset`.** The adapter subscribes to results, sets the two feature-flag disables to `false` and requests one evaluation. It sets no person properties or groups. It does not poll.
 - **A lookup returns the declared control until a validated result arrives.** An unknown key returns the control the caller passed; an unlisted variant, a reply from an earlier grant, a reply that reports a loading error, and a lookup whose control differs from the declared one return the declared control.
 - **A resolved lookup sends one `$feature_flag_called` exposure per key and variant per grant.** The exposure keeps the key, the variant, the delivery fields and the rebuilt URL fields. An exposure the adapter did not send is dropped, as is one whose grant ended before the hook ran.
 - **An experiments withdrawal with analytics open clears the SDK's flag state and sets both disables back to `true`.** It does not reset the session.
