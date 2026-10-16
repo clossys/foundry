@@ -1268,9 +1268,9 @@ The core hero contract uses `size: "compact"` for section-scale copy and
 `checkSectionVariety` warns for a lone compact hero unless known trailing
 content is supplied. The web views and gallery fixtures use the canonical size field.
 
-`LandingView`, exported from `@clossys/publisher/web` and
-`@clossys/publisher/web/server`, is a sectioned landing page: a hero block
-that fills the first screen, the document's other sections as full-bleed
+`LandingView`, exported from `@clossys/publisher/web`, is a sectioned landing
+page. The entry's `react-server` condition selects the server implementation.
+The page has a hero block that fills the first screen, the document's other sections as full-bleed
 bands, and an optional closing call to action. Every band's content, the hero
 copy and the call to action sit in one centred column (Designer
 `SectionFrame`'s `measure`, default `"wide"`); grounds run the full width. It

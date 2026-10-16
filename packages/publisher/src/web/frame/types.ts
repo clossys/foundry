@@ -23,7 +23,7 @@ export interface SiteLinkInput {
   readonly emphasis?: "primary" | "secondary";
 }
 
-type PlainSiteLinkInput = Omit<SiteLinkInput, "emphasis"> & { readonly emphasis?: never };
+type PlainSiteLinkInput = Omit<SiteLinkInput, "emphasis">;
 
 /** An icon-only link: its copy reference supplies the accessible name. */
 export type SiteIconLinkInput = {

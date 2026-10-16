@@ -130,8 +130,13 @@ export const invalidMeasure: HeroMeasure = ["content", "wide", undefined];
 export const invalidHeadingScale: HeroHeadingScale = ["large", "display", undefined];
 // @ts-expect-error emphasis belongs to shell.actions only
 export const navigationEmphasis: SiteShellInput = { ...shell, nav: { label: { id: "nav" }, links: [{ href: "/", label: { id: "home" }, emphasis: "primary" }] } };
-const emphasizedLink: SiteLinkInput = { href: "/", label: { id: "home" }, emphasis: "primary" };
-// @ts-expect-error navigation rejects emphasized link variables as well as fresh literals
-export const navigationEmphasisVariable: SiteShellInput = { ...shell, nav: { label: { id: "nav" }, links: [emphasizedLink] } };
+// Existing callers may type ordinary links with the public SiteLinkInput type.
+const plainLink: SiteLinkInput = { href: "/help", label: { id: "help" } };
+const plainLinks: readonly SiteLinkInput[] = [plainLink];
+export const typedNavigationLinks: SiteShellInput = { ...shell, nav: { label: { id: "nav" }, links: plainLinks } };
+export const typedFooterLinks: SiteShellInput = { ...shell, footer: { links: plainLinks, legal: config.legal } };
+export const typedFooterColumnLinks: SiteShellInput = { ...shell, footer: { columns: [{ heading: { id: "help" }, links: plainLinks }], legal: config.legal } };
+export const typedLegalLinks: SiteFrameConfig["legal"] = { entity: { id: "entity" }, links: plainLinks };
+export const typedSecondaryAction: SiteShellInput = { ...shell, secondaryAction: plainLink };
 // @ts-expect-error footer legal links do not accept header action emphasis
 export const legalEmphasis: SiteShellInput = { ...shell, footer: { legal: { entity: { id: "entity" }, links: [{ href: "/", label: { id: "home" }, emphasis: "primary" }] } } };
