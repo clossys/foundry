@@ -612,12 +612,12 @@ function frameSources(): Array<[string, string]> {
 }
 
 describe("module boundaries", () => {
-  it("only the skip-link and navigation islands are client modules, and the frame uses no hooks", () => {
+  it("only the skip-link, navigation implementation and navigation bridge are client modules, and the frame uses no hooks", () => {
     const sources = frameSources();
     expect(sources.map(([name]) => name)).toContain("SiteFrame.tsx");
-    expect(sources.filter(([, source]) => source.startsWith('"use client";')).map(([name]) => name).sort()).toEqual(["NavDisclosure.client.tsx", "SkipLink.client.tsx"]);
+    expect(sources.filter(([, source]) => source.startsWith('"use client";')).map(([name]) => name).sort()).toEqual(["NavDisclosure.boundary.client.tsx", "NavDisclosure.client.tsx", "SkipLink.client.tsx"]);
     for (const [name, source] of sources) {
-      if (name === "SkipLink.client.tsx" || name === "NavDisclosure.client.tsx") expect(source.startsWith('"use client";')).toBe(true);
+      if (name === "SkipLink.client.tsx" || name === "NavDisclosure.client.tsx" || name === "NavDisclosure.boundary.client.tsx") expect(source.startsWith('"use client";')).toBe(true);
       else expect(source).not.toMatch(/["']use client["']/);
     }
     const frameSource = readFileSync(join(import.meta.dirname, "SiteFrame.tsx"), "utf8");
@@ -628,6 +628,7 @@ describe("module boundaries", () => {
     for (const [name, source] of frameSources()) {
       for (const specifier of moduleSpecifiers(source)) {
         if (name === "NavDisclosure.client.tsx" && specifier === "@clossys/designer/shell") continue;
+        if (name === "NavDisclosure.boundary.client.tsx" && specifier === "#publisher-frame-navigation") continue;
         expect(specifier).toMatch(FRAME_ALLOWED_IMPORT);
       }
       expect(source).not.toMatch(/\bimport\s*\(|\brequire\s*\(/);

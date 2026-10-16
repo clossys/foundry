@@ -1,7 +1,7 @@
 import type { ReactElement } from "react";
 import { Icon } from "@clossys/designer/atoms/server";
 import { Brandmark, SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
-import { SiteNavDisclosure } from "./NavDisclosure.client.js";
+import { SiteNavDisclosure } from "./NavDisclosure.boundary.client.js";
 import { SiteSkipLink } from "./SkipLink.client.js";
 import { resolveShell } from "./internal/resolveShell.js";
 import type { ResolvedSiteIconLink, ResolvedSiteLink } from "./internal/resolveShell.js";

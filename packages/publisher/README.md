@@ -2812,7 +2812,12 @@ export function SignInPage() {
 - **Server-safe.** `SiteFrame` uses no hooks. The skip link, which moves
   focus on activation, is a small `"use client"` island that receives strings
   only. Navigation disclosure is a second island receiving resolved label
-  strings and link data; copy and asset resolvers stay on the server.
+  strings and link data; copy and asset resolvers stay on the server. Its
+  client bridge uses a private conditional binding: raw `react-server`
+  imports receive matching initial disclosure markup without loading Designer's
+  interactive shell barrel; the browser bundle retains Designer's disclosure
+  interaction. Server/client markup and generated control IDs are checked
+  together with pointer and keyboard interaction after hydration.
 
 ```tsx
 import type { SiteFrameConfig, SiteIconLinkInput } from "@clossys/publisher/web";
