@@ -494,6 +494,23 @@ name, a price, features and an optional call to action), `testimonial`
 items with an optional delta) or `content-section` (see below). Legacy kinds use the closed `base`/`sunken`/`inverse` ground vocabulary; canonical content sections omit ground for automatic cadence or author `inverse`;
 status values are the closed `available`/`partial`/`planned` readiness axis,
 with a separate `not-offered` disposition for deliberate non-capabilities.
+
+`status-list` is a declared Index mapping to canonical `topics` rows with
+badges. The readiness states use the original localized labels:
+`available` → success, `partial` → warning, and `planned` → info.
+The separate `not-offered` disposition uses its own label and neutral tone;
+it is never converted to a readiness state. Row labels become headings and
+row details become descriptions. This lookup contains 3–8 entries. Grouped
+inputs contain 2–4 groups of 2–4 entries, with at most eight entries overall,
+partitioning every item once; resolved group headings contain at most 24 characters.
+
+The original status shape, closed labels and exactly-one state/disposition
+rule are validated before projection. CopyRef resolution order and the
+resolved status wire shape stay intact. Web output uses ContentSection and
+Items instead of definition lists and the old readiness legend. Counts and
+groups outside the catalog bounds are refused; split larger collections
+into separate editorial sections rather than widening the configuration.
+
 Every audience-facing label, heading, description, question, answer, ordinal,
 and status label is a `CopyRef`. There are no React nodes, render callbacks,
 router fields, locale overrides, classes, styles, arbitrary colours, or
@@ -516,10 +533,10 @@ names the exact authored path. An unknown section kind is refused at validate
 and resolve time and names that kind — there is no implicit remap to
 `feature-grid` or any other shipped kind. This core stage intentionally imports neither
 React nor Designer and does not render a web view. The grounded web renderer
-uses Designer `0.4.0`'s server-safe site-block API, including the separate
-`not-offered` disposition and its caller-localized `labels.dispositions` map,
-the non-hero `eyebrow` slot, the per-row `detail` slot, and the flat `items`
-alternative to `StatusList`'s `groups`.
+uses the server-safe site-block API. Status lookup projects the separate
+`not-offered` disposition, caller-localized `labels.dispositions`, non-hero
+`eyebrow`, per-row `detail`, and exactly one flat `items` or grouped `groups`
+shape into canonical Items.
 
 #### `content-section` and content icons
 
@@ -751,8 +768,8 @@ const page = <SectionedView document={resolved} />;
 
 #### Optional fields the document may also carry
 
-These slots are optional and additive: a document written without them
-validates and renders exactly as it did before they existed.
+These fields remain optional. Status lookup uses the catalog bounds and
+rendering described above, including when its optional fields are omitted.
 
 - **`eyebrow` on every section kind.** `hero` always had one; `feature-grid`,
   `faq`, `ordered-step-sequence`, and `status-list` now carry the same
@@ -782,8 +799,9 @@ validates and renders exactly as it did before they existed.
   two read alike on one page.
 - **`detail` on a status-list item.** An optional `CopyRef` carrying that
   row's own explanation, including the reasoning behind a `not-offered`
-  answer. It renders as a second description of the same row, so the
-  definition-list semantics stay intact.
+  answer. The label becomes an Item heading, detail becomes its description,
+  and the localized status becomes a badge. Canonical Items lists and group
+  labels replace definition lists and the separate readiness legend.
 
 ```tsx
 const resolved = resolveSectionedViewDocument({
@@ -816,7 +834,14 @@ const resolved = resolveSectionedViewDocument({
           label: { id: "acme.trust.audit.label" },
           detail: { id: "acme.trust.audit.detail" },
           disposition: "not-offered",
-        }],
+        }, { id: "access", label: { id: "acme.trust.access.label" }, state: "available" }],
+      }, {
+        id: "next",
+        heading: { id: "acme.trust.next" },
+        items: [
+          { id: "review", label: { id: "acme.trust.review.label" }, state: "partial" },
+          { id: "follow-up", label: { id: "acme.trust.follow-up.label" }, state: "planned" },
+        ],
       }],
     },
   ],
@@ -825,8 +850,9 @@ const resolved = resolveSectionedViewDocument({
 
 #### At most one hero, and a status-list may go flat
 
-Two contract rules relaxed additively, both keeping every previously-valid
-document valid and unchanged:
+The hero placement relaxation remains additive. Status-list projection now
+uses the catalog lookup bounds: 3–8 flat entries, or 2–4 groups of 2–4
+entries, with at most eight entries overall.
 
 - **A hero section is now optional, and may sit anywhere.** The document
   previously required exactly one `hero` section and required it to be
@@ -839,11 +865,10 @@ document valid and unchanged:
   held. This unlocks a closing call-to-action band authored as its own
   section, and a page with no hero section at all.
 - **A `status-list` section's `groups` is now optional, with a flat `items`
-  alternative.** Provide exactly one of `groups` (unchanged: one heading and
-  one definition list per group) or `items` (new: the same row shape with no
-  group at all) — the common shape for a short list with nothing to group.
-  It renders through Designer `0.4.0`'s `StatusList` `items` prop as a
-  single definition list with no group heading.
+  alternative.** Provide exactly one of `groups` or `items`. Flat entries
+  render as canonical Items topics; grouped entries retain authored group
+  labels and order. The old one-row and one-group view shapes are refused;
+  standalone Designer `StatusList` remains available for historical usage.
 
 ```tsx
 const resolved = resolveSectionedViewDocument({
@@ -860,7 +885,11 @@ const resolved = resolveSectionedViewDocument({
         planned: { id: "acme.status.planned" },
         dispositions: { "not-offered": { id: "acme.status.not-offered" } },
       },
-      items: [{ id: "audit", label: { id: "acme.trust.audit.label" }, disposition: "not-offered" }],
+      items: [
+        { id: "audit", label: { id: "acme.trust.audit.label" }, disposition: "not-offered" },
+        { id: "access", label: { id: "acme.trust.access.label" }, state: "available" },
+        { id: "review", label: { id: "acme.trust.review.label" }, state: "partial" },
+      ],
     },
     // A closing call-to-action band: a second hero, not first, rendered as h2.
     { id: "cta", kind: "hero", ground: "inverse", heading: { id: "acme.trust.cta" } },
@@ -894,7 +923,7 @@ not backlog slots waiting for a loosening pass.
 
 - **Required `labels` on every `status-list` section.** The section must
   carry exactly `available`, `partial`, `planned`, and
-  `dispositions.not-offered` as `CopyRef`s. Designer `StatusList` renders
+  `dispositions.not-offered` as `CopyRef`s. Catalog Item badges render
   human-readable readiness names from this caller-localized map, so a surface
   cannot mount a status list until it has merged reader-facing words for all
   four axes. Omit the section when the page has no readiness posture to
@@ -905,7 +934,9 @@ not backlog slots waiting for a loosening pass.
   (often `"1"`, `"2"`) rather than relying on presentation-only counters.
 - **Non-empty repeating arrays.** Every `items` array, status-list `groups`
   array, group `items` array, and optional hero `actions` array must contain
-  at least one entry when present — an explicit `items: []` is refused
+  at least one entry when present; status lookups additionally require 3–8
+  flat entries or 2–4 groups of 2–4 entries, at most eight total. An explicit
+  `items: []` is refused
   (`sectioned-view-items-shape` / `sectioned-view-status-items-shape`).
   Unlike `MarketingView`'s repeating bindings, this document has no separate
   "slot omitted" vs "slot empty" distinction at the section level: a section

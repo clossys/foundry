@@ -79,7 +79,11 @@ export const READER_COPY: Record<string, Record<string, string>> = {
         ".block.items.0.heading": "Projects",
         ".block.items.1.heading": "Reviews",
         ".block.items.2.heading": "Documents",
-        ".block.items.3.heading": "Decisions"
+        ".block.items.3.heading": "Decisions",
+        ".block.items.0.badge.label": "Available",
+        ".block.items.1.badge.label": "Partial",
+        ".block.items.2.badge.label": "Planned",
+        ".block.items.3.badge.label": "Not offered"
     },
     "items-bento": {
         ".heading": "A workspace for the whole project",
