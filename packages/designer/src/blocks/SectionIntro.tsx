@@ -126,6 +126,7 @@ export function SectionIntro({
   const colors = SECTION_GROUND_CLASSES[ground];
   const centred = align === "center";
   const rhythm = RHYTHM_CLASSES[emphasis];
+  const displayHeading = headingScale === "display";
   const hasEyebrow = Boolean(eyebrow);
   const hasHeading = Boolean(heading);
   const hasDescription = Boolean(description);
@@ -146,7 +147,7 @@ export function SectionIntro({
         <HeadingTag
           id={headingId}
           className={cx(
-            headingScale === "display"
+            displayHeading
               ? "text-display-m tablet:text-display-l tablet-lg:text-display-xl font-display leading-display text-balance"
               : HEADING_CLASSES[emphasis],
             colors.primary,
