@@ -108,8 +108,51 @@ export function SiteFrame({ shell, resolveCopy, resolveAsset, children }: SiteFr
       </>
     ) : undefined;
 
+  const footerContent = footer ? (
+    <SiteFooter
+      ground={footer.ground}
+      {...(footer.placement === "overlay" ? { className: "publisher-frame-footer-overlay", style: { pointerEvents: "auto" as const } } : {})}
+      columns={
+        footer.columns.length > 0 || footer.links.length > 0 ? (
+          <>
+            {footer.columns.map((column, columnIndex) => (
+              <SiteFooter.Column key={columnIndex} heading={column.heading}>
+                {column.links.map((link, linkIndex) => (
+                  <TextLink key={linkIndex} link={link} />
+                ))}
+              </SiteFooter.Column>
+            ))}
+            {footer.links.length > 0 ? (
+              <LinkList links={footer.links} className="m-0 flex list-none flex-wrap items-center gap-sm p-0" />
+            ) : null}
+          </>
+        ) : undefined
+      }
+      secondary={
+        <>
+          {/* The social list sits beside SiteFooter.Legal (a `w-full` flex item) in the
+              footer's `secondary` row; it must not shrink, or its icons wrap. */}
+          {footer.social && footer.social.links.length > 0 ? (
+            footer.social.label === undefined ? (
+              <IconLinkList links={footer.social.links} className={`shrink-0 ${ICON_LIST_CLASSES}`} />
+            ) : (
+              <nav aria-label={footer.social.label} className="shrink-0">
+                <IconLinkList links={footer.social.links} className={ICON_LIST_CLASSES} />
+              </nav>
+            )
+          ) : null}
+          <SiteFooter.Legal
+            entity={footer.legal.entity}
+            links={footer.legal.links}
+            {...(footer.legal.linksLabel === undefined ? {} : { linksLabel: footer.legal.linksLabel })}
+          />
+        </>
+      }
+    />
+  ) : null;
+
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div className="flex min-h-dvh flex-col" {...(footer?.placement === "overlay" ? { style: { position: "relative" as const } } : {})}>
       <SiteSkipLink targetId={SITE_MAIN_ID} label={resolved.skipLink} />
       <SiteHeader
         {...(resolved.header.placement === "overlay"
@@ -125,47 +168,25 @@ export function SiteFrame({ shell, resolveCopy, resolveAsset, children }: SiteFr
       <main id={SITE_MAIN_ID} tabIndex={-1} className="flex w-full flex-1 flex-col">
         {children}
       </main>
-      {footer ? (
-        <SiteFooter
-          ground={footer.ground}
-          columns={
-            footer.columns.length > 0 || footer.links.length > 0 ? (
-              <>
-                {footer.columns.map((column, columnIndex) => (
-                  <SiteFooter.Column key={columnIndex} heading={column.heading}>
-                    {column.links.map((link, linkIndex) => (
-                      <TextLink key={linkIndex} link={link} />
-                    ))}
-                  </SiteFooter.Column>
-                ))}
-                {footer.links.length > 0 ? (
-                  <LinkList links={footer.links} className="m-0 flex list-none flex-wrap items-center gap-sm p-0" />
-                ) : null}
-              </>
-            ) : undefined
-          }
-          secondary={
-            <>
-              {/* The social list sits beside SiteFooter.Legal (a `w-full` flex item) in the
-                  footer's `secondary` row; it must not shrink, or its icons wrap. */}
-              {footer.social && footer.social.links.length > 0 ? (
-                footer.social.label === undefined ? (
-                  <IconLinkList links={footer.social.links} className={`shrink-0 ${ICON_LIST_CLASSES}`} />
-                ) : (
-                  <nav aria-label={footer.social.label} className="shrink-0">
-                    <IconLinkList links={footer.social.links} className={ICON_LIST_CLASSES} />
-                  </nav>
-                )
-              ) : null}
-              <SiteFooter.Legal
-                entity={footer.legal.entity}
-                links={footer.legal.links}
-                {...(footer.legal.linksLabel === undefined ? {} : { linksLabel: footer.legal.linksLabel })}
-              />
-            </>
-          }
-        />
-      ) : null}
+      {footer?.placement === "overlay" ? (
+        // The viewport sibling keeps contentinfo outside main and scrolls with the hero.
+        // Its context stays below the header; pointer events pass through the scene.
+        <div
+          data-frame-footer-overlay=""
+          style={{
+            position: "absolute",
+            insetBlockStart: 0,
+            insetInline: 0,
+            height: "100dvh",
+            display: "flex",
+            alignItems: "safe flex-end",
+            pointerEvents: "none",
+            zIndex: "var(--ui-z-sticky, 10)",
+          }}
+        >
+          {footerContent}
+        </div>
+      ) : footerContent}
     </div>
   );
 }

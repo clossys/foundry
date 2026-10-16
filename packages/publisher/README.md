@@ -2764,9 +2764,23 @@ export function SignInPage() {
   `SiteHeader.ActionLink` without icons. This intentionally changes the default
   navigation and action markup for existing configurations.
 - **Footer ground.** `shell.footer.ground` accepts `"base"`, `"inverse"` or
-  `"transparent"` and defaults to `shell.ground`, regardless of the header's
-  ground or overlay tone. For example, a shell with `ground: "base"` and
+  `"transparent"`. In flow placement it defaults to `shell.ground`, regardless
+  of the header's ground or overlay tone. For example, a shell with `ground: "base"` and
   `footer: { ground: "inverse", legal }` has a base header and inverse footer.
+- **Footer placement.** `shell.footer.placement` accepts `"flow"` (the default)
+  or `"overlay"`. Flow keeps the existing in-flow footer markup. Overlay places
+  the same footer at the bottom of the frame's first `100dvh` scene, above the
+  hero and below the overlay header and mobile navigation. It scrolls with
+  that first scene instead of following the viewport or the end of a long page.
+  Use `header: { placement: "overlay", tone: "inverse" }` with a hero-only
+  `<LandingView header="overlay" fit="frame" landmark="none" />` for a
+  one-viewport composition, and `footer: { placement: "overlay", legal }`.
+  Overlay defaults to an opaque inverse ground; explicit `"base"` or
+  `"inverse"` grounds work too. `"transparent"` is refused in overlay mode so
+  footer text and focusable links retain a contrast-safe backing. The viewport
+  container passes pointer events through to the hero except on the footer;
+  it does not clip footer links or add a navigation landmark. Oversized footers
+  align safely toward the scene start so their links remain reachable.
 - **Header placement.** `header` defaults to `{ placement: "reserved" }`:
   the banner stays in flow, with its `ground` defaulting to `shell.ground`.
   A reserved header may choose `ground` (`"base"`, `"inverse"` or

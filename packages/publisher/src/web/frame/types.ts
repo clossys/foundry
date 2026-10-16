@@ -61,7 +61,9 @@ export type { SiteChromeGround } from "../internal/viewChromeGround.js";
 
 /** The footer: optional headed columns, ungrouped links and social profiles, then the legal row. */
 export interface SiteFooterInput {
-  /** Defaults to the shell ground, independently of the header ground. */
+  /** In-flow by default; overlay sits at the bottom of the frame's first viewport. */
+  readonly placement?: "flow" | "overlay";
+  /** Flow defaults to the shell ground; overlay defaults to inverse and requires an opaque ground. */
   readonly ground?: SiteChromeGround;
   readonly columns?: readonly { readonly heading: CopyRef; readonly links: readonly SiteLinkInput[] }[];
   readonly links?: readonly SiteLinkInput[];
