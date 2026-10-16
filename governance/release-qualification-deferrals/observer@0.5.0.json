@@ -1,6 +1,0 @@
-{
-  "package": "observer",
-  "version": "0.5.0",
-  "reason": "Observer 0.5.0 awaits exact-artifact qualification on the pinned release runtime. This deferral acknowledges merge only; publication requires the retained record and npm-publish environment approval.",
-  "issue": 2162
-}
