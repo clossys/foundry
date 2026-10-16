@@ -193,6 +193,26 @@ function runProbe(reactServer: boolean) {
       );
     } else {
       const { renderToStaticMarkup } = await import("react-dom/server");
+      const { createElement } = await import("react");
+      const frameCopy = { brand: "Packed frame", skip: "Skip to content", nav: "Primary", menu: "Menu", help: "Help", legal: "Example" };
+      const frameRef = key => ({ id: "frame." + key });
+      const frameResolver = createCopyResolver({ id: "frame", locale: "en", revision: "1", source: { kind: "consumer", reference: "packed-frame-proof" }, entries: Object.entries(frameCopy).map(([key, text]) => ({ id: frameRef(key).id, text, context: "Packed frame proof", status: "approved" })) });
+      const frameShell = {
+        brand: { assetId: "mark", label: frameRef("brand"), variant: "mark", size: "md" },
+        skipLink: frameRef("skip"),
+        ground: "base",
+        header: { placement: "overlay", tone: "inverse" },
+        nav: { label: frameRef("nav"), triggerLabel: frameRef("menu"), links: [{ href: "/help", label: frameRef("help") }] },
+        footer: { ground: "inverse", legal: { entity: frameRef("legal"), links: [] } },
+      };
+      const heroDocument = resolveSectionedViewDocument({ id: "packed-frame", sections: [{ id: "packed-frame-hero", kind: "hero", ground: "inverse", heading: ref("heading") }] }, resolver);
+      const framed = fit => createElement(web.SiteFrame, {
+        shell: frameShell,
+        resolveCopy: frameResolver,
+        resolveAsset: () => ({ type: "image", src: "/mark.svg", width: 48, height: 48, alt: "Packed mark" }),
+      }, createElement(web.LandingView, { document: heroDocument, header: "overlay", fit, peek: false, landmark: "none" }));
+      result.frameHtml = renderToStaticMarkup(framed("frame"));
+      result.viewportHtml = renderToStaticMarkup(framed("viewport"));
       result.html = renderToStaticMarkup([element, sectioned]);
       result.contract = { html: renderToStaticMarkup(contractView) };
       result.landingHtml=renderToStaticMarkup(landing);
@@ -212,6 +232,8 @@ function runProbe(reactServer: boolean) {
     tags?: string[];
     text?: string[];
     html?: string;
+    frameHtml?: string;
+    viewportHtml?: string;
     summaryClasses: string[];
     contract?: {
       html?: string;
@@ -249,6 +271,30 @@ beforeAll(() => {
 
 afterAll(() => {
   rmSync(fixtureRoot, { recursive: true, force: true });
+});
+
+describe("packed frame release", () => {
+  it("ships the Designer and Publisher minor versions with the new Designer floor", () => {
+    const manifest = (name: string) => JSON.parse(readFileSync(join(consumerRoot, "node_modules", "@clossys", name, "package.json"), "utf8"));
+    expect(manifest("designer").version).toBe("0.11.0");
+    expect(manifest("publisher").version).toBe("0.12.0");
+    expect(manifest("publisher").dependencies["@clossys/designer"]).toBe("^0.11.0");
+  });
+
+  it("renders overlay chrome, mobile navigation and an independent footer around a frame-fitted hero from the tarballs", () => {
+    const html = normal.frameHtml!;
+    expect(html.match(/<main\b/g)).toHaveLength(1);
+    expect(html.match(/<nav\b/g)).toHaveLength(1);
+    expect(html).toMatch(/<header[^>]*data-placement="overlay"[^>]*data-tone="inverse"/);
+    expect(html).toMatch(/<footer[^>]*class="[^"]*bg-surface-inverse/);
+    expect(html).toContain('aria-label="Primary"');
+    expect(html).toContain('aria-expanded="false"');
+    expect(html).toContain('>Menu</button>');
+    expect(html).toContain('class="flex min-h-dvh flex-col"');
+    expect(html).toMatch(/data-landing-hero=""[^>]*class="[^"]*flex-1/);
+    expect(html).not.toContain("min-height:100dvh");
+    expect(normal.viewportHtml).toContain("min-height:100dvh");
+  });
 });
 
 describe("packed Publisher web React-server boundary", () => {
@@ -417,7 +463,7 @@ describe("packed Publisher web React-server boundary", () => {
     // does carry the current one. Tracks Designer's current minor — a Designer
     // minor bump updates this line too, the same way `expectedVersions` in
     // scripts/run-candidate-qualification.test.mjs tracks every package.
-    expect(legacyManifest.dependencies["@clossys/designer"]).toBe("^0.10.0");
+    expect(legacyManifest.dependencies["@clossys/designer"]).toBe("^0.11.0");
     legacyManifest.dependencies["@clossys/designer"] = "^0.2.0";
     writeFileSync(legacyManifestPath, `${JSON.stringify(legacyManifest, null, 2)}\n`);
     const legacyPublisherTarball = packPackage(legacyPublisherRoot, join(fixtureRoot, "legacy-packed"));

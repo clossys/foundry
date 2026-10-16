@@ -3,6 +3,10 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## 0.11.0 - 2026-10-16
+
+- Site navigation can collapse into a mobile disclosure with an inline fallback when scripting is unavailable, and header action links can show a text label without an icon.
+
 ## 0.10.0 - 2026-10-14
 
 - SiteHeader takes `placement="overlay"` to sit fixed over the first block, transparent at the top of the page and a blurred glass plate once the page scrolls, with `tone` for the ink a light or dark ground needs and `menuOpen` to hold the glass while a menu is open.
