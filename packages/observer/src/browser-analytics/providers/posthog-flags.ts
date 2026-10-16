@@ -311,11 +311,16 @@ export function createFlagsController(settings: FlagsSettings, link: FlagsLink):
 
   function onResult(grant: number, variants: unknown, context: unknown): void {
     if (grant !== generation || !active || !requested || !eligible()) return;
+    // A failed evaluation drops any earlier assignment of this grant: lookups return control and expose nothing.
+    const fail = (): void => {
+      assignments = new Map();
+      notify();
+    };
     if (context !== null && typeof context === "object") {
       const failed = Object.getOwnPropertyDescriptor(context, "errorsLoading");
-      if (failed !== undefined && (!("value" in failed) || failed.value !== false)) return;
+      if (failed !== undefined && (!("value" in failed) || failed.value !== false)) return fail();
     }
-    if (!isPlainObject(variants)) return;
+    if (!isPlainObject(variants)) return fail();
     const next = new Map<string, PostHogFlagValue>();
     for (const [key, definition] of settings.definitions) {
       const descriptor = Object.getOwnPropertyDescriptor(variants, key);

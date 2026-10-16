@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { FLAGS_CAPABILITY_FIELDS } from "./providers/posthog-flags.js";
 import { createPostHogProvider } from "./providers/posthog.js";
 import { CONTEXT, configFor, createFake, setPage } from "./posthog-fake.test.js";
-import { FLAGS_BLOCK, GOOD_FLAGS_PROBE, flagCalls, flagsEligible, flagsEvaluated, flagsInit } from "./posthog-flags-host.test.js";
+import { FLAGS_BLOCK, GOOD_FLAGS_PROBE, exposures, flagCalls, flagsEligible, flagsEvaluated, flagsInit } from "./posthog-flags-host.test.js";
 
 const ENABLE = { advanced_disable_feature_flags: false, advanced_disable_feature_flags_on_first_load: false };
 
@@ -148,6 +148,28 @@ describe("P-47 posthog-flags-loading: evaluation is requested only while jointly
       const { fake, provider } = flagsEligible();
       fake.flagReply(variants, context);
       expect(provider.flags.lookup("hero-copy", "control")).toBe("control");
+    }
+  });
+
+  it("a failed or malformed reply after a successful one drops the earlier assignment: control, no exposure, subscribers notified", () => {
+    for (const [variants, context] of [
+      [{ "hero-copy": "short" }, { errorsLoading: true }],
+      [{ "hero-copy": "short" }, { errorsLoading: "false" }],
+      [null, { errorsLoading: false }],
+      [["short"], { errorsLoading: false }],
+      [new Map([["hero-copy", "short"]]), { errorsLoading: false }],
+    ] as Array<[unknown, unknown]>) {
+      const { fake, provider } = flagsEvaluated({ "hero-copy": "short", "new-nav": true });
+      let notified = 0;
+      provider.flags.subscribe(() => {
+        notified += 1;
+      });
+      fake.flagReply(variants, context);
+      expect(notified).toBe(1);
+      // The first lookup of this pair comes after the failure.
+      expect(provider.flags.lookup("hero-copy", "control")).toBe("control");
+      expect(provider.flags.lookup("new-nav", false)).toBe(false);
+      expect(exposures(fake)).toEqual([]);
     }
   });
 
