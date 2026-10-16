@@ -1,6 +1,0 @@
-{
-  "package": "publisher",
-  "version": "0.13.0",
-  "reason": "The retained qualification record will be generated on the merged release commit after Designer 0.12.0 is published and before the gated publication. This is merge acknowledgement only: Publisher 0.13.0 may not be published before its matching qualification record exists.",
-  "issue": 2179
-}
