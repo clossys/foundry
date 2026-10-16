@@ -1,8 +1,11 @@
 // @vitest-environment jsdom
+import "@testing-library/jest-dom/vitest";
 import { createHash } from "node:crypto";
+import { cleanup, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { createCopyResolver, type CopyRegistry } from "@clossys/writer";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { resolveSectionedViewDocument, validateSectionedViewDocument, type SectionedViewDocument } from "../../core/sectioned-view.js";
 import { previewCopyResolver, previewSectionedDocument } from "../../preview/fixture-documents.js";
 import { LandingView } from "./LandingView.js";
@@ -56,6 +59,59 @@ const FAQ_MARKUP_SHA256 = {
 } as const;
 
 describe("published FAQ uses the Index disclosure recipe", () => {
+  afterEach(cleanup);
+
+  it("renders HTML-looking question and answer copy as text in both entries", () => {
+    const question = '<a href="/example">Question?</a>';
+    const answer = '<button type="button">Answer.</button>';
+    const htmlResolver = createCopyResolver({
+      ...registry,
+      entries: registry.entries.map(entry => ({
+        ...entry,
+        text: entry.id === ref("question-0").id ? question : entry.id === ref("answer-0").id ? answer : entry.text,
+      })),
+    });
+    const resolved = resolveSectionedViewDocument(authored(4), htmlResolver);
+    for (const [View, selector] of [[SectionedView, "button"], [ServerSectionedView, "summary"]] as const) {
+      const root = document.createElement("div");
+      root.innerHTML = renderToStaticMarkup(<View document={resolved} />);
+      const row = root.querySelector("#questions [data-items] li")!;
+      const trigger = row.querySelector(selector)!;
+      expect(trigger.textContent).toBe(question);
+      expect(row.textContent).toContain(answer);
+      expect(trigger.querySelector("a, button")).toBeNull();
+      expect(row.querySelectorAll("a, button")).toHaveLength(selector === "button" ? 1 : 0);
+      expect(root.innerHTML).toContain("&lt;button");
+    }
+  });
+
+  it("focuses the first disclosure with Tab and opens its answer with Enter", async () => {
+    const user = userEvent.setup();
+    const resolved = resolveSectionedViewDocument(authored(4), resolver);
+    render(<SectionedView document={resolved} />);
+    const trigger = screen.getByRole("button", { name: copy["question-0"] });
+    await user.tab();
+    expect(trigger).toHaveFocus();
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+    await user.keyboard("{Enter}");
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByText(copy["answer-0"])).toBeVisible();
+  });
+
+  it("puts a final inverse FAQ on base before an inverse closing action in both landing entries", () => {
+    const faq = resolveSectionedViewDocument(authored(4), resolver);
+    const hero = resolveSectionedViewDocument({ id: "faq-intro", sections: [{ id: "intro", kind: "hero", ground: "base", heading: ref("heading") }] }, resolver);
+    expect(faq.sections[0]!.ground).toBe("inverse");
+    for (const View of [LandingView, ServerLandingView]) {
+      const root = document.createElement("div");
+      root.innerHTML = renderToStaticMarkup(<View document={hero} trailing={[faq]} callToAction={{
+        id: "close", heading: "Closing action", action: <a href="/go">Continue</a>,
+      }} />);
+      expect(root.querySelector("#questions")?.closest("[data-landing-ground]")?.getAttribute("data-landing-ground")).toBe("base");
+      expect(root.querySelector("#close")?.getAttribute("data-landing-ground")).toBe("inverse");
+    }
+  });
+
   it.each(["stacked", "split"] as const)("pins FAQ recipe markup bytes for %s in both views and entries", layout => {
     const resolved = resolveSectionedViewDocument(authored(4, layout), resolver);
     const hero = resolveSectionedViewDocument({ id: "faq-intro", sections: [{ id: "intro", kind: "hero", ground: "base", heading: ref("heading") }] }, resolver);
