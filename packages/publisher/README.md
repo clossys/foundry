@@ -2684,6 +2684,20 @@ legacy boundary page can carry the same header as the rest of the site:
 
 Each slot is absent from the markup when omitted.
 
+### Consumer frame wiring
+
+Use the package frame and views with one brand binding. The table below
+covers the Tailwind v4 path; the Designer [setup guide](../designer/README.md#setup)
+has the CSS-loading details.
+
+| Clossys provides | Consumer supplies |
+| --- | --- |
+| `SiteFrame` mounts Designer's header, responsive mobile navigation disclosure, `SiteHeader.ActionLink` actions and footer. Header placement is `"reserved"` (in flow, the default) or `"overlay"`; the footer has its own ground. | The data in `shell`: brand asset and copy references, `nav`, `actions`, optional `secondaryAction`, `header.placement`, and `footer.ground` (`"base"`, `"inverse"` or `"transparent"`). Supply `resolveCopy` and `resolveAsset`; the frame resolves them before passing strings to its client islands. |
+| `LandingView` provides `fit="viewport"` or `fit="frame"`. A lone, non-compact hero under an overlay header can fill the frame's remaining space with `fit="frame"` and `landmark="none"`. `StatusView`, `LegalView` and `CaptureView` provide the corresponding page bodies. | Page content and copy, and page art through the view's slots, such as the home hero's `backdrop`. Mount a chrome-free view inside `SiteFrame`; use `framed` for `LegalView`. Content after the landing hero keeps its existing peek and scroll cue. |
+| `@clossys/designer/brand-template.css` supplies 48 required token slots, including `--color-surface-glass`, `--color-surface-glass-inverse` and `--blur-glass`, plus optional overrides. The packages own header, footer and chrome styling. | One `brand/brand.css` overlay copied from the template and filled with brand values under `:root[data-brand-bound]`. Fill its light block and both dark blocks: the OS-preference selector and `:root[data-brand-bound][data-theme="dark"]`. Put `data-brand-bound` on the document root after binding every required slot. |
+| Designer's `theme.css` connects its tokens to Tailwind v4; Publisher and Designer ship their built class-bearing modules. | One CSS entry importing `tailwindcss`, `@clossys/designer/theme.css`, then the brand overlay. Add `@source` paths to `node_modules/@clossys/designer/dist` and `node_modules/@clossys/publisher/dist`, relative to that CSS entry. Use this Tailwind path without also importing Designer's `compiled.css`. |
+| The packed packages include their built output and public entry points. Consumers import `SiteFrame` and the page views from `@clossys/publisher/web`. | Install the packages and their required peers, wire the brand, frame data and page content above, and follow the placement requirements below. No site-local header, footer or chrome CSS is needed for this composition. |
+
 ### Site frame — `SiteFrame`
 
 `SiteFrame` is the page frame. It owns the page's chrome and its one

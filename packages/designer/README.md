@@ -612,6 +612,11 @@ instead of to which component to reach for.
 
 ## Setup
 
+For a page assembled with Publisher's `SiteFrame`, see
+[Consumer frame wiring](../publisher/README.md#consumer-frame-wiring) for the
+package-provided chrome and the brand, CSS entry, frame data and content a
+consumer supplies.
+
 **Default (pre-auth pages, no Tailwind):** import token + compiled styles and
 your brand overlay — see "Framework-portable components, without Tailwind"
 above. Run `designer-hero-css-check` on the CSS file your app actually loads.
