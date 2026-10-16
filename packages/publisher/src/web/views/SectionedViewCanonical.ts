@@ -106,7 +106,8 @@ export function assertCanonicalContentSection(section: Record<string, unknown>, 
     const sceneInitials = field === "initials" && fieldPath.startsWith(`${path}.media.input.`);
     const numericValue = field === "value" && typeof value === "number";
     const partCopy = partType !== undefined && Object.hasOwn(PART_COPY_FIELDS, partType) && PART_COPY_FIELDS[partType]?.includes(field) === true;
-    if ((COPY_FIELDS.has(field) || partCopy) && !sceneInitials && !numericValue) return copy(value, fieldPath);
+    const assetAlt = media?.type === "asset" && fieldPath === `${path}.media.alt`;
+    if ((COPY_FIELDS.has(field) || partCopy || assetAlt) && !sceneInitials && !numericValue) return copy(value, fieldPath);
     if (record(value)) {
       const localPath = fieldPath.slice(path.length + 1);
       // Only specimen parts own these copy fields; Scene formats and source records stay structural.
