@@ -284,7 +284,7 @@ export type {
   SectionMeasure,
 } from "./blocks/index.js";
 
-export { Shell, Toaster, toast, SkipLink, SiteHeader, NavShell, SiteFooter, Brandmark } from "./shell/index.js";
+export { Shell, Toaster, toast, SkipLink, SiteHeader, NavDisclosure, NavShell, SiteFooter, Brandmark } from "./shell/index.js";
 export type {
   ShellProps,
   ShellHeaderProps,
@@ -305,6 +305,7 @@ export type {
   SiteHeaderActionLinkProps,
   SiteHeaderActionLinkVariant,
   NavShellProps,
+  NavDisclosureProps,
   SiteFooterProps,
   SiteFooterColumnProps,
   BrandmarkProps,

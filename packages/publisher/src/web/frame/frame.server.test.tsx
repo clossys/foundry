@@ -106,3 +106,23 @@ it("renders identical all-slots markup through ordinary and server entries", () 
   expect(server).toContain('aria-label="Profile"');
   expect(server).toContain('href="/help"');
 });
+
+it("renders disclosure, ActionLinks and independent footer ground without browser globals", () => {
+  const shell = { ...siteShellFor(CONFIG, "site"), ground: "base" as const,
+    nav: { label: ref("social.label"), triggerLabel: ref("footer.help"), links: [{ href: "/help", label: ref("footer.help") }] },
+    actions: [{ href: "/help", label: ref("footer.help") }],
+    secondaryAction: { href: "/contact", label: ref("icon.contact") },
+    footer: { ground: "inverse" as const, legal: { entity: ref("legal.entity"), links: [] } },
+  };
+  const html = renderToStaticMarkup(<SiteFrame shell={shell} resolveCopy={resolveCopy} resolveAsset={resolveAsset}><p>content</p></SiteFrame>);
+  expect(html.match(/<header\b/g)).toHaveLength(1);
+  expect(html.match(/<nav\b/g)).toHaveLength(1);
+  expect(html.match(/<main\b/g)).toHaveLength(1);
+  expect(html.match(/<footer\b/g)).toHaveLength(1);
+  expect(html).toContain('aria-label="Profiles"');
+  expect(html).toContain('aria-expanded="false"');
+  expect(html).toContain('>Help</button>');
+  expect(html).toMatch(/<header[^>]*bg-surface-raised/);
+  expect(html).toMatch(/<footer[^>]*bg-surface-inverse/);
+  expect(html).toMatch(/<a href="\/contact"[^>]*rounded-control/);
+});

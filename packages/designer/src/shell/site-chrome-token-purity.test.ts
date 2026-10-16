@@ -6,7 +6,7 @@ import { scanStyleSources, type StyleScanResult } from "../style-scan.js";
 import { checkTokenPurity, type TokenGateResult } from "../token-gate.js";
 import { TOKENS } from "../tokens/index.js";
 
-const CHROME_FILES = ["SiteHeader.tsx", "SiteFooter.tsx", "NavShell.tsx"] as const;
+const CHROME_FILES = ["SiteHeader.tsx", "SiteFooter.tsx", "NavShell.tsx", "NavDisclosure.tsx"] as const;
 
 describe("site chrome token-purity scan", () => {
   let dir = "";
@@ -26,7 +26,7 @@ describe("site chrome token-purity scan", () => {
     if (dir) rmSync(dir, { recursive: true, force: true });
   });
 
-  it("reads all three chrome files", { timeout: 60_000 }, () => {
+  it("reads all chrome files", { timeout: 60_000 }, () => {
     expect(scan.filesScanned).toBe(CHROME_FILES.length);
   });
 

@@ -1322,6 +1322,12 @@ Props, in addition to the standard `<main>` attributes (minus `children`),
 - `header` (`LandingViewHeader`: `"overlay"` or `"reserved"`, default
   `"overlay"`): whether the site header floats over the hero block or sits
   in flow above the view.
+- `fit` (`"viewport"` or `"frame"`, default `"viewport"`): when an overlay
+  header accompanies a non-compact hero alone, `"frame"` gives the view root
+  and hero `flex-1` and leaves the hero's `minHeight` unset. Use it with
+  `landmark="none"` inside `SiteFrame` to fill the frame's remaining space.
+  With content after the hero, the existing peek height and scroll cue apply.
+  Reserved headers and compact heroes ignore `fit`.
 - `peek` (default `true`): with an overlay header and content after the hero,
   the hero block stops short of the fold so the next band shows, and a
   scroll cue links to that band (see **Scroll cue**).
@@ -2729,12 +2735,41 @@ export function SignInPage() {
 `resolveCopy` and `resolveAsset` are the same ports `renderWebDocument` takes.
 
 - **The shell is data.** `shell` (`SiteShellInput`) holds copy references,
-  an asset id and links, never a node: there is no `header`, `footer` or
-  mark slot. Labels resolve through `resolveCopy` (Writer's `CopyResolver`);
+  an asset id and links, never a node: header and footer configuration are
+  data, and the frame supplies the chrome and mark. Labels resolve through `resolveCopy` (Writer's `CopyResolver`);
   the brand mark resolves through `resolveAsset` and must be an image asset.
   A `lockup` brand takes a `wordmark` copy reference; a `mark` brand takes
   none. Icon actions and social links use copy references for accessible
   names (`aria-label`); their labels are never visible text.
+- **Navigation and actions.** Primary navigation uses Designer's
+  `NavDisclosure` through a client island: one named navigation landmark,
+  with a mobile toggle and the same links in the responsive panel.
+  `nav.triggerLabel` is an optional copy reference for the toggle; when omitted,
+  it uses the resolved `nav.label`. A supplied reference must resolve to
+  nonblank copy. Text actions and the secondary action use Designer's
+  `SiteHeader.ActionLink` without icons. This intentionally changes the default
+  navigation and action markup for existing configurations.
+- **Footer ground.** `shell.footer.ground` accepts `"base"`, `"inverse"` or
+  `"transparent"` and defaults to `shell.ground`, regardless of the header's
+  ground or overlay tone. For example, a shell with `ground: "base"` and
+  `footer: { ground: "inverse", legal }` has a base header and inverse footer.
+- **Header placement.** `header` defaults to `{ placement: "reserved" }`:
+  the banner stays in flow, with its `ground` defaulting to `shell.ground`.
+  A reserved header may choose `ground` (`"base"`, `"inverse"` or
+  `"transparent"`), independently of the footer. An overlay header
+  takes `{ placement: "overlay", tone?: "base" | "inverse" }`; `tone`
+  defaults to `"base"` and selects Designer's inherited ink over its
+  transparent-to-glass header. Choose base ink over base or sunken hero
+  grounds and inverse ink over an inverse hero ground; children that set
+  their own ink retain it. `ground` with overlay and `tone` with reserved
+  placement are refused. `SiteFrameConfig.site.header` applies this choice
+  to the public site only.
+
+  The overlay is fixed: the first block must reserve space above its copy
+  for the header, the page must scroll on the root, and ancestors must avoid
+  transforms, filters and containment that establish a fixed containing block.
+  In-page anchors need root `scroll-padding-top` for the header height.
+  A fixed menu panel inside the glass header needs a portal outside it.
 - **Fails closed.** An unknown field, copy that does not resolve (or resolves
   blank), a non-image brand asset, a disallowed link, icon data that is not
   plain SVG shape data, a malformed `origin`, a `ground` outside `base`,
@@ -2776,7 +2811,13 @@ export function SignInPage() {
   on its content root.
 - **Server-safe.** `SiteFrame` uses no hooks. The skip link, which moves
   focus on activation, is a small `"use client"` island that receives strings
-  only.
+  only. Navigation disclosure is a second island receiving resolved label
+  strings and link data; copy and asset resolvers stay on the server. Its
+  client bridge uses a private conditional binding: raw `react-server`
+  imports receive matching initial disclosure markup without loading Designer's
+  interactive shell barrel; the browser bundle retains Designer's disclosure
+  interaction. Server/client markup and generated control IDs are checked
+  together with pointer and keyboard interaction after hydration.
 
 ```tsx
 import type { SiteFrameConfig, SiteIconLinkInput } from "@clossys/publisher/web";

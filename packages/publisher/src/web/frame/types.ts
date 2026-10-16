@@ -61,6 +61,8 @@ export type { SiteChromeGround } from "../internal/viewChromeGround.js";
 
 /** The footer: optional headed columns, ungrouped links and social profiles, then the legal row. */
 export interface SiteFooterInput {
+  /** Defaults to the shell ground, independently of the header ground. */
+  readonly ground?: SiteChromeGround;
   readonly columns?: readonly { readonly heading: CopyRef; readonly links: readonly SiteLinkInput[] }[];
   readonly links?: readonly SiteLinkInput[];
   readonly social?: { readonly label?: CopyRef; readonly links: readonly SiteIconLinkInput[] };
@@ -81,7 +83,12 @@ export interface SiteShellInput {
   /** The skip link's words. Its target is always {@link SITE_MAIN_ID}. */
   readonly skipLink: CopyRef;
   /** Primary navigation in the banner, in a `<nav>` named by `label`. */
-  readonly nav?: { readonly label: CopyRef; readonly links: readonly SiteLinkInput[] };
+  readonly nav?: {
+    readonly label: CopyRef;
+    /** The disclosure toggle copy; defaults to the resolved navigation label. */
+    readonly triggerLabel?: CopyRef;
+    readonly links: readonly SiteLinkInput[];
+  };
   /** Calls to action at the trailing end of the banner. */
   readonly actions?: readonly SiteLinkInput[];
   /** Icon-only links after text actions and before environments. */
@@ -95,6 +102,10 @@ export interface SiteShellInput {
   readonly navPlacement?: "leading" | "centered";
   /** @default "base" */
   readonly ground?: SiteChromeGround;
+  /** Reserved chrome may choose its own ground; an overlay inherits the selected ink tone over the page. */
+  readonly header?:
+    | { readonly placement?: "reserved"; readonly ground?: SiteChromeGround; readonly tone?: never }
+    | { readonly placement: "overlay"; readonly tone?: "base" | "inverse"; readonly ground?: never };
   readonly footer?: SiteFooterInput;
   /**
    * The canonical public origin (`https://example.com`), for a surface served
@@ -132,6 +143,7 @@ export interface SiteFrameConfig {
   readonly origin: string;
   /** Chrome the public site shows and the other surfaces do not. */
   readonly site?: {
+    readonly header?: SiteShellInput["header"];
     readonly nav?: SiteShellInput["nav"];
     readonly actions?: SiteShellInput["actions"];
     readonly iconActions?: SiteShellInput["iconActions"];

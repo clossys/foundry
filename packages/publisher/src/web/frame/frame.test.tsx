@@ -9,6 +9,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, within } from "@testing-library/react";
 import type { CopyRef, CopyResolution, CopyResolver } from "@clossys/writer";
 import type { IconNode } from "@clossys/designer/atoms/server";
+import { CONTRAST_PAIRS } from "@clossys/designer/tokens";
 import { AuthView } from "../views/AuthView.js";
 import { BoundaryView } from "../views/BoundaryView.js";
 import { CaptureView } from "../views/CaptureView.js";
@@ -256,7 +257,7 @@ describe("SiteFrame", () => {
     });
 
     it("refuses a node-shaped header, footer or mark slipped past the types", () => {
-      expect(render$({ ...FRONT_DOOR_SHELL, header: <header /> })).toThrow(/SiteFrame: shell has an unsupported field "header"/);
+      expect(render$({ ...FRONT_DOOR_SHELL, header: <header /> })).toThrow(/SiteFrame: shell\.header has an unsupported field/);
       expect(render$({ ...FRONT_DOOR_SHELL, footer: { legal: FRONT_DOOR_SHELL.footer?.legal, secondary: <p /> } })).toThrow(
         /shell\.footer has an unsupported field "secondary"/,
       );
@@ -611,20 +612,25 @@ function frameSources(): Array<[string, string]> {
 }
 
 describe("module boundaries", () => {
-  it("the skip-link island is the frame's only client module, and the frame uses no hooks", () => {
+  it("only the skip-link, navigation implementation and navigation bridge are client modules, and the frame uses no hooks", () => {
     const sources = frameSources();
     expect(sources.map(([name]) => name)).toContain("SiteFrame.tsx");
+    expect(sources.filter(([, source]) => source.startsWith('"use client";')).map(([name]) => name).sort()).toEqual(["NavDisclosure.boundary.client.tsx", "NavDisclosure.client.tsx", "SkipLink.client.tsx"]);
     for (const [name, source] of sources) {
-      if (name === "SkipLink.client.tsx") expect(source.startsWith('"use client";')).toBe(true);
+      if (name === "SkipLink.client.tsx" || name === "NavDisclosure.client.tsx" || name === "NavDisclosure.boundary.client.tsx") expect(source.startsWith('"use client";')).toBe(true);
       else expect(source).not.toMatch(/["']use client["']/);
     }
     const frameSource = readFileSync(join(import.meta.dirname, "SiteFrame.tsx"), "utf8");
     expect(frameSource).not.toMatch(/\buse[A-Z][A-Za-z]*\(/);
   });
 
-  it("every frame module imports only react, Designer server entries, Writer and its own relative modules, with no dynamic import or require", () => {
-    for (const [, source] of frameSources()) {
-      for (const specifier of moduleSpecifiers(source)) expect(specifier).toMatch(FRAME_ALLOWED_IMPORT);
+  it("frame modules retain server imports except the navigation island's Designer disclosure import, with no dynamic import or require", () => {
+    for (const [name, source] of frameSources()) {
+      for (const specifier of moduleSpecifiers(source)) {
+        if (name === "NavDisclosure.client.tsx" && specifier === "@clossys/designer/shell") continue;
+        if (name === "NavDisclosure.boundary.client.tsx" && specifier === "#publisher-frame-navigation") continue;
+        expect(specifier).toMatch(FRAME_ALLOWED_IMPORT);
+      }
       expect(source).not.toMatch(/\bimport\s*\(|\brequire\s*\(/);
     }
   });
@@ -706,7 +712,7 @@ describe("SiteFrame icon slots", () => {
     const focusable = [...container.querySelectorAll<HTMLElement>('a[href],button,input,select,textarea,[tabindex]')]
       .filter((element) => element.tabIndex >= 0);
     expect(focusable.map((element) => element.getAttribute("aria-label") ?? element.textContent)).toEqual([
-      "Skip to content", "Example home", "Pricing", "Docs", "Sign in", "Get started", "Contact", "App",
+      "Skip to content", "Example home", "Primary", "Pricing", "Docs", "Sign in", "Get started", "Contact", "App",
       "About", "Help", "Profile", "Privacy", "Terms",
     ]);
   });
@@ -831,5 +837,143 @@ describe("siteShellFor icon slots", () => {
       expect(shell.footer).not.toHaveProperty("links");
       expect(shell.footer).not.toHaveProperty("social");
     }
+  });
+});
+
+
+describe("frame header placement", () => {
+  it.each([undefined, "base", "inverse"] as const)("mounts Designer's overlay placement with tone %s and keeps one skip link and one main", (tone) => {
+    const shell: SiteShellInput = { ...FRONT_DOOR_SHELL, header: { placement: "overlay", ...(tone === undefined ? {} : { tone }) } };
+    const { container } = render(frame(shell, <p>content</p>));
+    const header = container.querySelector("header")!;
+    expect(header).toHaveAttribute("data-placement", "overlay");
+    expect(header).toHaveAttribute("data-tone", tone ?? "base");
+    expect(header).toHaveStyle({ position: "fixed" });
+    expect(header).toHaveClass(tone === "inverse" ? "text-ink-on-inverse" : "text-ink-primary");
+    expect(landmarks(container).skipLinks).toHaveLength(1);
+    expect(landmarks(container).mains).toHaveLength(1);
+    expect(container.querySelector("main")).toHaveAttribute("id", SITE_MAIN_ID);
+  });
+
+  it.each(["inverse", "transparent"] as const)("header ground %s paints only the reserved header while the footer keeps shell ground", (ground) => {
+    const { container } = render(frame({ ...FRONT_DOOR_SHELL, ground: "base", header: { placement: "reserved", ground } }, <p>content</p>));
+    if (ground === "inverse") expect(container.querySelector("header")).toHaveClass("bg-surface-inverse");
+    else expect(container.querySelector("header")).not.toHaveClass("bg-surface-raised");
+    expect(container.querySelector("footer")).toHaveClass("bg-surface-raised");
+    expect(container.querySelector("header")).not.toHaveAttribute("data-placement");
+  });
+
+  it("defaults reserved header ground to the shell ground", () => {
+    const omitted = renderToStaticMarkup(frame({ ...FRONT_DOOR_SHELL, ground: "inverse" }, <p>content</p>));
+    expect(renderToStaticMarkup(frame({ ...FRONT_DOOR_SHELL, ground: "inverse", header: {} }, <p>content</p>))).toBe(omitted);
+    expect(renderToStaticMarkup(frame({ ...FRONT_DOOR_SHELL, ground: "inverse", header: { placement: "reserved" } }, <p>content</p>))).toBe(omitted);
+  });
+
+  it.each([
+    [{ unknown: "PAYLOAD-SENTINEL" }, /shell\.header has an unsupported field/],
+    [{ placement: "PAYLOAD-SENTINEL" }, /shell\.header\.placement/],
+    [{ ground: "PAYLOAD-SENTINEL" }, /shell\.header\.ground/],
+    [{ placement: "overlay", tone: "PAYLOAD-SENTINEL" }, /shell\.header\.tone/],
+    [{ placement: "overlay", ground: "inverse" }, /shell\.header\.ground/],
+    [{ placement: "overlay", ground: "PAYLOAD-SENTINEL" }, /shell\.header\.ground/],
+    [{ placement: "overlay", ground: undefined }, /shell\.header\.ground/],
+    [{ placement: "reserved", tone: "inverse" }, /shell\.header\.tone/],
+    [{ placement: "reserved", tone: "PAYLOAD-SENTINEL" }, /shell\.header\.tone/],
+    [{ placement: "reserved", tone: undefined }, /shell\.header\.tone/],
+    [{ tone: "base" }, /shell\.header\.tone/],
+    [null, /shell\.header must be a plain object/],
+    [[], /shell\.header must be a plain object/],
+    ["PAYLOAD-SENTINEL", /shell\.header must be a plain object/],
+  ])("refuses invalid header data without echoing its value: %j", (header, pattern) => {
+    const attempt = () => renderToStaticMarkup(frame({ ...FRONT_DOOR_SHELL, header } as SiteShellInput, <p>content</p>));
+    expect(attempt).toThrow(pattern);
+    expect(attempt).not.toThrow(/PAYLOAD-SENTINEL/);
+  });
+
+  it("siteShellFor passes header to the site surface only", () => {
+    const header = { placement: "overlay", tone: "inverse" } as const;
+    const config: SiteFrameConfig = { ...CONFIG, site: { ...CONFIG.site, header } };
+    expect(siteShellFor(config, "site").header).toEqual(header);
+    for (const kind of ["front-door", "admin", "demo"] as const) {
+      expect(siteShellFor(config, kind)).not.toHaveProperty("header");
+    }
+  });
+
+  it.each([
+    ["base", "--color-ink-primary", "--color-surface-base"],
+    ["base", "--color-ink-primary", "--color-surface-sunken"],
+    ["inverse", "--color-ink-on-inverse", "--color-surface-inverse"],
+  ])("overlay tone %s uses a gated contrast pair over %s / %s", (_tone, foreground, background) => {
+    expect(CONTRAST_PAIRS.some(pair => pair.foreground === foreground && pair.background === background && pair.minimumRatio >= 4.5)).toBe(true);
+  });
+
+  it("keeps overlay links fail-closed", () => {
+    const shell = { ...FRONT_DOOR_SHELL, header: { placement: "overlay" }, actions: [{ href: "javascript:PAYLOAD-SENTINEL", label: ref("cta.start") }] };
+    const attempt = () => renderToStaticMarkup(frame(shell as SiteShellInput, <p>content</p>));
+    expect(attempt).toThrow(/shell\.actions\[0\]\.href is not an allowed link/);
+    expect(attempt).not.toThrow(/PAYLOAD-SENTINEL/);
+  });
+});
+
+
+// Literal captured from the existing shell on main (6ee625e3), before the header change.
+const MAIN_FRAME_MARKUP = "<link rel=\"preload\" as=\"image\" href=\"/brand/mark.svg\"/><div class=\"flex min-h-dvh flex-col\"><a href=\"#publisher-main-content\" class=\"sr-only focus:not-sr-only focus:fixed focus:start-sm focus:top-sm focus:rounded-control focus:bg-accent focus:px-md focus:py-sm focus:text-body focus:text-ink-on-accent focus:outline-none\" style=\"z-index:var(--ui-z-tooltip, 80)\">Skip to content</a><header class=\"bg-surface-raised py-sm border-b border-line-base\" style=\"position:relative;z-index:var(--ui-z-shell, 20);border-bottom-width:var(--ui-border-hairline, 1px)\"><div class=\"mx-auto flex w-full flex-wrap items-center justify-between gap-md\" style=\"padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))\"><div class=\"flex items-center gap-lg\"><a href=\"/\" aria-label=\"Example home\" class=\"inline-flex items-center no-underline text-ink-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent\" style=\"gap:var(--ui-brandmark-gap-md, 6px)\"><img src=\"/brand/mark.svg\" alt=\"\" style=\"height:var(--ui-brandmark-height-md, 36px);width:auto\"/><span class=\"font-display leading-none\" style=\"font-size:calc(var(--ui-brandmark-height-md, 36px) * 0.4583333333333333)\">Example</span></a></div><div class=\"flex items-center gap-sm\"><a href=\"https://app.example.com/\" aria-current=\"true\" class=\"inline-flex items-center justify-center gap-sm rounded-control font-body transition-colors motion-reduce:transition-none px-sm py-xs text-body-s bg-surface-raised text-ink-primary border border-line-base hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent\" style=\"min-height:var(--ui-layout-tap-target, 44px);min-width:var(--ui-layout-tap-target, 44px);box-shadow:inset 0 calc(-2 * var(--ui-border-hairline, 1px)) 0 currentColor\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:var(--ui-icon-sm, var(--spacing-lg, 16px));height:var(--ui-icon-sm, var(--spacing-lg, 16px));flex-shrink:0;stroke-width:var(--ui-icon-stroke, 2)\" aria-hidden=\"true\"><path d=\"M3 12h18\"></path></svg><span class=\"sr-only tablet:not-sr-only\">App</span></a><a href=\"https://admin.example.com/\" class=\"inline-flex items-center justify-center gap-sm rounded-control font-body transition-colors motion-reduce:transition-none px-sm py-xs text-body-s bg-surface-raised text-ink-primary border border-line-base hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent\" style=\"min-height:var(--ui-layout-tap-target, 44px);min-width:var(--ui-layout-tap-target, 44px)\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:var(--ui-icon-sm, var(--spacing-lg, 16px));height:var(--ui-icon-sm, var(--spacing-lg, 16px));flex-shrink:0;stroke-width:var(--ui-icon-stroke, 2)\" aria-hidden=\"true\"><path d=\"M3 12h18\"></path></svg><span class=\"sr-only tablet:not-sr-only\">Admin</span></a><a href=\"https://demo.example.com/\" class=\"inline-flex items-center justify-center gap-sm rounded-control font-body transition-colors motion-reduce:transition-none px-sm py-xs text-body-s bg-surface-raised text-ink-primary border border-line-base hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent\" style=\"min-height:var(--ui-layout-tap-target, 44px);min-width:var(--ui-layout-tap-target, 44px)\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:var(--ui-icon-sm, var(--spacing-lg, 16px));height:var(--ui-icon-sm, var(--spacing-lg, 16px));flex-shrink:0;stroke-width:var(--ui-icon-stroke, 2)\" aria-hidden=\"true\"><path d=\"M3 12h18\"></path></svg><span class=\"sr-only tablet:not-sr-only\">Demo</span></a></div></div></header><main id=\"publisher-main-content\" tabindex=\"-1\" class=\"flex w-full flex-1 flex-col\"><p>content</p></main><footer class=\"bg-surface-raised text-ink-primary py-lg border-t border-line-base\" style=\"position:relative;z-index:var(--ui-z-shell, 20);border-top-width:var(--ui-border-hairline, 1px)\"><div class=\"mx-auto flex w-full flex-col gap-lg\" style=\"padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))\"><div class=\"flex flex-col gap-sm text-body-s text-ink-secondary tablet:flex-row tablet:items-center tablet:justify-between\"><div class=\"flex w-full flex-col items-center gap-sm text-center desktop:flex-row-reverse desktop:flex-nowrap desktop:items-center desktop:justify-between desktop:text-start\"><nav aria-label=\"Legal\"><ul role=\"list\" class=\"m-0 flex list-none flex-wrap items-center justify-center gap-x-sm p-0 desktop:flex-nowrap desktop:justify-end\"><li><a href=\"https://example.com/privacy\" class=\"inline-flex items-center justify-center px-xs text-inherit underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent\" style=\"min-height:var(--ui-layout-tap-target, 44px);min-width:var(--ui-layout-tap-target, 44px)\">Privacy</a></li><li><a href=\"https://example.com/terms\" class=\"inline-flex items-center justify-center px-xs text-inherit underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent\" style=\"min-height:var(--ui-layout-tap-target, 44px);min-width:var(--ui-layout-tap-target, 44px)\">Terms</a></li></ul></nav><p class=\"m-0 desktop:whitespace-nowrap\">© 2026 Example Ltd</p></div></div></div></footer></div>";
+
+it("a shell with no header key renders byte-identical to main", () => {
+  const year = vi.spyOn(Date.prototype, "getFullYear").mockReturnValue(2026);
+  try {
+    expect(renderToStaticMarkup(frame(FRONT_DOOR_SHELL, <p>content</p>))).toBe(MAIN_FRAME_MARKUP);
+  } finally {
+    year.mockRestore();
+  }
+});
+
+describe("SiteFrame chrome parity", () => {
+  const navigation = { label: ref("nav.label"), triggerLabel: ref("cta.start"), links: [{ href: "/docs", label: ref("nav.docs") }] };
+  it("renders one named navigation disclosure and operates its mobile toggle", () => {
+    const { container } = render(frame({ ...FRONT_DOOR_SHELL, nav: navigation, footer: { legal: { entity: ref("legal.entity"), links: [] } } } as SiteShellInput, <p>content</p>));
+    expect(container.querySelectorAll("nav")).toHaveLength(1);
+    const nav = within(container).getByRole("navigation", { name: "Primary" });
+    const toggle = within(nav).getByRole("button", { name: "Get started" });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(nav.querySelectorAll('a[href="https://example.com/docs"]')).toHaveLength(1);
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    fireEvent.keyDown(nav, { key: "Escape" });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(toggle).toHaveFocus();
+  });
+  it("uses resolved navigation copy as the toggle label when no separate reference is supplied", () => {
+    const { container } = render(frame({ ...FRONT_DOOR_SHELL, nav: { label: ref("nav.label"), links: [] } }, <p>content</p>));
+    expect(within(container.querySelector("header")!).getByRole("button", { name: "Primary" })).toHaveAttribute("aria-expanded", "false");
+  });
+  it.each([ref("PAYLOAD-SENTINEL"), ref("blank"), "PAYLOAD-SENTINEL"])("refuses unresolved, blank or literal toggle copy without echoing it", triggerLabel => {
+    const run = () => renderToStaticMarkup(frame({ ...FRONT_DOOR_SHELL, nav: { ...navigation, triggerLabel } } as SiteShellInput, <p>content</p>));
+    expect(run).toThrow(/shell\.nav\.triggerLabel/);
+    expect(run).not.toThrow(/PAYLOAD-SENTINEL/);
+  });
+  it("renders primary and secondary actions with Designer ActionLink styling and no icons", () => {
+    const { container } = render(frame(siteShellFor(CONFIG, "site"), <p>content</p>));
+    for (const href of ["/start", "https://app.example.com/"]) {
+      const action = container.querySelector(`header a[href="${href}"]`)!;
+      expect(action).toHaveClass("rounded-control", "justify-center");
+      expect(action.querySelector("svg")).toBeNull();
+      expect(action.querySelector(".sr-only")).toBeNull();
+    }
+  });
+  it("paints an inverse footer independently of a base header", () => {
+    const { container } = render(frame({ ...FRONT_DOOR_SHELL, ground: "base", footer: { ...FRONT_DOOR_SHELL.footer!, ground: "inverse" } } as SiteShellInput, <p>content</p>));
+    expect(container.querySelector("header")).toHaveClass("bg-surface-raised");
+    expect(container.querySelector("footer")).toHaveClass("bg-surface-inverse");
+  });
+  it("defaults footer ground to shell ground even with a different reserved header ground", () => {
+    const { container } = render(frame({ ...FRONT_DOOR_SHELL, ground: "inverse", header: { ground: "base" } }, <p>content</p>));
+    expect(container.querySelector("header")).toHaveClass("bg-surface-raised");
+    expect(container.querySelector("footer")).toHaveClass("bg-surface-inverse");
+  });
+  it("refuses an invalid footer ground without echoing it", () => {
+    const run = () => renderToStaticMarkup(frame({ ...FRONT_DOOR_SHELL, footer: { ...FRONT_DOOR_SHELL.footer!, ground: "PAYLOAD-SENTINEL" } } as SiteShellInput, <p>content</p>));
+    expect(run).toThrow(/shell\.footer\.ground/);
+    expect(run).not.toThrow(/PAYLOAD-SENTINEL/);
   });
 });

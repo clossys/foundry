@@ -26,7 +26,7 @@ export const framed = (
 export const perKind = siteShellFor(config, "front-door");
 
 // The shell is data only: there is no node slot for a header, footer or mark.
-// @ts-expect-error SiteShellInput has no header slot
+// @ts-expect-error header configuration is data, not a nullable node slot
 export const withHeaderNode: SiteShellInput = { brand: mark, skipLink: { id: "shell.skipLink" }, header: null };
 
 // @ts-expect-error SiteShellInput has no footer node slot
@@ -72,3 +72,21 @@ export type IconLinkEntryParity = [
   import("../index.js").SiteIconLinkInput,
   import("../server.js").SiteIconLinkInput,
 ];
+
+
+export const reservedHeader: SiteShellInput = { ...shell, header: { placement: "reserved", ground: "inverse" } };
+export const overlayHeader: SiteShellInput = { ...shell, header: { placement: "overlay", tone: "inverse" } };
+export const defaultHeader: SiteShellInput = { ...shell, header: {} };
+// @ts-expect-error reserved headers take a ground, not an overlay tone
+export const reservedTone: SiteShellInput = { ...shell, header: { placement: "reserved", tone: "inverse" } };
+// @ts-expect-error omitting placement still selects reserved chrome
+export const omittedPlacementTone: SiteShellInput = { ...shell, header: { tone: "inverse" } };
+// @ts-expect-error overlay headers take a tone, not a reserved ground
+export const overlayGround: SiteShellInput = { ...shell, header: { placement: "overlay", ground: "base" } };
+
+export const independentFooter: SiteShellInput = { ...shell, footer: { ground: "inverse", legal: config.legal } };
+export const disclosureCopy: SiteShellInput = { ...shell, nav: { label: { id: "nav.label" }, triggerLabel: { id: "nav.toggle" }, links: [] } };
+// @ts-expect-error the disclosure toggle label is a copy reference, never literal text
+export const literalDisclosureCopy: SiteShellInput = { ...shell, nav: { label: { id: "nav.label" }, triggerLabel: "Menu", links: [] } };
+// @ts-expect-error footer ground accepts only the existing chrome grounds
+export const invalidFooterGround: SiteShellInput = { ...shell, footer: { ground: "unknown", legal: config.legal } };

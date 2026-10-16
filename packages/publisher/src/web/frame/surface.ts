@@ -32,6 +32,7 @@ export function siteShellFor(config: SiteFrameConfig, kind: SiteSurfaceKind): Si
     const site = config.site ?? {};
     return {
       ...shared,
+      ...(site.header === undefined ? {} : { header: site.header }),
       ...(site.nav === undefined ? {} : { nav: site.nav }),
       ...(site.iconActions === undefined ? {} : { iconActions: site.iconActions }),
       ...(site.actions === undefined ? {} : { actions: site.actions }),
