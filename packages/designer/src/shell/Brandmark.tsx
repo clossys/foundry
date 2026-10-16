@@ -144,7 +144,8 @@ export function Brandmark(props: BrandmarkProps) {
         inverse
           ? "inline-flex items-center no-underline text-ink-on-inverse"
           : "inline-flex items-center no-underline text-ink-primary",
-        "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
+        "focus-visible:outline-2 focus-visible:outline-offset-2",
+        inverse ? "focus-visible:outline-ink-on-inverse" : "focus-visible:outline-accent",
         className,
       )}
       style={showWordmark ? { gap: vars.gap } : undefined}

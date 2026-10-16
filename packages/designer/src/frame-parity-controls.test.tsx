@@ -78,6 +78,19 @@ for (const mode of modes) describe(`frame parity controls: ${mode}`, () => {
     expect(output(<SiteHeader tone="inverse" brand={<Brandmark {...brand} />} />, mode).innerHTML).toBe(original);
   });
 
+  it("uses inverse brand focus outline without a header", () => {
+    const variants = [brand, { variant: "mark", size: "md", label: "Example home", markSrc: "/mark.svg" }] as const;
+    for (const props of variants) {
+      const inverse = output(<Brandmark {...props} tone="inverse" />, mode).querySelector("a")!;
+      expect(inverse).toHaveClass("focus-visible:outline-ink-on-inverse");
+      expect(inverse).not.toHaveClass("focus-visible:outline-accent");
+      const auto = output(<Brandmark {...props} tone="auto" />, mode).querySelector("a")!;
+      expect(auto).toHaveClass("focus-visible:outline-accent");
+      expect(auto).not.toHaveClass("focus-visible:outline-ink-on-inverse");
+      expect(output(<Brandmark {...props} />, mode).querySelector("a")?.outerHTML).toBe(auto.outerHTML);
+    }
+  });
+
   for (const Component of [SectionIntro, Hero]) {
     it(`${Component.name} uses secondary eyebrow ink for every ground`, () => {
       for (const ground of ["base", "sunken", "inverse"] as const) {
