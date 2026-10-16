@@ -6,6 +6,7 @@ import {
   createPostHogProvider,
 } from "./providers/posthog.js";
 import { CONTEXT, HOST, configFor, createFake, type FlagOptions } from "./posthog-fake.test.js";
+import { FLAGS_BLOCK, flagsEligible } from "./posthog-flags-host.test.js";
 
 /** C-44's forced configuration as literals. */
 const C44 = {
@@ -134,5 +135,17 @@ describe("P-34 posthog-forced-options: each flag changes its own column and noth
     selectors[0] = "section";
     provider.init(CONTEXT);
     expect((fake.inits[0]!.config.session_recording as { blockSelector: string }).blockSelector.endsWith(", aside")).toBe(true);
+  });
+  it("with flags on, each combination initializes exactly as with flags off, and joint eligibility changes only the two feature-flag disables", () => {
+    for (const flags of [{}, { autocapture: true }, { replay: true }, { autocapture: true, replay: true }] as FlagOptions[]) {
+      const off = initConfig(flags);
+      expect(initConfig({ ...flags, flags: FLAGS_BLOCK })).toEqual(off);
+      const { fake } = flagsEligible({ analytics: flags });
+      const effective = { ...fake.inits[0]!.config, ...Object.assign({}, ...fake.flagState.configUpdates) };
+      const { before_send: _hook, ...rest } = effective;
+      expect(rest).toEqual({ ...off, advanced_disable_feature_flags: false, advanced_disable_feature_flags_on_first_load: false });
+      expect(rest.disable_surveys).toBe(true);
+      expect(rest.disable_web_experiments).toBe(true);
+    }
   });
 });

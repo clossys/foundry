@@ -5,7 +5,10 @@
  * gate at that call, returns a named instance whose `config` echoes what it
  * received (and can be told to report altered masking keys), runs the
  * configured `before_send` hook for transport, autocapture and snapshot
- * events, and calls back into the adapter from inside any method. Nothing
+ * events, and calls back into the adapter from inside any method. For unit
+ * H it also models the flag members: `set_config`, `reloadFeatureFlags`
+ * (each call records the request the SDK would build), `onFeatureFlags`
+ * with replies the test delivers, and `featureFlags.reset`. Nothing
  * here imports or installs the real SDK, and nothing reads the environment.
  *
  * This file is a test file (`*.test.ts`) so that it is neither compiled into
@@ -13,7 +16,7 @@
  */
 
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createPostHogProvider, type PostHogLike, type PostHogProviderConfig } from "./providers/posthog.js";
+import { createPostHogProvider, type PostHogLike, type PostHogProvider, type PostHogProviderConfig } from "./providers/posthog.js";
 import type { ReplayCapability } from "./providers/posthog-options.js";
 import { createAnalyticsTransport } from "./transport.js";
 import type { AnalyticsProviderPort, AnalyticsScheduler } from "./types.js";
@@ -135,10 +138,31 @@ export interface Fake {
   inside: Record<string, (() => void) | undefined>;
   /** The session id `get_session_id` returns; `reset` rotates it when `rotateOnReset`. */
   session: { id: unknown; rotateOnReset: boolean; counter: number };
+  /** Flag members (unit H): requests the SDK would send, option updates, registered callbacks. */
+  flagState: FlagState;
+  /** Delivers an evaluation reply to every registered, still-subscribed callback. */
+  flagReply(variants: unknown, context?: unknown): void;
   /** The hook the adapter installed. */
   hook(): ((result: unknown) => unknown) | undefined;
   names(): string[];
   instance(): PostHogLike | undefined;
+}
+
+export interface FlagCallback {
+  callback: (flags: unknown, variants: unknown, context?: unknown) => void;
+  subscribed: boolean;
+}
+
+export interface FlagState {
+  /** The request body the SDK would send for each `reloadFeatureFlags()`. */
+  requests: Array<Record<string, unknown>>;
+  /** Every `set_config` argument, in order. */
+  configUpdates: Array<Record<string, unknown>>;
+  callbacks: FlagCallback[];
+  personProperties: Record<string, unknown>;
+  groups: Record<string, unknown>;
+  /** The SDK's own flag cache; `onFeatureFlags` replays it at once when set, as the SDK does. */
+  loaded: unknown;
 }
 
 export function createFake(options: FakeOptions = {}): Fake {
@@ -163,6 +187,7 @@ export function createFake(options: FakeOptions = {}): Fake {
     reportedConsoleLog: null,
     inside: {},
     session: { id: "session-1", rotateOnReset: true, counter: 1 },
+    flagState: { requests: [], configUpdates: [], callbacks: [], personProperties: {}, groups: {}, loaded: null },
   } as unknown as Fake;
 
   const hook = () => storedConfig.before_send as ((result: unknown) => unknown) | undefined;
@@ -240,6 +265,45 @@ export function createFake(options: FakeOptions = {}): Fake {
       record("get_session_id");
       return fake.session.id;
     },
+    set_config(update: Record<string, unknown>) {
+      record("set_config");
+      fake.flagState.configUpdates.push({ ...update });
+    },
+    reloadFeatureFlags() {
+      record("reloadFeatureFlags");
+      fake.flagState.requests.push({
+        token: "sdk-token",
+        distinct_id: "anon-123",
+        person_properties: { ...fake.flagState.personProperties },
+        groups: { ...fake.flagState.groups },
+      });
+    },
+    onFeatureFlags(callback: FlagCallback["callback"]) {
+      record("onFeatureFlags");
+      const entry: FlagCallback = { callback, subscribed: true };
+      fake.flagState.callbacks.push(entry);
+      const loaded = fake.flagState.loaded;
+      if (loaded !== null) callback(Object.keys(loaded as object), loaded, { errorsLoading: false });
+      return () => {
+        record("offFeatureFlags");
+        entry.subscribed = false;
+      };
+    },
+    setPersonPropertiesForFlags(properties: Record<string, unknown>) {
+      record("setPersonPropertiesForFlags");
+      Object.assign(fake.flagState.personProperties, properties);
+    },
+    group(type: string, key: unknown) {
+      record("group");
+      fake.flagState.groups[type] = key;
+    },
+  };
+
+  const featureFlags = {
+    reset() {
+      record("featureFlags.reset");
+      fake.flagState.loaded = null;
+    },
   };
 
   function makeInstance(): PostHogLike {
@@ -258,6 +322,7 @@ export function createFake(options: FakeOptions = {}): Fake {
     for (const [name, method] of Object.entries(methods)) {
       if (!omit.has(name)) instance[name] = method;
     }
+    if (!omit.has("featureFlags")) instance.featureFlags = featureFlags;
     return instance as unknown as PostHogLike;
   }
 
@@ -283,6 +348,12 @@ export function createFake(options: FakeOptions = {}): Fake {
   Object.assign(fake, {
     sdk,
     emit,
+    flagReply(variants: unknown, context: unknown = { errorsLoading: false }) {
+      fake.flagState.loaded = variants;
+      for (const entry of [...fake.flagState.callbacks]) {
+        if (entry.subscribed) entry.callback(Object.keys((variants as object) ?? {}), variants, context);
+      }
+    },
     emitRaw: (value: unknown) => run(value, "raw"),
     hook,
     names: () => calls.map((call) => call.name),
@@ -312,12 +383,15 @@ export interface FlagOptions {
   sampleRate?: number;
   blockSelectors?: readonly string[];
   probe?: () => unknown;
+  /** The unit H flags block, passed through as given (it may be malformed on purpose). */
+  flags?: unknown;
 }
 
 /** A provider configuration for a flag combination; replay defaults to sampleRate 1 and a passing probe. */
 export function configFor(flags: FlagOptions = {}): PostHogProviderConfig {
   const config: Record<string, unknown> = { ...HOST };
   if (flags.autocapture !== undefined) config.autocapture = { enabled: flags.autocapture };
+  if (flags.flags !== undefined) config.flags = flags.flags;
   if (flags.replay !== undefined) {
     config.replay = {
       enabled: flags.replay,
@@ -342,7 +416,7 @@ export const CONTEXT = { sanitizeUrl: identityUrl, eventNames: ["$pageview", "si
 
 export interface Started {
   fake: Fake;
-  provider: AnalyticsProviderPort;
+  provider: PostHogProvider;
 }
 
 /** Creates the adapter, initializes it and opts in, as the transport does for a grant. */
