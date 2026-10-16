@@ -177,6 +177,13 @@ describe("SiteFrame footer placement", () => {
     expect(html.lastIndexOf("<footer")).toBeGreaterThan(html.indexOf("</main>"));
   });
 
+  it("fills the overlay viewport width instead of shrink-wrapping legal links", () => {
+    const footer = htmlFor("overlay").match(/<footer\b[^>]*>/)?.[0];
+    expect(footer).toBeDefined();
+    expect(footer).toContain("width:100%");
+    expect(footer).toContain("pointer-events:auto");
+  });
+
   it("anchors the overlay to the first viewport rather than the end of a multi-band page", () => {
     const document: ResolvedSectionedViewDocument = { ...hero, sections: [...hero.sections, { id: "details", kind: "feature-grid", ground: "base", heading: "Details", items: [{ id: "one", heading: "More" }] }] };
     const html = htmlFor("overlay", document);

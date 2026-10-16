@@ -111,7 +111,7 @@ export function SiteFrame({ shell, resolveCopy, resolveAsset, children }: SiteFr
   const footerContent = footer ? (
     <SiteFooter
       ground={footer.ground}
-      {...(footer.placement === "overlay" ? { className: "publisher-frame-footer-overlay", style: { pointerEvents: "auto" as const } } : {})}
+      {...(footer.placement === "overlay" ? { className: "publisher-frame-footer-overlay", style: { pointerEvents: "auto" as const, width: "100%" } } : {})}
       columns={
         footer.columns.length > 0 || footer.links.length > 0 ? (
           <>
