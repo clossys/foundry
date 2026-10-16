@@ -1,4 +1,5 @@
-import type { AnchorHTMLAttributes, HTMLAttributes, ReactNode } from "react";
+import { cloneElement, isValidElement, type AnchorHTMLAttributes, type HTMLAttributes, type ReactNode } from "react";
+import { Brandmark, type BrandmarkProps } from "./Brandmark.js";
 import { Badge } from "../atoms/Badge.js";
 import { buttonLinkClassName } from "../atoms/button-classes.js";
 import { Icon, type IconNode } from "../atoms/Icon.js";
@@ -24,7 +25,7 @@ export type SiteHeaderPlacement = "flow" | "overlay";
  * matches the same ink, so the ink never changes on scroll.
  *
  * The tone governs inherited ink only. A child that sets its own ink (a
- * `Link` in any variant, `Brandmark`, the `ghost` look of
+ * `Link` in any variant, an explicitly toned `Brandmark`, the `ghost` look of
  * `SiteHeader.ActionLink`) keeps it. The contrast gate checks only the
  * tone's own ink on the glass (`ink-primary` or `ink-on-inverse`); no other
  * ink is checked there, and `ink-link`, `ink-secondary` and `ink-muted` fall
@@ -207,6 +208,9 @@ function SiteHeaderRoot({
   const overlay = placement === "overlay";
   const colors = SITE_CHROME_GROUND_CLASSES[ground];
   const bordered = siteChromeHasBorder(ground);
+  const tonedBrand = isValidElement<BrandmarkProps>(brand) && brand.type === Brandmark && brand.props.tone === undefined
+    ? cloneElement(brand, { tone: overlay && tone === "inverse" ? "inverse" : "auto" })
+    : brand;
 
   return (
     <header
@@ -233,7 +237,7 @@ function SiteHeaderRoot({
           className="mx-auto flex w-full flex-wrap items-center gap-md"
           style={{ paddingInline: UI_WIDTH_PAGE_PADDING_X }}
         >
-          <div className="flex flex-1 items-center">{brand}</div>
+          <div className="flex flex-1 items-center">{tonedBrand}</div>
           {nav ? <div className="flex items-center">{nav}</div> : null}
           <div className="flex flex-1 items-center justify-end gap-sm">
             {secondaryAction}
@@ -247,7 +251,7 @@ function SiteHeaderRoot({
           style={{ paddingInline: UI_WIDTH_PAGE_PADDING_X }}
         >
           <div className="flex items-center gap-lg">
-            {brand}
+            {tonedBrand}
             {nav}
           </div>
           {secondaryAction || actions || surfaceLabel ? (

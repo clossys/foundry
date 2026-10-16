@@ -72,6 +72,8 @@ interface BrandmarkBaseProps {
    * the same shares `badgePlatePath` draws.
    */
   plate?: BrandmarkPlate;
+  /** Wordmark ink; auto keeps the base ink. @default "auto" */
+  tone?: "auto" | "inverse";
   className?: string;
 }
 
@@ -119,7 +121,7 @@ export type BrandmarkProps = BrandmarkBaseProps &
  * text and is not subject to that second check.
  */
 export function Brandmark(props: BrandmarkProps) {
-  const { variant, size, label, markSrc, className, plate } = props;
+  const { variant, size, label, markSrc, className, plate, tone = "auto" } = props;
   const vars = SIZE_VARS[size];
   const wordmark = variant === "lockup" ? props.wordmark : undefined;
   const showWordmark = typeof wordmark === "string" && normalise(wordmark) !== "";
@@ -138,7 +140,9 @@ export function Brandmark(props: BrandmarkProps) {
       href="/"
       aria-label={label}
       className={cx(
-        "inline-flex items-center no-underline text-ink-primary",
+        tone === "inverse"
+          ? "inline-flex items-center no-underline text-ink-on-inverse"
+          : "inline-flex items-center no-underline text-ink-primary",
         "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
         className,
       )}
