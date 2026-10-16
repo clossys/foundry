@@ -8,7 +8,11 @@ import * as webIndex from "../index.js";
 import * as webServer from "../server.js";
 import * as frameIndex from "./index.js";
 import { SITE_MAIN_ID, SiteFrame, siteShellFor } from "./index.js";
-import type { SiteFrameConfig } from "./index.js";
+import type { SiteFrameConfig, SiteShellInput } from "./index.js";
+import { LandingView } from "#publisher-web-views";
+import { LandingView as ServerLandingView } from "../views/LandingView.server.js";
+import type { LandingViewProps } from "../views/LandingViewContent.js";
+import type { ResolvedSectionedViewDocument } from "../../core/sectioned-view.js";
 
 const COPY: Readonly<Record<string, string>> = {
   "brand.label": "Example home",
@@ -125,4 +129,125 @@ it("renders disclosure, ActionLinks and independent footer ground without browse
   expect(html).toMatch(/<header[^>]*bg-surface-raised/);
   expect(html).toMatch(/<footer[^>]*bg-surface-inverse/);
   expect(html).toMatch(/<a href="\/contact"[^>]*rounded-control/);
+});
+
+
+describe("SiteFrame footer placement", () => {
+  const hero: ResolvedSectionedViewDocument = {
+    id: "example-home", resolutions: [resolveCopy(ref("brand.label"))!],
+    sections: [{ id: "hero", kind: "hero", ground: "inverse", heading: "Welcome" }],
+  };
+  const shell: SiteShellInput = {
+    ...siteShellFor(CONFIG, "site"),
+    header: { placement: "overlay", tone: "inverse" },
+    nav: { label: ref("social.label"), links: [{ href: "/help", label: ref("footer.help") }] },
+    footer: { legal: { entity: ref("legal.entity"), links: [{ href: "/privacy", label: ref("legal.privacy") }] } },
+  };
+  const htmlFor = (placement?: unknown, document = hero, ground?: unknown) => renderToStaticMarkup(
+    <SiteFrame shell={{ ...shell, footer: { ...shell.footer!, ...(placement === undefined ? {} : { placement }), ...(ground === undefined ? {} : { ground }) } } as SiteShellInput} resolveCopy={resolveCopy} resolveAsset={resolveAsset}>
+      <LandingView document={document} header="overlay" fit="frame" landmark="none" />
+    </SiteFrame>,
+  );
+
+  it("keeps the omitted and explicit flow footer markup identical and in flow", () => {
+    const html = htmlFor();
+    expect(htmlFor("flow")).toBe(html);
+    expect(html).not.toContain("data-frame-footer-overlay");
+    expect(html).not.toContain("publisher-frame-footer-overlay");
+    expect(html.lastIndexOf("<footer")).toBeGreaterThan(html.indexOf("</main>"));
+    expect(html).toMatch(/<footer[^>]*bg-surface-raised[^>]*style="position:relative;/);
+  });
+
+  it("overlays one inverse footer inside the first viewport hero container", () => {
+    const html = htmlFor("overlay");
+    expect(html.match(/<header\b/g)).toHaveLength(1);
+    expect(html.match(/<nav\b/g)).toHaveLength(1);
+    expect(html.match(/<main\b/g)).toHaveLength(1);
+    expect(html.match(/<footer\b/g)).toHaveLength(1);
+    expect(html).toContain(`<main id="${SITE_MAIN_ID}" tabindex="-1"`);
+    expect(html).toMatch(/<header[^>]*data-placement="overlay"/);
+    expect(html).toMatch(/data-landing-view="" class="[^"]*flex-1/);
+    expect(html).toMatch(/data-landing-hero=""[^>]*class="[^"]*flex-1/);
+    expect(html).toMatch(/<div class="flex min-h-dvh flex-col" style="position:relative"/);
+    expect(html).toContain('<div data-frame-footer-overlay="" style="display:flex;flex-direction:column;flex-shrink:0;min-width:0;pointer-events:none;z-index:var(--ui-z-sticky, 10)"><footer');
+    expect(html).toMatch(/<footer[^>]*bg-surface-inverse[^>]*publisher-frame-footer-overlay/);
+    expect(html).toMatch(/<footer[^>]*style="[^"]*pointer-events:auto/);
+    expect(html).toMatch(/<header[^>]*z-index:var\(--ui-z-shell, 20\)/);
+    expect(html).toContain('href="/privacy"');
+    expect(html).not.toContain('tabindex="-1">Privacy');
+    expect(html).not.toContain("overflow:hidden");
+    expect(html.lastIndexOf("<footer")).toBeGreaterThan(html.indexOf("</main>"));
+  });
+
+  it("fills the overlay viewport width instead of shrink-wrapping legal links", () => {
+    const footer = htmlFor("overlay").match(/<footer\b[^>]*>/)?.[0];
+    expect(footer).toBeDefined();
+    expect(footer).toContain("width:100%");
+    expect(footer).toContain("pointer-events:auto");
+  });
+
+  it("refuses multi-band overlay compositions rather than covering a peek or scroll cue", () => {
+    const document: ResolvedSectionedViewDocument = { ...hero, sections: [...hero.sections, { id: "details", kind: "feature-grid", ground: "base", heading: "Details", items: [{ id: "one", heading: "More" }] }] };
+    expect(() => htmlFor("overlay", document)).toThrow(/footer.*overlay.*hero/i);
+    expect(htmlFor("flow", document)).toContain('id="details"');
+  });
+
+  it("reserves the footer's intrinsic height in the same growing hero scene", () => {
+    const html = htmlFor("overlay");
+    expect(html).not.toContain("safe flex-end");
+    expect(html).not.toContain("height:100dvh");
+    expect(html).toMatch(/data-frame-footer-overlay=""[^>]*flex-direction:column/);
+    expect(html).toMatch(/<footer[^>]*margin-block-start:auto/);
+    expect(html).not.toContain("data-landing-cue");
+  });
+
+  it.each([LandingView, ServerLandingView])("accepts either direct LandingView entry with one growing hero", View => {
+    const html = renderToStaticMarkup(<SiteFrame shell={{ ...shell, footer: { ...shell.footer!, placement: "overlay" } }} resolveCopy={resolveCopy} resolveAsset={resolveAsset}>
+      <View document={hero} fit="frame" landmark="none" />
+    </SiteFrame>);
+    expect(html).toContain("data-frame-footer-overlay");
+    expect(html).not.toContain("data-landing-cue");
+  });
+
+  it.each([
+    { fit: "viewport" },
+    { header: "reserved" },
+    { landmark: "main" },
+    { trailing: [hero] },
+    { callToAction: { heading: "More", action: <a href="/more">More</a> } },
+    { afterSection: { hero: <p>More</p> } },
+    { style: { height: "100dvh" } },
+    { className: "h-dvh" },
+    { document: { ...hero, sections: [{ ...hero.sections[0]!, size: "compact" }] } },
+  ])("refuses unsupported overlay layout props before rendering a scene", extra => {
+    expect(() => renderToStaticMarkup(<SiteFrame shell={{ ...shell, footer: { ...shell.footer!, placement: "overlay" } }} resolveCopy={resolveCopy} resolveAsset={resolveAsset}>
+      <LandingView document={hero} fit="frame" landmark="none" {...extra as Partial<LandingViewProps>} />
+    </SiteFrame>)).toThrow(/shell\.footer\.placement/);
+  });
+
+  it("refuses a wrapper that copies LandingView props without invoking it", () => {
+    let called = false;
+    function WrappedLandingView(props: LandingViewProps) { called = true; return <LandingView {...props} />; }
+    expect(() => renderToStaticMarkup(<SiteFrame shell={{ ...shell, footer: { ...shell.footer!, placement: "overlay" } }} resolveCopy={resolveCopy} resolveAsset={resolveAsset}>
+      <WrappedLandingView document={hero} fit="frame" landmark="none" />
+    </SiteFrame>)).toThrow(/shell\.footer\.placement/);
+    expect(called).toBe(false);
+  });
+
+  it("refuses fragments and reserved frame headers for overlay scenes", () => {
+    const view = <LandingView document={hero} fit="frame" landmark="none" />;
+    expect(() => renderToStaticMarkup(<SiteFrame shell={{ ...shell, footer: { ...shell.footer!, placement: "overlay" } }} resolveCopy={resolveCopy} resolveAsset={resolveAsset}><>{view}</></SiteFrame>)).toThrow(/shell\.footer\.placement/);
+    expect(() => renderToStaticMarkup(<SiteFrame shell={{ ...shell, header: { placement: "reserved" }, footer: { ...shell.footer!, placement: "overlay" } }} resolveCopy={resolveCopy} resolveAsset={resolveAsset}>{view}</SiteFrame>)).toThrow(/shell\.footer\.placement/);
+  });
+
+  it.each(["base", "inverse"])("preserves an explicit opaque %s overlay ground", ground => {
+    expect(htmlFor("overlay", hero, ground)).toMatch(ground === "base" ? /<footer[^>]*bg-surface-raised/ : /<footer[^>]*bg-surface-inverse/);
+  });
+
+  it("refuses transparent overlay backing and unknown placement without echoing values", () => {
+    expect(() => htmlFor("overlay", hero, "transparent")).toThrow(/shell\.footer\.ground/);
+    expect(() => htmlFor("PAYLOAD-SENTINEL")).toThrow(/shell\.footer\.placement/);
+    expect(() => htmlFor("PAYLOAD-SENTINEL")).not.toThrow(/PAYLOAD-SENTINEL/);
+    expect(() => htmlFor("flow", hero, "transparent")).not.toThrow();
+  });
 });

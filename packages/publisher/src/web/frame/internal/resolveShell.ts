@@ -35,6 +35,7 @@ export interface ResolvedSiteShell {
     | { readonly placement: "reserved"; readonly ground: SiteChromeGround }
     | { readonly placement: "overlay"; readonly tone: "base" | "inverse" };
   readonly footer?: {
+    readonly placement: "flow" | "overlay";
     readonly ground: SiteChromeGround;
     readonly columns: readonly { readonly heading: string; readonly links: readonly ResolvedSiteLink[] }[];
     readonly links: readonly ResolvedSiteLink[];
@@ -65,7 +66,7 @@ const LINK_KEYS = new Set(["href", "label"]);
 const ENVIRONMENT_KEYS = new Set(["href", "label", "icon", "isCurrent"]);
 const ICON_LINK_KEYS = new Set(["href", "label", "icon"]);
 const SOCIAL_KEYS = new Set(["label", "links"]);
-const FOOTER_KEYS = new Set(["ground", "columns", "links", "social", "legal"]);
+const FOOTER_KEYS = new Set(["placement", "ground", "columns", "links", "social", "legal"]);
 const COLUMN_KEYS = new Set(["heading", "links"]);
 const LEGAL_KEYS = new Set(["entity", "links", "linksLabel"]);
 
@@ -300,6 +301,9 @@ export function resolveShell(input: SiteShellInput, resolveCopy: CopyResolver, r
   let footer: ResolvedSiteShell["footer"];
   if (shell.footer !== undefined) {
     const footerFields = record(shell.footer, "shell.footer", FOOTER_KEYS);
+    const placement = footerFields.placement === undefined ? "flow" : oneOf(footerFields.placement, "shell.footer.placement", ["flow", "overlay"] as const);
+    const footerGround = footerFields.ground === undefined ? (placement === "overlay" ? "inverse" : ground) : oneOf(footerFields.ground, "shell.footer.ground", SITE_CHROME_GROUNDS);
+    if (placement === "overlay" && footerGround === "transparent") fail("shell.footer.ground must be opaque for overlay placement.");
     const legalFields = record(footerFields.legal, "shell.footer.legal", LEGAL_KEYS);
     let social: NonNullable<ResolvedSiteShell["footer"]>["social"];
     if (footerFields.social !== undefined) {
@@ -310,7 +314,8 @@ export function resolveShell(input: SiteShellInput, resolveCopy: CopyResolver, r
       };
     }
     footer = {
-      ground: footerFields.ground === undefined ? ground : oneOf(footerFields.ground, "shell.footer.ground", SITE_CHROME_GROUNDS),
+      placement,
+      ground: footerGround,
       links: footerFields.links === undefined ? [] : links(footerFields.links, "shell.footer.links"),
       ...(social === undefined ? {} : { social }),
       columns:

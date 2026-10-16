@@ -2802,9 +2802,32 @@ export function SignInPage() {
   `SiteHeader.ActionLink` without icons. This intentionally changes the default
   navigation and action markup for existing configurations.
 - **Footer ground.** `shell.footer.ground` accepts `"base"`, `"inverse"` or
-  `"transparent"` and defaults to `shell.ground`, regardless of the header's
-  ground or overlay tone. For example, a shell with `ground: "base"` and
+  `"transparent"`. In flow placement it defaults to `shell.ground`, regardless
+  of the header's ground or overlay tone. For example, a shell with `ground: "base"` and
   `footer: { ground: "inverse", legal }` has a base header and inverse footer.
+- **Footer placement.** `shell.footer.placement` accepts `"flow"` (the default)
+  or `"overlay"`. Flow keeps the existing in-flow footer markup. Overlay places
+  the same footer in the bottom row of the frame's hero scene, below the
+  overlay header and mobile navigation. Its actual height is reserved in the
+  scene: the hero fills the remaining room, and the scene grows beyond one
+  viewport when enlarged copy or footer links need more room. The footer
+  scrolls with that scene instead of covering the hero's action or its focus.
+  Use `header: { placement: "overlay", tone: "inverse" }` with a hero-only
+  `<LandingView header="overlay" fit="frame" landmark="none" />` for a
+  one-viewport composition, and `footer: { placement: "overlay", legal }`.
+  Mount the frame as the page's scene; the anchor is this frame, rather than
+  a viewport-height box measured from content elsewhere on the page. The
+  child must be a direct ordinary or server `LandingView`, with one
+  noncompact hero. Wrappers, fragments, additional bands, trailing documents,
+  a closing call to action, `afterSection` content and view layout overrides
+  are refused. Use flow placement for those compositions; overlay mode does
+  not render a next-band peek or scroll cue.
+  Overlay defaults to an opaque inverse ground; explicit `"base"` or
+  `"inverse"` grounds work too. `"transparent"` is refused in overlay mode so
+  footer text and focusable links retain a contrast-safe backing. Column flex
+  layout and the footer's automatic block-start margin keep its links in
+  document flow as the scene grows, without clipping or adding a navigation
+  landmark.
 - **Header placement.** `header` defaults to `{ placement: "reserved" }`:
   the banner stays in flow, with its `ground` defaulting to `shell.ground`.
   A reserved header may choose `ground` (`"base"`, `"inverse"` or

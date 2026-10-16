@@ -60,9 +60,7 @@ export { SITE_CHROME_GROUNDS } from "../internal/viewChromeGround.js";
 export type { SiteChromeGround } from "../internal/viewChromeGround.js";
 
 /** The footer: optional headed columns, ungrouped links and social profiles, then the legal row. */
-export interface SiteFooterInput {
-  /** Defaults to the shell ground, independently of the header ground. */
-  readonly ground?: SiteChromeGround;
+interface SiteFooterFields {
   readonly columns?: readonly { readonly heading: CopyRef; readonly links: readonly SiteLinkInput[] }[];
   readonly links?: readonly SiteLinkInput[];
   readonly social?: { readonly label?: CopyRef; readonly links: readonly SiteIconLinkInput[] };
@@ -73,6 +71,12 @@ export interface SiteFooterInput {
     readonly linksLabel?: CopyRef;
   };
 }
+
+/** Flow follows the shell ground; overlay reserves its opaque footer within a growing hero scene. */
+export type SiteFooterInput = SiteFooterFields & (
+  | { readonly placement?: "flow"; readonly ground?: SiteChromeGround }
+  | { readonly placement: "overlay"; readonly ground?: "base" | "inverse" }
+);
 
 /**
  * Everything the frame's chrome shows, as data only. There is no node slot for

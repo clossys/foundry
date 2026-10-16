@@ -90,3 +90,11 @@ export const disclosureCopy: SiteShellInput = { ...shell, nav: { label: { id: "n
 export const literalDisclosureCopy: SiteShellInput = { ...shell, nav: { label: { id: "nav.label" }, triggerLabel: "Menu", links: [] } };
 // @ts-expect-error footer ground accepts only the existing chrome grounds
 export const invalidFooterGround: SiteShellInput = { ...shell, footer: { ground: "unknown", legal: config.legal } };
+
+
+export const overlayFooter: SiteShellInput = { ...shell, header: { placement: "overlay", tone: "inverse" }, footer: { placement: "overlay", legal: config.legal } };
+export const flowFooter: SiteShellInput = { ...shell, footer: { placement: "flow", ground: "transparent", legal: config.legal } };
+// @ts-expect-error footer placement accepts only flow or overlay
+export const invalidFooterPlacement: SiteShellInput = { ...shell, footer: { placement: "fixed", legal: config.legal } };
+// @ts-expect-error overlay placement requires an opaque footer ground
+export const transparentOverlayFooter: SiteShellInput = { ...shell, footer: { placement: "overlay", ground: "transparent", legal: config.legal } };
