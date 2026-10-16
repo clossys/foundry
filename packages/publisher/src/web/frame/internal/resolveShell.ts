@@ -23,7 +23,7 @@ export interface ResolvedSiteShell {
     readonly wordmark?: string;
   };
   readonly skipLink: string;
-  readonly nav?: { readonly label: string; readonly links: readonly ResolvedSiteLink[] };
+  readonly nav?: { readonly label: string; readonly triggerLabel: string; readonly links: readonly ResolvedSiteLink[] };
   readonly actions: readonly ResolvedSiteLink[];
   readonly iconActions: readonly ResolvedSiteIconLink[];
   readonly secondaryAction?: ResolvedSiteLink;
@@ -35,6 +35,7 @@ export interface ResolvedSiteShell {
     | { readonly placement: "reserved"; readonly ground: SiteChromeGround }
     | { readonly placement: "overlay"; readonly tone: "base" | "inverse" };
   readonly footer?: {
+    readonly ground: SiteChromeGround;
     readonly columns: readonly { readonly heading: string; readonly links: readonly ResolvedSiteLink[] }[];
     readonly links: readonly ResolvedSiteLink[];
     readonly social?: { readonly label?: string; readonly links: readonly ResolvedSiteIconLink[] };
@@ -59,12 +60,12 @@ const SHELL_KEYS = new Set([
 ]);
 const HEADER_KEYS = new Set(["placement", "ground", "tone"]);
 const BRAND_KEYS = new Set(["assetId", "label", "size", "plate", "variant", "wordmark"]);
-const NAV_KEYS = new Set(["label", "links"]);
+const NAV_KEYS = new Set(["label", "triggerLabel", "links"]);
 const LINK_KEYS = new Set(["href", "label"]);
 const ENVIRONMENT_KEYS = new Set(["href", "label", "icon", "isCurrent"]);
 const ICON_LINK_KEYS = new Set(["href", "label", "icon"]);
 const SOCIAL_KEYS = new Set(["label", "links"]);
-const FOOTER_KEYS = new Set(["columns", "links", "social", "legal"]);
+const FOOTER_KEYS = new Set(["ground", "columns", "links", "social", "legal"]);
 const COLUMN_KEYS = new Set(["heading", "links"]);
 const LEGAL_KEYS = new Set(["entity", "links", "linksLabel"]);
 
@@ -272,7 +273,12 @@ export function resolveShell(input: SiteShellInput, resolveCopy: CopyResolver, r
   let nav: ResolvedSiteShell["nav"];
   if (shell.nav !== undefined) {
     const navFields = record(shell.nav, "shell.nav", NAV_KEYS);
-    nav = { label: copy(navFields.label, "shell.nav.label", resolveCopy), links: links(navFields.links, "shell.nav.links") };
+    const label = copy(navFields.label, "shell.nav.label", resolveCopy);
+    nav = {
+      label,
+      triggerLabel: navFields.triggerLabel === undefined ? label : copy(navFields.triggerLabel, "shell.nav.triggerLabel", resolveCopy),
+      links: links(navFields.links, "shell.nav.links"),
+    };
   }
 
   const environments = shell.environments === undefined
@@ -290,6 +296,7 @@ export function resolveShell(input: SiteShellInput, resolveCopy: CopyResolver, r
       });
   if (environments.filter((environment) => environment.isCurrent).length > 1) fail("shell.environments marks more than one environment current.");
 
+  const ground = shell.ground === undefined ? "base" : oneOf(shell.ground, "shell.ground", SITE_CHROME_GROUNDS);
   let footer: ResolvedSiteShell["footer"];
   if (shell.footer !== undefined) {
     const footerFields = record(shell.footer, "shell.footer", FOOTER_KEYS);
@@ -303,6 +310,7 @@ export function resolveShell(input: SiteShellInput, resolveCopy: CopyResolver, r
       };
     }
     footer = {
+      ground: footerFields.ground === undefined ? ground : oneOf(footerFields.ground, "shell.footer.ground", SITE_CHROME_GROUNDS),
       links: footerFields.links === undefined ? [] : links(footerFields.links, "shell.footer.links"),
       ...(social === undefined ? {} : { social }),
       columns:
@@ -321,7 +329,6 @@ export function resolveShell(input: SiteShellInput, resolveCopy: CopyResolver, r
     };
   }
 
-  const ground = shell.ground === undefined ? "base" : oneOf(shell.ground, "shell.ground", SITE_CHROME_GROUNDS);
   let header: ResolvedSiteShell["header"] = { placement: "reserved", ground };
   if (shell.header !== undefined) {
     const fields = record(shell.header, "shell.header", HEADER_KEYS);

@@ -612,20 +612,25 @@ function frameSources(): Array<[string, string]> {
 }
 
 describe("module boundaries", () => {
-  it("the skip-link island is the frame's only client module, and the frame uses no hooks", () => {
+  it("only the skip-link, navigation implementation and navigation bridge are client modules, and the frame uses no hooks", () => {
     const sources = frameSources();
     expect(sources.map(([name]) => name)).toContain("SiteFrame.tsx");
+    expect(sources.filter(([, source]) => source.startsWith('"use client";')).map(([name]) => name).sort()).toEqual(["NavDisclosure.boundary.client.tsx", "NavDisclosure.client.tsx", "SkipLink.client.tsx"]);
     for (const [name, source] of sources) {
-      if (name === "SkipLink.client.tsx") expect(source.startsWith('"use client";')).toBe(true);
+      if (name === "SkipLink.client.tsx" || name === "NavDisclosure.client.tsx" || name === "NavDisclosure.boundary.client.tsx") expect(source.startsWith('"use client";')).toBe(true);
       else expect(source).not.toMatch(/["']use client["']/);
     }
     const frameSource = readFileSync(join(import.meta.dirname, "SiteFrame.tsx"), "utf8");
     expect(frameSource).not.toMatch(/\buse[A-Z][A-Za-z]*\(/);
   });
 
-  it("every frame module imports only react, Designer server entries, Writer and its own relative modules, with no dynamic import or require", () => {
-    for (const [, source] of frameSources()) {
-      for (const specifier of moduleSpecifiers(source)) expect(specifier).toMatch(FRAME_ALLOWED_IMPORT);
+  it("frame modules retain server imports except the navigation island's Designer disclosure import, with no dynamic import or require", () => {
+    for (const [name, source] of frameSources()) {
+      for (const specifier of moduleSpecifiers(source)) {
+        if (name === "NavDisclosure.client.tsx" && specifier === "@clossys/designer/shell") continue;
+        if (name === "NavDisclosure.boundary.client.tsx" && specifier === "#publisher-frame-navigation") continue;
+        expect(specifier).toMatch(FRAME_ALLOWED_IMPORT);
+      }
       expect(source).not.toMatch(/\bimport\s*\(|\brequire\s*\(/);
     }
   });
@@ -707,7 +712,7 @@ describe("SiteFrame icon slots", () => {
     const focusable = [...container.querySelectorAll<HTMLElement>('a[href],button,input,select,textarea,[tabindex]')]
       .filter((element) => element.tabIndex >= 0);
     expect(focusable.map((element) => element.getAttribute("aria-label") ?? element.textContent)).toEqual([
-      "Skip to content", "Example home", "Pricing", "Docs", "Sign in", "Get started", "Contact", "App",
+      "Skip to content", "Example home", "Primary", "Pricing", "Docs", "Sign in", "Get started", "Contact", "App",
       "About", "Help", "Profile", "Privacy", "Terms",
     ]);
   });
@@ -921,4 +926,54 @@ it("a shell with no header key renders byte-identical to main", () => {
   } finally {
     year.mockRestore();
   }
+});
+
+describe("SiteFrame chrome parity", () => {
+  const navigation = { label: ref("nav.label"), triggerLabel: ref("cta.start"), links: [{ href: "/docs", label: ref("nav.docs") }] };
+  it("renders one named navigation disclosure and operates its mobile toggle", () => {
+    const { container } = render(frame({ ...FRONT_DOOR_SHELL, nav: navigation, footer: { legal: { entity: ref("legal.entity"), links: [] } } } as SiteShellInput, <p>content</p>));
+    expect(container.querySelectorAll("nav")).toHaveLength(1);
+    const nav = within(container).getByRole("navigation", { name: "Primary" });
+    const toggle = within(nav).getByRole("button", { name: "Get started" });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(nav.querySelectorAll('a[href="https://example.com/docs"]')).toHaveLength(1);
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    fireEvent.keyDown(nav, { key: "Escape" });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(toggle).toHaveFocus();
+  });
+  it("uses resolved navigation copy as the toggle label when no separate reference is supplied", () => {
+    const { container } = render(frame({ ...FRONT_DOOR_SHELL, nav: { label: ref("nav.label"), links: [] } }, <p>content</p>));
+    expect(within(container.querySelector("header")!).getByRole("button", { name: "Primary" })).toHaveAttribute("aria-expanded", "false");
+  });
+  it.each([ref("PAYLOAD-SENTINEL"), ref("blank"), "PAYLOAD-SENTINEL"])("refuses unresolved, blank or literal toggle copy without echoing it", triggerLabel => {
+    const run = () => renderToStaticMarkup(frame({ ...FRONT_DOOR_SHELL, nav: { ...navigation, triggerLabel } } as SiteShellInput, <p>content</p>));
+    expect(run).toThrow(/shell\.nav\.triggerLabel/);
+    expect(run).not.toThrow(/PAYLOAD-SENTINEL/);
+  });
+  it("renders primary and secondary actions with Designer ActionLink styling and no icons", () => {
+    const { container } = render(frame(siteShellFor(CONFIG, "site"), <p>content</p>));
+    for (const href of ["/start", "https://app.example.com/"]) {
+      const action = container.querySelector(`header a[href="${href}"]`)!;
+      expect(action).toHaveClass("rounded-control", "justify-center");
+      expect(action.querySelector("svg")).toBeNull();
+      expect(action.querySelector(".sr-only")).toBeNull();
+    }
+  });
+  it("paints an inverse footer independently of a base header", () => {
+    const { container } = render(frame({ ...FRONT_DOOR_SHELL, ground: "base", footer: { ...FRONT_DOOR_SHELL.footer!, ground: "inverse" } } as SiteShellInput, <p>content</p>));
+    expect(container.querySelector("header")).toHaveClass("bg-surface-raised");
+    expect(container.querySelector("footer")).toHaveClass("bg-surface-inverse");
+  });
+  it("defaults footer ground to shell ground even with a different reserved header ground", () => {
+    const { container } = render(frame({ ...FRONT_DOOR_SHELL, ground: "inverse", header: { ground: "base" } }, <p>content</p>));
+    expect(container.querySelector("header")).toHaveClass("bg-surface-raised");
+    expect(container.querySelector("footer")).toHaveClass("bg-surface-inverse");
+  });
+  it("refuses an invalid footer ground without echoing it", () => {
+    const run = () => renderToStaticMarkup(frame({ ...FRONT_DOOR_SHELL, footer: { ...FRONT_DOOR_SHELL.footer!, ground: "PAYLOAD-SENTINEL" } } as SiteShellInput, <p>content</p>));
+    expect(run).toThrow(/shell\.footer\.ground/);
+    expect(run).not.toThrow(/PAYLOAD-SENTINEL/);
+  });
 });

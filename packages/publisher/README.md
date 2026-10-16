@@ -2741,10 +2741,22 @@ export function SignInPage() {
   A `lockup` brand takes a `wordmark` copy reference; a `mark` brand takes
   none. Icon actions and social links use copy references for accessible
   names (`aria-label`); their labels are never visible text.
+- **Navigation and actions.** Primary navigation uses Designer's
+  `NavDisclosure` through a client island: one named navigation landmark,
+  with a mobile toggle and the same links in the responsive panel.
+  `nav.triggerLabel` is an optional copy reference for the toggle; when omitted,
+  it uses the resolved `nav.label`. A supplied reference must resolve to
+  nonblank copy. Text actions and the secondary action use Designer's
+  `SiteHeader.ActionLink` without icons. This intentionally changes the default
+  navigation and action markup for existing configurations.
+- **Footer ground.** `shell.footer.ground` accepts `"base"`, `"inverse"` or
+  `"transparent"` and defaults to `shell.ground`, regardless of the header's
+  ground or overlay tone. For example, a shell with `ground: "base"` and
+  `footer: { ground: "inverse", legal }` has a base header and inverse footer.
 - **Header placement.** `header` defaults to `{ placement: "reserved" }`:
   the banner stays in flow, with its `ground` defaulting to `shell.ground`.
   A reserved header may choose `ground` (`"base"`, `"inverse"` or
-  `"transparent"`) while the footer keeps `shell.ground`. An overlay header
+  `"transparent"`), independently of the footer. An overlay header
   takes `{ placement: "overlay", tone?: "base" | "inverse" }`; `tone`
   defaults to `"base"` and selects Designer's inherited ink over its
   transparent-to-glass header. Choose base ink over base or sunken hero
@@ -2799,7 +2811,13 @@ export function SignInPage() {
   on its content root.
 - **Server-safe.** `SiteFrame` uses no hooks. The skip link, which moves
   focus on activation, is a small `"use client"` island that receives strings
-  only.
+  only. Navigation disclosure is a second island receiving resolved label
+  strings and link data; copy and asset resolvers stay on the server. Its
+  client bridge uses a private conditional binding: raw `react-server`
+  imports receive matching initial disclosure markup without loading Designer's
+  interactive shell barrel; the browser bundle retains Designer's disclosure
+  interaction. Server/client markup and generated control IDs are checked
+  together with pointer and keyboard interaction after hydration.
 
 ```tsx
 import type { SiteFrameConfig, SiteIconLinkInput } from "@clossys/publisher/web";

@@ -83,3 +83,10 @@ export const reservedTone: SiteShellInput = { ...shell, header: { placement: "re
 export const omittedPlacementTone: SiteShellInput = { ...shell, header: { tone: "inverse" } };
 // @ts-expect-error overlay headers take a tone, not a reserved ground
 export const overlayGround: SiteShellInput = { ...shell, header: { placement: "overlay", ground: "base" } };
+
+export const independentFooter: SiteShellInput = { ...shell, footer: { ground: "inverse", legal: config.legal } };
+export const disclosureCopy: SiteShellInput = { ...shell, nav: { label: { id: "nav.label" }, triggerLabel: { id: "nav.toggle" }, links: [] } };
+// @ts-expect-error the disclosure toggle label is a copy reference, never literal text
+export const literalDisclosureCopy: SiteShellInput = { ...shell, nav: { label: { id: "nav.label" }, triggerLabel: "Menu", links: [] } };
+// @ts-expect-error footer ground accepts only the existing chrome grounds
+export const invalidFooterGround: SiteShellInput = { ...shell, footer: { ground: "unknown", legal: config.legal } };

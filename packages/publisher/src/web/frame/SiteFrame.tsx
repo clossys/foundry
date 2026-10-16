@@ -1,6 +1,7 @@
 import type { ReactElement } from "react";
 import { Icon } from "@clossys/designer/atoms/server";
 import { Brandmark, SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
+import { SiteNavDisclosure } from "./NavDisclosure.boundary.client.js";
 import { SiteSkipLink } from "./SkipLink.client.js";
 import { resolveShell } from "./internal/resolveShell.js";
 import type { ResolvedSiteIconLink, ResolvedSiteLink } from "./internal/resolveShell.js";
@@ -70,8 +71,8 @@ function LinkList({ links, className }: { readonly links: readonly ResolvedSiteL
  * `resolveCopy`, the brand asset resolved through `resolveAsset`, and links
  * checked against an allowed set. Anything unknown or unresolved throws.
  *
- * Server-safe: no hooks. The skip link's focus handler is a client island,
- * so a server-rendered frame passes it strings only.
+ * Server-safe: no hooks. Skip-link focus and navigation disclosure are client
+ * islands; the server passes resolved strings and link data.
  */
 export function SiteFrame({ shell, resolveCopy, resolveAsset, children }: SiteFrameProps): ReactElement {
   const resolved = resolveShell(shell, resolveCopy, resolveAsset);
@@ -84,17 +85,13 @@ export function SiteFrame({ shell, resolveCopy, resolveAsset, children }: SiteFr
       <Brandmark variant="lockup" size={brand.size} label={brand.label} wordmark={brand.wordmark} markSrc={brand.markSrc} plate={brand.plate} />
     );
 
-  const nav = resolved.nav ? (
-    <nav aria-label={resolved.nav.label}>
-      <LinkList links={resolved.nav.links} className="m-0 flex list-none flex-wrap items-center gap-sm p-0" />
-    </nav>
-  ) : undefined;
+  const nav = resolved.nav ? <SiteNavDisclosure nav={resolved.nav} /> : undefined;
 
   const actions =
     resolved.actions.length > 0 || resolved.iconActions.length > 0 || resolved.environments.length > 0 ? (
       <>
         {resolved.actions.map((link, index) => (
-          <TextLink key={`action-${index}`} link={link} />
+          <SiteHeader.ActionLink key={`action-${index}`} href={link.href} label={link.label} />
         ))}
         {resolved.iconActions.map((link, index) => (
           <IconLink key={`icon-action-${index}`} link={link} />
@@ -121,7 +118,7 @@ export function SiteFrame({ shell, resolveCopy, resolveAsset, children }: SiteFr
         brand={brandmark}
         nav={nav}
         navPlacement={resolved.navPlacement}
-        secondaryAction={resolved.secondaryAction ? <TextLink link={resolved.secondaryAction} /> : undefined}
+        secondaryAction={resolved.secondaryAction ? <SiteHeader.ActionLink href={resolved.secondaryAction.href} label={resolved.secondaryAction.label} /> : undefined}
         actions={actions}
         surfaceLabel={resolved.surfaceLabel}
       />
@@ -130,7 +127,7 @@ export function SiteFrame({ shell, resolveCopy, resolveAsset, children }: SiteFr
       </main>
       {footer ? (
         <SiteFooter
-          ground={resolved.ground}
+          ground={footer.ground}
           columns={
             footer.columns.length > 0 || footer.links.length > 0 ? (
               <>
