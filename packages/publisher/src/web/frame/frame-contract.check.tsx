@@ -8,7 +8,7 @@ import type { CopyResolver } from "@clossys/writer";
 import type { AssetResolver } from "../types.js";
 import { SiteFrame } from "./SiteFrame.js";
 import { siteShellFor } from "./surface.js";
-import type { SiteBrandInput, SiteFrameConfig, SiteIconLinkInput, SiteShellInput } from "./types.js";
+import type { SiteBrandInput, SiteFrameConfig, SiteIconLinkInput, SiteLinkInput, SiteShellInput } from "./types.js";
 
 declare const resolveCopy: CopyResolver;
 declare const resolveAsset: AssetResolver;
@@ -130,5 +130,8 @@ export const invalidMeasure: HeroMeasure = ["content", "wide", undefined];
 export const invalidHeadingScale: HeroHeadingScale = ["large", "display", undefined];
 // @ts-expect-error emphasis belongs to shell.actions only
 export const navigationEmphasis: SiteShellInput = { ...shell, nav: { label: { id: "nav" }, links: [{ href: "/", label: { id: "home" }, emphasis: "primary" }] } };
+const emphasizedLink: SiteLinkInput = { href: "/", label: { id: "home" }, emphasis: "primary" };
+// @ts-expect-error navigation rejects emphasized link variables as well as fresh literals
+export const navigationEmphasisVariable: SiteShellInput = { ...shell, nav: { label: { id: "nav" }, links: [emphasizedLink] } };
 // @ts-expect-error footer legal links do not accept header action emphasis
 export const legalEmphasis: SiteShellInput = { ...shell, footer: { legal: { entity: { id: "entity" }, links: [{ href: "/", label: { id: "home" }, emphasis: "primary" }] } } };

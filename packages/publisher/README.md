@@ -2760,8 +2760,9 @@ Optional appearance inputs keep the existing frame and hero defaults:
 | `shell.footer.rule` | `"none"` (default) or `"top"`. Top draws one hairline on a transparent flow footer; opaque grounds ignore the option. Overlay footer placement still requires an opaque ground and the existing hero-only frame composition. |
 
 These fields belong to `SiteLinkInput`, `SiteBrandInput`, `SiteShellInput`,
-`SiteFooterInput` and `SectionedViewHeroSection`, available from `@clossys/publisher/web` and
-`@clossys/publisher/web/server`. Hero appearance fields pass through
+`SiteFooterInput` and `SectionedViewHeroSection`, available from
+`@clossys/publisher/web`. Its `react-server` condition selects the server
+implementation. Hero appearance fields pass through
 copy resolution into `SectionedView` and `LandingView`; copy references and
 their provenance stay unchanged. Existing configurations render the same
 bytes when the new fields are omitted.
