@@ -9,7 +9,9 @@ import * as webServer from "../server.js";
 import * as frameIndex from "./index.js";
 import { SITE_MAIN_ID, SiteFrame, siteShellFor } from "./index.js";
 import type { SiteFrameConfig, SiteShellInput } from "./index.js";
-import { LandingView } from "../views/LandingView.js";
+import { LandingView } from "#publisher-web-views";
+import { LandingView as ServerLandingView } from "../views/LandingView.server.js";
+import type { LandingViewProps } from "../views/LandingViewContent.js";
 import type { ResolvedSectionedViewDocument } from "../../core/sectioned-view.js";
 
 const COPY: Readonly<Record<string, string>> = {
@@ -167,7 +169,7 @@ describe("SiteFrame footer placement", () => {
     expect(html).toMatch(/data-landing-view="" class="[^"]*flex-1/);
     expect(html).toMatch(/data-landing-hero=""[^>]*class="[^"]*flex-1/);
     expect(html).toMatch(/<div class="flex min-h-dvh flex-col" style="position:relative"/);
-    expect(html).toContain('<div data-frame-footer-overlay="" style="position:absolute;inset-block-start:0;inset-inline:0;height:100dvh;display:flex;align-items:safe flex-end;pointer-events:none;z-index:var(--ui-z-sticky, 10)"><footer');
+    expect(html).toContain('<div data-frame-footer-overlay="" style="display:flex;flex-direction:column;flex-shrink:0;min-width:0;pointer-events:none;z-index:var(--ui-z-sticky, 10)"><footer');
     expect(html).toMatch(/<footer[^>]*bg-surface-inverse[^>]*publisher-frame-footer-overlay/);
     expect(html).toMatch(/<footer[^>]*style="[^"]*pointer-events:auto/);
     expect(html).toMatch(/<header[^>]*z-index:var\(--ui-z-shell, 20\)/);
@@ -184,12 +186,58 @@ describe("SiteFrame footer placement", () => {
     expect(footer).toContain("pointer-events:auto");
   });
 
-  it("anchors the overlay to the first viewport rather than the end of a multi-band page", () => {
+  it("refuses multi-band overlay compositions rather than covering a peek or scroll cue", () => {
     const document: ResolvedSectionedViewDocument = { ...hero, sections: [...hero.sections, { id: "details", kind: "feature-grid", ground: "base", heading: "Details", items: [{ id: "one", heading: "More" }] }] };
-    const html = htmlFor("overlay", document);
-    expect(html).toContain('id="details"');
-    expect(html).toContain('data-frame-footer-overlay="" style="position:absolute;inset-block-start:0;inset-inline:0;height:100dvh;display:flex;align-items:safe flex-end;pointer-events:none;z-index:var(--ui-z-sticky, 10)"');
-    expect(html).not.toMatch(/data-frame-footer-overlay="" style="position:fixed/);
+    expect(() => htmlFor("overlay", document)).toThrow(/footer.*overlay.*hero/i);
+    expect(htmlFor("flow", document)).toContain('id="details"');
+  });
+
+  it("reserves the footer's intrinsic height in the same growing hero scene", () => {
+    const html = htmlFor("overlay");
+    expect(html).not.toContain("safe flex-end");
+    expect(html).not.toContain("height:100dvh");
+    expect(html).toMatch(/data-frame-footer-overlay=""[^>]*flex-direction:column/);
+    expect(html).toMatch(/<footer[^>]*margin-block-start:auto/);
+    expect(html).not.toContain("data-landing-cue");
+  });
+
+  it.each([LandingView, ServerLandingView])("accepts either direct LandingView entry with one growing hero", View => {
+    const html = renderToStaticMarkup(<SiteFrame shell={{ ...shell, footer: { ...shell.footer!, placement: "overlay" } }} resolveCopy={resolveCopy} resolveAsset={resolveAsset}>
+      <View document={hero} fit="frame" landmark="none" />
+    </SiteFrame>);
+    expect(html).toContain("data-frame-footer-overlay");
+    expect(html).not.toContain("data-landing-cue");
+  });
+
+  it.each([
+    { fit: "viewport" },
+    { header: "reserved" },
+    { landmark: "main" },
+    { trailing: [hero] },
+    { callToAction: { heading: "More", action: <a href="/more">More</a> } },
+    { afterSection: { hero: <p>More</p> } },
+    { style: { height: "100dvh" } },
+    { className: "h-dvh" },
+    { document: { ...hero, sections: [{ ...hero.sections[0]!, size: "compact" }] } },
+  ])("refuses unsupported overlay layout props before rendering a scene", extra => {
+    expect(() => renderToStaticMarkup(<SiteFrame shell={{ ...shell, footer: { ...shell.footer!, placement: "overlay" } }} resolveCopy={resolveCopy} resolveAsset={resolveAsset}>
+      <LandingView document={hero} fit="frame" landmark="none" {...extra as Partial<LandingViewProps>} />
+    </SiteFrame>)).toThrow(/shell\.footer\.placement/);
+  });
+
+  it("refuses a wrapper that copies LandingView props without invoking it", () => {
+    let called = false;
+    function WrappedLandingView(props: LandingViewProps) { called = true; return <LandingView {...props} />; }
+    expect(() => renderToStaticMarkup(<SiteFrame shell={{ ...shell, footer: { ...shell.footer!, placement: "overlay" } }} resolveCopy={resolveCopy} resolveAsset={resolveAsset}>
+      <WrappedLandingView document={hero} fit="frame" landmark="none" />
+    </SiteFrame>)).toThrow(/shell\.footer\.placement/);
+    expect(called).toBe(false);
+  });
+
+  it("refuses fragments and reserved frame headers for overlay scenes", () => {
+    const view = <LandingView document={hero} fit="frame" landmark="none" />;
+    expect(() => renderToStaticMarkup(<SiteFrame shell={{ ...shell, footer: { ...shell.footer!, placement: "overlay" } }} resolveCopy={resolveCopy} resolveAsset={resolveAsset}><>{view}</></SiteFrame>)).toThrow(/shell\.footer\.placement/);
+    expect(() => renderToStaticMarkup(<SiteFrame shell={{ ...shell, header: { placement: "reserved" }, footer: { ...shell.footer!, placement: "overlay" } }} resolveCopy={resolveCopy} resolveAsset={resolveAsset}>{view}</SiteFrame>)).toThrow(/shell\.footer\.placement/);
   });
 
   it.each(["base", "inverse"])("preserves an explicit opaque %s overlay ground", ground => {

@@ -96,3 +96,5 @@ export const overlayFooter: SiteShellInput = { ...shell, header: { placement: "o
 export const flowFooter: SiteShellInput = { ...shell, footer: { placement: "flow", ground: "transparent", legal: config.legal } };
 // @ts-expect-error footer placement accepts only flow or overlay
 export const invalidFooterPlacement: SiteShellInput = { ...shell, footer: { placement: "fixed", legal: config.legal } };
+// @ts-expect-error overlay placement requires an opaque footer ground
+export const transparentOverlayFooter: SiteShellInput = { ...shell, footer: { placement: "overlay", ground: "transparent", legal: config.legal } };

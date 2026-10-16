@@ -17,6 +17,7 @@ import { CaptureView } from "../views/CaptureView.js";
 import { DocumentView } from "../views/DocumentView.js";
 import { ErrorView } from "../views/ErrorView.js";
 import { StatusView } from "../views/StatusView.js";
+import { LandingView } from "#publisher-web-views";
 import { SITE_MAIN_ID, SITE_SURFACE_KINDS, SiteFrame, siteShellFor } from "./index.js";
 import type { SiteFrameConfig, SiteShellInput } from "./index.js";
 import { resolveShell } from "./internal/resolveShell.js";
@@ -630,6 +631,7 @@ describe("module boundaries", () => {
       for (const specifier of moduleSpecifiers(source)) {
         if (name === "NavDisclosure.client.tsx" && specifier === "@clossys/designer/shell") continue;
         if (name === "NavDisclosure.boundary.client.tsx" && specifier === "#publisher-frame-navigation") continue;
+        if (name === "SiteFrame.tsx" && specifier === "#publisher-web-views") continue;
         expect(specifier).toMatch(FRAME_ALLOWED_IMPORT);
       }
       expect(source).not.toMatch(/\bimport\s*\(|\brequire\s*\(/);
@@ -980,10 +982,14 @@ describe("SiteFrame chrome parity", () => {
 });
 
 
+function overlayHero() {
+  return <LandingView document={{ id: "home", resolutions: [resolveCopy(ref("brand.label"))!], sections: [{ id: "hero", kind: "hero", ground: "inverse", heading: "Welcome" }] }} fit="frame" landmark="none" />;
+}
+
 it("keeps overlay legal links keyboard reachable and pointer operable", async () => {
-  const shell = { ...FRONT_DOOR_SHELL, environments: [], footer: { placement: "overlay", legal: { ...CONFIG.legal, linksLabel: undefined } } } as SiteShellInput;
+  const shell = { ...FRONT_DOOR_SHELL, header: { placement: "overlay", tone: "inverse" }, environments: [], footer: { placement: "overlay", legal: { ...CONFIG.legal, linksLabel: undefined } } } as SiteShellInput;
   const user = userEvent.setup();
-  const { container } = render(frame(shell, <p>content</p>));
+  const { container } = render(frame(shell, overlayHero()));
   const footer = within(container).getByRole("contentinfo");
   const privacy = within(footer).getByRole("link", { name: "Privacy" });
   const terms = within(footer).getByRole("link", { name: "Terms" });
@@ -1012,13 +1018,15 @@ it.each(["--color-ink-on-inverse", "--color-ink-on-inverse-muted"])("backs overl
 
 it("keeps a tall overlay footer safely aligned without clipping its tab stops", async () => {
   const links = Array.from({ length: 30 }, (_, index) => ({ href: `/legal-${index}`, label: ref("legal.privacy") }));
-  const shell: SiteShellInput = { ...FRONT_DOOR_SHELL, environments: [], footer: { placement: "overlay", legal: { entity: ref("legal.entity"), links } } };
+  const shell: SiteShellInput = { ...FRONT_DOOR_SHELL, header: { placement: "overlay", tone: "inverse" }, environments: [], footer: { placement: "overlay", legal: { entity: ref("legal.entity"), links } } };
   const user = userEvent.setup();
-  const { container } = render(frame(shell, <p>content</p>));
+  const { container } = render(frame(shell, overlayHero()));
   const footer = within(container).getByRole("contentinfo");
   const legalLinks = within(footer).getAllByRole("link", { name: "Privacy" });
   expect(legalLinks).toHaveLength(30);
-  expect(footer.parentElement?.style.alignItems).toBe("safe flex-end");
+  expect(footer.parentElement?.style.flexDirection).toBe("column");
+  expect(footer.style.marginBlockStart).toBe("auto");
+  expect(footer.style.minWidth).toBe("0");
   expect(footer.parentElement?.style.overflow).toBe("");
   expect(footer.style.overflow).toBe("");
   await user.tab(); // skip link

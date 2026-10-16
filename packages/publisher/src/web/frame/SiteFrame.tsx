@@ -1,6 +1,10 @@
-import type { ReactElement } from "react";
+import { isValidElement, type ReactElement, type ReactNode } from "react";
 import { Icon } from "@clossys/designer/atoms/server";
 import { Brandmark, SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
+import { LandingView as RuntimeLandingView } from "#publisher-web-views";
+import { LandingView as ServerLandingView } from "../views/LandingView.server.js";
+import type { LandingViewProps } from "../views/LandingViewContent.js";
+import { RenderError } from "../../internal/errors.js";
 import { SiteNavDisclosure } from "./NavDisclosure.boundary.client.js";
 import { SiteSkipLink } from "./SkipLink.client.js";
 import { resolveShell } from "./internal/resolveShell.js";
@@ -34,6 +38,25 @@ function IconLink({ link }: { readonly link: ResolvedSiteIconLink }) {
 }
 
 const ICON_LIST_CLASSES = "m-0 flex list-none flex-wrap items-center gap-sm p-0";
+
+function assertOverlayScene(children: ReactNode, headerPlacement: "reserved" | "overlay"): void {
+  // Read these live bindings only at render time: the views barrel also exports
+  // GlobalErrorDocument, which composes SiteFrame.
+  const directLanding = isValidElement<LandingViewProps>(children)
+    && (children.type === RuntimeLandingView || children.type === ServerLandingView);
+  if (directLanding) {
+    const props = children.props;
+    const sections = props.document?.sections;
+    if (headerPlacement === "overlay" && props.fit === "frame" && props.landmark === "none"
+      && (props.header === undefined || props.header === "overlay")
+      && Array.isArray(sections) && sections.length === 1 && sections[0]?.kind === "hero" && sections[0].size !== "compact"
+      && (props.trailing === undefined || (Array.isArray(props.trailing) && props.trailing.length === 0))
+      && props.callToAction === undefined
+      && (props.afterSection === undefined || Object.keys(props.afterSection).length === 0)
+      && props.style === undefined && props.className === undefined) return;
+  }
+  throw new RenderError("resolution-failed", "shell.footer.placement overlay requires a direct hero-only LandingView with frame fit, no landmark and an overlay header; trailing content, closing content and layout overrides are unsupported.");
+}
 
 function IconLinkList({ links, className }: { readonly links: readonly ResolvedSiteIconLink[]; readonly className: string }) {
   return (
@@ -77,6 +100,7 @@ function LinkList({ links, className }: { readonly links: readonly ResolvedSiteL
 export function SiteFrame({ shell, resolveCopy, resolveAsset, children }: SiteFrameProps): ReactElement {
   const resolved = resolveShell(shell, resolveCopy, resolveAsset);
   const { brand, footer } = resolved;
+  if (footer?.placement === "overlay") assertOverlayScene(children, resolved.header.placement);
 
   const brandmark =
     brand.wordmark === undefined ? (
@@ -111,7 +135,7 @@ export function SiteFrame({ shell, resolveCopy, resolveAsset, children }: SiteFr
   const footerContent = footer ? (
     <SiteFooter
       ground={footer.ground}
-      {...(footer.placement === "overlay" ? { className: "publisher-frame-footer-overlay", style: { pointerEvents: "auto" as const, width: "100%" } } : {})}
+      {...(footer.placement === "overlay" ? { className: "publisher-frame-footer-overlay", style: { pointerEvents: "auto" as const, width: "100%", marginBlockStart: "auto", minWidth: 0, overflowWrap: "anywhere" as const } } : {})}
       columns={
         footer.columns.length > 0 || footer.links.length > 0 ? (
           <>
@@ -169,17 +193,15 @@ export function SiteFrame({ shell, resolveCopy, resolveAsset, children }: SiteFr
         {children}
       </main>
       {footer?.placement === "overlay" ? (
-        // The viewport sibling keeps contentinfo outside main and scrolls with the hero.
-        // Its context stays below the header; pointer events pass through the scene.
+        // Intrinsic footer height is reserved within the same growing hero scene.
+        // No absolute viewport box can cover hero content when copy or links reflow.
         <div
           data-frame-footer-overlay=""
           style={{
-            position: "absolute",
-            insetBlockStart: 0,
-            insetInline: 0,
-            height: "100dvh",
             display: "flex",
-            alignItems: "safe flex-end",
+            flexDirection: "column",
+            flexShrink: 0,
+            minWidth: 0,
             pointerEvents: "none",
             zIndex: "var(--ui-z-sticky, 10)",
           }}
