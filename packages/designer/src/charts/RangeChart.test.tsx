@@ -219,7 +219,7 @@ describe("direct SVG status adaptation", () => {
         expect(glyph.tagName.toLowerCase()).toBe("rect");
         expect(["x", "y", "width", "height"].map(name => glyph.getAttribute(name))).toEqual(["1", "4", "8", "2"]);
         const serverDash = rowGroup(serialized, row.id).querySelector('[data-part="mark"] rect')!;
-        expect(serverDash.getAttribute("style")?.replace(/\s/g, "").split(";")).toContain("rx:" + CHART_MARK_RADIUS);
+        expect(serverDash.getAttribute("style")?.replace(/\s/g, "").split(";")).toContain("rx:" + CHART_MARK_RADIUS.replace(/\s/g, ""));
       } else {
         expect(glyph.tagName.toLowerCase()).toBe("path");
         expect(glyph.getAttribute("d")).toBe(paths[tone]);

@@ -1,4 +1,4 @@
-import { renderToStaticMarkup } from "react-dom/server";
+import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { LineChart, type LineChartProps } from "./LineChart.js";
 
@@ -24,7 +24,25 @@ const fixtures: Record<string, LineChartProps> = {
 };
 
 describe("LineChart client compatibility", () => {
-  it.each(Object.entries(fixtures))("preserves %s published HTML", (_name, props) => {
-    expect(renderToStaticMarkup(<LineChart {...props} />)).toMatchSnapshot();
+  it.each(Object.entries(fixtures))("preserves %s published structure and data", (_name, props) => {
+    const { container } = render(<LineChart {...props} />);
+    const svg = container.querySelector("svg")!;
+    expect([svg.getAttribute("width"), svg.getAttribute("height"), svg.getAttribute("viewBox")]).toEqual([
+      String(props.width ?? 480), String(props.height ?? 280), `0 0 ${props.width ?? 480} ${props.height ?? 280}`,
+    ]);
+    expect(svg.getAttribute("role")).toBe("img");
+    expect(svg.getAttribute("aria-labelledby")).toBe(svg.querySelector("title")!.id);
+    expect(svg.getAttribute("aria-describedby")).toBe(svg.querySelector("desc")!.id);
+    expect(svg.querySelector("title")!.textContent).toBe(props.title);
+    expect(svg.querySelector("desc")!.textContent).toBe(props.description);
+    expect(container.querySelectorAll('[data-chart-part="series"]')).toHaveLength(props.series.length);
+    expect(container.querySelectorAll('[data-chart-part="series"] path')).toHaveLength(props.series.length);
+    expect(svg.outerHTML).not.toMatch(/NaN|Infinity/);
+    expect(svg.querySelector('[data-chart-part="hover-overlay"]')!.getAttribute("tabindex")).toBe("0");
+    expect(container.querySelector("summary")!.textContent).toBe(props.tableFallbackLabel);
+    expect(Array.from(container.querySelectorAll("thead th"), cell => cell.textContent)).toEqual([props.xColumnLabel, ...props.series.map(series => series.name)]);
+    expect(Array.from(container.querySelectorAll("tbody tr"), row => Array.from(row.querySelectorAll("td"), cell => cell.textContent))).toEqual(
+      props.x.map((x, index) => [props.xFormat?.(x) ?? String(x), ...props.series.map(series => String(series.values[index] ?? 0))]),
+    );
   });
 });

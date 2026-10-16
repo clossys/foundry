@@ -257,17 +257,17 @@
   [data-chart-part="frame"] [data-chart-part="cluster"] rect[tabindex="0"]:hover,
   [data-chart-part="frame"] [data-chart-part="cluster"] rect[tabindex="0"]:focus {
     fill-opacity: .85;
-    stroke: var(--color-chart-surface);
-    stroke-width: var(--ui-border-rule);
+    stroke: var(--color-chart-surface, var(--color-surface-raised, oklch(1 0 0)));
+    stroke-width: var(--ui-border-rule, 2px);
   }
 
   [data-chart-part="frame"] [data-chart-part="cluster"] rect[data-chart-mark="bar"][tabindex="0"]:hover,
   [data-chart-part="frame"] [data-chart-part="cluster"] rect[data-chart-mark="bar"][tabindex="0"]:focus {
-    stroke-width: var(--ui-border-hairline);
+    stroke-width: var(--ui-border-hairline, 1px);
   }
 
   [data-chart-part="frame"]:has([data-chart-mark="bar"]) [data-chart-part="axis"] line {
-    stroke-width: var(--ui-border-hairline);
+    stroke-width: var(--ui-border-hairline, 1px);
   }
 
   figure:has(> [data-chart-part="frame"][width="100%"]),
@@ -289,8 +289,8 @@
       }
       figure:has(> [data-chart-part="frame"][width="100%"]) thead {
         position: absolute;
-        inline-size: var(--ui-border-hairline);
-        block-size: var(--ui-border-hairline);
+        inline-size: var(--ui-border-hairline, 1px);
+        block-size: var(--ui-border-hairline, 1px);
         overflow: hidden;
         clip-path: inset(50%);
         white-space: nowrap;
@@ -300,18 +300,18 @@
       }
       figure:has(> [data-chart-part="frame"][width="100%"]) tbody tr {
         display: grid;
-        gap: var(--spacing-xs);
-        padding-block: var(--spacing-sm);
+        gap: var(--spacing-xs, 4px);
+        padding-block: var(--spacing-sm, 8px);
       }
       figure:has(> [data-chart-part="frame"][width="100%"]) tbody td {
         display: grid;
         grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-        column-gap: var(--spacing-md);
+        column-gap: var(--spacing-md, 12px);
         text-align: end;
       }
       figure:has(> [data-chart-part="frame"][width="100%"]) tbody td::before {
         content: attr(data-column-label);
-        color: var(--color-ink-secondary);
+        color: var(--color-ink-secondary, oklch(0.36 0 0));
         text-align: start;
       }
     }

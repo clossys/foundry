@@ -175,6 +175,10 @@ describe("glass tokens", () => {
       expect(result.unchecked).toEqual([]);
       expect(result.findings.map((f) => f.pairId).sort()).toEqual(
         [
+          // This seeded palette paints both page grounds white, invalidating
+          // categorical slot 2's relief measured on the shipped grounds.
+          "chart-categorical-2/surface-base",
+          "chart-categorical-2/surface-sunken",
           "ink-primary/surface-glass@backdrop-white",
           "ink-primary/surface-glass@backdrop-black",
           "focus-ring/surface-glass@backdrop-white",
@@ -182,6 +186,11 @@ describe("glass tokens", () => {
         ].sort(),
       );
       for (const finding of result.findings) {
+        if (finding.pairId.startsWith("chart-categorical-2/")) {
+          expect(finding.rule, finding.pairId).toBe("stale-exception");
+          expect(finding.ratio, finding.pairId).toBeGreaterThanOrEqual(3);
+          continue;
+        }
         expect(finding.rule, finding.pairId).toBe("below-threshold");
         expect(finding.ratio, finding.pairId).toBe(1);
         expect(finding.message, finding.pairId).toContain("intermediate backdrop");

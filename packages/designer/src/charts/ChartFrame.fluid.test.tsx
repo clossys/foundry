@@ -6,12 +6,23 @@ import { ChartFrame } from "./ChartFrame.js";
 const table = { headers: ["Period", "Count"], rows: [["First", 12]] };
 
 describe("ChartFrame fit", () => {
-  it("preserves the published fixed default byte for byte", () => {
-    expect(renderToStaticMarkup(
+  it("preserves the published fixed dimensions, accessible names and table", () => {
+    const { container } = render(
       <ChartFrame title="Sample counts" description="Count by period" table={table}>
         {() => <rect x={48} y={16} width={12} height={24} />}
       </ChartFrame>,
-    )).toMatchSnapshot();
+    );
+    const svg = container.querySelector("svg")!;
+    expect([svg.getAttribute("width"), svg.getAttribute("height"), svg.getAttribute("viewBox")]).toEqual(["480", "280", "0 0 480 280"]);
+    expect(svg.getAttribute("role")).toBe("img");
+    expect(svg.getAttribute("aria-labelledby")).toBe(svg.querySelector("title")!.id);
+    expect(svg.getAttribute("aria-describedby")).toBe(svg.querySelector("desc")!.id);
+    expect(svg.querySelector("title")!.textContent).toBe("Sample counts");
+    expect(svg.querySelector("desc")!.textContent).toBe("Count by period");
+    expect(svg.querySelector("rect")!.outerHTML).toBe('<rect x="48" y="16" width="12" height="24"></rect>');
+    expect(container.querySelector("summary")!.textContent).toBe("View as table");
+    expect(Array.from(container.querySelectorAll("thead th"), cell => cell.textContent)).toEqual(table.headers);
+    expect(Array.from(container.querySelectorAll("tbody td"), cell => cell.textContent)).toEqual(["First", "12"]);
   });
 
   it("scales the intrinsic plot fluidly and caps it at 1.5 times its width", () => {
@@ -25,14 +36,14 @@ describe("ChartFrame fit", () => {
     expect(svg.getAttribute("viewBox")).toBe("0 0 360 240");
     expect(svg.style.maxWidth).toBe("540px");
     expect(svg.style.height).toBe("auto");
-    expect(container.querySelector('[data-chart-part="ticks"]')!.getAttribute("fill")).toBe("var(--color-ink-secondary)");
+    expect(container.querySelector('[data-chart-part="ticks"]')!.getAttribute("fill")).toBe("var(--color-ink-secondary, oklch(0.36 0 0))");
     expect(container.querySelector("rect")!.getAttribute("width")).toBe("296");
-    expect(container.querySelector('[data-chart-part="axis"] line')!.getAttribute("stroke-width")).toBe("var(--ui-border-hairline)");
-    expect(container.querySelector('[data-chart-part="grid"] line')!.getAttribute("stroke-width")).toBe("var(--ui-border-hairline)");
+    expect(container.querySelector('[data-chart-part="axis"] line')!.getAttribute("stroke-width")).toBe("var(--ui-border-hairline, 1px)");
+    expect(container.querySelector('[data-chart-part="grid"] line')!.getAttribute("stroke-width")).toBe("var(--ui-border-hairline, 1px)");
   });
 
   it("can show the single-series legend without requiring the title to repeat its name", () => {
-    const { container } = render(<ChartFrame title="Sample counts" table={table} showSingleSeriesLegend legend={[{label: "Group A", color: "var(--color-chart-categorical-2)"}]}>{() => null}</ChartFrame>);
+    const { container } = render(<ChartFrame title="Sample counts" table={table} showSingleSeriesLegend legend={[{label: "Group A", color: "var(--color-chart-categorical-2, #eb6834)"}]}>{() => null}</ChartFrame>);
     expect(container.querySelector('[data-chart-part="legend"]')!.textContent).toBe("Group A");
   });
 

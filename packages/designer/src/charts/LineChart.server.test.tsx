@@ -96,10 +96,10 @@ describe("server-safe LineChart", () => {
     const chart = LineChart(props);
     const native = nodes(chart.props.children(plot));
     for (const node of native.filter(item => item.type === "path" || item.type === "line")) {
-      expect(node.props.strokeWidth).toBe("var(--ui-border-hairline)");
+      expect(node.props.strokeWidth).toBe("var(--ui-border-hairline, 1px)");
     }
     for (const node of native.filter(item => item.type === "circle")) {
-      expect(node.props.style).toEqual({ r: "var(--radius-subtle)" });
+      expect(node.props.style).toEqual({ r: "var(--radius-subtle, 2px)" });
     }
   });
 
@@ -113,8 +113,8 @@ describe("server-safe LineChart", () => {
     for (const label of labels) {
       expect(Number(label.getAttribute("y"))).toBeGreaterThan(plot.y);
       expect(Number(label.getAttribute("y"))).toBeLessThan(plot.y + plot.height);
-      expect(label.getAttribute("stroke")).toBe("var(--color-surface-base)");
-      expect(label.getAttribute("stroke-width")).toBe("var(--ui-border-hairline)");
+      expect(label.getAttribute("stroke")).toBe("var(--color-surface-base, oklch(0.9702 0 0))");
+      expect(label.getAttribute("stroke-width")).toBe("var(--ui-border-hairline, 1px)");
       expect((label as SVGElement).style.paintOrder).toBe("stroke");
     }
   });

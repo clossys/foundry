@@ -6427,7 +6427,7 @@ part of this package's public API" and reachable only by that one test.
   `relativeLuminance`, `parseOklch`** (from `@clossys/designer/tokens`,
   promoted from that internal module — no behavior change, only
   visibility) — the WCAG colour math itself, pure and zero-dependency.
-- **`CONTRAST_PAIRS`** (same subpath) — an EXPLICIT, checked-in list of 76
+- **`CONTRAST_PAIRS`** (same subpath) — an EXPLICIT, checked-in list of 107
   `{ foreground, background, level, minimumRatio, compositeOver? }` pairs
   (`compositeOver` is a token, or a literal colour such as `oklch(0 0 0)`
   for a backdrop no token names, which is how the eight glass pairs check
@@ -6541,7 +6541,7 @@ against the actual base and sunken grounds. Light slots 2–5 measure below
 2.68/2.36/1.82/2.26 on sunken). These exact pairs carry a separate,
 measured labels/table compensation policy; the original raised-surface
 slots 3–5 remain unchanged. All other light slots and every dark slot must
-clear 3:1 outright. `chart-ground-contrast.test.ts` checks the raw findings,
+clear 3:1 outright. The chart ground checks cover the raw findings,
 theme-specific relief, stale exceptions and unrelieved dark failures.
 The supplementary axis baseline retains its axis-above-grid invariant;
 it is not a threshold pair.

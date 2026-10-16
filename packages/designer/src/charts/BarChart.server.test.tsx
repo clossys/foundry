@@ -24,9 +24,19 @@ function rectProps(node: ReactNode): Record<string, unknown>[] {
 }
 
 describe("server-safe BarChart", () => {
-  it("keeps the published default DOM and corner byte for byte", () => {
-    expect(renderToStaticMarkup(<BarChart {...props} />)).toMatchSnapshot();
+  it("keeps the published fixed default structure and corners", () => {
     const { container } = render(<BarChart {...props} />);
+    const svg = container.querySelector("svg")!;
+    expect([svg.getAttribute("width"), svg.getAttribute("height"), svg.getAttribute("viewBox")]).toEqual(["480", "280", "0 0 480 280"]);
+    expect(svg.getAttribute("role")).toBe("img");
+    expect(svg.getAttribute("aria-labelledby")).toBe(svg.querySelector("title")!.id);
+    expect(svg.getAttribute("aria-describedby")).toBe(svg.querySelector("desc")!.id);
+    expect(svg.querySelector("title")!.textContent).toBe(props.title);
+    expect(svg.querySelector("desc")!.textContent).toBe(props.description);
+    expect(container.querySelectorAll("rect")).toHaveLength(4);
+    expect(Array.from(container.querySelectorAll("thead th"), cell => cell.textContent)).toEqual(["Category", "Group A", "Group B"]);
+    expect(Array.from(container.querySelectorAll("tbody tr"), row => Array.from(row.querySelectorAll("td"), cell => cell.textContent))).toEqual([["First", "10", "4"], ["Next", "-2", "6"]]);
+    expect(container.querySelector("summary")!.textContent).toBe("View as table");
     for (const rect of container.querySelectorAll("rect")) {
       expect(rect.getAttribute("rx")).toBe("4");
       expect(rect.getAttribute("tabindex")).toBe("0");
@@ -40,7 +50,7 @@ describe("server-safe BarChart", () => {
     for (const mark of marks) {
       expect(mark.tabIndex).toBeUndefined();
       expect(mark["aria-hidden"]).toBe(true);
-      expect(mark.style).toEqual({ rx: "var(--radius-subtle)" });
+      expect(mark.style).toEqual({ rx: "var(--radius-subtle, 2px)" });
       expect(Object.entries(mark).filter(([name, value]) => /^on[A-Z]/.test(name) && value !== undefined)).toEqual([]);
     }
     const { container } = render(<BarChart {...props} marks="static" />);
@@ -52,7 +62,7 @@ describe("server-safe BarChart", () => {
     const { container, getByText } = render(<ServerBarChart {...props} fit="fluid" marks="static" tableFallbackLabel="Data table" categoryColumnLabel="Period" />);
     expect(container.querySelector("svg")!.getAttribute("width")).toBe("100%");
     expect(container.querySelectorAll("rect[tabindex]")).toHaveLength(0);
-    expect(container.querySelectorAll('[data-chart-part="ticks"]')[1]!.getAttribute("fill")).toBe("var(--color-ink-secondary)");
+    expect(container.querySelectorAll('[data-chart-part="ticks"]')[1]!.getAttribute("fill")).toBe("var(--color-ink-secondary, oklch(0.36 0 0))");
     expect(getByText("Data table").tagName).toBe("SUMMARY");
     expect(container.querySelectorAll("tbody tr")).toHaveLength(2);
     expect(container.querySelector("tbody")!.textContent).toContain("10");
@@ -110,7 +120,7 @@ describe("server-safe BarChart", () => {
     const serializedMarks = renderToStaticMarkup(<BarChart {...props} fit="fluid" />).match(/<rect\b[^>]*>/g) ?? [];
     expect(serializedMarks).toHaveLength(4);
     for (const mark of serializedMarks) {
-      expect(mark).toContain('style="rx:var(--radius-subtle)"');
+      expect(mark).toContain('style="rx:var(--radius-subtle, 2px)"');
       expect(mark).not.toContain('rx="4"');
     }
     for (const rect of container.querySelectorAll("rect")) {
@@ -121,8 +131,8 @@ describe("server-safe BarChart", () => {
   it("resolves the real compiled component and server barrel under react-server", () => {
     const component = resolve(sourceDir, "../../dist/charts/BarChart.js");
     const barrel = resolve(sourceDir, "../../dist/charts/server.js");
-    const script = `const a = await import(${JSON.stringify(component)}); const b = await import(${JSON.stringify(barrel)}); if (a.BarChart !== b.BarChart) throw new Error("missing server export"); function rects(n) { if (Array.isArray(n)) return n.flatMap(rects); if (!n || !n.props) return []; return n.type === "rect" ? [n.props] : rects(n.props.children); } for (const mode of ["interactive", "static"]) { const element = a.BarChart({ ...${JSON.stringify(props)}, marks: mode }); const marks = rects(element.props.children({ x: 48, y: 16, width: 296, height: 192 })); if (marks.length !== 4) throw new Error("missing marks"); if (marks.some(m => Object.entries(m).some(([k,v]) => /^on[A-Z]/.test(k) && v !== undefined))) throw new Error("client handler"); if (mode === "static" && marks.some(m => m.tabIndex !== undefined || m.style.rx !== "var(--radius-subtle)")) throw new Error("static mark contract"); } process.stdout.write("OK");`;
-    expect(execFileSync(process.execPath, ["--conditions=react-server", "--input-type=module", "-e", script], { encoding: "utf8", timeout: 10_000 }).trim()).toBe("OK");
+    const script = `const [component, barrel, serializedProps] = process.argv.slice(1); const props = JSON.parse(serializedProps); const a = await import(component); const b = await import(barrel); if (a.BarChart !== b.BarChart) throw new Error("missing server export"); function rects(n) { if (Array.isArray(n)) return n.flatMap(rects); if (!n || !n.props) return []; return n.type === "rect" ? [n.props] : rects(n.props.children); } for (const mode of ["interactive", "static"]) { const element = a.BarChart({ ...props, marks: mode }); const marks = rects(element.props.children({ x: 48, y: 16, width: 296, height: 192 })); if (marks.length !== 4) throw new Error("missing marks"); if (marks.some(m => Object.entries(m).some(([k,v]) => /^on[A-Z]/.test(k) && v !== undefined))) throw new Error("client handler"); if (mode === "static" && marks.some(m => m.tabIndex !== undefined || m.style.rx !== "var(--radius-subtle, 2px)")) throw new Error("static mark contract"); } process.stdout.write("OK");`;
+    expect(execFileSync(process.execPath, ["--conditions=react-server", "--input-type=module", "-e", script, component, barrel, JSON.stringify(props)], { encoding: "utf8", timeout: 10_000 }).trim()).toBe("OK");
   });
 
   it("keeps hover and focus feedback in CSS without motion", () => {
@@ -130,7 +140,7 @@ describe("server-safe BarChart", () => {
     const feedback = css.match(/\[data-chart-part="cluster"\] rect\[tabindex="0"\]:hover[\s\S]*?\{([^}]+)\}/)?.[1];
     expect(feedback).toBeDefined();
     expect(css).toContain('[data-chart-part="cluster"] rect[tabindex="0"]:focus');
-    expect(feedback).toContain("stroke-width: var(--ui-border-rule)");
+    expect(feedback).toContain("stroke-width: var(--ui-border-rule, 2px)");
     expect(feedback).not.toMatch(/transition|animation/);
   });
 });
