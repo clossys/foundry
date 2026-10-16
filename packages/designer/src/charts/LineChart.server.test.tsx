@@ -347,4 +347,3 @@ describe("server-safe LineChart", () => {
       { encoding: "utf8", timeout: 10_000 }).trim()).toBe("OK");
   });
 });
-

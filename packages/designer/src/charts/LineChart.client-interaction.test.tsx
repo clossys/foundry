@@ -142,4 +142,3 @@ describe("LineChart client interaction after geometry extraction", () => {
       .toEqual(["10", "6", "0"]);
   });
 });
-
