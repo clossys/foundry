@@ -3,6 +3,15 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## 0.5.0 - 2026-10-16
+
+- Add a consent-controlled analytics transport with a PostHog provider adapter.
+- Hosts can now import the browser consent lifecycle from `@clossys/butler/browser-consent`, its storage adapter from `@clossys/butler/browser-consent/local-storage`, the consent-controlled analytics transport from `@clossys/observer/browser-analytics` and its PostHog provider adapter from `@clossys/observer/browser-analytics/posthog`.
+- Strengthen consent port conformance checks and clarify browser storage and analytics network behavior.
+- Add opt-in autocapture and session replay to the PostHog provider adapter with consent-gated event capture and masked replay payload checks.
+- Each package skill's section for when the package is not installed speaks of the repositories the team is set up in, instead of every inventoried repository.
+- Each package skill says the whole team is composed in the hub and a repository staffed in an approved plan gets `@clossys-advisor` and the voices of the roles staffed there once that plan's setup pull request has merged, so a missing `@clossys-<package>` mention is a bug only in the hub.
+
 ## 0.4.2 - 2026-09-24
 
 - The changelog is no longer included in the package; it now lives in the public repository, linked from the README.
