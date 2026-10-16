@@ -3,6 +3,8 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { resolveSectionedViewDocument, type SectionedViewDocument } from "../../core/sectioned-view.js";
 import { SectionedView } from "./SectionedView.js";
+import { sectionedViewBlocks } from "./SectionedViewBlocks.js";
+import { JSDOM } from "jsdom";
 import type { ResolvedSectionedViewDocument } from "../../core/sectioned-view.js";
 
 const document: ResolvedSectionedViewDocument = {
@@ -13,18 +15,19 @@ const document: ResolvedSectionedViewDocument = {
     { id: "features", kind: "feature-grid", ground: "sunken", heading: "Features", items: [{ id: "first", heading: "First" }] },
     { id: "faq", kind: "faq", ground: "inverse", heading: "Questions", items: ["one", "two", "three", "four"].map(id => ({ id, question: "Why?", answer: "Because." })) },
     { id: "steps", kind: "ordered-step-sequence", ground: "base", heading: "Steps", items: [{ id: "one", ordinal: "1", heading: "Start" }] },
-    { id: "status", kind: "status-list", ground: "sunken", heading: "Readiness", labels: { available: "Available", partial: "Partial", planned: "Planned", dispositions: { "not-offered": "Not offered" } }, groups: [{ id: "core", heading: "Core", items: [{ id: "one", label: "Feature", state: "available" }, { id: "none", label: "No certifications", disposition: "not-offered" }] }] },
+    { id: "status", kind: "status-list", ground: "sunken", heading: "Readiness", labels: { available: "Available", partial: "Partial", planned: "Planned", dispositions: { "not-offered": "Not offered" } }, groups: [{ id: "core", heading: "Core", items: [{ id: "one", label: "Feature", state: "available" }, { id: "none", label: "No certifications", disposition: "not-offered" }] }, { id: "next", heading: "Next", items: [{ id: "partial", label: "Partial feature", state: "partial" }, { id: "planned", label: "Planned feature", state: "planned" }] }] },
   ],
 };
 
 describe("SectionedView", () => {
-  it("renders the five closed Designer blocks in source order with one h1, h2 sections, h3 nested headings, one legend, and semantic steps", () => {
+  it("renders the five closed Designer blocks in source order with one h1, h2 sections, h3 nested headings, localized status badges, and semantic steps", () => {
     const html = renderToStaticMarkup(<SectionedView document={document} />);
     expect(html).toMatch(/<h1[^>]*>Welcome<\/h1>[\s\S]*<h2[^>]*>Features<\/h2>[\s\S]*<h2[^>]*>Questions<\/h2>/);
     expect(html).toContain('id="hero"');
     expect(html).toContain('id="status"');
     expect(html).toContain("<ol");
-    expect(html.match(/aria-label="Readiness"/g)).toHaveLength(1);
+    expect(statusRoot(html).querySelector("h2")?.textContent).toBe("Readiness");
+    expect(statusRoot(html).querySelectorAll('[role="group"]')).toHaveLength(2);
     expect(html).toContain("<h3");
   });
 
@@ -54,19 +57,21 @@ describe("SectionedView", () => {
  * by rendering that release's own code before the optional eyebrow, hero
  * action, status detail, and landmark additions existed. It is frozen here so
  * "additive" is a measurement rather than a claim: a document that carries
- * none of the new fields retains the measured bytes outside the migrated FAQ. Designer
+ * none of the new fields retains the measured bytes outside the migrated FAQ and status. Designer
  * block restyles realign it (most recently the ordered steps: item-heading
  * type, a line-strong ordinal ring and a connector running from one ordinal
  * to the next); the view's own structure does not move.
  */
 const LEGACY_MARKUP = `<main aria-label="acme-home" class="flex flex-col gap-2xl py-2xl"><section id="hero" class="flex flex-col gap-xl"><div data-section-intro="display" class="flex w-full flex-col items-start" style="max-width:var(--ui-width-prose-max, 48rem)"><p class="text-body-s font-medium uppercase tracking-label text-accent-text">New</p><h1 class="text-display-m tablet:text-display-l font-display leading-display text-balance text-ink-primary mt-sm">Welcome</h1><p class="text-body-l text-pretty text-ink-secondary mt-2xl">A fixture hero.</p></div></section><div id="features" class="flex flex-col gap-lg bg-surface-sunken"><div class="flex flex-col gap-xs"><h2 class="text-h2 font-display text-ink-primary">Features</h2><p class="text-body text-ink-secondary">A fixture grid.</p></div><div class="grid grid-cols-1 gap-lg tablet:grid-cols-2 desktop:grid-cols-3"><div class="flex flex-col items-start gap-sm"><p class="text-body font-body font-medium text-ink-primary">First</p><p class="text-body-s text-ink-secondary">First feature.</p></div><div class="flex flex-col items-start gap-sm"><p class="text-body font-body font-medium text-ink-primary">Second</p></div></div></div><div id="faq" class="flex flex-col gap-lg bg-surface-inverse"><div class="flex flex-col gap-xs"><h2 class="text-h2 font-display leading-heading text-ink-on-inverse">Questions</h2><p class="text-body text-ink-on-inverse-muted">A fixture FAQ.</p></div><div class="flex flex-col border-t border-line-on-inverse"><div class="group/faq block border-b border-line-on-inverse" data-rac=""><button id="react-aria-_R_1jH1_" class="flex w-full cursor-pointer items-center justify-between gap-lg rounded-default py-lg text-start text-body-l font-medium tablet:py-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent summary-marker-none text-ink-on-inverse" data-rac="" type="button" tabindex="0" data-react-aria-pressable="true" aria-expanded="false" aria-controls="react-aria-_R_1jH2_" slot="trigger"><span>Why?</span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 disclosure-icon-motion" style="width:var(--ui-icon-md, var(--spacing-xl, 24px));height:var(--ui-icon-md, var(--spacing-xl, 24px));flex-shrink:0;stroke-width:var(--ui-icon-stroke, 2)" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></button><div class="disclosure-panel-motion" data-rac="" id="react-aria-_R_1jH2_" role="group" aria-labelledby="react-aria-_R_1jH1_" aria-hidden="true" hidden=""><div class="pb-lg pe-2xl text-body text-pretty tablet:pb-xl text-ink-on-inverse-muted" style="max-width:var(--ui-width-prose-max, 48rem)">Because.</div></div></div></div></div><section id="steps" class="flex flex-col gap-lg"><div class="flex flex-col gap-xs"><h2 class="text-h2 font-display text-ink-primary">Steps</h2></div><ol data-step-layout="plain" class="flex flex-col tablet:flex-row tablet:gap-x-xl"><li class="flex min-w-0 flex-1 flex-row gap-md tablet:flex-col tablet:gap-lg"><div class="flex shrink-0 flex-col items-center tablet:flex-row"><span class="flex size-2xl shrink-0 items-center justify-center rounded-pill text-body font-body font-medium tabular-nums bg-accent-tint text-accent-text">1</span><span aria-hidden="true" data-step-connector="" class="my-sm w-px flex-1 tablet:my-0 tablet:ms-md tablet:-me-md tablet:h-px tablet:w-auto bg-line-strong"></span></div><div data-step-text="" class="flex min-w-0 flex-col gap-sm pb-2xl tablet:pb-0"><p class="text-body-s font-medium uppercase tracking-label text-ink-secondary">First</p><h3 class="text-body-l font-body font-medium text-ink-primary">Start</h3><p class="text-body text-pretty text-ink-secondary">Start here.</p></div></li><li class="flex min-w-0 flex-1 flex-row gap-md tablet:flex-col tablet:gap-lg"><div class="flex shrink-0 flex-col items-center tablet:flex-row"><span class="flex size-2xl shrink-0 items-center justify-center rounded-pill text-body font-body font-medium tabular-nums bg-accent-tint text-accent-text">2</span></div><div data-step-text="" class="flex min-w-0 flex-col gap-sm"><h3 class="text-body-l font-body font-medium text-ink-primary">Finish</h3></div></li></ol></section><section id="status" class="flex flex-col gap-lg bg-surface-sunken"><div class="flex flex-col gap-xs"><h2 class="text-h2 font-display text-ink-primary">Readiness</h2><p class="text-body text-ink-secondary">A fixture status list.</p></div><div class="flex flex-col gap-xs"><p class="text-caption font-body font-medium text-ink-primary">Readiness</p><ul aria-label="Readiness" class="flex flex-wrap gap-md"><li class="flex items-center gap-xs text-body-s text-ink-primary"><span aria-hidden="true" class="size-xs shrink-0 rounded-pill bg-status-success ring-2 ring-ink-primary"></span>Available</li><li class="flex items-center gap-xs text-body-s text-ink-primary"><span aria-hidden="true" class="size-xs shrink-0 rounded-pill bg-status-warning ring-2 ring-ink-primary"></span>Partial</li><li class="flex items-center gap-xs text-body-s text-ink-primary"><span aria-hidden="true" class="size-xs shrink-0 rounded-pill bg-status-info ring-2 ring-ink-primary"></span>Planned</li><li class="flex items-center gap-xs text-body-s text-ink-primary"><span aria-hidden="true" class="size-xs shrink-0 rounded-pill bg-ink-muted ring-2 ring-ink-primary"></span>Not offered</li></ul></div><div class="flex flex-col gap-lg"><section class="flex flex-col gap-sm"><h3 class="text-h3 font-display text-ink-primary">Core</h3><dl class="flex flex-col"><div class="flex items-center justify-between gap-md py-sm"><dt class="text-body text-ink-primary">Feature</dt><dd class="flex shrink-0 items-center gap-xs text-body-s text-ink-primary"><span aria-hidden="true" class="size-xs shrink-0 rounded-pill bg-status-success ring-2 ring-ink-primary"></span>Available</dd></div><div class="flex items-center justify-between gap-md py-sm border-t border-line-base"><dt class="text-body text-ink-primary">No certifications</dt><dd class="flex shrink-0 items-center gap-xs text-body-s text-ink-primary"><span aria-hidden="true" class="size-xs shrink-0 rounded-pill bg-ink-muted ring-2 ring-ink-primary"></span>Not offered</dd></div></dl></section></div></section></main>`;
 
-// FAQ now has a canonical recipe; retain the frozen measurement for its siblings.
-function withoutFaq(markup: string): string {
+// FAQ and status now use canonical recipes; retain the frozen measurement for their siblings.
+function withoutMigratedSections(markup: string): string {
   const start = markup.indexOf('id="faq"');
   const end = markup.indexOf('<section id="steps"', start);
   const open = markup.lastIndexOf("<", start);
-  return markup.slice(0, open) + markup.slice(end);
+  const withoutFaq = markup.slice(0, open) + markup.slice(end);
+  const statusStart = withoutFaq.lastIndexOf("<", withoutFaq.indexOf('id="status"'));
+  return withoutFaq.slice(0, statusStart) + withoutFaq.slice(withoutFaq.lastIndexOf("</main>"));
 }
 
 const LEGACY_DOCUMENT: ResolvedSectionedViewDocument = {
@@ -77,9 +82,11 @@ const LEGACY_DOCUMENT: ResolvedSectionedViewDocument = {
     { id: "features", kind: "feature-grid", ground: "sunken", heading: "Features", description: "A fixture grid.", items: [{ id: "first", heading: "First", description: "First feature." }, { id: "second", heading: "Second" }] },
     { id: "faq", kind: "faq", ground: "inverse", heading: "Questions", description: "A fixture FAQ.", items: ["one", "two", "three", "four"].map(id => ({ id, question: "Why?", answer: "Because." })) },
     { id: "steps", kind: "ordered-step-sequence", ground: "base", heading: "Steps", items: [{ id: "one", ordinal: "1", label: "First", heading: "Start", description: "Start here." }, { id: "two", ordinal: "2", heading: "Finish" }] },
-    { id: "status", kind: "status-list", ground: "sunken", heading: "Readiness", description: "A fixture status list.", labels: { available: "Available", partial: "Partial", planned: "Planned", dispositions: { "not-offered": "Not offered" } }, groups: [{ id: "core", heading: "Core", items: [{ id: "one", label: "Feature", state: "available" }, { id: "none", label: "No certifications", disposition: "not-offered" }] }] },
+    { id: "status", kind: "status-list", ground: "sunken", heading: "Readiness", description: "A fixture status list.", labels: { available: "Available", partial: "Partial", planned: "Planned", dispositions: { "not-offered": "Not offered" } }, groups: [{ id: "core", heading: "Core", items: [{ id: "one", label: "Feature", state: "available" }, { id: "none", label: "No certifications", disposition: "not-offered" }] }, { id: "next", heading: "Next", items: [{ id: "partial", label: "Partial feature", state: "partial" }, { id: "planned", label: "Planned feature", state: "planned" }] }] },
   ],
 };
+
+const statusRoot = (html: string) => JSDOM.fragment(html).querySelector("#status")!;
 
 const expressive: ResolvedSectionedViewDocument = {
   ...document,
@@ -91,14 +98,22 @@ const expressive: ResolvedSectionedViewDocument = {
     {
       ...document.sections[4],
       eyebrow: "Posture",
-      groups: [{ ...document.sections[4].groups[0], items: [{ id: "one", label: "Feature", detail: "Generally available in every region.", state: "available" }, { id: "none", label: "No certifications", detail: "Not offered because the audit is not ours to claim.", disposition: "not-offered" }] }],
+      groups: [{ ...document.sections[4].groups[0], items: [{ id: "one", label: "Feature", detail: "Generally available in every region.", state: "available" }, { id: "none", label: "No certifications", detail: "Not offered because the audit is not ours to claim.", disposition: "not-offered" }] }, ...document.sections[4].groups.slice(1)],
     },
   ],
 };
 
 describe("SectionedView optional additive fields", () => {
-  it("renders a document carrying none of them exactly as 0.2.1 did, byte for byte", () => {
-    expect(withoutFaq(renderToStaticMarkup(<SectionedView document={LEGACY_DOCUMENT} />))).toBe(withoutFaq(LEGACY_MARKUP));
+  it("retains standalone StatusList definition-list markup byte for byte", () => {
+    const status = LEGACY_DOCUMENT.sections[4];
+    if (status.kind !== "status-list" || !status.groups) throw new Error("Expected grouped status fixture.");
+    const { kind: _kind, ...props } = status;
+    const html = renderToStaticMarkup(<sectionedViewBlocks.StatusList {...props} groups={status.groups.slice(0, 1)} legendLabel={status.heading} headingLevel={2} />);
+    const start = LEGACY_MARKUP.lastIndexOf("<", LEGACY_MARKUP.indexOf('id="status"'));
+    expect(html).toBe(LEGACY_MARKUP.slice(start, LEGACY_MARKUP.lastIndexOf("</main>")));
+  });
+  it("retains frozen sibling bytes outside the canonical FAQ and status sections", () => {
+    expect(withoutMigratedSections(renderToStaticMarkup(<SectionedView document={LEGACY_DOCUMENT} />))).toBe(withoutMigratedSections(LEGACY_MARKUP));
   });
 
   it("renders every non-hero eyebrow instead of dropping it", () => {
@@ -114,12 +129,13 @@ describe("SectionedView optional additive fields", () => {
     expect(html).toContain("Read the docs");
   });
 
-  it("renders a status row detail as a second description of the same row", () => {
+  it("renders status details as Item descriptions alongside localized badges", () => {
     const html = renderToStaticMarkup(<SectionedView document={expressive} />);
     expect(html).toContain("Generally available in every region.");
     expect(html).toContain("Not offered because the audit is not ours to claim.");
-    expect(html.match(/<dd/g)).toHaveLength(4);
-    expect(renderToStaticMarkup(<SectionedView document={document} />).match(/<dd/g)).toHaveLength(2);
+    expect(statusRoot(html).querySelectorAll("[data-item-description]")).toHaveLength(2);
+    expect(statusRoot(html).querySelectorAll("[data-item-heading]")).toHaveLength(4);
+    expect(statusRoot(renderToStaticMarkup(<SectionedView document={document} />)).querySelectorAll("[data-item-description]")).toHaveLength(0);
   });
 
   it("keeps its own main landmark by default and drops it, without a second landmark or a stray name, on request", () => {
@@ -135,7 +151,7 @@ describe("SectionedView optional additive fields", () => {
   });
 
   it("keeps rendering the same document identically when landmark is passed explicitly", () => {
-    expect(withoutFaq(renderToStaticMarkup(<SectionedView document={LEGACY_DOCUMENT} landmark="main" />))).toBe(withoutFaq(LEGACY_MARKUP));
+    expect(withoutMigratedSections(renderToStaticMarkup(<SectionedView document={LEGACY_DOCUMENT} landmark="main" />))).toBe(withoutMigratedSections(LEGACY_MARKUP));
   });
 
   it("fails closed on an unsanctioned action href, a malformed action, a blank detail, and an unsupported landmark", () => {
@@ -230,10 +246,10 @@ describe("SectionedView hero media and stat-grid (issue #1028)", () => {
 });
 
 describe("SectionedView gap 2 and gap 7 relaxations", () => {
-  it("retains the frozen sibling sections around the canonical FAQ", () => {
+  it("retains the frozen sibling sections around canonical FAQ and status", () => {
     // Same proof technique as the LEGACY_MARKUP assertion above: this is the
     // exact shape gaps 2 and 7 relax around, not merely near it.
-    expect(withoutFaq(renderToStaticMarkup(<SectionedView document={LEGACY_DOCUMENT} />))).toBe(withoutFaq(LEGACY_MARKUP));
+    expect(withoutMigratedSections(renderToStaticMarkup(<SectionedView document={LEGACY_DOCUMENT} />))).toBe(withoutMigratedSections(LEGACY_MARKUP));
   });
 
   it("renders a document with zero hero sections, with no h1 anywhere", () => {
@@ -255,24 +271,26 @@ describe("SectionedView gap 2 and gap 7 relaxations", () => {
     expect(() => renderToStaticMarkup(<SectionedView document={twoHeroes as unknown as ResolvedSectionedViewDocument} />)).toThrow(/invalid resolved document/);
   });
 
-  const flatStatusSection = { id: "status", kind: "status-list" as const, ground: "sunken" as const, heading: "Readiness", labels: document.sections[4].labels, items: [{ id: "one", label: "Feature", state: "available" as const }, { id: "none", label: "No certifications", disposition: "not-offered" as const }] };
+  const flatStatusSection = { id: "status", kind: "status-list" as const, ground: "sunken" as const, heading: "Readiness", labels: document.sections[4].labels, items: [{ id: "one", label: "Feature", state: "available" as const }, { id: "none", label: "No certifications", disposition: "not-offered" as const }, { id: "partial", label: "Partial feature", state: "partial" as const }, { id: "planned", label: "Planned feature", state: "planned" as const }] };
 
-  it("renders a flat status-list (no groups) as one dl with no group heading", () => {
+  it("renders a flat status-list as one Items list without group labels", () => {
     const flat = { ...document, sections: [document.sections[0], flatStatusSection] };
     const html = renderToStaticMarkup(<SectionedView document={flat as unknown as ResolvedSectionedViewDocument} />);
-    expect(html).toContain("<dl");
-    expect(html).not.toContain("<h3");
-    expect((html.match(/<dl/g) ?? []).length).toBe(1);
+    expect(statusRoot(html).querySelectorAll("[data-items]")).toHaveLength(1);
+    expect(statusRoot(html).querySelectorAll('[role="group"]')).toHaveLength(0);
+    expect(statusRoot(html).querySelector("dl")).toBeNull();
+    expect(statusRoot(html).querySelectorAll("[data-item-heading]")).toHaveLength(4);
     expect(html).toContain("Feature");
     expect(html).toContain("No certifications");
   });
 
   it("renders a flat status row's detail exactly the way a grouped row's detail renders", () => {
-    const flatWithDetail = { ...document, sections: [document.sections[0], { ...flatStatusSection, items: [{ ...flatStatusSection.items[0], detail: "Generally available." }] }] };
-    const groupedWithDetail = { ...document, sections: [document.sections[0], { ...document.sections[4], groups: [{ ...document.sections[4].groups[0], items: [{ id: "one", label: "Feature", detail: "Generally available.", state: "available" }] }] }] };
+    const flatWithDetail = { ...document, sections: [document.sections[0], { ...flatStatusSection, items: flatStatusSection.items.map((item, index) => index === 0 ? { ...item, detail: "Generally available." } : item) }] };
+    const groupedWithDetail = { ...document, sections: [document.sections[0], { ...document.sections[4], groups: [{ ...document.sections[4].groups[0], items: document.sections[4].groups[0].items.map((item, index) => index === 0 ? { ...item, detail: "Generally available." } : item) }, ...document.sections[4].groups.slice(1)] }] };
     const flatHtml = renderToStaticMarkup(<SectionedView document={flatWithDetail as unknown as ResolvedSectionedViewDocument} />);
     const groupedHtml = renderToStaticMarkup(<SectionedView document={groupedWithDetail as unknown as ResolvedSectionedViewDocument} />);
-    const rowOf = (html: string) => html.slice(html.indexOf("<dl"), html.indexOf("</dl>"));
+    const rowOf = (html: string) => statusRoot(html).querySelector("[data-item]")!.outerHTML;
+    expect(statusRoot(flatHtml).querySelector("[data-item-description]")?.textContent).toBe("Generally available.");
     expect(rowOf(flatHtml)).toBe(rowOf(groupedHtml));
   });
 
@@ -375,7 +393,7 @@ describe("SectionedView resolve-then-render contract", () => {
         ground: "sunken",
         heading: ref("acme.status.heading"),
         labels: statusLabels,
-        groups: [{ id: "core", heading: ref("acme.status.group.heading"), items: [{ id: "capability", label: ref("acme.status.item.label"), state: "available" }, { id: "unavailable", label: ref("acme.status.item.label"), disposition: "not-offered" }] }],
+        groups: [{ id: "core", heading: ref("acme.status.group.heading"), items: [{ id: "capability", label: ref("acme.status.item.label"), state: "available" }, { id: "unavailable", label: ref("acme.status.item.label"), disposition: "not-offered" }] }, { id: "next", heading: ref("acme.status.group.heading"), items: [{ id: "partial", label: ref("acme.status.item.label"), state: "partial" }, { id: "planned", label: ref("acme.status.item.label"), state: "planned" }] }],
       },
     ],
   };
@@ -387,7 +405,7 @@ describe("SectionedView resolve-then-render contract", () => {
       heroSection,
       {
         ...statusWithoutGroups,
-        items: [{ id: "capability", label: ref("acme.status.item.label"), state: "available" }, { id: "unavailable", label: ref("acme.status.item.label"), disposition: "not-offered" }],
+        items: [{ id: "capability", label: ref("acme.status.item.label"), state: "available" }, { id: "unavailable", label: ref("acme.status.item.label"), disposition: "not-offered" }, { id: "partial", label: ref("acme.status.item.label"), state: "partial" }, { id: "planned", label: ref("acme.status.item.label"), state: "planned" }],
       } as SectionedViewDocument["sections"][1],
     ],
   };
@@ -403,8 +421,9 @@ describe("SectionedView resolve-then-render contract", () => {
   it("renders a flat status-list after resolveSectionedViewDocument", () => {
     const resolved = resolveSectionedViewDocument(flatStatus, resolver);
     const html = renderToStaticMarkup(<SectionedView document={resolved} />);
-    expect(html).toContain("<dl");
-    expect(html).not.toContain("<h3");
+    expect(statusRoot(html).querySelector("dl")).toBeNull();
+    expect(statusRoot(html).querySelectorAll("[data-item-heading]")).toHaveLength(4);
+    expect(statusRoot(html).querySelectorAll('[role="group"]')).toHaveLength(0);
     expect(html).toContain("Fixture capability");
   });
 });

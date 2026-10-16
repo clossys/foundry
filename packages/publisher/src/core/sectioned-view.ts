@@ -1,4 +1,5 @@
 import { planContentGrounds } from "./content-ground.js";
+import { projectStatusListItems } from "./status-list-catalog.js";
 import type { CopyRef, CopyResolution, CopyResolver } from "@clossys/writer";
 import { isSanctionedHref } from "../internal/href.js";
 import { proseParagraphTextLength } from "../internal/prose-text.js";
@@ -302,10 +303,9 @@ export type SectionedViewStatus = "available" | "partial" | "planned";
 export type SectionedViewStatusDisposition = "not-offered";
 
 /**
- * A status row. `detail` is the row's own explanation, including the
- * reasoning behind a deliberate non-capability: optional, so every document
- * that validated without it still does, and additive, so a row without one
- * renders unchanged.
+ * A status row with exactly one readiness state or off-axis disposition.
+ * Optional `detail` supplies the canonical Item description, including the
+ * reasoning behind a deliberate non-capability.
  */
 export type SectionedViewStatusItem =
   | { id: string; label: CopyRef; detail?: CopyRef; state: SectionedViewStatus; disposition?: never }
@@ -321,16 +321,16 @@ export interface SectionedViewStatusListSection {
   id: string;
   kind: "status-list";
   ground?: SectionedViewGround;
-  /** Optional label above the section heading. Optional and additive: a section without one renders exactly as it did before. */
+  /** Optional label above the canonical section heading. */
   eyebrow?: CopyRef;
   heading: CopyRef;
   description?: CopyRef;
   labels: Record<SectionedViewStatus, CopyRef> & { dispositions: Record<SectionedViewStatusDisposition, CopyRef> };
-  /** Grouped editorial statements, each under its own heading. Provide this or `items`, never both. */
+  /** Two to four groups of two to four entries, eight entries total at most. Group headings resolve to at most 24 characters. Provide this or `items`, never both. */
   groups?: SectionedViewStatusGroup[];
   /**
    * A flat list of statements with no group headings — the common shape for
-   * a short trust page that has nothing to group. Provide this or `groups`,
+   * a lookup of three to eight entries. Provide this or `groups`,
    * never both.
    */
   items?: SectionedViewStatusItem[];
@@ -1045,6 +1045,7 @@ function validateContentFootnote(value: unknown, path: string, findings: Compose
 }
 
 function validateStatusListSection(section: Record<string, unknown>, path: string, findings: ComposeFinding[]): void {
+  const firstFinding = findings.length;
   if (!hasOnlyOwnKeys(section, ["id", "kind", "ground", "eyebrow", "heading", "description", "labels", "groups", "items"]) || !hasOwnKeys(section, ["heading", "labels"])) findings.push(finding("sectioned-view-section-keys", path, `${path} has keys not allowed for status-list.`));
   validateCopy(section.heading, `${path}.heading`, findings);
   if (section.eyebrow !== undefined) validateCopy(section.eyebrow, `${path}.eyebrow`, findings);
@@ -1071,6 +1072,7 @@ function validateStatusListSection(section: Record<string, unknown>, path: strin
   }
   if (hasItems) {
     validateStatusItems(section.items, `${path}.items`, findings);
+    validateStatusListProjection(section, path, findings, firstFinding);
     return;
   }
   if (!validateDenseArray(section.groups, `${path}.groups`, findings, "sectioned-view-status-groups-shape", `${path}.groups must be a non-empty array.`)) return;
@@ -1084,6 +1086,18 @@ function validateStatusListSection(section: Record<string, unknown>, path: strin
     }
     validateCopy(group.heading, `${groupPath}.heading`, findings);
     validateStatusItems(group.items, `${groupPath}.items`, findings);
+  }
+  validateStatusListProjection(section, path, findings, firstFinding);
+}
+
+/** The original status shape is complete before the canonical projection is inspected. */
+function validateStatusListProjection(section: Record<string, unknown>, path: string, findings: ComposeFinding[], start: number): void {
+  if (findings.slice(start).some(entry => entry.severity === "error")) return;
+  try {
+    const block = projectStatusListItems(section as unknown as SectionedViewStatusListSection);
+    validateContentBlock(block, `${path}.block`, findings);
+  } catch (error) {
+    findings.push(finding("sectioned-view-status-catalog", path, error instanceof Error ? error.message : "Invalid status catalog projection."));
   }
 }
 
@@ -1829,7 +1843,7 @@ function resolveSection(section: GroundedSection, path: string, text: (ref: Copy
         // renderer decides grouped-vs-flat with Object.hasOwn, which is true for a
         // key holding undefined. Writing both keys made every status-list section
         // fail the renderer's exactly-one check. Issue #890.
-        ...(sourceGroups ? { groups: sourceGroups.map((group, groupIndex) => ({ ...group, heading: text(group.heading, `${path}.groups.${groupIndex}.heading`), items: group.items.map((item, itemIndex) => resolveStatusItem(item, `${path}.groups.${groupIndex}.items.${itemIndex}`, text, optional)) })) } : {}),
+        ...(sourceGroups ? { groups: sourceGroups.map((group, groupIndex) => ({ ...group, heading: boundedText(group.heading, `${path}.groups.${groupIndex}.heading`, text, 24, "sectioned-view-content-topics-groups-text-length"), items: group.items.map((item, itemIndex) => resolveStatusItem(item, `${path}.groups.${groupIndex}.items.${itemIndex}`, text, optional)) })) } : {}),
         ...(sourceItems ? { items: sourceItems.map((item, itemIndex) => resolveStatusItem(item, `${path}.items.${itemIndex}`, text, optional)) } : {}),
       };
     }

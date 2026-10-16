@@ -66,7 +66,7 @@ const document: SectionedViewDocument = {
     { id: "features", kind: "feature-grid", ground: "sunken", heading: ref("acme.features.heading"), description: ref("acme.features.description"), items: [{ id: "one", heading: ref("acme.features.one.heading"), description: ref("acme.features.one.description") }, { id: "two", heading: ref("acme.features.two.heading") }] },
     { id: "faq", kind: "faq", ground: "base", heading: ref("acme.faq.heading"), description: ref("acme.faq.description"), items: ["one", "two", "three", "four"].map(id => ({ id, question: ref("acme.faq.one.question"), answer: ref("acme.faq.one.answer") })) },
     { id: "steps", kind: "ordered-step-sequence", ground: "inverse", heading: ref("acme.steps.heading"), items: [{ id: "one", ordinal: ref("acme.steps.one.ordinal"), label: ref("acme.steps.one.label"), heading: ref("acme.steps.one.heading"), description: ref("acme.steps.one.description") }] },
-    { id: "status", kind: "status-list", ground: "base", heading: ref("acme.status.heading"), labels: { available: ref("acme.status.available"), partial: ref("acme.status.partial"), planned: ref("acme.status.planned"), dispositions: { "not-offered": ref("acme.status.not-offered") } }, groups: [{ id: "core", heading: ref("acme.status.group.heading"), items: [{ id: "capability", label: ref("acme.status.item.label"), state: "available" }, { id: "unavailable", label: ref("acme.status.item.label"), disposition: "not-offered" }] }] },
+    { id: "status", kind: "status-list", ground: "base", heading: ref("acme.status.heading"), labels: { available: ref("acme.status.available"), partial: ref("acme.status.partial"), planned: ref("acme.status.planned"), dispositions: { "not-offered": ref("acme.status.not-offered") } }, groups: [{ id: "core", heading: ref("acme.status.group.heading"), items: [{ id: "capability", label: ref("acme.status.item.label"), state: "available" }, { id: "unavailable", label: ref("acme.status.item.label"), disposition: "not-offered" }] }, { id: "next", heading: ref("acme.status.group.heading"), items: [{ id: "partial", label: ref("acme.status.item.label"), state: "partial" }, { id: "planned", label: ref("acme.status.item.label"), state: "planned" }] }] },
   ],
 };
 
@@ -84,7 +84,7 @@ describe("SectionedViewDocument core contract", () => {
       "acme.features.heading", "acme.features.description", "acme.features.one.heading", "acme.features.one.description", "acme.features.two.heading",
       "acme.faq.heading", "acme.faq.description", ...Array.from({ length: 4 }).flatMap(() => ["acme.faq.one.question", "acme.faq.one.answer"]),
       "acme.steps.heading", "acme.steps.one.ordinal", "acme.steps.one.label", "acme.steps.one.heading", "acme.steps.one.description",
-      "acme.status.heading", "acme.status.available", "acme.status.partial", "acme.status.planned", "acme.status.not-offered", "acme.status.group.heading", "acme.status.item.label", "acme.status.item.label",
+      "acme.status.heading", "acme.status.available", "acme.status.partial", "acme.status.planned", "acme.status.not-offered", "acme.status.group.heading", "acme.status.item.label", "acme.status.item.label", "acme.status.group.heading", "acme.status.item.label", "acme.status.item.label",
     ]);
   });
 
@@ -267,7 +267,7 @@ describe("SectionedViewDocument optional additive fields", () => {
             { id: "capability", label: ref("acme.status.item.label"), detail: ref("acme.status.item.detail"), state: "available" },
             { id: "unavailable", label: ref("acme.status.item.label"), detail: ref("acme.status.none.detail"), disposition: "not-offered" },
           ],
-        }],
+        }, ...document.sections[4].groups.slice(1)],
       },
     ],
   };
@@ -290,7 +290,7 @@ describe("SectionedViewDocument optional additive fields", () => {
       "acme.faq.eyebrow", "acme.faq.heading", "acme.faq.description", ...Array.from({ length: 4 }).flatMap(() => ["acme.faq.one.question", "acme.faq.one.answer"]),
       "acme.steps.eyebrow", "acme.steps.heading", "acme.steps.one.ordinal", "acme.steps.one.label", "acme.steps.one.heading", "acme.steps.one.description",
       "acme.status.eyebrow", "acme.status.heading", "acme.status.available", "acme.status.partial", "acme.status.planned", "acme.status.not-offered", "acme.status.group.heading",
-      "acme.status.item.label", "acme.status.item.detail", "acme.status.item.label", "acme.status.none.detail",
+      "acme.status.item.label", "acme.status.item.detail", "acme.status.item.label", "acme.status.none.detail", "acme.status.group.heading", "acme.status.item.label", "acme.status.item.label",
     ]);
   });
 
@@ -402,14 +402,13 @@ describe("SectionedViewDocument hero media and stat-grid (issue #1028)", () => {
 });
 
 describe("SectionedViewDocument gap 2 and gap 7 relaxations", () => {
-  it("still accepts, unchanged, a document with a single leading hero and grouped status-list items", () => {
-    // The exact shape gap 2 and gap 7 must not disturb: this is the same
-    // `document` fixture the rest of this file already measures byte-for-byte
-    // at the render layer in SectionedView.test.tsx's LEGACY_MARKUP assertion.
+  it("accepts a conforming grouped status input while retaining its original wire shape", () => {
+    // Current fixtures conform to the catalog budget; historical block bytes are
+    // retained separately by the genuine direct composition in the render tests.
     expect(validateSectionedViewDocument(document)).toEqual([]);
     const resolved = resolveSectionedViewDocument(document, resolver);
     expect(resolved.sections[0].kind).toBe("hero");
-    expect(resolved.sections[4]).toMatchObject({ kind: "status-list", groups: [{ id: "core" }] });
+    expect(resolved.sections[4]).toMatchObject({ kind: "status-list", groups: [{ id: "core" }, { id: "next" }] });
     expect((resolved.sections[4] as { items?: unknown }).items).toBeUndefined();
   });
 
@@ -446,6 +445,8 @@ describe("SectionedViewDocument gap 2 and gap 7 relaxations", () => {
         items: [
           { id: "capability", label: ref("acme.status.item.label"), state: "available" },
           { id: "unavailable", label: ref("acme.status.item.label"), disposition: "not-offered" },
+          { id: "partial", label: ref("acme.status.item.label"), state: "partial" },
+          { id: "planned", label: ref("acme.status.item.label"), state: "planned" },
         ],
       } as unknown as SectionedViewDocument["sections"][4],
     ],
@@ -459,13 +460,15 @@ describe("SectionedViewDocument gap 2 and gap 7 relaxations", () => {
     expect(status.items).toEqual([
       { id: "capability", label: "Fixture capability", detail: undefined, state: "available" },
       { id: "unavailable", label: "Fixture capability", detail: undefined, disposition: "not-offered" },
+      { id: "partial", label: "Fixture capability", detail: undefined, state: "partial" },
+      { id: "planned", label: "Fixture capability", detail: undefined, state: "planned" },
     ]);
   });
 
   it("resolves a flat detail the same way a grouped one resolves", () => {
     const withDetail = {
       ...flatStatus,
-      sections: [flatStatus.sections[0], { ...flatStatus.sections[1], items: [{ id: "capability", label: ref("acme.status.item.label"), detail: ref("acme.status.item.detail"), state: "available" as const }] }],
+      sections: [flatStatus.sections[0], { ...flatStatus.sections[1], items: (flatStatus.sections[1] as Extract<SectionedViewDocument["sections"][number], { kind: "status-list" }>).items!.map((row, index) => index === 0 ? { ...row, detail: ref("acme.status.item.detail") } : row) }],
     };
     const resolved = resolveSectionedViewDocument(withDetail, resolver);
     expect((resolved.sections[1] as { items: { detail?: string }[] }).items[0].detail).toBe("Generally available in every region.");

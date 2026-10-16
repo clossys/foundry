@@ -56,7 +56,7 @@ describe("sectionWeight derivation", () => {
     ["faq", { id: "faq", kind: "faq", heading: ref, items: ["one", "two", "three", "four"].map(id => ({ id, question: ref, answer: ref })) }, "C", "reference"],
     ["feature-grid", { id: "features", kind: "feature-grid", heading: ref, items: [item] }, "C", "list"],
     ["ordered-step-sequence", { id: "steps", kind: "ordered-step-sequence", heading: ref, items: [{ ...item, ordinal: ref }] }, "B", "sequence"],
-    ["status-list", { id: "status", kind: "status-list", heading: ref, labels: { available: ref, partial: ref, planned: ref, dispositions: { "not-offered": ref } }, items: [{ id: "state", label: ref, state: "available" }] }, "B", "table"],
+    ["status-list", { id: "status", kind: "status-list", heading: ref, labels: { available: ref, partial: ref, planned: ref, dispositions: { "not-offered": ref } }, items: ["one", "two", "three"].map(id => ({ id, label: ref, state: "available" as const })) }, "B", "table"],
     ["stat-grid", { id: "stats", kind: "stat-grid", heading: ref, items: [{ id: "s", label: ref, value: ref }] }, "B", "proof"],
     ["stat", { id: "stat", kind: "stat", items: [{ id: "s", label: ref, value: ref }] }, "B", "proof"],
     ["testimonial", { id: "quote", kind: "testimonial", items: [{ id: "q", quote: ref, attributorName: ref }] }, "B", "proof"],
