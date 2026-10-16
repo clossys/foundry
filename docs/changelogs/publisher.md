@@ -3,6 +3,18 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## 0.13.0 - 2026-10-16
+
+- Regenerate the shipped preview stylesheet for Designer frame controls.
+- Fill canonical content media with consumer-owned images or captioned videos through asset ids, with checked dimensions, aspect ratios, MIME formats and accessibility intent, plus declared loading applied by the shared renderer.
+- SiteFrame can place its footer over a hero that fits one viewport, with an opaque backing and the existing legal links. The default flow placement keeps its rendered markup.
+- Add optional frame action emphasis, brand and navigation tone, hero appearance controls and a transparent footer top rule while preserving default rendering.
+- Document the package and host responsibilities for SiteFrame brand, CSS, page content and configuration.
+- SectionedView and LandingView render `status-list` as catalog Items topics with localized badges, replacing definition lists and the readiness legend and requiring 3–8 flat entries or 2–4 groups of 2–4 entries with at most eight entries overall.
+- Updated dependency @clossys/designer to ^0.12.0
+- Updated templates/site dependency @clossys/designer to ^0.12.0
+- Updated templates/site dependency @clossys/publisher to ^0.13.0
+
 ## 0.12.0 - 2026-10-16
 
 - Site navigation can collapse into a mobile disclosure with an inline fallback when scripting is unavailable, and header action links can show a text label without an icon.
