@@ -20,7 +20,7 @@ type GroundProps = { id: string; eyebrow?: string; heading: string; description?
 type StatusListItemProps = { id: string; label: string; detail?: string; state: SectionedViewStatus; disposition?: never } | { id: string; label: string; detail?: string; disposition: SectionedViewStatusDisposition; state?: never };
 
 export interface SectionedViewBlockSet {
-  Hero(props: { id: string; eyebrow?: string; heading: string; description?: string; actions?: ReactNode; media?: ReactNode; composition?: "editorial" | "split"; size?: "default" | "compact"; headingLevel: 1 | 2; ground: SectionedViewGround }): ReactNode;
+  Hero(props: { id: string; eyebrow?: string; eyebrowTone?: "accent" | "muted"; measure?: "prose" | "wide"; headingScale?: "default" | "display"; heading: string; description?: string; actions?: ReactNode; media?: ReactNode; composition?: "editorial" | "split"; size?: "default" | "compact"; headingLevel: 1 | 2; ground: SectionedViewGround }): ReactNode;
   FeatureGrid(props: GroundProps & { items: readonly { id: string; heading: string; description?: string }[] }): ReactNode;
   OrderedStepSequence(props: GroundProps & { items: readonly { id: string; ordinal: string; label?: string; heading: string; description?: string }[] }): ReactNode;
   /** `groups` and `items` are each optional; the resolved document guarantees exactly one is present. */
@@ -262,7 +262,7 @@ export function assertRenderableSectionedViewDocument(document: unknown): assert
   for (let index = 0; index < candidate.sections.length; index += 1) {
     const path = `sections.${index}`;
     const section = candidate.sections[index];
-    if (!plain(section) || !closed(section, ["id", "kind", "ground", "eyebrow", "heading", "description", "actions", "media", "items", "labels", "groups", "layout", "mediaSide", "align", "block", "footnote", "size"])) throw new Error(`${path} must be a closed resolved section object.`);
+    if (!plain(section) || !closed(section, ["id", "kind", "ground", "eyebrow", "eyebrowTone", "measure", "headingScale", "heading", "description", "actions", "media", "items", "labels", "groups", "layout", "mediaSide", "align", "block", "footnote", "size"])) throw new Error(`${path} must be a closed resolved section object.`);
     const record = section as Record<string, unknown>;
     if (!nonBlank(record.id) || !FRAGMENT_ID.test(record.id)) throw new Error(`${path}.id must be a unique fragment-safe id.`);
     if (sectionIds.has(record.id)) throw new Error(`${path}.id duplicates an earlier section.`);
@@ -279,9 +279,12 @@ export function assertRenderableSectionedViewDocument(document: unknown): assert
       copyFields(record, path, ["heading"], ["eyebrow", "description"]);
     }
     if (record.kind === "hero") {
-      if (!closed(record, ["id", "kind", "ground", "eyebrow", "heading", "description", "actions", "media", "size"])) throw new Error(`${path} has keys not allowed for a hero section.`);
+      if (!closed(record, ["id", "kind", "ground", "eyebrow", "eyebrowTone", "measure", "headingScale", "heading", "description", "actions", "media", "size"])) throw new Error(`${path} has keys not allowed for a hero section.`);
       assertActions(record.actions, `${path}.actions`);
       if (record.size !== undefined && !["compact", "display"].includes(record.size as string)) throw new Error(`${path}.size must be compact or display.`);
+      if (record.eyebrowTone !== undefined && !["accent", "muted"].includes(record.eyebrowTone as string)) throw new Error(`${path}.eyebrowTone must be accent or muted.`);
+      if (record.measure !== undefined && !["prose", "wide"].includes(record.measure as string)) throw new Error(`${path}.measure must be prose or wide.`);
+      if (record.headingScale !== undefined && !["default", "display"].includes(record.headingScale as string)) throw new Error(`${path}.headingScale must be default or display.`);
       if (record.size === "compact" && record.media !== undefined) throw new Error(`${path} cannot combine a compact hero with media.`);
       assertHeroMedia(record.media, `${path}.media`);
       continue;
@@ -556,6 +559,9 @@ function renderSection(section: ResolvedSectionedViewSection, index: number, blo
           key={section.id}
           id={section.id}
           eyebrow={section.eyebrow}
+          eyebrowTone={section.eyebrowTone}
+          measure={section.measure}
+          headingScale={section.headingScale}
           heading={section.heading}
           description={section.description}
           actions={renderActions(section.actions, section.ground, options.heroActions ?? "link", options.heroActionsCentered, section.size === "compact" ? "md" : "lg")}

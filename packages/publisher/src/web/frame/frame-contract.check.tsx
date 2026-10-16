@@ -8,7 +8,7 @@ import type { CopyResolver } from "@clossys/writer";
 import type { AssetResolver } from "../types.js";
 import { SiteFrame } from "./SiteFrame.js";
 import { siteShellFor } from "./surface.js";
-import type { SiteBrandInput, SiteFrameConfig, SiteIconLinkInput, SiteShellInput } from "./types.js";
+import type { SiteBrandInput, SiteFrameConfig, SiteIconLinkInput, SiteLinkInput, SiteShellInput } from "./types.js";
 
 declare const resolveCopy: CopyResolver;
 declare const resolveAsset: AssetResolver;
@@ -98,3 +98,45 @@ export const flowFooter: SiteShellInput = { ...shell, footer: { placement: "flow
 export const invalidFooterPlacement: SiteShellInput = { ...shell, footer: { placement: "fixed", legal: config.legal } };
 // @ts-expect-error overlay placement requires an opaque footer ground
 export const transparentOverlayFooter: SiteShellInput = { ...shell, footer: { placement: "overlay", ground: "transparent", legal: config.legal } };
+
+// Appearance inputs are reachable from the canonical barrel and both web entries.
+type ActionEmphasis = [import("../../index.js").SiteLinkInput["emphasis"], import("../index.js").SiteLinkInput["emphasis"], import("../server.js").SiteLinkInput["emphasis"]];
+type BrandTone = [import("../../index.js").SiteBrandInput["tone"], import("../index.js").SiteBrandInput["tone"], import("../server.js").SiteBrandInput["tone"]];
+type NavigationTone = [NonNullable<import("../../index.js").SiteShellInput["nav"]>["tone"], NonNullable<import("../index.js").SiteShellInput["nav"]>["tone"], NonNullable<import("../server.js").SiteShellInput["nav"]>["tone"]];
+type FooterRule = [import("../../index.js").SiteFooterInput["rule"], import("../index.js").SiteFooterInput["rule"], import("../server.js").SiteFooterInput["rule"]];
+type HeroEyebrowTone = [import("../../index.js").SectionedViewHeroSection["eyebrowTone"], import("../index.js").SectionedViewHeroSection["eyebrowTone"], import("../server.js").SectionedViewHeroSection["eyebrowTone"]];
+type HeroMeasure = [import("../../index.js").SectionedViewHeroSection["measure"], import("../index.js").SectionedViewHeroSection["measure"], import("../server.js").SectionedViewHeroSection["measure"]];
+type HeroHeadingScale = [import("../../index.js").SectionedViewHeroSection["headingScale"], import("../index.js").SectionedViewHeroSection["headingScale"], import("../server.js").SectionedViewHeroSection["headingScale"]];
+export const actionEmphasis: ActionEmphasis = ["primary", "secondary", undefined];
+export const brandTone: BrandTone = ["auto", "inverse", undefined];
+export const navigationTone: NavigationTone = ["auto", "inverse", undefined];
+export const footerRule: FooterRule = ["none", "top", undefined];
+export const heroEyebrowTone: HeroEyebrowTone = ["accent", "muted", undefined];
+export const heroMeasure: HeroMeasure = ["prose", "wide", undefined];
+export const heroHeadingScale: HeroHeadingScale = ["default", "display", undefined];
+// @ts-expect-error action emphasis is closed
+export const invalidEmphasis: ActionEmphasis = ["ghost", "secondary", undefined];
+// @ts-expect-error brand tone is closed
+export const invalidBrandTone: BrandTone = ["base", "inverse", undefined];
+// @ts-expect-error navigation tone is closed
+export const invalidNavigationTone: NavigationTone = ["base", "inverse", undefined];
+// @ts-expect-error footer rule is closed
+export const invalidRule: FooterRule = ["bottom", "top", undefined];
+// @ts-expect-error hero eyebrow tone is closed
+export const invalidEyebrowTone: HeroEyebrowTone = ["quiet", "muted", undefined];
+// @ts-expect-error hero measure is closed
+export const invalidMeasure: HeroMeasure = ["content", "wide", undefined];
+// @ts-expect-error hero heading scale is closed
+export const invalidHeadingScale: HeroHeadingScale = ["large", "display", undefined];
+// @ts-expect-error emphasis belongs to shell.actions only
+export const navigationEmphasis: SiteShellInput = { ...shell, nav: { label: { id: "nav" }, links: [{ href: "/", label: { id: "home" }, emphasis: "primary" }] } };
+// Existing callers may type ordinary links with the public SiteLinkInput type.
+const plainLink: SiteLinkInput = { href: "/help", label: { id: "help" } };
+const plainLinks: readonly SiteLinkInput[] = [plainLink];
+export const typedNavigationLinks: SiteShellInput = { ...shell, nav: { label: { id: "nav" }, links: plainLinks } };
+export const typedFooterLinks: SiteShellInput = { ...shell, footer: { links: plainLinks, legal: config.legal } };
+export const typedFooterColumnLinks: SiteShellInput = { ...shell, footer: { columns: [{ heading: { id: "help" }, links: plainLinks }], legal: config.legal } };
+export const typedLegalLinks: SiteFrameConfig["legal"] = { entity: { id: "entity" }, links: plainLinks };
+export const typedSecondaryAction: SiteShellInput = { ...shell, secondaryAction: plainLink };
+// @ts-expect-error footer legal links do not accept header action emphasis
+export const legalEmphasis: SiteShellInput = { ...shell, footer: { legal: { entity: { id: "entity" }, links: [{ href: "/", label: { id: "home" }, emphasis: "primary" }] } } };

@@ -104,9 +104,9 @@ export function SiteFrame({ shell, resolveCopy, resolveAsset, children }: SiteFr
 
   const brandmark =
     brand.wordmark === undefined ? (
-      <Brandmark variant="mark" size={brand.size} label={brand.label} markSrc={brand.markSrc} plate={brand.plate} />
+      <Brandmark variant="mark" size={brand.size} label={brand.label} markSrc={brand.markSrc} plate={brand.plate} tone={brand.tone} />
     ) : (
-      <Brandmark variant="lockup" size={brand.size} label={brand.label} wordmark={brand.wordmark} markSrc={brand.markSrc} plate={brand.plate} />
+      <Brandmark variant="lockup" size={brand.size} label={brand.label} wordmark={brand.wordmark} markSrc={brand.markSrc} plate={brand.plate} tone={brand.tone} />
     );
 
   const nav = resolved.nav ? <SiteNavDisclosure nav={resolved.nav} /> : undefined;
@@ -115,7 +115,7 @@ export function SiteFrame({ shell, resolveCopy, resolveAsset, children }: SiteFr
     resolved.actions.length > 0 || resolved.iconActions.length > 0 || resolved.environments.length > 0 ? (
       <>
         {resolved.actions.map((link, index) => (
-          <SiteHeader.ActionLink key={`action-${index}`} href={link.href} label={link.label} />
+          <SiteHeader.ActionLink key={`action-${index}`} href={link.href} label={link.label} variant={link.emphasis} />
         ))}
         {resolved.iconActions.map((link, index) => (
           <IconLink key={`icon-action-${index}`} link={link} />
@@ -135,6 +135,7 @@ export function SiteFrame({ shell, resolveCopy, resolveAsset, children }: SiteFr
   const footerContent = footer ? (
     <SiteFooter
       ground={footer.ground}
+      rule={footer.rule}
       {...(footer.placement === "overlay" ? { className: "publisher-frame-footer-overlay", style: { pointerEvents: "auto" as const, width: "100%", marginBlockStart: "auto", minWidth: 0, overflowWrap: "anywhere" as const } } : {})}
       columns={
         footer.columns.length > 0 || footer.links.length > 0 ? (

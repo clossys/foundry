@@ -185,3 +185,5 @@ export type { ConstructionStatusInput } from "#publisher-web-views";
 
 export { ContactForm } from "#publisher-web-views";
 export type { ContactFormCopy, ContactFormDevPreview, ContactFormProps, ContactFormTopic, ContactFormValues } from "#publisher-web-views";
+
+export type { SectionedViewHeroSection } from "../core/sectioned-view.js";

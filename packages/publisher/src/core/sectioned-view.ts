@@ -158,6 +158,12 @@ export interface SectionedViewHeroSection {
   kind: "hero";
   ground?: SectionedViewGround;
   eyebrow?: CopyRef;
+  /** Intro label ink. @default "accent" */
+  eyebrowTone?: "accent" | "muted";
+  /** Intro headline/body measure, independent of the outer page column. @default "prose" */
+  measure?: "prose" | "wide";
+  /** Intro type ramp. @default "default" */
+  headingScale?: "default" | "display";
   heading: CopyRef;
   description?: CopyRef;
   /** Short hero: section-scale heading, with no first-screen fill, peek or scroll cue. */
@@ -833,8 +839,11 @@ export function validateSectionedViewDocument(value: unknown): ComposeFinding[] 
     switch (section.kind) {
       case "hero":
         heroCount += 1;
-        if (!hasOnlyOwnKeys(section, ["id", "kind", "ground", "eyebrow", "heading", "description", "actions", "media", "size"]) || !hasOwn(section, "heading")) findings.push(finding("sectioned-view-section-keys", path, `${path} has keys not allowed for hero.`));
+        if (!hasOnlyOwnKeys(section, ["id", "kind", "ground", "eyebrow", "eyebrowTone", "measure", "headingScale", "heading", "description", "actions", "media", "size"]) || !hasOwn(section, "heading")) findings.push(finding("sectioned-view-section-keys", path, `${path} has keys not allowed for hero.`));
         validateEnumField(section, "size", ["display", "compact"], "sectioned-view-hero-shape", path, findings);
+        validateEnumField(section, "eyebrowTone", ["accent", "muted"], "sectioned-view-hero-shape", path, findings);
+        validateEnumField(section, "measure", ["prose", "wide"], "sectioned-view-hero-shape", path, findings);
+        validateEnumField(section, "headingScale", ["default", "display"], "sectioned-view-hero-shape", path, findings);
         if (section.size === "compact" && section.media !== undefined) findings.push(finding("sectioned-view-hero-compact-media", `${path}.media`, `${path} cannot combine a compact hero with media.`));
         validateCopy(section.heading, `${path}.heading`, findings);
         if (section.eyebrow !== undefined) validateCopy(section.eyebrow, `${path}.eyebrow`, findings);

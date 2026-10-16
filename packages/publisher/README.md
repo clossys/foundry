@@ -1268,9 +1268,9 @@ The core hero contract uses `size: "compact"` for section-scale copy and
 `checkSectionVariety` warns for a lone compact hero unless known trailing
 content is supplied. The web views and gallery fixtures use the canonical size field.
 
-`LandingView`, exported from `@clossys/publisher/web` and
-`@clossys/publisher/web/server`, is a sectioned landing page: a hero block
-that fills the first screen, the document's other sections as full-bleed
+`LandingView`, exported from `@clossys/publisher/web`, is a sectioned landing
+page. The entry's `react-server` condition selects the server implementation.
+The page has a hero block that fills the first screen, the document's other sections as full-bleed
 bands, and an optional closing call to action. Every band's content, the hero
 copy and the call to action sit in one centred column (Designer
 `SectionFrame`'s `measure`, default `"wide"`); grounds run the full width. It
@@ -2746,6 +2746,26 @@ view, then the contentinfo (Designer's `SiteFooter`). The view passed as
 `StatusView` (and the deprecated `BoundaryView` and `ErrorView`) carry no
 `<main>`, no banner and no contentinfo of their own when no chrome prop is
 passed, so a framed page has one of each.
+
+Optional appearance inputs keep the existing frame and hero defaults:
+
+| Input | Values and behavior |
+| --- | --- |
+| `shell.actions[].emphasis` | `"primary"` or `"secondary"` (default). Applies to header actions only; navigation, secondary-action and footer links retain their existing contract. |
+| `shell.brand.tone` | `"auto"` or `"inverse"`. Omitted tone inherits an inverse overlay header; explicit `"auto"` keeps ordinary brand ink. |
+| `shell.nav.tone` | `"auto"` or `"inverse"`. Omitted tone inherits an inverse overlay header without changing the default markup; explicit `"auto"` keeps ordinary toggle ink. The server and interactive client render the same initial disclosure. |
+| Hero section `eyebrowTone` | `"accent"` (default) or `"muted"`, using the existing secondary text ink. |
+| Hero section `measure` | `"prose"` (default) or `"wide"`. Wide copy removes the headline cap and caps supporting text at 64rem inside the page column. The outer `LandingView.measure` still controls that page column independently. |
+| Hero section `headingScale` | `"default"` or `"display"`, with the existing responsive display ramp reaching 72px at desktop. |
+| `shell.footer.rule` | `"none"` (default) or `"top"`. Top draws one hairline on a transparent flow footer; opaque grounds ignore the option. Overlay footer placement still requires an opaque ground and the existing hero-only frame composition. |
+
+These fields belong to `SiteLinkInput`, `SiteBrandInput`, `SiteShellInput`,
+`SiteFooterInput` and `SectionedViewHeroSection`, available from
+`@clossys/publisher/web`. Its `react-server` condition selects the server
+implementation. Hero appearance fields pass through
+copy resolution into `SectionedView` and `LandingView`; copy references and
+their provenance stay unchanged. Existing configurations render the same
+bytes when the new fields are omitted.
 
 ```tsx
 import { AuthView, SiteFrame, siteShellFor } from "@clossys/publisher/web";
