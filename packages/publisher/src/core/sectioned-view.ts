@@ -6,6 +6,7 @@ import { proseParagraphTextLength } from "../internal/prose-text.js";
 import type { ComposeFinding } from "./types.js";
 import { desugarRecipe, SECTIONED_VIEW_CONTENT_CONTRACT, SECTIONED_VIEW_ITEM_RECIPES } from "./content-contract.js";
 import type { FrameSize, FrameLayout, SectionedViewItemsBlock, CanonicalSectionedViewItemsBlock, SectionedViewMatrixBlock, SectionedViewProseBlock, SectionedViewItem, SectionedViewItemSpan, SectionedViewMedia, SectionedViewSpecimenMedia, SectionedViewSceneMedia, SectionedViewBadge } from "./content-contract.js";
+import { checkContentAssetContract } from "./content-asset.js";
 export * from "./content-contract.js";
 
 /** Resolved section grounds; canonical content sections author only inverse or omit ground. */
@@ -1470,11 +1471,23 @@ function contentShape(value: unknown, path: string, findings: ComposeFinding[], 
 function validateContentMedia(value: unknown, path: string, findings: ComposeFinding[]): void {
   if (!isPlainObject(value) || !hasEnumerableOwnDataKeys(value)) { findings.push(finding("sectioned-view-content-media-shape", path, "Media must be one closed data object.")); return; }
   switch (value.type) {
+    case "asset": validateAssetMedia(value, path, findings); return;
     case "specimen": validateSpecimenMedia(value, path, findings); return;
     case "record": validateRecordMedia(value, path, findings); return;
     case "scene": validateSceneMedia(value, path, findings); return;
-    default: findings.push(finding("sectioned-view-content-media-type", `${path}.type`, "Media type must be specimen, record or scene."));
+    default: findings.push(finding("sectioned-view-content-media-type", `${path}.type`, "Media type must be specimen, record, scene or asset."));
   }
+}
+function validateAssetMedia(value: unknown, path: string, findings: ComposeFinding[]): void {
+  const media = contentShape(value, path, findings, ["type", "assetId", "purpose", "alt", "caption", "contract"], ["type", "assetId", "purpose", "contract"]);
+  if (media === undefined) return;
+  if (!isNonWhitespaceString(media.assetId)) findings.push(finding("content-asset-id", `${path}.assetId`, "The asset id must be non-blank."));
+  const contract = checkContentAssetContract(media.contract);
+  findings.push(...contract.findings.map(entry => ({ ...entry, path: `${path}.contract${entry.path ? `.${entry.path}` : ""}` })));
+  if (!contract.ok) return;
+  if (media.purpose === "meaningful") validateCopy(media.alt, `${path}.alt`, findings);
+  else if (media.purpose !== "decorative" || hasOwn(media, "alt") || (isPlainObject(media.contract) && typeof media.contract.format === "string" && media.contract.format.startsWith("video/"))) findings.push(finding("content-asset-accessibility", path, "Use meaningful media with alt copy, or a decorative image without alt copy."));
+  if (media.caption !== undefined) validateCopy(media.caption, `${path}.caption`, findings);
 }
 function validateSpecimenMedia(value: unknown, path: string, findings: ComposeFinding[]): void {
   const media = contentShape(value, path, findings, ["type", "label", "panel", "key"], ["type", "label", "panel"]);
@@ -2098,7 +2111,7 @@ function resolveContentSection(section: GroundableContentSection & { ground: Sec
     ...copyField("description", section.description, path, text),
     ...(actions === undefined ? {} : { actions: actions.map((action, index) => ({ ...action, label: text(action.label, `${path}.actions.${index}.label`) })) }),
     ...(block === undefined ? {} : { block: resolveContentBlock(block, `${path}.block`, text) }),
-    ...(media === undefined ? {} : { media: media.type === "scene" ? resolveScene(media, `${path}.media`, text) : media.type === "record" ? resolveRecordMedia(media, `${path}.media`, text) : resolveSpecimenMedia(media, `${path}.media`, text) }),
+    ...(media === undefined ? {} : { media: media.type === "asset" ? { ...media, ...(media.purpose === "meaningful" ? { alt: text(media.alt, `${path}.media.alt`) } : {}), ...copyField("caption", media.caption, `${path}.media`, text) } : media.type === "scene" ? resolveScene(media, `${path}.media`, text) : media.type === "record" ? resolveRecordMedia(media, `${path}.media`, text) : resolveSpecimenMedia(media, `${path}.media`, text) }),
     ...(footnote === undefined ? {} : { footnote: { ...copyField("text", footnote.text, `${path}.footnote`, text), ...(footnote.link === undefined ? {} : { link: { label: text(footnote.link.label, `${path}.footnote.link.label`), href: footnote.link.href } }) } }),
   } as ResolvedSectionedViewContentSection;
 }
@@ -2115,7 +2128,7 @@ interface BandShape {
   layout: "stacked" | "split";
   mediaSide?: "start" | "end";
   block: string;
-  visual: "none" | "specimen" | "record" | "scene" | "lanes";
+  visual: "none" | "specimen" | "record" | "scene" | "asset" | "lanes";
   /** Carries a specimen (as media or inside its block) or a table: a dense band. */
   dense: boolean;
   ground?: SectionedViewGround;
