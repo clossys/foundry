@@ -1,6 +1,0 @@
-{
-  "package": "butler",
-  "version": "0.3.1",
-  "reason": "Butler 0.3.1 awaits exact-artifact qualification on the pinned release runtime. This deferral acknowledges merge only; publication requires the retained record and npm-publish environment approval.",
-  "issue": 2162
-}
