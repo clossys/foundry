@@ -1,6 +1,6 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { cx } from "../atoms/internal/cx.js";
-import { SectionIntro } from "./SectionIntro.js";
+import { SectionIntro, type SectionIntroProps } from "./SectionIntro.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
 
 export type HeroHeadingLevel = 1 | 2;
@@ -14,6 +14,12 @@ export type HeroComposition = "editorial" | "split";
 export interface HeroProps extends HTMLAttributes<HTMLElement> {
   /** Small label above the heading ("New", a category name). */
   eyebrow?: ReactNode;
+  /** Intro label ink. @default "accent" */
+  eyebrowTone?: SectionIntroProps["eyebrowTone"];
+  /** Intro headline/body measure. @default "prose" */
+  measure?: SectionIntroProps["measure"];
+  /** Intro type ramp. @default "default" */
+  headingScale?: SectionIntroProps["headingScale"];
   /** The hero's own message. The only required prop. */
   heading: ReactNode;
   /** A line of supporting copy under the heading. */
@@ -77,6 +83,9 @@ export interface HeroProps extends HTMLAttributes<HTMLElement> {
  */
 export function Hero({
   eyebrow,
+  eyebrowTone,
+  measure,
+  headingScale,
   heading,
   description,
   actions,
@@ -101,6 +110,9 @@ export function Hero({
       align={align}
       ground={ground}
       eyebrow={eyebrow}
+      eyebrowTone={eyebrowTone}
+      measure={measure}
+      headingScale={headingScale}
       heading={heading}
       description={description}
       actions={actions}

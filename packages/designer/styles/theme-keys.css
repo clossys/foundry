@@ -370,6 +370,13 @@
     --site-header-glass-line: var(--color-line-on-inverse, oklch(0.9702 0 0 / 0.14));
     --site-header-focus: var(--color-ink-on-inverse, oklch(0.9702 0 0));
   }
+  /* Unconfigured disclosure triggers follow the header; explicit tones win. */
+  &[data-tone="inverse"] .nav-disclosure-toggle:not([data-tone]) {
+    color: var(--color-ink-on-inverse, oklch(0.9702 0 0));
+    &:hover {
+      background-color: var(--color-control-tonal-inverse-hover, oklch(0.9702 0 0 / 0.16));
+    }
+  }
   &[data-placement="overlay"] :focus-visible {
     outline-color: var(--site-header-focus, oklch(0.2178 0 0));
   }

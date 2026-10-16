@@ -20,6 +20,9 @@
 /** Max width for long-form prose inside a `SectionFrame` with `measure="prose"`. */
 export const UI_WIDTH_PROSE_MAX = "var(--ui-width-prose-max, 48rem)";
 
+/** Supporting copy measure for an opt-in wide hero; its headline stays uncapped. */
+export const UI_WIDTH_HERO_WIDE = "var(--ui-width-hero-wide, 64rem)";
+
 /** Tailwind classes every display-sized marketing heading should carry (measure + brand display signature). */
 export const DISPLAY_HEADING_CLASS = "text-display-l font-display leading-display max-w-display";
 

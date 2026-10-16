@@ -12,6 +12,8 @@ export interface NavDisclosureProps {
   "aria-label"?: string;
   /** The toggle's visible and accessible name. @default "Menu" */
   triggerLabel?: string;
+  /** Trigger ink; omitted follows an inverse overlay header. @default "auto" */
+  tone?: "auto" | "inverse";
   /** Additional classes on the navigation landmark. */
   className?: string;
 }
@@ -28,7 +30,12 @@ const TOGGLE_CLASSES = buttonLinkClassName("ghost", "sm")
  * above it. CSS keeps the same links inline when scripting is unavailable.
  * Unlike NavShell, this is a disclosure, without a modal drawer or focus trap.
  */
-export function NavDisclosure({ children, "aria-label": ariaLabel = "Primary", triggerLabel = "Menu", className }: NavDisclosureProps) {
+export function NavDisclosure({ children, "aria-label": ariaLabel = "Primary", triggerLabel = "Menu", tone, className }: NavDisclosureProps) {
+  // Select a complete look before cx: tailwind-merge is an optional peer.
+  const inverse = tone === "inverse";
+  const look = inverse
+    ? TOGGLE_CLASSES.split(" ").filter(token => !["text-ink-primary", "hover:bg-surface-sunken", "focus-visible:outline-accent"].includes(token)).join(" ")
+    : TOGGLE_CLASSES;
   const panelId = useId();
   const toggle = useRef<HTMLButtonElement>(null);
   const [expanded, setExpanded] = useState(false);
@@ -49,7 +56,8 @@ export function NavDisclosure({ children, "aria-label": ariaLabel = "Primary", t
         type="button"
         aria-expanded={expanded}
         aria-controls={panelId}
-        className={cx(TOGGLE_CLASSES, "nav-disclosure-toggle")}
+        data-tone={tone}
+        className={cx(look, "nav-disclosure-toggle", inverse ? "text-ink-on-inverse hover:text-ink-on-inverse aria-expanded:text-ink-on-inverse focus-visible:text-ink-on-inverse hover:bg-control-tonal-inverse-hover focus-visible:outline-ink-on-inverse" : undefined)}
         style={{ minHeight: UI_LAYOUT_TAP_TARGET, minWidth: UI_LAYOUT_TAP_TARGET }}
         onClick={() => setExpanded(value => !value)}
       >

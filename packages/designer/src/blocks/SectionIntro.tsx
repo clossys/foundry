@@ -1,6 +1,6 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { cx } from "../atoms/internal/cx.js";
-import { SECTION_MEASURE_MAX } from "./internal/block-vars.js";
+import { SECTION_MEASURE_MAX, UI_WIDTH_HERO_WIDE } from "./internal/block-vars.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
 
 export type SectionIntroHeadingLevel = 1 | 2 | 3 | 4 | 5 | 6;
@@ -18,6 +18,12 @@ export type SectionIntroAlign = "start" | "center";
 export interface SectionIntroProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> {
   /** Small label above the heading. */
   eyebrow?: ReactNode;
+  /** Accent label ink or the ground's secondary text ink. @default "accent" */
+  eyebrowTone?: "accent" | "muted";
+  /** Prose cap, or an uncapped headline with a wide body. @default "prose" */
+  measure?: "prose" | "wide";
+  /** Opt into the larger responsive display ramp. @default "default" */
+  headingScale?: "default" | "display";
   /** The heading, at `headingLevel`. */
   heading?: ReactNode;
   /** Optional id on the real heading, for content named by it. */
@@ -94,12 +100,16 @@ const RHYTHM_CLASSES: Record<SectionIntroEmphasis, { heading: string; descriptio
  * call to action) both compose it, so their type steps, rhythm and measure
  * come from one place; only `emphasis` and `headingLevel` differ.
  *
- * The lines never run wider than the prose measure (`--ui-width-prose-max`);
+ * By default the lines stay within the prose measure (`--ui-width-prose-max`);
+ * `measure="wide"` uncaps the headline and caps only the body at 64rem.
  * a centred intro sits in the middle of its column with a balanced heading
  * and a pretty-wrapped description. Renders a plain `<div>`.
  */
 export function SectionIntro({
   eyebrow,
+  eyebrowTone = "accent",
+  measure = "prose",
+  headingScale = "default",
   heading,
   headingId,
   description,
@@ -116,6 +126,7 @@ export function SectionIntro({
   const colors = SECTION_GROUND_CLASSES[ground];
   const centred = align === "center";
   const rhythm = RHYTHM_CLASSES[emphasis];
+  const displayHeading = headingScale === "display";
   const hasEyebrow = Boolean(eyebrow);
   const hasHeading = Boolean(heading);
   const hasDescription = Boolean(description);
@@ -125,16 +136,32 @@ export function SectionIntro({
       {...rest}
       data-section-intro={emphasis}
       className={cx("flex w-full flex-col", centred ? "mx-auto items-center text-center" : "items-start", className)}
-      style={{ maxWidth: SECTION_MEASURE_MAX.prose, ...style }}
+      style={{ maxWidth: measure === "wide" ? "none" : SECTION_MEASURE_MAX.prose, ...style }}
     >
-      {hasEyebrow ? <p className={EYEBROW_CLASSES[ground]}>{eyebrow}</p> : null}
+      {hasEyebrow ? (
+        <p className={eyebrowTone === "muted" ? cx("text-body-s font-medium uppercase tracking-label", colors.secondary) : EYEBROW_CLASSES[ground]}>
+          {eyebrow}
+        </p>
+      ) : null}
       {hasHeading ? (
-        <HeadingTag id={headingId} className={cx(HEADING_CLASSES[emphasis], colors.primary, hasEyebrow ? rhythm.heading : undefined)}>
+        <HeadingTag
+          id={headingId}
+          className={cx(
+            displayHeading
+              ? "text-display-m tablet:text-display-l tablet-lg:text-display-xl font-display leading-display text-balance"
+              : HEADING_CLASSES[emphasis],
+            colors.primary,
+            hasEyebrow ? rhythm.heading : undefined,
+          )}
+        >
           {heading}
         </HeadingTag>
       ) : null}
       {hasDescription ? (
-        <p className={cx("text-body-l text-pretty", colors.secondary, hasEyebrow || hasHeading ? rhythm.description : undefined)}>
+        <p
+          className={cx("text-body-l text-pretty", colors.secondary, hasEyebrow || hasHeading ? rhythm.description : undefined)}
+          style={measure === "wide" ? { maxWidth: UI_WIDTH_HERO_WIDE } : undefined}
+        >
           {description}
         </p>
       ) : null}

@@ -1005,6 +1005,12 @@
       --site-header-glass-line: var(--color-line-on-inverse, oklch(0.9702 0 0 / 0.14));
       --site-header-focus: var(--color-ink-on-inverse, oklch(0.9702 0 0));
     }
+    &[data-tone="inverse"] .nav-disclosure-toggle:not([data-tone]) {
+      color: var(--color-ink-on-inverse, oklch(0.9702 0 0));
+      &:hover {
+        background-color: var(--color-control-tonal-inverse-hover, oklch(0.9702 0 0 / 0.16));
+      }
+    }
     &[data-placement="overlay"] :focus-visible {
       outline-color: var(--site-header-focus, oklch(0.2178 0 0));
     }
@@ -1897,6 +1903,9 @@
     .hover\:bg-surface-sunken:hover {
       background-color: var(--color-surface-sunken, oklch(0.9401 0 0));
     }
+    .hover\:text-ink-on-inverse:hover {
+      color: var(--color-ink-on-inverse, oklch(0.9702 0 0));
+    }
     .hover\:text-ink-secondary:hover {
       color: var(--color-ink-secondary, oklch(0.36 0 0));
     }
@@ -1964,6 +1973,9 @@
     --tw-outline-style: none;
     outline-style: none;
   }
+  .focus-visible\:text-ink-on-inverse:focus-visible {
+    color: var(--color-ink-on-inverse, oklch(0.9702 0 0));
+  }
   .focus-visible\:ring-2:focus-visible {
     --tw-ring-shadow: var(--tw-ring-inset,) 0 0 0 calc(2px + var(--tw-ring-offset-width, 0px)) var(--tw-ring-color, currentcolor);
     box-shadow: var(--tw-inset-shadow, 0 0 #0000), var(--tw-inset-ring-shadow, 0 0 #0000), var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow, 0 0 #0000);
@@ -1983,6 +1995,9 @@
   }
   .focus-visible\:outline-accent:focus-visible {
     outline-color: var(--color-accent, oklch(0.4748 0 0));
+  }
+  .focus-visible\:outline-ink-on-inverse:focus-visible {
+    outline-color: var(--color-ink-on-inverse, oklch(0.9702 0 0));
   }
   .focus-visible\:outline-solid:focus-visible {
     --tw-outline-style: solid;
@@ -2360,6 +2375,9 @@
     }
     .tablet-lg\:text-display-m {
       font-size: var(--text-display-m, 44px);
+    }
+    .tablet-lg\:text-display-xl {
+      font-size: var(--text-display-xl, 72px);
     }
     .tablet-lg\:\[--items-wide\:1\] {
       --items-wide: 1;
