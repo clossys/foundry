@@ -276,9 +276,9 @@ afterAll(() => {
 describe("packed frame release", () => {
   it("ships the Designer and Publisher minor versions with the new Designer floor", () => {
     const manifest = (name: string) => JSON.parse(readFileSync(join(consumerRoot, "node_modules", "@clossys", name, "package.json"), "utf8"));
-    expect(manifest("designer").version).toBe("0.11.0");
-    expect(manifest("publisher").version).toBe("0.12.0");
-    expect(manifest("publisher").dependencies["@clossys/designer"]).toBe("^0.11.0");
+    expect(manifest("designer").version).toBe("0.12.0");
+    expect(manifest("publisher").version).toBe("0.13.0");
+    expect(manifest("publisher").dependencies["@clossys/designer"]).toBe("^0.12.0");
   });
 
   it("renders overlay chrome, mobile navigation and an independent footer around a frame-fitted hero from the tarballs", () => {
@@ -468,7 +468,7 @@ describe("packed Publisher web React-server boundary", () => {
     // does carry the current one. Tracks Designer's current minor — a Designer
     // minor bump updates this line too, the same way `expectedVersions` in
     // scripts/run-candidate-qualification.test.mjs tracks every package.
-    expect(legacyManifest.dependencies["@clossys/designer"]).toBe("^0.11.0");
+    expect(legacyManifest.dependencies["@clossys/designer"]).toBe("^0.12.0");
     legacyManifest.dependencies["@clossys/designer"] = "^0.2.0";
     writeFileSync(legacyManifestPath, `${JSON.stringify(legacyManifest, null, 2)}\n`);
     const legacyPublisherTarball = packPackage(legacyPublisherRoot, join(fixtureRoot, "legacy-packed"));

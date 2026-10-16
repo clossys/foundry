@@ -3,6 +3,11 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## 0.12.0 - 2026-10-16
+
+- Add optional inverse brand and navigation ink, muted eyebrows, wide hero copy, display heading scale, and a transparent footer top rule while preserving default rendering.
+- Link Designer setup to the Publisher frame wiring guide for brand, CSS and frame configuration.
+
 ## 0.11.0 - 2026-10-16
 
 - Site navigation can collapse into a mobile disclosure with an inline fallback when scripting is unavailable, and header action links can show a text label without an icon.
