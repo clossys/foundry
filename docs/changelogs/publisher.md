@@ -3,6 +3,16 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## 0.12.0 - 2026-10-16
+
+- Site navigation can collapse into a mobile disclosure with an inline fallback when scripting is unavailable, and header action links can show a text label without an icon.
+- The package includes a type-check proof for the published FAQ item fields and section layout.
+- Render SiteFrame primary navigation with Designer NavDisclosure and text actions with SiteHeader.ActionLink, intentionally changing default navigation and action markup. Add a copy reference for the mobile toggle and an independent footer ground that defaults to the shell ground.
+- Allow frame headers to overlay a hero with a selected ink tone, and standalone landing heroes to flex into their page frame.
+- Updated dependency @clossys/designer to ^0.11.0
+- Updated templates/site dependency @clossys/designer to ^0.11.0
+- Updated templates/site dependency @clossys/publisher to ^0.12.0
+
 ## 0.11.0 - 2026-10-14
 
 - SiteHeader takes `placement="overlay"` to sit fixed over the first block, transparent at the top of the page and a blurred glass plate once the page scrolls, with `tone` for the ink a light or dark ground needs and `menuOpen` to hold the glass while a menu is open.
