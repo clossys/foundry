@@ -29,9 +29,14 @@
  *   passes the checks of C-68). An SDK that ran the hook later would have
  *   every transport event dropped: it fails closed;
  * - closes the capture gate synchronously before any SDK call on a
- *   withdrawal, and starts every grant as a new session (C-67, C-69).
+ *   withdrawal, and starts every grant as a new session (C-67, C-69);
+ * - with the optional `flags` block, exposes a lookup handle on the returned
+ *   provider (`provider.flags`). Flag work needs this instance initialized,
+ *   its capture gate open, a separate experiments-purpose grant and the
+ *   host's attested evidence (C-71 to C-79); otherwise every lookup returns
+ *   control. The one exposure class passes the same hook (C-65, C-75).
  *
- * The autocapture and replay classes are not yet part of the consent
+ * The autocapture, replay and flags classes are not yet part of the consent
  * assembly's API. Whether these option and property names behave as named in
  * the SDK version a host installs is separate evidence; a fake cannot prove
  * it.
@@ -52,6 +57,16 @@ import {
   type PostHogReplayConfig,
 } from "./posthog-options.js";
 import { addressHasQueryOrFragment, finishReplayPayload, scanReplayPayload } from "./posthog-payload.js";
+import {
+  POSTHOG_FLAG_EXPOSURE_EVENT,
+  POSTHOG_FLAG_EXPOSURE_PROPERTIES,
+  createFlagsController,
+  readFlagsSettings,
+  type PostHogFlagValue,
+  type PostHogFlagsConfig,
+  type PostHogFlagsHandle,
+  type PostHogFlagsSdk,
+} from "./posthog-flags.js";
 
 export {
   ANALYTICS_ELEMENT_ATTRIBUTE,
@@ -67,6 +82,14 @@ export {
   type PostHogReplayConfig,
   type ReplayCapability,
 } from "./posthog-options.js";
+export {
+  POSTHOG_FLAG_EXPOSURE_PROPERTIES,
+  type PostHogFlagDefinition,
+  type PostHogFlagValue,
+  type PostHogFlagsCapability,
+  type PostHogFlagsConfig,
+  type PostHogFlagsHandle,
+} from "./posthog-flags.js";
 
 /** The subset of the PostHog SDK object the adapter calls, declared structurally. */
 export interface PostHogLike {
@@ -84,6 +107,11 @@ export interface PostHogLike {
   stopSessionRecording?(): void;
   reset?(): void;
   get_session_id?(): unknown;
+  /** Flags only (C-73, C-77): called only while flag work is eligible, or for cleanup with analytics open. */
+  set_config?(config: Record<string, unknown>): void;
+  reloadFeatureFlags?(): void;
+  onFeatureFlags?(callback: (flags: unknown, variants: unknown, context?: unknown) => void): unknown;
+  readonly featureFlags?: { reset?(): void };
 }
 
 /** Host values the adapter accepts. There is no other option. */
@@ -92,6 +120,12 @@ export interface PostHogProviderConfig {
   apiHost: string;
   autocapture?: PostHogAutocaptureConfig;
   replay?: PostHogReplayConfig;
+  flags?: PostHogFlagsConfig;
+}
+
+/** The provider port the transport drives, plus the flags handle the host binds to its experiments purpose. */
+export interface PostHogProvider extends AnalyticsProviderPort {
+  readonly flags: PostHogFlagsHandle;
 }
 
 /** Fixed prefix of every instance name this adapter creates. */
@@ -131,6 +165,13 @@ interface PendingCapture {
   name: string;
   referrerOrigin: string | undefined;
   properties: Readonly<Record<string, string | number | boolean>>;
+}
+
+interface PendingExposure {
+  key: string;
+  value: PostHogFlagValue;
+  flagsGeneration: number;
+  generation: number;
 }
 
 interface CaptureResultLike {
@@ -244,13 +285,14 @@ function swallow(call: () => void): void {
  * (C-63) and calls nothing on the SDK until the transport calls
  * `init(context)`.
  */
-export function createPostHogProvider(sdk: PostHogLike, config: PostHogProviderConfig): AnalyticsProviderPort {
+export function createPostHogProvider(sdk: PostHogLike, config: PostHogProviderConfig): PostHogProvider {
   // Each value is read once; the validated local is the one used.
   const key: unknown = config.key;
   const apiHost: unknown = config.apiHost;
   if (typeof key !== "string" || key === "") throw new TypeError("A PostHog provider needs a key.");
   if (typeof apiHost !== "string" || apiHost === "") throw new TypeError("A PostHog provider needs an apiHost.");
   const settings: FeatureSettings = readFeatureSettings(config.autocapture, config.replay);
+  const flagsSettings = readFlagsSettings(config.flags);
   const anyFlag = settings.autocaptureOn || settings.replayOn;
   const name = `${POSTHOG_INSTANCE_PREFIX}${instanceSuffix()}`;
 
@@ -259,6 +301,7 @@ export function createPostHogProvider(sdk: PostHogLike, config: PostHogProviderC
   let eventNames: ReadonlySet<string> = new Set();
   let sanitizeUrl: ProviderInitContext["sanitizeUrl"] = () => null;
   let pending: PendingCapture | null = null;
+  let pendingExposure: PendingExposure | null = null;
 
   // C-67: the capture gate and the grant generation.
   let gateOpen = false;
@@ -276,6 +319,24 @@ export function createPostHogProvider(sdk: PostHogLike, config: PostHogProviderC
   let recordedSessionId: string | null = null;
   let tainted = false;
   const sessionIdsSeen = new Set<string>();
+
+  // C-71 to C-79: flags, bound to the instance and gate above.
+  const flags = createFlagsController(flagsSettings, {
+    instance: (): PostHogFlagsSdk | null => instance,
+    gateOpen: () => gateOpen,
+    sendExposure(key: string, value: PostHogFlagValue, flagsGeneration: number): void {
+      const target = instance;
+      if (!target || !gateOpen) return;
+      pendingExposure = { key, value, flagsGeneration, generation };
+      try {
+        target.capture(POSTHOG_FLAG_EXPOSURE_EVENT, { $feature_flag: key, $feature_flag_response: value });
+      } catch {
+        // A failed exposure send changes nothing: the lookup still answers.
+      } finally {
+        pendingExposure = null;
+      }
+    },
+  });
 
   // ------------------------------------------------------------- replay
 
@@ -452,6 +513,17 @@ export function createPostHogProvider(sdk: PostHogLike, config: PostHogProviderC
       return finish(input, sdkProperties, current.properties, current.referrerOrigin);
     }
 
+    // Arm 3: the adapter's own flag exposure, while its lookup's send is running (C-75).
+    if (eventName === POSTHOG_FLAG_EXPOSURE_EVENT && flagsSettings.enabled) {
+      const exposure = pendingExposure;
+      if (exposure === null || exposure.generation !== generation || !flags.admitsExposure(exposure.flagsGeneration)) return null;
+      const kept: Record<string, unknown> = {};
+      for (const field of POSTHOG_FLAG_EXPOSURE_PROPERTIES) {
+        kept[field] = field === "$feature_flag" ? exposure.key : exposure.value;
+      }
+      return finish(input, sdkProperties, kept, undefined);
+    }
+
     // Arm 2: an SDK-originated class, only under its flag.
     if (eventName === "$autocapture" && settings.autocaptureOn) {
       const rebuilt = rebuildAutocapture(sdkProperties);
@@ -494,6 +566,8 @@ export function createPostHogProvider(sdk: PostHogLike, config: PostHogProviderC
       if (generation !== grant) return;
       gateOpen = true;
       startReplayIfAllowed(target, grant);
+      if (generation !== grant || !gateOpen) return;
+      flags.afterGateOpened();
     } finally {
       if (granting === grant) granting = null;
     }
@@ -504,6 +578,9 @@ export function createPostHogProvider(sdk: PostHogLike, config: PostHogProviderC
     gateOpen = false;
     generation += 1;
     stopping = true;
+    // Flags close with the gate, locally: no flags SDK call follows an analytics withdrawal (C-72, C-77).
+    pendingExposure = null;
+    flags.closeForAnalytics();
     try {
       const wasStarted = replayStarted;
       replayStarted = false;
@@ -518,7 +595,9 @@ export function createPostHogProvider(sdk: PostHogLike, config: PostHogProviderC
     }
   }
 
-  const port: AnalyticsProviderPort = {
+  const port: PostHogProvider = {
+    flags: flags.handle,
+
     init(context: ProviderInitContext): void {
       if (initStarted) throw new Error("A PostHog provider is initialized once.");
       initStarted = true;
@@ -537,6 +616,7 @@ export function createPostHogProvider(sdk: PostHogLike, config: PostHogProviderC
       }
       instance = returned;
       replayEligible = decideReplayEligibility(returned);
+      flags.afterInit();
     },
 
     capture(event: SanitizedAnalyticsEvent): void {
@@ -576,6 +656,7 @@ export function createPostHogProvider(sdk: PostHogLike, config: PostHogProviderC
       // An optOut() during the stop steps does nothing: the steps are already running.
       if (stopping) return;
       runOptOut(instance);
+      flags.afterAnalyticsClosed();
       if (deferredOptIn) {
         deferredOptIn = false;
         port.optIn();

@@ -551,7 +551,7 @@ import { createAnalyticsTransport } from "@clossys/observer/browser-analytics";
 
 ## The `./browser-analytics/posthog` subpath
 
-`@clossys/observer/browser-analytics/posthog` exports `createPostHogProvider(sdk, config)`, the provider adapter for the consent-controlled analytics transport. The adapter takes the SDK object as an argument and imports no SDK, so the entry has no peer dependency. Autocapture and session replay are two separate features of that adapter, off unless a host turns them on. They are not yet part of the consent assembly API; a host that wires them today does so by calling the adapter directly.
+`@clossys/observer/browser-analytics/posthog` exports `createPostHogProvider(sdk, config)`, the provider adapter for the consent-controlled analytics transport. The adapter takes the SDK object as an argument and imports no SDK, so the entry has no peer dependency. Autocapture, session replay and feature flags are three separate features of that adapter, off unless a host turns them on. They are not yet part of the consent assembly API; a host that wires them today does so by calling the adapter directly.
 
 ```ts
 import {
@@ -579,17 +579,58 @@ const provider = createPostHogProvider(sdk, {
 - **Each grant starts a new session.** Withdrawal and each re-grant call `reset()` when either feature is on. A session id equal to an earlier one on the page leaves replay off for that grant, and a snapshot with an earlier session id is dropped.
 - **Withdrawal closes the capture gate before any SDK call.** A snapshot flushed after the stop is dropped.
 
+Feature flags need three things at once: the instance the transport initialized, its open capture gate, and a separate experiments permission that the host grants through `provider.flags`. Analytics permission does not grant experiments. The host also attests, from its own evidence for the SDK version it installed, how that version's flag requests behave, including that `featureFlags.reset()` cancels a pending evaluation request; without a passing attestation every lookup returns control and nothing is requested.
+
+```ts
+import {
+  createPostHogProvider,
+  type PostHogFlagsCapability,
+  type PostHogLike,
+} from "@clossys/observer/browser-analytics/posthog";
+
+declare const sdk: PostHogLike;
+declare function flagEvidenceForInstalledSdk(): PostHogFlagsCapability;
+declare function experimentsAllowed(): boolean;
+
+const flagged = createPostHogProvider(sdk, {
+  key: "project-key",
+  apiHost: "https://analytics.example.test",
+  flags: {
+    enabled: true,
+    purpose: "experiments",
+    definitions: { "hero-copy": { control: "control", variants: ["control", "short"] } },
+  },
+});
+// In the transport's loader, before the transport initializes the adapter:
+flagged.flags.attest(flagEvidenceForInstalledSdk);
+flagged.flags.setExperimentsPermission(experimentsAllowed());
+
+// After mount, on the client:
+const heroCopy = flagged.flags.lookup("hero-copy", "control");
+```
+
+- **The flags block is closed and checked when the adapter is created.** It has `enabled`, `purpose` and `definitions` and no other key. A key outside `[a-zA-Z0-9][a-zA-Z0-9._-]{0,63}`, a variant that is not a boolean or a non-empty string of at most 200 characters, a duplicate variant, a control that is not one of its variants or an accessor throws a `TypeError` before any SDK call. There is no bootstrap map.
+- **Evaluation starts when all three conditions hold, the attestation passed and the instance has `set_config`, `reloadFeatureFlags`, `onFeatureFlags` and `featureFlags.reset`.** The adapter subscribes to results, sets the two feature-flag disables to `false` and requests one evaluation. It sets no person properties or groups. It does not poll.
+- **A lookup returns the declared control until a validated result arrives.** An unknown key returns the control the caller passed; an unlisted variant, a reply from an earlier grant, a reply that reports a loading error, and a lookup whose control differs from the declared one return the declared control.
+- **A resolved lookup sends one `$feature_flag_called` exposure per key and variant per grant.** The exposure keeps the key, the variant, the delivery fields and the rebuilt URL fields. An exposure the adapter did not send is dropped, as is one whose grant ended before the hook ran.
+- **An experiments withdrawal with analytics open clears the SDK's flag state and sets both disables back to `true`.** It does not reset the session.
+- **An analytics withdrawal makes no flags SDK call.** Local assignments and exposures are cleared at once, and the SDK's flag state is cleared at the next eligible grant before anything else; if it cannot be cleared, lookups keep returning control.
+- **Assignments are held in memory.** The server and hydration render control; only a client lookup after a validated evaluation returns a variant.
+
 `BLOCK_SELECTOR_GRAMMAR` and the other constants the specification names are exported from the same entry. The two expressions that make up the grammar stay internal.
 
 | Export | Kind | Description |
 | --- | --- | --- |
-| `createPostHogProvider(sdk, config)` | function | Returns an `AnalyticsProviderPort` for the transport's `loadProvider`. |
+| `createPostHogProvider(sdk, config)` | function | Returns a `PostHogProvider`: an `AnalyticsProviderPort` for the transport's `loadProvider`, with the `flags` handle. |
 | `PostHogLike` / `PostHogProviderConfig` | type | The structural SDK subset and the host's key, API host and optional feature blocks. |
 | `PostHogAutocaptureConfig` / `PostHogReplayConfig` / `ReplayCapability` | type | The closed feature blocks and the host probe's replay capability report. |
 | `POSTHOG_INSTANCE_PREFIX` / `POSTHOG_PROPERTY_ALLOWLIST` / `POSTHOG_EVENT_FIELDS` | value | The instance-name prefix, SDK property allowlist and retained event fields. |
 | `ANALYTICS_ELEMENT_ATTRIBUTE` / `AUTOCAPTURE_ELEMENT_SELECTOR` / `PRIVATE_SUBTREE_SELECTORS` | value | The opt-in attribute and selectors for eligible elements and private subtrees. |
 | `BLOCK_SELECTOR_GRAMMAR` / `MASKED_TEXT_PATTERN` / `REPLAY_RECORD_KINDS` / `REPLAY_RECORDING_OPTIONS` | value | The host selector grammar, masked-text pattern, accepted record kinds and forced recording options. |
 | `POSTHOG_AUTOCAPTURE_PROPERTIES` / `POSTHOG_REPLAY_PROPERTIES` | value | The retained properties for each SDK-originated capture class. |
+| `POSTHOG_FLAG_EXPOSURE_PROPERTIES` | value | The two properties an exposure keeps besides the delivery and URL fields. |
+| `PostHogProvider` / `PostHogFlagsHandle` | type | The returned provider and its flags handle: `purpose`, `attest`, `setExperimentsPermission`, `lookup` and `subscribe`. |
+| `PostHogFlagsConfig` / `PostHogFlagDefinition` / `PostHogFlagValue` / `PostHogFlagsCapability` | type | The closed flags block, one declared flag, a flag value and the host's flag evidence report. |
 
 ## Non-Goals
 
