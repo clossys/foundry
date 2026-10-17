@@ -728,6 +728,14 @@
   .border-collapse {
     border-collapse: collapse;
   }
+  .border-separate {
+    border-collapse: separate;
+  }
+  .border-spacing-0 {
+    --tw-border-spacing-x: 0px;
+    --tw-border-spacing-y: 0px;
+    border-spacing: var(--tw-border-spacing-x, 0) var(--tw-border-spacing-y, 0);
+  }
   .translate-x-0 {
     --tw-translate-x: 0px;
     translate: var(--tw-translate-x, 0) var(--tw-translate-y, 0);
@@ -1573,6 +1581,9 @@
   .align-middle {
     vertical-align: middle;
   }
+  .align-top {
+    vertical-align: top;
+  }
   .font-body {
     font-family: var(--font-body, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif);
   }
@@ -1928,6 +1939,25 @@
     border-bottom-style: var(--tw-border-style, solid);
     border-bottom-width: 0px;
   }
+  .focus-within\:not-sr-only:focus-within {
+    position: static;
+    width: auto;
+    height: auto;
+    padding: 0;
+    margin: 0;
+    overflow: visible;
+    clip-path: none;
+    white-space: normal;
+  }
+  .focus-within\:block:focus-within {
+    display: block;
+  }
+  .focus-within\:w-full:focus-within {
+    width: 100%;
+  }
+  .focus-within\:overflow-x-auto:focus-within {
+    overflow-x: auto;
+  }
   @media (hover: hover) {
     .hover\:border-ink-on-inverse-muted:hover {
       border-color: var(--color-ink-on-inverse-muted, oklch(0.7763 0 0));
@@ -2235,6 +2265,21 @@
     .tablet\:hidden {
       display: none;
     }
+    .tablet\:table {
+      display: table;
+    }
+    .tablet\:table-cell {
+      display: table-cell;
+    }
+    .tablet\:table-header-group {
+      display: table-header-group;
+    }
+    .tablet\:table-row {
+      display: table-row;
+    }
+    .tablet\:table-row-group {
+      display: table-row-group;
+    }
     .tablet\:h-px {
       height: 1px;
     }
@@ -2252,6 +2297,9 @@
     }
     .tablet\:shrink-0 {
       flex-shrink: 0;
+    }
+    .tablet\:table-fixed {
+      table-layout: fixed;
     }
     .tablet\:rotate-0 {
       rotate: 0deg;
@@ -2292,8 +2340,20 @@
     .tablet\:gap-x-xl {
       column-gap: var(--spacing-xl, 24px);
     }
+    .tablet\:rounded-none {
+      border-radius: 0;
+    }
+    .tablet\:bg-transparent {
+      background-color: transparent;
+    }
+    .tablet\:p-0 {
+      padding: 0px;
+    }
     .tablet\:p-xl {
       padding: var(--spacing-xl, 24px);
+    }
+    .tablet\:px-md {
+      padding-inline: var(--spacing-md, 12px);
     }
     .tablet\:py-4xl {
       padding-block: var(--spacing-4xl, 64px);
@@ -2303,6 +2363,9 @@
     }
     .tablet\:py-6xl {
       padding-block: var(--spacing-6xl, 128px);
+    }
+    .tablet\:py-lg {
+      padding-block: var(--spacing-lg, 16px);
     }
     .tablet\:py-xl {
       padding-block: var(--spacing-xl, 24px);
@@ -2346,8 +2409,27 @@
       content: var(--tw-content, "");
       bottom: calc(var(--spacing-md, 12px) * -1);
     }
+    .tablet\:focus-within\:table-header-group:focus-within {
+      display: table-header-group;
+    }
+    .tablet\:focus-within\:w-auto:focus-within {
+      width: auto;
+    }
+    .tablet\:focus-within\:overflow-visible:focus-within {
+      overflow: visible;
+    }
   }
   @media (width >= 1024px) {
+    .tablet-lg\:not-sr-only {
+      position: static;
+      width: auto;
+      height: auto;
+      padding: 0;
+      margin: 0;
+      overflow: visible;
+      clip-path: none;
+      white-space: normal;
+    }
     .tablet-lg\:absolute {
       position: absolute;
     }
@@ -2405,11 +2487,29 @@
     .tablet-lg\:hidden {
       display: none;
     }
+    .tablet-lg\:table {
+      display: table;
+    }
+    .tablet-lg\:table-cell {
+      display: table-cell;
+    }
+    .tablet-lg\:table-header-group {
+      display: table-header-group;
+    }
+    .tablet-lg\:table-row {
+      display: table-row;
+    }
+    .tablet-lg\:table-row-group {
+      display: table-row-group;
+    }
     .tablet-lg\:max-w-display {
       max-width: var(--ui-width-display-max, 72rem);
     }
     .tablet-lg\:max-w-none {
       max-width: none;
+    }
+    .tablet-lg\:table-fixed {
+      table-layout: fixed;
     }
     .tablet-lg\:rotate-0 {
       rotate: 0deg;
@@ -2450,8 +2550,23 @@
     .tablet-lg\:gap-y-3xl {
       row-gap: var(--spacing-3xl, 48px);
     }
+    .tablet-lg\:rounded-none {
+      border-radius: 0;
+    }
+    .tablet-lg\:bg-transparent {
+      background-color: transparent;
+    }
+    .tablet-lg\:p-0 {
+      padding: 0px;
+    }
     .tablet-lg\:p-xl {
       padding: var(--spacing-xl, 24px);
+    }
+    .tablet-lg\:px-md {
+      padding-inline: var(--spacing-md, 12px);
+    }
+    .tablet-lg\:py-lg {
+      padding-block: var(--spacing-lg, 16px);
     }
     .tablet-lg\:text-display-m {
       font-size: var(--text-display-m, 44px);
@@ -2461,6 +2576,15 @@
     }
     .tablet-lg\:\[--items-wide\:1\] {
       --items-wide: 1;
+    }
+    .tablet-lg\:focus-within\:table-header-group:focus-within {
+      display: table-header-group;
+    }
+    .tablet-lg\:focus-within\:w-auto:focus-within {
+      width: auto;
+    }
+    .tablet-lg\:focus-within\:overflow-visible:focus-within {
+      overflow: visible;
     }
   }
   @media (width >= 1280px) {
@@ -2625,6 +2749,16 @@
       border-color: currentcolor;
     }
   }
+}
+@property --tw-border-spacing-x {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0;
+}
+@property --tw-border-spacing-y {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0;
 }
 @property --tw-translate-x {
   syntax: "*";
@@ -2823,6 +2957,8 @@
 @layer properties {
   @supports ((-webkit-hyphens: none) and (not (margin-trim: inline))) or ((-moz-orient: inline) and (not (color:rgb(from red r g b)))) {
     *, ::before, ::after, ::backdrop {
+      --tw-border-spacing-x: 0;
+      --tw-border-spacing-y: 0;
       --tw-translate-x: 0;
       --tw-translate-y: 0;
       --tw-translate-z: 0;
