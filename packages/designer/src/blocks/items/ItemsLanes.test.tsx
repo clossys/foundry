@@ -9,6 +9,7 @@ import { Items } from "./Items.js";
 import { Items as ServerItems } from "./Items.server.js";
 import type { ItemData, ItemsProps } from "./types.js";
 import { UI_BORDER_HAIRLINE } from "../../atoms/internal/ui-vars.js";
+import { TOKENS } from "../../tokens/tokens.js";
 
 function IdSlot({ label }: { label: string }) {
   const id = useId();
@@ -3971,7 +3972,7 @@ describe("Items lanes", () => {
     expect(last.querySelector("[data-item-end]")).toHaveAttribute("data-item-end", end);
     expect(last.querySelector("[data-item-end]")).toHaveAttribute("aria-hidden", "true");
     expect(last.querySelector("[data-item-end-label]")).toHaveTextContent("Authored completion");
-    expect(last.querySelector<HTMLElement>("[data-item-end-label]")!.style.marginBlockStart).toBe("var(--spacing-xl)");
+    expect(last.querySelector<HTMLElement>("[data-item-end-label]")!.style.marginBlockStart).toBe("var(--spacing-xl, " + TOKENS["--spacing-xl"]!.value + ")");
     expect(last.querySelector("[data-item-end] svg") !== null).toBe(end === "continues");
   });
 });

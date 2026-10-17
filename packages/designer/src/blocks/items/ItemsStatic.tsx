@@ -6,7 +6,7 @@ import { ItemRenderer, renderItemStatus } from "./render.js";
 import { ItemPlate } from "./anatomy.js";
 import { UI_BORDER_HAIRLINE, UI_LAYOUT_TAP_TARGET } from "../../atoms/internal/ui-vars.js";
 import { assertNoNestedInteractive, cardLinkContainerClassName } from "../stretched-link.js";
-import { renderConnectedTrack, renderOrdinal, renderTerminal, orderLayout, orderedItemStyle, multiLaneCellStyle, renderMultiLaneTrack, renderMultiLaneTerminal } from "./order.js";
+import { renderConnectedTrack, renderOrdinal, renderTerminal, orderLayout, orderedItemStyle, multiLaneCellStyle, renderMultiLaneTrack, renderMultiLaneTerminal, MULTI_LANE_VARS } from "./order.js";
 import { hasContent } from "./policies.js";
 import type { ItemData, ItemSpan, ItemsProps } from "./types.js";
 import { MULTI_LANE_CLASSES } from "./order-classes.js";
@@ -83,12 +83,12 @@ function renderMultiLaneItems(props: ItemsProps) {
   const colors = SECTION_GROUND_CLASSES[ground];
   const linkedBodyClassName = treatment === "plate" ? undefined : MULTI_LANE_CLASSES.linkedBody;
   const frame = <div data-items-lanes={laneCount} className={frameClassName} style={{ gridTemplateColumns: "repeat(" + (count + 1) + ", minmax(0, 1fr))", gridTemplateRows: "repeat(" + laneCount + ", minmax(0, 1fr))" }}>
-    {props.lanes!.map((lane, index) => <span key={lane.id} data-item-lane-row="" aria-hidden="true" {...INERT_LANE_ROW} className={cx(MULTI_LANE_CLASSES.label, colors.secondary)} style={{ gridColumn: 1, gridRow: index + 1, paddingBlockStart: "var(--spacing-xs)" }}>{lane.label}</span>)}
+    {props.lanes!.map((lane, index) => <span key={lane.id} data-item-lane-row="" aria-hidden="true" {...INERT_LANE_ROW} className={cx(MULTI_LANE_CLASSES.label, colors.secondary)} style={{ gridColumn: 1, gridRow: index + 1, paddingBlockStart: MULTI_LANE_VARS.xs }}>{lane.label}</span>)}
     <ol role="list" aria-labelledby={props["aria-labelledby"]} data-items="" data-arrangement="stacked" data-treatment={treatment} className={cx(MULTI_LANE_CLASSES.list, props.className)} style={{ gridColumn: "2 / -1", gridRow: "1 / -1", gridTemplateColumns: "repeat(" + count + ", minmax(0, 1fr))", gridTemplateRows: "subgrid" }}>
       {props.items.map((item, index) => <li key={item.id} data-lane={item.lane} className={MULTI_LANE_CLASSES.cell} style={multiLaneCellStyle(index, props)}>
         <span className="absolute start-0" style={{ insetBlockStart: 0 }}>{renderOrdinal({ ordinal: index + 1, props })}</span>
-        <span data-item-lane-label="" className={cx(MULTI_LANE_CLASSES.chip, colors.secondary)} style={{ borderWidth: UI_BORDER_HAIRLINE, marginBlockEnd: "var(--spacing-sm)" }}>{props.lanes!.find(lane => lane.id === item.lane)!.label}</span>
-        <div className={cx(MULTI_LANE_CLASSES.body, item.href === undefined ? undefined : linkedBodyClassName)}><span data-item-lane-clearance="" aria-hidden="true" className="hidden tablet-lg:block" style={{ blockSize: "calc(var(--spacing-2xl) + var(--spacing-lg))" }} /><ItemRenderer item={item} treatment={treatment} size={size} ground={ground} headingLevel={headingLevel} profile="sequence" orderClassName="h-auto min-w-0" /></div>
+        <span data-item-lane-label="" className={cx(MULTI_LANE_CLASSES.chip, colors.secondary)} style={{ borderWidth: UI_BORDER_HAIRLINE, marginBlockEnd: MULTI_LANE_VARS.sm }}>{props.lanes!.find(lane => lane.id === item.lane)!.label}</span>
+        <div className={cx(MULTI_LANE_CLASSES.body, item.href === undefined ? undefined : linkedBodyClassName)}><span data-item-lane-clearance="" aria-hidden="true" className="hidden tablet-lg:block" style={{ blockSize: "calc(" + MULTI_LANE_VARS.twoXl + " + " + MULTI_LANE_VARS.lg + ")" }} /><ItemRenderer item={item} treatment={treatment} size={size} ground={ground} headingLevel={headingLevel} profile="sequence" orderClassName="h-auto min-w-0" /></div>
         {renderMultiLaneTrack(index, props)}
         {index === count - 1 ? renderMultiLaneTerminal(props) : null}
       </li>)}
