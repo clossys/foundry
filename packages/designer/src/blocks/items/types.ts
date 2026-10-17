@@ -1,5 +1,6 @@
 import type { AriaAttributes, ReactNode } from "react";
 import type { BadgeVariant } from "../../atoms/Badge.js";
+import type { StatusMarkTone } from "../../atoms/StatusMark.js";
 import type { SectionGround } from "../section-ground.js";
 
 export type ItemSize = "standard" | "display";
@@ -18,6 +19,10 @@ export interface ItemData {
   href?: string;
   span?: ItemSpan;
   badge?: ItemBadge;
+  /** A focal measurement; its authored delta includes its own sign. */
+  figure?: { value: ReactNode; delta?: ReactNode; trend?: "up" | "down" | "neutral" };
+  /** A shaped mark and visible state label, distinct from a badge. */
+  status?: { tone: StatusMarkTone; label: ReactNode };
   /** Actor id in a connected, two-lane sequence. */
   lane?: string;
 }

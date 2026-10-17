@@ -1137,6 +1137,9 @@
   .gap-y-xs {
     row-gap: var(--spacing-xs, 4px);
   }
+  .self-start {
+    align-self: flex-start;
+  }
   .justify-self-end {
     justify-self: flex-end;
   }
@@ -2455,6 +2458,9 @@
     }
     .tablet\:my-0 {
       margin-block: 0px;
+    }
+    .tablet\:ms-auto {
+      margin-inline-start: auto;
     }
     .tablet\:ms-md {
       margin-inline-start: var(--spacing-md, 12px);

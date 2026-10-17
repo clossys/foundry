@@ -3385,6 +3385,38 @@ pairing on each ground. Neutral keeps its own opaque fill. Badge tone maps to
 the existing Badge atom: neutral (default), success, warning, danger or info.
 The item-level featured field is retired; select the collection treatment.
 
+An optional `figure` makes an item's measurement prominent: `{ value, delta?,
+trend? }`. Values use `text-h2` (`text-h1` at display size), the display font
+and tabular numerals. Author the sign in `delta`, such as `"+12%"` or `"-3%"`;
+`trend` selects `"up"`, `"down"` or `"neutral"` ink from the same mapping as
+`Stat`. A trend needs a nonblank delta. Figures belong to columns, rows and
+stacked collections, including connected order, with a figure on every item
+or on none. They cannot share an item with `visual`, or use bento, statement
+scale or disclosure.
+
+Use `status: { tone, label }` for a lighter state marker instead of a badge.
+The existing `StatusMark` atom supplies its tone-specific shape beside the
+visible label in the meta row. Its tones are `success`, `warning`, `danger`,
+`info` and `neutral`; the label carries the meaning in greyscale and print.
+On rows the status moves to the meta row's end from tablet width. Status is
+available in the three treatments and disclosure, but not statement scale,
+and cannot share an item with `badge`. Linked items require inert figure
+and status content; disclosure status labels must be phrasing content
+without controls.
+On inverse ground, delta and status slots use a raised-surface backing
+to keep their semantic text on its checked surface.
+
+```tsx
+import { Items } from "@clossys/designer/blocks/server";
+
+function ServiceMetrics() {
+  return <Items arrangement="rows" items={[
+    { id: "requests", heading: "Requests", figure: { value: "2,481", delta: "+12%", trend: "up" }, status: { tone: "success", label: "Available" } },
+    { id: "latency", heading: "Latency", figure: { value: "120 ms", delta: "-3%", trend: "down" }, status: { tone: "neutral", label: "Stable" } },
+  ]} />;
+}
+```
+
 #### Index configuration: status list
 
 Use unordered `Items` rows when readers look up an item's current status.
