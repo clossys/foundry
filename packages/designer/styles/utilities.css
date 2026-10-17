@@ -298,9 +298,10 @@
 @source inline("survive svg svgEl svgEl: switch sy symbol synchronously system t t.y tab tabIndex table");
 @source inline("table-fallback table-view table. table: tablet tablet-lg tablet-lg:[--items-wide:1]");
 @source inline("tablet-lg:absolute tablet-lg:anatomy-columns tablet-lg:block tablet-lg:col-span-1");
-@source inline("tablet-lg:col-span-4 tablet-lg:col-span-5 tablet-lg:col-span-7 tablet-lg:col-span-8");
-@source inline("tablet-lg:col-start-1 tablet-lg:col-start-8 tablet-lg:contents tablet-lg:gap-3xl tablet-lg:gap-x-3xl");
-@source inline("tablet-lg:gap-x-4xl tablet-lg:gap-y-0 tablet-lg:grid tablet-lg:grid-cols-12 tablet-lg:grid-cols-2");
+@source inline("tablet-lg:col-span-12 tablet-lg:col-span-4 tablet-lg:col-span-5 tablet-lg:col-span-7");
+@source inline("tablet-lg:col-span-8 tablet-lg:col-start-1 tablet-lg:col-start-6 tablet-lg:col-start-8");
+@source inline("tablet-lg:contents tablet-lg:gap-3xl tablet-lg:gap-x-3xl tablet-lg:gap-x-4xl tablet-lg:gap-y-0");
+@source inline("tablet-lg:gap-y-3xl tablet-lg:grid tablet-lg:grid-cols-12 tablet-lg:grid-cols-2");
 @source inline("tablet-lg:grid-cols-3 tablet-lg:grid-rows-subgrid tablet-lg:hidden tablet-lg:items-center");
 @source inline("tablet-lg:items-start tablet-lg:max-w-display tablet-lg:max-w-none tablet-lg:p-xl tablet-lg:rotate-0");
 @source inline("tablet-lg:row-span-1 tablet-lg:row-span-2 tablet-lg:row-span-3 tablet-lg:row-span-4");
@@ -315,7 +316,7 @@
 @source inline("tablet:not-sr-only tablet:p-xl tablet:pb-0 tablet:pb-xl tablet:py-4xl tablet:py-5xl tablet:py-6xl");
 @source inline("tablet:py-xl tablet:rotate-0 tablet:row-span-1 tablet:row-span-2 tablet:row-span-3 tablet:row-span-4");
 @source inline("tablet:rtl:rotate-180 tablet:shrink-0 tablet:text-display-l tablet:text-h0 tablet:w-auto");
-@source inline("tablet:w-full tabular-nums tags: tailwind-merge take takes target targetH targetId targets");
+@source inline("tablet:w-full tabular-nums tags: tailwind-merge take takeaway takes target targetH targetId targets");
 @source inline("terminals: test tests text text-accent text-accent-on-inverse text-accent-text text-balance");
 @source inline("text-blockquote text-body text-body-l text-body-s text-caption text-center text-control-quiet");
 @source inline("text-display-m text-end text-h0 text-h1 text-h2 text-h3 text-inherit text-ink-link text-ink-muted");

@@ -3244,9 +3244,18 @@ text column, never under the visual. Publisher's content contract refuses
 the other shapes. `footnote` (`ReactNode`) is an
 optional one-sentence aside closing the band: `text-body-s` in the ground's
 secondary ink, at most the prose measure, following `align`, and holding at
-most one underlined link. It renders as the last child of the section (in a
-split, the last line of the text column) with `data-content-section-footnote`.
+most one underlined link. It has `data-content-section-footnote`; without
+the slots below it closes the section (the text column in a split).
 Never put a call to action in it.
+
+`takeaway` and `source` are optional `ReactNode` slots. The takeaway follows
+the body and media, spans the full band in every layout, and carries an
+accent rule at the logical start edge using `--ui-border-hairline`, with
+`text-body-l` semibold text. The footnote follows it with its existing
+styling and column. The source follows the footnote in that same column,
+using `text-caption` and the ground's secondary ink. Both slots render the
+authored nodes without a prefix or default copy. Omitting both preserves
+the existing markup; empty strings, null and false also render no slot.
 
 Use it instead of `SectionHeader` (settings scale, `text-h3`) for a
 marketing section, and instead of `MarketingChapter` when the section needs
@@ -6086,7 +6095,7 @@ not a grab-bag).
 | `MarketingChapterProps` | type | Props for `MarketingChapter`: `title`, `description`, `children`, `headingLevel`, `ground`, `className`, `style`, plus every native `<section>` attribute except `title`. |
 | `MarketingChapterHeadingLevel` | type | `2 \| 3`. |
 | `ContentSection` | component | One marketing section anatomy: a header group (eyebrow, heading, description, actions) held to the prose measure, then a module slot for one or more content modules, at fixed spacing; stacked, or split with a visual in a 7/12 column. |
-| `ContentSectionProps` | type | `ContentSectionStackedProps \| ContentSectionSplitProps`: `eyebrow`, `heading`, `description`, `actions`, `footnote`, `headingLevel`, `size`, `emphasis`, `ground`, `layout`, `media`, `mediaSide` (supported split alias), `align` (stacked), `children`, `className`, `style`, plus every native `<div>` attribute except `title`. |
+| `ContentSectionProps` | type | `ContentSectionStackedProps \| ContentSectionSplitProps`: `eyebrow`, `heading`, `description`, `actions`, `footnote`, `takeaway`, `source`, `headingLevel`, `size`, `emphasis`, `ground`, `layout`, `media`, `mediaSide` (supported split alias), `align` (stacked), `children`, `className`, `style`, plus every native `<div>` attribute except `title`. |
 | `ContentSectionStackedProps` | type | Stacked section: `layout?: "stacked"`, `align?`, optional `media` after the text module. |
 | `ContentSectionSplitProps` | type | Split section: `layout: "split-start" \| "split-end"`, optional `media`; supported `layout: "split"` alias requires `media` and accepts `mediaSide?`. |
 | `ContentSectionLayout` | type | `"stacked" \| "split-start" \| "split-end" \| "split"` (supported alias). |
