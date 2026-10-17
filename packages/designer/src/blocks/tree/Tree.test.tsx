@@ -32,7 +32,7 @@ describe("Tree", () => {
     expect(screen.getByRole("heading", { level: 3, name: "Root" })).toHaveAttribute("data-item-heading");
     expect(screen.getAllByRole("heading", { level: 4 })).toHaveLength(4);
     for (const row of container.querySelectorAll("li")) {
-      expect(row.querySelector(":scope > [data-tree-node] [data-item]")).not.toBeNull();
+      expect(row.querySelector(":scope > [data-diagram-node] [data-item]")).not.toBeNull();
       expect(row.parentElement?.tagName).toBe("UL");
     }
     const child = screen.getByRole("heading", { name: "branch-2" }).closest("li")!;
@@ -84,7 +84,7 @@ describe("Tree", () => {
   it.each(["right", "down"] as const)("uses diagram classes only from tablet-lg, no role tree (%s)", orientation => {
     const { container } = render(<Tree nodes={branch(2)} orientation={orientation} />);
     expect(container.querySelector("[data-tree]")).toHaveAttribute("data-orientation", orientation);
-    const strokes = [...container.querySelectorAll("[data-tree-connector]")];
+    const strokes = [...container.querySelectorAll("[data-diagram-connector]")];
     for (const stroke of strokes) {
       expect(stroke).toHaveAttribute("aria-hidden", "true");
       expect(stroke).toHaveClass("hidden", "tablet-lg:block", "print:hidden", "tablet-lg:print:hidden");
@@ -104,7 +104,7 @@ describe("Tree", () => {
   it.each(["base", "sunken", "inverse"] as const)("selects existing ink, line and responsive plate tokens for %s", ground => {
     const { container } = render(<Tree nodes={simple} ground={ground} className="caller" />);
     expect(container.firstElementChild).toHaveClass("caller");
-    const node = container.querySelector("[data-tree-node]")!;
+    const node = container.querySelector("[data-diagram-node]")!;
     expect(node).toHaveClass("tablet-lg:rounded-panel", "tablet-lg:p-lg", "print:rounded-none", "print:p-0");
     expect(node).toHaveClass(ground === "base" ? "tablet-lg:bg-surface-sunken" : ground === "sunken" ? "tablet-lg:bg-surface-raised" : "tablet-lg:bg-surface-inverse-raised");
     expect(screen.getByRole("heading", { level: 3 })).toHaveClass(ground === "inverse" ? "text-ink-on-inverse" : "text-ink-primary");

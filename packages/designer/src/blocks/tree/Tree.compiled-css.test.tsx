@@ -30,7 +30,7 @@ it("ships every rendered Tree layout and connector class in canonical compiled C
   for (const ground of ["base", "sunken", "inverse"] as const) for (const props of fixtures) {
     const host = document.createElement("div");
     host.innerHTML = renderToStaticMarkup(createElement(Tree, { ...props, ground }));
-    for (const node of host.querySelectorAll("[data-tree], ul, li, [data-tree-node], [data-tree-connector]")) for (const token of node.classList) classes.add(token);
+    for (const node of host.querySelectorAll("[data-tree], ul, li, [data-diagram-node], [data-diagram-connector]")) for (const token of node.classList) classes.add(token);
   }
   expect(classes.size).toBeGreaterThan(20);
   const missing = [...classes].filter(token => {

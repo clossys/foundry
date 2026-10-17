@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
+import { TOKENS } from "../../tokens/tokens.js";
 import { cx } from "../../atoms/internal/cx.js";
 import { UI_BORDER_HAIRLINE } from "../../atoms/internal/ui-vars.js";
 import { Item } from "../items/Item.js";
@@ -50,9 +51,9 @@ const DOWN_CELL = "tablet-lg:row-span-full tablet-lg:grid tablet-lg:grid-cols-1 
 const DOWN_CHILDREN = "tablet-lg:col-start-1 tablet-lg:row-start-2 tablet-lg:row-end-[-1] tablet-lg:grid tablet-lg:grid-rows-subgrid tablet-lg:gap-x-lg tablet-lg:gap-y-2xl";
 const DOWN_PLATE = "tablet-lg:col-start-1 tablet-lg:row-start-1 tablet-lg:w-full tablet-lg:justify-self-center tablet-lg:self-stretch";
 const STROKE = "pointer-events-none absolute hidden tablet-lg:block print:hidden tablet-lg:print:hidden tablet-lg:before:absolute tablet-lg:before:inset-0 tablet-lg:before:content-['']";
-const HALF_COLUMN_GAP = "calc(var(--spacing-2xl) / 2)";
-const NEGATIVE_HALF_COLUMN_GAP = "calc(var(--spacing-2xl) / -2)";
-const NEGATIVE_HALF_ROW_GAP = "calc(var(--spacing-lg) / -2)";
+const HALF_COLUMN_GAP = `calc(var(--spacing-2xl, ${TOKENS["--spacing-2xl"]!.value}) / 2)`;
+const NEGATIVE_HALF_COLUMN_GAP = `calc(var(--spacing-2xl, ${TOKENS["--spacing-2xl"]!.value}) / -2)`;
+const NEGATIVE_HALF_ROW_GAP = `calc(var(--spacing-lg, ${TOKENS["--spacing-lg"]!.value}) / -2)`;
 
 /** One semantic nested list, with purely CSS diagram geometry on wider screens. */
 export function Tree({ nodes, orientation = "right", labelledBy, ground = "base", className }: TreeProps) {
@@ -61,7 +62,7 @@ export function Tree({ nodes, orientation = "right", labelledBy, ground = "base"
   const colors = SECTION_GROUND_CLASSES[ground];
   const tokens = GROUND_CLASSES[ground];
   function stroke(part: string, style: CSSProperties) {
-    return <span data-tree-connector={part} aria-hidden="true" className={cx(STROKE, tokens.pseudo)} style={style} />;
+    return <span data-diagram-connector={part} aria-hidden="true" className={cx(STROKE, tokens.pseudo)} style={style} />;
   }
   function row(node: TreeNodeData, isRoot = false, siblingIndex = 0, siblingCount = 1): ReactNode {
     const descendants = children.get(node.id)!;
@@ -72,9 +73,9 @@ export function Tree({ nodes, orientation = "right", labelledBy, ground = "base"
         {stroke("horizontal-incoming", { insetInlineStart: NEGATIVE_HALF_COLUMN_GAP, insetBlockStart: "50%", inlineSize: HALF_COLUMN_GAP, blockSize: UI_BORDER_HAIRLINE })}
         {stroke("horizontal-spine", { insetInlineStart: NEGATIVE_HALF_COLUMN_GAP, insetBlockStart: siblingIndex === 0 ? "50%" : NEGATIVE_HALF_ROW_GAP, insetBlockEnd: siblingIndex === siblingCount - 1 ? "50%" : NEGATIVE_HALF_ROW_GAP, inlineSize: UI_BORDER_HAIRLINE })}
       </> : null}
-      {!right && !isRoot && siblingIndex === 0 ? stroke("down-spine", { insetInlineStart: "50%", insetBlockStart: NEGATIVE_HALF_COLUMN_GAP, inlineSize: `calc((100% + var(--spacing-lg)) * ${siblingCount - 1})`, blockSize: UI_BORDER_HAIRLINE }) : null}
-      <div data-tree-node={node.id} style={right ? undefined : { maxInlineSize: "calc(var(--ui-width-prose-max) / 3)" }} className={cx(PLATE, tokens.plate, right ? "tablet-lg:col-start-1 tablet-lg:row-start-1 tablet-lg:self-center" : DOWN_PLATE)}>
-        {!isRoot && hasContent(edgeLabel) ? <p data-tree-edge="" className={cx("m-0 text-caption font-body", colors.secondary)}>{edgeLabel}</p> : null}
+      {!right && !isRoot && siblingIndex === 0 ? stroke("down-spine", { insetInlineStart: "50%", insetBlockStart: NEGATIVE_HALF_COLUMN_GAP, inlineSize: `calc((100% + var(--spacing-lg, ${TOKENS["--spacing-lg"]!.value})) * ${siblingCount - 1})`, blockSize: UI_BORDER_HAIRLINE }) : null}
+      <div data-diagram-node={node.id} style={right ? undefined : { maxInlineSize: `calc(var(--ui-width-prose-max, ${TOKENS["--ui-width-prose-max"]!.value}) / 3)` }} className={cx(PLATE, tokens.plate, right ? "tablet-lg:col-start-1 tablet-lg:row-start-1 tablet-lg:self-center" : DOWN_PLATE)}>
+        {!isRoot && hasContent(edgeLabel) ? <p data-diagram-edge="" className={cx("m-0 text-caption font-body", colors.secondary)}>{edgeLabel}</p> : null}
         <Item {...item} treatment="plain" size="standard" ground={ground} headingLevel={isRoot ? 3 : 4} />
         {right && hasChildren ? stroke("horizontal-outgoing", { insetInlineStart: "100%", insetBlockStart: "50%", inlineSize: HALF_COLUMN_GAP, blockSize: UI_BORDER_HAIRLINE }) : null}
         {!right && !isRoot ? stroke("down-incoming", { insetInlineStart: "50%", insetBlockStart: NEGATIVE_HALF_COLUMN_GAP, inlineSize: UI_BORDER_HAIRLINE, blockSize: HALF_COLUMN_GAP }) : null}
