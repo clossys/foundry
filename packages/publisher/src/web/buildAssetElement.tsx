@@ -1,6 +1,12 @@
 import { createElement, type ReactNode } from "react";
 import type { RenderImageAsset, RenderImageSource, RenderVideoAsset, RenderAsset } from "../internal/assets.js";
 
+/** Applied only by the checked content slot; existing asset rendering keeps its defaults. */
+export interface ContentAssetPresentation { loading: "lazy" | "eager"; decorative: boolean }
+function imagePresentation(presentation: ContentAssetPresentation | undefined) {
+  return presentation === undefined ? {} : { loading: presentation.loading, decoding: "async" as const, className: "block h-auto w-full", ...(presentation.decorative ? { "aria-hidden": true } : {}) };
+}
+
 function groupImageSourcesByFormat(sources: readonly RenderImageSource[]): Array<{ format: string | undefined; entries: RenderImageSource[] }> {
   const groups: Array<{ format: string | undefined; entries: RenderImageSource[] }> = [];
   const indexByFormat = new Map<string | undefined, number>();
@@ -20,10 +26,10 @@ function groupImageSourcesByFormat(sources: readonly RenderImageSource[]): Array
  * A `RenderImageAsset` with no `sources` (or an empty one) renders a single
  * `<img>`; when `sources` is present, wraps a responsive `<picture>`.
  */
-export function buildResponsiveImageElement(asset: RenderImageAsset, altOverride?: string): ReactNode {
+export function buildResponsiveImageElement(asset: RenderImageAsset, altOverride?: string, presentation?: ContentAssetPresentation): ReactNode {
   const alt = altOverride ?? asset.alt;
   const sources = asset.sources ?? [];
-  const fallbackImg = createElement("img", { src: asset.src, alt, width: asset.width, height: asset.height });
+  const fallbackImg = createElement("img", { src: asset.src, alt, width: asset.width, height: asset.height, ...imagePresentation(presentation) });
   if (sources.length === 0) return fallbackImg;
 
   const sourceElements = groupImageSourcesByFormat(sources).map((group, i) =>
@@ -36,12 +42,12 @@ export function buildResponsiveImageElement(asset: RenderImageAsset, altOverride
   return createElement("picture", {}, ...sourceElements, fallbackImg);
 }
 
-export function buildVideoElement(asset: RenderVideoAsset, prefersReducedMotion: boolean | undefined, altOverride?: string): ReactNode {
+export function buildVideoElement(asset: RenderVideoAsset, prefersReducedMotion: boolean | undefined, altOverride?: string, presentation?: ContentAssetPresentation): ReactNode {
   const alt = altOverride ?? asset.alt;
   const reducedMotionActive = prefersReducedMotion === true;
 
   if (reducedMotionActive && asset.reducedMotion === "static-poster") {
-    return createElement("img", { src: asset.poster as string, alt, width: asset.width, height: asset.height });
+    return createElement("img", { src: asset.poster as string, alt, width: asset.width, height: asset.height, ...imagePresentation(presentation) });
   }
 
   const autoplaySuppressed = reducedMotionActive && (asset.reducedMotion === "pause" || asset.reducedMotion === "no-autoplay");
@@ -63,6 +69,7 @@ export function buildVideoElement(asset: RenderVideoAsset, prefersReducedMotion:
       muted: asset.muted === true,
       controls: true,
       "aria-label": alt,
+      ...(presentation === undefined ? {} : { preload: presentation.loading === "lazy" ? "none" : "metadata", className: "block h-auto w-full" }),
     },
     ...sourceElements,
     ...trackElements,
@@ -70,7 +77,7 @@ export function buildVideoElement(asset: RenderVideoAsset, prefersReducedMotion:
   );
 }
 
-export function buildAssetElement(asset: RenderAsset, options: { prefersReducedMotion?: boolean; altOverride?: string } = {}): ReactNode {
-  const { prefersReducedMotion, altOverride } = options;
-  return asset.type === "image" ? buildResponsiveImageElement(asset, altOverride) : buildVideoElement(asset, prefersReducedMotion, altOverride);
+export function buildAssetElement(asset: RenderAsset, options: { prefersReducedMotion?: boolean; altOverride?: string; contentPresentation?: ContentAssetPresentation } = {}): ReactNode {
+  const { prefersReducedMotion, altOverride, contentPresentation } = options;
+  return asset.type === "image" ? buildResponsiveImageElement(asset, altOverride, contentPresentation) : buildVideoElement(asset, prefersReducedMotion, altOverride, contentPresentation);
 }

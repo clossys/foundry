@@ -122,7 +122,7 @@ export interface LandingViewProps extends Omit<HTMLAttributes<HTMLElement>, "chi
    * `"none"` when the frame already owns `main`.
    */
   landmark?: SectionedViewLandmark;
-  /** Resolves hero `media.assetId`, as for `SectionedView`. */
+  /** Resolves hero and canonical content `media.assetId`, as for `SectionedView`. */
   resolveAssetId?: AssetResolver;
   /** When `true`, applies each video asset's `reducedMotion` policy. */
   prefersReducedMotion?: boolean;
@@ -226,9 +226,9 @@ function bandBlocks(afterSection: Readonly<Record<string, ReactNode>>, canonical
         {after(id)}
       </ContentSection>
     ),
-    ContentSection: ({ section, actions, publishedKind }) => {
+    ContentSection: ({ section, actions, publishedKind, resolveAssetId, prefersReducedMotion }) => {
       const Content = canonicalContentSection;
-      return <Content section={section} actions={actions} after={after(section.id)} className={publishedKind === undefined ? undefined : BAND_ANCHOR_CLASS} style={publishedKind === undefined ? { scrollMarginTop: 0 } : undefined} />;
+      return <Content section={section} actions={actions} resolveAssetId={resolveAssetId} prefersReducedMotion={prefersReducedMotion} after={after(section.id)} className={publishedKind === undefined ? undefined : BAND_ANCHOR_CLASS} style={publishedKind === undefined ? { scrollMarginTop: 0 } : undefined} />;
     },
   };
 }
@@ -414,7 +414,7 @@ return function LandingView({
         </div>
       ) : null}
       {bands.map(({ section, node }) => (
-        <SectionFrame key={section.id} data-landing-ground={section.ground} ground={section.ground} measure={measure} className={BAND_CLASS} style={section.kind === "content-section" ? { paddingBlock: 0 } : undefined}>
+        <SectionFrame key={section.id} data-landing-ground={section.ground} ground={section.ground} measure={measure} className={BAND_CLASS} style={section.kind === "content-section" || section.kind === "status-list" ? { paddingBlock: 0 } : undefined}>
           {ANATOMY_KINDS.has(section.kind) ? (
             node
           ) : (

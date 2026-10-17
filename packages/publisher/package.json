@@ -1,6 +1,6 @@
 {
   "name": "@clossys/publisher",
-  "version": "0.12.0",
+  "version": "0.13.0",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -414,7 +414,7 @@
   },
   "dependencies": {
     "@clossys/writer": "^0.6.0",
-    "@clossys/designer": "^0.11.0",
+    "@clossys/designer": "^0.12.0",
     "@clossys/controller": "^0.10.0"
   },
   "peerDependencies": {

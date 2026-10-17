@@ -3149,6 +3149,14 @@ composition keeps its two columns.
 
 ### `SectionIntro`
 
+`SectionIntro` and `Hero` accept three optional controls. `eyebrowTone="muted"`
+uses the ground's secondary ink; the default is `"accent"`. `measure="wide"`
+leaves the headline within its content container without a prose cap and limits
+the supporting copy to `--ui-width-hero-wide` (64rem); the default `"prose"`
+keeps the existing 48rem cap. `headingScale="display"` selects display-m,
+display-l from tablet, and display-xl (72px) from tablet-lg; the default
+`"default"` keeps the emphasis ramp. These controls are independent.
+
 ```tsx
 import { SectionIntro } from "@clossys/designer/blocks/server";
 
@@ -7125,3 +7133,16 @@ const art: ConsumerArtContract = {
 };
 const report = checkConsumerArtContract(art);
 ```
+
+### Site chrome tone and transparent footer rule
+
+`Brandmark tone="inverse"` uses inverse wordmark ink; `"auto"` keeps the base
+ink. A `Brandmark` passed directly to an overlay `SiteHeader` follows the header tone
+unless its own tone is explicit. `NavDisclosure tone="inverse"` uses inverse
+trigger ink at rest, on hover, when expanded and on keyboard focus. An omitted
+nav tone follows an inverse overlay header; an explicit `"auto"` keeps base ink.
+Both controls otherwise retain their existing default markup.
+
+`SiteFooter ground="transparent" rule="top"` adds a token-bound top hairline
+without a plate or a divider inside the footer. `rule` defaults to `"none"`
+and is ignored on other grounds, which retain their existing border policy.

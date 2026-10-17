@@ -184,3 +184,4 @@ export { checkPageFlow, sectionWeight, resolveActionEmphasis } from "./page-flow
 export type { CheckPageFlowOptions, SectionShape, SectionWeight, SectionedViewFlowWarning } from "./page-flow.js";
 
 export * from "./content-contract.js";
+export * from "./content-asset.js";

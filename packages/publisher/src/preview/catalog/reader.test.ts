@@ -458,8 +458,10 @@ describe('reader function catalog', () => {
             expect(rules.find(rule => rule.selectorText === '.catalog-example>div')!.style.getPropertyValue('padding-inline')).toBe('');
             for (const wrapper of root.querySelectorAll('[data-catalog-native], [data-config-native]')) {
                 const landing = wrapper.querySelector('[data-landing-hero], [data-landing-call-to-action]') || wrapper.hasAttribute('data-catalog-composition');
-                const band = wrapper.querySelector(':is([data-catalog-native],[data-config-native])>div:not([data-landing-view])>[data-content-section]');
-                expect(band !== null, wrapper.parentElement?.id).toBe(!landing);
+                // Inspect the same direct-child relationship without the selector engine's
+                // unsupported nested :is/:not combination; the CSS selector stays pinned above.
+                const band = [...wrapper.children].some(child => child.tagName === 'DIV' && !child.hasAttribute('data-landing-view') && [...child.children].some(node => node.hasAttribute('data-content-section')));
+                expect(band, wrapper.parentElement?.id).toBe(!landing);
             }
             expect(rules.find(rule => rule.selectorText === '.catalog-note')?.style.getPropertyValue('overflow-wrap')).toBe('break-word');
         }

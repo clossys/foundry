@@ -1,4 +1,5 @@
 import type { CopyRef } from "@clossys/writer";
+import type { ContentAssetContract } from "./content-asset.js";
 import type { ContentIconName, SectionedViewSpecimenPanel, SectionedViewSpecimenPart, SectionedViewSpecimenStatus, SectionedViewSpecimenTone } from "./sectioned-view.js";
 
 /** Shared authored and renderer-facing vocabulary; recipes resolve into these axes. */
@@ -115,7 +116,12 @@ export interface SectionedViewSceneApprovalChainInput {
 }
 export type SectionedViewSceneInput = SectionedViewSceneConvergeInput | SectionedViewSceneEvidenceTrailInput | SectionedViewSceneApprovalChainInput;
 export interface SectionedViewSceneMedia { type: "scene"; label: CopyRef; relationLabel?: CopyRef; input: SectionedViewSceneInput }
-export type SectionedViewMedia = SectionedViewSpecimenMedia | SectionedViewRecordMedia | SectionedViewSceneMedia;
+/** Consumer-owned image or video data, rendered by the existing media slot. */
+export type SectionedViewAssetMedia = { type: "asset"; assetId: string; contract: ContentAssetContract; caption?: CopyRef } & (
+  | { purpose: "meaningful"; alt: CopyRef }
+  | { purpose: "decorative"; alt?: never; contract: ContentAssetContract & { format: Extract<ContentAssetContract["format"], `image/${string}`> } }
+);
+export type SectionedViewMedia = SectionedViewSpecimenMedia | SectionedViewRecordMedia | SectionedViewSceneMedia | SectionedViewAssetMedia;
 
 interface Recipe {
   readonly fixed: Readonly<Partial<Record<"arrangement" | "order" | "reveal" | "treatment" | "scale" | "columns", string | number>>>;

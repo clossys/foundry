@@ -51,3 +51,7 @@ export type {
   RenderStructuredDocumentOptions,
   RenderStructuredDocumentResult,
 } from "./document/index.js";
+
+// Frame appearance inputs; the package keeps explicit subpath exports.
+export type { SiteLinkInput, SiteBrandInput, SiteShellInput, SiteFooterInput } from "./web/frame/index.js";
+export type { SectionedViewHeroSection } from "./core/sectioned-view.js";

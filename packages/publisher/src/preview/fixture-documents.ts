@@ -142,15 +142,11 @@ export const previewSectionedDocument: SectionedViewDocument = {
         planned: ref("preview.sectioned.status.planned"),
         dispositions: { "not-offered": ref("preview.sectioned.status.not-offered") },
       },
-      groups: [
-        {
-          id: "core",
-          heading: ref("preview.sectioned.status.group.heading"),
-          items: [
-            { id: "capability", label: ref("preview.sectioned.status.item.label"), state: "available" },
-            { id: "unavailable", label: ref("preview.sectioned.status.item.label"), disposition: "not-offered" },
-          ],
-        },
+      items: [
+        { id: "available", label: ref("preview.sectioned.status.item.label"), state: "available" },
+        { id: "partial", label: ref("preview.sectioned.status.item.label"), state: "partial" },
+        { id: "planned", label: ref("preview.sectioned.status.item.label"), state: "planned" },
+        { id: "not-offered", label: ref("preview.sectioned.status.item.label"), disposition: "not-offered" },
       ],
     },
     {

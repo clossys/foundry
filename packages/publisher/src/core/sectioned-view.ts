@@ -1,10 +1,12 @@
 import { planContentGrounds } from "./content-ground.js";
+import { projectStatusListItems } from "./status-list-catalog.js";
 import type { CopyRef, CopyResolution, CopyResolver } from "@clossys/writer";
 import { isSanctionedHref } from "../internal/href.js";
 import { proseParagraphTextLength } from "../internal/prose-text.js";
 import type { ComposeFinding } from "./types.js";
 import { desugarRecipe, SECTIONED_VIEW_CONTENT_CONTRACT, SECTIONED_VIEW_ITEM_RECIPES } from "./content-contract.js";
 import type { FrameSize, FrameLayout, SectionedViewItemsBlock, CanonicalSectionedViewItemsBlock, SectionedViewMatrixBlock, SectionedViewProseBlock, SectionedViewItem, SectionedViewItemSpan, SectionedViewMedia, SectionedViewSpecimenMedia, SectionedViewSceneMedia, SectionedViewBadge } from "./content-contract.js";
+import { checkContentAssetContract } from "./content-asset.js";
 export * from "./content-contract.js";
 
 /** Resolved section grounds; canonical content sections author only inverse or omit ground. */
@@ -156,6 +158,12 @@ export interface SectionedViewHeroSection {
   kind: "hero";
   ground?: SectionedViewGround;
   eyebrow?: CopyRef;
+  /** Intro label ink. @default "accent" */
+  eyebrowTone?: "accent" | "muted";
+  /** Intro headline/body measure, independent of the outer page column. @default "prose" */
+  measure?: "prose" | "wide";
+  /** Intro type ramp. @default "default" */
+  headingScale?: "default" | "display";
   heading: CopyRef;
   description?: CopyRef;
   /** Short hero: section-scale heading, with no first-screen fill, peek or scroll cue. */
@@ -302,10 +310,9 @@ export type SectionedViewStatus = "available" | "partial" | "planned";
 export type SectionedViewStatusDisposition = "not-offered";
 
 /**
- * A status row. `detail` is the row's own explanation, including the
- * reasoning behind a deliberate non-capability: optional, so every document
- * that validated without it still does, and additive, so a row without one
- * renders unchanged.
+ * A status row with exactly one readiness state or off-axis disposition.
+ * Optional `detail` supplies the canonical Item description, including the
+ * reasoning behind a deliberate non-capability.
  */
 export type SectionedViewStatusItem =
   | { id: string; label: CopyRef; detail?: CopyRef; state: SectionedViewStatus; disposition?: never }
@@ -321,16 +328,16 @@ export interface SectionedViewStatusListSection {
   id: string;
   kind: "status-list";
   ground?: SectionedViewGround;
-  /** Optional label above the section heading. Optional and additive: a section without one renders exactly as it did before. */
+  /** Optional label above the canonical section heading. */
   eyebrow?: CopyRef;
   heading: CopyRef;
   description?: CopyRef;
   labels: Record<SectionedViewStatus, CopyRef> & { dispositions: Record<SectionedViewStatusDisposition, CopyRef> };
-  /** Grouped editorial statements, each under its own heading. Provide this or `items`, never both. */
+  /** Two to four groups of two to four entries, eight entries total at most. Group headings resolve to at most 24 characters. Provide this or `items`, never both. */
   groups?: SectionedViewStatusGroup[];
   /**
    * A flat list of statements with no group headings — the common shape for
-   * a short trust page that has nothing to group. Provide this or `groups`,
+   * a lookup of three to eight entries. Provide this or `groups`,
    * never both.
    */
   items?: SectionedViewStatusItem[];
@@ -832,8 +839,11 @@ export function validateSectionedViewDocument(value: unknown): ComposeFinding[] 
     switch (section.kind) {
       case "hero":
         heroCount += 1;
-        if (!hasOnlyOwnKeys(section, ["id", "kind", "ground", "eyebrow", "heading", "description", "actions", "media", "size"]) || !hasOwn(section, "heading")) findings.push(finding("sectioned-view-section-keys", path, `${path} has keys not allowed for hero.`));
+        if (!hasOnlyOwnKeys(section, ["id", "kind", "ground", "eyebrow", "eyebrowTone", "measure", "headingScale", "heading", "description", "actions", "media", "size"]) || !hasOwn(section, "heading")) findings.push(finding("sectioned-view-section-keys", path, `${path} has keys not allowed for hero.`));
         validateEnumField(section, "size", ["display", "compact"], "sectioned-view-hero-shape", path, findings);
+        validateEnumField(section, "eyebrowTone", ["accent", "muted"], "sectioned-view-hero-shape", path, findings);
+        validateEnumField(section, "measure", ["prose", "wide"], "sectioned-view-hero-shape", path, findings);
+        validateEnumField(section, "headingScale", ["default", "display"], "sectioned-view-hero-shape", path, findings);
         if (section.size === "compact" && section.media !== undefined) findings.push(finding("sectioned-view-hero-compact-media", `${path}.media`, `${path} cannot combine a compact hero with media.`));
         validateCopy(section.heading, `${path}.heading`, findings);
         if (section.eyebrow !== undefined) validateCopy(section.eyebrow, `${path}.eyebrow`, findings);
@@ -1045,6 +1055,7 @@ function validateContentFootnote(value: unknown, path: string, findings: Compose
 }
 
 function validateStatusListSection(section: Record<string, unknown>, path: string, findings: ComposeFinding[]): void {
+  const firstFinding = findings.length;
   if (!hasOnlyOwnKeys(section, ["id", "kind", "ground", "eyebrow", "heading", "description", "labels", "groups", "items"]) || !hasOwnKeys(section, ["heading", "labels"])) findings.push(finding("sectioned-view-section-keys", path, `${path} has keys not allowed for status-list.`));
   validateCopy(section.heading, `${path}.heading`, findings);
   if (section.eyebrow !== undefined) validateCopy(section.eyebrow, `${path}.eyebrow`, findings);
@@ -1071,6 +1082,7 @@ function validateStatusListSection(section: Record<string, unknown>, path: strin
   }
   if (hasItems) {
     validateStatusItems(section.items, `${path}.items`, findings);
+    validateStatusListProjection(section, path, findings, firstFinding);
     return;
   }
   if (!validateDenseArray(section.groups, `${path}.groups`, findings, "sectioned-view-status-groups-shape", `${path}.groups must be a non-empty array.`)) return;
@@ -1084,6 +1096,18 @@ function validateStatusListSection(section: Record<string, unknown>, path: strin
     }
     validateCopy(group.heading, `${groupPath}.heading`, findings);
     validateStatusItems(group.items, `${groupPath}.items`, findings);
+  }
+  validateStatusListProjection(section, path, findings, firstFinding);
+}
+
+/** The original status shape is complete before the canonical projection is inspected. */
+function validateStatusListProjection(section: Record<string, unknown>, path: string, findings: ComposeFinding[], start: number): void {
+  if (findings.slice(start).some(entry => entry.severity === "error")) return;
+  try {
+    const block = projectStatusListItems(section as unknown as SectionedViewStatusListSection);
+    validateContentBlock(block, `${path}.block`, findings);
+  } catch (error) {
+    findings.push(finding("sectioned-view-status-catalog", path, error instanceof Error ? error.message : "Invalid status catalog projection."));
   }
 }
 
@@ -1456,11 +1480,23 @@ function contentShape(value: unknown, path: string, findings: ComposeFinding[], 
 function validateContentMedia(value: unknown, path: string, findings: ComposeFinding[]): void {
   if (!isPlainObject(value) || !hasEnumerableOwnDataKeys(value)) { findings.push(finding("sectioned-view-content-media-shape", path, "Media must be one closed data object.")); return; }
   switch (value.type) {
+    case "asset": validateAssetMedia(value, path, findings); return;
     case "specimen": validateSpecimenMedia(value, path, findings); return;
     case "record": validateRecordMedia(value, path, findings); return;
     case "scene": validateSceneMedia(value, path, findings); return;
-    default: findings.push(finding("sectioned-view-content-media-type", `${path}.type`, "Media type must be specimen, record or scene."));
+    default: findings.push(finding("sectioned-view-content-media-type", `${path}.type`, "Media type must be specimen, record, scene or asset."));
   }
+}
+function validateAssetMedia(value: unknown, path: string, findings: ComposeFinding[]): void {
+  const media = contentShape(value, path, findings, ["type", "assetId", "purpose", "alt", "caption", "contract"], ["type", "assetId", "purpose", "contract"]);
+  if (media === undefined) return;
+  if (!isNonWhitespaceString(media.assetId)) findings.push(finding("content-asset-id", `${path}.assetId`, "The asset id must be non-blank."));
+  const contract = checkContentAssetContract(media.contract);
+  findings.push(...contract.findings.map(entry => ({ ...entry, path: `${path}.contract${entry.path ? `.${entry.path}` : ""}` })));
+  if (!contract.ok) return;
+  if (media.purpose === "meaningful") validateCopy(media.alt, `${path}.alt`, findings);
+  else if (media.purpose !== "decorative" || hasOwn(media, "alt") || (isPlainObject(media.contract) && typeof media.contract.format === "string" && media.contract.format.startsWith("video/"))) findings.push(finding("content-asset-accessibility", path, "Use meaningful media with alt copy, or a decorative image without alt copy."));
+  if (media.caption !== undefined) validateCopy(media.caption, `${path}.caption`, findings);
 }
 function validateSpecimenMedia(value: unknown, path: string, findings: ComposeFinding[]): void {
   const media = contentShape(value, path, findings, ["type", "label", "panel", "key"], ["type", "label", "panel"]);
@@ -1829,7 +1865,7 @@ function resolveSection(section: GroundedSection, path: string, text: (ref: Copy
         // renderer decides grouped-vs-flat with Object.hasOwn, which is true for a
         // key holding undefined. Writing both keys made every status-list section
         // fail the renderer's exactly-one check. Issue #890.
-        ...(sourceGroups ? { groups: sourceGroups.map((group, groupIndex) => ({ ...group, heading: text(group.heading, `${path}.groups.${groupIndex}.heading`), items: group.items.map((item, itemIndex) => resolveStatusItem(item, `${path}.groups.${groupIndex}.items.${itemIndex}`, text, optional)) })) } : {}),
+        ...(sourceGroups ? { groups: sourceGroups.map((group, groupIndex) => ({ ...group, heading: boundedText(group.heading, `${path}.groups.${groupIndex}.heading`, text, 24, "sectioned-view-content-topics-groups-text-length"), items: group.items.map((item, itemIndex) => resolveStatusItem(item, `${path}.groups.${groupIndex}.items.${itemIndex}`, text, optional)) })) } : {}),
         ...(sourceItems ? { items: sourceItems.map((item, itemIndex) => resolveStatusItem(item, `${path}.items.${itemIndex}`, text, optional)) } : {}),
       };
     }
@@ -2084,7 +2120,7 @@ function resolveContentSection(section: GroundableContentSection & { ground: Sec
     ...copyField("description", section.description, path, text),
     ...(actions === undefined ? {} : { actions: actions.map((action, index) => ({ ...action, label: text(action.label, `${path}.actions.${index}.label`) })) }),
     ...(block === undefined ? {} : { block: resolveContentBlock(block, `${path}.block`, text) }),
-    ...(media === undefined ? {} : { media: media.type === "scene" ? resolveScene(media, `${path}.media`, text) : media.type === "record" ? resolveRecordMedia(media, `${path}.media`, text) : resolveSpecimenMedia(media, `${path}.media`, text) }),
+    ...(media === undefined ? {} : { media: media.type === "asset" ? { ...media, ...(media.purpose === "meaningful" ? { alt: text(media.alt, `${path}.media.alt`) } : {}), ...copyField("caption", media.caption, `${path}.media`, text) } : media.type === "scene" ? resolveScene(media, `${path}.media`, text) : media.type === "record" ? resolveRecordMedia(media, `${path}.media`, text) : resolveSpecimenMedia(media, `${path}.media`, text) }),
     ...(footnote === undefined ? {} : { footnote: { ...copyField("text", footnote.text, `${path}.footnote`, text), ...(footnote.link === undefined ? {} : { link: { label: text(footnote.link.label, `${path}.footnote.link.label`), href: footnote.link.href } }) } }),
   } as ResolvedSectionedViewContentSection;
 }
@@ -2101,7 +2137,7 @@ interface BandShape {
   layout: "stacked" | "split";
   mediaSide?: "start" | "end";
   block: string;
-  visual: "none" | "specimen" | "record" | "scene" | "lanes";
+  visual: "none" | "specimen" | "record" | "scene" | "asset" | "lanes";
   /** Carries a specimen (as media or inside its block) or a table: a dense band. */
   dense: boolean;
   ground?: SectionedViewGround;

@@ -20,11 +20,12 @@ export interface ResolvedSiteShell {
     readonly label: string;
     readonly size: "sm" | "md" | "lg";
     readonly plate?: "self" | "shared";
+    readonly tone?: "auto" | "inverse";
     readonly wordmark?: string;
   };
   readonly skipLink: string;
-  readonly nav?: { readonly label: string; readonly triggerLabel: string; readonly links: readonly ResolvedSiteLink[] };
-  readonly actions: readonly ResolvedSiteLink[];
+  readonly nav?: { readonly tone?: "auto" | "inverse"; readonly label: string; readonly triggerLabel: string; readonly links: readonly ResolvedSiteLink[] };
+  readonly actions: readonly (ResolvedSiteLink & { readonly emphasis: "primary" | "secondary" })[];
   readonly iconActions: readonly ResolvedSiteIconLink[];
   readonly secondaryAction?: ResolvedSiteLink;
   readonly environments: readonly (ResolvedSiteLink & { readonly icon: IconNode; readonly isCurrent: boolean })[];
@@ -35,6 +36,8 @@ export interface ResolvedSiteShell {
     | { readonly placement: "reserved"; readonly ground: SiteChromeGround }
     | { readonly placement: "overlay"; readonly tone: "base" | "inverse" };
   readonly footer?: {
+    readonly rule?: "none" | "top";
+    readonly placement: "flow" | "overlay";
     readonly ground: SiteChromeGround;
     readonly columns: readonly { readonly heading: string; readonly links: readonly ResolvedSiteLink[] }[];
     readonly links: readonly ResolvedSiteLink[];
@@ -59,13 +62,14 @@ const SHELL_KEYS = new Set([
   "origin",
 ]);
 const HEADER_KEYS = new Set(["placement", "ground", "tone"]);
-const BRAND_KEYS = new Set(["assetId", "label", "size", "plate", "variant", "wordmark"]);
-const NAV_KEYS = new Set(["label", "triggerLabel", "links"]);
+const BRAND_KEYS = new Set(["assetId", "label", "size", "plate", "variant", "wordmark", "tone"]);
+const NAV_KEYS = new Set(["label", "triggerLabel", "links", "tone"]);
 const LINK_KEYS = new Set(["href", "label"]);
+const ACTION_KEYS = new Set(["href", "label", "emphasis"]);
 const ENVIRONMENT_KEYS = new Set(["href", "label", "icon", "isCurrent"]);
 const ICON_LINK_KEYS = new Set(["href", "label", "icon"]);
 const SOCIAL_KEYS = new Set(["label", "links"]);
-const FOOTER_KEYS = new Set(["ground", "columns", "links", "social", "legal"]);
+const FOOTER_KEYS = new Set(["placement", "ground", "columns", "links", "social", "legal", "rule"]);
 const COLUMN_KEYS = new Set(["heading", "links"]);
 const LEGAL_KEYS = new Set(["entity", "links", "linksLabel"]);
 
@@ -267,6 +271,7 @@ export function resolveShell(input: SiteShellInput, resolveCopy: CopyResolver, r
     label: copy(brandFields.label, "shell.brand.label", resolveCopy),
     size,
     ...(plate === undefined ? {} : { plate }),
+    ...(brandFields.tone === undefined ? {} : { tone: oneOf(brandFields.tone, "shell.brand.tone", ["auto", "inverse"] as const) }),
     ...(variant === "lockup" ? { wordmark: copy(brandFields.wordmark, "shell.brand.wordmark", resolveCopy) } : {}),
   };
 
@@ -276,6 +281,7 @@ export function resolveShell(input: SiteShellInput, resolveCopy: CopyResolver, r
     const label = copy(navFields.label, "shell.nav.label", resolveCopy);
     nav = {
       label,
+      ...(navFields.tone === undefined ? {} : { tone: oneOf(navFields.tone, "shell.nav.tone", ["auto", "inverse"] as const) }),
       triggerLabel: navFields.triggerLabel === undefined ? label : copy(navFields.triggerLabel, "shell.nav.triggerLabel", resolveCopy),
       links: links(navFields.links, "shell.nav.links"),
     };
@@ -300,6 +306,9 @@ export function resolveShell(input: SiteShellInput, resolveCopy: CopyResolver, r
   let footer: ResolvedSiteShell["footer"];
   if (shell.footer !== undefined) {
     const footerFields = record(shell.footer, "shell.footer", FOOTER_KEYS);
+    const placement = footerFields.placement === undefined ? "flow" : oneOf(footerFields.placement, "shell.footer.placement", ["flow", "overlay"] as const);
+    const footerGround = footerFields.ground === undefined ? (placement === "overlay" ? "inverse" : ground) : oneOf(footerFields.ground, "shell.footer.ground", SITE_CHROME_GROUNDS);
+    if (placement === "overlay" && footerGround === "transparent") fail("shell.footer.ground must be opaque for overlay placement.");
     const legalFields = record(footerFields.legal, "shell.footer.legal", LEGAL_KEYS);
     let social: NonNullable<ResolvedSiteShell["footer"]>["social"];
     if (footerFields.social !== undefined) {
@@ -310,7 +319,9 @@ export function resolveShell(input: SiteShellInput, resolveCopy: CopyResolver, r
       };
     }
     footer = {
-      ground: footerFields.ground === undefined ? ground : oneOf(footerFields.ground, "shell.footer.ground", SITE_CHROME_GROUNDS),
+      placement,
+      ground: footerGround,
+      ...(footerFields.rule === undefined ? {} : { rule: oneOf(footerFields.rule, "shell.footer.rule", ["none", "top"] as const) }),
       links: footerFields.links === undefined ? [] : links(footerFields.links, "shell.footer.links"),
       ...(social === undefined ? {} : { social }),
       columns:
@@ -346,7 +357,15 @@ export function resolveShell(input: SiteShellInput, resolveCopy: CopyResolver, r
     brand,
     skipLink: copy(shell.skipLink, "shell.skipLink", resolveCopy),
     ...(nav === undefined ? {} : { nav }),
-    actions: shell.actions === undefined ? [] : links(shell.actions, "shell.actions"),
+    actions: shell.actions === undefined ? [] : list(shell.actions, "shell.actions").map((value, index) => {
+      const path = `shell.actions[${index}]`;
+      const fields = record(value, path, ACTION_KEYS);
+      return {
+        href: href(fields.href, `${path}.href`, base),
+        label: copy(fields.label, `${path}.label`, resolveCopy),
+        emphasis: fields.emphasis === undefined ? "secondary" : oneOf(fields.emphasis, `${path}.emphasis`, ["primary", "secondary"] as const),
+      };
+    }),
     iconActions: shell.iconActions === undefined ? [] : iconLinks(shell.iconActions, "shell.iconActions"),
     ...(shell.secondaryAction === undefined ? {} : { secondaryAction: link(shell.secondaryAction, "shell.secondaryAction") }),
     environments,

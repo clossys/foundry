@@ -19,7 +19,11 @@ export interface SiteLinkInput {
    */
   readonly href: string;
   readonly label: CopyRef;
+  /** Header action look; accepted only in shell.actions. @default "secondary" */
+  readonly emphasis?: "primary" | "secondary";
 }
+
+type PlainSiteLinkInput = Omit<SiteLinkInput, "emphasis">;
 
 /** An icon-only link: its copy reference supplies the accessible name. */
 export type SiteIconLinkInput = {
@@ -40,6 +44,8 @@ export type SiteBrandInput = {
   readonly label: CopyRef;
   readonly size: "sm" | "md" | "lg";
   readonly plate?: "self" | "shared";
+  /** Omitted inherits inverse overlay header ink; explicit auto keeps ordinary ink. */
+  readonly tone?: "auto" | "inverse";
 } & ({ readonly variant: "mark"; readonly wordmark?: never } | { readonly variant: "lockup"; readonly wordmark: CopyRef });
 
 /**
@@ -60,19 +66,25 @@ export { SITE_CHROME_GROUNDS } from "../internal/viewChromeGround.js";
 export type { SiteChromeGround } from "../internal/viewChromeGround.js";
 
 /** The footer: optional headed columns, ungrouped links and social profiles, then the legal row. */
-export interface SiteFooterInput {
-  /** Defaults to the shell ground, independently of the header ground. */
-  readonly ground?: SiteChromeGround;
-  readonly columns?: readonly { readonly heading: CopyRef; readonly links: readonly SiteLinkInput[] }[];
-  readonly links?: readonly SiteLinkInput[];
+interface SiteFooterFields {
+  /** A top hairline on transparent flow footers; other grounds ignore it. @default "none" */
+  readonly rule?: "none" | "top";
+  readonly columns?: readonly { readonly heading: CopyRef; readonly links: readonly PlainSiteLinkInput[] }[];
+  readonly links?: readonly PlainSiteLinkInput[];
   readonly social?: { readonly label?: CopyRef; readonly links: readonly SiteIconLinkInput[] };
   readonly legal: {
     readonly entity: CopyRef;
-    readonly links: readonly SiteLinkInput[];
+    readonly links: readonly PlainSiteLinkInput[];
     /** When given, the legal links sit in a `<nav>` with this name. */
     readonly linksLabel?: CopyRef;
   };
 }
+
+/** Flow follows the shell ground; overlay reserves its opaque footer within a growing hero scene. */
+export type SiteFooterInput = SiteFooterFields & (
+  | { readonly placement?: "flow"; readonly ground?: SiteChromeGround }
+  | { readonly placement: "overlay"; readonly ground?: "base" | "inverse" }
+);
 
 /**
  * Everything the frame's chrome shows, as data only. There is no node slot for
@@ -87,14 +99,16 @@ export interface SiteShellInput {
     readonly label: CopyRef;
     /** The disclosure toggle copy; defaults to the resolved navigation label. */
     readonly triggerLabel?: CopyRef;
-    readonly links: readonly SiteLinkInput[];
+    /** Omitted inherits inverse overlay header ink; explicit auto keeps ordinary ink. */
+    readonly tone?: "auto" | "inverse";
+    readonly links: readonly PlainSiteLinkInput[];
   };
   /** Calls to action at the trailing end of the banner. */
   readonly actions?: readonly SiteLinkInput[];
   /** Icon-only links after text actions and before environments. */
   readonly iconActions?: readonly SiteIconLinkInput[];
   /** A secondary call to action, just before `actions`. */
-  readonly secondaryAction?: SiteLinkInput;
+  readonly secondaryAction?: PlainSiteLinkInput;
   /** Environment links, after text and icon actions. */
   readonly environments?: readonly SiteEnvironmentLinkInput[];
   /** A text badge naming the surface. Prefer `environments` with `isCurrent`. */

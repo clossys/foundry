@@ -19,7 +19,7 @@ export interface SiteFooterProps extends Omit<HTMLAttributes<HTMLElement>, "chil
   /**
    * Semantic plate for the footer bar — `inverse` paints the same
    * surface/ink tokens grounded marketing blocks use; `transparent` paints
-   * no plate, no border and no divider between `columns` and `secondary`
+   * no plate or inner divider, with no border unless `rule="top"` is set
    * (ink stays the base ink; the consumer's backdrop owns contrast);
    * `transparent-inverse` paints the same nothing with the inverse ink, for a
    * footer over a page on the inverse ground. Do not reconstruct the plate
@@ -27,6 +27,8 @@ export interface SiteFooterProps extends Omit<HTMLAttributes<HTMLElement>, "chil
    * @default "base"
    */
   ground?: SiteChromeGround;
+  /** Top hairline on transparent ground only; other grounds keep their own policy. @default "none" */
+  rule?: "none" | "top";
 }
 
 /**
@@ -38,18 +40,19 @@ export interface SiteFooterProps extends Omit<HTMLAttributes<HTMLElement>, "chil
  * automatically at the top level, the same placement rule `Shell.Footer`
  * already carries.
  */
-function SiteFooterRoot({ columns, secondary, ground = "base", className, style, ...rest }: SiteFooterProps) {
+function SiteFooterRoot({ columns, secondary, ground = "base", rule = "none", className, style, ...rest }: SiteFooterProps) {
   const colors = SITE_CHROME_GROUND_CLASSES[ground];
   const bordered = siteChromeHasBorder(ground);
+  const topRule = ground === "transparent" && rule === "top";
 
   return (
     <footer
       {...rest}
-      className={cx(colors.surface, colors.primary, "py-lg", bordered ? cx("border-t", colors.border) : "", className)}
+      className={cx(colors.surface, colors.primary, "py-lg", bordered ? cx("border-t", colors.border) : topRule ? "border-t border-line-base" : "", className)}
       style={{
         position: "relative",
         zIndex: UI_Z_SHELL,
-        ...(bordered ? { borderTopWidth: UI_BORDER_HAIRLINE } : {}),
+        ...(bordered || topRule ? { borderTopWidth: UI_BORDER_HAIRLINE } : {}),
         ...style,
       }}
     >

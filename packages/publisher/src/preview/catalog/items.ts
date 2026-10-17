@@ -74,25 +74,29 @@ export const ITEMS_FIXTURES = [
                     "id": "rows-two-item-1",
                     "heading": {
                         "id": "catalog.sample.rows-two.0.heading"
-                    }
+                    },
+                    "badge": { "tone": "success", "label": { "id": "catalog.sample.readiness.available" } }
                 },
                 {
                     "id": "rows-two-item-2",
                     "heading": {
                         "id": "catalog.sample.rows-two.1.heading"
-                    }
+                    },
+                    "badge": { "tone": "warning", "label": { "id": "catalog.sample.readiness.partial" } }
                 },
                 {
                     "id": "rows-two-item-3",
                     "heading": {
                         "id": "catalog.sample.rows-two.2.heading"
-                    }
+                    },
+                    "badge": { "tone": "info", "label": { "id": "catalog.sample.readiness.planned" } }
                 },
                 {
                     "id": "rows-two-item-4",
                     "heading": {
                         "id": "catalog.sample.rows-two.3.heading"
-                    }
+                    },
+                    "badge": { "tone": "neutral", "label": { "id": "catalog.sample.readiness.not-offered" } }
                 }
             ]
         }

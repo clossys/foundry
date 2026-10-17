@@ -65,7 +65,7 @@ function runProbe(reactServer: boolean) {
         sections: [
           { id: "hero", kind: "hero", ground: "base", heading: "Server-safe sections" },
           { id: "steps", kind: "ordered-step-sequence", ground: "sunken", heading: "Steps", items: [{ id: "one", ordinal: "1", heading: "Start" }] },
-          { id: "status", kind: "status-list", ground: "inverse", heading: "Status", labels: { available: "Available", partial: "Partial", planned: "Planned", dispositions: { "not-offered": "Not offered" } }, groups: [{ id: "core", heading: "Core", items: [{ id: "one", label: "Sections", state: "available" }] }] },
+          { id: "status", kind: "status-list", ground: "inverse", heading: "Status", labels: { available: "Available", partial: "Partial", planned: "Planned", dispositions: { "not-offered": "Not offered" } }, items: [{ id: "one", label: "Sections", state: "available" }, { id: "two", label: "Partial sections", state: "partial" }, { id: "three", label: "Planned sections", state: "planned" }] },
           {
             id: "content",
             kind: "content-section",
@@ -276,9 +276,9 @@ afterAll(() => {
 describe("packed frame release", () => {
   it("ships the Designer and Publisher minor versions with the new Designer floor", () => {
     const manifest = (name: string) => JSON.parse(readFileSync(join(consumerRoot, "node_modules", "@clossys", name, "package.json"), "utf8"));
-    expect(manifest("designer").version).toBe("0.11.0");
-    expect(manifest("publisher").version).toBe("0.12.0");
-    expect(manifest("publisher").dependencies["@clossys/designer"]).toBe("^0.11.0");
+    expect(manifest("designer").version).toBe("0.12.0");
+    expect(manifest("publisher").version).toBe("0.13.0");
+    expect(manifest("publisher").dependencies["@clossys/designer"]).toBe("^0.12.0");
   });
 
   it("renders overlay chrome, mobile navigation and an independent footer around a frame-fitted hero from the tarballs", () => {
@@ -331,9 +331,14 @@ describe("packed Publisher web React-server boundary", () => {
     expect(server.keys).toEqual(expect.arrayContaining(["CaptureView", "CollectionView", "ContactView", "DocumentView", "SectionedView"]));
   });
 
-  it("renders the packed SectionedView through server-safe ordered-step and status blocks", () => {
-    expect(server.tags).toEqual(expect.arrayContaining(["ol", "dl"]));
-    expect(server.text).toEqual(expect.arrayContaining(["Server-safe sections", "Steps", "Status"]));
+  it("renders packed ordered steps and canonical status Items on both targets", () => {
+    expect(server.tags).toEqual(expect.arrayContaining(["ol", "ul"]));
+    expect(server.text).toEqual(expect.arrayContaining(["Server-safe sections", "Steps", "Status", "Sections", "Partial sections", "Planned sections", "Available", "Partial", "Planned"]));
+    const statusHtml = normal.html!.slice(normal.html!.indexOf('id="status"'), normal.html!.indexOf('id="content"'));
+    expect(statusHtml).toContain("data-items");
+    expect(statusHtml.match(/data-item-heading/g)).toHaveLength(3);
+    expect(statusHtml.match(/data-item-meta/g)).toHaveLength(3);
+    expect(statusHtml).not.toContain("<dl");
   });
 
   it("renders a packed content-section band (text block and specimen) through server-safe blocks on both targets", () => {
@@ -463,7 +468,7 @@ describe("packed Publisher web React-server boundary", () => {
     // does carry the current one. Tracks Designer's current minor — a Designer
     // minor bump updates this line too, the same way `expectedVersions` in
     // scripts/run-candidate-qualification.test.mjs tracks every package.
-    expect(legacyManifest.dependencies["@clossys/designer"]).toBe("^0.11.0");
+    expect(legacyManifest.dependencies["@clossys/designer"]).toBe("^0.12.0");
     legacyManifest.dependencies["@clossys/designer"] = "^0.2.0";
     writeFileSync(legacyManifestPath, `${JSON.stringify(legacyManifest, null, 2)}\n`);
     const legacyPublisherTarball = packPackage(legacyPublisherRoot, join(fixtureRoot, "legacy-packed"));

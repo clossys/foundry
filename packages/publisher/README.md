@@ -494,6 +494,23 @@ name, a price, features and an optional call to action), `testimonial`
 items with an optional delta) or `content-section` (see below). Legacy kinds use the closed `base`/`sunken`/`inverse` ground vocabulary; canonical content sections omit ground for automatic cadence or author `inverse`;
 status values are the closed `available`/`partial`/`planned` readiness axis,
 with a separate `not-offered` disposition for deliberate non-capabilities.
+
+`status-list` is a declared Index mapping to canonical `topics` rows with
+badges. The readiness states use the original localized labels:
+`available` → success, `partial` → warning, and `planned` → info.
+The separate `not-offered` disposition uses its own label and neutral tone;
+it is never converted to a readiness state. Row labels become headings and
+row details become descriptions. This lookup contains 3–8 entries. Grouped
+inputs contain 2–4 groups of 2–4 entries, with at most eight entries overall,
+partitioning every item once; resolved group headings contain at most 24 characters.
+
+The original status shape, closed labels and exactly-one state/disposition
+rule are validated before projection. CopyRef resolution order and the
+resolved status wire shape stay intact. Web output uses ContentSection and
+Items instead of definition lists and the old readiness legend. Counts and
+groups outside the catalog bounds are refused; split larger collections
+into separate editorial sections rather than widening the configuration.
+
 Every audience-facing label, heading, description, question, answer, ordinal,
 and status label is a `CopyRef`. There are no React nodes, render callbacks,
 router fields, locale overrides, classes, styles, arbitrary colours, or
@@ -516,10 +533,10 @@ names the exact authored path. An unknown section kind is refused at validate
 and resolve time and names that kind — there is no implicit remap to
 `feature-grid` or any other shipped kind. This core stage intentionally imports neither
 React nor Designer and does not render a web view. The grounded web renderer
-uses Designer `0.4.0`'s server-safe site-block API, including the separate
-`not-offered` disposition and its caller-localized `labels.dispositions` map,
-the non-hero `eyebrow` slot, the per-row `detail` slot, and the flat `items`
-alternative to `StatusList`'s `groups`.
+uses the server-safe site-block API. Status lookup projects the separate
+`not-offered` disposition, caller-localized `labels.dispositions`, non-hero
+`eyebrow`, per-row `detail`, and exactly one flat `items` or grouped `groups`
+shape into canonical Items.
 
 #### `content-section` and content icons
 
@@ -627,6 +644,12 @@ Recipe constraints are deeply immutable; the features recipe fixes item scale.
 
 Media is exactly one of:
 
+- `asset`: a consumer-owned image or video addressed by `assetId`, with a
+  closed `ContentAssetContract`, meaningful or decorative intent, and an
+  optional caption CopyRef. Meaningful alt is a CopyRef; decorative images
+  omit authored alt and render empty alt with `aria-hidden`. Videos are
+  meaningful, captioned, user-controlled media. See Consumer-owned content
+  below for the contract and a complete example.
 - `specimen`: an accessible label and one `panel`, optionally an ordered
   `key` of 3–5 items targeting labeled header, part or footer slots. Key
   placement derives from the frame layout: at the end of a stacked band,
@@ -751,8 +774,8 @@ const page = <SectionedView document={resolved} />;
 
 #### Optional fields the document may also carry
 
-These slots are optional and additive: a document written without them
-validates and renders exactly as it did before they existed.
+These fields remain optional. Status lookup uses the catalog bounds and
+rendering described above, including when its optional fields are omitted.
 
 - **`eyebrow` on every section kind.** `hero` always had one; `feature-grid`,
   `faq`, `ordered-step-sequence`, and `status-list` now carry the same
@@ -782,8 +805,9 @@ validates and renders exactly as it did before they existed.
   two read alike on one page.
 - **`detail` on a status-list item.** An optional `CopyRef` carrying that
   row's own explanation, including the reasoning behind a `not-offered`
-  answer. It renders as a second description of the same row, so the
-  definition-list semantics stay intact.
+  answer. The label becomes an Item heading, detail becomes its description,
+  and the localized status becomes a badge. Canonical Items lists and group
+  labels replace definition lists and the separate readiness legend.
 
 ```tsx
 const resolved = resolveSectionedViewDocument({
@@ -816,7 +840,14 @@ const resolved = resolveSectionedViewDocument({
           label: { id: "acme.trust.audit.label" },
           detail: { id: "acme.trust.audit.detail" },
           disposition: "not-offered",
-        }],
+        }, { id: "access", label: { id: "acme.trust.access.label" }, state: "available" }],
+      }, {
+        id: "next",
+        heading: { id: "acme.trust.next" },
+        items: [
+          { id: "review", label: { id: "acme.trust.review.label" }, state: "partial" },
+          { id: "follow-up", label: { id: "acme.trust.follow-up.label" }, state: "planned" },
+        ],
       }],
     },
   ],
@@ -825,8 +856,9 @@ const resolved = resolveSectionedViewDocument({
 
 #### At most one hero, and a status-list may go flat
 
-Two contract rules relaxed additively, both keeping every previously-valid
-document valid and unchanged:
+The hero placement relaxation remains additive. Status-list projection now
+uses the catalog lookup bounds: 3–8 flat entries, or 2–4 groups of 2–4
+entries, with at most eight entries overall.
 
 - **A hero section is now optional, and may sit anywhere.** The document
   previously required exactly one `hero` section and required it to be
@@ -839,11 +871,10 @@ document valid and unchanged:
   held. This unlocks a closing call-to-action band authored as its own
   section, and a page with no hero section at all.
 - **A `status-list` section's `groups` is now optional, with a flat `items`
-  alternative.** Provide exactly one of `groups` (unchanged: one heading and
-  one definition list per group) or `items` (new: the same row shape with no
-  group at all) — the common shape for a short list with nothing to group.
-  It renders through Designer `0.4.0`'s `StatusList` `items` prop as a
-  single definition list with no group heading.
+  alternative.** Provide exactly one of `groups` or `items`. Flat entries
+  render as canonical Items topics; grouped entries retain authored group
+  labels and order. The old one-row and one-group view shapes are refused;
+  standalone Designer `StatusList` remains available for historical usage.
 
 ```tsx
 const resolved = resolveSectionedViewDocument({
@@ -860,7 +891,11 @@ const resolved = resolveSectionedViewDocument({
         planned: { id: "acme.status.planned" },
         dispositions: { "not-offered": { id: "acme.status.not-offered" } },
       },
-      items: [{ id: "audit", label: { id: "acme.trust.audit.label" }, disposition: "not-offered" }],
+      items: [
+        { id: "audit", label: { id: "acme.trust.audit.label" }, disposition: "not-offered" },
+        { id: "access", label: { id: "acme.trust.access.label" }, state: "available" },
+        { id: "review", label: { id: "acme.trust.review.label" }, state: "partial" },
+      ],
     },
     // A closing call-to-action band: a second hero, not first, rendered as h2.
     { id: "cta", kind: "hero", ground: "inverse", heading: { id: "acme.trust.cta" } },
@@ -894,7 +929,7 @@ not backlog slots waiting for a loosening pass.
 
 - **Required `labels` on every `status-list` section.** The section must
   carry exactly `available`, `partial`, `planned`, and
-  `dispositions.not-offered` as `CopyRef`s. Designer `StatusList` renders
+  `dispositions.not-offered` as `CopyRef`s. Catalog Item badges render
   human-readable readiness names from this caller-localized map, so a surface
   cannot mount a status list until it has merged reader-facing words for all
   four axes. Omit the section when the page has no readiness posture to
@@ -905,7 +940,9 @@ not backlog slots waiting for a loosening pass.
   (often `"1"`, `"2"`) rather than relying on presentation-only counters.
 - **Non-empty repeating arrays.** Every `items` array, status-list `groups`
   array, group `items` array, and optional hero `actions` array must contain
-  at least one entry when present — an explicit `items: []` is refused
+  at least one entry when present; status lookups additionally require 3–8
+  flat entries or 2–4 groups of 2–4 entries, at most eight total. An explicit
+  `items: []` is refused
   (`sectioned-view-items-shape` / `sectioned-view-status-items-shape`).
   Unlike `MarketingView`'s repeating bindings, this document has no separate
   "slot omitted" vs "slot empty" distinction at the section level: a section
@@ -1231,9 +1268,9 @@ The core hero contract uses `size: "compact"` for section-scale copy and
 `checkSectionVariety` warns for a lone compact hero unless known trailing
 content is supplied. The web views and gallery fixtures use the canonical size field.
 
-`LandingView`, exported from `@clossys/publisher/web` and
-`@clossys/publisher/web/server`, is a sectioned landing page: a hero block
-that fills the first screen, the document's other sections as full-bleed
+`LandingView`, exported from `@clossys/publisher/web`, is a sectioned landing
+page. The entry's `react-server` condition selects the server implementation.
+The page has a hero block that fills the first screen, the document's other sections as full-bleed
 bands, and an optional closing call to action. Every band's content, the hero
 copy and the call to action sit in one centred column (Designer
 `SectionFrame`'s `measure`, default `"wide"`); grounds run the full width. It
@@ -1294,7 +1331,8 @@ Props, in addition to the standard `<main>` attributes (minus `children`),
   after `document`, for example a shared FAQ.
 - `afterSection` (optional): content placed in a section's content slot,
   after its own content, keyed by section id. An id that names no rendered
-  section is refused with a `RenderError`, not dropped.
+  section is refused with a `RenderError`, not dropped. This node seam is
+  separate from the checked, data-only `asset` media slot.
 - `callToAction` (optional): the closing band: `id`, `eyebrow`, `heading`
   (an `<h2>`), `description`, and one required `action` slot (pass a
   button-styled link; it is not restyled). Add `copy: "hero"` to reuse the
@@ -2709,6 +2747,26 @@ view, then the contentinfo (Designer's `SiteFooter`). The view passed as
 `<main>`, no banner and no contentinfo of their own when no chrome prop is
 passed, so a framed page has one of each.
 
+Optional appearance inputs keep the existing frame and hero defaults:
+
+| Input | Values and behavior |
+| --- | --- |
+| `shell.actions[].emphasis` | `"primary"` or `"secondary"` (default). Applies to header actions only; navigation, secondary-action and footer links retain their existing contract. |
+| `shell.brand.tone` | `"auto"` or `"inverse"`. Omitted tone inherits an inverse overlay header; explicit `"auto"` keeps ordinary brand ink. |
+| `shell.nav.tone` | `"auto"` or `"inverse"`. Omitted tone inherits an inverse overlay header without changing the default markup; explicit `"auto"` keeps ordinary toggle ink. The server and interactive client render the same initial disclosure. |
+| Hero section `eyebrowTone` | `"accent"` (default) or `"muted"`, using the existing secondary text ink. |
+| Hero section `measure` | `"prose"` (default) or `"wide"`. Wide copy removes the headline cap and caps supporting text at 64rem inside the page column. The outer `LandingView.measure` still controls that page column independently. |
+| Hero section `headingScale` | `"default"` or `"display"`, with the existing responsive display ramp reaching 72px at desktop. |
+| `shell.footer.rule` | `"none"` (default) or `"top"`. Top draws one hairline on a transparent flow footer; opaque grounds ignore the option. Overlay footer placement still requires an opaque ground and the existing hero-only frame composition. |
+
+These fields belong to `SiteLinkInput`, `SiteBrandInput`, `SiteShellInput`,
+`SiteFooterInput` and `SectionedViewHeroSection`, available from
+`@clossys/publisher/web`. Its `react-server` condition selects the server
+implementation. Hero appearance fields pass through
+copy resolution into `SectionedView` and `LandingView`; copy references and
+their provenance stay unchanged. Existing configurations render the same
+bytes when the new fields are omitted.
+
 ```tsx
 import { AuthView, SiteFrame, siteShellFor } from "@clossys/publisher/web";
 import type { SiteFrameConfig } from "@clossys/publisher/web";
@@ -2764,9 +2822,32 @@ export function SignInPage() {
   `SiteHeader.ActionLink` without icons. This intentionally changes the default
   navigation and action markup for existing configurations.
 - **Footer ground.** `shell.footer.ground` accepts `"base"`, `"inverse"` or
-  `"transparent"` and defaults to `shell.ground`, regardless of the header's
-  ground or overlay tone. For example, a shell with `ground: "base"` and
+  `"transparent"`. In flow placement it defaults to `shell.ground`, regardless
+  of the header's ground or overlay tone. For example, a shell with `ground: "base"` and
   `footer: { ground: "inverse", legal }` has a base header and inverse footer.
+- **Footer placement.** `shell.footer.placement` accepts `"flow"` (the default)
+  or `"overlay"`. Flow keeps the existing in-flow footer markup. Overlay places
+  the same footer in the bottom row of the frame's hero scene, below the
+  overlay header and mobile navigation. Its actual height is reserved in the
+  scene: the hero fills the remaining room, and the scene grows beyond one
+  viewport when enlarged copy or footer links need more room. The footer
+  scrolls with that scene instead of covering the hero's action or its focus.
+  Use `header: { placement: "overlay", tone: "inverse" }` with a hero-only
+  `<LandingView header="overlay" fit="frame" landmark="none" />` for a
+  one-viewport composition, and `footer: { placement: "overlay", legal }`.
+  Mount the frame as the page's scene; the anchor is this frame, rather than
+  a viewport-height box measured from content elsewhere on the page. The
+  child must be a direct ordinary or server `LandingView`, with one
+  noncompact hero. Wrappers, fragments, additional bands, trailing documents,
+  a closing call to action, `afterSection` content and view layout overrides
+  are refused. Use flow placement for those compositions; overlay mode does
+  not render a next-band peek or scroll cue.
+  Overlay defaults to an opaque inverse ground; explicit `"base"` or
+  `"inverse"` grounds work too. `"transparent"` is refused in overlay mode so
+  footer text and focusable links retain a contrast-safe backing. Column flex
+  layout and the footer's automatic block-start margin keep its links in
+  document flow as the scene grows, without clipping or adding a navigation
+  landmark.
 - **Header placement.** `header` defaults to `{ placement: "reserved" }`:
   the banner stays in flow, with its `ground` defaulting to `shell.ground`.
   A reserved header may choose `ground` (`"base"`, `"inverse"` or
@@ -4822,7 +4903,9 @@ Three further usage requirements, not numbered in the specification:
   `SectionedViewItemsTreatment`, `SectionedViewItemsScale`,
   `SectionedViewMatrixBlock`, `SectionedViewMatrixSide`,
   `SectionedViewContentBlock`, `SectionedViewContentBlockType`,
-  `SectionedViewMedia`, `ResolvedSectionedViewMedia`,
+  `SectionedViewMedia`, `ResolvedSectionedViewMedia`, `SectionedViewAssetMedia`,
+  `ContentAssetContract`, `ContentAssetReport`, `CONTENT_ASSET_FORMATS`,
+  `CONTENT_ASSET_RATIOS`, `checkContentAssetContract`, `checkContentAssetFill`,
   `SectionedViewRecordMedia`, `SectionedViewLedgerGroup`, `SectionedViewLedgerRow`,
   `SectionedViewSceneMedia`, `SectionedViewSceneInput`,
   `SectionedViewSceneConvergeInput`, `SectionedViewSceneEvidenceTrailInput`,
@@ -5932,3 +6015,114 @@ dimensions, format, static content and byte size is not yet shipped. Consumers
 supply art and usage rights. Token paints re-theme inline illustrations and scenes, while
 photographs retain their source pixels. Existing image/video registry contracts
 continue to govern those registered assets.
+
+
+## Consumer-owned content
+
+Consumer repositories own their brand art, illustrations, photographs and
+art scenes. Publisher supplies a data slot and renderer; Designer's Specimen
+and Scene remain product visuals made from components. Put consumer content
+in a canonical `content-section`'s `media`, then supply the existing
+`resolveAssetId` prop to SectionedView or LandingView. The ordinary and server
+entries use the same fill check and markup, including stacked and split
+layouts. No custom view or additional design tokens are required.
+
+`ContentAssetContract` requires positive safe-integer intrinsic `width` and
+`height`, `aspectRatio` from `CONTENT_ASSET_RATIOS` (`1:1`, `4:3`, `3:4`,
+`16:9`), a MIME `format` from `CONTENT_ASSET_FORMATS`, and `loading: "lazy"`
+or `"eager"`. Dimensions must match the ratio without cropping. Supported
+image formats are PNG, JPEG, WebP, AVIF and external SVG; video formats are
+MP4 and WebM. The fallback image must state a matching `mimeType`, and each
+responsive source must state a supported image MIME `format` and positive
+safe-integer width. Video sources use supported MIME types and include the
+declared format. Missing, throwing or unmatched asset resolution refuses
+rendering instead of omitting the media.
+
+Meaningful media requires approved alt CopyRef text. Decorative media is
+image-only and omits the alt field; it renders `alt=""` and `aria-hidden`.
+The registry's own description stays nonblank. Optional caption copy resolves
+through Writer and renders as MediaFigure's figcaption. Content videos require
+captions, retain the existing reduced-motion validation and poster behavior,
+and render controls without autoplay. Images reserve their intrinsic ratio,
+fit the column, and emit async decoding plus the declared loading hint.
+Videos fit the column and use `preload="none"` for lazy loading or
+`preload="metadata"` for eager loading; the browser controls when it fetches.
+
+`checkContentAssetContract` checks declarations, and
+`checkContentAssetFill` checks a resolved fill's paintability, dimensions,
+formats, matching asset id and video accessibility metadata. Pass the requested
+asset id as the third fill-check argument; resolved fills must carry that id. Both accept unknown data and return
+`ContentAssetReport` with `ok` and error findings. Accessors, unsupported
+declaration fields or values, and missing fills fail. Fill records
+may retain registry metadata; it is not applied as styling. Neither reads files, makes requests,
+measures transferred bytes, decodes media, judges alt adequacy, or proves the
+actual file's size or MIME. Responsive-source heights are not supplied by the
+existing asset shape, so their ratios are not checked. A metadata agreement is
+not a measurement of the referenced bytes.
+
+The slot accepts no style, color, class or markup fields. Its surrounding
+chrome uses Designer token classes. Intrinsic photograph and video colors are
+consumer-owned content; no metadata gate can certify those pixels. External
+SVG is rendered as an image, not inserted as markup, and its declared MIME
+cannot prove its paint values use tokens. Consumer asset preflight must inspect
+SVG and other authored styling with the existing Designer source-token checks;
+this fill report does not certify uninspected source colors or browser output.
+
+The existing LandingView `backdrop` and `afterSection` ReactNode seams remain
+separate compatibility paths. The hero decoration contract is Designer's
+`BackdropContract`, checked with `checkBackdropContract` for its declarations
+and `checkBackdropElement` for rendered inertness. Those checks do not read
+asset bytes either; a ReactNode alone is not evidence that either check ran.
+
+This complete example validates and resolves a generic declaration. Replace
+the asset URL and registry entries with the consumer's own content.
+
+```ts
+import { createElement } from "react";
+import {
+  createCopyResolver,
+  type CopyRegistry,
+} from "@clossys/writer";
+import {
+  checkContentAssetFill, resolveSectionedViewDocument,
+  validateSectionedViewDocument, type SectionedViewDocument,
+} from "@clossys/publisher/core";
+import { LandingView } from "@clossys/publisher/web";
+
+const registry = {
+  id: "content-example", revision: "1", locale: "en",
+  source: { kind: "consumer", reference: "example" },
+  entries: [
+    { id: "example.heading", text: "A place to explore", context: "Heading", status: "approved" },
+    { id: "example.alt", text: "A landscape beside a walking path", context: "Image description", status: "approved" },
+  ],
+} satisfies CopyRegistry;
+const contract = {
+  width: 1600, height: 900, aspectRatio: "16:9",
+  format: "image/webp", loading: "lazy",
+} as const;
+const fill = {
+  id: "example.image", type: "image", src: "/media/example.webp", mimeType: "image/webp",
+  width: 1600, height: 900, alt: "Registry description",
+};
+export const document = {
+  id: "content-example", sectionGroundRhythm: "base-then-sunken",
+  sections: [
+    { id: "opening", kind: "hero", heading: { id: "example.heading" } },
+    { id: "photograph", kind: "content-section", layout: "split-end",
+      heading: { id: "example.heading" },
+      media: { type: "asset", assetId: "example.image", purpose: "meaningful",
+        alt: { id: "example.alt" }, contract } },
+  ],
+} satisfies SectionedViewDocument;
+export const findings = validateSectionedViewDocument(document);
+export const fillReport = checkContentAssetFill(contract, fill, "example.image");
+if (findings.some(finding => finding.severity === "error") || !fillReport.ok) {
+  throw new Error("Invalid content declaration or fill metadata");
+}
+export const resolved = resolveSectionedViewDocument(document, createCopyResolver(registry));
+export const element = createElement(LandingView, {
+  document: resolved,
+  resolveAssetId: id => id === "example.image" ? fill : undefined,
+});
+```

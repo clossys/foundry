@@ -1,4 +1,5 @@
 import { applyContentGrounds, planContentGrounds } from "../../core/content-ground.js";
+import { projectStatusListItems } from "../../core/status-list-catalog.js";
 import { assertClosedData, assertCanonicalContentSection } from "./SectionedViewCanonical.js";
 import { resolveActionEmphasis } from "../../core/page-flow.js";
 import { desugarRecipe, SECTIONED_VIEW_CONTENT_CONTRACT } from "../../core/content-contract.js";
@@ -19,7 +20,7 @@ type GroundProps = { id: string; eyebrow?: string; heading: string; description?
 type StatusListItemProps = { id: string; label: string; detail?: string; state: SectionedViewStatus; disposition?: never } | { id: string; label: string; detail?: string; disposition: SectionedViewStatusDisposition; state?: never };
 
 export interface SectionedViewBlockSet {
-  Hero(props: { id: string; eyebrow?: string; heading: string; description?: string; actions?: ReactNode; media?: ReactNode; composition?: "editorial" | "split"; size?: "default" | "compact"; headingLevel: 1 | 2; ground: SectionedViewGround }): ReactNode;
+  Hero(props: { id: string; eyebrow?: string; eyebrowTone?: "accent" | "muted"; measure?: "prose" | "wide"; headingScale?: "default" | "display"; heading: string; description?: string; actions?: ReactNode; media?: ReactNode; composition?: "editorial" | "split"; size?: "default" | "compact"; headingLevel: 1 | 2; ground: SectionedViewGround }): ReactNode;
   FeatureGrid(props: GroundProps & { items: readonly { id: string; heading: string; description?: string }[] }): ReactNode;
   OrderedStepSequence(props: GroundProps & { items: readonly { id: string; ordinal: string; label?: string; heading: string; description?: string }[] }): ReactNode;
   /** `groups` and `items` are each optional; the resolved document guarantees exactly one is present. */
@@ -61,9 +62,9 @@ export interface SectionedViewProps {
    */
   landmark?: SectionedViewLandmark;
   /**
-   * Resolves hero `media.assetId` into a paintable asset — the same seam
+   * Resolves hero and canonical content `media.assetId` into a paintable asset — the same seam
    * `renderWebDocument` uses for `heroMedia`. Required whenever the
-   * resolved document carries hero media; unresolved ids fail closed at
+   * resolved document carries asset media; unresolved ids fail closed at
    * render time and name the authored path.
    */
   resolveAssetId?: AssetResolver;
@@ -261,7 +262,7 @@ export function assertRenderableSectionedViewDocument(document: unknown): assert
   for (let index = 0; index < candidate.sections.length; index += 1) {
     const path = `sections.${index}`;
     const section = candidate.sections[index];
-    if (!plain(section) || !closed(section, ["id", "kind", "ground", "eyebrow", "heading", "description", "actions", "media", "items", "labels", "groups", "layout", "mediaSide", "align", "block", "footnote", "size"])) throw new Error(`${path} must be a closed resolved section object.`);
+    if (!plain(section) || !closed(section, ["id", "kind", "ground", "eyebrow", "eyebrowTone", "measure", "headingScale", "heading", "description", "actions", "media", "items", "labels", "groups", "layout", "mediaSide", "align", "block", "footnote", "size"])) throw new Error(`${path} must be a closed resolved section object.`);
     const record = section as Record<string, unknown>;
     if (!nonBlank(record.id) || !FRAGMENT_ID.test(record.id)) throw new Error(`${path}.id must be a unique fragment-safe id.`);
     if (sectionIds.has(record.id)) throw new Error(`${path}.id duplicates an earlier section.`);
@@ -278,9 +279,12 @@ export function assertRenderableSectionedViewDocument(document: unknown): assert
       copyFields(record, path, ["heading"], ["eyebrow", "description"]);
     }
     if (record.kind === "hero") {
-      if (!closed(record, ["id", "kind", "ground", "eyebrow", "heading", "description", "actions", "media", "size"])) throw new Error(`${path} has keys not allowed for a hero section.`);
+      if (!closed(record, ["id", "kind", "ground", "eyebrow", "eyebrowTone", "measure", "headingScale", "heading", "description", "actions", "media", "size"])) throw new Error(`${path} has keys not allowed for a hero section.`);
       assertActions(record.actions, `${path}.actions`);
       if (record.size !== undefined && !["compact", "display"].includes(record.size as string)) throw new Error(`${path}.size must be compact or display.`);
+      if (record.eyebrowTone !== undefined && !["accent", "muted"].includes(record.eyebrowTone as string)) throw new Error(`${path}.eyebrowTone must be accent or muted.`);
+      if (record.measure !== undefined && !["prose", "wide"].includes(record.measure as string)) throw new Error(`${path}.measure must be prose or wide.`);
+      if (record.headingScale !== undefined && !["default", "display"].includes(record.headingScale as string)) throw new Error(`${path}.headingScale must be default or display.`);
       if (record.size === "compact" && record.media !== undefined) throw new Error(`${path} cannot combine a compact hero with media.`);
       assertHeroMedia(record.media, `${path}.media`);
       continue;
@@ -320,6 +324,7 @@ export function assertRenderableSectionedViewDocument(document: unknown): assert
       if (hasGroups === hasItems) throw new Error(`${path} must have exactly one of groups or items.`);
       if (hasItems) {
         assertStatusItems(record.items, `${path}.items`);
+        statusListSection(record as unknown as Extract<ResolvedSectionedViewSection, { kind: "status-list" }>, path);
         continue;
       }
       dense(record.groups, `${path}.groups`);
@@ -330,6 +335,7 @@ export function assertRenderableSectionedViewDocument(document: unknown): assert
         if (!nonBlank(group.heading)) throw new Error(`${path}.groups.${groupIndex}.heading must be resolved non-blank copy.`);
         assertStatusItems(group.items, `${path}.groups.${groupIndex}.items`);
       }
+      statusListSection(record as unknown as Extract<ResolvedSectionedViewSection, { kind: "status-list" }>, path);
       continue;
     }
     const sectionKeys = record.kind === "faq" ? ["id", "kind", "ground", "eyebrow", "heading", "description", "layout", "items"] : ["id", "kind", "ground", "eyebrow", "heading", "description", "items"];
@@ -526,6 +532,23 @@ function faqSection(section: Extract<ResolvedSectionedViewSection, { kind: "faq"
   };
 }
 
+/** Keep original status data and resolutions intact; only render its validated catalog projection. */
+function statusListSection(section: Extract<ResolvedSectionedViewSection, { kind: "status-list" }>, path: string): ResolvedSectionedViewContentSection {
+  const projected: ResolvedSectionedViewContentSection = {
+    id: section.id,
+    kind: "content-section",
+    ground: section.ground,
+    ...(section.eyebrow === undefined ? {} : { eyebrow: section.eyebrow }),
+    heading: section.heading,
+    ...(section.description === undefined ? {} : { description: section.description }),
+    size: "standard",
+    layout: "stacked",
+    block: projectStatusListItems(section),
+  };
+  assertCanonicalContentSection(projected as unknown as Record<string, unknown>, path);
+  return projected;
+}
+
 function renderSection(section: ResolvedSectionedViewSection, index: number, blocks: SectionedViewBlockSet, options: SectionedViewRenderOptions): ReactNode {
   const mediaPath = `sections.${index}.media`;
   switch (section.kind) {
@@ -536,6 +559,9 @@ function renderSection(section: ResolvedSectionedViewSection, index: number, blo
           key={section.id}
           id={section.id}
           eyebrow={section.eyebrow}
+          eyebrowTone={section.eyebrowTone}
+          measure={section.measure}
+          headingScale={section.headingScale}
           heading={section.heading}
           description={section.description}
           actions={renderActions(section.actions, section.ground, options.heroActions ?? "link", options.heroActionsCentered, section.size === "compact" ? "md" : "lg")}
@@ -552,10 +578,10 @@ function renderSection(section: ResolvedSectionedViewSection, index: number, blo
       // LandingView consumes publishedKind for band anchors; the canonical adapter ignores it.
       return <blocks.ContentSection key={section.id} section={faqSection(section)} publishedKind="faq" className={SECTION_GROUND_CLASSES[section.ground].surface || undefined} />;
     case "ordered-step-sequence": return <blocks.OrderedStepSequence key={section.id} id={section.id} eyebrow={section.eyebrow} heading={section.heading} description={section.description} items={section.items} headingLevel={2} ground={section.ground} />;
-    case "status-list": return <blocks.StatusList key={section.id} id={section.id} eyebrow={section.eyebrow} heading={section.heading} description={section.description} labels={section.labels} groups={section.groups} items={section.items} legendLabel={section.heading} headingLevel={2} ground={section.ground} />;
+    case "status-list": return <blocks.ContentSection key={section.id} section={statusListSection(section, `sections.${index}`)} className={SECTION_GROUND_CLASSES[section.ground].surface || undefined} />;
     case "stat-grid": return renderStatGrid(section, blocks);
     case "content-section":
-      return <blocks.ContentSection key={section.id} section={section} actions={renderContentActions(section)} className={SECTION_GROUND_CLASSES[section.ground].surface || undefined} />;
+      return <blocks.ContentSection key={section.id} section={section} actions={renderContentActions(section)} resolveAssetId={options.resolveAssetId} prefersReducedMotion={options.prefersReducedMotion} className={SECTION_GROUND_CLASSES[section.ground].surface || undefined} />;
     case "pricing":
       return (
         <blocks.PricingTable

@@ -381,7 +381,7 @@ function rules(label: ReaderPage): string {
         Introduce: [['Roles', 'Hero, intro, split intro, and close.'], ['Actions', '0–2 actions, at most one primary. A lone hero action is primary.']],
         Show: [['Scenes', 'Converge connects sources; evidence-trail traces a result; approval-chain shows checks leading to a decision.'], ['Specimen', 'One panel with 1–3 parts; a key names 3–5 distinct targets.'], ['Record', '1–3 groups; each has 1–6 rows, or the final group may contain an owner instead. Multi-column records use stacked frames.']],
         Explain: [['Grid', '2, 4 or 6 entries in two columns; 3 or 6 in three columns.'], ['Bento / stack', 'Bento has 2–6 entries whose spans fill 12-unit rows; visual stacks have 2–4, with one part each.'], ['Prose', '1–8 non-empty paragraphs, each with at most 24 spans, 6 links and 1,200 visible Unicode characters. Text and link spans retain authored order.']],
-        Index: [['Rows', '2–8 entries in one or two columns; 2–4 groups each have 2–4 members.'], ['Status list', 'Use topics rows with a visible badge label on every item. Live, In progress and Planned are authored copy; tones use existing tokens.'], ['FAQ', '4–6 answers; every answer needs a description.']],
+        Index: [['Rows', '2–8 entries in one or two columns; 2–4 groups each have 2–4 members.'], ['Status list', 'Use topics rows with a visible badge label on every item. Live, In progress and Planned are authored copy; tones use existing tokens.'], ['Readiness lookup', 'Status-list maps 3–8 entries to topics plus localized badges: available/success, partial/warning, planned/info, not-offered/neutral.'], ['FAQ', '4–6 answers; every answer needs a description.']],
         Sequence: [['Line', '3–5 steps; four warns. Visual steps need a Sample data caption.'], ['Lanes', 'Exactly two roles and 3–5 steps. Use a stacked frame with a columns or stacked arrangement, and name the continuation when relevant.']],
         Compare: [['Points', 'Two sides with 2–4 equal-count points each.'], ['Visuals', 'One panel per side with 1–3 parts; do not combine points and a panel.']],
         Frame: [['Directions', 'Stacked, split-start, or split-end.'], ['Ground', 'Base and sunken are automatic; choose inverse for a focal band.']],
@@ -452,7 +452,7 @@ function embeddedNative(fixture: CatalogFixture, prefix: string, resolved: Resol
     return namespaceNativeMarkup(html, prefix);
 }
 function recipeTable(): string {
-    const aliases: Partial<Record<string, string>> = { features: "feature-grid", faq: "faq", steps: "ordered-step-sequence" };
+    const aliases: Partial<Record<string, string>> = { features: "feature-grid", topics: "status-list (readiness/disposition badges)", faq: "faq", steps: "ordered-step-sequence" };
     const axes = ["arrangement", "order", "reveal", "treatment", "scale"];
     const rows = SECTIONED_VIEW_CONTENT_CONTRACT.recipes.map(recipe => {
         const definition = SECTIONED_VIEW_ITEM_RECIPES[recipe];

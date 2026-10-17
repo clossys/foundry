@@ -1,6 +1,0 @@
-{
-  "package": "publisher",
-  "version": "0.12.0",
-  "reason": "Publisher 0.12.0 awaits exact-artifact qualification on the pinned release runtime. This deferral acknowledges merge only; publication requires the retained record and npm-publish environment approval.",
-  "issue": 2157
-}

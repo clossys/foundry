@@ -4,6 +4,10 @@ All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 
+## 0.3.1 - 2026-10-16
+
+- Strengthen consent port conformance checks and clarify browser storage and analytics network behavior.
+
 ## 0.3.0 - 2026-10-14
 
 - Hosts can now import the browser consent lifecycle from `@clossys/butler/browser-consent` and its storage adapter from `@clossys/butler/browser-consent/local-storage`.

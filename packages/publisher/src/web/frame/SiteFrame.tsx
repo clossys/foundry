@@ -1,6 +1,10 @@
-import type { ReactElement } from "react";
+import { isValidElement, type ReactElement, type ReactNode } from "react";
 import { Icon } from "@clossys/designer/atoms/server";
 import { Brandmark, SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
+import { LandingView as RuntimeLandingView } from "#publisher-web-views";
+import { LandingView as ServerLandingView } from "../views/LandingView.server.js";
+import type { LandingViewProps } from "../views/LandingViewContent.js";
+import { RenderError } from "../../internal/errors.js";
 import { SiteNavDisclosure } from "./NavDisclosure.boundary.client.js";
 import { SiteSkipLink } from "./SkipLink.client.js";
 import { resolveShell } from "./internal/resolveShell.js";
@@ -34,6 +38,25 @@ function IconLink({ link }: { readonly link: ResolvedSiteIconLink }) {
 }
 
 const ICON_LIST_CLASSES = "m-0 flex list-none flex-wrap items-center gap-sm p-0";
+
+function assertOverlayScene(children: ReactNode, headerPlacement: "reserved" | "overlay"): void {
+  // Read these live bindings only at render time: the views barrel also exports
+  // GlobalErrorDocument, which composes SiteFrame.
+  const directLanding = isValidElement<LandingViewProps>(children)
+    && (children.type === RuntimeLandingView || children.type === ServerLandingView);
+  if (directLanding) {
+    const props = children.props;
+    const sections = props.document?.sections;
+    if (headerPlacement === "overlay" && props.fit === "frame" && props.landmark === "none"
+      && (props.header === undefined || props.header === "overlay")
+      && Array.isArray(sections) && sections.length === 1 && sections[0]?.kind === "hero" && sections[0].size !== "compact"
+      && (props.trailing === undefined || (Array.isArray(props.trailing) && props.trailing.length === 0))
+      && props.callToAction === undefined
+      && (props.afterSection === undefined || Object.keys(props.afterSection).length === 0)
+      && props.style === undefined && props.className === undefined) return;
+  }
+  throw new RenderError("resolution-failed", "shell.footer.placement overlay requires a direct hero-only LandingView with frame fit, no landmark and an overlay header; trailing content, closing content and layout overrides are unsupported.");
+}
 
 function IconLinkList({ links, className }: { readonly links: readonly ResolvedSiteIconLink[]; readonly className: string }) {
   return (
@@ -77,12 +100,13 @@ function LinkList({ links, className }: { readonly links: readonly ResolvedSiteL
 export function SiteFrame({ shell, resolveCopy, resolveAsset, children }: SiteFrameProps): ReactElement {
   const resolved = resolveShell(shell, resolveCopy, resolveAsset);
   const { brand, footer } = resolved;
+  if (footer?.placement === "overlay") assertOverlayScene(children, resolved.header.placement);
 
   const brandmark =
     brand.wordmark === undefined ? (
-      <Brandmark variant="mark" size={brand.size} label={brand.label} markSrc={brand.markSrc} plate={brand.plate} />
+      <Brandmark variant="mark" size={brand.size} label={brand.label} markSrc={brand.markSrc} plate={brand.plate} tone={brand.tone} />
     ) : (
-      <Brandmark variant="lockup" size={brand.size} label={brand.label} wordmark={brand.wordmark} markSrc={brand.markSrc} plate={brand.plate} />
+      <Brandmark variant="lockup" size={brand.size} label={brand.label} wordmark={brand.wordmark} markSrc={brand.markSrc} plate={brand.plate} tone={brand.tone} />
     );
 
   const nav = resolved.nav ? <SiteNavDisclosure nav={resolved.nav} /> : undefined;
@@ -91,7 +115,7 @@ export function SiteFrame({ shell, resolveCopy, resolveAsset, children }: SiteFr
     resolved.actions.length > 0 || resolved.iconActions.length > 0 || resolved.environments.length > 0 ? (
       <>
         {resolved.actions.map((link, index) => (
-          <SiteHeader.ActionLink key={`action-${index}`} href={link.href} label={link.label} />
+          <SiteHeader.ActionLink key={`action-${index}`} href={link.href} label={link.label} variant={link.emphasis} />
         ))}
         {resolved.iconActions.map((link, index) => (
           <IconLink key={`icon-action-${index}`} link={link} />
@@ -108,8 +132,52 @@ export function SiteFrame({ shell, resolveCopy, resolveAsset, children }: SiteFr
       </>
     ) : undefined;
 
+  const footerContent = footer ? (
+    <SiteFooter
+      ground={footer.ground}
+      rule={footer.rule}
+      {...(footer.placement === "overlay" ? { className: "publisher-frame-footer-overlay", style: { pointerEvents: "auto" as const, width: "100%", marginBlockStart: "auto", minWidth: 0, overflowWrap: "anywhere" as const } } : {})}
+      columns={
+        footer.columns.length > 0 || footer.links.length > 0 ? (
+          <>
+            {footer.columns.map((column, columnIndex) => (
+              <SiteFooter.Column key={columnIndex} heading={column.heading}>
+                {column.links.map((link, linkIndex) => (
+                  <TextLink key={linkIndex} link={link} />
+                ))}
+              </SiteFooter.Column>
+            ))}
+            {footer.links.length > 0 ? (
+              <LinkList links={footer.links} className="m-0 flex list-none flex-wrap items-center gap-sm p-0" />
+            ) : null}
+          </>
+        ) : undefined
+      }
+      secondary={
+        <>
+          {/* The social list sits beside SiteFooter.Legal (a `w-full` flex item) in the
+              footer's `secondary` row; it must not shrink, or its icons wrap. */}
+          {footer.social && footer.social.links.length > 0 ? (
+            footer.social.label === undefined ? (
+              <IconLinkList links={footer.social.links} className={`shrink-0 ${ICON_LIST_CLASSES}`} />
+            ) : (
+              <nav aria-label={footer.social.label} className="shrink-0">
+                <IconLinkList links={footer.social.links} className={ICON_LIST_CLASSES} />
+              </nav>
+            )
+          ) : null}
+          <SiteFooter.Legal
+            entity={footer.legal.entity}
+            links={footer.legal.links}
+            {...(footer.legal.linksLabel === undefined ? {} : { linksLabel: footer.legal.linksLabel })}
+          />
+        </>
+      }
+    />
+  ) : null;
+
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div className="flex min-h-dvh flex-col" {...(footer?.placement === "overlay" ? { style: { position: "relative" as const } } : {})}>
       <SiteSkipLink targetId={SITE_MAIN_ID} label={resolved.skipLink} />
       <SiteHeader
         {...(resolved.header.placement === "overlay"
@@ -125,47 +193,23 @@ export function SiteFrame({ shell, resolveCopy, resolveAsset, children }: SiteFr
       <main id={SITE_MAIN_ID} tabIndex={-1} className="flex w-full flex-1 flex-col">
         {children}
       </main>
-      {footer ? (
-        <SiteFooter
-          ground={footer.ground}
-          columns={
-            footer.columns.length > 0 || footer.links.length > 0 ? (
-              <>
-                {footer.columns.map((column, columnIndex) => (
-                  <SiteFooter.Column key={columnIndex} heading={column.heading}>
-                    {column.links.map((link, linkIndex) => (
-                      <TextLink key={linkIndex} link={link} />
-                    ))}
-                  </SiteFooter.Column>
-                ))}
-                {footer.links.length > 0 ? (
-                  <LinkList links={footer.links} className="m-0 flex list-none flex-wrap items-center gap-sm p-0" />
-                ) : null}
-              </>
-            ) : undefined
-          }
-          secondary={
-            <>
-              {/* The social list sits beside SiteFooter.Legal (a `w-full` flex item) in the
-                  footer's `secondary` row; it must not shrink, or its icons wrap. */}
-              {footer.social && footer.social.links.length > 0 ? (
-                footer.social.label === undefined ? (
-                  <IconLinkList links={footer.social.links} className={`shrink-0 ${ICON_LIST_CLASSES}`} />
-                ) : (
-                  <nav aria-label={footer.social.label} className="shrink-0">
-                    <IconLinkList links={footer.social.links} className={ICON_LIST_CLASSES} />
-                  </nav>
-                )
-              ) : null}
-              <SiteFooter.Legal
-                entity={footer.legal.entity}
-                links={footer.legal.links}
-                {...(footer.legal.linksLabel === undefined ? {} : { linksLabel: footer.legal.linksLabel })}
-              />
-            </>
-          }
-        />
-      ) : null}
+      {footer?.placement === "overlay" ? (
+        // Intrinsic footer height is reserved within the same growing hero scene.
+        // No absolute viewport box can cover hero content when copy or links reflow.
+        <div
+          data-frame-footer-overlay=""
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            flexShrink: 0,
+            minWidth: 0,
+            pointerEvents: "none",
+            zIndex: "var(--ui-z-sticky, 10)",
+          }}
+        >
+          {footerContent}
+        </div>
+      ) : footerContent}
     </div>
   );
 }
