@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { useId } from "react";
 import { createHash } from "node:crypto";
 import { Faq } from "../Faq.js";
 import { Faq as ServerFaq } from "../Faq.server.js";
@@ -34,7 +35,35 @@ function legacyDisclosureHtml(consumer: DisclosureConsumer): string {
   return JSON.stringify(records);
 }
 
+function IdProbe({ slot }: { slot: string }) {
+  return <span id={useId()}>{slot}</span>;
+}
+function idSlots(): ItemData {
+  return { id: "reference", heading: <IdProbe slot="heading" />, meta: <IdProbe slot="meta" />, description: <IdProbe slot="description" />, icon: <IdProbe slot="icon" /> };
+}
+function legacyIdSlotHtml(name: string): string {
+  const [kind, entry, arrangement, reveal] = name.split("/");
+  if (kind === "Item") return renderToStaticMarkup(<Item {...idSlots()} treatment={entry as "plain" | "plate"} size="standard" ground="base" />);
+  const Component = entry === "client" ? Items : ServerItems;
+  return renderToStaticMarkup(<Component items={Array.from({ length: reveal === "disclose" ? 4 : 3 }, (_, i) => ({ ...idSlots(), id: `reference-${i}` }))} arrangement={arrangement as "columns" | "rows" | "stacked"} reveal={reveal as "all" | "disclose"} />);
+}
+
 describe("Item status", () => {
+  it.each([
+    ["Item/plain", "106c4515e4e5053ec6d4b0c6dd54288dc3f1ba268b2424a370215c550016d889"],
+    ["Item/plate", "858eadf71e1db60368d39313add1c3e762c67646c8c5467f28ca94047696e6d2"],
+    ["Items/client/columns/all", "e390b9257082d8cc11006b5d92ebcc86bfcfaf4a00af26b194dd335994146b06"],
+    ["Items/client/rows/all", "386bb663af3eaab3c7b48617e9b0166becdc873438b26cff70d972dc00d03c9c"],
+    ["Items/client/rows/disclose", "c50ae8b29ee0c6154b258696714ddc54530e6905d0245eb4eb2df37c5a3f06d3"],
+    ["Items/client/stacked/all", "68adb232a2f1cee1b5ff84d745b6327f409344c2263c2fe82ea17c81656d1499"],
+    ["Items/server/columns/all", "e390b9257082d8cc11006b5d92ebcc86bfcfaf4a00af26b194dd335994146b06"],
+    ["Items/server/rows/all", "386bb663af3eaab3c7b48617e9b0166becdc873438b26cff70d972dc00d03c9c"],
+    ["Items/server/rows/disclose", "53cb06fd4c7c74fcb97c638146de8bcc6e7e6560fd52a124d13409426da327e0"],
+    ["Items/server/stacked/all", "68adb232a2f1cee1b5ff84d745b6327f409344c2263c2fe82ea17c81656d1499"],
+  ] as const)("preserves legacy useId-bearing slot HTML for %s", (name, expectedSha256) => {
+    expect(createHash("sha256").update(legacyIdSlotHtml(name)).digest("hex")).toBe(expectedSha256);
+  });
+
   it.each([
     ["Faq/client", "3cc9e536ab23244c724851fc6460e2e6efaa0d18c4b597a1420a544ee1419d04"],
     ["Faq/server", "846ac0d4e03871cfd77b9ef45bf6799dfaa1bff4de79d839c22e0e0a68a0711f"],

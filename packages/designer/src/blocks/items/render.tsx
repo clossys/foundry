@@ -55,21 +55,22 @@ export function ItemRenderer({ item, treatment, size, ground, headingLevel, stat
   const legacy = navigation !== undefined;
   const control = navigation === "control" || navigation === "action";
   const icon = (legacy ? Boolean(item.icon) : hasContent(item.icon)) ? <ItemIcon className={legacy ? control ? "text-ink-muted" : cx("inline-flex link-grid-icon", colors.secondary) : cx("inline-flex", index ? "shrink-0" : undefined, colors.secondary)}>{item.icon}</ItemIcon> : null;
-  const copy: ReactNode = <>
-    {index ? null : icon}
-    {!legacy && (hasContent(item.eyebrow) || hasContent(item.meta) || item.badge !== undefined || item.status !== undefined) ? <div data-item-meta="" className={cx("flex flex-wrap items-center gap-sm", row && item.status !== undefined ? "w-full" : undefined)}>
-      {hasContent(item.eyebrow) ? <p data-item-eyebrow="" className={cx("text-body-s font-medium uppercase tracking-label", colors.secondary)}>{item.eyebrow}</p> : null}
-      {statusBadge ? <span className="inline-flex rounded-pill bg-surface-base">{badge}</span> : badge}
-      {hasContent(item.meta) ? <p className={cx("text-caption font-body", colors.secondary)}>{item.meta}</p> : null}
-      {renderItemStatus(item, row, ground)}
-    </div> : null}
-    {!legacy && item.figure !== undefined ? <div data-item-figure="" className="flex flex-col gap-xs">
+  const eyebrow = hasContent(item.eyebrow) ? <p data-item-eyebrow="" className={cx("text-body-s font-medium uppercase tracking-label", colors.secondary)}>{item.eyebrow}</p> : null;
+  const backedBadge = statusBadge ? <span className="inline-flex rounded-pill bg-surface-base">{badge}</span> : badge;
+  const metadata = hasContent(item.meta) ? <p className={cx("text-caption font-body", colors.secondary)}>{item.meta}</p> : null;
+  const meta = !legacy && (hasContent(item.eyebrow) || hasContent(item.meta) || item.badge !== undefined || item.status !== undefined) ? item.status === undefined
+    ? <div data-item-meta="" className="flex flex-wrap items-center gap-sm">{eyebrow}{backedBadge}{metadata}</div>
+    : <div data-item-meta="" className={cx("flex flex-wrap items-center gap-sm", row ? "w-full" : undefined)}>{eyebrow}{backedBadge}{metadata}{renderItemStatus(item, row, ground)}</div> : null;
+  const heading = <ItemHeading data-item-heading={legacy ? undefined : ""} as={legacy ? control ? "span" : "p" : headingLevel === 4 ? "h4" : headingLevel === 3 ? "h3" : "p"} heading={item.heading} href={item.href} variant={legacy ? control ? "control" : "plate" : frame} ground={ground} className={legacy ? cx("text-body font-body font-medium", control ? undefined : "m-0 leading-heading", colors.primary) : cx("m-0", scaleClassName, colors.primary, (display || explain) && item.href !== undefined ? "transform-none" : undefined)} anchorClassName={navigation === "plate" ? "active:decoration-current link-grid-active" : undefined} iconSize={display && !legacy ? "md" : "sm"} />;
+  const description = (legacy ? Boolean(item.description) : hasContent(item.description)) ? <ItemDescription as={control ? "span" : "p"} data-item-description={legacy ? undefined : ""} data-link-grid-description={legacy && navigation !== "action" ? "" : undefined} className={legacy ? cx("text-body-s", control ? undefined : "m-0", colors.secondary) : cx("m-0 text-pretty", index ? "text-body-s" : "text-body", colors.secondary)}>{item.description}</ItemDescription> : null;
+  const figure = !legacy && item.figure !== undefined ? <div data-item-figure="" className="flex flex-col gap-xs">
       <span className={cx(FIGURE_VALUE_CLASSES[size], "font-display tabular-nums", colors.primary)}>{item.figure.value}</span>
       {hasContent(item.figure.delta) ? <span data-item-delta="" className={cx("self-start text-body-s font-body", TREND_TEXT_CLASSES[figureTrend], STATUS_BACKING_CLASSES[ground])}>{item.figure.delta}</span> : null}
-    </div> : null}
-    <ItemHeading data-item-heading={legacy ? undefined : ""} as={legacy ? control ? "span" : "p" : headingLevel === 4 ? "h4" : headingLevel === 3 ? "h3" : "p"} heading={item.heading} href={item.href} variant={legacy ? control ? "control" : "plate" : frame} ground={ground} className={legacy ? cx("text-body font-body font-medium", control ? undefined : "m-0 leading-heading", colors.primary) : cx("m-0", scaleClassName, colors.primary, (display || explain) && item.href !== undefined ? "transform-none" : undefined)} anchorClassName={navigation === "plate" ? "active:decoration-current link-grid-active" : undefined} iconSize={display && !legacy ? "md" : "sm"} />
-    {(legacy ? Boolean(item.description) : hasContent(item.description)) ? <ItemDescription as={control ? "span" : "p"} data-item-description={legacy ? undefined : ""} data-link-grid-description={legacy && navigation !== "action" ? "" : undefined} className={legacy ? cx("text-body-s", control ? undefined : "m-0", colors.secondary) : cx("m-0 text-pretty", index ? "text-body-s" : "text-body", colors.secondary)}>{item.description}</ItemDescription> : null}
-  </>;
+    </div> : null;
+  // Keep the original child slots when the new fields are absent: authored nodes may use useId.
+  const copy: ReactNode = figure === null
+    ? <>{index ? null : icon}{meta}{heading}{description}</>
+    : <>{index ? null : icon}{meta}{figure}{heading}{description}</>;
   if (legacy) return copy;
   const body = sharedVisualRow ? <>
     <div className={cx("flex min-w-0 flex-col items-start", explain ? "gap-md" : "gap-sm")}>{copy}</div>
