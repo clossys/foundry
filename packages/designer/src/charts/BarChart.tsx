@@ -1,7 +1,8 @@
-import { useState, type CSSProperties } from "react";
+import { type CSSProperties } from "react";
 import { ChartFrame, type ChartTableSpec } from "./ChartFrame.js";
 import { bandScale, formatTickValue, linearScale, niceTicks } from "./internal/scale.js";
-import { CHART_AXIS_LABEL, CHART_FONT_BODY, CHART_GRID, CHART_SURFACE, MAX_CATEGORICAL_SERIES, resolveSeriesColor } from "./internal/chart-vars.js";
+import { CHART_AXIS_LABEL, CHART_FONT_BODY, CHART_GRID, MAX_CATEGORICAL_SERIES, resolveSeriesColor } from "./internal/chart-vars.js";
+import { CHART_HAIRLINE, CHART_MARK_RADIUS, CHART_INLINE_AXIS_LABEL } from "./internal/marks.js";
 
 export interface BarChartSeries {
   readonly name: string;
@@ -37,6 +38,10 @@ export interface BarChartProps {
   width?: number;
   /** @default 280 */
   height?: number;
+  /** Intrinsic fixed sizing, or fluid fitting with a default intrinsic width of 360. @default "fixed" */
+  fit?: "fixed" | "fluid";
+  /** Focusable marks, or one static chart graphic with its table fallback. @default "interactive" */
+  marks?: "interactive" | "static";
   /** @default thousands-comma formatting */
   valueFormat?: (value: number) => string;
   /**
@@ -78,7 +83,9 @@ export function BarChart({
   colorDomain,
   title,
   description,
-  width = 480,
+  fit = "fixed",
+  marks = "interactive",
+  width = fit === "fluid" ? 360 : 480,
   height = 280,
   valueFormat = formatTickValue,
   barLabel = defaultBarLabel,
@@ -87,7 +94,7 @@ export function BarChart({
   className,
   style,
 }: BarChartProps) {
-  const [hovered, setHovered] = useState<string | null>(null);
+  const tokenMarks = marks === "static" || fit === "fluid";
 
   if (series.length > MAX_CATEGORICAL_SERIES && typeof console !== "undefined") {
     console.warn(
@@ -117,7 +124,9 @@ export function BarChart({
       description={description}
       width={width}
       height={height}
+      fit={fit}
       legend={legend}
+      showSingleSeriesLegend={tokenMarks}
       table={table}
       tableFallbackLabel={tableFallbackLabel}
       className={className}
@@ -135,10 +144,10 @@ export function BarChart({
             {/* Redraw grid/ticks here, now that the value domain is known — ChartFrame's own grid/tick props are left empty above because the domain is BarChart's to compute, not ChartFrame's. */}
             <g data-chart-part="grid">
               {ticks.map((t) => (
-                <line key={`g-${t}`} x1={plot.x} x2={plot.x + plot.width} y1={y(t)} y2={y(t)} stroke={CHART_GRID} strokeWidth={1} />
+                <line key={`g-${t}`} x1={plot.x} x2={plot.x + plot.width} y1={y(t)} y2={y(t)} stroke={CHART_GRID} strokeWidth={tokenMarks ? CHART_HAIRLINE : 1} />
               ))}
             </g>
-            <g data-chart-part="ticks" fontSize={11} fill={CHART_AXIS_LABEL} fontFamily={CHART_FONT_BODY}>
+            <g data-chart-part="ticks" fontSize={11} fill={tokenMarks ? CHART_INLINE_AXIS_LABEL : CHART_AXIS_LABEL} fontFamily={CHART_FONT_BODY}>
               {ticks.map((t) => (
                 <text key={`ty-${t}`} x={plot.x - 8} y={y(t)} textAnchor="end" dominantBaseline="middle">
                   {valueFormat(t)}
@@ -167,7 +176,6 @@ export function BarChart({
                     const top = Math.min(y(value), baselineY);
                     const barHeight = Math.max(0, Math.abs(y(value) - baselineY));
                     const key = `${catIndex}-${seriesIndex}`;
-                    const isHovered = hovered === key;
                     const isLastCategory = catIndex === categories.length - 1;
 
                     return (
@@ -177,18 +185,17 @@ export function BarChart({
                           y={top}
                           width={Math.max(0, barWidth)}
                           height={barHeight}
-                          rx={4}
+                          rx={tokenMarks ? undefined : 4}
                           fill={color}
-                          fillOpacity={isHovered ? 0.85 : 1}
-                          stroke={isHovered ? CHART_SURFACE : "none"}
-                          strokeWidth={isHovered ? 2 : 0}
-                          tabIndex={0}
-                          role="img"
-                          aria-label={barLabel(s.name, cat, valueFormat(value))}
-                          onMouseEnter={() => setHovered(key)}
-                          onMouseLeave={() => setHovered((cur) => (cur === key ? null : cur))}
-                          onFocus={() => setHovered(key)}
-                          onBlur={() => setHovered((cur) => (cur === key ? null : cur))}
+                          fillOpacity={1}
+                          stroke="none"
+                          strokeWidth={0}
+                          tabIndex={marks === "interactive" ? 0 : undefined}
+                          role={marks === "interactive" ? "img" : undefined}
+                          aria-label={marks === "interactive" ? barLabel(s.name, cat, valueFormat(value)) : undefined}
+                          aria-hidden={marks === "static" ? true : undefined}
+                          style={tokenMarks ? { rx: CHART_MARK_RADIUS } : undefined}
+                          data-chart-mark={tokenMarks ? "bar" : undefined}
                         >
                           <title>{barLabel(s.name, cat, valueFormat(value))}</title>
                         </rect>
@@ -198,7 +205,7 @@ export function BarChart({
                             y={top - 4}
                             textAnchor="middle"
                             fontSize={11}
-                            fill={CHART_AXIS_LABEL}
+                            fill={tokenMarks ? CHART_INLINE_AXIS_LABEL : CHART_AXIS_LABEL}
                             fontFamily={CHART_FONT_BODY}
                           >
                             {valueFormat(value)}

@@ -115,7 +115,7 @@ function ruleLayerMembership(rawCss: string): { insideLayer: string[]; outsideLa
       i = j;
       continue;
     }
-    const classSelectorMatch = /^\s*\.[a-zA-Z0-9_:/.\\-]+[^{]*\{/.exec(rest);
+    const classSelectorMatch = /^\s*\.[a-zA-Z0-9_:/.\\-]+[^{;}]*\{/.exec(rest);
     if (classSelectorMatch) {
       (stack.some(Boolean) ? insideLayer : outsideLayer).push(classSelectorMatch[0].trim());
       // Advance past this rule's own self-contained block (never added to
@@ -142,6 +142,13 @@ function ruleLayerMembership(rawCss: string): { insideLayer: string[]; outsideLa
       i += wrapperOpenMatch[0].length;
       continue;
     }
+    // Non-class rules also own braces; their closing brace must not pop
+    // the surrounding layer before the next class-selector rule.
+    if (css[i] === "{") {
+      stack.push(false);
+      i++;
+      continue;
+    }
     if (css[i] === "}") {
       stack.pop();
       i++;
@@ -153,6 +160,22 @@ function ruleLayerMembership(rawCss: string): { insideLayer: string[]; outsideLa
 }
 
 describe("override precedence — structural proof", () => {
+  it("keeps decimal declarations and non-class rules within their named layer", () => {
+    const css = `@layer foundry-ui-compiled {
+      figure { display: block; }
+      .genuine-inside { color: black; }
+      figure::before { color: var(--color-ink-secondary, oklch(0.36 0 0)); }
+    }
+    @keyframes scroll-cue-out {
+      to { opacity: 0; }
+    }
+    .genuine-outside { color: black; }`;
+    expect(ruleLayerMembership(css)).toEqual({
+      insideLayer: [".genuine-inside {"],
+      outsideLayer: [".genuine-outside {"],
+    });
+  });
+
   it("places every class-selector style rule inside a named @layer (never bare/unlayered)", async () => {
     const scan = scanClassCandidates(resolve(packageRoot, "src", "atoms"));
     const generated = await generateCompiledCss({ stylesDir: resolve(packageRoot, "styles"), candidates: scan.candidates });
