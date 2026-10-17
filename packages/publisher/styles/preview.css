@@ -2187,6 +2187,25 @@
     border-bottom-style: var(--tw-border-style, solid);
     border-bottom-width: 0px;
   }
+  .focus-within\:not-sr-only:focus-within {
+    position: static;
+    width: auto;
+    height: auto;
+    padding: 0;
+    margin: 0;
+    overflow: visible;
+    clip-path: none;
+    white-space: normal;
+  }
+  .focus-within\:block:focus-within {
+    display: block;
+  }
+  .focus-within\:w-full:focus-within {
+    width: 100%;
+  }
+  .focus-within\:overflow-x-auto:focus-within {
+    overflow-x: auto;
+  }
   @media (hover: hover) {
     .hover\:border-ink-on-inverse-muted:hover {
       border-color: var(--color-ink-on-inverse-muted, oklch(0.7763 0 0));
@@ -2650,6 +2669,15 @@
       content: var(--tw-content, "");
       bottom: calc(var(--spacing-md, 12px) * -1);
     }
+    .tablet\:focus-within\:table-header-group:focus-within {
+      display: table-header-group;
+    }
+    .tablet\:focus-within\:w-auto:focus-within {
+      width: auto;
+    }
+    .tablet\:focus-within\:overflow-visible:focus-within {
+      overflow: visible;
+    }
   }
   @media (width >= 1024px) {
     .tablet-lg\:not-sr-only {
@@ -2823,6 +2851,15 @@
     }
     .tablet-lg\:\[--items-wide\:1\] {
       --items-wide: 1;
+    }
+    .tablet-lg\:focus-within\:table-header-group:focus-within {
+      display: table-header-group;
+    }
+    .tablet-lg\:focus-within\:w-auto:focus-within {
+      width: auto;
+    }
+    .tablet-lg\:focus-within\:overflow-visible:focus-within {
+      overflow: visible;
     }
   }
   @media (width >= 1280px) {

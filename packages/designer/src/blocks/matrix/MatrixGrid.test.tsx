@@ -70,6 +70,29 @@ describe("Matrix grid", () => {
     expect(screen.getByRole("cell", { name: "Copy 1-1" })).toHaveTextContent("Column 1Copy 1-1");
   });
 
+  it("keeps interactive column labels exposed in headers and inert in card mirrors", () => {
+    const props = grid();
+    props.columns = props.columns.map((column, index) => index === 0 ? {
+      ...column,
+      label: <span><a href="#authored-column-details">Authored details</a><button type="button">Authored action</button><span tabIndex={0}>Authored keyboard note</span></span>,
+    } : column);
+    const { container } = render(<Matrix {...props} />);
+    const header = screen.getByRole("columnheader", { name: /Authored details/ });
+    expect(within(header).getByRole("link", { name: "Authored details" })).toHaveAttribute("href", "#authored-column-details");
+    expect(within(header).getByRole("button", { name: "Authored action" })).toHaveAttribute("type", "button");
+    expect(header.closest("[inert]")).toBeNull();
+    for (const cell of container.querySelectorAll("tbody td")) {
+      expect(cell.firstElementChild).toHaveAttribute("aria-hidden", "true");
+      expect(cell.firstElementChild).toHaveAttribute("inert");
+    }
+    const serverDocument = new DOMParser().parseFromString(html(props), "text/html");
+    const mirrors = serverDocument.querySelectorAll("tbody td > span[aria-hidden='true']");
+    expect(mirrors).toHaveLength(6);
+    for (const mirror of mirrors) expect(mirror.hasAttribute("inert")).toBe(true);
+    expect(serverDocument.querySelectorAll("thead a")).toHaveLength(1);
+    expect(serverDocument.querySelectorAll("tbody a")).toHaveLength(2);
+  });
+
   it("featured column shows a Badge, needs featuredLabel", () => {
     const props = { ...grid(), featured: { column: "column-1" }, featuredLabel: "Selected measure" };
     render(<Matrix {...props} />);

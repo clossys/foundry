@@ -10,9 +10,12 @@ import { SECTION_GROUND_CLASSES, type SectionGround } from "../section-ground.js
 type GridProps = Extract<MatrixProps, { arrangement: "grid" }>;
 type Cell = GridProps["rows"][number]["cells"][string];
 const HEADINGS = { 2: "h2", 3: "h3", 4: "h4", 5: "h5", 6: "h6" } as const;
+// React 18 forwards this native boolean attribute as a non-empty string;
+// React 19 normalizes it to inert="". Both keep the visual mirror unfocusable.
+const INERT_LABEL_ATTRIBUTES: Readonly<{ [attribute: string]: string }> = { inert: "inert" };
 const TABLET_LAYOUT = {
   table: "block w-full border-separate border-spacing-0 tablet:table tablet:table-fixed",
-  head: "sr-only tablet:not-sr-only tablet:table-header-group",
+  head: "sr-only focus-within:not-sr-only focus-within:block focus-within:w-full focus-within:overflow-x-auto tablet:not-sr-only tablet:table-header-group tablet:focus-within:table-header-group tablet:focus-within:w-auto tablet:focus-within:overflow-visible",
   body: "flex flex-col gap-lg tablet:table-row-group",
   row: "flex min-w-0 flex-col gap-md rounded-panel p-lg tablet:table-row tablet:rounded-none tablet:bg-transparent tablet:p-0",
   header: "flex min-w-0 flex-col gap-xs tablet:table-cell tablet:px-md tablet:py-lg",
@@ -21,7 +24,7 @@ const TABLET_LAYOUT = {
 };
 const WIDE_LAYOUT = {
   table: "block w-full border-separate border-spacing-0 tablet-lg:table tablet-lg:table-fixed",
-  head: "sr-only tablet-lg:not-sr-only tablet-lg:table-header-group",
+  head: "sr-only focus-within:not-sr-only focus-within:block focus-within:w-full focus-within:overflow-x-auto tablet-lg:not-sr-only tablet-lg:table-header-group tablet-lg:focus-within:table-header-group tablet-lg:focus-within:w-auto tablet-lg:focus-within:overflow-visible",
   body: "flex flex-col gap-lg tablet-lg:table-row-group",
   row: "flex min-w-0 flex-col gap-md rounded-panel p-lg tablet-lg:table-row tablet-lg:rounded-none tablet-lg:bg-transparent tablet-lg:p-0",
   header: "flex min-w-0 flex-col gap-xs tablet-lg:table-cell tablet-lg:px-md tablet-lg:py-lg",
@@ -133,7 +136,7 @@ export function MatrixGrid(props: GridProps) {
         const highlighted = featured?.column === column.id;
         const figure = cell.type === "figure";
         return <td key={column.id} role="cell" className={cx(layout.cell, "border-b align-top", colors.border, figure ? "text-end" : "text-start")} style={{ borderBlockEndWidth: UI_BORDER_HAIRLINE }}>
-          <span aria-hidden="true" className={cx(layout.label, "text-body-s font-medium", colors.secondary, highlighted ? cx("border-t", TOP_ACCENT_CLASSES[ground]) : undefined)} style={highlighted ? { borderBlockStartWidth: UI_BORDER_HAIRLINE } : undefined}>{column.label}{highlighted ? <Badge>{featuredLabel}</Badge> : null}</span>
+          <span aria-hidden="true" className={cx(layout.label, "text-body-s font-medium", colors.secondary, highlighted ? cx("border-t", TOP_ACCENT_CLASSES[ground]) : undefined)} style={highlighted ? { borderBlockStartWidth: UI_BORDER_HAIRLINE } : undefined} {...INERT_LABEL_ATTRIBUTES}>{column.label}{highlighted ? <Badge>{featuredLabel}</Badge> : null}</span>
           <CellValue cell={cell} ground={ground} emptyLabel={emptyLabel} />
         </td>;
       })}
