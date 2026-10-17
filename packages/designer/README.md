@@ -3738,14 +3738,21 @@ function OrganizationTree() {
 }
 ```
 
-`Tree` is a passive nested list of 3–12 nodes, exported from both blocks
-barrels with `TreeProps` and `TreeNodeData`. Nodes carry Item's `id`, `heading`,
+`Tree`, `TreeProps` and `TreeNodeData` are exported from
+`@clossys/designer/blocks` and `@clossys/designer/blocks/server`.
+Tree is a passive nested list of 3–12 nodes. Nodes carry Item's `id`, `heading`,
 `description`, `eyebrow`, `meta`, `figure`, `status` and `badge` slots, plus a
 `parent` id and optional authored `edgeLabel`. Omit `parent` on one root.
 Parents must exist, ids must be unique, and cycles are refused. Siblings keep
 their source array order even when supplied before their parent. Root headings
 are h3; other nodes are h4. Edge labels appear before their child headings;
 provide content for every sibling or none. The root has no incoming edge.
+
+| Blocks export | Kind | Contract |
+| --- | --- | --- |
+| `Tree` | component | Passive nested Item tree with validated parent relations, responsive right/down diagrams and a print list. |
+| `TreeProps` | type | Nodes and optional orientation (`right` or `down`), labelledBy, ground and className. |
+| `TreeNodeData` | type | Item id, heading, description, eyebrow, meta, figure, status and badge slots, plus parent and edgeLabel. |
 
 Leaves have no children. Other parents have 2–4 children, with up to six at
 the root. `orientation="right"` is the default: at most three edges from root
@@ -6221,9 +6228,6 @@ not a grab-bag).
 | `FeatureGridHeadingLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
 | `Item` | component | Standalone item with required treatment, size and ground; one title link and independent copy, badge, meta and visual slots. |
 | `Items` | component | Canonical bounded collection with labelled groups, numbered or connected order, two actor lanes, and independent disclosed rows. |
-| `Tree` | component | Passive nested Item tree with validated parent relations, responsive right/down diagrams and a print list. |
-| `TreeProps` | type | Nodes and optional orientation (`right` or `down`), labelledBy, ground and className. |
-| `TreeNodeData` | type | Item id, heading, description, eyebrow, meta, figure, status and badge slots, plus parent and edgeLabel. |
 | `ItemData` | type | Stable id and heading; optional description, eyebrow, icon, meta, visual, href, span, badge and connected lane ID. |
 | `ItemProps` | type | ItemData plus required treatment, size and ground, and optional headingLevel (`3 \| 4`; omission keeps a paragraph). |
 | `ItemBadge` | type | ReactNode label and optional existing Badge tone. |
