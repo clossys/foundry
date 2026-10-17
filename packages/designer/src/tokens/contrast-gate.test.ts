@@ -121,7 +121,7 @@ describe("checkTokenContrast", () => {
     // about that relief rule, and correctly reports the plain WCAG
     // 1.4.11 threshold miss as a real finding rather than silently
     // agreeing with the test's exception list.
-    const categoricalOnly = CONTRAST_PAIRS.filter((p) => p.id.startsWith("chart-categorical-"));
+    const categoricalOnly = CONTRAST_PAIRS.filter((p) => p.id.startsWith("chart-categorical-") && p.background === "--color-chart-surface");
     const result = checkTokenContrast(categoricalOnly, { tokens: TOKENS });
 
     expect(result.unchecked).toEqual([]);
@@ -361,7 +361,7 @@ describe("checkTokenContrast — exceptions", () => {
     // are relieved, not hidden — see result.relieved below, which is
     // exactly as populated as the raw findings were in the un-excepted
     // version of this same check.
-    const categoricalOnly = contrastPairsForTheme("light").filter((p) => p.id.startsWith("chart-categorical-"));
+    const categoricalOnly = contrastPairsForTheme("light").filter((p) => p.id.startsWith("chart-categorical-") && p.background === "--color-chart-surface");
     const result = checkTokenContrast(categoricalOnly, { tokens: TOKENS });
 
     expect(result.unchecked).toEqual([]);
@@ -487,5 +487,180 @@ describe("Anatomy numeral contrast", () => {
       const tokens = { ...TOKENS, [pair.foreground]: def(pair.foreground, "oklch(0.6 0 0)"), [pair.background]: def(pair.background, "oklch(1 0 0)") };
       expect(checkTokenContrast([pair], { tokens }).findings).toEqual([expect.objectContaining({ pairId: pair.id, minimumRatio: AA, rule: "below-threshold" })]);
     }
+  });
+});
+
+describe("Waterfall mark boundaries and divergent aliases", () => {
+  const css = readFileSync(resolve(sourceDir, "../../styles/tokens.css"), "utf8");
+  const expected = [
+    ["waterfall/diverging-positive/surface-base", "--color-chart-diverging-positive", "--color-surface-base"],
+    ["waterfall/diverging-positive/surface-sunken", "--color-chart-diverging-positive", "--color-surface-sunken"],
+    ["waterfall/diverging-negative/surface-base", "--color-chart-diverging-negative", "--color-surface-base"],
+    ["waterfall/diverging-negative/surface-sunken", "--color-chart-diverging-negative", "--color-surface-sunken"],
+    ["waterfall/neutral-outline/surface-base", "--color-ink-secondary", "--color-surface-base"],
+    ["waterfall/neutral-outline/surface-sunken", "--color-ink-secondary", "--color-surface-sunken"],
+    ["waterfall/neutral-outline/diverging-neutral", "--color-ink-secondary", "--color-chart-diverging-neutral"],
+  ] as const;
+
+  function actualTokens(theme: "light" | "dark") {
+    const declarations = parseRootDeclarations(css);
+    if (theme === "dark") {
+      for (const [key, value] of parseDeclarationsForSelector(css, ':root[data-theme="dark"]')) {
+        declarations.set(key, value);
+      }
+    }
+    return Object.fromEntries(Object.entries(TOKENS).map(([key, token]) => [
+      key, { ...token, value: declarations.get(key) ?? token.value },
+    ]));
+  }
+
+  it.each(["light", "dark"] as const)("checks seven real %s boundaries with no relief", theme => {
+    const pairs = contrastPairsForTheme(theme).filter(pair => pair.id.startsWith("waterfall/"));
+    expect(pairs.map(pair => pair.id).sort()).toEqual(expected.map(([id]) => id).sort());
+    for (const [id, foreground, background] of expected) {
+      expect(pairs.find(pair => pair.id === id)).toMatchObject({ id, foreground, background, minimumRatio: AA_LARGE });
+    }
+    expect(pairs.every(pair => pair.exception === undefined)).toBe(true);
+    const result = checkTokenContrast(pairs, { tokens: actualTokens(theme) });
+    expect(result.pairsChecked).toBe(7);
+    expect(result.unchecked).toEqual([]);
+    expect(result.findings).toEqual([]);
+    expect(result.relieved).toEqual([]);
+    expect(result.ok).toBe(true);
+  });
+
+  it.each(["light", "dark"] as const)("rejects actual %s alias or perimeter drift", theme => {
+    for (const [id, foreground, background] of expected) {
+      const tokens = { ...actualTokens(theme), [foreground]: def(foreground, `var(${background})`) };
+      const pairs = contrastPairsForTheme(theme).filter(pair => pair.id === id);
+      expect(pairs).toHaveLength(1);
+      const result = checkTokenContrast(pairs, { tokens });
+      expect(result.unchecked).toEqual([]);
+      expect(result.relieved).toEqual([]);
+      expect(result.findings).toEqual([
+        expect.objectContaining({ pairId: id, rule: "below-threshold", minimumRatio: AA_LARGE }),
+      ]);
+      expect(result.findings[0]?.ratio).toBeCloseTo(1, 10);
+      expect(result.ok).toBe(false);
+    }
+  });
+});
+
+describe("Range status glyph boundaries and reused text/series policy", () => {
+  const css = readFileSync(resolve(sourceDir, "../../styles/tokens.css"), "utf8");
+  const added = [
+    ["range/status-danger/surface-base", "--color-status-danger", "--color-surface-base"],
+    ["range/status-danger/surface-sunken", "--color-status-danger", "--color-surface-sunken"],
+    ["range/status-warning/surface-sunken", "--color-status-warning", "--color-surface-sunken"],
+    ["range/status-info/surface-sunken", "--color-status-info", "--color-surface-sunken"],
+    ["range/status-success-outline/surface-base", "--color-ink-secondary", "--color-surface-base"],
+    ["range/status-success-outline/surface-sunken", "--color-ink-secondary", "--color-surface-sunken"],
+  ] as const;
+  const reused = [
+    ...(["success", "warning", "danger", "info"] as const).flatMap(tone =>
+      (["base", "sunken"] as const).map(ground => ({
+        id: `ledger/status-${tone}-text/surface-${ground}`,
+        foreground: `--color-status-${tone}-text`, background: `--color-surface-${ground}`,
+        minimumRatio: AA,
+      }))),
+    ...(["base", "sunken"] as const).flatMap(ground => [
+      { id: `chart-inline-axis-label/surface-${ground}`, foreground: "--color-ink-secondary",
+        background: `--color-surface-${ground}`, minimumRatio: AA },
+      { id: `chart-categorical-1/surface-${ground}`, foreground: "--color-chart-categorical-1",
+        background: `--color-surface-${ground}`, minimumRatio: AA_LARGE },
+      { id: `ink-muted/surface-${ground}`, foreground: "--color-ink-muted",
+        background: `--color-surface-${ground}`, minimumRatio: ground === "base" ? AA : AA_LARGE },
+    ]),
+    ...(["success", "warning", "info"] as const).map(tone => ({
+      id: `status-${tone}/surface-base`, foreground: `--color-status-${tone}`,
+      background: "--color-surface-base", minimumRatio: AA_LARGE,
+    })),
+  ];
+
+  function actualTokens(theme: "light" | "dark") {
+    const declarations = parseRootDeclarations(css);
+    if (theme === "dark") {
+      for (const [key, value] of parseDeclarationsForSelector(css, ':root[data-theme="dark"]')) {
+        declarations.set(key, value);
+      }
+    }
+    // Every involved property must actually exist in the shipped CSS;
+    // TOKENS supplies registry metadata, never a missing-CSS color fallback.
+    const properties = new Set([
+      ...added.flatMap(([, foreground, background]) => [foreground, background]),
+      ...reused.flatMap(pair => [pair.foreground, pair.background]),
+    ]);
+    for (const property of properties) expect(declarations.has(property), property).toBe(true);
+    return Object.fromEntries(Object.entries(TOKENS).map(([key, token]) => [
+      key, { ...token, value: declarations.get(key) ?? token.value },
+    ]));
+  }
+
+  it.each(["light", "dark"] as const)("requires six actual %s glyph pairs with no relief", theme => {
+    const pairs = contrastPairsForTheme(theme).filter(pair => pair.id.startsWith("range/"));
+    expect(pairs.map(pair => pair.id).sort()).toEqual(added.map(([id]) => id).sort());
+    for (const [id, foreground, background] of added) {
+      expect(pairs.find(pair => pair.id === id)).toMatchObject({
+        id, foreground, background, level: "AA-large", minimumRatio: AA_LARGE,
+      });
+    }
+    expect(pairs.every(pair => pair.exception === undefined)).toBe(true);
+    const result = checkTokenContrast(pairs, { tokens: actualTokens(theme) });
+    expect(result.pairsChecked).toBe(6);
+    expect(result.unchecked).toEqual([]);
+    expect(result.findings).toEqual([]);
+    expect(result.relieved).toEqual([]);
+    expect(result.ok).toBe(true);
+  });
+
+  it.each(["light", "dark"] as const)("retains every existing %s status-text, neutral and slot-1 floor", theme => {
+    const policy = contrastPairsForTheme(theme);
+    const pairs = reused.map(expected => {
+      const matches = policy.filter(pair => pair.id === expected.id);
+      expect(matches).toHaveLength(1);
+      expect(matches[0]).toMatchObject(expected);
+      expect(matches[0]?.exception).toBeUndefined();
+      return matches[0]!;
+    });
+    expect(pairs).toHaveLength(17);
+    const result = checkTokenContrast(pairs, { tokens: actualTokens(theme) });
+    expect(result.pairsChecked).toBe(17);
+    expect(result.unchecked).toEqual([]);
+    expect(result.findings).toEqual([]);
+    expect(result.relieved).toEqual([]);
+    expect(result.ok).toBe(true);
+  });
+
+  it.each(["light", "dark"] as const)("rejects every %s glyph foreground rebound to its ground", theme => {
+    for (const [id, foreground, background] of added) {
+      const pairs = contrastPairsForTheme(theme).filter(pair => pair.id === id);
+      expect(pairs).toHaveLength(1);
+      const tokens = { ...actualTokens(theme), [foreground]: def(foreground, `var(${background})`) };
+      const result = checkTokenContrast(pairs, { tokens });
+      expect(result.unchecked).toEqual([]);
+      expect(result.relieved).toEqual([]);
+      expect(result.findings).toEqual([
+        expect.objectContaining({ pairId: id, rule: "below-threshold", minimumRatio: AA_LARGE }),
+      ]);
+      expect(result.findings[0]?.ratio).toBeCloseTo(1, 10);
+      expect(result.ok).toBe(false);
+    }
+  });
+
+  it.each(["light", "dark"] as const)("rejects a near-ground %s success perimeter on sunken", theme => {
+    const id = "range/status-success-outline/surface-sunken";
+    const pairs = contrastPairsForTheme(theme).filter(pair => pair.id === id);
+    expect(pairs).toHaveLength(1);
+    const tokens = { ...actualTokens(theme),
+      "--color-ink-secondary": def("--color-ink-secondary", theme === "light" ? "oklch(0.93 0 0)" : "oklch(0.16 0 0)"),
+    };
+    const result = checkTokenContrast(pairs, { tokens });
+    expect(result.unchecked).toEqual([]);
+    expect(result.relieved).toEqual([]);
+    expect(result.findings).toEqual([
+      expect.objectContaining({ pairId: id, rule: "below-threshold", minimumRatio: AA_LARGE }),
+    ]);
+    expect(result.findings[0]?.ratio).toBeLessThan(1.1);
+    expect(result.ok).toBe(false);
   });
 });

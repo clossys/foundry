@@ -315,7 +315,7 @@ export type {
 export type { BrandmarkPlate } from "./shell/index.js";
 export { BADGE_INSET_SHARE, BADGE_RADIUS_SHARE, badgePlatePath } from "./shell/index.js";
 
-export { ChartFrame, BarChart, LineChart, Sparkline } from "./charts/index.js";
+export { ChartFrame, BarChart, LineChart, WaterfallChart, Sparkline } from "./charts/index.js";
 export type {
   ChartFrameProps,
   ChartMargin,
@@ -327,6 +327,7 @@ export type {
   BarChartSeries,
   LineChartProps,
   LineChartSeries,
+  WaterfallChartProps,
   SparklineProps,
 } from "./charts/index.js";
 
@@ -382,6 +383,12 @@ export {
   X,
   XCircle,
 } from "./icons/index.js";
+
+export { RangeChart } from "./charts/RangeChart.js";
+export type { RangeChartProps } from "./charts/RangeChart.js";
+
+export { ScatterChart } from "./charts/ScatterChart.js";
+export type { ScatterChartProps } from "./charts/ScatterChart.js";
 
 export { Item } from "./blocks/items/Item.js";
 export { Items } from "./blocks/items/Items.js";

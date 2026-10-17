@@ -323,9 +323,9 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
    * file's greyscale-by-default rule. Every other color token in this
    * package ships a neutral default so brand binding is FORCED, never
    * assumed — but a categorical hue is not brand expression, it is data
-   * encoding: a categorical chart rendered in greyscale is not
-   * "unbranded", it is unreadable, because series IDENTITY is carried
-   * by hue and nothing else. So these 8 slots ship real, validated hues
+   * encoding: hue supplies an additional series-identity channel,
+   * while visible series names and the matching table preserve meaning
+   * in greyscale. So these 8 slots ship real, validated hues
    * from day one, and are `brandable: false` in src/tokens.ts on
    * purpose — a brand is not expected to override them, the same way
    * it is not expected to override --color-neutral-*. Fixed order,

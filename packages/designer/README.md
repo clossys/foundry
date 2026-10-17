@@ -126,7 +126,7 @@ surfaces and live in `@clossys/publisher/web`.
   See "Shell" below.
 - **`charts`** — dependency-free SVG chart primitives: `ChartFrame` (the
   shared plot/axes/grid/legend/table container), `BarChart`, `LineChart`,
-  and `Sparkline`. A sibling of `shell`, not a sixth rung of the ladder —
+  `WaterfallChart`, `RangeChart`, `ScatterChart`, and `Sparkline`. A sibling of `shell`, not a sixth rung of the ladder —
   see "Charts" below.
 - **`theme`** — the JavaScript half of this package's theming contract
   (the CSS half already ships from `tokens.css`/`theme.css` — see "CSS
@@ -357,13 +357,20 @@ source file's own header for the exact probe and its result). Today that's:
 | `@clossys/designer/atoms/server` | `Avatar`, `Badge`, `Banner`, `Card`, `Field`, `Icon`, `Meter`, `Skeleton`, `Spinner`, `StatusMark`, `buttonLinkClassName`, `iconButtonClassName`, `iconButtonLinkClassName`, `mergeUiClasses` |
 | `@clossys/designer/blocks/server` | `AnatomyCallouts`, `ArticleBody`, `Matrix`, `ContentSection`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `Item`, `Items`, `MarketingChapter`, `MediaFigure`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `RecordLedger`, `Scene`, `SectionFrame`, `SectionHeader`, `SectionIntro`, `Specimen`, `SpecimenPanel`, `Stat`, `StatusList` |
 | `@clossys/designer/shell/server` | `Shell`, `SiteFooter`, `SiteHeader`, `SkipLink` |
-| `@clossys/designer/charts/server` | `ChartFrame`, `Sparkline` |
+| `@clossys/designer/charts/server` | `ChartFrame`, `BarChart`, `LineChart` (static), `WaterfallChart`, `RangeChart`, `ScatterChart`, `Sparkline` |
 | `@clossys/designer/theme/server` | `getThemeInitScript` |
 
 Everything not listed above stays reachable only from its original barrel,
 inside a client boundary — nothing was removed, renamed, or restructured to
 create these subpaths; each is strictly additive, a second, narrower way to
 reach bindings that already ship.
+
+`LineChart` also has two implementations. The ordinary `/charts` entry
+keeps its pointer and keyboard inspection layer. `/charts/server` renders
+static paths from the same geometry helpers, with a visible series legend
+and the complete table fallback. It accepts the published line props plus
+optional `fit`; `fit="fluid"` uses an intrinsic width of 360 when `width`
+is omitted, scaling up to 540. Omitted `fit` retains the fixed 480 preset.
 
 `Faq` deliberately has two implementations behind those entry points. The
 ordinary `@clossys/designer/blocks` entry keeps the React Aria disclosure and
@@ -5173,8 +5180,8 @@ imports from `charts` — see `src/ladder.test.ts`.
   y-scale. Two measures of different magnitude are two charts, never one
   chart with a second axis.
 - **Color follows the entity, never its rank.** Every series gets a color
-  from this package's fixed-order categorical palette, an
-  explicit `color` per series always winning outright. By default a
+  from this package's fixed-order categorical palette, with
+  an explicit `color` per series winning on `BarChart` and `LineChart`. By default a
   series' color is its position in the `series` array — which, on its
   own, is exactly the anti-pattern this rule warns about the moment a
   consumer filters `series` down to a subset, since removing an entry
@@ -5182,29 +5189,44 @@ imports from `charts` — see `src/ladder.test.ts`.
   (`BarChart`/`LineChart` both accept it — the complete set of possible
   series names, known before any filtering) and each name's position in
   THAT list picks its slot instead, so filtering never repaints a
-  survivor.
-- **A legend appears for two or more series, never for one** (the title
-  already names a single series) — `ChartFrame` enforces this itself, so
-  no chart in this layer can accidentally ship a one-swatch legend box.
+  survivor. `ScatterChart` instead uses its stable full `series` declaration
+  for both categorical slots and distinct marker shapes.
+- **By default, a legend appears for two or more series** (the title
+  names a single series). `ChartFrame` can also show one series through
+  `showSingleSeriesLegend`; static/fluid `BarChart` enables that option
+  to keep every series name visible independently of the title.
 - **A table-view fallback ships with every chart**, `Sparkline` included —
   a `<details>` whose summary text is `tableFallbackLabel` (default
   "View as table") on `ChartFrame`, `BarChart`, `LineChart`, and
   `Sparkline`, holding the same data as an ordinary HTML `<table>`,
   always reachable, never gated behind a screen reader or a hover.
   `Sparkline`'s value column heading is `valueColumnLabel` (default
-  "Value").
-- **A hover layer ships on every chart except `Sparkline`** — a crosshair
+  "Value"). `WaterfallChart` instead requires authored `labels.table`,
+  `labels.category`, and `labels.value` for its disclosure and columns.
+  `RangeChart` requires `labels.table`, `category`, `from`, `to`, and `status`
+  when rows carry statuses. `ScatterChart` requires `labels.table` and
+  `category`, both axis labels, and an authored size label when sizing is used.
+- **Interactive charts ship a hover layer** — a crosshair
   + shared tooltip readout on `LineChart`, a per-mark tooltip on
   `BarChart` — with the same detail reachable on keyboard focus as on
-  pointer hover.
+  pointer hover. Static `BarChart` marks retain the chart graphic and table fallback. The
+  static and fluid paths show a legend even for one series, independently
+  of the title.
 
 ### `ChartFrame`
 
-The shared container `BarChart` and `LineChart` both compose: plot area,
+The shared container `BarChart`, `LineChart`, `WaterfallChart`, `RangeChart`, and `ScatterChart` compose: plot area,
 axes, grid, an optional legend, an accessible SVG `<title>`/`<desc>`, and
 the table-view fallback. Only reached for directly when composing a new
-chart type this package doesn't ship; `BarChart`/`LineChart`/`Sparkline`
+chart type this package doesn't ship; `BarChart`/`LineChart`/`WaterfallChart`/`RangeChart`/`ScatterChart`/`Sparkline`
 below are the components most consumers actually render.
+
+`fit` accepts `"fixed"` (default) or `"fluid"`. Fluid charts fill their
+available width, preserve the SVG aspect ratio, and stop growing at 1.5
+times their intrinsic width. `width` and `height` define the coordinate
+space used by axes and marks; the outer figure still accepts `className`
+and `style`. Fluid table fallbacks stack their labelled cells below tablet,
+keeping headers and table roles available without horizontal scrolling.
 
 ```tsx
 import { ChartFrame } from "@clossys/designer/charts";
@@ -5247,6 +5269,15 @@ get a direct value label at the last category's cluster; more than 4
 series relies on the legend + per-bar tooltip + table instead, so the
 chart doesn't turn into a number on every point.
 
+`BarChart` accepts the same `fit` option. Its fluid path uses an intrinsic
+width of 360 when `width` is omitted. `marks="interactive"` (default) gives
+each bar a native SVG tooltip and keyboard focus target, with hover and
+focus feedback supplied by CSS. `marks="static"` presents the chart as
+one accessible graphic with its table fallback. Fluid or static bars read
+`--radius-subtle`; the fixed interactive path retains its existing 4px
+radius. Import `BarChart` from `@clossys/designer/charts/server` in a React
+Server Component.
+
 ### `LineChart`
 
 Change over time — one line per series, sharing one x scale and one y
@@ -5274,6 +5305,206 @@ accessible name is `"${title}: ${keyboardHintLabel}"`; `keyboardHintLabel`
 defaults to `"use arrow keys to inspect values"` and is independently
 overridable — `title` itself is already consumer-supplied, so only the
 fixed instructional half needed a prop.
+
+### `WaterfallChart`
+
+An opening total, ordered signed changes, and a derived closing total. Each
+change begins at the previous running total; the opening and closing bars
+begin at zero. Connectors show the accumulation, while signed value labels
+and the matching table preserve meaning independently of color.
+
+```tsx
+import { WaterfallChart } from "@clossys/designer/charts/server";
+
+<WaterfallChart
+  title="Balance changes"
+  description="Opening balance, additions, and removals"
+  start={{ label: "Opening", value: 100 }}
+  steps={[
+    { id: "added", label: "Added", value: 30 },
+    { id: "removed", label: "Removed", value: -20 },
+    { id: "recovered", label: "Recovered", value: 10 },
+  ]}
+  end={{ label: "Closing", value: 120 }}
+  labels={{ table: "View values", category: "Stage", value: "Amount" }}
+/>
+```
+
+`labels.table`, `labels.category`, and `labels.value` are required, nonblank
+strings. Steps need nonblank, unique IDs; visible labels may repeat. Empty
+steps are supported. The chart rejects nonfinite values and closing totals
+that disagree with the accumulation beyond floating-point roundoff.
+
+`end.value` is optional and checks the derived total. Geometry, visible
+values, and table values always use that derived total. For example,
+`0.1 + 0.2` accepts an authored end of `0.3`; with `valueFormat={String}`,
+the visible closing value and table value display `+0.30000000000000004`. With no steps, an authored
+end must exactly equal the opening value.
+
+Every positive bar, including opening and closing totals, has a `+` label;
+negative bars use Unicode minus (`−`), and zero is unsigned. Table values use
+the same signs. `valueFormat` formats an unsigned magnitude and must omit its
+own sign; the chart supplies signs for marks, table values, and negative-axis
+ticks. Positive-axis ticks remain unsigned. For example,
+`valueFormat={value => "$" + value}` yields `+$100` for the opening total,
+`−$20` for a negative change, and `$0` for zero. The default formatter uses
+the existing en-US number formatting.
+
+Short stage names appear directly below their bars. Dense categories use
+numbered SVG anchors and an always-visible wrapping key containing each
+number and its complete authored stage name. Full names remain in the table,
+and every signed value stays by its mark. No category names are truncated.
+
+The default is `fit="fluid"` with a 360×280 coordinate space and a width cap
+of 540px. `fit="fixed"` keeps the intrinsic dimensions. Marks are static;
+the named graphic and native table disclosure work without JavaScript.
+Positive and negative changes use the existing diverging colors. Neutral
+totals have a contrasting, non-scaling hairline outline because their fill
+alone does not distinguish the bar boundary from the chart ground.
+
+### `RangeChart`
+
+`RangeChart` shows activities across authored intervals. `ticks` names each
+interval; numeric `from` and `to` identify its boundaries. With four ticks,
+boundaries run from `0` through `4`. Fractional boundaries are supported.
+
+```tsx
+import { RangeChart } from "@clossys/designer/charts/server";
+
+<RangeChart
+  title="Sample schedule"
+  description="Activities across four phases"
+  ticks={["Phase A", "Phase B", "Phase C", "Phase D"]}
+  rows={[
+    { id: "whole", label: "Whole schedule", from: 0, to: 4 },
+    {
+      id: "review",
+      label: "Review",
+      from: 0.5,
+      to: 2.75,
+      status: { tone: "warning", label: "Awaiting review" },
+    },
+  ]}
+  labels={{
+    table: "Schedule data",
+    category: "Activity",
+    from: "Start boundary",
+    to: "End boundary",
+    status: "State",
+  }}
+/>
+```
+
+Each row requires a unique, nonblank `id`, a visible `label`, and finite bounds
+satisfying `0 <= from < to <= ticks.length`. Tick labels sit at interval
+centers. Optional statuses repeat the authored state in a visible label and
+the native table; their five distinct glyph shapes retain meaning in greyscale.
+Provide at least one row and one period; row and period labels must be nonblank.
+Every period retains a complete visible and accessible numbered key, including
+when there is only one period. Key item `1` names interval `0` through `1`.
+Long or dense period names use the same numbers at their SVG interval centers.
+An intrinsic width that cannot keep those numbered anchors distinct is rejected.
+`labels.status` is required when any row has a status. Rows without status keep
+an empty cell in that column. With no statuses, the table has three columns.
+
+The chart is static and available from both chart entry points. The default
+fluid view uses a 360-unit width and grows to fit wrapped activity and status
+labels. Two short rows without statuses retain a 120-unit height. An authored
+height smaller than the required content height is rejected.
+`width`, `height`, `fit`, `className`, and `style` allow authored layout.
+The native table disclosure works without JavaScript. Open it before printing
+to include the table; automatic expansion during printing is not promised.
+
+### `ScatterChart`
+
+`ScatterChart` plots three to twelve authored numeric observations. Each point
+has a unique, nonblank `id`, a visible `label`, and finite `x` and `y` values.
+Provide nonblank axis titles and the table disclosure and category labels.
+Point labels allow at most twenty graphemes; axis titles allow at most
+thirty-two. Axis titles can use multiple lines while preserving their full text.
+
+```tsx
+import { ScatterChart } from "@clossys/designer/charts/server";
+
+<ScatterChart
+  title="Sample observations"
+  description="Two measures and sample counts across two cohorts"
+  x={{ label: "First measure", min: 0, max: 10 }}
+  y={{ label: "Second measure", min: 0, max: 10 }}
+  size={{ label: "Sample count" }}
+  series={[
+    { id: "a", name: "Cohort A" },
+    { id: "b", name: "Cohort B" },
+  ]}
+  points={[
+    { id: "first", label: "Observation A", x: 2, y: 2, size: 1, series: "a", labelSide: "end" },
+    { id: "second", label: "Observation B", x: 5, y: 7, size: 4, series: "a", labelSide: "above" },
+    { id: "third", label: "Observation C", x: 8, y: 4, size: 9, series: "b", labelSide: "start" },
+  ]}
+  labels={{ table: "Observation data", category: "Observation" }}
+/>
+```
+
+Omitted bounds use a domain derived from the observations, with a constant
+range expanded to a finite interval. Authored `min` and `max` must be finite
+and contain every coordinate; when both are provided, `min < max` is required.
+Invalid bounds or coordinates are rejected. Bounds are independent for each
+axis.
+
+Declare at most four series, using unique, nonblank IDs and nonblank names.
+Every point must reference that declared domain. Declaration order assigns
+categorical slots and the circle, square, diamond, and triangle shapes in that
+order. Keep the full series declaration stable when filtering or reordering
+points so a surviving series retains its color and shape. With no declared
+series, omit each point's `series`; the marks use the first categorical slot
+and circle shape. A matching shape legend appears for two or more series. Series identity combines
+these shapes with complete point labels and the matching native table. The
+existing light base/sunken categorical policy compensates slots 2–4 below 3:1
+through these additional channels; those fills are compensated rather than raw
+contrast passes. Marker contours have equal filled area and no border, so shape
+does not change the size comparison. Dark fills retain the existing 3:1 floor
+without relief.
+
+Without `size`, omit every point's size value: all marks have equal filled
+area, including marks with different shapes. When `size={{ label }}` is
+provided, its label must be nonblank and every point must carry a finite,
+nonnegative `size`. Filled area is proportional to size within the chart,
+normalized to its largest observed size; a `1:4:9` size ratio produces a
+`1:4:9` area ratio. A zero size has zero filled area while its direct label
+and table row remain present. An all-zero set retains labels and rows without
+inflating its marks. The size label remains visible above the chart.
+
+The default intrinsic dimensions are `360 × 300`, with `fit="fluid"`.
+The SVG fills the available width, preserves its aspect ratio, and stops
+growing at 1.5 times its intrinsic width. `fit="fixed"` retains the authored
+SVG dimensions. Both `width` and `height` must be finite and at least `240`;
+that minimum does not guarantee every formatter or label placement fits.
+Wide formatted y ticks reserve extra space. X ticks can omit interior ticks
+to keep their complete text distinct; the first and last visible tick labels
+remain. A layout that cannot retain its tick text and plot is rejected.
+`valueFormat` formats axis ticks, table coordinates, and table sizes; it
+defaults to the chart number formatter. `className` and `style` apply to the
+outer chart figure.
+
+Each point's complete label is drawn next to its mark. `labelSide` accepts
+`"start"`, `"end"`, `"above"`, or `"below"`; start and end mean left and right
+in the SVG coordinate space. By default, the chart prefers a side toward the
+plot interior, tries the opposite side when needed, and otherwise places the
+label above. Authored start/end placement is rejected if the complete label
+cannot fit beside the mark within the plot. Above/below labels can shift
+horizontally to stay inside the SVG. These choices do not resolve collisions
+between nearby or coincident points. Authors must check the actual layout,
+choose label sides and dimensions, and provide suitably separated observations
+so labels remain readable.
+
+The component is static, available from both chart entry points, and requires
+no client state, effect, or interaction hook. There is no hover readout or
+per-point keyboard stop. `ChartFrame` supplies the caption, accessible SVG
+title and optional description, and a complete native data table. The table
+retains each point label, its declared series name when present, both formatted
+coordinates, and the formatted size when enabled, including zero. Its
+disclosure works without JavaScript. Open it before printing to include the
+table; automatic expansion during printing is not promised.
 
 ### `Sparkline`
 
@@ -5972,19 +6203,25 @@ not a grab-bag).
 | `ToastOptions` | type | Options for `toast(...)`: `description`, `timeout` (ms, or `null` to disable auto-dismiss), `onClose`. |
 | `ToastRecord` | type | The queued shape of one toast: `title`, `description?`, `variant`. |
 | `ToastVariant` | type | `"success" \| "danger" \| "info" \| "warning"`. |
-| `ChartFrame` | component | The shared plot/axes/grid/legend/table container `BarChart` and `LineChart` compose. |
-| `ChartFrameProps` | type | Props for `ChartFrame`: `title`, `description`, `width`, `height`, `margin`, `xTicks`, `yTicks`, `legend`, `table` (required), `tableFallbackLabel` (default `"View as table"`), `className`, `style`, `children` (render prop receiving the resolved `PlotArea`). |
+| `ChartFrame` | component | The shared plot/axes/grid/legend/table container `BarChart`, `LineChart`, `WaterfallChart`, `RangeChart`, and `ScatterChart` compose. |
+| `ChartFrameProps` | type | Props for `ChartFrame`: `title`, `description`, `width`, `height`, `fit` (default `"fixed"`), `margin`, `xTicks`, `yTicks`, `legend`, `showSingleSeriesLegend` (default `false`), `table` (required), `tableFallbackLabel` (default `"View as table"`), `className`, `style`, `children` (render prop receiving the resolved `PlotArea`). |
 | `ChartMargin` | type | `{ top, right, bottom, left }`, all `number`. |
 | `ChartAxisTick` | type | `{ position, label }` — a pre-scaled pixel position plus its label. |
-| `ChartLegendItem` | type | `{ label, color }`. |
+| `ChartLegendItem` | type | `{ label, color, mark?: "circle" \| "square" \| "diamond" \| "triangle" }`; omitted `mark` retains the color swatch. |
 | `ChartTableSpec` | type | `{ headers, rows }` — the table-view fallback's data. |
 | `PlotArea` | type | `{ x, y, width, height }` — the plot rectangle passed to `ChartFrame`'s `children` render prop. |
 | `BarChart` | component | Categorical magnitude: one bar per category, grouped by series. |
-| `BarChartProps` | type | Props for `BarChart`: `categories`, `series`, `colorDomain`, `title`, `description`, `width`, `height`, `valueFormat`, `barLabel` (default `"{series}, {category}: {value}"`), `categoryColumnLabel` (default `"Category"`), `tableFallbackLabel`, `className`, `style`. |
+| `BarChartProps` | type | Props for `BarChart`: `categories`, `series`, `colorDomain`, `title`, `description`, `width`, `height`, `fit` (default `"fixed"`), `marks` (default `"interactive"`), `valueFormat`, `barLabel` (default `"{series}, {category}: {value}"`), `categoryColumnLabel` (default `"Category"`), `tableFallbackLabel`, `className`, `style`. |
 | `BarChartSeries` | type | `{ name, values, color? }`. |
 | `LineChart` | component | Change over time: one line per series, one shared x/y scale, a crosshair + tooltip hover layer. |
 | `LineChartProps` | type | Props for `LineChart`: `x`, `series`, `colorDomain`, `title`, `description`, `width`, `height`, `valueFormat`, `xFormat`, `keyboardHintLabel` (default `"use arrow keys to inspect values"`), `overlayLabel` (default `"{title}: {hint}"`), `xColumnLabel` (default `"X"`), `tableFallbackLabel`, `className`, `style`. |
 | `LineChartSeries` | type | `{ name, values, color? }`. |
+| `WaterfallChart` | component | Static accumulated changes from an opening total to a derived closing total, with signed value labels, connectors, and a required table fallback. |
+| `WaterfallChartProps` | type | Props for `WaterfallChart`: required `title`, `start: { label, value }`, `steps: readonly { id, label, value }[]`, `end: { label, value? }`, and `labels: { table, category, value }`; optional `description`, `fit` (default `"fluid"`), `width` (default `360`), `height` (default `280`), `valueFormat` (default en-US number formatting; receives unsigned magnitude), `className`, and `style`. |
+| `RangeChart` | component | Static intervals with authored activity/status labels and a native data table. |
+| `RangeChartProps` | type | `title`, `description?`, `ticks`, `rows: readonly { id, label, from, to, status?: { tone: StatusMarkTone, label } }[]`, `labels: { table, category, from, to, status? }`, `fit?` (default `"fluid"`), `width?` (default `360`), `height?` (default fits wrapped content), `className?`, `style?`. |
+| `ScatterChart` | component | Static numeric observations with direct labels, up to four series shapes, optional proportional area, and a native data table. |
+| `ScatterChartProps` | type | `points: readonly { id, label, x, y, size?, series?, labelSide?: "start" \| "end" \| "above" \| "below" }[]`, `x` and `y: { label, min?, max? }`, `size?: { label }`, `series?: readonly { id, name }[]`, `labels: { table, category }`, required `title`, optional `description`, `fit?` (default `"fluid"`), `width?` (default `360`), `height?` (default `300`), `valueFormat?`, `className?`, and `style?`. |
 | `Sparkline` | component | A bare inline trend — no axes/grid/legend/hover, still ships a table-view fallback. |
 | `SparklineProps` | type | Props for `Sparkline`: `values`, `title`, `width`, `height`, `color`, `valueFormat`, `tableFallbackLabel` (default `"View as table"`), `valueColumnLabel` (default `"Value"`), `className`, `style`. |
 | `getThemeInitScript` | function | Returns a self-contained head script (string) that stamps `data-theme` before first paint. Takes `{ storageKey?, defaultTheme? }`. |
@@ -6001,6 +6238,9 @@ not a grab-bag).
 | `ThemeToggleProps` | type | Props for `ThemeToggle`: `preferenceLabels`, `toggleLabel`, `preferenceAnnouncement`, plus everything `Button` accepts except `children`/`onPress`. |
 
 ## Tests
+
+`WaterfallChart.test.tsx` covers accumulated totals, signed labels, connectors,
+and static fallback behavior. This source test does not ship with the package.
 
 Beyond render/interaction/keyboard/ARIA tests per atom (`Button.test.tsx`,
 `TextField.test.tsx`, `Badge.test.tsx`, `Card.test.tsx`,
@@ -6200,7 +6440,7 @@ part of this package's public API" and reachable only by that one test.
   `relativeLuminance`, `parseOklch`** (from `@clossys/designer/tokens`,
   promoted from that internal module — no behavior change, only
   visibility) — the WCAG colour math itself, pure and zero-dependency.
-- **`CONTRAST_PAIRS`** (same subpath) — an EXPLICIT, checked-in list of 76
+- **`CONTRAST_PAIRS`** (same subpath) — an EXPLICIT, checked-in list of 107
   `{ foreground, background, level, minimumRatio, compositeOver? }` pairs
   (`compositeOver` is a token, or a literal colour such as `oklch(0 0 0)`
   for a backdrop no token names, which is how the eight glass pairs check
@@ -6222,7 +6462,7 @@ part of this package's public API" and reachable only by that one test.
   REQUIRED to understand content or operate the interface, never anything
   purely decorative): hairlines/dividers (`--color-line-*`), a chart
   gridline (`--color-chart-grid` — a reading aid, not itself required to
-  read the data; the marks/axis/axis-label ARE checked), the modal/popover
+  read the data; categorical marks and axis labels are checked), the modal/popover
   scrim, elevation shadows, the skeleton loading fill, and the two focus
   rings (composite `box-shadow` values with their own WCAG success
   criterion, 2.4.13, not this gate's 1.4.3/1.4.11 scope) — see
@@ -6306,6 +6546,18 @@ pair list to force a green run. Dark mode's own categorical steps all
 clear 3:1 on their own and carry no exception at all — if a future
 palette edit ever moved one of dark's slots under the floor, it would
 report as a genuine, unrelieved `"below-threshold"` finding.
+
+Inline charts check their small axis labels at 4.5:1 using secondary ink,
+and all eight categorical marks at 3:1
+against the actual base and sunken grounds. Light slots 2–5 measure below
+3:1 on those grounds (approximately 2.94/2.58/1.99/2.47 on base and
+2.68/2.36/1.82/2.26 on sunken). These exact pairs carry a separate,
+measured labels/table compensation policy; the original raised-surface
+slots 3–5 remain unchanged. All other light slots and every dark slot must
+clear 3:1 outright. The chart ground checks cover the raw findings,
+theme-specific relief, stale exceptions and unrelieved dark failures.
+The supplementary axis baseline retains its axis-above-grid invariant;
+it is not a threshold pair.
 
 ## Identity kit (`@clossys/designer/tokens`) — #1210
 
@@ -6620,15 +6872,15 @@ No `AppNavItem`/`AppFooterColumn` or similar per-item component beyond
 `SiteFooter.Column` either, for the same reason atoms/blocks stay this
 short elsewhere in this README: added only once something real needs it.
 
-**Charts:** four ship — `ChartFrame`, `BarChart`, `LineChart`, `Sparkline`
+**Charts:** seven ship — `ChartFrame`, `BarChart`, `LineChart`, `WaterfallChart`, `RangeChart`, `ScatterChart`, `Sparkline`
 — no `PieChart`/`DonutChart` (part-to-whole reads reliably only up to
 about six segments and a bar communicates the same comparison more
 precisely at any count — see the dataviz reference's anti-patterns list),
-no `ScatterChart`/`Heatmap` (neither was asked for by this rung), and
+no `Heatmap` (not supplied by this layer), and
 deliberately **no dual-axis option on `BarChart`/`LineChart`** — that
 omission is not a gap to fill later, it's the one hard rule this layer
 does not bend on. No charting library is a dependency, and the scale/color
-helpers under `charts/internal/` stay unexported — this ships four
+helpers under `charts/internal/` stay unexported — this ships seven
 components, not a general-purpose numerical or color library (see
 `atoms/internal/cx.ts`/`ui-vars.ts` for the same precedent one layer down).
 

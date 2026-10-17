@@ -50,8 +50,9 @@
  *     separation, not information; removing it changes layout aesthetics,
  *     never comprehension. No 1.4.11 obligation attaches to a hairline.
  *   - `--color-chart-grid` — a gridline is a supplementary reading aid,
- *     not itself required to read a chart's data (the marks, the axis,
- *     and the axis labels are — all three ARE checked below). This
+ *     not itself required to read a chart's data. Categorical marks and
+ *     axis labels are checked below; the supplementary axis baseline
+ *     retains the axis-above-grid invariant in contrast.test.ts. This
  *     package's own `chart-vars.ts`/README already document gridlines as
  *     deliberately recessive, "visible but quiet"; `contrast.test.ts`
  *     encodes that as a design invariant (a comparison against
@@ -651,6 +652,81 @@ export const CONTRAST_PAIRS: readonly ContrastPair[] = [
     minimumRatio: AA_LARGE,
     description: `Categorical chart mark slot ${n} on the chart surface. Mirrors the per-slot sweep in contrast.test.ts's "every categorical slot either clears the 3:1 mark-contrast floor, or is a documented WARN slot".`,
   })),
+  // Inline charts have transparent plots: also check their actual page grounds.
+  ...(["base", "sunken"] as const).flatMap((ground): ContrastPair[] => [
+    {
+      id: `chart-inline-axis-label/surface-${ground}`,
+      foreground: "--color-ink-secondary",
+      background: `--color-surface-${ground}`,
+      level: "AA",
+      minimumRatio: AA,
+      description: `Small axis/tick labels on an inline chart's ${ground} ground use secondary ink at the normal-text floor.`,
+    },
+    ...([1, 2, 3, 4, 5, 6, 7, 8] as const).map((slot): ContrastPair => ({
+      id: `chart-categorical-${slot}/surface-${ground}`,
+      foreground: `--color-chart-categorical-${slot}`,
+      background: `--color-surface-${ground}`,
+      level: "AA-large",
+      minimumRatio: AA_LARGE,
+      description: `Categorical slot ${slot} on an inline chart's ${ground} ground.`,
+    })),
+  ]),
+  // Range status glyphs occupy transparent base/sunken plot grounds.
+  // Success retains its display fill, with a secondary-ink perimeter because
+  // that fill measures approximately 2.9733:1 on the light sunken ground.
+  ...(["base", "sunken"] as const).flatMap((ground): ContrastPair[] => [
+    {
+      id: `range/status-danger/surface-${ground}`,
+      foreground: "--color-status-danger",
+      background: `--color-surface-${ground}`,
+      level: "AA-large",
+      minimumRatio: AA_LARGE,
+      description: `Range danger diamond against the ${ground} plot ground.`,
+    },
+    {
+      id: `range/status-success-outline/surface-${ground}`,
+      foreground: "--color-ink-secondary",
+      background: `--color-surface-${ground}`,
+      level: "AA-large",
+      minimumRatio: AA_LARGE,
+      description: `Range success glyph perimeter against the ${ground} plot ground.`,
+    },
+  ]),
+  ...(["warning", "info"] as const).map((tone): ContrastPair => ({
+    id: `range/status-${tone}/surface-sunken`,
+    foreground: `--color-status-${tone}`,
+    background: "--color-surface-sunken",
+    level: "AA-large",
+    minimumRatio: AA_LARGE,
+    description: `Range ${tone} glyph against the sunken plot ground.`,
+  })),
+  // Waterfall changes and total perimeters must clear both transparent plot grounds.
+  ...(["base", "sunken"] as const).flatMap((ground): ContrastPair[] => [
+    ...(["positive", "negative"] as const).map((sign): ContrastPair => ({
+      id: `waterfall/diverging-${sign}/surface-${ground}`,
+      foreground: `--color-chart-diverging-${sign}`,
+      background: `--color-surface-${ground}`,
+      level: "AA-large",
+      minimumRatio: AA_LARGE,
+      description: `Signed Waterfall change against the ${ground} plot ground.`,
+    })),
+    {
+      id: `waterfall/neutral-outline/surface-${ground}`,
+      foreground: "--color-ink-secondary",
+      background: `--color-surface-${ground}`,
+      level: "AA-large",
+      minimumRatio: AA_LARGE,
+      description: `Waterfall total perimeter against the ${ground} plot ground.`,
+    },
+  ]),
+  {
+    id: "waterfall/neutral-outline/diverging-neutral",
+    foreground: "--color-ink-secondary",
+    background: "--color-chart-diverging-neutral",
+    level: "AA-large",
+    minimumRatio: AA_LARGE,
+    description: "Waterfall total perimeter against its neutral interior.",
+  },
   // Anatomy numerals are caption-sized text; every disc needs the normal-text floor.
   ...(["base", "sunken", "raised", "inverse"] as const).map(surface => ({
     id: `anatomy/surface-${surface}/${surface === "inverse" ? "ink-on-inverse" : "ink-primary"}`,
@@ -701,11 +777,30 @@ const CATEGORICAL_EXCEPTION_SLOTS_BY_THEME: Readonly<Record<string, readonly num
   dark: [],
 };
 
+type InlineChartGround = "base" | "sunken";
+
+// Measured separately from the original raised-surface palette acceptance.
+// Never infer exceptions from whichever colors happen to miss their floor.
+const INLINE_CATEGORICAL_EXCEPTION_SLOTS_BY_THEME: Readonly<
+  Record<"light" | "dark", Readonly<Record<InlineChartGround, readonly number[]>>>
+> = {
+  light: { base: [2, 3, 4, 5], sunken: [2, 3, 4, 5] },
+  dark: { base: [], sunken: [] },
+};
+const INLINE_CATEGORICAL_WARN_EXCEPTION: ContrastException = {
+  wcagClause: "WCAG 2.2 SC 1.4.11 (Non-text Contrast)",
+  compensatingMechanism:
+    "Inline BarChart paths retain a visible legend naming every series, independently of the title, plus direct value labels as applicable, and the required matching table fallback. ScatterChart uses distinct equal-area categorical silhouettes, complete direct point labels, matching visible shape keys for two or more declared series, and the complete native table; ScatterChart.test.tsx pins those channels. Static marks remain one accessible chart graphic; the native table disclosure works without JavaScript. BarChart.server.test.tsx pins names, categorical fills, table columns and every value for one, two and eight series.",
+  rationale:
+    "The real base/sunken ground sweep in chart-ground-contrast.test.ts measures light slots 2/3/4/5 below 3:1: base approximately 2.94/2.58/1.99/2.47, sunken 2.68/2.36/1.82/2.26. These exact ground/slot pairs carry the chart layer's legend/table compensation; every dark slot and the other light slots must clear 3:1 without relief. This is separate from the original raised-surface palette report.",
+};
+
 /**
  * `CONTRAST_PAIRS` with the theme-scoped categorical relief (see this
  * file's header, "EXCEPTIONS") attached to the matching
  * `chart-categorical-<n>/chart-surface` pairs' `exception` field for
- * `theme`, and every other pair untouched. `contrast-cli.ts` calls this
+ * `theme`. Inline base/sunken pairs use their separately measured ground map;
+ * every other pair is untouched. `contrast-cli.ts` calls this
  * once per theme it checks (light, and dark when the file being checked
  * declares one) instead of using the bare `CONTRAST_PAIRS` array
  * directly — that bare array stays theme-agnostic on purpose (a caller
@@ -722,7 +817,16 @@ export function contrastPairsForTheme(theme: "light" | "dark"): readonly Contras
   };
   return CONTRAST_PAIRS.map((pair) => {
     const slot = slotOf(pair.id);
-    if (slot === undefined || !exceptedSlots.has(slot)) return pair;
-    return { ...pair, exception: CATEGORICAL_WARN_EXCEPTION };
+    if (slot !== undefined && exceptedSlots.has(slot)) {
+      return { ...pair, exception: CATEGORICAL_WARN_EXCEPTION };
+    }
+    const inline = /^chart-categorical-([1-8])\/surface-(base|sunken)$/.exec(pair.id);
+    if (inline) {
+      const ground = inline[2] as InlineChartGround;
+      if (INLINE_CATEGORICAL_EXCEPTION_SLOTS_BY_THEME[theme][ground].includes(Number(inline[1]))) {
+        return { ...pair, exception: INLINE_CATEGORICAL_WARN_EXCEPTION };
+      }
+    }
+    return pair;
   });
 }
