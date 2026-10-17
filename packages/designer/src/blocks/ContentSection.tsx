@@ -413,8 +413,7 @@ export function ContentSection({
           ) : null}
         </div>
       ) : null}
-      {inlineFootnoteNode}
-      {hasClosing ? closingNode() : null}
+      {hasClosing ? closingNode() : footnoteNode}
     </div>
   );
 }
