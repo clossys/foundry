@@ -3734,7 +3734,8 @@ import { Matrix } from "@clossys/designer/blocks";
 />;
 ```
 
-Exactly two sides on equal `Card` plates. Each side has a distinct,
+The omitted `arrangement` and `arrangement="sides"` render two sides on equal
+`Card` plates. Each side has a distinct,
 whitespace-free `id`, an optional `label` rendered as a caption paragraph, and a
 required `heading` rendered at the selected semantic heading level. Label both
 sides or neither; mixed label presence is refused. Supply the same primary form
@@ -3749,6 +3750,66 @@ reading order or either plate's fill. `headingLevel` defaults to `3`; `ground`
 defaults to `base`. Sides stack below `tablet`, or `tablet-lg` when they carry
 visuals, then share subgrid rows for aligned copy and visuals. All styling uses
 the existing plate, ground, typography and accent tokens. Server-safe.
+
+Use `arrangement="grid"` for a comparison with two to six columns and two to
+eight rows:
+
+```tsx
+import { Matrix } from "@clossys/designer/blocks/server";
+
+<Matrix
+  arrangement="grid"
+  aria-label="Record comparison"
+  columns={[
+    { id: "record", label: "Record" },
+    { id: "count", label: "Count" },
+    { id: "state", label: "State" },
+  ]}
+  rows={[
+    {
+      id: "current", label: "Current record", description: "The latest authored view.",
+      cells: {
+        record: { type: "text", text: "Reviewed record" },
+        count: { type: "figure", value: "2,481", delta: "+12%", trend: "up" },
+        state: { type: "status", tone: "success", label: "Reviewed" },
+      },
+    },
+    {
+      id: "previous", label: "Previous record",
+      cells: {
+        record: { type: "empty" },
+        count: { type: "figure", value: "2,200", delta: "-3%", trend: "down" },
+        state: { type: "status", tone: "warning", label: "Needs review" },
+      },
+    },
+  ]}
+  featured={{ column: "count" }}
+  featuredLabel="Selected measure"
+  emptyLabel="No authored value"
+/>;
+```
+
+Column and row ids are distinct and whitespace-free within their axis; each row
+has its label, optional description, and a `cells` record containing every column
+id with no extra key. Cells use `type: "text"` with authored `text`, `"figure"`
+with `value`, optional signed `delta` and `trend` (`up`, `down`, `neutral`),
+`"status"` with a StatusMark `tone` and visible `label`, or `"empty"`. Each column
+contains one type among its non-empty cells. Figures align to the inline end and
+use tabular numerals; a supplied trend requires a delta. Empty cells voice the
+authored `emptyLabel`, required when any cell is empty and omitted otherwise.
+
+`featured` selects one `{ row: id }` or `{ column: id }`, adding a hairline accent
+rule and a Badge to that header. Supply meaningful `featuredLabel` when a target
+is featured, and omit it otherwise. The grid forwards native table attributes,
+including authored `aria-label` or `aria-labelledby`; it supplies no English
+labels. Row labels use `headingLevel` (default `3`), and `ground` supports the
+same three grounds as sides.
+
+One semantic table retains explicit table, row, header and cell roles and header
+scopes at every width. Up to four columns use table layout from `tablet`; five
+or six use `tablet-lg`. Below that breakpoint, rows become cards with a heading
+and visible column labels. Those repeated inline labels are hidden from assistive
+technology; the real column headers remain visually hidden and accessible.
 
 ### `Specimen`
 
@@ -6153,8 +6214,8 @@ not a grab-bag).
 | `SceneTag` | type | Citation tag bounds and copy. |
 | `SceneNode` | type | Review-node bounds and copy. |
 | `ScenePersonLayout` | type | Person row bounds and decider-ring flag. |
-| `Matrix` | component | Exactly two parallel sides on equal plates, optionally featuring one side by id. |
-| `MatrixProps` | type | Two `sides`, optional `featured`, `headingLevel`, `ground`, and native div attributes except `title`. |
+| `Matrix` | component | Two parallel sides on equal plates, or a responsive grid of authored comparison cells. |
+| `MatrixProps` | type | Optional `arrangement: "sides"` with two sides, or `arrangement: "grid"` with columns, rows, cell records and authored labels; shared ground/heading controls and native root attributes except `title`. |
 | `MatrixSide` | type | Stable id, required heading and optional label/description; a union requiring points or visual, never both. Labels appear on both sides or neither. |
 | `MatrixHeadingLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
 | `Specimen` | component | Labelled figure of 1 to 3 static product-UI panels (`single`, `row`, `stack`, `flow`); budgets validated. |
