@@ -23,7 +23,7 @@ export interface ItemData {
   figure?: { value: ReactNode; delta?: ReactNode; trend?: "up" | "down" | "neutral" };
   /** A shaped mark and visible state label, distinct from a badge. */
   status?: { tone: StatusMarkTone; label: ReactNode };
-  /** Actor id in a connected, two-lane sequence. */
+  /** Actor id in a connected sequence with two, three or four lanes. */
   lane?: string;
 }
 /** Standalone items explicitly select their frame's scale, treatment and ground. */
@@ -51,6 +51,7 @@ export interface ItemsProps extends Pick<AriaAttributes, "aria-labelledby"> {
   groups?: readonly ItemsGroup[];
   order?: "none" | "numbered" | "connected";
   reveal?: "all" | "disclose";
+  /** Two lanes allow columns or stacks with 3-5 steps; three/four lanes allow stacks with 4-6/5-8 steps. */
   lanes?: readonly ItemsLane[];
   end?: "ends" | "continues";
   endLabel?: ReactNode;

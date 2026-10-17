@@ -3518,7 +3518,8 @@ private policies.
 `Items` keeps source reading order and accepts `order="none"` (the default),
 `"numbered"`, or `"connected"`. Numbered items use ordered-list semantics;
 numbering continues across labelled groups in their rendered membership order.
-Connected items take three to five steps in columns or a stack. Four steps
+Connected items take three to five steps in columns or a stack, with longer
+stacks available for three or four lanes as described below. Four steps
 without lanes are accepted with a warning; four with lanes produce no count
 warning. Connected columns keep the authored two- or
 three-column layout, including an incomplete final row.
@@ -3529,11 +3530,20 @@ after the final step. A continuation without an authored label is decorative;
 empty labels are omitted. End fields, captions, and lanes belong to connected
 order.
 
-For two actors, supply exactly two lane definitions as a readonly array of
-`{ id, label }` entries and give every item its lane ID. Lanes require connected
-columns or a stack of three to five steps. The first step uses the first
-defined lane, both lanes appear, and each reference must match a definition. Lane definitions do
-not change step reading order.
+Supply lane definitions as a readonly array of `{ id, label }` entries and
+give every step its lane ID. Two actors allow connected columns or a stack of
+three to five steps. Three actors allow a connected stack of four to six steps;
+four actors allow a connected stack of five to eight steps. The first step
+uses the first defined lane, every lane appears, and each reference matches a
+definition. The existing limit of six linked items also applies to lanes.
+
+Three- and four-actor stacks show one ordered list with an authored lane chip
+before each heading below `tablet-lg`. From `tablet-lg`, a lane-label column
+and one column per step form a grid with numbered markers, hairline elbow
+connectors and an end marker. Step reading order stays the authored item order
+at every width. Lane labels remain available to assistive technology in the
+grid. If an authored label contains a link, its step chip becomes visible
+when that link receives keyboard focus.
 
 `reveal="all"` is the default. `reveal="disclose"` takes four to six rows with
 descriptions and supports numbered order and labelled groups. Disclosed items
@@ -6171,7 +6181,7 @@ not a grab-bag).
 | `FeatureGridItem` | type | One item: `id`, `icon?`, `heading`, `description?`. |
 | `FeatureGridHeadingLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
 | `Item` | component | Standalone item with required treatment, size and ground; one title link and independent copy, badge, meta and visual slots. |
-| `Items` | component | Canonical bounded collection with labelled groups, numbered or connected order, two actor lanes, and independent disclosed rows. |
+| `Items` | component | Canonical bounded collection with labelled groups, numbered or connected order, two to four actor lanes, and independent disclosed rows. |
 | `ItemData` | type | Stable id and heading; optional description, eyebrow, icon, meta, visual, href, span, badge and connected lane ID. |
 | `ItemProps` | type | ItemData plus required treatment, size and ground, and optional headingLevel (`3 \| 4`; omission keeps a paragraph). |
 | `ItemBadge` | type | ReactNode label and optional existing Badge tone. |
@@ -6182,7 +6192,7 @@ not a grab-bag).
 | `ItemsArrangement` | type | `"columns" \| "rows" \| "bento" \| "stacked"`. |
 | `ItemsColumns` | type | `1 \| 2 \| 3`; arrangement determines validity. |
 | `ItemsScale` | type | `"item" \| "statement"`. |
-| `ItemsLane` | type | Stable actor ID and authored ReactNode label; connected lanes require exactly two. |
+| `ItemsLane` | type | Stable actor ID and authored ReactNode label; two lanes allow columns or stacks, while three or four lanes allow stacks. |
 | `ItemsGroup` | type | Stable id, ReactNode label and an ordered list of canonical item IDs. |
 | `AnatomyCallouts` | component | A specimen panel with 3 or 5 numbered markers and an ordered key. |
 | `AnatomyCalloutsProps` | type | Required caller instance `id`, `label`, `panel`, `markers`, `keyLabel`; optional `legendSide`, `sample`, `headingLevel`, `ground`, `className`, `style`. |
