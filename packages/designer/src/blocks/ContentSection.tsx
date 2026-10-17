@@ -1,5 +1,6 @@
 import { Children, type CSSProperties, type HTMLAttributes, type ReactNode } from "react";
 import { cx } from "../atoms/internal/cx.js";
+import { UI_BORDER_HAIRLINE } from "../atoms/internal/ui-vars.js";
 import { SECTION_MEASURE_MAX } from "./internal/block-vars.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
 import { SectionIntro, type SectionIntroEmphasis } from "./SectionIntro.js";
@@ -55,7 +56,7 @@ interface ContentSectionBaseProps extends Omit<HTMLAttributes<HTMLDivElement>, "
    */
   actions?: ReactNode;
   /**
-   * An optional footnote, the band's last line: one short sentence in the
+   * An optional footnote: one short sentence after the body and takeaway in the
    * small step and the ground's secondary ink, for an aside (a contact
    * address, a policy pointer) that is not the band's next step. It may hold
    * at most one inline link, the only place a section body takes the
@@ -63,6 +64,10 @@ interface ContentSectionBaseProps extends Omit<HTMLAttributes<HTMLDivElement>, "
    * the header. Split: at the end of the text column, never under the visual.
    */
   footnote?: ReactNode;
+  /** Optional conclusion after the body, spanning the band with an accent start rule. */
+  takeaway?: ReactNode;
+  /** Optional authored attribution after the footnote, in the same column. */
+  source?: ReactNode;
   /** Which heading element `heading` renders as. @default 2 */
   headingLevel?: ContentSectionHeadingLevel;
   /** The header group's scale (see `ContentSectionEmphasis`). Semantic level stays `headingLevel`. @default "section" */
@@ -123,6 +128,12 @@ export type ContentSectionProps = ContentSectionStackedProps | ContentSectionSpl
 /** One vertical step between the header group and the first module, and between modules. */
 const MODULE_GAP = "gap-2xl tablet-lg:gap-3xl";
 
+const TAKEAWAY_RULE_CLASSES: Record<SectionGround, string> = {
+  base: "border-s-accent",
+  sunken: "border-s-accent",
+  inverse: "border-s-accent-on-inverse",
+};
+
 const SIZE_PADDING_CLASSES: Record<NonNullable<ContentSectionProps["size"]>, string> = {
   compact: "py-3xl tablet:py-4xl desktop:py-5xl",
   standard: "py-4xl tablet:py-5xl desktop:py-6xl",
@@ -168,9 +179,9 @@ function hasContent(node: ReactNode): boolean {
  * The supported `split`/`mediaSide` aliases render media beside the header
  * and module, and require media.
  *
- * An optional `footnote` is the band's last line (the end of the column when
- * stacked, the end of the text column when split), one module step after
- * what precedes it.
+ * An optional `takeaway` follows the body across the full band. The
+ * `footnote` and `source` follow in the footnote column. Without either new
+ * slot, the footnote keeps its existing placement and markup.
  */
 export function ContentSection({
   eyebrow,
@@ -179,6 +190,8 @@ export function ContentSection({
   description,
   actions,
   footnote,
+  takeaway,
+  source,
   headingLevel = 2,
   emphasis,
   size,
@@ -208,18 +221,55 @@ export function ContentSection({
       </p>
     );
 
+  const hasTakeaway = hasContent(takeaway);
+  const hasSource = hasContent(source);
+  const hasClosing = hasTakeaway || hasSource;
+  const inlineFootnoteNode = hasClosing ? null : footnoteNode;
+  const takeawayNode = hasTakeaway ? (
+    <div
+      data-content-section-takeaway=""
+      className={cx("w-full min-w-0 wrap-anywhere border-s ps-lg text-body-l font-semibold", SECTION_GROUND_CLASSES[ground].primary, TAKEAWAY_RULE_CLASSES[ground])}
+      style={{ borderInlineStartWidth: UI_BORDER_HAIRLINE }}
+    >
+      {takeaway}
+    </div>
+  ) : null;
+  const sourceNode = hasSource ? (
+    <div
+      data-content-section-source=""
+      className={cx("text-caption wrap-anywhere", SECTION_GROUND_CLASSES[ground].secondary, footnoteCentred ? "text-center" : undefined)}
+      style={{ maxWidth: SECTION_MEASURE_MAX.prose }}
+    >
+      {source}
+    </div>
+  ) : null;
+  const closingNode = (notesColumn?: string) => {
+    const notes = footnoteNode || sourceNode ? (
+      <div data-content-section-notes="" className={cx("flex min-w-0 flex-col gap-sm", notesColumn, footnoteCentred ? "items-center" : undefined)}>
+        {footnoteNode}
+        {sourceNode}
+      </div>
+    ) : null;
+    return (
+      <div data-content-section-closing="" className={cx("flex w-full min-w-0 flex-col", MODULE_GAP, notesColumn ? "tablet-lg:col-span-12" : undefined)}>
+        {takeawayNode}
+        {notes ? notesColumn ? <div className="grid w-full min-w-0 grid-cols-1 tablet-lg:grid-cols-12 tablet-lg:gap-x-4xl">{notes}</div> : notes : null}
+      </div>
+    );
+  };
+
   if (layout === "split-start" || layout === "split-end") {
     const atStart = layout === "split-start";
     if (!hasMedia) {
       const headerSplit = !hasContent(children);
       const hasSupportIntro = hasContent(description) || hasContent(actions);
-      const hasCompanion = !headerSplit || hasSupportIntro || hasContent(footnote);
+      const hasCompanion = !headerSplit || hasSupportIntro || (!hasClosing && hasContent(footnote));
       return (
         <div
           {...rest}
           data-content-section=""
           data-layout={layout}
-          className={cx("grid w-full grid-cols-1 gap-y-2xl tablet-lg:grid-cols-12 tablet-lg:items-start tablet-lg:gap-x-4xl tablet-lg:gap-y-0", padding, className)}
+          className={cx("grid w-full grid-cols-1 gap-y-2xl tablet-lg:grid-cols-12 tablet-lg:items-start tablet-lg:gap-x-4xl", hasClosing ? "tablet-lg:gap-y-3xl" : "tablet-lg:gap-y-0", padding, className)}
           style={style}
         >
           <div
@@ -239,7 +289,7 @@ export function ContentSection({
                 actions={headerSplit ? undefined : actions}
               />
             ) : null}
-            {headerSplit ? null : footnoteNode}
+            {headerSplit ? null : inlineFootnoteNode}
           </div>
           {hasCompanion ? <div
             {...(headerSplit ? { "data-content-section-support": "" } : { "data-content-section-modules": "" })}
@@ -256,10 +306,13 @@ export function ContentSection({
                     actions={actions === 0 ? <>{actions}</> : actions}
                   />
                 ) : null}
-                {footnoteNode}
+                {inlineFootnoteNode}
               </>
             ) : children}
           </div> : null}
+          {hasClosing ? closingNode(cx(headerSplit
+            ? atStart ? "tablet-lg:col-span-7 tablet-lg:col-start-1" : "tablet-lg:col-span-7 tablet-lg:col-start-6"
+            : atStart ? "tablet-lg:col-span-5 tablet-lg:col-start-8" : "tablet-lg:col-span-5 tablet-lg:col-start-1")) : null}
         </div>
       );
     }
@@ -277,7 +330,8 @@ export function ContentSection({
         data-layout={layout === "split-start" ? "split-start" : layout === "split-end" ? "split-end" : "split"}
         data-media-side={layout === "split" ? atStart ? "start" : "end" : undefined}
         className={cx(
-          "grid w-full grid-cols-1 gap-y-2xl tablet-lg:grid-cols-12 tablet-lg:items-center tablet-lg:gap-x-4xl tablet-lg:gap-y-0",
+          "grid w-full grid-cols-1 gap-y-2xl tablet-lg:grid-cols-12 tablet-lg:items-center tablet-lg:gap-x-4xl",
+          hasClosing ? "tablet-lg:gap-y-3xl" : "tablet-lg:gap-y-0",
           padding,
           className,
         )}
@@ -310,7 +364,7 @@ export function ContentSection({
               {children}
             </div>
           ) : null}
-          {footnoteNode}
+          {inlineFootnoteNode}
         </div>
         <div
           data-content-section-media=""
@@ -321,6 +375,7 @@ export function ContentSection({
         >
           {media}
         </div>
+        {hasClosing ? closingNode(cx(atStart ? "tablet-lg:col-span-5 tablet-lg:col-start-8" : "tablet-lg:col-span-5 tablet-lg:col-start-1")) : null}
       </div>
     );
   }
@@ -358,7 +413,8 @@ export function ContentSection({
           ) : null}
         </div>
       ) : null}
-      {footnoteNode}
+      {inlineFootnoteNode}
+      {hasClosing ? closingNode() : null}
     </div>
   );
 }

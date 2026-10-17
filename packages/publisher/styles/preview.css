@@ -2626,8 +2626,14 @@
     .tablet-lg\:col-span-8 {
       grid-column: span 8 / span 8;
     }
+    .tablet-lg\:col-span-12 {
+      grid-column: span 12 / span 12;
+    }
     .tablet-lg\:col-start-1 {
       grid-column-start: 1;
+    }
+    .tablet-lg\:col-start-6 {
+      grid-column-start: 6;
     }
     .tablet-lg\:col-start-8 {
       grid-column-start: 8;
@@ -2703,6 +2709,9 @@
     }
     .tablet-lg\:gap-y-0 {
       row-gap: 0px;
+    }
+    .tablet-lg\:gap-y-3xl {
+      row-gap: var(--spacing-3xl, 48px);
     }
     .tablet-lg\:p-xl {
       padding: var(--spacing-xl, 24px);
