@@ -39,6 +39,10 @@
     "./providers/clerk/web/proxy": {
       "types": "./dist/providers/clerk/web/proxy-entry.d.ts",
       "import": "./dist/providers/clerk/web/proxy-entry.js"
+    },
+    "./providers/clerk/web/sign-in-handlers": {
+      "types": "./dist/providers/clerk/web/sign-in-handlers.d.ts",
+      "import": "./dist/providers/clerk/web/sign-in-handlers.js"
     }
   },
   "bin": {
