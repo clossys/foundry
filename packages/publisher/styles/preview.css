@@ -2492,6 +2492,15 @@
     .tablet\:w-auto {
       width: auto;
     }
+    .tablet\:w-full {
+      width: 100%;
+    }
+    .tablet\:min-w-0 {
+      min-width: 0px;
+    }
+    .tablet\:flex-1 {
+      flex: 1;
+    }
     .tablet\:shrink-0 {
       flex-shrink: 0;
     }
