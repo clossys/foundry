@@ -383,7 +383,7 @@ jobs:
 
       - name: Download published candidate for verification
         if: ${{ inputs.verify_only }}
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: published-candidate-${{ matrix.package }}
           path: ${{ runner.temp }}/qualification/${{ matrix.package }}/download
@@ -564,7 +564,7 @@ jobs:
           test "$(node -p 'process.versions.zlib')" = '1.3.2.1-motley-3246f1b'
 
       - name: Download exact qualified candidate
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: qualified-candidate-${{ matrix.package }}
           path: ${{ runner.temp }}/qualification/${{ matrix.package }}
