@@ -216,3 +216,23 @@ const namedSpecimenPanel = { id: "sample", ...anatomyPanel };
 void <Specimen label="Sample record" panels={[namedSpecimenPanel]} />;
 // @ts-expect-error Every Specimen requires its accessible figure label.
 void <Specimen panels={[namedSpecimenPanel]} />;
+
+import { Tree, type TreeProps, type TreeNodeData } from "../index.js";
+import { Tree as ServerTree, type TreeProps as ServerTreeProps, type TreeNodeData as ServerTreeNodeData } from "../server.js";
+
+const treeRoot: TreeNodeData = { id: "root", heading: "Organization", figure: { value: 42, delta: "+6", trend: "up" }, status: { tone: "success", label: "Open" } };
+const treeChild: ServerTreeNodeData = { id: "one", parent: "root", edgeLabel: <em>Contains</em>, heading: "Team" };
+const treeProps: TreeProps = { nodes: [treeRoot, treeChild, { id: "two", parent: "root", heading: "Team", edgeLabel: "Contains" }], labelledBy: "organization", orientation: "down", ground: "inverse", className: "caller" };
+const serverTreeProps: ServerTreeProps = treeProps;
+void <Tree {...treeProps} />;
+void <ServerTree {...serverTreeProps} />;
+// @ts-expect-error A Tree node carries no navigation destination.
+const linkedTreeNode: TreeNodeData = { ...treeRoot, href: "/root" };
+// @ts-expect-error A Tree node carries no Item visual slot.
+const visualTreeNode: TreeNodeData = { ...treeRoot, visual: <p>Visual</p> };
+// @ts-expect-error Featured remains retired on Tree nodes.
+const featuredTreeNode: TreeNodeData = { ...treeRoot, featured: true };
+// @ts-expect-error Tree orientation has two closed choices.
+void <Tree {...treeProps} orientation="up" />;
+// @ts-expect-error Tree grounds use the existing section vocabulary.
+void <ServerTree {...serverTreeProps} ground="raised" />;
