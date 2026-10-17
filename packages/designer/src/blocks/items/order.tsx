@@ -71,12 +71,13 @@ export function renderTerminal({ props }: { props: ItemsProps }) {
 import { TOKENS } from "../../tokens/tokens.js";
 
 /** Defaults come from the CSS-parity-checked registry, so fallback values cannot drift independently. */
-function multiLaneVar(property: string): string {
-  return "var(" + property + ", " + TOKENS[property]!.value + ")";
-}
 export const MULTI_LANE_VARS = {
-  xs: multiLaneVar("--spacing-xs"), sm: multiLaneVar("--spacing-sm"), lg: multiLaneVar("--spacing-lg"),
-  xl: multiLaneVar("--spacing-xl"), twoXl: multiLaneVar("--spacing-2xl"), iconSm: multiLaneVar("--ui-icon-sm"),
+  xs: "var(--spacing-xs, " + TOKENS["--spacing-xs"]!.value + ")",
+  sm: "var(--spacing-sm, " + TOKENS["--spacing-sm"]!.value + ")",
+  lg: "var(--spacing-lg, " + TOKENS["--spacing-lg"]!.value + ")",
+  xl: "var(--spacing-xl, " + TOKENS["--spacing-xl"]!.value + ")",
+  twoXl: "var(--spacing-2xl, " + TOKENS["--spacing-2xl"]!.value + ")",
+  iconSm: "var(--ui-icon-sm, " + TOKENS["--ui-icon-sm"]!.value + ")",
 } as const;
 
 /** Three/four actors share equal rows, so elbow lengths follow the row gap without DOM measurements. */
