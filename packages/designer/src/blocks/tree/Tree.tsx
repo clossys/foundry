@@ -56,8 +56,9 @@ const NEGATIVE_HALF_COLUMN_GAP = `calc(var(--spacing-2xl, ${TOKENS["--spacing-2x
 const NEGATIVE_HALF_ROW_GAP = `calc(var(--spacing-lg, ${TOKENS["--spacing-lg"]!.value}) / -2)`;
 
 /** One semantic nested list, with purely CSS diagram geometry on wider screens. */
-export function Tree({ nodes, orientation = "right", labelledBy, ground = "base", className }: TreeProps) {
-  const { root, children, depth } = assertTree({ nodes, orientation, ground });
+export function Tree(props: TreeProps) {
+  const { root, children, depth } = assertTree(props);
+  const { orientation = "right", labelledBy, ground = "base", className } = props;
   const right = orientation === "right";
   const colors = SECTION_GROUND_CLASSES[ground];
   const tokens = GROUND_CLASSES[ground];

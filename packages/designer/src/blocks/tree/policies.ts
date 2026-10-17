@@ -29,7 +29,7 @@ function assertPassive(content: ReactNode, inSvg = false): void {
 /** Validate every graph component before deriving bounded, source-ordered layout. */
 export function assertTree({ nodes, orientation = "right", ground = "base" }: TreeProps) {
   if (orientation !== "right" && orientation !== "down") throw new TypeError("Tree: unknown orientation.");
-  if (!["base", "sunken", "inverse"].includes(ground)) throw new TypeError("Tree: unknown ground.");
+  if (ground !== "base" && ground !== "sunken" && ground !== "inverse") throw new TypeError("Tree: unknown ground.");
   if (!Array.isArray(nodes) || nodes.length < 3 || nodes.length > 12) throw new RangeError("Tree: supply 3-12 nodes.");
   const byId = new Map<string, TreeNodeData>();
   const children = new Map<string, TreeNodeData[]>();
