@@ -44,6 +44,7 @@ type MatrixGridCell =
   | { type: "text"; text: ReactNode }
   | { type: "figure"; value: ReactNode; delta?: ReactNode; trend?: "up" | "down" | "neutral" }
   | { type: "status"; tone: StatusMarkTone; label: ReactNode }
+  | { type: "mark"; value: 0 | 1 | 2 | 3 | 4 }
   | { type: "empty" };
 
 interface MatrixGridConfig extends Omit<HTMLAttributes<HTMLTableElement>, "title"> {
@@ -54,6 +55,8 @@ interface MatrixGridConfig extends Omit<HTMLAttributes<HTMLTableElement>, "title
   featured?: { row: string; column?: never } | { column: string; row?: never };
   featuredLabel?: ReactNode;
   emptyLabel?: ReactNode;
+  markLabels?: readonly [ReactNode, ReactNode, ReactNode, ReactNode, ReactNode];
+  keyLabel?: ReactNode;
   headingLevel?: MatrixHeadingLevel;
   ground?: SectionGround;
 }
