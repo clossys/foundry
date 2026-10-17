@@ -6,10 +6,12 @@ import type { MatrixProps } from "../Matrix.js";
 import { TREND_TEXT_CLASSES } from "../internal/trend.js";
 import { hasContent } from "../items/policies.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "../section-ground.js";
+import { HarveyMark } from "./harvey-mark.js";
 
 type GridProps = Extract<MatrixProps, { arrangement: "grid" }>;
 type Cell = GridProps["rows"][number]["cells"][string];
 const HEADINGS = { 2: "h2", 3: "h3", 4: "h4", 5: "h5", 6: "h6" } as const;
+const MARK_VALUES = [0, 1, 2, 3, 4] as const;
 // React 18 forwards this native boolean attribute as a non-empty string;
 // React 19 normalizes it to inert="". Both keep the visual mirror unfocusable.
 const INERT_LABEL_ATTRIBUTES: Readonly<{ [attribute: string]: string }> = { inert: "inert" };
@@ -44,7 +46,7 @@ const BACKING_CLASSES: Record<SectionGround, string> = {
   base: "", sunken: "", inverse: "bg-surface-raised",
 };
 
-function assertGrid({ columns, rows, featured, featuredLabel, emptyLabel, ground = "base", headingLevel = 3, sides }: GridProps): void {
+function assertGrid({ columns, rows, featured, featuredLabel, emptyLabel, markLabels, keyLabel, ground = "base", headingLevel = 3, sides }: GridProps): boolean {
   if (sides !== undefined) throw new TypeError("Matrix: grid and sides cannot be combined.");
   if (ground !== "base" && ground !== "sunken" && ground !== "inverse") throw new TypeError("Matrix: unknown ground.");
   if (![2, 3, 4, 5, 6].includes(headingLevel)) throw new TypeError("Matrix: unknown heading level.");
@@ -54,6 +56,7 @@ function assertGrid({ columns, rows, featured, featuredLabel, emptyLabel, ground
   const rowIds = new Set<string>();
   const columnTypes = new Map<string, Cell["type"]>();
   let hasEmpty = false;
+  let hasMark = false;
   for (let index = 0; index < columns.length; index++) {
     if (!Object.hasOwn(columns, index)) throw new TypeError("Matrix: columns must be dense.");
     const column = columns[index];
@@ -83,6 +86,10 @@ function assertGrid({ columns, rows, featured, featuredLabel, emptyLabel, ground
         case "status":
           if (!hasContent(cell.label) || !["success", "warning", "danger", "info", "neutral"].includes(cell.tone)) throw new TypeError("Matrix: status cells need a label and an existing tone.");
           break;
+        case "mark":
+          if (!MARK_VALUES.includes(cell.value)) throw new TypeError("Matrix: mark cells need a value from zero through four.");
+          hasMark = true;
+          break;
         default: throw new TypeError("Matrix: unknown cell type.");
       }
       if (columnTypes.has(column.id) && columnTypes.get(column.id) !== cell.type) throw new TypeError("Matrix: non-empty cells in a column must share one type.");
@@ -94,9 +101,12 @@ function assertGrid({ columns, rows, featured, featuredLabel, emptyLabel, ground
   }
   if (featured !== undefined ? !hasContent(featuredLabel) : featuredLabel !== undefined) throw new TypeError("Matrix: featuredLabel is required iff featured is supplied.");
   if (hasEmpty ? !hasContent(emptyLabel) : emptyLabel !== undefined) throw new TypeError("Matrix: emptyLabel is required iff an empty cell exists.");
+  if (hasMark ? !Array.isArray(markLabels) || markLabels.length !== 5 || MARK_VALUES.some(value => !Object.hasOwn(markLabels, value) || !hasContent(markLabels[value])) : markLabels !== undefined) throw new TypeError("Matrix: markLabels must contain five meaningful labels iff a mark cell exists.");
+  if (hasMark ? !hasContent(keyLabel) : keyLabel !== undefined) throw new TypeError("Matrix: keyLabel is required iff a mark cell exists.");
+  return hasMark;
 }
 
-function CellValue({ cell, ground, emptyLabel }: { cell: Cell; ground: SectionGround; emptyLabel: GridProps["emptyLabel"] }) {
+function CellValue({ cell, ground, emptyLabel, markLabels }: { cell: Cell; ground: SectionGround; emptyLabel: GridProps["emptyLabel"]; markLabels: GridProps["markLabels"] }) {
   switch (cell.type) {
     case "text": return <span className="min-w-0 wrap-anywhere text-body-s">{cell.text}</span>;
     case "figure": {
@@ -107,18 +117,19 @@ function CellValue({ cell, ground, emptyLabel }: { cell: Cell; ground: SectionGr
     </span>;
     }
     case "status": return <StatusMark tone={cell.tone} className={BACKING_CLASSES[ground]}>{cell.label}</StatusMark>;
+    case "mark": return <span className="inline-flex min-w-0 items-center"><HarveyMark value={cell.value} ground={ground} /><span className="sr-only">{markLabels![cell.value]}</span></span>;
     case "empty": return <span className="sr-only">{emptyLabel}</span>;
   }
 }
 
 /** One semantic table retains its headers while narrow rows become cards. */
 export function MatrixGrid(props: GridProps) {
-  assertGrid(props);
-  const { arrangement: _arrangement, columns, rows, featured, featuredLabel, emptyLabel, headingLevel = 3, ground = "base", className, style, ...rest } = props;
+  const hasMark = assertGrid(props);
+  const { arrangement: _arrangement, columns, rows, featured, featuredLabel, emptyLabel, markLabels, keyLabel, headingLevel = 3, ground = "base", className, style, ...rest } = props;
   const layout = columns.length <= 4 ? TABLET_LAYOUT : WIDE_LAYOUT;
   const colors = SECTION_GROUND_CLASSES[ground];
   const Heading = HEADINGS[headingLevel];
-  return <table {...rest} role="table" className={cx(layout.table, colors.surface, colors.primary, className)} style={style}>
+  const table = <table {...rest} role="table" className={cx(layout.table, colors.surface, colors.primary, className)} style={style}>
     <thead className={layout.head}><tr role="row">
       <td role="cell" aria-hidden="true" />
       {columns.map(column => <th key={column.id} scope="col" role="columnheader" className={cx("px-md py-lg text-start align-top text-body-s font-body font-medium", featured?.column === column.id ? cx("border-t", TOP_ACCENT_CLASSES[ground]) : undefined)} style={featured?.column === column.id ? { borderBlockStartWidth: UI_BORDER_HAIRLINE } : undefined}>
@@ -137,9 +148,16 @@ export function MatrixGrid(props: GridProps) {
         const figure = cell.type === "figure";
         return <td key={column.id} role="cell" className={cx(layout.cell, "border-b align-top", colors.border, figure ? "text-end" : "text-start")} style={{ borderBlockEndWidth: UI_BORDER_HAIRLINE }}>
           <span aria-hidden="true" className={cx(layout.label, "text-body-s font-medium", colors.secondary, highlighted ? cx("border-t", TOP_ACCENT_CLASSES[ground]) : undefined)} style={highlighted ? { borderBlockStartWidth: UI_BORDER_HAIRLINE } : undefined} {...INERT_LABEL_ATTRIBUTES}>{column.label}{highlighted ? <Badge>{featuredLabel}</Badge> : null}</span>
-          <CellValue cell={cell} ground={ground} emptyLabel={emptyLabel} />
+          <CellValue cell={cell} ground={ground} emptyLabel={emptyLabel} markLabels={markLabels} />
         </td>;
       })}
     </tr>)}</tbody>
   </table>;
+  if (!hasMark) return table;
+  return <>{table}<div dir={props.dir} className={cx("mt-md flex flex-col gap-sm", colors.surface, colors.primary)}>
+    <Heading className="m-0 text-body-s font-body font-medium">{keyLabel}</Heading>
+    <ul role="list" className="m-0 flex list-none flex-wrap gap-md p-0">
+      {MARK_VALUES.map(value => <li key={value} className="inline-flex min-w-0 items-center gap-xs text-body-s"><HarveyMark value={value} ground={ground} /><span className="min-w-0 wrap-anywhere">{markLabels![value]}</span></li>)}
+    </ul>
+  </div></>;
 }

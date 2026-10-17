@@ -152,7 +152,9 @@ export function assertItems(props: ItemsProps): number | undefined {
   if (figures && (arrangement === "bento" || scale === "statement" || reveal === "disclose")) throw new TypeError("Items: figure belongs to columns, rows or stacked without statement or disclosure.");
   if (scale === "statement" && items.some(item => item.status !== undefined)) throw new TypeError("Items: status does not belong to statement collections.");
   if (order === "connected") {
-    if ((arrangement !== "columns" && arrangement !== "stacked") || count < 3 || count > 5 || (arrangement === "columns" && columns !== 2 && columns !== 3)) throw new RangeError("Items: connected order needs columns or stacked with 3-5 steps.");
+    const extendedLanes = arrangement === "stacked" && Array.isArray(props.lanes) && [3, 4].includes(props.lanes.length) ? props.lanes.length : undefined;
+    const maxSteps = extendedLanes === undefined ? 5 : extendedLanes * 2;
+    if ((arrangement !== "columns" && arrangement !== "stacked") || count < 3 || count > maxSteps || (arrangement === "columns" && columns !== 2 && columns !== 3)) throw new RangeError(extendedLanes === undefined ? "Items: connected order needs columns or stacked with 3-5 steps." : "Items: connected order needs 4-6 steps for three lanes or 5-8 steps for four lanes.");
     if (count === 4 && props.lanes === undefined) console.warn("Items: connected sequences read best with three or five steps.");
     if (hasContent(props.caption) && !items.some(item => hasContent(item.visual))) throw new TypeError("Items: a connected caption requires a visual.");
   }
@@ -162,14 +164,28 @@ export function assertItems(props: ItemsProps): number | undefined {
   } else if (arrangement === "rows" && (count < 2 || count > 8 || (columns !== 1 && columns !== 2) || (columns === 2 && count % 2 !== 0))) throw new RangeError("Items: rows need 2-8 items, even in two columns.");
   if (arrangement === "stacked" && order !== "connected" && (count < 2 || count > 4)) throw new RangeError("Items: stacked needs 2-4 items.");
   if (props.lanes !== undefined) {
-    if (order !== "connected" || !["columns", "stacked"].includes(arrangement) || count < 3 || count > 5 || !Array.isArray(props.lanes) || props.lanes.length !== 2) throw new TypeError("Items: two lanes belong to connected columns or stacked sequences.");
-    const laneIds = new Set<string>();
-    for (let i = 0; i < 2; i++) {
-      const lane = props.lanes[i];
-      if (!Object.hasOwn(props.lanes, i) || !lane || typeof lane.id !== "string" || !lane.id.trim() || laneIds.has(lane.id) || !hasContent(lane.label)) throw new TypeError("Items: lanes need two unique stable ids and nonblank labels.");
-      laneIds.add(lane.id);
+    if (Array.isArray(props.lanes) && props.lanes.length > 2) {
+      const laneCount = props.lanes.length;
+      if (order !== "connected" || arrangement !== "stacked" || ![3, 4].includes(laneCount) || count < laneCount + 1 || count > laneCount * 2) throw new TypeError("Items: three or four lanes need connected stacks with 4-6 or 5-8 steps respectively.");
+      const laneIds = new Set<string>();
+      for (let i = 0; i < laneCount; i++) {
+        const lane = props.lanes[i];
+        if (!Object.hasOwn(props.lanes, i) || !lane || typeof lane.id !== "string" || !lane.id.trim() || laneIds.has(lane.id) || !hasContent(lane.label)) throw new TypeError("Items: lanes need unique stable ids and nonblank labels.");
+        laneIds.add(lane.id);
+      }
+      if (items[0]!.lane !== props.lanes[0]!.id) throw new TypeError("Items: start in the first lane.");
+      if (items.some(item => !laneIds.has(item.lane!))) throw new TypeError("Items: steps must reference known lane ids.");
+      if (new Set(items.map(item => item.lane)).size !== laneCount) throw new TypeError("Items: use every lane.");
+    } else {
+      if (order !== "connected" || !["columns", "stacked"].includes(arrangement) || count < 3 || count > 5 || !Array.isArray(props.lanes) || props.lanes.length !== 2) throw new TypeError("Items: two lanes belong to connected columns or stacked sequences.");
+      const laneIds = new Set<string>();
+      for (let i = 0; i < 2; i++) {
+        const lane = props.lanes[i];
+        if (!Object.hasOwn(props.lanes, i) || !lane || typeof lane.id !== "string" || !lane.id.trim() || laneIds.has(lane.id) || !hasContent(lane.label)) throw new TypeError("Items: lanes need two unique stable ids and nonblank labels.");
+        laneIds.add(lane.id);
+      }
+      if (items[0]!.lane !== props.lanes[0]!.id || items.some(item => !laneIds.has(item.lane!)) || new Set(items.map(item => item.lane)).size !== 2) throw new TypeError("Items: start in the first lane, use both lanes, and reference known lane ids.");
     }
-    if (items[0]!.lane !== props.lanes[0]!.id || items.some(item => !laneIds.has(item.lane!)) || new Set(items.map(item => item.lane)).size !== 2) throw new TypeError("Items: start in the first lane, use both lanes, and reference known lane ids.");
   } else if (items.some(item => item.lane !== undefined)) throw new TypeError("Items: item lane references require lanes.");
   if (reveal === "disclose") {
     if (arrangement !== "rows" || count < 4 || count > 6 || order === "connected") throw new RangeError("Items: disclosure needs four to six rows.");

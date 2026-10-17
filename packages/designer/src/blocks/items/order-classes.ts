@@ -17,3 +17,15 @@ export const ORDER_LAYOUT_CLASSES = {
   wideLanes3: "hidden tablet-lg:contents",
   wideLanesDesktop: "hidden desktop:contents",
 } as const;
+
+/** Responsive display is literal; numeric grid placement is inert in the narrow ordered list. */
+export const MULTI_LANE_CLASSES: Record<"three" | "four" | "list" | "label" | "cell" | "chip" | "body" | "linkedBody", string> = {
+  three: "min-w-0 tablet-lg:grid tablet-lg:gap-x-lg tablet-lg:gap-y-2xl",
+  four: "min-w-0 tablet-lg:grid tablet-lg:gap-x-lg tablet-lg:gap-y-2xl",
+  list: "m-0 flex min-w-0 list-none flex-col gap-2xl p-0 tablet-lg:grid tablet-lg:gap-x-lg",
+  label: "hidden min-w-0 self-start text-body-s font-medium uppercase tracking-label wrap-anywhere tablet-lg:block",
+  cell: "relative min-w-0 wrap-anywhere ps-2xl tablet-lg:ps-0",
+  chip: "ms-lg inline-flex rounded-pill border border-solid px-sm py-xs text-caption font-medium tablet-lg:ms-0 tablet-lg:sr-only tablet-lg:focus-within:not-sr-only",
+  body: "ms-lg min-w-0 wrap-anywhere tablet-lg:ms-0",
+  linkedBody: "pe-sm tablet:pe-md",
+};
