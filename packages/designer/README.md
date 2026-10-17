@@ -3774,6 +3774,7 @@ import { Matrix } from "@clossys/designer/blocks/server";
     { id: "record", label: "Record" },
     { id: "count", label: "Count" },
     { id: "state", label: "State" },
+    { id: "coverage", label: "Coverage" },
   ]}
   rows={[
     {
@@ -3782,6 +3783,7 @@ import { Matrix } from "@clossys/designer/blocks/server";
         record: { type: "text", text: "Reviewed record" },
         count: { type: "figure", value: "2,481", delta: "+12%", trend: "up" },
         state: { type: "status", tone: "success", label: "Reviewed" },
+        coverage: { type: "mark", value: 3 },
       },
     },
     {
@@ -3790,12 +3792,15 @@ import { Matrix } from "@clossys/designer/blocks/server";
         record: { type: "empty" },
         count: { type: "figure", value: "2,200", delta: "-3%", trend: "down" },
         state: { type: "status", tone: "warning", label: "Needs review" },
+        coverage: { type: "mark", value: 1 },
       },
     },
   ]}
   featured={{ column: "count" }}
   featuredLabel="Selected measure"
   emptyLabel="No authored value"
+  markLabels={["None", "One quarter", "Half", "Three quarters", "Full"]}
+  keyLabel="Coverage key"
 />;
 ```
 
@@ -3803,10 +3808,20 @@ Column and row ids are distinct and whitespace-free within their axis; each row
 has its label, optional description, and a `cells` record containing every column
 id with no extra key. Cells use `type: "text"` with authored `text`, `"figure"`
 with `value`, optional signed `delta` and `trend` (`up`, `down`, `neutral`),
-`"status"` with a StatusMark `tone` and visible `label`, or `"empty"`. Each column
+`"status"` with a StatusMark `tone` and visible `label`, `"mark"` with a `value`
+from `0` through `4`, or `"empty"`. Each column
 contains one type among its non-empty cells. Figures align to the inline end and
 use tabular numerals; a supplied trend requires a delta. Empty cells voice the
 authored `emptyLabel`, required when any cell is empty and omitted otherwise.
+
+Mark cells show a 16px Harvey circle with zero to four filled quarters, using
+geometry to retain the distinction in greyscale and print. Supply five meaningful
+`markLabels`, ordered from zero through four, and a meaningful `keyLabel` when
+any cell is a mark; omit both otherwise. Each cell voices its matching label
+through screen-reader-only text. A visible list below the table shows all five
+marks with their authored labels under the key heading. The SVG is decorative;
+the words carry the meaning. Its ring uses the hairline token and secondary ink,
+and its quarters use primary ink for the selected ground.
 
 `featured` selects one `{ row: id }` or `{ column: id }`, adding a hairline accent
 rule and a Badge to that header. Supply meaningful `featuredLabel` when a target
@@ -6225,7 +6240,7 @@ not a grab-bag).
 | `SceneNode` | type | Review-node bounds and copy. |
 | `ScenePersonLayout` | type | Person row bounds and decider-ring flag. |
 | `Matrix` | component | Two parallel sides on equal plates, or a responsive grid of authored comparison cells. |
-| `MatrixProps` | type | Optional `arrangement: "sides"` with two sides, or `arrangement: "grid"` with columns, rows, cell records and authored labels; shared ground/heading controls and native root attributes except `title`. |
+| `MatrixProps` | type | Optional `arrangement: "sides"` with two sides, or `arrangement: "grid"` with columns, rows, cell records and authored labels, including five-level mark labels and a visible key when marks occur; shared ground/heading controls and native root attributes except `title`. |
 | `MatrixSide` | type | Stable id, required heading and optional label/description; a union requiring points or visual, never both. Labels appear on both sides or neither. |
 | `MatrixHeadingLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
 | `Specimen` | component | Labelled figure of 1 to 3 static product-UI panels (`single`, `row`, `stack`, `flow`); budgets validated. |

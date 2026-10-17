@@ -1643,6 +1643,9 @@
   .scene-status-warning > .scene-status-text {
     fill: var(--color-status-warning-text, oklch(0.36 0 0));
   }
+  .fill-current {
+    fill: currentcolor;
+  }
   .fill-ink-muted {
     fill: var(--color-ink-muted, oklch(0.5658 0 0));
   }
@@ -1675,6 +1678,9 @@
   .scene-wire-subject {
     stroke: var(--color-ink-primary, oklch(0.2178 0 0));
     stroke-width: var(--ui-border-rule, 2px);
+  }
+  .stroke-current {
+    stroke: currentcolor;
   }
   .object-cover {
     object-fit: cover;
