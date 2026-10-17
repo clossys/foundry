@@ -67,3 +67,37 @@ export function renderTerminal({ props }: { props: ItemsProps }) {
     {hasContent(props.endLabel) ? <span data-item-end-label="" className={cx("block mt-xl text-body-s", colors.secondary)}>{props.endLabel}</span> : null}
   </>;
 }
+
+/** Three/four actors share equal rows, so elbow lengths follow the row gap without DOM measurements. */
+export function multiLaneCellStyle(index: number, props: ItemsProps): CSSProperties {
+  return { gridColumn: index + 1, gridRow: props.lanes!.findIndex(lane => lane.id === props.items[index]!.lane) + 1 };
+}
+function multiLaneSegment(name: string, props: ItemsProps, style: CSSProperties) {
+  const ground = props.ground ?? "base";
+  const stroke: CSSProperties = name === "handoff" ? { borderInlineStartWidth: UI_BORDER_HAIRLINE } : { borderBlockStartWidth: UI_BORDER_HAIRLINE };
+  return <span data-item-segment={name} className={cx("absolute", LINE[ground], ORDER_LAYOUT_CLASSES.forcedLine)} style={{ inlineSize: UI_BORDER_HAIRLINE, blockSize: UI_BORDER_HAIRLINE, borderWidth: 0, ...stroke, ...style }} />;
+}
+export function renderMultiLaneTrack(index: number, props: ItemsProps) {
+  const item = props.items[index]!, next = props.items[index + 1];
+  if (next === undefined) return null;
+  const laneIndex = (laneId: string | undefined) => props.lanes!.findIndex(lane => lane.id === laneId);
+  const delta = laneIndex(next.lane) - laneIndex(item.lane);
+  const midpoint = "calc(100% + var(--spacing-lg) / 2)";
+  const nextTop = "calc(var(--spacing-2xl) / 2 + " + delta + " * (100% + var(--spacing-2xl)))";
+  return <span data-item-connector="" data-item-transition={index} aria-hidden="true" className="pointer-events-none hidden tablet-lg:contents">
+    {multiLaneSegment("outgoing", props, { insetInlineStart: M, insetBlockStart: "calc(var(--spacing-2xl) / 2)", inlineSize: "calc(100% + var(--spacing-lg) / 2 - var(--spacing-2xl))" })}
+    {delta === 0 ? null : multiLaneSegment("handoff", props, { insetInlineStart: midpoint, insetBlockStart: "calc(var(--spacing-2xl) / 2 + " + Math.min(0, delta) + " * (100% + var(--spacing-2xl)))", blockSize: "calc(" + Math.abs(delta) + " * (100% + var(--spacing-2xl)))" })}
+    {multiLaneSegment("incoming", props, { insetInlineStart: midpoint, insetBlockStart: nextTop, inlineSize: "calc(var(--spacing-lg) / 2)" })}
+  </span>;
+}
+export function renderMultiLaneTerminal(props: ItemsProps) {
+  const end = props.end ?? "ends", ground = props.ground ?? "base", ends = end === "ends";
+  const terminalClass = ends ? cx("rounded-pill", LINE[ground], ORDER_LAYOUT_CLASSES.forcedLine) : ground === "inverse" ? "text-line-on-inverse" : "text-line-strong";
+  return <>
+    <span data-item-connector="" aria-hidden="true" className="pointer-events-none hidden tablet-lg:contents">
+      {multiLaneSegment("terminal", props, { insetInlineStart: M, insetBlockStart: "calc(var(--spacing-2xl) / 2)", inlineSize: "calc(100% - var(--spacing-2xl) - var(--ui-icon-sm))" })}
+    </span>
+    <span data-item-end={end} aria-hidden="true" className={cx("pointer-events-none absolute end-0 hidden border-none tablet-lg:block", terminalClass)} style={{ insetBlockStart: "calc((var(--spacing-2xl) - var(--ui-icon-sm)) / 2)", inlineSize: "var(--ui-icon-sm)", blockSize: "var(--ui-icon-sm)", borderWidth: UI_BORDER_HAIRLINE }}>{ends ? null : <Icon glyph={ArrowRight} decorative size="sm" className="rtl:rotate-180" />}</span>
+    {hasContent(props.endLabel) ? <span data-item-end-label="" className={cx("ms-lg block text-body-s tablet-lg:ms-0", SECTION_GROUND_CLASSES[ground].secondary)} style={{ marginBlockStart: "var(--spacing-xl)" }}>{props.endLabel}</span> : null}
+  </>;
+}
