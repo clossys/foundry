@@ -2,7 +2,7 @@ import { useId, type ReactNode } from "react";
 import { cx } from "../../atoms/internal/cx.js";
 import { SECTION_GROUND_CLASSES } from "../section-ground.js";
 import { assertItems, collectionProfile, loneTabletThirds } from "./policies.js";
-import { ItemRenderer } from "./render.js";
+import { ItemRenderer, renderItemStatus } from "./render.js";
 import { ItemPlate } from "./anatomy.js";
 import { UI_BORDER_HAIRLINE, UI_LAYOUT_TAP_TARGET } from "../../atoms/internal/ui-vars.js";
 import { assertNoNestedInteractive, cardLinkContainerClassName } from "../stretched-link.js";
@@ -40,7 +40,8 @@ function renderItems(props: ItemsProps, columns: number | undefined, disclosure?
     const finalRow = (count: number) => index >= Math.floor((props.items.length - 1) / count) * count;
     const labelRows = sharedBody === undefined || !hasContent(props.endLabel) ? undefined : arrangement === "columns" ? cx(finalRow(2) ? "tablet:row-span-3" : undefined, columns === 3 ? finalRow(3) ? "tablet-lg:row-span-3" : "tablet-lg:row-span-2" : undefined) : props.items.length === 3 ? "tablet-lg:row-span-3" : "desktop:row-span-3";
     const sharedRows = cx(sharedBody, labelRows);
-    const body = props.reveal === "disclose" ? disclosure!(item, props) : <ItemRenderer item={item} treatment={treatment} size={size} ground={ground} statement={scale === "statement"} profile={profile} headingLevel={headingLevel} span={span} sharedVisualRow={withVisuals} orderClassName={cx(sharedBody, connected ? "h-auto items-order-body" : ordered ? "min-w-0 flex-1" : undefined)} />;
+    const disclosureItem = props.reveal !== "disclose" || item.status === undefined ? item : { ...item, meta: <span className="flex w-full flex-wrap items-center gap-sm">{hasContent(item.meta) ? <span>{item.meta}</span> : null}{renderItemStatus(item, true, ground)}</span> };
+    const body = props.reveal === "disclose" ? disclosure!(disclosureItem, props) : <ItemRenderer item={item} treatment={treatment} size={size} ground={ground} statement={scale === "statement"} profile={profile} row={arrangement === "rows"} headingLevel={headingLevel} span={span} sharedVisualRow={withVisuals} orderClassName={cx(sharedBody, connected ? "h-auto items-order-body" : ordered ? "min-w-0 flex-1" : undefined)} />;
     const disclosureBody = props.reveal === "disclose" && treatment === "plate" ? <ItemPlate ground={ground} className="w-full min-w-0">{body}</ItemPlate> : body;
     return <li key={item.id} data-lane={connected ? item.lane : undefined} className={cx("h-full min-w-0", spanClassName, connected ? "relative items-order-cell" : ordered ? "flex items-start gap-lg" : undefined, sharedRows)} style={connected ? orderedItemStyle(item, props) : undefined}>
       {ordered ? renderOrdinal({ ordinal: start + index, props, connected }) : null}

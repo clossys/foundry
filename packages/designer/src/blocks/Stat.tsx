@@ -1,13 +1,8 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { cx } from "../atoms/internal/cx.js";
+import { TREND_TEXT_CLASSES } from "./internal/trend.js";
 
 export type StatTrend = "up" | "down" | "neutral";
-
-const TREND_TEXT_CLASSES: Record<StatTrend, string> = {
-  up: "text-status-success-text",
-  down: "text-status-danger-text",
-  neutral: "text-ink-secondary",
-};
 
 // Aria-hidden glyphs — the VISUAL non-colour indicator. `neutral`'s glyph
 // is a flat arrow, not one of `up`/`down`'s, so a colourblind reader (or
