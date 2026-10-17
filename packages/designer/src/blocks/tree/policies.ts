@@ -53,6 +53,7 @@ export function assertTree({ nodes, orientation = "right", ground = "base" }: Tr
     }
   }
   if (roots.length !== 1) throw new TypeError("Tree: exactly one root is required.");
+  if (roots[0]!.edgeLabel !== undefined) throw new TypeError("Tree: the root cannot have an edge label.");
 
   const state = new Map<string, "visiting" | "visited">();
   function visit(node: TreeNodeData): void {

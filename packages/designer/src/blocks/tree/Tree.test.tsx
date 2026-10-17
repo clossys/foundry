@@ -55,6 +55,36 @@ describe("Tree", () => {
     }
   });
 
+  it.each([
+    ["authored text", "Relation"], ["null", null], ["false", false], ["empty text", ""],
+  ] as const)("refuses a defined root edge label (%s)", (_name, edgeLabel) => {
+    expect(() => html([{ ...simple[0]!, edgeLabel }, ...simple.slice(1)])).toThrow(/root.*edge label/i);
+  });
+
+  it("keeps roots with omitted or undefined edge labels valid", () => {
+    expect(() => html(simple)).not.toThrow();
+    expect(() => html([{ ...simple[0]!, edgeLabel: undefined }, ...simple.slice(1)])).not.toThrow();
+  });
+
+  it("keeps passive block edge labels inside their wrapper through an SSR DOM roundtrip", () => {
+    const serialized = html(simple.map((node, index) => index === 0 ? node : {
+      ...node, edgeLabel: <div data-label-content="">{`Relation ${index}`}</div>,
+    }));
+    const parsed = document.createElement("div");
+    parsed.innerHTML = serialized;
+    const labels = parsed.querySelectorAll("[data-diagram-edge]");
+    expect(labels).toHaveLength(2);
+    for (const [index, label] of [...labels].entries()) {
+      const content = parsed.querySelectorAll("[data-label-content]")[index]!;
+      expect(label).toContainElement(content);
+      expect(label.tagName).toBe("DIV");
+      expect(content.textContent).toBe(`Relation ${index + 1}`);
+      const heading = label.closest("[data-diagram-node]")!.querySelector("h4")!;
+      expect(label.compareDocumentPosition(heading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    }
+    expect(parsed.querySelectorAll("p:empty")).toHaveLength(0);
+  });
+
   it("keeps label coverage local to siblings and preserves authored numeric zero", () => {
     const nodes = branch(2).map(node => node.parent === "root" ? { ...node, edgeLabel: 0 } : node);
     render(<Tree nodes={nodes} />);
