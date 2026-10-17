@@ -164,5 +164,7 @@ export { Scene, layoutScene, sceneRelationText } from "./scene/index.js";
 export type { SceneProps, SceneInput, SceneConverge, SceneEvidenceTrail, SceneApprovalChain, SceneDisorder, SceneFormat, SceneDocument, SceneRow, SceneStatus, ScenePerson, SceneFinding, ScenePoint, ScenePart, SceneWire, SceneTerminal, SceneTag, SceneNode, ScenePersonLayout, SceneLayout } from "./scene/index.js";
 
 export { Item } from "./items/Item.js";
+export { Tree } from "./tree/Tree.js";
+export type { TreeProps, TreeNodeData } from "./tree/Tree.js";
 export { Items } from "./items/Items.server.js";
 export type { ItemData, ItemProps, ItemBadge, ItemSize, ItemTreatment, ItemSpan, ItemsProps, ItemsArrangement, ItemsColumns, ItemsScale, ItemsGroup, ItemsLane } from "./items/types.js";

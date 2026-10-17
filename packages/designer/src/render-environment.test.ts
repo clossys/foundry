@@ -94,6 +94,7 @@ describe("server-safe entry points resolve under react-server (test 1)", () => {
         "SpecimenPanel",
         "Stat",
         "StatusList",
+        "Tree",
       ],
     },
     { distRelPath: "shell/server.js", expectedExports: ["BADGE_INSET_SHARE", "BADGE_RADIUS_SHARE", "Brandmark", "Shell", "SiteFooter", "SiteHeader", "SkipLink", "badgePlatePath"] },
@@ -112,6 +113,20 @@ describe("server-safe entry points resolve under react-server (test 1)", () => {
       expect(keys).toEqual([...expectedExports].sort());
     });
   }
+});
+
+describe("compiled Tree server graph", () => {
+  it("calls Tree under react-server and retains its published TreeProps and TreeNodeData declarations", () => {
+    const absolute = join(distDir, "blocks", "server.js");
+    const script = `import {Tree} from ${JSON.stringify(absolute)}; const tree=Tree({nodes:[{id:"root",heading:"Root",figure:{value:"42"},status:{tone:"info",label:"Open"}},{id:"one",parent:"root",heading:"One"},{id:"two",parent:"root",heading:"Two"}]}); if(tree.type!=="ul" || tree.props["data-tree"]!=="") throw new Error("missing semantic Tree"); process.stdout.write("OK");`;
+    expect(execFileSync(process.execPath, ["--conditions=react-server", "-e", script], { encoding: "utf8", timeout: 10_000 })).toBe("OK");
+    const declaration = readFileSync(join(distDir, "blocks", "tree", "Tree.d.ts"), "utf8");
+    expect(declaration).toContain("export type TreeNodeData = Pick<ItemData,");
+    expect(declaration).toContain("export interface TreeProps");
+    for (const entry of ["index.d.ts", "server.d.ts"]) {
+      expect(readFileSync(join(distDir, "blocks", entry), "utf8")).toContain('export type { TreeProps, TreeNodeData } from "./tree/Tree.js"');
+    }
+  }, 15_000);
 });
 
 describe("pure Item and Items compiled graphs", () => {

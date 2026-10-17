@@ -107,10 +107,10 @@ surfaces and live in `@clossys/publisher/web`.
   `Separator`, `Chip`, `StatusMark`, `Meter`.
 - **`blocks`** — owns the internal layout of multiple named regions,
   typically by composing one or more atoms (and/or layout) into something
-  with a real job on a page. Thirty-four ship: `PageHeader`, `EmptyState`,
+  with a real job on a page. Thirty-five ship: `PageHeader`, `EmptyState`,
   `DataTable`, `DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`,
   `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `SectionFrame`,
-  `MarketingChapter`, `FeatureGrid`, `Item`, `Items`, `AnatomyCallouts`, `RecordLedger`, `Scene`, `Matrix`,
+  `MarketingChapter`, `FeatureGrid`, `Item`, `Items`, `Tree`, `AnatomyCallouts`, `RecordLedger`, `Scene`, `Matrix`,
   `Specimen`, `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`,
   `PricingTable`, `Testimonial`, `ArticleBody`, `ConsentBanner` (see "Blocks" below).
 - **`shell`** — the persistent frame around content (nav, layout chrome)
@@ -355,7 +355,7 @@ source file's own header for the exact probe and its result). Today that's:
 | Subpath | Server-safe members |
 | --- | --- |
 | `@clossys/designer/atoms/server` | `Avatar`, `Badge`, `Banner`, `Card`, `Field`, `Icon`, `Meter`, `Skeleton`, `Spinner`, `StatusMark`, `buttonLinkClassName`, `iconButtonClassName`, `iconButtonLinkClassName`, `mergeUiClasses` |
-| `@clossys/designer/blocks/server` | `AnatomyCallouts`, `ArticleBody`, `Matrix`, `ContentSection`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `Item`, `Items`, `MarketingChapter`, `MediaFigure`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `RecordLedger`, `Scene`, `SectionFrame`, `SectionHeader`, `SectionIntro`, `Specimen`, `SpecimenPanel`, `Stat`, `StatusList` |
+| `@clossys/designer/blocks/server` | `AnatomyCallouts`, `ArticleBody`, `Matrix`, `ContentSection`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `Item`, `Items`, `MarketingChapter`, `MediaFigure`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `RecordLedger`, `Scene`, `SectionFrame`, `SectionHeader`, `SectionIntro`, `Specimen`, `SpecimenPanel`, `Stat`, `StatusList`, `Tree` |
 | `@clossys/designer/shell/server` | `Shell`, `SiteFooter`, `SiteHeader`, `SkipLink` |
 | `@clossys/designer/charts/server` | `ChartFrame`, `BarChart`, `LineChart` (static), `WaterfallChart`, `RangeChart`, `ScatterChart`, `Sparkline` |
 | `@clossys/designer/theme/server` | `getThemeInitScript` |
@@ -3729,6 +3729,62 @@ function LedgerExample() {
   </>;
 }
 ```
+
+### `Tree`
+
+```tsx
+import { Tree, type TreeNodeData } from "@clossys/designer/blocks/server";
+
+function OrganizationTree() {
+  const nodes: TreeNodeData[] = [
+    { id: "organization", heading: "Organization", description: "Sample structure." },
+    { id: "research", parent: "organization", heading: "Research", edgeLabel: "Includes", figure: { value: "4", delta: "+1", trend: "up" } },
+    { id: "operations", parent: "organization", heading: "Operations", edgeLabel: "Includes", status: { tone: "info", label: "Forming" } },
+  ];
+  return <>
+    <h2 id="organization-structure">Organization structure</h2>
+    <Tree nodes={nodes} labelledBy="organization-structure" />
+  </>;
+}
+```
+
+`Tree`, `TreeProps` and `TreeNodeData` are exported from
+`@clossys/designer/blocks` and `@clossys/designer/blocks/server`.
+Tree is a passive nested list of 3–12 nodes. Nodes carry Item's `id`, `heading`,
+`description`, `eyebrow`, `meta`, `figure`, `status` and `badge` slots, plus a
+`parent` id and optional authored `edgeLabel`. Omit `parent` on one root.
+Parents must exist, ids must be unique, and cycles are refused. Siblings keep
+their source array order even when supplied before their parent. Root headings
+are h3; other nodes are h4. Edge labels appear before their child headings;
+provide content for every sibling or none. The root has no incoming edge.
+
+| Blocks export | Kind | Contract |
+| --- | --- | --- |
+| `Tree` | component | Passive nested Item tree with validated parent relations, responsive right/down diagrams and a print list. |
+| `TreeProps` | type | Nodes and optional orientation (`right` or `down`), labelledBy, ground and className. |
+| `TreeNodeData` | type | Item id, heading, description, eyebrow, meta, figure, status and badge slots, plus parent and edgeLabel. |
+
+Leaves have no children. Other parents have 2–4 children, with up to six at
+the root. `orientation="right"` is the default: at most three edges from root
+to leaf and eight leaves. `orientation="down"` allows two edges and six nodes
+at each depth. The root is depth zero. `ground` is `base` (default), `sunken`
+or `inverse`; `className` extends the outer list. `labelledBy` refers to an
+existing external heading; Tree adds no fallback label or generated ids.
+
+Below `tablet-lg`, nodes form an indented list with a hairline at each level.
+From `tablet-lg`, right trees share depth columns with parents centred beside
+their children; down trees share centred rows. Nodes become ground-relative
+plates and pseudo-element elbows show relations. Print restores the indented
+list. The nested list and authored reading order are retained in each layout;
+there is no interactive tree role, disclosure, navigation or focus target.
+
+Individual nodes reuse Item's figure, trend and status validation. A trend
+needs an authored signed delta, and status cannot accompany a badge on the
+same node. Other nodes may omit figures. `href`, `visual`, `icon` and retired
+`featured` are outside this block's node contract. Supplied native controls,
+focus attributes, editing and event handlers are refused in node and edge
+content. Opaque component output is not inspected; callers must keep that
+output passive too.
 
 ### `Matrix`
 

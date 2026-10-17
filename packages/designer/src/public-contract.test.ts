@@ -3,6 +3,7 @@ import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { describe, expect, it } from "vitest";
+import ts from "typescript";
 
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const packageJson = JSON.parse(readFileSync(join(packageRoot, "package.json"), "utf8")) as {
@@ -300,4 +301,66 @@ describe("compiled catalog export cleanup", () => {
     expect(keys.filter(key => ["CardGrid", "TopicList", "LinkGrid", "Comparison", "LedgerTile"].includes(key))).toEqual([]);
     expect(keys.filter(key => ["ItemRenderer", "ItemsStatic", "renderNavItems", "MatrixRenderer"].includes(key))).toEqual([]);
   }, 15_000);
+});
+
+describe("compiled Tree public contract", () => {
+  it("pins the Tree exports through both blocks barrels", () => {
+    for (const subpath of ["@clossys/designer/blocks", "@clossys/designer/blocks/server"]) {
+      const script = `import * as blocks from ${JSON.stringify(subpath)}; process.stdout.write(JSON.stringify(Object.keys(blocks)));`;
+      const keys: string[] = JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e", script], { cwd: packageRoot, encoding: "utf8", timeout: 10_000 }));
+      expect(keys).toContain("Tree");
+      expect(keys.filter(name => ["TreeProps", "TreeNodeData", "assertTree", "TreeRenderer"].includes(name))).toEqual([]);
+    }
+  }, 15_000);
+
+  it("resolves TreeProps and TreeNodeData from real emitted declarations", () => {
+    const filename = join(packageRoot, "emitted-tree-consumer.check.ts");
+    const source = ["blocks/index.js", "blocks/server.js"].map((entry, index) => `
+      import { Tree as Tree${index}, type TreeProps as Props${index}, type TreeNodeData as Node${index} } from ${JSON.stringify(join(packageRoot, "dist", entry))};
+      const node${index}: Node${index} = { id: "root", heading: "Root", figure: { value: 42, delta: "+6", trend: "up" }, status: { tone: "info", label: "Open" } };
+      const props${index}: Props${index} = { nodes: [node${index}], orientation: "right", ground: "inverse", labelledBy: "heading", className: "caller" };
+      Tree${index}(props${index});
+    `).join("\n");
+    const options = { strict: true, noEmit: true, skipLibCheck: true, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler };
+    const host = ts.createCompilerHost(options);
+    const original = host.getSourceFile.bind(host);
+    host.getSourceFile = (path, language, error, fresh) => path === filename ? ts.createSourceFile(path, source, language, true) : original(path, language, error, fresh);
+    const diagnostics = ts.getPreEmitDiagnostics(ts.createProgram([filename], options, host));
+    expect(ts.formatDiagnosticsWithColorAndContext(diagnostics, { getCurrentDirectory: () => packageRoot, getCanonicalFileName: path => path, getNewLine: () => "\n" })).toBe("");
+  }, 30_000);
+
+  it("rejects unsupported Tree fields and orientation in real emitted declarations", () => {
+    const filename = join(packageRoot, "emitted-tree-negative-consumer.check.ts");
+    const source = ["blocks/index.js", "blocks/server.js"].map((entry, index) => `
+      import { type TreeProps as Props${index}, type TreeNodeData as Node${index} } from ${JSON.stringify(join(packageRoot, "dist", entry))};
+      const node${index}: Node${index} = { id: "root", heading: "Root" };
+      const props${index}: Props${index} = { nodes: [node${index}] };
+      const linked${index}: Node${index} = { ...node${index}, href: "/root" };
+      const visual${index}: Node${index} = { ...node${index}, visual: "Picture" };
+      const featured${index}: Node${index} = { ...node${index}, featured: true };
+      const invalid${index}: Props${index} = { ...props${index}, orientation: "up" };
+    `).join("\n");
+    const options = { strict: true, noEmit: true, skipLibCheck: true, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler };
+    const host = ts.createCompilerHost(options);
+    const original = host.getSourceFile.bind(host);
+    host.getSourceFile = (path, language, error, fresh) => path === filename ? ts.createSourceFile(path, source, language, true) : original(path, language, error, fresh);
+    const diagnostics = ts.getPreEmitDiagnostics(ts.createProgram([filename], options, host));
+    const cases = [0, 1].flatMap(index => [
+      { binding: `linked${index}`, field: "href", code: 2353 },
+      { binding: `visual${index}`, field: "visual", code: 2353 },
+      { binding: `featured${index}`, field: "featured", code: 2353 },
+      { binding: `invalid${index}`, field: "orientation", code: 2322 },
+    ]);
+    expect(diagnostics).toHaveLength(8);
+    expect(diagnostics.map(diagnostic => diagnostic.code)).toEqual(cases.map(item => item.code));
+    expect(diagnostics.map(diagnostic => diagnostic.file?.fileName)).toEqual(cases.map(() => filename));
+    for (const [index, diagnostic] of diagnostics.entries()) {
+      const item = cases[index]!;
+      const line = diagnostic.file!.getLineAndCharacterOfPosition(diagnostic.start!).line;
+      const declaration = source.split("\n")[line]!;
+      expect(declaration).toContain(`const ${item.binding}:`);
+      expect(declaration).toContain(`${item.field}:`);
+      expect(ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n")).toContain(item.field === "orientation" ? '"up"' : `'${item.field}'`);
+    }
+  }, 30_000);
 });
