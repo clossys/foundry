@@ -80,6 +80,7 @@ export function RangeChart({ rows, ticks, labels, title, description, fit = "flu
   if (hasStatus && (!labels.status || !labels.status.trim())) throw new TypeError("RangeChart requires an authored status label.");
   const ids = new Set<string>();
   const layouts = rows.map(row => {
+    if (typeof row.id !== "string") throw new TypeError("RangeChart requires authored row IDs.");
     if (!row.id.trim() || ids.has(row.id)) throw new RangeError("RangeChart requires unique nonblank row IDs.");
     ids.add(row.id);
     if (!Number.isFinite(row.from) || !Number.isFinite(row.to) || row.from < 0 || row.from >= row.to || row.to > ticks.length) {

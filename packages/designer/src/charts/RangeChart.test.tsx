@@ -158,6 +158,26 @@ describe("RangeChart bounds and tick-boundary geometry", () => {
     expect(() => renderToStaticMarkup(<RangeChart {...props} ticks={["   "]} rows={[{ id: "a", label: "A", from: 0, to: 1 }]} />)).toThrow(/tick|period|label|authored/i);
   });
 
+  it("rejects a missing row ID with an authored validation TypeError", () => {
+    const { id: _removed, ...withoutId } = rows[0]!;
+    const renderInvalid = () => renderToStaticMarkup(<RangeChart {...props} rows={[withoutId as RangeChartRow]} />);
+    expect(renderInvalid).toThrow(TypeError);
+    expect(renderInvalid).toThrow("RangeChart requires authored row IDs.");
+  });
+
+  it.each([undefined, null, 42, false, {}, []].map(id => [id]))("rejects non-string row ID %j with an authored validation TypeError", id => {
+    const invalidRow = { ...rows[0]!, id } as unknown as RangeChartRow;
+    const renderInvalid = () => renderToStaticMarkup(<RangeChart {...props} rows={[invalidRow]} />);
+    expect(renderInvalid).toThrow(TypeError);
+    expect(renderInvalid).toThrow("RangeChart requires authored row IDs.");
+  });
+
+  it.each(["", "   ", rows[1]!.id])("retains unique nonblank row ID validation for %j", id => {
+    const renderInvalid = () => renderToStaticMarkup(<RangeChart {...props} rows={[{ ...rows[0]!, id }, rows[1]!]} />);
+    expect(renderInvalid).toThrow(RangeError);
+    expect(renderInvalid).toThrow("RangeChart requires unique nonblank row IDs.");
+  });
+
   it.each([
     [0, 4.01], // mutation target: N + .01 must fail while N remains valid
     [-0.01, 1], [1, 1], [2, 1], [4, 4.01],
