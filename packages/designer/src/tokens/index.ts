@@ -4,7 +4,7 @@
  * A design token is a name for a design decision — `surface-raised`, not
  * `#F2EFE6` — so that the decision can be looked up and changed in one
  * place instead of hardcoded everywhere it's used. This package ships that
- * naming in two forms that describe the same 154 tokens:
+ * naming in two forms that describe the same 186 tokens:
  *
  *   - `styles/tokens.css` — CSS custom properties, the primary artifact.
  *   - This module — the same tokens as typed data, for JS/TS code that
@@ -13,7 +13,10 @@
  * See the README for the three-layer contract (primitives → brand binding
  * → consumer extensions), the naming rule that splits tokens into Tailwind
  * v4 `@theme` namespaces versus the `--ui-` prefix, and the full token
- * reference table.
+ * reference table. Semantic aliases and composites are independently
+ * referenceable roles, including the documented brandmark-gap exception;
+ * value derivability alone does not remove a property from the registry.
+ * Source-family identity stays intact when display navigation changes.
  *
  * THE BRAND-COVERAGE CHECK. `TOKENS` and `styles/brand-template.css` are a
  * vocabulary and a template — neither one, by itself, can tell a consumer
@@ -116,6 +119,8 @@
 
 export type { TokenDefinition, TokenFamily } from "./tokens.js";
 export { TOKENS, TOKEN_FAMILIES } from "./tokens.js";
+export { TOKEN_GUIDANCE, TOKEN_DISPLAY_GROUPS } from "./guidance.js";
+export type { TokenGuidance, TokenApplication, TokenValueType, TokenSpecimen, TokenDisplayFamily, TokenDisplayGroup } from "./guidance.js";
 
 export { checkBrandFileCoverage } from "./check-brand-file-coverage.js";
 export type {

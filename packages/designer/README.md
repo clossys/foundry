@@ -165,7 +165,7 @@ smallest stable subpath that owns what you need:
 
 | Subpath | Owns |
 | --- | --- |
-| `@clossys/designer/tokens` | Browser-safe typed `TOKENS`, pure brand CSS parsing, the brand-coverage gate, WCAG colour math (`contrastRatio` and friends), the contrast gate (`checkTokenContrast`, `CONTRAST_PAIRS`), and `assertTokenStylesLoaded` (dev-only token-CSS presence check — see "Setup" below). No React runtime. |
+| `@clossys/designer/tokens` | Browser-safe typed `TOKENS`, shared `TOKEN_GUIDANCE` and `TOKEN_DISPLAY_GROUPS`, pure brand CSS parsing, the brand-coverage gate, WCAG colour math (`contrastRatio` and friends), the contrast gate (`checkTokenContrast`, `CONTRAST_PAIRS`), and `assertTokenStylesLoaded` (dev-only token-CSS presence check — see "Setup" below). No React runtime. |
 | `@clossys/designer/tokens/server` | Node-only `readBrandCss`, `assertTailwindMergeVersion`, and file-reading result types. Neither helper runs automatically on import. |
 | `@clossys/designer/tokens.css` | Neutral primitive custom-property defaults; works without Tailwind. |
 | `@clossys/designer/theme.css` | Optional Tailwind v4 wiring; imports `tokens.css` itself. |
@@ -178,6 +178,30 @@ smallest stable subpath that owns what you need:
 | `@clossys/designer/theme` | `getThemeInitScript`, `ThemeProvider`/`useTheme`, `ThemeToggle` — the runtime half of theming. Not to be confused with the CSS `/theme.css` subpath above. |
 | `@clossys/designer/gate` | Token-purity scanner/gate and the environment-conformance gate (`checkEnvironmentConformance`). |
 | `@clossys/designer/render-environment` | `RENDER_ENVIRONMENT` — a plain data declaration of every subpath's render environment (`"server-safe"` \| `"client-only"`). See "Server Components" below. |
+
+### Token details and selection
+
+The flat `TOKENS` registry has 186 stable property identities across brand
+and supported theme overlays, with zero per-token configuration. Use the
+property-keyed `TOKEN_GUIDANCE` for purpose, appropriate use, misuse or an
+alternative, the consuming CSS application and its context, and a contextual
+specimen kind. Defaults, aliases, brandability, theme dependence and the 31
+legacy source families remain authoritative in `TOKENS`.
+
+`TOKEN_DISPLAY_GROUPS` gives nine navigation groups and 37 display families,
+with each property appearing once. Group and Family are navigation only;
+they do not imply usage or value type, and regrouping does not change legacy
+`oldGroup.sourceFamily@token` references or bookmarks. Call the inspector
+"Token details"; configurable components start at Atoms. Equal values and
+aliases do not make two roles interchangeable. Consumers import the shared
+guidance instead of keeping another prose registry.
+
+The additive metadata types are `TokenGuidance`, `TokenApplication`,
+`TokenValueType`, `TokenSpecimen`, `TokenDisplayFamily` and
+`TokenDisplayGroup`. `TokenDefinition` and `TokenFamily` retain their shape.
+See [TOKENS.md](TOKENS.md) for the generated property-by-property reference.
+Regenerate it with `node scripts/generate-token-docs.mjs` and verify it with
+`node scripts/check-token-docs.mjs` from the repository root.
 
 ### Node token helper migration
 

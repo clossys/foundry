@@ -43,6 +43,23 @@ Public marketing surfaces: stamp the authored register with `getAuthoredThemeIni
 
 One visual ladder per route: do not import a second atom/token stack beside `@clossys/designer`. Existing token root: `@clossys/designer/theme-keys.css`, not `theme.css` plus `tokens.css`.
 
+<!-- token-selection:start -->
+Choose a token by its semantic purpose and actual CSS application, using the
+shared `TOKEN_GUIDANCE` from `@clossys/designer/tokens` and the generated
+`TOKENS.md` reference. Read purpose, appropriate use, misuse and context before
+comparing values. `TOKEN_DISPLAY_GROUPS` supplies Group > Family navigation
+only: 9 groups and 37 display families. It does not configure tokens or imply their type.
+All 186 properties, including aliases and composites, are independently referenceable
+leaves with stable identity across brand and supported theme overlays and zero
+per-token configuration. Name the inspector "Token details"; configurable
+components begin at Atoms. Preserve the 31 legacy source families, references and
+bookmarks. Do not duplicate guidance in a consumer or treat equal values
+and aliases as interchangeable roles. Read all five TokenDefinition fields
+(`property`, `family`, `value`, `brandable`, `themeDependent`) from `TOKENS`.
+Regenerate the reference and this section with `node scripts/generate-token-docs.mjs`
+and check their freshness with `node scripts/check-token-docs.mjs`.
+<!-- token-selection:end -->
+
 Marketing chapters after the fold: `MarketingChapter`, not `SectionHeader`. Hero `media` requires an explicit `composition` (`editorial` default).
 
 Do not invent a type pairing during the walk that proves 3 — cite or author the brand-type record from `templates/brand-type.template.json` and run `designer-type-check`.
