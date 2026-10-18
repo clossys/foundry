@@ -50,8 +50,22 @@ const checker = `repeating-conic-gradient(${tokenReference("--color-surface-base
 const panel: CSSProperties = { padding: 16, minBlockSize: 48, background: tokenReference("--color-surface-raised"), color: tokenReference("--color-ink-primary") };
 const tile: CSSProperties = { inlineSize: 24, blockSize: 24, background: tokenReference("--color-accent") };
 
+interface TokenPreviewProps {
+  property: string;
+  /** Text shown by static specimens. @default "Aa 0123" */
+  sampleText?: string;
+  /** Message for an unsupported application. @default "Unsupported token application" */
+  unsupportedMessage?: string;
+  /** Message after the pending kind. @default "interactive support pending" */
+  pendingMessage?: string;
+}
+
 /** Static token tooling: the host supplies token/theme/brand CSS and preview cascade. */
-export function TokenPreview({ property }: { property: string }) {
+export function TokenPreview({
+  property, sampleText = "Aa 0123",
+  unsupportedMessage = "Unsupported token application",
+  pendingMessage = "interactive support pending",
+}: TokenPreviewProps) {
   const guidance = Object.hasOwn(TOKENS, property) && Object.hasOwn(TOKEN_GUIDANCE, property)
     ? TOKEN_GUIDANCE[property] : undefined;
   const kind = guidance?.specimen;
@@ -60,10 +74,10 @@ export function TokenPreview({ property }: { property: string }) {
   const supported = kind && Object.hasOwn(applications, kind) && applications[kind]?.includes(signature);
   const unavailable = kind && Object.hasOwn(pending, kind) && pending[kind]?.includes(signature);
   if (!kind || !application || !(supported || unavailable)) {
-    return <output role="status" data-property={property} data-kind={kind}>Unsupported token application</output>;
+    return <output role="status" data-property={property} data-kind={kind}>{unsupportedMessage}</output>;
   }
   if (unavailable) {
-    return <output role="status" data-property={property} data-kind={kind}>{kind}: interactive support pending</output>;
+    return <output role="status" data-property={property} data-kind={kind}>{kind}: {pendingMessage}</output>;
   }
   const value = tokenReference(property);
   const cssProperty = application.cssProperty.replace(/-([a-z])/g, (_, letter: string) => letter.toUpperCase());
@@ -84,42 +98,42 @@ export function TokenPreview({ property }: { property: string }) {
     </svg>
   );
   const specimens: Record<string, ReactNode> = {
-    surface: <div style={{ ...plate, ...style }}>Surface</div>,
-    text: <p style={style}>Readable type specimen Aa 0123</p>,
-    border: <div style={{ ...plate, border: `2px solid ${tokenReference("--color-line-strong")}`, ...style }}>Boundary</div>,
-    control: <button type="button" style={{ ...plate, ...style }}>Control</button>,
-    status: <span style={{ ...plate, ...style }}>Status indicator</span>,
+    surface: <div style={{ ...plate, ...style }}>{sampleText}</div>,
+    text: <p style={style}>{sampleText}</p>,
+    border: <div style={{ ...plate, border: `2px solid ${tokenReference("--color-line-strong")}`, ...style }}>{sampleText}</div>,
+    control: <button type="button" style={{ ...plate, ...style }}>{sampleText}</button>,
+    status: <span style={{ ...plate, ...style }}>{sampleText}</span>,
     chart: <svg viewBox="0 0 120 60" style={{ inlineSize: 160, blockSize: 80 }}>
-      {property === "--color-chart-axis-label" ? <text x="8" y="36" style={style}>Axis label</text> :
+      {property === "--color-chart-axis-label" ? <text x="8" y="36" style={style}>{sampleText}</text> :
         <rect x="8" y="8" width="104" height="44" fill="none" strokeWidth="4" style={style} />}
     </svg>,
-    font: <p style={{ transformOrigin: "left", ...style }}>Font specimen Aa 0123</p>,
+    font: <p style={{ transformOrigin: "left", ...style }}>{sampleText}</p>,
     space: <div style={{ display: "flex", ...style }}><span style={tile} /><span style={tile} /></div>,
-    size: <div style={{ ...plate, ...style }}>Sized region</div>,
+    size: <div style={{ ...plate, ...style }}>{sampleText}</div>,
     icon,
     brandmark: (
       <div style={{ display: "flex", alignItems: "center", ...style }}>
         <svg viewBox="0 0 24 24" style={{ blockSize: application.cssProperty === "gap" ? 24 : "100%", inlineSize: "auto", aspectRatio: "1", minBlockSize: 16 }}>
           <path fill="currentColor" d="M2 22L12 2l10 20z" />
         </svg>
-        <span>Brand</span>
+        <span>{sampleText}</span>
       </div>
     ),
-    radius: <div style={{ ...plate, ...style }}>Rounded panel</div>,
-    shadow: <div style={{ ...plate, ...style }}>Elevated panel</div>,
+    radius: <div style={{ ...plate, ...style }}>{sampleText}</div>,
+    shadow: <div style={{ ...plate, ...style }}>{sampleText}</div>,
     blur: (
       <div style={{ background: `repeating-linear-gradient(45deg, ${tokenReference("--color-accent")} 0 8px, ${tokenReference("--color-surface-base")} 8px 16px)` }}>
-        <div style={{ ...plate, background: tokenReference("--color-surface-glass"), ...style }}>Backdrop</div>
+        <div style={{ ...plate, background: tokenReference("--color-surface-glass"), ...style }}>{sampleText}</div>
       </div>
     ),
-    ring: <div style={{ ...plate, ...style }}>Focus outline</div>,
+    ring: <div style={{ ...plate, ...style }}>{sampleText}</div>,
     layer: (
       <div style={{ position: "relative", isolation: "isolate", blockSize: 90 }}>
-        <div style={{ ...plate, position: "absolute", inset: 0, zIndex: 1 }}>Reference layer 1</div>
-        <div style={{ ...plate, position: "absolute", inset: 12, ...style }}>Token layer</div>
+        <div style={{ ...plate, position: "absolute", inset: 0, zIndex: 1 }}>{sampleText}</div>
+        <div style={{ ...plate, position: "absolute", inset: 12, ...style }}>{sampleText}</div>
       </div>
     ),
-    opacity: <div style={{ ...plate, ...style }}>Object opacity</div>,
+    opacity: <div style={{ ...plate, ...style }}>{sampleText}</div>,
   };
   return (
     <figure aria-label={property} data-kind={kind} style={{

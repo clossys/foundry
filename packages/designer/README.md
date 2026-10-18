@@ -7416,9 +7416,14 @@ const specimen = <TokenPreview property="--color-chart-surface" />;
 ```
 
 Load the token CSS and desired theme/brand overrides in the host. The preview
-uses `var(--property)` rather than resolved defaults. This React subpath is
+uses live `var(--property, authored-value)` references so host overrides remain primary. This React subpath is
 selection tooling; configurable components begin at Atoms. `/tokens` stays
 React-free. Unknown properties and unsupported applications are refused.
+
+Optional copy props are `sampleText` (default "Aa 0123"),
+`unsupportedMessage` (default "Unsupported token application") and
+`pendingMessage` (default "interactive support pending"). Supply translated
+strings as needed; pending output keeps its authored kind before the message.
 
 The 168 static specimens support 17 authored kinds: surface, text, border,
 control, status, chart, font, space, size, icon, brandmark, radius, shadow,

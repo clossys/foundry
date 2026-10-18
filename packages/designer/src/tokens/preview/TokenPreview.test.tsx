@@ -52,9 +52,9 @@ const examples = [
   ["--ui-z-modal", "z-index", "var(--ui-z-modal, 50)", "DIV"],
   ["--ui-alpha-disabled", "opacity", "var(--ui-alpha-disabled, 0.5)", "DIV"],
 ];
-function specimen(property: string) {
+function specimen(property: string, copy: { sampleText?: string; unsupportedMessage?: string; pendingMessage?: string } = {}) {
   const host = document.createElement("div");
-  host.innerHTML = renderToStaticMarkup(<TokenPreview property={property} />);
+  host.innerHTML = renderToStaticMarkup(<TokenPreview property={property} {...copy} />);
   return host;
 }
 
@@ -98,7 +98,7 @@ describe("exact-property TokenPreview", () => {
     expect(plot.style.stroke).toBe("var(--color-chart-surface, var(--color-surface-raised, oklch(1 0 0)))");
     expect(plot.getAttribute("fill")).toBe("none");
     expect(plot.style.fill).toBe("");
-    expect(specimen("--color-chart-axis-label").querySelector("text")?.textContent).toBe("Axis label");
+    expect(specimen("--color-chart-axis-label").querySelector("text")?.textContent).toBe("Aa 0123");
     expect(specimen("--ui-icon-stroke").querySelector("svg")?.style.stroke).toBe("var(--color-ink-primary, oklch(0.2178 0 0))");
   });
   it("provides real backings for inverse, accent and alpha applications", () => {
@@ -136,16 +136,39 @@ describe("exact-property TokenPreview", () => {
     expect(gap.querySelector("svg")?.getAttribute("style")).toContain("aspect-ratio:1;");
     expect(specimen("--ui-brandmark-height-md").querySelector("svg")?.getAttribute("style")).toContain("block-size:100%;");
   });
+  it("supports default and custom sample text at every text-bearing kind and layer site", () => {
+    const sites = [
+      ["--color-surface-glass", "figure > div"], ["--text-body", "p"],
+      ["--ui-border-rule", "figure > div"], ["--color-control-quiet", "button"],
+      ["--color-status-info-text", "span"], ["--color-chart-axis-label", "text"],
+      ["--font-display-scale-x", "p"], ["--ui-density-row", "figure > div"],
+      ["--ui-brandmark-height-md", "span"], ["--radius-panel", "figure > div"],
+      ["--ui-elevation-none", "figure > div"], ["--blur-glass", "figure > div > div"],
+      ["--ui-ring-on-inverse", "figure > div"], ["--ui-alpha-disabled", "figure > div"],
+      ["--ui-z-modal", "figure > div > div:first-child"], ["--ui-z-modal", "figure > div > div:last-child"],
+    ];
+    for (const [property, selector] of sites) {
+      const ordinary = specimen(property!).querySelector(selector!)!;
+      const custom = specimen(property!, { sampleText: "Custom specimen" }).querySelector(selector!)!;
+      expect(ordinary.textContent, property).toBe("Aa 0123");
+      expect(custom.textContent, property).toBe("Custom specimen");
+      expect(custom.getAttribute("style"), property).toBe(ordinary.getAttribute("style"));
+    }
+  });
   it("reports each pending property with its true kind and explicit pending status", () => {
     for (const property of pending) {
       const host = specimen(property);
       expect(host.querySelector("figure, table")).toBeNull();
       expect(host.querySelector("[role=status]")?.getAttribute("data-kind")).toBe(TOKEN_GUIDANCE[property]?.specimen);
       expect(host.textContent).toContain(`${TOKEN_GUIDANCE[property]?.specimen}: interactive support pending`);
+      const custom = specimen(property, { pendingMessage: "Custom pending message" });
+      expect(custom.textContent).toBe(`${TOKEN_GUIDANCE[property]?.specimen}: Custom pending message`);
+      expect(custom.querySelector("[role=status]")?.getAttribute("data-kind")).toBe(TOKEN_GUIDANCE[property]?.specimen);
     }
   });
   it("refuses unknown properties and missing, malformed or unsupported authored applications", () => {
     for (const property of ["--not-a-token", "toString", ""]) expect(specimen(property).textContent).toBe("Unsupported token application");
+    expect(specimen("--not-a-token", { unsupportedMessage: "Custom refusal" }).textContent).toBe("Custom refusal");
     const mutable = TOKEN_GUIDANCE as unknown as Record<string, unknown>;
     const original = TOKEN_GUIDANCE["--color-accent"]!;
     const replacements = [
