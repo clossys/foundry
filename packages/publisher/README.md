@@ -6199,6 +6199,11 @@ Web views declare no main or skip target. Web layout is flow; non-web layout fol
 carries no HTML landmark claim. Video is unsupported. Evidence names a lowercase
 40-character source revision and a real calendar date in `YYYY-MM-DD` form.
 
+Object inputs and candidate declarations are copied from own data-property descriptors;
+inherited fields and accessors cannot supply obligations. Returned object data is a snapshot.
+Traversal is bounded to 64 levels; deep or cyclic configuration and throwing or revoked
+proxies return shape errors. Property get traps are not invoked.
+
 Malformed data returns `shape-error` with a field path. Unknown adapters,
 configuration or obligation mismatches return typed `unverified` reasons;
 role/medium mismatches and video return `unsupported`. Even a valid descriptor
@@ -6206,5 +6211,5 @@ returns `unverified` with `measurement-required`: caller declarations and input
 `qualified` flags cannot grant qualification. The result vocabulary reserves
 `qualified` for measured evidence; this validator never emits it. Bare booleans,
 exact role strings and role-only declarations return `unverified` with `role-claim`
-and the original claim, without fabricating a complete descriptor. No adapter measurements, Instance
+and a copy of the claim, without fabricating a complete descriptor. No adapter measurements, Instance
 binding, pair compatibility or legacy serialized-reference migration ships here.

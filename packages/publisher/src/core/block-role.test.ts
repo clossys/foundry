@@ -117,6 +117,46 @@ describe("Block role descriptor contract", () => {
     const before = JSON.stringify([frame, view, known]); validate(frame); validate(view);
     expect(JSON.stringify([frame, view, known])).toBe(before);
   });
+  it.each(["evidence", "role", "blockId"] as const)("requires own %s instead of prototype evidence", (field) => {
+    const input: Record<string, unknown> = { ...frame }; delete input[field];
+    const previous = Object.getOwnPropertyDescriptor(Object.prototype, field);
+    let result;
+    try {
+      Object.defineProperty(Object.prototype, field, { value: frame[field], configurable: true });
+      result = validate(input);
+    } finally {
+      if (previous) Object.defineProperty(Object.prototype, field, previous); else Reflect.deleteProperty(Object.prototype, field);
+    }
+    expect(result).toMatchObject({ status: "shape-error", path: field });
+  });
+  it("refuses deep and cyclic configuration without throwing", () => {
+    let deep: Record<string, unknown> = {};
+    for (let i = 0; i < 10000; i++) deep = { child: deep };
+    const cyclic: Record<string, unknown> = {}; cyclic.child = cyclic;
+    for (const config of [deep, cyclic]) expect(validate({ ...frame, adapter: { ...frame.adapter, config } })).toMatchObject({ status: "shape-error", path: "adapter" });
+  });
+  it("can revalidate its own data snapshots", () => {
+    const result = validate(frame);
+    expect(result.status).toBe("unverified");
+    if ("descriptor" in result) expect(validate(result.descriptor)).toEqual(result);
+  });
+  it("handles throwing and revoked proxies without property get traps", () => {
+    const revoked = Proxy.revocable(frame, {}); revoked.revoke();
+    for (const input of [revoked.proxy, new Proxy(frame, { getPrototypeOf() { throw revoked.proxy; } }), new Proxy(frame, { getPrototypeOf() { throw new Error("prototype trap"); } }), new Proxy(frame, { ownKeys() { throw new Error("keys trap"); } })]) expect(status(input)).toBe("shape-error");
+    let reads = 0;
+    const proxy = new Proxy(frame, { get() { reads++; throw new Error("get trap"); } });
+    expect(reason(proxy)).toBe("measurement-required");
+    const previous = Object.getOwnPropertyDescriptor(Object.prototype, "qualified");
+    let result;
+    try {
+      Object.defineProperty(Object.prototype, "qualified", { get() { reads++; throw new Error("inherited getter"); }, configurable: true });
+      result = validate({ role: "frame" });
+    } finally {
+      if (previous) Object.defineProperty(Object.prototype, "qualified", previous); else Reflect.deleteProperty(Object.prototype, "qualified");
+    }
+    expect(result).toMatchObject({ status: "unverified", reasons: ["role-claim"] });
+    expect(reads).toBe(0);
+  });
   it("keeps the descriptor import graph free of DOM, React, network and ambient effects", () => {
     expect(checkImportPurity({ root: process.cwd(), entries: ["src/core/block-role.ts"], allowedBuiltins: [], allowedPackages: [] }).findings).toEqual([]);
   });

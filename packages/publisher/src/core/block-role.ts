@@ -43,7 +43,7 @@ export type BlockRoleValidationResult =
 
 const record = (value: unknown): value is Record<string, unknown> =>
   value !== null && typeof value === "object" && !Array.isArray(value) &&
-  Object.getPrototypeOf(value) === Object.prototype && Reflect.ownKeys(value).every((key) =>
+  Object.getPrototypeOf(value) === null && Reflect.ownKeys(value).every((key) =>
     typeof key === "string" && Object.getOwnPropertyDescriptor(value, key)!.enumerable &&
     "value" in Object.getOwnPropertyDescriptor(value, key)!);
 const text = (value: unknown): value is string => typeof value === "string" && value.trim() === value && value.length > 0;
@@ -52,6 +52,25 @@ const dense = (value: unknown): value is unknown[] => Array.isArray(value) &&
     typeof key === "string" && (key === "length" || /^(0|[1-9]\d*)$/.test(key)) && "value" in Object.getOwnPropertyDescriptor(value, key)!);
 const strings = (value: unknown): value is string[] => dense(value) && value.every(text) && new Set(value).size === value.length;
 const role = (value: unknown): value is BlockRole => value === "frame" || value === "view";
+function snapshot(value: unknown, ancestors = new Set<unknown>(), depth = 0): unknown {
+  if (value === null || typeof value !== "object") return value;
+  if (depth >= 64 || ancestors.has(value)) return undefined;
+  const array = Array.isArray(value);
+  const prototype = Object.getPrototypeOf(value);
+  if (prototype !== (array ? Array.prototype : Object.prototype) && (array || prototype !== null)) return undefined;
+  const descriptors = Object.getOwnPropertyDescriptors(value);
+  if (Reflect.ownKeys(descriptors).some((key) => typeof key !== "string" ||
+      !Object.hasOwn(descriptors[key]!, "value") || (!descriptors[key]!.enumerable && !(array && key === "length")))) return undefined;
+  const copy = array ? [] : Object.create(null);
+  ancestors.add(value);
+  for (const key of Object.keys(descriptors)) {
+    const descriptor = Object.assign(Object.create(null), descriptors[key]);
+    descriptor.value = snapshot(descriptor.value, ancestors, depth + 1);
+    Object.defineProperty(copy, key, descriptor);
+  }
+  ancestors.delete(value);
+  return copy;
+}
 function json(value: unknown, ancestors = new Set<unknown>()): boolean {
   if (value === null || typeof value === "string" || typeof value === "boolean") return true;
   if (typeof value === "number") return Number.isFinite(value);
@@ -80,6 +99,13 @@ function dated(value: unknown): boolean {
 }
 /** Validates declaration shape and candidate compatibility; never grants measured qualification. */
 export function validateBlockRole(input: unknown, knownAdapters: readonly BlockRoleAdapterContract[]): BlockRoleValidationResult {
+  try {
+    return validateSnapshot(snapshot(input), snapshot(knownAdapters) as BlockRoleAdapterContract[]);
+  } catch {
+    return { status: "shape-error", path: "descriptor", reason: "Invalid Block role descriptor field." };
+  }
+}
+function validateSnapshot(input: unknown, knownAdapters: readonly BlockRoleAdapterContract[]): BlockRoleValidationResult {
   const error = (path: string): BlockRoleValidationResult => ({
     status: "shape-error", path, reason: "Invalid Block role descriptor field.",
   });
