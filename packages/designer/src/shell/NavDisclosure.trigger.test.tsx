@@ -48,14 +48,14 @@ describe("NavDisclosure trigger", () => {
     }
   });
 
-  it("renders three decorative token-coloured bars with triggerLabel as its accessible name", () => {
+  it("renders two decorative token-coloured bars with triggerLabel as its accessible name", () => {
     render(<NavDisclosure trigger="icon" triggerLabel="Sections menu"><a href="#about">About</a></NavDisclosure>);
     const toggle = screen.getByRole("button", { name: "Sections menu" });
     expect(toggle).toHaveAttribute("aria-label", "Sections menu");
     expect(toggle.textContent).toBe("");
     const icon = toggle.querySelector(".nav-disclosure-icon")!;
     expect(icon).toHaveAttribute("aria-hidden", "true");
-    expect(icon.children).toHaveLength(3);
+    expect(icon.children).toHaveLength(2);
     for (const bar of icon.children) expect(bar.tagName).toBe("SPAN");
     const css = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "..", "..", "styles", "theme-keys.css"), "utf8");
     const utility = css.slice(css.indexOf("@utility nav-disclosure-icon"), css.indexOf("\n}", css.indexOf("@utility nav-disclosure-icon")) + 2);

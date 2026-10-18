@@ -1,6 +1,6 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { NavDisclosure } from "./NavDisclosure.js";
 import { SiteHeader } from "./SiteHeader.js";
 
@@ -94,4 +94,108 @@ describe("NavDisclosure", () => {
     expect(root.NavDisclosure).toBe(NavDisclosure);
     expect(server).not.toHaveProperty("NavDisclosure");
   });
+});
+
+describe("HEADER-1 disclosure lifecycle", () => {
+  it("keeps closed content inert and exposes a two-line X state when opened", () => {
+    render(<SiteHeader brand={<a href="/">Example</a>} nav={<NavDisclosure trigger="icon"><a href="/help">Help</a></NavDisclosure>} />);
+    const toggle = screen.getByRole("button", { name: "Menu" });
+    const panel = document.getElementById(toggle.getAttribute("aria-controls")!)!;
+    expect(panel).toHaveAttribute("inert");
+    expect(toggle.querySelectorAll(".nav-disclosure-icon > span")).toHaveLength(2);
+    fireEvent.click(toggle);
+    expect(panel).not.toHaveAttribute("inert");
+    expect(toggle.querySelector(".nav-disclosure-icon")).toHaveAttribute("data-open");
+    act(() => (panel.querySelector("a") as HTMLElement).focus());
+    fireEvent.keyDown(panel.querySelector("a")!, { key: "Escape" });
+    expect(panel).toHaveAttribute("inert");
+    expect(toggle.querySelector(".nav-disclosure-icon")).not.toHaveAttribute("data-open");
+    expect(toggle).toHaveFocus();
+  });
+  it("resets navigation on history changes and leaves outside focus intact", () => {
+    render(<><NavDisclosure><a href="/help">Help</a></NavDisclosure><button>Outside</button></>);
+    const toggle = screen.getByRole("button", { name: "Menu" });
+    fireEvent.click(toggle);
+    fireEvent.popState(window);
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(toggle).toHaveFocus();
+    fireEvent.click(toggle);
+    act(() => screen.getByRole("button", { name: "Outside" }).focus());
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(screen.getByRole("button", { name: "Outside" })).toHaveFocus();
+    expect(document.body.style.overflow).toBe("");
+  });
+});
+
+it("HEADER-1 collapses from measured unequal tracks before collision and resets at desktop", () => {
+  const media = { matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() };
+  vi.stubGlobal("matchMedia", () => media);
+  let width = 900;
+  const rectangles = vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function () {
+    const size = this.classList.contains("site-header-row") ? width : this.parentElement?.classList.contains("site-header-brand") ? 300 : this.parentElement?.classList.contains("site-header-actions") ? 100 : 400;
+    return { width: size, height: 60, x: 0, y: 0, top: 0, left: 0, right: size, bottom: 60, toJSON() {} };
+  });
+  try {
+    render(<SiteHeader brand={<a href="/">Brand with a long name</a>} nav={<NavDisclosure trigger="icon"><ul><li><a href="/help">Translated navigation label</a></li></ul></NavDisclosure>} actions={<a href="/start">Start</a>} />);
+    const header = screen.getByRole("banner");
+    expect(header).toHaveAttribute("data-collapsed");
+    const toggle = screen.getByRole("button", { name: "Menu" });
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    width = 1400;
+    fireEvent.resize(window);
+    expect(header).not.toHaveAttribute("data-collapsed");
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(document.getElementById(toggle.getAttribute("aria-controls")!)).not.toHaveAttribute("inert");
+  } finally { rectangles.mockRestore(); vi.unstubAllGlobals(); }
+});
+
+it("HEADER-1 preserves an open disclosure across equivalent JSX and resets meaningful route changes", async () => {
+  const scene = (href: string) => <SiteHeader brand={<a href="/">Example</a>} nav={<NavDisclosure trigger="icon"><a href={href} aria-current="page">Current</a></NavDisclosure>} />;
+  const view = render(scene("/current"));
+  const toggle = screen.getByRole("button", { name: "Menu" });
+  fireEvent.click(toggle);
+  await act(async () => view.rerender(scene("/current")));
+  expect(toggle).toHaveAttribute("aria-expanded", "true");
+  await act(async () => view.rerender(scene("/next")));
+  expect(toggle).toHaveAttribute("aria-expanded", "false");
+  expect(toggle).toHaveFocus();
+});
+
+it("HEADER-1 observes intrinsic children, preserves visible desktop focus and restores clearance on nav removal", () => {
+  let measure = () => {};
+  const observed: Element[] = [];
+  class Observer { constructor(callback: () => void) { measure = callback; } observe(node: Element) { observed.push(node); } disconnect() {} }
+  vi.stubGlobal("ResizeObserver", Observer);
+  const media = { matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() };
+  vi.stubGlobal("matchMedia", () => media);
+  const rects = vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function () {
+    const width = this.classList.contains("site-header-row") ? 1400 : 100;
+    return { width, height: 72, left: 0, right: width, top: 0, bottom: 72, x: 0, y: 0, toJSON() {} };
+  });
+  const scene = (nav = true) => <div data-site-frame=""><SiteHeader brand={<a href="/">Example</a>} nav={nav ? <NavDisclosure trigger="icon"><ul className="site-header-nav-links"><li><a href="/help">Help</a></li></ul></NavDisclosure> : undefined} /></div>;
+  try {
+    const view = render(scene());
+    const frame = view.container.firstElementChild as HTMLElement;
+    expect(frame.style.getPropertyValue("--site-header-clearance")).toBe("72px");
+    expect(observed).toContain(screen.getByRole("link", { name: "Example" }));
+    expect(observed).toContain(screen.getByRole("link", { name: "Help" }));
+    const toggle = screen.getByRole("button", { name: "Menu" });
+    fireEvent.click(toggle);
+    act(() => screen.getByRole("link", { name: "Help" }).focus());
+    media.matches = true;
+    act(measure);
+    expect(screen.getByRole("link", { name: "Help" })).toHaveFocus();
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    media.matches = false;
+    act(measure);
+    expect(toggle).toHaveFocus();
+    media.matches = true;
+    act(measure);
+    expect(screen.getByRole("link", { name: "Help" })).toHaveFocus();
+    view.rerender(scene(false));
+    expect(frame.style.getPropertyValue("--site-header-clearance")).toBe("");
+    expect(view.container.querySelector("header")).toHaveClass("site-header-contract");
+    expect(view.container.querySelector("header nav, header button")).toBeNull();
+  } finally { rects.mockRestore(); vi.unstubAllGlobals(); }
 });

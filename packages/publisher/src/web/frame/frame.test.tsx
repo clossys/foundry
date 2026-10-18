@@ -6,7 +6,7 @@ import { join } from "node:path";
 import type { ReactElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { CopyRef, CopyResolution, CopyResolver } from "@clossys/writer";
 import type { IconNode } from "@clossys/designer/atoms/server";
@@ -181,7 +181,7 @@ describe("SiteFrame", () => {
     expect(brand).toHaveTextContent("Example");
     expect(brand.querySelector("img")).toHaveAttribute("src", "/brand/mark.svg");
     const nav = container.querySelector('header nav[aria-label="Primary"]') as HTMLElement;
-    expect([...nav.querySelectorAll("a")].map((a) => [a.textContent, a.getAttribute("href")])).toEqual([
+    expect([...nav.querySelectorAll(".nav-disclosure-panel > ul:first-child a")].map((a) => [a.textContent, a.getAttribute("href")])).toEqual([
       ["Pricing", "/pricing"],
       ["Docs", "/docs"],
     ]);
@@ -569,8 +569,9 @@ describe("siteShellFor", () => {
     expect(shell.origin).toBe("https://example.com");
 
     const { container } = render(frame(shell, <p>content</p>));
-    expect(container.querySelector("header nav")).toBeNull();
-    const currents = [...container.querySelectorAll('header a[aria-current="true"]')];
+    expect(container.querySelector("header nav")).toHaveAttribute("aria-label", "Primary");
+    expect(container.querySelector(".nav-disclosure-panel > ul:not(.site-header-desktop-actions)")).toBeNull();
+    const currents = [...container.querySelectorAll('.site-header-desktop-actions a[aria-current="true"]')];
     expect(currents).toHaveLength(1);
     expect(currents[0]).toHaveTextContent(current);
     const legal = [...container.querySelectorAll("footer a")].map((a) => a.getAttribute("href"));
@@ -651,7 +652,8 @@ describe("SiteFrame list keys", () => {
     const shell: SiteShellInput = {
       ...siteShellFor(CONFIG, "site"),
       nav: { label: ref("nav.label"), links: [repeated, repeated] },
-      actions: [repeated, repeated],
+      secondaryAction: undefined,
+      actions: [{ ...repeated, emphasis: "secondary" }, { ...repeated, emphasis: "ghost" }],
       footer: {
         columns: [
           { heading: ref("footer.company"), links: [repeated, repeated] },
@@ -666,7 +668,7 @@ describe("SiteFrame list keys", () => {
       const { container } = render(frame(shell, <p>content</p>));
       const keyWarnings = consoleError.mock.calls.filter((call) => call.some((part) => typeof part === "string" && /same key/i.test(part)));
       expect(keyWarnings).toEqual([]);
-      expect(container.querySelectorAll("header nav li")).toHaveLength(2);
+      expect(container.querySelectorAll("header .nav-disclosure-panel > ul:first-child li")).toHaveLength(2);
       const footer = container.querySelector("footer") as HTMLElement;
       expect([...footer.querySelectorAll("h2, h3, h4, p")].filter((node) => node.textContent === "Company")).toHaveLength(2);
       expect([...container.querySelectorAll("a")].filter((link) => link.textContent === "About")).toHaveLength(2 + 2 + 2 + 1);
@@ -681,6 +683,7 @@ describe("SiteFrame list keys", () => {
 const ICON_LINK = { href: "/contact", label: ref("icon.contact"), icon: ICON };
 const ALL_SLOTS: SiteShellInput = {
   ...siteShellFor(CONFIG, "site"),
+  actions: [],
   iconActions: [ICON_LINK],
   environments: [{ href: "/app", label: ref("env.app"), icon: ICON }],
   footer: {
@@ -696,7 +699,7 @@ describe("SiteFrame icon slots", () => {
     const banner = getByRole("banner");
     const contact = within(banner).getByRole("link", { name: "Contact" });
     expect(contact).toHaveAttribute("href", "/contact");
-    expect(contact.textContent).toBe("");
+    expect(contact).toHaveTextContent("Contact");
     expect(contact.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
     const footer = getByRole("contentinfo");
     const social = within(footer).getByRole("navigation", { name: "Profiles" });
@@ -715,7 +718,7 @@ describe("SiteFrame icon slots", () => {
     const focusable = [...container.querySelectorAll<HTMLElement>('a[href],button,input,select,textarea,[tabindex]')]
       .filter((element) => element.tabIndex >= 0);
     expect(focusable.map((element) => element.getAttribute("aria-label") ?? element.textContent)).toEqual([
-      "Skip to content", "Example home", "Primary", "Pricing", "Docs", "Sign in", "Get started", "Contact", "App",
+      "Skip to content", "Example home", "Primary", "Pricing", "Docs", "Sign in", "Contact", "App", "App",
       "About", "Help", "Profile", "Privacy", "Terms",
     ]);
   });
@@ -735,8 +738,9 @@ describe("SiteFrame icon slots", () => {
       const shell: SiteShellInput = { ...bare, iconActions: [], footer: { ...bare.footer!, links: [], social } };
       expect(renderToStaticMarkup(frame(shell, <p>content</p>))).toBe(baseline);
       const { container, unmount } = render(frame(shell, <p>content</p>));
-      // Banner: the brand group only, no empty trailing actions wrapper.
-      expect(container.querySelector("header > div")!.children).toHaveLength(1);
+      // Empty right track is structural and noninteractive; no disclosure is invented.
+      expect(container.querySelector("header .site-header-actions")!.children).toHaveLength(0);
+      expect(container.querySelector("header nav, header button")).toBeNull();
       // Footer: the secondary row only, no empty column grid, and no divider above it.
       const footer = container.querySelector("footer")!;
       expect(footer.querySelector(".grid")).toBeNull();
@@ -919,16 +923,12 @@ describe("frame header placement", () => {
 });
 
 
-// Literal captured from the existing shell on main (6ee625e3), before the header change.
-const MAIN_FRAME_MARKUP = "<link rel=\"preload\" as=\"image\" href=\"/brand/mark.svg\"/><div class=\"flex min-h-dvh flex-col\"><a href=\"#publisher-main-content\" class=\"sr-only focus:not-sr-only focus:fixed focus:start-sm focus:top-sm focus:rounded-control focus:bg-accent focus:px-md focus:py-sm focus:text-body focus:text-ink-on-accent focus:outline-none\" style=\"z-index:var(--ui-z-tooltip, 80)\">Skip to content</a><header class=\"bg-surface-raised py-sm border-b border-line-base\" style=\"position:relative;z-index:var(--ui-z-shell, 20);border-bottom-width:var(--ui-border-hairline, 1px)\"><div class=\"mx-auto flex w-full flex-wrap items-center justify-between gap-md\" style=\"padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))\"><div class=\"flex items-center gap-lg\"><a href=\"/\" aria-label=\"Example home\" class=\"inline-flex items-center no-underline text-ink-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent\" style=\"gap:var(--ui-brandmark-gap-md, 6px)\"><img src=\"/brand/mark.svg\" alt=\"\" style=\"height:var(--ui-brandmark-height-md, 36px);width:auto\"/><span class=\"font-display leading-none\" style=\"font-size:calc(var(--ui-brandmark-height-md, 36px) * 0.4583333333333333)\">Example</span></a></div><div class=\"flex items-center gap-sm\"><a href=\"https://app.example.com/\" aria-current=\"true\" class=\"inline-flex items-center justify-center gap-sm rounded-control font-body transition-colors motion-reduce:transition-none px-sm py-xs text-body-s bg-surface-raised text-ink-primary border border-line-base hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent\" style=\"min-height:var(--ui-layout-tap-target, 44px);min-width:var(--ui-layout-tap-target, 44px);box-shadow:inset 0 calc(-2 * var(--ui-border-hairline, 1px)) 0 currentColor\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:var(--ui-icon-sm, var(--spacing-lg, 16px));height:var(--ui-icon-sm, var(--spacing-lg, 16px));flex-shrink:0;stroke-width:var(--ui-icon-stroke, 2)\" aria-hidden=\"true\"><path d=\"M3 12h18\"></path></svg><span class=\"sr-only tablet:not-sr-only\">App</span></a><a href=\"https://admin.example.com/\" class=\"inline-flex items-center justify-center gap-sm rounded-control font-body transition-colors motion-reduce:transition-none px-sm py-xs text-body-s bg-surface-raised text-ink-primary border border-line-base hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent\" style=\"min-height:var(--ui-layout-tap-target, 44px);min-width:var(--ui-layout-tap-target, 44px)\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:var(--ui-icon-sm, var(--spacing-lg, 16px));height:var(--ui-icon-sm, var(--spacing-lg, 16px));flex-shrink:0;stroke-width:var(--ui-icon-stroke, 2)\" aria-hidden=\"true\"><path d=\"M3 12h18\"></path></svg><span class=\"sr-only tablet:not-sr-only\">Admin</span></a><a href=\"https://demo.example.com/\" class=\"inline-flex items-center justify-center gap-sm rounded-control font-body transition-colors motion-reduce:transition-none px-sm py-xs text-body-s bg-surface-raised text-ink-primary border border-line-base hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent\" style=\"min-height:var(--ui-layout-tap-target, 44px);min-width:var(--ui-layout-tap-target, 44px)\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:var(--ui-icon-sm, var(--spacing-lg, 16px));height:var(--ui-icon-sm, var(--spacing-lg, 16px));flex-shrink:0;stroke-width:var(--ui-icon-stroke, 2)\" aria-hidden=\"true\"><path d=\"M3 12h18\"></path></svg><span class=\"sr-only tablet:not-sr-only\">Demo</span></a></div></div></header><main id=\"publisher-main-content\" tabindex=\"-1\" class=\"flex w-full flex-1 flex-col\"><p>content</p></main><footer class=\"bg-surface-raised text-ink-primary py-lg border-t border-line-base\" style=\"position:relative;z-index:var(--ui-z-shell, 20);border-top-width:var(--ui-border-hairline, 1px)\"><div class=\"mx-auto flex w-full flex-col gap-lg\" style=\"padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))\"><div class=\"flex flex-col gap-sm text-body-s text-ink-secondary tablet:flex-row tablet:items-center tablet:justify-between\"><div class=\"flex w-full flex-col items-center gap-sm text-center desktop:flex-row-reverse desktop:flex-nowrap desktop:items-center desktop:justify-between desktop:text-start\"><nav aria-label=\"Legal\"><ul role=\"list\" class=\"m-0 flex list-none flex-wrap items-center justify-center gap-x-sm p-0 desktop:flex-nowrap desktop:justify-end\"><li><a href=\"https://example.com/privacy\" class=\"inline-flex items-center justify-center px-xs text-inherit underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent\" style=\"min-height:var(--ui-layout-tap-target, 44px);min-width:var(--ui-layout-tap-target, 44px)\">Privacy</a></li><li><a href=\"https://example.com/terms\" class=\"inline-flex items-center justify-center px-xs text-inherit underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent\" style=\"min-height:var(--ui-layout-tap-target, 44px);min-width:var(--ui-layout-tap-target, 44px)\">Terms</a></li></ul></nav><p class=\"m-0 desktop:whitespace-nowrap\">© 2026 Example Ltd</p></div></div></div></footer></div>";
-
-it("a shell with no header key renders byte-identical to main", () => {
-  const year = vi.spyOn(Date.prototype, "getFullYear").mockReturnValue(2026);
-  try {
-    expect(renderToStaticMarkup(frame(FRONT_DOOR_SHELL, <p>content</p>))).toBe(MAIN_FRAME_MARKUP);
-  } finally {
-    year.mockRestore();
-  }
+it("an omitted header uses the same mandatory defaults as an explicit reserved header", () => {
+  expect(renderToStaticMarkup(frame(FRONT_DOOR_SHELL, <p>content</p>))).toBe(renderToStaticMarkup(frame({ ...FRONT_DOOR_SHELL, header: { placement: "reserved", ground: "base" } }, <p>content</p>)));
+  const { container } = render(frame(FRONT_DOOR_SHELL, <p>content</p>));
+  expect(container.querySelector("header")).toHaveClass("site-header-contract");
+  expect(container.querySelector("main")).toHaveAttribute("tabindex", "-1");
+  expect(container.querySelectorAll("main,header,footer")).toHaveLength(3);
 });
 
 describe("SiteFrame chrome parity", () => {
@@ -1037,4 +1037,99 @@ it("keeps a tall overlay footer safely aligned without clipping its tab stops", 
   }
   await user.tab();
   expect(footer.contains(document.activeElement)).toBe(false);
+});
+
+describe("HEADER-1 finite content contract", () => {
+  const base: SiteShellInput = { brand: CONFIG.brand, skipLink: ref("skip") };
+  const link = { href: "/docs", label: ref("nav.docs") };
+  const read = (shell: SiteShellInput) => resolveShell(shell, resolveCopy, resolveAsset);
+  it("accepts zero through five links, refusing the sixth", () => {
+    for (let count = 0; count <= 5; count++) expect(read({ ...base, nav: { label: ref("nav.label"), links: Array(count).fill(link) } }).nav?.links).toHaveLength(count);
+    expect(() => read({ ...base, nav: { label: ref("nav.label"), links: Array(6).fill(link) } })).toThrow(/five|5/);
+  });
+  it("accepts zero through three distinct actions and rejects the fourth and duplicates", () => {
+    const actions = ["secondary", "ghost", "primary"].map(emphasis => ({ ...link, emphasis, icon: ICON })) as SiteShellInput["actions"];
+    for (let count = 0; count <= 3; count++) expect(read({ ...base, actions: actions!.slice(0, count) }).actions).toHaveLength(count);
+    expect(() => read({ ...base, actions: [...actions!, { ...link, icon: ICON, emphasis: "primary" }] })).toThrow(/three|3/);
+    expect(() => read({ ...base, actions: [{ ...link, emphasis: "secondary" }, { ...link, emphasis: "secondary" }] })).toThrow(/distinct|duplicate/);
+  });
+  it("requires a supplied primary icon and label, retaining no-primary and brand union inputs", () => {
+    expect(() => read({ ...base, actions: [{ ...link, emphasis: "primary" }] })).toThrow(/icon/);
+    expect(() => read({ ...base, actions: [{ ...link, label: ref("blank"), emphasis: "primary", icon: ICON }] })).toThrow(/label/);
+    expect(read({ ...base, actions: [{ ...link, emphasis: "ghost" }] }).actions[0]?.emphasis).toBe("ghost");
+    expect(read({ ...base, brand: { assetId: "brand-mark", variant: "mark", size: "md", label: ref("brand.label") } }).brand.wordmark).toBeUndefined();
+    expect(read(base).brand.wordmark).toBe("Example");
+  });
+  it("marks the configured current navigation page without guessing a route", () => {
+    const { container } = render(frame({ ...base, nav: { label: ref("nav.label"), links: [{ ...link, isCurrent: true }] } }, <h1>Content</h1>));
+    expect(container.querySelector('nav a[href="/docs"]')).toHaveAttribute("aria-current", "page");
+  });
+});
+
+it("HEADER-1 renders flat presentation settings through the shared normalizer", () => {
+  const props = { shell: { brand: CONFIG.brand, skipLink: ref("skip") }, resolveCopy, resolveAsset };
+  const { container } = render(<SiteFrame {...props} presentation={{ headerPlacement: "overlay", headerTone: "inverse" }}><h1>Owned by the View</h1></SiteFrame>);
+  const header = container.querySelector("header")!;
+  expect(header).toHaveAttribute("data-tone", "inverse");
+  expect(header).toHaveAttribute("data-placement", "overlay");
+  expect(header).toHaveClass("site-header-contract");
+  expect(container.querySelectorAll("main")).toHaveLength(1);
+  expect(container.querySelectorAll(`#${SITE_MAIN_ID}`)).toHaveLength(1);
+  expect(container.querySelector("main")).toHaveAttribute("tabindex", "-1");
+  expect(container.firstElementChild).toHaveClass("min-h-dvh", "flex-col");
+  expect(container.querySelector("main")).toHaveClass("flex-1");
+  expect(() => renderToStaticMarkup(<SiteFrame {...props} presentation={{ headerTone: "inverse" }}><p>Content</p></SiteFrame>)).toThrow(/config/);
+});
+
+
+it("HEADER-1 normalizes implicit legacy controls into distinct finite variants, and counts every interactive slot", () => {
+  const base: SiteShellInput = { brand: CONFIG.brand, skipLink: ref("skip") };
+  const link = { href: "/docs", label: ref("nav.docs") };
+  const resolved = resolveShell({ ...base, secondaryAction: link, actions: [link] }, resolveCopy, resolveAsset);
+  expect(resolved.headerActions.map(action => action.emphasis)).toEqual(["secondary", "ghost"]);
+  expect(() => resolveShell({ ...base, secondaryAction: link, actions: [link], iconActions: [{ ...link, icon: ICON }], environments: [{ ...link, icon: ICON }] }, resolveCopy, resolveAsset)).toThrow(/three/);
+  const { container } = render(frame({ ...base, secondaryAction: link, actions: [link] }, <p>Content</p>));
+  expect(container.querySelectorAll('header a[href="/docs"]')).toHaveLength(2);
+  expect(container.querySelector('header nav')).toHaveAttribute("aria-label", "Primary");
+  expect(container.querySelector('header button')).toHaveTextContent("Menu");
+});
+
+it("HEADER-1 composes an optional real host notice and returns focus to the live menu opener", async () => {
+  const { ConsentExperience } = await import("../consent/ConsentExperience.client.js");
+  const { NO_DECISION_VIEW } = await import("../consent/ports.js");
+  const field = (text: string) => ({ text, recordId: "notice", entryId: text, revision: "1", locale: "en" });
+  const copy = { title: field("Privacy choices"), promptLead: field("Choose"), noticeLead: field("Notice"), acceptLabel: field("Accept"), rejectLabel: field("Reject"), privacyLinkLabel: field("Policy"), status: Object.fromEntries(["memoryOnly", "withdrawalFailed", "evidenceUnavailable", "evidenceConflict", "storageUnavailable", "gpcInForce"].map(key => [key, field(key)])) } as import("../../consent-copy/types.js").ResolvedConsentCopy;
+  const snapshot = { ...NO_DECISION_VIEW, effective: "granted" as const, allowed: true, persistence: "stored" as const };
+  const lifecycle = { getSnapshot: () => snapshot, subscribe: () => () => {}, grant: () => snapshot, refuse: () => snapshot, refresh: () => snapshot, dispose() {} };
+  const shell = { ...FRONT_DOOR_SHELL, environments: [], nav: { label: ref("nav.label"), links: [{ href: "#privacy-choices", label: ref("nav.docs") }] } };
+  const bare = render(frame(shell, <h1>View heading</h1>));
+  expect(bare.container.querySelector("[data-consent-banner]")).toBeNull();
+  bare.unmount();
+  const view = render(<ConsentExperience copy={copy} createLifecycle={() => lifecycle} reviewSeam={false}>{frame(shell, <h1>View heading</h1>)}</ConsentExperience>);
+  const toggle = view.getByRole("button", { name: "Primary" });
+  fireEvent.click(toggle);
+  const opener = view.getByRole("link", { name: "Docs" });
+  act(() => opener.focus());
+  act(() => document.dispatchEvent(new Event("privacy-choices:open")));
+  const notice = view.container.querySelector("[data-consent-banner]")!;
+  expect(notice).toHaveFocus();
+  expect(toggle).toHaveAttribute("aria-expanded", "true");
+  expect(opener.closest(".nav-disclosure-panel")).not.toHaveAttribute("inert");
+  fireEvent.keyDown(notice, { key: "Escape" });
+  expect(view.container.querySelector("[data-consent-banner]")).toBeNull();
+  expect(opener).toHaveFocus();
+  expect(opener.closest(".nav-disclosure-panel")).not.toHaveAttribute("inert");
+  expect(document.body.style.overflow).toBe("");
+  fireEvent.keyDown(opener, { key: "Escape" });
+  expect(toggle).toHaveFocus();
+  expect(opener.closest(".nav-disclosure-panel")).toHaveAttribute("inert");
+});
+
+
+it("HEADER-1 retains the current environment indication on its mobile primary icon", () => {
+  const { container } = render(frame(siteShellFor(CONFIG, "demo"), <h1>Demo view</h1>));
+  const mobile = container.querySelector<HTMLAnchorElement>("header [data-header-primary]")!;
+  expect(mobile).toHaveAttribute("aria-current", "true");
+  expect(mobile).toHaveTextContent("Demo");
+  expect(mobile.style.boxShadow).toContain("inset");
 });
