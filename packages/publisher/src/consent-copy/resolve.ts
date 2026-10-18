@@ -10,6 +10,8 @@ export interface ConsentCopyRefs {
   acceptLabel: CopyRef;
   rejectLabel: CopyRef;
   privacyLinkLabel: CopyRef;
+  /** Optional card sentence trail, resolved with the same checks as required fields. */
+  trailingText?: CopyRef;
   status: {
     memoryOnly: CopyRef;
     withdrawalFailed: CopyRef;
@@ -126,5 +128,6 @@ export function resolveConsentCopy(input: ResolveConsentCopyInput): ResolvedCons
   for (const field of STATUS_FIELDS) {
     status[field] = resolveField(`status.${field}`, (statusRefs as Record<string, unknown>)[field], resolveCopy, locale, production);
   }
-  return { ...(resolved as Omit<ResolvedConsentCopy, "status">), status: status as ResolvedConsentStatusCopy };
+  const trailing = refs.trailingText === undefined ? {} : { trailingText: resolveField("trailingText", refs.trailingText, resolveCopy, locale, production) };
+  return { ...(resolved as Omit<ResolvedConsentCopy, "status">), ...trailing, status: status as ResolvedConsentStatusCopy };
 }

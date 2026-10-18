@@ -5,6 +5,7 @@ import userEvent from "@testing-library/user-event";
 import { hydrateRoot } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import { readdirSync, readFileSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ResolvedConsentCopy, ResolvedCopyField } from "../../consent-copy/types.js";
@@ -988,7 +989,7 @@ describe("ConsentExperience: regime-aware copy (P-28)", () => {
   ])("omits the policy link for %s and logs it", (href) => {
     const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
     const { factory } = recordingFactory(() => fakeLifecycle({ promptAutomatically: true }));
-    render(<ConsentExperience copy={COPY} createLifecycle={factory} policyLink={{ href }} {...NOTICE_REVIEW_OFF} />);
+    render(<ConsentExperience copy={COPY} createLifecycle={factory} presentation="banner" policyLink={{ href }} {...NOTICE_REVIEW_OFF} />);
     expect(banner()).not.toBeNull();
     // The decision is the assembly's: no anchor is created at all, whatever React would do with the href.
     expect(banner()!.querySelector("a")).toBeNull();
@@ -1011,5 +1012,66 @@ describe("ConsentExperience: client entry directive (C-49)", () => {
   it.each(CLIENT_ENTRY_MODULES)("%s begins with the use client directive", (file) => {
     const source = readFileSync(join(import.meta.dirname, file), "utf8");
     expect(source.startsWith('"use client";\n')).toBe(true);
+  });
+});
+
+
+describe("CONSENT-1 card composition", () => {
+  it("retains the immutable-base mounted banner HTML when explicitly selected", () => {
+    render(<ConsentExperience copy={COPY} createLifecycle={() => fakeLifecycle({ promptAutomatically: true })} presentation="banner" policyLink={{ href: "/privacy" }} {...NOTICE_REVIEW_OFF} />);
+    const html = banner()!.outerHTML.replace(/\bid="[^"]+"/g, 'id="ID"').replace(/\baria-labelledby="[^"]+"/g, 'aria-labelledby="ID"');
+    const hash = createHash("sha256").update(html).digest("hex");
+    expect(hash).toBe("93eb912deb9a13355a2127d64b39039a278020624a9c96b605ed1a8eb36f9de3");
+  });
+
+  const sentence = "We use analytics to see which pages are read. It stays off unless you allow it. Details are in our privacy policy.";
+  const cardCopy: ResolvedConsentCopy = { ...COPY, promptLead: field("We use analytics to see which pages are read. It stays off unless you allow it. Details are in our "), privacyLinkLabel: field("privacy policy"), trailingText: field(".") };
+
+  it("defaults to the card and places the sanctioned link inside the lead/link/trail sentence", () => {
+    const lifecycle = fakeLifecycle({ promptAutomatically: true });
+    render(<ConsentExperience copy={cardCopy} createLifecycle={() => lifecycle} policyLink={{ href: "/privacy" }} {...NOTICE_REVIEW_OFF} />);
+    expect(banner()).toHaveClass("consent-card");
+    expect(screen.getByRole("heading", { name: "Notice title" })).toHaveClass("sr-only");
+    const link = screen.getByRole("link", { name: "privacy policy" });
+    expect(link.parentElement).toHaveTextContent(sentence);
+    expect(link.parentElement!.textContent).toBe(sentence);
+  });
+
+  it("keeps the present label as plain text for an unsanctioned href, without creating an anchor", () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    render(<ConsentExperience copy={cardCopy} createLifecycle={() => fakeLifecycle({ promptAutomatically: true })} policyLink={{ href: "javascript:alert(1)" }} {...NOTICE_REVIEW_OFF} />);
+    expect(banner()!.querySelector("a")).toBeNull();
+    expect(screen.getByText(sentence)).toBeInTheDocument();
+  });
+
+  it("joins caller-authored complete fallback copy when the label is absent", () => {
+    const { privacyLinkLabel: _label, ...copy } = cardCopy;
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    render(<ConsentExperience copy={{ ...copy, promptLead: field("Analytics stays off unless you allow it"), trailingText: field(".") } as ResolvedConsentCopy} createLifecycle={() => fakeLifecycle({ promptAutomatically: true })} policyLink={{ href: "/privacy" }} {...NOTICE_REVIEW_OFF} />);
+    expect(screen.getByText("Analytics stays off unless you allow it.")).toBeInTheDocument();
+    expect(banner()!.querySelector("a")).toBeNull();
+  });
+
+  it("omits an absent trail without adding punctuation and retains the former explicit banner structure", () => {
+    const { rerender } = render(<ConsentExperience copy={COPY} createLifecycle={() => fakeLifecycle({ promptAutomatically: true })} policyLink={{ href: "/privacy" }} {...NOTICE_REVIEW_OFF} />);
+    expect(screen.getByRole("link", { name: "Policy" }).parentElement!.textContent).toBe("Prompt lead sentence. Policy");
+    rerender(<ConsentExperience copy={COPY} createLifecycle={() => fakeLifecycle({ promptAutomatically: true })} presentation="banner" policyLink={{ href: "/privacy" }} {...NOTICE_REVIEW_OFF} />);
+    expect(banner()).not.toHaveClass("consent-card");
+    expect(screen.getByRole("heading", { name: "Notice title" })).not.toHaveClass("sr-only");
+    expect(screen.getByRole("link", { name: "Policy" }).parentElement!.textContent).toBe("Policy");
+    expect(screen.getByRole("button", { name: "Accept" })).not.toHaveAttribute("aria-pressed");
+  });
+
+  it.each(["granted", "denied"] as const)("reads the %s selected feedback from the lifecycle after choice and reopen", (choice) => {
+    const lifecycle = fakeLifecycle({ promptAutomatically: true });
+    render(<ConsentExperience copy={COPY} createLifecycle={() => lifecycle} {...NOTICE_REVIEW_OFF} />);
+    fireEvent.click(screen.getByRole("button", { name: choice === "granted" ? "Accept" : "Reject" }));
+    expect(banner()).toBeNull();
+    act(() => document.dispatchEvent(new Event("privacy-choices:open")));
+    const selected = screen.getByRole("button", { name: choice === "granted" ? "Accept" : "Reject" });
+    expect(selected).toHaveAttribute("aria-pressed", "true");
+    expect(selected.querySelector("[data-consent-selected]")).not.toBeNull();
+    expect(screen.getByRole("button", { name: choice === "granted" ? "Reject" : "Accept" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("status")).toBeEmptyDOMElement();
   });
 });

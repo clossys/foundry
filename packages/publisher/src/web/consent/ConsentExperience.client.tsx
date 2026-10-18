@@ -24,6 +24,8 @@ import { normaliseReopenEvent, normaliseReopenFragment, useConsentReopen } from 
 import { buildSeamLifecycle, DEFAULT_REVIEW_PARAM, readReviewSeamValue } from "./review-seam.js";
 
 export interface ConsentExperienceProps {
+  /** Compact pinned `card` by default; `banner` retains the former in-flow presentation. */
+  presentation?: "card" | "banner";
   /** Copy resolved on the server with `resolveConsentCopy`. */
   copy: ResolvedConsentCopy;
   /** Builds the lifecycle. Called on client mount only, and honours every field of its input. */
@@ -135,6 +137,7 @@ function returnFocus(opener: Element | null, wrapper: HTMLElement | null): void 
 export function ConsentExperience(props: ConsentExperienceProps): ReactNode {
   const { copy, transport, policyLink, reopen, reviewSeam, children } = props;
   const required = props.required ?? true;
+  const presentation = props.presentation ?? "card";
   const seamParam = reviewSeam === false ? null : (reviewSeam?.param ?? DEFAULT_REVIEW_PARAM);
   const reopenFragment = normaliseReopenFragment(reopen?.fragment);
   const reopenEvent = normaliseReopenEvent(reopen?.eventName);
@@ -373,19 +376,34 @@ export function ConsentExperience(props: ConsentExperienceProps): ReactNode {
     }
   }, [visible, statusCopyMissing, statusKey]);
 
+  const inlinePolicy = linkLabel === undefined ? null : policyLinkShown ? <Link href={policyHref}>{linkLabel}</Link> : linkLabel;
+  const cardBody = (
+    <>
+      {body}
+      {inlinePolicy !== null ? <>{body !== undefined && /\s$/.test(body) ? null : " "}{inlinePolicy}</> : null}
+      {copyText(copy.trailingText)}
+    </>
+  );
+
   return (
     <ConsentContext.Provider value={contextValue}>
       {children}
       {visible && !noticeCopyMissing ? (
         <div ref={wrapperRef} data-consent-experience="" onKeyDown={handleKeyDown}>
           <ConsentBanner
+            presentation={presentation}
+            selectedChoice={
+              presentation === "card" && (snapshot.effective === "granted" || snapshot.effective === "denied")
+                ? snapshot.effective
+                : undefined
+            }
             title={title}
-            body={body}
+            body={presentation === "card" ? cardBody : body}
             acceptLabel={acceptLabel}
             rejectLabel={rejectLabel}
             onAccept={seamFailed ? inert : handleAccept}
             onReject={seamFailed ? inert : handleReject}
-            privacyLink={policyLinkShown ? <Link href={policyHref}>{linkLabel}</Link> : undefined}
+            privacyLink={presentation === "banner" && policyLinkShown ? <Link href={policyHref}>{linkLabel}</Link> : undefined}
             status={statusCopyMissing ? undefined : statusCopy?.text}
           />
         </div>

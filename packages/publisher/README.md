@@ -4789,6 +4789,25 @@ transport whether it may send. It declares the lifecycle and transport ports
 structurally and imports no consent or analytics implementation: the host
 composes those and passes them in.
 
+The default `presentation="card"` is a compact pinned notice: bottom-start
+on desktop and bottom-centre on phones, with safe-area gutters, glass and a
+hairline, two equal outlined choices and a visually hidden title that keeps
+the region named. `presentation="banner"` retains the former in-flow markup,
+visible title and separate policy link. Mounting remains the host's choice.
+A choice still closes the notice; reopening shows a check and `aria-pressed`
+for the lifecycle's effective granted or denied choice. Escape, reopen focus,
+transport binding and the polite status region retain their behavior.
+
+For a card, `ConsentCopyRefs.trailingText?` resolves to
+`ResolvedConsentCopy.trailingText?` with the same provenance and validation
+as the required copy. Its text follows the lead and inline policy label;
+omitting it adds no punctuation. An unsanctioned policy href keeps a present
+label as plain text and creates no anchor. When the label is absent, author
+the lead and trail to form a complete sentence without it; the assembly
+does not infer grammar. The banner keeps its former copy and link rendering.
+This source unit proves server rendering, hydration and jsdom interaction;
+it does not establish browser or accessibility-audit qualification.
+
 - **Copy is resolved on the server.** `resolveConsentCopy` from
   `@clossys/publisher/consent-copy` resolves every notice and status string
   through a Writer `CopyResolver` and refuses a missing field, a draft,
