@@ -6254,6 +6254,8 @@ not a grab-bag).
 | `Item` | component | Standalone item with required treatment, size and ground; one title link and independent copy, badge, meta and visual slots. |
 | `Items` | component | Canonical bounded collection with labelled groups, numbered or connected order, two to four actor lanes, and independent disclosed rows. |
 | `ItemData` | type | Stable id and heading; optional description, eyebrow, icon, meta, visual, href, span, badge and connected lane ID. |
+| `ItemFigureData` | type | The existing figure slot: required ReactNode value, optional authored delta and `up`, `down` or `neutral` trend. |
+| `ItemStatusData` | type | The existing status slot: an existing status tone and a visible ReactNode label. |
 | `ItemProps` | type | ItemData plus required treatment, size and ground, and optional headingLevel (`3 \| 4`; omission keeps a paragraph). |
 | `ItemBadge` | type | ReactNode label and optional existing Badge tone. |
 | `ItemSize` | type | `"standard" \| "display"`. |
@@ -6297,6 +6299,9 @@ not a grab-bag).
 | `ScenePersonLayout` | type | Person row bounds and decider-ring flag. |
 | `Matrix` | component | Two parallel sides on equal plates, or a responsive grid of authored comparison cells. |
 | `MatrixProps` | type | Optional `arrangement: "sides"` with two sides, or `arrangement: "grid"` with columns, rows, cell records and authored labels, including five-level mark labels and a visible key when marks occur; shared ground/heading controls and native root attributes except `title`. |
+| `MatrixGridProps` | type | The `arrangement: "grid"` member of MatrixProps with columns, rows, authored cells and grid labels. |
+| `MatrixQuadrantProps` | type | The `arrangement?: "sides"` member of MatrixProps with exactly two parallel sides. |
+| `MatrixCellData` | type | One authored text, figure, status, empty or mark cell in a grid row. |
 | `MatrixSide` | type | Stable id, required heading and optional label/description; a union requiring points or visual, never both. Labels appear on both sides or neither. |
 | `MatrixHeadingLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
 | `Specimen` | component | Labelled figure of 1 to 3 static product-UI panels (`single`, `row`, `stack`, `flow`); budgets validated. |

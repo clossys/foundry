@@ -7,6 +7,10 @@ export type ItemSize = "standard" | "display";
 export type ItemTreatment = "plain" | "rule" | "plate";
 export type ItemSpan = "third" | "half" | "two-thirds" | "full";
 export interface ItemBadge { label: ReactNode; tone?: BadgeVariant }
+/** A focal measurement with authored delta copy and an optional direction. */
+export type ItemFigureData = { value: ReactNode; delta?: ReactNode; trend?: "up" | "down" | "neutral" };
+/** A shaped status mark with its visible state label. */
+export type ItemStatusData = { tone: StatusMarkTone; label: ReactNode };
 /** Copy and visual slots for one item. Linked items must contain no other controls. */
 export interface ItemData {
   id: string;
@@ -20,9 +24,9 @@ export interface ItemData {
   span?: ItemSpan;
   badge?: ItemBadge;
   /** A focal measurement; its authored delta includes its own sign. */
-  figure?: { value: ReactNode; delta?: ReactNode; trend?: "up" | "down" | "neutral" };
+  figure?: ItemFigureData;
   /** A shaped mark and visible state label, distinct from a badge. */
-  status?: { tone: StatusMarkTone; label: ReactNode };
+  status?: ItemStatusData;
   /** Actor id in a connected sequence with two, three or four lanes. */
   lane?: string;
 }
