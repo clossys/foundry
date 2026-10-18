@@ -196,3 +196,7 @@ export type {
   InstanceBlockBinding, BlockRoleBindingRefIdentity, BlockRoleBindingIdentity,
   BlockRoleBindingReason, BlockRoleBindingValidationResult,
 } from "./block-role-binding.js";
+export { WEB_ROLE_PAIR_BINDINGS, WEB_ROLE_PAIR_EVIDENCE, validateWebRolePairEvidence } from "./web-role-pair-evidence.js";
+export type {
+  WebRolePairStatus, WebRolePairCheck, WebRolePairEvidence, WebRolePairEvidenceResult,
+} from "./web-role-pair-evidence.js";
