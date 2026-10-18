@@ -4243,7 +4243,7 @@ export const ATOM_API_FACTS: Readonly<Record<string, AtomApiFacts>> = {
           "property": "--color-chart-categorical-1",
           "kind": "transitive",
           "source": "src/charts/internal/chart-vars.ts",
-          "evidence": "return `var(--color-chart-categorical-${slot},",
+          "evidence": "TOKENS[\"--color-chart-categorical-1\"]!.value",
           "via": [
             {
               "source": "src/charts/Sparkline.tsx",

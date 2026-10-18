@@ -816,7 +816,7 @@ No finite scalar options are represented here; read the real prop type for autho
 
 
 Token dependency coverage: partial. Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.
-- `--color-chart-categorical-1` (transitive): `src/charts/internal/chart-vars.ts`: ``return `var(--color-chart-categorical-${slot},``; consumed via `src/charts/Sparkline.tsx`: `color ?? assignCategoricalColor(0)`.
+- `--color-chart-categorical-1` (transitive): `src/charts/internal/chart-vars.ts`: `TOKENS["--color-chart-categorical-1"]!.value`; consumed via `src/charts/Sparkline.tsx`: `color ?? assignCategoricalColor(0)`.
 
 ##### `depict.waterfall-chart` — WaterfallChart
 

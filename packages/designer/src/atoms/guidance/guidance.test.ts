@@ -239,11 +239,11 @@ describe("shared atom guidance", () => {
         expect(token.property).toMatch(/^--/);
         expect(Object.hasOwn(TOKENS, token.property), `${id} uses a real token identity`).toBe(true);
         const tokenSource = readFileSync(join(root, token.source), "utf8");
+        expect(token.evidence, `${id}: evidence must name the same token`).toContain(token.property);
         if (token.property === "--color-chart-categorical-1") {
           expect(tokenSource).toContain("const slot = index + 1;");
           expect(tokenSource).toContain('TOKENS["--color-chart-categorical-1"]');
         } else {
-          expect(token.evidence, `${id}: evidence must name the same token`).toContain(token.property);
           expect(tokenSource).toContain(token.property);
         }
         if (token.kind === "transitive") {
@@ -315,7 +315,7 @@ describe("shared atom guidance", () => {
     expect(new Set(ids).size).toBe(ids.length);
     expect(ids.sort()).toEqual(Object.keys(guidance()).sort());
     const categoricalEvidence = facts()["depict.sparkline"].tokens.dependencies[0].evidence;
-    expect(categoricalEvidence).toContain("`");
-    expect(text).toContain(`\`\`${categoricalEvidence}\`\``);
+    expect(categoricalEvidence).toContain("--color-chart-categorical-1");
+    expect(text).toContain("`" + categoricalEvidence + "`");
   });
 });
