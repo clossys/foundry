@@ -6170,3 +6170,41 @@ export const element = createElement(LandingView, {
   resolveAssetId: id => id === "example.image" ? fill : undefined,
 });
 ```
+
+## Block role descriptors
+
+The catalog has five tiers: Tokens, Atoms, Blocks, Instances and Packs. Frame and
+View are Block roles. Existing `SiteFrame`, `LandingView`, `LegalView`, internal `PageLayout`
+and canvas `Frame` contracts and imports keep their existing meaning.
+
+Publisher/core exports `BlockRoleDescriptor`, `BlockRoleAdapterContract` and
+`validateBlockRole(input, knownAdapters)`. `BlockRole` names the two roles;
+`BlockRoleClaim` carries an unverified bare tag. `BlockRoleAdapter` and
+`BlockRoleConfigValue` describe the public reference and JSON configuration;
+`BlockRoleRegion` names its child/content boundary. `BlockRoleValidationResult`
+and `BlockRoleReason` distinguish shape errors, unverified claims and assessment
+outcomes. A descriptor names its Block, exact
+role, separate `BlockRoleMedium` (`Channel` or `video`), public adapter owner,
+subpath, export and JSON configuration. Named regions reuse the flow-slot key
+and required flag, with explicit child-role and content contracts. Optional means
+occupancy is optional; the named region definition still belongs in the inventory. Content,
+runtime, required/provided lifecycle obligations and flow, geometry or sequence
+layout must match a separately supplied known candidate declaration. Array order
+is part of child-role, content, runtime and lifecycle contracts; region inventory
+matches by key. JSON configuration object-key order is not significant.
+
+Web frames declare a sole main and a skip target naming a required region key;
+the adapter must bind that named region to the actual DOM target at render time.
+Web views declare no main or skip target. Web layout is flow; non-web layout follows the candidate declaration and
+carries no HTML landmark claim. Video is unsupported. Evidence names a lowercase
+40-character source revision and a real calendar date in `YYYY-MM-DD` form.
+
+Malformed data returns `shape-error` with a field path. Unknown adapters,
+configuration or obligation mismatches return typed `unverified` reasons;
+role/medium mismatches and video return `unsupported`. Even a valid descriptor
+returns `unverified` with `measurement-required`: caller declarations and input
+`qualified` flags cannot grant qualification. The result vocabulary reserves
+`qualified` for measured evidence; this validator never emits it. Bare booleans,
+exact role strings and role-only declarations return `unverified` with `role-claim`
+and the original claim, without fabricating a complete descriptor. No adapter measurements, Instance
+binding, pair compatibility or legacy serialized-reference migration ships here.
