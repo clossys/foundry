@@ -191,3 +191,8 @@ export type {
   BlockRoleAdapter, BlockRoleRegion, BlockRoleDescriptor,
   BlockRoleAdapterContract, BlockRoleReason, BlockRoleValidationResult,
 } from "./block-role.js";
+export { validateBlockRoleBinding } from "./block-role-binding.js";
+export type {
+  InstanceBlockBinding, BlockRoleBindingRefIdentity, BlockRoleBindingIdentity,
+  BlockRoleBindingReason, BlockRoleBindingValidationResult,
+} from "./block-role-binding.js";

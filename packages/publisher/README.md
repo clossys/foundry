@@ -6211,5 +6211,32 @@ returns `unverified` with `measurement-required`: caller declarations and input
 `qualified` flags cannot grant qualification. The result vocabulary reserves
 `qualified` for measured evidence; this validator never emits it. Bare booleans,
 exact role strings and role-only declarations return `unverified` with `role-claim`
-and a copy of the claim, without fabricating a complete descriptor. No adapter measurements, Instance
-binding, pair compatibility or legacy serialized-reference migration ships here.
+and a copy of the claim, without fabricating a complete descriptor. No adapter measurements
+or legacy serialized-reference migration ships here.
+
+## Instance Block bindings
+
+Publisher/core exports `InstanceBlockBinding` and `validateBlockRoleBinding(input,
+knownAdapters)`. A binding has `context` (nonempty, trimmed `consumer` and `brand`,
+plus `medium`), `frameBlockRef` and `viewBlockRef`. Each ref is a complete
+`BlockRoleDescriptor` with the corresponding role. Both are validated independently,
+including when their Block ids coincide. Binding and context keys are closed;
+own data properties are required, and returned identity data is a separate snapshot.
+
+`BlockRoleBindingValidationResult` separates shape errors with field paths from
+`qualified`, `unverified` and `unsupported` outcomes. `BlockRoleBindingReason` names
+the affected ref or pair and a typed code. Swapped roles, medium/context mismatches
+and a web view owning main are unsupported. Descriptor assessment reasons remain
+scoped to each ref; unsupported takes precedence over unverified.
+
+`BlockRoleBindingIdentity` contains context and two `BlockRoleBindingRefIdentity`
+records: Block id, role, medium, adapter owner/subpath/export, exact `configDigest`
+and source revision. The digest is `sha256:<lowercase hex>` over UTF-8 canonical
+JSON: object keys sorted lexically by JavaScript string order, arrays in order,
+and JSON scalar serialization (including negative zero as zero). Identity is
+available after both descriptor shapes and pair compatibility checks pass;
+its presence is not evidence of qualification. Caller digests, flags and result
+statuses confer no authority. Compatible known declarations remain `unverified` with
+`measurement-required` on both refs. This validator never emits `qualified`;
+future measured records must establish both roles against the same identity.
+Legacy serialized references are neither parsed nor rewritten.
