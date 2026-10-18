@@ -109,13 +109,16 @@ export function SiteFrame({ shell, resolveCopy, resolveAsset, children }: SiteFr
       <Brandmark variant="lockup" size={brand.size} label={brand.label} wordmark={brand.wordmark} markSrc={brand.markSrc} plate={brand.plate} tone={brand.tone} />
     );
 
-  const nav = resolved.nav ? <SiteNavDisclosure nav={resolved.nav} /> : undefined;
+  const mobileActions = resolved.mobileLayout === "menu-brand-action"
+    ? resolved.actions.map(({ href, label, emphasis }) => ({ href, label, emphasis }))
+    : undefined;
+  const nav = resolved.nav ? <SiteNavDisclosure nav={resolved.nav} actions={mobileActions} /> : undefined;
 
   const actions =
     resolved.actions.length > 0 || resolved.iconActions.length > 0 || resolved.environments.length > 0 ? (
       <>
         {resolved.actions.map((link, index) => (
-          <SiteHeader.ActionLink key={`action-${index}`} href={link.href} label={link.label} variant={link.emphasis} />
+          <SiteHeader.ActionLink key={`action-${index}`} href={link.href} label={link.label} icon={link.icon} variant={link.emphasis} />
         ))}
         {resolved.iconActions.map((link, index) => (
           <IconLink key={`icon-action-${index}`} link={link} />
@@ -186,6 +189,7 @@ export function SiteFrame({ shell, resolveCopy, resolveAsset, children }: SiteFr
         brand={brandmark}
         nav={nav}
         navPlacement={resolved.navPlacement}
+        mobileLayout={resolved.mobileLayout}
         secondaryAction={resolved.secondaryAction ? <SiteHeader.ActionLink href={resolved.secondaryAction.href} label={resolved.secondaryAction.label} /> : undefined}
         actions={actions}
         surfaceLabel={resolved.surfaceLabel}

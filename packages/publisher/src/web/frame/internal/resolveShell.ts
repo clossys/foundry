@@ -24,13 +24,14 @@ export interface ResolvedSiteShell {
     readonly wordmark?: string;
   };
   readonly skipLink: string;
-  readonly nav?: { readonly tone?: "auto" | "inverse"; readonly label: string; readonly triggerLabel: string; readonly links: readonly ResolvedSiteLink[] };
-  readonly actions: readonly (ResolvedSiteLink & { readonly emphasis: "primary" | "secondary" })[];
+  readonly nav?: { readonly tone?: "auto" | "inverse"; readonly label: string; readonly triggerLabel: string; readonly trigger: "label" | "icon"; readonly links: readonly ResolvedSiteLink[] };
+  readonly actions: readonly (ResolvedSiteLink & { readonly emphasis: "primary" | "secondary"; readonly icon?: IconNode })[];
   readonly iconActions: readonly ResolvedSiteIconLink[];
   readonly secondaryAction?: ResolvedSiteLink;
   readonly environments: readonly (ResolvedSiteLink & { readonly icon: IconNode; readonly isCurrent: boolean })[];
   readonly surfaceLabel?: string;
   readonly navPlacement: "leading" | "centered";
+  readonly mobileLayout: "inline" | "menu-brand-action";
   readonly ground: SiteChromeGround;
   readonly header:
     | { readonly placement: "reserved"; readonly ground: SiteChromeGround }
@@ -56,6 +57,7 @@ const SHELL_KEYS = new Set([
   "environments",
   "surfaceLabel",
   "navPlacement",
+  "mobileLayout",
   "ground",
   "header",
   "footer",
@@ -63,9 +65,9 @@ const SHELL_KEYS = new Set([
 ]);
 const HEADER_KEYS = new Set(["placement", "ground", "tone"]);
 const BRAND_KEYS = new Set(["assetId", "label", "size", "plate", "variant", "wordmark", "tone"]);
-const NAV_KEYS = new Set(["label", "triggerLabel", "links", "tone"]);
+const NAV_KEYS = new Set(["label", "triggerLabel", "trigger", "links", "tone"]);
 const LINK_KEYS = new Set(["href", "label"]);
-const ACTION_KEYS = new Set(["href", "label", "emphasis"]);
+const ACTION_KEYS = new Set(["href", "label", "emphasis", "icon"]);
 const ENVIRONMENT_KEYS = new Set(["href", "label", "icon", "isCurrent"]);
 const ICON_LINK_KEYS = new Set(["href", "label", "icon"]);
 const SOCIAL_KEYS = new Set(["label", "links"]);
@@ -283,6 +285,7 @@ export function resolveShell(input: SiteShellInput, resolveCopy: CopyResolver, r
       label,
       ...(navFields.tone === undefined ? {} : { tone: oneOf(navFields.tone, "shell.nav.tone", ["auto", "inverse"] as const) }),
       triggerLabel: navFields.triggerLabel === undefined ? label : copy(navFields.triggerLabel, "shell.nav.triggerLabel", resolveCopy),
+      trigger: navFields.trigger === undefined ? "label" : oneOf(navFields.trigger, "shell.nav.trigger", ["label", "icon"] as const),
       links: links(navFields.links, "shell.nav.links"),
     };
   }
@@ -363,6 +366,7 @@ export function resolveShell(input: SiteShellInput, resolveCopy: CopyResolver, r
       return {
         href: href(fields.href, `${path}.href`, base),
         label: copy(fields.label, `${path}.label`, resolveCopy),
+        ...(fields.icon === undefined ? {} : { icon: icon(fields.icon, `${path}.icon`) }),
         emphasis: fields.emphasis === undefined ? "secondary" : oneOf(fields.emphasis, `${path}.emphasis`, ["primary", "secondary"] as const),
       };
     }),
@@ -371,6 +375,7 @@ export function resolveShell(input: SiteShellInput, resolveCopy: CopyResolver, r
     environments,
     ...(shell.surfaceLabel === undefined ? {} : { surfaceLabel: copy(shell.surfaceLabel, "shell.surfaceLabel", resolveCopy) }),
     navPlacement: shell.navPlacement === undefined ? "leading" : oneOf(shell.navPlacement, "shell.navPlacement", ["leading", "centered"] as const),
+    mobileLayout: shell.mobileLayout === undefined ? "inline" : oneOf(shell.mobileLayout, "shell.mobileLayout", ["inline", "menu-brand-action"] as const),
     ground,
     header,
     ...(footer === undefined ? {} : { footer }),

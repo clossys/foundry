@@ -10,7 +10,7 @@ const TOGGLE_CLASSES = buttonLinkClassName("ghost", "sm")
 const TAP_TARGET = "var(--ui-layout-tap-target, 44px)";
 
 /** Initial Designer disclosure markup for raw server imports; the client bridge supplies interaction. */
-function ServerNavDisclosure({ label, triggerLabel, tone, children }: { readonly label: string; readonly triggerLabel: string; readonly tone?: "auto" | "inverse"; readonly children: ReactNode }) {
+function ServerNavDisclosure({ label, triggerLabel, trigger, tone, children }: { readonly label: string; readonly triggerLabel: string; readonly trigger: "label" | "icon"; readonly tone?: "auto" | "inverse"; readonly children: ReactNode }) {
   // Match Designer’s complete inverse look without relying on its optional class merger.
   const inverse = tone === "inverse";
   const look = inverse
@@ -21,13 +21,14 @@ function ServerNavDisclosure({ label, triggerLabel, tone, children }: { readonly
     <nav aria-label={label}>
       <button
         type="button"
+        {...(trigger === "icon" ? { "aria-label": triggerLabel } : {})}
         aria-expanded={false}
         aria-controls={panelId}
         data-tone={tone}
         className={mergeUiClasses(look, "nav-disclosure-toggle", inverse ? "text-ink-on-inverse hover:text-ink-on-inverse aria-expanded:text-ink-on-inverse focus-visible:text-ink-on-inverse hover:bg-control-tonal-inverse-hover focus-visible:outline-ink-on-inverse" : undefined)}
         style={{ minHeight: TAP_TARGET, minWidth: TAP_TARGET }}
       >
-        {triggerLabel}
+        {trigger === "icon" ? <span className="nav-disclosure-icon" aria-hidden="true"><span /><span /><span /></span> : triggerLabel}
       </button>
       <div id={panelId} className="nav-disclosure-panel">
         {children}
@@ -37,10 +38,10 @@ function ServerNavDisclosure({ label, triggerLabel, tone, children }: { readonly
 }
 
 // Match the client wrapper's two component levels so useId agrees during hydration.
-export function SiteNavDisclosure({ nav }: { readonly nav: NonNullable<ResolvedSiteShell["nav"]> }) {
+export function SiteNavDisclosure({ nav, actions }: { readonly nav: NonNullable<ResolvedSiteShell["nav"]>; readonly actions?: ResolvedSiteShell["actions"] }) {
   return (
-    <ServerNavDisclosure label={nav.label} triggerLabel={nav.triggerLabel} tone={nav.tone}>
-      <NavLinks links={nav.links} />
+    <ServerNavDisclosure label={nav.label} triggerLabel={nav.triggerLabel} trigger={nav.trigger} tone={nav.tone}>
+      <NavLinks links={nav.links} actions={actions} />
     </ServerNavDisclosure>
   );
 }
