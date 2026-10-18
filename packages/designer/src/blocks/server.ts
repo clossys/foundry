@@ -56,7 +56,7 @@ export type {
   FeatureGridHeadingLevel,
 } from "./FeatureGrid.js";
 export { Matrix } from "./Matrix.js";
-export type { MatrixProps, MatrixSide, MatrixHeadingLevel } from "./Matrix.js";
+export type { MatrixProps, MatrixGridProps, MatrixQuadrantProps, MatrixCellData, MatrixSide, MatrixHeadingLevel } from "./Matrix.js";
 export { Specimen } from "./specimen/Specimen.js";
 export type { SpecimenProps, SpecimenArrangement } from "./specimen/Specimen.js";
 export { SpecimenPanel } from "./specimen/SpecimenPanel.js";
@@ -167,4 +167,4 @@ export { Item } from "./items/Item.js";
 export { Tree } from "./tree/Tree.js";
 export type { TreeProps, TreeNodeData } from "./tree/Tree.js";
 export { Items } from "./items/Items.server.js";
-export type { ItemData, ItemProps, ItemBadge, ItemSize, ItemTreatment, ItemSpan, ItemsProps, ItemsArrangement, ItemsColumns, ItemsScale, ItemsGroup, ItemsLane } from "./items/types.js";
+export type { ItemData, ItemFigureData, ItemStatusData, ItemProps, ItemBadge, ItemSize, ItemTreatment, ItemSpan, ItemsProps, ItemsArrangement, ItemsColumns, ItemsScale, ItemsGroup, ItemsLane } from "./items/types.js";

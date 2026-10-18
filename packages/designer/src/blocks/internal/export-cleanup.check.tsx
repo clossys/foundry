@@ -204,6 +204,27 @@ export type MatrixInventoryAliasParity = Expect<Equal<Blocks.MatrixProps, Packag
 export type MatrixSideAliasParity = Expect<Equal<Blocks.MatrixSide, ServerBlocks.MatrixSide>>;
 export type MatrixSideInventoryAliasParity = Expect<Equal<Blocks.MatrixSide, PackageInventory.MatrixSide>>;
 export type MatrixHeadingAliasParity = Expect<Equal<Blocks.MatrixHeadingLevel, 2 | 3 | 4 | 5 | 6>>;
+
+// Catalog type names preserve the existing fields and match every public barrel.
+export type ItemFigureAliasParity = Expect<Equal<Blocks.ItemFigureData, ServerBlocks.ItemFigureData>>;
+export type ItemFigureInventoryAliasParity = Expect<Equal<Blocks.ItemFigureData, PackageInventory.ItemFigureData>>;
+export type ItemFigureFieldIdentity = Expect<Equal<NonNullable<Blocks.ItemData["figure"]>, Blocks.ItemFigureData>>;
+export type ItemFigureShapeIdentity = Expect<Equal<Blocks.ItemFigureData, { value: ReactNode; delta?: ReactNode; trend?: "up" | "down" | "neutral" }>>;
+export type ItemStatusAliasParity = Expect<Equal<Blocks.ItemStatusData, ServerBlocks.ItemStatusData>>;
+export type ItemStatusInventoryAliasParity = Expect<Equal<Blocks.ItemStatusData, PackageInventory.ItemStatusData>>;
+export type ItemStatusFieldIdentity = Expect<Equal<NonNullable<Blocks.ItemData["status"]>, Blocks.ItemStatusData>>;
+export type ItemStatusShapeIdentity = Expect<Equal<Blocks.ItemStatusData, { tone: "success" | "warning" | "danger" | "info" | "neutral"; label: ReactNode }>>;
+export type MatrixCellAliasParity = Expect<Equal<Blocks.MatrixCellData, ServerBlocks.MatrixCellData>>;
+export type MatrixCellInventoryAliasParity = Expect<Equal<Blocks.MatrixCellData, PackageInventory.MatrixCellData>>;
+export type MatrixCellFieldIdentity = Expect<Equal<Blocks.MatrixGridProps["rows"][number]["cells"][string], Blocks.MatrixCellData>>;
+export type MatrixMarkCellIdentity = Expect<Equal<Extract<Blocks.MatrixCellData, { type: "mark" }>, { type: "mark"; value: 0 | 1 | 2 | 3 | 4 }>>;
+export type MatrixGridAliasParity = Expect<Equal<Blocks.MatrixGridProps, ServerBlocks.MatrixGridProps>>;
+export type MatrixGridInventoryAliasParity = Expect<Equal<Blocks.MatrixGridProps, PackageInventory.MatrixGridProps>>;
+export type MatrixGridMemberIdentity = Expect<Equal<Extract<Blocks.MatrixProps, { arrangement: "grid" }>, Blocks.MatrixGridProps>>;
+export type MatrixQuadrantAliasParity = Expect<Equal<Blocks.MatrixQuadrantProps, ServerBlocks.MatrixQuadrantProps>>;
+export type MatrixQuadrantInventoryAliasParity = Expect<Equal<Blocks.MatrixQuadrantProps, PackageInventory.MatrixQuadrantProps>>;
+export type MatrixQuadrantMemberIdentity = Expect<Equal<Extract<Blocks.MatrixProps, { arrangement?: "sides" }>, Blocks.MatrixQuadrantProps>>;
+export type MatrixMembersIdentity = Expect<Equal<Blocks.MatrixProps, Blocks.MatrixQuadrantProps | Blocks.MatrixGridProps>>;
 export type PublishedNavKeys = Expect<Equal<keyof Blocks.NavGridProps, "heading" | "items" | "className" | "style">>;
 export type PublishedNavItemKeys = Expect<Equal<keyof Blocks.NavGridItem, "id" | "title" | "description" | "icon" | "href" | "onSelect">>;
 void <Blocks.NavGrid items={Object.freeze([{ id: "one", title: 0, href: "relative-path" }, { id: "two", title: null, onSelect: () => {} }])} />;
