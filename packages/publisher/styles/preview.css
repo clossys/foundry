@@ -3266,6 +3266,29 @@
       border-color: currentcolor;
     }
   }
+  .\[\&_\.col-start-3\]\:max-w-full .col-start-3 {
+    max-width: 100%;
+  }
+  .\[\&_\.col-start-3\]\:min-w-0 .col-start-3 {
+    min-width: 0px;
+  }
+  .\[\&_\.col-start-3\]\:flex-wrap .col-start-3 {
+    flex-wrap: wrap;
+  }
+  .\[\&_\.col-start-3\]\:justify-end .col-start-3 {
+    justify-content: flex-end;
+  }
+  .\[\&_\.col-start-3\]\:wrap-anywhere .col-start-3 {
+    overflow-wrap: anywhere;
+  }
+  @media (width < 768px) {
+    .max-tablet\:\[\&_\.col-start-3\]\:w-full .col-start-3 {
+      width: 100%;
+    }
+  }
+  .\[\&_\.col-start-3\>\*\]\:max-w-full .col-start-3 > * {
+    max-width: 100%;
+  }
   .\[\&_a\]\:text-ink-link a {
     color: var(--color-ink-link, oklch(0.36 0 0));
   }
@@ -3434,6 +3457,9 @@
   .\[\&_img\]\:rounded-control img {
     border-radius: var(--radius-control, 6px);
   }
+  .\[\&_img\]\:object-contain img {
+    object-fit: contain;
+  }
   .\[\&_li\]\:text-body li {
     font-size: var(--text-body, 15px);
   }
@@ -3503,6 +3529,11 @@
   }
   .\[\&_ul\]\:text-ink-primary ul {
     color: var(--color-ink-primary, oklch(0.2178 0 0));
+  }
+  @media (width < 768px) {
+    .max-tablet\:\[\&\>div\]\:grid-cols-3\! > div {
+      grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    }
   }
   @media (prefers-reduced-motion: no-preference) {
     html:has(.motion-safe\:\[html\:has\(\&\)\]\:scroll-smooth) {

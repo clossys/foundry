@@ -2773,8 +2773,11 @@ bytes when the new fields are omitted.
 For a mobile header with the menu at inline-start, a centered logo and an
 icon CTA at inline-end, opt into `mobileLayout: "menu-brand-action"` and
 `nav.trigger: "icon"`. Both fields also pass through `SiteFrameConfig.site`.
-From tablet up, the header keeps its existing `navPlacement` layout. The
-icon trigger keeps `triggerLabel` as its accessible name, falling back to
+Below tablet, equal-width columns keep the whole logo centered independently
+of the controls. The logo fits its column without cropping; trailing controls
+wrap within theirs, retaining their tap targets and full labels. From tablet
+up, the header keeps its existing `navPlacement` layout; oversized trailing
+groups wrap within the available width. The icon trigger keeps `triggerLabel` as its accessible name, falling back to
 `nav.label` when the toggle copy is omitted.
 
 ```tsx

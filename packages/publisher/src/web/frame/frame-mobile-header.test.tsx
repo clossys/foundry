@@ -121,6 +121,34 @@ it("passes mobile layout through direct shells and siteShellFor into SiteHeader"
   for (const kind of ["front-door", "admin", "demo"] as const) expect(siteShellFor(config, kind).mobileLayout).toBeUndefined();
 });
 
+// JSDOM cannot measure geometry. Guard the responsive positioning contract here;
+// the Chromium proof measures the actual logo/control rectangles in both directions.
+it.each(["one", "two", "three", "six", "twenty", "secondary", "long-secondary"] as const)("centers the mobile brand independently of %s trailing controls", controls => {
+  const shell: SiteShellInput = {
+    ...base,
+    mobileLayout: "menu-brand-action",
+    nav: { ...base.nav!, trigger: "icon" },
+    actions: Array.from({ length: controls === "twenty" ? 20 : controls === "six" ? 6 : controls === "three" ? 3 : controls === "two" ? 2 : 1 }, (_, index) => ({ ...base.actions![index % 2]!, href: `/action-${index}`, icon })),
+    secondaryAction: controls === "long-secondary" ? { href: "/sign-in", label: ref("Averylongsecondaryactionwithoutwordbreaks") } : controls === "secondary" ? base.secondaryAction : undefined,
+  };
+  for (const server of [false, true]) for (const navPlacement of ["leading", "centered"] as const) {
+    const container = output({ ...shell, navPlacement }, server);
+    const brand = within(container).getByRole("link", { name: "Example home" });
+    expect(container.querySelector("header")).toHaveClass("max-tablet:[&>div]:grid-cols-3!", "[&_.col-start-3]:flex-wrap", "max-tablet:[&_.col-start-3]:w-full", "[&_.col-start-3>*]:max-w-full", "[&_.col-start-3]:wrap-anywhere");
+    expect(brand).toHaveClass("max-w-full", "[&_img]:object-contain");
+    expect(container.querySelectorAll('a[aria-label="Example home"]')).toHaveLength(1);
+    expect(container.querySelectorAll("header nav")).toHaveLength(1);
+  }
+  expect(output(base).querySelector("header")).not.toHaveClass("max-tablet:[&>div]:grid-cols-3!");
+});
+
+it.each([undefined, "auto", "inverse"] as const)("retains overlay brand tone %s in the centered mobile layout", tone => {
+  const shell: SiteShellInput = { ...base, brand: { ...base.brand, tone }, mobileLayout: "menu-brand-action", header: { placement: "overlay", tone: "inverse" } };
+  expect(renderToString(tree(shell))).toBe(renderToString(tree(shell, true)));
+  const brand = within(output(shell)).getByRole("link", { name: "Example home" });
+  expect(brand).toHaveClass(tone === "auto" ? "text-ink-primary" : "text-ink-on-inverse");
+});
+
 it.each([false, true])("puts every full-label action inside the existing mobile disclosure only in the opted-in layout (server=%s)", server => {
   const shell: SiteShellInput = { ...base, mobileLayout: "menu-brand-action", actions: base.actions!.map(action => ({ ...action, icon })) };
   const container = output(shell, server);
