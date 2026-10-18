@@ -185,3 +185,9 @@ export type { CheckPageFlowOptions, SectionShape, SectionWeight, SectionedViewFl
 
 export * from "./content-contract.js";
 export * from "./content-asset.js";
+export { validateBlockRole } from "./block-role.js";
+export type {
+  BlockRole, BlockRoleClaim, BlockRoleMedium, BlockRoleConfigValue,
+  BlockRoleAdapter, BlockRoleRegion, BlockRoleDescriptor,
+  BlockRoleAdapterContract, BlockRoleReason, BlockRoleValidationResult,
+} from "./block-role.js";
