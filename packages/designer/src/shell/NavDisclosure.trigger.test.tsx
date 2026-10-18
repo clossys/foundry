@@ -15,6 +15,39 @@ describe("NavDisclosure trigger", () => {
     expect(renderToStaticMarkup(<NavDisclosure trigger="label" triggerLabel="Sections menu"><a href="#about">About</a></NavDisclosure>)).toBe(DEFAULT_LABEL);
   });
 
+  it.each([undefined, "label", "icon"] as const)("preserves default and caller labels for trigger %s", trigger => {
+    const view = render(<NavDisclosure trigger={trigger}><a href="#about">About</a></NavDisclosure>);
+    const toggle = screen.getByRole("button", { name: "Menu" });
+    expect(toggle.textContent).toBe(trigger === "icon" ? "" : "Menu");
+    if (trigger === "icon") expect(toggle).toHaveAttribute("aria-label", "Menu");
+    else expect(toggle).not.toHaveAttribute("aria-label");
+
+    view.rerender(<NavDisclosure trigger={trigger} triggerLabel="Browse sections"><a href="#about">About</a></NavDisclosure>);
+    expect(screen.getByRole("button", { name: "Browse sections" })).toBe(toggle);
+    expect(toggle.textContent).toBe(trigger === "icon" ? "" : "Browse sections");
+    if (trigger === "icon") expect(toggle).toHaveAttribute("aria-label", "Browse sections");
+    else expect(toggle).not.toHaveAttribute("aria-label");
+  });
+
+  it("preserves the button, controls, expansion and focus when switching trigger modes", () => {
+    const view = render(<NavDisclosure trigger="icon" triggerLabel="Browse sections"><a href="#about">About</a></NavDisclosure>);
+    const toggle = screen.getByRole("button", { name: "Browse sections" });
+    const panel = screen.getByRole("link", { name: "About" }).parentElement!;
+    toggle.focus();
+    fireEvent.click(toggle);
+    const controls = toggle.getAttribute("aria-controls");
+
+    for (const trigger of ["label", "icon"] as const) {
+      view.rerender(<NavDisclosure trigger={trigger} triggerLabel="Browse sections"><a href="#about">About</a></NavDisclosure>);
+      expect(screen.getByRole("button", { name: "Browse sections" })).toBe(toggle);
+      expect(toggle).toHaveAttribute("aria-controls", controls);
+      expect(toggle).toHaveAttribute("aria-expanded", "true");
+      expect(panel).toHaveAttribute("data-expanded");
+      expect(panel.id).toBe(controls);
+      expect(toggle).toHaveFocus();
+    }
+  });
+
   it("renders three decorative token-coloured bars with triggerLabel as its accessible name", () => {
     render(<NavDisclosure trigger="icon" triggerLabel="Sections menu"><a href="#about">About</a></NavDisclosure>);
     const toggle = screen.getByRole("button", { name: "Sections menu" });

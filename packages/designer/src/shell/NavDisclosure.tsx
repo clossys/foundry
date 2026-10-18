@@ -53,19 +53,34 @@ export function NavDisclosure({ children, "aria-label": ariaLabel = "Primary", t
         toggle.current?.focus();
       }}
     >
-      <button
-        ref={toggle}
-        type="button"
-        aria-label={trigger === "icon" ? triggerLabel : undefined}
-        aria-expanded={expanded}
-        aria-controls={panelId}
-        data-tone={tone}
-        className={cx(look, "nav-disclosure-toggle", inverse ? "text-ink-on-inverse hover:text-ink-on-inverse aria-expanded:text-ink-on-inverse focus-visible:text-ink-on-inverse hover:bg-control-tonal-inverse-hover focus-visible:outline-ink-on-inverse" : undefined)}
-        style={{ minHeight: UI_LAYOUT_TAP_TARGET, minWidth: UI_LAYOUT_TAP_TARGET }}
-        onClick={() => setExpanded(value => !value)}
-      >
-        {trigger === "icon" ? <span className="nav-disclosure-icon" aria-hidden="true"><span /><span /><span /></span> : triggerLabel}
-      </button>
+      {trigger === "icon" ? (
+        <button
+          ref={toggle}
+          type="button"
+          aria-label={triggerLabel}
+          aria-expanded={expanded}
+          aria-controls={panelId}
+          data-tone={tone}
+          className={cx(look, "nav-disclosure-toggle", inverse ? "text-ink-on-inverse hover:text-ink-on-inverse aria-expanded:text-ink-on-inverse focus-visible:text-ink-on-inverse hover:bg-control-tonal-inverse-hover focus-visible:outline-ink-on-inverse" : undefined)}
+          style={{ minHeight: UI_LAYOUT_TAP_TARGET, minWidth: UI_LAYOUT_TAP_TARGET }}
+          onClick={() => setExpanded(value => !value)}
+        >
+          <span className="nav-disclosure-icon" aria-hidden="true"><span /><span /><span /></span>
+        </button>
+      ) : (
+        <button
+          ref={toggle}
+          type="button"
+          aria-expanded={expanded}
+          aria-controls={panelId}
+          data-tone={tone}
+          className={cx(look, "nav-disclosure-toggle", inverse ? "text-ink-on-inverse hover:text-ink-on-inverse aria-expanded:text-ink-on-inverse focus-visible:text-ink-on-inverse hover:bg-control-tonal-inverse-hover focus-visible:outline-ink-on-inverse" : undefined)}
+          style={{ minHeight: UI_LAYOUT_TAP_TARGET, minWidth: UI_LAYOUT_TAP_TARGET }}
+          onClick={() => setExpanded(value => !value)}
+        >
+          {triggerLabel}
+        </button>
+      )}
       <div
         id={panelId}
         className="nav-disclosure-panel"
