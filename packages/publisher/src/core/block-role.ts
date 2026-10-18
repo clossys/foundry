@@ -52,15 +52,16 @@ const dense = (value: unknown): value is unknown[] => Array.isArray(value) &&
     typeof key === "string" && (key === "length" || /^(0|[1-9]\d*)$/.test(key)) && "value" in Object.getOwnPropertyDescriptor(value, key)!);
 const strings = (value: unknown): value is string[] => dense(value) && value.every(text) && new Set(value).size === value.length;
 const role = (value: unknown): value is BlockRole => value === "frame" || value === "view";
+const INVALID: unique symbol = Symbol("invalid");
 function snapshot(value: unknown, ancestors = new Set<unknown>(), depth = 0): unknown {
   if (value === null || typeof value !== "object") return value;
-  if (depth >= 64 || ancestors.has(value)) return undefined;
+  if (depth >= 64 || ancestors.has(value)) return INVALID;
   const array = Array.isArray(value);
   const prototype = Object.getPrototypeOf(value);
-  if (prototype !== (array ? Array.prototype : Object.prototype) && (array || prototype !== null)) return undefined;
+  if (prototype !== (array ? Array.prototype : Object.prototype) && (array || prototype !== null)) return INVALID;
   const descriptors = Object.getOwnPropertyDescriptors(value);
   if (Reflect.ownKeys(descriptors).some((key) => typeof key !== "string" ||
-      !Object.hasOwn(descriptors[key]!, "value") || (!descriptors[key]!.enumerable && !(array && key === "length")))) return undefined;
+      !Object.hasOwn(descriptors[key]!, "value") || (!descriptors[key]!.enumerable && !(array && key === "length")))) return INVALID;
   const copy = array ? [] : Object.create(null);
   ancestors.add(value);
   for (const key of Object.keys(descriptors)) {
@@ -109,6 +110,9 @@ function validateSnapshot(input: unknown, knownAdapters: readonly BlockRoleAdapt
   const error = (path: string): BlockRoleValidationResult => ({
     status: "shape-error", path, reason: "Invalid Block role descriptor field.",
   });
+  if (record(input) && Object.hasOwn(input, "role") && role(input.role) &&
+      Object.keys(input).every((key) => key === "role" || key === "qualified") &&
+      input.qualified !== undefined && typeof input.qualified !== "boolean") return error("qualified");
   if (typeof input === "boolean" || role(input) || (record(input) && Object.hasOwn(input, "role") &&
       role(input.role) && Object.keys(input).every((key) => key === "role" || key === "qualified") &&
       (input.qualified === undefined || typeof input.qualified === "boolean"))) {
