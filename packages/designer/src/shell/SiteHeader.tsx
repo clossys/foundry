@@ -91,6 +91,13 @@ export interface SiteHeaderProps extends Omit<HTMLAttributes<HTMLElement>, "chil
    */
   navPlacement?: "leading" | "centered";
   /**
+   * Below tablet, place navigation at inline-start, the brand in a shrinkable
+   * center column and actions at inline-end. From tablet up, `navPlacement`
+   * still controls the row. DOM and tab order remain brand, nav, actions.
+   * @default "inline"
+   */
+  mobileLayout?: "inline" | "menu-brand-action";
+  /**
    * Semantic plate for the header bar — `inverse` for a dark hero band,
    * `transparent` for no plate and no border at all (the page beneath shows
    * through), `transparent-inverse` for the same over a page on the inverse
@@ -197,6 +204,7 @@ function SiteHeaderRoot({
   secondaryAction,
   surfaceLabel,
   navPlacement = "leading",
+  mobileLayout = "inline",
   ground = "base",
   placement = "flow",
   tone = "base",
@@ -206,6 +214,7 @@ function SiteHeaderRoot({
   ...rest
 }: SiteHeaderProps) {
   const overlay = placement === "overlay";
+  const mobileMenu = mobileLayout === "menu-brand-action";
   const colors = SITE_CHROME_GROUND_CLASSES[ground];
   const bordered = siteChromeHasBorder(ground);
   const tonedBrand = isValidElement<BrandmarkProps>(brand) && brand.type === Brandmark && brand.props.tone === undefined
@@ -234,12 +243,12 @@ function SiteHeaderRoot({
     >
       {navPlacement === "centered" ? (
         <div
-          className="mx-auto flex w-full flex-wrap items-center gap-md"
-          style={{ paddingInline: UI_WIDTH_PAGE_PADDING_X }}
+          className={mobileMenu ? "mx-auto grid w-full items-center gap-md tablet:flex tablet:flex-wrap" : "mx-auto flex w-full flex-wrap items-center gap-md"}
+          style={{ paddingInline: UI_WIDTH_PAGE_PADDING_X, ...(mobileMenu ? { gridTemplateColumns: "auto minmax(0, 1fr) auto" } : {}) }}
         >
-          <div className="flex flex-1 items-center">{tonedBrand}</div>
-          {nav ? <div className="flex items-center">{nav}</div> : null}
-          <div className="flex flex-1 items-center justify-end gap-sm">
+          <div className={mobileMenu ? "col-start-2 row-start-1 min-w-0 justify-self-center tablet:flex tablet:flex-1 tablet:items-center" : "flex flex-1 items-center"}>{tonedBrand}</div>
+          {nav ? <div className={mobileMenu ? "col-start-1 row-start-1 tablet:flex tablet:items-center" : "flex items-center"}>{nav}</div> : null}
+          <div className={mobileMenu ? "col-start-3 row-start-1 flex items-center justify-self-end gap-sm tablet:flex-1 tablet:justify-end" : "flex flex-1 items-center justify-end gap-sm"}>
             {secondaryAction}
             {actions}
             {surfaceLabel ? <Badge variant="neutral">{surfaceLabel}</Badge> : null}
@@ -247,15 +256,15 @@ function SiteHeaderRoot({
         </div>
       ) : (
         <div
-          className="mx-auto flex w-full flex-wrap items-center justify-between gap-md"
-          style={{ paddingInline: UI_WIDTH_PAGE_PADDING_X }}
+          className={mobileMenu ? "mx-auto grid w-full items-center gap-md tablet:flex tablet:flex-wrap tablet:justify-between" : "mx-auto flex w-full flex-wrap items-center justify-between gap-md"}
+          style={{ paddingInline: UI_WIDTH_PAGE_PADDING_X, ...(mobileMenu ? { gridTemplateColumns: "auto minmax(0, 1fr) auto" } : {}) }}
         >
-          <div className="flex items-center gap-lg">
-            {tonedBrand}
-            {nav}
+          <div className={mobileMenu ? "contents tablet:flex tablet:items-center tablet:gap-lg" : "flex items-center gap-lg"}>
+            {mobileMenu ? <div className="col-start-2 row-start-1 min-w-0 justify-self-center tablet:contents">{tonedBrand}</div> : tonedBrand}
+            {mobileMenu && nav ? <div className="col-start-1 row-start-1 tablet:contents">{nav}</div> : nav}
           </div>
           {secondaryAction || actions || surfaceLabel ? (
-            <div className="flex items-center gap-sm">
+            <div className={mobileMenu ? "col-start-3 row-start-1 flex items-center justify-self-end gap-sm" : "flex items-center gap-sm"}>
               {secondaryAction}
               {actions}
               {surfaceLabel ? <Badge variant="neutral">{surfaceLabel}</Badge> : null}

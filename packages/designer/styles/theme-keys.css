@@ -647,6 +647,18 @@
     border: 0;
   }
 }
+@utility nav-disclosure-icon {
+  display: inline-flex;
+  flex-direction: column;
+  gap: var(--spacing-xs, 4px);
+  inline-size: var(--ui-icon-md, var(--spacing-xl, 24px));
+  & > span {
+    display: block;
+    inline-size: 100%;
+    block-size: var(--ui-border-hairline, 1px);
+    background-color: currentColor;
+  }
+}
 @utility nav-disclosure-toggle {
   @media (width >= 48rem) { &[aria-expanded] { display: none; } }
   @media (scripting: none) { &[aria-expanded] { display: none; } }
