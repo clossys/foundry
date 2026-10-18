@@ -17,6 +17,39 @@ This package is published to the public npm registry, `https://registry.npmjs.or
 Installing it needs no authentication: no npm token, no `.npmrc` registry
 override, and no GitHub credential of any kind.
 
+## Shared atom selection
+
+`ATOM_GUIDANCE`, `ATOM_API_FACTS` and `ATOM_DISPLAY_GROUPS` are additive data
+exports from `@clossys/designer/atoms`. The barrel remains client-only. Read
+the packed [atom selection guide](skill/atoms-guide.md) for purpose, use and
+avoidance, alternatives, content, anatomy, block composition, accessibility,
+medium evidence, represented configurations and partial token dependencies.
+Four display groups and ten families place forty established atom/chart leaves
+exactly once. Groups and families are navigation; only leaves are selectable.
+Existing IDs such as `act.link` and `reveal.tabs` remain unchanged.
+
+Stable conceptual guidance is separate from each medium’s implementation.
+Web is implemented with source evidence; email, print and video are unassessed.
+`RENDER_ENVIRONMENT` describes import safety, not medium support. Checked facts
+are kept separate from curated semantics; scalar options are a bounded selection,
+not an exhaustive inherited API or a Cartesian product. Package defaults differ
+from consumer preview defaults, and package support differs from consumer-owned
+demonstration coverage. Callbacks, arbitrary children and styles are not config
+axes. Direct and transitive token claims carry partial source evidence.
+
+The public types are `AtomGuidance`, `AtomApiFacts`, `AtomDisplayGroup`,
+`AtomMedium`, `AtomMediumState`, `AtomScalar`, `AtomEvidence`,
+`AtomOptionGuidance`, `AtomCondition`, `AtomConstraint`, `AtomWebImplementation` and
+`AtomMediumGuidance`. Import these from the same existing atoms entry point.
+The installed guide is at `node_modules/@clossys/designer/skill/atoms-guide.md`;
+the launcher copies the selection essentials from `skill/SKILL.md`, not that
+companion file. Consumers should reference the shared records.
+
+Regenerate with `node scripts/generate-atom-docs.mjs` and check with
+`node scripts/check-atom-docs.mjs`. These commands are repository tooling and
+do not ship in the installed package. The generator reads source, never dist,
+and writes the guide and selection section deterministically.
+
 ## Design conformance rate
 
 Independent consumer evidence shows the position's owned metric meets its

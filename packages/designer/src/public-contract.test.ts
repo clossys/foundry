@@ -6,6 +6,15 @@ import { describe, expect, it } from "vitest";
 import ts from "typescript";
 
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
+
+describe("compiled atom guidance public contract", () => {
+  it("intentionally exports the three atom metadata records from the existing client atoms barrel", () => {
+    const entry = join(packageRoot, "dist/atoms/index.js");
+    const script = `import * as atoms from ${JSON.stringify(entry)}; process.stdout.write(JSON.stringify(Object.keys(atoms).filter(key => /^ATOM_/.test(key)).sort()));`;
+    const keys = JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8", cwd: packageRoot }));
+    expect(keys).toEqual(["ATOM_API_FACTS", "ATOM_DISPLAY_GROUPS", "ATOM_GUIDANCE"]);
+  });
+});
 const packageJson = JSON.parse(readFileSync(join(packageRoot, "package.json"), "utf8")) as {
   exports: Record<string, unknown>;
   dependencies?: Record<string, string>;
