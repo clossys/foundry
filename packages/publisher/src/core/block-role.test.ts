@@ -140,6 +140,28 @@ describe("Block role descriptor contract", () => {
     expect(result.status).toBe("unverified");
     if ("descriptor" in result) expect(validate(result.descriptor)).toEqual(result);
   });
+  for (const medium of ["web", "email"] as const) {
+    it.each([
+      ["date", () => new Date(0)],
+      ["prototype", () => Object.create({ main: "sole" })],
+      ["accessor", () => ({ main: "sole", get skipTarget() { throw new Error("must not evaluate"); } })],
+      ["symbol", () => ({ main: "sole", [Symbol("field")]: true })],
+    ] as const)(`refuses malformed optional web %s in ${medium} descriptors`, (_, makeWeb) => {
+      const descriptor: BlockRoleDescriptor = { ...frame, medium, web: medium === "web" ? frame.web : undefined };
+      expect(validateBlockRole({ ...descriptor, web: makeWeb() }, [descriptor])).toMatchObject({ status: "shape-error", path: "web" });
+    });
+  }
+  it("refuses malformed optional qualified claims at their own path", () => {
+    for (const qualified of [new Boolean(true), null, "true", {}, []]) {
+      expect(validate({ role: "frame", qualified })).toMatchObject({ status: "shape-error", path: "qualified" });
+    }
+  });
+  it("preserves omitted and explicit undefined optional fields", () => {
+    for (const claim of [{ role: "frame" }, { role: "frame", qualified: undefined }, { role: "frame", qualified: false }]) expect(validate(claim)).toMatchObject({ status: "unverified", reasons: ["role-claim"] });
+    const descriptor: BlockRoleDescriptor = { ...frame, medium: "email", web: undefined };
+    const omitted = { ...descriptor }; delete omitted.web;
+    for (const input of [omitted, descriptor]) expect(validateBlockRole(input, [descriptor])).toMatchObject({ status: "unverified", reasons: ["measurement-required"] });
+  });
   it("handles throwing and revoked proxies without property get traps", () => {
     const revoked = Proxy.revocable(frame, {}); revoked.revoke();
     for (const input of [revoked.proxy, new Proxy(frame, { getPrototypeOf() { throw revoked.proxy; } }), new Proxy(frame, { getPrototypeOf() { throw new Error("prototype trap"); } }), new Proxy(frame, { ownKeys() { throw new Error("keys trap"); } })]) expect(status(input)).toBe("shape-error");
