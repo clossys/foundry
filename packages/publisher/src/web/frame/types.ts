@@ -139,14 +139,14 @@ export interface SiteShellInput {
 
 /** What the frame needs besides its children: the shell and the runtime ports that resolve its copy and assets. */
 export interface SiteFrameInput {
-  /** Flat semantic presentation overrides; content remains in shell bindings. */
-  readonly presentation?: SiteFramePresentationConfig;
   readonly shell: SiteShellInput;
   readonly resolveCopy: CopyResolver;
   readonly resolveAsset: AssetResolver;
 }
 
 export interface SiteFrameProps extends SiteFrameInput {
+  /** Flat semantic presentation overrides; content remains in shell bindings. */
+  readonly presentation?: SiteFramePresentationConfig;
   /** The page content: one chrome-free view, rendered inside the frame's `<main>`. */
   readonly children: ReactNode;
 }

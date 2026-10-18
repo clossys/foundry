@@ -180,3 +180,9 @@ export type SemanticFrameEntryParity = [import("./index.js").SiteFramePresentati
 export const noSticky: import("./index.js").SiteFramePresentationConfig = { sticky: false };
 // @ts-expect-error semantic configuration is flat primitive data
 export const nestedPresentation: import("./index.js").SiteFramePresentationConfig = { headerTone: {} };
+
+
+// Frame-only renderer configuration must not become an ignored option on wrappers.
+declare const errorDocumentInput: import("../views/GlobalErrorDocument.js").GlobalErrorDocumentFramedProps;
+// @ts-expect-error GlobalErrorDocument forwards only shell and resolver ports, not presentation
+export const ignoredWrapperPresentation: typeof errorDocumentInput = { ...errorDocumentInput, presentation: {} };
