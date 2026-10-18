@@ -6,6 +6,8 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Button as AriaButton } from "react-aria-components";
 import { Dialog, type DialogSize } from "./Dialog.js";
+import { createHash } from "node:crypto";
+import { renderToString } from "react-dom/server";
 
 const compiledCss = readFileSync(
   join(dirname(fileURLToPath(import.meta.url)), "..", "..", "styles", "compiled.css"),
@@ -39,6 +41,21 @@ function BasicDialog({ withExtraField = false }: { withExtraField?: boolean } = 
 }
 
 describe("Dialog", () => {
+  it("preserves the unchanged-base default closed SSR bytes", () => {
+    const html = renderToString(<Dialog trigger={<AriaButton>Open settings</AriaButton>}><Dialog.Heading>Settings</Dialog.Heading></Dialog>);
+    expect(createHash("sha256").update(html).digest("hex")).toBe("dfbe1b382530f7367dca44ceefc065fc003872b3973b092302cadedf090f4c6a");
+  });
+
+  it("preserves the default open wrapper and surface classes when layout hooks are omitted", async () => {
+    render(<BasicDialog />);
+    await userEvent.click(screen.getByRole("button", { name: "Open settings" }));
+    const dialog = await screen.findByRole("dialog");
+    expect(dialog.parentElement?.className).toBe("flex w-full max-w-[28rem]");
+    expect(dialog.parentElement?.getAttribute("style")).toBeNull();
+    expect(dialog.className).toBe("flex max-h-[85vh] w-full flex-col gap-md overflow-auto rounded-control border border-overlay-border bg-overlay-surface p-lg text-body text-ink-primary outline-none");
+    expect(dialog.parentElement?.parentElement?.className).toBe("fixed inset-0 flex items-center justify-center bg-overlay-scrim p-lg");
+  });
+
   it("is closed until the trigger is activated", () => {
     render(<BasicDialog />);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();

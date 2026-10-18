@@ -2423,10 +2423,58 @@ export const ATOM_GUIDANCE: Readonly<Record<string, AtomGuidance>> = {
   ],
   "constraints": []
 }, "src/charts/ScatterChart.tsx"),
+  "enter.resize-handle": entry({
+    purpose: "Adjust the bounded size of one adjacent content pane.",
+    useWhen: "A host exposes a user-adjustable inline width or block height.",
+    avoidWhen: "The boundary is decorative or no dimension can actually change.",
+    alternatives: "Use Separator for a static boundary; ResizablePane for a complete bounded Panel composition.",
+    content: "Supply an accessible name identifying the pane being resized, with finite dimensions and a reset value.",
+    anatomy: "One focusable separator, a token-bound visible edge and a minimum interactive target.",
+    composition: "ResizablePane composes the handle with Panel and owns its uncontrolled or controlled size.",
+    accessibility: "Arrow keys adjust, Home and End reach bounds, Enter resets, and Escape cancels an active pointer drag. Horizontal movement follows inherited or explicit RTL.",
+  }, {
+    exportName: "ResizeHandle", entrypoint: "atoms",
+    notes: "Numeric dimensions, step, reset, names and callbacks are authored inputs. Pointer capture, cancellation and keyboard changes report bounded values through onChange; the Atom is controlled and never stores preferences.",
+    options: [{
+      prop: "orientation", label: "Separator orientation", purpose: "Select the visible separator and its perpendicular movement axis.",
+      values: [{ value: "vertical", purpose: "Inline width, moved horizontally with RTL reversal." }, { value: "horizontal", purpose: "Block height, moved vertically without RTL reversal." }],
+      applicability: "Effective for both pointer and keyboard movement.",
+      support: { state: "implemented", reason: "The component consumes orientation for semantics, visible edge and input axis." },
+    }, {
+      prop: "dir", label: "Explicit direction", purpose: "Override inherited direction for horizontal movement.",
+      values: [{ value: "ltr", purpose: "Right increases inline width." }, { value: "rtl", purpose: "Left increases inline width." }],
+      applicability: "Only horizontal movement reverses; omission follows computed or inherited direction.",
+      support: { state: "implemented", reason: "The component resolves direction when handling each interaction." },
+    }],
+    constraints: [{
+      kind: "data", props: ["value", "min", "max", "resetValue", "step"],
+      reason: "All dimensions must be finite, bounds ordered and step positive; emitted values and the reset are clamped to the supplied bounds.",
+      enforcement: "runtime", evidence: { source: "src/atoms/ResizeHandle.tsx", evidence: "![value, min, max, resetValue, step].every(Number.isFinite)" },
+    }, {
+      kind: "data", props: ["label"], reason: "An interactive separator requires an authored nonempty string name.",
+      enforcement: "runtime", evidence: { source: "src/atoms/ResizeHandle.tsx", evidence: "typeof label !== \"string\" || !label.trim()" },
+    }],
+  }, "src/atoms/ResizeHandle.tsx"),
 };
 
 /** Source-checked facts, not a claim to enumerate the whole inherited API or token graph. */
 export const ATOM_API_FACTS: Readonly<Record<string, AtomApiFacts>> = {
+  "enter.resize-handle": {
+    exportName: "ResizeHandle", source: "src/atoms/ResizeHandle.tsx",
+    options: [{
+      prop: "orientation", values: ["vertical", "horizontal"],
+      default: { kind: "value", value: "vertical", source: "src/atoms/ResizeHandle.tsx", evidence: "orientation = \"vertical\"" },
+      forwarding: { source: "src/atoms/ResizeHandle.tsx", evidence: "aria-orientation={orientation}" },
+    }, {
+      prop: "dir", values: ["ltr", "rtl"], default: { kind: "omitted", reason: "Omission follows effective direction at interaction time." },
+      forwarding: { source: "src/atoms/ResizeHandle.tsx", evidence: "dir={dir}" },
+    }],
+    tokens: { coverage: "partial", reason: "Representative consumed target, edge and native focus-color tokens; not an exhaustive generated utility inventory.", dependencies: [
+      { property: "--ui-layout-tap-target", kind: "transitive", source: "src/atoms/internal/ui-vars.ts", evidence: "var(--ui-layout-tap-target, 44px)", via: [{ source: "src/atoms/ResizeHandle.tsx", evidence: "minWidth: UI_LAYOUT_TAP_TARGET" }] },
+      { property: "--ui-border-hairline", kind: "transitive", source: "src/atoms/internal/ui-vars.ts", evidence: "var(--ui-border-hairline, 1px)", via: [{ source: "src/atoms/ResizeHandle.tsx", evidence: "borderWidth: UI_BORDER_HAIRLINE" }] },
+      { property: "--color-accent", kind: "transitive", source: "styles/theme-keys.css", evidence: "--color-accent:", via: [{ source: "src/atoms/ResizeHandle.tsx", evidence: "focus-visible:outline-accent" }] },
+    ] },
+  },
   "act.button": {
     "exportName": "Button",
     "source": "src/atoms/Button.tsx",
@@ -4417,7 +4465,8 @@ export const ATOM_DISPLAY_GROUPS: readonly AtomDisplayGroup[] = [
           "enter.switch",
           "enter.radio-group",
           "enter.file-trigger",
-          "enter.field"
+          "enter.field",
+          "enter.resize-handle"
         ]
       }
     ]
