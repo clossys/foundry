@@ -6259,3 +6259,28 @@ statuses confer no authority. Compatible known declarations remain `unverified` 
 `measurement-required` on both refs. This validator never emits `qualified`;
 future measured records must establish both roles against the same identity.
 Legacy serialized references are neither parsed nor rewritten.
+
+## Measured web role pairs
+
+Publisher/core exports `WEB_ROLE_PAIR_BINDINGS` and `WEB_ROLE_PAIR_EVIDENCE` for
+three separate SiteFrame pairs: LandingView (`landmark="none"`), LegalView
+(`framed=true`), and content-only CaptureView (omit every deprecated chrome prop).
+CaptureView with `ground="base"` or `header={null}` selects legacy chrome.
+The bindings and records are deeply frozen. Identity comes from the existing
+ROLE binding validator; Landing evidence cannot stand in for Legal or Capture.
+
+`WebRolePairEvidence` retains identity, web medium, run date, source revision,
+listed source-file digests, measurer version, deterministic fixture digest,
+selectors, observed counts, per-check status and limits. `WebRolePairCheck` names
+the structural checks; `WebRolePairStatus` is measured, violated or unmeasured.
+`validateWebRolePairEvidence(record, binding, fresh?)` returns
+`WebRolePairEvidenceResult`. It anchors both records to the exact retained fixture binding and
+rejects drift, unknown fields and success flags. Without fresh data it returns
+unmeasured. Fresh data comparison does not authenticate a render or qualify an
+adapter: the test owns real server rendering, structural parsing and digest checks.
+
+Evidence covers only each listed fixture and source files. Counts establish a
+chrome-free standalone view, one frame-owned main, one matching skip target,
+view content inside main and frame chrome outside it. This is structural SSR
+evidence only: no browser, accessibility-tree, focus-order, packed-install or
+consumer runtime qualification. A record alone never qualifies a pair.
