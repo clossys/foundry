@@ -51,6 +51,7 @@ const designerExports = [
   "@clossys/designer/theme/server",
   "@clossys/designer/tokens",
   "@clossys/designer/tokens/server",
+  "@clossys/designer/tokens/preview",
 ];
 const designerClientExports = [
   "@clossys/designer/atoms",
@@ -59,6 +60,7 @@ const designerClientExports = [
   "@clossys/designer/theme",
 ];
 const designerReactExports = [
+  "@clossys/designer/tokens/preview",
   "@clossys/designer/atoms",
   "@clossys/designer/atoms/server",
   "@clossys/designer/blocks",
