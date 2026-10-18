@@ -34,23 +34,23 @@ const pending = [
   "--breakpoint-mobile", "--breakpoint-mobile-lg", "--breakpoint-tablet", "--breakpoint-tablet-lg", "--breakpoint-desktop", "--breakpoint-wide",
 ];
 const examples = [
-  ["--color-surface-glass", "background-color", "var(--color-surface-glass)", "DIV"],
-  ["--text-body", "font-size", "var(--text-body)", "P"],
-  ["--ui-border-rule", "border-width", "var(--ui-border-rule)", "DIV"],
-  ["--color-control-quiet", "color", "var(--color-control-quiet)", "BUTTON"],
-  ["--color-status-info-text", "color", "var(--color-status-info-text)", "SPAN"],
-  ["--color-chart-surface", "stroke", "var(--color-chart-surface)", "rect"],
-  ["--font-display-scale-x", "transform", "scaleX(var(--font-display-scale-x))", "P"],
-  ["--ui-width-page-padding-x", "padding-inline", "var(--ui-width-page-padding-x)", "DIV"],
-  ["--ui-density-row", "min-block-size", "var(--ui-density-row)", "DIV"],
-  ["--ui-icon-stroke", "stroke-width", "var(--ui-icon-stroke)", "svg"],
-  ["--ui-brandmark-height-md", "block-size", "var(--ui-brandmark-height-md)", "DIV"],
-  ["--radius-panel", "border-radius", "var(--radius-panel)", "DIV"],
-  ["--ui-elevation-none", "box-shadow", "var(--ui-elevation-none)", "DIV"],
-  ["--blur-glass", "backdrop-filter", "blur(var(--blur-glass))", "DIV"],
-  ["--ui-ring-on-inverse", "box-shadow", "var(--ui-ring-on-inverse)", "DIV"],
-  ["--ui-z-modal", "z-index", "var(--ui-z-modal)", "DIV"],
-  ["--ui-alpha-disabled", "opacity", "var(--ui-alpha-disabled)", "DIV"],
+  ["--color-surface-glass", "background-color", "var(--color-surface-glass, oklch(1 0 0 / 0.88))", "DIV"],
+  ["--text-body", "font-size", "var(--text-body, 15px)", "P"],
+  ["--ui-border-rule", "border-width", "var(--ui-border-rule, 2px)", "DIV"],
+  ["--color-control-quiet", "color", "var(--color-control-quiet, var(--color-ink-primary, oklch(0.2178 0 0)))", "BUTTON"],
+  ["--color-status-info-text", "color", "var(--color-status-info-text, oklch(0.52 0 0))", "SPAN"],
+  ["--color-chart-surface", "stroke", "var(--color-chart-surface, var(--color-surface-raised, oklch(1 0 0)))", "rect"],
+  ["--font-display-scale-x", "transform", "scaleX(var(--font-display-scale-x, 1))", "P"],
+  ["--ui-width-page-padding-x", "padding-inline", "var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))", "DIV"],
+  ["--ui-density-row", "min-block-size", "var(--ui-density-row, var(--spacing-3xl, 48px))", "DIV"],
+  ["--ui-icon-stroke", "stroke-width", "var(--ui-icon-stroke, 2)", "svg"],
+  ["--ui-brandmark-height-md", "block-size", "var(--ui-brandmark-height-md, 36px)", "DIV"],
+  ["--radius-panel", "border-radius", "var(--radius-panel, var(--radius-surface, var(--radius-default, 3px)))", "DIV"],
+  ["--ui-elevation-none", "box-shadow", "var(--ui-elevation-none, none)", "DIV"],
+  ["--blur-glass", "backdrop-filter", "blur(var(--blur-glass, 16px))", "DIV"],
+  ["--ui-ring-on-inverse", "box-shadow", "var(--ui-ring-on-inverse, 0 0 0 1px rgba(245, 245, 245, 0.12))", "DIV"],
+  ["--ui-z-modal", "z-index", "var(--ui-z-modal, 50)", "DIV"],
+  ["--ui-alpha-disabled", "opacity", "var(--ui-alpha-disabled, 0.5)", "DIV"],
 ];
 function specimen(property: string) {
   const host = document.createElement("div");
@@ -85,7 +85,8 @@ describe("exact-property TokenPreview", () => {
       expect(host.querySelector("figure")?.getAttribute("aria-label")).toBe(property);
       expect(host.querySelector("[role=status], table"), property).toBeNull();
       expect(host.querySelector("figure")?.children.length, property).toBeGreaterThan(0);
-      expect(host.innerHTML, property).toContain(`var(${property})`);
+      const reference = `var(${property}, ${TOKENS[property]!.value})`;
+      expect([...host.querySelectorAll("[style]")].some(node => node.getAttribute("style")?.includes(reference)), property).toBe(true);
     }
   });
   it.each(examples)("applies an independent %s specimen style", (property, css, value, tag) => {
@@ -94,31 +95,43 @@ describe("exact-property TokenPreview", () => {
   });
   it("keeps chart surface transparent and icon stroke visible", () => {
     const plot = specimen("--color-chart-surface").querySelector("rect")!;
-    expect(plot.style.stroke).toBe("var(--color-chart-surface)");
+    expect(plot.style.stroke).toBe("var(--color-chart-surface, var(--color-surface-raised, oklch(1 0 0)))");
     expect(plot.getAttribute("fill")).toBe("none");
     expect(plot.style.fill).toBe("");
     expect(specimen("--color-chart-axis-label").querySelector("text")?.textContent).toBe("Axis label");
-    expect(specimen("--ui-icon-stroke").querySelector("svg")?.style.stroke).toBe("var(--color-ink-primary)");
+    expect(specimen("--ui-icon-stroke").querySelector("svg")?.style.stroke).toBe("var(--color-ink-primary, oklch(0.2178 0 0))");
   });
   it("provides real backings for inverse, accent and alpha applications", () => {
     for (const property of ["--color-ink-on-inverse", "--color-line-on-inverse", "--color-control-tonal-inverse", "--ui-ring-on-inverse"]) {
-      expect(specimen(property).querySelector("figure")?.getAttribute("style")).toContain("background:var(--color-surface-inverse);");
+      expect(specimen(property).querySelector("figure")?.getAttribute("style")).toContain("background:var(--color-surface-inverse, oklch(0.2178 0 0));");
     }
-    expect(specimen("--color-ink-on-accent").querySelector("figure")?.getAttribute("style")).toContain("background:var(--color-accent);");
+    expect(specimen("--color-ink-on-accent").querySelector("figure")?.getAttribute("style")).toContain("background:var(--color-accent, oklch(0.4748 0 0));");
     for (const property of ["--color-surface-glass", "--color-overlay-scrim", "--ui-alpha-disabled"]) {
-      expect(specimen(property).querySelector("figure")?.getAttribute("style")).toContain("background-image:repeating-conic-gradient(var(--color-surface-base) 0% 25%, var(--color-surface-inverse) 0% 50%);");
+      expect(specimen(property).querySelector("figure")?.getAttribute("style")).toContain("background-image:repeating-conic-gradient(var(--color-surface-base, oklch(0.9702 0 0)) 0% 25%, var(--color-surface-inverse, oklch(0.2178 0 0)) 0% 50%);");
     }
   });
   it("pairs inverse plate grounds and ink", () => {
     for (const property of ["--color-line-on-inverse", "--ui-ring-on-inverse"]) {
       const style = specimen(property).querySelector("figure")?.firstElementChild?.getAttribute("style");
-      expect(style).toContain("background:var(--color-surface-inverse);");
-      expect(style).toContain("color:var(--color-ink-on-inverse);");
+      expect(style).toContain("background:var(--color-surface-inverse, oklch(0.2178 0 0));");
+      expect(style).toContain("color:var(--color-ink-on-inverse, oklch(0.9702 0 0));");
+    }
+  });
+  it("pins authored fallbacks for unselected scaffold roles", () => {
+    const cases = [
+      ["--radius-panel", "figure > div", "background:var(--color-surface-raised, oklch(1 0 0));"],
+      ["--radius-panel", "figure > div", "color:var(--color-ink-primary, oklch(0.2178 0 0));"],
+      ["--ui-border-rule", "figure > div", "border:2px solid var(--color-line-strong, oklch(0.7763 0 0));"],
+      ["--spacing-sm", "span", "background:var(--color-accent, oklch(0.4748 0 0))"],
+      ["--blur-glass", "figure > div > div", "background:var(--color-surface-glass, oklch(1 0 0 / 0.88));"],
+    ];
+    for (const [property, selector, declaration] of cases) {
+      expect(specimen(property!).querySelector(selector!)?.getAttribute("style"), property).toContain(declaration);
     }
   });
   it("bounds the mark for gap specimens while retaining authored height specimens", () => {
     const gap = specimen("--ui-brandmark-gap-md");
-    expect(gap.querySelector("figure > div")?.getAttribute("style")).toContain("gap:var(--ui-brandmark-gap-md)");
+    expect(gap.querySelector("figure > div")?.getAttribute("style")).toContain("gap:var(--ui-brandmark-gap-md, 6px)");
     expect(gap.querySelector("svg")?.getAttribute("style")).toContain("block-size:24px;");
     expect(gap.querySelector("svg")?.getAttribute("style")).toContain("aspect-ratio:1;");
     expect(specimen("--ui-brandmark-height-md").querySelector("svg")?.getAttribute("style")).toContain("block-size:100%;");

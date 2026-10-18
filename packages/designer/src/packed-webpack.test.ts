@@ -78,7 +78,7 @@ function buildFixture(fixture: string, next: string, bundler: typeof bundlers[nu
   const html = readFileSync(join(fixture, ".next", "server", "app", "index.html"), "utf8");
   expect(html).toContain('aria-label="--color-chart-surface"');
   expect(html).toContain('data-kind="chart"');
-  expect(html).toContain("stroke:var(--color-chart-surface)");
+  expect(html).toContain("stroke:var(--color-chart-surface, var(--color-surface-raised, oklch(1 0 0)))");
 }
 
 it("exercises the packed public Node reader and opt-in peer check", () => {

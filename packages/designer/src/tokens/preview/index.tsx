@@ -6,6 +6,11 @@ import { REACT_DECLARED_RANGE } from "../../internal/declared-peer-ranges.js";
 
 assertPeerVersion({ peer: "react", declaredRange: REACT_DECLARED_RANGE, foundVersion: version });
 
+// Keep the live cascade first; use only this exact property's authored CSS as fallback.
+function tokenReference(property: string): string {
+  return `var(${property}, ${TOKENS[property]!.value})`;
+}
+
 // These are authored application signatures, never display-family heuristics.
 const applications: Record<string, readonly string[]> = {
   surface: ["surface|background-color|color"],
@@ -41,9 +46,9 @@ const translucent = new Set([
   "--color-status-success-tint", "--color-status-warning-tint", "--color-status-danger-tint", "--color-status-info-tint",
   "--color-line-on-inverse", "--color-overlay-scrim", "--ui-alpha-disabled",
 ]);
-const checker = "repeating-conic-gradient(var(--color-surface-base) 0% 25%, var(--color-surface-inverse) 0% 50%)";
-const panel: CSSProperties = { padding: 16, minBlockSize: 48, background: "var(--color-surface-raised)", color: "var(--color-ink-primary)" };
-const tile: CSSProperties = { inlineSize: 24, blockSize: 24, background: "var(--color-accent)" };
+const checker = `repeating-conic-gradient(${tokenReference("--color-surface-base")} 0% 25%, ${tokenReference("--color-surface-inverse")} 0% 50%)`;
+const panel: CSSProperties = { padding: 16, minBlockSize: 48, background: tokenReference("--color-surface-raised"), color: tokenReference("--color-ink-primary") };
+const tile: CSSProperties = { inlineSize: 24, blockSize: 24, background: tokenReference("--color-accent") };
 
 /** Static token tooling: the host supplies token/theme/brand CSS and preview cascade. */
 export function TokenPreview({ property }: { property: string }) {
@@ -60,28 +65,28 @@ export function TokenPreview({ property }: { property: string }) {
   if (unavailable) {
     return <output role="status" data-property={property} data-kind={kind}>{kind}: interactive support pending</output>;
   }
-  const value = `var(${property})`;
+  const value = tokenReference(property);
   const cssProperty = application.cssProperty.replace(/-([a-z])/g, (_, letter: string) => letter.toUpperCase());
   const style: CSSProperties = { [cssProperty]: value };
   if (application.cssProperty === "transform") style.transform = `scaleX(${value})`;
   if (application.cssProperty === "backdrop-filter") style.backdropFilter = `blur(${value})`;
-  const backing = inverse.has(property) ? "var(--color-surface-inverse)"
-    : property === "--color-ink-on-accent" ? "var(--color-accent)" : "var(--color-surface-base)";
+  const backing = inverse.has(property) ? tokenReference("--color-surface-inverse")
+    : property === "--color-ink-on-accent" ? tokenReference("--color-accent") : tokenReference("--color-surface-base");
   const foreground = inverse.has(property) || ["--color-surface-inverse", "--color-surface-inverse-raised"].includes(property)
-    ? "var(--color-ink-on-inverse)" : "var(--color-ink-primary)";
+    ? tokenReference("--color-ink-on-inverse") : tokenReference("--color-ink-primary");
   const plate: CSSProperties = {
     ...panel, color: foreground,
-    background: inverse.has(property) ? "var(--color-surface-inverse)" : panel.background,
+    background: inverse.has(property) ? tokenReference("--color-surface-inverse") : panel.background,
   };
   const icon = (
-    <svg viewBox="0 0 24 24" style={{ inlineSize: 32, blockSize: 32, fill: "none", stroke: "var(--color-ink-primary)", ...style }}>
+    <svg viewBox="0 0 24 24" style={{ inlineSize: 32, blockSize: 32, fill: "none", stroke: tokenReference("--color-ink-primary"), ...style }}>
       <path d="M4 12h16M12 4v16" />
     </svg>
   );
   const specimens: Record<string, ReactNode> = {
     surface: <div style={{ ...plate, ...style }}>Surface</div>,
     text: <p style={style}>Readable type specimen Aa 0123</p>,
-    border: <div style={{ ...plate, border: "2px solid var(--color-line-strong)", ...style }}>Boundary</div>,
+    border: <div style={{ ...plate, border: `2px solid ${tokenReference("--color-line-strong")}`, ...style }}>Boundary</div>,
     control: <button type="button" style={{ ...plate, ...style }}>Control</button>,
     status: <span style={{ ...plate, ...style }}>Status indicator</span>,
     chart: <svg viewBox="0 0 120 60" style={{ inlineSize: 160, blockSize: 80 }}>
@@ -103,8 +108,8 @@ export function TokenPreview({ property }: { property: string }) {
     radius: <div style={{ ...plate, ...style }}>Rounded panel</div>,
     shadow: <div style={{ ...plate, ...style }}>Elevated panel</div>,
     blur: (
-      <div style={{ background: "repeating-linear-gradient(45deg, var(--color-accent) 0 8px, var(--color-surface-base) 8px 16px)" }}>
-        <div style={{ ...plate, background: "var(--color-surface-glass)", ...style }}>Backdrop</div>
+      <div style={{ background: `repeating-linear-gradient(45deg, ${tokenReference("--color-accent")} 0 8px, ${tokenReference("--color-surface-base")} 8px 16px)` }}>
+        <div style={{ ...plate, background: tokenReference("--color-surface-glass"), ...style }}>Backdrop</div>
       </div>
     ),
     ring: <div style={{ ...plate, ...style }}>Focus outline</div>,
