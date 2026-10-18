@@ -4860,6 +4860,14 @@ centers on the header, in DOM, visual, and tab order. `secondaryAction` is a
 second trailing slot rendered directly before `actions`, in either placement.
 Both stay one `nav` slot, so the header holds one navigation landmark.
 
+`mobileLayout="menu-brand-action"` puts navigation at inline-start, the brand
+in a shrinkable center column and actions at inline-end below `tablet`.
+The columns mirror in RTL. From `tablet` up, `navPlacement` controls the
+original layout. DOM and tab order remain brand, nav, actions; the default
+`mobileLayout="inline"` keeps the existing markup. Supply a complete logo
+or wordmark in `brand`; the header adds no brand symbol. Give an
+`ActionLink` an `icon` for its existing icon-only mobile presentation.
+
 ```tsx
 <SiteHeader
   navPlacement="centered"
@@ -5016,16 +5024,18 @@ its drawer requires JavaScript.
 
 ```tsx
 import { NavDisclosure, SiteHeader } from "@clossys/designer/shell";
+import { Home } from "@clossys/designer/icons";
 
 <SiteHeader
-  brand={<a href="/">Example</a>}
+  mobileLayout="menu-brand-action"
+  brand={<a href="/"><img src="/logo.svg" alt="Example" style={{ maxWidth: "100%", height: "auto" }} /></a>}
   nav={
-    <NavDisclosure aria-label="Primary" triggerLabel="Menu">
+    <NavDisclosure aria-label="Primary" trigger="icon" triggerLabel="Menu">
       <a href="/about">About</a>
       <a href="/contact">Contact</a>
     </NavDisclosure>
   }
-  actions={<SiteHeader.ActionLink href="/start" label="Get started" variant="primary" />}
+  actions={<SiteHeader.ActionLink href="/start" label="Get started" icon={Home} variant="primary" />}
 />
 ```
 
@@ -5034,7 +5044,11 @@ import { NavDisclosure, SiteHeader } from "@clossys/designer/shell";
 declares no root (`"."`) export; `src/index.ts` re-exports them only for
 internal tooling and is not an import path.
 The props are `children` (required), `aria-label` (default `"Primary"`),
-`triggerLabel` (default `"Menu"`) and `className` on the landmark.
+`triggerLabel` (default `"Menu"`), `trigger` (`"label"` by default, or
+`"icon"`) and `className` on the landmark. The icon toggle draws three
+decorative bars in the current ink; `triggerLabel` remains its accessible
+name. Both triggers keep the same tap target, disclosure controls, Escape
+handling and focus return.
 
 `NavShell` is the modal responsive half: an ordinary inline `<nav>` from the
 `tablet` breakpoint up, and a trigger-plus-drawer below it — CSS-only
@@ -6400,10 +6414,10 @@ not a grab-bag).
 | `SkipLink` | component | Keyboard affordance to bypass nav chrome and jump straight to a page's content. Visually hidden until focused. |
 | `SkipLinkProps` | type | Props for `SkipLink`: `targetId` (the jump target's `id`), `children` (the link's own visible text — no built-in copy), `className`. |
 | `SiteHeader` | component | Public-site top chrome: brand slot, primary navigation slot (leading or centered), secondary action slot, actions slot. Renders the page's `banner` landmark. |
-| `SiteHeaderProps` | type | Props for `SiteHeader`: `brand` (required), `nav`, `navPlacement` (`"leading"` default, or `"centered"`), `secondaryAction`, `actions`, `surfaceLabel` (text-only badge, last in the trailing region), plus every native `<header>` attribute. |
+| `SiteHeaderProps` | type | Props for `SiteHeader`: `brand` (required), `nav`, `navPlacement` (`"leading"` default, or `"centered"`), `mobileLayout` (`"inline"` default, or `"menu-brand-action"`), `secondaryAction`, `actions`, `surfaceLabel` (text-only badge, last in the trailing region), plus every native `<header>` attribute. |
 | `NavShell` | component | The responsive half of a public site's navigation: an inline `<nav>` from `tablet` up, a trigger-plus-drawer below it. |
 | `NavDisclosure` | component | A non-modal navigation: a mobile sheet below `tablet`, an inline row from `tablet` up, and inline links when scripting is unavailable. |
-| `NavDisclosureProps` | type | Props for `NavDisclosure`: required `children`, `aria-label` (default `"Primary"`), `triggerLabel` (default `"Menu"`), and landmark `className`. |
+| `NavDisclosureProps` | type | Props for `NavDisclosure`: required `children`, `aria-label` (default `"Primary"`), `triggerLabel` (default `"Menu"`), `trigger` (`"label"` default, or `"icon"`), and landmark `className`. |
 | `NavShellProps` | type | Props for `NavShell`: `children` (the nav links, rendered in both the desktop row and the drawer), `aria-label` (default `"Primary"`), `triggerLabel` (default `"Menu"`), `closeLabel` (default `"Close menu"`), `className`, plus most of react-aria-components' own `DialogTrigger` props (`isOpen`, `defaultOpen`, `onOpenChange`). |
 | `SiteFooter` | component | Public-site bottom chrome: grouped link columns, a secondary/legal row. Carries `SiteFooter.Column` and `SiteFooter.Legal`. Renders the page's `contentinfo` landmark. |
 | `SiteFooterProps` | type | Props for `SiteFooter`: `columns`, `secondary`, plus every native `<footer>` attribute. |

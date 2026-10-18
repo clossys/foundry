@@ -10,8 +10,10 @@ export interface NavDisclosureProps {
   children: ReactNode;
   /** The navigation landmark's name. @default "Primary" */
   "aria-label"?: string;
-  /** The toggle's visible and accessible name. @default "Menu" */
+  /** The toggle's accessible name; also visible with the label trigger. @default "Menu" */
   triggerLabel?: string;
+  /** Toggle content; the icon keeps triggerLabel as its accessible name. @default "label" */
+  trigger?: "label" | "icon";
   /** Trigger ink; omitted follows an inverse overlay header. @default "auto" */
   tone?: "auto" | "inverse";
   /** Additional classes on the navigation landmark. */
@@ -30,7 +32,7 @@ const TOGGLE_CLASSES = buttonLinkClassName("ghost", "sm")
  * above it. CSS keeps the same links inline when scripting is unavailable.
  * Unlike NavShell, this is a disclosure, without a modal drawer or focus trap.
  */
-export function NavDisclosure({ children, "aria-label": ariaLabel = "Primary", triggerLabel = "Menu", tone, className }: NavDisclosureProps) {
+export function NavDisclosure({ children, "aria-label": ariaLabel = "Primary", triggerLabel = "Menu", trigger = "label", tone, className }: NavDisclosureProps) {
   // Select a complete look before cx: tailwind-merge is an optional peer.
   const inverse = tone === "inverse";
   const look = inverse
@@ -51,18 +53,34 @@ export function NavDisclosure({ children, "aria-label": ariaLabel = "Primary", t
         toggle.current?.focus();
       }}
     >
-      <button
-        ref={toggle}
-        type="button"
-        aria-expanded={expanded}
-        aria-controls={panelId}
-        data-tone={tone}
-        className={cx(look, "nav-disclosure-toggle", inverse ? "text-ink-on-inverse hover:text-ink-on-inverse aria-expanded:text-ink-on-inverse focus-visible:text-ink-on-inverse hover:bg-control-tonal-inverse-hover focus-visible:outline-ink-on-inverse" : undefined)}
-        style={{ minHeight: UI_LAYOUT_TAP_TARGET, minWidth: UI_LAYOUT_TAP_TARGET }}
-        onClick={() => setExpanded(value => !value)}
-      >
-        {triggerLabel}
-      </button>
+      {trigger === "icon" ? (
+        <button
+          ref={toggle}
+          type="button"
+          aria-label={triggerLabel}
+          aria-expanded={expanded}
+          aria-controls={panelId}
+          data-tone={tone}
+          className={cx(look, "nav-disclosure-toggle", inverse ? "text-ink-on-inverse hover:text-ink-on-inverse aria-expanded:text-ink-on-inverse focus-visible:text-ink-on-inverse hover:bg-control-tonal-inverse-hover focus-visible:outline-ink-on-inverse" : undefined)}
+          style={{ minHeight: UI_LAYOUT_TAP_TARGET, minWidth: UI_LAYOUT_TAP_TARGET }}
+          onClick={() => setExpanded(value => !value)}
+        >
+          <span className="nav-disclosure-icon" aria-hidden="true"><span /><span /><span /></span>
+        </button>
+      ) : (
+        <button
+          ref={toggle}
+          type="button"
+          aria-expanded={expanded}
+          aria-controls={panelId}
+          data-tone={tone}
+          className={cx(look, "nav-disclosure-toggle", inverse ? "text-ink-on-inverse hover:text-ink-on-inverse aria-expanded:text-ink-on-inverse focus-visible:text-ink-on-inverse hover:bg-control-tonal-inverse-hover focus-visible:outline-ink-on-inverse" : undefined)}
+          style={{ minHeight: UI_LAYOUT_TAP_TARGET, minWidth: UI_LAYOUT_TAP_TARGET }}
+          onClick={() => setExpanded(value => !value)}
+        >
+          {triggerLabel}
+        </button>
+      )}
       <div
         id={panelId}
         className="nav-disclosure-panel"
