@@ -2752,6 +2752,9 @@ Optional appearance inputs keep the existing frame and hero defaults:
 | Input | Values and behavior |
 | --- | --- |
 | `shell.actions[].emphasis` | `"primary"` or `"secondary"` (default). Applies to header actions only; navigation, secondary-action and footer links retain their existing contract. |
+| `shell.actions[].icon` | Optional SVG shape data; the header shows the icon below tablet and keeps the label as its accessible name. Accepted only for header actions. |
+| `shell.nav.trigger` | `"label"` (default) or `"icon"`; the icon uses `triggerLabel` as its accessible name. |
+| `shell.mobileLayout` | `"inline"` (default) or `"menu-brand-action"`; the latter places menu, centered brand and trailing action below tablet and adds full-label actions to the existing disclosure. |
 | `shell.brand.tone` | `"auto"` or `"inverse"`. Omitted tone inherits an inverse overlay header; explicit `"auto"` keeps ordinary brand ink. |
 | `shell.nav.tone` | `"auto"` or `"inverse"`. Omitted tone inherits an inverse overlay header without changing the default markup; explicit `"auto"` keeps ordinary toggle ink. The server and interactive client render the same initial disclosure. |
 | Hero section `eyebrowTone` | `"accent"` (default) or `"muted"`, using the existing secondary text ink. |
@@ -2766,6 +2769,48 @@ implementation. Hero appearance fields pass through
 copy resolution into `SectionedView` and `LandingView`; copy references and
 their provenance stay unchanged. Existing configurations render the same
 bytes when the new fields are omitted.
+
+For a mobile header with the menu at inline-start, a centered logo and an
+icon CTA at inline-end, opt into `mobileLayout: "menu-brand-action"` and
+`nav.trigger: "icon"`. Both fields also pass through `SiteFrameConfig.site`.
+Below tablet, equal-width columns keep the whole logo centered independently
+of the controls. The logo fits its column without cropping; trailing controls
+wrap within theirs, retaining their tap targets and full labels. From tablet
+up, the header keeps its existing `navPlacement` layout; oversized trailing
+groups wrap within the available width. The icon trigger keeps `triggerLabel` as its accessible name, falling back to
+`nav.label` when the toggle copy is omitted.
+
+```tsx
+import type { SiteFrameConfig } from "@clossys/publisher/web";
+
+const mobileFrame: SiteFrameConfig = {
+  // The registered image is the complete logo asset, with its own plate.
+  brand: { assetId: "brand-logo", label: { id: "brand.home" }, size: "md", variant: "mark", plate: "self" },
+  skipLink: { id: "shell.skipLink" },
+  origin: "https://example.com",
+  site: {
+    mobileLayout: "menu-brand-action",
+    nav: {
+      label: { id: "nav.label" }, triggerLabel: { id: "nav.menu" }, trigger: "icon",
+      links: [{ href: "/about", label: { id: "nav.about" } }],
+    },
+    actions: [{
+      href: "/contact", label: { id: "nav.contact" }, emphasis: "primary",
+      icon: [["path", { d: "M4 12h16m-6-6 6 6-6 6" }]],
+    }],
+  },
+  legal: { entity: { id: "legal.entity" }, links: [{ href: "/privacy", label: { id: "legal.privacy" } }] },
+};
+```
+
+An action `icon` uses Designer's SVG shape data and the same validation as
+environment icons. Designer's `SiteHeader.ActionLink` shows the icon alone
+below tablet while retaining the full label as its accessible name; tablet
+and wider show the label beside it. In the opted-in layout, the existing
+navigation disclosure also lists the full-label `actions`, hidden from tablet
+up, within the same navigation landmark. Navigation, secondary-action and
+ordinary footer links refuse `icon`. Omitted fields retain the existing HTML;
+`mobileLayout: "inline"` and `nav.trigger: "label"` select the defaults.
 
 ```tsx
 import { AuthView, SiteFrame, siteShellFor } from "@clossys/publisher/web";
@@ -2818,9 +2863,8 @@ export function SignInPage() {
   with a mobile toggle and the same links in the responsive panel.
   `nav.triggerLabel` is an optional copy reference for the toggle; when omitted,
   it uses the resolved `nav.label`. A supplied reference must resolve to
-  nonblank copy. Text actions and the secondary action use Designer's
-  `SiteHeader.ActionLink` without icons. This intentionally changes the default
-  navigation and action markup for existing configurations.
+  nonblank copy. Header actions use Designer's `SiteHeader.ActionLink` with
+  optional icons; the secondary action keeps its full text label.
 - **Footer ground.** `shell.footer.ground` accepts `"base"`, `"inverse"` or
   `"transparent"`. In flow placement it defaults to `shell.ground`, regardless
   of the header's ground or overlay tone. For example, a shell with `ground: "base"` and
@@ -2887,7 +2931,7 @@ export function SignInPage() {
   environments and the legal row.
 - **Origin.** `origin` is a bare `https:` origin; `http:` is accepted only for
   `localhost`, `127.0.0.1` and `[::1]`, for local development.
-- **Icons.** An environment, icon action or social `icon` is Designer
+- **Icons.** A header action, environment, icon action or social `icon` is Designer
   `IconNode` data: `path`,
   `circle`, `line`, `rect`, `polyline`, `polygon`, `ellipse` or `g` nodes whose
   attributes come from an allowlist of SVG shape attributes (geometry, fill,

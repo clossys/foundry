@@ -140,3 +140,36 @@ export const typedLegalLinks: SiteFrameConfig["legal"] = { entity: { id: "entity
 export const typedSecondaryAction: SiteShellInput = { ...shell, secondaryAction: plainLink };
 // @ts-expect-error footer legal links do not accept header action emphasis
 export const legalEmphasis: SiteShellInput = { ...shell, footer: { legal: { entity: { id: "entity" }, links: [{ href: "/", label: { id: "home" }, emphasis: "primary" }] } } };
+
+const actionIcon = [["path", { d: "M4 12h16" }]] as const;
+export const mobileShell: SiteShellInput = {
+  ...shell,
+  mobileLayout: "menu-brand-action",
+  nav: { label: { id: "nav" }, trigger: "icon", links: plainLinks },
+  actions: [{ href: "/start", label: { id: "start" }, icon: actionIcon, emphasis: "primary" }],
+};
+export const mobileConfig: SiteFrameConfig = { ...config, site: { mobileLayout: "menu-brand-action", nav: mobileShell.nav, actions: mobileShell.actions } };
+export const mobileSite = siteShellFor(mobileConfig, "site");
+
+type ActionIcon = [import("../../index.js").SiteLinkInput["icon"], import("../index.js").SiteLinkInput["icon"], import("../server.js").SiteLinkInput["icon"]];
+type MobileLayout = [import("../../index.js").SiteShellInput["mobileLayout"], import("../index.js").SiteShellInput["mobileLayout"], import("../server.js").SiteShellInput["mobileLayout"]];
+type NavigationTrigger = [NonNullable<import("../../index.js").SiteShellInput["nav"]>["trigger"], NonNullable<import("../index.js").SiteShellInput["nav"]>["trigger"], NonNullable<import("../server.js").SiteShellInput["nav"]>["trigger"]];
+export const actionIcons: ActionIcon = [actionIcon, undefined, actionIcon];
+export const mobileLayouts: MobileLayout = ["inline", "menu-brand-action", undefined];
+export const navigationTriggers: NavigationTrigger = ["label", "icon", undefined];
+// @ts-expect-error mobile layout is closed
+export const invalidMobileLayout: SiteShellInput = { ...shell, mobileLayout: "stacked" };
+// @ts-expect-error trigger is closed
+export const invalidNavigationTrigger: SiteShellInput = { ...shell, nav: { label: { id: "nav" }, trigger: "drawer", links: [] } };
+// @ts-expect-error icons are SVG shape data, not React nodes
+export const actionIconNode: SiteLinkInput = { href: "/start", label: { id: "start" }, icon: <svg /> };
+// @ts-expect-error icons belong to shell.actions, not navigation links
+export const navigationIcon: SiteShellInput = { ...shell, nav: { label: { id: "nav" }, links: [{ href: "/", label: { id: "home" }, icon: actionIcon }] } };
+// @ts-expect-error secondary actions remain plain links
+export const secondaryActionIcon: SiteShellInput = { ...shell, secondaryAction: { href: "/", label: { id: "home" }, icon: actionIcon } };
+// @ts-expect-error ordinary footer links remain plain links
+export const footerLinkIcon: SiteShellInput = { ...shell, footer: { legal: config.legal, links: [{ href: "/", label: { id: "home" }, icon: actionIcon }] } };
+// @ts-expect-error footer column links remain plain links
+export const footerColumnIcon: SiteShellInput = { ...shell, footer: { legal: config.legal, columns: [{ heading: { id: "help" }, links: [{ href: "/", label: { id: "home" }, icon: actionIcon }] }] } };
+// @ts-expect-error legal links remain plain links
+export const legalLinkIcon: SiteFrameConfig["legal"] = { entity: { id: "entity" }, links: [{ href: "/", label: { id: "home" }, icon: actionIcon }] };

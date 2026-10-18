@@ -21,9 +21,11 @@ export interface SiteLinkInput {
   readonly label: CopyRef;
   /** Header action look; accepted only in shell.actions. @default "secondary" */
   readonly emphasis?: "primary" | "secondary";
+  /** Header action glyph; accepted only in shell.actions and validated as SVG shape data. */
+  readonly icon?: IconNode;
 }
 
-type PlainSiteLinkInput = Omit<SiteLinkInput, "emphasis">;
+type PlainSiteLinkInput = Omit<SiteLinkInput, "emphasis" | "icon">;
 
 /** An icon-only link: its copy reference supplies the accessible name. */
 export type SiteIconLinkInput = {
@@ -99,6 +101,8 @@ export interface SiteShellInput {
     readonly label: CopyRef;
     /** The disclosure toggle copy; defaults to the resolved navigation label. */
     readonly triggerLabel?: CopyRef;
+    /** Toggle content; the icon keeps triggerLabel as its accessible name. @default "label" */
+    readonly trigger?: "label" | "icon";
     /** Omitted inherits inverse overlay header ink; explicit auto keeps ordinary ink. */
     readonly tone?: "auto" | "inverse";
     readonly links: readonly PlainSiteLinkInput[];
@@ -114,6 +118,8 @@ export interface SiteShellInput {
   /** A text badge naming the surface. Prefer `environments` with `isCurrent`. */
   readonly surfaceLabel?: CopyRef;
   readonly navPlacement?: "leading" | "centered";
+  /** Below tablet, put navigation before a centered brand and trailing actions. @default "inline" */
+  readonly mobileLayout?: "inline" | "menu-brand-action";
   /** @default "base" */
   readonly ground?: SiteChromeGround;
   /** Reserved chrome may choose its own ground; an overlay inherits the selected ink tone over the page. */
@@ -165,6 +171,7 @@ export interface SiteFrameConfig {
     readonly social?: SiteFooterInput["social"];
     readonly secondaryAction?: SiteShellInput["secondaryAction"];
     readonly navPlacement?: SiteShellInput["navPlacement"];
+    readonly mobileLayout?: SiteShellInput["mobileLayout"];
     readonly columns?: SiteFooterInput["columns"];
   };
   /** One link per non-site surface; the one matching the surface kind is marked current. */

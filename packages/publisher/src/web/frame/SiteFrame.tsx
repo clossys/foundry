@@ -102,20 +102,29 @@ export function SiteFrame({ shell, resolveCopy, resolveAsset, children }: SiteFr
   const { brand, footer } = resolved;
   if (footer?.placement === "overlay") assertOverlayScene(children, resolved.header.placement);
 
+  // Equal mobile tracks keep the brand centered when the control widths differ.
+  // The whole asset can shrink inside its track without changing its proportions.
+  const mobileHeaderClassName = resolved.mobileLayout === "menu-brand-action"
+    ? "max-tablet:[&>div]:grid-cols-3! [&_.col-start-3]:min-w-0 [&_.col-start-3]:max-w-full max-tablet:[&_.col-start-3]:w-full [&_.col-start-3]:flex-wrap [&_.col-start-3]:justify-end [&_.col-start-3]:wrap-anywhere [&_.col-start-3>*]:max-w-full"
+    : undefined;
+  const brandClassName = resolved.mobileLayout === "menu-brand-action" ? "max-w-full [&_img]:object-contain" : undefined;
   const brandmark =
     brand.wordmark === undefined ? (
-      <Brandmark variant="mark" size={brand.size} label={brand.label} markSrc={brand.markSrc} plate={brand.plate} tone={brand.tone} />
+      <Brandmark variant="mark" size={brand.size} label={brand.label} markSrc={brand.markSrc} plate={brand.plate} tone={brand.tone} className={brandClassName} />
     ) : (
-      <Brandmark variant="lockup" size={brand.size} label={brand.label} wordmark={brand.wordmark} markSrc={brand.markSrc} plate={brand.plate} tone={brand.tone} />
+      <Brandmark variant="lockup" size={brand.size} label={brand.label} wordmark={brand.wordmark} markSrc={brand.markSrc} plate={brand.plate} tone={brand.tone} className={brandClassName} />
     );
 
-  const nav = resolved.nav ? <SiteNavDisclosure nav={resolved.nav} /> : undefined;
+  const mobileActions = resolved.mobileLayout === "menu-brand-action"
+    ? resolved.actions.map(({ href, label, emphasis }) => ({ href, label, emphasis }))
+    : undefined;
+  const nav = resolved.nav ? <SiteNavDisclosure nav={resolved.nav} actions={mobileActions} /> : undefined;
 
   const actions =
     resolved.actions.length > 0 || resolved.iconActions.length > 0 || resolved.environments.length > 0 ? (
       <>
         {resolved.actions.map((link, index) => (
-          <SiteHeader.ActionLink key={`action-${index}`} href={link.href} label={link.label} variant={link.emphasis} />
+          <SiteHeader.ActionLink key={`action-${index}`} href={link.href} label={link.label} icon={link.icon} variant={link.emphasis} />
         ))}
         {resolved.iconActions.map((link, index) => (
           <IconLink key={`icon-action-${index}`} link={link} />
@@ -183,9 +192,11 @@ export function SiteFrame({ shell, resolveCopy, resolveAsset, children }: SiteFr
         {...(resolved.header.placement === "overlay"
           ? { placement: "overlay" as const, tone: resolved.header.tone }
           : { ground: resolved.header.ground })}
+        className={mobileHeaderClassName}
         brand={brandmark}
         nav={nav}
         navPlacement={resolved.navPlacement}
+        mobileLayout={resolved.mobileLayout}
         secondaryAction={resolved.secondaryAction ? <SiteHeader.ActionLink href={resolved.secondaryAction.href} label={resolved.secondaryAction.label} /> : undefined}
         actions={actions}
         surfaceLabel={resolved.surfaceLabel}
