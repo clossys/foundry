@@ -6265,3 +6265,34 @@ chrome-free standalone view, one frame-owned main, one matching skip target,
 view content inside main and frame chrome outside it. This is structural SSR
 evidence only: no browser, accessibility-tree, focus-order, packed-install or
 consumer runtime qualification. A record alone never qualifies a pair.
+
+## Exact membership and source use
+
+Publisher/core exports `validateRelations(input)`, `RelationsInput`,
+`RelationsResult` and `RelationsGraph`. `RelationNodeKind`, `RelationNode`,
+`RelationRouteBinding` and `RelationEndpoint` describe nodes, auxiliary route
+bindings and typed edge endpoints. Supply five node kinds (assembly,
+instance, block, atom, token), separate auxiliary `routeBindings`, forward
+`RelationEdge` records and known adapter declarations. `RelationIdentity` keeps
+an opaque complete configured reference, opaque source revision and closed
+consumer/brand/medium context; different configurations need distinct identities.
+The function never parses serialized references or infers edges from imports,
+aliases, default fixtures, filenames or `needs`.
+
+An assembly needs at least one placement with a unique key and location metadata.
+Repeated placements of the same Instance remain separate. Each Instance carries
+its explicit binding; the existing two-role validator checks both refs, and each
+outgoing frame/view edge must join its exact derived Block identity and revision.
+Optional witness data uses the existing web-role comparison. Candidate membership
+and compared measurements both leave graph qualification `unverified`.
+
+`RelationProvenance` is a declared source document or a derived measured extraction
+with extractor/version, exact source revision and evidence reference. A valid
+forward DAG produces frozen `forward` and `reverse` indexes keyed by exact node
+keys; each incoming record preserves endpoints, relation kind, placement and
+provenance. Refusals expose `RelationsReason` values and no graph. Authored reverse
+indexes and qualification flags are refused. Lifecycle item references on graph,
+node, identity, context, edge and endpoint records return the stable `unknown-field`
+reason. Existing Block role lifecycle obligations remain governed by the role
+validators. No lifecycle item, source use or qualification is fabricated.
+PackManifest and the publication map remain separate contracts.

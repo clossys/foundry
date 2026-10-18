@@ -200,3 +200,8 @@ export { WEB_ROLE_PAIR_BINDINGS, WEB_ROLE_PAIR_EVIDENCE, validateWebRolePairEvid
 export type {
   WebRolePairStatus, WebRolePairCheck, WebRolePairEvidence, WebRolePairEvidenceResult,
 } from "./web-role-pair-evidence.js";
+export { validateRelations } from "./relations.js";
+export type {
+  RelationIdentity, RelationNodeKind, RelationNode, RelationRouteBinding, RelationEndpoint,
+  RelationProvenance, RelationEdge, RelationsInput, RelationsGraph, RelationsReason, RelationsResult,
+} from "./relations.js";
