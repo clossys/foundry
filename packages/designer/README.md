@@ -201,7 +201,8 @@ The additive metadata types are `TokenGuidance`, `TokenApplication`,
 `TokenDisplayGroup`. `TokenDefinition` and `TokenFamily` retain their shape.
 See [TOKENS.md](TOKENS.md) for the generated property-by-property reference.
 Regenerate it with `node scripts/generate-token-docs.mjs` and verify it with
-`node scripts/check-token-docs.mjs` from the repository root.
+`node scripts/check-token-docs.mjs` from the repository root. These repository
+tools are not shipped in the installed package.
 
 ### Node token helper migration
 

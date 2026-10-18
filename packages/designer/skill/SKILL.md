@@ -57,7 +57,9 @@ bookmarks. Do not duplicate guidance in a consumer or treat equal values
 and aliases as interchangeable roles. Read all five TokenDefinition fields
 (`property`, `family`, `value`, `brandable`, `themeDependent`) from `TOKENS`.
 Regenerate the reference and this section with `node scripts/generate-token-docs.mjs`
-and check their freshness with `node scripts/check-token-docs.mjs`.
+(repository tooling, not shipped in the installed package)
+and check their freshness with `node scripts/check-token-docs.mjs`
+(repository tooling, not shipped in the installed package).
 <!-- token-selection:end -->
 
 Marketing chapters after the fold: `MarketingChapter`, not `SectionHeader`. Hero `media` requires an explicit `composition` (`editorial` default).

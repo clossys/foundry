@@ -1253,7 +1253,7 @@ export const TOKEN_GUIDANCE: Readonly<Record<string, TokenGuidance>> = {
     specimen: "layer",
   },
   "--ui-z-modal": {
-    purpose: "The modal layer establishes the shared stacking role for blocking dialogs and shared modal-tier overlays.",
+    purpose: "The modal layer establishes the shared stacking role for blocking dialogs and shared dialog or popover overlays.",
     use: "Use z-modal for the supported dialog, menu or popover plane above application chrome, within the intended stacking context.",
     misuse: "Do not treat z-modal as proof of modal semantics or automatic focus containment.",
     application: {"cssProperty": "z-index", "valueType": "number", "context": "The modal z-index role on positioned or otherwise stackable content; ancestor contexts still bound it."},
@@ -1261,7 +1261,7 @@ export const TOKEN_GUIDANCE: Readonly<Record<string, TokenGuidance>> = {
   },
   "--ui-z-toast": {
     purpose: "The toast layer establishes the shared stacking role for temporary notification presentation.",
-    use: "Use z-toast for a supported toast above the modal-tier plane, within the intended stacking context.",
+    use: "Use z-toast for a supported toast above the dialog and popover plane, within the intended stacking context.",
     misuse: "Do not treat z-toast as the replacement of persistent important content with a transient notification.",
     application: {"cssProperty": "z-index", "valueType": "number", "context": "The toast z-index role on positioned or otherwise stackable content; ancestor contexts still bound it."},
     specimen: "layer",

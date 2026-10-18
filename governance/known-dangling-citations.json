@@ -301,11 +301,6 @@
         "scripts/icon-source-data.json"
       ],
       "TOKENS.md": [
-        "contrast.test.ts",
-        "parity.test.ts",
-        "src/contrast.test.ts",
-        "src/tailwind-builtin-collision.test.ts",
-        "src/theme-parity.test.ts"
       ],
       "src/atoms/Banner.tsx": [
         "ladder.test.ts"
