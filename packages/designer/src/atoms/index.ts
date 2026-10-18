@@ -177,3 +177,10 @@ export type { MeterProps, MeterTone, MeterDirection, MeterEmphasis } from "./Met
 
 /** Merge token-aware Tailwind class names with last-argument precedence. */
 export { cx as mergeUiClasses } from "./internal/cx.js";
+
+export { ATOM_GUIDANCE, ATOM_API_FACTS, ATOM_DISPLAY_GROUPS } from "./guidance/internal/data.js";
+export type {
+  AtomMedium, AtomMediumState, AtomScalar, AtomEvidence, AtomOptionGuidance,
+  AtomCondition, AtomConstraint, AtomWebImplementation, AtomMediumGuidance, AtomGuidance,
+  AtomApiFacts, AtomDisplayGroup,
+} from "./guidance/internal/data.js";
