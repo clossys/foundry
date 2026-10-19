@@ -653,24 +653,41 @@
     inset-block-end: max(var(--spacing-md, 12px), env(safe-area-inset-bottom, 0px));
     inset-inline: max(var(--spacing-md, 12px), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
     margin-inline: auto;
-    max-inline-size: var(--ui-width-form-max, 38rem);
     max-block-size: calc(100dvh - max(var(--spacing-md, 12px), env(safe-area-inset-bottom, 0px)) - max(var(--spacing-md, 12px), env(safe-area-inset-top, 0px)));
     overflow-y: auto;
     overflow-wrap: anywhere;
     border-width: var(--ui-border-hairline, 1px);
     border-style: solid;
-    border-color: var(--color-overlay-border, oklch(0.8761 0 0));
-    background-color: var(--color-surface-glass, oklch(1 0 0 / 0.88));
-    -webkit-backdrop-filter: blur(var(--blur-glass, 16px));
-    backdrop-filter: blur(var(--blur-glass, 16px));
+    border-color: var(--color-line-base, oklch(0.8761 0 0));
+    background-color: var(--color-surface-base, oklch(0.9702 0 0));
+    @supports (color: color-mix(in lab, red, red)) {
+      background-color: color-mix(in oklab, var(--color-surface-base, oklch(0.9702 0 0)) 90%, transparent);
+    }
+    box-shadow: var(--ui-elevation-raised, 0 1px 0 var(--color-line-base, oklch(0.8761 0 0)));
+    -webkit-backdrop-filter: blur(var(--blur-notice, 12px));
+    backdrop-filter: blur(var(--blur-notice, 12px));
+    & button {
+      min-block-size: var(--ui-layout-tap-target, 44px);
+      transition-duration: var(--ui-duration-fast, 160ms);
+      transition-timing-function: var(--ease-default, cubic-bezier(.2, 0, 0, 1));
+    }
     @media (width >= 48rem) {
       margin-inline-start: 0;
+      max-inline-size: var(--ui-width-notice-max, 24rem);
     }
     @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-      background-color: var(--color-overlay-surface, oklch(1 0 0));
+      background-color: var(--color-surface-base, oklch(0.9702 0 0));
+      @supports (color: color-mix(in lab, red, red)) {
+        background-color: color-mix(in oklab, var(--color-surface-base, oklch(0.9702 0 0)) 95%, transparent);
+      }
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      transition-property: background-color, backdrop-filter;
+      transition-duration: var(--ui-duration-default, 240ms);
+      transition-timing-function: var(--ease-default, cubic-bezier(.2, 0, 0, 1));
     }
     @media (prefers-reduced-transparency: reduce) {
-      background-color: var(--color-overlay-surface, oklch(1 0 0));
+      background-color: var(--color-surface-base, oklch(0.9702 0 0));
       -webkit-backdrop-filter: none;
       backdrop-filter: none;
     }
@@ -1866,6 +1883,9 @@
   .border-accent {
     border-color: var(--color-accent, oklch(0.4748 0 0));
   }
+  .border-current {
+    border-color: currentcolor;
+  }
   .border-ink-on-inverse {
     border-color: var(--color-ink-on-inverse, oklch(0.9702 0 0));
   }
@@ -2442,6 +2462,9 @@
   .whitespace-normal {
     white-space: normal;
   }
+  .whitespace-nowrap {
+    white-space: nowrap;
+  }
   .text-accent {
     color: var(--color-accent, oklch(0.4748 0 0));
   }
@@ -2533,6 +2556,9 @@
   }
   .underline {
     text-decoration-line: underline;
+  }
+  .decoration-ink-muted {
+    text-decoration-color: var(--color-ink-muted, oklch(0.5658 0 0));
   }
   .decoration-transparent {
     text-decoration-color: transparent;
@@ -3173,6 +3199,9 @@
     }
     .tablet\:p-0 {
       padding: 0px;
+    }
+    .tablet\:p-lg {
+      padding: var(--spacing-lg, 16px);
     }
     .tablet\:p-xl {
       padding: var(--spacing-xl, 24px);

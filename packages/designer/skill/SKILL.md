@@ -74,7 +74,7 @@ shared `TOKEN_GUIDANCE` from `@clossys/designer/tokens` and the generated
 `TOKENS.md` reference. Read purpose, appropriate use, misuse and context before
 comparing values. `TOKEN_DISPLAY_GROUPS` supplies Group > Family navigation
 only: 9 groups and 37 display families. It does not configure tokens or imply their type.
-All 186 properties, including aliases and composites, are independently referenceable
+All 188 properties, including aliases and composites, are independently referenceable
 leaves with stable identity across brand and supported theme overlays and zero
 per-token configuration. Name the inspector "Token details"; configurable
 components begin at Atoms. Preserve the 31 legacy source families, references and
