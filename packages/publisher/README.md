@@ -2763,6 +2763,16 @@ Header appearance inputs and independent hero controls:
 | `shell.footer.rule` | `"none"` (default) or `"top"`. Top draws one hairline on a transparent flow footer; opaque grounds ignore the option. Overlay footer placement still requires an opaque ground and the existing hero-only frame composition. |
 
 These fields belong to `SiteLinkInput`, `SiteBrandInput`, `SiteShellInput`,
+The frame footer is always locally dark. Its standard row centers footer and
+legal links, keeps social icons before the real resolved brand-home mark, and
+stacks links, icons, copyright on phones. Empty link/social lists still retain
+home. `shell.footer.home` optionally supplies dark-compatible artwork through
+an asset id, destination and copy reference; omission uses the resolved brand.
+Existing columns and social names retain their ordering. The shared frame
+contract exposes `footerGround`, `footerPlacement` and `footerRule`; darkness,
+accessible names, external rel safety and the Privacy link are mandatory facts.
+Footer-only presentation overrides preserve the derived header presentation.
+
 `SiteFooterInput` and `SectionedViewHeroSection`, available from
 `@clossys/publisher/web`. Its `react-server` condition selects the server
 implementation. Hero appearance fields pass through

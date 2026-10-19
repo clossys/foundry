@@ -575,7 +575,7 @@ describe("siteShellFor", () => {
     expect(currents).toHaveLength(1);
     expect(currents[0]).toHaveTextContent(current);
     const legal = [...container.querySelectorAll("footer a")].map((a) => a.getAttribute("href"));
-    expect(legal).toEqual(["https://example.com/privacy", "https://example.com/terms"]);
+    expect(legal).toEqual(["https://example.com/privacy", "https://example.com/terms", "https://example.com/"]);
   });
 
   it("refuses an unknown surface kind", () => {
@@ -719,7 +719,7 @@ describe("SiteFrame icon slots", () => {
       .filter((element) => element.tabIndex >= 0);
     expect(focusable.map((element) => element.getAttribute("aria-label") ?? element.textContent)).toEqual([
       "Skip to content", "Example home", "Primary", "Pricing", "Docs", "Sign in", "Contact", "App", "App",
-      "About", "Help", "Profile", "Privacy", "Terms",
+      "About", "Help", "Privacy", "Terms", "Profile", "Example home",
     ]);
   });
 
@@ -755,9 +755,9 @@ describe("SiteFrame icon slots", () => {
     }
   });
 
-  it("keeps the social list from shrinking beside the legal row and gives icon links a square tap target", () => {
+  it("keeps social icons in their own composition region and gives icon links a square tap target", () => {
     const named = render(frame(ALL_SLOTS, <p>content</p>));
-    expect(named.getByRole("navigation", { name: "Profiles" })).toHaveClass("shrink-0");
+    expect(named.getByRole("navigation", { name: "Profiles" })).toHaveAttribute("data-footer-region", "icons");
     for (const name of ["Contact", "Profile"]) {
       const link = named.getByRole("link", { name });
       expect(link.style.minHeight).toBe("var(--ui-layout-tap-target, 44px)");
@@ -766,7 +766,7 @@ describe("SiteFrame icon slots", () => {
     }
     named.unmount();
     const unnamed = render(frame({ ...ALL_SLOTS, footer: { ...ALL_SLOTS.footer!, social: { links: ALL_SLOTS.footer!.social!.links } } }, <p>content</p>));
-    expect(unnamed.getByRole("link", { name: "Profile" }).closest("ul")).toHaveClass("shrink-0");
+    expect(unnamed.getByRole("link", { name: "Profile" }).closest("[data-footer-region]")).toHaveAttribute("data-footer-region", "icons");
   });
 
   it("renders ungrouped links alone and unnamed social without a navigation wrapper", () => {
@@ -1002,6 +1002,8 @@ it("keeps overlay legal links keyboard reachable and pointer operable", async ()
   await user.tab();
   expect(terms).toHaveFocus();
   await user.tab();
+  expect(within(footer).getByRole("link", { name: "Example home" })).toHaveFocus();
+  await user.tab();
   expect(footer.contains(document.activeElement)).toBe(false);
   const activate = vi.fn((event: Event) => event.preventDefault());
   privacy.addEventListener("click", activate);
@@ -1035,6 +1037,8 @@ it("keeps a tall overlay footer safely aligned without clipping its tab stops", 
     await user.tab();
     expect(link).toHaveFocus();
   }
+  await user.tab();
+  expect(within(footer).getByRole("link", { name: "Example home" })).toHaveFocus();
   await user.tab();
   expect(footer.contains(document.activeElement)).toBe(false);
 });
@@ -1132,4 +1136,38 @@ it("HEADER-1 retains the current environment indication on its mobile primary ic
   expect(mobile).toHaveAttribute("aria-current", "true");
   expect(mobile).toHaveTextContent("Demo");
   expect(mobile.style.boxShadow).toContain("inset");
+});
+
+it("composes the mandatory dark footer with a resolved home after named social icons", () => {
+  const shell: SiteShellInput = { brand: CONFIG.brand, skipLink: CONFIG.skipLink, origin: CONFIG.origin,
+    header: { placement: "overlay", tone: "inverse" },
+    footer: { legal: CONFIG.legal, social: { label: ref("social.label"), links: [{ href: "https://example.org/profile", label: ref("social.profile"), icon: ICON }] } } };
+  const { container } = render(<SiteFrame shell={shell} presentation={{ footerRule: "top" }} resolveCopy={resolveCopy} resolveAsset={resolveAsset}><p>Content</p></SiteFrame>);
+  const footer = container.querySelector("footer")!;
+  expect(footer).toHaveClass("site-footer-dark");
+  expect([...footer.querySelectorAll("[data-footer-region]")].map(node => node.getAttribute("data-footer-region"))).toEqual(["links", "icons", "copyright"]);
+  const icons = footer.querySelector('[data-footer-region="icons"]')!;
+  expect([...icons.querySelectorAll("a")].map(node => node.getAttribute("aria-label"))).toEqual(["Profile", "Example home"]);
+  expect(icons.querySelector("a")).toHaveAttribute("rel", "noopener noreferrer");
+  expect(icons.querySelector("a:last-child img") ?? icons.querySelector("img")).toHaveAttribute("src", BRAND_ASSET.src);
+  expect(icons.querySelectorAll("a")[1]).toHaveAttribute("href", "https://example.com/");
+  expect(container.querySelector("header")).toHaveAttribute("data-tone", "inverse");
+  expect(footer.querySelector("button")).toBeNull();
+});
+
+it("keeps the real default home with empty footer links and socials", () => {
+  const { container } = render(frame({ brand: CONFIG.brand, skipLink: CONFIG.skipLink, footer: { legal: { entity: CONFIG.legal.entity, links: [] } } }, <p>Content</p>));
+  const links = container.querySelectorAll("footer a");
+  expect(links).toHaveLength(1);
+  expect(links[0]).toHaveAttribute("aria-label", "Example home");
+  expect(links[0]).toHaveAttribute("href", "/");
+});
+
+it("resolves a dark home artwork override and refuses unsafe or unresolved footer inputs", () => {
+  const base: SiteShellInput = { brand: CONFIG.brand, skipLink: CONFIG.skipLink, footer: { legal: CONFIG.legal } };
+  const overridden = { ...base, footer: { ...base.footer!, home: { assetId: "brand-mark", href: "/home", label: ref("brand.label") } } };
+  expect(resolveShell(overridden, resolveCopy, resolveAsset).footer!.home).toEqual({ href: "/home", label: "Example home", markSrc: BRAND_ASSET.src });
+  for (const home of [{ assetId: "missing" }, { assetId: "brand-mark", href: "javascript:alert(1)" }, { assetId: "brand-mark", label: ref("blank") }, { assetId: "brand-mark", extra: true }]) {
+    expect(() => resolveShell({ ...base, footer: { ...base.footer!, home } } as SiteShellInput, resolveCopy, resolveAsset)).toThrow(/shell.footer.home/);
+  }
 });

@@ -70,6 +70,8 @@ export type { SiteChromeGround } from "../internal/viewChromeGround.js";
 
 /** The footer: optional headed columns, ungrouped links and social profiles, then the legal row. */
 interface SiteFooterFields {
+  /** Dark-compatible home artwork override; omission uses the resolved brand mark and name. */
+  readonly home?: { readonly assetId: string; readonly label?: CopyRef; readonly href?: string };
   /** A top hairline on transparent flow footers; other grounds ignore it. @default "none" */
   readonly rule?: "none" | "top";
   readonly columns?: readonly { readonly heading: CopyRef; readonly links: readonly PlainSiteLinkInput[] }[];

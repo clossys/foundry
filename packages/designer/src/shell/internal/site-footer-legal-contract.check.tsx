@@ -27,7 +27,7 @@ declare const notAClass: string;
 type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2 ? true : false;
 
 /** The exact accepted prop names; adding any member makes this fail to compile. */
-export const legalPropKeysAreClosed: Equal<keyof SiteFooterLegalProps, "entity" | "links" | "linksLabel" | "icons" | "home"> = true;
+export const legalPropKeysAreClosed: Equal<keyof SiteFooterLegalProps, "entity" | "links" | "linksLabel" | "icons" | "home" | "iconsLabel"> = true;
 
 export const legalAcceptsTheDocumentedProps = (
   <SiteFooter.Legal entity="Acme Studio" links={links} linksLabel="Legal links" />

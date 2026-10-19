@@ -4370,6 +4370,14 @@ cleanly — `shell` and `blocks` are independent sibling layers built on
 `atoms`, neither depending on the other (see "Package structure" above),
 so a real page just renders both together:
 
+`SiteFooter` keeps a dark local surface in light and dark page themes. Its
+`Legal` row places copyright left, links centered and named social icons followed
+by the home mark right; narrow containers stack links, icons, copyright.
+Provide dark-compatible artwork through `home` and optional named `icons`;
+`iconsLabel` preserves a social navigation name. Links use 44px targets,
+external rel safety and inverse focus rings. Privacy remains an ordinary link.
+Legacy `ground` controls divider policy without switching the page theme.
+
 ```tsx
 import { SiteHeader, SiteFooter } from "@clossys/designer/shell";
 import { Hero, FeatureGrid } from "@clossys/designer/blocks";

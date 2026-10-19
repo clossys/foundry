@@ -1044,9 +1044,20 @@
     & > [data-footer-region="copyright"] {
       grid-area: copyright;
     }
-    & img {
+    & img, & svg {
       max-width: 100%;
       object-fit: contain;
+    }
+    & [data-footer-region="icons"] li {
+      max-width: 100%;
+      min-width: 0;
+    }
+    & [data-footer-region="icons"] a {
+      max-width: 100%;
+    }
+    & [data-footer-region="icons"] svg {
+      max-width: var(--ui-layout-tap-target, 44px);
+      max-height: var(--ui-layout-tap-target, 44px);
     }
     @container (min-width: 64rem) {
       direction: ltr;

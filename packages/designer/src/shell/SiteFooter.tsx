@@ -125,6 +125,8 @@ export interface SiteFooterLegalProps {
   linksLabel?: string;
   /** Social/profile links with consumer-supplied decorative artwork and explicit names. */
   icons?: readonly { readonly label: string; readonly href: string; readonly icon: ReactNode }[];
+  /** Accessible group name retained for supplied social profiles and home. */
+  iconsLabel?: string;
   /** Dark-compatible authored home artwork. Always last within the icon group. */
   home?: { readonly label: string; readonly href: string; readonly markSrc: string };
 }
@@ -167,9 +169,10 @@ function requireNamedDestination(link: { label: string; href: string }): void {
  * bounded tracks wrap labels before collision and collapse to a phone stack.
  * No consent controls or arbitrary children are accepted in this row.
  */
-function SiteFooterLegal({ entity, links, linksLabel, icons = [], home }: SiteFooterLegalProps) {
+function SiteFooterLegal({ entity, links, linksLabel, icons = [], home, iconsLabel }: SiteFooterLegalProps) {
   for (const link of icons) requireNamedDestination(link);
   if (home) requireNamedDestination(home);
+  const IconGroup = iconsLabel ? "nav" : "div";
   const year = new Date().getFullYear();
   const list = (
     <ul role="list" className="m-0 flex list-none flex-wrap items-center justify-center gap-x-sm p-0">
@@ -185,7 +188,7 @@ function SiteFooterLegal({ entity, links, linksLabel, icons = [], home }: SiteFo
   return (
     <div data-footer-composition="" className="site-footer-composition">
       {linksLabel ? <nav data-footer-region="links" aria-label={linksLabel}>{list}</nav> : <div data-footer-region="links">{list}</div>}
-      <div data-footer-region="icons">
+      <IconGroup data-footer-region="icons" aria-label={iconsLabel}>
         <ul role="list" dir="ltr" className="m-0 flex list-none flex-wrap items-center justify-center gap-x-sm p-0">
           {icons.map((link, index) => <li key={index}>
             <a href={link.href} aria-label={link.label} rel={externalRel(link.href)} className={LEGAL_LINK_CLASSES} style={LEGAL_LINK_STYLE}>{link.icon}</a>
@@ -194,7 +197,7 @@ function SiteFooterLegal({ entity, links, linksLabel, icons = [], home }: SiteFo
             <img src={home.markSrc} alt="" style={{ height: "var(--ui-brandmark-height-sm, 24px)", width: "auto" }} />
           </a></li> : null}
         </ul>
-      </div>
+      </IconGroup>
       <p data-footer-region="copyright" className="m-0">{`© ${year} ${entity}`}</p>
     </div>
   );

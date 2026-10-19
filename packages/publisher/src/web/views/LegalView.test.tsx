@@ -659,12 +659,12 @@ if (mode === "framed") describe("LegalView header slots owned by SiteFrame", () 
   it("renders the same header and footer as a bare SiteHeader and SiteFooter when every slot is omitted", () => {
     const html = renderToStaticMarkup(frame(content, <span>FOOTER-SENTINEL</span>));
     expect(banner(html)).toBe(banner(renderToStaticMarkup(<SiteHeader brand={mark} />)));
-    expect(footer(html)).toBe(renderToStaticMarkup(<SiteFooter secondary={<SiteFooter.Legal entity="FOOTER-SENTINEL" links={[]} />} />));
+    expect(footer(html)).toBe(renderToStaticMarkup(<SiteFooter secondary={<SiteFooter.Legal entity="FOOTER-SENTINEL" links={[]} home={{ label: "Placeholder label effective", href: "/", markSrc: "/placeholder.svg" }} />} />).replace(/^<link[^>]+>/, ""));
   });
   it("passes ground to both the header and the footer", () => {
     const html = renderToStaticMarkup(frame(content, undefined, { ground: "transparent" }));
     expect(banner(html)).toBe(banner(renderToStaticMarkup(<SiteHeader ground="transparent" brand={mark} />)));
-    expect(footer(html)).toBe(renderToStaticMarkup(<SiteFooter ground="transparent" secondary={<SiteFooter.Legal entity="Placeholder footer entity" links={[]} />} />));
+    expect(footer(html)).toBe(renderToStaticMarkup(<SiteFooter ground="transparent" secondary={<SiteFooter.Legal entity="Placeholder footer entity" links={[]} home={{ label: "Placeholder label effective", href: "/", markSrc: "/placeholder.svg" }} />} />).replace(/^<link[^>]+>/, ""));
   });
   it("preserves the current header and footer bytes with all chrome slots", () => {
     const old = renderToStaticMarkup(frame(content, <span>FOOTER-SENTINEL</span>, chrome));

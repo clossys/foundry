@@ -140,11 +140,11 @@ it.each(["one", "two", "three", "six", "twenty", "secondary", "long-secondary"] 
   if (controls === "six" || controls === "twenty") { expect(() => output(shell)).toThrow(/three/); return; }
   for (const server of [false, true]) for (const navPlacement of ["centered"] as const) {
     const container = output({ ...shell, navPlacement }, server);
-    const brand = within(container).getByRole("link", { name: "Example home" });
+    const brand = within(container.querySelector("header")!).getByRole("link", { name: "Example home" });
     expect(container.querySelector("header")).toHaveClass("site-header-contract");
     expect(container.querySelector("header > div")).toHaveClass("site-header-row");
     expect(brand.querySelector("img")).toHaveAttribute("src", "/mark.svg");
-    expect(container.querySelectorAll('a[aria-label="Example home"]')).toHaveLength(1);
+    expect(container.querySelectorAll('header a[aria-label="Example home"]')).toHaveLength(1);
     expect(container.querySelectorAll("header nav")).toHaveLength(1);
   }
   expect(output(base).querySelector("header")).not.toHaveClass("max-tablet:[&>div]:grid-cols-3!");
@@ -153,7 +153,7 @@ it.each(["one", "two", "three", "six", "twenty", "secondary", "long-secondary"] 
 it.each([undefined, "auto", "inverse"] as const)("retains overlay brand tone %s in the centered mobile layout", tone => {
   const shell: SiteShellInput = { ...base, brand: { ...base.brand, tone }, mobileLayout: "menu-brand-action", header: { placement: "overlay", tone: "inverse" } };
   expect(renderToString(tree(shell))).toBe(renderToString(tree(shell, true)));
-  const brand = within(output(shell)).getByRole("link", { name: "Example home" });
+  const brand = within(output(shell).querySelector("header")!).getByRole("link", { name: "Example home" });
   expect(brand).toHaveClass(tone === "auto" ? "text-ink-primary" : "text-ink-on-inverse");
 });
 

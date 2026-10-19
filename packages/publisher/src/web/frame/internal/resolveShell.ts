@@ -41,6 +41,7 @@ export interface ResolvedSiteShell {
     | { readonly placement: "reserved"; readonly ground: SiteChromeGround }
     | { readonly placement: "overlay"; readonly tone: "base" | "inverse" };
   readonly footer?: {
+    readonly home: { readonly label: string; readonly href: string; readonly markSrc: string };
     readonly rule?: "none" | "top";
     readonly placement: "flow" | "overlay";
     readonly ground: SiteChromeGround;
@@ -76,7 +77,7 @@ const ACTION_KEYS = new Set(["href", "label", "emphasis", "icon"]);
 const ENVIRONMENT_KEYS = new Set(["href", "label", "icon", "isCurrent"]);
 const ICON_LINK_KEYS = new Set(["href", "label", "icon"]);
 const SOCIAL_KEYS = new Set(["label", "links"]);
-const FOOTER_KEYS = new Set(["placement", "ground", "columns", "links", "social", "legal", "rule"]);
+const FOOTER_KEYS = new Set(["placement", "ground", "columns", "links", "social", "legal", "rule", "home"]);
 const COLUMN_KEYS = new Set(["heading", "links"]);
 const LEGAL_KEYS = new Set(["entity", "links", "linksLabel"]);
 
@@ -333,7 +334,16 @@ export function resolveShell(input: SiteShellInput, resolveCopy: CopyResolver, r
         links: iconLinks(fields.links, "shell.footer.social.links"),
       };
     }
+    let home = { label: brand.label, href: href("/", "shell.footer.home.href", base), markSrc: brand.markSrc };
+    if (footerFields.home !== undefined) {
+      const fields = record(footerFields.home, "shell.footer.home", new Set(["assetId", "label", "href"]));
+      if (typeof fields.assetId !== "string" || !fields.assetId.trim()) fail("shell.footer.home.assetId must be a non-empty string.");
+      const homeAsset = resolveAsset(fields.assetId);
+      if (!isRenderImageAsset(homeAsset)) fail("shell.footer.home.assetId did not resolve to an image asset.");
+      home = { markSrc: homeAsset.src, label: fields.label === undefined ? brand.label : copy(fields.label, "shell.footer.home.label", resolveCopy), href: fields.href === undefined ? home.href : href(fields.href, "shell.footer.home.href", base) };
+    }
     footer = {
+      home,
       placement,
       ground: footerGround,
       ...(footerFields.rule === undefined ? {} : { rule: oneOf(footerFields.rule, "shell.footer.rule", ["none", "top"] as const) }),
@@ -395,9 +405,11 @@ export function resolveShell(input: SiteShellInput, resolveCopy: CopyResolver, r
     ...environments.map(() => "secondary" as const),
   ]);
   // Renderer and data contract normalize the same dependent presentation inputs.
-  const normalized = normalizeSiteFrameConfig(presentation ?? (header.placement === "overlay"
-    ? { headerPlacement: header.placement, headerTone: header.tone }
-    : { headerPlacement: header.placement, headerGround: header.ground }));
+  const normalized = normalizeSiteFrameConfig(presentation ?? {}, {
+    ...(header.placement === "overlay" ? { headerPlacement: header.placement, headerTone: header.tone } : { headerPlacement: header.placement, headerGround: header.ground }),
+    ...(footer ? { footerGround: footer.ground, footerPlacement: footer.placement, footerRule: footer.rule ?? "none" } : {}),
+  });
+  if (footer) footer = { ...footer, ground: normalized.footerGround, placement: normalized.footerPlacement, rule: normalized.footerRule };
   header = normalized.headerPlacement === "overlay"
     ? { placement: "overlay", tone: normalized.headerTone }
     : { placement: "reserved", ground: normalized.headerGround };

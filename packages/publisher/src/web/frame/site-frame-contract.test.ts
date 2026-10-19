@@ -9,7 +9,7 @@ describe("data-readable SiteFrame contract", () => {
     expect(frame.SITE_FRAME_CONTRACT).toBe(SITE_FRAME_CONTRACT);
     expect(web.SITE_FRAME_CONFIG_SCHEMA).toBe(SITE_FRAME_CONFIG_SCHEMA);
     expect(frame.normalizeSiteFrameActions).toBe(normalizeSiteFrameActions);
-    expect(SITE_FRAME_CONTRACT.constituents.Footer.status).toBe("awaiting-footer-composition");
+    expect(SITE_FRAME_CONTRACT.constituents.Footer.required).toContain("dark-in-both-themes");
     expect(SITE_FRAME_CONTRACT.identity).toBe("site-frame");
     expect(SITE_FRAME_CONTRACT.role).toBe("frame");
     expect(SITE_FRAME_CONTRACT.medium).toBe("web");
@@ -25,8 +25,8 @@ describe("data-readable SiteFrame contract", () => {
   });
   it("normalizes alphabetic flat primitive keys and rejects unknown or dependent inputs", () => {
     expect(Object.keys(SITE_FRAME_CONFIG_SCHEMA)).toEqual([...Object.keys(SITE_FRAME_CONFIG_SCHEMA)].sort());
-    expect(normalizeSiteFrameConfig()).toEqual({ headerGround: "base", headerPlacement: "reserved", headerTone: "base" });
-    expect(normalizeSiteFrameConfig({ headerPlacement: "overlay", headerTone: "inverse" })).toEqual({ headerGround: "base", headerPlacement: "overlay", headerTone: "inverse" });
+    expect(normalizeSiteFrameConfig()).toEqual({ footerGround: "base", footerPlacement: "flow", footerRule: "none", headerGround: "base", headerPlacement: "reserved", headerTone: "base" });
+    expect(normalizeSiteFrameConfig({ headerPlacement: "overlay", headerTone: "inverse" })).toEqual({ footerGround: "base", footerPlacement: "flow", footerRule: "none", headerGround: "base", headerPlacement: "overlay", headerTone: "inverse" });
     for (const invalid of [{ headerTone: "inverse" }, { headerPlacement: "overlay", headerGround: "inverse" }, { headerPlacement: "fixed" }, { headerTone: {} }, { sticky: false }, { Header: "{}" }, null, [], new Proxy({}, { ownKeys() { throw new Error("private-shape"); } })]) {
       expect(() => normalizeSiteFrameConfig(invalid)).toThrow(/SiteFrame/);
     }
@@ -55,4 +55,13 @@ it("enforces primary content dependencies through the real exported normalizer",
   for (const invalid of [{ icon }, { label: "", icon }, { label: "  ", icon }, { label: "Start" }, { label: "Start", icon: 123 }, { label: "Start", icon: [] }]) {
     expect(() => normalizeSiteFrameActions([{ href: "/start", emphasis: "primary", ...invalid }] as never)).toThrow(/SiteFrame:/);
   }
+});
+
+it("normalizes footer configuration without losing inherited header presentation", () => {
+  expect(normalizeSiteFrameConfig({ footerRule: "top" }, { headerPlacement: "overlay", headerTone: "inverse" })).toMatchObject({ footerRule: "top", headerPlacement: "overlay", headerTone: "inverse" });
+  expect(() => normalizeSiteFrameConfig({ footerPlacement: "overlay", footerGround: "transparent" })).toThrow(/SiteFrame/);
+  let reads = 0;
+  expect(() => normalizeSiteFrameConfig({ get footerRule() { reads++; return "top"; } })).toThrow(/SiteFrame/);
+  expect(reads).toBe(0);
+  expect(SITE_FRAME_CONTRACT.constituents.Footer.required).toEqual(expect.arrayContaining(["home-rightmost", "named-icons", "external-rel", "privacy-link-only"]));
 });
