@@ -29,7 +29,7 @@ export function useCommandMenuShortcut({ onOpen, enabled = true }: CommandMenuSh
     if (!enabled) return;
     const apple = /Mac|iPhone|iPad|iPod/.test(navigator.platform);
     const keydown = (event: globalThis.KeyboardEvent) => {
-      if (event.defaultPrevented || event.repeat || event.isComposing || event.altKey || event.shiftKey || event.key.toLowerCase() !== "k") return;
+      if (event.defaultPrevented || event.repeat || event.isComposing || event.altKey || event.shiftKey || typeof event.key !== "string" || event.key.toLowerCase() !== "k") return;
       if (apple ? !event.metaKey || event.ctrlKey : !event.ctrlKey || event.metaKey) return;
       const dialogs = document.querySelectorAll('[role="dialog"], [role="alertdialog"], [aria-modal="true"], dialog[open]');
       const openDialog = Array.from(dialogs).some(dialog => {

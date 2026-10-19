@@ -87,6 +87,7 @@ describe("CommandMenu", () => {
     expect(input).toHaveAttribute("aria-expanded", "true");
     expect(input).toHaveAttribute("aria-controls", screen.getByRole("listbox").id);
     expect(input).toHaveAttribute("aria-autocomplete", "list");
+    expect(screen.queryByText(copy.emptyMessage)).not.toBeInTheDocument();
     expect(document.getElementById(input.getAttribute("aria-activedescendant")!)).toHaveAccessibleName("Alpha");
     expect(screen.getByRole("status")).toHaveTextContent(/^4 results$/);
     expect(screen.getByRole("status")).toHaveAttribute("aria-live", "polite");
@@ -127,6 +128,9 @@ describe("CommandMenu", () => {
     const { input } = await open();
     await userEvent.keyboard("{ArrowDown}");
     expect(document.getElementById(input.getAttribute("aria-activedescendant")!)).toHaveAccessibleName("Bravo");
+    for (const option of screen.getAllByRole("option")) {
+      expect(option).toHaveAttribute("aria-selected", option.id === input.getAttribute("aria-activedescendant") ? "true" : "false");
+    }
     await userEvent.keyboard("{ArrowUp}{ArrowUp}");
     expect(document.getElementById(input.getAttribute("aria-activedescendant")!)).toHaveAccessibleName("Gamma");
     await userEvent.keyboard("{Enter}");
@@ -145,6 +149,17 @@ describe("CommandMenu", () => {
     expect(bravo).toHaveBeenCalledOnce();
     expect(alpha).not.toHaveBeenCalled();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("keeps composing Enter in search and Enter on close from running a command", async () => {
+    const { input } = await open();
+    fireEvent.keyDown(input, { key: "Enter", isComposing: true });
+    expect(alpha).not.toHaveBeenCalled();
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    screen.getByRole("button", { name: copy.closeLabel }).focus();
+    await userEvent.keyboard("{Enter}");
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(alpha).not.toHaveBeenCalled();
   });
 
   it("reveals the active row without moving search focus, including filtering with a stable active ID", async () => {
@@ -281,6 +296,23 @@ describe("CommandMenu", () => {
     view.unmount();
     expect(modKey().defaultPrevented).toBe(false);
     expect(onOpen).not.toHaveBeenCalled();
+  });
+
+  it("ignores autofill keydown events whose key is undefined without throwing or opening", () => {
+    const onOpen = vi.fn(), errors: unknown[] = [];
+    function Shortcut() { useCommandMenuShortcut({ onOpen }); return null; }
+    const view = render(<Shortcut />);
+    const capture = (event: ErrorEvent) => { errors.push(event.error); event.preventDefault(); };
+    window.addEventListener("error", capture);
+    try {
+      const apple = /Mac|iPhone|iPad|iPod/.test(navigator.platform);
+      const event = new KeyboardEvent("keydown", { ctrlKey: !apple, metaKey: apple, cancelable: true });
+      Object.defineProperty(event, "key", { value: undefined });
+      expect(() => act(() => { window.dispatchEvent(event); })).not.toThrow();
+      expect(errors).toEqual([]);
+      expect(onOpen).not.toHaveBeenCalled();
+      expect(event.defaultPrevented).toBe(false);
+    } finally { window.removeEventListener("error", capture); view.unmount(); }
   });
 
   it.each(["dialog", "alertdialog", "native-open"])("declines a visible %s surface", role => {
