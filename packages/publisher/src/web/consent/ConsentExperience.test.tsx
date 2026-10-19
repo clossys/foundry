@@ -1054,6 +1054,9 @@ describe("CONSENT-1 card composition", () => {
     const link = screen.getByRole("link", { name: "privacy policy" });
     expect(link.parentElement).toHaveTextContent(sentence);
     expect(link.parentElement!.textContent).toBe(sentence);
+    // The signed-off reference link: body-small, primary ink, muted rest underline, never split.
+    expect(link).toHaveClass("text-body-s", "text-ink-primary", "underline", "decoration-ink-muted", "hover:decoration-current", "whitespace-nowrap");
+    expect(link).not.toHaveClass("decoration-transparent", "text-ink-link");
   });
 
   it("keeps the present label as plain text for an unsanctioned href, without creating an anchor", () => {
@@ -1101,8 +1104,10 @@ describe("CONSENT-1 measured page clearance", () => {
     declaration.setProperty(property, value);
     return declaration.getPropertyValue(property);
   };
-  const expectSpace = (padding: string, scroll: string) => {
-    expect(document.documentElement.style.paddingBlockEnd).toBe(cssValue("padding-block-end", padding));
+  // The card floats over the page end (footer included), so the document's own
+  // end padding stays the host's; only focus-scroll clearance is measured.
+  const expectSpace = (hostPadding: string, scroll: string) => {
+    expect(document.documentElement.style.paddingBlockEnd).toBe(cssValue("padding-block-end", hostPadding));
     expect(document.documentElement.style.scrollPaddingBlockEnd).toBe(cssValue("scroll-padding-block-end", scroll));
   };
   async function withCard(
@@ -1142,9 +1147,10 @@ describe("CONSENT-1 measured page clearance", () => {
     }
   }
 
-  it("reserves actual card height plus its bottom gap, composes host space and throttles resize reads", async () => {
+  it("floats over the page end without padding the document, measures focus-scroll clearance and throttles resize reads", async () => {
     await withCard(({ geometry, resize, flush, observed, reads }) => {
-      expectSpace("calc(10px + 140px)", "max(24px, 140px)");
+      expectSpace("10px", "max(24px, 140px)");
+      expect(document.documentElement.style.getPropertyPriority("padding-block-end")).toBe("important");
       expect(observed).toHaveBeenCalledWith(banner());
       const before = reads();
       geometry(180, 20);
@@ -1152,11 +1158,11 @@ describe("CONSENT-1 measured page clearance", () => {
       expect(reads()).toBe(before);
       flush();
       expect(reads()).toBe(before + 1);
-      expectSpace("calc(10px + 200px)", "max(24px, 200px)");
+      expectSpace("10px", "max(24px, 200px)");
       geometry(180, 40);
       fireEvent(window, new Event("resize"));
       flush();
-      expectSpace("calc(10px + 220px)", "max(24px, 220px)");
+      expectSpace("10px", "max(24px, 220px)");
     });
   });
 
@@ -1194,7 +1200,7 @@ describe("CONSENT-1 measured page clearance", () => {
   it("normalizes auto and empty host arithmetic, then restores the authored values", async () => {
     await withCard(({ view }) => {
       const style = document.documentElement.style;
-      expectSpace("calc(0px + 140px)", "max(0px, 140px)");
+      expectSpace("", "max(0px, 140px)");
       view.unmount();
       expect(style.paddingBlockEnd).toBe("");
       expect(style.scrollPaddingBlockEnd).toBe("auto");
@@ -1214,17 +1220,17 @@ describe("CONSENT-1 measured page clearance", () => {
     await withCard(async ({ geometry, flush }) => {
       geometry(160, 20);
       fireEvent(window, new Event("resize")); flush();
-      expectSpace("calc(10px + 180px)", "max(24px, 180px)");
+      expectSpace("10px", "max(24px, 180px)");
       geometry(180, 20);
       await act(async () => { banner()!.appendChild(document.createTextNode("Additional resolved notice text.")); });
       flush();
-      expectSpace("calc(10px + 200px)", "max(24px, 200px)");
+      expectSpace("10px", "max(24px, 200px)");
     }, { observer: false });
   });
 
   it("keeps complex authored host lengths intact and restores their CSSOM serialization", async () => {
     await withCard(({ view }) => {
-      expectSpace("calc(calc(2% + 3px) + 140px)", "max(calc(4% + 5px), 140px)");
+      expectSpace("calc(2% + 3px)", "max(calc(4% + 5px), 140px)");
       view.unmount();
       expectSpace("calc(2% + 3px)", "calc(4% + 5px)");
       expect(document.documentElement.style.getPropertyPriority("padding-block-end")).toBe("important");

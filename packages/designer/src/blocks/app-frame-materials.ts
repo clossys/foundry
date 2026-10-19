@@ -1,8 +1,10 @@
+import { GroupedTable } from "./GroupedTable.js";
 import { Panel } from "./Panel.js";
 import { Drawer } from "./Drawer.js";
 import { ResizablePane } from "./ResizablePane.js";
 import { CommandMenu } from "./CommandMenu.js";
 import { AppNavigation } from "./AppNavigation.js";
+import { AccountMenu } from "./AccountMenu.js";
 
 /** Source-backed Material selections within the Block tier; these records grant no role qualification. */
 export const APP_FRAME_MATERIALS = [
@@ -63,5 +65,25 @@ export const APP_FRAME_MATERIALS = [
     ],
     configs: [{ prop: "collapsed", values: [false, true], default: false, source: "src/blocks/AppNavigation.tsx" }],
     authoredInputs: ["tree", "activeId", "activeHref", "label", "footer", "emptyMessage", "navigationKey", "defaultCollapsed", "onCollapsedChange", "drawerOpen", "onDrawerOpenChange", "dismissAt", "openLabel", "closeLabel", "expandLabel", "collapseLabel", "formatDisclosureLabel"],
+  },
+  {
+    id: "account-menu", layer: "blocks", exportName: "AccountMenu", component: AccountMenu, source: "src/blocks/AccountMenu.tsx",
+    regions: ["identity", "trigger", "content", "preferences"],
+    dependencies: [
+      { exportName: "Avatar", source: "src/atoms/Avatar.tsx" },
+      { exportName: "Button", source: "src/atoms/Button.tsx" },
+      { exportName: "Icon", source: "src/atoms/Icon.tsx" },
+      { exportName: "Menu", source: "src/atoms/Menu.tsx" },
+      { exportName: "Tooltip", source: "src/atoms/Tooltip.tsx" },
+    ],
+    configs: [{ prop: "collapsed", values: [false, true], default: false, source: "src/blocks/AccountMenu.tsx" }],
+    authoredInputs: ["actor", "sections", "contextLabel", "triggerLabel", "collapsed", "onClose", "onRoute"],
+  },
+  {
+    id: "grouped-table", layer: "blocks", exportName: "GroupedTable", component: GroupedTable, source: "src/blocks/GroupedTable.tsx",
+    regions: ["caption", "headers", "content"],
+    dependencies: [{ exportName: "Card", source: "src/atoms/Card.tsx" }],
+    configs: [],
+    authoredInputs: ["caption", "rowHeader", "groups", "rows", "rowKey", "emptyMessage"],
   },
 ] as const;

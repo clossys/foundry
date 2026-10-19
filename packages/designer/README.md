@@ -55,6 +55,27 @@ cells: every axis cell supplies an explicit scalar value. Consumers must still
 author valid content, callbacks and data; this declaration supplies no renderer
 or general-purpose validator.
 
+The lookup has finite keys: only some atoms have a represented comparison.
+For a dynamic string ID, narrow it to `keyof typeof ATOM_COMPARISON` with an
+ownership guard before indexing, and handle an unlisted ID as no entry:
+
+```ts
+import { ATOM_COMPARISON } from "@clossys/designer/atoms";
+
+type ComparisonKey = keyof typeof ATOM_COMPARISON;
+
+function isComparisonKey(key: string): key is ComparisonKey {
+  return Object.hasOwn(ATOM_COMPARISON, key);
+}
+
+function findComparison(atomId: string) {
+  if (isComparisonKey(atomId)) {
+    return ATOM_COMPARISON[atomId];
+  }
+  return undefined; // No represented comparison for this atom.
+}
+```
+
 The public types are `AtomGuidance`, `AtomApiFacts`, `AtomDisplayGroup`, `AtomComparison`,
 `AtomMedium`, `AtomMediumState`, `AtomScalar`, `AtomEvidence`,
 `AtomOptionGuidance`, `AtomCondition`, `AtomConstraint`, `AtomWebImplementation` and
@@ -158,13 +179,13 @@ surfaces and live in `@clossys/publisher/web`.
   `Separator`, `Chip`, `StatusMark`, `Meter`.
 - **`blocks`** — owns the internal layout of multiple named regions,
   typically by composing one or more atoms (and/or layout) into something
-  with a real job on a page. Forty-one ship: `AccountMenu`, `PageHeader`, `EmptyState`,
+  with a real job on a page. Forty-two ship: `AccountMenu`, `PageHeader`, `EmptyState`,
   `DataTable`, `DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`,
   `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `SectionFrame`,
   `MarketingChapter`, `FeatureGrid`, `Item`, `Items`, `Tree`, `AnatomyCallouts`, `RecordLedger`, `Scene`, `Matrix`,
   `Specimen`, `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`,
   `PricingTable`, `Testimonial`, `ArticleBody`, `ConsentBanner`, `Panel`, `Drawer`,
-  `ResizablePane`, `CommandMenu` and `AppNavigation` (see "Blocks" below).
+  `ResizablePane`, `CommandMenu`, `AppNavigation` and `GroupedTable` (see "Blocks" below).
 - **`shell`** — the persistent frame around content (nav, layout chrome)
   that provides the slots content fills. One per app; survives route
   changes that swap out the content underneath it. `Shell` ships with five
@@ -234,7 +255,7 @@ smallest stable subpath that owns what you need:
 
 ### Token details and selection
 
-The flat `TOKENS` registry has 186 stable property identities across brand
+The flat `TOKENS` registry has 188 stable property identities across brand
 and supported theme overlays, with zero per-token configuration. Use the
 property-keyed `TOKEN_GUIDANCE` for purpose, appropriate use, misuse or an
 alternative, the consuming CSS application and its context, and a contextual
@@ -4415,14 +4436,19 @@ banner is positioned over the page. If you pin the banner to the bottom
 visually, render it early in DOM order so keyboard and assistive-tech users
 reach it without tabbing through the whole page first.
 
-The opt-in card sits at the inline start from tablet width and is centred
-on phones, with safe-area gutters and the form-width cap. It uses the
-existing glass, blur and hairline roles; unsupported backdrop filters and
-reduced transparency use an opaque plate, and forced colours use system
-colours. There is no motion. Long copy can wrap and scroll within the
-viewport. The title stays as a visually hidden heading that names the
-region. The policy slot is inline with the body, and both outlined choices
-share the row equally. Pass `selectedChoice="granted"` or `"denied"` from
+The opt-in card floats on the notice layer (`--ui-z-notice`), above the
+shell header and footer. Below tablet width it fills the viewport less
+safe-area gutters, centred; from tablet width it is capped at the notice
+width (`--ui-width-notice-max`) and sits at the bottom inline start. Its
+plate is the base surface at 90% with the notice backdrop blur
+(`--blur-notice`), a hairline in the base line colour and the raised
+elevation; unsupported backdrop filters use the base surface at 95%, reduced
+transparency uses an opaque plate, and forced colours use system colours.
+Its only motion is a short background and blur transition, removed under
+reduced motion. Long copy can wrap and scroll within the viewport. The title
+stays as a visually hidden heading that names the region. The policy slot is
+inline with the body, and both choices fill a two-column row as full-width
+tap targets whose labels may wrap. Pass `selectedChoice="granted"` or `"denied"` from
 host state to show a decorative check and `aria-pressed`; the component
 stores no choice. The live region stays mounted in either presentation.
 
@@ -4964,8 +4990,12 @@ own doc comment for why it's `shell`, not `blocks`, despite reading like a
 `navPlacement="centered"` and `mobileLayout="menu-brand-action"` are the
 shared defaults. Equal side tracks center navigation on the whole header;
 `NavDisclosure` measures intrinsic brand/link/action widths and collapses
-before collision. Mobile centers the supplied mark, with menu at inline-start
-and a supplied primary icon or empty track at inline-end. The layout mirrors
+before collision. Mobile centers the supplied mark on the whole bar, not on
+the space left between the controls, with menu at inline-start and a supplied
+primary icon or empty track at inline-end. The mobile brand hides wordmark
+text only: a `Brandmark` mark stays visible (an image, a shared plate holding
+an image, or an accent mark tagged `data-brand-mark`), and the link keeps its
+`aria-label` as its name while the wordmark is hidden. The layout mirrors
 in RTL. `secondaryAction` renders before `actions` in the trailing region.
 Explicit `navPlacement="leading"` or `mobileLayout="inline"` retain legacy
 positioning rather than the default geometry. DOM order remains brand, nav,
@@ -5362,6 +5392,46 @@ Declared boundary: the wordmark's size is the mark's height times the fixed
 22/48 ratio, so at `size="sm"` (a 24px mark) the wordmark is 11px. Sizes
 derive from that ratio and are not raised to a minimum, so use `"md"` or
 `"lg"` where an 11px wordmark is too small.
+
+One brand slot size: the mark's box is the size's `--ui-brandmark-height-*`
+token for every form (`variant="mark"` or `"lockup"`, either plate, either
+`markInk`), so a mark-only brand and a lockup share one slot height, and the
+desktop header, the mobile bar and the menu panel all use that same token.
+The header styles set no brand height or font size of their own, so no
+per-site override is needed.
+
+#### Accent mark
+
+`markInk` is `"image"` or `"accent"`. On a `Brandmark` of its own, `"image"`
+is the default and the mark is the `markSrc` image, as above. Inside
+`SiteHeader`, an omitted `markInk` becomes `"accent"`, so the header's
+logomark is in the accent token by default; pass `markInk="image"` there to
+opt out. With `"accent"`,
+`Brandmark` paints the mark's shape in the accent token (`bg-accent`): a
+decorative `<span>` the size's height square, using `markSrc` as a CSS mask
+(`mask-image`, `contain`, centred), so the mark follows the accent token in
+light and dark color schemes. The wordmark keeps the link's ink: the
+`--color-ink-primary` token, or `--color-ink-on-inverse` with
+`tone="inverse"` on a dark or overlay ground, so it switches with the scheme
+and the ground through tokens only. With `plate="shared"` the accent mark sits
+inset on the plate. The prop is part of `BrandmarkProps`; no new type is
+exported.
+
+```tsx
+<Brandmark
+  variant="lockup"
+  size="md"
+  label="Acme home"
+  markSrc="/brand/acme-mark.svg"
+  wordmark="Acme"
+  markInk="accent"
+/>;
+```
+
+What it does not do: the mask uses the image's alpha only, so a multi-colour
+mark becomes a one-colour accent silhouette, including in the header's
+default; pass `markInk="image"` for a mark whose colours matter. It does not check that the accent reads on the ground behind
+it.
 
 #### Shared plate
 
@@ -6427,6 +6497,10 @@ not a grab-bag).
 | `AnatomyCallouts` | component | A specimen panel with 3 or 5 numbered markers and an ordered key. |
 | `AnatomyCalloutsProps` | type | Required caller instance `id`, `label`, `panel`, `markers`, `keyLabel`; optional `legendSide`, `sample`, `headingLevel`, `ground`, `className`, `style`. |
 | `AnatomyCalloutsMarker` | type | Stable `id`, labelled `target`, authored `heading` and `description`. |
+| `GroupedTable` | component | Captioned native table with grouped column headers, row headers and a named overflow region. |
+| `GroupedTableProps` | type | Generic table props: `caption`, `rowHeader`, `groups`, `rows`, `rowKey`, `emptyMessage`, optional `className`. |
+| `GroupedTableGroup` | type | Group `id`, React-node `header`, and nonempty `columns`. |
+| `GroupedTableColumn` | type | Column `id`, React-node `header`, and `cell(row)` renderer; also used for the leading row header. |
 | `RecordLedger` | component | A record on rules, without a panel. |
 | `RecordLedgerProps` | type | `form: "record"` takes unique instance seed `id`, `head`, `groups`, `columns?`, `caption`, `flagLabel?`; accepts `ground`, `headingLevel`, `className`. |
 | `LedgerRowData` | type | Static row: `id`, `label`, `detail?`, `status?` (`tone`, `label`), `flag?`. |
@@ -7484,7 +7558,8 @@ const report = checkConsumerArtContract(art);
 
 `Brandmark tone="inverse"` uses inverse wordmark ink; `"auto"` keeps the base
 ink. A `Brandmark` passed directly to an overlay `SiteHeader` follows the header tone
-unless its own tone is explicit. `NavDisclosure tone="inverse"` uses inverse
+unless its own tone is explicit. A `Brandmark` passed directly to any `SiteHeader`
+paints its logomark in the accent token unless it sets `markInk="image"`. `NavDisclosure tone="inverse"` uses inverse
 trigger ink at rest, on hover, when expanded and on keyboard focus. An omitted
 nav tone follows an inverse overlay header; an explicit `"auto"` keeps base ink.
 Both controls otherwise retain their existing default markup.
@@ -7514,7 +7589,7 @@ static equivalent"). Breakpoint copy props are `thresholdLabel` ("Threshold"),
 `matchLabel` ("Match"), `unavailableMessage` ("unavailable"), `matchesMessage`
 ("yes") and `notMatchesMessage` ("no").
 
-All 186 properties support their authored applications across 19 kinds. The 168
+All 188 properties support their authored applications across 19 kinds. The 170
 static specimens cover surface, text, border, control, status, chart, font,
 space, size, icon, brandmark, radius, shadow, blur, ring, layer and opacity.
 Patterns expose translucent applications; inverse foregrounds receive an inverse
@@ -7755,6 +7830,13 @@ remain supported. The interactive Material and helpers use the existing client
 blocks entry; no server-subset export or application-frame assembly is added.
 ### Account menu composition example
 
+`APP_FRAME_MATERIALS` includes the `account-menu` selection for `AccountMenu`,
+with identity, trigger, content and preference regions, its rendered `Avatar`,
+`Button`, `Icon`, `Menu` and `Tooltip` dependencies, and the finite `collapsed`
+configuration. Its authored inputs include `actor`, `sections`, `contextLabel`,
+`triggerLabel`, `collapsed`, `onClose` and `onRoute`; the host supplies identity,
+preference state, actions and routing.
+
 ```tsx
 import { AccountMenu } from "@clossys/designer/blocks";
 
@@ -7765,3 +7847,35 @@ export function AccountControl() {
     ] }]} />;
 }
 ```
+
+### GroupedTable
+
+`GroupedTable<Row>` is a Block for a captioned table with two levels of column
+headers and a leading row header. It composes an outlined `Card` around a
+focusable overflow region named by the visible caption. Native `colgroup`,
+`scope` and explicit `headers` associations connect each data cell to its row,
+group and leaf header. Generated IDs stay local to each instance.
+
+```tsx
+import { GroupedTable } from "@clossys/designer/blocks";
+
+<GroupedTable
+  caption="Quarterly results"
+  rowHeader={{ id: "team", header: "Team", cell: row => row.name }}
+  groups={[{ id: "quarter", header: "This quarter", columns: [
+    { id: "total", header: "Total", cell: row => row.total },
+  ] }]}
+  rows={[{ id: "alpha", name: "Alpha", total: 0 }]}
+  rowKey={row => row.id}
+  emptyMessage="No results yet"
+/>
+```
+
+Required props are `caption`, `rowHeader`, `groups`, `rows`, `rowKey` and
+`emptyMessage`; `className` customizes the outer Card. Header and cell renderers
+accept React nodes, including zero and authored links or actions. Each group
+needs at least one column. IDs must be nonempty and unique among groups or
+within a group's columns; row keys must be unique. Invalid input throws.
+An empty body displays `emptyMessage` across the row header and all leaf columns.
+The component and its types are exported from the client blocks entry and the
+component is registered in `APP_FRAME_MATERIALS` with its actual Card dependency.

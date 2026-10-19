@@ -881,6 +881,13 @@ export const TOKEN_GUIDANCE: Readonly<Record<string, TokenGuidance>> = {
     application: {"cssProperty": "max-inline-size", "valueType": "length", "context": "Maximum inline size of linear form content, with fields retaining their own responsive rules."},
     specimen: "size",
   },
+  "--ui-width-notice-max": {
+    purpose: "The notice measure bounds a compact pinned notice card so its wording stays short and legible beside the page.",
+    use: "Use notice-max as the inline-size cap of a floating notice card from tablet width upward.",
+    misuse: "Do not use notice-max as a page, form or reading measure, or cap a notice that fills a phone viewport.",
+    application: {"cssProperty": "max-inline-size", "valueType": "length", "context": "Maximum inline size of a pinned notice card once the viewport reaches tablet width."},
+    specimen: "size",
+  },
   "--ui-width-page-padding-x": {
     purpose: "The page inset maintains a fluid horizontal gutter between content and viewport edges.",
     use: "Use this token as inline padding on the shared page or shell container.",
@@ -1117,6 +1124,13 @@ export const TOKEN_GUIDANCE: Readonly<Record<string, TokenGuidance>> = {
     use: "Use blur-glass in a backdrop-filter blur function with a supported glass surface.",
     misuse: "Do not apply glass blur to the foreground text or assume blur alone provides contrast.",
     application: {"cssProperty": "backdrop-filter", "valueType": "length", "context": "Backdrop blur behind glass header plates, with an appropriate solid or translucent fallback."},
+    specimen: "blur",
+  },
+  "--blur-notice": {
+    purpose: "Notice blur softens the page behind a translucent pinned notice card without the stronger glass identity.",
+    use: "Use blur-notice in a backdrop-filter blur function behind a notice card plate that has a solid fallback.",
+    misuse: "Do not substitute notice blur for the brandable glass blur on header plates or rely on blur alone for contrast.",
+    application: {"cssProperty": "backdrop-filter", "valueType": "length", "context": "Backdrop blur behind a pinned notice card, with an opaque fallback where blur or transparency is unavailable."},
     specimen: "blur",
   },
   "--ui-ring-focus": {
@@ -1366,7 +1380,7 @@ export const TOKEN_DISPLAY_GROUPS: readonly TokenDisplayGroup[] = [
     { id: "brandmark-gaps", label: "Brandmark gaps", properties: ["--ui-brandmark-gap-sm", "--ui-brandmark-gap-md", "--ui-brandmark-gap-lg"] },
   ] },
   { id: "sizing", label: "Sizing", families: [
-    { id: "content-widths", label: "Content widths", properties: ["--ui-width-content-max", "--ui-width-display-max", "--ui-width-hero-wide", "--ui-width-prose-max", "--ui-width-wide-max", "--ui-width-form-max"] },
+    { id: "content-widths", label: "Content widths", properties: ["--ui-width-content-max", "--ui-width-display-max", "--ui-width-hero-wide", "--ui-width-prose-max", "--ui-width-wide-max", "--ui-width-form-max", "--ui-width-notice-max"] },
     { id: "app-regions", label: "App regions", properties: ["--ui-layout-sidebar-w", "--ui-layout-sidebar-rail-w", "--ui-layout-aside-w", "--ui-layout-drawer-w"] },
     { id: "interaction-target", label: "Interaction target", properties: ["--ui-layout-tap-target"] },
     { id: "row-height", label: "Row height", properties: ["--ui-density-row"] },
@@ -1381,7 +1395,7 @@ export const TOKEN_DISPLAY_GROUPS: readonly TokenDisplayGroup[] = [
   ] },
   { id: "effects", label: "Effects", families: [
     { id: "opacity", label: "Opacity", properties: ["--ui-alpha-disabled"] },
-    { id: "backdrop-blur", label: "Backdrop blur", properties: ["--blur-glass"] },
+    { id: "backdrop-blur", label: "Backdrop blur", properties: ["--blur-glass", "--blur-notice"] },
     { id: "shadows", label: "Shadows", properties: ["--ui-elevation-none", "--ui-elevation-raised", "--ui-elevation-floating", "--ui-elevation-panel"] },
     { id: "rings", label: "Rings", properties: ["--ui-ring-focus", "--ui-ring-on-inverse"] },
   ] },
