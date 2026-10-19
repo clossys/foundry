@@ -69,6 +69,10 @@ export interface DialogProps extends Omit<AriaDialogTriggerProps, "children"> {
   style?: CSSProperties;
   /** Merged onto the scrim/backdrop element. */
   overlayClassName?: string;
+  /** Merged onto the Modal wrapper; omitted preserves the centered dialog's exact defaults. */
+  modalClassName?: string;
+  /** Layout overrides for the Modal wrapper, separate from the dialog surface's style. */
+  modalStyle?: CSSProperties;
 }
 
 /**
@@ -101,6 +105,8 @@ function DialogRoot({
   className,
   style,
   overlayClassName,
+  modalClassName,
+  modalStyle,
   ...rest
 }: DialogProps) {
   return (
@@ -114,7 +120,7 @@ function DialogRoot({
         )}
         style={{ zIndex: UI_Z_MODAL }}
       >
-        <Modal className={cx("flex w-full", SIZE_CLASSES[size])}>
+        <Modal className={cx("flex w-full", SIZE_CLASSES[size], modalClassName)} style={modalStyle}>
           <AriaDialog
             className={cx(
               "flex max-h-[85vh] w-full flex-col gap-md overflow-auto rounded-control border border-overlay-border bg-overlay-surface p-lg text-body text-ink-primary outline-none",

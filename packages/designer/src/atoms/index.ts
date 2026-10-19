@@ -179,6 +179,8 @@ export type { MeterProps, MeterTone, MeterDirection, MeterEmphasis } from "./Met
 export { cx as mergeUiClasses } from "./internal/cx.js";
 
 export { ATOM_GUIDANCE, ATOM_API_FACTS, ATOM_DISPLAY_GROUPS } from "./guidance/internal/data.js";
+export { ResizeHandle } from "./ResizeHandle.js";
+export type { ResizeHandleProps } from "./ResizeHandle.js";
 export type {
   AtomMedium, AtomMediumState, AtomScalar, AtomEvidence, AtomOptionGuidance,
   AtomCondition, AtomConstraint, AtomWebImplementation, AtomMediumGuidance, AtomGuidance,
