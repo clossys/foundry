@@ -35,7 +35,9 @@ export function normalizeSiteFrameConfig(input: unknown = {}, inherited?: SiteFr
     if (typeof descriptor.value !== "string" || !values.includes(descriptor.value)) fail();
     fields[key] = descriptor.value;
   }
-  const result = Object.fromEntries(Object.entries(SITE_FRAME_CONFIG_SCHEMA).map(([key, field]) => [key, fields[key] ?? defaults?.[key as keyof SiteFramePresentationConfig] ?? field.default])) as Required<SiteFramePresentationConfig>;
+  // Explicit header inputs retain their independent defaults; footer-only inputs inherit the shell header.
+  const explicitHeader = Object.keys(fields).some(key => key.startsWith("header"));
+  const result = Object.fromEntries(Object.entries(SITE_FRAME_CONFIG_SCHEMA).map(([key, field]) => [key, fields[key] ?? (explicitHeader && key.startsWith("header") ? undefined : defaults?.[key as keyof SiteFramePresentationConfig]) ?? field.default])) as Required<SiteFramePresentationConfig>;
   if (result.headerPlacement === "overlay" ? result.headerGround !== "base" : result.headerTone !== "base") fail();
   if (result.footerPlacement === "overlay" && result.footerGround === "transparent") fail();
   return Object.freeze(result);
