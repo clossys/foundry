@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
+import { useCallback, useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { FieldInputContext } from "react-aria-components";
 import { Dialog } from "../atoms/Dialog.js";
 import { SearchField } from "../atoms/SearchField.js";
@@ -8,6 +8,20 @@ import { Icon } from "../atoms/Icon.js";
 import { UI_ALPHA_DISABLED } from "../atoms/internal/ui-vars.js";
 import { X } from "../icons/X.js";
 import type { CommandMenuProps, CommandMenuShortcutOptions } from "./command-menu-types.js";
+
+function defaultResultCountMessage(count: number): string {
+  return String(count) + " results";
+}
+
+function CommandMenuGroupRegion({ label, children }: { label: string; children: ReactNode }) {
+  const headingId = useId();
+  return (
+    <div role="group" aria-labelledby={headingId} className="flex flex-col gap-xs">
+      <p id={headingId} className="m-0 px-sm py-xs text-caption text-ink-muted">{label}</p>
+      {children}
+    </div>
+  );
+}
 
 /** Opt-in opening shortcut. Every open modal, including the command menu itself, keeps ownership of its keys. */
 export function useCommandMenuShortcut({ onOpen, enabled = true }: CommandMenuShortcutOptions): void {
@@ -39,6 +53,8 @@ export function useCommandMenuShortcut({ onOpen, enabled = true }: CommandMenuSh
 export function CommandMenu({
   heading, searchLabel, closeLabel, emptyMessage, groups, isOpen, onOpenChange,
   query, onQueryChange, filter, dir,
+  /** @default `${count} results` */
+  resultCountMessage = defaultResultCountMessage,
 }: CommandMenuProps) {
   const id = useId();
   const input = useRef<HTMLInputElement | null>(null);
@@ -104,8 +120,7 @@ export function CommandMenu({
         </FieldInputContext.Provider>
         <div id={`${id}-results`} role="listbox" aria-label={searchLabel} className="min-h-0 overflow-auto">
           {visibleGroups.map(group => (
-            <div key={group.id} role="group" aria-labelledby={`${id}-group-${encodeURIComponent(group.id)}`} className="flex flex-col gap-xs">
-              <p id={`${id}-group-${encodeURIComponent(group.id)}`} className="m-0 px-sm py-xs text-caption text-ink-muted">{group.label}</p>
+            <CommandMenuGroupRegion key={group.id} label={group.label}>
               {group.items.map(item => (
                 <a key={item.id} id={optionId(item.id)} role="option" aria-label={item.label}
                   aria-selected={active?.id === item.id} aria-disabled={item.disabled || undefined}
@@ -129,11 +144,11 @@ export function CommandMenu({
                   {item.shortcutHint ? <span className="shrink-0 text-caption text-ink-muted">{item.shortcutHint}</span> : null}
                 </a>
               ))}
-            </div>
+            </CommandMenuGroupRegion>
           ))}
         </div>
         {visible.length === 0 ? <div className="text-body text-ink-secondary">{emptyMessage}</div> : null}
-        <span role="status" aria-live="polite" aria-atomic="true" className="sr-only">{visible.length} results</span>
+        <span role="status" aria-live="polite" aria-atomic="true" className="sr-only">{resultCountMessage(visible.length)}</span>
       </div>
     </Dialog>
   );

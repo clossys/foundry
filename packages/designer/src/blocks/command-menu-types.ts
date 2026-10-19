@@ -29,6 +29,8 @@ export interface CommandMenuProps {
   onQueryChange: (query: string) => void;
   /** Defaults to case-insensitive label matching. */
   filter?: (item: CommandMenuItem, query: string) => boolean;
+  /** Polite announcement of the visible result count. @default `${count} results` */
+  resultCountMessage?: (count: number) => string;
   dir?: "ltr" | "rtl";
 }
 

@@ -7531,7 +7531,9 @@ The search input receives initial focus and controls a grouped listbox.
 Arrows wrap through enabled results, Enter activates the current filtered
 result, and pointer activation uses the same destination. Escape closes even
 with a nonempty query; Dialog contains focus and restores the external opener.
-The count is announced politely. Logical layout supports `dir="rtl"`,
+The count is announced politely as "N results" by default; override
+`resultCountMessage(count)` to localize the complete announcement.
+Logical layout supports `dir="rtl"`,
 disabled results retain semantics, and inherited control transitions honor
 reduced motion. Closed server rendering is empty; interaction requires the
 client. This component is outside the server-safe subset.
@@ -7545,7 +7547,7 @@ reopen. Listeners are removed when disabled or unmounted.
 | Export | Kind | Contract |
 | --- | --- | --- |
 | `CommandMenu` | component | Controlled modal command search over host-supplied groups. |
-| `CommandMenuProps` | type | Required labels, empty message, groups, open/query state and callbacks; optional filter and direction. |
+| `CommandMenuProps` | type | Required labels, empty message, groups, open/query state and callbacks; optional filter, count-message formatter and direction. |
 | `CommandMenuItem` | type | Unique ID, string label, href or action, and optional description, shortcut hint, icon and disabled state. |
 | `CommandMenuGroup` | type | Stable ID, label and ordered items. |
 | `useCommandMenuShortcut` | function | Opt-in opening shortcut outside visible dialogs. |
@@ -7565,6 +7567,7 @@ export function CommandExample() {
       <CommandMenu heading="Commands" searchLabel="Find a command"
         closeLabel="Close commands" emptyMessage="No matching commands"
         isOpen={isOpen} onOpenChange={setOpen} query={query} onQueryChange={setQuery}
+        resultCountMessage={count => count + " matching commands"}
         groups={[{ id: "pages", label: "Pages", items: [
           { id: "documents", label: "Documents", href: "/documents" },
         ] }]} />

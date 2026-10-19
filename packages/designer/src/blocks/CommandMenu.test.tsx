@@ -25,14 +25,14 @@ const copy = { heading: "Commands", searchLabel: "Search commands", closeLabel: 
 
 afterEach(() => { vi.restoreAllMocks(); vi.clearAllMocks(); });
 
-function Host({ items = groups, query: initialQuery = "", filter, shortcut = false, dir }: any = {}) {
+function Host({ items = groups, query: initialQuery = "", filter, shortcut = false, dir, resultCountMessage }: any = {}) {
   const [isOpen, setOpen] = useState(false);
   const [query, setQuery] = useState(initialQuery);
   useCommandMenuShortcut({ onOpen: () => setOpen(true), enabled: shortcut });
   return <>
     <button onClick={() => setOpen(true)}>Open commands</button><button>Outside</button>
     <CommandMenu {...copy} groups={items} isOpen={isOpen} onOpenChange={setOpen}
-      query={query} onQueryChange={setQuery} filter={filter} dir={dir} />
+      query={query} onQueryChange={setQuery} filter={filter} dir={dir} resultCountMessage={resultCountMessage} />
   </>;
 }
 async function open(props = {}) {
@@ -88,10 +88,39 @@ describe("CommandMenu", () => {
     expect(input).toHaveAttribute("aria-controls", screen.getByRole("listbox").id);
     expect(input).toHaveAttribute("aria-autocomplete", "list");
     expect(document.getElementById(input.getAttribute("aria-activedescendant")!)).toHaveAccessibleName("Alpha");
-    expect(screen.getByRole("status")).toHaveTextContent("4");
+    expect(screen.getByRole("status")).toHaveTextContent(/^4 results$/);
+    expect(screen.getByRole("status")).toHaveAttribute("aria-live", "polite");
     await userEvent.type(input, "BRAV");
-    expect(screen.getByRole("status")).toHaveTextContent("1");
+    expect(screen.getByRole("status")).toHaveTextContent(/^1 results$/);
     expect(document.getElementById(input.getAttribute("aria-activedescendant")!)).toHaveAccessibleName("Bravo");
+  });
+
+  it("uses the host result-count message for localized filtered and empty announcements", async () => {
+    const resultCountMessage = vi.fn((count: number) => `Correspondances : ${count}`);
+    const { input } = await open({ resultCountMessage });
+    expect(screen.getByRole("status")).toHaveTextContent(/^Correspondances : 4$/);
+    expect(screen.getByRole("status")).toHaveAttribute("aria-live", "polite");
+    await userEvent.type(input, "brav");
+    expect(screen.getByRole("status")).toHaveTextContent(/^Correspondances : 1$/);
+    await userEvent.clear(input);
+    await userEvent.type(input, "no match");
+    expect(screen.getByRole("status")).toHaveTextContent(/^Correspondances : 0$/);
+    expect(resultCountMessage).toHaveBeenLastCalledWith(0);
+  });
+
+  it("preserves unique group-label associations alongside host item IDs", async () => {
+    await open({ items: [
+      { id: "option-alpha", label: "Manage", items: [{ id: "0", label: "Alpha", onAction: alpha }] },
+      { id: "0", label: "More", items: [{ id: "option-alpha", label: "Bravo", onAction: bravo }] },
+    ] });
+    for (const label of ["Manage", "More"]) {
+      const group = screen.getByRole("group", { name: label });
+      const heading = document.getElementById(group.getAttribute("aria-labelledby")!);
+      expect(group).toContainElement(heading);
+      expect(heading).toHaveTextContent(label);
+    }
+    const ids = Array.from(screen.getByRole("listbox").querySelectorAll("[id]"), element => element.id);
+    expect(new Set(ids).size).toBe(ids.length);
   });
 
   it("wraps arrows across groups, skips disabled items and activates the current result", async () => {
