@@ -38,6 +38,15 @@ function tree(shell: SiteShellInput, server = false) {
   const Frame = server ? ServerFrame : ClientFrame;
   return <Frame shell={shell} resolveCopy={resolveCopy} resolveAsset={resolveAsset}><p>content</p></Frame>;
 }
+/** The header's logomark is painted in the accent token by default: a masked span, never an image. */
+function expectAccentMark(anchor: Element | null) {
+  const mark = anchor?.firstElementChild as HTMLElement;
+  expect(anchor!.querySelector("img")).toBeNull();
+  expect(mark).toHaveAttribute("data-brand-mark", "");
+  expect(mark).toHaveAttribute("aria-hidden", "true");
+  expect(mark).toHaveClass("bg-accent");
+  expect(mark.getAttribute("style")).toContain('mask-image:url("/mark.svg")');
+}
 function output(shell: SiteShellInput, server = false) {
   const container = document.createElement("div");
   container.innerHTML = renderToString(tree(shell, server));
@@ -53,7 +62,7 @@ it.each([false, true])("preserves explicit defaults and proves the new default c
   for (const selector of ["header", "main#publisher-main-content", "footer", "header nav"]) expect(container.querySelectorAll(selector)).toHaveLength(1);
   expect(container.querySelector("main")).toHaveAttribute("tabindex", "-1");
   expect(container.querySelector('a[href="#publisher-main-content"]')).toHaveTextContent("Skip to content");
-  expect(container.querySelector('header a[aria-label="Example home"] img')).toHaveAttribute("src", "/mark.svg");
+  expectAccentMark(container.querySelector('header a[aria-label="Example home"]'));
   expect(container.querySelector("header")).toHaveTextContent("Start now");
   expect(container.querySelector("header")).toHaveTextContent("Contact");
   expect(container.querySelector("header")).toHaveTextContent("Sign in");
@@ -123,7 +132,7 @@ it("passes mobile layout through direct shells and siteShellFor into SiteHeader"
       const header = output(input, server).querySelector("header")!;
       expect(header.firstElementChild).toHaveClass("site-header-row");
       expect(header).toHaveAttribute("data-header-root");
-      expect(header.querySelector('a[aria-label="Example home"] img')).toHaveAttribute("src", "/mark.svg");
+      expectAccentMark(header.querySelector('a[aria-label="Example home"]'));
     }
   }
   for (const kind of ["front-door", "admin", "demo"] as const) expect(siteShellFor(config, kind).mobileLayout).toBeUndefined();
@@ -145,7 +154,7 @@ it.each(["one", "two", "three", "six", "twenty", "secondary", "long-secondary"] 
     const brand = within(container).getByRole("link", { name: "Example home" });
     expect(container.querySelector("header")).toHaveClass("site-header-contract");
     expect(container.querySelector("header > div")).toHaveClass("site-header-row");
-    expect(brand.querySelector("img")).toHaveAttribute("src", "/mark.svg");
+    expectAccentMark(brand);
     expect(container.querySelectorAll('a[aria-label="Example home"]')).toHaveLength(1);
     expect(container.querySelectorAll("header nav")).toHaveLength(1);
   }
@@ -164,7 +173,7 @@ it.each([false, true])("names a mark-only brand from its label and renders no wo
   const brand = within(container).getByRole("link", { name: "Example home" });
   expect(brand).toHaveTextContent("");
   expect(brand.children).toHaveLength(1);
-  expect(brand.firstElementChild).toHaveAttribute("src", "/mark.svg");
+  expectAccentMark(brand);
 });
 
 it.each([undefined, "auto", "inverse"] as const)("paints an accent mark in the accent token with wordmark ink from the surface tone %s", tone => {
@@ -187,13 +196,33 @@ it.each([undefined, "auto", "inverse"] as const)("paints an accent mark in the a
   expect(brand.children[1]!.className).not.toMatch(/\b(?:text|bg)-/);
 });
 
-it("keeps the image mark when markInk is omitted or image", () => {
-  for (const markInk of [undefined, "image"] as const) {
-    const brand = within(output({ ...base, brand: { ...base.brand, markInk } })).getByRole("link", { name: "Example home" });
-    expect(brand.firstElementChild).toHaveAttribute("src", "/mark.svg");
-    expect(brand.firstElementChild).not.toHaveAttribute("data-brand-mark");
-    expect(brand.querySelector(".bg-accent")).toBeNull();
-  }
+const LAYOUTS = [undefined, "inline", "menu-brand-action"] as const;
+const BRANDS = [
+  ["mark-only", base.brand],
+  ["lockup", { ...base.brand, variant: "lockup", wordmark: ref("Example") }],
+  ["lockup on a shared plate", { ...base.brand, variant: "lockup", wordmark: ref("Example"), plate: "shared" }],
+] as const;
+const INK_CASES = BRANDS.flatMap(([name, brand]) => LAYOUTS.flatMap(mobileLayout => [false, true].map(server => [name, mobileLayout, server, brand] as const)));
+
+it.each(INK_CASES)("paints the %s header logomark in the accent token when markInk is omitted (layout %s, server=%s)", (_name, mobileLayout, server, brand) => {
+  const shell = { ...base, brand, mobileLayout } as SiteShellInput;
+  expect(renderToString(tree(shell, server))).toBe(renderToString(tree(shell, !server)));
+  const anchor = within(output(shell, server)).getByRole("link", { name: "Example home" });
+  const mark = anchor.firstElementChild as HTMLElement;
+  expect(anchor.querySelector("img")).toBeNull();
+  expect(mark).toHaveAttribute("data-brand-mark", "");
+  expect(mark.matches(".bg-accent") || mark.querySelector(".bg-accent") !== null).toBe(true);
+  expect(anchor.innerHTML).toContain('mask-image:url(&quot;/mark.svg&quot;)');
+  // The wordmark keeps the surface ink; only the mark carries the accent.
+  if (anchor.children[1]) expect(anchor.children[1].className).not.toMatch(/\b(?:text|bg)-/);
+});
+
+it.each(INK_CASES)("keeps the %s header logomark as the image when markInk is image (layout %s, server=%s)", (_name, mobileLayout, server, brand) => {
+  const shell = { ...base, brand: { ...brand, markInk: "image" }, mobileLayout } as SiteShellInput;
+  const anchor = within(output(shell, server)).getByRole("link", { name: "Example home" });
+  expect(anchor.querySelector("img")).toHaveAttribute("src", "/mark.svg");
+  expect(anchor.querySelector("[data-brand-mark]")).toBeNull();
+  expect(anchor.querySelector(".bg-accent")).toBeNull();
 });
 
 it.each([false, true])("puts every full-label action in defined panel order in every frame layout (server=%s)", server => {

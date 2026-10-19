@@ -5376,8 +5376,11 @@ per-site override is needed.
 
 #### Accent mark
 
-`markInk` is `"image"` (the default) or `"accent"`. With `"image"` or without
-the prop the mark is the `markSrc` image, as above. With `"accent"`,
+`markInk` is `"image"` or `"accent"`. On a `Brandmark` of its own, `"image"`
+is the default and the mark is the `markSrc` image, as above. Inside
+`SiteHeader`, an omitted `markInk` becomes `"accent"`, so the header's
+logomark is in the accent token by default; pass `markInk="image"` there to
+opt out. With `"accent"`,
 `Brandmark` paints the mark's shape in the accent token (`bg-accent`): a
 decorative `<span>` the size's height square, using `markSrc` as a CSS mask
 (`mask-image`, `contain`, centred), so the mark follows the accent token in
@@ -5400,8 +5403,8 @@ exported.
 ```
 
 What it does not do: the mask uses the image's alpha only, so a multi-colour
-mark becomes a one-colour accent silhouette; keep `"image"` for a mark whose
-colours matter. It does not check that the accent reads on the ground behind
+mark becomes a one-colour accent silhouette, including in the header's
+default; pass `markInk="image"` for a mark whose colours matter. It does not check that the accent reads on the ground behind
 it.
 
 #### Shared plate
@@ -7525,7 +7528,8 @@ const report = checkConsumerArtContract(art);
 
 `Brandmark tone="inverse"` uses inverse wordmark ink; `"auto"` keeps the base
 ink. A `Brandmark` passed directly to an overlay `SiteHeader` follows the header tone
-unless its own tone is explicit. `NavDisclosure tone="inverse"` uses inverse
+unless its own tone is explicit. A `Brandmark` passed directly to any `SiteHeader`
+paints its logomark in the accent token unless it sets `markInk="image"`. `NavDisclosure tone="inverse"` uses inverse
 trigger ink at rest, on hover, when expanded and on keyboard focus. An omitted
 nav tone follows an inverse overlay header; an explicit `"auto"` keeps base ink.
 Both controls otherwise retain their existing default markup.

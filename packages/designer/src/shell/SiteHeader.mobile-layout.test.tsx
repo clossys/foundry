@@ -189,12 +189,59 @@ describe("header brand slot", () => {
     expect(html).not.toMatch(/#[0-9a-f]{3,8}\b|rgba?\(|oklch\(/i);
   });
 
-  it("keeps the image mark, and its markup, by default", () => {
+  it("keeps the image mark, and its markup, by default for a Brandmark outside a header", () => {
     render(<Brandmark variant="mark" size="md" label="Example home" markSrc="/mark.svg" />);
     const mark = markOf(screen.getByRole("link", { name: "Example home" }));
     expect(mark.tagName).toBe("IMG");
     expect(mark).toHaveAttribute("src", "/mark.svg");
     expect(mark).not.toHaveAttribute("data-brand-mark");
+  });
+
+  const HEADER_BRANDS = [
+    ["mark-only", { variant: "mark" }],
+    ["mark-only on a shared plate", { variant: "mark", plate: "shared" }],
+    ["lockup", { variant: "lockup", wordmark: "Example" }],
+    ["lockup on a shared plate", { variant: "lockup", wordmark: "Example", plate: "shared" }],
+  ] as const;
+  const HEADER_CASES = (["inline", "menu-brand-action"] as const).flatMap(mobileLayout => HEADER_BRANDS.map(([name, props]) => [name, mobileLayout, props] as const));
+
+  it.each(HEADER_CASES)("paints a %s header logomark in the accent token by default (%s layout, server and client)", (_name, mobileLayout, props) => {
+    const element = <SiteHeader mobileLayout={mobileLayout} brand={<Brandmark size="md" label="Example home" markSrc="/mark.svg" {...props} />} />;
+    const host = document.createElement("div");
+    host.innerHTML = renderToStaticMarkup(element);
+    const { container } = render(element);
+    for (const root of [host, container]) {
+      const anchor = root.querySelector<HTMLElement>('a[aria-label="Example home"]')!;
+      expect(anchor).toHaveAccessibleName("Example home");
+      expect(anchor.querySelector("img")).toBeNull();
+      const mark = markOf(anchor);
+      expect(mark).toHaveAttribute("data-brand-mark", "");
+      expect(mark.matches(".bg-accent") || mark.querySelector(".bg-accent") !== null).toBe(true);
+      // jsdom drops mask properties on the client, so read the paint from the server markup.
+      if (root === host) expect((mark.matches("[style*=mask]") ? mark : mark.querySelector("[style*=mask]"))!.getAttribute("style")).toContain('mask-image:url("/mark.svg")');
+      // In the menu-brand-action layout the wordmark hides below tablet and the accent
+      // mark stays, centred on the bar; the inline layout hides nothing.
+      const { hidden, shown } = mobileBrand(anchor);
+      expect(shown[0]).toBe(mark);
+      expect(hidden.map(child => child.textContent)).toEqual(mobileLayout === "menu-brand-action" && props.variant === "lockup" ? ["Example"] : []);
+    }
+  });
+
+  it.each(HEADER_CASES)("keeps a %s header logomark as the image when markInk=\"image\" opts out (%s layout)", (_name, mobileLayout, props) => {
+    render(<SiteHeader mobileLayout={mobileLayout} brand={<Brandmark size="md" label="Example home" markSrc="/mark.svg" markInk="image" {...props} />} />);
+    const anchor = screen.getByRole("link", { name: "Example home" });
+    expect(anchor.querySelector("img")).toHaveAttribute("src", "/mark.svg");
+    expect(anchor.querySelector("[data-brand-mark]")).toBeNull();
+    expect(anchor.querySelector(".bg-accent")).toBeNull();
+    // The opted-out image mark also stays visible on mobile.
+    expect(mobileBrand(anchor).shown[0]).toBe(markOf(anchor));
+  });
+
+  it("keeps an explicit tone and accent default together in the header", () => {
+    render(<SiteHeader brand={<Brandmark variant="lockup" wordmark="Example" size="md" label="Example home" markSrc="/mark.svg" tone="inverse" />} />);
+    const anchor = screen.getByRole("link", { name: "Example home" });
+    expect(anchor).toHaveClass("text-ink-on-inverse");
+    expect(markOf(anchor)).toHaveClass("bg-accent");
   });
 
   it.each([
