@@ -140,6 +140,8 @@ export {
   useFormValidation,
   FieldGroup,
   ConfirmDialog,
+  CommandMenu,
+  useCommandMenuShortcut,
   Toolbar,
   NavGrid,
   AnatomyCallouts,
@@ -195,6 +197,10 @@ export type {
   FieldGroupProps,
   FieldGroupLayout,
   ConfirmDialogProps,
+  CommandMenuProps,
+  CommandMenuItem,
+  CommandMenuGroup,
+  CommandMenuShortcutOptions,
   ConfirmDialogTone,
   ToolbarProps,
   NavGridProps,
@@ -394,5 +400,9 @@ export { ScatterChart } from "./charts/ScatterChart.js";
 export type { ScatterChartProps } from "./charts/ScatterChart.js";
 
 export { Item } from "./blocks/items/Item.js";
+export { AppNavigation } from "./blocks/AppNavigation.js";
+export type { AppNavigationProps } from "./blocks/AppNavigation.js";
+export { validateAppNavigationTree, getAppNavigationAncestry, getAppNavigationBreadcrumbs } from "./blocks/app-navigation-tree.js";
+export type { AppNavigationNode, AppNavigationLeaf, AppNavigationDestination, AppNavigationTarget, AppNavigationBreadcrumb } from "./blocks/app-navigation-tree.js";
 export { Items } from "./blocks/items/Items.js";
 export type { ItemData, ItemFigureData, ItemStatusData, ItemProps, ItemBadge, ItemSize, ItemTreatment, ItemSpan, ItemsProps, ItemsArrangement, ItemsColumns, ItemsScale, ItemsGroup, ItemsLane } from "./blocks/items/types.js";

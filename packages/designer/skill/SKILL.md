@@ -8,8 +8,9 @@ disable-model-invocation: true
 <!-- atom-selection:start -->
 ### Atom selection
 
-Use `ATOM_GUIDANCE`, `ATOM_API_FACTS` and `ATOM_DISPLAY_GROUPS` from `@clossys/designer/atoms`. The barrel remains client-only. Import safety (`RENDER_ENVIRONMENT`) is not medium support.
+Use `ATOM_GUIDANCE`, `ATOM_API_FACTS`, `ATOM_DISPLAY_GROUPS` and `ATOM_COMPARISON` from `@clossys/designer/atoms`. The barrel remains client-only. Import safety (`RENDER_ENVIRONMENT`) is not medium support.
 Read the installed companion at `node_modules/@clossys/designer/skill/atoms-guide.md`; the launcher does not copy that file.
+`ATOM_COMPARISON` declares finite columns and optional rows with at most 24 cells. Its `constraints` references the original rules; `constraintPolicy: "skip-violations"` skips only `requires`, `exclusive` and `paired` violations with complete authored inputs. Applicability (`effective-when`), ignored-option, `derived` and `data` rules never skip cells.
 Display Group > Family > Atom: four groups, ten families, forty-one established leaves including six charts. Only leaves are selectable; preserve legacy IDs including act.link and reveal.tabs.
 Choose stable purpose, content and anatomy first, then medium implementation and configuration. Web is implemented with source evidence; email, print and video remain unassessed.
 Button has seven coupled Style preset values, not independent intent or emphasis axes. Respect ignored-option applicability, paired requirements, Icon naming/content contracts and severity/shape derivation. Represented scalar options are a bounded selection, not an exhaustive inherited API or a Cartesian product.
@@ -86,8 +87,9 @@ and check their freshness with `node scripts/check-token-docs.mjs`
 (repository tooling, not shipped in the installed package).
 <!-- token-selection:end -->
 
-`@clossys/designer/tokens/preview` provides exact-property static React specimens
-for token selection tooling; configurable components still begin at Atoms.
+`@clossys/designer/tokens/preview` provides exact-property React specimens for all 186
+tokens, including motion replay with a reduced-motion static equivalent and
+breakpoint thresholds with live match state, for token selection tooling; configurable components still begin at Atoms.
 
 Marketing chapters after the fold: `MarketingChapter`, not `SectionHeader`. Hero `media` requires an explicit `composition` (`editorial` default).
 

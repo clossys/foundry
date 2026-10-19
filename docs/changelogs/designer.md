@@ -5,6 +5,9 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+- Add the registered CommandMenu Navigation Material with host-controlled groups, filtering and open state, modal search focus and restoration, keyboard and pointer activation, and an optional SSR-safe opening shortcut.
+- Add the AppNavigation Block Material, a typed two-level host navigation tree, route ancestry and breadcrumbs, accessible rail destinations, Drawer focus handoff and a fixed footer slot. Give the Drawer close button a token-sized ghost icon presentation and visible keyboard focus.
+
 - Add Panel, Drawer and ResizablePane Block Materials with source-backed composition records, and a named ResizeHandle Atom with bounded keyboard and pointer interaction. Drawer reuses the Dialog lifecycle and releases it on route and breakpoint changes. Document the forty-first Atom without changing existing Dialog defaults.
 
 ## 0.12.0 - 2026-10-16
