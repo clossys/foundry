@@ -893,7 +893,7 @@
       direction: ltr;
       grid-template-areas: "copyright links icons";
       grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr);
-      align-items: start;
+      align-items: center;
       & > [data-footer-region="copyright"] {
         text-align: start;
       }

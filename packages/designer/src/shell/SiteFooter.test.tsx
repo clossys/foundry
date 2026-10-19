@@ -180,6 +180,9 @@ describe("SiteFooter mandatory dark composition", () => {
     ]);
     expect(within(icons as HTMLElement).getByRole("link", { name: "Example home" }).querySelector("img")).toHaveAttribute("src", "/dark-mark.svg");
     expect(screen.getByRole("link", { name: "Community profile" })).toHaveAttribute("rel", "noopener noreferrer");
+    for (const name of ["Privacy", "Terms", "Community profile", "Example home"]) {
+      expect(screen.getByRole("link", { name })).not.toHaveClass("underline");
+    }
     expect(screen.queryByRole("button")).toBeNull();
     expect(container.querySelector('[data-consent], [data-privacy-choices]')).toBeNull();
     expect(screen.getByRole("link", { name: "Privacy" })).toHaveAttribute("href", "/privacy");
@@ -226,6 +229,7 @@ describe("SiteFooter mandatory dark composition", () => {
     expect(composition).toContain("min-width: 0");
     expect(desktop).toContain('grid-template-areas: "copyright links icons"');
     expect(desktop).toMatch(/grid-template-columns:\s*minmax\(0, 1fr\) minmax\(0, 2fr\) minmax\(0, 1fr\)/);
+    expect(desktop).toContain("align-items: center");
     expect(desktop).toContain("direction: ltr");
     expect(desktop).toContain("justify-content: flex-end");
   });
