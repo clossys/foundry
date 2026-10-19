@@ -20,7 +20,7 @@ export const APP_FRAME_MATERIALS = [
       { exportName: "Button", source: "src/atoms/Button.tsx" },
     ],
     configs: [{ prop: "placement", values: ["start", "end", "bottom"], default: "start", source: "src/blocks/Drawer.tsx" }],
-    authoredInputs: ["heading", "closeLabel", "children", "footer", "navigationKey", "dismissAt"],
+    authoredInputs: ["trigger", "heading", "closeLabel", "children", "footer", "navigationKey", "dismissAt"],
   },
   {
     id: "resizable-pane", layer: "blocks", exportName: "ResizablePane", component: ResizablePane, source: "src/blocks/ResizablePane.tsx",

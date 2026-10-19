@@ -130,8 +130,13 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
       expect(generated.css, `fresh: ${name}`).toContain(toSelectorText(name));
       expect(shipped, `shipped: ${name}`).toContain(toSelectorText(name));
     }
-    expect(generated.css).toContain(".focus-visible\\:outline-solid:focus-visible");
-    expect(generated.css).toContain("outline-color: var(--color-accent,");
+    for (const [label, css] of [["fresh", generated.css], ["shipped", shipped]] as const) {
+      expect(css, `${label}: solid outline`).toContain(".focus-visible\\:outline-solid:focus-visible");
+      const selector = ".focus-visible\\:outline-accent-on-inverse:focus-visible";
+      expect(css, `${label}: inverse focus selector`).toContain(selector);
+      const rule = css.slice(css.indexOf(selector)).split("}", 1)[0];
+      expect(rule, `${label}: inverse focus color`).toContain("outline-color: var(--color-accent-on-inverse,");
+    }
   });
 
   it("covers actual ordered tracks and native/React Aria disclosure states", async () => {

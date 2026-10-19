@@ -3,6 +3,10 @@ import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { dirname, resolve, join } from "node:path";
 import { pathToFileURL } from "node:url";
 import ts from "typescript";
+import { createElement, type ComponentProps } from "react";
+import { render } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { Button } from "../atoms/Button.js";
 import { describe, expect, it } from "vitest";
 import * as blocks from "./index.js";
 
@@ -10,6 +14,21 @@ const root = resolve(import.meta.dirname, "../..");
 const materials = () => (blocks as any).APP_FRAME_MATERIALS ?? [];
 
 describe("AppFrame Material registration", () => {
+  it("keeps the Drawer opener available through its authored inputs", async () => {
+    const drawer = materials().find((entry: any) => entry.id === "drawer");
+    const supplied = {
+      heading: "Tools", closeLabel: "Close tools", children: "Tool content",
+      trigger: createElement(Button, {}, "Open tools"),
+    };
+    const authored = Object.fromEntries(drawer.authoredInputs
+      .filter((name: string) => name in supplied)
+      .map((name: keyof typeof supplied) => [name, supplied[name]]));
+    const view = render(createElement(blocks.Drawer, authored as ComponentProps<typeof blocks.Drawer>));
+    await userEvent.click(view.getByRole("button", { name: "Open tools" }));
+    expect(view.getByRole("dialog", { name: "Tools" })).toHaveTextContent("Tool content");
+    view.unmount();
+  });
+
   it("registers actual exported Block components, named regions, dependencies and finite configs", () => {
     expect(materials().map((entry: any) => entry.id)).toEqual(["panel", "drawer", "resizable-pane"]);
     for (const entry of materials()) {
