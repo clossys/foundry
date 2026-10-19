@@ -4794,6 +4794,9 @@ on desktop and bottom-centre on phones, with safe-area gutters, glass and a
 hairline, two equal outlined choices and a visually hidden title that keeps
 the region named. `presentation="banner"` retains the former in-flow markup,
 visible title and separate policy link. Mounting remains the host's choice.
+The card precedes page children in DOM order. While visible, its measured
+height and bottom gap reserve document end space and focus-scroll clearance;
+closing it restores still-owned host styles without replacing later edits.
 A choice still closes the notice; reopening shows a check and `aria-pressed`
 for the lifecycle's effective granted or denied choice. Escape, reopen focus,
 transport binding and the polite status region retain their behavior.
