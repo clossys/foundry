@@ -82,7 +82,10 @@ interface BrandmarkBaseProps {
    * means) renders `markSrc` as it is. `"accent"` paints the mark's shape in
    * the accent token, using `markSrc` as a mask: supply a single-colour mark
    * whose transparent areas are its background. The accent mark is drawn in a
-   * square of the size's height. @default "image"
+   * square of the size's height. Inside `SiteHeader`, an omitted `markInk`
+   * becomes `"accent"`; pass `"image"` there to keep a multi-colour logo,
+   * which the accent mask would flatten to a one-colour silhouette.
+   * @default "image"
    */
   markInk?: "image" | "accent";
   /** Wordmark ink; auto keeps the base ink. @default "auto" */

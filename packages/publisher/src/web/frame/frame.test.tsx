@@ -179,7 +179,10 @@ describe("SiteFrame", () => {
     const { container } = render(frame(siteShellFor(CONFIG, "site"), <p>content</p>));
     const brand = container.querySelector('header a[aria-label="Example home"]') as HTMLAnchorElement;
     expect(brand).toHaveTextContent("Example");
-    expect(brand.querySelector("img")).toHaveAttribute("src", "/brand/mark.svg");
+    // The header logomark is the resolved asset painted in the accent token by default.
+    expect(brand.querySelector("img")).toBeNull();
+    expect(brand.querySelector("[data-brand-mark]")).toHaveClass("bg-accent");
+    expect(renderToStaticMarkup(frame(siteShellFor(CONFIG, "site"), <p>content</p>))).toContain("mask-image:url(&quot;/brand/mark.svg&quot;)");
     const nav = container.querySelector('header nav[aria-label="Primary"]') as HTMLElement;
     expect([...nav.querySelectorAll(".nav-disclosure-panel > ul:first-child a")].map((a) => [a.textContent, a.getAttribute("href")])).toEqual([
       ["Pricing", "/pricing"],
