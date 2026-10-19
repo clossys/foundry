@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import { SiteFooter, type SiteFooterLegalProps } from "./SiteFooter.js";
@@ -95,24 +98,12 @@ describe("SiteFooter.Legal", () => {
     expect(list!.compareDocumentPosition(copyright!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
-  it("owns a centred mobile stack and a one-line desktop row, copyright left and links right", () => {
+  it("owns named composition regions in phone reading order", () => {
     const { container } = renderLegal();
-    const root = container.querySelector("ul")!.closest("div.w-full") as HTMLElement;
-    for (const cls of [
-      "w-full",
-      "flex",
-      "flex-col",
-      "items-center",
-      "text-center",
-      "desktop:flex-row-reverse",
-      "desktop:flex-nowrap",
-      "desktop:items-center",
-      "desktop:justify-between",
-    ]) {
-      expect(root.classList.contains(cls), cls).toBe(true);
-    }
-    expect(container.querySelector("ul")!.classList.contains("desktop:flex-nowrap")).toBe(true);
-    expect(container.querySelector("p")!.classList.contains("desktop:whitespace-nowrap")).toBe(true);
+    const row = container.querySelector("[data-footer-composition]");
+    expect(row).not.toBeNull();
+    expect(Array.from(row!.children).map(node => node.getAttribute("data-footer-region"))).toEqual(["links", "icons", "copyright"]);
+    expect(row).toHaveClass("site-footer-composition");
   });
 
   it("renders every link as a real anchor with a 44px minimum tap target", () => {
@@ -169,5 +160,104 @@ describe("SiteFooter.Legal", () => {
     const footer = screen.getByRole("contentinfo");
     expect(within(footer).getByRole("link", { name: "Privacy" })).toBeInTheDocument();
     expect(within(footer).getByRole("heading", { name: "Product" })).toBeInTheDocument();
+  });
+});
+
+
+describe("SiteFooter mandatory dark composition", () => {
+  const options = {
+    icons: [{ href: "https://example.org/profile", label: "Community profile", icon: <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 12h16" /></svg> }],
+    home: { href: "/", label: "Example home", markSrc: "/dark-mark.svg" },
+  };
+  function fixture(entity = "Example", labels = ["Privacy", "Terms"]) {
+    return <SiteFooter secondary={<SiteFooter.Legal entity={entity} links={labels.map((label, i) => ({ href: i ? "/terms" : "/privacy", label }))} {...options} />} />;
+  }
+  it("puts social before the home mark inside the icon group with named destinations and safe external rel", () => {
+    const { container } = render(fixture());
+    const icons = container.querySelector('[data-footer-region="icons"]')!;
+    expect(Array.from(icons.querySelectorAll("a")).map(a => [a.getAttribute("aria-label"), a.getAttribute("href")])).toEqual([
+      ["Community profile", "https://example.org/profile"], ["Example home", "/"],
+    ]);
+    expect(within(icons as HTMLElement).getByRole("link", { name: "Example home" }).querySelector("img")).toHaveAttribute("src", "/dark-mark.svg");
+    expect(screen.getByRole("link", { name: "Community profile" })).toHaveAttribute("rel", "noopener noreferrer");
+    expect(screen.queryByRole("button")).toBeNull();
+    expect(container.querySelector('[data-consent], [data-privacy-choices]')).toBeNull();
+    expect(screen.getByRole("link", { name: "Privacy" })).toHaveAttribute("href", "/privacy");
+  });
+  it("allows empty lists without adding a heading, trigger or cardinality limit", () => {
+    const { rerender } = render(<SiteFooter secondary={<SiteFooter.Legal entity="Example" links={[]} icons={[]} />} />);
+    expect(screen.queryByRole("link")).toBeNull();
+    expect(screen.queryByRole("heading")).toBeNull();
+    expect(screen.queryByRole("button")).toBeNull();
+    rerender(<SiteFooter secondary={<SiteFooter.Legal entity="Example" links={Array.from({ length: 24 }, (_, i) => ({ label: `Policy ${i}`, href: `/policy/${i}` }))} />} />);
+    expect(screen.getAllByRole("link")).toHaveLength(24);
+  });
+  it("refuses blank icon names and unsafe or missing destinations", () => {
+    for (const replacement of [{ label: " " }, { href: "" }, { href: "javascript:alert(1)" }]) {
+      expect(() => render(<SiteFooter.Legal entity="Example" links={[]} icons={[{ ...options.icons[0], ...replacement }]} />)).toThrow();
+      expect(() => render(<SiteFooter.Legal entity="Example" links={[]} home={{ ...options.home, ...replacement }} />)).toThrow();
+    }
+  });
+  it("keeps dark paint, inverse focus and safe areas in its shipped CSS", () => {
+    const css = readFileSync(join(import.meta.dirname, "../../styles/compiled.css"), "utf8");
+    expect(css).toContain(".site-footer-dark");
+    expect(css).toContain(".site-footer-composition");
+    expect(css).toContain("env(safe-area-inset-bottom");
+    expect(css).toContain(":visited");
+    expect(css).toContain("forced-colors: active");
+  });
+
+  const theme = readFileSync(join(import.meta.dirname, "../../styles/theme-keys.css"), "utf8");
+  function rule(opening: string) {
+    const start = theme.indexOf(opening);
+    expect(start, opening).toBeGreaterThanOrEqual(0);
+    let depth = 0;
+    for (let i = theme.indexOf("{", start); i < theme.length; i++) {
+      if (theme[i] === "{") depth++;
+      if (theme[i] === "}" && --depth === 0) return theme.slice(start, i + 1);
+    }
+    throw new Error(`Unterminated footer CSS: ${opening}`);
+  }
+  it("uses centered bounded tracks with links between copyright and icons, then collapses to reading order", () => {
+    const composition = rule("@utility site-footer-composition {");
+    const desktop = rule("@container (min-width: 64rem) {");
+    expect(composition).toContain('grid-template-areas: "links" "icons" "copyright"');
+    expect(composition).toContain("overflow-wrap: anywhere");
+    expect(composition).toContain("min-width: 0");
+    expect(desktop).toContain('grid-template-areas: "copyright links icons"');
+    expect(desktop).toMatch(/grid-template-columns:\s*minmax\(0, 1fr\) minmax\(0, 2fr\) minmax\(0, 1fr\)/);
+    expect(desktop).toContain("direction: ltr");
+    expect(desktop).toContain("justify-content: flex-end");
+  });
+  it("selects dark brand roles separately for light, explicit dark and OS dark themes", () => {
+    const paint = rule("@utility site-footer-dark {");
+    expect(paint).toContain("--site-footer-surface: var(--color-surface-inverse,");
+    for (const selector of [':root[data-theme="dark"] &[data-footer-root]', ':root:not([data-theme="light"]) &[data-footer-root]']) {
+      const dark = rule(`${selector} {`);
+      expect(dark).toContain("--site-footer-surface: var(--color-surface-base,");
+      expect(dark).toContain("--site-footer-ink: var(--color-ink-primary,");
+      expect(dark).toContain("--site-footer-muted: var(--color-ink-secondary,");
+    }
+    const { container } = render(fixture());
+    expect(container.querySelector("footer")).toHaveClass("site-footer-dark");
+    expect(container.querySelector("[data-theme]")).toBeNull();
+    expect(paint).toContain("background-color: var(--site-footer-surface, var(--color-surface-inverse, oklch(0.2178 0 0)))");
+    expect(paint).toContain("env(safe-area-inset-bottom");
+    for (const state of ["a:visited", "a:hover", "a:active"]) expect(paint).toContain(state);
+    expect(paint).toContain("outline: var(--ui-border-rule, 2px) solid var(--site-footer-ink, var(--color-ink-on-inverse, oklch(0.9702 0 0)))");
+    expect(paint).toContain("@media (forced-colors: active)");
+    expect(paint).toContain("@media (prefers-reduced-motion: reduce)");
+  });
+  it("adds rel safety to external legal and supported column anchors", () => {
+    render(<SiteFooter columns={<SiteFooter.Column heading="Resources"><a href="https://example.org/docs" target="_blank">Docs</a></SiteFooter.Column>}
+      secondary={<SiteFooter.Legal entity="Example" links={[{ label: "Policy", href: "//example.org/policy" }]} />} />);
+    for (const name of ["Docs", "Policy"]) expect(screen.getByRole("link", { name })).toHaveAttribute("rel", "noopener noreferrer");
+  });
+  it("retains server and client reading order and authored image attributes", () => {
+    const html = renderToStaticMarkup(fixture());
+    const { container } = render(fixture());
+    const server = document.createElement("div"); server.innerHTML = html;
+    const facts = (root: HTMLElement) => Array.from(root.querySelectorAll("[data-footer-region], a, img")).map(e => [e.tagName, e.getAttribute("data-footer-region"), e.getAttribute("href"), e.getAttribute("aria-label"), e.getAttribute("alt")]);
+    expect(facts(server)).toEqual(facts(container));
   });
 });
