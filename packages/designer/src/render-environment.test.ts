@@ -230,6 +230,8 @@ describe("no regression: every existing subpath still resolves normally (test 3)
   // a missing export (issue #434). Split, each case sits with its siblings at
   // roughly 200ms, and a failure names the barrel that actually regressed.
   const barrelSpotChecks: Array<[string, string]> = [
+    ["blocks/index.js", "CommandMenu"],
+    ["blocks/index.js", "useCommandMenuShortcut"],
     ["atoms/index.js", "Button"],
     ["blocks/index.js", "DataTable"],
     ["shell/index.js", "NavShell"],

@@ -7516,3 +7516,59 @@ on release; pointer cancellation, lost capture or Escape restores the drag's
 start value. Non-finite dimensions, reversed bounds, nonpositive steps and
 empty names are refused. Values and resets are clamped. Native forced-color
 adjustment remains enabled, with a token-bound edge and a visible focus outline.
+
+### CommandMenu
+
+`CommandMenu` is a Navigation Material in `APP_FRAME_MATERIALS`, composed
+from Dialog, SearchField, Tooltip and IconButton. The host owns open state,
+query, groups and destinations; item IDs must be unique across groups. Each
+item takes exactly one `href` or `onAction`, plus optional `description`,
+`shortcutHint`, icon glyph and `disabled`. The default filter matches labels
+case-insensitively; `filter(item, query)` replaces it. Empty results show the
+host's `emptyMessage` without inventing commands.
+
+The search input receives initial focus and controls a grouped listbox.
+Arrows wrap through enabled results, Enter activates the current filtered
+result, and pointer activation uses the same destination. Escape closes even
+with a nonempty query; Dialog contains focus and restores the external opener.
+The count is announced politely. Logical layout supports `dir="rtl"`,
+disabled results retain semantics, and inherited control transitions honor
+reduced motion. Closed server rendering is empty; interaction requires the
+client. This component is outside the server-safe subset.
+
+`useCommandMenuShortcut({ onOpen, enabled? })` is optional. It detects the
+platform on the client, handles Meta+K on Apple platforms and Ctrl+K elsewhere,
+and prevents the default only when it opens. It declines while any visible
+dialog is open, including its own menu; use Escape to close, then Mod+K to
+reopen. Listeners are removed when disabled or unmounted.
+
+| Export | Kind | Contract |
+| --- | --- | --- |
+| `CommandMenu` | component | Controlled modal command search over host-supplied groups. |
+| `CommandMenuProps` | type | Required labels, empty message, groups, open/query state and callbacks; optional filter and direction. |
+| `CommandMenuItem` | type | Unique ID, string label, href or action, and optional description, shortcut hint, icon and disabled state. |
+| `CommandMenuGroup` | type | Stable ID, label and ordered items. |
+| `useCommandMenuShortcut` | function | Opt-in opening shortcut outside visible dialogs. |
+| `CommandMenuShortcutOptions` | type | Required `onOpen` callback and optional `enabled` flag. |
+
+```tsx
+import { useState } from "react";
+import { CommandMenu, useCommandMenuShortcut } from "@clossys/designer/blocks";
+
+export function CommandExample() {
+  const [isOpen, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  useCommandMenuShortcut({ onOpen: () => setOpen(true) });
+  return (
+    <>
+      <button onClick={() => setOpen(true)}>Commands</button>
+      <CommandMenu heading="Commands" searchLabel="Find a command"
+        closeLabel="Close commands" emptyMessage="No matching commands"
+        isOpen={isOpen} onOpenChange={setOpen} query={query} onQueryChange={setQuery}
+        groups={[{ id: "pages", label: "Pages", items: [
+          { id: "documents", label: "Documents", href: "/documents" },
+        ] }]} />
+    </>
+  );
+}
+```

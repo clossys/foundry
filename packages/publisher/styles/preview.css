@@ -2293,6 +2293,9 @@
   .text-pretty {
     text-wrap: pretty;
   }
+  .break-words {
+    overflow-wrap: break-word;
+  }
   .wrap-anywhere {
     overflow-wrap: anywhere;
   }
