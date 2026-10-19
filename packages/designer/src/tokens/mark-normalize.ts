@@ -57,6 +57,7 @@ interface Node {
   attrs: Attrs;
   children: Node[];
   start: number;
+  openEnd: number;
   end: number;
 }
 interface Contour {
@@ -115,17 +116,45 @@ function transform(value = ""): Matrix {
 function parse(svg: string, lockupText = false): Node {
   const stack: Node[] = [], roots: Node[] = [];
   let end = 0;
-  for (const match of svg.matchAll(/<!--[\s\S]*?-->|<\/?[a-zA-Z][^<>]*>/g)) {
-    if (svg.slice(end, match.index).trim() && !(lockupText && stack[stack.length - 1]?.name === "text"))
+  while (end < svg.length) {
+    const start = svg.indexOf('<', end);
+    if (start < 0)
+      break;
+    if (svg.slice(end, start).trim() && !(lockupText && stack[stack.length - 1]?.name === "text"))
       fail("XML content");
-    end = match.index! + match[0].length;
-    const tag = match[0];
-    if (tag.startsWith("<!--"))
+    if (svg.startsWith('<!--', start)) {
+      const close = svg.indexOf('-->', start + 4);
+      if (close < 0)
+        fail("XML comment");
+      end = close + 3;
       continue;
-    const name = /^<\/?([^\s/>]+)/.exec(tag)![1]!;
-    if (tag.startsWith("</")) {
+    }
+    // Advance once through each tag; delimiters inside quoted attributes are data.
+    let cursor = start + 1, quote = '';
+    for (; cursor < svg.length; cursor++) {
+      const char = svg[cursor]!;
+      if (quote) {
+        if (char === quote)
+          quote = '';
+      }
+      else if (char === '"' || char === "'")
+        quote = char;
+      else if (char === '>')
+        break;
+      else if (char === '<')
+        fail("XML tag");
+    }
+    if (cursor === svg.length)
+      fail("XML tag");
+    end = cursor + 1;
+    const tag = svg.slice(start + 1, cursor).trimEnd(), closing = tag.startsWith('/');
+    const nameMatch = /^\/?([a-zA-Z][^\s/>]*)/.exec(tag);
+    if (!nameMatch)
+      fail("XML tag");
+    const name = nameMatch![1]!;
+    if (closing) {
       const node = stack.pop();
-      if (!node || node.name !== name)
+      if (!node || node.name !== name || tag.slice(name.length + 1).trim())
         fail("XML nesting");
       node!.end = end;
       continue;
@@ -133,17 +162,20 @@ function parse(svg: string, lockupText = false): Node {
     if (!["svg", "g", "rect", "circle", "ellipse", "polygon", "path"].includes(name) && !(lockupText && name === "text"))
       fail(name);
     const attrs: Attrs = {};
-    let rest = tag.slice(name.length + 1).replace(/\/?\s*>$/, "");
-    while (rest.trim()) {
-      const attr = /^\s+([^\s=]+)\s*=\s*(?:"([^"]*)"|'([^']*)')/.exec(rest);
+    const selfClosing = tag.endsWith('/'), content = (selfClosing ? tag.slice(0, -1) : tag).trimEnd();
+    const attribute = /\s+([^\s=]+)\s*=\s*(?:"([^"]*)"|'([^']*)')/y;
+    let position = name.length;
+    while (position < content.length) {
+      attribute.lastIndex = position;
+      const attr = attribute.exec(content);
       if (!attr || attrs[attr[1]!] !== undefined)
         fail("XML attribute");
       attrs[attr![1]!] = attr![2] ?? attr![3]!;
-      rest = rest.slice(attr![0].length);
+      position = attribute.lastIndex;
     }
-    const node: Node = { name, attrs, children: [], start: match.index!, end };
+    const node: Node = { name, attrs, children: [], start, openEnd: end, end };
     (stack.length ? stack[stack.length - 1]!.children : roots).push(node);
-    if (!/\/\s*>$/.test(tag))
+    if (!selfClosing)
       stack.push(node);
   }
   if (stack.length || svg.slice(end).trim() || roots.length !== 1 || roots[0]!.name !== "svg")
@@ -533,7 +565,7 @@ export function normalizeMark(input: NormalizeMarkInput): string {
   const correction: Point = input.optical ? clampVector(mul(sub(centre, measured.centroid), scale), side * .03) : [0, 0];
   const shift = (axis: 0 | 1) => correction[axis];
   const tx = side / 2 - centre[0] * scale + shift(0), ty = side / 2 - centre[1] * scale + shift(1);
-  const root = measured.root, opening = input.glyphSvg.indexOf('>', root.start) + 1, closing = input.glyphSvg.lastIndexOf('</svg');
+  const root = measured.root, opening = root.openEnd, closing = input.glyphSvg.lastIndexOf('</svg');
   let body = input.glyphSvg.slice(opening, closing);
   if (measured.plate)
     body = input.glyphSvg.slice(opening, measured.plate.start) + input.glyphSvg.slice(measured.plate.end, closing);

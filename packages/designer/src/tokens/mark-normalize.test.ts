@@ -96,6 +96,16 @@ describe("mark conformance", () => {
   });
 });
 describe("geometry edge cases", () => {
+  it("scans comments and long whitespace without ambiguous tag matching", () => {
+    expect(() => measureMarkGeometry('<!--'.repeat(10000))).toThrow(MarkGeometryError);
+    expect(box(`<!--${'<!--'.repeat(10000)}--><rect width="10" height="20"${' '.repeat(40000)}/>`).width).toBe(0.1);
+    expect(() => box('<rect width="10" height="20"></rect extra>')).toThrow(MarkGeometryError);
+  });
+  it("keeps quoted tag delimiters intact when measuring and normalizing", () => {
+    const glyphSvg = '<svg viewBox="0 0 100 100" data-label="a > b"><rect width="10" height="20" data-label="x > y"/></svg>';
+    expect(measureMarkGeometry(glyphSvg).glyphBox).toEqual({ x: 0, y: 0, width: 0.1, height: 0.2 });
+    expect(checkMarkConformance(normalizeMark({ glyphSvg, tokens }))).toEqual([]);
+  });
   it("measures overlapping painted area once for optical centring", () => {
     const glyphSvg = svg('<g><rect x="0" y="0" width="100" height="100"/><rect x="0" y="0" width="50" height="100"/></g>');
     const result = measureMarkGeometry(normalizeMark({ glyphSvg, tokens, optical: true }));
