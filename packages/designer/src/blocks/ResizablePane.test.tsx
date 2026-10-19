@@ -1,9 +1,9 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { act } from "react";
+import { act, useState } from "react";
 import { hydrateRoot } from "react-dom/client";
 import { renderToString } from "react-dom/server";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import * as blocks from "./index.js";
@@ -66,6 +66,56 @@ describe("ResizablePane", () => {
     expect(panel.style.inlineSize).toBe("300px");
     rerender(<ResizablePane {...props} value={160} onChange={changed}>Content</ResizablePane>);
     expect(panel.style.inlineSize).toBe("160px");
+  });
+
+  it("round-trips a host-owned width through keyboard and pointer changes", async () => {
+    const reported: number[] = [];
+    function Host() {
+      const [width, setWidth] = useState(240);
+      return <ResizablePane {...props} defaultValue={180} value={width} onChange={(next: number) => { reported.push(next); setWidth(next); }}>Content</ResizablePane>;
+    }
+    render(<Host />);
+    const panel = screen.getByRole("region", { name: "Tools" });
+    const handle = screen.getByRole("separator", { name: "Resize tools" });
+    expect(panel.style.inlineSize).toBe("240px");
+    expect(handle).toHaveAttribute("aria-valuenow", "240");
+    handle.focus();
+    await userEvent.keyboard("{ArrowLeft}");
+    expect(panel.style.inlineSize).toBe("220px");
+    expect(handle).toHaveAttribute("aria-valuenow", "220");
+    await userEvent.keyboard("{Home}");
+    expect(panel.style.inlineSize).toBe("100px");
+    await userEvent.keyboard("{Enter}");
+    expect(panel.style.inlineSize).toBe("180px");
+    class TestPointerEvent extends MouseEvent {
+      pointerId: number;
+      constructor(type: string, options: PointerEventInit = {}) { super(type, options); this.pointerId = options.pointerId ?? 1; }
+    }
+    vi.stubGlobal("PointerEvent", TestPointerEvent);
+    handle.setPointerCapture = () => {};
+    handle.releasePointerCapture = () => {};
+    handle.hasPointerCapture = () => true;
+    fireEvent.pointerDown(handle, { button: 0, pointerId: 1, clientX: 50 });
+    fireEvent.pointerMove(handle, { pointerId: 1, clientX: 90 });
+    expect(panel.style.inlineSize).toBe("220px");
+    fireEvent.keyDown(handle, { key: "Escape" });
+    expect(panel.style.inlineSize).toBe("180px");
+    fireEvent.pointerDown(handle, { button: 0, pointerId: 2, clientX: 50 });
+    fireEvent.pointerMove(handle, { pointerId: 2, clientX: 500 });
+    fireEvent.pointerUp(handle, { pointerId: 2, clientX: 500 });
+    expect(panel.style.inlineSize).toBe("300px");
+    expect(reported).toEqual([220, 100, 180, 220, 180, 300]);
+    vi.unstubAllGlobals();
+  });
+
+  it("keeps a controlled value fixed when the host declines a change", async () => {
+    const changed = vi.fn();
+    render(<ResizablePane {...props} value={200} onChange={changed}>Content</ResizablePane>);
+    const panel = screen.getByRole("region", { name: "Tools" });
+    screen.getByRole("separator").focus();
+    await userEvent.keyboard("{ArrowRight}{ArrowRight}");
+    expect(changed.mock.calls).toEqual([[220], [220]]);
+    expect(panel.style.inlineSize).toBe("200px");
   });
 
   it("resizes a horizontal separator on the block axis without consulting storage", async () => {

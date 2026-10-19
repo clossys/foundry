@@ -801,6 +801,9 @@
   .mb-sm {
     margin-bottom: var(--spacing-sm, 8px);
   }
+  .box-border {
+    box-sizing: border-box;
+  }
   .scene-linear-disc {
     display: inline-grid;
     place-items: center;
@@ -3378,8 +3381,24 @@
     .forced-colors\:border-current {
       border-color: currentcolor;
     }
+    .forced-colors\:outline {
+      outline-style: var(--tw-outline-style, solid);
+      outline-width: 1px;
+    }
     .forced-colors\:outline-current {
       outline-color: currentcolor;
+    }
+    .forced-colors\:outline-solid {
+      --tw-outline-style: solid;
+      outline-style: solid;
+    }
+    .forced-colors\:focus-visible\:outline:focus-visible {
+      outline-style: var(--tw-outline-style, solid);
+      outline-width: 1px;
+    }
+    .forced-colors\:focus-visible\:outline-solid:focus-visible {
+      --tw-outline-style: solid;
+      outline-style: solid;
     }
   }
 }

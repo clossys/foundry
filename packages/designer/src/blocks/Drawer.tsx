@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Button } from "../atoms/Button.js";
 import { Dialog, type DialogProps } from "../atoms/Dialog.js";
+import { Icon } from "../atoms/Icon.js";
 import { cx } from "../atoms/internal/cx.js";
+import { X } from "../icons/X.js";
 import { Panel } from "./Panel.js";
 
 export interface DrawerProps extends Omit<DialogProps, "children" | "size" | "isDismissable" | "overlayClassName" | "modalClassName" | "modalStyle"> {
@@ -13,25 +15,29 @@ export interface DrawerProps extends Omit<DialogProps, "children" | "size" | "is
   placement?: "start" | "end" | "bottom";
   /** Route identity supplied by the host; any change dismisses an open drawer. */
   navigationKey?: string;
-  /** Close on entering this wide-layout query; the default matches the structural tablet breakpoint. @default "(min-width: 768px)" */
+  /** Close on entering this wide-layout query; the default matches the structural tablet breakpoint. Ignored when `wide="sheet"`. @default "(min-width: 768px)" */
   dismissAt?: string;
+  /** Wide-layout behavior: `"dismiss"` closes and refuses opening while `dismissAt` matches; `"sheet"` opens as a modal side sheet at every viewport width. @default "dismiss" */
+  wide?: "dismiss" | "sheet";
 }
 
 /** Material composing the existing Dialog lifecycle and Panel regions, never a second overlay owner. */
 export function Drawer({
   trigger, heading, closeLabel, children, footer, placement = "start",
-  navigationKey, dismissAt = "(min-width: 768px)", isOpen, defaultOpen = false,
+  navigationKey, dismissAt = "(min-width: 768px)", wide = "dismiss", isOpen, defaultOpen = false,
   onOpenChange, className, style, ...rest
 }: DrawerProps) {
   const [internal, setInternal] = useState(defaultOpen);
   const [dismissed, setDismissed] = useState(false);
-  const [wide, setWide] = useState(false);
+  const [atWide, setAtWide] = useState(false);
+  const sheet = wide === "sheet";
+  const blocked = atWide && !sheet;
   const requested = isOpen ?? internal;
   const latest = useRef({ requested, onOpenChange });
   latest.current = { requested, onOpenChange };
   const lastNavigation = useRef(navigationKey);
   const change = (next: boolean) => {
-    if (next && wide) return;
+    if (next && blocked) return;
     setInternal(next);
     setDismissed(!next);
     latest.current.onOpenChange?.(next);
@@ -43,19 +49,20 @@ export function Drawer({
     if (latest.current.requested) change(false);
   }, [navigationKey]);
   useEffect(() => {
+    if (sheet) { setAtWide(false); return; }
     if (typeof window.matchMedia !== "function") return;
     const media = window.matchMedia(dismissAt);
     const sync = () => {
-      setWide(media.matches);
+      setAtWide(media.matches);
       if (media.matches && latest.current.requested) change(false);
     };
     sync();
     media.addEventListener("change", sync);
     return () => media.removeEventListener("change", sync);
-  }, [dismissAt, isOpen]);
+  }, [dismissAt, isOpen, sheet]);
   const bottom = placement === "bottom";
   return (
-    <Dialog {...rest} trigger={trigger} isOpen={requested && !dismissed && !wide} onOpenChange={change}
+    <Dialog {...rest} trigger={trigger} isOpen={requested && !dismissed && !blocked} onOpenChange={change}
       overlayClassName={bottom ? "items-end p-0" : placement === "start" ? "items-stretch justify-start p-0" : "items-stretch justify-end p-0"}
       modalClassName="h-full max-w-none"
       modalStyle={{
@@ -68,13 +75,13 @@ export function Drawer({
       {({ close }) => (
         <Panel
           className={cx("h-full min-h-0 flex-1 rounded-none", className)}
-          data-drawer-placement={placement} footer={footer}
+          data-drawer-placement={placement} data-drawer-wide={wide} footer={footer}
           header={(
             <div className="flex items-start justify-between gap-md">
               <Dialog.Heading>{heading}</Dialog.Heading>
               <Button variant="ghost" aria-label={closeLabel} onPress={close}
                 className="icon-control-md shrink-0 border-0 bg-transparent p-0 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent">
-                <span aria-hidden="true" style={{ fontSize: "var(--ui-icon-md, 24px)", lineHeight: 1 }}>×</span>
+                <Icon glyph={X} decorative size="md" />
               </Button>
             </div>
           )}
