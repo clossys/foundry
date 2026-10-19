@@ -4,6 +4,9 @@ import { Check } from "../icons/Check.js";
 import { Button } from "../atoms/Button.js";
 import { cx } from "../atoms/internal/cx.js";
 
+/** Card choices: full-width cells of a two-column grid, current-colour edge, no fill; labels may wrap. */
+const CARD_CHOICE_CLASS = "w-full min-w-0 border border-current bg-transparent font-medium text-center whitespace-normal";
+
 export interface ConsentBannerProps {
   /** `card` pins a compact notice; the default `banner` retains the in-flow rendering. */
   presentation?: "banner" | "card";
@@ -73,7 +76,7 @@ export function ConsentBanner({
       style={style}
       className={cx(
         card
-          ? "consent-card flex flex-col gap-md rounded-control p-lg text-body text-ink-primary"
+          ? "consent-card flex flex-col gap-md rounded-control p-md tablet:p-lg text-body text-ink-primary"
           : "flex flex-col gap-md rounded-control border border-overlay-border bg-overlay-surface p-lg text-body text-ink-primary tablet:flex-row tablet:items-center tablet:justify-between",
         className,
       )}
@@ -92,11 +95,11 @@ export function ConsentBanner({
           ) : null}
         </div>
       </div>
-      <div className={card ? "flex gap-sm" : "flex flex-col gap-sm tablet:shrink-0 tablet:flex-row"}>
+      <div className={card ? "grid grid-cols-2 gap-sm" : "flex flex-col gap-sm tablet:shrink-0 tablet:flex-row"}>
         <Button
-          variant={card ? "outline" : "secondary"}
+          variant="secondary"
           size="md"
-          className={card ? "min-w-0 flex-1 whitespace-normal" : "w-full tablet:w-auto"}
+          className={card ? CARD_CHOICE_CLASS : "w-full tablet:w-auto"}
           aria-pressed={card ? selectedChoice === "granted" : undefined}
           onPress={() => onAccept()}
         >
@@ -106,9 +109,9 @@ export function ConsentBanner({
           {acceptLabel}
         </Button>
         <Button
-          variant={card ? "outline" : "secondary"}
+          variant="secondary"
           size="md"
-          className={card ? "min-w-0 flex-1 whitespace-normal" : "w-full tablet:w-auto"}
+          className={card ? CARD_CHOICE_CLASS : "w-full tablet:w-auto"}
           aria-pressed={card ? selectedChoice === "denied" : undefined}
           onPress={() => onReject()}
         >
