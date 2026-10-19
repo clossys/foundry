@@ -173,7 +173,7 @@ it("HEADER-1 observes intrinsic children, preserves visible desktop focus and re
     const width = this.classList.contains("site-header-row") ? 1400 : 100;
     return { width, height: 72, left: 0, right: width, top: 0, bottom: 72, x: 0, y: 0, toJSON() {} };
   });
-  const scene = (nav = true) => <div data-site-frame=""><SiteHeader brand={<a href="/">Example</a>} nav={nav ? <NavDisclosure trigger="icon"><ul className="site-header-nav-links"><li><a href="/help">Help</a></li></ul></NavDisclosure> : undefined} /></div>;
+  const scene = (nav = true) => <div data-frame-root=""><SiteHeader brand={<a href="/">Example</a>} nav={nav ? <NavDisclosure trigger="icon"><ul className="site-header-nav-links"><li><a href="/help">Help</a></li></ul></NavDisclosure> : undefined} /></div>;
   try {
     const view = render(scene());
     const frame = view.container.firstElementChild as HTMLElement;

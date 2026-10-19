@@ -120,7 +120,7 @@ it("passes mobile layout through direct shells and siteShellFor into SiteHeader"
     for (const server of [false, true]) {
       const header = output(input, server).querySelector("header")!;
       expect(header.firstElementChild).toHaveClass("site-header-row");
-      expect(header).toHaveAttribute("data-site-header");
+      expect(header).toHaveAttribute("data-header-root");
       expect(header.querySelector('a[aria-label="Example home"] img')).toHaveAttribute("src", "/mark.svg");
     }
   }

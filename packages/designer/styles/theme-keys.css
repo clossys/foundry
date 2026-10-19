@@ -712,12 +712,12 @@
 
 /* One shared offset; the document remains the scroll owner. */
 @layer foundry-ui-compiled {
-[data-site-frame] {
+[data-frame-root] {
   --site-header-clearance: calc(max(var(--ui-layout-tap-target, 44px), var(--ui-brandmark-height-lg, 48px)) + 2 * var(--spacing-sm, 8px) + var(--ui-border-hairline, 1px) + env(safe-area-inset-top, 0px));
-  & [id] { scroll-margin-block-start: var(--site-header-clearance); }
+  & [id] { scroll-margin-block-start: var(--site-header-clearance, calc(max(var(--ui-layout-tap-target, 44px), var(--ui-brandmark-height-lg, 48px)) + 2 * var(--spacing-sm, 8px) + var(--ui-border-hairline, 1px) + env(safe-area-inset-top, 0px))); }
   & > header { position: sticky !important; inset-block-start: 0; padding-block-start: calc(var(--spacing-sm, 8px) + env(safe-area-inset-top, 0px)); }
   & > header[data-placement="overlay"] { position: fixed !important; }
-  &:has(> header[data-placement="overlay"]) { padding-block-start: var(--site-header-clearance); }
+  &:has(> header[data-placement="overlay"]) { padding-block-start: var(--site-header-clearance, calc(max(var(--ui-layout-tap-target, 44px), var(--ui-brandmark-height-lg, 48px)) + 2 * var(--spacing-sm, 8px) + var(--ui-border-hairline, 1px) + env(safe-area-inset-top, 0px))); }
 }
 }
 @utility site-header-row { min-block-size: max(var(--ui-layout-tap-target, 44px), var(--ui-brandmark-height-lg, 48px)); display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: var(--spacing-md, 12px); padding-inline: max(var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px)), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px)); }
@@ -744,7 +744,7 @@
     & .site-header-actions { grid-column: 3; grid-row: 1; display: flex; justify-content: end; }
     & .site-header-actions > a > span { @apply sr-only; }
     & .nav-disclosure-toggle { display: inline-flex; }
-    & .nav-disclosure-panel { display: none; position: absolute; inset-block-start: 100%; inset-inline: 0; max-block-size: calc(100dvb - var(--site-header-clearance) - env(safe-area-inset-bottom, 0px)); overflow-y: auto; overscroll-behavior: contain; padding-block: var(--spacing-md, 12px) max(var(--spacing-md, 12px), env(safe-area-inset-bottom, 0px)); padding-inline: var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px)); background-color: var(--color-overlay-surface, oklch(1 0 0)); color: var(--color-ink-primary, oklch(0.2178 0 0)); border-block-end: var(--ui-border-hairline, 1px) solid var(--color-overlay-border, oklch(0.8761 0 0)); }
+    & .nav-disclosure-panel { display: none; position: absolute; inset-block-start: 100%; inset-inline: 0; max-block-size: calc(100dvb - var(--site-header-clearance, calc(max(var(--ui-layout-tap-target, 44px), var(--ui-brandmark-height-lg, 48px)) + 2 * var(--spacing-sm, 8px) + var(--ui-border-hairline, 1px) + env(safe-area-inset-top, 0px))) - env(safe-area-inset-bottom, 0px)); overflow-y: auto; overscroll-behavior: contain; padding-block: var(--spacing-md, 12px) max(var(--spacing-md, 12px), env(safe-area-inset-bottom, 0px)); padding-inline: var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px)); background-color: var(--color-overlay-surface, oklch(1 0 0)); color: var(--color-ink-primary, oklch(0.2178 0 0)); border-block-end: var(--ui-border-hairline, 1px) solid var(--color-overlay-border, oklch(0.8761 0 0)); }
     & .nav-disclosure-panel[data-expanded] { display: flex; flex-direction: column; }
     & .site-header-nav-links, & .site-header-desktop-actions { flex-direction: column; align-items: stretch; white-space: normal; overflow-wrap: anywhere; }
   }
@@ -766,8 +766,8 @@
 
 /* Expanded fallback navigation stays in document flow when scripting is off. */
 @media (scripting: none) {
-  [data-site-frame] > header.site-header-contract { position: relative !important; }
-  [data-site-frame]:has(> header[data-placement="overlay"]) { padding-block-start: 0; }
+  [data-frame-root] > header.site-header-contract { position: relative !important; }
+  [data-frame-root]:has(> header[data-placement="overlay"]) { padding-block-start: 0; }
 }
 }
 

@@ -169,7 +169,7 @@ describe("SiteFrame footer placement", () => {
     expect(html).toMatch(/<header[^>]*data-placement="overlay"/);
     expect(html).toMatch(/data-landing-view="" class="[^"]*flex-1/);
     expect(html).toMatch(/data-landing-hero=""[^>]*class="[^"]*flex-1/);
-    expect(html).toMatch(/<div data-site-frame="" class="flex min-h-dvh flex-col" style="position:relative"/);
+    expect(html).toMatch(/<div data-frame-root="" class="flex min-h-dvh flex-col" style="position:relative"/);
     expect(html).toContain('<div data-frame-footer-overlay="" style="display:flex;flex-direction:column;flex-shrink:0;min-width:0;pointer-events:none;z-index:var(--ui-z-sticky, 10)"><footer');
     expect(html).toMatch(/<footer[^>]*bg-surface-inverse[^>]*publisher-frame-footer-overlay/);
     expect(html).toMatch(/<footer[^>]*style="[^"]*pointer-events:auto/);

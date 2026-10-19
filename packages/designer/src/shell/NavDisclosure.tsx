@@ -54,7 +54,7 @@ export function NavDisclosure({ children, "aria-label": ariaLabel = "Primary", t
   };
   useEffect(() => {
     const media = window.matchMedia?.(`(min-width: ${TOKENS["--breakpoint-tablet"]!.value})`);
-    const header = nav.current?.closest<HTMLElement>("[data-site-header]");
+    const header = nav.current?.closest<HTMLElement>("[data-header-root]");
     const frame = header?.parentElement;
     const priorClearance = frame?.style.getPropertyValue("--site-header-clearance");
     let disposed = false;

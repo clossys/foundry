@@ -225,7 +225,7 @@ function SiteHeaderRoot({
   return (
     <header
       {...rest}
-      {...(contract ? { "data-site-header": "", "data-collapsed": nav ? "" : undefined } : {})}
+      {...(contract ? { "data-header-root": "", "data-collapsed": nav ? "" : undefined } : {})}
       {...(overlay ? { "data-placement": "overlay", "data-tone": tone, "data-menu-open": menuOpen ? "" : undefined } : {})}
       className={
         overlay

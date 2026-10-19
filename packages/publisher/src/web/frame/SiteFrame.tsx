@@ -160,7 +160,7 @@ export function SiteFrame({ shell, presentation, resolveCopy, resolveAsset, chil
   ) : null;
 
   return (
-    <div data-site-frame="" className="flex min-h-dvh flex-col" {...(footer?.placement === "overlay" ? { style: { position: "relative" as const } } : {})}>
+    <div data-frame-root="" className="flex min-h-dvh flex-col" {...(footer?.placement === "overlay" ? { style: { position: "relative" as const } } : {})}>
       <SiteSkipLink targetId={SITE_MAIN_ID} label={resolved.skipLink} />
       <SiteHeader
         {...(resolved.header.placement === "overlay"

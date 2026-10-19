@@ -114,7 +114,7 @@ describe("golden: AuthView", () => {
 
     expect(html).toBe(
       '<div class="flex min-h-dvh flex-col">' +
-        '<header data-site-header="" class="bg-surface-raised py-sm border-b border-line-base site-header-contract" style="position:relative;z-index:var(--ui-z-shell, 20);border-bottom-width:var(--ui-border-hairline, 1px)">' +
+        '<header data-header-root="" class="bg-surface-raised py-sm border-b border-line-base site-header-contract" style="position:relative;z-index:var(--ui-z-shell, 20);border-bottom-width:var(--ui-border-hairline, 1px)">' +
         '<div class="site-header-row">' +
         '<div class="site-header-brand">Acme</div><div class="site-header-actions"></div></div></header>' +
         '<main class="mx-auto flex w-full flex-1 flex-col gap-xl px-lg py-2xl" style="max-width:var(--ui-width-form-max, none)">' +
@@ -155,7 +155,7 @@ describe("golden: assetId — a real <img>, byte for byte, alt text and intrinsi
     expect(html).toBe(
       '<link rel="preload" as="image" href="https://cdn.example/logo.svg"/>' +
         '<div class="flex min-h-dvh flex-col">' +
-        '<header data-site-header="" class="bg-surface-raised py-sm border-b border-line-base site-header-contract" style="position:relative;z-index:var(--ui-z-shell, 20);border-bottom-width:var(--ui-border-hairline, 1px)">' +
+        '<header data-header-root="" class="bg-surface-raised py-sm border-b border-line-base site-header-contract" style="position:relative;z-index:var(--ui-z-shell, 20);border-bottom-width:var(--ui-border-hairline, 1px)">' +
         '<div class="site-header-row">' +
         '<div class="site-header-brand">' +
         '<img src="https://cdn.example/logo.svg" alt="Acme logo" width="120" height="40"/>' +
@@ -327,7 +327,7 @@ describe("golden: MarketingView", () => {
 
     expect(html).toBe(
       '<div class="flex min-h-dvh flex-col">' +
-        '<header data-site-header="" class="bg-surface-raised py-sm border-b border-line-base site-header-contract" style="position:relative;z-index:var(--ui-z-shell, 20);border-bottom-width:var(--ui-border-hairline, 1px)">' +
+        '<header data-header-root="" class="bg-surface-raised py-sm border-b border-line-base site-header-contract" style="position:relative;z-index:var(--ui-z-shell, 20);border-bottom-width:var(--ui-border-hairline, 1px)">' +
         '<div class="site-header-row">' +
         '<div class="site-header-brand">Acme Wordmark</div>' +
         '<div class="site-header-actions"></div></div>' +
@@ -423,7 +423,7 @@ describe("golden: MarketingView", () => {
 
     expect(html).toBe(
       '<div class="flex min-h-dvh flex-col">' +
-        '<header data-site-header="" class="bg-surface-raised py-sm border-b border-line-base site-header-contract" style="position:relative;z-index:var(--ui-z-shell, 20);border-bottom-width:var(--ui-border-hairline, 1px)">' +
+        '<header data-header-root="" class="bg-surface-raised py-sm border-b border-line-base site-header-contract" style="position:relative;z-index:var(--ui-z-shell, 20);border-bottom-width:var(--ui-border-hairline, 1px)">' +
         '<div class="site-header-row">' +
         '<div class="site-header-brand">Acme Wordmark</div>' +
         '<div class="site-header-actions"></div></div>' +

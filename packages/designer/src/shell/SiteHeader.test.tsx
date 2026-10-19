@@ -340,8 +340,10 @@ it("ships the default header candidate and a shared frame clearance including sa
   const styles = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "styles");
   const css = readFileSync(join(styles, "compiled.css"), "utf8");
   expect(css).toContain(".site-header-row {");
-  expect(css).toContain("scroll-margin-block-start: var(--site-header-clearance)");
-  expect(css).toContain("padding-block-start: var(--site-header-clearance)");
+  const clearance = "var(--site-header-clearance, calc(max(var(--ui-layout-tap-target, 44px), var(--ui-brandmark-height-lg, 48px)) + 2 * var(--spacing-sm, 8px) + var(--ui-border-hairline, 1px) + env(safe-area-inset-top, 0px)))";
+  expect(css).toContain(`scroll-margin-block-start: ${clearance}`);
+  expect(css).toContain(`padding-block-start: ${clearance}`);
+  expect(css).toContain(`max-block-size: calc(100dvb - ${clearance} - env(safe-area-inset-bottom, 0px))`);
   expect(css).toContain("env(safe-area-inset-bottom");
   expect(css).toContain("env(safe-area-inset-top");
 });

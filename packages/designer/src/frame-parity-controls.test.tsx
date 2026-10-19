@@ -59,7 +59,7 @@ for (const mode of modes) describe(`frame parity controls: ${mode}`, () => {
       const root = output(element, mode);
       if (name === "header") {
         expect(root.querySelector("header")).toHaveClass("site-header-contract");
-        expect(root.querySelector("header")).toHaveAttribute("data-site-header");
+        expect(root.querySelector("header")).toHaveAttribute("data-header-root");
         expect(root.querySelector(".site-header-row > .site-header-brand a")).toHaveAttribute("aria-label", "Example home");
         expect(root.querySelector(".site-header-actions")!.children).toHaveLength(0);
         expect(root.querySelector("header nav, header button")).toBeNull();

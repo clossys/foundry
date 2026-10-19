@@ -254,10 +254,10 @@
   }
 }
 @layer foundry-ui-compiled {
-  [data-site-frame] {
+  [data-frame-root] {
     --site-header-clearance: calc(max(var(--ui-layout-tap-target, 44px), var(--ui-brandmark-height-lg, 48px)) + 2 * var(--spacing-sm, 8px) + var(--ui-border-hairline, 1px) + env(safe-area-inset-top, 0px));
     & [id] {
-      scroll-margin-block-start: var(--site-header-clearance);
+      scroll-margin-block-start: var(--site-header-clearance, calc(max(var(--ui-layout-tap-target, 44px), var(--ui-brandmark-height-lg, 48px)) + 2 * var(--spacing-sm, 8px) + var(--ui-border-hairline, 1px) + env(safe-area-inset-top, 0px)));
     }
     & > header {
       position: sticky !important;
@@ -268,17 +268,17 @@
       position: fixed !important;
     }
     &:has(> header[data-placement="overlay"]) {
-      padding-block-start: var(--site-header-clearance);
+      padding-block-start: var(--site-header-clearance, calc(max(var(--ui-layout-tap-target, 44px), var(--ui-brandmark-height-lg, 48px)) + 2 * var(--spacing-sm, 8px) + var(--ui-border-hairline, 1px) + env(safe-area-inset-top, 0px)));
     }
   }
   :root:has([data-consent-banner]) .site-header-contract[data-collapsed] .nav-disclosure-panel {
     visibility: hidden;
   }
   @media (scripting: none) {
-    [data-site-frame] > header.site-header-contract {
+    [data-frame-root] > header.site-header-contract {
       position: relative !important;
     }
-    [data-site-frame]:has(> header[data-placement="overlay"]) {
+    [data-frame-root]:has(> header[data-placement="overlay"]) {
       padding-block-start: 0;
     }
   }
@@ -446,7 +446,7 @@
     position: absolute;
     inset-block-start: 100%;
     inset-inline: 0;
-    max-block-size: calc(100dvb - var(--site-header-clearance) - env(safe-area-inset-bottom, 0px));
+    max-block-size: calc(100dvb - var(--site-header-clearance, calc(max(var(--ui-layout-tap-target, 44px), var(--ui-brandmark-height-lg, 48px)) + 2 * var(--spacing-sm, 8px) + var(--ui-border-hairline, 1px) + env(safe-area-inset-top, 0px))) - env(safe-area-inset-bottom, 0px));
     overflow-y: auto;
     overscroll-behavior: contain;
     padding-block: var(--spacing-md, 12px) max(var(--spacing-md, 12px), env(safe-area-inset-bottom, 0px));

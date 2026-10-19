@@ -326,7 +326,7 @@ describe("PackReviewView", () => {
     });
     expect(html).toBe(
       "<div class=\"flex min-h-dvh flex-col\">" +
-      "<header data-site-header=\"\" class=\"bg-surface-raised py-sm border-b border-line-base site-header-contract\" style=\"position:relative;z-index:var(--ui-z-shell, 20);border-bottom-width:var(--ui-border-hairline, 1px)\">" +
+      "<header data-header-root=\"\" class=\"bg-surface-raised py-sm border-b border-line-base site-header-contract\" style=\"position:relative;z-index:var(--ui-z-shell, 20);border-bottom-width:var(--ui-border-hairline, 1px)\">" +
       "<div class=\"site-header-row\">" +
       "<div class=\"site-header-brand\"><span>Example Studio</span></div><div class=\"site-header-actions\">" +
       "<span class=\"inline-flex items-center rounded-pill px-sm py-xs text-caption font-body tracking-meta bg-surface-sunken text-ink-secondary\">Marker surface</span>" +
@@ -405,7 +405,7 @@ describe("PackReviewView header slots", () => {
 
   it("passes ground to both the header and the footer", () => {
     const html = renderToStaticMarkup(<PackReviewView {...props({ ground: "transparent" })} />);
-    expect(html).toMatch(/^<div class="flex min-h-dvh flex-col"><header data-site-header="" class="py-sm site-header-contract" /);
+    expect(html).toMatch(/^<div class="flex min-h-dvh flex-col"><header data-header-root="" class="py-sm site-header-contract" /);
     expect(html).toMatch(/<footer class="text-ink-primary py-lg" /);
   });
 });

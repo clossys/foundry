@@ -119,9 +119,9 @@
 @source inline("createContext createElement crosshair crosshairX current current: currentColor currently");
 @source inline("cursor-default cursor-pointer cx cy cycle cycles cycling d d.id d.x d.y danger dangling dark dash");
 @source inline("data data-collapsed data-consent-banner data-content-section-modules data-content-section-support");
-@source inline("data-designer-section-frame data-fetching data-invalid data-item data-item-description");
-@source inline("data-item-heading data-link-grid-description data-menu-open data-placement data-shape");
-@source inline("data-site-header data-span data-theme data-tone data-treatment data.domainMin data.showDirectLabels");
+@source inline("data-designer-section-frame data-fetching data-header-root data-invalid data-item");
+@source inline("data-item-description data-item-heading data-link-grid-description data-menu-open data-placement");
+@source inline("data-shape data-span data-theme data-tone data-treatment data.domainMin data.showDirectLabels");
 @source inline("dataviz date days dd decides decisionH declared decoration-transparent decorative deep default");
 @source inline("default. default: defaultCamera defaultFilter defaultItems defaultPreference defaultTheme");
 @source inline("defaultValue defaults defs del delay delete deliberate deliberately deliberately: delta demo dense");
