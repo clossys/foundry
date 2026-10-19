@@ -246,8 +246,6 @@ const ANY_RECORD_MAP_RE = /const\s+([A-Za-z_]+)\s*:\s*Record</g;
 const KNOWN_NON_CLASS_MAPS = new Set([
   // Token preview's authored CSS application signatures, never class strings.
   "tokens/preview/index.tsx:applications",
-  // Token preview's pending application signatures, never class strings.
-  "tokens/preview/index.tsx:pending",
   // Token preview's ReactNode specimens, never class strings.
   "tokens/preview/index.tsx:specimens",
   // backdrop/consumer-art.ts — aspect -> intrinsic geometry pair, not classes.
@@ -542,7 +540,7 @@ describe("token parity: every Tailwind class and var() read resolves against a r
 
   it("qualifies preview non-class declarations without accepting those names elsewhere", () => {
     const preview = join(srcDir, "tokens", "preview", "index.tsx");
-    for (const name of ["applications", "pending", "specimens"]) {
+    for (const name of ["applications", "specimens"]) {
       expect(isKnownNonClassMap(preview, name), name).toBe(true);
       expect(isKnownNonClassMap(join(srcDir, "blocks", "Example.tsx"), name), name).toBe(false);
       expect(isKnownNonClassMap(join(srcDir, "tokens", "preview-other", "index.tsx"), name), name).toBe(false);
