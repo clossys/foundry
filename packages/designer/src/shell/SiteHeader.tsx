@@ -48,6 +48,10 @@ export interface SiteHeaderProps extends Omit<HTMLAttributes<HTMLElement>, "chil
    * of its own (a brand mark is per-product — the same reasoning `AuthView`
    * ships no `BrandLockup` either; see that view's own section in this
    * package's README).
+   *
+   * A `Brandmark` passed here paints its logomark in the `accent` token unless
+   * it sets `markInk="image"`, the opt-out for a multi-colour logo that a
+   * one-colour silhouette would flatten. Any other node renders as given.
    */
   brand: ReactNode;
   /**
@@ -218,8 +222,14 @@ function SiteHeaderRoot({
   const mobileMenu = mobileLayout === "menu-brand-action";
   const colors = SITE_CHROME_GROUND_CLASSES[ground];
   const bordered = siteChromeHasBorder(ground);
-  const tonedBrand = isValidElement<BrandmarkProps>(brand) && brand.type === Brandmark && brand.props.tone === undefined
-    ? cloneElement(brand, { tone: overlay && tone === "inverse" ? "inverse" : "auto" })
+  // A Brandmark in the header takes the header's tone unless it sets its own, and paints its
+  // logomark in the accent token unless it opts out with markInk="image".
+  const headerBrand = isValidElement<BrandmarkProps>(brand) && brand.type === Brandmark ? brand : undefined;
+  const tonedBrand = headerBrand && (headerBrand.props.tone === undefined || headerBrand.props.markInk === undefined)
+    ? cloneElement(headerBrand, {
+        ...(headerBrand.props.tone === undefined ? { tone: overlay && tone === "inverse" ? "inverse" : "auto" } : {}),
+        ...(headerBrand.props.markInk === undefined ? { markInk: "accent" } : {}),
+      } satisfies Partial<BrandmarkProps>)
     : brand;
 
   return (

@@ -4964,8 +4964,12 @@ own doc comment for why it's `shell`, not `blocks`, despite reading like a
 `navPlacement="centered"` and `mobileLayout="menu-brand-action"` are the
 shared defaults. Equal side tracks center navigation on the whole header;
 `NavDisclosure` measures intrinsic brand/link/action widths and collapses
-before collision. Mobile centers the supplied mark, with menu at inline-start
-and a supplied primary icon or empty track at inline-end. The layout mirrors
+before collision. Mobile centers the supplied mark on the whole bar, not on
+the space left between the controls, with menu at inline-start and a supplied
+primary icon or empty track at inline-end. The mobile brand hides wordmark
+text only: a `Brandmark` mark stays visible (an image, a shared plate holding
+an image, or an accent mark tagged `data-brand-mark`), and the link keeps its
+`aria-label` as its name while the wordmark is hidden. The layout mirrors
 in RTL. `secondaryAction` renders before `actions` in the trailing region.
 Explicit `navPlacement="leading"` or `mobileLayout="inline"` retain legacy
 positioning rather than the default geometry. DOM order remains brand, nav,
@@ -5362,6 +5366,46 @@ Declared boundary: the wordmark's size is the mark's height times the fixed
 22/48 ratio, so at `size="sm"` (a 24px mark) the wordmark is 11px. Sizes
 derive from that ratio and are not raised to a minimum, so use `"md"` or
 `"lg"` where an 11px wordmark is too small.
+
+One brand slot size: the mark's box is the size's `--ui-brandmark-height-*`
+token for every form (`variant="mark"` or `"lockup"`, either plate, either
+`markInk`), so a mark-only brand and a lockup share one slot height, and the
+desktop header, the mobile bar and the menu panel all use that same token.
+The header styles set no brand height or font size of their own, so no
+per-site override is needed.
+
+#### Accent mark
+
+`markInk` is `"image"` or `"accent"`. On a `Brandmark` of its own, `"image"`
+is the default and the mark is the `markSrc` image, as above. Inside
+`SiteHeader`, an omitted `markInk` becomes `"accent"`, so the header's
+logomark is in the accent token by default; pass `markInk="image"` there to
+opt out. With `"accent"`,
+`Brandmark` paints the mark's shape in the accent token (`bg-accent`): a
+decorative `<span>` the size's height square, using `markSrc` as a CSS mask
+(`mask-image`, `contain`, centred), so the mark follows the accent token in
+light and dark color schemes. The wordmark keeps the link's ink: the
+`--color-ink-primary` token, or `--color-ink-on-inverse` with
+`tone="inverse"` on a dark or overlay ground, so it switches with the scheme
+and the ground through tokens only. With `plate="shared"` the accent mark sits
+inset on the plate. The prop is part of `BrandmarkProps`; no new type is
+exported.
+
+```tsx
+<Brandmark
+  variant="lockup"
+  size="md"
+  label="Acme home"
+  markSrc="/brand/acme-mark.svg"
+  wordmark="Acme"
+  markInk="accent"
+/>;
+```
+
+What it does not do: the mask uses the image's alpha only, so a multi-colour
+mark becomes a one-colour accent silhouette, including in the header's
+default; pass `markInk="image"` for a mark whose colours matter. It does not check that the accent reads on the ground behind
+it.
 
 #### Shared plate
 
@@ -7484,7 +7528,8 @@ const report = checkConsumerArtContract(art);
 
 `Brandmark tone="inverse"` uses inverse wordmark ink; `"auto"` keeps the base
 ink. A `Brandmark` passed directly to an overlay `SiteHeader` follows the header tone
-unless its own tone is explicit. `NavDisclosure tone="inverse"` uses inverse
+unless its own tone is explicit. A `Brandmark` passed directly to any `SiteHeader`
+paints its logomark in the accent token unless it sets `markInk="image"`. `NavDisclosure tone="inverse"` uses inverse
 trigger ink at rest, on hover, when expanded and on keyboard focus. An omitted
 nav tone follows an inverse overlay header; an explicit `"auto"` keeps base ink.
 Both controls otherwise retain their existing default markup.
