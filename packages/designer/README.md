@@ -7548,6 +7548,11 @@ control. Navigation stores no preferences, fetches no data and imports no router
 `activeId` takes precedence over `activeHref`; ancestry and breadcrumbs derive
 only from that route identity, with no view-internal selection input.
 
+`validateAppNavigationTree(tree)` throws on invalid runtime input without mutating
+the tree. `getAppNavigationAncestry(tree, { id, href })` returns the matching
+root-to-destination node chain, with id taking precedence over href.
+
+
 Desktop parents expand inline. A destination link and its disclosure button are
 separate controls. A newly active child expands its ancestor. `collapsed` controls
 the named, tooltipped icon rail; `defaultCollapsed` supplies its initial local
