@@ -75,6 +75,7 @@ const ARIA_STATE_TOKENS = new Set([
 const MESSAGE_JSX_ATTRS = new Set(["label", "description", "title", "placeholder", "alt", "summary"]);
 
 const NON_COPY_JSX_ATTRS = new Set([
+  "presentation",
   "className",
   "style",
   "key",
@@ -10524,6 +10525,32 @@ describe("shipped message lint", () => {
     ].join("\n");
     expect(findShippedMessageViolations("not-found.tsx", inlineNotFound).map((violation) => violation.text)).toEqual(
       expect.arrayContaining(['title="Page not found"', "Back to home"]),
+    );
+  });
+});
+
+
+describe("CONSENT-1 presentation configuration", () => {
+  const fixture = (jsx: string) => [
+    'interface Props { presentation?: "card" | "banner"; }',
+    "export function Example(props: Props) {",
+    '  const presentation = props.presentation ?? "card";',
+    `  return ${jsx};`,
+    "}",
+  ].join("\n");
+
+  it("accepts finite card/banner forwarding as non-copy configuration", () => {
+    expect(findShippedMessageViolations("Example.tsx", fixture("<ConsentBanner presentation={presentation} />"))).toEqual([]);
+  });
+
+  it.each([
+    ["visible child", "<p>{presentation}</p>"],
+    ["accessible name", "<section aria-label={presentation} />"],
+    ["message attribute", "<ConsentBanner title={presentation} />"],
+    ["unknown copy prop", "<Notice customCopy={presentation} />"],
+  ])("still refuses the same binding as a %s", (_name, jsx) => {
+    expect(findShippedMessageViolations("Example.tsx", fixture(jsx))).toEqual(
+      expect.arrayContaining([expect.objectContaining({ kind: "rendered-local", text: "presentation" })]),
     );
   });
 });
