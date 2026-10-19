@@ -6863,7 +6863,7 @@ plate, radius 7/32, and fits the painted glyph into a 64% box on a 48-unit
 canvas with 0.2 declared clear space. Scaling preserves aspect and centres
 the bounding box. `plate: false` omits the plate; plate conformance then
 reports its absence. `optical: true` uses the painted-area centroid, limits
-each axis correction to 3% of the side, and declares the optical mode so
+the correction vector to 3% of the side, and declares the optical mode so
 conformance can verify the correction from measured geometry.
 
 Supported geometry is `rect`, `circle`, `ellipse`, `polygon`, and SVG paths

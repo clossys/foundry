@@ -519,6 +519,7 @@ function analyze(svg: string, optical = false): Analysis {
 }
 /** Measure supported SVG paint geometry without a DOM, fonts, or external resources. */
 export function measureMarkGeometry(svg: string): MarkGeometry { return analyze(svg).geometry; }
+const clampVector = (vector: Point, limit: number): Point => mul(vector, Math.min(1, limit / Math.hypot(...vector)));
 const format = (n: number): string => String(Number(n.toFixed(10)));
 const escape = (s: string): string => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
 /** Fit painted glyph bounds into the kit's 18% inset, preserving aspect. */
@@ -529,7 +530,8 @@ export function normalizeMark(input: NormalizeMarkInput): string {
     return fail('zero-area glyph bounds');
   const scale = side * (1 - 2 * inset) / Math.max(b.width, b.height);
   const centre: Point = [b.x + b.width / 2, b.y + b.height / 2];
-  const shift = (axis: 0 | 1) => input.optical ? Math.max(-side * .03, Math.min(side * .03, (centre[axis] - measured.centroid[axis]) * scale)) : 0;
+  const correction: Point = input.optical ? clampVector(mul(sub(centre, measured.centroid), scale), side * .03) : [0, 0];
+  const shift = (axis: 0 | 1) => correction[axis];
   const tx = side / 2 - centre[0] * scale + shift(0), ty = side / 2 - centre[1] * scale + shift(1);
   const root = measured.root, opening = input.glyphSvg.indexOf('>', root.start) + 1, closing = input.glyphSvg.lastIndexOf('</svg');
   let body = input.glyphSvg.slice(opening, closing);
@@ -555,7 +557,9 @@ export function checkMarkConformance(svg: string): MarkConformanceFinding[] {
   };
   check('radius', Math.abs((geometry.plate.radiusYShare ?? 0) - 7 / 32) > Math.abs((geometry.plate.radiusShare ?? 0) - 7 / 32) ? geometry.plate.radiusYShare : geometry.plate.radiusShare, 7 / 32);
   check('inset', Math.max(geometry.glyphBox.width, geometry.glyphBox.height), .64);
-  const opticalShift = (axis: 0 | 1) => root.attrs["data-optical-centering"] === "true" ? Math.max(-.03, Math.min(.03, ((axis === 0 ? analysis.box.x + analysis.box.width / 2 : analysis.box.y + analysis.box.height / 2) - analysis.centroid[axis]) / geometry.viewBox.height)) : 0;
+  const boxCentre: Point = [analysis.box.x + analysis.box.width / 2, analysis.box.y + analysis.box.height / 2];
+  const expectedShift: Point = root.attrs["data-optical-centering"] === "true" ? clampVector(mul(sub(boxCentre, analysis.centroid), 1 / geometry.viewBox.height), .03) : [0, 0];
+  const opticalShift = (axis: 0 | 1) => expectedShift[axis];
   check('centre', Math.max(Math.abs(geometry.centreOffset.x - opticalShift(0)), Math.abs(geometry.centreOffset.y - opticalShift(1))), 0);
   check('clear-space', geometry.declaredClearSpace, .2);
   if (texts.length) {

@@ -53,8 +53,9 @@ describe("mark normalization", () => {
     const normal = measureMarkGeometry(normalizeMark({ glyphSvg, tokens }));
     const optical = measureMarkGeometry(normalizeMark({ glyphSvg, tokens, optical: true }));
     expect(normal.centreOffset).toEqual({ x: 0, y: 0 });
-    expect(optical.centreOffset.x).toBeCloseTo(0.03, 5);
-    expect(optical.centreOffset.y).toBeCloseTo(0.03, 5);
+    expect(Math.hypot(optical.centreOffset.x, optical.centreOffset.y)).toBeCloseTo(0.03, 5);
+    expect(optical.centreOffset.x).toBeCloseTo(0.03 / Math.SQRT2, 5);
+    expect(optical.centreOffset.y).toBeCloseTo(0.03 / Math.SQRT2, 5);
   });
   it.each(['text', 'image', 'use', 'foreignObject', 'defs'])("names unsupported element %s", name => {
     expect(() => measureMarkGeometry(svg(`<${name}/>`))).toThrow(MarkGeometryError);
