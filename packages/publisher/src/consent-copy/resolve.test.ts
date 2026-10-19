@@ -232,3 +232,35 @@ describe("consent-copy/resolve (P-20)", () => {
     expect(productionWithoutProcess).toBeInstanceOf(Error);
   });
 });
+
+
+describe("CONSENT-1 optional trailing copy", () => {
+  it("resolves the optional trail with the same provenance and validation as other fields", () => {
+    const inner = resolverFor(registry(), "production");
+    const resolveCopy: CopyResolver = (ref) => inner(ref.id === "consent.trail" ? { ...ref, id: "consent.title" } : ref);
+    const copy = resolveConsentCopy({ resolveCopy, target: "production", refs: { ...REFS, trailingText: { id: "consent.trail" } }, locale: "en" });
+    expect(copy.trailingText).toEqual(copy.title);
+    expect(resolveConsentCopy({ resolveCopy: inner, target: "production", refs: REFS, locale: "en" })).not.toHaveProperty("trailingText");
+  });
+
+  it.each([undefined, { text: "", recordId: "r", entryId: "e", revision: "1", locale: "en" }])("refuses an unresolved or blank supplied trail", (resolution) => {
+    const inner = resolverFor(registry(), "preview");
+    const resolveCopy: CopyResolver = (ref) => ref.id === "consent.trail" ? resolution as CopyResolution | undefined : inner(ref);
+    expectRefusal(() => resolveConsentCopy({ resolveCopy, target: "preview", refs: { ...REFS, trailingText: { id: "consent.trail" } }, locale: "en" }), "trailingText");
+  });
+});
+
+
+describe("CONSENT-1 supplied trail validation", () => {
+  it.each([
+    ["locale", (r: CopyResolution) => ({ ...r, locale: "fr" })],
+    ["placeholder", (r: CopyResolution) => ({ ...r, text: r.text + PLACEHOLDER_SENTINEL })],
+    ["owner approval", (r: CopyResolution) => ({ ...r, approval: undefined })],
+    ["generated source", (r: CopyResolution) => ({ ...r, source: { kind: "generated" as const, reference: "fixture" } })],
+  ] as const)("applies the existing %s refusal to the optional field without echoing text", (_reason, mutate) => {
+    const inner = resolverFor(registry(), "production");
+    const original = inner(REFS.title)!;
+    const resolveCopy: CopyResolver = (ref) => ref.id === "consent.trail" ? mutate(original) : inner(ref);
+    expectRefusal(() => resolveConsentCopy({ resolveCopy, target: "production", refs: { ...REFS, trailingText: { id: "consent.trail" } }, locale: "en" }), "trailingText");
+  });
+});

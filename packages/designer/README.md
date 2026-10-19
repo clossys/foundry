@@ -4322,10 +4322,10 @@ function PageConsent({ onAccept, onReject, status }: { onAccept: () => void; onR
 A presentational consent notice, and nothing more: it holds no consent
 state, reads or writes no storage, and makes no network call. The consumer
 decides what `onAccept` and `onReject` do, whether to render it at all, and
-where it sits; it renders in flow, so a consumer who wants it pinned to the
-edge of the page positions it themselves. All copy arrives through props
+where it sits. The default `presentation="banner"` renders in flow;
+`presentation="card"` pins a compact card to the bottom edge. All copy arrives through props
 (`title`, `body`, `acceptLabel`, `rejectLabel`, and an optional
-`privacyLink` slot rendered after the body, and an optional `status` line), so
+`privacyLink` slot (after the body in the default banner), and an optional `status` line), so
 this package ships no wording of its own.
 
 `status` renders inside a polite live region (`role="status"`,
@@ -4343,14 +4343,25 @@ like any other content. Accept and reject are both `Button` atoms with the
 same `variant` and `size`, which gives the two choices equal prominence
 (rejecting is a button, not a link). No form control renders inside it.
 
-The surface uses `bg-overlay-surface`, `border-overlay-border` and ink
-tokens only, so it is opaque. Actions stack at full width at the base size
+The default banner uses `bg-overlay-surface`, `border-overlay-border` and ink
+tokens only, so it is opaque. Its actions stack at full width at the base size
 and sit in a row from the `tablet` breakpoint; the content width is capped
 with `max-w-display` from `tablet-lg`. The root carries `data-consent-banner`,
 a stable selector the consumer can pass in `overlayIntersectingFold` when the
 banner is positioned over the page. If you pin the banner to the bottom
 visually, render it early in DOM order so keyboard and assistive-tech users
 reach it without tabbing through the whole page first.
+
+The opt-in card sits at the inline start from tablet width and is centred
+on phones, with safe-area gutters and the form-width cap. It uses the
+existing glass, blur and hairline roles; unsupported backdrop filters and
+reduced transparency use an opaque plate, and forced colours use system
+colours. There is no motion. Long copy can wrap and scroll within the
+viewport. The title stays as a visually hidden heading that names the
+region. The policy slot is inline with the body, and both outlined choices
+share the row equally. Pass `selectedChoice="granted"` or `"denied"` from
+host state to show a decorative check and `aria-pressed`; the component
+stores no choice. The live region stays mounted in either presentation.
 
 ### Composing chrome and blocks
 
@@ -6436,7 +6447,7 @@ not a grab-bag).
 | `SectionFrameProps` | type | Props for `SectionFrame`: `ground` (default `"base"`), `measure` (default `"content"`), `children`, `className`, `style`, plus every native `<section>` attribute. |
 | `SectionMeasure` | type | `"content" \| "wide" \| "prose"`. How wide `SectionFrame`'s inner column is: it maps to the `--ui-width-content-max`, `--ui-width-wide-max`, or `--ui-width-prose-max` token. |
 | `ConsentBanner` | component | Presentational consent notice: a region landmark named by its title, a body, an optional `privacyLink` slot after it, and two same-variant, same-size `Button`s for accept and reject. Props only: no consent state, storage, network call or built-in copy. Not a dialog. Always mounts an empty polite `role="status"` live region for an optional `status`. Sets `data-consent-banner` on its root. |
-| `ConsentBannerProps` | type | Props for `ConsentBanner`: `title`, `body`, `acceptLabel`, `rejectLabel` (all `ReactNode`), `onAccept`, `onReject` (both `() => void`), `privacyLink?`, `status?` (a `ReactNode` rendered in an always-mounted polite live region), `className?`, `style?`. |
+| `ConsentBannerProps` | type | Props for `ConsentBanner`: `title`, `body`, `acceptLabel`, `rejectLabel` (all `ReactNode`), `onAccept`, `onReject` (both `() => void`), `privacyLink?`, `status?` (a `ReactNode` rendered in an always-mounted polite live region), `presentation?` (`banner` by default, or `card`), `selectedChoice?` (`granted` or `denied`, card feedback only), `className?`, `style?`. |
 | `mergeUiClasses` | function | Merges token-aware Tailwind utility classes with last-argument precedence; used by surface-level compositions built from UI primitives. |
 | `Shell` | component | The persistent application frame. Carries `Shell.Header`, `Shell.SideNav`, `Shell.Main`, `Shell.Rail`, `Shell.Footer`. |
 | `ShellProps` | type | Props for `Shell`: `children` (any subset of the five slots above, in any order), `skipLinkLabel` (default `"Skip to content"`), plus every native `<div>` attribute. |
