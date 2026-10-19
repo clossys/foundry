@@ -80,7 +80,8 @@ describe("exact declared membership and measured source use", () => {
   });
   it.each(["from", "to"] as const)("requires exact %s endpoint kind labels", endpoint => {
     const input = fixture();
-    Object.assign(input.edges[6]![endpoint], { kind: "token" });
+    input.edges[6] = { ...input.edges[6]!, [endpoint]: { ...input.edges[6]![endpoint], kind: "token" } } as RelationEdge;
+    expect(input.edges[5]!.to.kind).toBe("block");
     refused(input, "endpoint");
   });
   it("requires route bindings in the auxiliary collection", () => {
@@ -165,6 +166,75 @@ describe("exact declared membership and measured source use", () => {
     }
     const missing = fixture(); delete (missing.edges[6] as Partial<RelationEdge>).provenance; refused(missing, "provenance");
     refused({ ...fixture(), reverse: { "atom-small": [] } }, "unknown-field");
+  });
+  it.each([
+    ["declared", "sourceDocument", 6],
+    ["derived", "extractor", 7],
+    ["derived", "version", 7],
+  ] as const)("requires %s provenance field %s independently", (_kind, field, index) => {
+    const input = fixture(), record = { ...input.edges[index]!.provenance } as Record<string, unknown>;
+    delete record[field];
+    Object.assign(input.edges[index]!, { provenance: record });
+    refused(input, "provenance");
+  });
+  it.each([false, true])("refuses import provenance with derived fields (sourceDocument=%s)", sourceDocument => {
+    const input = fixture();
+    Object.assign(input.edges[6]!, { provenance: {
+      kind: "import", extractor: "example-measurer", version: "1",
+      sourceRevision: witness.sourceRevision, evidenceRef: "example-import",
+      ...(sourceDocument ? { sourceDocument: "example-source" } : {}),
+    } });
+    refused(input, "provenance");
+  });
+  it("refuses a source-side Atom in a Block-to-Atom edge", () => {
+    const input = fixture();
+    input.edges[6] = { ...input.edges[6]!, from: { kind: "atom", key: "atom-large" } } as unknown as RelationEdge;
+    refused(input, "endpoint");
+  });
+  it.each(["instance-frame", "instance-view"] as const)("requires exactly one %s edge per Instance", kind => {
+    const input = fixture();
+    input.edges.push(structuredClone(input.edges.find(edge => edge.kind === kind)!));
+    refused(input, "binding-join");
+  });
+  it.each<[string, (input: RelationsInput) => object, object]>([
+    ["Block qualification", input => input.nodes[2]!, { qualified: true }],
+    ["Block witness", input => input.nodes[2]!, { witness: {} }],
+    ["identity", input => input.nodes[4]!.identity, { extra: true }],
+    ["context", input => input.nodes[4]!.identity.context, { extra: true }],
+    ["edge", input => input.edges[6]!, { extra: true }],
+    ["placement key on source use", input => input.edges[6]!, { placementKey: "misplaced" }],
+    ["placement location on source use", input => input.edges[6]!, { location: { region: "misplaced" } }],
+  ])("refuses unknown %s fields independently", (_name, target, extra) => {
+    const input = fixture(); Object.assign(target(input), extra);
+    refused(input, "unknown-field");
+  });
+  it("refuses unknown provenance keys independently", () => {
+    const input = fixture();
+    input.edges[6]!.provenance = { ...input.edges[6]!.provenance, extra: true } as RelationEdge["provenance"];
+    refused(input, "provenance");
+  });
+  it("preserves duplicate identical source-use edges in both projections", () => {
+    const input = fixture(); input.edges.push(structuredClone(input.edges[6]!));
+    const result = graph(validate(input));
+    expect(result.edges).toEqual(input.edges);
+    expect(result.forward.nested).toEqual([input.edges[6], input.edges[8]]);
+    expect(result.reverse["atom-small"]).toEqual([input.edges[6], input.edges[8]]);
+  });
+  it.each([0, 2])("requires exactly one route edge, refusing %s", count => {
+    const input = fixture();
+    if (count === 0) input.edges.shift(); else input.edges.push(structuredClone(input.edges[0]!));
+    refused(input, "route-binding");
+  });
+  it.each(["nodes", "edges"])("refuses a non-array %s collection", field => {
+    refused({ ...fixture(), [field]: {} }, "shape");
+  });
+  it("requires a nonempty node key", () => {
+    const input = fixture(); input.nodes[6]!.key = ""; refused(input, "shape");
+  });
+  it.each(["ref", "sourceRevision", "consumer", "brand"] as const)("requires nonempty identity %s text", field => {
+    const input = fixture(), id = input.nodes[6]!.identity;
+    if (field === "ref" || field === "sourceRevision") id[field] = ""; else id.context[field] = "";
+    refused(input, "identity");
   });
   it("compares opaque revisions and rejects unknown media", () => {
     const input = fixture(); input.nodes[5]!.identity.sourceRevision = "release/example-v2";
