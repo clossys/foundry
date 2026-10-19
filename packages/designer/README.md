@@ -4920,7 +4920,9 @@ own doc comment for why it's `shell`, not `blocks`, despite reading like a
 shared defaults. Equal side tracks center navigation on the whole header;
 `NavDisclosure` measures intrinsic brand/link/action widths and collapses
 before collision. Mobile centers the supplied mark, with menu at inline-start
-and a supplied primary icon or empty track at inline-end. The layout mirrors
+and a supplied primary icon or empty track at inline-end. The mobile brand
+hides wordmark text only; a `Brandmark` mark on a shared plate stays visible,
+because the rule skips a span that holds an image. The layout mirrors
 in RTL. `secondaryAction` renders before `actions` in the trailing region.
 Explicit `navPlacement="leading"` or `mobileLayout="inline"` retain legacy
 positioning rather than the default geometry. DOM order remains brand, nav,

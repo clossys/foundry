@@ -60,11 +60,13 @@ it.each([false, true])("preserves explicit defaults and proves the new default c
   expect(container.querySelector("footer")).toHaveTextContent("Privacy");
 });
 
-it.each([false, true])("forwards an action icon and retains its sr-only mobile label (server=%s)", server => {
+it.each([false, true])("renders the mobile header-bar primary as a ghost icon action with its sr-only label (server=%s)", server => {
   const shell = { ...base, actions: [{ ...base.actions![0]!, icon }] };
   const container = output(shell, server);
   const action = within(container.querySelector(".site-header-actions") as HTMLElement).getByRole("link", { name: "Start now" });
-  expect(action).toHaveClass("bg-accent");
+  expect(action).toHaveAttribute("data-header-primary");
+  expect(action).not.toHaveClass("bg-accent");
+  expect(action).toHaveClass("text-ink-primary", "hover:bg-surface-sunken");
   expect(action.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
   expect(action.querySelector("svg path")).toHaveAttribute("d", "M4 12h16");
   expect(action.querySelector("span")).toHaveClass("sr-only", "tablet:not-sr-only");
@@ -164,11 +166,13 @@ it.each([false, true])("puts every full-label action in defined panel order in e
   const panel = nav.querySelector(".nav-disclosure-panel")!;
   const mobileActions = panel.querySelector(".site-header-desktop-actions")!;
   expect(mobileActions).not.toBeNull();
-  expect([...mobileActions.querySelectorAll("a")].map(link => [link.getAttribute("href"), link.textContent])).toEqual([["/sign-in", "Sign in"], ["/contact", "Contact"], ["/start", "Start now"]]);
-  expect(mobileActions.querySelectorAll("a")[2]).toHaveClass("bg-accent");
+  expect([...mobileActions.querySelectorAll("a")].map(link => [link.getAttribute("href"), link.textContent])).toEqual([["/start", "Start now"], ["/sign-in", "Sign in"], ["/contact", "Contact"]]);
+  expect(mobileActions.querySelectorAll("a")[0]).toHaveClass("bg-accent");
   expect(mobileActions.querySelectorAll("a")[1]).not.toHaveClass("bg-accent");
   expect(mobileActions.querySelectorAll("a")).toHaveLength(3);
-  expect(mobileActions).toHaveTextContent("Sign inContactStart now");
+  expect(mobileActions).toHaveTextContent("Start nowSign inContact");
+  // The desktop row and the expanded menu share this list: text only, no icons, no hidden labels.
+  expect(mobileActions.querySelectorAll("svg, .sr-only")).toHaveLength(0);
   expect(panel.querySelectorAll("nav")).toHaveLength(0);
   expect(container.querySelectorAll("header nav")).toHaveLength(1);
   expect(container.querySelectorAll("header")).toHaveLength(1);
@@ -244,4 +248,32 @@ it.each([{ navPlacement: "leading" }, { mobileLayout: "inline" }] as const)("kee
       expect(actions[0]).toHaveTextContent(label);
     }
   }
+});
+
+it.each([false, true])("keeps the icon on the mobile header-bar action only, with every other action text-only (server=%s)", server => {
+  const shell: SiteShellInput = { ...base, mobileLayout: "menu-brand-action", actions: base.actions!.map(action => ({ ...action, icon })) };
+  const header = output(shell, server).querySelector("header")!;
+  const iconed = [...header.querySelectorAll("a")].filter(link => link.querySelector("svg"));
+  expect(iconed).toHaveLength(1);
+  expect(iconed[0]).toHaveAttribute("data-header-primary");
+  expect(iconed[0]!.closest(".site-header-actions")).not.toBeNull();
+  expect(iconed[0]!.closest("nav")).toBeNull();
+  for (const link of header.querySelectorAll(".site-header-desktop-actions a")) {
+    expect(link.querySelector("svg, .sr-only")).toBeNull();
+    expect(link.textContent).not.toBe("");
+  }
+});
+
+it.each([false, true])("gives the ghost mobile action the toggle's inverse ink on an inverse navigation tone (server=%s)", server => {
+  const shell: SiteShellInput = { ...base, nav: { ...base.nav!, trigger: "icon", tone: "inverse" }, header: { placement: "overlay", tone: "inverse" } };
+  const header = output(shell, server).querySelector("header")!;
+  const action = header.querySelector<HTMLAnchorElement>("[data-header-primary]")!;
+  const toggle = header.querySelector("button")!;
+  for (const token of ["text-ink-on-inverse", "hover:bg-control-tonal-inverse-hover", "focus-visible:outline-ink-on-inverse"]) {
+    expect(toggle).toHaveClass(token);
+    expect(action).toHaveClass(token);
+  }
+  expect(action).not.toHaveClass("text-ink-primary");
+  expect(action).not.toHaveClass("hover:bg-surface-sunken");
+  expect(action).not.toHaveClass("focus-visible:outline-accent");
 });

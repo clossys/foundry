@@ -1,7 +1,23 @@
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { render, screen } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import { Brandmark } from "./Brandmark.js";
 import { SiteHeader } from "./SiteHeader.js";
+
+const themeKeys = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "..", "..", "styles", "theme-keys.css"), "utf8");
+function cssBlock(text: string, opening: string): string {
+  const start = text.indexOf(opening);
+  expect(start, opening).toBeGreaterThan(-1);
+  let depth = 0;
+  for (let i = text.indexOf("{", start); i < text.length; i++) {
+    if (text[i] === "{") depth++;
+    else if (text[i] === "}" && --depth === 0) return text.slice(start, i + 1);
+  }
+  throw new Error(`unterminated ${opening}`);
+}
 
 // Captured from main before adding mobileLayout.
 const DEFAULT_HEADERS = {
@@ -79,5 +95,24 @@ describe("SiteHeader mobile layout", () => {
     expect(screen.getByRole("link", { name: "Example" }).parentElement).toHaveClass(navPlacement === "leading" ? "col-start-2" : "site-header-brand");
     expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
+  });
+
+  it.each([
+    ["shared plate lockup", { variant: "lockup", wordmark: "Example", plate: "shared" }],
+    ["shared plate mark", { variant: "mark", plate: "shared" }],
+    ["self plate lockup", { variant: "lockup", wordmark: "Example", plate: "self" }],
+  ] as const)("hides only the wordmark, never the mark, in the mobile brand (%s)", (_name, props) => {
+    // The mobile rule hides wordmark text beside the mark. Brandmark wraps a shared
+    // plate's image in a span too, so the hide selector must skip spans holding an image.
+    const mobile = cssBlock(themeKeys, "@utility site-header-mobile {");
+    const rule = /& \.site-header-brand a > ([^{,]+?) \{ display: none; \}/.exec(mobile);
+    expect(rule?.[1]).toBe("span:not(:has(img))");
+    render(<SiteHeader mobileLayout="menu-brand-action" brand={<Brandmark size="md" label="Example home" markSrc="/mark.svg" {...props} />} />);
+    const anchor = screen.getByRole("link", { name: "Example home" });
+    // jsdom has no :has(), so apply the rule's own condition: a direct span child without an image.
+    const hidden = [...anchor.children].filter(child => child.matches(".site-header-brand a > span") && !child.querySelector("img"));
+    const shown = [...anchor.children].filter(child => !hidden.includes(child));
+    expect(shown.some(child => child.matches("img") || child.querySelector("img"))).toBe(true);
+    expect(hidden.map(child => child.textContent)).toEqual(props.variant === "lockup" ? ["Example"] : []);
   });
 });

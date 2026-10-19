@@ -38,6 +38,8 @@ function IconLink({ link }: { readonly link: ResolvedSiteIconLink }) {
   );
 }
 
+// The menu toggle's inverse ink, so the ghost mobile action beside it reads on the same plate.
+const MOBILE_ACTION_INVERSE = "text-ink-on-inverse hover:text-ink-on-inverse focus-visible:text-ink-on-inverse hover:bg-control-tonal-inverse-hover focus-visible:outline-ink-on-inverse";
 const ICON_LIST_CLASSES = "m-0 flex list-none flex-wrap items-center gap-sm p-0";
 
 function assertOverlayScene(children: ReactNode, headerPlacement: "reserved" | "overlay"): void {
@@ -113,7 +115,8 @@ export function SiteFrame({ shell, presentation, resolveCopy, resolveAsset, chil
   const navigation = resolved.nav ?? (resolved.headerActions.length ? { ...SITE_FRAME_NAV_DEFAULTS, links: [] } : undefined);
   const nav = navigation ? <SiteNavDisclosure nav={navigation} actions={resolved.headerActions} surfaceLabel={resolved.surfaceLabel} /> : undefined;
   const primary = resolved.headerActions.find(action => action.emphasis === "primary");
-  const actions = primary && resolved.navPlacement === "centered" && resolved.mobileLayout === "menu-brand-action" ? <SiteHeader.ActionLink data-header-primary="" href={primary.href} label={primary.label} icon={primary.icon} isCurrent={primary.isCurrent} variant="primary" /> : undefined;
+  // The mobile header bar's ghost action is the only header action that shows its icon, beside the ghost menu toggle.
+  const actions = primary && resolved.navPlacement === "centered" && resolved.mobileLayout === "menu-brand-action" ? <SiteHeader.ActionLink data-header-primary="" href={primary.href} label={primary.label} icon={primary.icon} isCurrent={primary.isCurrent} variant="ghost" className={navigation?.tone === "inverse" ? MOBILE_ACTION_INVERSE : undefined} /> : undefined;
 
   const footerContent = footer ? (
     <SiteFooter

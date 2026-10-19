@@ -2,7 +2,14 @@ import { SiteHeader } from "@clossys/designer/shell/server";
 import { HEADER_ACTION_VARIANTS } from "./site-frame-contract.js";
 import type { ResolvedSiteLink, ResolvedSiteShell } from "./internal/resolveShell.js";
 
-/** The same full-label links serve the desktop row and the mobile panel. */
+// Primary leads, so it is the first action in the expanded mobile menu; the rest keep their variant order.
+const actionRank = (emphasis: (typeof HEADER_ACTION_VARIANTS)[number]) => emphasis === "primary" ? -1 : HEADER_ACTION_VARIANTS.indexOf(emphasis);
+
+/**
+ * The same full-label links serve the desktop row and the mobile panel. Actions
+ * here are text only: the frame renders the mobile header-bar primary, the one
+ * action that shows its icon, separately.
+ */
 export function NavLinks({ links, actions, surfaceLabel }: { readonly links: readonly ResolvedSiteLink[]; readonly actions?: ResolvedSiteShell["actions"]; readonly surfaceLabel?: string }) {
   return (
     <>
@@ -17,8 +24,8 @@ export function NavLinks({ links, actions, surfaceLabel }: { readonly links: rea
       </ul> : null}
       {actions?.length || surfaceLabel ? (
         <ul role="list" className="site-header-desktop-actions m-0 flex list-none gap-sm p-0">
-          {[...(actions ?? [])].sort((a, b) => HEADER_ACTION_VARIANTS.indexOf(a.emphasis) - HEADER_ACTION_VARIANTS.indexOf(b.emphasis)).map((action, index) => (
-            <li key={index}><SiteHeader.ActionLink href={action.href} label={action.label} icon={action.icon} isCurrent={action.isCurrent} variant={action.emphasis} /></li>
+          {[...(actions ?? [])].sort((a, b) => actionRank(a.emphasis) - actionRank(b.emphasis)).map((action, index) => (
+            <li key={index}><SiteHeader.ActionLink href={action.href} label={action.label} isCurrent={action.isCurrent} variant={action.emphasis} /></li>
           ))}
           {surfaceLabel ? <li><span>{surfaceLabel}</span></li> : null}
         </ul>

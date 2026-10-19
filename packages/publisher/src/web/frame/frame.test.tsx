@@ -694,13 +694,13 @@ const ALL_SLOTS: SiteShellInput = {
 };
 
 describe("SiteFrame icon slots", () => {
-  it("renders all slots with semantic landmarks, resolved accessible names and decorative icons", () => {
+  it("renders all slots with semantic landmarks, resolved accessible names, text-only header actions and decorative footer icons", () => {
     const { getByRole } = render(frame(ALL_SLOTS, <p>content</p>));
     const banner = getByRole("banner");
     const contact = within(banner).getByRole("link", { name: "Contact" });
     expect(contact).toHaveAttribute("href", "/contact");
     expect(contact).toHaveTextContent("Contact");
-    expect(contact.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
+    expect(contact.querySelector("svg")).toBeNull();
     const footer = getByRole("contentinfo");
     const social = within(footer).getByRole("navigation", { name: "Profiles" });
     const profile = within(social).getByRole("link", { name: "Profile" });
@@ -718,7 +718,7 @@ describe("SiteFrame icon slots", () => {
     const focusable = [...container.querySelectorAll<HTMLElement>('a[href],button,input,select,textarea,[tabindex]')]
       .filter((element) => element.tabIndex >= 0);
     expect(focusable.map((element) => element.getAttribute("aria-label") ?? element.textContent)).toEqual([
-      "Skip to content", "Example home", "Primary", "Pricing", "Docs", "Sign in", "Contact", "App", "App",
+      "Skip to content", "Example home", "Primary", "Pricing", "Docs", "App", "Sign in", "Contact", "App",
       "About", "Help", "Profile", "Privacy", "Terms",
     ]);
   });
