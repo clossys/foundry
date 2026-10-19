@@ -33,8 +33,8 @@ const signatures = {
 };
 const counts = {
   surface: 24, text: 28, border: 8, control: 7, status: 12, chart: 22,
-  font: 7, space: 13, size: 13, icon: 4, brandmark: 6, radius: 7,
-  shadow: 4, blur: 1, ring: 2, layer: 9, opacity: 1, motion: 12, breakpoint: 6,
+  font: 7, space: 13, size: 14, icon: 4, brandmark: 6, radius: 7,
+  shadow: 4, blur: 2, ring: 2, layer: 9, opacity: 1, motion: 12, breakpoint: 6,
 };
 const interactive = [
   "--ui-duration-instant", "--ui-duration-fast", "--ui-duration-default", "--ui-duration-deliberate", "--ui-duration-flash", "--ui-duration-overlay",
@@ -67,10 +67,10 @@ function specimen(property: string, copy: Omit<Parameters<typeof TokenPreview>[0
 }
 
 describe("exact-property TokenPreview", () => {
-  it("partitions all 186 supported properties bidirectionally with zero unavailable", () => {
+  it("partitions all 188 supported properties bidirectionally with zero unavailable", () => {
     const supported = Object.keys(TOKEN_GUIDANCE);
     expect(Object.keys(TOKEN_GUIDANCE).sort()).toEqual(Object.keys(TOKENS).sort());
-    expect(supported).toHaveLength(186);
+    expect(supported).toHaveLength(188);
     expect(new Set(interactive).size).toBe(18);
     expect(supported.sort()).toEqual(Object.keys(TOKENS).sort());
     expect(interactive.slice().sort()).toEqual(supported.filter(property => ["motion", "breakpoint"].includes(TOKEN_GUIDANCE[property]!.specimen)).sort());

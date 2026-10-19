@@ -4797,14 +4797,17 @@ transport whether it may send. It declares the lifecycle and transport ports
 structurally and imports no consent or analytics implementation: the host
 composes those and passes them in.
 
-The default `presentation="card"` is a compact pinned notice: bottom-start
-on desktop and bottom-centre on phones, with safe-area gutters, glass and a
-hairline, two equal outlined choices and a visually hidden title that keeps
-the region named. `presentation="banner"` retains the former in-flow markup,
-visible title and separate policy link. Mounting remains the host's choice.
-The card precedes page children in DOM order. While visible, its measured
-height and bottom gap reserve document end space and focus-scroll clearance;
-closing it restores still-owned host styles without replacing later edits.
+The default `presentation="card"` is a compact pinned notice: full width
+less safe-area gutters and centred below tablet width, then capped at the
+notice width (`--ui-width-notice-max`) at the bottom start, with a
+translucent base plate, a hairline, two equal full-width choices and a
+visually hidden title that keeps the region named. It floats on the notice
+layer above the page end, footer included. `presentation="banner"` retains the
+former in-flow markup, visible title and separate policy link. Mounting remains the host's choice. The card precedes
+page children in DOM order. While visible, its measured height and bottom gap
+set focus-scroll clearance (`scroll-padding-block-end`) so a focused control
+is never scrolled beneath it; the document's own end padding is left alone.
+Closing it restores still-owned host styles without replacing later edits.
 A choice still closes the notice; reopening shows a check and `aria-pressed`
 for the lifecycle's effective granted or denied choice. Escape, reopen focus,
 transport binding and the polite status region retain their behavior.
