@@ -10,7 +10,7 @@ Stable purpose, content and anatomy are separate from medium-specific implementa
 
 Represented scalar options are a bounded source-checked selection, not an exhaustive inherited API or a Cartesian product. Defaults distinguish local initializers, inherited peer behavior and omitted/conditional values. Data, compound parts, callbacks, style and arbitrary children are authored inputs rather than selectable configuration axes.
 
-`ATOM_COMPARISON` declares preferred finite columns and optional rows for comparison, bounded by `maxCells` at no more than 24. `AtomComparison` describes this data-only contract; existing constraints remain authoritative for consumer-authored inputs. Atoms without finite options have no comparison entry.
+`ATOM_COMPARISON` declares preferred finite columns and optional rows for comparison; `maxCells` equals their product at no more than 24. `AtomComparison` describes this data-only contract. Its `constraints` references original rules; `constraintPolicy: "skip-violations"` skips only `requires`, `exclusive` and `paired` violations with complete authored inputs. Applicability (`effective-when`), ignored-option, `derived` and `data` rules never skip cells. Atoms without finite options have no comparison entry.
 
 Consumer-owned demonstration coverage is unassessed here. A fixed controlled value or a single option cannot demonstrate toggling or switching. Runtime acceptance, visual effectiveness and type/runtime rejection differ. Token evidence is partial and distinguishes direct reads from transitive bindings; importing a helper does not consume all its tokens.
 

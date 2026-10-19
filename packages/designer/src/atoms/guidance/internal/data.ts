@@ -4564,7 +4564,7 @@ export interface AtomComparison {
   readonly maxCells: number;
   /** Original rule array, shared by identity with ATOM_GUIDANCE. */
   readonly constraints: readonly AtomConstraint[];
-  /** Skip violations and ineffective declared axes after assessing every rule. */
+  /** Only requires/exclusive/paired can skip; applicability, derived and data rules cannot. */
   readonly constraintPolicy: "skip-violations";
 }
 
@@ -4593,7 +4593,7 @@ function comparison(id: string, column: string, row?: string): AtomComparison {
 export const ATOM_COMPARISON: Readonly<Record<string, AtomComparison>> = Object.freeze({
   "act.button": comparison("act.button", "variant", "size"),
   "act.icon-button": comparison("act.icon-button", "shape", "size"),
-  "act.link": comparison("act.link", "buttonVariant", "buttonSize"),
+  "act.link": comparison("act.link", "variant"),
   "act.menu": comparison("act.menu", "triggerAction"),
   "enter.text-field": comparison("enter.text-field", "isInvalid", "isDisabled"),
   "enter.textarea": comparison("enter.textarea", "isInvalid", "isDisabled"),
@@ -4615,7 +4615,7 @@ export const ATOM_COMPARISON: Readonly<Record<string, AtomComparison>> = Object.
   "inform.progress-bar": comparison("inform.progress-bar", "isIndeterminate"),
   "inform.spinner": comparison("inform.spinner", "size"),
   "inform.skeleton": comparison("inform.skeleton", "shape"),
-  "group.card": comparison("group.card", "variant", "ground"),
+  "group.card": comparison("group.card", "variant"),
   "group.table": comparison("group.table", "selectionMode"),
   "group.separator": comparison("group.separator", "orientation", "decorative"),
   "depict.avatar": comparison("depict.avatar", "size"),

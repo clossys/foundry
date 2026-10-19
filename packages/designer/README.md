@@ -40,13 +40,20 @@ axes. Direct and transitive token claims carry partial source evidence.
 `ATOM_COMPARISON` declares preferred finite `columns: { option, values }`,
 optional `rows` of the same shape, and `maxCells` bounded at 24. Each axis uses
 an existing option and its declared scalar values; atoms without finite options
-have no entry. The raw axis product conservatively bounds cells after skipping.
+have no entry. `maxCells` equals the raw axis product before any exclusions.
 Its `constraints` is the original guidance rule array by identity, and
-`constraintPolicy: "skip-violations"` requires consumers to assess every rule
-against complete authored props before rendering a cell, skipping violations
-and ineffective declared axes. This includes constraints on non-axis content,
-callbacks and numeric inputs; prose/data requirements still need consumer
-assessment. The declaration supplies no renderer or general-purpose validator.
+`constraintPolicy: "skip-violations"` skips only `requires`, `exclusive` and `paired`
+violations against complete authored props. Applicability (`effective-when`),
+ignored-option, `derived` and `data` rules never skip cells under this policy;
+those rules remain authoring guidance and do not remove default appearances.
+Apply a forbidding rule's `when` first. `requires` needs every named required
+prop; `exclusive` rejects present `excludes` or enforces `presence: "exactly-one"`
+across `props`; `paired` requires all or none of its `props`. Presence means a
+value other than `undefined`, so `false` and zero are present.
+Some axes may be visually static. Omitted defaults are not representable as
+cells: every axis cell supplies an explicit scalar value. Consumers must still
+author valid content, callbacks and data; this declaration supplies no renderer
+or general-purpose validator.
 
 The public types are `AtomGuidance`, `AtomApiFacts`, `AtomDisplayGroup`, `AtomComparison`,
 `AtomMedium`, `AtomMediumState`, `AtomScalar`, `AtomEvidence`,
