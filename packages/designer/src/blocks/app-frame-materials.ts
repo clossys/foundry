@@ -1,6 +1,7 @@
 import { Panel } from "./Panel.js";
 import { Drawer } from "./Drawer.js";
 import { ResizablePane } from "./ResizablePane.js";
+import { CommandMenu } from "./CommandMenu.js";
 import { AppNavigation } from "./AppNavigation.js";
 
 /** Source-backed Material selections within the Block tier; these records grant no role qualification. */
@@ -32,6 +33,18 @@ export const APP_FRAME_MATERIALS = [
     ],
     configs: [{ prop: "orientation", values: ["vertical", "horizontal"], default: "vertical", source: "src/atoms/ResizeHandle.tsx" }],
     authoredInputs: ["min", "max", "defaultValue", "value", "step", "label", "handleLabel", "onChange", "children"],
+  },
+  {
+    id: "command-menu", layer: "blocks", exportName: "CommandMenu", component: CommandMenu, source: "src/blocks/CommandMenu.tsx",
+    regions: ["heading", "search", "content", "status"],
+    dependencies: [
+      { exportName: "Dialog", source: "src/atoms/Dialog.tsx" },
+      { exportName: "SearchField", source: "src/atoms/SearchField.tsx" },
+      { exportName: "Tooltip", source: "src/atoms/Tooltip.tsx" },
+      { exportName: "IconButton", source: "src/atoms/IconButton.tsx" },
+    ],
+    configs: [],
+    authoredInputs: ["heading", "searchLabel", "closeLabel", "emptyMessage", "groups", "isOpen", "onOpenChange", "query", "onQueryChange", "filter", "dir", "resultCountMessage"],
   },
   {
     id: "app-navigation", layer: "blocks", exportName: "AppNavigation", component: AppNavigation, source: "src/blocks/AppNavigation.tsx",

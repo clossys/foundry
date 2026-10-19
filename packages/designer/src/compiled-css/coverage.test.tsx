@@ -44,6 +44,7 @@ import { ResizeHandle } from "../atoms/ResizeHandle.js";
 import { Panel } from "../blocks/Panel.js";
 import { Drawer } from "../blocks/Drawer.js";
 import { ResizablePane } from "../blocks/ResizablePane.js";
+import { CommandMenu } from "../blocks/CommandMenu.js";
 import { AppNavigation } from "../blocks/AppNavigation.js";
 import { Skeleton } from "../atoms/Skeleton.js";
 import { Spinner } from "../atoms/Spinner.js";
@@ -101,6 +102,26 @@ function toSelectorText(className: string): string {
 }
 
 describe("coverage: real rendered classes are all present in compiled.css", () => {
+  it("covers CommandMenu enabled, disabled, filtered and empty rendered states", async () => {
+    const classes = new Set<string>();
+    for (const query of ["", "SECOND", "missing"]) {
+      const view = render(<CommandMenu heading="Commands" searchLabel="Search" closeLabel="Close" emptyMessage="No commands"
+        groups={[{ id: "commands", label: "Commands", items: [
+          { id: "first", label: "First", onAction: () => {} },
+          { id: "second", label: "Second", description: "Details", shortcutHint: "S", href: "#second" },
+          { id: "disabled", label: "Unavailable", onAction: () => {}, disabled: true },
+        ] }]} isOpen onOpenChange={() => {}} query={query} onQueryChange={() => {}} />);
+      await view.findByRole("combobox");
+      for (const name of collectClassNames(document.body)) classes.add(name);
+      view.unmount();
+    }
+    const generated = await generateCompiledCss({ stylesDir: resolve(packageRoot, "styles"), candidates: scanCompiledCssSources(packageRoot).candidates });
+    const shipped = readFileSync(resolve(packageRoot, "styles/compiled.css"), "utf8");
+    for (const name of classes) {
+      expect(generated.css, `fresh: ${name}`).toContain(toSelectorText(name));
+      expect(shipped, `shipped: ${name}`).toContain(toSelectorText(name));
+    }
+  });
   it("covers actual expanded, rail and narrow Drawer navigation classes", async () => {
     const classes = new Set<string>();
     const focusClasses: string[][] = [];

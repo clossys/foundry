@@ -196,6 +196,8 @@ export type { DrawerProps } from "./Drawer.js";
 export { ResizablePane } from "./ResizablePane.js";
 export type { ResizablePaneProps } from "./ResizablePane.js";
 export { APP_FRAME_MATERIALS } from "./app-frame-materials.js";
+export { CommandMenu, useCommandMenuShortcut } from "./CommandMenu.js";
+export type { CommandMenuProps, CommandMenuItem, CommandMenuGroup, CommandMenuShortcutOptions } from "./command-menu-types.js";
 export { AppNavigation } from "./AppNavigation.js";
 export type { AppNavigationProps } from "./AppNavigation.js";
 export { validateAppNavigationTree, getAppNavigationAncestry, getAppNavigationBreadcrumbs } from "./app-navigation-tree.js";
