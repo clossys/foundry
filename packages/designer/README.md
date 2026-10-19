@@ -4306,8 +4306,11 @@ function MarketingChapter() {
 
 Full-bleed marketing section band: `ground`, horizontal page padding,
 vertical section rhythm, and a measured inner column (`content`, `wide`,
-or `prose`). Compose `ArticleBody`, `Stat`, and other blocks that do not
-own their own band inside this — not a host `className` wrapper.
+or `prose`). `ground` sets both the section surface and its primary
+foreground ink on the root, so raw children on `inverse` inherit the
+on-inverse ink instead of the base ink. Compose `ArticleBody`, `Stat`, and
+other blocks that do not own their own band inside this — not a host
+`className` wrapper.
 
 ### `ArticleBody`
 
