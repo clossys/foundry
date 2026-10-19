@@ -156,6 +156,38 @@ it("keeps equal entry ids in different sections independent", async () => {
   expect(second).toHaveBeenCalledTimes(1);
 });
 
+it.each(["populated", "empty", "all-empty"])("rejects duplicate section ids (%s)", state => {
+  const entry = { id: "first", kind: "action" as const, label: "First action", onAction: vi.fn() };
+  expect(() => render(<AccountMenu actor={actor} sections={[
+    { id: "duplicate", entries: state === "all-empty" ? [] : [entry] },
+    { id: "duplicate", entries: state === "populated" ? [{ ...entry, id: "second" }] : [] },
+  ]} />)).toThrow(TypeError);
+});
+
+it("rejects duplicate entry ids within one section", () => {
+  expect(() => render(<AccountMenu actor={actor} sections={[{ id: "commands", entries: [
+    { id: "duplicate", kind: "action", label: "First action", onAction: vi.fn() },
+    { id: "duplicate", kind: "action", label: "Second action", onAction: vi.fn() },
+  ] }]} />)).toThrow(TypeError);
+});
+
+it("rejects duplicate preference keys before either callback can run", async () => {
+  const first = vi.fn(), second = vi.fn();
+  let rejected: unknown;
+  try {
+    render(<AccountMenu actor={actor} sections={[{ id: "preferences", kind: "preferences", label: "Preferences", entries: [
+      { id: "duplicate", kind: "preference", label: "First preference", checked: false, onCheckedChange: first },
+      { id: "duplicate", kind: "preference", label: "Second preference", checked: false, onCheckedChange: second },
+    ] }]} />);
+  } catch (error) { rejected = error; }
+  if (!rejected) {
+    const user = await open();
+    await user.click(screen.getAllByRole("menuitemcheckbox")[0]!);
+  }
+  expect({ first: first.mock.calls, second: second.mock.calls }).toEqual({ first: [], second: [] });
+  expect(rejected).toBeInstanceOf(TypeError);
+});
+
 it.each([{ sections: [] }, { sections: [{ id: "empty", label: "Empty", entries: [] }] }])("omits an empty account control without placeholders", ({ sections }) => {
   const { container } = render(<AccountMenu actor={actor} sections={sections} />);
   expect(container).toBeEmptyDOMElement();

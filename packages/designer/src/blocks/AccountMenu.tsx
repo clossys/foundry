@@ -22,6 +22,14 @@ function isSanctionedHref(value: unknown): value is string {
 
 /** Host-owned account data composed into a client menu; no identity or persistence service. */
 export function AccountMenu({ actor, sections, contextLabel, triggerLabel, collapsed = false, onClose, onRoute }: AccountMenuProps) {
+  if (new Set(sections.map(section => section.id)).size !== sections.length) {
+    throw new TypeError("AccountMenu: section IDs must be unique within the menu.");
+  }
+  for (const section of sections) {
+    if (new Set(section.entries.map(entry => entry.id)).size !== section.entries.length) {
+      throw new TypeError("AccountMenu: entry IDs must be unique within their section.");
+    }
+  }
   const populated = sections.filter(section => section.entries.length > 0);
   if (populated.length === 0) return null;
   if (!actor.name.trim() || populated.some(section => section.entries.some(entry => !entry.label.trim()))) {

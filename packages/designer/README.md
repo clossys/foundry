@@ -4339,8 +4339,9 @@ separators without repeating the actor as a group name.
 Command sections contain `link` (`href`), `action` or `destructive` (`onAction`)
 entries. Preference sections use `kind="preferences"`, a required `label`, and
 `preference` entries with `checked` and `onCheckedChange`. Each entry also takes
-an `id`, `label` and optional `isDisabled`. Section IDs are unique within the menu;
-entry IDs are unique within their section. Empty sections are omitted; an empty
+an `id`, `label` and optional `isDisabled`. Duplicate section IDs (including empty
+sections) and duplicate entry IDs within a section are rejected with `TypeError`.
+Equal entry IDs in different sections remain valid. Empty sections are omitted; an empty
 menu renders no trigger or placeholder. Preference changes remain controlled and
 keep the menu open. Links and actions retain ordinary menuitem semantics.
 Empty actor names or entry labels are rejected. Destinations follow Items: an
