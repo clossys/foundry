@@ -125,6 +125,16 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
         expect(generated.css, `navigation fresh: ${name}`).toContain(toSelectorText(name));
         expect(shipped, `navigation shipped: ${name}`).toContain(toSelectorText(name));
       }
+      for (const css of [generated.css, shipped]) {
+        for (const [utility, declaration] of [["border-0", /border-width:\s*0(?:px)?;/], ["bg-transparent", /background-color:\s*transparent;/],
+          ["icon-control-md", /inline-size:\s*var\(--ui-layout-tap-target,\s*44px\)/]] as const) {
+          const start = css.indexOf(toSelectorText(utility));
+          expect(start).toBeGreaterThanOrEqual(0);
+          const rule = css.slice(start, css.indexOf("}", start) + 1);
+          expect(rule).toMatch(declaration);
+          if (utility === "icon-control-md") expect(rule).toMatch(/block-size:\s*var\(--ui-layout-tap-target,\s*44px\)/);
+        }
+      }
       expect(shipped).toContain("forced-colors: active");
       expect(shipped).toContain("prefers-reduced-motion: reduce");
     } finally { vi.unstubAllGlobals(); }

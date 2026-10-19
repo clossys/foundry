@@ -29,7 +29,35 @@ export interface AppNavigationProps {
   closeLabel?: string;
 }
 
-const CONTROL = "flex min-w-0 items-center justify-start gap-sm rounded-control px-sm py-sm text-start text-ink-primary no-underline hover:no-underline hover:bg-surface-sunken focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2";
+const CONTROL = "flex min-w-0 items-center justify-start gap-sm rounded-control border-0 bg-transparent px-sm py-sm text-start text-ink-primary no-underline hover:no-underline hover:bg-surface-sunken focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2";
+
+/** Keep the overlay absent until the browser has completed focus-induced scrolling. */
+function RailTooltip({ trigger, label, requests }: { trigger: ReactNode; label: string; requests: { current: number } }) {
+  const [open, setOpen] = useState(false);
+  const frame = useRef<number | undefined>(undefined);
+  const cancel = () => {
+    if (frame.current !== undefined) cancelAnimationFrame(frame.current);
+    frame.current = undefined;
+  };
+  const close = () => { cancel(); setOpen(false); };
+  const change = (next: boolean) => {
+    cancel();
+    if (!next) { setOpen(false); return; }
+    const ticket = ++requests.current;
+    frame.current = requestAnimationFrame(() => {
+      frame.current = requestAnimationFrame(() => {
+        frame.current = undefined;
+        if (ticket === requests.current) setOpen(true);
+      });
+    });
+  };
+  useEffect(() => () => cancel(), []);
+  return <span className="contents" onBlurCapture={close} onPointerDownCapture={close}
+    onPointerOutCapture={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) cancel(); }}
+    onKeyDownCapture={event => { if (["Escape", "Enter", " "].includes(event.key)) close(); }}>
+    <Tooltip trigger={trigger} delay={0} placement="end" isOpen={open} onOpenChange={change}>{label}</Tooltip>
+  </span>;
+}
 
 /** Host routes and identity arrive as data and slots; one Drawer owns the narrow modal lifecycle. */
 export function AppNavigation({
@@ -51,6 +79,7 @@ export function AppNavigation({
   const nav = useRef<HTMLElement>(null);
   const focusedId = useRef<string | undefined>(undefined);
   const handoff = useRef(false);
+  const tooltipRequests = useRef(0);
   const latest = useRef({ onDrawerOpenChange, active, requested });
   latest.current = { onDrawerOpenChange, active, requested };
   const instance = useId();
@@ -65,7 +94,7 @@ export function AppNavigation({
     if (typeof window.matchMedia !== "function") return;
     const query = window.matchMedia(dismissAt);
     const sync = () => {
-      const surface = nav.current?.closest('[role="dialog"]') ?? nav.current?.closest("[data-panel]") ?? nav.current;
+      const surface = nav.current?.closest("[role=dialog]") ?? nav.current?.closest("[data-panel]") ?? nav.current;
       handoff.current = Boolean(surface?.contains(document.activeElement));
       setNarrow(!query.matches);
       if (query.matches && latest.current.requested) changeOpen(false);
@@ -73,15 +102,15 @@ export function AppNavigation({
     sync();
     query.addEventListener("change", sync);
     return () => query.removeEventListener("change", sync);
-  }, [dismissAt]);
+  }, [dismissAt, drawerOpen]);
   useEffect(() => {
     if (!focusedId.current && !handoff.current) return;
     const id = focusedId.current ?? latest.current.active;
     const frame = requestAnimationFrame(() => {
-      const destination = [...(nav.current?.querySelectorAll<HTMLElement>("[data-app-navigation-control]") ?? [])]
-        .find(element => element.dataset.nodeId === id);
-      (destination ?? nav.current?.querySelector<HTMLElement>("[data-app-navigation-control]") ??
-        document.getElementById(`${instance}-trigger`))?.focus();
+      const destination = [...(nav.current?.querySelectorAll<HTMLElement>("[data-application-navigation-control]") ?? [])]
+        .find(element => element.dataset.navigationNodeId === id);
+      (destination ?? nav.current?.querySelector<HTMLElement>("[data-application-navigation-control]") ??
+        document.getElementById(instance + "-trigger"))?.focus();
       handoff.current = false;
     });
     return () => cancelAnimationFrame(frame);
@@ -93,20 +122,20 @@ export function AppNavigation({
     return result;
   });
   const keyboard = (event: KeyboardEvent<HTMLElement>) => {
-    const controls = [...event.currentTarget.querySelectorAll<HTMLElement>("[data-app-navigation-control]")];
-    const target = (event.target as HTMLElement).closest<HTMLElement>("[data-app-navigation-control]");
+    const controls = [...event.currentTarget.querySelectorAll<HTMLElement>("[data-application-navigation-control]")];
+    const target = (event.target as HTMLElement).closest<HTMLElement>("[data-application-navigation-control]");
     if (!target) return;
     const index = controls.indexOf(target);
     const movement = event.key === "Home" ? 0 : event.key === "End" ? controls.length - 1 :
       event.key === "ArrowDown" ? Math.min(index + 1, controls.length - 1) : event.key === "ArrowUp" ? Math.max(index - 1, 0) : undefined;
     if (movement !== undefined) { event.preventDefault(); controls[movement]?.focus(); return; }
-    const rtl = getComputedStyle(event.currentTarget).direction === "rtl" || event.currentTarget.closest('[dir="rtl"]') !== null;
+    const rtl = getComputedStyle(event.currentTarget).direction === "rtl" || event.currentTarget.closest("[dir=rtl]") !== null;
     const forward = event.key === (rtl ? "ArrowLeft" : "ArrowRight");
     const backward = event.key === (rtl ? "ArrowRight" : "ArrowLeft");
-    const parent = tree.find(node => node.id === (target.dataset.parentId ?? target.dataset.nodeId));
+    const parent = tree.find(node => node.id === (target.dataset.parentId ?? target.dataset.navigationNodeId));
     if ((forward || backward) && parent?.children?.length && !collapsed) {
       event.preventDefault();
-      if (backward) controls.find(element => element.dataset.nodeId === parent.id)?.focus();
+      if (backward) controls.find(element => element.dataset.navigationNodeId === parent.id)?.focus();
       toggle(parent.id, forward);
     }
     if (event.key === " " && target.tagName === "A") { event.preventDefault(); target.click(); }
@@ -117,30 +146,30 @@ export function AppNavigation({
       "bg-control-tonal font-semibold outline-solid outline-1 outline-line-strong forced-colors:outline-current");
     const content = <><span aria-hidden="true" className="flex shrink-0 items-center justify-center" style={{ inlineSize: "var(--ui-icon-md, 24px)" }}>{node.icon ?? node.label.slice(0, 1)}</span>
       <span className={collapsed ? "sr-only" : "min-w-0 truncate"}>{node.label}</span></>;
-    const shared = { "data-app-navigation-control": "", "data-node-id": node.id, "data-parent-id": parentId,
+    const shared = { "data-application-navigation-control": "", "data-navigation-node-id": node.id, "data-parent-id": parentId,
       "aria-current": current ? "page" as const : undefined, className, style: { minBlockSize: "var(--ui-layout-tap-target, 44px)" } };
     const control = node.href !== undefined ? <Link {...shared} variant="muted" href={node.href}>{content}</Link> :
       <Button {...shared} variant="ghost" onPress={() => { node.onAction?.(); if (narrow) changeOpen(false); }}>{content}</Button>;
-    return collapsed ? <Tooltip delay={0} placement="end" trigger={control}>{node.label}</Tooltip> : control;
+    return collapsed ? <RailTooltip trigger={control} label={node.label} requests={tooltipRequests} /> : control;
   };
   const footerRegion = footer !== undefined && footer !== null && footer !== false ?
-    <div data-app-navigation-region="footer" className="min-w-0 shrink-0 border-t border-line-base pt-sm">{footer}</div> : undefined;
+    <div data-application-navigation-region="footer" className="min-w-0 shrink-0 border-t border-line-base pt-sm">{footer}</div> : undefined;
   const links = <nav ref={nav} aria-label={label} className="flex h-full min-h-0 flex-col" onKeyDown={keyboard}
-    onFocus={event => { focusedId.current = (event.target as HTMLElement).closest<HTMLElement>("[data-node-id]")?.dataset.nodeId; }}
+    onFocus={event => { focusedId.current = (event.target as HTMLElement).closest<HTMLElement>("[data-navigation-node-id]")?.dataset.navigationNodeId; }}
     onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) focusedId.current = undefined; }}>
-    <div data-app-navigation-region="links" className="min-h-0 flex-1 overflow-auto">
+    <div data-application-navigation-region="links" className="min-h-0 flex-1 overflow-auto">
       {!tree.length ? <p className="p-sm text-body text-ink-muted">{emptyMessage}</p> :
         <ul className="m-0 flex list-none flex-col gap-xs p-0">{tree.map(node => {
           const children = node.children ?? [];
           const isExpanded = expanded.has(node.id);
-          const panelId = `${instance}-${encodeURIComponent(node.id)}`;
+          const panelId = instance + "-" + encodeURIComponent(node.id);
           return <li key={node.id} data-active-ancestor={node.id === ancestor ? "true" : undefined}>
             <div className={cx("flex min-w-0 items-center gap-xs rounded-control", node.id === ancestor && "bg-control-tonal")}>
               {(node.href !== undefined || node.onAction) && destination(node)}
               {children.length > 0 && !collapsed && <Button variant="ghost" className={cx(CONTROL, "shrink-0", node.href || node.onAction ? "justify-center" : "flex-1")}
                 style={{ minBlockSize: "var(--ui-layout-tap-target, 44px)", minInlineSize: "var(--ui-layout-tap-target, 44px)" }}
-                data-app-navigation-control="" data-node-id={node.id}
-                aria-label={`${isExpanded ? "Collapse" : "Expand"} ${node.label}`} aria-expanded={isExpanded} aria-controls={panelId}
+                data-application-navigation-control="" data-navigation-node-id={node.id}
+                aria-label={(isExpanded ? "Collapse " : "Expand ") + node.label} aria-expanded={isExpanded} aria-controls={panelId}
                 onPress={() => toggle(node.id)}>
                 {!node.href && !node.onAction && <span className="min-w-0 flex-1 truncate">{node.label}</span>}
                 <Icon glyph={ChevronDown} decorative size="sm" className={isExpanded ? "rotate-180" : undefined} />
@@ -154,14 +183,15 @@ export function AppNavigation({
         })}</ul>}
     </div>
   </nav>;
-  if (narrow) return <Drawer trigger={<Button id={`${instance}-trigger`} variant="ghost">{openLabel}</Button>}
+  if (narrow) return <Drawer trigger={<Button id={instance + "-trigger"} variant="ghost" className={cx(CONTROL, "inline-flex")}
+    style={{ minBlockSize: "var(--ui-layout-tap-target, 44px)" }}>{openLabel}</Button>}
     heading={label} closeLabel={closeLabel} footer={footerRegion} navigationKey={route} dismissAt={dismissAt}
     isOpen={requested} onOpenChange={changeOpen} className="gap-xs p-sm">{links}</Drawer>;
   return <Panel className="h-full min-h-0 shrink-0 gap-xs rounded-none border-0 p-sm"
     style={{ inlineSize: collapsed ? "var(--ui-layout-sidebar-rail-w, 64px)" : "var(--ui-layout-sidebar-w, 256px)" }}
     header={<div className="flex min-w-0 items-center justify-between gap-xs">
       <span className={collapsed ? "sr-only" : "min-w-0 truncate text-body font-semibold"}>{label}</span>
-      <Button variant="ghost" className="icon-control-md shrink-0 p-0" aria-label={collapsed ? "Expand navigation" : "Collapse navigation"}
+      <Button variant="ghost" className="icon-control-md shrink-0 border-0 bg-transparent p-0 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent" aria-label={collapsed ? "Expand navigation" : "Collapse navigation"}
         onPress={() => { setCollapsed(!collapsed); onCollapsedChange?.(!collapsed); }}>
         <Icon glyph={collapsed ? ChevronRight : ChevronLeft} decorative size="sm" className="rtl:rotate-180" />
       </Button>

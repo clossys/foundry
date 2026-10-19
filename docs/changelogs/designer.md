@@ -5,7 +5,7 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
-- Add the AppNavigation Block Material, a typed two-level host navigation tree, route ancestry and breadcrumbs, accessible rail destinations, Drawer focus handoff and a fixed footer slot.
+- Add the AppNavigation Block Material, a typed two-level host navigation tree, route ancestry and breadcrumbs, accessible rail destinations, Drawer focus handoff and a fixed footer slot. Give the Drawer close button a token-sized ghost icon presentation and visible keyboard focus.
 
 - Add Panel, Drawer and ResizablePane Block Materials with source-backed composition records, and a named ResizeHandle Atom with bounded keyboard and pointer interaction. Drawer reuses the Dialog lifecycle and releases it on route and breakpoint changes. Document the forty-first Atom without changing existing Dialog defaults.
 

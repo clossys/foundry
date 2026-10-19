@@ -7559,7 +7559,8 @@ to `(min-width: 768px)`. Escape returns focus; route changes, actions and enteri
 the wide layout close it and release modal state. A held `drawerOpen={true}`
 cannot revive a dismissed surface; acknowledge with false or explicitly reopen
 the trigger. `onDrawerOpenChange` lets the host coordinate other overlays.
-`navigationKey`, `label`, `openLabel` and `closeLabel` are host inputs.
+`navigationKey`, `label`, `openLabel` and `closeLabel` are host inputs. The Drawer close control
+uses a 44px ghost icon button; `closeLabel` supplies its accessible name.
 
 Arrow Up/Down and Home/End move among visible navigation controls. Logical
 Left/Right expand or collapse a parent, reversing in RTL. Enter/Space activate

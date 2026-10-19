@@ -30,6 +30,17 @@ beforeEach(() => {
 afterEach(() => { document.documentElement.dir = ""; vi.unstubAllGlobals(); });
 
 describe("AppNavigation", () => {
+  it("uses descriptive navigation attribute prefixes on the rendered controls and regions", () => {
+    const { container } = render(<AppNavigation tree={tree} activeId="blocks" footer="Host profile" />);
+    const controls = [...container.querySelectorAll("[data-application-navigation-control]")];
+    expect(controls.map(element => element.getAttribute("data-navigation-node-id"))).toEqual(["home", "catalogs", "catalogs", "blocks", "actions"]);
+    expect(container.querySelector("[data-application-navigation-region=links]")).toBeInTheDocument();
+    expect(container.querySelector("[data-application-navigation-region=footer]")).toHaveTextContent("Host profile");
+    for (const element of container.querySelectorAll("*")) {
+      expect(element.getAttributeNames().filter(name => /^data-(?:app|node)(?:-|$)/.test(name))).toEqual([]);
+    }
+  });
+
   it("separates parent navigation and disclosure with current and ancestor state", async () => {
     render(<AppNavigation tree={tree} activeId="blocks" />);
     const link = screen.getByRole("link", { name: "Catalogs" });
@@ -50,9 +61,10 @@ describe("AppNavigation", () => {
     expect(screen.queryByRole("link", { name: "Blocks" })).not.toBeInTheDocument();
     view.rerender(<AppNavigation tree={tree} activeId="blocks" />);
     expect(screen.getByRole("link", { name: "Blocks" })).toHaveAttribute("aria-current", "page");
-    expect(() => view.rerender(<AppNavigation tree={[{ id: "a", label: "A", children: [
+    expect.soft(() => view.rerender(<AppNavigation tree={[{ id: "a", label: "A", children: [
       { id: "b", label: "B", children: [{ id: "c", label: "C", href: "#c" }] },
     ] }] as any} />)).toThrow(/two levels/i);
+    expect(screen.queryByRole("link", { name: "C" })).not.toBeInTheDocument();
   });
 
   it("supports arrows, Home, End, Enter and Space on visible controls", async () => {
@@ -97,8 +109,8 @@ describe("AppNavigation", () => {
 
   it("places the plain footer outside the independently scrolling links", () => {
     const { container } = render(<AppNavigation tree={tree} footer={<button>Profile</button>} />);
-    const scroll = container.querySelector('[data-app-navigation-region="links"]')!;
-    const footer = container.querySelector('[data-app-navigation-region="footer"]')!;
+    const scroll = container.querySelector('[data-application-navigation-region="links"]')!;
+    const footer = container.querySelector('[data-application-navigation-region="footer"]')!;
     expect(scroll).toHaveClass("min-h-0", "overflow-auto");
     expect(footer).toHaveClass("shrink-0");
     expect(scroll).not.toContainElement(footer);
@@ -125,13 +137,14 @@ describe("AppNavigation", () => {
     expect(dialog).not.toContainElement(document.activeElement as HTMLElement);
     if (reason !== "wide") await waitFor(() => expect(trigger).toHaveFocus());
     else await waitFor(() => expect(screen.getByRole("link", { name: "Blocks" })).toHaveFocus());
+    expect(document.activeElement?.closest('[aria-hidden="true"],[hidden],[inert]')).toBeNull();
     expect(changed).toHaveBeenLastCalledWith(false);
   });
 
   it("keeps destinations stable for an empty tree and omits an absent footer", () => {
     const { container } = render(<AppNavigation tree={[]} emptyMessage="No destinations available" />);
     expect(screen.getByRole("navigation", { name: "Navigation" })).toHaveTextContent("No destinations available");
-    expect(container.querySelector('[data-app-navigation-region="footer"]')).toBeNull();
+    expect(container.querySelector('[data-application-navigation-region="footer"]')).toBeNull();
   });
 
   it.each(["action", "wide"])("dismisses a held controlled Drawer on %s without reviving it", async reason => {
@@ -149,12 +162,36 @@ describe("AppNavigation", () => {
     expect(await screen.findByRole("dialog")).toBeInTheDocument();
   });
 
+  it("dismisses a late controlled Drawer request made while wide", async () => {
+    const changed = vi.fn();
+    const view = render(<AppNavigation tree={tree} drawerOpen={false} onDrawerOpenChange={changed} />);
+    view.rerender(<AppNavigation tree={tree} drawerOpen onDrawerOpenChange={changed} />);
+    expect.soft(changed).toHaveBeenLastCalledWith(false);
+    await act(async () => { wide = false; for (const notify of listeners) notify(); });
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    await userEvent.click(screen.getByRole("button", { name: "Open navigation" }));
+    expect(await screen.findByRole("dialog")).toBeInTheDocument();
+  });
+
   it("hands desktop footer focus to the visible narrow trigger", async () => {
     render(<AppNavigation tree={tree} footer={<button>Profile</button>} />);
     screen.getByRole("button", { name: "Profile" }).focus();
     await act(async () => { wide = false; for (const notify of listeners) notify(); });
     await waitFor(() => expect(screen.getByRole("button", { name: "Open navigation" })).toHaveFocus());
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it.each(["Escape", "Enter", "blur", "leave", "switch"])("does not resurrect a rail tooltip after %s", async how => {
+    const view = render(<AppNavigation tree={tree} collapsed />);
+    const home = screen.getByRole("link", { name: "Home" });
+    if (how === "leave" || how === "switch") await userEvent.hover(home);
+    else { screen.getByRole("button", { name: "Expand navigation" }).focus(); await userEvent.keyboard("{Tab}"); }
+    if (how === "Escape" || how === "Enter") await userEvent.keyboard(`{${how}}`);
+    if (how === "blur") screen.getByRole("button", { name: "Expand navigation" }).focus();
+    if (how === "leave") await userEvent.unhover(home);
+    if (how === "switch") view.rerender(<AppNavigation tree={tree} collapsed={false} />);
+    await act(async () => { await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))); });
+    await waitFor(() => expect(screen.queryByRole("tooltip")).not.toBeInTheDocument());
   });
 
   it("has no router, storage, fetching, private account or sibling layer imports", () => {
