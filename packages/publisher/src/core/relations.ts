@@ -106,7 +106,7 @@ export function validateRelations(value: unknown): RelationsResult {
       if (!object(edge)) return refuse("endpoint");
       if (!keys(edge, ["kind", "from", "to", "provenance", ...(edge.kind === "placement" ? ["placementKey", "location"] : [])]) ||
         [edge.from, edge.to].some(endpoint => object(endpoint) && !keys(endpoint, ["kind", "key"]))) return refuse("unknown-field");
-      if (!Object.hasOwn(pairs, edge.kind) || !keys(edge.from, ["kind", "key"]) || !keys(edge.to, ["kind", "key"])) return refuse("endpoint");
+      if (!text(edge.kind) || !Object.hasOwn(pairs, edge.kind) || !keys(edge.from, ["kind", "key"]) || !keys(edge.to, ["kind", "key"])) return refuse("endpoint");
       const source = nodes.get(edge.from.key), target = nodes.get(edge.to.key), expected = pairs[edge.kind];
       if (!source || !target || source.kind !== expected[0] || target.kind !== expected[1] || source.kind !== edge.from.kind || target.kind !== edge.to.kind) return refuse("endpoint");
       if (canonical(source.identity.context) !== canonical(target.identity.context)) reasons.add("context");

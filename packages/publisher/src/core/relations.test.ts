@@ -78,6 +78,11 @@ describe("exact declared membership and measured source use", () => {
     let input = fixture(); input.edges[6] = { ...use, to: { kind: "atom", key: "absent" } }; refused(input, "endpoint");
     input = fixture(); input.edges[6] = { ...use, to: { kind: "block", key: "nested" } } as unknown as RelationEdge; refused(input, "endpoint");
   });
+  it.each(["placement", "instance-frame"])("refuses array-coerced %s edge kinds", kind => {
+    const input = fixture(), edge = input.edges.find(edge => edge.kind === kind)!;
+    input.edges.push({ kind: [kind], from: edge.from, to: edge.to, provenance: edge.provenance } as unknown as RelationEdge);
+    refused(input, "endpoint");
+  });
   it("refuses self edges", () => {
     const input = fixture(); input.edges.push({ kind: "block-block", from: source, to: source, provenance }); refused(input, "cycle");
   });
