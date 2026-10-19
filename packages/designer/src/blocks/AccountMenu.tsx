@@ -17,7 +17,7 @@ export function AccountMenu({ actor, sections, contextLabel, triggerLabel, colla
   const label = triggerLabel ?? actor.name;
   const keyFor = (sectionId: string, entryId: string) => JSON.stringify([sectionId, entryId]);
   const trigger = <Button variant="ghost" aria-label={label}
-    className={collapsed ? undefined : "w-full justify-start gap-sm text-start"}
+    className={collapsed ? "icon-control-md border-0 bg-transparent p-0" : "border-0 bg-transparent w-full justify-start gap-sm text-start"}
     style={({ isFocusVisible }) => ({ outlineStyle: isFocusVisible ? "auto" : undefined })}>
     <span aria-hidden="true"><Avatar alt={actor.name} src={actor.image} /></span>
     {!collapsed && <>

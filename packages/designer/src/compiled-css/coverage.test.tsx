@@ -101,6 +101,27 @@ function toSelectorText(className: string): string {
 }
 
 describe("coverage: real rendered classes are all present in compiled.css", () => {
+  it("keeps AccountMenu triggers transparent and borderless without a host reset", () => {
+    const css = readFileSync(resolve(packageRoot, "styles/compiled.css"), "utf8");
+    for (const collapsed of [false, true]) {
+      const tree = render(<AccountMenu actor={{ name: "Alex Morgan" }} collapsed={collapsed}
+        sections={[{ id: "account", entries: [{ id: "profile", kind: "link", label: "Profile", href: "#profile" }] }]} />);
+      const trigger = screen.getByRole("button", { name: "Alex Morgan" });
+      const style = document.createElement("style");
+      // jsdom cannot apply layers: project matching shipped base rules, with no reset or invented declarations.
+      style.textContent = [...css.matchAll(/(\.[a-zA-Z_][\w-]*)\s*\{[^{}]*\}/g)]
+        .filter(match => trigger.matches(match[1]!)).map(match => match[0]).join("\n");
+      document.head.append(style);
+      try {
+        const computed = getComputedStyle(trigger);
+        expect(computed.backgroundColor).toBe("rgba(0, 0, 0, 0)");
+        for (const side of ["top", "right", "bottom", "left"]) {
+          expect(computed.getPropertyValue(`border-${side}-width`)).toBe("0px");
+          if (collapsed) expect(computed.getPropertyValue(`padding-${side}`)).toBe("0px");
+        }
+      } finally { style.remove(); tree.unmount(); }
+    }
+  });
   it("covers AccountMenu portals and keeps keyboard outlines and reduced-motion styling", async () => {
     const classes = new Set<string>(), user = userEvent.setup();
     for (const collapsed of [false, true]) {
