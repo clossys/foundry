@@ -2775,8 +2775,21 @@ The frame footer is always locally dark. Its standard row centers footer and
 legal links, keeps social icons before the real resolved brand-home mark, and
 stacks links, icons, copyright on phones, each centered. Empty link/social
 lists still retain home, drawn on a plate of the page's base ground.
-`shell.footer.home` optionally supplies other home artwork through an asset
-id, destination and copy reference; omission uses the resolved brand.
+The footer mark comes from `shell.brand`, the same declaration as the header
+mark, with its label as the accessible name; there is no footer-specific art
+or second brand input, and `shell.footer.home` is refused as an unknown field.
+
+The footer configuration contract (`SITE_FRAME_CONTRACT.constituents.Footer.constraints`):
+`footer.links` and `footer.legal.links` together form one flat row of at most
+five links; more links go in labelled `footer.columns`. `footer.social` takes
+at most four icons, because the brand mark always fills the fifth and last
+slot. No footer link, column link or social icon may repeat home, a
+`shell.nav` destination (compared after `origin` resolution) or the
+`#privacy-choices` control, which stays on the privacy policy page. A breach
+throws a `SiteFooterContractError` (`name`) with a `code` of
+`"footer-link-limit"`, `"footer-icon-limit"`, `"footer-duplicate-link"` or
+`"footer-privacy-choices"`; its message names the field path, never the value,
+and nothing is truncated.
 Existing columns and social names retain their ordering. The shared frame
 contract exposes `footerGround`, `footerPlacement` and `footerRule`; darkness,
 accessible names, external rel safety and the Privacy link are mandatory facts.
@@ -2962,8 +2975,9 @@ export function SignInPage() {
   into the same distinct variants and panel order: primary, secondary, ghost.
   Social links occupy the icon group immediately before the home mark, in a
   named navigation when `social.label` is given. Ungrouped footer links precede
-  legal links in the centered links region. Empty content arrays are valid;
-  the frame still supplies its default home mark.
+  legal links in the centered links region, five at most together; social
+  links take at most four icons. Empty content arrays are valid; the frame
+  still supplies its brand home mark.
 - **One main.** The main id is fixed (`SITE_MAIN_ID`); the frame takes no
   main-id prop and the skip link always targets it. A chrome-free view
   (`ErrorView` included) refuses a `role` holding `main`, `banner`,

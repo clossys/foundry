@@ -3,7 +3,7 @@ import type { IconNode } from "@clossys/designer/atoms/server";
 import { isRenderImageAsset } from "../../../internal/assets.js";
 import type { AssetResolver } from "../../types.js";
 import type { SiteFramePresentationConfig } from "../site-frame-contract.js";
-import { HEADER_LINK_LIMIT, HEADER_ACTION_VARIANTS, normalizeSiteFrameActions, normalizeSiteFrameConfig } from "../site-frame-contract.js";
+import { FOOTER_ICON_LIMIT, FOOTER_LINK_LIMIT, HEADER_LINK_LIMIT, HEADER_ACTION_VARIANTS, SiteFooterContractError, normalizeSiteFrameActions, normalizeSiteFrameConfig } from "../site-frame-contract.js";
 import { SITE_CHROME_GROUNDS } from "../types.js";
 import type { SiteChromeGround, SiteShellInput } from "../types.js";
 
@@ -42,6 +42,7 @@ export interface ResolvedSiteShell {
     | { readonly placement: "reserved"; readonly ground: SiteChromeGround }
     | { readonly placement: "overlay"; readonly tone: "base" | "inverse" };
   readonly footer?: {
+    /** The brand's own mark, as resolved for `shell.brand`, linking home in the last icon slot. */
     readonly home: { readonly label: string; readonly href: string; readonly markSrc: string };
     readonly rule?: "none" | "top";
     readonly placement: "flow" | "overlay";
@@ -78,7 +79,9 @@ const ACTION_KEYS = new Set(["href", "label", "emphasis", "icon"]);
 const ENVIRONMENT_KEYS = new Set(["href", "label", "icon", "isCurrent"]);
 const ICON_LINK_KEYS = new Set(["href", "label", "icon"]);
 const SOCIAL_KEYS = new Set(["label", "links"]);
-const FOOTER_KEYS = new Set(["placement", "ground", "columns", "links", "social", "legal", "rule", "home"]);
+const FOOTER_KEYS = new Set(["placement", "ground", "columns", "links", "social", "legal", "rule"]);
+/** The consent reopen fragment; the footer never carries that control, only the policy link. */
+const PRIVACY_CHOICES_FRAGMENT = "privacy-choices";
 const COLUMN_KEYS = new Set(["heading", "links"]);
 const LEGAL_KEYS = new Set(["entity", "links", "linksLabel"]);
 
@@ -169,6 +172,17 @@ function copy(value: unknown, path: string, resolveCopy: CopyResolver): string {
   return resolution.text;
 }
 
+function fragment(href: string): string {
+  const index = href.indexOf("#");
+  if (index < 0) return "";
+  const raw = href.slice(index + 1);
+  try {
+    return decodeURIComponent(raw).toLowerCase();
+  } catch {
+    return raw.toLowerCase();
+  }
+}
+
 function isRootRelative(href: string): boolean {
   return href.startsWith("/") && !href.startsWith("//") && !href.startsWith("/\\");
 }
@@ -237,6 +251,30 @@ function icon(value: unknown, path: string): IconNode {
     return Object.freeze([tag, Object.freeze(copy)] as const);
   });
   return Object.freeze(nodes) as unknown as IconNode;
+}
+
+/**
+ * The footer configuration contract: one flat row of at most five links,
+ * labelled columns beyond it, at most four icons before the brand mark, and
+ * no home, header navigation or privacy-choices destination. Refuses rather
+ * than truncates, naming the field path and never the value.
+ */
+function assertFooterContract(footer: NonNullable<ResolvedSiteShell["footer"]>, navLinks: readonly ResolvedSiteLink[]): void {
+  if (footer.links.length + footer.legal.links.length > FOOTER_LINK_LIMIT) throw new SiteFooterContractError("footer-link-limit", "shell.footer.links");
+  if ((footer.social?.links.length ?? 0) + 1 > FOOTER_ICON_LIMIT) throw new SiteFooterContractError("footer-icon-limit", "shell.footer.social.links");
+  const reserved = new Set([footer.home.href, ...navLinks.map(link => link.href)]);
+  const slots: readonly (readonly [string, readonly { readonly href: string }[]])[] = [
+    ["shell.footer.links", footer.links],
+    ...footer.columns.map((column, index) => [`shell.footer.columns[${index}].links`, column.links] as const),
+    ["shell.footer.social.links", footer.social?.links ?? []],
+    ["shell.footer.legal.links", footer.legal.links],
+  ];
+  for (const [path, entries] of slots) {
+    entries.forEach((entry, index) => {
+      if (fragment(entry.href) === PRIVACY_CHOICES_FRAGMENT) throw new SiteFooterContractError("footer-privacy-choices", `${path}[${index}].href`);
+      if (reserved.has(entry.href)) throw new SiteFooterContractError("footer-duplicate-link", `${path}[${index}].href`);
+    });
+  }
 }
 
 /**
@@ -336,14 +374,8 @@ export function resolveShell(input: SiteShellInput, resolveCopy: CopyResolver, r
         links: iconLinks(fields.links, "shell.footer.social.links"),
       };
     }
-    let home = { label: brand.label, href: href("/", "shell.footer.home.href", base), markSrc: brand.markSrc };
-    if (footerFields.home !== undefined) {
-      const fields = record(footerFields.home, "shell.footer.home", new Set(["assetId", "label", "href"]));
-      if (typeof fields.assetId !== "string" || !fields.assetId.trim()) fail("shell.footer.home.assetId must be a non-empty string.");
-      const homeAsset = resolveAsset(fields.assetId);
-      if (!isRenderImageAsset(homeAsset)) fail("shell.footer.home.assetId did not resolve to an image asset.");
-      home = { markSrc: homeAsset.src, label: fields.label === undefined ? brand.label : copy(fields.label, "shell.footer.home.label", resolveCopy), href: fields.href === undefined ? home.href : href(fields.href, "shell.footer.home.href", base) };
-    }
+    // One brand declaration yields the header mark and the footer mark: no footer-specific art or label.
+    const home = { label: brand.label, href: href("/", "shell.brand", base), markSrc: brand.markSrc };
     footer = {
       home,
       placement,
@@ -365,6 +397,7 @@ export function resolveShell(input: SiteShellInput, resolveCopy: CopyResolver, r
         ...(legalFields.linksLabel === undefined ? {} : { linksLabel: copy(legalFields.linksLabel, "shell.footer.legal.linksLabel", resolveCopy) }),
       },
     };
+    assertFooterContract(footer, nav?.links ?? []);
   }
 
   let header: ResolvedSiteShell["header"] = { placement: "reserved", ground };

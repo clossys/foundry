@@ -831,6 +831,18 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: var(--spacing-lg, 16px);
+  /* Uneven columns top-align on one grid. */
+  align-items: start;
+  /* Group labels read as muted labels, distinct from the bright links. */
+  & h2 {
+    margin: 0;
+    color: var(--site-footer-muted, var(--color-ink-on-inverse-muted, oklch(0.7763 0 0)));
+  }
+  /* Link text starts on the label's edge; the 44px target extends inward. */
+  & a {
+    padding-inline: 0;
+    justify-content: flex-start;
+  }
   @container (min-width: 768px) {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -843,17 +855,18 @@
   display: grid;
   width: 100%;
   min-width: 0;
-  grid-template-areas: "links" "icons" "copyright";
   grid-template-columns: minmax(0, 1fr);
   gap: var(--spacing-sm, 8px) var(--spacing-lg, 16px);
   text-align: center;
-  /* Phone order is links, icons, copyright, each centred on both axes;
-   * max-width keeps a long word wrapping inside a centred, content-sized region. */
+  /* Phone order is DOM order (links, icons, copyright), each centred on both
+   * axes; max-width keeps a long word wrapping inside a centred region. */
   justify-items: center;
   & > * { min-width: 0; max-width: 100%; overflow-wrap: break-word; }
-  & > [data-footer-region="links"] { grid-area: links; }
-  & > [data-footer-region="icons"] { grid-area: icons; }
-  & > [data-footer-region="copyright"] { grid-area: copyright; }
+  /* An empty region takes no row and adds no gap. */
+  & > [data-footer-region="links"]:not(:has(li)),
+  & > [data-footer-region="icons"]:not(:has(li)) { display: none; }
+  /* 8px between links and icons, 12px before the copyright. */
+  & > [data-footer-region="copyright"] { padding-block-start: var(--spacing-xs, 4px); }
   & img, & svg { max-width: 100%; object-fit: contain; }
   & [data-footer-region="icons"] li { max-width: 100%; min-width: 0; }
   & [data-footer-region="icons"] a { max-width: 100%; }
@@ -865,7 +878,9 @@
     grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(max-content, 1fr);
     align-items: center;
     justify-items: stretch;
-    & > [data-footer-region="copyright"] { text-align: start; }
+    & > [data-footer-region="links"] { grid-area: links; }
+    & > [data-footer-region="icons"] { grid-area: icons; }
+    & > [data-footer-region="copyright"] { grid-area: copyright; text-align: start; padding-block-start: 0; }
     & > [data-footer-region="icons"] > ul { justify-content: flex-end; flex-wrap: nowrap; }
     /* The tap target extends inward so the end art meets the page gutter. */
     & > [data-footer-region="icons"] li:last-child > a { justify-content: flex-end; padding-inline-end: 0; }

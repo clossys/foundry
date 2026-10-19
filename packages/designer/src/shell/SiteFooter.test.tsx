@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
-import { SiteFooter, type SiteFooterLegalProps } from "./SiteFooter.js";
+import { SITE_FOOTER_LIMITS, SiteFooter, SiteFooterContractError, type SiteFooterLegalProps } from "./SiteFooter.js";
 import { UI_LAYOUT_TAP_TARGET } from "./internal/shell-vars.js";
 
 describe("SiteFooter", () => {
@@ -199,13 +199,11 @@ describe("SiteFooter mandatory dark composition", () => {
     expect(container.querySelector('[data-consent], [data-privacy-choices]')).toBeNull();
     expect(screen.getByRole("link", { name: "Privacy" })).toHaveAttribute("href", "/privacy");
   });
-  it("allows empty lists without adding a heading, trigger or cardinality limit", () => {
-    const { rerender } = render(<SiteFooter secondary={<SiteFooter.Legal entity="Example" links={[]} icons={[]} />} />);
+  it("allows empty lists without adding a heading or trigger", () => {
+    render(<SiteFooter secondary={<SiteFooter.Legal entity="Example" links={[]} icons={[]} />} />);
     expect(screen.queryByRole("link")).toBeNull();
     expect(screen.queryByRole("heading")).toBeNull();
     expect(screen.queryByRole("button")).toBeNull();
-    rerender(<SiteFooter secondary={<SiteFooter.Legal entity="Example" links={Array.from({ length: 24 }, (_, i) => ({ label: `Policy ${i}`, href: `/policy/${i}` }))} />} />);
-    expect(screen.getAllByRole("link")).toHaveLength(24);
   });
   it("refuses blank names and unsafe, missing or noncanonical destinations on every footer-owned anchor", () => {
     const noncanonical = [" https://example.org/profile", "https://example.org/profile ", "https://example.org/\tprofile", "\nhttps://example.org/profile"];
@@ -248,7 +246,9 @@ describe("SiteFooter mandatory dark composition", () => {
 
   it("uses centered bounded tracks with links between copyright and icons, then collapses to reading order", () => {
     const composition = rule("@utility site-footer-composition {");
-    expect(composition).toContain('grid-template-areas: "links" "icons" "copyright"');
+    // Narrow footers place regions in DOM order (links, icons, copyright); named areas exist only on the wide row.
+    expect(composition.replace(wide(), "")).not.toContain("grid-template-areas");
+    expect(composition.replace(wide(), "")).not.toContain("grid-area");
     expect(composition).toContain("min-width: 0");
     expect(wide()).toContain('grid-template-areas: "copyright links icons"');
     expect(wide()).toMatch(/grid-template-columns:\s*minmax\(0, 1fr\) minmax\(0, 2fr\) minmax\(max-content, 1fr\)/);
@@ -264,7 +264,6 @@ describe("SiteFooter mandatory dark composition", () => {
     }
     const composition = rule("@utility site-footer-composition {");
     const narrow = composition.replace(wide(), "");
-    expect(narrow).toContain('grid-template-areas: "links" "icons" "copyright"');
     expect(narrow).toContain("grid-template-columns: minmax(0, 1fr)");
     expect(narrow).toContain("text-align: center");
     expect(narrow).toContain("justify-items: center");
@@ -357,5 +356,145 @@ describe("SiteFooter mandatory dark composition", () => {
     const server = document.createElement("div"); server.innerHTML = html;
     const facts = (root: HTMLElement) => Array.from(root.querySelectorAll("[data-footer-region], a, img")).map(e => [e.tagName, e.getAttribute("data-footer-region"), e.getAttribute("href"), e.getAttribute("aria-label"), e.getAttribute("alt")]);
     expect(facts(server)).toEqual(facts(container));
+  });
+});
+
+describe("SiteFooter configuration contract (FOOTER-2)", () => {
+  const glyph = <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 12h16" /></svg>;
+  const linkList = (count: number) => Array.from({ length: count }, (_, i) => ({ label: `Page ${i + 1}`, href: `/page-${i + 1}` }));
+  const iconList = (count: number) => Array.from({ length: count }, (_, i) => ({ label: `Profile ${i + 1}`, href: `https://example.org/p${i + 1}`, icon: glyph }));
+  const home = { label: "Example home", href: "/", markSrc: "/mark.svg" };
+  const legal = (props: Partial<SiteFooterLegalProps>) => <SiteFooter secondary={<SiteFooter.Legal entity="Example" links={[]} {...props} />} />;
+  function contractError(run: () => unknown): SiteFooterContractError {
+    try {
+      run();
+    } catch (error) {
+      expect(error).toBeInstanceOf(SiteFooterContractError);
+      expect(error).toBeInstanceOf(TypeError);
+      expect((error as Error).name).toBe("SiteFooterContractError");
+      return error as SiteFooterContractError;
+    }
+    throw new Error("expected a SiteFooterContractError");
+  }
+
+  it("publishes the caps it enforces", () => {
+    expect(SITE_FOOTER_LIMITS).toEqual({ links: 5, icons: 5 });
+    expect(Object.isFrozen(SITE_FOOTER_LIMITS)).toBe(true);
+  });
+
+  it("renders five links flat in one row", () => {
+    const { container } = render(legal({ links: linkList(5) }));
+    const region = container.querySelector('[data-footer-region="links"]')!;
+    expect(region.querySelectorAll("ul")).toHaveLength(1);
+    expect(region.querySelectorAll(":scope > ul > li > a")).toHaveLength(5);
+    expect(screen.queryByRole("heading")).toBeNull();
+  });
+
+  it("rejects a sixth flat link with the named error instead of truncating", () => {
+    const error = contractError(() => render(legal({ links: linkList(6) })));
+    expect(error.code).toBe("footer-link-limit");
+    expect(error.message).toMatch(/at most five/);
+    expect(error.message).toMatch(/column/);
+    expect(screen.queryByRole("link", { name: "Page 1" })).toBeNull();
+  });
+
+  it("renders grouped links as labelled columns, not in the flat row", () => {
+    const groups = [{ heading: "Product", links: linkList(4) }, { heading: "Company", links: linkList(3).map(link => ({ ...link, href: `${link.href}-c` })) }];
+    const { container } = render(
+      <SiteFooter
+        columns={groups.map(group => <SiteFooter.Column key={group.heading} heading={group.heading}>{group.links.map(link => <a key={link.href} href={link.href}>{link.label}</a>)}</SiteFooter.Column>)}
+        secondary={<SiteFooter.Legal entity="Example" links={[{ label: "Privacy", href: "/privacy" }]} />}
+      />,
+    );
+    const grid = container.querySelector(".site-footer-columns")!;
+    const columns = Array.from(grid.children);
+    expect(columns).toHaveLength(2);
+    expect(columns.map(column => column.querySelector("h2")?.textContent)).toEqual(["Product", "Company"]);
+    expect(columns.map(column => column.querySelectorAll("a").length)).toEqual([4, 3]);
+    for (const column of columns) expect(column.querySelector("h2 a, a h2")).toBeNull();
+    expect(Array.from(container.querySelectorAll('[data-footer-region="links"] a'), a => a.textContent)).toEqual(["Privacy"]);
+  });
+
+  it("rejects a sixth icon slot, counting the home mark", () => {
+    expect(contractError(() => render(legal({ icons: iconList(5), home }))).code).toBe("footer-icon-limit");
+    expect(contractError(() => render(legal({ icons: iconList(6) }))).code).toBe("footer-icon-limit");
+    expect(screen.queryByRole("link")).toBeNull();
+  });
+
+  it("renders five icon slots with the site's own mark last", () => {
+    const { container } = render(legal({ icons: iconList(4), home }));
+    const anchors = Array.from(container.querySelectorAll('[data-footer-region="icons"] a'));
+    expect(anchors.map(a => a.getAttribute("aria-label"))).toEqual(["Profile 1", "Profile 2", "Profile 3", "Profile 4", "Example home"]);
+    expect(anchors.at(-1)!.querySelector("[data-footer-home-plate] img")).toHaveAttribute("src", "/mark.svg");
+    expect(anchors.slice(0, -1).some(a => a.querySelector("[data-footer-home-plate]"))).toBe(false);
+  });
+
+  it("renders no mark when no home is supplied", () => {
+    const { container } = render(legal({ icons: iconList(2) }));
+    expect(container.querySelector("[data-footer-home-plate]")).toBeNull();
+    expect(container.querySelector("img")).toBeNull();
+  });
+
+  it("names the home mark like the header brand: one accessible name, decorative art", () => {
+    render(legal({ home }));
+    const link = screen.getByRole("link", { name: "Example home" });
+    expect(link.querySelector("img")).toHaveAttribute("alt", "");
+    expect(link.querySelector("[data-footer-home-plate]")).toHaveAttribute("aria-hidden", "true");
+    expect(link.textContent).toBe("");
+  });
+
+  it("refuses a footer link or icon that repeats the home destination", () => {
+    expect(contractError(() => render(legal({ links: [{ label: "Start", href: "/" }], home }))).code).toBe("footer-duplicate-link");
+    expect(contractError(() => render(legal({ icons: [{ label: "Start", href: "/", icon: glyph }], home }))).code).toBe("footer-duplicate-link");
+    expect(() => render(legal({ links: [{ label: "Start", href: "/" }] }))).not.toThrow();
+  });
+});
+
+describe("SiteFooter finished composition CSS (FOOTER-2)", () => {
+  const theme = readFileSync(join(import.meta.dirname, "../../styles/theme-keys.css"), "utf8");
+  const compiled = readFileSync(join(import.meta.dirname, "../../styles/compiled.css"), "utf8");
+  function block(source: string, opening: string) {
+    const start = source.indexOf(opening);
+    expect(start, opening).toBeGreaterThanOrEqual(0);
+    let depth = 0;
+    for (let i = source.indexOf("{", start); i < source.length; i++) {
+      if (source[i] === "{") depth++;
+      if (source[i] === "}" && --depth === 0) return source.slice(start, i + 1);
+    }
+    throw new Error(`Unterminated footer CSS: ${opening}`);
+  }
+  const columns = () => block(theme, "@utility site-footer-columns {");
+  const composition = () => block(theme, "@utility site-footer-composition {");
+  const narrow = () => composition().replace(block(composition(), "@container"), "");
+
+  it("styles group labels as muted labels, distinct from bright links, with no margin", () => {
+    // Whole declarations, so a renamed property or a nonzero margin cannot pass as a substring.
+    for (const heading of [block(columns(), "& h2 {"), block(block(compiled, ".site-footer-columns {"), "& h2 {")]) {
+      expect(heading).toMatch(/[{;]\s*margin: 0;/);
+      expect(heading).toMatch(/[{;]\s*color: var\(--site-footer-muted, var\(--color-ink-on-inverse-muted,/);
+      expect(heading).not.toMatch(/text-decoration|cursor|margin-(block|inline)/);
+    }
+  });
+
+  it("aligns a column's label and link text on one inline edge and tops uneven columns", () => {
+    expect(columns()).toContain("align-items: start");
+    const link = block(columns(), "& a {");
+    expect(link).toContain("padding-inline: 0");
+    expect(link).toContain("justify-content: flex-start");
+    expect(block(block(compiled, ".site-footer-columns {"), "& a {")).toContain("padding-inline: 0");
+  });
+
+  it("omits empty link and icon regions so they add no row or gap", () => {
+    const empty = block(narrow(), '& > [data-footer-region="links"]:not(:has(li)),');
+    expect(empty).toContain('& > [data-footer-region="icons"]:not(:has(li))');
+    expect(empty).toContain("display: none");
+  });
+
+  it("spaces the phone stack 8px between links and icons and 12px before the copyright, without a copyright margin", () => {
+    expect(narrow()).toContain("gap: var(--spacing-sm, 8px)");
+    const copyright = block(narrow(), '& > [data-footer-region="copyright"] {');
+    expect(copyright).toContain("padding-block-start: var(--spacing-xs, 4px)");
+    expect(copyright).not.toContain("margin");
+    expect(block(block(composition(), "@container"), '& > [data-footer-region="copyright"] {')).toContain("padding-block-start: 0");
   });
 });
