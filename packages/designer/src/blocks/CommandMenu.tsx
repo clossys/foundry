@@ -58,6 +58,12 @@ export function CommandMenu({
   const visible = visibleGroups.flatMap(group => group.items);
   const enabled = visible.filter(item => !item.disabled);
   const active = enabled.find(item => item.id === activeId) ?? enabled[0];
+  const activeResultId = active?.id;
+  useEffect(() => {
+    if (isOpen && activeResultId !== undefined) {
+      options.current.get(activeResultId)?.scrollIntoView?.({ block: "nearest", inline: "nearest", behavior: "instant" });
+    }
+  }, [activeResultId, isOpen, query, groups]);
   const optionId = (itemId: string) => `${id}-option-${encodeURIComponent(itemId)}`;
   const keydown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.nativeEvent.isComposing) return;

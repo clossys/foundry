@@ -118,6 +118,23 @@ describe("CommandMenu", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
+  it("reveals the active row without moving search focus, including filtering with a stable active ID", async () => {
+    const { input } = await open();
+    const revealAlpha = vi.fn();
+    const revealBravo = vi.fn();
+    Object.defineProperty(screen.getByRole("option", { name: "Alpha" }), "scrollIntoView", { value: revealAlpha, configurable: true });
+    Object.defineProperty(screen.getByRole("option", { name: "Bravo" }), "scrollIntoView", { value: revealBravo, configurable: true });
+    await userEvent.keyboard("{ArrowDown}");
+    expect(revealBravo).toHaveBeenCalled();
+    expect(input).toHaveFocus();
+    await userEvent.keyboard("{ArrowUp}");
+    expect(revealAlpha).toHaveBeenCalled();
+    revealAlpha.mockClear();
+    await userEvent.type(input, "al");
+    expect(revealAlpha).toHaveBeenCalledWith(expect.objectContaining({ block: "nearest", behavior: "instant" }));
+    expect(input).toHaveFocus();
+  });
+
   it("supports host filtering and renders supplied descriptions and shortcut hints", async () => {
     await open({ query: "drafts", filter: (item: any, query: string) => item.description?.includes(query) });
     expect(screen.getAllByRole("option")).toHaveLength(1);
