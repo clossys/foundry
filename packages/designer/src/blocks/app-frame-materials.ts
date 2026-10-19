@@ -2,6 +2,7 @@ import { Panel } from "./Panel.js";
 import { Drawer } from "./Drawer.js";
 import { ResizablePane } from "./ResizablePane.js";
 import { CommandMenu } from "./CommandMenu.js";
+import { AppNavigation } from "./AppNavigation.js";
 
 /** Source-backed Material selections within the Block tier; these records grant no role qualification. */
 export const APP_FRAME_MATERIALS = [
@@ -44,5 +45,19 @@ export const APP_FRAME_MATERIALS = [
     ],
     configs: [],
     authoredInputs: ["heading", "searchLabel", "closeLabel", "emptyMessage", "groups", "isOpen", "onOpenChange", "query", "onQueryChange", "filter", "dir", "resultCountMessage"],
+  },
+  {
+    id: "app-navigation", layer: "blocks", exportName: "AppNavigation", component: AppNavigation, source: "src/blocks/AppNavigation.tsx",
+    regions: ["header", "content", "links", "footer"],
+    dependencies: [
+      { exportName: "Panel", source: "src/blocks/Panel.tsx" },
+      { exportName: "Drawer", source: "src/blocks/Drawer.tsx" },
+      { exportName: "Link", source: "src/atoms/Link.tsx" },
+      { exportName: "Button", source: "src/atoms/Button.tsx" },
+      { exportName: "Tooltip", source: "src/atoms/Tooltip.tsx" },
+      { exportName: "Icon", source: "src/atoms/Icon.tsx" },
+    ],
+    configs: [{ prop: "collapsed", values: [false, true], default: false, source: "src/blocks/AppNavigation.tsx" }],
+    authoredInputs: ["tree", "activeId", "activeHref", "label", "footer", "emptyMessage", "navigationKey", "defaultCollapsed", "onCollapsedChange", "drawerOpen", "onDrawerOpenChange", "dismissAt", "openLabel", "closeLabel", "expandLabel", "collapseLabel", "formatDisclosureLabel"],
   },
 ] as const;

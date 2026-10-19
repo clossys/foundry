@@ -765,6 +765,9 @@
   .ms-lg {
     margin-inline-start: var(--spacing-lg, 16px);
   }
+  .ms-md {
+    margin-inline-start: var(--spacing-md, 12px);
+  }
   .items-order-body {
     margin-block-start: calc((1 - var(--items-wide, 0)) * var(--items-body-narrow, 0px) + var(--items-wide, 0) * (var(--spacing-2xl, 32px) + var(--spacing-lg, 16px) + var(--items-lane-wide, 0px)));
   }
@@ -1864,11 +1867,17 @@
   .p-md {
     padding: var(--spacing-md, 12px);
   }
+  .p-sm {
+    padding: var(--spacing-sm, 8px);
+  }
   .p-xl {
     padding: var(--spacing-xl, 24px);
   }
   .p-xs {
     padding: var(--spacing-xs, 4px);
+  }
+  .px-0 {
+    padding-inline: 0px;
   }
   .px-0\.5 {
     padding-inline: calc(var(--spacing, 0.25rem) * 0.5);
@@ -1948,6 +1957,9 @@
   }
   .pt-md {
     padding-top: var(--spacing-md, 12px);
+  }
+  .pt-sm {
+    padding-top: var(--spacing-sm, 8px);
   }
   .pt-xl {
     padding-top: var(--spacing-xl, 24px);
@@ -2184,6 +2196,13 @@
     outline-style: var(--tw-outline-style, solid);
     outline-width: 1px;
   }
+  .outline-1 {
+    outline-style: var(--tw-outline-style, solid);
+    outline-width: 1px;
+  }
+  .outline-line-strong {
+    outline-color: var(--color-line-strong, oklch(0.7763 0 0));
+  }
   .filter {
     filter: var(--tw-blur,) var(--tw-brightness,) var(--tw-contrast,) var(--tw-grayscale,) var(--tw-hue-rotate,) var(--tw-invert,) var(--tw-saturate,) var(--tw-sepia,) var(--tw-drop-shadow,);
   }
@@ -2246,6 +2265,10 @@
   .outline-none {
     --tw-outline-style: none;
     outline-style: none;
+  }
+  .outline-solid {
+    --tw-outline-style: solid;
+    outline-style: solid;
   }
   .select-none {
     -webkit-user-select: none;
@@ -2399,6 +2422,9 @@
     .hover\:text-ink-secondary:hover {
       color: var(--color-ink-secondary, oklch(0.36 0 0));
     }
+    .hover\:no-underline:hover {
+      text-decoration-line: none;
+    }
     .hover\:underline:hover {
       text-decoration-line: underline;
     }
@@ -2479,6 +2505,9 @@
   .focus-visible\:outline-2:focus-visible {
     outline-style: var(--tw-outline-style, solid);
     outline-width: 2px;
+  }
+  .focus-visible\:-outline-offset-2:focus-visible {
+    outline-offset: calc(2px * -1);
   }
   .focus-visible\:outline-offset-2:focus-visible {
     outline-offset: 2px;
@@ -3348,6 +3377,9 @@
     }
     .forced-colors\:border-current {
       border-color: currentcolor;
+    }
+    .forced-colors\:outline-current {
+      outline-color: currentcolor;
     }
   }
 }

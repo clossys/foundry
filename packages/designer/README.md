@@ -7598,3 +7598,62 @@ export function CommandExample() {
   );
 }
 ```
+
+## Application navigation
+
+`AppNavigation` is a Block Material for host-owned destinations. Supply stable
+ids, text labels, optional decorative icons, and either `href` or `onAction`.
+Parents may have their own destination and children; children are destination
+leaves. The exported validator rejects duplicate ids, deeper input, ambiguous
+destinations and empty parents. An empty tree displays `emptyMessage`.
+
+```tsx
+import { AppNavigation, getAppNavigationBreadcrumbs, type AppNavigationNode } from "@clossys/designer/blocks";
+import { Button } from "@clossys/designer/atoms";
+
+const navigation: readonly AppNavigationNode[] = [
+  { id: "catalogs", label: "Catalogs", href: "/catalogs", children: [
+    { id: "blocks", label: "Blocks", href: "/catalogs/blocks" },
+  ] },
+];
+
+export function NavigationExample() {
+  const crumbs = getAppNavigationBreadcrumbs(navigation, { id: "blocks" });
+  return <AppNavigation tree={navigation} activeId={crumbs.at(-1)?.id}
+    footer={<Button variant="ghost">Example profile</Button>} />;
+}
+```
+
+The host places the Material in a height-constrained frame region. Links scroll
+independently of `footer`, which accepts plain children and imports no account
+control. Navigation stores no preferences, fetches no data and imports no router.
+`activeId` takes precedence over `activeHref`; ancestry and breadcrumbs derive
+only from that route identity, with no view-internal selection input.
+
+`validateAppNavigationTree(tree)` throws on invalid runtime input without mutating
+the tree. `getAppNavigationAncestry(tree, { id, href })` returns the matching
+root-to-destination node chain, with id taking precedence over href.
+
+
+Desktop parents expand inline. A destination link and its disclosure button are
+separate controls. A newly active child expands its ancestor. `collapsed` controls
+the named, tooltipped icon rail; `defaultCollapsed` supplies its initial local
+state and `onCollapsedChange` reports changes. Every child destination remains
+reachable in the rail. Long labels retain their complete accessible names.
+
+The narrow layout uses the existing Drawer with full rows. `dismissAt` defaults
+to `(min-width: 768px)`. Escape returns focus; route changes, actions and entering
+the wide layout close it and release modal state. A held `drawerOpen={true}`
+cannot revive a dismissed surface; acknowledge with false or explicitly reopen
+the trigger. `onDrawerOpenChange` lets the host coordinate other overlays.
+`navigationKey`, `label`, `openLabel` and `closeLabel` are host inputs. The Drawer close control
+uses a 44px ghost icon button; `closeLabel` supplies its accessible name.
+`expandLabel`, `collapseLabel` and `formatDisclosureLabel(nodeLabel, expanded)`
+let the host translate rail toggles and disclosures; their defaults preserve the
+English expand/collapse announcements. All message props are optional.
+
+Arrow Up/Down and Home/End move among visible navigation controls. Logical
+Left/Right expand or collapse a parent, reversing in RTL. Enter/Space activate
+destinations or disclosure. Native forced-color adjustment and reduced motion
+remain supported. The interactive Material and helpers use the existing client
+blocks entry; no server-subset export or application-frame assembly is added.
