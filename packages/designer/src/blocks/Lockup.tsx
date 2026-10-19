@@ -16,7 +16,7 @@ export interface LockupProps extends Omit<LogomarkProps, "title"> {
   as?: "span" | "a";
   href?: string;
   "aria-label"?: string;
-  /** Optional complete root class list, including its layout and ink. */
+  /** Additional root classes, merged with the layout and ink defaults. */
   className?: string;
   /** Override plate ink independently when existing artwork requires it. */
   markTone?: LogomarkProps["tone"];
@@ -46,7 +46,7 @@ export function Lockup({ src, size, wordmark, tone = "auto", plate = "self", cle
     <Root
       href={Root === "a" ? href : undefined}
       aria-label={label}
-      className={className ?? cx("inline-flex items-center", inverse ? "text-ink-on-inverse" : "text-ink-primary")}
+      className={cx("inline-flex items-center", inverse ? "text-ink-on-inverse" : "text-ink-primary", className)}
       style={style}
     >
       {markRegion}

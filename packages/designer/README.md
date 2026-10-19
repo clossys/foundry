@@ -5271,7 +5271,7 @@ function DecorativeMark() {
 
 Lockup defaults to a `span`; `as="a"`, `href` and `aria-label` allow a shell
 to own the surrounding link without adding a wrapper. A supplied `className`
-is the complete root class list and must retain the required flex alignment.
+merges with the root's flex alignment and ink defaults.
 Use Brandmark for its fixed home destination and enforced label-in-name rule.
 Both new components are also exported from their existing `/server` entries.
 

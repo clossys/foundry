@@ -12,6 +12,7 @@ type Props = {
   tone?: "auto" | "inverse";
   plate?: "shared" | "self";
   clearSpace?: boolean;
+  className?: string;
 };
 const Lockup = (blocks as unknown as { Lockup: ComponentType<Props> }).Lockup;
 const sizes = ["sm", "md", "lg"] as const;
@@ -62,6 +63,11 @@ describe("Lockup: mark and live wordmark regions", () => {
     const { container } = render(<Lockup src="/glyph.svg" wordmark={wordmark} size="md" />);
     expect(container.querySelector("svg, script")).toBeNull();
     expect(container.textContent).toBe(wordmark);
+  });
+
+  it("retains layout and ink when a consumer adds a class", () => {
+    const { container } = render(<Lockup src="/glyph.svg" wordmark="Example" size="md" className="consumer-class" />);
+    expect(container.firstElementChild).toHaveClass("inline-flex", "items-center", "text-ink-primary", "consumer-class");
   });
 
   it("composes Logomark through the permitted block-to-atom direction", () => {

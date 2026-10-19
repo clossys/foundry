@@ -1,5 +1,5 @@
 ---
-"@clossys/designer": minor
+designer: minor
 ---
 
 Add the decorative Logomark atom and live-text Lockup block, including server
