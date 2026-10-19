@@ -55,6 +55,27 @@ cells: every axis cell supplies an explicit scalar value. Consumers must still
 author valid content, callbacks and data; this declaration supplies no renderer
 or general-purpose validator.
 
+The lookup has finite keys: only some atoms have a represented comparison.
+For a dynamic string ID, narrow it to `keyof typeof ATOM_COMPARISON` with an
+ownership guard before indexing, and handle an unlisted ID as no entry:
+
+```ts
+import { ATOM_COMPARISON } from "@clossys/designer/atoms";
+
+type ComparisonKey = keyof typeof ATOM_COMPARISON;
+
+function isComparisonKey(key: string): key is ComparisonKey {
+  return Object.hasOwn(ATOM_COMPARISON, key);
+}
+
+function findComparison(atomId: string) {
+  if (isComparisonKey(atomId)) {
+    return ATOM_COMPARISON[atomId];
+  }
+  return undefined; // No represented comparison for this atom.
+}
+```
+
 The public types are `AtomGuidance`, `AtomApiFacts`, `AtomDisplayGroup`, `AtomComparison`,
 `AtomMedium`, `AtomMediumState`, `AtomScalar`, `AtomEvidence`,
 `AtomOptionGuidance`, `AtomCondition`, `AtomConstraint`, `AtomWebImplementation` and
