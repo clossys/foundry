@@ -7800,6 +7800,13 @@ remain supported. The interactive Material and helpers use the existing client
 blocks entry; no server-subset export or application-frame assembly is added.
 ### Account menu composition example
 
+`APP_FRAME_MATERIALS` includes the `account-menu` selection for `AccountMenu`,
+with identity, trigger, content and preference regions, its rendered `Avatar`,
+`Button`, `Icon`, `Menu` and `Tooltip` dependencies, and the finite `collapsed`
+configuration. Its authored inputs include `actor`, `sections`, `contextLabel`,
+`triggerLabel`, `collapsed`, `onClose` and `onRoute`; the host supplies identity,
+preference state, actions and routing.
+
 ```tsx
 import { AccountMenu } from "@clossys/designer/blocks";
 
