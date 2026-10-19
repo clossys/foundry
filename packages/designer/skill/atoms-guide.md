@@ -4,7 +4,7 @@
 
 Import the shared records from `@clossys/designer/atoms`. This barrel remains client-only; charts render through the existing `@clossys/designer/charts` entry point. No new package subpath is introduced.
 
-40 established leaves appear once in 4 groups and 10 families. Groups and families are navigation; only leaves are selectable. Display placement preserves legacy IDs.
+41 established leaves appear once in 4 groups and 10 families. Groups and families are navigation; only leaves are selectable. Display placement preserves legacy IDs.
 
 Stable purpose, content and anatomy are separate from medium-specific implementation. Web cites current source; email, print and video are unassessed. Import safety, server rendering and visual resemblance establish no other medium’s support.
 
@@ -16,7 +16,7 @@ Consumer-owned demonstration coverage is unassessed here. A fixed controlled val
 
 | Group | Families | Leaves |
 | --- | --- | ---: |
-| Interaction | Actions, Navigation, Inputs | 17 |
+| Interaction | Actions, Navigation, Inputs | 18 |
 | Content | Data display, Imagery, Charts | 12 |
 | Feedback | Messages, Progress and loading | 5 |
 | Containment | Structure, Overlays | 6 |
@@ -543,6 +543,40 @@ Web implementation: `@clossys/designer/atoms` → `Field`. Source: `src/atoms/Fi
 
 Token dependency coverage: partial. Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.
 - `--color-ink-secondary` (transitive): `styles/theme-keys.css`: `--color-ink-secondary:`; consumed via `src/atoms/Field.tsx`: `text-ink-secondary`.
+
+##### `enter.resize-handle` — ResizeHandle
+
+- Purpose: Adjust the bounded size of one adjacent content pane.
+- Use when: A host exposes a user-adjustable inline width or block height.
+- Avoid when: The boundary is decorative or no dimension can actually change.
+- Alternatives and boundary: Use Separator for a static boundary; ResizablePane for a complete bounded Panel composition.
+- Content: Supply an accessible name identifying the pane being resized, with finite dimensions and a reset value.
+- Anatomy: One focusable separator, a token-bound visible edge and a minimum interactive target.
+- Block composition example: ResizablePane composes the handle with Panel and owns its uncontrolled or controlled size.
+- Accessibility: Arrow keys adjust, Home and End reach bounds, Enter resets, and Escape cancels an active pointer drag. Horizontal movement follows inherited or explicit RTL.
+- Demonstration coverage: unassessed. Consumer-owned fixtures and interaction evidence have not been assessed here. A supported package option is not proof of a working catalog demonstration.
+
+| Medium | State | Reason and evidence |
+| --- | --- | --- |
+| web | implemented | The existing component renders or forwards its documented web implementation in the named source. Evidence: `src/atoms/ResizeHandle.tsx` |
+| email | unassessed | No email renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
+| print | unassessed | No print renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
+| video | unassessed | No video renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
+
+Web implementation: `@clossys/designer/atoms` → `ResizeHandle`. Source: `src/atoms/ResizeHandle.tsx`. Numeric dimensions, step, reset, names and callbacks are authored inputs. Pointer capture, cancellation and keyboard changes report bounded values through onChange; the Atom is controlled and never stores preferences.
+
+| Prop | Selection guidance | Package default | Applicability and support |
+| --- | --- | --- | --- |
+| `orientation` — Separator orientation | `vertical`: Inline width, moved horizontally with RTL reversal.<br>`horizontal`: Block height, moved vertically without RTL reversal. | `vertical` (`src/atoms/ResizeHandle.tsx`: `orientation = "vertical"`) | Effective for both pointer and keyboard movement. implemented: The component consumes orientation for semantics, visible edge and input axis. Evidence: `src/atoms/ResizeHandle.tsx`: `aria-orientation={orientation}` |
+| `dir` — Explicit direction | `ltr`: Right increases inline width.<br>`rtl`: Left increases inline width. | omitted: Omission follows effective direction at interaction time. | Only horizontal movement reverses; omission follows computed or inherited direction. implemented: The component resolves direction when handling each interaction. Evidence: `src/atoms/ResizeHandle.tsx`: `dir={dir}` |
+
+- data (runtime; `value`, `min`, `max`, `resetValue`, `step`): All dimensions must be finite, bounds ordered and step positive; emitted values and the reset are clamped to the supplied bounds. Evidence: `src/atoms/ResizeHandle.tsx`: `![value, min, max, resetValue, step].every(Number.isFinite)`.
+- data (runtime; `label`): An interactive separator requires an authored nonempty string name. Evidence: `src/atoms/ResizeHandle.tsx`: `typeof label !== "string" || !label.trim()`.
+
+Token dependency coverage: partial. Representative consumed target, edge and native focus-color tokens; not an exhaustive generated utility inventory.
+- `--ui-layout-tap-target` (transitive): `src/atoms/internal/ui-vars.ts`: `var(--ui-layout-tap-target, 44px)`; consumed via `src/atoms/ResizeHandle.tsx`: `minWidth: UI_LAYOUT_TAP_TARGET`.
+- `--ui-border-hairline` (transitive): `src/atoms/internal/ui-vars.ts`: `var(--ui-border-hairline, 1px)`; consumed via `src/atoms/ResizeHandle.tsx`: `borderWidth: UI_BORDER_HAIRLINE`.
+- `--color-accent` (transitive): `styles/theme-keys.css`: `--color-accent:`; consumed via `src/atoms/ResizeHandle.tsx`: `focus-visible:outline-accent`.
 
 ### Content
 

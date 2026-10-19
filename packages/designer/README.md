@@ -24,7 +24,7 @@ exports from `@clossys/designer/atoms`. The barrel remains client-only. Read
 the packed [atom selection guide](skill/atoms-guide.md) for purpose, use and
 avoidance, alternatives, content, anatomy, block composition, accessibility,
 medium evidence, represented configurations and partial token dependencies.
-Four display groups and ten families place forty established atom/chart leaves
+Four display groups and ten families place forty-one established atom/chart leaves
 exactly once. Groups and families are navigation; only leaves are selectable.
 Existing IDs such as `act.link` and `reveal.tabs` remain unchanged.
 
@@ -140,12 +140,13 @@ surfaces and live in `@clossys/publisher/web`.
   `Separator`, `Chip`, `StatusMark`, `Meter`.
 - **`blocks`** — owns the internal layout of multiple named regions,
   typically by composing one or more atoms (and/or layout) into something
-  with a real job on a page. Thirty-six ship: `AccountMenu`, `PageHeader`, `EmptyState`,
+  with a real job on a page. Thirty-nine ship: `AccountMenu`, `PageHeader`, `EmptyState`,
   `DataTable`, `DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`,
   `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `SectionFrame`,
   `MarketingChapter`, `FeatureGrid`, `Item`, `Items`, `Tree`, `AnatomyCallouts`, `RecordLedger`, `Scene`, `Matrix`,
   `Specimen`, `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`,
-  `PricingTable`, `Testimonial`, `ArticleBody`, `ConsentBanner` (see "Blocks" below).
+  `PricingTable`, `Testimonial`, `ArticleBody`, `ConsentBanner`, `Panel`, `Drawer`,
+  `ResizablePane` (see "Blocks" below).
 - **`shell`** — the persistent frame around content (nav, layout chrome)
   that provides the slots content fills. One per app; survives route
   changes that swap out the content underneath it. `Shell` ships with five
@@ -7138,12 +7139,13 @@ speculatively, just because a related component shipped, is the exact
 un-bounded growth this package's own "variant rule" warns against one level
 up. They get added here only once something real needs them.
 
-**Blocks:** thirty-six ship — `AccountMenu`, `PageHeader`, `EmptyState`, `DataTable`,
+**Blocks:** thirty-nine ship — `AccountMenu`, `PageHeader`, `EmptyState`, `DataTable`,
 `DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`, `ConfirmDialog`,
 `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `SectionFrame`, `MarketingChapter`,
-`FeatureGrid`, `Item`, `Items`, `AnatomyCallouts`, `RecordLedger`, `Scene`, `Matrix`, `Specimen`,
+`FeatureGrid`, `Item`, `Items`, `Tree`, `AnatomyCallouts`, `RecordLedger`, `Scene`, `Matrix`, `Specimen`,
 `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`, `PricingTable`,
-`Testimonial`, `ArticleBody`, `ConsentBanner` — completing this layer. No
+`Testimonial`, `ArticleBody`, `ConsentBanner`, `Panel`, `Drawer`,
+`ResizablePane` — completing this layer. No
 `FilterBar` block:
 `DataTable`'s own `toolbar` slot (and `Toolbar`'s own `search` slot) are
 deliberately plain `ReactNode`s, not a block with its own opinion about
@@ -7491,6 +7493,73 @@ These 18 properties explicitly report their true kind and "interactive support p
 `--ease-enter`, `--ease-exit`, `--breakpoint-mobile`, `--breakpoint-mobile-lg`,
 `--breakpoint-tablet`, `--breakpoint-tablet-lg`, `--breakpoint-desktop`, `--breakpoint-wide`.
 Motion and breakpoint interaction belong to a later increment.
+
+## Application panels
+
+Choose a Material Block before assembling its underlying Atoms. `Panel`,
+`Drawer` and `ResizablePane` are exported from `@clossys/designer/blocks`;
+`ResizeHandle` is exported from `@clossys/designer/atoms`. These additions stay
+outside the server subsets. They do not assemble an application frame or
+persist preferences.
+
+```tsx
+import { Panel, Drawer, ResizablePane } from "@clossys/designer/blocks";
+import { Button } from "@clossys/designer/atoms";
+
+export function WorkspaceTools() {
+  return (
+    <Panel header="Workspace" footer="Supporting information">
+      <Drawer heading="Tools" closeLabel="Close tools" trigger={<Button>Tools</Button>}>
+        <ResizablePane min={120} max={480} defaultValue={240}
+          label="Tool details" handleLabel="Resize tool details">
+          <p>Selected tool details</p>
+        </ResizablePane>
+      </Drawer>
+    </Panel>
+  );
+}
+```
+
+`Panel` composes the outlined `Card` with named `header`, content (`children`)
+and `footer` regions. Optional regions are omitted for null, undefined or false;
+zero remains content. Card `ground`, DOM semantics, classes and styles pass
+through. `APP_FRAME_MATERIALS`, from the blocks entry, records each actual
+component, its source, rendered dependencies, regions, finite configurations
+and authored inputs. These are Block composition facts, not role qualification.
+
+`Drawer` composes `Dialog` and `Panel`, with logical `placement="start"`
+(default), `"end"` or `"bottom"`. It uses Dialog's existing focus containment,
+restoration, Escape, outside dismissal and scroll lock. Closed content is
+unmounted. Its default `dismissAt="(min-width: 768px)"` matches the structural
+tablet breakpoint; supply another media query when the host's wide layout
+starts elsewhere. Changing `navigationKey` or entering that query dismisses
+an open drawer, as does ordinary in-panel link navigation. No motion is added.
+
+For a controlled Drawer, `isOpen` requests an open state; a local dismissal
+immediately removes the overlay even while the host retains `true`. The host
+can acknowledge closure with `false`, then request `true` again. An explicit
+trigger activation can also reopen it; a matching wide-layout query prevents
+opening, and blocked requests are not retained for later opening when it narrows.
+`onOpenChange` reports these changes. Every exit releases the existing
+Dialog lifecycle. The additive Dialog `modalClassName` and `modalStyle` hooks
+style its wrapper without changing centered defaults when omitted.
+
+`ResizablePane` composes Panel and ResizeHandle with required finite `min`,
+`max` and `defaultValue`, in CSS pixels. Choose bounds that leave room for the
+content and the handle's minimum 44px target. `value` makes it controlled;
+omission uses local state. `onChange` reports bounded values, with no storage
+access. `orientation="vertical"` (default) is a vertical separator resizing
+inline width; `"horizontal"` resizes block height. `label` names the pane and
+`handleLabel` names the separator; header and footer remain Panel regions.
+
+`ResizeHandle` is controlled with required `value`, `min`, `max`, `resetValue`,
+`label` and `onChange`. Positive `step` defaults to 1. Arrow keys adjust,
+Home/End reach the bounds, and Enter resets. Horizontal movement reverses in
+explicit or inherited RTL; vertical movement does not. Pointer capture commits
+on release; pointer cancellation, lost capture or Escape restores the drag's
+start value. Non-finite dimensions, reversed bounds, nonpositive steps and
+empty names are refused. Values and resets are clamped. Native forced-color
+adjustment remains enabled, with a token-bound edge and a visible focus outline.
 
 ### Account menu composition example
 

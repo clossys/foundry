@@ -6,6 +6,7 @@ All notable changes to this package are documented here. Format follows
 ## Unreleased
 
 - Add AccountMenu with expanded/collapsed actor triggers, grouped commands, controlled preferences and host close/route callbacks. Menu.Section provides named groups and section-local checkbox selection.
+- Add Panel, Drawer and ResizablePane Block Materials with source-backed composition records, and a named ResizeHandle Atom with bounded keyboard and pointer interaction. Drawer reuses the Dialog lifecycle and releases it on route and breakpoint changes. Document the forty-first Atom without changing existing Dialog defaults.
 
 ## 0.12.0 - 2026-10-16
 
