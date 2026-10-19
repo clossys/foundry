@@ -436,13 +436,14 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
   --spacing-6xl:                  128px;
 
   /* ════════════════════════════════════════════════════════════════
-   * UI · WIDTH (6 · content max-widths — no Tailwind namespace)
+   * UI · WIDTH (7 · content max-widths — no Tailwind namespace)
    * ════════════════════════════════════════════════════════════════ */
   --ui-width-content-max:         64rem;
   --ui-width-prose-max:           48rem;
   --ui-width-hero-wide:           64rem;
   --ui-width-wide-max:            72rem;
   --ui-width-form-max:            38rem;
+  --ui-width-notice-max:          24rem;   /* compact pinned notice card, from tablet width */
   --ui-width-page-padding-x:      clamp(16px, 4vw, 48px);
 
   /* ════════════════════════════════════════════════════════════════
@@ -537,11 +538,14 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
   --ui-elevation-panel:           var(--ui-elevation-floating, 0 8px 24px rgba(0, 0, 0, 0.10));
 
   /* ════════════════════════════════════════════════════════════════
-   * BLUR (1 · Tailwind `--blur-*` namespace)
+   * BLUR (2 · Tailwind `--blur-*` namespace)
    * ════════════════════════════════════════════════════════════════ */
   /* Glass identity: the backdrop blur behind a glass plate. Brandable,
    * theme invariant. */
   --blur-glass:                   16px;
+  /* Notice identity: the backdrop blur behind a pinned notice card.
+   * Theme invariant. */
+  --blur-notice:                  12px;
 
   /* ════════════════════════════════════════════════════════════════
    * UI · RING (2 · focus + on-inverse rings — no Tailwind namespace)

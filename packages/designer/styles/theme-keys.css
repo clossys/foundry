@@ -787,6 +787,73 @@
 }
 }
 
+/* Consent's pinned card; the in-flow banner and header keep their own rules.
+   It floats on the notice layer over the page end, footer included. Below
+   tablet width it fills the viewport less safe-area gutters, centred; from
+   tablet width it is capped at the notice width and pinned bottom-start
+   (logical, so RTL flips it). */
+@utility consent-card {
+  position: fixed;
+  z-index: var(--ui-z-notice, 40);
+  --ui-ring-focus: 0 0 0 2px var(--color-ink-primary, oklch(0.2178 0 0));
+  &[data-consent-presentation="card"] :focus-visible {
+    outline-color: var(--color-ink-primary, oklch(0.2178 0 0));
+  }
+  inset-block-end: max(var(--spacing-md, 12px), env(safe-area-inset-bottom, 0px));
+  inset-inline: max(var(--spacing-md, 12px), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
+  margin-inline: auto;
+  max-block-size: calc(100dvh - max(var(--spacing-md, 12px), env(safe-area-inset-bottom, 0px)) - max(var(--spacing-md, 12px), env(safe-area-inset-top, 0px)));
+  overflow-y: auto;
+  overflow-wrap: anywhere;
+  border-width: var(--ui-border-hairline, 1px);
+  border-style: solid;
+  border-color: var(--color-line-base, oklch(0.8761 0 0));
+  background-color: color-mix(in oklab, var(--color-surface-base, oklch(0.9702 0 0)) 90%, transparent);
+  box-shadow: var(--ui-elevation-raised, 0 1px 0 var(--color-line-base, oklch(0.8761 0 0)));
+  -webkit-backdrop-filter: blur(var(--blur-notice, 12px));
+  backdrop-filter: blur(var(--blur-notice, 12px));
+  & button {
+    min-block-size: var(--ui-layout-tap-target, 44px);
+    transition-duration: var(--ui-duration-fast, 160ms);
+    transition-timing-function: var(--ease-default, cubic-bezier(.2, 0, 0, 1));
+  }
+  @media (width >= 48rem) {
+    margin-inline-start: 0;
+    max-inline-size: var(--ui-width-notice-max, 24rem);
+  }
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    background-color: color-mix(in oklab, var(--color-surface-base, oklch(0.9702 0 0)) 95%, transparent);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    transition-property: background-color, backdrop-filter;
+    transition-duration: var(--ui-duration-default, 240ms);
+    transition-timing-function: var(--ease-default, cubic-bezier(.2, 0, 0, 1));
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    background-color: var(--color-surface-base, oklch(0.9702 0 0));
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  @media (forced-colors: active) {
+    &[data-consent-presentation="card"] {
+      background-color: Canvas;
+      color: CanvasText;
+      border-color: CanvasText;
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+      & button {
+        border-width: var(--ui-border-hairline, 1px);
+        border-style: solid;
+        border-color: ButtonText;
+      }
+      &:focus-visible, & :focus-visible {
+        outline: 2px solid Highlight;
+        outline-offset: 2px;
+      }
+    }
+  }
+}
+
 /* Static scenes: live token paints and a linear accessible form at every width. */
 @utility scene-root { container: scene / inline-size; margin: 0; inline-size: 100%; min-inline-size: 0; font-family: var(--font-body, ui-sans-serif, system-ui, sans-serif); }
 @utility scene-desktop { display: none; }
@@ -843,54 +910,3 @@
 @container scene (min-width: 800px) { [data-template="converge"] > [data-scene-desk] { display: block; } [data-template="converge"] > [data-scene-linear] { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; } }
 @container scene (min-width: 520px) { [data-template="evidence-trail"] > [data-scene-desk] { display: block; } [data-template="evidence-trail"] > [data-scene-linear] { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; } }
 @container scene (min-width: 900px) { [data-template="approval-chain"] > [data-scene-desk] { display: block; } [data-template="approval-chain"] > [data-scene-linear] { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; } }
-
-
-/* Consent's pinned card; the in-flow banner and header keep their own rules. */
-@utility consent-card {
-  position: fixed;
-  z-index: var(--ui-z-notice, 40);
-  --ui-ring-focus: 0 0 0 2px var(--color-ink-primary, oklch(0.2178 0 0));
-  &[data-consent-presentation="card"] :focus-visible {
-    outline-color: var(--color-ink-primary, oklch(0.2178 0 0));
-  }
-  inset-block-end: max(var(--spacing-md, 12px), env(safe-area-inset-bottom, 0px));
-  inset-inline: max(var(--spacing-md, 12px), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
-  margin-inline: auto;
-  max-inline-size: var(--ui-width-form-max, 38rem);
-  max-block-size: calc(100dvh - max(var(--spacing-md, 12px), env(safe-area-inset-bottom, 0px)) - max(var(--spacing-md, 12px), env(safe-area-inset-top, 0px)));
-  overflow-y: auto;
-  overflow-wrap: anywhere;
-  border-width: var(--ui-border-hairline, 1px);
-  border-style: solid;
-  border-color: var(--color-overlay-border, oklch(0.8761 0 0));
-  background-color: var(--color-surface-glass, oklch(1 0 0 / 0.88));
-  -webkit-backdrop-filter: blur(var(--blur-glass, 16px));
-  backdrop-filter: blur(var(--blur-glass, 16px));
-  @media (width >= 48rem) { margin-inline-start: 0; }
-  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-    background-color: var(--color-overlay-surface, oklch(1 0 0));
-  }
-  @media (prefers-reduced-transparency: reduce) {
-    background-color: var(--color-overlay-surface, oklch(1 0 0));
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-  }
-  @media (forced-colors: active) {
-    &[data-consent-presentation="card"] {
-      background-color: Canvas;
-      color: CanvasText;
-      border-color: CanvasText;
-      -webkit-backdrop-filter: none;
-      backdrop-filter: none;
-      & button {
-        border-width: var(--ui-border-hairline, 1px);
-        border-style: solid;
-        border-color: ButtonText;
-      }
-      &:focus-visible, & :focus-visible {
-        outline: 2px solid Highlight;
-        outline-offset: 2px;
-      }
-    }
-  }
-}
