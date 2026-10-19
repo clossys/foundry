@@ -175,7 +175,7 @@ it("HEADER-1 observes intrinsic children, preserves visible desktop focus and re
     const width = this.classList.contains("site-header-row") ? 1400 : 100;
     return { width, height: 72, left: 0, right: width, top: 0, bottom: 72, x: 0, y: 0, toJSON() {} };
   });
-  const scene = (nav = true) => <div data-frame-root=""><SiteHeader brand={<a href="/">Example</a>} nav={nav ? <NavDisclosure trigger="icon"><ul className="site-header-nav-links"><li><a href="/help">Help</a></li></ul></NavDisclosure> : undefined} /></div>;
+  const scene = (nav = true) => <div data-frame-root=""><SiteHeader brand={<a href="/">Example</a>} nav={nav ? <NavDisclosure trigger="icon"><ul className="site-header-nav-links"><li><a href="/help">Help</a></li></ul></NavDisclosure> : undefined} actions={nav ? <a href="/start">Start</a> : undefined} /></div>;
   try {
     const view = render(scene());
     const frame = view.container.firstElementChild as HTMLElement;
@@ -195,6 +195,8 @@ it("HEADER-1 observes intrinsic children, preserves visible desktop focus and re
     media.matches = true;
     act(measure);
     expect(screen.getByRole("link", { name: "Help" })).toHaveFocus();
+    act(() => { screen.getByRole("link", { name: "Start" }).focus(); measure(); });
+    expect(screen.getByRole("link", { name: "Start" })).toHaveFocus();
     view.rerender(scene(false));
     expect(frame.style.getPropertyValue("--site-header-clearance")).toBe("");
     expect(view.container.querySelector("header")).toHaveClass("site-header-contract");

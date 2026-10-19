@@ -82,8 +82,9 @@ export function NavDisclosure({ children, "aria-label": ariaLabel = "Primary", t
         if (height > 0) frame?.style.setProperty("--site-header-clearance", `${height}px`);
       }
       const active = document.activeElement;
+      const activeActions = active?.closest(".site-header-actions");
       if (!narrow) {
-        if (active === toggle.current || active?.closest(".site-header-actions")) {
+        if (active === toggle.current || (activeActions && getComputedStyle(activeActions).display === "none")) {
           const anchors = [...(nav.current?.querySelectorAll<HTMLAnchorElement>("a[href]") ?? [])];
           const target = anchors.find(link => active instanceof HTMLAnchorElement && link.href === active.href) ?? anchors[0] ?? header?.querySelector<HTMLElement>(".site-header-brand a");
           target?.focus();
