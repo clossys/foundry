@@ -158,13 +158,13 @@ surfaces and live in `@clossys/publisher/web`.
   `Separator`, `Chip`, `StatusMark`, `Meter`.
 - **`blocks`** — owns the internal layout of multiple named regions,
   typically by composing one or more atoms (and/or layout) into something
-  with a real job on a page. Thirty-nine ship: `AccountMenu`, `PageHeader`, `EmptyState`,
+  with a real job on a page. Forty-one ship: `AccountMenu`, `PageHeader`, `EmptyState`,
   `DataTable`, `DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`,
   `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `SectionFrame`,
   `MarketingChapter`, `FeatureGrid`, `Item`, `Items`, `Tree`, `AnatomyCallouts`, `RecordLedger`, `Scene`, `Matrix`,
   `Specimen`, `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`,
   `PricingTable`, `Testimonial`, `ArticleBody`, `ConsentBanner`, `Panel`, `Drawer`,
-  `ResizablePane` (see "Blocks" below).
+  `ResizablePane`, `CommandMenu` and `AppNavigation` (see "Blocks" below).
 - **`shell`** — the persistent frame around content (nav, layout chrome)
   that provides the slots content fills. One per app; survives route
   changes that swap out the content underneath it. `Shell` ships with five
@@ -7168,13 +7168,13 @@ speculatively, just because a related component shipped, is the exact
 un-bounded growth this package's own "variant rule" warns against one level
 up. They get added here only once something real needs them.
 
-**Blocks:** thirty-nine ship — `AccountMenu`, `PageHeader`, `EmptyState`, `DataTable`,
+**Blocks:** forty-one ship — `AccountMenu`, `PageHeader`, `EmptyState`, `DataTable`,
 `DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`, `ConfirmDialog`,
 `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `SectionFrame`, `MarketingChapter`,
 `FeatureGrid`, `Item`, `Items`, `Tree`, `AnatomyCallouts`, `RecordLedger`, `Scene`, `Matrix`, `Specimen`,
 `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`, `PricingTable`,
 `Testimonial`, `ArticleBody`, `ConsentBanner`, `Panel`, `Drawer`,
-`ResizablePane` — completing this layer. No
+`ResizablePane`, `CommandMenu` and `AppNavigation` — completing this layer. No
 `FilterBar` block:
 `DataTable`'s own `toolbar` slot (and `Toolbar`'s own `search` slot) are
 deliberately plain `ReactNode`s, not a block with its own opinion about
@@ -7595,6 +7595,123 @@ start value. Non-finite dimensions, reversed bounds, nonpositive steps and
 empty names are refused. Values and resets are clamped. Native forced-color
 adjustment remains enabled, with a token-bound edge and a visible focus outline.
 
+### CommandMenu
+
+`CommandMenu` is a Navigation Material in `APP_FRAME_MATERIALS`, composed
+from Dialog, SearchField, Tooltip and IconButton. The host owns open state,
+query, groups and destinations; item IDs must be unique across groups. Each
+item takes exactly one `href` or `onAction`, plus optional `description`,
+`shortcutHint`, icon glyph and `disabled`. The default filter matches labels
+case-insensitively; `filter(item, query)` replaces it. Empty results show the
+host's `emptyMessage` without inventing commands.
+
+The search input receives initial focus and controls a grouped listbox.
+Arrows wrap through enabled results, Enter activates the current filtered
+result, and pointer activation uses the same destination. Escape closes even
+with a nonempty query; Dialog contains focus and restores the external opener.
+The count is announced politely as "N results" by default; override
+`resultCountMessage(count)` to localize the complete announcement.
+Logical layout supports `dir="rtl"`,
+disabled results retain semantics, and inherited control transitions honor
+reduced motion. Closed server rendering is empty; interaction requires the
+client. This component is outside the server-safe subset.
+
+`useCommandMenuShortcut({ onOpen, enabled? })` is optional. It detects the
+platform on the client, handles Meta+K on Apple platforms and Ctrl+K elsewhere,
+and prevents the default only when it opens. It declines while any visible
+dialog is open, including its own menu; use Escape to close, then Mod+K to
+reopen. Listeners are removed when disabled or unmounted.
+
+| Export | Kind | Contract |
+| --- | --- | --- |
+| `CommandMenu` | component | Controlled modal command search over host-supplied groups. |
+| `CommandMenuProps` | type | Required labels, empty message, groups, open/query state and callbacks; optional filter, count-message formatter and direction. |
+| `CommandMenuItem` | type | Unique ID, string label, href or action, and optional description, shortcut hint, icon and disabled state. |
+| `CommandMenuGroup` | type | Stable ID, label and ordered items. |
+| `useCommandMenuShortcut` | function | Opt-in opening shortcut outside visible dialogs. |
+| `CommandMenuShortcutOptions` | type | Required `onOpen` callback and optional `enabled` flag. |
+
+```tsx
+import { useState } from "react";
+import { CommandMenu, useCommandMenuShortcut } from "@clossys/designer/blocks";
+
+export function CommandExample() {
+  const [isOpen, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  useCommandMenuShortcut({ onOpen: () => setOpen(true) });
+  return (
+    <>
+      <button onClick={() => setOpen(true)}>Commands</button>
+      <CommandMenu heading="Commands" searchLabel="Find a command"
+        closeLabel="Close commands" emptyMessage="No matching commands"
+        isOpen={isOpen} onOpenChange={setOpen} query={query} onQueryChange={setQuery}
+        resultCountMessage={count => count + " matching commands"}
+        groups={[{ id: "pages", label: "Pages", items: [
+          { id: "documents", label: "Documents", href: "/documents" },
+        ] }]} />
+    </>
+  );
+}
+```
+
+## Application navigation
+
+`AppNavigation` is a Block Material for host-owned destinations. Supply stable
+ids, text labels, optional decorative icons, and either `href` or `onAction`.
+Parents may have their own destination and children; children are destination
+leaves. The exported validator rejects duplicate ids, deeper input, ambiguous
+destinations and empty parents. An empty tree displays `emptyMessage`.
+
+```tsx
+import { AppNavigation, getAppNavigationBreadcrumbs, type AppNavigationNode } from "@clossys/designer/blocks";
+import { Button } from "@clossys/designer/atoms";
+
+const navigation: readonly AppNavigationNode[] = [
+  { id: "catalogs", label: "Catalogs", href: "/catalogs", children: [
+    { id: "blocks", label: "Blocks", href: "/catalogs/blocks" },
+  ] },
+];
+
+export function NavigationExample() {
+  const crumbs = getAppNavigationBreadcrumbs(navigation, { id: "blocks" });
+  return <AppNavigation tree={navigation} activeId={crumbs.at(-1)?.id}
+    footer={<Button variant="ghost">Example profile</Button>} />;
+}
+```
+
+The host places the Material in a height-constrained frame region. Links scroll
+independently of `footer`, which accepts plain children and imports no account
+control. Navigation stores no preferences, fetches no data and imports no router.
+`activeId` takes precedence over `activeHref`; ancestry and breadcrumbs derive
+only from that route identity, with no view-internal selection input.
+
+`validateAppNavigationTree(tree)` throws on invalid runtime input without mutating
+the tree. `getAppNavigationAncestry(tree, { id, href })` returns the matching
+root-to-destination node chain, with id taking precedence over href.
+
+
+Desktop parents expand inline. A destination link and its disclosure button are
+separate controls. A newly active child expands its ancestor. `collapsed` controls
+the named, tooltipped icon rail; `defaultCollapsed` supplies its initial local
+state and `onCollapsedChange` reports changes. Every child destination remains
+reachable in the rail. Long labels retain their complete accessible names.
+
+The narrow layout uses the existing Drawer with full rows. `dismissAt` defaults
+to `(min-width: 768px)`. Escape returns focus; route changes, actions and entering
+the wide layout close it and release modal state. A held `drawerOpen={true}`
+cannot revive a dismissed surface; acknowledge with false or explicitly reopen
+the trigger. `onDrawerOpenChange` lets the host coordinate other overlays.
+`navigationKey`, `label`, `openLabel` and `closeLabel` are host inputs. The Drawer close control
+uses a 44px ghost icon button; `closeLabel` supplies its accessible name.
+`expandLabel`, `collapseLabel` and `formatDisclosureLabel(nodeLabel, expanded)`
+let the host translate rail toggles and disclosures; their defaults preserve the
+English expand/collapse announcements. All message props are optional.
+
+Arrow Up/Down and Home/End move among visible navigation controls. Logical
+Left/Right expand or collapse a parent, reversing in RTL. Enter/Space activate
+destinations or disclosure. Native forced-color adjustment and reduced motion
+remain supported. The interactive Material and helpers use the existing client
+blocks entry; no server-subset export or application-frame assembly is added.
 ### Account menu composition example
 
 ```tsx

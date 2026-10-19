@@ -72,7 +72,10 @@ export function Drawer({
           header={(
             <div className="flex items-start justify-between gap-md">
               <Dialog.Heading>{heading}</Dialog.Heading>
-              <Button variant="ghost" onPress={close}>{closeLabel}</Button>
+              <Button variant="ghost" aria-label={closeLabel} onPress={close}
+                className="icon-control-md shrink-0 border-0 bg-transparent p-0 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent">
+                <span aria-hidden="true" style={{ fontSize: "var(--ui-icon-md, 24px)", lineHeight: 1 }}>×</span>
+              </Button>
             </div>
           )}
           onClick={event => {

@@ -34,6 +34,22 @@ function heldHost() {
 }
 
 describe("Drawer", () => {
+  it.each(["Enter", " "])("gives the default close control a native-chrome-free 44px presentation and keyboard focus on %s", async key => {
+    render(<Drawer {...supplied}>Content</Drawer>);
+    const trigger = screen.getByRole("button", { name: "Open tools" });
+    await userEvent.click(trigger);
+    const close = await screen.findByRole("button", { name: "Close tools" });
+    expect(close).toHaveClass("icon-control-md", "border-0", "bg-transparent", "p-0", "focus-visible:outline-solid", "focus-visible:outline-2", "focus-visible:outline-accent");
+    expect(close).toHaveAccessibleName("Close tools");
+    expect(close.querySelector('[aria-hidden="true"]')).toHaveTextContent("×");
+    await userEvent.tab();
+    expect(close).toHaveFocus();
+    expect(close.style.boxShadow).toContain("--ui-ring-focus");
+    await userEvent.keyboard(key === "Enter" ? "{Enter}" : " ");
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    await waitFor(() => expect(trigger).toHaveFocus());
+  });
+
   it("keeps closed content absent and outside the tab order", () => {
     expect((blocks as any).Drawer).toBeTypeOf("function");
     render(<Drawer {...supplied}><button>Inside drawer</button></Drawer>);

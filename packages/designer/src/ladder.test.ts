@@ -53,6 +53,13 @@ describe("ui layer dependencies", () => {
     expect(imports.filter(specifier => !/^(?:react|\.\/account-menu-types\.js|\.\.\/atoms\/(?:Avatar|Button|Icon|Menu|Tooltip)\.js|\.\.\/icons\/(?:Check|ChevronUp)\.js)$/.test(specifier!))).toEqual([]);
     expect(source).not.toMatch(/\b(?:localStorage|sessionStorage|indexedDB|cookie|fetch)\b/);
   });
+  it("keeps CommandMenu data and actions host-owned with no service imports", () => {
+    const source = readFileSync(join(blocksDir, "CommandMenu.tsx"), "utf8");
+    expect(source).not.toMatch(/\b(?:fetch|localStorage|sessionStorage|indexedDB|XMLHttpRequest)\b/);
+    for (const match of source.matchAll(IMPORT_RE)) {
+      expect(match[1]).not.toMatch(/auth|storage|fetch|theme|bouncer|node:/i);
+    }
+  });
   it("atoms do not depend on blocks, shell, or charts", () => {
     expect(violations(atomsDir, ["blocks", "shell", "charts"])).toEqual([]);
   });

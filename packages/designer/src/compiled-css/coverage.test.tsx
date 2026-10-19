@@ -26,7 +26,7 @@
  */
 import { resolve } from "node:path";
 import { readFileSync } from "node:fs";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Avatar } from "../atoms/Avatar.js";
@@ -44,6 +44,8 @@ import { ResizeHandle } from "../atoms/ResizeHandle.js";
 import { Panel } from "../blocks/Panel.js";
 import { Drawer } from "../blocks/Drawer.js";
 import { ResizablePane } from "../blocks/ResizablePane.js";
+import { CommandMenu } from "../blocks/CommandMenu.js";
+import { AppNavigation } from "../blocks/AppNavigation.js";
 import { Skeleton } from "../atoms/Skeleton.js";
 import { Spinner } from "../atoms/Spinner.js";
 import { StatusMark } from "../atoms/StatusMark.js";
@@ -101,6 +103,69 @@ function toSelectorText(className: string): string {
 }
 
 describe("coverage: real rendered classes are all present in compiled.css", () => {
+  it("covers CommandMenu enabled, disabled, filtered and empty rendered states", async () => {
+    const classes = new Set<string>();
+    for (const query of ["", "SECOND", "missing"]) {
+      const view = render(<CommandMenu heading="Commands" searchLabel="Search" closeLabel="Close" emptyMessage="No commands"
+        groups={[{ id: "commands", label: "Commands", items: [
+          { id: "first", label: "First", onAction: () => {} },
+          { id: "second", label: "Second", description: "Details", shortcutHint: "S", href: "#second" },
+          { id: "disabled", label: "Unavailable", onAction: () => {}, disabled: true },
+        ] }]} isOpen onOpenChange={() => {}} query={query} onQueryChange={() => {}} />);
+      await view.findByRole("combobox");
+      for (const name of collectClassNames(document.body)) classes.add(name);
+      view.unmount();
+    }
+    const generated = await generateCompiledCss({ stylesDir: resolve(packageRoot, "styles"), candidates: scanCompiledCssSources(packageRoot).candidates });
+    const shipped = readFileSync(resolve(packageRoot, "styles/compiled.css"), "utf8");
+    for (const name of classes) {
+      expect(generated.css, `fresh: ${name}`).toContain(toSelectorText(name));
+      expect(shipped, `shipped: ${name}`).toContain(toSelectorText(name));
+    }
+  });
+  it("covers actual expanded, rail and narrow Drawer navigation classes", async () => {
+    const classes = new Set<string>();
+    const focusClasses: string[][] = [];
+    const tree = [{ id: "catalogs", label: "Catalogs", href: "#catalogs", children: [
+      { id: "blocks", label: "Blocks", href: "#blocks" },
+      { id: "actions", label: "Actions", onAction: () => {} },
+    ] }];
+    try {
+      for (const state of ["expanded", "rail", "drawer"]) {
+        vi.stubGlobal("matchMedia", vi.fn((media: string) => ({
+          matches: media === "(min-width: 768px)" && state !== "drawer", media,
+          addEventListener: () => {}, removeEventListener: () => {}, addListener: () => {}, removeListener: () => {},
+        })));
+        const view = render(<AppNavigation tree={tree} activeId="blocks" collapsed={state === "rail"} footer={<Button>Profile</Button>} />);
+        try {
+          if (state === "drawer") await userEvent.click(view.getByRole("button", { name: "Open navigation" }));
+          for (const name of collectClassNames(document.body)) classes.add(name);
+          for (const row of document.querySelectorAll("[data-application-navigation-control]")) focusClasses.push([...row.classList]);
+        } finally { view.unmount(); }
+      }
+      const generated = await generateCompiledCss({ stylesDir: resolve(packageRoot, "styles"), candidates: scanCompiledCssSources(packageRoot).candidates });
+      const shipped = readFileSync(resolve(packageRoot, "styles/compiled.css"), "utf8");
+      for (const names of focusClasses) expect(names).toContain("focus-visible:-outline-offset-2");
+      for (const name of classes) {
+        expect(generated.css, `navigation fresh: ${name}`).toContain(toSelectorText(name));
+        expect(shipped, `navigation shipped: ${name}`).toContain(toSelectorText(name));
+      }
+      for (const css of [generated.css, shipped]) {
+        for (const [utility, declaration] of [["border-0", /border-width:\s*0(?:px)?;/], ["bg-transparent", /background-color:\s*transparent;/],
+          ["focus-visible:-outline-offset-2", /outline-offset:\s*(?:-2px|calc\(2px\s*\*\s*-1\));/],
+          ["icon-control-md", /inline-size:\s*var\(--ui-layout-tap-target,\s*44px\)/]] as const) {
+          const start = css.indexOf(toSelectorText(utility));
+          expect(start).toBeGreaterThanOrEqual(0);
+          const rule = css.slice(start, css.indexOf("}", start) + 1);
+          expect(rule).toMatch(declaration);
+          if (utility === "icon-control-md") expect(rule).toMatch(/block-size:\s*var\(--ui-layout-tap-target,\s*44px\)/);
+        }
+      }
+      expect(shipped).toContain("forced-colors: active");
+      expect(shipped).toContain("prefers-reduced-motion: reduce");
+    } finally { vi.unstubAllGlobals(); }
+  });
+
   it("keeps AccountMenu triggers transparent and borderless without a host reset", () => {
     const css = readFileSync(resolve(packageRoot, "styles/compiled.css"), "utf8");
     for (const collapsed of [false, true]) {
