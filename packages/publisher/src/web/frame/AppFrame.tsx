@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useId, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { ModalContext, PopoverContext } from "react-aria-components";
 import { Button, Icon, Menu } from "@clossys/designer/atoms";
 import { Layers, Search } from "@clossys/designer/icons";
@@ -52,27 +52,44 @@ function FrameContent({ brand, navigation, account, commands, children, rightPan
   const [panelOpen, setPanelOpen] = useState(false);
   const [width, setWidth] = useState(rightPanel?.defaultValue ?? 0);
   const [panelCollapsed, setPanelCollapsed] = useState(rightPanel?.defaultCollapsed ?? false);
+  const [panelSupplied, setPanelSupplied] = useState(rightPanel !== undefined);
+  if (rightPanel && !panelSupplied) {
+    // A panel first supplied after mount starts from its own defaults, not the absent-panel placeholders.
+    setPanelSupplied(true); setWidth(rightPanel.defaultValue); setPanelCollapsed(rightPanel.defaultCollapsed ?? false);
+  }
   const [navigationCollapsed, setNavigationCollapsed] = useState(navigation.defaultCollapsed ?? false);
   const collapsed = rightPanel?.collapsed ?? panelCollapsed;
   const navCollapsed = navigation.collapsed ?? navigationCollapsed;
   const { openLabel = "Open panel", closeLabel = "Close panel" } = rightPanel ?? {};
+  const frame = useRef<HTMLDivElement>(null);
+  const panelFocused = useRef(false);
   useEffect(() => {
     const media = window.matchMedia(APP_FRAME_WIDE_QUERY);
-    const sync = () => { setNarrow(!media.matches); setPanelOpen(false); };
+    const sync = () => {
+      const active = document.activeElement;
+      panelFocused.current = active !== null && frame.current?.contains(active) === true && active.closest("[data-application-frame-panel]") !== null;
+      setNarrow(!media.matches); setPanelOpen(false);
+    };
     sync(); media.addEventListener("change", sync);
     return () => media.removeEventListener("change", sync);
   }, []);
+  useEffect(() => {
+    // The responsive handoff unmounts the focused panel control; focus its replacement opener instead of the document.
+    if (!panelFocused.current) return;
+    panelFocused.current = false;
+    frame.current?.querySelector<HTMLElement>('[data-application-frame-panel="trigger"]')?.focus();
+  }, [narrow]);
   const changeCollapsed = (next: boolean) => { setPanelCollapsed(next); rightPanel?.onCollapsedChange?.(next); };
   const footer = account.actor ? <AccountMenu {...account} actor={account.actor} collapsed={navCollapsed && !narrow} /> : <SignedOutMenu {...account} />;
   const panelTrigger = rightPanel && (narrow ? <Drawer wide="sheet" placement="end" dismissAt={APP_FRAME_WIDE_QUERY}
     heading={rightPanel.label} closeLabel={closeLabel} navigationKey={navigation.navigationKey}
     isOpen={panelOpen} onOpenChange={setPanelOpen}
-    trigger={<Button variant="ghost" className={CONTROL} style={TAP} aria-label={openLabel}><Icon glyph={Layers} decorative /><span className="sr-only tablet:not-sr-only">{openLabel}</span></Button>}>
+    trigger={<Button variant="ghost" className={CONTROL} style={TAP} aria-label={openLabel} data-application-frame-panel="trigger"><Icon glyph={Layers} decorative /><span className="sr-only tablet:not-sr-only">{openLabel}</span></Button>}>
     {rightPanel.children}
-  </Drawer> : <Button variant="ghost" className={CONTROL} style={TAP} aria-expanded={!collapsed}
+  </Drawer> : <Button variant="ghost" className={CONTROL} style={TAP} aria-expanded={!collapsed} data-application-frame-panel="trigger"
     onPress={() => changeCollapsed(!collapsed)}><Icon glyph={Layers} decorative /><span className="sr-only tablet:not-sr-only">{collapsed ? openLabel : closeLabel}</span></Button>);
   return <ModalContext.Provider value={{ style: { direction: dir } }}><PopoverContext.Provider value={{ style: { direction: dir } }}>
-    <div dir={dir} data-application-frame="" className="relative flex h-dvh min-h-0 min-w-0 flex-col overflow-hidden bg-surface-base text-body text-ink-primary">
+    <div ref={frame} dir={dir} data-application-frame="" className="relative flex h-dvh min-h-0 min-w-0 flex-col overflow-hidden bg-surface-base text-body text-ink-primary">
       <SiteSkipLink targetId={target} label={skipLabel} />
       <header className="relative flex shrink-0 items-center justify-end gap-sm border-b border-line-base bg-surface-raised px-sm tablet:justify-between tablet:px-md"
         style={HEADER}>
@@ -93,7 +110,7 @@ function FrameContent({ brand, navigation, account, commands, children, rightPan
         {rightPanel && !narrow && !collapsed && <ResizablePane min={rightPanel.min} max={rightPanel.max} defaultValue={rightPanel.defaultValue}
           value={rightPanel.value ?? width} step={rightPanel.step} label={rightPanel.label} handleLabel={rightPanel.handleLabel}
           onChange={next => { setWidth(next); rightPanel.onChange?.(next); }}
-          className="h-full min-h-0 shrink-0 rounded-none border-0 border-s border-line-base p-sm">{rightPanel.children}</ResizablePane>}
+          data-application-frame-panel="pane" className="h-full min-h-0 shrink-0 rounded-none border-0 border-s border-line-base p-sm">{rightPanel.children}</ResizablePane>}
       </div>
       <CommandMenu {...commandProps} dir={dir} isOpen={commandOpen} onOpenChange={setCommandOpen} query={query} onQueryChange={setQuery} />
     </div>

@@ -203,6 +203,51 @@ describe("AppFrame composition", () => {
     expect(screen.getByRole("separator", { name: "Resize inspector" })).toHaveAttribute("aria-valuenow", "500");
   });
 
+  it("initializes a later-supplied panel from its own default width and collapsed state", async () => {
+    const props = fixture(); const { rightPanel } = props; delete props.rightPanel;
+    const view = render(<AppFrame {...props} />);
+    expect(screen.queryByRole("button", { name: "Open panel" })).not.toBeInTheDocument();
+    view.rerender(<AppFrame {...props} rightPanel={{ ...rightPanel!, min: 220, defaultValue: 280, defaultCollapsed: true }} />);
+    expect(screen.queryByRole("separator")).not.toBeInTheDocument();
+    const opener = screen.getByRole("button", { name: "Open panel" });
+    expect(opener).toHaveAttribute("aria-expanded", "false");
+    await userEvent.click(opener);
+    expect(screen.getByRole("separator", { name: "Resize inspector" })).toHaveAttribute("aria-valuenow", "280");
+  });
+
+  it("moves focus from wide panel controls to the corresponding opener across responsive changes", async () => {
+    render(<AppFrame {...fixture()} />);
+    const resize = (matches: boolean) => act(() => { wide.matches = matches; for (const listener of wide.listeners) listener(); });
+    screen.getByRole("separator", { name: "Resize inspector" }).focus();
+    resize(false);
+    await waitFor(() => expect(screen.getByRole("button", { name: "Open panel" })).toHaveFocus());
+    resize(true);
+    await waitFor(() => expect(screen.getByRole("button", { name: "Close panel" })).toHaveFocus());
+    resize(false);
+    await waitFor(() => expect(screen.getByRole("button", { name: "Open panel" })).toHaveFocus());
+    resize(true);
+    screen.getByRole("button", { name: "Inspector action" }).focus();
+    resize(false);
+    await waitFor(() => expect(screen.getByRole("button", { name: "Open panel" })).toHaveFocus());
+    resize(true);
+    const host = screen.getByRole("button", { name: "Host opener" }); host.focus();
+    resize(false);
+    expect(host).toHaveFocus();
+  });
+
+  // Fails until clossys/foundry#2254 (Designer SkipLink moves focus without rewriting the hash) is on main:
+  // Designer SkipLink does not prevent the native fragment navigation, so the host hash route is replaced.
+  // When #2254 lands and is merged into this branch, change `it.fails` to `it`.
+  it.fails("focuses main from the composed skip link without replacing a host hash route", async () => {
+    window.history.replaceState(null, "", "#/projects/42");
+    try {
+      render(<AppFrame {...fixture()} />);
+      await userEvent.click(screen.getByRole("link", { name: "Skip to content" }));
+      expect(screen.getByRole("main")).toHaveFocus();
+      expect(window.location.hash).toBe("#/projects/42");
+    } finally { window.history.replaceState(null, "", window.location.pathname); }
+  });
+
   it("supports absent panels and custom three-state theme copy with a host default", async () => {
     const props = fixture(); delete props.rightPanel;
     props.theme = { storageKey: "custom-theme", defaultPreference: "dark", preferenceLabels: { system: "Automatic", light: "Day", dark: "Night" }, toggleLabel: (current, next, labels) => labels[current] + " to " + labels[next], preferenceAnnouncement: next => "Chosen " + next };
