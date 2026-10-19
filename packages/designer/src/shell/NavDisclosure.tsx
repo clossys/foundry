@@ -22,7 +22,7 @@ export interface NavDisclosureProps {
 }
 
 // Borrow the small ghost button's look and focus outline, without its colour
-// transition: this disclosure changes state without animation.
+// transition: only the decorative bars animate, through the shared CSS tokens.
 const TOGGLE_CLASSES = buttonLinkClassName("ghost", "sm")
   .split(" ")
   .filter(token => !token.includes("transition-"))
@@ -121,6 +121,16 @@ export function NavDisclosure({ children, "aria-label": ariaLabel = "Primary", t
       document.fonts?.removeEventListener("loadingdone", measure);
       if (priorClearance) frame?.style.setProperty("--site-header-clearance", priorClearance); else frame?.style.removeProperty("--site-header-clearance");
     };
+  }, []);
+  useEffect(() => {
+    const header = nav.current?.closest<HTMLElement>('header[data-placement="overlay"]');
+    if (!header) return;
+    const prior = header.hasAttribute("data-scrolled");
+    let pending = 0;
+    const measure = () => { pending = 0; header.toggleAttribute("data-scrolled", window.scrollY > 0); };
+    const schedule = () => { if (!pending) pending = window.requestAnimationFrame(measure); };
+    measure(); window.addEventListener("scroll", schedule, { passive: true });
+    return () => { window.cancelAnimationFrame(pending); window.removeEventListener("scroll", schedule); header.toggleAttribute("data-scrolled", prior); };
   }, []);
   // Imperative boolean attributes support React 18 as well as React 19, with
   // no inert server markup to break the no-scripting fallback.

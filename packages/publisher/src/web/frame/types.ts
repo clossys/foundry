@@ -44,6 +44,8 @@ export type SiteIconLinkInput = {
  */
 export type SiteBrandInput = {
   readonly assetId: string;
+  /** Authored image asset IDs for absolute section grounds; both are required for sectionGround. */
+  readonly artwork?: { readonly onLight: string; readonly onDark: string };
   readonly label: CopyRef;
   readonly size: "sm" | "md" | "lg";
   readonly plate?: "self" | "shared";
@@ -126,7 +128,9 @@ export interface SiteShellInput {
   /** Reserved chrome may choose its own ground; an overlay inherits the selected ink tone over the page. */
   readonly header?:
     | { readonly placement?: "reserved"; readonly ground?: SiteChromeGround; readonly tone?: never }
-    | { readonly placement: "overlay"; readonly tone?: "base" | "inverse"; readonly ground?: never };
+    | { readonly placement: "overlay"; readonly tone?: "base" | "inverse"; readonly ground?: never;
+        /** Source-owned grounds, observed only within this frame; initial also selects SSR artwork. */
+        readonly sectionGround?: { readonly initial: "light" | "dark"; readonly sections: readonly { readonly id: string; readonly ground: "light" | "dark" }[] } };
   readonly footer?: SiteFooterInput;
   /**
    * The canonical public origin (`https://example.com`), for a surface served

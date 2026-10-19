@@ -38,10 +38,9 @@ function ServerNavDisclosure({ label, triggerLabel, trigger, tone, children }: {
 }
 
 // Match the client wrapper's two component levels so useId agrees during hydration.
-export function SiteNavDisclosure({ nav, actions, surfaceLabel }: { readonly nav: NonNullable<ResolvedSiteShell["nav"]>; readonly actions?: ResolvedSiteShell["actions"]; readonly surfaceLabel?: string }) {
-  return (
-    <ServerNavDisclosure label={nav.label} triggerLabel={nav.triggerLabel} trigger={nav.trigger} tone={nav.tone}>
-      <NavLinks links={nav.links} actions={actions} surfaceLabel={surfaceLabel} />
-    </ServerNavDisclosure>
-  );
+export function SiteNavDisclosure({ nav, actions, surfaceLabel, header }: { readonly nav?: ResolvedSiteShell["nav"]; readonly actions?: ResolvedSiteShell["actions"]; readonly surfaceLabel?: string; readonly header?: ResolvedSiteShell["header"]; readonly artwork?: ResolvedSiteShell["brand"]["artwork"] }) {
+  const navigation = nav ? <ServerNavDisclosure label={nav.label} triggerLabel={nav.triggerLabel} trigger={nav.trigger} tone={nav.tone}>
+    <NavLinks links={nav.links} actions={actions} surfaceLabel={surfaceLabel} />
+  </ServerNavDisclosure> : null;
+  return header?.placement === "overlay" ? <><span hidden data-header-observer="" />{navigation}</> : navigation;
 }

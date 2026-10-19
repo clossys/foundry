@@ -5002,10 +5002,11 @@ glass plate once the page scrolls beneath it. The glass is
   the header is open (`data-menu-open`). A descendant with
   `aria-expanded="true"`, such as an open `NavShell` trigger, or an open
   `<details>` does the same in CSS with no prop.
-- The glass state is a scroll-driven CSS animation over the first
-  `--spacing-3xl` of root scrolling, so it needs no JavaScript. An engine
-  without scroll-driven animations shows glass at every scroll position.
-  Reduced motion replaces the fade with a single step at the first scroll.
+- The header starts transparent. `NavDisclosure` observes root scrolling and
+  selects glass after scroll, returning to transparent at zero; Publisher also
+  observes navless overlay headers. This works without scroll-timeline support.
+  Without scripting, supporting engines use a CSS ramp over `--spacing-3xl`;
+  reduced motion replaces that ramp with a single step at the first scroll.
   Reduced transparency, or an engine without backdrop blur, replaces the
   glass with the opaque `surface-raised` (or `surface-inverse`) plate. Only
   paint changes between states, so the header never shifts layout.
@@ -5015,6 +5016,13 @@ glass plate once the page scrolls beneath it. The glass is
   sRGB) blend. It does not check the transparent top state: over
   photographic or arbitrary hero art the page supplies its own top scrim and
   a tone that reads over it in both themes.
+
+The equals-to-X bars, including the default-label trigger's pseudo bars, use
+`--ui-duration-default` and `--ease-default` for reversible transforms; reduced
+motion disables both transitions. Expanded mobile links stretch across the panel
+and align to its inline start, with actions below. Menu and primary action use
+centered 44px targets at the row edges. Current navigation uses a filled cue and
+weight, hover uses a filled cue, and keyboard focus keeps its visible outline.
 
 The header is fixed rather than absolutely positioned (which would scroll
 away before it could turn to glass) or stuck (which reserves its height in

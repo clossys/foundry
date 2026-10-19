@@ -245,3 +245,73 @@ it.each([{ navPlacement: "leading" }, { mobileLayout: "inline" }] as const)("kee
     }
   }
 });
+
+const grounded = (initial: "light" | "dark" = "dark"): SiteShellInput => ({
+  ...base,
+  brand: { ...base.brand, artwork: { onLight: "dark-art", onDark: "light-art" } },
+  header: { placement: "overlay", sectionGround: { initial, sections: [{ id: "opening", ground: "dark" }, { id: "details", ground: "light" }] } },
+});
+const groundAsset = (id: string) => ({ ...resolveAsset(), src: `/${id}.svg` });
+function groundTree(shell: SiteShellInput, server = false) {
+  const Frame = server ? ServerFrame : ClientFrame;
+  return <Frame shell={shell} resolveCopy={resolveCopy} resolveAsset={groundAsset}><section id="opening">Opening</section><section id="details">Details</section></Frame>;
+}
+
+it.each(["light", "dark"] as const)("renders authored %s initial ground and artwork identically on server and client", initial => {
+  const shell = grounded(initial);
+  const markup = renderToString(groundTree(shell, true));
+  expect(renderToString(groundTree(shell))).toBe(markup);
+  const container = document.createElement("div"); container.innerHTML = markup;
+  expect(container.querySelector("header")).toHaveAttribute("data-section-ground", initial);
+  expect(container.querySelector("header")).toHaveAttribute("data-tone", initial === "dark" ? "inverse" : "base");
+  expect(container.querySelector("header img")).toHaveAttribute("src", initial === "dark" ? "/light-art.svg" : "/dark-art.svg");
+});
+
+it("refuses absent or partial authored pairs and invalid section-ground data without echoing values", () => {
+  const shell = grounded();
+  for (const artwork of [undefined, { onLight: "dark-art" }, { onLight: "", onDark: "light-art" }]) {
+    expect(() => resolveShell({ ...shell, brand: { ...shell.brand, artwork } } as SiteShellInput, resolveCopy, groundAsset)).toThrow(/shell.brand.artwork/);
+  }
+  for (const sectionGround of [
+    { initial: "auto", sections: [] }, { initial: "light", sections: [{ id: "", ground: "dark" }] },
+    { initial: "light", sections: [{ id: "a", ground: "auto" }] },
+    { initial: "light", sections: [{ id: "a", ground: "dark" }, { id: "a", ground: "light" }] },
+    { initial: "light", sections: [], extra: true },
+  ]) expect(() => resolveShell({ ...shell, header: { placement: "overlay", sectionGround } } as SiteShellInput, resolveCopy, groundAsset)).toThrow(/shell.header.sectionGround/);
+  expect(() => resolveShell(shell, resolveCopy, () => ({ ...resolveAsset(), src: "javascript:invalid" }))).toThrow(/image asset/);
+});
+
+it.each([false, true])("updates ink, authored artwork and glass at the header edge, reverses and cleans up (navless=%s)", async navless => {
+  const shell = { ...grounded(), ...(navless ? { nav: undefined, actions: undefined, secondaryAction: undefined } : {}) };
+  const container = document.createElement("div");
+  container.innerHTML = renderToString(groundTree(shell, true)); document.body.append(container);
+  let offset = 0;
+  vi.spyOn(window, "scrollY", "get").mockImplementation(() => offset);
+  vi.spyOn(Element.prototype, "getBoundingClientRect").mockImplementation(function(this: Element) {
+    const top = this.id === "details" ? 600 - offset : this.id === "opening" ? -offset : 0;
+    const height = this.tagName === "HEADER" ? 64 : 600;
+    return { x: 0, y: top, top, bottom: top + height, left: 0, right: 390, width: 390, height, toJSON() {} };
+  });
+  const errors: unknown[] = [];
+  let root: ReturnType<typeof hydrateRoot>;
+  await act(async () => { root = hydrateRoot(container, groundTree(shell), { onRecoverableError: error => errors.push(error) }); });
+  const header = container.querySelector("header")!;
+  const cross = async (next: number) => { offset = next; await act(async () => { window.dispatchEvent(new Event("scroll")); await new Promise(resolve => window.requestAnimationFrame(resolve)); }); };
+  expect(header).not.toHaveAttribute("data-scrolled");
+  await cross(535);
+  expect(header).toHaveAttribute("data-section-ground", "dark");
+  await cross(537);
+  expect(header).toHaveAttribute("data-scrolled");
+  expect(header).toHaveAttribute("data-section-ground", "light");
+  expect(header).toHaveAttribute("data-tone", "base");
+  expect(header.querySelector("img")).toHaveAttribute("src", "/dark-art.svg");
+  await cross(0);
+  expect(header).not.toHaveAttribute("data-scrolled");
+  expect(header).toHaveAttribute("data-section-ground", "dark");
+  expect(header.querySelector("img")).toHaveAttribute("src", "/light-art.svg");
+  expect(errors).toEqual([]);
+  await act(async () => root!.unmount());
+  await cross(700);
+  expect(header).not.toHaveAttribute("data-scrolled");
+  container.remove();
+});

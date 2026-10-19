@@ -2738,6 +2738,26 @@ has the CSS-loading details.
 
 ### Site frame — `SiteFrame`
 
+Overlay headers may declare `shell.header.sectionGround` as
+`{ initial: "dark", sections: [{ id: "intro", ground: "dark" },
+{ id: "details", ground: "light" }] }`. IDs identify the authored sections inside
+this frame's main content. The initial ground selects server-rendered ink and
+artwork; a section crossing the header's bottom edge selects its declared ground,
+including on return scroll. Grounds are absolute light/dark, independent of the
+document theme; no pixel sampling is used.
+
+This contract requires `shell.brand.artwork: { onLight: "dark-mark", onDark:
+"light-mark" }`, with both IDs resolving to image assets. Missing or partial pairs
+are refused. The caller supplies both artwork sources; no alternate art is
+synthesized. The existing `assetId` remains required for legacy composition.
+Omitting `sectionGround` keeps legacy theme-relative tone and artwork behavior.
+
+The first section's background begins under transparent overlay chrome. Header
+clearance stays inside section content and in anchor scroll margins. Scroll selects
+a blurred translucent surface and reverses at the top, including without CSS
+scroll-timeline support and when the frame has no navigation.
+
+
 `SiteFrame` is the page frame. It owns the page's chrome and its one
 `<main>`, in this order: a skip link, the banner (Designer's `SiteHeader`
 with a `Brandmark`), `<main id={SITE_MAIN_ID} tabIndex={-1}>` holding the

@@ -20,6 +20,7 @@ export interface ResolvedSiteIconLink extends ResolvedSiteLink {
 export interface ResolvedSiteShell {
   readonly brand: {
     readonly markSrc: string;
+    readonly artwork?: { readonly onLight: string; readonly onDark: string };
     readonly label: string;
     readonly size: "sm" | "md" | "lg";
     readonly plate?: "self" | "shared";
@@ -39,7 +40,7 @@ export interface ResolvedSiteShell {
   readonly ground: SiteChromeGround;
   readonly header:
     | { readonly placement: "reserved"; readonly ground: SiteChromeGround }
-    | { readonly placement: "overlay"; readonly tone: "base" | "inverse" };
+    | { readonly placement: "overlay"; readonly tone: "base" | "inverse"; readonly sectionGround?: Extract<NonNullable<SiteShellInput["header"]>, { placement: "overlay" }>["sectionGround"] };
   readonly footer?: {
     readonly rule?: "none" | "top";
     readonly placement: "flow" | "overlay";
@@ -67,8 +68,8 @@ const SHELL_KEYS = new Set([
   "footer",
   "origin",
 ]);
-const HEADER_KEYS = new Set(["placement", "ground", "tone"]);
-const BRAND_KEYS = new Set(["assetId", "label", "size", "plate", "variant", "wordmark", "tone"]);
+const HEADER_KEYS = new Set(["placement", "ground", "tone", "sectionGround"]);
+const BRAND_KEYS = new Set(["assetId", "label", "size", "plate", "variant", "wordmark", "tone", "artwork"]);
 const NAV_KEYS = new Set(["label", "triggerLabel", "trigger", "links", "tone"]);
 const LINK_KEYS = new Set(["href", "label"]);
 const NAV_LINK_KEYS = new Set(["href", "label", "isCurrent"]);
@@ -273,8 +274,20 @@ export function resolveShell(input: SiteShellInput, resolveCopy: CopyResolver, r
   const asset = resolveAsset(brandFields.assetId);
   if (!isRenderImageAsset(asset)) fail("shell.brand.assetId did not resolve to an image asset.");
   if (variant === "mark" && brandFields.wordmark !== undefined) fail("shell.brand.wordmark is only for the lockup variant.");
+  let artwork: ResolvedSiteShell["brand"]["artwork"];
+  if (brandFields.artwork !== undefined) {
+    const fields = record(brandFields.artwork, "shell.brand.artwork", new Set(["onLight", "onDark"]));
+    const image = (key: "onLight" | "onDark") => {
+      if (typeof fields[key] !== "string" || !(fields[key] as string).trim()) fail(`shell.brand.artwork.${key} requires an image asset ID.`);
+      const resolved = resolveAsset(fields[key] as string);
+      if (!isRenderImageAsset(resolved)) fail(`shell.brand.artwork.${key} did not resolve to an image asset.`);
+      return resolved.src;
+    };
+    artwork = Object.freeze({ onLight: image("onLight"), onDark: image("onDark") });
+  }
   const brand = {
     markSrc: asset.src,
+    ...(artwork ? { artwork } : {}),
     label: copy(brandFields.label, "shell.brand.label", resolveCopy),
     size,
     ...(plate === undefined ? {} : { plate }),
@@ -361,8 +374,24 @@ export function resolveShell(input: SiteShellInput, resolveCopy: CopyResolver, r
     const placement = fields.placement === undefined ? "reserved" : oneOf(fields.placement, "shell.header.placement", ["reserved", "overlay"] as const);
     if (placement === "overlay") {
       if ("ground" in fields) fail("shell.header.ground is only for reserved placement.");
-      header = { placement, tone: fields.tone === undefined ? "base" : oneOf(fields.tone, "shell.header.tone", ["base", "inverse"] as const) };
+      let sectionGround: Extract<ResolvedSiteShell["header"], { placement: "overlay" }>["sectionGround"];
+      if (fields.sectionGround !== undefined) {
+        const path = "shell.header.sectionGround";
+        const data = record(fields.sectionGround, path, new Set(["initial", "sections"]));
+        const initial = oneOf(data.initial, `${path}.initial`, ["light", "dark"] as const);
+        const ids = new Set<string>();
+        const sections = list(data.sections, `${path}.sections`).map(value => {
+          const section = record(value, `${path}.sections[]`, new Set(["id", "ground"]));
+          if (typeof section.id !== "string" || !section.id.trim() || /\s/.test(section.id) || ids.has(section.id)) fail(`${path}.sections requires unique nonempty IDs without whitespace.`);
+          ids.add(section.id);
+          return Object.freeze({ id: section.id, ground: oneOf(section.ground, `${path}.sections[].ground`, ["light", "dark"] as const) });
+        });
+        if (!artwork) fail("shell.brand.artwork requires both onLight and onDark for sectionGround.");
+        sectionGround = Object.freeze({ initial, sections: Object.freeze(sections) });
+      }
+      header = { placement, tone: fields.tone === undefined ? "base" : oneOf(fields.tone, "shell.header.tone", ["base", "inverse"] as const), ...(sectionGround ? { sectionGround } : {}) };
     } else {
+      if ("sectionGround" in fields) fail("shell.header.sectionGround is only for overlay placement.");
       if ("tone" in fields) fail("shell.header.tone is only for overlay placement.");
       header = { placement, ground: fields.ground === undefined ? ground : oneOf(fields.ground, "shell.header.ground", SITE_CHROME_GROUNDS) };
     }
@@ -398,8 +427,10 @@ export function resolveShell(input: SiteShellInput, resolveCopy: CopyResolver, r
   const normalized = normalizeSiteFrameConfig(presentation ?? (header.placement === "overlay"
     ? { headerPlacement: header.placement, headerTone: header.tone }
     : { headerPlacement: header.placement, headerGround: header.ground }));
+  const sectionGround = header.placement === "overlay" ? header.sectionGround : undefined;
+  if (sectionGround && normalized.headerPlacement !== "overlay") fail("shell.header.sectionGround requires overlay presentation.");
   header = normalized.headerPlacement === "overlay"
-    ? { placement: "overlay", tone: normalized.headerTone }
+    ? { placement: "overlay", tone: sectionGround ? (sectionGround.initial === "dark" ? "inverse" : "base") : normalized.headerTone, ...(sectionGround ? { sectionGround } : {}) }
     : { placement: "reserved", ground: normalized.headerGround };
 
   return {

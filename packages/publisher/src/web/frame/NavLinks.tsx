@@ -10,7 +10,7 @@ export function NavLinks({ links, actions, surfaceLabel }: { readonly links: rea
         {links.map((link, index) => (
           <li key={index}>
             <a href={link.href} aria-current={link.isCurrent ? "page" : undefined}
-              className="inline-flex items-center px-xs text-inherit no-underline hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+              className="inline-flex items-center px-xs text-inherit no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
               style={{ minHeight: "var(--ui-layout-tap-target, 44px)", minWidth: "var(--ui-layout-tap-target, 44px)" }}>{link.label}</a>
           </li>
         ))}

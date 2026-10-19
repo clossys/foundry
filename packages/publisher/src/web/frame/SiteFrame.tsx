@@ -103,15 +103,17 @@ export function SiteFrame({ shell, presentation, resolveCopy, resolveAsset, chil
   const { brand, footer } = resolved;
   if (footer?.placement === "overlay") assertOverlayScene(children, resolved.header.placement);
 
+  const ground = resolved.header.placement === "overlay" ? resolved.header.sectionGround?.initial : undefined;
+  const markSrc = ground && brand.artwork ? (ground === "light" ? brand.artwork.onLight : brand.artwork.onDark) : brand.markSrc;
   const brandmark =
     brand.wordmark === undefined ? (
-      <Brandmark variant="mark" size={brand.size} label={brand.label} markSrc={brand.markSrc} plate={brand.plate} tone={brand.tone} />
+      <Brandmark variant="mark" size={brand.size} label={brand.label} markSrc={markSrc} plate={brand.plate} tone={ground ? (ground === "dark" ? "inverse" : "auto") : brand.tone} />
     ) : (
-      <Brandmark variant="lockup" size={brand.size} label={brand.label} wordmark={brand.wordmark} markSrc={brand.markSrc} plate={brand.plate} tone={brand.tone} />
+      <Brandmark variant="lockup" size={brand.size} label={brand.label} wordmark={brand.wordmark} markSrc={markSrc} plate={brand.plate} tone={ground ? (ground === "dark" ? "inverse" : "auto") : brand.tone} />
     );
 
   const navigation = resolved.nav ?? (resolved.headerActions.length ? { ...SITE_FRAME_NAV_DEFAULTS, links: [] } : undefined);
-  const nav = navigation ? <SiteNavDisclosure nav={navigation} actions={resolved.headerActions} surfaceLabel={resolved.surfaceLabel} /> : undefined;
+  const nav = navigation || resolved.header.placement === "overlay" ? <SiteNavDisclosure nav={navigation} actions={resolved.headerActions} surfaceLabel={resolved.surfaceLabel} header={resolved.header} artwork={brand.artwork} /> : undefined;
   const primary = resolved.headerActions.find(action => action.emphasis === "primary");
   const actions = primary && resolved.navPlacement === "centered" && resolved.mobileLayout === "menu-brand-action" ? <SiteHeader.ActionLink data-header-primary="" href={primary.href} label={primary.label} icon={primary.icon} isCurrent={primary.isCurrent} variant="primary" /> : undefined;
 
@@ -164,7 +166,7 @@ export function SiteFrame({ shell, presentation, resolveCopy, resolveAsset, chil
       <SiteSkipLink targetId={SITE_MAIN_ID} label={resolved.skipLink} />
       <SiteHeader
         {...(resolved.header.placement === "overlay"
-          ? { placement: "overlay" as const, tone: resolved.header.tone }
+          ? { placement: "overlay" as const, tone: resolved.header.tone, "data-section-ground": ground }
           : { ground: resolved.header.ground })}
         brand={brandmark}
         nav={nav}

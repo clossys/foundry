@@ -78,3 +78,57 @@ describe("nav disclosure utilities", () => {
     }
   });
 });
+
+describe("header motion and content geometry", () => {
+  it("animates actual bars and default-label pseudo bars with reversible token transforms", () => {
+    const bars = block(css, "@utility nav-disclosure-icon {");
+    const header = block(css, "@utility site-header-contract {");
+    for (const text of [bars, header]) {
+      expect(text).toContain("transition: transform var(--ui-duration-default, 240ms) var(--ease-default, cubic-bezier(.2, 0, 0, 1));");
+      expect(text).toContain("rotate(45deg)");
+      expect(text).toContain("rotate(-45deg)");
+    }
+  });
+  it("disables both bar transitions under reduced motion", () => {
+    for (const opening of ["@utility nav-disclosure-icon {", "@utility site-header-contract {"]) {
+      expect(block(block(css, opening), "@media (prefers-reduced-motion: reduce)")).toContain("transition: none;");
+    }
+  });
+  it("stretches mobile panels, lists and rows with inline-start labels", () => {
+    const mobile = block(css, "@utility site-header-mobile {");
+    expect(mobile).toContain("align-items: stretch;");
+    expect(mobile).toContain("inline-size: 100%;");
+    expect(mobile).toContain("text-align: start;");
+    expect(mobile).toContain("justify-content: start;");
+  });
+  it("starts the first section background under overlay chrome and clears content inside it", () => {
+    const frame = block(css, "[data-frame-root] {");
+    expect(frame).not.toMatch(/&:has\(> header\[data-placement="overlay"\]\) \{ padding-block-start:/);
+    expect(frame).toContain('> main > section:first-of-type');
+    expect(frame).toContain("padding-block-start: var(--site-header-clearance");
+    expect(frame).toContain("scroll-margin-block-start: var(--site-header-clearance");
+  });
+  it("shares square centered menu and primary mobile targets", () => {
+    const mobile = block(css, "@utility site-header-mobile {");
+    expect(mobile).toContain('.nav-disclosure-toggle, & .site-header-actions > [data-header-primary]');
+    expect(mobile).toContain("inline-size: var(--ui-layout-tap-target, 44px);");
+    expect(mobile).toContain("block-size: var(--ui-layout-tap-target, 44px);");
+    expect(mobile).toContain("justify-content: center;");
+  });
+  it("uses deliberate current and hover paint without persistent underlines", () => {
+    const header = block(css, "@utility site-header-contract {");
+    expect(header).not.toContain("text-decoration-line: underline");
+    expect(header).toContain('a[aria-current="page"]');
+    expect(header).toContain("background-color:");
+    expect(header).toContain(":focus-visible");
+  });
+});
+
+it("propagates absolute section ground to header ink and brand independently of document theme", () => {
+  const overlay = block(css, "@utility site-header-overlay {");
+  expect(block(overlay, '&[data-section-ground="light"]')).toContain("--site-header-ground-ink: var(--color-neutral-900");
+  expect(block(overlay, '&[data-section-ground="dark"]')).toContain("--site-header-ground-ink: var(--color-neutral-50");
+  const grounded = block(overlay, "&[data-section-ground] {");
+  expect(grounded).toContain("color: var(--site-header-ground-ink, var(--color-neutral-900, oklch(0.2178 0 0)));");
+  expect(grounded).toContain(".site-header-brand > a, & .nav-disclosure-toggle { color: inherit; }");
+});

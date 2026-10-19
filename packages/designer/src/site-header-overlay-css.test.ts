@@ -36,13 +36,13 @@ describe("site-header-overlay utility (theme-keys.css)", () => {
   const noBackdrop = nestedBlock(block, "@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)))");
   const reducedTransparency = nestedBlock(block, "@media (prefers-reduced-transparency: reduce)");
 
-  it("is glass by default: the glass tokens, the blur token and a hairline in the line role", () => {
+  it("declares glass tokens and reserves a hairline while starting transparent", () => {
     const outside = block.slice(0, block.indexOf("@supports (animation-timeline: scroll())"));
     expect(outside).toContain("--site-header-glass-fill: var(--color-surface-glass, oklch(1 0 0 / 0.88));");
     expect(outside).toContain("--site-header-glass-blur: blur(var(--blur-glass, 16px));");
-    expect(outside).toContain("background-color: var(--site-header-glass-fill, oklch(1 0 0 / 0.88));");
-    expect(outside).toContain("backdrop-filter: var(--site-header-glass-blur, blur(16px));");
-    expect(outside).toContain("-webkit-backdrop-filter: var(--site-header-glass-blur, blur(16px));");
+    expect(outside).toContain("background-color: transparent;");
+    expect(outside).toContain("backdrop-filter: none;");
+    expect(outside).toContain("-webkit-backdrop-filter: none;");
     expect(outside).toContain("border-block-end-width: var(--ui-border-hairline, 1px);");
     expect(outside).toMatch(/&\[data-tone="inverse"\] \{\s*--site-header-glass-fill: var\(--color-surface-glass-inverse, oklch\(0\.2178 0 0 \/ 0\.88\)\);\s*--site-header-glass-line: var\(--color-line-on-inverse/);
   });
@@ -60,9 +60,14 @@ describe("site-header-overlay utility (theme-keys.css)", () => {
     expect(reducedTransparency).toMatch(/&\[data-tone="inverse"\] \{\s*--site-header-glass-fill: var\(--color-surface-inverse, oklch\(0\.2178 0 0\)\);/);
   });
 
-  it("is transparent at the top only inside the scroll-driven branch, so a no-support engine stays glass", () => {
+  it("starts transparent without scroll-timeline and selects glass only for scrolled or open state", () => {
     const outside = block.replace(scrollDriven, "");
-    expect(outside).not.toContain("transparent");
+    expect(outside).toContain("background-color: transparent;");
+    const fallback = nestedBlock(outside, "&[data-scrolled],");
+    expect(fallback).toContain("animation-name: none;");
+    expect(fallback).toContain("background-color: var(--site-header-glass-fill, oklch(1 0 0 / 0.88));");
+    expect(fallback).toContain("backdrop-filter: var(--site-header-glass-blur, blur(16px));");
+    expect(fallback).not.toMatch(LAYOUT_PROPERTIES);
     expect(scrollDriven).toContain("background-color: transparent;");
     expect(scrollDriven).toContain("border-block-end-color: transparent;");
     expect(scrollDriven).toContain("animation-name: site-header-glass;");

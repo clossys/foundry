@@ -395,9 +395,8 @@
  *     plate, since an unblurred translucent plate does not hold contrast
  *     over busy content;
  *   - prefers-reduced-transparency: the same opaque plate, no blur;
- *   - no scroll-driven animations (and so no JavaScript requirement): the
- *     whole `animation-timeline` block is skipped and the header is glass at
- *     every scroll position, including the top.
+ *   - no scroll-driven animations: the existing navigation island observes
+ *     scroll and selects glass with data-scrolled, returning to clear at zero.
  * Where scroll-driven animations exist, the header is transparent at the
  * top in every case, including under the first two fallbacks. That is
  * intentional: the top is no surface at all, not a translucent one, and
@@ -425,10 +424,10 @@
   --site-header-glass-blur: blur(var(--blur-glass, 16px));
   border-block-end-width: var(--ui-border-hairline, 1px);
   border-block-end-style: solid;
-  background-color: var(--site-header-glass-fill, oklch(1 0 0 / 0.88));
-  border-block-end-color: var(--site-header-glass-line, oklch(0.8761 0 0));
-  -webkit-backdrop-filter: var(--site-header-glass-blur, blur(16px));
-  backdrop-filter: var(--site-header-glass-blur, blur(16px));
+  background-color: transparent;
+  border-block-end-color: transparent;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
   --site-header-focus: var(--color-ink-primary, oklch(0.2178 0 0));
   --ui-ring-focus: 0 0 0 2px var(--site-header-focus, oklch(0.2178 0 0));
   &[data-tone="inverse"] {
@@ -485,6 +484,38 @@
       border-block-end-color: var(--site-header-glass-line, oklch(0.8761 0 0));
       -webkit-backdrop-filter: var(--site-header-glass-blur, blur(16px));
       backdrop-filter: var(--site-header-glass-blur, blur(16px));
+    }
+  }
+  /* Scroll state also works in engines without scroll-timeline. */
+  &[data-scrolled], &[data-menu-open], &:has([aria-expanded="true"]), &:has(details[open]) {
+    animation-name: none;
+    background-color: var(--site-header-glass-fill, oklch(1 0 0 / 0.88));
+    border-block-end-color: var(--site-header-glass-line, oklch(0.8761 0 0));
+    -webkit-backdrop-filter: var(--site-header-glass-blur, blur(16px));
+    backdrop-filter: var(--site-header-glass-blur, blur(16px));
+  }
+  /* These absolute grounds keep their polarity in either document theme. */
+  &[data-section-ground="light"] {
+    --site-header-ground-ink: var(--color-neutral-900, oklch(0.2178 0 0));
+    --site-header-glass-fill: color-mix(in oklch, var(--color-neutral-50, oklch(0.9702 0 0)) 88%, transparent);
+    --site-header-glass-line: var(--color-neutral-200, oklch(0.8761 0 0));
+  }
+  &[data-section-ground="dark"] {
+    --site-header-ground-ink: var(--color-neutral-50, oklch(0.9702 0 0));
+    --site-header-glass-fill: color-mix(in oklch, var(--color-neutral-900, oklch(0.2178 0 0)) 88%, transparent);
+    --site-header-glass-line: var(--color-neutral-700, oklch(0.36 0 0));
+  }
+  &[data-section-ground] {
+    --site-header-focus: var(--site-header-ground-ink, var(--color-neutral-900, oklch(0.2178 0 0)));
+    color: var(--site-header-ground-ink, var(--color-neutral-900, oklch(0.2178 0 0)));
+    & .site-header-brand > a, & .nav-disclosure-toggle { color: inherit; }
+    @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+      &[data-section-ground="light"] { --site-header-glass-fill: var(--color-neutral-50, oklch(0.9702 0 0)); }
+      &[data-section-ground="dark"] { --site-header-glass-fill: var(--color-neutral-900, oklch(0.2178 0 0)); }
+    }
+    @media (prefers-reduced-transparency: reduce) {
+      &[data-section-ground="light"] { --site-header-glass-fill: var(--color-neutral-50, oklch(0.9702 0 0)); }
+      &[data-section-ground="dark"] { --site-header-glass-fill: var(--color-neutral-900, oklch(0.2178 0 0)); }
     }
   }
 }
@@ -650,7 +681,6 @@
 @utility nav-disclosure-icon {
   &[data-open] > span:first-child { transform: translateY(calc((var(--spacing-xs, 4px) + var(--ui-border-hairline, 1px)) / 2)) rotate(45deg); }
   &[data-open] > span:last-child { transform: translateY(calc((var(--spacing-xs, 4px) + var(--ui-border-hairline, 1px)) / -2)) rotate(-45deg); }
-  @media (prefers-reduced-motion: reduce) { & > span { transition: none; } }
   display: inline-flex;
   flex-direction: column;
   gap: var(--spacing-xs, 4px);
@@ -660,7 +690,9 @@
     inline-size: 100%;
     block-size: var(--ui-border-hairline, 1px);
     background-color: currentColor;
+    transition: transform var(--ui-duration-default, 240ms) var(--ease-default, cubic-bezier(.2, 0, 0, 1));
   }
+  @media (prefers-reduced-motion: reduce) { & > span { transition: none; } }
 }
 @utility nav-disclosure-toggle {
   &[aria-label] { font-size: 0; }
@@ -717,7 +749,9 @@
   & [id] { scroll-margin-block-start: var(--site-header-clearance, calc(max(var(--ui-layout-tap-target, 44px), var(--ui-brandmark-height-lg, 48px)) + 2 * var(--spacing-sm, 8px) + var(--ui-border-hairline, 1px) + env(safe-area-inset-top, 0px))); }
   & > header { position: sticky !important; inset-block-start: 0; padding-block-start: calc(var(--spacing-sm, 8px) + env(safe-area-inset-top, 0px)); }
   & > header[data-placement="overlay"] { position: fixed !important; }
-  &:has(> header[data-placement="overlay"]) { padding-block-start: var(--site-header-clearance, calc(max(var(--ui-layout-tap-target, 44px), var(--ui-brandmark-height-lg, 48px)) + 2 * var(--spacing-sm, 8px) + var(--ui-border-hairline, 1px) + env(safe-area-inset-top, 0px))); }
+  &:has(> header[data-placement="overlay"]) > main > section:first-of-type, &:has(> header[data-placement="overlay"]) > main > :first-child:not([data-landing-view]) > section:first-of-type { padding-block-start: var(--site-header-clearance, calc(max(var(--ui-layout-tap-target, 44px), var(--ui-brandmark-height-lg, 48px)) + 2 * var(--spacing-sm, 8px) + var(--ui-border-hairline, 1px) + env(safe-area-inset-top, 0px))); }
+  &:has(> header[data-placement="overlay"]) > main > [data-landing-view] > [data-landing-hero] { padding-block-start: max(var(--site-header-clearance, 65px), var(--spacing-5xl, 96px)); }
+
 }
 }
 @utility site-header-row { min-block-size: max(var(--ui-layout-tap-target, 44px), var(--ui-brandmark-height-lg, 48px)); display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: var(--spacing-md, 12px); padding-inline: max(var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px)), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px)); }
@@ -731,12 +765,16 @@
     & .site-header-actions > a > span { @apply sr-only; }
     & .nav-disclosure-toggle { display: inline-flex; }
     & .nav-disclosure-panel { display: none; position: absolute; inset-block-start: 100%; inset-inline: 0; max-block-size: calc(100dvb - var(--site-header-clearance, calc(max(var(--ui-layout-tap-target, 44px), var(--ui-brandmark-height-lg, 48px)) + 2 * var(--spacing-sm, 8px) + var(--ui-border-hairline, 1px) + env(safe-area-inset-top, 0px))) - env(safe-area-inset-bottom, 0px)); overflow-y: auto; overscroll-behavior: contain; padding-block: var(--spacing-md, 12px) max(var(--spacing-md, 12px), env(safe-area-inset-bottom, 0px)); padding-inline: max(var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px)), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px)); background-color: var(--color-overlay-surface, oklch(1 0 0)); color: var(--color-ink-primary, oklch(0.2178 0 0)); border-block-end: var(--ui-border-hairline, 1px) solid var(--color-overlay-border, oklch(0.8761 0 0)); }
-    & .nav-disclosure-panel[data-expanded] { display: flex; flex-direction: column; }
-    & .site-header-nav-links, & .site-header-desktop-actions { flex-direction: column; align-items: stretch; white-space: normal; overflow-wrap: anywhere; }
+    & .nav-disclosure-panel[data-expanded] { display: flex; flex-direction: column; align-items: stretch; }
+    & .site-header-nav-links, & .site-header-desktop-actions { inline-size: 100%; flex-direction: column; align-items: stretch; white-space: normal; overflow-wrap: anywhere; }
+    & .site-header-nav-links li, & .site-header-nav-links a, & .site-header-desktop-actions li, & .site-header-desktop-actions a { inline-size: 100%; text-align: start; justify-content: start; }
+    & .site-header-nav-links a, & .site-header-desktop-actions a { padding-inline: var(--spacing-sm, 8px); }
+    & .nav-disclosure-toggle, & .site-header-actions > [data-header-primary] { inline-size: var(--ui-layout-tap-target, 44px); block-size: var(--ui-layout-tap-target, 44px); padding: 0; justify-content: center; align-items: center; gap: 0; background-color: transparent; color: inherit; &:hover { background-color: color-mix(in oklch, currentColor 12%, transparent); } }
 }
 @utility site-header-contract {
   & .nav-disclosure-toggle:not([aria-label]) { position: relative; font-size: 0; }
-  & .nav-disclosure-toggle:not([aria-label])::before, & .nav-disclosure-toggle:not([aria-label])::after { content: ""; position: absolute; inset-inline-start: 50%; inset-block-start: 50%; inline-size: var(--ui-icon-md, 24px); block-size: var(--ui-border-hairline, 1px); margin-inline-start: calc(var(--ui-icon-md, 24px) / -2); background-color: currentColor; }
+  & .nav-disclosure-toggle:not([aria-label])::before, & .nav-disclosure-toggle:not([aria-label])::after { content: ""; position: absolute; inset-inline-start: 50%; inset-block-start: 50%; inline-size: var(--ui-icon-md, 24px); block-size: var(--ui-border-hairline, 1px); margin-inline-start: calc(var(--ui-icon-md, 24px) / -2); background-color: currentColor; transition: transform var(--ui-duration-default, 240ms) var(--ease-default, cubic-bezier(.2, 0, 0, 1)); }
+  @media (prefers-reduced-motion: reduce) { & .nav-disclosure-toggle::before, & .nav-disclosure-toggle::after { transition: none; } }
   & .nav-disclosure-toggle:not([aria-label])::before { transform: translateY(calc(var(--spacing-xs, 4px) / -2)); }
   & .nav-disclosure-toggle:not([aria-label])::after { transform: translateY(calc(var(--spacing-xs, 4px) / 2)); }
   & .nav-disclosure-toggle:not([aria-label])[aria-expanded="true"]::before { transform: rotate(45deg); }
@@ -746,7 +784,10 @@
   & nav a, & .site-header-brand > a, & .site-header-actions > a { display: inline-flex; align-items: center; min-block-size: var(--ui-layout-tap-target, 44px); min-inline-size: var(--ui-layout-tap-target, 44px); }
   & .nav-disclosure-toggle { display: none; }
   &:has(.site-header-desktop-actions) .site-header-actions { display: none; }
-  & .site-header-nav-links a[aria-current="page"] { text-decoration-line: underline; }
+  & .site-header-nav-links a { text-decoration-line: none; border-radius: var(--radius-control, 8px); }
+  & .site-header-nav-links a[aria-current="page"], & .site-header-nav-links a:hover { background-color: color-mix(in oklch, currentColor 12%, transparent); }
+  & .site-header-nav-links a[aria-current="page"] { font-weight: var(--font-weight-semibold, 600); }
+  & .site-header-nav-links a:focus-visible { outline: var(--ui-border-focus, 2px) solid currentColor; outline-offset: var(--spacing-xs, 4px); }
   & .site-header-nav-links { grid-column: 2; grid-row: 1; flex-wrap: nowrap; white-space: nowrap; }
   & .site-header-desktop-actions { grid-column: 3; grid-row: 1; align-items: center; justify-content: end; }
   & .nav-disclosure-panel a > span { position: static; inline-size: auto; block-size: auto; padding: 0; overflow: visible; clip: auto; white-space: normal; }
