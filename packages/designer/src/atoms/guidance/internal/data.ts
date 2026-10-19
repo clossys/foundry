@@ -1862,6 +1862,33 @@ export const ATOM_GUIDANCE: Readonly<Record<string, AtomGuidance>> = {
   ],
   "constraints": []
 }, "src/atoms/Separator.tsx"),
+  "depict.logomark": entry({
+    purpose: "Represent a brand with one decorative glyph and an optional shared plate.",
+    useWhen: "A surrounding identity link or adjacent text already names the brand.",
+    avoidWhen: "The image must communicate an accessible name or act as a standalone control.",
+    alternatives: "Use Lockup for a mark beside live text; use Brandmark for the established home link.",
+    content: "Supply the light, dark or mono artwork as an image URL, never injected markup.",
+    anatomy: "One glyph image, optionally inset inside one rounded square plate.",
+    composition: "In Lockup, place Logomark before the live wordmark and center both regions vertically.",
+    accessibility: "The image has empty alternative text; its surrounding text or control supplies the name.",
+  }, {
+    exportName: "Logomark", entrypoint: "atoms",
+    notes: "Size, tone and plate are finite choices. Artwork URLs and optional titles are authored content; artwork contrast remains caller-owned.",
+    options: [
+      { prop: "size", label: "Size", purpose: "Select the mark height from the existing brandmark scale.",
+        values: [{ value: "sm", purpose: "Small mark height." }, { value: "md", purpose: "Medium mark height." }, { value: "lg", purpose: "Large mark height." }],
+        applicability: "Always effective; size is required.", support: { state: "implemented", reason: "The mark consumes its size through the shared height bindings." } },
+      { prop: "tone", label: "Plate ink", purpose: "Choose shared plate ink to match the surrounding ground.",
+        values: [{ value: "auto", purpose: "Primary ink plate." }, { value: "inverse", purpose: "Inverse ink plate." }],
+        applicability: "Effective only with a shared plate; self-plated artwork supplies its own paint.", support: { state: "implemented", reason: "The shared plate selects the corresponding existing ink utility." } },
+      { prop: "plate", label: "Plate ownership", purpose: "Choose whether the caller artwork already includes a plate.",
+        values: [{ value: "self", purpose: "Render the supplied artwork at its natural aspect ratio." }, { value: "shared", purpose: "Inset the glyph in the shared square plate." }],
+        applicability: "Always effective for the mark geometry.", support: { state: "implemented", reason: "The component renders either the image alone or the shared plate." } },
+    ],
+    constraints: [{ kind: "effective-when", props: ["tone"], enforcement: "ignored", effectiveWhen: { prop: "plate", values: ["shared"] },
+      reason: "Tone paints the shared plate only; it never rewrites the supplied artwork URL.",
+      evidence: { source: "src/atoms/Logomark.tsx", evidence: 'if (plate !== "shared")' } }],
+  }, "src/atoms/Logomark.tsx"),
   "depict.avatar": entry(
 {
   "purpose": "Represent one person or entity with a picture or initials.",
@@ -3917,6 +3944,17 @@ export const ATOM_API_FACTS: Readonly<Record<string, AtomApiFacts>> = {
       ]
     }
   },
+  "depict.logomark": {
+    exportName: "Logomark", source: "src/atoms/Logomark.tsx",
+    options: [
+      { prop: "size", values: ["sm", "md", "lg"], default: { kind: "required", reason: "The caller selects the required height scale." }, forwarding: { source: "src/atoms/Logomark.tsx", evidence: "HEIGHTS[size]" } },
+      { prop: "tone", values: ["auto", "inverse"], default: { kind: "value", value: "auto", source: "src/atoms/Logomark.tsx", evidence: 'tone = "auto"' }, forwarding: { source: "src/atoms/Logomark.tsx", evidence: 'tone === "inverse"' } },
+      { prop: "plate", values: ["shared", "self"], default: { kind: "value", value: "self", source: "src/atoms/Logomark.tsx", evidence: 'plate = "self"' }, forwarding: { source: "src/atoms/Logomark.tsx", evidence: 'plate !== "shared"' } },
+    ],
+    tokens: { coverage: "partial", reason: "The height binding is representative; plate ink uses the existing primary or inverse ink utilities.", dependencies: [
+      { property: "--ui-brandmark-height-md", kind: "transitive", source: "src/internal/brandmark.ts", evidence: '"var(--ui-brandmark-height-md, 36px)"', via: [{ source: "src/atoms/Logomark.tsx", evidence: "HEIGHTS[size]" }] },
+    ] },
+  },
   "depict.avatar": {
     "exportName": "Avatar",
     "source": "src/atoms/Avatar.tsx",
@@ -4490,7 +4528,8 @@ export const ATOM_DISPLAY_GROUPS: readonly AtomDisplayGroup[] = [
         "label": "Imagery",
         "atoms": [
           "depict.avatar",
-          "depict.icon"
+          "depict.icon",
+          "depict.logomark"
         ]
       },
       {

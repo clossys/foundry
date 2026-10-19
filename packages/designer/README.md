@@ -24,7 +24,7 @@ exports from `@clossys/designer/atoms`. The barrel remains client-only. Read
 the packed [atom selection guide](skill/atoms-guide.md) for purpose, use and
 avoidance, alternatives, content, anatomy, block composition, accessibility,
 medium evidence, represented configurations and partial token dependencies.
-Four display groups and ten families place forty-one established atom/chart leaves
+Four display groups and ten families place forty-two established atom/chart leaves
 exactly once. Groups and families are navigation; only leaves are selectable.
 Existing IDs such as `act.link` and `reveal.tabs` remain unchanged.
 
@@ -413,8 +413,8 @@ source file's own header for the exact probe and its result). Today that's:
 
 | Subpath | Server-safe members |
 | --- | --- |
-| `@clossys/designer/atoms/server` | `Avatar`, `Badge`, `Banner`, `Card`, `Field`, `Icon`, `Meter`, `Skeleton`, `Spinner`, `StatusMark`, `buttonLinkClassName`, `iconButtonClassName`, `iconButtonLinkClassName`, `mergeUiClasses` |
-| `@clossys/designer/blocks/server` | `AnatomyCallouts`, `ArticleBody`, `Matrix`, `ContentSection`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `Item`, `Items`, `MarketingChapter`, `MediaFigure`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `RecordLedger`, `Scene`, `SectionFrame`, `SectionHeader`, `SectionIntro`, `Specimen`, `SpecimenPanel`, `Stat`, `StatusList`, `Tree` |
+| `@clossys/designer/atoms/server` | `Logomark`, `Avatar`, `Badge`, `Banner`, `Card`, `Field`, `Icon`, `Meter`, `Skeleton`, `Spinner`, `StatusMark`, `buttonLinkClassName`, `iconButtonClassName`, `iconButtonLinkClassName`, `mergeUiClasses` |
+| `@clossys/designer/blocks/server` | `Lockup`, `AnatomyCallouts`, `ArticleBody`, `Matrix`, `ContentSection`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `Item`, `Items`, `MarketingChapter`, `MediaFigure`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `RecordLedger`, `Scene`, `SectionFrame`, `SectionHeader`, `SectionIntro`, `Specimen`, `SpecimenPanel`, `Stat`, `StatusList`, `Tree` |
 | `@clossys/designer/shell/server` | `Shell`, `SiteFooter`, `SiteHeader`, `SkipLink` |
 | `@clossys/designer/charts/server` | `ChartFrame`, `BarChart`, `LineChart` (static), `WaterfallChart`, `RangeChart`, `ScatterChart`, `Sparkline` |
 | `@clossys/designer/theme/server` | `getThemeInitScript` |
@@ -5237,6 +5237,47 @@ Neither transparent ground checks the contrast of the chrome ink over
 whatever sits beneath it. That is the consumer's backdrop's job: choose a
 backdrop the base ink reads against, use `"transparent-inverse"` over the
 inverse ground, or use `ground="inverse"` for an opaque dark band.
+
+### `Logomark` and `Lockup`
+
+`Logomark` from `@clossys/designer/atoms` renders one decorative glyph image.
+Supply `src` as a URL and choose `size="sm" | "md" | "lg"`. The caller selects
+light, dark or mono artwork through that URL. `plate="self"` (the default)
+preserves its aspect ratio; `plate="shared"` insets it inside the shared square.
+The radius and inset use the same canonical shares as `badgePlatePath`.
+`tone="auto"` (default) paints a shared plate in primary ink; `"inverse"` uses
+inverse ink. Tone never recolors artwork. Optional `title` sets the native
+image title; alternative text stays empty, so adjacent text or a containing
+control must name the identity. Props are not spread onto the image.
+
+`Lockup` from `@clossys/designer/blocks` composes a Logomark mark region followed
+by a live-text `wordmark` region. Both share a vertical center. Height, gap and
+wordmark size use the existing brandmark CSS bindings with explicit fallbacks.
+`clearSpace` adds padding on all four sides equal to 0.2 of the mark height;
+omitting it adds no padding. `markTone` can select plate ink independently of
+the wordmark's `tone`, for artwork that needs a different plate.
+
+```tsx
+import { Logomark } from "@clossys/designer/atoms";
+import { Lockup } from "@clossys/designer/blocks";
+
+function Identity() {
+  return <Lockup src="/glyph.svg" wordmark="Example" size="md" plate="shared" clearSpace />;
+}
+function DecorativeMark() {
+  return <Logomark src="/glyph-mono.svg" size="sm" title="Decorative mark" />;
+}
+```
+
+Lockup defaults to a `span`; `as="a"`, `href` and `aria-label` allow a shell
+to own the surrounding link without adding a wrapper. A supplied `className`
+is the complete root class list and must retain the required flex alignment.
+Use Brandmark for its fixed home destination and enforced label-in-name rule.
+Both new components are also exported from their existing `/server` entries.
+
+Exported types are `LogomarkProps`, `LogomarkSize`, `LogomarkTone`,
+`LogomarkPlate` and `LockupProps`. `Brandmark` composes these primitives while
+preserving its public props, defaults and existing rendered markup.
 
 ### `Brandmark`
 

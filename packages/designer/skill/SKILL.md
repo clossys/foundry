@@ -10,7 +10,7 @@ disable-model-invocation: true
 
 Use `ATOM_GUIDANCE`, `ATOM_API_FACTS` and `ATOM_DISPLAY_GROUPS` from `@clossys/designer/atoms`. The barrel remains client-only. Import safety (`RENDER_ENVIRONMENT`) is not medium support.
 Read the installed companion at `node_modules/@clossys/designer/skill/atoms-guide.md`; the launcher does not copy that file.
-Display Group > Family > Atom: four groups, ten families, forty-one established leaves including six charts. Only leaves are selectable; preserve legacy IDs including act.link and reveal.tabs.
+Display Group > Family > Atom: four groups, ten families, forty-two established leaves including six charts. Only leaves are selectable; preserve legacy IDs including act.link and reveal.tabs.
 Choose stable purpose, content and anatomy first, then medium implementation and configuration. Web is implemented with source evidence; email, print and video remain unassessed.
 Button has seven coupled Style preset values, not independent intent or emphasis axes. Respect ignored-option applicability, paired requirements, Icon naming/content contracts and severity/shape derivation. Represented scalar options are a bounded selection, not an exhaustive inherited API or a Cartesian product.
 Package support and consumer-owned demonstrations are separate. Unknown demonstration coverage, fixed controlled values and one-option fixtures prove no interaction. Callbacks, style and arbitrary children are authored inputs, not configuration axes. Token dependencies identify partial direct/transitive evidence, not every imported helper token.

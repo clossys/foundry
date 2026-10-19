@@ -36,7 +36,7 @@ export function generateAtomSkillSection() {
   return [start, "### Atom selection", "",
     `Use ${code("ATOM_GUIDANCE")}, ${code("ATOM_API_FACTS")} and ${code("ATOM_DISPLAY_GROUPS")} from ${code(`${name()}/atoms`)}. The barrel remains client-only. Import safety (${code("RENDER_ENVIRONMENT")}) is not medium support.`,
     `Read the installed companion at ${code(`node_modules/${name()}/skill/atoms-guide.md`)}; the launcher does not copy that file.`,
-    "Display Group > Family > Atom: four groups, ten families, forty-one established leaves including six charts. Only leaves are selectable; preserve legacy IDs including act.link and reveal.tabs.",
+    "Display Group > Family > Atom: four groups, ten families, forty-two established leaves including six charts. Only leaves are selectable; preserve legacy IDs including act.link and reveal.tabs.",
     "Choose stable purpose, content and anatomy first, then medium implementation and configuration. Web is implemented with source evidence; email, print and video remain unassessed.",
     "Button has seven coupled Style preset values, not independent intent or emphasis axes. Respect ignored-option applicability, paired requirements, Icon naming/content contracts and severity/shape derivation. Represented scalar options are a bounded selection, not an exhaustive inherited API or a Cartesian product.",
     "Package support and consumer-owned demonstrations are separate. Unknown demonstration coverage, fixed controlled values and one-option fixtures prove no interaction. Callbacks, style and arbitrary children are authored inputs, not configuration axes. Token dependencies identify partial direct/transitive evidence, not every imported helper token.",

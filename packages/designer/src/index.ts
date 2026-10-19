@@ -396,3 +396,8 @@ export type { ScatterChartProps } from "./charts/ScatterChart.js";
 export { Item } from "./blocks/items/Item.js";
 export { Items } from "./blocks/items/Items.js";
 export type { ItemData, ItemFigureData, ItemStatusData, ItemProps, ItemBadge, ItemSize, ItemTreatment, ItemSpan, ItemsProps, ItemsArrangement, ItemsColumns, ItemsScale, ItemsGroup, ItemsLane } from "./blocks/items/types.js";
+
+export { Logomark } from "./atoms/index.js";
+export type { LogomarkProps, LogomarkSize, LogomarkTone, LogomarkPlate } from "./atoms/index.js";
+export { Lockup } from "./blocks/index.js";
+export type { LockupProps } from "./blocks/index.js";

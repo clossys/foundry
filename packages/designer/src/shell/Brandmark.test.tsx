@@ -20,7 +20,8 @@ const here = dirname(fileURLToPath(import.meta.url));
 const packageRoot = join(here, "..", "..");
 const brandmarkSource = readFileSync(join(here, "Brandmark.tsx"), "utf8");
 const badgePlateSource = readFileSync(join(here, "badge-plate.ts"), "utf8");
-const shellVarsSource = readFileSync(join(here, "internal", "shell-vars.ts"), "utf8");
+const shellVarsSource = readFileSync(join(here, "..", "internal", "brandmark.ts"), "utf8");
+const logomarkSource = readFileSync(join(here, "..", "atoms", "Logomark.tsx"), "utf8");
 const tokensCss = readFileSync(join(packageRoot, "styles", "tokens.css"), "utf8");
 
 const brandmarkConstantStatements = shellVarsSource.match(/export const (?:UI_)?BRANDMARK_\w+\s*=[^;]+;/g) ?? [];
@@ -443,8 +444,8 @@ describe("Brandmark: plate", () => {
   });
 
   it("the CSS shares in Brandmark come from the exported constants (one source)", () => {
-    expect(brandmarkSource).toMatch(/import \{[^}]*BADGE_RADIUS_SHARE[^}]*\} from "\.\/badge-plate\.js"/);
-    expect(brandmarkSource).toMatch(/import \{[^}]*BADGE_INSET_SHARE[^}]*\} from "\.\/badge-plate\.js"/);
+    expect(logomarkSource).toMatch(/import \{[^}]*BADGE_RADIUS_SHARE[^}]*\} from "\.\.\/internal\/brandmark\.js"/);
+    expect(logomarkSource).toMatch(/import \{[^}]*BADGE_INSET_SHARE[^}]*\} from "\.\.\/internal\/brandmark\.js"/);
     expect(brandmarkSource).not.toMatch(/\b0\.18\b|\b7 \/ 32\b|\b0\.21875\b|\b0\.64\b/);
   });
 

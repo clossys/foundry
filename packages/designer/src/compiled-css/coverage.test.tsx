@@ -29,6 +29,8 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { render } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { Logomark } from "../atoms/Logomark.js";
+import { Lockup } from "../blocks/Lockup.js";
 import { Avatar } from "../atoms/Avatar.js";
 import { Badge } from "../atoms/Badge.js";
 import { Banner } from "../atoms/Banner.js";
@@ -254,6 +256,10 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
         `Meter history ${tone}`,
         render(<Meter value={2} scaleMax={4} limit={3} previous={1} previousText="Previously 1.0x" tone={tone} valueText="2.0x" limitText="limit 3.0x" />),
       ]);
+    }
+    for (const size of ["sm", "md", "lg"] as const) for (const tone of ["auto", "inverse"] as const) for (const plate of ["shared", "self"] as const) {
+      trees.push([`Logomark ${size} ${tone} ${plate}`, render(<Logomark src="/glyph.svg" size={size} tone={tone} plate={plate} />)]);
+      trees.push([`Lockup ${size} ${tone} ${plate}`, render(<Lockup src="/glyph.svg" wordmark="Example" size={size} tone={tone} plate={plate} clearSpace />)]);
     }
     trees.push(["Avatar sm", render(<Avatar alt="A" size="sm" />)]);
     trees.push(["Avatar md", render(<Avatar alt="A" size="md" />)]);

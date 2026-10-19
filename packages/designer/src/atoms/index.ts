@@ -24,7 +24,7 @@
  * its `quiet` variant) and `IconButton` (its one glyph) compose `Icon` the
  * same way.
  *
- * Thirty-four ship as of this file. See the README's "What's deliberately
+ * Thirty-six ship as of this file. See the README's "What's deliberately
  * not here" for what was left out on purpose (`Slider`, `Calendar`, `NumberField`, `Toolbar`, `Accordion`, ...).
  */
 
@@ -186,3 +186,6 @@ export type {
   AtomCondition, AtomConstraint, AtomWebImplementation, AtomMediumGuidance, AtomGuidance,
   AtomApiFacts, AtomDisplayGroup,
 } from "./guidance/internal/data.js";
+
+export { Logomark } from "./Logomark.js";
+export type { LogomarkProps, LogomarkSize, LogomarkTone, LogomarkPlate } from "./Logomark.js";

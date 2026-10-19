@@ -4,7 +4,7 @@
 
 Import the shared records from `@clossys/designer/atoms`. This barrel remains client-only; charts render through the existing `@clossys/designer/charts` entry point. No new package subpath is introduced.
 
-41 established leaves appear once in 4 groups and 10 families. Groups and families are navigation; only leaves are selectable. Display placement preserves legacy IDs.
+42 established leaves appear once in 4 groups and 10 families. Groups and families are navigation; only leaves are selectable. Display placement preserves legacy IDs.
 
 Stable purpose, content and anatomy are separate from medium-specific implementation. Web cites current source; email, print and video are unassessed. Import safety, server rendering and visual resemblance establish no other medium’s support.
 
@@ -17,7 +17,7 @@ Consumer-owned demonstration coverage is unassessed here. A fixed controlled val
 | Group | Families | Leaves |
 | --- | --- | ---: |
 | Interaction | Actions, Navigation, Inputs | 18 |
-| Content | Data display, Imagery, Charts | 12 |
+| Content | Data display, Imagery, Charts | 13 |
 | Feedback | Messages, Progress and loading | 5 |
 | Containment | Structure, Overlays | 6 |
 
@@ -765,6 +765,38 @@ Web implementation: `@clossys/designer/atoms` → `Icon`. Source: `src/atoms/Ico
 
 Token dependency coverage: partial. Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.
 - `--ui-icon-stroke` (direct): `src/atoms/Icon.tsx`: `var(--ui-icon-stroke, 2)`.
+
+##### `depict.logomark` — Logomark
+
+- Purpose: Represent a brand with one decorative glyph and an optional shared plate.
+- Use when: A surrounding identity link or adjacent text already names the brand.
+- Avoid when: The image must communicate an accessible name or act as a standalone control.
+- Alternatives and boundary: Use Lockup for a mark beside live text; use Brandmark for the established home link.
+- Content: Supply the light, dark or mono artwork as an image URL, never injected markup.
+- Anatomy: One glyph image, optionally inset inside one rounded square plate.
+- Block composition example: In Lockup, place Logomark before the live wordmark and center both regions vertically.
+- Accessibility: The image has empty alternative text; its surrounding text or control supplies the name.
+- Demonstration coverage: unassessed. Consumer-owned fixtures and interaction evidence have not been assessed here. A supported package option is not proof of a working catalog demonstration.
+
+| Medium | State | Reason and evidence |
+| --- | --- | --- |
+| web | implemented | The existing component renders or forwards its documented web implementation in the named source. Evidence: `src/atoms/Logomark.tsx` |
+| email | unassessed | No email renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
+| print | unassessed | No print renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
+| video | unassessed | No video renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
+
+Web implementation: `@clossys/designer/atoms` → `Logomark`. Source: `src/atoms/Logomark.tsx`. Size, tone and plate are finite choices. Artwork URLs and optional titles are authored content; artwork contrast remains caller-owned.
+
+| Prop | Selection guidance | Package default | Applicability and support |
+| --- | --- | --- | --- |
+| `size` — Size | `sm`: Small mark height.<br>`md`: Medium mark height.<br>`lg`: Large mark height. | required: The caller selects the required height scale. | Always effective; size is required. implemented: The mark consumes its size through the shared height bindings. Evidence: `src/atoms/Logomark.tsx`: `HEIGHTS[size]` |
+| `tone` — Plate ink | `auto`: Primary ink plate.<br>`inverse`: Inverse ink plate. | `auto` (`src/atoms/Logomark.tsx`: `tone = "auto"`) | Effective only with a shared plate; self-plated artwork supplies its own paint. implemented: The shared plate selects the corresponding existing ink utility. Evidence: `src/atoms/Logomark.tsx`: `tone === "inverse"` |
+| `plate` — Plate ownership | `self`: Render the supplied artwork at its natural aspect ratio.<br>`shared`: Inset the glyph in the shared square plate. | `self` (`src/atoms/Logomark.tsx`: `plate = "self"`) | Always effective for the mark geometry. implemented: The component renders either the image alone or the shared plate. Evidence: `src/atoms/Logomark.tsx`: `plate !== "shared"` |
+
+- effective-when (ignored; `tone`): Tone paints the shared plate only; it never rewrites the supplied artwork URL. Evidence: `src/atoms/Logomark.tsx`: `if (plate !== "shared")`.
+
+Token dependency coverage: partial. The height binding is representative; plate ink uses the existing primary or inverse ink utilities.
+- `--ui-brandmark-height-md` (transitive): `src/internal/brandmark.ts`: `"var(--ui-brandmark-height-md, 36px)"`; consumed via `src/atoms/Logomark.tsx`: `HEIGHTS[size]`.
 
 #### Charts
 
