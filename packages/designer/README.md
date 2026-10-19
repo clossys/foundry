@@ -199,6 +199,7 @@ smallest stable subpath that owns what you need:
 | Subpath | Owns |
 | --- | --- |
 | `@clossys/designer/tokens` | Browser-safe typed `TOKENS`, shared `TOKEN_GUIDANCE` and `TOKEN_DISPLAY_GROUPS`, pure brand CSS parsing, the brand-coverage gate, WCAG colour math (`contrastRatio` and friends), the contrast gate (`checkTokenContrast`, `CONTRAST_PAIRS`), and `assertTokenStylesLoaded` (dev-only token-CSS presence check — see "Setup" below). No React runtime. |
+| `@clossys/designer/tokens/preview` | `TokenPreview`: opt-in React tooling for an exact token property, using the host token/theme/brand cascade. |
 | `@clossys/designer/tokens/server` | Node-only `readBrandCss`, `assertTailwindMergeVersion`, and file-reading result types. Neither helper runs automatically on import. |
 | `@clossys/designer/tokens.css` | Neutral primitive custom-property defaults; works without Tailwind. |
 | `@clossys/designer/theme.css` | Optional Tailwind v4 wiring; imports `tokens.css` itself. |
@@ -7406,6 +7407,36 @@ Both controls otherwise retain their existing default markup.
 `SiteFooter ground="transparent" rule="top"` adds a token-bound top hairline
 without a plate or a divider inside the footer. `rule` defaults to `"none"`
 and is ignored on other grounds, which retain their existing border policy.
+
+## Static token specimens
+
+```tsx
+import { TokenPreview } from "@clossys/designer/tokens/preview";
+const specimen = <TokenPreview property="--color-chart-surface" />;
+```
+
+Load the token CSS and desired theme/brand overrides in the host. The preview
+uses live `var(--property, authored-value)` references so host overrides remain primary. This React subpath is
+selection tooling; configurable components begin at Atoms. `/tokens` stays
+React-free. Unknown properties and unsupported applications are refused.
+
+Optional copy props are `sampleText` (default "Aa 0123"),
+`unsupportedMessage` (default "Unsupported token application") and
+`pendingMessage` (default "interactive support pending"). Supply translated
+strings as needed; pending output keeps its authored kind before the message.
+
+The 168 static specimens support 17 authored kinds: surface, text, border,
+control, status, chart, font, space, size, icon, brandmark, radius, shadow,
+blur, ring, layer and opacity. Patterns expose translucent applications;
+inverse foregrounds receive an inverse backing. No override is claimed as measured.
+
+These 18 properties explicitly report their true kind and "interactive support pending":
+`--ui-duration-instant`, `--ui-duration-fast`, `--ui-duration-default`,
+`--ui-duration-deliberate`, `--ui-duration-flash`, `--ui-duration-overlay`,
+`--ease-default`, `--ease-decelerate`, `--ease-accelerate`, `--ease-bounce`,
+`--ease-enter`, `--ease-exit`, `--breakpoint-mobile`, `--breakpoint-mobile-lg`,
+`--breakpoint-tablet`, `--breakpoint-tablet-lg`, `--breakpoint-desktop`, `--breakpoint-wide`.
+Motion and breakpoint interaction belong to a later increment.
 
 ## Application panels
 

@@ -86,6 +86,9 @@ and check their freshness with `node scripts/check-token-docs.mjs`
 (repository tooling, not shipped in the installed package).
 <!-- token-selection:end -->
 
+`@clossys/designer/tokens/preview` provides exact-property static React specimens
+for token selection tooling; configurable components still begin at Atoms.
+
 Marketing chapters after the fold: `MarketingChapter`, not `SectionHeader`. Hero `media` requires an explicit `composition` (`editorial` default).
 
 Do not invent a type pairing during the walk that proves 3 — cite or author the brand-type record from `templates/brand-type.template.json` and run `designer-type-check`.
