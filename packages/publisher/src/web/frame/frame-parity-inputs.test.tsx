@@ -108,7 +108,9 @@ for (const mode of ["server", "client"] as const) {
     expect(root.querySelector("header")).toHaveAttribute("data-tone", "inverse");
     expect(root.querySelector("header nav")).toHaveAttribute("aria-label", "Primary");
     expect(root.querySelector(".site-header-nav-links")).toBeNull();
-    expect(root.querySelector("header img")).toHaveAttribute("src", "/mark.svg");
+    // The header logomark is the brand asset painted in the accent token by default.
+    expect(root.querySelector("header img")).toBeNull();
+    expect(root.querySelector("header [data-brand-mark].bg-accent")!.getAttribute("style")).toMatch(/mask-image: ?url\("\/mark\.svg"\)/);
     expect(root.querySelector('header a[aria-label="Example home"]')).toHaveTextContent("Example");
     const actions = root.querySelectorAll('header a[href="/start"]');
     expect(actions).toHaveLength(2);
@@ -141,6 +143,7 @@ it("pins default server navigation bytes", () => {
 it.each([
   ["shell.actions[0].emphasis", { ...base, actions: [{ ...base.actions![0], emphasis: "PAYLOAD-SENTINEL" }] }],
   ["shell.brand.tone", { ...base, brand: { ...brand, tone: "PAYLOAD-SENTINEL" } }],
+  ["shell.brand.markInk", { ...base, brand: { ...brand, markInk: "PAYLOAD-SENTINEL" } }],
   ["shell.nav.tone", { ...base, nav: { ...nav, tone: "PAYLOAD-SENTINEL" } }],
   ["shell.footer.rule", { ...base, footer: { legal, rule: "PAYLOAD-SENTINEL" } }],
 ])("refuses invalid %s without echoing its value", (path, shell) => {

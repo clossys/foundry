@@ -2752,10 +2752,12 @@ Header appearance inputs and independent hero controls:
 | Input | Values and behavior |
 | --- | --- |
 | `shell.actions[].emphasis` | Distinct `"primary"`, `"secondary"`, `"ghost"` variants across at most three total header actions; implicit legacy slots use unoccupied variants. |
-| `shell.actions[].icon` | Supplied validated SVG shape data is required with nonblank copy for a primary action; its default mobile affordance is icon-only with an accessible label. |
+| `shell.actions[].icon` | Supplied validated SVG shape data is required with nonblank copy for a primary action; its default mobile affordance is an icon-only ghost action with an accessible label, and the desktop row and menu panel show the label as text only. |
 | `shell.nav.trigger` | `"label"` (default) or `"icon"`; the icon uses `triggerLabel` as its accessible name. |
 | `shell.mobileLayout` | `"menu-brand-action"` (default) gives equal mobile side tracks, an exact-center mark and a primary icon or empty right track; explicit `"inline"` retains legacy positioning. |
 | `shell.brand.tone` | `"auto"` or `"inverse"`. Omitted tone inherits an inverse overlay header; explicit `"auto"` keeps ordinary brand ink. |
+| `shell.brand.variant` | `"lockup"` (mark plus `wordmark` text) or `"mark"` (a mark-only brand, no `wordmark`). Both name the link from `label` and draw the mark at the one `size` height, so a mark-only brand and a lockup fill the same slot in the desktop row, the mobile bar and the menu panel. The mobile bar hides the wordmark and keeps the mark, centered on the bar, with `label` still naming the link. |
+| `shell.brand.markInk` | `"accent"` (what an omitted value means in the header) or `"image"`. Accent paints the header logomark's shape in the accent token, using the brand asset as a mask, so supply a single-colour mark; the wordmark keeps the brand's ink token from `tone`, which follows the color scheme and an inverse ground. `"image"` is the opt-out for a multi-colour logo: the mask uses only the asset's alpha, so it would flatten that logo to a one-colour silhouette. Other values are refused without echoing them. |
 | `shell.nav.tone` | `"auto"` or `"inverse"`. Omitted tone inherits an inverse overlay header without changing the default markup; explicit `"auto"` keeps ordinary toggle ink. The server and interactive client render the same initial disclosure. |
 | Hero section `eyebrowTone` | `"accent"` (default) or `"muted"`, using the existing secondary text ink. |
 | Hero section `measure` | `"prose"` (default) or `"wide"`. Wide copy removes the headline cap and caps supporting text at 64rem inside the page column. The outer `LandingView.measure` still controls that page column independently. |
@@ -2783,12 +2785,13 @@ Footer-only presentation overrides preserve the derived header presentation.
 The default header centers desktop navigation on the whole header and measures
 intrinsic brand/link/action widths to collapse before collision. Mobile places
 the menu at inline-start, a mark-only brand at the exact center, and the supplied
-primary icon at inline-end (or an empty noninteractive track). `nav.trigger:
+primary as a ghost icon action at inline-end (or an empty noninteractive track).
+A brand mark on a shared plate stays visible there. `nav.trigger:
 "icon"` selects the explicit two-stroke icon; the default label trigger uses the
 same two-line/X visual in the shared header. Both fields pass through
 `SiteFrameConfig.site`. Configure zero to five links and zero to three total
-actions with distinct variants. The panel lists every full label: links, then
-secondary, ghost, primary. Explicit leading/inline positioning retains its
+actions with distinct variants. The panel lists every full label as text
+only: links, then primary, secondary, ghost. Explicit leading/inline positioning retains its
 legacy geometry and renders each action once. The trigger keeps `triggerLabel`
 as its accessible name, falling back to `nav.label` when toggle copy is omitted.
 
@@ -2816,9 +2819,11 @@ const mobileFrame: SiteFrameConfig = {
 ```
 
 An action `icon` uses Designer's SVG shape data and validation. The primary
-requires a supplied icon plus nonblank label. The default mobile bar shows its
-icon alone, retaining that accessible label; each full-label action also lives
-in the shared desktop/panel list, ordered secondary, ghost, primary. Ordinary
+requires a supplied icon plus nonblank label. The default mobile bar shows it
+as a ghost action with its icon alone, retaining that accessible label; with an
+inverse `nav.tone` it takes the menu toggle's inverse ink. That bar action is the
+only header action with an icon: each full-label action also lives in the shared
+desktop/panel list as text only, ordered primary, secondary, ghost. Ordinary
 navigation, secondary-action and footer links refuse `icon`. The shared default
 is `mobileLayout: "menu-brand-action"`; explicit `"inline"` preserves legacy
 positioning. `nav.trigger: "label"` remains the trigger-content default.
@@ -2874,8 +2879,9 @@ export function SignInPage() {
   with a mobile toggle and the same links in the responsive panel.
   `nav.triggerLabel` is an optional copy reference for the toggle; when omitted,
   it uses the resolved `nav.label`. A supplied reference must resolve to
-  nonblank copy. Header actions use Designer's `SiteHeader.ActionLink` with
-  optional icons; the secondary action keeps its full text label.
+  nonblank copy. Header actions use Designer's `SiteHeader.ActionLink`; the
+  desktop row and the menu panel show text labels only, and only the default
+  mobile bar's ghost primary shows its icon.
 - **Footer ground.** `shell.footer.ground` accepts `"base"`, `"inverse"` or
   `"transparent"`. In flow placement it defaults to `shell.ground`, regardless
   of the header's ground or overlay tone. For example, a shell with `ground: "base"` and
@@ -2953,7 +2959,7 @@ export function SignInPage() {
   refused. The string `key` Designer's generated icons carry is dropped. The
   frame renders a frozen copy, so changing the caller's data afterwards has
   no effect. Header controls, including icon actions and environments, normalize
-  into the same distinct variants and panel order: secondary, ghost, primary.
+  into the same distinct variants and panel order: primary, secondary, ghost.
   Social links occupy the icon group immediately before the home mark, in a
   named navigation when `social.label` is given. Ungrouped footer links precede
   legal links in the centered links region. Empty content arrays are valid;
@@ -6326,8 +6332,9 @@ already-resolved label/href/IconNode content; `resolveShell` owns copy, URL and
 SVG allowlist validation before that helper. No primary means an empty,
 noninteractive right track. Actions without navigation reuse existing shared
 `Primary`/`Menu` labels; no minimum link count or invented brand copy is needed.
-All full labels appear in the panel after links, secondary then ghost then
-primary. Only the default mobile primary affordance has a second icon-only copy.
+All full labels appear in the panel after links as text only, primary then
+secondary then ghost. Only the default mobile primary affordance has a second
+copy, an icon-only ghost action in the mobile bar.
 Explicit existing leading/inline positioning keeps each full-label action once
 and retains its legacy geometry, without the separate default mobile icon bar.
 

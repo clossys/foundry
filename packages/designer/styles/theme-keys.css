@@ -725,7 +725,8 @@
 @utility site-header-actions { display: flex; grid-column: 3; grid-row: 1; justify-content: end; gap: var(--spacing-sm, 8px); flex-wrap: wrap; overflow-wrap: anywhere; }
 @utility site-header-mobile {
     & .site-header-brand { grid-column: 2; justify-self: center; }
-    & .site-header-brand a > span { display: none; }
+    /* Hide wordmark text only: a shared plate or an accent mark is also a span. */
+    & .site-header-brand a > span:not([data-brand-mark]):not(:has(img)) { display: none; }
     & nav { display: block; grid-column: 1; grid-row: 1; }
     & .site-header-actions { grid-column: 3; grid-row: 1; display: flex; justify-content: end; }
     & .site-header-actions > a > span { @apply sr-only; }

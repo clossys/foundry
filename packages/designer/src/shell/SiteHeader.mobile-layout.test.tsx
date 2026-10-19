@@ -1,7 +1,23 @@
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { render, screen } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import { Brandmark } from "./Brandmark.js";
 import { SiteHeader } from "./SiteHeader.js";
+
+const themeKeys = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "..", "..", "styles", "theme-keys.css"), "utf8");
+function cssBlock(text: string, opening: string): string {
+  const start = text.indexOf(opening);
+  expect(start, opening).toBeGreaterThan(-1);
+  let depth = 0;
+  for (let i = text.indexOf("{", start); i < text.length; i++) {
+    if (text[i] === "{") depth++;
+    else if (text[i] === "}" && --depth === 0) return text.slice(start, i + 1);
+  }
+  throw new Error(`unterminated ${opening}`);
+}
 
 // Captured from main before adding mobileLayout.
 const DEFAULT_HEADERS = {
@@ -79,5 +95,183 @@ describe("SiteHeader mobile layout", () => {
     expect(screen.getByRole("link", { name: "Example" }).parentElement).toHaveClass(navPlacement === "leading" ? "col-start-2" : "site-header-brand");
     expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
+  });
+
+  it.each([
+    ["shared plate lockup", { variant: "lockup", wordmark: "Example", plate: "shared" }],
+    ["shared plate mark", { variant: "mark", plate: "shared" }],
+    ["self plate lockup", { variant: "lockup", wordmark: "Example", plate: "self" }],
+    ["accent lockup", { variant: "lockup", wordmark: "Example", markInk: "accent" }],
+    ["accent mark on a shared plate", { variant: "mark", plate: "shared", markInk: "accent" }],
+  ] as const)("hides only the wordmark, never the mark, in the mobile brand (%s)", (_name, props) => {
+    // The mobile rule hides wordmark text beside the mark. A shared plate and an
+    // accent mark are spans too, so the hide selector skips the marked mark element
+    // and, for a hand-written brand, any span holding an image.
+    expect(MOBILE_HIDE_RULE?.[1]).toBe("span:not([data-brand-mark]):not(:has(img))");
+    render(<SiteHeader mobileLayout="menu-brand-action" brand={<Brandmark size="md" label="Example home" markSrc="/mark.svg" {...props} />} />);
+    const anchor = screen.getByRole("link", { name: "Example home" });
+    const { hidden, shown } = mobileBrand(anchor);
+    expect(shown).toContain(anchor.firstElementChild);
+    expect(hidden.map(child => child.textContent)).toEqual(props.variant === "lockup" ? ["Example"] : []);
+    // The wordmark is hidden, the link keeps its whole accessible name.
+    expect(anchor).toHaveAccessibleName("Example home");
+  });
+
+  it("still hides the text, never the image, of a hand-written brand link", () => {
+    render(<SiteHeader mobileLayout="menu-brand-action" brand={<a href="/" aria-label="Example home"><span><img src="/mark.svg" alt="" /></span><span>Example</span></a>} />);
+    const { hidden, shown } = mobileBrand(screen.getByRole("link", { name: "Example home" }));
+    expect(hidden.map(child => child.textContent)).toEqual(["Example"]);
+    expect(shown).toHaveLength(1);
+  });
+});
+
+const MOBILE_HIDE_RULE = /& \.site-header-brand a > ([^{,]+?) \{ display: none; \}/.exec(cssBlock(themeKeys, "@utility site-header-mobile {"));
+
+/** jsdom has no :has(), so apply the mobile rule's own conditions to the brand link's children. */
+function mobileBrand(anchor: HTMLElement) {
+  const hidden = [...anchor.children].filter(child => child.matches(".site-header-brand a > span:not([data-brand-mark])") && !child.querySelector("img"));
+  return { hidden, shown: [...anchor.children].filter(child => !hidden.includes(child)) };
+}
+
+/** Brandmark renders the mark first and, for a lockup, the wordmark second. */
+const markOf = (anchor: HTMLElement) => anchor.children[0] as HTMLElement;
+const wordmarkOf = (anchor: HTMLElement) => anchor.children[1] as HTMLElement | undefined;
+
+const HEIGHTS = { sm: "var(--ui-brandmark-height-sm, 24px)", md: "var(--ui-brandmark-height-md, 36px)", lg: "var(--ui-brandmark-height-lg, 48px)" } as const;
+const BRAND_FORMS = [
+  ["mark-only", { variant: "mark" }],
+  ["mark-only on a shared plate", { variant: "mark", plate: "shared" }],
+  ["accent mark-only", { variant: "mark", markInk: "accent" }],
+  ["lockup", { variant: "lockup", wordmark: "Example" }],
+  ["lockup on a shared plate", { variant: "lockup", wordmark: "Example", plate: "shared" }],
+  ["accent lockup", { variant: "lockup", wordmark: "Example", markInk: "accent" }],
+] as const;
+
+describe("header brand slot", () => {
+  it.each((["sm", "md", "lg"] as const).flatMap(size => BRAND_FORMS.map(([name, props]) => [size, name, props] as const)))(
+    "resolves a %s %s brand to the size's one mark height, at desktop and mobile",
+    (size, _name, props) => {
+      render(<SiteHeader mobileLayout="menu-brand-action" brand={<Brandmark size={size} label="Example home" markSrc="/mark.svg" {...props} />} />);
+      const anchor = screen.getByRole("link", { name: "Example home" });
+      expect(anchor.children).toHaveLength(props.variant === "lockup" ? 2 : 1);
+      // The mark's box is the size token at full height; a wordmark is set smaller.
+      expect(markOf(anchor).style.height).toBe(HEIGHTS[size]);
+      const wordmark = wordmarkOf(anchor);
+      if (props.variant === "lockup") expect(wordmark!.style.fontSize).toBe(`calc(${HEIGHTS[size]} * ${22 / 48})`);
+      // Nothing in the header resizes the brand at either width.
+      for (const opening of ["@utility site-header-mobile {", "@utility site-header-contract {", "@utility site-header-brand {"]) {
+        expect(cssBlock(themeKeys, opening)).not.toMatch(/--ui-brandmark-height-\w+\s*:|\.site-header-brand[^{]*\{[^}]*(?:^|[;{\s])(?:block-size|height|font-size)\s*:/);
+      }
+    },
+  );
+
+  it("names a mark-only brand by its label, with no wordmark text", () => {
+    render(<SiteHeader brand={<Brandmark variant="mark" size="md" label="Example home" markSrc="/mark.svg" />} />);
+    const anchor = screen.getByRole("link", { name: "Example home" });
+    expect(anchor).toHaveAttribute("aria-label", "Example home");
+    expect(anchor.children).toHaveLength(1);
+    expect(anchor.textContent).toBe("");
+  });
+
+  it("paints an accent mark with the accent token through a mask of the mark image", () => {
+    const html = renderToStaticMarkup(<Brandmark variant="lockup" wordmark="Example" size="md" label="Example home" markSrc={'/brand/mark".svg'} markInk="accent" />);
+    const host = document.createElement("div");
+    host.innerHTML = html;
+    const anchor = host.querySelector("a")!;
+    const mark = markOf(anchor);
+    expect(mark.tagName).toBe("SPAN");
+    expect(mark).toHaveAttribute("data-brand-mark", "");
+    expect(mark).toHaveAttribute("aria-hidden", "true");
+    expect(mark).toHaveClass("bg-accent");
+    expect(anchor.querySelector("img")).toBeNull();
+    // The quote is escaped, so the URL cannot end the mask value early.
+    expect(html).toContain('mask-image:url(&quot;/brand/mark\\22 .svg&quot;)');
+    expect(html).not.toMatch(/#[0-9a-f]{3,8}\b|rgba?\(|oklch\(/i);
+  });
+
+  it("keeps the image mark, and its markup, by default for a Brandmark outside a header", () => {
+    render(<Brandmark variant="mark" size="md" label="Example home" markSrc="/mark.svg" />);
+    const mark = markOf(screen.getByRole("link", { name: "Example home" }));
+    expect(mark.tagName).toBe("IMG");
+    expect(mark).toHaveAttribute("src", "/mark.svg");
+    expect(mark).not.toHaveAttribute("data-brand-mark");
+  });
+
+  const HEADER_BRANDS = [
+    ["mark-only", { variant: "mark" }],
+    ["mark-only on a shared plate", { variant: "mark", plate: "shared" }],
+    ["lockup", { variant: "lockup", wordmark: "Example" }],
+    ["lockup on a shared plate", { variant: "lockup", wordmark: "Example", plate: "shared" }],
+  ] as const;
+  const HEADER_CASES = (["inline", "menu-brand-action"] as const).flatMap(mobileLayout => HEADER_BRANDS.map(([name, props]) => [name, mobileLayout, props] as const));
+
+  it.each(HEADER_CASES)("paints a %s header logomark in the accent token by default (%s layout, server and client)", (_name, mobileLayout, props) => {
+    const element = <SiteHeader mobileLayout={mobileLayout} brand={<Brandmark size="md" label="Example home" markSrc="/mark.svg" {...props} />} />;
+    const host = document.createElement("div");
+    host.innerHTML = renderToStaticMarkup(element);
+    const { container } = render(element);
+    for (const root of [host, container]) {
+      const anchor = root.querySelector<HTMLElement>('a[aria-label="Example home"]')!;
+      expect(anchor).toHaveAccessibleName("Example home");
+      expect(anchor.querySelector("img")).toBeNull();
+      const mark = markOf(anchor);
+      expect(mark).toHaveAttribute("data-brand-mark", "");
+      expect(mark.matches(".bg-accent") || mark.querySelector(".bg-accent") !== null).toBe(true);
+      // jsdom drops mask properties on the client, so read the paint from the server markup.
+      if (root === host) expect((mark.matches("[style*=mask]") ? mark : mark.querySelector("[style*=mask]"))!.getAttribute("style")).toContain('mask-image:url("/mark.svg")');
+      // In the menu-brand-action layout the wordmark hides below tablet and the accent
+      // mark stays, centred on the bar; the inline layout hides nothing.
+      const { hidden, shown } = mobileBrand(anchor);
+      expect(shown[0]).toBe(mark);
+      expect(hidden.map(child => child.textContent)).toEqual(mobileLayout === "menu-brand-action" && props.variant === "lockup" ? ["Example"] : []);
+    }
+  });
+
+  it.each(HEADER_CASES)("keeps a %s header logomark as the image when markInk=\"image\" opts out (%s layout)", (_name, mobileLayout, props) => {
+    render(<SiteHeader mobileLayout={mobileLayout} brand={<Brandmark size="md" label="Example home" markSrc="/mark.svg" markInk="image" {...props} />} />);
+    const anchor = screen.getByRole("link", { name: "Example home" });
+    expect(anchor.querySelector("img")).toHaveAttribute("src", "/mark.svg");
+    expect(anchor.querySelector("[data-brand-mark]")).toBeNull();
+    expect(anchor.querySelector(".bg-accent")).toBeNull();
+    // The opted-out image mark also stays visible on mobile.
+    expect(mobileBrand(anchor).shown[0]).toBe(markOf(anchor));
+  });
+
+  it("keeps an explicit tone and accent default together in the header", () => {
+    render(<SiteHeader brand={<Brandmark variant="lockup" wordmark="Example" size="md" label="Example home" markSrc="/mark.svg" tone="inverse" />} />);
+    const anchor = screen.getByRole("link", { name: "Example home" });
+    expect(anchor).toHaveClass("text-ink-on-inverse");
+    expect(markOf(anchor)).toHaveClass("bg-accent");
+  });
+
+  it.each([
+    ["auto", "text-ink-primary"],
+    ["inverse", "text-ink-on-inverse"],
+  ] as const)("sets the %s wordmark in the surface's own ink token, which follows the colour scheme", (tone, ink) => {
+    render(<Brandmark variant="lockup" wordmark="Example" size="md" label="Example home" markSrc="/mark.svg" markInk="accent" tone={tone} />);
+    const anchor = screen.getByRole("link", { name: "Example home" });
+    expect(anchor).toHaveClass(ink);
+    // The wordmark inherits that ink; only the mark carries the accent.
+    expect(wordmarkOf(anchor)!.className).not.toMatch(/\b(?:text|bg)-/);
+    expect(markOf(anchor)).toHaveClass("bg-accent");
+  });
+
+  it("defines the wordmark and accent inks for light and dark schemes, and the mobile header leaves brand paint alone", () => {
+    const tokens = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "..", "..", "styles", "tokens.css"), "utf8");
+    const darkAt = tokens.indexOf('\n:root[data-theme="dark"] {');
+    const dark = cssBlock(tokens.slice(darkAt), ':root[data-theme="dark"] {');
+    for (const token of ["--color-ink-primary", "--color-ink-on-inverse", "--color-accent"]) {
+      expect(tokens.indexOf(`${token}:`)).toBeLessThan(darkAt);
+      expect(dark).toContain(`${token}:`);
+    }
+    expect(cssBlock(themeKeys, "@utility site-header-mobile {")).not.toMatch(/\.site-header-brand[^{]*\{[^}]*(?:color|background)[\w-]*\s*:/);
+  });
+
+  it("centers the mobile mark on the bar between equal edge tracks for the menu and actions", () => {
+    expect(cssBlock(themeKeys, "@utility site-header-row {")).toContain("grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);");
+    const mobile = cssBlock(themeKeys, "@utility site-header-mobile {");
+    expect(mobile).toContain("& .site-header-brand { grid-column: 2; justify-self: center; }");
+    expect(mobile).toContain("& nav { display: block; grid-column: 1; grid-row: 1; }");
+    expect(mobile).toContain("& .site-header-actions { grid-column: 3; grid-row: 1; display: flex; justify-content: end; }");
   });
 });

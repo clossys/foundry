@@ -482,7 +482,7 @@
     grid-column: 2;
     justify-self: center;
   }
-  .site-header-contract[data-collapsed] .site-header-brand a > span {
+  .site-header-contract[data-collapsed] .site-header-brand a > span:not([data-brand-mark]):not(:has(img)) {
     display: none;
   }
   .site-header-contract[data-collapsed] nav {
@@ -539,7 +539,7 @@
       grid-column: 2;
       justify-self: center;
     }
-    .site-header-contract[data-header-root] .site-header-brand a > span {
+    .site-header-contract[data-header-root] .site-header-brand a > span:not([data-brand-mark]):not(:has(img)) {
       display: none;
     }
     .site-header-contract[data-header-root] nav {

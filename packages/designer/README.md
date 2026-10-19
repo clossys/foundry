@@ -4974,8 +4974,12 @@ own doc comment for why it's `shell`, not `blocks`, despite reading like a
 `navPlacement="centered"` and `mobileLayout="menu-brand-action"` are the
 shared defaults. Equal side tracks center navigation on the whole header;
 `NavDisclosure` measures intrinsic brand/link/action widths and collapses
-before collision. Mobile centers the supplied mark, with menu at inline-start
-and a supplied primary icon or empty track at inline-end. The layout mirrors
+before collision. Mobile centers the supplied mark on the whole bar, not on
+the space left between the controls, with menu at inline-start and a supplied
+primary icon or empty track at inline-end. The mobile brand hides wordmark
+text only: a `Brandmark` mark stays visible (an image, a shared plate holding
+an image, or an accent mark tagged `data-brand-mark`), and the link keeps its
+`aria-label` as its name while the wordmark is hidden. The layout mirrors
 in RTL. `secondaryAction` renders before `actions` in the trailing region.
 Explicit `navPlacement="leading"` or `mobileLayout="inline"` retain legacy
 positioning rather than the default geometry. DOM order remains brand, nav,
@@ -5387,6 +5391,46 @@ Declared boundary: the wordmark's size is the mark's height times the fixed
 22/48 ratio, so at `size="sm"` (a 24px mark) the wordmark is 11px. Sizes
 derive from that ratio and are not raised to a minimum, so use `"md"` or
 `"lg"` where an 11px wordmark is too small.
+
+One brand slot size: the mark's box is the size's `--ui-brandmark-height-*`
+token for every form (`variant="mark"` or `"lockup"`, either plate, either
+`markInk`), so a mark-only brand and a lockup share one slot height, and the
+desktop header, the mobile bar and the menu panel all use that same token.
+The header styles set no brand height or font size of their own, so no
+per-site override is needed.
+
+#### Accent mark
+
+`markInk` is `"image"` or `"accent"`. On a `Brandmark` of its own, `"image"`
+is the default and the mark is the `markSrc` image, as above. Inside
+`SiteHeader`, an omitted `markInk` becomes `"accent"`, so the header's
+logomark is in the accent token by default; pass `markInk="image"` there to
+opt out. With `"accent"`,
+`Brandmark` paints the mark's shape in the accent token (`bg-accent`): a
+decorative `<span>` the size's height square, using `markSrc` as a CSS mask
+(`mask-image`, `contain`, centred), so the mark follows the accent token in
+light and dark color schemes. The wordmark keeps the link's ink: the
+`--color-ink-primary` token, or `--color-ink-on-inverse` with
+`tone="inverse"` on a dark or overlay ground, so it switches with the scheme
+and the ground through tokens only. With `plate="shared"` the accent mark sits
+inset on the plate. The prop is part of `BrandmarkProps`; no new type is
+exported.
+
+```tsx
+<Brandmark
+  variant="lockup"
+  size="md"
+  label="Acme home"
+  markSrc="/brand/acme-mark.svg"
+  wordmark="Acme"
+  markInk="accent"
+/>;
+```
+
+What it does not do: the mask uses the image's alpha only, so a multi-colour
+mark becomes a one-colour accent silhouette, including in the header's
+default; pass `markInk="image"` for a mark whose colours matter. It does not check that the accent reads on the ground behind
+it.
 
 #### Shared plate
 
@@ -7509,7 +7553,8 @@ const report = checkConsumerArtContract(art);
 
 `Brandmark tone="inverse"` uses inverse wordmark ink; `"auto"` keeps the base
 ink. A `Brandmark` passed directly to an overlay `SiteHeader` follows the header tone
-unless its own tone is explicit. `NavDisclosure tone="inverse"` uses inverse
+unless its own tone is explicit. A `Brandmark` passed directly to any `SiteHeader`
+paints its logomark in the accent token unless it sets `markInk="image"`. `NavDisclosure tone="inverse"` uses inverse
 trigger ink at rest, on hover, when expanded and on keyboard focus. An omitted
 nav tone follows an inverse overlay header; an explicit `"auto"` keeps base ink.
 Both controls otherwise retain their existing default markup.
@@ -7594,6 +7639,30 @@ unmounted. Its default `dismissAt="(min-width: 768px)"` matches the structural
 tablet breakpoint; supply another media query when the host's wide layout
 starts elsewhere. Changing `navigationKey` or entering that query dismisses
 an open drawer, as does ordinary in-panel link navigation. No motion is added.
+The close control renders the `X` glyph through the `Icon` atom as decoration;
+`closeLabel` supplies the control's accessible name.
+
+`wide="sheet"` makes the Drawer an application side sheet that opens at every
+viewport width, for example an inspector at `placement="end"`. It ignores
+`dismissAt` and registers no media listener; it keeps the same Dialog focus
+containment, Escape and outside dismissal, focus restoration, scroll lock,
+`navigationKey` and in-panel link dismissal, and adds no motion. The default
+`wide="dismiss"` keeps the narrow-layout behavior described above. Switching
+an open sheet back to `"dismiss"` while the query matches closes it.
+
+```tsx
+import { Drawer } from "@clossys/designer/blocks";
+import { Button } from "@clossys/designer/atoms";
+
+export function InspectorSheet() {
+  return (
+    <Drawer heading="Inspector" closeLabel="Close inspector" placement="end"
+      wide="sheet" trigger={<Button>Inspect</Button>}>
+      <p>Selection details</p>
+    </Drawer>
+  );
+}
+```
 
 For a controlled Drawer, `isOpen` requests an open state; a local dismissal
 immediately removes the overlay even while the host retains `true`. The host
@@ -7608,9 +7677,26 @@ style its wrapper without changing centered defaults when omitted.
 `max` and `defaultValue`, in CSS pixels. Choose bounds that leave room for the
 content and the handle's minimum 44px target. `value` makes it controlled;
 omission uses local state. `onChange` reports bounded values, with no storage
-access. `orientation="vertical"` (default) is a vertical separator resizing
-inline width; `"horizontal"` resizes block height. `label` names the pane and
-`handleLabel` names the separator; header and footer remain Panel regions.
+access. A controlled host owns the dimension: keyboard and pointer changes
+render only after the host passes the reported value back, so the host can
+keep a remembered width in its own state or storage. `defaultValue` remains
+the Enter reset target in both modes. `orientation="vertical"` (default) is a
+vertical separator resizing inline width; `"horizontal"` resizes block height.
+`label` names the pane and `handleLabel` names the separator; header and footer
+remain Panel regions.
+
+```tsx
+import { ResizablePane } from "@clossys/designer/blocks";
+
+export function Inspector({ width, onWidthChange }: { width: number; onWidthChange: (width: number) => void }) {
+  return (
+    <ResizablePane min={240} max={560} defaultValue={320} value={width}
+      onChange={onWidthChange} label="Inspector" handleLabel="Resize inspector">
+      <p>Selection details</p>
+    </ResizablePane>
+  );
+}
+```
 
 `ResizeHandle` is controlled with required `value`, `min`, `max`, `resetValue`,
 `label` and `onChange`. Positive `step` defaults to 1. Arrow keys adjust,
