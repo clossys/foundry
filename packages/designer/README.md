@@ -158,12 +158,13 @@ surfaces and live in `@clossys/publisher/web`.
   `Separator`, `Chip`, `StatusMark`, `Meter`.
 - **`blocks`** — owns the internal layout of multiple named regions,
   typically by composing one or more atoms (and/or layout) into something
-  with a real job on a page. Thirty-five ship: `PageHeader`, `EmptyState`,
+  with a real job on a page. Forty-one ship: `AccountMenu`, `PageHeader`, `EmptyState`,
   `DataTable`, `DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`,
   `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `SectionFrame`,
   `MarketingChapter`, `FeatureGrid`, `Item`, `Items`, `Tree`, `AnatomyCallouts`, `RecordLedger`, `Scene`, `Matrix`,
   `Specimen`, `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`,
-  `PricingTable`, `Testimonial`, `ArticleBody`, `ConsentBanner` (see "Blocks" below).
+  `PricingTable`, `Testimonial`, `ArticleBody`, `ConsentBanner`, `Panel`, `Drawer`,
+  `ResizablePane`, `CommandMenu` and `AppNavigation` (see "Blocks" below).
 - **`shell`** — the persistent frame around content (nav, layout chrome)
   that provides the slots content fills. One per app; survives route
   changes that swap out the content underneath it. `Shell` ships with five
@@ -1673,6 +1674,14 @@ none of it reimplemented here.
 `Menu.Item` takes an `isDestructive` prop for actions like "Delete" —
 danger-colored styling, purely visual, doesn't change keyboard/selection
 behavior. `Menu.Separator` is a visual divider between item groups.
+
+`Menu.Section` groups entries under a real menu Header. Supply `heading` or
+`aria-label`. Its optional `selectionMode` (`none` or `multiple`), `selectedKeys`,
+`onSelectionChange` and `shouldCloseOnSelect` belong to the section. Multiple
+selection produces `menuitemcheckbox` preferences; the caller owns checked
+values. Normal hover/focus retains the existing selected surface with no outline;
+a focused, enabled item adds a current-color outline only in forced colors.
+
 
 There is deliberately no `aria-label` prop on `Menu` itself:
 react-aria-components' `MenuTrigger` always wires the menu's
@@ -4315,6 +4324,42 @@ Measure and section padding come from the parent `SectionFrame` (`measure="prose
 article plus a sidebar callout, or two comparison columns), which is what
 keeps it at this layer rather than being a view (test 3).
 
+### `AccountMenu`
+
+A Navigation Material combining Avatar, Button, Icon, Tooltip and Menu. The host
+supplies `actor.name`, optional `secondaryText` and `image`, `contextLabel`, and
+`sections`. Avatar derives fallback initials from the name. Expanded triggers
+show the name and context; collapsed triggers show the avatar, keep an explicit
+accessible name, and expose a tooltip. A non-empty `triggerLabel` overrides only
+the collapsed trigger and tooltip. Expanded controls retain the visible actor
+name in their accessible name. The open menu shows and truncates long actor
+details within a viewport-bounded panel. Later unnamed command sections use
+separators without repeating the actor as a group name.
+
+Command sections contain `link` (`href`), `action` or `destructive` (`onAction`)
+entries. Preference sections use `kind="preferences"`, a required `label`, and
+`preference` entries with `checked` and `onCheckedChange`. Each entry also takes
+an `id`, `label` and optional `isDisabled`. Duplicate section IDs (including empty
+sections) and duplicate entry IDs within a section are rejected with `TypeError`.
+Equal entry IDs in different sections remain valid. Empty sections are omitted; an empty
+menu renders no trigger or placeholder. Preference changes remain controlled and
+keep the menu open. Links and actions retain ordinary menuitem semantics.
+Empty actor names or entry labels are rejected. Destinations follow Items: an
+anchor, one-origin path, HTTP(S) URL without credentials, or explicit mail link;
+blank, protocol-relative, script/data, control-character and backslash URLs are
+rejected. Images remain host-provided Avatar data. Destructive styling does not
+confirm an action: the host owns confirmation and the final destructive effect.
+
+`onClose` observes a menu close and `onRoute` observes a link activation. A drawer
+host removes or hides its navigation, then focuses its visible opener or route
+destination after that update commits; the block does not own the drawer. Normal
+Escape focus return and collision-aware placement use Menu's overlay machinery.
+This is a client component: SSR emits a closed trigger and hydration enables
+interaction. It is not exported from `blocks/server`. Tests cover synthetic
+viewport geometry, normal and forced-color focus, reduced-motion transitions,
+long actor details, retained hidden-host handoff, and client hydration;
+they do not establish a separate native server or browser-qualification claim.
+
 ### `ConsentBanner`
 
 ```tsx
@@ -4798,7 +4843,7 @@ files:
 
 // app/(member)/layout.tsx
 <Shell>
-  <Shell.Header><AccountMenu /></Shell.Header>
+  <Shell.Header><MemberAccountControl /></Shell.Header>
   <Shell.SideNav><MemberNav /></Shell.SideNav>
   <Shell.Main>{children}</Shell.Main>
 </Shell>
@@ -4812,7 +4857,7 @@ files:
 </Shell>
 ```
 
-`MarketingNav`, `AccountMenu`, `MemberNav`, `StaffToolbar`, `StaffNav`, and
+`MarketingNav`, `MemberAccountControl`, `MemberNav`, `StaffToolbar`, `StaffNav`, and
 `AuditLog` are each the CONSUMER's own composition of atoms — `Shell.Header`
 itself stays a plain, unopinionated slot, and ships no `AppHeader` block of
 its own. A header is where brand lives, and shipping a pre-built one INTO
@@ -6223,7 +6268,7 @@ not a grab-bag).
 | `Spinner` | component | Indeterminate loading indicator. Plain SVG — not interactive, composes no other atom. |
 | `SpinnerProps` | type | Props for `Spinner`: `size`, `label`, plus every native `<svg>` attribute except `className`/`children`. |
 | `SpinnerSize` | type | `"sm" \| "md" \| "lg"`. |
-| `Menu` | component | Dropdown menu built on react-aria-components' `MenuTrigger`/`Menu`/`MenuItem`/`Popover`. Carries `Menu.Item` and `Menu.Separator`. |
+| `Menu` | component | Dropdown menu built on react-aria-components' `MenuTrigger`/`Menu`/`MenuItem`/`Popover`. Carries `Menu.Item`, `Menu.Separator` and `Menu.Section`. |
 | `MenuProps` | type | Props for `Menu`: `trigger`, `children`, `triggerAction`, `className`, `popoverClassName`, plus most of react-aria-components' own `MenuTrigger` props. |
 | `MenuItemProps` | type | Props for `Menu.Item`: `children`, `isDestructive`, `className`, plus everything react-aria-components' own `MenuItem` accepts. |
 | `MenuSeparatorProps` | type | Props for `Menu.Separator`: `className`. |
@@ -6285,6 +6330,15 @@ not a grab-bag).
 | `MeterProps` | type | Props for `Meter`: `value`, `scaleMax`, `limit`, `direction`, `tone`, `valueText`, `limitText`, `emphasis`, optional paired `previous`/`previousText`, plus every native `<div>` attribute except `children`. |
 | `MeterTone` | type | `"success" \| "warning" \| "danger" \| "info" \| "neutral"`. |
 | `MeterDirection` | type | `"max" \| "min"`: whether the limit is a cap or a floor. |
+| `AccountMenu` | component | Navigation Material with actor trigger, grouped commands and controlled preferences. |
+| `AccountMenuProps` | type | Actor, sections, context/collapsed/triggerLabel and host close/route callbacks. |
+| `AccountMenuActor` | type | Name, optional secondaryText and image; name-derived fallback initials. |
+| `AccountMenuEntry` | type | Command or controlled preference entry. |
+| `AccountMenuCommand` | type | Link, action or destructive command. |
+| `AccountMenuLink` | type | Labelled destination entry with href. |
+| `AccountMenuAction` | type | Labelled action or destructive callback entry. |
+| `AccountMenuPreference` | type | Checked preference and change callback. |
+| `AccountMenuSection` | type | Command group or named preference group; entries have section-local IDs. |
 | `PageHeader` | component | Page banner: breadcrumb slot, title, description, actions slot. |
 | `PageHeaderProps` | type | Props for `PageHeader`: `title`, `description`, `actions`, `breadcrumb`, plus every native `<header>` attribute. |
 | `EmptyState` | component | Zero-item placeholder: icon slot, title, description, action slot. |
@@ -7114,12 +7168,13 @@ speculatively, just because a related component shipped, is the exact
 un-bounded growth this package's own "variant rule" warns against one level
 up. They get added here only once something real needs them.
 
-**Blocks:** thirty-five ship — `PageHeader`, `EmptyState`, `DataTable`,
+**Blocks:** forty-one ship — `AccountMenu`, `PageHeader`, `EmptyState`, `DataTable`,
 `DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`, `ConfirmDialog`,
 `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `SectionFrame`, `MarketingChapter`,
-`FeatureGrid`, `Item`, `Items`, `AnatomyCallouts`, `RecordLedger`, `Scene`, `Matrix`, `Specimen`,
+`FeatureGrid`, `Item`, `Items`, `Tree`, `AnatomyCallouts`, `RecordLedger`, `Scene`, `Matrix`, `Specimen`,
 `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`, `PricingTable`,
-`Testimonial`, `ArticleBody`, `ConsentBanner` — completing this layer. No
+`Testimonial`, `ArticleBody`, `ConsentBanner`, `Panel`, `Drawer`,
+`ResizablePane`, `CommandMenu` and `AppNavigation` — completing this layer. No
 `FilterBar` block:
 `DataTable`'s own `toolbar` slot (and `Toolbar`'s own `search` slot) are
 deliberately plain `ReactNode`s, not a block with its own opinion about
@@ -7657,3 +7712,15 @@ Left/Right expand or collapse a parent, reversing in RTL. Enter/Space activate
 destinations or disclosure. Native forced-color adjustment and reduced motion
 remain supported. The interactive Material and helpers use the existing client
 blocks entry; no server-subset export or application-frame assembly is added.
+### Account menu composition example
+
+```tsx
+import { AccountMenu } from "@clossys/designer/blocks";
+
+export function AccountControl() {
+  return <AccountMenu actor={{ name: "Alex Morgan" }} contextLabel="Workspace"
+    sections={[{ id: "account", label: "Account", entries: [
+      { id: "settings", kind: "link", label: "Settings", href: "/settings" },
+    ] }]} />;
+}
+```
