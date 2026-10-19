@@ -41,9 +41,10 @@ export function GroupedTable<Row>({ caption, rowHeader, groups, rows, rowKey, em
   groups.forEach(group => assertIds(group.columns.map(column => column.id), "column"));
   const keys = rows.map(rowKey);
   if (new Set(keys.map(String)).size !== keys.length) throw new Error("GroupedTable requires unique row keys.");
-  const captionId = prefix + "-caption";
-  const groupId = (group: number) => prefix + "-group-" + group;
-  const columnId = (group: number, column: number) => prefix + "-column-" + group + "-" + column;
+  const captionId = prefix;
+  // React ID scopes caption and structural header IDREFs per table instance.
+  const groupId = (group: number) => prefix + "-" + group;
+  const columnId = (group: number, column: number) => prefix + "-" + group + "-" + column;
   const columnCount = 1 + groups.reduce((count, group) => count + group.columns.length, 0);
   return (
     <Card variant="outline" className={cx("p-0 overflow-hidden", className)}>
@@ -67,7 +68,7 @@ export function GroupedTable<Row>({ caption, rowHeader, groups, rows, rowKey, em
           </thead>
           <tbody>
             {rows.map((row, rowIndex) => {
-              const rowId = prefix + "-row-" + rowIndex;
+              const rowId = prefix + "--" + rowIndex;
               return <tr key={keys[rowIndex]}>
                 <th id={rowId} scope="row" className="border-b border-line-base p-md text-start font-medium">{rowHeader.cell(row)}</th>
                 {groups.map((group, groupIndex) => group.columns.map((column, columnIndex) => (
