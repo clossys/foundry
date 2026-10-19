@@ -134,6 +134,29 @@ describe("AppNavigation", () => {
     expect(container.querySelector('[data-app-navigation-region="footer"]')).toBeNull();
   });
 
+  it.each(["action", "wide"])("dismisses a held controlled Drawer on %s without reviving it", async reason => {
+    wide = false;
+    const changed = vi.fn();
+    render(<AppNavigation tree={tree} activeId="blocks" drawerOpen onDrawerOpenChange={changed} />);
+    await screen.findByRole("dialog");
+    if (reason === "action") await userEvent.click(screen.getByRole("button", { name: "Actions" }));
+    else await act(async () => { wide = true; for (const notify of listeners) notify(); });
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    if (reason === "wide") await act(async () => { wide = false; for (const notify of listeners) notify(); });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(changed).toHaveBeenLastCalledWith(false);
+    await userEvent.click(screen.getByRole("button", { name: "Open navigation" }));
+    expect(await screen.findByRole("dialog")).toBeInTheDocument();
+  });
+
+  it("hands desktop footer focus to the visible narrow trigger", async () => {
+    render(<AppNavigation tree={tree} footer={<button>Profile</button>} />);
+    screen.getByRole("button", { name: "Profile" }).focus();
+    await act(async () => { wide = false; for (const notify of listeners) notify(); });
+    await waitFor(() => expect(screen.getByRole("button", { name: "Open navigation" })).toHaveFocus());
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
   it("has no router, storage, fetching, private account or sibling layer imports", () => {
     for (const file of ["AppNavigation.tsx", "app-navigation-tree.ts"]) {
       const source = readFileSync(new URL(file, import.meta.url), "utf8");

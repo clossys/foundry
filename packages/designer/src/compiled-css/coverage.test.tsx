@@ -26,7 +26,7 @@
  */
 import { resolve } from "node:path";
 import { readFileSync } from "node:fs";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { render } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Avatar } from "../atoms/Avatar.js";
@@ -44,6 +44,7 @@ import { ResizeHandle } from "../atoms/ResizeHandle.js";
 import { Panel } from "../blocks/Panel.js";
 import { Drawer } from "../blocks/Drawer.js";
 import { ResizablePane } from "../blocks/ResizablePane.js";
+import { AppNavigation } from "../blocks/AppNavigation.js";
 import { Skeleton } from "../atoms/Skeleton.js";
 import { Spinner } from "../atoms/Spinner.js";
 import { StatusMark } from "../atoms/StatusMark.js";
@@ -100,6 +101,35 @@ function toSelectorText(className: string): string {
 }
 
 describe("coverage: real rendered classes are all present in compiled.css", () => {
+  it("covers actual expanded, rail and narrow Drawer navigation classes", async () => {
+    const classes = new Set<string>();
+    const tree = [{ id: "catalogs", label: "Catalogs", href: "#catalogs", children: [
+      { id: "blocks", label: "Blocks", href: "#blocks" },
+      { id: "actions", label: "Actions", onAction: () => {} },
+    ] }];
+    try {
+      for (const state of ["expanded", "rail", "drawer"]) {
+        vi.stubGlobal("matchMedia", vi.fn((media: string) => ({
+          matches: media === "(min-width: 768px)" && state !== "drawer", media,
+          addEventListener: () => {}, removeEventListener: () => {}, addListener: () => {}, removeListener: () => {},
+        })));
+        const view = render(<AppNavigation tree={tree} activeId="blocks" collapsed={state === "rail"} footer={<Button>Profile</Button>} />);
+        try {
+          if (state === "drawer") await userEvent.click(view.getByRole("button", { name: "Open navigation" }));
+          for (const name of collectClassNames(document.body)) classes.add(name);
+        } finally { view.unmount(); }
+      }
+      const generated = await generateCompiledCss({ stylesDir: resolve(packageRoot, "styles"), candidates: scanCompiledCssSources(packageRoot).candidates });
+      const shipped = readFileSync(resolve(packageRoot, "styles/compiled.css"), "utf8");
+      for (const name of classes) {
+        expect(generated.css, `navigation fresh: ${name}`).toContain(toSelectorText(name));
+        expect(shipped, `navigation shipped: ${name}`).toContain(toSelectorText(name));
+      }
+      expect(shipped).toContain("forced-colors: active");
+      expect(shipped).toContain("prefers-reduced-motion: reduce");
+    } finally { vi.unstubAllGlobals(); }
+  });
+
   it("covers AppFrame Material and resize states in fresh and shipped CSS", async () => {
     const classes = new Set<string>();
     const collect = (container: HTMLElement) => { for (const name of collectClassNames(container)) classes.add(name); };

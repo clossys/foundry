@@ -29,7 +29,7 @@ export interface AppNavigationProps {
   closeLabel?: string;
 }
 
-const CONTROL = "flex min-w-0 items-center gap-sm rounded-control px-sm py-sm text-start text-ink-primary no-underline hover:no-underline hover:bg-surface-sunken focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2";
+const CONTROL = "flex min-w-0 items-center justify-start gap-sm rounded-control px-sm py-sm text-start text-ink-primary no-underline hover:no-underline hover:bg-surface-sunken focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2";
 
 /** Host routes and identity arrive as data and slots; one Drawer owns the narrow modal lifecycle. */
 export function AppNavigation({
@@ -44,17 +44,20 @@ export function AppNavigation({
   const [expanded, setExpanded] = useState(() => new Set(ancestor ? [ancestor] : []));
   const [internalCollapsed, setCollapsed] = useState(defaultCollapsed);
   const [open, setOpen] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
   const [narrow, setNarrow] = useState(false);
+  const requested = (drawerOpen ?? open) && !dismissed;
   const collapsed = !narrow && (suppliedCollapsed ?? internalCollapsed);
   const nav = useRef<HTMLElement>(null);
   const focusedId = useRef<string | undefined>(undefined);
   const handoff = useRef(false);
-  const latest = useRef({ onDrawerOpenChange, active, requested: drawerOpen ?? open });
-  latest.current = { onDrawerOpenChange, active, requested: drawerOpen ?? open };
+  const latest = useRef({ onDrawerOpenChange, active, requested });
+  latest.current = { onDrawerOpenChange, active, requested };
   const instance = useId();
   const route = JSON.stringify([navigationKey, activeId, activeHref]);
-  const changeOpen = (next: boolean) => { setOpen(next); latest.current.onDrawerOpenChange?.(next); };
+  const changeOpen = (next: boolean) => { setOpen(next); setDismissed(!next); latest.current.onDrawerOpenChange?.(next); };
 
+  useEffect(() => { if (drawerOpen === false) setDismissed(false); }, [drawerOpen]);
   useEffect(() => {
     if (ancestor) setExpanded(previous => new Set([...previous, ancestor]));
   }, [ancestor, active]);
@@ -62,7 +65,7 @@ export function AppNavigation({
     if (typeof window.matchMedia !== "function") return;
     const query = window.matchMedia(dismissAt);
     const sync = () => {
-      const surface = nav.current?.closest('[role="dialog"]') ?? nav.current;
+      const surface = nav.current?.closest('[role="dialog"]') ?? nav.current?.closest("[data-panel]") ?? nav.current;
       handoff.current = Boolean(surface?.contains(document.activeElement));
       setNarrow(!query.matches);
       if (query.matches && latest.current.requested) changeOpen(false);
@@ -127,14 +130,14 @@ export function AppNavigation({
     onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) focusedId.current = undefined; }}>
     <div data-app-navigation-region="links" className="min-h-0 flex-1 overflow-auto">
       {!tree.length ? <p className="p-sm text-body text-ink-muted">{emptyMessage}</p> :
-        <ul className="flex flex-col gap-xs">{tree.map(node => {
+        <ul className="m-0 flex list-none flex-col gap-xs p-0">{tree.map(node => {
           const children = node.children ?? [];
           const isExpanded = expanded.has(node.id);
           const panelId = `${instance}-${encodeURIComponent(node.id)}`;
           return <li key={node.id} data-active-ancestor={node.id === ancestor ? "true" : undefined}>
             <div className={cx("flex min-w-0 items-center gap-xs rounded-control", node.id === ancestor && "bg-control-tonal")}>
               {(node.href !== undefined || node.onAction) && destination(node)}
-              {children.length > 0 && !collapsed && <Button variant="ghost" className={cx(CONTROL, "shrink-0", !node.href && !node.onAction && "flex-1")}
+              {children.length > 0 && !collapsed && <Button variant="ghost" className={cx(CONTROL, "shrink-0", node.href || node.onAction ? "justify-center" : "flex-1")}
                 style={{ minBlockSize: "var(--ui-layout-tap-target, 44px)", minInlineSize: "var(--ui-layout-tap-target, 44px)" }}
                 data-app-navigation-control="" data-node-id={node.id}
                 aria-label={`${isExpanded ? "Collapse" : "Expand"} ${node.label}`} aria-expanded={isExpanded} aria-controls={panelId}
@@ -143,7 +146,7 @@ export function AppNavigation({
                 <Icon glyph={ChevronDown} decorative size="sm" className={isExpanded ? "rotate-180" : undefined} />
               </Button>}
             </div>
-            {children.length > 0 && <ul id={panelId} className={cx("flex flex-col gap-xs", !collapsed && "ms-md border-s border-line-base ps-sm", !collapsed && !isExpanded && "hidden")}
+            {children.length > 0 && <ul id={panelId} className={cx("m-0 flex list-none flex-col gap-xs p-0", !collapsed && "ms-md border-s border-line-base ps-sm", !collapsed && !isExpanded && "hidden")}
               hidden={!collapsed && !isExpanded}>
               {(collapsed || isExpanded) && children.map(child => <li key={child.id}>{destination(child, node.id)}</li>)}
             </ul>}
@@ -153,7 +156,7 @@ export function AppNavigation({
   </nav>;
   if (narrow) return <Drawer trigger={<Button id={`${instance}-trigger`} variant="ghost">{openLabel}</Button>}
     heading={label} closeLabel={closeLabel} footer={footerRegion} navigationKey={route} dismissAt={dismissAt}
-    isOpen={drawerOpen ?? open} onOpenChange={changeOpen} className="gap-xs p-sm">{links}</Drawer>;
+    isOpen={requested} onOpenChange={changeOpen} className="gap-xs p-sm">{links}</Drawer>;
   return <Panel className="h-full min-h-0 shrink-0 gap-xs rounded-none border-0 p-sm"
     style={{ inlineSize: collapsed ? "var(--ui-layout-sidebar-rail-w, 64px)" : "var(--ui-layout-sidebar-w, 256px)" }}
     header={<div className="flex min-w-0 items-center justify-between gap-xs">

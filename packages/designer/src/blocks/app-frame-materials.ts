@@ -45,6 +45,6 @@ export const APP_FRAME_MATERIALS = [
       { exportName: "Icon", source: "src/atoms/Icon.tsx" },
     ],
     configs: [{ prop: "collapsed", values: [false, true], default: false, source: "src/blocks/AppNavigation.tsx" }],
-    authoredInputs: ["tree", "activeId", "activeHref", "label", "footer", "emptyMessage", "navigationKey", "drawerOpen", "onDrawerOpenChange"],
+    authoredInputs: ["tree", "activeId", "activeHref", "label", "footer", "emptyMessage", "navigationKey", "defaultCollapsed", "onCollapsedChange", "drawerOpen", "onDrawerOpenChange", "dismissAt", "openLabel", "closeLabel"],
   },
 ] as const;
