@@ -225,7 +225,7 @@ it("moves initially focused panel content to its control before first mobile col
   expect(screen.getByRole("link", { name: "About" }).parentElement).toHaveAttribute("inert");
 });
 
-it("keeps a closing panel painted but immediately inert, returns focus, reverses and cancels safely", async () => {
+it.each([false, true])("keeps a closing panel painted but immediately inert, returns focus, reverses and cancels safely (standalone=%s)", async standalone => {
   const original = HTMLElement.prototype.animate;
   const finishes: (() => void)[] = [];
   const animations: { cancel: ReturnType<typeof vi.fn>; finished: Promise<void> }[] = [];
@@ -236,7 +236,7 @@ it("keeps a closing panel painted but immediately inert, returns focus, reverses
   });
   Object.defineProperty(HTMLElement.prototype, "animate", { configurable: true, writable: true, value: animate });
   try {
-    const view = renderNav(); const toggle = screen.getByRole("button", { name: "Menu" });
+    const view = standalone ? render(<NavDisclosure><a href="#about">About</a></NavDisclosure>) : renderNav(); const toggle = screen.getByRole("button", { name: "Menu" });
     const link = screen.getByRole("link", { name: "About" }); const panel = link.parentElement!;
     fireEvent.click(toggle);
     expect(animate).toHaveBeenCalledTimes(1);

@@ -50,7 +50,7 @@ export function NavDisclosure({ children, "aria-label": ariaLabel = "Primary", t
   const close = (restore = true) => {
     if (!open.current) return;
     if (restore) toggle.current?.focus();
-    panel.current?.toggleAttribute("inert", Boolean(nav.current?.closest("header")));
+    panel.current?.setAttribute("inert", "");
     setExpanded(false);
   };
   useLayoutEffect(() => {
@@ -147,7 +147,7 @@ export function NavDisclosure({ children, "aria-label": ariaLabel = "Primary", t
     if (!element) return;
     const header = nav.current?.closest("header");
     const narrow = header?.hasAttribute("data-header-root") ? header.hasAttribute("data-collapsed") : mobile;
-    element.toggleAttribute("inert", narrow && !expanded && Boolean(header));
+    element.toggleAttribute("inert", narrow && !expanded);
     const previous = motion.current;
     const style = getComputedStyle(element);
     const from = previous ? { opacity: style.opacity, transform: style.transform } :
