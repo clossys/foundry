@@ -4389,9 +4389,11 @@ cleanly — `shell` and `blocks` are independent sibling layers built on
 so a real page just renders both together:
 
 `SiteFooter` keeps a dark local surface in light and dark page themes. Its
-`Legal` row places copyright left, links centered and named social icons followed
-by the home mark right; narrow containers stack links, icons, copyright.
-Provide dark-compatible artwork through `home` and optional named `icons`;
+`Legal` row places copyright at the inline start, links centered and named
+social icons followed by the home mark at the inline end, following the
+document's direction; narrower footers stack links, icons, then copyright,
+each centered. `home` takes the page's own mark, shown on a plate of the
+page's base ground; optional named `icons` take decorative artwork and
 `iconsLabel` preserves a social navigation name. Links use 44px targets,
 external rel safety and inverse focus rings. Privacy remains an ordinary link.
 Legacy `ground` controls divider policy without switching the page theme.
@@ -5168,8 +5170,10 @@ component ships no English of its own, so the caller supplies `linksLabel`
 in the page's language. Optional `icons` are ordered `{ label, href, icon }`
 records with named destinations and consumer-supplied decorative artwork.
 `iconsLabel` names their navigation group. Optional `home` supplies
-`{ label, href, markSrc }` with dark-compatible artwork, always after the
-social icons; standalone Designer callers supply it explicitly.
+`{ label, href, markSrc }`, always after the social icons; standalone
+Designer callers supply it explicitly. The mark is artwork authored for the
+page's base ground and is drawn on a small plate of that ground, so the same
+mark the header shows stays legible on the dark footer in either theme.
 
 ```tsx
 import { SiteFooter } from "@clossys/designer/shell";
@@ -5194,10 +5198,15 @@ export function Footer() {
 
 It renders one text string, `© {year} {entity}`, where the year is computed
 at render from the current date; there is no `year` prop. The component owns
-the layout: DOM and narrow-container order is links, icons, copyright.
-At a container width of 64rem or more, copyright sits left, links remain
-centered on the footer, and icons sit right with home last. Tracks wrap
-long content within their bounds. Every
+the layout: DOM and narrow-container order is links, icons, copyright,
+each centered on its own line. From the footer's own `desktop` breakpoint
+width (the same container width at which the columns become four; they
+become two at `tablet`), copyright sits at the inline start, links remain
+centered on the footer, and icons sit at the inline end on one line with
+home last, its plate meeting the page gutter; the three parts share one
+vertical centre. Inline start and end follow the document's direction, so a
+right-to-left page mirrors the row. Tracks wrap long content within their
+bounds without breaking words. Every
 link tap target is at least 44px. There is deliberately no disclaimer slot
 and no `children`, `className`, or `style` prop — regulatory text belongs in
 legal documents the links point to. `SiteFooter.Legal` does not import

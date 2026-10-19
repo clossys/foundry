@@ -2771,9 +2771,10 @@ their provenance stay unchanged. Hero appearance omission preserves the hero def
 
 The frame footer is always locally dark. Its standard row centers footer and
 legal links, keeps social icons before the real resolved brand-home mark, and
-stacks links, icons, copyright on phones. Empty link/social lists still retain
-home. `shell.footer.home` optionally supplies dark-compatible artwork through
-an asset id, destination and copy reference; omission uses the resolved brand.
+stacks links, icons, copyright on phones, each centered. Empty link/social
+lists still retain home, drawn on a plate of the page's base ground.
+`shell.footer.home` optionally supplies other home artwork through an asset
+id, destination and copy reference; omission uses the resolved brand.
 Existing columns and social names retain their ordering. The shared frame
 contract exposes `footerGround`, `footerPlacement` and `footerRule`; darkness,
 accessible names, external rel safety and the Privacy link are mandatory facts.

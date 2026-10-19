@@ -1,6 +1,7 @@
 import { Children, cloneElement, isValidElement, type HTMLAttributes, type ReactNode } from "react";
 import { cx } from "../atoms/internal/cx.js";
 import { SITE_CHROME_GROUND_CLASSES, siteChromeHasBorder, type SiteChromeGround } from "./internal/shell-ground.js";
+import { BADGE_INSET_SHARE, BADGE_RADIUS_SHARE } from "./badge-plate.js";
 import { UI_BORDER_HAIRLINE, UI_BRANDMARK_HEIGHT_SM, UI_LAYOUT_TAP_TARGET, UI_WIDTH_PAGE_PADDING_X, UI_Z_SHELL } from "./internal/shell-vars.js";
 
 export interface SiteFooterProps extends Omit<HTMLAttributes<HTMLElement>, "children"> {
@@ -58,7 +59,7 @@ function SiteFooterRoot({ columns, secondary, ground = "base", rule = "none", cl
         style={{ paddingInline: UI_WIDTH_PAGE_PADDING_X }}
       >
         {columns ? (
-          <div className="grid grid-cols-1 gap-lg tablet:grid-cols-2 desktop:grid-cols-4">{columns}</div>
+          <div className="site-footer-columns">{columns}</div>
         ) : null}
         {secondary ? (
           <div
@@ -99,7 +100,7 @@ export interface SiteFooterColumnProps {
 function SiteFooterColumn({ heading, children, className }: SiteFooterColumnProps) {
   return (
     <div className={cx("flex flex-col gap-sm", className)}>
-      <h2 className="text-body-s font-body font-medium">{heading}</h2>
+      <h2 className="m-0 text-body-s font-body font-medium">{heading}</h2>
       <div className="flex flex-col gap-xs">{safeColumnLinks(children)}</div>
     </div>
   );
@@ -127,7 +128,12 @@ export interface SiteFooterLegalProps {
   icons?: readonly { readonly label: string; readonly href: string; readonly icon: ReactNode }[];
   /** Accessible group name retained for supplied social profiles and home. */
   iconsLabel?: string;
-  /** Dark-compatible authored home artwork. Always last within the icon group. */
+  /**
+   * The home link, always last within the icon group. `markSrc` is artwork
+   * authored for the page's base ground (the ground the header shows the
+   * brand mark on); the footer draws it on a small plate of that ground so
+   * it reads on the dark footer in either page theme.
+   */
   home?: { readonly label: string; readonly href: string; readonly markSrc: string };
 }
 
@@ -152,24 +158,54 @@ function safeColumnLinks(children: ReactNode): ReactNode {
   });
 }
 
-/** External destinations receive rel safety even when the consumer uses the same tab. */
+/** Two unrelated documents: a destination that leaves either one's host is external. */
+const PARSE_BASES = ["https://footer-a.invalid/", "http://footer-b.invalid/"] as const;
+
+/**
+ * External destinations receive rel safety even when the consumer uses the
+ * same tab. Classified with the URL parser the browser applies to `href`
+ * (surrounding spaces and controls stripped, backslashes as slashes), not
+ * by matching the raw string, so a classification cannot disagree with
+ * where the rendered anchor goes.
+ */
 function externalRel(href: string): string | undefined {
-  return /^(?:https?:)?\/\//i.test(href) ? "noopener noreferrer" : undefined;
+  for (const base of PARSE_BASES) {
+    let url: URL;
+    try {
+      url = new URL(href, base);
+    } catch {
+      return undefined;
+    }
+    if ((url.protocol === "http:" || url.protocol === "https:") && url.host !== new URL(base).host) return "noopener noreferrer";
+  }
+  return undefined;
 }
 
+/** Spaces, tabs, newlines and other C0 controls the URL parser would silently strip. */
+const NONCANONICAL_HREF = /^[\u0000-\u0020]|[\u0000-\u0020]$|[\t\n\r]/;
+
 function requireNamedDestination(link: { label: string; href: string }): void {
-  if (!link.label.trim() || !link.href.trim()) throw new TypeError("Footer icons need a name and destination.");
-  const protocol = new URL(link.href, "https://example.invalid").protocol;
-  if (!["http:", "https:", "mailto:", "tel:"].includes(protocol)) throw new TypeError("Footer icon destination is unsafe.");
+  if (!link.label.trim() || !link.href.trim()) throw new TypeError("Footer links need a name and destination.");
+  if (NONCANONICAL_HREF.test(link.href)) throw new TypeError("Footer link destination is not canonical.");
+  const protocol = new URL(link.href, PARSE_BASES[0]).protocol;
+  if (!["http:", "https:", "mailto:", "tel:"].includes(protocol)) throw new TypeError("Footer link destination is unsafe.");
 }
+
+/** The home plate's padding and corner, from the same shares `Brandmark`'s shared plate uses. */
+const HOME_PLATE_STYLE = {
+  padding: "calc(" + UI_BRANDMARK_HEIGHT_SM + " * " + BADGE_INSET_SHARE / (1 - 2 * BADGE_INSET_SHARE) + ")",
+  borderRadius: "calc(" + UI_BRANDMARK_HEIGHT_SM + " * " + BADGE_RADIUS_SHARE / (1 - 2 * BADGE_INSET_SHARE) + ")",
+} as const;
 
 /**
  * Standard composition: links, icons (home last), copyright in reading order.
- * The desktop grid centers the links independently of asymmetric side contents;
- * bounded tracks wrap labels before collision and collapse to a phone stack.
+ * From the `desktop` breakpoint of the footer's own width, copyright sits at
+ * the inline start, links in the centre and icons at the inline end, in the
+ * document's direction; narrower footers stack in reading order.
  * No consent controls or arbitrary children are accepted in this row.
  */
 function SiteFooterLegal({ entity, links, linksLabel, icons = [], home, iconsLabel }: SiteFooterLegalProps) {
+  for (const link of links) requireNamedDestination(link);
   for (const link of icons) requireNamedDestination(link);
   if (home) requireNamedDestination(home);
   const IconGroup = iconsLabel ? "nav" : "div";
@@ -189,12 +225,14 @@ function SiteFooterLegal({ entity, links, linksLabel, icons = [], home, iconsLab
     <div data-footer-composition="" className="site-footer-composition">
       {linksLabel ? <nav data-footer-region="links" aria-label={linksLabel}>{list}</nav> : <div data-footer-region="links">{list}</div>}
       <IconGroup data-footer-region="icons" aria-label={iconsLabel}>
-        <ul role="list" dir="ltr" className="m-0 flex list-none flex-wrap items-center justify-center gap-x-sm p-0">
+        <ul role="list" className="m-0 flex list-none flex-wrap items-center justify-center gap-x-sm p-0">
           {icons.map((link, index) => <li key={index}>
             <a href={link.href} aria-label={link.label} rel={externalRel(link.href)} className={LEGAL_LINK_CLASSES} style={LEGAL_LINK_STYLE}>{link.icon}</a>
           </li>)}
           {home ? <li><a href={home.href} aria-label={home.label} rel={externalRel(home.href)} className={LEGAL_LINK_CLASSES} style={LEGAL_LINK_STYLE}>
-            <img src={home.markSrc} alt="" style={{ height: UI_BRANDMARK_HEIGHT_SM, width: "auto" }} />
+            <span data-footer-home-plate="" aria-hidden="true" className="inline-flex items-center justify-center bg-surface-base" style={HOME_PLATE_STYLE}>
+              <img src={home.markSrc} alt="" style={{ height: UI_BRANDMARK_HEIGHT_SM, width: "auto" }} />
+            </span>
           </a></li> : null}
         </ul>
       </IconGroup>

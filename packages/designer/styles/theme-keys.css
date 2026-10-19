@@ -823,6 +823,21 @@
   }
 }
 
+/* Footer columns and legal row switch on one source: the footer's own
+ * inline size (container-type above), at the theme's tablet and desktop
+ * breakpoint values, so the two can never disagree at a given width. */
+@utility site-footer-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--spacing-lg, 16px);
+  @container (min-width: 768px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  @container (min-width: 1280px) {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
 @utility site-footer-composition {
   display: grid;
   width: 100%;
@@ -831,7 +846,10 @@
   grid-template-columns: minmax(0, 1fr);
   gap: var(--spacing-sm, 8px) var(--spacing-lg, 16px);
   text-align: center;
-  & > * { min-width: 0; overflow-wrap: anywhere; }
+  /* Phone order is links, icons, copyright, each centred on both axes;
+   * max-width keeps a long word wrapping inside a centred, content-sized region. */
+  justify-items: center;
+  & > * { min-width: 0; max-width: 100%; overflow-wrap: break-word; }
   & > [data-footer-region="links"] { grid-area: links; }
   & > [data-footer-region="icons"] { grid-area: icons; }
   & > [data-footer-region="copyright"] { grid-area: copyright; }
@@ -839,13 +857,17 @@
   & [data-footer-region="icons"] li { max-width: 100%; min-width: 0; }
   & [data-footer-region="icons"] a { max-width: 100%; }
   & [data-footer-region="icons"] svg { max-width: var(--ui-layout-tap-target, 44px); max-height: var(--ui-layout-tap-target, 44px); }
-  @container (min-width: 64rem) {
-    direction: ltr;
+  /* Grid areas and flex-end are logical: in a right-to-left document the
+   * copyright starts on the right and home ends on the left. */
+  @container (min-width: 1280px) {
     grid-template-areas: "copyright links icons";
-    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(max-content, 1fr);
     align-items: center;
+    justify-items: stretch;
     & > [data-footer-region="copyright"] { text-align: start; }
-    & > [data-footer-region="icons"] > ul { justify-content: flex-end; }
+    & > [data-footer-region="icons"] > ul { justify-content: flex-end; flex-wrap: nowrap; }
+    /* The tap target extends inward so the end art meets the page gutter. */
+    & > [data-footer-region="icons"] li:last-child > a { justify-content: flex-end; padding-inline-end: 0; }
   }
 }
 

@@ -47,6 +47,18 @@ describe("SiteFooter", () => {
     expect(screen.getByText("Legal")).toBeInTheDocument();
   });
 
+  it("resets the browser heading margin on column headings", () => {
+    render(<SiteFooter columns={<SiteFooter.Column heading="Product"><a href="/x">X</a></SiteFooter.Column>} />);
+    expect(screen.getByRole("heading", { name: "Product" })).toHaveClass("m-0");
+  });
+
+  it("lays the columns out on the footer container instead of viewport breakpoints", () => {
+    const { container } = render(<SiteFooter columns={<SiteFooter.Column heading="Product"><a href="/x">X</a></SiteFooter.Column>} />);
+    const grid = container.querySelector("[data-footer-root] > div > div")!;
+    expect(grid).toHaveClass("site-footer-columns");
+    expect(grid.className).not.toMatch(/(?:^|\s)(?:tablet|desktop|mobile|wide)[-a-z]*:/);
+  });
+
   it("forwards className merged with its own built-in classes", () => {
     render(<SiteFooter secondary={<span>Legal</span>} className="my-footer" />);
     expect(screen.getByRole("contentinfo").className).toContain("my-footer");
@@ -195,11 +207,19 @@ describe("SiteFooter mandatory dark composition", () => {
     rerender(<SiteFooter secondary={<SiteFooter.Legal entity="Example" links={Array.from({ length: 24 }, (_, i) => ({ label: `Policy ${i}`, href: `/policy/${i}` }))} />} />);
     expect(screen.getAllByRole("link")).toHaveLength(24);
   });
-  it("refuses blank icon names and unsafe or missing destinations", () => {
-    for (const replacement of [{ label: " " }, { href: "" }, { href: "javascript:alert(1)" }]) {
-      expect(() => render(<SiteFooter.Legal entity="Example" links={[]} icons={[{ ...options.icons[0], ...replacement }]} />)).toThrow();
-      expect(() => render(<SiteFooter.Legal entity="Example" links={[]} home={{ ...options.home, ...replacement }} />)).toThrow();
+  it("refuses blank names and unsafe, missing or noncanonical destinations on every footer-owned anchor", () => {
+    const noncanonical = [" https://example.org/profile", "https://example.org/profile ", "https://example.org/\tprofile", "\nhttps://example.org/profile"];
+    for (const replacement of [{ label: " " }, { href: "" }, { href: "javascript:alert(1)" }, ...noncanonical.map(href => ({ href }))]) {
+      expect(() => render(<SiteFooter.Legal entity="Example" links={[]} icons={[{ ...options.icons[0], ...replacement }]} />)).toThrow(TypeError);
+      expect(() => render(<SiteFooter.Legal entity="Example" links={[]} home={{ ...options.home, ...replacement }} />)).toThrow(TypeError);
+      expect(() => render(<SiteFooter.Legal entity="Example" links={[{ label: "Privacy", href: "/privacy", ...replacement }]} />)).toThrow(TypeError);
     }
+  });
+  it("classifies external column anchors the way the browser parses them", () => {
+    const hrefs = [" https://example.org/a", "HTTPS://example.org/b", "\\\\example.org/c", "/\\example.org/d", "https:example.org/e"];
+    render(<SiteFooter columns={<SiteFooter.Column heading="Resources">{hrefs.map((href, i) => <a key={i} href={href}>{`Doc ${i}`}</a>)}<a href="/local">Local</a><a href="mailto:team@example.org">Mail</a></SiteFooter.Column>} />);
+    hrefs.forEach((_, i) => expect(screen.getByRole("link", { name: `Doc ${i}` })).toHaveAttribute("rel", "noopener noreferrer"));
+    for (const name of ["Local", "Mail"]) expect(screen.getByRole("link", { name })).not.toHaveAttribute("rel");
   });
   it("keeps dark paint, inverse focus and safe areas in its shipped CSS", () => {
     const css = readFileSync(join(import.meta.dirname, "../../styles/compiled.css"), "utf8");
@@ -211,33 +231,104 @@ describe("SiteFooter mandatory dark composition", () => {
   });
 
   const theme = readFileSync(join(import.meta.dirname, "../../styles/theme-keys.css"), "utf8");
-  function rule(opening: string) {
-    const start = theme.indexOf(opening);
+  function block(source: string, opening: string) {
+    const start = source.indexOf(opening);
     expect(start, opening).toBeGreaterThanOrEqual(0);
     let depth = 0;
-    for (let i = theme.indexOf("{", start); i < theme.length; i++) {
-      if (theme[i] === "{") depth++;
-      if (theme[i] === "}" && --depth === 0) return theme.slice(start, i + 1);
+    for (let i = source.indexOf("{", start); i < source.length; i++) {
+      if (source[i] === "{") depth++;
+      if (source[i] === "}" && --depth === 0) return source.slice(start, i + 1);
     }
     throw new Error(`Unterminated footer CSS: ${opening}`);
   }
+  const rule = (opening: string) => block(theme, opening);
+  const breakpoint = (name: string) => theme.match(new RegExp(`--breakpoint-${name}:\\s*([^;]+);`))![1]!.trim();
+  const containerQueries = (css: string) => Array.from(css.matchAll(/@container\s*\(min-width:\s*([^)]+)\)/g), match => match[1]!.trim());
+  const wide = () => block(rule("@utility site-footer-composition {"), "@container");
+
   it("uses centered bounded tracks with links between copyright and icons, then collapses to reading order", () => {
     const composition = rule("@utility site-footer-composition {");
-    const desktop = rule("@container (min-width: 64rem) {");
     expect(composition).toContain('grid-template-areas: "links" "icons" "copyright"');
-    expect(composition).toContain("overflow-wrap: anywhere");
     expect(composition).toContain("min-width: 0");
-    expect(desktop).toContain('grid-template-areas: "copyright links icons"');
-    expect(desktop).toMatch(/grid-template-columns:\s*minmax\(0, 1fr\) minmax\(0, 2fr\) minmax\(0, 1fr\)/);
-    expect(desktop).toContain("align-items: center");
-    expect(desktop).toContain("direction: ltr");
-    expect(desktop).toContain("justify-content: flex-end");
+    expect(wide()).toContain('grid-template-areas: "copyright links icons"');
+    expect(wide()).toMatch(/grid-template-columns:\s*minmax\(0, 1fr\) minmax\(0, 2fr\) minmax\(max-content, 1fr\)/);
+    expect(wide()).toContain("align-items: center");
+    expect(wide()).toContain("justify-content: flex-end");
+  });
+  it("stacks links, then icons, then copyright, all centred, below the desktop breakpoint", () => {
+    const { container } = render(fixture());
+    const row = container.querySelector("[data-footer-composition]")!;
+    expect(Array.from(row.children).map(node => node.getAttribute("data-footer-region"))).toEqual(["links", "icons", "copyright"]);
+    for (const region of ["links", "icons"]) {
+      expect(row.querySelector(`[data-footer-region="${region}"] > ul`)).toHaveClass("justify-center", "items-center");
+    }
+    const composition = rule("@utility site-footer-composition {");
+    const narrow = composition.replace(wide(), "");
+    expect(narrow).toContain('grid-template-areas: "links" "icons" "copyright"');
+    expect(narrow).toContain("grid-template-columns: minmax(0, 1fr)");
+    expect(narrow).toContain("text-align: center");
+    expect(narrow).toContain("justify-items: center");
+    expect(narrow).toMatch(/& > \* \{[^}]*max-width: 100%/);
+    expect(narrow).not.toMatch(/\border\s*:/);
+    expect(wide()).toContain("justify-items: stretch");
+  });
+  it("follows the document direction instead of forcing left-to-right", () => {
+    const composition = rule("@utility site-footer-composition {");
+    expect(composition).not.toMatch(/direction\s*:/);
+    expect(composition).not.toMatch(/(?:^|[\s;{-])(?:left|right)\s*:|margin-(?:left|right)|padding-(?:left|right)|text-align:\s*(?:left|right)/);
+    const { container } = render(<div dir="rtl">{fixture()}</div>);
+    const footer = container.querySelector("footer")!;
+    expect(footer.querySelector("[dir]")).toBeNull();
+    // Home is the last icon in DOM order, so it lands at the inline end in either direction.
+    const icons = Array.from(footer.querySelectorAll('[data-footer-region="icons"] li'));
+    expect(icons.at(-1)!.querySelector("a")).toHaveAttribute("aria-label", "Example home");
+    expect(wide()).toContain("text-align: start");
+  });
+  it("aligns the inline-end icon art to the page gutter on wide footers", () => {
+    const end = block(wide(), '& > [data-footer-region="icons"] li:last-child > a {');
+    expect(end).toContain("justify-content: flex-end");
+    expect(end).toContain("padding-inline-end: 0");
+  });
+  it("switches legal row and link columns from one breakpoint source on the footer container", () => {
+    const columns = rule("@utility site-footer-columns {");
+    const legal = containerQueries(rule("@utility site-footer-composition {"));
+    const grid = containerQueries(columns);
+    expect(legal).toEqual([breakpoint("desktop")]);
+    expect(grid).toEqual([breakpoint("tablet"), breakpoint("desktop")]);
+    expect(block(columns, `@container (min-width: ${breakpoint("desktop")}) {`)).toContain("grid-template-columns: repeat(4, minmax(0, 1fr))");
+    expect(block(columns, `@container (min-width: ${breakpoint("tablet")}) {`)).toContain("grid-template-columns: repeat(2, minmax(0, 1fr))");
+    expect(rule("@utility site-footer-dark {")).toContain("container-type: inline-size");
+  });
+  it("keeps the wide icon row on one line and never breaks the copyright mid-word", () => {
+    const composition = rule("@utility site-footer-composition {");
+    expect(composition).not.toContain("overflow-wrap: anywhere");
+    expect(block(wide(), '& > [data-footer-region="icons"] > ul {')).toContain("flex-wrap: nowrap");
+  });
+  it("shows the home artwork on a page-ground plate so page-ground marks read on the dark footer", () => {
+    const { container } = render(fixture());
+    const home = screen.getByRole("link", { name: "Example home" });
+    const plate = home.querySelector("[data-footer-home-plate]")!;
+    expect(plate).not.toBeNull();
+    expect(plate).toHaveClass("bg-surface-base");
+    expect(plate).toHaveAttribute("aria-hidden", "true");
+    expect(plate.querySelector("img")).toHaveAttribute("src", "/dark-mark.svg");
+    expect(plate.getAttribute("style")).toContain("var(--ui-brandmark-height-sm");
+    expect(container.querySelectorAll("[data-footer-home-plate]")).toHaveLength(1);
   });
   it("selects dark brand roles separately for light, explicit dark and OS dark themes", () => {
     const paint = rule("@utility site-footer-dark {");
     expect(paint).toContain("--site-footer-surface: var(--color-surface-inverse,");
-    for (const selector of [':root[data-theme="dark"] &[data-footer-root]', ':root:not([data-theme="light"]) &[data-footer-root]']) {
-      const dark = rule(`${selector} {`);
+    // OS dark applies only inside the prefers-color-scheme media block, in source and in shipped CSS.
+    const osDark = block(paint, "@media (prefers-color-scheme: dark) {");
+    expect(osDark).toContain(':root:not([data-theme="light"]) &[data-footer-root] {');
+    const compiled = readFileSync(join(import.meta.dirname, "../../styles/compiled.css"), "utf8");
+    const shippedOsDark = Array.from(compiled.matchAll(/@media \(prefers-color-scheme: dark\) \{/g), m => block(compiled.slice(m.index), "@media"))
+      .filter(media => media.includes('.site-footer-dark[data-footer-root]'));
+    expect(shippedOsDark).toHaveLength(1);
+    expect(shippedOsDark[0]).toContain(':root:not([data-theme="light"]) .site-footer-dark[data-footer-root]');
+    expect(shippedOsDark[0]).toContain("--site-footer-surface: var(--color-surface-base,");
+    for (const [selector, source] of [[':root[data-theme="dark"] &[data-footer-root]', paint], [':root:not([data-theme="light"]) &[data-footer-root]', osDark]] as const) {
+      const dark = block(source, `${selector} {`);
       expect(dark).toContain("--site-footer-surface: var(--color-surface-base,");
       expect(dark).toContain("--site-footer-ink: var(--color-ink-primary,");
       expect(dark).toContain("--site-footer-muted: var(--color-ink-secondary,");
