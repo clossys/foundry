@@ -3,6 +3,10 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## Unreleased
+
+- Add Panel, Drawer and ResizablePane Block Materials with source-backed composition records, and a named ResizeHandle Atom with bounded keyboard and pointer interaction. Drawer reuses the Dialog lifecycle and releases it on route and breakpoint changes. Document the forty-first Atom without changing existing Dialog defaults.
+
 ## 0.12.0 - 2026-10-16
 
 - Add optional inverse brand and navigation ink, muted eyebrows, wide hero copy, display heading scale, and a transparent footer top rule while preserving default rendering.

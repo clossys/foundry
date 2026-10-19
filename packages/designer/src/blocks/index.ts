@@ -189,6 +189,13 @@ export type { SectionFrameProps, SectionMeasure } from "./SectionFrame.js";
 
 export { ConsentBanner } from "./ConsentBanner.js";
 export type { ConsentBannerProps } from "./ConsentBanner.js";
+export { Panel } from "./Panel.js";
+export type { PanelProps } from "./Panel.js";
+export { Drawer } from "./Drawer.js";
+export type { DrawerProps } from "./Drawer.js";
+export { ResizablePane } from "./ResizablePane.js";
+export type { ResizablePaneProps } from "./ResizablePane.js";
+export { APP_FRAME_MATERIALS } from "./app-frame-materials.js";
 
 export { RecordLedger } from "./RecordLedger.js";
 export type { RecordLedgerProps, LedgerRowData, LedgerGroupData } from "./RecordLedger.js";
