@@ -52,10 +52,11 @@ describe("Logomark: decorative glyph and plate", () => {
     expect(image).toHaveAttribute("alt", "");
   });
 
-  it("keeps the optional title separate from the decorative accessible name", () => {
-    const { container } = render(<Logomark src="/glyph.svg" size="md" title="Decorative identity" />);
+  it.each(["self", "shared"] as const)("keeps a titled %s mark out of the accessibility tree", plate => {
+    const { container } = render(<Logomark src="/glyph.svg" size="md" plate={plate} title="Decorative identity" />);
     expect(container.querySelector("[title]")).toHaveAttribute("title", "Decorative identity");
     expect(container.querySelector("img")).toHaveAttribute("alt", "");
+    expect(container.querySelector("img")!.closest('[aria-hidden="true"]')).not.toBeNull();
     expect(screen.queryByRole("img")).toBeNull();
   });
 

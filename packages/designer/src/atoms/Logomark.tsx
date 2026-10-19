@@ -25,7 +25,7 @@ const HEIGHTS = { sm: UI_BRANDMARK_HEIGHT_SM, md: UI_BRANDMARK_HEIGHT_MD, lg: UI
 export function Logomark({ src, size, tone = "auto", plate = "self", title }: LogomarkProps) {
   const height = HEIGHTS[size];
   const inverse = tone === "inverse";
-  if (plate !== "shared") return <img src={src} alt="" style={{ height, width: "auto" }} title={title} />;
+  if (plate !== "shared") return <img src={src} alt="" aria-hidden={title ? true : undefined} style={{ height, width: "auto" }} title={title} />;
   const imageSide = `calc(${height} * ${1 - 2 * BADGE_INSET_SHARE})`;
   return (
     <span
