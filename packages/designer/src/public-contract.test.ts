@@ -8,11 +8,43 @@ import ts from "typescript";
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 
 describe("compiled atom guidance public contract", () => {
-  it("intentionally exports the three atom metadata records from the existing client atoms barrel", () => {
+  it("intentionally exports the four atom metadata records from the existing client atoms barrel", () => {
     const entry = join(packageRoot, "dist/atoms/index.js");
     const script = `import * as atoms from ${JSON.stringify(entry)}; process.stdout.write(JSON.stringify(Object.keys(atoms).filter(key => /^ATOM_/.test(key)).sort()));`;
     const keys = JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8", cwd: packageRoot }));
-    expect(keys).toEqual(["ATOM_API_FACTS", "ATOM_DISPLAY_GROUPS", "ATOM_GUIDANCE"]);
+    expect(keys).toEqual(["ATOM_API_FACTS", "ATOM_COMPARISON", "ATOM_DISPLAY_GROUPS", "ATOM_GUIDANCE"]);
+  });
+  it("pins compiled comparison keys to the finite public API facts", () => {
+    const entry = join(packageRoot, "dist/atoms/index.js");
+    const script = `
+      import { ATOM_COMPARISON, ATOM_API_FACTS } from ${JSON.stringify(entry)};
+      process.stdout.write(JSON.stringify({
+        actual: Object.keys(ATOM_COMPARISON).sort(),
+        expected: Object.entries(ATOM_API_FACTS).filter(([, fact]) => fact.options.length > 0).map(([id]) => id).sort()
+      }));
+    `;
+    const keys = JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8", cwd: packageRoot }));
+    expect(keys.actual.length).toBeGreaterThan(0);
+    expect(keys.actual).toEqual(keys.expected);
+  });
+
+  it("exports the compiled AtomComparison type through the existing atoms subpath", () => {
+    const filename = join(packageRoot, "atom-comparison-consumer.check.ts");
+    const consumer = `
+      import { ATOM_COMPARISON, type AtomComparison } from ${JSON.stringify(join(packageRoot, "dist/atoms/index.js"))};
+      const comparison: AtomComparison = ATOM_COMPARISON["act.button"];
+      const column: string = comparison.columns.option;
+      const policy: "skip-violations" = comparison.constraintPolicy;
+      const cap: number = comparison.maxCells;
+    `;
+    const options = { strict: true, noEmit: true, skipLibCheck: true, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler };
+    const host = ts.createCompilerHost(options);
+    const original = host.getSourceFile.bind(host);
+    host.getSourceFile = (path, language, error, fresh) => path === filename
+      ? ts.createSourceFile(path, consumer, language, true)
+      : original(path, language, error, fresh);
+    const program = ts.createProgram([filename], options, host);
+    expect(ts.getPreEmitDiagnostics(program).map(diagnostic => ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n"))).toEqual([]);
   });
 });
 const packageJson = JSON.parse(readFileSync(join(packageRoot, "package.json"), "utf8")) as {

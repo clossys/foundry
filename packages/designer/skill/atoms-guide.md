@@ -10,6 +10,8 @@ Stable purpose, content and anatomy are separate from medium-specific implementa
 
 Represented scalar options are a bounded source-checked selection, not an exhaustive inherited API or a Cartesian product. Defaults distinguish local initializers, inherited peer behavior and omitted/conditional values. Data, compound parts, callbacks, style and arbitrary children are authored inputs rather than selectable configuration axes.
 
+`ATOM_COMPARISON` declares preferred finite columns and optional rows for comparison, bounded by `maxCells` at no more than 24. `AtomComparison` describes this data-only contract; existing constraints remain authoritative for consumer-authored inputs. Atoms without finite options have no comparison entry.
+
 Consumer-owned demonstration coverage is unassessed here. A fixed controlled value or a single option cannot demonstrate toggling or switching. Runtime acceptance, visual effectiveness and type/runtime rejection differ. Token evidence is partial and distinguishes direct reads from transitive bindings; importing a helper does not consume all its tokens.
 
 ## Display taxonomy
@@ -1274,6 +1276,6 @@ Token dependency coverage: partial. Representative consumed dependencies only; t
 
 ## Maintain the shared contract
 
-Read `ATOM_GUIDANCE` for curated selection semantics and medium evidence, `ATOM_API_FACTS` for checked facts, and `ATOM_DISPLAY_GROUPS` for placement. `AtomGuidance`, `AtomApiFacts` and `AtomDisplayGroup` describe their shapes; the README lists supporting types. Consumers reference these records rather than copying guidance.
+Read `ATOM_GUIDANCE` for curated selection semantics and medium evidence, `ATOM_API_FACTS` for checked facts, `ATOM_DISPLAY_GROUPS` for placement, and `ATOM_COMPARISON` for finite comparison axes. `AtomGuidance`, `AtomApiFacts`, `AtomDisplayGroup` and `AtomComparison` describe their shapes; the README lists supporting types. Consumers reference these records rather than copying guidance.
 
 Regenerate with `node scripts/generate-atom-docs.mjs`; check freshness with `node scripts/check-atom-docs.mjs`. These are repository-only commands and do not ship in the installed package. The checker compares this whole guide and the skill selection section byte for byte using source, without installed dist or timestamps.

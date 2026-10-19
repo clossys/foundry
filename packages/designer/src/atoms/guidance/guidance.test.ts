@@ -319,3 +319,155 @@ describe("shared atom guidance", () => {
     expect(text).toContain("`" + categoricalEvidence + "`");
   });
 });
+
+// Structural constraint evaluation is test-only. Prose/data requirements still
+// require consumer assessment; the public contract contains no validator.
+function comparisonViolations(rules: readonly any[], values: Record<string, unknown>) {
+  const present = (prop: string) => values[prop] !== undefined;
+  return rules.filter(rule => {
+    if (rule.when && !matches(rule.when, values)) return false;
+    if (rule.kind === "effective-when") {
+      return present(rule.props[0]) && !effective(rule, values);
+    }
+    if (rule.kind === "paired") {
+      const count = rule.props.filter(present).length;
+      return count > 0 && count < rule.props.length;
+    }
+    if (rule.kind === "requires") return rule.requires.some((prop: string) => !present(prop));
+    if (rule.kind === "exclusive") {
+      if (rule.presence === "exactly-one") return rule.props.filter(present).length !== 1;
+      return rule.excludes.some(present);
+    }
+    return false;
+  });
+}
+
+function comparisonCells(comparison: any): Record<string, unknown>[] {
+  return comparison.columns.values.flatMap((column: unknown) => {
+    const cell = { [comparison.columns.option]: column };
+    return comparison.rows
+      ? comparison.rows.values.map((row: unknown) => ({ ...cell, [comparison.rows.option]: row }))
+      : [cell];
+  });
+}
+
+describe("finite atom comparisons", () => {
+  const comparisons = () => (atoms as unknown as { ATOM_COMPARISON?: Record<string, any> }).ATOM_COMPARISON;
+
+  it("declares a nonempty comparison exactly for leaves with finite options", () => {
+    expect(comparisons()).toBeDefined();
+    const finiteIds = Object.entries(facts()).filter(([, fact]) => fact.options.length > 0).map(([id]) => id);
+    expect(Object.keys(comparisons()!).sort()).toEqual(finiteIds.sort());
+    for (const [id, comparison] of Object.entries(comparisons()!)) {
+      expect(comparison.columns, id).toBeDefined();
+      expect(comparison.columns.values.length, id).toBeGreaterThan(0);
+    }
+  });
+
+  it("uses only existing finite axes and values with a bounded cell budget", () => {
+    expect(comparisons()).toBeDefined();
+    for (const [id, comparison] of Object.entries(comparisons()!)) {
+      const axes = [comparison.columns, ...(comparison.rows ? [comparison.rows] : [])];
+      expect(new Set(axes.map(axis => axis.option)).size, id).toBe(axes.length);
+      for (const axis of axes) {
+        const option = facts()[id].options.find((candidate: any) => candidate.prop === axis.option);
+        expect(option, `${id}.${axis.option} must be a source-checked finite option`).toBeDefined();
+        expect(axis.values).not.toBe(option.values);
+        expect(Object.isFrozen(option.values), id).toBe(false);
+        expect(axis.values.length, id).toBeGreaterThan(0);
+        expect(new Set(axis.values).size, id).toBe(axis.values.length);
+        for (const value of axis.values) {
+          expect(["string", "number", "boolean"]).toContain(typeof value);
+          expect(option.values, `${id}.${axis.option}`).toContain(value);
+          if (typeof value === "number") expect(Number.isFinite(value)).toBe(true);
+        }
+      }
+      expect(Number.isInteger(comparison.maxCells), id).toBe(true);
+      expect(comparison.maxCells, id).toBeLessThanOrEqual(24);
+      // The raw product conservatively bounds cells after any constraint skip.
+      expect(comparison.maxCells, id).toBeGreaterThanOrEqual(comparisonCells(comparison).length);
+    }
+  });
+
+  it("flags cells using original constraint references without freezing existing metadata", () => {
+    expect(comparisons()).toBeDefined();
+    let skippedAxisCells = 0;
+    let retainedAxisCells = 0;
+    expect(Object.isFrozen(comparisons())).toBe(true);
+    for (const [id, comparison] of Object.entries(comparisons()!)) {
+      const rules = guidance()[id].media.web.implementation.constraints;
+      expect(comparison.constraints, id).toBe(rules);
+      expect(comparison.constraintPolicy, id).toBe("skip-violations");
+      expect(Object.isFrozen(comparison), id).toBe(true);
+      for (const axis of [comparison.columns, ...(comparison.rows ? [comparison.rows] : [])]) {
+        expect(Object.isFrozen(axis), id).toBe(true);
+        expect(Object.isFrozen(axis.values), id).toBe(true);
+      }
+      expect(Object.isFrozen(rules), id).toBe(false);
+      for (const rule of rules) expect(Object.isFrozen(rule), id).toBe(false);
+      const axisOptions = [comparison.columns.option, ...(comparison.rows ? [comparison.rows.option] : [])];
+      for (const cell of comparisonCells(comparison)) {
+        const forbidden = comparisonViolations(rules, cell);
+        const flagged = comparisonViolations(comparison.constraints, cell);
+        expect(flagged, `${id} ${JSON.stringify(cell)}`).toEqual(forbidden);
+        for (const rule of forbidden) expect(flagged.some(candidate => candidate === rule)).toBe(true);
+        if (forbidden.some(rule => rule.props.every((prop: string) => axisOptions.includes(prop)))) skippedAxisCells += 1;
+        if (!flagged.length) retainedAxisCells += 1;
+      }
+    }
+    // At least one real axis product exercises conditional applicability.
+    expect(skippedAxisCells).toBeGreaterThan(0);
+    expect(retainedAxisCells).toBeGreaterThan(0);
+  });
+
+  it("flags concrete non-axis Icon, Chip and Meter violations from retained rules", () => {
+    expect(comparisons()).toBeDefined();
+    const fixtures: { id: string; valid: Record<string, unknown>[]; invalid: Record<string, unknown>[] }[] = [
+      {
+        id: "depict.icon",
+        valid: [{ glyph: [], decorative: true }, { glyph: [], label: "Search" }, { children: "Markup", label: "Symbol" }],
+        invalid: [
+          { glyph: [], decorative: true, label: "Search" },
+          { glyph: [], children: "Markup", decorative: true },
+          { decorative: true },
+          { glyph: [], decorative: false },
+          { glyph: [] },
+        ],
+      },
+      {
+        id: "inform.chip",
+        valid: [{ children: "Filter" }, { children: "Filter", onRemove: () => {}, removeLabel: "Remove Filter" }],
+        invalid: [{ children: "Filter", onRemove: () => {} }],
+      },
+      {
+        id: "inform.meter",
+        valid: [
+          { value: 5, scaleMax: 10, valueText: "5" },
+          { value: 5, scaleMax: 10, valueText: "5", previous: 0, previousText: "Previously zero" },
+        ],
+        invalid: [
+          { value: 5, scaleMax: 10, valueText: "5", previous: 0 },
+          { value: 5, scaleMax: 10, valueText: "5", previousText: "Previously zero" },
+        ],
+      },
+    ];
+    for (const { id, valid, invalid } of fixtures) {
+      const comparison = comparisons()![id];
+      const rules = guidance()[id].media.web.implementation.constraints;
+      for (const cell of comparisonCells(comparison)) {
+        for (const authored of valid) {
+          expect(comparisonViolations(comparison.constraints, { ...cell, ...authored }), id).toEqual([]);
+        }
+        for (const authored of invalid) {
+          const values = { ...cell, ...authored };
+          const forbidden = comparisonViolations(rules, values);
+          expect(forbidden.length, `${id} ${JSON.stringify(authored)}`).toBeGreaterThan(0);
+          const flagged = comparisonViolations(comparison.constraints, values);
+          expect(flagged).toEqual(forbidden);
+          for (const rule of forbidden) expect(flagged.some(candidate => candidate === rule)).toBe(true);
+          expect(comparison.constraintPolicy).toBe("skip-violations");
+        }
+      }
+    }
+  });
+});

@@ -8,8 +8,9 @@ disable-model-invocation: true
 <!-- atom-selection:start -->
 ### Atom selection
 
-Use `ATOM_GUIDANCE`, `ATOM_API_FACTS` and `ATOM_DISPLAY_GROUPS` from `@clossys/designer/atoms`. The barrel remains client-only. Import safety (`RENDER_ENVIRONMENT`) is not medium support.
+Use `ATOM_GUIDANCE`, `ATOM_API_FACTS`, `ATOM_DISPLAY_GROUPS` and `ATOM_COMPARISON` from `@clossys/designer/atoms`. The barrel remains client-only. Import safety (`RENDER_ENVIRONMENT`) is not medium support.
 Read the installed companion at `node_modules/@clossys/designer/skill/atoms-guide.md`; the launcher does not copy that file.
+ATOM_COMPARISON declares preferred finite columns and optional rows with a maximum of 24 cells. Respect its references to existing constraints when choosing consumer-authored inputs.
 Display Group > Family > Atom: four groups, ten families, forty-one established leaves including six charts. Only leaves are selectable; preserve legacy IDs including act.link and reveal.tabs.
 Choose stable purpose, content and anatomy first, then medium implementation and configuration. Web is implemented with source evidence; email, print and video remain unassessed.
 Button has seven coupled Style preset values, not independent intent or emphasis axes. Respect ignored-option applicability, paired requirements, Icon naming/content contracts and severity/shape derivation. Represented scalar options are a bounded selection, not an exhaustive inherited API or a Cartesian product.

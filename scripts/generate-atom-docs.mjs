@@ -34,8 +34,9 @@ export async function atomData() {
 
 export function generateAtomSkillSection() {
   return [start, "### Atom selection", "",
-    `Use ${code("ATOM_GUIDANCE")}, ${code("ATOM_API_FACTS")} and ${code("ATOM_DISPLAY_GROUPS")} from ${code(`${name()}/atoms`)}. The barrel remains client-only. Import safety (${code("RENDER_ENVIRONMENT")}) is not medium support.`,
+    `Use ${code("ATOM_GUIDANCE")}, ${code("ATOM_API_FACTS")}, ${code("ATOM_DISPLAY_GROUPS")} and ${code("ATOM_COMPARISON")} from ${code(`${name()}/atoms`)}. The barrel remains client-only. Import safety (${code("RENDER_ENVIRONMENT")}) is not medium support.`,
     `Read the installed companion at ${code(`node_modules/${name()}/skill/atoms-guide.md`)}; the launcher does not copy that file.`,
+    "ATOM_COMPARISON declares preferred finite columns and optional rows with a maximum of 24 cells. Respect its references to existing constraints when choosing consumer-authored inputs.",
     "Display Group > Family > Atom: four groups, ten families, forty-one established leaves including six charts. Only leaves are selectable; preserve legacy IDs including act.link and reveal.tabs.",
     "Choose stable purpose, content and anatomy first, then medium implementation and configuration. Web is implemented with source evidence; email, print and video remain unassessed.",
     "Button has seven coupled Style preset values, not independent intent or emphasis axes. Respect ignored-option applicability, paired requirements, Icon naming/content contracts and severity/shape derivation. Represented scalar options are a bounded selection, not an exhaustive inherited API or a Cartesian product.",
@@ -55,6 +56,7 @@ export async function generateAtomDocs() {
     `${Object.keys(guidance).length} established leaves appear once in ${groups.length} groups and ${groups.flatMap(group => group.families).length} families. Groups and families are navigation; only leaves are selectable. Display placement preserves legacy IDs.`, "",
     "Stable purpose, content and anatomy are separate from medium-specific implementation. Web cites current source; email, print and video are unassessed. Import safety, server rendering and visual resemblance establish no other medium’s support.", "",
     "Represented scalar options are a bounded source-checked selection, not an exhaustive inherited API or a Cartesian product. Defaults distinguish local initializers, inherited peer behavior and omitted/conditional values. Data, compound parts, callbacks, style and arbitrary children are authored inputs rather than selectable configuration axes.", "",
+    "`ATOM_COMPARISON` declares preferred finite columns and optional rows for comparison, bounded by `maxCells` at no more than 24. `AtomComparison` describes this data-only contract; existing constraints remain authoritative for consumer-authored inputs. Atoms without finite options have no comparison entry.", "",
     "Consumer-owned demonstration coverage is unassessed here. A fixed controlled value or a single option cannot demonstrate toggling or switching. Runtime acceptance, visual effectiveness and type/runtime rejection differ. Token evidence is partial and distinguishes direct reads from transitive bindings; importing a helper does not consume all its tokens.", "",
     "## Display taxonomy", "", "| Group | Families | Leaves |", "| --- | --- | ---: |",
     ...groups.map(group => `| ${group.label} | ${group.families.map(family => family.label).join(", ")} | ${group.families.flatMap(family => family.atoms).length} |`), "", "## Atom reference"];
@@ -85,7 +87,7 @@ export async function generateAtomDocs() {
       }
     }
   }
-  lines.push("", "## Maintain the shared contract", "", "Read `ATOM_GUIDANCE` for curated selection semantics and medium evidence, `ATOM_API_FACTS` for checked facts, and `ATOM_DISPLAY_GROUPS` for placement. `AtomGuidance`, `AtomApiFacts` and `AtomDisplayGroup` describe their shapes; the README lists supporting types. Consumers reference these records rather than copying guidance.", "", "Regenerate with `node scripts/generate-atom-docs.mjs`; check freshness with `node scripts/check-atom-docs.mjs`. These are repository-only commands and do not ship in the installed package. The checker compares this whole guide and the skill selection section byte for byte using source, without installed dist or timestamps.", "");
+  lines.push("", "## Maintain the shared contract", "", "Read `ATOM_GUIDANCE` for curated selection semantics and medium evidence, `ATOM_API_FACTS` for checked facts, `ATOM_DISPLAY_GROUPS` for placement, and `ATOM_COMPARISON` for finite comparison axes. `AtomGuidance`, `AtomApiFacts`, `AtomDisplayGroup` and `AtomComparison` describe their shapes; the README lists supporting types. Consumers reference these records rather than copying guidance.", "", "Regenerate with `node scripts/generate-atom-docs.mjs`; check freshness with `node scripts/check-atom-docs.mjs`. These are repository-only commands and do not ship in the installed package. The checker compares this whole guide and the skill selection section byte for byte using source, without installed dist or timestamps.", "");
   return lines.join("\n");
 }
 
