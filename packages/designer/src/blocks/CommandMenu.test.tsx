@@ -242,6 +242,18 @@ describe("CommandMenu", () => {
     expect(onOpen).not.toHaveBeenCalled();
   });
 
+  it("removes its enabled listener immediately on unmount", () => {
+    const onOpen = vi.fn();
+    function Shortcut() { useCommandMenuShortcut({ onOpen }); return null; }
+    const view = render(<Shortcut />);
+    expect(modKey().defaultPrevented).toBe(true);
+    expect(onOpen).toHaveBeenCalledOnce();
+    onOpen.mockClear();
+    view.unmount();
+    expect(modKey().defaultPrevented).toBe(false);
+    expect(onOpen).not.toHaveBeenCalled();
+  });
+
   it.each(["dialog", "alertdialog", "native-open"])("declines a visible %s surface", role => {
     const onOpen = vi.fn();
     function Shortcut() { useCommandMenuShortcut({ onOpen }); return null; }
