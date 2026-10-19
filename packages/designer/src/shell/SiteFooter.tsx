@@ -133,7 +133,7 @@ export interface SiteFooterLegalProps {
 
 const LEGAL_LINK_CLASSES = cx(
   "inline-flex items-center justify-center px-xs",
-  "text-inherit",
+  "text-inherit no-underline",
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink-on-inverse",
 );
 
