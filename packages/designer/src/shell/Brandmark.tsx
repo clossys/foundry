@@ -150,8 +150,8 @@ export function Brandmark(props: BrandmarkProps) {
   }
 
   // The accent mark is a decorative span masked by the image, filled with the
-  // accent token. data-brand-mark names the outermost mark element, so header
-  // CSS can hide the wordmark alone.
+  // accent token. data-brand-mark names the outermost accent mark element, so
+  // header CSS can hide the wordmark alone; the image forms keep their markup.
   const mark = (side: string, outermost: boolean) => markInk === "accent" ? (
     <span
       aria-hidden
@@ -189,7 +189,7 @@ export function Brandmark(props: BrandmarkProps) {
       {plate === "shared" ? (
         <span
           aria-hidden
-          data-brand-mark=""
+          data-brand-mark={markInk === "accent" ? "" : undefined}
           className="inline-flex shrink-0 items-center justify-center bg-ink-primary"
           style={{
             height: vars.height,
@@ -210,10 +210,10 @@ export function Brandmark(props: BrandmarkProps) {
           )}
         </span>
       ) : (
-        mark(vars.height, true) ?? <img data-brand-mark="" src={markSrc} alt="" style={{ height: vars.height, width: "auto" }} />
+        mark(vars.height, true) ?? <img src={markSrc} alt="" style={{ height: vars.height, width: "auto" }} />
       )}
       {showWordmark ? (
-        <span data-brand-wordmark="" className="font-display leading-none" style={{ fontSize: vars.wordmark }}>
+        <span className="font-display leading-none" style={{ fontSize: vars.wordmark }}>
           {wordmark}
         </span>
       ) : null}

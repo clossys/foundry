@@ -163,8 +163,8 @@ it.each([false, true])("names a mark-only brand from its label and renders no wo
   const container = output({ ...base, mobileLayout: "menu-brand-action" }, server);
   const brand = within(container).getByRole("link", { name: "Example home" });
   expect(brand).toHaveTextContent("");
-  expect(brand.querySelector("[data-brand-wordmark]")).toBeNull();
-  expect(brand.querySelectorAll("[data-brand-mark]")).toHaveLength(1);
+  expect(brand.children).toHaveLength(1);
+  expect(brand.firstElementChild).toHaveAttribute("src", "/mark.svg");
 });
 
 it.each([undefined, "auto", "inverse"] as const)("paints an accent mark in the accent token with wordmark ink from the surface tone %s", tone => {
@@ -176,20 +176,22 @@ it.each([undefined, "auto", "inverse"] as const)("paints an accent mark in the a
   };
   expect(renderToString(tree(shell))).toBe(renderToString(tree(shell, true)));
   const brand = within(output(shell)).getByRole("link", { name: "Example home" });
-  const mark = brand.querySelector("[data-brand-mark]") as HTMLElement;
+  const mark = brand.firstElementChild as HTMLElement;
+  expect(mark).toHaveAttribute("data-brand-mark", "");
   expect(brand.querySelector("img")).toBeNull();
   expect(mark).toHaveAttribute("aria-hidden", "true");
   expect(mark).toHaveClass("bg-accent");
   expect(mark.getAttribute("style")).toContain('mask-image:url("/mark.svg")');
   expect(brand).toHaveClass(tone === "auto" ? "text-ink-primary" : "text-ink-on-inverse");
-  expect(brand.querySelector("[data-brand-wordmark]")).toHaveTextContent("Example");
-  expect(brand.querySelector("[data-brand-wordmark]")!.className).not.toMatch(/\b(?:text|bg)-/);
+  expect(brand.children[1]).toHaveTextContent("Example");
+  expect(brand.children[1]!.className).not.toMatch(/\b(?:text|bg)-/);
 });
 
 it("keeps the image mark when markInk is omitted or image", () => {
   for (const markInk of [undefined, "image"] as const) {
     const brand = within(output({ ...base, brand: { ...base.brand, markInk } })).getByRole("link", { name: "Example home" });
-    expect(brand.querySelector("img[data-brand-mark]")).toHaveAttribute("src", "/mark.svg");
+    expect(brand.firstElementChild).toHaveAttribute("src", "/mark.svg");
+    expect(brand.firstElementChild).not.toHaveAttribute("data-brand-mark");
     expect(brand.querySelector(".bg-accent")).toBeNull();
   }
 });

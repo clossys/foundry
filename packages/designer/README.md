@@ -4922,8 +4922,8 @@ shared defaults. Equal side tracks center navigation on the whole header;
 before collision. Mobile centers the supplied mark on the whole bar, not on
 the space left between the controls, with menu at inline-start and a supplied
 primary icon or empty track at inline-end. The mobile brand hides wordmark
-text only: a `Brandmark` mark stays visible (an image, a shared plate or an
-accent mark, each tagged `data-brand-mark`), and the link keeps its
+text only: a `Brandmark` mark stays visible (an image, a shared plate holding
+an image, or an accent mark tagged `data-brand-mark`), and the link keeps its
 `aria-label` as its name while the wordmark is hidden. The layout mirrors
 in RTL. `secondaryAction` renders before `actions` in the trailing region.
 Explicit `navPlacement="leading"` or `mobileLayout="inline"` retain legacy

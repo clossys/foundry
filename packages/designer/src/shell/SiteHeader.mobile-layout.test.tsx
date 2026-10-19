@@ -111,7 +111,7 @@ describe("SiteHeader mobile layout", () => {
     render(<SiteHeader mobileLayout="menu-brand-action" brand={<Brandmark size="md" label="Example home" markSrc="/mark.svg" {...props} />} />);
     const anchor = screen.getByRole("link", { name: "Example home" });
     const { hidden, shown } = mobileBrand(anchor);
-    expect(shown.some(child => child.matches("[data-brand-mark]"))).toBe(true);
+    expect(shown).toContain(anchor.firstElementChild);
     expect(hidden.map(child => child.textContent)).toEqual(props.variant === "lockup" ? ["Example"] : []);
     // The wordmark is hidden, the link keeps its whole accessible name.
     expect(anchor).toHaveAccessibleName("Example home");
@@ -133,6 +133,10 @@ function mobileBrand(anchor: HTMLElement) {
   return { hidden, shown: [...anchor.children].filter(child => !hidden.includes(child)) };
 }
 
+/** Brandmark renders the mark first and, for a lockup, the wordmark second. */
+const markOf = (anchor: HTMLElement) => anchor.children[0] as HTMLElement;
+const wordmarkOf = (anchor: HTMLElement) => anchor.children[1] as HTMLElement | undefined;
+
 const HEIGHTS = { sm: "var(--ui-brandmark-height-sm, 24px)", md: "var(--ui-brandmark-height-md, 36px)", lg: "var(--ui-brandmark-height-lg, 48px)" } as const;
 const BRAND_FORMS = [
   ["mark-only", { variant: "mark" }],
@@ -149,12 +153,11 @@ describe("header brand slot", () => {
     (size, _name, props) => {
       render(<SiteHeader mobileLayout="menu-brand-action" brand={<Brandmark size={size} label="Example home" markSrc="/mark.svg" {...props} />} />);
       const anchor = screen.getByRole("link", { name: "Example home" });
-      const marks = anchor.querySelectorAll<HTMLElement>("[data-brand-mark]");
-      expect(marks).toHaveLength(1);
+      expect(anchor.children).toHaveLength(props.variant === "lockup" ? 2 : 1);
       // The mark's box is the size token at full height; a wordmark is set smaller.
-      expect(marks[0]!.style.height).toBe(HEIGHTS[size]);
-      const wordmark = anchor.querySelector<HTMLElement>("[data-brand-wordmark]");
-      if (wordmark) expect(wordmark.style.fontSize).toBe(`calc(${HEIGHTS[size]} * ${22 / 48})`);
+      expect(markOf(anchor).style.height).toBe(HEIGHTS[size]);
+      const wordmark = wordmarkOf(anchor);
+      if (props.variant === "lockup") expect(wordmark!.style.fontSize).toBe(`calc(${HEIGHTS[size]} * ${22 / 48})`);
       // Nothing in the header resizes the brand at either width.
       for (const opening of ["@utility site-header-mobile {", "@utility site-header-contract {", "@utility site-header-brand {"]) {
         expect(cssBlock(themeKeys, opening)).not.toMatch(/--ui-brandmark-height-\w+\s*:|\.site-header-brand[^{]*\{[^}]*(?:^|[;{\s])(?:block-size|height|font-size)\s*:/);
@@ -166,7 +169,7 @@ describe("header brand slot", () => {
     render(<SiteHeader brand={<Brandmark variant="mark" size="md" label="Example home" markSrc="/mark.svg" />} />);
     const anchor = screen.getByRole("link", { name: "Example home" });
     expect(anchor).toHaveAttribute("aria-label", "Example home");
-    expect(anchor.querySelector("[data-brand-wordmark]")).toBeNull();
+    expect(anchor.children).toHaveLength(1);
     expect(anchor.textContent).toBe("");
   });
 
@@ -175,8 +178,9 @@ describe("header brand slot", () => {
     const host = document.createElement("div");
     host.innerHTML = html;
     const anchor = host.querySelector("a")!;
-    const mark = anchor.querySelector<HTMLElement>("[data-brand-mark]")!;
+    const mark = markOf(anchor);
     expect(mark.tagName).toBe("SPAN");
+    expect(mark).toHaveAttribute("data-brand-mark", "");
     expect(mark).toHaveAttribute("aria-hidden", "true");
     expect(mark).toHaveClass("bg-accent");
     expect(anchor.querySelector("img")).toBeNull();
@@ -185,9 +189,12 @@ describe("header brand slot", () => {
     expect(html).not.toMatch(/#[0-9a-f]{3,8}\b|rgba?\(|oklch\(/i);
   });
 
-  it("keeps the image mark by default", () => {
+  it("keeps the image mark, and its markup, by default", () => {
     render(<Brandmark variant="mark" size="md" label="Example home" markSrc="/mark.svg" />);
-    expect(screen.getByRole("link", { name: "Example home" }).querySelector("img[data-brand-mark]")).toHaveAttribute("src", "/mark.svg");
+    const mark = markOf(screen.getByRole("link", { name: "Example home" }));
+    expect(mark.tagName).toBe("IMG");
+    expect(mark).toHaveAttribute("src", "/mark.svg");
+    expect(mark).not.toHaveAttribute("data-brand-mark");
   });
 
   it.each([
@@ -198,8 +205,8 @@ describe("header brand slot", () => {
     const anchor = screen.getByRole("link", { name: "Example home" });
     expect(anchor).toHaveClass(ink);
     // The wordmark inherits that ink; only the mark carries the accent.
-    expect(anchor.querySelector("[data-brand-wordmark]")!.className).not.toMatch(/\b(?:text|bg)-/);
-    expect(anchor.querySelector("[data-brand-mark]")).toHaveClass("bg-accent");
+    expect(wordmarkOf(anchor)!.className).not.toMatch(/\b(?:text|bg)-/);
+    expect(markOf(anchor)).toHaveClass("bg-accent");
   });
 
   it("defines the wordmark and accent inks for light and dark schemes, and the mobile header leaves brand paint alone", () => {
