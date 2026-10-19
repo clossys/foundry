@@ -101,7 +101,7 @@
 @source inline("bg-surface-base bg-surface-inverse bg-surface-inverse-raised bg-surface-raised bg-surface-selected");
 @source inline("bg-surface-sunken bg-transparent billed bit block block: blockSize: blockquote blocks blocks/");
 @source inline("blocks/index.ts blocks/internal/ blocks/server.ts blur. blur: blurField body boolean border border-");
-@source inline("border-0 border-accent border-b border-b-2 border-collapse border-dashed border-e");
+@source inline("border-0 border-accent border-b border-b-2 border-collapse border-current border-dashed border-e");
 @source inline("border-ink-on-inverse border-ink-primary border-ink-secondary border-line-base");
 @source inline("border-line-on-inverse border-line-panel border-line-strong border-none border-overlay-border");
 @source inline("border-s border-s-accent border-s-accent-on-inverse border-separate border-solid border-spacing-0");
@@ -372,8 +372,8 @@
 @source inline("tablet:gap-x-4xl tablet:gap-x-xl tablet:grid tablet:grid-cols-12 tablet:grid-cols-2");
 @source inline("tablet:grid-cols-6 tablet:grid-rows-subgrid tablet:h-px tablet:hidden tablet:items-center");
 @source inline("tablet:justify-between tablet:justify-end tablet:min-w-0 tablet:ms-auto tablet:ms-md tablet:my-0");
-@source inline("tablet:not-sr-only tablet:p-0 tablet:p-xl tablet:pb-0 tablet:pb-xl tablet:pe-md tablet:px-md");
-@source inline("tablet:py-4xl tablet:py-5xl tablet:py-6xl tablet:py-lg tablet:py-xl tablet:rotate-0");
+@source inline("tablet:not-sr-only tablet:p-0 tablet:p-lg tablet:p-xl tablet:pb-0 tablet:pb-xl tablet:pe-md");
+@source inline("tablet:px-md tablet:py-4xl tablet:py-5xl tablet:py-6xl tablet:py-lg tablet:py-xl tablet:rotate-0");
 @source inline("tablet:rounded-none tablet:row-span-1 tablet:row-span-2 tablet:row-span-3 tablet:row-span-4");
 @source inline("tablet:rtl:rotate-180 tablet:shrink-0 tablet:table tablet:table-cell tablet:table-fixed");
 @source inline("tablet:table-header-group tablet:table-row tablet:table-row-group tablet:text-display-l");

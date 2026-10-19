@@ -389,7 +389,7 @@ describe("CONSENT-1 card presentation", () => {
     }
   });
 
-  it("keeps a named region, a visually hidden title, equal outlined choices and a placement hook", () => {
+  it("keeps a named region, a visually hidden title, equal choices and a placement hook", () => {
     const { root } = setup({ presentation: "card" });
     expect(screen.getByRole("region", { name: "Banner title" })).toBe(root);
     expect(screen.getByRole("heading", { name: "Banner title" })).toHaveClass("sr-only");
@@ -398,7 +398,8 @@ describe("CONSENT-1 card presentation", () => {
     const accept = screen.getByRole("button", { name: "Accept label" });
     const reject = screen.getByRole("button", { name: "Reject label" });
     expect(accept.className).toBe(reject.className);
-    expect(accept).toHaveClass("flex-1", "min-w-0", "whitespace-normal");
+    expect(accept).toHaveClass("w-full", "min-w-0", "whitespace-normal", "border", "border-current", "bg-transparent", "font-medium", "text-center");
+    expect(accept).not.toHaveClass("flex-1");
     expect(accept).toHaveAttribute("aria-pressed", "false");
     expect(reject).toHaveAttribute("aria-pressed", "false");
     expect(screen.getByRole("status")).toBeEmptyDOMElement();
@@ -428,13 +429,92 @@ describe("CONSENT-1 card presentation", () => {
     expect(root.closest("[dir]")).toBe(container.firstElementChild);
     expect(root.parentElement).toHaveAttribute("dir", "rtl");
     const card = consentCardUtility();
-    for (const declaration of ["position: fixed", "inset-inline", "inset-block-end", "safe-area-inset-bottom", "safe-area-inset-left", "safe-area-inset-right", "max-inline-size", "--ui-width-form-max", "--color-surface-glass", "--blur-glass", "--color-overlay-border", "prefers-reduced-transparency: reduce", "@supports not", "forced-colors: active", "overflow-y: auto"]) expect(card, declaration).toContain(declaration);
+    for (const declaration of ["position: fixed", "inset-inline", "inset-block-end", "safe-area-inset-bottom", "safe-area-inset-left", "safe-area-inset-right", "max-inline-size", "--container-sm", "--color-surface-base", "--blur-md", "--color-line-base", "prefers-reduced-transparency: reduce", "@supports not", "forced-colors: active", "overflow-y: auto"]) expect(card, declaration).toContain(declaration);
     expect(card).toContain("--ui-ring-focus: 0 0 0 2px var(--color-ink-primary");
     expect(card).toContain('\u0026[data-consent-presentation="card"] :focus-visible');
     expect(card).toContain("outline-color: var(--color-ink-primary");
     expect(card).not.toContain("animation");
     expect(card).not.toContain("scroll(");
     expect(readFileSync(resolve(import.meta.dirname, "..", "..", "styles", "compiled.css"), "utf8")).toContain(".consent-card");
+  });
+});
+
+
+function cardDeclaration(card: string, property: string): string {
+  // Top-level declaration of the utility only, never one nested in an at-rule.
+  let depth = 0;
+  for (const line of card.split("\n")) {
+    const trimmed = line.trim();
+    if (depth === 1 && trimmed.startsWith(`${property}:`)) return trimmed.slice(property.length + 1).replace(/;$/, "").trim();
+    depth += (line.match(/{/g) ?? []).length - (line.match(/}/g) ?? []).length;
+  }
+  throw new Error(`no top-level ${property}`);
+}
+
+function tokenValue(name: string): number {
+  const tokens = readFileSync(resolve(import.meta.dirname, "..", "..", "styles", "tokens.css"), "utf8");
+  const match = tokens.match(new RegExp(`${name}:\\s*([0-9.]+)(px|rem)?;`));
+  expect(match, name).not.toBeNull();
+  return Number(match![1]);
+}
+
+describe("CONSENT-1 card geometry matches the signed-off reference", () => {
+  it("caps the width at the small container, not the form width", () => {
+    const card = consentCardUtility();
+    expect(cardDeclaration(card, "max-inline-size")).toBe("var(--container-sm, 24rem)");
+    expect(card).not.toContain("--ui-width-form-max");
+  });
+
+  it("pins the bottom-start corner with logical properties only, so RTL flips it", () => {
+    const card = consentCardUtility();
+    for (const physical of [/\bleft:/, /\bright:/, /\bbottom:/, /\btop:/, /margin-left/, /margin-right/]) expect(card).not.toMatch(physical);
+    expect(cardDeclaration(card, "inset-block-end")).toBe("max(var(--spacing-md, 12px), env(safe-area-inset-bottom, 0px))");
+    expect(card).toMatch(/@media \(width >= 48rem\) \{ margin-inline-start: 0; \}/);
+    // 48rem is the tablet breakpoint (768px at the 16px root).
+    expect(tokenValue("--breakpoint-tablet")).toBe(48 * 16);
+  });
+
+  it("centres below tablet width inside safe-area gutters", () => {
+    const card = consentCardUtility();
+    expect(cardDeclaration(card, "margin-inline")).toBe("auto");
+    expect(cardDeclaration(card, "inset-inline")).toBe("max(var(--spacing-md, 12px), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px))");
+  });
+
+  it("floats on the notice layer, above the shell footer and header and the sticky layer", () => {
+    const card = consentCardUtility();
+    expect(cardDeclaration(card, "position")).toBe("fixed");
+    expect(cardDeclaration(card, "z-index")).toBe("var(--ui-z-notice, 40)");
+    const shell = readFileSync(resolve(import.meta.dirname, "..", "shell", "internal", "shell-vars.ts"), "utf8");
+    expect(shell).toContain('export const UI_Z_SHELL = "var(--ui-z-shell, 20)"');
+    for (const shellFile of ["SiteFooter.tsx", "SiteHeader.tsx"]) {
+      const source = readFileSync(resolve(import.meta.dirname, "..", "shell", shellFile), "utf8");
+      expect(source, shellFile).toMatch(/zIndex: UI_Z_SHELL/);
+    }
+    expect(tokenValue("--ui-z-notice")).toBeGreaterThan(tokenValue("--ui-z-shell"));
+    expect(tokenValue("--ui-z-notice")).toBeGreaterThan(tokenValue("--ui-z-sticky"));
+  });
+
+  it("uses the reference plate: 90% base fill, 95% without blur, hairline base line, raised elevation and medium blur", () => {
+    const card = consentCardUtility();
+    expect(cardDeclaration(card, "background-color")).toBe("color-mix(in oklab, var(--color-surface-base, oklch(0.9702 0 0)) 90%, transparent)");
+    expect(cardDeclaration(card, "border-color")).toBe("var(--color-line-base, oklch(0.8761 0 0))");
+    expect(cardDeclaration(card, "box-shadow")).toBe("var(--ui-elevation-raised, 0 1px 0 var(--color-line-base, oklch(0.8761 0 0)))");
+    expect(cardDeclaration(card, "backdrop-filter")).toBe("blur(var(--blur-md, 12px))");
+    expect(card).toMatch(/@supports not \([^\n]*\) \{\s*background-color: color-mix\(in oklab, var\(--color-surface-base, oklch\(0\.9702 0 0\)\) 95%, transparent\);/);
+    expect(card).not.toContain("--color-surface-glass");
+    expect(card).not.toContain("--blur-glass");
+    expect(card).toMatch(/@media \(prefers-reduced-motion: no-preference\) \{\s*transition-property: background-color, backdrop-filter;\s*transition-duration: var\(--ui-duration-default, 240ms\);/);
+  });
+
+  it("sizes choices as a two-column grid of full-width tap targets with reference padding", () => {
+    const { root } = setup({ presentation: "card" });
+    expect(root).toHaveClass("p-md", "tablet:p-lg");
+    expect(root).not.toHaveClass("p-lg");
+    const accept = screen.getByRole("button", { name: "Accept label" });
+    expect(accept.parentElement).toHaveClass("grid", "grid-cols-2", "gap-sm");
+    expect(accept).not.toHaveClass("whitespace-nowrap");
+    const card = consentCardUtility();
+    expect(card).toMatch(/& button \{\s*min-block-size: var\(--ui-layout-tap-target, 44px\);\s*transition-duration: var\(--ui-duration-fast, 160ms\);\s*transition-timing-function: var\(--ease-default, cubic-bezier\(\.2, 0, 0, 1\)\);/);
   });
 });
 

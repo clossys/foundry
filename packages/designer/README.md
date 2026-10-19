@@ -4370,14 +4370,18 @@ banner is positioned over the page. If you pin the banner to the bottom
 visually, render it early in DOM order so keyboard and assistive-tech users
 reach it without tabbing through the whole page first.
 
-The opt-in card sits at the inline start from tablet width and is centred
-on phones, with safe-area gutters and the form-width cap. It uses the
-existing glass, blur and hairline roles; unsupported backdrop filters and
-reduced transparency use an opaque plate, and forced colours use system
-colours. There is no motion. Long copy can wrap and scroll within the
-viewport. The title stays as a visually hidden heading that names the
-region. The policy slot is inline with the body, and both outlined choices
-share the row equally. Pass `selectedChoice="granted"` or `"denied"` from
+The opt-in card floats on the notice layer (`--ui-z-notice`), above the
+shell header and footer, and sits at the inline start from tablet width and
+centred on phones, with safe-area gutters and the small-container cap
+(`--container-sm`). Its plate is the base surface at 90% with a medium
+backdrop blur, a hairline in the base line colour and the raised elevation;
+unsupported backdrop filters use the base surface at 95%, reduced
+transparency uses an opaque plate, and forced colours use system colours.
+Its only motion is a short background and blur transition, removed under
+reduced motion. Long copy can wrap and scroll within the viewport. The title
+stays as a visually hidden heading that names the region. The policy slot is
+inline with the body, and both choices fill a two-column row as full-width
+tap targets whose labels may wrap. Pass `selectedChoice="granted"` or `"denied"` from
 host state to show a decorative check and `aria-pressed`; the component
 stores no choice. The live region stays mounted in either presentation.
 
