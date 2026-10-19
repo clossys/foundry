@@ -1,4 +1,6 @@
-import { version, type CSSProperties, type ReactNode } from "react";
+"use client";
+
+import { useEffect, useRef, useState, version, type CSSProperties, type ReactNode } from "react";
 import { TOKENS } from "../tokens.js";
 import { TOKEN_GUIDANCE } from "../guidance.js";
 import { assertPeerVersion } from "../../internal/peer-version.js";
@@ -30,8 +32,6 @@ const applications: Record<string, readonly string[]> = {
   ring: ["ring|box-shadow|shadow"],
   layer: ["layer|z-index|number"],
   opacity: ["opacity|opacity|number"],
-};
-const pending: Record<string, readonly string[]> = {
   motion: ["motion|transition-duration|duration", "motion|transition-timing-function|easing"],
   breakpoint: ["breakpoint|@media (min-width)|length"],
 };
@@ -50,20 +50,106 @@ const checker = `repeating-conic-gradient(${tokenReference("--color-surface-base
 const panel: CSSProperties = { padding: 16, minBlockSize: 48, background: tokenReference("--color-surface-raised"), color: tokenReference("--color-ink-primary") };
 const tile: CSSProperties = { inlineSize: 24, blockSize: 24, background: tokenReference("--color-accent") };
 
+function MotionPreview({ property, cssProperty, replayLabel, reducedMotionMessage }:
+  { property: string; cssProperty: string } & Pick<TokenPreviewProps, "replayLabel" | "reducedMotionMessage">) {
+  // The initial static equivalent also keeps server rendering and hydration identical.
+  const [reduced, setReduced] = useState(true);
+  const moving = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (typeof window.matchMedia !== "function") return;
+    const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = (event: { matches: boolean }) => setReduced(event.matches);
+    update(preference);
+    preference.addEventListener("change", update);
+    return () => preference.removeEventListener("change", update);
+  }, []);
+  const information = <code>{TOKENS[property]!.value}</code>;
+  if (reduced) return <div>{information}<p>{reducedMotionMessage}</p><div aria-hidden="true" style={tile} /></div>;
+  const style: CSSProperties = {
+    ...tile, transform: "translateX(0)",
+    transitionDuration: tokenReference("--ui-duration-default"),
+    transitionTimingFunction: tokenReference("--ease-default"),
+    [cssProperty === "transition-duration" ? "transitionDuration" : "transitionTimingFunction"]: tokenReference(property),
+  };
+  function replay() {
+    const node = moving.current;
+    if (!node) return;
+    node.style.transitionProperty = "none";
+    node.style.transform = "translateX(0)";
+    // Commit the starting position before each explicitly requested transition.
+    void node.offsetWidth;
+    node.style.transitionProperty = "";
+    node.style.transform = "translateX(64px)";
+  }
+  return <div>{information}<button type="button" onClick={replay}>{replayLabel}</button>
+    <div ref={moving} data-token-preview-motion="" aria-hidden="true" className="transition-transform motion-reduce:transition-none" style={style} />
+  </div>;
+}
+
+function BreakpointPreview({ property, thresholdLabel, matchLabel, unavailableMessage, matchesMessage, notMatchesMessage }:
+  { property: string } & Pick<TokenPreviewProps, "thresholdLabel" | "matchLabel" | "unavailableMessage" | "matchesMessage" | "notMatchesMessage">) {
+  const probe = useRef<HTMLSpanElement>(null);
+  const [state, setState] = useState<{ threshold: string; matches: boolean } | null>(null);
+  useEffect(() => {
+    setState(null);
+    const node = probe.current;
+    if (!node || typeof window.matchMedia !== "function") return;
+    const root = node.ownerDocument.documentElement;
+    const computed = getComputedStyle(node);
+    const rootStyle = getComputedStyle(root);
+    const value = computed.getPropertyValue(property).trim() || TOKENS[property]!.value;
+    const length = /^(\d+(?:\.\d+)?)(px|rem)$/.exec(value);
+    // Native media queries cannot use custom properties. Resolve against this host's cascade.
+    let pixels = length ? Number(length[1]) * (length[2] === "rem" ? Number.parseFloat(rootStyle.fontSize) : 1) : NaN;
+    if (!length && (typeof CSS === "undefined" || typeof CSS.supports !== "function" || CSS.supports("outline-offset", value))) {
+      const resolved = /^(\d+(?:\.\d+)?)px$/.exec(computed.width);
+      pixels = resolved ? Number(resolved[1]) : NaN;
+    }
+    if (!Number.isFinite(pixels) || pixels < 0) return;
+    const threshold = `${pixels}px`;
+    const query = window.matchMedia(`(min-width: ${threshold})`);
+    const update = (event: { matches: boolean }) => setState({ threshold, matches: event.matches });
+    update(query);
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, [property]);
+  return <div><code>{TOKENS[property]!.value}</code>
+    <span ref={probe} aria-hidden="true" style={{ position: "absolute", visibility: "hidden", minWidth: 0, maxWidth: "none", width: tokenReference(property) }} />
+    <p aria-live="polite">{thresholdLabel}: {state?.threshold ?? unavailableMessage}; {matchLabel}: {state ? state.matches ? matchesMessage : notMatchesMessage : unavailableMessage}</p>
+  </div>;
+}
+
 interface TokenPreviewProps {
   property: string;
+  /** Replay button label. @default "Replay" */
+  replayLabel?: string;
+  /** Static equivalent message. @default "Reduced motion: static equivalent" */
+  reducedMotionMessage?: string;
+  /** Resolved breakpoint label. @default "Threshold" */
+  thresholdLabel?: string;
+  /** Media-query match label. @default "Match" */
+  matchLabel?: string;
+  /** Unresolved breakpoint message. @default "unavailable" */
+  unavailableMessage?: string;
+  /** Matching query message. @default "yes" */
+  matchesMessage?: string;
+  /** Nonmatching query message. @default "no" */
+  notMatchesMessage?: string;
   /** Text shown by static specimens. @default "Aa 0123" */
   sampleText?: string;
   /** Message for an unsupported application. @default "Unsupported token application" */
   unsupportedMessage?: string;
-  /** Message after the pending kind. @default "interactive support pending" */
+  /** Retained for compatibility. @default "interactive support pending" */
   pendingMessage?: string;
 }
 
-/** Static token tooling: the host supplies token/theme/brand CSS and preview cascade. */
+/** Exact-property token tooling: the host supplies token/theme/brand CSS and preview cascade. */
 export function TokenPreview({
   property, sampleText = "Aa 0123",
   unsupportedMessage = "Unsupported token application",
+  replayLabel = "Replay", reducedMotionMessage = "Reduced motion: static equivalent",
+  thresholdLabel = "Threshold", matchLabel = "Match", unavailableMessage = "unavailable",
+  matchesMessage = "yes", notMatchesMessage = "no",
   pendingMessage = "interactive support pending",
 }: TokenPreviewProps) {
   const guidance = Object.hasOwn(TOKENS, property) && Object.hasOwn(TOKEN_GUIDANCE, property)
@@ -72,12 +158,8 @@ export function TokenPreview({
   const application = guidance?.application;
   const signature = `${kind}|${application?.cssProperty}|${application?.valueType}`;
   const supported = kind && Object.hasOwn(applications, kind) && applications[kind]?.includes(signature);
-  const unavailable = kind && Object.hasOwn(pending, kind) && pending[kind]?.includes(signature);
-  if (!kind || !application || !(supported || unavailable)) {
+  if (!kind || !application || !supported) {
     return <output role="status" data-property={property} data-kind={kind}>{unsupportedMessage}</output>;
-  }
-  if (unavailable) {
-    return <output role="status" data-property={property} data-kind={kind}>{kind}: {pendingMessage}</output>;
   }
   const value = tokenReference(property);
   const cssProperty = application.cssProperty.replace(/-([a-z])/g, (_, letter: string) => letter.toUpperCase());
@@ -98,6 +180,8 @@ export function TokenPreview({
     </svg>
   );
   const specimens: Record<string, ReactNode> = {
+    motion: <MotionPreview key={property} property={property} cssProperty={application.cssProperty} replayLabel={replayLabel} reducedMotionMessage={reducedMotionMessage} />,
+    breakpoint: <BreakpointPreview key={property} property={property} thresholdLabel={thresholdLabel} matchLabel={matchLabel} unavailableMessage={unavailableMessage} matchesMessage={matchesMessage} notMatchesMessage={notMatchesMessage} />,
     surface: <div style={{ ...plate, ...style }}>{sampleText}</div>,
     text: <p style={style}>{sampleText}</p>,
     border: <div style={{ ...plate, border: `2px solid ${tokenReference("--color-line-strong")}`, ...style }}>{sampleText}</div>,

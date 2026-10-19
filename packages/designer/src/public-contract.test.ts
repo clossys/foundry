@@ -118,7 +118,7 @@ describe("public UI contract", () => {
     // any file that has one must also carry a `motion-reduce:` override.
     const MOTION_CLASS_RE = /\b(?:animate|transition)-[a-zA-Z[\]-]+/;
 
-    const motionFiles = COMPONENT_DIRS.flatMap((dir) =>
+    const motionFiles = [...COMPONENT_DIRS, "tokens/preview"].flatMap((dir) =>
       sourceFiles(join(packageRoot, "src", dir))
         .filter((file) => MOTION_CLASS_RE.test(readFileSync(file, "utf8")))
         .map((file) => file.slice(packageRoot.length + 1)),

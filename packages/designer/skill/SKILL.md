@@ -74,8 +74,9 @@ and check their freshness with `node scripts/check-token-docs.mjs`
 (repository tooling, not shipped in the installed package).
 <!-- token-selection:end -->
 
-`@clossys/designer/tokens/preview` provides exact-property static React specimens
-for token selection tooling; configurable components still begin at Atoms.
+`@clossys/designer/tokens/preview` provides exact-property React specimens for all 186
+tokens, including motion replay with a reduced-motion static equivalent and
+breakpoint thresholds with live match state, for token selection tooling; configurable components still begin at Atoms.
 
 Marketing chapters after the fold: `MarketingChapter`, not `SectionHeader`. Hero `media` requires an explicit `composition` (`editorial` default).
 

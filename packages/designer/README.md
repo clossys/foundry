@@ -7419,7 +7419,7 @@ Both controls otherwise retain their existing default markup.
 without a plate or a divider inside the footer. `rule` defaults to `"none"`
 and is ignored on other grounds, which retain their existing border policy.
 
-## Static token specimens
+## Token specimens
 
 ```tsx
 import { TokenPreview } from "@clossys/designer/tokens/preview";
@@ -7431,20 +7431,25 @@ uses live `var(--property, authored-value)` references so host overrides remain 
 selection tooling; configurable components begin at Atoms. `/tokens` stays
 React-free. Unknown properties and unsupported applications are refused.
 
-Optional copy props are `sampleText` (default "Aa 0123"),
-`unsupportedMessage` (default "Unsupported token application") and
-`pendingMessage` (default "interactive support pending"). Supply translated
-strings as needed; pending output keeps its authored kind before the message.
+Optional copy props are `sampleText` (default "Aa 0123") and
+`unsupportedMessage` (default "Unsupported token application"). Supply translated
+strings as needed. The former `pendingMessage` prop (default "interactive support pending") remains
+accepted for compatibility. Motion copy
+props are `replayLabel` ("Replay") and `reducedMotionMessage` ("Reduced motion:
+static equivalent"). Breakpoint copy props are `thresholdLabel` ("Threshold"),
+`matchLabel` ("Match"), `unavailableMessage` ("unavailable"), `matchesMessage`
+("yes") and `notMatchesMessage` ("no").
 
-The 168 static specimens support 17 authored kinds: surface, text, border,
-control, status, chart, font, space, size, icon, brandmark, radius, shadow,
-blur, ring, layer and opacity. Patterns expose translucent applications;
-inverse foregrounds receive an inverse backing. No override is claimed as measured.
+All 186 properties support their authored applications across 19 kinds. The 168
+static specimens cover surface, text, border, control, status, chart, font,
+space, size, icon, brandmark, radius, shadow, blur, ring, layer and opacity.
+Patterns expose translucent applications; inverse foregrounds receive an inverse
+backing. No override is claimed as measured.
 
-These 18 properties explicitly report their true kind and "interactive support pending":
-`--ui-duration-instant`, `--ui-duration-fast`, `--ui-duration-default`,
-`--ui-duration-deliberate`, `--ui-duration-flash`, `--ui-duration-overlay`,
-`--ease-default`, `--ease-decelerate`, `--ease-accelerate`, `--ease-bounce`,
-`--ease-enter`, `--ease-exit`, `--breakpoint-mobile`, `--breakpoint-mobile-lg`,
-`--breakpoint-tablet`, `--breakpoint-tablet-lg`, `--breakpoint-desktop`, `--breakpoint-wide`.
-Motion and breakpoint interaction belong to a later increment.
+The 12 motion properties show their authored duration or easing and replay a
+small transition when Replay is activated. Reduced-motion preferences show the
+same authored information as a static equivalent, with no transition. The six
+breakpoint properties show their resolved threshold and current media-query
+match; rem values resolve against the root font size. Query listeners are
+removed when the selected property changes or the preview unmounts. This
+interactive subpath requires a client boundary; `/tokens` remains React-free.
