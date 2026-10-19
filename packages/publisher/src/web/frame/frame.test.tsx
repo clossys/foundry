@@ -179,7 +179,10 @@ describe("SiteFrame", () => {
     const { container } = render(frame(siteShellFor(CONFIG, "site"), <p>content</p>));
     const brand = container.querySelector('header a[aria-label="Example home"]') as HTMLAnchorElement;
     expect(brand).toHaveTextContent("Example");
-    expect(brand.querySelector("img")).toHaveAttribute("src", "/brand/mark.svg");
+    // The header logomark is the resolved asset painted in the accent token by default.
+    expect(brand.querySelector("img")).toBeNull();
+    expect(brand.querySelector("[data-brand-mark]")).toHaveClass("bg-accent");
+    expect(renderToStaticMarkup(frame(siteShellFor(CONFIG, "site"), <p>content</p>))).toContain("mask-image:url(&quot;/brand/mark.svg&quot;)");
     const nav = container.querySelector('header nav[aria-label="Primary"]') as HTMLElement;
     expect([...nav.querySelectorAll(".nav-disclosure-panel > ul:first-child a")].map((a) => [a.textContent, a.getAttribute("href")])).toEqual([
       ["Pricing", "/pricing"],
@@ -694,13 +697,13 @@ const ALL_SLOTS: SiteShellInput = {
 };
 
 describe("SiteFrame icon slots", () => {
-  it("renders all slots with semantic landmarks, resolved accessible names and decorative icons", () => {
+  it("renders all slots with semantic landmarks, resolved accessible names, text-only header actions and decorative footer icons", () => {
     const { getByRole } = render(frame(ALL_SLOTS, <p>content</p>));
     const banner = getByRole("banner");
     const contact = within(banner).getByRole("link", { name: "Contact" });
     expect(contact).toHaveAttribute("href", "/contact");
     expect(contact).toHaveTextContent("Contact");
-    expect(contact.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
+    expect(contact.querySelector("svg")).toBeNull();
     const footer = getByRole("contentinfo");
     const social = within(footer).getByRole("navigation", { name: "Profiles" });
     const profile = within(social).getByRole("link", { name: "Profile" });
@@ -718,7 +721,7 @@ describe("SiteFrame icon slots", () => {
     const focusable = [...container.querySelectorAll<HTMLElement>('a[href],button,input,select,textarea,[tabindex]')]
       .filter((element) => element.tabIndex >= 0);
     expect(focusable.map((element) => element.getAttribute("aria-label") ?? element.textContent)).toEqual([
-      "Skip to content", "Example home", "Primary", "Pricing", "Docs", "Sign in", "Contact", "App", "App",
+      "Skip to content", "Example home", "Primary", "Pricing", "Docs", "App", "Sign in", "Contact", "App",
       "About", "Help", "Profile", "Privacy", "Terms",
     ]);
   });

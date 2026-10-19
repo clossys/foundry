@@ -42,6 +42,9 @@ export type { SectionGround, SectionGroundClasses, SectionStatusTone } from "./s
 export { PageHeader } from "./PageHeader.js";
 export type { PageHeaderProps } from "./PageHeader.js";
 
+export { AccountMenu } from "./AccountMenu.js";
+export type { AccountMenuProps, AccountMenuActor, AccountMenuEntry, AccountMenuCommand, AccountMenuLink, AccountMenuAction, AccountMenuPreference, AccountMenuSection } from "./account-menu-types.js";
+
 export { EmptyState } from "./EmptyState.js";
 export type { EmptyStateProps } from "./EmptyState.js";
 

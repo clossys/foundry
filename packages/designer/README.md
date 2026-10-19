@@ -158,12 +158,13 @@ surfaces and live in `@clossys/publisher/web`.
   `Separator`, `Chip`, `StatusMark`, `Meter`.
 - **`blocks`** — owns the internal layout of multiple named regions,
   typically by composing one or more atoms (and/or layout) into something
-  with a real job on a page. Thirty-five ship: `PageHeader`, `EmptyState`,
+  with a real job on a page. Forty-one ship: `AccountMenu`, `PageHeader`, `EmptyState`,
   `DataTable`, `DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`,
   `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `SectionFrame`,
   `MarketingChapter`, `FeatureGrid`, `Item`, `Items`, `Tree`, `AnatomyCallouts`, `RecordLedger`, `Scene`, `Matrix`,
   `Specimen`, `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`,
-  `PricingTable`, `Testimonial`, `ArticleBody`, `ConsentBanner` (see "Blocks" below).
+  `PricingTable`, `Testimonial`, `ArticleBody`, `ConsentBanner`, `Panel`, `Drawer`,
+  `ResizablePane`, `CommandMenu` and `AppNavigation` (see "Blocks" below).
 - **`shell`** — the persistent frame around content (nav, layout chrome)
   that provides the slots content fills. One per app; survives route
   changes that swap out the content underneath it. `Shell` ships with five
@@ -233,7 +234,7 @@ smallest stable subpath that owns what you need:
 
 ### Token details and selection
 
-The flat `TOKENS` registry has 186 stable property identities across brand
+The flat `TOKENS` registry has 188 stable property identities across brand
 and supported theme overlays, with zero per-token configuration. Use the
 property-keyed `TOKEN_GUIDANCE` for purpose, appropriate use, misuse or an
 alternative, the consuming CSS application and its context, and a contextual
@@ -1673,6 +1674,14 @@ none of it reimplemented here.
 `Menu.Item` takes an `isDestructive` prop for actions like "Delete" —
 danger-colored styling, purely visual, doesn't change keyboard/selection
 behavior. `Menu.Separator` is a visual divider between item groups.
+
+`Menu.Section` groups entries under a real menu Header. Supply `heading` or
+`aria-label`. Its optional `selectionMode` (`none` or `multiple`), `selectedKeys`,
+`onSelectionChange` and `shouldCloseOnSelect` belong to the section. Multiple
+selection produces `menuitemcheckbox` preferences; the caller owns checked
+values. Normal hover/focus retains the existing selected surface with no outline;
+a focused, enabled item adds a current-color outline only in forced colors.
+
 
 There is deliberately no `aria-label` prop on `Menu` itself:
 react-aria-components' `MenuTrigger` always wires the menu's
@@ -4315,6 +4324,42 @@ Measure and section padding come from the parent `SectionFrame` (`measure="prose
 article plus a sidebar callout, or two comparison columns), which is what
 keeps it at this layer rather than being a view (test 3).
 
+### `AccountMenu`
+
+A Navigation Material combining Avatar, Button, Icon, Tooltip and Menu. The host
+supplies `actor.name`, optional `secondaryText` and `image`, `contextLabel`, and
+`sections`. Avatar derives fallback initials from the name. Expanded triggers
+show the name and context; collapsed triggers show the avatar, keep an explicit
+accessible name, and expose a tooltip. A non-empty `triggerLabel` overrides only
+the collapsed trigger and tooltip. Expanded controls retain the visible actor
+name in their accessible name. The open menu shows and truncates long actor
+details within a viewport-bounded panel. Later unnamed command sections use
+separators without repeating the actor as a group name.
+
+Command sections contain `link` (`href`), `action` or `destructive` (`onAction`)
+entries. Preference sections use `kind="preferences"`, a required `label`, and
+`preference` entries with `checked` and `onCheckedChange`. Each entry also takes
+an `id`, `label` and optional `isDisabled`. Duplicate section IDs (including empty
+sections) and duplicate entry IDs within a section are rejected with `TypeError`.
+Equal entry IDs in different sections remain valid. Empty sections are omitted; an empty
+menu renders no trigger or placeholder. Preference changes remain controlled and
+keep the menu open. Links and actions retain ordinary menuitem semantics.
+Empty actor names or entry labels are rejected. Destinations follow Items: an
+anchor, one-origin path, HTTP(S) URL without credentials, or explicit mail link;
+blank, protocol-relative, script/data, control-character and backslash URLs are
+rejected. Images remain host-provided Avatar data. Destructive styling does not
+confirm an action: the host owns confirmation and the final destructive effect.
+
+`onClose` observes a menu close and `onRoute` observes a link activation. A drawer
+host removes or hides its navigation, then focuses its visible opener or route
+destination after that update commits; the block does not own the drawer. Normal
+Escape focus return and collision-aware placement use Menu's overlay machinery.
+This is a client component: SSR emits a closed trigger and hydration enables
+interaction. It is not exported from `blocks/server`. Tests cover synthetic
+viewport geometry, normal and forced-color focus, reduced-motion transitions,
+long actor details, retained hidden-host handoff, and client hydration;
+they do not establish a separate native server or browser-qualification claim.
+
 ### `ConsentBanner`
 
 ```tsx
@@ -4370,14 +4415,19 @@ banner is positioned over the page. If you pin the banner to the bottom
 visually, render it early in DOM order so keyboard and assistive-tech users
 reach it without tabbing through the whole page first.
 
-The opt-in card sits at the inline start from tablet width and is centred
-on phones, with safe-area gutters and the form-width cap. It uses the
-existing glass, blur and hairline roles; unsupported backdrop filters and
-reduced transparency use an opaque plate, and forced colours use system
-colours. There is no motion. Long copy can wrap and scroll within the
-viewport. The title stays as a visually hidden heading that names the
-region. The policy slot is inline with the body, and both outlined choices
-share the row equally. Pass `selectedChoice="granted"` or `"denied"` from
+The opt-in card floats on the notice layer (`--ui-z-notice`), above the
+shell header and footer. Below tablet width it fills the viewport less
+safe-area gutters, centred; from tablet width it is capped at the notice
+width (`--ui-width-notice-max`) and sits at the bottom inline start. Its
+plate is the base surface at 90% with the notice backdrop blur
+(`--blur-notice`), a hairline in the base line colour and the raised
+elevation; unsupported backdrop filters use the base surface at 95%, reduced
+transparency uses an opaque plate, and forced colours use system colours.
+Its only motion is a short background and blur transition, removed under
+reduced motion. Long copy can wrap and scroll within the viewport. The title
+stays as a visually hidden heading that names the region. The policy slot is
+inline with the body, and both choices fill a two-column row as full-width
+tap targets whose labels may wrap. Pass `selectedChoice="granted"` or `"denied"` from
 host state to show a decorative check and `aria-pressed`; the component
 stores no choice. The live region stays mounted in either presentation.
 
@@ -4798,7 +4848,7 @@ files:
 
 // app/(member)/layout.tsx
 <Shell>
-  <Shell.Header><AccountMenu /></Shell.Header>
+  <Shell.Header><MemberAccountControl /></Shell.Header>
   <Shell.SideNav><MemberNav /></Shell.SideNav>
   <Shell.Main>{children}</Shell.Main>
 </Shell>
@@ -4812,7 +4862,7 @@ files:
 </Shell>
 ```
 
-`MarketingNav`, `AccountMenu`, `MemberNav`, `StaffToolbar`, `StaffNav`, and
+`MarketingNav`, `MemberAccountControl`, `MemberNav`, `StaffToolbar`, `StaffNav`, and
 `AuditLog` are each the CONSUMER's own composition of atoms — `Shell.Header`
 itself stays a plain, unopinionated slot, and ships no `AppHeader` block of
 its own. A header is where brand lives, and shipping a pre-built one INTO
@@ -4919,8 +4969,12 @@ own doc comment for why it's `shell`, not `blocks`, despite reading like a
 `navPlacement="centered"` and `mobileLayout="menu-brand-action"` are the
 shared defaults. Equal side tracks center navigation on the whole header;
 `NavDisclosure` measures intrinsic brand/link/action widths and collapses
-before collision. Mobile centers the supplied mark, with menu at inline-start
-and a supplied primary icon or empty track at inline-end. The layout mirrors
+before collision. Mobile centers the supplied mark on the whole bar, not on
+the space left between the controls, with menu at inline-start and a supplied
+primary icon or empty track at inline-end. The mobile brand hides wordmark
+text only: a `Brandmark` mark stays visible (an image, a shared plate holding
+an image, or an accent mark tagged `data-brand-mark`), and the link keeps its
+`aria-label` as its name while the wordmark is hidden. The layout mirrors
 in RTL. `secondaryAction` renders before `actions` in the trailing region.
 Explicit `navPlacement="leading"` or `mobileLayout="inline"` retain legacy
 positioning rather than the default geometry. DOM order remains brand, nav,
@@ -5317,6 +5371,46 @@ Declared boundary: the wordmark's size is the mark's height times the fixed
 22/48 ratio, so at `size="sm"` (a 24px mark) the wordmark is 11px. Sizes
 derive from that ratio and are not raised to a minimum, so use `"md"` or
 `"lg"` where an 11px wordmark is too small.
+
+One brand slot size: the mark's box is the size's `--ui-brandmark-height-*`
+token for every form (`variant="mark"` or `"lockup"`, either plate, either
+`markInk`), so a mark-only brand and a lockup share one slot height, and the
+desktop header, the mobile bar and the menu panel all use that same token.
+The header styles set no brand height or font size of their own, so no
+per-site override is needed.
+
+#### Accent mark
+
+`markInk` is `"image"` or `"accent"`. On a `Brandmark` of its own, `"image"`
+is the default and the mark is the `markSrc` image, as above. Inside
+`SiteHeader`, an omitted `markInk` becomes `"accent"`, so the header's
+logomark is in the accent token by default; pass `markInk="image"` there to
+opt out. With `"accent"`,
+`Brandmark` paints the mark's shape in the accent token (`bg-accent`): a
+decorative `<span>` the size's height square, using `markSrc` as a CSS mask
+(`mask-image`, `contain`, centred), so the mark follows the accent token in
+light and dark color schemes. The wordmark keeps the link's ink: the
+`--color-ink-primary` token, or `--color-ink-on-inverse` with
+`tone="inverse"` on a dark or overlay ground, so it switches with the scheme
+and the ground through tokens only. With `plate="shared"` the accent mark sits
+inset on the plate. The prop is part of `BrandmarkProps`; no new type is
+exported.
+
+```tsx
+<Brandmark
+  variant="lockup"
+  size="md"
+  label="Acme home"
+  markSrc="/brand/acme-mark.svg"
+  wordmark="Acme"
+  markInk="accent"
+/>;
+```
+
+What it does not do: the mask uses the image's alpha only, so a multi-colour
+mark becomes a one-colour accent silhouette, including in the header's
+default; pass `markInk="image"` for a mark whose colours matter. It does not check that the accent reads on the ground behind
+it.
 
 #### Shared plate
 
@@ -6223,7 +6317,7 @@ not a grab-bag).
 | `Spinner` | component | Indeterminate loading indicator. Plain SVG — not interactive, composes no other atom. |
 | `SpinnerProps` | type | Props for `Spinner`: `size`, `label`, plus every native `<svg>` attribute except `className`/`children`. |
 | `SpinnerSize` | type | `"sm" \| "md" \| "lg"`. |
-| `Menu` | component | Dropdown menu built on react-aria-components' `MenuTrigger`/`Menu`/`MenuItem`/`Popover`. Carries `Menu.Item` and `Menu.Separator`. |
+| `Menu` | component | Dropdown menu built on react-aria-components' `MenuTrigger`/`Menu`/`MenuItem`/`Popover`. Carries `Menu.Item`, `Menu.Separator` and `Menu.Section`. |
 | `MenuProps` | type | Props for `Menu`: `trigger`, `children`, `triggerAction`, `className`, `popoverClassName`, plus most of react-aria-components' own `MenuTrigger` props. |
 | `MenuItemProps` | type | Props for `Menu.Item`: `children`, `isDestructive`, `className`, plus everything react-aria-components' own `MenuItem` accepts. |
 | `MenuSeparatorProps` | type | Props for `Menu.Separator`: `className`. |
@@ -6285,6 +6379,15 @@ not a grab-bag).
 | `MeterProps` | type | Props for `Meter`: `value`, `scaleMax`, `limit`, `direction`, `tone`, `valueText`, `limitText`, `emphasis`, optional paired `previous`/`previousText`, plus every native `<div>` attribute except `children`. |
 | `MeterTone` | type | `"success" \| "warning" \| "danger" \| "info" \| "neutral"`. |
 | `MeterDirection` | type | `"max" \| "min"`: whether the limit is a cap or a floor. |
+| `AccountMenu` | component | Navigation Material with actor trigger, grouped commands and controlled preferences. |
+| `AccountMenuProps` | type | Actor, sections, context/collapsed/triggerLabel and host close/route callbacks. |
+| `AccountMenuActor` | type | Name, optional secondaryText and image; name-derived fallback initials. |
+| `AccountMenuEntry` | type | Command or controlled preference entry. |
+| `AccountMenuCommand` | type | Link, action or destructive command. |
+| `AccountMenuLink` | type | Labelled destination entry with href. |
+| `AccountMenuAction` | type | Labelled action or destructive callback entry. |
+| `AccountMenuPreference` | type | Checked preference and change callback. |
+| `AccountMenuSection` | type | Command group or named preference group; entries have section-local IDs. |
 | `PageHeader` | component | Page banner: breadcrumb slot, title, description, actions slot. |
 | `PageHeaderProps` | type | Props for `PageHeader`: `title`, `description`, `actions`, `breadcrumb`, plus every native `<header>` attribute. |
 | `EmptyState` | component | Zero-item placeholder: icon slot, title, description, action slot. |
@@ -7114,12 +7217,13 @@ speculatively, just because a related component shipped, is the exact
 un-bounded growth this package's own "variant rule" warns against one level
 up. They get added here only once something real needs them.
 
-**Blocks:** thirty-five ship — `PageHeader`, `EmptyState`, `DataTable`,
+**Blocks:** forty-one ship — `AccountMenu`, `PageHeader`, `EmptyState`, `DataTable`,
 `DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`, `ConfirmDialog`,
 `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `SectionFrame`, `MarketingChapter`,
-`FeatureGrid`, `Item`, `Items`, `AnatomyCallouts`, `RecordLedger`, `Scene`, `Matrix`, `Specimen`,
+`FeatureGrid`, `Item`, `Items`, `Tree`, `AnatomyCallouts`, `RecordLedger`, `Scene`, `Matrix`, `Specimen`,
 `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`, `PricingTable`,
-`Testimonial`, `ArticleBody`, `ConsentBanner` — completing this layer. No
+`Testimonial`, `ArticleBody`, `ConsentBanner`, `Panel`, `Drawer`,
+`ResizablePane`, `CommandMenu` and `AppNavigation` — completing this layer. No
 `FilterBar` block:
 `DataTable`'s own `toolbar` slot (and `Toolbar`'s own `search` slot) are
 deliberately plain `ReactNode`s, not a block with its own opinion about
@@ -7429,7 +7533,8 @@ const report = checkConsumerArtContract(art);
 
 `Brandmark tone="inverse"` uses inverse wordmark ink; `"auto"` keeps the base
 ink. A `Brandmark` passed directly to an overlay `SiteHeader` follows the header tone
-unless its own tone is explicit. `NavDisclosure tone="inverse"` uses inverse
+unless its own tone is explicit. A `Brandmark` passed directly to any `SiteHeader`
+paints its logomark in the accent token unless it sets `markInk="image"`. `NavDisclosure tone="inverse"` uses inverse
 trigger ink at rest, on hover, when expanded and on keyboard focus. An omitted
 nav tone follows an inverse overlay header; an explicit `"auto"` keeps base ink.
 Both controls otherwise retain their existing default markup.
@@ -7459,7 +7564,7 @@ static equivalent"). Breakpoint copy props are `thresholdLabel` ("Threshold"),
 `matchLabel` ("Match"), `unavailableMessage` ("unavailable"), `matchesMessage`
 ("yes") and `notMatchesMessage` ("no").
 
-All 186 properties support their authored applications across 19 kinds. The 168
+All 188 properties support their authored applications across 19 kinds. The 170
 static specimens cover surface, text, border, control, status, chart, font,
 space, size, icon, brandmark, radius, shadow, blur, ring, layer and opacity.
 Patterns expose translucent applications; inverse foregrounds receive an inverse
@@ -7513,6 +7618,30 @@ unmounted. Its default `dismissAt="(min-width: 768px)"` matches the structural
 tablet breakpoint; supply another media query when the host's wide layout
 starts elsewhere. Changing `navigationKey` or entering that query dismisses
 an open drawer, as does ordinary in-panel link navigation. No motion is added.
+The close control renders the `X` glyph through the `Icon` atom as decoration;
+`closeLabel` supplies the control's accessible name.
+
+`wide="sheet"` makes the Drawer an application side sheet that opens at every
+viewport width, for example an inspector at `placement="end"`. It ignores
+`dismissAt` and registers no media listener; it keeps the same Dialog focus
+containment, Escape and outside dismissal, focus restoration, scroll lock,
+`navigationKey` and in-panel link dismissal, and adds no motion. The default
+`wide="dismiss"` keeps the narrow-layout behavior described above. Switching
+an open sheet back to `"dismiss"` while the query matches closes it.
+
+```tsx
+import { Drawer } from "@clossys/designer/blocks";
+import { Button } from "@clossys/designer/atoms";
+
+export function InspectorSheet() {
+  return (
+    <Drawer heading="Inspector" closeLabel="Close inspector" placement="end"
+      wide="sheet" trigger={<Button>Inspect</Button>}>
+      <p>Selection details</p>
+    </Drawer>
+  );
+}
+```
 
 For a controlled Drawer, `isOpen` requests an open state; a local dismissal
 immediately removes the overlay even while the host retains `true`. The host
@@ -7527,9 +7656,26 @@ style its wrapper without changing centered defaults when omitted.
 `max` and `defaultValue`, in CSS pixels. Choose bounds that leave room for the
 content and the handle's minimum 44px target. `value` makes it controlled;
 omission uses local state. `onChange` reports bounded values, with no storage
-access. `orientation="vertical"` (default) is a vertical separator resizing
-inline width; `"horizontal"` resizes block height. `label` names the pane and
-`handleLabel` names the separator; header and footer remain Panel regions.
+access. A controlled host owns the dimension: keyboard and pointer changes
+render only after the host passes the reported value back, so the host can
+keep a remembered width in its own state or storage. `defaultValue` remains
+the Enter reset target in both modes. `orientation="vertical"` (default) is a
+vertical separator resizing inline width; `"horizontal"` resizes block height.
+`label` names the pane and `handleLabel` names the separator; header and footer
+remain Panel regions.
+
+```tsx
+import { ResizablePane } from "@clossys/designer/blocks";
+
+export function Inspector({ width, onWidthChange }: { width: number; onWidthChange: (width: number) => void }) {
+  return (
+    <ResizablePane min={240} max={560} defaultValue={320} value={width}
+      onChange={onWidthChange} label="Inspector" handleLabel="Resize inspector">
+      <p>Selection details</p>
+    </ResizablePane>
+  );
+}
+```
 
 `ResizeHandle` is controlled with required `value`, `min`, `max`, `resetValue`,
 `label` and `onChange`. Positive `step` defaults to 1. Arrow keys adjust,
@@ -7657,6 +7803,18 @@ Left/Right expand or collapse a parent, reversing in RTL. Enter/Space activate
 destinations or disclosure. Native forced-color adjustment and reduced motion
 remain supported. The interactive Material and helpers use the existing client
 blocks entry; no server-subset export or application-frame assembly is added.
+### Account menu composition example
+
+```tsx
+import { AccountMenu } from "@clossys/designer/blocks";
+
+export function AccountControl() {
+  return <AccountMenu actor={{ name: "Alex Morgan" }} contextLabel="Workspace"
+    sections={[{ id: "account", label: "Account", entries: [
+      { id: "settings", kind: "link", label: "Settings", href: "/settings" },
+    ] }]} />;
+}
+```
 
 ## Flow canvas
 

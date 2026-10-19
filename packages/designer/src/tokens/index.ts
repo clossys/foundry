@@ -4,7 +4,7 @@
  * A design token is a name for a design decision — `surface-raised`, not
  * `#F2EFE6` — so that the decision can be looked up and changed in one
  * place instead of hardcoded everywhere it's used. This package ships that
- * naming in two forms that describe the same 186 tokens:
+ * naming in two forms that describe the same 188 tokens:
  *
  *   - `styles/tokens.css` — CSS custom properties, the primary artifact.
  *   - This module — the same tokens as typed data, for JS/TS code that

@@ -27,7 +27,7 @@
 import { resolve } from "node:path";
 import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
-import { render } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Avatar } from "../atoms/Avatar.js";
 import { Badge } from "../atoms/Badge.js";
@@ -54,6 +54,7 @@ import { Switch } from "../atoms/Switch.js";
 import { TextField } from "../atoms/TextField.js";
 import { Textarea } from "../atoms/Textarea.js";
 import { Hero } from "../blocks/Hero.js";
+import { AccountMenu } from "../blocks/AccountMenu.js";
 import { Item } from "../blocks/items/Item.js";
 import { Items } from "../blocks/items/Items.js";
 import { Items as NativeItems } from "../blocks/items/Items.server.js";
@@ -186,6 +187,70 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
     }
   });
 
+  it("keeps AccountMenu triggers transparent and borderless without a host reset", () => {
+    const css = readFileSync(resolve(packageRoot, "styles/compiled.css"), "utf8");
+    for (const collapsed of [false, true]) {
+      const tree = render(<AccountMenu actor={{ name: "Alex Morgan" }} collapsed={collapsed}
+        sections={[{ id: "account", entries: [{ id: "profile", kind: "link", label: "Profile", href: "#profile" }] }]} />);
+      const trigger = screen.getByRole("button", { name: "Alex Morgan" });
+      const style = document.createElement("style");
+      // jsdom cannot apply layers: project matching shipped base rules, with no reset or invented declarations.
+      style.textContent = [...css.matchAll(/(\.[a-zA-Z_][\w-]*)\s*\{[^{}]*\}/g)]
+        .filter(match => trigger.matches(match[1]!)).map(match => match[0]).join("\n");
+      document.head.append(style);
+      try {
+        const computed = getComputedStyle(trigger);
+        expect(computed.backgroundColor).toBe("rgba(0, 0, 0, 0)");
+        for (const side of ["top", "right", "bottom", "left"]) {
+          expect(computed.getPropertyValue(`border-${side}-width`)).toBe("0px");
+          if (collapsed) expect(computed.getPropertyValue(`padding-${side}`)).toBe("0px");
+        }
+      } finally { style.remove(); tree.unmount(); }
+    }
+  });
+  it("covers AccountMenu portals with normal rings and forced-colors-only outlines", async () => {
+    const classes = new Set<string>(), user = userEvent.setup();
+    for (const collapsed of [false, true]) {
+      const tree = render(<AccountMenu actor={{ name: "Alex Morgan" }} collapsed={collapsed}
+        sections={[{ id: "prefs", kind: "preferences", label: "Preferences", entries: [
+          { id: "on", kind: "preference", label: "Enabled", checked: true, onCheckedChange() {} },
+          { id: "off", kind: "preference", label: "Disabled preference", checked: false, onCheckedChange() {} },
+        ] }]} />);
+      await user.tab();
+      const trigger = screen.getByRole("button", { name: "Alex Morgan" });
+      await waitFor(() => expect(trigger).toHaveFocus());
+      expect(trigger.style.outlineStyle).toBe("");
+      expect(trigger.style.boxShadow).not.toBe("");
+      expect(trigger).toHaveClass("forced-colors:focus-visible:outline", "forced-colors:focus-visible:outline-solid");
+      for (const cls of collectClassNames(document.body)) classes.add(cls);
+      await user.keyboard("{ArrowDown}");
+      const focused = await screen.findByRole("menuitemcheckbox", { name: "Enabled" });
+      const details = within(screen.getByRole("menu")).getByText("Alex Morgan").parentElement!;
+      expect(details.style.maxInlineSize).toBe("min(var(--ui-layout-sidebar-w, 256px), calc(100vw - 2 * var(--spacing-2xl, 32px)))");
+      expect(focused).toHaveFocus(); expect(focused).toHaveClass("outline-none", "forced-colors:outline", "forced-colors:outline-solid");
+      expect(focused).not.toHaveClass("outline");
+      for (const cls of collectClassNames(document.body)) classes.add(cls);
+      tree.unmount();
+    }
+    const scan = scanCompiledCssSources(packageRoot);
+    const generated = await generateCompiledCss({ stylesDir: resolve(packageRoot, "styles"), candidates: scan.candidates });
+    expect([...classes].filter(cls => !generated.css.includes(toSelectorText(cls)))).toEqual([]);
+    expect(generated.css).toMatch(/\.max-w-full\s*\{[^}]*max-width:\s*100%/);
+    expect(generated.css).toMatch(/\.box-border\s*\{[^}]*box-sizing:\s*border-box/);
+    // Both actual rendered outline rules must be nested inside the forced-colors media query.
+    for (const candidate of ["forced-colors:outline", "forced-colors:focus-visible:outline-solid"]) {
+      const offset = generated.css.indexOf(toSelectorText(candidate));
+      const blocks: string[] = [];
+      for (const match of generated.css.slice(0, offset).matchAll(/([^{}]+)\{|\}/g)) {
+        if (match[1]) blocks.push(match[1].trim()); else blocks.pop();
+      }
+      const rule = generated.css.slice(offset, generated.css.indexOf("}", offset));
+      // Tailwind nests the media condition within the candidate selector.
+      expect(blocks.some(block => block.includes("forced-colors: active")) || rule.includes("forced-colors: active")).toBe(true);
+    }
+    expect(generated.css).toContain(".motion-reduce\\:transition-none");
+    expect(generated.css).toContain("prefers-reduced-motion: reduce");
+  }, 30_000);
   it("covers AppFrame Material and resize states in fresh and shipped CSS", async () => {
     const classes = new Set<string>();
     const collect = (container: HTMLElement) => { for (const name of collectClassNames(container)) classes.add(name); };

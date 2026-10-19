@@ -131,6 +131,7 @@ export type {
 
 export {
   PageHeader,
+  AccountMenu,
   EmptyState,
   DataTable,
   DetailView,
@@ -174,6 +175,14 @@ export type {
   SectionGroundClasses,
   SectionStatusTone,
   PageHeaderProps,
+  AccountMenuProps,
+  AccountMenuActor,
+  AccountMenuEntry,
+  AccountMenuCommand,
+  AccountMenuLink,
+  AccountMenuAction,
+  AccountMenuPreference,
+  AccountMenuSection,
   EmptyStateProps,
   DataTableProps,
   DataTableColumn,
