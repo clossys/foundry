@@ -32,6 +32,9 @@ export interface FlowCanvasProps {
 const UNIT = "var(--spacing-xs, 4px)";
 const units = (value: number) => "calc(" + value + " * " + UNIT + ")";
 
+/** In forced colors the border colours collapse to one system colour, so the selected node also gets an outline in the button's system text colour. */
+const SELECTED_FORCED = "forced-colors:outline-solid forced-colors:outline-2 forced-colors:outline-offset-2 forced-colors:outline-current";
+
 const PLATE = "box-border flex h-full w-full min-w-0 flex-col items-start justify-start gap-xs overflow-hidden rounded-panel border-solid p-sm text-start font-body forced-colors:border-current focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent";
 
 /**
@@ -92,6 +95,8 @@ export function FlowCanvas({ nodes, edges, label, emptyMessage, outgoingLabel, o
   };
 
   const onKeyDown = (event: KeyboardEvent<HTMLOListElement>) => {
+    // Modified arrows belong to the browser and the platform (Alt+Arrow is history navigation), so leave them alone.
+    if (event.altKey || event.ctrlKey || event.metaKey) return;
     const current = (event.target as HTMLElement).closest<HTMLElement>("[data-flowchart-node]")?.dataset.flowchartNode;
     if (current === undefined || !graph.byId.has(current)) return;
     const rtl = getComputedStyle(event.currentTarget).direction === "rtl" || event.currentTarget.closest("[dir=rtl]") !== null;
@@ -189,7 +194,7 @@ export function FlowCanvas({ nodes, edges, label, emptyMessage, outgoingLabel, o
                     aria-labelledby={labelId}
                     aria-describedby={describedBy || undefined}
                     aria-current={isSelected ? "true" : undefined}
-                    className={cx(PLATE, isSelected ? "border-accent bg-surface-selected" : "border-line-panel bg-surface-raised hover:bg-surface-sunken")}
+                    className={cx(PLATE, isSelected ? cx("border-accent bg-surface-selected", SELECTED_FORCED) : "border-line-panel bg-surface-raised hover:bg-surface-sunken")}
                     style={{ borderWidth: isSelected ? UI_BORDER_RULE : UI_BORDER_HAIRLINE }}
                     onFocus={() => setFocusedId(placed.id)}
                     onClick={() => onSelect?.(placed.id)}

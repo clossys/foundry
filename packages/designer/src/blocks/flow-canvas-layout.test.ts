@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { FLOW_CANVAS_NODE_LIMIT, layoutFlowCanvas, type FlowCanvasEdge, type FlowCanvasLayout, type FlowCanvasNode } from "./flow-canvas-layout.js";
+import { FLOW_CANVAS_EDGE_LIMIT, FLOW_CANVAS_NODE_LIMIT, layoutFlowCanvas, type FlowCanvasEdge, type FlowCanvasLayout, type FlowCanvasNode } from "./flow-canvas-layout.js";
 
 const node = (id: string): FlowCanvasNode => ({ id, label: id.toUpperCase() });
 const nodesOf = (...ids: string[]) => ids.map(node);
@@ -166,4 +166,29 @@ describe("layoutFlowCanvas", () => {
     expect(() => layoutFlowCanvas(many, [])).toThrow(/^FlowCanvas: /);
     expect(layoutFlowCanvas(many.slice(1), []).nodes).toHaveLength(FLOW_CANVAS_NODE_LIMIT);
   });
+
+  it("accepts exactly the documented edge limit and refuses one more", () => {
+    const pair = [node("a"), node("b")];
+    const edges = Array.from({ length: FLOW_CANVAS_EDGE_LIMIT + 1 }, () => ({ from: "a", to: "b" }));
+    expect(layoutFlowCanvas(pair, edges.slice(1)).edges).toHaveLength(FLOW_CANVAS_EDGE_LIMIT);
+    expect(() => layoutFlowCanvas(pair, edges)).toThrow(RangeError);
+    expect(() => layoutFlowCanvas(pair, edges)).toThrow(/^FlowCanvas: /);
+  });
+
+  it("lays out a graph at both documented limits, with hundreds of thousands of bend points, without a call-stack overflow", () => {
+    const chain = Array.from({ length: FLOW_CANVAS_NODE_LIMIT }, (_, i) => node("n" + i));
+    const last = FLOW_CANVAS_NODE_LIMIT - 1;
+    const links: FlowCanvasEdge[] = chain.slice(1).map((_, i) => ({ from: "n" + i, to: "n" + (i + 1) }));
+    // Every spanning edge crosses at least 247 layers, so the edges below add well over 130,000 bend points.
+    while (links.length < FLOW_CANVAS_EDGE_LIMIT) {
+      const step = links.length % 4;
+      links.push({ from: "n" + step, to: "n" + (last - step) });
+    }
+    const layout = layoutFlowCanvas(chain, links);
+    expect(layout.nodes).toHaveLength(FLOW_CANVAS_NODE_LIMIT);
+    expect(layout.edges).toHaveLength(FLOW_CANVAS_EDGE_LIMIT);
+    // A route holds its two ends plus two points per bend (where it enters and leaves each layer it crosses).
+    expect(layout.edges.reduce((sum, edge) => sum + (edge.points.length - 2) / 2, 0)).toBeGreaterThan(130_000);
+    expect(Number.isFinite(layout.width) && Number.isFinite(layout.height)).toBe(true);
+  }, 60_000);
 });

@@ -3682,8 +3682,19 @@
     .forced-colors\:stroke-current {
       stroke: currentcolor;
     }
+    .forced-colors\:outline-2 {
+      outline-style: var(--tw-outline-style, solid);
+      outline-width: 2px;
+    }
+    .forced-colors\:outline-offset-2 {
+      outline-offset: 2px;
+    }
     .forced-colors\:outline-current {
       outline-color: currentcolor;
+    }
+    .forced-colors\:outline-solid {
+      --tw-outline-style: solid;
+      outline-style: solid;
     }
   }
   .\[\&_a\]\:text-ink-link a {

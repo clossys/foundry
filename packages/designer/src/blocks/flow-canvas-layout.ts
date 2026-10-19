@@ -231,7 +231,9 @@ export function layoutFlowCanvas(nodes: readonly FlowCanvasNode[], edges: readon
   const reversed = backEdges(nodes.length, authored);
   const pairs = authored.map(([from, to], i) => (reversed[i] ? [to, from] as const : [from, to] as const));
   const nodeLayer = assignLayers(nodes.length, pairs);
-  const layerCount = Math.max(...nodeLayer) + 1;
+  // Loops, not argument spreads: spreading a large array into Math.max overflows the call stack.
+  let layerCount = 1;
+  for (const layer of nodeLayer) if (layer + 1 > layerCount) layerCount = layer + 1;
 
   // Items are real nodes followed by bend points; each edge becomes a chain of segments between adjacent layers.
   const items: Item[] = nodes.map((_, node) => ({ key: node, node, dummy: false, layer: nodeLayer[node]!, size: geometry.cross, weight: 1 }));
@@ -311,7 +313,11 @@ export function layoutFlowCanvas(nodes: readonly FlowCanvasNode[], edges: readon
   }
   for (let layer = 0; layer < layerCount; layer++) align(layer, item => [...preds[item]!, ...succs[item]!]);
   const start = items.map((item, i) => Math.round(centre[i]! - item.size / 2));
-  const lowest = Math.min(...start), highest = Math.max(...items.map((item, i) => start[i]! + item.size));
+  let lowest = Infinity, highest = -Infinity;
+  items.forEach((item, i) => {
+    if (start[i]! < lowest) lowest = start[i]!;
+    if (start[i]! + item.size > highest) highest = start[i]! + item.size;
+  });
   const crossStart = start.map(value => value - lowest + PAD);
   const crossExtent = highest - lowest + PAD * 2;
   const mainStart = (layer: number) => PAD + layer * (geometry.main + geometry.layerGap);

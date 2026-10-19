@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { FlowCanvas } from "./FlowCanvas.js";
@@ -79,6 +79,19 @@ describe("FlowCanvas", () => {
     expect(button("Draft")).toHaveFocus();
   });
 
+  it("leaves arrow keys with Alt, Control or Meta to the browser", () => {
+    render(<FlowCanvas nodes={nodes} edges={edges} {...copy} />);
+    button("Draft").focus();
+    for (const modifier of ["altKey", "ctrlKey", "metaKey"] as const) {
+      for (const key of ["ArrowRight", "ArrowLeft", "ArrowDown", "Home", "End"]) {
+        expect(fireEvent.keyDown(button("Draft"), { key, [modifier]: true }), modifier + " " + key).toBe(true);
+        expect(button("Draft")).toHaveFocus();
+      }
+    }
+    expect(fireEvent.keyDown(button("Draft"), { key: "ArrowRight" })).toBe(false);
+    expect(button("Review")).toHaveFocus();
+  });
+
   it("returns along the remembered trail when stepping back", async () => {
     const user = userEvent.setup();
     const joined: FlowCanvasEdge[] = [{ from: "draft", to: "publish" }, { from: "review", to: "publish" }];
@@ -131,6 +144,9 @@ describe("FlowCanvas", () => {
     const { container, rerender } = render(<FlowCanvas nodes={nodes} edges={edges} selectedId="review" {...copy} />);
     expect(button("Review")).toHaveAttribute("aria-current", "true");
     expect(button("Draft")).not.toHaveAttribute("aria-current");
+    // Forced colors flatten the border colours, so selection also carries an outline there.
+    expect(button("Review")).toHaveClass("forced-colors:outline-solid", "forced-colors:outline-2", "forced-colors:outline-current");
+    expect(button("Draft")).not.toHaveClass("forced-colors:outline-solid");
     expect(button("Review").tabIndex).toBe(0);
     expect(container.querySelectorAll("[data-flowchart-edge][data-selected]")).toHaveLength(3);
     rerender(<FlowCanvas nodes={nodes} edges={edges} selectedId="archive" {...copy} />);
