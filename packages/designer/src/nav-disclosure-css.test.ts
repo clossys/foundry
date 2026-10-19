@@ -94,6 +94,10 @@ describe("header motion and content geometry", () => {
       expect(block(block(css, opening), "@media (prefers-reduced-motion: reduce)")).toContain("transition: none;");
     }
   });
+  it("gives reduced-motion pseudo bars the same specificity as their normal transitions", () => {
+    const reduced = block(block(css, "@utility site-header-contract {"), "@media (prefers-reduced-motion: reduce)");
+    for (const pseudo of ["before", "after"]) expect(reduced).toContain(`.nav-disclosure-toggle:not([aria-label])::${pseudo}`);
+  });
   it("stretches mobile panels, lists and rows with inline-start labels", () => {
     const mobile = block(css, "@utility site-header-mobile {");
     expect(mobile).toContain("align-items: stretch;");
@@ -130,5 +134,12 @@ it("propagates absolute section ground to header ink and brand independently of 
   expect(block(overlay, '&[data-section-ground="dark"]')).toContain("--site-header-ground-ink: var(--color-neutral-50");
   const grounded = block(overlay, "&[data-section-ground] {");
   expect(grounded).toContain("color: var(--site-header-ground-ink, var(--color-neutral-900, oklch(0.2178 0 0)));");
-  expect(grounded).toContain(".site-header-brand > a, & .nav-disclosure-toggle { color: inherit; }");
+  expect(grounded).toContain(".site-header-brand > a, & .nav-disclosure-toggle[aria-expanded] { color: inherit; }");
+});
+
+it("centers the mobile brand graphic and keeps its authored shared plate visible", () => {
+  const mobile = block(css, "@utility site-header-mobile {");
+  expect(mobile).toContain(".site-header-brand > a { justify-content: center; }");
+  expect(mobile).toContain(".site-header-brand a > span:not(:has(img)) { display: none; }");
+  expect(block(css, "@utility site-header-brand {")).toContain("display: flex;");
 });

@@ -173,7 +173,7 @@ export function SiteFrame({ shell, presentation, resolveCopy, resolveAsset, chil
         navPlacement={resolved.navPlacement}
         mobileLayout={resolved.mobileLayout}
         actions={actions}
-        surfaceLabel={nav ? undefined : resolved.surfaceLabel}
+        surfaceLabel={navigation ? undefined : resolved.surfaceLabel}
       />
       <main id={SITE_MAIN_ID} tabIndex={-1} className="flex w-full flex-1 flex-col">
         {children}

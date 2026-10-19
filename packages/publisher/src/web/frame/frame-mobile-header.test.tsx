@@ -298,6 +298,7 @@ it.each([false, true])("updates ink, authored artwork and glass at the header ed
   const header = container.querySelector("header")!;
   const cross = async (next: number) => { offset = next; await act(async () => { window.dispatchEvent(new Event("scroll")); await new Promise(resolve => window.requestAnimationFrame(resolve)); }); };
   expect(header).not.toHaveAttribute("data-scrolled");
+  expect((header.parentElement as HTMLElement).style.getPropertyValue("--site-header-clearance")).toBe("64px");
   await cross(535);
   expect(header).toHaveAttribute("data-section-ground", "dark");
   await cross(537);
@@ -314,4 +315,10 @@ it.each([false, true])("updates ink, authored artwork and glass at the header ed
   await cross(700);
   expect(header).not.toHaveAttribute("data-scrolled");
   container.remove();
+});
+
+it("retains the authored surface badge on a navless overlay header", () => {
+  const shell: SiteShellInput = { ...base, nav: undefined, actions: undefined, secondaryAction: undefined, header: { placement: "overlay" }, surfaceLabel: ref("Preview") };
+  expect(output(shell, true).querySelector("header")).toHaveTextContent("Preview");
+  expect(output(shell).querySelector("header")).toHaveTextContent("Preview");
 });

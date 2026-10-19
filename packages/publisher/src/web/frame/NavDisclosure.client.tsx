@@ -13,6 +13,8 @@ export function SiteNavDisclosure({ nav, actions, surfaceLabel, header, artwork 
     const banner = marker.current?.closest("header");
     const main = banner?.parentElement?.querySelector(":scope > main");
     if (!banner || !main) return;
+    const frame = banner.parentElement;
+    const priorClearance = frame?.style.getPropertyValue("--site-header-clearance");
     const image = banner.querySelector<HTMLImageElement>(".site-header-brand img");
     const prior = ["data-scrolled", "data-section-ground", "data-tone"].map(key => [key, banner.getAttribute(key)] as const);
     const priorSrc = image?.getAttribute("src");
@@ -22,9 +24,11 @@ export function SiteNavDisclosure({ nav, actions, surfaceLabel, header, artwork 
     const measure = () => {
       pending = 0;
       if (disposed) return;
+      const bounds = banner.getBoundingClientRect();
+      if (bounds.height > 0) frame?.style.setProperty("--site-header-clearance", `${bounds.height}px`);
       banner.toggleAttribute("data-scrolled", window.scrollY > 0);
       if (!ground || !artwork) return;
-      const edge = banner.getBoundingClientRect().bottom;
+      const edge = bounds.bottom;
       let current = ground.initial;
       let nearest = -Infinity;
       // Match explicit IDs inside this frame only; no selector interpolation or pixel sampling.
@@ -51,6 +55,7 @@ export function SiteNavDisclosure({ nav, actions, surfaceLabel, header, artwork 
     return () => {
       disposed = true; window.cancelAnimationFrame(pending); resize?.disconnect(); mutations.disconnect();
       window.removeEventListener("scroll", schedule); window.removeEventListener("resize", schedule);
+      if (priorClearance) frame?.style.setProperty("--site-header-clearance", priorClearance); else frame?.style.removeProperty("--site-header-clearance");
       for (const [key, value] of prior) { if (value === null) banner.removeAttribute(key); else banner.setAttribute(key, value); }
       if (image && priorSrc !== undefined && priorSrc !== null) image.setAttribute("src", priorSrc);
     };
