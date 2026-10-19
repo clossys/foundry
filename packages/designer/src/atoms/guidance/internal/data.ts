@@ -460,15 +460,15 @@ export const ATOM_GUIDANCE: Readonly<Record<string, AtomGuidance>> = {
   "useWhen": "Several related commands should be revealed on demand.",
   "avoidWhen": "The content is an input choice set or a rich explanatory panel.",
   "alternatives": "Use Select for choosing a value; Popover for arbitrary panel content.",
-  "content": "Name the trigger and each command; group related commands with separators.",
-  "anatomy": "One trigger and a repeated collection of actionable items.",
-  "composition": "In a consumer-owned row-actions block, expose edit and archive through Menu.Item.",
-  "accessibility": "Name the trigger; disabled items and keyboard navigation belong to the menu primitive."
+  "content": "Name the trigger and each command. Use Menu.Section for a real section heading and separators between groups.",
+  "anatomy": "One trigger and a repeated collection of actionable items, optionally grouped in Menu.Section with a real heading.",
+  "composition": "AccountMenu composes Menu.Item commands and Menu.Section preference groups with an actor trigger.",
+  "accessibility": "Name the trigger and each section. Section headings use the menu primitive's Header; section selection provides menuitemcheckbox preferences. Disabled items and keyboard navigation belong to the primitive."
 },
 {
   "exportName": "Menu",
   "entrypoint": "atoms",
-  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Root props forward to MenuTrigger, not the inner menu list. triggerAction forwards to the peer trigger prop; the package supplies no local initializer. Item-level commands use Menu.Item; destructive emphasis is item-level.",
+  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Root props forward to MenuTrigger, not the inner menu list. triggerAction forwards to the peer trigger prop; the package supplies no local initializer. Item-level commands use Menu.Item; destructive emphasis is item-level. Menu.Section supplies a real heading through Header and forwards selectionMode, selectedKeys, onSelectionChange and shouldCloseOnSelect to the peer MenuSection. Checkbox preferences use multiple selection with caller-owned keys and callbacks.",
   "options": [
     {
       "prop": "triggerAction",
