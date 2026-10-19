@@ -141,6 +141,31 @@ describe("geometry edge cases", () => {
   });
 });
 describe("paint geometry regressions", () => {
+  it.each(['fill="none"', 'style="fill: none"'])("keeps a border with inherited %s in the glyph", fill => {
+    const input = `<svg viewBox="0 0 100 100" ${fill} stroke="#000" stroke-width="2"><rect width="100" height="100"/><path d="M40 40 H60 V60 H40 Z"/></svg>`;
+    const measured = measureMarkGeometry(input);
+    expect(measured.plate.present).toBe(false);
+    expect(measured.glyphBox).toEqual({ x: -0.01, y: -0.01, width: 1.02, height: 1.02 });
+    expect(checkMarkConformance(normalizeMark({ glyphSvg: input, tokens }))).toEqual([]);
+  });
+  it.each(['M0 0', 'M0 0 L10 0', 'M0 0 L5 0 L10 0'])("excludes unpainted contour %s from fill bounds", prefix => {
+    const input = svg(`<path d="${prefix} M20 20 H40 V40 H20 Z"/>`);
+    expect(measureMarkGeometry(input).glyphBox).toEqual({ x: 0.2, y: 0.2, width: 0.2, height: 0.2 });
+    const normalized = normalizeMark({ glyphSvg: input, tokens }).replace(prefix + ' ', '');
+    expect(measureMarkGeometry(normalized).glyphBox).toEqual({ x: expect.closeTo(0.18, 12), y: expect.closeTo(0.18, 12), width: 0.64, height: 0.64 });
+    expect(checkMarkConformance(normalized)).toEqual([]);
+  });
+  it("refuses numerical overflow rather than returning nonfinite geometry or SVG", () => {
+    const input = svg('<g transform="scale(1e308)"><rect width="10" height="10"/></g>');
+    expect(() => measureMarkGeometry(input)).toThrow(MarkGeometryError);
+    expect(() => normalizeMark({ glyphSvg: input, tokens })).toThrow('numeric overflow');
+    expect(() => measureMarkGeometry('<svg viewBox="0 0 1e-308 1e-308"><rect width="10" height="10"/></svg>')).toThrow('numeric overflow');
+  });
+  it("preserves a finite small fitting scale instead of rounding it to zero", () => {
+    const normalized = normalizeMark({ glyphSvg: svg('<rect width="1e20" height="1e20"/>'), tokens });
+    expect(measureMarkGeometry(normalized).glyphBox.width).toBeCloseTo(0.64, 10);
+    expect(checkMarkConformance(normalized)).toEqual([]);
+  });
   it("checks both plate radii and measures SVG radius clamping", () => {
     const anisotropic = MARK_FIXTURES.small.replace('rx="21.875"', 'rx="21.875" ry="40"');
     expect(checkMarkConformance(anisotropic).some(f => f.rule === 'radius')).toBe(true);

@@ -187,12 +187,17 @@ function bounds(points: Point[]): MarkBox {
     return fail("empty glyph");
   let x = Infinity, y = Infinity, right = -Infinity, bottom = -Infinity;
   for (const p of points) {
+    if (!p.every(Number.isFinite))
+      fail('numeric overflow');
     x = Math.min(x, p[0]);
     y = Math.min(y, p[1]);
     right = Math.max(right, p[0]);
     bottom = Math.max(bottom, p[1]);
   }
-  return { x, y, width: right - x, height: bottom - y };
+  const box = { x, y, width: right - x, height: bottom - y };
+  if (!Object.values(box).every(Number.isFinite))
+    fail('numeric overflow');
+  return box;
 }
 // Curves are flattened adaptively to one millionth of the source canvas.
 // Bounds and area are computed from that geometry, never from control-point boxes.
@@ -477,27 +482,35 @@ interface Analysis {
   root: Node;
   plate?: Node;
 }
+function presentation(node: Node, inherited: Attrs): Attrs {
+  const attrs = { ...inherited, ...node.attrs };
+  if (attrs.style) {
+    for (const declaration of attrs.style.split(';').filter(Boolean)) {
+      const split = declaration.indexOf(':'), key = declaration.slice(0, split).trim(), value = declaration.slice(split + 1).trim();
+      if (!['color', 'fill', 'stroke', 'stroke-width', 'stroke-linecap', 'stroke-linejoin', 'stroke-miterlimit'].includes(key))
+        fail(`style ${key}`);
+      attrs[key] = value;
+    }
+    delete attrs.style;
+  }
+  return attrs;
+}
+function hasFillArea(points: Point[]): boolean {
+  const first = points[0], second = points.find(p => first && (p[0] !== first[0] || p[1] !== first[1]));
+  return !!first && !!second && points.some(p => cross(sub(second, first), sub(p, first)) !== 0);
+}
 function analyze(svg: string, optical = false): Analysis {
   const root = parse(svg), v = numbers(root.attrs.viewBox ?? "");
   if (v.length !== 4 || v[2]! <= 0 || v[3]! <= 0)
     return fail("viewBox");
   const viewBox: MarkBox = { x: v[0]!, y: v[1]!, width: v[2]!, height: v[3]! };
   const candidate = root.children[0];
-  const plate = root.children.length > 1 && !root.attrs.transform && candidate?.name === 'rect' && !candidate.attrs.transform && number(candidate.attrs, 'x') === viewBox.x && number(candidate.attrs, 'y') === viewBox.y && number(candidate.attrs, 'width') === viewBox.height && number(candidate.attrs, 'height') === viewBox.height && candidate.attrs.fill !== 'none' ? candidate : undefined;
+  const plate = root.children.length > 1 && !root.attrs.transform && candidate?.name === 'rect' && !candidate.attrs.transform && number(candidate.attrs, 'x') === viewBox.x && number(candidate.attrs, 'y') === viewBox.y && number(candidate.attrs, 'width') === viewBox.height && number(candidate.attrs, 'height') === viewBox.height && presentation(candidate, presentation(root, {})).fill !== 'none' ? candidate : undefined;
   const frame = plate ? { ...viewBox, width: viewBox.height } : viewBox;
   const tolerance = Math.max(viewBox.width, viewBox.height) * 1e-6, painted: Point[] = [];
   const regions: Region[] = [];
   const visit = (node: Node, m: Matrix, inherited: Attrs): void => {
-    const a = { ...inherited, ...node.attrs };
-    if (a.style) {
-      for (const declaration of a.style.split(';').filter(Boolean)) {
-        const split = declaration.indexOf(':'), key = declaration.slice(0, split).trim(), value = declaration.slice(split + 1).trim();
-        if (!['color', 'fill', 'stroke', 'stroke-width', 'stroke-linecap', 'stroke-linejoin', 'stroke-miterlimit'].includes(key))
-          fail(`style ${key}`);
-        a[key] = value;
-      }
-      delete a.style;
-    }
+    const a = presentation(node, inherited);
     for (const key of ['clip-path', 'mask', 'filter', 'vector-effect', 'stroke-dasharray', 'stroke-dashoffset', 'display', 'visibility', 'opacity', 'fill-opacity', 'stroke-opacity'])
       if (a[key] !== undefined)
         fail(key);
@@ -521,7 +534,7 @@ function analyze(svg: string, optical = false): Analysis {
     const localTolerance = tolerance / Math.max(Math.hypot(matrix[0], matrix[1]), Math.hypot(matrix[2], matrix[3]), 1);
     const shape = contours(node, localTolerance);
     if (a.fill !== 'none') {
-      const contours = shape.map(c => c.points.map(p => point(matrix, p)));
+      const contours = shape.filter(c => hasFillArea(c.points)).map(c => c.points.map(p => point(matrix, p)));
       for (const contour of contours)
         for (const p of contour)
           painted.push(p);
@@ -547,12 +560,14 @@ function analyze(svg: string, optical = false): Analysis {
   visit(root, identity, {});
   const box = bounds(painted), centre: Point = [box.x + box.width / 2, box.y + box.height / 2];
   const glyphBox = { x: (box.x - frame.x) / frame.width, y: (box.y - frame.y) / frame.height, width: box.width / frame.width, height: box.height / frame.height };
+  if (![...centre, ...Object.values(glyphBox)].every(Number.isFinite))
+    fail('numeric overflow');
   return { root, plate, box, centroid: optical ? areaCentroid(regions, box) : centre, geometry: { viewBox, plate: { present: !!plate, radiusShare: plate ? Math.min(number(plate.attrs, 'rx', number(plate.attrs, 'ry')), frame.width / 2) / frame.width : null, radiusYShare: plate ? Math.min(number(plate.attrs, 'ry', number(plate.attrs, 'rx')), frame.height / 2) / frame.height : null }, glyphBox, centreOffset: { x: glyphBox.x + glyphBox.width / 2 - .5, y: glyphBox.y + glyphBox.height / 2 - .5 }, declaredClearSpace: root.attrs['data-clear-space'] === undefined ? null : number(root.attrs, 'data-clear-space') } };
 }
 /** Measure supported SVG paint geometry without a DOM, fonts, or external resources. */
 export function measureMarkGeometry(svg: string): MarkGeometry { return analyze(svg).geometry; }
 const clampVector = (vector: Point, limit: number): Point => mul(vector, Math.min(1, limit / Math.hypot(...vector)));
-const format = (n: number): string => String(Number(n.toFixed(10)));
+const format = (n: number): string => Number.isFinite(n) ? String(Number(n.toPrecision(12))) : fail('numeric overflow');
 const escape = (s: string): string => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
 /** Fit painted glyph bounds into the kit's 18% inset, preserving aspect. */
 export function normalizeMark(input: NormalizeMarkInput): string {
