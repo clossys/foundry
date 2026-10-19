@@ -50,8 +50,8 @@ const checker = `repeating-conic-gradient(${tokenReference("--color-surface-base
 const panel: CSSProperties = { padding: 16, minBlockSize: 48, background: tokenReference("--color-surface-raised"), color: tokenReference("--color-ink-primary") };
 const tile: CSSProperties = { inlineSize: 24, blockSize: 24, background: tokenReference("--color-accent") };
 
-function MotionPreview({ property, cssProperty, replayLabel, reducedMotionMessage }:
-  { property: string; cssProperty: string } & Pick<TokenPreviewProps, "replayLabel" | "reducedMotionMessage">) {
+function MotionPreview({ property, cssProperty, authoredValueLabel, replayLabel, reducedMotionMessage }:
+  { property: string; cssProperty: string } & Pick<TokenPreviewProps, "authoredValueLabel" | "replayLabel" | "reducedMotionMessage">) {
   // The initial static equivalent also keeps server rendering and hydration identical.
   const [reduced, setReduced] = useState(true);
   const moving = useRef<HTMLDivElement>(null);
@@ -63,7 +63,7 @@ function MotionPreview({ property, cssProperty, replayLabel, reducedMotionMessag
     preference.addEventListener("change", update);
     return () => preference.removeEventListener("change", update);
   }, []);
-  const information = <code>{TOKENS[property]!.value}</code>;
+  const information = <p>{authoredValueLabel}: <code>{TOKENS[property]!.value}</code></p>;
   if (reduced) return <div>{information}<p>{reducedMotionMessage}</p><div aria-hidden="true" style={tile} /></div>;
   const style: CSSProperties = {
     ...tile, transform: "translateX(0)",
@@ -107,7 +107,7 @@ function BreakpointPreview({ property, thresholdLabel, matchLabel, unavailableMe
       const computed = getComputedStyle(node);
       const rootStyle = getComputedStyle(root);
       const value = computed.getPropertyValue(property).trim() || TOKENS[property]!.value;
-      const length = /^(\d+(?:\.\d+)?)(px|rem)$/.exec(value);
+      const length = /^([+-]?(?:\d+(?:\.\d*)?|\.\d+))(px|rem)$/.exec(value);
       // Native media queries cannot use custom properties. Resolve the current host cascade.
       let pixels = length ? Number(length[1]) * (length[2] === "rem" ? Number.parseFloat(rootStyle.fontSize) : 1) : NaN;
       if (!length && (typeof CSS === "undefined" || typeof CSS.supports !== "function" || CSS.supports("outline-offset", value))) {
@@ -133,13 +133,17 @@ function BreakpointPreview({ property, thresholdLabel, matchLabel, unavailableMe
     return () => { active = false; window.removeEventListener("resize", refresh); observer?.disconnect(); unsubscribe(); };
   }, [property]);
   return <div><code>{TOKENS[property]!.value}</code>
-    <span ref={probe} aria-hidden="true" style={{ position: "absolute", visibility: "hidden", minWidth: 0, maxWidth: "none", width: tokenReference(property) }} />
+    <div style={{ position: "relative", overflow: "hidden", inlineSize: 0, blockSize: 0 }}>
+      <span ref={probe} aria-hidden="true" style={{ position: "absolute", visibility: "hidden", minWidth: 0, maxWidth: "none", width: tokenReference(property) }} />
+    </div>
     <p aria-live="polite">{thresholdLabel}: {state?.threshold ?? unavailableMessage}; {matchLabel}: {state ? state.matches ? matchesMessage : notMatchesMessage : unavailableMessage}</p>
   </div>;
 }
 
 interface TokenPreviewProps {
   property: string;
+  /** Authored motion value label. @default "Authored value" */
+  authoredValueLabel?: string;
   /** Replay button label. @default "Replay" */
   replayLabel?: string;
   /** Static equivalent message. @default "Reduced motion: static equivalent" */
@@ -166,7 +170,7 @@ interface TokenPreviewProps {
 export function TokenPreview({
   property, sampleText = "Aa 0123",
   unsupportedMessage = "Unsupported token application",
-  replayLabel = "Replay", reducedMotionMessage = "Reduced motion: static equivalent",
+  authoredValueLabel = "Authored value", replayLabel = "Replay", reducedMotionMessage = "Reduced motion: static equivalent",
   thresholdLabel = "Threshold", matchLabel = "Match", unavailableMessage = "unavailable",
   matchesMessage = "yes", notMatchesMessage = "no",
   pendingMessage = "interactive support pending",
@@ -199,7 +203,7 @@ export function TokenPreview({
     </svg>
   );
   const specimens: Record<string, ReactNode> = {
-    motion: <MotionPreview key={property} property={property} cssProperty={application.cssProperty} replayLabel={replayLabel} reducedMotionMessage={reducedMotionMessage} />,
+    motion: <MotionPreview key={property} property={property} cssProperty={application.cssProperty} authoredValueLabel={authoredValueLabel} replayLabel={replayLabel} reducedMotionMessage={reducedMotionMessage} />,
     breakpoint: <BreakpointPreview key={property} property={property} thresholdLabel={thresholdLabel} matchLabel={matchLabel} unavailableMessage={unavailableMessage} matchesMessage={matchesMessage} notMatchesMessage={notMatchesMessage} />,
     surface: <div style={{ ...plate, ...style }}>{sampleText}</div>,
     text: <p style={style}>{sampleText}</p>,

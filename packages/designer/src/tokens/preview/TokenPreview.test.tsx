@@ -184,6 +184,7 @@ describe("exact-property TokenPreview", () => {
     expect(moving.classList.contains("motion-reduce:transition-none")).toBe(true);
     expect(moving.style.getPropertyValue(TOKEN_GUIDANCE[property]!.application.cssProperty)).toBe(`var(${property}, ${TOKENS[property]!.value})`);
     expect(container.textContent).toContain(TOKENS[property]!.value);
+    expect(container.querySelector("code")?.parentElement?.textContent).toBe(`Authored value: ${TOKENS[property]!.value}`);
     const reset = vi.fn(() => {
       expect(moving.style.transitionProperty).toBe("none");
       expect(moving.style.transform).toBe("translateX(0)");
@@ -204,6 +205,7 @@ describe("exact-property TokenPreview", () => {
     const { container, queryByRole, unmount } = render(<TokenPreview property={property} />);
     expect(container.textContent).toContain(TOKENS[property]!.value);
     expect(container.textContent).toContain("Reduced motion");
+    expect(container.querySelector("code")?.parentElement?.textContent).toBe(`Authored value: ${TOKENS[property]!.value}`);
     expect(queryByRole("button")).toBeNull();
     expect(container.querySelector("[class*=transition], [class*=animate]")).toBeNull();
     expect(container.querySelector("[style*=transition], [style*=animation]")).toBeNull();
@@ -377,6 +379,27 @@ describe("exact-property TokenPreview", () => {
     unmount();
     expect(queries.get("(min-width: 640px)")!.removeEventListener).toHaveBeenCalledTimes(1);
   });
+  it("contains the absolute breakpoint probe in a positioned, clipped zero-size box", () => {
+    media();
+    const { container } = render(<TokenPreview property="--breakpoint-wide" />);
+    const probe = container.querySelector<HTMLElement>('span[aria-hidden="true"]')!;
+    expect(probe.style.position).toBe("absolute");
+    expect(probe.style.width).toBe("var(--breakpoint-wide, 1440px)");
+    const bounds = probe.parentElement!;
+    expect(bounds.style.position).toBe("relative");
+    expect(bounds.style.overflow).toBe("hidden");
+    expect(bounds.style.inlineSize).toBe("0");
+    expect(bounds.style.blockSize).toBe("0");
+    expect(bounds.children).toHaveLength(1);
+  });
+  it.each(["-10px", "-0.5px", "-2rem"])("refuses negative breakpoint %s even when the probe width is clamped to zero", value => {
+    const { matchMedia } = media();
+    cascade("--breakpoint-tablet", value, "0px");
+    vi.stubGlobal("CSS", { supports: () => true });
+    const { container } = render(<TokenPreview property="--breakpoint-tablet" />);
+    expect(matchMedia).not.toHaveBeenCalled();
+    expect(container.textContent).toContain("Threshold: unavailable; Match: unavailable");
+  });
   it("does not invent a match when an override cannot resolve", () => {
     const { matchMedia } = media();
     cascade("--breakpoint-tablet", "invalid", "auto");
@@ -408,13 +431,15 @@ describe("exact-property TokenPreview", () => {
   });
   it("uses translated copy for replay, reduced motion and breakpoint states", () => {
     const { queries } = media(false, false);
-    const copy = { replayLabel: "Again", reducedMotionMessage: "Still", thresholdLabel: "Limit", matchLabel: "Fits", unavailableMessage: "Waiting", matchesMessage: "Inside", notMatchesMessage: "Outside" };
+    const copy = { authoredValueLabel: "Written", replayLabel: "Again", reducedMotionMessage: "Still", thresholdLabel: "Limit", matchLabel: "Fits", unavailableMessage: "Waiting", matchesMessage: "Inside", notMatchesMessage: "Outside" };
     const { container, getByRole } = render(<><TokenPreview property="--ease-enter" {...copy} /><TokenPreview property="--breakpoint-tablet" {...copy} /></>);
     expect(getByRole("button", { name: "Again" })).toBeTruthy();
+    expect(container.querySelector("code")?.parentElement?.textContent).toBe(`Written: ${TOKENS["--ease-enter"]!.value}`);
     expect(container.textContent).toContain("Limit: 768px; Fits: Outside");
     const preference = queries.get("(prefers-reduced-motion: reduce)")!;
     act(() => preference.addEventListener.mock.calls[0]![1]({ matches: true }));
     expect(container.textContent).toContain("Still");
+    expect(container.querySelector("code")?.parentElement?.textContent).toBe(`Written: ${TOKENS["--ease-enter"]!.value}`);
     const subscription = queries.get("(min-width: 768px)")!;
     act(() => subscription.addEventListener.mock.calls[0]![1]({ matches: true }));
     expect(container.textContent).toContain("Fits: Inside");

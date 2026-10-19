@@ -7436,7 +7436,7 @@ Optional copy props are `sampleText` (default "Aa 0123") and
 `unsupportedMessage` (default "Unsupported token application"). Supply translated
 strings as needed. The former `pendingMessage` prop (default "interactive support pending") remains
 accepted for compatibility. Motion copy
-props are `replayLabel` ("Replay") and `reducedMotionMessage` ("Reduced motion:
+props are `authoredValueLabel` ("Authored value"), `replayLabel` ("Replay") and `reducedMotionMessage` ("Reduced motion:
 static equivalent"). Breakpoint copy props are `thresholdLabel` ("Threshold"),
 `matchLabel` ("Match"), `unavailableMessage` ("unavailable"), `matchesMessage`
 ("yes") and `notMatchesMessage` ("no").
