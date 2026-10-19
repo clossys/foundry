@@ -56,6 +56,7 @@ function copy(value: unknown, depth = 0): any {
   for (const key of Reflect.ownKeys(fields)) {
     if (array && key === "length") continue;
     if (typeof key !== "string" || !fields[key]!.enumerable || !("value" in fields[key]!)) throw new Error("Invalid field");
+    if (key === "lifecycleItemRef") throw new Error("Unknown lifecycle item reference");
     Object.defineProperty(result, key, { value: copy(fields[key]!.value, depth + 1), enumerable: true, writable: true, configurable: true });
   }
   if (array && (Object.keys(result).length !== value.length || Object.keys(result).some((key, i) => key !== String(i)))) throw new Error("Sparse array");
@@ -149,5 +150,5 @@ export function validateRelations(value: unknown): RelationsResult {
     }
     for (const key of nodes.keys()) visit(key);
     return reasons.size ? refuse() : { status: "valid", graph: freeze({ qualification: "unverified", nodes: input.nodes, routeBindings: input.routeBindings, edges: input.edges, forward, reverse }) };
-  } catch { return refuse("shape"); }
+  } catch (error) { return refuse(error instanceof Error && error.message === "Unknown lifecycle item reference" ? "unknown-field" : "shape"); }
 }

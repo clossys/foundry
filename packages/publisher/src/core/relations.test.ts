@@ -161,6 +161,13 @@ describe("exact declared membership and measured source use", () => {
     }
     expect(graph(validate(fixture()))).not.toHaveProperty("lifecycleItemRef");
   });
+  it.each<(input: RelationsInput) => object>([
+    input => input.knownAdapters[0]!, input => (input.nodes[1] as Extract<RelationNode, { kind: "instance" }>).binding.frameBlockRef,
+    input => input.edges[0]!.provenance, input => (input.edges[1] as Extract<RelationEdge, { kind: "placement" }>).location,
+    input => Object.assign(input.nodes[1]!, { witness: { record: structuredClone(witness), fresh: structuredClone(witness) } }).witness.record,
+  ])("refuses nested lifecycle item references with a stable unknown-field reason %#", target => {
+    const input = fixture(); Object.assign(target(input), { lifecycleItemRef: "invented" }); refused(input, "unknown-field");
+  });
   it("refuses accessors, inherited fields, sparse and cyclic data without executing getters", () => {
     let calls = 0;
     const getter = Object.defineProperty(fixture(), "edges", { enumerable: true, get() { calls++; return []; } });
