@@ -53,13 +53,14 @@ export function AccountMenu({ actor, sections, contextLabel, triggerLabel, colla
     {entry.kind === "preference" && entry.checked && <Icon glyph={Check} decorative size="sm" />}
     {entry.label}
   </Menu.Item>);
-  return <Menu className="min-w-0" popoverClassName="box-border max-w-[calc(100vw_-_var(--spacing-xl,24px))]" trigger={collapsed ? <Tooltip trigger={trigger} delay={0}>{label}</Tooltip> : trigger}
+  return <Menu className="min-w-0" popoverClassName="box-border max-w-full" trigger={collapsed ? <Tooltip trigger={trigger} delay={0}>{label}</Tooltip> : trigger}
     onOpenChange={open => { if (!open) onClose?.(); }}>
     {populated.map((section, index) => index > 0 && !section.label?.trim()
       ? <Fragment key={section.id}><Menu.Separator />{entriesFor(section)}</Fragment>
       : <Menu.Section key={section.id}
       aria-label={section.label}
-      heading={index === 0 ? <span className="flex min-w-0 flex-col gap-xs">
+      heading={index === 0 ? <span className="flex min-w-0 flex-col gap-xs"
+        style={{ maxInlineSize: "min(var(--ui-layout-sidebar-w, 256px), calc(100vw - 2 * var(--spacing-2xl, 32px)))" }}>
         <span className="truncate">{actor.name}</span>
         {actor.secondaryText && <span className="truncate">{actor.secondaryText}</span>}
         {contextLabel && <span className="truncate">{contextLabel}</span>}

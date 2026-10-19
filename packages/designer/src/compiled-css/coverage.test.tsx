@@ -27,7 +27,7 @@
 import { resolve } from "node:path";
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Avatar } from "../atoms/Avatar.js";
 import { Badge } from "../atoms/Badge.js";
@@ -139,6 +139,8 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
       for (const cls of collectClassNames(document.body)) classes.add(cls);
       await user.keyboard("{ArrowDown}");
       const focused = await screen.findByRole("menuitemcheckbox", { name: "Enabled" });
+      const details = within(screen.getByRole("menu")).getByText("Alex Morgan").parentElement!;
+      expect(details.style.maxInlineSize).toBe("min(var(--ui-layout-sidebar-w, 256px), calc(100vw - 2 * var(--spacing-2xl, 32px)))");
       expect(focused).toHaveFocus(); expect(focused).toHaveClass("outline-none", "forced-colors:outline", "forced-colors:outline-solid");
       expect(focused).not.toHaveClass("outline");
       for (const cls of collectClassNames(document.body)) classes.add(cls);
@@ -147,6 +149,8 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
     const scan = scanCompiledCssSources(packageRoot);
     const generated = await generateCompiledCss({ stylesDir: resolve(packageRoot, "styles"), candidates: scan.candidates });
     expect([...classes].filter(cls => !generated.css.includes(toSelectorText(cls)))).toEqual([]);
+    expect(generated.css).toMatch(/\.max-w-full\s*\{[^}]*max-width:\s*100%/);
+    expect(generated.css).toMatch(/\.box-border\s*\{[^}]*box-sizing:\s*border-box/);
     // Both actual rendered outline rules must be nested inside the forced-colors media query.
     for (const candidate of ["forced-colors:outline", "forced-colors:focus-visible:outline-solid"]) {
       const offset = generated.css.indexOf(toSelectorText(candidate));
