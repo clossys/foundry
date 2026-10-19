@@ -13,9 +13,8 @@ import { previewCopyString } from "./fixture-copy-registry.js";
  * `MarketingView` slots `templates/site/app/*.tsx` itself resolves through
  * `renderWebDocument`, just with this preview's own fixture copy instead
  * of a consumer's `clossys/publisher/surfaces/*.json`. `templates/site/app/not-found.tsx`
- * is the one route that calls `ErrorView` directly rather than going
- * through `renderWebDocument` + a named template — `notFoundElement`
- * below mirrors that exact call shape.
+ * is the one route that renders without `renderWebDocument` + a named
+ * template; `buildNotFoundElement` below keeps its earlier `ErrorView` shape.
  *
  * All prose is looked up from `fixture-copy-registry.ts` by id, never
  * typed here — see that file's own top comment.
@@ -117,7 +116,13 @@ export const SITE_PAGE_FIXTURES: readonly SitePageFixture[] = [
   },
 ];
 
-/** Mirrors `templates/site/app/not-found.tsx`'s own direct `ErrorView` call — that route never goes through `renderWebDocument`, so neither does this fixture. */
+/**
+ * The launch-pack gallery's 404 card, in the deprecated `ErrorView` shape. The template's
+ * `not-found.tsx` now renders `SiteFrame` around `StatusView` through the
+ * template's own error view (template source, not shipped in this package); this card has
+ * not moved with it. The route never goes through `renderWebDocument`, so
+ * neither does this fixture.
+ */
 export function buildNotFoundElement(): ReactElement {
   return createElement(ErrorView, {
     status: 404,
