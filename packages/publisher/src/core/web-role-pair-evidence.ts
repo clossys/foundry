@@ -26,7 +26,7 @@ function freeze<T>(value: T): T {
   }
   return value;
 }
-const revision = "db224f1615dc7933a386b63aea296102f02c7068";
+const revision = "dac5a617af9acb1eaaa1b19303af1c151e1e1092";
 const measuredAt = "2026-10-19";
 const frame: InstanceBlockBinding["frameBlockRef"] = {
   blockId: "site-frame", role: "frame", medium: "web",
@@ -52,14 +52,14 @@ const sources = {
   "src/web/frame/index.ts": "sha256:51c265d1680485b457299374b1df944c60f45f19d9c8be6eb0abb0e6c91ed6ef",
   "src/web/server.ts": "sha256:b62eb683105f20c0d6adaed03dc5b188a87cf2df34922e8b66a8de70e2990961",
   "src/web/frame/site-frame-contract.ts": "sha256:7f2e4577b5cff54ca8288f14ddb343e555e28d603d789fb1341c804166c001e1",
-  "src/web/frame/NavLinks.tsx": "sha256:56a30a94beb29347d0d5ed933a9c058a6b659158a605d03cc597fe3acac26aa5",
-  "src/web/frame/NavDisclosure.client.tsx": "sha256:c0672b9ccd72bb3c08d0c86e6669ce5b0b0a875e2347a285a5d99a782de53528",
-  "src/web/frame/NavDisclosure.server.tsx": "sha256:c82d3e49ebe9cb61f40fc1419097d62b241a0ff3e34df77ae31fa98249b2b14a",
+  "src/web/frame/NavLinks.tsx": "sha256:adcb5b71df7fe1300b81f52f7e3978cf271c1e1ba6f5b2d432867a10e73bbb0d",
+  "src/web/frame/NavDisclosure.client.tsx": "sha256:b45c63cdc590a6ff1bacdfb411cdaf6d23ad757359048d8dac80778f69bade66",
+  "src/web/frame/NavDisclosure.server.tsx": "sha256:7a53b90486fec036d098dbb34aa1fb55ed4a570601a3ffc65a740e5b92b81fe1",
   "src/web/frame/NavDisclosure.boundary.client.tsx": "sha256:7534aa2ae3394632a66ad871b4c298cd4467420b55d74af54ccf23422540655f",
-  "src/web/frame/SiteFrame.tsx": "sha256:bdb07b5f3d055f4106a7e415e93b0037fd1f1d6c448e6e2999232e2d0e18ecde",
-  "src/web/frame/types.ts": "sha256:f67cfba2313faafea8b749c801e3171fdd3c348c2ea34f62ef435abfce2feadc",
+  "src/web/frame/SiteFrame.tsx": "sha256:4273f8b1eaa0622dc9b40759b724129fe9e8201539b5549452e37ff0a755c73b",
+  "src/web/frame/types.ts": "sha256:0aba77e272ad680e7f963cf0ef934424bc732c4d8bbaa1fad86b7a1a780346a9",
   "src/web/frame/SkipLink.client.tsx": "sha256:6eda961d6d7071cc7083b1db8b674bd38fe2c4d48d7bfd8cc82745344883d585",
-  "src/web/frame/internal/resolveShell.ts": "sha256:7f5358c77a6564d46c4b9e3140ac0d048732f7070001676e3f0f142a56c26fad",
+  "src/web/frame/internal/resolveShell.ts": "sha256:c46a69902434b24e975356fdabe2c7cbaa469d2524bd8f6e4c2cca4719103135",
   "src/web/views/index.ts": "sha256:17d52454224b53eb2b2807995eef9ea16b6cbf7d5d92358d4faef9cb612261b7",
   "src/web/views/LandingView.tsx": "sha256:ad06fd2fd0e76e087c104a67c45630bcd6c02fa310222fae2c4e6d85c3526de7",
   "src/web/views/LandingViewContent.tsx": "sha256:510a846a5e470efaec2415219afa0b5820f79642c5e7bac08a648971e4100324",
