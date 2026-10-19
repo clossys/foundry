@@ -1,5 +1,7 @@
-import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it, vi } from "vitest";
+import { hydrateRoot } from "react-dom/client";
+import { renderToStaticMarkup, renderToString } from "react-dom/server";
+import { act, cleanup, fireEvent, render } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { TOKENS } from "../tokens.js";
 import { TOKEN_GUIDANCE } from "../guidance.js";
 import { TokenPreview } from "./index.js";
@@ -8,6 +10,11 @@ vi.mock("../guidance.js", async importOriginal => {
   const actual = await importOriginal<typeof import("../guidance.js")>();
   return { ...actual, TOKEN_GUIDANCE: structuredClone(actual.TOKEN_GUIDANCE) };
 });
+vi.mock("../tokens.js", async importOriginal => {
+  const actual = await importOriginal<typeof import("../tokens.js")>();
+  return { ...actual, TOKENS: structuredClone(actual.TOKENS) };
+});
+afterEach(() => { cleanup(); vi.useRealTimers(); vi.restoreAllMocks(); vi.unstubAllGlobals(); document.documentElement.removeAttribute("style"); });
 const signatures = {
   surface: ["background-color/color"],
   text: ["color/color", "font-size/length", "letter-spacing/length", "line-height/number"],
@@ -22,13 +29,14 @@ const signatures = {
   brandmark: ["block-size/length", "gap/length"],
   radius: ["border-radius/length"], shadow: ["box-shadow/shadow"], blur: ["backdrop-filter/length"],
   ring: ["box-shadow/shadow"], layer: ["z-index/number"], opacity: ["opacity/number"],
+  motion: ["transition-duration/duration", "transition-timing-function/easing"], breakpoint: ["@media (min-width)/length"],
 };
 const counts = {
   surface: 24, text: 28, border: 8, control: 7, status: 12, chart: 22,
   font: 7, space: 13, size: 13, icon: 4, brandmark: 6, radius: 7,
-  shadow: 4, blur: 1, ring: 2, layer: 9, opacity: 1,
+  shadow: 4, blur: 1, ring: 2, layer: 9, opacity: 1, motion: 12, breakpoint: 6,
 };
-const pending = [
+const interactive = [
   "--ui-duration-instant", "--ui-duration-fast", "--ui-duration-default", "--ui-duration-deliberate", "--ui-duration-flash", "--ui-duration-overlay",
   "--ease-default", "--ease-decelerate", "--ease-accelerate", "--ease-bounce", "--ease-enter", "--ease-exit",
   "--breakpoint-mobile", "--breakpoint-mobile-lg", "--breakpoint-tablet", "--breakpoint-tablet-lg", "--breakpoint-desktop", "--breakpoint-wide",
@@ -52,41 +60,41 @@ const examples = [
   ["--ui-z-modal", "z-index", "var(--ui-z-modal, 50)", "DIV"],
   ["--ui-alpha-disabled", "opacity", "var(--ui-alpha-disabled, 0.5)", "DIV"],
 ];
-function specimen(property: string, copy: { sampleText?: string; unsupportedMessage?: string; pendingMessage?: string } = {}) {
+function specimen(property: string, copy: Omit<Parameters<typeof TokenPreview>[0], "property"> = {}) {
   const host = document.createElement("div");
   host.innerHTML = renderToStaticMarkup(<TokenPreview property={property} {...copy} />);
   return host;
 }
 
 describe("exact-property TokenPreview", () => {
-  it("partitions all 186 properties bidirectionally into 168 static and 18 pending", () => {
-    const supported = Object.keys(TOKEN_GUIDANCE).filter(property => !pending.includes(property));
+  it("partitions all 186 supported properties bidirectionally with zero unavailable", () => {
+    const supported = Object.keys(TOKEN_GUIDANCE);
     expect(Object.keys(TOKEN_GUIDANCE).sort()).toEqual(Object.keys(TOKENS).sort());
-    expect(supported).toHaveLength(168);
-    expect(new Set([...supported, ...pending]).size).toBe(186);
-    expect([...supported, ...pending].sort()).toEqual(Object.keys(TOKENS).sort());
+    expect(supported).toHaveLength(186);
+    expect(new Set(interactive).size).toBe(18);
+    expect(supported.sort()).toEqual(Object.keys(TOKENS).sort());
+    expect(interactive.slice().sort()).toEqual(supported.filter(property => ["motion", "breakpoint"].includes(TOKEN_GUIDANCE[property]!.specimen)).sort());
     expect(Object.fromEntries(Object.keys(counts).map(kind => [kind, supported.filter(property => TOKEN_GUIDANCE[property]?.specimen === kind).length]))).toEqual(counts);
     expect(new Set(supported.map(property => TOKEN_GUIDANCE[property]?.specimen))).toEqual(new Set(Object.keys(signatures)));
-    expect(pending.filter(property => TOKEN_GUIDANCE[property]?.specimen === "motion")).toHaveLength(12);
-    expect(pending.filter(property => TOKEN_GUIDANCE[property]?.specimen === "breakpoint")).toHaveLength(6);
+    expect(interactive.filter(property => TOKEN_GUIDANCE[property]?.specimen === "motion")).toHaveLength(12);
+    expect(interactive.filter(property => TOKEN_GUIDANCE[property]?.specimen === "breakpoint")).toHaveLength(6);
   });
-  it("covers every authored static application triple exactly", () => {
+  it("covers every authored application triple exactly", () => {
     const actual = Object.entries(TOKEN_GUIDANCE)
-      .filter(([property]) => !pending.includes(property))
       .map(([, item]) => `${item.specimen}/${item.application.cssProperty}/${item.application.valueType}`);
     const expected = Object.entries(signatures).flatMap(([kind, applications]) => applications.map(application => `${kind}/${application}`));
     expect([...new Set(actual)].sort()).toEqual(expected.sort());
-    expect(expected).toHaveLength(35);
+    expect(expected).toHaveLength(38);
   });
   it("actually renders every supported property through its own cascade variable, without tables", () => {
-    for (const property of Object.keys(TOKENS).filter(property => !pending.includes(property))) {
+    for (const property of Object.keys(TOKENS)) {
       const host = specimen(property);
       expect(host.querySelector("figure")?.getAttribute("data-kind"), property).toBe(TOKEN_GUIDANCE[property]?.specimen);
       expect(host.querySelector("figure")?.getAttribute("aria-label")).toBe(property);
       expect(host.querySelector("[role=status], table"), property).toBeNull();
       expect(host.querySelector("figure")?.children.length, property).toBeGreaterThan(0);
       const reference = `var(${property}, ${TOKENS[property]!.value})`;
-      expect([...host.querySelectorAll("[style]")].some(node => node.getAttribute("style")?.includes(reference)), property).toBe(true);
+      expect([...host.querySelectorAll("[style]")].some(node => node.getAttribute("style")?.includes(reference)) || (TOKEN_GUIDANCE[property]!.specimen === "motion" && host.querySelector("code")?.textContent === TOKENS[property]!.value), property).toBe(true);
     }
   });
   it.each(examples)("applies an independent %s specimen style", (property, css, value, tag) => {
@@ -155,16 +163,316 @@ describe("exact-property TokenPreview", () => {
       expect(custom.getAttribute("style"), property).toBe(ordinary.getAttribute("style"));
     }
   });
-  it("reports each pending property with its true kind and explicit pending status", () => {
-    for (const property of pending) {
-      const host = specimen(property);
-      expect(host.querySelector("figure, table")).toBeNull();
-      expect(host.querySelector("[role=status]")?.getAttribute("data-kind")).toBe(TOKEN_GUIDANCE[property]?.specimen);
-      expect(host.textContent).toContain(`${TOKEN_GUIDANCE[property]?.specimen}: interactive support pending`);
-      const custom = specimen(property, { pendingMessage: "Custom pending message" });
-      expect(custom.textContent).toBe(`${TOKEN_GUIDANCE[property]?.specimen}: Custom pending message`);
-      expect(custom.querySelector("[role=status]")?.getAttribute("data-kind")).toBe(TOKEN_GUIDANCE[property]?.specimen);
+  function media(reduced = false, breakpointMatches = true) {
+    const queries = new Map<string, { matches: boolean; addEventListener: ReturnType<typeof vi.fn>; removeEventListener: ReturnType<typeof vi.fn> }>();
+    const matchMedia = vi.fn((query: string) => {
+      const result = { matches: query.includes("reduced-motion") ? reduced : breakpointMatches, addEventListener: vi.fn(), removeEventListener: vi.fn() };
+      queries.set(query, result);
+      return result;
+    });
+    vi.stubGlobal("matchMedia", matchMedia);
+    return { queries, matchMedia };
+  }
+  it.each(interactive.slice(0, 12))("replays %s only on user action through the exact authored application", property => {
+    media();
+    const { container, getByRole } = render(<TokenPreview property={property} />);
+    const moving = container.querySelector<HTMLElement>("[data-token-preview-motion]")!;
+    expect(moving).not.toBeNull();
+    expect(moving.style.transform).toBe("translateX(0)");
+    expect(moving.style.animation).toBe("");
+    expect(moving.classList.contains("transition-transform")).toBe(true);
+    expect(moving.classList.contains("motion-reduce:transition-none")).toBe(true);
+    expect(moving.style.getPropertyValue(TOKEN_GUIDANCE[property]!.application.cssProperty)).toBe(`var(${property}, ${TOKENS[property]!.value})`);
+    expect(container.textContent).toContain(TOKENS[property]!.value);
+    expect(container.querySelector("code")?.parentElement?.textContent).toBe(`Authored value: ${TOKENS[property]!.value}`);
+    const reset = vi.fn(() => {
+      expect(moving.style.transitionProperty).toBe("none");
+      expect(moving.style.transform).toBe("translateX(0)");
+      return 24;
+    });
+    Object.defineProperty(moving, "offsetWidth", { get: reset });
+    fireEvent.click(getByRole("button", { name: "Replay" }));
+    expect(reset).toHaveBeenCalledTimes(1);
+    expect(moving.style.transform).toBe("translateX(64px)");
+    expect(moving.style.transitionProperty).toBe("");
+    fireEvent.click(getByRole("button", { name: "Replay" }));
+    expect(reset).toHaveBeenCalledTimes(2);
+    expect(moving.style.transform).toBe("translateX(64px)");
+    expect(moving.style.transitionProperty).toBe("");
+  });
+  it.each(interactive.slice(0, 12))("keeps %s static with identical authored information under reduced motion", property => {
+    const { queries } = media(true);
+    const { container, queryByRole, unmount } = render(<TokenPreview property={property} />);
+    expect(container.textContent).toContain(TOKENS[property]!.value);
+    expect(container.textContent).toContain("Reduced motion");
+    expect(container.querySelector("code")?.parentElement?.textContent).toBe(`Authored value: ${TOKENS[property]!.value}`);
+    expect(queryByRole("button")).toBeNull();
+    expect(container.querySelector("[class*=transition], [class*=animate]")).toBeNull();
+    expect(container.querySelector("[style*=transition], [style*=animation]")).toBeNull();
+    const preference = queries.get("(prefers-reduced-motion: reduce)")!;
+    expect(preference.addEventListener).toHaveBeenCalledTimes(1);
+    unmount();
+    expect(preference.removeEventListener).toHaveBeenCalledWith("change", preference.addEventListener.mock.calls[0]![1]);
+  });
+  it("reacts to a changed motion preference without autoplay", () => {
+    const { queries } = media();
+    const { container, queryByRole } = render(<TokenPreview property="--ease-enter" />);
+    const preference = queries.get("(prefers-reduced-motion: reduce)")!;
+    act(() => preference.addEventListener.mock.calls[0]![1]({ matches: true }));
+    expect(queryByRole("button")).toBeNull();
+    expect(container.querySelector("[class*=transition]")).toBeNull();
+    act(() => preference.addEventListener.mock.calls[0]![1]({ matches: false }));
+    expect(container.querySelector<HTMLElement>("[data-token-preview-motion]")?.style.transform).toBe("translateX(0)");
+  });
+  it.each(interactive.slice(12))("resolves %s and tracks its exact query once, cleaning up on unmount", property => {
+    const { queries, matchMedia } = media();
+    const { container, rerender, unmount } = render(<TokenPreview property={property} />);
+    const query = `(min-width: ${TOKENS[property]!.value})`;
+    expect(matchMedia).toHaveBeenCalledWith(query);
+    expect(container.textContent).toContain(`Threshold: ${TOKENS[property]!.value}`);
+    expect(container.textContent).toContain("Match: yes");
+    const subscription = queries.get(query)!;
+    act(() => subscription.addEventListener.mock.calls[0]![1]({ matches: false }));
+    expect(container.textContent).toContain("Match: no");
+    rerender(<TokenPreview property={property} />);
+    expect(matchMedia).toHaveBeenCalledTimes(1);
+    expect(subscription.addEventListener).toHaveBeenCalledTimes(1);
+    unmount();
+    expect(subscription.removeEventListener).toHaveBeenCalledTimes(1);
+    expect(subscription.removeEventListener).toHaveBeenCalledWith("change", subscription.addEventListener.mock.calls[0]![1]);
+  });
+  it("resolves the selected breakpoint's cascade rem value against the root font size and replaces subscriptions", () => {
+    const { queries, matchMedia } = media();
+    document.documentElement.style.fontSize = "20px";
+    cascade("--breakpoint-tablet", "40rem");
+    const { container, rerender, unmount } = render(<TokenPreview property="--breakpoint-tablet" />);
+    expect(matchMedia).toHaveBeenCalledWith("(min-width: 800px)");
+    expect(container.textContent).toContain("Threshold: 800px");
+    const old = queries.get("(min-width: 800px)")!;
+    rerender(<TokenPreview property="--breakpoint-wide" />);
+    expect(old.removeEventListener).toHaveBeenCalledTimes(1);
+    expect(old.removeEventListener).toHaveBeenCalledWith("change", old.addEventListener.mock.calls[0]![1]);
+    expect(matchMedia).toHaveBeenLastCalledWith(`(min-width: ${TOKENS["--breakpoint-wide"]!.value})`);
+    const current = queries.get(`(min-width: ${TOKENS["--breakpoint-wide"]!.value})`)!;
+    expect(current.addEventListener).toHaveBeenCalledTimes(1);
+    unmount();
+    expect(current.removeEventListener).toHaveBeenCalledTimes(1);
+    expect(current.removeEventListener).toHaveBeenCalledWith("change", current.addEventListener.mock.calls[0]![1]);
+  });
+  it("uses authored application metadata rather than a token family", () => {
+    const token = TOKENS["--ui-duration-fast"]!;
+    const original = token.family;
+    try {
+      (token as { family: string }).family = "color";
+      expect(specimen("--ui-duration-fast").querySelector("figure")?.getAttribute("data-kind")).toBe("motion");
+    } finally { (token as { family: string }).family = original; }
+  });
+  function cascade(property: string, value: string | (() => string), width?: string | (() => string)) {
+    const nativeComputed = getComputedStyle;
+    vi.stubGlobal("getComputedStyle", (node: Element) => {
+      const result = nativeComputed(node);
+      return node.isConnected && node.tagName === "SPAN" && node.closest("figure")?.getAttribute("aria-label") === property ? new Proxy(result, { get(target, key) {
+        if (key === "getPropertyValue") return (name: string) => name === property ? typeof value === "function" ? value() : value : target.getPropertyValue(name);
+        if (key === "width" && width !== undefined) return typeof width === "function" ? width() : width;
+        return Reflect.get(target, key);
+      } }) : result;
+    });
+  }
+  it("does not autoplay while time passes or an identical property rerenders", () => {
+    vi.useFakeTimers();
+    media();
+    const { container, rerender } = render(<TokenPreview property="--ui-duration-instant" />);
+    act(() => vi.advanceTimersByTime(60_000));
+    rerender(<TokenPreview property="--ui-duration-instant" />);
+    expect(container.querySelector<HTMLElement>("[data-token-preview-motion]")?.style.transform).toBe("translateX(0)");
+  });
+  it("resolves a scoped breakpoint override and browser-resolved calc without using a registry default", () => {
+    const { matchMedia } = media();
+    cascade("--breakpoint-tablet", "calc(20rem + 8px)", "408px");
+    const { container } = render(<TokenPreview property="--breakpoint-tablet" />);
+    expect(matchMedia).toHaveBeenCalledWith("(min-width: 408px)");
+    expect(container.textContent).toContain("Threshold: 408px");
+  });
+  function observers() {
+    const instances: { notify: () => void; observe: ReturnType<typeof vi.fn>; disconnect: ReturnType<typeof vi.fn> }[] = [];
+    vi.stubGlobal("ResizeObserver", class {
+      observe = vi.fn();
+      disconnect = vi.fn();
+      constructor(notify: () => void) { instances.push({ notify, observe: this.observe, disconnect: this.disconnect }); }
+    });
+    return instances;
+  }
+  it("refreshes a viewport-dependent cascade threshold and replaces only the changed query", () => {
+    vi.stubGlobal("innerWidth", 1200);
+    const observation = observers();
+    const added = vi.spyOn(window, "addEventListener");
+    const removed = vi.spyOn(window, "removeEventListener");
+    const queries: { matches: boolean; addEventListener: ReturnType<typeof vi.fn>; removeEventListener: ReturnType<typeof vi.fn> }[] = [];
+    const matchMedia = vi.fn((query: string) => {
+      const result = { matches: window.innerWidth >= Number(/min-width: ([\d.]+)px/.exec(query)![1]), addEventListener: vi.fn(), removeEventListener: vi.fn() };
+      queries.push(result);
+      return result;
+    });
+    vi.stubGlobal("matchMedia", matchMedia);
+    cascade("--breakpoint-tablet", "calc(50vw + 100px)", () => `${window.innerWidth / 2 + 100}px`);
+    const { container, unmount } = render(<TokenPreview property="--breakpoint-tablet" />);
+    expect(container.textContent).toContain("Threshold: 700px; Match: yes");
+    const previous = queries[0]!;
+    const stale = previous.addEventListener.mock.calls[0]![1];
+    act(() => { vi.stubGlobal("innerWidth", 500); fireEvent.resize(window); stale({ matches: false }); });
+    expect(container.textContent).toContain("Threshold: 350px; Match: yes");
+    expect(matchMedia.mock.calls.map(([query]) => query)).toEqual(["(min-width: 700px)", "(min-width: 350px)"]);
+    expect(previous.removeEventListener).toHaveBeenCalledTimes(1);
+    expect(previous.removeEventListener).toHaveBeenCalledWith("change", stale);
+    expect(queries[1]!.addEventListener).toHaveBeenCalledTimes(1);
+    act(() => { fireEvent.resize(window); observation[0]!.notify(); observation[0]!.notify(); });
+    expect(matchMedia).toHaveBeenCalledTimes(2);
+    const resize = added.mock.calls.find(([type]) => type === "resize")![1];
+    expect(added.mock.calls.filter(([type]) => type === "resize")).toHaveLength(1);
+    unmount();
+    expect(removed).toHaveBeenCalledWith("resize", resize);
+    expect(observation[0]!.disconnect).toHaveBeenCalledTimes(1);
+    expect(queries[1]!.removeEventListener).toHaveBeenCalledTimes(1);
+    expect(queries[1]!.removeEventListener).toHaveBeenCalledWith("change", queries[1]!.addEventListener.mock.calls[0]![1]);
+    act(() => { vi.stubGlobal("innerWidth", 900); fireEvent.resize(window); observation[0]!.notify(); });
+    expect(matchMedia).toHaveBeenCalledTimes(2);
+  });
+  it("rereads root rem sizing on observed threshold changes without duplicating subscriptions", () => {
+    const { queries, matchMedia } = media();
+    const observation = observers();
+    document.documentElement.style.fontSize = "20px";
+    cascade("--breakpoint-tablet", "40rem");
+    const { container, unmount } = render(<TokenPreview property="--breakpoint-tablet" />);
+    expect(container.textContent).toContain("Threshold: 800px");
+    expect(observation).toHaveLength(1);
+    expect(observation[0]!.observe).toHaveBeenCalledTimes(1);
+    expect(observation[0]!.observe).toHaveBeenCalledWith(container.querySelector("span"));
+    const previous = queries.get("(min-width: 800px)")!;
+    act(() => { document.documentElement.style.fontSize = "25px"; observation[0]!.notify(); });
+    expect(container.textContent).toContain("Threshold: 1000px");
+    expect(previous.removeEventListener).toHaveBeenCalledTimes(1);
+    expect(previous.removeEventListener).toHaveBeenCalledWith("change", previous.addEventListener.mock.calls[0]![1]);
+    act(() => observation[0]!.notify());
+    expect(matchMedia).toHaveBeenCalledTimes(2);
+    unmount();
+    expect(observation[0]!.disconnect).toHaveBeenCalledTimes(1);
+  });
+  it("observes unresolved cascade values and cleans up stale queries before recovering", () => {
+    const { queries, matchMedia } = media();
+    const observation = observers();
+    let value = "invalid";
+    cascade("--breakpoint-tablet", () => value, "auto");
+    const { container, unmount } = render(<TokenPreview property="--breakpoint-tablet" />);
+    expect(container.textContent).toContain("Threshold: unavailable; Match: unavailable");
+    expect(matchMedia).not.toHaveBeenCalled();
+    expect(observation).toHaveLength(1);
+    act(() => { value = "512px"; observation[0]!.notify(); });
+    expect(container.textContent).toContain("Threshold: 512px; Match: yes");
+    const previous = queries.get("(min-width: 512px)")!;
+    const stale = previous.addEventListener.mock.calls[0]![1];
+    act(() => { value = "invalid"; observation[0]!.notify(); stale({ matches: true }); });
+    expect(container.textContent).toContain("Threshold: unavailable; Match: unavailable");
+    expect(previous.removeEventListener).toHaveBeenCalledTimes(1);
+    expect(previous.removeEventListener).toHaveBeenCalledWith("change", stale);
+    act(() => { value = "640px"; observation[0]!.notify(); });
+    expect(container.textContent).toContain("Threshold: 640px; Match: yes");
+    unmount();
+    expect(queries.get("(min-width: 640px)")!.removeEventListener).toHaveBeenCalledTimes(1);
+  });
+  it("contains the absolute breakpoint probe in a positioned, clipped zero-size box", () => {
+    media();
+    const { container } = render(<TokenPreview property="--breakpoint-wide" />);
+    const probe = container.querySelector<HTMLElement>('span[aria-hidden="true"]')!;
+    expect(probe.style.position).toBe("absolute");
+    expect(probe.style.width).toBe("var(--breakpoint-wide, 1440px)");
+    const bounds = probe.parentElement!;
+    expect(bounds.style.position).toBe("relative");
+    expect(bounds.style.overflow).toBe("hidden");
+    expect(bounds.style.inlineSize).toBe("0");
+    expect(bounds.style.blockSize).toBe("0");
+    expect(bounds.children).toHaveLength(1);
+  });
+  it.each(["-10px", "-0.5px", "-2rem"])("refuses negative breakpoint %s even when the probe width is clamped to zero", value => {
+    const { matchMedia } = media();
+    cascade("--breakpoint-tablet", value, "0px");
+    vi.stubGlobal("CSS", { supports: () => true });
+    const { container } = render(<TokenPreview property="--breakpoint-tablet" />);
+    expect(matchMedia).not.toHaveBeenCalled();
+    expect(container.textContent).toContain("Threshold: unavailable; Match: unavailable");
+  });
+  it("does not invent a match when an override cannot resolve", () => {
+    const { matchMedia } = media();
+    cascade("--breakpoint-tablet", "invalid", "auto");
+    const { container } = render(<TokenPreview property="--breakpoint-tablet" />);
+    expect(matchMedia).not.toHaveBeenCalled();
+    expect(container.textContent).toContain("Threshold: unavailable; Match: unavailable");
+  });
+  it("uses the authored fallback when a scoped reset clears an inherited root override", () => {
+    const { matchMedia } = media();
+    document.documentElement.style.setProperty("--breakpoint-tablet", "1234px");
+    cascade("--breakpoint-tablet", "", "768px");
+    render(<TokenPreview property="--breakpoint-tablet" />);
+    expect(matchMedia).toHaveBeenCalledWith("(min-width: 768px)");
+  });
+  it.each(["auto", "50%"])("rejects non-length breakpoint override %s even if width resolves to pixels", value => {
+    const { matchMedia } = media();
+    cascade("--breakpoint-tablet", value, "400px");
+    vi.stubGlobal("CSS", { supports: (property: string) => property === "width" });
+    render(<TokenPreview property="--breakpoint-tablet" />);
+    expect(matchMedia).not.toHaveBeenCalled();
+  });
+  it("reports an initially unmatched breakpoint before reacting to changes", () => {
+    const { queries } = media(false, false);
+    const { container } = render(<TokenPreview property="--breakpoint-tablet" />);
+    expect(container.textContent).toContain("Match: no");
+    const subscription = queries.get("(min-width: 768px)")!;
+    act(() => subscription.addEventListener.mock.calls[0]![1]({ matches: true }));
+    expect(container.textContent).toContain("Match: yes");
+  });
+  it("uses translated copy for replay, reduced motion and breakpoint states", () => {
+    const { queries } = media(false, false);
+    const copy = { authoredValueLabel: "Written", replayLabel: "Again", reducedMotionMessage: "Still", thresholdLabel: "Limit", matchLabel: "Fits", unavailableMessage: "Waiting", matchesMessage: "Inside", notMatchesMessage: "Outside" };
+    const { container, getByRole } = render(<><TokenPreview property="--ease-enter" {...copy} /><TokenPreview property="--breakpoint-tablet" {...copy} /></>);
+    expect(getByRole("button", { name: "Again" })).toBeTruthy();
+    expect(container.querySelector("code")?.parentElement?.textContent).toBe(`Written: ${TOKENS["--ease-enter"]!.value}`);
+    expect(container.textContent).toContain("Limit: 768px; Fits: Outside");
+    const preference = queries.get("(prefers-reduced-motion: reduce)")!;
+    act(() => preference.addEventListener.mock.calls[0]![1]({ matches: true }));
+    expect(container.textContent).toContain("Still");
+    expect(container.querySelector("code")?.parentElement?.textContent).toBe(`Written: ${TOKENS["--ease-enter"]!.value}`);
+    const subscription = queries.get("(min-width: 768px)")!;
+    act(() => subscription.addEventListener.mock.calls[0]![1]({ matches: true }));
+    expect(container.textContent).toContain("Fits: Inside");
+    expect(specimen("--breakpoint-tablet", copy).textContent).toContain("Limit: Waiting; Fits: Waiting");
+  });
+  it.each(["--ui-duration-fast", "--ease-enter", "--breakpoint-tablet"])("refuses unsupported authored metadata for %s", property => {
+    const mutable = TOKEN_GUIDANCE as unknown as Record<string, unknown>;
+    const original = TOKEN_GUIDANCE[property]!;
+    for (const replacement of [undefined, { ...original, specimen: "unknown" }, { ...original, application: undefined },
+      { ...original, application: { ...original.application, cssProperty: "fill" } },
+      { ...original, application: { ...original.application, valueType: "color" } }]) {
+      try {
+        mutable[property] = replacement;
+        const host = specimen(property);
+        expect(host.textContent).toBe("Unsupported token application");
+        expect(host.querySelector("figure")).toBeNull();
+      } finally { mutable[property] = original; }
     }
+  });
+  it("hydrates server-rendered motion and breakpoint specimens without mismatches", async () => {
+    media(false);
+    const content = <><TokenPreview property="--ease-enter" /><TokenPreview property="--breakpoint-tablet" /></>;
+    const host = document.createElement("div");
+    host.innerHTML = renderToString(content);
+    document.body.append(host);
+    const recoverable = vi.fn();
+    let hydrated: ReturnType<typeof hydrateRoot>;
+    await act(async () => { hydrated = hydrateRoot(host, content, { onRecoverableError: recoverable }); });
+    expect(recoverable).not.toHaveBeenCalled();
+    expect(host.querySelector("button")?.textContent).toBe("Replay");
+    expect(host.textContent).toContain("Threshold: 768px; Match: yes");
+    act(() => hydrated.unmount());
+    host.remove();
   });
   it("refuses unknown properties and missing, malformed or unsupported authored applications", () => {
     for (const property of ["--not-a-token", "toString", ""]) expect(specimen(property).textContent).toBe("Unsupported token application");
