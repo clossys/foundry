@@ -48,6 +48,8 @@ describe("data-readable SiteFrame contract", () => {
 });
 
 it("publishes navigation defaults as copy references, not audience text", () => {
+  // Revision 1 published string labels here; copy references are an incompatible shape.
+  expect(SITE_FRAME_CONTRACT.revision).toBe(2);
   expect(SITE_FRAME_CONTRACT.defaults).toEqual({
     label: { id: "site-frame.nav.label" },
     triggerLabel: { id: "site-frame.nav.trigger-label" },

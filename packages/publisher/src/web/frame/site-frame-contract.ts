@@ -49,7 +49,7 @@ export const SITE_FRAME_NAV_DEFAULTS = Object.freeze({
 });
 /** Composition references identify exports; they confer no qualification. Pack owns route placement and Instance pairs Frame with View. */
 export const SITE_FRAME_CONTRACT = freeze({
-  identity: "site-frame", role: "frame", revision: 1, medium: "web",
+  identity: "site-frame", role: "frame", revision: 2, medium: "web",
   use: ["persistent public-site chrome surrounding one chrome-free View"],
   avoid: ["route placement", "document bootstrap", "content sections", "application navigation focus bridge"],
   config: SITE_FRAME_CONFIG_SCHEMA,

@@ -6321,6 +6321,7 @@ named through the consumer's own `resolveCopy` from the copy references in
 `SITE_FRAME_CONTRACT.defaults`: `site-frame.nav.label` names the navigation and
 `site-frame.nav.trigger-label` labels its toggle. The frame ships no audience
 text for them, and an unresolved default fails closed like any other shell copy.
+The contract is at `revision` 2; revision 1 published these defaults as strings.
 Supply `shell.nav` (links may be empty) to name the menu with other copy; no
 minimum link count or invented brand copy is needed.
 All full labels appear in the panel after links as text only, primary then
