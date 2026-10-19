@@ -33,5 +33,7 @@ export interface ResolvedConsentCopy {
   acceptLabel: ResolvedCopyField;
   rejectLabel: ResolvedCopyField;
   privacyLinkLabel: ResolvedCopyField;
+  /** Optional text following the inline policy label in the card. */
+  trailingText?: ResolvedCopyField;
   status: ResolvedConsentStatusCopy;
 }

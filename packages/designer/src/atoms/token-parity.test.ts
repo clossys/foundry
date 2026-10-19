@@ -1,6 +1,6 @@
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { createRequire } from "node:module";
-import { dirname, extname, join } from "node:path";
+import { dirname, extname, join, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { __unstable__loadDesignSystem } from "tailwindcss";
@@ -244,6 +244,12 @@ const ANY_RECORD_MAP_RE = /const\s+([A-Za-z_]+)\s*:\s*Record</g;
  * escape both.
  */
 const KNOWN_NON_CLASS_MAPS = new Set([
+  // Token preview's authored CSS application signatures, never class strings.
+  "tokens/preview/index.tsx:applications",
+  // Token preview's pending application signatures, never class strings.
+  "tokens/preview/index.tsx:pending",
+  // Token preview's ReactNode specimens, never class strings.
+  "tokens/preview/index.tsx:specimens",
   // backdrop/consumer-art.ts — aspect -> intrinsic geometry pair, not classes.
   "aspects",
   // blocks/scene/Scene.tsx — document-format labels, never class names.
@@ -301,6 +307,11 @@ const KNOWN_NON_CLASS_MAPS = new Set([
   // class name.
   "checkVerdicts",
 ]);
+
+function isKnownNonClassMap(file: string, name: string): boolean {
+  const path = relative(srcDir, file).split(sep).join("/");
+  return KNOWN_NON_CLASS_MAPS.has(name) || KNOWN_NON_CLASS_MAPS.has(`${path}:${name}`);
+}
 
 function extractCandidateClasses(code: string): Set<string> {
   const chunks: string[] = [];
@@ -512,7 +523,7 @@ describe("token parity: every Tailwind class and var() read resolves against a r
       for (const match of code.matchAll(ANY_RECORD_MAP_RE)) {
         const name = match[1] as string;
         if (name.includes("CLASSES")) continue;
-        if (KNOWN_NON_CLASS_MAPS.has(name)) continue;
+        if (isKnownNonClassMap(file, name)) continue;
         unaccounted.push(`  ${file.slice(srcDir.length + 1)}: ${name}`);
       }
     }
@@ -527,5 +538,16 @@ describe("token parity: every Tailwind class and var() read resolves against a r
       );
     }
     expect(unaccounted).toEqual([]);
+  });
+
+  it("qualifies preview non-class declarations without accepting those names elsewhere", () => {
+    const preview = join(srcDir, "tokens", "preview", "index.tsx");
+    for (const name of ["applications", "pending", "specimens"]) {
+      expect(isKnownNonClassMap(preview, name), name).toBe(true);
+      expect(isKnownNonClassMap(join(srcDir, "blocks", "Example.tsx"), name), name).toBe(false);
+      expect(isKnownNonClassMap(join(srcDir, "tokens", "preview-other", "index.tsx"), name), name).toBe(false);
+    }
+    expect(isKnownNonClassMap(preview, "unknownMap")).toBe(false);
+    expect(isKnownNonClassMap(join(srcDir, "other.ts"), "aspects")).toBe(true);
   });
 });

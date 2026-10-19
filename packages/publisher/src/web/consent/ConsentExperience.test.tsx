@@ -5,6 +5,7 @@ import userEvent from "@testing-library/user-event";
 import { hydrateRoot } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import { readdirSync, readFileSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ResolvedConsentCopy, ResolvedCopyField } from "../../consent-copy/types.js";
@@ -932,18 +933,24 @@ describe("ConsentExperience: hydration (P-17)", () => {
     const container = document.createElement("div");
     container.innerHTML = html;
     document.body.appendChild(container);
+    const serverChild = container.querySelector(":scope > span");
     const recoverable = vi.fn();
     const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
     renders.length = 0;
     const root = await act(async () => hydrateRoot(container, tree, { onRecoverableError: recoverable }));
-    expect(recoverable).not.toHaveBeenCalled();
-    expect(consoleError).not.toHaveBeenCalled();
-    expect(renders[0]).toBe(false);
-    expect(factory).toHaveBeenCalledTimes(1);
-    expect(container.querySelector("[data-consent-banner]")).not.toBeNull();
-    expect(renders.at(-1)).toBe(true);
-    act(() => root.unmount());
-    container.remove();
+    try {
+      expect(recoverable).not.toHaveBeenCalled();
+      expect(consoleError).not.toHaveBeenCalled();
+      expect(renders[0]).toBe(false);
+      expect(factory).toHaveBeenCalledTimes(1);
+      expect(container.querySelector("[data-consent-banner]")).not.toBeNull();
+      expect(container.querySelector(":scope > span")).toBe(serverChild);
+      expect(Boolean(container.querySelector("[data-consent-banner]")!.compareDocumentPosition(serverChild!) & Node.DOCUMENT_POSITION_FOLLOWING)).toBe(true);
+      expect(renders.at(-1)).toBe(true);
+    } finally {
+      act(() => root.unmount());
+      container.remove();
+    }
   });
 });
 
@@ -988,7 +995,7 @@ describe("ConsentExperience: regime-aware copy (P-28)", () => {
   ])("omits the policy link for %s and logs it", (href) => {
     const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
     const { factory } = recordingFactory(() => fakeLifecycle({ promptAutomatically: true }));
-    render(<ConsentExperience copy={COPY} createLifecycle={factory} policyLink={{ href }} {...NOTICE_REVIEW_OFF} />);
+    render(<ConsentExperience copy={COPY} createLifecycle={factory} presentation="banner" policyLink={{ href }} {...NOTICE_REVIEW_OFF} />);
     expect(banner()).not.toBeNull();
     // The decision is the assembly's: no anchor is created at all, whatever React would do with the href.
     expect(banner()!.querySelector("a")).toBeNull();
@@ -1011,5 +1018,216 @@ describe("ConsentExperience: client entry directive (C-49)", () => {
   it.each(CLIENT_ENTRY_MODULES)("%s begins with the use client directive", (file) => {
     const source = readFileSync(join(import.meta.dirname, file), "utf8");
     expect(source.startsWith('"use client";\n')).toBe(true);
+  });
+});
+
+
+describe("CONSENT-1 card composition", () => {
+  it.each(["card", "banner"] as const)("keeps %s notice in its required DOM and keyboard order", async (presentation) => {
+    render(
+      <ConsentExperience copy={COPY} createLifecycle={() => fakeLifecycle({ promptAutomatically: true })} presentation={presentation} {...NOTICE_REVIEW_OFF}>
+        <button>Page action</button>
+      </ConsentExperience>,
+    );
+    const notice = banner()!;
+    const page = screen.getByRole("button", { name: "Page action" });
+    expect(Boolean(notice.compareDocumentPosition(page) & Node.DOCUMENT_POSITION_FOLLOWING)).toBe(presentation === "card");
+    await userEvent.setup().tab();
+    expect(presentation === "card" ? screen.getByRole("button", { name: "Accept" }) : page).toHaveFocus();
+  });
+
+  it("retains the immutable-base mounted banner HTML when explicitly selected", () => {
+    render(<ConsentExperience copy={COPY} createLifecycle={() => fakeLifecycle({ promptAutomatically: true })} presentation="banner" policyLink={{ href: "/privacy" }} {...NOTICE_REVIEW_OFF} />);
+    const html = banner()!.outerHTML.replace(/\bid="[^"]+"/g, 'id="ID"').replace(/\baria-labelledby="[^"]+"/g, 'aria-labelledby="ID"');
+    const hash = createHash("sha256").update(html).digest("hex");
+    expect(hash).toBe("93eb912deb9a13355a2127d64b39039a278020624a9c96b605ed1a8eb36f9de3");
+  });
+
+  const sentence = "We use analytics to see which pages are read. It stays off unless you allow it. Details are in our privacy policy.";
+  const cardCopy: ResolvedConsentCopy = { ...COPY, promptLead: field("We use analytics to see which pages are read. It stays off unless you allow it. Details are in our "), privacyLinkLabel: field("privacy policy"), trailingText: field(".") };
+
+  it("defaults to the card and places the sanctioned link inside the lead/link/trail sentence", () => {
+    const lifecycle = fakeLifecycle({ promptAutomatically: true });
+    render(<ConsentExperience copy={cardCopy} createLifecycle={() => lifecycle} policyLink={{ href: "/privacy" }} {...NOTICE_REVIEW_OFF} />);
+    expect(banner()).toHaveClass("consent-card");
+    expect(screen.getByRole("heading", { name: "Notice title" })).toHaveClass("sr-only");
+    const link = screen.getByRole("link", { name: "privacy policy" });
+    expect(link.parentElement).toHaveTextContent(sentence);
+    expect(link.parentElement!.textContent).toBe(sentence);
+  });
+
+  it("keeps the present label as plain text for an unsanctioned href, without creating an anchor", () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    render(<ConsentExperience copy={cardCopy} createLifecycle={() => fakeLifecycle({ promptAutomatically: true })} policyLink={{ href: "javascript:alert(1)" }} {...NOTICE_REVIEW_OFF} />);
+    expect(banner()!.querySelector("a")).toBeNull();
+    expect(screen.getByText(sentence)).toBeInTheDocument();
+  });
+
+  it("joins caller-authored complete fallback copy when the label is absent", () => {
+    const { privacyLinkLabel: _label, ...copy } = cardCopy;
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    render(<ConsentExperience copy={{ ...copy, promptLead: field("Analytics stays off unless you allow it"), trailingText: field(".") } as ResolvedConsentCopy} createLifecycle={() => fakeLifecycle({ promptAutomatically: true })} policyLink={{ href: "/privacy" }} {...NOTICE_REVIEW_OFF} />);
+    expect(screen.getByText("Analytics stays off unless you allow it.")).toBeInTheDocument();
+    expect(banner()!.querySelector("a")).toBeNull();
+  });
+
+  it("omits an absent trail without adding punctuation and retains the former explicit banner structure", () => {
+    const { rerender } = render(<ConsentExperience copy={COPY} createLifecycle={() => fakeLifecycle({ promptAutomatically: true })} policyLink={{ href: "/privacy" }} {...NOTICE_REVIEW_OFF} />);
+    expect(screen.getByRole("link", { name: "Policy" }).parentElement!.textContent).toBe("Prompt lead sentence. Policy");
+    rerender(<ConsentExperience copy={COPY} createLifecycle={() => fakeLifecycle({ promptAutomatically: true })} presentation="banner" policyLink={{ href: "/privacy" }} {...NOTICE_REVIEW_OFF} />);
+    expect(banner()).not.toHaveClass("consent-card");
+    expect(screen.getByRole("heading", { name: "Notice title" })).not.toHaveClass("sr-only");
+    expect(screen.getByRole("link", { name: "Policy" }).parentElement!.textContent).toBe("Policy");
+    expect(screen.getByRole("button", { name: "Accept" })).not.toHaveAttribute("aria-pressed");
+  });
+
+  it.each(["granted", "denied"] as const)("reads the %s selected feedback from the lifecycle after choice and reopen", (choice) => {
+    const lifecycle = fakeLifecycle({ promptAutomatically: true });
+    render(<ConsentExperience copy={COPY} createLifecycle={() => lifecycle} {...NOTICE_REVIEW_OFF} />);
+    fireEvent.click(screen.getByRole("button", { name: choice === "granted" ? "Accept" : "Reject" }));
+    expect(banner()).toBeNull();
+    act(() => document.dispatchEvent(new Event("privacy-choices:open")));
+    const selected = screen.getByRole("button", { name: choice === "granted" ? "Accept" : "Reject" });
+    expect(selected).toHaveAttribute("aria-pressed", "true");
+    expect(selected.querySelector("[data-consent-selected]")).not.toBeNull();
+    expect(screen.getByRole("button", { name: choice === "granted" ? "Reject" : "Accept" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("status")).toBeEmptyDOMElement();
+  });
+});
+
+describe("CONSENT-1 measured page clearance", () => {
+  const cssValue = (property: string, value: string) => {
+    const declaration = document.createElement("div").style;
+    declaration.setProperty(property, value);
+    return declaration.getPropertyValue(property);
+  };
+  const expectSpace = (padding: string, scroll: string) => {
+    expect(document.documentElement.style.paddingBlockEnd).toBe(cssValue("padding-block-end", padding));
+    expect(document.documentElement.style.scrollPaddingBlockEnd).toBe(cssValue("scroll-padding-block-end", scroll));
+  };
+  async function withCard(
+    check: (fixture: { resize: () => void; geometry: (height: number, gap: number) => void; flush: () => void; view: ReturnType<typeof render>; switchToBanner: () => void; observed: ReturnType<typeof vi.fn>; disconnected: ReturnType<typeof vi.fn>; reads: () => number }) => void | Promise<void>,
+    options: { presentation?: "card" | "banner"; observer?: boolean; auto?: boolean; padding?: string; scroll?: string } = {},
+  ) {
+    const style = document.documentElement.style;
+    const previous = style.cssText;
+    style.setProperty("padding-block-end", options.padding ?? (options.auto ? "" : "10px"), "important");
+    style.setProperty("scroll-padding-block-end", options.scroll ?? (options.auto ? "auto" : "24px"), "important");
+    style.setProperty("--host-value", "retained");
+    let height = 120, gap = 20, notify = () => {}, reads = 0;
+    const observed = vi.fn(), disconnected = vi.fn();
+    vi.useFakeTimers();
+    vi.stubGlobal("ResizeObserver", options.observer === false ? undefined : class {
+      constructor(callback: () => void) { notify = callback; }
+      observe = observed;
+      disconnect = disconnected;
+    });
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function (this: HTMLElement) {
+      if (this.matches('[data-consent-presentation="card"]')) {
+        reads++;
+        return new DOMRect(0, window.innerHeight - height - gap, 300, height);
+      }
+      return new DOMRect(); // The wrapper has no in-flow height.
+    });
+    const factory = () => fakeLifecycle({ promptAutomatically: true });
+    const view = render(<ConsentExperience copy={COPY} createLifecycle={factory} presentation={options.presentation ?? "card"} {...NOTICE_REVIEW_OFF} />);
+    try {
+      await check({ resize: () => act(() => notify()), geometry: (nextHeight, nextGap) => { height = nextHeight; gap = nextGap; }, flush: () => act(() => vi.advanceTimersByTime(16)), view, switchToBanner: () => view.rerender(<ConsentExperience copy={COPY} createLifecycle={factory} presentation="banner" {...NOTICE_REVIEW_OFF} />), observed, disconnected, reads: () => reads });
+    } finally {
+      view.unmount();
+      style.cssText = previous;
+      vi.clearAllTimers();
+      vi.useRealTimers();
+      vi.unstubAllGlobals();
+    }
+  }
+
+  it("reserves actual card height plus its bottom gap, composes host space and throttles resize reads", async () => {
+    await withCard(({ geometry, resize, flush, observed, reads }) => {
+      expectSpace("calc(10px + 140px)", "max(24px, 140px)");
+      expect(observed).toHaveBeenCalledWith(banner());
+      const before = reads();
+      geometry(180, 20);
+      resize(); resize(); resize();
+      expect(reads()).toBe(before);
+      flush();
+      expect(reads()).toBe(before + 1);
+      expectSpace("calc(10px + 200px)", "max(24px, 200px)");
+      geometry(180, 40);
+      fireEvent(window, new Event("resize"));
+      flush();
+      expectSpace("calc(10px + 220px)", "max(24px, 220px)");
+    });
+  });
+
+  it.each(["hide", "banner", "unmount"] as const)("restores host values and priorities on %s, including a queued resize", async (action) => {
+    await withCard(({ view, switchToBanner, resize, flush, disconnected }) => {
+      resize();
+      if (action === "hide") fireEvent.click(screen.getByRole("button", { name: "Accept" }));
+      else if (action === "banner") switchToBanner();
+      else view.unmount();
+      flush();
+      const style = document.documentElement.style;
+      expect(style.paddingBlockEnd).toBe("10px");
+      expect(style.scrollPaddingBlockEnd).toBe("24px");
+      expect(style.getPropertyPriority("padding-block-end")).toBe("important");
+      expect(style.getPropertyPriority("scroll-padding-block-end")).toBe("important");
+      expect(style.getPropertyValue("--host-value")).toBe("retained");
+      expect(disconnected).toHaveBeenCalledOnce();
+    });
+  });
+
+  it("preserves later host writes during resize and cleanup", async () => {
+    await withCard(({ view, resize, flush }) => {
+      const style = document.documentElement.style;
+      style.setProperty("padding-block-end", "99px");
+      style.setProperty("scroll-padding-block-end", "88px", "important");
+      resize(); flush(); view.unmount();
+      expect(style.paddingBlockEnd).toBe("99px");
+      expect(style.getPropertyPriority("padding-block-end")).toBe("");
+      expect(style.scrollPaddingBlockEnd).toBe("88px");
+      expect(style.getPropertyPriority("scroll-padding-block-end")).toBe("important");
+      expect(style.getPropertyValue("--host-value")).toBe("retained");
+    });
+  });
+
+  it("normalizes auto and empty host arithmetic, then restores the authored values", async () => {
+    await withCard(({ view }) => {
+      const style = document.documentElement.style;
+      expectSpace("calc(0px + 140px)", "max(0px, 140px)");
+      view.unmount();
+      expect(style.paddingBlockEnd).toBe("");
+      expect(style.scrollPaddingBlockEnd).toBe("auto");
+      expect(style.getPropertyPriority("scroll-padding-block-end")).toBe("important");
+    }, { auto: true });
+  });
+
+  it("leaves legacy banner host styles untouched", async () => {
+    await withCard(({ observed }) => {
+      expect(document.documentElement.style.paddingBlockEnd).toBe("10px");
+      expect(document.documentElement.style.scrollPaddingBlockEnd).toBe("24px");
+      expect(observed).not.toHaveBeenCalled();
+    }, { presentation: "banner" });
+  });
+
+  it("tracks window and content changes when ResizeObserver is unavailable", async () => {
+    await withCard(async ({ geometry, flush }) => {
+      geometry(160, 20);
+      fireEvent(window, new Event("resize")); flush();
+      expectSpace("calc(10px + 180px)", "max(24px, 180px)");
+      geometry(180, 20);
+      await act(async () => { banner()!.appendChild(document.createTextNode("Additional resolved notice text.")); });
+      flush();
+      expectSpace("calc(10px + 200px)", "max(24px, 200px)");
+    }, { observer: false });
+  });
+
+  it("keeps complex authored host lengths intact and restores their CSSOM serialization", async () => {
+    await withCard(({ view }) => {
+      expectSpace("calc(calc(2% + 3px) + 140px)", "max(calc(4% + 5px), 140px)");
+      view.unmount();
+      expectSpace("calc(2% + 3px)", "calc(4% + 5px)");
+      expect(document.documentElement.style.getPropertyPriority("padding-block-end")).toBe("important");
+    }, { padding: "calc(2% + 3px)", scroll: "calc(4% + 5px)" });
   });
 });
