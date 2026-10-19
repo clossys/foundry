@@ -41,7 +41,11 @@ describe("Drawer", () => {
     const close = await screen.findByRole("button", { name: "Close tools" });
     expect(close).toHaveClass("icon-control-md", "border-0", "bg-transparent", "p-0", "focus-visible:outline-solid", "focus-visible:outline-2", "focus-visible:outline-accent");
     expect(close).toHaveAccessibleName("Close tools");
-    expect(close.querySelector('[aria-hidden="true"]')).toHaveTextContent("×");
+    const glyph = close.querySelector("svg");
+    expect(glyph).not.toBeNull();
+    expect(glyph).toHaveAttribute("aria-hidden", "true");
+    expect(close).not.toHaveTextContent("×");
+    expect(close.textContent?.trim()).toBe("");
     await userEvent.tab();
     expect(close).toHaveFocus();
     expect(close.style.boxShadow).toContain("--ui-ring-focus");
@@ -165,6 +169,62 @@ describe("Drawer", () => {
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
     await userEvent.click(trigger);
     expect(await screen.findByRole("dialog")).toBeInTheDocument();
+  });
+
+  it("opens as a sheet while the wide query matches and keeps focus containment, Escape and focus return", async () => {
+    wide.matches = true;
+    const changed = vi.fn();
+    render(<Drawer {...supplied} wide="sheet" placement="end" onOpenChange={changed}><button>First tool</button><button>Last tool</button></Drawer>);
+    const trigger = screen.getByRole("button", { name: "Open tools" });
+    trigger.focus();
+    await userEvent.keyboard("{Enter}");
+    const dialog = await screen.findByRole("dialog", { name: "Workspace tools" });
+    expect(changed).toHaveBeenLastCalledWith(true);
+    expect(dialog.querySelector("[data-panel]")).toHaveAttribute("data-drawer-wide", "sheet");
+    expect(dialog).toContainElement(document.activeElement as HTMLElement);
+    for (let index = 0; index < 4; index += 1) {
+      await userEvent.tab();
+      expect(dialog).toContainElement(document.activeElement as HTMLElement);
+    }
+    await userEvent.tab({ shift: true });
+    expect(dialog).toContainElement(document.activeElement as HTMLElement);
+    expect(dialog.parentElement?.className).not.toMatch(/transition|animate/);
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(changed).toHaveBeenLastCalledWith(false);
+    await waitFor(() => expect(trigger).toHaveFocus());
+  });
+
+  it("keeps an open sheet across a breakpoint change into the wide layout without a media listener", async () => {
+    function SheetHost() {
+      const [open, setOpen] = useState(false);
+      return <Drawer {...supplied} wide="sheet" isOpen={open} onOpenChange={setOpen}>Content</Drawer>;
+    }
+    render(<SheetHost />);
+    expect(wide.listeners.size).toBe(0);
+    await userEvent.click(screen.getByRole("button", { name: "Open tools" }));
+    await screen.findByRole("dialog");
+    await act(async () => { wide.matches = true; for (const notify of wide.listeners) notify({ matches: true }); });
+    expect(screen.getByRole("dialog", { name: "Workspace tools" })).toBeInTheDocument();
+  });
+
+  it("honours a controlled sheet request made while wide and still dismisses on route change", async () => {
+    wide.matches = true;
+    const changed = vi.fn();
+    const view = render(<Drawer {...supplied} wide="sheet" isOpen navigationKey="first" onOpenChange={changed}>Content</Drawer>);
+    expect(await screen.findByRole("dialog")).toBeInTheDocument();
+    view.rerender(<Drawer {...supplied} wide="sheet" isOpen navigationKey="second" onOpenChange={changed}>Content</Drawer>);
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(changed).toHaveBeenLastCalledWith(false);
+  });
+
+  it("returns to wide-layout dismissal when the host switches the sheet back to the default", async () => {
+    wide.matches = true;
+    const view = render(<Drawer {...supplied} wide="sheet" defaultOpen>Content</Drawer>);
+    expect(await screen.findByRole("dialog")).toBeInTheDocument();
+    view.rerender(<Drawer {...supplied} wide="dismiss" defaultOpen>Content</Drawer>);
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(wide.listeners.size).toBeGreaterThan(0);
   });
 
   it("renders and hydrates its closed trigger without a recoverable mismatch", async () => {
