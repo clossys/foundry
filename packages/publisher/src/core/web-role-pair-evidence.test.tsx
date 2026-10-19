@@ -114,12 +114,12 @@ const SELECTORS: Record<WebRolePairCheck, string> = {
 const expected = { standaloneMain: 0, standaloneChrome: 0, composedMain: 1, frameMain: 1,
   skipLinks: 1, skipTargets: 1, viewMain: 0, viewContent: 1, chromeOutsideMain: 2, chromeInsideMain: 0 };
 const sha = (value: string | Buffer): `sha256:${string}` => `sha256:${createHash("sha256").update(value).digest("hex")}`;
-function fresh(index: number, mutant = ""): WebRolePairEvidence {
+function fresh(index: number, mutant = "", measuredAt = WEB_ROLE_PAIR_EVIDENCE[index]!.measuredAt): WebRolePairEvidence {
   const record = WEB_ROLE_PAIR_EVIDENCE[index]!;
   const observations = measure(record.identity.viewBlockRef.adapter.export, mutant);
   const joined = validateBlockRoleBinding(WEB_ROLE_PAIR_BINDINGS[index], WEB_ROLE_PAIR_BINDINGS.flatMap(binding => [binding.frameBlockRef, binding.viewBlockRef]));
   if (!("identity" in joined) || !joined.identity) throw new Error("Missing fresh identity");
-  return { ...JSON.parse(JSON.stringify(record)), identity: joined.identity, fixtureDigest: sha(JSON.stringify(fixture)),
+  return { ...JSON.parse(JSON.stringify(record)), identity: joined.identity, measuredAt, fixtureDigest: sha(JSON.stringify(fixture)),
     sourceDigests: Object.fromEntries(SOURCE_FILES.map(path => [path, sha(readFileSync(path))])),
     checks: Object.fromEntries(Object.entries(observations).map(([key, count]) => [key, {
       count, selector: SELECTORS[key as WebRolePairCheck],
@@ -136,7 +136,9 @@ describe("web role-pair evidence", () => {
     expect(validate(record, WEB_ROLE_PAIR_BINDINGS[index], measurement)).toEqual({ status: "measured", reasons: [] });
     expect(measurement).toEqual(fresh(index));
     expect(validate(record, WEB_ROLE_PAIR_BINDINGS[index]).status).toBe("unmeasured");
-    expect(record.measuredAt).toBe("2026-10-18");
+    expect(record.measuredAt).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(record.measuredAt).toBe(WEB_ROLE_PAIR_BINDINGS[index]!.frameBlockRef.evidence.measuredAt);
+    expect(record.measuredAt).toBe(WEB_ROLE_PAIR_BINDINGS[index]!.viewBlockRef.evidence.measuredAt);
     expect(record.sourceRevision).toMatch(/^[a-f0-9]{40}$/);
     expect(record.identity.viewBlockRef.adapter.export).toBe(["LandingView", "LegalView", "CaptureView"][index]);
     expect(WEB_ROLE_PAIR_BINDINGS[index]!.viewBlockRef.adapter.config).toEqual([{ landmark: "none" }, { framed: true }, {}][index]);
@@ -221,8 +223,10 @@ describe("web role-pair evidence", () => {
 it("regenerates retained role-pair measurements on explicit request", () => {
   if (process.env.UPDATE_WEB_ROLE_PAIR_EVIDENCE !== "1") return;
   const revision = execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
-  const records = [0, 1, 2].map(index => fresh(index));
+  const measuredAt = new Date().toISOString().slice(0, 10);
+  const records = [0, 1, 2].map(index => fresh(index, "", measuredAt));
   for (const measurement of records) {
+    expect(measurement.measuredAt).toBe(measuredAt);
     expect(Object.fromEntries(Object.entries(measurement.checks).map(([key, value]) => [key, value.count]))).toEqual(expected);
     for (const [path, digest] of Object.entries(measurement.sourceDigests)) {
       expect(sha(execFileSync("git", ["show", `${revision}:packages/publisher/${path}`]))).toBe(digest);
@@ -231,8 +235,9 @@ it("regenerates retained role-pair measurements on explicit request", () => {
   const path = "src/core/web-role-pair-evidence.ts";
   const source = readFileSync(path, "utf8")
     .replace(/const revision = "[a-f0-9]{40}";/, `const revision = "${revision}";`)
+    .replace(/const measuredAt = "\d{4}-\d{2}-\d{2}";/, `const measuredAt = "${measuredAt}";`)
     .replace(/const sources = \{[\s\S]*?\n\} as const;/, `const sources = ${JSON.stringify(records[0]!.sourceDigests, null, 2)} as const;`)
     .replace(/fixtureDigest: "sha256:[a-f0-9]{64}"/, `fixtureDigest: "${records[0]!.fixtureDigest}"`);
   writeFileSync(path, source);
-  console.log(JSON.stringify({ sourceRevision: revision, pairs: records.length, sourceFiles: SOURCE_FILES.length, checks: records.map(record => record.checks) }));
+  console.log(JSON.stringify({ sourceRevision: revision, measuredAt, pairs: records.length, sourceFiles: SOURCE_FILES.length, checks: records.map(record => record.checks) }));
 });

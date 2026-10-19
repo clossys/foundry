@@ -116,6 +116,36 @@
     backdrop-filter: var(--site-header-glass-blur, blur(16px));
   }
 }
+@layer foundry-ui-compiled {
+  [data-site-frame] {
+    --site-header-clearance: calc(max(var(--ui-layout-tap-target, 44px), var(--ui-brandmark-height-lg, 48px)) + 2 * var(--spacing-sm, 8px) + var(--ui-border-hairline, 1px) + env(safe-area-inset-top, 0px));
+    & [id] {
+      scroll-margin-block-start: var(--site-header-clearance);
+    }
+    & > header {
+      position: sticky !important;
+      inset-block-start: 0;
+      padding-block-start: calc(var(--spacing-sm, 8px) + env(safe-area-inset-top, 0px));
+    }
+    & > header[data-placement="overlay"] {
+      position: fixed !important;
+    }
+    &:has(> header[data-placement="overlay"]) {
+      padding-block-start: var(--site-header-clearance);
+    }
+  }
+  :root:has([data-consent-banner]) .site-header-contract[data-collapsed] .nav-disclosure-panel {
+    visibility: hidden;
+  }
+  @media (scripting: none) {
+    [data-site-frame] > header.site-header-contract {
+      position: relative !important;
+    }
+    [data-site-frame]:has(> header[data-placement="overlay"]) {
+      padding-block-start: 0;
+    }
+  }
+}
 @container scene (min-width: 800px) {
   [data-template="converge"] > [data-scene-desk] {
     display: block;
@@ -153,34 +183,6 @@
     overflow: hidden;
     clip-path: inset(50%);
     white-space: nowrap;
-  }
-}
-[data-site-frame] {
-  --site-header-clearance: calc(max(var(--ui-layout-tap-target, 44px), var(--ui-brandmark-height-lg, 48px)) + 2 * var(--spacing-sm, 8px) + var(--ui-border-hairline, 1px) + env(safe-area-inset-top, 0px));
-  & [id] {
-    scroll-margin-block-start: var(--site-header-clearance);
-  }
-  & > header {
-    position: sticky !important;
-    inset-block-start: 0;
-    padding-block-start: calc(var(--spacing-sm, 8px) + env(safe-area-inset-top, 0px));
-  }
-  & > header[data-placement="overlay"] {
-    position: fixed !important;
-  }
-  &:has(> header[data-placement="overlay"]) {
-    padding-block-start: var(--site-header-clearance);
-  }
-}
-:root:has([data-consent-banner]) .site-header-contract[data-collapsed] .nav-disclosure-panel {
-  visibility: hidden;
-}
-@media (scripting: none) {
-  [data-site-frame] > header.site-header-contract {
-    position: relative !important;
-  }
-  [data-site-frame]:has(> header[data-placement="overlay"]) {
-    padding-block-start: 0;
   }
 }
 @layer foundry-ui-compiled {
@@ -343,7 +345,7 @@
     .site-header-contract[data-collapsed] nav {
       inline-size: 100%;
     }
-    .site-header-contract[data-collapsed] .nav-disclosure-toggle {
+    .site-header-contract[data-collapsed] .nav-disclosure-toggle[aria-expanded] {
       display: none;
     }
     .site-header-contract[data-collapsed] .nav-disclosure-panel {
