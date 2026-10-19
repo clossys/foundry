@@ -96,7 +96,10 @@ describe("AppNavigation", () => {
   it("supports arrows, Home, End, Enter and Space on visible controls", async () => {
     render(<AppNavigation tree={tree} activeId="blocks" />);
     const home = screen.getByRole("link", { name: "Home" });
+    const activate = vi.spyOn(home, "click");
     home.focus();
+    await userEvent.keyboard(" ");
+    expect(activate).toHaveBeenCalledOnce();
     await userEvent.keyboard("{End}");
     expect(screen.getByRole("button", { name: "Actions" })).toHaveFocus();
     await userEvent.keyboard("{Enter} ");
@@ -122,7 +125,9 @@ describe("AppNavigation", () => {
   });
 
   it("keeps every rail destination named and shows real focus tooltips", async () => {
-    const view = render(<AppNavigation tree={tree} activeId="blocks" />);
+    const view = render(<AppNavigation tree={tree} activeId="home" collapsed />);
+    expect(screen.getByRole("link", { name: "Blocks" })).toHaveAttribute("href", "#blocks");
+    view.rerender(<AppNavigation tree={tree} activeId="blocks" />);
     screen.getByRole("link", { name: "Blocks" }).focus();
     view.rerender(<AppNavigation tree={tree} activeId="blocks" collapsed />);
     await waitFor(() => expect(screen.getByRole("link", { name: "Blocks" })).toHaveFocus());

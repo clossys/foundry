@@ -61,6 +61,7 @@ describe("AppFrame Material registration", () => {
         const configSource = readFileSync(join(root, config.source), "utf8");
         expect(config.values.length).toBeGreaterThan(1);
         expect(config.values).toContain(config.default);
+        if (entry.id === "app-navigation") expect(configSource).toContain("defaultCollapsed = " + JSON.stringify(config.default));
         for (const value of config.values) expect(configSource, `${entry.id}.${config.prop}`).toContain(JSON.stringify(value));
       }
     }
