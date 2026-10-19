@@ -4793,11 +4793,11 @@ composes those and passes them in.
 
 The default `presentation="card"` is a compact pinned notice: full width
 less safe-area gutters and centred below tablet width, then capped at the
-small-container width at the bottom start, with a translucent base plate, a hairline, two
-equal full-width choices and a visually hidden title that keeps the region
-named. It floats on the notice layer above the page end, footer included.
-`presentation="banner"` retains the former in-flow markup, visible title and
-separate policy link. Mounting remains the host's choice. The card precedes
+notice width (`--ui-width-notice-max`) at the bottom start, with a
+translucent base plate, a hairline, two equal full-width choices and a
+visually hidden title that keeps the region named. It floats on the notice
+layer above the page end, footer included. `presentation="banner"` retains the
+former in-flow markup, visible title and separate policy link. Mounting remains the host's choice. The card precedes
 page children in DOM order. While visible, its measured height and bottom gap
 set focus-scroll clearance (`scroll-padding-block-end`) so a focused control
 is never scrolled beneath it; the document's own end padding is left alone.

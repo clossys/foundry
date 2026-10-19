@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ConsentBanner } from "./ConsentBanner.js";
+import { TOKENS } from "../tokens/tokens.js";
 
 function setup(overrides: Partial<Parameters<typeof ConsentBanner>[0]> = {}) {
   const onAccept = vi.fn();
@@ -429,7 +430,7 @@ describe("CONSENT-1 card presentation", () => {
     expect(root.closest("[dir]")).toBe(container.firstElementChild);
     expect(root.parentElement).toHaveAttribute("dir", "rtl");
     const card = consentCardUtility();
-    for (const declaration of ["position: fixed", "inset-inline", "inset-block-end", "safe-area-inset-bottom", "safe-area-inset-left", "safe-area-inset-right", "max-inline-size", "--container-sm", "--color-surface-base", "--blur-md", "--color-line-base", "prefers-reduced-transparency: reduce", "@supports not", "forced-colors: active", "overflow-y: auto"]) expect(card, declaration).toContain(declaration);
+    for (const declaration of ["position: fixed", "inset-inline", "inset-block-end", "safe-area-inset-bottom", "safe-area-inset-left", "safe-area-inset-right", "max-inline-size", "--ui-width-notice-max", "--color-surface-base", "--blur-notice", "--color-line-base", "prefers-reduced-transparency: reduce", "@supports not", "forced-colors: active", "overflow-y: auto"]) expect(card, declaration).toContain(declaration);
     expect(card).toContain("--ui-ring-focus: 0 0 0 2px var(--color-ink-primary");
     expect(card).toContain('\u0026[data-consent-presentation="card"] :focus-visible');
     expect(card).toContain("outline-color: var(--color-ink-primary");
@@ -459,6 +460,19 @@ function tokenValue(name: string): number {
 }
 
 describe("CONSENT-1 card geometry matches the signed-off reference", () => {
+  it("reads only declared Designer tokens, never a Tailwind default-theme name that looks like one", () => {
+    const card = consentCardUtility();
+    const tokensCss = readFileSync(resolve(import.meta.dirname, "..", "..", "styles", "tokens.css"), "utf8");
+    const read = [...new Set([...card.matchAll(/var\((--[\w-]+)/g)].map((match) => match[1]!))];
+    // The rule must read a real set of tokens, so an empty match cannot pass vacuously.
+    expect(read).toEqual(expect.arrayContaining(["--ui-width-notice-max", "--blur-notice", "--spacing-md", "--color-surface-base"]));
+    // Each read name is a registered token and is declared in the shipped token layer.
+    expect(read.filter((name) => !Object.hasOwn(TOKENS, name))).toEqual([]);
+    expect(read.filter((name) => !new RegExp(`^\\s*${name}:`, "m").test(tokensCss))).toEqual([]);
+    expect(TOKENS["--ui-width-notice-max"]).toMatchObject({ family: "width", value: "24rem" });
+    expect(TOKENS["--blur-notice"]).toMatchObject({ family: "blur", value: "12px" });
+  });
+
   it("fills the viewport less safe-area gutters and centres below tablet width, with no width cap there", () => {
     const card = consentCardUtility();
     // Both inline insets are the gutter and margins are auto with no cap, so the
@@ -473,7 +487,7 @@ describe("CONSENT-1 card geometry matches the signed-off reference", () => {
 
   it("caps at the small container and pins bottom-start from tablet width, logically so RTL flips it", () => {
     const card = consentCardUtility();
-    expect(card).toMatch(/@media \(width >= 48rem\) \{\s*margin-inline-start: 0;\s*max-inline-size: var\(--container-sm, 24rem\);\s*\}/);
+    expect(card).toMatch(/@media \(width >= 48rem\) \{\s*margin-inline-start: 0;\s*max-inline-size: var\(--ui-width-notice-max, 24rem\);\s*\}/);
     for (const physical of [/\bleft:/, /\bright:/, /\bbottom:/, /\btop:/, /margin-left/, /margin-right/, /(?<![-\w])width:/]) expect(card).not.toMatch(physical);
     // 48rem is the tablet breakpoint (768px at the 16px root).
     expect(tokenValue("--breakpoint-tablet")).toBe(48 * 16);
@@ -498,10 +512,12 @@ describe("CONSENT-1 card geometry matches the signed-off reference", () => {
     expect(cardDeclaration(card, "background-color")).toBe("color-mix(in oklab, var(--color-surface-base, oklch(0.9702 0 0)) 90%, transparent)");
     expect(cardDeclaration(card, "border-color")).toBe("var(--color-line-base, oklch(0.8761 0 0))");
     expect(cardDeclaration(card, "box-shadow")).toBe("var(--ui-elevation-raised, 0 1px 0 var(--color-line-base, oklch(0.8761 0 0)))");
-    expect(cardDeclaration(card, "backdrop-filter")).toBe("blur(var(--blur-md, 12px))");
+    expect(cardDeclaration(card, "backdrop-filter")).toBe("blur(var(--blur-notice, 12px))");
     expect(card).toMatch(/@supports not \([^\n]*\) \{\s*background-color: color-mix\(in oklab, var\(--color-surface-base, oklch\(0\.9702 0 0\)\) 95%, transparent\);/);
     expect(card).not.toContain("--color-surface-glass");
     expect(card).not.toContain("--blur-glass");
+    expect(card).not.toContain("--blur-md");
+    expect(card).not.toContain("--container-sm");
     expect(card).toMatch(/@media \(prefers-reduced-motion: no-preference\) \{\s*transition-property: background-color, backdrop-filter;\s*transition-duration: var\(--ui-duration-default, 240ms\);/);
   });
 

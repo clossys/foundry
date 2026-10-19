@@ -472,8 +472,8 @@
       background-color: color-mix(in oklab, var(--color-surface-base, oklch(0.9702 0 0)) 90%, transparent);
     }
     box-shadow: var(--ui-elevation-raised, 0 1px 0 var(--color-line-base, oklch(0.8761 0 0)));
-    -webkit-backdrop-filter: blur(var(--blur-md, 12px));
-    backdrop-filter: blur(var(--blur-md, 12px));
+    -webkit-backdrop-filter: blur(var(--blur-notice, 12px));
+    backdrop-filter: blur(var(--blur-notice, 12px));
     & button {
       min-block-size: var(--ui-layout-tap-target, 44px);
       transition-duration: var(--ui-duration-fast, 160ms);
@@ -481,7 +481,7 @@
     }
     @media (width >= 48rem) {
       margin-inline-start: 0;
-      max-inline-size: var(--container-sm, 24rem);
+      max-inline-size: var(--ui-width-notice-max, 24rem);
     }
     @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
       background-color: var(--color-surface-base, oklch(0.9702 0 0));
