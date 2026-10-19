@@ -153,6 +153,22 @@ it("labels real sections and limits checkbox semantics to a preference section",
   expect(screen.getByRole("menuitemcheckbox", { name: "Contrast" })).toHaveAttribute("aria-checked", "false");
 });
 
+it("rejects an unnamed Menu.Section at runtime and keeps either name valid", () => {
+  const section = Menu.Section as unknown as (props: Record<string, unknown>) => unknown;
+  const children = <Menu.Item>Help</Menu.Item>;
+  for (const props of [{}, { heading: "   " }, { "aria-label": "" }, { heading: null, "aria-label": "  " }]) {
+    expect(() => section({ ...props, children })).toThrow("Menu.Section: a non-empty heading or aria-label is required.");
+  }
+  expect(() => section({ heading: "Account", children })).not.toThrow();
+  expect(() => section({ "aria-label": "Account", children })).not.toThrow();
+});
+
+it("requires a name for Menu.Section in the type", () => {
+  // @ts-expect-error a section needs a heading or an aria-label
+  const unnamed = <Menu.Section><Menu.Item>Help</Menu.Item></Menu.Section>;
+  expect(unnamed).toBeDefined();
+});
+
 it("updates controlled section selection without closing, with keyboard and typeahead", async () => {
   const changed = vi.fn();
   function Preferences() {

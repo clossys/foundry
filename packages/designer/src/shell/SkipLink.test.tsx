@@ -154,8 +154,33 @@ describe("SkipLink", () => {
       );
       const link = screen.getByRole("link", { name: "Skip to content" });
       expect(fireEvent.click(link)).toBe(true);
-      expect(fireEvent.keyDown(link, { key: " " })).toBe(true);
       expect(screen.getByRole("main")).not.toHaveFocus();
+    });
+
+    it("follows the href on Space when the target cannot take focus", async () => {
+      render(
+        <>
+          <SkipLink targetId="plain">Skip to content</SkipLink>
+          <main id="plain">Content</main>
+        </>,
+      );
+      const link = screen.getByRole("link", { name: "Skip to content" });
+      window.location.hash = "#/inbox/42";
+      await settle();
+      // The key event is canceled (no page scroll) and the fragment fallback runs.
+      expect(fireEvent.keyDown(link, { key: " " })).toBe(false);
+      await settle();
+      expect(window.location.hash).toBe("#plain");
+      expect(screen.getByRole("main")).not.toHaveFocus();
+    });
+
+    it("keeps the hash untouched on Space when the target takes focus", async () => {
+      render(<Page />);
+      const link = screen.getByRole("link", { name: "Skip to content" });
+      expect(fireEvent.keyDown(link, { key: " " })).toBe(false);
+      await settle();
+      expect(window.location.hash).toBe("#/inbox/42");
+      expect(screen.getByRole("main")).toHaveFocus();
     });
 
     it("falls back to the href when the target is not in the document", () => {

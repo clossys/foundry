@@ -48,7 +48,8 @@ export interface SkipLinkProps {
  * the fallback for the cases where this handler does not run or cannot move
  * focus: JavaScript is unavailable, the click is a modified or non-primary
  * one (open in a new tab), the target is not in the document, or the target
- * cannot take focus (for example it lacks `tabIndex={-1}`).
+ * cannot take focus (for example it lacks `tabIndex={-1}`). Space follows the
+ * same `href` fallback in those cases, as Enter does.
  */
 export function SkipLink({ targetId, children, className }: SkipLinkProps) {
   // True only when focus actually landed on the target. A target that cannot
@@ -69,11 +70,15 @@ export function SkipLink({ targetId, children, className }: SkipLinkProps) {
   };
 
   // A link activates on Enter natively (as a click); Space is added here so
-  // the control also answers to it, as a button would.
+  // the control also answers to it, as a button would. Space does not follow
+  // an `href` on its own, so when focus cannot move to the target the handler
+  // clicks the link, which runs the `href` fragment fallback exactly as Enter
+  // does, and also keeps Space from scrolling the page.
   const onKeyDown = (event: KeyboardEvent<HTMLAnchorElement>) => {
     if (event.defaultPrevented || event.key !== " ") return;
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-    if (jumpToTarget()) event.preventDefault();
+    event.preventDefault();
+    if (!jumpToTarget()) event.currentTarget.click();
   };
 
   return (

@@ -1675,8 +1675,9 @@ none of it reimplemented here.
 danger-colored styling, purely visual, doesn't change keyboard/selection
 behavior. `Menu.Separator` is a visual divider between item groups.
 
-`Menu.Section` groups entries under a real menu Header. Supply `heading` or
-`aria-label`. Its optional `selectionMode` (`none` or `multiple`), `selectedKeys`,
+`Menu.Section` groups entries under a real menu Header. Supply a non-empty
+`heading` or `aria-label`; the type requires one and a blank name throws a
+`TypeError`. Its optional `selectionMode` (`none` or `multiple`), `selectedKeys`,
 `onSelectionChange` and `shouldCloseOnSelect` belong to the section. Multiple
 selection produces `menuitemcheckbox` preferences; the caller owns checked
 values. Normal hover/focus retains the existing selected surface with no outline;
