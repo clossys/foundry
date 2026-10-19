@@ -26,7 +26,7 @@ function freeze<T>(value: T): T {
   }
   return value;
 }
-const revision = "f7c3bbda9289f3f66f1d702dd91bc2d76eb55b39";
+const revision = "eeb9b948a040c876aa5c71e4e04e7037e026a505";
 const measuredAt = "2026-10-19";
 const frame: InstanceBlockBinding["frameBlockRef"] = {
   blockId: "site-frame", role: "frame", medium: "web",
