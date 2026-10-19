@@ -319,3 +319,401 @@ describe("shared atom guidance", () => {
     expect(text).toContain("`" + categoricalEvidence + "`");
   });
 });
+
+// This test-only evaluator implements the documented skip policy. Other rules
+// remain authoring guidance, not reasons to exclude a comparison cell.
+function comparisonViolations(rules: readonly any[], values: Record<string, unknown>) {
+  const present = (prop: string) => values[prop] !== undefined;
+  return rules.filter(rule => {
+    if (!["requires", "exclusive", "paired"].includes(rule.kind)) return false;
+    if (rule.when && !matches(rule.when, values)) return false;
+    if (rule.kind === "paired") {
+      const count = rule.props.filter(present).length;
+      return count > 0 && count < rule.props.length;
+    }
+    if (rule.kind === "requires") return rule.requires.some((prop: string) => !present(prop));
+    if (rule.kind === "exclusive") {
+      if (rule.presence === "exactly-one") return rule.props.filter(present).length !== 1;
+      return rule.excludes.some(present);
+    }
+    return false;
+  });
+}
+
+function comparisonCells(comparison: any): Record<string, unknown>[] {
+  return comparison.columns.values.flatMap((column: unknown) => {
+    const cell = { [comparison.columns.option]: column };
+    return comparison.rows
+      ? comparison.rows.values.map((row: unknown) => ({ ...cell, [comparison.rows.option]: row }))
+      : [cell];
+  });
+}
+
+// Deliberate preference pins: changing a valid finite option still changes this contract.
+const comparisonGolden: Record<string, {
+  columns: { option: string; values: (string | number | boolean)[] };
+  rows?: { option: string; values: (string | number | boolean)[] };
+  maxCells: number;
+  retainedCells: number;
+}> = {
+  "act.button": {
+    columns: {"option": "variant", "values": ["primary", "secondary", "ghost", "danger", "outline", "tonal", "quiet"]},
+    rows: {"option": "size", "values": ["sm", "md", "lg"]},
+    maxCells: 21,
+    retainedCells: 21,
+  },
+  "act.icon-button": {
+    columns: {"option": "shape", "values": ["circle", "square"]},
+    rows: {"option": "size", "values": ["sm", "md"]},
+    maxCells: 4,
+    retainedCells: 4,
+  },
+  "act.link": {
+    columns: {"option": "variant", "values": ["default", "muted", "standalone"]},
+    maxCells: 3,
+    retainedCells: 3,
+  },
+  "act.menu": {
+    columns: {"option": "triggerAction", "values": ["press", "longPress", "contextMenu"]},
+    maxCells: 3,
+    retainedCells: 3,
+  },
+  "enter.text-field": {
+    columns: {"option": "isInvalid", "values": [false, true]},
+    rows: {"option": "isDisabled", "values": [false, true]},
+    maxCells: 4,
+    retainedCells: 4,
+  },
+  "enter.textarea": {
+    columns: {"option": "isInvalid", "values": [false, true]},
+    rows: {"option": "isDisabled", "values": [false, true]},
+    maxCells: 4,
+    retainedCells: 4,
+  },
+  "enter.search-field": {
+    columns: {"option": "isInvalid", "values": [false, true]},
+    rows: {"option": "isDisabled", "values": [false, true]},
+    maxCells: 4,
+    retainedCells: 4,
+  },
+  "enter.date-field": {
+    columns: {"option": "isInvalid", "values": [false, true]},
+    rows: {"option": "isDisabled", "values": [false, true]},
+    maxCells: 4,
+    retainedCells: 4,
+  },
+  "enter.select": {
+    columns: {"option": "isInvalid", "values": [false, true]},
+    rows: {"option": "isDisabled", "values": [false, true]},
+    maxCells: 4,
+    retainedCells: 4,
+  },
+  "enter.combo-box": {
+    columns: {"option": "isInvalid", "values": [false, true]},
+    rows: {"option": "isDisabled", "values": [false, true]},
+    maxCells: 4,
+    retainedCells: 4,
+  },
+  "enter.checkbox": {
+    columns: {"option": "isSelected", "values": [false, true]},
+    rows: {"option": "isDisabled", "values": [false, true]},
+    maxCells: 4,
+    retainedCells: 4,
+  },
+  "enter.switch": {
+    columns: {"option": "isSelected", "values": [false, true]},
+    rows: {"option": "isDisabled", "values": [false, true]},
+    maxCells: 4,
+    retainedCells: 4,
+  },
+  "enter.radio-group": {
+    columns: {"option": "orientation", "values": ["horizontal", "vertical"]},
+    rows: {"option": "isDisabled", "values": [false, true]},
+    maxCells: 4,
+    retainedCells: 4,
+  },
+  "enter.file-trigger": {
+    columns: {"option": "allowsMultiple", "values": [false, true]},
+    rows: {"option": "defaultCamera", "values": ["user", "environment"]},
+    maxCells: 4,
+    retainedCells: 4,
+  },
+  "enter.field": {
+    columns: {"option": "isRequired", "values": [false, true]},
+    rows: {"option": "isInvalid", "values": [false, true]},
+    maxCells: 4,
+    retainedCells: 4,
+  },
+  "enter.resize-handle": {
+    columns: {"option": "orientation", "values": ["vertical", "horizontal"]},
+    rows: {"option": "dir", "values": ["ltr", "rtl"]},
+    maxCells: 4,
+    retainedCells: 4,
+  },
+  "inform.badge": {
+    columns: {"option": "variant", "values": ["neutral", "success", "warning", "danger", "info"]},
+    maxCells: 5,
+    retainedCells: 5,
+  },
+  "inform.banner": {
+    columns: {"option": "variant", "values": ["info", "success", "warning", "danger"]},
+    maxCells: 4,
+    retainedCells: 4,
+  },
+  "inform.chip": {
+    columns: {"option": "isDisabled", "values": [false, true]},
+    maxCells: 2,
+    retainedCells: 2,
+  },
+  "inform.status-mark": {
+    columns: {"option": "tone", "values": ["success", "warning", "danger", "info", "neutral"]},
+    maxCells: 5,
+    retainedCells: 5,
+  },
+  "inform.meter": {
+    columns: {"option": "tone", "values": ["success", "warning", "danger", "info", "neutral", "accent"]},
+    rows: {"option": "emphasis", "values": ["default", "figure"]},
+    maxCells: 12,
+    retainedCells: 12,
+  },
+  "inform.progress-bar": {
+    columns: {"option": "isIndeterminate", "values": [false, true]},
+    maxCells: 2,
+    retainedCells: 2,
+  },
+  "inform.spinner": {
+    columns: {"option": "size", "values": ["sm", "md", "lg"]},
+    maxCells: 3,
+    retainedCells: 3,
+  },
+  "inform.skeleton": {
+    columns: {"option": "shape", "values": ["text", "block", "circle"]},
+    maxCells: 3,
+    retainedCells: 3,
+  },
+  "group.card": {
+    columns: {"option": "variant", "values": ["raised", "plate", "outline"]},
+    maxCells: 3,
+    retainedCells: 3,
+  },
+  "group.table": {
+    columns: {"option": "selectionMode", "values": ["none", "single", "multiple"]},
+    maxCells: 3,
+    retainedCells: 3,
+  },
+  "group.separator": {
+    columns: {"option": "orientation", "values": ["horizontal", "vertical"]},
+    rows: {"option": "decorative", "values": [false, true]},
+    maxCells: 4,
+    retainedCells: 4,
+  },
+  "depict.avatar": {
+    columns: {"option": "size", "values": ["sm", "md", "lg"]},
+    maxCells: 3,
+    retainedCells: 3,
+  },
+  "depict.icon": {
+    columns: {"option": "size", "values": ["sm", "md", "lg"]},
+    maxCells: 3,
+    retainedCells: 3,
+  },
+  "reveal.dialog": {
+    columns: {"option": "size", "values": ["sm", "md", "lg"]},
+    rows: {"option": "isDismissable", "values": [false, true]},
+    maxCells: 6,
+    retainedCells: 6,
+  },
+  "reveal.tooltip": {
+    columns: {"option": "triggerAction", "values": ["hover", "focus"]},
+    maxCells: 2,
+    retainedCells: 2,
+  },
+  "reveal.tabs": {
+    columns: {"option": "orientation", "values": ["horizontal", "vertical"]},
+    rows: {"option": "isDisabled", "values": [false, true]},
+    maxCells: 4,
+    retainedCells: 4,
+  },
+  "depict.bar-chart": {
+    columns: {"option": "fit", "values": ["fixed", "fluid"]},
+    rows: {"option": "marks", "values": ["interactive", "static"]},
+    maxCells: 4,
+    retainedCells: 4,
+  },
+  "depict.waterfall-chart": {
+    columns: {"option": "fit", "values": ["fixed", "fluid"]},
+    maxCells: 2,
+    retainedCells: 2,
+  },
+  "depict.range-chart": {
+    columns: {"option": "fit", "values": ["fixed", "fluid"]},
+    maxCells: 2,
+    retainedCells: 2,
+  },
+  "depict.scatter-chart": {
+    columns: {"option": "fit", "values": ["fixed", "fluid"]},
+    maxCells: 2,
+    retainedCells: 2,
+  },
+};
+
+describe("finite atom comparisons", () => {
+  const comparisons = () => (atoms as unknown as { ATOM_COMPARISON?: Record<string, any> }).ATOM_COMPARISON;
+
+  it("declares a nonempty comparison exactly for leaves with finite options", () => {
+    expect(comparisons()).toBeDefined();
+    const finiteIds = Object.entries(facts()).filter(([, fact]) => fact.options.length > 0).map(([id]) => id);
+    expect(Object.keys(comparisons()!).sort()).toEqual(finiteIds.sort());
+    for (const [id, comparison] of Object.entries(comparisons()!)) {
+      expect(comparison.columns, id).toBeDefined();
+      expect(comparison.columns.values.length, id).toBeGreaterThan(0);
+    }
+  });
+
+  it("pins every preferred axis, ordered value, exact budget and retained count", () => {
+    expect(Object.keys(comparisons()!).sort()).toEqual(Object.keys(comparisonGolden).sort());
+    for (const [id, expected] of Object.entries(comparisonGolden)) {
+      const comparison = comparisons()![id];
+      expect(comparison.columns, id).toEqual(expected.columns);
+      expect(comparison.rows, id).toEqual(expected.rows);
+      expect(comparison.maxCells, id).toBe(expected.maxCells);
+      // Supply Icon's non-axis content/name; other forbidding rules are inactive
+      // when their optional authored inputs are absent in this finite-axis fixture.
+      const authored = id === "depict.icon" ? { glyph: [], label: "Search" } : {};
+      const retained = comparisonCells(comparison).filter(cell =>
+        comparisonViolations(comparison.constraints, { ...cell, ...authored }).length === 0);
+      expect(retained.length, id).toBe(expected.retainedCells);
+      for (const axis of [comparison.columns, ...(comparison.rows ? [comparison.rows] : [])]) {
+        const option = facts()[id].options.find((candidate: any) => candidate.prop === axis.option);
+        if (option.default.kind === "value") {
+          expect(axis.values, `${id}.${axis.option} default`).toContain(option.default.value);
+          expect(retained.some(cell => cell[axis.option] === option.default.value), id).toBe(true);
+        }
+      }
+    }
+  });
+
+  it("retains Card's raised default and Link's three text appearances", () => {
+    const card = comparisons()!["group.card"];
+    expect(comparisonCells(card)).toEqual([{ variant: "raised" }, { variant: "plate" }, { variant: "outline" }]);
+    expect(comparisonCells(comparisons()!["act.link"])).toEqual([
+      { variant: "default" }, { variant: "muted" }, { variant: "standalone" },
+    ]);
+    expect(comparisonViolations(card.constraints, { variant: "raised", ground: "base" })).toEqual([]);
+  });
+
+  it("never excludes cells for applicability, derivation or data guidance", () => {
+    const fixtures = [
+      ["act.button", { variant: "primary", ground: "base", trailingIcon: null }],
+      ["act.link", { variant: "muted", buttonVariant: "primary" }],
+      ["group.card", { variant: "raised", ground: "base" }],
+      ["inform.meter", { direction: "higher-is-better" }],
+      ["inform.banner", { variant: "danger" }],
+      ["inform.status-mark", { tone: "warning" }],
+      ["enter.resize-handle", { value: Number.NaN }],
+    ] as const;
+    for (const [id, values] of fixtures) {
+      expect(comparisonViolations(comparisons()![id].constraints, values), id).toEqual([]);
+    }
+    // A retained cell still requires valid authored inputs; data validation is
+    // distinct from this policy and is not provided by comparison metadata.
+  });
+
+  it("documents the same forbidding-only policy on every consumer surface", () => {
+    for (const file of ["README.md", "skill/SKILL.md", "skill/atoms-guide.md"]) {
+      const text = readFileSync(join(root, file), "utf8");
+      expect(text, file).toContain('`constraintPolicy: "skip-violations"`');
+      expect(text, file).toContain("only `requires`, `exclusive` and `paired`");
+      expect(text, file).toContain("never skip");
+    }
+  });
+
+  it("uses only existing finite axes and values with a bounded cell budget", () => {
+    expect(comparisons()).toBeDefined();
+    for (const [id, comparison] of Object.entries(comparisons()!)) {
+      const axes = [comparison.columns, ...(comparison.rows ? [comparison.rows] : [])];
+      expect(new Set(axes.map(axis => axis.option)).size, id).toBe(axes.length);
+      for (const axis of axes) {
+        const option = facts()[id].options.find((candidate: any) => candidate.prop === axis.option);
+        expect(option, `${id}.${axis.option} must be a source-checked finite option`).toBeDefined();
+        expect(axis.values).not.toBe(option.values);
+        expect(Object.isFrozen(option.values), id).toBe(false);
+        expect(axis.values.length, id).toBeGreaterThan(0);
+        expect(new Set(axis.values).size, id).toBe(axis.values.length);
+        for (const value of axis.values) {
+          expect(["string", "number", "boolean"]).toContain(typeof value);
+          expect(option.values, `${id}.${axis.option}`).toContain(value);
+          if (typeof value === "number") expect(Number.isFinite(value)).toBe(true);
+        }
+      }
+      expect(Number.isInteger(comparison.maxCells), id).toBe(true);
+      expect(comparison.maxCells, id).toBeLessThanOrEqual(24);
+      expect(comparison.maxCells, id).toBe(comparisonCells(comparison).length);
+    }
+  });
+
+  it("retains original constraint references without freezing existing metadata", () => {
+    expect(comparisons()).toBeDefined();
+    expect(Object.isFrozen(comparisons())).toBe(true);
+    for (const [id, comparison] of Object.entries(comparisons()!)) {
+      const rules = guidance()[id].media.web.implementation.constraints;
+      expect(comparison.constraints, id).toBe(rules);
+      expect(comparison.constraintPolicy, id).toBe("skip-violations");
+      expect(Object.isFrozen(comparison), id).toBe(true);
+      for (const axis of [comparison.columns, ...(comparison.rows ? [comparison.rows] : [])]) {
+        expect(Object.isFrozen(axis), id).toBe(true);
+        expect(Object.isFrozen(axis.values), id).toBe(true);
+      }
+      expect(Object.isFrozen(rules), id).toBe(false);
+      for (const rule of rules) expect(Object.isFrozen(rule), id).toBe(false);
+    }
+  });
+
+  it("flags concrete non-axis Icon, Chip and Meter violations from retained rules", () => {
+    expect(comparisons()).toBeDefined();
+    const fixtures: { id: string; valid: Record<string, unknown>[]; invalid: { values: Record<string, unknown>; kinds: string[] }[] }[] = [
+      {
+        id: "depict.icon",
+        valid: [{ glyph: [], decorative: true }, { glyph: [], label: "Search" }, { children: "Markup", label: "Symbol" }],
+        invalid: [
+          { values: { glyph: [], decorative: true, label: "Search" }, kinds: ["exclusive"] },
+          { values: { glyph: [], children: "Markup", decorative: true }, kinds: ["exclusive"] },
+          { values: { decorative: true }, kinds: ["exclusive"] },
+          { values: { glyph: [], decorative: false }, kinds: ["requires"] },
+          { values: { glyph: [] }, kinds: ["requires"] },
+        ],
+      },
+      {
+        id: "inform.chip",
+        valid: [{ children: "Filter" }, { children: "Filter", onRemove: () => {}, removeLabel: "Remove Filter" }],
+        invalid: [{ values: { children: "Filter", onRemove: () => {} }, kinds: ["requires"] }],
+      },
+      {
+        id: "inform.meter",
+        valid: [
+          { value: 5, scaleMax: 10, valueText: "5" },
+          { value: 5, scaleMax: 10, valueText: "5", previous: 0, previousText: "Previously zero" },
+        ],
+        invalid: [
+          { values: { value: 5, scaleMax: 10, valueText: "5", previous: 0 }, kinds: ["paired"] },
+          { values: { value: 5, scaleMax: 10, valueText: "5", previousText: "Previously zero" }, kinds: ["paired"] },
+        ],
+      },
+    ];
+    for (const { id, valid, invalid } of fixtures) {
+      const comparison = comparisons()![id];
+      const rules = guidance()[id].media.web.implementation.constraints;
+      for (const cell of comparisonCells(comparison)) {
+        for (const authored of valid) {
+          expect(comparisonViolations(comparison.constraints, { ...cell, ...authored }), id).toEqual([]);
+        }
+        for (const { values, kinds } of invalid) {
+          const flagged = comparisonViolations(comparison.constraints, { ...cell, ...values });
+          expect(flagged.map(rule => rule.kind), `${id} ${JSON.stringify(values)}`).toEqual(kinds);
+          for (const rule of flagged) expect(rules).toContain(rule);
+          expect(comparison.constraintPolicy).toBe("skip-violations");
+        }
+      }
+    }
+  });
+});
