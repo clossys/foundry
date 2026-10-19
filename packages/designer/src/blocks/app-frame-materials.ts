@@ -43,6 +43,6 @@ export const APP_FRAME_MATERIALS = [
       { exportName: "IconButton", source: "src/atoms/IconButton.tsx" },
     ],
     configs: [],
-    authoredInputs: ["heading", "searchLabel", "closeLabel", "emptyMessage", "groups", "isOpen", "onOpenChange", "query", "onQueryChange", "filter", "dir"],
+    authoredInputs: ["heading", "searchLabel", "closeLabel", "emptyMessage", "groups", "isOpen", "onOpenChange", "query", "onQueryChange", "filter", "dir", "resultCountMessage"],
   },
 ] as const;

@@ -29,6 +29,22 @@ describe("AppFrame Material registration", () => {
     view.unmount();
   });
 
+  it("forwards the authored CommandMenu count message from its real record", () => {
+    const command = materials().find((entry: any) => entry.id === "command-menu");
+    const supplied = {
+      heading: "Commands", searchLabel: "Search commands", closeLabel: "Close commands",
+      emptyMessage: "No matching commands", groups: [], isOpen: true,
+      onOpenChange: (_open: boolean) => {}, query: "", onQueryChange: (_query: string) => {},
+      resultCountMessage: (count: number) => `Commands found: ${count}`,
+    };
+    const authored = Object.fromEntries(command.authoredInputs
+      .filter((name: string) => name in supplied)
+      .map((name: keyof typeof supplied) => [name, supplied[name]]));
+    const view = render(createElement(blocks.CommandMenu, authored as ComponentProps<typeof blocks.CommandMenu>));
+    expect(view.getByRole("status")).toHaveTextContent(/^Commands found: 0$/);
+    view.unmount();
+  });
+
   it("registers actual exported Block components, named regions, dependencies and finite configs", () => {
     expect(materials().map((entry: any) => entry.id)).toEqual(["panel", "drawer", "resizable-pane", "command-menu"]);
     for (const entry of materials()) {
