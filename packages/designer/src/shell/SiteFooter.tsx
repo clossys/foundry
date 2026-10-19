@@ -1,7 +1,7 @@
 import { Children, cloneElement, isValidElement, type HTMLAttributes, type ReactNode } from "react";
 import { cx } from "../atoms/internal/cx.js";
 import { SITE_CHROME_GROUND_CLASSES, siteChromeHasBorder, type SiteChromeGround } from "./internal/shell-ground.js";
-import { UI_BORDER_HAIRLINE, UI_LAYOUT_TAP_TARGET, UI_WIDTH_PAGE_PADDING_X, UI_Z_SHELL } from "./internal/shell-vars.js";
+import { UI_BORDER_HAIRLINE, UI_BRANDMARK_HEIGHT_SM, UI_LAYOUT_TAP_TARGET, UI_WIDTH_PAGE_PADDING_X, UI_Z_SHELL } from "./internal/shell-vars.js";
 
 export interface SiteFooterProps extends Omit<HTMLAttributes<HTMLElement>, "children"> {
   /**
@@ -194,7 +194,7 @@ function SiteFooterLegal({ entity, links, linksLabel, icons = [], home, iconsLab
             <a href={link.href} aria-label={link.label} rel={externalRel(link.href)} className={LEGAL_LINK_CLASSES} style={LEGAL_LINK_STYLE}>{link.icon}</a>
           </li>)}
           {home ? <li><a href={home.href} aria-label={home.label} rel={externalRel(home.href)} className={LEGAL_LINK_CLASSES} style={LEGAL_LINK_STYLE}>
-            <img src={home.markSrc} alt="" style={{ height: "var(--ui-brandmark-height-sm, 24px)", width: "auto" }} />
+            <img src={home.markSrc} alt="" style={{ height: UI_BRANDMARK_HEIGHT_SM, width: "auto" }} />
           </a></li> : null}
         </ul>
       </IconGroup>
