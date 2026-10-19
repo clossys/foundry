@@ -1,24 +1,33 @@
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { describe, expect, it } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { Home, Settings } from "../icons/index.js";
 import { SiteHeader } from "./SiteHeader.js";
+import { NavDisclosure } from "./NavDisclosure.js";
 import { SiteHeader as ServerSiteHeader } from "./server.js";
 import { CONTRAST_PAIRS } from "../tokens/contrast-pairs.js";
 
 describe("SiteHeader", () => {
-  it("preserves the main branch's flow markup with a plain nav and icon action", () => {
-    const html = renderToStaticMarkup(
-      <SiteHeader
-        brand={<a href="/">Example</a>}
-        nav={<nav aria-label="Primary"><a href="/about">About</a></nav>}
-        actions={<SiteHeader.ActionLink href="/app" label="App" icon={Home} />}
-      />,
-    );
-    expect(html).toBe('<header class="bg-surface-raised py-sm border-b border-line-base" style="position:relative;z-index:var(--ui-z-shell, 20);border-bottom-width:var(--ui-border-hairline, 1px)"><div class="mx-auto flex w-full flex-wrap items-center justify-between gap-md" style="padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))"><div class="flex items-center gap-lg"><a href="/">Example</a><nav aria-label="Primary"><a href="/about">About</a></nav></div><div class="flex items-center gap-sm"><a href="/app" class="inline-flex items-center justify-center gap-sm rounded-control font-body transition-colors motion-reduce:transition-none px-sm py-xs text-body-s bg-surface-raised text-ink-primary border border-line-base hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent" style="min-height:var(--ui-layout-tap-target, 44px);min-width:var(--ui-layout-tap-target, 44px)"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="width:var(--ui-icon-sm, var(--spacing-lg, 16px));height:var(--ui-icon-sm, var(--spacing-lg, 16px));flex-shrink:0;stroke-width:var(--ui-icon-stroke, 2)" aria-hidden="true"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"></path><path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg><span class="sr-only tablet:not-sr-only">App</span></a></div></div></header>');
+  it.each(["plain", "disclosure", "none"])("keeps %s navigation in desktop layout across resize", supply => {
+    vi.stubGlobal("matchMedia", () => ({ matches: true, addEventListener() {}, removeEventListener() {} }));
+    const links = <a href="/about">About</a>;
+    try {
+      render(<SiteHeader brand="Example" nav={supply === "plain" ? <nav>{links}</nav> : supply === "disclosure" ? <NavDisclosure>{links}</NavDisclosure> : undefined} />);
+      fireEvent.resize(window);
+      expect(screen.getByRole("banner")).not.toHaveAttribute("data-collapsed");
+    } finally { vi.unstubAllGlobals(); }
+  });
+
+  it("uses the mandatory centered responsive structure with a plain nav and icon action", () => {
+    const { container } = render(<SiteHeader brand={<a href="/">Example</a>} nav={<nav aria-label="Primary"><a href="/about">About</a></nav>} actions={<SiteHeader.ActionLink href="/app" label="App" icon={Home} />} />);
+    expect(container.querySelector("header")).toHaveClass("site-header-contract");
+    expect(container.querySelector(".site-header-row > .site-header-brand")).toHaveTextContent("Example");
+    expect(container.querySelector(".site-header-row > nav")).toHaveAttribute("aria-label", "Primary");
+    expect(container.querySelector(".site-header-row > .site-header-actions a")).toHaveAttribute("href", "/app");
+    expect(container.querySelectorAll("header, header nav")).toHaveLength(2);
   });
 
   it("renders the brand, nav, and actions slots", () => {
@@ -64,16 +73,15 @@ describe("SiteHeader", () => {
     const [leading, center, trailing] = Array.from(row.children) as HTMLElement[];
     expect(row.children).toHaveLength(3);
     expect(leading).toContainElement(screen.getByText("Acme"));
-    expect(center).toContainElement(screen.getByRole("navigation", { name: "Primary" }));
+    expect(center).toBe(screen.getByRole("navigation", { name: "Primary" }));
     const secondary = screen.getByRole("link", { name: "Sign in" });
     const primary = screen.getByRole("button", { name: "Get started" });
     expect(trailing).toContainElement(secondary);
     expect(trailing).toContainElement(primary);
     expect(secondary.compareDocumentPosition(primary) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(leading.className).toContain("flex-1");
-    expect(trailing.className).toContain("flex-1");
-    expect(center.className).not.toContain("flex-1");
-    expect(trailing.className).toContain("justify-end");
+    expect(leading).toHaveClass("site-header-brand");
+    expect(trailing).toHaveClass("site-header-actions");
+    expect(row).toHaveClass("site-header-row");
   });
 
   it("the centered layout has exactly one banner and one navigation landmark", () => {
@@ -90,9 +98,11 @@ describe("SiteHeader", () => {
     expect(screen.getAllByRole("navigation")).toHaveLength(1);
   });
 
-  it("leading placement stays the default and takes the secondary action", () => {
+  it("explicit legacy leading placement takes the secondary action", () => {
     render(
       <SiteHeader
+        navPlacement="leading"
+        mobileLayout="inline"
         brand={<span>Acme</span>}
         nav={<nav aria-label="Primary">Links</nav>}
         secondaryAction={<a href="/sign-in">Sign in</a>}
@@ -136,7 +146,7 @@ describe("SiteHeader", () => {
   });
 
   describe("badge alone", () => {
-    it("the leading layout renders the trailing region when only a surface label is given", () => {
+    it("retains a structural trailing region when only a surface label is given", () => {
       render(<SiteHeader brand={<span>Acme</span>} surfaceLabel="demo" />);
       const row = screen.getByRole("banner").firstElementChild as HTMLElement;
       expect(row.children).toHaveLength(2);
@@ -145,10 +155,11 @@ describe("SiteHeader", () => {
       expect(trailing.children).toHaveLength(1);
     });
 
-    it("renders no badge, and no trailing region, without a surface label", () => {
+    it("keeps empty equal tracks noninteractive without a surface label", () => {
       render(<SiteHeader brand={<span>Acme</span>} />);
       const row = screen.getByRole("banner").firstElementChild as HTMLElement;
-      expect(row.children).toHaveLength(1);
+      expect(row.children).toHaveLength(2);
+      expect(row.lastElementChild!.children).toHaveLength(0);
       expect(screen.getByRole("banner")).not.toHaveTextContent("admin");
     });
   });
@@ -179,8 +190,7 @@ describe("SiteHeader", () => {
       expect(new Set(gated)).toEqual(new Set(["--color-ink-on-inverse"]));
     });
 
-    const FLOW_MARKUP =
-      '<header class="bg-surface-raised py-sm border-b border-line-base" style="position:relative;z-index:var(--ui-z-shell, 20);border-bottom-width:var(--ui-border-hairline, 1px)"><div class="mx-auto flex w-full flex-wrap items-center justify-between gap-md" style="padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))"><div class="flex items-center gap-lg"><span>Acme</span></div></div></header>';
+    const FLOW_MARKUP = renderToStaticMarkup(<SiteHeader brand={<span>Acme</span>} navPlacement="centered" mobileLayout="menu-brand-action" placement="flow" />);
 
     it("defaults to flow, byte-identical to a header given no placement, tone or menu props", () => {
       const html = renderToStaticMarkup(<SiteHeader brand={<span>Acme</span>} />);
@@ -205,7 +215,7 @@ describe("SiteHeader", () => {
     it("overlay paints through the site-header-overlay utility, with no ground plate or border classes", () => {
       render(<SiteHeader brand={<span>Acme</span>} placement="overlay" ground="inverse" />);
       const classes = screen.getByRole("banner").className.split(" ");
-      expect(classes).toEqual(["site-header-overlay", "text-ink-primary", "py-sm"]);
+      expect(classes).toEqual(["site-header-overlay", "text-ink-primary", "py-sm", "site-header-contract"]);
       expect(screen.getByRole("banner").style.borderBottomWidth).toBe("");
     });
 
@@ -232,7 +242,7 @@ describe("SiteHeader", () => {
       const html = renderToStaticMarkup(
         <ServerSiteHeader brand={<span>Acme</span>} placement="overlay" className="my-header" style={{ zIndex: 5 }} />,
       );
-      expect(html).toContain('class="site-header-overlay text-ink-primary py-sm my-header"');
+      expect(html).toContain('class="site-header-overlay text-ink-primary py-sm site-header-contract my-header"');
       expect(html).toContain("position:fixed");
       expect(html).toContain("z-index:5");
       expect(html).toContain('data-placement="overlay"');
@@ -334,4 +344,23 @@ describe("SiteHeader", () => {
       expect(html).toContain(">Home</span>");
     });
   });
+});
+
+
+it("ships the default header candidate and a shared frame clearance including safe areas", () => {
+  const styles = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "styles");
+  const css = readFileSync(join(styles, "compiled.css"), "utf8");
+  expect(css).toContain(".site-header-row {");
+  const clearance = "var(--site-header-clearance, calc(max(var(--ui-layout-tap-target, 44px), var(--ui-brandmark-height-lg, 48px)) + 2 * var(--spacing-sm, 8px) + var(--ui-border-hairline, 1px) + env(safe-area-inset-top, 0px)))";
+  expect(css).toContain(`scroll-margin-block-start: ${clearance}`);
+  expect(css).toContain(`padding-block-start: ${clearance}`);
+  expect(css).toContain(`max-block-size: calc(100dvb - ${clearance} - env(safe-area-inset-bottom, 0px))`);
+  expect(css).toContain("env(safe-area-inset-bottom");
+  expect(css).toContain("env(safe-area-inset-top");
+  expect(css).toContain(".site-header-contract[data-header-root] .site-header-actions");
+  expect(readFileSync(join(styles, "theme-keys.css"), "utf8").match(/& \.nav-disclosure-panel \{[^\n]*padding-inline:[^\n]+/g)?.at(-1)).toContain("padding-inline: max(var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px)), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px))");
+});
+
+it("documents the two decorative icon bars", () => {
+  expect(readFileSync(join(dirname(fileURLToPath(import.meta.url)), "..", "..", "README.md"), "utf8")).toContain("icon toggle draws two\ndecorative bars");
 });

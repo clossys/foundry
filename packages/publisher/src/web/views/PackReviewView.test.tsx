@@ -326,9 +326,9 @@ describe("PackReviewView", () => {
     });
     expect(html).toBe(
       "<div class=\"flex min-h-dvh flex-col\">" +
-      "<header class=\"bg-surface-raised py-sm border-b border-line-base\" style=\"position:relative;z-index:var(--ui-z-shell, 20);border-bottom-width:var(--ui-border-hairline, 1px)\">" +
-      "<div class=\"mx-auto flex w-full flex-wrap items-center justify-between gap-md\" style=\"padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))\">" +
-      "<div class=\"flex items-center gap-lg\"><span>Example Studio</span></div><div class=\"flex items-center gap-sm\">" +
+      "<header data-header-root=\"\" class=\"bg-surface-raised py-sm border-b border-line-base site-header-contract\" style=\"position:relative;z-index:var(--ui-z-shell, 20);border-bottom-width:var(--ui-border-hairline, 1px)\">" +
+      "<div class=\"site-header-row\">" +
+      "<div class=\"site-header-brand\"><span>Example Studio</span></div><div class=\"site-header-actions\">" +
       "<span class=\"inline-flex items-center rounded-pill px-sm py-xs text-caption font-body tracking-meta bg-surface-sunken text-ink-secondary\">Marker surface</span>" +
       "</div></div></header>" +
       "<main class=\"mx-auto flex w-full flex-1 flex-col gap-xl px-lg py-2xl\" style=\"max-width:var(--ui-width-form-max, none)\">" +
@@ -405,7 +405,7 @@ describe("PackReviewView header slots", () => {
 
   it("passes ground to both the header and the footer", () => {
     const html = renderToStaticMarkup(<PackReviewView {...props({ ground: "transparent" })} />);
-    expect(html).toMatch(/^<div class="flex min-h-dvh flex-col"><header class="py-sm" /);
+    expect(html).toMatch(/^<div class="flex min-h-dvh flex-col"><header data-header-root="" class="py-sm site-header-contract" /);
     expect(html).toMatch(/<footer class="text-ink-primary py-lg" /);
   });
 });

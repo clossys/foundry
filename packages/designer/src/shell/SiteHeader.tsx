@@ -87,14 +87,14 @@ export interface SiteHeaderProps extends Omit<HTMLAttributes<HTMLElement>, "chil
    * brand; `"centered"` gives brand, nav, and trailing controls their own
    * regions, with the brand and trailing regions growing equally so the nav
    * centers on the header. Logical properties only, so RTL mirrors.
-   * @default "leading"
+   * @default "centered"
    */
   navPlacement?: "leading" | "centered";
   /**
    * Below tablet, place navigation at inline-start, the brand in a shrinkable
    * center column and actions at inline-end. From tablet up, `navPlacement`
    * still controls the row. DOM and tab order remain brand, nav, actions.
-   * @default "inline"
+   * @default "menu-brand-action"
    */
   mobileLayout?: "inline" | "menu-brand-action";
   /**
@@ -203,8 +203,8 @@ function SiteHeaderRoot({
   actions,
   secondaryAction,
   surfaceLabel,
-  navPlacement = "leading",
-  mobileLayout = "inline",
+  navPlacement = "centered",
+  mobileLayout = "menu-brand-action",
   ground = "base",
   placement = "flow",
   tone = "base",
@@ -213,6 +213,7 @@ function SiteHeaderRoot({
   style,
   ...rest
 }: SiteHeaderProps) {
+  const contract = navPlacement === "centered" && mobileLayout === "menu-brand-action";
   const overlay = placement === "overlay";
   const mobileMenu = mobileLayout === "menu-brand-action";
   const colors = SITE_CHROME_GROUND_CLASSES[ground];
@@ -224,11 +225,12 @@ function SiteHeaderRoot({
   return (
     <header
       {...rest}
+      {...(contract ? { "data-header-root": "" } : {})}
       {...(overlay ? { "data-placement": "overlay", "data-tone": tone, "data-menu-open": menuOpen ? "" : undefined } : {})}
       className={
         overlay
-          ? cx("site-header-overlay", OVERLAY_INK_CLASSES[tone], "py-sm", className)
-          : cx(colors.surface, "py-sm", bordered ? cx("border-b", colors.border) : "", className)
+          ? cx("site-header-overlay", OVERLAY_INK_CLASSES[tone], "py-sm", contract && "site-header-contract", className)
+          : cx(colors.surface, "py-sm", bordered ? cx("border-b", colors.border) : "", contract && "site-header-contract", className)
       }
       style={
         overlay
@@ -241,7 +243,13 @@ function SiteHeaderRoot({
             }
       }
     >
-      {navPlacement === "centered" ? (
+      {contract ? (
+        <div className="site-header-row">
+          <div className="site-header-brand">{tonedBrand}</div>
+          {nav}
+          <div className="site-header-actions">{secondaryAction}{actions}{surfaceLabel ? <Badge variant="neutral">{surfaceLabel}</Badge> : null}</div>
+        </div>
+      ) : navPlacement === "centered" ? (
         <div
           className={mobileMenu ? "mx-auto grid w-full items-center gap-md tablet:flex tablet:flex-wrap" : "mx-auto flex w-full flex-wrap items-center gap-md"}
           style={{ paddingInline: UI_WIDTH_PAGE_PADDING_X, ...(mobileMenu ? { gridTemplateColumns: "auto minmax(0, 1fr) auto" } : {}) }}
