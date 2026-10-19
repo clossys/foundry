@@ -49,6 +49,12 @@ export type SiteBrandInput = {
   readonly plate?: "self" | "shared";
   /** Omitted inherits inverse overlay header ink; explicit auto keeps ordinary ink. */
   readonly tone?: "auto" | "inverse";
+  /**
+   * How the mark is painted. Omitted or `"image"` renders the asset as it is;
+   * `"accent"` paints the mark's shape in the accent token, using the asset as
+   * a mask, so supply a single-colour mark.
+   */
+  readonly markInk?: "image" | "accent";
 } & ({ readonly variant: "mark"; readonly wordmark?: never } | { readonly variant: "lockup"; readonly wordmark: CopyRef });
 
 /**

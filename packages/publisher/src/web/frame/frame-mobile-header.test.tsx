@@ -159,6 +159,41 @@ it.each([undefined, "auto", "inverse"] as const)("retains overlay brand tone %s 
   expect(brand).toHaveClass(tone === "auto" ? "text-ink-primary" : "text-ink-on-inverse");
 });
 
+it.each([false, true])("names a mark-only brand from its label and renders no wordmark (server=%s)", server => {
+  const container = output({ ...base, mobileLayout: "menu-brand-action" }, server);
+  const brand = within(container).getByRole("link", { name: "Example home" });
+  expect(brand).toHaveTextContent("");
+  expect(brand.querySelector("[data-brand-wordmark]")).toBeNull();
+  expect(brand.querySelectorAll("[data-brand-mark]")).toHaveLength(1);
+});
+
+it.each([undefined, "auto", "inverse"] as const)("paints an accent mark in the accent token with wordmark ink from the surface tone %s", tone => {
+  const shell: SiteShellInput = {
+    ...base,
+    brand: { assetId: "mark", label: ref("Example home"), size: "md", variant: "lockup", wordmark: ref("Example"), markInk: "accent", tone },
+    mobileLayout: "menu-brand-action",
+    header: { placement: "overlay", tone: "inverse" },
+  };
+  expect(renderToString(tree(shell))).toBe(renderToString(tree(shell, true)));
+  const brand = within(output(shell)).getByRole("link", { name: "Example home" });
+  const mark = brand.querySelector("[data-brand-mark]") as HTMLElement;
+  expect(brand.querySelector("img")).toBeNull();
+  expect(mark).toHaveAttribute("aria-hidden", "true");
+  expect(mark).toHaveClass("bg-accent");
+  expect(mark.getAttribute("style")).toContain('mask-image:url("/mark.svg")');
+  expect(brand).toHaveClass(tone === "auto" ? "text-ink-primary" : "text-ink-on-inverse");
+  expect(brand.querySelector("[data-brand-wordmark]")).toHaveTextContent("Example");
+  expect(brand.querySelector("[data-brand-wordmark]")!.className).not.toMatch(/\b(?:text|bg)-/);
+});
+
+it("keeps the image mark when markInk is omitted or image", () => {
+  for (const markInk of [undefined, "image"] as const) {
+    const brand = within(output({ ...base, brand: { ...base.brand, markInk } })).getByRole("link", { name: "Example home" });
+    expect(brand.querySelector("img[data-brand-mark]")).toHaveAttribute("src", "/mark.svg");
+    expect(brand.querySelector(".bg-accent")).toBeNull();
+  }
+});
+
 it.each([false, true])("puts every full-label action in defined panel order in every frame layout (server=%s)", server => {
   const shell: SiteShellInput = { ...base, mobileLayout: "menu-brand-action", actions: base.actions!.map(action => ({ ...action, icon })) };
   const container = output(shell, server);

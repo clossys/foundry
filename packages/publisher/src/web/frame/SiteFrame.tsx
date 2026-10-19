@@ -107,9 +107,9 @@ export function SiteFrame({ shell, presentation, resolveCopy, resolveAsset, chil
 
   const brandmark =
     brand.wordmark === undefined ? (
-      <Brandmark variant="mark" size={brand.size} label={brand.label} markSrc={brand.markSrc} plate={brand.plate} tone={brand.tone} />
+      <Brandmark variant="mark" size={brand.size} label={brand.label} markSrc={brand.markSrc} plate={brand.plate} markInk={brand.markInk} tone={brand.tone} />
     ) : (
-      <Brandmark variant="lockup" size={brand.size} label={brand.label} wordmark={brand.wordmark} markSrc={brand.markSrc} plate={brand.plate} tone={brand.tone} />
+      <Brandmark variant="lockup" size={brand.size} label={brand.label} wordmark={brand.wordmark} markSrc={brand.markSrc} plate={brand.plate} markInk={brand.markInk} tone={brand.tone} />
     );
 
   const navigation = resolved.nav ?? (resolved.headerActions.length ? { ...SITE_FRAME_NAV_DEFAULTS, links: [] } : undefined);
