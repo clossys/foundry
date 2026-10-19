@@ -199,6 +199,7 @@ smallest stable subpath that owns what you need:
 | Subpath | Owns |
 | --- | --- |
 | `@clossys/designer/tokens` | Browser-safe typed `TOKENS`, shared `TOKEN_GUIDANCE` and `TOKEN_DISPLAY_GROUPS`, pure brand CSS parsing, the brand-coverage gate, WCAG colour math (`contrastRatio` and friends), the contrast gate (`checkTokenContrast`, `CONTRAST_PAIRS`), and `assertTokenStylesLoaded` (dev-only token-CSS presence check — see "Setup" below). No React runtime. |
+| `@clossys/designer/tokens/preview` | `TokenPreview`: opt-in React tooling for an exact token property, using the host token/theme/brand cascade. |
 | `@clossys/designer/tokens/server` | Node-only `readBrandCss`, `assertTailwindMergeVersion`, and file-reading result types. Neither helper runs automatically on import. |
 | `@clossys/designer/tokens.css` | Neutral primitive custom-property defaults; works without Tailwind. |
 | `@clossys/designer/theme.css` | Optional Tailwind v4 wiring; imports `tokens.css` itself. |
@@ -4321,10 +4322,10 @@ function PageConsent({ onAccept, onReject, status }: { onAccept: () => void; onR
 A presentational consent notice, and nothing more: it holds no consent
 state, reads or writes no storage, and makes no network call. The consumer
 decides what `onAccept` and `onReject` do, whether to render it at all, and
-where it sits; it renders in flow, so a consumer who wants it pinned to the
-edge of the page positions it themselves. All copy arrives through props
+where it sits. The default `presentation="banner"` renders in flow;
+`presentation="card"` pins a compact card to the bottom edge. All copy arrives through props
 (`title`, `body`, `acceptLabel`, `rejectLabel`, and an optional
-`privacyLink` slot rendered after the body, and an optional `status` line), so
+`privacyLink` slot (after the body in the default banner), and an optional `status` line), so
 this package ships no wording of its own.
 
 `status` renders inside a polite live region (`role="status"`,
@@ -4342,14 +4343,25 @@ like any other content. Accept and reject are both `Button` atoms with the
 same `variant` and `size`, which gives the two choices equal prominence
 (rejecting is a button, not a link). No form control renders inside it.
 
-The surface uses `bg-overlay-surface`, `border-overlay-border` and ink
-tokens only, so it is opaque. Actions stack at full width at the base size
+The default banner uses `bg-overlay-surface`, `border-overlay-border` and ink
+tokens only, so it is opaque. Its actions stack at full width at the base size
 and sit in a row from the `tablet` breakpoint; the content width is capped
 with `max-w-display` from `tablet-lg`. The root carries `data-consent-banner`,
 a stable selector the consumer can pass in `overlayIntersectingFold` when the
 banner is positioned over the page. If you pin the banner to the bottom
 visually, render it early in DOM order so keyboard and assistive-tech users
 reach it without tabbing through the whole page first.
+
+The opt-in card sits at the inline start from tablet width and is centred
+on phones, with safe-area gutters and the form-width cap. It uses the
+existing glass, blur and hairline roles; unsupported backdrop filters and
+reduced transparency use an opaque plate, and forced colours use system
+colours. There is no motion. Long copy can wrap and scroll within the
+viewport. The title stays as a visually hidden heading that names the
+region. The policy slot is inline with the body, and both outlined choices
+share the row equally. Pass `selectedChoice="granted"` or `"denied"` from
+host state to show a decorative check and `aria-pressed`; the component
+stores no choice. The live region stays mounted in either presentation.
 
 ### Composing chrome and blocks
 
@@ -4886,20 +4898,15 @@ prop" shape every block in this README already follows; see `SiteHeader`'s
 own doc comment for why it's `shell`, not `blocks`, despite reading like a
 `PageHeader`-shaped composition of named regions.
 
-`navPlacement` (`"leading"` by default, the markup above) moves the same `nav`
-slot within the row: `"centered"` gives brand, nav, and trailing controls their
-own regions, with the brand and trailing regions growing equally so the nav
-centers on the header, in DOM, visual, and tab order. `secondaryAction` is a
-second trailing slot rendered directly before `actions`, in either placement.
-Both stay one `nav` slot, so the header holds one navigation landmark.
-
-`mobileLayout="menu-brand-action"` puts navigation at inline-start, the brand
-in a shrinkable center column and actions at inline-end below `tablet`.
-The columns mirror in RTL. From `tablet` up, `navPlacement` controls the
-original layout. DOM and tab order remain brand, nav, actions; the default
-`mobileLayout="inline"` keeps the existing markup. Supply a complete logo
-or wordmark in `brand`; the header adds no brand symbol. Give an
-`ActionLink` an `icon` for its existing icon-only mobile presentation.
+`navPlacement="centered"` and `mobileLayout="menu-brand-action"` are the
+shared defaults. Equal side tracks center navigation on the whole header;
+`NavDisclosure` measures intrinsic brand/link/action widths and collapses
+before collision. Mobile centers the supplied mark, with menu at inline-start
+and a supplied primary icon or empty track at inline-end. The layout mirrors
+in RTL. `secondaryAction` renders before `actions` in the trailing region.
+Explicit `navPlacement="leading"` or `mobileLayout="inline"` retain legacy
+positioning rather than the default geometry. DOM order remains brand, nav,
+actions, and the header adds no brand symbol.
 
 ```tsx
 <SiteHeader
@@ -5011,7 +5018,9 @@ glass plate once the page scrolls beneath it. The glass is
 
 The header is fixed rather than absolutely positioned (which would scroll
 away before it could turn to glass) or stuck (which reserves its height in
-flow). That asks this of the page:
+flow). These hosting requirements apply to a standalone header; Publisher
+`SiteFrame` supplies shared header clearance for its main, skip and anchor
+targets. A standalone page supplies the following:
 
 - **The root scrolls.** The fade follows `scroll(root block)`. If the page
   scrolls inside a container instead, the root never scrolls and the header
@@ -5044,12 +5053,16 @@ flow). That asks this of the page:
 
 `NavDisclosure` is the non-modal navigation for `SiteHeader`'s `nav` slot.
 It renders one navigation landmark and one set of links: below `tablet`
-(`48rem`) a Menu button opens a sheet directly under the header; from
+(`768px`) a Menu button opens a sheet directly under the header; from
 `tablet` up the same panel is an inline row and the button hides. The
 server-rendered state is collapsed. With scripting unavailable, CSS shows
 the panel inline and hides the button at every width. The toggle keeps
 focus when activated; Escape while open closes the sheet and returns focus
-to the toggle, and activating an `a[href]` within the panel closes it.
+to the toggle, and activating an `a[href]` within the panel closes it. Closed
+header content is inert after mount and CSS hides it before hydration.
+Equivalent parent renders preserve an open menu; meaningful route changes
+reset it and desktop transitions retain visible focus. Without scripting,
+expanded frame navigation stays in document flow before the View.
 There is no focus trap or portal, and the disclosure has no animation.
 `SiteHeader` supplies the positioned containing block for the mobile sheet.
 Use `NavShell` when the menu needs a modal drawer and managed focus instead;
@@ -5078,7 +5091,7 @@ declares no root (`"."`) export; `src/index.ts` re-exports them only for
 internal tooling and is not an import path.
 The props are `children` (required), `aria-label` (default `"Primary"`),
 `triggerLabel` (default `"Menu"`), `trigger` (`"label"` by default, or
-`"icon"`) and `className` on the landmark. The icon toggle draws three
+`"icon"`) and `className` on the landmark. The icon toggle draws two
 decorative bars in the current ink; `triggerLabel` remains its accessible
 name. Both triggers keep the same tap target, disclosure controls, Escape
 handling and focus return.
@@ -6435,7 +6448,7 @@ not a grab-bag).
 | `SectionFrameProps` | type | Props for `SectionFrame`: `ground` (default `"base"`), `measure` (default `"content"`), `children`, `className`, `style`, plus every native `<section>` attribute. |
 | `SectionMeasure` | type | `"content" \| "wide" \| "prose"`. How wide `SectionFrame`'s inner column is: it maps to the `--ui-width-content-max`, `--ui-width-wide-max`, or `--ui-width-prose-max` token. |
 | `ConsentBanner` | component | Presentational consent notice: a region landmark named by its title, a body, an optional `privacyLink` slot after it, and two same-variant, same-size `Button`s for accept and reject. Props only: no consent state, storage, network call or built-in copy. Not a dialog. Always mounts an empty polite `role="status"` live region for an optional `status`. Sets `data-consent-banner` on its root. |
-| `ConsentBannerProps` | type | Props for `ConsentBanner`: `title`, `body`, `acceptLabel`, `rejectLabel` (all `ReactNode`), `onAccept`, `onReject` (both `() => void`), `privacyLink?`, `status?` (a `ReactNode` rendered in an always-mounted polite live region), `className?`, `style?`. |
+| `ConsentBannerProps` | type | Props for `ConsentBanner`: `title`, `body`, `acceptLabel`, `rejectLabel` (all `ReactNode`), `onAccept`, `onReject` (both `() => void`), `privacyLink?`, `status?` (a `ReactNode` rendered in an always-mounted polite live region), `presentation?` (`banner` by default, or `card`), `selectedChoice?` (`granted` or `denied`, card feedback only), `className?`, `style?`. |
 | `mergeUiClasses` | function | Merges token-aware Tailwind utility classes with last-argument precedence; used by surface-level compositions built from UI primitives. |
 | `Shell` | component | The persistent application frame. Carries `Shell.Header`, `Shell.SideNav`, `Shell.Main`, `Shell.Rail`, `Shell.Footer`. |
 | `ShellProps` | type | Props for `Shell`: `children` (any subset of the five slots above, in any order), `skipLinkLabel` (default `"Skip to content"`), plus every native `<div>` attribute. |
@@ -6447,7 +6460,7 @@ not a grab-bag).
 | `SkipLink` | component | Keyboard affordance to bypass nav chrome and jump straight to a page's content. Visually hidden until focused. |
 | `SkipLinkProps` | type | Props for `SkipLink`: `targetId` (the jump target's `id`), `children` (the link's own visible text — no built-in copy), `className`. |
 | `SiteHeader` | component | Public-site top chrome: brand slot, primary navigation slot (leading or centered), secondary action slot, actions slot. Renders the page's `banner` landmark. |
-| `SiteHeaderProps` | type | Props for `SiteHeader`: `brand` (required), `nav`, `navPlacement` (`"leading"` default, or `"centered"`), `mobileLayout` (`"inline"` default, or `"menu-brand-action"`), `secondaryAction`, `actions`, `surfaceLabel` (text-only badge, last in the trailing region), plus every native `<header>` attribute. |
+| `SiteHeaderProps` | type | Props for `SiteHeader`: `brand` (required), `nav`, `navPlacement` (`"centered"` default; explicit `"leading"` retains legacy positioning), `mobileLayout` (`"menu-brand-action"` default; explicit `"inline"` retains legacy positioning), `secondaryAction`, `actions`, `surfaceLabel` (text-only badge, last in the trailing region), plus every native `<header>` attribute. |
 | `NavShell` | component | The responsive half of a public site's navigation: an inline `<nav>` from `tablet` up, a trigger-plus-drawer below it. |
 | `NavDisclosure` | component | A non-modal navigation: a mobile sheet below `tablet`, an inline row from `tablet` up, and inline links when scripting is unavailable. |
 | `NavDisclosureProps` | type | Props for `NavDisclosure`: required `children`, `aria-label` (default `"Primary"`), `triggerLabel` (default `"Menu"`), `trigger` (`"label"` default, or `"icon"`), and landmark `className`. |
@@ -7406,3 +7419,33 @@ Both controls otherwise retain their existing default markup.
 `SiteFooter ground="transparent" rule="top"` adds a token-bound top hairline
 without a plate or a divider inside the footer. `rule` defaults to `"none"`
 and is ignored on other grounds, which retain their existing border policy.
+
+## Static token specimens
+
+```tsx
+import { TokenPreview } from "@clossys/designer/tokens/preview";
+const specimen = <TokenPreview property="--color-chart-surface" />;
+```
+
+Load the token CSS and desired theme/brand overrides in the host. The preview
+uses live `var(--property, authored-value)` references so host overrides remain primary. This React subpath is
+selection tooling; configurable components begin at Atoms. `/tokens` stays
+React-free. Unknown properties and unsupported applications are refused.
+
+Optional copy props are `sampleText` (default "Aa 0123"),
+`unsupportedMessage` (default "Unsupported token application") and
+`pendingMessage` (default "interactive support pending"). Supply translated
+strings as needed; pending output keeps its authored kind before the message.
+
+The 168 static specimens support 17 authored kinds: surface, text, border,
+control, status, chart, font, space, size, icon, brandmark, radius, shadow,
+blur, ring, layer and opacity. Patterns expose translucent applications;
+inverse foregrounds receive an inverse backing. No override is claimed as measured.
+
+These 18 properties explicitly report their true kind and "interactive support pending":
+`--ui-duration-instant`, `--ui-duration-fast`, `--ui-duration-default`,
+`--ui-duration-deliberate`, `--ui-duration-flash`, `--ui-duration-overlay`,
+`--ease-default`, `--ease-decelerate`, `--ease-accelerate`, `--ease-bounce`,
+`--ease-enter`, `--ease-exit`, `--breakpoint-mobile`, `--breakpoint-mobile-lg`,
+`--breakpoint-tablet`, `--breakpoint-tablet-lg`, `--breakpoint-desktop`, `--breakpoint-wide`.
+Motion and breakpoint interaction belong to a later increment.

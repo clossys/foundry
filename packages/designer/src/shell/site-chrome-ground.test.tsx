@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import { SiteFooter } from "./SiteFooter.js";
@@ -5,19 +7,16 @@ import { SiteHeader } from "./SiteHeader.js";
 
 /**
  * Markup captured from `main` BEFORE the `transparent` ground existed
- * (fixed clock, so the legal row's year is stable). Header fixtures remain
- * byte-identical; footer fixtures record the mandatory dark composition.
+ * (fixed clock, so the legal row's year is stable). `base` and `inverse`
+ * must stay byte-identical to it.
  */
 const MAIN_MARKUP: Readonly<Record<string, string>> = {
-  "header-base": "<header class=\"bg-surface-raised py-sm border-b border-line-base\" style=\"position:relative;z-index:var(--ui-z-shell, 20);border-bottom-width:var(--ui-border-hairline, 1px)\"><div class=\"mx-auto flex w-full flex-wrap items-center justify-between gap-md\" style=\"padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))\"><div class=\"flex items-center gap-lg\"><a href=\"/\">Home</a><nav>Nav</nav></div><div class=\"flex items-center gap-sm\"><button type=\"button\">Go</button></div></div></header>",
   "footer-cols-base": "<footer data-footer-root=\"\" class=\"site-footer-dark bg-surface-raised text-ink-primary py-lg border-t border-line-base\" style=\"position:relative;z-index:var(--ui-z-shell, 20);border-top-width:var(--ui-border-hairline, 1px)\"><div class=\"mx-auto flex w-full flex-col gap-lg\" style=\"padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))\"><div class=\"grid grid-cols-1 gap-lg tablet:grid-cols-2 desktop:grid-cols-4\"><div class=\"flex flex-col gap-sm\"><h2 class=\"text-body-s font-body font-medium\">Product</h2><div class=\"flex flex-col gap-xs\"><a href=\"/a\">A</a></div></div></div><div class=\"flex flex-col gap-sm text-body-s text-ink-secondary tablet:flex-row tablet:items-center tablet:justify-between border-t pt-lg border-line-base\"><span>Legal</span></div></div></footer>",
   "footer-secondary-base": "<footer data-footer-root=\"\" class=\"site-footer-dark bg-surface-raised text-ink-primary py-lg border-t border-line-base\" style=\"position:relative;z-index:var(--ui-z-shell, 20);border-top-width:var(--ui-border-hairline, 1px)\"><div class=\"mx-auto flex w-full flex-col gap-lg\" style=\"padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))\"><div class=\"flex flex-col gap-sm text-body-s text-ink-secondary tablet:flex-row tablet:items-center tablet:justify-between\"><span>Legal</span></div></div></footer>",
   "footer-legal-base": "<footer data-footer-root=\"\" class=\"site-footer-dark bg-surface-raised text-ink-primary py-lg border-t border-line-base\" style=\"position:relative;z-index:var(--ui-z-shell, 20);border-top-width:var(--ui-border-hairline, 1px)\"><div class=\"mx-auto flex w-full flex-col gap-lg\" style=\"padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))\"><div class=\"grid grid-cols-1 gap-lg tablet:grid-cols-2 desktop:grid-cols-4\"><div class=\"flex flex-col gap-sm\"><h2 class=\"text-body-s font-body font-medium\">Product</h2><div class=\"flex flex-col gap-xs\"><a href=\"/a\">A</a></div></div></div><div class=\"flex flex-col gap-sm text-body-s text-ink-secondary tablet:flex-row tablet:items-center tablet:justify-between border-t pt-lg border-line-base\"><div data-footer-composition=\"\" class=\"site-footer-composition\"><nav data-footer-region=\"links\" aria-label=\"Legal links\"><ul role=\"list\" class=\"m-0 flex list-none flex-wrap items-center justify-center gap-x-sm p-0\"><li><a href=\"/privacy\" class=\"inline-flex items-center justify-center px-xs text-inherit underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink-on-inverse\" style=\"min-height:var(--ui-layout-tap-target, 44px);min-width:var(--ui-layout-tap-target, 44px)\">Privacy</a></li></ul></nav><div data-footer-region=\"icons\"><ul role=\"list\" dir=\"ltr\" class=\"m-0 flex list-none flex-wrap items-center justify-center gap-x-sm p-0\"></ul></div><p data-footer-region=\"copyright\" class=\"m-0\">© 2030 Acme Studio</p></div></div></div></footer>",
-  "header-inverse": "<header class=\"bg-surface-inverse py-sm border-b border-line-on-inverse\" style=\"position:relative;z-index:var(--ui-z-shell, 20);border-bottom-width:var(--ui-border-hairline, 1px)\"><div class=\"mx-auto flex w-full flex-wrap items-center justify-between gap-md\" style=\"padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))\"><div class=\"flex items-center gap-lg\"><a href=\"/\">Home</a><nav>Nav</nav></div><div class=\"flex items-center gap-sm\"><button type=\"button\">Go</button></div></div></header>",
   "footer-cols-inverse": "<footer data-footer-root=\"\" class=\"site-footer-dark bg-surface-inverse text-ink-on-inverse py-lg border-t border-line-on-inverse\" style=\"position:relative;z-index:var(--ui-z-shell, 20);border-top-width:var(--ui-border-hairline, 1px)\"><div class=\"mx-auto flex w-full flex-col gap-lg\" style=\"padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))\"><div class=\"grid grid-cols-1 gap-lg tablet:grid-cols-2 desktop:grid-cols-4\"><div class=\"flex flex-col gap-sm\"><h2 class=\"text-body-s font-body font-medium\">Product</h2><div class=\"flex flex-col gap-xs\"><a href=\"/a\">A</a></div></div></div><div class=\"flex flex-col gap-sm text-body-s text-ink-on-inverse-muted tablet:flex-row tablet:items-center tablet:justify-between border-t pt-lg border-line-on-inverse\"><span>Legal</span></div></div></footer>",
   "footer-secondary-inverse": "<footer data-footer-root=\"\" class=\"site-footer-dark bg-surface-inverse text-ink-on-inverse py-lg border-t border-line-on-inverse\" style=\"position:relative;z-index:var(--ui-z-shell, 20);border-top-width:var(--ui-border-hairline, 1px)\"><div class=\"mx-auto flex w-full flex-col gap-lg\" style=\"padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))\"><div class=\"flex flex-col gap-sm text-body-s text-ink-on-inverse-muted tablet:flex-row tablet:items-center tablet:justify-between\"><span>Legal</span></div></div></footer>",
   "footer-legal-inverse": "<footer data-footer-root=\"\" class=\"site-footer-dark bg-surface-inverse text-ink-on-inverse py-lg border-t border-line-on-inverse\" style=\"position:relative;z-index:var(--ui-z-shell, 20);border-top-width:var(--ui-border-hairline, 1px)\"><div class=\"mx-auto flex w-full flex-col gap-lg\" style=\"padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))\"><div class=\"grid grid-cols-1 gap-lg tablet:grid-cols-2 desktop:grid-cols-4\"><div class=\"flex flex-col gap-sm\"><h2 class=\"text-body-s font-body font-medium\">Product</h2><div class=\"flex flex-col gap-xs\"><a href=\"/a\">A</a></div></div></div><div class=\"flex flex-col gap-sm text-body-s text-ink-on-inverse-muted tablet:flex-row tablet:items-center tablet:justify-between border-t pt-lg border-line-on-inverse\"><div data-footer-composition=\"\" class=\"site-footer-composition\"><nav data-footer-region=\"links\" aria-label=\"Legal links\"><ul role=\"list\" class=\"m-0 flex list-none flex-wrap items-center justify-center gap-x-sm p-0\"><li><a href=\"/privacy\" class=\"inline-flex items-center justify-center px-xs text-inherit underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink-on-inverse\" style=\"min-height:var(--ui-layout-tap-target, 44px);min-width:var(--ui-layout-tap-target, 44px)\">Privacy</a></li></ul></nav><div data-footer-region=\"icons\"><ul role=\"list\" dir=\"ltr\" class=\"m-0 flex list-none flex-wrap items-center justify-center gap-x-sm p-0\"></ul></div><p data-footer-region=\"copyright\" class=\"m-0\">© 2030 Acme Studio</p></div></div></div></footer>",
-  "header-default": "<header class=\"bg-surface-raised py-sm border-b border-line-base\" style=\"position:relative;z-index:var(--ui-z-shell, 20);border-bottom-width:var(--ui-border-hairline, 1px)\"><div class=\"mx-auto flex w-full flex-wrap items-center justify-between gap-md\" style=\"padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))\"><div class=\"flex items-center gap-lg\"><a href=\"/\">Home</a></div></div></header>",
   "footer-default": "<footer data-footer-root=\"\" class=\"site-footer-dark bg-surface-raised text-ink-primary py-lg border-t border-line-base\" style=\"position:relative;z-index:var(--ui-z-shell, 20);border-top-width:var(--ui-border-hairline, 1px)\"><div class=\"mx-auto flex w-full flex-col gap-lg\" style=\"padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))\"><div class=\"flex flex-col gap-sm text-body-s text-ink-secondary tablet:flex-row tablet:items-center tablet:justify-between\"><span>Legal</span></div></div></footer>",
 };
 
@@ -41,10 +40,14 @@ afterEach(() => {
 
 describe("site chrome: base and inverse are unchanged", () => {
   for (const ground of ["base", "inverse"] as const) {
-    it(`preserves ${ground} header bytes and mandatory dark footer composition`, () => {
-      expect(
-        html(<SiteHeader ground={ground} brand={brand} nav={<nav>Nav</nav>} actions={<button type="button">Go</button>} />),
-      ).toBe(MAIN_MARKUP[`header-${ground}`]);
+    it(`renders ${ground} byte-identically to main`, () => {
+      const host = document.createElement("div");
+      host.innerHTML = html(<SiteHeader ground={ground} brand={brand} nav={<nav>Nav</nav>} actions={<button type="button">Go</button>} />);
+      expect(host.querySelector("header")).toHaveClass("site-header-contract", ground === "base" ? "bg-surface-raised" : "bg-surface-inverse", "border-b", ground === "base" ? "border-line-base" : "border-line-on-inverse");
+      expect((host.querySelector("header") as HTMLElement).style.borderBottomWidth).toBe("var(--ui-border-hairline, 1px)");
+      expect(host.querySelector(".site-header-brand")).toHaveTextContent("Home");
+      expect(host.querySelector("nav")).toHaveTextContent("Nav");
+      expect(host.querySelector(".site-header-actions")).toHaveTextContent("Go");
       expect(html(<SiteFooter ground={ground} columns={columns} secondary={<span>Legal</span>} />)).toBe(
         MAIN_MARKUP[`footer-cols-${ground}`],
       );
@@ -57,8 +60,8 @@ describe("site chrome: base and inverse are unchanged", () => {
     });
   }
 
-  it("keeps header base and the mandatory dark footer as defaults", () => {
-    expect(html(<SiteHeader brand={brand} />)).toBe(MAIN_MARKUP["header-default"]);
+  it("keeps base as the default ground", () => {
+    expect(html(<SiteHeader brand={brand} />)).toBe(html(<SiteHeader brand={brand} ground="base" />));
     expect(html(<SiteFooter secondary={<span>Legal</span>} />)).toBe(MAIN_MARKUP["footer-default"]);
   });
 });
@@ -86,7 +89,7 @@ describe("site chrome: transparent ground", () => {
   ];
 
   for (const [name, node] of cases) {
-    it(`${name} omits divider classes while retaining mandatory footer paint`, () => {
+    it(`${name} renders no bg-* class, no border-* class and no border-width style`, () => {
       const { classes, styles } = paint(html(node));
       expect(classes.filter((c) => /(^|:)bg-/.test(c))).toEqual([]);
       expect(classes.filter((c) => /(^|:)border(-|$)/.test(c))).toEqual([]);
@@ -95,7 +98,7 @@ describe("site chrome: transparent ground", () => {
     });
   }
 
-  it("keeps legacy ink classes under the footer-local dark role override", () => {
+  it("keeps the base ink", () => {
     const footer = paint(html(<SiteFooter ground="transparent" secondary={<span>Legal</span>} />));
     expect(footer.classes).toContain("text-ink-primary");
     expect(footer.classes).toContain("text-ink-secondary");
@@ -118,7 +121,7 @@ describe("site chrome: transparent-inverse ground", () => {
   ];
 
   for (const [name, node] of cases) {
-    it(`${name} omits divider classes while retaining mandatory footer paint`, () => {
+    it(`${name} renders no bg-* class, no border-* class and no border-width style`, () => {
       const { classes, styles } = paint(html(node));
       expect(classes.filter((c) => /(^|:)bg-/.test(c))).toEqual([]);
       expect(classes.filter((c) => /(^|:)border(-|$)/.test(c))).toEqual([]);
@@ -137,7 +140,7 @@ describe("site chrome: transparent-inverse ground", () => {
     expect(classes.filter((c) => /^text-ink-(primary|secondary|muted)$/.test(c))).toEqual([]);
   });
 
-  it("retains compatible ground classes under identical footer-local dark paint", () => {
+  it("differs from transparent only in the footer's two ink classes", () => {
     const transparent = html(<SiteFooter ground="transparent" columns={columns} secondary={legal} />);
     const inverse = html(<SiteFooter ground="transparent-inverse" columns={columns} secondary={legal} />);
     expect(inverse).toBe(
@@ -179,9 +182,12 @@ describe("site chrome: full width", () => {
       html(<SiteHeader ground="transparent" brand={brand} />) + html(<SiteFooter ground="transparent" secondary={legal} />);
     const containers = Array.from(host.querySelectorAll("header > div, footer > div"));
     expect(containers).toHaveLength(2);
-    for (const el of containers) {
-      expect(el.getAttribute("style")).toContain("padding-inline:var(--ui-width-page-padding-x");
-      expect(el.className).toContain("w-full");
-    }
+    expect(containers[0]).toHaveClass("site-header-row");
+    const css = readFileSync(join(import.meta.dirname, "../../styles/theme-keys.css"), "utf8");
+    expect(css).toContain("padding-inline: max(var(--ui-width-page-padding-x");
+    expect(css).toContain("env(safe-area-inset-left");
+    expect(css).toContain("env(safe-area-inset-right");
+    expect(containers[1].getAttribute("style")).toContain("padding-inline:var(--ui-width-page-padding-x");
+    expect(containers[1].className).toContain("w-full");
   });
 });

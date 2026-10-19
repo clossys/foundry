@@ -1,6 +1,6 @@
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
-import { resolve } from "node:path";
+import { resolve, sep } from "node:path";
 import { compile } from "tailwindcss";
 import { describe, expect, it } from "vitest";
 import { scanClassCandidates } from "./class-scan.js";
@@ -32,18 +32,21 @@ describe("generateUtilitiesCss", () => {
     expect(listed.has("h-3")).toBe(true);
   });
 
-  it("scans every exported component directory", () => {
+  it("covers every exported TSX implementation with a path-boundary scan root", () => {
     const pkg = JSON.parse(readFileSync(resolve(packageRoot, "package.json"), "utf8")) as { exports: Record<string, unknown> };
-    const dirs = new Set(Object.keys(pkg.exports).map((k) => k.split("/")[1]!).filter((d) => d && !d.includes(".")));
-    const withComponents = [...dirs].filter((d) => {
-      try {
-        return readdirSync(resolve(packageRoot, "src", d), { recursive: true }).some((f) => /(?<!\.test)\.tsx$/.test(String(f)));
-      } catch {
-        return false;
-      }
-    });
-    expect(withComponents.length).toBeGreaterThan(0);
-    for (const d of withComponents) expect([...UTILITIES_SOURCE_DIRS], d).toContain(d);
+    const dirs = new Set(Object.keys(pkg.exports).map(key => key.split("/")[1]!).filter(dir => dir && !dir.includes(".")));
+    const implementations = [...dirs].flatMap(dir => {
+      const root = resolve(packageRoot, "src", dir);
+      if (!existsSync(root)) return [];
+      return readdirSync(root, { recursive: true }).map(file => `${dir}/${String(file).split(sep).join("/")}`);
+    }).filter(file => file.endsWith(".tsx") && !file.endsWith(".test.tsx"));
+    const covered = (file: string) => UTILITIES_SOURCE_DIRS.some(root => file.startsWith(`${root}/`));
+    expect(implementations.length).toBeGreaterThan(0);
+    for (const file of implementations) expect(covered(file), file).toBe(true);
+    expect(covered("tokens/preview/index.tsx")).toBe(true);
+    expect(covered("tokens/preview-other/index.tsx")).toBe(false);
+    expect(covered("tokens/other.tsx")).toBe(false);
+    expect([...UTILITIES_SOURCE_DIRS]).not.toContain("tokens");
   });
 
   it("importing styles/utilities.css after theme.css generates this package's utilities with no path @source", async () => {

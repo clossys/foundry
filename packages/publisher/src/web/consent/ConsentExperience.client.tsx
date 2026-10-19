@@ -24,6 +24,8 @@ import { normaliseReopenEvent, normaliseReopenFragment, useConsentReopen } from 
 import { buildSeamLifecycle, DEFAULT_REVIEW_PARAM, readReviewSeamValue } from "./review-seam.js";
 
 export interface ConsentExperienceProps {
+  /** Compact pinned `card` by default; `banner` retains the former in-flow presentation. */
+  presentation?: "card" | "banner";
   /** Copy resolved on the server with `resolveConsentCopy`. */
   copy: ResolvedConsentCopy;
   /** Builds the lifecycle. Called on client mount only, and honours every field of its input. */
@@ -135,6 +137,7 @@ function returnFocus(opener: Element | null, wrapper: HTMLElement | null): void 
 export function ConsentExperience(props: ConsentExperienceProps): ReactNode {
   const { copy, transport, policyLink, reopen, reviewSeam, children } = props;
   const required = props.required ?? true;
+  const presentation = props.presentation ?? "card";
   const seamParam = reviewSeam === false ? null : (reviewSeam?.param ?? DEFAULT_REVIEW_PARAM);
   const reopenFragment = normaliseReopenFragment(reopen?.fragment);
   const reopenEvent = normaliseReopenEvent(reopen?.eventName);
@@ -373,23 +376,108 @@ export function ConsentExperience(props: ConsentExperienceProps): ReactNode {
     }
   }, [visible, statusCopyMissing, statusKey]);
 
+  useEffect(() => {
+    if (!visible || noticeCopyMissing || presentation !== "card") return;
+    const card = wrapperRef.current?.querySelector<HTMLElement>('[data-consent-presentation="card"]');
+    if (!card) return;
+    const page = document.documentElement;
+    const style = page.style;
+    const hadStyle = page.hasAttribute("style");
+    const computed = window.getComputedStyle(page);
+    const properties = (["padding-block-end", "scroll-padding-block-end"] as const).map((property) => {
+      const host = computed.getPropertyValue(property);
+      return {
+        property,
+        previous: style.getPropertyValue(property),
+        priority: style.getPropertyPriority(property),
+        host: host === "" || host === "auto" ? "0px" : host,
+        owned: null as string | null,
+        ownedPriority: "",
+      };
+    });
+    const stillOwned = (entry: (typeof properties)[number]) =>
+      style.getPropertyValue(entry.property) === entry.owned && style.getPropertyPriority(entry.property) === entry.ownedPriority;
+    let stopped = false;
+    let pending: number | undefined;
+    const measure = () => {
+      if (stopped) return;
+      const clearance = Math.ceil(Math.max(0, window.innerHeight - card.getBoundingClientRect().top));
+      for (const entry of properties) {
+        if (entry.owned !== null && !stillOwned(entry)) continue;
+        const value = entry.property === "padding-block-end"
+          ? `calc(${entry.host} + ${clearance}px)`
+          : `max(${entry.host}, ${clearance}px)`;
+        style.setProperty(entry.property, value, "important");
+        // CSSOM may normalize arithmetic; ownership follows the assigned serialization.
+        entry.owned = style.getPropertyValue(entry.property);
+        entry.ownedPriority = style.getPropertyPriority(entry.property);
+      }
+    };
+    const schedule = () => {
+      if (stopped || pending !== undefined) return;
+      pending = window.setTimeout(() => {
+        pending = undefined;
+        measure();
+      }, 16);
+    };
+    const resize = typeof ResizeObserver === "function" ? new ResizeObserver(schedule) : undefined;
+    const content = typeof MutationObserver === "function" ? new MutationObserver(schedule) : undefined;
+    resize?.observe(card);
+    content?.observe(card, { subtree: true, childList: true, characterData: true, attributes: true });
+    window.addEventListener("resize", schedule);
+    measure();
+    return () => {
+      stopped = true;
+      if (pending !== undefined) window.clearTimeout(pending);
+      resize?.disconnect();
+      content?.disconnect();
+      window.removeEventListener("resize", schedule);
+      let restored = 0;
+      for (const entry of properties) {
+        if (!stillOwned(entry)) continue;
+        if (entry.previous) style.setProperty(entry.property, entry.previous, entry.priority);
+        else style.removeProperty(entry.property);
+        restored++;
+      }
+      if (!hadStyle && restored === properties.length && style.length === 0) page.removeAttribute("style");
+    };
+  }, [visible, noticeCopyMissing, presentation]);
+
+  const inlinePolicy = linkLabel === undefined ? null : policyLinkShown ? <Link href={policyHref}>{linkLabel}</Link> : linkLabel;
+  const cardBody = (
+    <>
+      {body}
+      {inlinePolicy !== null ? <>{body !== undefined && /\s$/.test(body) ? null : " "}{inlinePolicy}</> : null}
+      {copyText(copy.trailingText)}
+    </>
+  );
+
+  const notice = visible && !noticeCopyMissing ? (
+    <div ref={wrapperRef} data-consent-experience="" onKeyDown={handleKeyDown}>
+      <ConsentBanner
+        presentation={presentation}
+        selectedChoice={
+          presentation === "card" && (snapshot.effective === "granted" || snapshot.effective === "denied")
+            ? snapshot.effective
+            : undefined
+        }
+        title={title}
+        body={presentation === "card" ? cardBody : body}
+        acceptLabel={acceptLabel}
+        rejectLabel={rejectLabel}
+        onAccept={seamFailed ? inert : handleAccept}
+        onReject={seamFailed ? inert : handleReject}
+        privacyLink={presentation === "banner" && policyLinkShown ? <Link href={policyHref}>{linkLabel}</Link> : undefined}
+        status={statusCopyMissing ? undefined : statusCopy?.text}
+      />
+    </div>
+  ) : null;
+
   return (
     <ConsentContext.Provider value={contextValue}>
+      {presentation === "card" ? notice : null}
       {children}
-      {visible && !noticeCopyMissing ? (
-        <div ref={wrapperRef} data-consent-experience="" onKeyDown={handleKeyDown}>
-          <ConsentBanner
-            title={title}
-            body={body}
-            acceptLabel={acceptLabel}
-            rejectLabel={rejectLabel}
-            onAccept={seamFailed ? inert : handleAccept}
-            onReject={seamFailed ? inert : handleReject}
-            privacyLink={policyLinkShown ? <Link href={policyHref}>{linkLabel}</Link> : undefined}
-            status={statusCopyMissing ? undefined : statusCopy?.text}
-          />
-        </div>
-      ) : null}
+      {presentation === "banner" ? notice : null}
     </ConsentContext.Provider>
   );
 }

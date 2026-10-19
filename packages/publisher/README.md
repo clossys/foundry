@@ -2747,14 +2747,14 @@ view, then the contentinfo (Designer's `SiteFooter`). The view passed as
 `<main>`, no banner and no contentinfo of their own when no chrome prop is
 passed, so a framed page has one of each.
 
-Optional appearance inputs keep the existing frame and hero defaults:
+Header appearance inputs and independent hero controls:
 
 | Input | Values and behavior |
 | --- | --- |
-| `shell.actions[].emphasis` | `"primary"` or `"secondary"` (default). Applies to header actions only; navigation, secondary-action and footer links retain their existing contract. |
-| `shell.actions[].icon` | Optional SVG shape data; the header shows the icon below tablet and keeps the label as its accessible name. Accepted only for header actions. |
+| `shell.actions[].emphasis` | Distinct `"primary"`, `"secondary"`, `"ghost"` variants across at most three total header actions; implicit legacy slots use unoccupied variants. |
+| `shell.actions[].icon` | Supplied validated SVG shape data is required with nonblank copy for a primary action; its default mobile affordance is icon-only with an accessible label. |
 | `shell.nav.trigger` | `"label"` (default) or `"icon"`; the icon uses `triggerLabel` as its accessible name. |
-| `shell.mobileLayout` | `"inline"` (default) or `"menu-brand-action"`; the latter places menu, centered brand and trailing action below tablet and adds full-label actions to the existing disclosure. |
+| `shell.mobileLayout` | `"menu-brand-action"` (default) gives equal mobile side tracks, an exact-center mark and a primary icon or empty right track; explicit `"inline"` retains legacy positioning. |
 | `shell.brand.tone` | `"auto"` or `"inverse"`. Omitted tone inherits an inverse overlay header; explicit `"auto"` keeps ordinary brand ink. |
 | `shell.nav.tone` | `"auto"` or `"inverse"`. Omitted tone inherits an inverse overlay header without changing the default markup; explicit `"auto"` keeps ordinary toggle ink. The server and interactive client render the same initial disclosure. |
 | Hero section `eyebrowTone` | `"accent"` (default) or `"muted"`, using the existing secondary text ink. |
@@ -2767,18 +2767,19 @@ These fields belong to `SiteLinkInput`, `SiteBrandInput`, `SiteShellInput`,
 `@clossys/publisher/web`. Its `react-server` condition selects the server
 implementation. Hero appearance fields pass through
 copy resolution into `SectionedView` and `LandingView`; copy references and
-their provenance stay unchanged. Existing configurations render the same
-bytes when the new fields are omitted.
+their provenance stay unchanged. Hero appearance omission preserves the hero defaults; shared header defaults use the responsive contract.
 
-For a mobile header with the menu at inline-start, a centered logo and an
-icon CTA at inline-end, opt into `mobileLayout: "menu-brand-action"` and
-`nav.trigger: "icon"`. Both fields also pass through `SiteFrameConfig.site`.
-Below tablet, equal-width columns keep the whole logo centered independently
-of the controls. The logo fits its column without cropping; trailing controls
-wrap within theirs, retaining their tap targets and full labels. From tablet
-up, the header keeps its existing `navPlacement` layout; oversized trailing
-groups wrap within the available width. The icon trigger keeps `triggerLabel` as its accessible name, falling back to
-`nav.label` when the toggle copy is omitted.
+The default header centers desktop navigation on the whole header and measures
+intrinsic brand/link/action widths to collapse before collision. Mobile places
+the menu at inline-start, a mark-only brand at the exact center, and the supplied
+primary icon at inline-end (or an empty noninteractive track). `nav.trigger:
+"icon"` selects the explicit two-stroke icon; the default label trigger uses the
+same two-line/X visual in the shared header. Both fields pass through
+`SiteFrameConfig.site`. Configure zero to five links and zero to three total
+actions with distinct variants. The panel lists every full label: links, then
+secondary, ghost, primary. Explicit leading/inline positioning retains its
+legacy geometry and renders each action once. The trigger keeps `triggerLabel`
+as its accessible name, falling back to `nav.label` when toggle copy is omitted.
 
 ```tsx
 import type { SiteFrameConfig } from "@clossys/publisher/web";
@@ -2803,14 +2804,13 @@ const mobileFrame: SiteFrameConfig = {
 };
 ```
 
-An action `icon` uses Designer's SVG shape data and the same validation as
-environment icons. Designer's `SiteHeader.ActionLink` shows the icon alone
-below tablet while retaining the full label as its accessible name; tablet
-and wider show the label beside it. In the opted-in layout, the existing
-navigation disclosure also lists the full-label `actions`, hidden from tablet
-up, within the same navigation landmark. Navigation, secondary-action and
-ordinary footer links refuse `icon`. Omitted fields retain the existing HTML;
-`mobileLayout: "inline"` and `nav.trigger: "label"` select the defaults.
+An action `icon` uses Designer's SVG shape data and validation. The primary
+requires a supplied icon plus nonblank label. The default mobile bar shows its
+icon alone, retaining that accessible label; each full-label action also lives
+in the shared desktop/panel list, ordered secondary, ghost, primary. Ordinary
+navigation, secondary-action and footer links refuse `icon`. The shared default
+is `mobileLayout: "menu-brand-action"`; explicit `"inline"` preserves legacy
+positioning. `nav.trigger: "label"` remains the trigger-content default.
 
 ```tsx
 import { AuthView, SiteFrame, siteShellFor } from "@clossys/publisher/web";
@@ -2904,11 +2904,12 @@ export function SignInPage() {
   placement are refused. `SiteFrameConfig.site.header` applies this choice
   to the public site only.
 
-  The overlay is fixed: the first block must reserve space above its copy
-  for the header, the page must scroll on the root, and ancestors must avoid
+  The reserved header is sticky and the overlay is fixed. The frame reserves
+  overlay clearance and uses one shared offset for skip/anchor targets; Views
+  do not guess header padding. The page scrolls on the document. Avoid ancestor
   transforms, filters and containment that establish a fixed containing block.
-  In-page anchors need root `scroll-padding-top` for the header height.
-  A fixed menu panel inside the glass header needs a portal outside it.
+  The disclosure panel scrolls below its header, capped to the viewport and safe
+  area; it does not need a separate fixed panel or portal.
 - **Fails closed.** An unknown field, copy that does not resolve (or resolves
   blank), a non-image brand asset, a disallowed link, icon data that is not
   plain SVG shape data, a malformed `origin`, a `ground` outside `base`,
@@ -2939,7 +2940,8 @@ export function SignInPage() {
   `ref`, `children`, `dangerouslySetInnerHTML` and any `url(...)` value are
   refused. The string `key` Designer's generated icons carry is dropped. The
   frame renders a frozen copy, so changing the caller's data afterwards has
-  no effect. Icon actions render after text actions and before environments.
+  no effect. Header controls, including icon actions and environments, normalize
+  into the same distinct variants and panel order: secondary, ghost, primary.
   Social links render before the legal row, in a named navigation when
   `social.label` is given. Ungrouped footer links render after headed columns
   without a heading. Empty slot arrays render nothing.
@@ -4789,6 +4791,28 @@ transport whether it may send. It declares the lifecycle and transport ports
 structurally and imports no consent or analytics implementation: the host
 composes those and passes them in.
 
+The default `presentation="card"` is a compact pinned notice: bottom-start
+on desktop and bottom-centre on phones, with safe-area gutters, glass and a
+hairline, two equal outlined choices and a visually hidden title that keeps
+the region named. `presentation="banner"` retains the former in-flow markup,
+visible title and separate policy link. Mounting remains the host's choice.
+The card precedes page children in DOM order. While visible, its measured
+height and bottom gap reserve document end space and focus-scroll clearance;
+closing it restores still-owned host styles without replacing later edits.
+A choice still closes the notice; reopening shows a check and `aria-pressed`
+for the lifecycle's effective granted or denied choice. Escape, reopen focus,
+transport binding and the polite status region retain their behavior.
+
+For a card, `ConsentCopyRefs.trailingText?` resolves to
+`ResolvedConsentCopy.trailingText?` with the same provenance and validation
+as the required copy. Its text follows the lead and inline policy label;
+omitting it adds no punctuation. An unsanctioned policy href keeps a present
+label as plain text and creates no anchor. When the label is absent, author
+the lead and trail to form a complete sentence without it; the assembly
+does not infer grammar. The banner keeps its former copy and link rendering.
+This source unit proves server rendering, hydration and jsdom interaction;
+it does not establish browser or accessibility-audit qualification.
+
 - **Copy is resolved on the server.** `resolveConsentCopy` from
   `@clossys/publisher/consent-copy` resolves every notice and status string
   through a Writer `CopyResolver` and refuses a missing field, a draft,
@@ -6265,3 +6289,34 @@ chrome-free standalone view, one frame-owned main, one matching skip target,
 view content inside main and frame chrome outside it. This is structural SSR
 evidence only: no browser, accessibility-tree, focus-order, packed-install or
 consumer runtime qualification. A record alone never qualifies a pair.
+
+`SiteFrame` exports immutable `SITE_FRAME_CONTRACT` and
+`SITE_FRAME_CONFIG_SCHEMA` metadata through both web and server entries. The
+contract references real Designer Header/Footer exports, separate from Pack
+route placement and Instance binding; it is not measurement or qualification.
+Footer composition facts remain pending the footer unit. `presentation` accepts
+only flat finite `headerGround`, `headerPlacement` and `headerTone` keys, with
+reserved/base defaults; overlay uses tone and reserved uses ground. Shared
+`normalizeSiteFrameConfig` rejects unknown keys and incompatible dependent
+fields and accepts its own normalized output.
+
+Header navigation permits zero to five links and zero to three total actions,
+including legacy secondary, icon and environment controls. Explicit action
+variants must be distinct `secondary`, `ghost`, `primary`. Implicit legacy slots
+use unoccupied variants in that order; primary requires resolved nonblank copy
+and supplied validated SVG icon data. `normalizeSiteFrameActions` accepts
+already-resolved label/href/IconNode content; `resolveShell` owns copy, URL and
+SVG allowlist validation before that helper. No primary means an empty,
+noninteractive right track. Actions without navigation reuse existing shared
+`Primary`/`Menu` labels; no minimum link count or invented brand copy is needed.
+All full labels appear in the panel after links, secondary then ghost then
+primary. Only the default mobile primary affordance has a second icon-only copy.
+Explicit existing leading/inline positioning keeps each full-label action once
+and retains its legacy geometry, without the separate default mobile icon bar.
+
+The frame owns one focusable main/skip target, document scrolling, footer flow,
+and a shared header-clearance CSS property for sticky/fixed chrome and anchors.
+A host may mount the real `ConsentExperience` separately; the frame does not
+mount it or own permission/storage. A reopened notice takes visual priority;
+the menu opener stays live for focus return, and neither disclosure nor notice
+adds a page scroll lock.

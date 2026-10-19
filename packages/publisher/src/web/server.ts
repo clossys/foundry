@@ -187,3 +187,6 @@ export { ContactForm } from "#publisher-web-views";
 export type { ContactFormCopy, ContactFormDevPreview, ContactFormProps, ContactFormTopic, ContactFormValues } from "#publisher-web-views";
 
 export type { SectionedViewHeroSection } from "../core/sectioned-view.js";
+
+export { SITE_FRAME_CONTRACT, SITE_FRAME_CONFIG_SCHEMA, normalizeSiteFrameConfig, normalizeSiteFrameActions } from "./frame/site-frame-contract.js";
+export type { SiteFramePresentationConfig } from "./frame/site-frame-contract.js";

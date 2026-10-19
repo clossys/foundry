@@ -1,7 +1,10 @@
 import { readFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { renderToStaticMarkup, renderToString } from "react-dom/server";
+import { hydrateRoot } from "react-dom/client";
 import { resolve } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ConsentBanner } from "./ConsentBanner.js";
 
@@ -359,5 +362,126 @@ describe("ConsentBanner: opaque and responsive", () => {
       expect(value).toMatch(/^oklch\(/);
       expect(value).not.toContain("/");
     }
+  });
+});
+
+
+
+function consentCardUtility(): string {
+  const theme = readFileSync(resolve(import.meta.dirname, "..", "..", "styles", "theme-keys.css"), "utf8");
+  const start = theme.indexOf("@utility consent-card {");
+  expect(start).toBeGreaterThanOrEqual(0);
+  let end = theme.indexOf("{", start), depth = 0;
+  do {
+    if (theme[end] === "{") depth++;
+    if (theme[end] === "}") depth--;
+    end++;
+  } while (depth > 0 && end < theme.length);
+  return theme.slice(start, end);
+}
+
+describe("CONSENT-1 card presentation", () => {
+  it("preserves the immutable-base banner HTML by default and by explicit opt-in", () => {
+    for (const presentation of [undefined, "banner"] as const) {
+      const html = renderToStaticMarkup(<ConsentBanner title="Banner title" body="Banner body" acceptLabel="Accept label" rejectLabel="Reject label" onAccept={() => {}} onReject={() => {}} privacyLink={<a href="/privacy">Privacy link</a>} presentation={presentation} />)
+        .replace(/\bid="[^"]+"/g, 'id="ID"').replace(/\baria-labelledby="[^"]+"/g, 'aria-labelledby="ID"');
+      expect(createHash("sha256").update(html).digest("hex")).toBe("cfb61e6eb29a35cd8d643f517852d1ce9027db3dabd53e1b0483035c195405d0");
+    }
+  });
+
+  it("keeps a named region, a visually hidden title, equal outlined choices and a placement hook", () => {
+    const { root } = setup({ presentation: "card" });
+    expect(screen.getByRole("region", { name: "Banner title" })).toBe(root);
+    expect(screen.getByRole("heading", { name: "Banner title" })).toHaveClass("sr-only");
+    expect(root).toHaveClass("consent-card");
+    expect(root).toHaveAttribute("data-consent-presentation", "card");
+    const accept = screen.getByRole("button", { name: "Accept label" });
+    const reject = screen.getByRole("button", { name: "Reject label" });
+    expect(accept.className).toBe(reject.className);
+    expect(accept).toHaveClass("flex-1", "min-w-0", "whitespace-normal");
+    expect(accept).toHaveAttribute("aria-pressed", "false");
+    expect(reject).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("status")).toBeEmptyDOMElement();
+  });
+
+  it.each(["granted", "denied"] as const)("marks only the %s choice and keeps the live region mounted", (selectedChoice) => {
+    const { root } = setup({ presentation: "card", selectedChoice });
+    const selected = screen.getByRole("button", { name: selectedChoice === "granted" ? "Accept label" : "Reject label" });
+    const other = screen.getByRole("button", { name: selectedChoice === "granted" ? "Reject label" : "Accept label" });
+    expect(selected).toHaveAttribute("aria-pressed", "true");
+    expect(other).toHaveAttribute("aria-pressed", "false");
+    expect(selected.querySelector('[data-consent-selected][aria-hidden="true"]')).not.toBeNull();
+    expect(other.querySelector("[data-consent-selected]")).toBeNull();
+    expect(root.querySelectorAll('[role="status"]')).toHaveLength(1);
+  });
+
+  it("keeps long copy in an RTL card with logical safe-area placement and accessibility fallbacks", () => {
+    const long = "Long consent wording ".repeat(80);
+    const { container } = render(
+      <div dir="rtl">
+        <ConsentBanner presentation="card" title="Banner title" body={long} acceptLabel="Accept label" rejectLabel="Reject label" onAccept={() => {}} onReject={() => {}} />
+      </div>,
+    );
+    const root = container.querySelector("[data-consent-banner]") as HTMLElement;
+    expect(root).toHaveTextContent(long.trim());
+    expect(root).not.toHaveAttribute("dir");
+    expect(root.closest("[dir]")).toBe(container.firstElementChild);
+    expect(root.parentElement).toHaveAttribute("dir", "rtl");
+    const card = consentCardUtility();
+    for (const declaration of ["position: fixed", "inset-inline", "inset-block-end", "safe-area-inset-bottom", "safe-area-inset-left", "safe-area-inset-right", "max-inline-size", "--ui-width-form-max", "--color-surface-glass", "--blur-glass", "--color-overlay-border", "prefers-reduced-transparency: reduce", "@supports not", "forced-colors: active", "overflow-y: auto"]) expect(card, declaration).toContain(declaration);
+    expect(card).toContain("--ui-ring-focus: 0 0 0 2px var(--color-ink-primary");
+    expect(card).toContain('\u0026[data-consent-presentation="card"] :focus-visible');
+    expect(card).toContain("outline-color: var(--color-ink-primary");
+    expect(card).not.toContain("animation");
+    expect(card).not.toContain("scroll(");
+    expect(readFileSync(resolve(import.meta.dirname, "..", "..", "styles", "compiled.css"), "utf8")).toContain(".consent-card");
+  });
+});
+
+
+describe("CONSENT-1 forced colors", () => {
+  it("provides native choice edges and a focus outline where shadows are suppressed", () => {
+    const card = consentCardUtility();
+    expect(card).toContain("border-color: ButtonText");
+    expect(card).toContain("outline: 2px solid Highlight");
+    expect(card).toContain("outline-offset: 2px");
+  });
+});
+
+
+describe("CONSENT-1 card server rendering and hydration", () => {
+  it("hydrates the same named card and selected controls without errors, then handles a press", async () => {
+    const onAccept = vi.fn(), onReject = vi.fn();
+    const tree = <ConsentBanner presentation="card" selectedChoice="granted" title="Card title" body="Card body" acceptLabel="Accept label" rejectLabel="Reject label" onAccept={onAccept} onReject={onReject} />;
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+    const html = renderToString(tree);
+    const container = document.createElement("div");
+    container.innerHTML = html;
+    document.body.appendChild(container);
+    const region = container.querySelector("[data-consent-banner]");
+    const status = container.querySelector('[role="status"]');
+    const recoverable = vi.fn();
+    let root: ReturnType<typeof hydrateRoot> | undefined;
+    try {
+      await act(async () => { root = hydrateRoot(container, tree, { onRecoverableError: recoverable }); });
+      expect(container.querySelector("[data-consent-banner]")).toBe(region);
+      expect(region).toHaveAccessibleName("Card title");
+      expect(region).toHaveClass("consent-card");
+      expect(container.querySelector("h2")).toHaveClass("sr-only");
+      expect(container.querySelector('[role="status"]')).toBe(status);
+      const accept = screen.getByRole("button", { name: "Accept label" });
+      expect(accept).toHaveAttribute("aria-pressed", "true");
+      expect(accept.querySelector("[data-consent-selected]")).not.toBeNull();
+      expect(screen.getByRole("button", { name: "Reject label" })).toHaveAttribute("aria-pressed", "false");
+      await userEvent.setup().click(accept);
+      expect(onAccept).toHaveBeenCalledTimes(1);
+      expect(onReject).not.toHaveBeenCalled();
+      expect(recoverable).not.toHaveBeenCalled();
+      expect(consoleError).not.toHaveBeenCalled();
+    } finally {
+      await act(async () => { root?.unmount(); });
+      container.remove();
+    }
+    expect(consoleError).not.toHaveBeenCalled();
   });
 });
