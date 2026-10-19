@@ -6350,4 +6350,5 @@ indexes and qualification flags are refused. Lifecycle item references on graph,
 node, identity, context, edge and endpoint records return the stable `unknown-field`
 reason. Existing Block role lifecycle obligations remain governed by the role
 validators. No lifecycle item, source use or qualification is fabricated.
+Copied node, edge and identity records are prototype-less; use `Object.hasOwn(record, key)` instead of instance prototype methods.
 PackManifest and the publication map remain separate contracts.

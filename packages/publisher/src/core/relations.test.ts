@@ -78,6 +78,32 @@ describe("exact declared membership and measured source use", () => {
     let input = fixture(); input.edges[6] = { ...use, to: { kind: "atom", key: "absent" } }; refused(input, "endpoint");
     input = fixture(); input.edges[6] = { ...use, to: { kind: "block", key: "nested" } } as unknown as RelationEdge; refused(input, "endpoint");
   });
+  it.each(["from", "to"] as const)("requires exact %s endpoint kind labels", endpoint => {
+    const input = fixture();
+    Object.assign(input.edges[6]![endpoint], { kind: "token" });
+    refused(input, "endpoint");
+  });
+  it("requires route bindings in the auxiliary collection", () => {
+    const input = fixture(), route = input.routeBindings.pop()!;
+    input.nodes.push(route as unknown as RelationNode);
+    refused(input, "shape");
+  });
+  it("refuses duplicate complete identities at distinct node keys", () => {
+    const input = fixture();
+    input.nodes.push({ ...input.nodes[6]!, key: "duplicate-identity" });
+    refused(input, "identity");
+  });
+  it("requires a role-identified Block to participate in an Instance join", () => {
+    const input = fixture();
+    input.nodes.push({ ...input.nodes[2]!, key: "orphan-role", identity: identity("orphan-role") });
+    refused(input, "binding-join");
+  });
+  it.each([undefined, {}, { region: "" }])("requires nonempty placement location metadata %#", location => {
+    const input = fixture(), placement = input.edges[1] as Extract<RelationEdge, { kind: "placement" }>;
+    if (location === undefined) delete (placement as Partial<typeof placement>).location;
+    else placement.location = location;
+    refused(input, "placement-key");
+  });
   it.each(["placement", "instance-frame"])("refuses array-coerced %s edge kinds", kind => {
     const input = fixture(), edge = input.edges.find(edge => edge.kind === kind)!;
     input.edges.push({ kind: [kind], from: edge.from, to: edge.to, provenance: edge.provenance } as unknown as RelationEdge);
@@ -98,6 +124,9 @@ describe("exact declared membership and measured source use", () => {
     for (const field of ["consumer", "brand", "medium"] as const) {
       const input = fixture(); (input.nodes[5]!.identity.context as Record<string, string>)[field] = field === "medium" ? "email" : "foreign";
       refused(input, "context");
+      const consistent = fixture();
+      for (const node of [...consistent.nodes, ...consistent.routeBindings]) (node.identity.context as Record<string, string>)[field] = field === "medium" ? "email" : "foreign";
+      refused(consistent, "context");
     }
     const input = fixture(); input.nodes[5]!.identity.sourceRevision = "b".repeat(40); refused(input, "revision");
   });
@@ -122,6 +151,12 @@ describe("exact declared membership and measured source use", () => {
     }
     let input = fixture(); Object.assign((input.nodes[3] as Extract<RelationNode, { kind: "block" }>).roleIdentity!, { configDigest: "sha256:wrong" }); refused(input, "binding-join");
     input = fixture(); input.edges = input.edges.filter(edge => edge.kind !== "instance-view"); refused(input, "binding-join");
+    for (const key of ["frame", "view"]) {
+      const input = fixture(), block = input.nodes.find(node => node.key === key)!;
+      block.identity.sourceRevision = "different-role-revision";
+      for (const edge of input.edges.filter(edge => edge.from.key === key)) edge.provenance = { ...edge.provenance, sourceRevision: block.identity.sourceRevision };
+      refused(input, "binding-join");
+    }
   });
   it("requires exact source provenance, refusing imports, missing fields and authored reverse indexes", () => {
     for (const change of [...["import", "alias", "default-fixture"].map(kind => ({ provenance: { ...provenance, kind } })), { provenance: { ...provenance, evidenceRef: "" } },
