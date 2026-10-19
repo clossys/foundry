@@ -15,8 +15,10 @@ export interface AppNavigationProps {
   tree: readonly AppNavigationNode[];
   activeId?: string;
   activeHref?: string;
+  /** @default "Navigation" */
   label?: string;
   footer?: ReactNode;
+  /** @default "No destinations available" */
   emptyMessage?: ReactNode;
   collapsed?: boolean;
   defaultCollapsed?: boolean;
@@ -24,9 +26,22 @@ export interface AppNavigationProps {
   drawerOpen?: boolean;
   onDrawerOpenChange?: (open: boolean) => void;
   navigationKey?: string;
+  /** @default "(min-width: 768px)" */
   dismissAt?: string;
+  /** @default "Open navigation" */
   openLabel?: string;
+  /** @default "Close navigation" */
   closeLabel?: string;
+  /** @default "Expand navigation" */
+  expandLabel?: string;
+  /** @default "Collapse navigation" */
+  collapseLabel?: string;
+  /** @default "Collapse {nodeLabel}" when expanded, "Expand {nodeLabel}" otherwise */
+  formatDisclosureLabel?: (nodeLabel: string, expanded: boolean) => string;
+}
+
+function defaultDisclosureLabel(nodeLabel: string, expanded: boolean): string {
+  return (expanded ? "Collapse " : "Expand ") + nodeLabel;
 }
 
 const CONTROL = "flex min-w-0 items-center justify-start gap-sm rounded-control border-0 bg-transparent px-sm py-sm text-start text-ink-primary no-underline hover:no-underline hover:bg-surface-sunken focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2";
@@ -64,7 +79,9 @@ export function AppNavigation({
   tree, activeId, activeHref, label = "Navigation", footer, emptyMessage = "No destinations available",
   collapsed: suppliedCollapsed, defaultCollapsed = false, onCollapsedChange,
   drawerOpen, onDrawerOpenChange, navigationKey, dismissAt = "(min-width: 768px)",
-  openLabel = "Open navigation", closeLabel = "Close navigation",
+  openLabel = "Open navigation", closeLabel = "Close navigation", expandLabel = "Expand navigation", collapseLabel = "Collapse navigation",
+  /** @default "Collapse {nodeLabel}" when expanded, "Expand {nodeLabel}" otherwise */
+  formatDisclosureLabel = defaultDisclosureLabel,
 }: AppNavigationProps) {
   const ancestry = getAppNavigationAncestry(tree, { id: activeId, href: activeHref });
   const active = ancestry.at(-1)?.id;
@@ -169,7 +186,7 @@ export function AppNavigation({
               {children.length > 0 && !collapsed && <Button variant="ghost" className={cx(CONTROL, "shrink-0", node.href || node.onAction ? "justify-center" : "flex-1")}
                 style={{ minBlockSize: "var(--ui-layout-tap-target, 44px)", minInlineSize: "var(--ui-layout-tap-target, 44px)" }}
                 data-application-navigation-control="" data-navigation-node-id={node.id}
-                aria-label={(isExpanded ? "Collapse " : "Expand ") + node.label} aria-expanded={isExpanded} aria-controls={panelId}
+                aria-label={formatDisclosureLabel(node.label, isExpanded)} aria-expanded={isExpanded} aria-controls={panelId}
                 onPress={() => toggle(node.id)}>
                 {!node.href && !node.onAction && <span className="min-w-0 flex-1 truncate">{node.label}</span>}
                 <Icon glyph={ChevronDown} decorative size="sm" className={isExpanded ? "rotate-180" : undefined} />
@@ -191,9 +208,12 @@ export function AppNavigation({
     style={{ inlineSize: collapsed ? "var(--ui-layout-sidebar-rail-w, 64px)" : "var(--ui-layout-sidebar-w, 256px)" }}
     header={<div className="flex min-w-0 items-center justify-between gap-xs">
       <span className={collapsed ? "sr-only" : "min-w-0 truncate text-body font-semibold"}>{label}</span>
-      <Button variant="ghost" className="icon-control-md shrink-0 border-0 bg-transparent p-0 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent" aria-label={collapsed ? "Expand navigation" : "Collapse navigation"}
-        onPress={() => { setCollapsed(!collapsed); onCollapsedChange?.(!collapsed); }}>
-        <Icon glyph={collapsed ? ChevronRight : ChevronLeft} decorative size="sm" className="rtl:rotate-180" />
-      </Button>
+      {collapsed ? <Button variant="ghost" className="icon-control-md shrink-0 border-0 bg-transparent p-0 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent" aria-label={expandLabel}
+        onPress={() => { setCollapsed(false); onCollapsedChange?.(false); }}>
+        <Icon glyph={ChevronRight} decorative size="sm" className="rtl:rotate-180" />
+      </Button> : <Button variant="ghost" className="icon-control-md shrink-0 border-0 bg-transparent p-0 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent" aria-label={collapseLabel}
+        onPress={() => { setCollapsed(true); onCollapsedChange?.(true); }}>
+        <Icon glyph={ChevronLeft} decorative size="sm" className="rtl:rotate-180" />
+      </Button>}
     </div>} footer={footerRegion}>{links}</Panel>;
 }

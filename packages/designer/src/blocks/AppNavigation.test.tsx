@@ -30,6 +30,32 @@ beforeEach(() => {
 afterEach(() => { document.documentElement.dir = ""; vi.unstubAllGlobals(); });
 
 describe("AppNavigation", () => {
+  it("uses host copy for rail toggles and both disclosure states", async () => {
+    const formatDisclosureLabel = vi.fn((label: string, expanded: boolean) => (expanded ? "Fermer " : "Ouvrir ") + label);
+    const copy = { expandLabel: "Agrandir", collapseLabel: "Reduire", formatDisclosureLabel };
+    render(<AppNavigation tree={tree} activeId="blocks" label="Destinations" {...copy} />);
+    expect(screen.getByRole("navigation", { name: "Destinations" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Catalogs" })).toHaveAttribute("href", "#catalogs");
+    await userEvent.click(screen.getByRole("button", { name: "Fermer Catalogs" }));
+    expect(screen.queryByRole("link", { name: "Blocks" })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Ouvrir Catalogs" }));
+    expect(screen.getByRole("link", { name: "Blocks" })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Reduire" }));
+    await userEvent.click(screen.getByRole("button", { name: "Agrandir" }));
+    expect(formatDisclosureLabel).toHaveBeenCalledWith("Catalogs", true);
+    expect(formatDisclosureLabel).toHaveBeenCalledWith("Catalogs", false);
+  });
+
+  it("uses host copy for narrow open, close, heading and empty state", async () => {
+    wide = false;
+    render(<AppNavigation tree={[]} label="Destinations" emptyMessage="Aucune destination" openLabel="Ouvrir" closeLabel="Fermer" />);
+    await userEvent.click(screen.getByRole("button", { name: "Ouvrir" }));
+    expect(screen.getByRole("dialog", { name: "Destinations" })).toBeInTheDocument();
+    expect(screen.getByText("Aucune destination")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Fermer" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+  });
+
   it("uses descriptive navigation attribute prefixes on the rendered controls and regions", () => {
     const { container } = render(<AppNavigation tree={tree} activeId="blocks" footer="Host profile" />);
     const controls = [...container.querySelectorAll("[data-application-navigation-control]")];

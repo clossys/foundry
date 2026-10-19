@@ -7566,6 +7566,9 @@ cannot revive a dismissed surface; acknowledge with false or explicitly reopen
 the trigger. `onDrawerOpenChange` lets the host coordinate other overlays.
 `navigationKey`, `label`, `openLabel` and `closeLabel` are host inputs. The Drawer close control
 uses a 44px ghost icon button; `closeLabel` supplies its accessible name.
+`expandLabel`, `collapseLabel` and `formatDisclosureLabel(nodeLabel, expanded)`
+let the host translate rail toggles and disclosures; their defaults preserve the
+English expand/collapse announcements. All message props are optional.
 
 Arrow Up/Down and Home/End move among visible navigation controls. Logical
 Left/Right expand or collapse a parent, reversing in RTL. Enter/Space activate
