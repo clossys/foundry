@@ -1,3 +1,4 @@
+import { SITE_FRAME_NAV_DEFAULTS } from "./site-frame-contract.js";
 import { isValidElement, type ReactElement, type ReactNode } from "react";
 import { Icon } from "@clossys/designer/atoms/server";
 import { Brandmark, SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
@@ -97,49 +98,22 @@ function LinkList({ links, className }: { readonly links: readonly ResolvedSiteL
  * Server-safe: no hooks. Skip-link focus and navigation disclosure are client
  * islands; the server passes resolved strings and link data.
  */
-export function SiteFrame({ shell, resolveCopy, resolveAsset, children }: SiteFrameProps): ReactElement {
-  const resolved = resolveShell(shell, resolveCopy, resolveAsset);
+export function SiteFrame({ shell, presentation, resolveCopy, resolveAsset, children }: SiteFrameProps): ReactElement {
+  const resolved = resolveShell(shell, resolveCopy, resolveAsset, presentation);
   const { brand, footer } = resolved;
   if (footer?.placement === "overlay") assertOverlayScene(children, resolved.header.placement);
 
-  // Equal mobile tracks keep the brand centered when the control widths differ.
-  // The whole asset can shrink inside its track without changing its proportions.
-  const mobileHeaderClassName = resolved.mobileLayout === "menu-brand-action"
-    ? "max-tablet:[&>div]:grid-cols-3! [&_.col-start-3]:min-w-0 [&_.col-start-3]:max-w-full max-tablet:[&_.col-start-3]:w-full [&_.col-start-3]:flex-wrap [&_.col-start-3]:justify-end [&_.col-start-3]:wrap-anywhere [&_.col-start-3>*]:max-w-full"
-    : undefined;
-  const brandClassName = resolved.mobileLayout === "menu-brand-action" ? "max-w-full [&_img]:object-contain" : undefined;
   const brandmark =
     brand.wordmark === undefined ? (
-      <Brandmark variant="mark" size={brand.size} label={brand.label} markSrc={brand.markSrc} plate={brand.plate} tone={brand.tone} className={brandClassName} />
+      <Brandmark variant="mark" size={brand.size} label={brand.label} markSrc={brand.markSrc} plate={brand.plate} tone={brand.tone} />
     ) : (
-      <Brandmark variant="lockup" size={brand.size} label={brand.label} wordmark={brand.wordmark} markSrc={brand.markSrc} plate={brand.plate} tone={brand.tone} className={brandClassName} />
+      <Brandmark variant="lockup" size={brand.size} label={brand.label} wordmark={brand.wordmark} markSrc={brand.markSrc} plate={brand.plate} tone={brand.tone} />
     );
 
-  const mobileActions = resolved.mobileLayout === "menu-brand-action"
-    ? resolved.actions.map(({ href, label, emphasis }) => ({ href, label, emphasis }))
-    : undefined;
-  const nav = resolved.nav ? <SiteNavDisclosure nav={resolved.nav} actions={mobileActions} /> : undefined;
-
-  const actions =
-    resolved.actions.length > 0 || resolved.iconActions.length > 0 || resolved.environments.length > 0 ? (
-      <>
-        {resolved.actions.map((link, index) => (
-          <SiteHeader.ActionLink key={`action-${index}`} href={link.href} label={link.label} icon={link.icon} variant={link.emphasis} />
-        ))}
-        {resolved.iconActions.map((link, index) => (
-          <IconLink key={`icon-action-${index}`} link={link} />
-        ))}
-        {resolved.environments.map((environment, index) => (
-          <SiteHeader.ActionLink
-            key={`environment-${index}`}
-            href={environment.href}
-            label={environment.label}
-            icon={environment.icon}
-            isCurrent={environment.isCurrent}
-          />
-        ))}
-      </>
-    ) : undefined;
+  const navigation = resolved.nav ?? (resolved.headerActions.length ? { ...SITE_FRAME_NAV_DEFAULTS, links: [] } : undefined);
+  const nav = navigation ? <SiteNavDisclosure nav={navigation} actions={resolved.headerActions} surfaceLabel={resolved.surfaceLabel} /> : undefined;
+  const primary = resolved.headerActions.find(action => action.emphasis === "primary");
+  const actions = primary && resolved.navPlacement === "centered" && resolved.mobileLayout === "menu-brand-action" ? <SiteHeader.ActionLink data-header-primary="" href={primary.href} label={primary.label} icon={primary.icon} isCurrent={primary.isCurrent} variant="primary" /> : undefined;
 
   const footerContent = footer ? (
     <SiteFooter
@@ -186,20 +160,18 @@ export function SiteFrame({ shell, resolveCopy, resolveAsset, children }: SiteFr
   ) : null;
 
   return (
-    <div className="flex min-h-dvh flex-col" {...(footer?.placement === "overlay" ? { style: { position: "relative" as const } } : {})}>
+    <div data-frame-root="" className="flex min-h-dvh flex-col" {...(footer?.placement === "overlay" ? { style: { position: "relative" as const } } : {})}>
       <SiteSkipLink targetId={SITE_MAIN_ID} label={resolved.skipLink} />
       <SiteHeader
         {...(resolved.header.placement === "overlay"
           ? { placement: "overlay" as const, tone: resolved.header.tone }
           : { ground: resolved.header.ground })}
-        className={mobileHeaderClassName}
         brand={brandmark}
         nav={nav}
         navPlacement={resolved.navPlacement}
         mobileLayout={resolved.mobileLayout}
-        secondaryAction={resolved.secondaryAction ? <SiteHeader.ActionLink href={resolved.secondaryAction.href} label={resolved.secondaryAction.label} /> : undefined}
         actions={actions}
-        surfaceLabel={resolved.surfaceLabel}
+        surfaceLabel={nav ? undefined : resolved.surfaceLabel}
       />
       <main id={SITE_MAIN_ID} tabIndex={-1} className="flex w-full flex-1 flex-col">
         {children}
