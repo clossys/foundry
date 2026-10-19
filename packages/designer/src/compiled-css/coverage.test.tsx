@@ -40,6 +40,10 @@ import { Chip } from "../atoms/Chip.js";
 import { Link } from "../atoms/Link.js";
 import { Meter } from "../atoms/Meter.js";
 import { Separator } from "../atoms/Separator.js";
+import { ResizeHandle } from "../atoms/ResizeHandle.js";
+import { Panel } from "../blocks/Panel.js";
+import { Drawer } from "../blocks/Drawer.js";
+import { ResizablePane } from "../blocks/ResizablePane.js";
 import { Skeleton } from "../atoms/Skeleton.js";
 import { Spinner } from "../atoms/Spinner.js";
 import { StatusMark } from "../atoms/StatusMark.js";
@@ -96,6 +100,45 @@ function toSelectorText(className: string): string {
 }
 
 describe("coverage: real rendered classes are all present in compiled.css", () => {
+  it("covers AppFrame Material and resize states in fresh and shipped CSS", async () => {
+    const classes = new Set<string>();
+    const collect = (container: HTMLElement) => { for (const name of collectClassNames(container)) classes.add(name); };
+    for (const orientation of ["vertical", "horizontal"] as const) {
+      for (const ground of ["base", "inverse"] as const) {
+        const view = render(<ResizablePane ground={ground} orientation={orientation} min={100} max={300} defaultValue={180} label="Tools" handleLabel="Resize tools">Content</ResizablePane>);
+        collect(view.container);
+        view.unmount();
+      }
+    }
+    const atom = render(<ResizeHandle value={100} min={50} max={200} resetValue={100} label="Resize tools" onChange={() => {}} />);
+    collect(atom.container);
+    atom.unmount();
+    for (const ground of ["base", "sunken", "inverse"] as const) {
+      const view = render(<Panel ground={ground} header="Header" footer="Footer">Content</Panel>);
+      collect(view.container);
+      view.unmount();
+    }
+    for (const placement of ["start", "end", "bottom"] as const) {
+      const view = render(<Drawer placement={placement} heading="Tools" closeLabel="Close tools" trigger={<Button>Open tools</Button>}>Content</Drawer>);
+      await userEvent.click(view.getByRole("button", { name: "Open tools" }));
+      collect(document.body);
+      view.unmount();
+    }
+    const generated = await generateCompiledCss({ stylesDir: resolve(packageRoot, "styles"), candidates: scanCompiledCssSources(packageRoot).candidates });
+    const shipped = readFileSync(resolve(packageRoot, "styles/compiled.css"), "utf8");
+    for (const name of classes) {
+      expect(generated.css, `fresh: ${name}`).toContain(toSelectorText(name));
+      expect(shipped, `shipped: ${name}`).toContain(toSelectorText(name));
+    }
+    for (const [label, css] of [["fresh", generated.css], ["shipped", shipped]] as const) {
+      expect(css, `${label}: solid outline`).toContain(".focus-visible\\:outline-solid:focus-visible");
+      const selector = ".focus-visible\\:outline-accent-on-inverse:focus-visible";
+      expect(css, `${label}: inverse focus selector`).toContain(selector);
+      const rule = css.slice(css.indexOf(selector)).split("}", 1)[0];
+      expect(rule, `${label}: inverse focus color`).toContain("outline-color: var(--color-accent-on-inverse,");
+    }
+  });
+
   it("covers actual ordered tracks and native/React Aria disclosure states", async () => {
     const classes = new Set<string>();
     const user = userEvent.setup();

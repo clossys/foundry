@@ -1179,6 +1179,9 @@
   .max-h-\[85vh\] {
     max-height: 85vh;
   }
+  .max-h-none {
+    max-height: none;
+  }
   .min-h-0 {
     min-height: 0px;
   }
@@ -1253,6 +1256,9 @@
   }
   .max-w-full {
     max-width: 100%;
+  }
+  .max-w-none {
+    max-width: none;
   }
   .min-w-0 {
     min-width: 0px;
@@ -1346,11 +1352,17 @@
   .animate-spin {
     animation: var(--animate-spin, spin 1s linear infinite);
   }
+  .cursor-col-resize {
+    cursor: col-resize;
+  }
   .cursor-default {
     cursor: default;
   }
   .cursor-pointer {
     cursor: pointer;
+  }
+  .cursor-row-resize {
+    cursor: row-resize;
   }
   .resize {
     resize: both;
@@ -1510,6 +1522,9 @@
   .self-start {
     align-self: flex-start;
   }
+  .self-stretch {
+    align-self: stretch;
+  }
   .justify-self-center {
     justify-self: center;
   }
@@ -1588,6 +1603,9 @@
   }
   .rounded-lg {
     border-radius: var(--radius-lg, 0.5rem);
+  }
+  .rounded-none {
+    border-radius: 0;
   }
   .rounded-panel {
     border-radius: var(--radius-panel, var(--radius-surface, var(--radius-default, 3px)));
@@ -2716,6 +2734,9 @@
   }
   .focus-visible\:outline-accent:focus-visible {
     outline-color: var(--color-accent, oklch(0.4748 0 0));
+  }
+  .focus-visible\:outline-accent-on-inverse:focus-visible {
+    outline-color: var(--color-accent-on-inverse, oklch(0.7763 0 0));
   }
   .focus-visible\:outline-ink-on-inverse:focus-visible {
     outline-color: var(--color-ink-on-inverse, oklch(0.9702 0 0));
