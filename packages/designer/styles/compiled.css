@@ -2503,6 +2503,9 @@
     outline-style: var(--tw-outline-style, solid);
     outline-width: 2px;
   }
+  .focus-visible\:-outline-offset-2:focus-visible {
+    outline-offset: calc(2px * -1);
+  }
   .focus-visible\:outline-offset-2:focus-visible {
     outline-offset: 2px;
   }

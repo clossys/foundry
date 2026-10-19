@@ -162,11 +162,12 @@
 @source inline("fill-rule fill-status-danger fill-status-info fill-status-success fill-status-warning fill: fills");
 @source inline("filter filterDOMProps filters finally findH finding finding.subject finds finite first fit five");
 @source inline("fixed flag flagged flat flex flex-1 flex-col flex-row flex-wrap floor. flow fluid focal focus");
-@source inline("focus-search focus-visible focus-visible:after:outline-2 focus-visible:after:outline-accent");
-@source inline("focus-visible:after:outline-accent-on-inverse focus-visible:after:outline-offset-2");
-@source inline("focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-accent-on-inverse");
-@source inline("focus-visible:outline-ink-on-inverse focus-visible:outline-offset-2 focus-visible:outline-solid");
-@source inline("focus-visible:ring-2 focus-visible:ring-surface-inverse-raised focus-visible:ring-surface-raised");
+@source inline("focus-search focus-visible focus-visible:-outline-offset-2 focus-visible:after:outline-2");
+@source inline("focus-visible:after:outline-accent focus-visible:after:outline-accent-on-inverse");
+@source inline("focus-visible:after:outline-offset-2 focus-visible:outline-2 focus-visible:outline-accent");
+@source inline("focus-visible:outline-accent-on-inverse focus-visible:outline-ink-on-inverse");
+@source inline("focus-visible:outline-offset-2 focus-visible:outline-solid focus-visible:ring-2");
+@source inline("focus-visible:ring-surface-inverse-raised focus-visible:ring-surface-raised");
 @source inline("focus-visible:text-ink-on-inverse focus-within:block focus-within:not-sr-only");
 @source inline("focus-within:overflow-x-auto focus-within:w-full focus. focus:bg-accent focus:fixed");
 @source inline("focus:not-sr-only focus:outline-none focus:px-md focus:py-sm focus:rounded-control focus:start-sm");

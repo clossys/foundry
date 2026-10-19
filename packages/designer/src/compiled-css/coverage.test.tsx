@@ -103,6 +103,7 @@ function toSelectorText(className: string): string {
 describe("coverage: real rendered classes are all present in compiled.css", () => {
   it("covers actual expanded, rail and narrow Drawer navigation classes", async () => {
     const classes = new Set<string>();
+    const focusClasses: string[][] = [];
     const tree = [{ id: "catalogs", label: "Catalogs", href: "#catalogs", children: [
       { id: "blocks", label: "Blocks", href: "#blocks" },
       { id: "actions", label: "Actions", onAction: () => {} },
@@ -117,16 +118,19 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
         try {
           if (state === "drawer") await userEvent.click(view.getByRole("button", { name: "Open navigation" }));
           for (const name of collectClassNames(document.body)) classes.add(name);
+          for (const row of document.querySelectorAll("[data-application-navigation-control]")) focusClasses.push([...row.classList]);
         } finally { view.unmount(); }
       }
       const generated = await generateCompiledCss({ stylesDir: resolve(packageRoot, "styles"), candidates: scanCompiledCssSources(packageRoot).candidates });
       const shipped = readFileSync(resolve(packageRoot, "styles/compiled.css"), "utf8");
+      for (const names of focusClasses) expect(names).toContain("focus-visible:-outline-offset-2");
       for (const name of classes) {
         expect(generated.css, `navigation fresh: ${name}`).toContain(toSelectorText(name));
         expect(shipped, `navigation shipped: ${name}`).toContain(toSelectorText(name));
       }
       for (const css of [generated.css, shipped]) {
         for (const [utility, declaration] of [["border-0", /border-width:\s*0(?:px)?;/], ["bg-transparent", /background-color:\s*transparent;/],
+          ["focus-visible:-outline-offset-2", /outline-offset:\s*(?:-2px|calc\(2px\s*\*\s*-1\));/],
           ["icon-control-md", /inline-size:\s*var\(--ui-layout-tap-target,\s*44px\)/]] as const) {
           const start = css.indexOf(toSelectorText(utility));
           expect(start).toBeGreaterThanOrEqual(0);

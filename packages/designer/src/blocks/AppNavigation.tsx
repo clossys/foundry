@@ -44,7 +44,7 @@ function defaultDisclosureLabel(nodeLabel: string, expanded: boolean): string {
   return (expanded ? "Collapse " : "Expand ") + nodeLabel;
 }
 
-const CONTROL = "flex min-w-0 items-center justify-start gap-sm rounded-control border-0 bg-transparent px-sm py-sm text-start text-ink-primary no-underline hover:no-underline hover:bg-surface-sunken focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2";
+const CONTROL = "flex min-w-0 items-center justify-start gap-sm rounded-control border-0 bg-transparent px-sm py-sm text-start text-ink-primary no-underline hover:no-underline hover:bg-surface-sunken focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent focus-visible:-outline-offset-2";
 
 /** Keep the overlay absent until the browser has completed focus-induced scrolling. */
 function RailTooltip({ trigger, label, requests }: { trigger: ReactNode; label: string; requests: { current: number } }) {
