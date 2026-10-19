@@ -459,25 +459,24 @@ function tokenValue(name: string): number {
 }
 
 describe("CONSENT-1 card geometry matches the signed-off reference", () => {
-  it("caps the width at the small container, not the form width", () => {
+  it("fills the viewport less safe-area gutters and centres below tablet width, with no width cap there", () => {
     const card = consentCardUtility();
-    expect(cardDeclaration(card, "max-inline-size")).toBe("var(--container-sm, 24rem)");
+    // Both inline insets are the gutter and margins are auto with no cap, so the
+    // used inline size is the viewport less both gutters, centred (CSS 2.1 §10.3.7).
+    expect(() => cardDeclaration(card, "max-inline-size")).toThrow("no top-level max-inline-size");
+    expect(() => cardDeclaration(card, "inline-size")).toThrow("no top-level inline-size");
+    expect(cardDeclaration(card, "inset-inline")).toBe("max(var(--spacing-md, 12px), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px))");
+    expect(cardDeclaration(card, "margin-inline")).toBe("auto");
+    expect(cardDeclaration(card, "inset-block-end")).toBe("max(var(--spacing-md, 12px), env(safe-area-inset-bottom, 0px))");
     expect(card).not.toContain("--ui-width-form-max");
   });
 
-  it("pins the bottom-start corner with logical properties only, so RTL flips it", () => {
+  it("caps at the small container and pins bottom-start from tablet width, logically so RTL flips it", () => {
     const card = consentCardUtility();
-    for (const physical of [/\bleft:/, /\bright:/, /\bbottom:/, /\btop:/, /margin-left/, /margin-right/]) expect(card).not.toMatch(physical);
-    expect(cardDeclaration(card, "inset-block-end")).toBe("max(var(--spacing-md, 12px), env(safe-area-inset-bottom, 0px))");
-    expect(card).toMatch(/@media \(width >= 48rem\) \{ margin-inline-start: 0; \}/);
+    expect(card).toMatch(/@media \(width >= 48rem\) \{\s*margin-inline-start: 0;\s*max-inline-size: var\(--container-sm, 24rem\);\s*\}/);
+    for (const physical of [/\bleft:/, /\bright:/, /\bbottom:/, /\btop:/, /margin-left/, /margin-right/, /(?<![-\w])width:/]) expect(card).not.toMatch(physical);
     // 48rem is the tablet breakpoint (768px at the 16px root).
     expect(tokenValue("--breakpoint-tablet")).toBe(48 * 16);
-  });
-
-  it("centres below tablet width inside safe-area gutters", () => {
-    const card = consentCardUtility();
-    expect(cardDeclaration(card, "margin-inline")).toBe("auto");
-    expect(cardDeclaration(card, "inset-inline")).toBe("max(var(--spacing-md, 12px), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px))");
   });
 
   it("floats on the notice layer, above the shell footer and header and the sticky layer", () => {

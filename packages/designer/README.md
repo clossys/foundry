@@ -4371,9 +4371,9 @@ visually, render it early in DOM order so keyboard and assistive-tech users
 reach it without tabbing through the whole page first.
 
 The opt-in card floats on the notice layer (`--ui-z-notice`), above the
-shell header and footer, and sits at the inline start from tablet width and
-centred on phones, with safe-area gutters and the small-container cap
-(`--container-sm`). Its plate is the base surface at 90% with a medium
+shell header and footer. Below tablet width it fills the viewport less
+safe-area gutters, centred; from tablet width it is capped at the small
+container (`--container-sm`) and sits at the bottom inline start. Its plate is the base surface at 90% with a medium
 backdrop blur, a hairline in the base line colour and the raised elevation;
 unsupported backdrop filters use the base surface at 95%, reduced
 transparency uses an opaque plate, and forced colours use system colours.

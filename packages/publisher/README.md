@@ -4791,9 +4791,9 @@ transport whether it may send. It declares the lifecycle and transport ports
 structurally and imports no consent or analytics implementation: the host
 composes those and passes them in.
 
-The default `presentation="card"` is a compact pinned notice: bottom-start
-from tablet width and bottom-centre on phones, at most the small-container
-width, with safe-area gutters, a translucent base plate, a hairline, two
+The default `presentation="card"` is a compact pinned notice: full width
+less safe-area gutters and centred below tablet width, then capped at the
+small-container width at the bottom start, with a translucent base plate, a hairline, two
 equal full-width choices and a visually hidden title that keeps the region
 named. It floats on the notice layer above the page end, footer included.
 `presentation="banner"` retains the former in-flow markup, visible title and

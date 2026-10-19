@@ -461,7 +461,6 @@
     inset-block-end: max(var(--spacing-md, 12px), env(safe-area-inset-bottom, 0px));
     inset-inline: max(var(--spacing-md, 12px), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
     margin-inline: auto;
-    max-inline-size: var(--container-sm, 24rem);
     max-block-size: calc(100dvh - max(var(--spacing-md, 12px), env(safe-area-inset-bottom, 0px)) - max(var(--spacing-md, 12px), env(safe-area-inset-top, 0px)));
     overflow-y: auto;
     overflow-wrap: anywhere;
@@ -482,6 +481,7 @@
     }
     @media (width >= 48rem) {
       margin-inline-start: 0;
+      max-inline-size: var(--container-sm, 24rem);
     }
     @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
       background-color: var(--color-surface-base, oklch(0.9702 0 0));

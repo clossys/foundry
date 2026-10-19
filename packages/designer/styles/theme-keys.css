@@ -774,9 +774,10 @@
 }
 
 /* Consent's pinned card; the in-flow banner and header keep their own rules.
-   It floats on the notice layer over the page end, footer included, at the
-   small-container width: bottom-start from tablet width (logical, so RTL
-   flips it), centred inside safe-area gutters below it. */
+   It floats on the notice layer over the page end, footer included. Below
+   tablet width it fills the viewport less safe-area gutters, centred; from
+   tablet width it is capped at the small container and pinned bottom-start
+   (logical, so RTL flips it). */
 @utility consent-card {
   position: fixed;
   z-index: var(--ui-z-notice, 40);
@@ -787,7 +788,6 @@
   inset-block-end: max(var(--spacing-md, 12px), env(safe-area-inset-bottom, 0px));
   inset-inline: max(var(--spacing-md, 12px), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
   margin-inline: auto;
-  max-inline-size: var(--container-sm, 24rem);
   max-block-size: calc(100dvh - max(var(--spacing-md, 12px), env(safe-area-inset-bottom, 0px)) - max(var(--spacing-md, 12px), env(safe-area-inset-top, 0px)));
   overflow-y: auto;
   overflow-wrap: anywhere;
@@ -803,7 +803,10 @@
     transition-duration: var(--ui-duration-fast, 160ms);
     transition-timing-function: var(--ease-default, cubic-bezier(.2, 0, 0, 1));
   }
-  @media (width >= 48rem) { margin-inline-start: 0; }
+  @media (width >= 48rem) {
+    margin-inline-start: 0;
+    max-inline-size: var(--container-sm, 24rem);
+  }
   @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
     background-color: color-mix(in oklab, var(--color-surface-base, oklch(0.9702 0 0)) 95%, transparent);
   }
