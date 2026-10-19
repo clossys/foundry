@@ -3,6 +3,7 @@ import { Drawer } from "./Drawer.js";
 import { ResizablePane } from "./ResizablePane.js";
 import { CommandMenu } from "./CommandMenu.js";
 import { AppNavigation } from "./AppNavigation.js";
+import { FlowCanvas } from "./FlowCanvas.js";
 
 /** Source-backed Material selections within the Block tier; these records grant no role qualification. */
 export const APP_FRAME_MATERIALS = [
@@ -59,5 +60,12 @@ export const APP_FRAME_MATERIALS = [
     ],
     configs: [{ prop: "collapsed", values: [false, true], default: false, source: "src/blocks/AppNavigation.tsx" }],
     authoredInputs: ["tree", "activeId", "activeHref", "label", "footer", "emptyMessage", "navigationKey", "defaultCollapsed", "onCollapsedChange", "drawerOpen", "onDrawerOpenChange", "dismissAt", "openLabel", "closeLabel", "expandLabel", "collapseLabel", "formatDisclosureLabel"],
+  },
+  {
+    id: "flow-canvas", layer: "blocks", exportName: "FlowCanvas", component: FlowCanvas, source: "src/blocks/FlowCanvas.tsx",
+    regions: ["content", "viewport", "drawing", "edge-labels", "nodes"],
+    dependencies: [{ exportName: "StatusMark", source: "src/atoms/StatusMark.tsx" }],
+    configs: [{ prop: "orientation", values: ["horizontal", "vertical"], default: "horizontal", source: "src/blocks/flow-canvas-layout.ts" }],
+    authoredInputs: ["nodes", "edges", "label", "emptyMessage", "outgoingLabel", "orientation", "selectedId", "onSelect"],
   },
 ] as const;

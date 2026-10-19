@@ -971,6 +971,9 @@
   .mb-sm {
     margin-bottom: var(--spacing-sm, 8px);
   }
+  .box-border {
+    box-sizing: border-box;
+  }
   .scene-linear-disc {
     display: inline-grid;
     place-items: center;
@@ -1055,6 +1058,12 @@
     block-size: auto;
     max-inline-size: calc(var(--sc-w, 880) * 1px);
     overflow: visible;
+  }
+  .line-clamp-2 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
   }
   .nav-disclosure-toggle[aria-label] {
     font-size: 0;
@@ -2023,6 +2032,9 @@
   .scene-status-warning > .scene-status-text {
     fill: var(--color-status-warning-text, oklch(0.36 0 0));
   }
+  .fill-accent {
+    fill: var(--color-accent, oklch(0.4748 0 0));
+  }
   .fill-current {
     fill: currentcolor;
   }
@@ -2059,8 +2071,14 @@
     stroke: var(--color-ink-primary, oklch(0.2178 0 0));
     stroke-width: var(--ui-border-rule, 2px);
   }
+  .stroke-accent {
+    stroke: var(--color-accent, oklch(0.4748 0 0));
+  }
   .stroke-current {
     stroke: currentcolor;
+  }
+  .stroke-ink-muted {
+    stroke: var(--color-ink-muted, oklch(0.5658 0 0));
   }
   .object-cover {
     object-fit: cover;
@@ -3575,6 +3593,10 @@
       grid-template-columns: repeat(4, minmax(0, 1fr));
     }
   }
+  .rtl\:-scale-x-100:where(:dir(rtl), [dir="rtl"], [dir="rtl"] *) {
+    --tw-scale-x: calc(100% * -1);
+    scale: var(--tw-scale-x, 1) var(--tw-scale-y, 1);
+  }
   .rtl\:rotate-180:where(:dir(rtl), [dir="rtl"], [dir="rtl"] *) {
     rotate: 180deg;
   }
@@ -3653,6 +3675,12 @@
     }
     .forced-colors\:border-current {
       border-color: currentcolor;
+    }
+    .forced-colors\:fill-current {
+      fill: currentcolor;
+    }
+    .forced-colors\:stroke-current {
+      stroke: currentcolor;
     }
     .forced-colors\:outline-current {
       outline-color: currentcolor;
@@ -4152,6 +4180,21 @@
   initial-value: "";
   inherits: false;
 }
+@property --tw-scale-x {
+  syntax: "*";
+  inherits: false;
+  initial-value: 1;
+}
+@property --tw-scale-y {
+  syntax: "*";
+  inherits: false;
+  initial-value: 1;
+}
+@property --tw-scale-z {
+  syntax: "*";
+  inherits: false;
+  initial-value: 1;
+}
 @keyframes spin {
   to {
     transform: rotate(360deg);
@@ -4223,6 +4266,9 @@
       --tw-backdrop-sepia: initial;
       --tw-ease: initial;
       --tw-content: "";
+      --tw-scale-x: 1;
+      --tw-scale-y: 1;
+      --tw-scale-z: 1;
     }
   }
 }

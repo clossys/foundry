@@ -7657,3 +7657,81 @@ Left/Right expand or collapse a parent, reversing in RTL. Enter/Space activate
 destinations or disclosure. Native forced-color adjustment and reduced motion
 remain supported. The interactive Material and helpers use the existing client
 blocks entry; no server-subset export or application-frame assembly is added.
+
+## Flow canvas
+
+`FlowCanvas` is a Block Material in `APP_FRAME_MATERIALS` that draws a directed
+node-and-edge diagram: boxes in layers joined by arrowed edges. Each node takes a
+stable `id`, a text `label`, an optional short `kind` and an optional `status`
+(a `StatusMark` tone with its own label). Each edge joins two node ids and may
+carry a `label`. Every visible word comes from props; `label`, `emptyMessage` and
+`outgoingLabel` are required.
+
+```tsx
+import { useState } from "react";
+import { FlowCanvas, type FlowCanvasEdge, type FlowCanvasNode } from "@clossys/designer/blocks";
+
+const steps: readonly FlowCanvasNode[] = [
+  { id: "draft", label: "Draft", kind: "Step" },
+  { id: "review", label: "Review", kind: "Gate", status: { tone: "warning", label: "Waiting" } },
+  { id: "publish", label: "Publish", kind: "Step" },
+];
+const links: readonly FlowCanvasEdge[] = [
+  { from: "draft", to: "review" },
+  { from: "review", to: "publish", label: "Approves" },
+  { from: "review", to: "draft", label: "Returns" },
+];
+
+export function FlowExample() {
+  const [selected, setSelected] = useState<string | null>(null);
+  return <FlowCanvas nodes={steps} edges={links} label="Release flow"
+    emptyMessage="No steps yet" outgoingLabel="Leads to"
+    selectedId={selected} onSelect={setSelected} />;
+}
+```
+
+`layoutFlowCanvas(nodes, edges, { orientation })` computes the drawing from the
+props alone, with no DOM measurement and no layout dependency, so the server
+renders the finished diagram and hydration changes nothing. Equal inputs give
+equal output. Layers come from the longest path; an edge that closes a cycle is
+drawn against the layer direction with its arrow still on its authored target.
+Long edges bend around the layers they cross, each layer is reordered to reduce
+crossings, and each edge gets its own port on the node's side. Invalid input
+(duplicate or empty ids, empty labels, unknown endpoints, self edges, unknown
+status tones) throws a `TypeError` that names the problem; more than
+`FLOW_CANVAS_NODE_LIMIT` nodes or `FLOW_CANVAS_EDGE_LIMIT` edges throws a
+`RangeError`. Positions are in layout units of `--spacing-xs`.
+
+The semantic source is an ordered list, named by `label`, of the nodes in
+reading order. Each node is a native button named by its label and described by
+its kind, its status and, after `outgoingLabel`, the nodes it leads to with any
+edge labels. The SVG lines, arrowheads and edge label boxes are presentation and
+hidden from assistive technology. The list is one tab stop. Arrow keys along the
+layer direction follow edges forward and back, returning along the path just
+taken where they can; arrow keys across it move between nodes in the same
+layer; Home and End jump to the first and last node. Inline keys mirror in
+right-to-left documents. Enter, Space or a click calls `onSelect`; focus alone
+never selects, and the host owns `selectedId`. The selected node and its edges
+use the accent colour and the rule border width; forced-colour mode draws edges
+in the current text colour. The canvas has no motion. It scrolls inside its own
+viewport when wider than its host; `orientation="vertical"` suits narrow
+regions. An empty `nodes` array shows `emptyMessage`. There is no inspector
+slot; the host renders details for `selectedId` beside the canvas. The
+interactive Material uses the client blocks entry and is outside the
+server-safe subsets.
+
+| Export | Kind | Contract |
+| --- | --- | --- |
+| `FlowCanvas` | component | Layered, keyboard-operable diagram with a controlled selection. |
+| `FlowCanvasProps` | type | Nodes, edges, required list name, empty message and outgoing label; optional orientation, `selectedId`, `onSelect` and `className`. |
+| `FlowCanvasNode` | type | Unique id, label, optional kind and optional status tone and label. |
+| `FlowCanvasEdge` | type | Source and target node ids with an optional label. |
+| `FlowCanvasOrientation` | type | `"horizontal"` or `"vertical"`. |
+| `FLOW_CANVAS_ORIENTATIONS` | constant | The accepted orientations. |
+| `layoutFlowCanvas` | function | Deterministic layered layout in `--spacing-xs` units. |
+| `FlowCanvasLayoutOptions` | type | Optional orientation. |
+| `FlowCanvasLayout` | type | Size, layer count, nodes in reading order and edges in authored order. |
+| `FlowCanvasLayoutNode` | type | A node's layer, position and size. |
+| `FlowCanvasLayoutEdge` | type | Route points, arrow tip, SVG path and arrowhead data, reversal flag and optional label box. |
+| `FLOW_CANVAS_NODE_LIMIT` | constant | The largest node count laid out (256). |
+| `FLOW_CANVAS_EDGE_LIMIT` | constant | The largest edge count laid out (1024). |

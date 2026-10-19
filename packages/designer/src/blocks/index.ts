@@ -202,6 +202,10 @@ export { AppNavigation } from "./AppNavigation.js";
 export type { AppNavigationProps } from "./AppNavigation.js";
 export { validateAppNavigationTree, getAppNavigationAncestry, getAppNavigationBreadcrumbs } from "./app-navigation-tree.js";
 export type { AppNavigationNode, AppNavigationLeaf, AppNavigationDestination, AppNavigationTarget, AppNavigationBreadcrumb } from "./app-navigation-tree.js";
+export { FlowCanvas } from "./FlowCanvas.js";
+export type { FlowCanvasProps } from "./FlowCanvas.js";
+export { layoutFlowCanvas, FLOW_CANVAS_ORIENTATIONS, FLOW_CANVAS_NODE_LIMIT, FLOW_CANVAS_EDGE_LIMIT } from "./flow-canvas-layout.js";
+export type { FlowCanvasNode, FlowCanvasEdge, FlowCanvasOrientation, FlowCanvasLayout, FlowCanvasLayoutNode, FlowCanvasLayoutEdge, FlowCanvasLayoutOptions } from "./flow-canvas-layout.js";
 
 export { RecordLedger } from "./RecordLedger.js";
 export type { RecordLedgerProps, LedgerRowData, LedgerGroupData } from "./RecordLedger.js";
