@@ -1864,6 +1864,9 @@
   .p-md {
     padding: var(--spacing-md, 12px);
   }
+  .p-sm {
+    padding: var(--spacing-sm, 8px);
+  }
   .p-xl {
     padding: var(--spacing-xl, 24px);
   }
@@ -2181,6 +2184,13 @@
     outline-style: var(--tw-outline-style, solid);
     outline-width: 1px;
   }
+  .outline-1 {
+    outline-style: var(--tw-outline-style, solid);
+    outline-width: 1px;
+  }
+  .outline-line-strong {
+    outline-color: var(--color-line-strong, oklch(0.7763 0 0));
+  }
   .filter {
     filter: var(--tw-blur,) var(--tw-brightness,) var(--tw-contrast,) var(--tw-grayscale,) var(--tw-hue-rotate,) var(--tw-invert,) var(--tw-saturate,) var(--tw-sepia,) var(--tw-drop-shadow,);
   }
@@ -2243,6 +2253,10 @@
   .outline-none {
     --tw-outline-style: none;
     outline-style: none;
+  }
+  .outline-solid {
+    --tw-outline-style: solid;
+    outline-style: solid;
   }
   .select-none {
     -webkit-user-select: none;
@@ -2395,6 +2409,9 @@
     }
     .hover\:text-ink-secondary:hover {
       color: var(--color-ink-secondary, oklch(0.36 0 0));
+    }
+    .hover\:no-underline:hover {
+      text-decoration-line: none;
     }
     .hover\:underline:hover {
       text-decoration-line: underline;
