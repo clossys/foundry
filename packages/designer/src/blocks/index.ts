@@ -42,6 +42,9 @@ export type { SectionGround, SectionGroundClasses, SectionStatusTone } from "./s
 export { PageHeader } from "./PageHeader.js";
 export type { PageHeaderProps } from "./PageHeader.js";
 
+export { AccountMenu } from "./AccountMenu.js";
+export type { AccountMenuProps, AccountMenuActor, AccountMenuEntry, AccountMenuCommand, AccountMenuLink, AccountMenuAction, AccountMenuPreference, AccountMenuSection } from "./account-menu-types.js";
+
 export { EmptyState } from "./EmptyState.js";
 export type { EmptyStateProps } from "./EmptyState.js";
 
@@ -196,6 +199,12 @@ export type { DrawerProps } from "./Drawer.js";
 export { ResizablePane } from "./ResizablePane.js";
 export type { ResizablePaneProps } from "./ResizablePane.js";
 export { APP_FRAME_MATERIALS } from "./app-frame-materials.js";
+export { CommandMenu, useCommandMenuShortcut } from "./CommandMenu.js";
+export type { CommandMenuProps, CommandMenuItem, CommandMenuGroup, CommandMenuShortcutOptions } from "./command-menu-types.js";
+export { AppNavigation } from "./AppNavigation.js";
+export type { AppNavigationProps } from "./AppNavigation.js";
+export { validateAppNavigationTree, getAppNavigationAncestry, getAppNavigationBreadcrumbs } from "./app-navigation-tree.js";
+export type { AppNavigationNode, AppNavigationLeaf, AppNavigationDestination, AppNavigationTarget, AppNavigationBreadcrumb } from "./app-navigation-tree.js";
 
 export { RecordLedger } from "./RecordLedger.js";
 export type { RecordLedgerProps, LedgerRowData, LedgerGroupData } from "./RecordLedger.js";

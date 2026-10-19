@@ -1,6 +1,19 @@
 import { cx } from "../atoms/internal/cx.js";
 import { Logomark } from "../atoms/Logomark.js";
 import { Lockup } from "../blocks/Lockup.js";
+import {
+  BADGE_INSET_SHARE,
+  BADGE_RADIUS_SHARE,
+  UI_BRANDMARK_GAP_LG,
+  UI_BRANDMARK_GAP_MD,
+  UI_BRANDMARK_GAP_SM,
+  UI_BRANDMARK_HEIGHT_LG,
+  UI_BRANDMARK_HEIGHT_MD,
+  UI_BRANDMARK_HEIGHT_SM,
+  UI_BRANDMARK_WORDMARK_SIZE_LG,
+  UI_BRANDMARK_WORDMARK_SIZE_MD,
+  UI_BRANDMARK_WORDMARK_SIZE_SM,
+} from "../internal/brandmark.js";
 
 /** The two renderings: the mark alone, or the mark beside a live-text wordmark. */
 export const BRANDMARK_VARIANTS = ["mark", "lockup"] as const;
@@ -17,6 +30,20 @@ export type BrandmarkSize = (typeof BRANDMARK_SIZES)[number];
  */
 export const BRANDMARK_PLATES = ["shared", "self"] as const;
 export type BrandmarkPlate = (typeof BRANDMARK_PLATES)[number];
+
+/** The image's side inside a shared plate, as a fraction of the plate's side. */
+const PLATE_IMAGE_SHARE = 1 - 2 * BADGE_INSET_SHARE;
+
+const SIZE_VARS: Readonly<Record<BrandmarkSize, { height: string; gap: string; wordmark: string }>> = {
+  sm: { height: UI_BRANDMARK_HEIGHT_SM, gap: UI_BRANDMARK_GAP_SM, wordmark: UI_BRANDMARK_WORDMARK_SIZE_SM },
+  md: { height: UI_BRANDMARK_HEIGHT_MD, gap: UI_BRANDMARK_GAP_MD, wordmark: UI_BRANDMARK_WORDMARK_SIZE_MD },
+  lg: { height: UI_BRANDMARK_HEIGHT_LG, gap: UI_BRANDMARK_GAP_LG, wordmark: UI_BRANDMARK_WORDMARK_SIZE_LG },
+};
+
+/** `markSrc` as a quoted CSS `url()`; quotes, backslashes and line breaks are escaped. */
+function cssUrl(src: string): string {
+  return `url("${src.replace(/["\\\n\r\f]/g, character => `\\${character.charCodeAt(0).toString(16)} `)}")`;
+}
 
 /** Case-insensitive, whitespace-collapsed form used for the label-in-name comparison. */
 function normalise(text: string): string {
@@ -53,6 +80,17 @@ interface BrandmarkBaseProps {
    * the same shares `badgePlatePath` draws.
    */
   plate?: BrandmarkPlate;
+  /**
+   * How the mark is painted. `"image"` (the default, and what an omitted prop
+   * means) renders `markSrc` as it is. `"accent"` paints the mark's shape in
+   * the accent token, using `markSrc` as a mask: supply a single-colour mark
+   * whose transparent areas are its background. The accent mark is drawn in a
+   * square of the size's height. Inside `SiteHeader`, an omitted `markInk`
+   * becomes `"accent"`; pass `"image"` there to keep a multi-colour logo,
+   * which the accent mask would flatten to a one-colour silhouette.
+   * @default "image"
+   */
+  markInk?: "image" | "accent";
   /** Wordmark ink; auto keeps the base ink. @default "auto" */
   tone?: "auto" | "inverse";
   className?: string;
@@ -102,7 +140,8 @@ export type BrandmarkProps = BrandmarkBaseProps &
  * text and is not subject to that second check.
  */
 export function Brandmark(props: BrandmarkProps) {
-  const { variant, size, label, markSrc, className, plate, tone = "auto" } = props;
+  const { variant, size, label, markSrc, className, plate, markInk = "image", tone = "auto" } = props;
+  const vars = SIZE_VARS[size];
   const inverse = tone === "inverse";
   const wordmark = variant === "lockup" ? props.wordmark : undefined;
   const showWordmark = typeof wordmark === "string" && normalise(wordmark) !== "";
@@ -124,13 +163,65 @@ export function Brandmark(props: BrandmarkProps) {
     inverse ? "focus-visible:outline-ink-on-inverse" : "focus-visible:outline-accent",
     className,
   );
-  if (showWordmark) {
-    return <Lockup as={"a"} href="/" aria-label={label} src={markSrc} size={size}
-      wordmark={wordmark} plate={plate} tone={tone} markTone={"auto"} className={linkClasses} />;
+
+  if (markInk !== "accent") {
+    if (showWordmark) {
+      return <Lockup as={"a"} href="/" aria-label={label} src={markSrc} size={size}
+        wordmark={wordmark} plate={plate} tone={tone} className={linkClasses} />;
+    }
+    return (
+      <a href="/" aria-label={label} className={linkClasses}>
+        <Logomark src={markSrc} size={size} plate={plate} />
+      </a>
+    );
   }
+
+  // The accent mark is a decorative span masked by the image, filled with the
+  // accent token. data-brand-mark names the outermost accent mark element, so
+  // header CSS can hide the wordmark alone; the image forms above keep their markup.
+  const mark = (side: string, outermost: boolean) => (
+    <span
+      aria-hidden
+      data-brand-mark={outermost ? "" : undefined}
+      className="inline-block shrink-0 bg-accent"
+      style={{
+        height: side,
+        width: side,
+        maskImage: cssUrl(markSrc),
+        WebkitMaskImage: cssUrl(markSrc),
+        maskSize: "contain",
+        WebkitMaskSize: "contain",
+        maskRepeat: "no-repeat",
+        WebkitMaskRepeat: "no-repeat",
+        maskPosition: "center",
+        WebkitMaskPosition: "center",
+      }}
+    />
+  );
+
   return (
-    <a href="/" aria-label={label} className={linkClasses}>
-      <Logomark src={markSrc} size={size} plate={plate} />
+    <a href="/" aria-label={label} className={linkClasses} style={showWordmark ? { gap: vars.gap } : undefined}>
+      {plate === "shared" ? (
+        <span
+          aria-hidden
+          data-brand-mark=""
+          className="inline-flex shrink-0 items-center justify-center bg-ink-primary"
+          style={{
+            height: vars.height,
+            width: vars.height,
+            borderRadius: `calc(${vars.height} * ${BADGE_RADIUS_SHARE})`,
+          }}
+        >
+          {mark(`calc(${vars.height} * ${PLATE_IMAGE_SHARE})`, false)}
+        </span>
+      ) : (
+        mark(vars.height, true)
+      )}
+      {showWordmark ? (
+        <span className="font-display leading-none" style={{ fontSize: vars.wordmark }}>
+          {wordmark}
+        </span>
+      ) : null}
     </a>
   );
 }

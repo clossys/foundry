@@ -106,7 +106,9 @@ it("renders identical all-slots markup through ordinary and server entries", () 
   const server = renderToStaticMarkup(<webServer.SiteFrame shell={shell} resolveCopy={resolveCopy} resolveAsset={resolveAsset}><p>content</p></webServer.SiteFrame>);
   expect(ordinary).toBe(server);
   expect(server).toContain('href="/contact"');
-  expect(server).toContain('>Contact</span>');
+  // Header actions are text only; the label is the link's own text, not an icon's hidden span.
+  expect(server).toContain('>Contact</a>');
+  expect(server).not.toContain('>Contact</span>');
   expect(server).toContain('aria-label="Profiles"');
   expect(server).toContain('aria-label="Profile"');
   expect(server).toContain('href="/help"');

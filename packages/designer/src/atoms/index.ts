@@ -178,13 +178,13 @@ export type { MeterProps, MeterTone, MeterDirection, MeterEmphasis } from "./Met
 /** Merge token-aware Tailwind class names with last-argument precedence. */
 export { cx as mergeUiClasses } from "./internal/cx.js";
 
-export { ATOM_GUIDANCE, ATOM_API_FACTS, ATOM_DISPLAY_GROUPS } from "./guidance/internal/data.js";
+export { ATOM_GUIDANCE, ATOM_API_FACTS, ATOM_DISPLAY_GROUPS, ATOM_COMPARISON } from "./guidance/internal/data.js";
 export { ResizeHandle } from "./ResizeHandle.js";
 export type { ResizeHandleProps } from "./ResizeHandle.js";
 export type {
   AtomMedium, AtomMediumState, AtomScalar, AtomEvidence, AtomOptionGuidance,
   AtomCondition, AtomConstraint, AtomWebImplementation, AtomMediumGuidance, AtomGuidance,
-  AtomApiFacts, AtomDisplayGroup,
+  AtomApiFacts, AtomDisplayGroup, AtomComparison,
 } from "./guidance/internal/data.js";
 
 export { Logomark } from "./Logomark.js";

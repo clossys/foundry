@@ -17,7 +17,7 @@ import { TokenPreview } from "@clossys/designer/tokens/preview";
 import { contrastRatio, parseBrandDeclarations${nodeMutation ? ", readNodeFile" : ""} } from "@clossys/designer/tokens";
 const parsed = parseBrandDeclarations(":root { --example: #000000; }");
 export default function Page() {
-  return <><Button${nodeMutation ? ' onPress={() => readNodeFile("unused.css", "utf8")}' : ""}>{contrastRatio(parsed.declarations["--example"], "#ffffff")}</Button><TokenPreview property="--color-chart-surface" /></>;
+  return <><Button${nodeMutation ? ' onPress={() => readNodeFile("unused.css", "utf8")}' : ""}>{contrastRatio(parsed.declarations["--example"], "#ffffff")}</Button><TokenPreview property="--color-chart-surface" /><TokenPreview property="--ui-duration-overlay" /><TokenPreview property="--breakpoint-tablet" /></>;
 }
 `;
 }
@@ -78,6 +78,12 @@ function buildFixture(fixture: string, next: string, bundler: typeof bundlers[nu
   const html = readFileSync(join(fixture, ".next", "server", "app", "index.html"), "utf8");
   expect(html).toContain('aria-label="--color-chart-surface"');
   expect(html).toContain('data-kind="chart"');
+  expect(html).toContain('aria-label="--ui-duration-overlay"');
+  expect(html).toContain('data-kind="motion"');
+  expect(html).toContain("<code>var(--ui-duration-fast, 160ms)</code>");
+  expect(html).toContain('aria-label="--breakpoint-tablet"');
+  expect(html).toContain('data-kind="breakpoint"');
+  expect(html).toContain("var(--breakpoint-tablet, 768px)");
   expect(html).toContain("stroke:var(--color-chart-surface, var(--color-surface-raised, oklch(1 0 0)))");
 }
 

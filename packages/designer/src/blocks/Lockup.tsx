@@ -18,7 +18,7 @@ export interface LockupProps extends Omit<LogomarkProps, "title"> {
   "aria-label"?: string;
   /** Additional root classes, merged with the layout and ink defaults. */
   className?: string;
-  /** Override plate ink independently when existing artwork requires it. */
+  /** Plate ink, independent of the wordmark `tone`; omitted, Logomark's own default applies. */
   markTone?: LogomarkProps["tone"];
 }
 
@@ -29,8 +29,8 @@ const SIZE_VARS = {
 };
 
 /** Mark and wordmark regions in reading order, aligned on their vertical centers. */
-export function Lockup({ src, size, wordmark, tone = "auto", plate = "self", clearSpace = false,
-  as: Root = "span", href, "aria-label": label, className, markTone = tone }: LockupProps) {
+export function Lockup({ src, size, wordmark, tone = "auto", plate, clearSpace = false,
+  as: Root = "span", href, "aria-label": label, className, markTone }: LockupProps) {
   const vars = SIZE_VARS[size];
   const inverse = tone === "inverse";
   const showWordmark = typeof wordmark === "string" && wordmark.trim() !== "";

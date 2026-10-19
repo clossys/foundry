@@ -460,15 +460,15 @@ export const ATOM_GUIDANCE: Readonly<Record<string, AtomGuidance>> = {
   "useWhen": "Several related commands should be revealed on demand.",
   "avoidWhen": "The content is an input choice set or a rich explanatory panel.",
   "alternatives": "Use Select for choosing a value; Popover for arbitrary panel content.",
-  "content": "Name the trigger and each command; group related commands with separators.",
-  "anatomy": "One trigger and a repeated collection of actionable items.",
-  "composition": "In a consumer-owned row-actions block, expose edit and archive through Menu.Item.",
-  "accessibility": "Name the trigger; disabled items and keyboard navigation belong to the menu primitive."
+  "content": "Name the trigger and each command. Use Menu.Section for a real section heading and separators between groups.",
+  "anatomy": "One trigger and a repeated collection of actionable items, optionally grouped in Menu.Section with a real heading.",
+  "composition": "AccountMenu composes Menu.Item commands and Menu.Section preference groups with an actor trigger.",
+  "accessibility": "Name the trigger and each section. Section headings use the menu primitive's Header; section selection provides menuitemcheckbox preferences. Disabled items and keyboard navigation belong to the primitive."
 },
 {
   "exportName": "Menu",
   "entrypoint": "atoms",
-  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Root props forward to MenuTrigger, not the inner menu list. triggerAction forwards to the peer trigger prop; the package supplies no local initializer. Item-level commands use Menu.Item; destructive emphasis is item-level.",
+  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Root props forward to MenuTrigger, not the inner menu list. triggerAction forwards to the peer trigger prop; the package supplies no local initializer. Item-level commands use Menu.Item; destructive emphasis is item-level. Menu.Section supplies a real heading through Header and forwards selectionMode, selectedKeys, onSelectionChange and shouldCloseOnSelect to the peer MenuSection. Checkbox preferences use multiple selection with caller-owned keys and callbacks.",
   "options": [
     {
       "prop": "triggerAction",
@@ -4594,3 +4594,77 @@ export const ATOM_DISPLAY_GROUPS: readonly AtomDisplayGroup[] = [
     ]
   }
 ];
+
+/** Preferred finite axes; evaluate constraints with complete consumer-authored props. */
+export interface AtomComparison {
+  readonly columns: { readonly option: string; readonly values: readonly AtomScalar[] };
+  readonly rows?: AtomComparison["columns"];
+  /** Conservative bound including cells the constraint policy may skip. */
+  readonly maxCells: number;
+  /** Original rule array, shared by identity with ATOM_GUIDANCE. */
+  readonly constraints: readonly AtomConstraint[];
+  /** Only requires/exclusive/paired can skip; applicability, derived and data rules cannot. */
+  readonly constraintPolicy: "skip-violations";
+}
+
+function comparison(id: string, column: string, row?: string): AtomComparison {
+  const api = ATOM_API_FACTS[id];
+  const constraints = ATOM_GUIDANCE[id]?.media.web.implementation?.constraints;
+  if (!api || !constraints) throw new Error(`Unknown comparison atom: ${id}`);
+  const axis = (option: string): AtomComparison["columns"] => {
+    const fact = api.options.find(candidate => candidate.prop === option);
+    if (!fact) throw new Error(`Unknown finite comparison option: ${id}.${option}`);
+    return Object.freeze({ option, values: Object.freeze([...fact.values]) });
+  };
+  const columns = axis(column);
+  const rows = row === undefined ? undefined : axis(row);
+  // Freeze only new containers: existing guidance and rule descriptors stay intact.
+  return Object.freeze({
+    columns,
+    ...(rows ? { rows } : {}),
+    maxCells: columns.values.length * (rows?.values.length ?? 1),
+    constraints,
+    constraintPolicy: "skip-violations",
+  });
+}
+
+/** Data only: absence means no represented finite comparison; this renders nothing. */
+export const ATOM_COMPARISON = Object.freeze({
+  "act.button": comparison("act.button", "variant", "size"),
+  "act.icon-button": comparison("act.icon-button", "shape", "size"),
+  "act.link": comparison("act.link", "variant"),
+  "act.menu": comparison("act.menu", "triggerAction"),
+  "enter.text-field": comparison("enter.text-field", "isInvalid", "isDisabled"),
+  "enter.textarea": comparison("enter.textarea", "isInvalid", "isDisabled"),
+  "enter.search-field": comparison("enter.search-field", "isInvalid", "isDisabled"),
+  "enter.date-field": comparison("enter.date-field", "isInvalid", "isDisabled"),
+  "enter.select": comparison("enter.select", "isInvalid", "isDisabled"),
+  "enter.combo-box": comparison("enter.combo-box", "isInvalid", "isDisabled"),
+  "enter.checkbox": comparison("enter.checkbox", "isSelected", "isDisabled"),
+  "enter.switch": comparison("enter.switch", "isSelected", "isDisabled"),
+  "enter.radio-group": comparison("enter.radio-group", "orientation", "isDisabled"),
+  "enter.file-trigger": comparison("enter.file-trigger", "allowsMultiple", "defaultCamera"),
+  "enter.field": comparison("enter.field", "isRequired", "isInvalid"),
+  "enter.resize-handle": comparison("enter.resize-handle", "orientation", "dir"),
+  "inform.badge": comparison("inform.badge", "variant"),
+  "inform.banner": comparison("inform.banner", "variant"),
+  "inform.chip": comparison("inform.chip", "isDisabled"),
+  "inform.status-mark": comparison("inform.status-mark", "tone"),
+  "inform.meter": comparison("inform.meter", "tone", "emphasis"),
+  "inform.progress-bar": comparison("inform.progress-bar", "isIndeterminate"),
+  "inform.spinner": comparison("inform.spinner", "size"),
+  "inform.skeleton": comparison("inform.skeleton", "shape"),
+  "group.card": comparison("group.card", "variant"),
+  "group.table": comparison("group.table", "selectionMode"),
+  "group.separator": comparison("group.separator", "orientation", "decorative"),
+  "depict.avatar": comparison("depict.avatar", "size"),
+  "depict.icon": comparison("depict.icon", "size"),
+  "depict.logomark": comparison("depict.logomark", "plate", "size"),
+  "reveal.dialog": comparison("reveal.dialog", "size", "isDismissable"),
+  "reveal.tooltip": comparison("reveal.tooltip", "triggerAction"),
+  "reveal.tabs": comparison("reveal.tabs", "orientation", "isDisabled"),
+  "depict.bar-chart": comparison("depict.bar-chart", "fit", "marks"),
+  "depict.waterfall-chart": comparison("depict.waterfall-chart", "fit"),
+  "depict.range-chart": comparison("depict.range-chart", "fit"),
+  "depict.scatter-chart": comparison("depict.scatter-chart", "fit"),
+});
