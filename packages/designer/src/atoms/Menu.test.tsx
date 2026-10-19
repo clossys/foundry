@@ -163,6 +163,45 @@ it("rejects an unnamed Menu.Section at runtime and keeps either name valid", () 
   expect(() => section({ "aria-label": "Account", children })).not.toThrow();
 });
 
+it("rejects element headings without usable text when the menu renders", () => {
+  function EmptyHeading() { return <span />; }
+  for (const heading of [<span>{""}</span>, <><span>{"   "}</span></>,
+    <span aria-hidden="true">Account</span>, <span hidden>Account</span>,
+    <span style={{ display: "none" }}>Account</span>, <span style={{ visibility: "hidden" }}>Account</span>,
+    <EmptyHeading />]) {
+    expect(() => render(<Menu defaultOpen trigger={<AriaButton>Actions</AriaButton>}>
+      <Menu.Section heading={heading}><Menu.Item>Help</Menu.Item></Menu.Section>
+    </Menu>)).toThrow("Menu.Section: a non-empty heading or aria-label is required.");
+  }
+});
+
+it("names rendered groups from rich text and from a label when the heading is empty", () => {
+  function OpaqueHeading() { return <span>Support details</span>; }
+  render(<Menu defaultOpen trigger={<AriaButton>Actions</AriaButton>}>
+    <Menu.Section heading={<><span hidden>Hidden</span><span>Account <strong>settings</strong></span></>}>
+      <Menu.Item>Profile</Menu.Item>
+    </Menu.Section>
+    <Menu.Section heading={<span>{""}</span>} aria-label="Other">
+      <Menu.Item>Help</Menu.Item>
+    </Menu.Section>
+    <Menu.Section heading={<OpaqueHeading />} aria-label="Support">
+      <Menu.Item>Contact</Menu.Item>
+    </Menu.Section>
+    <Menu.Section heading={<span hidden={false} aria-hidden={false}>{["Count ", 0]}</span>}>
+      <Menu.Item>Details</Menu.Item>
+    </Menu.Section>
+    <Menu.Section heading={<span aria-label="Account tools" />}>
+      <Menu.Item>Tools</Menu.Item>
+    </Menu.Section>
+  </Menu>);
+  expect(screen.getByRole("group", { name: "Account settings" })).toHaveAccessibleName("Account settings");
+  expect(screen.getByRole("group", { name: "Other" })).toHaveAccessibleName("Other");
+  expect(screen.getByRole("group", { name: "Support" })).toHaveAccessibleName("Support");
+  expect(screen.getByText("Support details")).toBeVisible();
+  expect(screen.getByRole("group", { name: "Count 0" })).toHaveAccessibleName("Count 0");
+  expect(screen.getByRole("group", { name: "Account tools" })).toHaveAccessibleName("Account tools");
+});
+
 it("updates controlled section selection without closing, with keyboard and typeahead", async () => {
   const changed = vi.fn();
   function Preferences() {

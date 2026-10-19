@@ -96,7 +96,7 @@
 @source inline("bg-skeleton-fill bg-status-danger bg-status-danger-tint bg-status-info bg-status-info-tint");
 @source inline("bg-status-success bg-status-success-tint bg-status-warning bg-status-warning-tint bg-surface-aside");
 @source inline("bg-surface-base bg-surface-inverse bg-surface-inverse-raised bg-surface-raised bg-surface-selected");
-@source inline("bg-surface-sunken bg-transparent billed bit block block: blockSize: blockquote blocks blocks/");
+@source inline("bg-surface-sunken bg-transparent bigint billed bit block block: blockSize: blockquote blocks blocks/");
 @source inline("blocks/index.ts blocks/internal/ blocks/server.ts blur. blur: blurField body boolean border border-");
 @source inline("border-0 border-accent border-b border-b-2 border-collapse border-current border-dashed border-e");
 @source inline("border-ink-on-inverse border-ink-primary border-ink-secondary border-line-base");
@@ -374,7 +374,7 @@
 @source inline("tablet:row-span-2 tablet:row-span-3 tablet:row-span-4 tablet:rtl:rotate-180 tablet:shrink-0");
 @source inline("tablet:table tablet:table-cell tablet:table-fixed tablet:table-header-group tablet:table-row");
 @source inline("tablet:table-row-group tablet:text-display-l tablet:text-h0 tablet:w-auto tablet:w-full tabular-nums");
-@source inline("tags: tailwind-merge take takeaway takes target targetH targetId targets targets. terminal");
+@source inline("tags: tailwind-merge take takeaway takes target targetH targetId targets targets. template terminal");
 @source inline("terminals: test tests text text-accent text-accent-on-inverse text-accent-text text-balance");
 @source inline("text-blockquote text-body text-body-l text-body-s text-caption text-center text-control-quiet");
 @source inline("text-display-m text-end text-h0 text-h1 text-h2 text-h3 text-inherit text-ink-link text-ink-muted");

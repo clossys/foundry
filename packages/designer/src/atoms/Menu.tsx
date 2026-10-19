@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { Fragment, isValidElement, type ReactNode, type HTMLAttributes } from "react";
 import {
   Menu as AriaMenu,
   MenuItem as AriaMenuItem,
@@ -171,17 +171,37 @@ type MenuSectionProps = MenuSectionBaseProps & (
 const isBlank = (value: unknown): boolean =>
   value == null || typeof value === "boolean" || (typeof value === "string" && !value.trim());
 
+// Only inspect intrinsic content and fragments; a component's output cannot
+// be verified here. Such headings need the section's explicit aria-label.
+function hasHeadingText(value: ReactNode): boolean {
+  if (typeof value === "string") return !!value.trim();
+  if (typeof value === "number" || typeof value === "bigint") return true;
+  if (Array.isArray(value)) return value.some(hasHeadingText);
+  if (!isValidElement<HTMLAttributes<HTMLElement>>(value)) return false;
+  if (value.type === Fragment) return hasHeadingText(value.props.children);
+  if (typeof value.type !== "string") return false;
+  const props = value.props;
+  if (props.hidden || props["aria-hidden"] === true || props["aria-hidden"] === "true"
+    || props.style?.display === "none" || props.style?.visibility === "hidden"
+    || props["aria-labelledby"]
+    || ["script", "style", "template"].includes(value.type)) return false;
+  if (props["aria-label"] !== undefined) return !isBlank(props["aria-label"]);
+  return hasHeadingText(props.children);
+}
+
 /**
  * A named group with optional controlled checkbox selection, owned by the
  * menu peer. Throws if neither `heading` nor `aria-label` carries a
  * non-empty name, since that would render an unnamed menu group.
  */
 function MenuSection({ heading, children, ...rest }: MenuSectionProps) {
-  if (isBlank(heading) && isBlank(rest["aria-label"])) {
+  const hasHeading = hasHeadingText(heading);
+  if (!hasHeading && isBlank(rest["aria-label"])) {
     throw new TypeError("Menu.Section: a non-empty heading or aria-label is required.");
   }
   return <AriaMenuSection {...rest} className="flex flex-col">
-    {!isBlank(heading) && <Header className="px-sm py-xs text-caption font-body text-ink-muted">{heading}</Header>}
+    {!isBlank(heading) && <Header aria-label={hasHeading ? undefined : rest["aria-label"]}
+      className="px-sm py-xs text-caption font-body text-ink-muted">{heading}</Header>}
     {children}
   </AriaMenuSection>;
 }

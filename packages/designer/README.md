@@ -1677,7 +1677,11 @@ behavior. `Menu.Separator` is a visual divider between item groups.
 
 `Menu.Section` groups entries under a real menu Header. Supply a non-empty
 `heading` or `aria-label`; the type requires one and a blank name throws a
-`TypeError`. Its optional `selectionMode` (`none` or `multiple`), `selectedKeys`,
+`TypeError`. Rich headings need nonblank text or a label in intrinsic elements
+or fragments; hidden content and opaque components do not establish a name.
+An explicit section `aria-label` names an unverified heading while preserving
+its visible content.
+Its optional `selectionMode` (`none` or `multiple`), `selectedKeys`,
 `onSelectionChange` and `shouldCloseOnSelect` belong to the section. Multiple
 selection produces `menuitemcheckbox` preferences; the caller owns checked
 values. Normal hover/focus retains the existing selected surface with no outline;
