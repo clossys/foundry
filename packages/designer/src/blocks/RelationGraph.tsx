@@ -74,6 +74,11 @@ export function RelationGraph<Kind extends string>({ nodes, edges, kinds, label,
       case "ArrowLeft": case "ArrowUp": target = layout.incoming.get(id)![0]?.from; break;
       case "Home": target = layout.order[0]?.id; break;
       case "End": target = layout.order.at(-1)?.id; break;
+      case "PageDown": case "PageUp": {
+        const index = nodes.findIndex(node => node.id === id);
+        target = nodes[(index + (event.key === "PageDown" ? 1 : nodes.length - 1)) % nodes.length]?.id;
+        break;
+      }
       default: return;
     }
     event.preventDefault();

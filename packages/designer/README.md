@@ -7782,6 +7782,8 @@ SVG edges measured after hydration; narrower screens use the vertical list.
 SSR emits the complete list and an empty drawing. The sole interactive control
 per node is a Link or Button. ArrowRight/Down follows the first outgoing edge;
 ArrowLeft/Up follows the first incoming edge; Home/End follows layout order.
+PageDown/PageUp visits every node in authored order, wrapping at either end,
+including disconnected nodes and every branch.
 Enter activates and reports the id through `onSelectionChange`; `selectedId`
 remains controlled and is announced through `aria-current`. RTL uses the same
 edge-direction keys. Motion is not required; existing Atom focus treatment and

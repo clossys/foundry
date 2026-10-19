@@ -87,6 +87,27 @@ describe("RelationGraph", () => {
     expect(view.container.querySelectorAll('[aria-current="true"]')).toHaveLength(1);
     expect(screen.getByRole("button", { name: "Alpha" })).toHaveAttribute("aria-current", "true");
   });
+  it.each([
+    { shape: "disconnected nodes", authored: nodes, relations: [] },
+    { shape: "branching edges", authored: [...nodes, { id: "d", label: "Delta", kind: "unit" }], relations: [{ from: "a", to: "b" }, { from: "a", to: "c" }, { from: "a", to: "d" }] },
+  ])("provides complete authored-order keyboard traversal for $shape", async ({ authored, relations }) => {
+    const user = userEvent.setup(); const onSelectionChange = vi.fn();
+    const { container } = render(<><RelationGraph {...props} nodes={authored} edges={relations} selectedId="a" onSelectionChange={onSelectionChange} /><button>After graph</button></>);
+    const check = (name: string) => {
+      expect(document.activeElement).toHaveAccessibleName(name);
+      expect(controls(container).filter(node => node.tabIndex === 0)).toEqual([document.activeElement]);
+    };
+    await user.tab(); check("Alpha");
+    for (const node of [...authored.slice(1), authored[0]!]) {
+      await user.keyboard("{PageDown}"); check(node.label);
+    }
+    for (const node of [...authored.slice(1).reverse(), authored[0]!]) {
+      await user.keyboard("{PageUp}"); check(node.label);
+    }
+    expect(screen.getByRole("button", { name: "Alpha" })).toHaveAttribute("aria-current", "true");
+    expect(onSelectionChange).not.toHaveBeenCalled();
+    await user.tab(); expect(document.activeElement).toHaveAccessibleName("After graph");
+  });
   it("activates a button once with Enter", async () => {
     const user = userEvent.setup(); const onSelectionChange = vi.fn();
     render(<RelationGraph {...props} onSelectionChange={onSelectionChange} />);
