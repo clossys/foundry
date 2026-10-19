@@ -20,8 +20,12 @@ export const APP_FRAME_MATERIALS = [
       { exportName: "Dialog", source: "src/atoms/Dialog.tsx" },
       { exportName: "Panel", source: "src/blocks/Panel.tsx" },
       { exportName: "Button", source: "src/atoms/Button.tsx" },
+      { exportName: "Icon", source: "src/atoms/Icon.tsx" },
     ],
-    configs: [{ prop: "placement", values: ["start", "end", "bottom"], default: "start", source: "src/blocks/Drawer.tsx" }],
+    configs: [
+      { prop: "placement", values: ["start", "end", "bottom"], default: "start", source: "src/blocks/Drawer.tsx" },
+      { prop: "wide", values: ["dismiss", "sheet"], default: "dismiss", source: "src/blocks/Drawer.tsx" },
+    ],
     authoredInputs: ["trigger", "heading", "closeLabel", "children", "footer", "navigationKey", "dismissAt"],
   },
   {
