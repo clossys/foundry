@@ -90,7 +90,6 @@ function importKeysNormally(distRelPath: string): string[] {
 
 describe("server-safe entry points resolve under react-server (test 1)", () => {
   const serverEntries: Array<{ distRelPath: string; expectedExports: string[] }> = [
-    { distRelPath: "tokens/preview/index.js", expectedExports: ["TokenPreview"] },
     { distRelPath: "tokens/server.js", expectedExports: ["readBrandCss", "assertTailwindMergeVersion"] },
     { distRelPath: "atoms/server.js", expectedExports: ["Avatar", "Badge", "Banner", "Card", "Field", "Icon", "Meter", "Skeleton", "Spinner", "StatusMark", "buttonLinkClassName", "iconButtonClassName", "iconButtonLinkClassName", "mergeUiClasses"] },
     {
@@ -144,6 +143,12 @@ describe("server-safe entry points resolve under react-server (test 1)", () => {
       expect(keys).toEqual([...expectedExports].sort());
     });
   }
+});
+
+it("keeps the interactive preview export exact and its emitted client boundary explicit", () => {
+  expect(importKeysNormally("tokens/preview/index.js")).toEqual(["TokenPreview"]);
+  expect(readFileSync(join(distDir, "tokens/preview/index.js"), "utf8")).toMatch(/^"use client";/);
+  expect(RENDER_ENVIRONMENT["./tokens/preview"]).toBe("client-only");
 });
 
 describe("compiled Tree server graph", () => {
@@ -220,7 +225,7 @@ describe("compiled grouped Items SSR", () => {
 });
 
 describe("negative control: the original barrels still fail under react-server (test 2)", () => {
-  const originalBarrels = ["atoms/index.js", "blocks/index.js", "shell/index.js", "charts/index.js", "theme/index.js"];
+  const originalBarrels = ["tokens/preview/index.js", "atoms/index.js", "blocks/index.js", "shell/index.js", "charts/index.js", "theme/index.js"];
 
   for (const distRelPath of originalBarrels) {
     it(`${distRelPath} still fails under --conditions=react-server (proves the server entry is doing real work)`, () => {
