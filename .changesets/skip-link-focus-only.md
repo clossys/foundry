@@ -2,4 +2,4 @@
 designer: patch
 ---
 
-Activating the shell skip link now moves focus to the main content without changing the URL fragment, so hash-routed applications keep their current route.
+Activating `SkipLink`, including the one `Shell` renders, now moves focus to its target without updating `location.hash`, adding a history entry or applying `:target` styling, so hash-routed applications keep their current route.

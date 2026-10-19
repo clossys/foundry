@@ -3,6 +3,10 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Shell } from "./Shell.js";
 
+// jsdom dispatches `hashchange` as a later task, so wait a macrotask before
+// asserting that none arrived.
+const settle = () => new Promise<void>((resolve) => setTimeout(resolve, 10));
+
 function FullShell() {
   return (
     <Shell>
@@ -135,7 +139,7 @@ describe("Shell", () => {
       beforeEach(async () => {
         window.location.hash = "#/settings/profile";
         // Let the hashchange from setting the route flush before a test listens.
-        await new Promise((resolve) => setTimeout(resolve, 0));
+        await settle();
       });
       afterEach(() => {
         window.location.hash = "";
@@ -145,12 +149,14 @@ describe("Shell", () => {
         const user = userEvent.setup();
         const onHashChange = vi.fn();
         window.addEventListener("hashchange", onHashChange);
+        const historyLength = window.history.length;
         render(<FullShell />);
         await user.click(screen.getByRole("link", { name: "Skip to content" }));
-        await Promise.resolve();
+        await settle();
         window.removeEventListener("hashchange", onHashChange);
         expect(screen.getByRole("main")).toHaveFocus();
         expect(window.location.hash).toBe("#/settings/profile");
+        expect(window.history.length).toBe(historyLength);
         expect(onHashChange).not.toHaveBeenCalled();
       });
 

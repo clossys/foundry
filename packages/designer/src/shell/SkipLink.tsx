@@ -45,17 +45,21 @@ export interface SkipLinkProps {
  * `location.hash` and browser history stay untouched. That keeps a
  * hash-routed application on its current route: following `href="#target"`
  * would otherwise overwrite the route in the fragment. The `href` remains as
- * the fallback for the cases where this handler does not run: JavaScript is
- * unavailable, the click is a modified or non-primary one (open in a new
- * tab), or the target is not in the document.
+ * the fallback for the cases where this handler does not run or cannot move
+ * focus: JavaScript is unavailable, the click is a modified or non-primary
+ * one (open in a new tab), the target is not in the document, or the target
+ * cannot take focus (for example it lacks `tabIndex={-1}`).
  */
 export function SkipLink({ targetId, children, className }: SkipLinkProps) {
+  // True only when focus actually landed on the target. A target that cannot
+  // take focus (no `tabIndex`, `inert`, hidden) leaves the `href` to run, so
+  // the link never becomes a no-op.
   const jumpToTarget = (): boolean => {
     const target = document.getElementById(targetId);
     if (!target) return false;
     // `focus()` scrolls the target into view unless `preventScroll` is set.
     target.focus();
-    return true;
+    return document.activeElement === target;
   };
 
   const onClick = (event: MouseEvent<HTMLAnchorElement>) => {

@@ -4913,8 +4913,11 @@ about where it points. Give the target element a matching `id` and
 into view, and cancels the anchor's default navigation, so `location.hash` and
 history are left alone and a hash-routed application keeps its route. The
 `href` remains as the fallback when JavaScript is unavailable, for a modified
-or non-primary click (open in a new tab), and when the target is not in the
-document.
+or non-primary click (open in a new tab), when the target is not in the
+document, and when the target cannot take focus (for example it lacks
+`tabIndex={-1}`), so the link still scrolls there. Because the fragment is no
+longer updated, the target no longer matches `:target` and no history entry is
+added; this applies to the public `SkipLink` as well as the one `Shell` renders.
 
 `SiteHeader` renders a real `<header>` — the page's `banner` landmark,
 provided it sits at the top level rather than nested inside `<main>`/
