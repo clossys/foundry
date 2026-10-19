@@ -234,7 +234,7 @@ smallest stable subpath that owns what you need:
 
 ### Token details and selection
 
-The flat `TOKENS` registry has 186 stable property identities across brand
+The flat `TOKENS` registry has 188 stable property identities across brand
 and supported theme overlays, with zero per-token configuration. Use the
 property-keyed `TOKEN_GUIDANCE` for purpose, appropriate use, misuse or an
 alternative, the consuming CSS application and its context, and a contextual
@@ -4415,14 +4415,19 @@ banner is positioned over the page. If you pin the banner to the bottom
 visually, render it early in DOM order so keyboard and assistive-tech users
 reach it without tabbing through the whole page first.
 
-The opt-in card sits at the inline start from tablet width and is centred
-on phones, with safe-area gutters and the form-width cap. It uses the
-existing glass, blur and hairline roles; unsupported backdrop filters and
-reduced transparency use an opaque plate, and forced colours use system
-colours. There is no motion. Long copy can wrap and scroll within the
-viewport. The title stays as a visually hidden heading that names the
-region. The policy slot is inline with the body, and both outlined choices
-share the row equally. Pass `selectedChoice="granted"` or `"denied"` from
+The opt-in card floats on the notice layer (`--ui-z-notice`), above the
+shell header and footer. Below tablet width it fills the viewport less
+safe-area gutters, centred; from tablet width it is capped at the notice
+width (`--ui-width-notice-max`) and sits at the bottom inline start. Its
+plate is the base surface at 90% with the notice backdrop blur
+(`--blur-notice`), a hairline in the base line colour and the raised
+elevation; unsupported backdrop filters use the base surface at 95%, reduced
+transparency uses an opaque plate, and forced colours use system colours.
+Its only motion is a short background and blur transition, removed under
+reduced motion. Long copy can wrap and scroll within the viewport. The title
+stays as a visually hidden heading that names the region. The policy slot is
+inline with the body, and both choices fill a two-column row as full-width
+tap targets whose labels may wrap. Pass `selectedChoice="granted"` or `"denied"` from
 host state to show a decorative check and `aria-pressed`; the component
 stores no choice. The live region stays mounted in either presentation.
 
@@ -7559,7 +7564,7 @@ static equivalent"). Breakpoint copy props are `thresholdLabel` ("Threshold"),
 `matchLabel` ("Match"), `unavailableMessage` ("unavailable"), `matchesMessage`
 ("yes") and `notMatchesMessage` ("no").
 
-All 186 properties support their authored applications across 19 kinds. The 168
+All 188 properties support their authored applications across 19 kinds. The 170
 static specimens cover surface, text, border, control, status, chart, font,
 space, size, icon, brandmark, radius, shadow, blur, ring, layer and opacity.
 Patterns expose translucent applications; inverse foregrounds receive an inverse
