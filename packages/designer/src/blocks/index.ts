@@ -220,3 +220,6 @@ export { Tree } from "./tree/Tree.js";
 export type { TreeProps, TreeNodeData } from "./tree/Tree.js";
 export { Items } from "./items/Items.js";
 export type { ItemData, ItemFigureData, ItemStatusData, ItemProps, ItemBadge, ItemSize, ItemTreatment, ItemSpan, ItemsProps, ItemsArrangement, ItemsColumns, ItemsScale, ItemsGroup, ItemsLane } from "./items/types.js";
+
+export { GroupedTable } from "./GroupedTable.js";
+export type { GroupedTableProps, GroupedTableGroup, GroupedTableColumn } from "./GroupedTable.js";
