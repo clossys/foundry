@@ -22,6 +22,37 @@ afterEach(() => {
 });
 
 describe("exported AppFrame specimen", () => {
+  it("passes a host command index directly to the real menu", async () => {
+    const user = userEvent.setup();
+    const run = vi.fn();
+    render(<AppFrameSpecimen commands={{
+      triggerLabel: "Host launcher", heading: "Host commands", searchLabel: "Host query",
+      closeLabel: "Dismiss launcher", emptyMessage: "No host commands",
+      groups: [{ id: "host", label: "Host destinations", items: [{ id: "run", label: "Run host task", onAction: run }] }],
+    }} />);
+    await user.click(screen.getByRole("button", { name: "Host launcher" }));
+    expect(await screen.findByRole("dialog", { name: "Host commands" })).toBeInTheDocument();
+    await user.type(screen.getByRole("combobox", { name: "Host query" }), "Run host");
+    await user.keyboard("{Enter}");
+    expect(run).toHaveBeenCalledOnce();
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+  });
+
+  it("resolves changed host activity copy for the current route without losing task-button focus", async () => {
+    const user = userEvent.setup();
+    const view = render(<AppFrameSpecimen routeOpenedLabel="first" />);
+    const main = within(screen.getByRole("main"));
+    await user.click(screen.getByRole("link", { name: "Projects", exact: true }));
+    expect(main.getByRole("status")).toHaveTextContent("Projects first");
+    expect(main.getByRole("status").querySelectorAll("span")).toHaveLength(2);
+    view.rerender(<AppFrameSpecimen routeOpenedLabel="updated" />);
+    expect(main.getByRole("status")).toHaveTextContent("Projects updated");
+    const task = screen.getByRole("button", { name: "Complete example task" });
+    await user.click(task);
+    expect(screen.getByRole("button", { name: "Reopen example task" })).toBe(task);
+    expect(task).toHaveFocus();
+  });
+
   it("retains the generic default copy when no host overrides are supplied", () => {
     render(<AppFrameSpecimen />);
     const main = within(screen.getByRole("main"));
@@ -41,7 +72,7 @@ describe("exported AppFrame specimen", () => {
       milestoneHeading="HOST milestone" milestoneDescription="HOST milestone detail"
       completeTaskLabel="HOST complete" reopenTaskLabel="HOST reopen"
       taskCompletedMessage="HOST task done" taskReadyMessage="HOST task ready" taskReopenedMessage="HOST task reopened"
-      initialActivityMessage="HOST welcome" formatRouteOpened={title => `HOST opened ${title}`}
+      initialActivityMessage="HOST welcome" routeOpenedLabel="HOST opened"
       noAccountMessage="HOST account removed"
     />);
     const main = within(screen.getByRole("main"));
@@ -59,7 +90,7 @@ describe("exported AppFrame specimen", () => {
     await user.type(screen.getByRole("combobox", { name: "HOST query" }), "HOST tasks");
     await user.keyboard("{Enter}");
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
-    expect(main.getByText("HOST opened Tasks")).toBeInTheDocument();
+    expect(main.getByRole("status")).toHaveTextContent("Tasks HOST opened");
     await user.click(screen.getByRole("button", { name: "HOST member" }));
     await user.click(await screen.findByRole("menuitem", { name: "HOST leave" }));
     expect(main.getByText("HOST account removed")).toBeInTheDocument();
@@ -81,7 +112,7 @@ describe("exported AppFrame specimen", () => {
     const main = within(screen.getByRole("main"));
     expect(main.getByRole("heading", { level: 1, name: "HOST projects" })).toBeInTheDocument();
     expect(main.getByText("HOST project detail")).toBeInTheDocument();
-    expect(main.getByText("HOST projects opened.")).toBeInTheDocument();
+    expect(main.getByRole("status")).toHaveTextContent("HOST projects opened");
   });
 
   it("renders a real whole frame and routes host links into its sole main", async () => {

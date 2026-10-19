@@ -6470,15 +6470,18 @@ description for each of `overview`, `projects`, `tasks`, `profile`, `preferences
 and `signed-out`, and these titles also label the matching navigation and
 account links. Other optional props cover brand/workspace copy, account actions,
 command labels and empty results, context and work content, and task/activity
-messages. `formatRouteOpened(title)` formats route activity; its default is
-`${title} opened.`. For example:
+messages. Route activity displays the destination title and the independently
+documented `routeOpenedLabel` (default `"opened"`) in separate text nodes.
+The optional `commands` prop passes a host command index through directly;
+when omitted, the documented command labels name the local destination links.
+For example:
 
 ```tsx
 <AppFrameSpecimen
   commandTriggerLabel="Find a destination"
   completeTaskLabel="Mark example task complete"
   taskCompletedMessage="The example task is complete."
-  formatRouteOpened={title => `Viewing ${title}`}
+  routeOpenedLabel="selected"
 />
 ```
 

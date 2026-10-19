@@ -59,6 +59,8 @@ export interface AppFrameSpecimenProps {
   openProjectsLabel?: string;
   /** Tasks command. @default "Open tasks" */
   openTasksLabel?: string;
+  /** Host command index. @default Generic Example destination links using the documented command labels. */
+  commands?: AppFrameProps["commands"];
   /** Context pane accessible name. @default "Example context" */
   contextLabel?: string;
   /** Resize handle accessible name. @default "Resize example context" */
@@ -91,8 +93,8 @@ export interface AppFrameSpecimenProps {
   initialActivityMessage?: string;
   /** Activity message after reopening the task. @default "Example task reopened." */
   taskReopenedMessage?: string;
-  /** Route activity formatter. @default (title) => `${title} opened.` */
-  formatRouteOpened?: (title: string) => string;
+  /** Separate route activity label. @default "opened" */
+  routeOpenedLabel?: string;
 }
 
 /**
@@ -107,6 +109,15 @@ export function AppFrameSpecimen({
   commandTriggerLabel = "Search Example commands", commandHeading = "Example commands", commandSearchLabel = "Find a command",
   commandCloseLabel = "Close commands", commandEmptyMessage = "No matching commands. Try overview, projects or tasks.",
   commandGroupLabel = "Go to", openOverviewLabel = "Open overview", openProjectsLabel = "Open projects", openTasksLabel = "Open tasks",
+  commands = {
+    triggerLabel: commandTriggerLabel, heading: commandHeading, searchLabel: commandSearchLabel,
+    closeLabel: commandCloseLabel, emptyMessage: commandEmptyMessage,
+    groups: [{ id: APP_FRAME_SPECIMEN_COMMAND_IDS.group, label: commandGroupLabel, items: [
+      { id: APP_FRAME_SPECIMEN_COMMAND_IDS.overview, label: openOverviewLabel, href: "#example-overview" },
+      { id: APP_FRAME_SPECIMEN_COMMAND_IDS.projects, label: openProjectsLabel, href: "#example-projects" },
+      { id: APP_FRAME_SPECIMEN_COMMAND_IDS.tasks, label: openTasksLabel, href: "#example-tasks" },
+    ] }],
+  },
   contextLabel = "Example context", resizeContextLabel = "Resize example context", contextHeading = "Context",
   currentDestinationPrefix = "Current destination: ", taskCompletedMessage = "Example task completed.",
   taskReadyMessage = "One example task is ready for review.", preferencesHeading = "Workspace appearance", milestoneHeading = "Next milestone",
@@ -114,7 +125,7 @@ export function AppFrameSpecimen({
   preferencesDescription = "The frame's theme control cycles through System, Light and Dark for the entire workspace. Your choice is saved in this browser.",
   milestoneDescription = "Review the project outline before the next planning session.", noAccountMessage = "No account information is supplied to the frame.",
   completeTaskLabel = "Complete example task", reopenTaskLabel = "Reopen example task", initialActivityMessage = "Example workspace opened.",
-  taskReopenedMessage = "Example task reopened.", formatRouteOpened = title => `${title} opened.`,
+  taskReopenedMessage = "Example task reopened.", routeOpenedLabel = "opened",
 }: AppFrameSpecimenProps = {}) {
   const workHeadingId = useId();
   const [page, setPage] = useState<Page>("overview");
@@ -155,16 +166,6 @@ export function AppFrameSpecimen({
     setSignedIn(true);
     route("overview");
   } }] }];
-  const commands: AppFrameProps["commands"] = {
-    triggerLabel: commandTriggerLabel, heading: commandHeading, searchLabel: commandSearchLabel,
-    closeLabel: commandCloseLabel, emptyMessage: commandEmptyMessage,
-    groups: [{ id: APP_FRAME_SPECIMEN_COMMAND_IDS.group, label: commandGroupLabel, items: [
-      { id: APP_FRAME_SPECIMEN_COMMAND_IDS.overview, label: openOverviewLabel, onAction: () => route(APP_FRAME_SPECIMEN_COMMAND_IDS.overview) },
-      { id: APP_FRAME_SPECIMEN_COMMAND_IDS.projects, label: openProjectsLabel, onAction: () => route(APP_FRAME_SPECIMEN_COMMAND_IDS.projects) },
-      { id: APP_FRAME_SPECIMEN_COMMAND_IDS.tasks, label: openTasksLabel, onAction: () => route(APP_FRAME_SPECIMEN_COMMAND_IDS.tasks) },
-    ] }],
-  };
-
   return <div onClickCapture={onHostLink}>
     <AppFrame
       brand={{ markSrc: EXAMPLE_MARK, wordmark, label: workspaceLabel, href: "#example-overview" }}
@@ -216,7 +217,7 @@ export function AppFrameSpecimen({
           </section>}
         <p role="status" aria-live="polite" className="m-0 text-body-s text-ink-muted">
           {activity.kind === "initial" && <>{initialActivityMessage}</>}
-          {activity.kind === "route" && <>{formatRouteOpened(pages[activity.page].title)}</>}
+          {activity.kind === "route" && <><span>{destination.title}</span>{" "}<span>{routeOpenedLabel}</span></>}
           {activity.kind === "complete" && <>{taskCompletedMessage}</>}
           {activity.kind === "reopen" && <>{taskReopenedMessage}</>}
         </p>
