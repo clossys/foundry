@@ -275,7 +275,10 @@ describe("SiteFooter mandatory dark composition", () => {
   it("follows the document direction instead of forcing left-to-right", () => {
     const composition = rule("@utility site-footer-composition {");
     expect(composition).not.toMatch(/direction\s*:/);
-    expect(composition).not.toMatch(/(?:^|[\s;{-])(?:left|right)\s*:|margin-(?:left|right)|padding-(?:left|right)|text-align:\s*(?:left|right)/);
+    // Every footer utility, not just the composition: physical properties and physical VALUES both pin a side.
+    const footerCss = ["site-footer-dark", "site-footer-columns", "site-footer-composition"].map(name => rule(`@utility ${name} {`)).join("\n");
+    expect(footerCss).not.toMatch(/(?:^|[\s;{-])(?:left|right)\s*:|(?:margin|padding|border)-(?:left|right)/);
+    expect(footerCss).not.toMatch(/(?:justify-content|justify-items|justify-self|align-self|text-align|float|clear)\s*:\s*(?:left|right)\b/);
     const { container } = render(<div dir="rtl">{fixture()}</div>);
     const footer = container.querySelector("footer")!;
     expect(footer.querySelector("[dir]")).toBeNull();

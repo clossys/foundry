@@ -63,7 +63,7 @@ it("normalizes footer configuration without losing inherited header presentation
   let reads = 0;
   expect(() => normalizeSiteFrameConfig({ get footerRule() { reads++; return "top"; } })).toThrow(/SiteFrame/);
   expect(reads).toBe(0);
-  expect(SITE_FRAME_CONTRACT.constituents.Footer.required).toEqual(expect.arrayContaining(["home-rightmost", "named-icons", "external-rel", "privacy-link-only"]));
+  expect(SITE_FRAME_CONTRACT.constituents.Footer.required).toEqual(expect.arrayContaining(["home-inline-end", "named-icons", "external-rel", "privacy-link-only"]));
 });
 
 it("preserves independent explicit header overrides while inheriting footer-only settings", () => {

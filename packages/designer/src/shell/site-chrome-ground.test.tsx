@@ -6,9 +6,10 @@ import { SiteFooter } from "./SiteFooter.js";
 import { SiteHeader } from "./SiteHeader.js";
 
 /**
- * Markup captured from `main` BEFORE the `transparent` ground existed
- * (fixed clock, so the legal row's year is stable). `base` and `inverse`
- * must stay byte-identical to it.
+ * Recorded footer markup for the `base` and `inverse` grounds (fixed clock, so
+ * the legal row's year is stable). The fixtures hold the current locally dark
+ * footer: the `data-footer-root` marker, the `site-footer-dark` scope class and
+ * the centered legal composition. Both grounds must stay byte-identical to them.
  */
 const MAIN_MARKUP: Readonly<Record<string, string>> = {
   "footer-cols-base": "<footer data-footer-root=\"\" class=\"site-footer-dark bg-surface-raised text-ink-primary py-lg border-t border-line-base\" style=\"position:relative;z-index:var(--ui-z-shell, 20);border-top-width:var(--ui-border-hairline, 1px)\"><div class=\"mx-auto flex w-full flex-col gap-lg\" style=\"padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))\"><div class=\"site-footer-columns\"><div class=\"flex flex-col gap-sm\"><h2 class=\"m-0 text-body-s font-body font-medium\">Product</h2><div class=\"flex flex-col gap-xs\"><a href=\"/a\">A</a></div></div></div><div class=\"flex flex-col gap-sm text-body-s text-ink-secondary tablet:flex-row tablet:items-center tablet:justify-between border-t pt-lg border-line-base\"><span>Legal</span></div></div></footer>",
@@ -40,7 +41,7 @@ afterEach(() => {
 
 describe("site chrome: base and inverse are unchanged", () => {
   for (const ground of ["base", "inverse"] as const) {
-    it(`renders ${ground} byte-identically to main`, () => {
+    it(`renders ${ground} byte-identically to its recorded markup`, () => {
       const host = document.createElement("div");
       host.innerHTML = html(<SiteHeader ground={ground} brand={brand} nav={<nav>Nav</nav>} actions={<button type="button">Go</button>} />);
       expect(host.querySelector("header")).toHaveClass("site-header-contract", ground === "base" ? "bg-surface-raised" : "bg-surface-inverse", "border-b", ground === "base" ? "border-line-base" : "border-line-on-inverse");

@@ -6308,7 +6308,8 @@ consumer runtime qualification. A record alone never qualifies a pair.
 contract references real Designer Header/Footer exports, separate from Pack
 route placement and Instance binding; it is not measurement or qualification.
 Footer composition facts require local darkness, centered links, named icons,
-rightmost home and mobile links/icons/copyright order. `presentation` accepts
+home at the inline end (following document direction) and mobile
+links/icons/copyright order. `presentation` accepts
 flat finite `footerGround`, `footerPlacement`, `footerRule`, `headerGround`,
 `headerPlacement` and `headerTone` keys. Footer defaults are base/flow/none;
 header defaults remain reserved/base, with overlay using tone and reserved

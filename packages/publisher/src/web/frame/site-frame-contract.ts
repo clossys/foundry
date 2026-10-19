@@ -63,7 +63,7 @@ export const SITE_FRAME_CONTRACT = freeze({
   required: ["sticky-header", "dark-footer", "accessible-navigation", "document-scroll", "sole-main"],
   constituents: {
     Header: { owner: "@clossys/designer", subpath: "shell/server", export: "SiteHeader", config: ["headerGround", "headerPlacement", "headerTone"] },
-    Footer: { owner: "@clossys/designer", subpath: "shell/server", export: "SiteFooter", config: ["footerGround", "footerPlacement", "footerRule"], content: ["columns", "links", "social", "legal", "home"], required: ["dark-in-both-themes", "centered-links", "home-rightmost", "mobile-links-icons-copyright", "named-icons", "external-rel", "safe-area", "44px-targets", "privacy-link-only"], constraints: { home: "resolved brand mark by default", links: "uncapped", accessibility: "mandatory" } },
+    Footer: { owner: "@clossys/designer", subpath: "shell/server", export: "SiteFooter", config: ["footerGround", "footerPlacement", "footerRule"], content: ["columns", "links", "social", "legal", "home"], required: ["dark-in-both-themes", "centered-links", "home-inline-end", "mobile-links-icons-copyright", "named-icons", "external-rel", "safe-area", "44px-targets", "privacy-link-only"], constraints: { home: "resolved brand mark by default", links: "uncapped", accessibility: "mandatory" } },
   },
 } as const);
 

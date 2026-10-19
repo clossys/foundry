@@ -336,7 +336,7 @@ describe("HeroView surface footer", () => {
         );
       });
 
-      it("uses the base ink on its own plate", () => {
+      it("paints dark through the footer's own scope, with base ink tokens and no inverse ink classes", () => {
         const footer = surface().querySelector("footer")!;
         expect(classesOf(footer)).toContain("text-ink-primary");
         expect(classesOf(footer.querySelector("nav")!.closest("footer > div > div")!)).toContain("text-ink-secondary");
