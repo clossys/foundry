@@ -5,6 +5,8 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+- Add the RelationGraph Navigation Material: layered directed relationships, one keyboard-navigable list, safe-link refusals and a cycle fallback.
+
 - Add Panel, Drawer and ResizablePane Block Materials with source-backed composition records, and a named ResizeHandle Atom with bounded keyboard and pointer interaction. Drawer reuses the Dialog lifecycle and releases it on route and breakpoint changes. Document the forty-first Atom without changing existing Dialog defaults.
 
 ## 0.12.0 - 2026-10-16

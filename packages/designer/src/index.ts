@@ -395,4 +395,6 @@ export type { ScatterChartProps } from "./charts/ScatterChart.js";
 
 export { Item } from "./blocks/items/Item.js";
 export { Items } from "./blocks/items/Items.js";
+export { RelationGraph } from "./blocks/RelationGraph.js";
+export type { RelationGraphProps, RelationGraphNode, RelationGraphEdge } from "./blocks/relation-graph-types.js";
 export type { ItemData, ItemFigureData, ItemStatusData, ItemProps, ItemBadge, ItemSize, ItemTreatment, ItemSpan, ItemsProps, ItemsArrangement, ItemsColumns, ItemsScale, ItemsGroup, ItemsLane } from "./blocks/items/types.js";

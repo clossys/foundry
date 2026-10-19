@@ -196,6 +196,8 @@ export type { DrawerProps } from "./Drawer.js";
 export { ResizablePane } from "./ResizablePane.js";
 export type { ResizablePaneProps } from "./ResizablePane.js";
 export { APP_FRAME_MATERIALS } from "./app-frame-materials.js";
+export { RelationGraph } from "./RelationGraph.js";
+export type { RelationGraphProps, RelationGraphNode, RelationGraphEdge } from "./relation-graph-types.js";
 
 export { RecordLedger } from "./RecordLedger.js";
 export type { RecordLedgerProps, LedgerRowData, LedgerGroupData } from "./RecordLedger.js";

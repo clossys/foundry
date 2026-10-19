@@ -7539,3 +7539,48 @@ on release; pointer cancellation, lost capture or Escape restores the drag's
 start value. Non-finite dimensions, reversed bounds, nonpositive steps and
 empty names are refused. Values and resets are clamped. Native forced-color
 adjustment remains enabled, with a token-bound edge and a visible focus outline.
+
+
+### RelationGraph
+
+`RelationGraph` is a client Material in Navigation, exported from the Block
+barrel and the aggregate entry. Supply the closed `kinds` vocabulary, authored
+nodes and directed edges. The cap is 64 nodes. Duplicate ids, unknown endpoints,
+self-edges and malformed data throw field-specific errors. No nodes or relations
+are inferred. Cycles preserve the list and show `unavailableMessage`, without a
+partial drawing.
+
+The deterministic longest-path layout preserves source order within each layer.
+At tablet-lg and wider, the same list becomes a layered drawing with decorative
+SVG edges measured after hydration; narrower screens use the vertical list.
+SSR emits the complete list and an empty drawing. The sole interactive control
+per node is a Link or Button. ArrowRight/Down follows the first outgoing edge;
+ArrowLeft/Up follows the first incoming edge; Home/End follows layout order.
+Enter activates and reports the id through `onSelectionChange`; `selectedId`
+remains controlled and is announced through `aria-current`. RTL uses the same
+edge-direction keys. Motion is not required; existing Atom focus treatment and
+a forced-colors outline remain available.
+
+Only same-origin relative paths and HTTPS URLs without credentials become links.
+Protocol-relative, non-HTTPS schemes, backslashes, whitespace and control
+characters are refused: the node remains a Button and appears in the refused
+list. Href bytes are preserved for accepted links. No routing, fetching or
+persistence is owned here.
+
+Host copy props are `emptyMessage` (default “No relationships”),
+`unavailableMessage` (“Drawing unavailable: cycle”), `incomingLabel` (“Incoming”),
+`outgoingLabel` (“Outgoing”) and `refusedLabel` (“Refused links”).
+
+```tsx
+import { RelationGraph } from "@clossys/designer/blocks";
+
+<RelationGraph
+  label="Relationships"
+  kinds={["block", "pack"] as const}
+  nodes={[
+    { id: "detail", label: "Detail", kind: "block", href: "/detail" },
+    { id: "collection", label: "Collection", kind: "pack" },
+  ]}
+  edges={[{ from: "collection", to: "detail", label: "contains" }]}
+/>;
+```

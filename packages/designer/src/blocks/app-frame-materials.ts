@@ -1,6 +1,7 @@
 import { Panel } from "./Panel.js";
 import { Drawer } from "./Drawer.js";
 import { ResizablePane } from "./ResizablePane.js";
+import { RelationGraph } from "./RelationGraph.js";
 
 /** Source-backed Material selections within the Block tier; these records grant no role qualification. */
 export const APP_FRAME_MATERIALS = [
@@ -31,5 +32,12 @@ export const APP_FRAME_MATERIALS = [
     ],
     configs: [{ prop: "orientation", values: ["vertical", "horizontal"], default: "vertical", source: "src/atoms/ResizeHandle.tsx" }],
     authoredInputs: ["min", "max", "defaultValue", "value", "step", "label", "handleLabel", "onChange", "children"],
+  },
+  {
+    id: "relation-graph", layer: "blocks", informationArchitecture: "navigation", exportName: "RelationGraph", component: RelationGraph, source: "src/blocks/RelationGraph.tsx",
+    regions: ["content", "drawing", "list"],
+    dependencies: [{ exportName: "Link", source: "src/atoms/Link.tsx" }, { exportName: "Button", source: "src/atoms/Button.tsx" }],
+    configs: [],
+    authoredInputs: ["nodes", "edges", "kinds", "label", "selectedId", "onSelectionChange", "emptyMessage", "unavailableMessage", "incomingLabel", "outgoingLabel", "refusedLabel"],
   },
 ] as const;

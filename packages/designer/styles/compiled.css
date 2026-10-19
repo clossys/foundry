@@ -765,6 +765,9 @@
   .ms-lg {
     margin-inline-start: var(--spacing-lg, 16px);
   }
+  .ms-xs {
+    margin-inline-start: var(--spacing-xs, 4px);
+  }
   .items-order-body {
     margin-block-start: calc((1 - var(--items-wide, 0)) * var(--items-body-narrow, 0px) + var(--items-wide, 0) * (var(--spacing-2xl, 32px) + var(--spacing-lg, 16px) + var(--items-lane-wide, 0px)));
   }
@@ -3345,6 +3348,14 @@
     }
     .forced-colors\:border-current {
       border-color: currentcolor;
+    }
+    .forced-colors\:focus-visible\:outline:focus-visible {
+      outline-style: var(--tw-outline-style, solid);
+      outline-width: 1px;
+    }
+    .forced-colors\:focus-visible\:outline-solid:focus-visible {
+      --tw-outline-style: solid;
+      outline-style: solid;
     }
   }
 }
