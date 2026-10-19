@@ -165,3 +165,9 @@ it("refuses a lockup text offset it cannot evaluate", () => {
   const mark = MARK_FIXTURES.small.replace('</svg>', '<text x="116.6667" dx="40" font-size="45.8333">Example</text></svg>');
   expect(() => checkMarkConformance(mark)).toThrow('lockup text positioning');
 });
+
+it("keeps the normalized app icon at kit geometry without nesting another badge", () => {
+  const direction = adoptSuppliedMark({ brand: { name: "Example" }, suppliedSvg: MARK_FIXTURES.small, tokens, normalize: true });
+  expect(checkMarkConformance(direction.variants.appIcon)).toEqual([]);
+  expect(direction.variants.appIcon).toBe(direction.variants.mark);
+});

@@ -897,7 +897,7 @@ export function adoptSuppliedMark(input: AdoptSuppliedMarkInput): IdentityDirect
       light: recolorSvg(trimmed, tokens.ink),
       dark: recolorSvg(trimmed, tokens.onInverse),
       favicon: recolorSvg(trimmed, "currentColor"),
-      appIcon: wrapBadge(onAccentGlyph, tokens.accent, tokens.onAccent, sourceViewBox),
+      appIcon: input.normalize === true ? trimmed : wrapBadge(onAccentGlyph, tokens.accent, tokens.onAccent, sourceViewBox),
     },
   };
 }
