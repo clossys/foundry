@@ -265,13 +265,13 @@ describe("exact-property TokenPreview", () => {
       expect(specimen("--ui-duration-fast").querySelector("figure")?.getAttribute("data-kind")).toBe("motion");
     } finally { (token as { family: string }).family = original; }
   });
-  function cascade(property: string, value: string, width?: string) {
+  function cascade(property: string, value: string | (() => string), width?: string | (() => string)) {
     const nativeComputed = getComputedStyle;
     vi.stubGlobal("getComputedStyle", (node: Element) => {
       const result = nativeComputed(node);
       return node.isConnected && node.tagName === "SPAN" && node.closest("figure")?.getAttribute("aria-label") === property ? new Proxy(result, { get(target, key) {
-        if (key === "getPropertyValue") return (name: string) => name === property ? value : target.getPropertyValue(name);
-        if (key === "width" && width !== undefined) return width;
+        if (key === "getPropertyValue") return (name: string) => name === property ? typeof value === "function" ? value() : value : target.getPropertyValue(name);
+        if (key === "width" && width !== undefined) return typeof width === "function" ? width() : width;
         return Reflect.get(target, key);
       } }) : result;
     });
@@ -290,6 +290,92 @@ describe("exact-property TokenPreview", () => {
     const { container } = render(<TokenPreview property="--breakpoint-tablet" />);
     expect(matchMedia).toHaveBeenCalledWith("(min-width: 408px)");
     expect(container.textContent).toContain("Threshold: 408px");
+  });
+  function observers() {
+    const instances: { notify: () => void; observe: ReturnType<typeof vi.fn>; disconnect: ReturnType<typeof vi.fn> }[] = [];
+    vi.stubGlobal("ResizeObserver", class {
+      observe = vi.fn();
+      disconnect = vi.fn();
+      constructor(notify: () => void) { instances.push({ notify, observe: this.observe, disconnect: this.disconnect }); }
+    });
+    return instances;
+  }
+  it("refreshes a viewport-dependent cascade threshold and replaces only the changed query", () => {
+    vi.stubGlobal("innerWidth", 1200);
+    const observation = observers();
+    const added = vi.spyOn(window, "addEventListener");
+    const removed = vi.spyOn(window, "removeEventListener");
+    const queries: { matches: boolean; addEventListener: ReturnType<typeof vi.fn>; removeEventListener: ReturnType<typeof vi.fn> }[] = [];
+    const matchMedia = vi.fn((query: string) => {
+      const result = { matches: window.innerWidth >= Number(/min-width: ([\d.]+)px/.exec(query)![1]), addEventListener: vi.fn(), removeEventListener: vi.fn() };
+      queries.push(result);
+      return result;
+    });
+    vi.stubGlobal("matchMedia", matchMedia);
+    cascade("--breakpoint-tablet", "calc(50vw + 100px)", () => `${window.innerWidth / 2 + 100}px`);
+    const { container, unmount } = render(<TokenPreview property="--breakpoint-tablet" />);
+    expect(container.textContent).toContain("Threshold: 700px; Match: yes");
+    const previous = queries[0]!;
+    const stale = previous.addEventListener.mock.calls[0]![1];
+    act(() => { vi.stubGlobal("innerWidth", 500); fireEvent.resize(window); stale({ matches: false }); });
+    expect(container.textContent).toContain("Threshold: 350px; Match: yes");
+    expect(matchMedia.mock.calls.map(([query]) => query)).toEqual(["(min-width: 700px)", "(min-width: 350px)"]);
+    expect(previous.removeEventListener).toHaveBeenCalledTimes(1);
+    expect(previous.removeEventListener).toHaveBeenCalledWith("change", stale);
+    expect(queries[1]!.addEventListener).toHaveBeenCalledTimes(1);
+    act(() => { fireEvent.resize(window); observation[0]!.notify(); observation[0]!.notify(); });
+    expect(matchMedia).toHaveBeenCalledTimes(2);
+    const resize = added.mock.calls.find(([type]) => type === "resize")![1];
+    expect(added.mock.calls.filter(([type]) => type === "resize")).toHaveLength(1);
+    unmount();
+    expect(removed).toHaveBeenCalledWith("resize", resize);
+    expect(observation[0]!.disconnect).toHaveBeenCalledTimes(1);
+    expect(queries[1]!.removeEventListener).toHaveBeenCalledTimes(1);
+    expect(queries[1]!.removeEventListener).toHaveBeenCalledWith("change", queries[1]!.addEventListener.mock.calls[0]![1]);
+    act(() => { vi.stubGlobal("innerWidth", 900); fireEvent.resize(window); observation[0]!.notify(); });
+    expect(matchMedia).toHaveBeenCalledTimes(2);
+  });
+  it("rereads root rem sizing on observed threshold changes without duplicating subscriptions", () => {
+    const { queries, matchMedia } = media();
+    const observation = observers();
+    document.documentElement.style.fontSize = "20px";
+    cascade("--breakpoint-tablet", "40rem");
+    const { container, unmount } = render(<TokenPreview property="--breakpoint-tablet" />);
+    expect(container.textContent).toContain("Threshold: 800px");
+    expect(observation).toHaveLength(1);
+    expect(observation[0]!.observe).toHaveBeenCalledTimes(1);
+    expect(observation[0]!.observe).toHaveBeenCalledWith(container.querySelector("span"));
+    const previous = queries.get("(min-width: 800px)")!;
+    act(() => { document.documentElement.style.fontSize = "25px"; observation[0]!.notify(); });
+    expect(container.textContent).toContain("Threshold: 1000px");
+    expect(previous.removeEventListener).toHaveBeenCalledTimes(1);
+    expect(previous.removeEventListener).toHaveBeenCalledWith("change", previous.addEventListener.mock.calls[0]![1]);
+    act(() => observation[0]!.notify());
+    expect(matchMedia).toHaveBeenCalledTimes(2);
+    unmount();
+    expect(observation[0]!.disconnect).toHaveBeenCalledTimes(1);
+  });
+  it("observes unresolved cascade values and cleans up stale queries before recovering", () => {
+    const { queries, matchMedia } = media();
+    const observation = observers();
+    let value = "invalid";
+    cascade("--breakpoint-tablet", () => value, "auto");
+    const { container, unmount } = render(<TokenPreview property="--breakpoint-tablet" />);
+    expect(container.textContent).toContain("Threshold: unavailable; Match: unavailable");
+    expect(matchMedia).not.toHaveBeenCalled();
+    expect(observation).toHaveLength(1);
+    act(() => { value = "512px"; observation[0]!.notify(); });
+    expect(container.textContent).toContain("Threshold: 512px; Match: yes");
+    const previous = queries.get("(min-width: 512px)")!;
+    const stale = previous.addEventListener.mock.calls[0]![1];
+    act(() => { value = "invalid"; observation[0]!.notify(); stale({ matches: true }); });
+    expect(container.textContent).toContain("Threshold: unavailable; Match: unavailable");
+    expect(previous.removeEventListener).toHaveBeenCalledTimes(1);
+    expect(previous.removeEventListener).toHaveBeenCalledWith("change", stale);
+    act(() => { value = "640px"; observation[0]!.notify(); });
+    expect(container.textContent).toContain("Threshold: 640px; Match: yes");
+    unmount();
+    expect(queries.get("(min-width: 640px)")!.removeEventListener).toHaveBeenCalledTimes(1);
   });
   it("does not invent a match when an override cannot resolve", () => {
     const { matchMedia } = media();

@@ -95,23 +95,42 @@ function BreakpointPreview({ property, thresholdLabel, matchLabel, unavailableMe
     const node = probe.current;
     if (!node || typeof window.matchMedia !== "function") return;
     const root = node.ownerDocument.documentElement;
-    const computed = getComputedStyle(node);
-    const rootStyle = getComputedStyle(root);
-    const value = computed.getPropertyValue(property).trim() || TOKENS[property]!.value;
-    const length = /^(\d+(?:\.\d+)?)(px|rem)$/.exec(value);
-    // Native media queries cannot use custom properties. Resolve against this host's cascade.
-    let pixels = length ? Number(length[1]) * (length[2] === "rem" ? Number.parseFloat(rootStyle.fontSize) : 1) : NaN;
-    if (!length && (typeof CSS === "undefined" || typeof CSS.supports !== "function" || CSS.supports("outline-offset", value))) {
-      const resolved = /^(\d+(?:\.\d+)?)px$/.exec(computed.width);
-      pixels = resolved ? Number(resolved[1]) : NaN;
+    let active = true;
+    let subscription: { threshold: string; query: MediaQueryList; update: (event: { matches: boolean }) => void } | null = null;
+    function unsubscribe() {
+      const previous = subscription;
+      subscription = null;
+      previous?.query.removeEventListener("change", previous.update);
     }
-    if (!Number.isFinite(pixels) || pixels < 0) return;
-    const threshold = `${pixels}px`;
-    const query = window.matchMedia(`(min-width: ${threshold})`);
-    const update = (event: { matches: boolean }) => setState({ threshold, matches: event.matches });
-    update(query);
-    query.addEventListener("change", update);
-    return () => query.removeEventListener("change", update);
+    function refresh() {
+      if (!active || !node) return;
+      const computed = getComputedStyle(node);
+      const rootStyle = getComputedStyle(root);
+      const value = computed.getPropertyValue(property).trim() || TOKENS[property]!.value;
+      const length = /^(\d+(?:\.\d+)?)(px|rem)$/.exec(value);
+      // Native media queries cannot use custom properties. Resolve the current host cascade.
+      let pixels = length ? Number(length[1]) * (length[2] === "rem" ? Number.parseFloat(rootStyle.fontSize) : 1) : NaN;
+      if (!length && (typeof CSS === "undefined" || typeof CSS.supports !== "function" || CSS.supports("outline-offset", value))) {
+        const resolved = /^(\d+(?:\.\d+)?)px$/.exec(computed.width);
+        pixels = resolved ? Number(resolved[1]) : NaN;
+      }
+      if (!Number.isFinite(pixels) || pixels < 0) { unsubscribe(); setState(null); return; }
+      const threshold = `${pixels}px`;
+      if (subscription?.threshold === threshold) return;
+      unsubscribe();
+      const query = window.matchMedia(`(min-width: ${threshold})`);
+      const update = (event: { matches: boolean }): void => {
+        if (active && subscription?.update === update) setState({ threshold, matches: event.matches });
+      };
+      subscription = { threshold, query, update };
+      update(query);
+      query.addEventListener("change", update);
+    }
+    const observer = typeof ResizeObserver === "function" ? new ResizeObserver(refresh) : null;
+    window.addEventListener("resize", refresh);
+    observer?.observe(node);
+    refresh();
+    return () => { active = false; window.removeEventListener("resize", refresh); observer?.disconnect(); unsubscribe(); };
   }, [property]);
   return <div><code>{TOKENS[property]!.value}</code>
     <span ref={probe} aria-hidden="true" style={{ position: "absolute", visibility: "hidden", minWidth: 0, maxWidth: "none", width: tokenReference(property) }} />
