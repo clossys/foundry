@@ -72,7 +72,7 @@ export function NavDisclosure({ children, "aria-label": ariaLabel = "Primary", t
         const row = header.firstElementChild as HTMLElement;
         const brand = row.querySelector<HTMLElement>(".site-header-brand");
         const actions = row.querySelector<HTMLElement>(".site-header-desktop-actions") ?? row.querySelector<HTMLElement>(".site-header-actions");
-        const links = panel.current?.querySelector<HTMLElement>(".site-header-nav-links") ?? panel.current?.firstElementChild as HTMLElement | null;
+        const links = panel.current?.querySelector<HTMLElement>(".site-header-nav-links") ?? panel.current;
         const spacing = getComputedStyle(row);
         const width = row.getBoundingClientRect().width - parseFloat(spacing.paddingInlineStart || "0") - parseFloat(spacing.paddingInlineEnd || "0");
         const gap = parseFloat(spacing.columnGap || "0");
@@ -99,7 +99,7 @@ export function NavDisclosure({ children, "aria-label": ariaLabel = "Primary", t
     const observer = typeof ResizeObserver === "undefined" ? undefined : new ResizeObserver(measure);
     const observe = () => {
       observer?.disconnect();
-      if (header) { observer?.observe(header); header.querySelectorAll(".site-header-brand > *, .site-header-desktop-actions a, .site-header-nav-links a").forEach(node => observer?.observe(node)); }
+      if (header) { observer?.observe(header); header.querySelectorAll(".site-header-brand > *, .site-header-desktop-actions a, .site-header-actions > *, nav a").forEach(node => observer?.observe(node)); }
     };
     const signature = () => JSON.stringify([...(nav.current?.querySelectorAll("a[href]") ?? [])].map(link => [link.getAttribute("href"), link.getAttribute("aria-current"), link.textContent]));
     let content = signature();
@@ -108,7 +108,7 @@ export function NavDisclosure({ children, "aria-label": ariaLabel = "Primary", t
       if (next !== content) { content = next; close(); }
       measure(); observe();
     });
-    if (nav.current) mutations.observe(nav.current, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ["href", "aria-current"] });
+    if (nav.current) mutations.observe(nav.current, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ["href", "aria-current", "class", "style"] });
     measure(); observe();
     media?.addEventListener("change", measure);
     window.addEventListener("resize", measure);

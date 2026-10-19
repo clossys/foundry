@@ -5080,7 +5080,7 @@ declares no root (`"."`) export; `src/index.ts` re-exports them only for
 internal tooling and is not an import path.
 The props are `children` (required), `aria-label` (default `"Primary"`),
 `triggerLabel` (default `"Menu"`), `trigger` (`"label"` by default, or
-`"icon"`) and `className` on the landmark. The icon toggle draws three
+`"icon"`) and `className` on the landmark. The icon toggle draws two
 decorative bars in the current ink; `triggerLabel` remains its accessible
 name. Both triggers keep the same tap target, disclosure controls, Escape
 handling and focus return.

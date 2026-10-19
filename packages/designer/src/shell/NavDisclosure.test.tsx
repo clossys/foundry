@@ -127,16 +127,18 @@ describe("HEADER-1 disclosure lifecycle", () => {
   });
 });
 
-it("HEADER-1 collapses from measured unequal tracks before collision and resets at desktop", () => {
+it.each(["wrapped", "direct"])("HEADER-1 collapses from measured unequal tracks (%s) before collision and resets at desktop", supply => {
   const media = { matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() };
   vi.stubGlobal("matchMedia", () => media);
   let width = 900;
   const rectangles = vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function () {
     const size = this.classList.contains("site-header-row") ? width : this.parentElement?.classList.contains("site-header-brand") ? 300 : this.parentElement?.classList.contains("site-header-actions") ? 100 : 400;
-    return { width: size, height: 60, x: 0, y: 0, top: 0, left: 0, right: size, bottom: 60, toJSON() {} };
+    const left = this.textContent === "Later navigation" ? 100 : 0;
+    const measured = this.matches(".nav-disclosure-panel > a") ? (left ? 300 : 100) : size;
+    return { width: measured, height: 60, x: left, y: 0, top: 0, left, right: left + measured, bottom: 60, toJSON() {} };
   });
   try {
-    render(<SiteHeader brand={<a href="/">Brand with a long name</a>} nav={<NavDisclosure trigger="icon"><ul><li><a href="/help">Translated navigation label</a></li></ul></NavDisclosure>} actions={<a href="/start">Start</a>} />);
+    render(<SiteHeader brand={<a href="/">Brand with a long name</a>} nav={<NavDisclosure trigger="icon">{supply === "wrapped" ? <ul><li><a href="/help">Translated navigation label</a></li></ul> : <><a href="/help">First navigation</a><a href="/later">Later navigation</a></>}</NavDisclosure>} actions={<a href="/start">Start</a>} />);
     const header = screen.getByRole("banner");
     expect(header).toHaveAttribute("data-collapsed");
     const toggle = screen.getByRole("button", { name: "Menu" });

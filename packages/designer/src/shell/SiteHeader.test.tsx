@@ -1,15 +1,26 @@
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { describe, expect, it } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { Home, Settings } from "../icons/index.js";
 import { SiteHeader } from "./SiteHeader.js";
+import { NavDisclosure } from "./NavDisclosure.js";
 import { SiteHeader as ServerSiteHeader } from "./server.js";
 import { CONTRAST_PAIRS } from "../tokens/contrast-pairs.js";
 
 describe("SiteHeader", () => {
+  it.each(["plain", "disclosure", "none"])("keeps %s navigation in desktop layout across resize", supply => {
+    vi.stubGlobal("matchMedia", () => ({ matches: true, addEventListener() {}, removeEventListener() {} }));
+    const links = <a href="/about">About</a>;
+    try {
+      render(<SiteHeader brand="Example" nav={supply === "plain" ? <nav>{links}</nav> : supply === "disclosure" ? <NavDisclosure>{links}</NavDisclosure> : undefined} />);
+      fireEvent.resize(window);
+      expect(screen.getByRole("banner")).not.toHaveAttribute("data-collapsed");
+    } finally { vi.unstubAllGlobals(); }
+  });
+
   it("uses the mandatory centered responsive structure with a plain nav and icon action", () => {
     const { container } = render(<SiteHeader brand={<a href="/">Example</a>} nav={<nav aria-label="Primary"><a href="/about">About</a></nav>} actions={<SiteHeader.ActionLink href="/app" label="App" icon={Home} />} />);
     expect(container.querySelector("header")).toHaveClass("site-header-contract");
@@ -346,4 +357,10 @@ it("ships the default header candidate and a shared frame clearance including sa
   expect(css).toContain(`max-block-size: calc(100dvb - ${clearance} - env(safe-area-inset-bottom, 0px))`);
   expect(css).toContain("env(safe-area-inset-bottom");
   expect(css).toContain("env(safe-area-inset-top");
+  expect(css).toContain(".site-header-contract[data-header-root] .site-header-actions");
+  expect(readFileSync(join(styles, "theme-keys.css"), "utf8").match(/& \.nav-disclosure-panel \{[^\n]*padding-inline:[^\n]+/g)?.at(-1)).toContain("padding-inline: max(var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px)), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px))");
+});
+
+it("documents the two decorative icon bars", () => {
+  expect(readFileSync(join(dirname(fileURLToPath(import.meta.url)), "..", "..", "README.md"), "utf8")).toContain("icon toggle draws two\ndecorative bars");
 });

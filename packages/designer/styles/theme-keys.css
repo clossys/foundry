@@ -723,6 +723,17 @@
 @utility site-header-row { min-block-size: max(var(--ui-layout-tap-target, 44px), var(--ui-brandmark-height-lg, 48px)); display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: var(--spacing-md, 12px); padding-inline: max(var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px)), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px)); }
 @utility site-header-brand { grid-column: 1; grid-row: 1; min-inline-size: 0; }
 @utility site-header-actions { display: flex; grid-column: 3; grid-row: 1; justify-content: end; gap: var(--spacing-sm, 8px); flex-wrap: wrap; overflow-wrap: anywhere; }
+@utility site-header-mobile {
+    & .site-header-brand { grid-column: 2; justify-self: center; }
+    & .site-header-brand a > span { display: none; }
+    & nav { display: block; grid-column: 1; grid-row: 1; }
+    & .site-header-actions { grid-column: 3; grid-row: 1; display: flex; justify-content: end; }
+    & .site-header-actions > a > span { @apply sr-only; }
+    & .nav-disclosure-toggle { display: inline-flex; }
+    & .nav-disclosure-panel { display: none; position: absolute; inset-block-start: 100%; inset-inline: 0; max-block-size: calc(100dvb - var(--site-header-clearance, calc(max(var(--ui-layout-tap-target, 44px), var(--ui-brandmark-height-lg, 48px)) + 2 * var(--spacing-sm, 8px) + var(--ui-border-hairline, 1px) + env(safe-area-inset-top, 0px))) - env(safe-area-inset-bottom, 0px)); overflow-y: auto; overscroll-behavior: contain; padding-block: var(--spacing-md, 12px) max(var(--spacing-md, 12px), env(safe-area-inset-bottom, 0px)); padding-inline: max(var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px)), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px)); background-color: var(--color-overlay-surface, oklch(1 0 0)); color: var(--color-ink-primary, oklch(0.2178 0 0)); border-block-end: var(--ui-border-hairline, 1px) solid var(--color-overlay-border, oklch(0.8761 0 0)); }
+    & .nav-disclosure-panel[data-expanded] { display: flex; flex-direction: column; }
+    & .site-header-nav-links, & .site-header-desktop-actions { flex-direction: column; align-items: stretch; white-space: normal; overflow-wrap: anywhere; }
+}
 @utility site-header-contract {
   & .nav-disclosure-toggle:not([aria-label]) { position: relative; font-size: 0; }
   & .nav-disclosure-toggle:not([aria-label])::before, & .nav-disclosure-toggle:not([aria-label])::after { content: ""; position: absolute; inset-inline-start: 50%; inset-block-start: 50%; inline-size: var(--ui-icon-md, 24px); block-size: var(--ui-border-hairline, 1px); margin-inline-start: calc(var(--ui-icon-md, 24px) / -2); background-color: currentColor; }
@@ -730,33 +741,24 @@
   & .nav-disclosure-toggle:not([aria-label])::after { transform: translateY(calc(var(--spacing-xs, 4px) / 2)); }
   & .nav-disclosure-toggle:not([aria-label])[aria-expanded="true"]::before { transform: rotate(45deg); }
   & .nav-disclosure-toggle:not([aria-label])[aria-expanded="true"]::after { transform: rotate(-45deg); }
-  & nav, & .nav-disclosure-panel { display: contents; }
+  & nav, & .nav-disclosure-panel { display: flex; align-items: center; gap: var(--spacing-sm, 8px); grid-column: 2; grid-row: 1; white-space: nowrap; }
+  & nav:has(.site-header-nav-links), & nav:has(.site-header-desktop-actions), & .nav-disclosure-panel:has(> ul) { display: contents; }
+  & nav a, & .site-header-brand > a, & .site-header-actions > a { display: inline-flex; align-items: center; min-block-size: var(--ui-layout-tap-target, 44px); min-inline-size: var(--ui-layout-tap-target, 44px); }
   & .nav-disclosure-toggle { display: none; }
   &:has(.site-header-desktop-actions) .site-header-actions { display: none; }
   & .site-header-nav-links a[aria-current="page"] { text-decoration-line: underline; }
   & .site-header-nav-links { grid-column: 2; grid-row: 1; flex-wrap: nowrap; white-space: nowrap; }
   & .site-header-desktop-actions { grid-column: 3; grid-row: 1; align-items: center; justify-content: end; }
   & .nav-disclosure-panel a > span { position: static; inline-size: auto; block-size: auto; padding: 0; overflow: visible; clip: auto; white-space: normal; }
-  &[data-collapsed] {
-    & .site-header-brand { grid-column: 2; justify-self: center; }
-    & .site-header-brand a > span { display: none; }
-    & nav { display: block; grid-column: 1; grid-row: 1; }
-    & .site-header-actions { grid-column: 3; grid-row: 1; display: flex; justify-content: end; }
-    & .site-header-actions > a > span { @apply sr-only; }
-    & .nav-disclosure-toggle { display: inline-flex; }
-    & .nav-disclosure-panel { display: none; position: absolute; inset-block-start: 100%; inset-inline: 0; max-block-size: calc(100dvb - var(--site-header-clearance, calc(max(var(--ui-layout-tap-target, 44px), var(--ui-brandmark-height-lg, 48px)) + 2 * var(--spacing-sm, 8px) + var(--ui-border-hairline, 1px) + env(safe-area-inset-top, 0px))) - env(safe-area-inset-bottom, 0px)); overflow-y: auto; overscroll-behavior: contain; padding-block: var(--spacing-md, 12px) max(var(--spacing-md, 12px), env(safe-area-inset-bottom, 0px)); padding-inline: var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px)); background-color: var(--color-overlay-surface, oklch(1 0 0)); color: var(--color-ink-primary, oklch(0.2178 0 0)); border-block-end: var(--ui-border-hairline, 1px) solid var(--color-overlay-border, oklch(0.8761 0 0)); }
-    & .nav-disclosure-panel[data-expanded] { display: flex; flex-direction: column; }
-    & .site-header-nav-links, & .site-header-desktop-actions { flex-direction: column; align-items: stretch; white-space: normal; overflow-wrap: anywhere; }
-  }
+  &[data-collapsed] { @apply site-header-mobile; }
   @media (width < 768px) {
-    &:not(:has(nav)) .site-header-brand { grid-column: 2; justify-self: center; }
-    &:not(:has(nav)) .site-header-brand a > span { display: none; }
+    &[data-header-root] { @apply site-header-mobile; }
   }
   @media (scripting: none) {
-    &[data-collapsed] .site-header-row { display: flex; flex-wrap: wrap; }
-    &[data-collapsed] nav { inline-size: 100%; }
-    &[data-collapsed] .nav-disclosure-toggle[aria-expanded] { display: none; }
-    &[data-collapsed] .nav-disclosure-panel { display: flex; position: static; max-block-size: none; }
+    &:has(.nav-disclosure-panel) .site-header-row { display: flex; flex-wrap: wrap; }
+    &:has(.nav-disclosure-panel) nav { inline-size: 100%; }
+    &:has(.nav-disclosure-panel) .nav-disclosure-toggle[aria-expanded] { display: none; }
+    &:has(.nav-disclosure-panel) .nav-disclosure-panel { display: flex; position: static; max-block-size: none; }
   }
 }
 
