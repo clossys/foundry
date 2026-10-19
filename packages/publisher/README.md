@@ -2746,10 +2746,12 @@ artwork; a section crossing the header's bottom edge selects its declared ground
 including on return scroll. Grounds are absolute light/dark, independent of the
 document theme; no pixel sampling is used.
 
-This contract requires `shell.brand.artwork: { onLight: "dark-mark", onDark:
-"light-mark" }`, with both IDs resolving to image assets. Missing or partial pairs
-are refused. The caller supplies both artwork sources; no alternate art is
-synthesized. The existing `assetId` remains required for legacy composition.
+By default, `shell.brand.assetId` supplies one caller-authored accent mark that
+stays unchanged across grounds. Supply artwork whose own paint matches the
+site accent; arbitrary image pixels are not recolored by the header. Consumers
+may opt into `shell.brand.artwork: { onLight: "dark-mark", onDark: "light-mark" }`,
+with both IDs resolving to image assets. Partial pairs are refused. No alternate
+art is synthesized. The existing `assetId` remains required for composition.
 Omitting `sectionGround` keeps legacy theme-relative tone and artwork behavior.
 
 The first section's background begins under transparent overlay chrome. Header
@@ -2797,7 +2799,7 @@ primary icon at inline-end (or an empty noninteractive track). `nav.trigger:
 same two-line/X visual in the shared header. Both fields pass through
 `SiteFrameConfig.site`. Configure zero to five links and zero to three total
 actions with distinct variants. The panel lists every full label: links, then
-secondary, ghost, primary. Explicit leading/inline positioning retains its
+primary, secondary, ghost. Explicit leading/inline positioning retains its
 legacy geometry and renders each action once. The trigger keeps `triggerLabel`
 as its accessible name, falling back to `nav.label` when toggle copy is omitted.
 
@@ -2827,7 +2829,7 @@ const mobileFrame: SiteFrameConfig = {
 An action `icon` uses Designer's SVG shape data and validation. The primary
 requires a supplied icon plus nonblank label. The default mobile bar shows its
 icon alone, retaining that accessible label; each full-label action also lives
-in the shared desktop/panel list, ordered secondary, ghost, primary. Ordinary
+as text only in the shared desktop/panel list, ordered primary, secondary, ghost. Ordinary
 navigation, secondary-action and footer links refuse `icon`. The shared default
 is `mobileLayout: "menu-brand-action"`; explicit `"inline"` preserves legacy
 positioning. `nav.trigger: "label"` remains the trigger-content default.
@@ -2961,7 +2963,7 @@ export function SignInPage() {
   refused. The string `key` Designer's generated icons carry is dropped. The
   frame renders a frozen copy, so changing the caller's data afterwards has
   no effect. Header controls, including icon actions and environments, normalize
-  into the same distinct variants and panel order: secondary, ghost, primary.
+  into distinct variants, rendered in panel order: primary, secondary, ghost.
   Social links render before the legal row, in a named navigation when
   `social.label` is given. Ungrouped footer links render after headed columns
   without a heading. Empty slot arrays render nothing.
@@ -6329,8 +6331,15 @@ already-resolved label/href/IconNode content; `resolveShell` owns copy, URL and
 SVG allowlist validation before that helper. No primary means an empty,
 noninteractive right track. Actions without navigation reuse existing shared
 `Primary`/`Menu` labels; no minimum link count or invented brand copy is needed.
-All full labels appear in the panel after links, secondary then ghost then
-primary. Only the default mobile primary affordance has a second icon-only copy.
+All full labels appear in the panel after links, primary then secondary then
+ghost. Every CTA stretches to the same panel content width as the link rows. Only the default mobile primary affordance has a second icon-only ghost copy.
+It shares the menu control's 44px geometry, ink, hover, active and focus treatment.
+Desktop and menu actions show text only; supplied icon data remains validated
+for the mobile primary control. The panel animates open and closed, becomes
+inert immediately on close after focus returns, and changes instantly under
+reduced motion.
+The mobile bar shows only the centered mark; Brandmark owns artwork sizing
+and plate treatment, and desktop retains the wordmark lockup.
 Explicit existing leading/inline positioning keeps each full-label action once
 and retains its legacy geometry, without the separate default mobile icon bar.
 

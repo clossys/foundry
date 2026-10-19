@@ -115,7 +115,7 @@ export function SiteFrame({ shell, presentation, resolveCopy, resolveAsset, chil
   const navigation = resolved.nav ?? (resolved.headerActions.length ? { ...SITE_FRAME_NAV_DEFAULTS, links: [] } : undefined);
   const nav = navigation || resolved.header.placement === "overlay" ? <SiteNavDisclosure nav={navigation} actions={resolved.headerActions} surfaceLabel={resolved.surfaceLabel} header={resolved.header} artwork={brand.artwork} /> : undefined;
   const primary = resolved.headerActions.find(action => action.emphasis === "primary");
-  const actions = primary && resolved.navPlacement === "centered" && resolved.mobileLayout === "menu-brand-action" ? <SiteHeader.ActionLink data-header-primary="" href={primary.href} label={primary.label} icon={primary.icon} isCurrent={primary.isCurrent} variant="primary" /> : undefined;
+  const actions = primary && resolved.navPlacement === "centered" && resolved.mobileLayout === "menu-brand-action" ? <SiteHeader.ActionLink data-header-primary="" href={primary.href} label={primary.label} icon={primary.icon} isCurrent={primary.isCurrent} variant="ghost" style={primary.isCurrent ? { boxShadow: "none" } : undefined} /> : undefined;
 
   const footerContent = footer ? (
     <SiteFooter

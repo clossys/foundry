@@ -495,7 +495,7 @@
     color: var(--color-ink-primary, oklch(0.2178 0 0));
     border-block-end: var(--ui-border-hairline, 1px) solid var(--color-overlay-border, oklch(0.8761 0 0));
   }
-  .site-header-contract[data-collapsed] .nav-disclosure-panel[data-expanded] {
+  .site-header-contract[data-collapsed] .nav-disclosure-panel[data-expanded], .site-header-contract[data-collapsed] .nav-disclosure-panel[data-present] {
     display: flex;
     flex-direction: column;
     align-items: stretch;
@@ -515,14 +515,17 @@
   .site-header-contract[data-collapsed] .site-header-nav-links a, .site-header-contract[data-collapsed] .site-header-desktop-actions a {
     padding-inline: var(--spacing-sm, 8px);
   }
-  .site-header-contract[data-collapsed] .nav-disclosure-toggle, .site-header-contract[data-collapsed] .site-header-actions > [data-header-primary] {
+  .site-header-contract[data-collapsed] .nav-disclosure-toggle[aria-expanded][aria-controls], .site-header-contract[data-collapsed] .site-header-actions > [data-header-primary] {
     inline-size: var(--ui-layout-tap-target, 44px);
     block-size: var(--ui-layout-tap-target, 44px);
     padding: 0;
     justify-content: center;
     align-items: center;
     gap: 0;
+    transition: none;
     background-color: transparent;
+    border-width: 0;
+    box-shadow: none;
     color: inherit;
     &:hover {
       background-color: currentColor;
@@ -530,6 +533,22 @@
         background-color: color-mix(in oklch, currentColor 12%, transparent);
       }
     }
+    &:active {
+      background-color: currentColor;
+      @supports (color: color-mix(in lab, red, red)) {
+        background-color: color-mix(in oklch, currentColor 20%, transparent);
+      }
+    }
+    &:focus-visible {
+      outline: var(--ui-border-focus, 2px) solid currentColor;
+      outline-offset: var(--spacing-xs, 4px);
+    }
+    @media (forced-colors: active) {
+      color: CanvasText;
+    }
+  }
+  .site-header-contract[data-collapsed] .site-header-actions > [data-header-primary] > svg {
+    --ui-icon-sm: var(--ui-icon-md, 24px);
   }
   @media (width < 768px) {
     .site-header-contract[data-header-root] .site-header-brand {
@@ -581,7 +600,7 @@
       color: var(--color-ink-primary, oklch(0.2178 0 0));
       border-block-end: var(--ui-border-hairline, 1px) solid var(--color-overlay-border, oklch(0.8761 0 0));
     }
-    .site-header-contract[data-header-root] .nav-disclosure-panel[data-expanded] {
+    .site-header-contract[data-header-root] .nav-disclosure-panel[data-expanded], .site-header-contract[data-header-root] .nav-disclosure-panel[data-present] {
       display: flex;
       flex-direction: column;
       align-items: stretch;
@@ -601,14 +620,17 @@
     .site-header-contract[data-header-root] .site-header-nav-links a, .site-header-contract[data-header-root] .site-header-desktop-actions a {
       padding-inline: var(--spacing-sm, 8px);
     }
-    .site-header-contract[data-header-root] .nav-disclosure-toggle, .site-header-contract[data-header-root] .site-header-actions > [data-header-primary] {
+    .site-header-contract[data-header-root] .nav-disclosure-toggle[aria-expanded][aria-controls], .site-header-contract[data-header-root] .site-header-actions > [data-header-primary] {
       inline-size: var(--ui-layout-tap-target, 44px);
       block-size: var(--ui-layout-tap-target, 44px);
       padding: 0;
       justify-content: center;
       align-items: center;
       gap: 0;
+      transition: none;
       background-color: transparent;
+      border-width: 0;
+      box-shadow: none;
       color: inherit;
       &:hover {
         background-color: currentColor;
@@ -616,7 +638,50 @@
           background-color: color-mix(in oklch, currentColor 12%, transparent);
         }
       }
+      &:active {
+        background-color: currentColor;
+        @supports (color: color-mix(in lab, red, red)) {
+          background-color: color-mix(in oklch, currentColor 20%, transparent);
+        }
+      }
+      &:focus-visible {
+        outline: var(--ui-border-focus, 2px) solid currentColor;
+        outline-offset: var(--spacing-xs, 4px);
+      }
+      @media (forced-colors: active) {
+        color: CanvasText;
+      }
     }
+    .site-header-contract[data-header-root] .site-header-actions > [data-header-primary] > svg {
+      --ui-icon-sm: var(--ui-icon-md, 24px);
+    }
+  }
+  .site-header-contract[data-measuring] .site-header-brand, .site-header-contract[data-measuring] .site-header-nav-links, .site-header-contract[data-measuring] .site-header-desktop-actions {
+    inline-size: max-content;
+    max-inline-size: none;
+    flex-shrink: 0;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+  }
+  .site-header-contract[data-measuring] .site-header-brand a > span:not(:has(img)) {
+    display: inline;
+  }
+  .site-header-contract[data-measuring] .nav-disclosure-panel {
+    display: contents;
+  }
+  .site-header-contract[data-measuring] .site-header-nav-links > li, .site-header-contract[data-measuring] .site-header-desktop-actions > li {
+    inline-size: auto;
+    flex-shrink: 0;
+  }
+  .site-header-contract[data-measuring] .site-header-brand > a, .site-header-contract[data-measuring] .site-header-nav-links a, .site-header-contract[data-measuring] .site-header-desktop-actions a {
+    inline-size: max-content;
+    max-inline-size: none;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+  .site-header-contract[data-measuring] .nav-disclosure-panel a > span {
+    white-space: nowrap;
   }
   @media (scripting: none) {
     .site-header-contract:has(.nav-disclosure-panel) .site-header-row {
@@ -636,6 +701,8 @@
     }
   }
   .nav-disclosure-panel {
+    --site-header-panel-duration: var(--ui-duration-default, 240ms);
+    --site-header-panel-ease: var(--ease-default, cubic-bezier(.2, 0, 0, 1));
     display: none;
     position: absolute;
     inset-block-start: 100%;
@@ -647,7 +714,7 @@
     background-color: var(--color-overlay-surface, oklch(1 0 0));
     color: var(--color-ink-primary, oklch(0.2178 0 0));
     border-block-end: var(--ui-border-hairline, 1px) solid var(--color-overlay-border, oklch(0.8761 0 0));
-    &[data-expanded] {
+    &[data-expanded], &[data-present] {
       display: flex;
     }
     @media (width >= 768px) {

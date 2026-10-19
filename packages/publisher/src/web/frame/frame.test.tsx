@@ -718,7 +718,7 @@ describe("SiteFrame icon slots", () => {
     const focusable = [...container.querySelectorAll<HTMLElement>('a[href],button,input,select,textarea,[tabindex]')]
       .filter((element) => element.tabIndex >= 0);
     expect(focusable.map((element) => element.getAttribute("aria-label") ?? element.textContent)).toEqual([
-      "Skip to content", "Example home", "Primary", "Pricing", "Docs", "Sign in", "Contact", "App", "App",
+      "Skip to content", "Example home", "Primary", "Pricing", "Docs", "App", "Sign in", "Contact", "App",
       "About", "Help", "Profile", "Privacy", "Terms",
     ]);
   });
@@ -1126,10 +1126,10 @@ it("HEADER-1 composes an optional real host notice and returns focus to the live
 });
 
 
-it("HEADER-1 retains the current environment indication on its mobile primary icon", () => {
+it("retains the current environment semantics on its mobile ghost primary icon", () => {
   const { container } = render(frame(siteShellFor(CONFIG, "demo"), <h1>Demo view</h1>));
   const mobile = container.querySelector<HTMLAnchorElement>("header [data-header-primary]")!;
   expect(mobile).toHaveAttribute("aria-current", "true");
   expect(mobile).toHaveTextContent("Demo");
-  expect(mobile.style.boxShadow).toContain("inset");
+  expect(mobile.style.boxShadow).toBe("none");
 });

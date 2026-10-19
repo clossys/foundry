@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { TOKENS } from "../tokens/tokens.js";
 import { buttonLinkClassName } from "../atoms/button-classes.js";
 import { cx } from "../atoms/internal/cx.js";
@@ -49,26 +49,28 @@ export function NavDisclosure({ children, "aria-label": ariaLabel = "Primary", t
   open.current = expanded;
   const close = (restore = true) => {
     if (!open.current) return;
-    setExpanded(false);
     if (restore) toggle.current?.focus();
+    panel.current?.toggleAttribute("inert", Boolean(nav.current?.closest("header")));
+    setExpanded(false);
   };
-  useEffect(() => {
+  useLayoutEffect(() => {
     const media = window.matchMedia?.(`(min-width: ${TOKENS["--breakpoint-tablet"]!.value})`);
     const header = nav.current?.closest<HTMLElement>("[data-header-root]");
     const frame = header?.parentElement;
     const priorClearance = frame?.style.getPropertyValue("--site-header-clearance");
-    let disposed = false;
-    let wasMobile = true;
-    // Child rectangles measure occupied content, never an allocated equal grid track.
+    let disposed = false, pending = 0;
+    let wasMobile: boolean | undefined;
+    // Read desktop intrinsics before restoring responsive paint, within one frame.
     const extent = (element: HTMLElement | null) => {
       const boxes = [...(element?.children ?? [])].map(child => child.getBoundingClientRect()).filter(box => box.width > 0);
       return boxes.length ? Math.max(...boxes.map(box => box.right)) - Math.min(...boxes.map(box => box.left)) : 0;
     };
     const measure = () => {
+      pending = 0;
       if (disposed) return;
       let narrow = !media?.matches;
       if (header) {
-        header.removeAttribute("data-collapsed");
+        header.removeAttribute("data-collapsed"); header.setAttribute("data-measuring", "");
         const row = header.firstElementChild as HTMLElement;
         const brand = row.querySelector<HTMLElement>(".site-header-brand");
         const actions = row.querySelector<HTMLElement>(".site-header-desktop-actions") ?? row.querySelector<HTMLElement>(".site-header-actions");
@@ -76,49 +78,55 @@ export function NavDisclosure({ children, "aria-label": ariaLabel = "Primary", t
         const spacing = getComputedStyle(row);
         const width = row.getBoundingClientRect().width - parseFloat(spacing.paddingInlineStart || "0") - parseFloat(spacing.paddingInlineEnd || "0");
         const gap = parseFloat(spacing.columnGap || "0");
-        narrow ||= width < 2 * Math.max(extent(brand), extent(actions)) + extent(links) + 2 * gap;
-        header.toggleAttribute("data-collapsed", narrow);
+        const required = 2 * Math.max(extent(brand), extent(actions)) + extent(links) + 2 * gap;
+        // One focus-ring width of slack prevents rounding at the fit edge from flapping.
+        const slack = wasMobile ? parseFloat(getComputedStyle(header).getPropertyValue("--ui-border-focus")) || 2 : 0;
+        narrow ||= width < required + slack;
+        header.removeAttribute("data-measuring"); header.toggleAttribute("data-collapsed", narrow);
         const height = header.getBoundingClientRect().height;
         if (height > 0) frame?.style.setProperty("--site-header-clearance", `${height}px`);
       }
       const active = document.activeElement;
       const activeActions = active?.closest(".site-header-actions");
       if (!narrow) {
+        panel.current?.removeAttribute("inert");
         if (active === toggle.current || (activeActions && getComputedStyle(activeActions).display === "none")) {
           const anchors = [...(nav.current?.querySelectorAll<HTMLAnchorElement>("a[href]") ?? [])];
           const target = anchors.find(link => active instanceof HTMLAnchorElement && link.href === active.href) ?? anchors[0] ?? header?.querySelector<HTMLElement>(".site-header-brand a");
           target?.focus();
         }
         setExpanded(false);
-      } else if (!wasMobile && active instanceof Node && panel.current?.contains(active)) {
-        close();
-        toggle.current?.focus();
+      } else if (wasMobile !== true && active instanceof Node && panel.current?.contains(active)) {
+        close(); toggle.current?.focus();
       }
-      wasMobile = narrow;
-      setMobile(narrow);
+      wasMobile = narrow; setMobile(narrow);
     };
-    const observer = typeof ResizeObserver === "undefined" ? undefined : new ResizeObserver(measure);
+    const schedule = () => { if (!disposed && !pending) pending = window.requestAnimationFrame(measure); };
+    const observer = typeof ResizeObserver === "undefined" ? undefined : new ResizeObserver(schedule);
     const observe = () => {
       observer?.disconnect();
-      if (header) { observer?.observe(header); header.querySelectorAll(".site-header-brand > *, .site-header-desktop-actions a, .site-header-actions > *, nav a").forEach(node => observer?.observe(node)); }
+      if (header) { observer?.observe(header); header.querySelectorAll(".site-header-brand > *, .site-header-desktop-actions a, .site-header-actions > *, nav a, img").forEach(node => observer?.observe(node)); }
     };
     const signature = () => JSON.stringify([...(nav.current?.querySelectorAll("a[href]") ?? [])].map(link => [link.getAttribute("href"), link.getAttribute("aria-current"), link.textContent]));
     let content = signature();
     const mutations = new MutationObserver(() => {
       const next = signature();
       if (next !== content) { content = next; close(); }
-      measure(); observe();
+      schedule(); observe();
     });
-    if (nav.current) mutations.observe(nav.current, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ["href", "aria-current", "class", "style"] });
+    const owner = header ?? nav.current;
+    if (owner) mutations.observe(owner, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ["href", "aria-current", "class", "style", "src", "width", "height"] });
+    const direction = new MutationObserver(schedule);
+    for (let parent: HTMLElement | null = owner ?? null; parent; parent = parent.parentElement) direction.observe(parent, { attributes: true, attributeFilter: ["dir", "lang"] });
     measure(); observe();
-    media?.addEventListener("change", measure);
-    window.addEventListener("resize", measure);
-    document.fonts?.ready.then(measure);
-    document.fonts?.addEventListener("loadingdone", measure);
+    media?.addEventListener("change", schedule); window.addEventListener("resize", schedule);
+    owner?.addEventListener("load", schedule, true);
+    document.fonts?.ready.then(schedule); document.fonts?.addEventListener("loadingdone", schedule);
     return () => {
-      disposed = true; observer?.disconnect(); mutations.disconnect();
-      media?.removeEventListener("change", measure); window.removeEventListener("resize", measure);
-      document.fonts?.removeEventListener("loadingdone", measure);
+      disposed = true; window.cancelAnimationFrame(pending); observer?.disconnect(); mutations.disconnect(); direction.disconnect();
+      media?.removeEventListener("change", schedule); window.removeEventListener("resize", schedule);
+      owner?.removeEventListener("load", schedule, true); document.fonts?.removeEventListener("loadingdone", schedule);
+      header?.removeAttribute("data-measuring");
       if (priorClearance) frame?.style.setProperty("--site-header-clearance", priorClearance); else frame?.style.removeProperty("--site-header-clearance");
     };
   }, []);
@@ -132,9 +140,39 @@ export function NavDisclosure({ children, "aria-label": ariaLabel = "Primary", t
     measure(); window.addEventListener("scroll", schedule, { passive: true });
     return () => { window.cancelAnimationFrame(pending); window.removeEventListener("scroll", schedule); header.toggleAttribute("data-scrolled", prior); };
   }, []);
-  // Imperative boolean attributes support React 18 as well as React 19, with
-  // no inert server markup to break the no-scripting fallback.
-  useEffect(() => { panel.current?.toggleAttribute("inert", mobile && !expanded && Boolean(nav.current?.closest("header"))); }, [mobile, expanded]);
+  const motion = useRef<Animation | null>(null);
+  const previousOpen = useRef(false);
+  useLayoutEffect(() => {
+    const element = panel.current;
+    if (!element) return;
+    const header = nav.current?.closest("header");
+    const narrow = header?.hasAttribute("data-header-root") ? header.hasAttribute("data-collapsed") : mobile;
+    element.toggleAttribute("inert", narrow && !expanded && Boolean(header));
+    const previous = motion.current;
+    const style = getComputedStyle(element);
+    const from = previous ? { opacity: style.opacity, transform: style.transform } :
+      { opacity: previousOpen.current ? "1" : "0", transform: previousOpen.current ? "none" : "translateY(calc(-1 * var(--spacing-sm, 8px)))" };
+    const changed = previousOpen.current !== expanded;
+    previousOpen.current = expanded; motion.current = null; previous?.cancel();
+    const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    if (!narrow || reduced || !element.animate || (!changed && !previous)) { element.removeAttribute("data-present"); return; }
+    element.setAttribute("data-present", "");
+    const rawDuration = style.getPropertyValue("--site-header-panel-duration").trim() || "240ms";
+    const duration = parseFloat(rawDuration) * (rawDuration.endsWith("ms") ? 1 : 1000);
+    const animation = element.animate([from, { opacity: expanded ? "1" : "0", transform: expanded ? "none" : "translateY(calc(-1 * var(--spacing-sm, 8px)))" }], {
+      duration, easing: style.getPropertyValue("--site-header-panel-ease").trim() || "cubic-bezier(.2, 0, 0, 1)", fill: "both",
+    });
+    motion.current = animation;
+    const finish = () => { if (motion.current !== animation) return; motion.current = null; element.removeAttribute("data-present"); animation.cancel(); };
+    void animation.finished.then(finish, finish);
+  }, [expanded, mobile]);
+  useEffect(() => {
+    const media = window.matchMedia?.("(prefers-reduced-motion: reduce)");
+    const cancel = () => { const animation = motion.current; motion.current = null; animation?.cancel(); panel.current?.removeAttribute("data-present"); };
+    const change = () => { if (media?.matches) cancel(); };
+    media?.addEventListener("change", change);
+    return () => { media?.removeEventListener("change", change); cancel(); };
+  }, []);
   useEffect(() => {
     const reset = () => close();
     const leave = (event: FocusEvent) => {
@@ -170,7 +208,7 @@ export function NavDisclosure({ children, "aria-label": ariaLabel = "Primary", t
           data-tone={tone}
           className={cx(look, "nav-disclosure-toggle", inverse ? "text-ink-on-inverse hover:text-ink-on-inverse aria-expanded:text-ink-on-inverse focus-visible:text-ink-on-inverse hover:bg-control-tonal-inverse-hover focus-visible:outline-ink-on-inverse" : undefined)}
           style={{ minHeight: UI_LAYOUT_TAP_TARGET, minWidth: UI_LAYOUT_TAP_TARGET }}
-          onClick={() => setExpanded(value => !value)}
+          onClick={() => expanded ? close() : setExpanded(true)}
         >
           <><span className="nav-disclosure-icon" data-open={expanded ? "" : undefined} aria-hidden="true"><span /><span /></span></>
         </button>
@@ -183,7 +221,7 @@ export function NavDisclosure({ children, "aria-label": ariaLabel = "Primary", t
           data-tone={tone}
           className={cx(look, "nav-disclosure-toggle", inverse ? "text-ink-on-inverse hover:text-ink-on-inverse aria-expanded:text-ink-on-inverse focus-visible:text-ink-on-inverse hover:bg-control-tonal-inverse-hover focus-visible:outline-ink-on-inverse" : undefined)}
           style={{ minHeight: UI_LAYOUT_TAP_TARGET, minWidth: UI_LAYOUT_TAP_TARGET }}
-          onClick={() => setExpanded(value => !value)}
+          onClick={() => expanded ? close() : setExpanded(true)}
         >
           {triggerLabel}
         </button>

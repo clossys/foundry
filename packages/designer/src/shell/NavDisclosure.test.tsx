@@ -127,7 +127,7 @@ describe("HEADER-1 disclosure lifecycle", () => {
   });
 });
 
-it.each(["wrapped", "direct"])("HEADER-1 collapses from measured unequal tracks (%s) before collision and resets at desktop", supply => {
+it.each(["wrapped", "direct"])("HEADER-1 collapses from measured unequal tracks (%s) before collision and resets at desktop", async supply => {
   const media = { matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() };
   vi.stubGlobal("matchMedia", () => media);
   let width = 900;
@@ -145,7 +145,7 @@ it.each(["wrapped", "direct"])("HEADER-1 collapses from measured unequal tracks 
     fireEvent.click(toggle);
     expect(toggle).toHaveAttribute("aria-expanded", "true");
     width = 1400;
-    fireEvent.resize(window);
+    await act(async () => { fireEvent.resize(window); await new Promise(requestAnimationFrame); });
     expect(header).not.toHaveAttribute("data-collapsed");
     expect(toggle).toHaveAttribute("aria-expanded", "false");
     expect(document.getElementById(toggle.getAttribute("aria-controls")!)).not.toHaveAttribute("inert");
@@ -164,7 +164,7 @@ it("HEADER-1 preserves an open disclosure across equivalent JSX and resets meani
   expect(toggle).toHaveFocus();
 });
 
-it("HEADER-1 observes intrinsic children, preserves visible desktop focus and restores clearance on nav removal", () => {
+it("HEADER-1 observes intrinsic children, preserves visible desktop focus and restores clearance on nav removal", async () => {
   let measure = () => {};
   const observed: Element[] = [];
   class Observer { constructor(callback: () => void) { measure = callback; } observe(node: Element) { observed.push(node); } disconnect() {} }
@@ -186,20 +186,134 @@ it("HEADER-1 observes intrinsic children, preserves visible desktop focus and re
     fireEvent.click(toggle);
     act(() => screen.getByRole("link", { name: "Help" }).focus());
     media.matches = true;
-    act(measure);
+    await act(async () => { measure(); await new Promise(requestAnimationFrame); });
     expect(screen.getByRole("link", { name: "Help" })).toHaveFocus();
     expect(toggle).toHaveAttribute("aria-expanded", "false");
     media.matches = false;
-    act(measure);
+    await act(async () => { measure(); await new Promise(requestAnimationFrame); });
     expect(toggle).toHaveFocus();
     media.matches = true;
-    act(measure);
+    await act(async () => { measure(); await new Promise(requestAnimationFrame); });
     expect(screen.getByRole("link", { name: "Help" })).toHaveFocus();
-    act(() => { screen.getByRole("link", { name: "Start" }).focus(); measure(); });
+    await act(async () => { screen.getByRole("link", { name: "Start" }).focus(); measure(); await new Promise(requestAnimationFrame); });
     expect(screen.getByRole("link", { name: "Start" })).toHaveFocus();
     view.rerender(scene(false));
     expect(frame.style.getPropertyValue("--site-header-clearance")).toBe("");
     expect(view.container.querySelector("header")).toHaveClass("site-header-contract");
     expect(view.container.querySelector("header nav, header button")).toBeNull();
   } finally { rects.mockRestore(); vi.unstubAllGlobals(); }
+});
+
+it("coalesces content-fit measurement into one animation frame", () => {
+  const callbacks: FrameRequestCallback[] = [];
+  const request = vi.spyOn(window, "requestAnimationFrame").mockImplementation(callback => { callbacks.push(callback); return callbacks.length; });
+  const rectangles = vi.spyOn(HTMLElement.prototype, "getBoundingClientRect");
+  try {
+    renderNav();
+    const initial = rectangles.mock.calls.length;
+    fireEvent.resize(window); fireEvent.resize(window); fireEvent.resize(window);
+    expect(rectangles.mock.calls.length).toBe(initial);
+    expect(callbacks).toHaveLength(1);
+    act(() => callbacks[0]!(0));
+    expect(rectangles.mock.calls.length).toBeGreaterThan(initial);
+  } finally { request.mockRestore(); rectangles.mockRestore(); }
+});
+
+it("moves initially focused panel content to its control before first mobile collapse", () => {
+  render(<SiteHeader brand={<a href="/">Example</a>} nav={<NavDisclosure><a href="#about" ref={node => { node?.focus(); }}>About</a></NavDisclosure>} />);
+  expect(screen.getByRole("button", { name: "Menu" })).toHaveFocus();
+  expect(screen.getByRole("link", { name: "About" }).parentElement).toHaveAttribute("inert");
+});
+
+it("keeps a closing panel painted but immediately inert, returns focus, reverses and cancels safely", async () => {
+  const original = HTMLElement.prototype.animate;
+  const finishes: (() => void)[] = [];
+  const animations: { cancel: ReturnType<typeof vi.fn>; finished: Promise<void> }[] = [];
+  const animate = vi.fn(() => {
+    let finish!: () => void;
+    const animation = { cancel: vi.fn(), finished: new Promise<void>(resolve => { finish = resolve; }) };
+    finishes.push(finish); animations.push(animation); return animation as unknown as Animation;
+  });
+  Object.defineProperty(HTMLElement.prototype, "animate", { configurable: true, writable: true, value: animate });
+  try {
+    const view = renderNav(); const toggle = screen.getByRole("button", { name: "Menu" });
+    const link = screen.getByRole("link", { name: "About" }); const panel = link.parentElement!;
+    fireEvent.click(toggle);
+    expect(animate).toHaveBeenCalledTimes(1);
+    await act(async () => finishes[0]!());
+    link.focus(); toggle.addEventListener("focus", () => expect(panel).not.toHaveAttribute("inert"), { once: true });
+    fireEvent.keyDown(link, { key: "Escape" });
+    expect(toggle).toHaveFocus(); expect(panel).toHaveAttribute("inert");
+    expect(panel).toHaveAttribute("data-present"); expect(animate).toHaveBeenCalledTimes(2);
+    fireEvent.click(toggle);
+    expect(animations[1]!.cancel).toHaveBeenCalled(); expect(panel).not.toHaveAttribute("inert");
+    await act(async () => finishes[1]!());
+    expect(panel).toHaveAttribute("data-expanded");
+    view.unmount(); expect(animations[2]!.cancel).toHaveBeenCalled();
+  } finally { if (original) HTMLElement.prototype.animate = original; else delete (HTMLElement.prototype as { animate?: unknown }).animate; }
+});
+
+it("measures desktop intrinsics with hysteresis and observes direction and image changes", async () => {
+  const callbacks: FrameRequestCallback[] = [];
+  const request = vi.spyOn(window, "requestAnimationFrame").mockImplementation(callback => { callbacks.push(callback); return callbacks.length; });
+  vi.stubGlobal("matchMedia", () => ({ matches: true, addEventListener() {}, removeEventListener() {} }));
+  let width = 999;
+  const rects = vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function () {
+    if (this.closest("header") && !this.matches("header")) expect(this.closest("header")).toHaveAttribute("data-measuring");
+    const measured = this.classList.contains("site-header-row") ? width : this.parentElement?.classList.contains("site-header-brand") ? 300 : this.parentElement?.classList.contains("site-header-nav-links") ? 400 : 100;
+    return { width: measured, height: 60, left: 0, right: measured, top: 0, bottom: 60, x: 0, y: 0, toJSON() {} };
+  });
+  const frame = () => act(() => { const callback = callbacks.shift(); expect(callback).toBeDefined(); callback!(0); });
+  try {
+    render(<SiteHeader brand={<a href="/"><img src="/mark.svg" alt="Example" /></a>} nav={<NavDisclosure><ul className="site-header-nav-links"><li><a href="/help">Help</a></li></ul></NavDisclosure>} actions={<a href="/start">Start</a>} />);
+    const header = screen.getByRole("banner");
+    expect(header).toHaveAttribute("data-collapsed"); expect(header).not.toHaveAttribute("data-measuring");
+    width = 1001; fireEvent.resize(window); frame(); expect(header).toHaveAttribute("data-collapsed");
+    width = 1002; fireEvent.resize(window); frame(); expect(header).not.toHaveAttribute("data-collapsed");
+    width = 1000; fireEvent.resize(window); frame(); expect(header).not.toHaveAttribute("data-collapsed");
+    width = 999; fireEvent.resize(window); frame(); expect(header).toHaveAttribute("data-collapsed");
+    await act(async () => { header.setAttribute("dir", "rtl"); }); frame();
+    fireEvent.load(screen.getByRole("img")); frame();
+  } finally { request.mockRestore(); rects.mockRestore(); vi.unstubAllGlobals(); }
+});
+
+it("cancels panel travel immediately when reduced motion becomes active", () => {
+  let onChange = () => {};
+  const reduced = { matches: false, addEventListener: (_: string, callback: () => void) => { onChange = callback; }, removeEventListener() {} };
+  vi.stubGlobal("matchMedia", (query: string) => query.includes("prefers-reduced-motion") ? reduced : { matches: false, addEventListener() {}, removeEventListener() {} });
+  const original = HTMLElement.prototype.animate;
+  const animation = { cancel: vi.fn(), finished: new Promise<void>(() => {}) };
+  const animate = vi.fn(() => animation as unknown as Animation);
+  Object.defineProperty(HTMLElement.prototype, "animate", { configurable: true, writable: true, value: animate });
+  try {
+    renderNav(); const toggle = screen.getByRole("button", { name: "Menu" });
+    fireEvent.click(toggle); expect(animate).toHaveBeenCalledOnce();
+    reduced.matches = true; act(onChange);
+    expect(animation.cancel).toHaveBeenCalled();
+    expect(screen.getByRole("link", { name: "About" }).parentElement).not.toHaveAttribute("data-present");
+    fireEvent.click(toggle); expect(animate).toHaveBeenCalledOnce();
+    expect(screen.getByRole("link", { name: "About" }).parentElement).toHaveAttribute("inert");
+  } finally { vi.unstubAllGlobals(); if (original) HTMLElement.prototype.animate = original; else delete (HTMLElement.prototype as { animate?: unknown }).animate; }
+});
+
+it("removes panel inertness before restoring desktop link focus", async () => {
+  const media = { matches: false, addEventListener() {}, removeEventListener() {} };
+  vi.stubGlobal("matchMedia", () => media);
+  const rects = vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function () {
+    const width = this.classList.contains("site-header-row") ? 1400 : 100;
+    return { width, height: 60, left: 0, right: width, top: 0, bottom: 60, x: 0, y: 0, toJSON() {} };
+  });
+  const inertAtFocus: boolean[] = [];
+  const original = HTMLElement.prototype.focus;
+  const focus = vi.spyOn(HTMLElement.prototype, "focus").mockImplementation(function (options) {
+    if (this.tagName === "A") inertAtFocus.push(Boolean(this.closest("[inert]")));
+    original.call(this, options);
+  });
+  try {
+    renderNav(); screen.getByRole("button", { name: "Menu" }).focus();
+    media.matches = true;
+    await act(async () => { fireEvent.resize(window); await new Promise(requestAnimationFrame); });
+    expect(inertAtFocus).toEqual([false]);
+    expect(screen.getByRole("link", { name: "About" })).toHaveFocus();
+  } finally { focus.mockRestore(); rects.mockRestore(); vi.unstubAllGlobals(); }
 });

@@ -64,7 +64,8 @@ it.each([false, true])("forwards an action icon and retains its sr-only mobile l
   const shell = { ...base, actions: [{ ...base.actions![0]!, icon }] };
   const container = output(shell, server);
   const action = within(container.querySelector(".site-header-actions") as HTMLElement).getByRole("link", { name: "Start now" });
-  expect(action).toHaveClass("bg-accent");
+  expect(action).not.toHaveClass("bg-accent");
+  expect(action).toHaveClass("text-ink-primary");
   expect(action.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
   expect(action.querySelector("svg path")).toHaveAttribute("d", "M4 12h16");
   expect(action.querySelector("span")).toHaveClass("sr-only", "tablet:not-sr-only");
@@ -164,11 +165,11 @@ it.each([false, true])("puts every full-label action in defined panel order in e
   const panel = nav.querySelector(".nav-disclosure-panel")!;
   const mobileActions = panel.querySelector(".site-header-desktop-actions")!;
   expect(mobileActions).not.toBeNull();
-  expect([...mobileActions.querySelectorAll("a")].map(link => [link.getAttribute("href"), link.textContent])).toEqual([["/sign-in", "Sign in"], ["/contact", "Contact"], ["/start", "Start now"]]);
-  expect(mobileActions.querySelectorAll("a")[2]).toHaveClass("bg-accent");
+  expect([...mobileActions.querySelectorAll("a")].map(link => [link.getAttribute("href"), link.textContent])).toEqual([["/start", "Start now"], ["/sign-in", "Sign in"], ["/contact", "Contact"]]);
+  expect(mobileActions.querySelectorAll("a")[0]).toHaveClass("bg-accent");
   expect(mobileActions.querySelectorAll("a")[1]).not.toHaveClass("bg-accent");
   expect(mobileActions.querySelectorAll("a")).toHaveLength(3);
-  expect(mobileActions).toHaveTextContent("Sign inContactStart now");
+  expect(mobileActions).toHaveTextContent("Start nowSign inContact");
   expect(panel.querySelectorAll("nav")).toHaveLength(0);
   expect(container.querySelectorAll("header nav")).toHaveLength(1);
   expect(container.querySelectorAll("header")).toHaveLength(1);
@@ -267,9 +268,9 @@ it.each(["light", "dark"] as const)("renders authored %s initial ground and artw
   expect(container.querySelector("header img")).toHaveAttribute("src", initial === "dark" ? "/light-art.svg" : "/dark-art.svg");
 });
 
-it("refuses absent or partial authored pairs and invalid section-ground data without echoing values", () => {
+it("refuses partial authored pairs and invalid section-ground data without echoing values", () => {
   const shell = grounded();
-  for (const artwork of [undefined, { onLight: "dark-art" }, { onLight: "", onDark: "light-art" }]) {
+  for (const artwork of [{ onLight: "dark-art" }, { onLight: "", onDark: "light-art" }]) {
     expect(() => resolveShell({ ...shell, brand: { ...shell.brand, artwork } } as SiteShellInput, resolveCopy, groundAsset)).toThrow(/shell.brand.artwork/);
   }
   for (const sectionGround of [
@@ -281,8 +282,8 @@ it("refuses absent or partial authored pairs and invalid section-ground data wit
   expect(() => resolveShell(shell, resolveCopy, () => ({ ...resolveAsset(), src: "javascript:invalid" }))).toThrow(/image asset/);
 });
 
-it.each([false, true])("updates ink, authored artwork and glass at the header edge, reverses and cleans up (navless=%s)", async navless => {
-  const shell = { ...grounded(), ...(navless ? { nav: undefined, actions: undefined, secondaryAction: undefined } : {}) };
+it.each([[false, false], [true, false], [false, true], [true, true]])("updates ink, authored artwork and glass at the header edge, reverses and cleans up (navless=%s, single=%s)", async (navless, single) => {
+  const shell = { ...grounded(), brand: { ...grounded().brand, ...(single ? { artwork: undefined } : {}) }, ...(navless ? { nav: undefined, actions: undefined, secondaryAction: undefined } : {}) };
   const container = document.createElement("div");
   container.innerHTML = renderToString(groundTree(shell, true)); document.body.append(container);
   let offset = 0;
@@ -305,11 +306,11 @@ it.each([false, true])("updates ink, authored artwork and glass at the header ed
   expect(header).toHaveAttribute("data-scrolled");
   expect(header).toHaveAttribute("data-section-ground", "light");
   expect(header).toHaveAttribute("data-tone", "base");
-  expect(header.querySelector("img")).toHaveAttribute("src", "/dark-art.svg");
+  expect(header.querySelector("img")).toHaveAttribute("src", single ? "/mark.svg" : "/dark-art.svg");
   await cross(0);
   expect(header).not.toHaveAttribute("data-scrolled");
   expect(header).toHaveAttribute("data-section-ground", "dark");
-  expect(header.querySelector("img")).toHaveAttribute("src", "/light-art.svg");
+  expect(header.querySelector("img")).toHaveAttribute("src", single ? "/mark.svg" : "/light-art.svg");
   expect(errors).toEqual([]);
   await act(async () => root!.unmount());
   await cross(700);
@@ -321,4 +322,23 @@ it("retains the authored surface badge on a navless overlay header", () => {
   const shell: SiteShellInput = { ...base, nav: undefined, actions: undefined, secondaryAction: undefined, header: { placement: "overlay" }, surfaceLabel: ref("Preview") };
   expect(output(shell, true).querySelector("header")).toHaveTextContent("Preview");
   expect(output(shell).querySelector("header")).toHaveTextContent("Preview");
+});
+
+it("keeps the mobile current-action cue semantic without changing its ghost surface", () => {
+  const shell: SiteShellInput = { ...base, secondaryAction: undefined, actions: [
+    { href: "/sign-in", label: ref("Sign in"), emphasis: "secondary" },
+    { href: "/help", label: ref("Help"), emphasis: "ghost" },
+  ], environments: [{ href: "/current", label: ref("Current"), icon, isCurrent: true }] };
+  const control = output(shell).querySelector<HTMLElement>("header [data-header-primary]")!;
+  expect(control).toHaveAttribute("aria-current", "true");
+  expect(control.style.boxShadow).toBe("none");
+});
+
+it.each([false, true])("uses text-only desktop and menu CTAs while retaining the mobile semantic icon (server=%s)", server => {
+  const container = output(base, server);
+  const panelActions = container.querySelector(".site-header-desktop-actions")!;
+  expect(panelActions.querySelectorAll("svg")).toHaveLength(0);
+  expect(panelActions).toHaveTextContent("Start now");
+  expect(container.querySelector("[data-header-primary] svg path")).toHaveAttribute("d", "M4 12h16");
+  expect(resolveShell(base, resolveCopy, resolveAsset).headerActions.find(action => action.emphasis === "primary")!.icon).toEqual(icon.map(([tag, attributes]) => [tag, { d: attributes.d }]));
 });

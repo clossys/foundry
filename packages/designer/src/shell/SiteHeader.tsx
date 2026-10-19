@@ -131,9 +131,9 @@ export interface SiteHeaderProps extends Omit<HTMLAttributes<HTMLElement>, "chil
    *   `position: fixed` descendants: a full-screen menu panel rendered
    *   inside the header must portal out of it.
    *
-   * The glass state needs no JavaScript: it is a scroll-driven CSS
-   * animation, and an engine without scroll-driven animations shows glass
-   * at every scroll position. Only paint changes between states, so the
+   * NavDisclosure selects glass after root scrolling and clears it on return.
+   * Without scripting, supporting engines use an optional scroll-driven CSS
+   * animation. Only paint changes between states, so the
    * header never shifts layout. Reduced motion swaps the fade for one step;
    * reduced transparency, or no backdrop blur support, swaps the glass for the
    * opaque raised (or inverse) plate.

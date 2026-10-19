@@ -44,7 +44,7 @@ export type SiteIconLinkInput = {
  */
 export type SiteBrandInput = {
   readonly assetId: string;
-  /** Authored image asset IDs for absolute section grounds; both are required for sectionGround. */
+  /** Optional authored image pair for section grounds; omit to retain one caller-authored accent mark. */
   readonly artwork?: { readonly onLight: string; readonly onDark: string };
   readonly label: CopyRef;
   readonly size: "sm" | "md" | "lg";

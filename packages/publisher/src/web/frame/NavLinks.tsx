@@ -17,8 +17,8 @@ export function NavLinks({ links, actions, surfaceLabel }: { readonly links: rea
       </ul> : null}
       {actions?.length || surfaceLabel ? (
         <ul role="list" className="site-header-desktop-actions m-0 flex list-none gap-sm p-0">
-          {[...(actions ?? [])].sort((a, b) => HEADER_ACTION_VARIANTS.indexOf(a.emphasis) - HEADER_ACTION_VARIANTS.indexOf(b.emphasis)).map((action, index) => (
-            <li key={index}><SiteHeader.ActionLink href={action.href} label={action.label} icon={action.icon} isCurrent={action.isCurrent} variant={action.emphasis} /></li>
+          {[...(actions ?? [])].sort((a, b) => (a.emphasis === "primary" ? -1 : HEADER_ACTION_VARIANTS.indexOf(a.emphasis)) - (b.emphasis === "primary" ? -1 : HEADER_ACTION_VARIANTS.indexOf(b.emphasis))).map((action, index) => (
+            <li key={index}><SiteHeader.ActionLink href={action.href} label={action.label} isCurrent={action.isCurrent} variant={action.emphasis} /></li>
           ))}
           {surfaceLabel ? <li><span>{surfaceLabel}</span></li> : null}
         </ul>

@@ -20,14 +20,14 @@ function block(text: string, opening: string): string {
 }
 
 describe("nav disclosure utilities", () => {
-  it("below tablet only an expanded panel shows as a sheet under the header", () => {
+  it("below tablet an expanded or closing panel shows as a sheet under the header", () => {
     const panel = block(css, "@utility nav-disclosure-panel {");
     const mobile = panel.slice(0, panel.indexOf("@media"));
     expect(mobile).toContain("display: none;");
     expect(mobile).toContain("position: absolute;");
     expect(mobile).toContain("inset-block-start: 100%;");
     expect(mobile).toContain("inset-inline: 0;");
-    expect(mobile).toMatch(/&\[data-expanded\] \{\s*display: flex;/);
+    expect(mobile).toMatch(/&\[data-expanded\], &\[data-present\] \{\s*display: flex;/);
   });
 
   it("from tablet the panel is an inline row and the toggle hides", () => {
@@ -50,7 +50,7 @@ describe("nav disclosure utilities", () => {
     expect(block(toggle, "@media (scripting: none)")).toContain("display: none;");
   });
 
-  it("uses tokens only and no transition or animation", () => {
+  it("keeps token-only panel paint and exposes tokenized motion timing", () => {
     const panel = block(css, "@utility nav-disclosure-panel {");
     const toggle = block(css, "@utility nav-disclosure-toggle {");
     expect(panel).toContain("var(--color-overlay-surface,");
@@ -58,7 +58,10 @@ describe("nav disclosure utilities", () => {
     expect(panel).toContain("var(--color-overlay-border,");
     expect(panel).toContain("var(--ui-width-page-padding-x,");
     expect(panel).toContain("var(--spacing-md,");
-    expect(panel + toggle).not.toMatch(/#[0-9a-f]{3,8}\b|\brgba?\(|(?:transition|animation|duration|delay)[\w-]*\s*:/i);
+    expect(panel + toggle).not.toMatch(/#[0-9a-f]{3,8}\b|\brgba?\(/i);
+    expect(panel).toContain("--site-header-panel-duration: var(--ui-duration-default, 240ms);");
+    expect(panel).toContain("--site-header-panel-ease: var(--ease-default, cubic-bezier(.2, 0, 0, 1));");
+    expect(panel).toContain("&[data-present]");
     const compiled = readFileSync(join(styles, "compiled.css"), "utf8");
     expect(compiled).toContain(".nav-disclosure-panel");
     expect(compiled).toContain(".nav-disclosure-toggle");
@@ -104,6 +107,7 @@ describe("header motion and content geometry", () => {
     expect(mobile).toContain("inline-size: 100%;");
     expect(mobile).toContain("text-align: start;");
     expect(mobile).toContain("justify-content: start;");
+    expect(mobile).toContain(".site-header-desktop-actions li, & .site-header-desktop-actions a { inline-size: 100%;");
   });
   it("starts the first section background under overlay chrome and clears content inside it", () => {
     const frame = block(css, "[data-frame-root] {");
@@ -114,7 +118,7 @@ describe("header motion and content geometry", () => {
   });
   it("shares square centered menu and primary mobile targets", () => {
     const mobile = block(css, "@utility site-header-mobile {");
-    expect(mobile).toContain('.nav-disclosure-toggle, & .site-header-actions > [data-header-primary]');
+    expect(mobile).toContain('.nav-disclosure-toggle[aria-expanded][aria-controls], & .site-header-actions > [data-header-primary]');
     expect(mobile).toContain("inline-size: var(--ui-layout-tap-target, 44px);");
     expect(mobile).toContain("block-size: var(--ui-layout-tap-target, 44px);");
     expect(mobile).toContain("justify-content: center;");
@@ -142,4 +146,19 @@ it("centers the mobile brand graphic and keeps its authored shared plate visible
   expect(mobile).toContain(".site-header-brand > a { justify-content: center; }");
   expect(mobile).toContain(".site-header-brand a > span:not(:has(img)) { display: none; }");
   expect(block(css, "@utility site-header-brand {")).toContain("display: flex;");
+});
+
+it("uses matching ghost paint, focus, active state and icon geometry for the mobile controls", () => {
+  const mobile = block(css, "@utility site-header-mobile {");
+  const controls = block(mobile, "& .nav-disclosure-toggle[aria-expanded][aria-controls], & .site-header-actions > [data-header-primary]");
+  for (const declaration of ["background-color: transparent;", "border-width: 0;", "transition: none;", "color: inherit;", "box-shadow: none;", ":hover", ":active", ":focus-visible", "outline:"]) expect(controls).toContain(declaration);
+  expect(block(controls, "@media (forced-colors: active)")).toContain("color: CanvasText;");
+  expect(mobile).toContain(".site-header-actions > [data-header-primary] > svg");
+  expect(mobile).toContain("--ui-icon-sm: var(--ui-icon-md, 24px);");
+});
+
+it("leaves artwork sizing to Brandmark rather than enlarging its wrapper through local tokens", () => {
+  const mobile = block(css, "@utility site-header-mobile {");
+  expect(mobile).not.toMatch(/--ui-brandmark-height-(?:sm|md|lg)\s*:/);
+  expect(block(mobile, "& .site-header-brand {")).not.toMatch(/(?:block-size|height):/);
 });

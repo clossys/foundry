@@ -4900,8 +4900,10 @@ own doc comment for why it's `shell`, not `blocks`, despite reading like a
 
 `navPlacement="centered"` and `mobileLayout="menu-brand-action"` are the
 shared defaults. Equal side tracks center navigation on the whole header;
-`NavDisclosure` measures intrinsic brand/link/action widths and collapses
-before collision. Mobile centers the supplied mark, with menu at inline-start
+`NavDisclosure` measures unwrapped desktop brand/link/action widths and the
+row gutters, coalescing resize, content, direction, image and font updates into
+one animation frame. A small fit margin prevents oscillation at the threshold.
+It collapses before collision. Mobile centers the supplied mark, with menu at inline-start
 and a supplied primary icon or empty track at inline-end. The layout mirrors
 in RTL. `secondaryAction` renders before `actions` in the trailing region.
 Explicit `navPlacement="leading"` or `mobileLayout="inline"` retain legacy
@@ -5021,7 +5023,9 @@ The equals-to-X bars, including the default-label trigger's pseudo bars, use
 `--ui-duration-default` and `--ease-default` for reversible transforms; reduced
 motion disables both transitions. Expanded mobile links stretch across the panel
 and align to its inline start, with actions below. Menu and primary action use
-centered 44px targets at the row edges. Current navigation uses a filled cue and
+centered 44px ghost targets at the row edges, with matching ink, hover, active
+and focus paint. Brandmark owns artwork sizing and plate treatment; the header
+centers the mobile mark and shows the wordmark only on desktop. Current navigation uses a filled cue and
 weight, hover uses a filled cue, and keyboard focus keeps its visible outline.
 
 The header is fixed rather than absolutely positioned (which would scroll
@@ -5071,7 +5075,10 @@ header content is inert after mount and CSS hides it before hydration.
 Equivalent parent renders preserve an open menu; meaningful route changes
 reset it and desktop transitions retain visible focus. Without scripting,
 expanded frame navigation stays in document flow before the View.
-There is no focus trap or portal, and the disclosure has no animation.
+The whole sheet opens and closes using the shared duration and easing tokens.
+Closing returns focus before making the still-painted panel inert; reversal
+continues from its current position. Reduced motion makes the change immediate.
+There is no focus trap or portal.
 `SiteHeader` supplies the positioned containing block for the mobile sheet.
 Use `NavShell` when the menu needs a modal drawer and managed focus instead;
 its drawer requires JavaScript.

@@ -386,7 +386,6 @@ export function resolveShell(input: SiteShellInput, resolveCopy: CopyResolver, r
           ids.add(section.id);
           return Object.freeze({ id: section.id, ground: oneOf(section.ground, `${path}.sections[].ground`, ["light", "dark"] as const) });
         });
-        if (!artwork) fail("shell.brand.artwork requires both onLight and onDark for sectionGround.");
         sectionGround = Object.freeze({ initial, sections: Object.freeze(sections) });
       }
       header = { placement, tone: fields.tone === undefined ? "base" : oneOf(fields.tone, "shell.header.tone", ["base", "inverse"] as const), ...(sectionGround ? { sectionGround } : {}) };

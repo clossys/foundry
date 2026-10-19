@@ -27,7 +27,7 @@ export function SiteNavDisclosure({ nav, actions, surfaceLabel, header, artwork 
       const bounds = banner.getBoundingClientRect();
       if (bounds.height > 0) frame?.style.setProperty("--site-header-clearance", `${bounds.height}px`);
       banner.toggleAttribute("data-scrolled", window.scrollY > 0);
-      if (!ground || !artwork) return;
+      if (!ground) return;
       const edge = bounds.bottom;
       let current = ground.initial;
       let nearest = -Infinity;
@@ -40,8 +40,8 @@ export function SiteNavDisclosure({ nav, actions, surfaceLabel, header, artwork 
       }
       banner.setAttribute("data-section-ground", current);
       banner.setAttribute("data-tone", current === "dark" ? "inverse" : "base");
-      const src = current === "light" ? artwork.onLight : artwork.onDark;
-      if (image && image.getAttribute("src") !== src) image.setAttribute("src", src);
+      const src = artwork ? (current === "light" ? artwork.onLight : artwork.onDark) : undefined;
+      if (image && src && image.getAttribute("src") !== src) image.setAttribute("src", src);
     };
     const schedule = () => { if (!pending && !disposed) pending = window.requestAnimationFrame(measure); };
     const resize = typeof ResizeObserver === "undefined" ? undefined : new ResizeObserver(schedule);
