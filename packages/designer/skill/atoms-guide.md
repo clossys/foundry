@@ -99,10 +99,10 @@ Token dependency coverage: partial. Representative consumed dependencies only; t
 - Use when: Several related commands should be revealed on demand.
 - Avoid when: The content is an input choice set or a rich explanatory panel.
 - Alternatives and boundary: Use Select for choosing a value; Popover for arbitrary panel content.
-- Content: Name the trigger and each command; group related commands with separators.
-- Anatomy: One trigger and a repeated collection of actionable items.
-- Block composition example: In a consumer-owned row-actions block, expose edit and archive through Menu.Item.
-- Accessibility: Name the trigger; disabled items and keyboard navigation belong to the menu primitive.
+- Content: Name the trigger and each command. Use Menu.Section for a real section heading and separators between groups.
+- Anatomy: One trigger and a repeated collection of actionable items, optionally grouped in Menu.Section with a real heading.
+- Block composition example: AccountMenu composes Menu.Item commands and Menu.Section preference groups with an actor trigger.
+- Accessibility: Name the trigger and each section. Section headings use the menu primitive's Header; section selection provides menuitemcheckbox preferences. Disabled items and keyboard navigation belong to the primitive.
 - Demonstration coverage: unassessed. Consumer-owned fixtures and interaction evidence have not been assessed here. A supported package option is not proof of a working catalog demonstration.
 
 | Medium | State | Reason and evidence |
@@ -112,7 +112,7 @@ Token dependency coverage: partial. Representative consumed dependencies only; t
 | print | unassessed | No print renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 | video | unassessed | No video renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 
-Web implementation: `@clossys/designer/atoms` → `Menu`. Source: `src/atoms/Menu.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Root props forward to MenuTrigger, not the inner menu list. triggerAction forwards to the peer trigger prop; the package supplies no local initializer. Item-level commands use Menu.Item; destructive emphasis is item-level.
+Web implementation: `@clossys/designer/atoms` → `Menu`. Source: `src/atoms/Menu.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Root props forward to MenuTrigger, not the inner menu list. triggerAction forwards to the peer trigger prop; the package supplies no local initializer. Item-level commands use Menu.Item; destructive emphasis is item-level. Menu.Section supplies a real heading through Header and forwards selectionMode, selectedKeys, onSelectionChange and shouldCloseOnSelect to the peer MenuSection. Checkbox preferences use multiple selection with caller-owned keys and callbacks.
 
 | Prop | Selection guidance | Package default | Applicability and support |
 | --- | --- | --- | --- |

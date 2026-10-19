@@ -3,10 +3,13 @@ import {
   Menu as AriaMenu,
   MenuItem as AriaMenuItem,
   MenuTrigger,
+  MenuSection as AriaMenuSection,
+  Header,
   Popover,
   Separator,
   type MenuItemProps as AriaMenuItemProps,
   type MenuTriggerProps as AriaMenuTriggerProps,
+  type MenuSectionProps as AriaMenuSectionProps,
 } from "react-aria-components";
 import { cx } from "./internal/cx.js";
 import { UI_ELEVATION_FLOATING, UI_Z_POPOVER } from "./internal/ui-vars.js";
@@ -20,7 +23,7 @@ export interface MenuProps extends Omit<AriaMenuTriggerProps, "children" | "trig
    * `MenuTrigger` via context, the same way `Select`'s trigger works.
    */
   trigger: ReactNode;
-  /** One or more `Menu.Item`s and, optionally, `Menu.Separator`s. */
+  /** Menu.Item entries, optionally grouped with Menu.Section and Menu.Separator. */
   children: ReactNode;
   /**
    * How the menu is opened — a left click (`"press"`, the default), a
@@ -119,6 +122,7 @@ function MenuItem({ children, isDestructive = false, className, ...rest }: MenuI
       className={(renderProps) =>
         cx(
           "flex cursor-default items-center gap-sm rounded-default px-sm py-xs text-body-s font-body outline-none",
+          renderProps.isFocused && !renderProps.isDisabled ? "forced-colors:outline forced-colors:outline-solid" : "",
           renderProps.isDisabled
             ? "text-ink-muted"
             : isDestructive
@@ -154,4 +158,16 @@ function MenuSeparator({ className }: MenuSeparatorProps) {
   return <Separator className={cx("my-xs border border-line-base", className)} />;
 }
 
-export const Menu = Object.assign(MenuRoot, { Item: MenuItem, Separator: MenuSeparator });
+type MenuSectionProps = Pick<AriaMenuSectionProps<object>,
+  "selectedKeys" | "onSelectionChange" | "shouldCloseOnSelect" | "aria-label"
+> & { children: ReactNode; heading?: ReactNode; selectionMode?: "none" | "multiple" };
+
+/** A named group with optional controlled checkbox selection, owned by the menu peer. */
+function MenuSection({ heading, children, ...rest }: MenuSectionProps) {
+  return <AriaMenuSection {...rest} className="flex flex-col">
+    {heading != null && <Header className="px-sm py-xs text-caption font-body text-ink-muted">{heading}</Header>}
+    {children}
+  </AriaMenuSection>;
+}
+
+export const Menu = Object.assign(MenuRoot, { Item: MenuItem, Separator: MenuSeparator, Section: MenuSection });
