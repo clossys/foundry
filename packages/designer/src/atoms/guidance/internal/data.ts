@@ -4590,7 +4590,7 @@ function comparison(id: string, column: string, row?: string): AtomComparison {
 }
 
 /** Data only: absence means no represented finite comparison; this renders nothing. */
-export const ATOM_COMPARISON: Readonly<Record<string, AtomComparison>> = Object.freeze({
+export const ATOM_COMPARISON = Object.freeze({
   "act.button": comparison("act.button", "variant", "size"),
   "act.icon-button": comparison("act.icon-button", "shape", "size"),
   "act.link": comparison("act.link", "variant"),

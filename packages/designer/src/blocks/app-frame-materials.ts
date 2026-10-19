@@ -1,3 +1,4 @@
+import { GroupedTable } from "./GroupedTable.js";
 import { Panel } from "./Panel.js";
 import { Drawer } from "./Drawer.js";
 import { ResizablePane } from "./ResizablePane.js";
@@ -77,5 +78,12 @@ export const APP_FRAME_MATERIALS = [
     ],
     configs: [{ prop: "collapsed", values: [false, true], default: false, source: "src/blocks/AccountMenu.tsx" }],
     authoredInputs: ["actor", "sections", "contextLabel", "triggerLabel", "collapsed", "onClose", "onRoute"],
+  },
+  {
+    id: "grouped-table", layer: "blocks", exportName: "GroupedTable", component: GroupedTable, source: "src/blocks/GroupedTable.tsx",
+    regions: ["caption", "headers", "content"],
+    dependencies: [{ exportName: "Card", source: "src/atoms/Card.tsx" }],
+    configs: [],
+    authoredInputs: ["caption", "rowHeader", "groups", "rows", "rowKey", "emptyMessage"],
   },
 ] as const;

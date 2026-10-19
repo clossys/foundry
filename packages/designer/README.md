@@ -55,6 +55,27 @@ cells: every axis cell supplies an explicit scalar value. Consumers must still
 author valid content, callbacks and data; this declaration supplies no renderer
 or general-purpose validator.
 
+The lookup has finite keys: only some atoms have a represented comparison.
+For a dynamic string ID, narrow it to `keyof typeof ATOM_COMPARISON` with an
+ownership guard before indexing, and handle an unlisted ID as no entry:
+
+```ts
+import { ATOM_COMPARISON } from "@clossys/designer/atoms";
+
+type ComparisonKey = keyof typeof ATOM_COMPARISON;
+
+function isComparisonKey(key: string): key is ComparisonKey {
+  return Object.hasOwn(ATOM_COMPARISON, key);
+}
+
+function findComparison(atomId: string) {
+  if (isComparisonKey(atomId)) {
+    return ATOM_COMPARISON[atomId];
+  }
+  return undefined; // No represented comparison for this atom.
+}
+```
+
 The public types are `AtomGuidance`, `AtomApiFacts`, `AtomDisplayGroup`, `AtomComparison`,
 `AtomMedium`, `AtomMediumState`, `AtomScalar`, `AtomEvidence`,
 `AtomOptionGuidance`, `AtomCondition`, `AtomConstraint`, `AtomWebImplementation` and
@@ -158,13 +179,13 @@ surfaces and live in `@clossys/publisher/web`.
   `Separator`, `Chip`, `StatusMark`, `Meter`.
 - **`blocks`** — owns the internal layout of multiple named regions,
   typically by composing one or more atoms (and/or layout) into something
-  with a real job on a page. Forty-one ship: `AccountMenu`, `PageHeader`, `EmptyState`,
+  with a real job on a page. Forty-two ship: `AccountMenu`, `PageHeader`, `EmptyState`,
   `DataTable`, `DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`,
   `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `SectionFrame`,
   `MarketingChapter`, `FeatureGrid`, `Item`, `Items`, `Tree`, `AnatomyCallouts`, `RecordLedger`, `Scene`, `Matrix`,
   `Specimen`, `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`,
   `PricingTable`, `Testimonial`, `ArticleBody`, `ConsentBanner`, `Panel`, `Drawer`,
-  `ResizablePane`, `CommandMenu` and `AppNavigation` (see "Blocks" below).
+  `ResizablePane`, `CommandMenu`, `AppNavigation` and `GroupedTable` (see "Blocks" below).
 - **`shell`** — the persistent frame around content (nav, layout chrome)
   that provides the slots content fills. One per app; survives route
   changes that swap out the content underneath it. `Shell` ships with five
@@ -6494,6 +6515,10 @@ not a grab-bag).
 | `AnatomyCallouts` | component | A specimen panel with 3 or 5 numbered markers and an ordered key. |
 | `AnatomyCalloutsProps` | type | Required caller instance `id`, `label`, `panel`, `markers`, `keyLabel`; optional `legendSide`, `sample`, `headingLevel`, `ground`, `className`, `style`. |
 | `AnatomyCalloutsMarker` | type | Stable `id`, labelled `target`, authored `heading` and `description`. |
+| `GroupedTable` | component | Captioned native table with grouped column headers, row headers and a named overflow region. |
+| `GroupedTableProps` | type | Generic table props: `caption`, `rowHeader`, `groups`, `rows`, `rowKey`, `emptyMessage`, optional `className`. |
+| `GroupedTableGroup` | type | Group `id`, React-node `header`, and nonempty `columns`. |
+| `GroupedTableColumn` | type | Column `id`, React-node `header`, and `cell(row)` renderer; also used for the leading row header. |
 | `RecordLedger` | component | A record on rules, without a panel. |
 | `RecordLedgerProps` | type | `form: "record"` takes unique instance seed `id`, `head`, `groups`, `columns?`, `caption`, `flagLabel?`; accepts `ground`, `headingLevel`, `className`. |
 | `LedgerRowData` | type | Static row: `id`, `label`, `detail?`, `status?` (`tone`, `label`), `flag?`. |
@@ -7840,3 +7865,35 @@ export function AccountControl() {
     ] }]} />;
 }
 ```
+
+### GroupedTable
+
+`GroupedTable<Row>` is a Block for a captioned table with two levels of column
+headers and a leading row header. It composes an outlined `Card` around a
+focusable overflow region named by the visible caption. Native `colgroup`,
+`scope` and explicit `headers` associations connect each data cell to its row,
+group and leaf header. Generated IDs stay local to each instance.
+
+```tsx
+import { GroupedTable } from "@clossys/designer/blocks";
+
+<GroupedTable
+  caption="Quarterly results"
+  rowHeader={{ id: "team", header: "Team", cell: row => row.name }}
+  groups={[{ id: "quarter", header: "This quarter", columns: [
+    { id: "total", header: "Total", cell: row => row.total },
+  ] }]}
+  rows={[{ id: "alpha", name: "Alpha", total: 0 }]}
+  rowKey={row => row.id}
+  emptyMessage="No results yet"
+/>
+```
+
+Required props are `caption`, `rowHeader`, `groups`, `rows`, `rowKey` and
+`emptyMessage`; `className` customizes the outer Card. Header and cell renderers
+accept React nodes, including zero and authored links or actions. Each group
+needs at least one column. IDs must be nonempty and unique among groups or
+within a group's columns; row keys must be unique. Invalid input throws.
+An empty body displays `emptyMessage` across the row header and all leaf columns.
+The component and its types are exported from the client blocks entry and the
+component is registered in `APP_FRAME_MATERIALS` with its actual Card dependency.
