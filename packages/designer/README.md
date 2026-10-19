@@ -7568,6 +7568,30 @@ unmounted. Its default `dismissAt="(min-width: 768px)"` matches the structural
 tablet breakpoint; supply another media query when the host's wide layout
 starts elsewhere. Changing `navigationKey` or entering that query dismisses
 an open drawer, as does ordinary in-panel link navigation. No motion is added.
+The close control renders the `X` glyph through the `Icon` atom as decoration;
+`closeLabel` supplies the control's accessible name.
+
+`wide="sheet"` makes the Drawer an application side sheet that opens at every
+viewport width, for example an inspector at `placement="end"`. It ignores
+`dismissAt` and registers no media listener; it keeps the same Dialog focus
+containment, Escape and outside dismissal, focus restoration, scroll lock,
+`navigationKey` and in-panel link dismissal, and adds no motion. The default
+`wide="dismiss"` keeps the narrow-layout behavior described above. Switching
+an open sheet back to `"dismiss"` while the query matches closes it.
+
+```tsx
+import { Drawer } from "@clossys/designer/blocks";
+import { Button } from "@clossys/designer/atoms";
+
+export function InspectorSheet() {
+  return (
+    <Drawer heading="Inspector" closeLabel="Close inspector" placement="end"
+      wide="sheet" trigger={<Button>Inspect</Button>}>
+      <p>Selection details</p>
+    </Drawer>
+  );
+}
+```
 
 For a controlled Drawer, `isOpen` requests an open state; a local dismissal
 immediately removes the overlay even while the host retains `true`. The host
@@ -7582,9 +7606,26 @@ style its wrapper without changing centered defaults when omitted.
 `max` and `defaultValue`, in CSS pixels. Choose bounds that leave room for the
 content and the handle's minimum 44px target. `value` makes it controlled;
 omission uses local state. `onChange` reports bounded values, with no storage
-access. `orientation="vertical"` (default) is a vertical separator resizing
-inline width; `"horizontal"` resizes block height. `label` names the pane and
-`handleLabel` names the separator; header and footer remain Panel regions.
+access. A controlled host owns the dimension: keyboard and pointer changes
+render only after the host passes the reported value back, so the host can
+keep a remembered width in its own state or storage. `defaultValue` remains
+the Enter reset target in both modes. `orientation="vertical"` (default) is a
+vertical separator resizing inline width; `"horizontal"` resizes block height.
+`label` names the pane and `handleLabel` names the separator; header and footer
+remain Panel regions.
+
+```tsx
+import { ResizablePane } from "@clossys/designer/blocks";
+
+export function Inspector({ width, onWidthChange }: { width: number; onWidthChange: (width: number) => void }) {
+  return (
+    <ResizablePane min={240} max={560} defaultValue={320} value={width}
+      onChange={onWidthChange} label="Inspector" handleLabel="Resize inspector">
+      <p>Selection details</p>
+    </ResizablePane>
+  );
+}
+```
 
 `ResizeHandle` is controlled with required `value`, `min`, `max`, `resetValue`,
 `label` and `onChange`. Positive `step` defaults to 1. Arrow keys adjust,
