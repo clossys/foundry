@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { TOKENS } from "../tokens/tokens.js";
 import { buttonLinkClassName } from "../atoms/button-classes.js";
 import { cx } from "../atoms/internal/cx.js";
@@ -22,11 +22,24 @@ export interface NavDisclosureProps {
 }
 
 // Borrow the small ghost button's look and focus outline, without its colour
-// transition: this disclosure changes state without animation.
+// transition: only the panel and the decorative bars move, through CSS tokens.
 const TOGGLE_CLASSES = buttonLinkClassName("ghost", "sm")
   .split(" ")
   .filter(token => !token.includes("transition-"))
   .join(" ");
+
+// A collapsed header expands only with this much width to spare.
+const HYSTERESIS = parseFloat(TOKENS["--spacing-sm"]!.value);
+
+// Panel motion must land before paint, but a server render has no layout.
+const useBeforePaint = typeof window === "undefined" ? useEffect : useLayoutEffect;
+
+/** A CSS time such as `240ms` or `.24s`, in milliseconds; 0 when absent or unparseable. */
+function milliseconds(time: string): number {
+  const value = parseFloat(time);
+  if (!Number.isFinite(value) || value <= 0) return 0;
+  return time.trim().endsWith("ms") ? value : value * 1000;
+}
 
 /**
  * SiteHeader navigation that becomes a sheet below tablet and an inline row
@@ -49,8 +62,10 @@ export function NavDisclosure({ children, "aria-label": ariaLabel = "Primary", t
   open.current = expanded;
   const close = (restore = true) => {
     if (!open.current) return;
-    setExpanded(false);
     if (restore) toggle.current?.focus();
+    // Inert at once, while a closing panel may still be painted.
+    if (nav.current?.closest("header")) panel.current?.setAttribute("inert", "");
+    setExpanded(false);
   };
   useEffect(() => {
     const media = window.matchMedia?.(`(min-width: ${TOKENS["--breakpoint-tablet"]!.value})`);
@@ -58,17 +73,23 @@ export function NavDisclosure({ children, "aria-label": ariaLabel = "Primary", t
     const frame = header?.parentElement;
     const priorClearance = frame?.style.getPropertyValue("--site-header-clearance");
     let disposed = false;
+    let pending = 0;
     let wasMobile = true;
-    // Child rectangles measure occupied content, never an allocated equal grid track.
+    // The first measurement has no layout to hold, so it takes no hysteresis.
+    let settled = false;
+    // Child rectangles measure occupied content, never an allocated equal grid
+    // track. data-measuring lays each region out at its natural, unwrapped width.
     const extent = (element: HTMLElement | null) => {
       const boxes = [...(element?.children ?? [])].map(child => child.getBoundingClientRect()).filter(box => box.width > 0);
       return boxes.length ? Math.max(...boxes.map(box => box.right)) - Math.min(...boxes.map(box => box.left)) : 0;
     };
     const measure = () => {
+      pending = 0;
       if (disposed) return;
       let narrow = !media?.matches;
       if (header) {
         header.removeAttribute("data-collapsed");
+        header.setAttribute("data-measuring", "");
         const row = header.firstElementChild as HTMLElement;
         const brand = row.querySelector<HTMLElement>(".site-header-brand");
         const actions = row.querySelector<HTMLElement>(".site-header-desktop-actions") ?? row.querySelector<HTMLElement>(".site-header-actions");
@@ -76,7 +97,13 @@ export function NavDisclosure({ children, "aria-label": ariaLabel = "Primary", t
         const spacing = getComputedStyle(row);
         const width = row.getBoundingClientRect().width - parseFloat(spacing.paddingInlineStart || "0") - parseFloat(spacing.paddingInlineEnd || "0");
         const gap = parseFloat(spacing.columnGap || "0");
-        narrow ||= width < 2 * Math.max(extent(brand), extent(actions)) + extent(links) + 2 * gap;
+        const required = 2 * Math.max(extent(brand), extent(actions)) + extent(links) + 2 * gap;
+        // Hysteresis: a collapsed header expands only with one small spacing
+        // step to spare, so widths at the fit edge cannot flap between layouts.
+        const slack = settled && wasMobile ? HYSTERESIS : 0;
+        settled = true;
+        narrow ||= width < required + slack;
+        header.removeAttribute("data-measuring");
         header.toggleAttribute("data-collapsed", narrow);
         const height = header.getBoundingClientRect().height;
         if (height > 0) frame?.style.setProperty("--site-header-clearance", `${height}px`);
@@ -84,6 +111,7 @@ export function NavDisclosure({ children, "aria-label": ariaLabel = "Primary", t
       const active = document.activeElement;
       const activeActions = active?.closest(".site-header-actions");
       if (!narrow) {
+        panel.current?.removeAttribute("inert");
         if (active === toggle.current || (activeActions && getComputedStyle(activeActions).display === "none")) {
           const anchors = [...(nav.current?.querySelectorAll<HTMLAnchorElement>("a[href]") ?? [])];
           const target = anchors.find(link => active instanceof HTMLAnchorElement && link.href === active.href) ?? anchors[0] ?? header?.querySelector<HTMLElement>(".site-header-brand a");
@@ -97,34 +125,100 @@ export function NavDisclosure({ children, "aria-label": ariaLabel = "Primary", t
       wasMobile = narrow;
       setMobile(narrow);
     };
-    const observer = typeof ResizeObserver === "undefined" ? undefined : new ResizeObserver(measure);
+    // Every trigger in one frame shares one measurement.
+    const schedule = () => {
+      if (disposed || pending) return;
+      if (typeof window.requestAnimationFrame !== "function") { measure(); return; }
+      pending = window.requestAnimationFrame(measure);
+    };
+    const observer = typeof ResizeObserver === "undefined" ? undefined : new ResizeObserver(schedule);
     const observe = () => {
       observer?.disconnect();
-      if (header) { observer?.observe(header); header.querySelectorAll(".site-header-brand > *, .site-header-desktop-actions a, .site-header-actions > *, nav a").forEach(node => observer?.observe(node)); }
+      if (header) { observer?.observe(header); header.querySelectorAll(".site-header-brand > *, .site-header-desktop-actions a, .site-header-actions > *, nav a, img").forEach(node => observer?.observe(node)); }
     };
     const signature = () => JSON.stringify([...(nav.current?.querySelectorAll("a[href]") ?? [])].map(link => [link.getAttribute("href"), link.getAttribute("aria-current"), link.textContent]));
     let content = signature();
     const mutations = new MutationObserver(() => {
       const next = signature();
       if (next !== content) { content = next; close(); }
-      measure(); observe();
+      schedule(); observe();
     });
     if (nav.current) mutations.observe(nav.current, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ["href", "aria-current", "class", "style"] });
+    // A late brand image or a direction change also alters natural widths.
+    const direction = new MutationObserver(schedule);
+    for (let node: HTMLElement | null = header ?? null; node; node = node.parentElement) direction.observe(node, { attributes: true, attributeFilter: ["dir", "lang"] });
     measure(); observe();
-    media?.addEventListener("change", measure);
-    window.addEventListener("resize", measure);
-    document.fonts?.ready.then(measure);
-    document.fonts?.addEventListener("loadingdone", measure);
+    media?.addEventListener("change", schedule);
+    window.addEventListener("resize", schedule);
+    header?.addEventListener("load", schedule, true);
+    document.fonts?.ready.then(schedule);
+    document.fonts?.addEventListener("loadingdone", schedule);
     return () => {
-      disposed = true; observer?.disconnect(); mutations.disconnect();
-      media?.removeEventListener("change", measure); window.removeEventListener("resize", measure);
-      document.fonts?.removeEventListener("loadingdone", measure);
+      disposed = true;
+      if (pending) window.cancelAnimationFrame?.(pending);
+      observer?.disconnect(); mutations.disconnect(); direction.disconnect();
+      media?.removeEventListener("change", schedule); window.removeEventListener("resize", schedule);
+      header?.removeEventListener("load", schedule, true);
+      document.fonts?.removeEventListener("loadingdone", schedule);
+      header?.removeAttribute("data-measuring");
       if (priorClearance) frame?.style.setProperty("--site-header-clearance", priorClearance); else frame?.style.removeProperty("--site-header-clearance");
     };
   }, []);
   // Imperative boolean attributes support React 18 as well as React 19, with
   // no inert server markup to break the no-scripting fallback.
-  useEffect(() => { panel.current?.toggleAttribute("inert", mobile && !expanded && Boolean(nav.current?.closest("header"))); }, [mobile, expanded]);
+  const motion = useRef<Animation | null>(null);
+  const shown = useRef(false);
+  useBeforePaint(() => {
+    const element = panel.current;
+    if (!element) return;
+    element.toggleAttribute("inert", mobile && !expanded && Boolean(nav.current?.closest("header")));
+    const running = motion.current;
+    const changed = shown.current !== expanded;
+    shown.current = expanded;
+    if (!changed && (mobile || !running)) return;
+    motion.current = null;
+    // The sheet slides from just under the header and fades, on the panel's
+    // motion tokens. data-present keeps a closing sheet painted (but inert)
+    // until it has left; reduced motion, a zero duration, an inline desktop
+    // row or an engine without element.animate switch at once.
+    const style = getComputedStyle(element);
+    const duration = milliseconds(style.getPropertyValue("--site-header-panel-duration"));
+    const shift = style.getPropertyValue("--site-header-panel-shift").trim();
+    const easing = style.getPropertyValue("--site-header-panel-ease").trim();
+    const still = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    if (!changed || !mobile || still || !duration || !shift || typeof element.animate !== "function") {
+      running?.cancel();
+      element.removeAttribute("data-present");
+      return;
+    }
+    const away = { opacity: "0", transform: `translateY(${shift})` };
+    const here = { opacity: "1", transform: "none" };
+    // Reverse from where an interrupted animation had reached.
+    const from = running ? { opacity: style.opacity, transform: style.transform } : expanded ? away : here;
+    running?.cancel();
+    element.setAttribute("data-present", "");
+    const animation = element.animate([from, expanded ? here : away], { duration, easing: easing || undefined, fill: "both" });
+    motion.current = animation;
+    const settle = () => {
+      if (motion.current !== animation) return;
+      motion.current = null;
+      element.removeAttribute("data-present");
+      animation.cancel();
+    };
+    animation.finished.then(settle, settle);
+  }, [mobile, expanded]);
+  useEffect(() => {
+    const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)");
+    const stop = () => {
+      const animation = motion.current;
+      motion.current = null;
+      animation?.cancel();
+      panel.current?.removeAttribute("data-present");
+    };
+    const change = () => { if (reduced?.matches) stop(); };
+    reduced?.addEventListener?.("change", change);
+    return () => { reduced?.removeEventListener?.("change", change); stop(); };
+  }, []);
   useEffect(() => {
     const reset = () => close();
     const leave = (event: FocusEvent) => {
@@ -160,7 +254,7 @@ export function NavDisclosure({ children, "aria-label": ariaLabel = "Primary", t
           data-tone={tone}
           className={cx(look, "nav-disclosure-toggle", inverse ? "text-ink-on-inverse hover:text-ink-on-inverse aria-expanded:text-ink-on-inverse focus-visible:text-ink-on-inverse hover:bg-control-tonal-inverse-hover focus-visible:outline-ink-on-inverse" : undefined)}
           style={{ minHeight: UI_LAYOUT_TAP_TARGET, minWidth: UI_LAYOUT_TAP_TARGET }}
-          onClick={() => setExpanded(value => !value)}
+          onClick={() => (expanded ? close() : setExpanded(true))}
         >
           <><span className="nav-disclosure-icon" data-open={expanded ? "" : undefined} aria-hidden="true"><span /><span /></span></>
         </button>
@@ -173,7 +267,7 @@ export function NavDisclosure({ children, "aria-label": ariaLabel = "Primary", t
           data-tone={tone}
           className={cx(look, "nav-disclosure-toggle", inverse ? "text-ink-on-inverse hover:text-ink-on-inverse aria-expanded:text-ink-on-inverse focus-visible:text-ink-on-inverse hover:bg-control-tonal-inverse-hover focus-visible:outline-ink-on-inverse" : undefined)}
           style={{ minHeight: UI_LAYOUT_TAP_TARGET, minWidth: UI_LAYOUT_TAP_TARGET }}
-          onClick={() => setExpanded(value => !value)}
+          onClick={() => (expanded ? close() : setExpanded(true))}
         >
           {triggerLabel}
         </button>
@@ -184,7 +278,9 @@ export function NavDisclosure({ children, "aria-label": ariaLabel = "Primary", t
         className="nav-disclosure-panel"
         data-expanded={expanded ? "" : undefined}
         onClick={event => {
-          if (event.target instanceof Element && event.target.closest("a[href]")) close();
+          // Following a link moves on from the menu; focus stays with the
+          // destination rather than returning to the toggle.
+          if (event.target instanceof Element && event.target.closest("a[href]")) close(false);
         }}
       >
         {children}

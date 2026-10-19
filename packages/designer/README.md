@@ -5080,13 +5080,38 @@ It renders one navigation landmark and one set of links: below `tablet`
 server-rendered state is collapsed. With scripting unavailable, CSS shows
 the panel inline and hides the button at every width. The toggle keeps
 focus when activated; Escape while open closes the sheet and returns focus
-to the toggle, and activating an `a[href]` within the panel closes it. Closed
-header content is inert after mount and CSS hides it before hydration.
-Equivalent parent renders preserve an open menu; meaningful route changes
-reset it and desktop transitions retain visible focus. Without scripting,
-expanded frame navigation stays in document flow before the View.
-There is no focus trap or portal, and the disclosure has no animation.
+to the toggle, and activating an `a[href]` within the panel closes it
+without moving focus back to the toggle, so the browser follows the link.
+Closed header content is inert after mount, from the moment it closes, and
+CSS hides it before hydration. Equivalent parent renders preserve an open
+menu; meaningful route changes reset it and desktop transitions retain
+visible focus. Without scripting, expanded frame navigation stays in
+document flow before the View. There is no focus trap or portal.
 `SiteHeader` supplies the positioned containing block for the mobile sheet.
+
+Motion: below `tablet` the sheet slides down by `--spacing-sm` and fades in
+when it opens, and reverses when it closes, over `--ui-duration-default` with
+`--ease-default`. The panel's `--site-header-panel-duration`,
+`--site-header-panel-ease` and `--site-header-panel-shift` carry those tokens,
+and the script reads them, so the CSS owns the timing. While a closing sheet
+animates it keeps `data-present` and stays painted, but it is already inert
+and out of the tab order. A reopen mid-close reverses from where the sheet is.
+Under `prefers-reduced-motion: reduce` the duration is `0s`, so the sheet
+switches at once, and turning reduced motion on cancels a running animation.
+The menu icon's bars rotate over the same duration and stop under reduced
+motion. From `tablet` up nothing moves.
+
+Collapse: the header collapses its links into the Menu sheet when the brand,
+the links and the actions would not fit on one row. `NavDisclosure` measures
+each region at its natural one-line width (the header carries
+`data-measuring` for that read, so many links, many actions and long labels
+are counted unwrapped) and requires twice the wider of the brand and the
+actions, plus the links and two gaps, so the links can stay centred. Size
+changes, content changes, image and font loads and a `dir` or `lang` change
+on the header or an ancestor schedule one measurement per animation frame.
+Hysteresis keeps a collapsed header collapsed until the row is `--spacing-sm`
+(8px) wider than it needs, so a width near the threshold does not flicker
+between the two layouts.
 Use `NavShell` when the menu needs a modal drawer and managed focus instead;
 its drawer requires JavaScript.
 
