@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import { contrastRatio } from "./color.js";
 import { checkSingleColourLegibility, IDENTITY_MIN_CONTRAST } from "./identity-checks.js";
@@ -923,5 +924,14 @@ describe("composeLockup (issue #1535, live-text lockup from a supplied mark)", (
       composeLockup(input({ wordmark: " ", header: "x" as never, fontLicence: { family: "a;b", outlining: "y" as never } })),
     );
     expect(reasons).toHaveLength(4);
+  });
+});
+
+
+describe("supplied mark normalization opt-in", () => {
+  it("keeps all seven legacy variant bytes, pinned before normalization existed", () => {
+    const suppliedSvg = '<svg viewBox="0 0 100 100" data-clear-space="0.2"><path d="M30 35h40v30H30z" fill="currentColor"/></svg>';
+    const variants = adoptSuppliedMark({ brand: { name: "Example" }, suppliedSvg, tokens: TOKENS }).variants;
+    expect(createHash("sha256").update(JSON.stringify(variants)).digest("hex")).toBe("afe0d1539ebe0d74789514b6075ec0528e3183f8e0d28b4b350df206e16e4521");
   });
 });

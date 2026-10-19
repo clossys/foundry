@@ -72,6 +72,8 @@
  * auditable one.
  */
 
+import { normalizeMark } from "./mark-normalize.js";
+
 const MARK_VIEW_BOX = "0 0 48 48";
 const WORDMARK_VIEW_BOX = "0 0 200 48";
 const CLEAR_SPACE_RATIO = 0.2;
@@ -858,6 +860,8 @@ function sourceViewBoxOf(svg: string): string {
 }
 
 export interface AdoptSuppliedMarkInput {
+  /** Normalize supported supplied geometry; omitted or false preserves legacy bytes. */
+  normalize?: boolean;
   brand: IdentityBrandInput;
   /** A complete `<svg>...</svg>` document — the client's existing logo, or a human designer's/image model's output. */
   suppliedSvg: string;
@@ -878,7 +882,7 @@ export function adoptSuppliedMark(input: AdoptSuppliedMarkInput): IdentityDirect
   if (!isSvgDocument(suppliedSvg)) {
     throw new IdentityKitValidationError(["supplied mark must be a complete <svg>...</svg> document"]);
   }
-  const trimmed = suppliedSvg.trim();
+  const trimmed = input.normalize === true ? normalizeMark({ glyphSvg: suppliedSvg, tokens }) : suppliedSvg.trim();
   const onAccentGlyph = innerMarkupOf(recolorSvg(trimmed, tokens.onAccent));
   const sourceViewBox = sourceViewBoxOf(trimmed);
 

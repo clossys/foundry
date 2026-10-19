@@ -6853,6 +6853,38 @@ free-hand drawing: both compose the same small set of primitives (a glyph, a
 badge wrapper, `recolorSvg`), the "deterministic mechanics" split #1187's
 "who does what" table draws for this package's role.
 
+**Measure and normalize a supplied mark.** `measureMarkGeometry(svg)` returns
+its `viewBox`, plate presence and horizontal/vertical radius shares, painted
+`glyphBox` shares, `centreOffset`, and `declaredClearSpace`. A leading filled
+square `rect` matching the canvas height is recognized as the plate when
+other artwork follows; wrap a full-canvas glyph in a `g` to distinguish it.
+`normalizeMark({ glyphSvg, tokens })` replaces that plate with the token accent
+plate, radius 7/32, and fits the painted glyph into a 64% box on a 48-unit
+canvas with 0.2 declared clear space. Scaling preserves aspect and centres
+the bounding box. `plate: false` omits the plate; plate conformance then
+reports its absence. `optical: true` uses the painted-area centroid, limits
+each axis correction to 3% of the side, and declares the optical mode so
+conformance can verify the correction from measured geometry.
+
+Supported geometry is `rect`, `circle`, `ellipse`, `polygon`, and SVG paths
+with absolute or relative `M L H V C S Q T A Z`, under `translate`, `rotate`,
+and `scale` transforms. Bounds include strokes, caps, and joins. Curves are
+subdivided to one millionth of the canvas size; optical area integrates the
+painted union over 4096 horizontal strips, including holes and overlaps.
+Unsupported elements, transforms, and rendering effects such as masks or
+opacity throw `MarkGeometryError` naming the feature.
+
+`checkMarkConformance(svg)` returns ordered radius, inset, centring, clear
+space, lockup gap, and wordmark-size findings with `measured` and `expected`
+values (0.005 share tolerance). A direct, untransformed lockup `text` element
+contributes its declared position and font size; its font outline is not
+measured. `adoptSuppliedMark({ brand, suppliedSvg, tokens, normalize: true })`
+opts into normalization; omitted or false preserves the legacy variant bytes.
+`judgeIdentityKit` adds mark-conformance findings for adopted directions,
+reporting unsupported supplied geometry as indeterminate. Generated live-text
+directions retain their existing four checks without claiming measured mark
+geometry.
+
 **Seven variant roles**, every direction: `primary` (the flagship lockup,
 for light surfaces), `mark` (icon/monogram alone), `mono` (`mark`
 recoloured to `currentColor`, single-colour legible), `light` (`primary`
