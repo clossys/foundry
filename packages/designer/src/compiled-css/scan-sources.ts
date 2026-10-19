@@ -16,10 +16,10 @@ export interface CompiledCssScanResult extends ClassScanResult {
 
 /**
  * Directories whose components are exported (`./atoms`, `./blocks`, `./shell`,
- * `./charts`, `./theme`). `styles/utilities.css` lists the classes of all of
+ * `./charts`, `./theme`, plus token preview tooling). `styles/utilities.css` lists the classes of all of
  * them; `compiled.css` keeps the narrower scan above.
  */
-export const UTILITIES_SOURCE_DIRS = [...COMPILED_CSS_SOURCE_DIRS, "charts", "theme"] as const;
+export const UTILITIES_SOURCE_DIRS = [...COMPILED_CSS_SOURCE_DIRS, "charts", "theme", "tokens/preview"] as const;
 
 function scanDirs<D extends string>(packageRoot: string, dirs: readonly D[]): ClassScanResult & { byDir: Record<D, number> } {
   const candidates = new Set<string>();

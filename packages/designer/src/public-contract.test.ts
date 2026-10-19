@@ -25,6 +25,7 @@ const packageJson = JSON.parse(readFileSync(join(packageRoot, "package.json"), "
 const JS_SUBPATHS = [
   "./tokens",
   "./tokens/server",
+  "./tokens/preview",
   "./atoms",
   "./atoms/server",
   "./icons",
@@ -54,9 +55,9 @@ function sourceFiles(dir: string, out: string[] = []): string[] {
 describe("public UI contract", () => {
   it("exports only intentional token, visual, and gate subpaths — never a root barrel or views", () => {
     expect(Object.keys(packageJson.exports)).toEqual([
-      ...JS_SUBPATHS.slice(0, 2),
+      ...JS_SUBPATHS.slice(0, 3),
       ...CSS_SUBPATHS,
-      ...JS_SUBPATHS.slice(2),
+      ...JS_SUBPATHS.slice(3),
     ]);
     expect(packageJson.exports["."]).toBeUndefined();
     expect(packageJson.exports["./views"]).toBeUndefined();

@@ -13,10 +13,11 @@ const bundlers = ["webpack", "turbopack"] as const;
 function clientPage(nodeMutation = false): string {
   return `"use client";
 import { Button } from "@clossys/designer/atoms";
+import { TokenPreview } from "@clossys/designer/tokens/preview";
 import { contrastRatio, parseBrandDeclarations${nodeMutation ? ", readNodeFile" : ""} } from "@clossys/designer/tokens";
 const parsed = parseBrandDeclarations(":root { --example: #000000; }");
 export default function Page() {
-  return <Button${nodeMutation ? ' onPress={() => readNodeFile("unused.css", "utf8")}' : ""}>{contrastRatio(parsed.declarations["--example"], "#ffffff")}</Button>;
+  return <><Button${nodeMutation ? ' onPress={() => readNodeFile("unused.css", "utf8")}' : ""}>{contrastRatio(parsed.declarations["--example"], "#ffffff")}</Button><TokenPreview property="--color-chart-surface" /></>;
 }
 `;
 }
@@ -74,6 +75,10 @@ function buildFixture(fixture: string, next: string, bundler: typeof bundlers[nu
     env: { PATH: process.env.PATH ?? "", TMPDIR: tmpdir(), LC_ALL: "C", CI: "1", NEXT_TELEMETRY_DISABLED: "1" },
   });
   expect(existsSync(join(fixture, ".next", "BUILD_ID"))).toBe(true);
+  const html = readFileSync(join(fixture, ".next", "server", "app", "index.html"), "utf8");
+  expect(html).toContain('aria-label="--color-chart-surface"');
+  expect(html).toContain('data-kind="chart"');
+  expect(html).toContain("stroke:var(--color-chart-surface, var(--color-surface-raised, oklch(1 0 0)))");
 }
 
 it("exercises the packed public Node reader and opt-in peer check", () => {
