@@ -80,7 +80,7 @@ describe("frame exports", () => {
   const frameNames = Object.keys(frameIndex).sort();
 
   it("the web entry and the server entry export every frame value, and the same ones", () => {
-    expect(frameNames).toEqual(["SITE_MAIN_ID", "SITE_PAGE_LAYERS", "SITE_SURFACE_KINDS", "SiteFrame", "siteShellFor"]);
+    expect(frameNames).toEqual(["SITE_FRAME_CONFIG_SCHEMA", "SITE_FRAME_CONTRACT", "SITE_MAIN_ID", "SITE_PAGE_LAYERS", "SITE_SURFACE_KINDS", "SiteFrame", "normalizeSiteFrameActions", "normalizeSiteFrameConfig", "siteShellFor"]);
     for (const name of frameNames) {
       expect(webIndex).toHaveProperty(name);
       expect(webServer).toHaveProperty(name);
@@ -105,7 +105,8 @@ it("renders identical all-slots markup through ordinary and server entries", () 
   const ordinary = renderToStaticMarkup(<webIndex.SiteFrame shell={shell} resolveCopy={resolveCopy} resolveAsset={resolveAsset}><p>content</p></webIndex.SiteFrame>);
   const server = renderToStaticMarkup(<webServer.SiteFrame shell={shell} resolveCopy={resolveCopy} resolveAsset={resolveAsset}><p>content</p></webServer.SiteFrame>);
   expect(ordinary).toBe(server);
-  expect(server).toContain('aria-label="Contact"');
+  expect(server).toContain('href="/contact"');
+  expect(server).toContain('>Contact</span>');
   expect(server).toContain('aria-label="Profiles"');
   expect(server).toContain('aria-label="Profile"');
   expect(server).toContain('href="/help"');
@@ -168,7 +169,7 @@ describe("SiteFrame footer placement", () => {
     expect(html).toMatch(/<header[^>]*data-placement="overlay"/);
     expect(html).toMatch(/data-landing-view="" class="[^"]*flex-1/);
     expect(html).toMatch(/data-landing-hero=""[^>]*class="[^"]*flex-1/);
-    expect(html).toMatch(/<div class="flex min-h-dvh flex-col" style="position:relative"/);
+    expect(html).toMatch(/<div data-frame-root="" class="flex min-h-dvh flex-col" style="position:relative"/);
     expect(html).toContain('<div data-frame-footer-overlay="" style="display:flex;flex-direction:column;flex-shrink:0;min-width:0;pointer-events:none;z-index:var(--ui-z-sticky, 10)"><footer');
     expect(html).toMatch(/<footer[^>]*bg-surface-inverse[^>]*publisher-frame-footer-overlay/);
     expect(html).toMatch(/<footer[^>]*style="[^"]*pointer-events:auto/);

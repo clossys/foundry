@@ -21,7 +21,7 @@ const base: SiteShellInput = {
   brand: { assetId: "mark", label: ref("Example home"), size: "md", variant: "mark", plate: "self" },
   skipLink: ref("Skip to content"),
   nav: { label: ref("Primary"), triggerLabel: ref("Menu"), links: [{ href: "#help", label: ref("Help") }] },
-  actions: [{ href: "/start", label: ref("Start now"), emphasis: "primary" }, { href: "/contact", label: ref("Contact") }],
+  actions: [{ href: "/start", label: ref("Start now"), emphasis: "primary", icon }, { href: "/contact", label: ref("Contact") }],
   secondaryAction: { href: "/sign-in", label: ref("Sign in") },
   footer: { legal: { entity: ref("Example"), links: [{ href: "/privacy", label: ref("Privacy") }] } },
 };
@@ -44,20 +44,26 @@ function output(shell: SiteShellInput, server = false) {
   return container;
 }
 
-// Captured from unchanged main 22b5f7b3 before production edits, using renderToString.
-const DEFAULT_HTML = "<link rel=\"preload\" as=\"image\" href=\"/mark.svg\"/><div class=\"flex min-h-dvh flex-col\"><a href=\"#publisher-main-content\" class=\"sr-only focus:not-sr-only focus:fixed focus:start-sm focus:top-sm focus:rounded-control focus:bg-accent focus:px-md focus:py-sm focus:text-body focus:text-ink-on-accent focus:outline-none\" style=\"z-index:var(--ui-z-tooltip, 80)\">Skip to content</a><header class=\"bg-surface-raised py-sm border-b border-line-base\" style=\"position:relative;z-index:var(--ui-z-shell, 20);border-bottom-width:var(--ui-border-hairline, 1px)\"><div class=\"mx-auto flex w-full flex-wrap items-center justify-between gap-md\" style=\"padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))\"><div class=\"flex items-center gap-lg\"><a href=\"/\" aria-label=\"Example home\" class=\"inline-flex items-center no-underline text-ink-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent\"><img src=\"/mark.svg\" alt=\"\" style=\"height:var(--ui-brandmark-height-md, 36px);width:auto\"/></a><nav aria-label=\"Primary\"><button type=\"button\" aria-expanded=\"false\" aria-controls=\"_R_2a_\" class=\"inline-flex items-center justify-center gap-sm rounded-control font-body px-sm py-xs text-body-s text-ink-primary hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent nav-disclosure-toggle\" style=\"min-height:var(--ui-layout-tap-target, 44px);min-width:var(--ui-layout-tap-target, 44px)\">Menu</button><div id=\"_R_2a_\" class=\"nav-disclosure-panel\"><ul role=\"list\" class=\"m-0 flex list-none flex-wrap items-center gap-sm p-0\"><li><a href=\"#help\" class=\"inline-flex items-center px-xs text-inherit no-underline hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent\" style=\"min-height:var(--ui-layout-tap-target, 44px)\">Help</a></li></ul></div></nav></div><div class=\"flex items-center gap-sm\"><a href=\"/sign-in\" class=\"inline-flex items-center justify-center gap-sm rounded-control font-body transition-colors motion-reduce:transition-none px-sm py-xs text-body-s bg-surface-raised text-ink-primary border border-line-base hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent\" style=\"min-height:var(--ui-layout-tap-target, 44px);min-width:var(--ui-layout-tap-target, 44px)\">Sign in</a><a href=\"/start\" class=\"inline-flex items-center justify-center gap-sm rounded-control font-body transition-colors motion-reduce:transition-none px-sm py-xs text-body-s bg-accent text-ink-on-accent hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent\" style=\"min-height:var(--ui-layout-tap-target, 44px);min-width:var(--ui-layout-tap-target, 44px)\">Start now</a><a href=\"/contact\" class=\"inline-flex items-center justify-center gap-sm rounded-control font-body transition-colors motion-reduce:transition-none px-sm py-xs text-body-s bg-surface-raised text-ink-primary border border-line-base hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent\" style=\"min-height:var(--ui-layout-tap-target, 44px);min-width:var(--ui-layout-tap-target, 44px)\">Contact</a></div></div></header><main id=\"publisher-main-content\" tabindex=\"-1\" class=\"flex w-full flex-1 flex-col\"><p>content</p></main><footer class=\"bg-surface-raised text-ink-primary py-lg border-t border-line-base\" style=\"position:relative;z-index:var(--ui-z-shell, 20);border-top-width:var(--ui-border-hairline, 1px)\"><div class=\"mx-auto flex w-full flex-col gap-lg\" style=\"padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))\"><div class=\"flex flex-col gap-sm text-body-s text-ink-secondary tablet:flex-row tablet:items-center tablet:justify-between\"><div class=\"flex w-full flex-col items-center gap-sm text-center desktop:flex-row-reverse desktop:flex-nowrap desktop:items-center desktop:justify-between desktop:text-start\"><ul role=\"list\" class=\"m-0 flex list-none flex-wrap items-center justify-center gap-x-sm p-0 desktop:flex-nowrap desktop:justify-end\"><li><a href=\"/privacy\" class=\"inline-flex items-center justify-center px-xs text-inherit underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent\" style=\"min-height:var(--ui-layout-tap-target, 44px);min-width:var(--ui-layout-tap-target, 44px)\">Privacy</a></li></ul><p class=\"m-0 desktop:whitespace-nowrap\">© 2026 Example</p></div></div></div></footer></div>";
-
-it.each([false, true])("preserves byte-identical default HTML (server=%s)", server => {
-  const expected = DEFAULT_HTML.replace("© 2026 Example", `© ${new Date().getFullYear()} Example`);
+it.each([false, true])("preserves explicit defaults and proves the new default chrome semantics (server=%s)", server => {
+  const expected = renderToString(tree(base));
   expect(renderToString(tree(base, server))).toBe(expected);
-  expect(renderToString(tree({ ...base, mobileLayout: "inline" }, server))).toBe(expected);
+  expect(renderToString(tree({ ...base, mobileLayout: "menu-brand-action", navPlacement: "centered" }, server))).toBe(expected);
   expect(renderToString(tree({ ...base, nav: { ...base.nav!, trigger: "label" } }, server))).toBe(expected);
+  const container = output(base, server);
+  for (const selector of ["header", "main#publisher-main-content", "footer", "header nav"]) expect(container.querySelectorAll(selector)).toHaveLength(1);
+  expect(container.querySelector("main")).toHaveAttribute("tabindex", "-1");
+  expect(container.querySelector('a[href="#publisher-main-content"]')).toHaveTextContent("Skip to content");
+  expect(container.querySelector('header a[aria-label="Example home"] img')).toHaveAttribute("src", "/mark.svg");
+  expect(container.querySelector("header")).toHaveTextContent("Start now");
+  expect(container.querySelector("header")).toHaveTextContent("Contact");
+  expect(container.querySelector("header")).toHaveTextContent("Sign in");
+  expect(container.querySelector("footer")).toHaveTextContent("Privacy");
 });
 
 it.each([false, true])("forwards an action icon and retains its sr-only mobile label (server=%s)", server => {
   const shell = { ...base, actions: [{ ...base.actions![0]!, icon }] };
   const container = output(shell, server);
-  const action = within(container).getByRole("link", { name: "Start now" });
+  const action = within(container.querySelector(".site-header-actions") as HTMLElement).getByRole("link", { name: "Start now" });
   expect(action).toHaveClass("bg-accent");
   expect(action.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
   expect(action.querySelector("svg path")).toHaveAttribute("d", "M4 12h16");
@@ -99,9 +105,9 @@ it.each(["auto", "inverse", undefined] as const)("renders identical initial serv
   expect(renderToString(tree(shell))).toBe(server);
   const toggle = within(output(shell, true)).getByRole("button", { name: "Menu" });
   expect(toggle).toHaveAttribute("aria-expanded", "false");
-  expect(toggle).toHaveTextContent("");
+  expect(toggle.textContent).toBe("");
   expect(toggle.querySelector(".nav-disclosure-icon")).toHaveAttribute("aria-hidden", "true");
-  expect(toggle.querySelectorAll(".nav-disclosure-icon > span")).toHaveLength(3);
+  expect(toggle.querySelectorAll(".nav-disclosure-icon > span")).toHaveLength(2);
 });
 
 it("passes mobile layout through direct shells and siteShellFor into SiteHeader", () => {
@@ -113,8 +119,8 @@ it("passes mobile layout through direct shells and siteShellFor into SiteHeader"
   for (const input of [shell, { ...base, mobileLayout: "menu-brand-action" } as SiteShellInput]) {
     for (const server of [false, true]) {
       const header = output(input, server).querySelector("header")!;
-      expect(header.firstElementChild).toHaveClass("grid", "tablet:flex");
-      expect(header.firstElementChild).toHaveStyle({ gridTemplateColumns: "auto minmax(0, 1fr) auto" });
+      expect(header.firstElementChild).toHaveClass("site-header-row");
+      expect(header).toHaveAttribute("data-header-root");
       expect(header.querySelector('a[aria-label="Example home"] img')).toHaveAttribute("src", "/mark.svg");
     }
   }
@@ -128,14 +134,16 @@ it.each(["one", "two", "three", "six", "twenty", "secondary", "long-secondary"] 
     ...base,
     mobileLayout: "menu-brand-action",
     nav: { ...base.nav!, trigger: "icon" },
-    actions: Array.from({ length: controls === "twenty" ? 20 : controls === "six" ? 6 : controls === "three" ? 3 : controls === "two" ? 2 : 1 }, (_, index) => ({ ...base.actions![index % 2]!, href: `/action-${index}`, icon })),
+    actions: Array.from({ length: controls === "twenty" ? 20 : controls === "six" ? 6 : controls === "three" ? 3 : controls === "two" ? 2 : 1 }, (_, index) => ({ ...base.actions![0]!, href: `/action-${index}`, emphasis: (["primary", "secondary", "ghost"] as const)[index % 3], icon })),
     secondaryAction: controls === "long-secondary" ? { href: "/sign-in", label: ref("Averylongsecondaryactionwithoutwordbreaks") } : controls === "secondary" ? base.secondaryAction : undefined,
   };
-  for (const server of [false, true]) for (const navPlacement of ["leading", "centered"] as const) {
+  if (controls === "six" || controls === "twenty") { expect(() => output(shell)).toThrow(/three/); return; }
+  for (const server of [false, true]) for (const navPlacement of ["centered"] as const) {
     const container = output({ ...shell, navPlacement }, server);
     const brand = within(container).getByRole("link", { name: "Example home" });
-    expect(container.querySelector("header")).toHaveClass("max-tablet:[&>div]:grid-cols-3!", "[&_.col-start-3]:flex-wrap", "max-tablet:[&_.col-start-3]:w-full", "[&_.col-start-3>*]:max-w-full", "[&_.col-start-3]:wrap-anywhere");
-    expect(brand).toHaveClass("max-w-full", "[&_img]:object-contain");
+    expect(container.querySelector("header")).toHaveClass("site-header-contract");
+    expect(container.querySelector("header > div")).toHaveClass("site-header-row");
+    expect(brand.querySelector("img")).toHaveAttribute("src", "/mark.svg");
     expect(container.querySelectorAll('a[aria-label="Example home"]')).toHaveLength(1);
     expect(container.querySelectorAll("header nav")).toHaveLength(1);
   }
@@ -149,25 +157,26 @@ it.each([undefined, "auto", "inverse"] as const)("retains overlay brand tone %s 
   expect(brand).toHaveClass(tone === "auto" ? "text-ink-primary" : "text-ink-on-inverse");
 });
 
-it.each([false, true])("puts every full-label action inside the existing mobile disclosure only in the opted-in layout (server=%s)", server => {
+it.each([false, true])("puts every full-label action in defined panel order in every frame layout (server=%s)", server => {
   const shell: SiteShellInput = { ...base, mobileLayout: "menu-brand-action", actions: base.actions!.map(action => ({ ...action, icon })) };
   const container = output(shell, server);
   const nav = within(container).getByRole("navigation", { name: "Primary" });
   const panel = nav.querySelector(".nav-disclosure-panel")!;
-  const mobileActions = panel.querySelector(".tablet\\:hidden")!;
+  const mobileActions = panel.querySelector(".site-header-desktop-actions")!;
   expect(mobileActions).not.toBeNull();
-  expect([...mobileActions.querySelectorAll("a")].map(link => [link.getAttribute("href"), link.textContent])).toEqual(base.actions!.map(link => [link.href, link.label.id]));
-  expect(mobileActions.querySelector("a")).toHaveClass("bg-accent");
+  expect([...mobileActions.querySelectorAll("a")].map(link => [link.getAttribute("href"), link.textContent])).toEqual([["/sign-in", "Sign in"], ["/contact", "Contact"], ["/start", "Start now"]]);
+  expect(mobileActions.querySelectorAll("a")[2]).toHaveClass("bg-accent");
   expect(mobileActions.querySelectorAll("a")[1]).not.toHaveClass("bg-accent");
-  expect(mobileActions.querySelector(".sr-only, svg")).toBeNull();
+  expect(mobileActions.querySelectorAll("a")).toHaveLength(3);
+  expect(mobileActions).toHaveTextContent("Sign inContactStart now");
   expect(panel.querySelectorAll("nav")).toHaveLength(0);
   expect(container.querySelectorAll("header nav")).toHaveLength(1);
   expect(container.querySelectorAll("header")).toHaveLength(1);
   expect(container.querySelectorAll("main")).toHaveLength(1);
   expect(container.querySelectorAll("footer")).toHaveLength(1);
-  expect(output({ ...shell, actions: [] }, server).querySelector(".nav-disclosure-panel .tablet\\:hidden")).toBeNull();
+  expect(output({ ...shell, actions: [], secondaryAction: undefined }, server).querySelector(".site-header-desktop-actions")).toBeNull();
   for (const mobileLayout of [undefined, "inline"] as const) {
-    expect(output({ ...shell, mobileLayout }, server).querySelector('.nav-disclosure-panel .tablet\\:hidden')).toBeNull();
+    expect(output({ ...shell, mobileLayout }, server).querySelector('.site-header-desktop-actions')).not.toBeNull();
   }
 });
 
@@ -222,4 +231,17 @@ it.each([
 ])("refuses invalid %s without echoing values", (path, shell) => {
   expect(() => resolveShell(shell as SiteShellInput, resolveCopy, resolveAsset)).toThrow(path);
   try { resolveShell(shell as SiteShellInput, resolveCopy, resolveAsset); } catch (error) { expect(String(error)).not.toContain("PAYLOAD-SENTINEL"); }
+});
+
+
+it.each([{ navPlacement: "leading" }, { mobileLayout: "inline" }] as const)("keeps every action once in explicit legacy positioning %j", positioning => {
+  for (const server of [false, true]) {
+    const root = output({ ...base, ...positioning }, server);
+    expect(root.querySelector('header [data-header-primary]')).toBeNull();
+    for (const [href, label] of [["/start", "Start now"], ["/contact", "Contact"], ["/sign-in", "Sign in"]]) {
+      const actions = root.querySelectorAll(`header a[href="${href}"]`);
+      expect(actions).toHaveLength(1);
+      expect(actions[0]).toHaveTextContent(label);
+    }
+  }
 });

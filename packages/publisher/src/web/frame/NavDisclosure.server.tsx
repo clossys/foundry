@@ -28,7 +28,7 @@ function ServerNavDisclosure({ label, triggerLabel, trigger, tone, children }: {
         className={mergeUiClasses(look, "nav-disclosure-toggle", inverse ? "text-ink-on-inverse hover:text-ink-on-inverse aria-expanded:text-ink-on-inverse focus-visible:text-ink-on-inverse hover:bg-control-tonal-inverse-hover focus-visible:outline-ink-on-inverse" : undefined)}
         style={{ minHeight: TAP_TARGET, minWidth: TAP_TARGET }}
       >
-        {trigger === "icon" ? <span className="nav-disclosure-icon" aria-hidden="true"><span /><span /><span /></span> : triggerLabel}
+        {trigger === "icon" ? <><span className="nav-disclosure-icon" aria-hidden="true"><span /><span /></span></> : triggerLabel}
       </button>
       <div id={panelId} className="nav-disclosure-panel">
         {children}
@@ -38,10 +38,10 @@ function ServerNavDisclosure({ label, triggerLabel, trigger, tone, children }: {
 }
 
 // Match the client wrapper's two component levels so useId agrees during hydration.
-export function SiteNavDisclosure({ nav, actions }: { readonly nav: NonNullable<ResolvedSiteShell["nav"]>; readonly actions?: ResolvedSiteShell["actions"] }) {
+export function SiteNavDisclosure({ nav, actions, surfaceLabel }: { readonly nav: NonNullable<ResolvedSiteShell["nav"]>; readonly actions?: ResolvedSiteShell["actions"]; readonly surfaceLabel?: string }) {
   return (
     <ServerNavDisclosure label={nav.label} triggerLabel={nav.triggerLabel} trigger={nav.trigger} tone={nav.tone}>
-      <NavLinks links={nav.links} actions={actions} />
+      <NavLinks links={nav.links} actions={actions} surfaceLabel={surfaceLabel} />
     </ServerNavDisclosure>
   );
 }

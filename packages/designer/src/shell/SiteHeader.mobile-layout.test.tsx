@@ -18,14 +18,22 @@ function header(navPlacement: "leading" | "centered", mobileLayout?: "inline" | 
 }
 
 describe("SiteHeader mobile layout", () => {
-  it.each(["leading", "centered"] as const)("default output is byte-identical for %s navigation", navPlacement => {
-    expect(renderToStaticMarkup(header(navPlacement))).toBe(DEFAULT_HEADERS[navPlacement]);
+  it.each(["leading", "centered"] as const)("uses the new mobile default and retains explicit inline bytes for %s navigation", navPlacement => {
+    expect(renderToStaticMarkup(header(navPlacement))).toBe(renderToStaticMarkup(header(navPlacement, "menu-brand-action")));
     expect(renderToStaticMarkup(header(navPlacement, "inline"))).toBe(DEFAULT_HEADERS[navPlacement]);
   });
 
   it.each(["leading", "centered"] as const)("menu-brand-action puts nav, brand and actions in columns 1, 2 and 3 for %s navigation", navPlacement => {
     render(header(navPlacement, "menu-brand-action"));
     const row = screen.getByRole("banner").firstElementChild!;
+    if (navPlacement === "centered") {
+      expect(row).toHaveClass("site-header-row");
+      expect(screen.getByRole("banner")).toHaveClass("site-header-contract");
+      expect(screen.getByRole("link", { name: "Example" }).parentElement).toHaveClass("site-header-brand");
+      expect(screen.getByRole("navigation").parentElement).toBe(row);
+      expect(screen.getByRole("button", { name: "Start" }).parentElement).toHaveClass("site-header-actions");
+      return;
+    }
     expect(row).toHaveClass("grid", "tablet:flex", "tablet:flex-wrap");
     expect((row as HTMLElement).style.gridTemplateColumns).toBe("auto minmax(0, 1fr) auto");
     expect(screen.getByRole("link", { name: "Example" }).parentElement).toHaveClass("col-start-2", "row-start-1");
@@ -45,9 +53,9 @@ describe("SiteHeader mobile layout", () => {
       expect(brand.parentElement).toHaveClass("contents", "tablet:flex", "tablet:items-center", "tablet:gap-lg");
       expect(screen.getByRole("banner").firstElementChild).toHaveClass("tablet:justify-between");
     } else {
-      expect(brand).toHaveClass("tablet:flex", "tablet:flex-1", "tablet:items-center");
-      expect(nav).toHaveClass("tablet:flex", "tablet:items-center");
-      expect(actions).toHaveClass("tablet:flex-1", "tablet:justify-end");
+      expect(brand).toHaveClass("site-header-brand");
+      expect(nav).toHaveClass("site-header-row");
+      expect(actions).toHaveClass("site-header-actions");
     }
   });
 
@@ -58,15 +66,17 @@ describe("SiteHeader mobile layout", () => {
     const actions = screen.getByRole("button", { name: "Start" });
     expect(brand.compareDocumentPosition(nav) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(nav.compareDocumentPosition(actions) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(brand.parentElement).toHaveClass("min-w-0", "justify-self-center");
-    expect((screen.getByRole("banner").firstElementChild as HTMLElement).style.gridTemplateColumns).toBe("auto minmax(0, 1fr) auto");
+    if (navPlacement === "leading") {
+      expect(brand.parentElement).toHaveClass("min-w-0", "justify-self-center");
+      expect((screen.getByRole("banner").firstElementChild as HTMLElement).style.gridTemplateColumns).toBe("auto minmax(0, 1fr) auto");
+    } else expect(brand.parentElement).toHaveClass("site-header-brand");
     expect(screen.getAllByRole("navigation")).toHaveLength(1);
     expect(screen.getAllByRole("banner")).toHaveLength(1);
   });
 
   it.each(["leading", "centered"] as const)("allows omitted optional slots with %s navigation", navPlacement => {
     render(<SiteHeader mobileLayout="menu-brand-action" navPlacement={navPlacement} brand={<a href="/">Example</a>} />);
-    expect(screen.getByRole("link", { name: "Example" }).parentElement).toHaveClass("col-start-2");
+    expect(screen.getByRole("link", { name: "Example" }).parentElement).toHaveClass(navPlacement === "leading" ? "col-start-2" : "site-header-brand");
     expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });

@@ -115,7 +115,7 @@ export const heroEyebrowTone: HeroEyebrowTone = ["accent", "muted", undefined];
 export const heroMeasure: HeroMeasure = ["prose", "wide", undefined];
 export const heroHeadingScale: HeroHeadingScale = ["default", "display", undefined];
 // @ts-expect-error action emphasis is closed
-export const invalidEmphasis: ActionEmphasis = ["ghost", "secondary", undefined];
+export const invalidEmphasis: ActionEmphasis = ["danger", "secondary", undefined];
 // @ts-expect-error brand tone is closed
 export const invalidBrandTone: BrandTone = ["base", "inverse", undefined];
 // @ts-expect-error navigation tone is closed
@@ -173,3 +173,16 @@ export const footerLinkIcon: SiteShellInput = { ...shell, footer: { legal: confi
 export const footerColumnIcon: SiteShellInput = { ...shell, footer: { legal: config.legal, columns: [{ heading: { id: "help" }, links: [{ href: "/", label: { id: "home" }, icon: actionIcon }] }] } };
 // @ts-expect-error legal links remain plain links
 export const legalLinkIcon: SiteFrameConfig["legal"] = { entity: { id: "entity" }, links: [{ href: "/", label: { id: "home" }, icon: actionIcon }] };
+
+export const semanticFrame = <SiteFrame {...{ shell, resolveCopy, resolveAsset }} presentation={{ headerPlacement: "overlay", headerTone: "inverse" }}><h1>View content</h1></SiteFrame>;
+export type SemanticFrameEntryParity = [import("./index.js").SiteFramePresentationConfig, import("../index.js").SiteFramePresentationConfig, import("../server.js").SiteFramePresentationConfig];
+// @ts-expect-error mandatory behavior is not a disabling option
+export const noSticky: import("./index.js").SiteFramePresentationConfig = { sticky: false };
+// @ts-expect-error semantic configuration is flat primitive data
+export const nestedPresentation: import("./index.js").SiteFramePresentationConfig = { headerTone: {} };
+
+
+// Frame-only renderer configuration must not become an ignored option on wrappers.
+declare const errorDocumentInput: import("../views/GlobalErrorDocument.js").GlobalErrorDocumentFramedProps;
+// @ts-expect-error GlobalErrorDocument forwards only shell and resolver ports, not presentation
+export const ignoredWrapperPresentation: typeof errorDocumentInput = { ...errorDocumentInput, presentation: {} };

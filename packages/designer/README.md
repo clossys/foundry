@@ -4898,20 +4898,15 @@ prop" shape every block in this README already follows; see `SiteHeader`'s
 own doc comment for why it's `shell`, not `blocks`, despite reading like a
 `PageHeader`-shaped composition of named regions.
 
-`navPlacement` (`"leading"` by default, the markup above) moves the same `nav`
-slot within the row: `"centered"` gives brand, nav, and trailing controls their
-own regions, with the brand and trailing regions growing equally so the nav
-centers on the header, in DOM, visual, and tab order. `secondaryAction` is a
-second trailing slot rendered directly before `actions`, in either placement.
-Both stay one `nav` slot, so the header holds one navigation landmark.
-
-`mobileLayout="menu-brand-action"` puts navigation at inline-start, the brand
-in a shrinkable center column and actions at inline-end below `tablet`.
-The columns mirror in RTL. From `tablet` up, `navPlacement` controls the
-original layout. DOM and tab order remain brand, nav, actions; the default
-`mobileLayout="inline"` keeps the existing markup. Supply a complete logo
-or wordmark in `brand`; the header adds no brand symbol. Give an
-`ActionLink` an `icon` for its existing icon-only mobile presentation.
+`navPlacement="centered"` and `mobileLayout="menu-brand-action"` are the
+shared defaults. Equal side tracks center navigation on the whole header;
+`NavDisclosure` measures intrinsic brand/link/action widths and collapses
+before collision. Mobile centers the supplied mark, with menu at inline-start
+and a supplied primary icon or empty track at inline-end. The layout mirrors
+in RTL. `secondaryAction` renders before `actions` in the trailing region.
+Explicit `navPlacement="leading"` or `mobileLayout="inline"` retain legacy
+positioning rather than the default geometry. DOM order remains brand, nav,
+actions, and the header adds no brand symbol.
 
 ```tsx
 <SiteHeader
@@ -5023,7 +5018,9 @@ glass plate once the page scrolls beneath it. The glass is
 
 The header is fixed rather than absolutely positioned (which would scroll
 away before it could turn to glass) or stuck (which reserves its height in
-flow). That asks this of the page:
+flow). These hosting requirements apply to a standalone header; Publisher
+`SiteFrame` supplies shared header clearance for its main, skip and anchor
+targets. A standalone page supplies the following:
 
 - **The root scrolls.** The fade follows `scroll(root block)`. If the page
   scrolls inside a container instead, the root never scrolls and the header
@@ -5056,12 +5053,16 @@ flow). That asks this of the page:
 
 `NavDisclosure` is the non-modal navigation for `SiteHeader`'s `nav` slot.
 It renders one navigation landmark and one set of links: below `tablet`
-(`48rem`) a Menu button opens a sheet directly under the header; from
+(`768px`) a Menu button opens a sheet directly under the header; from
 `tablet` up the same panel is an inline row and the button hides. The
 server-rendered state is collapsed. With scripting unavailable, CSS shows
 the panel inline and hides the button at every width. The toggle keeps
 focus when activated; Escape while open closes the sheet and returns focus
-to the toggle, and activating an `a[href]` within the panel closes it.
+to the toggle, and activating an `a[href]` within the panel closes it. Closed
+header content is inert after mount and CSS hides it before hydration.
+Equivalent parent renders preserve an open menu; meaningful route changes
+reset it and desktop transitions retain visible focus. Without scripting,
+expanded frame navigation stays in document flow before the View.
 There is no focus trap or portal, and the disclosure has no animation.
 `SiteHeader` supplies the positioned containing block for the mobile sheet.
 Use `NavShell` when the menu needs a modal drawer and managed focus instead;
@@ -5090,7 +5091,7 @@ declares no root (`"."`) export; `src/index.ts` re-exports them only for
 internal tooling and is not an import path.
 The props are `children` (required), `aria-label` (default `"Primary"`),
 `triggerLabel` (default `"Menu"`), `trigger` (`"label"` by default, or
-`"icon"`) and `className` on the landmark. The icon toggle draws three
+`"icon"`) and `className` on the landmark. The icon toggle draws two
 decorative bars in the current ink; `triggerLabel` remains its accessible
 name. Both triggers keep the same tap target, disclosure controls, Escape
 handling and focus return.
@@ -6459,7 +6460,7 @@ not a grab-bag).
 | `SkipLink` | component | Keyboard affordance to bypass nav chrome and jump straight to a page's content. Visually hidden until focused. |
 | `SkipLinkProps` | type | Props for `SkipLink`: `targetId` (the jump target's `id`), `children` (the link's own visible text — no built-in copy), `className`. |
 | `SiteHeader` | component | Public-site top chrome: brand slot, primary navigation slot (leading or centered), secondary action slot, actions slot. Renders the page's `banner` landmark. |
-| `SiteHeaderProps` | type | Props for `SiteHeader`: `brand` (required), `nav`, `navPlacement` (`"leading"` default, or `"centered"`), `mobileLayout` (`"inline"` default, or `"menu-brand-action"`), `secondaryAction`, `actions`, `surfaceLabel` (text-only badge, last in the trailing region), plus every native `<header>` attribute. |
+| `SiteHeaderProps` | type | Props for `SiteHeader`: `brand` (required), `nav`, `navPlacement` (`"centered"` default; explicit `"leading"` retains legacy positioning), `mobileLayout` (`"menu-brand-action"` default; explicit `"inline"` retains legacy positioning), `secondaryAction`, `actions`, `surfaceLabel` (text-only badge, last in the trailing region), plus every native `<header>` attribute. |
 | `NavShell` | component | The responsive half of a public site's navigation: an inline `<nav>` from `tablet` up, a trigger-plus-drawer below it. |
 | `NavDisclosure` | component | A non-modal navigation: a mobile sheet below `tablet`, an inline row from `tablet` up, and inline links when scripting is unavailable. |
 | `NavDisclosureProps` | type | Props for `NavDisclosure`: required `children`, `aria-label` (default `"Primary"`), `triggerLabel` (default `"Menu"`), `trigger` (`"label"` default, or `"icon"`), and landmark `className`. |
