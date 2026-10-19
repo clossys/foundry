@@ -27,7 +27,7 @@
 import { resolve } from "node:path";
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { render } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Avatar } from "../atoms/Avatar.js";
 import { Badge } from "../atoms/Badge.js";
@@ -47,6 +47,7 @@ import { Switch } from "../atoms/Switch.js";
 import { TextField } from "../atoms/TextField.js";
 import { Textarea } from "../atoms/Textarea.js";
 import { Hero } from "../blocks/Hero.js";
+import { AccountMenu } from "../blocks/AccountMenu.js";
 import { Item } from "../blocks/items/Item.js";
 import { Items } from "../blocks/items/Items.js";
 import { Items as NativeItems } from "../blocks/items/Items.server.js";
@@ -96,6 +97,32 @@ function toSelectorText(className: string): string {
 }
 
 describe("coverage: real rendered classes are all present in compiled.css", () => {
+  it("covers AccountMenu portals and keeps keyboard outlines and reduced-motion styling", async () => {
+    const classes = new Set<string>(), user = userEvent.setup();
+    for (const collapsed of [false, true]) {
+      const tree = render(<AccountMenu actor={{ name: "Alex Morgan" }} collapsed={collapsed}
+        sections={[{ id: "prefs", kind: "preferences", label: "Preferences", entries: [
+          { id: "on", kind: "preference", label: "Enabled", checked: true, onCheckedChange() {} },
+          { id: "off", kind: "preference", label: "Disabled preference", checked: false, onCheckedChange() {} },
+        ] }]} />);
+      await user.tab();
+      const trigger = screen.getByRole("button", { name: "Alex Morgan" });
+      await waitFor(() => expect(trigger.style.outlineStyle).toBe("auto"));
+      for (const cls of collectClassNames(document.body)) classes.add(cls);
+      await user.keyboard("{ArrowDown}");
+      const focused = await screen.findByRole("menuitemcheckbox", { name: "Enabled" });
+      expect(focused).toHaveFocus(); expect(focused).toHaveClass("outline"); expect(focused).not.toHaveClass("outline-none");
+      for (const cls of collectClassNames(document.body)) classes.add(cls);
+      tree.unmount();
+    }
+    const scan = scanCompiledCssSources(packageRoot);
+    const generated = await generateCompiledCss({ stylesDir: resolve(packageRoot, "styles"), candidates: scan.candidates });
+    expect([...classes].filter(cls => !generated.css.includes(toSelectorText(cls)))).toEqual([]);
+    // Native auto/current-color outlines survive forced colors without relying on box shadows.
+    expect(generated.css).toMatch(/\.outline\s*\{[^}]*outline-style:\s*var\(--tw-outline-style,\s*solid\)/);
+    expect(generated.css).toContain(".motion-reduce\\:transition-none");
+    expect(generated.css).toContain("prefers-reduced-motion: reduce");
+  }, 30_000);
   it("covers actual ordered tracks and native/React Aria disclosure states", async () => {
     const classes = new Set<string>();
     const user = userEvent.setup();

@@ -3,6 +3,10 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## Unreleased
+
+- Add AccountMenu with expanded/collapsed actor triggers, grouped commands, controlled preferences and host close/route callbacks. Menu.Section provides named groups and section-local checkbox selection.
+
 ## 0.12.0 - 2026-10-16
 
 - Add optional inverse brand and navigation ink, muted eyebrows, wide hero copy, display heading scale, and a transparent footer top rule while preserving default rendering.
