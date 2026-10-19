@@ -6392,6 +6392,8 @@ already owns a main landmark.
 
 ### Host-owned data and behavior
 
+AppFrame and its stateful specimen are explicit `web/client` islands; SiteFrame and the default/server entries retain their hook-free, server-import boundary, with AppFrame exceptions pinned per file and shared contract imports restricted to types.
+
 Supply `brand` with resolved `markSrc`, `wordmark` and accessible `label` strings.
 The label must contain the visible wordmark. The desktop lockup uses an accent
 mark with the wordmark in the surface's natural foreground. At the mobile breakpoint the mark

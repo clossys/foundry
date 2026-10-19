@@ -3,6 +3,7 @@
 import "@testing-library/jest-dom/vitest";
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
+import ts from "typescript";
 import type { ReactElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -602,6 +603,24 @@ function moduleSpecifiers(source: string): string[] {
 }
 
 const FRAME_ALLOWED_IMPORT = /^(react|@clossys\/designer\/[a-z-]+\/server|@clossys\/writer|\.{1,2}\/[A-Za-z./-]+\.js)$/;
+const FRAME_CLIENT_MODULES = [
+  "AppFrame.specimen.tsx", "AppFrame.tsx", "NavDisclosure.boundary.client.tsx",
+  "NavDisclosure.client.tsx", "SkipLink.client.tsx",
+];
+// AppFrame is an explicit web/client composition; SiteFrame's server rules stay unchanged.
+const FRAME_IMPORT_EXCEPTIONS: Readonly<Record<string, readonly string[]>> = {
+  "NavDisclosure.client.tsx": ["@clossys/designer/shell"],
+  "NavDisclosure.boundary.client.tsx": ["#publisher-frame-navigation"],
+  "SiteFrame.tsx": ["#publisher-web-views"],
+  "AppFrame.tsx": ["react-aria-components", "@clossys/designer/atoms", "@clossys/designer/icons", "@clossys/designer/blocks", "@clossys/designer/theme"],
+  "AppFrame.specimen.tsx": ["@clossys/designer/atoms", "@clossys/designer/blocks"],
+  "app-frame-types.ts": ["@clossys/designer/blocks", "@clossys/designer/theme"],
+  "app-frame-layout.ts": ["@clossys/designer/tokens"],
+};
+
+function allowedFrameImport(name: string, specifier: string): boolean {
+  return FRAME_ALLOWED_IMPORT.test(specifier) || (FRAME_IMPORT_EXCEPTIONS[name]?.includes(specifier) ?? false);
+}
 
 function frameSources(): Array<[string, string]> {
   const files: Array<[string, string]> = [];
@@ -615,27 +634,43 @@ function frameSources(): Array<[string, string]> {
 }
 
 describe("module boundaries", () => {
-  it("only the skip-link, navigation implementation and navigation bridge are client modules, and the frame uses no hooks", () => {
+  it("pins the SiteFrame islands and separate AppFrame client composition while SiteFrame uses no hooks", () => {
     const sources = frameSources();
     expect(sources.map(([name]) => name)).toContain("SiteFrame.tsx");
-    expect(sources.filter(([, source]) => source.startsWith('"use client";')).map(([name]) => name).sort()).toEqual(["NavDisclosure.boundary.client.tsx", "NavDisclosure.client.tsx", "SkipLink.client.tsx"]);
+    expect(sources.filter(([, source]) => source.startsWith('"use client";')).map(([name]) => name).sort()).toEqual(FRAME_CLIENT_MODULES);
     for (const [name, source] of sources) {
-      if (name === "SkipLink.client.tsx" || name === "NavDisclosure.client.tsx" || name === "NavDisclosure.boundary.client.tsx") expect(source.startsWith('"use client";')).toBe(true);
+      if (FRAME_CLIENT_MODULES.includes(name)) expect(source.startsWith('"use client";')).toBe(true);
       else expect(source).not.toMatch(/["']use client["']/);
     }
     const frameSource = readFileSync(join(import.meta.dirname, "SiteFrame.tsx"), "utf8");
     expect(frameSource).not.toMatch(/\buse[A-Z][A-Za-z]*\(/);
   });
 
-  it("frame modules retain server imports except the navigation island's Designer disclosure import, with no dynamic import or require", () => {
+  it("retains server imports with exact per-file client exceptions and no dynamic import or require", () => {
     for (const [name, source] of frameSources()) {
       for (const specifier of moduleSpecifiers(source)) {
-        if (name === "NavDisclosure.client.tsx" && specifier === "@clossys/designer/shell") continue;
-        if (name === "NavDisclosure.boundary.client.tsx" && specifier === "#publisher-frame-navigation") continue;
-        if (name === "SiteFrame.tsx" && specifier === "#publisher-web-views") continue;
-        expect(specifier).toMatch(FRAME_ALLOWED_IMPORT);
+        expect(allowedFrameImport(name, specifier), `${name}: ${specifier}`).toBe(true);
       }
       expect(source).not.toMatch(/\bimport\s*\(|\brequire\s*\(/);
+    }
+  });
+
+  it("refuses AppFrame interactive imports in SiteFrame, unnamed modules and its pure helpers", () => {
+    for (const name of ["SiteFrame.tsx", "UnlistedFrame.tsx", "AppFrame.other.tsx", "app-frame-contract.ts", "AppFrameBrand.tsx"]) {
+      for (const specifier of ["react-aria-components", "@clossys/designer/atoms", "@clossys/designer/blocks", "@clossys/designer/theme", "@clossys/designer/tokens"]) {
+        expect(allowedFrameImport(name, specifier), `${name}: ${specifier}`).toBe(false);
+      }
+    }
+    expect(allowedFrameImport("AppFrame.specimen.tsx", "@clossys/designer/theme")).toBe(false);
+    expect(allowedFrameImport("app-frame-layout.ts", "@clossys/designer/atoms")).toBe(false);
+    expect(allowedFrameImport("AppFrame.tsx", "unlisted-dependency")).toBe(false);
+  });
+
+  it("keeps AppFrame's shared contract imports type-only", () => {
+    const source = ts.createSourceFile("app-frame-types.ts", readFileSync(join(import.meta.dirname, "app-frame-types.ts"), "utf8"), ts.ScriptTarget.Latest, true);
+    for (const statement of source.statements) {
+      if (ts.isImportDeclaration(statement)) expect(statement.importClause?.isTypeOnly).toBe(true);
+      if (ts.isExportDeclaration(statement) && statement.moduleSpecifier) expect(statement.isTypeOnly).toBe(true);
     }
   });
 
