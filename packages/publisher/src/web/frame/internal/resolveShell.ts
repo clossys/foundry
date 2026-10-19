@@ -2,12 +2,15 @@ import type { CopyRef, CopyResolver } from "@clossys/writer";
 import type { IconNode } from "@clossys/designer/atoms/server";
 import { isRenderImageAsset } from "../../../internal/assets.js";
 import type { AssetResolver } from "../../types.js";
+import type { SiteFramePresentationConfig } from "../site-frame-contract.js";
+import { HEADER_LINK_LIMIT, HEADER_ACTION_VARIANTS, normalizeSiteFrameActions, normalizeSiteFrameConfig } from "../site-frame-contract.js";
 import { SITE_CHROME_GROUNDS } from "../types.js";
 import type { SiteChromeGround, SiteShellInput } from "../types.js";
 
 export interface ResolvedSiteLink {
   readonly href: string;
   readonly label: string;
+  readonly isCurrent?: boolean;
 }
 
 export interface ResolvedSiteIconLink extends ResolvedSiteLink {
@@ -25,7 +28,8 @@ export interface ResolvedSiteShell {
   };
   readonly skipLink: string;
   readonly nav?: { readonly tone?: "auto" | "inverse"; readonly label: string; readonly triggerLabel: string; readonly trigger: "label" | "icon"; readonly links: readonly ResolvedSiteLink[] };
-  readonly actions: readonly (ResolvedSiteLink & { readonly emphasis: "primary" | "secondary"; readonly icon?: IconNode })[];
+  readonly actions: readonly (ResolvedSiteLink & { readonly emphasis: "primary" | "secondary" | "ghost"; readonly icon?: IconNode })[];
+  readonly headerActions: readonly (ResolvedSiteLink & { readonly emphasis: "primary" | "secondary" | "ghost"; readonly icon?: IconNode })[];
   readonly iconActions: readonly ResolvedSiteIconLink[];
   readonly secondaryAction?: ResolvedSiteLink;
   readonly environments: readonly (ResolvedSiteLink & { readonly icon: IconNode; readonly isCurrent: boolean })[];
@@ -67,6 +71,7 @@ const HEADER_KEYS = new Set(["placement", "ground", "tone"]);
 const BRAND_KEYS = new Set(["assetId", "label", "size", "plate", "variant", "wordmark", "tone"]);
 const NAV_KEYS = new Set(["label", "triggerLabel", "trigger", "links", "tone"]);
 const LINK_KEYS = new Set(["href", "label"]);
+const NAV_LINK_KEYS = new Set(["href", "label", "isCurrent"]);
 const ACTION_KEYS = new Set(["href", "label", "emphasis", "icon"]);
 const ENVIRONMENT_KEYS = new Set(["href", "label", "icon", "isCurrent"]);
 const ICON_LINK_KEYS = new Set(["href", "label", "icon"]);
@@ -238,7 +243,7 @@ function icon(value: unknown, path: string): IconNode {
  * link or a non-image brand asset throws, naming the field and never echoing
  * the value.
  */
-export function resolveShell(input: SiteShellInput, resolveCopy: CopyResolver, resolveAsset: AssetResolver): ResolvedSiteShell {
+export function resolveShell(input: SiteShellInput, resolveCopy: CopyResolver, resolveAsset: AssetResolver, presentation?: SiteFramePresentationConfig): ResolvedSiteShell {
   if (typeof resolveCopy !== "function") fail("resolveCopy must be a function.");
   if (typeof resolveAsset !== "function") fail("resolveAsset must be a function.");
   const shell = record(input, "shell", SHELL_KEYS);
@@ -286,9 +291,16 @@ export function resolveShell(input: SiteShellInput, resolveCopy: CopyResolver, r
       ...(navFields.tone === undefined ? {} : { tone: oneOf(navFields.tone, "shell.nav.tone", ["auto", "inverse"] as const) }),
       triggerLabel: navFields.triggerLabel === undefined ? label : copy(navFields.triggerLabel, "shell.nav.triggerLabel", resolveCopy),
       trigger: navFields.trigger === undefined ? "label" : oneOf(navFields.trigger, "shell.nav.trigger", ["label", "icon"] as const),
-      links: links(navFields.links, "shell.nav.links"),
+      links: list(navFields.links, "shell.nav.links").map((value, index) => {
+        const path = `shell.nav.links[${index}]`;
+        const fields = record(value, path, NAV_LINK_KEYS);
+        if (fields.isCurrent !== undefined && typeof fields.isCurrent !== "boolean") fail(`${path}.isCurrent must be a boolean.`);
+        return { href: href(fields.href, `${path}.href`, base), label: copy(fields.label, `${path}.label`, resolveCopy), ...(fields.isCurrent === true ? { isCurrent: true } : {}) };
+      }),
     };
   }
+
+  if (nav && nav.links.length > HEADER_LINK_LIMIT) fail("shell.nav.links permits at most five links.");
 
   const environments = shell.environments === undefined
     ? []
@@ -356,26 +368,52 @@ export function resolveShell(input: SiteShellInput, resolveCopy: CopyResolver, r
     }
   }
 
-  return {
-    brand,
-    skipLink: copy(shell.skipLink, "shell.skipLink", resolveCopy),
-    ...(nav === undefined ? {} : { nav }),
-    actions: shell.actions === undefined ? [] : list(shell.actions, "shell.actions").map((value, index) => {
+  const declaredVariants: ("primary" | "secondary" | "ghost" | undefined)[] = [];
+  const actions = shell.actions === undefined ? [] : list(shell.actions, "shell.actions").map((value, index) => {
       const path = `shell.actions[${index}]`;
       const fields = record(value, path, ACTION_KEYS);
+      const emphasis = fields.emphasis === undefined ? undefined : oneOf(fields.emphasis, `${path}.emphasis`, HEADER_ACTION_VARIANTS);
+      declaredVariants.push(emphasis);
       return {
         href: href(fields.href, `${path}.href`, base),
         label: copy(fields.label, `${path}.label`, resolveCopy),
         ...(fields.icon === undefined ? {} : { icon: icon(fields.icon, `${path}.icon`) }),
-        emphasis: fields.emphasis === undefined ? "secondary" : oneOf(fields.emphasis, `${path}.emphasis`, ["primary", "secondary"] as const),
+        emphasis: fields.emphasis === undefined ? "secondary" : oneOf(fields.emphasis, `${path}.emphasis`, HEADER_ACTION_VARIANTS),
       };
-    }),
-    iconActions: shell.iconActions === undefined ? [] : iconLinks(shell.iconActions, "shell.iconActions"),
-    ...(shell.secondaryAction === undefined ? {} : { secondaryAction: link(shell.secondaryAction, "shell.secondaryAction") }),
+    });
+  const secondaryAction = shell.secondaryAction === undefined ? undefined : link(shell.secondaryAction, "shell.secondaryAction");
+  const iconActions = shell.iconActions === undefined ? [] : iconLinks(shell.iconActions, "shell.iconActions");
+  const headerActions = normalizeSiteFrameActions([
+    ...(secondaryAction ? [{ ...secondaryAction, emphasis: undefined }] : []),
+    ...actions.map((action, index) => ({ ...action, emphasis: declaredVariants[index] })),
+    ...iconActions.map(action => ({ ...action, emphasis: undefined })),
+    ...environments.map(action => ({ ...action, emphasis: undefined })),
+  ], [
+    ...(secondaryAction ? ["secondary" as const] : []),
+    ...actions.map(() => "secondary" as const),
+    ...iconActions.map(() => "ghost" as const),
+    ...environments.map(() => "secondary" as const),
+  ]);
+  // Renderer and data contract normalize the same dependent presentation inputs.
+  const normalized = normalizeSiteFrameConfig(presentation ?? (header.placement === "overlay"
+    ? { headerPlacement: header.placement, headerTone: header.tone }
+    : { headerPlacement: header.placement, headerGround: header.ground }));
+  header = normalized.headerPlacement === "overlay"
+    ? { placement: "overlay", tone: normalized.headerTone }
+    : { placement: "reserved", ground: normalized.headerGround };
+
+  return {
+    brand,
+    skipLink: copy(shell.skipLink, "shell.skipLink", resolveCopy),
+    ...(nav === undefined ? {} : { nav }),
+    actions,
+    headerActions,
+    iconActions,
+    ...(secondaryAction === undefined ? {} : { secondaryAction }),
     environments,
     ...(shell.surfaceLabel === undefined ? {} : { surfaceLabel: copy(shell.surfaceLabel, "shell.surfaceLabel", resolveCopy) }),
-    navPlacement: shell.navPlacement === undefined ? "leading" : oneOf(shell.navPlacement, "shell.navPlacement", ["leading", "centered"] as const),
-    mobileLayout: shell.mobileLayout === undefined ? "inline" : oneOf(shell.mobileLayout, "shell.mobileLayout", ["inline", "menu-brand-action"] as const),
+    navPlacement: shell.navPlacement === undefined ? "centered" : oneOf(shell.navPlacement, "shell.navPlacement", ["leading", "centered"] as const),
+    mobileLayout: shell.mobileLayout === undefined ? "menu-brand-action" : oneOf(shell.mobileLayout, "shell.mobileLayout", ["inline", "menu-brand-action"] as const),
     ground,
     header,
     ...(footer === undefined ? {} : { footer }),

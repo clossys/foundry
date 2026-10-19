@@ -1,3 +1,4 @@
+import type { SiteFramePresentationConfig } from "./site-frame-contract.js";
 import type { ReactNode } from "react";
 import type { CopyRef, CopyResolver } from "@clossys/writer";
 import type { IconNode } from "@clossys/designer/atoms/server";
@@ -20,7 +21,7 @@ export interface SiteLinkInput {
   readonly href: string;
   readonly label: CopyRef;
   /** Header action look; accepted only in shell.actions. @default "secondary" */
-  readonly emphasis?: "primary" | "secondary";
+  readonly emphasis?: "primary" | "secondary" | "ghost";
   /** Header action glyph; accepted only in shell.actions and validated as SVG shape data. */
   readonly icon?: IconNode;
 }
@@ -105,7 +106,7 @@ export interface SiteShellInput {
     readonly trigger?: "label" | "icon";
     /** Omitted inherits inverse overlay header ink; explicit auto keeps ordinary ink. */
     readonly tone?: "auto" | "inverse";
-    readonly links: readonly PlainSiteLinkInput[];
+    readonly links: readonly (PlainSiteLinkInput & { readonly isCurrent?: boolean })[];
   };
   /** Calls to action at the trailing end of the banner. */
   readonly actions?: readonly SiteLinkInput[];
@@ -144,6 +145,8 @@ export interface SiteFrameInput {
 }
 
 export interface SiteFrameProps extends SiteFrameInput {
+  /** Flat semantic presentation overrides; content remains in shell bindings. */
+  readonly presentation?: SiteFramePresentationConfig;
   /** The page content: one chrome-free view, rendered inside the frame's `<main>`. */
   readonly children: ReactNode;
 }

@@ -2,9 +2,11 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { TOKENS } from "./tokens/tokens.js";
 
 const styles = join(dirname(fileURLToPath(import.meta.url)), "..", "styles");
 const css = readFileSync(join(styles, "theme-keys.css"), "utf8");
+const tabletMedia = `@media (width >= ${TOKENS["--breakpoint-tablet"]!.value})`;
 
 function block(text: string, opening: string): string {
   const start = text.indexOf(opening);
@@ -31,11 +33,11 @@ describe("nav disclosure utilities", () => {
   it("from tablet the panel is an inline row and the toggle hides", () => {
     const panel = block(css, "@utility nav-disclosure-panel {");
     const toggle = block(css, "@utility nav-disclosure-toggle {");
-    const desktop = block(panel, "@media (width >= 48rem)");
+    const desktop = block(panel, tabletMedia);
     expect(desktop).toContain("display: flex;");
     expect(desktop).toContain("position: static;");
     expect(desktop).toContain("flex-direction: row;");
-    expect(block(toggle, "@media (width >= 48rem)")).toContain("display: none;");
+    expect(block(toggle, tabletMedia)).toContain("display: none;");
   });
 
   it("under scripting none the panel shows inline and the toggle hides", () => {
@@ -65,7 +67,7 @@ describe("nav disclosure utilities", () => {
 
   it("the compiled toggle's hiding rules outrank its inline-flex button look", () => {
     const compiled = readFileSync(join(styles, "compiled.css"), "utf8");
-    for (const media of ["@media (width >= 48rem)", "@media (scripting: none)"]) {
+    for (const media of [tabletMedia, "@media (scripting: none)"]) {
       // A same-element attribute raises specificity above .inline-flex,
       // which Tailwind places later than this custom display utility.
       const rules = [...compiled.matchAll(new RegExp(`${media.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")} \\{`, "g"))]
