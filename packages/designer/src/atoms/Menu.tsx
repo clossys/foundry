@@ -121,8 +121,8 @@ function MenuItem({ children, isDestructive = false, className, ...rest }: MenuI
       {...rest}
       className={(renderProps) =>
         cx(
-          "flex cursor-default items-center gap-sm rounded-default px-sm py-xs text-body-s font-body",
-          renderProps.isFocused && !renderProps.isDisabled ? "outline" : "outline-none",
+          "flex cursor-default items-center gap-sm rounded-default px-sm py-xs text-body-s font-body outline-none",
+          renderProps.isFocused && !renderProps.isDisabled ? "forced-colors:outline forced-colors:outline-solid" : "",
           renderProps.isDisabled
             ? "text-ink-muted"
             : isDestructive

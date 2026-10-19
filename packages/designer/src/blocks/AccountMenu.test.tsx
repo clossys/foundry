@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { I18nProvider } from "react-aria-components";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { Menu } from "../atoms/Menu.js";
 import { AccountMenu, type AccountMenuProps } from "./AccountMenu.js";
 
 const actor = { name: "Jordan Vale", secondaryText: "jordan@example.test" };
@@ -40,6 +41,7 @@ it("renders the expanded actor and context with one truthful menu trigger", () =
   expect(trigger()).toHaveAttribute("aria-expanded", "false");
   expect(trigger()).toHaveTextContent(actor.name);
   expect(trigger()).toHaveTextContent("Workspace");
+  expect(screen.queryByRole("img")).not.toBeInTheDocument();
   expect(screen.queryByRole("menu")).not.toBeInTheDocument();
 });
 
@@ -79,11 +81,16 @@ it("renders real labelled groups and links, with distinct destructive emphasis",
   await open();
   expect(screen.getByRole("group", { name: /Account/ })).toBeInTheDocument();
   expect(screen.getByRole("group", { name: "Preferences" })).toBeInTheDocument();
+  for (const text of [actor.name, actor.secondaryText, "Workspace"]) expect(within(screen.getByRole("menu")).getByText(text)).toBeInTheDocument();
   expect(screen.getByRole("menuitem", { name: "Profile" })).toHaveAttribute("href", "/profile");
   const ordinary = screen.getByRole("menuitem", { name: "Settings" });
   const destructive = screen.getByRole("menuitem", { name: "Sign out" });
   expect(destructive).toHaveClass("text-status-danger-text");
   expect(ordinary).not.toHaveClass("text-status-danger-text");
+  expect(screen.getByRole("menuitem", { name: "Profile" })).not.toHaveClass("text-status-danger-text");
+  const preference = screen.getByRole("menuitemcheckbox", { name: "Compact view" });
+  expect(preference).not.toHaveClass("text-status-danger-text");
+  expect(preference.querySelector("svg[aria-hidden=true] path")).toHaveAttribute("d", "M20 6 9 17l-5-5");
   destructive.focus();
   await waitFor(() => expect(destructive).toHaveClass("bg-status-danger-tint"));
   expect(screen.getByRole("menuitemcheckbox", { name: "Compact view" })).toHaveAttribute("aria-checked", "true");
@@ -120,7 +127,9 @@ it("reports preference changes and command activation through host callbacks", a
 
 it("honors triggerLabel, displays an image, and retains the name-derived initials fallback", () => {
   const configured = props();
-  const { rerender } = render(<AccountMenu {...configured} collapsed triggerLabel="Manage account" />);
+  const { rerender } = render(<AccountMenu {...configured} triggerLabel="Manage account" />);
+  expect(trigger()).toHaveAccessibleName(actor.name);
+  rerender(<AccountMenu {...configured} collapsed triggerLabel="Manage account" />);
   expect(screen.getByRole("button", { name: "Manage account" })).toHaveTextContent("JV");
   rerender(<AccountMenu {...configured} actor={{ ...actor, image: "/portrait.png" }} collapsed triggerLabel="Manage account" />);
   const button = screen.getByRole("button", { name: "Manage account" });
@@ -164,7 +173,7 @@ it("omits empty sections alongside populated sections", async () => {
   expect(screen.getAllByRole("menuitemcheckbox")).toHaveLength(1);
 });
 
-function ClosingHost({ route = false }: { route?: boolean }) {
+function ClosingHost({ route = false, hide = false }: { route?: boolean; hide?: boolean }) {
   const [visible, setVisible] = useState(true);
   const destination = useRef<HTMLButtonElement>(null);
   const handoff = () => setVisible(false);
@@ -176,18 +185,18 @@ function ClosingHost({ route = false }: { route?: boolean }) {
   }, [visible]);
   return <>
     <button ref={destination}>Destination</button>
-    {visible && <nav aria-label="Host navigation" onClickCapture={event => { if ((event.target as Element).closest("a")) event.preventDefault(); }}>
+    {(visible || hide) && <nav hidden={!visible} aria-label="Host navigation" onClickCapture={event => { if ((event.target as Element).closest("a")) event.preventDefault(); }}>
       <AccountMenu {...props()} onClose={route ? undefined : handoff} onRoute={route ? handoff : undefined} />
     </nav>}
   </>;
 }
-it.each([false, true])("lets the host remove navigation and hand off focus (route=%s)", async route => {
-  render(<ClosingHost route={route} />);
+it.each([{ route: false, hide: false }, { route: true, hide: false }, { route: false, hide: true }, { route: true, hide: true }])("lets the host remove or hide navigation and hand off focus (%j)", async ({ route, hide }) => {
+  render(<ClosingHost route={route} hide={hide} />);
   const oldTrigger = trigger();
   const user = await open();
   if (route) await user.click(screen.getByRole("menuitem", { name: "Profile" }));
   else await user.keyboard("{Escape}");
-  await waitFor(() => expect(oldTrigger).not.toBeInTheDocument());
+  await waitFor(() => hide ? expect(oldTrigger).not.toBeVisible() : expect(oldTrigger).not.toBeInTheDocument());
   // Wait through React Aria's deferred restoration, not only synchronous callback execution.
   await act(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
   expect(screen.getByRole("button", { name: "Destination" })).toHaveFocus();
@@ -221,4 +230,64 @@ it.each(["en-US", "ar"])("flips above a bottom trigger and respects logical alig
   expect(top, panel.style.cssText).toBeGreaterThanOrEqual(0); expect(top + 200, panel.style.cssText).toBeLessThanOrEqual(768);
   expect(left).toBe(locale === "ar" ? 208 : 400);
   expect(left + 240).toBeLessThanOrEqual(1024);
+});
+
+
+it("leaves later unnamed commands ungrouped instead of repeating the actor", async () => {
+  render(<AccountMenu actor={actor} sections={[
+    { id: "first", entries: [{ id: "one", kind: "action", label: "First", onAction() {} }] },
+    { id: "later", entries: [{ id: "two", kind: "action", label: "Later", onAction() {} }] },
+  ]} />);
+  await open();
+  expect(screen.getAllByRole("group")).toHaveLength(1);
+  expect(screen.getByRole("menuitem", { name: "Later" }).closest("[role=group]")).toBeNull();
+});
+
+it("reports only changed preferences, including the peer select-all callback, with visible check marks", async () => {
+  const unchanged = vi.fn(), changed = vi.fn(), all = vi.fn();
+  const section = Menu.Section;
+  let selectAll: ((keys: "all") => void) | undefined;
+  vi.spyOn(Menu, "Section").mockImplementation(props => {
+    if (props.selectionMode === "multiple") selectAll = props.onSelectionChange;
+    return section(props);
+  });
+  render(<AccountMenu actor={actor} sections={[{ id: "prefs", kind: "preferences", label: "Preferences", entries: [
+    { id: "on", kind: "preference", label: "Already enabled", checked: true, onCheckedChange: unchanged },
+    { id: "off", kind: "preference", label: "Enable this", checked: false, onCheckedChange: changed },
+    { id: "other", kind: "preference", label: "Another", checked: false, onCheckedChange: all },
+  ] }]} />);
+  const user = await open();
+  expect(screen.getByRole("menuitemcheckbox", { name: "Already enabled" }).querySelector("svg path")).toHaveAttribute("d", "M20 6 9 17l-5-5");
+  const off = screen.getByRole("menuitemcheckbox", { name: "Enable this" });
+  expect(off.querySelector("svg")).toBeNull();
+  await user.click(off);
+  expect(changed).toHaveBeenCalledExactlyOnceWith(true);
+  expect(unchanged).not.toHaveBeenCalled(); expect(all).not.toHaveBeenCalled();
+  // Exercise the typed peer callback; native section selection has no select-all key binding.
+  await act(() => selectAll!("all"));
+  expect(all).toHaveBeenCalledExactlyOnceWith(true);
+  expect(unchanged).not.toHaveBeenCalled();
+});
+
+it("passes the activated link entry to its host route observer", async () => {
+  const onRoute = vi.fn(), entry = { id: "profile", kind: "link" as const, label: "Profile", href: "#profile" };
+  render(<AccountMenu actor={actor} sections={[{ id: "account", entries: [entry] }]} onRoute={onRoute} />);
+  const user = await open();
+  await user.click(screen.getByRole("menuitem", { name: "Profile" }));
+  expect(onRoute).toHaveBeenCalledExactlyOnceWith(entry);
+});
+
+it.each(["", " ", "javascript:alert(1)", "data:text/plain,value", "//example.test", "/path\\file", "https://name:pass@example.test", "https://example.test\n"])("rejects unsafe account href %j", href => {
+  expect(() => render(<AccountMenu actor={actor} sections={[{ id: "links", entries: [{ id: "bad", kind: "link", label: "Destination", href }] }]} />)).toThrow(TypeError);
+});
+it.each(["#profile", "/profile", "https://example.test", "http://example.test", "mailto:member@example.test"])("accepts the existing destination contract %s", href => {
+  expect(() => render(<AccountMenu actor={actor} sections={[{ id: "links", entries: [{ id: "ok", kind: "link", label: "Destination", href }] }]} />)).not.toThrow();
+});
+it.each([{ name: "", label: "Settings" }, { name: " ", label: "Settings" }, { name: actor.name, label: "" }, { name: actor.name, label: " " }])("rejects unnamed actor or entry data %j", ({ name, label }) => {
+  expect(() => render(<AccountMenu actor={{ name }} sections={[{ id: "account", entries: [{ id: "settings", kind: "action", label, onAction() {} }] }]} />)).toThrow(TypeError);
+});
+
+it.each(["", " "])("keeps an actor-derived collapsed name for blank triggerLabel %j", triggerLabel => {
+  render(<AccountMenu {...props()} collapsed triggerLabel={triggerLabel} />);
+  expect(trigger()).toHaveAccessibleName(actor.name);
 });

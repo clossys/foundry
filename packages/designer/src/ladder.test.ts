@@ -51,7 +51,7 @@ describe("ui layer dependencies", () => {
     const imports = [...source.matchAll(IMPORT_RE)].map(match => match[1]);
     expect(imports.length).toBeGreaterThan(0);
     expect(imports.filter(specifier => !/^(?:react|\.\/account-menu-types\.js|\.\.\/atoms\/(?:Avatar|Button|Icon|Menu|Tooltip)\.js|\.\.\/icons\/(?:Check|ChevronUp)\.js)$/.test(specifier!))).toEqual([]);
-    expect(source).not.toMatch(/\b(?:localStorage|sessionStorage|fetch)\b/);
+    expect(source).not.toMatch(/\b(?:localStorage|sessionStorage|indexedDB|cookie|fetch)\b/);
   });
   it("atoms do not depend on blocks, shell, or charts", () => {
     expect(violations(atomsDir, ["blocks", "shell", "charts"])).toEqual([]);

@@ -1661,7 +1661,8 @@ behavior. `Menu.Separator` is a visual divider between item groups.
 `aria-label`. Its optional `selectionMode` (`none` or `multiple`), `selectedKeys`,
 `onSelectionChange` and `shouldCloseOnSelect` belong to the section. Multiple
 selection produces `menuitemcheckbox` preferences; the caller owns checked
-values. A focused item retains a current-color outline in forced colors.
+values. Normal hover/focus retains the existing selected surface with no outline;
+a focused, enabled item adds a current-color outline only in forced colors.
 
 
 There is deliberately no `aria-label` prop on `Menu` itself:
@@ -4311,8 +4312,11 @@ A Navigation Material combining Avatar, Button, Icon, Tooltip and Menu. The host
 supplies `actor.name`, optional `secondaryText` and `image`, `contextLabel`, and
 `sections`. Avatar derives fallback initials from the name. Expanded triggers
 show the name and context; collapsed triggers show the avatar, keep an explicit
-accessible name, and expose a tooltip. `triggerLabel` overrides the name used by
-the trigger and tooltip. The open menu also shows the supplied actor details.
+accessible name, and expose a tooltip. A non-empty `triggerLabel` overrides only
+the collapsed trigger and tooltip. Expanded controls retain the visible actor
+name in their accessible name. The open menu shows and truncates long actor
+details within a viewport-bounded panel. Later unnamed command sections use
+separators without repeating the actor as a group name.
 
 Command sections contain `link` (`href`), `action` or `destructive` (`onAction`)
 entries. Preference sections use `kind="preferences"`, a required `label`, and
@@ -4321,6 +4325,11 @@ an `id`, `label` and optional `isDisabled`. Section IDs are unique within the me
 entry IDs are unique within their section. Empty sections are omitted; an empty
 menu renders no trigger or placeholder. Preference changes remain controlled and
 keep the menu open. Links and actions retain ordinary menuitem semantics.
+Empty actor names or entry labels are rejected. Destinations follow Items: an
+anchor, one-origin path, HTTP(S) URL without credentials, or explicit mail link;
+blank, protocol-relative, script/data, control-character and backslash URLs are
+rejected. Images remain host-provided Avatar data. Destructive styling does not
+confirm an action: the host owns confirmation and the final destructive effect.
 
 `onClose` observes a menu close and `onRoute` observes a link activation. A drawer
 host removes or hides its navigation, then focuses its visible opener or route
@@ -4328,7 +4337,8 @@ destination after that update commits; the block does not own the drawer. Normal
 Escape focus return and collision-aware placement use Menu's overlay machinery.
 This is a client component: SSR emits a closed trigger and hydration enables
 interaction. It is not exported from `blocks/server`. Tests cover synthetic
-viewport geometry, emitted motion/forced-color styles, and client hydration;
+viewport geometry, normal and forced-color focus, reduced-motion transitions,
+long actor details, retained hidden-host handoff, and client hydration;
 they do not establish a separate native server or browser-qualification claim.
 
 ### `ConsentBanner`

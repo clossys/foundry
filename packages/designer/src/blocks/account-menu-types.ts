@@ -41,7 +41,7 @@ export interface AccountMenuProps {
   /** Section IDs must be unique within this menu. */
   sections: readonly AccountMenuSection[];
   contextLabel?: string;
-  /** Accessible trigger name and collapsed tooltip; defaults to actor.name. */
+  /** Collapsed trigger name and tooltip only; non-empty overrides actor.name. Expanded labels retain the visible name. */
   triggerLabel?: string;
   /** @default false */
   collapsed?: boolean;

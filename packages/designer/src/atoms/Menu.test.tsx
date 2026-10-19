@@ -177,3 +177,19 @@ it("updates controlled section selection without closing, with keyboard and type
   await user.keyboard("comp");
   expect(screen.getByRole("menuitemcheckbox", { name: "Compact" })).toHaveFocus();
 });
+
+
+it("keeps ordinary Menu hover and keyboard focus free of normal-mode outlines", async () => {
+  render(<BasicMenu />);
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: "Actions" }));
+  const edit = await screen.findByRole("menuitem", { name: "Edit" });
+  await user.hover(edit);
+  expect(edit).toHaveClass("outline-none", "forced-colors:outline", "forced-colors:outline-solid");
+  expect(edit).not.toHaveClass("outline");
+  await user.hover(screen.getByRole("menuitem", { name: "Delete" }));
+  expect(edit).not.toHaveClass("forced-colors:outline");
+  expect(screen.getByRole("menuitem", { name: "Duplicate" })).not.toHaveClass("forced-colors:outline");
+  await user.keyboard("{Home}");
+  expect(edit).toHaveFocus(); expect(edit).toHaveClass("outline-none", "forced-colors:outline");
+});

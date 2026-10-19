@@ -122,7 +122,7 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
       } finally { style.remove(); tree.unmount(); }
     }
   });
-  it("covers AccountMenu portals and keeps keyboard outlines and reduced-motion styling", async () => {
+  it("covers AccountMenu portals with normal rings and forced-colors-only outlines", async () => {
     const classes = new Set<string>(), user = userEvent.setup();
     for (const collapsed of [false, true]) {
       const tree = render(<AccountMenu actor={{ name: "Alex Morgan" }} collapsed={collapsed}
@@ -132,19 +132,32 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
         ] }]} />);
       await user.tab();
       const trigger = screen.getByRole("button", { name: "Alex Morgan" });
-      await waitFor(() => expect(trigger.style.outlineStyle).toBe("auto"));
+      await waitFor(() => expect(trigger).toHaveFocus());
+      expect(trigger.style.outlineStyle).toBe("");
+      expect(trigger.style.boxShadow).not.toBe("");
+      expect(trigger).toHaveClass("forced-colors:focus-visible:outline", "forced-colors:focus-visible:outline-solid");
       for (const cls of collectClassNames(document.body)) classes.add(cls);
       await user.keyboard("{ArrowDown}");
       const focused = await screen.findByRole("menuitemcheckbox", { name: "Enabled" });
-      expect(focused).toHaveFocus(); expect(focused).toHaveClass("outline"); expect(focused).not.toHaveClass("outline-none");
+      expect(focused).toHaveFocus(); expect(focused).toHaveClass("outline-none", "forced-colors:outline", "forced-colors:outline-solid");
+      expect(focused).not.toHaveClass("outline");
       for (const cls of collectClassNames(document.body)) classes.add(cls);
       tree.unmount();
     }
     const scan = scanCompiledCssSources(packageRoot);
     const generated = await generateCompiledCss({ stylesDir: resolve(packageRoot, "styles"), candidates: scan.candidates });
     expect([...classes].filter(cls => !generated.css.includes(toSelectorText(cls)))).toEqual([]);
-    // Native auto/current-color outlines survive forced colors without relying on box shadows.
-    expect(generated.css).toMatch(/\.outline\s*\{[^}]*outline-style:\s*var\(--tw-outline-style,\s*solid\)/);
+    // Both actual rendered outline rules must be nested inside the forced-colors media query.
+    for (const candidate of ["forced-colors:outline", "forced-colors:focus-visible:outline-solid"]) {
+      const offset = generated.css.indexOf(toSelectorText(candidate));
+      const blocks: string[] = [];
+      for (const match of generated.css.slice(0, offset).matchAll(/([^{}]+)\{|\}/g)) {
+        if (match[1]) blocks.push(match[1].trim()); else blocks.pop();
+      }
+      const rule = generated.css.slice(offset, generated.css.indexOf("}", offset));
+      // Tailwind nests the media condition within the candidate selector.
+      expect(blocks.some(block => block.includes("forced-colors: active")) || rule.includes("forced-colors: active")).toBe(true);
+    }
     expect(generated.css).toContain(".motion-reduce\\:transition-none");
     expect(generated.css).toContain("prefers-reduced-motion: reduce");
   }, 30_000);
