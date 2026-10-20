@@ -26,7 +26,7 @@ function freeze<T>(value: T): T {
   }
   return value;
 }
-const revision = "d4db341340d1d7ee1c05afba497b7ce3aac29f8f";
+const revision = "77aa40685e413209299db5041588edb79bbb28e7";
 const measuredAt = "2026-10-20";
 const frame: InstanceBlockBinding["frameBlockRef"] = {
   blockId: "site-frame", role: "frame", medium: "web",
@@ -56,7 +56,7 @@ const sources = {
   "src/web/frame/NavDisclosure.client.tsx": "sha256:c0672b9ccd72bb3c08d0c86e6669ce5b0b0a875e2347a285a5d99a782de53528",
   "src/web/frame/NavDisclosure.server.tsx": "sha256:c82d3e49ebe9cb61f40fc1419097d62b241a0ff3e34df77ae31fa98249b2b14a",
   "src/web/frame/NavDisclosure.boundary.client.tsx": "sha256:7534aa2ae3394632a66ad871b4c298cd4467420b55d74af54ccf23422540655f",
-  "src/web/frame/SiteFrame.tsx": "sha256:2c0143d2e1d5751e002e5d4f96b616ccc8ed712ae263ea95c8c45a3005070875",
+  "src/web/frame/SiteFrame.tsx": "sha256:13e2bd54b59384e20157dd56fbf9f1605a22779f1038d5329850d6d5f0134e2f",
   "src/web/frame/types.ts": "sha256:d659a4c6affe0b60b94317bdaa6bfabfc9c3ad7843f357ec1967913192050c01",
   "src/web/frame/SkipLink.client.tsx": "sha256:4cd4ff41cd290b09f10d6c1079f7fe3ad788c25722c9d023bb740b659148aa01",
   "src/web/frame/internal/resolveShell.ts": "sha256:60eef0b040bc7a4495bc593a64b931c1f823053289407660462286d0641d29b5",
