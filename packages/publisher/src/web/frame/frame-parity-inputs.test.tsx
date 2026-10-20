@@ -13,7 +13,8 @@ import type { SiteShellInput } from "./types.js";
 import { resolveShell } from "./internal/resolveShell.js";
 
 const ref = (id: string) => ({ id });
-const resolveCopy: CopyResolver = ref => ({ ref, text: ref.id, recordId: ref.id, revision: "1", locale: "en", source: { kind: "consumer", reference: "fixture" }, entryId: ref.id });
+const NAV_DEFAULT_COPY: Readonly<Record<string, string>> = { "site-frame.nav.label": "Primary", "site-frame.nav.trigger-label": "Menu" };
+const resolveCopy: CopyResolver = ref => ({ ref, text: NAV_DEFAULT_COPY[ref.id] ?? ref.id, recordId: ref.id, revision: "1", locale: "en", source: { kind: "consumer", reference: "fixture" }, entryId: ref.id });
 const resolveAsset = () => ({ type: "image", src: "/mark.svg", width: 48, height: 48, alt: "Example mark" });
 const brand = { assetId: "mark", label: ref("Example home"), size: "md", variant: "lockup", wordmark: ref("Example") } as const;
 const legal = { entity: ref("Example"), links: [{ href: "/privacy", label: ref("Privacy") }, { href: "/terms", label: ref("Terms") }] };

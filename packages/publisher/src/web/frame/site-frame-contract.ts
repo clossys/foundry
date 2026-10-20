@@ -70,11 +70,19 @@ function freeze<T>(value: T): T {
   if (value && typeof value === "object") { Object.values(value).forEach(freeze); Object.freeze(value); }
   return value;
 }
-/** Existing shared navigation labels, used only when no navigation copy binding was supplied. */
-export const SITE_FRAME_NAV_DEFAULTS = Object.freeze({ label: "Primary", triggerLabel: "Menu", trigger: "label" as const });
+/**
+ * Copy references for the navigation SiteFrame supplies when header actions
+ * exist without `shell.nav`. They resolve through the consumer's own
+ * `resolveCopy`, like every other shell label, and fail closed when unresolved.
+ */
+export const SITE_FRAME_NAV_DEFAULTS = Object.freeze({
+  label: Object.freeze({ id: "site-frame.nav.label" }),
+  triggerLabel: Object.freeze({ id: "site-frame.nav.trigger-label" }),
+  trigger: "label" as const,
+});
 /** Composition references identify exports; they confer no qualification. Pack owns route placement and Instance pairs Frame with View. */
 export const SITE_FRAME_CONTRACT = freeze({
-  identity: "site-frame", role: "frame", revision: 1, medium: "web",
+  identity: "site-frame", role: "frame", revision: 2, medium: "web",
   use: ["persistent public-site chrome surrounding one chrome-free View"],
   avoid: ["route placement", "document bootstrap", "content sections", "application navigation focus bridge"],
   config: SITE_FRAME_CONFIG_SCHEMA,

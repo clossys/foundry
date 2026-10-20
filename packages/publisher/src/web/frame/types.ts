@@ -112,7 +112,15 @@ export interface SiteShellInput {
   readonly brand: SiteBrandInput;
   /** The skip link's words. Its target is always {@link SITE_MAIN_ID}. */
   readonly skipLink: CopyRef;
-  /** Primary navigation in the banner, in a `<nav>` named by `label`. */
+  /**
+   * Primary navigation in the banner, in a `<nav>` named by `label`. When it is
+   * omitted and the header has any action, the frame still renders a menu with
+   * no links and resolves its name and toggle through `resolveCopy` from the
+   * copy references in `SITE_FRAME_CONTRACT.defaults` (`site-frame.nav.label`
+   * and `site-frame.nav.trigger-label`). Unresolved default copy fails closed,
+   * like any other shell label. Supply `nav` (links may be empty) to use other
+   * copy references.
+   */
   readonly nav?: {
     readonly label: CopyRef;
     /** The disclosure toggle copy; defaults to the resolved navigation label. */
