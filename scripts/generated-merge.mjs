@@ -3,7 +3,7 @@
 // A pre-merge hook cannot do this: Git has already cached its commit tree.
 import { execFileSync, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, resolve } from "node:path";
 
@@ -15,8 +15,13 @@ const css = [
 const evidence = "packages/publisher/src/core/web-role-pair-evidence.ts";
 const evidenceTest = "src/core/web-role-pair-evidence.test.tsx";
 const outputs = [...css, evidence];
-const driver = "node scripts/generated-merge.mjs driver %O %A %B %P";
-const alias = "!node scripts/generated-merge.mjs merge";
+const installedCommand = 'node -- "$(git rev-parse --git-common-dir)/generated-merge/runner.mjs"';
+const driver = `${installedCommand} driver %O %A %B %P`;
+const alias = `!${installedCommand} merge`;
+const legacy = new Map([
+  ["merge.foundry-generated.driver", "node scripts/generated-merge.mjs driver %O %A %B %P"],
+  ["alias.merge-generated", "!node scripts/generated-merge.mjs merge"],
+]);
 const git = (...args) => execFileSync("git", args, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
 const configured = key => {
   const result = spawnSync("git", ["config", "--get", key], { encoding: "utf8" });
@@ -55,11 +60,28 @@ function refreshEvidence() {
 function setup() {
   for (const [key, desired] of [["merge.foundry-generated.driver", driver], ["alias.merge-generated", alias]]) {
     const current = configured(key);
-    if (current && current !== desired) throw new Error(`Refusing to replace an existing merge driver or alias (${key}).`);
+    if (current && current !== desired && current !== legacy.get(key)) throw new Error(`Refusing to replace an existing merge driver or alias (${key}).`);
   }
   for (const path of outputs) {
     const attribute = git("check-attr", "merge", "--", path).split(": ").at(-1);
     if (attribute !== "unspecified" && attribute !== "foundry-generated") throw new Error(`Refusing to replace an existing merge attribute for ${path}.`);
+  }
+  const source = readFileSync(new URL(import.meta.url), "utf8");
+  const installed = resolve(git("rev-parse", "--git-common-dir"), "generated-merge/runner.mjs");
+  const previous = existsSync(installed) ? readFileSync(installed, "utf8") : null;
+  const signature = "#!/usr/bin/env node\n// Coordinate the existing generators after Git has completed the source merge.\n";
+  if (previous !== null && !previous.replaceAll("\r\n", "\n").startsWith(signature)) throw new Error("Refusing to replace an existing installed runner unrelated to this setup.");
+  if (previous !== source) {
+    // Install atomically: other worktrees may launch the shared coordinator.
+    mkdirSync(dirname(installed), { recursive: true });
+    const scratch = mkdtempSync(resolve(dirname(installed), "install-"));
+    try {
+      const candidate = resolve(scratch, "runner.mjs");
+      writeFileSync(candidate, source);
+      renameSync(candidate, installed);
+    } finally {
+      rmSync(scratch, { recursive: true, force: true });
+    }
   }
   const attributes = resolve(git("rev-parse", "--git-path", "info/attributes"));
   const before = existsSync(attributes) ? readFileSync(attributes, "utf8") : "";

@@ -11,8 +11,8 @@ const script = join(dirname(fileURLToPath(import.meta.url)), "generated-merge.mj
 const outputs = ["packages/designer/styles/compiled.css", "packages/designer/styles/utilities.css", "packages/publisher/styles/preview.css"];
 const evidence = "packages/publisher/src/core/web-role-pair-evidence.ts";
 const env = { ...process.env, GIT_AUTHOR_NAME: "fixture", GIT_AUTHOR_EMAIL: "fixture@example.invalid", GIT_COMMITTER_NAME: "fixture", GIT_COMMITTER_EMAIL: "fixture@example.invalid", GIT_EDITOR: "true" };
-function fixture(t) {
-  const root = mkdtempSync(join(tmpdir(), "generated-merge-"));
+function fixture(t, prefix = "generated-merge-") {
+  const root = mkdtempSync(join(tmpdir(), prefix));
   t.after(() => rmSync(root, { recursive: true, force: true }));
   mkdirSync(join(root, "scripts"));
   cpSync(script, join(root, "scripts/generated-merge.mjs"));
@@ -141,6 +141,10 @@ test("setup is idempotent and never overwrites existing hooks or merge policy", 
   const attributes = readFileSync(join(f.root, ".git/info/attributes"), "utf8");
   f.setup();
   assert.equal(readFileSync(join(f.root, ".git/info/attributes"), "utf8"), attributes);
+  f.git("config", "merge.foundry-generated.driver", "node scripts/generated-merge.mjs driver %O %A %B %P");
+  f.git("config", "alias.merge-generated", "!node scripts/generated-merge.mjs merge");
+  f.setup();
+  assert.match(f.git("config", "--get", "alias.merge-generated"), /git-common-dir/);
   f.git("config", "merge.foundry-generated.driver", "false");
   assert.throws(() => f.setup(), /existing merge driver/);
 });
@@ -159,15 +163,56 @@ test("source conflicts remain conflicts and are never marked resolved", t => {
 });
 
 test("linked worktrees use the clone-local alias without changing the primary worktree", t => {
-  const f = fixture(t); f.setup();
+  const f = fixture(t, "generated-merge-$`%A ' "); f.setup();
   f.git("switch", "-qc", "feature"); f.write("inputs/feature", "feature\n");
   f.git("add", "."); f.git("commit", "-qm", "feature"); f.git("switch", "main");
   const linked = join(f.root, "linked");
   f.git("worktree", "add", "-qb", "linked", linked, "main");
+  execFileSync("git", ["rm", "scripts/generated-merge.mjs"], { cwd: linked, env, stdio: "pipe" });
+  execFileSync("git", ["commit", "-qm", "branch predates helper"], { cwd: linked, env, stdio: "pipe" });
   execFileSync("git", ["merge-generated", "feature"], { cwd: linked, env, stdio: "pipe" });
   for (const path of outputs) assert.equal(readFileSync(join(linked, path), "utf8"), "base\nfeature\n");
   assert.equal(f.git("diff", "--name-only"), "");
   assert.equal(f.git("branch", "--show-current"), "main");
+});
+
+test("setup preserves an unrelated file at its installation path", t => {
+  const f = fixture(t);
+  const installed = join(f.root, ".git/generated-merge/runner.mjs");
+  mkdirSync(dirname(installed), { recursive: true });
+  writeFileSync(installed, "unrelated local file\n");
+  assert.throws(() => f.setup(), /existing installed runner/);
+  assert.equal(readFileSync(installed, "utf8"), "unrelated local file\n");
+  assert.equal(existsSync(join(f.root, ".git/info/attributes")), false);
+});
+
+test("setup recognizes its own installed runner from a CRLF checkout", t => {
+  const f = fixture(t);
+  const tracked = join(f.root, "scripts/generated-merge.mjs");
+  writeFileSync(tracked, readFileSync(tracked, "utf8").replaceAll("\n", "\r\n"));
+  f.setup();
+  const installed = join(f.root, ".git/generated-merge/runner.mjs");
+  const before = readFileSync(installed, "utf8");
+  f.setup();
+  assert.equal(readFileSync(installed, "utf8"), before);
+});
+
+test("installed coordinator merges branches that predate the tracked helper", t => {
+  const f = fixture(t); f.setup();
+  const base = f.git("rev-parse", "HEAD");
+  f.git("switch", "-qc", "modern", base);
+  f.write("inputs/modern", "modern\n");
+  for (const path of outputs) f.write(path, "base\nmodern\n");
+  f.git("add", "."); f.git("commit", "-qm", "modern input");
+  f.git("switch", "-qc", "legacy", base);
+  f.git("rm", "scripts/generated-merge.mjs");
+  f.write("inputs/legacy", "legacy\n");
+  for (const path of outputs) f.write(path, "base\nlegacy\n");
+  f.git("add", "."); f.git("commit", "-qm", "legacy input without helper");
+  f.git("merge-generated", "modern");
+  for (const path of outputs) assert.equal(readFileSync(join(f.root, path), "utf8"), "base\nlegacy\nmodern\n");
+  assert.equal(existsSync(join(f.root, "scripts/generated-merge.mjs")), false);
+  assert.equal(f.git("status", "--porcelain"), "");
 });
 
 test("plain Git merge cannot silently accept provisional generated conflicts", t => {

@@ -26,8 +26,11 @@ declarations.
 Setup installs a clone-local Git merge driver and `merge-generated` alias;
 cloud bootstrap installs the same setup. Existing clones can run
 `npm run setup:generated-merge` once. It preserves existing hooks and refuses
-to replace another merge driver, alias or attribute rule. Configuration is
-shared by linked worktrees; use branches containing the merge script.
+to replace another merge driver, alias or attribute rule. Configuration and
+an installed copy of the coordinator live in Git's common directory, shared
+by linked worktrees. The alias therefore also works on branches that predate
+the tracked script. Rerun setup from current `main` after tooling updates;
+do not downgrade it by running setup from an older branch.
 
 After installing dependencies and building the workspaces, use:
 
@@ -36,7 +39,8 @@ git fetch origin main
 git merge-generated origin/main
 ```
 
-`npm run merge:generated -- origin/main` is the equivalent command. Start
+On branches containing the script, `npm run merge:generated -- origin/main`
+is the equivalent command. Start
 with a clean index and worktree. The command performs an ordinary, non-fast-forward
 merge without committing, then runs the existing Designer compiled-CSS and
 Publisher preview-CSS generators and stages only their three outputs. It
