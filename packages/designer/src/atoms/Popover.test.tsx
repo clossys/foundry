@@ -19,6 +19,17 @@ describe("Popover", () => {
     expect(screen.queryByText("Filter controls here.")).not.toBeInTheDocument();
   });
 
+  it("exposes the supplied accessible dialog name", async () => {
+    const user = userEvent.setup();
+    render(
+      <Popover trigger={<Button>Filters</Button>} aria-label="Filter options">
+        <p>Filter controls here.</p>
+      </Popover>,
+    );
+    await user.click(screen.getByRole("button", { name: "Filters" }));
+    expect(await screen.findByRole("dialog", { name: "Filter options" })).toBeInTheDocument();
+  });
+
   it("opens on trigger press", async () => {
     const user = userEvent.setup();
     render(
