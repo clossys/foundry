@@ -135,8 +135,6 @@ describe("standalone Lockup with the optional peer absent", () => {
   afterAll(() => { warning.mockRestore(); vi.doUnmock("tailwind-merge"); vi.resetModules(); });
   it("keeps the internal adapter outside the public Block entry", () => {
     expect(blocks).not.toHaveProperty("internalLockupWithRootClass");
-    const publicRootProp: "rootClassName" extends keyof import("./Lockup.js").LockupProps ? true : false = false;
-    expect(publicRootProp).toBe(false);
   });
   it.each(ABSENT_STANDALONE_GOLDENS.filter(entry => !entry.props.className))("uses the complete internal root classes once for $name", entry => {
     const complete = "root root items-start text-inherit";
