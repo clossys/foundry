@@ -47,6 +47,23 @@ describe("data-readable SiteFrame contract", () => {
   });
 });
 
+it("publishes navigation defaults as copy references, not audience text", () => {
+  // Revision 1 published string labels here; copy references are an incompatible shape.
+  expect(SITE_FRAME_CONTRACT.revision).toBe(2);
+  expect(SITE_FRAME_CONTRACT.defaults).toEqual({
+    label: { id: "site-frame.nav.label" },
+    triggerLabel: { id: "site-frame.nav.trigger-label" },
+    trigger: "label",
+  });
+  expect(Object.isFrozen(SITE_FRAME_CONTRACT.defaults.label)).toBe(true);
+  expect(Object.isFrozen(SITE_FRAME_CONTRACT.defaults.triggerLabel)).toBe(true);
+  for (const [key, value] of Object.entries(SITE_FRAME_CONTRACT.defaults)) {
+    if (key === "trigger") continue;
+    expect(typeof value, key).toBe("object");
+  }
+  expect(JSON.stringify(SITE_FRAME_CONTRACT.defaults)).not.toMatch(/"Primary"|"Menu"/);
+});
+
 it("enforces primary content dependencies through the real exported normalizer", () => {
   const icon = [["path", { d: "M0 0h12" }]] as const;
   expect(SITE_FRAME_CONTRACT.defaults).toBe(SITE_FRAME_NAV_DEFAULTS);

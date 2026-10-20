@@ -6107,6 +6107,61 @@ photographs retain their source pixels. Existing image/video registry contracts
 continue to govern those registered assets.
 
 
+## Instances and Packs
+
+Publisher/core exports `InstanceRecord`, `InstanceBlockRef`, `PackRecord`,
+`InstanceRecordOptions`, `InstanceRecordReason` and `InstanceRecordValidationResult`.
+An Instance names one page and binds two plain `{ blockId, configId }` references.
+`path` is optional catalog metadata; it is not a router registration. `surface`
+is site or app, and the context medium is web. This data format does not carry
+recorded, pending or not-recorded measurement status.
+
+`INSTANCE_FRAME_BLOCK_IDS` and `InstanceFrameBlockId` define the current closed
+Frame set: SiteFrame and AppFrame. Consumers extend Views and Blocks, rather than
+Frames. `INSTANCE_VIEW_BLOCK_IDS` and `InstanceViewBlockId` name the built-in Views;
+pass explicit `customViewIds` to `validateInstanceRecord` or
+`validateInstanceRecords` for additional View names. `INSTANCE_SITE_SURFACE_KINDS`
+and `InstanceSiteSurfaceKind` mirror the web adapter's site, front-door, admin
+and demo kinds without a core-to-web dependency. AuthView Instances use SiteFrame's
+front-door, admin or demo configuration on the site surface; other site Views
+use site. App Instances use AppFrame with a non-AuthView View. Knowing a Frame name does not establish availability,
+export compatibility or qualification; the Standard website Pack uses SiteFrame.
+
+`standard.<name>` Instances omit consumer, brand and `uses`. Custom Instance IDs
+use `<consumer>.<name>`, match `context.consumer`, and require a nonblank brand.
+A custom `uses: "standard.<name>"` identifies the Standard Instance it adopts or
+overrides. `validateInstanceRecord` checks shape and pairing;
+`validatePackRecord` checks a Pack record's shape. `validateInstanceRecords`
+checks uniqueness, resolves `uses` to a Standard record of the same surface,
+and verifies membership in both directions between `packIds` and `instanceIds`.
+Refusals expose a stable reason and field path without echoing host values.
+
+`STANDARD_WEBSITE_INSTANCES` and `STANDARD_WEBSITE_PACK` provide the deeply frozen
+`pack.standard-website`: home (LandingView), about (MarketingView), contact
+(ContactView), terms and privacy (LegalView), sign-in (AuthView), and not-found
+and error (StatusView). Sign-in declares default, submit-error and
+provider-unavailable View states and uses the front-door frame; the other pages
+use site. Not-found and error carry no catalog path. The Standard records contain
+no consumer or brand. An app Pack is outside this offering's current scope.
+
+PackRecord is not PackManifest: these records describe catalog membership and
+page bindings, and confer no rendering, measured evidence or qualification.
+Foundry owns the Standard offering; consumers own custom extensions.
+
+```ts
+import {
+  STANDARD_WEBSITE_INSTANCES,
+  STANDARD_WEBSITE_PACK,
+  validateInstanceRecords,
+} from "@clossys/publisher/core";
+
+const result = validateInstanceRecords(
+  STANDARD_WEBSITE_INSTANCES,
+  [STANDARD_WEBSITE_PACK],
+);
+if (result.status === "refused") console.error(result.reason, result.path);
+```
+
 ## Consumer-owned content
 
 Consumer repositories own their brand art, illustrations, photographs and
@@ -6333,8 +6388,14 @@ use unoccupied variants in that order; primary requires resolved nonblank copy
 and supplied validated SVG icon data. `normalizeSiteFrameActions` accepts
 already-resolved label/href/IconNode content; `resolveShell` owns copy, URL and
 SVG allowlist validation before that helper. No primary means an empty,
-noninteractive right track. Actions without navigation reuse existing shared
-`Primary`/`Menu` labels; no minimum link count or invented brand copy is needed.
+noninteractive right track. Actions without navigation get a menu with no links,
+named through the consumer's own `resolveCopy` from the copy references in
+`SITE_FRAME_CONTRACT.defaults`: `site-frame.nav.label` names the navigation and
+`site-frame.nav.trigger-label` labels its toggle. The frame ships no audience
+text for them, and an unresolved default fails closed like any other shell copy.
+The contract is at `revision` 2; revision 1 published these defaults as strings.
+Supply `shell.nav` (links may be empty) to name the menu with other copy; no
+minimum link count or invented brand copy is needed.
 All full labels appear in the panel after links as text only, primary then
 secondary then ghost. Only the default mobile primary affordance has a second
 copy, an icon-only ghost action in the mobile bar.

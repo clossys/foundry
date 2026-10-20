@@ -48,7 +48,7 @@ export function SectionFrame({
     <section
       {...rest}
       {...{ [SECTION_FRAME_DATA_ATTR]: "" }}
-      className={cx(colors.surface, "py-lg", className)}
+      className={cx(colors.surface, colors.primary, "py-lg", className)}
       style={style}
     >
       <div

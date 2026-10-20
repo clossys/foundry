@@ -614,8 +614,14 @@
 }
 
 /* Responsive navigation shares one panel across the sheet, inline row and
-   no-scripting fallback. SiteHeader supplies its positioned containing block. */
+   no-scripting fallback. SiteHeader supplies its positioned containing block.
+   The sheet's motion reads these tokens from script: it slides down by the
+   shift and fades in, and reverses on close while data-present keeps it
+   painted. Reduced motion zeroes the duration, so the sheet switches at once. */
 @utility nav-disclosure-panel {
+  --site-header-panel-duration: var(--ui-duration-default, 240ms);
+  --site-header-panel-ease: var(--ease-default, cubic-bezier(.2, 0, 0, 1));
+  --site-header-panel-shift: calc(-1 * var(--spacing-sm, 8px));
   display: none;
   position: absolute;
   inset-block-start: 100%;
@@ -627,7 +633,8 @@
   background-color: var(--color-overlay-surface, oklch(1 0 0));
   color: var(--color-ink-primary, oklch(0.2178 0 0));
   border-block-end: var(--ui-border-hairline, 1px) solid var(--color-overlay-border, oklch(0.8761 0 0));
-  &[data-expanded] { display: flex; }
+  &[data-expanded], &[data-present] { display: flex; }
+  @media (prefers-reduced-motion: reduce) { --site-header-panel-duration: 0s; }
   @media (width >= 768px) {
     display: flex;
     position: static;
@@ -650,7 +657,6 @@
 @utility nav-disclosure-icon {
   &[data-open] > span:first-child { transform: translateY(calc((var(--spacing-xs, 4px) + var(--ui-border-hairline, 1px)) / 2)) rotate(45deg); }
   &[data-open] > span:last-child { transform: translateY(calc((var(--spacing-xs, 4px) + var(--ui-border-hairline, 1px)) / -2)) rotate(-45deg); }
-  @media (prefers-reduced-motion: reduce) { & > span { transition: none; } }
   display: inline-flex;
   flex-direction: column;
   gap: var(--spacing-xs, 4px);
@@ -660,7 +666,9 @@
     inline-size: 100%;
     block-size: var(--ui-border-hairline, 1px);
     background-color: currentColor;
+    transition: transform var(--ui-duration-default, 240ms) var(--ease-default, cubic-bezier(.2, 0, 0, 1));
   }
+  @media (prefers-reduced-motion: reduce) { & > span { transition: none; } }
 }
 @utility nav-disclosure-toggle {
   &[aria-label] { font-size: 0; }
@@ -732,12 +740,13 @@
     & .site-header-actions > a > span { @apply sr-only; }
     & .nav-disclosure-toggle { display: inline-flex; }
     & .nav-disclosure-panel { display: none; position: absolute; inset-block-start: 100%; inset-inline: 0; max-block-size: calc(100dvb - var(--site-header-clearance, calc(max(var(--ui-layout-tap-target, 44px), var(--ui-brandmark-height-lg, 48px)) + 2 * var(--spacing-sm, 8px) + var(--ui-border-hairline, 1px) + env(safe-area-inset-top, 0px))) - env(safe-area-inset-bottom, 0px)); overflow-y: auto; overscroll-behavior: contain; padding-block: var(--spacing-md, 12px) max(var(--spacing-md, 12px), env(safe-area-inset-bottom, 0px)); padding-inline: max(var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px)), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px)); background-color: var(--color-overlay-surface, oklch(1 0 0)); color: var(--color-ink-primary, oklch(0.2178 0 0)); border-block-end: var(--ui-border-hairline, 1px) solid var(--color-overlay-border, oklch(0.8761 0 0)); }
-    & .nav-disclosure-panel[data-expanded] { display: flex; flex-direction: column; }
+    & .nav-disclosure-panel[data-expanded], & .nav-disclosure-panel[data-present] { display: flex; flex-direction: column; }
     & .site-header-nav-links, & .site-header-desktop-actions { flex-direction: column; align-items: stretch; white-space: normal; overflow-wrap: anywhere; }
 }
 @utility site-header-contract {
   & .nav-disclosure-toggle:not([aria-label]) { position: relative; font-size: 0; }
-  & .nav-disclosure-toggle:not([aria-label])::before, & .nav-disclosure-toggle:not([aria-label])::after { content: ""; position: absolute; inset-inline-start: 50%; inset-block-start: 50%; inline-size: var(--ui-icon-md, 24px); block-size: var(--ui-border-hairline, 1px); margin-inline-start: calc(var(--ui-icon-md, 24px) / -2); background-color: currentColor; }
+  & .nav-disclosure-toggle:not([aria-label])::before, & .nav-disclosure-toggle:not([aria-label])::after { content: ""; position: absolute; inset-inline-start: 50%; inset-block-start: 50%; inline-size: var(--ui-icon-md, 24px); block-size: var(--ui-border-hairline, 1px); margin-inline-start: calc(var(--ui-icon-md, 24px) / -2); background-color: currentColor; transition: transform var(--ui-duration-default, 240ms) var(--ease-default, cubic-bezier(.2, 0, 0, 1)); }
+  @media (prefers-reduced-motion: reduce) { & .nav-disclosure-toggle:not([aria-label])::before, & .nav-disclosure-toggle:not([aria-label])::after { transition: none; } }
   & .nav-disclosure-toggle:not([aria-label])::before { transform: translateY(calc(var(--spacing-xs, 4px) / -2)); }
   & .nav-disclosure-toggle:not([aria-label])::after { transform: translateY(calc(var(--spacing-xs, 4px) / 2)); }
   & .nav-disclosure-toggle:not([aria-label])[aria-expanded="true"]::before { transform: rotate(45deg); }
@@ -755,6 +764,10 @@
   @media (width < 768px) {
     &[data-header-root] { @apply site-header-mobile; }
   }
+  /* While NavDisclosure measures, each region takes its natural one-line
+     width, so many links, many actions or long labels are counted unwrapped. */
+  &[data-measuring] .site-header-brand, &[data-measuring] .site-header-nav-links, &[data-measuring] .site-header-desktop-actions, &[data-measuring] .site-header-actions { inline-size: max-content; max-inline-size: none; flex-shrink: 0; flex-wrap: nowrap; white-space: nowrap; }
+  &[data-measuring] .site-header-nav-links > li, &[data-measuring] .site-header-desktop-actions > li, &[data-measuring] .site-header-brand > a, &[data-measuring] .site-header-nav-links a, &[data-measuring] .site-header-desktop-actions a, &[data-measuring] .site-header-actions > * { inline-size: max-content; max-inline-size: none; flex-shrink: 0; white-space: nowrap; }
   @media (scripting: none) {
     &:has(.nav-disclosure-panel) .site-header-row { display: flex; flex-wrap: wrap; }
     &:has(.nav-disclosure-panel) nav { inline-size: 100%; }

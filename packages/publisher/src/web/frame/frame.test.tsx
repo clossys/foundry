@@ -33,6 +33,8 @@ const COPY: Readonly<Record<string, string>> = {
   "brand.label": "Example home",
   "skip": "Skip to content",
   "nav.label": "Primary",
+  "site-frame.nav.label": "Primary",
+  "site-frame.nav.trigger-label": "Menu",
   "nav.pricing": "Pricing",
   "nav.docs": "Docs",
   "cta.start": "Get started",
@@ -1099,6 +1101,45 @@ it("HEADER-1 normalizes implicit legacy controls into distinct finite variants, 
   expect(container.querySelectorAll('header a[href="/docs"]')).toHaveLength(2);
   expect(container.querySelector('header nav')).toHaveAttribute("aria-label", "Primary");
   expect(container.querySelector('header button')).toHaveTextContent("Menu");
+});
+
+describe("HEADER-1 navigation defaults resolve through the consumer's copy", () => {
+  const base: SiteShellInput = { brand: CONFIG.brand, skipLink: ref("skip") };
+  const link = { href: "/docs", label: ref("nav.docs") };
+  const LOCALIZED: Readonly<Record<string, string>> = { "site-frame.nav.label": "Navegación", "site-frame.nav.trigger-label": "Menú" };
+  const localized = (requested: string[]): CopyResolver => (copyRef) => {
+    requested.push(copyRef.id);
+    const text = LOCALIZED[copyRef.id];
+    return text === undefined ? resolveCopy(copyRef) : { ...resolveCopy(ref("skip"))!, ref: copyRef, text, entryId: copyRef.id, recordId: `record-${copyRef.id}` };
+  };
+
+  it("names the fallback navigation and its toggle from the default copy references", () => {
+    const requested: string[] = [];
+    const resolved = resolveShell({ ...base, actions: [link] }, localized(requested), resolveAsset);
+    expect(resolved.nav).toEqual({ label: "Navegación", triggerLabel: "Menú", trigger: "label", links: [] });
+    expect(requested).toEqual(expect.arrayContaining(["site-frame.nav.label", "site-frame.nav.trigger-label"]));
+    const { container } = render(<SiteFrame shell={{ ...base, actions: [link] }} resolveCopy={localized([])} resolveAsset={resolveAsset}><p>Content</p></SiteFrame>);
+    const header = container.querySelector("header")!;
+    expect(within(header).getByRole("navigation", { name: "Navegación" })).toBeInTheDocument();
+    expect(within(header).getByRole("button", { name: "Menú" })).toHaveTextContent("Menú");
+    expect(header.textContent).not.toMatch(/Primary|Menu\b/);
+  });
+
+  it("fails closed, naming the default copy id, when the consumer cannot resolve it", () => {
+    const missingLabel: CopyResolver = (copyRef) => (copyRef.id.startsWith("site-frame.") ? undefined : resolveCopy(copyRef));
+    const missingTrigger: CopyResolver = (copyRef) => (copyRef.id === "site-frame.nav.trigger-label" ? undefined : localized([])(copyRef));
+    expect(() => resolveShell({ ...base, actions: [link] }, missingLabel, resolveAsset)).toThrow(/SiteFrame: .*site-frame\.nav\.label.* did not resolve to copy/);
+    expect(() => resolveShell({ ...base, actions: [link] }, missingTrigger, resolveAsset)).toThrow(/SiteFrame: .*site-frame\.nav\.trigger-label.* did not resolve to copy/);
+  });
+
+  it("asks for no default copy when the shell supplies navigation or has no header actions", () => {
+    for (const shell of [base, { ...base, nav: { label: ref("nav.label"), links: [] }, actions: [link] }] as SiteShellInput[]) {
+      const requested: string[] = [];
+      resolveShell(shell, localized(requested), resolveAsset);
+      expect(requested.filter(id => id.startsWith("site-frame."))).toEqual([]);
+    }
+    expect(resolveShell(base, localized([]), resolveAsset).nav).toBeUndefined();
+  });
 });
 
 it("HEADER-1 composes an optional real host notice and returns focus to the live menu opener", async () => {
