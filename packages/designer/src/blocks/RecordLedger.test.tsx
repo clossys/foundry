@@ -98,7 +98,9 @@ it("keeps a middle flag on the logical start edge and retains the row hairline c
 it("uses ledger-only inverse label ink while preserving the status glyph's tone and shape", () => {
   const { container } = render(<RecordLedger id="inverse" form="record" ground="inverse" head={{ title: "Record", status: { tone: "danger", label: "Overdue" } }} groups={[{ id: "rows", label: "Rows", rows: [{ id: "danger", label: "Check", status: { tone: "danger", label: "Needs review" } }] }]} caption="Sample data." />);
   for (const status of container.querySelectorAll('[data-tone="danger"]')) {
-    expect(status).toHaveStyle({ color: "var(--color-ink-on-inverse, oklch(0.9702 0 0))" });
+    expect(status).not.toHaveAttribute("style");
+    expect(status).toHaveClass("text-status-danger-text");
+    expect(status.querySelector(":scope > span > span")).toHaveClass("text-ink-on-inverse");
     expect(status.querySelector('[data-part="mark"]')).toHaveClass("fill-status-danger");
     expect(status.querySelector('[data-part="mark"]')).toHaveAttribute("data-shape", "diamond");
   }

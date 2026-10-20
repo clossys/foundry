@@ -2442,6 +2442,21 @@ imports an atom — their regions are consumer-supplied slots. A block never
 reaches outside this package for data or routing — everything it needs
 comes in through props, same as an atom.
 
+### Both themes are required
+
+Every exported Block must work in light and dark. There is no per-Block
+theme-support flag. Use token-backed color utilities so the container's
+theme and ground select the colors. When a section should look dark on a
+light page, place it in a locally dark container, such as `SectionFrame`
+with `ground="inverse"`; that context belongs to the container.
+
+The Block theme-conformance test checks the real export inventory, Block
+render helpers, token values in both dark cascades and light, and registered
+contrast pairs. `Panel` and `Toolbar` have documented, foreground-free
+contrast exemptions; their source and token checks still apply, and the
+exemption list can only shrink. Caller-supplied slots own their content's
+contrast obligations.
+
 ### Slots, not a `mode`/`variant` prop
 
 Neither block below takes a `variant` or `mode` prop for structural
