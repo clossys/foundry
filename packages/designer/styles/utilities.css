@@ -214,8 +214,8 @@
 @source inline("hover:bg-status-danger-text hover:bg-surface-base hover:bg-surface-inverse hover:bg-surface-raised");
 @source inline("hover:bg-surface-selected hover:bg-surface-sunken hover:border-ink-on-inverse-muted");
 @source inline("hover:border-line-strong hover:decoration-current hover:no-underline hover:ring-2");
-@source inline("hover:text-ink-on-inverse hover:text-ink-secondary hover:underline how hr href href: htmlFor http");
-@source inline("http: http://www.w3.org/2000/svg https https: hub hydration hysteresis. i icon icon-control-md");
+@source inline("hover:text-ink-on-inverse hover:text-ink-secondary hover:underline how hr href htmlFor http http:");
+@source inline("http://www.w3.org/2000/svg https https: hub hydration hysteresis. i icon icon-control-md");
 @source inline("icon-control-sm icon. icon: iconButtonClassName icons id id. id: idFor: identical. identifiers");
 @source inline("identity identity. ids ids. if iff iframe ignorePunctuation image image. imageSide img");
 @source inline("implementation implementations import importing in incidence include included included/excluded");

@@ -197,7 +197,7 @@ export function Brandmark(props: BrandmarkProps) {
           presentation={props.presentation === "responsive" ? "desktop" : props.presentation} geometry={props.geometry} />;
     const mobile = <Logomark src={markSrc} size={size} geometry={props.geometry}
       presentation={props.presentation === "responsive" ? "mobile" : props.presentation} />;
-    return <a href="/" aria-label={label} className={linkClasses}>
+    return <a href={href} aria-label={label} className={linkClasses}>
       {props.presentation === "responsive"
         ? <><span className="hidden desktop:block">{desktop}</span><span data-brand-mark="" className="inline-flex desktop:hidden">{mobile}</span></>
         : props.presentation === "mobile" ? mobile : desktop}
@@ -206,11 +206,11 @@ export function Brandmark(props: BrandmarkProps) {
 
   if (markInk !== "accent") {
     if (showWordmark) {
-      return internalLockupWithRootClass({ as: "a", href: "/", "aria-label": label, src: markSrc, size,
+      return internalLockupWithRootClass({ as: "a", href, "aria-label": label, src: markSrc, size,
         wordmark, plate, tone }, linkClasses);
     }
     return (
-      <a href="/" aria-label={label} className={linkClasses}>
+      <a href={href} aria-label={label} className={linkClasses}>
         <Logomark src={markSrc} size={size} plate={plate} />
       </a>
     );

@@ -237,6 +237,22 @@ describe("Brandmark: optional public origin", () => {
   });
 });
 
+describe("Brandmark: validated origin across every home-link slot", () => {
+  it.each([
+    ["accent", { ...props("lockup", "md"), markInk: "accent" }],
+    ["explicit presentation", { ...props("lockup", "md"), presentation: "responsive", geometry: fixtureGeometry(PRESENTATION_MARKS[0]) }],
+    ["legacy image lockup", props("lockup", "md")],
+    ["legacy mark only", props("mark", "md")],
+  ] as const)("forwards the validated origin in the %s slot", (_slot, attributes) => {
+    const markup = renderToStaticMarkup(<Brandmark {...attributes} origin="HTTPS://EXAMPLE.COM:8443/" />);
+    const document = new DOMParser().parseFromString(markup, "text/html");
+    expect(document.querySelectorAll("a")).toHaveLength(1);
+    expect(document.querySelector("a")!.getAttribute("href")).toBe("https://example.com:8443/");
+    expect(() => renderToStaticMarkup(<Brandmark {...attributes} origin="https://example.com/path" />))
+      .toThrow("Brandmark: `origin` must be an https origin, or an http origin on a loopback host.");
+  });
+});
+
 describe("Brandmark: token wiring", () => {
   const varNameRe = /var\(\s*(--[a-zA-Z0-9-]+)/g;
 
