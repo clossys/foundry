@@ -192,7 +192,7 @@ Token dependency coverage: partial. Representative consumed dependencies only; t
 - Content: Give each tab a distinct label and match it to the corresponding panel identity.
 - Anatomy: A repeated set of tab labels and one associated panel per label.
 - Block composition example: In a consumer-owned account-details block, compose Tabs.List, multiple Tabs.Tab items and matched Tabs.Panel content.
-- Accessibility: Preserve tab-panel IDs and keyboard selection; forwarded orientation does not implement a visual vertical layout.
+- Accessibility: Preserve tab-panel IDs and keyboard selection; orientation aligns the list layout, indicator edge and keyboard navigation.
 - Demonstration coverage: unassessed. Consumer-owned fixtures and interaction evidence have not been assessed here. A supported package option is not proof of a working catalog demonstration.
 
 | Medium | State | Reason and evidence |
@@ -202,12 +202,12 @@ Token dependency coverage: partial. Representative consumed dependencies only; t
 | print | unassessed | No print renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 | video | unassessed | No video renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 
-Web implementation: `@clossys/designer/atoms` → `Tabs`. Source: `src/atoms/Tabs.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. The root forwards orientation to AriaTabs, but the list has a fixed flex row and bottom border. A single-option specimen cannot prove panel switching.
+Web implementation: `@clossys/designer/atoms` → `Tabs`. Source: `src/atoms/Tabs.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Orientation sets the list to a row with bottom indicators or a column with start-edge indicators and forwards matching semantics to AriaTabs. A single-option specimen cannot prove panel switching.
 
 | Prop | Selection guidance | Package default | Applicability and support |
 | --- | --- | --- | --- |
 | `isDisabled` — Availability | `false`: Enabled interaction.<br>`true`: Disabled interaction. | peer: No local initializer; any inherited default belongs to the installed peer. | Effective for this component when supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/atoms/Tabs.tsx`: `AriaTabs` |
-| `orientation` — ARIA orientation | `horizontal`: Horizontal keyboard semantics.<br>`vertical`: Vertical keyboard semantics. | peer: No local initializer; any inherited default belongs to the installed peer. | ARIA and keyboard forwarding only; do not claim matching visual orientation. partial: Forwarded to the ARIA primitive, but fixed layout classes do not implement visual orientation. Evidence: `src/atoms/Tabs.tsx`: `<AriaTabs {...rest}` |
+| `orientation` — ARIA orientation | `horizontal`: Horizontal list with bottom indicators and keyboard semantics.<br>`vertical`: Vertical list with start-edge indicators and keyboard semantics. | peer: No local initializer; any inherited default belongs to the installed peer. | Layout and keyboard semantics follow the supplied orientation. implemented: The component uses orientation for layout and forwards it to the ARIA primitive. Evidence: `src/atoms/Tabs.tsx`: `<AriaTabs {...rest}` |
 
 
 Token dependency coverage: partial. Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.
@@ -465,7 +465,7 @@ Token dependency coverage: partial. Representative consumed dependencies only; t
 - Content: Name the group and each choice; optional per-choice descriptions explain differences.
 - Anatomy: One group label and repeated mutually exclusive labelled choices.
 - Block composition example: In a consumer-owned preference-selection block, render at least two RadioGroup.Radio choices.
-- Accessibility: Use the group’s label and roving keyboard selection; orientation does not guarantee layout.
+- Accessibility: Use the group’s label and roving keyboard selection; orientation aligns option layout and keyboard navigation.
 - Demonstration coverage: unassessed. Consumer-owned fixtures and interaction evidence have not been assessed here. A supported package option is not proof of a working catalog demonstration.
 
 | Medium | State | Reason and evidence |
@@ -475,13 +475,13 @@ Token dependency coverage: partial. Representative consumed dependencies only; t
 | print | unassessed | No print renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 | video | unassessed | No video renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 
-Web implementation: `@clossys/designer/atoms` → `RadioGroup`. Source: `src/atoms/RadioGroup.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. The root forwards orientation to AriaRadioGroup, but the options wrapper remains flex-col. A single-option specimen cannot prove selection differences.
+Web implementation: `@clossys/designer/atoms` → `RadioGroup`. Source: `src/atoms/RadioGroup.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Orientation sets the options to a row or column and forwards matching semantics to AriaRadioGroup. A single-option specimen cannot prove selection differences.
 
 | Prop | Selection guidance | Package default | Applicability and support |
 | --- | --- | --- | --- |
 | `isDisabled` — Availability | `false`: Enabled interaction.<br>`true`: Disabled interaction. | peer: No local initializer; any inherited default belongs to the installed peer. | Effective for this component when supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/atoms/RadioGroup.tsx`: `AriaRadioGroup` |
 | `isInvalid` — Validation state | `false`: No invalid state requested.<br>`true`: Expose validation state and the authored error. | peer: No local initializer; any inherited default belongs to the installed peer. | Effective for this component when supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/atoms/RadioGroup.tsx`: `<AriaRadioGroup {...rest}` |
-| `orientation` — ARIA orientation | `horizontal`: Horizontal keyboard semantics.<br>`vertical`: Vertical keyboard semantics. | peer: No local initializer; any inherited default belongs to the installed peer. | ARIA and keyboard forwarding only; do not claim matching visual orientation. partial: Forwarded to the ARIA primitive, but fixed layout classes do not implement visual orientation. Evidence: `src/atoms/RadioGroup.tsx`: `<AriaRadioGroup {...rest}` |
+| `orientation` — ARIA orientation | `horizontal`: Horizontal option layout and keyboard semantics.<br>`vertical`: Vertical option layout and keyboard semantics. | peer: No local initializer; any inherited default belongs to the installed peer. | Layout and keyboard semantics follow the supplied orientation. implemented: The component uses orientation for layout and forwards it to the ARIA primitive. Evidence: `src/atoms/RadioGroup.tsx`: `<AriaRadioGroup {...rest}` |
 
 
 Token dependency coverage: partial. Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.
@@ -1317,7 +1317,7 @@ Token dependency coverage: partial. Representative consumed dependencies only; t
 - Content: Name the trigger and give the panel content an understandable task hierarchy.
 - Anatomy: One contextual trigger and its anchored content panel.
 - Block composition example: In a consumer-owned filter block, put several filter fields inside Popover and manage their state outside it.
-- Accessibility: The panel uses dialog behavior; preserve focus entry, outside dismissal and return to the trigger.
+- Accessibility: The panel uses dialog behavior; supply aria-label for its accessible name when there is no visible title heading, and preserve focus entry, outside dismissal and return to the trigger.
 - Demonstration coverage: unassessed. Consumer-owned fixtures and interaction evidence have not been assessed here. A supported package option is not proof of a working catalog demonstration.
 
 | Medium | State | Reason and evidence |
