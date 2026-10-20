@@ -1,8 +1,10 @@
 import type { CSSProperties, ReactNode } from "react";
 import type { Key, SortDescriptor } from "react-aria-components";
-import { Table } from "../atoms/Table.js";
-import { cx } from "../atoms/internal/cx.js";
-import { EmptyState } from "./EmptyState.js";
+
+import { FlatGrid } from "./data-table/FlatGrid.js";
+import { ModelTable } from "./data-table/ModelTable.js";
+import type { DataTableMessages } from "./data-table/messages.js";
+import type { DataTableViewModel } from "./data-table/view-model.js";
 
 export type DataTableSelectionMode = "none" | "single" | "multiple";
 
@@ -77,134 +79,20 @@ export interface DataTableProps<Row> {
   toolbar?: ReactNode;
   /** Slot below the grid — typically a `Pagination` block. `DataTable` never paginates `rows` itself. */
   footer?: ReactNode;
+  /** Optional saved-view mode. With a model, filtering/sorting/grouping/pivoting are computed locally. */
+  model?: DataTableViewModel;
+  /** Host labels/formatters with documented English defaults. Kept outside the saved view. */
+  messages?: DataTableMessages;
+  /** Required with model; persist the complete replacement envelope. Never called just for opening options. */
+  onModelChange?: (model: DataTableViewModel) => void;
+  /** Controlled group expansion; omitted means all groups expanded. Keys come from groupRows. */
+  expandedGroupKeys?: ReadonlySet<string> | "all";
+  onExpandedGroupKeysChange?: (keys: ReadonlySet<string>) => void;
   className?: string;
   style?: CSSProperties;
 }
 
-function columnStyle(width: string | number | undefined): CSSProperties | undefined {
-  if (width === undefined) return undefined;
-  return { width: typeof width === "number" ? `${width}px` : width };
-}
-
-function SkeletonCell() {
-  return <div className="h-4 w-full animate-pulse motion-reduce:animate-none rounded-subtle bg-surface-sunken" />;
-}
-
-/**
- * A working data grid: a toolbar region, the grid itself (built on the
- * `Table` atom's primitives), an empty-state region, a loading region, and
- * a footer/pagination slot — five regions that differ in kind, which is
- * what makes this a block rather than an atom (see this package's README,
- * "Placement rules", test 2). A page can hold two `DataTable`s side by
- * side (test 3), which is why it's a block and not a view even though it's
- * the largest, most intricate component this package ships.
- *
- * Controlled only, deliberately: sorting, selection, and pagination all
- * come from props with change callbacks, and `DataTable` never fetches
- * data or owns any async state of its own. Welding a data table to one
- * consumer's data-fetching layer (a specific pagination style, a specific
- * cache) would make it useless to every consumer whose data layer differs
- * — the same reasoning `Table`'s own doc comment gives for shipping
- * compositional primitives instead of a pre-wired grid in the first place.
- * `toolbar` and `footer` are plain slots for exactly this reason: a
- * `Pagination` block belongs in `footer`, wired to the consumer's own
- * paging state, not reimplemented in here.
- */
-export function DataTable<Row>({
-  "aria-label": ariaLabel,
-  columns,
-  rows,
-  rowKey,
-  sortDescriptor,
-  onSortChange,
-  selectionMode = "none",
-  selectedKeys,
-  onSelectionChange,
-  isLoading = false,
-  loadingRowCount = 5,
-  emptyStateTitle = "No results",
-  emptyStateDescription,
-  emptyStateAction,
-  toolbar,
-  footer,
-  className,
-  style,
-}: DataTableProps<Row>) {
-  const showSelectionColumn = selectionMode === "multiple";
-
-  return (
-    <div className={cx("flex flex-col gap-md", className)} style={style}>
-      {toolbar ? <div className="flex flex-wrap items-center justify-between gap-md">{toolbar}</div> : null}
-      <div className="overflow-x-auto rounded-control border border-line-base">
-        <Table
-          aria-label={ariaLabel}
-          sortDescriptor={sortDescriptor}
-          onSortChange={onSortChange}
-          selectionMode={selectionMode}
-          selectedKeys={selectedKeys}
-          onSelectionChange={onSelectionChange as ((keys: unknown) => void) | undefined}
-        >
-          <Table.Header>
-            {showSelectionColumn ? (
-              <Table.Column>
-                <Table.SelectAllCheckbox />
-              </Table.Column>
-            ) : null}
-            {columns.map((column) => (
-              <Table.Column
-                key={column.id}
-                id={column.id}
-                isRowHeader={column.isRowHeader}
-                allowsSorting={column.allowsSorting}
-                style={columnStyle(column.width)}
-              >
-                {column.header}
-              </Table.Column>
-            ))}
-          </Table.Header>
-          <Table.Body
-            renderEmptyState={() => (
-              <EmptyState
-                title={emptyStateTitle}
-                description={emptyStateDescription}
-                action={emptyStateAction}
-              />
-            )}
-          >
-            {isLoading
-              ? Array.from({ length: loadingRowCount }, (_, index) => (
-                  <Table.Row key={`loading-${index}`} id={`loading-${index}`}>
-                    {showSelectionColumn ? (
-                      <Table.Cell>
-                        <SkeletonCell />
-                      </Table.Cell>
-                    ) : null}
-                    {columns.map((column) => (
-                      <Table.Cell key={column.id}>
-                        <SkeletonCell />
-                      </Table.Cell>
-                    ))}
-                  </Table.Row>
-                ))
-              : rows.map((row) => {
-                  const key = rowKey(row);
-                  return (
-                    <Table.Row key={key} id={key}>
-                      {showSelectionColumn ? (
-                        <Table.Cell>
-                          <Table.SelectionCheckbox />
-                        </Table.Cell>
-                      ) : null}
-                      {columns.map((column) => (
-                        <Table.Cell key={column.id}>{column.cell(row)}</Table.Cell>
-                      ))}
-                    </Table.Row>
-                  );
-                })}
-          </Table.Body>
-        </Table>
-      </div>
-      {footer ? <div className="flex flex-wrap items-center justify-between gap-md">{footer}</div> : null}
-    </div>
-  );
+/** Legacy controlled grid, or a saved local view over the same rows and column renderers. */
+export function DataTable<Row>(props: DataTableProps<Row>) {
+  return props.model ? <ModelTable {...props} {...props.messages} model={props.model} /> : <FlatGrid {...props} {...props.messages} />;
 }

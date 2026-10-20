@@ -2549,7 +2549,7 @@ A page can hold two `DataTable`s side by side, which is what makes it a
 block and not a view (test 3) despite being the largest, most intricate
 component this package ships.
 
-**Controlled only, deliberately.** `sortDescriptor`/`onSortChange`,
+**Without a saved-view `model`, controlled only.** `sortDescriptor`/`onSortChange`,
 `selectedKeys`/`onSelectionChange`, and pagination (via the `footer` slot)
 all come from props with change callbacks — `DataTable` never re-sorts,
 re-selects, or re-paginates `rows` itself, and never fetches data or owns
@@ -2578,6 +2578,80 @@ the loading state uses a plain `animate-pulse` placeholder div instead.
 Swapping that placeholder for a real `Skeleton` atom, once one exists, is
 a deliberate follow-up.
 
+
+#### Saved views and View options
+
+Pass `model` and `onModelChange` to render a local saved view of the supplied
+rows. `DataTableViewModel` is one versioned, plain-data envelope containing the
+unchanged headless `TableModel` in `table`, plus `mode` (`flat`, `grouped`,
+`pivot`), `density` (`comfortable`, `compact`), ordered `sort` rules and ordered
+`visibleColumns`. Every model column needs a matching `DataTableColumn` renderer;
+React headers and cell callbacks stay in props, outside the saved payload.
+
+See the [saved-view example](#datatable-saved-view-example) for a complete controlled table.
+
+
+`messages?: DataTableMessages` supplies host labels and formatters with documented
+English defaults. It is a render prop, outside `DataTableViewModel` and its JSON.
+For example, set `viewOptionsLabel` to "Settings" and provide `groupByMessage`
+to format grouping labels in the host’s word order.
+All fields are optional; omitted fields keep the documented defaults.
+
+The contract covers options/section/mode/density labels, sort and tag choices,
+column/group/sort/filter/pivot actions and chip summaries, range labels and errors,
+facet labels and empty values, selection names, group paths/expansion/aggregates,
+and pivot axis/header/cell/empty labels. Formatters receive column names, rule data,
+axis/value data or booleans, so hosts can supply complete phrases in their own
+word order. Existing `emptyStateTitle`, `emptyStateDescription`, `emptyStateAction`
+and the grid's `aria-label` remain separate host props. Message callbacks and
+React nodes are never serialized into the view; persistence contains only the
+validated envelope. Dynamic data such as column headers still comes from props.
+
+Persist the complete replacement object received by `onModelChange`. The block
+never reads or writes storage, fetches rows or performs other I/O. Opening and
+closing options emits no change and retains the original model object. Actual
+edits copy the envelope and affected nested arrays/objects; frozen inputs work.
+`serializeDataTableViewModel` returns JSON, and `parseDataTableViewModel` accepts
+that JSON or a plain object. Both validate the envelope and delegate nested
+validation to `parseTableModel`; unknown versions, fields, columns, duplicates,
+accessors and non-data values are refused. Envelope errors use
+`DataTableViewModelError`; nested errors retain `TableModelError`.
+
+View options composes `Popover`, `Drawer`, `Select`, `Checkbox`, `TextField`,
+`Button` and `Chip`. Group, Sort, Filter and Columns edit the same envelope.
+Group and sort priorities can move earlier, each direction is editable, and
+visible columns can be reordered. Filters support text comparison, numeric/UTC
+date ranges (apply valid bounds explicitly), enum values, tag any/all/none and
+booleans. Facet choices come from the engine and retain selected values. Each
+active group, sort and filter has its own keyboard-removable chip. Pivot appears
+only with configured group or pivot dimensions; configuring its axes requires
+host-defined measures. Switching to pivot initializes missing axes from groups.
+The existing overlay primitives supply Escape, focus containment and trigger
+focus restoration. Below 768px options use the existing bottom Drawer sheet.
+Surfaces, controls, spacing and radii use the same theme tokens in light and dark.
+
+The engine computes filtered rows, group aggregates, arbitrary grouping depths,
+pivot axes, subtotals and totals. Ordered row sorting copies the filtered rows,
+uses explicit model collation, orders nulls first ascending, and preserves source
+order for ties; within groups it sorts leaves. Header sorting updates the primary
+model sort rule. `sortDescriptor`/`onSortChange` remain the legacy contract when
+`model` is omitted. Paging always belongs to the host's supplied row slice.
+
+`expandedGroupKeys` uses `groupRows` keys (JSON value paths), with `"all"` as
+the default. `onExpandedGroupKeysChange` receives a new set; without that callback
+groups render at the requested expansion with disabled expansion controls.
+`selectionMode`, `selectedKeys` and `onSelectionChange` retain original row keys
+in flat and grouped views; aggregate group rows cannot be selected. Pivot cells
+are read-only aggregate results. Compact density reduces header and cell padding.
+Empty and loading slots remain available; loading uses the flat skeleton grid.
+Hiding the designated row-header column makes the first visible column the
+accessible row header, and the final visible column cannot be hidden.
+
+`GroupedTable` still renders authored, two-level **column headers**; it does not
+compute row groups. `Matrix` still renders authored quadrants or bounded
+comparison grids (2–6 columns and 2–8 rows), with its own editorial cell forms.
+DataTable computes unbounded-by-layout row groups and engine-budgeted pivots.
+These existing blocks keep their separate contracts.
 
 ### `Form`
 
@@ -6460,8 +6534,12 @@ not a grab-bag).
 | `EmptyState` | component | Zero-item placeholder: icon slot, title, description, action slot. |
 | `EmptyStateProps` | type | Props for `EmptyState`: `icon`, `title`, `description`, `action`, plus every native `<div>` attribute. |
 | `DataTable` | component | Controlled data grid built on `Table`'s primitives: toolbar slot, the grid itself, empty state, loading state, footer slot. |
-| `DataTableProps` | type | Props for `DataTable`: `aria-label`, `columns`, `rows`, `rowKey`, `sortDescriptor`, `onSortChange`, `selectionMode`, `selectedKeys`, `onSelectionChange`, `isLoading`, `loadingRowCount`, `emptyStateTitle`, `emptyStateDescription`, `emptyStateAction`, `toolbar`, `footer`, `className`, `style`. |
+| `DataTableProps` | type | Props for `DataTable`: `aria-label`, `columns`, `rows`, `rowKey`, `sortDescriptor`, `onSortChange`, `selectionMode`, `selectedKeys`, `onSelectionChange`, `isLoading`, `loadingRowCount`, `emptyStateTitle`, `emptyStateDescription`, `emptyStateAction`, `toolbar`, `footer`, `model`, `onModelChange`, `messages`, `expandedGroupKeys`, `onExpandedGroupKeysChange`, `className`, `style`. |
 | `DataTableColumn` | type | One column definition: `id`, `header`, `cell(row)`, `allowsSorting?`, `isRowHeader?`, `width?`. |
+| `DataTableMessages` | type | Optional host labels and formatters with documented English defaults; never persisted in the view. |
+| `DataTableViewModel` | type | Versioned saved-view envelope: `table`, `mode`, `density`, ordered `sort` and `visibleColumns`. |
+| `DataTableMode`, `DataTableDensity`, `DataTableSortRule` | types | Saved rendering mode, density and row-sort rules. |
+| `parseDataTableViewModel`, `serializeDataTableViewModel`, `DataTableViewModelError` | values | Validate/copy saved views, encode JSON and report envelope validation errors. |
 | `DataTableSelectionMode` | type | `"none" \| "single" \| "multiple"`. |
 | `DetailView` | component | Label/value presentation of a single record: title slot, a `<dl>` field list, actions slot. |
 | `DetailViewProps` | type | Props for `DetailView`: `title`, `fields`, `actions`, `className`, `style`, plus every native `<section>` attribute. |
@@ -8067,3 +8145,41 @@ has a stable `code`: `invalid-model`, `unsupported-version`, `unknown-column`,
 | `TablePivotCell` | type | Row/column axis keys, explicit emptiness and measure results. |
 | `TablePivotResult` | type | Both axes, their cells and grand-total measures. |
 | `TableModelErrorCode` | type | The six stable refusal codes. |
+
+### DataTable saved-view example
+
+```tsx
+import { useState } from "react";
+import { DataTable, parseDataTableViewModel, serializeDataTableViewModel,
+  type DataTableViewModel } from "@clossys/designer/blocks";
+
+const initialView: DataTableViewModel = {
+  version: 1,
+  table: {
+    version: 1, collation: { locale: "en", numeric: true },
+    columns: [{ id: "name", kind: "text" }, { id: "team", kind: "enum" },
+      { id: "amount", kind: "number" }],
+    groupBy: [{ column: "team" }],
+    measures: [{ id: "total", op: "sum", column: "amount" }],
+  },
+  mode: "grouped", density: "comfortable", sort: [],
+  visibleColumns: ["name", "team", "amount"],
+};
+const records = [{ id: "one", name: "Example", team: "Blue", amount: 42 }];
+
+function SavedTable() {
+  const [model, setModel] = useState(initialView);
+  const [expanded, setExpanded] = useState<ReadonlySet<string> | "all">("all");
+  return <DataTable aria-label="Records" rows={records} rowKey={row => row.id}
+    columns={[
+      { id: "name", header: "Name", cell: row => row.name, isRowHeader: true },
+      { id: "team", header: "Team", cell: row => row.team },
+      { id: "amount", header: "Amount", cell: row => row.amount },
+    ]}
+    model={model} onModelChange={setModel}
+    expandedGroupKeys={expanded} onExpandedGroupKeysChange={setExpanded} />;
+}
+// Persistence belongs to the host. The codec validates and copies plain data.
+const encoded = serializeDataTableViewModel(initialView);
+const restored = parseDataTableViewModel(encoded);
+```
