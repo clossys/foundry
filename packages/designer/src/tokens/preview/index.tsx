@@ -211,7 +211,7 @@ export function TokenPreview({
     breakpoint: <BreakpointPreview key={property} property={property} thresholdLabel={thresholdLabel} matchLabel={matchLabel} unavailableMessage={unavailableMessage} matchesMessage={matchesMessage} notMatchesMessage={notMatchesMessage} />,
     surface: <div style={{ ...plate, ...style }}>{property === "--color-neutral-500"
       ? <span style={{ color: tokenReference("--color-neutral-50"), background: tokenReference("--color-neutral-950") }}>{sampleText}</span>
-      : sampleText}</div>,
+      : <>{sampleText}</>}</div>,
     text: <p style={style}>{sampleText}</p>,
     border: <div style={{ ...plate, border: `2px solid ${tokenReference("--color-line-strong")}`, ...style }}>{sampleText}</div>,
     control: <button type="button" style={{ ...plate, ...style }}>{sampleText}</button>,
