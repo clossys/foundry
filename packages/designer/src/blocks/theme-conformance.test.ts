@@ -70,7 +70,7 @@ function utilityBase(candidate: string): string {
 function colorUtility(candidate: string): { token?: string; invalid?: string } {
   const utility = utilityBase(candidate);
   const arbitraryProperty = /^\[([\w-]+):.+\]$/.exec(utility);
-  if (arbitraryProperty && (COLOR_PROPERTY.test(normalizeProperty(arbitraryProperty[1]!)) || COLOR_SHORTHAND.test(normalizeProperty(arbitraryProperty[1]!)))) return { invalid: candidate };
+  if (arbitraryProperty && (arbitraryProperty[1]!.startsWith("--color-") || COLOR_PROPERTY.test(normalizeProperty(arbitraryProperty[1]!)) || COLOR_SHORTHAND.test(normalizeProperty(arbitraryProperty[1]!)))) return { invalid: candidate };
   if (/^border-[trblsexy]$/.test(utility)) return {};
   if (/^(?:text|bg|border|outline|ring|fill|stroke)-$/.test(utility)) return { invalid: candidate };
   const match = /^(text|bg|border(?:-[trblsexy])?|outline|ring(?:-offset)?|fill|stroke|decoration|divide|accent|caret|placeholder|from|via|to|shadow)-(.+)$/.exec(utility);
@@ -375,6 +375,30 @@ describe("Block theme conformance", () => {
   ])("refuses arbitrary color properties: %s", candidate => {
     expect(sourceEvidence("Example.tsx", `const classes = ${JSON.stringify(candidate)};`).findings)
       .toContain(`Example.tsx: color utility has no token ${candidate}`);
+  });
+
+  it.each([
+    "[--color-ink-primary:red]", "hover:[--color-ink-primary:red]",
+    "dark:[&_[data-state=open]]:hover:![--color-ink-primary:red]",
+    "md:[--color-ink-primary:red]!", "[--color-ink-primary:var(--color-surface-base)]",
+  ])("rejects custom color properties through the canonical pipeline: %s", candidate => {
+    const input = realInputs();
+    const file = "src/blocks/PageHeader.tsx";
+    const source = input.sources.get(file)!;
+    expect(source).toContain('className={cx("');
+    input.sources.set(file, source.replace('className={cx("', `className={cx("${candidate} `));
+    expect(conformanceFindings(input)).toEqual([`${file}: color utility has no token ${candidate}`]);
+  });
+
+  it.each([
+    "[--layout-gap:1rem]", "--color-ink-primary", "[&_[data-color=red]]:text-ink-primary",
+  ])("preserves structural custom properties through the canonical pipeline: %s", candidate => {
+    const input = realInputs();
+    const file = "src/blocks/PageHeader.tsx";
+    const source = input.sources.get(file)!;
+    expect(source).toContain('className={cx("');
+    input.sources.set(file, source.replace('className={cx("', `className={cx("${candidate} `));
+    expect(conformanceFindings(input)).toEqual([]);
   });
 
   it.each([
