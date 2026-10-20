@@ -423,6 +423,9 @@ export type { GraphNode, GraphEdge, GraphInput, GraphModelEdge, GraphModel, Grap
 export { filterRows, groupRows, pivotRows, aggregate, parseTableModel, serializeTableModel, TableModelError } from "./blocks/table-model/index.js";
 export type { TableValue, TableColumnKind, TableColumn, TableCollation, TableFilter, TableDimension, TableMeasure, TablePivot, TableModel, TableFacet, TableFilterResult, TableAggregateValue, TableAggregates, TableGroup, TablePivotAxis, TablePivotCell, TablePivotResult, TableModelErrorCode } from "./blocks/table-model/index.js";
 
+export { CatalogWorkspace } from "./blocks/index.js";
+export type { CatalogWorkspaceProps, CatalogWorkspaceItem, CatalogWorkspaceSize } from "./blocks/index.js";
+
 export { parseDataTableViewModel, serializeDataTableViewModel, DataTableViewModelError } from "./blocks/data-table/view-model.js";
 export type { DataTableMessages } from "./blocks/data-table/messages.js";
 export type { DataTableViewModel, DataTableMode, DataTableDensity, DataTableSortRule } from "./blocks/data-table/view-model.js";

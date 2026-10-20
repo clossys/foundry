@@ -233,3 +233,6 @@ export type { GroupedTableProps, GroupedTableGroup, GroupedTableColumn } from ".
 
 export { GraphValidationError, validateGraph, neighbors, subgraph, degrees, components, shortestPath, groupByKind, radialLayout, forceLayout, edgeRoutingHints } from "./graph-model/index.js";
 export type { GraphNode, GraphEdge, GraphInput, GraphModelEdge, GraphModel, GraphErrorCode, GraphNeighborOptions, GraphSubgraphOptions, GraphDegree, GraphKindGroup, GraphPosition, GraphRadialOptions, GraphForceOptions, GraphEdgeRoutingHint } from "./graph-model/index.js";
+
+export { CatalogWorkspace } from "./CatalogWorkspace.js";
+export type { CatalogWorkspaceProps, CatalogWorkspaceItem, CatalogWorkspaceSize } from "./CatalogWorkspace.js";
