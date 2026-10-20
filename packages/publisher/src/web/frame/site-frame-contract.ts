@@ -32,7 +32,7 @@ export const SITE_FRAME_CONFIG_SCHEMA = Object.freeze({
   footerPlacement: Object.freeze({ values: Object.freeze(["flow", "overlay"] as const), default: "flow" as const }),
   footerRule: Object.freeze({ values: Object.freeze(["none", "top"] as const), default: "none" as const }),
   headerGround: Object.freeze({ values: SITE_CHROME_GROUNDS, default: "base" as const }),
-  headerPlacement: Object.freeze({ values: Object.freeze(["reserved", "overlay"] as const), default: "reserved" as const }),
+  headerPlacement: Object.freeze({ values: Object.freeze(["reserved", "overlay"] as const), default: "overlay" as const }),
   headerTone: Object.freeze({ values: Object.freeze(["base", "inverse"] as const), default: "base" as const }),
 });
 export interface SiteFramePresentationConfig {
@@ -80,9 +80,13 @@ export const SITE_FRAME_NAV_DEFAULTS = Object.freeze({
   triggerLabel: Object.freeze({ id: "site-frame.nav.trigger-label" }),
   trigger: "label" as const,
 });
-/** Composition references identify exports; they confer no qualification. Pack owns route placement and Instance pairs Frame with View. */
+/**
+ * Composition references identify exports; they confer no qualification.
+ * Revision 3 uses current-only auth environments and direct ghost links for environment-only headers.
+ * Pack owns route placement and Instance pairs Frame with View.
+ */
 export const SITE_FRAME_CONTRACT = freeze({
-  identity: "site-frame", role: "frame", revision: 2, medium: "web",
+  identity: "site-frame", role: "frame", revision: 3, medium: "web",
   use: ["persistent public-site chrome surrounding one chrome-free View"],
   avoid: ["route placement", "document bootstrap", "content sections", "application navigation focus bridge"],
   config: SITE_FRAME_CONFIG_SCHEMA,

@@ -38,7 +38,7 @@ function SignedOutMenu({ sections, signedOutLabel, onRoute }: AppFrameAccount) {
   </Menu>;
 }
 
-function FrameContent({ brand, navigation, account, commands, children, rightPanel, theme, dir,
+function FrameContent({ brand, navigation, account, commands, children, rightPanel, theme, themeControl, dir,
   /** @default "Skip to content" */
   skipLabel = "Skip to content", mainId }: AppFrameProps) {
   const generated = useId();
@@ -144,7 +144,9 @@ function FrameContent({ brand, navigation, account, commands, children, rightPan
         <div className="absolute start-1/2 -translate-x-1/2 rtl:translate-x-1/2 tablet:static tablet:translate-x-0 tablet:rtl:translate-x-0"><AppFrameBrand {...brand} /></div>
         <div className="flex min-w-0 items-center gap-xs">
           <Button variant="ghost" className={CONTROL} style={TAP} onPress={openCommands}><Icon glyph={Search} decorative /><span className="sr-only tablet:not-sr-only">{triggerLabel}</span></Button>
-          <ThemeToggle className={CONTROL} style={TAP} preferenceLabels={theme?.preferenceLabels} toggleLabel={theme?.toggleLabel} preferenceAnnouncement={theme?.preferenceAnnouncement} />
+          {themeControl !== null && <div data-application-frame-slot="theme-control" className="contents">
+            {themeControl === undefined ? <ThemeToggle className={CONTROL} style={TAP} preferenceLabels={theme?.preferenceLabels} toggleLabel={theme?.toggleLabel} preferenceAnnouncement={theme?.preferenceAnnouncement} /> : themeControl}
+          </div>}
           {panelTrigger}
         </div>
       </header>

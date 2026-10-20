@@ -4,7 +4,7 @@ type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B 
 type Assert<T extends true> = T;
 type Surface = Assert<Equal<InstanceRecord["surface"], "site" | "app">>;
 type Frames = Assert<Equal<InstanceFrameBlockId, "SiteFrame" | "AppFrame">>;
-type Views = Assert<Equal<InstanceViewBlockId, "AuthView" | "CaptureView" | "CollectionView" | "ContactView" | "DocumentView" | "HeroView" | "LandingView" | "LegalView" | "MarketingView" | "SectionedView" | "StatusView">>;
+type Views = Assert<Equal<InstanceViewBlockId, "AuthView" | "CaptureView" | "CollectionView" | "ContactView" | "DocumentView" | "HeroView" | "LandingView" | "LegalView" | "MarketingView" | "SectionedView" | "StatusView" | "IndexView" | "DetailsView">>;
 type Kinds = Assert<Equal<InstanceSiteSurfaceKind, "site" | "front-door" | "admin" | "demo">>;
 type PlainRefs = Assert<Equal<keyof InstanceBlockRef, "blockId" | "configId">>;
 type Status = Assert<Equal<InstanceRecordValidationResult["status"], "valid" | "refused">>;

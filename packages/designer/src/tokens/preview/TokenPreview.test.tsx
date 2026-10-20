@@ -42,7 +42,7 @@ const interactive = [
   "--breakpoint-mobile", "--breakpoint-mobile-lg", "--breakpoint-tablet", "--breakpoint-tablet-lg", "--breakpoint-desktop", "--breakpoint-wide",
 ];
 const examples = [
-  ["--color-surface-glass", "background-color", "var(--color-surface-glass, oklch(1 0 0 / 0.88))", "DIV"],
+  ["--color-surface-glass", "background-color", "var(--color-surface-glass, oklch(1 0 0 / 0.6))", "DIV"],
   ["--text-body", "font-size", "var(--text-body, 15px)", "P"],
   ["--ui-border-rule", "border-width", "var(--ui-border-rule, 2px)", "DIV"],
   ["--color-control-quiet", "color", "var(--color-control-quiet, var(--color-ink-primary, oklch(0.2178 0 0)))", "BUTTON"],
@@ -55,7 +55,7 @@ const examples = [
   ["--ui-brandmark-height-md", "block-size", "var(--ui-brandmark-height-md, 36px)", "DIV"],
   ["--radius-panel", "border-radius", "var(--radius-panel, var(--radius-surface, var(--radius-default, 3px)))", "DIV"],
   ["--ui-elevation-none", "box-shadow", "var(--ui-elevation-none, none)", "DIV"],
-  ["--blur-glass", "backdrop-filter", "blur(var(--blur-glass, 16px))", "DIV"],
+  ["--blur-glass", "backdrop-filter", "blur(var(--blur-glass, 20px))", "DIV"],
   ["--ui-ring-on-inverse", "box-shadow", "var(--ui-ring-on-inverse, 0 0 0 1px rgba(245, 245, 245, 0.12))", "DIV"],
   ["--ui-z-modal", "z-index", "var(--ui-z-modal, 50)", "DIV"],
   ["--ui-alpha-disabled", "opacity", "var(--ui-alpha-disabled, 0.5)", "DIV"],
@@ -131,7 +131,7 @@ describe("exact-property TokenPreview", () => {
       ["--radius-panel", "figure > div", "color:var(--color-ink-primary, oklch(0.2178 0 0));"],
       ["--ui-border-rule", "figure > div", "border:2px solid var(--color-line-strong, oklch(0.7763 0 0));"],
       ["--spacing-sm", "span", "background:var(--color-accent, oklch(0.4748 0 0))"],
-      ["--blur-glass", "figure > div > div", "background:var(--color-surface-glass, oklch(1 0 0 / 0.88));"],
+      ["--blur-glass", "figure > div > div", "background:var(--color-surface-glass, oklch(1 0 0 / 0.6));"],
     ];
     for (const [property, selector, declaration] of cases) {
       expect(specimen(property!).querySelector(selector!)?.getAttribute("style"), property).toContain(declaration);

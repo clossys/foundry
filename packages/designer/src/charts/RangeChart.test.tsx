@@ -25,7 +25,7 @@ const props: RangeChartProps = { title: "Sample schedule", description: "Four au
 // ChartFrame's existing x48/width296 plot inside the same 360-unit viewBox.
 const plot = { x: 16, y: 16, width: 328, height: 72 };
 const sourceDir = dirname(fileURLToPath(import.meta.url));
-const SERVER_EXPORTS_WITHOUT_RANGE = ["ChartFrame", "BarChart", "LineChart", "ScatterChart", "Sparkline", "WaterfallChart"];
+const SERVER_EXPORTS_WITHOUT_RANGE = ["ChartFrame", "BarChart", "LineChart", "ScatterChart", "Sparkline", "WaterfallChart", "AreaChart", "Heatmap", "StatusStrip"];
 
 function elementProps(node: ReactNode): Record<string, unknown>[] {
   if (Array.isArray(node)) return node.flatMap(elementProps);

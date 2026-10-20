@@ -79,8 +79,9 @@ export const overlayHeader: SiteShellInput = { ...shell, header: { placement: "o
 export const defaultHeader: SiteShellInput = { ...shell, header: {} };
 // @ts-expect-error reserved headers take a ground, not an overlay tone
 export const reservedTone: SiteShellInput = { ...shell, header: { placement: "reserved", tone: "inverse" } };
-// @ts-expect-error omitting placement still selects reserved chrome
 export const omittedPlacementTone: SiteShellInput = { ...shell, header: { tone: "inverse" } };
+// @ts-expect-error omitted placement is overlay, so a reserved ground requires explicit placement
+export const omittedPlacementGround: SiteShellInput = { ...shell, header: { ground: "inverse" } };
 // @ts-expect-error overlay headers take a tone, not a reserved ground
 export const overlayGround: SiteShellInput = { ...shell, header: { placement: "overlay", ground: "base" } };
 

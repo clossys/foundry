@@ -212,7 +212,8 @@ function href(value: unknown, path: string, origin: string | undefined): string 
 function origin(value: unknown): string | undefined {
   if (value === undefined) return undefined;
   const refuse = (): never => fail("shell.origin must be an https origin, or an http origin on a loopback host.");
-  if (typeof value !== "string" || UNSAFE_URL_CHARACTER.test(value) || value !== value.trim()) refuse();
+  if (typeof value !== "string" || UNSAFE_URL_CHARACTER.test(value) || value !== value.trim()
+    || !/^https?:\/\/[^/?#@]+\/?$/i.test(value)) refuse();
   let url: URL;
   try {
     url = new URL(value as string);
@@ -400,10 +401,10 @@ export function resolveShell(input: SiteShellInput, resolveCopy: CopyResolver, r
     assertFooterContract(footer, nav?.links ?? []);
   }
 
-  let header: ResolvedSiteShell["header"] = { placement: "reserved", ground };
+  let header: ResolvedSiteShell["header"] = { placement: "overlay", tone: "base" };
   if (shell.header !== undefined) {
     const fields = record(shell.header, "shell.header", HEADER_KEYS);
-    const placement = fields.placement === undefined ? "reserved" : oneOf(fields.placement, "shell.header.placement", ["reserved", "overlay"] as const);
+    const placement = fields.placement === undefined ? "overlay" : oneOf(fields.placement, "shell.header.placement", ["reserved", "overlay"] as const);
     if (placement === "overlay") {
       if ("ground" in fields) fail("shell.header.ground is only for reserved placement.");
       header = { placement, tone: fields.tone === undefined ? "base" : oneOf(fields.tone, "shell.header.tone", ["base", "inverse"] as const) };
@@ -439,8 +440,8 @@ export function resolveShell(input: SiteShellInput, resolveCopy: CopyResolver, r
     ...iconActions.map(() => "ghost" as const),
     ...environments.map(() => "secondary" as const),
   ]);
-  // Actions without navigation still need a named menu; its words come from the consumer's copy.
-  if (nav === undefined && headerActions.length > 0) {
+  // Ordinary actions still need a named menu. Environment-only shells use direct ghost links.
+  if (nav === undefined && (secondaryAction !== undefined || actions.length > 0 || iconActions.length > 0)) {
     const defaults = SITE_FRAME_NAV_DEFAULTS;
     nav = {
       label: copy(defaults.label, `shell.nav default label "${defaults.label.id}"`, resolveCopy),

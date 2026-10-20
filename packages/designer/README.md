@@ -24,7 +24,7 @@ exports from `@clossys/designer/atoms`. The barrel remains client-only. Read
 the packed [atom selection guide](skill/atoms-guide.md) for purpose, use and
 avoidance, alternatives, content, anatomy, block composition, accessibility,
 medium evidence, represented configurations and partial token dependencies.
-Four display groups and ten families place forty-one established atom/chart leaves
+Four display groups and ten families place forty-four established atom/chart leaves
 exactly once. Groups and families are navigation; only leaves are selectable.
 Existing IDs such as `act.link` and `reveal.tabs` remain unchanged.
 
@@ -199,7 +199,7 @@ surfaces and live in `@clossys/publisher/web`.
   See "Shell" below.
 - **`charts`** — dependency-free SVG chart primitives: `ChartFrame` (the
   shared plot/axes/grid/legend/table container), `BarChart`, `LineChart`,
-  `WaterfallChart`, `RangeChart`, `ScatterChart`, and `Sparkline`. A sibling of `shell`, not a sixth rung of the ladder —
+  `WaterfallChart`, `RangeChart`, `ScatterChart`, `AreaChart`, `Heatmap`, `StatusStrip`, and `Sparkline`. A sibling of `shell`, not a sixth rung of the ladder —
   see "Charts" below.
 - **`theme`** — the JavaScript half of this package's theming contract
   (the CSS half already ships from `tokens.css`/`theme.css` — see "CSS
@@ -456,7 +456,7 @@ source file's own header for the exact probe and its result). Today that's:
 | `@clossys/designer/atoms/server` | `Avatar`, `Badge`, `Banner`, `Card`, `Field`, `Icon`, `Meter`, `Skeleton`, `Spinner`, `StatusMark`, `buttonLinkClassName`, `iconButtonClassName`, `iconButtonLinkClassName`, `mergeUiClasses` |
 | `@clossys/designer/blocks/server` | `AnatomyCallouts`, `ArticleBody`, `Matrix`, `ContentSection`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `Item`, `Items`, `MarketingChapter`, `MediaFigure`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `RecordLedger`, `Scene`, `SectionFrame`, `SectionHeader`, `SectionIntro`, `Specimen`, `SpecimenPanel`, `Stat`, `StatusList`, `Tree` |
 | `@clossys/designer/shell/server` | `Shell`, `SiteFooter`, `SiteHeader`, `SkipLink` |
-| `@clossys/designer/charts/server` | `ChartFrame`, `BarChart`, `LineChart` (static), `WaterfallChart`, `RangeChart`, `ScatterChart`, `Sparkline` |
+| `@clossys/designer/charts/server` | `ChartFrame`, `BarChart`, `LineChart` (static), `WaterfallChart`, `RangeChart`, `ScatterChart`, `AreaChart` (static), `Heatmap` (static), `StatusStrip` (static), `Sparkline` |
 | `@clossys/designer/theme/server` | `getThemeInitScript` |
 
 Everything not listed above stays reachable only from its original barrel,
@@ -1006,6 +1006,13 @@ function HeaderActions() {
   return <ThemeToggle />;
 }
 ```
+
+Publisher's client-only `AppFrame` supplies this provider and toggle together.
+Its header `themeControl` slot accepts a replacement node, including a
+customized `ThemeToggle`; pass `null` to omit the control. A replacement can
+use `useTheme()` from the frame's existing provider. Match `AppFrame`'s
+`theme.storageKey` and `theme.defaultPreference` with the head initializer's
+`storageKey` and `defaultTheme` to apply the persisted preference before paint.
 
 Reach for `useTheme()` directly when a component needs the current
 preference or resolved theme without rendering a toggle itself:
@@ -2441,6 +2448,21 @@ atoms and/or layout to do it, but doesn't have to: neither block below
 imports an atom — their regions are consumer-supplied slots. A block never
 reaches outside this package for data or routing — everything it needs
 comes in through props, same as an atom.
+
+### Both themes are required
+
+Every exported Block must work in light and dark. There is no per-Block
+theme-support flag. Use token-backed color utilities so the container's
+theme and ground select the colors. When a section should look dark on a
+light page, place it in a locally dark container, such as `SectionFrame`
+with `ground="inverse"`; that context belongs to the container.
+
+The Block theme-conformance test checks the real export inventory, Block
+render helpers, token values in both dark cascades and light, and registered
+contrast pairs. `Panel` and `Toolbar` have documented, foreground-free
+contrast exemptions; their source and token checks still apply, and the
+exemption list can only shrink. Caller-supplied slots own their content's
+contrast obligations.
 
 ### Slots, not a `mode`/`variant` prop
 
@@ -5095,18 +5117,29 @@ taking no height in the document: transparent at the top of the page, then a
 glass plate once the page scrolls beneath it. The glass is
 `--color-surface-glass` (or `--color-surface-glass-inverse`) behind a
 `--blur-glass` backdrop blur, over a hairline in the matching line role.
+The shipped blur is 20px. Glass alpha is measured separately for each theme
+and polarity against both white and black backdrops: light-theme base/inverse
+use 0.60/0.85, dark-theme base/inverse use 0.86/0.60. These are the lowest
+hundredth steps at or above the 0.60 floor that retain at least 0.10 contrast-ratio
+margin over AA with the shipped ink, scoring both blend models. Brands must
+rerun the unchanged contrast gate when changing those tokens.
 
 - `tone` (`"base"` by default, or `"inverse"`) sets the header's inherited
   ink (`ink-primary` or `ink-on-inverse`) and the matching glass, so the ink
-  stays the same as the header turns to glass. Tones are theme-relative, like
+  follows the matching plate as the header turns to glass. Tones are theme-relative, like
   the tokens: `base` is dark ink on a light ground only in the light theme.
   In `"overlay"`, `ground` is not read.
 - `tone` governs inherited ink only. A child that sets its own ink keeps it:
   `Link` in every variant (`standalone` is `ink-primary`, `default` is
-  `ink-link`, `muted` is `ink-muted`), `Brandmark` (`ink-primary`) and
+  `ink-link`, `muted` is `ink-muted`), an explicitly toned `Brandmark` and
   `SiteHeader.ActionLink`'s `ghost` look (`ink-primary` with no plate). With
   `tone="inverse"` those read dark on dark glass. `ActionLink`'s `primary`
   and `secondary` looks carry their own fill, so they read on either tone.
+  An unconfigured header Brandmark inherits the live header ink for its
+  wordmark while retaining the accent logomark and `markInk="image"` opt-out.
+  Publisher's automatic SiteFrame additionally follows declared physical
+  grounds and the page/OS theme through its existing client island; its own
+  ghost controls inherit that ink and use opaque matching hover plates.
 - The contrast gate checks only the tone's own ink on the glass:
   `ink-primary` on `surface-glass` and `ink-on-inverse` on
   `surface-glass-inverse`. A child whose ink is exactly that token (with
@@ -5119,8 +5152,7 @@ glass plate once the page scrolls beneath it. The glass is
 - Focus indicators inside the header take the tone's ink instead of
   `--color-accent`: the `--ui-ring-focus` ring (`Link`, `Button`) and the
   colour of every `:focus-visible` outline (`ActionLink`). Accent does not
-  reach the 3:1 non-text floor on the glass (dark theme, base glass over a
-  white backdrop: 1.55:1), and the gate checks the ring in the tone's ink
+  reach the 3:1 non-text floor on every glass/backdrop combination, and the gate checks the ring in the tone's ink
   on each glass at 3:1.
 - `menuOpen` holds the glass at any scroll position while a menu belonging to
   the header is open (`data-menu-open`). A descendant with
@@ -5335,10 +5367,11 @@ the layout: DOM and narrow-container order is links, icons, copyright,
 each centered on its own line. From the footer's own `desktop` breakpoint
 width (the same container width at which the columns become four; they
 become two at `tablet`), copyright sits at the inline start, links remain
-centered on the footer, and icons sit at the inline end on one line with
-home last, its plate meeting the page gutter; the three parts share one
-vertical centre. Inline start and end follow the document's direction, so a
-right-to-left page mirrors the row. Tracks wrap long content within their
+centered on the footer between equal bounded side tracks. Icons sit at the
+inline end with home last, its plate meeting the page gutter; uncapped icon
+content wraps within its track before it can collide with another region.
+The three parts share one vertical centre. Inline start and end follow the
+document's direction, so a right-to-left page mirrors the row. Tracks wrap long content within their
 bounds without breaking words. Every
 link tap target is at least 44px. There is deliberately no disclaimer slot
 and no `children`, `className`, or `style` prop — regulatory text belongs in
@@ -5348,6 +5381,10 @@ as well as `@clossys/designer/shell`, and its prop types
 (`SiteFooterLegalProps`, `SiteFooterLegalLink`) are exported from both.
 `secondary` continues to accept any node, so existing footers that
 compose their own row are unaffected.
+
+The footer geometry tests use Chromium or Google Chrome from `PATH` to measure
+the shipped CSS, including unequal side content and crowded icon groups in
+both document directions. No browser-driver npm dependency is required.
 
 #### Transparent chrome and full width
 
@@ -5445,13 +5482,21 @@ element or image). `size` is `"sm"`, `"md"` or
 tokens. The exported types are `BrandmarkProps`, `BrandmarkVariant` and
 `BrandmarkSize`.
 
-What `Brandmark` does: it renders a plain `<a href="/">` whose accessible
-name is `label` (set as `aria-label`), so the name does not depend on the
+`Brandmark` renders a plain `<a href="/">` by default. Optional `origin`
+selects the public home origin, for example `origin="https://example.com"`
+links to `https://example.com/`. It accepts a bare HTTPS origin or HTTP on
+`localhost`, `127.0.0.1` or `[::1]`, including a port and an optional trailing
+root slash. Scheme and host case are normalized. Paths, queries, fragments,
+userinfo, controls, backslashes, remote HTTP and other schemes throw an
+`Error` naming `origin` without echoing its value. Omitting `origin` retains
+the existing markup.
+
+The link's accessible name is `label` (set as `aria-label`), so the name does not depend on the
 image or the wordmark text. The image is decorative (`alt=""`) and is set
 from `markSrc` as a URL, and `wordmark` renders as live text in the display
 font at a size derived from the mark's height; neither is injected as
 markup. The component spreads no props onto the anchor, so `href` and
-`aria-label` are not reachable through its props. What it does not do: it
+`aria-label` cannot be overridden through forced props. What it does not do: it
 does not check that `markSrc` resolves or that the image is legible at the
 chosen size, it does not check that `label` is a meaningful name beyond the
 two refusals below, and it does not load the display font, so the wordmark
@@ -5989,6 +6034,96 @@ retains each point label, its declared series name when present, both formatted
 coordinates, and the formatted size when enabled, including zero. Its
 disclosure works without JavaScript. Open it before printing to include the
 table; automatic expansion during printing is not promised.
+
+### `AreaChart`, `Heatmap`, and `StatusStrip`
+
+These charts share `ChartFrame` titles, descriptions, axes and native table
+fallbacks. The ordinary `/charts` exports support keyboard and pointer
+inspection. `/charts/server` exports static versions with the same data and
+geometry, without inert keyboard controls or series toggle buttons. Every
+colour reads the existing chart tokens, so the active light/dark theme applies;
+no animation is used, including under reduced motion.
+
+```tsx
+import { AreaChart, Heatmap, StatusStrip } from "@clossys/designer/charts";
+
+<AreaChart
+  title="Volume by month"
+  x={["Jan", "Feb", "Mar"]}
+  series={[
+    { name: "New", values: [10, 20, null] },
+    { name: "Returning", values: [30, 20, 10] },
+  ]}
+  stacked
+/>;
+<Heatmap
+  title="Capacity by team"
+  rows={["East", "West"]}
+  columns={["Mon", "Tue"]}
+  values={[[0, 100], [null, 50]]}
+/>;
+<StatusStrip
+  title="Service history"
+  domain={[0, 40]}
+  segments={[
+    { from: 0, to: 10, status: "ok" },
+    { from: 20, to: 40, status: "error" },
+  ]}
+/>;
+```
+
+`AreaChart` accepts category strings, increasing numbers, or increasing `Date`
+values in `x`; use one kind consistently. Every series must have exactly one
+finite number or `null` per x. Nulls break that series' area into separate runs
+and remain “No data” in its table and readout. `stacked` accumulates in authored
+series order; `normalized` implies stacking and makes each nonzero column total
+100%. Stacked/normalized values must be nonnegative; unstacked areas can cross
+zero. All-zero columns remain zero. `smooth` defaults to false. Up to eight
+series are supported; larger sets must be faceted. The legend toggles each
+series, recomputes the visible totals and retains every source datum in the
+table. Stable `colorDomain` or series positions preserve colour identity during
+toggles. Set `hiddenSeries` and `onHiddenSeriesChange` to control that legend.
+The focusable plot uses Left/Right, Home/End and Escape to inspect x positions;
+Enter/Space selects the inspected index. `xFormat` defaults to strings or ISO
+dates, and `valueFormat` to en-US number formatting.
+
+`Heatmap` requires a rectangular `values` matrix matching `rows` and `columns`.
+Each row and column name must be nonempty and unique within its axis. Sequential
+mode accepts finite numbers or null; the minimum and maximum map to the first
+and last of seven single-hue token steps. A constant numeric set uses the first
+step. Categorical mode (`categorical`) accepts strings or numbers and assigns
+at most eight identities stable categorical colours; supply `colorDomain` to
+preserve identities when data changes. Null remains “No data”, with a neutral
+cell. Every cell is named “row, column, value”, including missing values. Arrow
+keys move within the grid without wrapping; Home/End move within a row and
+Ctrl+Home/End move to the grid boundaries. Focus reveals the complete value;
+Enter/Space selects the row-major index. `valueFormat` defaults to `String`.
+
+`StatusStrip` accepts finite numeric or `Date` intervals with one of `ok`,
+`warn`, `error`, or `unknown`. It sorts intervals chronologically, rejects
+reversed/overlapping intervals, and gives each segment width proportional to
+its duration. `domain` optionally defines the observation window; leading,
+internal and trailing gaps become explicit `unknown` segments and table rows.
+Segments outside that window are rejected. Every status has a distinct pattern
+and a visible text legend, and each segment is named with status and interval.
+Keyboard arrows, Home/End and Enter/Space inspect/select intervals. Selection
+and hover indices include generated unknown gaps in chronological order.
+`intervalFormat` defaults to numeric strings or ISO dates.
+
+All three accept optional `activeIndex` / `onActiveIndexChange` and
+`selectedIndex` / `onSelectionChange`. Omit a controlled value for local state;
+set it to `null` to clear it. Callbacks receive an index or null. These
+callbacks let a host bind a later drill-down without importing a table
+component. Invalid/outdated controlled inspection indices are ignored. `labels`
+accepts partial translations of `SignatureChartLabels`: empty/loading/missing
+text, table headings, inspection/series/scale names and status labels. Omitted
+fields retain their documented defaults. `loading` displays “Loading data” and
+suppresses marks; empty data displays “No data”. Tables retain the authored data
+even while loading. Shared props are `title`, `description`, `width`, `height`,
+`tableFallbackLabel`, `className`, and `style`. Dimensions default to 480×280
+(StatusStrip: 480×100), must be finite and leave a positive plot after the
+standard margins (width >64, height >48). Authors must choose enough space for
+their labels; these charts do not resolve label collisions automatically.
 
 ### `Sparkline`
 
@@ -6706,7 +6841,7 @@ not a grab-bag).
 | `ToastRecord` | type | The queued shape of one toast: `title`, `description?`, `variant`. |
 | `ToastVariant` | type | `"success" \| "danger" \| "info" \| "warning"`. |
 | `ChartFrame` | component | The shared plot/axes/grid/legend/table container `BarChart`, `LineChart`, `WaterfallChart`, `RangeChart`, and `ScatterChart` compose. |
-| `ChartFrameProps` | type | Props for `ChartFrame`: `title`, `description`, `width`, `height`, `fit` (default `"fixed"`), `margin`, `xTicks`, `yTicks`, `legend`, `showSingleSeriesLegend` (default `false`), `table` (required), `tableFallbackLabel` (default `"View as table"`), `className`, `style`, `children` (render prop receiving the resolved `PlotArea`). |
+| `ChartFrameProps` | type | Props for `ChartFrame`: `title`, `description`, `interactive` (default `false`; exposes interactive SVG descendants using `role="group"`), `width`, `height`, `fit` (default `"fixed"`), `margin`, `xTicks`, `yTicks`, `legend`, `showSingleSeriesLegend` (default `false`), `table` (required), `tableFallbackLabel` (default `"View as table"`), `className`, `style`, `children` (render prop receiving the resolved `PlotArea`). |
 | `ChartMargin` | type | `{ top, right, bottom, left }`, all `number`. |
 | `ChartAxisTick` | type | `{ position, label }` — a pre-scaled pixel position plus its label. |
 | `ChartLegendItem` | type | `{ label, color, mark?: "circle" \| "square" \| "diamond" \| "triangle" }`; omitted `mark` retains the color swatch. |
@@ -6724,6 +6859,15 @@ not a grab-bag).
 | `RangeChartProps` | type | `title`, `description?`, `ticks`, `rows: readonly { id, label, from, to, status?: { tone: StatusMarkTone, label } }[]`, `labels: { table, category, from, to, status? }`, `fit?` (default `"fluid"`), `width?` (default `360`), `height?` (default fits wrapped content), `className?`, `style?`. |
 | `ScatterChart` | component | Static numeric observations with direct labels, up to four series shapes, optional proportional area, and a native data table. |
 | `ScatterChartProps` | type | `points: readonly { id, label, x, y, size?, series?, labelSide?: "start" \| "end" \| "above" \| "below" }[]`, `x` and `y: { label, min?, max? }`, `size?: { label }`, `series?: readonly { id, name }[]`, `labels: { table, category }`, required `title`, optional `description`, `fit?` (default `"fluid"`), `width?` (default `360`), `height?` (default `300`), `valueFormat?`, `className?`, and `style?`. |
+| `SignatureChartLabels` | type | Shared copy overrides: `empty`, `loading`, `missing`, table headings (`xColumn`, `rowColumn`, `fromColumn`, `toColumn`, `statusColumn`), and `inspection(title)`, `series(title)`, `scale(minimum, maximum)`, `status(status)` formatter functions. Defaults are documented on each field. |
+| `AreaChart` | component | Filled category/time series with null gaps, stacked/normalized modes, legend toggles and keyboard crosshair. |
+| `AreaChartProps` | type | Required `title`, `x`, `series`; optional `stacked`, `normalized`, `smooth`, `colorDomain`, `hiddenSeries`, `onHiddenSeriesChange`, `xFormat`, `valueFormat`, and shared chart inspection/selection, loading, description, dimensions, table and style props. |
+| `AreaChartSeries` | type | `{ name, values: readonly (number \| null)[], color? }`. |
+| `Heatmap` | component | Sequential or categorical matrix with accessible grid cells, keyboard navigation and a native table. |
+| `HeatmapProps` | type | Required `title`, `rows`, `columns`, `values: readonly (readonly (number \| string \| null)[])[]`; optional `categorical`, `colorDomain`, `valueFormat`, and shared chart inspection/selection, loading, description, dimensions, table and style props. |
+| `StatusStrip` | component | Proportional patterned status intervals with explicit unknown gaps and a native table. |
+| `StatusStripProps` | type | Required `title`, `segments`; optional `domain: readonly [number \| Date, number \| Date]`, `intervalFormat`, and shared chart inspection/selection, loading, description, dimensions, table and style props. |
+| `StatusStripSegment` | type | `{ from: number \| Date, to: number \| Date, status: "ok" \| "warn" \| "error" \| "unknown" }`. |
 | `Sparkline` | component | A bare inline trend — no axes/grid/legend/hover, still ships a table-view fallback. |
 | `SparklineProps` | type | Props for `Sparkline`: `values`, `title`, `width`, `height`, `color`, `valueFormat`, `tableFallbackLabel` (default `"View as table"`), `valueColumnLabel` (default `"Value"`), `className`, `style`. |
 | `getThemeInitScript` | function | Returns a self-contained head script (string) that stamps `data-theme` before first paint. Takes `{ storageKey?, defaultTheme? }`. |
@@ -7375,15 +7519,15 @@ No `AppNavItem`/`AppFooterColumn` or similar per-item component beyond
 `SiteFooter.Column` either, for the same reason atoms/blocks stay this
 short elsewhere in this README: added only once something real needs it.
 
-**Charts:** seven ship — `ChartFrame`, `BarChart`, `LineChart`, `WaterfallChart`, `RangeChart`, `ScatterChart`, `Sparkline`
+**Charts:** ten ship — `ChartFrame`, `BarChart`, `LineChart`, `WaterfallChart`, `RangeChart`, `ScatterChart`, `AreaChart`, `Heatmap`, `StatusStrip`, `Sparkline`
 — no `PieChart`/`DonutChart` (part-to-whole reads reliably only up to
 about six segments and a bar communicates the same comparison more
 precisely at any count — see the dataviz reference's anti-patterns list),
-no `Heatmap` (not supplied by this layer), and
+and
 deliberately **no dual-axis option on `BarChart`/`LineChart`** — that
 omission is not a gap to fill later, it's the one hard rule this layer
 does not bend on. No charting library is a dependency, and the scale/color
-helpers under `charts/internal/` stay unexported — this ships seven
+helpers under `charts/internal/` stay unexported — this ships ten
 components, not a general-purpose numerical or color library (see
 `atoms/internal/cx.ts`/`ui-vars.ts` for the same precedent one layer down).
 
@@ -7771,7 +7915,10 @@ keep a remembered width in its own state or storage. `defaultValue` remains
 the Enter reset target in both modes. `orientation="vertical"` (default) is a
 vertical separator resizing inline width; `"horizontal"` resizes block height.
 `label` names the pane and `handleLabel` names the separator; header and footer
-remain Panel regions.
+remain Panel regions. `handleEdge="end"` preserves the trailing separator;
+choose `handleEdge="start"` for a trailing inspector whose leading separator
+grows the pane when moved toward the preceding content. The separator precedes
+content in DOM order at the start edge.
 
 ```tsx
 import { ResizablePane } from "@clossys/designer/blocks";
@@ -7789,7 +7936,9 @@ export function Inspector({ width, onWidthChange }: { width: number; onWidthChan
 `ResizeHandle` is controlled with required `value`, `min`, `max`, `resetValue`,
 `label` and `onChange`. Positive `step` defaults to 1. Arrow keys adjust,
 Home/End reach the bounds, and Enter resets. Horizontal movement reverses in
-explicit or inherited RTL; vertical movement does not. Pointer capture commits
+explicit or inherited RTL; vertical movement does not. `edge="start"` reverses
+the pane-size direction at the leading edge; `edge="end"` is the default.
+Home/End still report the minimum/maximum actual pane size. Pointer capture commits
 on release; pointer cancellation, lost capture or Escape restores the drag's
 start value. Non-finite dimensions, reversed bounds, nonpositive steps and
 empty names are refused. Values and resets are clamped. Native forced-color
@@ -8105,3 +8254,189 @@ has a stable `code`: `invalid-model`, `unsupported-version`, `unknown-column`,
 | `TablePivotCell` | type | Row/column axis keys, explicit emptiness and measure results. |
 | `TablePivotResult` | type | Both axes, their cells and grand-total measures. |
 | `TableModelErrorCode` | type | The six stable refusal codes. |
+
+### Headless graph model
+
+`validateGraph`, `neighbors`, `subgraph`, `degrees`, `components`, `shortestPath`,
+`groupByKind`, `radialLayout`, `forceLayout`, `edgeRoutingHints` and
+`GraphValidationError` are exported from `@clossys/designer/blocks`. The graph
+modules themselves contain pure functions with no React, I/O, clock or ambient
+randomness. Their inputs and results are plain serializable records and arrays.
+
+```ts
+import { validateGraph, neighbors, radialLayout, forceLayout, type GraphInput } from "@clossys/designer/blocks";
+
+const input: GraphInput = {
+  nodes: [
+    { id: "program", kind: "program", label: "Program" },
+    { id: "package", kind: "package", label: "Package" },
+  ],
+  edges: [{ id: "includes", from: "program", to: "package", kind: "includes" }],
+};
+const graph = validateGraph(input);
+const outgoing = neighbors(graph, "program", { direction: "out" });
+const rings = radialLayout(graph, "program", { ringGap: 100 });
+const positions = forceLayout(graph, { iterations: 300, seed: 1 });
+```
+
+The public types are:
+
+```ts
+interface GraphNode { readonly id: string; readonly kind: string; readonly label: string }
+interface GraphEdge { readonly id: string; readonly from: string; readonly to: string; readonly kind: string; readonly weight?: number }
+interface GraphInput { readonly nodes: readonly GraphNode[]; readonly edges: readonly GraphEdge[] }
+interface GraphModelEdge extends GraphEdge { readonly selfLoop: boolean }
+interface GraphModel { readonly nodes: readonly GraphNode[]; readonly edges: readonly GraphModelEdge[] }
+type GraphErrorCode = "INVALID_INPUT" | "NODE_CAP" | "EDGE_CAP" | "DUPLICATE_NODE" | "DUPLICATE_EDGE" | "UNKNOWN_ENDPOINT" | "UNKNOWN_NODE" | "INVALID_OPTIONS";
+interface GraphNeighborOptions { readonly direction?: "in" | "out" | "both"; readonly edgeKinds?: readonly string[] }
+interface GraphSubgraphOptions { readonly depth: number; readonly edgeKinds?: readonly string[]; readonly nodeKinds?: readonly string[] }
+interface GraphDegree { readonly id: string; readonly in: number; readonly out: number; readonly total: number }
+interface GraphKindGroup { readonly kind: string; readonly nodes: readonly GraphNode[] }
+interface GraphPosition { readonly id: string; readonly x: number; readonly y: number }
+interface GraphRadialOptions { readonly ringGap?: number }
+interface GraphForceOptions { readonly iterations?: number; readonly seed?: number }
+interface GraphEdgeRoutingHint { readonly id: string; readonly type: "straight"; readonly selfLoop: boolean; readonly parallelIndex: number; readonly parallelCount: number }
+```
+
+`validateGraph(input): GraphModel` accepts at most 500 nodes and 2,000 edges,
+including empty graphs. IDs and kinds must be nonempty strings; labels must be
+strings. Node IDs and edge IDs are unique within their respective namespaces,
+and endpoints must exist. Optional weights must be finite positive numbers;
+weights are retained as metadata, while queries and layouts use unweighted
+topology. Self-loops are allowed and flagged on returned edges. Validation
+copies known fields rather than modifying input. `GraphValidationError` extends
+`Error` and exposes its typed `code: GraphErrorCode`; invalid query IDs and
+options also throw this error.
+
+| Function | Result and ordering |
+| --- | --- |
+| `neighbors(graph, id, options?)` | Unique `GraphNode[]` in authored node order; direction defaults to `both`. Loops include the node itself. |
+| `subgraph(graph, focusId, {depth, edgeKinds?, nodeKinds?})` | `GraphModel` from undirected, depth-bounded BFS; focus first, then BFS discovery order with authored node ties. The focus is retained even when excluded by `nodeKinds`; other excluded kinds prune traversal. Edges are induced among visited nodes, filtered by `edgeKinds`, in authored edge order. |
+| `degrees(graph)` | `GraphDegree[]` in authored node order; a loop contributes one incoming and one outgoing incidence, two to total. |
+| `components(graph)` | Weak, undirected `GraphNode[][]`; components ordered by first authored node, members in authored node order, isolates included. |
+| `shortestPath(graph, from, to)` | Unweighted undirected BFS returning `GraphNode[]` or `null` if disconnected; ties resolve by authored node order, independently of authored edge order. A node's path to itself is `[node]`. |
+| `groupByKind(graph)` | `GraphKindGroup[]` in first-seen kind order; members in authored node order. |
+| `edgeRoutingHints(graph)` | `GraphEdgeRoutingHint[]` in authored edge order; opposite directions share one unordered endpoint pair. `parallelIndex` is zero-based within that pair and `parallelCount` includes loops when both endpoints are the same node. |
+
+Omitting a kind filter includes kinds without restriction; an empty filter
+includes none. Depth must be a nonnegative integer. Queries validate input
+before traversing it and return copied records.
+
+`radialLayout(graph, focusId, options?): GraphPosition[]` defaults to a 100-unit
+`ringGap` (positive, at most 1,000,000). It places the focus at the origin, uses
+undirected BFS depths as ring indices, and puts unreachable nodes one ring
+beyond the deepest reachable node. Each ring starts on the positive x axis;
+nodes follow authored node order at evenly spaced angles. Coordinates are
+rounded to integers, so distance from the ideal radius may differ by less than
+one unit. Positions return in authored node order.
+
+`forceLayout(graph, options?): GraphPosition[]` runs Fruchterman–Reingold with
+mulberry32 initialization, 300 iterations and seed 1 by default. Iterations must
+be an integer from 1 through 10,000; seed must be an unsigned 32-bit integer.
+Repulsion uses an ideal distance of 80 units, attraction uses non-loop edges,
+and the initial temperature is one tenth of the component's square size,
+cooling linearly by the configured iteration count. Each weak component is
+simulated separately. After integer rounding, colliding nodes move right in
+authored order until point centers are at least 24 units apart. Components are
+normalized to nonnegative coordinates and packed horizontally with an 80-unit
+gap. Results retain authored node order and identical inputs/options yield
+byte-identical JSON. The fixed 500-node chain fixture with 300 iterations has
+a 4,000ms test budget; this is a fixture budget, not a runtime deadline.
+
+### PageHeader in Standard entity Views
+
+Publisher's Standard `IndexView` and `DetailsView` arrange entity administration
+content inside an AppFrame content region. Both use this package's `PageHeader`
+Block for the page title and its supporting line: their public `title` maps to
+`PageHeader.title`, and their public **`subtitle` maps to `PageHeader.description`**.
+The Designer prop remains `description`. The Views own no frame chrome.
+
+IndexView composes Toolbar, DataTable (or a typed collection Block), EmptyState and
+optional Pagination. DetailsView composes the Breadcrumb and Tabs atoms with
+SectionHeader and typed DetailView, Panel, Stat, StatusList or RecordLedger
+sections. One normalized layout groups main sections before a narrow aside, or
+uses a single column in the original section order. Local section states use
+Skeleton, EmptyState and a danger Banner without replacing the page. An empty
+section list uses EmptyState; a record-wide banner slot sits under PageHeader.
+Block slots keep their existing props and controlled behavior. The host binds
+`tab` and `onTabChange` to its URL. These interactive Views use Publisher's client
+entry, render during ordinary SSR and have explicit wrong-channel stubs under
+`react-server`; importing Designer's server Blocks does not make the interactive
+Views server components. See Publisher's README for the public View contracts.
+
+
+### CatalogWorkspace
+
+`CatalogWorkspace` composes a controlled browse tree, an arbitrary preview and
+an inspector. It uses Button for tree rows, two ResizablePane blocks and a
+Panel for the preview. The existing passive Tree, Specimen, DetailView and
+Items remain useful inside host content; the preview slot also accepts live
+interactive content. Import this client composition from
+`@clossys/designer/blocks`.
+
+| Export | Kind | Contract |
+| --- | --- | --- |
+| `CatalogWorkspace` | component | Controlled leaf selection with browse, preview and inspector regions. |
+| `CatalogWorkspaceProps` | type | Supplied forest, selected ID, callback, names, content slots and optional pane bounds. |
+| `CatalogWorkspaceItem` | type | Readonly ID, label, kind, optional badge/tag and optional child items. |
+| `CatalogWorkspaceSize` | type | Finite pixel min/max/defaultValue bounds and optional positive keyboard step. |
+
+```tsx
+import { useState } from "react";
+import { CatalogWorkspace, type CatalogWorkspaceItem } from "@clossys/designer/blocks";
+
+const catalog: readonly CatalogWorkspaceItem[] = [
+  { id: "components", label: "Components", kind: "collection", children: [
+    { id: "button", label: "Button", kind: "component", badge: "Ready" },
+  ] },
+];
+
+export function ComponentCatalog() {
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  return <CatalogWorkspace items={catalog} selectedId={selectedId} onSelect={setSelectedId}
+    label="Component catalog"
+    labels={{ browse: "Browse", preview: "Preview", inspector: "Inspector",
+      resizeBrowse: "Resize browse", resizeInspector: "Resize inspector" }}
+    preview={item => <p>{item.label} preview</p>}
+    inspector={item => <p>{item.kind}</p>}
+    emptyState={<p>Select a component to preview it.</p>} />;
+}
+```
+
+The forest is bounded to 1,000 total nodes and three levels. Each ID must be
+unique and nonempty; labels and kinds must be nonempty strings. IDs and item
+objects are retained verbatim. Presence of `children` marks a group, including
+an empty group. Input arrays and objects are not mutated. Invalid bounds,
+identities, text, sparse arrays, cycles and excessive depth/count throw a
+TypeError. These limits make the rendered tree suitable for bounded catalogs;
+this block does not virtualize or fetch more items.
+
+Groups start collapsed. Pointer, Enter and Space toggle groups and request
+leaf selection. Up/Down follow visible preorder, Right expands or enters a
+group, Left collapses or reaches the parent, and Home/End reach the first/last
+visible row. One visible row owns the tree tab stop. Removing the focused row
+recovers focus to the first visible row while the tree owns focus. Arrows and
+groups do not request selection. A click leaves selection unchanged until the
+host passes a new `selectedId`; an unknown or group ID shows `emptyState` once
+in the preview. Both content slots receive the original selected leaf object,
+including when it belongs to a collapsed group. Slot content keeps its React
+instance as selection and layout change; hosts can key their own content when
+a new instance is desired.
+
+DOM and focus order are browse, preview, inspector. Each separator supports
+arrow keys, Home/End, Enter reset and pointer resize with Escape cancellation.
+The inspector handle is on its start edge, so physical growth follows its
+leading boundary in LTR and RTL. `browseSize` and `inspectorSize` default to
+min 160, max 480, defaultValue 240 and step 16 CSS pixels. They describe layout
+geometry; content colors, spacing, corners and focus treatment use shared
+tokens. The panes maintain separate width and height preferences locally,
+without persistence. Hosts can give the composition a bounded height through
+an enclosing layout to contain tall preview content.
+
+Below the token registry's `tablet-lg` build-time threshold (currently
+1024px), the same three regions stack and separators resize their heights.
+Wider layouts resize their widths. Server and initial client rendering use
+the stacked layout; the client then adopts matchMedia and removes its change
+listener on unmount. Rows, selection, focused controls and slot instances are
+preserved across this change. No animated layout transition is introduced.
+Light and dark surfaces follow the existing Panel, Button and Badge tokens.

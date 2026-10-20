@@ -15,6 +15,9 @@ export const props: AppFrameProps = {
   children: <h1>Home</h1>,
 };
 export const composed = <AppFrame {...props} />;
+export const hostThemeControl = <AppFrame {...props} themeControl={<button>Choose theme</button>} />;
+export const omittedThemeControl = <AppFrame {...props} themeControl={null} />;
+export const defaultThemeControl = <AppFrame {...props} themeControl={undefined} />;
 export const originalImage = <AppFrame {...props} brand={{ ...brand, markInk: "image" }} dir="rtl" theme={{ defaultPreference: "dark", storageKey: "example-theme" }} />;
 export const signedIn: AppFrameAccount = { ...signedOut, actor: { name: "Example user" } };
 export const panel: AppFrameRightPanel = { label: "Details", handleLabel: "Resize details", min: 200, max: 480, defaultValue: 320, children: <p>Details</p> };

@@ -44,6 +44,8 @@ export interface ChartFrameProps {
   title: string;
   /** Optional longer accessible description, rendered as the SVG's `<desc>`. */
   description?: string;
+  /** Expose interactive SVG descendants to assistive technology. @default false */
+  interactive?: boolean;
   /** @default 480 */
   width?: number;
   /** @default 280 */
@@ -91,6 +93,7 @@ export interface ChartFrameProps {
 export function ChartFrame({
   title,
   description,
+  interactive = false,
   width = 480,
   height = 280,
   fit = "fixed",
@@ -124,7 +127,7 @@ export function ChartFrame({
         viewBox={`0 0 ${width} ${height}`}
         width={fit === "fluid" ? "100%" : width}
         height={height}
-        role="img"
+        role={interactive ? "group" : "img"}
         aria-labelledby={titleId}
         aria-describedby={description ? descId : undefined}
         data-chart-part="frame"

@@ -25,9 +25,10 @@ describe("data-readable SiteFrame contract", () => {
   });
   it("normalizes alphabetic flat primitive keys and rejects unknown or dependent inputs", () => {
     expect(Object.keys(SITE_FRAME_CONFIG_SCHEMA)).toEqual([...Object.keys(SITE_FRAME_CONFIG_SCHEMA)].sort());
-    expect(normalizeSiteFrameConfig()).toEqual({ footerGround: "base", footerPlacement: "flow", footerRule: "none", headerGround: "base", headerPlacement: "reserved", headerTone: "base" });
+    expect(normalizeSiteFrameConfig()).toEqual({ footerGround: "base", footerPlacement: "flow", footerRule: "none", headerGround: "base", headerPlacement: "overlay", headerTone: "base" });
+    expect(normalizeSiteFrameConfig({ headerTone: "inverse" })).toEqual({ footerGround: "base", footerPlacement: "flow", footerRule: "none", headerGround: "base", headerPlacement: "overlay", headerTone: "inverse" });
     expect(normalizeSiteFrameConfig({ headerPlacement: "overlay", headerTone: "inverse" })).toEqual({ footerGround: "base", footerPlacement: "flow", footerRule: "none", headerGround: "base", headerPlacement: "overlay", headerTone: "inverse" });
-    for (const invalid of [{ headerTone: "inverse" }, { headerPlacement: "overlay", headerGround: "inverse" }, { headerPlacement: "fixed" }, { headerTone: {} }, { sticky: false }, { Header: "{}" }, null, [], new Proxy({}, { ownKeys() { throw new Error("private-shape"); } })]) {
+    for (const invalid of [{ headerPlacement: "reserved", headerTone: "inverse" }, { headerPlacement: "overlay", headerGround: "inverse" }, { headerPlacement: "fixed" }, { headerTone: {} }, { sticky: false }, { Header: "{}" }, null, [], new Proxy({}, { ownKeys() { throw new Error("private-shape"); } })]) {
       expect(() => normalizeSiteFrameConfig(invalid)).toThrow(/SiteFrame/);
     }
     expect(Object.values(normalizeSiteFrameConfig()).every(value => typeof value === "string")).toBe(true);
@@ -48,8 +49,8 @@ describe("data-readable SiteFrame contract", () => {
 });
 
 it("publishes navigation defaults as copy references, not audience text", () => {
-  // Revision 1 published string labels here; copy references are an incompatible shape.
-  expect(SITE_FRAME_CONTRACT.revision).toBe(2);
+  // Revision 2 introduced copy references; revision 3 changes auth/environment-only headers.
+  expect(SITE_FRAME_CONTRACT.revision).toBe(3);
   expect(SITE_FRAME_CONTRACT.defaults).toEqual({
     label: { id: "site-frame.nav.label" },
     triggerLabel: { id: "site-frame.nav.trigger-label" },
@@ -84,7 +85,7 @@ it("normalizes footer configuration without losing inherited header presentation
 });
 
 it("preserves independent explicit header overrides while inheriting footer-only settings", () => {
-  expect(normalizeSiteFrameConfig({ headerPlacement: "overlay", headerTone: "inverse" }, { headerGround: "inverse" })).toMatchObject({ headerPlacement: "overlay", headerTone: "inverse", headerGround: "base" });
+  expect(normalizeSiteFrameConfig({ headerPlacement: "overlay", headerTone: "inverse" }, { headerGround: "inverse", headerPlacement: "reserved" })).toMatchObject({ headerPlacement: "overlay", headerTone: "inverse", headerGround: "base" });
   expect(normalizeSiteFrameConfig({ headerPlacement: "reserved" }, { headerPlacement: "overlay", headerTone: "inverse" })).toMatchObject({ headerPlacement: "reserved", headerTone: "base" });
 });
 
