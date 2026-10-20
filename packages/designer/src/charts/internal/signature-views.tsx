@@ -1,4 +1,4 @@
-import { useId, type KeyboardEvent, type PointerEvent } from "react";
+import { useId, type KeyboardEvent, type MouseEvent, type PointerEvent } from "react";
 import { ChartFrame } from "../ChartFrame.js";
 import { resolveLabels } from "./signature-labels.js";
 import {
@@ -82,7 +82,7 @@ function stepKey(
   else if (event.key === "End") next = length - 1;
   else if (event.key === "Enter" || event.key === " ") {
     event.preventDefault();
-    interaction.select?.(index);
+    if (inspected(index, length) !== null) interaction.select?.(index);
     return;
   } else if (event.key === "Escape") {
     interaction.inspect?.(null);
@@ -144,9 +144,9 @@ export function AreaView({
     active === null
       ? ""
       : `${xFormat(x[active]!)}: ${geometry.layers.map((layer) => `${layer.name} ${layer.values[active] === null ? labels.missing : valueFormat(layer.values[active]!)}`).join(", ")}`;
-  function pointer(event: PointerEvent<SVGRectElement>) {
+  function pointerIndex(event: PointerEvent<SVGRectElement> | MouseEvent<SVGRectElement>) {
     const bounds = event.currentTarget.ownerSVGElement?.getBoundingClientRect();
-    if (!bounds || !x.length) return;
+    if (!bounds || !x.length) return null;
     const local =
       (event.clientX - bounds.left) *
       (bounds.width > 0 ? width / bounds.width : 1);
@@ -155,7 +155,11 @@ export function AreaView({
       if (Math.abs(value - local) < Math.abs(geometry.px[closest]! - local))
         closest = index;
     });
-    interaction.inspect?.(closest);
+    return closest;
+  }
+  function pointer(event: PointerEvent<SVGRectElement>) {
+    const index = pointerIndex(event);
+    if (index !== null) interaction.inspect?.(index);
   }
   return (
     <div>
@@ -271,7 +275,13 @@ export function AreaView({
                   }
                   onClick={
                     interaction.select
-                      ? () => interaction.select?.(active)
+                      ? (event) => {
+                          const index = pointerIndex(event);
+                          if (index !== null) {
+                            interaction.inspect?.(index);
+                            interaction.select?.(index);
+                          }
+                        }
                       : undefined
                   }
                 />

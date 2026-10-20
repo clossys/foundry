@@ -700,3 +700,38 @@ describe("StatusStrip", () => {
     expect(rows(container)).toEqual([["0", "40", "unknown"]]);
   });
 });
+
+describe("AreaChart inspection sequence regressions", () => {
+  it.each(["Enter", " "])("does not select an absent datum after Escape then %j", key => {
+    const onSelectionChange = vi.fn();
+    const { container } = plot("AreaChart", { ...area, onSelectionChange });
+    const overlay = container.querySelector('[data-chart-part="hover-overlay"]')!;
+    fireEvent.focus(overlay);
+    expect(container.querySelector('[data-chart-part="crosshair"]')).not.toBeNull();
+    fireEvent.keyDown(overlay, { key: "Escape" });
+    expect(container.querySelector('[data-chart-part="crosshair"]')).toBeNull();
+    fireEvent.keyDown(overlay, { key });
+    expect(onSelectionChange).not.toHaveBeenCalled();
+    expect(overlay).toHaveAttribute("aria-pressed", "false");
+    expect(container.querySelector('[data-chart-part="readout"]')).toBeNull();
+    fireEvent.keyDown(overlay, { key: "End" });
+    fireEvent.keyDown(overlay, { key });
+    expect(onSelectionChange).toHaveBeenCalledExactlyOnceWith(2);
+    expect(overlay).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it.each([false, true])("selects the clicked datum before any pointermove (focused=%s)", focused => {
+    const onSelectionChange = vi.fn();
+    const onActiveIndexChange = vi.fn();
+    const { container } = plot("AreaChart", { ...area, onSelectionChange, onActiveIndexChange });
+    vi.spyOn(container.querySelector("svg")!, "getBoundingClientRect")
+      .mockReturnValue({ left: 100, width: 800 } as DOMRect);
+    const overlay = container.querySelector('[data-chart-part="hover-overlay"]')!;
+    if (focused) fireEvent.focus(overlay);
+    fireEvent.click(overlay, { clientX: 868 });
+    expect(onSelectionChange).toHaveBeenCalledExactlyOnceWith(2);
+    expect(onActiveIndexChange).toHaveBeenLastCalledWith(2);
+    expect(overlay).toHaveAttribute("aria-pressed", "true");
+    expect(container.querySelector('[data-chart-part="readout"]')?.textContent).toContain("Mar");
+  });
+});
