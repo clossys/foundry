@@ -1,11 +1,11 @@
 import type { ReactElement, ReactNode } from "react";
 import { SiteFrame } from "../frame/SiteFrame.js";
 import type { SiteFrameInput } from "../frame/types.js";
-import { formatPageTitle } from "../siteMetadata.js";
 import { ErrorViewBody } from "./ErrorView.js";
 import type { ErrorViewProps } from "./ErrorView.js";
 import { StatusView } from "./StatusView.js";
 import type { StatusViewProps } from "./StatusView.js";
+import { StatusDocument } from "./statusDocument.js";
 
 /** The document-level props both shapes share: the root `<html>` and the `<head>`. */
 export interface GlobalErrorDocumentHeadProps {
@@ -26,6 +26,14 @@ export interface GlobalErrorDocumentHeadProps {
    * those variables still resolve in a document that replaces the root layout.
    */
   htmlClassName?: string;
+  /**
+   * Stylesheets linked from the head, in order, for a host that cannot import
+   * the site stylesheet into a document that replaces the root layout (for
+   * example the built site CSS, or Designer's `tokens.css` and `compiled.css`
+   * and the brand file, served as static files). Each is a root-relative path
+   * or an `https` URL; anything else throws a `TypeError` naming its index.
+   */
+  stylesheets?: readonly string[];
 }
 
 /**
@@ -99,13 +107,17 @@ function isFramed(props: GlobalErrorDocumentProps): props is GlobalErrorDocument
  *
  * No theme script runs here, so the document is pinned to the light theme with
  * `color-scheme: light`. Brand tokens come from the stylesheet the consumer
- * imports in its own global-error file; this component imports none.
+ * imports in its own global-error file, or links through `stylesheets`; this
+ * component imports none. With `shell`, the head also carries inline critical
+ * rules for the frame's bands (the frame root's column, the main's growth, the
+ * skip link hidden until focused, the accent brand mark's fill), so the frame
+ * keeps its structure when no stylesheet loads.
  *
  * A component, not a template: it takes no router, framework, hook or
  * `metadata` export, and is not a client module.
  */
 export function GlobalErrorDocument(props: GlobalErrorDocumentProps): ReactElement {
-  const { lang, documentTitle, icon, htmlClassName } = props;
+  const { lang, documentTitle, icon, htmlClassName, stylesheets } = props;
   let body: ReactElement;
   if (isFramed(props)) {
     const legacy = props as { title?: unknown; description?: unknown };
@@ -132,6 +144,7 @@ export function GlobalErrorDocument(props: GlobalErrorDocumentProps): ReactEleme
       documentTitle: _documentTitle,
       icon: _icon,
       htmlClassName: _htmlClassName,
+      stylesheets: _stylesheets,
       shell: _shell,
       resolveCopy: _resolveCopy,
       resolveAsset: _resolveAsset,
@@ -144,19 +157,8 @@ export function GlobalErrorDocument(props: GlobalErrorDocumentProps): ReactEleme
     body = <ErrorViewBody {...errorViewProps} />;
   }
   return (
-    <html
-      lang={lang}
-      className={htmlClassName === undefined || htmlClassName === "" ? undefined : htmlClassName}
-      data-theme="light"
-      data-brand-bound=""
-      style={{ colorScheme: "light" }}
-    >
-      <head>
-        <title>{formatPageTitle(documentTitle)}</title>
-        <meta name="robots" content="noindex, nofollow" />
-        <link rel="icon" href={icon.href} type={icon.type} />
-      </head>
-      <body>{body}</body>
-    </html>
+    <StatusDocument component="GlobalErrorDocument" head={{ lang, documentTitle, icon, htmlClassName, stylesheets }} framed={isFramed(props)}>
+      {body}
+    </StatusDocument>
   );
 }
