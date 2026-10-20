@@ -176,8 +176,8 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
    * the page scrolls beneath it, one per ink polarity. The alpha is pinned
    * by the contrast gate: the matching ink must clear AA over the glass
    * composited on both a white and a black backdrop. */
-  --color-surface-glass:          oklch(1 0 0 / 0.88);
-  --color-surface-glass-inverse:  oklch(0.2178 0 0 / 0.88);
+  --color-surface-glass:          oklch(1 0 0 / 0.6);
+  --color-surface-glass-inverse:  oklch(0.2178 0 0 / 0.85);
 
   /* ════════════════════════════════════════════════════════════════
    * COLOR · INK (7 · text on surfaces)
@@ -542,7 +542,7 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
    * ════════════════════════════════════════════════════════════════ */
   /* Glass identity: the backdrop blur behind a glass plate. Brandable,
    * theme invariant. */
-  --blur-glass:                   16px;
+  --blur-glass:                   20px;
   /* Notice identity: the backdrop blur behind a pinned notice card.
    * Theme invariant. */
   --blur-notice:                  12px;
@@ -634,8 +634,8 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
     --color-surface-inverse-raised: oklch(1 0 0);
     --color-surface-aside:          oklch(0.165 0 0);
     --color-surface-selected:       oklch(0.9702 0 0 / 0.1);
-    --color-surface-glass:          oklch(0.26 0 0 / 0.88);
-    --color-surface-glass-inverse:  oklch(0.96 0 0 / 0.88);
+    --color-surface-glass:          oklch(0.26 0 0 / 0.86);
+    --color-surface-glass-inverse:  oklch(0.96 0 0 / 0.6);
 
     /* ── COLOR · INK ────────────────────────────────────────────── */
     --color-ink-primary:            oklch(0.97 0 0);      /* flips: near-black to near-white */
@@ -739,8 +739,8 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
   --color-surface-inverse-raised: oklch(1 0 0);
   --color-surface-aside:          oklch(0.165 0 0);
   --color-surface-selected:       oklch(0.9702 0 0 / 0.1);
-  --color-surface-glass:          oklch(0.26 0 0 / 0.88);
-  --color-surface-glass-inverse:  oklch(0.96 0 0 / 0.88);
+  --color-surface-glass:          oklch(0.26 0 0 / 0.86);
+  --color-surface-glass-inverse:  oklch(0.96 0 0 / 0.6);
 
   /* ── COLOR · INK ──────────────────────────────────────────────── */
   --color-ink-primary:            oklch(0.97 0 0);
