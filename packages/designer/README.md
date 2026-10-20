@@ -1007,6 +1007,13 @@ function HeaderActions() {
 }
 ```
 
+Publisher's client-only `AppFrame` supplies this provider and toggle together.
+Its header `themeControl` slot accepts a replacement node, including a
+customized `ThemeToggle`; pass `null` to omit the control. A replacement can
+use `useTheme()` from the frame's existing provider. Match `AppFrame`'s
+`theme.storageKey` and `theme.defaultPreference` with the head initializer's
+`storageKey` and `defaultTheme` to apply the persisted preference before paint.
+
 Reach for `useTheme()` directly when a component needs the current
 preference or resolved theme without rendering a toggle itself:
 

@@ -58,6 +58,8 @@ export interface AppFrameProps {
   children: ReactNode;
   rightPanel?: AppFrameRightPanel;
   theme?: Omit<ThemeProviderProps, "children"> & Pick<ThemeToggleProps, "preferenceLabels" | "toggleLabel" | "preferenceAnnouncement">;
+  /** Header theme control; undefined uses ThemeToggle, null omits the slot. */
+  themeControl?: ReactNode;
   dir?: "ltr" | "rtl";
   /** @default "Skip to content" */
   skipLabel?: string;
