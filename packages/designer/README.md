@@ -4489,6 +4489,16 @@ cleanly — `shell` and `blocks` are independent sibling layers built on
 `atoms`, neither depending on the other (see "Package structure" above),
 so a real page just renders both together:
 
+`SiteFooter` keeps a dark local surface in light and dark page themes. Its
+`Legal` row places copyright at the inline start, links centered and named
+social icons followed by the home mark at the inline end, following the
+document's direction; narrower footers stack links, icons, then copyright,
+each centered. `home` takes the page's own mark, shown on a plate of the
+page's base ground; optional named `icons` take decorative artwork and
+`iconsLabel` preserves a social navigation name. Links use 44px targets,
+external rel safety and inverse focus rings. Privacy remains an ordinary link.
+Legacy `ground` controls divider policy without switching the page theme.
+
 ```tsx
 import { SiteHeader, SiteFooter } from "@clossys/designer/shell";
 import { Hero, FeatureGrid } from "@clossys/designer/blocks";
@@ -5286,9 +5296,10 @@ once per breakpoint's own nav, so exactly one is ever visible and
 reachable at a time) and why it's the correct one given this package's
 "no JS-dependent layout" rule.
 
-`SiteFooter` accepts `ground` (`base` | `inverse`, default `base`) — use
-it for the common inverse footer plate instead of reconstructing
-`bg-surface-inverse` and ink utilities in host `className`.
+`SiteFooter` always paints a local dark surface with paired light ink in
+both page themes. Its legacy `ground` vocabulary (`base`, `inverse`,
+`transparent`, `transparent-inverse`; default `base`) controls divider
+policy; transparent values omit dividers without removing the dark surface.
 
 `SiteFooter` renders a real `<footer>` — the page's `contentinfo`
 landmark, the same top-level-placement rule `SiteHeader` follows. Two
@@ -5309,7 +5320,13 @@ by hand. It takes `entity` (a plain string) and `links` (a list of
 name for the links region. When `linksLabel` is given, the links render
 inside a `<nav aria-label>`; otherwise they render as a plain list. The
 component ships no English of its own, so the caller supplies `linksLabel`
-in the page's language.
+in the page's language. Optional `icons` are ordered `{ label, href, icon }`
+records with named destinations and consumer-supplied decorative artwork.
+`iconsLabel` names their navigation group. Optional `home` supplies
+`{ label, href, markSrc }`, always after the social icons; standalone
+Designer callers supply it explicitly. The mark is artwork authored for the
+page's base ground and is drawn on a small plate of that ground, so the same
+mark the header shows stays legible on the dark footer in either theme.
 
 ```tsx
 import { SiteFooter } from "@clossys/designer/shell";
@@ -5334,9 +5351,16 @@ export function Footer() {
 
 It renders one text string, `© {year} {entity}`, where the year is computed
 at render from the current date; there is no `year` prop. The component owns
-the layout: the links come first in DOM order; below the `desktop`
-breakpoint the two stack, centred, links first; from `desktop` up they sit on
-one line with the copyright on the left and the links on the right. Every
+the layout: DOM and narrow-container order is links, icons, copyright,
+each centered on its own line. From the footer's own `desktop` breakpoint
+width (the same container width at which the columns become four; they
+become two at `tablet`), copyright sits at the inline start, links remain
+centered on the footer between equal bounded side tracks. Icons sit at the
+inline end with home last, its plate meeting the page gutter; uncapped icon
+content wraps within its track before it can collide with another region.
+The three parts share one vertical centre. Inline start and end follow the
+document's direction, so a right-to-left page mirrors the row. Tracks wrap long content within their
+bounds without breaking words. Every
 link tap target is at least 44px. There is deliberately no disclaimer slot
 and no `children`, `className`, or `style` prop — regulatory text belongs in
 legal documents the links point to. `SiteFooter.Legal` does not import
@@ -5346,15 +5370,20 @@ as well as `@clossys/designer/shell`, and its prop types
 `secondary` continues to accept any node, so existing footers that
 compose their own row are unaffected.
 
+The footer geometry tests use Chromium or Google Chrome from `PATH` to measure
+the shipped CSS, including unequal side content and crowded icon groups in
+both document directions. No browser-driver npm dependency is required.
+
 #### Transparent chrome and full width
 
-`SiteHeader` and `SiteFooter` accept `ground="transparent"` for chrome that
-sits over a page backdrop. It renders no `bg-*` class, no `border-*` class
-and no border-width style, and `SiteFooter` also omits the divider between
-`columns` and `secondary`. Ink is unchanged from `"base"`: `SiteFooter` still
-sets the base ink, and `SiteHeader` still sets none, so its content inherits
-its ink from the page. `ground` still defaults to
-`"base"`, and `"base"` and `"inverse"` render the same markup as before.
+`SiteHeader` accepts `ground="transparent"` for chrome that sits over a
+page backdrop. It renders no `bg-*` class, no `border-*` class and no
+border-width style. Ink is unchanged from `"base"`: `SiteHeader` still sets
+none, so its content inherits its ink from the page. `ground` still defaults
+to `"base"`, and the header's `"base"` and `"inverse"` markup is unchanged.
+`SiteFooter ground="transparent"` omits its outer border and the divider
+between `columns` and `secondary`, while retaining its local dark surface
+and paired light ink. Its `ground` default remains `"base"`.
 `Shell.Header` and `Shell.Footer` keep `"base" | "inverse"`: passing
 `"transparent"` or `"transparent-inverse"` to either is a type error.
 
@@ -5381,12 +5410,13 @@ the full viewport width, inset only by the `--ui-width-page-padding-x` token;
 page content stays in `Shell.Main`'s container. A test pins this for every
 ground.
 
-`ground="transparent-inverse"` is the same no-plate, no-border chrome for a
-page that is itself on the inverse ground (`bg-surface-inverse` with
-`text-ink-on-inverse`). `SiteFooter` sets `text-ink-on-inverse` on the footer
-and `text-ink-on-inverse-muted` on its `secondary` row, the ink the
-`"inverse"` plate uses; `SiteHeader` renders exactly as it does for
-`"transparent"`, since it sets no ink and inherits the page's.
+For `SiteHeader`, `ground="transparent-inverse"` is the same no-plate,
+no-border chrome for a page that is itself on the inverse ground
+(`bg-surface-inverse` with `text-ink-on-inverse`). `SiteHeader` renders
+exactly as it does for `"transparent"`, since it sets no ink and inherits
+the page's. `SiteFooter ground="transparent-inverse"` retains the same local
+dark surface and paired light primary and secondary ink as its other
+grounds, while omitting borders and the internal divider.
 
 ```tsx
 import { SiteFooter, SiteHeader } from "@clossys/designer/shell";
@@ -6788,7 +6818,7 @@ not a grab-bag).
 | `NavDisclosureProps` | type | Props for `NavDisclosure`: required `children`, `aria-label` (default `"Primary"`), `triggerLabel` (default `"Menu"`), `trigger` (`"label"` default, or `"icon"`), and landmark `className`. |
 | `NavShellProps` | type | Props for `NavShell`: `children` (the nav links, rendered in both the desktop row and the drawer), `aria-label` (default `"Primary"`), `triggerLabel` (default `"Menu"`), `closeLabel` (default `"Close menu"`), `className`, plus most of react-aria-components' own `DialogTrigger` props (`isOpen`, `defaultOpen`, `onOpenChange`). |
 | `SiteFooter` | component | Public-site bottom chrome: grouped link columns, a secondary/legal row. Carries `SiteFooter.Column` and `SiteFooter.Legal`. Renders the page's `contentinfo` landmark. |
-| `SiteFooterProps` | type | Props for `SiteFooter`: `columns`, `secondary`, plus every native `<footer>` attribute. |
+| `SiteFooterProps` | type | Props for `SiteFooter`: `columns`, `secondary`, legacy `ground` divider policy, optional `rule="top"` on transparent ground, plus native `<footer>` attributes except `children`. Paint remains locally dark. |
 | `SiteFooterColumnProps` | type | Props for `SiteFooter.Column`: `heading`, `children` (the column's own links), `className`. |
 | `Toaster` | component | The toast viewport — mount once, anywhere in the same tree as `Shell`. |
 | `ToasterProps` | type | Props for `Toaster`: `aria-label` (default `"Notifications"`), `className`. |
@@ -7750,8 +7780,9 @@ nav tone follows an inverse overlay header; an explicit `"auto"` keeps base ink.
 Both controls otherwise retain their existing default markup.
 
 `SiteFooter ground="transparent" rule="top"` adds a token-bound top hairline
-without a plate or a divider inside the footer. `rule` defaults to `"none"`
-and is ignored on other grounds, which retain their existing border policy.
+on its local dark surface without a divider inside the footer. `rule`
+defaults to `"none"` and is ignored on other grounds, which retain their
+existing border policy.
 
 ## Token specimens
 

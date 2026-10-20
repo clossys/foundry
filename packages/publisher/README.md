@@ -1059,7 +1059,7 @@ slots `HeroView`'s banner uses. They are props, not template slots, so a
   `headerAction`.
 - `nav` (optional): the primary navigation, beside the brand.
 - `ground` (`"base"`, `"inverse"` or `"transparent"`, default `"base"`): the
-  plate of both the header and the footer. `"transparent"` matches
+  header plate and footer divider policy; the footer always paints a local dark surface. `"transparent"` matches
   `HeroView`. The section bands keep their own `*Ground` props.
 
 Each slot is absent from the markup when omitted, so a page that passes none
@@ -1167,7 +1167,7 @@ staged and is not part of these publisher shells.
 
 `HeroView`, exported from `@clossys/publisher/web`, is a single-screen
 landing page: a transparent banner, one hero centred both ways, and a
-transparent legal footer, over an optional backdrop. It is server-safe (it
+locally dark legal footer, over an optional backdrop. It is server-safe (it
 imports only Designer's `/shell/server`, `/atoms/server` and `/blocks/server`
 barrels) and ships no wording of its own: every visible word comes from a prop.
 
@@ -1206,19 +1206,19 @@ Props, in addition to the standard `div` attributes (minus `children`) and `styl
 - `legal`: the props of Designer's `SiteFooter.Legal`, passed straight through.
 - `ground` (`HeroViewGround`: `"base"` or `"inverse"`, default `"base"`): the
   page's ground. Unlike the `ground` on the other views, which sets only the
-  header and footer plate, this one sets the ground of the whole page.
+  header plate and footer divider policy, this one sets the ground of the whole page.
   `"inverse"` paints `bg-surface-inverse` on the page root and gives every text
   role the on-inverse ink from Designer's `SECTION_GROUND_CLASSES`:
   `text-ink-on-inverse` on the root (which the banner inherits) and the heading,
   `text-ink-on-inverse-muted` on the eyebrow and the description. The header and
-  footer get Designer's `ground="transparent-inverse"`, so they stay plate-less
-  over the backdrop and the footer's legal row takes
-  `text-ink-on-inverse-muted`.
+  footer get Designer's `ground="transparent-inverse"`. The header stays plate-less
+  over the backdrop; the footer omits dividers but retains its local dark
+  surface and paired light legal text.
 - `footer` (`HeroViewFooter`: `"transparent"` or `"surface"`, default
-  `"transparent"`): the footer's plate. `"surface"` gives the footer Designer's
-  `ground="base"` plate (`bg-surface-raised` with the base ink) across the full
-  width, with a hairline on its top edge only, stacked above the backdrop. The
-  banner and the hero are unchanged, on either `ground`.
+  `"transparent"`): the footer's divider policy. `"surface"` passes Designer's
+  `ground="base"` and adds a top hairline; both values retain the full-width
+  local dark surface and paired light ink above the backdrop. The banner and
+  the hero are unchanged, on either `ground`.
 
 ```tsx
 import { HeroView } from "@clossys/publisher/web";
@@ -1248,11 +1248,10 @@ export function DarkHomePage() {
 
 What it guarantees: one banner, one main and one contentinfo landmark; one
 `<h1>`; a backdrop that is `aria-hidden` and takes no pointer events; a header,
-and unless `footer` is `"surface"` a footer, with a transparent Designer
-ground, so they carry no background, border or width cap and run the full
-viewport width; and text that comes only from props. These hold for every
-`ground` and `footer`, and with both left at their defaults the markup is the
-same as before they existed.
+with a transparent Designer ground, so it carries no background, border or
+width cap and runs the full viewport width; a full-width locally dark footer,
+with a top hairline when `footer="surface"`; and text that comes only from
+props. These hold for every `ground` and `footer`.
 
 What it does not do: check the contrast of the page ink over your backdrop
 (that contract is issue #1523), restyle the actions you pass in, or make
@@ -1501,7 +1500,7 @@ pages; see the [framed contact example](#contactform--framed-contact-example).
 
 `ContactView`, exported from `@clossys/publisher/web`, is a single-screen
 contact page: a transparent banner, a page header, one form in a card, and a
-transparent legal footer. The form asks for a topic, a name, an
+locally dark legal footer. The form asks for a topic, a name, an
 email, an optional phone and a message, and carries a hidden honeypot field.
 It is a client component: it needs Designer's React Aria fields, so import it
 from a module that is a client boundary. Under the `react-server` condition
@@ -1547,7 +1546,7 @@ Props, in addition to the standard `div` attributes (minus `children` and
   sits beside the brand. Each is absent from the markup when omitted, so the
   banner then holds the brand alone.
 - `ground` (`"base"`, `"inverse"` or `"transparent"`, default
-  `"transparent"`): the plate of both the header and the footer.
+  `"transparent"`): the header plate and footer divider policy; the footer always paints a local dark surface.
 - `legal`: the props of Designer's `SiteFooter.Legal`, passed straight through.
 - `resolveCopyId` and `copy`: the approved-copy resolver and one `CopyRef` per
   string (heading, description, every label, the button, the client-side error
@@ -1578,7 +1577,8 @@ order, `aria-hidden` and `autocomplete="off"`, and its value reaches
 `accepted` replaces the form with a `role="status"` confirmation and focuses
 its heading; `invalid`, `rate-limited` and `unavailable` each show a
 `role="alert"` led by the failure label, keep every typed value and focus the submit button; with
-the default `ground` the banner and footer carry no background, border or width cap; and an entry that does not
+the default `ground` the banner carries no background, border or width cap,
+while the footer keeps its dark surface without a border or width cap; and an entry that does not
 resolve throws an error naming its path, never its id.
 
 What it does not do: show which field a server `invalid` result refers to (the
@@ -2584,7 +2584,7 @@ Props, in addition to the standard `div` attributes and `style`:
   `SiteHeader`'s `actions`), `secondaryAction` sits just before it and `nav`
   sits beside the brand. Each is absent from the markup when omitted.
 - `ground` (`"base"`, `"inverse"` or `"transparent"`, default `"base"`): the
-  plate of both the header and the footer. `"transparent"` matches
+  header plate and footer divider policy; the footer always paints a local dark surface. `"transparent"` matches
   `HeroView`.
 - `document`: the `LegalDocument` to render.
 - `resolveCopyId`: `@clossys/writer`'s ref-based `CopyResolver`
@@ -2717,7 +2717,7 @@ legacy boundary page can carry the same header as the rest of the site:
   `headerAction`.
 - `nav` (optional): the primary navigation, beside the brand.
 - `ground` (`"base"`, `"inverse"` or `"transparent"`, default `"base"`): the
-  plate of both the header and the footer. `"transparent"` matches
+  header plate and footer divider policy; the footer always paints a local dark surface. `"transparent"` matches
   `HeroView`.
 
 Each slot is absent from the markup when omitted.
@@ -2762,7 +2762,7 @@ Header appearance inputs and independent hero controls:
 | Hero section `eyebrowTone` | `"accent"` (default) or `"muted"`, using the existing secondary text ink. |
 | Hero section `measure` | `"prose"` (default) or `"wide"`. Wide copy removes the headline cap and caps supporting text at 64rem inside the page column. The outer `LandingView.measure` still controls that page column independently. |
 | Hero section `headingScale` | `"default"` or `"display"`, with the existing responsive display ramp reaching 72px at desktop. |
-| `shell.footer.rule` | `"none"` (default) or `"top"`. Top draws one hairline on a transparent flow footer; opaque grounds ignore the option. Overlay footer placement still requires an opaque ground and the existing hero-only frame composition. |
+| `shell.footer.rule` | `"none"` (default) or `"top"`. Top draws one hairline when a flow footer uses the legacy `"transparent"` ground value; other grounds ignore the option. Footer paint remains dark. Overlay footer placement still requires an opaque ground and the existing hero-only frame composition. |
 
 These fields belong to `SiteLinkInput`, `SiteBrandInput`, `SiteShellInput`,
 `SiteFooterInput` and `SectionedViewHeroSection`, available from
@@ -2770,6 +2770,17 @@ These fields belong to `SiteLinkInput`, `SiteBrandInput`, `SiteShellInput`,
 implementation. Hero appearance fields pass through
 copy resolution into `SectionedView` and `LandingView`; copy references and
 their provenance stay unchanged. Hero appearance omission preserves the hero defaults; shared header defaults use the responsive contract.
+
+The frame footer is always locally dark. Its standard row centers footer and
+legal links, keeps social icons before the real resolved brand-home mark, and
+stacks links, icons, copyright on phones, each centered. Empty link/social
+lists still retain home, drawn on a plate of the page's base ground.
+`shell.footer.home` optionally supplies other home artwork through an asset
+id, destination and copy reference; omission uses the resolved brand.
+Existing columns and social names retain their ordering. The shared frame
+contract exposes `footerGround`, `footerPlacement` and `footerRule`; darkness,
+accessible names, external rel safety and the Privacy link are mandatory facts.
+Footer-only presentation overrides preserve the derived header presentation.
 
 The default header centers desktop navigation on the whole header and measures
 intrinsic brand/link/action widths to collapse before collision. Mobile places
@@ -2874,8 +2885,9 @@ export function SignInPage() {
 - **Footer ground.** `shell.footer.ground` accepts `"base"`, `"inverse"` or
   `"transparent"`. In flow placement it defaults to `shell.ground`, regardless
   of the header's ground or overlay tone. For example, a shell with `ground: "base"` and
-  `footer: { ground: "inverse", legal }` has an inverse footer independently of
-  the ground the overlay header observes.
+  `footer: { ground: "inverse", legal }` has inverse footer divider roles
+  independently of the ground the overlay header observes; footer paint
+  remains locally dark for every ground.
 - **Footer placement.** `shell.footer.placement` accepts `"flow"` (the default)
   or `"overlay"`. Flow keeps the existing in-flow footer markup. Overlay places
   the same footer in the bottom row of the frame's hero scene, below the
@@ -2956,9 +2968,10 @@ export function SignInPage() {
   frame renders a frozen copy, so changing the caller's data afterwards has
   no effect. Header controls, including icon actions and environments, normalize
   into the same distinct variants and panel order: primary, secondary, ghost.
-  Social links render before the legal row, in a named navigation when
-  `social.label` is given. Ungrouped footer links render after headed columns
-  without a heading. Empty slot arrays render nothing.
+  Social links occupy the icon group immediately before the home mark, in a
+  named navigation when `social.label` is given. Ungrouped footer links precede
+  legal links in the centered links region. Empty content arrays are valid;
+  the frame still supplies its default home mark.
 - **One main.** The main id is fixed (`SITE_MAIN_ID`); the frame takes no
   main-id prop and the skip link always targets it. A chrome-free view
   (`ErrorView` included) refuses a `role` holding `main`, `banner`,
@@ -2996,8 +3009,8 @@ export const publicChrome: SiteFrameConfig["site"] = {
 
 | Kind | Banner | Footer | Links |
 | --- | --- | --- | --- |
-| `"site"` | brand, `site.nav`, `site.secondaryAction`, `site.actions`, `site.iconActions` | `site.columns`, `site.footerLinks`, `site.social`, then the legal row | as given (`siteShellFor` sets no `origin` for the site itself) |
-| `"front-door"`, `"admin"`, `"demo"` | leading brand and only the matching environment, marked current, as a ghost icon link; no menu | the legal row only | brand home and root-relative links resolve against `origin` |
+| `"site"` | brand, `site.nav`, `site.secondaryAction`, `site.actions`, `site.iconActions` | `site.columns`, then centered `site.footerLinks` and legal links, social icons and home, copyright | as given (`siteShellFor` sets no `origin` for the site itself) |
+| `"front-door"`, `"admin"`, `"demo"` | leading brand and only the matching environment, marked current, as a ghost icon link; no menu | legal links, default home mark, copyright | brand home and root-relative links resolve against `origin` |
 
 Every kind shares the brand, the skip link, the ground and the legal row. A
 surface served from another host (a sign-in host, an admin host) therefore
@@ -3928,7 +3941,7 @@ Props:
   `secondaryAction` sits just before it and `nav` sits beside the brand. Each
   is absent from the markup when omitted.
 - `ground` (`"base"`, `"inverse"` or `"transparent"`, default `"base"`): the
-  plate of both the header and the footer.
+  header plate and footer divider policy; the footer always paints a local dark surface.
 - `pages`: `{ id, href, status, states: { id, href }[] }[]`. `id` is shown as
   text. Every `href` must be a same-site address (one leading slash, no
   `//`, no backslash, no control character); anything else throws a
@@ -6478,9 +6491,13 @@ consumer runtime qualification. A record alone never qualifies a pair.
 `SITE_FRAME_CONFIG_SCHEMA` metadata through both web and server entries. The
 contract references real Designer Header/Footer exports, separate from Pack
 route placement and Instance binding; it is not measurement or qualification.
-Footer composition facts remain pending the footer unit. `presentation` accepts
-only flat finite `headerGround`, `headerPlacement` and `headerTone` keys, with
-overlay/base defaults; overlay uses tone and explicit reserved uses ground. Shared
+Footer composition facts require local darkness, centered links, named icons,
+home at the inline end (following document direction) and mobile
+links/icons/copyright order. `presentation` accepts
+flat finite `footerGround`, `footerPlacement`, `footerRule`, `headerGround`,
+`headerPlacement` and `headerTone` keys. Footer defaults are base/flow/none;
+header defaults are overlay/base, with overlay using tone and explicit reserved
+using ground. Shared
 `normalizeSiteFrameConfig` rejects unknown keys and incompatible dependent
 fields and accepts its own normalized output.
 
