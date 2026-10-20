@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { KeyboardEvent, MouseEvent, ReactNode } from "react";
 import { cx } from "../atoms/internal/cx.js";
 import { UI_Z_SKIP_LINK } from "./internal/shell-vars.js";
 
@@ -32,31 +32,60 @@ export interface SkipLinkProps {
  * through an entire `SiteHeader`/`NavShell` before reaching the content
  * that actually changed.
  *
- * A public, standalone sibling of the identically-shaped skip link `Shell`
- * already renders internally (see `Shell.tsx`'s own `SkipLink`): that one
- * is wired to `Shell.Main`'s own fixed id, because `Shell`'s five slots are
- * a closed, one-per-app set this package already owns end to end. Site
- * chrome has no such fixed target — a consumer's page structure decides
- * what "content" means and which element carries that id — so this version
- * takes `targetId` (and its own visible `children`) as props instead of
- * assuming either. Render it as the very first thing inside `<body>`,
- * before `SiteHeader`/`NavShell`, and give the jump target itself a
- * matching `id` plus `tabIndex={-1}`.
+ * A public, standalone component that `Shell` also renders for its own
+ * `Shell.Main` target: `Shell`'s five slots are a closed, one-per-app set
+ * wired to a fixed, package-owned id, whereas site chrome has no such fixed
+ * target, so this version takes `targetId` (and its own visible `children`)
+ * as props. Render it as the very first thing inside `<body>`, before
+ * `SiteHeader`/`NavShell`, and give the jump target itself a matching `id`
+ * plus `tabIndex={-1}`.
  *
- * Focuses the target directly, in addition to following `href`'s own URL-
- * fragment navigation: a target isn't natively focusable purely from
- * `tabIndex={-1}`'s absence of a browser default, and not every browser
- * reliably moves focus there from an anchor click alone — calling
- * `.focus()` explicitly is the same belt-and-braces fix `Shell`'s own skip
- * link uses, kept identical here rather than reinvented.
+ * Activation (click, Enter, or Space) moves focus to the target and scrolls
+ * it into view, and cancels the anchor's default navigation, so
+ * `location.hash` and browser history stay untouched. That keeps a
+ * hash-routed application on its current route: following `href="#target"`
+ * would otherwise overwrite the route in the fragment. The `href` remains as
+ * the fallback for the cases where this handler does not run or cannot move
+ * focus: JavaScript is unavailable, the click is a modified or non-primary
+ * one (open in a new tab), the target is not in the document, or the target
+ * cannot take focus (for example it lacks `tabIndex={-1}`). Space follows the
+ * same `href` fallback in those cases, as Enter does.
  */
 export function SkipLink({ targetId, children, className }: SkipLinkProps) {
+  // True only when focus actually landed on the target. A target that cannot
+  // take focus (no `tabIndex`, `inert`, hidden) leaves the `href` to run, so
+  // the link never becomes a no-op.
+  const jumpToTarget = (): boolean => {
+    const target = document.getElementById(targetId);
+    if (!target) return false;
+    // `focus()` scrolls the target into view unless `preventScroll` is set.
+    target.focus();
+    return document.activeElement === target;
+  };
+
+  const onClick = (event: MouseEvent<HTMLAnchorElement>) => {
+    if (event.defaultPrevented) return;
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    if (jumpToTarget()) event.preventDefault();
+  };
+
+  // A link activates on Enter natively (as a click); Space is added here so
+  // the control also answers to it, as a button would. Space does not follow
+  // an `href` on its own, so when focus cannot move to the target the handler
+  // clicks the link, which runs the `href` fragment fallback exactly as Enter
+  // does, and also keeps Space from scrolling the page.
+  const onKeyDown = (event: KeyboardEvent<HTMLAnchorElement>) => {
+    if (event.defaultPrevented || event.key !== " ") return;
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    if (!jumpToTarget()) event.currentTarget.click();
+  };
+
   return (
     <a
       href={`#${targetId}`}
-      onClick={() => {
-        document.getElementById(targetId)?.focus();
-      }}
+      onClick={onClick}
+      onKeyDown={onKeyDown}
       className={cx(
         "sr-only focus:not-sr-only",
         "focus:fixed focus:start-sm focus:top-sm focus:rounded-control focus:bg-accent focus:px-md focus:py-sm",
