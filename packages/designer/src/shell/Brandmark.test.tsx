@@ -104,6 +104,33 @@ describe("Brandmark: REV4 presentation contract regressions", () => {
     expect(container.querySelector(".desktop\\:hidden")).not.toBeNull();
   });
 
+  it.each(BRANDMARK_VARIANTS.flatMap(variant =>
+    (["mobile", "responsive"] as const).flatMap(presentation =>
+      (["shared", "self"] as const).map(plate => [plate, variant, presentation] as const))),
+  )("preserves %s plates for %s / %s explicit mobile artwork", (plate, variant, presentation) => {
+    const mark = PRESENTATION_MARKS[1];
+    const { container } = render(<Brandmark {...props(variant, "sm")} plate={plate}
+      markSrc={fixtureUrl(mark)} geometry={fixtureGeometry(mark)} presentation={presentation} />);
+    const link = container.querySelector("a")!;
+    const mobile = presentation === "responsive" ? link.querySelector(".desktop\\:hidden")! : link;
+    const silhouette = mobile.querySelector<HTMLElement>(".bg-accent")!;
+    expect(silhouette).not.toBeNull();
+    expect(silhouette.parentElement!.style.height).toBe("var(--ui-layout-tap-target, 44px)");
+    expect(mobile.textContent).toBe("");
+    const sharedPlate = mobile.querySelector<HTMLElement>(".bg-ink-primary");
+    if (plate === "shared") {
+      expect(sharedPlate).not.toBeNull();
+      expect(sharedPlate).toContainElement(silhouette);
+      const height = "var(--ui-layout-tap-target, 44px)";
+      const side = `calc(max(${height}, calc(${height} * ${mark.art[2] / mark.art[3]})) / ${1 - 2 * BADGE_INSET_SHARE})`;
+      expect(sharedPlate!.style.height).toBe(side);
+      expect(sharedPlate!.style.width).toBe(side);
+      expect(sharedPlate!.style.borderRadius).toBe(`calc(${side} * ${BADGE_RADIUS_SHARE})`);
+    } else {
+      expect(sharedPlate).toBeNull();
+    }
+  });
+
   it.each(["geometry", "presentation"] as const)("retains exact legacy SSR when %s is omitted", omitted => {
     const legacy = props("lockup", "sm");
     const addition = omitted === "geometry" ? { presentation: "desktop" as const }

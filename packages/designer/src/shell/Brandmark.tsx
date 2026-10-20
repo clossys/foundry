@@ -195,7 +195,7 @@ export function Brandmark(props: BrandmarkProps) {
           presentation={props.presentation === "responsive" ? "desktop" : props.presentation} geometry={props.geometry} />
       : <Logomark src={markSrc} size={size} plate={plate}
           presentation={props.presentation === "responsive" ? "desktop" : props.presentation} geometry={props.geometry} />;
-    const mobile = <Logomark src={markSrc} size={size} geometry={props.geometry}
+    const mobile = <Logomark src={markSrc} size={size} plate={plate} geometry={props.geometry}
       presentation={props.presentation === "responsive" ? "mobile" : props.presentation} />;
     return <a href={href} aria-label={label} className={linkClasses}>
       {props.presentation === "responsive"
