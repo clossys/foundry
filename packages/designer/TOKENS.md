@@ -136,7 +136,7 @@ Application type describes the consuming CSS syntax, not a new field on TokenDef
 - CSS binding: `background-color: var(--color-surface-glass)`. Application type: `color`.
 - Context: Normal-polarity overlay header plates composited above a real backdrop.
 - Specimen kind: `surface`.
-- Default: `oklch(1 0 0 / 0.88)`. Source family: `surface`. Brandable: yes. Theme-dependent declaration: yes.
+- Default: `oklch(1 0 0 / 0.6)`. Source family: `surface`. Brandable: yes. Theme-dependent declaration: yes.
 
 ##### `--color-surface-glass-inverse`
 
@@ -146,7 +146,7 @@ Application type describes the consuming CSS syntax, not a new field on TokenDef
 - CSS binding: `background-color: var(--color-surface-glass-inverse)`. Application type: `color`.
 - Context: Inverse-polarity overlay header plates; composite contrast remains context dependent.
 - Specimen kind: `surface`.
-- Default: `oklch(0.2178 0 0 / 0.88)`. Source family: `surface`. Brandable: yes. Theme-dependent declaration: yes.
+- Default: `oklch(0.2178 0 0 / 0.85)`. Source family: `surface`. Brandable: yes. Theme-dependent declaration: yes.
 
 #### Ink (7)
 
@@ -1666,7 +1666,7 @@ Application type describes the consuming CSS syntax, not a new field on TokenDef
 - CSS binding: `backdrop-filter: blur(var(--blur-glass))`. Application type: `length`.
 - Context: Backdrop blur behind glass header plates, with an appropriate solid or translucent fallback.
 - Specimen kind: `blur`.
-- Default: `16px`. Source family: `blur`. Brandable: yes. Theme-dependent declaration: no.
+- Default: `20px`. Source family: `blur`. Brandable: yes. Theme-dependent declaration: no.
 
 ##### `--blur-notice`
 

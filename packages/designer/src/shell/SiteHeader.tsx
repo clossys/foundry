@@ -22,7 +22,8 @@ export type SiteHeaderPlacement = "flow" | "overlay";
  * inverse ground in the current theme. `base` means dark ink on a light
  * ground only in the light theme; in the dark theme it is light ink on a
  * dark ground, and `inverse` flips with it. The glass the header turns into after scrolling
- * matches the same ink, so the ink never changes on scroll.
+ * matches the same ink. A host that observes changing grounds may update
+ * `data-tone`; the header's inherited ink and glass follow it together.
  *
  * The tone governs inherited ink only. A child that sets its own ink (a
  * `Link` in any variant, an explicitly toned `Brandmark`, the `ghost` look of
@@ -228,6 +229,9 @@ function SiteHeaderRoot({
   const tonedBrand = headerBrand && (headerBrand.props.tone === undefined || headerBrand.props.markInk === undefined)
     ? cloneElement(headerBrand, {
         ...(headerBrand.props.tone === undefined ? { tone: overlay && tone === "inverse" ? "inverse" : "auto" } : {}),
+        // Automatic wordmarks inherit the live header ink as its observed
+        // ground changes; an authored tone or class remains the host's choice.
+        ...(overlay && headerBrand.props.tone === undefined && headerBrand.props.className === undefined ? { className: "text-inherit" } : {}),
         ...(headerBrand.props.markInk === undefined ? { markInk: "accent" } : {}),
       } satisfies Partial<BrandmarkProps>)
     : brand;

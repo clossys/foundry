@@ -138,10 +138,10 @@ export interface SiteShellInput {
   readonly mobileLayout?: "inline" | "menu-brand-action";
   /** @default "base" */
   readonly ground?: SiteChromeGround;
-  /** Reserved chrome may choose its own ground; an overlay inherits the selected ink tone over the page. */
+  /** Overlay is the default. Its tone is a server hint; the client follows declared ground and page theme. Explicit reserved chrome may choose its own ground. */
   readonly header?:
-    | { readonly placement?: "reserved"; readonly ground?: SiteChromeGround; readonly tone?: never }
-    | { readonly placement: "overlay"; readonly tone?: "base" | "inverse"; readonly ground?: never };
+    | { readonly placement: "reserved"; readonly ground?: SiteChromeGround; readonly tone?: never }
+    | { readonly placement?: "overlay"; readonly tone?: "base" | "inverse"; readonly ground?: never };
   readonly footer?: SiteFooterInput;
   /**
    * The canonical public origin (`https://example.com`), for a surface served
