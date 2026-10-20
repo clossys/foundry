@@ -24,9 +24,10 @@ const TabsOrientationContext = createContext<"horizontal" | "vertical">("horizon
 function TabsRoot({ children, className, ...rest }: TabsProps) {
   return (
     <AriaTabs {...rest}
-      className={({ orientation }) =>
-        cx(orientation === "vertical" ? "flex flex-row gap-md" : "flex flex-col gap-md", className)
-      }
+      className={({ orientation }) => {
+        const vertical = orientation === "vertical";
+        return cx(vertical ? "flex flex-row gap-md" : "flex flex-col gap-md", className);
+      }}
     >
       {({ orientation }) => (
         <TabsOrientationContext.Provider value={orientation}>
@@ -52,14 +53,15 @@ function TabsList({ children, className, ...rest }: TabsListProps) {
   return (
     <AriaTabList
       {...rest}
-      className={({ orientation }) =>
-        cx(
-          orientation === "vertical"
+      className={({ orientation }) => {
+        const vertical = orientation === "vertical";
+        return cx(
+          vertical
             ? "flex flex-col gap-xs border-s border-line-base"
             : "flex gap-xs border-b border-line-base",
           className,
-        )
-      }
+        );
+      }}
     >
       {children}
     </AriaTabList>
@@ -87,7 +89,9 @@ function TabsTab({ children, className, style, ...rest }: TabsTabProps) {
       className={(renderProps) =>
         cx(
           // Reserve the indicator track in every state to avoid selection jumps.
-          `cursor-default ${vertical ? "border-s-2" : "border-b-2"} px-md py-sm text-body-s font-body text-ink-muted outline-none transition-colors motion-reduce:transition-none disabled:cursor-not-allowed`,
+          "cursor-default",
+          vertical ? "border-s-2" : "border-b-2",
+          "px-md py-sm text-body-s font-body text-ink-muted outline-none transition-colors motion-reduce:transition-none disabled:cursor-not-allowed",
           renderProps.isSelected ? "border-accent text-ink-primary" : "border-transparent",
           className,
         )
