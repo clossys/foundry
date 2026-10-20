@@ -7,6 +7,13 @@ import ts from "typescript";
 
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 
+describe("compiled signature chart public contract", () => {
+  it.each(["index", "server"])("exports all three charts from the compiled charts/%s entry", async entry => {
+    const exports = await import(pathToFileURL(join(packageRoot, `dist/charts/${entry}.js`)).href);
+    for (const name of ["AreaChart", "Heatmap", "StatusStrip"]) expect(exports[name]).toBeTypeOf("function");
+  });
+});
+
 describe("compiled atom guidance public contract", () => {
   it("intentionally exports the four atom metadata records from the existing client atoms barrel", () => {
     const entry = join(packageRoot, "dist/atoms/index.js");
