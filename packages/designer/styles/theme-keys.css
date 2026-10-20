@@ -875,11 +875,13 @@
    * copyright starts on the right and home ends on the left. */
   @container (min-width: 1280px) {
     grid-template-areas: "copyright links icons";
-    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(max-content, 1fr);
+    /* Equal bounded side tracks keep the links on the whole-footer centre.
+     * Uncapped profiles wrap within their end track before any collision. */
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr);
     align-items: center;
     justify-items: stretch;
     & > [data-footer-region="copyright"] { text-align: start; }
-    & > [data-footer-region="icons"] > ul { justify-content: flex-end; flex-wrap: nowrap; }
+    & > [data-footer-region="icons"] > ul { justify-content: flex-end; flex-wrap: wrap; }
     /* The tap target extends inward so the end art meets the page gutter. */
     & > [data-footer-region="icons"] li:last-child > a { justify-content: flex-end; padding-inline-end: 0; }
   }

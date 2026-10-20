@@ -941,7 +941,7 @@
     }
     @container (min-width: 1280px) {
       grid-template-areas: "copyright links icons";
-      grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(max-content, 1fr);
+      grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr);
       align-items: center;
       justify-items: stretch;
       & > [data-footer-region="copyright"] {
@@ -949,7 +949,7 @@
       }
       & > [data-footer-region="icons"] > ul {
         justify-content: flex-end;
-        flex-wrap: nowrap;
+        flex-wrap: wrap;
       }
       & > [data-footer-region="icons"] li:last-child > a {
         justify-content: flex-end;

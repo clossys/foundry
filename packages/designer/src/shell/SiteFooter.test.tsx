@@ -1,7 +1,10 @@
-import { readFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { execFileSync, spawnSync } from "node:child_process";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { pathToFileURL } from "node:url";
 import { renderToStaticMarkup } from "react-dom/server";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import { SiteFooter, type SiteFooterLegalProps } from "./SiteFooter.js";
 import { UI_LAYOUT_TAP_TARGET } from "./internal/shell-vars.js";
@@ -63,6 +66,152 @@ describe("SiteFooter", () => {
     render(<SiteFooter secondary={<span>Legal</span>} className="my-footer" />);
     expect(screen.getByRole("contentinfo").className).toContain("my-footer");
   });
+});
+
+describe("SiteFooter measured geometry", () => {
+  type Rect = { left: number; right: number; top: number; bottom: number; width: number };
+  type Measurement = {
+    content: Rect; links: Rect; icons: Rect; copyright: Rect;
+    copyrightText: Rect; targets: Rect[]; linkItems: Rect[];
+  };
+  let measurements: Record<string, Measurement>;
+  beforeAll(() => {
+    const browser = ["chromium", "chromium-browser", "google-chrome", "google-chrome-stable"]
+      .find(name => spawnSync(name, ["--version"], { stdio: "ignore" }).status === 0);
+    if (!browser) throw new Error("Footer geometry tests require Chromium or Google Chrome on PATH.");
+    const css = readFileSync(join(import.meta.dirname, "../../styles/compiled.css"), "utf8");
+    const fixtures = ["ltr", "rtl"].flatMap(dir => [
+      { name: "wide", width: 1280, count: 7 },
+      { name: "roomy", width: 1440, count: 7 },
+      { name: "crowded", width: 1280, count: 30 },
+      { name: "phone", width: 375, count: 7 },
+      { name: "below-desktop", width: 1279, count: 7 },
+    ].map(({ name, width, count }) => renderToStaticMarkup(
+      <section dir={dir} data-geometry-case={`${dir}-${name}`}>
+        <SiteFooter style={{ width }} secondary={<SiteFooter.Legal
+          entity="Example"
+          links={[{ label: "Privacy", href: "/privacy" }, { label: "Terms", href: "/terms" }]}
+          icons={Array.from({ length: count }, (_, index) => ({
+            label: `Profile ${index}`, href: `/profile/${index}`,
+            icon: <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24"><path d="M4 12h16" /></svg>,
+          }))}
+          home={{ label: "Example home", href: "/", markSrc: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'/%3E" }}
+        />} />
+      </section>,
+    ))).join("");
+    function measure() {
+      const rect = (node: Element | Range) => {
+        const { left, right, top, bottom, width } = node.getBoundingClientRect();
+        return { left, right, top, bottom, width };
+      };
+      const result = Object.fromEntries([...document.querySelectorAll("[data-geometry-case]")].map(fixture => {
+        const content = fixture.querySelector("[data-footer-composition]")!;
+        const region = (name: string) => content.querySelector(`[data-footer-region="${name}"]`)!;
+        const text = document.createRange();
+        text.selectNodeContents(region("copyright"));
+        return [fixture.getAttribute("data-geometry-case"), {
+          content: rect(content), links: rect(region("links")), icons: rect(region("icons")),
+          copyright: rect(region("copyright")), copyrightText: rect(text),
+          targets: [...region("icons").querySelectorAll("a")].map(rect),
+          linkItems: [...region("links").querySelectorAll("li")].map(rect),
+        }];
+      }));
+      document.getElementById("footer-geometry")!.textContent = JSON.stringify(result);
+    }
+    // Read real Chromium layout through DevTools and close the owned browser.
+    async function readBrowserLayout() {
+      const { spawn } = require("node:child_process") as typeof import("node:child_process");
+      const browser = spawn(process.argv[1]!, ["--headless", "--no-sandbox", "--disable-dev-shm-usage",
+        "--remote-debugging-port=0", `--user-data-dir=${process.argv[3]}`, "about:blank"], { stdio: ["ignore", "ignore", "pipe"] });
+      let socket: WebSocket | undefined;
+      try {
+        const endpoint = await new Promise<string>((resolve, reject) => {
+          let output = "";
+          browser.on("error", reject);
+          browser.stderr!.on("data", (chunk: Buffer) => {
+            output += String(chunk);
+            const match = output.match(/DevTools listening on (ws:\/\/\S+)/);
+            if (match) resolve(match[1]!);
+          });
+        });
+        socket = new WebSocket(endpoint);
+        const client = socket;
+        await new Promise<void>((resolve, reject) => { client.onopen = () => resolve(); client.onerror = reject; });
+        let id = 0;
+        const pending = new Map<number, (response: any) => void>();
+        client.onmessage = event => { const response = JSON.parse(String(event.data)); pending.get(response.id)?.(response); pending.delete(response.id); };
+        const command = (method: string, params = {}, sessionId?: string): Promise<any> => new Promise((resolve, reject) => {
+          const request = ++id;
+          pending.set(request, response => response.error ? reject(new Error(response.error.message)) : resolve(response.result));
+          client.send(JSON.stringify({ id: request, method, params, sessionId }));
+        });
+        const { targetId } = await command("Target.createTarget", { url: "about:blank" });
+        const { sessionId } = await command("Target.attachToTarget", { targetId, flatten: true });
+        await command("Page.enable", {}, sessionId);
+        const { frameTree } = await command("Page.getFrameTree", {}, sessionId);
+        const html = require("node:fs").readFileSync(require("node:url").fileURLToPath(process.argv[2]), "utf8");
+        await command("Page.setDocumentContent", { frameId: frameTree.frame.id, html }, sessionId);
+        let value = "";
+        for (let attempt = 0; attempt < 50 && !value; attempt++) {
+          const response = await command("Runtime.evaluate", { expression: "document.getElementById('footer-geometry')?.textContent", returnByValue: true }, sessionId);
+          value = response.result.value ?? "";
+          if (!value) await new Promise(resolve => setTimeout(resolve, 20));
+        }
+        if (!value) throw new Error("Chromium did not produce footer layout measurements.");
+        process.stdout.write(value);
+      } finally {
+        socket?.close();
+        browser.kill();
+      }
+    }
+    const directory = mkdtempSync(join(tmpdir(), "footer-geometry-"));
+    try {
+      const html = join(directory, "fixture.html");
+      writeFileSync(html, `<!doctype html><meta charset="utf-8"><style>${css}</style>${fixtures}<pre id="footer-geometry"></pre><script>(${measure.toString()})()</script>`);
+      const output = execFileSync(process.execPath, ["--experimental-websocket", "-e", `(${readBrowserLayout.toString()})().catch(error => { console.error(error.message); process.exitCode = 1; });`,
+        browser, pathToFileURL(html).href, join(directory, "profile")],
+      { encoding: "utf8", timeout: 5000, maxBuffer: 8 * 1024 * 1024, stdio: ["ignore", "pipe", "pipe"] });
+      measurements = JSON.parse(output);
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  });
+  for (const dir of ["ltr", "rtl"]) {
+    it(`centres links on the whole footer with unequal side content in ${dir}`, () => {
+      for (const size of ["wide", "roomy"]) {
+        const { content, links, copyrightText, targets, linkItems } = measurements[`${dir}-${size}`]!;
+        const iconWidth = Math.max(...targets.map(rect => rect.right)) - Math.min(...targets.map(rect => rect.left));
+        expect(iconWidth).toBeGreaterThan(copyrightText.width + 100);
+        expect(Math.abs((links.left + links.right - content.left - content.right) / 2)).toBeLessThan(1);
+        const visibleCentre = (Math.min(...linkItems.map(rect => rect.left)) + Math.max(...linkItems.map(rect => rect.right))) / 2;
+        expect(Math.abs(visibleCentre - (content.left + content.right) / 2)).toBeLessThan(1);
+      }
+    });
+    it(`contains uncapped icon content before it collides with adjacent regions in ${dir}`, () => {
+      const { content, links, icons, copyright, targets } = measurements[`${dir}-crowded`]!;
+      expect(targets).toHaveLength(31);
+      expect(new Set(targets.map(rect => Math.round(rect.top))).size).toBeGreaterThan(1);
+      for (const target of targets) {
+        expect(target.width).toBeGreaterThanOrEqual(44);
+        expect(target.left).toBeGreaterThanOrEqual(icons.left - 1);
+        expect(target.right).toBeLessThanOrEqual(icons.right + 1);
+      }
+      expect(Math.abs((links.left + links.right - content.left - content.right) / 2)).toBeLessThan(1);
+      const regions = [copyright, links, icons].sort((a, b) => a.left - b.left);
+      expect(regions[0]!.right).toBeLessThanOrEqual(regions[1]!.left);
+      expect(regions[1]!.right).toBeLessThanOrEqual(regions[2]!.left);
+    });
+    it(`measures the centred phone stack and breakpoint collapse in ${dir}`, () => {
+      for (const size of ["phone", "below-desktop"]) {
+        const { content, links, icons, copyright } = measurements[`${dir}-${size}`]!;
+        expect(links.bottom).toBeLessThanOrEqual(icons.top);
+        expect(icons.bottom).toBeLessThanOrEqual(copyright.top);
+        for (const region of [links, icons, copyright]) {
+          expect(Math.abs((region.left + region.right - content.left - content.right) / 2)).toBeLessThan(1);
+        }
+      }
+    });
+  }
 });
 
 describe("SiteFooter.Legal", () => {
@@ -251,7 +400,7 @@ describe("SiteFooter mandatory dark composition", () => {
     expect(composition).toContain('grid-template-areas: "links" "icons" "copyright"');
     expect(composition).toContain("min-width: 0");
     expect(wide()).toContain('grid-template-areas: "copyright links icons"');
-    expect(wide()).toMatch(/grid-template-columns:\s*minmax\(0, 1fr\) minmax\(0, 2fr\) minmax\(max-content, 1fr\)/);
+    expect(wide()).toMatch(/grid-template-columns:\s*minmax\(0, 1fr\) minmax\(0, 2fr\) minmax\(0, 1fr\)/);
     expect(wide()).toContain("align-items: center");
     expect(wide()).toContain("justify-content: flex-end");
   });
@@ -302,10 +451,10 @@ describe("SiteFooter mandatory dark composition", () => {
     expect(block(columns, `@container (min-width: ${breakpoint("tablet")}) {`)).toContain("grid-template-columns: repeat(2, minmax(0, 1fr))");
     expect(rule("@utility site-footer-dark {")).toContain("container-type: inline-size");
   });
-  it("keeps the wide icon row on one line and never breaks the copyright mid-word", () => {
+  it("wraps wide icons within their bounded track and never forces copyright word breaks", () => {
     const composition = rule("@utility site-footer-composition {");
     expect(composition).not.toContain("overflow-wrap: anywhere");
-    expect(block(wide(), '& > [data-footer-region="icons"] > ul {')).toContain("flex-wrap: nowrap");
+    expect(block(wide(), '& > [data-footer-region="icons"] > ul {')).toContain("flex-wrap: wrap");
   });
   it("shows the home artwork on a page-ground plate so page-ground marks read on the dark footer", () => {
     const { container } = render(fixture());

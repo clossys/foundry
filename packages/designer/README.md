@@ -5323,10 +5323,11 @@ the layout: DOM and narrow-container order is links, icons, copyright,
 each centered on its own line. From the footer's own `desktop` breakpoint
 width (the same container width at which the columns become four; they
 become two at `tablet`), copyright sits at the inline start, links remain
-centered on the footer, and icons sit at the inline end on one line with
-home last, its plate meeting the page gutter; the three parts share one
-vertical centre. Inline start and end follow the document's direction, so a
-right-to-left page mirrors the row. Tracks wrap long content within their
+centered on the footer between equal bounded side tracks. Icons sit at the
+inline end with home last, its plate meeting the page gutter; uncapped icon
+content wraps within its track before it can collide with another region.
+The three parts share one vertical centre. Inline start and end follow the
+document's direction, so a right-to-left page mirrors the row. Tracks wrap long content within their
 bounds without breaking words. Every
 link tap target is at least 44px. There is deliberately no disclaimer slot
 and no `children`, `className`, or `style` prop — regulatory text belongs in
@@ -5336,6 +5337,10 @@ as well as `@clossys/designer/shell`, and its prop types
 (`SiteFooterLegalProps`, `SiteFooterLegalLink`) are exported from both.
 `secondary` continues to accept any node, so existing footers that
 compose their own row are unaffected.
+
+The footer geometry tests use Chromium or Google Chrome from `PATH` to measure
+the shipped CSS, including unequal side content and crowded icon groups in
+both document directions. No browser-driver npm dependency is required.
 
 #### Transparent chrome and full width
 
