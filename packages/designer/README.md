@@ -1007,6 +1007,13 @@ function HeaderActions() {
 }
 ```
 
+Publisher's client-only `AppFrame` supplies this provider and toggle together.
+Its header `themeControl` slot accepts a replacement node, including a
+customized `ThemeToggle`; pass `null` to omit the control. A replacement can
+use `useTheme()` from the frame's existing provider. Match `AppFrame`'s
+`theme.storageKey` and `theme.defaultPreference` with the head initializer's
+`storageKey` and `defaultTheme` to apply the persisted preference before paint.
+
 Reach for `useTheme()` directly when a component needs the current
 preference or resolved theme without rendering a toggle itself:
 
@@ -7940,3 +7947,145 @@ within a group's columns; row keys must be unique. Invalid input throws.
 An empty body displays `emptyMessage` across the row header and all leaf columns.
 The component and its types are exported from the client blocks entry and the
 component is registered in `APP_FRAME_MATERIALS` with its actual Card dependency.
+
+### Headless table model
+
+`filterRows`, `groupRows`, `pivotRows` and `aggregate` operate on caller-supplied
+rows and a versioned `TableModel`, exported through `@clossys/designer/blocks`.
+Each operation applies the model's filters and global search. Pass the resulting
+rows or aggregates to the controlled table components. The engine's module graph
+contains plain data operations; the existing blocks barrel still loads its React
+peers. Rendering, selection, pagination and fetching stay with the caller.
+
+```ts
+import {
+  aggregate, filterRows, groupRows, pivotRows,
+  parseTableModel, serializeTableModel, type TableModel,
+} from "@clossys/designer/blocks";
+
+const records = [
+  { region: "East", team: "Blue", year: 2026, quarter: "Q1", amount: 20, tags: ["urgent"] },
+  { region: "East", team: "Gold", year: 2026, quarter: "Q2", amount: 30, tags: ["urgent", "follow-up"] },
+];
+const view: TableModel = {
+  version: 1,
+  columns: [
+    { id: "region", kind: "enum" }, { id: "team", kind: "enum" },
+    { id: "year", kind: "number" }, { id: "quarter", kind: "enum" },
+    { id: "amount", kind: "number" }, { id: "tags", kind: "tags" },
+  ],
+  collation: { locale: "en", sensitivity: "base", numeric: true },
+  filters: [{ column: "tags", kind: "tags", op: "all", values: ["urgent"] }],
+  groupBy: [{ column: "region" }, { column: "team" }],
+  measures: [
+    { id: "rows", op: "count" },
+    { id: "total", op: "sum", column: "amount" },
+    { id: "average", op: "avg", column: "amount" },
+  ],
+  pivot: {
+    rows: [{ column: "region" }, { column: "team" }],
+    columns: [{ column: "year" }, { column: "quarter" }],
+  },
+};
+const filtered = filterRows(records, view); // { rows, facets }
+const groups = groupRows(records, view);    // nested groups with rows and aggregates
+const pivot = pivotRows(records, view);    // rowAxis, columnAxis, cells, totals
+const totals = aggregate(records, view);   // { rows: 2, total: 50, average: 25 }
+const saved = serializeTableModel(view);   // independent validated plain object
+const restored = parseTableModel(JSON.parse(JSON.stringify(saved)));
+```
+
+Column IDs name own row properties. Supported cell kinds are `text`, `number`,
+`date`, `enum`, `tags` and `boolean`. Numbers must be finite; enum values are
+strings, tags are arrays of strings and boolean values are actual booleans.
+Dates accept finite epoch milliseconds, `YYYY-MM-DD`, or canonical UTC ISO strings
+such as `2026-01-01T00:00:00.000Z`; normalization produces UTC ISO strings. Invalid
+calendar dates and ambiguous local date strings are refused. Null and absent
+properties normalize to one null value. Invalid cells are refused even if a
+later filter would hide that row. Input rows, arrays and models are not mutated;
+returned row arrays retain references to the caller's original rows.
+
+Filters combine with AND, including multiple filters on one column. Text supports
+`contains` and `equals`; number and date `range` bounds are inclusive and either
+bound may be omitted. Enum `in` matches exact string values. Tags support `any`,
+`all` and `none`; null tags act as an empty set for filtering. Empty `any` matches
+no rows, while empty `all` and `none` match every row. Boolean uses `equals`.
+Null values fail scalar filters. Global `search` matches any non-null searchable
+column, with individual tags searched separately; `searchable: false` opts a
+column out. Contains and global search use case folding in the supplied locale;
+text equality uses its collation sensitivity. Enum and tag identity remain exact.
+
+`filterRows` returns input-ordered `rows` and `facets` keyed by column ID. Each
+facet applies global search and every other column's filters, omitting all filters
+on its own column. Counts are per distinct value and row; repeated tags count
+once, an empty tag set contributes no tag and a missing tag value contributes a
+null facet. This disjunctive convention lets a filter menu display alternatives
+to its current selection. Numeric and date facets count distinct normalized
+values rather than histogram buckets.
+
+The locale is required and must be supported by the runtime. Collation options
+control text ordering; a UTF-16 lexical tie break makes equal-collation group keys
+deterministic across input permutations. Numeric/date/boolean values use their
+natural order. Null sorts first ascending and last descending. Each group axis
+can set `order: "desc"`. Group paths have JSON tuple keys: null and the literal
+string `"null"` differ, and delimiters inside values cannot collide. Tags group
+as a deduplicated set sorted by UTF-16 values rather than multiplying a row across tags.
+Groups contain their original rows, per-group aggregates and sorted children.
+The engine supports more than three grouping levels; repeated columns within an
+axis are refused.
+
+Measures are named by distinct IDs. `count` without a column counts rows; with a
+column it counts non-null values. `sum` and `avg` require a number column. `min`
+and `max` support scalar kinds, while `distinct` counts exact normalized values,
+including complete tag sets. Column measures exclude nulls. Empty input yields
+zero for count, sum and distinct, and null for min, max and average. Numeric
+overflow is a typed refusal. Averages and distinct totals are recomputed from
+underlying rows, so subtotals do not add child averages or distinct counts.
+
+A pivot accepts any number of row and column dimensions and one or more measures.
+Both axes contain observed full paths and every observed prefix, plus the `[]`
+grand-total path. Prefixes carry `kind: "subtotal"`, complete paths `"leaf"` and
+the empty path `"total"`. Total/subtotal paths precede their descendants. Every
+axis intersection has a cell, with `empty: true` and the documented empty
+aggregates for an unobserved combination. Empty input still has one grand-total
+cell; zero-dimensional axes are allowed. Before constructing Cartesian cells,
+the engine refuses more than 100,000 measure slots (`rowAxis.length ×
+columnAxis.length × measure count`) with `pivot-budget`. This bounds sparse
+high-cardinality output. The test budget is 2,000 ms for filter, three-level group
+and two-by-two-dimension pivot computation over 10,000 rows with bounded axis
+cardinality and three measures; it is not a timing promise for arbitrary shapes.
+
+Saved views are version 1 plain objects. `serializeTableModel` validates and
+copies a model; `parseTableModel` accepts an unknown plain object and copies it
+after validation. Unknown fields, accessors, column references, kinds, operators,
+invalid ranges and unsupported versions are refused. The typed `TableModelError`
+has a stable `code`: `invalid-model`, `unsupported-version`, `unknown-column`,
+`invalid-cell`, `pivot-budget` or `aggregate-overflow`.
+
+| Export | Kind | Contract |
+| --- | --- | --- |
+| `filterRows` | function | AND/global filtering with input-ordered rows and disjunctive facets. |
+| `groupRows` | function | Deterministically ordered group tree and per-node aggregates. |
+| `pivotRows` | function | Prefix axes, explicit sparse cells, measures, totals and subtotals. |
+| `aggregate` | function | Saved-view measures over filtered rows. |
+| `parseTableModel` | function | Validate and copy an unknown plain saved-view object. |
+| `serializeTableModel` | function | Produce an independent validated plain saved-view object. |
+| `TableModelError` | class | Typed model, cell, output-budget and numeric-overflow refusal. |
+| `TableModel` | type | Version 1 columns, collation, filters, search, groups, measures and pivot. |
+| `TableValue` | type | Normalized string, number, boolean, tag set or null. |
+| `TableColumnKind` | type | The six supported column kinds. |
+| `TableColumn` | type | Own-property ID, kind and optional global-search participation. |
+| `TableCollation` | type | Required locale and optional sensitivity, numeric and case ordering. |
+| `TableFilter` | type | Discriminated column-kind and operator filter union. |
+| `TableDimension` | type | Column reference and optional ascending or descending order. |
+| `TableMeasure` | type | Named count, sum, min, max, average or distinct measure. |
+| `TablePivot` | type | Row and column dimension arrays. |
+| `TableFacet` | type | Normalized facet value and matching-row count. |
+| `TableFilterResult` | type | Filtered original rows and column facet arrays. |
+| `TableAggregateValue` | type | Scalar measure result or null. |
+| `TableAggregates` | type | Measure ID to scalar result record. |
+| `TableGroup` | type | Tuple key, column, value, path, rows, aggregates and child groups. |
+| `TablePivotAxis` | type | Tuple key and path tagged as total, subtotal or leaf. |
+| `TablePivotCell` | type | Row/column axis keys, explicit emptiness and measure results. |
+| `TablePivotResult` | type | Both axes, their cells and grand-total measures. |
+| `TableModelErrorCode` | type | The six stable refusal codes. |

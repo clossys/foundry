@@ -86,4 +86,11 @@ export const NON_BLOCK_THEME_EXPORTS: Readonly<Record<string, string>> = {
   getAppNavigationBreadcrumbs: "Navigation data query with no rendered regions or owned paint.",
   layoutScene: "Scene geometry calculation; the rendered Scene is registered separately.",
   sceneRelationText: "Scene relation text calculation; the rendered Scene is registered separately.",
+  filterRows: "Saved-view row filtering and facet counts over supplied plain data; renders no UI or paint.",
+  groupRows: "Nested group and aggregate calculation over supplied rows; renders no UI or paint.",
+  pivotRows: "Pivot axes, cells and totals calculated from supplied rows; renders no UI or paint.",
+  aggregate: "Saved-view measure calculation returning plain aggregate values; renders no UI or paint.",
+  parseTableModel: "Saved-view validation and copying from a plain object; renders no UI or paint.",
+  serializeTableModel: "Independent validated plain-object saved-view serialization; renders no UI or paint.",
+  TableModelError: "Typed table-data refusal with an error code and message; renders no UI or paint.",
 };
