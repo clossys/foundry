@@ -1,7 +1,11 @@
-import { describe, expect, it } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Shell } from "./Shell.js";
+
+// jsdom dispatches `hashchange` as a later task, so wait a macrotask before
+// asserting that none arrived.
+const settle = () => new Promise<void>((resolve) => setTimeout(resolve, 10));
 
 function FullShell() {
   return (
@@ -129,6 +133,55 @@ describe("Shell", () => {
       expect(skipLink).toHaveFocus();
       await user.keyboard("{Enter}");
       expect(screen.getByRole("main")).toHaveFocus();
+    });
+
+    describe("under a hash router", () => {
+      beforeEach(async () => {
+        window.location.hash = "#/settings/profile";
+        // Let the hashchange from setting the route flush before a test listens.
+        await settle();
+      });
+      afterEach(() => {
+        window.location.hash = "";
+      });
+
+      it("moves focus to Shell.Main without rewriting location.hash", async () => {
+        const user = userEvent.setup();
+        const onHashChange = vi.fn();
+        window.addEventListener("hashchange", onHashChange);
+        const historyLength = window.history.length;
+        render(<FullShell />);
+        await user.click(screen.getByRole("link", { name: "Skip to content" }));
+        await settle();
+        window.removeEventListener("hashchange", onHashChange);
+        expect(screen.getByRole("main")).toHaveFocus();
+        expect(window.location.hash).toBe("#/settings/profile");
+        expect(window.history.length).toBe(historyLength);
+        expect(onHashChange).not.toHaveBeenCalled();
+      });
+
+      it("moves focus on Enter without rewriting location.hash", async () => {
+        const user = userEvent.setup();
+        render(<FullShell />);
+        await user.tab();
+        await user.keyboard("{Enter}");
+        expect(screen.getByRole("main")).toHaveFocus();
+        expect(window.location.hash).toBe("#/settings/profile");
+      });
+
+      it("moves focus on Space without rewriting location.hash", async () => {
+        const user = userEvent.setup();
+        render(<FullShell />);
+        await user.tab();
+        await user.keyboard(" ");
+        expect(screen.getByRole("main")).toHaveFocus();
+        expect(window.location.hash).toBe("#/settings/profile");
+      });
+
+      it("cancels the anchor's default navigation", () => {
+        render(<FullShell />);
+        expect(fireEvent.click(screen.getByRole("link", { name: "Skip to content" }))).toBe(false);
+      });
     });
 
     it("uses skipLinkLabel when a caller passes one", () => {

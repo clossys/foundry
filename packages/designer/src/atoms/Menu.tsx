@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { Fragment, isValidElement, type ReactNode, type HTMLAttributes } from "react";
 import {
   Menu as AriaMenu,
   MenuItem as AriaMenuItem,
@@ -158,14 +158,50 @@ function MenuSeparator({ className }: MenuSeparatorProps) {
   return <Separator className={cx("my-xs border border-line-base", className)} />;
 }
 
-type MenuSectionProps = Pick<AriaMenuSectionProps<object>,
-  "selectedKeys" | "onSelectionChange" | "shouldCloseOnSelect" | "aria-label"
-> & { children: ReactNode; heading?: ReactNode; selectionMode?: "none" | "multiple" };
+type MenuSectionBaseProps = Pick<AriaMenuSectionProps<object>,
+  "selectedKeys" | "onSelectionChange" | "shouldCloseOnSelect"
+> & { children: ReactNode; selectionMode?: "none" | "multiple" };
 
-/** A named group with optional controlled checkbox selection, owned by the menu peer. */
+/** A section needs an accessible name: a visible `heading`, an `aria-label`, or both. */
+type MenuSectionProps = MenuSectionBaseProps & (
+  | { heading: ReactNode; "aria-label"?: string }
+  | { heading?: ReactNode; "aria-label": string }
+);
+
+const isBlank = (value: unknown): boolean =>
+  value == null || typeof value === "boolean" || (typeof value === "string" && !value.trim());
+
+// Only inspect intrinsic content and fragments; a component's output cannot
+// be verified here. Such headings need the section's explicit aria-label.
+function hasHeadingText(value: ReactNode): boolean {
+  if (typeof value === "string") return !!value.trim();
+  if (typeof value === "number" || typeof value === "bigint") return true;
+  if (Array.isArray(value)) return value.some(hasHeadingText);
+  if (!isValidElement<HTMLAttributes<HTMLElement>>(value)) return false;
+  if (value.type === Fragment) return hasHeadingText(value.props.children);
+  if (typeof value.type !== "string") return false;
+  const props = value.props;
+  if (props.hidden || props["aria-hidden"] === true || props["aria-hidden"] === "true"
+    || props.style?.display === "none" || props.style?.visibility === "hidden"
+    || props["aria-labelledby"]
+    || ["script", "style", "template"].includes(value.type)) return false;
+  if (props["aria-label"] !== undefined) return !isBlank(props["aria-label"]);
+  return hasHeadingText(props.children);
+}
+
+/**
+ * A named group with optional controlled checkbox selection, owned by the
+ * menu peer. Throws if neither `heading` nor `aria-label` carries a
+ * non-empty name, since that would render an unnamed menu group.
+ */
 function MenuSection({ heading, children, ...rest }: MenuSectionProps) {
+  const hasHeading = hasHeadingText(heading);
+  if (!hasHeading && isBlank(rest["aria-label"])) {
+    throw new TypeError("Menu.Section: a non-empty heading or aria-label is required.");
+  }
   return <AriaMenuSection {...rest} className="flex flex-col">
-    {heading != null && <Header className="px-sm py-xs text-caption font-body text-ink-muted">{heading}</Header>}
+    {!isBlank(heading) && <Header aria-label={hasHeading ? undefined : rest["aria-label"]}
+      className="px-sm py-xs text-caption font-body text-ink-muted">{heading}</Header>}
     {children}
   </AriaMenuSection>;
 }

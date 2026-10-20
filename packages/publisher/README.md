@@ -6316,8 +6316,14 @@ use unoccupied variants in that order; primary requires resolved nonblank copy
 and supplied validated SVG icon data. `normalizeSiteFrameActions` accepts
 already-resolved label/href/IconNode content; `resolveShell` owns copy, URL and
 SVG allowlist validation before that helper. No primary means an empty,
-noninteractive right track. Actions without navigation reuse existing shared
-`Primary`/`Menu` labels; no minimum link count or invented brand copy is needed.
+noninteractive right track. Actions without navigation get a menu with no links,
+named through the consumer's own `resolveCopy` from the copy references in
+`SITE_FRAME_CONTRACT.defaults`: `site-frame.nav.label` names the navigation and
+`site-frame.nav.trigger-label` labels its toggle. The frame ships no audience
+text for them, and an unresolved default fails closed like any other shell copy.
+The contract is at `revision` 2; revision 1 published these defaults as strings.
+Supply `shell.nav` (links may be empty) to name the menu with other copy; no
+minimum link count or invented brand copy is needed.
 All full labels appear in the panel after links as text only, primary then
 secondary then ghost. Only the default mobile primary affordance has a second
 copy, an icon-only ghost action in the mobile bar.
