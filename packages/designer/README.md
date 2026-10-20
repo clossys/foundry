@@ -454,7 +454,7 @@ source file's own header for the exact probe and its result). Today that's:
 | Subpath | Server-safe members |
 | --- | --- |
 | `@clossys/designer/atoms/server` | `Avatar`, `Badge`, `Banner`, `Card`, `Field`, `Icon`, `Meter`, `Skeleton`, `Spinner`, `StatusMark`, `buttonLinkClassName`, `iconButtonClassName`, `iconButtonLinkClassName`, `mergeUiClasses` |
-| `@clossys/designer/blocks/server` | `AnatomyCallouts`, `ArticleBody`, `Matrix`, `ContentSection`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `Item`, `Items`, `MarketingChapter`, `MediaFigure`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `RecordLedger`, `Scene`, `SectionFrame`, `SectionHeader`, `SectionIntro`, `Specimen`, `SpecimenPanel`, `Stat`, `StatusList`, `Tree` |
+| `@clossys/designer/blocks/server` | `AnatomyCallouts`, `ArticleBody`, `Matrix`, `ContentSection`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `Item`, `Items`, `MarketingChapter`, `MediaFigure`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `RecordLedger`, `Scene`, `SectionFrame`, `SectionHeader`, `SectionIntro`, `Specimen`, `SpecimenPanel`, `Stat`, `StatusList`, `Testimonial`, `Tree` |
 | `@clossys/designer/shell/server` | `Shell`, `SiteFooter`, `SiteHeader`, `SkipLink` |
 | `@clossys/designer/charts/server` | `ChartFrame`, `BarChart`, `LineChart` (static), `WaterfallChart`, `RangeChart`, `ScatterChart`, `AreaChart` (static), `Heatmap` (static), `StatusStrip` (static), `Sparkline` |
 | `@clossys/designer/theme/server` | `getThemeInitScript` |
@@ -4314,6 +4314,8 @@ pairing already establishes elsewhere in this package. Rendered through
 this package's own `Avatar` atom, which independently requires `alt` at
 its own type level too.
 
+The `/blocks/server` variant uses the server Avatar; use the ordinary block when you need its image-load-failure fallback.
+
 ### `SectionFrame`
 
 ```tsx
@@ -5324,9 +5326,21 @@ in the page's language. Optional `icons` are ordered `{ label, href, icon }`
 records with named destinations and consumer-supplied decorative artwork.
 `iconsLabel` names their navigation group. Optional `home` supplies
 `{ label, href, markSrc }`, always after the social icons; standalone
-Designer callers supply it explicitly. The mark is artwork authored for the
-page's base ground and is drawn on a small plate of that ground, so the same
-mark the header shows stays legible on the dark footer in either theme.
+Designer callers supply it explicitly, and an omitted `home` renders no mark.
+Pass the same artwork the header brand mark uses: it is drawn on a small
+plate of the page's base ground, so it stays legible on the dark footer in
+either theme. The art is decorative (`alt=""`); `label` is the link's whole
+accessible name, as on the header brand link.
+
+`SiteFooter.Legal` enforces the footer configuration contract: at most five
+`links` in one flat row (further links belong in labelled
+`SiteFooter.Column`s), at most five icon slots with `home` counted as the
+last, and no link or icon that repeats `home.href`. A breach throws an error
+whose `name` is `"SiteFooterContractError"` and whose `code` is
+`"footer-link-limit"`, `"footer-icon-limit"` or `"footer-duplicate-link"`;
+nothing is truncated.
+Column headings sit at zero margin in the muted footer ink, aligned with
+their links' text; an empty links or icons region takes no space.
 
 ```tsx
 import { SiteFooter } from "@clossys/designer/shell";

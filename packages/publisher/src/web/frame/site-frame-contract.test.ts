@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import * as shell from "@clossys/designer/shell/server";
 import * as frame from "./index.js";
 import * as web from "../index.js";
-import { SITE_FRAME_CONTRACT, SITE_FRAME_CONFIG_SCHEMA, normalizeSiteFrameConfig, normalizeSiteFrameActions, SITE_FRAME_NAV_DEFAULTS } from "./site-frame-contract.js";
+import { FOOTER_ICON_LIMIT, FOOTER_LINK_LIMIT, SITE_FRAME_CONTRACT, SITE_FRAME_CONFIG_SCHEMA, SiteFooterContractError, normalizeSiteFrameConfig, normalizeSiteFrameActions, SITE_FRAME_NAV_DEFAULTS } from "./site-frame-contract.js";
 
 describe("data-readable SiteFrame contract", () => {
   it("names real exported constituents without claiming measurement or qualification", () => {
@@ -87,4 +87,26 @@ it("normalizes footer configuration without losing inherited header presentation
 it("preserves independent explicit header overrides while inheriting footer-only settings", () => {
   expect(normalizeSiteFrameConfig({ headerPlacement: "overlay", headerTone: "inverse" }, { headerGround: "inverse", headerPlacement: "reserved" })).toMatchObject({ headerPlacement: "overlay", headerTone: "inverse", headerGround: "base" });
   expect(normalizeSiteFrameConfig({ headerPlacement: "reserved" }, { headerPlacement: "overlay", headerTone: "inverse" })).toMatchObject({ headerPlacement: "reserved", headerTone: "base" });
+});
+
+it("FOOTER-2 publishes the footer caps, brand-last slot, grouping and exclusions as contract data", () => {
+  expect(FOOTER_LINK_LIMIT).toBe(5);
+  expect(FOOTER_ICON_LIMIT).toBe(5);
+  const footer = SITE_FRAME_CONTRACT.constituents.Footer;
+  expect(footer.content).toEqual(["columns", "links", "social", "legal"]);
+  expect(footer.constraints).toEqual({
+    links: FOOTER_LINK_LIMIT,
+    linksLayout: "one flat row of shell.footer.links then shell.footer.legal.links",
+    grouping: "shell.footer.columns: labelled columns for links beyond the flat row",
+    icons: FOOTER_ICON_LIMIT,
+    brandMark: "shell.brand, always the last icon slot",
+    excludes: ["home", "header-navigation", "privacy-choices"],
+    error: "SiteFooterContractError",
+    accessibility: "mandatory",
+  });
+  expect(Object.isFrozen(footer.constraints.excludes)).toBe(true);
+  const error = new SiteFooterContractError("footer-link-limit", "shell.footer.links");
+  expect(error).toBeInstanceOf(TypeError);
+  expect(error).toMatchObject({ name: "SiteFooterContractError", code: "footer-link-limit" });
+  expect(error.message).toMatch(/^SiteFrame: shell\.footer\.links /);
 });
