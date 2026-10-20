@@ -24,6 +24,8 @@ const COPY: Readonly<Record<string, string>> = {
   "footer.help": "Help",
   "legal.entity": "Example Ltd",
   "legal.privacy": "Privacy",
+  "site-frame.nav.label": "Primary",
+  "site-frame.nav.trigger-label": "Menu",
 };
 
 const ref = (id: string): CopyRef => ({ id });

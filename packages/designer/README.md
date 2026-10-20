@@ -179,13 +179,13 @@ surfaces and live in `@clossys/publisher/web`.
   `Separator`, `Chip`, `StatusMark`, `Meter`.
 - **`blocks`** — owns the internal layout of multiple named regions,
   typically by composing one or more atoms (and/or layout) into something
-  with a real job on a page. Forty-one ship: `AccountMenu`, `PageHeader`, `EmptyState`,
+  with a real job on a page. Forty-two ship: `AccountMenu`, `PageHeader`, `EmptyState`,
   `DataTable`, `DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`,
   `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `SectionFrame`,
   `MarketingChapter`, `FeatureGrid`, `Item`, `Items`, `Tree`, `AnatomyCallouts`, `RecordLedger`, `Scene`, `Matrix`,
   `Specimen`, `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`,
   `PricingTable`, `Testimonial`, `ArticleBody`, `ConsentBanner`, `Panel`, `Drawer`,
-  `ResizablePane`, `CommandMenu` and `AppNavigation` (see "Blocks" below).
+  `ResizablePane`, `CommandMenu`, `AppNavigation` and `GroupedTable` (see "Blocks" below).
 - **`shell`** — the persistent frame around content (nav, layout chrome)
   that provides the slots content fills. One per app; survives route
   changes that swap out the content underneath it. `Shell` ships with five
@@ -1696,8 +1696,13 @@ none of it reimplemented here.
 danger-colored styling, purely visual, doesn't change keyboard/selection
 behavior. `Menu.Separator` is a visual divider between item groups.
 
-`Menu.Section` groups entries under a real menu Header. Supply `heading` or
-`aria-label`. Its optional `selectionMode` (`none` or `multiple`), `selectedKeys`,
+`Menu.Section` groups entries under a real menu Header. Supply a non-empty
+`heading` or `aria-label`; the type requires one and a blank name throws a
+`TypeError`. Rich headings need nonblank text or a label in intrinsic elements
+or fragments; hidden content and opaque components do not establish a name.
+An explicit section `aria-label` names an unverified heading while preserving
+its visible content.
+Its optional `selectionMode` (`none` or `multiple`), `selectedKeys`,
 `onSelectionChange` and `shouldCloseOnSelect` belong to the section. Multiple
 selection produces `menuitemcheckbox` preferences; the caller owns checked
 values. Normal hover/focus retains the existing selected surface with no outline;
@@ -4306,8 +4311,11 @@ function MarketingChapter() {
 
 Full-bleed marketing section band: `ground`, horizontal page padding,
 vertical section rhythm, and a measured inner column (`content`, `wide`,
-or `prose`). Compose `ArticleBody`, `Stat`, and other blocks that do not
-own their own band inside this — not a host `className` wrapper.
+or `prose`). `ground` sets both the section surface and its primary
+foreground ink on the root, so raw children on `inverse` inherit the
+on-inverse ink instead of the base ink. Compose `ArticleBody`, `Stat`, and
+other blocks that do not own their own band inside this — not a host
+`className` wrapper.
 
 ### `ArticleBody`
 
@@ -4843,7 +4851,11 @@ Grid rather than relying on source order.
 the page, visually hidden until it receives keyboard focus — so a keyboard
 user landing on any route can jump straight past the header and side
 navigation to that route's actual content. `skipLinkLabel` is that link's
-visible text and defaults to "Skip to content".
+visible text and defaults to "Skip to content". Activating it (click, Enter
+or Space) moves focus to `Shell.Main` and scrolls it into view without
+changing `location.hash` or browser history, so an application that keeps its
+route in the URL fragment stays on its current route. Without JavaScript the
+link falls back to its `href`.
 
 `Shell.SideNav` is sized to `--ui-layout-sidebar-w` from the `tablet`
 breakpoint up, and collapses — CSS-only, no JavaScript breakpoint state — to
@@ -4971,11 +4983,20 @@ about the four components themselves hardcodes a label, a brand name, or a
 footer line; every one arrives as a prop or a child.
 
 `SkipLink` takes the jump target's `id` (`targetId`) and its own visible
-text (`children`) as props — unlike `Shell`'s internal skip link, which is
-wired to `Shell.Main`'s own fixed, package-owned id, a site's own page
+text (`children`) as props — `Shell` renders this same component, wired to
+`Shell.Main`'s own fixed, package-owned id, whereas a site's own page
 structure decides what "content" means, so this version assumes nothing
 about where it points. Give the target element a matching `id` and
-`tabIndex={-1}` (a plain `<main>` isn't natively focusable).
+`tabIndex={-1}` (a plain `<main>` isn't natively focusable). Activation
+(click, Enter or Space) is focus-only: it focuses the target, which scrolls it
+into view, and cancels the anchor's default navigation, so `location.hash` and
+history are left alone and a hash-routed application keeps its route. The
+`href` remains as the fallback when JavaScript is unavailable, for a modified
+or non-primary click (open in a new tab), when the target is not in the
+document, and when the target cannot take focus (for example it lacks
+`tabIndex={-1}`), so the link still scrolls there. Because the fragment is no
+longer updated, the target no longer matches `:target` and no history entry is
+added; this applies to the public `SkipLink` as well as the one `Shell` renders.
 
 `SiteHeader` renders a real `<header>` — the page's `banner` landmark,
 provided it sits at the top level rather than nested inside `<main>`/
@@ -5151,13 +5172,38 @@ It renders one navigation landmark and one set of links: below `tablet`
 server-rendered state is collapsed. With scripting unavailable, CSS shows
 the panel inline and hides the button at every width. The toggle keeps
 focus when activated; Escape while open closes the sheet and returns focus
-to the toggle, and activating an `a[href]` within the panel closes it. Closed
-header content is inert after mount and CSS hides it before hydration.
-Equivalent parent renders preserve an open menu; meaningful route changes
-reset it and desktop transitions retain visible focus. Without scripting,
-expanded frame navigation stays in document flow before the View.
-There is no focus trap or portal, and the disclosure has no animation.
+to the toggle, and activating an `a[href]` within the panel closes it
+without moving focus back to the toggle, so the browser follows the link.
+Closed header content is inert after mount, from the moment it closes, and
+CSS hides it before hydration. Equivalent parent renders preserve an open
+menu; meaningful route changes reset it and desktop transitions retain
+visible focus. Without scripting, expanded frame navigation stays in
+document flow before the View. There is no focus trap or portal.
 `SiteHeader` supplies the positioned containing block for the mobile sheet.
+
+Motion: below `tablet` the sheet slides down by `--spacing-sm` and fades in
+when it opens, and reverses when it closes, over `--ui-duration-default` with
+`--ease-default`. The panel's `--site-header-panel-duration`,
+`--site-header-panel-ease` and `--site-header-panel-shift` carry those tokens,
+and the script reads them, so the CSS owns the timing. While a closing sheet
+animates it keeps `data-present` and stays painted, but it is already inert
+and out of the tab order. A reopen mid-close reverses from where the sheet is.
+Under `prefers-reduced-motion: reduce` the duration is `0s`, so the sheet
+switches at once, and turning reduced motion on cancels a running animation.
+The menu icon's bars rotate over the same duration and stop under reduced
+motion. From `tablet` up nothing moves.
+
+Collapse: the header collapses its links into the Menu sheet when the brand,
+the links and the actions would not fit on one row. `NavDisclosure` measures
+each region at its natural one-line width (the header carries
+`data-measuring` for that read, so many links, many actions and long labels
+are counted unwrapped) and requires twice the wider of the brand and the
+actions, plus the links and two gaps, so the links can stay centred. Size
+changes, content changes, image and font loads and a `dir` or `lang` change
+on the header or an ancestor schedule one measurement per animation frame.
+Hysteresis keeps a collapsed header collapsed until the row is `--spacing-sm`
+(8px) wider than it needs, so a width near the threshold does not flicker
+between the two layouts.
 Use `NavShell` when the menu needs a modal drawer and managed focus instead;
 its drawer requires JavaScript.
 
@@ -6497,6 +6543,10 @@ not a grab-bag).
 | `AnatomyCallouts` | component | A specimen panel with 3 or 5 numbered markers and an ordered key. |
 | `AnatomyCalloutsProps` | type | Required caller instance `id`, `label`, `panel`, `markers`, `keyLabel`; optional `legendSide`, `sample`, `headingLevel`, `ground`, `className`, `style`. |
 | `AnatomyCalloutsMarker` | type | Stable `id`, labelled `target`, authored `heading` and `description`. |
+| `GroupedTable` | component | Captioned native table with grouped column headers, row headers and a named overflow region. |
+| `GroupedTableProps` | type | Generic table props: `caption`, `rowHeader`, `groups`, `rows`, `rowKey`, `emptyMessage`, optional `className`. |
+| `GroupedTableGroup` | type | Group `id`, React-node `header`, and nonempty `columns`. |
+| `GroupedTableColumn` | type | Column `id`, React-node `header`, and `cell(row)` renderer; also used for the leading row header. |
 | `RecordLedger` | component | A record on rules, without a panel. |
 | `RecordLedgerProps` | type | `form: "record"` takes unique instance seed `id`, `head`, `groups`, `columns?`, `caption`, `flagLabel?`; accepts `ground`, `headingLevel`, `className`. |
 | `LedgerRowData` | type | Static row: `id`, `label`, `detail?`, `status?` (`tone`, `label`), `flag?`. |
@@ -7843,3 +7893,35 @@ export function AccountControl() {
     ] }]} />;
 }
 ```
+
+### GroupedTable
+
+`GroupedTable<Row>` is a Block for a captioned table with two levels of column
+headers and a leading row header. It composes an outlined `Card` around a
+focusable overflow region named by the visible caption. Native `colgroup`,
+`scope` and explicit `headers` associations connect each data cell to its row,
+group and leaf header. Generated IDs stay local to each instance.
+
+```tsx
+import { GroupedTable } from "@clossys/designer/blocks";
+
+<GroupedTable
+  caption="Quarterly results"
+  rowHeader={{ id: "team", header: "Team", cell: row => row.name }}
+  groups={[{ id: "quarter", header: "This quarter", columns: [
+    { id: "total", header: "Total", cell: row => row.total },
+  ] }]}
+  rows={[{ id: "alpha", name: "Alpha", total: 0 }]}
+  rowKey={row => row.id}
+  emptyMessage="No results yet"
+/>
+```
+
+Required props are `caption`, `rowHeader`, `groups`, `rows`, `rowKey` and
+`emptyMessage`; `className` customizes the outer Card. Header and cell renderers
+accept React nodes, including zero and authored links or actions. Each group
+needs at least one column. IDs must be nonempty and unique among groups or
+within a group's columns; row keys must be unique. Invalid input throws.
+An empty body displays `emptyMessage` across the row header and all leaf columns.
+The component and its types are exported from the client blocks entry and the
+component is registered in `APP_FRAME_MATERIALS` with its actual Card dependency.
