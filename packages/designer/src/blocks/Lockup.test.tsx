@@ -13,6 +13,9 @@ type Props = {
   plate?: "shared" | "self";
   clearSpace?: boolean;
   className?: string;
+  presentation?: "desktop" | "mobile" | "responsive";
+  geometry?: { viewBox: { x: number; y: number; width: number; height: number };
+    paintedBounds: { x: number; y: number; width: number; height: number } };
 };
 const Lockup = (blocks as unknown as { Lockup: ComponentType<Props> }).Lockup;
 const sizes = ["sm", "md", "lg"] as const;
@@ -20,6 +23,24 @@ const heights = { sm: 24, md: 36, lg: 48 };
 const gaps = { sm: 4, md: 6, lg: 8 };
 
 describe("Lockup: mark and live wordmark regions", () => {
+  it("hides only the live wordmark in the responsive mobile presentation", () => {
+    const { container } = render(<Lockup src="/glyph.svg" wordmark="Example" size="sm" presentation="responsive"
+      geometry={{ viewBox: { x: 0, y: 0, width: 100, height: 100 }, paintedBounds: { x: 25, y: 25, width: 50, height: 50 } }} />);
+    expect(screen.getByText("Example").closest(".desktop\\:block")).not.toBeNull();
+    expect(container.querySelector(".desktop\\:hidden")).not.toBeNull();
+  });
+  it("uses mobile's accent mark alone when producer geometry is supplied", () => {
+    const { container } = render(<Lockup src="/glyph.svg" wordmark="Example" size="sm" presentation="mobile"
+      geometry={{ viewBox: { x: 0, y: 0, width: 100, height: 100 }, paintedBounds: { x: 25, y: 25, width: 50, height: 50 } }} />);
+    expect(container.textContent).toBe("");
+    expect(container.querySelector(".bg-accent")).not.toBeNull();
+    expect(container.querySelector("img")).toBeNull();
+  });
+  it("derives mobile clear space from the fitted artwork height", () => {
+    const { container } = render(<Lockup src="/glyph.svg" wordmark="Example" size="sm" presentation="mobile" clearSpace
+      geometry={{ viewBox: { x: 0, y: 0, width: 100, height: 100 }, paintedBounds: { x: 25, y: 25, width: 50, height: 50 } }} />);
+    expect((container.firstElementChild as HTMLElement).style.padding).toBe("calc(var(--ui-layout-tap-target, 44px) * 0.2)");
+  });
   it("is exported as a public block", () => {
     expect(Lockup).toBeTypeOf("function");
   });

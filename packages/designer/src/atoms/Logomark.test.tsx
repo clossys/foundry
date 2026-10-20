@@ -13,6 +13,9 @@ type Props = {
   tone?: "auto" | "inverse";
   plate?: "shared" | "self";
   title?: string;
+  presentation?: "desktop" | "mobile" | "responsive";
+  geometry?: { viewBox: { x: number; y: number; width: number; height: number };
+    paintedBounds: { x: number; y: number; width: number; height: number } };
 };
 // Resolve the addition through the existing public namespace so RED measures
 // the missing contract without creating an unresolved source import.
@@ -21,6 +24,21 @@ const sizes = ["sm", "md", "lg"] as const;
 const heights = { sm: 24, md: 36, lg: 48 };
 
 describe("Logomark: decorative glyph and plate", () => {
+  it("owns both responsive decorative branches with shared geometry", () => {
+    const { container } = render(<Logomark src="/glyph.svg" size="sm" presentation="responsive"
+      geometry={{ viewBox: { x: 0, y: 0, width: 100, height: 100 }, paintedBounds: { x: 25, y: 25, width: 50, height: 50 } }} />);
+    expect(container.querySelector(".desktop\\:block")).not.toBeNull();
+    expect(container.querySelector(".desktop\\:hidden")).not.toBeNull();
+    expect(container.querySelector(".bg-accent")).not.toBeNull();
+    expect(container.querySelectorAll("a")).toHaveLength(0);
+  });
+  it("keeps the shared plate square around a wide normalized glyph without shrinking the art", () => {
+    const { container } = render(<Logomark src="/wide.svg" size="sm" presentation="desktop" plate="shared"
+      geometry={{ viewBox: { x: 0, y: 0, width: 100, height: 60 }, paintedBounds: { x: 20, y: 20, width: 60, height: 20 } }} />);
+    const plate = container.firstElementChild as HTMLElement;
+    expect(plate.style.width).toBe(plate.style.height);
+    expect((plate.querySelector("img")!.parentElement as HTMLElement).style.height).toBe("var(--ui-brandmark-height-lg, 48px)");
+  });
   it("is exported as a public atom", () => {
     expect(Logomark).toBeTypeOf("function");
   });

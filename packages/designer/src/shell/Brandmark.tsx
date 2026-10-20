@@ -1,5 +1,5 @@
 import { cx } from "../atoms/internal/cx.js";
-import { Logomark } from "../atoms/Logomark.js";
+import { Logomark, type LogomarkProps } from "../atoms/Logomark.js";
 import { Lockup } from "../blocks/Lockup.js";
 import {
   BADGE_INSET_SHARE,
@@ -53,6 +53,10 @@ function normalise(text: string): string {
 interface BrandmarkBaseProps {
   /** Which step of the closed size set to render at. */
   size: BrandmarkSize;
+  /** Explicit chrome sizing; omission preserves the legacy variant and size. */
+  presentation?: "desktop" | "mobile" | "responsive";
+  /** Producer-measured source viewBox and painted bounds for explicit presentations. */
+  geometry?: LogomarkProps["geometry"];
   /**
    * The link's whole accessible name, supplied by the consumer — this
    * package ships no default copy and no `"{Brand} home"` template (see
@@ -163,6 +167,21 @@ export function Brandmark(props: BrandmarkProps) {
     inverse ? "focus-visible:outline-ink-on-inverse" : "focus-visible:outline-accent",
     className,
   );
+
+  if (props.presentation !== undefined && props.geometry !== undefined) {
+    const desktop = showWordmark
+      ? <Lockup src={markSrc} size={size} wordmark={wordmark} plate={plate} tone={tone}
+          presentation={props.presentation === "responsive" ? "desktop" : props.presentation} geometry={props.geometry} />
+      : <Logomark src={markSrc} size={size} plate={plate}
+          presentation={props.presentation === "responsive" ? "desktop" : props.presentation} geometry={props.geometry} />;
+    const mobile = <Logomark src={markSrc} size={size} geometry={props.geometry}
+      presentation={props.presentation === "responsive" ? "mobile" : props.presentation} />;
+    return <a href="/" aria-label={label} className={linkClasses}>
+      {props.presentation === "responsive"
+        ? <><span className="hidden desktop:block">{desktop}</span><span className="inline-flex desktop:hidden">{mobile}</span></>
+        : props.presentation === "mobile" ? mobile : desktop}
+    </a>;
+  }
 
   if (markInk !== "accent") {
     if (showWordmark) {

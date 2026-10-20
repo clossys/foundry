@@ -30,15 +30,33 @@ const SIZE_VARS = {
 
 /** Mark and wordmark regions in reading order, aligned on their vertical centers. */
 export function Lockup({ src, size, wordmark, tone = "auto", plate, clearSpace = false,
-  as: Root = "span", href, "aria-label": label, className, markTone }: LockupProps) {
-  const vars = SIZE_VARS[size];
+  as: Root = "span", href, "aria-label": label, className, markTone, presentation, geometry }: LockupProps) {
+  const vars = SIZE_VARS[presentation !== undefined && geometry !== undefined ? "lg" : size];
+  const markHeight = presentation === "mobile" && geometry !== undefined ? "var(--ui-layout-tap-target, 44px)" : vars.height;
   const inverse = tone === "inverse";
-  const showWordmark = typeof wordmark === "string" && wordmark.trim() !== "";
+  const showWordmark = !(presentation === "mobile" && geometry !== undefined)
+    && typeof wordmark === "string" && wordmark.trim() !== "";
+  if (presentation === "responsive" && geometry !== undefined) {
+    return <Root href={Root === "a" ? href : undefined} aria-label={label}
+      className={cx("inline-flex items-center", inverse ? "text-ink-on-inverse" : "text-ink-primary", className)}>
+      <span className="hidden desktop:block"><span className="inline-flex items-center" style={{
+        ...(showWordmark ? { gap: vars.gap } : {}), ...(clearSpace ? { padding: `calc(${vars.height} * 0.2)` } : {}),
+      }}>
+        <Logomark src={src} size={size} tone={markTone} plate={plate} geometry={geometry}
+          presentation={presentation === "responsive" ? "desktop" : presentation} />
+        {showWordmark ? <span className="font-display leading-none" style={{ fontSize: vars.wordmark }}>{wordmark}</span> : null}
+      </span></span>
+      <span className="inline-flex desktop:hidden" style={clearSpace ? { padding: "calc(var(--ui-layout-tap-target, 44px) * 0.2)" } : undefined}>
+        <Logomark src={src} size={size} tone={markTone} plate={plate} geometry={geometry}
+          presentation={presentation === "responsive" ? "mobile" : presentation} />
+      </span>
+    </Root>;
+  }
   const style: CSSProperties | undefined = showWordmark || clearSpace ? {
     ...(showWordmark ? { gap: vars.gap } : {}),
-    ...(clearSpace ? { padding: `calc(${vars.height} * 0.2)` } : {}),
+    ...(clearSpace ? { padding: `calc(${markHeight} * 0.2)` } : {}),
   } : undefined;
-  const markRegion = <Logomark src={src} size={size} tone={markTone} plate={plate} />;
+  const markRegion = <Logomark src={src} size={size} tone={markTone} plate={plate} presentation={presentation} geometry={geometry} />;
   const wordmarkRegion = showWordmark
     ? <span className="font-display leading-none" style={{ fontSize: vars.wordmark }}>{wordmark}</span>
     : null;

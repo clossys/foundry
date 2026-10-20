@@ -2,7 +2,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import type { ReactElement } from "react";
+import type { ComponentType, ReactElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import ts from "typescript";
 import { afterEach, describe, expect, it } from "vitest";
@@ -45,6 +45,72 @@ function props(variant: BrandmarkVariant, size: BrandmarkSize): BrandmarkProps {
 const COMBOS: Array<[BrandmarkVariant, BrandmarkSize]> = BRANDMARK_VARIANTS.flatMap((variant) =>
   BRANDMARK_SIZES.map((size): [BrandmarkVariant, BrandmarkSize] => [variant, size]),
 );
+
+// Generic synthetic identity fixtures: the rectangle is the complete painted
+// artwork, deliberately padded differently in each supplied SVG viewport.
+// These are geometry cases, never assets copied from a consumer.
+const PRESENTATION_MARKS = [
+  { name: "square", box: [48, 48], art: [12, 12, 24, 24] },
+  { name: "wide", box: [100, 60], art: [20, 20, 60, 20] },
+  { name: "tall", box: [60, 100], art: [20, 20, 20, 60] },
+  { name: "offset", box: [80, 80], art: [5, 10, 40, 30] },
+  { name: "padded", box: [200, 200], art: [90, 85, 20, 30] },
+] as const;
+const PresentationBrandmark = Brandmark as unknown as ComponentType<BrandmarkProps & {
+  presentation: "desktop" | "mobile" | "responsive";
+}>;
+
+function fixtureUrl(mark: (typeof PRESENTATION_MARKS)[number]): string {
+  const [x, y, width, height] = mark.art;
+  return `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${mark.box[0]} ${mark.box[1]}"><rect x="${x}" y="${y}" width="${width}" height="${height}"/></svg>`)}`;
+}
+
+function fixtureGeometry(mark: (typeof PRESENTATION_MARKS)[number]) {
+  return { viewBox: { x: 0, y: 0, width: mark.box[0], height: mark.box[1] },
+    paintedBounds: { x: mark.art[0], y: mark.art[1], width: mark.art[2], height: mark.art[3] } };
+}
+
+describe("Brandmark: REV4 presentation contract regressions", () => {
+  it.each(PRESENTATION_MARKS)("owns desktop glyph sizing and normalizes the padded $name source", mark => {
+    const { container } = render(<PresentationBrandmark {...props("lockup", "sm")} markSrc={fixtureUrl(mark)} geometry={fixtureGeometry(mark)} presentation="desktop" />);
+    const image = container.querySelector("img")!;
+    // These are component-contract checks. The independent Chromium pixel
+    // matrix measures the resulting painted rectangle, including SVG padding;
+    // neither this declaration nor a larger wrapper is painted-art evidence.
+    expect(image.parentElement!.style.height).toBe("var(--ui-brandmark-height-lg, 48px)");
+    expect(image.getAttribute("src")).toBe(fixtureUrl(mark));
+    expect(image.parentElement!.style.overflow).toBe("hidden");
+    expect(image.style.height).toBe(`calc(var(--ui-brandmark-height-lg, 48px) * ${mark.box[1] / mark.art[3]})`);
+    expect(image.style.width).toBe(`calc(var(--ui-brandmark-height-lg, 48px) * ${mark.box[0] / mark.art[3]})`);
+  });
+
+  it.each(PRESENTATION_MARKS)("uses a normalized accent silhouette at mobile control height for $name", mark => {
+    const { container } = render(<PresentationBrandmark {...props("lockup", "sm")} markSrc={fixtureUrl(mark)} geometry={fixtureGeometry(mark)} presentation="mobile" />);
+    const link = container.querySelector("a")!;
+    const painted = link.querySelector(".bg-accent");
+    expect(painted).not.toBeNull();
+    expect(painted).toHaveClass("bg-accent");
+    expect((painted!.parentElement as HTMLElement).style.height).toBe("var(--ui-layout-tap-target, 44px)");
+    expect(link.textContent).toBe("");
+    expect((painted as HTMLElement).style.maskSize).toBe("100% 100%");
+    expect((painted as HTMLElement).style.height).toBe(`calc(var(--ui-layout-tap-target, 44px) * ${mark.box[1] / mark.art[3]})`);
+  });
+
+  it("uses one named responsive link with separate desktop and mobile presentations", () => {
+    const { container } = render(<PresentationBrandmark {...props("lockup", "sm")} markSrc={fixtureUrl(PRESENTATION_MARKS[0])} geometry={fixtureGeometry(PRESENTATION_MARKS[0])} presentation="responsive" />);
+    expect(container.querySelectorAll("a")).toHaveLength(1);
+    expect(screen.getByRole("link", { name: LABEL })).toHaveAttribute("href", "/");
+    expect(container.querySelector(".desktop\\:block")).not.toBeNull();
+    expect(container.querySelector(".desktop\\:hidden")).not.toBeNull();
+  });
+
+  it.each(["geometry", "presentation"] as const)("retains exact legacy SSR when %s is omitted", omitted => {
+    const legacy = props("lockup", "sm");
+    const addition = omitted === "geometry" ? { presentation: "desktop" as const }
+      : { geometry: fixtureGeometry(PRESENTATION_MARKS[0]) };
+    expect(renderToStaticMarkup(<Brandmark {...legacy} {...addition} />)).toBe(renderToStaticMarkup(<Brandmark {...legacy} />));
+  });
+});
 
 describe("Brandmark: the closed sets", () => {
   it("are exactly the specified variants and sizes (6 combinations)", () => {

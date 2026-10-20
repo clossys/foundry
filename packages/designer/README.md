@@ -5419,6 +5419,32 @@ Exported types are `LogomarkProps`, `LogomarkSize`, `LogomarkTone`,
 `LogomarkPlate` and `LockupProps`. `Brandmark` composes these primitives while
 preserving its public props, defaults and existing rendered markup.
 
+For explicit chrome presentations, the producer can bind measured SVG geometry
+alongside the artwork URL. `geometry.viewBox` and `geometry.paintedBounds` are
+`{ x, y, width, height }` boxes in the source SVG coordinate system. Painted
+bounds describe all visible artwork, including strokes and any authored plate;
+they are measured by the producer, never guessed from an image element's box.
+The box shape matches the normalizer's `MarkBox` output contract. Until the
+normalizer unit is merged, this shape is declared once at the point of use;
+that integration replaces it with a type-only import rather than a second parser.
+
+`Logomark`, `Lockup` and `Brandmark` accept `presentation="desktop" | "mobile" |
+"responsive"` with this geometry. Desktop fits the painted
+height to the existing large brandmark token (48px) and keeps the locked gap
+and wordmark ratio. Mobile uses the existing tap-target token (44px), shows
+only the mark and paints its silhouette in the accent token. Responsive
+Brandmark owns one named home link and switches its two decorative branches
+at the existing desktop breakpoint. Source cropping removes intrinsic
+whitespace; width follows the measured aspect ratio. A shared plate grows
+around the fitted artwork using the same radius and inset shares.
+
+Both geometry and presentation must be supplied to opt in. Omitting either
+preserves the legacy props, defaults and server-rendered markup byte-for-byte.
+The component does not fetch URLs, parse SVG markup, use hooks or infer paint
+bounds in a consumer. Geometry is producer evidence, not a consumer size knob;
+invalid, non-finite or out-of-viewBox bounds are refused. Do not attach a
+geometry record to a different artwork URL.
+
 ### `Brandmark`
 
 `Brandmark` is the site's identity link, for `SiteHeader`'s `brand` slot or
