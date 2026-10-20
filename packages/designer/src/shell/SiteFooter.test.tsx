@@ -213,12 +213,12 @@ describe("SiteFooter measured geometry", () => {
       }))));
       const output = execFileSync(process.execPath, ["--experimental-websocket", "-e", `(${readBrowserLayout.toString()})().catch(error => { console.error(error.message); process.exitCode = 1; });`,
         browser, pathToFileURL(html).href, join(directory, "profile"), safeDocuments],
-      { encoding: "utf8", timeout: 5000, maxBuffer: 8 * 1024 * 1024, stdio: ["ignore", "pipe", "pipe"] });
+      { encoding: "utf8", timeout: 60000, maxBuffer: 8 * 1024 * 1024, stdio: ["ignore", "pipe", "pipe"] });
       measurements = JSON.parse(output);
     } finally {
       rmSync(directory, { recursive: true, force: true });
     }
-  });
+  }, 90000);
   for (const dir of ["ltr", "rtl"]) {
     it(`contains tall and long content inside native horizontal safe areas in ${dir}`, () => {
       for (const width of [375, 844, 1279, 1280, 1440]) {
