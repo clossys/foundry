@@ -107,7 +107,7 @@ describe("round-two alpha and arc refusals", () => {
     }
     expect(() => box(`<rect width="40" height="40" fill="${paint}"/>`)).toThrow(MarkGeometryError);
   });
-  it.each(['#000f', '#00000001', 'rgb(0 0 0)', 'rgba(0, 0, 0, .5)', 'oklch(0.5 0 0)', 'color(srgb 0 0 0)', 'currentColor'])("retains visible %s paint", paint => {
+  it.each(['#000f', '#00000001', 'rgb(0 0 0)', 'rgba(0, 0, 0, .5)', 'oklch(0.5 0 0)', 'color(srgb 0 0 0)'])("retains visible %s paint", paint => {
     expect(box(`<rect x="30" y="30" width="40" height="40" fill="${paint}"/>`)).toEqual({ x: .3, y: .3, width: .4, height: .4 });
   });
   it.each(['transparent', '#0000', 'rgba(0, 0, 0, 0)'])("resolves invisible currentColor from %s without changing visible bounds", color => {
@@ -125,7 +125,7 @@ describe("round-two alpha and arc refusals", () => {
     expect(measureMarkGeometry(svg(`<rect width="100" height="100" fill="currentColor" color="${color}"/>${visible}`)).plate.present).toBe(false);
     expect(() => box(`<rect width="40" height="40" fill="currentColor" color="${color}"/>`)).toThrow(MarkGeometryError);
   });
-  it.each(['#000', 'rgb(0 0 0)', 'currentColor'])("retains opaque inherited currentColor from %s", color => {
+  it.each(['#000', 'rgb(0 0 0)'])("retains opaque inherited currentColor from %s", color => {
     expect(box(`<g color="${color}" fill="currentColor"><g color="currentColor"><rect x="30" y="30" width="40" height="40"/></g></g>`)).toEqual({ x: .3, y: .3, width: .4, height: .4 });
   });
   it("retains actual normalized adoption with opaque functional token colors", () => {
@@ -141,6 +141,123 @@ describe("round-two alpha and arc refusals", () => {
     for (const evaluate of [() => measureMarkGeometry(input), () => normalizeMark({ glyphSvg: input, tokens }), () => checkMarkConformance(input)]) {
       expect(evaluate).toThrow(MarkGeometryError);
     }
+  });
+});
+// The geometry subset refuses CSS-wide paint keywords; it does not implement the CSS cascade.
+describe("CSS-wide paint boundary after inline precedence", () => {
+  const keywords = ['inherit', 'unset', 'initial', 'revert', 'revert-layer'];
+  const supported = { fill: '#000', stroke: 'none', color: '#000' };
+  const cases = (Object.keys(supported) as (keyof typeof supported)[]).flatMap(property => keywords.flatMap(keyword =>
+    ['attribute', 'style'].map(mode => [property, keyword, mode] as const)));
+  const visible = '<rect x="30" y="30" width="40" height="40" fill="#000"/>';
+  for (const [name, evaluate] of Object.entries({ measure: measureMarkGeometry, normalize: (input: string) => normalizeMark({ glyphSvg: input, tokens }), conformance: checkMarkConformance })) {
+    it.each(['\u00a0', '\u000b'])(`${name} refuses non-CSS whitespace in paint channels, values and style keys`, whitespace => {
+      for (const attribute of [`fill="rgb(0${whitespace}0${whitespace}0)"`, `fill="${whitespace}#000${whitespace}"`, `style="fill:rgb(0${whitespace}0${whitespace}0)"`, `style="${whitespace}fill${whitespace}:#000"`])
+        expect(() => evaluate(svg(`<rect x="18" y="18" width="64" height="64" ${attribute}/>${visible}`))).toThrow(MarkGeometryError);
+    });
+    it.each(['hsl(0 0% 0%)', 'hwb(0 0% 0% / .5)', 'lab(50% 0 0)', 'lch(50% 0 0)', 'oklab(0.5 0 0)'])(`${name} retains the documented concrete %s syntax`, paint => {
+      const input = svg(`<rect x="30" y="30" width="40" height="40" fill="${paint}"/>`);
+      expect(() => evaluate(input)).not.toThrow();
+      expect(measureMarkGeometry(input).glyphBox).toEqual({ x: .3, y: .3, width: .4, height: .4 });
+    });
+    it.each(cases)(`${name} refuses %s=%s in %s form`, (property, keyword, mode) => {
+      const current = property === 'fill' ? '' : 'fill="currentColor"';
+      const paint = mode === 'attribute' ? `${property}=" ${keyword.toUpperCase()} "` : `${property}="${supported[property]}" style="${property}: ${keyword.toUpperCase()} "`;
+      const input = svg(`<g fill="none" color="transparent"><g><rect x="18" y="18" width="64" height="64" ${current} ${paint}/></g></g>${visible}`);
+      expect(() => evaluate(input)).toThrow(MarkGeometryError);
+      expect(() => evaluate(input)).toThrow('CSS-wide paint keyword');
+    });
+    it.each(Object.keys(supported) as (keyof typeof supported)[])(`${name} accepts a supported inline %s overriding the keyword attribute`, property => {
+      for (const keyword of keywords) {
+        const input = svg(`<g ${property}="${keyword}" style="${property}: ${supported[property]}">${visible}</g>`);
+        expect(() => evaluate(input)).not.toThrow();
+        expect(measureMarkGeometry(input).glyphBox).toEqual({ x: .3, y: .3, width: .4, height: .4 });
+      }
+    });
+    it(`${name} refuses the inherited 64-square reviewer sample`, () => {
+      const input = svg(`<g fill="none"><rect x="18" y="18" width="64" height="64" fill="inherit"/></g>${visible}`);
+      expect(() => evaluate(input)).toThrow(MarkGeometryError);
+      expect(() => evaluate(input)).toThrow('CSS-wide paint keyword');
+    });
+    it(`${name} retains transparent parent color with currentColor when the keyword is omitted`, () => {
+      const input = svg(`<g color="transparent" fill="currentColor"><rect x="18" y="18" width="64" height="64"/></g>${visible}`);
+      expect(() => evaluate(input)).not.toThrow();
+      expect(measureMarkGeometry(input).glyphBox).toEqual({ x: .3, y: .3, width: .4, height: .4 });
+    });
+  }
+});
+describe("closed computed paint shared by geometry and output", () => {
+  const visible = '<rect x="30" y="30" width="40" height="40" fill="#000"/>';
+  const invalid = ['currentColor', 'context-fill', 'context-stroke', 'notacolor', '#00', '#12345', '#1234567', 'rgb()', 'rgb(0 0)', 'rgb(0,0,0 / .5)', 'rgba(0 0 0 .5)', 'transparent !important', '/*comment*/none'];
+  const effects = ['clip-path', 'mask', 'filter', 'vector-effect', 'stroke-dasharray', 'stroke-dashoffset', 'display', 'visibility', 'opacity', 'fill-opacity', 'stroke-opacity'];
+  const atEveryLevel = (attribute: string) => [
+    `<svg viewBox="0 0 100 100" ${attribute}>${visible}</svg>`,
+    svg(`<g ${attribute}><rect x="18" y="18" width="64" height="64"/></g>${visible}`),
+    svg(`<rect x="18" y="18" width="64" height="64" ${attribute}/>${visible}`),
+    svg(`<rect width="100" height="100" rx="21.875" ${attribute}/>${visible}`),
+  ];
+  for (const [name, evaluate] of Object.entries({ measure: measureMarkGeometry, normalize: (input: string) => normalizeMark({ glyphSvg: input, tokens }), conformance: checkMarkConformance })) {
+    it.each(['rgb(0. 0 0)', 'rgb(0 0 0 / 0.)', 'rgba(0.,0,0,1)', 'hsl(0. 0% 0%)', 'hwb(0 0.% 0%)', 'lab(0. 0 0)', 'oklch(0 0 0.)', 'color(srgb 0 0 0 / 0.)'])(`${name} refuses trailing decimal paint numbers in channels and alpha`, paint => {
+      for (const attribute of [`fill="${paint}"`, `style="fill:${paint}"`]) {
+        expect(() => evaluate(svg(`<rect x="18" y="18" width="64" height="64" ${attribute}/>${visible}`))).toThrow(MarkGeometryError);
+        expect(() => evaluate(svg(`<rect x="18" y="18" width="64" height="64" ${attribute}/>${visible}`))).toThrow('paint arity');
+      }
+    });
+    it.each(['rgb(0 0 0)', 'rgb(0.0 0 0 / 1.0)', 'hsl(0.0 0.0% 0%)', 'color(srgb 0.0 0 0 / 1)'])(`${name} retains valid integer and decimal paint numbers in %s`, paint => {
+      expect(() => evaluate(svg(`<rect x="30" y="30" width="40" height="40" fill="${paint}"/>`))).not.toThrow();
+    });
+    it.each(invalid)(`${name} refuses unsupported paint %s in attributes and styles`, paint => {
+      for (const property of ['fill', 'stroke', 'color']) for (const style of [false, true]) {
+        const fill = property === 'fill' ? '' : property === 'stroke' ? 'fill="none"' : 'fill="currentColor"';
+        const attribute = style ? `style="${property}: ${paint}"` : `${property}="${paint}"`;
+        expect(() => evaluate(svg(`<rect x="18" y="18" width="64" height="64" ${fill} ${attribute}/>${visible}`))).toThrow(MarkGeometryError);
+      }
+    });
+    it(`${name} refuses none as color and priority declarations before a later override`, () => {
+      for (const attribute of ['color="none" fill="currentColor"', 'style="fill:transparent !important;fill:#000"'])
+        expect(() => evaluate(svg(`<rect x="18" y="18" width="64" height="64" ${attribute}/>${visible}`))).toThrow(MarkGeometryError);
+    });
+    it.each(effects)(`${name} refuses effect %s at every level including the plate`, property => {
+      const value = property === 'display' ? 'none' : property === 'visibility' ? 'hidden' : '0';
+      for (const attribute of [`${property}="${value}"`, `style="${property}:${value}"`])
+        for (const input of atEveryLevel(attribute)) expect(() => evaluate(input)).toThrow(MarkGeometryError);
+    });
+    it(`${name} refuses paint URLs on roots, groups, leaves and plates`, () => {
+      for (const property of ['fill', 'stroke']) for (const input of atEveryLevel(`${property}="url(#paint) #000"`)) {
+        expect(() => evaluate(input)).toThrow(MarkGeometryError);
+        expect(() => evaluate(input)).toThrow('paint reference');
+      }
+    });
+    it(`${name} keeps inherited currentColor symbolic until an opaque child overrides a transparent parent`, () => {
+      const input = svg('<g color="#ff0000" fill="currentColor"><rect x="18" y="18" width="64" height="64" color="transparent"/><g color="currentColor"><rect x="30" y="30" width="40" height="40" color="#123456"/></g></g>');
+      expect(() => evaluate(input)).not.toThrow();
+      expect(measureMarkGeometry(input).glyphBox).toEqual({ x: .3, y: .3, width: .4, height: .4 });
+      const output = normalizeMark({ glyphSvg: input, tokens });
+      const document = new DOMParser().parseFromString(output, 'image/svg+xml');
+      expect([...document.querySelectorAll('g rect')].map(node => node.getAttribute('fill'))).toEqual(['transparent', '#123456']);
+      expect(output).not.toMatch(/(?:fill|stroke)="currentColor"/i);
+    });
+  }
+  it.each([['accent', 'transparent'], ['onAccent', 'transparent'], ['accent', 'currentColor'], ['onAccent', 'currentColor'], ['accent', '#1234567'], ['onAccent', 'rgb()']] as const)("refuses actually-used generated %s paint %s", (field, paint) => {
+    const input = field === 'accent' ? svg(visible) : svg('<rect x="30" y="30" width="40" height="40"/>');
+    expect(() => normalizeMark({ glyphSvg: input, tokens: { ...tokens, [field]: paint } })).toThrow(MarkGeometryError);
+  });
+  it.each(['transparent', 'currentColor'])("allows unused generated paint %s", paint => {
+    expect(() => normalizeMark({ glyphSvg: svg(visible), tokens: { ...tokens, accent: paint }, plate: false })).not.toThrow();
+    const output = normalizeMark({ glyphSvg: svg(visible), tokens: { ...tokens, onAccent: paint } });
+    expect(new DOMParser().parseFromString(output, 'image/svg+xml').querySelector('g rect')?.getAttribute('fill')).toBe('#000');
+    expect(checkMarkConformance(output)).toEqual([]);
+  });
+  it("refuses an invisible required generated glyph even beside an explicit visible glyph", () => {
+    expect(() => normalizeMark({ glyphSvg: svg(`<rect x="18" y="18" width="64" height="64"/>${visible}`), tokens: { ...tokens, onAccent: 'transparent' } })).toThrow('generated glyph paint');
+  });
+  it.each(['currentColor', 'rgb()'])("does not consume unused generated fill %s on a stroke-only path", paint => {
+    expect(() => normalizeMark({ glyphSvg: svg('<path d="M30 50H70" stroke="#000" stroke-width="4"/>'), tokens: { ...tokens, onAccent: paint } })).not.toThrow();
+    const output = normalizeMark({ glyphSvg: svg('<path d="M30 50H70" stroke="#000" stroke-width="4"/>'), tokens: { ...tokens, onAccent: paint } });
+    const path = new DOMParser().parseFromString(output, 'image/svg+xml').querySelector('path');
+    expect(path?.getAttribute('fill')).toBe('none');
+    expect(path?.getAttribute('stroke')).toBe('#000');
+    expect(checkMarkConformance(output)).toEqual([]);
   });
 });
 describe("mark conformance", () => {

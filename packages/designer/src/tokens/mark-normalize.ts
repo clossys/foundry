@@ -52,6 +52,22 @@ type Matrix = [
   number
 ];
 type Attrs = Record<string, string>;
+interface LiteralPaint {
+  css: string;
+  visible: boolean;
+}
+type Paint = LiteralPaint | 'currentColor';
+interface Presentation {
+  attrs: Attrs;
+  fill?: Paint;
+  stroke?: Paint;
+  color?: LiteralPaint;
+}
+interface ComputedPaint {
+  attrs: Attrs;
+  fill: LiteralPaint;
+  stroke: LiteralPaint;
+}
 interface Node {
   name: string;
   attrs: Attrs;
@@ -495,6 +511,8 @@ interface Analysis {
   centroid: Point;
   root: Node;
   plate?: Node;
+  paints: Map<Node, ComputedPaint>;
+  rootColor?: LiteralPaint;
 }
 // Split scan bands at edge crossings, then bound only intervals whose winding
 // actually paints. Separate SVG shapes remain separate regions, never holes.
@@ -555,28 +573,52 @@ function paintedBoundary(region: Region): Point[] {
   }
   return result;
 }
-function hasPaint(attrs: Attrs, key: 'fill' | 'stroke'): boolean {
-  let paint = attrs[key]?.trim().toLowerCase();
-  if (paint === 'currentcolor') paint = attrs.color?.trim().toLowerCase() ?? paint;
-  if (paint === 'none' || paint === 'transparent') return false;
-  if (!paint) return true;
-  if (/^#[\da-f]{4}$/.test(paint)) return paint[4] !== '0';
-  if (/^#[\da-f]{8}$/.test(paint)) return paint.slice(-2) !== '00';
-  const functional = /^(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)\(([^()]*)\)$/s.exec(paint);
-  if (!functional) return paint.includes('(') ? fail('paint alpha') : true;
-  const argumentsText = functional[1]!, slash = argumentsText.lastIndexOf('/'), commaFields = argumentsText.split(',');
-  const numericArguments = paint.startsWith('color(') ? argumentsText.replace(/^[a-z][a-z0-9-]*\s+/i, '') : argumentsText;
-  if (/[^0-9e.%+\-\s,/]/i.test(numericArguments)) fail('paint alpha');
-  const alpha = slash >= 0 ? argumentsText.slice(slash + 1) : commaFields.length === 4 ? commaFields[3] : undefined;
-  if (alpha === undefined) return true;
-  const parsed = numbers(alpha.trim().replace(/%$/, ''));
-  if (parsed.length !== 1) fail('paint alpha');
-  return parsed[0]! > 0;
+// Closed paint syntax: hex 3/4/6/8; numeric rgb/hsl/hwb/lab/lch/oklab/oklch;
+// numeric color(srgb ...); transparent/none; internally resolved currentColor.
+// Named colors, angle units, relative/context colors and the full CSS cascade are unsupported.
+function parsePaint(value: string, allowNone = true): Paint {
+  if (/[^\x09\x0a\x0c\x0d\x20-\x7e]/.test(value)) fail('paint syntax');
+  const paint = value.trim().toLowerCase();
+  if (/url\s*\(|\\/.test(paint)) fail('paint reference');
+  if (paint === 'context-fill' || paint === 'context-stroke') fail('context paint');
+  if (paint === 'currentcolor') return 'currentColor';
+  if (paint === 'none') return allowNone ? { css: 'none', visible: false } : fail('color none');
+  if (paint === 'transparent') return { css: paint, visible: false };
+  if (/^#(?:[\da-f]{3}|[\da-f]{4}|[\da-f]{6}|[\da-f]{8})$/.test(paint))
+    return { css: paint, visible: paint.length === 5 ? paint[4] !== '0' : paint.length !== 9 || paint.slice(-2) !== '00' };
+  const fn = /^(rgb|rgba|hsl|hsla|hwb|lab|lch|oklab|oklch|color)\(([^()]*)\)$/.exec(paint);
+  if (!fn) return fail('paint syntax');
+  const name = fn[1]!, body = fn[2]!.trim(), comma = body.includes(',');
+  const args = name === 'color' ? body.replace(/^srgb\s+/, '') : body;
+  if (name === 'color' && args === body) fail('paint color space');
+  let channels: string[], alpha: string | undefined;
+  if (comma) {
+    if (!/^(rgb|rgba|hsl|hsla)$/.test(name) || args.includes('/')) fail('paint syntax');
+    const fields = args.split(',').map(field => field.trim());
+    if (fields.length !== 3 && fields.length !== 4) fail('paint arity');
+    channels = fields.slice(0, 3); alpha = fields[3];
+  } else {
+    const fields = args.split('/');
+    if (fields.length > 2) fail('paint arity');
+    channels = fields[0]!.trim().split(/\s+/); alpha = fields[1]?.trim();
+  }
+  const values = [...channels, ...(alpha === undefined ? [] : [alpha])];
+  if (channels.length !== 3 || values.some(field => !/^[+-]?(?:\d+(?:\.\d+)?|\.\d+)(?:e[+-]?\d+)?%?$/.test(field) || !Number.isFinite(Number(field.replace(/%$/, ''))))) fail('paint arity');
+  if (/^(hsl|hsla|hwb)$/.test(name) && (channels[0]!.endsWith('%') || !channels[1]!.endsWith('%') || !channels[2]!.endsWith('%'))) fail('paint channels');
+  if (/^(lch|oklch)$/.test(name) && channels[2]!.endsWith('%')) fail('paint hue');
+  if (comma && /^rgba?$/.test(name) && channels.some(field => field.endsWith('%')) && !channels.every(field => field.endsWith('%'))) fail('paint channels');
+  const opacity = alpha === undefined ? 1 : Number(alpha.replace(/%$/, '')) / (alpha.endsWith('%') ? 100 : 1);
+  return { css: paint, visible: opacity > 0 };
 }
-function presentation(node: Node, inherited: Attrs): Attrs {
-  const attrs = { ...inherited, ...node.attrs };
+function effectivePaint(paint: Paint | undefined, color: LiteralPaint | undefined, fallback: string): LiteralPaint {
+  const specified = paint ?? parsePaint(fallback);
+  return specified === 'currentColor' ? color ?? fail('ambient currentColor') : specified;
+}
+function presentation(node: Node, inherited: Presentation): Presentation {
+  const attrs = { ...inherited.attrs, ...node.attrs };
   if (attrs.style) {
-    for (const declaration of attrs.style.split(';').filter(Boolean)) {
+    if (/!|\/\*|\*\/|[^\x09\x0a\x0c\x0d\x20-\x7e]/.test(attrs.style)) fail('style syntax');
+    for (const declaration of attrs.style.split(';').map(value => value.trim()).filter(Boolean)) {
       const split = declaration.indexOf(':'), key = declaration.slice(0, split).trim(), value = declaration.slice(split + 1).trim();
       if (!['color', 'fill', 'stroke', 'stroke-width', 'stroke-linecap', 'stroke-linejoin', 'stroke-miterlimit'].includes(key))
         fail(`style ${key}`);
@@ -584,53 +626,69 @@ function presentation(node: Node, inherited: Attrs): Attrs {
     }
     delete attrs.style;
   }
-  if (attrs.color?.trim().toLowerCase() === 'currentcolor') attrs.color = inherited.color ?? 'currentColor';
-  if ([attrs.fill, attrs.stroke].some(value => value !== undefined && (/url\s*\(/i.test(value) || value.includes('\\')))) fail('paint reference');
-  return attrs;
+  // Concrete paint and currentColor are supported; full CSS cascade resolution is not.
+  // Check the effective inline value so a supported override can replace a keyword attribute.
+  const cssWidePaint = ['inherit', 'unset', 'initial', 'revert', 'revert-layer'];
+  if (['fill', 'stroke', 'color'].some(key => cssWidePaint.includes(attrs[key]?.trim().toLowerCase() ?? '')))
+    fail('CSS-wide paint keyword');
+  for (const key of ['clip-path', 'mask', 'filter', 'vector-effect', 'stroke-dasharray', 'stroke-dashoffset', 'display', 'visibility', 'opacity', 'fill-opacity', 'stroke-opacity'])
+    if (attrs[key] !== undefined) fail(key);
+  const color = attrs.color === undefined ? undefined : parsePaint(attrs.color, false);
+  return {
+    attrs,
+    fill: attrs.fill === undefined ? undefined : parsePaint(attrs.fill),
+    stroke: attrs.stroke === undefined ? undefined : parsePaint(attrs.stroke),
+    color: color === 'currentColor' || color === undefined ? inherited.color : color,
+  };
 }
 function hasFillArea(points: Point[]): boolean {
   const first = points[0], second = points.find(p => first && (p[0] !== first[0] || p[1] !== first[1]));
   return !!first && !!second && points.some(p => cross(sub(second, first), sub(p, first)) !== 0);
 }
-function analyze(svg: string, optical = false): Analysis {
+function analyze(svg: string, optical = false, glyphFill?: string): Analysis {
   const root = parse(svg), v = numbers(root.attrs.viewBox ?? "");
   if (v.length !== 4 || v[2]! <= 0 || v[3]! <= 0)
     return fail("viewBox");
   const viewBox: MarkBox = { x: v[0]!, y: v[1]!, width: v[2]!, height: v[3]! };
   const candidate = root.children[0];
-  const plate = root.children.length > 1 && !root.attrs.transform && candidate?.name === 'rect' && !candidate.attrs.transform && number(candidate.attrs, 'x') === viewBox.x && number(candidate.attrs, 'y') === viewBox.y && number(candidate.attrs, 'width') === viewBox.height && number(candidate.attrs, 'height') === viewBox.height && hasPaint(presentation(candidate, presentation(root, {})), 'fill') ? candidate : undefined;
+  const rootPresentation = presentation(root, { attrs: {} });
+  const candidatePresentation = candidate ? presentation(candidate, rootPresentation) : undefined;
+  const plate = root.children.length > 1 && !root.attrs.transform && candidate?.name === 'rect' && !candidate.attrs.transform && number(candidate.attrs, 'x') === viewBox.x && number(candidate.attrs, 'y') === viewBox.y && number(candidate.attrs, 'width') === viewBox.height && number(candidate.attrs, 'height') === viewBox.height && effectivePaint(candidatePresentation!.fill, candidatePresentation!.color, '#000').visible ? candidate : undefined;
   const frame = plate ? { ...viewBox, width: viewBox.height } : viewBox;
   const tolerance = Math.max(viewBox.width, viewBox.height) * 1e-6;
   const regions: Region[] = [];
-  const visit = (node: Node, m: Matrix, inherited: Attrs): void => {
-    const a = presentation(node, inherited);
-    for (const key of ['clip-path', 'mask', 'filter', 'vector-effect', 'stroke-dasharray', 'stroke-dashoffset', 'display', 'visibility', 'opacity', 'fill-opacity', 'stroke-opacity'])
-      if (a[key] !== undefined)
-        fail(key);
+  const paints = new Map<Node, ComputedPaint>();
+  const visit = (node: Node, m: Matrix, inherited: Presentation): void => {
+    const resolved = presentation(node, inherited), a = resolved.attrs;
     if (a['fill-rule'] && !['nonzero', 'evenodd'].includes(a['fill-rule']))
       fail('fill-rule');
     const matrix = product(m, transform(node.attrs.transform));
-    if (node === plate) {
-      if (node.children.length || number(a, 'rx', number(a, 'ry')) < 0 || number(a, 'ry', number(a, 'rx')) < 0)
-        fail('plate geometry');
+    if (node.name === 'svg' || node.name === 'g') {
+      if (node.name === 'svg' && node !== root) fail('nested svg');
+      for (const child of node.children) visit(child, matrix, resolved);
       return;
     }
-    if (node.name === 'svg' && node !== root)
-      fail('nested svg');
-    if (node.name === 'svg' || node.name === 'g') {
-      for (const child of node.children)
-        visit(child, matrix, a);
+    let fill = effectivePaint(resolved.fill, resolved.color, '#000');
+    const strokePaint = effectivePaint(resolved.stroke, resolved.color, 'none');
+    if (node === plate) {
+      paints.set(node, { attrs: a, fill, stroke: strokePaint });
+      if (node.children.length || number(a, 'rx', number(a, 'ry')) < 0 || number(a, 'ry', number(a, 'rx')) < 0)
+        fail('plate geometry');
       return;
     }
     if (node.children.length)
       fail(node.name);
     const localTolerance = tolerance / Math.max(Math.hypot(matrix[0], matrix[1]), Math.hypot(matrix[2], matrix[3]), 1);
     const shape = contours(node, localTolerance);
-    if (hasPaint(a, 'fill')) {
+    if (glyphFill !== undefined && resolved.fill === undefined)
+      fill = shape.some(contour => hasFillArea(contour.points)) ? effectivePaint(undefined, resolved.color, glyphFill) : { css: 'none', visible: false };
+    paints.set(node, { attrs: a, fill, stroke: strokePaint });
+    if (glyphFill !== undefined && resolved.fill === undefined && !fill.visible && shape.some(contour => hasFillArea(contour.points))) fail('generated glyph paint');
+    if (fill.visible) {
       const contours = shape.filter(c => hasFillArea(c.points)).map(c => c.points.map(p => point(matrix, p)));
       regions.push({ contours, evenOdd: a['fill-rule'] === 'evenodd' });
     }
-    if (a.stroke && hasPaint(a, 'stroke')) {
+    if (strokePaint.visible) {
       const width = number(a, 'stroke-width', 1);
       if (width < 0)
         fail('stroke-width');
@@ -642,12 +700,12 @@ function analyze(svg: string, optical = false): Analysis {
           }
     }
   };
-  visit(root, identity, {});
+  visit(root, identity, { attrs: {} });
   const box = bounds(regions.flatMap(paintedBoundary)), centre: Point = [box.x + box.width / 2, box.y + box.height / 2];
   const glyphBox = { x: (box.x - frame.x) / frame.width, y: (box.y - frame.y) / frame.height, width: box.width / frame.width, height: box.height / frame.height };
   if (![...centre, ...Object.values(glyphBox)].every(Number.isFinite))
     fail('numeric overflow');
-  return { root, plate, box, centroid: optical ? areaCentroid(regions, box) : centre, geometry: { viewBox, plate: { present: !!plate, radiusShare: plate ? Math.min(number(plate.attrs, 'rx', number(plate.attrs, 'ry')), frame.width / 2) / frame.width : null, radiusYShare: plate ? Math.min(number(plate.attrs, 'ry', number(plate.attrs, 'rx')), frame.height / 2) / frame.height : null }, glyphBox, centreOffset: { x: glyphBox.x + glyphBox.width / 2 - .5, y: glyphBox.y + glyphBox.height / 2 - .5 }, declaredClearSpace: root.attrs['data-clear-space'] === undefined ? null : number(root.attrs, 'data-clear-space') } };
+  return { root, plate, paints, rootColor: rootPresentation.color, box, centroid: optical ? areaCentroid(regions, box) : centre, geometry: { viewBox, plate: { present: !!plate, radiusShare: plate ? Math.min(number(plate.attrs, 'rx', number(plate.attrs, 'ry')), frame.width / 2) / frame.width : null, radiusYShare: plate ? Math.min(number(plate.attrs, 'ry', number(plate.attrs, 'rx')), frame.height / 2) / frame.height : null }, glyphBox, centreOffset: { x: glyphBox.x + glyphBox.width / 2 - .5, y: glyphBox.y + glyphBox.height / 2 - .5 }, declaredClearSpace: root.attrs['data-clear-space'] === undefined ? null : number(root.attrs, 'data-clear-space') } };
 }
 /** Measure supported SVG paint geometry without a DOM, fonts, or external resources. */
 export function measureMarkGeometry(svg: string): MarkGeometry { return analyze(svg).geometry; }
@@ -657,7 +715,7 @@ const escape = (s: string): string => s.replace(/&/g, '&amp;').replace(/"/g, '&q
 /** Fit painted glyph bounds into the kit's 18% inset, preserving aspect. */
 export function normalizeMark(input: NormalizeMarkInput): string {
   validateIdentityTokenInput(input.tokens);
-  const measured = analyze(input.glyphSvg, input.optical), b = measured.box, inset = .18, side = 48;
+  const measured = analyze(input.glyphSvg, input.optical, input.tokens.onAccent), b = measured.box, inset = .18, side = 48;
   if (!b.width || !b.height)
     return fail('zero-area glyph bounds');
   const scale = side * (1 - 2 * inset) / Math.max(b.width, b.height);
@@ -668,18 +726,21 @@ export function normalizeMark(input: NormalizeMarkInput): string {
   const root = measured.root;
   const paintKeys = ['color', 'fill', 'stroke', 'stroke-width', 'stroke-linecap', 'stroke-linejoin', 'stroke-miterlimit', 'fill-rule'];
   const attributesOf = (attrs: Attrs) => Object.entries(attrs).map(([key, value]) => ` ${key}="${escape(value)}"`).join('');
-  const render = (node: Node, inherited: Attrs): string => {
-    const resolved = presentation(node, inherited);
+  const render = (node: Node): string => {
     const attrs: Attrs = Object.fromEntries(Object.entries(node.attrs).filter(([key]) => key !== 'style' && !paintKeys.includes(key)));
-    if (node.name === 'g') return `<g${attributesOf(attrs)}>${node.children.map(child => render(child, resolved)).join('')}</g>`;
-    for (const key of paintKeys) if (resolved[key] !== undefined) attrs[key] = resolved[key]!;
-    attrs.fill ??= input.tokens.onAccent;
+    if (node.name === 'g') return `<g${attributesOf(attrs)}>${node.children.map(render).join('')}</g>`;
+    const resolved = measured.paints.get(node)!;
+    for (const key of paintKeys) if (!['fill', 'stroke', 'color'].includes(key) && resolved.attrs[key] !== undefined) attrs[key] = resolved.attrs[key]!;
+    attrs.fill = resolved.fill.css;
+    attrs.stroke = resolved.stroke.css;
     return `<${node.name}${attributesOf(attrs)}/>`;
   };
-  const inherited = presentation(root, {}), body = root.children.filter(node => node !== measured.plate).map(node => render(node, inherited)).join('');
+  const body = root.children.filter(node => node !== measured.plate).map(render).join('');
   const rootMetadata = attributesOf(Object.fromEntries(Object.entries(root.attrs).filter(([key]) => ['role', 'aria-label'].includes(key))));
   const attributes = attributesOf(Object.fromEntries(Object.entries(root.attrs).filter(([key]) => !['xmlns', 'viewBox', 'width', 'height', 'data-clear-space', 'style', 'role', 'aria-label', ...paintKeys].includes(key))));
-  const plate = input.plate === false ? '' : `<rect width="48" height="48" rx="10.5" fill="${escape(input.tokens.accent)}"/>`;
+  const accent = input.plate === false ? undefined : effectivePaint(parsePaint(input.tokens.accent), measured.rootColor, '#000');
+  if (accent && !accent.visible) fail('generated plate paint');
+  const plate = accent ? `<rect width="48" height="48" rx="10.5" fill="${escape(accent.css)}"/>` : '';
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" data-clear-space="0.2"${rootMetadata}${input.optical ? ' data-optical-centering="true"' : ''}>${plate}<g transform="translate(${format(tx)} ${format(ty)}) scale(${format(scale)})"><g${attributes}>${body}</g></g></svg>`;
 }
 /** Ordered violations. Live lockup text contributes position/font size, never an outline box. */
