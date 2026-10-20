@@ -417,3 +417,6 @@ export { Items } from "./blocks/items/Items.js";
 export type { ItemData, ItemFigureData, ItemStatusData, ItemProps, ItemBadge, ItemSize, ItemTreatment, ItemSpan, ItemsProps, ItemsArrangement, ItemsColumns, ItemsScale, ItemsGroup, ItemsLane } from "./blocks/items/types.js";
 export { GroupedTable } from "./blocks/GroupedTable.js";
 export type { GroupedTableProps, GroupedTableGroup, GroupedTableColumn } from "./blocks/GroupedTable.js";
+
+export { filterRows, groupRows, pivotRows, aggregate, parseTableModel, serializeTableModel, TableModelError } from "./blocks/table-model/index.js";
+export type { TableValue, TableColumnKind, TableColumn, TableCollation, TableFilter, TableDimension, TableMeasure, TablePivot, TableModel, TableFacet, TableFilterResult, TableAggregateValue, TableAggregates, TableGroup, TablePivotAxis, TablePivotCell, TablePivotResult, TableModelErrorCode } from "./blocks/table-model/index.js";
