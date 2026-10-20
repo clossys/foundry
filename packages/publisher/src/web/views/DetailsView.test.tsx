@@ -2,12 +2,16 @@
 import "@testing-library/jest-dom/vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { act } from "react";
+import { hydrateRoot } from "react-dom/client";
 import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { renderToStaticMarkup } from "react-dom/server";
+import { renderToStaticMarkup, renderToString } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { Banner, Button } from "@clossys/designer/atoms";
 import { DetailsView, type DetailsViewProps, type DetailsViewSection } from "./DetailsView.js";
+import { IndexView } from "./IndexView.js";
+import { AppFrame } from "../frame/AppFrame.js";
 import * as web from "../index.js";
 import * as client from "../client.js";
 import * as server from "../server.js";
@@ -181,6 +185,66 @@ describe("DetailsView", () => {
     render(<DetailsView {...common} sections={[]} />);
     expect(screen.getByRole("heading", { name: "No sections", level: 2 })).toBeInTheDocument();
     expect(screen.queryByRole("tablist")).toBeNull();
+  });
+
+  it.each([
+    { kind: "index", wide: true }, { kind: "index", wide: false },
+    { kind: "details", wide: true }, { kind: "details", wide: false },
+  ])("hydrates the $kind View inside the real AppFrame without duplicate chrome (wide=$wide)", async ({ kind, wide }) => {
+    vi.stubGlobal("matchMedia", (media: string) => ({ matches: media === "(min-width: 768px)" ? wide : false, media, addEventListener() {}, removeEventListener() {} }));
+    localStorage.clear();
+    const onNavigate = vi.fn();
+    const onTabChange = vi.fn();
+    const row = { id: "one", name: "First record" };
+    const frame = {
+      brand: { markSrc: "/mark.svg", wordmark: "Example", label: "Example workspace" },
+      navigation: { tree: [{ id: "records", label: "Records", href: "/records" }], activeId: "records" },
+      account: { signedOutLabel: "Signed out", sections: [] },
+      commands: { heading: "Commands", triggerLabel: "Find a command", searchLabel: "Search commands", closeLabel: "Close commands", emptyMessage: "No matching commands", groups: [] },
+    };
+    const tree = (tab = "overview") => <AppFrame {...frame}>{kind === "index" ? <IndexView
+      title="Records" subtitle="Browse the current records." rows={[row]} rowKey={entry => entry.id}
+      columns={[{ id: "name", header: "Name", isRowHeader: true, cell: entry => entry.name }]}
+      collectionLabel="Record collection" empty={{ title: "No records" }}
+      rowRoute={{ href: entry => "/records/" + entry.id, onNavigate }}
+    /> : <DetailsView {...tabbed({ tab, onTabChange })} />}</AppFrame>;
+    const host = document.createElement("div");
+    host.innerHTML = renderToString(tree()); document.body.append(host);
+    const main = within(host).getByRole("main");
+    const mainId = main.id;
+    const recoverable = vi.fn();
+    let root: ReturnType<typeof hydrateRoot> | undefined;
+    try {
+      expect(host.querySelectorAll("[data-application-frame]")).toHaveLength(1);
+      expect(host.querySelectorAll("main")).toHaveLength(1);
+      expect(host.querySelectorAll("h1")).toHaveLength(1);
+      expect(host.querySelector("[data-frame-root]")).toBeNull();
+      expect(within(main).getByText(kind === "index" ? "Browse the current records." : common.subtitle)).toBeInTheDocument();
+      expect(within(host).getByRole("link", { name: "Skip to content" })).toHaveAttribute("href", "#" + mainId);
+      await act(async () => { root = hydrateRoot(host, tree(), { onRecoverableError: recoverable }); });
+      expect(recoverable).not.toHaveBeenCalled();
+      expect(within(host).getByRole("main")).toBe(main);
+      expect(main).toHaveAttribute("id", mainId);
+      expect(host.querySelectorAll("h1")).toHaveLength(1);
+      expect(host.querySelectorAll("main")).toHaveLength(1);
+      const user = userEvent.setup();
+      if (kind === "index") {
+        await user.click(within(main).getByRole("link", { name: "First record" }));
+        expect(onNavigate).toHaveBeenCalledExactlyOnceWith("/records/one", row);
+      } else {
+        expect(within(main).getByRole("link", { name: "Records" })).toHaveAttribute("href", "/records");
+        await user.click(within(main).getByRole("tab", { name: "History" }));
+        expect(onTabChange).toHaveBeenCalledWith("history");
+        expect(within(main).getByRole("tab", { name: "Overview" })).toHaveAttribute("aria-selected", "true");
+        await act(async () => root!.render(tree("history")));
+        expect(within(within(main).getByRole("tabpanel", { name: "History" })).getByText("Recorded changes")).toBeInTheDocument();
+      }
+      await user.click(within(host).getByRole("link", { name: "Skip to content" }));
+      expect(main).toHaveFocus();
+    } finally {
+      await act(async () => root?.unmount()); host.remove();
+      vi.unstubAllGlobals(); localStorage.clear(); document.documentElement.removeAttribute("data-theme");
+    }
   });
 
   it("refuses raw elements instead of Block entries, bad identities, missing controlled selection and unsafe index links", () => {
