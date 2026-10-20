@@ -171,7 +171,7 @@ The web condition changes only the implementation selected for server
 rendering, not the API. `MarketingView` keeps the same props and regional
 layout; its server target uses Designer's native `details`/`summary` FAQ while
 the ordinary target keeps Designer's React Aria FAQ. `SiteFrame`, `AuthView`,
-`StatusView`, `GlobalErrorDocument`, `ErrorView`,
+`StatusView`, `GlobalErrorDocument`, `NotFoundDocument`, `ErrorView`,
 `CaptureView`, `CollectionView`, `DocumentView`, `LegalView`, the renderer functions,
 template helpers, error class, and all runtime export names are present in
 both targets.
@@ -3036,7 +3036,7 @@ nothing shipped for it yet; `out-of-scope`, not part of the page contract.
 | 5. View | Publisher | `implemented` | chrome-free `HeroView`, `MarketingView`, `CollectionView`, `PackReviewView`, `BrandGuideView` and `SystemAuditView` |
 | 6. Per-page head | Publisher | `contract-only` | `pageHead` |
 | 7. Machine surfaces | Publisher | `contract-only` | robots, sitemap from the route manifest, web manifest, icons, health |
-| 8. System states | Publisher views | `implemented` | loading state, degraded state, frame-aware `ErrorView` root |
+| 8. System states | Publisher views | `implemented` | loading state, degraded state |
 | 9. Forms and APIs | their owning form and API packages | `out-of-scope` | |
 
 **Extending a page.** A consumer differs only through declared brand
@@ -3064,7 +3064,7 @@ page only and is not for use inside a frame.
 A chrome-free view's content root refuses a landmark `role` (`main`, `banner`,
 `contentinfo`, `navigation`) and the frame's main id, because the frame owns
 those. `GlobalErrorDocument` renders `SiteFrame` and `StatusView` when given a
-`shell`, so the same rule holds there; only its deprecated `ErrorView` shape
+`shell`, and `NotFoundDocument` always does, so the same rule holds there; only its deprecated `ErrorView` shape
 has no frame and no `<main>`, and that shape's root may carry `role="main"`.
 
 **Deprecated view chrome.** The chrome props on `AuthView`, `CaptureView`,
@@ -3379,6 +3379,7 @@ Props (`GlobalErrorDocumentFramedProps`):
 | `documentTitle` | yes | `{ page, brand }`, joined by `formatPageTitle`. |
 | `icon` | yes | `{ href, type? }` for the one `<link rel="icon">`. |
 | `htmlClassName` | no | A class on `<html>`, rendered only when non-empty. |
+| `stylesheets` | no | Stylesheet `href`s linked from the head, in order. Each is a root-relative path or an `https` URL with no space or ASCII control character; anything else throws a `TypeError` naming its index. See "Styling a document that replaces the root layout" below. |
 | `shell`, `resolveCopy`, `resolveAsset` | yes | The frame's inputs, exactly as `SiteFrame` takes them (`SiteFrameInput`). |
 | `status` | yes | The one `<h1>`, as on `StatusView`: a code such as `"500"`, or a short title. |
 | `subtitle` | no | One line of supporting caller copy. |
@@ -3387,13 +3388,14 @@ Props (`GlobalErrorDocumentFramedProps`):
 | `notes` | no | A quiet line for a secondary link. |
 | `routes` | no | Caller-labelled destinations, forwarded unchanged to `StatusView`. |
 
-`GlobalErrorDocumentHeadProps` names the first four, which both shapes share.
+`GlobalErrorDocumentHeadProps` names the first five, which both shapes share.
 The frame fails closed here as everywhere: a shell the frame refuses throws.
 
 No theme script runs in this document, so it is pinned to the light theme
 (`data-theme="light"` and `color-scheme: light`) and marked `data-brand-bound`.
 Brand tokens are not imported here: import your brand stylesheet in the same
-global-error file that renders this component, as your root layout does.
+global-error file that renders this component, as your root layout does, or
+link it through `stylesheets` (see below).
 
 Brand fonts loaded through a framework font loader usually expose their CSS
 variables through a class that must sit on `<html>`, and brand tokens that
@@ -3433,6 +3435,86 @@ client module, the shell and the two resolvers it passes are bundled for the
 browser: build them from modules with no server-only imports and nothing
 secret in them. A segment `error` boundary and `not-found` page keep their
 layout, and so its frame: they render `StatusView` alone, not this document.
+A layout that mounts no frame (its pages carry their own chrome) leaves the
+error page to mount it: render `SiteFrame` around `StatusView` there, so the
+page still has one skip link, banner, `<main>` and contentinfo.
+
+#### Styling a document that replaces the root layout
+
+A global-error or unmatched-address document gets none of the root layout's
+stylesheets. Without them every utility class on the frame is inert: the brand
+mark (painted with the accent background under a mask) is invisible, the skip
+link shows at the top of the page, and the footer no longer sits at the bottom
+of a short page. Give the document its styles in one of three ways, in order
+of preference:
+
+1. **Import the site stylesheet** in the same file that renders the document,
+   as the root layout does, where the framework bundles CSS for that file.
+2. **Link it** through `stylesheets` when the host cannot import CSS into
+   that file: the built site stylesheet, or Designer's `tokens.css` and
+   `compiled.css` plus the brand file, served as static files. Each entry is
+   a root-relative path or an `https` URL, linked in order.
+3. **Rely on the inline critical rules** when neither is possible. Every
+   framed document (`GlobalErrorDocument` with `shell`, and
+   `NotFoundDocument`) carries one `<style data-publisher-frame-critical>` in
+   its head, before any linked stylesheet. Its rules keep the frame's
+   structure: the frame root is a full-height column, the `<main>` grows to
+   fill it, the skip link is visually hidden until it has focus, and the
+   accent brand mark is filled with `var(--color-accent)`, falling back to
+   the text colour. They restate the values of the classes the frame already
+   carries, sit in their own cascade layer (`publisher-frame-critical`), and
+   use no colour literal, so they agree with the site stylesheet when it
+   loads. They do not supply brand colour, type or spacing; only a stylesheet
+   does.
+
+The deprecated `ErrorView` shape has no frame and carries no critical rules.
+
+### Unmatched-address document — `NotFoundDocument`
+
+`NotFoundDocument`, exported from `@clossys/publisher/web` and its server
+entry (not from `@clossys/publisher/web/client`), is the whole document for an
+unmatched address that no root layout renders: Next's `global-not-found`
+file, or a site whose only root layouts sit under a locale or tenant segment
+that the address never matched. It renders its own `<html>`, `<head>` and
+`<body>` with the same head as `GlobalErrorDocument` (title from
+`formatPageTitle`, `noindex, nofollow`, one icon link, the critical rules and
+any `stylesheets`), then `SiteFrame` around a `StatusView`: one skip link,
+banner, `<main>`, contentinfo and `<h1>`.
+
+It reads no request, header, cookie, router, locale or provider. The `lang`
+is the configured one you pass, every word comes from its props, and the
+frame resolves its copy through the `resolveCopy` you pass, so it renders the
+same markup with no context at all. It has no hooks and is not a client
+module, so a server file renders it directly.
+
+Props (`NotFoundDocumentProps`): `lang`, `documentTitle`, `icon`,
+`htmlClassName` and `stylesheets` as on `GlobalErrorDocument`; `shell`,
+`resolveCopy` and `resolveAsset` (`SiteFrameInput`); and `status`,
+`subtitle`, `action`, `notes` and `routes` as on `StatusView`. An unmatched
+address has no diagnostic, so `reference` throws, and so do the deprecated
+`title` and `description`. A shell the frame refuses throws, as everywhere.
+
+```tsx
+import { NotFoundDocument } from "@clossys/publisher/web";
+import type { SiteFrameInput } from "@clossys/publisher/web";
+
+declare const frame: SiteFrameInput; // built from the configured copy, not from the request
+
+export default function GlobalNotFound() {
+  return (
+    <NotFoundDocument
+      lang="en"
+      documentTitle={{ page: "Page not found", brand: "Example Studio" }}
+      icon={{ href: "/icon.svg", type: "image/svg+xml" }}
+      stylesheets={["/site.css"]}
+      {...frame}
+      status="404"
+      subtitle="This page does not exist."
+      action={<a href="/" className="bg-accent">Back to home</a>}
+    />
+  );
+}
+```
 
 **Deprecated `ErrorView` shape** (`GlobalErrorDocumentErrorViewProps`, kept for
 one release). Without `shell`, the document takes the earlier props (`status`,
@@ -3460,9 +3542,12 @@ chrome props) moves to the published view in the same steps for every page.
 2. **Pages render the view only.** `page.tsx`, `error.tsx` and `not-found.tsx`
    render inside their segment layout, so each renders the view with no frame
    wrapper, no `<main>` and no header or footer of its own.
-3. **Only `global-error` owns a document.** It replaces the root layout, so it
-   renders [`GlobalErrorDocument`](#global-error-document--globalerrordocument),
-   which brings its own frame.
+3. **Only a file that replaces the root layout owns a document.**
+   `global-error` renders
+   [`GlobalErrorDocument`](#global-error-document--globalerrordocument), and a
+   `global-not-found` file renders
+   [`NotFoundDocument`](#unmatched-address-document--notfounddocument); each
+   brings its own frame.
 4. **Drop every deprecated chrome prop.** Delete `brand`, `header`, `footer`,
    `mainId`, `nav`, `headerAction`, `headerSecondaryAction` (`AuthView`,
    `CaptureView`), `secondaryAction` (`BoundaryView`), `ground`,
@@ -3507,6 +3592,7 @@ chrome props) moves to the published view in the same steps for every page.
 | a form file (`"use client"`) | client | `SignInForm`, `ActivateForm`, `ResetForm` from `@clossys/publisher/web/client` (package copy) or `@clossys/publisher/web` (your copy registry), with the handlers; the server page renders this file in `AuthView`'s `form` |
 | `error.tsx` (`"use client"`, as Next requires) | client | `StatusView` from `@clossys/publisher/web/client` |
 | `global-error.tsx` (`"use client"`, as Next requires) | client | `GlobalErrorDocument` from `@clossys/publisher/web`; the client entry does not export it or `SiteFrame` yet |
+| `global-not-found.tsx` | server | `NotFoundDocument` from `@clossys/publisher/web` |
 
    Under `react-server`, the `/web` form names are stubs that throw a
    `RenderError` when called, so a server page never renders a form directly;
@@ -5037,7 +5123,7 @@ Three further usage requirements, not numbered in the specification:
   `SiteOpenGraphMetadata`, `SitePageInput`, `SitePageKind`, `SiteShareCard`,
   `SiteTwitterMetadata`, `SiteMetadataLintFinding`, `SiteMetadataLintResult`,
   `SiteMetadataLintRule`, `SiteMetadataRequiredTag`, and
-  `SiteMetadataTagSelector` types, plus `GlobalErrorDocument` and `GlobalErrorDocumentProps`, and `SiteFrame`, `siteShellFor`, `SITE_SURFACE_KINDS`, `SITE_PAGE_LAYERS`, `SITE_MAIN_ID` and the `SiteBrandInput`, `SiteChromeGround`, `SiteEnvironmentLinkInput`, `SiteFooterInput`, `SiteFrameConfig`, `SiteFrameInput`, `SiteFrameProps`, `SiteIconLinkInput`, `SiteLinkInput`, `SitePageLayer`, `SiteShellInput` and `SiteSurfaceKind` types (see "Site frame"), and `ActivateForm`, `ResetForm`, `ActivateDetails`, `ActivateFailure`, `ActivateFormProps`, `ActivateResult`, `ResetDetails`, `ResetFailure`, `ResetFormProps` and `ResetResult` (see "Activation and reset forms").
+  `SiteMetadataTagSelector` types, plus `GlobalErrorDocument` and `GlobalErrorDocumentProps`, `NotFoundDocument` and `NotFoundDocumentProps`, and `SiteFrame`, `siteShellFor`, `SITE_SURFACE_KINDS`, `SITE_PAGE_LAYERS`, `SITE_MAIN_ID` and the `SiteBrandInput`, `SiteChromeGround`, `SiteEnvironmentLinkInput`, `SiteFooterInput`, `SiteFrameConfig`, `SiteFrameInput`, `SiteFrameProps`, `SiteIconLinkInput`, `SiteLinkInput`, `SitePageLayer`, `SiteShellInput` and `SiteSurfaceKind` types (see "Site frame"), and `ActivateForm`, `ResetForm`, `ActivateDetails`, `ActivateFailure`, `ActivateFormProps`, `ActivateResult`, `ResetDetails`, `ResetFailure`, `ResetFormProps` and `ResetResult` (see "Activation and reset forms").
 - `document`: `validateStructuredDocument`, `renderStructuredDocument`,
   `RenderError`, and the `DocumentBlock`, `DocumentCallout`,
   `DocumentColumnStyle`, `DocumentDefinitionList`, `DocumentInline`, `DocumentList`,
@@ -5785,7 +5871,8 @@ Release notes for every version are in the [changelog](https://github.com/clossy
 
 `@clossys/publisher/web/client` exports `SignInForm`, `ActivateForm`,
 `ResetForm`, `AuthView`, `StatusView`, the deprecated `BoundaryView` and their
-props/result types. It does not export `SiteFrame` or `GlobalErrorDocument`.
+props/result types. It does not export `SiteFrame`, `GlobalErrorDocument` or
+`NotFoundDocument`.
 The forms bind immutable Writer package defaults once when the module loads;
 consumer registry mutations cannot change or authorize those defaults.
 Use the existing `@clossys/publisher/web` forms for strict mutable registry

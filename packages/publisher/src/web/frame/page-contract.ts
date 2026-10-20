@@ -59,7 +59,7 @@ export const SITE_PAGE_LAYERS: readonly SitePageLayer[] = freezeRows([
     owner: "Publisher views",
     mountOwner: "Publisher frame",
     implementationScope: "implemented",
-    deferred: ["loading state", "degraded state", "frame-aware ErrorView root"],
+    deferred: ["loading state", "degraded state"],
   },
   { id: 9, name: "Forms and APIs", owner: "Their owning form/API packages", mountOwner: "Explicit package adapter", implementationScope: "out-of-scope", deferred: [] },
 ]);

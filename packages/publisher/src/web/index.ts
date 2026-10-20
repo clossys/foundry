@@ -108,6 +108,8 @@ export { SignInForm } from "./views/index.js";
 export type { SignInFailure, SignInFormProps, SignInResult } from "./views/index.js";
 export { GlobalErrorDocument } from "./views/index.js";
 export type { GlobalErrorDocumentErrorViewProps, GlobalErrorDocumentFramedProps, GlobalErrorDocumentHeadProps, GlobalErrorDocumentProps } from "./views/index.js";
+export { NotFoundDocument } from "./views/index.js";
+export type { NotFoundDocumentProps } from "./views/index.js";
 export { ActivateForm, ResetForm } from "./views/index.js";
 export type { ActivateDetails, ActivateFailure, ActivateFormProps, ActivateResult, ResetDetails, ResetFailure, ResetFormProps, ResetResult } from "./views/index.js";
 
