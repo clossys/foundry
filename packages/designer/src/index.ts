@@ -417,3 +417,6 @@ export { Items } from "./blocks/items/Items.js";
 export type { ItemData, ItemFigureData, ItemStatusData, ItemProps, ItemBadge, ItemSize, ItemTreatment, ItemSpan, ItemsProps, ItemsArrangement, ItemsColumns, ItemsScale, ItemsGroup, ItemsLane } from "./blocks/items/types.js";
 export { GroupedTable } from "./blocks/GroupedTable.js";
 export type { GroupedTableProps, GroupedTableGroup, GroupedTableColumn } from "./blocks/GroupedTable.js";
+
+export { scheduleProject, projectRollups, boardColumns, timelineLayout, serializeProject, parseProject, ProjectModelError } from "./blocks/project-model/index.js";
+export type { ProjectDay, TaskDependency, Task, Calendar as ProjectCalendar, ProjectModelErrorCode, ProjectModel, ScheduledTask, ProjectConflict, ProjectSchedule, ProjectRollup, BoardOptions, BoardColumn, TimelineZoom, TimelineOptions, TimelinePoint, TimelineRow, TimelineConnector, TimelineLayout } from "./blocks/project-model/index.js";

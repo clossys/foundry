@@ -223,3 +223,6 @@ export type { ItemData, ItemFigureData, ItemStatusData, ItemProps, ItemBadge, It
 
 export { GroupedTable } from "./GroupedTable.js";
 export type { GroupedTableProps, GroupedTableGroup, GroupedTableColumn } from "./GroupedTable.js";
+
+export { scheduleProject, projectRollups, boardColumns, timelineLayout, serializeProject, parseProject, ProjectModelError } from "./project-model/index.js";
+export type { ProjectDay, TaskDependency, Task, Calendar, ProjectModelErrorCode, ProjectModel, ScheduledTask, ProjectConflict, ProjectSchedule, ProjectRollup, BoardOptions, BoardColumn, TimelineZoom, TimelineOptions, TimelinePoint, TimelineRow, TimelineConnector, TimelineLayout } from "./project-model/index.js";
