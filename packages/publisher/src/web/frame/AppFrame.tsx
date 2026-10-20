@@ -21,7 +21,7 @@ function SignedOutMenu({ sections, signedOutLabel, onRoute }: AppFrameAccount) {
   if (!populated.length) return <p className="m-0 px-sm py-sm text-body text-ink-secondary">{signedOutLabel}</p>;
   const itemKey = (section: string, entry: string) => JSON.stringify([section, entry]);
   return <Menu trigger={<Button variant="ghost" className={CONTROL + " w-full justify-start text-start"} style={TAP}>{signedOutLabel}</Button>}>
-    {populated.map(section => <Menu.Section key={section.id} heading={section.label} aria-label={section.label}
+    {populated.map(section => <Menu.Section key={section.id} heading={section.label} aria-label={section.label ?? signedOutLabel}
       selectionMode={section.kind === "preferences" ? "multiple" : "none"}
       selectedKeys={section.kind === "preferences" ? section.entries.filter(entry => entry.checked).map(entry => itemKey(section.id, entry.id)) : undefined}
       shouldCloseOnSelect={section.kind === "preferences" ? false : undefined}

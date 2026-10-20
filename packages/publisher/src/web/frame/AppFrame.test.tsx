@@ -105,6 +105,20 @@ describe("AppFrame composition", () => {
     await userEvent.keyboard("{Escape}"); await waitFor(() => expect(trigger).toHaveFocus());
   });
 
+  it("names unlabeled signed-out sections from the host label and retains explicit headings", async () => {
+    const props = fixture(); delete props.account.actor;
+    props.account.signedOutLabel = "Guest account";
+    props.account.sections = [...props.account.sections, {
+      id: "help", label: "Help destinations", entries: [{ kind: "link", id: "help", label: "Help", href: "#help" }],
+    }];
+    render(<AppFrame {...props} />);
+    await userEvent.click(screen.getByRole("button", { name: "Guest account" }));
+    expect(within(await screen.findByRole("group", { name: "Guest account" })).getByRole("menuitem", { name: "Profile" })).toHaveAttribute("href", "#profile");
+    const named = screen.getByRole("group", { name: "Help destinations" });
+    expect(within(named).getByText("Help destinations")).toBeVisible();
+    expect(within(named).getByRole("menuitem", { name: "Help" })).toHaveAttribute("href", "#help");
+  });
+
   it("resizes through the composed separator and retains width through collapse/reopen", async () => {
     const props = fixture(); const change = vi.fn(); props.rightPanel!.onChange = change;
     render(<AppFrame {...props} />);
@@ -235,10 +249,7 @@ describe("AppFrame composition", () => {
     expect(host).toHaveFocus();
   });
 
-  // Fails until clossys/foundry#2254 (Designer SkipLink moves focus without rewriting the hash) is on main:
-  // Designer SkipLink does not prevent the native fragment navigation, so the host hash route is replaced.
-  // When #2254 lands and is merged into this branch, change `it.fails` to `it`.
-  it.fails("focuses main from the composed skip link without replacing a host hash route", async () => {
+  it("focuses main from the composed skip link without replacing a host hash route", async () => {
     window.history.replaceState(null, "", "#/projects/42");
     try {
       render(<AppFrame {...fixture()} />);
