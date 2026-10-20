@@ -210,6 +210,33 @@ describe("Brandmark: href and aria-label are not overridable", () => {
   });
 });
 
+describe("Brandmark: optional public origin", () => {
+  it.each([
+    [undefined, "/"],
+    ["https://example.com", "https://example.com/"],
+    ["HTTPS://EXAMPLE.com/", "https://example.com/"],
+    ["https://example.com:8443", "https://example.com:8443/"],
+    ["http://localhost:3000", "http://localhost:3000/"],
+    ["http://127.0.0.1:8080/", "http://127.0.0.1:8080/"],
+    ["http://[::1]:4000", "http://[::1]:4000/"],
+  ])("origin %j links to %s", (origin, href) => {
+    render(<Brandmark {...props("lockup", "md")} origin={origin} />);
+    expect(screen.getByRole("link", { name: LABEL })).toHaveAttribute("href", href);
+  });
+
+  it.each([
+    "javascript:alert(1)", "/path", "//example.com", "https:example.com",
+    "https://example.com/path", "https://example.com/.", "https://example.com?x=1",
+    "https://example.com#section", "https://user@example.com", "https://@www.example.test/",
+    "http://example.com", "http://localhost.example.com", "ftp://example.com",
+    " https://example.com", "https://example.com\n", "https:\\\\example.com", "", null, 42,
+  ])("refuses malformed origin %j without echoing it", origin => {
+    const forced = { ...props("mark", "md"), origin } as unknown as BrandmarkProps;
+    expect(() => renderToStaticMarkup(<Brandmark {...forced} />)).toThrow(/Brandmark:.*origin/);
+    expect(() => renderToStaticMarkup(<Brandmark {...forced} />)).not.toThrow(/example\.com|alert|path|user@/);
+  });
+});
+
 describe("Brandmark: token wiring", () => {
   const varNameRe = /var\(\s*(--[a-zA-Z0-9-]+)/g;
 

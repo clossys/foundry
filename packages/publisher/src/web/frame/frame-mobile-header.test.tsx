@@ -135,7 +135,30 @@ it("passes mobile layout through direct shells and siteShellFor into SiteHeader"
       expectAccentMark(header.querySelector('a[aria-label="Example home"]'));
     }
   }
-  for (const kind of ["front-door", "admin", "demo"] as const) expect(siteShellFor(config, kind).mobileLayout).toBeUndefined();
+  for (const kind of ["front-door", "admin", "demo"] as const) expect(siteShellFor(config, kind).mobileLayout).toBe("inline");
+});
+
+it.each(["front-door", "admin", "demo"] as const)("keeps the %s brand leading and its sole environment ghost in both renderers", kind => {
+  const kinds = ["front-door", "admin", "demo"] as const;
+  const config: SiteFrameConfig = {
+    brand: base.brand, skipLink: base.skipLink, origin: "https://example.com", legal: base.footer!.legal,
+    environments: kinds.map(surface => ({ surface, href: `https://${surface}.example.com/`, label: ref(surface), icon })),
+  };
+  const shell = siteShellFor(config, kind);
+  expect(shell.mobileLayout).toBe("inline");
+  expect(renderToString(tree(shell))).toBe(renderToString(tree(shell, true)));
+  for (const server of [false, true]) {
+    const header = output(shell, server).querySelector("header")!;
+    expect(header).not.toHaveClass("site-header-contract");
+    expect(header.querySelector("nav, button")).toBeNull();
+    const brand = within(header).getByRole("link", { name: "Example home" });
+    expect(brand).toHaveAttribute("href", "https://example.com/");
+    const link = within(header).getByRole("link", { name: kind });
+    expect(link).toHaveAttribute("aria-current", "true");
+    expect(link).toHaveClass("hover:bg-surface-sunken");
+    expect(link.querySelector("svg")).not.toBeNull();
+    expect(header.querySelectorAll("a")).toHaveLength(2);
+  }
 });
 
 // JSDOM cannot measure geometry. Guard the responsive positioning contract here;

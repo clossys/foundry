@@ -50,7 +50,25 @@ function normalise(text: string): string {
   return text.replace(/\s+/g, " ").trim().toLowerCase();
 }
 
+/** A bare origin only; inspect raw syntax before URL normalization can erase a path or userinfo. */
+function homeHref(value: unknown): string {
+  if (value === undefined) return "/";
+  const refuse = (): never => { throw new Error("Brandmark: `origin` must be an https origin, or an http origin on a loopback host."); };
+  if (typeof value !== "string" || value !== value.trim() || /[\u0000-\u001F\u007F\\]/.test(value)
+    || !/^https?:\/\/[^/?#@]+\/?$/i.test(value)) refuse();
+  let url: URL;
+  try { url = new URL(value as string); } catch { refuse(); }
+  const parsed = url!;
+  const loopback = ["localhost", "127.0.0.1", "[::1]"].includes(parsed.hostname);
+  if ((parsed.protocol !== "https:" && !(parsed.protocol === "http:" && loopback))
+    || parsed.pathname !== "/" || parsed.search !== "" || parsed.hash !== ""
+    || parsed.username !== "" || parsed.password !== "") refuse();
+  return `${parsed.origin}/`;
+}
+
 interface BrandmarkBaseProps {
+  /** Bare public https origin, or http on localhost/127.0.0.1/[::1]. Omitted links to `/`; a trailing root slash is accepted. */
+  origin?: string;
   /** Which step of the closed size set to render at. */
   size: BrandmarkSize;
   /** Explicit chrome sizing; omission preserves the legacy variant and size. */
@@ -102,8 +120,8 @@ interface BrandmarkBaseProps {
 
 /**
  * `lockup` requires a `wordmark`; `mark` takes none. `href` and
- * `aria-label` are deliberately not props at all: the link always goes to
- * `"/"` and is always named by `label`.
+ * `aria-label` are deliberately not props at all: the link goes to the
+ * optional `origin`'s root (otherwise `"/"`) and is always named by `label`.
  */
 export type BrandmarkProps = BrandmarkBaseProps &
   (
@@ -131,8 +149,10 @@ export type BrandmarkProps = BrandmarkBaseProps &
  * hooks, no client directive, no `react-aria-components`. Never accepts or
  * renders markup — `markSrc` is a URL and `wordmark` is text.
  *
- * Deliberately no props spread onto the anchor: nothing a consumer passes
- * can reach `href` or `aria-label`, even past the type system.
+ * Deliberately no props spread onto the anchor: a forced `href` or
+ * `aria-label` cannot override the validated home origin or the label.
+ * A present `origin` must be bare HTTPS or loopback HTTP; invalid values
+ * throw without echoing the supplied value.
  *
  * Refuses (throws a plain `Error` that names the prop and never echoes its
  * value) a `label` that is empty, whitespace-only or not a string, since the
@@ -144,7 +164,7 @@ export type BrandmarkProps = BrandmarkBaseProps &
  * text and is not subject to that second check.
  */
 export function Brandmark(props: BrandmarkProps) {
-  const { variant, size, label, markSrc, className, plate, markInk = "image", tone = "auto" } = props;
+  const { variant, size, label, markSrc, className, plate, origin, markInk = "image", tone = "auto" } = props;
   const vars = SIZE_VARS[size];
   const inverse = tone === "inverse";
   const wordmark = variant === "lockup" ? props.wordmark : undefined;
@@ -158,6 +178,7 @@ export function Brandmark(props: BrandmarkProps) {
       'Brandmark: for variant="lockup", `label` must contain the visible `wordmark` text (WCAG 2.5.3, label in name).',
     );
   }
+  const href = homeHref(origin);
 
   const linkClasses = cx(
     inverse
@@ -219,7 +240,7 @@ export function Brandmark(props: BrandmarkProps) {
   );
 
   return (
-    <a href="/" aria-label={label} className={linkClasses} style={showWordmark ? { gap: vars.gap } : undefined}>
+    <a href={href} aria-label={label} className={linkClasses} style={showWordmark ? { gap: vars.gap } : undefined}>
       {plate === "shared" ? (
         <span
           aria-hidden
