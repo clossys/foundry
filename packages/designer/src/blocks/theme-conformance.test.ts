@@ -335,7 +335,7 @@ describe("Block theme conformance", () => {
     expect([...result.tokens].sort()).toEqual(["--color-ink-primary", "--color-surface-sunken"]);
     for (const literal of ["red", "rebeccapurple", "Blue"]) expect(sourceEvidence("Example.tsx", `const paint = "${literal}";`).findings).toContain(`Example.tsx: named color ${literal}`);
     for (const utility of ["border-t-red", "bg-gray-500", "text-[#fff]", "[&_p]:text-rebeccapurple", "bg-[rgb(1,2,3)]"]) expect(sourceEvidence("Example.tsx", `const classes = "${utility}";`).findings.some(item => item.includes("color utility has no token"))).toBe(true);
-    expect(sourceEvidence("Example.tsx", 'const paint = { color: "var(--color-ink-primary)" };').findings).toContain("Example.tsx: inline color property color");
+    expect(sourceEvidence("Example.tsx", 'const paint = { color: "var(--color-ink-primary, currentColor)" };').findings).toContain("Example.tsx: inline color property color");
   });
 
   it("rejects a hex-color mutant through the canonical pipeline", () => {
