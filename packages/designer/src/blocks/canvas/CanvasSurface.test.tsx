@@ -504,3 +504,44 @@ describe("canvas wheel intent and focus visibility", () => {
     expect(nested.scrollLeft).toBe(11); expect(props.onViewportChange).not.toHaveBeenCalled();
   });
 });
+
+
+describe("canvas current range anchors", () => {
+  it("recovers a removed anchor to the clicked target while waiting for host selection acceptance", () => {
+    const result = setup({ selection: Object.freeze(["b"]) });
+    fireEvent.click(screen.getByRole("button", { name: "Alpha" }));
+    result.rerender(<CanvasSurface {...result.props} selection={["a"]} />);
+    const remaining = Object.freeze([items[1]!, items[2]!]);
+    result.rerender(<CanvasSurface {...result.props} items={remaining} selection={["b"]} />);
+    const beta = screen.getByRole("button", { name: "Beta" }), target = screen.getByRole("button", { name: "Gamma" });
+    vi.mocked(result.props.onSelectionChange).mockClear();
+    fireEvent.click(target, { shiftKey: true });
+    expect(result.props.onSelectionChange).toHaveBeenCalledExactlyOnceWith(["c"]);
+    expect(beta).toHaveAttribute("aria-pressed", "true"); expect(target).toHaveAttribute("aria-pressed", "false");
+    result.rerender(<CanvasSurface {...result.props} items={remaining} selection={["c"]} />);
+    expect(beta).toHaveAttribute("aria-pressed", "false"); expect(target).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it.each([
+    { order: items, expected: ["a", "b"] },
+    { order: [items[2]!, items[1]!, items[0]!], expected: ["b", "a"] },
+  ])("keeps a valid stored anchor across controlled rerender and current order: $expected", ({ order, expected }) => {
+    const result = setup(); fireEvent.click(screen.getByRole("button", { name: "Alpha" }));
+    // Temporary absence must not clear the stored anchor: the host may reintroduce it.
+    result.rerender(<CanvasSurface {...result.props} items={[items[1]!, items[2]!]} selection={["b"]} />);
+    result.rerender(<CanvasSurface {...result.props} items={order} selection={["b"]} />);
+    vi.mocked(result.props.onSelectionChange).mockClear();
+    fireEvent.click(screen.getByRole("button", { name: "Beta" }), { shiftKey: true });
+    expect(result.props.onSelectionChange).toHaveBeenCalledExactlyOnceWith(expected);
+    expect(screen.getByRole("button", { name: "Alpha" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("button", { name: "Beta" })).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("uses the clicked target for a fresh mount without a stored anchor", () => {
+    const { props } = setup({ selection: Object.freeze(["c"]) });
+    fireEvent.click(screen.getByRole("button", { name: "Beta" }), { shiftKey: true });
+    expect(props.onSelectionChange).toHaveBeenCalledExactlyOnceWith(["b"]);
+    expect(screen.getByRole("button", { name: "Gamma" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "Beta" })).toHaveAttribute("aria-pressed", "false");
+  });
+});

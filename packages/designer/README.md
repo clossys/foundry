@@ -8329,6 +8329,7 @@ selects one item; Control/Command+click toggles, and Shift+click selects a range
 from the last non-shift click. Plus/minus zoom around the view center; zero and
 Home fit; Escape clears selection. An empty surface is itself keyboard focusable.
 Consumer form inputs and independent controls retain their own keyboard handling.
+If the last non-shift-click anchor is absent from the current items, Shift+click selects only the clicked item.
 Translate the help and control names with `instructionText`, `recenterLabel`,
 `zoomGroupLabel`, `zoomOutLabel`, `zoomPercentageLabel`, `zoomInLabel` and
 `fitLabel`; their documented defaults supply English text.

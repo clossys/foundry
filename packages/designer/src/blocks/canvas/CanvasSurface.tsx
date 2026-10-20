@@ -332,7 +332,11 @@ export function CanvasSurface(props: CanvasSurfaceProps) {
         onFocus={() => focusItem(item)} onClick={event => {
           if (space.current) return;
           event.currentTarget.focus({ preventScroll: true });
-          if (event.shiftKey) onSelectionChange(selectRange(items.map(value => value.id), anchor.current ?? item.id, item.id));
+          if (event.shiftKey) {
+            const order = items.map(value => value.id);
+            const start = anchor.current !== null && order.includes(anchor.current) ? anchor.current : item.id;
+            onSelectionChange(selectRange(order, start, item.id));
+          }
           else {
             anchor.current = item.id;
             onSelectionChange(event.ctrlKey || event.metaKey ? toggleSelection(selection, item.id) : selectSingle(item.id));
