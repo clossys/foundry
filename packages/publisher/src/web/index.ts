@@ -165,3 +165,6 @@ export type { SectionedViewHeroSection } from "../core/sectioned-view.js";
 
 export { SITE_FRAME_CONTRACT, SITE_FRAME_CONFIG_SCHEMA, normalizeSiteFrameConfig, normalizeSiteFrameActions } from "./frame/site-frame-contract.js";
 export type { SiteFramePresentationConfig } from "./frame/site-frame-contract.js";
+
+export { IndexView, DetailsView } from "./views/index.js";
+export type { IndexViewCollection, IndexViewProps, IndexViewRowRoute, IndexViewTable, DetailsViewBlock, DetailsViewIndex, DetailsViewLayout, DetailsViewProps, DetailsViewRegion, DetailsViewSection, DetailsViewSectionState, DetailsViewTab } from "./views/index.js";

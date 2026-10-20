@@ -26,3 +26,8 @@ export { AppFrame } from "./frame/AppFrame.js";
 export type { AppFrameProps, AppFrameBrand, AppFrameAccount, AppFrameRightPanel } from "./frame/app-frame-types.js";
 export { APP_FRAME_CONTRACT, APP_FRAME_CONFIG_SCHEMA } from "./frame/app-frame-contract.js";
 export { AppFrameSpecimen } from "./frame/AppFrame.specimen.js";
+
+export { IndexView } from "./views/IndexView.js";
+export type { IndexViewCollection, IndexViewProps, IndexViewRowRoute, IndexViewTable } from "./views/IndexView.js";
+export { DetailsView } from "./views/DetailsView.js";
+export type { DetailsViewBlock, DetailsViewIndex, DetailsViewLayout, DetailsViewProps, DetailsViewRegion, DetailsViewSection, DetailsViewSectionState, DetailsViewTab } from "./views/DetailsView.js";
