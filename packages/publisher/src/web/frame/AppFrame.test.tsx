@@ -34,6 +34,28 @@ function fixture(): AppFrameProps {
   };
 }
 
+function nestedPanelFixture(): AppFrameProps {
+  const props = fixture();
+  props.rightPanel!.children = <>
+    <Dialog trigger={<Button>Open nested dialog</Button>}>
+      {({ close }) => <><Dialog.Heading>Nested settings</Dialog.Heading><Button onPress={close}>Close nested dialog</Button><Button>Nested action</Button></>}
+    </Dialog>
+    <button>Remaining inspector action</button>
+  </>;
+  return props;
+}
+
+function resizeFrame(matches: boolean) {
+  act(() => { wide.matches = matches; for (const listener of wide.listeners) listener(); });
+}
+
+async function settleFocusRestoration() {
+  // FocusScope restores in a later animation frame; transient waitFor success is not final focus.
+  await act(async () => {
+    for (let frame = 0; frame < 3; frame++) await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
+  });
+}
+
 describe("AppFrame composition", () => {
   it("owns the sole main and focusable skip target, active host navigation, and bottom account footer", async () => {
     render(<AppFrame {...fixture()} />);
@@ -267,8 +289,9 @@ describe("AppFrame composition", () => {
     act(() => { wide.matches = true; for (const listener of wide.listeners) listener(); });
 
     await waitFor(() => expect(screen.queryByRole("dialog", { name: "Inspector" })).not.toBeInTheDocument());
-    const desktopControl = screen.getByRole("button", { name: "Close panel" });
-    await waitFor(() => expect([main, desktopControl]).toContain(document.activeElement));
+    const desktopControl = await screen.findByRole("button", { name: "Close panel" });
+    await settleFocusRestoration();
+    expect([main, desktopControl]).toContain(document.activeElement);
     expect(openerPresentAtHandoff).toBe(true);
     expect(document.body).not.toHaveFocus();
   });
@@ -302,6 +325,135 @@ describe("AppFrame composition", () => {
     expect(openerPresentAtHandoff).toBe(true);
     expect(screen.queryByRole("dialog", { name: "Inspector" })).not.toBeInTheDocument();
     expect(document.body).not.toHaveFocus();
+  });
+
+  it.each(["ltr", "rtl"] as const)("hands an open nested drawer portal to main after modal release in %s", async dir => {
+    wide.matches = false;
+    render(<AppFrame {...nestedPanelFixture()} dir={dir} />);
+    const opener = screen.getByRole("button", { name: "Open panel" });
+    const main = screen.getByRole("main");
+    const mainFocus = vi.spyOn(main, "focus");
+    const handoffs: Array<{ openerConnected: boolean; modalReleased: boolean }> = [];
+    main.addEventListener("focus", () => handoffs.push({ openerConnected: opener.isConnected, modalReleased: document.querySelector('[role="dialog"]') === null }));
+    await userEvent.click(opener);
+    const drawer = await screen.findByRole("dialog", { name: "Inspector" });
+    await userEvent.click(within(drawer).getByRole("button", { name: "Open nested dialog" }));
+    const nested = await screen.findByRole("dialog", { name: "Nested settings" });
+    const action = within(nested).getByRole("button", { name: "Nested action" });
+    action.focus();
+    expect(action).toHaveFocus();
+    expect(drawer).not.toContainElement(action);
+    expect(nested).toBeInTheDocument();
+
+    resizeFrame(true);
+    await settleFocusRestoration();
+
+    expect(main).toHaveFocus();
+    expect(mainFocus).toHaveBeenCalledOnce();
+    expect(handoffs).toEqual([{ openerConnected: true, modalReleased: true }]);
+    expect(screen.queryByRole("dialog", { name: "Nested settings" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: "Inspector" })).not.toBeInTheDocument();
+    expect(document.body).not.toHaveFocus();
+  });
+
+  it.each(["ltr", "rtl"] as const)("hands an open nested wide-panel portal to the narrow opener in %s", async dir => {
+    render(<AppFrame {...nestedPanelFixture()} dir={dir} />);
+    const pane = screen.getByRole("region", { name: "Inspector" });
+    await userEvent.click(within(pane).getByRole("button", { name: "Open nested dialog" }));
+    const nested = await screen.findByRole("dialog", { name: "Nested settings" });
+    const action = within(nested).getByRole("button", { name: "Nested action" });
+    action.focus();
+    expect(action).toHaveFocus();
+    expect(pane).not.toContainElement(action);
+
+    resizeFrame(false);
+    await settleFocusRestoration();
+
+    expect(screen.getByRole("button", { name: "Open panel" })).toHaveFocus();
+    expect(screen.queryByRole("dialog", { name: "Nested settings" })).not.toBeInTheDocument();
+    expect(document.body).not.toHaveFocus();
+  });
+
+  it.each([
+    ["widen", "restored trigger"], ["widen", "remaining action"],
+    ["narrow", "restored trigger"], ["narrow", "remaining action"],
+  ])("preserves panel ownership after nested close before %s from %s", async (direction, focused) => {
+    const widening = direction === "widen";
+    wide.matches = !widening;
+    render(<AppFrame {...nestedPanelFixture()} />);
+    if (widening) await userEvent.click(screen.getByRole("button", { name: "Open panel" }));
+    const opener = screen.getByRole("button", { name: "Open nested dialog" });
+    await userEvent.click(opener);
+    await userEvent.click(await screen.findByRole("button", { name: "Close nested dialog" }));
+    await settleFocusRestoration();
+    expect(opener).toHaveFocus();
+    if (focused === "remaining action") screen.getByRole("button", { name: "Remaining inspector action" }).focus();
+
+    resizeFrame(widening);
+    await settleFocusRestoration();
+
+    expect(widening ? screen.getByRole("main") : screen.getByRole("button", { name: "Open panel" })).toHaveFocus();
+    expect(document.body).not.toHaveFocus();
+  });
+
+  it("replaces a focused closed panel opener in either direction without treating desktop expansion as an open drawer", async () => {
+    wide.matches = false;
+    render(<AppFrame {...fixture()} />);
+    screen.getByRole("button", { name: "Open panel" }).focus();
+    const mainFocus = vi.spyOn(screen.getByRole("main"), "focus");
+    resizeFrame(true);
+    await settleFocusRestoration();
+    const desktop = screen.getByRole("button", { name: "Close panel" });
+    expect(desktop).toHaveFocus();
+    expect(desktop).toHaveAttribute("aria-expanded", "true");
+    resizeFrame(false);
+    await settleFocusRestoration();
+    expect(screen.getByRole("button", { name: "Open panel" })).toHaveFocus();
+    expect(mainFocus).not.toHaveBeenCalled();
+  });
+
+  it("does not reuse stale panel focus after focus has moved to host content", async () => {
+    render(<AppFrame {...fixture()} />);
+    screen.getByRole("button", { name: "Inspector action" }).focus();
+    const outside = screen.getByRole("button", { name: "Host opener" });
+    outside.focus();
+    resizeFrame(false);
+    await settleFocusRestoration();
+    expect(outside).toHaveFocus();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("does not take ownership of an unrelated command portal after panel focus", async () => {
+    render(<AppFrame {...fixture()} />);
+    screen.getByRole("button", { name: "Inspector action" }).focus();
+    await userEvent.click(screen.getByRole("button", { name: "Find a command" }));
+    const search = await screen.findByRole("combobox", { name: "Search commands" });
+    expect(search).toHaveFocus();
+    const focuses = vi.spyOn(HTMLElement.prototype, "focus");
+    resizeFrame(false);
+    await settleFocusRestoration();
+    expect(search).toHaveFocus();
+    expect(focuses.mock.instances.filter(element => element.getAttribute("data-application-frame-panel") === "trigger")).toHaveLength(0);
+    expect(screen.getByRole("dialog", { name: "Commands" })).toBeInTheDocument();
+  });
+
+  it("cancels a pending main handoff when the viewport reverses before the drawer closes", async () => {
+    wide.matches = false;
+    render(<AppFrame {...nestedPanelFixture()} />);
+    const opener = screen.getByRole("button", { name: "Open panel" });
+    const mainFocus = vi.spyOn(screen.getByRole("main"), "focus");
+    await userEvent.click(opener);
+    await userEvent.click(await screen.findByRole("button", { name: "Open nested dialog" }));
+    (await screen.findByRole("button", { name: "Nested action" })).focus();
+    act(() => {
+      wide.matches = true; for (const listener of wide.listeners) listener();
+      wide.matches = false; for (const listener of wide.listeners) listener();
+    });
+    await settleFocusRestoration();
+    expect(opener.isConnected).toBe(true);
+    expect(opener).toHaveFocus();
+    expect(mainFocus).not.toHaveBeenCalled();
+    expect(screen.queryByRole("separator", { name: "Resize inspector" })).not.toBeInTheDocument();
   });
 
   it("focuses main from the composed skip link without replacing a host hash route", async () => {

@@ -62,45 +62,79 @@ function FrameContent({ brand, navigation, account, commands, children, rightPan
   const navCollapsed = navigation.collapsed ?? navigationCollapsed;
   const { openLabel = "Open panel", closeLabel = "Close panel" } = rightPanel ?? {};
   const frame = useRef<HTMLDivElement>(null);
-  const panelExpanding = useRef(false);
-  const panelFocused = useRef(false);
+  const panelFocus = useRef<EventTarget | null>(null);
+  const panelState = useRef({ narrow, panelOpen });
+  panelState.current = { narrow, panelOpen };
+  const desiredNarrow = useRef(false);
+  const responsiveActive = useRef(false);
+  const panelHandoff = useRef<"main" | "control" | null>(null);
+  const drawerToRelease = useRef<Element | null>(null);
+  const [handoffVersion, setHandoffVersion] = useState(0);
+  const capturePanelFocus = (event: { target: EventTarget | null }) => { panelFocus.current = event.target; };
   useEffect(() => {
+    responsiveActive.current = true;
     const media = window.matchMedia(APP_FRAME_WIDE_QUERY);
     const sync = () => {
+      const nextNarrow = !media.matches;
       const active = document.activeElement;
-      panelFocused.current = active !== null && frame.current?.contains(active) === true && active.closest("[data-application-frame-panel]") !== null;
       const panelTrigger = frame.current?.querySelector('[data-application-frame-panel="trigger"]');
-      const drawerId = panelTrigger?.getAttribute("aria-controls");
-      // Resolve this trigger's dialog directly; nested modal context cannot replace its ownership.
-      const panelDrawer = drawerId ? document.getElementById(drawerId) : null;
-      panelExpanding.current = media.matches && active !== null && panelDrawer?.contains(active) === true;
-      if (panelExpanding.current) { setPanelOpen(false); return; }
-      setNarrow(!media.matches); setPanelOpen(false);
+      // React focus capture includes nested portals; exact identity avoids stale ownership outside the panel.
+      const ownsFocus = active !== null && (panelFocus.current === active || panelTrigger === active);
+      const current = panelState.current;
+      const drawerId = current.narrow ? panelTrigger?.getAttribute("aria-controls") : null;
+      const drawer = drawerId ? document.getElementById(drawerId) : null;
+      const drawerOpen = current.narrow && (current.panelOpen || drawer !== null);
+      desiredNarrow.current = nextNarrow;
+      panelHandoff.current = ownsFocus && nextNarrow !== current.narrow ? drawerOpen && !nextNarrow ? "main" : "control" : null;
+      drawerToRelease.current = panelHandoff.current === "main" ? drawer : null;
+      setPanelOpen(false);
+      if (panelHandoff.current !== "main") setNarrow(nextNarrow);
+      // Also process a handoff when closing an already-closed controlled drawer changes no state.
+      setHandoffVersion(version => version + 1);
     };
     sync(); media.addEventListener("change", sync);
-    return () => media.removeEventListener("change", sync);
+    return () => { responsiveActive.current = false; panelHandoff.current = null; drawerToRelease.current = null; media.removeEventListener("change", sync); };
   }, []);
   useEffect(() => {
-    if (panelOpen || !panelExpanding.current) return;
-    panelExpanding.current = false;
-    // Release the modal focus trap, then focus content before removing its narrow opener.
-    frame.current?.querySelector<HTMLElement>("main")?.focus();
-    setNarrow(false);
-  }, [panelOpen]);
-  useEffect(() => {
-    // The responsive handoff unmounts the focused panel control; focus its replacement opener instead of the document.
-    if (!panelFocused.current) return;
-    panelFocused.current = false;
+    const handoff = panelHandoff.current;
+    if (!handoff || !responsiveActive.current) return;
+    if (handoff === "main") {
+      if (desiredNarrow.current || !narrow) { panelHandoff.current = null; drawerToRelease.current = null; return; }
+      if (panelOpen) return;
+      const drawer = drawerToRelease.current;
+      if (drawer?.isConnected) {
+        // React Aria may retain one exiting commit even without authored exit animation.
+        const observer = new MutationObserver(() => {
+          if (drawer.isConnected) return;
+          observer.disconnect();
+          if (responsiveActive.current && panelHandoff.current === "main" && !desiredNarrow.current) setHandoffVersion(version => version + 1);
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+        return () => observer.disconnect();
+      }
+      const active = document.activeElement;
+      const trigger = frame.current?.querySelector('[data-application-frame-panel="trigger"]');
+      const retainsFocus = active === null || active === document.body || active === panelFocus.current || active === trigger;
+      panelHandoff.current = null;
+      drawerToRelease.current = null;
+      // The modal has unmounted and released its trap; keep its opener connected until main owns focus.
+      if (retainsFocus) frame.current?.querySelector<HTMLElement>("main")?.focus();
+      setNarrow(false);
+      return;
+    }
+    if (desiredNarrow.current !== narrow) return;
+    panelHandoff.current = null;
+    drawerToRelease.current = null;
     frame.current?.querySelector<HTMLElement>('[data-application-frame-panel="trigger"]')?.focus();
-  }, [narrow]);
+  }, [narrow, panelOpen, handoffVersion]);
   const changeCollapsed = (next: boolean) => { setPanelCollapsed(next); rightPanel?.onCollapsedChange?.(next); };
   const footer = account.actor ? <AccountMenu {...account} actor={account.actor} collapsed={navCollapsed && !narrow} /> : <SignedOutMenu {...account} />;
-  const panelTrigger = rightPanel && (narrow ? <ModalContext.Provider value={{ style: { direction: dir } }}><Drawer wide="sheet" placement="end" dismissAt={APP_FRAME_WIDE_QUERY}
+  const panelTrigger = rightPanel && (narrow ? <div className="contents" onFocusCapture={capturePanelFocus}><ModalContext.Provider value={{ style: { direction: dir } }}><Drawer wide="sheet" placement="end" dismissAt={APP_FRAME_WIDE_QUERY}
     heading={rightPanel.label} closeLabel={closeLabel} navigationKey={navigation.navigationKey}
     isOpen={panelOpen} onOpenChange={setPanelOpen}
     trigger={<Button variant="ghost" className={CONTROL} style={TAP} aria-label={openLabel} data-application-frame-panel="trigger"><Icon glyph={Layers} decorative /><span className="sr-only tablet:not-sr-only">{openLabel}</span></Button>}>
     {rightPanel.children}
-  </Drawer></ModalContext.Provider> : <Button variant="ghost" className={CONTROL} style={TAP} aria-expanded={!collapsed} data-application-frame-panel="trigger"
+  </Drawer></ModalContext.Provider></div> : <Button variant="ghost" className={CONTROL} style={TAP} aria-expanded={!collapsed} data-application-frame-panel="trigger"
     onPress={() => changeCollapsed(!collapsed)}><Icon glyph={Layers} decorative /><span className="sr-only tablet:not-sr-only">{collapsed ? openLabel : closeLabel}</span></Button>);
   return <ModalContext.Provider value={{ style: { direction: dir } }}><PopoverContext.Provider value={{ style: { direction: dir } }}>
     <div ref={frame} dir={dir} data-application-frame="" className="relative flex h-dvh min-h-0 min-w-0 flex-col overflow-hidden bg-surface-base text-body text-ink-primary">
@@ -124,7 +158,7 @@ function FrameContent({ brand, navigation, account, commands, children, rightPan
         {rightPanel && !narrow && !collapsed && <ResizablePane min={rightPanel.min} max={rightPanel.max} defaultValue={rightPanel.defaultValue}
           value={rightPanel.value ?? width} step={rightPanel.step} label={rightPanel.label} handleLabel={rightPanel.handleLabel}
           onChange={next => { setWidth(next); rightPanel.onChange?.(next); }}
-          data-application-frame-panel="pane" className="h-full min-h-0 shrink-0 rounded-none border-0 border-s border-line-base p-sm">{rightPanel.children}</ResizablePane>}
+          onFocusCapture={capturePanelFocus} data-application-frame-panel="pane" className="h-full min-h-0 shrink-0 rounded-none border-0 border-s border-line-base p-sm">{rightPanel.children}</ResizablePane>}
       </div>
       <CommandMenu {...commandProps} dir={dir} isOpen={commandOpen} onOpenChange={setCommandOpen} query={query} onQueryChange={setQuery} />
     </div>
