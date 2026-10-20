@@ -161,6 +161,64 @@ Historical implementation attempts are retained below and do not qualify as GREE
 | Run / source head | Actual result | Created | Job execution | Wall / admission | Cache and finding |
 | --- | --- | --- | --- | --- | --- |
 | [39453407191](https://github.com/clossys/foundry/actions/runs/39453407191) / 47e880d3 | cancelled by planner after prose failure | 08:59:16 PDT | 08:59:19–09:10:12 PDT | 656s / 3s | Prose exit 1: unsupported wording in this timing note; the correction passed the affected local and hosted checks. Root tests passed; README was cancelled. |
-| [39454037481](https://github.com/clossys/foundry/actions/runs/39454037481) / ead614f0 | root tests failed; other jobs still executing when recorded | 09:03:24 PDT | first job 09:10:16 PDT; root 09:10:32–09:16:42 PDT | completion pending / 412s | Exact dist cache hit omitted ignored source contracts. Launcher and Publisher failed before the later workspaces' own test generators. |
+| [39454037481](https://github.com/clossys/foundry/actions/runs/39454037481) / ead614f0 | cancelled after correction push; root tests and required fan-in failed | 09:03:24 PDT | 09:10:16–09:31:59 PDT; root 09:10:32–09:16:42 PDT | 1715s / 412s | Exact dist cache hit omitted ignored source contracts. Launcher and Publisher failed before the later workspaces' own test generators. |
 
-The correction retains the exact build cache and runs the existing full build before root tests even on a cache hit. This materializes source contracts without changing package scripts, cache keys, required checks, or the gate inventory. Two completed GREEN measurements remain pending; no speedup is claimed yet. After hosted run 1 is GREEN, one timing-note commit records it. The final run 2 exact-head timings and both measured deltas go in the sole terminal issue comment, as agreed for this unit. This avoids a third evidence-only push and its additional CI run.
+The correction retains the exact build cache and runs the existing full build before root tests even on a cache hit. This materializes source contracts without changing package scripts, cache keys, required checks, or the gate inventory. Run 1 is complete below. Run 2 at the timing-note head remains pending. Its exact-head timings and both measured deltas go in the terminal issue comment, as agreed for this unit; no subsequent evidence-only push is planned.
+
+### Hosted run 1: completed GREEN
+
+Run [39457205617](https://github.com/clossys/foundry/actions/runs/39457205617), attempt 1, source `1e0734362aa1ead6bc2d333fb5a21927ec4464e5`, tree `6d10062f94d50017d0a51feb31b8330a219c4929`. All 35 CI jobs and the 16 required contexts completed successfully. Native merge `1924ff56f9cad23023e4000de39a6dd49054bf5c` has parents `5077a8815685772234a5b68627fc6b4125e19e99` and that source head, with the same tree.
+
+| Created PDT | Admitted PDT | Completed PDT | Full wall | Admission | Admitted span | Reduction vs. 2026s admitted median |
+| --- | --- | --- | ---: | ---: | ---: | ---: |
+| 09:24:48 | 09:32:02 | 09:50:55 | 1567s | 434s | 1133s | 893s (14m53s) |
+
+The full-wall reduction against its separate 2131s baseline median is 564s (9m24s). Completed job timestamps replace the provisional in-progress admission timestamp of 09:32:00; the measured admission is 434s.
+
+| Executed step | Started PDT | Completed PDT | Seconds |
+| --- | --- | --- | ---: |
+| Root full build | 09:32:45 | 09:33:58 | 73 |
+| Literal npm test | 09:33:58 | 09:44:11 | 613 |
+| README checker | 09:32:35 | 09:47:05 | 870 |
+
+Root tests overlap README validation for their entire 613s interval. Workspace-build and round-trip caches both hit; the root full build still ran. Literal root tests passed 20901 tests across 914 files and 21 workspaces. Gate regression tests passed 2365, failed 0, with 2 existing skips; hosted typecheck passed all 21 workspaces. Source safety passed 3 FULL scans; tarball safety passed 21 FULL scans and 21 producer scans, with matching artifact digests. Existing README known-failure waivers were reported unchanged; no waiver or inventory was edited.
+
+Every job below retains C/S/E relative to run creation, plus the explicit queue S-C. All results are success; none skipped or retried.
+
+| Job | C/S/E seconds | Queue seconds |
+| --- | --- | ---: |
+| README code examples typecheck against shipped declarations | 445/448/1340 | 3 |
+| WCAG contrast gate (designer-contrast-check) | 445/448/485 | 3 |
+| WCAG contrast gate (ui-contrast-check) | 445/448/472 | 3 |
+| artifact safety (tarball) | 558/561/589 | 3 |
+| artifact safety (tarball) / pack | 445/448/558 | 3 |
+| attestation freshness (early warning, non-blocking) | 439/442/455 | 3 |
+| build and test | 1340/1343/1567 | 3 |
+| candidate qualification records | 577/580/582 | 3 |
+| candidate qualification records (shard 0) | 445/448/569 | 3 |
+| candidate qualification records (shard 1) | 445/448/573 | 3 |
+| candidate qualification records (shard 2) | 445/448/571 | 3 |
+| candidate qualification records (shard 3) | 445/449/577 | 4 |
+| classify change tier | 432/434/445 | 2 |
+| controller gates (catalog, neutrality, repository-profile) | 445/448/474 | 3 |
+| credential lifecycle (dependency-audit token) | 474/477/505 | 3 |
+| dependency audit | 445/449/474 | 4 |
+| package state (declared vs. evidence) | 445/448/529 | 3 |
+| packed consumer readiness | 445/448/856 | 3 |
+| prepublish hook drift | 445/448/457 | 3 |
+| prose quality (README parity, contamination classes) | 439/441/478 | 2 |
+| publish safety | 1287/1290/1294 | 3 |
+| publish safety / gate regression tests | 439/442/1287 | 3 |
+| publish safety / gitleaks | 439/442/456 | 3 |
+| publish safety / identity | 439/442/472 | 3 |
+| push-tree identity | 432/435/439 | 3 |
+| qualification record required (version bump vs. retained record) | 445/448/481 | 3 |
+| registry drift | 445/448/458 | 3 |
+| release PR shape (version bump vs. changeset/CHANGELOG) | 432/435/468 | 3 |
+| release readiness (version bump vs. shipped content) | 432/435/459 | 3 |
+| role-loop archetypes | 445/448/462 | 3 |
+| root entry policy drift | 445/448/459 | 3 |
+| root package tests | 445/448/1169 | 3 |
+| scope drift | 445/448/665 | 3 |
+| secret-scan (inspector judgment) | 456/459/494 | 3 |
+| workspace link integrity | 445/448/459 | 3 |
