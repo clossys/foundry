@@ -5326,9 +5326,21 @@ in the page's language. Optional `icons` are ordered `{ label, href, icon }`
 records with named destinations and consumer-supplied decorative artwork.
 `iconsLabel` names their navigation group. Optional `home` supplies
 `{ label, href, markSrc }`, always after the social icons; standalone
-Designer callers supply it explicitly. The mark is artwork authored for the
-page's base ground and is drawn on a small plate of that ground, so the same
-mark the header shows stays legible on the dark footer in either theme.
+Designer callers supply it explicitly, and an omitted `home` renders no mark.
+Pass the same artwork the header brand mark uses: it is drawn on a small
+plate of the page's base ground, so it stays legible on the dark footer in
+either theme. The art is decorative (`alt=""`); `label` is the link's whole
+accessible name, as on the header brand link.
+
+`SiteFooter.Legal` enforces the footer configuration contract: at most five
+`links` in one flat row (further links belong in labelled
+`SiteFooter.Column`s), at most five icon slots with `home` counted as the
+last, and no link or icon that repeats `home.href`. A breach throws an error
+whose `name` is `"SiteFooterContractError"` and whose `code` is
+`"footer-link-limit"`, `"footer-icon-limit"` or `"footer-duplicate-link"`;
+nothing is truncated.
+Column headings sit at zero margin in the muted footer ink, aligned with
+their links' text; an empty links or icons region takes no space.
 
 ```tsx
 import { SiteFooter } from "@clossys/designer/shell";

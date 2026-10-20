@@ -789,6 +789,26 @@
   .row-start-1 {
     grid-row-start: 1;
   }
+  .site-footer-columns {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--spacing-lg, 16px);
+    align-items: start;
+    & h2 {
+      margin: 0;
+      color: var(--site-footer-muted, var(--color-ink-on-inverse-muted, oklch(0.7763 0 0)));
+    }
+    & a {
+      padding-inline: 0;
+      justify-content: flex-start;
+    }
+    @container (min-width: 768px) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    @container (min-width: 1280px) {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
   .scene-linear-findings {
     display: flex;
     flex-direction: column;
@@ -912,7 +932,6 @@
     display: grid;
     width: 100%;
     min-width: 0;
-    grid-template-areas: "links" "icons" "copyright";
     grid-template-columns: minmax(0, 1fr);
     gap: var(--spacing-sm, 8px) var(--spacing-lg, 16px);
     text-align: center;
@@ -931,14 +950,11 @@
       grid-template-columns: minmax(0, 1fr);
       max-width: 100%;
     }
-    & > [data-footer-region="links"] {
-      grid-area: links;
-    }
-    & > [data-footer-region="icons"] {
-      grid-area: icons;
+    & > [data-footer-region="links"]:not(:has(li)), & > [data-footer-region="icons"]:not(:has(li)) {
+      display: none;
     }
     & > [data-footer-region="copyright"] {
-      grid-area: copyright;
+      padding-block-start: var(--spacing-xs, 4px);
     }
     & img, & svg {
       max-width: 100%;
@@ -960,8 +976,16 @@
       grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr);
       align-items: center;
       justify-items: stretch;
+      & > [data-footer-region="links"] {
+        grid-area: links;
+      }
+      & > [data-footer-region="icons"] {
+        grid-area: icons;
+      }
       & > [data-footer-region="copyright"] {
+        grid-area: copyright;
         text-align: start;
+        padding-block-start: 0;
       }
       & > [data-footer-region="icons"] > ul {
         justify-content: flex-end;
@@ -1024,17 +1048,6 @@
     gap: var(--spacing-md, 12px);
     align-items: center;
     overflow-wrap: anywhere;
-  }
-  .site-footer-columns {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: var(--spacing-lg, 16px);
-    @container (min-width: 768px) {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-    @container (min-width: 1280px) {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-    }
   }
   .scene-linear-finding {
     display: flex;

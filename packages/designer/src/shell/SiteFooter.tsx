@@ -129,12 +129,39 @@ export interface SiteFooterLegalProps {
   /** Accessible group name retained for supplied social profiles and home. */
   iconsLabel?: string;
   /**
-   * The home link, always last within the icon group. `markSrc` is artwork
-   * authored for the page's base ground (the ground the header shows the
-   * brand mark on); the footer draws it on a small plate of that ground so
-   * it reads on the dark footer in either page theme.
+   * The site's own brand mark linking home, always the last icon slot.
+   * `markSrc` is the same artwork the header's brand mark uses, authored for
+   * the page's base ground; the footer draws it on a small plate of that
+   * ground so it reads on the dark footer in either page theme. `label` is
+   * the link's whole accessible name and the art is decorative, as in
+   * `Brandmark`. Omitted, no mark renders.
    */
   home?: { readonly label: string; readonly href: string; readonly markSrc: string };
+}
+
+/**
+ * The footer's configuration caps: one flat row of at most five `links`, and
+ * at most five icon slots (`icons` plus `home`, which is always last). More
+ * links belong in labelled `SiteFooter.Column` groups. Frozen.
+ */
+export const SITE_FOOTER_LIMITS = Object.freeze({ links: 5, icons: 5 } as const);
+
+/** Why `SiteFooter.Legal` refused its configuration. */
+export type SiteFooterContractErrorCode = "footer-link-limit" | "footer-icon-limit" | "footer-duplicate-link";
+
+/**
+ * Thrown by `SiteFooter.Legal` for configuration outside the footer contract:
+ * over-cap input is refused, never truncated. A `TypeError`, named
+ * `"SiteFooterContractError"`, with a machine-readable `code`; the message
+ * never echoes a destination or label.
+ */
+export class SiteFooterContractError extends TypeError {
+  override readonly name = "SiteFooterContractError";
+  readonly code: SiteFooterContractErrorCode;
+  constructor(code: SiteFooterContractErrorCode, message: string) {
+    super(message);
+    this.code = code;
+  }
 }
 
 const LEGAL_LINK_CLASSES = cx(
@@ -199,6 +226,8 @@ const HOME_PLATE_STYLE = {
 
 /**
  * Standard composition: links, icons (home last), copyright in reading order.
+ * At most five flat links and five icon slots ({@link SITE_FOOTER_LIMITS});
+ * over-cap or home-repeating input throws {@link SiteFooterContractError}.
  * From the `desktop` breakpoint of the footer's own width, copyright sits at
  * the inline start, links in the centre and icons at the inline end, in the
  * document's direction; narrower footers stack in reading order.
@@ -208,6 +237,15 @@ function SiteFooterLegal({ entity, links, linksLabel, icons = [], home, iconsLab
   for (const link of links) requireNamedDestination(link);
   for (const link of icons) requireNamedDestination(link);
   if (home) requireNamedDestination(home);
+  if (links.length > SITE_FOOTER_LIMITS.links) {
+    throw new SiteFooterContractError("footer-link-limit", "Footer links permit at most five in the flat row; group further links into labelled columns.");
+  }
+  if (icons.length + (home ? 1 : 0) > SITE_FOOTER_LIMITS.icons) {
+    throw new SiteFooterContractError("footer-icon-limit", "Footer icons permit at most five slots, the home mark counted as the last.");
+  }
+  if (home && [...links, ...icons].some(link => link.href === home.href)) {
+    throw new SiteFooterContractError("footer-duplicate-link", "Footer links and icons must not repeat the home destination.");
+  }
   const IconGroup = iconsLabel ? "nav" : "div";
   const year = new Date().getFullYear();
   const list = (
