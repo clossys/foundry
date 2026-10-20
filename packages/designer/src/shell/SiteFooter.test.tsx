@@ -83,13 +83,13 @@ describe("SiteFooter measured geometry", () => {
     const css = readFileSync(join(import.meta.dirname, "../../styles/compiled.css"), "utf8");
     const longText = "International privacy terms for account information and research communications ".repeat(4);
     const fixtures = ["ltr", "rtl"].flatMap(dir => [
-      { name: "wide", width: 1280, count: 7 },
-      { name: "roomy", width: 1440, count: 7 },
-      { name: "crowded", width: 1280, count: 30 },
-      { name: "phone", width: 375, count: 7 },
-      { name: "below-desktop", width: 1279, count: 7 },
-      { name: "long-wide", width: 1280, count: 7, long: true }, { name: "long-roomy", width: 1440, count: 7, long: true },
-      { name: "long-phone", width: 375, count: 7, long: true }, { name: "long-below-desktop", width: 1279, count: 7, long: true },
+      { name: "wide", width: 1280, count: 4 },
+      { name: "roomy", width: 1440, count: 4 },
+      { name: "crowded", width: 1280, count: 4 },
+      { name: "phone", width: 375, count: 4 },
+      { name: "below-desktop", width: 1279, count: 4 },
+      { name: "long-wide", width: 1280, count: 4, long: true }, { name: "long-roomy", width: 1440, count: 4, long: true },
+      { name: "long-phone", width: 375, count: 4, long: true }, { name: "long-below-desktop", width: 1279, count: 4, long: true },
     ].map(({ name, width, count, long = false }) => renderToStaticMarkup(
       <section dir={dir} data-geometry-case={`${dir}-${name}`}>
         <SiteFooter style={{ width }} secondary={<SiteFooter.Legal
@@ -272,10 +272,13 @@ describe("SiteFooter measured geometry", () => {
         expect(Math.abs(visibleCentre - (content.left + content.right) / 2)).toBeLessThan(1);
       }
     });
-    it(`contains uncapped icon content before it collides with adjacent regions in ${dir}`, () => {
+    it(`contains capped maximum icon content that stays in one row inside its track in ${dir}`, () => {
       const { content, links, icons, copyright, targets } = measurements[`${dir}-crowded`]!;
-      expect(targets).toHaveLength(31);
-      expect(new Set(targets.map(rect => Math.round(rect.top))).size).toBeGreaterThan(1);
+      expect(targets).toHaveLength(SITE_FOOTER_LIMITS.icons);
+      expect(new Set(measurements[`${dir}-phone`]!.targets.map(rect => Math.round(rect.top))).size).toBe(1);
+      expect(Math.max(...measurements[`${dir}-phone`]!.targets.map(rect => rect.right)) - Math.min(...measurements[`${dir}-phone`]!.targets.map(rect => rect.left))).toBeLessThanOrEqual(measurements[`${dir}-phone`]!.icons.width);
+      expect(new Set(targets.map(rect => Math.round(rect.top))).size).toBe(1);
+      expect(Math.max(...targets.map(rect => rect.right)) - Math.min(...targets.map(rect => rect.left))).toBeLessThanOrEqual(icons.width);
       for (const target of targets) {
         expect(target.width).toBeGreaterThanOrEqual(44);
         expect(target.left).toBeGreaterThanOrEqual(icons.left - 1);

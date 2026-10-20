@@ -950,17 +950,10 @@
       grid-template-columns: minmax(0, 1fr);
       max-width: 100%;
     }
-    & > [data-footer-region="links"] {
-      grid-area: links;
-    }
-    & > [data-footer-region="icons"] {
-      grid-area: icons;
-    }
     & > [data-footer-region="links"]:not(:has(li)), & > [data-footer-region="icons"]:not(:has(li)) {
       display: none;
     }
     & > [data-footer-region="copyright"] {
-      grid-area: copyright;
       padding-block-start: var(--spacing-xs, 4px);
     }
     & img, & svg {
@@ -983,7 +976,14 @@
       grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr);
       align-items: center;
       justify-items: stretch;
+      & > [data-footer-region="links"] {
+        grid-area: links;
+      }
+      & > [data-footer-region="icons"] {
+        grid-area: icons;
+      }
       & > [data-footer-region="copyright"] {
+        grid-area: copyright;
         text-align: start;
         padding-block-start: 0;
       }
