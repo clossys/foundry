@@ -38,13 +38,50 @@ describe("site-header-overlay utility (theme-keys.css)", () => {
 
   it("is glass by default: the glass tokens, the blur token and a hairline in the line role", () => {
     const outside = block.slice(0, block.indexOf("@supports (animation-timeline: scroll())"));
-    expect(outside).toContain("--site-header-glass-fill: var(--color-surface-glass, oklch(1 0 0 / 0.88));");
-    expect(outside).toContain("--site-header-glass-blur: blur(var(--blur-glass, 16px));");
-    expect(outside).toContain("background-color: var(--site-header-glass-fill, oklch(1 0 0 / 0.88));");
-    expect(outside).toContain("backdrop-filter: var(--site-header-glass-blur, blur(16px));");
-    expect(outside).toContain("-webkit-backdrop-filter: var(--site-header-glass-blur, blur(16px));");
+    expect(outside).toContain("--site-header-glass-fill: var(--color-surface-glass, oklch(1 0 0 / 0.6));");
+    expect(outside).toContain("--site-header-glass-blur: blur(var(--blur-glass, 20px));");
+    expect(outside).toContain("background-color: var(--site-header-glass-fill, oklch(1 0 0 / 0.6));");
+    expect(outside).toContain("backdrop-filter: var(--site-header-glass-blur, blur(20px));");
+    expect(outside).toContain("-webkit-backdrop-filter: var(--site-header-glass-blur, blur(20px));");
     expect(outside).toContain("border-block-end-width: var(--ui-border-hairline, 1px);");
-    expect(outside).toMatch(/&\[data-tone="inverse"\] \{\s*--site-header-glass-fill: var\(--color-surface-glass-inverse, oklch\(0\.2178 0 0 \/ 0\.88\)\);\s*--site-header-glass-line: var\(--color-line-on-inverse/);
+    expect(outside).toMatch(/&\[data-tone="inverse"\] \{\s*--site-header-glass-fill: var\(--color-surface-glass-inverse, oklch\(0\.2178 0 0 \/ 0\.85\)\);\s*--site-header-glass-line: var\(--color-line-on-inverse/);
+  });
+
+  it("paints inherited ink from live data-tone rather than the initial static ink class", () => {
+    const base = nestedBlock(block, '&[data-tone="base"] {');
+    const inverse = nestedBlock(block, '&[data-tone="inverse"] {');
+    expect(base).toContain("color: var(--color-ink-primary, oklch(0.2178 0 0));");
+    expect(inverse).toContain("color: var(--color-ink-on-inverse, oklch(0.9702 0 0));");
+    expect(nestedBlock(block, "& .site-header-brand > a.text-inherit {")).toContain("color: inherit;");
+  });
+
+  it("keeps only the automatic frame's ghost controls on the live ink and an AA-tested opaque hover plate", () => {
+    const automatic = nestedBlock(block, "&.site-header-ground-aware {");
+    expect(automatic).toContain('--site-header-action-hover: var(--color-surface-raised, oklch(1 0 0));');
+    expect(nestedBlock(automatic, '&[data-tone="inverse"] {')).toContain('--site-header-action-hover: var(--color-surface-inverse, oklch(0.2178 0 0));');
+    const actions = nestedBlock(automatic, '&[data-placement="overlay"][data-tone] .site-header-actions > a,');
+    expect(actions).toContain('&[data-placement="overlay"][data-tone] .site-header-desktop-actions a.text-ink-primary:not(.bg-surface-raised),');
+    expect(actions).toContain('&[data-placement="overlay"][data-tone] .nav-disclosure-toggle:not([data-tone]) {');
+    expect(actions).toContain("color: inherit;");
+    expect(actions).toContain("background-color: transparent;");
+    expect(nestedBlock(actions, "&:hover, &:focus-visible {")).toContain("color: inherit;");
+    expect(actions).toContain("background-color: var(--site-header-action-hover, var(--color-surface-raised, oklch(1 0 0)));");
+    // These selectors beat both normal and hover utilities on an initially
+    // inverse action. Its icon and current-item underline use currentColor.
+    expect(automatic).not.toContain("--color-control-tonal");
+    expect(automatic).not.toMatch(LAYOUT_PROPERTIES);
+  });
+
+  it("resets expanded mobile-panel action hover and focus plates to match the panel's own base ink", () => {
+    const mobile = topLevelBlock(themeKeys, "@utility site-header-mobile {");
+    const panel = nestedBlock(mobile, "& .nav-disclosure-panel {");
+    expect(panel).toContain("color: var(--color-ink-primary, oklch(0.2178 0 0));");
+    expect(panel).toContain("--site-header-action-hover: var(--color-surface-raised, oklch(1 0 0));");
+    expect(panel).toContain("--site-header-focus: var(--color-ink-primary, oklch(0.2178 0 0));");
+    // Inline inverse header actions keep their inverse plate: only the
+    // narrow or overflow-collapsed panel establishes this base-ink scope.
+    const automatic = nestedBlock(block, "&.site-header-ground-aware {");
+    expect(nestedBlock(automatic, '&[data-tone="inverse"] {')).toContain("--site-header-action-hover: var(--color-surface-inverse, oklch(0.2178 0 0));");
   });
 
   it("falls back to the opaque plate for each tone where backdrop-filter is unsupported", () => {
@@ -61,7 +98,12 @@ describe("site-header-overlay utility (theme-keys.css)", () => {
   });
 
   it("is transparent at the top only inside the scroll-driven branch, so a no-support engine stays glass", () => {
-    const outside = block.replace(scrollDriven, "");
+    // A ghost control's transparent fill reveals the header plate; it does
+    // not make that plate transparent in the no-animation fallback.
+    const automatic = nestedBlock(block, "&.site-header-ground-aware {");
+    const controls = nestedBlock(automatic, '&[data-placement="overlay"][data-tone] .site-header-actions > a,');
+    const outside = block.replace(scrollDriven, "").replace(controls, "");
+    expect(outside).toContain("background-color: var(--site-header-glass-fill, oklch(1 0 0 / 0.6));");
     expect(outside).not.toContain("transparent");
     expect(scrollDriven).toContain("background-color: transparent;");
     expect(scrollDriven).toContain("border-block-end-color: transparent;");
@@ -81,7 +123,7 @@ describe("site-header-overlay utility (theme-keys.css)", () => {
 
   it("forces glass while a menu is open, by prop, by an expanded toggle or by an open details", () => {
     expect(scrollDriven).toMatch(
-      /&\[data-menu-open\],\s*&:has\(\[aria-expanded="true"\]\),\s*&:has\(details\[open\]\) \{\s*animation-name: none;\s*background-color: var\(--site-header-glass-fill, oklch\(1 0 0 \/ 0\.88\)\);/,
+      /&\[data-menu-open\],\s*&:has\(\[aria-expanded="true"\]\),\s*&:has\(details\[open\]\) \{\s*animation-name: none;\s*background-color: var\(--site-header-glass-fill, oklch\(1 0 0 \/ 0\.6\)\);/,
     );
   });
 
@@ -101,8 +143,8 @@ describe("site-header-overlay utility (theme-keys.css)", () => {
     expect(scrollDriven).not.toMatch(LAYOUT_PROPERTIES);
     expect(noBackdrop).not.toMatch(LAYOUT_PROPERTIES);
     expect(reducedTransparency).not.toMatch(LAYOUT_PROPERTIES);
-    expect(keyframes).toContain("background-color: var(--site-header-glass-fill, oklch(1 0 0 / 0.88));");
-    expect(keyframes).toContain("backdrop-filter: var(--site-header-glass-blur, blur(16px));");
+    expect(keyframes).toContain("background-color: var(--site-header-glass-fill, oklch(1 0 0 / 0.6));");
+    expect(keyframes).toContain("backdrop-filter: var(--site-header-glass-blur, blur(20px));");
   });
 
   it("is carried into compiled.css with the fallback, the reduced-preference branches and the keyframes", () => {

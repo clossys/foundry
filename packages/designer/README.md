@@ -1007,6 +1007,13 @@ function HeaderActions() {
 }
 ```
 
+Publisher's client-only `AppFrame` supplies this provider and toggle together.
+Its header `themeControl` slot accepts a replacement node, including a
+customized `ThemeToggle`; pass `null` to omit the control. A replacement can
+use `useTheme()` from the frame's existing provider. Match `AppFrame`'s
+`theme.storageKey` and `theme.defaultPreference` with the head initializer's
+`storageKey` and `defaultTheme` to apply the persisted preference before paint.
+
 Reach for `useTheme()` directly when a component needs the current
 preference or resolved theme without rendering a toggle itself:
 
@@ -5085,18 +5092,29 @@ taking no height in the document: transparent at the top of the page, then a
 glass plate once the page scrolls beneath it. The glass is
 `--color-surface-glass` (or `--color-surface-glass-inverse`) behind a
 `--blur-glass` backdrop blur, over a hairline in the matching line role.
+The shipped blur is 20px. Glass alpha is measured separately for each theme
+and polarity against both white and black backdrops: light-theme base/inverse
+use 0.60/0.85, dark-theme base/inverse use 0.86/0.60. These are the lowest
+hundredth steps at or above the 0.60 floor that retain at least 0.10 contrast-ratio
+margin over AA with the shipped ink, scoring both blend models. Brands must
+rerun the unchanged contrast gate when changing those tokens.
 
 - `tone` (`"base"` by default, or `"inverse"`) sets the header's inherited
   ink (`ink-primary` or `ink-on-inverse`) and the matching glass, so the ink
-  stays the same as the header turns to glass. Tones are theme-relative, like
+  follows the matching plate as the header turns to glass. Tones are theme-relative, like
   the tokens: `base` is dark ink on a light ground only in the light theme.
   In `"overlay"`, `ground` is not read.
 - `tone` governs inherited ink only. A child that sets its own ink keeps it:
   `Link` in every variant (`standalone` is `ink-primary`, `default` is
-  `ink-link`, `muted` is `ink-muted`), `Brandmark` (`ink-primary`) and
+  `ink-link`, `muted` is `ink-muted`), an explicitly toned `Brandmark` and
   `SiteHeader.ActionLink`'s `ghost` look (`ink-primary` with no plate). With
   `tone="inverse"` those read dark on dark glass. `ActionLink`'s `primary`
   and `secondary` looks carry their own fill, so they read on either tone.
+  An unconfigured header Brandmark inherits the live header ink for its
+  wordmark while retaining the accent logomark and `markInk="image"` opt-out.
+  Publisher's automatic SiteFrame additionally follows declared physical
+  grounds and the page/OS theme through its existing client island; its own
+  ghost controls inherit that ink and use opaque matching hover plates.
 - The contrast gate checks only the tone's own ink on the glass:
   `ink-primary` on `surface-glass` and `ink-on-inverse` on
   `surface-glass-inverse`. A child whose ink is exactly that token (with
@@ -5109,8 +5127,7 @@ glass plate once the page scrolls beneath it. The glass is
 - Focus indicators inside the header take the tone's ink instead of
   `--color-accent`: the `--ui-ring-focus` ring (`Link`, `Button`) and the
   colour of every `:focus-visible` outline (`ActionLink`). Accent does not
-  reach the 3:1 non-text floor on the glass (dark theme, base glass over a
-  white backdrop: 1.55:1), and the gate checks the ring in the tone's ink
+  reach the 3:1 non-text floor on every glass/backdrop combination, and the gate checks the ring in the tone's ink
   on each glass at 3:1.
 - `menuOpen` holds the glass at any scroll position while a menu belonging to
   the header is open (`data-menu-open`). A descendant with
@@ -8024,3 +8041,233 @@ within a group's columns; row keys must be unique. Invalid input throws.
 An empty body displays `emptyMessage` across the row header and all leaf columns.
 The component and its types are exported from the client blocks entry and the
 component is registered in `APP_FRAME_MATERIALS` with its actual Card dependency.
+
+### Headless table model
+
+`filterRows`, `groupRows`, `pivotRows` and `aggregate` operate on caller-supplied
+rows and a versioned `TableModel`, exported through `@clossys/designer/blocks`.
+Each operation applies the model's filters and global search. Pass the resulting
+rows or aggregates to the controlled table components. The engine's module graph
+contains plain data operations; the existing blocks barrel still loads its React
+peers. Rendering, selection, pagination and fetching stay with the caller.
+
+```ts
+import {
+  aggregate, filterRows, groupRows, pivotRows,
+  parseTableModel, serializeTableModel, type TableModel,
+} from "@clossys/designer/blocks";
+
+const records = [
+  { region: "East", team: "Blue", year: 2026, quarter: "Q1", amount: 20, tags: ["urgent"] },
+  { region: "East", team: "Gold", year: 2026, quarter: "Q2", amount: 30, tags: ["urgent", "follow-up"] },
+];
+const view: TableModel = {
+  version: 1,
+  columns: [
+    { id: "region", kind: "enum" }, { id: "team", kind: "enum" },
+    { id: "year", kind: "number" }, { id: "quarter", kind: "enum" },
+    { id: "amount", kind: "number" }, { id: "tags", kind: "tags" },
+  ],
+  collation: { locale: "en", sensitivity: "base", numeric: true },
+  filters: [{ column: "tags", kind: "tags", op: "all", values: ["urgent"] }],
+  groupBy: [{ column: "region" }, { column: "team" }],
+  measures: [
+    { id: "rows", op: "count" },
+    { id: "total", op: "sum", column: "amount" },
+    { id: "average", op: "avg", column: "amount" },
+  ],
+  pivot: {
+    rows: [{ column: "region" }, { column: "team" }],
+    columns: [{ column: "year" }, { column: "quarter" }],
+  },
+};
+const filtered = filterRows(records, view); // { rows, facets }
+const groups = groupRows(records, view);    // nested groups with rows and aggregates
+const pivot = pivotRows(records, view);    // rowAxis, columnAxis, cells, totals
+const totals = aggregate(records, view);   // { rows: 2, total: 50, average: 25 }
+const saved = serializeTableModel(view);   // independent validated plain object
+const restored = parseTableModel(JSON.parse(JSON.stringify(saved)));
+```
+
+Column IDs name own row properties. Supported cell kinds are `text`, `number`,
+`date`, `enum`, `tags` and `boolean`. Numbers must be finite; enum values are
+strings, tags are arrays of strings and boolean values are actual booleans.
+Dates accept finite epoch milliseconds, `YYYY-MM-DD`, or canonical UTC ISO strings
+such as `2026-01-01T00:00:00.000Z`; normalization produces UTC ISO strings. Invalid
+calendar dates and ambiguous local date strings are refused. Null and absent
+properties normalize to one null value. Invalid cells are refused even if a
+later filter would hide that row. Input rows, arrays and models are not mutated;
+returned row arrays retain references to the caller's original rows.
+
+Filters combine with AND, including multiple filters on one column. Text supports
+`contains` and `equals`; number and date `range` bounds are inclusive and either
+bound may be omitted. Enum `in` matches exact string values. Tags support `any`,
+`all` and `none`; null tags act as an empty set for filtering. Empty `any` matches
+no rows, while empty `all` and `none` match every row. Boolean uses `equals`.
+Null values fail scalar filters. Global `search` matches any non-null searchable
+column, with individual tags searched separately; `searchable: false` opts a
+column out. Contains and global search use case folding in the supplied locale;
+text equality uses its collation sensitivity. Enum and tag identity remain exact.
+
+`filterRows` returns input-ordered `rows` and `facets` keyed by column ID. Each
+facet applies global search and every other column's filters, omitting all filters
+on its own column. Counts are per distinct value and row; repeated tags count
+once, an empty tag set contributes no tag and a missing tag value contributes a
+null facet. This disjunctive convention lets a filter menu display alternatives
+to its current selection. Numeric and date facets count distinct normalized
+values rather than histogram buckets.
+
+The locale is required and must be supported by the runtime. Collation options
+control text ordering; a UTF-16 lexical tie break makes equal-collation group keys
+deterministic across input permutations. Numeric/date/boolean values use their
+natural order. Null sorts first ascending and last descending. Each group axis
+can set `order: "desc"`. Group paths have JSON tuple keys: null and the literal
+string `"null"` differ, and delimiters inside values cannot collide. Tags group
+as a deduplicated set sorted by UTF-16 values rather than multiplying a row across tags.
+Groups contain their original rows, per-group aggregates and sorted children.
+The engine supports more than three grouping levels; repeated columns within an
+axis are refused.
+
+Measures are named by distinct IDs. `count` without a column counts rows; with a
+column it counts non-null values. `sum` and `avg` require a number column. `min`
+and `max` support scalar kinds, while `distinct` counts exact normalized values,
+including complete tag sets. Column measures exclude nulls. Empty input yields
+zero for count, sum and distinct, and null for min, max and average. Numeric
+overflow is a typed refusal. Averages and distinct totals are recomputed from
+underlying rows, so subtotals do not add child averages or distinct counts.
+
+A pivot accepts any number of row and column dimensions and one or more measures.
+Both axes contain observed full paths and every observed prefix, plus the `[]`
+grand-total path. Prefixes carry `kind: "subtotal"`, complete paths `"leaf"` and
+the empty path `"total"`. Total/subtotal paths precede their descendants. Every
+axis intersection has a cell, with `empty: true` and the documented empty
+aggregates for an unobserved combination. Empty input still has one grand-total
+cell; zero-dimensional axes are allowed. Before constructing Cartesian cells,
+the engine refuses more than 100,000 measure slots (`rowAxis.length ×
+columnAxis.length × measure count`) with `pivot-budget`. This bounds sparse
+high-cardinality output. The test budget is 2,000 ms for filter, three-level group
+and two-by-two-dimension pivot computation over 10,000 rows with bounded axis
+cardinality and three measures; it is not a timing promise for arbitrary shapes.
+
+Saved views are version 1 plain objects. `serializeTableModel` validates and
+copies a model; `parseTableModel` accepts an unknown plain object and copies it
+after validation. Unknown fields, accessors, column references, kinds, operators,
+invalid ranges and unsupported versions are refused. The typed `TableModelError`
+has a stable `code`: `invalid-model`, `unsupported-version`, `unknown-column`,
+`invalid-cell`, `pivot-budget` or `aggregate-overflow`.
+
+| Export | Kind | Contract |
+| --- | --- | --- |
+| `filterRows` | function | AND/global filtering with input-ordered rows and disjunctive facets. |
+| `groupRows` | function | Deterministically ordered group tree and per-node aggregates. |
+| `pivotRows` | function | Prefix axes, explicit sparse cells, measures, totals and subtotals. |
+| `aggregate` | function | Saved-view measures over filtered rows. |
+| `parseTableModel` | function | Validate and copy an unknown plain saved-view object. |
+| `serializeTableModel` | function | Produce an independent validated plain saved-view object. |
+| `TableModelError` | class | Typed model, cell, output-budget and numeric-overflow refusal. |
+| `TableModel` | type | Version 1 columns, collation, filters, search, groups, measures and pivot. |
+| `TableValue` | type | Normalized string, number, boolean, tag set or null. |
+| `TableColumnKind` | type | The six supported column kinds. |
+| `TableColumn` | type | Own-property ID, kind and optional global-search participation. |
+| `TableCollation` | type | Required locale and optional sensitivity, numeric and case ordering. |
+| `TableFilter` | type | Discriminated column-kind and operator filter union. |
+| `TableDimension` | type | Column reference and optional ascending or descending order. |
+| `TableMeasure` | type | Named count, sum, min, max, average or distinct measure. |
+| `TablePivot` | type | Row and column dimension arrays. |
+| `TableFacet` | type | Normalized facet value and matching-row count. |
+| `TableFilterResult` | type | Filtered original rows and column facet arrays. |
+| `TableAggregateValue` | type | Scalar measure result or null. |
+| `TableAggregates` | type | Measure ID to scalar result record. |
+| `TableGroup` | type | Tuple key, column, value, path, rows, aggregates and child groups. |
+| `TablePivotAxis` | type | Tuple key and path tagged as total, subtotal or leaf. |
+| `TablePivotCell` | type | Row/column axis keys, explicit emptiness and measure results. |
+| `TablePivotResult` | type | Both axes, their cells and grand-total measures. |
+| `TableModelErrorCode` | type | The six stable refusal codes. |
+
+### Headless graph model
+
+`validateGraph`, `neighbors`, `subgraph`, `degrees`, `components`, `shortestPath`,
+`groupByKind`, `radialLayout`, `forceLayout`, `edgeRoutingHints` and
+`GraphValidationError` are exported from `@clossys/designer/blocks`. The graph
+modules themselves contain pure functions with no React, I/O, clock or ambient
+randomness. Their inputs and results are plain serializable records and arrays.
+
+```ts
+import { validateGraph, neighbors, radialLayout, forceLayout, type GraphInput } from "@clossys/designer/blocks";
+
+const input: GraphInput = {
+  nodes: [
+    { id: "program", kind: "program", label: "Program" },
+    { id: "package", kind: "package", label: "Package" },
+  ],
+  edges: [{ id: "includes", from: "program", to: "package", kind: "includes" }],
+};
+const graph = validateGraph(input);
+const outgoing = neighbors(graph, "program", { direction: "out" });
+const rings = radialLayout(graph, "program", { ringGap: 100 });
+const positions = forceLayout(graph, { iterations: 300, seed: 1 });
+```
+
+The public types are:
+
+```ts
+interface GraphNode { readonly id: string; readonly kind: string; readonly label: string }
+interface GraphEdge { readonly id: string; readonly from: string; readonly to: string; readonly kind: string; readonly weight?: number }
+interface GraphInput { readonly nodes: readonly GraphNode[]; readonly edges: readonly GraphEdge[] }
+interface GraphModelEdge extends GraphEdge { readonly selfLoop: boolean }
+interface GraphModel { readonly nodes: readonly GraphNode[]; readonly edges: readonly GraphModelEdge[] }
+type GraphErrorCode = "INVALID_INPUT" | "NODE_CAP" | "EDGE_CAP" | "DUPLICATE_NODE" | "DUPLICATE_EDGE" | "UNKNOWN_ENDPOINT" | "UNKNOWN_NODE" | "INVALID_OPTIONS";
+interface GraphNeighborOptions { readonly direction?: "in" | "out" | "both"; readonly edgeKinds?: readonly string[] }
+interface GraphSubgraphOptions { readonly depth: number; readonly edgeKinds?: readonly string[]; readonly nodeKinds?: readonly string[] }
+interface GraphDegree { readonly id: string; readonly in: number; readonly out: number; readonly total: number }
+interface GraphKindGroup { readonly kind: string; readonly nodes: readonly GraphNode[] }
+interface GraphPosition { readonly id: string; readonly x: number; readonly y: number }
+interface GraphRadialOptions { readonly ringGap?: number }
+interface GraphForceOptions { readonly iterations?: number; readonly seed?: number }
+interface GraphEdgeRoutingHint { readonly id: string; readonly type: "straight"; readonly selfLoop: boolean; readonly parallelIndex: number; readonly parallelCount: number }
+```
+
+`validateGraph(input): GraphModel` accepts at most 500 nodes and 2,000 edges,
+including empty graphs. IDs and kinds must be nonempty strings; labels must be
+strings. Node IDs and edge IDs are unique within their respective namespaces,
+and endpoints must exist. Optional weights must be finite positive numbers;
+weights are retained as metadata, while queries and layouts use unweighted
+topology. Self-loops are allowed and flagged on returned edges. Validation
+copies known fields rather than modifying input. `GraphValidationError` extends
+`Error` and exposes its typed `code: GraphErrorCode`; invalid query IDs and
+options also throw this error.
+
+| Function | Result and ordering |
+| --- | --- |
+| `neighbors(graph, id, options?)` | Unique `GraphNode[]` in authored node order; direction defaults to `both`. Loops include the node itself. |
+| `subgraph(graph, focusId, {depth, edgeKinds?, nodeKinds?})` | `GraphModel` from undirected, depth-bounded BFS; focus first, then BFS discovery order with authored node ties. The focus is retained even when excluded by `nodeKinds`; other excluded kinds prune traversal. Edges are induced among visited nodes, filtered by `edgeKinds`, in authored edge order. |
+| `degrees(graph)` | `GraphDegree[]` in authored node order; a loop contributes one incoming and one outgoing incidence, two to total. |
+| `components(graph)` | Weak, undirected `GraphNode[][]`; components ordered by first authored node, members in authored node order, isolates included. |
+| `shortestPath(graph, from, to)` | Unweighted undirected BFS returning `GraphNode[]` or `null` if disconnected; ties resolve by authored node order, independently of authored edge order. A node's path to itself is `[node]`. |
+| `groupByKind(graph)` | `GraphKindGroup[]` in first-seen kind order; members in authored node order. |
+| `edgeRoutingHints(graph)` | `GraphEdgeRoutingHint[]` in authored edge order; opposite directions share one unordered endpoint pair. `parallelIndex` is zero-based within that pair and `parallelCount` includes loops when both endpoints are the same node. |
+
+Omitting a kind filter includes kinds without restriction; an empty filter
+includes none. Depth must be a nonnegative integer. Queries validate input
+before traversing it and return copied records.
+
+`radialLayout(graph, focusId, options?): GraphPosition[]` defaults to a 100-unit
+`ringGap` (positive, at most 1,000,000). It places the focus at the origin, uses
+undirected BFS depths as ring indices, and puts unreachable nodes one ring
+beyond the deepest reachable node. Each ring starts on the positive x axis;
+nodes follow authored node order at evenly spaced angles. Coordinates are
+rounded to integers, so distance from the ideal radius may differ by less than
+one unit. Positions return in authored node order.
+
+`forceLayout(graph, options?): GraphPosition[]` runs Fruchterman–Reingold with
+mulberry32 initialization, 300 iterations and seed 1 by default. Iterations must
+be an integer from 1 through 10,000; seed must be an unsigned 32-bit integer.
+Repulsion uses an ideal distance of 80 units, attraction uses non-loop edges,
+and the initial temperature is one tenth of the component's square size,
+cooling linearly by the configured iteration count. Each weak component is
+simulated separately. After integer rounding, colliding nodes move right in
+authored order until point centers are at least 24 units apart. Components are
+normalized to nonnegative coordinates and packed horizontally with an 80-unit
+gap. Results retain authored node order and identical inputs/options yield
+byte-identical JSON. The fixed 500-node chain fixture with 300 iterations has
+a 4,000ms test budget; this is a fixture budget, not a runtime deadline.

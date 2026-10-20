@@ -357,10 +357,10 @@ export function resolveShell(input: SiteShellInput, resolveCopy: CopyResolver, r
     };
   }
 
-  let header: ResolvedSiteShell["header"] = { placement: "reserved", ground };
+  let header: ResolvedSiteShell["header"] = { placement: "overlay", tone: "base" };
   if (shell.header !== undefined) {
     const fields = record(shell.header, "shell.header", HEADER_KEYS);
-    const placement = fields.placement === undefined ? "reserved" : oneOf(fields.placement, "shell.header.placement", ["reserved", "overlay"] as const);
+    const placement = fields.placement === undefined ? "overlay" : oneOf(fields.placement, "shell.header.placement", ["reserved", "overlay"] as const);
     if (placement === "overlay") {
       if ("ground" in fields) fail("shell.header.ground is only for reserved placement.");
       header = { placement, tone: fields.tone === undefined ? "base" : oneOf(fields.tone, "shell.header.tone", ["base", "inverse"] as const) };
