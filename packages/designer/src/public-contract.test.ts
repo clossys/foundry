@@ -7,6 +7,55 @@ import ts from "typescript";
 
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 
+describe("compiled table-model public contract", () => {
+  const values = ["TableModelError", "aggregate", "filterRows", "groupRows", "parseTableModel", "pivotRows", "serializeTableModel"];
+
+  it("exports the headless engine from the existing blocks and internal barrels", () => {
+    for (const entry of ["blocks/index.js", "index.js"]) {
+      const script = `import * as api from ${JSON.stringify(join(packageRoot, "dist", entry))}; process.stdout.write(JSON.stringify(Object.keys(api).filter(name => ${JSON.stringify(values)}.includes(name)).sort()));`;
+      const exported = JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8", cwd: packageRoot }));
+      expect(exported).toEqual(values);
+    }
+  });
+
+  it("keeps the emitted engine import graph within its pure local module directory", () => {
+    const root = join(packageRoot, "dist/blocks/table-model");
+    const visit = (file: string, seen = new Set<string>()) => {
+      if (seen.has(file)) return;
+      seen.add(file);
+      const source = readFileSync(file, "utf8");
+      expect(source).not.toMatch(/\b(?:process|document|window|fetch|XMLHttpRequest)\b|\bimport\s*\(/);
+      for (const match of source.matchAll(/\bfrom\s+["']([^"']+)["']/g)) {
+        expect(match[1]).toMatch(/^\.\/[^/]+\.js$/);
+        visit(join(root, match[1]!), seen);
+      }
+    };
+    visit(join(root, "index.js"));
+    const script = `import { aggregate } from ${JSON.stringify(join(root, "index.js"))}; process.stdout.write(JSON.stringify(aggregate([{value: 7}], {version: 1, columns: [{id: "value", kind: "number"}], collation: {locale: "en"}, measures: [{id: "sum", op: "sum", column: "value"}]})));`;
+    expect(JSON.parse(execFileSync(process.execPath, ["--conditions=react-server", "--input-type=module", "-e", script], { encoding: "utf8" }))).toEqual({ sum: 7 });
+  });
+
+  it("resolves saved-view and output types from real emitted declarations", () => {
+    const filename = join(packageRoot, "emitted-table-model-consumer.check.ts");
+    const consumer = ["blocks/index.js", "index.js"].map((entry, index) => `
+      import { filterRows as filter${index}, groupRows as group${index}, pivotRows as pivot${index}, aggregate as aggregate${index}, serializeTableModel as serialize${index}, parseTableModel as parse${index}, TableModelError as Error${index}, type TableModel as Model${index}, type TableFilterResult as Filter${index}, type TableGroup as Group${index}, type TablePivotResult as Pivot${index}, type TableAggregates as Aggregates${index}, type TableModelErrorCode as Code${index} } from ${JSON.stringify(join(packageRoot, "dist", entry))};
+      const model${index}: Model${index} = {version: 1, columns: [{id: "value", kind: "number"}], collation: {locale: "en"}, measures: [{id: "sum", op: "sum", column: "value"}], groupBy: [{column: "value"}], pivot: {rows: [{column: "value"}], columns: []}};
+      const rows${index} = [{value: 7}];
+      const result${index}: Filter${index}<{value: number}> = filter${index}(rows${index}, model${index});
+      const groups${index}: readonly Group${index}<{value: number}>[] = group${index}(rows${index}, model${index});
+      const pivoted${index}: Pivot${index} = pivot${index}(rows${index}, model${index});
+      const totals${index}: Aggregates${index} = aggregate${index}(rows${index}, parse${index}(serialize${index}(model${index})));
+      const code${index}: Code${index} = new Error${index}("invalid-model", "Invalid saved view").code;
+    `).join("\n");
+    const options = { strict: true, noEmit: true, skipLibCheck: true, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler };
+    const host = ts.createCompilerHost(options);
+    const original = host.getSourceFile.bind(host);
+    host.getSourceFile = (path, language, error, fresh) => path === filename ? ts.createSourceFile(path, consumer, language, true) : original(path, language, error, fresh);
+    const diagnostics = ts.getPreEmitDiagnostics(ts.createProgram([filename], options, host));
+    expect(diagnostics.map(diagnostic => ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n"))).toEqual([]);
+  }, 30_000);
+});
+
 describe("graph-model public contract", () => {
   it("registers the pure graph runtime exports in the blocks entry", async () => {
     const model = await import("./blocks/graph-model/index.js");

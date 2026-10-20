@@ -252,6 +252,8 @@ const KNOWN_NON_CLASS_MAPS = new Set([
   "aspects",
   // blocks/scene/Scene.tsx — document-format labels, never class names.
   "formats",
+  // Validated saved-view fields copied into plain data, not rendered classes.
+  "blocks/table-model/model.ts:result",
   // blocks/FeatureGrid.tsx — treatment -> linked-item frame name (a
   // stretched-link.tsx key), not a class string.
   "LINK_FRAMES",
