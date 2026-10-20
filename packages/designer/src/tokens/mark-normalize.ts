@@ -67,6 +67,16 @@ interface Contour {
 const identity: Matrix = [1, 0, 0, 1, 0, 0];
 const fail = (feature: string): never => { throw new MarkGeometryError(feature); };
 const numPattern = /[+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?/g;
+function decodeAttribute(value: string): string {
+  const entity = /&(#x[\dA-Fa-f]+|#\d+|amp|lt|gt|quot|apos);/g;
+  if (value.replace(entity, '').includes('&')) return fail('XML entity');
+  return value.replace(entity, (_match, name: string) => {
+    if (name[0] !== '#') return name === 'amp' ? '&' : name === 'lt' ? '<' : name === 'gt' ? '>' : name === 'quot' ? '"' : "'";
+    const code = name[1] === 'x' || name[1] === 'X' ? parseInt(name.slice(2), 16) : Number(name.slice(1));
+    if (!Number.isInteger(code) || code <= 0 || code > 0x10ffff || code >= 0xd800 && code <= 0xdfff) return fail('XML entity');
+    return String.fromCodePoint(code);
+  });
+}
 const add = (a: Point, b: Point): Point => [a[0] + b[0], a[1] + b[1]];
 const sub = (a: Point, b: Point): Point => [a[0] - b[0], a[1] - b[1]];
 const mul = (a: Point, s: number): Point => [a[0] * s, a[1] * s];
@@ -170,7 +180,8 @@ function parse(svg: string, lockupText = false): Node {
       const attr = attribute.exec(content);
       if (!attr || attrs[attr[1]!] !== undefined)
         fail("XML attribute");
-      attrs[attr![1]!] = attr![2] ?? attr![3]!;
+      if (/^on/i.test(attr![1]!)) fail(`event attribute ${attr![1]}`);
+      attrs[attr![1]!] = decodeAttribute(attr![2] ?? attr![3]!);
       position = attribute.lastIndex;
     }
     const node: Node = { name, attrs, children: [], start, openEnd: end, end };
@@ -413,6 +424,7 @@ function stroke(contour: Contour, width: number, a: Attrs, tolerance: number): R
           if (denominator < 0 && delta > 0)
             delta -= 2 * Math.PI;
           const steps = Math.max(1, Math.ceil(Math.abs(delta) / (2 * Math.acos(Math.max(-1, 1 - tolerance / radius)))));
+          if (!Number.isFinite(steps) || steps > 100000) fail('round join complexity');
           const sector: Point[] = [p[i]!];
           for (let j = 0; j <= steps; j++)
             sector.push(add(p[i]!, [radius * Math.cos(start + delta * j / steps), radius * Math.sin(start + delta * j / steps)]));
@@ -482,6 +494,66 @@ interface Analysis {
   root: Node;
   plate?: Node;
 }
+// Split scan bands at edge crossings, then bound only intervals whose winding
+// actually paints. Separate SVG shapes remain separate regions, never holes.
+function paintedBoundary(region: Region): Point[] {
+  const points = region.contours.flat();
+  if (!points.length) return [];
+  bounds(points); // Preserve the finite-coordinate refusal before comparisons.
+  if (region.contours.length === 1 && !region.evenOdd) {
+    let direction = 0, convex = true;
+    for (let i = 0; i < points.length; i++) {
+      const turn = Math.sign(cross(sub(points[(i + 1) % points.length]!, points[i]!), sub(points[(i + 2) % points.length]!, points[(i + 1) % points.length]!)));
+      if (turn && direction && turn !== direction) { convex = false; break; }
+      direction ||= turn;
+    }
+    if (convex && direction) return points;
+  }
+  const edges = region.contours.flatMap(contour => contour.flatMap((p, i) => {
+    const q = contour[(i + 1) % contour.length]!;
+    return p[1] === q[1] ? [] : [{ p, q, low: Math.min(p[1], q[1]), high: Math.max(p[1], q[1]), slope: (q[0] - p[0]) / (q[1] - p[1]) }];
+  }));
+  type Edge = typeof edges[number];
+  const starts = new Map<number, Edge[]>(), ends = new Map<number, Edge[]>();
+  for (const edge of edges) {
+    starts.set(edge.low, [...(starts.get(edge.low) ?? []), edge]);
+    ends.set(edge.high, [...(ends.get(edge.high) ?? []), edge]);
+  }
+  const levels = [...new Set(edges.flatMap(edge => [edge.low, edge.high]))].sort((a, b) => a - b);
+  const active = new Set<Edge>(), result: Point[] = [];
+  const x = (edge: Edge, y: number) => edge.p[0] + (y - edge.p[1]) * edge.slope;
+  let bands = 0;
+  for (let level = 0; level + 1 < levels.length; level++) {
+    for (const edge of ends.get(levels[level]!) ?? []) active.delete(edge);
+    for (const edge of starts.get(levels[level]!) ?? []) active.add(edge);
+    const pending: Point[] = [[levels[level]!, levels[level + 1]!]];
+    while (pending.length) {
+      if (++bands > 100000) return fail('paint complexity');
+      const [low, high] = pending.pop()!, middle = low + (high - low) / 2;
+      const ordered = [...active].sort((a, b) => x(a, middle) - x(b, middle));
+      let split = false;
+      for (let i = 1; i < ordered.length; i++) {
+        const a = ordered[i - 1]!, b = ordered[i]!, difference = a.slope - b.slope;
+        const intersection = middle + (x(b, middle) - x(a, middle)) / difference;
+        if (difference && intersection > low && intersection < high) {
+          pending.push([low, intersection], [intersection, high]); split = true; break;
+        }
+      }
+      if (split) continue;
+      let winding = 0, left: Edge | undefined;
+      for (let i = 0; i < ordered.length;) {
+        const edge = ordered[i]!, at = x(edge, middle), wasPainted = region.evenOdd ? Math.abs(winding) % 2 !== 0 : winding !== 0;
+        do { const crossing = ordered[i++]!; winding += crossing.q[1] > crossing.p[1] ? 1 : -1; }
+        while (i < ordered.length && Math.abs(x(ordered[i]!, middle) - at) <= Number.EPSILON * 16 * Math.max(Math.abs(at), Math.abs(x(ordered[i]!, middle))));
+        const isPainted = region.evenOdd ? Math.abs(winding) % 2 !== 0 : winding !== 0;
+        if (!wasPainted && isPainted) left = edge;
+        if (wasPainted && !isPainted && left && at > x(left, middle)) result.push([x(left, low), low], [x(left, high), high], [x(edge, low), low], [x(edge, high), high]);
+      }
+    }
+  }
+  return result;
+}
+const hasPaint = (value: string | undefined): boolean => value?.trim().toLowerCase() !== 'none' && value?.trim().toLowerCase() !== 'transparent';
 function presentation(node: Node, inherited: Attrs): Attrs {
   const attrs = { ...inherited, ...node.attrs };
   if (attrs.style) {
@@ -493,6 +565,7 @@ function presentation(node: Node, inherited: Attrs): Attrs {
     }
     delete attrs.style;
   }
+  if ([attrs.fill, attrs.stroke].some(value => value !== undefined && (/url\s*\(/i.test(value) || value.includes('\\')))) fail('paint reference');
   return attrs;
 }
 function hasFillArea(points: Point[]): boolean {
@@ -505,9 +578,9 @@ function analyze(svg: string, optical = false): Analysis {
     return fail("viewBox");
   const viewBox: MarkBox = { x: v[0]!, y: v[1]!, width: v[2]!, height: v[3]! };
   const candidate = root.children[0];
-  const plate = root.children.length > 1 && !root.attrs.transform && candidate?.name === 'rect' && !candidate.attrs.transform && number(candidate.attrs, 'x') === viewBox.x && number(candidate.attrs, 'y') === viewBox.y && number(candidate.attrs, 'width') === viewBox.height && number(candidate.attrs, 'height') === viewBox.height && presentation(candidate, presentation(root, {})).fill !== 'none' ? candidate : undefined;
+  const plate = root.children.length > 1 && !root.attrs.transform && candidate?.name === 'rect' && !candidate.attrs.transform && number(candidate.attrs, 'x') === viewBox.x && number(candidate.attrs, 'y') === viewBox.y && number(candidate.attrs, 'width') === viewBox.height && number(candidate.attrs, 'height') === viewBox.height && hasPaint(presentation(candidate, presentation(root, {})).fill) ? candidate : undefined;
   const frame = plate ? { ...viewBox, width: viewBox.height } : viewBox;
-  const tolerance = Math.max(viewBox.width, viewBox.height) * 1e-6, painted: Point[] = [];
+  const tolerance = Math.max(viewBox.width, viewBox.height) * 1e-6;
   const regions: Region[] = [];
   const visit = (node: Node, m: Matrix, inherited: Attrs): void => {
     const a = presentation(node, inherited);
@@ -533,15 +606,11 @@ function analyze(svg: string, optical = false): Analysis {
       fail(node.name);
     const localTolerance = tolerance / Math.max(Math.hypot(matrix[0], matrix[1]), Math.hypot(matrix[2], matrix[3]), 1);
     const shape = contours(node, localTolerance);
-    if (a.fill !== 'none') {
+    if (hasPaint(a.fill)) {
       const contours = shape.filter(c => hasFillArea(c.points)).map(c => c.points.map(p => point(matrix, p)));
-      for (const contour of contours)
-        for (const p of contour)
-          painted.push(p);
-      if (optical)
-        regions.push({ contours, evenOdd: a['fill-rule'] === 'evenodd' });
+      regions.push({ contours, evenOdd: a['fill-rule'] === 'evenodd' });
     }
-    if (a.stroke && a.stroke !== 'none') {
+    if (a.stroke && hasPaint(a.stroke)) {
       const width = number(a, 'stroke-width', 1);
       if (width < 0)
         fail('stroke-width');
@@ -549,16 +618,12 @@ function analyze(svg: string, optical = false): Analysis {
         for (const contour of shape)
           for (const region of stroke(contour, width, a, localTolerance)) {
             const transformed = { contours: region.contours.map(c => c.map(p => point(matrix, p))) };
-            for (const contour of transformed.contours)
-              for (const p of contour)
-                painted.push(p);
-            if (optical)
-              regions.push(transformed);
+            regions.push(transformed);
           }
     }
   };
   visit(root, identity, {});
-  const box = bounds(painted), centre: Point = [box.x + box.width / 2, box.y + box.height / 2];
+  const box = bounds(regions.flatMap(paintedBoundary)), centre: Point = [box.x + box.width / 2, box.y + box.height / 2];
   const glyphBox = { x: (box.x - frame.x) / frame.width, y: (box.y - frame.y) / frame.height, width: box.width / frame.width, height: box.height / frame.height };
   if (![...centre, ...Object.values(glyphBox)].every(Number.isFinite))
     fail('numeric overflow');
@@ -580,13 +645,22 @@ export function normalizeMark(input: NormalizeMarkInput): string {
   const correction: Point = input.optical ? clampVector(mul(sub(centre, measured.centroid), scale), side * .03) : [0, 0];
   const shift = (axis: 0 | 1) => correction[axis];
   const tx = side / 2 - centre[0] * scale + shift(0), ty = side / 2 - centre[1] * scale + shift(1);
-  const root = measured.root, opening = root.openEnd, closing = input.glyphSvg.lastIndexOf('</svg');
-  let body = input.glyphSvg.slice(opening, closing);
-  if (measured.plate)
-    body = input.glyphSvg.slice(opening, measured.plate.start) + input.glyphSvg.slice(measured.plate.end, closing);
-  const attributes = Object.entries(root.attrs).filter(([key]) => !['xmlns', 'viewBox', 'width', 'height', 'data-clear-space'].includes(key)).map(([key, value]) => ` ${key}="${escape(value)}"`).join('');
+  const root = measured.root;
+  const paintKeys = ['color', 'fill', 'stroke', 'stroke-width', 'stroke-linecap', 'stroke-linejoin', 'stroke-miterlimit', 'fill-rule'];
+  const attributesOf = (attrs: Attrs) => Object.entries(attrs).map(([key, value]) => ` ${key}="${escape(value)}"`).join('');
+  const render = (node: Node, inherited: Attrs): string => {
+    const resolved = presentation(node, inherited);
+    const attrs: Attrs = Object.fromEntries(Object.entries(node.attrs).filter(([key]) => key !== 'style' && !paintKeys.includes(key)));
+    if (node.name === 'g') return `<g${attributesOf(attrs)}>${node.children.map(child => render(child, resolved)).join('')}</g>`;
+    for (const key of paintKeys) if (resolved[key] !== undefined) attrs[key] = resolved[key]!;
+    attrs.fill ??= input.tokens.onAccent;
+    return `<${node.name}${attributesOf(attrs)}/>`;
+  };
+  const inherited = presentation(root, {}), body = root.children.filter(node => node !== measured.plate).map(node => render(node, inherited)).join('');
+  const rootMetadata = attributesOf(Object.fromEntries(Object.entries(root.attrs).filter(([key]) => ['role', 'aria-label'].includes(key))));
+  const attributes = attributesOf(Object.fromEntries(Object.entries(root.attrs).filter(([key]) => !['xmlns', 'viewBox', 'width', 'height', 'data-clear-space', 'style', 'role', 'aria-label', ...paintKeys].includes(key))));
   const plate = input.plate === false ? '' : `<rect width="48" height="48" rx="10.5" fill="${escape(input.tokens.accent)}"/>`;
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" data-clear-space="0.2"${input.optical ? ' data-optical-centering="true"' : ''}>${plate}<g fill="${escape(input.tokens.onAccent)}" transform="translate(${format(tx)} ${format(ty)}) scale(${format(scale)})"><g${attributes}>${body}</g></g></svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" data-clear-space="0.2"${rootMetadata}${input.optical ? ' data-optical-centering="true"' : ''}>${plate}<g transform="translate(${format(tx)} ${format(ty)}) scale(${format(scale)})"><g${attributes}>${body}</g></g></svg>`;
 }
 /** Ordered violations. Live lockup text contributes position/font size, never an outline box. */
 export function checkMarkConformance(svg: string): MarkConformanceFinding[] {

@@ -1,4 +1,9 @@
 import { describe, expect, it } from "vitest";
+import { spawnSync } from "node:child_process";
+import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
+import { createRequire } from "node:module";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
 import { measureMarkGeometry, normalizeMark, checkMarkConformance, MarkGeometryError } from "./mark-normalize.js";
 import { MARK_FIXTURES } from "./mark-fixtures.js";
 import { adoptSuppliedMark } from "./identity-kit.js";
@@ -206,4 +211,88 @@ it("keeps the normalized app icon at kit geometry without nesting another badge"
   const direction = adoptSuppliedMark({ brand: { name: "Example" }, suppliedSvg: MARK_FIXTURES.small, tokens, normalize: true });
   expect(checkMarkConformance(direction.variants.appIcon)).toEqual([]);
   expect(direction.variants.appIcon).toBe(direction.variants.mark);
+});
+
+describe("reviewed paint and document boundaries", () => {
+  it("refuses an unbounded round join in a bounded child using the current source", () => {
+    const directory = mkdtempSync(join(tmpdir(), "mark-round-join-"));
+    try {
+      const input = svg('<path d="M0 0H10V10" fill="none" stroke="#000" stroke-width="1e20" stroke-linejoin="round"/>');
+      const control = svg('<path d="M0 0H10V10" fill="none" stroke="#000" stroke-width="2" stroke-linejoin="round"/>');
+      const filename = join(directory, "normalizer.cjs");
+      const entry = resolve(process.cwd(), "src/tokens/mark-normalize.ts");
+      const esbuild = createRequire(resolve(process.cwd(), "package.json")).resolve("esbuild");
+      writeFileSync(filename, `const { buildSync } = require(${JSON.stringify(esbuild)}); const bundle = ${JSON.stringify(join(directory, "bundle.cjs"))};\nrequire("node:fs").writeFileSync(bundle, buildSync({ entryPoints: [${JSON.stringify(entry)}], bundle: true, write: false, platform: "node", format: "cjs" }).outputFiles[0].text);\nconst normalizer = require(bundle); normalizer.measureMarkGeometry(${JSON.stringify(control)}); process.stdout.write("ready\\n");\ntry { normalizer.measureMarkGeometry(${JSON.stringify(input)}); process.stdout.write("returned"); } catch (error) { if (!(error instanceof normalizer.MarkGeometryError)) throw error; process.stdout.write(error.name + ":" + error.feature); }`);
+      const result = spawnSync(process.execPath, [filename], { encoding: "utf8", timeout: 2_000 });
+      expect(result.stdout).toContain("ready\n");
+      expect(result.error).toBeUndefined();
+      expect(result.status).toBe(0);
+      expect(result.stdout).toContain("MarkGeometryError:round join complexity");
+    } finally { rmSync(directory, { recursive: true, force: true }); }
+  });
+  it.each([
+    'fill="url(https://example.invalid/paint.svg#x)"',
+    'fill="&#x75;rl(https://example.invalid/paint.svg#x)"',
+    String.raw`fill="u\72l(https://example.invalid/paint.svg#x)"`,
+    'style="fill: url(https://example.invalid/paint.svg#x)"',
+    'fill="none" stroke="url(https://example.invalid/paint.svg#x)"',
+  ])("refuses unresolved paint references in %s", paint => {
+    const input = svg(`<rect width="40" height="40" ${paint}/>`);
+    expect(() => measureMarkGeometry(input)).toThrow(/paint reference/);
+    expect(() => normalizeMark({ glyphSvg: input, tokens })).toThrow(MarkGeometryError);
+    expect(() => checkMarkConformance(input)).toThrow(MarkGeometryError);
+  });
+  it.each([
+    '<svg viewBox="0 0 100 100" onload="handleEvent()"><rect width="40" height="40"/></svg>',
+    svg('<g onclick="handleEvent()"><rect width="40" height="40"/></g>'),
+    svg('<rect width="40" height="40" onfocus="handleEvent()"/>'),
+  ])("refuses event attributes before retaining any supplied markup", input => {
+    expect(() => measureMarkGeometry(input)).toThrow(/event attribute/);
+    expect(() => normalizeMark({ glyphSvg: input, tokens })).toThrow(MarkGeometryError);
+    expect(() => checkMarkConformance(input)).toThrow(MarkGeometryError);
+  });
+  it("retains two-tone knockout recolouring after actual normalized adoption", () => {
+    const input = svg('<rect width="100" height="100" rx="21.875" fill="#000"/><rect x="30" y="30" width="40" height="40" fill="#fff"/>');
+    const adopted = adoptSuppliedMark({ brand: { name: "Example" }, suppliedSvg: input, tokens, normalize: true });
+    for (const role of ["mono", "favicon", "light", "dark"] as const) {
+      expect(adopted.variants[role]).toContain("<mask ");
+      expect(adopted.variants[role].match(/ mask="url\(#recolor-/g)).toHaveLength(2);
+    }
+    expect(checkMarkConformance(adopted.variants.mark)).toEqual([]);
+  });
+  it("preserves root accessibility metadata without defeating normalized two-tone adoption", () => {
+    const input = '<svg viewBox="0 0 100 100" role="img" aria-label="Example mark"><rect width="100" height="100" rx="21.875" fill="#000"/><rect x="30" y="30" width="40" height="40" fill="#fff"/></svg>';
+    const adopted = adoptSuppliedMark({ brand: { name: "Example" }, suppliedSvg: input, tokens, normalize: true });
+    expect(adopted.variants.mark).toMatch(/^<svg\b[^>]* role="img" aria-label="Example mark"/);
+    for (const role of ["mono", "favicon", "light", "dark"] as const) {
+      expect(adopted.variants[role].match(/ mask="url\(#recolor-/g)).toHaveLength(2);
+    }
+    expect(checkMarkConformance(adopted.variants.mark)).toEqual([]);
+  });
+  it.each([50, 70])("bounds only nonzero-winding paint with an inner square ending at %s", end => {
+    const input = svg(`<path d="M0 0H100V100H0Z M0 0V100H100V0Z M30 30H${end}V${end}H30Z"/>`);
+    expect(measureMarkGeometry(input).glyphBox).toEqual({ x: .3, y: .3, width: (end - 30) / 100, height: (end - 30) / 100 });
+    const normalized = normalizeMark({ glyphSvg: input, tokens, optical: true });
+    expect(measureMarkGeometry(normalized).glyphBox.width).toBeCloseTo(.64, 5);
+    expect(checkMarkConformance(normalized)).toEqual([]);
+  });
+  it("excludes evenodd-cancelled contours without cancelling separately painted shapes", () => {
+    expect(box('<path fill-rule="evenodd" d="M0 0H100V100H0Z M0 0H100V100H0Z M30 30H70V70H30Z"/>')).toEqual({ x: .3, y: .3, width: .4, height: .4 });
+  });
+  it.each([
+    '<rect x="-500" width="100" height="100" fill="transparent"/>',
+    '<g style="fill: transparent"><rect x="-500" width="100" height="100"/></g>',
+    '<rect x="-500" width="100" height="100" fill="none" stroke="transparent" stroke-width="10"/>',
+  ])("excludes transparent paint from fitting bounds", transparent => {
+    expect(box(transparent + '<rect x="30" y="30" width="40" height="40"/>')).toEqual({ x: .3, y: .3, width: .4, height: .4 });
+  });
+  it("refuses an entirely transparent glyph", () => {
+    expect(() => box('<rect width="40" height="40" fill="transparent"/>')).toThrow(MarkGeometryError);
+  });
+  it("uses the parsed root boundary before a valid trailing closing-tag comment", () => {
+    const input = MARK_FIXTURES.small + '<!-- </svg -->';
+    const normalized = normalizeMark({ glyphSvg: input, tokens });
+    expect(() => measureMarkGeometry(normalized)).not.toThrow();
+    expect(checkMarkConformance(normalized)).toEqual([]);
+  });
 });
