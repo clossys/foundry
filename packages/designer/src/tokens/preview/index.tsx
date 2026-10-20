@@ -209,7 +209,9 @@ export function TokenPreview({
   const specimens: Record<string, ReactNode> = {
     motion: <MotionPreview key={property} property={property} cssProperty={application.cssProperty} authoredValueLabel={authoredValueLabel} replayLabel={replayLabel} reducedMotionMessage={reducedMotionMessage} />,
     breakpoint: <BreakpointPreview key={property} property={property} thresholdLabel={thresholdLabel} matchLabel={matchLabel} unavailableMessage={unavailableMessage} matchesMessage={matchesMessage} notMatchesMessage={notMatchesMessage} />,
-    surface: <div style={{ ...plate, ...style }}>{sampleText}</div>,
+    surface: <div style={{ ...plate, ...style }}>{property === "--color-neutral-500"
+      ? <span style={{ color: tokenReference("--color-neutral-50"), background: tokenReference("--color-neutral-950") }}>{sampleText}</span>
+      : sampleText}</div>,
     text: <p style={style}>{sampleText}</p>,
     border: <div style={{ ...plate, border: `2px solid ${tokenReference("--color-line-strong")}`, ...style }}>{sampleText}</div>,
     control: <button type="button" style={{ ...plate, ...style }}>{sampleText}</button>,
@@ -240,7 +242,9 @@ export function TokenPreview({
     ring: <div style={{ ...plate, ...style }}>{sampleText}</div>,
     layer: (
       <div style={{ position: "relative", isolation: "isolate", blockSize: 90 }}>
-        <div style={{ ...plate, position: "absolute", top: 0, right: 24, bottom: 24, left: 0, zIndex: 1 }}>{sampleText}</div>
+        <div style={{ ...plate, background: "transparent", padding: 0, outline: `2px solid ${tokenReference("--color-line-strong")}`, position: "absolute", top: 0, right: 24, bottom: 24, left: 0, zIndex: 1 }}>
+          <span style={{ display: "block", blockSize: 24, overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis", paddingInline: 16, background: panel.background }}>{sampleText}</span>
+        </div>
         <div style={{ ...plate, position: "absolute", top: 24, right: 0, bottom: 0, left: 24, ...style }}>{sampleText}</div>
       </div>
     ),
