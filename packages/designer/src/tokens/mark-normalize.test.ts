@@ -86,6 +86,63 @@ describe("mark normalization", () => {
     expect(checkMarkConformance(normalized.variants.mark)).toEqual([]);
   });
 });
+describe("round-two alpha and arc refusals", () => {
+  it.each([
+    '#0000', '#1230', '#abcdef00', '#00000000',
+    'rgba(0, 0, 0, 0)', 'rgb(0, 0, 0, 0)', 'RGBA(0 0 0 / 0%)',
+    'rgb(0 0 0 / .0)', 'hsla(120, 100%, 50%, 0)', 'hsl(120 100% 50% / +0%)',
+    'oklch(0.5 0 0 / -0)', 'color(srgb 0 0 0 / 0e0)', 'rgba(0, 0, 0, -1)',
+  ])("excludes invisible %s paint from measured and normalized bounds", paint => {
+    const visible = '<rect x="30" y="30" width="40" height="40"/>';
+    for (const invisible of [
+      `<rect x="-500" width="100" height="100" fill="${paint}"/>`,
+      `<g style="fill: ${paint}"><rect x="-500" width="100" height="100"/></g>`,
+      `<rect x="-500" width="100" height="100" fill="none" stroke="${paint}" stroke-width="10"/>`,
+    ]) {
+      const input = svg(invisible + visible);
+      expect(measureMarkGeometry(input).glyphBox).toEqual({ x: .3, y: .3, width: .4, height: .4 });
+      const normalized = normalizeMark({ glyphSvg: input, tokens });
+      expect(measureMarkGeometry(normalized).glyphBox.width).toBeCloseTo(.64, 5);
+      expect(checkMarkConformance(normalized)).toEqual([]);
+    }
+    expect(() => box(`<rect width="40" height="40" fill="${paint}"/>`)).toThrow(MarkGeometryError);
+  });
+  it.each(['#000f', '#00000001', 'rgb(0 0 0)', 'rgba(0, 0, 0, .5)', 'oklch(0.5 0 0)', 'color(srgb 0 0 0)', 'currentColor'])("retains visible %s paint", paint => {
+    expect(box(`<rect x="30" y="30" width="40" height="40" fill="${paint}"/>`)).toEqual({ x: .3, y: .3, width: .4, height: .4 });
+  });
+  it.each(['transparent', '#0000', 'rgba(0, 0, 0, 0)'])("resolves invisible currentColor from %s without changing visible bounds", color => {
+    const visible = '<rect x="30" y="30" width="40" height="40" fill="#000"/>';
+    for (const input of [
+      svg(`<rect x="-500" width="100" height="100" fill="currentColor" color="${color}"/>${visible}`),
+      svg(`<g style="color: ${color}; fill: currentColor"><g color="currentColor"><rect x="-500" width="100" height="100"/></g></g>${visible}`),
+      `<svg viewBox="0 0 100 100" color="${color}"><rect x="-500" width="100" height="100" fill="none" stroke="currentColor" stroke-width="10"/>${visible}</svg>`,
+    ]) {
+      expect(measureMarkGeometry(input).glyphBox).toEqual({ x: .3, y: .3, width: .4, height: .4 });
+      const normalized = normalizeMark({ glyphSvg: input, tokens });
+      expect(measureMarkGeometry(normalized).glyphBox.width).toBeCloseTo(.64, 5);
+      expect(checkMarkConformance(normalized)).toEqual([]);
+    }
+    expect(measureMarkGeometry(svg(`<rect width="100" height="100" fill="currentColor" color="${color}"/>${visible}`)).plate.present).toBe(false);
+    expect(() => box(`<rect width="40" height="40" fill="currentColor" color="${color}"/>`)).toThrow(MarkGeometryError);
+  });
+  it.each(['#000', 'rgb(0 0 0)', 'currentColor'])("retains opaque inherited currentColor from %s", color => {
+    expect(box(`<g color="${color}" fill="currentColor"><g color="currentColor"><rect x="30" y="30" width="40" height="40"/></g></g>`)).toEqual({ x: .3, y: .3, width: .4, height: .4 });
+  });
+  it("retains actual normalized adoption with opaque functional token colors", () => {
+    const functionalTokens = { ...tokens, accent: 'oklch(0.3 0 0)', onAccent: 'rgb(255 255 255)' };
+    const adopted = adoptSuppliedMark({ brand: { name: "Example" }, suppliedSvg: MARK_FIXTURES.small, tokens: functionalTokens, normalize: true });
+    expect(checkMarkConformance(adopted.variants.mark)).toEqual([]);
+  });
+  it.each(['rgb(from transparent r g b)', 'color(from transparent srgb r g b)'])("refuses unmeasurable relative alpha in %s", paint => {
+    expect(() => box(`<rect width="40" height="40" fill="${paint}"/>`)).toThrow(MarkGeometryError);
+  });
+  it("refuses nonfinite arc intermediates instead of silently omitting an arc", () => {
+    const input = svg('<path d="M0 0H10V10 A1e200 1e200 0 0 1 20 20 Z"/>');
+    for (const evaluate of [() => measureMarkGeometry(input), () => normalizeMark({ glyphSvg: input, tokens }), () => checkMarkConformance(input)]) {
+      expect(evaluate).toThrow(MarkGeometryError);
+    }
+  });
+});
 describe("mark conformance", () => {
   it.each(['small', 'oversized', 'offCentre', 'wrongRadius'] as const)("flags off-kit %s with measured and expected values", name => {
     const findings = checkMarkConformance(MARK_FIXTURES[name]);

@@ -253,6 +253,8 @@ function arc(a: Point, v: number[], end: Point, tolerance: number, out: Point[])
   if (!sweep && delta > 0)
     delta -= 2 * Math.PI;
   const count = Math.max(1, Math.ceil(Math.abs(delta) / (2 * Math.acos(Math.max(-1, 1 - tolerance / Math.max(rx, ry))))));
+  if (![rx, ry, phi, x, y, lambda, factor, cx, cy, ...centre, start, delta, count].every(Number.isFinite))
+    fail("arc numeric overflow");
   if (count > 100000)
     fail("arc complexity");
   for (let i = 1; i <= count; i++) {
@@ -553,7 +555,24 @@ function paintedBoundary(region: Region): Point[] {
   }
   return result;
 }
-const hasPaint = (value: string | undefined): boolean => value?.trim().toLowerCase() !== 'none' && value?.trim().toLowerCase() !== 'transparent';
+function hasPaint(attrs: Attrs, key: 'fill' | 'stroke'): boolean {
+  let paint = attrs[key]?.trim().toLowerCase();
+  if (paint === 'currentcolor') paint = attrs.color?.trim().toLowerCase() ?? paint;
+  if (paint === 'none' || paint === 'transparent') return false;
+  if (!paint) return true;
+  if (/^#[\da-f]{4}$/.test(paint)) return paint[4] !== '0';
+  if (/^#[\da-f]{8}$/.test(paint)) return paint.slice(-2) !== '00';
+  const functional = /^(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)\(([^()]*)\)$/s.exec(paint);
+  if (!functional) return paint.includes('(') ? fail('paint alpha') : true;
+  const argumentsText = functional[1]!, slash = argumentsText.lastIndexOf('/'), commaFields = argumentsText.split(',');
+  const numericArguments = paint.startsWith('color(') ? argumentsText.replace(/^[a-z][a-z0-9-]*\s+/i, '') : argumentsText;
+  if (/[^0-9e.%+\-\s,/]/i.test(numericArguments)) fail('paint alpha');
+  const alpha = slash >= 0 ? argumentsText.slice(slash + 1) : commaFields.length === 4 ? commaFields[3] : undefined;
+  if (alpha === undefined) return true;
+  const parsed = numbers(alpha.trim().replace(/%$/, ''));
+  if (parsed.length !== 1) fail('paint alpha');
+  return parsed[0]! > 0;
+}
 function presentation(node: Node, inherited: Attrs): Attrs {
   const attrs = { ...inherited, ...node.attrs };
   if (attrs.style) {
@@ -565,6 +584,7 @@ function presentation(node: Node, inherited: Attrs): Attrs {
     }
     delete attrs.style;
   }
+  if (attrs.color?.trim().toLowerCase() === 'currentcolor') attrs.color = inherited.color ?? 'currentColor';
   if ([attrs.fill, attrs.stroke].some(value => value !== undefined && (/url\s*\(/i.test(value) || value.includes('\\')))) fail('paint reference');
   return attrs;
 }
@@ -578,7 +598,7 @@ function analyze(svg: string, optical = false): Analysis {
     return fail("viewBox");
   const viewBox: MarkBox = { x: v[0]!, y: v[1]!, width: v[2]!, height: v[3]! };
   const candidate = root.children[0];
-  const plate = root.children.length > 1 && !root.attrs.transform && candidate?.name === 'rect' && !candidate.attrs.transform && number(candidate.attrs, 'x') === viewBox.x && number(candidate.attrs, 'y') === viewBox.y && number(candidate.attrs, 'width') === viewBox.height && number(candidate.attrs, 'height') === viewBox.height && hasPaint(presentation(candidate, presentation(root, {})).fill) ? candidate : undefined;
+  const plate = root.children.length > 1 && !root.attrs.transform && candidate?.name === 'rect' && !candidate.attrs.transform && number(candidate.attrs, 'x') === viewBox.x && number(candidate.attrs, 'y') === viewBox.y && number(candidate.attrs, 'width') === viewBox.height && number(candidate.attrs, 'height') === viewBox.height && hasPaint(presentation(candidate, presentation(root, {})), 'fill') ? candidate : undefined;
   const frame = plate ? { ...viewBox, width: viewBox.height } : viewBox;
   const tolerance = Math.max(viewBox.width, viewBox.height) * 1e-6;
   const regions: Region[] = [];
@@ -606,11 +626,11 @@ function analyze(svg: string, optical = false): Analysis {
       fail(node.name);
     const localTolerance = tolerance / Math.max(Math.hypot(matrix[0], matrix[1]), Math.hypot(matrix[2], matrix[3]), 1);
     const shape = contours(node, localTolerance);
-    if (hasPaint(a.fill)) {
+    if (hasPaint(a, 'fill')) {
       const contours = shape.filter(c => hasFillArea(c.points)).map(c => c.points.map(p => point(matrix, p)));
       regions.push({ contours, evenOdd: a['fill-rule'] === 'evenodd' });
     }
-    if (a.stroke && hasPaint(a.stroke)) {
+    if (a.stroke && hasPaint(a, 'stroke')) {
       const width = number(a, 'stroke-width', 1);
       if (width < 0)
         fail('stroke-width');
