@@ -72,6 +72,18 @@ describe("site-header-overlay utility (theme-keys.css)", () => {
     expect(automatic).not.toMatch(LAYOUT_PROPERTIES);
   });
 
+  it("resets expanded mobile-panel action hover and focus plates to match the panel's own base ink", () => {
+    const mobile = topLevelBlock(themeKeys, "@utility site-header-mobile {");
+    const panel = nestedBlock(mobile, "& .nav-disclosure-panel {");
+    expect(panel).toContain("color: var(--color-ink-primary, oklch(0.2178 0 0));");
+    expect(panel).toContain("--site-header-action-hover: var(--color-surface-raised, oklch(1 0 0));");
+    expect(panel).toContain("--site-header-focus: var(--color-ink-primary, oklch(0.2178 0 0));");
+    // Inline inverse header actions keep their inverse plate: only the
+    // narrow or overflow-collapsed panel establishes this base-ink scope.
+    const automatic = nestedBlock(block, "&.site-header-ground-aware {");
+    expect(nestedBlock(automatic, '&[data-tone="inverse"] {')).toContain("--site-header-action-hover: var(--color-surface-inverse, oklch(0.2178 0 0));");
+  });
+
   it("falls back to the opaque plate for each tone where backdrop-filter is unsupported", () => {
     expect(noBackdrop).toContain("--site-header-glass-fill: var(--color-surface-raised, oklch(1 0 0));");
     expect(noBackdrop).toMatch(/&\[data-tone="inverse"\] \{\s*--site-header-glass-fill: var\(--color-surface-inverse, oklch\(0\.2178 0 0\)\);/);

@@ -325,6 +325,8 @@
     display: inline-flex;
   }
   .site-header-contract[data-collapsed] .nav-disclosure-panel {
+    --site-header-action-hover: var(--color-surface-raised, oklch(1 0 0));
+    --site-header-focus: var(--color-ink-primary, oklch(0.2178 0 0));
     display: none;
     position: absolute;
     inset-block-start: 100%;
@@ -382,6 +384,8 @@
       display: inline-flex;
     }
     .site-header-contract[data-header-root] .nav-disclosure-panel {
+      --site-header-action-hover: var(--color-surface-raised, oklch(1 0 0));
+      --site-header-focus: var(--color-ink-primary, oklch(0.2178 0 0));
       display: none;
       position: absolute;
       inset-block-start: 100%;
