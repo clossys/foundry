@@ -8370,7 +8370,7 @@ Views server components. See Publisher's README for the public View contracts.
 ### CatalogWorkspace
 
 `CatalogWorkspace` composes a controlled browse tree, an arbitrary preview and
-an inspector. It uses Button for tree rows, two ResizablePane blocks and a
+an inspector. It uses Explorer for tree browsing, two ResizablePane blocks and a
 Panel for the preview. The existing passive Tree, Specimen, DetailView and
 Items remain useful inside host content; the preview slot also accepts live
 interactive content. Import this client composition from
@@ -8405,12 +8405,12 @@ export function ComponentCatalog() {
 }
 ```
 
-The forest is bounded to 1,000 total nodes and three levels. Each ID must be
+The forest is bounded to 10,000 total nodes with unrestricted depth. Each ID must be
 unique and nonempty; labels and kinds must be nonempty strings. IDs and item
 objects are retained verbatim. Presence of `children` marks a group, including
 an empty group. Input arrays and objects are not mutated. Invalid bounds,
-identities, text, sparse arrays, cycles and excessive depth/count throw a
-TypeError. These limits make the rendered tree suitable for bounded catalogs;
+identities, text, sparse arrays, cycles and excessive node counts throw a
+TypeError. The node limit makes the rendered tree suitable for bounded catalogs;
 this block does not virtualize or fetch more items.
 
 Groups start collapsed. Pointer, Enter and Space toggle groups and request
@@ -8569,3 +8569,46 @@ function SavedTable() {
 const encoded = serializeDataTableViewModel(initialView);
 const restored = parseDataTableViewModel(encoded);
 ```
+
+### Explorer and shared tree model
+
+`Explorer` from `@clossys/designer/blocks` browses files and folders at any depth.
+Supply a `tree` and accessible `label`; use `selectedId` and `onSelect` for
+controlled single selection. Node IDs are retained verbatim. A node's optional
+`children` marks a folder, including an empty folder. Rows can supply an `href`
+or an `onSelect` callback. Default folder and file marks use distinct Icon atoms;
+`icon` accepts custom decorative content and `renderDetails` supplies descriptive
+metadata separately from each row's accessible name.
+
+Files and folders can be selected. Activation requests the exact ID and invokes
+the row's own callback once; activating a folder also toggles its disclosure.
+Every folder expands and collapses independently. `defaultExpandedIds` supplies
+initial disclosure. Up/Down and Home/End follow visible preorder; Right opens a
+folder or enters its first child, Left closes a folder or moves to its parent.
+Enter and Space activate the focused row. The ARIA tree has one tab stop, and
+focus movement and arrow disclosure leave selection unchanged. Token branch guides retain ancestry;
+visual indentation stops growing after six steps while semantic depth remains
+unrestricted. Horizontal scrolling is available for content that still needs it.
+
+The shared model rejects duplicate IDs, cycles, repeated references, sparse lists,
+empty identities and ambiguous destinations. It preserves caller objects and uses
+iterative indexing and ancestry. Optional `maxDepth` and `maxNodes` parameters
+bound presentations that need them. AppNavigation uses this model at two levels
+with its existing link, icon and `onAction` API. CatalogWorkspace delegates browse
+rows to Explorer and keeps its 10,000-node size bound without a depth limit.
+Custom metadata node types must declare `children` recursively with that same
+type so details and ancestry can safely expose metadata on every descendant.
+Ordinary inline trees use the base `TreeNode` shape.
+
+| Export | Kind | Contract |
+| --- | --- | --- |
+| `Explorer` | component | Single-select ARIA tree with files, folders, branch guides and independent disclosure. |
+| `ExplorerProps` | type | Supplied tree and name, controlled selection, initial disclosure and optional descriptive content. |
+| `TreeNode` | type | ID, label, decorative icon, optional href or selection callback, and optional child nodes. |
+| `TreeTarget` | type | Exact ID or href lookup; an explicit ID takes precedence. |
+| `TreeBreadcrumb` | type | An ancestry node's ID, label and optional href. |
+| `TreeValidationOptions` | type | Optional depth and node bounds, destination requirement and callback adapter. |
+| `TreeIndex` | type | Caller nodes, parent IDs and depths in Maps, ordered in caller preorder. |
+| `indexTree` | function | Validate and index supplied nodes without copying or mutating them. |
+| `getTreeAncestry` | function | Return exact root-to-target caller nodes in ancestry order. |
+| `getTreeBreadcrumbs` | function | Project validated ancestry into plain breadcrumb records. |

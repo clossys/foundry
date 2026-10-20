@@ -212,6 +212,10 @@ export { AppNavigation } from "./AppNavigation.js";
 export type { AppNavigationProps } from "./AppNavigation.js";
 export { validateAppNavigationTree, getAppNavigationAncestry, getAppNavigationBreadcrumbs } from "./app-navigation-tree.js";
 export type { AppNavigationNode, AppNavigationLeaf, AppNavigationDestination, AppNavigationTarget, AppNavigationBreadcrumb } from "./app-navigation-tree.js";
+export { Explorer } from "./Explorer.js";
+export type { ExplorerProps } from "./Explorer.js";
+export { indexTree, getTreeAncestry, getTreeBreadcrumbs } from "./tree-model.js";
+export type { TreeNode, TreeTarget, TreeBreadcrumb, TreeValidationOptions, TreeIndex } from "./tree-model.js";
 
 export { RecordLedger } from "./RecordLedger.js";
 export type { RecordLedgerProps, LedgerRowData, LedgerGroupData } from "./RecordLedger.js";
