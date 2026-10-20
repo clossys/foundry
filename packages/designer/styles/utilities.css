@@ -32,10 +32,10 @@
 @source inline("INVALID_OPTIONS ISO Icon Icon.tsx IconAccessibilityProps IconButton IconProps If Imperative Increase");
 @source inline("Independent Index Input It Item Item: ItemHeadingTag Items Items: Iterations JS Keeps Keyboard Kind");
 @source inline("L LEAVES LINE LOOK Label Latest Ledger Light LineChart LineChart.server.js");
-@source inline("LineChartProps.colorDomain Link LinkGrid ListBox ListBoxItem Live-region Logomark: M M1 M2 M2.5 M22");
-@source inline("M5 M8 MAX_CATEGORICAL_SERIES Main MarketingChapter Matching Matrix Matrix: Media-query MediaFigure");
-@source inline("Menu Menu.Item Menu.Section: Menu.Separator Menu.tsx MenuItem MenuTrigger Message Meter Mirrors");
-@source inline("Modal ModalOverlay Monthly NEGATIVE_HALF_COLUMN_GAP NEGATIVE_HALF_ROW_GAP NODE_CAP NOT NOTE");
+@source inline("LineChartProps.colorDomain Link LinkGrid ListBox ListBoxItem Live-region Lockup Logomark: M M1 M2");
+@source inline("M2.5 M22 M5 M8 MAX_CATEGORICAL_SERIES Main MarketingChapter Matching Matrix Matrix: Media-query");
+@source inline("MediaFigure Menu Menu.Item Menu.Section: Menu.Separator Menu.tsx MenuItem MenuTrigger Message Meter");
+@source inline("Mirrors Modal ModalOverlay Monthly NEGATIVE_HALF_COLUMN_GAP NEGATIVE_HALF_ROW_GAP NODE_CAP NOT NOTE");
 @source inline("NO_ERRORS: Native NavDisclosure NavGrid NavShell NavShell.tsx Navigation Nested New Next Next.js No");
 @source inline("Node Node.DOCUMENT_POSITION_FOLLOWING Non-negotiables Nonmatching Not Notifications Number.EPSILON");
 @source inline("NumberField ONE ORDER_LAYOUT_CLASSES.columns ORDER_LAYOUT_CLASSES.inverseOutline");
@@ -354,9 +354,9 @@
 @source inline("src/blocks/ConsentBanner.tsx src/blocks/ContentSection.tsx src/blocks/DataTable.tsx");
 @source inline("src/blocks/DetailView.tsx src/blocks/Drawer.tsx src/blocks/EmptyState.tsx src/blocks/Faq.tsx");
 @source inline("src/blocks/FeatureGrid.tsx src/blocks/FieldGroup.tsx src/blocks/Form.tsx src/blocks/GroupedTable.tsx");
-@source inline("src/blocks/Hero.tsx src/blocks/MarketingChapter.tsx src/blocks/Matrix.tsx src/blocks/MediaFigure.tsx");
-@source inline("src/blocks/NavGrid.tsx src/blocks/OrderedStepSequence.tsx src/blocks/PageHeader.tsx");
-@source inline("src/blocks/Pagination.tsx src/blocks/Panel.tsx src/blocks/PricingTable.tsx");
+@source inline("src/blocks/Hero.tsx src/blocks/Lockup.tsx src/blocks/MarketingChapter.tsx src/blocks/Matrix.tsx");
+@source inline("src/blocks/MediaFigure.tsx src/blocks/NavGrid.tsx src/blocks/OrderedStepSequence.tsx");
+@source inline("src/blocks/PageHeader.tsx src/blocks/Pagination.tsx src/blocks/Panel.tsx src/blocks/PricingTable.tsx");
 @source inline("src/blocks/RecordLedger.tsx src/blocks/ResizablePane.tsx src/blocks/SectionFrame.tsx");
 @source inline("src/blocks/SectionHeader.tsx src/blocks/SectionIntro.tsx src/blocks/Stat.tsx");
 @source inline("src/blocks/StatusList.tsx src/blocks/Testimonial.tsx src/blocks/Toolbar.tsx");
