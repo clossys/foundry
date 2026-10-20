@@ -81,6 +81,7 @@ export function FlatGrid<Row>({
             ))}
           </Table.Header>
           <Table.Body
+            className=""
             renderEmptyState={() => (
               <EmptyState
                 title={emptyStateTitle}

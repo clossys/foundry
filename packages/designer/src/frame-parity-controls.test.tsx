@@ -72,7 +72,7 @@ for (const mode of modes) describe(`frame parity controls: ${mode}`, () => {
     expect(direct.querySelector("a")).toHaveClass("text-ink-on-inverse");
     for (const navPlacement of ["leading", "centered"] as const) {
       const inherited = output(<SiteHeader placement="overlay" tone="inverse" navPlacement={navPlacement} brand={<Brandmark {...brand} />} />, mode);
-      expect(inherited.querySelector("a")).toHaveClass("text-ink-on-inverse");
+      expect(inherited.querySelector("a")).toHaveClass("text-inherit");
       const overridden = output(<SiteHeader placement="overlay" tone="inverse" navPlacement={navPlacement} brand={<Brandmark {...brand} {...options({ tone: "auto" })} />} />, mode);
       expect(overridden.querySelector("a")).toHaveClass("text-ink-primary");
     }

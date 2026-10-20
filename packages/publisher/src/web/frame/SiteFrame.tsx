@@ -96,8 +96,8 @@ function LinkList({ links, className }: { readonly links: readonly ResolvedSiteL
  * `resolveCopy`, the brand asset resolved through `resolveAsset`, and links
  * checked against an allowed set. Anything unknown or unresolved throws.
  *
- * Server-safe: no hooks. Skip-link focus and navigation disclosure are client
- * islands; the server passes resolved strings and link data.
+ * Server-safe: no hooks. Skip-link focus, header-ground observation and
+ * navigation disclosure use the existing client islands and resolved data.
  */
 export function SiteFrame({ shell, presentation, resolveCopy, resolveAsset, children }: SiteFrameProps): ReactElement {
   const resolved = resolveShell(shell, resolveCopy, resolveAsset, presentation);
@@ -163,10 +163,10 @@ export function SiteFrame({ shell, presentation, resolveCopy, resolveAsset, chil
 
   return (
     <div data-frame-root="" className="flex min-h-dvh flex-col" {...(footer?.placement === "overlay" ? { style: { position: "relative" as const } } : {})}>
-      <SiteSkipLink targetId={SITE_MAIN_ID} label={resolved.skipLink} />
+      <SiteSkipLink targetId={SITE_MAIN_ID} label={resolved.skipLink} followHeaderGround={resolved.header.placement === "overlay"} />
       <SiteHeader
         {...(resolved.header.placement === "overlay"
-          ? { placement: "overlay" as const, tone: resolved.header.tone }
+          ? { placement: "overlay" as const, tone: resolved.header.tone, className: "site-header-ground-aware" }
           : { ground: resolved.header.ground })}
         brand={brandmark}
         nav={nav}
