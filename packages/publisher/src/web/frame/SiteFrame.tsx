@@ -114,9 +114,10 @@ export function SiteFrame({ shell, presentation, resolveCopy, resolveAsset, chil
   const navigation = resolved.nav;
   const nav = navigation ? <SiteNavDisclosure nav={navigation} actions={resolved.headerActions} surfaceLabel={resolved.surfaceLabel} /> : undefined;
   const primary = resolved.headerActions.find(action => action.emphasis === "primary");
+  const inverseHeader = resolved.header.placement === "overlay" ? resolved.header.tone === "inverse" : resolved.header.ground === "inverse";
   // Environment-only headers keep direct ghost icons; menu headers retain their mobile primary affordance.
   const actions = !navigation && resolved.environments.length > 0
-    ? resolved.environments.map((environment, index) => <SiteHeader.ActionLink key={index} href={environment.href} label={environment.label} icon={environment.icon} isCurrent={environment.isCurrent} variant="ghost" />)
+    ? resolved.environments.map((environment, index) => <SiteHeader.ActionLink key={index} href={environment.href} label={environment.label} icon={environment.icon} isCurrent={environment.isCurrent} variant="ghost" className={inverseHeader ? MOBILE_ACTION_INVERSE : undefined} />)
     : primary && resolved.navPlacement === "centered" && resolved.mobileLayout === "menu-brand-action" ? <SiteHeader.ActionLink data-header-primary="" href={primary.href} label={primary.label} icon={primary.icon} isCurrent={primary.isCurrent} variant="ghost" className={navigation?.tone === "inverse" ? MOBILE_ACTION_INVERSE : undefined} /> : undefined;
 
   const footerContent = footer ? (

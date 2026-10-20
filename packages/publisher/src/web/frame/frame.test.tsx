@@ -11,7 +11,7 @@ import { act, cleanup, fireEvent, render, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event";
 import type { CopyRef, CopyResolution, CopyResolver } from "@clossys/writer";
 import type { IconNode } from "@clossys/designer/atoms/server";
-import { CONTRAST_PAIRS } from "@clossys/designer/tokens";
+import { CONTRAST_PAIRS, contrastRatio, parseBrandDeclarations } from "@clossys/designer/tokens";
 import { AuthView } from "../views/AuthView.js";
 import { BoundaryView } from "../views/BoundaryView.js";
 import { CaptureView } from "../views/CaptureView.js";
@@ -1225,4 +1225,47 @@ it("retains the current environment indication on the lite header's direct ghost
   expect(mobile).toHaveAttribute("aria-current", "true");
   expect(mobile).toHaveTextContent("Demo");
   expect(mobile.style.boxShadow).toContain("inset");
+});
+
+function shippedUtilityToken(utility: string, property: string): string {
+  const css = readFileSync(join(import.meta.dirname, "../../../../designer/styles/compiled.css"), "utf8");
+  const start = css.indexOf(`.${utility.replaceAll(":", "\\:")}`);
+  expect(start).toBeGreaterThanOrEqual(0);
+  const body = css.slice(css.indexOf("{", start) + 1, css.indexOf("}", start));
+  const declaration = body.match(new RegExp(`(?:^|\\s)${property}:\\s*var\\((--[\\w-]+)`));
+  expect(declaration).not.toBeNull();
+  return declaration![1]!;
+}
+
+it.each(["light", "dark"] as const)("keeps inverse environment-only links readable in the %s theme", theme => {
+  const css = readFileSync(join(import.meta.dirname, "../../../../designer/styles/tokens.css"), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+  const block = css.match(theme === "light" ? /:root\s*\{[^}]*\}/ : /:root\[data-theme="dark"\]\s*\{[^}]*\}/);
+  expect(block).not.toBeNull();
+  const values = parseBrandDeclarations(block![0]).declarations;
+  const surface = values["--color-surface-inverse"]!;
+  for (const kind of ["front-door", "admin", "demo"] as const) {
+    for (const header of [{ placement: "reserved", ground: "inverse" }, { placement: "overlay", tone: "inverse" }] as const) {
+      const view = render(frame({ ...siteShellFor(CONFIG, kind), header }, <p>content</p>));
+      const link = view.container.querySelector<HTMLAnchorElement>('header a[aria-current="true"]')!;
+      const ink = [...link.classList].filter(value => value.startsWith("text-ink-"));
+      const hover = [...link.classList].filter(value => value.startsWith("hover:bg-"));
+      expect(ink).toHaveLength(1);
+      expect(hover).toHaveLength(1);
+      const foreground = values[shippedUtilityToken(ink[0]!, "color")]!;
+      const hoveredSurface = values[shippedUtilityToken(hover[0]!, "background-color")]!;
+      expect(contrastRatio(foreground, surface)).toBeGreaterThanOrEqual(4.5);
+      expect(contrastRatio(foreground, hoveredSurface, surface)).toBeGreaterThanOrEqual(4.5);
+      expect(link).toHaveClass("text-ink-on-inverse", "hover:text-ink-on-inverse", "focus-visible:text-ink-on-inverse", "hover:bg-control-tonal-inverse-hover", "focus-visible:outline-ink-on-inverse");
+      expect(link).not.toHaveClass("text-ink-primary");
+      expect(link).not.toHaveClass("hover:bg-surface-sunken");
+      expect(link).not.toHaveClass("focus-visible:outline-accent");
+      expect(link.querySelector("svg")).toHaveAttribute("stroke", "currentColor");
+      expect(link.querySelector<SVGElement>("svg")!.style.color).toBe("");
+      expect(link.querySelector("span")).toHaveTextContent(kind === "front-door" ? "App" : kind === "admin" ? "Admin" : "Demo");
+      expect(link.style.boxShadow).toContain("currentColor");
+      const focus = values[shippedUtilityToken("focus-visible:outline-ink-on-inverse", "outline-color")]!;
+      expect(contrastRatio(focus, surface)).toBeGreaterThanOrEqual(3);
+      view.unmount();
+    }
+  }
 });
