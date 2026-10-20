@@ -75,7 +75,15 @@ export interface SiteEnvironmentLinkInput {
 export { SITE_CHROME_GROUNDS } from "../internal/viewChromeGround.js";
 export type { SiteChromeGround } from "../internal/viewChromeGround.js";
 
-/** The footer: optional headed columns, ungrouped links and social profiles, then the legal row. */
+/**
+ * The footer: optional headed columns, ungrouped links and social profiles, then the legal row.
+ *
+ * Contract (`SITE_FRAME_CONTRACT.constituents.Footer.constraints`): `links` and
+ * `legal.links` together form one flat row of at most five; further links go in
+ * labelled `columns`. `social` takes at most four icons, because the `shell.brand` mark always fills the fifth and last slot. No footer link may
+ * repeat home, a `shell.nav` destination or the `#privacy-choices` control.
+ * Breaches throw a `SiteFooterContractError` (`name` and `code`), never truncate.
+ */
 interface SiteFooterFields {
   /** A top hairline on transparent flow footers; other grounds ignore it. @default "none" */
   readonly rule?: "none" | "top";

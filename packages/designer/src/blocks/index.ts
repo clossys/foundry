@@ -48,6 +48,10 @@ export type { AccountMenuProps, AccountMenuActor, AccountMenuEntry, AccountMenuC
 export { EmptyState } from "./EmptyState.js";
 export type { EmptyStateProps } from "./EmptyState.js";
 
+export { parseDataTableViewModel, serializeDataTableViewModel, DataTableViewModelError } from "./data-table/view-model.js";
+export type { DataTableMessages } from "./data-table/messages.js";
+export type { DataTableViewModel, DataTableMode, DataTableDensity, DataTableSortRule } from "./data-table/view-model.js";
+
 export { DataTable } from "./DataTable.js";
 export type { DataTableProps, DataTableColumn, DataTableSelectionMode } from "./DataTable.js";
 
@@ -231,3 +235,6 @@ export type { GroupedTableProps, GroupedTableGroup, GroupedTableColumn } from ".
 
 export { GraphValidationError, validateGraph, neighbors, subgraph, degrees, components, shortestPath, groupByKind, radialLayout, forceLayout, edgeRoutingHints } from "./graph-model/index.js";
 export type { GraphNode, GraphEdge, GraphInput, GraphModelEdge, GraphModel, GraphErrorCode, GraphNeighborOptions, GraphSubgraphOptions, GraphDegree, GraphKindGroup, GraphPosition, GraphRadialOptions, GraphForceOptions, GraphEdgeRoutingHint } from "./graph-model/index.js";
+
+export { CatalogWorkspace } from "./CatalogWorkspace.js";
+export type { CatalogWorkspaceProps, CatalogWorkspaceItem, CatalogWorkspaceSize } from "./CatalogWorkspace.js";

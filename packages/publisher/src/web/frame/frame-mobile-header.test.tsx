@@ -174,11 +174,11 @@ it.each(["one", "two", "three", "six", "twenty", "secondary", "long-secondary"] 
   if (controls === "six" || controls === "twenty") { expect(() => output(shell)).toThrow(/three/); return; }
   for (const server of [false, true]) for (const navPlacement of ["centered"] as const) {
     const container = output({ ...shell, navPlacement }, server);
-    const brand = within(container).getByRole("link", { name: "Example home" });
+    const brand = within(container.querySelector("header")!).getByRole("link", { name: "Example home" });
     expect(container.querySelector("header")).toHaveClass("site-header-contract");
     expect(container.querySelector("header > div")).toHaveClass("site-header-row");
     expectAccentMark(brand);
-    expect(container.querySelectorAll('a[aria-label="Example home"]')).toHaveLength(1);
+    expect(container.querySelectorAll('header a[aria-label="Example home"]')).toHaveLength(1);
     expect(container.querySelectorAll("header nav")).toHaveLength(1);
   }
   expect(output(base).querySelector("header")).not.toHaveClass("max-tablet:[&>div]:grid-cols-3!");
@@ -187,13 +187,13 @@ it.each(["one", "two", "three", "six", "twenty", "secondary", "long-secondary"] 
 it.each([undefined, "auto", "inverse"] as const)("retains overlay brand tone %s in the centered mobile layout", tone => {
   const shell: SiteShellInput = { ...base, brand: { ...base.brand, tone }, mobileLayout: "menu-brand-action", header: { placement: "overlay", tone: "inverse" } };
   expect(renderToString(tree(shell))).toBe(renderToString(tree(shell, true)));
-  const brand = within(output(shell)).getByRole("link", { name: "Example home" });
+  const brand = within(output(shell).querySelector("header")!).getByRole("link", { name: "Example home" });
   expect(brand).toHaveClass(tone === undefined ? "text-inherit" : tone === "auto" ? "text-ink-primary" : "text-ink-on-inverse");
 });
 
 it.each([false, true])("names a mark-only brand from its label and renders no wordmark (server=%s)", server => {
   const container = output({ ...base, mobileLayout: "menu-brand-action" }, server);
-  const brand = within(container).getByRole("link", { name: "Example home" });
+  const brand = within(container.querySelector("header")!).getByRole("link", { name: "Example home" });
   expect(brand).toHaveTextContent("");
   expect(brand.children).toHaveLength(1);
   expectAccentMark(brand);
@@ -207,7 +207,7 @@ it.each([undefined, "auto", "inverse"] as const)("paints an accent mark in the a
     header: { placement: "overlay", tone: "inverse" },
   };
   expect(renderToString(tree(shell))).toBe(renderToString(tree(shell, true)));
-  const brand = within(output(shell)).getByRole("link", { name: "Example home" });
+  const brand = within(output(shell).querySelector("header")!).getByRole("link", { name: "Example home" });
   const mark = brand.firstElementChild as HTMLElement;
   expect(mark).toHaveAttribute("data-brand-mark", "");
   expect(brand.querySelector("img")).toBeNull();
@@ -230,7 +230,7 @@ const INK_CASES = BRANDS.flatMap(([name, brand]) => LAYOUTS.flatMap(mobileLayout
 it.each(INK_CASES)("paints the %s header logomark in the accent token when markInk is omitted (layout %s, server=%s)", (_name, mobileLayout, server, brand) => {
   const shell = { ...base, brand, mobileLayout } as SiteShellInput;
   expect(renderToString(tree(shell, server))).toBe(renderToString(tree(shell, !server)));
-  const anchor = within(output(shell, server)).getByRole("link", { name: "Example home" });
+  const anchor = within(output(shell, server).querySelector("header")!).getByRole("link", { name: "Example home" });
   const mark = anchor.firstElementChild as HTMLElement;
   expect(anchor.querySelector("img")).toBeNull();
   expect(mark).toHaveAttribute("data-brand-mark", "");
@@ -242,7 +242,7 @@ it.each(INK_CASES)("paints the %s header logomark in the accent token when markI
 
 it.each(INK_CASES)("keeps the %s header logomark as the image when markInk is image (layout %s, server=%s)", (_name, mobileLayout, server, brand) => {
   const shell = { ...base, brand: { ...brand, markInk: "image" }, mobileLayout } as SiteShellInput;
-  const anchor = within(output(shell, server)).getByRole("link", { name: "Example home" });
+  const anchor = within(output(shell, server).querySelector("header")!).getByRole("link", { name: "Example home" });
   expect(anchor.querySelector("img")).toHaveAttribute("src", "/mark.svg");
   expect(anchor.querySelector("[data-brand-mark]")).toBeNull();
   expect(anchor.querySelector(".bg-accent")).toBeNull();

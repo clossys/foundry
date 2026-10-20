@@ -24,6 +24,7 @@ import { LandingView } from "#publisher-web-views";
 import { SITE_MAIN_ID, SITE_SURFACE_KINDS, SiteFrame, siteShellFor } from "./index.js";
 import type { SiteFrameConfig, SiteShellInput } from "./index.js";
 import { resolveShell } from "./internal/resolveShell.js";
+import { FOOTER_ICON_LIMIT, FOOTER_LINK_LIMIT, SiteFooterContractError } from "./site-frame-contract.js";
 
 afterEach(cleanup);
 
@@ -597,7 +598,7 @@ describe("siteShellFor", () => {
     expect(currents).toHaveLength(1);
     expect(currents[0]).toHaveTextContent(current);
     const legal = [...container.querySelectorAll("footer a")].map((a) => a.getAttribute("href"));
-    expect(legal).toEqual(["https://example.com/privacy", "https://example.com/terms"]);
+    expect(legal).toEqual(["https://example.com/privacy", "https://example.com/terms", "https://example.com/"]);
     expect(container.querySelector("footer")).toHaveTextContent("Example Ltd");
     expect(container.querySelector("footer h2, footer .grid, [data-consent-banner], [data-consent-presentation=card], [role=dialog]")).toBeNull();
   });
@@ -605,7 +606,7 @@ describe("siteShellFor", () => {
   it("preserves explicitly reserved site bytes and its same-host brand link", () => {
     const config: SiteFrameConfig = { brand: CONFIG.brand, skipLink: CONFIG.skipLink, origin: CONFIG.origin, legal: CONFIG.legal, site: { header: { placement: "reserved" } } };
     const html = renderToStaticMarkup(frame(siteShellFor(config, "site"), <p>content</p>));
-    expect(createHash("sha256").update(html).digest("hex")).toBe("aaaaf379ffb58fb3ea4a66f2375212f7ef0624ad5602cf6e870f417582ce74a9");
+    expect(createHash("sha256").update(html).digest("hex")).toBe("390aff3580abb0b61c33b18eabb539a33f865ea37f24f72367118e9eeb427de1");
     const { container } = render(frame(siteShellFor(config, "site"), <p>content</p>));
     expect(container.querySelector('header a[aria-label="Example home"]')).toHaveAttribute("href", "/");
   });
@@ -742,11 +743,13 @@ describe("module boundaries", () => {
 describe("SiteFrame list keys", () => {
   it("renders repeated headings and links in full, with no duplicate-key warning", () => {
     const repeated = { href: "/about", label: ref("footer.about") };
+    // The footer never repeats a header navigation destination, so the header repeats its own.
+    const headerRepeated = { href: "/docs", label: ref("nav.docs") };
     const shell: SiteShellInput = {
       ...siteShellFor(CONFIG, "site"),
-      nav: { label: ref("nav.label"), links: [repeated, repeated] },
+      nav: { label: ref("nav.label"), links: [headerRepeated, headerRepeated] },
       secondaryAction: undefined,
-      actions: [{ ...repeated, emphasis: "secondary" }, { ...repeated, emphasis: "ghost" }],
+      actions: [{ ...headerRepeated, emphasis: "secondary" }, { ...headerRepeated, emphasis: "ghost" }],
       footer: {
         columns: [
           { heading: ref("footer.company"), links: [repeated, repeated] },
@@ -764,7 +767,8 @@ describe("SiteFrame list keys", () => {
       expect(container.querySelectorAll("header .nav-disclosure-panel > ul:first-child li")).toHaveLength(2);
       const footer = container.querySelector("footer") as HTMLElement;
       expect([...footer.querySelectorAll("h2, h3, h4, p")].filter((node) => node.textContent === "Company")).toHaveLength(2);
-      expect([...container.querySelectorAll("a")].filter((link) => link.textContent === "About")).toHaveLength(2 + 2 + 2 + 1);
+      expect([...container.querySelectorAll("header a")].filter((link) => link.textContent === "Docs")).toHaveLength(2 + 2);
+      expect([...footer.querySelectorAll("a")].filter((link) => link.textContent === "About")).toHaveLength(2 + 1);
     } finally {
       consoleError.mockRestore();
     }
@@ -812,7 +816,7 @@ describe("SiteFrame icon slots", () => {
       .filter((element) => element.tabIndex >= 0);
     expect(focusable.map((element) => element.getAttribute("aria-label") ?? element.textContent)).toEqual([
       "Skip to content", "Example home", "Primary", "Pricing", "Docs", "App", "Sign in", "Contact", "App",
-      "About", "Help", "Profile", "Privacy", "Terms",
+      "About", "Help", "Privacy", "Terms", "Profile", "Example home",
     ]);
   });
 
@@ -848,9 +852,9 @@ describe("SiteFrame icon slots", () => {
     }
   });
 
-  it("keeps the social list from shrinking beside the legal row and gives icon links a square tap target", () => {
+  it("keeps social icons in their own composition region and gives icon links a square tap target", () => {
     const named = render(frame(ALL_SLOTS, <p>content</p>));
-    expect(named.getByRole("navigation", { name: "Profiles" })).toHaveClass("shrink-0");
+    expect(named.getByRole("navigation", { name: "Profiles" })).toHaveAttribute("data-footer-region", "icons");
     for (const name of ["Contact", "Profile"]) {
       const link = named.getByRole("link", { name });
       expect(link.style.minHeight).toBe("var(--ui-layout-tap-target, 44px)");
@@ -859,7 +863,7 @@ describe("SiteFrame icon slots", () => {
     }
     named.unmount();
     const unnamed = render(frame({ ...ALL_SLOTS, footer: { ...ALL_SLOTS.footer!, social: { links: ALL_SLOTS.footer!.social!.links } } }, <p>content</p>));
-    expect(unnamed.getByRole("link", { name: "Profile" }).closest("ul")).toHaveClass("shrink-0");
+    expect(unnamed.getByRole("link", { name: "Profile" }).closest("[data-footer-region]")).toHaveAttribute("data-footer-region", "icons");
   });
 
   it("renders ungrouped links alone and unnamed social without a navigation wrapper", () => {
@@ -1098,6 +1102,8 @@ it("keeps overlay legal links keyboard reachable and pointer operable", async ()
   await user.tab();
   expect(terms).toHaveFocus();
   await user.tab();
+  expect(within(footer).getByRole("link", { name: "Example home" })).toHaveFocus();
+  await user.tab();
   expect(footer.contains(document.activeElement)).toBe(false);
   const activate = vi.fn((event: Event) => event.preventDefault());
   privacy.addEventListener("click", activate);
@@ -1114,7 +1120,9 @@ it.each(["--color-ink-on-inverse", "--color-ink-on-inverse-muted"])("backs overl
 
 it("keeps a tall overlay footer safely aligned without clipping its tab stops", async () => {
   const links = Array.from({ length: 30 }, (_, index) => ({ href: `/legal-${index}`, label: ref("legal.privacy") }));
-  const shell: SiteShellInput = { ...FRONT_DOOR_SHELL, header: { placement: "overlay", tone: "inverse" }, environments: [], footer: { placement: "overlay", legal: { entity: ref("legal.entity"), links } } };
+  // Beyond the five-link flat row, the other twenty-five links arrive as labelled columns.
+  const columns = Array.from({ length: 5 }, (_, column) => ({ heading: ref("footer.company"), links: links.slice(column * 5, column * 5 + 5) }));
+  const shell: SiteShellInput = { ...FRONT_DOOR_SHELL, header: { placement: "overlay", tone: "inverse" }, environments: [], footer: { placement: "overlay", columns, legal: { entity: ref("legal.entity"), links: links.slice(25) } } };
   const user = userEvent.setup();
   const { container } = render(frame(shell, overlayHero()));
   const footer = within(container).getByRole("contentinfo");
@@ -1131,6 +1139,8 @@ it("keeps a tall overlay footer safely aligned without clipping its tab stops", 
     await user.tab();
     expect(link).toHaveFocus();
   }
+  await user.tab();
+  expect(within(footer).getByRole("link", { name: "Example home" })).toHaveFocus();
   await user.tab();
   expect(footer.contains(document.activeElement)).toBe(false);
 });
@@ -1269,6 +1279,149 @@ it("retains the current environment indication on the lite header's direct ghost
   expect(mobile).toHaveAttribute("aria-current", "true");
   expect(mobile).toHaveTextContent("Demo");
   expect(mobile.style.boxShadow).toContain("inset");
+});
+
+it("composes the mandatory dark footer with a resolved home after named social icons", () => {
+  const shell: SiteShellInput = { brand: CONFIG.brand, skipLink: CONFIG.skipLink, origin: CONFIG.origin,
+    header: { placement: "overlay", tone: "inverse" },
+    footer: { legal: CONFIG.legal, social: { label: ref("social.label"), links: [{ href: "https://example.org/profile", label: ref("social.profile"), icon: ICON }] } } };
+  const { container } = render(<SiteFrame shell={shell} presentation={{ footerRule: "top" }} resolveCopy={resolveCopy} resolveAsset={resolveAsset}><p>Content</p></SiteFrame>);
+  const footer = container.querySelector("footer")!;
+  expect(footer).toHaveClass("site-footer-dark");
+  expect([...footer.querySelectorAll("[data-footer-region]")].map(node => node.getAttribute("data-footer-region"))).toEqual(["links", "icons", "copyright"]);
+  const icons = footer.querySelector('[data-footer-region="icons"]')!;
+  expect([...icons.querySelectorAll("a")].map(node => node.getAttribute("aria-label"))).toEqual(["Profile", "Example home"]);
+  expect(icons.querySelector("a")).toHaveAttribute("rel", "noopener noreferrer");
+  expect(icons.querySelector("a:last-child img") ?? icons.querySelector("img")).toHaveAttribute("src", BRAND_ASSET.src);
+  expect(icons.querySelectorAll("a")[1]).toHaveAttribute("href", "https://example.com/");
+  expect(container.querySelector("header")).toHaveAttribute("data-tone", "inverse");
+  expect(footer.querySelector("button")).toBeNull();
+});
+
+it("keeps the real default home with empty footer links and socials", () => {
+  const { container } = render(frame({ brand: CONFIG.brand, skipLink: CONFIG.skipLink, footer: { legal: { entity: CONFIG.legal.entity, links: [] } } }, <p>Content</p>));
+  const links = container.querySelectorAll("footer a");
+  expect(links).toHaveLength(1);
+  expect(links[0]).toHaveAttribute("aria-label", "Example home");
+  expect(links[0]).toHaveAttribute("href", "/");
+});
+
+it("takes the footer mark from shell.brand alone, refusing footer-specific art or a second brand input", () => {
+  const base: SiteShellInput = { brand: CONFIG.brand, skipLink: CONFIG.skipLink, footer: { legal: CONFIG.legal } };
+  expect(resolveShell(base, resolveCopy, resolveAsset).footer!.home).toEqual({ href: "/", label: "Example home", markSrc: BRAND_ASSET.src });
+  for (const [key, value] of [["home", { assetId: "brand-mark" }], ["home", { assetId: "brand-mark", href: "/home", label: ref("brand.label") }], ["brand", CONFIG.brand], ["mark", "brand-mark"]] as const) {
+    const call = () => resolveShell({ ...base, footer: { ...base.footer!, [key]: value } } as SiteShellInput, resolveCopy, resolveAsset);
+    expect(call).toThrow(`SiteFrame: shell.footer has an unsupported field "${key}".`);
+  }
+});
+
+describe("FOOTER-2 footer configuration contract", () => {
+  type Footer = NonNullable<SiteShellInput["footer"]>;
+  const base: SiteShellInput = { brand: CONFIG.brand, skipLink: CONFIG.skipLink, origin: CONFIG.origin, nav: CONFIG.site!.nav, footer: { legal: { entity: ref("legal.entity"), links: [] } } };
+  const pages = (prefix: string, count: number) => Array.from({ length: count }, (_, index) => ({ href: `/${prefix}-${index}`, label: ref("footer.help") }));
+  const profiles = (count: number) => Array.from({ length: count }, (_, index) => ({ href: `https://example.org/profile-${index}`, label: ref("social.profile"), icon: ICON }));
+  const withFooter = (footer: Partial<Footer>): SiteShellInput => ({ ...base, footer: { ...base.footer!, ...footer } as Footer });
+  const refusal = (shell: SiteShellInput, code: string, hidden?: string) => {
+    let caught: unknown;
+    try { resolveShell(shell, resolveCopy, resolveAsset); } catch (error) { caught = error; }
+    expect(caught).toBeInstanceOf(SiteFooterContractError);
+    expect(caught).toMatchObject({ name: "SiteFooterContractError", code });
+    expect((caught as Error).message).toMatch(/^SiteFrame: shell\.footer\./);
+    if (hidden !== undefined) expect((caught as Error).message).not.toContain(hidden);
+    // Rendering refuses the same input; nothing is truncated into a partial footer.
+    expect(() => renderToStaticMarkup(frame(shell, <p>content</p>))).toThrow(SiteFooterContractError);
+  };
+
+  it("renders five flat links, ungrouped then legal, in one row", () => {
+    const { getByRole } = render(frame(withFooter({ links: pages("page", 3), legal: { entity: ref("legal.entity"), links: pages("legal", 2) } }), <p>content</p>));
+    const region = getByRole("contentinfo").querySelector('[data-footer-region="links"]')!;
+    expect(region.querySelectorAll("ul")).toHaveLength(1);
+    expect([...region.querySelectorAll("li > a")].map(link => new URL(link.getAttribute("href")!).pathname)).toEqual(["/page-0", "/page-1", "/page-2", "/legal-0", "/legal-1"]);
+    expect(FOOTER_LINK_LIMIT).toBe(5);
+  });
+
+  it.each([
+    ["six ungrouped links", { links: pages("page", 6) }],
+    ["four ungrouped and two legal links", { links: pages("page", 4), legal: { entity: ref("legal.entity"), links: pages("legal", 2) } }],
+    ["six legal links", { legal: { entity: ref("legal.entity"), links: pages("legal", 6) } }],
+  ] as const)("refuses %s with the named link-limit error instead of truncating", (_name, footer) => {
+    refusal(withFooter(footer as Partial<Footer>), "footer-link-limit");
+  });
+
+  it("groups links beyond five into labelled columns outside the flat row", () => {
+    const columns = [{ heading: ref("footer.company"), links: pages("company", 4) }, { heading: ref("footer.about"), links: pages("about", 3) }];
+    const { getByRole } = render(frame(withFooter({ links: pages("page", 5), columns }), <p>content</p>));
+    const footer = getByRole("contentinfo");
+    const headings = within(footer).getAllByRole("heading", { level: 2 });
+    expect(headings.map(heading => heading.textContent)).toEqual(["Company", "About"]);
+    const paths = (root: Element) => [...root.querySelectorAll("a")].map(link => new URL(link.getAttribute("href")!).pathname);
+    expect(paths(headings[0]!.parentElement!)).toEqual(["/company-0", "/company-1", "/company-2", "/company-3"]);
+    expect(paths(headings[1]!.parentElement!)).toEqual(["/about-0", "/about-1", "/about-2"]);
+    const row = footer.querySelector('[data-footer-region="links"]')!;
+    expect(row.querySelectorAll("li")).toHaveLength(5);
+    expect(paths(row).some(path => /^\/(company|about)-/.test(path))).toBe(false);
+  });
+
+  it("renders up to four social icons with the resolved brand mark as the fifth and last slot", () => {
+    const { getByRole } = render(frame(withFooter({ social: { label: ref("social.label"), links: profiles(4) } }), <p>content</p>));
+    const anchors = [...getByRole("contentinfo").querySelectorAll('[data-footer-region="icons"] a')];
+    expect(anchors).toHaveLength(FOOTER_ICON_LIMIT);
+    expect(anchors.map(anchor => anchor.getAttribute("aria-label"))).toEqual(["Profile", "Profile", "Profile", "Profile", "Example home"]);
+    const mark = anchors.at(-1)!;
+    // Decorative art with an accessible name, the same name the header brand link carries.
+    expect(mark).toHaveAttribute("href", "https://example.com/");
+    expect(mark.querySelector("img")).toHaveAttribute("src", BRAND_ASSET.src);
+    expect(mark.querySelector("img")).toHaveAttribute("alt", "");
+    expect(within(getByRole("banner")).getByRole("link", { name: "Example home" })).toHaveAttribute("aria-label", mark.getAttribute("aria-label"));
+    expect(anchors.slice(0, -1).some(anchor => anchor.querySelector("img"))).toBe(false);
+  });
+
+  it("refuses a fifth social icon because the brand mark always takes the last slot", () => {
+    refusal(withFooter({ social: { links: profiles(5) } }), "footer-icon-limit");
+  });
+
+  it("draws the footer mark from the same shell.brand input as the header", () => {
+    const art = { ...BRAND_ASSET, src: "/brand/other.svg" };
+    const assets = (assetId: string): unknown => (assetId === "other-mark" ? art : undefined);
+    const shell = withFooter({});
+    const { getByRole } = render(<SiteFrame shell={{ ...shell, brand: { ...CONFIG.brand, assetId: "other-mark" } }} resolveCopy={resolveCopy} resolveAsset={assets}><p>content</p></SiteFrame>);
+    const icons = getByRole("contentinfo").querySelectorAll('[data-footer-region="icons"] a');
+    expect(icons).toHaveLength(1);
+    expect(icons[0]!.querySelector("img")).toHaveAttribute("src", art.src);
+  });
+
+  it.each([
+    ["an ungrouped link", "/pricing", (href: string) => ({ links: [{ href, label: ref("footer.help") }] })],
+    ["a legal link", "/docs", (href: string) => ({ legal: { entity: ref("legal.entity"), links: [{ href, label: ref("legal.terms") }] } })],
+    ["a column link", "/pricing", (href: string) => ({ columns: [{ heading: ref("footer.company"), links: [{ href, label: ref("footer.about") }] }] })],
+    ["a social icon", "/docs", (href: string) => ({ social: { links: [{ href, label: ref("social.profile"), icon: ICON }] } })],
+    ["an absolute header destination", "https://example.com/pricing", (href: string) => ({ links: [{ href, label: ref("footer.help") }] })],
+    ["the home destination", "/", (href: string) => ({ links: [{ href, label: ref("footer.help") }] })],
+    ["the absolute home destination", "https://example.com/", (href: string) => ({ legal: { entity: ref("legal.entity"), links: [{ href, label: ref("legal.terms") }] } })],
+  ] as const)("refuses %s that repeats home or header navigation, without echoing it", (_name, href, footer) => {
+    refusal(withFooter(footer(href) as Partial<Footer>), "footer-duplicate-link", href === "/" ? undefined : href);
+  });
+
+  it("allows a destination the header does not navigate to", () => {
+    const shell = { ...withFooter({ links: [{ href: "/pricing", label: ref("footer.help") }] }), nav: undefined };
+    expect(resolveShell(shell, resolveCopy, resolveAsset).footer!.links.map(link => link.href)).toEqual(["https://example.com/pricing"]);
+  });
+
+  it.each([
+    ["an ungrouped link", "#privacy-choices", (href: string) => ({ links: [{ href, label: ref("footer.help") }] })],
+    ["a legal link", "/privacy#privacy-choices", (href: string) => ({ legal: { entity: ref("legal.entity"), links: [{ href, label: ref("legal.privacy") }] } })],
+    ["a column link", "https://example.com/privacy#privacy-choices", (href: string) => ({ columns: [{ heading: ref("footer.company"), links: [{ href, label: ref("footer.about") }] }] })],
+    ["a social icon", "#privacy-choices", (href: string) => ({ social: { links: [{ href, label: ref("social.profile"), icon: ICON }] } })],
+  ] as const)("refuses the privacy-choices reopen control in %s", (_name, href, footer) => {
+    refusal(withFooter(footer(href) as Partial<Footer>), "footer-privacy-choices", "privacy-choices\"");
+  });
+
+  it("keeps the privacy policy link while rendering no reopen control or button", () => {
+    const { getByRole } = render(frame(withFooter({ legal: CONFIG.legal }), <p>content</p>));
+    const footer = getByRole("contentinfo");
+    expect(within(footer).getByRole("link", { name: "Privacy" })).toHaveAttribute("href", "https://example.com/privacy");
+    expect(footer.querySelector("button, [href*='#privacy-choices']")).toBeNull();
+  });
 });
 
 function shippedUtilityToken(utility: string, property: string): string {

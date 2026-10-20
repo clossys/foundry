@@ -74,6 +74,7 @@ export const BLOCK_THEME_CONFORMANCE: readonly BlockThemeRegistration[] = [
   { exportName: "Tree", source: "src/blocks/tree/Tree.tsx", contrastPairs: GROUNDED_READING },
   { exportName: "Items", source: "src/blocks/items/Items.tsx", contrastPairs: GROUNDED_READING },
   { exportName: "GroupedTable", source: "src/blocks/GroupedTable.tsx", contrastPairs: [...RAISED_READING, "ink-primary/surface-sunken"] },
+  { exportName: "CatalogWorkspace", source: "src/blocks/CatalogWorkspace.tsx", contrastPairs: [...BASE_READING, ...RAISED_READING] },
 ];
 
 /** Explicitly classified value exports, never a casing-based escape for new Blocks. */
@@ -94,6 +95,9 @@ export const NON_BLOCK_THEME_EXPORTS: Readonly<Record<string, string>> = {
   parseTableModel: "Saved-view validation and copying from a plain object; renders no UI or paint.",
   serializeTableModel: "Independent validated plain-object saved-view serialization; renders no UI or paint.",
   TableModelError: "Typed table-data refusal with an error code and message; renders no UI or paint.",
+  parseDataTableViewModel: "Saved-view envelope validation and copying over plain data; renders no UI or paint.",
+  serializeDataTableViewModel: "Validated saved-view envelope JSON serialization; renders no UI or paint.",
+  DataTableViewModelError: "Typed saved-view envelope validation refusal; renders no UI or paint.",
   GraphValidationError: "Typed graph-data refusal with an error code and message; renders no UI or paint.",
   validateGraph: "Graph record validation and copying with explicit self-loop flags; renders no UI or paint.",
   neighbors: "Adjacent-node query with direction and edge-kind filters; returns plain node data with no UI or paint.",

@@ -126,42 +126,20 @@ export function SiteFrame({ shell, presentation, resolveCopy, resolveAsset, chil
       ground={footer.ground}
       rule={footer.rule}
       {...(footer.placement === "overlay" ? { className: "publisher-frame-footer-overlay", style: { pointerEvents: "auto" as const, width: "100%", marginBlockStart: "auto", minWidth: 0, overflowWrap: "anywhere" as const } } : {})}
-      columns={
-        footer.columns.length > 0 || footer.links.length > 0 ? (
-          <>
-            {footer.columns.map((column, columnIndex) => (
-              <SiteFooter.Column key={columnIndex} heading={column.heading}>
-                {column.links.map((link, linkIndex) => (
-                  <TextLink key={linkIndex} link={link} />
-                ))}
-              </SiteFooter.Column>
-            ))}
-            {footer.links.length > 0 ? (
-              <LinkList links={footer.links} className="m-0 flex list-none flex-wrap items-center gap-sm p-0" />
-            ) : null}
-          </>
-        ) : undefined
-      }
-      secondary={
-        <>
-          {/* The social list sits beside SiteFooter.Legal (a `w-full` flex item) in the
-              footer's `secondary` row; it must not shrink, or its icons wrap. */}
-          {footer.social && footer.social.links.length > 0 ? (
-            footer.social.label === undefined ? (
-              <IconLinkList links={footer.social.links} className={`shrink-0 ${ICON_LIST_CLASSES}`} />
-            ) : (
-              <nav aria-label={footer.social.label} className="shrink-0">
-                <IconLinkList links={footer.social.links} className={ICON_LIST_CLASSES} />
-              </nav>
-            )
-          ) : null}
-          <SiteFooter.Legal
-            entity={footer.legal.entity}
-            links={footer.legal.links}
-            {...(footer.legal.linksLabel === undefined ? {} : { linksLabel: footer.legal.linksLabel })}
-          />
-        </>
-      }
+      columns={footer.columns.length ? <>{footer.columns.map((column, columnIndex) => (
+        <SiteFooter.Column key={columnIndex} heading={column.heading}>
+          {column.links.map((link, linkIndex) => <a key={linkIndex} href={link.href} rel={/^https?:\/\//i.test(link.href) ? "noopener noreferrer" : undefined} className={LINK_CLASSES} style={LINK_STYLE}>{link.label}</a>)}
+        </SiteFooter.Column>
+      ))}</> : undefined}
+      secondary={<SiteFooter.Legal
+        entity={footer.legal.entity}
+        links={[...footer.links, ...footer.legal.links]}
+        linksLabel={footer.legal.linksLabel}
+        icons={footer.social?.links.map(link => ({ label: link.label, href: link.href, icon: <Icon glyph={link.icon} decorative /> }))}
+        iconsLabel={footer.social?.links.length ? footer.social.label : undefined}
+        home={footer.home}
+      />}
+
     />
   ) : null;
 

@@ -7,6 +7,13 @@ import ts from "typescript";
 
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 
+describe("compiled signature chart public contract", () => {
+  it.each(["index", "server"])("exports all three charts from the compiled charts/%s entry", async entry => {
+    const exports = await import(pathToFileURL(join(packageRoot, `dist/charts/${entry}.js`)).href);
+    for (const name of ["AreaChart", "Heatmap", "StatusStrip"]) expect(exports[name]).toBeTypeOf("function");
+  });
+});
+
 describe("compiled table-model public contract", () => {
   const values = ["TableModelError", "aggregate", "filterRows", "groupRows", "parseTableModel", "pivotRows", "serializeTableModel"];
 
@@ -464,6 +471,141 @@ describe("compiled Tree public contract", () => {
       expect(declaration).toContain(`const ${item.binding}:`);
       expect(declaration).toContain(`${item.field}:`);
       expect(ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n")).toContain(item.field === "orientation" ? '"up"' : `'${item.field}'`);
+    }
+  }, 30_000);
+});
+
+
+describe("compiled pane handle edge contract", () => {
+  it("accepts both edges through the emitted atom and block declarations", () => {
+    const filename = join(packageRoot, "pane-edge-consumer.check.ts");
+    const consumer = `
+      import { type ResizeHandleProps } from ${JSON.stringify(join(packageRoot, "dist/atoms/index.js"))};
+      import { type ResizablePaneProps } from ${JSON.stringify(join(packageRoot, "dist/blocks/index.js"))};
+      const start: ResizeHandleProps["edge"] = "start";
+      const end: ResizablePaneProps["handleEdge"] = "end";
+    `;
+    const options = { strict: true, noEmit: true, skipLibCheck: true, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler };
+    const host = ts.createCompilerHost(options);
+    const original = host.getSourceFile.bind(host);
+    host.getSourceFile = (path, language, error, fresh) => path === filename ? ts.createSourceFile(path, consumer, language, true) : original(path, language, error, fresh);
+    expect(ts.getPreEmitDiagnostics(ts.createProgram([filename], options, host)).map(diagnostic => ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n"))).toEqual([]);
+  });
+
+  it("rejects unsupported edges with native diagnostics through the atom and block barrels", () => {
+    const filename = join(packageRoot, "pane-edge-negative-consumer.check.ts");
+    const source = `
+      import { type ResizeHandleProps } from ${JSON.stringify(join(packageRoot, "dist/atoms/index.js"))};
+      import { type ResizablePaneProps } from ${JSON.stringify(join(packageRoot, "dist/blocks/index.js"))};
+      const invalidAtom: ResizeHandleProps["edge"] = "middle";
+      const invalidPane: ResizablePaneProps["handleEdge"] = "middle";
+    `;
+    const options = { strict: true, noEmit: true, skipLibCheck: true, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler };
+    const host = ts.createCompilerHost(options); const original = host.getSourceFile.bind(host);
+    host.getSourceFile = (path, language, error, fresh) => path === filename ? ts.createSourceFile(path, source, language, true) : original(path, language, error, fresh);
+    const diagnostics = ts.getPreEmitDiagnostics(ts.createProgram([filename], options, host));
+    const cases = [{ binding: "invalidAtom", field: "edge" }, { binding: "invalidPane", field: "handleEdge" }];
+    expect(diagnostics).toHaveLength(2);
+    for (const [index, diagnostic] of diagnostics.entries()) {
+      const item = cases[index]!;
+      expect(diagnostic.code).toBe(2322); expect(diagnostic.file?.fileName).toBe(filename);
+      const line = diagnostic.file!.getLineAndCharacterOfPosition(diagnostic.start!).line;
+      expect(source.split("\n")[line]).toContain(`const ${item.binding}:`);
+      expect(source.split("\n")[line]).toContain(`["${item.field}"]`);
+      expect(ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n")).toBe(`Type '"middle"' is not assignable to type '"start" | "end" | undefined'.`);
+    }
+  });
+});
+
+
+describe("compiled CatalogWorkspace public contract", () => {
+  it("exports the composition from both existing barrels with emitted host-facing types", () => {
+    for (const entry of ["blocks/index.js", "index.js"]) {
+      const filename = join(packageRoot, "catalog-consumer.check.ts");
+      const consumer = `
+        import { CatalogWorkspace, type CatalogWorkspaceProps, type CatalogWorkspaceItem, type CatalogWorkspaceSize } from ${JSON.stringify(join(packageRoot, "dist", entry))};
+        const item: CatalogWorkspaceItem = {id: "host-id", label: "Example", kind: "component", children: []};
+        const size: CatalogWorkspaceSize = {min: 160, max: 480, defaultValue: 240};
+        const props: CatalogWorkspaceProps = {items: [item], selectedId: null, onSelect: (id: string) => {}, label: "Catalog", labels: {browse: "Browse", preview: "Preview", inspector: "Inspector", resizeBrowse: "Resize browse", resizeInspector: "Resize inspector"}, preview: selected => selected.label, inspector: selected => selected.kind, emptyState: "Select an item", browseSize: size};
+        const result = CatalogWorkspace(props);
+      `;
+      const options = { strict: true, noEmit: true, skipLibCheck: true, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler };
+      const host = ts.createCompilerHost(options); const original = host.getSourceFile.bind(host);
+      host.getSourceFile = (path, language, error, fresh) => path === filename ? ts.createSourceFile(path, consumer, language, true) : original(path, language, error, fresh);
+      expect(ts.getPreEmitDiagnostics(ts.createProgram([filename], options, host)).map(diagnostic => ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n"))).toEqual([]);
+      const script = `import { CatalogWorkspace } from ${JSON.stringify(join(packageRoot, "dist", entry))}; process.stdout.write(typeof CatalogWorkspace);`;
+      expect(execFileSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8", cwd: packageRoot })).toBe("function");
+    }
+  }, 30_000);
+
+  it("rejects numeric host IDs with native diagnostics at the ID field in both barrels", () => {
+    const filename = join(packageRoot, "catalog-negative-consumer.check.ts");
+    const source = ["blocks/index.js", "index.js"].map((entry, index) => `
+      import { type CatalogWorkspaceItem as Item${index} } from ${JSON.stringify(join(packageRoot, "dist", entry))};
+      const invalid${index}: Item${index} = {id: 1, label: "Bad", kind: "component"};
+    `).join("\n");
+    const options = { strict: true, noEmit: true, skipLibCheck: true, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler };
+    const host = ts.createCompilerHost(options); const original = host.getSourceFile.bind(host);
+    host.getSourceFile = (path, language, error, fresh) => path === filename ? ts.createSourceFile(path, source, language, true) : original(path, language, error, fresh);
+    const diagnostics = ts.getPreEmitDiagnostics(ts.createProgram([filename], options, host));
+    expect(diagnostics).toHaveLength(2);
+    for (const [index, diagnostic] of diagnostics.entries()) {
+      expect(diagnostic.code).toBe(2322); expect(diagnostic.file?.fileName).toBe(filename);
+      const line = diagnostic.file!.getLineAndCharacterOfPosition(diagnostic.start!).line;
+      expect(source.split("\n")[line]).toContain(`const invalid${index}:`);
+      expect(source.split("\n")[line]).toContain("id: 1");
+      expect(ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n")).toBe("Type 'number' is not assignable to type 'string'.");
+    }
+  });
+});
+
+describe("compiled DataTable saved-view public contract", () => {
+  const values = ["DataTable", "DataTableViewModelError", "parseDataTableViewModel", "serializeDataTableViewModel"];
+  it("exposes only the intended component and persistence values through both client barrels", () => {
+    for (const entry of ["blocks/index.js", "index.js"]) {
+      const script = `import * as api from ${JSON.stringify(join(packageRoot, "dist", entry))}; const model = {version:1, table:{version:1, columns:[{id:"value",kind:"number"}],collation:{locale:"en"}}, mode:"flat", density:"compact", sort:[], visibleColumns:["value"]}; process.stdout.write(JSON.stringify({keys: Object.keys(api).filter(name => ${JSON.stringify(values)}.includes(name)).sort(), internal: ["ModelTable","FlatGrid","ViewOptions","PivotGrid","editView"].filter(name => name in api), model:api.parseDataTableViewModel(api.serializeDataTableViewModel(model))}));`;
+      const result = JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8", cwd: packageRoot }));
+      expect(result.keys).toEqual(values); expect(result.internal).toEqual([]); expect(result.model.density).toBe("compact"); expect(result.model.table.columns).toEqual([{ id: "value", kind: "number" }]);
+    }
+  });
+  it("resolves the model, mode, density, sort and controlled props from emitted declarations", () => {
+    const filename = join(packageRoot, "emitted-datatable-consumer.check.ts");
+    const consumer = ["blocks/index.js", "index.js"].map((entry, index) => `
+      import { DataTable as Table${index}, parseDataTableViewModel as parse${index}, serializeDataTableViewModel as serialize${index}, type DataTableViewModel as Model${index}, type DataTableProps as Props${index}, type DataTableMode as Mode${index}, type DataTableDensity as Density${index}, type DataTableSortRule as Sort${index}, type DataTableMessages as Messages${index} } from ${JSON.stringify(join(packageRoot, "dist", entry))};
+      const mode${index}: Mode${index} = "grouped";
+      const density${index}: Density${index} = "compact";
+      const sort${index}: Sort${index} = {column: "value", direction: "ascending"};
+      const model${index}: Model${index} = {version:1, table:{version:1, columns:[{id:"value",kind:"number"}],collation:{locale:"en"}}, mode:mode${index}, density:density${index}, sort:[sort${index}], visibleColumns:["value"]};
+      const messages${index}: Messages${index} = {viewOptionsLabel: "Settings", groupByMessage: column => "Bucket " + column, pivotColumnMessage: (axis, measure) => axis.kind + measure};
+      const props${index}: Props${index}<{value:number}> = {"aria-label":"Values", columns:[{id:"value",header:"Value",cell:row=>row.value}],rows:[{value:7}],rowKey:row=>row.value,model:model${index},messages:messages${index},onModelChange:next=>{ const copy: Model${index} = parse${index}(serialize${index}(next)); },expandedGroupKeys:"all",onExpandedGroupKeysChange:keys=>{ const selected: ReadonlySet<string> = keys; }};
+      Table${index}(props${index});
+    `).join("\n");
+    const options = { strict: true, noEmit: true, skipLibCheck: true, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler };
+    const compile = (source: string) => {
+      const host = ts.createCompilerHost(options); const original = host.getSourceFile.bind(host);
+      host.getSourceFile = (path, language, error, fresh) => path === filename ? ts.createSourceFile(path, source, language, true) : original(path, language, error, fresh);
+      return ts.getPreEmitDiagnostics(ts.createProgram([filename], options, host));
+    };
+    expect(compile(consumer).map(diagnostic => ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n"))).toEqual([]);
+    const negative = consumer + [0, 1].map(index => `
+      const invalidMessages${index}: Messages${index} = {viewOptionsLabel: 7};
+      model${index}.messages = messages${index};
+      const invalid${index}: Density${index} = "tiny";
+      model${index}.sort.push(sort${index});
+    `).join("\n");
+    const diagnostics = compile(negative);
+    const cases = [0, 1].flatMap(index => [
+      { source: `const invalidMessages${index}:`, code: 2322 },
+      { source: `model${index}.messages =`, code: 2339 },
+      { source: `const invalid${index}:`, code: 2322 },
+      { source: `model${index}.sort.push`, code: 2339 },
+    ]);
+    expect(diagnostics).toHaveLength(cases.length);
+    expect(diagnostics.map(diagnostic => diagnostic.code)).toEqual(cases.map(item => item.code));
+    for (const [index, diagnostic] of diagnostics.entries()) {
+      expect(diagnostic.file?.fileName).toBe(filename);
+      const line = diagnostic.file!.getLineAndCharacterOfPosition(diagnostic.start!).line;
+      expect(negative.split("\n")[line]).toContain(cases[index]!.source);
     }
   }, 30_000);
 });

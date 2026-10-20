@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { Tabs } from "./Tabs.js";
+import { TabsContext } from "react-aria-components";
+import { Tabs, type TabsProps } from "./Tabs.js";
 
-function BasicTabs() {
+function BasicTabs(props: Partial<TabsProps> = {}) {
   return (
-    <Tabs>
+    <Tabs {...props}>
       <Tabs.List aria-label="Prompt sections">
         <Tabs.Tab id="details">Details</Tabs.Tab>
         <Tabs.Tab id="history" isDisabled>
@@ -21,6 +22,56 @@ function BasicTabs() {
 }
 
 describe("Tabs", () => {
+  it("inherits vertical orientation from the native provider when the prop is omitted", () => {
+    render(<TabsContext.Provider value={{ orientation: "vertical" }}><BasicTabs /></TabsContext.Provider>);
+    const list = screen.getByRole("tablist");
+    expect(list).toHaveAttribute("aria-orientation", "vertical");
+    expect(list.parentElement).toHaveClass("flex-row");
+    expect(list).toHaveClass("flex-col", "border-s");
+    expect(screen.getByRole("tab", { name: "Details" })).toHaveClass("border-s-2");
+  });
+
+  it("keeps the default horizontal list, bottom indicator and root classes", () => {
+    render(<BasicTabs />);
+    const list = screen.getByRole("tablist");
+    expect(list).toHaveAttribute("aria-orientation", "horizontal");
+    expect(list.parentElement?.className).toBe("flex flex-col gap-md");
+    expect(list.className).toBe("flex gap-xs border-b border-line-base");
+    expect(screen.getByRole("tab", { name: "Details" }).className).toBe(
+      "cursor-default border-b-2 px-md py-sm text-body-s font-body outline-none transition-colors motion-reduce:transition-none disabled:cursor-not-allowed border-accent text-ink-primary",
+    );
+  });
+
+  it.each(["ltr", "rtl"])("uses a column and start-edge indicators vertically in %s, with native keyboard navigation", async (dir) => {
+    const user = userEvent.setup();
+    const { rerender } = render(<div dir={dir}><BasicTabs orientation="vertical" /></div>);
+    const list = screen.getByRole("tablist");
+    const details = screen.getByRole("tab", { name: "Details" });
+    const settings = screen.getByRole("tab", { name: "Settings" });
+    expect(list).toHaveAttribute("aria-orientation", "vertical");
+    expect(list.parentElement).toHaveClass("flex-row");
+    expect(list).toHaveClass("flex-col", "border-s", "border-line-base");
+    expect(list).not.toHaveClass("border-b");
+    for (const tab of screen.getAllByRole("tab")) {
+      expect(tab).toHaveClass("border-s-2");
+      expect(tab).not.toHaveClass("border-b-2");
+    }
+    expect(details).toHaveClass("border-accent", "text-ink-primary");
+    expect(settings).toHaveClass("border-transparent");
+    details.focus();
+    await user.keyboard("{ArrowDown}");
+    expect(settings).toHaveFocus();
+    expect(settings).toHaveAttribute("aria-selected", "true");
+    expect(settings).toHaveClass("border-accent");
+    await user.keyboard("{ArrowUp}");
+    expect(details).toHaveFocus();
+    rerender(<div dir={dir}><BasicTabs orientation="horizontal" /></div>);
+    expect(list).toHaveAttribute("aria-orientation", "horizontal");
+    expect(list.className).toBe("flex gap-xs border-b border-line-base");
+    expect(details).toHaveClass("border-b-2");
+    expect(details).not.toHaveClass("border-s-2");
+  });
+
   it("renders a tablist with every tab, and shows only the first tab's panel by default", () => {
     render(<BasicTabs />);
     expect(screen.getByRole("tablist", { name: "Prompt sections" })).toBeInTheDocument();

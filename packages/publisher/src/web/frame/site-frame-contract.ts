@@ -4,21 +4,51 @@ import { SITE_CHROME_GROUNDS } from "../internal/viewChromeGround.js";
 export const HEADER_LINK_LIMIT = 5;
 export const HEADER_ACTION_LIMIT = 3;
 export const HEADER_ACTION_VARIANTS = Object.freeze(["secondary", "ghost", "primary"] as const);
+/** Flat footer row: `shell.footer.links` then `shell.footer.legal.links`; more links belong in labelled `columns`. */
+export const FOOTER_LINK_LIMIT = 5;
+/** Footer icon slots, counting the `shell.brand` mark that always takes the last one. */
+export const FOOTER_ICON_LIMIT = 5;
+export type SiteFooterContractErrorCode = "footer-link-limit" | "footer-icon-limit" | "footer-duplicate-link" | "footer-privacy-choices";
+const FOOTER_CONTRACT_REASONS: Readonly<Record<SiteFooterContractErrorCode, string>> = Object.freeze({
+  "footer-link-limit": "permits at most five flat links across links and legal links; group further links into labelled columns.",
+  "footer-icon-limit": "permits at most four icons; the brand mark takes the fifth and last slot.",
+  "footer-duplicate-link": "repeats the home or a header navigation destination.",
+  "footer-privacy-choices": "must not carry the privacy-choices control; it stays on the privacy policy page.",
+});
+/**
+ * Over-cap or excluded footer input, refused at the contract boundary and never truncated.
+ * The message names the field path only, never a caller value.
+ */
+export class SiteFooterContractError extends TypeError {
+  override readonly name = "SiteFooterContractError";
+  readonly code: SiteFooterContractErrorCode;
+  constructor(code: SiteFooterContractErrorCode, path: string) {
+    super(`SiteFrame: ${path} ${FOOTER_CONTRACT_REASONS[code]}`);
+    this.code = code;
+  }
+}
 export const SITE_FRAME_CONFIG_SCHEMA = Object.freeze({
+  footerGround: Object.freeze({ values: SITE_CHROME_GROUNDS, default: "base" as const }),
+  footerPlacement: Object.freeze({ values: Object.freeze(["flow", "overlay"] as const), default: "flow" as const }),
+  footerRule: Object.freeze({ values: Object.freeze(["none", "top"] as const), default: "none" as const }),
   headerGround: Object.freeze({ values: SITE_CHROME_GROUNDS, default: "base" as const }),
   headerPlacement: Object.freeze({ values: Object.freeze(["reserved", "overlay"] as const), default: "overlay" as const }),
   headerTone: Object.freeze({ values: Object.freeze(["base", "inverse"] as const), default: "base" as const }),
 });
 export interface SiteFramePresentationConfig {
+  readonly footerGround?: typeof SITE_FRAME_CONFIG_SCHEMA.footerGround.values[number];
+  readonly footerPlacement?: typeof SITE_FRAME_CONFIG_SCHEMA.footerPlacement.values[number];
+  readonly footerRule?: typeof SITE_FRAME_CONFIG_SCHEMA.footerRule.values[number];
   readonly headerGround?: typeof SITE_FRAME_CONFIG_SCHEMA.headerGround.values[number];
   readonly headerPlacement?: typeof SITE_FRAME_CONFIG_SCHEMA.headerPlacement.values[number];
   readonly headerTone?: typeof SITE_FRAME_CONFIG_SCHEMA.headerTone.values[number];
 }
 /** Reject unknown fields and incompatible dependent inputs; output keys remain flat primitive values. */
-export function normalizeSiteFrameConfig(input: unknown = {}): Required<SiteFramePresentationConfig> {
+export function normalizeSiteFrameConfig(input: unknown = {}, inherited?: SiteFramePresentationConfig): Required<SiteFramePresentationConfig> {
   const fail = (): never => { throw new Error("SiteFrame: invalid presentation config or dependent field."); };
   try {
   if (!input || typeof input !== "object" || Array.isArray(input) || Object.getPrototypeOf(input) !== Object.prototype) fail();
+  const defaults = inherited === undefined ? undefined : normalizeSiteFrameConfig(inherited);
   const descriptors = Object.getOwnPropertyDescriptors(input);
   if (Reflect.ownKeys(input as object).some(key => typeof key !== "string")) fail();
   const fields: Record<string, string> = {};
@@ -28,8 +58,11 @@ export function normalizeSiteFrameConfig(input: unknown = {}): Required<SiteFram
     if (typeof descriptor.value !== "string" || !values.includes(descriptor.value)) fail();
     fields[key] = descriptor.value;
   }
-  const result = Object.fromEntries(Object.entries(SITE_FRAME_CONFIG_SCHEMA).map(([key, field]) => [key, fields[key] ?? field.default])) as Required<SiteFramePresentationConfig>;
+  // Explicit header inputs retain their independent defaults; footer-only inputs inherit the shell header.
+  const explicitHeader = Object.keys(fields).some(key => key.startsWith("header"));
+  const result = Object.fromEntries(Object.entries(SITE_FRAME_CONFIG_SCHEMA).map(([key, field]) => [key, fields[key] ?? (explicitHeader && key.startsWith("header") ? undefined : defaults?.[key as keyof SiteFramePresentationConfig]) ?? field.default])) as Required<SiteFramePresentationConfig>;
   if (result.headerPlacement === "overlay" ? result.headerGround !== "base" : result.headerTone !== "base") fail();
+  if (result.footerPlacement === "overlay" && result.footerGround === "transparent") fail();
   return Object.freeze(result);
   } catch { return fail(); }
 }
@@ -65,7 +98,7 @@ export const SITE_FRAME_CONTRACT = freeze({
   required: ["sticky-header", "dark-footer", "accessible-navigation", "document-scroll", "sole-main"],
   constituents: {
     Header: { owner: "@clossys/designer", subpath: "shell/server", export: "SiteHeader", config: ["headerGround", "headerPlacement", "headerTone"] },
-    Footer: { owner: "@clossys/designer", subpath: "shell/server", export: "SiteFooter", config: [], status: "awaiting-footer-composition" },
+    Footer: { owner: "@clossys/designer", subpath: "shell/server", export: "SiteFooter", config: ["footerGround", "footerPlacement", "footerRule"], content: ["columns", "links", "social", "legal"], required: ["dark-in-both-themes", "centered-links", "home-inline-end", "mobile-links-icons-copyright", "named-icons", "external-rel", "safe-area", "44px-targets", "privacy-link-only"], constraints: { links: FOOTER_LINK_LIMIT, linksLayout: "one flat row of shell.footer.links then shell.footer.legal.links", grouping: "shell.footer.columns: labelled columns for links beyond the flat row", icons: FOOTER_ICON_LIMIT, brandMark: "shell.brand, always the last icon slot", excludes: ["home", "header-navigation", "privacy-choices"], error: "SiteFooterContractError", accessibility: "mandatory" } },
   },
 } as const);
 

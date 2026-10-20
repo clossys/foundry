@@ -1,7 +1,7 @@
 import { useId } from "react";
 import type { ReactNode } from "react";
 import { Badge, type BadgeVariant } from "@clossys/designer/atoms/server";
-import { PageHeader } from "@clossys/designer/blocks/server";
+import { DetailView, PageHeader } from "@clossys/designer/blocks/server";
 import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
 import type { SiteHeaderProps } from "@clossys/designer/shell/server";
 import { RenderError } from "../../internal/errors.js";
@@ -191,16 +191,7 @@ function NoneNotice({ label }: { label: string }) {
 
 function FactList({ entries, none }: { entries: readonly PackReviewViewFact[]; none: string }) {
   if (entries.length === 0) return <NoneNotice label={none} />;
-  return (
-    <dl className="flex flex-col gap-sm text-body-s">
-      {entries.map((entry, index) => (
-        <div key={`${index}:${entry.name}`} className="flex flex-col gap-xs">
-          <dt className="text-ink-secondary">{entry.name}</dt>
-          <dd className="text-ink-primary">{entry.value}</dd>
-        </div>
-      ))}
-    </dl>
-  );
+  return <DetailView fields={entries.map((entry) => ({ label: entry.name, value: entry.value }))} />;
 }
 
 function TextList({ entries, none }: { entries: readonly string[]; none: string }) {

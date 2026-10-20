@@ -4,7 +4,7 @@
  * full #375 rationale this file shares: `blocks/index.ts` re-exports
  * every block eagerly from one module, so the interactive minority
  * (`DataTable`, `Form`, `ConfirmDialog`, `Toolbar`, `NavGrid`,
- * `Pagination`, `Testimonial`) drags the whole barrel down under React's
+ * `Pagination` and the client `Testimonial`) drags the whole barrel down under React's
  * `react-server` condition even though eleven individual blocks resolve
  * cleanly on their own.
  *
@@ -153,6 +153,9 @@ export type { SectionFrameProps, SectionMeasure } from "./SectionFrame.js";
 
 export { Stat } from "./Stat.js";
 export type { StatProps, StatTrend } from "./Stat.js";
+
+export { Testimonial } from "./Testimonial.server.js";
+export type { TestimonialProps } from "./Testimonial.js";
 
 export { RecordLedger } from "./RecordLedger.js";
 export type { RecordLedgerProps, LedgerRowData, LedgerGroupData } from "./RecordLedger.js";
