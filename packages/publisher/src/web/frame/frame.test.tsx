@@ -588,6 +588,8 @@ describe("siteShellFor", () => {
     const header = container.querySelector("header")!;
     expect(within(header).getAllByRole("link")).toHaveLength(2);
     const environment = within(header).getByRole("link", { name: current });
+    expect(environment).toHaveClass("site-header-environment-ghost");
+    expect(header.querySelectorAll(".site-header-environment-ghost")).toHaveLength(1);
     expect(environment).toHaveClass("hover:bg-surface-sunken");
     expect(environment).not.toHaveClass("bg-accent");
     expect(environment.querySelector("svg")).not.toBeNull();
