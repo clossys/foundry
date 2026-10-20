@@ -37,7 +37,9 @@ function normalizeProperty(name: string): string {
 }
 
 /** Inspect authored value fragments, never expression identifiers or copy elsewhere. */
-function inlineColor(name: string, value: ts.Node | undefined): boolean {
+function inlineColor(rawName: string, value: ts.Node | undefined): boolean {
+  if (rawName.startsWith("--color-")) return true;
+  const name = normalizeProperty(rawName);
   if (COLOR_PROPERTY.test(name)) return true;
   if (!COLOR_SHORTHAND.test(name) || !value) return false;
   const fragments: string[] = [];
@@ -109,16 +111,18 @@ function sourceEvidence(file: string, source: string) {
     if (ts.isTypeNode(node) || ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) return;
     if (ts.isNewExpression(node) && /^(?:Error|TypeError|RangeError)$/.test(node.expression.getText(ast))) return;
     if (ts.isPropertyAssignment(node)) {
-      const name = normalizeProperty(node.name.getText(ast).replace(/[\[\]"']/g, ""));
-      if (inlineColor(name, node.initializer)) findings.push(`${file}: inline color property ${name}`);
+      const name = ts.isStringLiteralLike(node.name) ? node.name.text
+        : ts.isComputedPropertyName(node.name) && ts.isStringLiteralLike(node.name.expression) ? node.name.expression.text
+        : node.name.getText(ast).replace(/[\[\]"']/g, "");
+      if (inlineColor(name, node.initializer)) findings.push(`${file}: inline color property ${name.startsWith("--") ? name : normalizeProperty(name)}`);
     }
     if (ts.isBinaryExpression(node) && node.operatorToken.kind === ts.SyntaxKind.EqualsToken) {
       if (ts.isPropertyAccessExpression(node.left) && inlineColor(node.left.name.text, node.right) && /\.style$/.test(node.left.expression.getText(ast))) findings.push(`${file}: inline color assignment ${node.left.name.text}`);
-      if (ts.isElementAccessExpression(node.left) && ts.isStringLiteralLike(node.left.argumentExpression) && inlineColor(normalizeProperty(node.left.argumentExpression.text), node.right) && /\.style$/.test(node.left.expression.getText(ast))) findings.push(`${file}: inline color assignment ${node.left.argumentExpression.text}`);
+      if (ts.isElementAccessExpression(node.left) && ts.isStringLiteralLike(node.left.argumentExpression) && inlineColor(node.left.argumentExpression.text, node.right) && /\.style$/.test(node.left.expression.getText(ast))) findings.push(`${file}: inline color assignment ${node.left.argumentExpression.text}`);
     }
     if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression) && node.expression.name.text === "setProperty" && /\.style$/.test(node.expression.expression.getText(ast))) {
       const key = node.arguments[0];
-      if (key && ts.isStringLiteralLike(key) && inlineColor(normalizeProperty(key.text), node.arguments[1])) findings.push(`${file}: inline color setProperty ${normalizeProperty(key.text)}`);
+      if (key && ts.isStringLiteralLike(key) && inlineColor(key.text, node.arguments[1])) findings.push(`${file}: inline color setProperty ${key.text.startsWith("--") ? key.text : normalizeProperty(key.text)}`);
     }
     if (ts.isStringLiteralLike(node) || ts.isTemplateHead(node) || ts.isTemplateMiddle(node) || ts.isTemplateTail(node)) {
       // A CSS property key is technical syntax, not a utility class value.
@@ -530,5 +534,41 @@ describe("Block theme conformance", () => {
     const findings = conformanceFindings(input);
     expect(findings).toContain("Block exemption count grew above 2");
     expect(findings).toContain("new Block exemption PageHeader");
+  });
+});
+
+describe("raw inline custom color properties", () => {
+  it.each([
+    ["style object", 'style={{ "--color-ink-primary": "var(--color-surface-base,currentColor)" }}', "property"],
+    ["computed string style key", 'style={{ [ "--color-ink-primary" ]: "var(--color-surface-base,currentColor)" }}', "property"],
+    ["computed template style key", 'style={{ [ `--color-ink-primary` ]: "var(--color-surface-base,currentColor)" }}', "property"],
+    ["escaped string style key", String.raw`style={{ "\u002d\u002dcolor-ink-primary": "var(--color-surface-base,currentColor)" }}`, "property"],
+    ["style element assignment", 'element.style["--color-ink-primary"] = "var(--color-surface-base,currentColor)";', "assignment"],
+    ["style setProperty", 'element.style.setProperty("--color-ink-primary", "var(--color-surface-base,currentColor)");', "setProperty"],
+  ])("rejects raw inline overrides through the canonical pipeline: %s", (_name, fragment, kind) => {
+    const input = realInputs();
+    const file = "src/blocks/PageHeader.tsx";
+    const source = input.sources.get(file)!;
+    expect(source).toContain("<header {...rest}");
+    input.sources.set(file, kind === "property"
+      ? source.replace("<header {...rest}", `<header {...rest} ${fragment}`)
+      : source + `\nfunction applyOverride(element: HTMLElement) { ${fragment} }`);
+    expect(conformanceFindings(input)).toEqual([`${file}: inline color ${kind} --color-ink-primary`]);
+  });
+
+  it.each([
+    ["layout style object", 'style={{ "--layout-gap": "1rem" }}', true],
+    ["computed layout style key", 'style={{ [ "--layout-gap" ]: "1rem" }}', true],
+    ["layout style assignment", 'element.style["--layout-gap"] = "1rem";', false],
+    ["layout setProperty", 'element.style.setProperty("--layout-gap", "1rem");', false],
+    ["plain color token reference", 'const reference = "--color-ink-primary";', false],
+  ])("preserves non-color custom properties and token references: %s", (_name, fragment, property) => {
+    const input = realInputs();
+    const file = "src/blocks/PageHeader.tsx";
+    const source = input.sources.get(file)!;
+    input.sources.set(file, property
+      ? source.replace("<header {...rest}", `<header {...rest} ${fragment}`)
+      : source + `\nfunction preserveLayout(element: HTMLElement) { ${fragment} }`);
+    expect(conformanceFindings(input)).toEqual([]);
   });
 });
