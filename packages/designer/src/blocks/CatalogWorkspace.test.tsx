@@ -43,6 +43,23 @@ describe("CatalogWorkspace", () => {
     expect(screen.getByRole("treeitem", { name: "Second" })).toHaveAttribute("aria-selected", "false");
     expect(preview).not.toHaveBeenCalled(); expect(inspector).not.toHaveBeenCalled();
   });
+  it("keeps the host-selected leaf visibly marked after focus moves elsewhere", async () => {
+    media(); const onSelect = vi.fn(); const result = render(<CatalogWorkspace {...base} onSelect={onSelect} />);
+    await openTree();
+    const selected = screen.getByRole("treeitem", { name: "Second" });
+    await userEvent.click(selected); expect(onSelect).toHaveBeenCalledExactlyOnceWith(second.id);
+    expect(selected).toHaveAttribute("aria-selected", "false"); expect(selected).not.toHaveClass("bg-surface-raised");
+    result.rerender(<CatalogWorkspace {...base} onSelect={onSelect} selectedId={second.id} />);
+    await userEvent.keyboard("{ArrowUp}");
+    const other = screen.getByRole("treeitem", { name: "First" }); expect(other).toHaveFocus();
+    expect(selected).not.toHaveFocus(); expect(selected).toHaveAttribute("aria-selected", "true");
+    expect(selected).toHaveClass("bg-surface-raised", "border", "border-line-base", "text-ink-primary");
+    expect(other).not.toHaveClass("bg-surface-raised");
+    expect(screen.getByRole("treeitem", { name: "Nested" })).not.toHaveClass("bg-surface-raised");
+    result.rerender(<CatalogWorkspace {...base} onSelect={onSelect} selectedId={first.id} />);
+    expect(other).toHaveFocus(); expect(other).toHaveClass("bg-surface-raised", "border-line-base");
+    expect(selected).not.toHaveClass("bg-surface-raised"); expect(selected).toHaveAttribute("aria-selected", "false");
+  });
   it("passes original selected leaf objects into both slots and follows host rerenders without remount", async () => {
     media(); const { rerender } = render(<CatalogWorkspace {...base} selectedId={second.id} />);
     expect(preview).toHaveBeenLastCalledWith(second); expect(inspector).toHaveBeenLastCalledWith(second);

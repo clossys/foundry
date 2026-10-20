@@ -28,7 +28,7 @@ function Row(props: RowProps) {
   const open = group && expanded.has(item.id);
   return <div role="none">
     <div role="none" ref={element => { register(item.id, element?.querySelector<HTMLButtonElement>("button") ?? null); }}>
-      <Button id={rowId} variant="ghost" className="w-full justify-start gap-sm text-start"
+      <Button id={rowId} variant={!group && selectedId === item.id ? "secondary" : "ghost"} className="w-full justify-start gap-sm text-start"
         aria-label={item.label} aria-describedby={descriptionId}
         render={domProps => <button {...domProps} role="treeitem" tabIndex={active === item.id ? 0 : -1}
           aria-level={level} aria-posinset={position} aria-setsize={count}
