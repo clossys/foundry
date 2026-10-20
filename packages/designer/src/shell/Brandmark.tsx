@@ -1,6 +1,6 @@
 import { cx } from "../atoms/internal/cx.js";
 import { Logomark, type LogomarkProps } from "../atoms/Logomark.js";
-import { Lockup } from "../blocks/Lockup.js";
+import { Lockup, internalLockupWithRootClass } from "../blocks/Lockup.js";
 import {
   BADGE_INSET_SHARE,
   BADGE_RADIUS_SHARE,
@@ -185,8 +185,8 @@ export function Brandmark(props: BrandmarkProps) {
 
   if (markInk !== "accent") {
     if (showWordmark) {
-      return <Lockup as={"a"} href="/" aria-label={label} src={markSrc} size={size}
-        wordmark={wordmark} plate={plate} tone={tone} className={linkClasses} />;
+      return internalLockupWithRootClass({ as: "a", href: "/", "aria-label": label, src: markSrc, size,
+        wordmark, plate, tone }, linkClasses);
     }
     return (
       <a href="/" aria-label={label} className={linkClasses}>

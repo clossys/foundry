@@ -29,8 +29,8 @@ const SIZE_VARS = {
 };
 
 /** Mark and wordmark regions in reading order, aligned on their vertical centers. */
-export function Lockup({ src, size, wordmark, tone = "auto", plate, clearSpace = false,
-  as: Root = "span", href, "aria-label": label, className, markTone, presentation, geometry }: LockupProps) {
+function LockupRoot({ src, size, wordmark, tone = "auto", plate, clearSpace = false,
+  as: Root = "span", href, "aria-label": label, className, markTone, presentation, geometry, rootClassName }: LockupProps & { rootClassName?: string }) {
   const vars = SIZE_VARS[presentation !== undefined && geometry !== undefined ? "lg" : size];
   const markHeight = presentation === "mobile" && geometry !== undefined ? "var(--ui-layout-tap-target, 44px)" : vars.height;
   const inverse = tone === "inverse";
@@ -38,7 +38,7 @@ export function Lockup({ src, size, wordmark, tone = "auto", plate, clearSpace =
     && typeof wordmark === "string" && wordmark.trim() !== "";
   if (presentation === "responsive" && geometry !== undefined) {
     return <Root href={Root === "a" ? href : undefined} aria-label={label}
-      className={cx("inline-flex items-center", inverse ? "text-ink-on-inverse" : "text-ink-primary", className)}>
+      className={rootClassName ?? cx("inline-flex items-center", inverse ? "text-ink-on-inverse" : "text-ink-primary", className)}>
       <span className="hidden desktop:block"><span className="inline-flex items-center" style={{
         ...(showWordmark ? { gap: vars.gap } : {}), ...(clearSpace ? { padding: `calc(${vars.height} * 0.2)` } : {}),
       }}>
@@ -64,11 +64,20 @@ export function Lockup({ src, size, wordmark, tone = "auto", plate, clearSpace =
     <Root
       href={Root === "a" ? href : undefined}
       aria-label={label}
-      className={cx("inline-flex items-center", inverse ? "text-ink-on-inverse" : "text-ink-primary", className)}
+      className={rootClassName ?? cx("inline-flex items-center", inverse ? "text-ink-on-inverse" : "text-ink-primary", className)}
       style={style}
     >
       {markRegion}
       {wordmarkRegion}
     </Root>
   );
+}
+
+export function Lockup(props: LockupProps) {
+  return <LockupRoot {...props} />;
+}
+
+/** @internal Shell composition only; never re-export from a package entry. */
+export function internalLockupWithRootClass(props: LockupProps, rootClassName: string) {
+  return <LockupRoot {...props} rootClassName={rootClassName} />;
 }
