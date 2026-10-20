@@ -1840,6 +1840,10 @@
     border-inline-start-style: var(--tw-border-style, solid);
     border-inline-start-width: 1px;
   }
+  .border-s-2 {
+    border-inline-start-style: var(--tw-border-style, solid);
+    border-inline-start-width: 2px;
+  }
   .border-e {
     border-inline-end-style: var(--tw-border-style, solid);
     border-inline-end-width: 1px;

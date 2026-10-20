@@ -282,7 +282,7 @@ describe("shared atom guidance", () => {
     expect(matches(find("depict.icon", "label").when, { decorative: true })).toBe(false);
     expect(find("depict.icon", "label").requires).toEqual(["label"]);
     for (const [id, prop] of [["inform.banner", "variant"], ["inform.status-mark", "tone"]]) expect(find(id, prop).enforcement).toBe("derived");
-    for (const id of ["reveal.tabs", "enter.radio-group"]) expect(guidance()[id].media.web.implementation.options.find((option: any) => option.prop === "orientation").support.state).toBe("partial");
+    for (const id of ["reveal.tabs", "enter.radio-group"]) expect(guidance()[id].media.web.implementation.options.find((option: any) => option.prop === "orientation").support.state).toBe("implemented");
     const meter = { value: 5, scaleMax: 10, tone: "neutral" as const, valueText: "5" };
     expect(() => atoms.Meter({ ...meter, direction: "min" })).not.toThrow();
     expect(() => atoms.Meter({ ...meter, previous: 2 })).toThrow(/together/);
