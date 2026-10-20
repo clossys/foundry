@@ -226,3 +226,6 @@ export type { ItemData, ItemFigureData, ItemStatusData, ItemProps, ItemBadge, It
 
 export { GroupedTable } from "./GroupedTable.js";
 export type { GroupedTableProps, GroupedTableGroup, GroupedTableColumn } from "./GroupedTable.js";
+
+export { CatalogWorkspace } from "./CatalogWorkspace.js";
+export type { CatalogWorkspaceProps, CatalogWorkspaceItem, CatalogWorkspaceSize } from "./CatalogWorkspace.js";
