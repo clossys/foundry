@@ -69,3 +69,8 @@ export type { ConstructionStatusInput } from "./constructionStatus.js";
 
 export { ContactForm } from "./ContactForm.js";
 export type { ContactFormCopy, ContactFormDevPreview, ContactFormProps, ContactFormTopic, ContactFormValues } from "./ContactForm.js";
+
+export { IndexView } from "./IndexView.js";
+export type { IndexViewCollection, IndexViewProps, IndexViewRowRoute, IndexViewTable } from "./IndexView.js";
+export { DetailsView } from "./DetailsView.js";
+export type { DetailsViewBlock, DetailsViewIndex, DetailsViewLayout, DetailsViewProps, DetailsViewRegion, DetailsViewSection, DetailsViewSectionState, DetailsViewTab } from "./DetailsView.js";

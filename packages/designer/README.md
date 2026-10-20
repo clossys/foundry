@@ -2449,6 +2449,21 @@ imports an atom — their regions are consumer-supplied slots. A block never
 reaches outside this package for data or routing — everything it needs
 comes in through props, same as an atom.
 
+### Both themes are required
+
+Every exported Block must work in light and dark. There is no per-Block
+theme-support flag. Use token-backed color utilities so the container's
+theme and ground select the colors. When a section should look dark on a
+light page, place it in a locally dark container, such as `SectionFrame`
+with `ground="inverse"`; that context belongs to the container.
+
+The Block theme-conformance test checks the real export inventory, Block
+render helpers, token values in both dark cascades and light, and registered
+contrast pairs. `Panel` and `Toolbar` have documented, foreground-free
+contrast exemptions; their source and token checks still apply, and the
+exemption list can only shrink. Caller-supplied slots own their content's
+contrast obligations.
+
 ### Slots, not a `mode`/`variant` prop
 
 Neither block below takes a `variant` or `mode` prop for structural
@@ -8240,3 +8255,24 @@ normalized to nonnegative coordinates and packed horizontally with an 80-unit
 gap. Results retain authored node order and identical inputs/options yield
 byte-identical JSON. The fixed 500-node chain fixture with 300 iterations has
 a 4,000ms test budget; this is a fixture budget, not a runtime deadline.
+
+### PageHeader in Standard entity Views
+
+Publisher's Standard `IndexView` and `DetailsView` arrange entity administration
+content inside an AppFrame content region. Both use this package's `PageHeader`
+Block for the page title and its supporting line: their public `title` maps to
+`PageHeader.title`, and their public **`subtitle` maps to `PageHeader.description`**.
+The Designer prop remains `description`. The Views own no frame chrome.
+
+IndexView composes Toolbar, DataTable (or a typed collection Block), EmptyState and
+optional Pagination. DetailsView composes the Breadcrumb and Tabs atoms with
+SectionHeader and typed DetailView, Panel, Stat, StatusList or RecordLedger
+sections. One normalized layout groups main sections before a narrow aside, or
+uses a single column in the original section order. Local section states use
+Skeleton, EmptyState and a danger Banner without replacing the page. An empty
+section list uses EmptyState; a record-wide banner slot sits under PageHeader.
+Block slots keep their existing props and controlled behavior. The host binds
+`tab` and `onTabChange` to its URL. These interactive Views use Publisher's client
+entry, render during ordinary SSR and have explicit wrong-channel stubs under
+`react-server`; importing Designer's server Blocks does not make the interactive
+Views server components. See Publisher's README for the public View contracts.
