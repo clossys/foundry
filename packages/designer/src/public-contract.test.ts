@@ -457,3 +457,23 @@ describe("compiled Tree public contract", () => {
     }
   }, 30_000);
 });
+
+
+describe("compiled pane handle edge contract", () => {
+  it("accepts both edges through the emitted atom and block declarations", () => {
+    const filename = join(packageRoot, "pane-edge-consumer.check.ts");
+    const consumer = `
+      import { type ResizeHandleProps } from ${JSON.stringify(join(packageRoot, "dist/atoms/index.js"))};
+      import { type ResizablePaneProps } from ${JSON.stringify(join(packageRoot, "dist/blocks/index.js"))};
+      const start: ResizeHandleProps["edge"] = "start";
+      const end: ResizablePaneProps["handleEdge"] = "end";
+      // @ts-expect-error Only logical pane edges are supported.
+      const invalid: ResizablePaneProps["handleEdge"] = "middle";
+    `;
+    const options = { strict: true, noEmit: true, skipLibCheck: true, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler };
+    const host = ts.createCompilerHost(options);
+    const original = host.getSourceFile.bind(host);
+    host.getSourceFile = (path, language, error, fresh) => path === filename ? ts.createSourceFile(path, consumer, language, true) : original(path, language, error, fresh);
+    expect(ts.getPreEmitDiagnostics(ts.createProgram([filename], options, host)).map(diagnostic => ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n"))).toEqual([]);
+  });
+});

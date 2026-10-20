@@ -145,3 +145,80 @@ describe("ResizablePane", () => {
     container.remove();
   });
 });
+
+describe("ResizablePane start edge", () => {
+  it("keeps default end markup and focus order identical to explicit end", () => {
+    const view = render(<ResizablePane {...props}>Content</ResizablePane>);
+    const original = view.container.innerHTML;
+    view.rerender(<ResizablePane {...props} handleEdge="end">Content</ResizablePane>);
+    expect(view.container.innerHTML).toBe(original);
+    const panel = screen.getByRole("region", { name: "Tools" });
+    const handle = screen.getByRole("separator");
+    expect(panel.querySelector('[data-panel-region="content"]')!.textContent).toContain("Content");
+    expect(handle.compareDocumentPosition(screen.getByText("Content")) & Node.DOCUMENT_POSITION_PRECEDING).not.toBe(0);
+  });
+
+  it.each(["ltr", "rtl"].flatMap(dir => ["vertical", "horizontal"].map(orientation => ({ dir, orientation }))))(
+    "places the start handle before content and reports actual $orientation size in $dir", async ({ dir, orientation }) => {
+      function Host() {
+        const [size, setSize] = useState(180);
+        return <div dir={dir}><ResizablePane {...props} orientation={orientation} handleEdge="start" value={size} onChange={setSize}>
+          <input aria-label="Inspector data" defaultValue="Retained" />
+        </ResizablePane></div>;
+      }
+      render(<Host />);
+      const panel = screen.getByRole("region", { name: "Tools" });
+      const handle = screen.getByRole("separator", { name: "Resize tools" });
+      const input = screen.getByRole("textbox");
+      expect(handle.compareDocumentPosition(input) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
+      expect(handle).toHaveAttribute("aria-controls", panel.id);
+      expect(handle).toHaveAttribute("tabindex", "0");
+      const size = () => orientation === "vertical" ? panel.style.inlineSize : panel.style.blockSize;
+      expect(size()).toBe("180px");
+      handle.focus();
+      const grow = orientation === "horizontal" ? "ArrowUp" : dir === "ltr" ? "ArrowLeft" : "ArrowRight";
+      await userEvent.keyboard(`{${grow}}`);
+      expect(size()).toBe("200px");
+      expect(handle).toHaveAttribute("aria-valuenow", "200");
+      await userEvent.keyboard("{Home}");
+      expect(size()).toBe("100px");
+      await userEvent.keyboard("{End}");
+      expect(size()).toBe("300px");
+      await userEvent.keyboard("{Enter}");
+      expect(size()).toBe("180px");
+      class TestPointerEvent extends MouseEvent {
+        pointerId: number;
+        constructor(type: string, options: PointerEventInit = {}) { super(type, options); this.pointerId = options.pointerId ?? 1; }
+      }
+      vi.stubGlobal("PointerEvent", TestPointerEvent);
+      const capture = vi.fn(), release = vi.fn();
+      Object.assign(handle, { setPointerCapture: capture, releasePointerCapture: release, hasPointerCapture: () => true });
+      const leading = orientation === "horizontal" || dir === "ltr" ? -1 : 1;
+      const coordinates = (offset: number) => orientation === "vertical" ? { clientX: 100 + offset } : { clientY: 100 + offset };
+      fireEvent.pointerDown(handle, { pointerId: 3, button: 0, ...coordinates(0) });
+      fireEvent.pointerMove(handle, { pointerId: 3, ...coordinates(leading * 40) });
+      expect(size()).toBe("220px");
+      expect(handle).toHaveAttribute("aria-valuenow", "220");
+      fireEvent.pointerMove(handle, { pointerId: 3, ...coordinates(leading * 1000) });
+      expect(size()).toBe("300px");
+      fireEvent.pointerMove(handle, { pointerId: 3, ...coordinates(-leading * 1000) });
+      expect(size()).toBe("100px");
+      fireEvent.keyDown(handle, { key: "Escape" });
+      expect(size()).toBe("180px");
+      expect(capture).toHaveBeenCalledWith(3);
+      expect(release).toHaveBeenCalledWith(3);
+      expect(input).toHaveValue("Retained");
+    },
+  );
+
+  it("does not overwrite a controlled size when the host declines a start-edge change", async () => {
+    const changed = vi.fn();
+    render(<ResizablePane {...props} handleEdge="start" value={200} onChange={changed}>Content</ResizablePane>);
+    const handle = screen.getByRole("separator");
+    handle.focus();
+    await userEvent.keyboard("{ArrowLeft}");
+    expect(changed).toHaveBeenLastCalledWith(220);
+    expect(screen.getByRole("region").style.inlineSize).toBe("200px");
+    expect(handle).toHaveAttribute("aria-valuenow", "200");
+  });
+});

@@ -7750,7 +7750,10 @@ keep a remembered width in its own state or storage. `defaultValue` remains
 the Enter reset target in both modes. `orientation="vertical"` (default) is a
 vertical separator resizing inline width; `"horizontal"` resizes block height.
 `label` names the pane and `handleLabel` names the separator; header and footer
-remain Panel regions.
+remain Panel regions. `handleEdge="end"` preserves the trailing separator;
+choose `handleEdge="start"` for a trailing inspector whose leading separator
+grows the pane when moved toward the preceding content. The separator precedes
+content in DOM order at the start edge.
 
 ```tsx
 import { ResizablePane } from "@clossys/designer/blocks";
@@ -7768,7 +7771,9 @@ export function Inspector({ width, onWidthChange }: { width: number; onWidthChan
 `ResizeHandle` is controlled with required `value`, `min`, `max`, `resetValue`,
 `label` and `onChange`. Positive `step` defaults to 1. Arrow keys adjust,
 Home/End reach the bounds, and Enter resets. Horizontal movement reverses in
-explicit or inherited RTL; vertical movement does not. Pointer capture commits
+explicit or inherited RTL; vertical movement does not. `edge="start"` reverses
+the pane-size direction at the leading edge; `edge="end"` is the default.
+Home/End still report the minimum/maximum actual pane size. Pointer capture commits
 on release; pointer cancellation, lost capture or Escape restores the drag's
 start value. Non-finite dimensions, reversed bounds, nonpositive steps and
 empty names are refused. Values and resets are clamped. Native forced-color

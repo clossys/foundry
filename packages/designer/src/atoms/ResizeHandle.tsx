@@ -11,6 +11,8 @@ export interface ResizeHandleProps extends Omit<HTMLAttributes<HTMLDivElement>, 
   onChange: (value: number) => void;
   /** A vertical separator changes inline width; a horizontal separator changes block height. @default "vertical" */
   orientation?: "vertical" | "horizontal";
+  /** Pane edge occupied by the handle; start reverses directional size growth. @default "end" */
+  edge?: "start" | "end";
   /** Positive keyboard increment, in the same units as value. @default 1 */
   step?: number;
   /** Omitted direction follows computed/inherited direction at interaction time. */
@@ -20,9 +22,10 @@ export interface ResizeHandleProps extends Omit<HTMLAttributes<HTMLDivElement>, 
 /** Focusable separator with bounded pointer/keyboard resizing; Enter resets, Escape cancels a drag. */
 export function ResizeHandle({
   value, min, max, resetValue, label, onChange,
-  orientation = "vertical", step = 1, dir, className, style, ...rest
+  orientation = "vertical", edge = "end", step = 1, dir, className, style, ...rest
 }: ResizeHandleProps) {
   const drag = useRef<{ pointer: number; coordinate: number; value: number } | null>(null);
+  if (edge !== "start" && edge !== "end") throw new TypeError("ResizeHandle: unknown pane edge.");
   if (![value, min, max, resetValue, step].every(Number.isFinite) || min > max || step <= 0 || typeof label !== "string" || !label.trim() || (orientation !== "vertical" && orientation !== "horizontal")) {
     throw new TypeError("ResizeHandle: finite ordered bounds, a positive step, a name and a supported orientation are required.");
   }
@@ -31,7 +34,8 @@ export function ResizeHandle({
   const horizontalMovement = orientation === "vertical";
   const sign = (element: HTMLElement) => {
     const inherited = getComputedStyle(element).direction || element.closest("[dir]")?.getAttribute("dir");
-    return horizontalMovement && (dir ?? inherited) === "rtl" ? -1 : 1;
+    const direction = horizontalMovement && (dir ?? inherited) === "rtl" ? -1 : 1;
+    return edge === "start" ? -direction : direction;
   };
   const coordinate = (event: PointerEvent<HTMLDivElement>) => horizontalMovement ? event.clientX : event.clientY;
   const finish = (element: HTMLDivElement, cancel: boolean) => {
