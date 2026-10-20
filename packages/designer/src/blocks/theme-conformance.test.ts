@@ -40,8 +40,18 @@ function normalizeProperty(name: string): string {
 function inlineColor(name: string, value: ts.Node | undefined): boolean {
   if (COLOR_PROPERTY.test(name)) return true;
   if (!COLOR_SHORTHAND.test(name) || !value) return false;
-  const fragments = ts.isStringLiteralLike(value) ? [value.text]
-    : ts.isTemplateExpression(value) ? [value.head.text, ...value.templateSpans.map(span => span.literal.text)] : [];
+  const fragments: string[] = [];
+  function inspectValue(node: ts.Node) {
+    if (ts.isTypeNode(node)) return;
+    if (ts.isConditionalExpression(node)) {
+      inspectValue(node.whenTrue);
+      inspectValue(node.whenFalse);
+      return;
+    }
+    if (ts.isStringLiteralLike(node) || ts.isTemplateHead(node) || ts.isTemplateMiddle(node) || ts.isTemplateTail(node)) fragments.push(node.text);
+    ts.forEachChild(node, inspectValue);
+  }
+  inspectValue(value);
   return fragments.some(fragment => /--color-[\w-]+|#[\da-f]{3,8}\b|\b(?:rgb|rgba|hsl|hsla|hwb|lab|lch|oklab|oklch|color|color-mix)\(/i.test(fragment)
     || (fragment.match(/[a-zA-Z_-][\w-]*/g) ?? []).some(namedColor));
 }
@@ -118,7 +128,7 @@ function sourceEvidence(file: string, source: string) {
         const color = colorUtility(candidate);
         if (color.token) {
           tokens.add(color.token); paintTokens.add(color.token);
-          if (/^(?:text|fill|stroke|outline|ring|border|decoration|accent|caret|placeholder)-/.test(utilityBase(candidate))) foregroundTokens.add(color.token);
+          if (/^(?:text|fill|stroke)-/.test(utilityBase(candidate))) foregroundTokens.add(color.token);
         }
         if (color.invalid) findings.push(`${file}: color utility has no token ${color.invalid}`);
       }
@@ -308,9 +318,9 @@ function conformanceFindings(input: ConformanceInputs): string[] {
       else if (!paint.has(pair.foreground)) findings.push(`${entry.exportName}: contrast foreground is not used or delegated ${id}`);
     }
     if (entry.exemptionReason?.trim()) {
-      // Shared variable modules can also export unrelated ring fallbacks.
-      // A fallback reference alone is not evidence of an authored foreground.
-      if ([...foreground].some(property => CONTRAST_PAIRS.some(pair => pair.foreground === property))) findings.push(`${entry.exportName}: stale exemption now owns or delegates a contrast foreground`);
+      // Text/fill/stroke utilities author a foreground regardless of pair membership.
+      // Surface/edge classes and unrelated variable fallbacks remain token checks.
+      if (foreground.size) findings.push(`${entry.exportName}: stale exemption now owns or delegates a contrast foreground`);
       continue;
     }
     for (const theme of themes) {
@@ -402,6 +412,63 @@ describe("Block theme conformance", () => {
       'element.style.borderWidth = "1px"; element.style.setProperty("border-width", "1px");',
       'const description = "A red border and white shadow";',
     ]) expect(sourceEvidence("Example.tsx", source).findings, source).toEqual([]);
+  });
+
+  it.each([
+    'active ? "1px solid red" : "none"',
+    'active ? "none" : "1px solid red"',
+    'active ? (ready ? "1px solid red" : "none") : "none"',
+    'active ? "none" : (ready ? "none" : "1px solid red")',
+    '(active ? "1px solid red" : "none")',
+    '(active ? "none" : "1px solid red") as string',
+    '(active ? "none" : "1px solid red") satisfies string',
+    '`${active ? "1px solid red" : "none"}`',
+    '"1px " + (active ? "solid red" : "solid currentColor")',
+  ])("rejects conditional shorthand paint: %s", expression => {
+    for (const [source, kind] of [
+      [`const style = { border: ${expression} };`, "property"],
+      [`const element = <div style={{ border: ${expression} }} />;`, "property"],
+      [`element.style.border = ${expression};`, "assignment"],
+      [`element.style["border"] = ${expression};`, "assignment"],
+      [`element.style.setProperty("border", ${expression});`, "setProperty"],
+    ]) expect(sourceEvidence("Example.tsx", source!).findings, source)
+      .toContain(`Example.tsx: inline color ${kind} border`);
+  });
+
+  it("checks conditional shadows while preserving inherited ink and identifiers", () => {
+    for (const source of [
+      'const style = { border: active ? "1px solid currentColor" : "none" };',
+      'const style = { border: (active ? "none" : "1px solid currentColor") as string };',
+      'const style = { boxShadow: active ? UI_ELEVATION_PANEL : "none" };',
+      'const style = { border: `${active ? red : width}px solid currentColor` };',
+    ]) expect(sourceEvidence("Example.tsx", source).findings, source).toEqual([]);
+    expect(sourceEvidence("Example.tsx", 'const style = { boxShadow: active ? "none" : "0 0 1px red" };').findings)
+      .toContain("Example.tsx: inline color property boxShadow");
+  });
+
+  it.each([
+    "text-line-base", "fill-line-base", "stroke-line-base",
+    "hover:text-line-base", "[&_span]:text-line-base",
+  ])("refuses a foreground-free exemption with authored foreground %s", utility => {
+    for (const name of ["Toolbar", "Panel"]) {
+      const input = realInputs();
+      const file = input.registrations.find(entry => entry.exportName === name)!.source;
+      const source = input.sources.get(file)!;
+      expect(source).toContain('className={cx("');
+      input.sources.set(file, source.replace('className={cx("', `className={cx("${utility} `));
+      expect(conformanceFindings(input), `${name}: ${utility}`)
+        .toContain(`${name}: stale exemption now owns or delegates a contrast foreground`);
+    }
+  });
+
+  it("keeps structural text and surface or edge paint foreground-free", () => {
+    for (const name of ["Toolbar", "Panel"]) {
+      const input = realInputs();
+      const file = input.registrations.find(entry => entry.exportName === name)!.source;
+      const source = input.sources.get(file)!;
+      input.sources.set(file, source.replace('className={cx("', 'className={cx("border-line-base bg-surface-base text-body-s stroke-2 '));
+      expect(conformanceFindings(input), name).toEqual([]);
+    }
   });
 
   it("rejects a hex-color mutant through the canonical pipeline", () => {
