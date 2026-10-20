@@ -62,7 +62,6 @@ function FrameContent({ brand, navigation, account, commands, children, rightPan
   const navCollapsed = navigation.collapsed ?? navigationCollapsed;
   const { openLabel = "Open panel", closeLabel = "Close panel" } = rightPanel ?? {};
   const frame = useRef<HTMLDivElement>(null);
-  const panelDrawer = useRef<HTMLDivElement>(null);
   const panelExpanding = useRef(false);
   const panelFocused = useRef(false);
   useEffect(() => {
@@ -70,7 +69,11 @@ function FrameContent({ brand, navigation, account, commands, children, rightPan
     const sync = () => {
       const active = document.activeElement;
       panelFocused.current = active !== null && frame.current?.contains(active) === true && active.closest("[data-application-frame-panel]") !== null;
-      panelExpanding.current = media.matches && active !== null && panelDrawer.current?.contains(active) === true;
+      const panelTrigger = frame.current?.querySelector('[data-application-frame-panel="trigger"]');
+      const drawerId = panelTrigger?.getAttribute("aria-controls");
+      // Resolve this trigger's dialog directly; nested modal context cannot replace its ownership.
+      const panelDrawer = drawerId ? document.getElementById(drawerId) : null;
+      panelExpanding.current = media.matches && active !== null && panelDrawer?.contains(active) === true;
       if (panelExpanding.current) { setPanelOpen(false); return; }
       setNarrow(!media.matches); setPanelOpen(false);
     };
@@ -92,7 +95,7 @@ function FrameContent({ brand, navigation, account, commands, children, rightPan
   }, [narrow]);
   const changeCollapsed = (next: boolean) => { setPanelCollapsed(next); rightPanel?.onCollapsedChange?.(next); };
   const footer = account.actor ? <AccountMenu {...account} actor={account.actor} collapsed={navCollapsed && !narrow} /> : <SignedOutMenu {...account} />;
-  const panelTrigger = rightPanel && (narrow ? <ModalContext.Provider value={{ ref: panelDrawer, style: { direction: dir } }}><Drawer wide="sheet" placement="end" dismissAt={APP_FRAME_WIDE_QUERY}
+  const panelTrigger = rightPanel && (narrow ? <ModalContext.Provider value={{ style: { direction: dir } }}><Drawer wide="sheet" placement="end" dismissAt={APP_FRAME_WIDE_QUERY}
     heading={rightPanel.label} closeLabel={closeLabel} navigationKey={navigation.navigationKey}
     isOpen={panelOpen} onOpenChange={setPanelOpen}
     trigger={<Button variant="ghost" className={CONTROL} style={TAP} aria-label={openLabel} data-application-frame-panel="trigger"><Icon glyph={Layers} decorative /><span className="sr-only tablet:not-sr-only">{openLabel}</span></Button>}>

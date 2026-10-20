@@ -3,6 +3,7 @@ import "@testing-library/jest-dom/vitest";
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { Button, Dialog } from "@clossys/designer/atoms";
 import { AppFrame } from "./AppFrame.js";
 import type { AppFrameProps } from "./app-frame-types.js";
 
@@ -269,6 +270,37 @@ describe("AppFrame composition", () => {
     const desktopControl = screen.getByRole("button", { name: "Close panel" });
     await waitFor(() => expect([main, desktopControl]).toContain(document.activeElement));
     expect(openerPresentAtHandoff).toBe(true);
+    expect(document.body).not.toHaveFocus();
+  });
+
+  it("preserves drawer focus when widening after a nested dialog closes", async () => {
+    wide.matches = false;
+    const props = fixture();
+    props.rightPanel!.children = <>
+      <Dialog trigger={<Button>Open nested dialog</Button>}>
+        {({ close }) => <><Dialog.Heading>Nested settings</Dialog.Heading><Button onPress={close}>Close nested dialog</Button></>}
+      </Dialog>
+      <button>Remaining inspector action</button>
+    </>;
+    render(<AppFrame {...props} />);
+    const opener = screen.getByRole("button", { name: "Open panel" });
+    const main = screen.getByRole("main");
+    let openerPresentAtHandoff = false;
+    main.addEventListener("focus", () => { openerPresentAtHandoff = opener.isConnected; }, { once: true });
+    await userEvent.click(opener);
+    await userEvent.click(await screen.findByRole("button", { name: "Open nested dialog" }));
+    expect(await screen.findByRole("dialog", { name: "Nested settings" })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Close nested dialog" }));
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Nested settings" })).not.toBeInTheDocument());
+    const action = screen.getByRole("button", { name: "Remaining inspector action" });
+    action.focus();
+    expect(action).toHaveFocus();
+
+    act(() => { wide.matches = true; for (const listener of wide.listeners) listener(); });
+
+    await waitFor(() => expect(main).toHaveFocus());
+    expect(openerPresentAtHandoff).toBe(true);
+    expect(screen.queryByRole("dialog", { name: "Inspector" })).not.toBeInTheDocument();
     expect(document.body).not.toHaveFocus();
   });
 
