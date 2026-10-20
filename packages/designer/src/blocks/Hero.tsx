@@ -113,7 +113,7 @@ export function Hero({
       eyebrowTone={eyebrowTone}
       measure={measure}
       headingScale={headingScale}
-      heading={heading}
+      heading={<>{heading}</>}
       description={description}
       actions={actions}
     />

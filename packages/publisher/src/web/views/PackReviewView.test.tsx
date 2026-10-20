@@ -435,6 +435,16 @@ const VOICE: PackReviewViewVoice = {
 };
 
 describe("PackReviewView record sections", () => {
+  it("retains empty and zero strings in every strategy and voice fact list", () => {
+    const entries = [{ name: "", value: "0" }, { name: "0", value: "" }];
+    const voice = { ...VOICE, rules: entries, pitch: entries, boilerplate: entries,
+      faq: entries.map(({ name, value }) => ({ question: name, answer: value })) };
+    const { container } = render(<PackReviewView {...props({ strategy: { ...STRATEGY, context: entries }, voice })} />);
+    const lists = [...container.querySelectorAll("dl")];
+    expect(lists).toHaveLength(5);
+    for (const list of lists) expect([...list.querySelectorAll("dt, dd")].map((node) => node.textContent)).toEqual(["", "0", "0", ""]);
+  });
+
   it("renders real title-less DetailViews for every strategy and voice fact list", () => {
     const { container } = render(<PackReviewView {...props({ strategy: STRATEGY, voice: VOICE })} />);
     const records = [STRATEGY.context, VOICE.rules, VOICE.pitch, VOICE.boilerplate,

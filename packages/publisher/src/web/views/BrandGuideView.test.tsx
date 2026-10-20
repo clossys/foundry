@@ -24,6 +24,18 @@ function props(over: Partial<BrandGuideViewProps> = {}): BrandGuideViewProps {
 }
 
 describe("BrandGuideView Designer facts", () => {
+  it.each([false, true])("retains empty and zero strings in fact pairs with embedded=%s", (embedded) => {
+    const entries = [{ name: "", value: "0" }, { name: "0", value: "" }];
+    const data = props({ embedded, colors: entries, type: entries, facts: entries });
+    const { container, rerender } = render(<BrandGuideView {...data} />);
+    const lists = [...container.querySelectorAll("dl")];
+    expect(lists).toHaveLength(3);
+    for (const list of lists) expect([...list.querySelectorAll("dt, dd")].map((node) => node.textContent)).toEqual(["", "0", "0", ""]);
+    rerender(<BrandGuideView {...data} colors={[]} type={[]} facts={[]} emptyLabel="" />);
+    expect(container.querySelectorAll("dl")).toHaveLength(0);
+    expect([...container.querySelectorAll("p")].filter((node) => node.textContent === "")).toHaveLength(3);
+  });
+
   it.each([false, true])("renders real title-less DetailViews with embedded=%s", (embedded) => {
     const data = props({ embedded });
     const { container } = render(<BrandGuideView {...data} />);

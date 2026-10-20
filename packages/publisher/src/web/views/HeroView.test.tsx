@@ -90,6 +90,14 @@ describe("HeroView landmarks and headings", () => {
     expect(headings[0]?.textContent).toBe("HEADING-SENTINEL");
   });
 
+  it.each([0, ""])("keeps one h1 for heading %j", (heading) => {
+    const root = dom({ ...MINIMAL, heading });
+    const headings = root.querySelectorAll("h1");
+    expect(headings).toHaveLength(1);
+    expect(headings[0]?.textContent).toBe(String(heading));
+    expect(root.querySelector("main h1")).toBe(headings[0]);
+  });
+
   it("has one banner, one main and one contentinfo landmark", () => {
     const root = dom(FULL);
     expect(root.querySelectorAll("header")).toHaveLength(1);

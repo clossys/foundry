@@ -300,6 +300,14 @@ describe("LegalView sections", () => {
 });
 
 describe("LegalView dates", () => {
+  it("retains zero-string date labels with both ordered time values", () => {
+    const zeroLabels: CopyResolver = (r) => r.id === LABELS.effectiveDate.id || r.id === LABELS.lastUpdated.id
+      ? { ...resolver(r)!, text: "0" } : resolver(r);
+    const html = render(legalDoc("terms"), { resolveCopyId: zeroLabels });
+    expect([...html.matchAll(/<dt\b[^>]*>([^<]*)<\/dt>/g)].map((match) => match[1])).toEqual(["0", "0"]);
+    expect([...html.matchAll(/<time dateTime="([^"]+)"/g)].map((match) => match[1])).toEqual(["2026-01-15", "2026-02-01"]);
+  });
+
   it("renders the real title-less DetailView with localized time values", () => {
     expect(render(legalDoc("terms"), { locale: "de" })).toContain(dateDetails("de"));
   });
