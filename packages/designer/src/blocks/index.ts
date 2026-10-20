@@ -48,6 +48,10 @@ export type { AccountMenuProps, AccountMenuActor, AccountMenuEntry, AccountMenuC
 export { EmptyState } from "./EmptyState.js";
 export type { EmptyStateProps } from "./EmptyState.js";
 
+export { parseDataTableViewModel, serializeDataTableViewModel, DataTableViewModelError } from "./data-table/view-model.js";
+export type { DataTableMessages } from "./data-table/messages.js";
+export type { DataTableViewModel, DataTableMode, DataTableDensity, DataTableSortRule } from "./data-table/view-model.js";
+
 export { DataTable } from "./DataTable.js";
 export type { DataTableProps, DataTableColumn, DataTableSelectionMode } from "./DataTable.js";
 
