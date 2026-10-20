@@ -2086,7 +2086,7 @@ export const ATOM_GUIDANCE: Readonly<Record<string, AtomGuidance>> = {
   "content": "Name the trigger and give the panel content an understandable task hierarchy.",
   "anatomy": "One contextual trigger and its anchored content panel.",
   "composition": "In a consumer-owned filter block, put several filter fields inside Popover and manage their state outside it.",
-  "accessibility": "The panel uses dialog behavior; preserve focus entry, outside dismissal and return to the trigger."
+  "accessibility": "The panel uses dialog behavior; supply aria-label for its accessible name when there is no visible title heading, and preserve focus entry, outside dismissal and return to the trigger."
 },
 {
   "exportName": "Popover",

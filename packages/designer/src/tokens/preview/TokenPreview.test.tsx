@@ -118,6 +118,39 @@ describe("exact-property TokenPreview", () => {
       expect(specimen(property).querySelector("figure")?.getAttribute("style")).toContain("background-image:repeating-conic-gradient(var(--color-surface-base, oklch(0.9702 0 0)) 0% 25%, var(--color-surface-inverse, oklch(0.2178 0 0)) 0% 50%);");
     }
   });
+  it.each([
+    ["--color-neutral-50", "--color-neutral-900"],
+    ["--color-neutral-100", "--color-neutral-900"],
+    ["--color-neutral-200", "--color-neutral-900"],
+    ["--color-neutral-300", "--color-neutral-900"],
+    ["--color-neutral-400", "--color-neutral-900"],
+    ["--color-neutral-500", "--color-neutral-900"],
+    ["--color-neutral-600", "--color-neutral-50"],
+    ["--color-neutral-700", "--color-neutral-50"],
+    ["--color-neutral-800", "--color-neutral-50"],
+    ["--color-neutral-900", "--color-neutral-50"],
+    ["--color-neutral-950", "--color-neutral-50"],
+  ])("pairs %s with theme-independent neutral foreground %s", (property, foreground) => {
+    expect(specimen(property).querySelector("figure > div")?.getAttribute("style"))
+      .toContain(`color:var(${foreground}, ${TOKENS[foreground]!.value});`);
+  });
+  it.each(["--color-accent", "--color-accent-hover"])("pairs %s with on-accent ink", property => {
+    expect(specimen(property).querySelector("figure > div, figure > button")?.getAttribute("style"))
+      .toContain(`color:var(--color-ink-on-accent, ${TOKENS["--color-ink-on-accent"]!.value});`);
+  });
+  it.each(Object.keys(TOKENS).filter(property => TOKEN_GUIDANCE[property]?.specimen === "layer"))(
+    "leaves the %s target exposed beyond the reference plate even at a lower layer", property => {
+      const plates = specimen(property).querySelectorAll<HTMLElement>("figure > div > div");
+      const reference = plates[0]!;
+      const target = plates[1]!;
+      expect(reference.style.right).toBe("24px");
+      expect(reference.style.bottom).toBe("24px");
+      expect(target.style.right).toBe("0px");
+      expect(target.style.bottom).toBe("0px");
+      expect(target.style.left).toBe("24px");
+      expect(target.style.top).toBe("24px");
+    },
+  );
   it("pairs inverse plate grounds and ink", () => {
     for (const property of ["--color-line-on-inverse", "--ui-ring-on-inverse"]) {
       const style = specimen(property).querySelector("figure")?.firstElementChild?.getAttribute("style");
