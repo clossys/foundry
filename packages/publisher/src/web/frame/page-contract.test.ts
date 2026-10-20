@@ -23,7 +23,9 @@ describe("SITE_PAGE_LAYERS", () => {
     const deferred = (id: number) => SITE_PAGE_LAYERS.find((layer) => layer.id === id)?.deferred;
     expect(deferred(4)).toContain("signature slot (defineSiteSignature)");
     expect(deferred(6)).toEqual(["pageHead"]);
-    expect(deferred(8)).toContain("frame-aware ErrorView root");
+    // The framed error and not-found documents (GlobalErrorDocument, NotFoundDocument) and the
+    // in-route StatusView inside SiteFrame cover what the frame-aware ErrorView root stood for.
+    expect(deferred(8)).toEqual(["loading state", "degraded state"]);
     expect(SITE_PAGE_LAYERS.filter((layer) => layer.implementationScope === "implemented").map((layer) => layer.id)).toEqual([4, 5, 8]);
   });
 

@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { getThemeInitScript } from "@clossys/designer/theme/server";
-import { errorCopyIds, requireCopy } from "./site-copy";
+import { errorCopyIds, requireCopy, siteFrameCopyIds } from "./site-copy";
 import { SiteCopyProvider } from "./site-copy-context";
-import { createSiteCopyResolver, loadBrandFacts, siteOrigin, siteTarget } from "./site-records";
+import { createSiteCopyResolver, loadBrandFacts, siteLocale, siteOrigin, siteTarget } from "./site-records";
 import "./globals.css";
 
 // Reads brand tokens from clossys/designer/brand.css at build time — the
@@ -26,17 +26,21 @@ export function generateMetadata(): Metadata {
 // `:root[data-brand-bound]` rules apply and Designer's unbranded badge stays
 // off. The theme init script runs before first paint and sets the theme
 // attributes on <html> itself, so React is told to expect that difference.
-// The error boundary's copy is resolved here, on the server, and provided to
-// the client boundary below.
+// `lang` is the copy registry's locale, the language every word on the page is
+// in. The error boundary's copy and its frame's brand facts are resolved here,
+// on the server, and provided to the client boundary below.
 export default function RootLayout({ children }: { children: ReactNode }) {
-  const errorCopy = requireCopy(createSiteCopyResolver(siteTarget()), errorCopyIds());
+  const errorCopy = requireCopy(createSiteCopyResolver(siteTarget()), [...errorCopyIds(), ...siteFrameCopyIds()]);
+  const { brandLabel, entity } = loadBrandFacts();
   return (
-    <html lang="en" data-brand-bound suppressHydrationWarning>
+    <html lang={siteLocale()} data-brand-bound suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: getThemeInitScript() }} />
       </head>
       <body>
-        <SiteCopyProvider copy={errorCopy}>{children}</SiteCopyProvider>
+        <SiteCopyProvider copy={errorCopy} facts={{ brandLabel, entity }}>
+          {children}
+        </SiteCopyProvider>
       </body>
     </html>
   );
