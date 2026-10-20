@@ -178,7 +178,7 @@ export function Brandmark(props: BrandmarkProps) {
       presentation={props.presentation === "responsive" ? "mobile" : props.presentation} />;
     return <a href="/" aria-label={label} className={linkClasses}>
       {props.presentation === "responsive"
-        ? <><span className="hidden desktop:block">{desktop}</span><span className="inline-flex desktop:hidden">{mobile}</span></>
+        ? <><span className="hidden desktop:block">{desktop}</span><span data-brand-mark="" className="inline-flex desktop:hidden">{mobile}</span></>
         : props.presentation === "mobile" ? mobile : desktop}
     </a>;
   }
