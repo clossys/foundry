@@ -6600,6 +6600,15 @@ shortcut is enabled by default and can be disabled with
 
 ### Theme, panel and styles
 
+The header's named `themeControl` slot contains Designer's `ThemeToggle` by
+default. Pass a React node to replace it, or `themeControl={null}` to omit the
+slot and its tab stop. The slot stays in the frame header at both viewport
+sizes, outside the navigation drawer. Header keyboard order is brand (when
+linked), command trigger, theme control, then the optional panel trigger;
+the navigation and its account footer follow in document order. A replacement
+owns its accessible name, keyboard behavior and focusable elements; use
+Designer's `ThemeToggle` or `useTheme` to share the frame's provider.
+
 The frame assembles a Designer `ThemeProvider` and the existing `ThemeToggle`,
 whose single button cycles System → Light → Dark → System. The control updates
 the document theme, so navigation, content, dialogs and the
