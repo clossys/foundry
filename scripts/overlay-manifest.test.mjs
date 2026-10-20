@@ -16,6 +16,13 @@
 //   6. Each package entry carries name, version and the tarball integrity
 //      as an SRI `sha512-<base64>` string recomputable from the tarball;
 //      a missing integrity or any other algorithm fails closed.
+//   7. A run only mutates the rolling release when its commit is the
+//      current tip of main AND is not older than the commit the published
+//      manifest names (committedAt and ancestry); a stale run is skipped
+//      with a reason, and malformed input fails closed.
+//   8. The bytes the publish job uploads are exactly the bytes the scan job
+//      scanned: the scanned sha256 of every file is checked, and an extra,
+//      missing or changed file fails closed.
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -26,11 +33,15 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 
 import {
+  OVERLAY_FILES,
   OVERLAY_PACKAGES,
+  assertScannedDigests,
   buildOverlayManifest,
   overlayChangeKey,
   overlayChanged,
+  overlayPublishDecision,
   pendingChangesetNames,
+  scannedDigests,
   treeDigest,
   validateOverlayManifest,
   verifyOverlayRelease,
@@ -356,4 +367,137 @@ test("rule 5: the CLI derives committedAt from the commit itself when not given"
   const manifest = JSON.parse(readFileSync(out, "utf8"));
   assert.equal(manifest.commit, head);
   assert.equal(manifest.committedAt, new Date(epoch * 1000).toISOString().replace(".000Z", "Z"));
+});
+
+// Rule 7 fixtures: a run's own manifest and the currently published one.
+const OLD = "b".repeat(40);
+const NEW = "c".repeat(40);
+function manifestAt(t, commit, committedAt) {
+  return buildOverlayManifest({ packedDir: packedSet(t), changesetsDir: changesetDir(t, []), commit, committedAt });
+}
+
+test("rule 7: the first publish and a newer descendant of the published commit are published", (t) => {
+  const run = manifestAt(t, NEW, "2026-10-20T13:00:00Z");
+  const first = overlayPublishDecision({ run, mainTip: NEW, published: null });
+  assert.equal(first.publish, true, first.reason);
+  const published = manifestAt(t, OLD, "2026-10-20T12:00:00Z");
+  const next = overlayPublishDecision({ run, mainTip: NEW, published, comparison: "ahead" });
+  assert.equal(next.publish, true, next.reason);
+});
+
+test("rule 7: a rerun of the commit already published, still at the tip, republishes", (t) => {
+  const run = manifestAt(t, NEW, "2026-10-20T13:00:00Z");
+  const decision = overlayPublishDecision({ run, mainTip: NEW, published: run });
+  assert.equal(decision.publish, true, decision.reason);
+});
+
+test("rule 7: a stale run whose commit is no longer the tip of main is skipped with a reason", (t) => {
+  const run = manifestAt(t, OLD, "2026-10-20T12:00:00Z");
+  for (const published of [null, run]) {
+    const decision = overlayPublishDecision({ run, mainTip: NEW, published, comparison: "identical" });
+    assert.equal(decision.publish, false);
+    assert.match(decision.reason, /not the current tip of main/);
+    assert.match(decision.reason, new RegExp(NEW));
+  }
+});
+
+test("rule 7: a run older than the published manifest is skipped, by committedAt and by ancestry", (t) => {
+  const published = manifestAt(t, NEW, "2026-10-20T13:00:00Z");
+  const earlier = manifestAt(t, OLD, "2026-10-20T12:00:00Z");
+  const byTime = overlayPublishDecision({ run: earlier, mainTip: OLD, published, comparison: "ahead" });
+  assert.equal(byTime.publish, false);
+  assert.match(byTime.reason, /committedAt .* is older than the published/);
+  const later = manifestAt(t, OLD, "2026-10-20T14:00:00Z");
+  for (const comparison of ["behind", "diverged"]) {
+    const byAncestry = overlayPublishDecision({ run: later, mainTip: OLD, published, comparison });
+    assert.equal(byAncestry.publish, false);
+    assert.match(byAncestry.reason, /not a descendant of the published/);
+  }
+});
+
+test("rule 7: malformed decision input fails closed", (t) => {
+  const run = manifestAt(t, NEW, "2026-10-20T13:00:00Z");
+  const published = manifestAt(t, OLD, "2026-10-20T12:00:00Z");
+  assert.throws(() => overlayPublishDecision({ run, mainTip: "main", published: null }), /main tip/);
+  assert.throws(() => overlayPublishDecision({ run, mainTip: NEW, published }), /comparison/);
+  assert.throws(() => overlayPublishDecision({ run, mainTip: NEW, published, comparison: "unknown" }), /comparison/);
+  const broken = structuredClone(published);
+  delete broken.committedAt;
+  assert.throws(() => overlayPublishDecision({ run, mainTip: NEW, published: broken, comparison: "ahead" }), /committedAt/);
+});
+
+test("rule 7: the CLI skips a stale run with exit 0, publish=false and the reason", (t) => {
+  const root = scratch(t);
+  const runPath = join(root, "run.json");
+  const publishedPath = join(root, "published.json");
+  writeFileSync(runPath, JSON.stringify(manifestAt(t, OLD, "2026-10-20T12:00:00Z")));
+  writeFileSync(publishedPath, JSON.stringify(manifestAt(t, NEW, "2026-10-20T13:00:00Z")));
+  const stale = spawnSync("node", [script, "decide", "--manifest", runPath, "--main-tip", NEW, "--published", publishedPath, "--comparison", "behind"], { encoding: "utf8" });
+  assert.equal(stale.status, 0, stale.stderr);
+  assert.match(stale.stdout, /^publish=false$/m);
+  assert.match(stale.stdout, /^reason=.*not the current tip of main/m);
+  const fresh = spawnSync("node", [script, "decide", "--manifest", publishedPath, "--main-tip", NEW, "--published", publishedPath], { encoding: "utf8" });
+  assert.equal(fresh.status, 0, fresh.stderr);
+  assert.match(fresh.stdout, /^publish=true$/m);
+  const bad = spawnSync("node", [script, "decide", "--manifest", runPath, "--main-tip", OLD, "--published", publishedPath, "--comparison", "sideways"], { encoding: "utf8" });
+  assert.equal(bad.status, 1);
+  assert.doesNotMatch(bad.stdout, /publish=/);
+});
+
+// Rule 8 fixture: a complete overlay directory (two tarballs + manifest).
+function overlayDir(t) {
+  const packed = packedSet(t);
+  const manifest = buildOverlayManifest({ packedDir: packed, changesetsDir: changesetDir(t, []), commit: COMMIT, committedAt: COMMITTED_AT });
+  writeFileSync(join(packed, "overlay-manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
+  return packed;
+}
+
+test("rule 8: the scanned digests cover exactly the three overlay files and match them", (t) => {
+  const dir = overlayDir(t);
+  const scanned = scannedDigests(dir);
+  assert.deepEqual(Object.keys(scanned), [...OVERLAY_FILES]);
+  for (const name of OVERLAY_FILES) assert.equal(scanned[name], sha256(readFileSync(join(dir, name))));
+  assert.doesNotThrow(() => assertScannedDigests({ dir, scanned }));
+});
+
+test("rule 8: a file changed after the scan fails closed", (t) => {
+  const dir = overlayDir(t);
+  const scanned = scannedDigests(dir);
+  for (const name of OVERLAY_FILES) {
+    const copy = join(scratch(t), name);
+    writeFileSync(copy, readFileSync(join(dir, name)));
+    writeFileSync(join(dir, name), Buffer.concat([readFileSync(copy), Buffer.from(" ")]));
+    assert.throws(() => assertScannedDigests({ dir, scanned }), new RegExp(`${name.replace(".", "\\.")}: sha256 differs from the scanned`));
+    writeFileSync(join(dir, name), readFileSync(copy));
+  }
+});
+
+test("rule 8: an extra or missing file, or an incomplete scan record, fails closed", (t) => {
+  const dir = overlayDir(t);
+  const scanned = scannedDigests(dir);
+  writeFileSync(join(dir, "extra.tgz"), "x");
+  assert.throws(() => assertScannedDigests({ dir, scanned }), /exactly/);
+  assert.throws(() => scannedDigests(dir), /exactly/);
+  rmSync(join(dir, "extra.tgz"));
+  const partial = { ...scanned };
+  delete partial["publisher.tgz"];
+  assert.throws(() => assertScannedDigests({ dir, scanned: partial }), /scan record/);
+  assert.throws(() => assertScannedDigests({ dir, scanned: { ...scanned, "other.tgz": scanned["designer.tgz"] } }), /scan record/);
+  rmSync(join(dir, "publisher.tgz"));
+  assert.throws(() => assertScannedDigests({ dir, scanned }), /exactly/);
+});
+
+test("rule 8: the CLI prints the scan record and verify --scanned refuses changed bytes", (t) => {
+  const dir = overlayDir(t);
+  const digests = spawnSync("node", [script, "digests", "--dir", dir], { encoding: "utf8" });
+  assert.equal(digests.status, 0, digests.stderr);
+  const record = digests.stdout.trim();
+  assert.deepEqual(JSON.parse(record), scannedDigests(dir));
+  const manifestPath = join(dir, "overlay-manifest.json");
+  const ok = spawnSync("node", [script, "verify", "--manifest", manifestPath, "--dir", dir, "--scanned", record], { encoding: "utf8" });
+  assert.equal(ok.status, 0, ok.stderr);
+  const forged = JSON.stringify({ ...JSON.parse(record), "designer.tgz": "0".repeat(64) });
+  const refused = spawnSync("node", [script, "verify", "--manifest", manifestPath, "--dir", dir, "--scanned", forged], { encoding: "utf8" });
+  assert.equal(refused.status, 1);
+  assert.match(refused.stderr, /designer\.tgz: sha256 differs from the scanned/);
 });

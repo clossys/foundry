@@ -5,9 +5,14 @@
 //                                            [--committed-at <iso>] [--changesets <dir>]
 //                                            [--packages-root <dir>]
 //   node scripts/overlay-manifest.mjs verify --manifest <file> --dir <dir>
+//                                            [--scanned <json>]
+//   node scripts/overlay-manifest.mjs digests --dir <dir>
+//   node scripts/overlay-manifest.mjs decide --manifest <file> --main-tip <sha>
+//                                            [--published <file>] [--comparison <status>]
 //
-// Exit 0 = built / verified. Exit 1 = fail closed (a package is missing, a
-// digest does not match, a tree is malformed). Exit 2 = usage error.
+// Exit 0 = built / verified / decided (a `decide` that skips is still 0).
+// Exit 1 = fail closed (a package is missing, a digest does not match, a
+// tree is malformed, decision input is malformed). Exit 2 = usage error.
 //
 // WHAT THIS IS FOR
 // ----------------
@@ -41,8 +46,19 @@
 // not carry them, so seeing one means the input is not what it claims to be.
 //
 // Nothing here packs. Packing is `npm pack --ignore-scripts`, done by the
-// workflow exactly as ci.yml's artifact-pack job does it, and each tarball
-// is scanned by scripts/check-artifact-safety.mjs before this runs.
+// workflow exactly as ci.yml's artifact-pack job does it.
+//
+// SCANNED BYTES AND FRESHNESS
+// ---------------------------
+// The workflow scans the exact files in a job of their own, FULL mode with
+// the identity denylist, before the publish job runs. `digests` prints the
+// sha256 of each of the three files that scan saw, and the publish job runs
+// `verify --scanned` with that record (assertScannedDigests), so what it
+// uploads is byte-for-byte what was scanned. Before it moves the tag or
+// replaces an asset, the publish job asks `decide` (overlayPublishDecision)
+// whether this run may mutate the release at all: only when its commit is
+// still the tip of main and is not older than the commit the published
+// manifest names. A rerun of an older run therefore leaves the release alone.
 
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -55,6 +71,11 @@ export const OVERLAY_PACKAGES = Object.freeze(["designer", "publisher"]);
 export const MANIFEST_KIND = "foundry-overlay-manifest";
 export const MANIFEST_SCHEMA_VERSION = 1;
 export const TREE_DIGEST_ALGORITHM = "sha256-lines-v1";
+export const MANIFEST_FILE = "overlay-manifest.json";
+/** Every file the rolling release carries, sorted by byte order. */
+export const OVERLAY_FILES = Object.freeze([...OVERLAY_PACKAGES.map((dir) => `${dir}.tgz`), MANIFEST_FILE].sort());
+// GitHub's compare API status for <published>...<run>.
+const COMPARISON_STATUSES = Object.freeze(["ahead", "behind", "diverged", "identical"]);
 
 const CHANGESET_NAME = /^[a-z0-9][a-z0-9-]*\.md$/;
 const HEX64 = /^[a-f0-9]{64}$/;
@@ -254,6 +275,82 @@ export function verifyOverlayRelease({ manifest, dir }) {
   return true;
 }
 
+// The directory must hold exactly OVERLAY_FILES, each a regular file.
+function overlayDirectoryFiles(dir) {
+  const names = readdirSync(dir).sort();
+  if (names.length !== OVERLAY_FILES.length || names.some((name, index) => name !== OVERLAY_FILES[index])) {
+    throw new Error(`overlay directory must hold exactly ${OVERLAY_FILES.join(", ")} (found: ${names.join(", ") || "nothing"})`);
+  }
+  for (const name of names) {
+    if (!lstatSync(join(dir, name)).isFile()) throw new Error(`${name}: not a regular file`);
+  }
+  return names;
+}
+
+/** The scan record: sha256 of every overlay file in <dir>, keyed by file name. */
+export function scannedDigests(dir) {
+  return Object.fromEntries(overlayDirectoryFiles(dir).map((name) => [name, sha256(readFileSync(join(dir, name)))]));
+}
+
+/**
+ * Throw unless <dir> holds exactly the overlay files and each one's sha256
+ * equals the digest the scan job recorded for it.
+ */
+export function assertScannedDigests({ dir, scanned }) {
+  if (!scanned || typeof scanned !== "object" || Array.isArray(scanned)) throw new Error("scan record is not an object");
+  const keys = Object.keys(scanned).sort();
+  if (keys.length !== OVERLAY_FILES.length || keys.some((key, index) => key !== OVERLAY_FILES[index])) {
+    throw new Error(`scan record must name exactly ${OVERLAY_FILES.join(", ")} (got: ${keys.join(", ") || "nothing"})`);
+  }
+  for (const name of OVERLAY_FILES) {
+    if (!HEX64.test(scanned[name] ?? "")) throw new Error(`scan record ${name} is not a sha256`);
+  }
+  const actual = scannedDigests(dir);
+  for (const name of OVERLAY_FILES) {
+    if (actual[name] !== scanned[name]) throw new Error(`${name}: sha256 differs from the scanned bytes (scanned ${scanned[name]}, file ${actual[name]})`);
+  }
+  return true;
+}
+
+/**
+ * May this run mutate the rolling release?
+ *
+ *   run         this run's own manifest (commit, committedAt).
+ *   mainTip     the commit main points at now.
+ *   published   the manifest the release carries now, or null when none is published.
+ *   comparison  GitHub's compare status for <published.commit>...<run.commit>;
+ *               required whenever the two commits differ.
+ *
+ * Returns { publish, reason }. Skips (publish false) when the run is not the
+ * tip of main, when its committedAt is older than the published one, or when
+ * it is not a descendant of the published commit. Throws on malformed input,
+ * so the caller fails closed rather than guessing.
+ */
+export function overlayPublishDecision({ run, mainTip, published, comparison }) {
+  validateOverlayManifest(run);
+  if (!COMMIT.test(mainTip ?? "")) throw new Error(`main tip must be a full 40-character lowercase sha (got ${JSON.stringify(mainTip)})`);
+  if (published !== null && published !== undefined) validateOverlayManifest(published);
+  if (comparison !== undefined && !COMPARISON_STATUSES.includes(comparison)) throw new Error(`comparison must be one of ${COMPARISON_STATUSES.join(", ")} (got ${JSON.stringify(comparison)})`);
+  if (run.commit !== mainTip) {
+    return { publish: false, reason: `run commit ${run.commit} is not the current tip of main (${mainTip}); the run for the newer commit owns the overlay` };
+  }
+  if (!published) return { publish: true, reason: `no overlay manifest is published yet; publishing ${run.commit}` };
+  if (published.commit === run.commit) return { publish: true, reason: `republishing ${run.commit}, the commit already published` };
+  if (comparison === undefined) throw new Error("comparison is required when the run and published commits differ");
+  if (Date.parse(run.committedAt) < Date.parse(published.committedAt)) {
+    return { publish: false, reason: `run committedAt ${run.committedAt} is older than the published ${published.committedAt} (${published.commit})` };
+  }
+  if (comparison !== "ahead") {
+    return { publish: false, reason: `run commit ${run.commit} is not a descendant of the published ${published.commit} (compare status: ${comparison})` };
+  }
+  return { publish: true, reason: `${run.commit} is the tip of main and a descendant of the published ${published.commit}` };
+}
+
+function readJsonFile(path, what) {
+  try { return JSON.parse(readFileSync(resolve(path), "utf8")); }
+  catch { throw new Error(`${what} is missing or not valid JSON`); }
+}
+
 function expectedFromPackagesRoot(packagesRoot) {
   const expected = {};
   for (const dir of OVERLAY_PACKAGES) {
@@ -306,16 +403,40 @@ function main(argv) {
     return 0;
   }
   if (command === "verify") {
-    const args = parseArgs(rest, ["--manifest", "--dir"]);
+    const args = parseArgs(rest, ["--manifest", "--dir", "--scanned"]);
     for (const flag of ["--manifest", "--dir"]) if (!args[flag]) throw new UsageError(`${flag} is required`);
-    let manifest;
-    try { manifest = JSON.parse(readFileSync(resolve(args["--manifest"]), "utf8")); }
-    catch { throw new Error("manifest is missing or not valid JSON"); }
+    const manifest = readJsonFile(args["--manifest"], "manifest");
+    if (args["--scanned"] !== undefined) {
+      let scanned;
+      try { scanned = JSON.parse(args["--scanned"]); }
+      catch { throw new Error("scan record is not valid JSON"); }
+      assertScannedDigests({ dir: resolve(args["--dir"]), scanned });
+    }
     verifyOverlayRelease({ manifest, dir: resolve(args["--dir"]) });
-    console.log(`overlay-manifest: verified ${OVERLAY_PACKAGES.join(", ")} against commit ${manifest.commit}`);
+    console.log(`overlay-manifest: verified ${OVERLAY_PACKAGES.join(", ")} against commit ${manifest.commit}${args["--scanned"] !== undefined ? " and the scanned digests" : ""}`);
     return 0;
   }
-  throw new UsageError("usage: overlay-manifest.mjs build|verify ...");
+  if (command === "digests") {
+    const args = parseArgs(rest, ["--dir"]);
+    if (!args["--dir"]) throw new UsageError("--dir is required");
+    console.log(JSON.stringify(scannedDigests(resolve(args["--dir"]))));
+    return 0;
+  }
+  if (command === "decide") {
+    const args = parseArgs(rest, ["--manifest", "--main-tip", "--published", "--comparison"]);
+    for (const flag of ["--manifest", "--main-tip"]) if (!args[flag]) throw new UsageError(`${flag} is required`);
+    const decision = overlayPublishDecision({
+      run: readJsonFile(args["--manifest"], "run manifest"),
+      mainTip: args["--main-tip"],
+      published: args["--published"] === undefined ? null : readJsonFile(args["--published"], "published manifest"),
+      comparison: args["--comparison"],
+    });
+    // Two GITHUB_OUTPUT-shaped lines; the reason never holds a newline.
+    console.log(`publish=${decision.publish}`);
+    console.log(`reason=${decision.reason}`);
+    return 0;
+  }
+  throw new UsageError("usage: overlay-manifest.mjs build|verify|digests|decide ...");
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

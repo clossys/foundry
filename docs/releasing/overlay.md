@@ -24,11 +24,40 @@ replaces the release's assets with exactly three files:
 
 The tag moves to the merged commit on each run. An older run still in
 progress when a newer merge lands is cancelled, so only the newest `main`
-is ever published. Each tarball is scanned with
-`scripts/check-artifact-safety.mjs` before upload. That scan runs without
-the identity denylist, because the workflow holds no secret. The full scan
-with the denylist runs on tarballs built the same way from the same tree in
-CI's required `artifact safety (tarball)` check, before a change can merge.
+is ever published.
+
+### Scanned before upload
+
+The workflow runs in three jobs. `pack` installs, builds and packs with a
+read-only token and no secret. `scan` installs and builds nothing: it
+records the sha256 of all three files, then scans each tarball with
+`scripts/check-artifact-safety.mjs --require-denylist --sha256 <recorded>`
+and the manifest with `scripts/check-public-safety.mjs --require-denylist`.
+Both run in FULL mode, with the identity denylist taken from the same
+repository secret CI's required `artifact safety (tarball)` check uses.
+Without that secret the run fails; it never falls back to a partial scan.
+The denylist is never printed and is removed when the job ends.
+
+`publish` holds the write token and never sees the denylist. It uploads
+nothing unless every file it downloaded has exactly the sha256 the scan job
+recorded (`overlay-manifest.mjs verify --scanned`, which also refuses an
+extra or missing file).
+
+### Never moved backwards
+
+Before `publish` moves the tag or touches any asset, `overlay-manifest.mjs
+decide` checks two things:
+
+- this run's commit is still the tip of `main`, and
+- when a manifest is already published, this run's `committedAt` is not
+  older than the published one and its commit is a descendant of the
+  published commit (GitHub's compare status is `ahead`).
+
+If either fails, the run changes nothing, ends successfully and records the
+reason as a notice. Re-running an old workflow run therefore cannot put an
+older `main` back on the release. Re-running the run for the current tip
+uploads the same commit again. If any of the inputs cannot be read, the
+step fails and nothing is changed.
 
 ## Manifest
 
@@ -124,6 +153,10 @@ to pin and check the bytes you downloaded.
   version.
 - Older builds are not kept. The release always holds only the newest
   `main`.
+- Re-running an old run while a newer one is in progress cancels the newer
+  one (the two share a concurrency group). The old run then changes
+  nothing, so the overlay stays at its previous commit until the next merge
+  or until the newer run is re-run.
 - The manifest records what was built. It is not a qualification record
   and does not stand in for the release path in
   [`docs/RELEASING.md`](../RELEASING.md).
