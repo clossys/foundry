@@ -85,6 +85,6 @@ it("normalizes footer configuration without losing inherited header presentation
 });
 
 it("preserves independent explicit header overrides while inheriting footer-only settings", () => {
-  expect(normalizeSiteFrameConfig({ headerPlacement: "overlay", headerTone: "inverse" }, { headerGround: "inverse" })).toMatchObject({ headerPlacement: "overlay", headerTone: "inverse", headerGround: "base" });
+  expect(normalizeSiteFrameConfig({ headerPlacement: "overlay", headerTone: "inverse" }, { headerGround: "inverse", headerPlacement: "reserved" })).toMatchObject({ headerPlacement: "overlay", headerTone: "inverse", headerGround: "base" });
   expect(normalizeSiteFrameConfig({ headerPlacement: "reserved" }, { headerPlacement: "overlay", headerTone: "inverse" })).toMatchObject({ headerPlacement: "reserved", headerTone: "base" });
 });

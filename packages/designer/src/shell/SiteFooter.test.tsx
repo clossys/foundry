@@ -138,11 +138,15 @@ describe("SiteFooter measured geometry", () => {
         const client = socket;
         await new Promise<void>((resolve, reject) => { client.onopen = () => resolve(); client.onerror = reject; });
         let id = 0;
-        const pending = new Map<number, (response: any) => void>();
-        client.onmessage = event => { const response = JSON.parse(String(event.data)); pending.get(response.id)?.(response); pending.delete(response.id); };
+        let pending: { id: number; resolve(response: any): void } | undefined;
+        client.onmessage = event => {
+          const response = JSON.parse(String(event.data));
+          const request = pending;
+          if (request && response.id === request.id) { pending = undefined; request.resolve(response); }
+        };
         const command = (method: string, params = {}, sessionId?: string): Promise<any> => new Promise((resolve, reject) => {
           const request = ++id;
-          pending.set(request, response => response.error ? reject(new Error(response.error.message)) : resolve(response.result));
+          pending = { id: request, resolve: response => response.error ? reject(new Error(response.error.message)) : resolve(response.result) };
           client.send(JSON.stringify({ id: request, method, params, sessionId }));
         });
         const { targetId } = await command("Target.createTarget", { url: "about:blank" });
