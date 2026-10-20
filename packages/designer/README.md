@@ -5102,18 +5102,29 @@ taking no height in the document: transparent at the top of the page, then a
 glass plate once the page scrolls beneath it. The glass is
 `--color-surface-glass` (or `--color-surface-glass-inverse`) behind a
 `--blur-glass` backdrop blur, over a hairline in the matching line role.
+The shipped blur is 20px. Glass alpha is measured separately for each theme
+and polarity against both white and black backdrops: light-theme base/inverse
+use 0.60/0.85, dark-theme base/inverse use 0.86/0.60. These are the lowest
+hundredth steps at or above the 0.60 floor that retain at least 0.10 contrast-ratio
+margin over AA with the shipped ink, scoring both blend models. Brands must
+rerun the unchanged contrast gate when changing those tokens.
 
 - `tone` (`"base"` by default, or `"inverse"`) sets the header's inherited
   ink (`ink-primary` or `ink-on-inverse`) and the matching glass, so the ink
-  stays the same as the header turns to glass. Tones are theme-relative, like
+  follows the matching plate as the header turns to glass. Tones are theme-relative, like
   the tokens: `base` is dark ink on a light ground only in the light theme.
   In `"overlay"`, `ground` is not read.
 - `tone` governs inherited ink only. A child that sets its own ink keeps it:
   `Link` in every variant (`standalone` is `ink-primary`, `default` is
-  `ink-link`, `muted` is `ink-muted`), `Brandmark` (`ink-primary`) and
+  `ink-link`, `muted` is `ink-muted`), an explicitly toned `Brandmark` and
   `SiteHeader.ActionLink`'s `ghost` look (`ink-primary` with no plate). With
   `tone="inverse"` those read dark on dark glass. `ActionLink`'s `primary`
   and `secondary` looks carry their own fill, so they read on either tone.
+  An unconfigured header Brandmark inherits the live header ink for its
+  wordmark while retaining the accent logomark and `markInk="image"` opt-out.
+  Publisher's automatic SiteFrame additionally follows declared physical
+  grounds and the page/OS theme through its existing client island; its own
+  ghost controls inherit that ink and use opaque matching hover plates.
 - The contrast gate checks only the tone's own ink on the glass:
   `ink-primary` on `surface-glass` and `ink-on-inverse` on
   `surface-glass-inverse`. A child whose ink is exactly that token (with
@@ -5126,8 +5137,7 @@ glass plate once the page scrolls beneath it. The glass is
 - Focus indicators inside the header take the tone's ink instead of
   `--color-accent`: the `--ui-ring-focus` ring (`Link`, `Button`) and the
   colour of every `:focus-visible` outline (`ActionLink`). Accent does not
-  reach the 3:1 non-text floor on the glass (dark theme, base glass over a
-  white backdrop: 1.55:1), and the gate checks the ring in the tone's ink
+  reach the 3:1 non-text floor on every glass/backdrop combination, and the gate checks the ring in the tone's ink
   on each glass at 3:1.
 - `menuOpen` holds the glass at any scroll position while a menu belonging to
   the header is open (`data-menu-open`). A descendant with

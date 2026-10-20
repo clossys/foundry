@@ -35,7 +35,7 @@ function output(element: ReactElement, mode: "server" | "client"): HTMLElement {
 afterEach(cleanup);
 
 const defaults = {
-  reserved: base,
+  reserved: { ...base, header: { placement: "reserved" } },
   inverse: { ...base, header: { placement: "overlay", tone: "inverse" } },
   "overlay-footer": { ...base, header: { placement: "overlay", tone: "inverse" }, footer: { placement: "overlay", ground: "inverse", legal } },
 } satisfies Record<string, SiteShellInput>;
@@ -70,7 +70,7 @@ for (const mode of ["server", "client"] as const) {
       expect(output(frame(shell), mode).querySelector('header a[aria-label="Example home"]')).toHaveClass("text-ink-on-inverse", "focus-visible:outline-ink-on-inverse");
       const auto = { ...defaults.inverse, brand: { ...variantBrand, tone: "auto" } } as SiteShellInput;
       expect(output(frame(auto), mode).querySelector('header a[aria-label="Example home"]')).toHaveClass("text-ink-primary", "focus-visible:outline-accent");
-      expect(output(frame({ ...defaults.inverse, brand: variantBrand } as SiteShellInput), mode).querySelector('header a[aria-label="Example home"]')).toHaveClass("text-ink-on-inverse");
+      expect(output(frame({ ...defaults.inverse, brand: variantBrand } as SiteShellInput), mode).querySelector('header a[aria-label="Example home"]')).toHaveClass("text-inherit");
     }
   });
 

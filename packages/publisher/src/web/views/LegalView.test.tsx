@@ -656,15 +656,18 @@ if (mode === "framed") describe("LegalView header slots owned by SiteFrame", () 
     }
     expect(header.indexOf("SECONDARY-ACTION-SENTINEL")).toBeLessThan(header.indexOf("HEADER-ACTION-SENTINEL"));
   });
-  it("renders the same header and footer as a bare SiteHeader and SiteFooter when every slot is omitted", () => {
-    const html = renderToStaticMarkup(frame(content, <span>FOOTER-SENTINEL</span>));
+  it("renders the same header and footer as bare chrome with an explicit reserved header", () => {
+    const html = renderToStaticMarkup(frame(content, <span>FOOTER-SENTINEL</span>, { header: { placement: "reserved" } }));
     expect(banner(html)).toBe(banner(renderToStaticMarkup(<SiteHeader brand={mark} />)));
     expect(footer(html)).toBe(renderToStaticMarkup(<SiteFooter secondary={<SiteFooter.Legal entity="FOOTER-SENTINEL" links={[]} home={{ label: "Placeholder label effective", href: "/", markSrc: "/placeholder.svg" }} />} />).replace(/^<link[^>]+>/, ""));
   });
-  it("passes ground to both the header and the footer", () => {
-    const html = renderToStaticMarkup(frame(content, undefined, { ground: "transparent" }));
+  it("passes ground to both an explicit reserved header and the footer", () => {
+    const html = renderToStaticMarkup(frame(content, undefined, { ground: "transparent", header: { placement: "reserved" } }));
     expect(banner(html)).toBe(banner(renderToStaticMarkup(<SiteHeader ground="transparent" brand={mark} />)));
     expect(footer(html)).toBe(renderToStaticMarkup(<SiteFooter ground="transparent" secondary={<SiteFooter.Legal entity="Placeholder footer entity" links={[]} home={{ label: "Placeholder label effective", href: "/", markSrc: "/placeholder.svg" }} />} />).replace(/^<link[^>]+>/, ""));
+  });
+  it("uses an overlay header when the framed path omits header placement", () => {
+    expect(banner(renderToStaticMarkup(frame(content)))).toContain('data-placement="overlay"');
   });
   it("preserves the current header and footer bytes with all chrome slots", () => {
     const old = renderToStaticMarkup(frame(content, <span>FOOTER-SENTINEL</span>, chrome));
