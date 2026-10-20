@@ -125,7 +125,7 @@ for (const mode of ["server", "client"] as const) {
     const footer = root.querySelector("footer")!;
     expect(footer).toHaveClass("border-t", "border-line-base");
     expect(footer).not.toHaveClass("bg-surface-base", "bg-surface-inverse");
-    expect([...footer.querySelectorAll("a")].map(a => a.textContent)).toEqual(["Privacy", "Terms"]);
+    expect([...footer.querySelectorAll("a")].map(a => a.getAttribute("aria-label") ?? a.textContent)).toEqual(["Privacy", "Terms", "Example home"]);
     expect(footer.querySelector(".border-t")).toBeNull();
     expect(root.querySelector("[data-frame-footer-overlay]")).toBeNull();
   });

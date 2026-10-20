@@ -369,9 +369,7 @@ describe("PackReviewView", () => {
       "<span class=\"inline-flex items-center rounded-pill px-sm py-xs text-caption font-body tracking-meta bg-status-warning-tint text-status-warning-text\">Marker delegated</span></p><div class=\"flex gap-lg\">" +
       "<iframe src=\"/contact?preview=idle\" title=\"Marker frame /contact idle 390\" width=\"390\" height=\"640\" loading=\"lazy\" class=\"shrink-0 border border-line-base\">" +
       "</iframe></div></div></div></section></main>" +
-      "<footer class=\"bg-surface-raised text-ink-primary py-lg border-t border-line-base\" style=\"position:relative;z-index:var(--ui-z-shell, 20);border-top-width:var(--ui-border-hairline, 1px)\">" +
-      "<div class=\"mx-auto flex w-full flex-col gap-lg\" style=\"padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))\">" +
-      "</div></footer></div>",
+      "<footer data-footer-root=\"\" class=\"site-footer-dark bg-surface-raised text-ink-primary py-lg border-t border-line-base\" style=\"position:relative;z-index:var(--ui-z-shell, 20);border-top-width:var(--ui-border-hairline, 1px)\"><div class=\"mx-auto flex w-full flex-col gap-lg\" style=\"padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))\"></div></footer></div>",
     );
   });
 });
@@ -407,7 +405,7 @@ describe("PackReviewView header slots", () => {
   it("passes ground to both the header and the footer", () => {
     const html = renderToStaticMarkup(<PackReviewView {...props({ ground: "transparent" })} />);
     expect(html).toMatch(/^<div class="flex min-h-dvh flex-col"><header data-header-root="" class="py-sm site-header-contract" /);
-    expect(html).toMatch(/<footer class="text-ink-primary py-lg" /);
+    expect(html).toMatch(/<footer data-footer-root="" class="site-footer-dark text-ink-primary py-lg" /);
   });
 });
 
