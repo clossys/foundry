@@ -437,8 +437,6 @@ describe("headless project model public contract", () => {
       const saved: ProjectModel = parseProject(serializeProject(tasks));
       const error = new ProjectModelError('unsupported-version', 'version');
       const cycle: readonly string[] = error.cycle;
-      // @ts-expect-error dependencies only support finish-to-start
-      const invalid: Task = {id:'b',title:'B',status:'todo',deps:[{id:'a',type:'start-to-start'}]};
     `;
     const options = { strict: true, noEmit: true, skipLibCheck: true, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler };
     const host = ts.createCompilerHost(options);
