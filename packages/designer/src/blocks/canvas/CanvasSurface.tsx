@@ -93,7 +93,9 @@ export function CanvasSurface({
   const map = minimapModel(worldBounds, viewport, size);
   // Also validates padding before a user invokes fit.
   if (!Number.isFinite(fitPadding) || fitPadding < 0) throw new RangeError("Canvas padding must be finite and nonnegative.");
-  if (viewSize || measured) fitTo(worldBounds, size, fitPadding);
+  // Measured containers may collapse; retain one CSS pixel of fit area. Explicit sizes remain strict.
+  const effectiveFitPadding = viewSize ? fitPadding : Math.min(fitPadding, Math.max(0, (Math.min(size.width, size.height) - 1) / 2));
+  if (viewSize || measured) fitTo(worldBounds, size, effectiveFitPadding);
   const roving = items.some(item => item.id === focused) ? focused : items[0]?.id ?? null;
   const selectedIds = new Set(selection);
 
@@ -176,7 +178,7 @@ export function CanvasSurface({
 
   const requestFit = () => {
     setFitting(!reducedMotion);
-    const fitted = fitTo(worldBounds, size, fitPadding);
+    const fitted = fitTo(worldBounds, size, effectiveFitPadding);
     const zoom = Math.min(maxZoom, Math.max(minZoom, fitted.zoom));
     onViewportChange({ x: size.width / 2 - (worldBounds.x + worldBounds.width / 2) * zoom,
       y: size.height / 2 - (worldBounds.y + worldBounds.height / 2) * zoom, zoom });

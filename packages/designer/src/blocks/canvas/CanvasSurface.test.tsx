@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef } from "react";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CanvasSurface, type CanvasSurfaceProps } from "./CanvasSurface.js";
@@ -282,5 +283,80 @@ describe("canvas surface controls and motion", () => {
     const { surface, world } = setup(); fireEvent.keyDown(surface, { key: "Home" });
     expect(world).not.toHaveClass("transition-transform");
     expect(document.getElementById(surface.getAttribute("aria-describedby")!)).toHaveTextContent(/arrow.*focus/i);
+  });
+});
+
+
+describe("canvas measured fit padding", () => {
+  const bounds = Object.freeze({ x: 10, y: 20, width: 10, height: 8 });
+  const props = (): CanvasSurfaceProps => ({
+    "aria-label": "Measured workspace", viewport: initial, selection: Object.freeze([]),
+    onViewportChange: vi.fn(), onSelectionChange: vi.fn(), items: [], worldBounds: bounds,
+    fitPadding: 20, zoomControls: true,
+  });
+  function measured(initialSize: { width: number; height: number }) {
+    let dimensions = initialSize;
+    let notify = () => {};
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(() => ({
+      ...dimensions, x: 0, y: 0, left: 0, top: 0, right: dimensions.width, bottom: dimensions.height, toJSON() {},
+    }));
+    vi.stubGlobal("ResizeObserver", class { constructor(callback: () => void) { notify = callback; } observe() {} disconnect() {} });
+    const supplied = props(); const result = render(<CanvasSurface {...supplied} />);
+    const surface = screen.getByRole("region", { name: supplied["aria-label"] });
+    return { ...result, supplied, surface, resize: (next: { width: number; height: number }) => { dimensions = next; act(() => notify()); } };
+  }
+
+  it.each([
+    [{ width: 0, height: 0 }, { width: 1, height: 1 }, 0],
+    [{ width: 1, height: 1 }, { width: 1, height: 1 }, 0],
+    [{ width: 1, height: 300 }, { width: 1, height: 300 }, 0],
+    [{ width: 3, height: 5 }, { width: 3, height: 5 }, 1],
+  ])("fits a zero or tiny measured container without losing the fit action: %j", (measurement, size, padding) => {
+    const { supplied, surface, container } = measured(measurement);
+    expect(supplied.onViewportChange).not.toHaveBeenCalled();
+    fireEvent.keyDown(surface, { key: "Home" });
+    expect(supplied.onViewportChange).toHaveBeenLastCalledWith(fitTo(bounds, size, padding));
+    fireEvent.click(screen.getByRole("button", { name: "Fit canvas" }));
+    expect(supplied.onViewportChange).toHaveBeenCalledTimes(2);
+    expect(supplied.onViewportChange).toHaveBeenLastCalledWith(fitTo(bounds, size, padding));
+    expect(container.querySelector<HTMLElement>("[data-canvas-world]")!.style.transform).toBe("translate(0px, 0px) scale(1)");
+  });
+
+  it("uses the safe fallback padding for a real Home event before measurement effects", () => {
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({ width: 80, height: 60, left: 0, top: 0 } as DOMRect);
+    const supplied = props();
+    function FitOnLayout() {
+      const host = useRef<HTMLDivElement>(null);
+      useLayoutEffect(() => { fireEvent.keyDown(host.current!.querySelector('[role="region"]')!, { key: "Home" }); }, []);
+      return <div ref={host}><CanvasSurface {...supplied} /></div>;
+    }
+    render(<FitOnLayout />);
+    expect(supplied.onViewportChange).toHaveBeenCalledExactlyOnceWith(fitTo(bounds, { width: 1, height: 1 }, 0));
+  });
+
+  it("recomputes measured padding through shrink and grow without changing the requested padding or fitting automatically", () => {
+    const { supplied, surface, resize } = measured({ width: 80, height: 60 });
+    fireEvent.keyDown(surface, { key: "Home" });
+    expect(supplied.onViewportChange).toHaveBeenLastCalledWith(fitTo(bounds, { width: 80, height: 60 }, 20));
+    resize({ width: 5, height: 3 }); expect(supplied.onViewportChange).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole("button", { name: "Fit canvas" }));
+    expect(supplied.onViewportChange).toHaveBeenLastCalledWith(fitTo(bounds, { width: 5, height: 3 }, 1));
+    resize({ width: 80, height: 60 }); expect(supplied.onViewportChange).toHaveBeenCalledTimes(2);
+    fireEvent.keyDown(surface, { key: "Home" });
+    expect(supplied.onViewportChange).toHaveBeenLastCalledWith(fitTo(bounds, { width: 80, height: 60 }, 20));
+    expect(supplied.fitPadding).toBe(20);
+  });
+
+  it.each([{ width: 1, height: 1 }, { width: 40, height: 40 }, { width: 20, height: 200 }])("keeps explicitly supplied insufficient viewSize strict: %j", viewSize => {
+    expect(() => render(<CanvasSurface {...props()} viewSize={viewSize} />)).toThrow("Canvas padding must leave a positive view area.");
+  });
+  it.each([-1, NaN, Infinity])("keeps invalid requested padding strict before measured clamping: %s", fitPadding => {
+    expect(() => render(<CanvasSurface {...props()} fitPadding={fitPadding} />)).toThrow("Canvas padding must be finite and nonnegative.");
+  });
+  it("keeps valid explicit viewSize and requested fit padding unchanged", () => {
+    const supplied = props(); const size = { width: 100, height: 80 };
+    render(<CanvasSurface {...supplied} viewSize={size} />);
+    fireEvent.click(screen.getByRole("button", { name: "Fit canvas" }));
+    expect(supplied.onViewportChange).toHaveBeenCalledExactlyOnceWith(fitTo(bounds, size, 20));
   });
 });
