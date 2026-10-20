@@ -1,8 +1,8 @@
-import { useLayoutEffect, useRef } from "react";
+import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CanvasSurface, type CanvasSurfaceProps } from "./CanvasSurface.js";
-import { fitTo, toWorld, type CanvasItem } from "./models.js";
+import { fitTo, toWorld, zoomAt, type CanvasItem } from "./models.js";
 
 const items: readonly CanvasItem[] = [
   { id: "a", label: "Alpha", rect: { x: 0, y: 0, width: 20, height: 20 } },
@@ -358,5 +358,149 @@ describe("canvas measured fit padding", () => {
     render(<CanvasSurface {...supplied} viewSize={size} />);
     fireEvent.click(screen.getByRole("button", { name: "Fit canvas" }));
     expect(supplied.onViewportChange).toHaveBeenCalledExactlyOnceWith(fitTo(bounds, size, 20));
+  });
+});
+
+// Native browser scrolling is measured separately in Chromium; these cases
+// exercise the synchronous handler and controlled request contract in jsdom.
+describe("canvas wheel intent and focus visibility", () => {
+  const frozen = Object.freeze({ x: 0, y: 0, zoom: 1 });
+  const nearFar: readonly CanvasItem[] = [
+    { id: "near", label: "Near", rect: { x: 20, y: 20, width: 20, height: 20 } },
+    { id: "far", label: "Far", rect: { x: 1200, y: 900, width: 20, height: 20 } },
+  ];
+  const factor = Math.exp(0.2);
+  const wheel = (surface: HTMLElement, point = { x: 100, y: 100 }, deltaY = -100, deltaMode = 0) => {
+    const event = new WheelEvent("wheel", { bubbles: true, cancelable: true, clientX: 40 + surface.clientLeft + point.x,
+      clientY: 30 + surface.clientTop + point.y, deltaY, deltaMode });
+    surface.dispatchEvent(event); return event;
+  };
+  const expectViewport = (actual: ReturnType<typeof zoomAt>, expected: ReturnType<typeof zoomAt>) => {
+    expect(actual.x).toBeCloseTo(expected.x, 10); expect(actual.y).toBeCloseTo(expected.y, 10); expect(actual.zoom).toBeCloseTo(expected.zoom, 10);
+  };
+
+  it("accumulates native wheel intent before a host commit without painting an optimistic viewport or minimap", () => {
+    const { surface, props, world } = setup({ viewport: frozen, minimap: true });
+    const map = surface.querySelector("[data-canvas-minimap] span")!.getAttribute("style");
+    let events: WheelEvent[] = [];
+    act(() => { events = [wheel(surface), wheel(surface, { x: 150, y: 90 })]; });
+    expect(events.every(event => event.defaultPrevented)).toBe(true);
+    expect(props.onViewportChange).toHaveBeenCalledTimes(2);
+    const first = zoomAt(frozen, { x: 100, y: 100 }, factor);
+    expectViewport(vi.mocked(props.onViewportChange).mock.calls[0]![0], first);
+    expectViewport(vi.mocked(props.onViewportChange).mock.calls[1]![0], zoomAt(first, { x: 150, y: 90 }, factor));
+    expect(world.style.transform).toBe("translate(0px, 0px) scale(1)");
+    expect(surface.querySelector("[data-canvas-minimap] span")!.getAttribute("style")).toBe(map);
+  });
+
+  it("accumulates a burst in a real accepting controlled host", () => {
+    const changed = vi.fn();
+    function Host() {
+      const [viewport, setViewport] = useState(frozen);
+      const onChange = useCallback((next: typeof frozen) => { changed(next); setViewport(next); }, []);
+      return <CanvasSurface aria-label="Accepting canvas" viewport={viewport} onViewportChange={onChange} selection={[]}
+        onSelectionChange={() => {}} worldBounds={worldBounds} viewSize={viewSize} items={items} />;
+    }
+    const { container } = render(<Host />); const surface = screen.getByRole("region", { name: "Accepting canvas" });
+    vi.spyOn(surface, "getBoundingClientRect").mockReturnValue({ left: 40, top: 30, width: 800, height: 600 } as DOMRect);
+    act(() => { wheel(surface); wheel(surface); });
+    const expected = zoomAt(zoomAt(frozen, { x: 100, y: 100 }, factor), { x: 100, y: 100 }, factor);
+    expect(changed).toHaveBeenCalledTimes(2); expectViewport(changed.mock.calls[1]![0], expected);
+    expect(container.querySelector<HTMLElement>("[data-canvas-world]")!.style.transform).toBe(`translate(${expected.x}px, ${expected.y}px) scale(${expected.zoom})`);
+  });
+
+  it.each(["accepted", "clamped", "rejected with same frozen object", "external reset"])("reconciles pending wheel intent on authoritative host commit: %s", kind => {
+    const result = setup({ viewport: frozen }); const { surface, props } = result;
+    act(() => { wheel(surface); wheel(surface); });
+    const accepted = vi.mocked(props.onViewportChange).mock.calls[1]![0];
+    const authoritative = kind === "accepted" ? accepted : kind === "clamped" ? { x: -10, y: -20, zoom: 1.1 }
+      : kind === "rejected with same frozen object" ? frozen : { x: 240, y: 80, zoom: 0.5 };
+    // Identical viewport object and callback still constitute an authoritative commit.
+    result.rerender(<CanvasSurface {...props} viewport={authoritative} />);
+    vi.mocked(props.onViewportChange).mockClear(); act(() => { wheel(surface); });
+    expectViewport(vi.mocked(props.onViewportChange).mock.calls[0]![0], zoomAt(authoritative, { x: 100, y: 100 }, factor));
+  });
+
+  it.each(["zoom", "fit", "minimap", "pan"])("discards pending wheel intent for a non-wheel viewport operation: %s", operation => {
+    const { surface, props } = setup({ viewport: frozen, minimap: true });
+    act(() => { wheel(surface); });
+    if (operation === "zoom") fireEvent.keyDown(surface, { key: "+" });
+    else if (operation === "fit") fireEvent.keyDown(surface, { key: "Home" });
+    else if (operation === "minimap") fireEvent.click(screen.getByRole("button", { name: "Recenter canvas" }));
+    else { pointer(surface, "down", 5, 5); pointer(surface, "move", 25, 10); pointer(surface, "up", 25, 10); }
+    vi.mocked(props.onViewportChange).mockClear(); act(() => { wheel(surface); });
+    expectViewport(vi.mocked(props.onViewportChange).mock.calls[0]![0], zoomAt(frozen, { x: 100, y: 100 }, factor));
+  });
+
+  it.each(["secondary button", "nested control"])("preserves wheel intent through an ignored pointer press: %s", kind => {
+    const { surface, props } = setup({ viewport: frozen, minimap: true });
+    act(() => { wheel(surface); });
+    fireEvent.pointerDown(kind === "nested control" ? screen.getByRole("button", { name: "Recenter canvas" }) : surface,
+      { pointerId: 17, pointerType: "mouse", button: kind === "secondary button" ? 2 : 0 });
+    act(() => { wheel(surface); });
+    expectViewport(vi.mocked(props.onViewportChange).mock.calls[1]![0], zoomAt(zoomAt(frozen, { x: 100, y: 100 }, factor), { x: 100, y: 100 }, factor));
+  });
+
+  it("keeps wheel normalization, anchors and zoom limits while accumulating", () => {
+    const { surface, props } = setup({ viewport: frozen, maxZoom: 2 });
+    act(() => { wheel(surface, { x: 70, y: 80 }, -2, 1); wheel(surface, { x: 70, y: 80 }, -1, 2); });
+    const first = zoomAt(frozen, { x: 70, y: 80 }, Math.exp(0.064));
+    expectViewport(vi.mocked(props.onViewportChange).mock.calls[0]![0], first);
+    expectViewport(vi.mocked(props.onViewportChange).mock.calls[1]![0], zoomAt(first, { x: 70, y: 80 }, 2 / first.zoom));
+  });
+
+  it("discards wheel intent and listeners on teardown", () => {
+    const result = setup({ viewport: frozen }); const old = result.surface;
+    act(() => { wheel(old); }); result.unmount(); vi.mocked(result.props.onViewportChange).mockClear();
+    act(() => { wheel(old); }); expect(result.props.onViewportChange).not.toHaveBeenCalled();
+    const next = setup({ viewport: frozen }); act(() => { wheel(next.surface); });
+    expectViewport(vi.mocked(next.props.onViewportChange).mock.calls[0]![0], zoomAt(frozen, { x: 100, y: 100 }, factor));
+  });
+
+  it("requests minimal focus reveal once at unchanged zoom and selection, with no optimistic paint", () => {
+    const result = setup({ viewport: frozen, items: nearFar, selection: Object.freeze(["near"]) });
+    const near = screen.getByRole("button", { name: "Near" }), far = screen.getByRole("button", { name: "Far" });
+    act(() => near.focus()); expect(result.props.onViewportChange).not.toHaveBeenCalled();
+    fireEvent.keyDown(near, { key: "ArrowRight" });
+    expect(far).toHaveFocus(); expect(far).toHaveAttribute("tabindex", "0");
+    expect(result.props.onViewportChange).toHaveBeenCalledExactlyOnceWith({ x: -422, y: -322, zoom: 1 });
+    expect(result.props.onSelectionChange).not.toHaveBeenCalled(); expect(result.world.style.transform).toBe("translate(0px, 0px) scale(1)");
+    act(() => far.focus()); expect(result.props.onViewportChange).toHaveBeenCalledTimes(1);
+    result.rerender(<CanvasSurface {...result.props} viewport={{ x: -422, y: -322, zoom: 1 }} />);
+    expect(screen.getByRole("button", { name: "Far" })).toBe(far); expect(far).toHaveFocus();
+    expect(result.world.style.transform).toBe("translate(-422px, -322px) scale(1)");
+    expect(result.props.onViewportChange).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps visible item focus free of viewport callbacks", () => {
+    const { props } = setup({ viewport: frozen, items: [nearFar[0]!, { ...nearFar[1]!, rect: { x: 100, y: 100, width: 20, height: 20 } }] });
+    const near = screen.getByRole("button", { name: "Near" }); act(() => near.focus()); fireEvent.keyDown(near, { key: "ArrowRight" });
+    expect(screen.getByRole("button", { name: "Far" })).toHaveFocus();
+    expect(props.onViewportChange).not.toHaveBeenCalled();
+  });
+
+  it("reveals both axes in world-to-screen coordinates without changing zoom", () => {
+    const { props } = setup({ viewport: { x: 40, y: -20, zoom: 0.5 }, items: [{ id: "far", label: "Far", rect: { x: 2000, y: 1600, width: 100, height: 100 } }] });
+    act(() => screen.getByRole("button", { name: "Far" }).focus());
+    expect(props.onViewportChange).toHaveBeenCalledExactlyOnceWith({ x: -252, y: -252, zoom: 0.5 });
+  });
+
+  it.each([{ width: 80, height: 60, inset: 2 }, { width: 1, height: 1, inset: 0 }])("aligns oversized focus to a stable bounded leading edge: %j", dimensions => {
+    const item = { id: "far", label: "Far", rect: { x: 100, y: 200, width: 500, height: 400 } };
+    const { inset, ...view } = dimensions; const result = setup({ viewport: frozen, viewSize: view, items: [item] });
+    const far = screen.getByRole("button", { name: "Far" }); act(() => far.focus());
+    const requested = { x: inset - 100, y: inset - 200, zoom: 1 };
+    expect(result.props.onViewportChange).toHaveBeenCalledExactlyOnceWith(requested);
+    result.rerender(<CanvasSurface {...result.props} viewport={requested} />);
+    const outside = document.createElement("button"); result.container.appendChild(outside);
+    act(() => outside.focus()); act(() => far.focus()); expect(result.props.onViewportChange).toHaveBeenCalledTimes(1);
+  });
+
+  it("neutralizes native container scrolling synchronously without commandeering nested scroll or changing viewport", () => {
+    const { surface, props, world } = setup({ viewport: frozen });
+    surface.scrollLeft = 37; surface.scrollTop = 19; fireEvent.scroll(surface);
+    expect(surface.scrollLeft).toBe(0); expect(surface.scrollTop).toBe(0);
+    const nested = document.createElement("div"); world.appendChild(nested); nested.scrollLeft = 11; fireEvent.scroll(nested);
+    expect(nested.scrollLeft).toBe(11); expect(props.onViewportChange).not.toHaveBeenCalled();
   });
 });

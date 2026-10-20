@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent, type ReactNode } from "react";
 import { Button } from "../../atoms/Button.js";
 import { cx } from "../../atoms/internal/cx.js";
 import { UI_BORDER_HAIRLINE } from "../../atoms/internal/ui-vars.js";
@@ -61,14 +61,15 @@ const midpoint = (a: CanvasPoint, b: CanvasPoint): CanvasPoint => ({ x: (a.x + b
 const rectangle = (a: CanvasPoint, b: CanvasPoint): CanvasRect => ({ x: Math.min(a.x, b.x), y: Math.min(a.y, b.y), width: Math.abs(b.x - a.x), height: Math.abs(b.y - a.y) });
 
 /** A controlled viewport and selection, with real DOM item focus and disposable transient gestures. */
-export function CanvasSurface({
+export function CanvasSurface(props: CanvasSurfaceProps) {
+  const {
   "aria-label": label, viewport, onViewportChange, selection, onSelectionChange, worldBounds, items,
   children, renderItem, viewSize, minimap = false, zoomControls = false,
   minZoom = 0.1, maxZoom = 8, fitPadding = 0, className, style,
   instructionText = "Arrow keys move item focus. Shift and arrows extend selection. Plus and minus zoom; zero or Home fits. Escape clears selection. Drag empty space or hold Space to pan; Shift and drag selects.",
   recenterLabel = "Recenter canvas", zoomGroupLabel = "Canvas zoom", zoomOutLabel = "Zoom out",
   zoomPercentageLabel = "Canvas zoom percentage", zoomInLabel = "Zoom in", fitLabel = "Fit canvas",
-}: CanvasSurfaceProps) {
+} = props;
   if (!label.trim()) throw new TypeError("CanvasSurface requires an accessible label.");
   validateCanvasItems(items);
   // Validate limits and viewport even when a gesture has not yet happened.
@@ -98,6 +99,37 @@ export function CanvasSurface({
   if (viewSize || measured) fitTo(worldBounds, size, effectiveFitPadding);
   const roving = items.some(item => item.id === focused) ? focused : items[0]?.id ?? null;
   const selectedIds = new Set(selection);
+  const pendingWheel = useRef<Viewport | null>(null);
+  const wheelState = useRef({ viewport, minZoom, maxZoom, onViewportChange, height: size.height });
+  // The whole props object marks an authoritative host commit, including a rejection
+  // that supplies the same viewport and callback. Internal focus/gesture state keeps its intent.
+  useLayoutEffect(() => {
+    wheelState.current = { viewport, minZoom, maxZoom, onViewportChange, height: size.height };
+    pendingWheel.current = null;
+  }, [props, size.width, size.height]);
+  const requestViewport = (next: Viewport) => {
+    pendingWheel.current = null;
+    onViewportChange(next);
+  };
+  const neutralizeScroll = () => {
+    const node = surfaceRef.current;
+    if (node?.scrollLeft) node.scrollLeft = 0;
+    if (node?.scrollTop) node.scrollTop = 0;
+  };
+  const focusItem = (item: CanvasItem) => {
+    neutralizeScroll();
+    setFocused(item.id);
+    const reveal = (start: number, length: number, extent: number) => {
+      // Preserve the existing two-pixel focus outline while retaining a pixel in tiny views.
+      const inset = Math.min(2, Math.max(0, (extent - 1) / 2));
+      if (length > extent - inset * 2 || start < inset) return inset - start;
+      return Math.min(0, extent - inset - start - length);
+    };
+    const dx = reveal(item.rect.x * viewport.zoom + viewport.x, item.rect.width * viewport.zoom, size.width);
+    const dy = reveal(item.rect.y * viewport.zoom + viewport.y, item.rect.height * viewport.zoom, size.height);
+    pendingWheel.current = null;
+    if (dx || dy) { setFitting(false); requestViewport({ x: viewport.x + dx, y: viewport.y + dy, zoom: viewport.zoom }); }
+  };
 
   const release = useCallback((pointerId: number) => {
     if (!captured.current.delete(pointerId)) return;
@@ -109,7 +141,7 @@ export function CanvasSurface({
   const reset = useCallback(() => {
     for (const pointerId of captured.current) release(pointerId);
     captureOwner.current = null;
-    pointers.current.clear(); drag.current = null; pinch.current = null;
+    pointers.current.clear(); drag.current = null; pinch.current = null; pendingWheel.current = null;
   }, [release]);
   const cancel = useCallback(() => { reset(); setMarquee(null); }, [reset]);
 
@@ -167,24 +199,29 @@ export function CanvasSurface({
       const bounds = node.getBoundingClientRect();
       const point = { x: event.clientX - bounds.left - node.clientLeft, y: event.clientY - bounds.top - node.clientTop };
       // Normalize line/page wheels; cap extreme deltas to keep every factor finite.
-      const units = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? size.height : 1;
+      const state = wheelState.current;
+      const base = pendingWheel.current ?? state.viewport;
+      const units = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? state.height : 1;
       const factor = Math.exp(-Math.max(-1000, Math.min(1000, event.deltaY * units)) * 0.002);
-      const zoom = Math.min(maxZoom, Math.max(minZoom, viewport.zoom * factor));
-      onViewportChange(zoomAt(viewport, point, zoom / viewport.zoom));
+      const zoom = Math.min(state.maxZoom, Math.max(state.minZoom, base.zoom * factor));
+      const next = zoomAt(base, point, zoom / base.zoom);
+      // Store before notifying: a synchronous host commit may accept, clamp, or reject it.
+      pendingWheel.current = next;
+      state.onViewportChange(next);
     };
     node.addEventListener("wheel", wheel, { passive: false });
     return () => node.removeEventListener("wheel", wheel);
-  }, [viewport, minZoom, maxZoom, onViewportChange, size.height]);
+  }, []);
 
   const requestFit = () => {
     setFitting(!reducedMotion);
     const fitted = fitTo(worldBounds, size, effectiveFitPadding);
     const zoom = Math.min(maxZoom, Math.max(minZoom, fitted.zoom));
-    onViewportChange({ x: size.width / 2 - (worldBounds.x + worldBounds.width / 2) * zoom,
+    requestViewport({ x: size.width / 2 - (worldBounds.x + worldBounds.width / 2) * zoom,
       y: size.height / 2 - (worldBounds.y + worldBounds.height / 2) * zoom, zoom });
   };
   const requestZoom = (factor: number) => {
-    setFitting(false); onViewportChange(boundedZoom(viewport, { x: size.width / 2, y: size.height / 2 }, factor));
+    setFitting(false); requestViewport(boundedZoom(viewport, { x: size.width / 2, y: size.height / 2 }, factor));
   };
   const keydown = (event: KeyboardEvent<HTMLDivElement>) => {
     const target = event.target as Element;
@@ -219,6 +256,7 @@ export function CanvasSurface({
     const onItem = !!target.closest("[data-canvas-item]");
     if (onItem && !space.current && event.pointerType !== "touch") return;
     if (pointers.current.size >= 2) return;
+    pendingWheel.current = null;
     if (!onItem) surfaceRef.current?.focus({ preventScroll: true });
     const point = local({ x: event.clientX, y: event.clientY });
     pointers.current.set(event.pointerId, point);
@@ -248,14 +286,14 @@ export function CanvasSurface({
       if (zooming.distance === 0) { pinch.current = { ...zooming, center: midpoint(a, b), distance: distance(a, b) }; return; }
       const center = midpoint(a, b), factor = Math.max(Number.EPSILON, distance(a, b)) / zooming.distance;
       const scaled = boundedZoom(zooming.viewport, zooming.center, factor);
-      onViewportChange(panBy(scaled, { x: center.x - zooming.center.x, y: center.y - zooming.center.y }));
+      requestViewport(panBy(scaled, { x: center.x - zooming.center.x, y: center.y - zooming.center.y }));
       return;
     }
     const gesture = drag.current;
     if (!gesture || gesture.pointerId !== event.pointerId) return;
     gesture.last = point;
     if (distance(point, gesture.start) > 3) { suppressClick.current = true; capture(event.pointerId); }
-    if (gesture.kind === "pan") onViewportChange(panBy(gesture.viewport, { x: point.x - gesture.start.x, y: point.y - gesture.start.y }));
+    if (gesture.kind === "pan") requestViewport(panBy(gesture.viewport, { x: point.x - gesture.start.x, y: point.y - gesture.start.y }));
     else setMarquee(rectangle(gesture.start, point));
   };
   const pointerend = (event: PointerEvent<HTMLDivElement>, commit: boolean) => {
@@ -270,6 +308,7 @@ export function CanvasSurface({
   };
 
   return <div ref={surfaceRef} role="region" aria-label={label} aria-describedby={instructionId}
+    onScroll={event => { if (event.target === event.currentTarget) neutralizeScroll(); }}
     tabIndex={items.length ? -1 : 0} onKeyDown={keydown} onPointerDown={pointerdown} onPointerMove={pointermove}
     onPointerUp={event => pointerend(event, true)} onPointerCancel={event => pointerend(event, false)}
     onLostPointerCapture={event => { if (event.target === event.currentTarget && captured.current.has(event.pointerId)) cancel(); }}
@@ -290,7 +329,7 @@ export function CanvasSurface({
       {items.map(item => <button key={item.id} type="button" data-canvas-item={item.id} aria-label={item.label}
         aria-pressed={selectedIds.has(item.id)} tabIndex={item.id === roving ? 0 : -1}
         ref={node => { if (node) itemRefs.current.set(item.id, node); else itemRefs.current.delete(item.id); }}
-        onFocus={() => setFocused(item.id)} onClick={event => {
+        onFocus={() => focusItem(item)} onClick={event => {
           if (space.current) return;
           event.currentTarget.focus({ preventScroll: true });
           if (event.shiftKey) onSelectionChange(selectRange(items.map(value => value.id), anchor.current ?? item.id, item.id));
@@ -314,7 +353,7 @@ export function CanvasSurface({
         const x = event.detail && bounds.width ? unit((event.clientX - bounds.left) / bounds.width) : 0.5;
         const y = event.detail && bounds.height ? unit((event.clientY - bounds.top) / bounds.height) : 0.5;
         setFitting(false);
-        onViewportChange({ x: size.width / 2 - (worldBounds.x + worldBounds.width * x) * viewport.zoom,
+        requestViewport({ x: size.width / 2 - (worldBounds.x + worldBounds.width * x) * viewport.zoom,
           y: size.height / 2 - (worldBounds.y + worldBounds.height * y) * viewport.zoom, zoom: viewport.zoom });
       }}>
       <span aria-hidden="true" className="pointer-events-none absolute border border-accent bg-accent-tint"
