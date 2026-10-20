@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import { TOKENS } from "../tokens/tokens.js";
 import { StatusMark } from "../atoms/StatusMark.js";
 import { cx } from "../atoms/internal/cx.js";
 import { UI_BORDER_HAIRLINE, UI_BORDER_RULE } from "../atoms/internal/ui-vars.js";
@@ -12,7 +11,7 @@ const ROW_CLASSES = "grid min-w-0 ledger-row-grid items-start gap-x-lg text-body
 
 /** Ledger-only inverse label ink. StatusMark's glyph and global defaults stay intact. */
 export function LedgerStatus({ status, ground, className }: { status: LedgerRowData["status"]; ground: SectionGround; className?: string }) {
-  return status ? <StatusMark tone={status.tone} className={className} style={ground === "inverse" ? { color: `var(--color-ink-on-inverse, ${TOKENS["--color-ink-on-inverse"]!.value})` } : undefined}>{status.label}</StatusMark> : null;
+  return status ? <StatusMark tone={status.tone} className={className}><span className={ground === "inverse" ? "text-ink-on-inverse" : undefined}>{status.label}</span></StatusMark> : null;
 }
 
 /** Shared static rows for the record and tile. The mobile cap only applies below tablet. */
