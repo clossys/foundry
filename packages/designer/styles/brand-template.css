@@ -174,7 +174,7 @@
 
   /* ─── BLUR (1 required — the backdrop blur behind the two glass
    * plates in SURFACE above, the overlay SiteHeader's scrolled state.
-   * Theme invariant, so it stays in this light block; 16px is the
+   * Theme invariant, so it stays in this light block; 20px is the
    * shipped value) ──────────────────────────────────────────────── */
   --blur-glass:                    ;
 

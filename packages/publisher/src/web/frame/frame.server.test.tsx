@@ -131,7 +131,8 @@ it("renders disclosure, ActionLinks and independent footer ground without browse
   expect(html).toContain('aria-label="Profiles"');
   expect(html).toContain('aria-expanded="false"');
   expect(html).toContain('>Help</button>');
-  expect(html).toMatch(/<header[^>]*bg-surface-raised/);
+  expect(html).toMatch(/<header[^>]*data-placement="overlay"/);
+  expect(html).toContain("site-header-overlay");
   expect(html).toMatch(/<footer[^>]*bg-surface-inverse/);
   expect(html).toMatch(/<a href="\/contact"[^>]*rounded-control/);
 });

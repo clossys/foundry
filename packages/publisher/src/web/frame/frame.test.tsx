@@ -8,11 +8,12 @@ import ts from "typescript";
 import type { ReactElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { act, cleanup, fireEvent, render, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { CopyRef, CopyResolution, CopyResolver } from "@clossys/writer";
 import type { IconNode } from "@clossys/designer/atoms/server";
 import { CONTRAST_PAIRS, contrastRatio, parseBrandDeclarations } from "@clossys/designer/tokens";
+import { ThemeProvider, ThemeToggle } from "@clossys/designer/theme";
 import { AuthView } from "../views/AuthView.js";
 import { BoundaryView } from "../views/BoundaryView.js";
 import { CaptureView } from "../views/CaptureView.js";
@@ -599,8 +600,8 @@ describe("siteShellFor", () => {
     expect(container.querySelector("footer h2, footer .grid, [data-consent-banner], [data-consent-presentation=card], [role=dialog]")).toBeNull();
   });
 
-  it("preserves default site bytes and its same-host brand link", () => {
-    const config: SiteFrameConfig = { brand: CONFIG.brand, skipLink: CONFIG.skipLink, origin: CONFIG.origin, legal: CONFIG.legal };
+  it("preserves explicitly reserved site bytes and its same-host brand link", () => {
+    const config: SiteFrameConfig = { brand: CONFIG.brand, skipLink: CONFIG.skipLink, origin: CONFIG.origin, legal: CONFIG.legal, site: { header: { placement: "reserved" } } };
     const html = renderToStaticMarkup(frame(siteShellFor(config, "site"), <p>content</p>));
     expect(createHash("sha256").update(html).digest("hex")).toBe("aaaaf379ffb58fb3ea4a66f2375212f7ef0624ad5602cf6e870f417582ce74a9");
     const { container } = render(frame(siteShellFor(config, "site"), <p>content</p>));
@@ -960,10 +961,13 @@ describe("frame header placement", () => {
     expect(container.querySelector("header")).not.toHaveAttribute("data-placement");
   });
 
-  it("defaults reserved header ground to the shell ground", () => {
+  it("defaults to overlay and retains shell ground for explicit reserved chrome", () => {
     const omitted = renderToStaticMarkup(frame({ ...FRONT_DOOR_SHELL, ground: "inverse" }, <p>content</p>));
     expect(renderToStaticMarkup(frame({ ...FRONT_DOOR_SHELL, ground: "inverse", header: {} }, <p>content</p>))).toBe(omitted);
-    expect(renderToStaticMarkup(frame({ ...FRONT_DOOR_SHELL, ground: "inverse", header: { placement: "reserved" } }, <p>content</p>))).toBe(omitted);
+    expect(omitted).toMatch(/<header[^>]*data-placement="overlay"/);
+    const reserved = renderToStaticMarkup(frame({ ...FRONT_DOOR_SHELL, ground: "inverse", header: { placement: "reserved" } }, <p>content</p>));
+    expect(reserved).toMatch(/<header[^>]*bg-surface-inverse/);
+    expect(reserved).not.toMatch(/<header[^>]*data-placement="overlay"/);
   });
 
   it.each([
@@ -977,7 +981,7 @@ describe("frame header placement", () => {
     [{ placement: "reserved", tone: "inverse" }, /shell\.header\.tone/],
     [{ placement: "reserved", tone: "PAYLOAD-SENTINEL" }, /shell\.header\.tone/],
     [{ placement: "reserved", tone: undefined }, /shell\.header\.tone/],
-    [{ tone: "base" }, /shell\.header\.tone/],
+    [{ placement: "reserved", tone: "base" }, /shell\.header\.tone/],
     [null, /shell\.header must be a plain object/],
     [[], /shell\.header must be a plain object/],
     ["PAYLOAD-SENTINEL", /shell\.header must be a plain object/],
@@ -1013,11 +1017,10 @@ describe("frame header placement", () => {
 });
 
 
-it("an omitted header uses the same mandatory defaults as an explicit reserved header", () => {
-  const shell = siteShellFor(CONFIG, "site");
-  expect(renderToStaticMarkup(frame(shell, <p>content</p>))).toBe(renderToStaticMarkup(frame({ ...shell, header: { placement: "reserved", ground: "base" } }, <p>content</p>)));
-  const { container } = render(frame(shell, <p>content</p>));
-  expect(container.querySelector("header")).toHaveClass("site-header-contract");
+it("an omitted header uses the same automatic overlay defaults as an empty header", () => {
+  expect(renderToStaticMarkup(frame(FRONT_DOOR_SHELL, <p>content</p>))).toBe(renderToStaticMarkup(frame({ ...FRONT_DOOR_SHELL, header: {} }, <p>content</p>)));
+  const { container } = render(frame(FRONT_DOOR_SHELL, <p>content</p>));
+  expect(container.querySelector("header")).toHaveClass("site-header-overlay", "site-header-ground-aware");
   expect(container.querySelector("main")).toHaveAttribute("tabindex", "-1");
   expect(container.querySelectorAll("main,header,footer")).toHaveLength(3);
 });
@@ -1056,12 +1059,12 @@ describe("SiteFrame chrome parity", () => {
     }
   });
   it("paints an inverse footer independently of a base header", () => {
-    const { container } = render(frame({ ...FRONT_DOOR_SHELL, ground: "base", footer: { ...FRONT_DOOR_SHELL.footer!, ground: "inverse" } } as SiteShellInput, <p>content</p>));
+    const { container } = render(frame({ ...FRONT_DOOR_SHELL, ground: "base", header: { placement: "reserved" }, footer: { ...FRONT_DOOR_SHELL.footer!, ground: "inverse" } } as SiteShellInput, <p>content</p>));
     expect(container.querySelector("header")).toHaveClass("bg-surface-raised");
     expect(container.querySelector("footer")).toHaveClass("bg-surface-inverse");
   });
   it("defaults footer ground to shell ground even with a different reserved header ground", () => {
-    const { container } = render(frame({ ...FRONT_DOOR_SHELL, ground: "inverse", header: { ground: "base" } }, <p>content</p>));
+    const { container } = render(frame({ ...FRONT_DOOR_SHELL, ground: "inverse", header: { placement: "reserved", ground: "base" } }, <p>content</p>));
     expect(container.querySelector("header")).toHaveClass("bg-surface-raised");
     expect(container.querySelector("footer")).toHaveClass("bg-surface-inverse");
   });
@@ -1169,7 +1172,8 @@ it("HEADER-1 renders flat presentation settings through the shared normalizer", 
   expect(container.querySelector("main")).toHaveAttribute("tabindex", "-1");
   expect(container.firstElementChild).toHaveClass("min-h-dvh", "flex-col");
   expect(container.querySelector("main")).toHaveClass("flex-1");
-  expect(() => renderToStaticMarkup(<SiteFrame {...props} presentation={{ headerTone: "inverse" }}><p>Content</p></SiteFrame>)).toThrow(/config/);
+  expect(() => renderToStaticMarkup(<SiteFrame {...props} presentation={{ headerPlacement: "reserved", headerTone: "inverse" }}><p>Content</p></SiteFrame>)).toThrow(/config/);
+  expect(renderToStaticMarkup(<SiteFrame {...props} presentation={{ headerTone: "inverse" }}><p>Content</p></SiteFrame>)).toContain('data-placement="overlay"');
 });
 
 
@@ -1306,4 +1310,184 @@ it.each(["light", "dark"] as const)("keeps inverse environment-only links readab
       view.unmount();
     }
   }
+});
+
+describe("SiteFrame automatic ground glass", () => {
+  const bare: SiteShellInput = { brand: CONFIG.brand, skipLink: CONFIG.skipLink };
+  const overlay = { ...bare, header: { placement: "overlay", tone: "base" } } as const;
+
+  async function scene(run: (controls: { visible: (ground: string) => void; darkOS: () => void }) => void | Promise<void>) {
+    const theme = document.documentElement.getAttribute("data-theme");
+    const scheme = document.documentElement.style.colorScheme;
+    let visible = "dark", osDark = false;
+    const mediaListeners = new Set<() => void>();
+    document.documentElement.setAttribute("data-theme", "light");
+    window.localStorage.removeItem("glass-2275-theme");
+    vi.stubGlobal("matchMedia", (query: string) => ({
+      media: query,
+      get matches() { return query === "(prefers-color-scheme: dark)" && osDark; },
+      addEventListener: (_event: string, listener: () => void) => { mediaListeners.add(listener); },
+      removeEventListener: (_event: string, listener: () => void) => { mediaListeners.delete(listener); },
+    }));
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function (this: HTMLElement) {
+      if (this.tagName === "HEADER") return new DOMRect(0, 0, 1280, 64);
+      const ground = this.getAttribute("data-ground") ?? this.getAttribute("data-landing-ground");
+      return ground === null ? new DOMRect() : new DOMRect(0, ground === visible || visible === "*" ? -100 : 1000, 1280, 1000);
+    });
+    try {
+      await run({ visible: ground => { visible = ground; }, darkOS: () => { osDark = true; mediaListeners.forEach(listener => listener()); } });
+    } finally {
+      cleanup();
+      vi.restoreAllMocks();
+      vi.unstubAllGlobals();
+      if (theme === null) document.documentElement.removeAttribute("data-theme");
+      else document.documentElement.setAttribute("data-theme", theme);
+      document.documentElement.style.colorScheme = scheme;
+      window.localStorage.removeItem("glass-2275-theme");
+    }
+  }
+
+  it.each(SITE_SURFACE_KINDS)("starts %s headers in the CSS overlay without JavaScript", kind => {
+    const html = renderToStaticMarkup(frame(siteShellFor(CONFIG, kind), <h1>View</h1>));
+    expect(html).toMatch(/<header[^>]*data-placement="overlay"/);
+    expect(html).toContain("site-header-overlay");
+    expect(html).toContain("site-header-ground-aware");
+    expect(html).not.toMatch(/<header[^>]*bg-surface-raised/);
+  });
+
+  it.each([
+    ["light", "dark", "inverse"], ["dark", "dark", "base"],
+    ["light", "light", "base"], ["dark", "light", "inverse"],
+  ] as const)("matches physical %s-theme / %s-ground ink to its glass", (theme, ground, tone) => scene(({ visible }) => {
+    document.documentElement.setAttribute("data-theme", theme);
+    visible(ground);
+    const { container } = render(frame(overlay, <section data-ground={ground}><h1>View</h1></section>));
+    const header = container.querySelector("header")!;
+    expect(header).toHaveAttribute("data-tone", tone);
+    expect(within(header).getByRole("link", { name: "Example home" })).toHaveClass("text-inherit");
+  }));
+
+  it.each(["base", "inverse"] as const)("recognizes the shipped %s landing ground", ground => scene(({ visible }) => {
+    visible(ground);
+    const { container } = render(frame(overlay, <section data-landing-ground={ground}><h1>View</h1></section>));
+    expect(container.querySelector("header")).toHaveAttribute("data-tone", ground);
+  }));
+
+  it("uses page-theme ink when no ground is declared, rather than retaining the SSR hint", () => scene(() => {
+    const { container } = render(frame({ ...bare, header: { placement: "overlay", tone: "inverse" } }, <h1>View</h1>));
+    expect(container.querySelector("header")).toHaveAttribute("data-tone", "base");
+  }));
+
+  it("follows the real theme toggle through light, dark and system", () => scene(async () => {
+    const user = userEvent.setup();
+    const { container } = render(<ThemeProvider storageKey="glass-2275-theme" defaultPreference="light">
+      {frame(overlay, <section data-ground="dark"><h1>View</h1><ThemeToggle /></section>)}
+    </ThemeProvider>);
+    const header = container.querySelector("header")!;
+    expect(header).toHaveAttribute("data-tone", "inverse");
+    await user.click(within(container).getByRole("button", { name: /^Theme: Light/ }));
+    await waitFor(() => expect(header).toHaveAttribute("data-tone", "base"));
+    expect(document.documentElement).toHaveAttribute("data-theme", "dark");
+    await user.click(within(container).getByRole("button", { name: /^Theme: Dark/ }));
+    await waitFor(() => expect(header).toHaveAttribute("data-tone", "inverse"));
+    expect(document.documentElement).not.toHaveAttribute("data-theme");
+  }));
+
+  it("tracks the OS register when the page follows system", () => scene(async ({ darkOS }) => {
+    document.documentElement.removeAttribute("data-theme");
+    const { container } = render(frame(overlay, <section data-ground="dark"><h1>View</h1></section>));
+    const header = container.querySelector("header")!;
+    expect(header).toHaveAttribute("data-tone", "inverse");
+    act(darkOS);
+    await waitFor(() => expect(header).toHaveAttribute("data-tone", "base"));
+  }));
+
+  it("changes tone as sections pass the header and restores it on return", () => scene(async ({ visible }) => {
+    const { container } = render(frame(overlay, <><section data-ground="dark"><h1>View</h1></section><section data-ground="light"><h2>Details</h2></section></>));
+    const header = container.querySelector("header")!;
+    expect(header).toHaveAttribute("data-tone", "inverse");
+    visible("light"); fireEvent.scroll(window);
+    await waitFor(() => expect(header).toHaveAttribute("data-tone", "base"));
+    visible("dark"); fireEvent.scroll(window);
+    await waitFor(() => expect(header).toHaveAttribute("data-tone", "inverse"));
+  }));
+
+  it("leaves explicit reserved chrome outside ground observation", () => scene(() => {
+    const { container } = render(frame({ ...bare, header: { placement: "reserved", ground: "inverse" } }, <section data-ground="light"><h1>View</h1></section>));
+    const header = container.querySelector("header")!;
+    expect(header).not.toHaveAttribute("data-placement");
+    expect(header).not.toHaveAttribute("data-tone");
+    expect(header).not.toHaveClass("site-header-ground-aware");
+    expect(header).toHaveClass("bg-surface-inverse");
+  }));
+
+  it("uses the innermost declared ground and ignores declarations outside this frame", () => scene(({ visible }) => {
+    visible("*");
+    const { container } = render(<>
+      {frame(overlay, <section data-ground="dark"><div data-ground="light"><h1>View</h1></div></section>)}
+      <section data-ground="dark"><h2>Outside the frame</h2></section>
+    </>);
+    expect(container.querySelector("header")).toHaveAttribute("data-tone", "base");
+  }));
+
+  it("starts and stops observation when explicit placement changes", () => scene(() => {
+    const reserved = { ...bare, header: { placement: "reserved", ground: "inverse" } } as const;
+    const child = <section data-ground="dark"><h1>View</h1></section>;
+    const { container, rerender } = render(frame(reserved, child));
+    expect(container.querySelector("header")).not.toHaveAttribute("data-tone");
+    rerender(frame(overlay, child));
+    expect(container.querySelector("header")).toHaveAttribute("data-tone", "inverse");
+    rerender(frame(reserved, child));
+    fireEvent.scroll(window);
+    expect(container.querySelector("header")).not.toHaveAttribute("data-tone");
+  }));
+
+  it("does not revive a disconnected resize observer from a late mutation callback", () => scene(() => {
+    const observed = vi.fn(), resizeDisconnected = vi.fn();
+    vi.stubGlobal("ResizeObserver", class {
+      observe = observed;
+      unobserve = vi.fn();
+      disconnect = resizeDisconnected;
+    });
+    const mutations: { callback: MutationCallback; observer: MutationObserver; disconnected: ReturnType<typeof vi.fn> }[] = [];
+    vi.stubGlobal("MutationObserver", class {
+      observe = vi.fn();
+      disconnect = vi.fn();
+      constructor(callback: MutationCallback) { mutations.push({ callback, observer: this as unknown as MutationObserver, disconnected: this.disconnect }); }
+    });
+    const { container, unmount } = render(frame(overlay, <section data-ground="dark"><h1>View</h1></section>));
+    const main = container.querySelector("main")!;
+    expect(mutations).toHaveLength(2);
+    const count = observed.mock.calls.length;
+    unmount();
+    const lateSection = document.createElement("section");
+    lateSection.setAttribute("data-ground", "light");
+    main.append(lateSection);
+    act(() => mutations[1]!.callback([], mutations[1]!.observer));
+    expect(observed).toHaveBeenCalledTimes(count);
+    expect(resizeDisconnected).toHaveBeenCalledOnce();
+    for (const mutation of mutations) expect(mutation.disconnected).toHaveBeenCalledOnce();
+  }));
+
+  it("releases its listeners, observers and a pending frame on unmount", () => scene(() => {
+    const queued: FrameRequestCallback[] = [];
+    const cancel = vi.fn();
+    vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => { queued.push(callback); return queued.length; });
+    vi.stubGlobal("cancelAnimationFrame", cancel);
+    const added = vi.spyOn(window, "addEventListener"), removed = vi.spyOn(window, "removeEventListener");
+    const disconnected = vi.spyOn(MutationObserver.prototype, "disconnect");
+    const { container, unmount } = render(frame(overlay, <section data-ground="dark"><h1>View</h1></section>));
+    const header = container.querySelector("header")!;
+    const scroll = added.mock.calls.find(([event]) => event === "scroll");
+    expect(scroll).toBeDefined();
+    fireEvent.scroll(window);
+    expect(queued).toHaveLength(1);
+    unmount();
+    expect(removed.mock.calls.some(([event, listener]) => event === "scroll" && listener === scroll![1])).toBe(true);
+    expect(disconnected).toHaveBeenCalled();
+    expect(cancel).toHaveBeenCalledWith(1);
+    const tone = header.getAttribute("data-tone");
+    queued[0]!(0);
+    expect(header).toHaveAttribute("data-tone", tone);
+  }));
 });

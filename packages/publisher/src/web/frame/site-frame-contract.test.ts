@@ -25,9 +25,10 @@ describe("data-readable SiteFrame contract", () => {
   });
   it("normalizes alphabetic flat primitive keys and rejects unknown or dependent inputs", () => {
     expect(Object.keys(SITE_FRAME_CONFIG_SCHEMA)).toEqual([...Object.keys(SITE_FRAME_CONFIG_SCHEMA)].sort());
-    expect(normalizeSiteFrameConfig()).toEqual({ headerGround: "base", headerPlacement: "reserved", headerTone: "base" });
+    expect(normalizeSiteFrameConfig()).toEqual({ headerGround: "base", headerPlacement: "overlay", headerTone: "base" });
+    expect(normalizeSiteFrameConfig({ headerTone: "inverse" })).toEqual({ headerGround: "base", headerPlacement: "overlay", headerTone: "inverse" });
     expect(normalizeSiteFrameConfig({ headerPlacement: "overlay", headerTone: "inverse" })).toEqual({ headerGround: "base", headerPlacement: "overlay", headerTone: "inverse" });
-    for (const invalid of [{ headerTone: "inverse" }, { headerPlacement: "overlay", headerGround: "inverse" }, { headerPlacement: "fixed" }, { headerTone: {} }, { sticky: false }, { Header: "{}" }, null, [], new Proxy({}, { ownKeys() { throw new Error("private-shape"); } })]) {
+    for (const invalid of [{ headerPlacement: "reserved", headerTone: "inverse" }, { headerPlacement: "overlay", headerGround: "inverse" }, { headerPlacement: "fixed" }, { headerTone: {} }, { sticky: false }, { Header: "{}" }, null, [], new Proxy({}, { ownKeys() { throw new Error("private-shape"); } })]) {
       expect(() => normalizeSiteFrameConfig(invalid)).toThrow(/SiteFrame/);
     }
     expect(Object.values(normalizeSiteFrameConfig()).every(value => typeof value === "string")).toBe(true);
