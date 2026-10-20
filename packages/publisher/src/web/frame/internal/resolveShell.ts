@@ -197,7 +197,8 @@ function href(value: unknown, path: string, origin: string | undefined): string 
 function origin(value: unknown): string | undefined {
   if (value === undefined) return undefined;
   const refuse = (): never => fail("shell.origin must be an https origin, or an http origin on a loopback host.");
-  if (typeof value !== "string" || UNSAFE_URL_CHARACTER.test(value) || value !== value.trim()) refuse();
+  if (typeof value !== "string" || UNSAFE_URL_CHARACTER.test(value) || value !== value.trim()
+    || !/^https?:\/\/[^/?#@]+\/?$/i.test(value)) refuse();
   let url: URL;
   try {
     url = new URL(value as string);

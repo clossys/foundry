@@ -385,8 +385,6 @@ function validatePublicFrame(value: unknown): RenderWebOptions["frame"] {
   const frame = value as unknown as NonNullable<RenderWebOptions["frame"]>;
   try {
     resolveShell(frame.shell, frame.resolveCopy, frame.resolveAsset, frame.presentation);
-    // The legacy shell parser normalizes URLs; frame origins must also be bare in their raw form.
-    if (frame.shell.origin !== undefined && !/^https?:\/\/[^/?#@]+\/?$/i.test(frame.shell.origin)) refuse();
   } catch { refuse(); }
   return frame;
 }

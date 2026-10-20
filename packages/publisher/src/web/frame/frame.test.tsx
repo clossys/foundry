@@ -342,6 +342,9 @@ describe("SiteFrame", () => {
     it.each([
       ["javascript:alert(1)"],
       ["https://example.com/path"],
+      ["https:example.com"],
+      ["https://example.com/."],
+      ["https://@www.example.test/"],
       ["https://example.com?x=1"],
       ["https://user@example.com"],
       ["http://example.com"],
