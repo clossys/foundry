@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 
 import "@testing-library/jest-dom/vitest";
+import { createHash } from "node:crypto";
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import ts from "typescript";
@@ -11,7 +12,7 @@ import { act, cleanup, fireEvent, render, waitFor, within } from "@testing-libra
 import userEvent from "@testing-library/user-event";
 import type { CopyRef, CopyResolution, CopyResolver } from "@clossys/writer";
 import type { IconNode } from "@clossys/designer/atoms/server";
-import { CONTRAST_PAIRS } from "@clossys/designer/tokens";
+import { CONTRAST_PAIRS, contrastRatio, parseBrandDeclarations } from "@clossys/designer/tokens";
 import { ThemeProvider, ThemeToggle } from "@clossys/designer/theme";
 import { AuthView } from "../views/AuthView.js";
 import { BoundaryView } from "../views/BoundaryView.js";
@@ -343,6 +344,9 @@ describe("SiteFrame", () => {
     it.each([
       ["javascript:alert(1)"],
       ["https://example.com/path"],
+      ["https:example.com"],
+      ["https://example.com/."],
+      ["https://@www.example.test/"],
       ["https://example.com?x=1"],
       ["https://user@example.com"],
       ["http://example.com"],
@@ -568,21 +572,69 @@ describe("siteShellFor", () => {
     ["front-door", "App"],
     ["admin", "Admin"],
     ["demo", "Demo"],
-  ] as const)("%s: no navigation, environment links with the current one marked, legal links absolute to the public origin", (kind, current) => {
+  ] as const)("%s: one current ghost environment, no menu, public brand and legal-only footer", (kind, current) => {
     const shell = siteShellFor(CONFIG, kind);
     expect(shell.nav).toBeUndefined();
     expect(shell.actions).toBeUndefined();
     expect(shell.footer?.columns).toBeUndefined();
     expect(shell.origin).toBe("https://example.com");
+    expect(shell.mobileLayout).toBe("inline");
+    expect(shell.environments).toHaveLength(1);
+    expect(shell.environments?.[0]?.isCurrent).toBe(true);
 
     const { container } = render(frame(shell, <p>content</p>));
-    expect(container.querySelector("header nav")).toHaveAttribute("aria-label", "Primary");
-    expect(container.querySelector(".nav-disclosure-panel > ul:not(.site-header-desktop-actions)")).toBeNull();
-    const currents = [...container.querySelectorAll('.site-header-desktop-actions a[aria-current="true"]')];
+    expect(container.querySelector("header nav, header button, .nav-disclosure-panel")).toBeNull();
+    expect(container.querySelector('header a[aria-label="Example home"]')).toHaveAttribute("href", "https://example.com/");
+    const header = container.querySelector("header")!;
+    expect(within(header).getAllByRole("link")).toHaveLength(2);
+    const environment = within(header).getByRole("link", { name: current });
+    expect(environment).toHaveClass("site-header-environment-ghost");
+    expect(header.querySelectorAll(".site-header-environment-ghost")).toHaveLength(1);
+    expect(environment).toHaveClass("hover:bg-surface-sunken");
+    expect(environment).not.toHaveClass("bg-accent");
+    expect(environment.querySelector("svg")).not.toBeNull();
+    const currents = [...container.querySelectorAll('header a[aria-current="true"]')];
     expect(currents).toHaveLength(1);
     expect(currents[0]).toHaveTextContent(current);
     const legal = [...container.querySelectorAll("footer a")].map((a) => a.getAttribute("href"));
     expect(legal).toEqual(["https://example.com/privacy", "https://example.com/terms"]);
+    expect(container.querySelector("footer")).toHaveTextContent("Example Ltd");
+    expect(container.querySelector("footer h2, footer .grid, [data-consent-banner], [data-consent-presentation=card], [role=dialog]")).toBeNull();
+  });
+
+  it("preserves explicitly reserved site bytes and its same-host brand link", () => {
+    const config: SiteFrameConfig = { brand: CONFIG.brand, skipLink: CONFIG.skipLink, origin: CONFIG.origin, legal: CONFIG.legal, site: { header: { placement: "reserved" } } };
+    const html = renderToStaticMarkup(frame(siteShellFor(config, "site"), <p>content</p>));
+    expect(createHash("sha256").update(html).digest("hex")).toBe("aaaaf379ffb58fb3ea4a66f2375212f7ef0624ad5602cf6e870f417582ce74a9");
+    const { container } = render(frame(siteShellFor(config, "site"), <p>content</p>));
+    expect(container.querySelector('header a[aria-label="Example home"]')).toHaveAttribute("href", "/");
+  });
+
+  it.each(["front-door", "admin", "demo"] as const)("%s with no matching environment shows the brand alone", kind => {
+    for (const environments of [undefined, [], CONFIG.environments!.filter(entry => entry.surface !== kind)]) {
+      const { container, unmount } = render(frame(siteShellFor({ ...CONFIG, environments }, kind), <p>content</p>));
+      expect(container.querySelectorAll("header a")).toHaveLength(1);
+      expect(container.querySelector("header nav, header button")).toBeNull();
+      expect(container.querySelector("header a")).toHaveAttribute("href", "https://example.com/");
+      unmount();
+    }
+  });
+
+  it("renders every direct environment-only link as ghost without requesting default menu copy", () => {
+    const shell = { ...FRONT_DOOR_SHELL, environments: CONFIG.environments!.map(({ surface, ...entry }) => ({ ...entry, isCurrent: surface === "admin" })) };
+    const requested: string[] = [];
+    const copy: CopyResolver = ref => { requested.push(ref.id); return resolveCopy(ref); };
+    const { container } = render(<SiteFrame shell={shell} resolveCopy={copy} resolveAsset={resolveAsset}><p>content</p></SiteFrame>);
+    expect(container.querySelector("header nav, header button")).toBeNull();
+    const header = container.querySelector("header")!;
+    expect(within(header).getAllByRole("link")).toHaveLength(4);
+    for (const name of ["App", "Admin", "Demo"]) {
+      const link = within(header).getByRole("link", { name });
+      expect(link).toHaveClass("hover:bg-surface-sunken");
+      expect(link.querySelector("svg")).not.toBeNull();
+    }
+    expect(requested.filter(id => id.startsWith("site-frame.nav."))).toEqual([]);
+    expect(container.querySelector('header a[aria-current="true"]')).toHaveTextContent("Admin");
   });
 
   it("refuses an unknown surface kind", () => {
@@ -970,7 +1022,7 @@ describe("frame header placement", () => {
 it("an omitted header uses the same automatic overlay defaults as an empty header", () => {
   expect(renderToStaticMarkup(frame(FRONT_DOOR_SHELL, <p>content</p>))).toBe(renderToStaticMarkup(frame({ ...FRONT_DOOR_SHELL, header: {} }, <p>content</p>)));
   const { container } = render(frame(FRONT_DOOR_SHELL, <p>content</p>));
-  expect(container.querySelector("header")).toHaveClass("site-header-contract");
+  expect(container.querySelector("header")).toHaveClass("site-header-overlay", "site-header-ground-aware");
   expect(container.querySelector("main")).toHaveAttribute("tabindex", "-1");
   expect(container.querySelectorAll("main,header,footer")).toHaveLength(3);
 });
@@ -1210,12 +1262,56 @@ it("HEADER-1 composes an optional real host notice and returns focus to the live
 });
 
 
-it("HEADER-1 retains the current environment indication on its mobile primary icon", () => {
+it("retains the current environment indication on the lite header's direct ghost icon", () => {
   const { container } = render(frame(siteShellFor(CONFIG, "demo"), <h1>Demo view</h1>));
-  const mobile = container.querySelector<HTMLAnchorElement>("header [data-header-primary]")!;
+  const mobile = within(container.querySelector("header")!).getByRole("link", { name: "Demo" });
+  expect(mobile).not.toHaveAttribute("data-header-primary");
   expect(mobile).toHaveAttribute("aria-current", "true");
   expect(mobile).toHaveTextContent("Demo");
   expect(mobile.style.boxShadow).toContain("inset");
+});
+
+function shippedUtilityToken(utility: string, property: string): string {
+  const css = readFileSync(join(import.meta.dirname, "../../../../designer/styles/compiled.css"), "utf8");
+  const start = css.indexOf(`.${utility.replaceAll(":", "\\:")}`);
+  expect(start).toBeGreaterThanOrEqual(0);
+  const body = css.slice(css.indexOf("{", start) + 1, css.indexOf("}", start));
+  const declaration = body.match(new RegExp(`(?:^|\\s)${property}:\\s*var\\((--[\\w-]+)`));
+  expect(declaration).not.toBeNull();
+  return declaration![1]!;
+}
+
+it.each(["light", "dark"] as const)("keeps inverse environment-only links readable in the %s theme", theme => {
+  const css = readFileSync(join(import.meta.dirname, "../../../../designer/styles/tokens.css"), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+  const block = css.match(theme === "light" ? /:root\s*\{[^}]*\}/ : /:root\[data-theme="dark"\]\s*\{[^}]*\}/);
+  expect(block).not.toBeNull();
+  const values = parseBrandDeclarations(block![0]).declarations;
+  const surface = values["--color-surface-inverse"]!;
+  for (const kind of ["front-door", "admin", "demo"] as const) {
+    for (const header of [{ placement: "reserved", ground: "inverse" }, { placement: "overlay", tone: "inverse" }] as const) {
+      const view = render(frame({ ...siteShellFor(CONFIG, kind), header }, <p>content</p>));
+      const link = view.container.querySelector<HTMLAnchorElement>('header a[aria-current="true"]')!;
+      const ink = [...link.classList].filter(value => value.startsWith("text-ink-"));
+      const hover = [...link.classList].filter(value => value.startsWith("hover:bg-"));
+      expect(ink).toHaveLength(1);
+      expect(hover).toHaveLength(1);
+      const foreground = values[shippedUtilityToken(ink[0]!, "color")]!;
+      const hoveredSurface = values[shippedUtilityToken(hover[0]!, "background-color")]!;
+      expect(contrastRatio(foreground, surface)).toBeGreaterThanOrEqual(4.5);
+      expect(contrastRatio(foreground, hoveredSurface, surface)).toBeGreaterThanOrEqual(4.5);
+      expect(link).toHaveClass("text-ink-on-inverse", "hover:text-ink-on-inverse", "focus-visible:text-ink-on-inverse", "hover:bg-control-tonal-inverse-hover", "focus-visible:outline-ink-on-inverse");
+      expect(link).not.toHaveClass("text-ink-primary");
+      expect(link).not.toHaveClass("hover:bg-surface-sunken");
+      expect(link).not.toHaveClass("focus-visible:outline-accent");
+      expect(link.querySelector("svg")).toHaveAttribute("stroke", "currentColor");
+      expect(link.querySelector<SVGElement>("svg")!.style.color).toBe("");
+      expect(link.querySelector("span")).toHaveTextContent(kind === "front-door" ? "App" : kind === "admin" ? "Admin" : "Demo");
+      expect(link.style.boxShadow).toContain("currentColor");
+      const focus = values[shippedUtilityToken("focus-visible:outline-ink-on-inverse", "outline-color")]!;
+      expect(contrastRatio(focus, surface)).toBeGreaterThanOrEqual(3);
+      view.unmount();
+    }
+  }
 });
 
 describe("SiteFrame automatic ground glass", () => {
