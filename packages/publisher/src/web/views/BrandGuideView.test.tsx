@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 
 import "@testing-library/jest-dom/vitest";
+import { DetailView } from "@clossys/designer/blocks/server";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, render, within } from "@testing-library/react";
@@ -21,6 +22,23 @@ function props(over: Partial<BrandGuideViewProps> = {}): BrandGuideViewProps {
     ...over,
   };
 }
+
+describe("BrandGuideView Designer facts", () => {
+  it.each([false, true])("renders real title-less DetailViews with embedded=%s", (embedded) => {
+    const data = props({ embedded });
+    const { container } = render(<BrandGuideView {...data} />);
+    const lists = [...container.querySelectorAll("dl")];
+    const records = [data.colors, data.type, data.facts];
+    expect(lists).toHaveLength(records.length);
+    records.forEach((entries, index) => {
+      const expected = document.createElement("div");
+      expected.innerHTML = renderToStaticMarkup(
+        <DetailView fields={entries.map(({ name, value }) => ({ label: name, value }))} />,
+      );
+      expect(lists[index]?.parentElement?.outerHTML).toBe(expected.firstElementChild?.outerHTML);
+    });
+  });
+});
 
 describe("BrandGuideView standalone", () => {
   it("keeps its page shape: one main with a PageHeader h1, and sections named by aria-label", () => {

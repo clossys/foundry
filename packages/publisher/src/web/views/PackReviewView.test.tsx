@@ -3,6 +3,7 @@
 import "@testing-library/jest-dom/vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { DetailView } from "@clossys/designer/blocks/server";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, render, within } from "@testing-library/react";
@@ -436,6 +437,19 @@ const VOICE: PackReviewViewVoice = {
 };
 
 describe("PackReviewView record sections", () => {
+  it("renders real title-less DetailViews for every strategy and voice fact list", () => {
+    const { container } = render(<PackReviewView {...props({ strategy: STRATEGY, voice: VOICE })} />);
+    const records = [STRATEGY.context, VOICE.rules, VOICE.pitch, VOICE.boilerplate,
+      VOICE.faq.map(({ question, answer }) => ({ name: question, value: answer }))];
+    const lists = [...container.querySelectorAll("dl")];
+    expect(lists).toHaveLength(records.length);
+    records.forEach((entries, index) => {
+      expect(lists[index]?.parentElement?.outerHTML).toBe(renderToStaticMarkup(
+        <DetailView fields={entries.map(({ name, value }) => ({ label: name, value }))} />,
+      ));
+    });
+  });
+
   it("shows each section's own empty label when its record is absent, and no guide markup", () => {
     const { container } = render(<PackReviewView {...props()} />);
     expect(within(sectionOf(container, "Marker strategy")).getByText("Marker no strategy")).toBeInTheDocument();
