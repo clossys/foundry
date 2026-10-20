@@ -6511,6 +6511,144 @@ validators. No lifecycle item, source use or qualification is fabricated.
 Copied node, edge and identity records are prototype-less; use `Object.hasOwn(record, key)` instead of instance prototype methods.
 PackManifest and the publication map remain separate contracts.
 
+## Application frame — `AppFrame`
+
+`AppFrame` is a client-only application assembly exported from
+`@clossys/publisher/web/client`, alongside `AppFrameSpecimen`, `AppFrameProps`,
+`AppFrameBrand`, `AppFrameAccount`, `AppFrameRightPanel`, and immutable
+`APP_FRAME_CONTRACT` metadata and `APP_FRAME_CONFIG_SCHEMA`. Import it inside a client boundary. The ordinary
+web and server entries continue to serve their existing page compositions.
+The application frame composes Designer's `AppNavigation`, `AccountMenu`,
+`CommandMenu`, brand primitives, theme controls and optional
+`ResizablePane`. It owns one focusable main landmark and its skip target;
+its children supply the route body without another `main`, banner or sidebar.
+
+The contract points to a real, interactive whole-frame specimen. Mount it
+directly in a client route or a frame-capable catalog canvas:
+
+```tsx
+"use client";
+
+import { AppFrameSpecimen } from "@clossys/publisher/web/client";
+
+export default function ExampleWorkspace() {
+  return <AppFrameSpecimen />;
+}
+```
+
+The specimen uses a public, inline Example brand mark and local host state.
+Its navigation links update route content and the active navigation index;
+the nested Tasks destination remains a real link. Search commands filter and
+select destinations, close the dialog and return focus to its opener. Account
+links open local Profile and Preferences views, Sign out removes the actor,
+and the guest menu can restore the example account. The task action completes
+and reopens a local task, and the right panel follows the selected destination.
+It calls no authentication, sign-out, routing or network service. This is a
+whole Frame specimen, separate from the section-only fixtures used by Publisher's
+existing view catalog; do not place it inside a section-only catalog page that
+already owns a main landmark.
+
+### Host-owned data and behavior
+
+AppFrame and its stateful specimen are explicit `web/client` islands; SiteFrame and the default/server entries retain their hook-free, server-import boundary, with AppFrame exceptions pinned per file and shared contract imports restricted to types.
+
+Supply `brand` with resolved `markSrc`, `wordmark` and accessible `label` strings.
+The label must contain the visible wordmark. The desktop lockup uses an accent
+mark with the wordmark in the surface's natural foreground. At the mobile breakpoint the mark
+is centered and the wordmark is hidden. Use `markInk: "image"` when the source
+artwork must retain its own colors; the default accent treatment uses a mask.
+An optional `href` makes the brand a host-owned destination.
+
+Supply `navigation.tree`, an `activeId` or `activeHref`, and a `navigationKey`
+that changes on route transitions. Navigation nodes support destinations and
+one nested level. The host owns its router, selected destination, route content
+and active index; the frame does not infer these from the browser location.
+Use actual hrefs with your router, or explicit `onAction` callbacks for commands.
+The specimen demonstrates local routing by intercepting its own example links.
+Its navigation, command and account destinations share the same route state.
+
+Supply `account.sections` with host-owned links and action callbacks. Pass the
+current `actor` when available; omit it for the signed-out state and provide
+`signedOutLabel` for the guest trigger. No actor, session or account name is
+invented by the frame. The host owns authentication and sign-out effects,
+including removing the actor and updating the available sections after sign-out.
+`onRoute` observes account link selections so the host can update its route.
+
+Supply command groups, item labels and destination callbacks or hrefs through
+`commands`, together with `triggerLabel`, `heading`, `searchLabel`, `closeLabel`
+and `emptyMessage`. The frame owns the command dialog's open and query state;
+the command material owns filtering and keyboard selection. The opening
+shortcut is enabled by default and can be disabled with
+`commands.shortcutEnabled: false`. The host owns each selected task or route.
+
+### Theme, panel and styles
+
+The frame assembles a Designer `ThemeProvider` and the existing `ThemeToggle`,
+whose single button cycles System → Light → Dark → System. The control updates
+the document theme, so navigation, content, dialogs and the
+optional pane share the preference. Preference persistence uses best-effort
+`localStorage`, with `"ui-theme"` and `"system"` as the default key and preference.
+Pass `theme.storageKey` and `theme.defaultPreference` when overriding them. Put
+Designer's `getThemeInitScript` in the document head before first paint with
+the same storage key and matching `defaultTheme`; the frame does not insert
+the head script itself. For example, the interactive specimen uses
+`storageKey: "example-app-theme"` and `defaultPreference: "system"`:
+
+The head initializer is available from `@clossys/designer/theme/server`.
+Call `getThemeInitScript` with those same values and place its returned script
+in the document head, following Designer's theme initialization documentation.
+
+Omit `rightPanel` to remove the pane, its controls and resize handle. When
+present, supply its content, accessible `label`, `handleLabel`, `min`, `max`
+and `defaultValue` widths. The frame retains width and collapsed state by
+default; use `value`/`onChange` and `collapsed`/`onCollapsedChange` for host
+control. It starts expanded unless `defaultCollapsed` is true. The panel
+defaults to `"Open panel"` and `"Close panel"` for its controls. Other frame
+defaults are inherited document direction, `"Skip to content"` and a generated
+per-instance main ID. Host copy can override these labels and theme labels.
+
+Load the same Designer token and brand styles used by other Publisher web
+compositions. For a Tailwind v4 consumer, import `tailwindcss`, then
+`@clossys/designer/theme.css`, then the brand overlay; scan the installed
+`node_modules/@clossys/designer/dist` and
+`node_modules/@clossys/publisher/dist` directories with `@source` paths relative
+to your CSS entry. Use that Tailwind path without also importing Designer's
+`compiled.css`. The frame's layout styling belongs to the packages; a host
+does not recreate its header, navigation, account menu or resize styling.
+
+Publisher's retained `styles/preview.css` supplies the equivalent compiled
+utility coverage for its preview environment. The `check:preview-css` command
+checks that retained coverage against the package's current class-bearing
+sources. The exported specimen and its interaction tests exercise the real
+frame; this documentation and the metadata alone establish no browser,
+accessibility, packed-install or consumer-runtime qualification.
+
+`AppFrameSpecimen` accepts optional copy overrides without changing its local
+demo actions. Omit them to retain the generic English Example defaults; each
+default is documented on the component's props. `pages` supplies the title and
+description for each of `overview`, `projects`, `tasks`, `profile`, `preferences`
+and `signed-out`, and these titles also label the matching navigation and
+account links. Other optional props cover brand/workspace copy, account actions,
+command labels and empty results, context and work content, and task/activity
+messages. Route activity displays the destination title and the independently
+documented `routeOpenedLabel` (default `"opened"`) in separate text nodes.
+The optional `commands` prop passes a host command index through directly;
+when omitted, the documented command labels name the local destination links.
+For example:
+
+```tsx
+<AppFrameSpecimen
+  commandTriggerLabel="Find a destination"
+  completeTaskLabel="Mark example task complete"
+  taskCompletedMessage="The example task is complete."
+  routeOpenedLabel="selected"
+/>
+```
+
+When overriding `wordmark`, keep it in `workspaceLabel` as required by the
+brand's accessible-name contract. Copy changes do not supply authentication,
+routing services or new task effects; the specimen retains its local behavior.
+
 ## Standard entity Views: IndexView and DetailsView
 
 `IndexView` and `DetailsView` compose entity administration content for an
