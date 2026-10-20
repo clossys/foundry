@@ -234,8 +234,11 @@ describe("LandingView", () => {
     const padding = (element: HTMLElement) => element.className.split(/\s+/).filter((name) => /(^|:)py-/.test(name));
     expect(padding(band)).toEqual(["py-4xl", "tablet-lg:py-5xl"]);
     expect(padding(close)).toEqual(["py-5xl", "tablet-lg:py-6xl"]);
-    const rest = (element: HTMLElement) => element.className.split(/\s+/).filter((name) => !/(^|:)py-/.test(name) && !name.startsWith("bg-surface-"));
+    const groundInk = /^text-ink-(primary|on-inverse)$/;
+    const rest = (element: HTMLElement) => element.className.split(/\s+/).filter((name) => !/(^|:)py-/.test(name) && !name.startsWith("bg-surface-") && !groundInk.test(name));
     expect(rest(close)).toEqual(rest(band));
+    expect(close.className.split(/\s+/)).toContain("text-ink-on-inverse");
+    expect(band.className.split(/\s+/).filter((name) => groundInk.test(name))).toEqual(["text-ink-primary"]);
     const intro = close.querySelector("[data-section-intro]") as HTMLElement;
     expect(intro.getAttribute("data-section-intro")).toBe("section");
     const heading = close.querySelector("h2") as HTMLElement;
@@ -361,7 +364,7 @@ describe("LandingView close copy", () => {
     // Require the cue rail's token fallback; preserve every other pre-option byte.
     const cueRail = 'class="relative z-[var(--ui-z-sticky,10)] h-0"';
     expect(html.split(cueRail)).toHaveLength(2);
-    const legacyHtml = html.replace(cueRail, cueRail.replace(",10", ""));
+    const legacyHtml = withoutSectionFrameInk(html.replace(cueRail, cueRail.replace(",10", "")));
     expect(createHash("sha256").update(legacyHtml).digest("hex")).toBe(LEGACY_CLOSE_MARKUP_SHA256);
   });
 
@@ -400,6 +403,14 @@ describe("LandingView close copy", () => {
 });
 
 const LEGACY_CLOSE_MARKUP_SHA256 = "84380478f6fa9f7b040b6e7a4780ee3389bbb1224d6b916df1489e28a8febd0d";
+
+// Every SectionFrame root now carries its ground's primary ink; the pinned bytes predate it.
+function withoutSectionFrameInk(html: string): string {
+  const roots = html.match(/data-designer-section-frame="" class="[^"]*"/g) ?? [];
+  expect(roots.length).toBeGreaterThan(0);
+  for (const root of roots) expect(root).toMatch(/[" ]text-ink-(?:primary|on-inverse)[ "]/);
+  return html.replace(/(data-designer-section-frame="" class="(?:[^" ]+ )*?)text-ink-(?:primary|on-inverse) ?/g, "$1");
+}
 
 
 describe("LandingView action ladder", () => {

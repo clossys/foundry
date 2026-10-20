@@ -420,3 +420,8 @@ export { Logomark } from "./atoms/index.js";
 export type { LogomarkProps, LogomarkSize, LogomarkTone, LogomarkPlate } from "./atoms/index.js";
 export { Lockup } from "./blocks/index.js";
 export type { LockupProps } from "./blocks/index.js";
+export { GroupedTable } from "./blocks/GroupedTable.js";
+export type { GroupedTableProps, GroupedTableGroup, GroupedTableColumn } from "./blocks/GroupedTable.js";
+
+export { filterRows, groupRows, pivotRows, aggregate, parseTableModel, serializeTableModel, TableModelError } from "./blocks/table-model/index.js";
+export type { TableValue, TableColumnKind, TableColumn, TableCollation, TableFilter, TableDimension, TableMeasure, TablePivot, TableModel, TableFacet, TableFilterResult, TableAggregateValue, TableAggregates, TableGroup, TablePivotAxis, TablePivotCell, TablePivotResult, TableModelErrorCode } from "./blocks/table-model/index.js";

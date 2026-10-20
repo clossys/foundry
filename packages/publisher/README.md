@@ -171,7 +171,7 @@ The web condition changes only the implementation selected for server
 rendering, not the API. `MarketingView` keeps the same props and regional
 layout; its server target uses Designer's native `details`/`summary` FAQ while
 the ordinary target keeps Designer's React Aria FAQ. `SiteFrame`, `AuthView`,
-`StatusView`, `GlobalErrorDocument`, `ErrorView`,
+`StatusView`, `GlobalErrorDocument`, `NotFoundDocument`, `ErrorView`,
 `CaptureView`, `CollectionView`, `DocumentView`, `LegalView`, the renderer functions,
 template helpers, error class, and all runtime export names are present in
 both targets.
@@ -3036,7 +3036,7 @@ nothing shipped for it yet; `out-of-scope`, not part of the page contract.
 | 5. View | Publisher | `implemented` | chrome-free `HeroView`, `MarketingView`, `CollectionView`, `PackReviewView`, `BrandGuideView` and `SystemAuditView` |
 | 6. Per-page head | Publisher | `contract-only` | `pageHead` |
 | 7. Machine surfaces | Publisher | `contract-only` | robots, sitemap from the route manifest, web manifest, icons, health |
-| 8. System states | Publisher views | `implemented` | loading state, degraded state, frame-aware `ErrorView` root |
+| 8. System states | Publisher views | `implemented` | loading state, degraded state |
 | 9. Forms and APIs | their owning form and API packages | `out-of-scope` | |
 
 **Extending a page.** A consumer differs only through declared brand
@@ -3064,7 +3064,7 @@ page only and is not for use inside a frame.
 A chrome-free view's content root refuses a landmark `role` (`main`, `banner`,
 `contentinfo`, `navigation`) and the frame's main id, because the frame owns
 those. `GlobalErrorDocument` renders `SiteFrame` and `StatusView` when given a
-`shell`, so the same rule holds there; only its deprecated `ErrorView` shape
+`shell`, and `NotFoundDocument` always does, so the same rule holds there; only its deprecated `ErrorView` shape
 has no frame and no `<main>`, and that shape's root may carry `role="main"`.
 
 **Deprecated view chrome.** The chrome props on `AuthView`, `CaptureView`,
@@ -3379,6 +3379,7 @@ Props (`GlobalErrorDocumentFramedProps`):
 | `documentTitle` | yes | `{ page, brand }`, joined by `formatPageTitle`. |
 | `icon` | yes | `{ href, type? }` for the one `<link rel="icon">`. |
 | `htmlClassName` | no | A class on `<html>`, rendered only when non-empty. |
+| `stylesheets` | no | Stylesheet `href`s linked from the head, in order. Each is a root-relative path or an `https` URL with no space or ASCII control character; anything else throws a `TypeError` naming its index. See "Styling a document that replaces the root layout" below. |
 | `shell`, `resolveCopy`, `resolveAsset` | yes | The frame's inputs, exactly as `SiteFrame` takes them (`SiteFrameInput`). |
 | `status` | yes | The one `<h1>`, as on `StatusView`: a code such as `"500"`, or a short title. |
 | `subtitle` | no | One line of supporting caller copy. |
@@ -3387,13 +3388,14 @@ Props (`GlobalErrorDocumentFramedProps`):
 | `notes` | no | A quiet line for a secondary link. |
 | `routes` | no | Caller-labelled destinations, forwarded unchanged to `StatusView`. |
 
-`GlobalErrorDocumentHeadProps` names the first four, which both shapes share.
+`GlobalErrorDocumentHeadProps` names the first five, which both shapes share.
 The frame fails closed here as everywhere: a shell the frame refuses throws.
 
 No theme script runs in this document, so it is pinned to the light theme
 (`data-theme="light"` and `color-scheme: light`) and marked `data-brand-bound`.
 Brand tokens are not imported here: import your brand stylesheet in the same
-global-error file that renders this component, as your root layout does.
+global-error file that renders this component, as your root layout does, or
+link it through `stylesheets` (see below).
 
 Brand fonts loaded through a framework font loader usually expose their CSS
 variables through a class that must sit on `<html>`, and brand tokens that
@@ -3433,6 +3435,86 @@ client module, the shell and the two resolvers it passes are bundled for the
 browser: build them from modules with no server-only imports and nothing
 secret in them. A segment `error` boundary and `not-found` page keep their
 layout, and so its frame: they render `StatusView` alone, not this document.
+A layout that mounts no frame (its pages carry their own chrome) leaves the
+error page to mount it: render `SiteFrame` around `StatusView` there, so the
+page still has one skip link, banner, `<main>` and contentinfo.
+
+#### Styling a document that replaces the root layout
+
+A global-error or unmatched-address document gets none of the root layout's
+stylesheets. Without them every utility class on the frame is inert: the brand
+mark (painted with the accent background under a mask) is invisible, the skip
+link shows at the top of the page, and the footer no longer sits at the bottom
+of a short page. Give the document its styles in one of three ways, in order
+of preference:
+
+1. **Import the site stylesheet** in the same file that renders the document,
+   as the root layout does, where the framework bundles CSS for that file.
+2. **Link it** through `stylesheets` when the host cannot import CSS into
+   that file: the built site stylesheet, or Designer's `tokens.css` and
+   `compiled.css` plus the brand file, served as static files. Each entry is
+   a root-relative path or an `https` URL, linked in order.
+3. **Rely on the inline critical rules** when neither is possible. Every
+   framed document (`GlobalErrorDocument` with `shell`, and
+   `NotFoundDocument`) carries one `<style data-publisher-frame-critical>` in
+   its head, before any linked stylesheet. Its rules keep the frame's
+   structure: the frame root is a full-height column, the `<main>` grows to
+   fill it, the skip link is visually hidden until it has focus, and the
+   accent brand mark is filled with `var(--color-accent)`, falling back to
+   the text colour. They restate the values of the classes the frame already
+   carries, sit in their own cascade layer (`publisher-frame-critical`), and
+   use no colour literal, so they agree with the site stylesheet when it
+   loads. They do not supply brand colour, type or spacing; only a stylesheet
+   does.
+
+The deprecated `ErrorView` shape has no frame and carries no critical rules.
+
+### Unmatched-address document — `NotFoundDocument`
+
+`NotFoundDocument`, exported from `@clossys/publisher/web` and its server
+entry (not from `@clossys/publisher/web/client`), is the whole document for an
+unmatched address that no root layout renders: Next's `global-not-found`
+file, or a site whose only root layouts sit under a locale or tenant segment
+that the address never matched. It renders its own `<html>`, `<head>` and
+`<body>` with the same head as `GlobalErrorDocument` (title from
+`formatPageTitle`, `noindex, nofollow`, one icon link, the critical rules and
+any `stylesheets`), then `SiteFrame` around a `StatusView`: one skip link,
+banner, `<main>`, contentinfo and `<h1>`.
+
+It reads no request, header, cookie, router, locale or provider. The `lang`
+is the configured one you pass, every word comes from its props, and the
+frame resolves its copy through the `resolveCopy` you pass, so it renders the
+same markup with no context at all. It has no hooks and is not a client
+module, so a server file renders it directly.
+
+Props (`NotFoundDocumentProps`): `lang`, `documentTitle`, `icon`,
+`htmlClassName` and `stylesheets` as on `GlobalErrorDocument`; `shell`,
+`resolveCopy` and `resolveAsset` (`SiteFrameInput`); and `status`,
+`subtitle`, `action`, `notes` and `routes` as on `StatusView`. An unmatched
+address has no diagnostic, so `reference` throws, and so do the deprecated
+`title` and `description`. A shell the frame refuses throws, as everywhere.
+
+```tsx
+import { NotFoundDocument } from "@clossys/publisher/web";
+import type { SiteFrameInput } from "@clossys/publisher/web";
+
+declare const frame: SiteFrameInput; // built from the configured copy, not from the request
+
+export default function GlobalNotFound() {
+  return (
+    <NotFoundDocument
+      lang="en"
+      documentTitle={{ page: "Page not found", brand: "Example Studio" }}
+      icon={{ href: "/icon.svg", type: "image/svg+xml" }}
+      stylesheets={["/site.css"]}
+      {...frame}
+      status="404"
+      subtitle="This page does not exist."
+      action={<a href="/" className="bg-accent">Back to home</a>}
+    />
+  );
+}
+```
 
 **Deprecated `ErrorView` shape** (`GlobalErrorDocumentErrorViewProps`, kept for
 one release). Without `shell`, the document takes the earlier props (`status`,
@@ -3460,9 +3542,12 @@ chrome props) moves to the published view in the same steps for every page.
 2. **Pages render the view only.** `page.tsx`, `error.tsx` and `not-found.tsx`
    render inside their segment layout, so each renders the view with no frame
    wrapper, no `<main>` and no header or footer of its own.
-3. **Only `global-error` owns a document.** It replaces the root layout, so it
-   renders [`GlobalErrorDocument`](#global-error-document--globalerrordocument),
-   which brings its own frame.
+3. **Only a file that replaces the root layout owns a document.**
+   `global-error` renders
+   [`GlobalErrorDocument`](#global-error-document--globalerrordocument), and a
+   `global-not-found` file renders
+   [`NotFoundDocument`](#unmatched-address-document--notfounddocument); each
+   brings its own frame.
 4. **Drop every deprecated chrome prop.** Delete `brand`, `header`, `footer`,
    `mainId`, `nav`, `headerAction`, `headerSecondaryAction` (`AuthView`,
    `CaptureView`), `secondaryAction` (`BoundaryView`), `ground`,
@@ -3507,6 +3592,7 @@ chrome props) moves to the published view in the same steps for every page.
 | a form file (`"use client"`) | client | `SignInForm`, `ActivateForm`, `ResetForm` from `@clossys/publisher/web/client` (package copy) or `@clossys/publisher/web` (your copy registry), with the handlers; the server page renders this file in `AuthView`'s `form` |
 | `error.tsx` (`"use client"`, as Next requires) | client | `StatusView` from `@clossys/publisher/web/client` |
 | `global-error.tsx` (`"use client"`, as Next requires) | client | `GlobalErrorDocument` from `@clossys/publisher/web`; the client entry does not export it or `SiteFrame` yet |
+| `global-not-found.tsx` | server | `NotFoundDocument` from `@clossys/publisher/web` |
 
    Under `react-server`, the `/web` form names are stubs that throw a
    `RenderError` when called, so a server page never renders a form directly;
@@ -5037,7 +5123,7 @@ Three further usage requirements, not numbered in the specification:
   `SiteOpenGraphMetadata`, `SitePageInput`, `SitePageKind`, `SiteShareCard`,
   `SiteTwitterMetadata`, `SiteMetadataLintFinding`, `SiteMetadataLintResult`,
   `SiteMetadataLintRule`, `SiteMetadataRequiredTag`, and
-  `SiteMetadataTagSelector` types, plus `GlobalErrorDocument` and `GlobalErrorDocumentProps`, and `SiteFrame`, `siteShellFor`, `SITE_SURFACE_KINDS`, `SITE_PAGE_LAYERS`, `SITE_MAIN_ID` and the `SiteBrandInput`, `SiteChromeGround`, `SiteEnvironmentLinkInput`, `SiteFooterInput`, `SiteFrameConfig`, `SiteFrameInput`, `SiteFrameProps`, `SiteIconLinkInput`, `SiteLinkInput`, `SitePageLayer`, `SiteShellInput` and `SiteSurfaceKind` types (see "Site frame"), and `ActivateForm`, `ResetForm`, `ActivateDetails`, `ActivateFailure`, `ActivateFormProps`, `ActivateResult`, `ResetDetails`, `ResetFailure`, `ResetFormProps` and `ResetResult` (see "Activation and reset forms").
+  `SiteMetadataTagSelector` types, plus `GlobalErrorDocument` and `GlobalErrorDocumentProps`, `NotFoundDocument` and `NotFoundDocumentProps`, and `SiteFrame`, `siteShellFor`, `SITE_SURFACE_KINDS`, `SITE_PAGE_LAYERS`, `SITE_MAIN_ID` and the `SiteBrandInput`, `SiteChromeGround`, `SiteEnvironmentLinkInput`, `SiteFooterInput`, `SiteFrameConfig`, `SiteFrameInput`, `SiteFrameProps`, `SiteIconLinkInput`, `SiteLinkInput`, `SitePageLayer`, `SiteShellInput` and `SiteSurfaceKind` types (see "Site frame"), and `ActivateForm`, `ResetForm`, `ActivateDetails`, `ActivateFailure`, `ActivateFormProps`, `ActivateResult`, `ResetDetails`, `ResetFailure`, `ResetFormProps` and `ResetResult` (see "Activation and reset forms").
 - `document`: `validateStructuredDocument`, `renderStructuredDocument`,
   `RenderError`, and the `DocumentBlock`, `DocumentCallout`,
   `DocumentColumnStyle`, `DocumentDefinitionList`, `DocumentInline`, `DocumentList`,
@@ -5785,7 +5871,8 @@ Release notes for every version are in the [changelog](https://github.com/clossy
 
 `@clossys/publisher/web/client` exports `SignInForm`, `ActivateForm`,
 `ResetForm`, `AuthView`, `StatusView`, the deprecated `BoundaryView` and their
-props/result types. It does not export `SiteFrame` or `GlobalErrorDocument`.
+props/result types. It does not export `SiteFrame`, `GlobalErrorDocument` or
+`NotFoundDocument`.
 The forms bind immutable Writer package defaults once when the module loads;
 consumer registry mutations cannot change or authorize those defaults.
 Use the existing `@clossys/publisher/web` forms for strict mutable registry
@@ -6094,6 +6181,61 @@ photographs retain their source pixels. Existing image/video registry contracts
 continue to govern those registered assets.
 
 
+## Instances and Packs
+
+Publisher/core exports `InstanceRecord`, `InstanceBlockRef`, `PackRecord`,
+`InstanceRecordOptions`, `InstanceRecordReason` and `InstanceRecordValidationResult`.
+An Instance names one page and binds two plain `{ blockId, configId }` references.
+`path` is optional catalog metadata; it is not a router registration. `surface`
+is site or app, and the context medium is web. This data format does not carry
+recorded, pending or not-recorded measurement status.
+
+`INSTANCE_FRAME_BLOCK_IDS` and `InstanceFrameBlockId` define the current closed
+Frame set: SiteFrame and AppFrame. Consumers extend Views and Blocks, rather than
+Frames. `INSTANCE_VIEW_BLOCK_IDS` and `InstanceViewBlockId` name the built-in Views;
+pass explicit `customViewIds` to `validateInstanceRecord` or
+`validateInstanceRecords` for additional View names. `INSTANCE_SITE_SURFACE_KINDS`
+and `InstanceSiteSurfaceKind` mirror the web adapter's site, front-door, admin
+and demo kinds without a core-to-web dependency. AuthView Instances use SiteFrame's
+front-door, admin or demo configuration on the site surface; other site Views
+use site. App Instances use AppFrame with a non-AuthView View. Knowing a Frame name does not establish availability,
+export compatibility or qualification; the Standard website Pack uses SiteFrame.
+
+`standard.<name>` Instances omit consumer, brand and `uses`. Custom Instance IDs
+use `<consumer>.<name>`, match `context.consumer`, and require a nonblank brand.
+A custom `uses: "standard.<name>"` identifies the Standard Instance it adopts or
+overrides. `validateInstanceRecord` checks shape and pairing;
+`validatePackRecord` checks a Pack record's shape. `validateInstanceRecords`
+checks uniqueness, resolves `uses` to a Standard record of the same surface,
+and verifies membership in both directions between `packIds` and `instanceIds`.
+Refusals expose a stable reason and field path without echoing host values.
+
+`STANDARD_WEBSITE_INSTANCES` and `STANDARD_WEBSITE_PACK` provide the deeply frozen
+`pack.standard-website`: home (LandingView), about (MarketingView), contact
+(ContactView), terms and privacy (LegalView), sign-in (AuthView), and not-found
+and error (StatusView). Sign-in declares default, submit-error and
+provider-unavailable View states and uses the front-door frame; the other pages
+use site. Not-found and error carry no catalog path. The Standard records contain
+no consumer or brand. An app Pack is outside this offering's current scope.
+
+PackRecord is not PackManifest: these records describe catalog membership and
+page bindings, and confer no rendering, measured evidence or qualification.
+Foundry owns the Standard offering; consumers own custom extensions.
+
+```ts
+import {
+  STANDARD_WEBSITE_INSTANCES,
+  STANDARD_WEBSITE_PACK,
+  validateInstanceRecords,
+} from "@clossys/publisher/core";
+
+const result = validateInstanceRecords(
+  STANDARD_WEBSITE_INSTANCES,
+  [STANDARD_WEBSITE_PACK],
+);
+if (result.status === "refused") console.error(result.reason, result.path);
+```
+
 ## Consumer-owned content
 
 Consumer repositories own their brand art, illustrations, photographs and
@@ -6316,8 +6458,14 @@ use unoccupied variants in that order; primary requires resolved nonblank copy
 and supplied validated SVG icon data. `normalizeSiteFrameActions` accepts
 already-resolved label/href/IconNode content; `resolveShell` owns copy, URL and
 SVG allowlist validation before that helper. No primary means an empty,
-noninteractive right track. Actions without navigation reuse existing shared
-`Primary`/`Menu` labels; no minimum link count or invented brand copy is needed.
+noninteractive right track. Actions without navigation get a menu with no links,
+named through the consumer's own `resolveCopy` from the copy references in
+`SITE_FRAME_CONTRACT.defaults`: `site-frame.nav.label` names the navigation and
+`site-frame.nav.trigger-label` labels its toggle. The frame ships no audience
+text for them, and an unresolved default fails closed like any other shell copy.
+The contract is at `revision` 2; revision 1 published these defaults as strings.
+Supply `shell.nav` (links may be empty) to name the menu with other copy; no
+minimum link count or invented brand copy is needed.
 All full labels appear in the panel after links as text only, primary then
 secondary then ghost. Only the default mobile primary affordance has a second
 copy, an icon-only ghost action in the mobile bar.
@@ -6362,3 +6510,141 @@ reason. Existing Block role lifecycle obligations remain governed by the role
 validators. No lifecycle item, source use or qualification is fabricated.
 Copied node, edge and identity records are prototype-less; use `Object.hasOwn(record, key)` instead of instance prototype methods.
 PackManifest and the publication map remain separate contracts.
+
+## Application frame — `AppFrame`
+
+`AppFrame` is a client-only application assembly exported from
+`@clossys/publisher/web/client`, alongside `AppFrameSpecimen`, `AppFrameProps`,
+`AppFrameBrand`, `AppFrameAccount`, `AppFrameRightPanel`, and immutable
+`APP_FRAME_CONTRACT` metadata and `APP_FRAME_CONFIG_SCHEMA`. Import it inside a client boundary. The ordinary
+web and server entries continue to serve their existing page compositions.
+The application frame composes Designer's `AppNavigation`, `AccountMenu`,
+`CommandMenu`, brand primitives, theme controls and optional
+`ResizablePane`. It owns one focusable main landmark and its skip target;
+its children supply the route body without another `main`, banner or sidebar.
+
+The contract points to a real, interactive whole-frame specimen. Mount it
+directly in a client route or a frame-capable catalog canvas:
+
+```tsx
+"use client";
+
+import { AppFrameSpecimen } from "@clossys/publisher/web/client";
+
+export default function ExampleWorkspace() {
+  return <AppFrameSpecimen />;
+}
+```
+
+The specimen uses a public, inline Example brand mark and local host state.
+Its navigation links update route content and the active navigation index;
+the nested Tasks destination remains a real link. Search commands filter and
+select destinations, close the dialog and return focus to its opener. Account
+links open local Profile and Preferences views, Sign out removes the actor,
+and the guest menu can restore the example account. The task action completes
+and reopens a local task, and the right panel follows the selected destination.
+It calls no authentication, sign-out, routing or network service. This is a
+whole Frame specimen, separate from the section-only fixtures used by Publisher's
+existing view catalog; do not place it inside a section-only catalog page that
+already owns a main landmark.
+
+### Host-owned data and behavior
+
+AppFrame and its stateful specimen are explicit `web/client` islands; SiteFrame and the default/server entries retain their hook-free, server-import boundary, with AppFrame exceptions pinned per file and shared contract imports restricted to types.
+
+Supply `brand` with resolved `markSrc`, `wordmark` and accessible `label` strings.
+The label must contain the visible wordmark. The desktop lockup uses an accent
+mark with the wordmark in the surface's natural foreground. At the mobile breakpoint the mark
+is centered and the wordmark is hidden. Use `markInk: "image"` when the source
+artwork must retain its own colors; the default accent treatment uses a mask.
+An optional `href` makes the brand a host-owned destination.
+
+Supply `navigation.tree`, an `activeId` or `activeHref`, and a `navigationKey`
+that changes on route transitions. Navigation nodes support destinations and
+one nested level. The host owns its router, selected destination, route content
+and active index; the frame does not infer these from the browser location.
+Use actual hrefs with your router, or explicit `onAction` callbacks for commands.
+The specimen demonstrates local routing by intercepting its own example links.
+Its navigation, command and account destinations share the same route state.
+
+Supply `account.sections` with host-owned links and action callbacks. Pass the
+current `actor` when available; omit it for the signed-out state and provide
+`signedOutLabel` for the guest trigger. No actor, session or account name is
+invented by the frame. The host owns authentication and sign-out effects,
+including removing the actor and updating the available sections after sign-out.
+`onRoute` observes account link selections so the host can update its route.
+
+Supply command groups, item labels and destination callbacks or hrefs through
+`commands`, together with `triggerLabel`, `heading`, `searchLabel`, `closeLabel`
+and `emptyMessage`. The frame owns the command dialog's open and query state;
+the command material owns filtering and keyboard selection. The opening
+shortcut is enabled by default and can be disabled with
+`commands.shortcutEnabled: false`. The host owns each selected task or route.
+
+### Theme, panel and styles
+
+The frame assembles a Designer `ThemeProvider` and the existing `ThemeToggle`,
+whose single button cycles System → Light → Dark → System. The control updates
+the document theme, so navigation, content, dialogs and the
+optional pane share the preference. Preference persistence uses best-effort
+`localStorage`, with `"ui-theme"` and `"system"` as the default key and preference.
+Pass `theme.storageKey` and `theme.defaultPreference` when overriding them. Put
+Designer's `getThemeInitScript` in the document head before first paint with
+the same storage key and matching `defaultTheme`; the frame does not insert
+the head script itself. For example, the interactive specimen uses
+`storageKey: "example-app-theme"` and `defaultPreference: "system"`:
+
+The head initializer is available from `@clossys/designer/theme/server`.
+Call `getThemeInitScript` with those same values and place its returned script
+in the document head, following Designer's theme initialization documentation.
+
+Omit `rightPanel` to remove the pane, its controls and resize handle. When
+present, supply its content, accessible `label`, `handleLabel`, `min`, `max`
+and `defaultValue` widths. The frame retains width and collapsed state by
+default; use `value`/`onChange` and `collapsed`/`onCollapsedChange` for host
+control. It starts expanded unless `defaultCollapsed` is true. The panel
+defaults to `"Open panel"` and `"Close panel"` for its controls. Other frame
+defaults are inherited document direction, `"Skip to content"` and a generated
+per-instance main ID. Host copy can override these labels and theme labels.
+
+Load the same Designer token and brand styles used by other Publisher web
+compositions. For a Tailwind v4 consumer, import `tailwindcss`, then
+`@clossys/designer/theme.css`, then the brand overlay; scan the installed
+`node_modules/@clossys/designer/dist` and
+`node_modules/@clossys/publisher/dist` directories with `@source` paths relative
+to your CSS entry. Use that Tailwind path without also importing Designer's
+`compiled.css`. The frame's layout styling belongs to the packages; a host
+does not recreate its header, navigation, account menu or resize styling.
+
+Publisher's retained `styles/preview.css` supplies the equivalent compiled
+utility coverage for its preview environment. The `check:preview-css` command
+checks that retained coverage against the package's current class-bearing
+sources. The exported specimen and its interaction tests exercise the real
+frame; this documentation and the metadata alone establish no browser,
+accessibility, packed-install or consumer-runtime qualification.
+
+`AppFrameSpecimen` accepts optional copy overrides without changing its local
+demo actions. Omit them to retain the generic English Example defaults; each
+default is documented on the component's props. `pages` supplies the title and
+description for each of `overview`, `projects`, `tasks`, `profile`, `preferences`
+and `signed-out`, and these titles also label the matching navigation and
+account links. Other optional props cover brand/workspace copy, account actions,
+command labels and empty results, context and work content, and task/activity
+messages. Route activity displays the destination title and the independently
+documented `routeOpenedLabel` (default `"opened"`) in separate text nodes.
+The optional `commands` prop passes a host command index through directly;
+when omitted, the documented command labels name the local destination links.
+For example:
+
+```tsx
+<AppFrameSpecimen
+  commandTriggerLabel="Find a destination"
+  completeTaskLabel="Mark example task complete"
+  taskCompletedMessage="The example task is complete."
+  routeOpenedLabel="selected"
+/>
+```
+
+When overriding `wordmark`, keep it in `workspaceLabel` as required by the
+brand's accessible-name contract. Copy changes do not supply authentication,
+routing services or new task effects; the specimen retains its local behavior.

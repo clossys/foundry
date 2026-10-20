@@ -1,4 +1,3 @@
-import { SITE_FRAME_NAV_DEFAULTS } from "./site-frame-contract.js";
 import { isValidElement, type ReactElement, type ReactNode } from "react";
 import { Icon } from "@clossys/designer/atoms/server";
 import { Brandmark, SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
@@ -112,7 +111,7 @@ export function SiteFrame({ shell, presentation, resolveCopy, resolveAsset, chil
       <Brandmark variant="lockup" size={brand.size} label={brand.label} wordmark={brand.wordmark} markSrc={brand.markSrc} plate={brand.plate} markInk={brand.markInk} tone={brand.tone} />
     );
 
-  const navigation = resolved.nav ?? (resolved.headerActions.length ? { ...SITE_FRAME_NAV_DEFAULTS, links: [] } : undefined);
+  const navigation = resolved.nav;
   const nav = navigation ? <SiteNavDisclosure nav={navigation} actions={resolved.headerActions} surfaceLabel={resolved.surfaceLabel} /> : undefined;
   const primary = resolved.headerActions.find(action => action.emphasis === "primary");
   // The mobile header bar's ghost action is the only header action that shows its icon, beside the ghost menu toggle.

@@ -47,6 +47,7 @@ import { Panel } from "../blocks/Panel.js";
 import { Drawer } from "../blocks/Drawer.js";
 import { ResizablePane } from "../blocks/ResizablePane.js";
 import { CommandMenu } from "../blocks/CommandMenu.js";
+import { GroupedTable } from "../blocks/GroupedTable.js";
 import { AppNavigation } from "../blocks/AppNavigation.js";
 import { Skeleton } from "../atoms/Skeleton.js";
 import { Spinner } from "../atoms/Spinner.js";
@@ -105,6 +106,22 @@ function toSelectorText(className: string): string {
 }
 
 describe("coverage: real rendered classes are all present in compiled.css", () => {
+  it("covers populated and empty GroupedTable rendered classes", async () => {
+    const classes = new Set<string>();
+    for (const rows of [["Alpha"], []]) {
+      const view = render(<GroupedTable caption="Results" rowHeader={{ id: "name", header: "Name", cell: row => row }}
+        groups={[{ id: "totals", header: "Totals", columns: [{ id: "count", header: "Count", cell: () => 0 }] }]}
+        rows={rows} rowKey={row => row} emptyMessage="No rows" />);
+      for (const name of collectClassNames(view.container)) classes.add(name);
+      view.unmount();
+    }
+    const generated = await generateCompiledCss({ stylesDir: resolve(packageRoot, "styles"), candidates: scanCompiledCssSources(packageRoot).candidates });
+    const shipped = readFileSync(resolve(packageRoot, "styles/compiled.css"), "utf8");
+    for (const name of classes) {
+      expect(generated.css, `grouped table fresh: ${name}`).toContain(toSelectorText(name));
+      expect(shipped, `grouped table shipped: ${name}`).toContain(toSelectorText(name));
+    }
+  });
   it("covers CommandMenu enabled, disabled, filtered and empty rendered states", async () => {
     const classes = new Set<string>();
     for (const query of ["", "SECOND", "missing"]) {

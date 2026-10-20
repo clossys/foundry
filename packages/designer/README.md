@@ -179,13 +179,13 @@ surfaces and live in `@clossys/publisher/web`.
   `Separator`, `Chip`, `StatusMark`, `Meter`.
 - **`blocks`** — owns the internal layout of multiple named regions,
   typically by composing one or more atoms (and/or layout) into something
-  with a real job on a page. Forty-one ship: `AccountMenu`, `PageHeader`, `EmptyState`,
+  with a real job on a page. Forty-two ship: `AccountMenu`, `PageHeader`, `EmptyState`,
   `DataTable`, `DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`,
   `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `SectionFrame`,
   `MarketingChapter`, `FeatureGrid`, `Item`, `Items`, `Tree`, `AnatomyCallouts`, `RecordLedger`, `Scene`, `Matrix`,
   `Specimen`, `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`,
   `PricingTable`, `Testimonial`, `ArticleBody`, `ConsentBanner`, `Panel`, `Drawer`,
-  `ResizablePane`, `CommandMenu` and `AppNavigation` (see "Blocks" below).
+  `ResizablePane`, `CommandMenu`, `AppNavigation` and `GroupedTable` (see "Blocks" below).
 - **`shell`** — the persistent frame around content (nav, layout chrome)
   that provides the slots content fills. One per app; survives route
   changes that swap out the content underneath it. `Shell` ships with five
@@ -1696,8 +1696,13 @@ none of it reimplemented here.
 danger-colored styling, purely visual, doesn't change keyboard/selection
 behavior. `Menu.Separator` is a visual divider between item groups.
 
-`Menu.Section` groups entries under a real menu Header. Supply `heading` or
-`aria-label`. Its optional `selectionMode` (`none` or `multiple`), `selectedKeys`,
+`Menu.Section` groups entries under a real menu Header. Supply a non-empty
+`heading` or `aria-label`; the type requires one and a blank name throws a
+`TypeError`. Rich headings need nonblank text or a label in intrinsic elements
+or fragments; hidden content and opaque components do not establish a name.
+An explicit section `aria-label` names an unverified heading while preserving
+its visible content.
+Its optional `selectionMode` (`none` or `multiple`), `selectedKeys`,
 `onSelectionChange` and `shouldCloseOnSelect` belong to the section. Multiple
 selection produces `menuitemcheckbox` preferences; the caller owns checked
 values. Normal hover/focus retains the existing selected surface with no outline;
@@ -4306,8 +4311,11 @@ function MarketingChapter() {
 
 Full-bleed marketing section band: `ground`, horizontal page padding,
 vertical section rhythm, and a measured inner column (`content`, `wide`,
-or `prose`). Compose `ArticleBody`, `Stat`, and other blocks that do not
-own their own band inside this — not a host `className` wrapper.
+or `prose`). `ground` sets both the section surface and its primary
+foreground ink on the root, so raw children on `inverse` inherit the
+on-inverse ink instead of the base ink. Compose `ArticleBody`, `Stat`, and
+other blocks that do not own their own band inside this — not a host
+`className` wrapper.
 
 ### `ArticleBody`
 
@@ -4843,7 +4851,11 @@ Grid rather than relying on source order.
 the page, visually hidden until it receives keyboard focus — so a keyboard
 user landing on any route can jump straight past the header and side
 navigation to that route's actual content. `skipLinkLabel` is that link's
-visible text and defaults to "Skip to content".
+visible text and defaults to "Skip to content". Activating it (click, Enter
+or Space) moves focus to `Shell.Main` and scrolls it into view without
+changing `location.hash` or browser history, so an application that keeps its
+route in the URL fragment stays on its current route. Without JavaScript the
+link falls back to its `href`.
 
 `Shell.SideNav` is sized to `--ui-layout-sidebar-w` from the `tablet`
 breakpoint up, and collapses — CSS-only, no JavaScript breakpoint state — to
@@ -4971,11 +4983,20 @@ about the four components themselves hardcodes a label, a brand name, or a
 footer line; every one arrives as a prop or a child.
 
 `SkipLink` takes the jump target's `id` (`targetId`) and its own visible
-text (`children`) as props — unlike `Shell`'s internal skip link, which is
-wired to `Shell.Main`'s own fixed, package-owned id, a site's own page
+text (`children`) as props — `Shell` renders this same component, wired to
+`Shell.Main`'s own fixed, package-owned id, whereas a site's own page
 structure decides what "content" means, so this version assumes nothing
 about where it points. Give the target element a matching `id` and
-`tabIndex={-1}` (a plain `<main>` isn't natively focusable).
+`tabIndex={-1}` (a plain `<main>` isn't natively focusable). Activation
+(click, Enter or Space) is focus-only: it focuses the target, which scrolls it
+into view, and cancels the anchor's default navigation, so `location.hash` and
+history are left alone and a hash-routed application keeps its route. The
+`href` remains as the fallback when JavaScript is unavailable, for a modified
+or non-primary click (open in a new tab), when the target is not in the
+document, and when the target cannot take focus (for example it lacks
+`tabIndex={-1}`), so the link still scrolls there. Because the fragment is no
+longer updated, the target no longer matches `:target` and no history entry is
+added; this applies to the public `SkipLink` as well as the one `Shell` renders.
 
 `SiteHeader` renders a real `<header>` — the page's `banner` landmark,
 provided it sits at the top level rather than nested inside `<main>`/
@@ -5151,13 +5172,38 @@ It renders one navigation landmark and one set of links: below `tablet`
 server-rendered state is collapsed. With scripting unavailable, CSS shows
 the panel inline and hides the button at every width. The toggle keeps
 focus when activated; Escape while open closes the sheet and returns focus
-to the toggle, and activating an `a[href]` within the panel closes it. Closed
-header content is inert after mount and CSS hides it before hydration.
-Equivalent parent renders preserve an open menu; meaningful route changes
-reset it and desktop transitions retain visible focus. Without scripting,
-expanded frame navigation stays in document flow before the View.
-There is no focus trap or portal, and the disclosure has no animation.
+to the toggle, and activating an `a[href]` within the panel closes it
+without moving focus back to the toggle, so the browser follows the link.
+Closed header content is inert after mount, from the moment it closes, and
+CSS hides it before hydration. Equivalent parent renders preserve an open
+menu; meaningful route changes reset it and desktop transitions retain
+visible focus. Without scripting, expanded frame navigation stays in
+document flow before the View. There is no focus trap or portal.
 `SiteHeader` supplies the positioned containing block for the mobile sheet.
+
+Motion: below `tablet` the sheet slides down by `--spacing-sm` and fades in
+when it opens, and reverses when it closes, over `--ui-duration-default` with
+`--ease-default`. The panel's `--site-header-panel-duration`,
+`--site-header-panel-ease` and `--site-header-panel-shift` carry those tokens,
+and the script reads them, so the CSS owns the timing. While a closing sheet
+animates it keeps `data-present` and stays painted, but it is already inert
+and out of the tab order. A reopen mid-close reverses from where the sheet is.
+Under `prefers-reduced-motion: reduce` the duration is `0s`, so the sheet
+switches at once, and turning reduced motion on cancels a running animation.
+The menu icon's bars rotate over the same duration and stop under reduced
+motion. From `tablet` up nothing moves.
+
+Collapse: the header collapses its links into the Menu sheet when the brand,
+the links and the actions would not fit on one row. `NavDisclosure` measures
+each region at its natural one-line width (the header carries
+`data-measuring` for that read, so many links, many actions and long labels
+are counted unwrapped) and requires twice the wider of the brand and the
+actions, plus the links and two gaps, so the links can stay centred. Size
+changes, content changes, image and font loads and a `dir` or `lang` change
+on the header or an ancestor schedule one measurement per animation frame.
+Hysteresis keeps a collapsed header collapsed until the row is `--spacing-sm`
+(8px) wider than it needs, so a width near the threshold does not flicker
+between the two layouts.
 Use `NavShell` when the menu needs a modal drawer and managed focus instead;
 its drawer requires JavaScript.
 
@@ -6539,6 +6585,10 @@ not a grab-bag).
 | `AnatomyCallouts` | component | A specimen panel with 3 or 5 numbered markers and an ordered key. |
 | `AnatomyCalloutsProps` | type | Required caller instance `id`, `label`, `panel`, `markers`, `keyLabel`; optional `legendSide`, `sample`, `headingLevel`, `ground`, `className`, `style`. |
 | `AnatomyCalloutsMarker` | type | Stable `id`, labelled `target`, authored `heading` and `description`. |
+| `GroupedTable` | component | Captioned native table with grouped column headers, row headers and a named overflow region. |
+| `GroupedTableProps` | type | Generic table props: `caption`, `rowHeader`, `groups`, `rows`, `rowKey`, `emptyMessage`, optional `className`. |
+| `GroupedTableGroup` | type | Group `id`, React-node `header`, and nonempty `columns`. |
+| `GroupedTableColumn` | type | Column `id`, React-node `header`, and `cell(row)` renderer; also used for the leading row header. |
 | `RecordLedger` | component | A record on rules, without a panel. |
 | `RecordLedgerProps` | type | `form: "record"` takes unique instance seed `id`, `head`, `groups`, `columns?`, `caption`, `flagLabel?`; accepts `ground`, `headingLevel`, `className`. |
 | `LedgerRowData` | type | Static row: `id`, `label`, `detail?`, `status?` (`tone`, `label`), `flag?`. |
@@ -7885,3 +7935,177 @@ export function AccountControl() {
     ] }]} />;
 }
 ```
+
+### GroupedTable
+
+`GroupedTable<Row>` is a Block for a captioned table with two levels of column
+headers and a leading row header. It composes an outlined `Card` around a
+focusable overflow region named by the visible caption. Native `colgroup`,
+`scope` and explicit `headers` associations connect each data cell to its row,
+group and leaf header. Generated IDs stay local to each instance.
+
+```tsx
+import { GroupedTable } from "@clossys/designer/blocks";
+
+<GroupedTable
+  caption="Quarterly results"
+  rowHeader={{ id: "team", header: "Team", cell: row => row.name }}
+  groups={[{ id: "quarter", header: "This quarter", columns: [
+    { id: "total", header: "Total", cell: row => row.total },
+  ] }]}
+  rows={[{ id: "alpha", name: "Alpha", total: 0 }]}
+  rowKey={row => row.id}
+  emptyMessage="No results yet"
+/>
+```
+
+Required props are `caption`, `rowHeader`, `groups`, `rows`, `rowKey` and
+`emptyMessage`; `className` customizes the outer Card. Header and cell renderers
+accept React nodes, including zero and authored links or actions. Each group
+needs at least one column. IDs must be nonempty and unique among groups or
+within a group's columns; row keys must be unique. Invalid input throws.
+An empty body displays `emptyMessage` across the row header and all leaf columns.
+The component and its types are exported from the client blocks entry and the
+component is registered in `APP_FRAME_MATERIALS` with its actual Card dependency.
+
+### Headless table model
+
+`filterRows`, `groupRows`, `pivotRows` and `aggregate` operate on caller-supplied
+rows and a versioned `TableModel`, exported through `@clossys/designer/blocks`.
+Each operation applies the model's filters and global search. Pass the resulting
+rows or aggregates to the controlled table components. The engine's module graph
+contains plain data operations; the existing blocks barrel still loads its React
+peers. Rendering, selection, pagination and fetching stay with the caller.
+
+```ts
+import {
+  aggregate, filterRows, groupRows, pivotRows,
+  parseTableModel, serializeTableModel, type TableModel,
+} from "@clossys/designer/blocks";
+
+const records = [
+  { region: "East", team: "Blue", year: 2026, quarter: "Q1", amount: 20, tags: ["urgent"] },
+  { region: "East", team: "Gold", year: 2026, quarter: "Q2", amount: 30, tags: ["urgent", "follow-up"] },
+];
+const view: TableModel = {
+  version: 1,
+  columns: [
+    { id: "region", kind: "enum" }, { id: "team", kind: "enum" },
+    { id: "year", kind: "number" }, { id: "quarter", kind: "enum" },
+    { id: "amount", kind: "number" }, { id: "tags", kind: "tags" },
+  ],
+  collation: { locale: "en", sensitivity: "base", numeric: true },
+  filters: [{ column: "tags", kind: "tags", op: "all", values: ["urgent"] }],
+  groupBy: [{ column: "region" }, { column: "team" }],
+  measures: [
+    { id: "rows", op: "count" },
+    { id: "total", op: "sum", column: "amount" },
+    { id: "average", op: "avg", column: "amount" },
+  ],
+  pivot: {
+    rows: [{ column: "region" }, { column: "team" }],
+    columns: [{ column: "year" }, { column: "quarter" }],
+  },
+};
+const filtered = filterRows(records, view); // { rows, facets }
+const groups = groupRows(records, view);    // nested groups with rows and aggregates
+const pivot = pivotRows(records, view);    // rowAxis, columnAxis, cells, totals
+const totals = aggregate(records, view);   // { rows: 2, total: 50, average: 25 }
+const saved = serializeTableModel(view);   // independent validated plain object
+const restored = parseTableModel(JSON.parse(JSON.stringify(saved)));
+```
+
+Column IDs name own row properties. Supported cell kinds are `text`, `number`,
+`date`, `enum`, `tags` and `boolean`. Numbers must be finite; enum values are
+strings, tags are arrays of strings and boolean values are actual booleans.
+Dates accept finite epoch milliseconds, `YYYY-MM-DD`, or canonical UTC ISO strings
+such as `2026-01-01T00:00:00.000Z`; normalization produces UTC ISO strings. Invalid
+calendar dates and ambiguous local date strings are refused. Null and absent
+properties normalize to one null value. Invalid cells are refused even if a
+later filter would hide that row. Input rows, arrays and models are not mutated;
+returned row arrays retain references to the caller's original rows.
+
+Filters combine with AND, including multiple filters on one column. Text supports
+`contains` and `equals`; number and date `range` bounds are inclusive and either
+bound may be omitted. Enum `in` matches exact string values. Tags support `any`,
+`all` and `none`; null tags act as an empty set for filtering. Empty `any` matches
+no rows, while empty `all` and `none` match every row. Boolean uses `equals`.
+Null values fail scalar filters. Global `search` matches any non-null searchable
+column, with individual tags searched separately; `searchable: false` opts a
+column out. Contains and global search use case folding in the supplied locale;
+text equality uses its collation sensitivity. Enum and tag identity remain exact.
+
+`filterRows` returns input-ordered `rows` and `facets` keyed by column ID. Each
+facet applies global search and every other column's filters, omitting all filters
+on its own column. Counts are per distinct value and row; repeated tags count
+once, an empty tag set contributes no tag and a missing tag value contributes a
+null facet. This disjunctive convention lets a filter menu display alternatives
+to its current selection. Numeric and date facets count distinct normalized
+values rather than histogram buckets.
+
+The locale is required and must be supported by the runtime. Collation options
+control text ordering; a UTF-16 lexical tie break makes equal-collation group keys
+deterministic across input permutations. Numeric/date/boolean values use their
+natural order. Null sorts first ascending and last descending. Each group axis
+can set `order: "desc"`. Group paths have JSON tuple keys: null and the literal
+string `"null"` differ, and delimiters inside values cannot collide. Tags group
+as a deduplicated set sorted by UTF-16 values rather than multiplying a row across tags.
+Groups contain their original rows, per-group aggregates and sorted children.
+The engine supports more than three grouping levels; repeated columns within an
+axis are refused.
+
+Measures are named by distinct IDs. `count` without a column counts rows; with a
+column it counts non-null values. `sum` and `avg` require a number column. `min`
+and `max` support scalar kinds, while `distinct` counts exact normalized values,
+including complete tag sets. Column measures exclude nulls. Empty input yields
+zero for count, sum and distinct, and null for min, max and average. Numeric
+overflow is a typed refusal. Averages and distinct totals are recomputed from
+underlying rows, so subtotals do not add child averages or distinct counts.
+
+A pivot accepts any number of row and column dimensions and one or more measures.
+Both axes contain observed full paths and every observed prefix, plus the `[]`
+grand-total path. Prefixes carry `kind: "subtotal"`, complete paths `"leaf"` and
+the empty path `"total"`. Total/subtotal paths precede their descendants. Every
+axis intersection has a cell, with `empty: true` and the documented empty
+aggregates for an unobserved combination. Empty input still has one grand-total
+cell; zero-dimensional axes are allowed. Before constructing Cartesian cells,
+the engine refuses more than 100,000 measure slots (`rowAxis.length ×
+columnAxis.length × measure count`) with `pivot-budget`. This bounds sparse
+high-cardinality output. The test budget is 2,000 ms for filter, three-level group
+and two-by-two-dimension pivot computation over 10,000 rows with bounded axis
+cardinality and three measures; it is not a timing promise for arbitrary shapes.
+
+Saved views are version 1 plain objects. `serializeTableModel` validates and
+copies a model; `parseTableModel` accepts an unknown plain object and copies it
+after validation. Unknown fields, accessors, column references, kinds, operators,
+invalid ranges and unsupported versions are refused. The typed `TableModelError`
+has a stable `code`: `invalid-model`, `unsupported-version`, `unknown-column`,
+`invalid-cell`, `pivot-budget` or `aggregate-overflow`.
+
+| Export | Kind | Contract |
+| --- | --- | --- |
+| `filterRows` | function | AND/global filtering with input-ordered rows and disjunctive facets. |
+| `groupRows` | function | Deterministically ordered group tree and per-node aggregates. |
+| `pivotRows` | function | Prefix axes, explicit sparse cells, measures, totals and subtotals. |
+| `aggregate` | function | Saved-view measures over filtered rows. |
+| `parseTableModel` | function | Validate and copy an unknown plain saved-view object. |
+| `serializeTableModel` | function | Produce an independent validated plain saved-view object. |
+| `TableModelError` | class | Typed model, cell, output-budget and numeric-overflow refusal. |
+| `TableModel` | type | Version 1 columns, collation, filters, search, groups, measures and pivot. |
+| `TableValue` | type | Normalized string, number, boolean, tag set or null. |
+| `TableColumnKind` | type | The six supported column kinds. |
+| `TableColumn` | type | Own-property ID, kind and optional global-search participation. |
+| `TableCollation` | type | Required locale and optional sensitivity, numeric and case ordering. |
+| `TableFilter` | type | Discriminated column-kind and operator filter union. |
+| `TableDimension` | type | Column reference and optional ascending or descending order. |
+| `TableMeasure` | type | Named count, sum, min, max, average or distinct measure. |
+| `TablePivot` | type | Row and column dimension arrays. |
+| `TableFacet` | type | Normalized facet value and matching-row count. |
+| `TableFilterResult` | type | Filtered original rows and column facet arrays. |
+| `TableAggregateValue` | type | Scalar measure result or null. |
+| `TableAggregates` | type | Measure ID to scalar result record. |
+| `TableGroup` | type | Tuple key, column, value, path, rows, aggregates and child groups. |
+| `TablePivotAxis` | type | Tuple key and path tagged as total, subtotal or leaf. |
+| `TablePivotCell` | type | Row/column axis keys, explicit emptiness and measure results. |
+| `TablePivotResult` | type | Both axes, their cells and grand-total measures. |
+| `TableModelErrorCode` | type | The six stable refusal codes. |

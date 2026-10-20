@@ -51,6 +51,9 @@ export type { EmptyStateProps } from "./EmptyState.js";
 export { DataTable } from "./DataTable.js";
 export type { DataTableProps, DataTableColumn, DataTableSelectionMode } from "./DataTable.js";
 
+export { filterRows, groupRows, pivotRows, aggregate, parseTableModel, serializeTableModel, TableModelError } from "./table-model/index.js";
+export type { TableValue, TableColumnKind, TableColumn, TableCollation, TableFilter, TableDimension, TableMeasure, TablePivot, TableModel, TableFacet, TableFilterResult, TableAggregateValue, TableAggregates, TableGroup, TablePivotAxis, TablePivotCell, TablePivotResult, TableModelErrorCode } from "./table-model/index.js";
+
 export { DetailView } from "./DetailView.js";
 export type { DetailViewProps, DetailViewField } from "./DetailView.js";
 
@@ -223,3 +226,5 @@ export type { ItemData, ItemFigureData, ItemStatusData, ItemProps, ItemBadge, It
 
 export { Lockup } from "./Lockup.js";
 export type { LockupProps } from "./Lockup.js";
+export { GroupedTable } from "./GroupedTable.js";
+export type { GroupedTableProps, GroupedTableGroup, GroupedTableColumn } from "./GroupedTable.js";
