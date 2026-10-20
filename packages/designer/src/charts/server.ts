@@ -47,3 +47,12 @@ export type { RangeChartProps } from "./RangeChart.js";
 
 export { ScatterChart } from "./ScatterChart.js";
 export type { ScatterChartProps } from "./ScatterChart.js";
+
+export { AreaChart } from "./AreaChart.server.js";
+export type { AreaChartProps, AreaChartSeries } from "./AreaChart.js";
+export { Heatmap } from "./Heatmap.server.js";
+export type { HeatmapProps } from "./Heatmap.js";
+export { StatusStrip } from "./StatusStrip.server.js";
+export type { StatusStripProps, StatusStripSegment } from "./StatusStrip.js";
+
+export type { SignatureChartLabels } from "./internal/signature-types.js";

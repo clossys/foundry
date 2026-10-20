@@ -24,7 +24,7 @@ exports from `@clossys/designer/atoms`. The barrel remains client-only. Read
 the packed [atom selection guide](skill/atoms-guide.md) for purpose, use and
 avoidance, alternatives, content, anatomy, block composition, accessibility,
 medium evidence, represented configurations and partial token dependencies.
-Four display groups and ten families place forty-one established atom/chart leaves
+Four display groups and ten families place forty-four established atom/chart leaves
 exactly once. Groups and families are navigation; only leaves are selectable.
 Existing IDs such as `act.link` and `reveal.tabs` remain unchanged.
 
@@ -199,7 +199,7 @@ surfaces and live in `@clossys/publisher/web`.
   See "Shell" below.
 - **`charts`** — dependency-free SVG chart primitives: `ChartFrame` (the
   shared plot/axes/grid/legend/table container), `BarChart`, `LineChart`,
-  `WaterfallChart`, `RangeChart`, `ScatterChart`, and `Sparkline`. A sibling of `shell`, not a sixth rung of the ladder —
+  `WaterfallChart`, `RangeChart`, `ScatterChart`, `AreaChart`, `Heatmap`, `StatusStrip`, and `Sparkline`. A sibling of `shell`, not a sixth rung of the ladder —
   see "Charts" below.
 - **`theme`** — the JavaScript half of this package's theming contract
   (the CSS half already ships from `tokens.css`/`theme.css` — see "CSS
@@ -456,7 +456,7 @@ source file's own header for the exact probe and its result). Today that's:
 | `@clossys/designer/atoms/server` | `Avatar`, `Badge`, `Banner`, `Card`, `Field`, `Icon`, `Meter`, `Skeleton`, `Spinner`, `StatusMark`, `buttonLinkClassName`, `iconButtonClassName`, `iconButtonLinkClassName`, `mergeUiClasses` |
 | `@clossys/designer/blocks/server` | `AnatomyCallouts`, `ArticleBody`, `Matrix`, `ContentSection`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `Item`, `Items`, `MarketingChapter`, `MediaFigure`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `RecordLedger`, `Scene`, `SectionFrame`, `SectionHeader`, `SectionIntro`, `Specimen`, `SpecimenPanel`, `Stat`, `StatusList`, `Tree` |
 | `@clossys/designer/shell/server` | `Shell`, `SiteFooter`, `SiteHeader`, `SkipLink` |
-| `@clossys/designer/charts/server` | `ChartFrame`, `BarChart`, `LineChart` (static), `WaterfallChart`, `RangeChart`, `ScatterChart`, `Sparkline` |
+| `@clossys/designer/charts/server` | `ChartFrame`, `BarChart`, `LineChart` (static), `WaterfallChart`, `RangeChart`, `ScatterChart`, `AreaChart` (static), `Heatmap` (static), `StatusStrip` (static), `Sparkline` |
 | `@clossys/designer/theme/server` | `getThemeInitScript` |
 
 Everything not listed above stays reachable only from its original barrel,
@@ -4489,6 +4489,16 @@ cleanly — `shell` and `blocks` are independent sibling layers built on
 `atoms`, neither depending on the other (see "Package structure" above),
 so a real page just renders both together:
 
+`SiteFooter` keeps a dark local surface in light and dark page themes. Its
+`Legal` row places copyright at the inline start, links centered and named
+social icons followed by the home mark at the inline end, following the
+document's direction; narrower footers stack links, icons, then copyright,
+each centered. `home` takes the page's own mark, shown on a plate of the
+page's base ground; optional named `icons` take decorative artwork and
+`iconsLabel` preserves a social navigation name. Links use 44px targets,
+external rel safety and inverse focus rings. Privacy remains an ordinary link.
+Legacy `ground` controls divider policy without switching the page theme.
+
 ```tsx
 import { SiteHeader, SiteFooter } from "@clossys/designer/shell";
 import { Hero, FeatureGrid } from "@clossys/designer/blocks";
@@ -5286,9 +5296,10 @@ once per breakpoint's own nav, so exactly one is ever visible and
 reachable at a time) and why it's the correct one given this package's
 "no JS-dependent layout" rule.
 
-`SiteFooter` accepts `ground` (`base` | `inverse`, default `base`) — use
-it for the common inverse footer plate instead of reconstructing
-`bg-surface-inverse` and ink utilities in host `className`.
+`SiteFooter` always paints a local dark surface with paired light ink in
+both page themes. Its legacy `ground` vocabulary (`base`, `inverse`,
+`transparent`, `transparent-inverse`; default `base`) controls divider
+policy; transparent values omit dividers without removing the dark surface.
 
 `SiteFooter` renders a real `<footer>` — the page's `contentinfo`
 landmark, the same top-level-placement rule `SiteHeader` follows. Two
@@ -5309,7 +5320,13 @@ by hand. It takes `entity` (a plain string) and `links` (a list of
 name for the links region. When `linksLabel` is given, the links render
 inside a `<nav aria-label>`; otherwise they render as a plain list. The
 component ships no English of its own, so the caller supplies `linksLabel`
-in the page's language.
+in the page's language. Optional `icons` are ordered `{ label, href, icon }`
+records with named destinations and consumer-supplied decorative artwork.
+`iconsLabel` names their navigation group. Optional `home` supplies
+`{ label, href, markSrc }`, always after the social icons; standalone
+Designer callers supply it explicitly. The mark is artwork authored for the
+page's base ground and is drawn on a small plate of that ground, so the same
+mark the header shows stays legible on the dark footer in either theme.
 
 ```tsx
 import { SiteFooter } from "@clossys/designer/shell";
@@ -5334,9 +5351,16 @@ export function Footer() {
 
 It renders one text string, `© {year} {entity}`, where the year is computed
 at render from the current date; there is no `year` prop. The component owns
-the layout: the links come first in DOM order; below the `desktop`
-breakpoint the two stack, centred, links first; from `desktop` up they sit on
-one line with the copyright on the left and the links on the right. Every
+the layout: DOM and narrow-container order is links, icons, copyright,
+each centered on its own line. From the footer's own `desktop` breakpoint
+width (the same container width at which the columns become four; they
+become two at `tablet`), copyright sits at the inline start, links remain
+centered on the footer between equal bounded side tracks. Icons sit at the
+inline end with home last, its plate meeting the page gutter; uncapped icon
+content wraps within its track before it can collide with another region.
+The three parts share one vertical centre. Inline start and end follow the
+document's direction, so a right-to-left page mirrors the row. Tracks wrap long content within their
+bounds without breaking words. Every
 link tap target is at least 44px. There is deliberately no disclaimer slot
 and no `children`, `className`, or `style` prop — regulatory text belongs in
 legal documents the links point to. `SiteFooter.Legal` does not import
@@ -5346,15 +5370,20 @@ as well as `@clossys/designer/shell`, and its prop types
 `secondary` continues to accept any node, so existing footers that
 compose their own row are unaffected.
 
+The footer geometry tests use Chromium or Google Chrome from `PATH` to measure
+the shipped CSS, including unequal side content and crowded icon groups in
+both document directions. No browser-driver npm dependency is required.
+
 #### Transparent chrome and full width
 
-`SiteHeader` and `SiteFooter` accept `ground="transparent"` for chrome that
-sits over a page backdrop. It renders no `bg-*` class, no `border-*` class
-and no border-width style, and `SiteFooter` also omits the divider between
-`columns` and `secondary`. Ink is unchanged from `"base"`: `SiteFooter` still
-sets the base ink, and `SiteHeader` still sets none, so its content inherits
-its ink from the page. `ground` still defaults to
-`"base"`, and `"base"` and `"inverse"` render the same markup as before.
+`SiteHeader` accepts `ground="transparent"` for chrome that sits over a
+page backdrop. It renders no `bg-*` class, no `border-*` class and no
+border-width style. Ink is unchanged from `"base"`: `SiteHeader` still sets
+none, so its content inherits its ink from the page. `ground` still defaults
+to `"base"`, and the header's `"base"` and `"inverse"` markup is unchanged.
+`SiteFooter ground="transparent"` omits its outer border and the divider
+between `columns` and `secondary`, while retaining its local dark surface
+and paired light ink. Its `ground` default remains `"base"`.
 `Shell.Header` and `Shell.Footer` keep `"base" | "inverse"`: passing
 `"transparent"` or `"transparent-inverse"` to either is a type error.
 
@@ -5381,12 +5410,13 @@ the full viewport width, inset only by the `--ui-width-page-padding-x` token;
 page content stays in `Shell.Main`'s container. A test pins this for every
 ground.
 
-`ground="transparent-inverse"` is the same no-plate, no-border chrome for a
-page that is itself on the inverse ground (`bg-surface-inverse` with
-`text-ink-on-inverse`). `SiteFooter` sets `text-ink-on-inverse` on the footer
-and `text-ink-on-inverse-muted` on its `secondary` row, the ink the
-`"inverse"` plate uses; `SiteHeader` renders exactly as it does for
-`"transparent"`, since it sets no ink and inherits the page's.
+For `SiteHeader`, `ground="transparent-inverse"` is the same no-plate,
+no-border chrome for a page that is itself on the inverse ground
+(`bg-surface-inverse` with `text-ink-on-inverse`). `SiteHeader` renders
+exactly as it does for `"transparent"`, since it sets no ink and inherits
+the page's. `SiteFooter ground="transparent-inverse"` retains the same local
+dark surface and paired light primary and secondary ink as its other
+grounds, while omitting borders and the internal divider.
 
 ```tsx
 import { SiteFooter, SiteHeader } from "@clossys/designer/shell";
@@ -5992,6 +6022,96 @@ retains each point label, its declared series name when present, both formatted
 coordinates, and the formatted size when enabled, including zero. Its
 disclosure works without JavaScript. Open it before printing to include the
 table; automatic expansion during printing is not promised.
+
+### `AreaChart`, `Heatmap`, and `StatusStrip`
+
+These charts share `ChartFrame` titles, descriptions, axes and native table
+fallbacks. The ordinary `/charts` exports support keyboard and pointer
+inspection. `/charts/server` exports static versions with the same data and
+geometry, without inert keyboard controls or series toggle buttons. Every
+colour reads the existing chart tokens, so the active light/dark theme applies;
+no animation is used, including under reduced motion.
+
+```tsx
+import { AreaChart, Heatmap, StatusStrip } from "@clossys/designer/charts";
+
+<AreaChart
+  title="Volume by month"
+  x={["Jan", "Feb", "Mar"]}
+  series={[
+    { name: "New", values: [10, 20, null] },
+    { name: "Returning", values: [30, 20, 10] },
+  ]}
+  stacked
+/>;
+<Heatmap
+  title="Capacity by team"
+  rows={["East", "West"]}
+  columns={["Mon", "Tue"]}
+  values={[[0, 100], [null, 50]]}
+/>;
+<StatusStrip
+  title="Service history"
+  domain={[0, 40]}
+  segments={[
+    { from: 0, to: 10, status: "ok" },
+    { from: 20, to: 40, status: "error" },
+  ]}
+/>;
+```
+
+`AreaChart` accepts category strings, increasing numbers, or increasing `Date`
+values in `x`; use one kind consistently. Every series must have exactly one
+finite number or `null` per x. Nulls break that series' area into separate runs
+and remain “No data” in its table and readout. `stacked` accumulates in authored
+series order; `normalized` implies stacking and makes each nonzero column total
+100%. Stacked/normalized values must be nonnegative; unstacked areas can cross
+zero. All-zero columns remain zero. `smooth` defaults to false. Up to eight
+series are supported; larger sets must be faceted. The legend toggles each
+series, recomputes the visible totals and retains every source datum in the
+table. Stable `colorDomain` or series positions preserve colour identity during
+toggles. Set `hiddenSeries` and `onHiddenSeriesChange` to control that legend.
+The focusable plot uses Left/Right, Home/End and Escape to inspect x positions;
+Enter/Space selects the inspected index. `xFormat` defaults to strings or ISO
+dates, and `valueFormat` to en-US number formatting.
+
+`Heatmap` requires a rectangular `values` matrix matching `rows` and `columns`.
+Each row and column name must be nonempty and unique within its axis. Sequential
+mode accepts finite numbers or null; the minimum and maximum map to the first
+and last of seven single-hue token steps. A constant numeric set uses the first
+step. Categorical mode (`categorical`) accepts strings or numbers and assigns
+at most eight identities stable categorical colours; supply `colorDomain` to
+preserve identities when data changes. Null remains “No data”, with a neutral
+cell. Every cell is named “row, column, value”, including missing values. Arrow
+keys move within the grid without wrapping; Home/End move within a row and
+Ctrl+Home/End move to the grid boundaries. Focus reveals the complete value;
+Enter/Space selects the row-major index. `valueFormat` defaults to `String`.
+
+`StatusStrip` accepts finite numeric or `Date` intervals with one of `ok`,
+`warn`, `error`, or `unknown`. It sorts intervals chronologically, rejects
+reversed/overlapping intervals, and gives each segment width proportional to
+its duration. `domain` optionally defines the observation window; leading,
+internal and trailing gaps become explicit `unknown` segments and table rows.
+Segments outside that window are rejected. Every status has a distinct pattern
+and a visible text legend, and each segment is named with status and interval.
+Keyboard arrows, Home/End and Enter/Space inspect/select intervals. Selection
+and hover indices include generated unknown gaps in chronological order.
+`intervalFormat` defaults to numeric strings or ISO dates.
+
+All three accept optional `activeIndex` / `onActiveIndexChange` and
+`selectedIndex` / `onSelectionChange`. Omit a controlled value for local state;
+set it to `null` to clear it. Callbacks receive an index or null. These
+callbacks let a host bind a later drill-down without importing a table
+component. Invalid/outdated controlled inspection indices are ignored. `labels`
+accepts partial translations of `SignatureChartLabels`: empty/loading/missing
+text, table headings, inspection/series/scale names and status labels. Omitted
+fields retain their documented defaults. `loading` displays “Loading data” and
+suppresses marks; empty data displays “No data”. Tables retain the authored data
+even while loading. Shared props are `title`, `description`, `width`, `height`,
+`tableFallbackLabel`, `className`, and `style`. Dimensions default to 480×280
+(StatusStrip: 480×100), must be finite and leave a positive plot after the
+standard margins (width >64, height >48). Authors must choose enough space for
+their labels; these charts do not resolve label collisions automatically.
 
 ### `Sparkline`
 
@@ -6698,7 +6818,7 @@ not a grab-bag).
 | `NavDisclosureProps` | type | Props for `NavDisclosure`: required `children`, `aria-label` (default `"Primary"`), `triggerLabel` (default `"Menu"`), `trigger` (`"label"` default, or `"icon"`), and landmark `className`. |
 | `NavShellProps` | type | Props for `NavShell`: `children` (the nav links, rendered in both the desktop row and the drawer), `aria-label` (default `"Primary"`), `triggerLabel` (default `"Menu"`), `closeLabel` (default `"Close menu"`), `className`, plus most of react-aria-components' own `DialogTrigger` props (`isOpen`, `defaultOpen`, `onOpenChange`). |
 | `SiteFooter` | component | Public-site bottom chrome: grouped link columns, a secondary/legal row. Carries `SiteFooter.Column` and `SiteFooter.Legal`. Renders the page's `contentinfo` landmark. |
-| `SiteFooterProps` | type | Props for `SiteFooter`: `columns`, `secondary`, plus every native `<footer>` attribute. |
+| `SiteFooterProps` | type | Props for `SiteFooter`: `columns`, `secondary`, legacy `ground` divider policy, optional `rule="top"` on transparent ground, plus native `<footer>` attributes except `children`. Paint remains locally dark. |
 | `SiteFooterColumnProps` | type | Props for `SiteFooter.Column`: `heading`, `children` (the column's own links), `className`. |
 | `Toaster` | component | The toast viewport — mount once, anywhere in the same tree as `Shell`. |
 | `ToasterProps` | type | Props for `Toaster`: `aria-label` (default `"Notifications"`), `className`. |
@@ -6709,7 +6829,7 @@ not a grab-bag).
 | `ToastRecord` | type | The queued shape of one toast: `title`, `description?`, `variant`. |
 | `ToastVariant` | type | `"success" \| "danger" \| "info" \| "warning"`. |
 | `ChartFrame` | component | The shared plot/axes/grid/legend/table container `BarChart`, `LineChart`, `WaterfallChart`, `RangeChart`, and `ScatterChart` compose. |
-| `ChartFrameProps` | type | Props for `ChartFrame`: `title`, `description`, `width`, `height`, `fit` (default `"fixed"`), `margin`, `xTicks`, `yTicks`, `legend`, `showSingleSeriesLegend` (default `false`), `table` (required), `tableFallbackLabel` (default `"View as table"`), `className`, `style`, `children` (render prop receiving the resolved `PlotArea`). |
+| `ChartFrameProps` | type | Props for `ChartFrame`: `title`, `description`, `interactive` (default `false`; exposes interactive SVG descendants using `role="group"`), `width`, `height`, `fit` (default `"fixed"`), `margin`, `xTicks`, `yTicks`, `legend`, `showSingleSeriesLegend` (default `false`), `table` (required), `tableFallbackLabel` (default `"View as table"`), `className`, `style`, `children` (render prop receiving the resolved `PlotArea`). |
 | `ChartMargin` | type | `{ top, right, bottom, left }`, all `number`. |
 | `ChartAxisTick` | type | `{ position, label }` — a pre-scaled pixel position plus its label. |
 | `ChartLegendItem` | type | `{ label, color, mark?: "circle" \| "square" \| "diamond" \| "triangle" }`; omitted `mark` retains the color swatch. |
@@ -6727,6 +6847,15 @@ not a grab-bag).
 | `RangeChartProps` | type | `title`, `description?`, `ticks`, `rows: readonly { id, label, from, to, status?: { tone: StatusMarkTone, label } }[]`, `labels: { table, category, from, to, status? }`, `fit?` (default `"fluid"`), `width?` (default `360`), `height?` (default fits wrapped content), `className?`, `style?`. |
 | `ScatterChart` | component | Static numeric observations with direct labels, up to four series shapes, optional proportional area, and a native data table. |
 | `ScatterChartProps` | type | `points: readonly { id, label, x, y, size?, series?, labelSide?: "start" \| "end" \| "above" \| "below" }[]`, `x` and `y: { label, min?, max? }`, `size?: { label }`, `series?: readonly { id, name }[]`, `labels: { table, category }`, required `title`, optional `description`, `fit?` (default `"fluid"`), `width?` (default `360`), `height?` (default `300`), `valueFormat?`, `className?`, and `style?`. |
+| `SignatureChartLabels` | type | Shared copy overrides: `empty`, `loading`, `missing`, table headings (`xColumn`, `rowColumn`, `fromColumn`, `toColumn`, `statusColumn`), and `inspection(title)`, `series(title)`, `scale(minimum, maximum)`, `status(status)` formatter functions. Defaults are documented on each field. |
+| `AreaChart` | component | Filled category/time series with null gaps, stacked/normalized modes, legend toggles and keyboard crosshair. |
+| `AreaChartProps` | type | Required `title`, `x`, `series`; optional `stacked`, `normalized`, `smooth`, `colorDomain`, `hiddenSeries`, `onHiddenSeriesChange`, `xFormat`, `valueFormat`, and shared chart inspection/selection, loading, description, dimensions, table and style props. |
+| `AreaChartSeries` | type | `{ name, values: readonly (number \| null)[], color? }`. |
+| `Heatmap` | component | Sequential or categorical matrix with accessible grid cells, keyboard navigation and a native table. |
+| `HeatmapProps` | type | Required `title`, `rows`, `columns`, `values: readonly (readonly (number \| string \| null)[])[]`; optional `categorical`, `colorDomain`, `valueFormat`, and shared chart inspection/selection, loading, description, dimensions, table and style props. |
+| `StatusStrip` | component | Proportional patterned status intervals with explicit unknown gaps and a native table. |
+| `StatusStripProps` | type | Required `title`, `segments`; optional `domain: readonly [number \| Date, number \| Date]`, `intervalFormat`, and shared chart inspection/selection, loading, description, dimensions, table and style props. |
+| `StatusStripSegment` | type | `{ from: number \| Date, to: number \| Date, status: "ok" \| "warn" \| "error" \| "unknown" }`. |
 | `Sparkline` | component | A bare inline trend — no axes/grid/legend/hover, still ships a table-view fallback. |
 | `SparklineProps` | type | Props for `Sparkline`: `values`, `title`, `width`, `height`, `color`, `valueFormat`, `tableFallbackLabel` (default `"View as table"`), `valueColumnLabel` (default `"Value"`), `className`, `style`. |
 | `getThemeInitScript` | function | Returns a self-contained head script (string) that stamps `data-theme` before first paint. Takes `{ storageKey?, defaultTheme? }`. |
@@ -7378,15 +7507,15 @@ No `AppNavItem`/`AppFooterColumn` or similar per-item component beyond
 `SiteFooter.Column` either, for the same reason atoms/blocks stay this
 short elsewhere in this README: added only once something real needs it.
 
-**Charts:** seven ship — `ChartFrame`, `BarChart`, `LineChart`, `WaterfallChart`, `RangeChart`, `ScatterChart`, `Sparkline`
+**Charts:** ten ship — `ChartFrame`, `BarChart`, `LineChart`, `WaterfallChart`, `RangeChart`, `ScatterChart`, `AreaChart`, `Heatmap`, `StatusStrip`, `Sparkline`
 — no `PieChart`/`DonutChart` (part-to-whole reads reliably only up to
 about six segments and a bar communicates the same comparison more
 precisely at any count — see the dataviz reference's anti-patterns list),
-no `Heatmap` (not supplied by this layer), and
+and
 deliberately **no dual-axis option on `BarChart`/`LineChart`** — that
 omission is not a gap to fill later, it's the one hard rule this layer
 does not bend on. No charting library is a dependency, and the scale/color
-helpers under `charts/internal/` stay unexported — this ships seven
+helpers under `charts/internal/` stay unexported — this ships ten
 components, not a general-purpose numerical or color library (see
 `atoms/internal/cx.ts`/`ui-vars.ts` for the same precedent one layer down).
 
@@ -7651,8 +7780,9 @@ nav tone follows an inverse overlay header; an explicit `"auto"` keeps base ink.
 Both controls otherwise retain their existing default markup.
 
 `SiteFooter ground="transparent" rule="top"` adds a token-bound top hairline
-without a plate or a divider inside the footer. `rule` defaults to `"none"`
-and is ignored on other grounds, which retain their existing border policy.
+on its local dark surface without a divider inside the footer. `rule`
+defaults to `"none"` and is ignored on other grounds, which retain their
+existing border policy.
 
 ## Token specimens
 

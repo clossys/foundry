@@ -5,20 +5,27 @@ export const HEADER_LINK_LIMIT = 5;
 export const HEADER_ACTION_LIMIT = 3;
 export const HEADER_ACTION_VARIANTS = Object.freeze(["secondary", "ghost", "primary"] as const);
 export const SITE_FRAME_CONFIG_SCHEMA = Object.freeze({
+  footerGround: Object.freeze({ values: SITE_CHROME_GROUNDS, default: "base" as const }),
+  footerPlacement: Object.freeze({ values: Object.freeze(["flow", "overlay"] as const), default: "flow" as const }),
+  footerRule: Object.freeze({ values: Object.freeze(["none", "top"] as const), default: "none" as const }),
   headerGround: Object.freeze({ values: SITE_CHROME_GROUNDS, default: "base" as const }),
   headerPlacement: Object.freeze({ values: Object.freeze(["reserved", "overlay"] as const), default: "overlay" as const }),
   headerTone: Object.freeze({ values: Object.freeze(["base", "inverse"] as const), default: "base" as const }),
 });
 export interface SiteFramePresentationConfig {
+  readonly footerGround?: typeof SITE_FRAME_CONFIG_SCHEMA.footerGround.values[number];
+  readonly footerPlacement?: typeof SITE_FRAME_CONFIG_SCHEMA.footerPlacement.values[number];
+  readonly footerRule?: typeof SITE_FRAME_CONFIG_SCHEMA.footerRule.values[number];
   readonly headerGround?: typeof SITE_FRAME_CONFIG_SCHEMA.headerGround.values[number];
   readonly headerPlacement?: typeof SITE_FRAME_CONFIG_SCHEMA.headerPlacement.values[number];
   readonly headerTone?: typeof SITE_FRAME_CONFIG_SCHEMA.headerTone.values[number];
 }
 /** Reject unknown fields and incompatible dependent inputs; output keys remain flat primitive values. */
-export function normalizeSiteFrameConfig(input: unknown = {}): Required<SiteFramePresentationConfig> {
+export function normalizeSiteFrameConfig(input: unknown = {}, inherited?: SiteFramePresentationConfig): Required<SiteFramePresentationConfig> {
   const fail = (): never => { throw new Error("SiteFrame: invalid presentation config or dependent field."); };
   try {
   if (!input || typeof input !== "object" || Array.isArray(input) || Object.getPrototypeOf(input) !== Object.prototype) fail();
+  const defaults = inherited === undefined ? undefined : normalizeSiteFrameConfig(inherited);
   const descriptors = Object.getOwnPropertyDescriptors(input);
   if (Reflect.ownKeys(input as object).some(key => typeof key !== "string")) fail();
   const fields: Record<string, string> = {};
@@ -28,8 +35,11 @@ export function normalizeSiteFrameConfig(input: unknown = {}): Required<SiteFram
     if (typeof descriptor.value !== "string" || !values.includes(descriptor.value)) fail();
     fields[key] = descriptor.value;
   }
-  const result = Object.fromEntries(Object.entries(SITE_FRAME_CONFIG_SCHEMA).map(([key, field]) => [key, fields[key] ?? field.default])) as Required<SiteFramePresentationConfig>;
+  // Explicit header inputs retain their independent defaults; footer-only inputs inherit the shell header.
+  const explicitHeader = Object.keys(fields).some(key => key.startsWith("header"));
+  const result = Object.fromEntries(Object.entries(SITE_FRAME_CONFIG_SCHEMA).map(([key, field]) => [key, fields[key] ?? (explicitHeader && key.startsWith("header") ? undefined : defaults?.[key as keyof SiteFramePresentationConfig]) ?? field.default])) as Required<SiteFramePresentationConfig>;
   if (result.headerPlacement === "overlay" ? result.headerGround !== "base" : result.headerTone !== "base") fail();
+  if (result.footerPlacement === "overlay" && result.footerGround === "transparent") fail();
   return Object.freeze(result);
   } catch { return fail(); }
 }
@@ -65,7 +75,7 @@ export const SITE_FRAME_CONTRACT = freeze({
   required: ["sticky-header", "dark-footer", "accessible-navigation", "document-scroll", "sole-main"],
   constituents: {
     Header: { owner: "@clossys/designer", subpath: "shell/server", export: "SiteHeader", config: ["headerGround", "headerPlacement", "headerTone"] },
-    Footer: { owner: "@clossys/designer", subpath: "shell/server", export: "SiteFooter", config: [], status: "awaiting-footer-composition" },
+    Footer: { owner: "@clossys/designer", subpath: "shell/server", export: "SiteFooter", config: ["footerGround", "footerPlacement", "footerRule"], content: ["columns", "links", "social", "legal", "home"], required: ["dark-in-both-themes", "centered-links", "home-inline-end", "mobile-links-icons-copyright", "named-icons", "external-rel", "safe-area", "44px-targets", "privacy-link-only"], constraints: { home: "resolved brand mark by default", links: "uncapped", accessibility: "mandatory" } },
   },
 } as const);
 
