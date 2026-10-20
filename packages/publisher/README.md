@@ -2730,7 +2730,7 @@ has the CSS-loading details.
 
 | Clossys provides | Consumer supplies |
 | --- | --- |
-| `SiteFrame` mounts Designer's header, responsive mobile navigation disclosure, `SiteHeader.ActionLink` actions and footer. Header placement is `"reserved"` (in flow, the default) or `"overlay"`; the footer has its own ground. | The data in `shell`: brand asset and copy references, `nav`, `actions`, optional `secondaryAction`, `header.placement`, and `footer.ground` (`"base"`, `"inverse"` or `"transparent"`). Supply `resolveCopy` and `resolveAsset`; the frame resolves them before passing strings to its client islands. |
+| `SiteFrame` mounts Designer's header, responsive mobile navigation disclosure, `SiteHeader.ActionLink` actions and footer. Header placement defaults to `"overlay"`; explicit `"reserved"` keeps it in flow. The footer has its own ground. | The data in `shell`: brand asset and copy references, `nav`, `actions`, optional `secondaryAction`, `header.placement`, and `footer.ground` (`"base"`, `"inverse"` or `"transparent"`). Supply `resolveCopy` and `resolveAsset`; the frame resolves them before passing data to its client islands. |
 | `LandingView` provides `fit="viewport"` or `fit="frame"`. A lone, non-compact hero under an overlay header can fill the frame's remaining space with `fit="frame"` and `landmark="none"`. `StatusView`, `LegalView` and `CaptureView` provide the corresponding page bodies. | Page content and copy, and page art through the view's slots, such as the home hero's `backdrop`. Mount a chrome-free view inside `SiteFrame`; use `framed` for `LegalView`. Content after the landing hero keeps its existing peek and scroll cue. |
 | `@clossys/designer/brand-template.css` supplies 48 required token slots, including `--color-surface-glass`, `--color-surface-glass-inverse` and `--blur-glass`, plus optional overrides. The packages own header, footer and chrome styling. | One `brand/brand.css` overlay copied from the template and filled with brand values under `:root[data-brand-bound]`. Fill its light block and both dark blocks: the OS-preference selector and `:root[data-brand-bound][data-theme="dark"]`. Put `data-brand-bound` on the document root after binding every required slot. |
 | Designer's `theme.css` connects its tokens to Tailwind v4; Publisher and Designer ship their built class-bearing modules. | One CSS entry importing `tailwindcss`, `@clossys/designer/theme.css`, then the brand overlay. Add `@source` paths to `node_modules/@clossys/designer/dist` and `node_modules/@clossys/publisher/dist`, relative to that CSS entry. Use this Tailwind path without also importing Designer's `compiled.css`. |
@@ -2874,7 +2874,8 @@ export function SignInPage() {
 - **Footer ground.** `shell.footer.ground` accepts `"base"`, `"inverse"` or
   `"transparent"`. In flow placement it defaults to `shell.ground`, regardless
   of the header's ground or overlay tone. For example, a shell with `ground: "base"` and
-  `footer: { ground: "inverse", legal }` has a base header and inverse footer.
+  `footer: { ground: "inverse", legal }` has an inverse footer independently of
+  the ground the overlay header observes.
 - **Footer placement.** `shell.footer.placement` accepts `"flow"` (the default)
   or `"overlay"`. Flow keeps the existing in-flow footer markup. Overlay places
   the same footer in the bottom row of the frame's hero scene, below the
@@ -2898,17 +2899,24 @@ export function SignInPage() {
   layout and the footer's automatic block-start margin keep its links in
   document flow as the scene grows, without clipping or adding a navigation
   landmark.
-- **Header placement.** `header` defaults to `{ placement: "reserved" }`:
-  the banner stays in flow, with its `ground` defaulting to `shell.ground`.
-  A reserved header may choose `ground` (`"base"`, `"inverse"` or
-  `"transparent"`), independently of the footer. An overlay header
-  takes `{ placement: "overlay", tone?: "base" | "inverse" }`; `tone`
-  defaults to `"base"` and selects Designer's inherited ink over its
-  transparent-to-glass header. Choose base ink over base or sunken hero
-  grounds and inverse ink over an inverse hero ground; children that set
-  their own ink retain it. `ground` with overlay and `tone` with reserved
-  placement are refused. `SiteFrameConfig.site.header` applies this choice
-  to the public site only.
+- **Header placement.** `header` defaults to `{ placement: "overlay" }` on
+  every surface kind. The fixed banner starts transparent in a browser with
+  scroll-driven animations and takes Designer's glass plate as the page scrolls.
+  The existing skip-link client island observes declared grounds at the center
+  of the header's bottom edge: `data-ground="light"` or `data-ground="dark"`
+  on a content section names its physical ground. Nested declarations take
+  precedence. The shipped LandingView `data-landing-ground` bands already name
+  their theme-relative ground and need no extra attribute. With no declaration,
+  header ink and glass follow the resolved page theme, including system changes.
+  The theme toggle changes both together; listeners and observers are released
+  when the frame unmounts. The optional overlay `tone` is an initial server hint,
+  rather than a persistent override of the observed ground. An automatic
+  wordmark inherits that ink; explicitly toned children retain their own ink.
+  Explicit `{ placement: "reserved" }` keeps the banner in flow, with its
+  `ground` defaulting to `shell.ground`; it may choose `"base"`, `"inverse"` or
+  `"transparent"` independently of the footer. `ground` with overlay and `tone`
+  with reserved placement are refused. `SiteFrameConfig.site.header` configures
+  the public-site surface; omitted headers on the other kinds also use overlay.
 
   The reserved header is sticky and the overlay is fixed. The frame reserves
   overlay clearance and uses one shared offset for skip/anchor targets; Views
@@ -6447,7 +6455,7 @@ contract references real Designer Header/Footer exports, separate from Pack
 route placement and Instance binding; it is not measurement or qualification.
 Footer composition facts remain pending the footer unit. `presentation` accepts
 only flat finite `headerGround`, `headerPlacement` and `headerTone` keys, with
-reserved/base defaults; overlay uses tone and reserved uses ground. Shared
+overlay/base defaults; overlay uses tone and explicit reserved uses ground. Shared
 `normalizeSiteFrameConfig` rejects unknown keys and incompatible dependent
 fields and accepts its own normalized output.
 
@@ -6582,6 +6590,15 @@ shortcut is enabled by default and can be disabled with
 `commands.shortcutEnabled: false`. The host owns each selected task or route.
 
 ### Theme, panel and styles
+
+The header's named `themeControl` slot contains Designer's `ThemeToggle` by
+default. Pass a React node to replace it, or `themeControl={null}` to omit the
+slot and its tab stop. The slot stays in the frame header at both viewport
+sizes, outside the navigation drawer. Header keyboard order is brand (when
+linked), command trigger, theme control, then the optional panel trigger;
+the navigation and its account footer follow in document order. A replacement
+owns its accessible name, keyboard behavior and focusable elements; use
+Designer's `ThemeToggle` or `useTheme` to share the frame's provider.
 
 The frame assembles a Designer `ThemeProvider` and the existing `ThemeToggle`,
 whose single button cycles System → Light → Dark → System. The control updates

@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { contrastRatio, contrastRatioEncodedBlend } from "./color.js";
+import { contrastRatio, contrastRatioEncodedBlend, parseOklch } from "./color.js";
 import { checkTokenContrast } from "./contrast-gate.js";
 import { AA, CONTRAST_PAIRS, contrastPairsForTheme } from "./contrast-pairs.js";
 import { findAllCustomPropertyNames, parseDeclarationsForSelector } from "./internal/parse-css.js";
@@ -70,18 +70,19 @@ describe("glass tokens", () => {
     for (const property of GLASS_COLORS) {
       expect(TOKENS[property], property).toMatchObject({ family: "surface", brandable: true, themeDependent: true });
     }
-    expect(TOKENS["--color-surface-glass"]?.value).toBe("oklch(1 0 0 / 0.88)");
-    expect(TOKENS["--color-surface-glass-inverse"]?.value).toBe("oklch(0.2178 0 0 / 0.88)");
+    expect(TOKENS["--color-surface-glass"]?.value).toBe("oklch(1 0 0 / 0.6)");
+    expect(TOKENS["--color-surface-glass-inverse"]?.value).toBe("oklch(0.2178 0 0 / 0.85)");
   });
 
   it("declares the blur as a brandable, theme-invariant token in the Tailwind blur namespace", () => {
-    expect(TOKENS["--blur-glass"]).toMatchObject({ family: "blur", value: "16px", brandable: true, themeDependent: false });
+    expect(TOKENS["--blur-glass"]).toMatchObject({ family: "blur", value: "20px", brandable: true, themeDependent: false });
+    expect(parseDeclarationsForSelector(tokensCss, ":root").get("--blur-glass")).toBe("20px");
   });
 
   it("gives each glass plate a translucent dark value", () => {
     const dark = parseDeclarationsForSelector(tokensCss, ':root[data-theme="dark"]');
-    expect(dark.get("--color-surface-glass")).toBe("oklch(0.26 0 0 / 0.88)");
-    expect(dark.get("--color-surface-glass-inverse")).toBe("oklch(0.96 0 0 / 0.88)");
+    expect(dark.get("--color-surface-glass")).toBe("oklch(0.26 0 0 / 0.86)");
+    expect(dark.get("--color-surface-glass-inverse")).toBe("oklch(0.96 0 0 / 0.6)");
     expect(dark.has("--blur-glass")).toBe(false);
   });
 
@@ -98,6 +99,32 @@ describe("glass tokens", () => {
     expect(result.ok).toBe(true);
   });
 
+  it.each(THEMES)("uses the lowest hundredth alpha with a 0.1 AA margin, never below 0.60 (%s)", (theme, tokens) => {
+    for (const plate of GLASS_COLORS) {
+      const ink = tokens[plate === "--color-surface-glass" ? "--color-ink-primary" : "--color-ink-on-inverse"]!.value;
+      const value = tokens[plate]!.value;
+      const alpha = parseOklch(value).A;
+      const minimum = (color: string) => Math.min(...["oklch(1 0 0)", "oklch(0 0 0)"].flatMap(backdrop => [contrastRatio(ink, color, backdrop), contrastRatioEncodedBlend(ink, color, backdrop)]));
+      expect(alpha, plate).toBeGreaterThanOrEqual(0.6);
+      expect(minimum(value), plate).toBeGreaterThanOrEqual(AA + 0.1);
+      if (alpha > 0.6) {
+        const previous = value.replace(/\/\s*[\d.]+\)/, `/ ${(alpha - 0.01).toFixed(2)})`);
+        expect(minimum(previous), plate).toBeLessThan(AA + 0.1);
+      }
+      console.info("glass-aa-measurement", JSON.stringify({ theme, plate, alpha, minimumRatio: minimum(value), requiredRatio: AA, margin: minimum(value) - AA }));
+    }
+  });
+
+  it.each(THEMES)("rejects 40% alpha for either plate using the unchanged contrast gate (%s)", (_theme, tokens) => {
+    for (const plate of GLASS_COLORS) {
+      const value = tokens[plate]!.value.replace(/\/\s*[\d.]+\)/, "/ 0.4)");
+      const result = checkTokenContrast(glassPairs, { tokens: withValue(tokens, plate, value) });
+      expect(result.unchecked).toEqual([]);
+      expect(result.ok).toBe(false);
+      expect(result.findings.length).toBeGreaterThan(0);
+    }
+  });
+
   it.each(THEMES)("checks the focus indicator on each glass in the tone's ink at 3:1, and it passes on the shipped %s tokens", (_theme, tokens) => {
     expect(focusPairs.map((pair) => pair.id).sort()).toEqual([...FOCUS_PAIR_IDS].sort());
     for (const pair of focusPairs) {
@@ -111,7 +138,7 @@ describe("glass tokens", () => {
   });
 
   it.each([
-    ["light", TOKENS, ["focus-ring/surface-glass-inverse@backdrop-white", "focus-ring/surface-glass-inverse@backdrop-black"]],
+    ["light", TOKENS, ["focus-ring/surface-glass-inverse@backdrop-white", "focus-ring/surface-glass-inverse@backdrop-black", "focus-ring/surface-glass@backdrop-black"]],
     ["dark", darkTokens(), ["focus-ring/surface-glass@backdrop-white", "focus-ring/surface-glass-inverse@backdrop-black"]],
   ] as const)("mutation proof: an accent focus ring fails on the glass in the %s theme", (_theme, tokens, failing) => {
     const accentPairs = focusPairs.map((pair) => ({ ...pair, foreground: "--color-accent" }));
@@ -197,7 +224,7 @@ describe("glass tokens", () => {
       }
     });
 
-    it("a modest cut from 88% to 80% alpha already fails", () => {
+    it("cutting the light-theme inverse plate to 80% alpha fails", () => {
       const result = checkTokenContrast(glassPairs, { tokens: withValue(TOKENS, "--color-surface-glass-inverse", "oklch(0.2178 0 0 / 0.8)") });
       expect(result.findings.map((f) => f.pairId)).toEqual(["ink-on-inverse/surface-glass-inverse@backdrop-white"]);
     });
