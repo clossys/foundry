@@ -1,5 +1,9 @@
 # foundry
 
+Contributors can use `git merge-generated origin/main` after setup to regenerate
+derived frame files during an ordinary merge; see
+[the contributor merge procedure](CONTRIBUTING.md#merging-generated-frame-files).
+
 A small set of TypeScript packages for validating an npm workspace against
 what is actually true of it — not against what its own packages claim about
 themselves. This repository is public and MIT licensed; current `@clossys`

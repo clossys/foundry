@@ -14,12 +14,72 @@ guidance. Working on this repository itself is a plain npm workspace and needs
 neither.
 
 ```bash
-npm install
+npm run setup
 npm test
 ```
 
 Requires Node 20 or newer. Packages ship ESM only and emit their own type
 declarations.
+
+## Merging generated frame files
+
+Setup installs a clone-local Git merge driver and `merge-generated` alias;
+cloud bootstrap installs the same setup. Existing clones can run
+`npm run setup:generated-merge` once. It preserves existing hooks and refuses
+to replace another merge driver, alias or attribute rule. Configuration is
+shared by linked worktrees; use branches containing the merge script.
+
+After installing dependencies and building the workspaces, use:
+
+```bash
+git fetch origin main
+git merge-generated origin/main
+```
+
+`npm run merge:generated -- origin/main` is the equivalent command. Start
+with a clean index and worktree. The command performs an ordinary, non-fast-forward
+merge without committing, then runs the existing Designer compiled-CSS and
+Publisher preview-CSS generators and stages only their three outputs. It
+commits after regeneration succeeds. Source conflicts remain conflicts and
+stop the command; generator failures leave the merge open for inspection.
+It never resets, rebases, force-pushes, changes a version or bypasses hooks.
+After resolving and staging a real source conflict, finish with
+`git merge-generated --continue`, which regenerates before committing. The
+same continuation completes evidence refresh if the source merge already
+committed. Do not finish an interrupted operation with plain `git commit`;
+that would omit regeneration, and the unchanged CI freshness checks reject it.
+Plain `git merge` refuses generated-file conflicts once this driver is
+installed: use the coordinated command so provisional CSS cannot be committed
+without regeneration. Git's pre-merge hook cannot substitute for it because
+the merge commit's tree is already computed when that hook runs.
+
+The role-pair evidence module also contains authored contracts and validation
+code. Its driver merges that code normally, deferring only revision, date,
+source digests and fixture digest. When measurements need refreshing, the
+existing structural measurement hook runs after the source merge is committed,
+followed by the full role-pair evidence tests and a separate ordinary commit
+containing only the evidence module. A failure returns nonzero and leaves the
+source merge intact; inspect it rather than repeating the command blindly.
+No revision is fabricated and no evidence claim is weakened.
+
+For explicit regeneration of all three CSS artifacts and retained evidence:
+
+```bash
+npm run generate:frame
+```
+
+Commit measured source changes first: evidence pins a real committed snapshot.
+CSS generation is deterministic; an already-current measurement remains
+byte-identical, while a new measurement records its actual date. The command
+does not stage or commit. All generated-file freshness and evidence checks
+remain required. `node --test scripts/generated-merge.test.mjs` exercises
+both merge orders, source conflicts and failure preservation with local Git
+repositories and dependency-free generator fixtures.
+
+The server does not execute clone-local merge drivers. No bot restack workflow
+is installed: a bot push would move the reviewed head and invalidate its
+exact-head checks and review clearance. Run the coordinated merge locally or
+in a cloud clone, push normally, and obtain fresh checks and review at that head.
 
 ## Making a change
 
