@@ -1007,6 +1007,13 @@ function HeaderActions() {
 }
 ```
 
+Publisher's client-only `AppFrame` supplies this provider and toggle together.
+Its header `themeControl` slot accepts a replacement node, including a
+customized `ThemeToggle`; pass `null` to omit the control. A replacement can
+use `useTheme()` from the frame's existing provider. Match `AppFrame`'s
+`theme.storageKey` and `theme.defaultPreference` with the head initializer's
+`storageKey` and `defaultTheme` to apply the persisted preference before paint.
+
 Reach for `useTheme()` directly when a component needs the current
 preference or resolved theme without rendering a toggle itself:
 
@@ -5085,18 +5092,29 @@ taking no height in the document: transparent at the top of the page, then a
 glass plate once the page scrolls beneath it. The glass is
 `--color-surface-glass` (or `--color-surface-glass-inverse`) behind a
 `--blur-glass` backdrop blur, over a hairline in the matching line role.
+The shipped blur is 20px. Glass alpha is measured separately for each theme
+and polarity against both white and black backdrops: light-theme base/inverse
+use 0.60/0.85, dark-theme base/inverse use 0.86/0.60. These are the lowest
+hundredth steps at or above the 0.60 floor that retain at least 0.10 contrast-ratio
+margin over AA with the shipped ink, scoring both blend models. Brands must
+rerun the unchanged contrast gate when changing those tokens.
 
 - `tone` (`"base"` by default, or `"inverse"`) sets the header's inherited
   ink (`ink-primary` or `ink-on-inverse`) and the matching glass, so the ink
-  stays the same as the header turns to glass. Tones are theme-relative, like
+  follows the matching plate as the header turns to glass. Tones are theme-relative, like
   the tokens: `base` is dark ink on a light ground only in the light theme.
   In `"overlay"`, `ground` is not read.
 - `tone` governs inherited ink only. A child that sets its own ink keeps it:
   `Link` in every variant (`standalone` is `ink-primary`, `default` is
-  `ink-link`, `muted` is `ink-muted`), `Brandmark` (`ink-primary`) and
+  `ink-link`, `muted` is `ink-muted`), an explicitly toned `Brandmark` and
   `SiteHeader.ActionLink`'s `ghost` look (`ink-primary` with no plate). With
   `tone="inverse"` those read dark on dark glass. `ActionLink`'s `primary`
   and `secondary` looks carry their own fill, so they read on either tone.
+  An unconfigured header Brandmark inherits the live header ink for its
+  wordmark while retaining the accent logomark and `markInk="image"` opt-out.
+  Publisher's automatic SiteFrame additionally follows declared physical
+  grounds and the page/OS theme through its existing client island; its own
+  ghost controls inherit that ink and use opaque matching hover plates.
 - The contrast gate checks only the tone's own ink on the glass:
   `ink-primary` on `surface-glass` and `ink-on-inverse` on
   `surface-glass-inverse`. A child whose ink is exactly that token (with
@@ -5109,8 +5127,7 @@ glass plate once the page scrolls beneath it. The glass is
 - Focus indicators inside the header take the tone's ink instead of
   `--color-accent`: the `--ui-ring-focus` ring (`Link`, `Button`) and the
   colour of every `:focus-visible` outline (`ActionLink`). Accent does not
-  reach the 3:1 non-text floor on the glass (dark theme, base glass over a
-  white backdrop: 1.55:1), and the gate checks the ring in the tone's ink
+  reach the 3:1 non-text floor on every glass/backdrop combination, and the gate checks the ring in the tone's ink
   on each glass at 3:1.
 - `menuOpen` holds the glass at any scroll position while a menu belonging to
   the header is open (`data-menu-open`). A descendant with
@@ -8090,6 +8107,94 @@ has a stable `code`: `invalid-model`, `unsupported-version`, `unknown-column`,
 | `TablePivotCell` | type | Row/column axis keys, explicit emptiness and measure results. |
 | `TablePivotResult` | type | Both axes, their cells and grand-total measures. |
 | `TableModelErrorCode` | type | The six stable refusal codes. |
+
+### Headless graph model
+
+`validateGraph`, `neighbors`, `subgraph`, `degrees`, `components`, `shortestPath`,
+`groupByKind`, `radialLayout`, `forceLayout`, `edgeRoutingHints` and
+`GraphValidationError` are exported from `@clossys/designer/blocks`. The graph
+modules themselves contain pure functions with no React, I/O, clock or ambient
+randomness. Their inputs and results are plain serializable records and arrays.
+
+```ts
+import { validateGraph, neighbors, radialLayout, forceLayout, type GraphInput } from "@clossys/designer/blocks";
+
+const input: GraphInput = {
+  nodes: [
+    { id: "program", kind: "program", label: "Program" },
+    { id: "package", kind: "package", label: "Package" },
+  ],
+  edges: [{ id: "includes", from: "program", to: "package", kind: "includes" }],
+};
+const graph = validateGraph(input);
+const outgoing = neighbors(graph, "program", { direction: "out" });
+const rings = radialLayout(graph, "program", { ringGap: 100 });
+const positions = forceLayout(graph, { iterations: 300, seed: 1 });
+```
+
+The public types are:
+
+```ts
+interface GraphNode { readonly id: string; readonly kind: string; readonly label: string }
+interface GraphEdge { readonly id: string; readonly from: string; readonly to: string; readonly kind: string; readonly weight?: number }
+interface GraphInput { readonly nodes: readonly GraphNode[]; readonly edges: readonly GraphEdge[] }
+interface GraphModelEdge extends GraphEdge { readonly selfLoop: boolean }
+interface GraphModel { readonly nodes: readonly GraphNode[]; readonly edges: readonly GraphModelEdge[] }
+type GraphErrorCode = "INVALID_INPUT" | "NODE_CAP" | "EDGE_CAP" | "DUPLICATE_NODE" | "DUPLICATE_EDGE" | "UNKNOWN_ENDPOINT" | "UNKNOWN_NODE" | "INVALID_OPTIONS";
+interface GraphNeighborOptions { readonly direction?: "in" | "out" | "both"; readonly edgeKinds?: readonly string[] }
+interface GraphSubgraphOptions { readonly depth: number; readonly edgeKinds?: readonly string[]; readonly nodeKinds?: readonly string[] }
+interface GraphDegree { readonly id: string; readonly in: number; readonly out: number; readonly total: number }
+interface GraphKindGroup { readonly kind: string; readonly nodes: readonly GraphNode[] }
+interface GraphPosition { readonly id: string; readonly x: number; readonly y: number }
+interface GraphRadialOptions { readonly ringGap?: number }
+interface GraphForceOptions { readonly iterations?: number; readonly seed?: number }
+interface GraphEdgeRoutingHint { readonly id: string; readonly type: "straight"; readonly selfLoop: boolean; readonly parallelIndex: number; readonly parallelCount: number }
+```
+
+`validateGraph(input): GraphModel` accepts at most 500 nodes and 2,000 edges,
+including empty graphs. IDs and kinds must be nonempty strings; labels must be
+strings. Node IDs and edge IDs are unique within their respective namespaces,
+and endpoints must exist. Optional weights must be finite positive numbers;
+weights are retained as metadata, while queries and layouts use unweighted
+topology. Self-loops are allowed and flagged on returned edges. Validation
+copies known fields rather than modifying input. `GraphValidationError` extends
+`Error` and exposes its typed `code: GraphErrorCode`; invalid query IDs and
+options also throw this error.
+
+| Function | Result and ordering |
+| --- | --- |
+| `neighbors(graph, id, options?)` | Unique `GraphNode[]` in authored node order; direction defaults to `both`. Loops include the node itself. |
+| `subgraph(graph, focusId, {depth, edgeKinds?, nodeKinds?})` | `GraphModel` from undirected, depth-bounded BFS; focus first, then BFS discovery order with authored node ties. The focus is retained even when excluded by `nodeKinds`; other excluded kinds prune traversal. Edges are induced among visited nodes, filtered by `edgeKinds`, in authored edge order. |
+| `degrees(graph)` | `GraphDegree[]` in authored node order; a loop contributes one incoming and one outgoing incidence, two to total. |
+| `components(graph)` | Weak, undirected `GraphNode[][]`; components ordered by first authored node, members in authored node order, isolates included. |
+| `shortestPath(graph, from, to)` | Unweighted undirected BFS returning `GraphNode[]` or `null` if disconnected; ties resolve by authored node order, independently of authored edge order. A node's path to itself is `[node]`. |
+| `groupByKind(graph)` | `GraphKindGroup[]` in first-seen kind order; members in authored node order. |
+| `edgeRoutingHints(graph)` | `GraphEdgeRoutingHint[]` in authored edge order; opposite directions share one unordered endpoint pair. `parallelIndex` is zero-based within that pair and `parallelCount` includes loops when both endpoints are the same node. |
+
+Omitting a kind filter includes kinds without restriction; an empty filter
+includes none. Depth must be a nonnegative integer. Queries validate input
+before traversing it and return copied records.
+
+`radialLayout(graph, focusId, options?): GraphPosition[]` defaults to a 100-unit
+`ringGap` (positive, at most 1,000,000). It places the focus at the origin, uses
+undirected BFS depths as ring indices, and puts unreachable nodes one ring
+beyond the deepest reachable node. Each ring starts on the positive x axis;
+nodes follow authored node order at evenly spaced angles. Coordinates are
+rounded to integers, so distance from the ideal radius may differ by less than
+one unit. Positions return in authored node order.
+
+`forceLayout(graph, options?): GraphPosition[]` runs Fruchterman–Reingold with
+mulberry32 initialization, 300 iterations and seed 1 by default. Iterations must
+be an integer from 1 through 10,000; seed must be an unsigned 32-bit integer.
+Repulsion uses an ideal distance of 80 units, attraction uses non-loop edges,
+and the initial temperature is one tenth of the component's square size,
+cooling linearly by the configured iteration count. Each weak component is
+simulated separately. After integer rounding, colliding nodes move right in
+authored order until point centers are at least 24 units apart. Components are
+normalized to nonnegative coordinates and packed horizontally with an 80-unit
+gap. Results retain authored node order and identical inputs/options yield
+byte-identical JSON. The fixed 500-node chain fixture with 300 iterations has
+a 4,000ms test budget; this is a fixture budget, not a runtime deadline.
 
 ## Shared canvas interaction layer
 

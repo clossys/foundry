@@ -97,6 +97,16 @@ describe("compiled table-model public contract", () => {
   }, 30_000);
 });
 
+describe("graph-model public contract", () => {
+  it("registers the pure graph runtime exports in the blocks entry", async () => {
+    const model = await import("./blocks/graph-model/index.js");
+    const blocks = await import("./blocks/index.js");
+    const names = Object.keys(model);
+    expect(names.length).toBeGreaterThan(0);
+    for (const name of names) expect(blocks[name as keyof typeof blocks], name).toBe(model[name as keyof typeof model]);
+  });
+});
+
 describe("compiled atom guidance public contract", () => {
   it("intentionally exports the four atom metadata records from the existing client atoms barrel", () => {
     const entry = join(packageRoot, "dist/atoms/index.js");

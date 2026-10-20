@@ -2,8 +2,11 @@
 import "@testing-library/jest-dom/vitest";
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { hydrateRoot } from "react-dom/client";
+import { renderToString } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Button, Dialog } from "@clossys/designer/atoms";
+import { ThemeToggle } from "@clossys/designer/theme";
 import { AppFrame } from "./AppFrame.js";
 import type { AppFrameProps } from "./app-frame-types.js";
 
@@ -81,6 +84,98 @@ describe("AppFrame composition", () => {
     await userEvent.click(screen.getByRole("button", { name: /Theme: System/ }));
     view.unmount(); render(<AppFrame {...props} />);
     await waitFor(() => expect(screen.getByRole("button", { name: /Theme: Light/ })).toBeInTheDocument());
+  });
+
+  it.each([true, false])("keeps one named default theme slot in the header keyboard order when wide=%s", async matches => {
+    wide.matches = matches;
+    render(<AppFrame {...fixture()} />);
+    const header = screen.getByRole("banner");
+    const slot = header.querySelector('[data-application-frame-slot="theme-control"]');
+    const toggle = screen.getByRole("button", { name: /Theme: System/ });
+    expect(document.querySelectorAll('[data-application-frame-slot="theme-control"]')).toHaveLength(1);
+    expect(slot).toContainElement(toggle);
+    expect(header.closest("[data-application-frame]")).toContainElement(toggle);
+    expect(screen.getAllByRole("button", { name: /Theme:/, hidden: true })).toHaveLength(1);
+    screen.getByRole("button", { name: "Find a command" }).focus();
+    await userEvent.tab();
+    expect(toggle).toHaveFocus();
+    await userEvent.tab();
+    expect(screen.getByRole("button", { name: matches ? "Close panel" : "Open panel" })).toHaveFocus();
+    // Account chrome stays in the later navigation footer, after the header controls.
+    if (matches) expect(toggle.compareDocumentPosition(screen.getByRole("button", { name: "Sam River" })) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+
+  it("replaces the default with a host control inside the existing persistent provider", async () => {
+    const props = fixture();
+    props.themeControl = <ThemeToggle aria-label="Host theme preference" />;
+    const view = render(<AppFrame {...props} />);
+    const control = screen.getByRole("button", { name: "Host theme preference" });
+    expect(screen.queryByRole("button", { name: /Theme:/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("banner").querySelector('[data-application-frame-slot="theme-control"]')).toContainElement(control);
+    screen.getByRole("button", { name: "Find a command" }).focus();
+    await userEvent.tab();
+    expect(control).toHaveFocus();
+    await userEvent.keyboard("{Enter}");
+    expect(localStorage.getItem("ui-theme")).toBe("light");
+    expect(document.documentElement).toHaveAttribute("data-theme", "light");
+    view.unmount();
+    render(<AppFrame {...props} />);
+    expect(document.documentElement).toHaveAttribute("data-theme", "light");
+    await userEvent.click(screen.getByRole("button", { name: "Host theme preference" }));
+    expect(localStorage.getItem("ui-theme")).toBe("dark");
+    await userEvent.click(screen.getByRole("button", { name: "Host theme preference" }));
+    expect(localStorage.getItem("ui-theme")).toBe("system");
+    expect(document.documentElement).not.toHaveAttribute("data-theme");
+  });
+
+  it.each([true, false])("omits an explicit null theme slot from header focus order when wide=%s", async matches => {
+    wide.matches = matches;
+    render(<AppFrame {...fixture()} themeControl={null} />);
+    expect(document.querySelector('[data-application-frame-slot="theme-control"]')).toBeNull();
+    expect(screen.queryByRole("button", { name: /Theme:/, hidden: true })).not.toBeInTheDocument();
+    screen.getByRole("button", { name: "Find a command" }).focus();
+    await userEvent.tab();
+    expect(screen.getByRole("button", { name: matches ? "Close panel" : "Open panel" })).toHaveFocus();
+  });
+
+  it("retains the sole theme control in the frame header while the narrow navigation drawer is open", async () => {
+    wide.matches = false;
+    render(<AppFrame {...fixture()} />);
+    const toggle = screen.getByRole("button", { name: /Theme: System/ });
+    const header = screen.getByRole("banner");
+    await userEvent.click(screen.getByRole("button", { name: "Open navigation" }));
+    const drawer = await screen.findByRole("dialog", { name: "Workspace navigation" });
+    expect(screen.getAllByRole("button", { name: /Theme:/, hidden: true })).toEqual([toggle]);
+    expect(document.querySelectorAll('[data-application-frame-slot="theme-control"]')).toHaveLength(1);
+    expect(header.querySelector('[data-application-frame-slot="theme-control"]')).toContainElement(toggle);
+    expect(header.closest("[data-application-frame]")).toContainElement(toggle);
+    expect(drawer).not.toContainElement(toggle);
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() => expect(screen.getByRole("button", { name: "Open navigation" })).toHaveFocus());
+  });
+
+  it.each(["light", "dark", "system"])("hydrates stable server chrome with a persisted %s preference", async preference => {
+    const props = fixture();
+    localStorage.setItem("ui-theme", "light");
+    const markup = renderToString(<AppFrame {...props} />);
+    localStorage.setItem("ui-theme", preference);
+    expect(renderToString(<AppFrame {...props} />)).toBe(markup);
+    const container = document.createElement("div");
+    container.innerHTML = markup;
+    document.body.append(container);
+    const recoverable = vi.fn();
+    let root: ReturnType<typeof hydrateRoot> | undefined;
+    try {
+      await act(async () => { root = hydrateRoot(container, <AppFrame {...props} />, { onRecoverableError: recoverable }); });
+      await waitFor(() => expect(within(container).getByRole("button", { name: new RegExp("Theme: " + preference[0]!.toUpperCase() + preference.slice(1)) })).toBeInTheDocument());
+      expect(recoverable).not.toHaveBeenCalled();
+      expect(container.querySelector("header")).toContainElement(container.querySelector('[data-application-frame-slot="theme-control"]'));
+      if (preference === "system") expect(document.documentElement).not.toHaveAttribute("data-theme");
+      else expect(document.documentElement).toHaveAttribute("data-theme", preference);
+    } finally {
+      await act(async () => root?.unmount());
+      container.remove();
+    }
   });
 
   it("opens real search, filters host commands, executes selection, closes and restores its button", async () => {
