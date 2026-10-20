@@ -3,7 +3,7 @@ import type { IconNode } from "@clossys/designer/atoms/server";
 import { isRenderImageAsset } from "../../../internal/assets.js";
 import type { AssetResolver } from "../../types.js";
 import type { SiteFramePresentationConfig } from "../site-frame-contract.js";
-import { HEADER_LINK_LIMIT, HEADER_ACTION_VARIANTS, normalizeSiteFrameActions, normalizeSiteFrameConfig } from "../site-frame-contract.js";
+import { HEADER_LINK_LIMIT, HEADER_ACTION_VARIANTS, SITE_FRAME_NAV_DEFAULTS, normalizeSiteFrameActions, normalizeSiteFrameConfig } from "../site-frame-contract.js";
 import { SITE_CHROME_GROUNDS } from "../types.js";
 import type { SiteChromeGround, SiteShellInput } from "../types.js";
 
@@ -396,6 +396,16 @@ export function resolveShell(input: SiteShellInput, resolveCopy: CopyResolver, r
     ...iconActions.map(() => "ghost" as const),
     ...environments.map(() => "secondary" as const),
   ]);
+  // Actions without navigation still need a named menu; its words come from the consumer's copy.
+  if (nav === undefined && headerActions.length > 0) {
+    const defaults = SITE_FRAME_NAV_DEFAULTS;
+    nav = {
+      label: copy(defaults.label, `shell.nav default label "${defaults.label.id}"`, resolveCopy),
+      triggerLabel: copy(defaults.triggerLabel, `shell.nav default triggerLabel "${defaults.triggerLabel.id}"`, resolveCopy),
+      trigger: defaults.trigger,
+      links: [],
+    };
+  }
   // Renderer and data contract normalize the same dependent presentation inputs.
   const normalized = normalizeSiteFrameConfig(presentation ?? (header.placement === "overlay"
     ? { headerPlacement: header.placement, headerTone: header.tone }

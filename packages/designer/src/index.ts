@@ -419,3 +419,5 @@ export { layoutFlowCanvas, FLOW_CANVAS_ORIENTATIONS, FLOW_CANVAS_NODE_LIMIT, FLO
 export type { FlowCanvasNode, FlowCanvasEdge, FlowCanvasOrientation, FlowCanvasLayout, FlowCanvasLayoutNode, FlowCanvasLayoutEdge, FlowCanvasLayoutOptions } from "./blocks/flow-canvas-layout.js";
 export { Items } from "./blocks/items/Items.js";
 export type { ItemData, ItemFigureData, ItemStatusData, ItemProps, ItemBadge, ItemSize, ItemTreatment, ItemSpan, ItemsProps, ItemsArrangement, ItemsColumns, ItemsScale, ItemsGroup, ItemsLane } from "./blocks/items/types.js";
+export { GroupedTable } from "./blocks/GroupedTable.js";
+export type { GroupedTableProps, GroupedTableGroup, GroupedTableColumn } from "./blocks/GroupedTable.js";

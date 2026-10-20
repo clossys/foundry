@@ -4,10 +4,10 @@ import { dirname, resolve, join } from "node:path";
 import { pathToFileURL } from "node:url";
 import ts from "typescript";
 import { createElement, type ComponentProps } from "react";
-import { render } from "@testing-library/react";
+import { render, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Button } from "../atoms/Button.js";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import * as blocks from "./index.js";
 
 const root = resolve(import.meta.dirname, "../..");
@@ -45,8 +45,81 @@ describe("AppFrame Material registration", () => {
     view.unmount();
   });
 
+  it("registers AccountMenu's rendered atoms, regions and complete public inputs", () => {
+    const account = materials().find((entry: any) => entry.id === "account-menu");
+    expect(account).toMatchObject({
+      exportName: "AccountMenu", source: "src/blocks/AccountMenu.tsx",
+      regions: ["identity", "trigger", "content", "preferences"],
+      dependencies: [
+        { exportName: "Avatar", source: "src/atoms/Avatar.tsx" },
+        { exportName: "Button", source: "src/atoms/Button.tsx" },
+        { exportName: "Icon", source: "src/atoms/Icon.tsx" },
+        { exportName: "Menu", source: "src/atoms/Menu.tsx" },
+        { exportName: "Tooltip", source: "src/atoms/Tooltip.tsx" },
+      ],
+      configs: [{ prop: "collapsed", values: [false, true], default: false, source: "src/blocks/AccountMenu.tsx" }],
+      authoredInputs: ["actor", "sections", "contextLabel", "triggerLabel", "collapsed", "onClose", "onRoute"],
+    });
+  });
+
+  it("opens the real AccountMenu through its record and forwards controlled preferences, actions and routes", async () => {
+    const account = materials().find((entry: any) => entry.id === "account-menu");
+    const onCheckedChange = vi.fn(), onAction = vi.fn(), onClose = vi.fn(), onRoute = vi.fn();
+    const link = { id: "profile", kind: "link" as const, label: "Profile", href: "#profile" };
+    const supplied: ComponentProps<typeof blocks.AccountMenu> = {
+      actor: { name: "Alex Morgan", secondaryText: "alex@example.test" },
+      contextLabel: "Workspace", triggerLabel: "Manage account", collapsed: true, onClose, onRoute,
+      sections: [
+        { id: "account", label: "Account", entries: [link,
+          { id: "settings", kind: "action", label: "Settings", onAction }] },
+        { id: "preferences", kind: "preferences", label: "Preferences", entries: [
+          { id: "compact", kind: "preference", label: "Compact view", checked: true, onCheckedChange },
+        ] },
+      ],
+    };
+    const authored = Object.fromEntries(account.authoredInputs
+      .filter((name: string) => name in supplied)
+      .map((name: keyof typeof supplied) => [name, supplied[name]]));
+    const view = render(createElement(account.component, authored as ComponentProps<typeof blocks.AccountMenu>));
+    const user = userEvent.setup();
+    const trigger = view.getByRole("button", { name: "Manage account" });
+    await user.click(trigger);
+    expect(await view.findByRole("menu", { name: "Manage account" })).toHaveTextContent("alex@example.test");
+    expect(view.getByRole("menu")).toHaveTextContent("Workspace");
+    await user.click(view.getByRole("menuitemcheckbox", { name: "Compact view" }));
+    expect(onCheckedChange).toHaveBeenCalledExactlyOnceWith(false);
+    expect(view.getByRole("menuitemcheckbox", { name: "Compact view" })).toHaveAttribute("aria-checked", "true");
+    expect(onClose).not.toHaveBeenCalled();
+    await user.click(view.getByRole("menuitem", { name: "Settings" }));
+    expect(onAction).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(view.queryByRole("menu")).not.toBeInTheDocument());
+    expect(onClose).toHaveBeenCalledTimes(1);
+    await user.click(trigger);
+    const route = await view.findByRole("menuitem", { name: "Profile" });
+    expect(route).toHaveAttribute("href", "#profile");
+    await user.click(route);
+    expect(onRoute).toHaveBeenCalledExactlyOnceWith(link);
+    await waitFor(() => expect(view.queryByRole("menu")).not.toBeInTheDocument());
+    expect(onClose).toHaveBeenCalledTimes(2);
+    view.unmount();
+  });
+
+  it("renders a grouped table from its actual authored-input record", () => {
+    const entry = materials().find((entry: any) => entry.id === "grouped-table");
+    const supplied = {
+      caption: "Results", rowHeader: { id: "name", header: "Name", cell: (row: { name: string }) => row.name },
+      groups: [{ id: "totals", header: "Totals", columns: [{ id: "count", header: "Count", cell: () => 0 }] }],
+      rows: [{ name: "Alpha" }], rowKey: (row: { name: string }) => row.name, emptyMessage: "No rows",
+    };
+    const authored = Object.fromEntries(entry.authoredInputs.map((name: keyof typeof supplied) => [name, supplied[name]]));
+    const view = render(createElement(entry.component, authored));
+    expect(view.getByRole("table", { name: "Results" })).toHaveTextContent("Alpha");
+    expect(view.getByRole("cell", { name: "0" })).toBeInTheDocument();
+    view.unmount();
+  });
+
   it("registers actual exported Block components, named regions, dependencies and finite configs", () => {
-    expect(materials().map((entry: any) => entry.id)).toEqual(["panel", "drawer", "resizable-pane", "command-menu", "app-navigation", "flow-canvas"]);
+    expect(materials().map((entry: any) => entry.id)).toEqual(["panel", "drawer", "resizable-pane", "command-menu", "app-navigation", "account-menu", "grouped-table", "flow-canvas"]);
     for (const entry of materials()) {
       expect(entry.layer).toBe("blocks");
       expect(entry.component).toBe((blocks as any)[entry.exportName]);
@@ -77,6 +150,7 @@ describe("AppFrame Material registration", () => {
         const configSource = readFileSync(join(root, config.source), "utf8");
         expect(config.values.length).toBeGreaterThan(1);
         expect(config.values).toContain(config.default);
+        if (entry.id === "account-menu") expect(configSource).toContain("collapsed = " + JSON.stringify(config.default));
         if (entry.id === "app-navigation") expect(configSource).toContain("defaultCollapsed = " + JSON.stringify(config.default));
         for (const value of config.values) expect(configSource, `${entry.id}.${config.prop}`).toContain(JSON.stringify(value));
       }
@@ -104,12 +178,12 @@ describe("AppFrame Material registration", () => {
       const blockEntry = pathToFileURL(join(temporary, "package/dist/blocks/index.js")).href;
       const script = `import * as atoms from ${JSON.stringify(atomEntry)}; import * as blocks from ${JSON.stringify(blockEntry)}; console.log(JSON.stringify({ handle: typeof atoms.ResizeHandle, materials: blocks.APP_FRAME_MATERIALS.map(entry => [entry.id, entry.component === blocks[entry.exportName]]) }));`;
       const result = JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8", cwd: root }));
-      expect(result).toEqual({ handle: "function", materials: [["panel", true], ["drawer", true], ["resizable-pane", true], ["command-menu", true], ["app-navigation", true], ["flow-canvas", true]] });
+      expect(result).toEqual({ handle: "function", materials: [["panel", true], ["drawer", true], ["resizable-pane", true], ["command-menu", true], ["app-navigation", true], ["account-menu", true], ["grouped-table", true], ["flow-canvas", true]] });
     } finally { rmSync(temporary, { recursive: true, force: true }); }
   });
 
   it("imports every real server subset under react-server without exporting interactive additions", () => {
-    const additions = ["ResizeHandle", "Panel", "Drawer", "ResizablePane", "APP_FRAME_MATERIALS", "CommandMenu", "useCommandMenuShortcut", "AppNavigation", "FlowCanvas", "layoutFlowCanvas"];
+    const additions = ["ResizeHandle", "Panel", "Drawer", "ResizablePane", "APP_FRAME_MATERIALS", "CommandMenu", "useCommandMenuShortcut", "AppNavigation", "AccountMenu", "GroupedTable", "FlowCanvas", "layoutFlowCanvas"];
     const entries = ["atoms", "blocks", "shell"].map(layer => pathToFileURL(join(root, `dist/${layer}/server.js`)).href);
     const script = `const modules = await Promise.all(${JSON.stringify(entries)}.map(entry => import(entry))); console.log(JSON.stringify(modules.map(module => ${JSON.stringify(additions)}.filter(name => name in module))));`;
     const result = JSON.parse(execFileSync(process.execPath, ["--conditions=react-server", "--input-type=module", "-e", script], { encoding: "utf8", cwd: root }));
