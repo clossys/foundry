@@ -380,7 +380,7 @@ describe("Block theme conformance", () => {
   it.each([
     "[--color-ink-primary:red]", "hover:[--color-ink-primary:red]",
     "dark:[&_[data-state=open]]:hover:![--color-ink-primary:red]",
-    "md:[--color-ink-primary:red]!", "[--color-ink-primary:var(--color-surface-base)]",
+    "md:[--color-ink-primary:red]!", "[--color-ink-primary:var(--color-surface-base,currentColor)]",
   ])("rejects custom color properties through the canonical pipeline: %s", candidate => {
     const input = realInputs();
     const file = "src/blocks/PageHeader.tsx";
