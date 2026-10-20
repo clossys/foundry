@@ -92,6 +92,14 @@ for (const document of documents) {
       ["a script URL", "javascript:alert(1)"],
       ["a relative path", "site.css"],
       ["a blank string", " "],
+      // The URL parser strips TAB, LF and CR, so each of these would resolve to a protocol-relative external URL.
+      ["a TAB between the leading slashes", "/\t/cdn.example.com/site.css"],
+      ["a LF between the leading slashes", "/\n/cdn.example.com/site.css"],
+      ["a CR between the leading slashes", "/\r/cdn.example.com/site.css"],
+      ["a TAB inside an https URL", "https://cdn.example.com/\tsite.css"],
+      ["a space inside a path", "/site .css"],
+      ["a NUL inside a path", "/site\u0000.css"],
+      ["a DEL inside a path", "/site\u007f.css"],
     ])("refuses %s, naming only its index", (_label, href) => {
       expect(() => renderToStaticMarkup(document.render(["/ok.css", href]))).toThrow(
         new TypeError(`${document.name}: stylesheets[1] must be a root-relative path or an https URL.`),

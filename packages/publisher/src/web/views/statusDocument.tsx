@@ -30,8 +30,22 @@ const FRAME_CRITICAL_CSS = [
   "}",
 ].join("");
 
+/**
+ * Whether the value holds an ASCII control character, a space or DEL. The URL
+ * parser strips TAB, LF and CR anywhere in its input, so "/<TAB>/host" would
+ * otherwise pass the root-relative test below and still resolve to a
+ * protocol-relative external URL.
+ */
+function hasControlOrSpace(value: string): boolean {
+  for (let index = 0; index < value.length; index += 1) {
+    const code = value.charCodeAt(index);
+    if (code <= 0x20 || code === 0x7f) return true;
+  }
+  return false;
+}
+
 function isStylesheetHref(href: unknown): href is string {
-  if (typeof href !== "string" || href.trim() !== href || href === "") return false;
+  if (typeof href !== "string" || href === "" || href.trim() !== href || hasControlOrSpace(href)) return false;
   if (href.startsWith("/")) return !href.startsWith("//") && !href.includes("\\");
   try {
     return new URL(href).protocol === "https:";

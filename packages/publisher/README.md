@@ -3379,7 +3379,7 @@ Props (`GlobalErrorDocumentFramedProps`):
 | `documentTitle` | yes | `{ page, brand }`, joined by `formatPageTitle`. |
 | `icon` | yes | `{ href, type? }` for the one `<link rel="icon">`. |
 | `htmlClassName` | no | A class on `<html>`, rendered only when non-empty. |
-| `stylesheets` | no | Stylesheet `href`s linked from the head, in order. Each is a root-relative path or an `https` URL; anything else throws a `TypeError` naming its index. See "Styling a document that replaces the root layout" below. |
+| `stylesheets` | no | Stylesheet `href`s linked from the head, in order. Each is a root-relative path or an `https` URL with no space or ASCII control character; anything else throws a `TypeError` naming its index. See "Styling a document that replaces the root layout" below. |
 | `shell`, `resolveCopy`, `resolveAsset` | yes | The frame's inputs, exactly as `SiteFrame` takes them (`SiteFrameInput`). |
 | `status` | yes | The one `<h1>`, as on `StatusView`: a code such as `"500"`, or a short title. |
 | `subtitle` | no | One line of supporting caller copy. |
