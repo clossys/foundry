@@ -470,3 +470,42 @@ describe("reviewed paint and document boundaries", () => {
     expect(checkMarkConformance(normalized)).toEqual([]);
   });
 });
+describe("zero-length drawn stroke caps", () => {
+  const visible = '<rect x="30" y="30" width="40" height="40"/>';
+  const capPath = (d: string, cap: string) => `<path d="${d}" fill="none" stroke="#000" stroke-width="20" stroke-linecap="${cap}"/>`;
+  it("fits the reviewer square-cap point together with the visible glyph", () => {
+    const input = svg(capPath('M10 10h0', 'square') + visible);
+    expect(measureMarkGeometry(input).glyphBox).toEqual({ x: 0, y: 0, width: .7, height: .7 });
+    expect(checkMarkConformance(input).find(finding => finding.rule === 'inset')?.measured).toBe(.7);
+    const normalized = normalizeMark({ glyphSvg: input, tokens });
+    const document = new DOMParser().parseFromString(normalized, 'image/svg+xml');
+    expect(document.querySelector('svg > g')?.getAttribute('transform')).toBe('translate(8.64 8.64) scale(0.438857142857)');
+    expect(document.querySelector('path')?.getAttribute('d')).toBe('M10 10h0');
+    expect(measureMarkGeometry(normalized).glyphBox).toMatchObject({ x: expect.closeTo(.18, 5), y: expect.closeTo(.18, 5), width: expect.closeTo(.64, 5), height: expect.closeTo(.64, 5) });
+    expect(checkMarkConformance(normalized)).toEqual([]);
+  });
+  it.each(['M10 10h0', 'M10 10h0Z'])("paints a square at the drawn zero-length subpath %s", d => {
+    expect(() => box(capPath(d, 'square'))).not.toThrow();
+    expect(box(capPath(d, 'square'))).toEqual({ x: 0, y: 0, width: .2, height: .2 });
+  });
+  it.each(['M10 10h0', 'M10 10h0Z'])("retains round and butt behavior at %s", d => {
+    expect(() => box(capPath(d, 'round') + visible)).not.toThrow();
+    expect(box(capPath(d, 'round') + visible)).toEqual({ x: 0, y: 0, width: .7, height: .7 });
+    expect(box(capPath(d, 'butt') + visible)).toEqual({ x: .3, y: .3, width: .4, height: .4 });
+  });
+  it("measures every zero-length subpath without joining separate points", () => {
+    expect(() => box(capPath('M10 10h0 M90 90h0', 'square'))).not.toThrow();
+    expect(box(capPath('M10 10h0 M90 90h0', 'square'))).toEqual({ x: 0, y: 0, width: 1, height: 1 });
+  });
+  it("constructs the square before nonuniform scale and rotation", () => {
+    const input = `<g transform="translate(10 20) rotate(90) scale(2 3)">${capPath('M10 10h0', 'square')}</g>`;
+    expect(() => box(input)).not.toThrow();
+    expect(box(input)).toMatchObject({ x: expect.closeTo(-.5, 5), y: expect.closeTo(.2, 5), width: expect.closeTo(.6, 5), height: expect.closeTo(.4, 5) });
+  });
+  it.each(['M10 10', 'M10 10A5 5 0 0 0 10 10'])("does not add a square to an undrawn subpath %s", d => {
+    expect(box(capPath(d, 'square') + visible)).toEqual({ x: .3, y: .3, width: .4, height: .4 });
+  });
+  it.each(['square', 'round', 'butt'])("retains nonzero closed backtracking with %s caps", cap => {
+    expect(box(capPath('M10 10H40H10Z', cap))).toEqual({ x: .1, y: 0, width: .3, height: .2 });
+  });
+});

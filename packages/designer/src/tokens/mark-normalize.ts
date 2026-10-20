@@ -415,6 +415,13 @@ function stroke(contour: Contour, width: number, a: Attrs, tolerance: number): R
   if (!['miter', 'round', 'bevel'].includes(join))
     fail(`stroke-linejoin ${join}`);
   const emit = (points: Point[]) => out.push({ contours: [points] });
+  // Bound a drawn zero-length segment before constructing its directions.
+  if (p.length === 1 && contour.points.length > 1) {
+    const [x, y] = p[0]!;
+    if (cap === 'square') emit([[x - radius, y - radius], [x + radius, y - radius], [x + radius, y + radius], [x - radius, y + radius]]);
+    if (cap === 'round') emit(ellipse(x, y, radius, radius, tolerance).points);
+    return out;
+  }
   const directions: Point[] = [], normals: Point[] = [];
   for (let i = 0; i < count; i++) {
     const next = p[(i + 1) % p.length]!, d = sub(next, p[i]!), length = Math.hypot(...d), unit = mul(d, 1 / length), normal: Point = [-unit[1] * radius, unit[0] * radius];
