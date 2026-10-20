@@ -72,6 +72,18 @@ describe("site-header-overlay utility (theme-keys.css)", () => {
     expect(automatic).not.toMatch(LAYOUT_PROPERTIES);
   });
 
+  it("covers inline environment ghost controls with the same scoped paint rule", () => {
+    const automatic = nestedBlock(block, "&.site-header-ground-aware {");
+    const actions = nestedBlock(automatic, '&[data-placement="overlay"][data-tone] .site-header-actions > a,');
+    expect(actions).toContain('&[data-placement="overlay"][data-tone] .site-header-environment-ghost,');
+    expect(actions).toContain("color: inherit;");
+    const interaction = nestedBlock(actions, "&:hover, &:focus-visible {");
+    expect(interaction).toContain("color: inherit;");
+    expect(interaction).toContain("background-color: var(--site-header-action-hover, var(--color-surface-raised, oklch(1 0 0)));");
+    expect(themeKeys.replace(automatic, "")).not.toContain("site-header-environment-ghost");
+    expect(automatic).not.toMatch(LAYOUT_PROPERTIES);
+  });
+
   it("resets expanded mobile-panel action hover and focus plates to match the panel's own base ink", () => {
     const mobile = topLevelBlock(themeKeys, "@utility site-header-mobile {");
     const panel = nestedBlock(mobile, "& .nav-disclosure-panel {");

@@ -57,9 +57,13 @@ export const SITE_FRAME_NAV_DEFAULTS = Object.freeze({
   triggerLabel: Object.freeze({ id: "site-frame.nav.trigger-label" }),
   trigger: "label" as const,
 });
-/** Composition references identify exports; they confer no qualification. Pack owns route placement and Instance pairs Frame with View. */
+/**
+ * Composition references identify exports; they confer no qualification.
+ * Revision 3 uses current-only auth environments and direct ghost links for environment-only headers.
+ * Pack owns route placement and Instance pairs Frame with View.
+ */
 export const SITE_FRAME_CONTRACT = freeze({
-  identity: "site-frame", role: "frame", revision: 2, medium: "web",
+  identity: "site-frame", role: "frame", revision: 3, medium: "web",
   use: ["persistent public-site chrome surrounding one chrome-free View"],
   avoid: ["route placement", "document bootstrap", "content sections", "application navigation focus bridge"],
   config: SITE_FRAME_CONFIG_SCHEMA,

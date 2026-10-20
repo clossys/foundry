@@ -98,6 +98,27 @@ const AUTH_VIEW_TEMPLATE: WebTemplate = {
     }),
 };
 
+// A separate flow keeps the shared legacy template's required brand unchanged.
+const FRAMED_AUTH_VIEW_TEMPLATE: WebTemplate = {
+  ...AUTH_VIEW_TEMPLATE,
+  flow: { slots: AUTH_VIEW_TEMPLATE.flow.slots.filter(slot => slot.key !== "brand" && slot.key !== "footerSecondary") },
+  build: content => createElement(AuthView, {
+    heading: content.heading,
+    description: content.description,
+    form: content.form,
+    notes: content.secondaryAction,
+    footnote: content.footnote,
+  }),
+};
+
+/** Actual registry identity is required; a consumer template may also be named AuthView. */
+export function framedAuthTemplate(template: WebTemplate): WebTemplate {
+  if (template !== AUTH_VIEW_TEMPLATE) {
+    throw new RenderError("resolution-failed", "renderWebDocument frame requires the built-in AuthView template.");
+  }
+  return FRAMED_AUTH_VIEW_TEMPLATE;
+}
+
 const ERROR_VIEW_TEMPLATE: WebTemplate = {
   name: "ErrorView",
   flow: {
