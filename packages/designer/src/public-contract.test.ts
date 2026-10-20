@@ -467,13 +467,35 @@ describe("compiled pane handle edge contract", () => {
       import { type ResizablePaneProps } from ${JSON.stringify(join(packageRoot, "dist/blocks/index.js"))};
       const start: ResizeHandleProps["edge"] = "start";
       const end: ResizablePaneProps["handleEdge"] = "end";
-      // @ts-expect-error Only logical pane edges are supported.
-      const invalid: ResizablePaneProps["handleEdge"] = "middle";
     `;
     const options = { strict: true, noEmit: true, skipLibCheck: true, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler };
     const host = ts.createCompilerHost(options);
     const original = host.getSourceFile.bind(host);
     host.getSourceFile = (path, language, error, fresh) => path === filename ? ts.createSourceFile(path, consumer, language, true) : original(path, language, error, fresh);
     expect(ts.getPreEmitDiagnostics(ts.createProgram([filename], options, host)).map(diagnostic => ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n"))).toEqual([]);
+  });
+
+  it("rejects unsupported edges with native diagnostics through the atom and block barrels", () => {
+    const filename = join(packageRoot, "pane-edge-negative-consumer.check.ts");
+    const source = `
+      import { type ResizeHandleProps } from ${JSON.stringify(join(packageRoot, "dist/atoms/index.js"))};
+      import { type ResizablePaneProps } from ${JSON.stringify(join(packageRoot, "dist/blocks/index.js"))};
+      const invalidAtom: ResizeHandleProps["edge"] = "middle";
+      const invalidPane: ResizablePaneProps["handleEdge"] = "middle";
+    `;
+    const options = { strict: true, noEmit: true, skipLibCheck: true, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler };
+    const host = ts.createCompilerHost(options); const original = host.getSourceFile.bind(host);
+    host.getSourceFile = (path, language, error, fresh) => path === filename ? ts.createSourceFile(path, source, language, true) : original(path, language, error, fresh);
+    const diagnostics = ts.getPreEmitDiagnostics(ts.createProgram([filename], options, host));
+    const cases = [{ binding: "invalidAtom", field: "edge" }, { binding: "invalidPane", field: "handleEdge" }];
+    expect(diagnostics).toHaveLength(2);
+    for (const [index, diagnostic] of diagnostics.entries()) {
+      const item = cases[index]!;
+      expect(diagnostic.code).toBe(2322); expect(diagnostic.file?.fileName).toBe(filename);
+      const line = diagnostic.file!.getLineAndCharacterOfPosition(diagnostic.start!).line;
+      expect(source.split("\n")[line]).toContain(`const ${item.binding}:`);
+      expect(source.split("\n")[line]).toContain(`["${item.field}"]`);
+      expect(ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n")).toBe(`Type '"middle"' is not assignable to type '"start" | "end" | undefined'.`);
+    }
   });
 });
