@@ -6460,6 +6460,29 @@ not a grab-bag).
 | `EmptyState` | component | Zero-item placeholder: icon slot, title, description, action slot. |
 | `EmptyStateProps` | type | Props for `EmptyState`: `icon`, `title`, `description`, `action`, plus every native `<div>` attribute. |
 | `DataTable` | component | Controlled data grid built on `Table`'s primitives: toolbar slot, the grid itself, empty state, loading state, footer slot. |
+| `CanvasSurface` | component | Controlled world layer with native item focus, pan, zoom, marquee, minimap and zoom controls. |
+| `CanvasSurfaceProps` | type | Controlled viewport and selection callbacks, labelled item geometry, world bounds, children, passive item renderer, optional view size and controls. |
+| `CanvasPoint` | type | Readonly physical x/y coordinates. |
+| `CanvasSize` | type | Readonly width/height dimensions. |
+| `CanvasRect` | type | Readonly x/y/width/height rectangle. |
+| `Viewport` | type | Serializable screen translation x/y and positive zoom. |
+| `Selection` | type | Serializable readonly array of unique item ids. |
+| `CanvasItem` | type | Stable id, accessible label and world-space rect. |
+| `CanvasDirection` | type | Spatial direction: left, right, up or down. |
+| `CanvasMinimapModel` | type | World bounds, world-space viewport rectangle and normalized clipped visible rectangle. |
+| `panBy` | function | Return a viewport translated by screen-space delta. |
+| `zoomAt` | function | Scale a viewport while preserving the world point under a screen anchor. |
+| `fitTo` | function | Center world bounds in a view size with screen-space padding. |
+| `clamp` | function | Clamp zoom, optionally constraining translation to world bounds with an explicit view size. |
+| `toWorld` | function | Convert a screen point into world coordinates. |
+| `toScreen` | function | Convert a world point into screen coordinates. |
+| `selectSingle` | function | Return a one-id selection. |
+| `toggleSelection` | function | Toggle an id while preserving existing selection order. |
+| `selectRange` | function | Return an inclusive range in canonical id order. |
+| `selectMarquee` | function | Return ids whose world rectangles intersect an inclusive marquee, in item order. |
+| `clearSelection` | function | Return a fresh empty selection. |
+| `navigate` | function | Find the nearest item center in a directional half-plane, with input-order ties. |
+| `minimapModel` | function | Derive serializable viewport and normalized visible geometry. |
 | `DataTableProps` | type | Props for `DataTable`: `aria-label`, `columns`, `rows`, `rowKey`, `sortDescriptor`, `onSortChange`, `selectionMode`, `selectedKeys`, `onSelectionChange`, `isLoading`, `loadingRowCount`, `emptyStateTitle`, `emptyStateDescription`, `emptyStateAction`, `toolbar`, `footer`, `className`, `style`. |
 | `DataTableColumn` | type | One column definition: `id`, `header`, `cell(row)`, `allowsSorting?`, `isRowHeader?`, `width?`. |
 | `DataTableSelectionMode` | type | `"none" \| "single" \| "multiple"`. |
@@ -7288,7 +7311,7 @@ speculatively, just because a related component shipped, is the exact
 un-bounded growth this package's own "variant rule" warns against one level
 up. They get added here only once something real needs them.
 
-**Blocks:** forty-one ship — `AccountMenu`, `PageHeader`, `EmptyState`, `DataTable`,
+**Blocks:** include `AccountMenu`, `PageHeader`, `EmptyState`, `DataTable`, `CanvasSurface`,
 `DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`, `ConfirmDialog`,
 `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `SectionFrame`, `MarketingChapter`,
 `FeatureGrid`, `Item`, `Items`, `Tree`, `AnatomyCallouts`, `RecordLedger`, `Scene`, `Matrix`, `Specimen`,
@@ -7925,3 +7948,103 @@ within a group's columns; row keys must be unique. Invalid input throws.
 An empty body displays `emptyMessage` across the row header and all leaf columns.
 The component and its types are exported from the client blocks entry and the
 component is registered in `APP_FRAME_MATERIALS` with its actual Card dependency.
+
+## Shared canvas interaction layer
+
+Import `CanvasSurface` and the model functions from `@clossys/designer/blocks`.
+The headless modules contain no React or DOM operations. Their state is plain
+readonly data: `Viewport { x, y, zoom }` and `Selection`, an array of unique ids.
+Functions return new values and leave caller points, rectangles and arrays intact.
+
+```tsx
+import { useState } from "react";
+import {
+  CanvasSurface, type CanvasItem, type Selection, type Viewport,
+} from "@clossys/designer/blocks";
+
+const items: readonly CanvasItem[] = [
+  { id: "draft", label: "Draft", rect: { x: 40, y: 40, width: 160, height: 80 } },
+  { id: "review", label: "Review", rect: { x: 300, y: 160, width: 160, height: 80 } },
+];
+
+export function Diagram() {
+  const [viewport, setViewport] = useState<Viewport>({ x: 0, y: 0, zoom: 1 });
+  const [selection, setSelection] = useState<Selection>([]);
+  return <CanvasSurface
+    aria-label="Document workflow"
+    viewport={viewport} onViewportChange={setViewport}
+    selection={selection} onSelectionChange={setSelection}
+    items={items} worldBounds={{ x: 0, y: 0, width: 600, height: 400 }}
+    viewSize={{ width: 600, height: 400 }} minimap zoomControls
+    renderItem={item => <span>{item.label}</span>}
+  />;
+}
+```
+
+`CanvasSurface` requests changes through callbacks and renders the supplied values.
+It keeps transient gestures, focus and fit animation state locally. Provide a sized
+container when omitting `viewSize`; the surface measures its content box and tracks
+resizes. An explicit `viewSize` sets the content-box width and height, in pixels.
+The world layer transforms both `children` and the generated item buttons once.
+Use `children` for decorative world content such as SVG connectors; use `renderItem`
+for passive content inside the generated native button. Nested buttons, links or
+form controls inside `renderItem` are invalid HTML. Labels name the item buttons.
+Item rectangles determine target sizes; author bounds large enough for touch use.
+World geometry uses physical x/y axes, including under right-to-left page layouts;
+controls use logical inline positioning. Surface, border, focus and motion styles
+consume the existing light/dark tokens.
+
+- `toScreen(viewport, world)` computes `world * zoom + translation`;
+  `toWorld(viewport, screen)` reverses it. Surface pointer coordinates are local
+  content-box pixels, accounting for its page position and border.
+- `panBy(viewport, delta)` takes a screen delta. `zoomAt(viewport, screenAnchor,
+  factor)` preserves the anchored world point. Zoom and dimensions must be finite;
+  zoom/factors and view dimensions must be positive. World extents may be zero.
+- `fitTo(bounds, viewSize, padding = 0)` centers the bounds, with padding in screen
+  pixels. Padding must leave positive space along both axes. A point fits at zoom
+  one; a line fits using its nonzero extent.
+- `clamp(viewport, minZoom, maxZoom, worldBounds?, viewSize?)` requires positive,
+  ordered limits. With world bounds it requires a view size, constrains translation
+  to keep the visible area within the world, and centers any smaller world axis.
+  Surface gestures restrict zoom to `minZoom = 0.1` / `maxZoom = 8`; its
+  `worldBounds` supplies fit and minimap geometry. Hosts can apply headless `clamp`
+  in their callback when bounded panning is wanted. Fit recenters after applying
+  zoom limits; a limit may prevent the entire world from fitting.
+- `selectSingle(id)` replaces selection. `toggleSelection(selection, id)` retains
+  existing order and appends a newly selected id. `selectRange(order, anchor,
+  target)` returns both endpoints in canonical order, or an empty array if either
+  id is missing. `selectMarquee(items, worldRect)` includes edge/corner contact
+  and returns item order. `clearSelection()` returns an empty array.
+- `navigate(items, current, direction)` compares item centers in the strict
+  directional half-plane and chooses the smallest Euclidean distance; equal
+  distances use input order. It returns `null` at an edge, or the first item for
+  missing/current-null focus. Ids must be unique and labels nonempty.
+- `minimapModel(worldBounds, viewport, viewSize)` returns a world-space viewport
+  rectangle and a visible rectangle clipped and normalized to `[0, 1]`. A zero
+  world extent produces zero normalized extent on that axis.
+
+Drag empty space (including decorative descendants) to pan. Space+drag also pans
+from an item; Shift+drag on empty space selects an inclusive world-space marquee.
+Wheel and trackpad pinch zoom at the pointer; two touch pointers pinch around
+their midpoint. Touch item taps retain native button activation; a moved gesture
+suppresses its synthetic click. Releasing either pinch pointer ends that gesture.
+Escape, lost capture, window blur and pointer cancellation cancel a marquee.
+Owned pointer captures, wheel/resize/key listeners and observers are released on
+unmount. Wheel handling is non-passive to prevent page scrolling over the canvas.
+
+The generated buttons provide one roving tab stop. Arrow keys move actual DOM
+focus; Shift+arrows add current and destination ids in item order. Click/Enter
+selects one item; Control/Command+click toggles, and Shift+click selects a range
+from the last non-shift click. Plus/minus zoom around the view center; zero and
+Home fit; Escape clears selection. An empty surface is itself keyboard focusable.
+Consumer form inputs and independent controls retain their own keyboard handling.
+Translate the help and control names with `instructionText`, `recenterLabel`,
+`zoomGroupLabel`, `zoomOutLabel`, `zoomPercentageLabel`, `zoomInLabel` and
+`fitLabel`; their documented defaults supply English text.
+
+Set `minimap` and/or `zoomControls` to show the optional controls. A minimap click
+recenters on the clicked world point; keyboard activation recenters on the world
+center. Zoom controls report the supplied viewport percentage. Fit can animate
+using the existing motion duration; `prefers-reduced-motion` disables the fit
+transition, including when the preference changes while mounted. Pan, wheel,
+pinch and ordinary zoom requests use immediate transforms.

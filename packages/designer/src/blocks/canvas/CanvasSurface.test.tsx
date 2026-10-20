@@ -1,0 +1,286 @@
+import { act, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { CanvasSurface, type CanvasSurfaceProps } from "./CanvasSurface.js";
+import { fitTo, toWorld, type CanvasItem } from "./models.js";
+
+const items: readonly CanvasItem[] = [
+  { id: "a", label: "Alpha", rect: { x: 0, y: 0, width: 20, height: 20 } },
+  { id: "b", label: "Beta", rect: { x: 100, y: 0, width: 20, height: 20 } },
+  { id: "c", label: "Gamma", rect: { x: 0, y: 100, width: 20, height: 20 } },
+];
+const initial = { x: 0, y: 0, zoom: 1 };
+const viewSize = { width: 800, height: 600 };
+const worldBounds = { x: 0, y: 0, width: 1000, height: 800 };
+let media: { matches: boolean; addEventListener: ReturnType<typeof vi.fn>; removeEventListener: ReturnType<typeof vi.fn> };
+beforeEach(() => {
+  class TestPointerEvent extends MouseEvent {
+    pointerId: number; pointerType: string;
+    constructor(type: string, init: PointerEventInit = {}) {
+      super(type, init); this.pointerId = init.pointerId ?? 1; this.pointerType = init.pointerType ?? "mouse";
+    }
+  }
+  vi.stubGlobal("PointerEvent", TestPointerEvent);
+  media = { matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() };
+  vi.stubGlobal("matchMedia", vi.fn(() => media));
+});
+afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); });
+
+function setup(overrides: Partial<CanvasSurfaceProps> = {}) {
+  const props: CanvasSurfaceProps = {
+    "aria-label": "Workspace", viewport: initial, onViewportChange: vi.fn(), selection: Object.freeze([]),
+    onSelectionChange: vi.fn(), items, worldBounds, viewSize, ...overrides,
+  };
+  const result = render(<CanvasSurface {...props} />);
+  const surface = screen.getByRole("region", { name: "Workspace" });
+  Object.defineProperties(surface, { setPointerCapture: { value: vi.fn(), configurable: true },
+    releasePointerCapture: { value: vi.fn(), configurable: true }, hasPointerCapture: { value: () => true, configurable: true } });
+  vi.spyOn(surface, "getBoundingClientRect").mockReturnValue({ x: 40, y: 30, left: 40, top: 30, width: 800, height: 600, right: 840, bottom: 630, toJSON() {} });
+  return { ...result, surface, props, world: result.container.querySelector("[data-canvas-world]") as HTMLElement };
+}
+const pointer = (node: Element, type: "down" | "move" | "up" | "cancel", x: number, y: number, extra: PointerEventInit = {}) =>
+  fireEvent(node, new PointerEvent(`pointer${type}`, { bubbles: true, cancelable: true, clientX: x + 40, clientY: y + 30, button: 0, pointerId: 1, ...extra }));
+
+describe("canvas surface keyboard and controlled values", () => {
+  it("renders real named item buttons with one roving tab stop and passive content once", () => {
+    setup({ children: <svg data-testid="edge"><path /></svg>, renderItem: item => <span>{item.label} detail</span> });
+    expect(screen.getByRole("button", { name: "Alpha" })).toHaveAttribute("tabindex", "0");
+    expect(screen.getByRole("button", { name: "Beta" })).toHaveAttribute("tabindex", "-1");
+    expect(screen.getAllByTestId("edge")).toHaveLength(1);
+    expect(screen.getAllByText("Alpha detail")).toHaveLength(1);
+  });
+  it("moves actual DOM focus spatially, including all four arrow directions", () => {
+    const { props } = setup();
+    const a = screen.getByRole("button", { name: "Alpha" }), b = screen.getByRole("button", { name: "Beta" }), c = screen.getByRole("button", { name: "Gamma" });
+    act(() => a.focus());
+    for (const [key, target] of [["ArrowRight", b], ["ArrowLeft", a], ["ArrowDown", c], ["ArrowUp", a]] as const) {
+      fireEvent.keyDown(document.activeElement!, { key });
+      expect(target).toHaveFocus(); expect(target).toHaveAttribute("tabindex", "0");
+    }
+    fireEvent.keyDown(a, { key: "ArrowUp" }); expect(a).toHaveFocus();
+    expect(props.onSelectionChange).not.toHaveBeenCalled();
+  });
+  it("hands DOM focus to the surface on empty press and to an activated item", () => {
+    const { props, surface } = setup({ children: <svg><path data-testid="focus-wire" /></svg> });
+    pointer(screen.getByTestId("focus-wire"), "down", 400, 350);
+    expect(surface).toHaveFocus();
+    pointer(surface, "up", 400, 350);
+    fireEvent.keyDown(document.activeElement!, { key: "+" });
+    expect(props.onViewportChange).toHaveBeenCalled();
+    const b = screen.getByRole("button", { name: "Beta" });
+    fireEvent.click(b); expect(b).toHaveFocus(); expect(b).toHaveAttribute("tabindex", "0");
+  });
+  it("extends selection with shift arrows in item order, without mutating or applying it internally", () => {
+    const selected = Object.freeze(["c"]);
+    const { props } = setup({ selection: selected });
+    const a = screen.getByRole("button", { name: "Alpha" }), b = screen.getByRole("button", { name: "Beta" });
+    act(() => a.focus()); fireEvent.keyDown(a, { key: "ArrowRight", shiftKey: true });
+    expect(b).toHaveFocus(); expect(props.onSelectionChange).toHaveBeenLastCalledWith(["a", "b", "c"]);
+    expect(b).toHaveAttribute("aria-pressed", "false"); expect(selected).toEqual(["c"]);
+  });
+  it("single-selects, toggles with command/control, and ranges from a stable click anchor", () => {
+    const { props, rerender } = setup();
+    fireEvent.click(screen.getByRole("button", { name: "Alpha" }));
+    expect(props.onSelectionChange).toHaveBeenLastCalledWith(["a"]);
+    rerender(<CanvasSurface {...props} selection={["a"]} />);
+    fireEvent.click(screen.getByRole("button", { name: "Gamma" }), { ctrlKey: true });
+    expect(props.onSelectionChange).toHaveBeenLastCalledWith(["a", "c"]);
+    fireEvent.click(screen.getByRole("button", { name: "Gamma" }), { shiftKey: true });
+    expect(props.onSelectionChange).toHaveBeenLastCalledWith(["c"]);
+  });
+  it("zooms with +/- and fits with 0/Home; Escape requests clear", () => {
+    const { surface, props } = setup({ selection: ["b"] });
+    fireEvent.keyDown(surface, { key: "+" });
+    expect(vi.mocked(props.onViewportChange).mock.lastCall![0].zoom).toBeGreaterThan(1);
+    fireEvent.keyDown(surface, { key: "-" });
+    expect(vi.mocked(props.onViewportChange).mock.lastCall![0].zoom).toBeLessThan(1);
+    for (const key of ["0", "Home"]) {
+      fireEvent.keyDown(surface, { key });
+      expect(props.onViewportChange).toHaveBeenLastCalledWith(fitTo(worldBounds, viewSize, 0));
+    }
+    fireEvent.keyDown(surface, { key: "Escape" }); expect(props.onSelectionChange).toHaveBeenLastCalledWith([]);
+  });
+  it("uses the latest controlled viewport and zoom limits without optimistic transforms", () => {
+    const { surface, props, world, rerender } = setup({ minZoom: 0.5, maxZoom: 2 });
+    fireEvent.keyDown(surface, { key: "+" }); expect(world.style.transform).toBe("translate(0px, 0px) scale(1)");
+    rerender(<CanvasSurface {...props} viewport={{ x: 7, y: 9, zoom: 2 }} />);
+    fireEvent.keyDown(surface, { key: "+" }); expect(props.onViewportChange).toHaveBeenLastCalledWith({ x: 7, y: 9, zoom: 2 });
+    expect(world.style.transform).toBe("translate(7px, 9px) scale(2)");
+  });
+  it("does not intercept typing or shortcuts in consumer controls", () => {
+    const { props } = setup({ children: <input aria-label="Node name" /> });
+    fireEvent.keyDown(screen.getByRole("textbox"), { key: "+" });
+    fireEvent.keyDown(screen.getByRole("textbox"), { key: "Escape" });
+    expect(props.onViewportChange).not.toHaveBeenCalled(); expect(props.onSelectionChange).not.toHaveBeenCalled();
+  });
+  it("recovers a roving tab stop when the focused item is removed", () => {
+    const { props, rerender } = setup();
+    act(() => screen.getByRole("button", { name: "Beta" }).focus());
+    rerender(<CanvasSurface {...props} items={[items[0]!, items[2]!]} />);
+    expect(screen.getByRole("button", { name: "Alpha" })).toHaveAttribute("tabindex", "0");
+  });
+  it("offers a keyboard entry point when the canvas is empty", () => {
+    const { surface } = setup({ items: [] }); expect(surface).toHaveAttribute("tabindex", "0");
+  });
+});
+
+describe("canvas surface gestures and cleanup", () => {
+  it("pans on decorative world descendants in screen coordinates", () => {
+    const { props, surface } = setup({ children: <svg><path data-testid="wire" /></svg> });
+    pointer(screen.getByTestId("wire"), "down", 100, 100);
+    pointer(surface, "move", 125, 85); pointer(surface, "up", 125, 85);
+    expect(props.onViewportChange).toHaveBeenLastCalledWith({ x: 25, y: -15, zoom: 1 });
+    expect(surface.releasePointerCapture).toHaveBeenCalledWith(1);
+  });
+  it("space drag pans from an item, keyup outside and blur release space mode", () => {
+    const { props, surface } = setup(); const a = screen.getByRole("button", { name: "Alpha" });
+    fireEvent.keyDown(a, { key: " " }); pointer(a, "down", 0, 0); pointer(surface, "move", 20, 10); pointer(surface, "up", 20, 10);
+    expect(props.onViewportChange).toHaveBeenLastCalledWith({ x: 20, y: 10, zoom: 1 });
+    fireEvent.keyUp(window, { key: " " });
+    vi.mocked(props.onViewportChange).mockClear(); pointer(a, "down", 0, 0); pointer(surface, "move", 30, 10);
+    expect(props.onViewportChange).not.toHaveBeenCalled();
+    fireEvent.keyDown(a, { key: " " }); fireEvent.blur(window);
+    pointer(a, "down", 0, 0); pointer(surface, "move", 30, 10); expect(props.onViewportChange).not.toHaveBeenCalled();
+  });
+  it("marquees inclusively in world coordinates under pan and zoom", () => {
+    const { props, surface } = setup({ viewport: { x: 10, y: 20, zoom: 2 } });
+    pointer(surface, "down", 50, 60, { shiftKey: true }); pointer(surface, "move", 210, 220); pointer(surface, "up", 210, 220);
+    expect(props.onSelectionChange).toHaveBeenLastCalledWith(["a", "b", "c"]);
+    expect(props.onViewportChange).not.toHaveBeenCalled();
+  });
+  it("cancels marquee without selection on pointercancel or Escape", () => {
+    const { props, surface } = setup();
+    pointer(surface, "down", 0, 0, { shiftKey: true }); pointer(surface, "move", 50, 50); pointer(surface, "cancel", 50, 50);
+    expect(props.onSelectionChange).not.toHaveBeenCalled();
+    pointer(surface, "down", 0, 0, { shiftKey: true }); fireEvent.keyDown(surface, { key: "Escape" }); pointer(surface, "up", 50, 50);
+    expect(props.onSelectionChange).toHaveBeenCalledTimes(1); expect(props.onSelectionChange).toHaveBeenLastCalledWith([]);
+  });
+  it("zooms wheel and trackpad pinch at the local pointer, preventing native scrolling", () => {
+    const { props, surface } = setup({ viewport: { x: 10, y: 20, zoom: 2 } });
+    for (const [deltaY, ctrlKey] of [[-100, false], [100, true]] as const) {
+      const event = new WheelEvent("wheel", { bubbles: true, cancelable: true, clientX: 240, clientY: 180, deltaY, ctrlKey });
+      fireEvent(surface, event); expect(event.defaultPrevented).toBe(true);
+      const next = vi.mocked(props.onViewportChange).mock.lastCall![0];
+      expect(next.zoom > 2).toBe(deltaY < 0);
+      expect(toWorld(next, { x: 200, y: 150 })).toEqual(toWorld(props.viewport, { x: 200, y: 150 }));
+    }
+  });
+  it("pinches with two touch pointers and pans the moving midpoint", () => {
+    const { props, surface } = setup();
+    pointer(surface, "down", 100, 100, { pointerId: 1, pointerType: "touch" });
+    pointer(surface, "down", 200, 100, { pointerId: 2, pointerType: "touch" });
+    pointer(surface, "move", 300, 100, { pointerId: 2, pointerType: "touch" });
+    expect(props.onViewportChange).toHaveBeenLastCalledWith({ x: -100, y: -100, zoom: 2 });
+    pointer(surface, "up", 100, 100, { pointerId: 1, pointerType: "touch" });
+    pointer(surface, "up", 300, 100, { pointerId: 2, pointerType: "touch" });
+    expect(surface.releasePointerCapture).toHaveBeenCalledWith(1); expect(surface.releasePointerCapture).toHaveBeenCalledWith(2);
+  });
+  it("ignores secondary mouse buttons and does not pan on item clicks", () => {
+    const { props, surface } = setup();
+    pointer(surface, "down", 0, 0, { button: 2 }); pointer(surface, "move", 10, 10);
+    pointer(screen.getByRole("button", { name: "Alpha" }), "down", 0, 0); pointer(surface, "move", 10, 10);
+    expect(props.onViewportChange).not.toHaveBeenCalled();
+  });
+  it("suppresses a moved touch item's synthetic click while preserving later keyboard activation", () => {
+    const { props, surface } = setup(); const a = screen.getByRole("button", { name: "Alpha" });
+    pointer(a, "down", 0, 0, { pointerType: "touch" }); pointer(surface, "move", 30, 10); pointer(surface, "up", 30, 10);
+    fireEvent.click(a, { detail: 1 }); expect(props.onSelectionChange).not.toHaveBeenCalled();
+    fireEvent.click(a, { detail: 0 }); expect(props.onSelectionChange).toHaveBeenLastCalledWith(["a"]);
+  });
+  it("preserves native touch tap targeting and delays item capture until an actual drag", () => {
+    const { props, surface } = setup(); const a = screen.getByRole("button", { name: "Alpha" });
+    pointer(a, "down", 0, 0, { pointerType: "touch" });
+    expect(surface.setPointerCapture).not.toHaveBeenCalled();
+    pointer(a, "up", 0, 0, { pointerType: "touch" });
+    fireEvent.click(a, { detail: 1 }); expect(props.onSelectionChange).toHaveBeenLastCalledWith(["a"]);
+    pointer(a, "down", 0, 0, { pointerType: "touch" }); pointer(a, "move", 10, 10, { pointerType: "touch" });
+    expect(surface.setPointerCapture).toHaveBeenCalledWith(1);
+  });
+  it("accounts for surface borders when anchoring wheel zoom", () => {
+    const { props, surface } = setup();
+    Object.defineProperties(surface, { clientLeft: { value: 2 }, clientTop: { value: 3 } });
+    fireEvent(surface, new WheelEvent("wheel", { bubbles: true, cancelable: true, clientX: 242, clientY: 183, deltaY: -100 }));
+    const next = vi.mocked(props.onViewportChange).mock.lastCall![0];
+    expect(toWorld(next, { x: 200, y: 150 })).toEqual({ x: 200, y: 150 });
+  });
+  it("cancels captured gestures when pointer capture is lost", () => {
+    const { props, surface } = setup();
+    pointer(surface, "down", 0, 0, { shiftKey: true });
+    fireEvent(surface, new PointerEvent("lostpointercapture", { bubbles: true, pointerId: 1 }));
+    pointer(surface, "up", 100, 100); expect(props.onSelectionChange).not.toHaveBeenCalled();
+    expect(surface.querySelector("[data-canvas-marquee]")).toBeNull();
+  });
+  it("measures the surface and disposes ResizeObserver and resize listeners", () => {
+    const observe = vi.fn(), disconnect = vi.fn();
+    vi.stubGlobal("ResizeObserver", class { observe = observe; disconnect = disconnect; });
+    const bounds = vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({ width: 400, height: 300, left: 0, top: 0 } as DOMRect);
+    const add = vi.spyOn(window, "addEventListener"), remove = vi.spyOn(window, "removeEventListener");
+    const { props, surface, unmount } = setup({ viewSize: undefined, fitPadding: 20 });
+    fireEvent.keyDown(surface, { key: "Home" });
+    expect(props.onViewportChange).toHaveBeenLastCalledWith(fitTo(worldBounds, { width: 400, height: 300 }, 20));
+    unmount(); expect(observe).toHaveBeenCalledWith(surface); expect(disconnect).toHaveBeenCalledOnce();
+    const handler = add.mock.calls.find(call => call[0] === "resize")![1];
+    expect(remove.mock.calls.some(call => call[0] === "resize" && call[1] === handler)).toBe(true);
+    bounds.mockRestore();
+  });
+  it("removes native listeners and releases every live pointer capture on unmount", () => {
+    const add = vi.spyOn(window, "addEventListener"), remove = vi.spyOn(window, "removeEventListener");
+    const { props, surface, unmount } = setup(); const surfaceRemove = vi.spyOn(surface, "removeEventListener");
+    pointer(surface, "down", 0, 0, { pointerType: "touch" }); pointer(surface, "down", 50, 0, { pointerId: 2, pointerType: "touch" });
+    unmount();
+    expect(surface.releasePointerCapture).toHaveBeenCalledWith(1); expect(surface.releasePointerCapture).toHaveBeenCalledWith(2);
+    expect(surfaceRemove.mock.calls.some(call => call[0] === "wheel")).toBe(true);
+    for (const type of ["blur", "keyup"]) {
+      const handler = add.mock.calls.find(call => call[0] === type)![1];
+      expect(remove.mock.calls.some(call => call[0] === type && call[1] === handler)).toBe(true);
+    }
+    const handler = media.addEventListener.mock.calls.find(call => call[0] === "change")![1];
+    expect(media.removeEventListener).toHaveBeenCalledWith("change", handler);
+    const calls = vi.mocked(props.onViewportChange).mock.calls.length;
+    fireEvent(surface, new WheelEvent("wheel", { deltaY: -10 })); expect(props.onViewportChange).toHaveBeenCalledTimes(calls);
+  });
+});
+
+describe("canvas surface controls and motion", () => {
+  it("allows hosts to translate help and every control name", () => {
+    const { surface } = setup({ minimap: true, zoomControls: true, instructionText: "Navigation help", recenterLabel: "Center view",
+      zoomGroupLabel: "Magnification", zoomOutLabel: "Smaller", zoomPercentageLabel: "Scale", zoomInLabel: "Larger", fitLabel: "Show all" });
+    expect(document.getElementById(surface.getAttribute("aria-describedby")!)).toHaveTextContent("Navigation help");
+    for (const name of ["Center view", "Smaller", "Larger", "Show all"]) expect(screen.getByRole("button", { name })).toBeVisible();
+    expect(screen.getByRole("group", { name: "Magnification" })).toBeVisible();
+    expect(screen.getByLabelText("Scale")).toHaveTextContent("100%");
+  });
+  it("provides zoom controls with a controlled percentage readout", () => {
+    const { props } = setup({ zoomControls: true, viewport: { x: 0, y: 0, zoom: 1.5 } });
+    expect(screen.getByText("150%")).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Zoom in" })); expect(vi.mocked(props.onViewportChange).mock.lastCall![0].zoom).toBeGreaterThan(1.5);
+    fireEvent.click(screen.getByRole("button", { name: "Zoom out" })); expect(vi.mocked(props.onViewportChange).mock.lastCall![0].zoom).toBeLessThan(1.5);
+    fireEvent.click(screen.getByRole("button", { name: "Fit canvas" })); expect(props.onViewportChange).toHaveBeenLastCalledWith(fitTo(worldBounds, viewSize));
+    expect(screen.getByText("150%")).toBeVisible();
+  });
+  it("recenters via minimap click position, including translated world origins", () => {
+    const { props } = setup({ minimap: true, worldBounds: { ...worldBounds, x: -100, y: -50 } });
+    const map = screen.getByRole("button", { name: "Recenter canvas" });
+    vi.spyOn(map, "getBoundingClientRect").mockReturnValue({ left: 10, top: 20, width: 200, height: 100 } as DOMRect);
+    fireEvent.click(map, { detail: 1, clientX: 160, clientY: 45 });
+    expect(props.onViewportChange).toHaveBeenLastCalledWith({ x: -250, y: 150, zoom: 1 });
+    fireEvent.click(map, { detail: 0 }); expect(props.onViewportChange).toHaveBeenLastCalledWith({ x: 0, y: -50, zoom: 1 });
+  });
+  it("animates only fit and disables it for changing reduced-motion preferences", () => {
+    const { surface, world } = setup();
+    expect(world.style.transitionDuration).toBe("0s");
+    fireEvent.keyDown(surface, { key: "Home" }); expect(world).toHaveClass("transition-transform");
+    expect(world.style.transitionDuration).toContain("--ui-duration-fast");
+    const handler = media.addEventListener.mock.calls.find(call => call[0] === "change")![1];
+    act(() => handler({ matches: true })); expect(world).not.toHaveClass("transition-transform");
+    expect(world.style.transitionDuration).toBe("0s");
+    fireEvent.keyDown(surface, { key: "Home" }); expect(world).not.toHaveClass("transition-transform");
+    act(() => handler({ matches: false })); fireEvent.keyDown(surface, { key: "+" }); expect(world).not.toHaveClass("transition-transform");
+    expect(world.style.transitionDuration).toBe("0s");
+  });
+  it("respects reduced motion at mount and exposes instructions with a unique id", () => {
+    media.matches = true;
+    const { surface, world } = setup(); fireEvent.keyDown(surface, { key: "Home" });
+    expect(world).not.toHaveClass("transition-transform");
+    expect(document.getElementById(surface.getAttribute("aria-describedby")!)).toHaveTextContent(/arrow.*focus/i);
+  });
+});

@@ -7,6 +7,47 @@ import ts from "typescript";
 
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 
+describe("compiled canvas public contract", () => {
+  it("exports CanvasSurface and the headless functions through the client blocks entry", () => {
+    const script = `import * as blocks from "@clossys/designer/blocks"; process.stdout.write(JSON.stringify(Object.keys(blocks)));`;
+    const keys: string[] = JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e", script], { cwd: packageRoot, encoding: "utf8" }));
+    for (const name of ["CanvasSurface", "panBy", "zoomAt", "fitTo", "clamp", "toWorld", "toScreen", "selectSingle", "toggleSelection", "selectRange", "selectMarquee", "clearSelection", "navigate", "minimapModel"]) expect(keys).toContain(name);
+    expect(keys).not.toContain("validateCanvasItems");
+    expect(readFileSync(join(packageRoot, "src/blocks/canvas/models.ts"), "utf8")).not.toMatch(/\b(?:import|require)\b.*["'](?:react|react-dom)/);
+  });
+
+  it("resolves readonly serializable models and controlled surface props from emitted declarations", () => {
+    const filename = join(packageRoot, "canvas-consumer.check.ts");
+    const source = `
+      import { CanvasSurface, panBy, zoomAt, fitTo, clamp, toWorld, toScreen, selectSingle,
+        toggleSelection, selectRange, selectMarquee, clearSelection, navigate, minimapModel,
+        type CanvasSurfaceProps, type CanvasPoint, type CanvasSize, type CanvasRect, type Viewport,
+        type Selection, type CanvasItem, type CanvasDirection, type CanvasMinimapModel
+      } from ${JSON.stringify(join(packageRoot, "dist/blocks/index.js"))};
+      const point: CanvasPoint = { x: 0, y: 0 };
+      const size: CanvasSize = { width: 800, height: 600 };
+      const bounds: CanvasRect = { ...point, width: 1000, height: 800 };
+      const viewport: Viewport = { ...point, zoom: 1 };
+      const selection: Selection = selectSingle("a");
+      const items: readonly CanvasItem[] = [{ id: "a", label: "Alpha", rect: bounds }];
+      const direction: CanvasDirection = "right";
+      const model: CanvasMinimapModel = minimapModel(bounds, viewport, size);
+      const next: Viewport = clamp(zoomAt(panBy(viewport, point), toScreen(viewport, toWorld(viewport, point)), 2), 0.1, 8, bounds, size);
+      const props: CanvasSurfaceProps = { "aria-label": "Canvas", viewport: next, selection,
+        onViewportChange: (value: Viewport) => void JSON.stringify(value),
+        onSelectionChange: (value: Selection) => void JSON.stringify(value), worldBounds: bounds,
+        items, viewSize: size, minimap: true, zoomControls: true, renderItem: item => item.label };
+      CanvasSurface(props); fitTo(bounds, size, 20); toggleSelection(selection, "b");
+      selectRange(["a", "b"], "a", "b"); selectMarquee(items, bounds); clearSelection(); navigate(items, "a", direction);
+    `;
+    const options = { strict: true, noEmit: true, skipLibCheck: true, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler };
+    const host = ts.createCompilerHost(options), original = host.getSourceFile.bind(host);
+    host.getSourceFile = (path, language, error, fresh) => path === filename ? ts.createSourceFile(path, source, language, true) : original(path, language, error, fresh);
+    const diagnostics = ts.getPreEmitDiagnostics(ts.createProgram([filename], options, host));
+    expect(diagnostics.map(diagnostic => ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n"))).toEqual([]);
+  }, 30_000);
+});
+
 describe("compiled atom guidance public contract", () => {
   it("intentionally exports the four atom metadata records from the existing client atoms barrel", () => {
     const entry = join(packageRoot, "dist/atoms/index.js");

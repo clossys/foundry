@@ -11,6 +11,9 @@
  * `./shell/index.js`, `./charts/index.js`, and `./theme/index.js` each
  * export, nothing more.
  */
+export { CanvasSurface, panBy, zoomAt, fitTo, clamp, toWorld, toScreen, selectSingle, toggleSelection, selectRange, selectMarquee, clearSelection, navigate, minimapModel } from "./blocks/index.js";
+export type { CanvasSurfaceProps, CanvasPoint, CanvasSize, CanvasRect, Viewport, Selection, CanvasItem, CanvasDirection, CanvasMinimapModel } from "./blocks/index.js";
+
 export {
   Button,
   Icon,

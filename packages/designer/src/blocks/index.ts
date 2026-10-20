@@ -51,6 +51,11 @@ export type { EmptyStateProps } from "./EmptyState.js";
 export { DataTable } from "./DataTable.js";
 export type { DataTableProps, DataTableColumn, DataTableSelectionMode } from "./DataTable.js";
 
+export { CanvasSurface } from "./canvas/CanvasSurface.js";
+export type { CanvasSurfaceProps } from "./canvas/CanvasSurface.js";
+export { panBy, zoomAt, fitTo, clamp, toWorld, toScreen, selectSingle, toggleSelection, selectRange, selectMarquee, clearSelection, navigate, minimapModel } from "./canvas/models.js";
+export type { CanvasPoint, CanvasSize, CanvasRect, Viewport, Selection, CanvasItem, CanvasDirection, CanvasMinimapModel } from "./canvas/models.js";
+
 export { DetailView } from "./DetailView.js";
 export type { DetailViewProps, DetailViewField } from "./DetailView.js";
 
