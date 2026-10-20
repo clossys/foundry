@@ -62,17 +62,28 @@ function FrameContent({ brand, navigation, account, commands, children, rightPan
   const navCollapsed = navigation.collapsed ?? navigationCollapsed;
   const { openLabel = "Open panel", closeLabel = "Close panel" } = rightPanel ?? {};
   const frame = useRef<HTMLDivElement>(null);
+  const panelDrawer = useRef<HTMLDivElement>(null);
+  const panelExpanding = useRef(false);
   const panelFocused = useRef(false);
   useEffect(() => {
     const media = window.matchMedia(APP_FRAME_WIDE_QUERY);
     const sync = () => {
       const active = document.activeElement;
       panelFocused.current = active !== null && frame.current?.contains(active) === true && active.closest("[data-application-frame-panel]") !== null;
+      panelExpanding.current = media.matches && active !== null && panelDrawer.current?.contains(active) === true;
+      if (panelExpanding.current) { setPanelOpen(false); return; }
       setNarrow(!media.matches); setPanelOpen(false);
     };
     sync(); media.addEventListener("change", sync);
     return () => media.removeEventListener("change", sync);
   }, []);
+  useEffect(() => {
+    if (panelOpen || !panelExpanding.current) return;
+    panelExpanding.current = false;
+    // Release the modal focus trap, then focus content before removing its narrow opener.
+    frame.current?.querySelector<HTMLElement>("main")?.focus();
+    setNarrow(false);
+  }, [panelOpen]);
   useEffect(() => {
     // The responsive handoff unmounts the focused panel control; focus its replacement opener instead of the document.
     if (!panelFocused.current) return;
@@ -81,12 +92,12 @@ function FrameContent({ brand, navigation, account, commands, children, rightPan
   }, [narrow]);
   const changeCollapsed = (next: boolean) => { setPanelCollapsed(next); rightPanel?.onCollapsedChange?.(next); };
   const footer = account.actor ? <AccountMenu {...account} actor={account.actor} collapsed={navCollapsed && !narrow} /> : <SignedOutMenu {...account} />;
-  const panelTrigger = rightPanel && (narrow ? <Drawer wide="sheet" placement="end" dismissAt={APP_FRAME_WIDE_QUERY}
+  const panelTrigger = rightPanel && (narrow ? <ModalContext.Provider value={{ ref: panelDrawer, style: { direction: dir } }}><Drawer wide="sheet" placement="end" dismissAt={APP_FRAME_WIDE_QUERY}
     heading={rightPanel.label} closeLabel={closeLabel} navigationKey={navigation.navigationKey}
     isOpen={panelOpen} onOpenChange={setPanelOpen}
     trigger={<Button variant="ghost" className={CONTROL} style={TAP} aria-label={openLabel} data-application-frame-panel="trigger"><Icon glyph={Layers} decorative /><span className="sr-only tablet:not-sr-only">{openLabel}</span></Button>}>
     {rightPanel.children}
-  </Drawer> : <Button variant="ghost" className={CONTROL} style={TAP} aria-expanded={!collapsed} data-application-frame-panel="trigger"
+  </Drawer></ModalContext.Provider> : <Button variant="ghost" className={CONTROL} style={TAP} aria-expanded={!collapsed} data-application-frame-panel="trigger"
     onPress={() => changeCollapsed(!collapsed)}><Icon glyph={Layers} decorative /><span className="sr-only tablet:not-sr-only">{collapsed ? openLabel : closeLabel}</span></Button>);
   return <ModalContext.Provider value={{ style: { direction: dir } }}><PopoverContext.Provider value={{ style: { direction: dir } }}>
     <div ref={frame} dir={dir} data-application-frame="" className="relative flex h-dvh min-h-0 min-w-0 flex-col overflow-hidden bg-surface-base text-body text-ink-primary">

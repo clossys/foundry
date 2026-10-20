@@ -249,6 +249,29 @@ describe("AppFrame composition", () => {
     expect(host).toHaveFocus();
   });
 
+  it.each(["Close panel", "Inspector action"])("preserves focus when widening an open narrow panel from %s", async focusedControl => {
+    wide.matches = false;
+    render(<AppFrame {...fixture()} />);
+    const opener = screen.getByRole("button", { name: "Open panel" });
+    const main = screen.getByRole("main");
+    let openerPresentAtHandoff = false;
+    main.addEventListener("focus", () => { openerPresentAtHandoff = opener.isConnected; }, { once: true });
+    await userEvent.click(opener);
+    const dialog = await screen.findByRole("dialog", { name: "Inspector" });
+    const focused = within(dialog).getByRole("button", { name: focusedControl });
+    focused.focus();
+    expect(focused).toHaveFocus();
+    expect(screen.getByRole("banner", { hidden: true }).closest("[data-application-frame]")).not.toContainElement(focused);
+
+    act(() => { wide.matches = true; for (const listener of wide.listeners) listener(); });
+
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Inspector" })).not.toBeInTheDocument());
+    const desktopControl = screen.getByRole("button", { name: "Close panel" });
+    await waitFor(() => expect([main, desktopControl]).toContain(document.activeElement));
+    expect(openerPresentAtHandoff).toBe(true);
+    expect(document.body).not.toHaveFocus();
+  });
+
   it("focuses main from the composed skip link without replacing a host hash route", async () => {
     window.history.replaceState(null, "", "#/projects/42");
     try {
