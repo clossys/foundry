@@ -76,7 +76,7 @@ describe("SiteFooter measured geometry", () => {
   };
   let measurements: Record<string, Measurement>;
   beforeAll(() => {
-    const browser = ["chromium", "chromium-browser", "google-chrome", "google-chrome-stable"]
+    const browser = ["google-chrome", "google-chrome-stable", "chromium", "chromium-browser"]
       .find(name => spawnSync(name, ["--version"], { stdio: "ignore" }).status === 0);
     if (!browser) throw new Error("Footer geometry tests require Chromium or Google Chrome on PATH.");
     const css = readFileSync(join(import.meta.dirname, "../../styles/compiled.css"), "utf8");
@@ -128,6 +128,7 @@ describe("SiteFooter measured geometry", () => {
         const endpoint = await new Promise<string>((resolve, reject) => {
           let output = "";
           browser.on("error", reject);
+          browser.on("exit", code => reject(new Error(`Browser exited before DevTools was ready (${code}): ${output}`)));
           browser.stderr!.on("data", (chunk: Buffer) => {
             output += String(chunk);
             const match = output.match(/DevTools listening on (ws:\/\/\S+)/);
