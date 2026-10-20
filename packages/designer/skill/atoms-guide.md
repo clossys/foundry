@@ -1227,7 +1227,7 @@ Token dependency coverage: partial. Representative consumed dependencies only; t
 - Content: Name the trigger and give the panel content an understandable task hierarchy.
 - Anatomy: One contextual trigger and its anchored content panel.
 - Block composition example: In a consumer-owned filter block, put several filter fields inside Popover and manage their state outside it.
-- Accessibility: The panel uses dialog behavior; preserve focus entry, outside dismissal and return to the trigger.
+- Accessibility: The panel uses dialog behavior; supply aria-label for its accessible name when there is no visible title heading, and preserve focus entry, outside dismissal and return to the trigger.
 - Demonstration coverage: unassessed. Consumer-owned fixtures and interaction evidence have not been assessed here. A supported package option is not proof of a working catalog demonstration.
 
 | Medium | State | Reason and evidence |

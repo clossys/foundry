@@ -268,8 +268,8 @@
 @source inline("mutations muted mx-auto my-sm my-xs n name name. name.length name: named names names. names: narrow");
 @source inline("native natural nav nav-disclosure-icon nav-disclosure-panel nav-disclosure-toggle navPlacement");
 @source inline("navigate navigation navigationKey navigational nearest nearestDist need needs negative neither");
-@source inline("nested neutral never new next next.lane next: nextPageLabel no no-scripting no-underline");
-@source inline("noResultsLabel noUncheckedIndexedAccess noValidate node node.id node.label node.nextKey");
+@source inline("nested neutral neutralForeground never new next next.lane next: nextPageLabel no no-scripting");
+@source inline("no-underline noResultsLabel noUncheckedIndexedAccess noValidate node node.id node.label node.nextKey");
 @source inline("node.style.transform node.style.transitionProperty node: node:fs nodes nodes. nodes: non-empty");
 @source inline("non-empty. non-finite non-positive non-scaling-stroke nonblank none none. nonempty nonempty.");
 @source inline("nonnegative normalised: normalized not not-last:after:text-ink-muted not-last:border-b not-offered");

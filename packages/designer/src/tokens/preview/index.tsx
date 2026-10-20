@@ -191,8 +191,12 @@ export function TokenPreview({
   if (application.cssProperty === "backdrop-filter") style.backdropFilter = `blur(${value})`;
   const backing = inverse.has(property) ? tokenReference("--color-surface-inverse")
     : property === "--color-ink-on-accent" ? tokenReference("--color-accent") : tokenReference("--color-surface-base");
-  const foreground = inverse.has(property) || ["--color-surface-inverse", "--color-surface-inverse-raised"].includes(property)
-    ? tokenReference("--color-ink-on-inverse") : tokenReference("--color-ink-primary");
+  const neutralForeground = TOKENS[property]!.family === "neutral"
+    ? tokenReference(Number(property.slice("--color-neutral-".length)) >= 600 ? "--color-neutral-50" : "--color-neutral-900")
+    : undefined;
+  const foreground = neutralForeground ?? (["--color-accent", "--color-accent-hover"].includes(property)
+    ? tokenReference("--color-ink-on-accent") : inverse.has(property) || ["--color-surface-inverse", "--color-surface-inverse-raised"].includes(property)
+    ? tokenReference("--color-ink-on-inverse") : tokenReference("--color-ink-primary"));
   const plate: CSSProperties = {
     ...panel, color: foreground,
     background: inverse.has(property) ? tokenReference("--color-surface-inverse") : panel.background,
@@ -236,8 +240,8 @@ export function TokenPreview({
     ring: <div style={{ ...plate, ...style }}>{sampleText}</div>,
     layer: (
       <div style={{ position: "relative", isolation: "isolate", blockSize: 90 }}>
-        <div style={{ ...plate, position: "absolute", inset: 0, zIndex: 1 }}>{sampleText}</div>
-        <div style={{ ...plate, position: "absolute", inset: 12, ...style }}>{sampleText}</div>
+        <div style={{ ...plate, position: "absolute", top: 0, right: 24, bottom: 24, left: 0, zIndex: 1 }}>{sampleText}</div>
+        <div style={{ ...plate, position: "absolute", top: 24, right: 0, bottom: 0, left: 24, ...style }}>{sampleText}</div>
       </div>
     ),
     opacity: <div style={{ ...plate, ...style }}>{sampleText}</div>,
