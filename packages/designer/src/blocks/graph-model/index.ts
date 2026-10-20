@@ -43,14 +43,14 @@ export function validateGraph(input: GraphInput): GraphModel {
   if (input.nodes.length > 500) fail("NODE_CAP", "Graph supports at most 500 nodes");
   if (input.edges.length > 2000) fail("EDGE_CAP", "Graph supports at most 2000 edges");
   const nodeIds = new Set<string>();
-  const nodes = input.nodes.map(node => {
+  const nodes = Array.from(input.nodes, node => {
     if (!node || !identity(node.id) || !identity(node.kind) || typeof node.label !== "string") fail("INVALID_INPUT", "Node needs an id, kind and string label");
     if (nodeIds.has(node.id)) fail("DUPLICATE_NODE", `Duplicate node: ${node.id}`);
     nodeIds.add(node.id);
     return { id: node.id, kind: node.kind, label: node.label };
   });
   const edgeIds = new Set<string>();
-  const edges = input.edges.map(edge => {
+  const edges = Array.from(input.edges, edge => {
     if (!edge || !identity(edge.id) || !identity(edge.from) || !identity(edge.to) || !identity(edge.kind) ||
         (edge.weight !== undefined && (typeof edge.weight !== "number" || !Number.isFinite(edge.weight) || edge.weight <= 0))) {
       fail("INVALID_INPUT", "Edge needs an id, endpoints, kind and optional finite positive weight");
@@ -66,6 +66,9 @@ export function validateGraph(input: GraphInput): GraphModel {
 
 function requireNode(graph: GraphModel, id: string): void {
   if (!graph.nodes.some(node => node.id === id)) fail("UNKNOWN_NODE", `Unknown node: ${id}`);
+}
+function checkOptions(options: unknown): void {
+  if (!options || typeof options !== "object" || Array.isArray(options)) fail("INVALID_OPTIONS", "Options must be an object");
 }
 function checkKinds(kinds: readonly string[] | undefined): void {
   if (kinds !== undefined && (!Array.isArray(kinds) || !kinds.every(identity))) fail("INVALID_OPTIONS", "Kind filters must be arrays of nonempty strings");
@@ -84,6 +87,7 @@ function adjacent(graph: GraphModel, id: string, direction: "in" | "out" | "both
 export function neighbors(input: GraphInput, id: string, options: GraphNeighborOptions = {}): GraphNode[] {
   const graph = validateGraph(input);
   requireNode(graph, id);
+  checkOptions(options);
   const direction = options.direction ?? "both";
   if (!["in", "out", "both"].includes(direction)) fail("INVALID_OPTIONS", "Direction must be in, out or both");
   checkKinds(options.edgeKinds);
@@ -196,6 +200,7 @@ export function edgeRoutingHints(input: GraphInput): GraphEdgeRoutingHint[] {
 export function radialLayout(input: GraphInput, focusId: string, options: GraphRadialOptions = {}): GraphPosition[] {
   const graph = validateGraph(input);
   requireNode(graph, focusId);
+  checkOptions(options);
   const ringGap = options.ringGap ?? 100;
   if (!Number.isFinite(ringGap) || ringGap <= 0 || ringGap > 1_000_000) fail("INVALID_OPTIONS", "Ring gap must be positive and at most 1000000");
   const depths = new Map([[focusId, 0]]);
@@ -238,6 +243,7 @@ function mulberry32(seed: number): () => number {
 /** Fixed-step Fruchterman–Reingold, integer separation, then horizontal component packing. */
 export function forceLayout(input: GraphInput, options: GraphForceOptions = {}): GraphPosition[] {
   const graph = validateGraph(input);
+  checkOptions(options);
   const iterations = options.iterations ?? 300; const seed = options.seed ?? 1;
   if (!Number.isInteger(iterations) || iterations < 1 || iterations > 10000 ||
       !Number.isInteger(seed) || seed < 0 || seed > 0xFFFFFFFF) fail("INVALID_OPTIONS", "Iterations must be 1..10000 and seed an unsigned 32-bit integer");

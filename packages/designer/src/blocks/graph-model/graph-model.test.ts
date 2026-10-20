@@ -35,6 +35,19 @@ const assertError = (fn: () => unknown, code: string) => {
 };
 
 describe("graph-model validation", () => {
+  it.each(["nodes", "edges"] as const)("rejects sparse %s with a typed input error", field => {
+    const input = { nodes: [node("a")], edges: [] };
+    const sparse = { ...input, [field]: new Array(1) };
+    assertError(() => validateGraph(sparse), "INVALID_INPUT");
+    assertError(() => components(sparse), "INVALID_INPUT");
+  });
+  it.each([
+    ["neighbors", () => neighbors(graph, "a", null as unknown as Parameters<typeof neighbors>[2])],
+    ["radialLayout", () => radialLayout(graph, "a", null as unknown as Parameters<typeof radialLayout>[2])],
+    ["forceLayout", () => forceLayout(graph, null as unknown as Parameters<typeof forceLayout>[1])],
+  ] as const)("rejects null %s options with a typed options error", (_name, run) => {
+    assertError(run, "INVALID_OPTIONS");
+  });
   it("accepts inclusive caps, empty graphs and flagged self-loops", () => {
     expect(validateGraph({ nodes: [], edges: [] })).toEqual({ nodes: [], edges: [] });
     expect(validateGraph(chain(500)).nodes).toHaveLength(500);
