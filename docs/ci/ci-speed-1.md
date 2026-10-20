@@ -154,4 +154,4 @@ A README sample (run 39434181083, job 118666888280) spends about 1,297s in the c
 
 Two planned, completed hosted observations must show the root-test interval overlapping README validation, unchanged required contexts, and at least 480s less wall time than the 2,131s comparable baseline median. Queue delay, cache result, source head/tree, run identity, conclusions, and actual execution timestamps must be recorded separately. A red run is evidence, never permission to retry until green.
 
-Hosted measurements are pending; no speedup is claimed yet. After the first GREEN hosted run, one timing-note commit records run 1. The final run 2 exact-head timings and both measured deltas go in the sole terminal issue comment, as agreed for this unit. This avoids a third evidence-only push and its additional CI run.
+Hosted measurements are pending; no speedup is claimed yet. After hosted run 1 is GREEN, one timing-note commit records it. The final run 2 exact-head timings and both measured deltas go in the sole terminal issue comment, as agreed for this unit. This avoids a third evidence-only push and its additional CI run.
