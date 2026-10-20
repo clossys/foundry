@@ -6696,3 +6696,180 @@ For example:
 When overriding `wordmark`, keep it in `workspaceLabel` as required by the
 brand's accessible-name contract. Copy changes do not supply authentication,
 routing services or new task effects; the specimen retains its local behavior.
+
+## Standard entity Views: IndexView and DetailsView
+
+`IndexView` and `DetailsView` compose entity administration content for an
+AppFrame content region. Mount the frame in the host and place the View in its
+content slot. The Views arrange Designer Blocks; they own no app header, footer,
+sidebar, routing state or `<main>`. Frame chrome props and frame-owned root
+landmarks are refused. The preview gallery includes both content specimens.
+
+Both expose text `title` and optional text `subtitle`, plus an `actions` slot.
+Each renders one Designer `PageHeader`: `title` maps to `PageHeader.title`, and
+`subtitle` maps to **`PageHeader.description`**. Designer's prop remains named
+`description`; the Views do not expose a second description prop.
+
+These are interactive client Views, available from `@clossys/publisher/web/client`
+and the ordinary `@clossys/publisher/web` entry. They render content during ordinary
+server-side rendering. Under the `react-server` condition, `/web` preserves both
+export names through named stubs that throw `RenderError` with reason
+`wrong-channel`; render the View from a client module instead. This follows the
+form boundary: the server entry stays import-safe while a client host supplies
+the controlled callbacks. It does not render a reduced server-only View.
+
+### IndexView
+
+`IndexViewProps<Row>` requires `title`, `rows`, `columns`, `rowKey`,
+`collectionLabel` and an explicit `empty` (`EmptyState` props). It renders
+PageHeader, optional `toolbar` (`Toolbar` props), the primary collection and
+optional `pagination` (`Pagination` props), in that order. The primary collection
+defaults to `DataTable`. Zero rows render `EmptyState`, retaining the toolbar and
+pagination; `table.isLoading` instead preserves the DataTable loading state.
+
+`IndexViewTable<Row>` carries DataTable's controlled sorting, selection and loading
+props through `table`. The View does not sort, select, paginate or fetch rows.
+`IndexViewCollection` is an optional typed Block slot: `{ kind: "panel", props }`
+or `{ kind: "record-ledger", props }`, using that Block's public props. An arbitrary
+element is not a collection Block entry. The row count still determines the empty
+state when using this slot.
+
+`IndexViewRowRoute<Row>` supplies `rowRoute.href(row)` and
+`rowRoute.onNavigate(href, row)`. Exactly one column must be `isRowHeader`.
+That column's content becomes a Designer Link. Activating the row link by pointer
+or Enter reports the sanctioned route and row to `onNavigate`, which handles
+navigation. Modified clicks keep browser link navigation. This is a row-link
+contract: clicking another cell does not activate the route, and selection keeps
+its own controls. Unsafe hrefs are refused.
+
+```tsx
+"use client";
+import { IndexView } from "@clossys/publisher/web/client";
+
+type RecordRow = { id: string; name: string };
+const rows: RecordRow[] = [{ id: "one", name: "First record" }];
+
+export function RecordsArea({ navigate }: { navigate: (href: string) => void }) {
+  return <IndexView
+    title="Records"
+    subtitle="Browse the current records."
+    collectionLabel="Records"
+    rows={rows}
+    rowKey={row => row.id}
+    columns={[{ id: "name", header: "Name", isRowHeader: true, cell: row => row.name }]}
+    rowRoute={{ href: row => `/records/${row.id}`, onNavigate: href => navigate(href) }}
+    empty={{ title: "No records", description: "Create a record to begin." }}
+  />;
+}
+```
+
+### DetailsView
+
+`DetailsViewProps` requires `title`, `index: { href, label }` and an explicit
+`empty` (`EmptyState` props). The required `DetailsViewIndex` forms a Breadcrumb
+back to the Index Instance, followed by the current title. The index href follows
+the same sanctioned-link policy as row routes.
+
+Supply either an ordered `sections` list or `tabs` with a required `tab`,
+`onTabChange` and accessible `tabsLabel`. `DetailsViewTab` is `{ id, label,
+sections }`. Tabs uses Designer's Tabs atom for arrow-key focus and tab/panel
+relationships. Selection changes are reported; the selected content changes when
+the host supplies the new `tab`. The host reads the selected ID from its URL and
+updates that URL in `onTabChange`; the View reads no URL and owns no router. A
+tab's sections and layout stay in its own panel.
+A tab with no sections, or an empty untabbed list, renders the supplied EmptyState.
+The tab list must be nonempty, IDs unique and the selected ID present.
+
+`DetailsViewSection` is `{ id, title, block, region?, state? }`; section IDs must
+be unique within each list. A SectionHeader Block renders the section title. `DetailsViewBlock`
+is a closed union of `{ kind, props }` entries for these shipped Blocks:
+
+| kind | Designer Block |
+| --- | --- |
+| `detail` | DetailView |
+| `panel` | Panel |
+| `stat` | Stat |
+| `status-list` | StatusList |
+| `record-ledger` | RecordLedger |
+
+Each entry uses that Block's public props. Raw elements, unknown kinds and a second
+PageHeader entry are refused. Slots inside a Block retain that Block's contract.
+There is one normalized View, with `DetailsViewLayout` values `main-aside` (the
+default) and `single`. A section's `DetailsViewRegion` is `main` (the default) or
+`aside`. Main/aside layout groups main sections first and aside sections second,
+preserving authored order within each region. The aside is a complementary
+region named by its section titles. It stacks **after main** at narrow widths;
+from the Designer tablet breakpoint main takes two columns and aside one.
+An empty aside is omitted. `single` ignores region placement and renders every
+section in the original authored order. It does not discard aside sections.
+There is no independent side-column API and no left, right or bottom work-panel
+control: AppFrame owns navigation and its work panel.
+
+`DetailsViewSectionState` replaces only its section's Block content while
+retaining that section's heading, the page header and other sections:
+
+| state data | presentation | required caller copy |
+| --- | --- | --- |
+| `{ kind: "loading", label }` | Skeleton with a busy status | nonempty accessible `label` |
+| `{ kind: "empty", props }` | EmptyState | `props.title`, plus optional description/action |
+| `{ kind: "error", props }` | danger Banner | `props.children`, plus optional Banner dismissal props |
+
+State values are typed payload objects, rather than bare status strings, so each
+region can supply localized state copy. Error severity is fixed to danger. The
+section keeps its required `block`; omitting `state` restores that Block. An empty
+View or empty tab still uses the View's required page-level `empty` props. The
+optional `banner` node slot sits between PageHeader and body, normally a Designer
+Banner for a record-wide state such as archived, degraded or read-only. `actions`
+stays in PageHeader. A section state does not blank the page.
+
+```tsx
+"use client";
+import { DetailsView, type DetailsViewSection } from "@clossys/publisher/web/client";
+
+const sections: DetailsViewSection[] = [{
+  id: "identity", title: "Identity",
+  block: { kind: "detail", props: { fields: [{ label: "Identifier", value: "one" }] } },
+}];
+
+export function RecordArea() {
+  return <DetailsView
+    title="First record"
+    subtitle="Details of the selected record."
+    index={{ href: "/records", label: "Records" }}
+    sections={sections}
+    empty={{ title: "No sections" }}
+  />;
+}
+```
+
+The Instance registry recognizes both Standard View IDs only on `surface: "app"`
+with `frameBlockRef.blockId: "AppFrame"`. This registration records the composition
+contract; it does not declare an Instance or a Frame/View role pair qualified.
+
+The host can bind tabs to a URL without changing the normalized layout:
+
+```tsx
+"use client";
+import { DetailsView, type DetailsViewTab } from "@clossys/publisher/web/client";
+
+const tabs: DetailsViewTab[] = [{ id: "overview", label: "Overview", sections: [
+  { id: "identity", title: "Identity", block: { kind: "detail", props: { fields: [{ label: "Identifier", value: "one" }] } } },
+  { id: "activity", title: "Activity", block: { kind: "panel", props: { children: "Recent activity" } }, state: { kind: "loading", label: "Loading activity" } },
+  { id: "attachments", title: "Attachments", region: "aside", block: { kind: "panel", props: { children: "Files" } }, state: { kind: "empty", props: { title: "No attachments" } } },
+  { id: "history", title: "History", region: "aside", block: { kind: "panel", props: { children: "Changes" } }, state: { kind: "error", props: { children: "History could not load." } } },
+] }, { id: "notes", label: "Notes", sections: [] }];
+
+export function TabbedRecordArea({ tab, onTabChange }: { tab: string; onTabChange: (tab: string) => void }) {
+  return <DetailsView
+    title="First record"
+    subtitle="Details of the selected record."
+    index={{ href: "/records", label: "Records" }}
+    layout="main-aside"
+    tabs={tabs}
+    tab={tab}
+    onTabChange={onTabChange}
+    tabsLabel="Record sections"
+    empty={{ title: "No sections" }}
+  />;
+}
+```
