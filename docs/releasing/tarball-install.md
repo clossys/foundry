@@ -103,7 +103,7 @@ node scripts/tarball-install-check.mjs                 # one minor past the curr
 node scripts/tarball-install-check.mjs --as-packed     # the same-version case
 ```
 
-It packs designer and publisher plus the first-party packages they depend on
+It packs designer and publisher plus any first-party packages they depend on
 into a temporary directory, installs them into an empty project with the
 overrides block above, and verifies that each first-party package resolves
 once, at the top level, from its tarball, with the tarball's integrity.
