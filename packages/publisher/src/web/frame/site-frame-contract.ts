@@ -6,7 +6,7 @@ export const HEADER_ACTION_LIMIT = 3;
 export const HEADER_ACTION_VARIANTS = Object.freeze(["secondary", "ghost", "primary"] as const);
 export const SITE_FRAME_CONFIG_SCHEMA = Object.freeze({
   headerGround: Object.freeze({ values: SITE_CHROME_GROUNDS, default: "base" as const }),
-  headerPlacement: Object.freeze({ values: Object.freeze(["reserved", "overlay"] as const), default: "reserved" as const }),
+  headerPlacement: Object.freeze({ values: Object.freeze(["reserved", "overlay"] as const), default: "overlay" as const }),
   headerTone: Object.freeze({ values: Object.freeze(["base", "inverse"] as const), default: "base" as const }),
 });
 export interface SiteFramePresentationConfig {
