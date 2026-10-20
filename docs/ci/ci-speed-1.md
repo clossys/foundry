@@ -152,6 +152,15 @@ A README sample (run 39434181083, job 118666888280) spends about 1,297s in the c
 
 ## Hosted comparison
 
-Two planned, completed hosted observations must show the root-test interval overlapping README validation, unchanged required contexts, and at least 480s less wall time than the 2,131s comparable baseline median. Queue delay, cache result, source head/tree, run identity, conclusions, and actual execution timestamps must be recorded separately. A red run is evidence, never permission to retry until green.
+Two planned, completed hosted observations must show the root-test interval overlapping README validation, unchanged required contexts, and at least 480s less admitted CI span than the same-clock comparable baseline median. The admitted span runs from min(non-skipped job.started_at) to max(CI job.completed_at). It retains runner queue inside the job graph and excludes only admission before any job starts. Full creation-to-completion wall time, admission delay, per-job queue, cache result, source head/tree, run identity, conclusions, and actual execution timestamps remain separate. A red run is evidence, never permission to retry until green.
 
-Hosted measurements are pending; no speedup is claimed yet. After hosted run 1 is GREEN, one timing-note commit records it. The final run 2 exact-head timings and both measured deltas go in the sole terminal issue comment, as agreed for this unit. This avoids a third evidence-only push and its additional CI run.
+The same 11 baseline runs have admitted spans 2008, 2041, 1648, 2301, 2128, 2302, 2006, 1929, 1834, 2026, and 2109 seconds, respectively, in the table's order. Their median is 2026s (33m46s), so each GREEN observation must finish within 1546s (25m46s). The full-wall median remains 2131s; no run was resampled for this clock clarification.
+
+Historical implementation attempts are retained below and do not qualify as GREEN measurements:
+
+| Run / source head | Actual result | Created | Job execution | Wall / admission | Cache and finding |
+| --- | --- | --- | --- | --- | --- |
+| [39453407191](https://github.com/clossys/foundry/actions/runs/39453407191) / 47e880d3 | cancelled by planner after prose failure | 08:59:16 PDT | 08:59:19–09:10:12 PDT | 656s / 3s | Prose exit 1: unsupported wording in this timing note; the correction passed the affected local and hosted checks. Root tests passed; README was cancelled. |
+| [39454037481](https://github.com/clossys/foundry/actions/runs/39454037481) / ead614f0 | root tests failed; other jobs still executing when recorded | 09:03:24 PDT | first job 09:10:16 PDT; root 09:10:32–09:16:42 PDT | completion pending / 412s | Exact dist cache hit omitted ignored source contracts. Launcher and Publisher failed before the later workspaces' own test generators. |
+
+The correction retains the exact build cache and runs the existing full build before root tests even on a cache hit. This materializes source contracts without changing package scripts, cache keys, required checks, or the gate inventory. Two completed GREEN measurements remain pending; no speedup is claimed yet. After hosted run 1 is GREEN, one timing-note commit records it. The final run 2 exact-head timings and both measured deltas go in the sole terminal issue comment, as agreed for this unit. This avoids a third evidence-only push and its additional CI run.

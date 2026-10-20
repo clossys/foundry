@@ -1818,8 +1818,10 @@ jobs:
           path: packages/*/dist
           key: workspace-build-${{ runner.os }}-${{ hashFiles('package.json', 'package-lock.json', 'packages/*/src/**', 'packages/*/package.json', 'packages/*/tsconfig*.json', 'packages/*/scripts/**', 'scripts/lib/**', 'docs/contracts/**') }}
       - run: npm ci
+      # Root tests import other workspaces' source before those packages'
+      # own test-time generators run. A dist cache hit lacks that generated
+      # source, so retain the cache but always materialize the full build.
       - name: Build
-        if: steps.workspace-build-cache.outputs.cache-hit != 'true'
         run: npm run build
       - run: npm test
 

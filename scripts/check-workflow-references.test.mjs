@@ -342,7 +342,7 @@ test("root tests start independently of README and packed consumers with the sam
   assert.match(worker, /node-version: 20/);
   assert.match(worker, /^    timeout-minutes: 20$/m);
   assert.match(worker, /^      - run: npm ci$/m);
-  assert.match(worker, /if: steps\.workspace-build-cache\.outputs\.cache-hit != 'true'\n        run: npm run build/);
+  assert.match(worker, /- name: Build\n        run: npm run build/);
   assert.match(worker, /^      - run: npm test$/m);
   assert.equal(workflow.match(/^      - run: npm test$/gm)?.length, 1);
   assert.doesNotMatch(build, /^      - run: npm test$/m);
@@ -350,6 +350,19 @@ test("root tests start independently of README and packed consumers with the sam
   for (const token of ["Restore round-trip npm cache", "round-trip-npm-cache-${{ runner.os }}-", "RELEASE_ROUND_TRIP_NPM_CACHE_DIR=${{ runner.temp }}/round-trip-npm-cache"]) {
     assert.ok(worker.includes(token), `root tests must retain the existing round-trip cache: ${token}`);
   }
+});
+
+test("root tests build cross-workspace source contracts even on a dist cache hit", () => {
+  const workflow = readFileSync(join(workflowsDir, "ci.yml"), "utf8");
+  const worker = workflowJob(workflow, "root-tests");
+  const testIndex = worker.indexOf("      - run: npm test\n");
+  // Launcher imports Starter source before Starter's own test script runs;
+  // Publisher similarly imports Writer source. The dist-only cache cannot
+  // supply either package's ignored src/generated contract modules.
+  const step = worker.split(/\n(?=      - )/).find((candidate) => /\brun: npm run build(?:\n|$)/.test(candidate));
+  assert.ok(step, "root tests must materialize source contracts before testing");
+  assert.doesNotMatch(step, /^        if:/m, "source generation must also run on a cache hit");
+  assert.ok(worker.indexOf(step) < testIndex, "the full build must run before root tests");
 });
 
 // #1257: `publish safety` measured ~18-19 minutes as ten serial steps in one
