@@ -58,6 +58,15 @@ const FAQ_MARKUP_SHA256 = {
   "landing-split": ["cb98ac8fb507c7e93bbf84bb26f37e2b3c9f40cbd0f7caf886d8936d999c38a9", "e445d1ac0afb7d3d2ce4e5a6b29e470e1e2bb27df05a77538ad8a43479790117"],
 } as const;
 
+// SectionFrame roots now carry their ground's primary ink; these bytes predate it.
+// Require the ink on every framed root, then compare every other byte to the capture.
+function withoutSectionFrameInk(html: string): string {
+  for (const root of html.match(/data-designer-section-frame="" class="[^"]*"/g) ?? []) {
+    expect(root).toMatch(/[" ]text-ink-(?:primary|on-inverse)[ "]/);
+  }
+  return html.replace(/(data-designer-section-frame="" class="(?:[^" ]+ )*?)text-ink-(?:primary|on-inverse) ?/g, "$1");
+}
+
 describe("published FAQ uses the Index disclosure recipe", () => {
   afterEach(cleanup);
 
@@ -125,7 +134,7 @@ describe("published FAQ uses the Index disclosure recipe", () => {
         landing: renderToStaticMarkup(<Landing document={hero} trailing={[resolved]} afterSection={afterSection} />, { identifierPrefix: "faq-proof-" }),
       };
       for (const view of ["sectioned", "landing"] as const) {
-        const hash = createHash("sha256").update(markup[view]).digest("hex");
+        const hash = createHash("sha256").update(withoutSectionFrameInk(markup[view])).digest("hex");
         expect.soft(hash, `${view}-${layout} entry ${entry}: ${hash}`).toBe(FAQ_MARKUP_SHA256[`${view}-${layout}`][entry]);
       }
     }

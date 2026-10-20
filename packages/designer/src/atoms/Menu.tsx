@@ -1,12 +1,15 @@
-import type { ReactNode } from "react";
+import { Fragment, isValidElement, type ReactNode, type HTMLAttributes } from "react";
 import {
   Menu as AriaMenu,
   MenuItem as AriaMenuItem,
   MenuTrigger,
+  MenuSection as AriaMenuSection,
+  Header,
   Popover,
   Separator,
   type MenuItemProps as AriaMenuItemProps,
   type MenuTriggerProps as AriaMenuTriggerProps,
+  type MenuSectionProps as AriaMenuSectionProps,
 } from "react-aria-components";
 import { cx } from "./internal/cx.js";
 import { UI_ELEVATION_FLOATING, UI_Z_POPOVER } from "./internal/ui-vars.js";
@@ -20,7 +23,7 @@ export interface MenuProps extends Omit<AriaMenuTriggerProps, "children" | "trig
    * `MenuTrigger` via context, the same way `Select`'s trigger works.
    */
   trigger: ReactNode;
-  /** One or more `Menu.Item`s and, optionally, `Menu.Separator`s. */
+  /** Menu.Item entries, optionally grouped with Menu.Section and Menu.Separator. */
   children: ReactNode;
   /**
    * How the menu is opened — a left click (`"press"`, the default), a
@@ -119,6 +122,7 @@ function MenuItem({ children, isDestructive = false, className, ...rest }: MenuI
       className={(renderProps) =>
         cx(
           "flex cursor-default items-center gap-sm rounded-default px-sm py-xs text-body-s font-body outline-none",
+          renderProps.isFocused && !renderProps.isDisabled ? "forced-colors:outline forced-colors:outline-solid" : "",
           renderProps.isDisabled
             ? "text-ink-muted"
             : isDestructive
@@ -154,4 +158,52 @@ function MenuSeparator({ className }: MenuSeparatorProps) {
   return <Separator className={cx("my-xs border border-line-base", className)} />;
 }
 
-export const Menu = Object.assign(MenuRoot, { Item: MenuItem, Separator: MenuSeparator });
+type MenuSectionBaseProps = Pick<AriaMenuSectionProps<object>,
+  "selectedKeys" | "onSelectionChange" | "shouldCloseOnSelect"
+> & { children: ReactNode; selectionMode?: "none" | "multiple" };
+
+/** A section needs an accessible name: a visible `heading`, an `aria-label`, or both. */
+type MenuSectionProps = MenuSectionBaseProps & (
+  | { heading: ReactNode; "aria-label"?: string }
+  | { heading?: ReactNode; "aria-label": string }
+);
+
+const isBlank = (value: unknown): boolean =>
+  value == null || typeof value === "boolean" || (typeof value === "string" && !value.trim());
+
+// Only inspect intrinsic content and fragments; a component's output cannot
+// be verified here. Such headings need the section's explicit aria-label.
+function hasHeadingText(value: ReactNode): boolean {
+  if (typeof value === "string") return !!value.trim();
+  if (typeof value === "number" || typeof value === "bigint") return true;
+  if (Array.isArray(value)) return value.some(hasHeadingText);
+  if (!isValidElement<HTMLAttributes<HTMLElement>>(value)) return false;
+  if (value.type === Fragment) return hasHeadingText(value.props.children);
+  if (typeof value.type !== "string") return false;
+  const props = value.props;
+  if (props.hidden || props["aria-hidden"] === true || props["aria-hidden"] === "true"
+    || props.style?.display === "none" || props.style?.visibility === "hidden"
+    || props["aria-labelledby"]
+    || ["script", "style", "template"].includes(value.type)) return false;
+  if (props["aria-label"] !== undefined) return !isBlank(props["aria-label"]);
+  return hasHeadingText(props.children);
+}
+
+/**
+ * A named group with optional controlled checkbox selection, owned by the
+ * menu peer. Throws if neither `heading` nor `aria-label` carries a
+ * non-empty name, since that would render an unnamed menu group.
+ */
+function MenuSection({ heading, children, ...rest }: MenuSectionProps) {
+  const hasHeading = hasHeadingText(heading);
+  if (!hasHeading && isBlank(rest["aria-label"])) {
+    throw new TypeError("Menu.Section: a non-empty heading or aria-label is required.");
+  }
+  return <AriaMenuSection {...rest} className="flex flex-col">
+    {!isBlank(heading) && <Header aria-label={hasHeading ? undefined : rest["aria-label"]}
+      className="px-sm py-xs text-caption font-body text-ink-muted">{heading}</Header>}
+    {children}
+  </AriaMenuSection>;
+}
+
+export const Menu = Object.assign(MenuRoot, { Item: MenuItem, Separator: MenuSeparator, Section: MenuSection });

@@ -75,6 +75,8 @@ const UNMOUNTED: Mounted = { lifecycle: null, seam: null, seamFailed: false };
 const noopSubscribe = (): (() => void) => () => {};
 const noDecision = (): ConsentSnapshotView => NO_DECISION_VIEW;
 const inert = (): void => {};
+/** The card's inline policy link: body-small, primary ink, a muted underline at rest, never split across lines. */
+const CARD_POLICY_LINK_CLASS = "text-body-s text-ink-primary underline decoration-ink-muted hover:decoration-current whitespace-nowrap";
 
 function readGpcSignal(): boolean {
   try {
@@ -384,7 +386,10 @@ export function ConsentExperience(props: ConsentExperienceProps): ReactNode {
     const style = page.style;
     const hadStyle = page.hasAttribute("style");
     const computed = window.getComputedStyle(page);
-    const properties = (["padding-block-end", "scroll-padding-block-end"] as const).map((property) => {
+    // The card floats over the page end, footer included, as the signed-off
+    // reference does, so the document is not padded for it. Only focus-scroll
+    // clearance is reserved, so a focused control is never scrolled under it.
+    const properties = (["scroll-padding-block-end"] as const).map((property) => {
       const host = computed.getPropertyValue(property);
       return {
         property,
@@ -404,10 +409,7 @@ export function ConsentExperience(props: ConsentExperienceProps): ReactNode {
       const clearance = Math.ceil(Math.max(0, window.innerHeight - card.getBoundingClientRect().top));
       for (const entry of properties) {
         if (entry.owned !== null && !stillOwned(entry)) continue;
-        const value = entry.property === "padding-block-end"
-          ? `calc(${entry.host} + ${clearance}px)`
-          : `max(${entry.host}, ${clearance}px)`;
-        style.setProperty(entry.property, value, "important");
+        style.setProperty(entry.property, `max(${entry.host}, ${clearance}px)`, "important");
         // CSSOM may normalize arithmetic; ownership follows the assigned serialization.
         entry.owned = style.getPropertyValue(entry.property);
         entry.ownedPriority = style.getPropertyPriority(entry.property);
@@ -443,7 +445,7 @@ export function ConsentExperience(props: ConsentExperienceProps): ReactNode {
     };
   }, [visible, noticeCopyMissing, presentation]);
 
-  const inlinePolicy = linkLabel === undefined ? null : policyLinkShown ? <Link href={policyHref}>{linkLabel}</Link> : linkLabel;
+  const inlinePolicy = linkLabel === undefined ? null : policyLinkShown ? <Link href={policyHref} className={CARD_POLICY_LINK_CLASS}>{linkLabel}</Link> : linkLabel;
   const cardBody = (
     <>
       {body}

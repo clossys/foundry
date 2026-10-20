@@ -19,7 +19,7 @@ override, and no GitHub credential of any kind.
 
 ## Shared atom selection
 
-`ATOM_GUIDANCE`, `ATOM_API_FACTS` and `ATOM_DISPLAY_GROUPS` are additive data
+`ATOM_GUIDANCE`, `ATOM_API_FACTS`, `ATOM_DISPLAY_GROUPS` and `ATOM_COMPARISON` are additive data
 exports from `@clossys/designer/atoms`. The barrel remains client-only. Read
 the packed [atom selection guide](skill/atoms-guide.md) for purpose, use and
 avoidance, alternatives, content, anatomy, block composition, accessibility,
@@ -37,7 +37,46 @@ from consumer preview defaults, and package support differs from consumer-owned
 demonstration coverage. Callbacks, arbitrary children and styles are not config
 axes. Direct and transitive token claims carry partial source evidence.
 
-The public types are `AtomGuidance`, `AtomApiFacts`, `AtomDisplayGroup`,
+`ATOM_COMPARISON` declares preferred finite `columns: { option, values }`,
+optional `rows` of the same shape, and `maxCells` bounded at 24. Each axis uses
+an existing option and its declared scalar values; atoms without finite options
+have no entry. `maxCells` equals the raw axis product before any exclusions.
+Its `constraints` is the original guidance rule array by identity, and
+`constraintPolicy: "skip-violations"` skips only `requires`, `exclusive` and `paired`
+violations against complete authored props. Applicability (`effective-when`),
+ignored-option, `derived` and `data` rules never skip cells under this policy;
+those rules remain authoring guidance and do not remove default appearances.
+Apply a forbidding rule's `when` first. `requires` needs every named required
+prop; `exclusive` rejects present `excludes` or enforces `presence: "exactly-one"`
+across `props`; `paired` requires all or none of its `props`. Presence means a
+value other than `undefined`, so `false` and zero are present.
+Some axes may be visually static. Omitted defaults are not representable as
+cells: every axis cell supplies an explicit scalar value. Consumers must still
+author valid content, callbacks and data; this declaration supplies no renderer
+or general-purpose validator.
+
+The lookup has finite keys: only some atoms have a represented comparison.
+For a dynamic string ID, narrow it to `keyof typeof ATOM_COMPARISON` with an
+ownership guard before indexing, and handle an unlisted ID as no entry:
+
+```ts
+import { ATOM_COMPARISON } from "@clossys/designer/atoms";
+
+type ComparisonKey = keyof typeof ATOM_COMPARISON;
+
+function isComparisonKey(key: string): key is ComparisonKey {
+  return Object.hasOwn(ATOM_COMPARISON, key);
+}
+
+function findComparison(atomId: string) {
+  if (isComparisonKey(atomId)) {
+    return ATOM_COMPARISON[atomId];
+  }
+  return undefined; // No represented comparison for this atom.
+}
+```
+
+The public types are `AtomGuidance`, `AtomApiFacts`, `AtomDisplayGroup`, `AtomComparison`,
 `AtomMedium`, `AtomMediumState`, `AtomScalar`, `AtomEvidence`,
 `AtomOptionGuidance`, `AtomCondition`, `AtomConstraint`, `AtomWebImplementation` and
 `AtomMediumGuidance`. Import these from the same existing atoms entry point.
@@ -140,12 +179,13 @@ surfaces and live in `@clossys/publisher/web`.
   `Separator`, `Chip`, `StatusMark`, `Meter`.
 - **`blocks`** — owns the internal layout of multiple named regions,
   typically by composing one or more atoms (and/or layout) into something
-  with a real job on a page. Thirty-five ship: `PageHeader`, `EmptyState`,
+  with a real job on a page. Forty-two ship: `AccountMenu`, `PageHeader`, `EmptyState`,
   `DataTable`, `DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`,
   `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `SectionFrame`,
   `MarketingChapter`, `FeatureGrid`, `Item`, `Items`, `Tree`, `AnatomyCallouts`, `RecordLedger`, `Scene`, `Matrix`,
   `Specimen`, `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`,
-  `PricingTable`, `Testimonial`, `ArticleBody`, `ConsentBanner` (see "Blocks" below).
+  `PricingTable`, `Testimonial`, `ArticleBody`, `ConsentBanner`, `Panel`, `Drawer`,
+  `ResizablePane`, `CommandMenu`, `AppNavigation` and `GroupedTable` (see "Blocks" below).
 - **`shell`** — the persistent frame around content (nav, layout chrome)
   that provides the slots content fills. One per app; survives route
   changes that swap out the content underneath it. `Shell` ships with five
@@ -215,7 +255,7 @@ smallest stable subpath that owns what you need:
 
 ### Token details and selection
 
-The flat `TOKENS` registry has 186 stable property identities across brand
+The flat `TOKENS` registry has 188 stable property identities across brand
 and supported theme overlays, with zero per-token configuration. Use the
 property-keyed `TOKEN_GUIDANCE` for purpose, appropriate use, misuse or an
 alternative, the consuming CSS application and its context, and a contextual
@@ -1655,6 +1695,19 @@ none of it reimplemented here.
 `Menu.Item` takes an `isDestructive` prop for actions like "Delete" —
 danger-colored styling, purely visual, doesn't change keyboard/selection
 behavior. `Menu.Separator` is a visual divider between item groups.
+
+`Menu.Section` groups entries under a real menu Header. Supply a non-empty
+`heading` or `aria-label`; the type requires one and a blank name throws a
+`TypeError`. Rich headings need nonblank text or a label in intrinsic elements
+or fragments; hidden content and opaque components do not establish a name.
+An explicit section `aria-label` names an unverified heading while preserving
+its visible content.
+Its optional `selectionMode` (`none` or `multiple`), `selectedKeys`,
+`onSelectionChange` and `shouldCloseOnSelect` belong to the section. Multiple
+selection produces `menuitemcheckbox` preferences; the caller owns checked
+values. Normal hover/focus retains the existing selected surface with no outline;
+a focused, enabled item adds a current-color outline only in forced colors.
+
 
 There is deliberately no `aria-label` prop on `Menu` itself:
 react-aria-components' `MenuTrigger` always wires the menu's
@@ -4258,8 +4311,11 @@ function MarketingChapter() {
 
 Full-bleed marketing section band: `ground`, horizontal page padding,
 vertical section rhythm, and a measured inner column (`content`, `wide`,
-or `prose`). Compose `ArticleBody`, `Stat`, and other blocks that do not
-own their own band inside this — not a host `className` wrapper.
+or `prose`). `ground` sets both the section surface and its primary
+foreground ink on the root, so raw children on `inverse` inherit the
+on-inverse ink instead of the base ink. Compose `ArticleBody`, `Stat`, and
+other blocks that do not own their own band inside this — not a host
+`className` wrapper.
 
 ### `ArticleBody`
 
@@ -4296,6 +4352,42 @@ here and belongs to a separate, already-filed proposal in
 Measure and section padding come from the parent `SectionFrame` (`measure="prose"` for long-form copy). This component only applies typography. A page can hold two `ArticleBody`s (a main
 article plus a sidebar callout, or two comparison columns), which is what
 keeps it at this layer rather than being a view (test 3).
+
+### `AccountMenu`
+
+A Navigation Material combining Avatar, Button, Icon, Tooltip and Menu. The host
+supplies `actor.name`, optional `secondaryText` and `image`, `contextLabel`, and
+`sections`. Avatar derives fallback initials from the name. Expanded triggers
+show the name and context; collapsed triggers show the avatar, keep an explicit
+accessible name, and expose a tooltip. A non-empty `triggerLabel` overrides only
+the collapsed trigger and tooltip. Expanded controls retain the visible actor
+name in their accessible name. The open menu shows and truncates long actor
+details within a viewport-bounded panel. Later unnamed command sections use
+separators without repeating the actor as a group name.
+
+Command sections contain `link` (`href`), `action` or `destructive` (`onAction`)
+entries. Preference sections use `kind="preferences"`, a required `label`, and
+`preference` entries with `checked` and `onCheckedChange`. Each entry also takes
+an `id`, `label` and optional `isDisabled`. Duplicate section IDs (including empty
+sections) and duplicate entry IDs within a section are rejected with `TypeError`.
+Equal entry IDs in different sections remain valid. Empty sections are omitted; an empty
+menu renders no trigger or placeholder. Preference changes remain controlled and
+keep the menu open. Links and actions retain ordinary menuitem semantics.
+Empty actor names or entry labels are rejected. Destinations follow Items: an
+anchor, one-origin path, HTTP(S) URL without credentials, or explicit mail link;
+blank, protocol-relative, script/data, control-character and backslash URLs are
+rejected. Images remain host-provided Avatar data. Destructive styling does not
+confirm an action: the host owns confirmation and the final destructive effect.
+
+`onClose` observes a menu close and `onRoute` observes a link activation. A drawer
+host removes or hides its navigation, then focuses its visible opener or route
+destination after that update commits; the block does not own the drawer. Normal
+Escape focus return and collision-aware placement use Menu's overlay machinery.
+This is a client component: SSR emits a closed trigger and hydration enables
+interaction. It is not exported from `blocks/server`. Tests cover synthetic
+viewport geometry, normal and forced-color focus, reduced-motion transitions,
+long actor details, retained hidden-host handoff, and client hydration;
+they do not establish a separate native server or browser-qualification claim.
 
 ### `ConsentBanner`
 
@@ -4352,14 +4444,19 @@ banner is positioned over the page. If you pin the banner to the bottom
 visually, render it early in DOM order so keyboard and assistive-tech users
 reach it without tabbing through the whole page first.
 
-The opt-in card sits at the inline start from tablet width and is centred
-on phones, with safe-area gutters and the form-width cap. It uses the
-existing glass, blur and hairline roles; unsupported backdrop filters and
-reduced transparency use an opaque plate, and forced colours use system
-colours. There is no motion. Long copy can wrap and scroll within the
-viewport. The title stays as a visually hidden heading that names the
-region. The policy slot is inline with the body, and both outlined choices
-share the row equally. Pass `selectedChoice="granted"` or `"denied"` from
+The opt-in card floats on the notice layer (`--ui-z-notice`), above the
+shell header and footer. Below tablet width it fills the viewport less
+safe-area gutters, centred; from tablet width it is capped at the notice
+width (`--ui-width-notice-max`) and sits at the bottom inline start. Its
+plate is the base surface at 90% with the notice backdrop blur
+(`--blur-notice`), a hairline in the base line colour and the raised
+elevation; unsupported backdrop filters use the base surface at 95%, reduced
+transparency uses an opaque plate, and forced colours use system colours.
+Its only motion is a short background and blur transition, removed under
+reduced motion. Long copy can wrap and scroll within the viewport. The title
+stays as a visually hidden heading that names the region. The policy slot is
+inline with the body, and both choices fill a two-column row as full-width
+tap targets whose labels may wrap. Pass `selectedChoice="granted"` or `"denied"` from
 host state to show a decorative check and `aria-pressed`; the component
 stores no choice. The live region stays mounted in either presentation.
 
@@ -4754,7 +4851,11 @@ Grid rather than relying on source order.
 the page, visually hidden until it receives keyboard focus — so a keyboard
 user landing on any route can jump straight past the header and side
 navigation to that route's actual content. `skipLinkLabel` is that link's
-visible text and defaults to "Skip to content".
+visible text and defaults to "Skip to content". Activating it (click, Enter
+or Space) moves focus to `Shell.Main` and scrolls it into view without
+changing `location.hash` or browser history, so an application that keeps its
+route in the URL fragment stays on its current route. Without JavaScript the
+link falls back to its `href`.
 
 `Shell.SideNav` is sized to `--ui-layout-sidebar-w` from the `tablet`
 breakpoint up, and collapses — CSS-only, no JavaScript breakpoint state — to
@@ -4780,7 +4881,7 @@ files:
 
 // app/(member)/layout.tsx
 <Shell>
-  <Shell.Header><AccountMenu /></Shell.Header>
+  <Shell.Header><MemberAccountControl /></Shell.Header>
   <Shell.SideNav><MemberNav /></Shell.SideNav>
   <Shell.Main>{children}</Shell.Main>
 </Shell>
@@ -4794,7 +4895,7 @@ files:
 </Shell>
 ```
 
-`MarketingNav`, `AccountMenu`, `MemberNav`, `StaffToolbar`, `StaffNav`, and
+`MarketingNav`, `MemberAccountControl`, `MemberNav`, `StaffToolbar`, `StaffNav`, and
 `AuditLog` are each the CONSUMER's own composition of atoms — `Shell.Header`
 itself stays a plain, unopinionated slot, and ships no `AppHeader` block of
 its own. A header is where brand lives, and shipping a pre-built one INTO
@@ -4882,11 +4983,20 @@ about the four components themselves hardcodes a label, a brand name, or a
 footer line; every one arrives as a prop or a child.
 
 `SkipLink` takes the jump target's `id` (`targetId`) and its own visible
-text (`children`) as props — unlike `Shell`'s internal skip link, which is
-wired to `Shell.Main`'s own fixed, package-owned id, a site's own page
+text (`children`) as props — `Shell` renders this same component, wired to
+`Shell.Main`'s own fixed, package-owned id, whereas a site's own page
 structure decides what "content" means, so this version assumes nothing
 about where it points. Give the target element a matching `id` and
-`tabIndex={-1}` (a plain `<main>` isn't natively focusable).
+`tabIndex={-1}` (a plain `<main>` isn't natively focusable). Activation
+(click, Enter or Space) is focus-only: it focuses the target, which scrolls it
+into view, and cancels the anchor's default navigation, so `location.hash` and
+history are left alone and a hash-routed application keeps its route. The
+`href` remains as the fallback when JavaScript is unavailable, for a modified
+or non-primary click (open in a new tab), when the target is not in the
+document, and when the target cannot take focus (for example it lacks
+`tabIndex={-1}`), so the link still scrolls there. Because the fragment is no
+longer updated, the target no longer matches `:target` and no history entry is
+added; this applies to the public `SkipLink` as well as the one `Shell` renders.
 
 `SiteHeader` renders a real `<header>` — the page's `banner` landmark,
 provided it sits at the top level rather than nested inside `<main>`/
@@ -4901,8 +5011,12 @@ own doc comment for why it's `shell`, not `blocks`, despite reading like a
 `navPlacement="centered"` and `mobileLayout="menu-brand-action"` are the
 shared defaults. Equal side tracks center navigation on the whole header;
 `NavDisclosure` measures intrinsic brand/link/action widths and collapses
-before collision. Mobile centers the supplied mark, with menu at inline-start
-and a supplied primary icon or empty track at inline-end. The layout mirrors
+before collision. Mobile centers the supplied mark on the whole bar, not on
+the space left between the controls, with menu at inline-start and a supplied
+primary icon or empty track at inline-end. The mobile brand hides wordmark
+text only: a `Brandmark` mark stays visible (an image, a shared plate holding
+an image, or an accent mark tagged `data-brand-mark`), and the link keeps its
+`aria-label` as its name while the wordmark is hidden. The layout mirrors
 in RTL. `secondaryAction` renders before `actions` in the trailing region.
 Explicit `navPlacement="leading"` or `mobileLayout="inline"` retain legacy
 positioning rather than the default geometry. DOM order remains brand, nav,
@@ -5058,13 +5172,38 @@ It renders one navigation landmark and one set of links: below `tablet`
 server-rendered state is collapsed. With scripting unavailable, CSS shows
 the panel inline and hides the button at every width. The toggle keeps
 focus when activated; Escape while open closes the sheet and returns focus
-to the toggle, and activating an `a[href]` within the panel closes it. Closed
-header content is inert after mount and CSS hides it before hydration.
-Equivalent parent renders preserve an open menu; meaningful route changes
-reset it and desktop transitions retain visible focus. Without scripting,
-expanded frame navigation stays in document flow before the View.
-There is no focus trap or portal, and the disclosure has no animation.
+to the toggle, and activating an `a[href]` within the panel closes it
+without moving focus back to the toggle, so the browser follows the link.
+Closed header content is inert after mount, from the moment it closes, and
+CSS hides it before hydration. Equivalent parent renders preserve an open
+menu; meaningful route changes reset it and desktop transitions retain
+visible focus. Without scripting, expanded frame navigation stays in
+document flow before the View. There is no focus trap or portal.
 `SiteHeader` supplies the positioned containing block for the mobile sheet.
+
+Motion: below `tablet` the sheet slides down by `--spacing-sm` and fades in
+when it opens, and reverses when it closes, over `--ui-duration-default` with
+`--ease-default`. The panel's `--site-header-panel-duration`,
+`--site-header-panel-ease` and `--site-header-panel-shift` carry those tokens,
+and the script reads them, so the CSS owns the timing. While a closing sheet
+animates it keeps `data-present` and stays painted, but it is already inert
+and out of the tab order. A reopen mid-close reverses from where the sheet is.
+Under `prefers-reduced-motion: reduce` the duration is `0s`, so the sheet
+switches at once, and turning reduced motion on cancels a running animation.
+The menu icon's bars rotate over the same duration and stop under reduced
+motion. From `tablet` up nothing moves.
+
+Collapse: the header collapses its links into the Menu sheet when the brand,
+the links and the actions would not fit on one row. `NavDisclosure` measures
+each region at its natural one-line width (the header carries
+`data-measuring` for that read, so many links, many actions and long labels
+are counted unwrapped) and requires twice the wider of the brand and the
+actions, plus the links and two gaps, so the links can stay centred. Size
+changes, content changes, image and font loads and a `dir` or `lang` change
+on the header or an ancestor schedule one measurement per animation frame.
+Hysteresis keeps a collapsed header collapsed until the row is `--spacing-sm`
+(8px) wider than it needs, so a width near the threshold does not flicker
+between the two layouts.
 Use `NavShell` when the menu needs a modal drawer and managed focus instead;
 its drawer requires JavaScript.
 
@@ -5299,6 +5438,46 @@ Declared boundary: the wordmark's size is the mark's height times the fixed
 22/48 ratio, so at `size="sm"` (a 24px mark) the wordmark is 11px. Sizes
 derive from that ratio and are not raised to a minimum, so use `"md"` or
 `"lg"` where an 11px wordmark is too small.
+
+One brand slot size: the mark's box is the size's `--ui-brandmark-height-*`
+token for every form (`variant="mark"` or `"lockup"`, either plate, either
+`markInk`), so a mark-only brand and a lockup share one slot height, and the
+desktop header, the mobile bar and the menu panel all use that same token.
+The header styles set no brand height or font size of their own, so no
+per-site override is needed.
+
+#### Accent mark
+
+`markInk` is `"image"` or `"accent"`. On a `Brandmark` of its own, `"image"`
+is the default and the mark is the `markSrc` image, as above. Inside
+`SiteHeader`, an omitted `markInk` becomes `"accent"`, so the header's
+logomark is in the accent token by default; pass `markInk="image"` there to
+opt out. With `"accent"`,
+`Brandmark` paints the mark's shape in the accent token (`bg-accent`): a
+decorative `<span>` the size's height square, using `markSrc` as a CSS mask
+(`mask-image`, `contain`, centred), so the mark follows the accent token in
+light and dark color schemes. The wordmark keeps the link's ink: the
+`--color-ink-primary` token, or `--color-ink-on-inverse` with
+`tone="inverse"` on a dark or overlay ground, so it switches with the scheme
+and the ground through tokens only. With `plate="shared"` the accent mark sits
+inset on the plate. The prop is part of `BrandmarkProps`; no new type is
+exported.
+
+```tsx
+<Brandmark
+  variant="lockup"
+  size="md"
+  label="Acme home"
+  markSrc="/brand/acme-mark.svg"
+  wordmark="Acme"
+  markInk="accent"
+/>;
+```
+
+What it does not do: the mask uses the image's alpha only, so a multi-colour
+mark becomes a one-colour accent silhouette, including in the header's
+default; pass `markInk="image"` for a mark whose colours matter. It does not check that the accent reads on the ground behind
+it.
 
 #### Shared plate
 
@@ -6205,7 +6384,7 @@ not a grab-bag).
 | `Spinner` | component | Indeterminate loading indicator. Plain SVG — not interactive, composes no other atom. |
 | `SpinnerProps` | type | Props for `Spinner`: `size`, `label`, plus every native `<svg>` attribute except `className`/`children`. |
 | `SpinnerSize` | type | `"sm" \| "md" \| "lg"`. |
-| `Menu` | component | Dropdown menu built on react-aria-components' `MenuTrigger`/`Menu`/`MenuItem`/`Popover`. Carries `Menu.Item` and `Menu.Separator`. |
+| `Menu` | component | Dropdown menu built on react-aria-components' `MenuTrigger`/`Menu`/`MenuItem`/`Popover`. Carries `Menu.Item`, `Menu.Separator` and `Menu.Section`. |
 | `MenuProps` | type | Props for `Menu`: `trigger`, `children`, `triggerAction`, `className`, `popoverClassName`, plus most of react-aria-components' own `MenuTrigger` props. |
 | `MenuItemProps` | type | Props for `Menu.Item`: `children`, `isDestructive`, `className`, plus everything react-aria-components' own `MenuItem` accepts. |
 | `MenuSeparatorProps` | type | Props for `Menu.Separator`: `className`. |
@@ -6267,6 +6446,15 @@ not a grab-bag).
 | `MeterProps` | type | Props for `Meter`: `value`, `scaleMax`, `limit`, `direction`, `tone`, `valueText`, `limitText`, `emphasis`, optional paired `previous`/`previousText`, plus every native `<div>` attribute except `children`. |
 | `MeterTone` | type | `"success" \| "warning" \| "danger" \| "info" \| "neutral"`. |
 | `MeterDirection` | type | `"max" \| "min"`: whether the limit is a cap or a floor. |
+| `AccountMenu` | component | Navigation Material with actor trigger, grouped commands and controlled preferences. |
+| `AccountMenuProps` | type | Actor, sections, context/collapsed/triggerLabel and host close/route callbacks. |
+| `AccountMenuActor` | type | Name, optional secondaryText and image; name-derived fallback initials. |
+| `AccountMenuEntry` | type | Command or controlled preference entry. |
+| `AccountMenuCommand` | type | Link, action or destructive command. |
+| `AccountMenuLink` | type | Labelled destination entry with href. |
+| `AccountMenuAction` | type | Labelled action or destructive callback entry. |
+| `AccountMenuPreference` | type | Checked preference and change callback. |
+| `AccountMenuSection` | type | Command group or named preference group; entries have section-local IDs. |
 | `PageHeader` | component | Page banner: breadcrumb slot, title, description, actions slot. |
 | `PageHeaderProps` | type | Props for `PageHeader`: `title`, `description`, `actions`, `breadcrumb`, plus every native `<header>` attribute. |
 | `EmptyState` | component | Zero-item placeholder: icon slot, title, description, action slot. |
@@ -6355,6 +6543,10 @@ not a grab-bag).
 | `AnatomyCallouts` | component | A specimen panel with 3 or 5 numbered markers and an ordered key. |
 | `AnatomyCalloutsProps` | type | Required caller instance `id`, `label`, `panel`, `markers`, `keyLabel`; optional `legendSide`, `sample`, `headingLevel`, `ground`, `className`, `style`. |
 | `AnatomyCalloutsMarker` | type | Stable `id`, labelled `target`, authored `heading` and `description`. |
+| `GroupedTable` | component | Captioned native table with grouped column headers, row headers and a named overflow region. |
+| `GroupedTableProps` | type | Generic table props: `caption`, `rowHeader`, `groups`, `rows`, `rowKey`, `emptyMessage`, optional `className`. |
+| `GroupedTableGroup` | type | Group `id`, React-node `header`, and nonempty `columns`. |
+| `GroupedTableColumn` | type | Column `id`, React-node `header`, and `cell(row)` renderer; also used for the leading row header. |
 | `RecordLedger` | component | A record on rules, without a panel. |
 | `RecordLedgerProps` | type | `form: "record"` takes unique instance seed `id`, `head`, `groups`, `columns?`, `caption`, `flagLabel?`; accepts `ground`, `headingLevel`, `className`. |
 | `LedgerRowData` | type | Static row: `id`, `label`, `detail?`, `status?` (`tone`, `label`), `flag?`. |
@@ -7128,12 +7320,13 @@ speculatively, just because a related component shipped, is the exact
 un-bounded growth this package's own "variant rule" warns against one level
 up. They get added here only once something real needs them.
 
-**Blocks:** thirty-five ship — `PageHeader`, `EmptyState`, `DataTable`,
+**Blocks:** forty-one ship — `AccountMenu`, `PageHeader`, `EmptyState`, `DataTable`,
 `DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`, `ConfirmDialog`,
 `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `SectionFrame`, `MarketingChapter`,
-`FeatureGrid`, `Item`, `Items`, `AnatomyCallouts`, `RecordLedger`, `Scene`, `Matrix`, `Specimen`,
+`FeatureGrid`, `Item`, `Items`, `Tree`, `AnatomyCallouts`, `RecordLedger`, `Scene`, `Matrix`, `Specimen`,
 `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`, `PricingTable`,
-`Testimonial`, `ArticleBody`, `ConsentBanner` — completing this layer. No
+`Testimonial`, `ArticleBody`, `ConsentBanner`, `Panel`, `Drawer`,
+`ResizablePane`, `CommandMenu` and `AppNavigation` — completing this layer. No
 `FilterBar` block:
 `DataTable`'s own `toolbar` slot (and `Toolbar`'s own `search` slot) are
 deliberately plain `ReactNode`s, not a block with its own opinion about
@@ -7443,7 +7636,8 @@ const report = checkConsumerArtContract(art);
 
 `Brandmark tone="inverse"` uses inverse wordmark ink; `"auto"` keeps the base
 ink. A `Brandmark` passed directly to an overlay `SiteHeader` follows the header tone
-unless its own tone is explicit. `NavDisclosure tone="inverse"` uses inverse
+unless its own tone is explicit. A `Brandmark` passed directly to any `SiteHeader`
+paints its logomark in the accent token unless it sets `markInk="image"`. `NavDisclosure tone="inverse"` uses inverse
 trigger ink at rest, on hover, when expanded and on keyboard focus. An omitted
 nav tone follows an inverse overlay header; an explicit `"auto"` keeps base ink.
 Both controls otherwise retain their existing default markup.
@@ -7452,7 +7646,7 @@ Both controls otherwise retain their existing default markup.
 without a plate or a divider inside the footer. `rule` defaults to `"none"`
 and is ignored on other grounds, which retain their existing border policy.
 
-## Static token specimens
+## Token specimens
 
 ```tsx
 import { TokenPreview } from "@clossys/designer/tokens/preview";
@@ -7464,23 +7658,28 @@ uses live `var(--property, authored-value)` references so host overrides remain 
 selection tooling; configurable components begin at Atoms. `/tokens` stays
 React-free. Unknown properties and unsupported applications are refused.
 
-Optional copy props are `sampleText` (default "Aa 0123"),
-`unsupportedMessage` (default "Unsupported token application") and
-`pendingMessage` (default "interactive support pending"). Supply translated
-strings as needed; pending output keeps its authored kind before the message.
+Optional copy props are `sampleText` (default "Aa 0123") and
+`unsupportedMessage` (default "Unsupported token application"). Supply translated
+strings as needed. The former `pendingMessage` prop (default "interactive support pending") remains
+accepted for compatibility. Motion copy
+props are `authoredValueLabel` ("Authored value"), `replayLabel` ("Replay") and `reducedMotionMessage` ("Reduced motion:
+static equivalent"). Breakpoint copy props are `thresholdLabel` ("Threshold"),
+`matchLabel` ("Match"), `unavailableMessage` ("unavailable"), `matchesMessage`
+("yes") and `notMatchesMessage` ("no").
 
-The 168 static specimens support 17 authored kinds: surface, text, border,
-control, status, chart, font, space, size, icon, brandmark, radius, shadow,
-blur, ring, layer and opacity. Patterns expose translucent applications;
-inverse foregrounds receive an inverse backing. No override is claimed as measured.
+All 188 properties support their authored applications across 19 kinds. The 170
+static specimens cover surface, text, border, control, status, chart, font,
+space, size, icon, brandmark, radius, shadow, blur, ring, layer and opacity.
+Patterns expose translucent applications; inverse foregrounds receive an inverse
+backing. No override is claimed as measured.
 
-These 18 properties explicitly report their true kind and "interactive support pending":
-`--ui-duration-instant`, `--ui-duration-fast`, `--ui-duration-default`,
-`--ui-duration-deliberate`, `--ui-duration-flash`, `--ui-duration-overlay`,
-`--ease-default`, `--ease-decelerate`, `--ease-accelerate`, `--ease-bounce`,
-`--ease-enter`, `--ease-exit`, `--breakpoint-mobile`, `--breakpoint-mobile-lg`,
-`--breakpoint-tablet`, `--breakpoint-tablet-lg`, `--breakpoint-desktop`, `--breakpoint-wide`.
-Motion and breakpoint interaction belong to a later increment.
+The 12 motion properties show their authored duration or easing and replay a
+small transition when Replay is activated. Reduced-motion preferences show the
+same authored information as a static equivalent, with no transition. The six
+breakpoint properties show their resolved threshold and current media-query
+match; rem values resolve against the root font size. Query listeners are
+removed when the selected property changes or the preview unmounts. This
+interactive subpath requires a client boundary; `/tokens` remains React-free.
 
 ## Application panels
 
@@ -7522,6 +7721,30 @@ unmounted. Its default `dismissAt="(min-width: 768px)"` matches the structural
 tablet breakpoint; supply another media query when the host's wide layout
 starts elsewhere. Changing `navigationKey` or entering that query dismisses
 an open drawer, as does ordinary in-panel link navigation. No motion is added.
+The close control renders the `X` glyph through the `Icon` atom as decoration;
+`closeLabel` supplies the control's accessible name.
+
+`wide="sheet"` makes the Drawer an application side sheet that opens at every
+viewport width, for example an inspector at `placement="end"`. It ignores
+`dismissAt` and registers no media listener; it keeps the same Dialog focus
+containment, Escape and outside dismissal, focus restoration, scroll lock,
+`navigationKey` and in-panel link dismissal, and adds no motion. The default
+`wide="dismiss"` keeps the narrow-layout behavior described above. Switching
+an open sheet back to `"dismiss"` while the query matches closes it.
+
+```tsx
+import { Drawer } from "@clossys/designer/blocks";
+import { Button } from "@clossys/designer/atoms";
+
+export function InspectorSheet() {
+  return (
+    <Drawer heading="Inspector" closeLabel="Close inspector" placement="end"
+      wide="sheet" trigger={<Button>Inspect</Button>}>
+      <p>Selection details</p>
+    </Drawer>
+  );
+}
+```
 
 For a controlled Drawer, `isOpen` requests an open state; a local dismissal
 immediately removes the overlay even while the host retains `true`. The host
@@ -7536,9 +7759,26 @@ style its wrapper without changing centered defaults when omitted.
 `max` and `defaultValue`, in CSS pixels. Choose bounds that leave room for the
 content and the handle's minimum 44px target. `value` makes it controlled;
 omission uses local state. `onChange` reports bounded values, with no storage
-access. `orientation="vertical"` (default) is a vertical separator resizing
-inline width; `"horizontal"` resizes block height. `label` names the pane and
-`handleLabel` names the separator; header and footer remain Panel regions.
+access. A controlled host owns the dimension: keyboard and pointer changes
+render only after the host passes the reported value back, so the host can
+keep a remembered width in its own state or storage. `defaultValue` remains
+the Enter reset target in both modes. `orientation="vertical"` (default) is a
+vertical separator resizing inline width; `"horizontal"` resizes block height.
+`label` names the pane and `handleLabel` names the separator; header and footer
+remain Panel regions.
+
+```tsx
+import { ResizablePane } from "@clossys/designer/blocks";
+
+export function Inspector({ width, onWidthChange }: { width: number; onWidthChange: (width: number) => void }) {
+  return (
+    <ResizablePane min={240} max={560} defaultValue={320} value={width}
+      onChange={onWidthChange} label="Inspector" handleLabel="Resize inspector">
+      <p>Selection details</p>
+    </ResizablePane>
+  );
+}
+```
 
 `ResizeHandle` is controlled with required `value`, `min`, `max`, `resetValue`,
 `label` and `onChange`. Positive `step` defaults to 1. Arrow keys adjust,
@@ -7548,3 +7788,314 @@ on release; pointer cancellation, lost capture or Escape restores the drag's
 start value. Non-finite dimensions, reversed bounds, nonpositive steps and
 empty names are refused. Values and resets are clamped. Native forced-color
 adjustment remains enabled, with a token-bound edge and a visible focus outline.
+
+### CommandMenu
+
+`CommandMenu` is a Navigation Material in `APP_FRAME_MATERIALS`, composed
+from Dialog, SearchField, Tooltip and IconButton. The host owns open state,
+query, groups and destinations; item IDs must be unique across groups. Each
+item takes exactly one `href` or `onAction`, plus optional `description`,
+`shortcutHint`, icon glyph and `disabled`. The default filter matches labels
+case-insensitively; `filter(item, query)` replaces it. Empty results show the
+host's `emptyMessage` without inventing commands.
+
+The search input receives initial focus and controls a grouped listbox.
+Arrows wrap through enabled results, Enter activates the current filtered
+result, and pointer activation uses the same destination. Escape closes even
+with a nonempty query; Dialog contains focus and restores the external opener.
+The count is announced politely as "N results" by default; override
+`resultCountMessage(count)` to localize the complete announcement.
+Logical layout supports `dir="rtl"`,
+disabled results retain semantics, and inherited control transitions honor
+reduced motion. Closed server rendering is empty; interaction requires the
+client. This component is outside the server-safe subset.
+
+`useCommandMenuShortcut({ onOpen, enabled? })` is optional. It detects the
+platform on the client, handles Meta+K on Apple platforms and Ctrl+K elsewhere,
+and prevents the default only when it opens. It declines while any visible
+dialog is open, including its own menu; use Escape to close, then Mod+K to
+reopen. Listeners are removed when disabled or unmounted.
+
+| Export | Kind | Contract |
+| --- | --- | --- |
+| `CommandMenu` | component | Controlled modal command search over host-supplied groups. |
+| `CommandMenuProps` | type | Required labels, empty message, groups, open/query state and callbacks; optional filter, count-message formatter and direction. |
+| `CommandMenuItem` | type | Unique ID, string label, href or action, and optional description, shortcut hint, icon and disabled state. |
+| `CommandMenuGroup` | type | Stable ID, label and ordered items. |
+| `useCommandMenuShortcut` | function | Opt-in opening shortcut outside visible dialogs. |
+| `CommandMenuShortcutOptions` | type | Required `onOpen` callback and optional `enabled` flag. |
+
+```tsx
+import { useState } from "react";
+import { CommandMenu, useCommandMenuShortcut } from "@clossys/designer/blocks";
+
+export function CommandExample() {
+  const [isOpen, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  useCommandMenuShortcut({ onOpen: () => setOpen(true) });
+  return (
+    <>
+      <button onClick={() => setOpen(true)}>Commands</button>
+      <CommandMenu heading="Commands" searchLabel="Find a command"
+        closeLabel="Close commands" emptyMessage="No matching commands"
+        isOpen={isOpen} onOpenChange={setOpen} query={query} onQueryChange={setQuery}
+        resultCountMessage={count => count + " matching commands"}
+        groups={[{ id: "pages", label: "Pages", items: [
+          { id: "documents", label: "Documents", href: "/documents" },
+        ] }]} />
+    </>
+  );
+}
+```
+
+## Application navigation
+
+`AppNavigation` is a Block Material for host-owned destinations. Supply stable
+ids, text labels, optional decorative icons, and either `href` or `onAction`.
+Parents may have their own destination and children; children are destination
+leaves. The exported validator rejects duplicate ids, deeper input, ambiguous
+destinations and empty parents. An empty tree displays `emptyMessage`.
+
+```tsx
+import { AppNavigation, getAppNavigationBreadcrumbs, type AppNavigationNode } from "@clossys/designer/blocks";
+import { Button } from "@clossys/designer/atoms";
+
+const navigation: readonly AppNavigationNode[] = [
+  { id: "catalogs", label: "Catalogs", href: "/catalogs", children: [
+    { id: "blocks", label: "Blocks", href: "/catalogs/blocks" },
+  ] },
+];
+
+export function NavigationExample() {
+  const crumbs = getAppNavigationBreadcrumbs(navigation, { id: "blocks" });
+  return <AppNavigation tree={navigation} activeId={crumbs.at(-1)?.id}
+    footer={<Button variant="ghost">Example profile</Button>} />;
+}
+```
+
+The host places the Material in a height-constrained frame region. Links scroll
+independently of `footer`, which accepts plain children and imports no account
+control. Navigation stores no preferences, fetches no data and imports no router.
+`activeId` takes precedence over `activeHref`; ancestry and breadcrumbs derive
+only from that route identity, with no view-internal selection input.
+
+`validateAppNavigationTree(tree)` throws on invalid runtime input without mutating
+the tree. `getAppNavigationAncestry(tree, { id, href })` returns the matching
+root-to-destination node chain, with id taking precedence over href.
+
+
+Desktop parents expand inline. A destination link and its disclosure button are
+separate controls. A newly active child expands its ancestor. `collapsed` controls
+the named, tooltipped icon rail; `defaultCollapsed` supplies its initial local
+state and `onCollapsedChange` reports changes. Every child destination remains
+reachable in the rail. Long labels retain their complete accessible names.
+
+The narrow layout uses the existing Drawer with full rows. `dismissAt` defaults
+to `(min-width: 768px)`. Escape returns focus; route changes, actions and entering
+the wide layout close it and release modal state. A held `drawerOpen={true}`
+cannot revive a dismissed surface; acknowledge with false or explicitly reopen
+the trigger. `onDrawerOpenChange` lets the host coordinate other overlays.
+`navigationKey`, `label`, `openLabel` and `closeLabel` are host inputs. The Drawer close control
+uses a 44px ghost icon button; `closeLabel` supplies its accessible name.
+`expandLabel`, `collapseLabel` and `formatDisclosureLabel(nodeLabel, expanded)`
+let the host translate rail toggles and disclosures; their defaults preserve the
+English expand/collapse announcements. All message props are optional.
+
+Arrow Up/Down and Home/End move among visible navigation controls. Logical
+Left/Right expand or collapse a parent, reversing in RTL. Enter/Space activate
+destinations or disclosure. Native forced-color adjustment and reduced motion
+remain supported. The interactive Material and helpers use the existing client
+blocks entry; no server-subset export or application-frame assembly is added.
+### Account menu composition example
+
+`APP_FRAME_MATERIALS` includes the `account-menu` selection for `AccountMenu`,
+with identity, trigger, content and preference regions, its rendered `Avatar`,
+`Button`, `Icon`, `Menu` and `Tooltip` dependencies, and the finite `collapsed`
+configuration. Its authored inputs include `actor`, `sections`, `contextLabel`,
+`triggerLabel`, `collapsed`, `onClose` and `onRoute`; the host supplies identity,
+preference state, actions and routing.
+
+```tsx
+import { AccountMenu } from "@clossys/designer/blocks";
+
+export function AccountControl() {
+  return <AccountMenu actor={{ name: "Alex Morgan" }} contextLabel="Workspace"
+    sections={[{ id: "account", label: "Account", entries: [
+      { id: "settings", kind: "link", label: "Settings", href: "/settings" },
+    ] }]} />;
+}
+```
+
+### GroupedTable
+
+`GroupedTable<Row>` is a Block for a captioned table with two levels of column
+headers and a leading row header. It composes an outlined `Card` around a
+focusable overflow region named by the visible caption. Native `colgroup`,
+`scope` and explicit `headers` associations connect each data cell to its row,
+group and leaf header. Generated IDs stay local to each instance.
+
+```tsx
+import { GroupedTable } from "@clossys/designer/blocks";
+
+<GroupedTable
+  caption="Quarterly results"
+  rowHeader={{ id: "team", header: "Team", cell: row => row.name }}
+  groups={[{ id: "quarter", header: "This quarter", columns: [
+    { id: "total", header: "Total", cell: row => row.total },
+  ] }]}
+  rows={[{ id: "alpha", name: "Alpha", total: 0 }]}
+  rowKey={row => row.id}
+  emptyMessage="No results yet"
+/>
+```
+
+Required props are `caption`, `rowHeader`, `groups`, `rows`, `rowKey` and
+`emptyMessage`; `className` customizes the outer Card. Header and cell renderers
+accept React nodes, including zero and authored links or actions. Each group
+needs at least one column. IDs must be nonempty and unique among groups or
+within a group's columns; row keys must be unique. Invalid input throws.
+An empty body displays `emptyMessage` across the row header and all leaf columns.
+The component and its types are exported from the client blocks entry and the
+component is registered in `APP_FRAME_MATERIALS` with its actual Card dependency.
+
+### Headless table model
+
+`filterRows`, `groupRows`, `pivotRows` and `aggregate` operate on caller-supplied
+rows and a versioned `TableModel`, exported through `@clossys/designer/blocks`.
+Each operation applies the model's filters and global search. Pass the resulting
+rows or aggregates to the controlled table components. The engine's module graph
+contains plain data operations; the existing blocks barrel still loads its React
+peers. Rendering, selection, pagination and fetching stay with the caller.
+
+```ts
+import {
+  aggregate, filterRows, groupRows, pivotRows,
+  parseTableModel, serializeTableModel, type TableModel,
+} from "@clossys/designer/blocks";
+
+const records = [
+  { region: "East", team: "Blue", year: 2026, quarter: "Q1", amount: 20, tags: ["urgent"] },
+  { region: "East", team: "Gold", year: 2026, quarter: "Q2", amount: 30, tags: ["urgent", "follow-up"] },
+];
+const view: TableModel = {
+  version: 1,
+  columns: [
+    { id: "region", kind: "enum" }, { id: "team", kind: "enum" },
+    { id: "year", kind: "number" }, { id: "quarter", kind: "enum" },
+    { id: "amount", kind: "number" }, { id: "tags", kind: "tags" },
+  ],
+  collation: { locale: "en", sensitivity: "base", numeric: true },
+  filters: [{ column: "tags", kind: "tags", op: "all", values: ["urgent"] }],
+  groupBy: [{ column: "region" }, { column: "team" }],
+  measures: [
+    { id: "rows", op: "count" },
+    { id: "total", op: "sum", column: "amount" },
+    { id: "average", op: "avg", column: "amount" },
+  ],
+  pivot: {
+    rows: [{ column: "region" }, { column: "team" }],
+    columns: [{ column: "year" }, { column: "quarter" }],
+  },
+};
+const filtered = filterRows(records, view); // { rows, facets }
+const groups = groupRows(records, view);    // nested groups with rows and aggregates
+const pivot = pivotRows(records, view);    // rowAxis, columnAxis, cells, totals
+const totals = aggregate(records, view);   // { rows: 2, total: 50, average: 25 }
+const saved = serializeTableModel(view);   // independent validated plain object
+const restored = parseTableModel(JSON.parse(JSON.stringify(saved)));
+```
+
+Column IDs name own row properties. Supported cell kinds are `text`, `number`,
+`date`, `enum`, `tags` and `boolean`. Numbers must be finite; enum values are
+strings, tags are arrays of strings and boolean values are actual booleans.
+Dates accept finite epoch milliseconds, `YYYY-MM-DD`, or canonical UTC ISO strings
+such as `2026-01-01T00:00:00.000Z`; normalization produces UTC ISO strings. Invalid
+calendar dates and ambiguous local date strings are refused. Null and absent
+properties normalize to one null value. Invalid cells are refused even if a
+later filter would hide that row. Input rows, arrays and models are not mutated;
+returned row arrays retain references to the caller's original rows.
+
+Filters combine with AND, including multiple filters on one column. Text supports
+`contains` and `equals`; number and date `range` bounds are inclusive and either
+bound may be omitted. Enum `in` matches exact string values. Tags support `any`,
+`all` and `none`; null tags act as an empty set for filtering. Empty `any` matches
+no rows, while empty `all` and `none` match every row. Boolean uses `equals`.
+Null values fail scalar filters. Global `search` matches any non-null searchable
+column, with individual tags searched separately; `searchable: false` opts a
+column out. Contains and global search use case folding in the supplied locale;
+text equality uses its collation sensitivity. Enum and tag identity remain exact.
+
+`filterRows` returns input-ordered `rows` and `facets` keyed by column ID. Each
+facet applies global search and every other column's filters, omitting all filters
+on its own column. Counts are per distinct value and row; repeated tags count
+once, an empty tag set contributes no tag and a missing tag value contributes a
+null facet. This disjunctive convention lets a filter menu display alternatives
+to its current selection. Numeric and date facets count distinct normalized
+values rather than histogram buckets.
+
+The locale is required and must be supported by the runtime. Collation options
+control text ordering; a UTF-16 lexical tie break makes equal-collation group keys
+deterministic across input permutations. Numeric/date/boolean values use their
+natural order. Null sorts first ascending and last descending. Each group axis
+can set `order: "desc"`. Group paths have JSON tuple keys: null and the literal
+string `"null"` differ, and delimiters inside values cannot collide. Tags group
+as a deduplicated set sorted by UTF-16 values rather than multiplying a row across tags.
+Groups contain their original rows, per-group aggregates and sorted children.
+The engine supports more than three grouping levels; repeated columns within an
+axis are refused.
+
+Measures are named by distinct IDs. `count` without a column counts rows; with a
+column it counts non-null values. `sum` and `avg` require a number column. `min`
+and `max` support scalar kinds, while `distinct` counts exact normalized values,
+including complete tag sets. Column measures exclude nulls. Empty input yields
+zero for count, sum and distinct, and null for min, max and average. Numeric
+overflow is a typed refusal. Averages and distinct totals are recomputed from
+underlying rows, so subtotals do not add child averages or distinct counts.
+
+A pivot accepts any number of row and column dimensions and one or more measures.
+Both axes contain observed full paths and every observed prefix, plus the `[]`
+grand-total path. Prefixes carry `kind: "subtotal"`, complete paths `"leaf"` and
+the empty path `"total"`. Total/subtotal paths precede their descendants. Every
+axis intersection has a cell, with `empty: true` and the documented empty
+aggregates for an unobserved combination. Empty input still has one grand-total
+cell; zero-dimensional axes are allowed. Before constructing Cartesian cells,
+the engine refuses more than 100,000 measure slots (`rowAxis.length ×
+columnAxis.length × measure count`) with `pivot-budget`. This bounds sparse
+high-cardinality output. The test budget is 2,000 ms for filter, three-level group
+and two-by-two-dimension pivot computation over 10,000 rows with bounded axis
+cardinality and three measures; it is not a timing promise for arbitrary shapes.
+
+Saved views are version 1 plain objects. `serializeTableModel` validates and
+copies a model; `parseTableModel` accepts an unknown plain object and copies it
+after validation. Unknown fields, accessors, column references, kinds, operators,
+invalid ranges and unsupported versions are refused. The typed `TableModelError`
+has a stable `code`: `invalid-model`, `unsupported-version`, `unknown-column`,
+`invalid-cell`, `pivot-budget` or `aggregate-overflow`.
+
+| Export | Kind | Contract |
+| --- | --- | --- |
+| `filterRows` | function | AND/global filtering with input-ordered rows and disjunctive facets. |
+| `groupRows` | function | Deterministically ordered group tree and per-node aggregates. |
+| `pivotRows` | function | Prefix axes, explicit sparse cells, measures, totals and subtotals. |
+| `aggregate` | function | Saved-view measures over filtered rows. |
+| `parseTableModel` | function | Validate and copy an unknown plain saved-view object. |
+| `serializeTableModel` | function | Produce an independent validated plain saved-view object. |
+| `TableModelError` | class | Typed model, cell, output-budget and numeric-overflow refusal. |
+| `TableModel` | type | Version 1 columns, collation, filters, search, groups, measures and pivot. |
+| `TableValue` | type | Normalized string, number, boolean, tag set or null. |
+| `TableColumnKind` | type | The six supported column kinds. |
+| `TableColumn` | type | Own-property ID, kind and optional global-search participation. |
+| `TableCollation` | type | Required locale and optional sensitivity, numeric and case ordering. |
+| `TableFilter` | type | Discriminated column-kind and operator filter union. |
+| `TableDimension` | type | Column reference and optional ascending or descending order. |
+| `TableMeasure` | type | Named count, sum, min, max, average or distinct measure. |
+| `TablePivot` | type | Row and column dimension arrays. |
+| `TableFacet` | type | Normalized facet value and matching-row count. |
+| `TableFilterResult` | type | Filtered original rows and column facet arrays. |
+| `TableAggregateValue` | type | Scalar measure result or null. |
+| `TableAggregates` | type | Measure ID to scalar result record. |
+| `TableGroup` | type | Tuple key, column, value, path, rows, aggregates and child groups. |
+| `TablePivotAxis` | type | Tuple key and path tagged as total, subtotal or leaf. |
+| `TablePivotCell` | type | Row/column axis keys, explicit emptiness and measure results. |
+| `TablePivotResult` | type | Both axes, their cells and grand-total measures. |
+| `TableModelErrorCode` | type | The six stable refusal codes. |

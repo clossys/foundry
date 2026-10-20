@@ -10,6 +10,8 @@ Stable purpose, content and anatomy are separate from medium-specific implementa
 
 Represented scalar options are a bounded source-checked selection, not an exhaustive inherited API or a Cartesian product. Defaults distinguish local initializers, inherited peer behavior and omitted/conditional values. Data, compound parts, callbacks, style and arbitrary children are authored inputs rather than selectable configuration axes.
 
+`ATOM_COMPARISON` declares preferred finite columns and optional rows for comparison; `maxCells` equals their product at no more than 24. `AtomComparison` describes this data-only contract. Its `constraints` references original rules; `constraintPolicy: "skip-violations"` skips only `requires`, `exclusive` and `paired` violations with complete authored inputs. Applicability (`effective-when`), ignored-option, `derived` and `data` rules never skip cells. Atoms without finite options have no comparison entry.
+
 Consumer-owned demonstration coverage is unassessed here. A fixed controlled value or a single option cannot demonstrate toggling or switching. Runtime acceptance, visual effectiveness and type/runtime rejection differ. Token evidence is partial and distinguishes direct reads from transitive bindings; importing a helper does not consume all its tokens.
 
 ## Display taxonomy
@@ -97,10 +99,10 @@ Token dependency coverage: partial. Representative consumed dependencies only; t
 - Use when: Several related commands should be revealed on demand.
 - Avoid when: The content is an input choice set or a rich explanatory panel.
 - Alternatives and boundary: Use Select for choosing a value; Popover for arbitrary panel content.
-- Content: Name the trigger and each command; group related commands with separators.
-- Anatomy: One trigger and a repeated collection of actionable items.
-- Block composition example: In a consumer-owned row-actions block, expose edit and archive through Menu.Item.
-- Accessibility: Name the trigger; disabled items and keyboard navigation belong to the menu primitive.
+- Content: Name the trigger and each command. Use Menu.Section for a real section heading and separators between groups.
+- Anatomy: One trigger and a repeated collection of actionable items, optionally grouped in Menu.Section with a real heading.
+- Block composition example: AccountMenu composes Menu.Item commands and Menu.Section preference groups with an actor trigger.
+- Accessibility: Name the trigger and each section. Section headings use the menu primitive's Header; section selection provides menuitemcheckbox preferences. Disabled items and keyboard navigation belong to the primitive.
 - Demonstration coverage: unassessed. Consumer-owned fixtures and interaction evidence have not been assessed here. A supported package option is not proof of a working catalog demonstration.
 
 | Medium | State | Reason and evidence |
@@ -110,7 +112,7 @@ Token dependency coverage: partial. Representative consumed dependencies only; t
 | print | unassessed | No print renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 | video | unassessed | No video renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 
-Web implementation: `@clossys/designer/atoms` → `Menu`. Source: `src/atoms/Menu.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Root props forward to MenuTrigger, not the inner menu list. triggerAction forwards to the peer trigger prop; the package supplies no local initializer. Item-level commands use Menu.Item; destructive emphasis is item-level.
+Web implementation: `@clossys/designer/atoms` → `Menu`. Source: `src/atoms/Menu.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Root props forward to MenuTrigger, not the inner menu list. triggerAction forwards to the peer trigger prop; the package supplies no local initializer. Item-level commands use Menu.Item; destructive emphasis is item-level. Menu.Section supplies a real heading through Header and forwards selectionMode, selectedKeys, onSelectionChange and shouldCloseOnSelect to the peer MenuSection. Checkbox preferences use multiple selection with caller-owned keys and callbacks.
 
 | Prop | Selection guidance | Package default | Applicability and support |
 | --- | --- | --- | --- |
@@ -1274,6 +1276,6 @@ Token dependency coverage: partial. Representative consumed dependencies only; t
 
 ## Maintain the shared contract
 
-Read `ATOM_GUIDANCE` for curated selection semantics and medium evidence, `ATOM_API_FACTS` for checked facts, and `ATOM_DISPLAY_GROUPS` for placement. `AtomGuidance`, `AtomApiFacts` and `AtomDisplayGroup` describe their shapes; the README lists supporting types. Consumers reference these records rather than copying guidance.
+Read `ATOM_GUIDANCE` for curated selection semantics and medium evidence, `ATOM_API_FACTS` for checked facts, `ATOM_DISPLAY_GROUPS` for placement, and `ATOM_COMPARISON` for finite comparison axes. `AtomGuidance`, `AtomApiFacts`, `AtomDisplayGroup` and `AtomComparison` describe their shapes; the README lists supporting types. Consumers reference these records rather than copying guidance.
 
 Regenerate with `node scripts/generate-atom-docs.mjs`; check freshness with `node scripts/check-atom-docs.mjs`. These are repository-only commands and do not ship in the installed package. The checker compares this whole guide and the skill selection section byte for byte using source, without installed dist or timestamps.

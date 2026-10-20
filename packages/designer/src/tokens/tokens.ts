@@ -2,7 +2,7 @@
  * The token catalog: every custom property this package declares in
  * `styles/tokens.css`, as data. This file is the JS/TS half of the package;
  * `styles/tokens.css` is the CSS half. Both are hand-authored and both are
- * meant to describe the exact same 186 tokens — a test in this package
+ * meant to describe the exact same 188 tokens — a test in this package
  * (`parity.test.ts`) parses `styles/tokens.css` and asserts its custom
  * property names and values match this file entry-for-entry, in both
  * directions. That test is what keeps this file honest; nothing generates
@@ -35,7 +35,7 @@
  */
 
 /**
- * The 31 semantic groups the 186 tokens fall into. Each maps to exactly one
+ * The 31 semantic groups the 188 tokens fall into. Each maps to exactly one
  * CSS custom property prefix — see `FAMILY_PREFIX` in `parity.test.ts` (and
  * the README's naming table) for the concrete mapping.
  */
@@ -109,7 +109,7 @@ export interface TokenDefinition {
 }
 
 /**
- * All 186 tokens, keyed by their CSS custom property name. A `Record` rather
+ * All 188 tokens, keyed by their CSS custom property name. A `Record` rather
  * than an array because the natural question from JS — "what is
  * `--color-surface-raised` set to?" — is a lookup, not a scan.
  */
@@ -293,6 +293,7 @@ export const TOKENS: Readonly<Record<string, TokenDefinition>> = {
   "--ui-width-prose-max": { property: "--ui-width-prose-max", family: "width", value: "48rem", brandable: true, themeDependent: false },
   "--ui-width-wide-max": { property: "--ui-width-wide-max", family: "width", value: "72rem", brandable: true, themeDependent: false },
   "--ui-width-form-max": { property: "--ui-width-form-max", family: "width", value: "38rem", brandable: false, themeDependent: false },
+  "--ui-width-notice-max": { property: "--ui-width-notice-max", family: "width", value: "24rem", brandable: false, themeDependent: false },
   "--ui-width-page-padding-x": { property: "--ui-width-page-padding-x", family: "width", value: "clamp(16px, 4vw, 48px)", brandable: false, themeDependent: false },
 
   // ── UI · LAYOUT ─────────────────────────────────────────────────────
@@ -358,6 +359,9 @@ export const TOKENS: Readonly<Record<string, TokenDefinition>> = {
   // Glass identity: the backdrop blur behind a glass plate. Theme invariant;
   // a brand lever like the panel tokens.
   "--blur-glass": { property: "--blur-glass", family: "blur", value: "16px", brandable: true, themeDependent: false },
+  // Notice identity: the backdrop blur behind a pinned notice card. Theme
+  // invariant and fixed, like the other component measures.
+  "--blur-notice": { property: "--blur-notice", family: "blur", value: "12px", brandable: false, themeDependent: false },
 
   // ── UI · RING ───────────────────────────────────────────────────────
   "--ui-ring-focus": { property: "--ui-ring-focus", family: "ring", value: "0 0 0 2px var(--color-accent, oklch(0.4748 0 0))", brandable: false, themeDependent: false },

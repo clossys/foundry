@@ -13,7 +13,8 @@ import type { SiteShellInput } from "./types.js";
 import { resolveShell } from "./internal/resolveShell.js";
 
 const ref = (id: string) => ({ id });
-const resolveCopy: CopyResolver = ref => ({ ref, text: ref.id, recordId: ref.id, revision: "1", locale: "en", source: { kind: "consumer", reference: "fixture" }, entryId: ref.id });
+const NAV_DEFAULT_COPY: Readonly<Record<string, string>> = { "site-frame.nav.label": "Primary", "site-frame.nav.trigger-label": "Menu" };
+const resolveCopy: CopyResolver = ref => ({ ref, text: NAV_DEFAULT_COPY[ref.id] ?? ref.id, recordId: ref.id, revision: "1", locale: "en", source: { kind: "consumer", reference: "fixture" }, entryId: ref.id });
 const resolveAsset = () => ({ type: "image", src: "/mark.svg", width: 48, height: 48, alt: "Example mark" });
 const brand = { assetId: "mark", label: ref("Example home"), size: "md", variant: "lockup", wordmark: ref("Example") } as const;
 const legal = { entity: ref("Example"), links: [{ href: "/privacy", label: ref("Privacy") }, { href: "/terms", label: ref("Terms") }] };
@@ -108,7 +109,9 @@ for (const mode of ["server", "client"] as const) {
     expect(root.querySelector("header")).toHaveAttribute("data-tone", "inverse");
     expect(root.querySelector("header nav")).toHaveAttribute("aria-label", "Primary");
     expect(root.querySelector(".site-header-nav-links")).toBeNull();
-    expect(root.querySelector("header img")).toHaveAttribute("src", "/mark.svg");
+    // The header logomark is the brand asset painted in the accent token by default.
+    expect(root.querySelector("header img")).toBeNull();
+    expect(root.querySelector("header [data-brand-mark].bg-accent")!.getAttribute("style")).toMatch(/mask-image: ?url\("\/mark\.svg"\)/);
     expect(root.querySelector('header a[aria-label="Example home"]')).toHaveTextContent("Example");
     const actions = root.querySelectorAll('header a[href="/start"]');
     expect(actions).toHaveLength(2);
@@ -141,6 +144,7 @@ it("pins default server navigation bytes", () => {
 it.each([
   ["shell.actions[0].emphasis", { ...base, actions: [{ ...base.actions![0], emphasis: "PAYLOAD-SENTINEL" }] }],
   ["shell.brand.tone", { ...base, brand: { ...brand, tone: "PAYLOAD-SENTINEL" } }],
+  ["shell.brand.markInk", { ...base, brand: { ...brand, markInk: "PAYLOAD-SENTINEL" } }],
   ["shell.nav.tone", { ...base, nav: { ...nav, tone: "PAYLOAD-SENTINEL" } }],
   ["shell.footer.rule", { ...base, footer: { legal, rule: "PAYLOAD-SENTINEL" } }],
 ])("refuses invalid %s without echoing its value", (path, shell) => {

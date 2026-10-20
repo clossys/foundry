@@ -3,7 +3,7 @@ import type { IconNode } from "@clossys/designer/atoms/server";
 import { isRenderImageAsset } from "../../../internal/assets.js";
 import type { AssetResolver } from "../../types.js";
 import type { SiteFramePresentationConfig } from "../site-frame-contract.js";
-import { HEADER_LINK_LIMIT, HEADER_ACTION_VARIANTS, normalizeSiteFrameActions, normalizeSiteFrameConfig } from "../site-frame-contract.js";
+import { HEADER_LINK_LIMIT, HEADER_ACTION_VARIANTS, SITE_FRAME_NAV_DEFAULTS, normalizeSiteFrameActions, normalizeSiteFrameConfig } from "../site-frame-contract.js";
 import { SITE_CHROME_GROUNDS } from "../types.js";
 import type { SiteChromeGround, SiteShellInput } from "../types.js";
 
@@ -24,6 +24,7 @@ export interface ResolvedSiteShell {
     readonly size: "sm" | "md" | "lg";
     readonly plate?: "self" | "shared";
     readonly tone?: "auto" | "inverse";
+    readonly markInk?: "image" | "accent";
     readonly wordmark?: string;
   };
   readonly skipLink: string;
@@ -68,7 +69,7 @@ const SHELL_KEYS = new Set([
   "origin",
 ]);
 const HEADER_KEYS = new Set(["placement", "ground", "tone"]);
-const BRAND_KEYS = new Set(["assetId", "label", "size", "plate", "variant", "wordmark", "tone"]);
+const BRAND_KEYS = new Set(["assetId", "label", "size", "plate", "variant", "wordmark", "tone", "markInk"]);
 const NAV_KEYS = new Set(["label", "triggerLabel", "trigger", "links", "tone"]);
 const LINK_KEYS = new Set(["href", "label"]);
 const NAV_LINK_KEYS = new Set(["href", "label", "isCurrent"]);
@@ -279,6 +280,7 @@ export function resolveShell(input: SiteShellInput, resolveCopy: CopyResolver, r
     size,
     ...(plate === undefined ? {} : { plate }),
     ...(brandFields.tone === undefined ? {} : { tone: oneOf(brandFields.tone, "shell.brand.tone", ["auto", "inverse"] as const) }),
+    ...(brandFields.markInk === undefined ? {} : { markInk: oneOf(brandFields.markInk, "shell.brand.markInk", ["image", "accent"] as const) }),
     ...(variant === "lockup" ? { wordmark: copy(brandFields.wordmark, "shell.brand.wordmark", resolveCopy) } : {}),
   };
 
@@ -394,6 +396,16 @@ export function resolveShell(input: SiteShellInput, resolveCopy: CopyResolver, r
     ...iconActions.map(() => "ghost" as const),
     ...environments.map(() => "secondary" as const),
   ]);
+  // Actions without navigation still need a named menu; its words come from the consumer's copy.
+  if (nav === undefined && headerActions.length > 0) {
+    const defaults = SITE_FRAME_NAV_DEFAULTS;
+    nav = {
+      label: copy(defaults.label, `shell.nav default label "${defaults.label.id}"`, resolveCopy),
+      triggerLabel: copy(defaults.triggerLabel, `shell.nav default triggerLabel "${defaults.triggerLabel.id}"`, resolveCopy),
+      trigger: defaults.trigger,
+      links: [],
+    };
+  }
   // Renderer and data contract normalize the same dependent presentation inputs.
   const normalized = normalizeSiteFrameConfig(presentation ?? (header.placement === "overlay"
     ? { headerPlacement: header.placement, headerTone: header.tone }

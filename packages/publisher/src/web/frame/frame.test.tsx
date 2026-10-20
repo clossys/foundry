@@ -3,6 +3,7 @@
 import "@testing-library/jest-dom/vitest";
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
+import ts from "typescript";
 import type { ReactElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -33,6 +34,8 @@ const COPY: Readonly<Record<string, string>> = {
   "brand.label": "Example home",
   "skip": "Skip to content",
   "nav.label": "Primary",
+  "site-frame.nav.label": "Primary",
+  "site-frame.nav.trigger-label": "Menu",
   "nav.pricing": "Pricing",
   "nav.docs": "Docs",
   "cta.start": "Get started",
@@ -179,7 +182,10 @@ describe("SiteFrame", () => {
     const { container } = render(frame(siteShellFor(CONFIG, "site"), <p>content</p>));
     const brand = container.querySelector('header a[aria-label="Example home"]') as HTMLAnchorElement;
     expect(brand).toHaveTextContent("Example");
-    expect(brand.querySelector("img")).toHaveAttribute("src", "/brand/mark.svg");
+    // The header logomark is the resolved asset painted in the accent token by default.
+    expect(brand.querySelector("img")).toBeNull();
+    expect(brand.querySelector("[data-brand-mark]")).toHaveClass("bg-accent");
+    expect(renderToStaticMarkup(frame(siteShellFor(CONFIG, "site"), <p>content</p>))).toContain("mask-image:url(&quot;/brand/mark.svg&quot;)");
     const nav = container.querySelector('header nav[aria-label="Primary"]') as HTMLElement;
     expect([...nav.querySelectorAll(".nav-disclosure-panel > ul:first-child a")].map((a) => [a.textContent, a.getAttribute("href")])).toEqual([
       ["Pricing", "/pricing"],
@@ -602,6 +608,24 @@ function moduleSpecifiers(source: string): string[] {
 }
 
 const FRAME_ALLOWED_IMPORT = /^(react|@clossys\/designer\/[a-z-]+\/server|@clossys\/writer|\.{1,2}\/[A-Za-z./-]+\.js)$/;
+const FRAME_CLIENT_MODULES = [
+  "AppFrame.specimen.tsx", "AppFrame.tsx", "NavDisclosure.boundary.client.tsx",
+  "NavDisclosure.client.tsx", "SkipLink.client.tsx",
+];
+// AppFrame is an explicit web/client composition; SiteFrame's server rules stay unchanged.
+const FRAME_IMPORT_EXCEPTIONS: Readonly<Record<string, readonly string[]>> = {
+  "NavDisclosure.client.tsx": ["@clossys/designer/shell"],
+  "NavDisclosure.boundary.client.tsx": ["#publisher-frame-navigation"],
+  "SiteFrame.tsx": ["#publisher-web-views"],
+  "AppFrame.tsx": ["react-aria-components", "@clossys/designer/atoms", "@clossys/designer/icons", "@clossys/designer/blocks", "@clossys/designer/theme"],
+  "AppFrame.specimen.tsx": ["@clossys/designer/atoms", "@clossys/designer/blocks"],
+  "app-frame-types.ts": ["@clossys/designer/blocks", "@clossys/designer/theme"],
+  "app-frame-layout.ts": ["@clossys/designer/tokens"],
+};
+
+function allowedFrameImport(name: string, specifier: string): boolean {
+  return FRAME_ALLOWED_IMPORT.test(specifier) || (FRAME_IMPORT_EXCEPTIONS[name]?.includes(specifier) ?? false);
+}
 
 function frameSources(): Array<[string, string]> {
   const files: Array<[string, string]> = [];
@@ -615,27 +639,43 @@ function frameSources(): Array<[string, string]> {
 }
 
 describe("module boundaries", () => {
-  it("only the skip-link, navigation implementation and navigation bridge are client modules, and the frame uses no hooks", () => {
+  it("pins the SiteFrame islands and separate AppFrame client composition while SiteFrame uses no hooks", () => {
     const sources = frameSources();
     expect(sources.map(([name]) => name)).toContain("SiteFrame.tsx");
-    expect(sources.filter(([, source]) => source.startsWith('"use client";')).map(([name]) => name).sort()).toEqual(["NavDisclosure.boundary.client.tsx", "NavDisclosure.client.tsx", "SkipLink.client.tsx"]);
+    expect(sources.filter(([, source]) => source.startsWith('"use client";')).map(([name]) => name).sort()).toEqual(FRAME_CLIENT_MODULES);
     for (const [name, source] of sources) {
-      if (name === "SkipLink.client.tsx" || name === "NavDisclosure.client.tsx" || name === "NavDisclosure.boundary.client.tsx") expect(source.startsWith('"use client";')).toBe(true);
+      if (FRAME_CLIENT_MODULES.includes(name)) expect(source.startsWith('"use client";')).toBe(true);
       else expect(source).not.toMatch(/["']use client["']/);
     }
     const frameSource = readFileSync(join(import.meta.dirname, "SiteFrame.tsx"), "utf8");
     expect(frameSource).not.toMatch(/\buse[A-Z][A-Za-z]*\(/);
   });
 
-  it("frame modules retain server imports except the navigation island's Designer disclosure import, with no dynamic import or require", () => {
+  it("retains server imports with exact per-file client exceptions and no dynamic import or require", () => {
     for (const [name, source] of frameSources()) {
       for (const specifier of moduleSpecifiers(source)) {
-        if (name === "NavDisclosure.client.tsx" && specifier === "@clossys/designer/shell") continue;
-        if (name === "NavDisclosure.boundary.client.tsx" && specifier === "#publisher-frame-navigation") continue;
-        if (name === "SiteFrame.tsx" && specifier === "#publisher-web-views") continue;
-        expect(specifier).toMatch(FRAME_ALLOWED_IMPORT);
+        expect(allowedFrameImport(name, specifier), `${name}: ${specifier}`).toBe(true);
       }
       expect(source).not.toMatch(/\bimport\s*\(|\brequire\s*\(/);
+    }
+  });
+
+  it("refuses AppFrame interactive imports in SiteFrame, unnamed modules and its pure helpers", () => {
+    for (const name of ["SiteFrame.tsx", "UnlistedFrame.tsx", "AppFrame.other.tsx", "app-frame-contract.ts", "AppFrameBrand.tsx"]) {
+      for (const specifier of ["react-aria-components", "@clossys/designer/atoms", "@clossys/designer/blocks", "@clossys/designer/theme", "@clossys/designer/tokens"]) {
+        expect(allowedFrameImport(name, specifier), `${name}: ${specifier}`).toBe(false);
+      }
+    }
+    expect(allowedFrameImport("AppFrame.specimen.tsx", "@clossys/designer/theme")).toBe(false);
+    expect(allowedFrameImport("app-frame-layout.ts", "@clossys/designer/atoms")).toBe(false);
+    expect(allowedFrameImport("AppFrame.tsx", "unlisted-dependency")).toBe(false);
+  });
+
+  it("keeps AppFrame's shared contract imports type-only", () => {
+    const source = ts.createSourceFile("app-frame-types.ts", readFileSync(join(import.meta.dirname, "app-frame-types.ts"), "utf8"), ts.ScriptTarget.Latest, true);
+    for (const statement of source.statements) {
+      if (ts.isImportDeclaration(statement)) expect(statement.importClause?.isTypeOnly).toBe(true);
+      if (ts.isExportDeclaration(statement) && statement.moduleSpecifier) expect(statement.isTypeOnly).toBe(true);
     }
   });
 
@@ -694,13 +734,13 @@ const ALL_SLOTS: SiteShellInput = {
 };
 
 describe("SiteFrame icon slots", () => {
-  it("renders all slots with semantic landmarks, resolved accessible names and decorative icons", () => {
+  it("renders all slots with semantic landmarks, resolved accessible names, text-only header actions and decorative footer icons", () => {
     const { getByRole } = render(frame(ALL_SLOTS, <p>content</p>));
     const banner = getByRole("banner");
     const contact = within(banner).getByRole("link", { name: "Contact" });
     expect(contact).toHaveAttribute("href", "/contact");
     expect(contact).toHaveTextContent("Contact");
-    expect(contact.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
+    expect(contact.querySelector("svg")).toBeNull();
     const footer = getByRole("contentinfo");
     const social = within(footer).getByRole("navigation", { name: "Profiles" });
     const profile = within(social).getByRole("link", { name: "Profile" });
@@ -718,7 +758,7 @@ describe("SiteFrame icon slots", () => {
     const focusable = [...container.querySelectorAll<HTMLElement>('a[href],button,input,select,textarea,[tabindex]')]
       .filter((element) => element.tabIndex >= 0);
     expect(focusable.map((element) => element.getAttribute("aria-label") ?? element.textContent)).toEqual([
-      "Skip to content", "Example home", "Primary", "Pricing", "Docs", "Sign in", "Contact", "App", "App",
+      "Skip to content", "Example home", "Primary", "Pricing", "Docs", "App", "Sign in", "Contact", "App",
       "About", "Help", "Profile", "Privacy", "Terms",
     ]);
   });
@@ -1092,6 +1132,45 @@ it("HEADER-1 normalizes implicit legacy controls into distinct finite variants, 
   expect(container.querySelectorAll('header a[href="/docs"]')).toHaveLength(2);
   expect(container.querySelector('header nav')).toHaveAttribute("aria-label", "Primary");
   expect(container.querySelector('header button')).toHaveTextContent("Menu");
+});
+
+describe("HEADER-1 navigation defaults resolve through the consumer's copy", () => {
+  const base: SiteShellInput = { brand: CONFIG.brand, skipLink: ref("skip") };
+  const link = { href: "/docs", label: ref("nav.docs") };
+  const LOCALIZED: Readonly<Record<string, string>> = { "site-frame.nav.label": "Navegación", "site-frame.nav.trigger-label": "Menú" };
+  const localized = (requested: string[]): CopyResolver => (copyRef) => {
+    requested.push(copyRef.id);
+    const text = LOCALIZED[copyRef.id];
+    return text === undefined ? resolveCopy(copyRef) : { ...resolveCopy(ref("skip"))!, ref: copyRef, text, entryId: copyRef.id, recordId: `record-${copyRef.id}` };
+  };
+
+  it("names the fallback navigation and its toggle from the default copy references", () => {
+    const requested: string[] = [];
+    const resolved = resolveShell({ ...base, actions: [link] }, localized(requested), resolveAsset);
+    expect(resolved.nav).toEqual({ label: "Navegación", triggerLabel: "Menú", trigger: "label", links: [] });
+    expect(requested).toEqual(expect.arrayContaining(["site-frame.nav.label", "site-frame.nav.trigger-label"]));
+    const { container } = render(<SiteFrame shell={{ ...base, actions: [link] }} resolveCopy={localized([])} resolveAsset={resolveAsset}><p>Content</p></SiteFrame>);
+    const header = container.querySelector("header")!;
+    expect(within(header).getByRole("navigation", { name: "Navegación" })).toBeInTheDocument();
+    expect(within(header).getByRole("button", { name: "Menú" })).toHaveTextContent("Menú");
+    expect(header.textContent).not.toMatch(/Primary|Menu\b/);
+  });
+
+  it("fails closed, naming the default copy id, when the consumer cannot resolve it", () => {
+    const missingLabel: CopyResolver = (copyRef) => (copyRef.id.startsWith("site-frame.") ? undefined : resolveCopy(copyRef));
+    const missingTrigger: CopyResolver = (copyRef) => (copyRef.id === "site-frame.nav.trigger-label" ? undefined : localized([])(copyRef));
+    expect(() => resolveShell({ ...base, actions: [link] }, missingLabel, resolveAsset)).toThrow(/SiteFrame: .*site-frame\.nav\.label.* did not resolve to copy/);
+    expect(() => resolveShell({ ...base, actions: [link] }, missingTrigger, resolveAsset)).toThrow(/SiteFrame: .*site-frame\.nav\.trigger-label.* did not resolve to copy/);
+  });
+
+  it("asks for no default copy when the shell supplies navigation or has no header actions", () => {
+    for (const shell of [base, { ...base, nav: { label: ref("nav.label"), links: [] }, actions: [link] }] as SiteShellInput[]) {
+      const requested: string[] = [];
+      resolveShell(shell, localized(requested), resolveAsset);
+      expect(requested.filter(id => id.startsWith("site-frame."))).toEqual([]);
+    }
+    expect(resolveShell(base, localized([]), resolveAsset).nav).toBeUndefined();
+  });
 });
 
 it("HEADER-1 composes an optional real host notice and returns focus to the live menu opener", async () => {

@@ -5,6 +5,10 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+- Add the registered CommandMenu Navigation Material with host-controlled groups, filtering and open state, modal search focus and restoration, keyboard and pointer activation, and an optional SSR-safe opening shortcut.
+- Add the AppNavigation Block Material, a typed two-level host navigation tree, route ancestry and breadcrumbs, accessible rail destinations, Drawer focus handoff and a fixed footer slot. Give the Drawer close button a token-sized ghost icon presentation and visible keyboard focus.
+
+- Add AccountMenu with expanded/collapsed actor triggers, grouped commands, controlled preferences and host close/route callbacks. Menu.Section provides named groups and section-local checkbox selection. Menu keeps normal hover/focus outlines suppressed and adds an outline only for focused enabled items in forced colors; AccountMenu uses the Button focus ring with a forced-color fallback, retains expanded label-in-name, validates required labels and destinations, and bounds long actor details.
 - Add Panel, Drawer and ResizablePane Block Materials with source-backed composition records, and a named ResizeHandle Atom with bounded keyboard and pointer interaction. Drawer reuses the Dialog lifecycle and releases it on route and breakpoint changes. Document the forty-first Atom without changing existing Dialog defaults.
 
 ## 0.12.0 - 2026-10-16

@@ -49,6 +49,13 @@ export type SiteBrandInput = {
   readonly plate?: "self" | "shared";
   /** Omitted inherits inverse overlay header ink; explicit auto keeps ordinary ink. */
   readonly tone?: "auto" | "inverse";
+  /**
+   * How the header's logomark is painted. Omitted or `"accent"` paints the
+   * mark's shape in the accent token, using the asset as a mask, so supply a
+   * single-colour mark. `"image"` opts out and renders the asset as it is, for
+   * a multi-colour logo that the mask would flatten to a one-colour silhouette.
+   */
+  readonly markInk?: "image" | "accent";
 } & ({ readonly variant: "mark"; readonly wordmark?: never } | { readonly variant: "lockup"; readonly wordmark: CopyRef });
 
 /**
@@ -97,7 +104,15 @@ export interface SiteShellInput {
   readonly brand: SiteBrandInput;
   /** The skip link's words. Its target is always {@link SITE_MAIN_ID}. */
   readonly skipLink: CopyRef;
-  /** Primary navigation in the banner, in a `<nav>` named by `label`. */
+  /**
+   * Primary navigation in the banner, in a `<nav>` named by `label`. When it is
+   * omitted and the header has any action, the frame still renders a menu with
+   * no links and resolves its name and toggle through `resolveCopy` from the
+   * copy references in `SITE_FRAME_CONTRACT.defaults` (`site-frame.nav.label`
+   * and `site-frame.nav.trigger-label`). Unresolved default copy fails closed,
+   * like any other shell label. Supply `nav` (links may be empty) to use other
+   * copy references.
+   */
   readonly nav?: {
     readonly label: CopyRef;
     /** The disclosure toggle copy; defaults to the resolved navigation label. */

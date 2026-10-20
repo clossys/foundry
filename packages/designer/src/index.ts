@@ -131,6 +131,7 @@ export type {
 
 export {
   PageHeader,
+  AccountMenu,
   EmptyState,
   DataTable,
   DetailView,
@@ -140,6 +141,8 @@ export {
   useFormValidation,
   FieldGroup,
   ConfirmDialog,
+  CommandMenu,
+  useCommandMenuShortcut,
   Toolbar,
   NavGrid,
   AnatomyCallouts,
@@ -172,6 +175,14 @@ export type {
   SectionGroundClasses,
   SectionStatusTone,
   PageHeaderProps,
+  AccountMenuProps,
+  AccountMenuActor,
+  AccountMenuEntry,
+  AccountMenuCommand,
+  AccountMenuLink,
+  AccountMenuAction,
+  AccountMenuPreference,
+  AccountMenuSection,
   EmptyStateProps,
   DataTableProps,
   DataTableColumn,
@@ -195,6 +206,10 @@ export type {
   FieldGroupProps,
   FieldGroupLayout,
   ConfirmDialogProps,
+  CommandMenuProps,
+  CommandMenuItem,
+  CommandMenuGroup,
+  CommandMenuShortcutOptions,
   ConfirmDialogTone,
   ToolbarProps,
   NavGridProps,
@@ -394,5 +409,14 @@ export { ScatterChart } from "./charts/ScatterChart.js";
 export type { ScatterChartProps } from "./charts/ScatterChart.js";
 
 export { Item } from "./blocks/items/Item.js";
+export { AppNavigation } from "./blocks/AppNavigation.js";
+export type { AppNavigationProps } from "./blocks/AppNavigation.js";
+export { validateAppNavigationTree, getAppNavigationAncestry, getAppNavigationBreadcrumbs } from "./blocks/app-navigation-tree.js";
+export type { AppNavigationNode, AppNavigationLeaf, AppNavigationDestination, AppNavigationTarget, AppNavigationBreadcrumb } from "./blocks/app-navigation-tree.js";
 export { Items } from "./blocks/items/Items.js";
 export type { ItemData, ItemFigureData, ItemStatusData, ItemProps, ItemBadge, ItemSize, ItemTreatment, ItemSpan, ItemsProps, ItemsArrangement, ItemsColumns, ItemsScale, ItemsGroup, ItemsLane } from "./blocks/items/types.js";
+export { GroupedTable } from "./blocks/GroupedTable.js";
+export type { GroupedTableProps, GroupedTableGroup, GroupedTableColumn } from "./blocks/GroupedTable.js";
+
+export { filterRows, groupRows, pivotRows, aggregate, parseTableModel, serializeTableModel, TableModelError } from "./blocks/table-model/index.js";
+export type { TableValue, TableColumnKind, TableColumn, TableCollation, TableFilter, TableDimension, TableMeasure, TablePivot, TableModel, TableFacet, TableFilterResult, TableAggregateValue, TableAggregates, TableGroup, TablePivotAxis, TablePivotCell, TablePivotResult, TableModelErrorCode } from "./blocks/table-model/index.js";

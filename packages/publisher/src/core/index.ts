@@ -200,3 +200,17 @@ export { WEB_ROLE_PAIR_BINDINGS, WEB_ROLE_PAIR_EVIDENCE, validateWebRolePairEvid
 export type {
   WebRolePairStatus, WebRolePairCheck, WebRolePairEvidence, WebRolePairEvidenceResult,
 } from "./web-role-pair-evidence.js";
+export { validateRelations } from "./relations.js";
+export type {
+  RelationIdentity, RelationNodeKind, RelationNode, RelationRouteBinding, RelationEndpoint,
+  RelationProvenance, RelationEdge, RelationsInput, RelationsGraph, RelationsReason, RelationsResult,
+} from "./relations.js";
+export {
+  INSTANCE_FRAME_BLOCK_IDS, INSTANCE_VIEW_BLOCK_IDS, INSTANCE_SITE_SURFACE_KINDS,
+  validateInstanceRecord, validatePackRecord, validateInstanceRecords,
+} from "./instance-record.js";
+export type {
+  InstanceFrameBlockId, InstanceViewBlockId, InstanceSiteSurfaceKind, InstanceBlockRef,
+  InstanceRecord, PackRecord, InstanceRecordOptions, InstanceRecordReason, InstanceRecordValidationResult,
+} from "./instance-record.js";
+export { STANDARD_WEBSITE_INSTANCES, STANDARD_WEBSITE_PACK } from "./standard-website-pack.js";

@@ -33,6 +33,36 @@ if (!existsSync(distDir)) {
 
 type ProbeResult = { ok: true } | { ok: false; message: string };
 
+it("retains the AccountMenu client export and typed host-data contract without a server export", () => {
+  expect(importKeysNormally("blocks/index.js")).toContain("AccountMenu");
+  expect(importKeysNormally("index.js")).toContain("AccountMenu");
+  expect(importKeysNormally("blocks/server.js")).not.toContain("AccountMenu");
+  expect(readFileSync(join(distDir, "blocks/AccountMenu.js"), "utf8")).toMatch(/^"use client";/);
+  const filename = join(packageRoot, "account-menu-consumer.check.ts");
+  const options = { strict: true, noEmit: true, skipLibCheck: true, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler };
+  const diagnosticsFor = (consumer: string) => {
+    const host = ts.createCompilerHost(options), original = host.getSourceFile.bind(host);
+    host.getSourceFile = (path, language, error, fresh) => path === filename ? ts.createSourceFile(path, consumer, language, true) : original(path, language, error, fresh);
+    return ts.getPreEmitDiagnostics(ts.createProgram([filename], options, host));
+  };
+  for (const entry of ["blocks/index.js", "index.js"]) {
+    const prelude = `import type * as B from ${JSON.stringify(join(distDir, entry))};`;
+    const valid = `${prelude}
+      const actor: B.AccountMenuActor = {name:"Actor"};
+      const link: B.AccountMenuLink = {id:"profile",kind:"link",label:"Profile",href:"/profile"};
+      const action: B.AccountMenuAction = {id:"remove",kind:"destructive",label:"Remove",onAction:()=>{}};
+      const preference: B.AccountMenuPreference = {id:"compact",kind:"preference",label:"Compact",checked:false,onCheckedChange:()=>{}};
+      const command: B.AccountMenuCommand = action;
+      const item: B.AccountMenuEntry = preference;
+      const section: B.AccountMenuSection = {id:"prefs",kind:"preferences",label:"Preferences",entries:[preference]};
+      const props: B.AccountMenuProps = {actor,sections:[{id:"commands",entries:[link,command]},section],onRoute:entry=>entry.href,onClose:()=>{}};`;
+    const diagnostics = diagnosticsFor(valid);
+    expect(ts.formatDiagnosticsWithColorAndContext(diagnostics, { getCurrentDirectory: () => packageRoot, getCanonicalFileName: path => path, getNewLine: () => "\n" }), entry).toBe("");
+    const wrong = diagnosticsFor(`${prelude}\nconst wrong: B.AccountMenuSection = {id:"prefs",kind:"preferences",label:"Preferences",entries:[{id:"link",kind:"link",label:"Wrong",href:"/wrong"}]};`);
+    expect(wrong.some(diagnostic => diagnostic.code === 2322), entry).toBe(true);
+  }
+}, 30_000);
+
 /** Spawns a real `node --conditions=react-server` subprocess importing `distRelPath`, and reports what actually happened — never "did not throw" alone. */
 function probeUnderReactServer(distRelPath: string): ProbeResult {
   const absolute = join(distDir, distRelPath);
@@ -60,7 +90,6 @@ function importKeysNormally(distRelPath: string): string[] {
 
 describe("server-safe entry points resolve under react-server (test 1)", () => {
   const serverEntries: Array<{ distRelPath: string; expectedExports: string[] }> = [
-    { distRelPath: "tokens/preview/index.js", expectedExports: ["TokenPreview"] },
     { distRelPath: "tokens/server.js", expectedExports: ["readBrandCss", "assertTailwindMergeVersion"] },
     { distRelPath: "atoms/server.js", expectedExports: ["Avatar", "Badge", "Banner", "Card", "Field", "Icon", "Meter", "Skeleton", "Spinner", "StatusMark", "buttonLinkClassName", "iconButtonClassName", "iconButtonLinkClassName", "mergeUiClasses"] },
     {
@@ -114,6 +143,12 @@ describe("server-safe entry points resolve under react-server (test 1)", () => {
       expect(keys).toEqual([...expectedExports].sort());
     });
   }
+});
+
+it("keeps the interactive preview export exact and its emitted client boundary explicit", () => {
+  expect(importKeysNormally("tokens/preview/index.js")).toEqual(["TokenPreview"]);
+  expect(readFileSync(join(distDir, "tokens/preview/index.js"), "utf8")).toMatch(/^"use client";/);
+  expect(RENDER_ENVIRONMENT["./tokens/preview"]).toBe("client-only");
 });
 
 describe("compiled Tree server graph", () => {
@@ -190,7 +225,7 @@ describe("compiled grouped Items SSR", () => {
 });
 
 describe("negative control: the original barrels still fail under react-server (test 2)", () => {
-  const originalBarrels = ["atoms/index.js", "blocks/index.js", "shell/index.js", "charts/index.js", "theme/index.js"];
+  const originalBarrels = ["tokens/preview/index.js", "atoms/index.js", "blocks/index.js", "shell/index.js", "charts/index.js", "theme/index.js"];
 
   for (const distRelPath of originalBarrels) {
     it(`${distRelPath} still fails under --conditions=react-server (proves the server entry is doing real work)`, () => {
@@ -230,6 +265,8 @@ describe("no regression: every existing subpath still resolves normally (test 3)
   // a missing export (issue #434). Split, each case sits with its siblings at
   // roughly 200ms, and a failure names the barrel that actually regressed.
   const barrelSpotChecks: Array<[string, string]> = [
+    ["blocks/index.js", "CommandMenu"],
+    ["blocks/index.js", "useCommandMenuShortcut"],
     ["atoms/index.js", "Button"],
     ["blocks/index.js", "DataTable"],
     ["shell/index.js", "NavShell"],

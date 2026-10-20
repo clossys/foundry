@@ -42,11 +42,17 @@ export type { SectionGround, SectionGroundClasses, SectionStatusTone } from "./s
 export { PageHeader } from "./PageHeader.js";
 export type { PageHeaderProps } from "./PageHeader.js";
 
+export { AccountMenu } from "./AccountMenu.js";
+export type { AccountMenuProps, AccountMenuActor, AccountMenuEntry, AccountMenuCommand, AccountMenuLink, AccountMenuAction, AccountMenuPreference, AccountMenuSection } from "./account-menu-types.js";
+
 export { EmptyState } from "./EmptyState.js";
 export type { EmptyStateProps } from "./EmptyState.js";
 
 export { DataTable } from "./DataTable.js";
 export type { DataTableProps, DataTableColumn, DataTableSelectionMode } from "./DataTable.js";
+
+export { filterRows, groupRows, pivotRows, aggregate, parseTableModel, serializeTableModel, TableModelError } from "./table-model/index.js";
+export type { TableValue, TableColumnKind, TableColumn, TableCollation, TableFilter, TableDimension, TableMeasure, TablePivot, TableModel, TableFacet, TableFilterResult, TableAggregateValue, TableAggregates, TableGroup, TablePivotAxis, TablePivotCell, TablePivotResult, TableModelErrorCode } from "./table-model/index.js";
 
 export { DetailView } from "./DetailView.js";
 export type { DetailViewProps, DetailViewField } from "./DetailView.js";
@@ -196,6 +202,12 @@ export type { DrawerProps } from "./Drawer.js";
 export { ResizablePane } from "./ResizablePane.js";
 export type { ResizablePaneProps } from "./ResizablePane.js";
 export { APP_FRAME_MATERIALS } from "./app-frame-materials.js";
+export { CommandMenu, useCommandMenuShortcut } from "./CommandMenu.js";
+export type { CommandMenuProps, CommandMenuItem, CommandMenuGroup, CommandMenuShortcutOptions } from "./command-menu-types.js";
+export { AppNavigation } from "./AppNavigation.js";
+export type { AppNavigationProps } from "./AppNavigation.js";
+export { validateAppNavigationTree, getAppNavigationAncestry, getAppNavigationBreadcrumbs } from "./app-navigation-tree.js";
+export type { AppNavigationNode, AppNavigationLeaf, AppNavigationDestination, AppNavigationTarget, AppNavigationBreadcrumb } from "./app-navigation-tree.js";
 
 export { RecordLedger } from "./RecordLedger.js";
 export type { RecordLedgerProps, LedgerRowData, LedgerGroupData } from "./RecordLedger.js";
@@ -211,3 +223,6 @@ export { Tree } from "./tree/Tree.js";
 export type { TreeProps, TreeNodeData } from "./tree/Tree.js";
 export { Items } from "./items/Items.js";
 export type { ItemData, ItemFigureData, ItemStatusData, ItemProps, ItemBadge, ItemSize, ItemTreatment, ItemSpan, ItemsProps, ItemsArrangement, ItemsColumns, ItemsScale, ItemsGroup, ItemsLane } from "./items/types.js";
+
+export { GroupedTable } from "./GroupedTable.js";
+export type { GroupedTableProps, GroupedTableGroup, GroupedTableColumn } from "./GroupedTable.js";
