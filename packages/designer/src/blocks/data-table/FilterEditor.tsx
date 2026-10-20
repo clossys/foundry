@@ -5,6 +5,7 @@ import { Checkbox } from "../../atoms/Checkbox.js";
 import { Select } from "../../atoms/Select.js";
 import { TextField } from "../../atoms/TextField.js";
 import type { TableFacet, TableFilter } from "../table-model/index.js";
+import { dateValue } from "../table-model/model.js";
 
 type RangeFilter = Extract<TableFilter, { kind: "number" | "date" }>;
 function RangeEditor({
@@ -20,10 +21,14 @@ function RangeEditor({
   dateHintLabel = "UTC: YYYY-MM-DD or a canonical ISO timestamp.",
   filter, label, change,
 }: DataTableMessages & { filter: RangeFilter; label: string; change: (filter: TableFilter) => void }) {
-  const [min, setMin] = useState(String(filter.min ?? ""));
-  const [max, setMax] = useState(String(filter.max ?? ""));
+  const [min, setMin] = useState(filter.kind === "date" && Number.isFinite(filter.min) ? dateValue(filter.min, "invalid-model") : String(filter.min ?? ""));
+  const [max, setMax] = useState(filter.kind === "date" && Number.isFinite(filter.max) ? dateValue(filter.max, "invalid-model") : String(filter.max ?? ""));
   const [invalid, setInvalid] = useState(false);
-  useEffect(() => { setMin(String(filter.min ?? "")); setMax(String(filter.max ?? "")); setInvalid(false); }, [filter.min, filter.max]);
+  useEffect(() => {
+    setMin(filter.kind === "date" && Number.isFinite(filter.min) ? dateValue(filter.min, "invalid-model") : String(filter.min ?? ""));
+    setMax(filter.kind === "date" && Number.isFinite(filter.max) ? dateValue(filter.max, "invalid-model") : String(filter.max ?? ""));
+    setInvalid(false);
+  }, [filter.kind, filter.min, filter.max]);
   const apply = () => {
     const number = (text: string) => filter.kind === "number" ? Number(text) : Date.parse(text);
     const valid = (text: string) => !text || (Number.isFinite(number(text)) && (filter.kind === "number" || new Date(text).toISOString() === text || /^\d{4}-\d{2}-\d{2}$/.test(text) && new Date(text).toISOString() === text + "T00:00:00.000Z"));
