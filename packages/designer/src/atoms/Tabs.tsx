@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from "react";
+import { createContext, useContext, type CSSProperties, type ReactNode } from "react";
 import {
   Tab as AriaTab,
   TabList as AriaTabList,
@@ -18,10 +18,21 @@ export interface TabsProps extends Omit<AriaTabsProps, "className" | "children">
   className?: string;
 }
 
+// Tab children are collected before AriaTabs provides its own context.
+const TabsOrientationContext = createContext<"horizontal" | "vertical">("horizontal");
+
 function TabsRoot({ children, className, ...rest }: TabsProps) {
   return (
-    <AriaTabs {...rest} className={cx("flex flex-col gap-md", className)}>
-      {children}
+    <AriaTabs {...rest}
+      className={({ orientation }) =>
+        cx(orientation === "vertical" ? "flex flex-row gap-md" : "flex flex-col gap-md", className)
+      }
+    >
+      {({ orientation }) => (
+        <TabsOrientationContext.Provider value={orientation}>
+          {children}
+        </TabsOrientationContext.Provider>
+      )}
     </AriaTabs>
   );
 }
@@ -33,7 +44,7 @@ export interface TabsListProps extends Omit<AriaTabListProps<object>, "className
 }
 
 /**
- * The row of tabs itself. Wraps react-aria-components' `TabList`, which
+ * The oriented list of tabs. Wraps react-aria-components' `TabList`, which
  * supplies the roving-tabindex/arrow-key navigation this component doesn't
  * reimplement — see `Tabs`' own doc comment.
  */
@@ -41,7 +52,14 @@ function TabsList({ children, className, ...rest }: TabsListProps) {
   return (
     <AriaTabList
       {...rest}
-      className={cx("flex gap-xs border-b border-line-base", className)}
+      className={({ orientation }) =>
+        cx(
+          orientation === "vertical"
+            ? "flex flex-col gap-xs border-s border-line-base"
+            : "flex gap-xs border-b border-line-base",
+          className,
+        )
+      }
     >
       {children}
     </AriaTabList>
@@ -62,20 +80,14 @@ export interface TabsTabProps extends Omit<AriaTabProps, "className" | "style"> 
  * generated DOM id by hand.
  */
 function TabsTab({ children, className, style, ...rest }: TabsTabProps) {
+  const vertical = useContext(TabsOrientationContext) === "vertical";
   return (
     <AriaTab
       {...rest}
       className={(renderProps) =>
         cx(
-          // `border-b-2`, always applied (not just while selected), with
-          // its color switching between transparent and the accent color:
-          // holding the 2px track open at every state avoids a 2px height
-          // jump when a tab becomes selected — the layout consequence of
-          // reaching for `border-b-2` only conditionally would be, since an
-          // element with no bottom border and one with a 2px-wide
-          // transparent bottom border occupy different heights, even though
-          // both paint nothing.
-          "cursor-default border-b-2 px-md py-sm text-body-s font-body text-ink-muted outline-none transition-colors motion-reduce:transition-none disabled:cursor-not-allowed",
+          // Reserve the indicator track in every state to avoid selection jumps.
+          `cursor-default ${vertical ? "border-s-2" : "border-b-2"} px-md py-sm text-body-s font-body text-ink-muted outline-none transition-colors motion-reduce:transition-none disabled:cursor-not-allowed`,
           renderProps.isSelected ? "border-accent text-ink-primary" : "border-transparent",
           className,
         )

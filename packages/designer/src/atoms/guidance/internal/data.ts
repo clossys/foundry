@@ -998,12 +998,12 @@ export const ATOM_GUIDANCE: Readonly<Record<string, AtomGuidance>> = {
   "content": "Name the group and each choice; optional per-choice descriptions explain differences.",
   "anatomy": "One group label and repeated mutually exclusive labelled choices.",
   "composition": "In a consumer-owned preference-selection block, render at least two RadioGroup.Radio choices.",
-  "accessibility": "Use the group’s label and roving keyboard selection; orientation does not guarantee layout."
+  "accessibility": "Use the group’s label and roving keyboard selection; orientation aligns option layout and keyboard navigation."
 },
 {
   "exportName": "RadioGroup",
   "entrypoint": "atoms",
-  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. The root forwards orientation to AriaRadioGroup, but the options wrapper remains flex-col. A single-option specimen cannot prove selection differences.",
+  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Orientation sets the options to a row or column and forwards matching semantics to AriaRadioGroup. A single-option specimen cannot prove selection differences.",
   "options": [
     {
       "prop": "isDisabled",
@@ -1048,21 +1048,21 @@ export const ATOM_GUIDANCE: Readonly<Record<string, AtomGuidance>> = {
     {
       "prop": "orientation",
       "label": "ARIA orientation",
-      "purpose": "ARIA orientation selects the existing RadioGroup orientation behavior.",
+      "purpose": "Orientation aligns the options layout with keyboard semantics.",
       "values": [
         {
           "value": "horizontal",
-          "purpose": "Horizontal keyboard semantics."
+          "purpose": "Horizontal option layout and keyboard semantics."
         },
         {
           "value": "vertical",
-          "purpose": "Vertical keyboard semantics."
+          "purpose": "Vertical option layout and keyboard semantics."
         }
       ],
-      "applicability": "ARIA and keyboard forwarding only; do not claim matching visual orientation.",
+      "applicability": "Layout and keyboard semantics follow the supplied orientation.",
       "support": {
-        "state": "partial",
-        "reason": "Forwarded to the ARIA primitive, but fixed layout classes do not implement visual orientation."
+        "state": "implemented",
+        "reason": "The component uses orientation for layout and forwards it to the ARIA primitive."
       }
     }
   ],
@@ -2161,12 +2161,12 @@ export const ATOM_GUIDANCE: Readonly<Record<string, AtomGuidance>> = {
   "content": "Give each tab a distinct label and match it to the corresponding panel identity.",
   "anatomy": "A repeated set of tab labels and one associated panel per label.",
   "composition": "In a consumer-owned account-details block, compose Tabs.List, multiple Tabs.Tab items and matched Tabs.Panel content.",
-  "accessibility": "Preserve tab-panel IDs and keyboard selection; forwarded orientation does not implement a visual vertical layout."
+  "accessibility": "Preserve tab-panel IDs and keyboard selection; orientation aligns the list layout, indicator edge and keyboard navigation."
 },
 {
   "exportName": "Tabs",
   "entrypoint": "atoms",
-  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. The root forwards orientation to AriaTabs, but the list has a fixed flex row and bottom border. A single-option specimen cannot prove panel switching.",
+  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Orientation sets the list to a row with bottom indicators or a column with start-edge indicators and forwards matching semantics to AriaTabs. A single-option specimen cannot prove panel switching.",
   "options": [
     {
       "prop": "isDisabled",
@@ -2191,21 +2191,21 @@ export const ATOM_GUIDANCE: Readonly<Record<string, AtomGuidance>> = {
     {
       "prop": "orientation",
       "label": "ARIA orientation",
-      "purpose": "ARIA orientation selects the existing Tabs orientation behavior.",
+      "purpose": "Orientation aligns the list layout and indicator edge with keyboard semantics.",
       "values": [
         {
           "value": "horizontal",
-          "purpose": "Horizontal keyboard semantics."
+          "purpose": "Horizontal list with bottom indicators and keyboard semantics."
         },
         {
           "value": "vertical",
-          "purpose": "Vertical keyboard semantics."
+          "purpose": "Vertical list with start-edge indicators and keyboard semantics."
         }
       ],
-      "applicability": "ARIA and keyboard forwarding only; do not claim matching visual orientation.",
+      "applicability": "Layout and keyboard semantics follow the supplied orientation.",
       "support": {
-        "state": "partial",
-        "reason": "Forwarded to the ARIA primitive, but fixed layout classes do not implement visual orientation."
+        "state": "implemented",
+        "reason": "The component uses orientation for layout and forwards it to the ARIA primitive."
       }
     }
   ],
