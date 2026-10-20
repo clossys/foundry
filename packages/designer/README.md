@@ -1696,8 +1696,13 @@ none of it reimplemented here.
 danger-colored styling, purely visual, doesn't change keyboard/selection
 behavior. `Menu.Separator` is a visual divider between item groups.
 
-`Menu.Section` groups entries under a real menu Header. Supply `heading` or
-`aria-label`. Its optional `selectionMode` (`none` or `multiple`), `selectedKeys`,
+`Menu.Section` groups entries under a real menu Header. Supply a non-empty
+`heading` or `aria-label`; the type requires one and a blank name throws a
+`TypeError`. Rich headings need nonblank text or a label in intrinsic elements
+or fragments; hidden content and opaque components do not establish a name.
+An explicit section `aria-label` names an unverified heading while preserving
+its visible content.
+Its optional `selectionMode` (`none` or `multiple`), `selectedKeys`,
 `onSelectionChange` and `shouldCloseOnSelect` belong to the section. Multiple
 selection produces `menuitemcheckbox` preferences; the caller owns checked
 values. Normal hover/focus retains the existing selected surface with no outline;
@@ -4306,8 +4311,11 @@ function MarketingChapter() {
 
 Full-bleed marketing section band: `ground`, horizontal page padding,
 vertical section rhythm, and a measured inner column (`content`, `wide`,
-or `prose`). Compose `ArticleBody`, `Stat`, and other blocks that do not
-own their own band inside this — not a host `className` wrapper.
+or `prose`). `ground` sets both the section surface and its primary
+foreground ink on the root, so raw children on `inverse` inherit the
+on-inverse ink instead of the base ink. Compose `ArticleBody`, `Stat`, and
+other blocks that do not own their own band inside this — not a host
+`className` wrapper.
 
 ### `ArticleBody`
 
@@ -4843,7 +4851,11 @@ Grid rather than relying on source order.
 the page, visually hidden until it receives keyboard focus — so a keyboard
 user landing on any route can jump straight past the header and side
 navigation to that route's actual content. `skipLinkLabel` is that link's
-visible text and defaults to "Skip to content".
+visible text and defaults to "Skip to content". Activating it (click, Enter
+or Space) moves focus to `Shell.Main` and scrolls it into view without
+changing `location.hash` or browser history, so an application that keeps its
+route in the URL fragment stays on its current route. Without JavaScript the
+link falls back to its `href`.
 
 `Shell.SideNav` is sized to `--ui-layout-sidebar-w` from the `tablet`
 breakpoint up, and collapses — CSS-only, no JavaScript breakpoint state — to
@@ -4971,11 +4983,20 @@ about the four components themselves hardcodes a label, a brand name, or a
 footer line; every one arrives as a prop or a child.
 
 `SkipLink` takes the jump target's `id` (`targetId`) and its own visible
-text (`children`) as props — unlike `Shell`'s internal skip link, which is
-wired to `Shell.Main`'s own fixed, package-owned id, a site's own page
+text (`children`) as props — `Shell` renders this same component, wired to
+`Shell.Main`'s own fixed, package-owned id, whereas a site's own page
 structure decides what "content" means, so this version assumes nothing
 about where it points. Give the target element a matching `id` and
-`tabIndex={-1}` (a plain `<main>` isn't natively focusable).
+`tabIndex={-1}` (a plain `<main>` isn't natively focusable). Activation
+(click, Enter or Space) is focus-only: it focuses the target, which scrolls it
+into view, and cancels the anchor's default navigation, so `location.hash` and
+history are left alone and a hash-routed application keeps its route. The
+`href` remains as the fallback when JavaScript is unavailable, for a modified
+or non-primary click (open in a new tab), when the target is not in the
+document, and when the target cannot take focus (for example it lacks
+`tabIndex={-1}`), so the link still scrolls there. Because the fragment is no
+longer updated, the target no longer matches `:target` and no history entry is
+added; this applies to the public `SkipLink` as well as the one `Shell` renders.
 
 `SiteHeader` renders a real `<header>` — the page's `banner` landmark,
 provided it sits at the top level rather than nested inside `<main>`/
