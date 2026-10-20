@@ -1,0 +1,200 @@
+name: Overlay prerelease
+
+# Every push to main packs @clossys/designer and @clossys/publisher exactly
+# as ci.yml's `artifact safety (tarball) / pack` job does (`npm run build`,
+# then `npm pack --ignore-scripts` in each package directory), scans each
+# tarball with scripts/check-artifact-safety.mjs, writes a digest manifest
+# with scripts/overlay-manifest.mjs, and replaces the assets of ONE rolling
+# GitHub prerelease (tag `overlay`) with those three files. It lets a
+# consumer install unpublished main before a release reaches npm; the
+# consumer side is docs/releasing/overlay.md.
+#
+# What this workflow never does: publish to npm or any other registry, bump
+# a version, touch a changeset, or hold a registry token. The only write is
+# the `overlay` tag and its one release, made with this run's GITHUB_TOKEN
+# from the `publish` job, the only job granted `contents: write`.
+#
+# Split in two for the same reason ci.yml splits artifact-pack from
+# artifact: the job that installs dependencies and runs this commit's build
+# holds a read-only token, and the job holding the write token installs
+# nothing, builds nothing, and executes only scripts/overlay-manifest.mjs
+# (node builtins only) from a sparse checkout of the same commit. The
+# tarballs cross between the two as a one-day workflow artifact; that is
+# transport inside this run, not a distribution channel.
+#
+# The artifact-safety scan here is PARTIAL: this workflow is given no secret,
+# so the identity denylist is not loaded and identity terms are not checked.
+# The FULL, denylist-backed scan of tarballs built the same way from the same
+# tree is ci.yml's required `artifact safety (tarball)` context, which every
+# change passes before it can reach main; this scan re-asserts the
+# structural, credential and machine-path rules on the exact bytes uploaded.
+#
+# Concurrency cancels an older run when a newer main push arrives: only the
+# newest main matters for a rolling prerelease. A run cancelled part-way
+# can leave the release holding a mix of old and new files; the manifest
+# records each tarball's sha256, so `overlay-manifest.mjs verify` refuses
+# that mix until the next run completes.
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: overlay-prerelease
+  cancel-in-progress: true
+
+env:
+  OVERLAY_TAG: overlay
+
+jobs:
+  pack:
+    name: overlay / pack
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+          cache: npm
+
+      # No dependency in the lockfile needs its install script for this
+      # build, so none runs (same as ci.yml's artifact-pack).
+      - run: npm ci --ignore-scripts
+
+      # Unscoped: publisher resolves designer, writer and controller through
+      # their own dist/, and the root build script owns that order.
+      - run: npm run build
+
+      - name: Pack designer and publisher (lifecycle scripts never run)
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/overlay"
+          mkdir -p "$out"
+          for dir in designer publisher; do
+            packed="$(cd "packages/$dir" && npm pack --ignore-scripts --pack-destination "$out")"
+            name="$(printf '%s\n' "$packed" | sed '/^$/d' | tail -n 1)"
+            [ -n "$name" ] && [ -f "$out/$name" ] || { echo "::error::npm pack reported no tarball for $dir"; exit 1; }
+            mv "$out/$name" "$out/$dir.tgz"
+          done
+          ls -l "$out"
+
+      - name: check-artifact-safety on the exact tarballs (PARTIAL, no denylist here)
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/overlay"
+          for dir in designer publisher; do
+            digest="$(sha256sum "$out/$dir.tgz" | awk '{print $1}')"
+            node scripts/check-artifact-safety.mjs "packages/$dir" --tarball "$out/$dir.tgz" --sha256 "$digest"
+          done
+
+      # committedAt is read from this commit with git (the default
+      # fetch-depth of 1 includes it), never from the runner's clock, so a
+      # rerun of the same commit writes the same manifest fields.
+      - name: Build and verify the digest manifest
+        env:
+          COMMIT: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/overlay"
+          node scripts/overlay-manifest.mjs build --packed "$out" --commit "$COMMIT" --out "$out/overlay-manifest.json"
+          node scripts/overlay-manifest.mjs verify --manifest "$out/overlay-manifest.json" --dir "$out"
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: overlay-prerelease
+          path: |
+            ${{ runner.temp }}/overlay/designer.tgz
+            ${{ runner.temp }}/overlay/publisher.tgz
+            ${{ runner.temp }}/overlay/overlay-manifest.json
+          if-no-files-found: error
+          retention-days: 1
+
+  publish:
+    name: overlay / publish rolling prerelease
+    needs: pack
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      # setup-node goes first, before any repository content is in the
+      # workspace, as in ci.yml's `artifact` job.
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+
+      # Only the manifest script, which imports node builtins alone. Nothing
+      # is installed or built while the write token is in scope.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            scripts/overlay-manifest.mjs
+          sparse-checkout-cone-mode: false
+
+      - name: Download packed tarballs and manifest (data only)
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: overlay-prerelease
+          path: ${{ runner.temp }}/overlay
+
+      - name: Re-verify the exact files about to be uploaded
+        env:
+          COMMIT: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/overlay"
+          expected="$(printf '%s\n' designer.tgz overlay-manifest.json publisher.tgz)"
+          actual="$(cd "$out" && find . -mindepth 1 -maxdepth 1 -print | sed 's|^\./||' | LC_ALL=C sort)"
+          if [ "$actual" != "$expected" ]; then
+            echo "::error title=Unexpected overlay files::expected exactly designer.tgz, publisher.tgz and overlay-manifest.json"
+            exit 1
+          fi
+          node scripts/overlay-manifest.mjs verify --manifest "$out/overlay-manifest.json" --dir "$out"
+          recorded="$(node -p 'JSON.parse(require("fs").readFileSync(process.argv[1], "utf8")).commit' "$out/overlay-manifest.json")"
+          if [ "$recorded" != "$COMMIT" ]; then
+            echo "::error title=Manifest commit mismatch::manifest records $recorded, this run is $COMMIT"
+            exit 1
+          fi
+
+      # One tag, one release, replaced in place. The tag is moved first, so
+      # the release always points at the commit its manifest names once the
+      # manifest (uploaded last) lands.
+      - name: Upsert the rolling prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          COMMIT: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/overlay"
+          if gh api "repos/$GH_REPO/git/ref/tags/$OVERLAY_TAG" > /dev/null 2>&1; then
+            gh api -X PATCH "repos/$GH_REPO/git/refs/tags/$OVERLAY_TAG" -f sha="$COMMIT" -F force=true > /dev/null
+          else
+            gh api -X POST "repos/$GH_REPO/git/refs" -f ref="refs/tags/$OVERLAY_TAG" -f sha="$COMMIT" > /dev/null
+          fi
+          title="Overlay prerelease (main)"
+          notes="Rolling prerelease of packed @clossys/designer and @clossys/publisher built from main at $COMMIT. Not an npm release: versions are unchanged and pending changesets are listed in overlay-manifest.json. Fetch and verify as described in docs/releasing/overlay.md."
+          if gh release view "$OVERLAY_TAG" > /dev/null 2>&1; then
+            gh release edit "$OVERLAY_TAG" --prerelease --latest=false --title "$title" --notes "$notes"
+          else
+            gh release create "$OVERLAY_TAG" --verify-tag --prerelease --latest=false --title "$title" --notes "$notes"
+          fi
+          gh release upload "$OVERLAY_TAG" "$out/designer.tgz" "$out/publisher.tgz" --clobber
+          gh release upload "$OVERLAY_TAG" "$out/overlay-manifest.json" --clobber
+          gh release view "$OVERLAY_TAG" --json assets --jq '.assets[].name' | while IFS= read -r asset; do
+            case "$asset" in
+              designer.tgz|publisher.tgz|overlay-manifest.json) ;;
+              *) gh release delete-asset "$OVERLAY_TAG" "$asset" --yes ;;
+            esac
+          done
+          echo "overlay: $OVERLAY_TAG now carries designer.tgz, publisher.tgz and overlay-manifest.json for $COMMIT"
