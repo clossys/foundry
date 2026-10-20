@@ -72,6 +72,7 @@ describe("SiteFooter measured geometry", () => {
   type Rect = { left: number; right: number; top: number; bottom: number; width: number };
   type Measurement = {
     footer: Rect; content: Rect; links: Rect; icons: Rect; copyright: Rect;
+    viewport: number; safeInset: number; bottomPadding: number; contentBoxes: Rect[];
     copyrightText: Rect; copyrightLines: number; linkText: Rect[][]; targets: Rect[]; linkItems: Rect[];
   };
   let measurements: Record<string, Measurement>;
@@ -102,6 +103,15 @@ describe("SiteFooter measured geometry", () => {
         />} />
       </section>,
     ))).join("");
+    const safeFixtures = ["ltr", "rtl"].flatMap(dir => [375, 844, 1279, 1280, 1440].map(width => ({
+      width,
+      markup: renderToStaticMarkup(<section dir={dir} data-geometry-case={`${dir}-safe-${width}`}>
+        <SiteFooter columns={<SiteFooter.Column heading="Information">
+          <a href="/information">{longText}</a>
+        </SiteFooter.Column>} secondary={<SiteFooter.Legal entity={longText}
+          links={[{ label: longText, href: "/privacy" }, { label: longText, href: "/terms" }]} />} />
+      </section>),
+    })));
     function measure() {
       const rect = (node: Element | Range) => {
         const { left, right, top, bottom, width } = node.getBoundingClientRect();
@@ -117,6 +127,13 @@ describe("SiteFooter measured geometry", () => {
         const text = document.createRange();
         text.selectNodeContents(region("copyright"));
         return [fixture.getAttribute("data-geometry-case"), {
+          viewport: window.innerWidth,
+          safeInset: parseFloat(getComputedStyle(document.getElementById("safe-inset-probe") ?? fixture).paddingLeft) || 0,
+          bottomPadding: parseFloat(getComputedStyle(fixture.querySelector("footer")!).paddingBottom),
+          contentBoxes: [...fixture.querySelectorAll("footer a, footer p, footer h2")].flatMap(node => {
+            const range = document.createRange(); range.selectNodeContents(node);
+            return [rect(node), ...[...range.getClientRects()].map(box => ({ left: box.left, right: box.right, top: box.top, bottom: box.bottom, width: box.width }))];
+          }),
           footer: rect(fixture.querySelector("footer")!), content: rect(content), links: rect(region("links")), icons: rect(region("icons")),
           copyright: rect(region("copyright")), copyrightText: rect(text),
           copyrightLines: text.getClientRects().length, linkText: [...region("links").querySelectorAll("a")].map(textRects),
@@ -171,7 +188,16 @@ describe("SiteFooter measured geometry", () => {
           if (!value) await new Promise(resolve => setTimeout(resolve, 20));
         }
         if (!value) throw new Error("Chromium did not produce footer layout measurements.");
-        process.stdout.write(value);
+        const result = JSON.parse(value);
+        const safeDocuments = JSON.parse(require("node:fs").readFileSync(process.argv[4], "utf8"));
+        for (const { width, html } of safeDocuments) {
+          await command("Emulation.setDeviceMetricsOverride", { width, height: 4096, deviceScaleFactor: 1, mobile: false }, sessionId);
+          await command("Emulation.setSafeAreaInsetsOverride", { insets: { left: 44, right: 44, bottom: 44 } }, sessionId);
+          await command("Page.setDocumentContent", { frameId: frameTree.frame.id, html }, sessionId);
+          const response = await command("Runtime.evaluate", { expression: "document.getElementById('footer-geometry').textContent", returnByValue: true }, sessionId);
+          Object.assign(result, JSON.parse(response.result.value));
+        }
+        process.stdout.write(JSON.stringify(result));
       } finally {
         socket?.close();
         browser.kill();
@@ -181,8 +207,12 @@ describe("SiteFooter measured geometry", () => {
     try {
       const html = join(directory, "fixture.html");
       writeFileSync(html, `<!doctype html><meta charset="utf-8"><style>${css}</style>${fixtures}<pre id="footer-geometry"></pre><script>(${measure.toString()})()</script>`);
+      const safeDocuments = join(directory, "safe-documents.json");
+      writeFileSync(safeDocuments, JSON.stringify(safeFixtures.map(({ width, markup }) => ({ width,
+        html: `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><style>${css}body{margin:0}</style>${markup}<div id="safe-inset-probe" style="padding-left:env(safe-area-inset-left)"></div><pre id="footer-geometry"></pre><script>(${measure.toString()})()</script>`,
+      }))));
       const output = execFileSync(process.execPath, ["--experimental-websocket", "-e", `(${readBrowserLayout.toString()})().catch(error => { console.error(error.message); process.exitCode = 1; });`,
-        browser, pathToFileURL(html).href, join(directory, "profile")],
+        browser, pathToFileURL(html).href, join(directory, "profile"), safeDocuments],
       { encoding: "utf8", timeout: 5000, maxBuffer: 8 * 1024 * 1024, stdio: ["ignore", "pipe", "pipe"] });
       measurements = JSON.parse(output);
     } finally {
@@ -190,6 +220,24 @@ describe("SiteFooter measured geometry", () => {
     }
   });
   for (const dir of ["ltr", "rtl"]) {
+    it(`contains tall and long content inside native horizontal safe areas in ${dir}`, () => {
+      for (const width of [375, 844, 1279, 1280, 1440]) {
+        const { footer, content, links, contentBoxes, viewport, safeInset, bottomPadding } = measurements[`${dir}-safe-${width}`]!;
+        expect(viewport).toBe(width);
+        expect(safeInset).toBe(44);
+        expect(bottomPadding).toBeGreaterThanOrEqual(44);
+        expect(footer.left).toBeGreaterThanOrEqual(0);
+        expect(footer.right).toBeLessThanOrEqual(width);
+        expect(footer.top).toBeGreaterThanOrEqual(0);
+        expect(footer.bottom).toBeLessThanOrEqual(4096);
+        expect(contentBoxes.length).toBeGreaterThan(10);
+        for (const box of [content, links, ...contentBoxes]) {
+          expect(box.left).toBeGreaterThanOrEqual(44 - 1);
+          expect(box.right).toBeLessThanOrEqual(width - 44 + 1);
+        }
+        expect(Math.abs((links.left + links.right - width) / 2)).toBeLessThan(1);
+      }
+    });
     it(`wraps long links and legal text inside centred tracks in ${dir}`, () => {
       for (const size of ["wide", "roomy", "phone", "below-desktop"]) {
         const { footer, content, links, copyright, copyrightText, copyrightLines, linkText } = measurements[`${dir}-long-${size}`]!;

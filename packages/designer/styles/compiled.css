@@ -196,6 +196,9 @@
     container-type: inline-size;
     padding-bottom: max(var(--spacing-lg, 16px), env(safe-area-inset-bottom, 0px));
   }
+  .site-footer-dark[data-footer-root] > div {
+    padding-inline: max(var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px)), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px)) !important;
+  }
   :root[data-theme="dark"] .site-footer-dark[data-footer-root] {
     --site-footer-surface: var(--color-surface-base, oklch(0.19 0 0));
     --site-footer-ink: var(--color-ink-primary, oklch(0.97 0 0));
