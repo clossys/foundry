@@ -7804,7 +7804,10 @@ keep a remembered width in its own state or storage. `defaultValue` remains
 the Enter reset target in both modes. `orientation="vertical"` (default) is a
 vertical separator resizing inline width; `"horizontal"` resizes block height.
 `label` names the pane and `handleLabel` names the separator; header and footer
-remain Panel regions.
+remain Panel regions. `handleEdge="end"` preserves the trailing separator;
+choose `handleEdge="start"` for a trailing inspector whose leading separator
+grows the pane when moved toward the preceding content. The separator precedes
+content in DOM order at the start edge.
 
 ```tsx
 import { ResizablePane } from "@clossys/designer/blocks";
@@ -7822,7 +7825,9 @@ export function Inspector({ width, onWidthChange }: { width: number; onWidthChan
 `ResizeHandle` is controlled with required `value`, `min`, `max`, `resetValue`,
 `label` and `onChange`. Positive `step` defaults to 1. Arrow keys adjust,
 Home/End reach the bounds, and Enter resets. Horizontal movement reverses in
-explicit or inherited RTL; vertical movement does not. Pointer capture commits
+explicit or inherited RTL; vertical movement does not. `edge="start"` reverses
+the pane-size direction at the leading edge; `edge="end"` is the default.
+Home/End still report the minimum/maximum actual pane size. Pointer capture commits
 on release; pointer cancellation, lost capture or Escape restores the drag's
 start value. Non-finite dimensions, reversed bounds, nonpositive steps and
 empty names are refused. Values and resets are clamped. Native forced-color
@@ -8247,3 +8252,80 @@ Block slots keep their existing props and controlled behavior. The host binds
 entry, render during ordinary SSR and have explicit wrong-channel stubs under
 `react-server`; importing Designer's server Blocks does not make the interactive
 Views server components. See Publisher's README for the public View contracts.
+
+
+### CatalogWorkspace
+
+`CatalogWorkspace` composes a controlled browse tree, an arbitrary preview and
+an inspector. It uses Button for tree rows, two ResizablePane blocks and a
+Panel for the preview. The existing passive Tree, Specimen, DetailView and
+Items remain useful inside host content; the preview slot also accepts live
+interactive content. Import this client composition from
+`@clossys/designer/blocks`.
+
+| Export | Kind | Contract |
+| --- | --- | --- |
+| `CatalogWorkspace` | component | Controlled leaf selection with browse, preview and inspector regions. |
+| `CatalogWorkspaceProps` | type | Supplied forest, selected ID, callback, names, content slots and optional pane bounds. |
+| `CatalogWorkspaceItem` | type | Readonly ID, label, kind, optional badge/tag and optional child items. |
+| `CatalogWorkspaceSize` | type | Finite pixel min/max/defaultValue bounds and optional positive keyboard step. |
+
+```tsx
+import { useState } from "react";
+import { CatalogWorkspace, type CatalogWorkspaceItem } from "@clossys/designer/blocks";
+
+const catalog: readonly CatalogWorkspaceItem[] = [
+  { id: "components", label: "Components", kind: "collection", children: [
+    { id: "button", label: "Button", kind: "component", badge: "Ready" },
+  ] },
+];
+
+export function ComponentCatalog() {
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  return <CatalogWorkspace items={catalog} selectedId={selectedId} onSelect={setSelectedId}
+    label="Component catalog"
+    labels={{ browse: "Browse", preview: "Preview", inspector: "Inspector",
+      resizeBrowse: "Resize browse", resizeInspector: "Resize inspector" }}
+    preview={item => <p>{item.label} preview</p>}
+    inspector={item => <p>{item.kind}</p>}
+    emptyState={<p>Select a component to preview it.</p>} />;
+}
+```
+
+The forest is bounded to 1,000 total nodes and three levels. Each ID must be
+unique and nonempty; labels and kinds must be nonempty strings. IDs and item
+objects are retained verbatim. Presence of `children` marks a group, including
+an empty group. Input arrays and objects are not mutated. Invalid bounds,
+identities, text, sparse arrays, cycles and excessive depth/count throw a
+TypeError. These limits make the rendered tree suitable for bounded catalogs;
+this block does not virtualize or fetch more items.
+
+Groups start collapsed. Pointer, Enter and Space toggle groups and request
+leaf selection. Up/Down follow visible preorder, Right expands or enters a
+group, Left collapses or reaches the parent, and Home/End reach the first/last
+visible row. One visible row owns the tree tab stop. Removing the focused row
+recovers focus to the first visible row while the tree owns focus. Arrows and
+groups do not request selection. A click leaves selection unchanged until the
+host passes a new `selectedId`; an unknown or group ID shows `emptyState` once
+in the preview. Both content slots receive the original selected leaf object,
+including when it belongs to a collapsed group. Slot content keeps its React
+instance as selection and layout change; hosts can key their own content when
+a new instance is desired.
+
+DOM and focus order are browse, preview, inspector. Each separator supports
+arrow keys, Home/End, Enter reset and pointer resize with Escape cancellation.
+The inspector handle is on its start edge, so physical growth follows its
+leading boundary in LTR and RTL. `browseSize` and `inspectorSize` default to
+min 160, max 480, defaultValue 240 and step 16 CSS pixels. They describe layout
+geometry; content colors, spacing, corners and focus treatment use shared
+tokens. The panes maintain separate width and height preferences locally,
+without persistence. Hosts can give the composition a bounded height through
+an enclosing layout to contain tall preview content.
+
+Below the token registry's `tablet-lg` build-time threshold (currently
+1024px), the same three regions stack and separators resize their heights.
+Wider layouts resize their widths. Server and initial client rendering use
+the stacked layout; the client then adopts matchMedia and removes its change
+listener on unmount. Rows, selection, focused controls and slot instances are
+preserved across this change. No animated layout transition is introduced.
+Light and dark surfaces follow the existing Panel, Button and Badge tokens.

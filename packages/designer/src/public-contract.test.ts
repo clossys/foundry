@@ -467,3 +467,87 @@ describe("compiled Tree public contract", () => {
     }
   }, 30_000);
 });
+
+
+describe("compiled pane handle edge contract", () => {
+  it("accepts both edges through the emitted atom and block declarations", () => {
+    const filename = join(packageRoot, "pane-edge-consumer.check.ts");
+    const consumer = `
+      import { type ResizeHandleProps } from ${JSON.stringify(join(packageRoot, "dist/atoms/index.js"))};
+      import { type ResizablePaneProps } from ${JSON.stringify(join(packageRoot, "dist/blocks/index.js"))};
+      const start: ResizeHandleProps["edge"] = "start";
+      const end: ResizablePaneProps["handleEdge"] = "end";
+    `;
+    const options = { strict: true, noEmit: true, skipLibCheck: true, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler };
+    const host = ts.createCompilerHost(options);
+    const original = host.getSourceFile.bind(host);
+    host.getSourceFile = (path, language, error, fresh) => path === filename ? ts.createSourceFile(path, consumer, language, true) : original(path, language, error, fresh);
+    expect(ts.getPreEmitDiagnostics(ts.createProgram([filename], options, host)).map(diagnostic => ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n"))).toEqual([]);
+  });
+
+  it("rejects unsupported edges with native diagnostics through the atom and block barrels", () => {
+    const filename = join(packageRoot, "pane-edge-negative-consumer.check.ts");
+    const source = `
+      import { type ResizeHandleProps } from ${JSON.stringify(join(packageRoot, "dist/atoms/index.js"))};
+      import { type ResizablePaneProps } from ${JSON.stringify(join(packageRoot, "dist/blocks/index.js"))};
+      const invalidAtom: ResizeHandleProps["edge"] = "middle";
+      const invalidPane: ResizablePaneProps["handleEdge"] = "middle";
+    `;
+    const options = { strict: true, noEmit: true, skipLibCheck: true, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler };
+    const host = ts.createCompilerHost(options); const original = host.getSourceFile.bind(host);
+    host.getSourceFile = (path, language, error, fresh) => path === filename ? ts.createSourceFile(path, source, language, true) : original(path, language, error, fresh);
+    const diagnostics = ts.getPreEmitDiagnostics(ts.createProgram([filename], options, host));
+    const cases = [{ binding: "invalidAtom", field: "edge" }, { binding: "invalidPane", field: "handleEdge" }];
+    expect(diagnostics).toHaveLength(2);
+    for (const [index, diagnostic] of diagnostics.entries()) {
+      const item = cases[index]!;
+      expect(diagnostic.code).toBe(2322); expect(diagnostic.file?.fileName).toBe(filename);
+      const line = diagnostic.file!.getLineAndCharacterOfPosition(diagnostic.start!).line;
+      expect(source.split("\n")[line]).toContain(`const ${item.binding}:`);
+      expect(source.split("\n")[line]).toContain(`["${item.field}"]`);
+      expect(ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n")).toBe(`Type '"middle"' is not assignable to type '"start" | "end" | undefined'.`);
+    }
+  });
+});
+
+
+describe("compiled CatalogWorkspace public contract", () => {
+  it("exports the composition from both existing barrels with emitted host-facing types", () => {
+    for (const entry of ["blocks/index.js", "index.js"]) {
+      const filename = join(packageRoot, "catalog-consumer.check.ts");
+      const consumer = `
+        import { CatalogWorkspace, type CatalogWorkspaceProps, type CatalogWorkspaceItem, type CatalogWorkspaceSize } from ${JSON.stringify(join(packageRoot, "dist", entry))};
+        const item: CatalogWorkspaceItem = {id: "host-id", label: "Example", kind: "component", children: []};
+        const size: CatalogWorkspaceSize = {min: 160, max: 480, defaultValue: 240};
+        const props: CatalogWorkspaceProps = {items: [item], selectedId: null, onSelect: (id: string) => {}, label: "Catalog", labels: {browse: "Browse", preview: "Preview", inspector: "Inspector", resizeBrowse: "Resize browse", resizeInspector: "Resize inspector"}, preview: selected => selected.label, inspector: selected => selected.kind, emptyState: "Select an item", browseSize: size};
+        const result = CatalogWorkspace(props);
+      `;
+      const options = { strict: true, noEmit: true, skipLibCheck: true, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler };
+      const host = ts.createCompilerHost(options); const original = host.getSourceFile.bind(host);
+      host.getSourceFile = (path, language, error, fresh) => path === filename ? ts.createSourceFile(path, consumer, language, true) : original(path, language, error, fresh);
+      expect(ts.getPreEmitDiagnostics(ts.createProgram([filename], options, host)).map(diagnostic => ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n"))).toEqual([]);
+      const script = `import { CatalogWorkspace } from ${JSON.stringify(join(packageRoot, "dist", entry))}; process.stdout.write(typeof CatalogWorkspace);`;
+      expect(execFileSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8", cwd: packageRoot })).toBe("function");
+    }
+  }, 30_000);
+
+  it("rejects numeric host IDs with native diagnostics at the ID field in both barrels", () => {
+    const filename = join(packageRoot, "catalog-negative-consumer.check.ts");
+    const source = ["blocks/index.js", "index.js"].map((entry, index) => `
+      import { type CatalogWorkspaceItem as Item${index} } from ${JSON.stringify(join(packageRoot, "dist", entry))};
+      const invalid${index}: Item${index} = {id: 1, label: "Bad", kind: "component"};
+    `).join("\n");
+    const options = { strict: true, noEmit: true, skipLibCheck: true, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler };
+    const host = ts.createCompilerHost(options); const original = host.getSourceFile.bind(host);
+    host.getSourceFile = (path, language, error, fresh) => path === filename ? ts.createSourceFile(path, source, language, true) : original(path, language, error, fresh);
+    const diagnostics = ts.getPreEmitDiagnostics(ts.createProgram([filename], options, host));
+    expect(diagnostics).toHaveLength(2);
+    for (const [index, diagnostic] of diagnostics.entries()) {
+      expect(diagnostic.code).toBe(2322); expect(diagnostic.file?.fileName).toBe(filename);
+      const line = diagnostic.file!.getLineAndCharacterOfPosition(diagnostic.start!).line;
+      expect(source.split("\n")[line]).toContain(`const invalid${index}:`);
+      expect(source.split("\n")[line]).toContain("id: 1");
+      expect(ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n")).toBe("Type 'number' is not assignable to type 'string'.");
+    }
+  });
+});

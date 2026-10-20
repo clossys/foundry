@@ -159,3 +159,77 @@ describe("ResizeHandle", () => {
     container.remove();
   });
 });
+
+describe("ResizeHandle start edge", () => {
+  it("keeps the default end edge DOM identical to explicit end", () => {
+    const changed = vi.fn();
+    const view = render(<ResizeHandle {...bounds} value={100} onChange={changed} />);
+    const original = view.container.innerHTML;
+    view.rerender(<ResizeHandle {...bounds} value={100} onChange={changed} edge="end" />);
+    expect(view.container.innerHTML).toBe(original);
+  });
+
+  it.each(["ltr", "rtl"])("tracks leading-edge pointer and keyboard growth, bounds and reset in %s", async dir => {
+    const { handle, capture, release } = setup({ edge: "start", dir });
+    const leading = dir === "ltr" ? -1 : 1;
+    fireEvent.pointerDown(handle, { pointerId: 9, clientX: 100, button: 0 });
+    fireEvent.pointerMove(handle, { pointerId: 9, clientX: 100 + leading * 40 });
+    expect(handle).toHaveAttribute("aria-valuenow", "140");
+    fireEvent.pointerMove(handle, { pointerId: 9, clientX: 100 + leading * 1000 });
+    expect(handle).toHaveAttribute("aria-valuenow", "200");
+    fireEvent.pointerMove(handle, { pointerId: 9, clientX: 100 - leading * 1000 });
+    expect(handle).toHaveAttribute("aria-valuenow", "50");
+    fireEvent.pointerUp(handle, { pointerId: 9 });
+    expect(capture).toHaveBeenCalledWith(9);
+    expect(release).toHaveBeenCalledWith(9);
+    handle.focus();
+    await userEvent.keyboard("{Enter}");
+    await userEvent.keyboard(dir === "ltr" ? "{ArrowLeft}" : "{ArrowRight}");
+    expect(handle).toHaveAttribute("aria-valuenow", "110");
+    await userEvent.keyboard(dir === "ltr" ? "{ArrowRight}" : "{ArrowLeft}");
+    expect(handle).toHaveAttribute("aria-valuenow", "100");
+    await userEvent.keyboard("{Home}");
+    expect(handle).toHaveAttribute("aria-valuenow", "50");
+    await userEvent.keyboard("{End}");
+    expect(handle).toHaveAttribute("aria-valuenow", "200");
+    await userEvent.keyboard("{Enter}");
+    expect(handle).toHaveAttribute("aria-valuenow", "100");
+  });
+
+  it.each(["ltr", "rtl"].flatMap(dir => ["Escape", "pointerCancel", "lostPointerCapture"].map(cancel => ({ dir, cancel }))))(
+    "cancels a leading-edge drag on $cancel in $dir", ({ dir, cancel }) => {
+      const { handle, release } = setup({ edge: "start", dir });
+      fireEvent.pointerDown(handle, { pointerId: 4, clientX: 100, button: 0 });
+      fireEvent.pointerMove(handle, { pointerId: 4, clientX: dir === "ltr" ? 60 : 140 });
+      expect(handle).toHaveAttribute("aria-valuenow", "140");
+      if (cancel === "Escape") fireEvent.keyDown(handle, { key: "Escape" });
+      else if (cancel === "pointerCancel") fireEvent.pointerCancel(handle, { pointerId: 4 });
+      else fireEvent.lostPointerCapture(handle, { pointerId: 4 });
+      expect(handle).toHaveAttribute("aria-valuenow", "100");
+      expect(release).toHaveBeenCalledWith(4);
+    },
+  );
+
+  it.each(["ltr", "rtl"])("resizes from the block start without RTL reversal in %s", async dir => {
+    const { handle } = setup({ edge: "start", orientation: "horizontal", dir });
+    fireEvent.pointerDown(handle, { pointerId: 2, clientY: 100, button: 0 });
+    fireEvent.pointerMove(handle, { pointerId: 2, clientY: 60 });
+    expect(handle).toHaveAttribute("aria-valuenow", "140");
+    fireEvent.pointerMove(handle, { pointerId: 2, clientY: -1000 });
+    expect(handle).toHaveAttribute("aria-valuenow", "200");
+    fireEvent.pointerMove(handle, { pointerId: 2, clientY: 1000 });
+    expect(handle).toHaveAttribute("aria-valuenow", "50");
+    fireEvent.keyDown(handle, { key: "Escape" });
+    expect(handle).toHaveAttribute("aria-valuenow", "100");
+    handle.focus();
+    await userEvent.keyboard("{ArrowUp}");
+    expect(handle).toHaveAttribute("aria-valuenow", "110");
+    await userEvent.keyboard("{ArrowDown}");
+    expect(handle).toHaveAttribute("aria-valuenow", "100");
+    expect(handle).toHaveAttribute("aria-orientation", "horizontal");
+  });
+
+  it("rejects an unsupported handle edge", () => {
+    expect(() => render(<ResizeHandle {...bounds} value={100} edge="middle" onChange={vi.fn()} />)).toThrow(TypeError);
+  });
+});
