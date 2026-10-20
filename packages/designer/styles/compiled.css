@@ -919,6 +919,15 @@
       max-width: 100%;
       overflow-wrap: break-word;
     }
+    & [data-footer-region="links"] li {
+      min-width: 0;
+      max-width: 100%;
+    }
+    & [data-footer-region="links"] a {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      max-width: 100%;
+    }
     & > [data-footer-region="links"] {
       grid-area: links;
     }

@@ -71,8 +71,8 @@ describe("SiteFooter", () => {
 describe("SiteFooter measured geometry", () => {
   type Rect = { left: number; right: number; top: number; bottom: number; width: number };
   type Measurement = {
-    content: Rect; links: Rect; icons: Rect; copyright: Rect;
-    copyrightText: Rect; targets: Rect[]; linkItems: Rect[];
+    footer: Rect; content: Rect; links: Rect; icons: Rect; copyright: Rect;
+    copyrightText: Rect; copyrightLines: number; linkText: Rect[][]; targets: Rect[]; linkItems: Rect[];
   };
   let measurements: Record<string, Measurement>;
   beforeAll(() => {
@@ -80,17 +80,20 @@ describe("SiteFooter measured geometry", () => {
       .find(name => spawnSync(name, ["--version"], { stdio: "ignore" }).status === 0);
     if (!browser) throw new Error("Footer geometry tests require Chromium or Google Chrome on PATH.");
     const css = readFileSync(join(import.meta.dirname, "../../styles/compiled.css"), "utf8");
+    const longText = "International privacy terms for account information and research communications ".repeat(4);
     const fixtures = ["ltr", "rtl"].flatMap(dir => [
       { name: "wide", width: 1280, count: 7 },
       { name: "roomy", width: 1440, count: 7 },
       { name: "crowded", width: 1280, count: 30 },
       { name: "phone", width: 375, count: 7 },
       { name: "below-desktop", width: 1279, count: 7 },
-    ].map(({ name, width, count }) => renderToStaticMarkup(
+      { name: "long-wide", width: 1280, count: 7, long: true }, { name: "long-roomy", width: 1440, count: 7, long: true },
+      { name: "long-phone", width: 375, count: 7, long: true }, { name: "long-below-desktop", width: 1279, count: 7, long: true },
+    ].map(({ name, width, count, long = false }) => renderToStaticMarkup(
       <section dir={dir} data-geometry-case={`${dir}-${name}`}>
         <SiteFooter style={{ width }} secondary={<SiteFooter.Legal
-          entity="Example"
-          links={[{ label: "Privacy", href: "/privacy" }, { label: "Terms", href: "/terms" }]}
+          entity={long ? longText + longText.replaceAll(" ", "") : "Example"}
+          links={[{ label: long ? longText : "Privacy", href: "/privacy" }, { label: long ? longText.replaceAll(" ", "") : "Terms", href: "/terms" }]}
           icons={Array.from({ length: count }, (_, index) => ({
             label: `Profile ${index}`, href: `/profile/${index}`,
             icon: <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24"><path d="M4 12h16" /></svg>,
@@ -104,14 +107,19 @@ describe("SiteFooter measured geometry", () => {
         const { left, right, top, bottom, width } = node.getBoundingClientRect();
         return { left, right, top, bottom, width };
       };
+      const textRects = (node: Element) => {
+        const range = document.createRange(); range.selectNodeContents(node.firstChild!);
+        return [...range.getClientRects()].map(box => ({ left: box.left, right: box.right, top: box.top, bottom: box.bottom, width: box.width }));
+      };
       const result = Object.fromEntries([...document.querySelectorAll("[data-geometry-case]")].map(fixture => {
         const content = fixture.querySelector("[data-footer-composition]")!;
         const region = (name: string) => content.querySelector(`[data-footer-region="${name}"]`)!;
         const text = document.createRange();
         text.selectNodeContents(region("copyright"));
         return [fixture.getAttribute("data-geometry-case"), {
-          content: rect(content), links: rect(region("links")), icons: rect(region("icons")),
+          footer: rect(fixture.querySelector("footer")!), content: rect(content), links: rect(region("links")), icons: rect(region("icons")),
           copyright: rect(region("copyright")), copyrightText: rect(text),
+          copyrightLines: text.getClientRects().length, linkText: [...region("links").querySelectorAll("a")].map(textRects),
           targets: [...region("icons").querySelectorAll("a")].map(rect),
           linkItems: [...region("links").querySelectorAll("li")].map(rect),
         }];
@@ -182,6 +190,30 @@ describe("SiteFooter measured geometry", () => {
     }
   });
   for (const dir of ["ltr", "rtl"]) {
+    it(`wraps long links and legal text inside centred tracks in ${dir}`, () => {
+      for (const size of ["wide", "roomy", "phone", "below-desktop"]) {
+        const { footer, content, links, copyright, copyrightText, copyrightLines, linkText } = measurements[`${dir}-long-${size}`]!;
+        expect(copyrightLines).toBeGreaterThan(1);
+        expect(Math.abs((links.left + links.right - content.left - content.right) / 2)).toBeLessThan(1);
+        const ink = linkText.flat();
+        expect(Math.abs((Math.min(...ink.map(box => box.left)) + Math.max(...ink.map(box => box.right)) - content.left - content.right) / 2)).toBeLessThan(1);
+        for (const lines of linkText) {
+          for (const line of lines) {
+            expect(line.left).toBeGreaterThanOrEqual(links.left - 1);
+            expect(line.right).toBeLessThanOrEqual(links.right + 1);
+          }
+          expect(lines.length).toBeGreaterThan(1);
+        }
+        for (const box of [content, links, copyright, copyrightText, ...linkText.flat()]) {
+          expect(box.left).toBeGreaterThanOrEqual(footer.left - 1);
+          expect(box.right).toBeLessThanOrEqual(footer.right + 1);
+          expect(box.top).toBeGreaterThanOrEqual(footer.top - 1);
+          expect(box.bottom).toBeLessThanOrEqual(footer.bottom + 1);
+        }
+        expect(copyrightText.left).toBeGreaterThanOrEqual(copyright.left - 1);
+        expect(copyrightText.right).toBeLessThanOrEqual(copyright.right + 1);
+      }
+    });
     it(`centres links on the whole footer with unequal side content in ${dir}`, () => {
       for (const size of ["wide", "roomy"]) {
         const { content, links, copyrightText, targets, linkItems } = measurements[`${dir}-${size}`]!;
