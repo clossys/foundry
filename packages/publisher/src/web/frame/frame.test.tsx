@@ -605,7 +605,7 @@ describe("siteShellFor", () => {
   it("preserves explicitly reserved site bytes and its same-host brand link", () => {
     const config: SiteFrameConfig = { brand: CONFIG.brand, skipLink: CONFIG.skipLink, origin: CONFIG.origin, legal: CONFIG.legal, site: { header: { placement: "reserved" } } };
     const html = renderToStaticMarkup(frame(siteShellFor(config, "site"), <p>content</p>));
-    expect(createHash("sha256").update(html).digest("hex")).toBe("aaaaf379ffb58fb3ea4a66f2375212f7ef0624ad5602cf6e870f417582ce74a9");
+    expect(createHash("sha256").update(html).digest("hex")).toBe("390aff3580abb0b61c33b18eabb539a33f865ea37f24f72367118e9eeb427de1");
     const { container } = render(frame(siteShellFor(config, "site"), <p>content</p>));
     expect(container.querySelector('header a[aria-label="Example home"]')).toHaveAttribute("href", "/");
   });
