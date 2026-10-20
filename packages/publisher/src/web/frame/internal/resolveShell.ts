@@ -396,8 +396,8 @@ export function resolveShell(input: SiteShellInput, resolveCopy: CopyResolver, r
     ...iconActions.map(() => "ghost" as const),
     ...environments.map(() => "secondary" as const),
   ]);
-  // Actions without navigation still need a named menu; its words come from the consumer's copy.
-  if (nav === undefined && headerActions.length > 0) {
+  // Ordinary actions still need a named menu. Environment-only shells use direct ghost links.
+  if (nav === undefined && (secondaryAction !== undefined || actions.length > 0 || iconActions.length > 0)) {
     const defaults = SITE_FRAME_NAV_DEFAULTS;
     nav = {
       label: copy(defaults.label, `shell.nav default label "${defaults.label.id}"`, resolveCopy),

@@ -5383,13 +5383,21 @@ element or image). `size` is `"sm"`, `"md"` or
 tokens. The exported types are `BrandmarkProps`, `BrandmarkVariant` and
 `BrandmarkSize`.
 
-What `Brandmark` does: it renders a plain `<a href="/">` whose accessible
-name is `label` (set as `aria-label`), so the name does not depend on the
+`Brandmark` renders a plain `<a href="/">` by default. Optional `origin`
+selects the public home origin, for example `origin="https://example.com"`
+links to `https://example.com/`. It accepts a bare HTTPS origin or HTTP on
+`localhost`, `127.0.0.1` or `[::1]`, including a port and an optional trailing
+root slash. Scheme and host case are normalized. Paths, queries, fragments,
+userinfo, controls, backslashes, remote HTTP and other schemes throw an
+`Error` naming `origin` without echoing its value. Omitting `origin` retains
+the existing markup.
+
+The link's accessible name is `label` (set as `aria-label`), so the name does not depend on the
 image or the wordmark text. The image is decorative (`alt=""`) and is set
 from `markSrc` as a URL, and `wordmark` renders as live text in the display
 font at a size derived from the mark's height; neither is injected as
 markup. The component spreads no props onto the anchor, so `href` and
-`aria-label` are not reachable through its props. What it does not do: it
+`aria-label` cannot be overridden through forced props. What it does not do: it
 does not check that `markSrc` resolves or that the image is legible at the
 chosen size, it does not check that `label` is a meaningful name beyond the
 two refusals below, and it does not load the display font, so the wordmark

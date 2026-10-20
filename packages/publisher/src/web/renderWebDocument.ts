@@ -184,10 +184,12 @@ import { describeAssetProblems, hasAssetProblems, isRenderAsset, resolveDocument
 import type { RenderAsset, RenderImageAsset, RenderImageSource, RenderVideoAsset } from "../internal/assets.js";
 import { assertPeerVersion } from "../internal/peer-version.js";
 import { buildWebHeadMetadata } from "./headMetadata.js";
-import { defaultWebTemplateMap, slotKindsFor } from "./internal/webTemplates.js";
+import { defaultWebTemplateMap, framedAuthTemplate, slotKindsFor } from "./internal/webTemplates.js";
 import type { RepeatingWebSlotFieldSpec, RepeatingWebSlotSpec, ResolvedWebGroupField, ResolvedWebGroupItem, WebTemplate } from "./types.js";
 import type { RenderWebOptions, RenderWebResult } from "./types.js";
 import { buildAssetElement } from "./buildAssetElement.js";
+import { SiteFrame } from "./frame/SiteFrame.js";
+import { resolveShell } from "./frame/internal/resolveShell.js";
 
 /**
  * `react` is this subpath's optional peer (see package.json's
@@ -370,6 +372,23 @@ function invalidPublicGroups(message: string): never {
 
 function invalidPublicNodes(message: string): never {
   throw new RenderError("resolution-failed", `renderWebDocument refused malformed RenderWebOptions.nodes: ${message}`);
+}
+
+/** Validate the new frame boundary synchronously, before returning a deferred React element. */
+function validatePublicFrame(value: unknown): RenderWebOptions["frame"] {
+  if (value === undefined) return undefined;
+  const refuse = (): never => { throw new RenderError("resolution-failed", "renderWebDocument refused malformed RenderWebOptions.frame: expected a shell, copy/asset resolvers and optional presentation."); };
+  if (!isPlainClosedObject(value) || !hasOnlyOwnKeys(value, ["shell", "resolveCopy", "resolveAsset", "presentation"])
+    || !["shell", "resolveCopy", "resolveAsset"].every(key => hasOwn(value, key))
+    || typeof value.resolveCopy !== "function" || typeof value.resolveAsset !== "function"
+    || !isPlainClosedObject(value.shell) || !hasOnlyEnumerableStringDataKeys(value.shell)) refuse();
+  const frame = value as unknown as NonNullable<RenderWebOptions["frame"]>;
+  try {
+    resolveShell(frame.shell, frame.resolveCopy, frame.resolveAsset, frame.presentation);
+    // The legacy shell parser normalizes URLs; frame origins must also be bare in their raw form.
+    if (frame.shell.origin !== undefined && !/^https?:\/\/[^/?#@]+\/?$/i.test(frame.shell.origin)) refuse();
+  } catch { refuse(); }
+  return frame;
 }
 
 /**
@@ -573,12 +592,18 @@ export function renderWebDocumentAgainst(templates: ReadonlyMap<string, WebTempl
     );
   }
 
-  const template = templates.get(doc.template);
-  if (template === undefined) {
+  const registeredTemplate = templates.get(doc.template);
+  if (registeredTemplate === undefined) {
     throw new RenderError(
       "unknown-template",
       `renderWebDocument does not know the document's template. Known templates: ${[...templates.keys()].join(", ") || "(none)"}.`,
     );
+  }
+
+  const frame = validatePublicFrame(options.frame);
+  const template = frame === undefined ? registeredTemplate : framedAuthTemplate(registeredTemplate);
+  if (frame !== undefined && doc.bindings.some(binding => binding.slot === "brand" || binding.slot === "footerSecondary")) {
+    throw new RenderError("resolution-failed", "renderWebDocument frame refuses a chrome binding for brand or footerSecondary.");
   }
 
   const nodes = validatePublicNodes(options.nodes);
@@ -716,8 +741,9 @@ export function renderWebDocumentAgainst(templates: ReadonlyMap<string, WebTempl
   // `doc.bindings` (see `internal/webTemplates.ts`'s own top comment).
   const groups = resolveTemplateGroups(doc, template, options);
 
+  const element = template.build(content, groups);
   return {
-    element: template.build(content, groups),
+    element: frame === undefined ? element : createElement(SiteFrame, { ...frame, children: element }),
     head: buildWebHeadMetadata(doc.meta as WebMeta),
   };
 }

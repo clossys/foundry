@@ -2989,12 +2989,19 @@ export const publicChrome: SiteFrameConfig["site"] = {
 | Kind | Banner | Footer | Links |
 | --- | --- | --- | --- |
 | `"site"` | brand, `site.nav`, `site.secondaryAction`, `site.actions`, `site.iconActions` | `site.columns`, `site.footerLinks`, `site.social`, then the legal row | as given (`siteShellFor` sets no `origin` for the site itself) |
-| `"front-door"`, `"admin"`, `"demo"` | brand, the `environments` links (the one whose `surface` matches marked current) | the legal row only | root-relative links resolve against `origin` |
+| `"front-door"`, `"admin"`, `"demo"` | leading brand and only the matching environment, marked current, as a ghost icon link; no menu | the legal row only | brand home and root-relative links resolve against `origin` |
 
 Every kind shares the brand, the skip link, the ground and the legal row. A
 surface served from another host (a sign-in host, an admin host) therefore
 links its legal row to the public site's `/privacy` and `/terms` on
 `origin`, not to routes its own host may not serve. An unknown kind throws.
+These auth surfaces use `mobileLayout: "inline"` at every width. A kind with
+no matching environment shows the brand alone. The `"site"` shell keeps its
+existing navigation, actions, links and same-host brand home.
+
+Auth chrome mounts no cookie banner or consent card. Sign-up acceptance is
+an `AuthView` notice, such as caller copy in its footnote; it is not cookie
+consent. The footer remains the entity and legal links only.
 
 **Which views fit inside the frame.**
 
@@ -3006,19 +3013,37 @@ links its legal row to the public site's `/privacy` and `/terms` on
 the single `<main>`. Omitting `framed` keeps the self-chromed legal page.
 
 `SectionedView` and `LandingView` render their own `<main>` by default; pass
-`landmark="none"` to place either inside the frame. The built-in registry `AuthView` template
-always passes `brand`, so a registry-rendered sign-in page is still the
-legacy full page, not a framed one.
+`landmark="none"` to place either inside the frame. The built-in registry
+`AuthView` template can also render inside `SiteFrame` through the optional
+`renderWebDocument(document, { frame })` option:
+
+```ts
+import { renderWebDocument } from "@clossys/publisher/web";
+import type { SiteFrameInput } from "@clossys/publisher/web";
+import type { ComposeDocument } from "@clossys/publisher/core";
+
+declare const auth: ComposeDocument; // AuthView heading/form bindings, without chrome bindings
+declare const frame: SiteFrameInput; // shell and its CopyRef-based copy and asset resolvers
+const { element, head } = renderWebDocument(auth, { frame });
+```
+
+`frame` takes the same shell, resolvers and optional `presentation` as
+`SiteFrame`. Its shape and shell resolution are checked synchronously.
+Only the shipped `AuthView` template is accepted, including when registered
+through `createWebRenderer({ includeBuiltins: true })`; a consumer template
+named `AuthView` is refused. Document `brand` and `footerSecondary` bindings
+are refused even when empty or unresolved. The view supplies no chrome and
+the frame owns the sole main, header and footer. Without `frame`, the
+existing output bytes and required `brand` binding remain unchanged.
 
 The deprecated `ErrorView`'s root keeps its `min-h-dvh` (full viewport
 height) class, so inside the frame the page is taller than the viewport and
 scrolls past the footer. `StatusView` has no such root; use it instead.
 
-**Known gaps.** The `Brandmark` links to `/` on the current host and does not
-follow `origin`, so on a sign-in or admin host the logo goes to that host's
-home, not the public site; that is a Designer follow-up. A call-to-action is
-either text or an icon-only link, and Designer has no server-safe link
-component yet, so the frame renders plain anchors.
+The frame passes `shell.origin` to Designer's `Brandmark`. It accepts only
+a bare HTTPS origin or HTTP on `localhost`, `127.0.0.1` or `[::1]`, with an
+optional port and trailing root slash. Paths, userinfo, queries, fragments,
+controls and backslashes are refused without echoing the supplied value.
 
 **Page layers.** `SITE_PAGE_LAYERS` is the page-assembly contract as frozen
 data: nine layers, each with its owning package, who mounts it, its
@@ -6316,12 +6341,18 @@ use unoccupied variants in that order; primary requires resolved nonblank copy
 and supplied validated SVG icon data. `normalizeSiteFrameActions` accepts
 already-resolved label/href/IconNode content; `resolveShell` owns copy, URL and
 SVG allowlist validation before that helper. No primary means an empty,
-noninteractive right track. Actions without navigation get a menu with no links,
+noninteractive right track. Ordinary actions without navigation get a menu with no links,
 named through the consumer's own `resolveCopy` from the copy references in
 `SITE_FRAME_CONTRACT.defaults`: `site-frame.nav.label` names the navigation and
 `site-frame.nav.trigger-label` labels its toggle. The frame ships no audience
 text for them, and an unresolved default fails closed like any other shell copy.
-The contract is at `revision` 2; revision 1 published these defaults as strings.
+An environment-only shell instead renders its links directly as ghost
+`SiteHeader.ActionLink`s with icons and `aria-current`; it requests no default
+navigation copy and mounts no menu. Mixed and ordinary action-only shells
+retain the distinct action variants and default menu behavior.
+The contract is at `revision` 3: auth surfaces select only their current
+environment, and environment-only headers render direct ghost links.
+Revision 2 introduced copy-reference defaults; revision 1 used strings.
 Supply `shell.nav` (links may be empty) to name the menu with other copy; no
 minimum link count or invented brand copy is needed.
 All full labels appear in the panel after links as text only, primary then
