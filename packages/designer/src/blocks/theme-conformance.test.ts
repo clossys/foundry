@@ -14,6 +14,7 @@ import { BLOCK_THEME_CONFORMANCE, NON_BLOCK_THEME_EXPORTS, type BlockThemeRegist
 const packageRoot = resolve(import.meta.dirname, "../..");
 const blocksRoot = resolve(packageRoot, "src/blocks");
 const COLOR_PROPERTY = /^(?:color|background|backgroundColor|border(?:Block|Inline)?(?:Start|End|Top|Right|Bottom|Left)?Color|outlineColor|textDecorationColor|textEmphasisColor|caretColor|accentColor|fill|stroke)$/;
+const COLOR_SHORTHAND = /^(?:border(?:Block|Inline)?(?:Start|End|Top|Right|Bottom|Left)?|outline|boxShadow|textShadow|textDecoration|textEmphasis)$/;
 const INHERITED_COLOR = new Set(["current", "currentColor", "inherit", "transparent", "none"]);
 // CSS named colors, not CSS system-color keywords such as Menu/Mark/Canvas:
 // those words also name exported components, SVG concepts and HTML elements.
@@ -31,6 +32,20 @@ function namedColor(value: string): boolean {
   return NAMED_COLORS.has(value.toLowerCase());
 }
 
+function normalizeProperty(name: string): string {
+  return name.replace(/-([a-z])/g, (_, letter: string) => letter.toUpperCase());
+}
+
+/** Inspect authored value fragments, never expression identifiers or copy elsewhere. */
+function inlineColor(name: string, value: ts.Node | undefined): boolean {
+  if (COLOR_PROPERTY.test(name)) return true;
+  if (!COLOR_SHORTHAND.test(name) || !value) return false;
+  const fragments = ts.isStringLiteralLike(value) ? [value.text]
+    : ts.isTemplateExpression(value) ? [value.head.text, ...value.templateSpans.map(span => span.literal.text)] : [];
+  return fragments.some(fragment => /--color-[\w-]+|#[\da-f]{3,8}\b|\b(?:rgb|rgba|hsl|hsla|hwb|lab|lch|oklab|oklch|color|color-mix)\(/i.test(fragment)
+    || (fragment.match(/[a-zA-Z_-][\w-]*/g) ?? []).some(namedColor));
+}
+
 /** Colons inside arbitrary selectors/values belong to the variant, not its utility. */
 function utilityBase(candidate: string): string {
   let depth = 0, start = 0;
@@ -44,6 +59,8 @@ function utilityBase(candidate: string): string {
 
 function colorUtility(candidate: string): { token?: string; invalid?: string } {
   const utility = utilityBase(candidate);
+  const arbitraryProperty = /^\[([\w-]+):.+\]$/.exec(utility);
+  if (arbitraryProperty && (COLOR_PROPERTY.test(normalizeProperty(arbitraryProperty[1]!)) || COLOR_SHORTHAND.test(normalizeProperty(arbitraryProperty[1]!)))) return { invalid: candidate };
   if (/^border-[trblsexy]$/.test(utility)) return {};
   if (/^(?:text|bg|border|outline|ring|fill|stroke)-$/.test(utility)) return { invalid: candidate };
   const match = /^(text|bg|border(?:-[trblsexy])?|outline|ring(?:-offset)?|fill|stroke|decoration|divide|accent|caret|placeholder|from|via|to|shadow)-(.+)$/.exec(utility);
@@ -82,18 +99,20 @@ function sourceEvidence(file: string, source: string) {
     if (ts.isTypeNode(node) || ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) return;
     if (ts.isNewExpression(node) && /^(?:Error|TypeError|RangeError)$/.test(node.expression.getText(ast))) return;
     if (ts.isPropertyAssignment(node)) {
-      const name = node.name.getText(ast).replace(/[\[\]"']/g, "").replace(/-([a-z])/g, (_, letter: string) => letter.toUpperCase());
-      if (COLOR_PROPERTY.test(name)) findings.push(`${file}: inline color property ${name}`);
+      const name = normalizeProperty(node.name.getText(ast).replace(/[\[\]"']/g, ""));
+      if (inlineColor(name, node.initializer)) findings.push(`${file}: inline color property ${name}`);
     }
     if (ts.isBinaryExpression(node) && node.operatorToken.kind === ts.SyntaxKind.EqualsToken) {
-      if (ts.isPropertyAccessExpression(node.left) && COLOR_PROPERTY.test(node.left.name.text) && /\.style$/.test(node.left.expression.getText(ast))) findings.push(`${file}: inline color assignment ${node.left.name.text}`);
-      if (ts.isElementAccessExpression(node.left) && ts.isStringLiteralLike(node.left.argumentExpression) && COLOR_PROPERTY.test(node.left.argumentExpression.text) && /\.style$/.test(node.left.expression.getText(ast))) findings.push(`${file}: inline color assignment ${node.left.argumentExpression.text}`);
+      if (ts.isPropertyAccessExpression(node.left) && inlineColor(node.left.name.text, node.right) && /\.style$/.test(node.left.expression.getText(ast))) findings.push(`${file}: inline color assignment ${node.left.name.text}`);
+      if (ts.isElementAccessExpression(node.left) && ts.isStringLiteralLike(node.left.argumentExpression) && inlineColor(normalizeProperty(node.left.argumentExpression.text), node.right) && /\.style$/.test(node.left.expression.getText(ast))) findings.push(`${file}: inline color assignment ${node.left.argumentExpression.text}`);
     }
     if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression) && node.expression.name.text === "setProperty" && /\.style$/.test(node.expression.expression.getText(ast))) {
       const key = node.arguments[0];
-      if (key && ts.isStringLiteralLike(key) && COLOR_PROPERTY.test(key.text.replace(/-([a-z])/g, (_, letter: string) => letter.toUpperCase()))) findings.push(`${file}: inline color setProperty ${key.text}`);
+      if (key && ts.isStringLiteralLike(key) && inlineColor(normalizeProperty(key.text), node.arguments[1])) findings.push(`${file}: inline color setProperty ${normalizeProperty(key.text)}`);
     }
     if (ts.isStringLiteralLike(node) || ts.isTemplateHead(node) || ts.isTemplateMiddle(node) || ts.isTemplateTail(node)) {
+      // A CSS property key is technical syntax, not a utility class value.
+      if (ts.isCallExpression(node.parent) && node.parent.arguments[0] === node && ts.isPropertyAccessExpression(node.parent.expression) && node.parent.expression.name.text === "setProperty" && /\.style$/.test(node.parent.expression.expression.getText(ast))) return;
       if (namedColor(node.text)) findings.push(`${file}: named color ${node.text}`);
       for (const candidate of node.text.split(/\s+/)) {
         const color = colorUtility(candidate);
@@ -336,6 +355,53 @@ describe("Block theme conformance", () => {
     for (const literal of ["red", "rebeccapurple", "Blue"]) expect(sourceEvidence("Example.tsx", `const paint = "${literal}";`).findings).toContain(`Example.tsx: named color ${literal}`);
     for (const utility of ["border-t-red", "bg-gray-500", "text-[#fff]", "[&_p]:text-rebeccapurple", "bg-[rgb(1,2,3)]"]) expect(sourceEvidence("Example.tsx", `const classes = "${utility}";`).findings.some(item => item.includes("color utility has no token"))).toBe(true);
     expect(sourceEvidence("Example.tsx", 'const paint = { color: "var(--color-ink-primary, currentColor)" };').findings).toContain("Example.tsx: inline color property color");
+  });
+
+  it.each([
+    "[color:red]", "[background-color:rebeccapurple]", "hover:[color:red]",
+    "[&>a]:focus:[background-color:white]", "md:hover:[color:Blue]",
+    "![border-inline-start-color:red]", "dark:[&_[data-state=open]]:hover:[fill:red]",
+    "[color:var(--color-ink-primary,currentColor)]", "[box-shadow:0_0_1px_red]",
+  ])("refuses arbitrary color properties: %s", candidate => {
+    expect(sourceEvidence("Example.tsx", `const classes = ${JSON.stringify(candidate)};`).findings)
+      .toContain(`Example.tsx: color utility has no token ${candidate}`);
+  });
+
+  it.each([
+    ["border", "1px solid red"], ["boxShadow", "0 0 1px red"],
+    ["borderInlineStart", "1px solid rebeccapurple"], ["outline", "1px dotted Blue"],
+    ["textShadow", "0 0 1px red, 0 1px 1px blue"],
+    ["border", "1px solid var(--color-line-base,currentColor)"],
+  ])("refuses inline color shorthands: %s = %s", (property, value) => {
+    const literal = JSON.stringify(value);
+    const cssProperty = property.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`);
+    for (const [source, kind] of [
+      [`const style = { ${property}: ${literal} };`, "property"],
+      [`const element = <div style={{ ${property}: ${literal} }} />;`, "property"],
+      [`element.style.${property} = ${literal};`, "assignment"],
+      [`element.style[${JSON.stringify(property)}] = ${literal};`, "assignment"],
+      [`element.style.setProperty(${JSON.stringify(cssProperty)}, ${literal});`, "setProperty"],
+    ]) {
+      expect(sourceEvidence("Example.tsx", source!).findings, source)
+        .toContain(`Example.tsx: inline color ${kind} ${property}`);
+    }
+  });
+
+  it("detects a shorthand color in a literal template fragment", () => {
+    expect(sourceEvidence("Example.tsx", 'const style = { border: `${width}px solid red` };').findings)
+      .toContain("Example.tsx: inline color property border");
+  });
+
+  it("preserves structural arbitrary properties, inherited ink and non-paint metadata", () => {
+    for (const source of [
+      'const classes = "[width:1rem] hover:[grid-template-columns:1fr_2fr] [&>a]:[padding-inline:1rem] [--layout-gap:1rem] [border-width:1px]";',
+      'const style = { borderWidth: "1px", border: "none", boxShadow: "none", padding: "1rem" };',
+      'const style = { border: "1px solid currentColor", boxShadow: UI_ELEVATION_PANEL };',
+      'const style = { border: `${red}px solid currentColor` };',
+      'const classes = { border: "border-line-base", boxShadow: "shadow-sm" };',
+      'element.style.borderWidth = "1px"; element.style.setProperty("border-width", "1px");',
+      'const description = "A red border and white shadow";',
+    ]) expect(sourceEvidence("Example.tsx", source).findings, source).toEqual([]);
   });
 
   it("rejects a hex-color mutant through the canonical pipeline", () => {
