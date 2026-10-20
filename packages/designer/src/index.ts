@@ -408,6 +408,9 @@ export type { RangeChartProps } from "./charts/RangeChart.js";
 export { ScatterChart } from "./charts/ScatterChart.js";
 export type { ScatterChartProps } from "./charts/ScatterChart.js";
 
+export { AreaChart, Heatmap, StatusStrip } from "./charts/index.js";
+export type { AreaChartProps, AreaChartSeries, HeatmapProps, StatusStripProps, StatusStripSegment } from "./charts/index.js";
+
 export { Item } from "./blocks/items/Item.js";
 export { AppNavigation } from "./blocks/AppNavigation.js";
 export type { AppNavigationProps } from "./blocks/AppNavigation.js";
@@ -418,6 +421,7 @@ export type { ItemData, ItemFigureData, ItemStatusData, ItemProps, ItemBadge, It
 export { GroupedTable } from "./blocks/GroupedTable.js";
 export type { GroupedTableProps, GroupedTableGroup, GroupedTableColumn } from "./blocks/GroupedTable.js";
 
+export type { SignatureChartLabels } from "./charts/index.js";
 export { GraphValidationError, validateGraph, neighbors, subgraph, degrees, components, shortestPath, groupByKind, radialLayout, forceLayout, edgeRoutingHints } from "./blocks/index.js";
 export type { GraphNode, GraphEdge, GraphInput, GraphModelEdge, GraphModel, GraphErrorCode, GraphNeighborOptions, GraphSubgraphOptions, GraphDegree, GraphKindGroup, GraphPosition, GraphRadialOptions, GraphForceOptions, GraphEdgeRoutingHint } from "./blocks/index.js";
 export { filterRows, groupRows, pivotRows, aggregate, parseTableModel, serializeTableModel, TableModelError } from "./blocks/table-model/index.js";

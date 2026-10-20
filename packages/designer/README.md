@@ -24,7 +24,7 @@ exports from `@clossys/designer/atoms`. The barrel remains client-only. Read
 the packed [atom selection guide](skill/atoms-guide.md) for purpose, use and
 avoidance, alternatives, content, anatomy, block composition, accessibility,
 medium evidence, represented configurations and partial token dependencies.
-Four display groups and ten families place forty-one established atom/chart leaves
+Four display groups and ten families place forty-four established atom/chart leaves
 exactly once. Groups and families are navigation; only leaves are selectable.
 Existing IDs such as `act.link` and `reveal.tabs` remain unchanged.
 
@@ -199,7 +199,7 @@ surfaces and live in `@clossys/publisher/web`.
   See "Shell" below.
 - **`charts`** — dependency-free SVG chart primitives: `ChartFrame` (the
   shared plot/axes/grid/legend/table container), `BarChart`, `LineChart`,
-  `WaterfallChart`, `RangeChart`, `ScatterChart`, and `Sparkline`. A sibling of `shell`, not a sixth rung of the ladder —
+  `WaterfallChart`, `RangeChart`, `ScatterChart`, `AreaChart`, `Heatmap`, `StatusStrip`, and `Sparkline`. A sibling of `shell`, not a sixth rung of the ladder —
   see "Charts" below.
 - **`theme`** — the JavaScript half of this package's theming contract
   (the CSS half already ships from `tokens.css`/`theme.css` — see "CSS
@@ -456,7 +456,7 @@ source file's own header for the exact probe and its result). Today that's:
 | `@clossys/designer/atoms/server` | `Avatar`, `Badge`, `Banner`, `Card`, `Field`, `Icon`, `Meter`, `Skeleton`, `Spinner`, `StatusMark`, `buttonLinkClassName`, `iconButtonClassName`, `iconButtonLinkClassName`, `mergeUiClasses` |
 | `@clossys/designer/blocks/server` | `AnatomyCallouts`, `ArticleBody`, `Matrix`, `ContentSection`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `Item`, `Items`, `MarketingChapter`, `MediaFigure`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `RecordLedger`, `Scene`, `SectionFrame`, `SectionHeader`, `SectionIntro`, `Specimen`, `SpecimenPanel`, `Stat`, `StatusList`, `Tree` |
 | `@clossys/designer/shell/server` | `Shell`, `SiteFooter`, `SiteHeader`, `SkipLink` |
-| `@clossys/designer/charts/server` | `ChartFrame`, `BarChart`, `LineChart` (static), `WaterfallChart`, `RangeChart`, `ScatterChart`, `Sparkline` |
+| `@clossys/designer/charts/server` | `ChartFrame`, `BarChart`, `LineChart` (static), `WaterfallChart`, `RangeChart`, `ScatterChart`, `AreaChart` (static), `Heatmap` (static), `StatusStrip` (static), `Sparkline` |
 | `@clossys/designer/theme/server` | `getThemeInitScript` |
 
 Everything not listed above stays reachable only from its original barrel,
@@ -5993,6 +5993,96 @@ coordinates, and the formatted size when enabled, including zero. Its
 disclosure works without JavaScript. Open it before printing to include the
 table; automatic expansion during printing is not promised.
 
+### `AreaChart`, `Heatmap`, and `StatusStrip`
+
+These charts share `ChartFrame` titles, descriptions, axes and native table
+fallbacks. The ordinary `/charts` exports support keyboard and pointer
+inspection. `/charts/server` exports static versions with the same data and
+geometry, without inert keyboard controls or series toggle buttons. Every
+colour reads the existing chart tokens, so the active light/dark theme applies;
+no animation is used, including under reduced motion.
+
+```tsx
+import { AreaChart, Heatmap, StatusStrip } from "@clossys/designer/charts";
+
+<AreaChart
+  title="Volume by month"
+  x={["Jan", "Feb", "Mar"]}
+  series={[
+    { name: "New", values: [10, 20, null] },
+    { name: "Returning", values: [30, 20, 10] },
+  ]}
+  stacked
+/>;
+<Heatmap
+  title="Capacity by team"
+  rows={["East", "West"]}
+  columns={["Mon", "Tue"]}
+  values={[[0, 100], [null, 50]]}
+/>;
+<StatusStrip
+  title="Service history"
+  domain={[0, 40]}
+  segments={[
+    { from: 0, to: 10, status: "ok" },
+    { from: 20, to: 40, status: "error" },
+  ]}
+/>;
+```
+
+`AreaChart` accepts category strings, increasing numbers, or increasing `Date`
+values in `x`; use one kind consistently. Every series must have exactly one
+finite number or `null` per x. Nulls break that series' area into separate runs
+and remain “No data” in its table and readout. `stacked` accumulates in authored
+series order; `normalized` implies stacking and makes each nonzero column total
+100%. Stacked/normalized values must be nonnegative; unstacked areas can cross
+zero. All-zero columns remain zero. `smooth` defaults to false. Up to eight
+series are supported; larger sets must be faceted. The legend toggles each
+series, recomputes the visible totals and retains every source datum in the
+table. Stable `colorDomain` or series positions preserve colour identity during
+toggles. Set `hiddenSeries` and `onHiddenSeriesChange` to control that legend.
+The focusable plot uses Left/Right, Home/End and Escape to inspect x positions;
+Enter/Space selects the inspected index. `xFormat` defaults to strings or ISO
+dates, and `valueFormat` to en-US number formatting.
+
+`Heatmap` requires a rectangular `values` matrix matching `rows` and `columns`.
+Each row and column name must be nonempty and unique within its axis. Sequential
+mode accepts finite numbers or null; the minimum and maximum map to the first
+and last of seven single-hue token steps. A constant numeric set uses the first
+step. Categorical mode (`categorical`) accepts strings or numbers and assigns
+at most eight identities stable categorical colours; supply `colorDomain` to
+preserve identities when data changes. Null remains “No data”, with a neutral
+cell. Every cell is named “row, column, value”, including missing values. Arrow
+keys move within the grid without wrapping; Home/End move within a row and
+Ctrl+Home/End move to the grid boundaries. Focus reveals the complete value;
+Enter/Space selects the row-major index. `valueFormat` defaults to `String`.
+
+`StatusStrip` accepts finite numeric or `Date` intervals with one of `ok`,
+`warn`, `error`, or `unknown`. It sorts intervals chronologically, rejects
+reversed/overlapping intervals, and gives each segment width proportional to
+its duration. `domain` optionally defines the observation window; leading,
+internal and trailing gaps become explicit `unknown` segments and table rows.
+Segments outside that window are rejected. Every status has a distinct pattern
+and a visible text legend, and each segment is named with status and interval.
+Keyboard arrows, Home/End and Enter/Space inspect/select intervals. Selection
+and hover indices include generated unknown gaps in chronological order.
+`intervalFormat` defaults to numeric strings or ISO dates.
+
+All three accept optional `activeIndex` / `onActiveIndexChange` and
+`selectedIndex` / `onSelectionChange`. Omit a controlled value for local state;
+set it to `null` to clear it. Callbacks receive an index or null. These
+callbacks let a host bind a later drill-down without importing a table
+component. Invalid/outdated controlled inspection indices are ignored. `labels`
+accepts partial translations of `SignatureChartLabels`: empty/loading/missing
+text, table headings, inspection/series/scale names and status labels. Omitted
+fields retain their documented defaults. `loading` displays “Loading data” and
+suppresses marks; empty data displays “No data”. Tables retain the authored data
+even while loading. Shared props are `title`, `description`, `width`, `height`,
+`tableFallbackLabel`, `className`, and `style`. Dimensions default to 480×280
+(StatusStrip: 480×100), must be finite and leave a positive plot after the
+standard margins (width >64, height >48). Authors must choose enough space for
+their labels; these charts do not resolve label collisions automatically.
+
 ### `Sparkline`
 
 A bare inline trend — no axes, no grid, no legend, and (the one exception
@@ -6709,7 +6799,7 @@ not a grab-bag).
 | `ToastRecord` | type | The queued shape of one toast: `title`, `description?`, `variant`. |
 | `ToastVariant` | type | `"success" \| "danger" \| "info" \| "warning"`. |
 | `ChartFrame` | component | The shared plot/axes/grid/legend/table container `BarChart`, `LineChart`, `WaterfallChart`, `RangeChart`, and `ScatterChart` compose. |
-| `ChartFrameProps` | type | Props for `ChartFrame`: `title`, `description`, `width`, `height`, `fit` (default `"fixed"`), `margin`, `xTicks`, `yTicks`, `legend`, `showSingleSeriesLegend` (default `false`), `table` (required), `tableFallbackLabel` (default `"View as table"`), `className`, `style`, `children` (render prop receiving the resolved `PlotArea`). |
+| `ChartFrameProps` | type | Props for `ChartFrame`: `title`, `description`, `interactive` (default `false`; exposes interactive SVG descendants using `role="group"`), `width`, `height`, `fit` (default `"fixed"`), `margin`, `xTicks`, `yTicks`, `legend`, `showSingleSeriesLegend` (default `false`), `table` (required), `tableFallbackLabel` (default `"View as table"`), `className`, `style`, `children` (render prop receiving the resolved `PlotArea`). |
 | `ChartMargin` | type | `{ top, right, bottom, left }`, all `number`. |
 | `ChartAxisTick` | type | `{ position, label }` — a pre-scaled pixel position plus its label. |
 | `ChartLegendItem` | type | `{ label, color, mark?: "circle" \| "square" \| "diamond" \| "triangle" }`; omitted `mark` retains the color swatch. |
@@ -6727,6 +6817,15 @@ not a grab-bag).
 | `RangeChartProps` | type | `title`, `description?`, `ticks`, `rows: readonly { id, label, from, to, status?: { tone: StatusMarkTone, label } }[]`, `labels: { table, category, from, to, status? }`, `fit?` (default `"fluid"`), `width?` (default `360`), `height?` (default fits wrapped content), `className?`, `style?`. |
 | `ScatterChart` | component | Static numeric observations with direct labels, up to four series shapes, optional proportional area, and a native data table. |
 | `ScatterChartProps` | type | `points: readonly { id, label, x, y, size?, series?, labelSide?: "start" \| "end" \| "above" \| "below" }[]`, `x` and `y: { label, min?, max? }`, `size?: { label }`, `series?: readonly { id, name }[]`, `labels: { table, category }`, required `title`, optional `description`, `fit?` (default `"fluid"`), `width?` (default `360`), `height?` (default `300`), `valueFormat?`, `className?`, and `style?`. |
+| `SignatureChartLabels` | type | Shared copy overrides: `empty`, `loading`, `missing`, table headings (`xColumn`, `rowColumn`, `fromColumn`, `toColumn`, `statusColumn`), and `inspection(title)`, `series(title)`, `scale(minimum, maximum)`, `status(status)` formatter functions. Defaults are documented on each field. |
+| `AreaChart` | component | Filled category/time series with null gaps, stacked/normalized modes, legend toggles and keyboard crosshair. |
+| `AreaChartProps` | type | Required `title`, `x`, `series`; optional `stacked`, `normalized`, `smooth`, `colorDomain`, `hiddenSeries`, `onHiddenSeriesChange`, `xFormat`, `valueFormat`, and shared chart inspection/selection, loading, description, dimensions, table and style props. |
+| `AreaChartSeries` | type | `{ name, values: readonly (number \| null)[], color? }`. |
+| `Heatmap` | component | Sequential or categorical matrix with accessible grid cells, keyboard navigation and a native table. |
+| `HeatmapProps` | type | Required `title`, `rows`, `columns`, `values: readonly (readonly (number \| string \| null)[])[]`; optional `categorical`, `colorDomain`, `valueFormat`, and shared chart inspection/selection, loading, description, dimensions, table and style props. |
+| `StatusStrip` | component | Proportional patterned status intervals with explicit unknown gaps and a native table. |
+| `StatusStripProps` | type | Required `title`, `segments`; optional `domain: readonly [number \| Date, number \| Date]`, `intervalFormat`, and shared chart inspection/selection, loading, description, dimensions, table and style props. |
+| `StatusStripSegment` | type | `{ from: number \| Date, to: number \| Date, status: "ok" \| "warn" \| "error" \| "unknown" }`. |
 | `Sparkline` | component | A bare inline trend — no axes/grid/legend/hover, still ships a table-view fallback. |
 | `SparklineProps` | type | Props for `Sparkline`: `values`, `title`, `width`, `height`, `color`, `valueFormat`, `tableFallbackLabel` (default `"View as table"`), `valueColumnLabel` (default `"Value"`), `className`, `style`. |
 | `getThemeInitScript` | function | Returns a self-contained head script (string) that stamps `data-theme` before first paint. Takes `{ storageKey?, defaultTheme? }`. |
@@ -7378,15 +7477,15 @@ No `AppNavItem`/`AppFooterColumn` or similar per-item component beyond
 `SiteFooter.Column` either, for the same reason atoms/blocks stay this
 short elsewhere in this README: added only once something real needs it.
 
-**Charts:** seven ship — `ChartFrame`, `BarChart`, `LineChart`, `WaterfallChart`, `RangeChart`, `ScatterChart`, `Sparkline`
+**Charts:** ten ship — `ChartFrame`, `BarChart`, `LineChart`, `WaterfallChart`, `RangeChart`, `ScatterChart`, `AreaChart`, `Heatmap`, `StatusStrip`, `Sparkline`
 — no `PieChart`/`DonutChart` (part-to-whole reads reliably only up to
 about six segments and a bar communicates the same comparison more
 precisely at any count — see the dataviz reference's anti-patterns list),
-no `Heatmap` (not supplied by this layer), and
+and
 deliberately **no dual-axis option on `BarChart`/`LineChart`** — that
 omission is not a gap to fill later, it's the one hard rule this layer
 does not bend on. No charting library is a dependency, and the scale/color
-helpers under `charts/internal/` stay unexported — this ships seven
+helpers under `charts/internal/` stay unexported — this ships ten
 components, not a general-purpose numerical or color library (see
 `atoms/internal/cx.ts`/`ui-vars.ts` for the same precedent one layer down).
 

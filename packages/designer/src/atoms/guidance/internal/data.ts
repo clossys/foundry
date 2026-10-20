@@ -2423,6 +2423,178 @@ export const ATOM_GUIDANCE: Readonly<Record<string, AtomGuidance>> = {
   ],
   "constraints": []
 }, "src/charts/ScatterChart.tsx"),
+  "depict.area-chart": entry(
+{
+  "purpose": "Compare how one or several quantities change or accumulate across ordered categories or time.",
+  "useWhen": "Filled magnitude, authored series totals or a normalized percentage composition answer the stated question.",
+  "avoidWhen": "Area overlap conceals the comparison, units differ between series or missing observations would be mistaken for zero.",
+  "alternatives": "Use LineChart for precise trends without filled areas, BarChart for categorical comparisons or a table for exact values.",
+  "content": "Author one consistent x domain, named same-length series and explicit null gaps; normalized and stacked quantities must be nonnegative.",
+  "anatomy": "Contiguous filled runs share axes, a named series legend, an inspection crosshair and an equivalent native data table.",
+  "composition": "In a consumer-owned trends block, place AreaChart beside period definitions and an explanation of magnitude, stacking or percentages.",
+  "accessibility": "Retain visible series names, keyboard inspection and the complete table; explain missing values rather than relying on the filled colour alone."
+},
+{
+  "exportName": "AreaChart",
+  "entrypoint": "charts",
+  "notes": "Represented scalar options are a bounded source-checked selection; consult the public prop type and chart README for data, labels, callbacks and other supported props. No Cartesian combination support or consumer demonstration is implied. The stacked prop is supported and described in the public chart contract, but is not a represented comparison axis here. Inspection and selection may be controlled; the server export preserves static geometry and table data.",
+  "options": [
+    {
+      "prop": "normalized",
+      "label": "Percentage composition",
+      "purpose": "Choose whether the visible series use authored magnitude or normalized column totals.",
+      "values": [
+        {
+          "value": false,
+          "purpose": "Retain authored magnitudes on one shared value scale."
+        },
+        {
+          "value": true,
+          "purpose": "Stack each nonzero column to a total of one hundred percent."
+        }
+      ],
+      "applicability": "Normalization implies stacking; all-zero columns remain zero and null values remain missing.",
+      "support": {
+        "state": "implemented",
+        "reason": "The directly imported shared chart view consumes this implemented boolean; callers still author data and accessible labels."
+      }
+    },
+    {
+      "prop": "smooth",
+      "label": "Interpolation",
+      "purpose": "Choose straight or smooth geometry within each contiguous nonmissing area run.",
+      "values": [
+        {
+          "value": false,
+          "purpose": "Connect adjacent samples with straight segments."
+        },
+        {
+          "value": true,
+          "purpose": "Use cubic interpolation within each nonmissing run."
+        }
+      ],
+      "applicability": "Smoothing never connects across an explicit null gap and does not change the table data.",
+      "support": {
+        "state": "implemented",
+        "reason": "The directly imported shared chart view consumes this implemented boolean; callers still author data and accessible labels."
+      }
+    }
+  ],
+  "constraints": [
+    {
+      "kind": "derived",
+      "props": [
+        "normalized",
+        "stacked"
+      ],
+      "reason": "Normalization implies stacking; an unstacked percentage mode is not a separate supported configuration.",
+      "enforcement": "derived",
+      "evidence": {
+        "source": "src/charts/internal/signature-geometry.ts",
+        "evidence": "const bottom = stacked || normalized ? bases[index]! : 0;"
+      }
+    },
+    {
+      "kind": "data",
+      "props": [
+        "x",
+        "series"
+      ],
+      "reason": "Every named series supplies one finite number or explicit null for each x; stacking and normalization refuse negative values.",
+      "enforcement": "runtime",
+      "evidence": {
+        "source": "src/charts/internal/signature-geometry.ts",
+        "evidence": "AreaChart series must have one value for every x."
+      }
+    }
+  ]
+}, "src/charts/AreaChart.tsx"),
+  "depict.heatmap": entry(
+{
+  "purpose": "Compare a rectangular set of magnitudes or categorical identities across named rows and columns.",
+  "useWhen": "The question concerns variation across two discrete dimensions and complete values remain available for inspection.",
+  "avoidWhen": "An unordered set needs precise rank comparisons, the category count exceeds eight identities or missing cells would be interpreted as zero.",
+  "alternatives": "Use BarChart for ranked magnitude, StatusStrip for interval history or a table when the cell values themselves are the primary task.",
+  "content": "Provide unique row and column names and a rectangular matrix; sequential data are finite numbers or null, while categorical identities use a stable domain.",
+  "anatomy": "A labelled matrix of cells shares a sequential ramp or categorical legend, a focused value readout and a complete native table.",
+  "composition": "In a consumer-owned capacity block, place Heatmap beside the meaning of each matrix dimension and its magnitude or identity legend.",
+  "accessibility": "Each cell exposes row, column and value in its name; arrow navigation and the native table retain access without colour matching."
+},
+{
+  "exportName": "Heatmap",
+  "entrypoint": "charts",
+  "notes": "Represented scalar options are a bounded source-checked selection; consult the public prop type and chart README for data, labels, callbacks and other supported props. No Cartesian combination support or consumer demonstration is implied. The categorical domain bounds identity encoding to eight entries. Controlled inspection uses row-major cell indices; the server export retains a static grid and native data table.",
+  "options": [
+    {
+      "prop": "categorical",
+      "label": "Encoding mode",
+      "purpose": "Choose a single-hue numeric magnitude ramp or stable categorical identity colours.",
+      "values": [
+        {
+          "value": false,
+          "purpose": "Map finite numeric magnitudes onto the seven-step sequential ramp."
+        },
+        {
+          "value": true,
+          "purpose": "Assign stable colours to at most eight distinct categorical identities."
+        }
+      ],
+      "applicability": "Sequential mode requires numbers or null; categorical mode accepts names or numbers within the declared identity domain.",
+      "support": {
+        "state": "implemented",
+        "reason": "The directly imported shared chart view consumes this implemented boolean; callers still author data and accessible labels."
+      }
+    }
+  ],
+  "constraints": [
+    {
+      "kind": "data",
+      "props": [
+        "rows",
+        "columns",
+        "values"
+      ],
+      "reason": "The matrix dimensions exactly match its unique nonblank row and column labels; null is a missing value rather than numeric zero.",
+      "enforcement": "runtime",
+      "evidence": {
+        "source": "src/charts/internal/signature-views.tsx",
+        "evidence": "Heatmap requires one value per row and column."
+      }
+    }
+  ]
+}, "src/charts/Heatmap.tsx"),
+  "depict.status-strip": entry(
+{
+  "purpose": "Show a compact chronological history of labelled states with widths proportional to their observed duration.",
+  "useWhen": "Uptime or program history consists of nonoverlapping intervals within a known observation window.",
+  "avoidWhen": "The task needs dependency editing or scheduling, interval bounds overlap or unobserved time would be presented as healthy operation.",
+  "alternatives": "Use RangeChart for authored activity intervals, LineChart for measured numeric trends or a table for detailed incident narratives.",
+  "content": "Author finite increasing bounds with ok, warn, error or unknown states; an optional full domain makes leading and trailing unknown periods explicit.",
+  "anatomy": "Chronological patterned segments share a time axis, a visible status legend, interval inspection and a gap-inclusive native table.",
+  "composition": "In a consumer-owned service-health block, place StatusStrip beside the observation window and the meaning of each operational state.",
+  "accessibility": "Every segment is named with its state and interval; distinct patterns, visible labels, keyboard inspection and table rows supplement colour."
+},
+{
+  "exportName": "StatusStrip",
+  "entrypoint": "charts",
+  "notes": "Represented scalar options are a bounded source-checked selection; consult the public prop type and chart README for data, labels, callbacks and other supported props. No Cartesian combination support or consumer demonstration is implied. No finite scalar configuration axis is represented for this interval-data component. Status keys belong to authored segment data. The server export retains the same chronological intervals, patterns and native table.",
+  "options": [],
+  "constraints": [
+    {
+      "kind": "data",
+      "props": [
+        "segments",
+        "domain"
+      ],
+      "reason": "Intervals must be finite, forward and nonoverlapping inside the observation domain; uncovered intervals are derived unknown segments.",
+      "enforcement": "runtime",
+      "evidence": {
+        "source": "src/charts/internal/signature-geometry.ts",
+        "evidence": "StatusStrip intervals overlap or fall outside the domain."
+      }
+    }
+  ]
+}, "src/charts/StatusStrip.tsx"),
   "enter.resize-handle": entry({
     purpose: "Adjust the bounded size of one adjacent content pane.",
     useWhen: "A host exposes a user-adjustable inline width or block height.",
@@ -4424,6 +4596,140 @@ export const ATOM_API_FACTS: Readonly<Record<string, AtomApiFacts>> = {
         }
       ]
     }
+  },
+  "depict.area-chart": {
+    "exportName": "AreaChart",
+    "source": "src/charts/AreaChart.tsx",
+    "options": [
+      {
+        "prop": "normalized",
+        "values": [
+          false,
+          true
+        ],
+        "default": {
+          "kind": "value",
+          "value": false,
+          "source": "src/charts/internal/signature-views.tsx",
+          "evidence": "normalized = false"
+        },
+        "forwarding": {
+          "source": "src/charts/internal/signature-views.tsx",
+          "evidence": "normalized = false"
+        }
+      },
+      {
+        "prop": "smooth",
+        "values": [
+          false,
+          true
+        ],
+        "default": {
+          "kind": "value",
+          "value": false,
+          "source": "src/charts/internal/signature-views.tsx",
+          "evidence": "smooth = false"
+        },
+        "forwarding": {
+          "source": "src/charts/internal/signature-views.tsx",
+          "evidence": "smooth = false"
+        }
+      }
+    ],
+    "tokens": {
+      "coverage": "partial",
+      "reason": "One representative chart colour binding is recorded with its actual helper and view consumption; this is not an exhaustive token inventory.",
+      "dependencies": [
+        {
+          "property": "--color-chart-categorical-1",
+          "kind": "transitive",
+          "source": "src/charts/internal/chart-vars.ts",
+          "evidence": "TOKENS[\"--color-chart-categorical-1\"]",
+          "via": [
+            {
+              "source": "src/charts/internal/signature-views.tsx",
+              "evidence": "fill={resolveSeriesColor("
+            },
+            {
+              "source": "src/charts/AreaChart.tsx",
+              "evidence": "<AreaView"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "depict.heatmap": {
+    "exportName": "Heatmap",
+    "source": "src/charts/Heatmap.tsx",
+    "options": [
+      {
+        "prop": "categorical",
+        "values": [
+          false,
+          true
+        ],
+        "default": {
+          "kind": "value",
+          "value": false,
+          "source": "src/charts/internal/signature-views.tsx",
+          "evidence": "categorical = false"
+        },
+        "forwarding": {
+          "source": "src/charts/internal/signature-views.tsx",
+          "evidence": "categorical = false"
+        }
+      }
+    ],
+    "tokens": {
+      "coverage": "partial",
+      "reason": "One representative chart colour binding is recorded with its actual helper and view consumption; this is not an exhaustive token inventory.",
+      "dependencies": [
+        {
+          "property": "--color-chart-sequential-100",
+          "kind": "transitive",
+          "source": "src/charts/internal/chart-vars.ts",
+          "evidence": "TOKENS[\"--color-chart-sequential-100\"]",
+          "via": [
+            {
+              "source": "src/charts/internal/signature-views.tsx",
+              "evidence": "chartSequentialVar("
+            },
+            {
+              "source": "src/charts/Heatmap.tsx",
+              "evidence": "<HeatmapView"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "depict.status-strip": {
+    "exportName": "StatusStrip",
+    "source": "src/charts/StatusStrip.tsx",
+    "options": [],
+    "tokens": {
+      "coverage": "partial",
+      "reason": "One representative chart colour binding is recorded with its actual helper and view consumption; this is not an exhaustive token inventory.",
+      "dependencies": [
+        {
+          "property": "--color-chart-categorical-1",
+          "kind": "transitive",
+          "source": "src/charts/internal/chart-vars.ts",
+          "evidence": "TOKENS[\"--color-chart-categorical-1\"]",
+          "via": [
+            {
+              "source": "src/charts/internal/signature-views.tsx",
+              "evidence": "fill={assignCategoricalColor(index)}"
+            },
+            {
+              "source": "src/charts/StatusStrip.tsx",
+              "evidence": "<StatusView"
+            }
+          ]
+        }
+      ]
+    }
   }
 };
 
@@ -4502,7 +4808,10 @@ export const ATOM_DISPLAY_GROUPS: readonly AtomDisplayGroup[] = [
           "depict.sparkline",
           "depict.waterfall-chart",
           "depict.range-chart",
-          "depict.scatter-chart"
+          "depict.scatter-chart",
+          "depict.area-chart",
+          "depict.heatmap",
+          "depict.status-strip"
         ]
       }
     ]
@@ -4627,4 +4936,6 @@ export const ATOM_COMPARISON = Object.freeze({
   "depict.waterfall-chart": comparison("depict.waterfall-chart", "fit"),
   "depict.range-chart": comparison("depict.range-chart", "fit"),
   "depict.scatter-chart": comparison("depict.scatter-chart", "fit"),
+  "depict.area-chart": comparison("depict.area-chart", "normalized", "smooth"),
+  "depict.heatmap": comparison("depict.heatmap", "categorical"),
 });
