@@ -75,7 +75,7 @@ describe("renderWebDocument optional AuthView frame", () => {
     null, [], true, {}, { ...frame, children: "payload" }, { ...frame, resolveCopy: null }, { ...frame, resolveAsset: null },
     { ...frame, resolveCopy: () => { throw new Error("payload"); } }, { ...frame, shell: null },
     { ...frame, shell: { ...frame.shell, extra: "payload" } }, { ...frame, presentation: { extra: true } },
-    ...["https:example.com", "https://example.com/.", "https://@example.com"].map(origin => ({ ...frame, shell: { ...frame.shell, origin } })),
+    ...["https:example.com", "https://example.com/.", "https://@www.example.test/"].map(origin => ({ ...frame, shell: { ...frame.shell, origin } })),
   ])("refuses malformed frame %j", value => {
     expect(() => renderWebDocument(doc, framed(value))).toThrow(RenderError);
     expect(() => renderWebDocument(doc, framed(value))).not.toThrow(/payload/);

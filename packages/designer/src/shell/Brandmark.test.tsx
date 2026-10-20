@@ -160,7 +160,7 @@ describe("Brandmark: optional public origin", () => {
   it.each([
     "javascript:alert(1)", "/path", "//example.com", "https:example.com",
     "https://example.com/path", "https://example.com/.", "https://example.com?x=1",
-    "https://example.com#section", "https://user@example.com", "https://@example.com",
+    "https://example.com#section", "https://user@example.com", "https://@www.example.test/",
     "http://example.com", "http://localhost.example.com", "ftp://example.com",
     " https://example.com", "https://example.com\n", "https:\\\\example.com", "", null, 42,
   ])("refuses malformed origin %j without echoing it", origin => {
