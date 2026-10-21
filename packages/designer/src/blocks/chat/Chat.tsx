@@ -13,7 +13,6 @@ import { defaultContent } from "./content.js";
 import type { ChatActions, ChatLabels, ChatMessage, ChatProps } from "./types.js";
 
 const PROGRESS_ROW_CLASSES = "flex flex-wrap items-center gap-sm text-body-s text-ink-secondary";
-const COMPOSER_TEXTAREA_CLASSES = "min-w-0 w-full resize-none overflow-y-auto max-h-6xl";
 
 function MessageAction({ label, icon, onPress }: { label: string; icon: IconNode; onPress: () => void }) {
   return <Tooltip trigger={<IconButton label={label} icon={icon} size="sm" onPress={onPress} />}>{label}</Tooltip>;
@@ -180,7 +179,7 @@ function ChatView({
           </> : null}
         </div>
         <div ref={composerRef} className="min-w-0">
-          <Textarea label={composerLabel} value={draft} onChange={setDraft} rows={1} placeholder={placeholder} textareaClassName={COMPOSER_TEXTAREA_CLASSES} />
+          <Textarea label={composerLabel} value={draft} onChange={setDraft} rows={1} placeholder={placeholder} textareaClassName="min-w-0 w-full resize-none overflow-y-auto max-h-6xl" />
         </div>
         <div className="flex flex-wrap justify-end gap-sm">
           {streaming && onStop ? <Button variant="secondary" onPress={onStop}>{stopLabel}</Button> : null}
