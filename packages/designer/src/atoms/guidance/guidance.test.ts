@@ -28,7 +28,7 @@ const exportedComponents = (layer: string) => {
 };
 const expectedPartition = [
   ["Interaction", ["Actions", ["Button", "IconButton", "Menu"]], ["Navigation", ["Link", "Breadcrumb", "Tabs"]], ["Inputs", ["TextField", "Textarea", "SearchField", "DateField", "Select", "ComboBox", "Checkbox", "Switch", "RadioGroup", "FileTrigger", "Field", "ResizeHandle"]]],
-  ["Content", ["Data display", ["Badge", "Chip", "Meter", "Table"]], ["Imagery", ["Avatar", "Icon"]], ["Charts", ["BarChart", "LineChart", "Sparkline", "WaterfallChart", "RangeChart", "ScatterChart", "AreaChart", "Heatmap", "StatusStrip"]]],
+  ["Content", ["Data display", ["Badge", "Chip", "Meter", "Table"]], ["Imagery", ["Avatar", "Icon", "Logomark"]], ["Charts", ["BarChart", "LineChart", "Sparkline", "WaterfallChart", "RangeChart", "ScatterChart", "AreaChart", "Heatmap", "StatusStrip"]]],
   ["Feedback", ["Messages", ["Banner", "StatusMark"]], ["Progress and loading", ["ProgressBar", "Spinner", "Skeleton"]]],
   ["Containment", ["Structure", ["Card", "Separator", "Disclosure"]], ["Overlays", ["Dialog", "Popover", "Tooltip"]]],
 ];
@@ -80,7 +80,7 @@ describe("shared atom guidance", () => {
     expect(additions.ATOM_GUIDANCE).toBeDefined();
     expect(additions.ATOM_API_FACTS).toBeDefined();
     const components = [...exportedComponents("atoms"), ...exportedComponents("charts")].sort();
-    expect(components).toHaveLength(44);
+    expect(components).toHaveLength(45);
     expect(Object.values(facts()).map(fact => fact.exportName).sort()).toEqual(components);
     expect(Object.keys(guidance()).sort()).toEqual(Object.keys(facts()).sort());
     const legacy = { ResizeHandle: "enter", Button: "act", IconButton: "act", Link: "act", Breadcrumb: "act", Menu: "act", TextField: "enter", Textarea: "enter", SearchField: "enter", DateField: "enter", Select: "enter", ComboBox: "enter", Checkbox: "enter", Switch: "enter", RadioGroup: "enter", FileTrigger: "enter", Field: "enter", Badge: "inform", Banner: "inform", Chip: "inform", StatusMark: "inform", Meter: "inform", ProgressBar: "inform", Spinner: "inform", Skeleton: "inform", Card: "group", Table: "group", Separator: "group", Avatar: "depict", Icon: "depict", Dialog: "reveal", Popover: "reveal", Tooltip: "reveal", Disclosure: "reveal", Tabs: "reveal" };
@@ -90,13 +90,13 @@ describe("shared atom guidance", () => {
     }
   });
 
-  it("pins four display groups, ten families and forty-four unique selectable leaves", () => {
+  it("pins four display groups, ten families and forty-five unique selectable leaves", () => {
     expect(additions.ATOM_DISPLAY_GROUPS).toBeDefined();
     expect(groups().map(group => [group.label, ...group.families.map((family: any) => [family.label, family.atoms.map((id: string) => facts()[id]?.exportName)])])).toEqual(expectedPartition);
     const leaves = groups().flatMap(group => group.families.flatMap((family: any) => family.atoms));
     expect(groups().flatMap(group => group.families)).toHaveLength(10);
-    expect(leaves).toHaveLength(44);
-    expect(new Set(leaves).size).toBe(44);
+    expect(leaves).toHaveLength(45);
+    expect(new Set(leaves).size).toBe(45);
     expect([...leaves].sort()).toEqual(Object.keys(guidance()).sort());
     expect(new Set(groups().map(group => group.id)).size).toBe(4);
     const families = groups().flatMap(group => group.families);
@@ -105,11 +105,11 @@ describe("shared atom guidance", () => {
   });
 
   it("gives each atom meaningful stable semantics separate from web implementation", () => {
-    expect(Object.keys(guidance())).toHaveLength(44);
+    expect(Object.keys(guidance())).toHaveLength(45);
     for (const field of ["purpose", "useWhen", "avoidWhen", "alternatives", "content", "anatomy", "composition", "accessibility"]) {
       const values = Object.values(guidance()).map(entry => entry[field]);
       expect(values.every(value => typeof value === "string" && value.trim().length > 24), field).toBe(true);
-      expect(new Set(values).size, field).toBe(44);
+      expect(new Set(values).size, field).toBe(45);
     }
     for (const entry of Object.values(guidance())) {
       expect(entry).not.toHaveProperty("props");
@@ -120,7 +120,7 @@ describe("shared atom guidance", () => {
   });
 
   it("records implementation evidence or explicit assessment absence for each medium", () => {
-    expect(Object.keys(guidance())).toHaveLength(44);
+    expect(Object.keys(guidance())).toHaveLength(45);
     for (const [id, entry] of Object.entries(guidance())) {
       expect(Object.keys(entry.media)).toEqual(["web", "email", "print", "video"]);
       for (const [medium, mediumEntry] of Object.entries(entry.media) as [string, any][]) {
@@ -142,7 +142,7 @@ describe("shared atom guidance", () => {
   });
 
   it("checks represented option names and complete finite value sets against real TypeScript props", () => {
-    expect(Object.keys(facts())).toHaveLength(44);
+    expect(Object.keys(facts())).toHaveLength(45);
     const paths = Object.values(facts()).map(fact => join(root, fact.source));
     const filename = join(root, "atom-guidance-consumer.check.ts");
     const consumer = `
@@ -229,7 +229,7 @@ describe("shared atom guidance", () => {
   });
 
   it("links token dependencies to consumed source evidence with explicit coverage", () => {
-    expect(Object.keys(facts())).toHaveLength(44);
+    expect(Object.keys(facts())).toHaveLength(45);
     for (const [id, fact] of Object.entries(facts())) {
       expect(["partial", "none-owned"]).toContain(fact.tokens.coverage);
       expect(fact.tokens.reason.length).toBeGreaterThan(20);
@@ -516,6 +516,12 @@ const comparisonGolden: Record<string, {
     columns: {"option": "size", "values": ["sm", "md", "lg"]},
     maxCells: 3,
     retainedCells: 3,
+  },
+  "depict.logomark": {
+    columns: {"option": "plate", "values": ["shared", "self"]},
+    rows: {"option": "size", "values": ["sm", "md", "lg"]},
+    maxCells: 6,
+    retainedCells: 6,
   },
   "reveal.dialog": {
     columns: {"option": "size", "values": ["sm", "md", "lg"]},
