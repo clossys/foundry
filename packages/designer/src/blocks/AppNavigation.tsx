@@ -7,8 +7,9 @@ import { cx } from "../atoms/internal/cx.js";
 import { ChevronDown } from "../icons/ChevronDown.js";
 import { ChevronLeft } from "../icons/ChevronLeft.js";
 import { ChevronRight } from "../icons/ChevronRight.js";
-import { Drawer, type DrawerProps } from "./Drawer.js";
+import { Drawer } from "./Drawer.js";
 import { Panel } from "./Panel.js";
+import { getAppNavigationCloseStyle } from "./app-navigation-layout.js";
 import { getAppNavigationAncestry, type AppNavigationNode } from "./app-navigation-tree.js";
 
 export interface AppNavigationProps {
@@ -100,18 +101,17 @@ export function AppNavigation({
   const collapsed = !narrow && (suppliedCollapsed ?? internalCollapsed);
   const nav = useRef<HTMLElement>(null);
   const corner = useRef<HTMLSpanElement>(null);
-  const [closeButtonStyle, setCloseButtonStyle] = useState<DrawerProps["closeButtonStyle"]>();
+  const [cornerMeasurement, setCornerMeasurement] = useState<{ top: number; left: number; right: number; rtl: boolean }>();
   const customTrigger = trigger !== undefined;
   useEffect(() => {
-    if (!narrow || !requested || !customTrigger) { setCloseButtonStyle(undefined); return; }
+    if (!narrow || !requested || !customTrigger) { setCornerMeasurement(undefined); return; }
     const measure = () => {
       const opener = corner.current?.querySelector<HTMLElement>("button, a");
       if (!opener) return;
       const rect = opener.getBoundingClientRect();
       const computed = getComputedStyle(opener).direction;
-      const direction = computed === "rtl" || (!computed && opener.closest<HTMLElement>("[dir]")?.dir === "rtl") ? "rtl" : "ltr";
-      setCloseButtonStyle({ position: "fixed", direction, insetBlockStart: rect.top,
-        insetInlineStart: direction === "rtl" ? `calc(100% - ${rect.right}px)` : rect.left, insetInlineEnd: "auto" });
+      const rtl = computed === "rtl" || (!computed && opener.closest<HTMLElement>("[dir]")?.dir === "rtl");
+      setCornerMeasurement({ top: rect.top, left: rect.left, right: rect.right, rtl });
     };
     measure(); window.addEventListener("resize", measure);
     return () => window.removeEventListener("resize", measure);
@@ -226,16 +226,24 @@ export function AppNavigation({
   </nav>;
   const changeCollapsed = () => { setCollapsed(!collapsed); onCollapsedChange?.(!collapsed); };
   const wideControl = collapsed
-    ? <Button variant="ghost" className="icon-control-md shrink-0 border-0 bg-transparent p-0 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent"
-        aria-expanded={false} aria-label={expandLabel ?? openLabel} onPress={changeCollapsed}><Icon glyph={ChevronRight} decorative size="sm" className="rtl:rotate-180" /></Button>
-    : <Button variant="ghost" className="icon-control-md shrink-0 border-0 bg-transparent p-0 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent"
-        aria-expanded={true} aria-label={collapseLabel ?? closeLabel} onPress={changeCollapsed}><Icon glyph={ChevronLeft} decorative size="sm" className="rtl:rotate-180" /></Button>;
+    ? expandLabel === undefined
+      ? <Button variant="ghost" className="icon-control-md shrink-0 border-0 bg-transparent p-0 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent"
+          aria-expanded={false} aria-label={openLabel} onPress={changeCollapsed}><Icon glyph={ChevronRight} decorative size="sm" className="rtl:rotate-180" /></Button>
+      : <Button variant="ghost" className="icon-control-md shrink-0 border-0 bg-transparent p-0 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent"
+          aria-expanded={false} aria-label={expandLabel} onPress={changeCollapsed}><Icon glyph={ChevronRight} decorative size="sm" className="rtl:rotate-180" /></Button>
+    : collapseLabel === undefined
+      ? <Button variant="ghost" className="icon-control-md shrink-0 border-0 bg-transparent p-0 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent"
+          aria-expanded={true} aria-label={closeLabel} onPress={changeCollapsed}><Icon glyph={ChevronLeft} decorative size="sm" className="rtl:rotate-180" /></Button>
+      : <Button variant="ghost" className="icon-control-md shrink-0 border-0 bg-transparent p-0 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent"
+          aria-expanded={true} aria-label={collapseLabel} onPress={changeCollapsed}><Icon glyph={ChevronLeft} decorative size="sm" className="rtl:rotate-180" /></Button>;
   const control = <span ref={corner} id={instance + "-trigger"} className="contents">{trigger ?? (narrow
     ? <Button variant="ghost" className="icon-control-md shrink-0 border-0 bg-transparent p-0 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent"
         aria-expanded={requested} aria-label={openLabel}><Icon glyph={ChevronRight} decorative size="sm" className="rtl:rotate-180" /></Button>
-    : <CornerTooltip trigger={wideControl} label={collapsed ? openLabel : closeLabel} requests={tooltipRequests} />)}</span>;
+    : collapsed
+      ? <CornerTooltip trigger={wideControl} label={openLabel} requests={tooltipRequests} />
+      : <CornerTooltip trigger={wideControl} label={closeLabel} requests={tooltipRequests} />)}</span>;
   if (narrow) return <Drawer trigger={control}
-    heading={<span className="sr-only">{label}</span>} closeLabel={closeLabel} closeButtonStyle={closeButtonStyle} navigationKey={route} dismissAt={dismissAt}
+    heading={<span className="sr-only">{label}</span>} closeLabel={closeLabel} closeButtonStyle={getAppNavigationCloseStyle(cornerMeasurement)} navigationKey={route} dismissAt={dismissAt}
     isOpen={requested} onOpenChange={changeOpen} className="gap-xs p-sm">{links}</Drawer>;
   return <>{control}{!collapsed && <Panel className="h-full min-h-0 shrink-0 gap-xs rounded-none border-0 p-sm"
     style={{ inlineSize: "var(--ui-layout-sidebar-w, 256px)" }}>{links}</Panel>}</>;

@@ -4,6 +4,7 @@ import { fireEvent, render, screen, waitFor, within } from "@testing-library/rea
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AppNavigation } from "./AppNavigation.js";
+import { getAppNavigationCloseStyle } from "./app-navigation-layout.js";
 import type { AppNavigationNode } from "./app-navigation-tree.js";
 
 const action = vi.fn();
@@ -30,6 +31,29 @@ beforeEach(() => {
 afterEach(() => { document.documentElement.dir = ""; vi.unstubAllGlobals(); });
 
 describe("AppNavigation", () => {
+  it.each([
+    [{}, "Open navigation", "Close navigation"],
+    [{ openLabel: "Show destinations", closeLabel: "Hide destinations" }, "Show destinations", "Hide destinations"],
+    [{ openLabel: "Show destinations", closeLabel: "Hide destinations", expandLabel: "Expand destinations", collapseLabel: "Collapse destinations" }, "Expand destinations", "Collapse destinations"],
+  ] as const)("preserves both wide label branches and their host aliases for %j", async (copy, openName, closeName) => {
+    render(<AppNavigation tree={tree} defaultCollapsed {...copy} />);
+    const opener = screen.getByRole("button", { name: openName });
+    expect(opener).toHaveAttribute("aria-expanded", "false");
+    await userEvent.click(opener);
+    const closer = screen.getByRole("button", { name: closeName });
+    expect(closer).toBe(opener);
+    expect(closer).toHaveAttribute("aria-expanded", "true");
+    await userEvent.click(closer);
+    expect(screen.getByRole("button", { name: openName })).toBe(opener);
+  });
+
+  it("keeps the technical close position equivalent for measured LTR and RTL corners", () => {
+    const rect = { top: 35, left: 755, right: 799 };
+    expect(getAppNavigationCloseStyle({ ...rect, rtl: false })).toEqual({ position: "fixed", direction: "ltr", insetBlockStart: 35, insetInlineStart: 755, insetInlineEnd: "auto" });
+    expect(getAppNavigationCloseStyle({ ...rect, rtl: true })).toEqual({ position: "fixed", direction: "rtl", insetBlockStart: 35, insetInlineStart: "calc(100% - 799px)", insetInlineEnd: "auto" });
+    expect(getAppNavigationCloseStyle(undefined)).toBeUndefined();
+  });
+
   it("uses host copy for panel toggles and both disclosure states", async () => {
     const formatDisclosureLabel = vi.fn((label: string, expanded: boolean) => (expanded ? "Fermer " : "Ouvrir ") + label);
     const copy = { expandLabel: "Agrandir", collapseLabel: "Reduire", formatDisclosureLabel };
