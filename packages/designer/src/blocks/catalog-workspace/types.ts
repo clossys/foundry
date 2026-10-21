@@ -6,7 +6,7 @@ export interface CatalogWorkspaceItem {
   readonly kind: string;
   readonly badge?: string;
   readonly tag?: string;
-  /** Presence marks a group, including an empty group. At most three levels. */
+  /** Presence marks a folder, including an empty folder. Depth is unrestricted. */
   readonly children?: readonly CatalogWorkspaceItem[];
 }
 export interface CatalogWorkspaceSize {
@@ -16,7 +16,7 @@ export interface CatalogWorkspaceSize {
   step?: number;
 }
 export interface CatalogWorkspaceProps {
-  /** A supplied forest, bounded to 1,000 nodes and three levels. IDs are preserved verbatim. */
+  /** A supplied forest, bounded to 10,000 nodes at any depth. IDs are preserved verbatim. */
   items: readonly CatalogWorkspaceItem[];
   selectedId: string | null;
   onSelect: (id: string) => void;
