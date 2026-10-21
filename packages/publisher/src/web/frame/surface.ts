@@ -16,7 +16,7 @@ export const SITE_SURFACE_KINDS: readonly SiteSurfaceKind[] = Object.freeze(["si
  *   link, marked current, with the brand leading at every width; and
  *   `origin` set, so the brand and root-relative legal links point at the public site.
  *
- * Every kind shares the brand, the skip link, the ground and the legal row, so
+ * Every kind shares the brand, the skip link, the footer ground and the legal row, so
  * a visitor sees one header and one footer across the brand's surfaces.
  */
 export function siteShellFor(config: SiteFrameConfig, kind: SiteSurfaceKind): SiteShellInput {
@@ -34,11 +34,8 @@ export function siteShellFor(config: SiteFrameConfig, kind: SiteSurfaceKind): Si
       ...shared,
       ...(site.header === undefined ? {} : { header: site.header }),
       ...(site.nav === undefined ? {} : { nav: site.nav }),
-      ...(site.iconActions === undefined ? {} : { iconActions: site.iconActions }),
       ...(site.actions === undefined ? {} : { actions: site.actions }),
-      ...(site.secondaryAction === undefined ? {} : { secondaryAction: site.secondaryAction }),
       ...(site.navPlacement === undefined ? {} : { navPlacement: site.navPlacement }),
-      ...(site.mobileLayout === undefined ? {} : { mobileLayout: site.mobileLayout }),
       footer: {
         ...(site.columns === undefined ? {} : { columns: site.columns }),
         ...(site.footerLinks === undefined ? {} : { links: site.footerLinks }),
@@ -50,7 +47,6 @@ export function siteShellFor(config: SiteFrameConfig, kind: SiteSurfaceKind): Si
   return {
     ...shared,
     origin: config.origin,
-    mobileLayout: "inline",
     ...(config.environments === undefined
       ? {}
       : {

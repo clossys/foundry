@@ -5056,19 +5056,20 @@ prop" shape every block in this README already follows; see `SiteHeader`'s
 own doc comment for why it's `shell`, not `blocks`, despite reading like a
 `PageHeader`-shaped composition of named regions.
 
-`navPlacement="centered"` and `mobileLayout="menu-brand-action"` are the
-shared defaults. Equal side tracks center navigation on the whole header;
-`NavDisclosure` measures intrinsic brand/link/action widths and collapses
-before collision. Mobile centers the supplied mark on the whole bar, not on
-the space left between the controls, with menu at inline-start and a supplied
-primary icon or empty track at inline-end. The mobile brand hides wordmark
-text only: a `Brandmark` mark stays visible (an image, a shared plate holding
-an image, or an accent mark tagged `data-brand-mark`), and the link keeps its
-`aria-label` as its name while the wordmark is hidden. The layout mirrors
-in RTL. `secondaryAction` renders before `actions` in the trailing region.
-Explicit `navPlacement="leading"` or `mobileLayout="inline"` retain legacy
-positioning rather than the default geometry. DOM order remains brand, nav,
-actions, and the header adds no brand symbol.
+`navPlacement="centered"` is the desktop default; `"leading"` places
+navigation beside the brand on wide headers. Both use one responsive layout:
+mobile puts the menu at inline-start, centers the mark on the whole bar, and
+keeps the actions at inline-end. Equal side tracks keep an asymmetric set of
+controls from displacing the mark. The mobile brand hides only the wordmark;
+the image or accent mark stays visible and the link retains its accessible
+name. The layout mirrors in RTL. DOM order stays brand, nav, actions.
+
+The one `actions` slot orders recognized `SiteHeader.ActionLink` children from
+ghost through secondary to primary, including fragments containing only these
+links. Primary is last in DOM order, at inline-end on desktop and lowest in a
+stacked menu. Unknown custom children keep their authored positions, props and
+relative order; the host owns their importance and order. The header adds no
+brand symbol or duplicate content.
 
 ```tsx
 <SiteHeader
@@ -5080,23 +5081,21 @@ actions, and the header adds no brand symbol.
       <Link href="/pricing" variant="standalone">Pricing</Link>
     </NavShell>
   }
-  secondaryAction={<Link href="/sign-in" variant="standalone">Sign in</Link>}
-  actions={<Link href="/pricing" variant="standalone">Pricing</Link>}
+  actions={<>
+    <SiteHeader.ActionLink href="/sign-in" label="Sign in" variant="ghost" />
+    <SiteHeader.ActionLink href="/pricing" label="Pricing" variant="secondary" />
+  </>}
 />
 ```
 
-`surfaceLabel` names the surface a staff or demo host serves, such as `"admin"`
-or `"demo"`: a neutral `Badge` rendered last in the trailing region, after
-`secondaryAction` and `actions`, in either placement. It is text only by type,
-so no link, button or icon can be passed and it is never interactive; a member
-host omits it.
+The trailing region has no surface badge. Use named environment links in the
+same actions list to identify the current environment.
 
 ```tsx
-<SiteHeader brand={<Link href="/" variant="standalone">Acme</Link>} surfaceLabel="admin" />
+<SiteHeader brand={<Link href="/" variant="standalone">Acme</Link>} actions={<SiteHeader.ActionLink href="/admin" label="Admin" isCurrent />} />
 ```
 
-`surfaceLabel` is superseded by environment links and stays for existing
-callers. `SiteHeader.ActionLink` is one header call to action: a real
+`SiteHeader.ActionLink` is one header call to action: a real
 `<a>` with a `label` and an optional caller-supplied `IconNode` glyph. Without
 an icon, the label is plain visible text at every width. With an icon, from the
 `tablet` breakpoint up it shows the icon and the label; below it the label is
@@ -5126,13 +5125,12 @@ import { Home, Settings } from "@clossys/designer/icons";
 looks as `Button` at its small size. `ActionLink` is a server-safe component
 from both `@clossys/designer/shell` and `@clossys/designer/shell/server`.
 
-`placement` (`"flow"` by default) decides where the header sits. `"flow"` is
-the header in normal document flow, unchanged from earlier releases.
-`"overlay"` fixes the header to the top of the viewport over the first block,
-taking no height in the document: transparent at the top of the page, then a
-glass plate once the page scrolls beneath it. The glass is
-`--color-surface-glass` (or `--color-surface-glass-inverse`) behind a
-`--blur-glass` backdrop blur, over a hairline in the matching line role.
+`surface` is the single header surface setting. `"solid"` (default) is an
+in-flow plate with a hairline. `"transparent"` never paints a plate or border.
+`"glass"` fixes the header over the first block, taking no document height:
+transparent at the scroll origin, then translucent and blurred after scrolling
+or while a menu is open. The glass is `--color-surface-glass` (or
+`--color-surface-glass-inverse`) behind `--blur-glass`, with a matching hairline.
 The shipped blur is 20px. Glass alpha is measured separately for each theme
 and polarity against both white and black backdrops: light-theme base/inverse
 use 0.60/0.85, dark-theme base/inverse use 0.86/0.60. These are the lowest
@@ -5142,14 +5140,13 @@ rerun the unchanged contrast gate when changing those tokens.
 
 - `tone` (`"base"` by default, or `"inverse"`) sets the header's inherited
   ink (`ink-primary` or `ink-on-inverse`) and the matching glass, so the ink
-  follows the matching plate as the header turns to glass. Tones are theme-relative, like
+  follows the plate on all three surfaces. Tones are theme-relative, like
   the tokens: `base` is dark ink on a light ground only in the light theme.
-  In `"overlay"`, `ground` is not read.
 - `tone` governs inherited ink only. A child that sets its own ink keeps it:
   `Link` in every variant (`standalone` is `ink-primary`, `default` is
   `ink-link`, `muted` is `ink-muted`), an explicitly toned `Brandmark` and
-  `SiteHeader.ActionLink`'s `ghost` look (`ink-primary` with no plate). With
-  `tone="inverse"` those read dark on dark glass. `ActionLink`'s `primary`
+  custom content may therefore need `text-inherit` on inverse surfaces.
+  Header ghost ActionLinks and navigation inherit the header ink. `ActionLink`'s `primary`
   and `secondary` looks carry their own fill, so they read on either tone.
   An unconfigured header Brandmark inherits the live header ink for its
   wordmark while retaining the accent logomark and `markInk="image"` opt-out.
@@ -5188,7 +5185,7 @@ rerun the unchanged contrast gate when changing those tokens.
   photographic or arbitrary hero art the page supplies its own top scrim and
   a tone that reads over it in both themes.
 
-The header is fixed rather than absolutely positioned (which would scroll
+The glass header is fixed rather than absolutely positioned (which would scroll
 away before it could turn to glass) or stuck (which reserves its height in
 flow). These hosting requirements apply to a standalone header; Publisher
 `SiteFrame` supplies shared header clearance for its main, skip and anchor
@@ -5198,7 +5195,7 @@ targets. A standalone page supplies the following:
   scrolls inside a container instead, the root never scrolls and the header
   stays transparent over content.
 - **The first block reserves the header's height.** No header-height value is
-  exported; the height changes with wrapping, text zoom and `surfaceLabel`,
+  exported; the height changes with wrapping and text zoom,
   so measure it in the page or pad generously.
 - **The root sets `scroll-padding-top`** to at least the header's height. It
   lands in-page anchors below the header, and it keeps a focused element
@@ -5216,7 +5213,7 @@ targets. A standalone page supplies the following:
 
 ```tsx
 <SiteHeader
-  placement="overlay"
+  surface="glass"
   tone="inverse"
   brand={<a href="/" className="text-inherit">Acme</a>}
   actions={<a href="/sign-in" className="text-inherit">Sign in</a>}
@@ -5270,7 +5267,6 @@ import { NavDisclosure, SiteHeader } from "@clossys/designer/shell";
 import { Home } from "@clossys/designer/icons";
 
 <SiteHeader
-  mobileLayout="menu-brand-action"
   brand={<a href="/"><img src="/logo.svg" alt="Example" style={{ maxWidth: "100%", height: "auto" }} /></a>}
   nav={
     <NavDisclosure aria-label="Primary" trigger="icon" triggerLabel="Menu">
@@ -5404,11 +5400,9 @@ both document directions. No browser-driver npm dependency is required.
 
 #### Transparent chrome and full width
 
-`SiteHeader` accepts `ground="transparent"` for chrome that sits over a
-page backdrop. It renders no `bg-*` class, no `border-*` class and no
-border-width style. Ink is unchanged from `"base"`: `SiteHeader` still sets
-none, so its content inherits its ink from the page. `ground` still defaults
-to `"base"`, and the header's `"base"` and `"inverse"` markup is unchanged.
+`SiteHeader surface="transparent"` sits over a page backdrop without a plate,
+border class or border-width style. `tone="base"` (default) sets ordinary ink;
+`tone="inverse"` selects inverse ink independently of the surface.
 `SiteFooter ground="transparent"` omits its outer border and the divider
 between `columns` and `secondary`, while retaining its local dark surface
 and paired light ink. Its `ground` default remains `"base"`.
@@ -5421,7 +5415,7 @@ import { SiteFooter, SiteHeader } from "@clossys/designer/shell";
 export function Chrome() {
   return (
     <>
-      <SiteHeader ground="transparent" brand={<a href="/">Example Co</a>} />
+      <SiteHeader surface="transparent" brand={<a href="/">Example Co</a>} />
       <SiteFooter
         ground="transparent"
         secondary={<SiteFooter.Legal entity="Example Co" links={[{ label: "Privacy", href: "/privacy" }]} />}
@@ -5438,11 +5432,8 @@ the full viewport width, inset only by the `--ui-width-page-padding-x` token;
 page content stays in `Shell.Main`'s container. A test pins this for every
 ground.
 
-For `SiteHeader`, `ground="transparent-inverse"` is the same no-plate,
-no-border chrome for a page that is itself on the inverse ground
-(`bg-surface-inverse` with `text-ink-on-inverse`). `SiteHeader` renders
-exactly as it does for `"transparent"`, since it sets no ink and inherits
-the page's. `SiteFooter ground="transparent-inverse"` retains the same local
+For `SiteHeader`, `surface="transparent" tone="inverse"` is no-plate,
+no-border chrome with inverse ink. `SiteFooter ground="transparent-inverse"` retains the same local
 dark surface and paired light primary and secondary ink as its other
 grounds, while omitting borders and the internal divider.
 
@@ -5452,7 +5443,7 @@ import { SiteFooter, SiteHeader } from "@clossys/designer/shell";
 export function InverseChrome() {
   return (
     <div className="bg-surface-inverse text-ink-on-inverse">
-      <SiteHeader ground="transparent-inverse" brand={<a href="/">Example Co</a>} />
+      <SiteHeader surface="transparent" tone="inverse" brand={<a href="/">Example Co</a>} />
       <SiteFooter
         ground="transparent-inverse"
         secondary={<SiteFooter.Legal entity="Example Co" links={[{ label: "Privacy", href: "/privacy" }]} />}
@@ -5462,10 +5453,10 @@ export function InverseChrome() {
 }
 ```
 
-Neither transparent ground checks the contrast of the chrome ink over
-whatever sits beneath it. That is the consumer's backdrop's job: choose a
-backdrop the base ink reads against, use `"transparent-inverse"` over the
-inverse ground, or use `ground="inverse"` for an opaque dark band.
+Transparent header surfaces require a backdrop that supports the selected
+ink in both themes. Choose `tone="inverse"` over inverse ground, or
+`surface="solid" tone="inverse"` for an opaque header plate. Footer ground
+behavior is independent and unchanged.
 
 ### `Logomark` and `Lockup`
 
@@ -6908,7 +6899,7 @@ not a grab-bag).
 | `SkipLink` | component | Keyboard affordance to bypass nav chrome and jump straight to a page's content. Visually hidden until focused. |
 | `SkipLinkProps` | type | Props for `SkipLink`: `targetId` (the jump target's `id`), `children` (the link's own visible text — no built-in copy), `className`. |
 | `SiteHeader` | component | Public-site top chrome: brand slot, primary navigation slot (leading or centered), secondary action slot, actions slot. Renders the page's `banner` landmark. |
-| `SiteHeaderProps` | type | Props for `SiteHeader`: `brand` (required), `nav`, `navPlacement` (`"centered"` default; explicit `"leading"` retains legacy positioning), `mobileLayout` (`"menu-brand-action"` default; explicit `"inline"` retains legacy positioning), `secondaryAction`, `actions`, `surfaceLabel` (text-only badge, last in the trailing region), plus every native `<header>` attribute. |
+| `SiteHeaderProps` | type | Props for `SiteHeader`: `brand` (required), `nav`, ordered `actions`, `navPlacement` (`"centered"` default or `"leading"`), `surface` (`"solid"` default, `"transparent"`, `"glass"`), `tone` (`"base"` default or `"inverse"`), `menuOpen`, plus native `<header>` attributes. |
 | `NavShell` | component | The responsive half of a public site's navigation: an inline `<nav>` from `tablet` up, a trigger-plus-drawer below it. |
 | `NavDisclosure` | component | A non-modal navigation: a mobile sheet below `tablet`, an inline row from `tablet` up, and inline links when scripting is unavailable. |
 | `NavDisclosureProps` | type | Props for `NavDisclosure`: required `children`, `aria-label` (default `"Primary"`), `triggerLabel` (default `"Menu"`), `trigger` (`"label"` default, or `"icon"`), and landmark `className`. |
@@ -7868,12 +7859,12 @@ const report = checkConsumerArtContract(art);
 ### Site chrome tone and transparent footer rule
 
 `Brandmark tone="inverse"` uses inverse wordmark ink; `"auto"` keeps the base
-ink. A `Brandmark` passed directly to an overlay `SiteHeader` follows the header tone
+ink. A `Brandmark` passed directly to a `SiteHeader` follows the header tone
 unless its own tone is explicit. A `Brandmark` passed directly to any `SiteHeader`
 paints its logomark in the accent token unless it sets `markInk="image"`. `NavDisclosure tone="inverse"` uses inverse
-trigger ink at rest, on hover, when expanded and on keyboard focus. An omitted
-nav tone follows an inverse overlay header; an explicit `"auto"` keeps base ink.
-Both controls otherwise retain their existing default markup.
+trigger ink at rest, on hover, when expanded and on keyboard focus. Navigation
+inside a SiteHeader inherits its tone on every surface when no standalone
+tone is set. Outside a SiteHeader, both controls retain their existing defaults.
 
 `SiteFooter ground="transparent" rule="top"` adds a token-bound top hairline
 on its local dark surface without a divider inside the footer. `rule`
@@ -7956,7 +7947,12 @@ tablet breakpoint; supply another media query when the host's wide layout
 starts elsewhere. Changing `navigationKey` or entering that query dismisses
 an open drawer, as does ordinary in-panel link navigation. No motion is added.
 The close control renders the `X` glyph through the `Icon` atom as decoration;
-`closeLabel` supplies the control's accessible name.
+`closeLabel` supplies the control's accessible name. The optional
+`closeButtonStyle` layout hook positions that same control from a measured opener
+rectangle and direction; it accepts only position, logical insets and direction.
+The opted-in close reports `aria-expanded="true"` while visible. Omission preserves
+the existing header placement and markup; the host does not replace its action,
+label, focus restoration or Dialog lifecycle.
 
 `wide="sheet"` makes the Drawer an application side sheet that opens at every
 viewport width, for example an inspector at `placement="end"`. It ignores
@@ -8087,6 +8083,12 @@ export function CommandExample() {
 }
 ```
 
+The general `Popover` atom also accepts an optional `anchorRef` positioning
+reference. Omission keeps its actual trigger as the anchor. A different anchor
+changes positioning only: the trigger still owns opening, Escape, outside
+interaction and focus restoration. AppFrame uses its bar reference to align the
+page-information overlay and supplies direction through the existing style hook.
+
 ## Application navigation
 
 `AppNavigation` is a Block Material for host-owned destinations. Supply stable
@@ -8113,8 +8115,10 @@ export function NavigationExample() {
 ```
 
 The host places the Material in a height-constrained frame region. Links scroll
-independently of `footer`, which accepts plain children and imports no account
-control. Navigation stores no preferences, fetches no data and imports no router.
+independently of optional `header` and `footer` slots, which accept plain
+children and import no account control. The header precedes destinations; the
+footer follows them. No title row is synthesized. A frame may supply its own
+`trigger` wired to controlled open/collapsed state. Navigation stores no preferences, fetches no data and imports no router.
 `activeId` takes precedence over `activeHref`; ancestry and breadcrumbs derive
 only from that route identity, with no view-internal selection input.
 
@@ -8125,9 +8129,11 @@ root-to-destination node chain, with id taking precedence over href.
 
 Desktop parents expand inline. A destination link and its disclosure button are
 separate controls. A newly active child expands its ancestor. `collapsed` controls
-the named, tooltipped icon rail; `defaultCollapsed` supplies its initial local
-state and `onCollapsedChange` reports changes. Every child destination remains
-reachable in the rail. Long labels retain their complete accessible names.
+the full panel: when closed, only the named corner control remains, without an
+icon rail. `defaultCollapsed` supplies its initial local state and
+`onCollapsedChange` reports changes. Closing hands destination focus to the
+corner control; reopening retains the active ancestry. Long labels keep their
+complete accessible names.
 
 The narrow layout uses the existing Drawer with full rows. `dismissAt` defaults
 to `(min-width: 768px)`. Escape returns focus; route changes, actions and entering
@@ -8137,8 +8143,10 @@ the trigger. `onDrawerOpenChange` lets the host coordinate other overlays.
 `navigationKey`, `label`, `openLabel` and `closeLabel` are host inputs. The Drawer close control
 uses a 44px ghost icon button; `closeLabel` supplies its accessible name.
 `expandLabel`, `collapseLabel` and `formatDisclosureLabel(nodeLabel, expanded)`
-let the host translate rail toggles and disclosures; their defaults preserve the
-English expand/collapse announcements. All message props are optional.
+let the host translate panel toggles and disclosures. The first two are optional
+legacy aliases for the wide open/close labels; the default control uses
+`openLabel` and `closeLabel`. Disclosure defaults retain the English
+expand/collapse announcements. All message props are optional.
 
 Arrow Up/Down and Home/End move among visible navigation controls. Logical
 Left/Right expand or collapse a parent, reversing in RTL. Enter/Space activate
@@ -8427,26 +8435,25 @@ gap. Results retain authored node order and identical inputs/options yield
 byte-identical JSON. The fixed 500-node chain fixture with 300 iterations has
 a 4,000ms test budget; this is a fixture budget, not a runtime deadline.
 
-### PageHeader in Standard entity Views
+### Standard entity Views in AppFrame
 
 Publisher's Standard `IndexView` and `DetailsView` arrange entity administration
-content inside an AppFrame content region. Both use this package's `PageHeader`
-Block for the page title and its supporting line: their public `title` maps to
-`PageHeader.title`, and their public **`subtitle` maps to `PageHeader.description`**.
-The Designer prop remains `description`. The Views own no frame chrome.
+content inside an AppFrame content region. AppFrame's `page` contract owns the
+page title, description, breadcrumb and page actions. Content Views start with
+their content Blocks and use explicit accessible labels for collections and tabs.
 
 IndexView composes Toolbar, DataTable (or a typed collection Block), EmptyState and
-optional Pagination. DetailsView composes the Breadcrumb and Tabs atoms with
-SectionHeader and typed DetailView, Panel, Stat, StatusList or RecordLedger
-sections. One normalized layout groups main sections before a narrow aside, or
-uses a single column in the original section order. Local section states use
-Skeleton, EmptyState and a danger Banner without replacing the page. An empty
-section list uses EmptyState; a record-wide banner slot sits under PageHeader.
-Block slots keep their existing props and controlled behavior. The host binds
-`tab` and `onTabChange` to its URL. These interactive Views use Publisher's client
-entry, render during ordinary SSR and have explicit wrong-channel stubs under
-`react-server`; importing Designer's server Blocks does not make the interactive
-Views server components. See Publisher's README for the public View contracts.
+optional Pagination. DetailsView composes Tabs with SectionHeader and typed
+DetailView, Panel, Stat, StatusList or RecordLedger sections. One normalized layout
+groups main sections before a narrow aside, or uses a single column in the original
+section order. Local section states use Skeleton, EmptyState and a danger Banner.
+An empty section list uses EmptyState; a content-notice banner slot comes before
+tabs and sections. Block slots keep their existing props and controlled behavior.
+The host binds `tab` and `onTabChange` to its URL. These interactive Views use
+Publisher's client entry, render during ordinary SSR and have explicit
+wrong-channel stubs under `react-server`; importing Designer's server Blocks does
+not make the interactive Views server components. See Publisher's README for the
+public View contracts.
 
 
 ### CatalogWorkspace
@@ -8694,3 +8701,17 @@ Ordinary inline trees use the base `TreeNode` shape.
 | `indexTree` | function | Validate and index supplied nodes without copying or mutating them. |
 | `getTreeAncestry` | function | Return exact root-to-target caller nodes in ancestry order. |
 | `getTreeBreadcrumbs` | function | Project validated ancestry into plain breadcrumb records. |
+
+### Chat
+
+`Chat` presents a controlled conversation log and composer inside a bounded panel. Supply `messages`, `status` and `onSend`; the host updates the thread and handles cancellation, retry, suggestions and optional message actions. Consecutive messages share an author group, streamed text follows the bottom until the reader scrolls up, and Jump to latest resumes following. Enter sends, Shift+Enter inserts a newline, and Escape calls `onStop` while streaming.
+
+The default renderer supports paragraphs, flat lists, inline code, fenced code with a copy control and safe explicit links. HTML stays escaped text. `renderContent(message, defaultContent)` supplies a trusted React slot for host content. `labels` overrides the documented default copy; `label` names the region and `labels.logLabel` names the live log. Import the Designer styles and give the containing panel a height. The block uses the current light or dark theme tokens.
+
+| Export | Kind | Description |
+| --- | --- | --- |
+| `Chat` | component | Message log, composer, stable streaming/error row, suggestions and optional message actions. |
+| `ChatProps` | type | Controlled messages/status, callbacks, content slot, optional actions and labels. |
+| `ChatMessage` | type | Stable id, user/assistant role, text content and optional display timestamp. |
+| `ChatActions` | type | Optional copy, regeneration and up/down feedback callbacks. |
+| `ChatLabels` | type | Optional host copy overrides with documented English defaults. |

@@ -23,12 +23,12 @@ vi.doUnmock("#publisher-frame-navigation");
 vi.resetModules();
 const { SiteFrame: ClientFrame } = await import("./SiteFrame.js");
 
-it.each(["auto", "inverse", undefined] as const)("hydrates the real frame with %s navigation tone and preserves interaction", async tone => {
+it.each(["base", "inverse"] as const)("hydrates the real frame with %s header tone and preserves interaction", async tone => {
   const shell = {
     brand: { assetId: "mark", label: { id: "Home" }, size: "md", variant: "mark" },
     skipLink: { id: "Skip" },
-    header: { placement: "overlay", tone: "inverse" },
-    nav: { label: { id: "Primary" }, triggerLabel: { id: "Menu" }, links: [{ href: "#help", label: { id: "Help" } }], ...(tone === undefined ? {} : { tone }) },
+    header: { surface: "glass", tone },
+    nav: { label: { id: "Primary" }, triggerLabel: { id: "Menu" }, links: [{ href: "#help", label: { id: "Help" } }] },
   } as SiteShellInput;
   const server = renderToString(<ServerFrame shell={shell} resolveCopy={resolveCopy} resolveAsset={resolveAsset}><p>content</p></ServerFrame>);
   const tree = <ClientFrame shell={shell} resolveCopy={resolveCopy} resolveAsset={resolveAsset}><p>content</p></ClientFrame>;
@@ -43,9 +43,8 @@ it.each(["auto", "inverse", undefined] as const)("hydrates the real frame with %
   try {
     const navigation = within(container).getByRole("navigation", { name: "Primary" });
     const toggle = within(navigation).getByRole("button", { name: "Menu" });
-    expect(toggle.getAttribute("data-tone")).toBe(tone ?? null);
-    if (tone === "inverse") expect(toggle).toHaveClass("text-ink-on-inverse", "focus-visible:outline-ink-on-inverse");
-    if (tone === "auto") expect(toggle).toHaveClass("text-ink-primary", "focus-visible:outline-accent");
+    expect(toggle).not.toHaveAttribute("data-tone");
+    expect(container.querySelector("header")).toHaveAttribute("data-tone", tone);
     expect(toggle).toHaveAttribute("aria-controls", panelId!);
     expect(navigation.querySelector(".nav-disclosure-panel")!.id).toBe(panelId);
     const user = userEvent.setup();

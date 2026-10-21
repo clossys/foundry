@@ -84,7 +84,8 @@ describe("publisher-preview main — brand coverage gate", () => {
     for (const name of ["index", "details"]) {
       const view = page.querySelector(`main[aria-label="publisher-preview-${name}"]`);
       expect(view).not.toBeNull();
-      expect(view?.querySelectorAll("h1")).toHaveLength(1);
+      expect(view?.querySelectorAll("h1")).toHaveLength(0);
+      expect(view?.querySelector("header")).toBeNull();
       expect(view?.querySelector("main, footer, [role=banner], [role=contentinfo]")).toBeNull();
     }
     const sectioned = page.querySelector('main[aria-label="publisher-preview-sectioned"]');

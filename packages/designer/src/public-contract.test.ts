@@ -413,6 +413,26 @@ describe("compiled catalog export cleanup", () => {
   }, 15_000);
 });
 
+describe("compiled SiteHeader single-surface public contract", () => {
+  it("exports the exact surface vocabulary and refuses retired fields through every declaration entry", () => {
+    const filename = join(packageRoot, "emitted-site-header-consumer.check.ts");
+    const source = ["index.js", "shell/index.js", "shell/server.js"].map((entry, index) => `
+      import { type SiteHeaderProps as Props${index}, type SiteHeaderSurface as Surface${index} } from ${JSON.stringify(join(packageRoot, "dist", entry))};
+      type Same${index}<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ? true : false;
+      const exact${index}: Same${index}<Surface${index}, "solid" | "transparent" | "glass"> = true;
+      const valid${index}: Props${index} = { brand: "Example", surface: "glass", tone: "inverse" };
+      type Retired${index} = "ground" | "placement" | "secondaryAction" | "surfaceLabel" | "mobileLayout";
+      const absent${index}: Extract<keyof Props${index}, Retired${index}> extends never ? true : false = true;
+    `).join("\n");
+    const options = { strict: true, noEmit: true, skipLibCheck: true, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler };
+    const host = ts.createCompilerHost(options);
+    const original = host.getSourceFile.bind(host);
+    host.getSourceFile = (path, language, error, fresh) => path === filename ? ts.createSourceFile(path, source, language, true) : original(path, language, error, fresh);
+    const diagnostics = ts.getPreEmitDiagnostics(ts.createProgram([filename], options, host));
+    expect(ts.formatDiagnosticsWithColorAndContext(diagnostics, { getCurrentDirectory: () => packageRoot, getCanonicalFileName: path => path, getNewLine: () => "\n" })).toBe("");
+  });
+});
+
 describe("compiled Tree public contract", () => {
   it("pins the Tree exports through both blocks barrels", () => {
     for (const subpath of ["@clossys/designer/blocks", "@clossys/designer/blocks/server"]) {

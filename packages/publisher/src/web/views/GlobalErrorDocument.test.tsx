@@ -60,7 +60,6 @@ const resolveAsset = (assetId: string): unknown =>
 const shell: SiteShellInput = {
   brand: { assetId: "brand-mark", label: ref("brand.label"), size: "md", variant: "mark" },
   skipLink: ref("skip"),
-  surfaceLabel: ref("surface"),
   footer: {
     legal: {
       entity: ref("legal.entity"),
@@ -187,12 +186,13 @@ describe("GlobalErrorDocument", () => {
       expect(main.querySelector(".rounded-control")).toBeNull();
     });
 
-    it("puts the banner before the main and the contentinfo after it, with the shell's surface badge and legal row", () => {
+    it("puts the banner before the main and the contentinfo after it, with the shell's resolved brand and legal row", () => {
       const markup = renderToStaticMarkup(<GlobalErrorDocument {...framedProps} />);
       expect(markup.indexOf("<header")).toBeLessThan(markup.indexOf("<main"));
       expect(markup.lastIndexOf("<footer")).toBeGreaterThan(markup.indexOf("</main>"));
       const body = parse().body;
-      expect(body.querySelector("header")?.textContent).toContain("Sign in");
+      expect(body.querySelector('header a[aria-label="Example home"]')).not.toBeNull();
+      expect(body.querySelector("header")?.textContent).not.toContain("Sign in");
       expect(body.querySelector("footer")?.textContent).toContain("Example Ltd");
       expect(body.querySelector('footer a[href="/terms"]')).not.toBeNull();
     });

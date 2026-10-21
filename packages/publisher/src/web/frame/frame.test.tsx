@@ -93,8 +93,7 @@ const CONFIG: SiteFrameConfig = {
   origin: "https://example.com",
   site: {
     nav: { label: ref("nav.label"), links: [{ href: "/pricing", label: ref("nav.pricing") }, { href: "/docs", label: ref("nav.docs") }] },
-    actions: [{ href: "/start", label: ref("cta.start") }],
-    secondaryAction: { href: "https://app.example.com/", label: ref("cta.signin") },
+    actions: [{ href: "/start", label: ref("cta.start") }, { href: "https://app.example.com/", label: ref("cta.signin") }],
     columns: [{ heading: ref("footer.company"), links: [{ href: "/about", label: ref("footer.about") }] }],
   },
   environments: [
@@ -380,8 +379,7 @@ describe("SiteFrame", () => {
       const site = siteShellFor(CONFIG, "site");
       const resolved = resolveShell({ ...site, origin: "https://example.com" }, resolveCopy, resolveAsset);
       expect(resolved.nav?.links.map((link) => link.href)).toEqual(["https://example.com/pricing", "https://example.com/docs"]);
-      expect(resolved.actions.map((link) => link.href)).toEqual(["https://example.com/start"]);
-      expect(resolved.secondaryAction?.href).toBe("https://app.example.com/");
+      expect(resolved.actions.map((link) => link.href)).toEqual(["https://example.com/start", "https://app.example.com/"]);
       expect(resolved.footer?.columns[0]?.links.map((link) => link.href)).toEqual(["https://example.com/about"]);
     });
 
@@ -510,14 +508,13 @@ const CHROME_VALUES: Readonly<Record<string, unknown>> = {
   secondaryAction: <a href="/signin">Sign in</a>,
   ground: "base",
   footerSecondary: <p>Legal</p>,
-  surfaceLabel: "Admin",
 };
 
 const LEGACY_KEYS: ReadonlyArray<readonly [string, (chrome: Record<string, unknown>) => ReactElement, readonly string[]]> = [
   [
     "AuthView",
     (chrome) => <AuthView heading="Sign in" description="Welcome back." form={null} {...chrome} />,
-    ["brand", "header", "footer", "mainId", "nav", "headerAction", "headerSecondaryAction", "ground", "footerSecondary", "surfaceLabel"],
+    ["brand", "header", "footer", "mainId", "nav", "headerAction", "headerSecondaryAction", "ground", "footerSecondary"],
   ],
   [
     "CaptureView",
@@ -563,7 +560,7 @@ describe("siteShellFor", () => {
   it("site: navigation, calls to action and footer columns, links relative to its own host", () => {
     const shell = siteShellFor(CONFIG, "site");
     expect(shell.nav?.links).toHaveLength(2);
-    expect(shell.actions).toHaveLength(1);
+    expect(shell.actions).toHaveLength(2);
     expect(shell.footer?.columns).toHaveLength(1);
     expect(shell.environments).toBeUndefined();
     expect(shell.origin).toBeUndefined();
@@ -579,7 +576,7 @@ describe("siteShellFor", () => {
     expect(shell.actions).toBeUndefined();
     expect(shell.footer?.columns).toBeUndefined();
     expect(shell.origin).toBe("https://example.com");
-    expect(shell.mobileLayout).toBe("inline");
+    expect(shell).not.toHaveProperty("mobileLayout");
     expect(shell.environments).toHaveLength(1);
     expect(shell.environments?.[0]?.isCurrent).toBe(true);
 
@@ -604,9 +601,10 @@ describe("siteShellFor", () => {
   });
 
   it("preserves explicitly reserved site bytes and its same-host brand link", () => {
-    const config: SiteFrameConfig = { brand: CONFIG.brand, skipLink: CONFIG.skipLink, origin: CONFIG.origin, legal: CONFIG.legal, site: { header: { placement: "reserved" } } };
+    const config: SiteFrameConfig = { brand: CONFIG.brand, skipLink: CONFIG.skipLink, origin: CONFIG.origin, legal: CONFIG.legal, site: { header: { surface: "solid" } } };
     const html = renderToStaticMarkup(frame(siteShellFor(config, "site"), <p>content</p>));
-    expect(createHash("sha256").update(html).digest("hex")).toBe("390aff3580abb0b61c33b18eabb539a33f865ea37f24f72367118e9eeb427de1");
+    expect(html).toContain('data-surface="solid"');
+    expect(html).not.toContain('data-placement="overlay"');
     const { container } = render(frame(siteShellFor(config, "site"), <p>content</p>));
     expect(container.querySelector('header a[aria-label="Example home"]')).toHaveAttribute("href", "/");
   });
@@ -748,7 +746,6 @@ describe("SiteFrame list keys", () => {
     const shell: SiteShellInput = {
       ...siteShellFor(CONFIG, "site"),
       nav: { label: ref("nav.label"), links: [headerRepeated, headerRepeated] },
-      secondaryAction: undefined,
       actions: [{ ...headerRepeated, emphasis: "secondary" }, { ...headerRepeated, emphasis: "ghost" }],
       footer: {
         columns: [
@@ -780,8 +777,7 @@ describe("SiteFrame list keys", () => {
 const ICON_LINK = { href: "/contact", label: ref("icon.contact"), icon: ICON };
 const ALL_SLOTS: SiteShellInput = {
   ...siteShellFor(CONFIG, "site"),
-  actions: [],
-  iconActions: [ICON_LINK],
+  actions: [ICON_LINK],
   environments: [{ href: "/app", label: ref("env.app"), icon: ICON }],
   footer: {
     ...siteShellFor(CONFIG, "site").footer!,
@@ -797,7 +793,7 @@ describe("SiteFrame icon slots", () => {
     const contact = within(banner).getByRole("link", { name: "Contact" });
     expect(contact).toHaveAttribute("href", "/contact");
     expect(contact).toHaveTextContent("Contact");
-    expect(contact.querySelector("svg")).toBeNull();
+    expect(contact.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
     const footer = getByRole("contentinfo");
     const social = within(footer).getByRole("navigation", { name: "Profiles" });
     const profile = within(social).getByRole("link", { name: "Profile" });
@@ -815,16 +811,16 @@ describe("SiteFrame icon slots", () => {
     const focusable = [...container.querySelectorAll<HTMLElement>('a[href],button,input,select,textarea,[tabindex]')]
       .filter((element) => element.tabIndex >= 0);
     expect(focusable.map((element) => element.getAttribute("aria-label") ?? element.textContent)).toEqual([
-      "Skip to content", "Example home", "Primary", "Pricing", "Docs", "App", "Sign in", "Contact", "App",
+      "Skip to content", "Example home", "Primary", "Pricing", "Docs", "App", "Contact",
       "About", "Help", "Privacy", "Terms", "Profile", "Example home",
     ]);
   });
 
   it("omits empty slots byte for byte", () => {
     const shell = siteShellFor(CONFIG, "site");
-    const omitted = renderToStaticMarkup(frame(shell, <p>content</p>));
+    const omitted = renderToStaticMarkup(frame({ ...shell, actions: [] }, <p>content</p>));
     for (const social of [{ links: [] }, { label: ref("social.label"), links: [] }]) {
-      expect(renderToStaticMarkup(frame({ ...shell, iconActions: [], footer: { ...shell.footer!, links: [], social } }, <p>content</p>))).toBe(omitted);
+      expect(renderToStaticMarkup(frame({ ...shell, actions: [], footer: { ...shell.footer!, links: [], social } }, <p>content</p>))).toBe(omitted);
     }
   });
 
@@ -832,7 +828,7 @@ describe("SiteFrame icon slots", () => {
     const bare: SiteShellInput = { brand: CONFIG.brand, skipLink: CONFIG.skipLink, footer: { legal: CONFIG.legal } };
     const baseline = renderToStaticMarkup(frame(bare, <p>content</p>));
     for (const social of [{ links: [] }, { label: ref("social.label"), links: [] }]) {
-      const shell: SiteShellInput = { ...bare, iconActions: [], footer: { ...bare.footer!, links: [], social } };
+      const shell: SiteShellInput = { ...bare, actions: [], footer: { ...bare.footer!, links: [], social } };
       expect(renderToStaticMarkup(frame(shell, <p>content</p>))).toBe(baseline);
       const { container, unmount } = render(frame(shell, <p>content</p>));
       // Empty right track is structural and noninteractive; no disclosure is invented.
@@ -890,24 +886,24 @@ describe("SiteFrame icon slots", () => {
     };
     const withIconLink = (entry: unknown, social = false) => social
       ? { ...ALL_SLOTS, footer: { ...ALL_SLOTS.footer, social: { links: [entry] } } }
-      : { ...ALL_SLOTS, iconActions: [entry] };
+      : { ...ALL_SLOTS, actions: [entry] };
 
     it("refuses unknown icon-link and social keys without echoing values", () => {
       for (const social of [false, true]) {
-        assertRefusal(withIconLink({ ...ICON_LINK, extra: "private-value" }, social), social ? "shell.footer.social.links[0]" : "shell.iconActions[0]", "private-value");
+        assertRefusal(withIconLink({ ...ICON_LINK, extra: "private-value" }, social), social ? "shell.footer.social.links[0]" : "shell.actions[0]", "private-value");
       }
       assertRefusal({ ...ALL_SLOTS, footer: { ...ALL_SLOTS.footer, social: { links: [], extra: "private-value" } } }, "shell.footer.social", "private-value");
     });
 
     it.each(["javascript:alert(1)", "//unsafe.example/path", "/unsafe\u0000path"])("refuses unsafe href %j in each new slot", (value) => {
-      assertRefusal(withIconLink({ ...ICON_LINK, href: value }), "shell.iconActions[0].href", value);
+      assertRefusal(withIconLink({ ...ICON_LINK, href: value }), "shell.actions[0].href", value);
       assertRefusal(withIconLink({ ...ICON_LINK, href: value }, true), "shell.footer.social.links[0].href", value);
       assertRefusal({ ...ALL_SLOTS, footer: { ...ALL_SLOTS.footer, links: [{ href: value, label: ref("footer.help") }] } }, "shell.footer.links[0].href", value);
     });
 
     it.each([undefined, ref("unresolved-label"), ref("blank"), "literal-label"])("refuses missing unresolved blank or literal label %j", (label) => {
       for (const social of [false, true]) {
-        assertRefusal(withIconLink({ ...ICON_LINK, label }, social), social ? "shell.footer.social.links[0].label" : "shell.iconActions[0].label", typeof label === "string" ? label : label?.id ?? "missing-label");
+        assertRefusal(withIconLink({ ...ICON_LINK, label }, social), social ? "shell.footer.social.links[0].label" : "shell.actions[0].label", typeof label === "string" ? label : label?.id ?? "missing-label");
       }
     });
 
@@ -922,22 +918,22 @@ describe("SiteFrame icon slots", () => {
     ])("refuses non-shape icon data %j", (node) => {
       // Wrap parameterised tuples so each case remains an IconNode array.
       for (const social of [false, true]) {
-        assertRefusal(withIconLink({ ...ICON_LINK, icon: [node] }, social), social ? "shell.footer.social.links[0].icon" : "shell.iconActions[0].icon", "forbidden-value");
+        assertRefusal(withIconLink({ ...ICON_LINK, icon: [node] }, social), social ? "shell.footer.social.links[0].icon" : "shell.actions[0].icon", "forbidden-value");
       }
     });
   });
 });
 
 describe("siteShellFor icon slots", () => {
-  const config: SiteFrameConfig = { ...CONFIG, site: { ...CONFIG.site, iconActions: ALL_SLOTS.iconActions, footerLinks: ALL_SLOTS.footer!.links, social: ALL_SLOTS.footer!.social } };
+  const config: SiteFrameConfig = { ...CONFIG, site: { ...CONFIG.site, actions: ALL_SLOTS.actions, footerLinks: ALL_SLOTS.footer!.links, social: ALL_SLOTS.footer!.social } };
   it("passes all three slots only to the site", () => {
     const site = siteShellFor(config, "site");
-    expect(site.iconActions).toEqual(ALL_SLOTS.iconActions);
+    expect(site.actions).toEqual(ALL_SLOTS.actions);
     expect(site.footer?.links).toEqual(ALL_SLOTS.footer!.links);
     expect(site.footer?.social).toEqual(ALL_SLOTS.footer!.social);
     for (const kind of ["front-door", "admin", "demo"] as const) {
       const shell = siteShellFor(config, kind);
-      expect(shell).not.toHaveProperty("iconActions");
+      expect(shell).not.toHaveProperty("actions");
       expect(shell.footer).not.toHaveProperty("links");
       expect(shell.footer).not.toHaveProperty("social");
     }
@@ -947,7 +943,7 @@ describe("siteShellFor icon slots", () => {
 
 describe("frame header placement", () => {
   it.each([undefined, "base", "inverse"] as const)("mounts Designer's overlay placement with tone %s and keeps one skip link and one main", (tone) => {
-    const shell: SiteShellInput = { ...FRONT_DOOR_SHELL, header: { placement: "overlay", ...(tone === undefined ? {} : { tone }) } };
+    const shell: SiteShellInput = { ...FRONT_DOOR_SHELL, header: { surface: "glass", ...(tone === undefined ? {} : { tone }) } };
     const { container } = render(frame(shell, <p>content</p>));
     const header = container.querySelector("header")!;
     expect(header).toHaveAttribute("data-placement", "overlay");
@@ -959,35 +955,32 @@ describe("frame header placement", () => {
     expect(container.querySelector("main")).toHaveAttribute("id", SITE_MAIN_ID);
   });
 
-  it.each(["inverse", "transparent"] as const)("header ground %s paints only the reserved header while the footer keeps shell ground", (ground) => {
-    const { container } = render(frame({ ...FRONT_DOOR_SHELL, ground: "base", header: { placement: "reserved", ground } }, <p>content</p>));
-    if (ground === "inverse") expect(container.querySelector("header")).toHaveClass("bg-surface-inverse");
-    else expect(container.querySelector("header")).not.toHaveClass("bg-surface-raised");
+  it.each(["solid", "transparent"] as const)("header %s surface and tone are independent of the footer fallback", surface => {
+    const { container } = render(frame({ ...FRONT_DOOR_SHELL, ground: "base", header: { surface, tone: "inverse" } }, <p>content</p>));
+    const header = container.querySelector("header")!;
+    expect(header).toHaveAttribute("data-surface", surface);
+    expect(header).toHaveClass("text-ink-on-inverse");
+    expect(header.classList.contains("bg-surface-inverse")).toBe(surface === "solid");
     expect(container.querySelector("footer")).toHaveClass("bg-surface-raised");
-    expect(container.querySelector("header")).not.toHaveAttribute("data-placement");
+    expect(header).not.toHaveAttribute("data-placement");
   });
 
-  it("defaults to overlay and retains shell ground for explicit reserved chrome", () => {
+  it("defaults to solid/base independently of the existing footer ground fallback", () => {
     const omitted = renderToStaticMarkup(frame({ ...FRONT_DOOR_SHELL, ground: "inverse" }, <p>content</p>));
     expect(renderToStaticMarkup(frame({ ...FRONT_DOOR_SHELL, ground: "inverse", header: {} }, <p>content</p>))).toBe(omitted);
-    expect(omitted).toMatch(/<header[^>]*data-placement="overlay"/);
-    const reserved = renderToStaticMarkup(frame({ ...FRONT_DOOR_SHELL, ground: "inverse", header: { placement: "reserved" } }, <p>content</p>));
-    expect(reserved).toMatch(/<header[^>]*bg-surface-inverse/);
-    expect(reserved).not.toMatch(/<header[^>]*data-placement="overlay"/);
+    expect(omitted).toMatch(/<header[^>]*data-surface="solid"[^>]*data-tone="base"/);
+    expect(omitted).not.toMatch(/<header[^>]*data-placement="overlay"/);
+    expect(omitted).toMatch(/<footer[^>]*bg-surface-inverse/);
   });
 
   it.each([
     [{ unknown: "PAYLOAD-SENTINEL" }, /shell\.header has an unsupported field/],
-    [{ placement: "PAYLOAD-SENTINEL" }, /shell\.header\.placement/],
-    [{ ground: "PAYLOAD-SENTINEL" }, /shell\.header\.ground/],
-    [{ placement: "overlay", tone: "PAYLOAD-SENTINEL" }, /shell\.header\.tone/],
-    [{ placement: "overlay", ground: "inverse" }, /shell\.header\.ground/],
-    [{ placement: "overlay", ground: "PAYLOAD-SENTINEL" }, /shell\.header\.ground/],
-    [{ placement: "overlay", ground: undefined }, /shell\.header\.ground/],
-    [{ placement: "reserved", tone: "inverse" }, /shell\.header\.tone/],
-    [{ placement: "reserved", tone: "PAYLOAD-SENTINEL" }, /shell\.header\.tone/],
-    [{ placement: "reserved", tone: undefined }, /shell\.header\.tone/],
-    [{ placement: "reserved", tone: "base" }, /shell\.header\.tone/],
+    [{ placement: "PAYLOAD-SENTINEL" }, /shell\.header has an unsupported field/],
+    [{ ground: "PAYLOAD-SENTINEL" }, /shell\.header has an unsupported field/],
+    [{ surface: "PAYLOAD-SENTINEL" }, /shell\.header\.surface/],
+    [{ surface: "glass", tone: "PAYLOAD-SENTINEL" }, /shell\.header\.tone/],
+    [{ surface: "solid", tone: "PAYLOAD-SENTINEL" }, /shell\.header\.tone/],
+    [{ surface: "transparent", tone: "PAYLOAD-SENTINEL" }, /shell\.header\.tone/],
     [null, /shell\.header must be a plain object/],
     [[], /shell\.header must be a plain object/],
     ["PAYLOAD-SENTINEL", /shell\.header must be a plain object/],
@@ -998,7 +991,7 @@ describe("frame header placement", () => {
   });
 
   it("siteShellFor passes header to the site surface only", () => {
-    const header = { placement: "overlay", tone: "inverse" } as const;
+    const header = { surface: "glass", tone: "inverse" } as const;
     const config: SiteFrameConfig = { ...CONFIG, site: { ...CONFIG.site, header } };
     expect(siteShellFor(config, "site").header).toEqual(header);
     for (const kind of ["front-door", "admin", "demo"] as const) {
@@ -1015,7 +1008,7 @@ describe("frame header placement", () => {
   });
 
   it("keeps overlay links fail-closed", () => {
-    const shell = { ...FRONT_DOOR_SHELL, header: { placement: "overlay" }, actions: [{ href: "javascript:PAYLOAD-SENTINEL", label: ref("cta.start") }] };
+    const shell = { ...FRONT_DOOR_SHELL, header: { surface: "glass" }, actions: [{ href: "javascript:PAYLOAD-SENTINEL", label: ref("cta.start") }] };
     const attempt = () => renderToStaticMarkup(frame(shell as SiteShellInput, <p>content</p>));
     expect(attempt).toThrow(/shell\.actions\[0\]\.href is not an allowed link/);
     expect(attempt).not.toThrow(/PAYLOAD-SENTINEL/);
@@ -1023,10 +1016,11 @@ describe("frame header placement", () => {
 });
 
 
-it("an omitted header uses the same automatic overlay defaults as an empty header", () => {
+it("an omitted header uses the same solid defaults as an empty header", () => {
   expect(renderToStaticMarkup(frame(FRONT_DOOR_SHELL, <p>content</p>))).toBe(renderToStaticMarkup(frame({ ...FRONT_DOOR_SHELL, header: {} }, <p>content</p>)));
   const { container } = render(frame(FRONT_DOOR_SHELL, <p>content</p>));
-  expect(container.querySelector("header")).toHaveClass("site-header-overlay", "site-header-ground-aware");
+  expect(container.querySelector("header")).toHaveClass("bg-surface-raised");
+  expect(container.querySelector("header")).not.toHaveClass("site-header-overlay", "site-header-ground-aware");
   expect(container.querySelector("main")).toHaveAttribute("tabindex", "-1");
   expect(container.querySelectorAll("main,header,footer")).toHaveLength(3);
 });
@@ -1065,12 +1059,12 @@ describe("SiteFrame chrome parity", () => {
     }
   });
   it("paints an inverse footer independently of a base header", () => {
-    const { container } = render(frame({ ...FRONT_DOOR_SHELL, ground: "base", header: { placement: "reserved" }, footer: { ...FRONT_DOOR_SHELL.footer!, ground: "inverse" } } as SiteShellInput, <p>content</p>));
+    const { container } = render(frame({ ...FRONT_DOOR_SHELL, ground: "base", header: { surface: "solid" }, footer: { ...FRONT_DOOR_SHELL.footer!, ground: "inverse" } } as SiteShellInput, <p>content</p>));
     expect(container.querySelector("header")).toHaveClass("bg-surface-raised");
     expect(container.querySelector("footer")).toHaveClass("bg-surface-inverse");
   });
   it("defaults footer ground to shell ground even with a different reserved header ground", () => {
-    const { container } = render(frame({ ...FRONT_DOOR_SHELL, ground: "inverse", header: { placement: "reserved", ground: "base" } }, <p>content</p>));
+    const { container } = render(frame({ ...FRONT_DOOR_SHELL, ground: "inverse", header: { surface: "solid", tone: "base" } }, <p>content</p>));
     expect(container.querySelector("header")).toHaveClass("bg-surface-raised");
     expect(container.querySelector("footer")).toHaveClass("bg-surface-inverse");
   });
@@ -1087,7 +1081,7 @@ function overlayHero() {
 }
 
 it("keeps overlay legal links keyboard reachable and pointer operable", async () => {
-  const shell = { ...FRONT_DOOR_SHELL, header: { placement: "overlay", tone: "inverse" }, environments: [], footer: { placement: "overlay", legal: { ...CONFIG.legal, linksLabel: undefined } } } as SiteShellInput;
+  const shell = { ...FRONT_DOOR_SHELL, header: { surface: "glass", tone: "inverse" }, environments: [], footer: { placement: "overlay", legal: { ...CONFIG.legal, linksLabel: undefined } } } as SiteShellInput;
   const user = userEvent.setup();
   const { container } = render(frame(shell, overlayHero()));
   const footer = within(container).getByRole("contentinfo");
@@ -1122,7 +1116,7 @@ it("keeps a tall overlay footer safely aligned without clipping its tab stops", 
   const links = Array.from({ length: 30 }, (_, index) => ({ href: `/legal-${index}`, label: ref("legal.privacy") }));
   // Beyond the five-link flat row, the other twenty-five links arrive as labelled columns.
   const columns = Array.from({ length: 5 }, (_, column) => ({ heading: ref("footer.company"), links: links.slice(column * 5, column * 5 + 5) }));
-  const shell: SiteShellInput = { ...FRONT_DOOR_SHELL, header: { placement: "overlay", tone: "inverse" }, environments: [], footer: { placement: "overlay", columns, legal: { entity: ref("legal.entity"), links: links.slice(25) } } };
+  const shell: SiteShellInput = { ...FRONT_DOOR_SHELL, header: { surface: "glass", tone: "inverse" }, environments: [], footer: { placement: "overlay", columns, legal: { entity: ref("legal.entity"), links: links.slice(25) } } };
   const user = userEvent.setup();
   const { container } = render(frame(shell, overlayHero()));
   const footer = within(container).getByRole("contentinfo");
@@ -1174,7 +1168,7 @@ describe("HEADER-1 finite content contract", () => {
 
 it("HEADER-1 renders flat presentation settings through the shared normalizer", () => {
   const props = { shell: { brand: CONFIG.brand, skipLink: ref("skip") }, resolveCopy, resolveAsset };
-  const { container } = render(<SiteFrame {...props} presentation={{ headerPlacement: "overlay", headerTone: "inverse" }}><h1>Owned by the View</h1></SiteFrame>);
+  const { container } = render(<SiteFrame {...props} presentation={{ headerSurface: "glass", headerTone: "inverse" }}><h1>Owned by the View</h1></SiteFrame>);
   const header = container.querySelector("header")!;
   expect(header).toHaveAttribute("data-tone", "inverse");
   expect(header).toHaveAttribute("data-placement", "overlay");
@@ -1184,21 +1178,21 @@ it("HEADER-1 renders flat presentation settings through the shared normalizer", 
   expect(container.querySelector("main")).toHaveAttribute("tabindex", "-1");
   expect(container.firstElementChild).toHaveClass("min-h-dvh", "flex-col");
   expect(container.querySelector("main")).toHaveClass("flex-1");
-  expect(() => renderToStaticMarkup(<SiteFrame {...props} presentation={{ headerPlacement: "reserved", headerTone: "inverse" }}><p>Content</p></SiteFrame>)).toThrow(/config/);
-  expect(renderToStaticMarkup(<SiteFrame {...props} presentation={{ headerTone: "inverse" }}><p>Content</p></SiteFrame>)).toContain('data-placement="overlay"');
+  expect(renderToStaticMarkup(<SiteFrame {...props} presentation={{ headerSurface: "solid", headerTone: "inverse" }}><p>Content</p></SiteFrame>)).toContain('data-surface="solid" data-tone="inverse"');
+  expect(renderToStaticMarkup(<SiteFrame {...props} presentation={{ headerTone: "inverse" }}><p>Content</p></SiteFrame>)).toContain('data-surface="solid"');
 });
 
 
 it("HEADER-1 normalizes implicit legacy controls into distinct finite variants, and counts every interactive slot", () => {
   const base: SiteShellInput = { brand: CONFIG.brand, skipLink: ref("skip") };
   const link = { href: "/docs", label: ref("nav.docs") };
-  const resolved = resolveShell({ ...base, secondaryAction: link, actions: [link] }, resolveCopy, resolveAsset);
-  expect(resolved.headerActions.map(action => action.emphasis)).toEqual(["secondary", "ghost"]);
-  expect(() => resolveShell({ ...base, secondaryAction: link, actions: [link], iconActions: [{ ...link, icon: ICON }], environments: [{ ...link, icon: ICON }] }, resolveCopy, resolveAsset)).toThrow(/three/);
-  const { container } = render(frame({ ...base, secondaryAction: link, actions: [link] }, <p>Content</p>));
+  const resolved = resolveShell({ ...base, actions: [link, link] }, resolveCopy, resolveAsset);
+  expect(resolved.headerActions.map(action => action.emphasis)).toEqual(["ghost", "secondary"]);
+  expect(() => resolveShell({ ...base, actions: [link, link, { ...link, icon: ICON }], environments: [{ ...link, icon: ICON }] }, resolveCopy, resolveAsset)).toThrow(/three/);
+  const { container } = render(frame({ ...base, actions: [link, link] }, <p>Content</p>));
   expect(container.querySelectorAll('header a[href="/docs"]')).toHaveLength(2);
   expect(container.querySelector('header nav')).toHaveAttribute("aria-label", "Primary");
-  expect(container.querySelector('header button')).toHaveTextContent("Menu");
+  expect(container.querySelector('header button')).toHaveAttribute("aria-label", "Menu");
 });
 
 describe("HEADER-1 navigation defaults resolve through the consumer's copy", () => {
@@ -1214,12 +1208,12 @@ describe("HEADER-1 navigation defaults resolve through the consumer's copy", () 
   it("names the fallback navigation and its toggle from the default copy references", () => {
     const requested: string[] = [];
     const resolved = resolveShell({ ...base, actions: [link] }, localized(requested), resolveAsset);
-    expect(resolved.nav).toEqual({ label: "Navegación", triggerLabel: "Menú", trigger: "label", links: [] });
+    expect(resolved.nav).toEqual({ label: "Navegación", triggerLabel: "Menú", links: [] });
     expect(requested).toEqual(expect.arrayContaining(["site-frame.nav.label", "site-frame.nav.trigger-label"]));
     const { container } = render(<SiteFrame shell={{ ...base, actions: [link] }} resolveCopy={localized([])} resolveAsset={resolveAsset}><p>Content</p></SiteFrame>);
     const header = container.querySelector("header")!;
     expect(within(header).getByRole("navigation", { name: "Navegación" })).toBeInTheDocument();
-    expect(within(header).getByRole("button", { name: "Menú" })).toHaveTextContent("Menú");
+    expect(within(header).getByRole("button", { name: "Menú" })).toHaveAttribute("aria-label", "Menú");
     expect(header.textContent).not.toMatch(/Primary|Menu\b/);
   });
 
@@ -1283,7 +1277,7 @@ it("retains the current environment indication on the lite header's direct ghost
 
 it("composes the mandatory dark footer with a resolved home after named social icons", () => {
   const shell: SiteShellInput = { brand: CONFIG.brand, skipLink: CONFIG.skipLink, origin: CONFIG.origin,
-    header: { placement: "overlay", tone: "inverse" },
+    header: { surface: "glass", tone: "inverse" },
     footer: { legal: CONFIG.legal, social: { label: ref("social.label"), links: [{ href: "https://example.org/profile", label: ref("social.profile"), icon: ICON }] } } };
   const { container } = render(<SiteFrame shell={shell} presentation={{ footerRule: "top" }} resolveCopy={resolveCopy} resolveAsset={resolveAsset}><p>Content</p></SiteFrame>);
   const footer = container.querySelector("footer")!;
@@ -1441,7 +1435,7 @@ it.each(["light", "dark"] as const)("keeps inverse environment-only links readab
   const values = parseBrandDeclarations(block![0]).declarations;
   const surface = values["--color-surface-inverse"]!;
   for (const kind of ["front-door", "admin", "demo"] as const) {
-    for (const header of [{ placement: "reserved", ground: "inverse" }, { placement: "overlay", tone: "inverse" }] as const) {
+    for (const header of [{ surface: "solid", tone: "inverse" }, { surface: "glass", tone: "inverse" }] as const) {
       const view = render(frame({ ...siteShellFor(CONFIG, kind), header }, <p>content</p>));
       const link = view.container.querySelector<HTMLAnchorElement>('header a[aria-current="true"]')!;
       const ink = [...link.classList].filter(value => value.startsWith("text-ink-"));
@@ -1469,7 +1463,7 @@ it.each(["light", "dark"] as const)("keeps inverse environment-only links readab
 
 describe("SiteFrame automatic ground glass", () => {
   const bare: SiteShellInput = { brand: CONFIG.brand, skipLink: CONFIG.skipLink };
-  const overlay = { ...bare, header: { placement: "overlay", tone: "base" } } as const;
+  const overlay = { ...bare, header: { surface: "glass", tone: "base" } } as const;
 
   async function scene(run: (controls: { visible: (ground: string) => void; darkOS: () => void }) => void | Promise<void>) {
     const theme = document.documentElement.getAttribute("data-theme");
@@ -1502,8 +1496,8 @@ describe("SiteFrame automatic ground glass", () => {
     }
   }
 
-  it.each(SITE_SURFACE_KINDS)("starts %s headers in the CSS overlay without JavaScript", kind => {
-    const html = renderToStaticMarkup(frame(siteShellFor(CONFIG, kind), <h1>View</h1>));
+  it.each(SITE_SURFACE_KINDS)("starts explicit %s glass headers in the CSS overlay without JavaScript", kind => {
+    const html = renderToStaticMarkup(frame({ ...siteShellFor(CONFIG, kind), header: { surface: "glass" } }, <h1>View</h1>));
     expect(html).toMatch(/<header[^>]*data-placement="overlay"/);
     expect(html).toContain("site-header-overlay");
     expect(html).toContain("site-header-ground-aware");
@@ -1529,7 +1523,7 @@ describe("SiteFrame automatic ground glass", () => {
   }));
 
   it("uses page-theme ink when no ground is declared, rather than retaining the SSR hint", () => scene(() => {
-    const { container } = render(frame({ ...bare, header: { placement: "overlay", tone: "inverse" } }, <h1>View</h1>));
+    const { container } = render(frame({ ...bare, header: { surface: "glass", tone: "inverse" } }, <h1>View</h1>));
     expect(container.querySelector("header")).toHaveAttribute("data-tone", "base");
   }));
 
@@ -1567,11 +1561,11 @@ describe("SiteFrame automatic ground glass", () => {
     await waitFor(() => expect(header).toHaveAttribute("data-tone", "inverse"));
   }));
 
-  it("leaves explicit reserved chrome outside ground observation", () => scene(() => {
-    const { container } = render(frame({ ...bare, header: { placement: "reserved", ground: "inverse" } }, <section data-ground="light"><h1>View</h1></section>));
+  it("leaves solid chrome outside ground observation", () => scene(() => {
+    const { container } = render(frame({ ...bare, header: { surface: "solid", tone: "inverse" } }, <section data-ground="light"><h1>View</h1></section>));
     const header = container.querySelector("header")!;
     expect(header).not.toHaveAttribute("data-placement");
-    expect(header).not.toHaveAttribute("data-tone");
+    expect(header).toHaveAttribute("data-tone", "inverse");
     expect(header).not.toHaveClass("site-header-ground-aware");
     expect(header).toHaveClass("bg-surface-inverse");
   }));
@@ -1585,16 +1579,16 @@ describe("SiteFrame automatic ground glass", () => {
     expect(container.querySelector("header")).toHaveAttribute("data-tone", "base");
   }));
 
-  it("starts and stops observation when explicit placement changes", () => scene(() => {
-    const reserved = { ...bare, header: { placement: "reserved", ground: "inverse" } } as const;
+  it("starts and stops observation when the explicit surface changes", () => scene(() => {
+    const reserved = { ...bare, header: { surface: "solid", tone: "inverse" } } as const;
     const child = <section data-ground="dark"><h1>View</h1></section>;
     const { container, rerender } = render(frame(reserved, child));
-    expect(container.querySelector("header")).not.toHaveAttribute("data-tone");
+    expect(container.querySelector("header")).toHaveAttribute("data-tone", "inverse");
     rerender(frame(overlay, child));
     expect(container.querySelector("header")).toHaveAttribute("data-tone", "inverse");
     rerender(frame(reserved, child));
     fireEvent.scroll(window);
-    expect(container.querySelector("header")).not.toHaveAttribute("data-tone");
+    expect(container.querySelector("header")).toHaveAttribute("data-tone", "inverse");
   }));
 
   it("does not revive a disconnected resize observer from a late mutation callback", () => scene(() => {

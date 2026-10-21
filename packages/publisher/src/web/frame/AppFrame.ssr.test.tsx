@@ -12,7 +12,8 @@ import type { AppFrameProps } from "./app-frame-types.js";
 afterEach(() => { vi.unstubAllGlobals(); localStorage.clear(); document.documentElement.removeAttribute("data-theme"); });
 
 it.each([true, false])("hydrates with stable IDs before correcting viewport and saved theme (wide=%s)", async wide => {
-  vi.stubGlobal("matchMedia", (media: string) => ({ matches: media === "(min-width: 768px)" ? wide : true, media, addEventListener() {}, removeEventListener() {} }));
+  Object.defineProperty(window, "innerWidth", { configurable: true, value: wide ? 1280 : 375 });
+  vi.stubGlobal("matchMedia", (media: string) => ({ matches: media === "(min-width: 56.25rem)" ? wide : media === "all", media, addEventListener() {}, removeEventListener() {} }));
   localStorage.setItem("hydration-theme", "dark");
   const props: AppFrameProps = {
     brand: { markSrc: "/mark.svg", wordmark: "Atlas", label: "Atlas" },
@@ -34,7 +35,9 @@ it.each([true, false])("hydrates with stable IDs before correcting viewport and 
     expect(recoverable).not.toHaveBeenCalled();
     expect(host.querySelector("main")).toHaveAttribute("id", mainId);
     expect(document.documentElement).toHaveAttribute("data-theme", "dark");
-    expect(within(host).getByRole("button", { name: /Theme: Dark/ })).toBeInTheDocument();
+    if (!wide) await userEvent.click(within(host).getByRole("button", { name: "Open navigation" }));
+    expect((wide ? within(host) : within(document.body)).getByRole("button", { name: /Theme: Dark/ })).toBeInTheDocument();
+    if (!wide) await userEvent.keyboard("{Escape}");
     if (!wide) expect(within(host).getByRole("button", { name: "Open navigation" })).toBeInTheDocument();
     const user = userEvent.setup(); await user.click(within(host).getByRole("link", { name: "Skip to content" }));
     expect(within(host).getByRole("main")).toHaveFocus();

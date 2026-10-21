@@ -21,8 +21,7 @@ const base: SiteShellInput = {
   brand: { assetId: "mark", label: ref("Example home"), size: "md", variant: "mark", plate: "self" },
   skipLink: ref("Skip to content"),
   nav: { label: ref("Primary"), triggerLabel: ref("Menu"), links: [{ href: "#help", label: ref("Help") }] },
-  actions: [{ href: "/start", label: ref("Start now"), emphasis: "primary", icon }, { href: "/contact", label: ref("Contact") }],
-  secondaryAction: { href: "/sign-in", label: ref("Sign in") },
+  actions: [{ href: "/start", label: ref("Start now"), emphasis: "primary", icon }, { href: "/contact", label: ref("Contact"), emphasis: "ghost" }, { href: "/sign-in", label: ref("Sign in"), emphasis: "secondary" }],
   footer: { legal: { entity: ref("Example"), links: [{ href: "/privacy", label: ref("Privacy") }] } },
 };
 
@@ -56,8 +55,8 @@ function output(shell: SiteShellInput, server = false) {
 it.each([false, true])("preserves explicit defaults and proves the new default chrome semantics (server=%s)", server => {
   const expected = renderToString(tree(base));
   expect(renderToString(tree(base, server))).toBe(expected);
-  expect(renderToString(tree({ ...base, mobileLayout: "menu-brand-action", navPlacement: "centered" }, server))).toBe(expected);
-  expect(renderToString(tree({ ...base, nav: { ...base.nav!, trigger: "label" } }, server))).toBe(expected);
+  expect(renderToString(tree({ ...base, navPlacement: "centered" }, server))).toBe(expected);
+  expect(renderToString(tree({ ...base, header: { surface: "solid", tone: "base" } }, server))).toBe(expected);
   const container = output(base, server);
   for (const selector of ["header", "main#publisher-main-content", "footer", "header nav"]) expect(container.querySelectorAll(selector)).toHaveLength(1);
   expect(container.querySelector("main")).toHaveAttribute("tabindex", "-1");
@@ -98,20 +97,19 @@ it("validates and freezes action icons with the environment SVG allowlist", () =
   }
 });
 
-it("refuses action icon data on ordinary navigation, secondary and footer links", () => {
+it("refuses action icon data on ordinary navigation and footer links", () => {
   const link = { href: "/help", label: ref("Help"), icon };
   const legal = base.footer!.legal;
   for (const shell of [
     { ...base, nav: { ...base.nav!, links: [link] } },
-    { ...base, secondaryAction: link },
     { ...base, footer: { legal, links: [link] } },
     { ...base, footer: { legal, columns: [{ heading: ref("Help"), links: [link] }] } },
     { ...base, footer: { legal: { ...legal, links: [link] } } },
   ]) expect(() => resolveShell(shell as SiteShellInput, resolveCopy, resolveAsset)).toThrow(/unsupported field "icon"/);
 });
 
-it.each(["auto", "inverse", undefined] as const)("renders identical initial server/client icon triggers with %s tone", tone => {
-  const shell: SiteShellInput = { ...base, nav: { ...base.nav!, trigger: "icon", tone } };
+it.each(["base", "inverse"] as const)("renders identical initial server/client icon triggers with inherited %s tone", tone => {
+  const shell: SiteShellInput = { ...base, header: { surface: "solid", tone } };
   const server = renderToString(tree(shell, true));
   expect(renderToString(tree(shell))).toBe(server);
   const toggle = within(output(shell, true)).getByRole("button", { name: "Menu" });
@@ -122,12 +120,12 @@ it.each(["auto", "inverse", undefined] as const)("renders identical initial serv
 });
 
 it("passes mobile layout through direct shells and siteShellFor into SiteHeader", () => {
-  const config: SiteFrameConfig = { brand: base.brand, skipLink: base.skipLink, origin: "https://example.com", legal: base.footer!.legal, site: { mobileLayout: "menu-brand-action", nav: { ...base.nav!, trigger: "icon" }, actions: [{ ...base.actions![0]!, icon }] } };
+  const config: SiteFrameConfig = { brand: base.brand, skipLink: base.skipLink, origin: "https://example.com", legal: base.footer!.legal, site: { nav: base.nav, actions: [{ ...base.actions![0]!, icon }] } };
   const shell = siteShellFor(config, "site");
-  expect(shell.mobileLayout).toBe("menu-brand-action");
-  expect(shell.nav?.trigger).toBe("icon");
+  expect(shell).not.toHaveProperty("mobileLayout");
+  expect(shell.nav).not.toHaveProperty("trigger");
   expect(shell.actions?.[0]?.icon).toBe(icon);
-  for (const input of [shell, { ...base, mobileLayout: "menu-brand-action" } as SiteShellInput]) {
+  for (const input of [shell, base]) {
     for (const server of [false, true]) {
       const header = output(input, server).querySelector("header")!;
       expect(header.firstElementChild).toHaveClass("site-header-row");
@@ -135,7 +133,7 @@ it("passes mobile layout through direct shells and siteShellFor into SiteHeader"
       expectAccentMark(header.querySelector('a[aria-label="Example home"]'));
     }
   }
-  for (const kind of ["front-door", "admin", "demo"] as const) expect(siteShellFor(config, kind).mobileLayout).toBe("inline");
+  for (const kind of ["front-door", "admin", "demo"] as const) expect(siteShellFor(config, kind)).not.toHaveProperty("mobileLayout");
 });
 
 it.each(["front-door", "admin", "demo"] as const)("keeps the %s brand leading and its sole environment ghost in both renderers", kind => {
@@ -145,11 +143,11 @@ it.each(["front-door", "admin", "demo"] as const)("keeps the %s brand leading an
     environments: kinds.map(surface => ({ surface, href: `https://${surface}.example.com/`, label: ref(surface), icon })),
   };
   const shell = siteShellFor(config, kind);
-  expect(shell.mobileLayout).toBe("inline");
+  expect(shell).not.toHaveProperty("mobileLayout");
   expect(renderToString(tree(shell))).toBe(renderToString(tree(shell, true)));
   for (const server of [false, true]) {
     const header = output(shell, server).querySelector("header")!;
-    expect(header).not.toHaveClass("site-header-contract");
+    expect(header).toHaveClass("site-header-contract");
     expect(header.querySelector("nav, button")).toBeNull();
     const brand = within(header).getByRole("link", { name: "Example home" });
     expect(brand).toHaveAttribute("href", "https://example.com/");
@@ -164,13 +162,13 @@ it.each(["front-door", "admin", "demo"] as const)("keeps the %s brand leading an
 // JSDOM cannot measure geometry. Guard the responsive positioning contract here;
 // the Chromium proof measures the actual logo/control rectangles in both directions.
 it.each(["one", "two", "three", "six", "twenty", "secondary", "long-secondary"] as const)("centers the mobile brand independently of %s trailing controls", controls => {
-  const shell: SiteShellInput = {
+  let shell: SiteShellInput = {
     ...base,
-    mobileLayout: "menu-brand-action",
-    nav: { ...base.nav!, trigger: "icon" },
+    nav: base.nav,
     actions: Array.from({ length: controls === "twenty" ? 20 : controls === "six" ? 6 : controls === "three" ? 3 : controls === "two" ? 2 : 1 }, (_, index) => ({ ...base.actions![0]!, href: `/action-${index}`, emphasis: (["primary", "secondary", "ghost"] as const)[index % 3], icon })),
-    secondaryAction: controls === "long-secondary" ? { href: "/sign-in", label: ref("Averylongsecondaryactionwithoutwordbreaks") } : controls === "secondary" ? base.secondaryAction : undefined,
+
   };
+  if (controls === "secondary" || controls === "long-secondary") shell = { ...shell, actions: [...shell.actions!, { href: "/sign-in", label: ref(controls === "long-secondary" ? "Averylongsecondaryactionwithoutwordbreaks" : "Sign in"), emphasis: "secondary" }] };
   if (controls === "six" || controls === "twenty") { expect(() => output(shell)).toThrow(/three/); return; }
   for (const server of [false, true]) for (const navPlacement of ["centered"] as const) {
     const container = output({ ...shell, navPlacement }, server);
@@ -185,14 +183,14 @@ it.each(["one", "two", "three", "six", "twenty", "secondary", "long-secondary"] 
 });
 
 it.each([undefined, "auto", "inverse"] as const)("retains overlay brand tone %s in the centered mobile layout", tone => {
-  const shell: SiteShellInput = { ...base, brand: { ...base.brand, tone }, mobileLayout: "menu-brand-action", header: { placement: "overlay", tone: "inverse" } };
+  const shell: SiteShellInput = { ...base, brand: { ...base.brand, tone }, header: { surface: "glass", tone: "inverse" } };
   expect(renderToString(tree(shell))).toBe(renderToString(tree(shell, true)));
   const brand = within(output(shell).querySelector("header")!).getByRole("link", { name: "Example home" });
   expect(brand).toHaveClass(tone === undefined ? "text-inherit" : tone === "auto" ? "text-ink-primary" : "text-ink-on-inverse");
 });
 
 it.each([false, true])("names a mark-only brand from its label and renders no wordmark (server=%s)", server => {
-  const container = output({ ...base, mobileLayout: "menu-brand-action" }, server);
+  const container = output(base, server);
   const brand = within(container.querySelector("header")!).getByRole("link", { name: "Example home" });
   expect(brand).toHaveTextContent("");
   expect(brand.children).toHaveLength(1);
@@ -203,8 +201,7 @@ it.each([undefined, "auto", "inverse"] as const)("paints an accent mark in the a
   const shell: SiteShellInput = {
     ...base,
     brand: { assetId: "mark", label: ref("Example home"), size: "md", variant: "lockup", wordmark: ref("Example"), markInk: "accent", tone },
-    mobileLayout: "menu-brand-action",
-    header: { placement: "overlay", tone: "inverse" },
+        header: { surface: "glass", tone: "inverse" },
   };
   expect(renderToString(tree(shell))).toBe(renderToString(tree(shell, true)));
   const brand = within(output(shell).querySelector("header")!).getByRole("link", { name: "Example home" });
@@ -219,16 +216,16 @@ it.each([undefined, "auto", "inverse"] as const)("paints an accent mark in the a
   expect(brand.children[1]!.className).not.toMatch(/\b(?:text|bg)-/);
 });
 
-const LAYOUTS = [undefined, "inline", "menu-brand-action"] as const;
+const LAYOUTS = ["leading", "centered"] as const;
 const BRANDS = [
   ["mark-only", base.brand],
   ["lockup", { ...base.brand, variant: "lockup", wordmark: ref("Example") }],
   ["lockup on a shared plate", { ...base.brand, variant: "lockup", wordmark: ref("Example"), plate: "shared" }],
 ] as const;
-const INK_CASES = BRANDS.flatMap(([name, brand]) => LAYOUTS.flatMap(mobileLayout => [false, true].map(server => [name, mobileLayout, server, brand] as const)));
+const INK_CASES = BRANDS.flatMap(([name, brand]) => LAYOUTS.flatMap(navPlacement => [false, true].map(server => [name, navPlacement, server, brand] as const)));
 
-it.each(INK_CASES)("paints the %s header logomark in the accent token when markInk is omitted (layout %s, server=%s)", (_name, mobileLayout, server, brand) => {
-  const shell = { ...base, brand, mobileLayout } as SiteShellInput;
+it.each(INK_CASES)("paints the %s header logomark in the accent token when markInk is omitted (layout %s, server=%s)", (_name, navPlacement, server, brand) => {
+  const shell = { ...base, brand, navPlacement } as SiteShellInput;
   expect(renderToString(tree(shell, server))).toBe(renderToString(tree(shell, !server)));
   const anchor = within(output(shell, server).querySelector("header")!).getByRole("link", { name: "Example home" });
   const mark = anchor.firstElementChild as HTMLElement;
@@ -240,8 +237,8 @@ it.each(INK_CASES)("paints the %s header logomark in the accent token when markI
   if (anchor.children[1]) expect(anchor.children[1].className).not.toMatch(/\b(?:text|bg)-/);
 });
 
-it.each(INK_CASES)("keeps the %s header logomark as the image when markInk is image (layout %s, server=%s)", (_name, mobileLayout, server, brand) => {
-  const shell = { ...base, brand: { ...brand, markInk: "image" }, mobileLayout } as SiteShellInput;
+it.each(INK_CASES)("keeps the %s header logomark as the image when markInk is image (layout %s, server=%s)", (_name, navPlacement, server, brand) => {
+  const shell = { ...base, brand: { ...brand, markInk: "image" }, navPlacement } as SiteShellInput;
   const anchor = within(output(shell, server).querySelector("header")!).getByRole("link", { name: "Example home" });
   expect(anchor.querySelector("img")).toHaveAttribute("src", "/mark.svg");
   expect(anchor.querySelector("[data-brand-mark]")).toBeNull();
@@ -249,32 +246,33 @@ it.each(INK_CASES)("keeps the %s header logomark as the image when markInk is im
 });
 
 it.each([false, true])("puts every full-label action in defined panel order in every frame layout (server=%s)", server => {
-  const shell: SiteShellInput = { ...base, mobileLayout: "menu-brand-action", actions: base.actions!.map(action => ({ ...action, icon })) };
+  const shell: SiteShellInput = { ...base, actions: base.actions!.map(action => ({ ...action, icon })) };
   const container = output(shell, server);
   const nav = within(container).getByRole("navigation", { name: "Primary" });
   const panel = nav.querySelector(".nav-disclosure-panel")!;
   const mobileActions = panel.querySelector(".site-header-desktop-actions")!;
   expect(mobileActions).not.toBeNull();
-  expect([...mobileActions.querySelectorAll("a")].map(link => [link.getAttribute("href"), link.textContent])).toEqual([["/start", "Start now"], ["/sign-in", "Sign in"], ["/contact", "Contact"]]);
-  expect(mobileActions.querySelectorAll("a")[0]).toHaveClass("bg-accent");
-  expect(mobileActions.querySelectorAll("a")[1]).not.toHaveClass("bg-accent");
+  expect([...mobileActions.querySelectorAll("a")].map(link => [link.getAttribute("href"), link.textContent])).toEqual([["/contact", "Contact"], ["/sign-in", "Sign in"], ["/start", "Start now"]]);
+  expect(mobileActions.querySelectorAll("a")[2]).toHaveClass("bg-accent");
+  expect(mobileActions.querySelectorAll("a")[0]).not.toHaveClass("bg-accent");
   expect(mobileActions.querySelectorAll("a")).toHaveLength(3);
-  expect(mobileActions).toHaveTextContent("Start nowSign inContact");
-  // The desktop row and the expanded menu share this list: text only, no icons, no hidden labels.
-  expect(mobileActions.querySelectorAll("svg, .sr-only")).toHaveLength(0);
+  expect(mobileActions).toHaveTextContent("ContactSign inStart now");
+  // Optional action icons remain decorative and labels remain accessible.
+  expect(mobileActions.querySelectorAll("svg")).toHaveLength(3);
+  for (const svg of mobileActions.querySelectorAll("svg")) expect(svg).toHaveAttribute("aria-hidden", "true");
   expect(panel.querySelectorAll("nav")).toHaveLength(0);
   expect(container.querySelectorAll("header nav")).toHaveLength(1);
   expect(container.querySelectorAll("header")).toHaveLength(1);
   expect(container.querySelectorAll("main")).toHaveLength(1);
   expect(container.querySelectorAll("footer")).toHaveLength(1);
-  expect(output({ ...shell, actions: [], secondaryAction: undefined }, server).querySelector(".site-header-desktop-actions")).toBeNull();
-  for (const mobileLayout of [undefined, "inline"] as const) {
-    expect(output({ ...shell, mobileLayout }, server).querySelector('.site-header-desktop-actions')).not.toBeNull();
+  expect(output({ ...shell, actions: [] }, server).querySelector(".site-header-desktop-actions")).toBeNull();
+  for (const navPlacement of ["leading", "centered"] as const) {
+    expect(output({ ...shell, navPlacement }, server).querySelector('.site-header-desktop-actions')).not.toBeNull();
   }
 });
 
 it("hydrates the real icon-trigger frame without markup drift and keeps disclosure interaction", async () => {
-  const shell: SiteShellInput = { ...base, mobileLayout: "menu-brand-action", nav: { ...base.nav!, trigger: "icon" }, actions: base.actions!.map(action => ({ ...action, icon })) };
+  const shell: SiteShellInput = { ...base, nav: base.nav, actions: base.actions!.map(action => ({ ...action, icon })) };
   const server = renderToString(tree(shell, true));
   expect(renderToString(tree(shell))).toBe(server);
   const container = document.createElement("div");
@@ -319,47 +317,47 @@ it("hydrates the real icon-trigger frame without markup drift and keeps disclosu
 });
 
 it.each([
-  ["shell.mobileLayout", { ...base, mobileLayout: "PAYLOAD-SENTINEL" }],
-  ["shell.nav.trigger", { ...base, nav: { ...base.nav!, trigger: "PAYLOAD-SENTINEL" } }],
+  ["shell", { ...base, mobileLayout: "PAYLOAD-SENTINEL" }],
+  ["shell.nav", { ...base, nav: { ...base.nav!, trigger: "PAYLOAD-SENTINEL" } }],
 ])("refuses invalid %s without echoing values", (path, shell) => {
   expect(() => resolveShell(shell as SiteShellInput, resolveCopy, resolveAsset)).toThrow(path);
   try { resolveShell(shell as SiteShellInput, resolveCopy, resolveAsset); } catch (error) { expect(String(error)).not.toContain("PAYLOAD-SENTINEL"); }
 });
 
 
-it.each([{ navPlacement: "leading" }, { mobileLayout: "inline" }] as const)("keeps every action once in explicit legacy positioning %j", positioning => {
+it.each(["leading", "centered"] as const)("retains actions and the mobile primary in %s navigation", navPlacement => {
   for (const server of [false, true]) {
-    const root = output({ ...base, ...positioning }, server);
-    expect(root.querySelector('header [data-header-primary]')).toBeNull();
-    for (const [href, label] of [["/start", "Start now"], ["/contact", "Contact"], ["/sign-in", "Sign in"]]) {
-      const actions = root.querySelectorAll(`header a[href="${href}"]`);
+    const root = output({ ...base, navPlacement }, server);
+    expect(root.querySelector('header [data-header-primary]')).not.toBeNull();
+    for (const [href, label] of [["/contact", "Contact"], ["/sign-in", "Sign in"], ["/start", "Start now"]]) {
+      const actions = root.querySelectorAll(`header .site-header-desktop-actions a[href="${href}"]`);
       expect(actions).toHaveLength(1);
       expect(actions[0]).toHaveTextContent(label);
     }
   }
 });
 
-it.each([false, true])("keeps the icon on the mobile header-bar action only, with every other action text-only (server=%s)", server => {
-  const shell: SiteShellInput = { ...base, mobileLayout: "menu-brand-action", actions: base.actions!.map(action => ({ ...action, icon })) };
+it.each([false, true])("keeps authored action icons decorative and the mobile primary separate (server=%s)", server => {
+  const shell: SiteShellInput = { ...base, actions: base.actions!.map(action => ({ ...action, icon })) };
   const header = output(shell, server).querySelector("header")!;
-  const iconed = [...header.querySelectorAll("a")].filter(link => link.querySelector("svg"));
-  expect(iconed).toHaveLength(1);
-  expect(iconed[0]).toHaveAttribute("data-header-primary");
-  expect(iconed[0]!.closest(".site-header-actions")).not.toBeNull();
-  expect(iconed[0]!.closest("nav")).toBeNull();
+  const primary = header.querySelector("[data-header-primary]")!;
+  expect(primary.closest(".site-header-actions")).not.toBeNull();
+  expect(primary.closest("nav")).toBeNull();
+  expect(primary.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
   for (const link of header.querySelectorAll(".site-header-desktop-actions a")) {
-    expect(link.querySelector("svg, .sr-only")).toBeNull();
+    expect(link.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
     expect(link.textContent).not.toBe("");
   }
 });
 
 it.each([false, true])("gives the ghost mobile action the toggle's inverse ink on an inverse navigation tone (server=%s)", server => {
-  const shell: SiteShellInput = { ...base, nav: { ...base.nav!, trigger: "icon", tone: "inverse" }, header: { placement: "overlay", tone: "inverse" } };
+  const shell: SiteShellInput = { ...base, nav: base.nav, header: { surface: "glass", tone: "inverse" } };
   const header = output(shell, server).querySelector("header")!;
   const action = header.querySelector<HTMLAnchorElement>("[data-header-primary]")!;
   const toggle = header.querySelector("button")!;
   for (const token of ["text-ink-on-inverse", "hover:bg-control-tonal-inverse-hover", "focus-visible:outline-ink-on-inverse"]) {
-    expect(toggle).toHaveClass(token);
+    expect(toggle).not.toHaveAttribute("data-tone");
+    expect(header).toHaveAttribute("data-tone", "inverse");
     expect(action).toHaveClass(token);
   }
   expect(action).not.toHaveClass("text-ink-primary");
