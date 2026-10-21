@@ -26,8 +26,8 @@ function freeze<T>(value: T): T {
   }
   return value;
 }
-const revision = "97e1ab51c6f0d4cb0de63f24cf65a499c74fb903";
-const measuredAt = "2026-10-20";
+const revision = "40fad2bae423ef04a1d6bafa9f1ec9682f3c96ec";
+const measuredAt = "2026-10-21";
 const frame: InstanceBlockBinding["frameBlockRef"] = {
   blockId: "site-frame", role: "frame", medium: "web",
   adapter: { owner: "@clossys/publisher", subpath: "web", export: "SiteFrame", config: {} },
@@ -48,9 +48,9 @@ export const WEB_ROLE_PAIR_BINDINGS: readonly InstanceBlockBinding[] = freeze(ca
 })));
 const known = WEB_ROLE_PAIR_BINDINGS.flatMap(binding => [binding.frameBlockRef, binding.viewBlockRef]);
 const sources = {
-  "src/web/index.ts": "sha256:06f0c556bc260667cf5d1028dee7401480b27afb6394def281270575e0339853",
+  "src/web/index.ts": "sha256:3ad5d21c3d9487b17340ec30ca8f21e47575ad0051639e121b18b8bf9f4856e6",
   "src/web/frame/index.ts": "sha256:51c265d1680485b457299374b1df944c60f45f19d9c8be6eb0abb0e6c91ed6ef",
-  "src/web/server.ts": "sha256:ea720e5398c31842ba478b781b48387d161d7378905a5ca9b6e79393f3ba73e4",
+  "src/web/server.ts": "sha256:6d38619be190a2b831a15aaabe162202274232ecfd8f3be4537baf5e1b7eec33",
   "src/web/frame/site-frame-contract.ts": "sha256:96b058b7fdcce7baf0d26989a6f12c2e00eb9ccdd8ee200a59f3ae8f73e6a786",
   "src/web/frame/NavLinks.tsx": "sha256:5e519925f5d79ed8ce908a69d2a5ea7644cdbd10d0be416993060446b85aff17",
   "src/web/frame/NavDisclosure.client.tsx": "sha256:c0672b9ccd72bb3c08d0c86e6669ce5b0b0a875e2347a285a5d99a782de53528",
@@ -60,7 +60,7 @@ const sources = {
   "src/web/frame/types.ts": "sha256:708e3e0c4ca21233053a88c1113cc2f7a6b6afdfa3f9523b9cbe18747a66d0cb",
   "src/web/frame/SkipLink.client.tsx": "sha256:4cd4ff41cd290b09f10d6c1079f7fe3ad788c25722c9d023bb740b659148aa01",
   "src/web/frame/internal/resolveShell.ts": "sha256:85781615a9794297be94dc3ef3095ec159ad781acd893f2a5382ae7b7c73b5ae",
-  "src/web/views/index.ts": "sha256:c857a047bedc98905bc8f0558ad83f9b469d33c6016bcd3ac584857654c62a50",
+  "src/web/views/index.ts": "sha256:3784e027bf51446cc3d0af93e5dabd7e44328cd6fdbdb7f02b6d274e861653a5",
   "src/web/views/LandingView.tsx": "sha256:ad06fd2fd0e76e087c104a67c45630bcd6c02fa310222fae2c4e6d85c3526de7",
   "src/web/views/LandingViewContent.tsx": "sha256:510a846a5e470efaec2415219afa0b5820f79642c5e7bac08a648971e4100324",
   "src/web/views/SectionedViewContent.tsx": "sha256:81dc4a515f3d60db852799aef67208da4c607ac6b98e11bbeb38737ba4dd5a94",
@@ -68,7 +68,7 @@ const sources = {
   "src/web/views/LegalView.tsx": "sha256:64f3857be9be3adb677e8986937c274db0c0f594c449abc3cb30648ad2bb3d11",
   "src/web/views/CaptureView.tsx": "sha256:eab856f18aae8023450bdbd718086dfaaaf49b9ad9c653c8061bcda676ecfdc1",
   "src/web/internal/viewContentRoot.ts": "sha256:30d3259d5514a5b7dda0f51c4fb7735ecaee4eda7242174df4e996a7e5c4059e",
-  "src/web/internal/PageLayout.tsx": "sha256:d4422311a8b6f0435f52d1cfc5c5ea9f0946e892dbc8e08fa8903a99cd8653cb",
+  "src/web/internal/PageLayout.tsx": "sha256:45bf980356da1711fa57ccd7f41fa06fb34759df6fe7d3084bc67d96c5d4c94e",
   "src/document/legal.ts": "sha256:3b9b19cb843964875b1f5fd89be78ea9b851a059d2f8a9d904ca84adf9a74ee3",
   "src/document/render.ts": "sha256:2564a403881a2c43f70e9aaffb679878d2351413a556af4c57e0f433016737e0"
 } as const;
