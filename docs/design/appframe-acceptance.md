@@ -150,7 +150,7 @@ false, and passes the unchanged assertions in light and dark with no blur.
 - The original bare `publisher` workspace command exited 1 because that alias
   does not exist; the admitted native forms use `packages/publisher` and
   `packages/designer`. The unchanged-base native comparison passed after the
-  repository build supplied the first-party declarations.
+  repository build supplied the package declarations.
 
 All 18 named mutants reach an assertion failure with exit 1 and pass after exact
 producer restoration with exit 0: expanded state, minimum stage, width memory,
