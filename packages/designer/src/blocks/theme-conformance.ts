@@ -29,6 +29,7 @@ export const BLOCK_THEME_CONFORMANCE: readonly BlockThemeRegistration[] = [
   { exportName: "DataTable", source: "src/blocks/DataTable.tsx", contrastPairs: BASE_READING },
   { exportName: "DetailView", source: "src/blocks/DetailView.tsx", contrastPairs: BASE_READING },
   { exportName: "Pagination", source: "src/blocks/Pagination.tsx", contrastPairs: ["ink-secondary/surface-base", "ink-muted/surface-base"] },
+  { exportName: "UsageMeter", source: "src/blocks/UsageMeter.tsx", contrastPairs: BASE_READING },
   { exportName: "Stat", source: "src/blocks/Stat.tsx", contrastPairs: BASE_READING },
   { exportName: "Form", source: "src/blocks/Form.tsx", contrastPairs: ["ink-primary/surface-base"] },
   { exportName: "FieldGroup", source: "src/blocks/FieldGroup.tsx", contrastPairs: ["ink-secondary/surface-base", "ink-muted/surface-base"] },
