@@ -23,6 +23,9 @@
 //   8. The bytes the publish job uploads are exactly the bytes the scan job
 //      scanned: the scanned sha256 of every file is checked, and an extra,
 //      missing or changed file fails closed.
+//   9. A package marked private (in its source or its packed package.json)
+//      fails closed: check-artifact-safety skips private packages without
+//      scanning them, so the overlay must never publish one.
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -35,6 +38,7 @@ import { fileURLToPath } from "node:url";
 import {
   OVERLAY_FILES,
   OVERLAY_PACKAGES,
+  assertOverlayPackagesPublic,
   assertScannedDigests,
   buildOverlayManifest,
   overlayChangeKey,
@@ -110,11 +114,11 @@ function changesetDir(t, names) {
 }
 
 // A packages/ root whose manifests match the packed fixtures' identity.
-function packagesRoot(t, version = "1.2.3") {
+function packagesRoot(t, version = "1.2.3", extra = {}) {
   const root = scratch(t);
   for (const dir of OVERLAY_PACKAGES) {
     mkdirSync(join(root, dir));
-    writeFileSync(join(root, dir, "package.json"), JSON.stringify({ name: `@example/${dir}`, version }));
+    writeFileSync(join(root, dir, "package.json"), JSON.stringify({ name: `@example/${dir}`, version, ...(extra[dir] ?? {}) }));
   }
   return root;
 }
@@ -500,4 +504,37 @@ test("rule 8: the CLI prints the scan record and verify --scanned refuses change
   const refused = spawnSync("node", [script, "verify", "--manifest", manifestPath, "--dir", dir, "--scanned", forged], { encoding: "utf8" });
   assert.equal(refused.status, 1);
   assert.match(refused.stderr, /designer\.tgz: sha256 differs from the scanned/);
+});
+
+const privatePackageJson = (dir, value) => JSON.stringify({ name: `@example/${dir}`, version: "1.2.3", private: value });
+
+test("rule 9: a packed package.json marked private fails build and verify closed", (t) => {
+  for (const value of [true, "true", 1]) {
+    const packed = packedSet(t, { extra: { publisher: { "package.json": privatePackageJson("publisher", value) } } });
+    assert.throws(
+      () => buildOverlayManifest({ packedDir: packed, changesetsDir: changesetDir(t, []), commit: COMMIT, committedAt: COMMITTED_AT }),
+      /publisher: packed package\.json is marked private/,
+    );
+  }
+  const explicitFalse = packedSet(t, { extra: { publisher: { "package.json": privatePackageJson("publisher", false) } } });
+  assert.doesNotThrow(() => buildOverlayManifest({ packedDir: explicitFalse, changesetsDir: changesetDir(t, []), commit: COMMIT, committedAt: COMMITTED_AT }));
+  const packed = packedSet(t);
+  const manifest = buildOverlayManifest({ packedDir: packed, changesetsDir: changesetDir(t, []), commit: COMMIT, committedAt: COMMITTED_AT });
+  const swapped = packedSet(t, { extra: { designer: { "package.json": privatePackageJson("designer", true) } } });
+  writeFileSync(join(packed, "designer.tgz"), readFileSync(join(swapped, "designer.tgz")));
+  assert.throws(() => verifyOverlayRelease({ manifest, dir: packed }), /designer: packed package\.json is marked private/);
+});
+
+test("rule 9: a source package.json marked private fails assert-public and build closed", (t) => {
+  assert.doesNotThrow(() => assertOverlayPackagesPublic(packagesRoot(t)));
+  const privateRoot = packagesRoot(t, "1.2.3", { designer: { private: true } });
+  assert.throws(() => assertOverlayPackagesPublic(privateRoot), /designer: packages\/designer\/package\.json is marked private/);
+  const ok = spawnSync("node", [script, "assert-public", "--packages-root", packagesRoot(t)], { encoding: "utf8" });
+  assert.equal(ok.status, 0, ok.stderr);
+  const refused = spawnSync("node", [script, "assert-public", "--packages-root", privateRoot], { encoding: "utf8" });
+  assert.equal(refused.status, 1);
+  assert.match(refused.stderr, /designer: packages\/designer\/package\.json is marked private/);
+  const build = spawnSync("node", [script, "build", "--packed", packedSet(t), "--changesets", changesetDir(t, []), "--commit", COMMIT, "--committed-at", COMMITTED_AT, "--out", join(scratch(t), "m.json"), "--packages-root", privateRoot], { encoding: "utf8" });
+  assert.equal(build.status, 1);
+  assert.match(build.stderr, /marked private/);
 });

@@ -78,6 +78,12 @@ jobs:
           node-version: 20
           cache: npm
 
+      # check-artifact-safety.mjs passes a `private: true` package without
+      # scanning it, so a private overlay package fails here, before
+      # anything is installed or packed.
+      - name: Refuse private overlay packages
+        run: node scripts/overlay-manifest.mjs assert-public
+
       # No dependency in the lockfile needs its install script for this
       # build, so none runs (same as ci.yml's artifact-pack).
       - run: npm ci --ignore-scripts
@@ -186,6 +192,10 @@ jobs:
         run: |
           set -euo pipefail
           out="$RUNNER_TEMP/overlay"
+          # check-artifact-safety.mjs reads packages/<dir>/package.json and
+          # exits 0 unscanned when it is private; refuse that case first.
+          # (The packed package.json was already refused by verify above.)
+          node scripts/overlay-manifest.mjs assert-public
           for dir in designer publisher; do
             digest="$(node -p 'JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"))[process.argv[2]]' "$RUNNER_TEMP/scanned.json" "$dir.tgz")"
             node scripts/check-artifact-safety.mjs "packages/$dir" --tarball "$out/$dir.tgz" --sha256 "$digest" --require-denylist

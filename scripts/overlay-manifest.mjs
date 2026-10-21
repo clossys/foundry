@@ -7,6 +7,7 @@
 //   node scripts/overlay-manifest.mjs verify --manifest <file> --dir <dir>
 //                                            [--scanned <json>]
 //   node scripts/overlay-manifest.mjs digests --dir <dir>
+//   node scripts/overlay-manifest.mjs assert-public [--packages-root <dir>]
 //   node scripts/overlay-manifest.mjs decide --manifest <file> --main-tip <sha>
 //                                            [--published <file>] [--comparison <status>]
 //
@@ -48,6 +49,16 @@
 // Nothing here packs. Packing is `npm pack --ignore-scripts`, done by the
 // workflow exactly as ci.yml's artifact-pack job does it.
 //
+// NEVER A PRIVATE PACKAGE
+// -----------------------
+// scripts/check-artifact-safety.mjs exits 0 WITHOUT scanning when a
+// package.json says `private: true`: for npm that package is never
+// published. The overlay would publish it anyway, so here a `private` field
+// set to anything but `false` fails closed, both in the source
+// packages/<dir>/package.json (`assert-public`, and the build's expected
+// identity) and in the packed one (every build and verify). The workflow
+// runs `assert-public` before packing and again right before the scan.
+//
 // SCANNED BYTES AND FRESHNESS
 // ---------------------------
 // The workflow scans the exact files in a job of their own, FULL mode with
@@ -83,6 +94,14 @@ const COMMIT = /^[a-f0-9]{40}$/;
 const COMMITTED_AT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/;
 // 64 sha512 bytes are always 88 base64 characters ending in "==".
 const SRI_SHA512 = /^sha512-[A-Za-z0-9+/]{86}==$/;
+
+/** Throw unless `pkg` (a parsed package.json) is publishable: `private` absent or false. */
+export function assertNotPrivate(pkg, where) {
+  if (pkg && Object.hasOwn(pkg, "private") && pkg.private !== false) {
+    throw new Error(`${where} is marked private (private: ${JSON.stringify(pkg.private)}); check-artifact-safety skips private packages without scanning them, so the overlay refuses to publish one`);
+  }
+  return pkg;
+}
 
 const sha256 = (bytes) => createHash("sha256").update(bytes).digest("hex");
 const sri512 = (bytes) => `sha512-${createHash("sha512").update(bytes).digest("base64")}`;
@@ -156,6 +175,7 @@ function describeTarball(dir, tarballPath) {
     let packed;
     try { packed = JSON.parse(readFileSync(join(root, "package.json"), "utf8")); }
     catch { throw new Error(`${dir}: packed package.json is missing or invalid`); }
+    assertNotPrivate(packed, `${dir}: packed package.json`);
     if (typeof packed.name !== "string" || !packed.name || typeof packed.version !== "string" || !packed.version) {
       throw new Error(`${dir}: packed package.json has no name or version`);
     }
@@ -358,9 +378,16 @@ function expectedFromPackagesRoot(packagesRoot) {
     let manifest;
     try { manifest = JSON.parse(readFileSync(path, "utf8")); }
     catch { throw new Error(`missing package ${dir}: ${dir}/package.json not readable under the packages root`); }
+    assertNotPrivate(manifest, `${dir}: packages/${dir}/package.json`);
     expected[dir] = { name: manifest.name, version: manifest.version };
   }
   return expected;
+}
+
+/** Throw unless every overlay package's source package.json under `packagesRoot` is publishable. */
+export function assertOverlayPackagesPublic(packagesRoot) {
+  expectedFromPackagesRoot(packagesRoot);
+  return true;
 }
 
 function parseArgs(argv, allowed) {
@@ -422,6 +449,12 @@ function main(argv) {
     console.log(JSON.stringify(scannedDigests(resolve(args["--dir"]))));
     return 0;
   }
+  if (command === "assert-public") {
+    const args = parseArgs(rest, ["--packages-root"]);
+    assertOverlayPackagesPublic(resolve(args["--packages-root"] ?? join(repoRoot, "packages")));
+    console.log(`overlay-manifest: ${OVERLAY_PACKAGES.join(", ")} are not private`);
+    return 0;
+  }
   if (command === "decide") {
     const args = parseArgs(rest, ["--manifest", "--main-tip", "--published", "--comparison"]);
     for (const flag of ["--manifest", "--main-tip"]) if (!args[flag]) throw new UsageError(`${flag} is required`);
@@ -436,7 +469,7 @@ function main(argv) {
     console.log(`reason=${decision.reason}`);
     return 0;
   }
-  throw new UsageError("usage: overlay-manifest.mjs build|verify|digests|decide ...");
+  throw new UsageError("usage: overlay-manifest.mjs build|verify|digests|assert-public|decide ...");
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

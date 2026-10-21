@@ -37,6 +37,10 @@ Both run in FULL mode, with the identity denylist taken from the same
 repository secret CI's required `artifact safety (tarball)` check uses.
 Without that secret the run fails; it never falls back to a partial scan.
 The denylist is never printed and is removed when the job ends.
+`check-artifact-safety.mjs` passes a package marked `private` without
+scanning it, so a `private` field set to anything but `false`, in
+`packages/<dir>/package.json` or in the packed one, fails the run before
+packing and again before the scan.
 
 `publish` holds the write token and never sees the denylist. It uploads
 nothing unless every file it downloaded has exactly the sha256 the scan job
