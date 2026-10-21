@@ -108,7 +108,7 @@ export interface PricingTableProps extends Omit<HTMLAttributes<HTMLDivElement>, 
 function assertPrices(tiers: readonly PricingTier[], interval: string | undefined): void {
   let sharedKeys: readonly string[] | undefined;
   for (const tier of tiers) {
-    const hasFixed = Object.hasOwn(tier, "price");
+    const hasFixed = "price" in tier;
     const hasIntervals = tier.priceByInterval !== undefined;
     if (hasFixed === hasIntervals) throw new TypeError("PricingTable: each tier needs one price form.");
     if (!hasIntervals) continue;

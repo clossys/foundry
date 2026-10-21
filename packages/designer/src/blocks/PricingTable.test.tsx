@@ -344,3 +344,21 @@ describe("PricingTable fixed-price byte preservation", () => {
     expect(markup({ tiers: TIERS })).toBe(FIXED_BARE_MARKUP);
   });
 });
+
+
+describe("PricingTable inherited price contracts", () => {
+  it("accepts an inherited fixed price getter with the original fixed render", () => {
+    const fixed = TIERS[0]!;
+    const { price, ...tier } = fixed;
+    const inherited = Object.assign(Object.create({ get price() { return price; } }), tier);
+    expect(markup({ tiers: [inherited] })).toBe(markup({ tiers: [fixed] }));
+  });
+
+  it("rejects an inherited fixed price combined with interval prices", () => {
+    const inherited = Object.assign(
+      Object.create({ get price() { return "Inherited amount"; } }),
+      INTERVAL_TIERS[0]!,
+    );
+    expect(() => markup({ tiers: [inherited], interval: "b" })).toThrow("PricingTable: each tier needs one price form.");
+  });
+});
