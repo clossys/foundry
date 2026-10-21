@@ -1379,6 +1379,9 @@
   .h-xl {
     height: var(--spacing-xl, 24px);
   }
+  .max-h-6xl {
+    max-height: var(--spacing-6xl, 128px);
+  }
   .max-h-64 {
     max-height: calc(var(--spacing, 0.25rem) * 64);
   }
@@ -1573,11 +1576,20 @@
   .resize {
     resize: both;
   }
+  .resize-none {
+    resize: none;
+  }
   .resize-y {
     resize: vertical;
   }
   .scroll-mt-4xl {
     scroll-margin-top: var(--spacing-4xl, 64px);
+  }
+  .list-decimal {
+    list-style-type: decimal;
+  }
+  .list-disc {
+    list-style-type: disc;
   }
   .list-none {
     list-style-type: none;
@@ -2483,6 +2495,9 @@
   .text-caption {
     font-size: var(--text-caption, 12px);
   }
+  .text-code-block {
+    font-size: var(--text-code-block, 13px);
+  }
   .text-display-l {
     font-size: var(--text-display-l, 56px);
   }
@@ -2553,6 +2568,9 @@
   }
   .whitespace-nowrap {
     white-space: nowrap;
+  }
+  .whitespace-pre-wrap {
+    white-space: pre-wrap;
   }
   .text-accent {
     color: var(--color-accent, oklch(0.4748 0 0));

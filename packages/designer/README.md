@@ -8430,26 +8430,25 @@ gap. Results retain authored node order and identical inputs/options yield
 byte-identical JSON. The fixed 500-node chain fixture with 300 iterations has
 a 4,000ms test budget; this is a fixture budget, not a runtime deadline.
 
-### PageHeader in Standard entity Views
+### Standard entity Views in AppFrame
 
 Publisher's Standard `IndexView` and `DetailsView` arrange entity administration
-content inside an AppFrame content region. Both use this package's `PageHeader`
-Block for the page title and its supporting line: their public `title` maps to
-`PageHeader.title`, and their public **`subtitle` maps to `PageHeader.description`**.
-The Designer prop remains `description`. The Views own no frame chrome.
+content inside an AppFrame content region. AppFrame's `page` contract owns the
+page title, description, breadcrumb and page actions. Content Views start with
+their content Blocks and use explicit accessible labels for collections and tabs.
 
 IndexView composes Toolbar, DataTable (or a typed collection Block), EmptyState and
-optional Pagination. DetailsView composes the Breadcrumb and Tabs atoms with
-SectionHeader and typed DetailView, Panel, Stat, StatusList or RecordLedger
-sections. One normalized layout groups main sections before a narrow aside, or
-uses a single column in the original section order. Local section states use
-Skeleton, EmptyState and a danger Banner without replacing the page. An empty
-section list uses EmptyState; a record-wide banner slot sits under PageHeader.
-Block slots keep their existing props and controlled behavior. The host binds
-`tab` and `onTabChange` to its URL. These interactive Views use Publisher's client
-entry, render during ordinary SSR and have explicit wrong-channel stubs under
-`react-server`; importing Designer's server Blocks does not make the interactive
-Views server components. See Publisher's README for the public View contracts.
+optional Pagination. DetailsView composes Tabs with SectionHeader and typed
+DetailView, Panel, Stat, StatusList or RecordLedger sections. One normalized layout
+groups main sections before a narrow aside, or uses a single column in the original
+section order. Local section states use Skeleton, EmptyState and a danger Banner.
+An empty section list uses EmptyState; a content-notice banner slot comes before
+tabs and sections. Block slots keep their existing props and controlled behavior.
+The host binds `tab` and `onTabChange` to its URL. These interactive Views use
+Publisher's client entry, render during ordinary SSR and have explicit
+wrong-channel stubs under `react-server`; importing Designer's server Blocks does
+not make the interactive Views server components. See Publisher's README for the
+public View contracts.
 
 
 ### CatalogWorkspace
@@ -8697,3 +8696,17 @@ Ordinary inline trees use the base `TreeNode` shape.
 | `indexTree` | function | Validate and index supplied nodes without copying or mutating them. |
 | `getTreeAncestry` | function | Return exact root-to-target caller nodes in ancestry order. |
 | `getTreeBreadcrumbs` | function | Project validated ancestry into plain breadcrumb records. |
+
+### Chat
+
+`Chat` presents a controlled conversation log and composer inside a bounded panel. Supply `messages`, `status` and `onSend`; the host updates the thread and handles cancellation, retry, suggestions and optional message actions. Consecutive messages share an author group, streamed text follows the bottom until the reader scrolls up, and Jump to latest resumes following. Enter sends, Shift+Enter inserts a newline, and Escape calls `onStop` while streaming.
+
+The default renderer supports paragraphs, flat lists, inline code, fenced code with a copy control and safe explicit links. HTML stays escaped text. `renderContent(message, defaultContent)` supplies a trusted React slot for host content. `labels` overrides the documented default copy; `label` names the region and `labels.logLabel` names the live log. Import the Designer styles and give the containing panel a height. The block uses the current light or dark theme tokens.
+
+| Export | Kind | Description |
+| --- | --- | --- |
+| `Chat` | component | Message log, composer, stable streaming/error row, suggestions and optional message actions. |
+| `ChatProps` | type | Controlled messages/status, callbacks, content slot, optional actions and labels. |
+| `ChatMessage` | type | Stable id, user/assistant role, text content and optional display timestamp. |
+| `ChatActions` | type | Optional copy, regeneration and up/down feedback callbacks. |
+| `ChatLabels` | type | Optional host copy overrides with documented English defaults. |

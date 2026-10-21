@@ -6762,10 +6762,13 @@ content slot. The Views arrange Designer Blocks; they own no app header, footer,
 sidebar, routing state or `<main>`. Frame chrome props and frame-owned root
 landmarks are refused. The preview gallery includes both content specimens.
 
-Both expose text `title` and optional text `subtitle`, plus an `actions` slot.
-Each renders one Designer `PageHeader`: `title` maps to `PageHeader.title`, and
-`subtitle` maps to **`PageHeader.description`**. Designer's prop remains named
-`description`; the Views do not expose a second description prop.
+Page titles, descriptions, breadcrumbs and page actions belong in AppFrame's
+`page` contract. These Views start with their content: optional toolbar, collection
+and pagination for IndexView; an optional content notice, tabs and named sections
+for DetailsView. The removed `title`, `subtitle` and `actions` props, plus
+DetailsView's removed `index`, are type errors. At runtime, supplying one throws
+an unknown-prop `TypeError` directing the caller to AppFrame `page`, including
+when its value is `undefined`.
 
 These are interactive client Views, available from `@clossys/publisher/web/client`
 and the ordinary `@clossys/publisher/web` entry. They render content during ordinary
@@ -6777,9 +6780,10 @@ the controlled callbacks. It does not render a reduced server-only View.
 
 ### IndexView
 
-`IndexViewProps<Row>` requires `title`, `rows`, `columns`, `rowKey`,
-`collectionLabel` and an explicit `empty` (`EmptyState` props). It renders
-PageHeader, optional `toolbar` (`Toolbar` props), the primary collection and
+`IndexViewProps<Row>` requires `rows`, `columns`, `rowKey`,
+`collectionLabel` and an explicit `empty` (`EmptyState` props). The nonempty
+`collectionLabel` names the collection independently of the page title. It renders
+optional `toolbar` (`Toolbar` props), the primary collection and
 optional `pagination` (`Pagination` props), in that order. The primary collection
 defaults to `DataTable`. Zero rows render `EmptyState`, retaining the toolbar and
 pagination; `table.isLoading` instead preserves the DataTable loading state.
@@ -6808,8 +6812,6 @@ const rows: RecordRow[] = [{ id: "one", name: "First record" }];
 
 export function RecordsArea({ navigate }: { navigate: (href: string) => void }) {
   return <IndexView
-    title="Records"
-    subtitle="Browse the current records."
     collectionLabel="Records"
     rows={rows}
     rowKey={row => row.id}
@@ -6822,14 +6824,13 @@ export function RecordsArea({ navigate }: { navigate: (href: string) => void }) 
 
 ### DetailsView
 
-`DetailsViewProps` requires `title`, `index: { href, label }` and an explicit
-`empty` (`EmptyState` props). The required `DetailsViewIndex` forms a Breadcrumb
-back to the Index Instance, followed by the current title. The index href follows
-the same sanctioned-link policy as row routes.
+`DetailsViewProps` requires an explicit `empty` (`EmptyState` props) and either
+sections or controlled tabs. AppFrame `page` owns the breadcrumb back to the
+collection and the page title.
 
 Supply either an ordered `sections` list or `tabs` with a required `tab`,
-`onTabChange` and accessible `tabsLabel`. `DetailsViewTab` is `{ id, label,
-sections }`. Tabs uses Designer's Tabs atom for arrow-key focus and tab/panel
+`onTabChange` and a nonempty accessible `tabsLabel`, independent of the page title.
+`DetailsViewTab` is `{ id, label, sections }`. Tabs uses Designer's Tabs atom for arrow-key focus and tab/panel
 relationships. Selection changes are reported; the selected content changes when
 the host supplies the new `tab`. The host reads the selected ID from its URL and
 updates that URL in `onTabChange`; the View reads no URL and owns no router. A
@@ -6849,7 +6850,7 @@ is a closed union of `{ kind, props }` entries for these shipped Blocks:
 | `status-list` | StatusList |
 | `record-ledger` | RecordLedger |
 
-Each entry uses that Block's public props. Raw elements, unknown kinds and a second
+Each entry uses that Block's public props. Raw elements, unknown kinds and a
 PageHeader entry are refused. Slots inside a Block retain that Block's contract.
 There is one normalized View, with `DetailsViewLayout` values `main-aside` (the
 default) and `single`. A section's `DetailsViewRegion` is `main` (the default) or
@@ -6863,7 +6864,7 @@ There is no independent side-column API and no left, right or bottom work-panel
 control: AppFrame owns navigation and its work panel.
 
 `DetailsViewSectionState` replaces only its section's Block content while
-retaining that section's heading, the page header and other sections:
+retaining that section's heading and other sections:
 
 | state data | presentation | required caller copy |
 | --- | --- | --- |
@@ -6874,10 +6875,10 @@ retaining that section's heading, the page header and other sections:
 State values are typed payload objects, rather than bare status strings, so each
 region can supply localized state copy. Error severity is fixed to danger. The
 section keeps its required `block`; omitting `state` restores that Block. An empty
-View or empty tab still uses the View's required page-level `empty` props. The
-optional `banner` node slot sits between PageHeader and body, normally a Designer
-Banner for a record-wide state such as archived, degraded or read-only. `actions`
-stays in PageHeader. A section state does not blank the page.
+View or empty tab still uses the View's required `empty` props. The optional
+`banner` node slot comes before tabs and sections and carries a content notice,
+normally a Designer Banner for a record state such as archived, degraded or
+read-only. A section state replaces only that section's content.
 
 ```tsx
 "use client";
@@ -6890,9 +6891,6 @@ const sections: DetailsViewSection[] = [{
 
 export function RecordArea() {
   return <DetailsView
-    title="First record"
-    subtitle="Details of the selected record."
-    index={{ href: "/records", label: "Records" }}
     sections={sections}
     empty={{ title: "No sections" }}
   />;
@@ -6918,9 +6916,6 @@ const tabs: DetailsViewTab[] = [{ id: "overview", label: "Overview", sections: [
 
 export function TabbedRecordArea({ tab, onTabChange }: { tab: string; onTabChange: (tab: string) => void }) {
   return <DetailsView
-    title="First record"
-    subtitle="Details of the selected record."
-    index={{ href: "/records", label: "Records" }}
     layout="main-aside"
     tabs={tabs}
     tab={tab}
