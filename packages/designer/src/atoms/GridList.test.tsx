@@ -157,6 +157,24 @@ describe("GridList", () => {
     expect(action).toHaveBeenCalledExactlyOnceWith("one");
   });
 
+  it.each([
+    { name: "selection cleared", selectedKeys: new Set<string>(), disabledKeys: [] as string[] },
+    { name: "selection disabled", selectedKeys: new Set(["one"]), disabledKeys: ["one"] },
+  ])("rechecks peer Enter ownership when $name before keyup", async ({ selectedKeys, disabledKeys }) => {
+    const action = vi.fn(); const user = userEvent.setup();
+    const content = (keys: Set<string>, disabled: string[] = []) => <GridList aria-label="Notes"
+      selectionMode="multiple" disabledBehavior="selection" selectedKeys={keys} disabledKeys={disabled} onAction={action}>
+      <GridList.Item id="one" textValue="Planning note">Planning note</GridList.Item>
+    </GridList>;
+    const { rerender } = render(content(new Set(["one"])));
+    act(() => screen.getByRole("row").focus());
+    await user.keyboard("{Enter>}");
+    expect(action).not.toHaveBeenCalled();
+    rerender(content(selectedKeys, disabledKeys));
+    await user.keyboard("{/Enter}");
+    expect(action).toHaveBeenCalledExactlyOnceWith("one");
+  });
+
   it("honors caller cancellation before the caller delegates direct-row Enter", async () => {
     const action = vi.fn(); const cancelled = vi.fn(); const user = userEvent.setup();
     render(<GridList aria-label="Notes" selectionMode="multiple" selectedKeys={new Set(["one"])} onAction={action}>

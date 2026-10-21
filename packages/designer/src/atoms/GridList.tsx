@@ -61,7 +61,10 @@ function GridListItem({ className, render, ...rest }: GridListItemProps) {
           // The peer suppresses row actions in toggle mode once any row is selected.
           // Adapt only direct-row Enter; preserve the peer's DOM handlers and navigation.
           const activate = event.key === "Enter" && pendingEnter.current
-            && event.target === event.currentTarget && !state.isDisabled;
+            && event.target === event.currentTarget && !state.isDisabled
+            && state.selectionBehavior === "toggle" && state.id !== undefined
+            && state.state.selectionManager.canSelectItem(state.id)
+            && !state.state.selectionManager.isEmpty;
           if (event.key === "Enter") pendingEnter.current = false;
           domProps.onKeyUp?.(event);
           if (activate) {
