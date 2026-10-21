@@ -6904,3 +6904,18 @@ export function TabbedRecordArea({ tab, onTabChange }: { tab: string; onTabChang
   />;
 }
 ```
+
+## PageView
+
+Import `PageView` and `PageViewProps` from `@clossys/publisher/web`; the client
+entry also exports both. PageView renders a plain-text title, optional subtitle,
+a flat bordered plate and optional notes below it. Supply either `children`
+content or a `form` slot; the type contract rejects supplying both. The host form
+keeps its accessible name and submission behavior.
+
+Optional `effectiveDate` and `updated` lines use `{ dateTime, text: CopyRef }` and
+require the caller's `resolveCopyId` resolver. The enclosing frame owns the skip
+link and single main landmark; PageView supplies one h1 and no frame landmarks.
+Use StatusView for a cardless status page with a call to action. See
+[PageView slots and migration guidance](../../docs/design/page-view.md) for
+content, form and date examples. Existing views remain available unchanged.
