@@ -1,9 +1,9 @@
 "use client";
 
-import type { HTMLAttributes, ReactNode } from "react";
+import type { HTMLAttributes } from "react";
 import { Link } from "@clossys/designer/atoms";
 import { mergeUiClasses } from "@clossys/designer/atoms/server";
-import { DataTable, EmptyState, PageHeader, Pagination, Panel, RecordLedger, Toolbar } from "@clossys/designer/blocks";
+import { DataTable, EmptyState, Pagination, Panel, RecordLedger, Toolbar } from "@clossys/designer/blocks";
 import type { DataTableColumn, DataTableProps, EmptyStateProps, PaginationProps, PanelProps, RecordLedgerProps, ToolbarProps } from "@clossys/designer/blocks";
 import { isSanctionedHref } from "../../internal/href.js";
 import { assertViewContentRoot } from "../internal/viewContentRoot.js";
@@ -28,10 +28,6 @@ export interface IndexViewRowRoute<Row> {
 export interface IndexViewProps<Row> extends Omit<HTMLAttributes<HTMLDivElement>, "title" | "children"> {
   /** Content enters through the declared Block slots. */
   children?: never;
-  title: string;
-  /** Maps to Designer PageHeader's description prop. */
-  subtitle?: string;
-  actions?: ReactNode;
   rows: readonly Row[];
   columns: readonly DataTableColumn<Row>[];
   rowKey: DataTableProps<Row>["rowKey"];
@@ -55,12 +51,14 @@ export interface IndexViewProps<Row> extends Omit<HTMLAttributes<HTMLDivElement>
  * Interactive, including during ordinary SSR; react-server exports a named
  * wrong-channel stub so the server entry remains safe to import.
  */
-export function IndexView<Row>({ title, subtitle, actions, rows, columns, rowKey, collectionLabel, empty, toolbar, collection, table, pagination, rowRoute, className, ...rest }: IndexViewProps<Row>) {
+export function IndexView<Row>({ rows, columns, rowKey, collectionLabel, empty, toolbar, collection, table, pagination, rowRoute, className, ...rest }: IndexViewProps<Row>) {
+  for (const key of ["title", "subtitle", "actions"]) {
+    if (Object.hasOwn(rest, key)) throw new TypeError(`IndexView: unknown prop "${key}"; page-level information belongs in AppFrame page.`);
+  }
   assertViewContentRoot("IndexView", rest);
   for (const key of ["brand", "header", "footer", "nav", "mainId", "children"]) {
     if (Object.hasOwn(rest, key)) throw new TypeError("IndexView: chrome and arbitrary children belong to the frame, not this View.");
   }
-  if (typeof title !== "string" || title.trim() === "" || (subtitle !== undefined && typeof subtitle !== "string")) throw new TypeError("IndexView: title and subtitle must be text.");
   if (!Array.isArray(rows)) throw new TypeError("IndexView: rows must be an array.");
   for (let index = 0; index < rows.length; index += 1) {
     if (!Object.hasOwn(rows, index)) throw new TypeError("IndexView: rows must be a dense array.");
@@ -94,7 +92,6 @@ export function IndexView<Row>({ title, subtitle, actions, rows, columns, rowKey
   });
   return (
     <div {...rest} className={mergeUiClasses("flex min-w-0 flex-col gap-xl", className)}>
-      <PageHeader title={title} description={subtitle} actions={actions} />
       {toolbar === undefined ? null : <Toolbar {...toolbar} />}
       {rows.length === 0 && !table?.isLoading ? <EmptyState {...empty} /> : collection === undefined ? (
         <DataTable {...table} aria-label={collectionLabel} rows={rows} columns={linkedColumns} rowKey={rowKey} />
