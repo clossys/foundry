@@ -50,13 +50,13 @@ export type { EmptyStateProps } from "./EmptyState.js";
 
 export { parseDataTableViewModel, serializeDataTableViewModel, DataTableViewModelError } from "./data-table/view-model.js";
 export type { DataTableMessages } from "./data-table/messages.js";
-export type { DataTableViewModel, DataTableMode, DataTableDensity, DataTableSortRule } from "./data-table/view-model.js";
+export type { DataTableViewModel, DataTableViewModelV1, DataTableMode, DataTableDensity, DataTableSortRule } from "./data-table/view-model.js";
 
 export { DataTable } from "./DataTable.js";
 export type { DataTableProps, DataTableColumn, DataTableSelectionMode } from "./DataTable.js";
 
-export { filterRows, groupRows, pivotRows, aggregate, parseTableModel, serializeTableModel, TableModelError } from "./table-model/index.js";
-export type { TableValue, TableColumnKind, TableColumn, TableCollation, TableFilter, TableDimension, TableMeasure, TablePivot, TableModel, TableFacet, TableFilterResult, TableAggregateValue, TableAggregates, TableGroup, TablePivotAxis, TablePivotCell, TablePivotResult, TableModelErrorCode } from "./table-model/index.js";
+export { filterRows, groupRows, pivotRows, aggregate, parseTableModel, serializeTableModel, TableModelError, tableFilterPredicate, pruneFilterColumn, TABLE_FILTER_CONFORMANCE } from "./table-model/index.js";
+export type { TableValue, TableColumnKind, TableColumn, TableCollation, TableFilter, TableFilterGroup, TableFilterNode, TableDimension, TableMeasure, TablePivot, TableModel, TableFacet, TableFilterResult, TableAggregateValue, TableAggregates, TableGroup, TablePivotAxis, TablePivotCell, TablePivotResult, TableModelErrorCode } from "./table-model/index.js";
 
 export { DetailView } from "./DetailView.js";
 export type { DetailViewProps, DetailViewField } from "./DetailView.js";
