@@ -27,7 +27,7 @@ describe("shell ground plates (#1057)", () => {
   });
 
   it("paints SiteHeader inverse plate tokens", () => {
-    render(<SiteHeader brand={<span>Brand</span>} ground="inverse" />);
+    render(<SiteHeader brand={<span>Brand</span>} surface="solid" tone="inverse" />);
     const header = screen.getByRole("banner");
     expect(header.className).toContain("bg-surface-inverse");
   });
