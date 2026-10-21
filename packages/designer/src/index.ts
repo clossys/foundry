@@ -435,6 +435,11 @@ export type { TableValue, TableColumnKind, TableColumn, TableCollation, TableFil
 export { CatalogWorkspace } from "./blocks/index.js";
 export type { CatalogWorkspaceProps, CatalogWorkspaceItem, CatalogWorkspaceSize } from "./blocks/index.js";
 
+export { Timeline } from "./blocks/Timeline.js";
+export type { TimelineProps, TimelineEntry } from "./blocks/Timeline.js";
+export { MediaGallery } from "./blocks/MediaGallery.js";
+export type { MediaGalleryProps, MediaGalleryItem } from "./blocks/MediaGallery.js";
+
 export { parseDataTableViewModel, serializeDataTableViewModel, DataTableViewModelError } from "./blocks/data-table/view-model.js";
 export type { DataTableMessages } from "./blocks/data-table/messages.js";
 export type { DataTableViewModel, DataTableMode, DataTableDensity, DataTableSortRule } from "./blocks/data-table/view-model.js";

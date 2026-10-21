@@ -7,6 +7,27 @@ import ts from "typescript";
 
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 
+describe("compiled Timeline and MediaGallery public contract", () => {
+  it("exports both components and their host-data types through the two existing barrels", () => {
+    const filename = join(packageRoot, "timeline-gallery-consumer.check.ts");
+    const consumer = ["blocks/index.js", "index.js"].map((entry, index) => `
+      import {Timeline as Timeline${index}, MediaGallery as Gallery${index}, type TimelineProps as TimelineProps${index}, type TimelineEntry as Entry${index}, type MediaGalleryProps as GalleryProps${index}, type MediaGalleryItem as Item${index}} from ${JSON.stringify(join(packageRoot, "dist", entry))};
+      const entry${index}: Entry${index} = {id:"entry",dateTime:"2026-01",date:"January",heading:"Release"};
+      const timeline${index}: TimelineProps${index} = {entries:[entry${index}],headingLevel:5,ground:"inverse"};
+      const item${index}: Item${index} = {id:"image",thumbnail:null,full:null,alt:"Courtyard"};
+      const gallery${index}: GalleryProps${index} = {items:[item${index},item${index}],columns:4,aspect:"1:1",openLabel:alt=>alt,closeLabel:"Dismiss",previousLabel:"Earlier",nextLabel:"Later",positionLabel:(position,total)=>position+" / "+total};
+      const timelineComponent${index}: (props: TimelineProps${index}) => unknown = Timeline${index};
+      const galleryComponent${index}: (props: GalleryProps${index}) => unknown = Gallery${index};
+    `).join("\n");
+    const options = { strict: true, noEmit: true, skipLibCheck: true, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler };
+    const host = ts.createCompilerHost(options);
+    const original = host.getSourceFile.bind(host);
+    host.getSourceFile = (path, language, error, fresh) => path === filename ? ts.createSourceFile(path, consumer, language, true) : original(path, language, error, fresh);
+    const diagnostics = ts.getPreEmitDiagnostics(ts.createProgram([filename], options, host));
+    expect(diagnostics.map(diagnostic => ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n"))).toEqual([]);
+  }, 30_000);
+});
+
 describe("compiled signature chart public contract", () => {
   it.each(["index", "server"])("exports all three charts from the compiled charts/%s entry", async entry => {
     const exports = await import(pathToFileURL(join(packageRoot, `dist/charts/${entry}.js`)).href);

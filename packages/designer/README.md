@@ -454,7 +454,7 @@ source file's own header for the exact probe and its result). Today that's:
 | Subpath | Server-safe members |
 | --- | --- |
 | `@clossys/designer/atoms/server` | `Logomark`, `Avatar`, `Badge`, `Banner`, `Card`, `Field`, `Icon`, `Meter`, `Skeleton`, `Spinner`, `StatusMark`, `buttonLinkClassName`, `iconButtonClassName`, `iconButtonLinkClassName`, `mergeUiClasses` |
-| `@clossys/designer/blocks/server` | `Lockup`, `AnatomyCallouts`, `ArticleBody`, `Matrix`, `ContentSection`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `Item`, `Items`, `MarketingChapter`, `MediaFigure`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `RecordLedger`, `Scene`, `SectionFrame`, `SectionHeader`, `SectionIntro`, `Specimen`, `SpecimenPanel`, `Stat`, `StatusList`, `Testimonial`, `Tree` |
+| `@clossys/designer/blocks/server` | `Lockup`, `AnatomyCallouts`, `ArticleBody`, `Matrix`, `ContentSection`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `Item`, `Items`, `MarketingChapter`, `MediaFigure`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `RecordLedger`, `Scene`, `SectionFrame`, `SectionHeader`, `SectionIntro`, `Specimen`, `SpecimenPanel`, `Stat`, `StatusList`, `Testimonial`, `Timeline`, `Tree` |
 | `@clossys/designer/shell/server` | `Shell`, `SiteFooter`, `SiteHeader`, `SkipLink` |
 | `@clossys/designer/charts/server` | `ChartFrame`, `BarChart`, `LineChart` (static), `WaterfallChart`, `RangeChart`, `ScatterChart`, `AreaChart` (static), `Heatmap` (static), `StatusStrip` (static), `Sparkline` |
 | `@clossys/designer/theme/server` | `getThemeInitScript` |
@@ -4377,6 +4377,75 @@ Measure and section padding come from the parent `SectionFrame` (`measure="prose
 article plus a sidebar callout, or two comparison columns), which is what
 keeps it at this layer rather than being a view (test 3).
 
+### `Timeline`
+
+Draft dated entries in authored order. The ordered list is server-safe and
+imports from `@clossys/designer/blocks/server` as well as the blocks entry.
+The host supplies formatted dates, headings, optional labels and body content.
+
+| Prop | Contract |
+| --- | --- |
+| `entries` | Required readonly `TimelineEntry[]`, one through twenty entries. Each has `id`, `dateTime`, `date`, `heading`, and optional `label`, `body`, `href`. |
+| `headingLevel` | `3 \| 4 \| 5 \| 6`; defaults to `3`. |
+| `ground` | `"base" \| "sunken" \| "inverse"`; defaults to `"base"`. |
+| Native list attributes | `aria-label`, `aria-labelledby`, `className`, `style`, and native ordered-list attributes pass to the root. |
+
+`dateTime` accepts a year-month, date, or date-time matching
+`/^\d{4}-\d{2}(-\d{2})?(T[\d:.+Z-]+)?$/`. Invalid dates or entry counts
+throw a `TypeError` with the `Timeline:` prefix. `date` supplies the visible
+host-formatted value. A supplied `href` links the entry heading.
+
+```tsx
+import { Timeline } from "@clossys/designer/blocks";
+
+function ReleaseHistory() {
+  return <Timeline aria-label="Release notes" entries={[
+    { id: "filters", dateTime: "2026-10-15", date: "15 October 2026", heading: "Search filters", label: "v2.4", body: "Combine topic and date filters to narrow a search.", href: "/releases/search-filters" },
+    { id: "saved", dateTime: "2026-09-18", date: "18 September 2026", heading: "Saved searches", label: "v2.3", body: "Return to a saved set of search criteria." },
+    { id: "exports", dateTime: "2026-08-21", date: "21 August 2026", heading: "Table exports", label: "v2.2", body: "Download the visible columns for further review." },
+    { id: "notes", dateTime: "2026-07-17", date: "17 July 2026", heading: "Review notes", label: "v2.1", body: "Keep a short note alongside a reviewed record." },
+    { id: "history", dateTime: "2026-06-19", date: "19 June 2026", heading: "Change history", label: "v2.0", body: "Read the sequence of edits to a record." },
+  ]} />;
+}
+```
+
+### `MediaGallery`
+
+Draft thumbnail grid with a controlled Dialog lightbox. The component is
+client-only. The host supplies thumbnail and full media nodes, accessible
+names, optional captions, and the navigation copy.
+
+| Prop | Contract |
+| --- | --- |
+| `items` | Required readonly `MediaGalleryItem[]`, two through twenty-four items, with `id`, `thumbnail`, `full`, `alt`, and optional `caption`. |
+| `columns` | `2 \| 3 \| 4`; defaults to `3`; below tablet the grid has two columns. |
+| `aspect` | `"1:1" \| "4:3" \| "16:9"`; defaults to `"4:3"`. |
+| `openLabel` | Required `(alt: string) => string` naming each thumbnail button. |
+| `closeLabel`, `previousLabel`, `nextLabel` | Required accessible control names. |
+| `positionLabel` | Required `(index: number, total: number) => string`; index is one-based. |
+| `ground` | `"base" \| "sunken" \| "inverse"`; defaults to `"base"`. |
+| Root attributes | `aria-label`, `aria-labelledby`, `className`, `style` pass to the thumbnail list. |
+
+Arrow keys follow visual direction, including RTL. Home and End select the
+first and last images; endpoint arrows are disabled. Escape and the close
+control dismiss the lightbox and restore focus to the opening thumbnail.
+Invalid item counts throw a `TypeError` with the `MediaGallery:` prefix.
+
+```tsx
+import { MediaGallery, type MediaGalleryItem } from "@clossys/designer/blocks";
+
+function CourtyardGallery() {
+  const panels = ["North gate", "Stone path", "Shaded bench", "Garden wall", "Water basin", "Covered walk", "South gate"];
+  const items: MediaGalleryItem[] = panels.map((alt, index) => {
+    const panel = <svg role="img" aria-label={alt} viewBox="0 0 120 120"><title>{alt}</title><rect x="10" y="10" width="100" height="100" fill="none" stroke="currentColor" /><path d={`M10 ${30 + index * 10}h100`} stroke="currentColor" /></svg>;
+    return { id: `courtyard-${index}`, alt, thumbnail: panel, full: panel, caption: index === 1 ? "A stone path connects the two gates." : index === 4 ? "The basin sits beside the covered walk." : undefined };
+  });
+  return <MediaGallery items={items} columns={4} aspect="1:1" aria-label="Courtyard study"
+    openLabel={alt => `Open ${alt}`} closeLabel="Close image" previousLabel="Previous image" nextLabel="Next image"
+    positionLabel={(index, total) => `${index} of ${total}`} />;
+}
+```
+
 ### `AccountMenu`
 
 A Navigation Material combining Avatar, Button, Icon, Tooltip and Menu. The host
@@ -6753,6 +6822,12 @@ not a grab-bag).
 | `MediaFigure` | component | Large media as a section module: framed media with an optional caption underneath. |
 | `MediaFigureProps` | type | Props for `MediaFigure`: `children`, `caption`, `measure`, `framed`, `ground`, `className`, `style`, plus every native `<figure>` attribute. |
 | `MediaFigureMeasure` | type | `"column" \| "content"`. |
+| `Timeline` | component | Draft server-safe dated entries in authored order. |
+| `TimelineProps` | type | Props for `Timeline`: `entries`, `headingLevel`, `ground`, and native ordered-list attributes. |
+| `TimelineEntry` | type | One dated entry: `id`, `dateTime`, `date`, `heading`, optional `label`, `body`, `href`. |
+| `MediaGallery` | component | Draft thumbnail grid with a keyboard-operated Dialog lightbox. |
+| `MediaGalleryProps` | type | Props for `MediaGallery`: `items`, `columns`, `aspect`, required host label functions and navigation labels, `ground`, and root list attributes. |
+| `MediaGalleryItem` | type | Media data: `id`, `thumbnail`, `full`, `alt`, optional `caption`. |
 | `FeatureGrid` | component | Titled collection of feature items: optional eyebrow/heading/description region, a grid of icon/heading/description items. |
 | `FeatureGridProps` | type | Props for `FeatureGrid`: `eyebrow`, `heading`, `description`, `items`, `headingLevel`, `ground`, `className`, `style`, plus every native `<div>` attribute. |
 | `FeatureGridItem` | type | One item: `id`, `icon?`, `heading`, `description?`. |
