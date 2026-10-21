@@ -26,7 +26,7 @@ function freeze<T>(value: T): T {
   }
   return value;
 }
-const revision = "2e1f4fe17e1068e9c3c24aebb81c427f4c1b4362";
+const revision = "804f242d6d2937031d4f0ee53460a40c7d77f975";
 const measuredAt = "2026-10-21";
 const frame: InstanceBlockBinding["frameBlockRef"] = {
   blockId: "site-frame", role: "frame", medium: "web",
@@ -48,9 +48,9 @@ export const WEB_ROLE_PAIR_BINDINGS: readonly InstanceBlockBinding[] = freeze(ca
 })));
 const known = WEB_ROLE_PAIR_BINDINGS.flatMap(binding => [binding.frameBlockRef, binding.viewBlockRef]);
 const sources = {
-  "src/web/index.ts": "sha256:06f0c556bc260667cf5d1028dee7401480b27afb6394def281270575e0339853",
+  "src/web/index.ts": "sha256:1fad5e9ba87d829074e33e4070a3e3fdd9b1c67e4e23ac2310e9687e1621807d",
   "src/web/frame/index.ts": "sha256:51c265d1680485b457299374b1df944c60f45f19d9c8be6eb0abb0e6c91ed6ef",
-  "src/web/server.ts": "sha256:ea720e5398c31842ba478b781b48387d161d7378905a5ca9b6e79393f3ba73e4",
+  "src/web/server.ts": "sha256:e69b0df86f3408425b1c9d2f46eb5cb046ef6ced3dbfebd1f52e65c84ffe3bb5",
   "src/web/frame/site-frame-contract.ts": "sha256:678940dd5021909c68b638c6a8c15dab2f7d5273efc4dfe6f156e62edc28196d",
   "src/web/frame/NavLinks.tsx": "sha256:01288ed59dfcd0f0d8abda463dbc6df9c5a60359d3b0fe8f60ba631d70024ca7",
   "src/web/frame/NavDisclosure.client.tsx": "sha256:d08037c12988a01a10faff0e81e6120aa6c6b61a911705fe5017642e117770f2",
@@ -60,7 +60,7 @@ const sources = {
   "src/web/frame/types.ts": "sha256:f6a27f2c396e80a2dbfa96b2c665f73f8dfc3b2e2e97dab4051a392a124b61f5",
   "src/web/frame/SkipLink.client.tsx": "sha256:4cd4ff41cd290b09f10d6c1079f7fe3ad788c25722c9d023bb740b659148aa01",
   "src/web/frame/internal/resolveShell.ts": "sha256:be6e184ba938aa57cc4f30c729cb46ff8b693e8a40f7ef4cbdfefc3fa336cf32",
-  "src/web/views/index.ts": "sha256:c857a047bedc98905bc8f0558ad83f9b469d33c6016bcd3ac584857654c62a50",
+  "src/web/views/index.ts": "sha256:d1fe427dd29b49f67df327b5589bc48eaf98beb5e80c0a1d92fbe837a81a49ff",
   "src/web/views/LandingView.tsx": "sha256:ad06fd2fd0e76e087c104a67c45630bcd6c02fa310222fae2c4e6d85c3526de7",
   "src/web/views/LandingViewContent.tsx": "sha256:510a846a5e470efaec2415219afa0b5820f79642c5e7bac08a648971e4100324",
   "src/web/views/SectionedViewContent.tsx": "sha256:81dc4a515f3d60db852799aef67208da4c607ac6b98e11bbeb38737ba4dd5a94",
