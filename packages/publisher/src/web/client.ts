@@ -30,4 +30,4 @@ export { AppFrameSpecimen } from "./frame/AppFrame.specimen.js";
 export { IndexView } from "./views/IndexView.js";
 export type { IndexViewCollection, IndexViewProps, IndexViewRowRoute, IndexViewTable } from "./views/IndexView.js";
 export { DetailsView } from "./views/DetailsView.js";
-export type { DetailsViewBlock, DetailsViewIndex, DetailsViewLayout, DetailsViewProps, DetailsViewRegion, DetailsViewSection, DetailsViewSectionState, DetailsViewTab } from "./views/DetailsView.js";
+export type { DetailsViewBlock, DetailsViewLayout, DetailsViewProps, DetailsViewRegion, DetailsViewSection, DetailsViewSectionState, DetailsViewTab } from "./views/DetailsView.js";
