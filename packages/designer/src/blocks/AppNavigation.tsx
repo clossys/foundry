@@ -9,6 +9,7 @@ import { ChevronLeft } from "../icons/ChevronLeft.js";
 import { ChevronRight } from "../icons/ChevronRight.js";
 import { Drawer } from "./Drawer.js";
 import { Panel } from "./Panel.js";
+import { getAppNavigationCloseStyle } from "./app-navigation-layout.js";
 import { getAppNavigationAncestry, type AppNavigationNode } from "./app-navigation-tree.js";
 
 export interface AppNavigationProps {
@@ -17,7 +18,11 @@ export interface AppNavigationProps {
   activeHref?: string;
   /** @default "Navigation" */
   label?: string;
+  /** Host controls before the destination list; no title row is synthesized. */
+  header?: ReactNode;
   footer?: ReactNode;
+  /** Optional host-owned corner control; wire its press to the controlled panel state. */
+  trigger?: ReactNode;
   /** @default "No destinations available" */
   emptyMessage?: ReactNode;
   collapsed?: boolean;
@@ -32,9 +37,9 @@ export interface AppNavigationProps {
   openLabel?: string;
   /** @default "Close navigation" */
   closeLabel?: string;
-  /** @default "Expand navigation" */
+  /** Optional legacy label alias for the wide open control. */
   expandLabel?: string;
-  /** @default "Collapse navigation" */
+  /** Optional legacy label alias for the wide close control. */
   collapseLabel?: string;
   /** @default "Collapse {nodeLabel}" when expanded, "Expand {nodeLabel}" otherwise */
   formatDisclosureLabel?: (nodeLabel: string, expanded: boolean) => string;
@@ -47,7 +52,7 @@ function defaultDisclosureLabel(nodeLabel: string, expanded: boolean): string {
 const CONTROL = "flex min-w-0 items-center justify-start gap-sm rounded-control border-0 bg-transparent px-sm py-sm text-start text-ink-primary no-underline hover:no-underline hover:bg-surface-sunken focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent focus-visible:-outline-offset-2";
 
 /** Keep the overlay absent until the browser has completed focus-induced scrolling. */
-function RailTooltip({ trigger, label, requests }: { trigger: ReactNode; label: string; requests: { current: number } }) {
+function CornerTooltip({ trigger, label, requests }: { trigger: ReactNode; label: string; requests: { current: number } }) {
   const [open, setOpen] = useState(false);
   const frame = useRef<number | undefined>(undefined);
   const cancel = () => {
@@ -67,6 +72,7 @@ function RailTooltip({ trigger, label, requests }: { trigger: ReactNode; label: 
     });
   };
   useEffect(() => () => cancel(), []);
+  useEffect(() => { ++requests.current; cancel(); setOpen(false); }, [label, requests]);
   return <span className="contents" onBlurCapture={close} onPointerDownCapture={close}
     onPointerOutCapture={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) cancel(); }}
     onKeyDownCapture={event => { if (["Escape", "Enter", " "].includes(event.key)) close(); }}>
@@ -76,10 +82,10 @@ function RailTooltip({ trigger, label, requests }: { trigger: ReactNode; label: 
 
 /** Host routes and identity arrive as data and slots; one Drawer owns the narrow modal lifecycle. */
 export function AppNavigation({
-  tree, activeId, activeHref, label = "Navigation", footer, emptyMessage = "No destinations available",
+  tree, activeId, activeHref, label = "Navigation", header, footer, trigger, emptyMessage = "No destinations available",
   collapsed: suppliedCollapsed, defaultCollapsed = false, onCollapsedChange,
   drawerOpen, onDrawerOpenChange, navigationKey, dismissAt = "(min-width: 768px)",
-  openLabel = "Open navigation", closeLabel = "Close navigation", expandLabel = "Expand navigation", collapseLabel = "Collapse navigation",
+  openLabel = "Open navigation", closeLabel = "Close navigation", expandLabel, collapseLabel,
   /** @default "Collapse {nodeLabel}" when expanded, "Expand {nodeLabel}" otherwise */
   formatDisclosureLabel = defaultDisclosureLabel,
 }: AppNavigationProps) {
@@ -94,6 +100,22 @@ export function AppNavigation({
   const requested = (drawerOpen ?? open) && !dismissed;
   const collapsed = !narrow && (suppliedCollapsed ?? internalCollapsed);
   const nav = useRef<HTMLElement>(null);
+  const corner = useRef<HTMLSpanElement>(null);
+  const [cornerMeasurement, setCornerMeasurement] = useState<{ top: number; left: number; right: number; rtl: boolean }>();
+  const customTrigger = trigger !== undefined;
+  useEffect(() => {
+    if (!narrow || !requested || !customTrigger) { setCornerMeasurement(undefined); return; }
+    const measure = () => {
+      const opener = corner.current?.querySelector<HTMLElement>("button, a");
+      if (!opener) return;
+      const rect = opener.getBoundingClientRect();
+      const computed = getComputedStyle(opener).direction;
+      const rtl = computed === "rtl" || (!computed && opener.closest<HTMLElement>("[dir]")?.dir === "rtl");
+      setCornerMeasurement({ top: rect.top, left: rect.left, right: rect.right, rtl });
+    };
+    measure(); window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [narrow, requested, customTrigger, trigger]);
   const focusedId = useRef<string | undefined>(undefined);
   const handoff = useRef(false);
   const tooltipRequests = useRef(0);
@@ -127,7 +149,7 @@ export function AppNavigation({
       const destination = [...(nav.current?.querySelectorAll<HTMLElement>("[data-application-navigation-control]") ?? [])]
         .find(element => element.dataset.navigationNodeId === id);
       (destination ?? nav.current?.querySelector<HTMLElement>("[data-application-navigation-control]") ??
-        document.getElementById(instance + "-trigger"))?.focus();
+        document.getElementById(instance + "-trigger")?.querySelector<HTMLElement>("button, a"))?.focus();
       handoff.current = false;
     });
     return () => cancelAnimationFrame(frame);
@@ -159,21 +181,22 @@ export function AppNavigation({
   };
   const destination = (node: AppNavigationNode, parentId?: string) => {
     const current = node.id === active;
-    const className = cx(CONTROL, "flex-1", collapsed && "justify-center px-0", current &&
+    const className = cx(CONTROL, "flex-1", current &&
       "bg-control-tonal font-semibold outline-solid outline-1 outline-line-strong forced-colors:outline-current");
     const content = <><span aria-hidden="true" className="flex shrink-0 items-center justify-center" style={{ inlineSize: "var(--ui-icon-md, 24px)" }}>{node.icon ?? node.label.slice(0, 1)}</span>
-      <span className={collapsed ? "sr-only" : "min-w-0 truncate"}>{node.label}</span></>;
+      <span className="min-w-0 truncate">{node.label}</span></>;
     const shared = { "data-application-navigation-control": "", "data-navigation-node-id": node.id, "data-parent-id": parentId,
       "aria-current": current ? "page" as const : undefined, className, style: { minBlockSize: "var(--ui-layout-tap-target, 44px)" } };
     const control = node.href !== undefined ? <Link {...shared} variant="muted" href={node.href}>{content}</Link> :
       <Button {...shared} variant="ghost" onPress={() => { node.onAction?.(); if (narrow) changeOpen(false); }}>{content}</Button>;
-    return collapsed ? <RailTooltip trigger={control} label={node.label} requests={tooltipRequests} /> : control;
+    return control;
   };
   const footerRegion = footer !== undefined && footer !== null && footer !== false ?
     <div data-application-navigation-region="footer" className="min-w-0 shrink-0 border-t border-line-base pt-sm">{footer}</div> : undefined;
   const links = <nav ref={nav} aria-label={label} className="flex h-full min-h-0 flex-col" onKeyDown={keyboard}
     onFocus={event => { focusedId.current = (event.target as HTMLElement).closest<HTMLElement>("[data-navigation-node-id]")?.dataset.navigationNodeId; }}
     onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) focusedId.current = undefined; }}>
+    {header !== undefined && header !== null && header !== false && <div data-application-navigation-region="header" className="min-w-0 shrink-0 pb-sm">{header}</div>}
     <div data-application-navigation-region="links" className="min-h-0 flex-1 overflow-auto">
       {!tree.length ? <p className="p-sm text-body text-ink-muted">{emptyMessage}</p> :
         <ul className="m-0 flex list-none flex-col gap-xs p-0">{tree.map(node => {
@@ -183,7 +206,7 @@ export function AppNavigation({
           return <li key={node.id} data-active-ancestor={node.id === ancestor ? "true" : undefined}>
             <div className={cx("flex min-w-0 items-center gap-xs rounded-control", node.id === ancestor && "bg-control-tonal")}>
               {(node.href !== undefined || node.onAction) && destination(node)}
-              {children.length > 0 && !collapsed && <Button variant="ghost" className={cx(CONTROL, "shrink-0", node.href || node.onAction ? "justify-center" : "flex-1")}
+              {children.length > 0 && <Button variant="ghost" className={cx(CONTROL, "shrink-0", node.href || node.onAction ? "justify-center" : "flex-1")}
                 style={{ minBlockSize: "var(--ui-layout-tap-target, 44px)", minInlineSize: "var(--ui-layout-tap-target, 44px)" }}
                 data-application-navigation-control="" data-navigation-node-id={node.id}
                 aria-label={formatDisclosureLabel(node.label, isExpanded)} aria-expanded={isExpanded} aria-controls={panelId}
@@ -192,28 +215,40 @@ export function AppNavigation({
                 <Icon glyph={ChevronDown} decorative size="sm" className={isExpanded ? "rotate-180" : undefined} />
               </Button>}
             </div>
-            {children.length > 0 && <ul id={panelId} className={cx("m-0 flex list-none flex-col gap-xs p-0", !collapsed && "ms-md border-s border-line-base ps-sm", !collapsed && !isExpanded && "hidden")}
-              hidden={!collapsed && !isExpanded}>
-              {(collapsed || isExpanded) && children.map(child => <li key={child.id}>{destination(child, node.id)}</li>)}
+            {children.length > 0 && <ul id={panelId} className={cx("m-0 flex list-none flex-col gap-xs p-0", "ms-md border-s border-line-base ps-sm", !isExpanded && "hidden")}
+              hidden={!isExpanded}>
+              {isExpanded && children.map(child => <li key={child.id}>{destination(child, node.id)}</li>)}
             </ul>}
           </li>;
         })}</ul>}
     </div>
+    {footerRegion}
   </nav>;
-  if (narrow) return <Drawer trigger={<Button id={instance + "-trigger"} variant="ghost" className={cx(CONTROL, "inline-flex")}
-    style={{ minBlockSize: "var(--ui-layout-tap-target, 44px)" }}>{openLabel}</Button>}
-    heading={label} closeLabel={closeLabel} footer={footerRegion} navigationKey={route} dismissAt={dismissAt}
+  const changeCollapsed = () => { setCollapsed(!collapsed); onCollapsedChange?.(!collapsed); };
+  const wideControl = collapsed
+    ? expandLabel === undefined
+      ? <Button variant="ghost" className="icon-control-md shrink-0 border-0 bg-transparent p-0 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent"
+          aria-expanded={false} aria-label={openLabel} onPress={changeCollapsed}><Icon glyph={ChevronRight} decorative size="sm" className="rtl:rotate-180" /></Button>
+      : <Button variant="ghost" className="icon-control-md shrink-0 border-0 bg-transparent p-0 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent"
+          aria-expanded={false} aria-label={expandLabel} onPress={changeCollapsed}><Icon glyph={ChevronRight} decorative size="sm" className="rtl:rotate-180" /></Button>
+    : collapseLabel === undefined
+      ? <Button variant="ghost" className="icon-control-md shrink-0 border-0 bg-transparent p-0 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent"
+          aria-expanded={true} aria-label={closeLabel} onPress={changeCollapsed}><Icon glyph={ChevronLeft} decorative size="sm" className="rtl:rotate-180" /></Button>
+      : <Button variant="ghost" className="icon-control-md shrink-0 border-0 bg-transparent p-0 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent"
+          aria-expanded={true} aria-label={collapseLabel} onPress={changeCollapsed}><Icon glyph={ChevronLeft} decorative size="sm" className="rtl:rotate-180" /></Button>;
+  const control = <span ref={corner} id={instance + "-trigger"} className="contents">{trigger ?? (narrow
+    ? <Button variant="ghost" className="icon-control-md shrink-0 border-0 bg-transparent p-0 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent"
+        aria-expanded={requested} aria-label={openLabel}><Icon glyph={ChevronRight} decorative size="sm" className="rtl:rotate-180" /></Button>
+    : collapsed
+      ? expandLabel === undefined
+        ? <CornerTooltip trigger={wideControl} label={openLabel} requests={tooltipRequests} />
+        : <CornerTooltip trigger={wideControl} label={expandLabel} requests={tooltipRequests} />
+      : collapseLabel === undefined
+        ? <CornerTooltip trigger={wideControl} label={closeLabel} requests={tooltipRequests} />
+        : <CornerTooltip trigger={wideControl} label={collapseLabel} requests={tooltipRequests} />)}</span>;
+  if (narrow) return <Drawer trigger={control}
+    heading={<span className="sr-only">{label}</span>} closeLabel={closeLabel} closeButtonStyle={getAppNavigationCloseStyle(cornerMeasurement)} navigationKey={route} dismissAt={dismissAt}
     isOpen={requested} onOpenChange={changeOpen} className="gap-xs p-sm">{links}</Drawer>;
-  return <Panel className="h-full min-h-0 shrink-0 gap-xs rounded-none border-0 p-sm"
-    style={{ inlineSize: collapsed ? "var(--ui-layout-sidebar-rail-w, 64px)" : "var(--ui-layout-sidebar-w, 256px)" }}
-    header={<div className="flex min-w-0 items-center justify-between gap-xs">
-      <span className={collapsed ? "sr-only" : "min-w-0 truncate text-body font-semibold"}>{label}</span>
-      {collapsed ? <Button variant="ghost" className="icon-control-md shrink-0 border-0 bg-transparent p-0 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent" aria-label={expandLabel}
-        onPress={() => { setCollapsed(false); onCollapsedChange?.(false); }}>
-        <Icon glyph={ChevronRight} decorative size="sm" className="rtl:rotate-180" />
-      </Button> : <Button variant="ghost" className="icon-control-md shrink-0 border-0 bg-transparent p-0 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent" aria-label={collapseLabel}
-        onPress={() => { setCollapsed(true); onCollapsedChange?.(true); }}>
-        <Icon glyph={ChevronLeft} decorative size="sm" className="rtl:rotate-180" />
-      </Button>}
-    </div>} footer={footerRegion}>{links}</Panel>;
+  return <>{control}{!collapsed && <Panel className="h-full min-h-0 shrink-0 gap-xs rounded-none border-0 p-sm"
+    style={{ inlineSize: "var(--ui-layout-sidebar-w, 256px)" }}>{links}</Panel>}</>;
 }

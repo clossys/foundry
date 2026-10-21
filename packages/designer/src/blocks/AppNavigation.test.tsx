@@ -1,9 +1,10 @@
 import { readFileSync } from "node:fs";
 import { act } from "react";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AppNavigation } from "./AppNavigation.js";
+import { getAppNavigationCloseStyle } from "./app-navigation-layout.js";
 import type { AppNavigationNode } from "./app-navigation-tree.js";
 
 const action = vi.fn();
@@ -30,7 +31,56 @@ beforeEach(() => {
 afterEach(() => { document.documentElement.dir = ""; vi.unstubAllGlobals(); });
 
 describe("AppNavigation", () => {
-  it("uses host copy for rail toggles and both disclosure states", async () => {
+  it.each([
+    [{}, "Open navigation", "Close navigation"],
+    [{ openLabel: "Show destinations", closeLabel: "Hide destinations" }, "Show destinations", "Hide destinations"],
+    [{ openLabel: "Show destinations", closeLabel: "Hide destinations", expandLabel: "Expand destinations", collapseLabel: "Collapse destinations" }, "Expand destinations", "Collapse destinations"],
+  ] as const)("preserves both wide label branches and their host aliases for %j", async (copy, openName, closeName) => {
+    render(<AppNavigation tree={tree} defaultCollapsed {...copy} />);
+    const opener = screen.getByRole("button", { name: openName });
+    expect(opener).toHaveAttribute("aria-expanded", "false");
+    await userEvent.click(opener);
+    const closer = screen.getByRole("button", { name: closeName });
+    expect(closer).toBe(opener);
+    expect(closer).toHaveAttribute("aria-expanded", "true");
+    await userEvent.click(closer);
+    expect(screen.getByRole("button", { name: openName })).toBe(opener);
+  });
+
+  it("keeps the technical close position equivalent for measured LTR and RTL corners", () => {
+    const rect = { top: 35, left: 755, right: 799 };
+    expect(getAppNavigationCloseStyle({ ...rect, rtl: false })).toEqual({ position: "fixed", direction: "ltr", insetBlockStart: 35, insetInlineStart: 755, insetInlineEnd: "auto" });
+    expect(getAppNavigationCloseStyle({ ...rect, rtl: true })).toEqual({ position: "fixed", direction: "rtl", insetBlockStart: 35, insetInlineStart: "calc(100% - 799px)", insetInlineEnd: "auto" });
+    expect(getAppNavigationCloseStyle(undefined)).toBeUndefined();
+  });
+
+  it("remeasures a changed custom trigger while the narrow Drawer remains open", async () => {
+    wide = false;
+    let left = 35;
+    const original = HTMLElement.prototype.getBoundingClientRect;
+    const measured = vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function (this: HTMLElement) {
+      return this.getAttribute("aria-label") === "Host corner" ? new DOMRect(left, 27, 44, 44) : original.call(this);
+    });
+    try {
+      const view = render(<div dir="ltr"><AppNavigation tree={tree} drawerOpen trigger={<button aria-label="Host corner" style={{ direction: "ltr" }} />} /></div>);
+      const close = await screen.findByRole("button", { name: "Close navigation", expanded: true });
+      await waitFor(() => expect(close).toHaveStyle({ insetBlockStart: "27px", insetInlineStart: "35px", direction: "ltr" }));
+      left = 621;
+      view.rerender(<div dir="rtl"><AppNavigation tree={tree} drawerOpen trigger={<button aria-label="Host corner" style={{ direction: "rtl" }} />} /></div>);
+      await waitFor(() => expect(close).toHaveStyle({ insetBlockStart: "27px", insetInlineStart: "calc(100% - 665px)", direction: "rtl" }));
+    } finally { measured.mockRestore(); }
+  });
+
+  it.each([true, false])("matches the corner tooltip to the host alias when collapsed is %s", async collapsed => {
+    render(<AppNavigation tree={tree} collapsed={collapsed} openLabel="Show destinations" closeLabel="Hide destinations" expandLabel="Expand destinations" collapseLabel="Collapse destinations" />);
+    const label = collapsed ? "Expand destinations" : "Collapse destinations";
+    const trigger = screen.getByRole("button", { name: label });
+    fireEvent.mouseMove(document.body);
+    await userEvent.hover(trigger);
+    expect(await screen.findByRole("tooltip")).toHaveTextContent(label);
+  });
+
+  it("uses host copy for panel toggles and both disclosure states", async () => {
     const formatDisclosureLabel = vi.fn((label: string, expanded: boolean) => (expanded ? "Fermer " : "Ouvrir ") + label);
     const copy = { expandLabel: "Agrandir", collapseLabel: "Reduire", formatDisclosureLabel };
     render(<AppNavigation tree={tree} activeId="blocks" label="Destinations" {...copy} />);
@@ -124,18 +174,19 @@ describe("AppNavigation", () => {
     expect(screen.queryByRole("link", { name: "Blocks" })).not.toBeInTheDocument();
   });
 
-  it("keeps every rail destination named and shows real focus tooltips", async () => {
-    const view = render(<AppNavigation tree={tree} activeId="home" collapsed />);
-    expect(screen.getByRole("link", { name: "Blocks" })).toHaveAttribute("href", "#blocks");
-    view.rerender(<AppNavigation tree={tree} activeId="blocks" />);
+  it("keeps destinations named on reopening and hands collapsed focus to the corner control", async () => {
+    const view = render(<AppNavigation tree={tree} activeId="blocks" />);
     screen.getByRole("link", { name: "Blocks" }).focus();
     view.rerender(<AppNavigation tree={tree} activeId="blocks" collapsed />);
-    await waitFor(() => expect(screen.getByRole("link", { name: "Blocks" })).toHaveFocus());
+    await waitFor(() => expect(screen.getByRole("button", { name: "Open navigation" })).toHaveFocus());
+    expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
+    view.rerender(<AppNavigation tree={tree} activeId="blocks" collapsed={false} />);
     for (const name of ["Home", "Catalogs", "Blocks"]) expect(screen.getByRole("link", { name })).toHaveAttribute("href");
     expect(screen.getByRole("button", { name: "Actions" })).toBeInTheDocument();
-    await userEvent.tab();
-    expect(await screen.findByRole("tooltip")).toHaveTextContent("Actions");
-    expect(screen.getByRole("button", { name: "Actions" })).toHaveAccessibleName("Actions");
+    await waitFor(() => expect(screen.getByRole("link", { name: "Blocks" })).toHaveFocus());
+    fireEvent.mouseMove(document.body);
+    await userEvent.hover(screen.getByRole("button", { name: "Close navigation" }));
+    expect(await screen.findByRole("tooltip")).toHaveTextContent("Close navigation");
   });
 
   it("places the plain footer outside the independently scrolling links", () => {
@@ -212,14 +263,14 @@ describe("AppNavigation", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
-  it.each(["Escape", "Enter", "blur", "leave", "switch"])("does not resurrect a rail tooltip after %s", async how => {
+  it.each(["Escape", "Enter", "blur", "leave", "switch"])("does not resurrect a corner tooltip after %s", async how => {
     const view = render(<AppNavigation tree={tree} collapsed />);
-    const home = screen.getByRole("link", { name: "Home" });
-    if (how === "leave" || how === "switch") await userEvent.hover(home);
-    else { screen.getByRole("button", { name: "Expand navigation" }).focus(); await userEvent.keyboard("{Tab}"); }
+    const trigger = screen.getByRole("button", { name: "Open navigation" });
+    if (how === "leave" || how === "switch") { fireEvent.mouseMove(document.body); await userEvent.hover(trigger); }
+    else { trigger.focus(); }
     if (how === "Escape" || how === "Enter") await userEvent.keyboard(`{${how}}`);
-    if (how === "blur") screen.getByRole("button", { name: "Expand navigation" }).focus();
-    if (how === "leave") await userEvent.unhover(home);
+    if (how === "blur") trigger.blur();
+    if (how === "leave") await userEvent.unhover(trigger);
     if (how === "switch") view.rerender(<AppNavigation tree={tree} collapsed={false} />);
     await act(async () => { await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))); });
     await waitFor(() => expect(screen.queryByRole("tooltip")).not.toBeInTheDocument());
@@ -233,5 +284,25 @@ describe("AppNavigation", () => {
       expect(source).not.toMatch(/#[\da-f]{3,8}\b|\b(?:rgb|oklch)\(/i);
       expect(source).not.toMatch(/forced-color-adjust-none|animate-|transition-(?!none)/);
     }
+  });
+});
+
+
+describe("AppNavigation frame slots", () => {
+  it("places the host header before destinations and footer after them with no title or rail", async () => {
+    const user = userEvent.setup();
+    render(<AppNavigation tree={tree} label="Workspace destinations" header={<button>Find a command</button>} footer={<button>Host account</button>} />);
+    const nav = screen.getByRole("navigation", { name: "Workspace destinations" });
+    const controls = [...nav.querySelectorAll("button, a")];
+    expect(controls[0]).toHaveAccessibleName("Find a command");
+    expect(controls.at(-1)).toHaveAccessibleName("Host account");
+    expect(within(nav).getByRole("button", { name: "Find a command" })).toBeInTheDocument();
+    expect(within(nav).getByRole("button", { name: "Host account" })).toBeInTheDocument();
+    expect(screen.queryByText("Workspace destinations")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Close navigation" }));
+    expect(screen.queryByRole("navigation", { name: "Workspace destinations" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Open navigation" })).toHaveFocus();
+    await user.click(screen.getByRole("button", { name: "Open navigation" }));
+    expect(screen.getByRole("navigation", { name: "Workspace destinations" })).toBeInTheDocument();
   });
 });

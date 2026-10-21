@@ -31,3 +31,14 @@ describe("DataTable date-range editing", () => {
     expect(filter).toEqual({ column: "created", kind: "date", op: "range", ...bounds });
   });
 });
+
+it.each([
+  { column: "name", kind: "text", op: "notEquals", value: "Alpha" },
+  { column: "plan", kind: "enum", op: "notIn", values: ["pro"] },
+  ...["text", "number", "date", "enum", "tags", "boolean"].flatMap(kind => ["empty", "notEmpty"].map(op => ({ column: "value", kind, op }))),
+] as TableFilter[])("does not open a v2-only editor for $kind/$op", filter => {
+  const change = vi.fn();
+  const { container } = render(<FilterEditor filter={filter} label="Value" facets={[]} change={change} />);
+  expect(container).toBeEmptyDOMElement();
+  expect(change).not.toHaveBeenCalled();
+});

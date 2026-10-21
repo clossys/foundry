@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from "react";
+import type { CSSProperties, ReactNode, RefObject } from "react";
 import {
   Dialog as AriaDialog,
   DialogTrigger,
@@ -18,6 +18,8 @@ export interface PopoverProps extends Omit<AriaDialogTriggerProps, "children"> {
    * onto it by react-aria-components' `DialogTrigger` via context.
    */
   trigger: ReactNode;
+  /** Optional positioning anchor; omission keeps the actual trigger as the anchor. */
+  anchorRef?: RefObject<Element | null>;
   /** Accessible name for the inner dialog when no visible title heading is supplied. */
   "aria-label"?: string;
   /**
@@ -88,6 +90,7 @@ export interface PopoverProps extends Omit<AriaDialogTriggerProps, "children"> {
  */
 export function Popover({
   trigger,
+  anchorRef,
   "aria-label": ariaLabel,
   children,
   placement = "bottom",
@@ -100,6 +103,7 @@ export function Popover({
     <DialogTrigger {...rest}>
       {trigger}
       <AriaPopover
+        triggerRef={anchorRef}
         placement={placement}
         offset={offset}
         className={cx(

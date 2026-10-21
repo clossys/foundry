@@ -9,7 +9,7 @@ import { FlatGrid } from "./FlatGrid.js";
 import { PivotGrid } from "./PivotGrid.js";
 import { sortViewRows } from "./presentation.js";
 import { ViewOptions } from "./ViewOptions.js";
-import { editView, parseDataTableViewModel, type DataTableViewModel } from "./view-model.js";
+import { editView, parseDataTableViewModel, type DataTableViewModel, type DataTableViewModelV1 } from "./view-model.js";
 
 type DisplayRow<Row> = { kind: "leaf"; key: string; row: Row } | { kind: "group"; key: string; group: TableGroup<Row>; open: boolean };
 const leafKey = (key: Key) => "leaf:" + JSON.stringify([typeof key, key]);
@@ -21,9 +21,9 @@ export function ModelTable<Row>({
   /** @default (id, value) => `${id}: ${valueLabel(value)}` */
   aggregateMessage = defaultAggregateMessage,
   ...props
-}: DataTableProps<Row> & DataTableMessages & { model: DataTableViewModel }) {
-  const { model, onModelChange, expandedGroupKeys = "all", onExpandedGroupKeysChange, toolbar, footer } = props;
-  parseDataTableViewModel(model);
+}: DataTableProps<Row> & DataTableMessages & { model: DataTableViewModel | DataTableViewModelV1 }) {
+  const { model: inputModel, onModelChange, expandedGroupKeys = "all", onExpandedGroupKeysChange, toolbar, footer } = props;
+  const model = parseDataTableViewModel(inputModel);
   if (!onModelChange) throw new TypeError("DataTable with model requires onModelChange.");
   const supplied = new Map(props.columns.map(column => [column.id, column]));
   for (const column of model.table.columns) if (!supplied.has(column.id)) throw new TypeError("DataTable requires a renderer for every model column.");

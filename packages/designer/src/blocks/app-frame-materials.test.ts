@@ -14,6 +14,36 @@ const root = resolve(import.meta.dirname, "../..");
 const materials = () => (blocks as any).APP_FRAME_MATERIALS ?? [];
 
 describe("AppFrame Material registration", () => {
+  it("forwards AppNavigation host header, footer and corner trigger from its real record", () => {
+    const navigation = materials().find((entry: any) => entry.id === "app-navigation");
+    const supplied = {
+      tree: [{ id: "home", label: "Home", href: "#home" }], label: "Workspace destinations",
+      header: createElement(Button, {}, "Find a command"), footer: createElement(Button, {}, "Host account"),
+      trigger: createElement(Button, {}, "Host navigation toggle"),
+    };
+    const authored = Object.fromEntries(navigation.authoredInputs.filter((name: string) => name in supplied)
+      .map((name: keyof typeof supplied) => [name, supplied[name]]));
+    const view = render(createElement(blocks.AppNavigation, authored as ComponentProps<typeof blocks.AppNavigation>));
+    expect(view.getByRole("button", { name: "Find a command" })).toBeInTheDocument();
+    expect(view.getByRole("button", { name: "Host account" })).toBeInTheDocument();
+    expect(view.getByRole("button", { name: "Host navigation toggle" })).toBeInTheDocument();
+    view.unmount();
+  });
+
+  it("forwards only the admitted Drawer close layout through its own authored-input record", async () => {
+    const drawer = materials().find((entry: any) => entry.id === "drawer");
+    const supplied = {
+      heading: "Tools", closeLabel: "Close tools", children: "Tool content", trigger: createElement(Button, {}, "Open tools"),
+      closeButtonStyle: { position: "fixed" as const, insetBlockStart: 35, insetInlineStart: 117, direction: "rtl" as const },
+    };
+    const authored = Object.fromEntries(drawer.authoredInputs.filter((name: string) => name in supplied)
+      .map((name: keyof typeof supplied) => [name, supplied[name]]));
+    const view = render(createElement(blocks.Drawer, authored as ComponentProps<typeof blocks.Drawer>));
+    await userEvent.click(view.getByRole("button", { name: "Open tools" }));
+    expect(view.getByRole("button", { name: "Close tools" })).toHaveStyle({ position: "fixed", insetBlockStart: "35px", insetInlineStart: "117px", direction: "rtl" });
+    view.unmount();
+  });
+
   it("keeps the Drawer opener available through its authored inputs", async () => {
     const drawer = materials().find((entry: any) => entry.id === "drawer");
     const supplied = {

@@ -1,4 +1,4 @@
-import type { TableFilter, TableValue, TableAggregateValue, TablePivotAxis } from "../table-model/index.js";
+import type { TableFilter, TableFilterNode, TableValue, TableAggregateValue, TablePivotAxis } from "../table-model/index.js";
 import type { DataTableSortRule } from "./view-model.js";
 import { pathLabel, valueLabel } from "./presentation.js";
 
@@ -55,7 +55,7 @@ export interface DataTableMessages {
   /** @default column => `Add sort ${column}` */
   readonly addSortMessage?: (column: string) => string;
   /** @default (column, filter) => `Remove filter ${column} ${describeFilter(filter)}` */
-  readonly removeFilterMessage?: (column: string, filter: TableFilter) => string;
+  readonly removeFilterMessage?: (column: string, filter: TableFilterNode) => string;
   /** @default column => `Add filter ${column}` */
   readonly addFilterMessage?: (column: string) => string;
   /** @default column => `Show ${column}` */
@@ -75,7 +75,7 @@ export interface DataTableMessages {
   /** @default (column, direction) => `Sort: ${column} ${direction}` */
   readonly sortChipMessage?: (column: string, direction: DataTableSortRule["direction"]) => string;
   /** @default (column, filter) => `Filter: ${column} ${describeFilter(filter)}` */
-  readonly filterChipMessage?: (column: string, filter: TableFilter) => string;
+  readonly filterChipMessage?: (column: string, filter: TableFilterNode) => string;
   /** @default column => `Minimum ${column}` */
   readonly minimumMessage?: (column: string) => string;
   /** @default column => `Maximum ${column}` */
@@ -130,7 +130,13 @@ export interface DataTableMessages {
   readonly selectRowLabel?: string;
 }
 
-function describeFilter(filter: TableFilter): string {
+function isEmptyFilter(filter: TableFilter): filter is Extract<TableFilter, { op: "empty" | "notEmpty" }> {
+  return filter.op === "empty" || filter.op === "notEmpty";
+}
+
+function describeFilter(filter: TableFilterNode): string {
+  if (filter.kind === "group") return `${filter.op} (${filter.items.length})`;
+  if (isEmptyFilter(filter)) return filter.op;
   if (filter.kind === "text") return `${filter.op} “${filter.value}”`;
   if (filter.kind === "number" || filter.kind === "date") return `${filter.min ?? "…"} – ${filter.max ?? "…"}`;
   if (filter.kind === "boolean") return String(filter.value);
@@ -144,7 +150,7 @@ export const defaultSortDirectionMessage: NonNullable<DataTableMessages["sortDir
 export const defaultMoveSortMessage: NonNullable<DataTableMessages["moveSortMessage"]> = column => `Move sort ${column} earlier`;
 export const defaultRemoveSortMessage: NonNullable<DataTableMessages["removeSortMessage"]> = column => `Remove sort ${column}`;
 export const defaultAddSortMessage: NonNullable<DataTableMessages["addSortMessage"]> = column => `Add sort ${column}`;
-export const defaultRemoveFilterMessage: NonNullable<DataTableMessages["removeFilterMessage"]> = (column, filter) => `Remove filter ${column} ${describeFilter(filter)}`;
+export const defaultRemoveFilterMessage: NonNullable<DataTableMessages["removeFilterMessage"]> = (column, filter) => `Remove filter ${filter.kind === "group" ? "" : column + " "}${describeFilter(filter)}`;
 export const defaultAddFilterMessage: NonNullable<DataTableMessages["addFilterMessage"]> = column => `Add filter ${column}`;
 export const defaultShowColumnMessage: NonNullable<DataTableMessages["showColumnMessage"]> = column => `Show ${column}`;
 export const defaultMoveColumnMessage: NonNullable<DataTableMessages["moveColumnMessage"]> = column => `Move column ${column} earlier`;
@@ -154,7 +160,7 @@ export const defaultMovePivotMessage: NonNullable<DataTableMessages["movePivotMe
 export const defaultRemoveGroupMessage: NonNullable<DataTableMessages["removeGroupMessage"]> = column => `Remove group ${column}`;
 export const defaultGroupChipMessage: NonNullable<DataTableMessages["groupChipMessage"]> = column => `Group: ${column}`;
 export const defaultSortChipMessage: NonNullable<DataTableMessages["sortChipMessage"]> = (column, direction) => `Sort: ${column} ${direction}`;
-export const defaultFilterChipMessage: NonNullable<DataTableMessages["filterChipMessage"]> = (column, filter) => `Filter: ${column} ${describeFilter(filter)}`;
+export const defaultFilterChipMessage: NonNullable<DataTableMessages["filterChipMessage"]> = (column, filter) => `Filter: ${filter.kind === "group" ? "" : column + " "}${describeFilter(filter)}`;
 export const defaultMinimumMessage: NonNullable<DataTableMessages["minimumMessage"]> = column => `Minimum ${column}`;
 export const defaultMaximumMessage: NonNullable<DataTableMessages["maximumMessage"]> = column => `Maximum ${column}`;
 export const defaultApplyRangeMessage: NonNullable<DataTableMessages["applyRangeMessage"]> = column => `Apply ${column} range`;

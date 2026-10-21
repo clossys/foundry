@@ -5042,19 +5042,20 @@ prop" shape every block in this README already follows; see `SiteHeader`'s
 own doc comment for why it's `shell`, not `blocks`, despite reading like a
 `PageHeader`-shaped composition of named regions.
 
-`navPlacement="centered"` and `mobileLayout="menu-brand-action"` are the
-shared defaults. Equal side tracks center navigation on the whole header;
-`NavDisclosure` measures intrinsic brand/link/action widths and collapses
-before collision. Mobile centers the supplied mark on the whole bar, not on
-the space left between the controls, with menu at inline-start and a supplied
-primary icon or empty track at inline-end. The mobile brand hides wordmark
-text only: a `Brandmark` mark stays visible (an image, a shared plate holding
-an image, or an accent mark tagged `data-brand-mark`), and the link keeps its
-`aria-label` as its name while the wordmark is hidden. The layout mirrors
-in RTL. `secondaryAction` renders before `actions` in the trailing region.
-Explicit `navPlacement="leading"` or `mobileLayout="inline"` retain legacy
-positioning rather than the default geometry. DOM order remains brand, nav,
-actions, and the header adds no brand symbol.
+`navPlacement="centered"` is the desktop default; `"leading"` places
+navigation beside the brand on wide headers. Both use one responsive layout:
+mobile puts the menu at inline-start, centers the mark on the whole bar, and
+keeps the actions at inline-end. Equal side tracks keep an asymmetric set of
+controls from displacing the mark. The mobile brand hides only the wordmark;
+the image or accent mark stays visible and the link retains its accessible
+name. The layout mirrors in RTL. DOM order stays brand, nav, actions.
+
+The one `actions` slot orders recognized `SiteHeader.ActionLink` children from
+ghost through secondary to primary, including fragments containing only these
+links. Primary is last in DOM order, at inline-end on desktop and lowest in a
+stacked menu. Unknown custom children keep their authored positions, props and
+relative order; the host owns their importance and order. The header adds no
+brand symbol or duplicate content.
 
 ```tsx
 <SiteHeader
@@ -5066,23 +5067,21 @@ actions, and the header adds no brand symbol.
       <Link href="/pricing" variant="standalone">Pricing</Link>
     </NavShell>
   }
-  secondaryAction={<Link href="/sign-in" variant="standalone">Sign in</Link>}
-  actions={<Link href="/pricing" variant="standalone">Pricing</Link>}
+  actions={<>
+    <SiteHeader.ActionLink href="/sign-in" label="Sign in" variant="ghost" />
+    <SiteHeader.ActionLink href="/pricing" label="Pricing" variant="secondary" />
+  </>}
 />
 ```
 
-`surfaceLabel` names the surface a staff or demo host serves, such as `"admin"`
-or `"demo"`: a neutral `Badge` rendered last in the trailing region, after
-`secondaryAction` and `actions`, in either placement. It is text only by type,
-so no link, button or icon can be passed and it is never interactive; a member
-host omits it.
+The trailing region has no surface badge. Use named environment links in the
+same actions list to identify the current environment.
 
 ```tsx
-<SiteHeader brand={<Link href="/" variant="standalone">Acme</Link>} surfaceLabel="admin" />
+<SiteHeader brand={<Link href="/" variant="standalone">Acme</Link>} actions={<SiteHeader.ActionLink href="/admin" label="Admin" isCurrent />} />
 ```
 
-`surfaceLabel` is superseded by environment links and stays for existing
-callers. `SiteHeader.ActionLink` is one header call to action: a real
+`SiteHeader.ActionLink` is one header call to action: a real
 `<a>` with a `label` and an optional caller-supplied `IconNode` glyph. Without
 an icon, the label is plain visible text at every width. With an icon, from the
 `tablet` breakpoint up it shows the icon and the label; below it the label is
@@ -5112,13 +5111,12 @@ import { Home, Settings } from "@clossys/designer/icons";
 looks as `Button` at its small size. `ActionLink` is a server-safe component
 from both `@clossys/designer/shell` and `@clossys/designer/shell/server`.
 
-`placement` (`"flow"` by default) decides where the header sits. `"flow"` is
-the header in normal document flow, unchanged from earlier releases.
-`"overlay"` fixes the header to the top of the viewport over the first block,
-taking no height in the document: transparent at the top of the page, then a
-glass plate once the page scrolls beneath it. The glass is
-`--color-surface-glass` (or `--color-surface-glass-inverse`) behind a
-`--blur-glass` backdrop blur, over a hairline in the matching line role.
+`surface` is the single header surface setting. `"solid"` (default) is an
+in-flow plate with a hairline. `"transparent"` never paints a plate or border.
+`"glass"` fixes the header over the first block, taking no document height:
+transparent at the scroll origin, then translucent and blurred after scrolling
+or while a menu is open. The glass is `--color-surface-glass` (or
+`--color-surface-glass-inverse`) behind `--blur-glass`, with a matching hairline.
 The shipped blur is 20px. Glass alpha is measured separately for each theme
 and polarity against both white and black backdrops: light-theme base/inverse
 use 0.60/0.85, dark-theme base/inverse use 0.86/0.60. These are the lowest
@@ -5128,14 +5126,13 @@ rerun the unchanged contrast gate when changing those tokens.
 
 - `tone` (`"base"` by default, or `"inverse"`) sets the header's inherited
   ink (`ink-primary` or `ink-on-inverse`) and the matching glass, so the ink
-  follows the matching plate as the header turns to glass. Tones are theme-relative, like
+  follows the plate on all three surfaces. Tones are theme-relative, like
   the tokens: `base` is dark ink on a light ground only in the light theme.
-  In `"overlay"`, `ground` is not read.
 - `tone` governs inherited ink only. A child that sets its own ink keeps it:
   `Link` in every variant (`standalone` is `ink-primary`, `default` is
   `ink-link`, `muted` is `ink-muted`), an explicitly toned `Brandmark` and
-  `SiteHeader.ActionLink`'s `ghost` look (`ink-primary` with no plate). With
-  `tone="inverse"` those read dark on dark glass. `ActionLink`'s `primary`
+  custom content may therefore need `text-inherit` on inverse surfaces.
+  Header ghost ActionLinks and navigation inherit the header ink. `ActionLink`'s `primary`
   and `secondary` looks carry their own fill, so they read on either tone.
   An unconfigured header Brandmark inherits the live header ink for its
   wordmark while retaining the accent logomark and `markInk="image"` opt-out.
@@ -5174,7 +5171,7 @@ rerun the unchanged contrast gate when changing those tokens.
   photographic or arbitrary hero art the page supplies its own top scrim and
   a tone that reads over it in both themes.
 
-The header is fixed rather than absolutely positioned (which would scroll
+The glass header is fixed rather than absolutely positioned (which would scroll
 away before it could turn to glass) or stuck (which reserves its height in
 flow). These hosting requirements apply to a standalone header; Publisher
 `SiteFrame` supplies shared header clearance for its main, skip and anchor
@@ -5184,7 +5181,7 @@ targets. A standalone page supplies the following:
   scrolls inside a container instead, the root never scrolls and the header
   stays transparent over content.
 - **The first block reserves the header's height.** No header-height value is
-  exported; the height changes with wrapping, text zoom and `surfaceLabel`,
+  exported; the height changes with wrapping and text zoom,
   so measure it in the page or pad generously.
 - **The root sets `scroll-padding-top`** to at least the header's height. It
   lands in-page anchors below the header, and it keeps a focused element
@@ -5202,7 +5199,7 @@ targets. A standalone page supplies the following:
 
 ```tsx
 <SiteHeader
-  placement="overlay"
+  surface="glass"
   tone="inverse"
   brand={<a href="/" className="text-inherit">Acme</a>}
   actions={<a href="/sign-in" className="text-inherit">Sign in</a>}
@@ -5256,7 +5253,6 @@ import { NavDisclosure, SiteHeader } from "@clossys/designer/shell";
 import { Home } from "@clossys/designer/icons";
 
 <SiteHeader
-  mobileLayout="menu-brand-action"
   brand={<a href="/"><img src="/logo.svg" alt="Example" style={{ maxWidth: "100%", height: "auto" }} /></a>}
   nav={
     <NavDisclosure aria-label="Primary" trigger="icon" triggerLabel="Menu">
@@ -5390,11 +5386,9 @@ both document directions. No browser-driver npm dependency is required.
 
 #### Transparent chrome and full width
 
-`SiteHeader` accepts `ground="transparent"` for chrome that sits over a
-page backdrop. It renders no `bg-*` class, no `border-*` class and no
-border-width style. Ink is unchanged from `"base"`: `SiteHeader` still sets
-none, so its content inherits its ink from the page. `ground` still defaults
-to `"base"`, and the header's `"base"` and `"inverse"` markup is unchanged.
+`SiteHeader surface="transparent"` sits over a page backdrop without a plate,
+border class or border-width style. `tone="base"` (default) sets ordinary ink;
+`tone="inverse"` selects inverse ink independently of the surface.
 `SiteFooter ground="transparent"` omits its outer border and the divider
 between `columns` and `secondary`, while retaining its local dark surface
 and paired light ink. Its `ground` default remains `"base"`.
@@ -5407,7 +5401,7 @@ import { SiteFooter, SiteHeader } from "@clossys/designer/shell";
 export function Chrome() {
   return (
     <>
-      <SiteHeader ground="transparent" brand={<a href="/">Example Co</a>} />
+      <SiteHeader surface="transparent" brand={<a href="/">Example Co</a>} />
       <SiteFooter
         ground="transparent"
         secondary={<SiteFooter.Legal entity="Example Co" links={[{ label: "Privacy", href: "/privacy" }]} />}
@@ -5424,11 +5418,8 @@ the full viewport width, inset only by the `--ui-width-page-padding-x` token;
 page content stays in `Shell.Main`'s container. A test pins this for every
 ground.
 
-For `SiteHeader`, `ground="transparent-inverse"` is the same no-plate,
-no-border chrome for a page that is itself on the inverse ground
-(`bg-surface-inverse` with `text-ink-on-inverse`). `SiteHeader` renders
-exactly as it does for `"transparent"`, since it sets no ink and inherits
-the page's. `SiteFooter ground="transparent-inverse"` retains the same local
+For `SiteHeader`, `surface="transparent" tone="inverse"` is no-plate,
+no-border chrome with inverse ink. `SiteFooter ground="transparent-inverse"` retains the same local
 dark surface and paired light primary and secondary ink as its other
 grounds, while omitting borders and the internal divider.
 
@@ -5438,7 +5429,7 @@ import { SiteFooter, SiteHeader } from "@clossys/designer/shell";
 export function InverseChrome() {
   return (
     <div className="bg-surface-inverse text-ink-on-inverse">
-      <SiteHeader ground="transparent-inverse" brand={<a href="/">Example Co</a>} />
+      <SiteHeader surface="transparent" tone="inverse" brand={<a href="/">Example Co</a>} />
       <SiteFooter
         ground="transparent-inverse"
         secondary={<SiteFooter.Legal entity="Example Co" links={[{ label: "Privacy", href: "/privacy" }]} />}
@@ -5448,10 +5439,10 @@ export function InverseChrome() {
 }
 ```
 
-Neither transparent ground checks the contrast of the chrome ink over
-whatever sits beneath it. That is the consumer's backdrop's job: choose a
-backdrop the base ink reads against, use `"transparent-inverse"` over the
-inverse ground, or use `ground="inverse"` for an opaque dark band.
+Transparent header surfaces require a backdrop that supports the selected
+ink in both themes. Choose `tone="inverse"` over inverse ground, or
+`surface="solid" tone="inverse"` for an opaque header plate. Footer ground
+behavior is independent and unchanged.
 
 ### `Logomark` and `Lockup`
 
@@ -6894,7 +6885,7 @@ not a grab-bag).
 | `SkipLink` | component | Keyboard affordance to bypass nav chrome and jump straight to a page's content. Visually hidden until focused. |
 | `SkipLinkProps` | type | Props for `SkipLink`: `targetId` (the jump target's `id`), `children` (the link's own visible text — no built-in copy), `className`. |
 | `SiteHeader` | component | Public-site top chrome: brand slot, primary navigation slot (leading or centered), secondary action slot, actions slot. Renders the page's `banner` landmark. |
-| `SiteHeaderProps` | type | Props for `SiteHeader`: `brand` (required), `nav`, `navPlacement` (`"centered"` default; explicit `"leading"` retains legacy positioning), `mobileLayout` (`"menu-brand-action"` default; explicit `"inline"` retains legacy positioning), `secondaryAction`, `actions`, `surfaceLabel` (text-only badge, last in the trailing region), plus every native `<header>` attribute. |
+| `SiteHeaderProps` | type | Props for `SiteHeader`: `brand` (required), `nav`, ordered `actions`, `navPlacement` (`"centered"` default or `"leading"`), `surface` (`"solid"` default, `"transparent"`, `"glass"`), `tone` (`"base"` default or `"inverse"`), `menuOpen`, plus native `<header>` attributes. |
 | `NavShell` | component | The responsive half of a public site's navigation: an inline `<nav>` from `tablet` up, a trigger-plus-drawer below it. |
 | `NavDisclosure` | component | A non-modal navigation: a mobile sheet below `tablet`, an inline row from `tablet` up, and inline links when scripting is unavailable. |
 | `NavDisclosureProps` | type | Props for `NavDisclosure`: required `children`, `aria-label` (default `"Primary"`), `triggerLabel` (default `"Menu"`), `trigger` (`"label"` default, or `"icon"`), and landmark `className`. |
@@ -7854,12 +7845,12 @@ const report = checkConsumerArtContract(art);
 ### Site chrome tone and transparent footer rule
 
 `Brandmark tone="inverse"` uses inverse wordmark ink; `"auto"` keeps the base
-ink. A `Brandmark` passed directly to an overlay `SiteHeader` follows the header tone
+ink. A `Brandmark` passed directly to a `SiteHeader` follows the header tone
 unless its own tone is explicit. A `Brandmark` passed directly to any `SiteHeader`
 paints its logomark in the accent token unless it sets `markInk="image"`. `NavDisclosure tone="inverse"` uses inverse
-trigger ink at rest, on hover, when expanded and on keyboard focus. An omitted
-nav tone follows an inverse overlay header; an explicit `"auto"` keeps base ink.
-Both controls otherwise retain their existing default markup.
+trigger ink at rest, on hover, when expanded and on keyboard focus. Navigation
+inside a SiteHeader inherits its tone on every surface when no standalone
+tone is set. Outside a SiteHeader, both controls retain their existing defaults.
 
 `SiteFooter ground="transparent" rule="top"` adds a token-bound top hairline
 on its local dark surface without a divider inside the footer. `rule`
@@ -7942,7 +7933,12 @@ tablet breakpoint; supply another media query when the host's wide layout
 starts elsewhere. Changing `navigationKey` or entering that query dismisses
 an open drawer, as does ordinary in-panel link navigation. No motion is added.
 The close control renders the `X` glyph through the `Icon` atom as decoration;
-`closeLabel` supplies the control's accessible name.
+`closeLabel` supplies the control's accessible name. The optional
+`closeButtonStyle` layout hook positions that same control from a measured opener
+rectangle and direction; it accepts only position, logical insets and direction.
+The opted-in close reports `aria-expanded="true"` while visible. Omission preserves
+the existing header placement and markup; the host does not replace its action,
+label, focus restoration or Dialog lifecycle.
 
 `wide="sheet"` makes the Drawer an application side sheet that opens at every
 viewport width, for example an inspector at `placement="end"`. It ignores
@@ -8073,6 +8069,12 @@ export function CommandExample() {
 }
 ```
 
+The general `Popover` atom also accepts an optional `anchorRef` positioning
+reference. Omission keeps its actual trigger as the anchor. A different anchor
+changes positioning only: the trigger still owns opening, Escape, outside
+interaction and focus restoration. AppFrame uses its bar reference to align the
+page-information overlay and supplies direction through the existing style hook.
+
 ## Application navigation
 
 `AppNavigation` is a Block Material for host-owned destinations. Supply stable
@@ -8099,8 +8101,10 @@ export function NavigationExample() {
 ```
 
 The host places the Material in a height-constrained frame region. Links scroll
-independently of `footer`, which accepts plain children and imports no account
-control. Navigation stores no preferences, fetches no data and imports no router.
+independently of optional `header` and `footer` slots, which accept plain
+children and import no account control. The header precedes destinations; the
+footer follows them. No title row is synthesized. A frame may supply its own
+`trigger` wired to controlled open/collapsed state. Navigation stores no preferences, fetches no data and imports no router.
 `activeId` takes precedence over `activeHref`; ancestry and breadcrumbs derive
 only from that route identity, with no view-internal selection input.
 
@@ -8111,9 +8115,11 @@ root-to-destination node chain, with id taking precedence over href.
 
 Desktop parents expand inline. A destination link and its disclosure button are
 separate controls. A newly active child expands its ancestor. `collapsed` controls
-the named, tooltipped icon rail; `defaultCollapsed` supplies its initial local
-state and `onCollapsedChange` reports changes. Every child destination remains
-reachable in the rail. Long labels retain their complete accessible names.
+the full panel: when closed, only the named corner control remains, without an
+icon rail. `defaultCollapsed` supplies its initial local state and
+`onCollapsedChange` reports changes. Closing hands destination focus to the
+corner control; reopening retains the active ancestry. Long labels keep their
+complete accessible names.
 
 The narrow layout uses the existing Drawer with full rows. `dismissAt` defaults
 to `(min-width: 768px)`. Escape returns focus; route changes, actions and entering
@@ -8123,8 +8129,10 @@ the trigger. `onDrawerOpenChange` lets the host coordinate other overlays.
 `navigationKey`, `label`, `openLabel` and `closeLabel` are host inputs. The Drawer close control
 uses a 44px ghost icon button; `closeLabel` supplies its accessible name.
 `expandLabel`, `collapseLabel` and `formatDisclosureLabel(nodeLabel, expanded)`
-let the host translate rail toggles and disclosures; their defaults preserve the
-English expand/collapse announcements. All message props are optional.
+let the host translate panel toggles and disclosures. The first two are optional
+legacy aliases for the wide open/close labels; the default control uses
+`openLabel` and `closeLabel`. Disclosure defaults retain the English
+expand/collapse announcements. All message props are optional.
 
 Arrow Up/Down and Home/End move among visible navigation controls. Logical
 Left/Right expand or collapse a parent, reversing in RTL. Enter/Space activate
@@ -8240,15 +8248,29 @@ properties normalize to one null value. Invalid cells are refused even if a
 later filter would hide that row. Input rows, arrays and models are not mutated;
 returned row arrays retain references to the caller's original rows.
 
-Filters combine with AND, including multiple filters on one column. Text supports
+Version 1 filters combine with AND, including multiple filters on one column. Text supports
 `contains` and `equals`; number and date `range` bounds are inclusive and either
 bound may be omitted. Enum `in` matches exact string values. Tags support `any`,
 `all` and `none`; null tags act as an empty set for filtering. Empty `any` matches
 no rows, while empty `all` and `none` match every row. Boolean uses `equals`.
-Null values fail scalar filters. Global `search` matches any non-null searchable
+Null values fail these scalar filters. Global `search` matches any non-null searchable
 column, with individual tags searched separately; `searchable: false` opts a
 column out. Contains and global search use case folding in the supplied locale;
 text equality uses its collation sensitivity. Enum and tag identity remain exact.
+
+Version 2 adds text `notEquals`, enum `notIn`, and `empty`/`notEmpty` on every
+column kind. Negation (`notEquals`, `notIn` and tags `none`) matches null cells;
+text negation uses the same collation as equality. `empty` matches null, `""`
+and `[]`; `notEmpty` is its inverse. Empty-operator leaves have exactly
+`column`, `kind` and `op`, with no value or bounds. Every leaf's kind must match
+its declared column.
+
+`TableFilterNode` is a `TableFilter` leaf or a `TableFilterGroup` shaped as
+`{ kind: "group", op: "and" | "or", items: readonly TableFilterNode[] }`.
+The root filter array is an implicit AND at depth zero. Root groups are depth
+one, nested groups depth two; deeper groups are refused, even when empty.
+Empty groups are ignored, including empty OR children inside another OR.
+Version 1 refuses groups and all four new operators with `invalid-model`.
 
 `filterRows` returns input-ordered `rows` and `facets` keyed by column ID. Each
 facet applies global search and every other column's filters, omitting all filters
@@ -8257,6 +8279,14 @@ once, an empty tag set contributes no tag and a missing tag value contributes a
 null facet. This disjunctive convention lets a filter menu display alternatives
 to its current selection. Numeric and date facets count distinct normalized
 values rather than histogram buckets.
+
+For groups, each facet applies search and `pruneFilterColumn(filters, column)`:
+remove that column's leaves at every depth, then drop groups left empty.
+Flat AND facets retain version 1 behavior. `tableFilterPredicate(model)` parses
+once and returns a row predicate for filters only; global search is separate.
+`TABLE_FILTER_CONFORMANCE` exports at least 30 plain-data cases with string row
+IDs and input-ordered `expectedIds`; hosts that translate filters to queries run
+`TABLE_FILTER_CONFORMANCE` against their translation.
 
 The locale is required and must be supported by the runtime. Collation options
 control text ordering; a UTF-16 lexical tie break makes equal-collation group keys
@@ -8290,9 +8320,11 @@ high-cardinality output. The test budget is 2,000 ms for filter, three-level gro
 and two-by-two-dimension pivot computation over 10,000 rows with bounded axis
 cardinality and three measures; it is not a timing promise for arbitrary shapes.
 
-Saved views are version 1 plain objects. `serializeTableModel` validates and
+Table saved views are version 1 or 2 plain objects. `serializeTableModel` validates and
 copies a model; `parseTableModel` accepts an unknown plain object and copies it
-after validation. Unknown fields, accessors, column references, kinds, operators,
+after validation. Both preserve the input table version. Other versions, including
+the string `"2"`, are refused with `unsupported-version`.
+Unknown fields, accessors, column references, kinds, operators,
 invalid ranges and unsupported versions are refused. The typed `TableModelError`
 has a stable `code`: `invalid-model`, `unsupported-version`, `unknown-column`,
 `invalid-cell`, `pivot-budget` or `aggregate-overflow`.
@@ -8300,18 +8332,23 @@ has a stable `code`: `invalid-model`, `unsupported-version`, `unknown-column`,
 | Export | Kind | Contract |
 | --- | --- | --- |
 | `filterRows` | function | AND/global filtering with input-ordered rows and disjunctive facets. |
+| `tableFilterPredicate` | function | Parse once and evaluate filters without global search. |
+| `pruneFilterColumn` | function | Remove a column's leaves recursively and drop emptied groups. |
+| `TABLE_FILTER_CONFORMANCE` | value | Plain-data filter cases and input-ordered passing row IDs for host parity. |
 | `groupRows` | function | Deterministically ordered group tree and per-node aggregates. |
 | `pivotRows` | function | Prefix axes, explicit sparse cells, measures, totals and subtotals. |
 | `aggregate` | function | Saved-view measures over filtered rows. |
 | `parseTableModel` | function | Validate and copy an unknown plain saved-view object. |
 | `serializeTableModel` | function | Produce an independent validated plain saved-view object. |
 | `TableModelError` | class | Typed model, cell, output-budget and numeric-overflow refusal. |
-| `TableModel` | type | Version 1 columns, collation, filters, search, groups, measures and pivot. |
+| `TableModel` | type | Version 1 or 2 columns, collation, filters, search, groups, measures and pivot. |
 | `TableValue` | type | Normalized string, number, boolean, tag set or null. |
 | `TableColumnKind` | type | The six supported column kinds. |
 | `TableColumn` | type | Own-property ID, kind and optional global-search participation. |
 | `TableCollation` | type | Required locale and optional sensitivity, numeric and case ordering. |
 | `TableFilter` | type | Discriminated column-kind and operator filter union. |
+| `TableFilterGroup` | type | AND/OR items with at most two group levels in version 2. |
+| `TableFilterNode` | type | A filter leaf or group. |
 | `TableDimension` | type | Column reference and optional ascending or descending order. |
 | `TableMeasure` | type | Named count, sum, min, max, average or distinct measure. |
 | `TablePivot` | type | Row and column dimension arrays. |
@@ -8521,11 +8558,24 @@ Saved views add `model`, `onModelChange`, `messages`, `expandedGroupKeys` and
 
 
 Pass `model` and `onModelChange` to render a local saved view of the supplied
-rows. `DataTableViewModel` is one versioned, plain-data envelope containing the
-unchanged headless `TableModel` in `table`, plus `mode` (`flat`, `grouped`,
+rows. `DataTableViewModel` is the version 2 plain-data envelope containing the
+headless `TableModel` in `table`, plus `mode` (`flat`, `grouped`,
 `pivot`), `density` (`comfortable`, `compact`), ordered `sort` rules and ordered
 `visibleColumns`. Every model column needs a matching `DataTableColumn` renderer;
 React headers and cell callbacks stay in props, outside the saved payload.
+
+The optional `columnWidths` record maps declared column IDs to integer pixels
+48 through 2000 inclusive. Optional `pinnedColumns` contains at most three unique
+IDs, equal to the leading entries of `visibleColumns` in the same order.
+The current flat grid ignores widths and pins. Existing options preserve them;
+pinned columns cannot be hidden or moved, and unpinned columns cannot cross the
+pinned prefix. There are no width or pin editors in this block.
+
+`DataTableViewModelV1` names the version 1 envelope. The `model` prop accepts
+either version; `onModelChange` always emits version 2. Parsing migrates a v1
+envelope to v2 without adding absent width or pin keys, and the nested table keeps
+its own version. Hosts with version 1 literals typed as `DataTableViewModel` now
+type those literals as `DataTableViewModelV1`.
 
 See the [saved-view example](#datatable-saved-view-example) for a complete controlled table.
 
@@ -8553,8 +8603,10 @@ edits copy the envelope and affected nested arrays/objects; frozen inputs work.
 `serializeDataTableViewModel` returns JSON, and `parseDataTableViewModel` accepts
 that JSON or a plain object. Both validate the envelope and delegate nested
 validation to `parseTableModel`; unknown versions, fields, columns, duplicates,
-accessors and non-data values are refused. Envelope errors use
-`DataTableViewModelError`; nested errors retain `TableModelError`.
+accessors and non-data values are refused. The view parser reports envelope and
+nested-table validation failures as `DataTableViewModelError`; direct engine
+validation still reports `TableModelError`. Serialization always writes a version
+2 envelope, preserving the nested table version.
 
 View options composes `Popover`, `Drawer`, `Select`, `Checkbox`, `TextField`,
 `Button` and `Chip`. Group, Sort, Filter and Columns edit the same envelope.
@@ -8562,6 +8614,10 @@ Group and sort priorities can move earlier, each direction is editable, and
 visible columns can be reordered. Filters support text comparison, numeric/UTC
 date ranges (apply valid bounds explicitly), enum values, tag any/all/none and
 booleans. Facet choices come from the engine and retain selected values. Each
+root legacy leaf stays editable in a v2 table. Groups and new-operator leaves
+show their summary and existing remove action only; sibling edits preserve all
+other root nodes and their order. Adding a legacy leaf preserves the table version.
+Each
 active group, sort and filter has its own keyboard-removable chip. Pivot appears
 only with configured group or pivot dimensions; configuring its axes requires
 host-defined measures. Switching to pivot initializes missing axes from groups.
@@ -8595,7 +8651,8 @@ These existing blocks keep their separate contracts.
 | Export | Kind | Description |
 | --- | --- | --- |
 | `DataTableMessages` | type | Optional host labels and formatters with documented English defaults; never persisted in the view. |
-| `DataTableViewModel` | type | Versioned saved-view envelope: `table`, `mode`, `density`, ordered `sort` and `visibleColumns`. |
+| `DataTableViewModel` | type | Version 2 envelope: `table`, `mode`, `density`, ordered `sort`, `visibleColumns`, optional `columnWidths` and `pinnedColumns`. |
+| `DataTableViewModelV1` | type | Version 1 envelope accepted by migration and the model prop. |
 | `DataTableMode`, `DataTableDensity`, `DataTableSortRule` | types | Saved rendering mode, density and row-sort rules. |
 | `parseDataTableViewModel`, `serializeDataTableViewModel`, `DataTableViewModelError` | values | Validate/copy saved views, encode JSON and report envelope validation errors. |
 
@@ -8604,9 +8661,9 @@ These existing blocks keep their separate contracts.
 ```tsx
 import { useState } from "react";
 import { DataTable, parseDataTableViewModel, serializeDataTableViewModel,
-  type DataTableViewModel } from "@clossys/designer/blocks";
+  type DataTableViewModelV1 } from "@clossys/designer/blocks";
 
-const initialView: DataTableViewModel = {
+const initialView: DataTableViewModelV1 = {
   version: 1,
   table: {
     version: 1, collation: { locale: "en", numeric: true },
@@ -8621,7 +8678,7 @@ const initialView: DataTableViewModel = {
 const records = [{ id: "one", name: "Example", team: "Blue", amount: 42 }];
 
 function SavedTable() {
-  const [model, setModel] = useState(initialView);
+  const [model, setModel] = useState(() => parseDataTableViewModel(initialView));
   const [expanded, setExpanded] = useState<ReadonlySet<string> | "all">("all");
   return <DataTable aria-label="Records" rows={records} rowKey={row => row.id}
     columns={[

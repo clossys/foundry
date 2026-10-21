@@ -424,6 +424,27 @@
   }
 }
 
+/* All header surfaces share ink; transparent controls reveal their own header surface. */
+@utility site-header-ink {
+  --site-header-action-hover: var(--color-surface-raised, oklch(1 0 0));
+  --site-header-focus: var(--color-ink-primary, oklch(0.2178 0 0));
+  &[data-tone="inverse"] {
+    --site-header-action-hover: var(--color-surface-inverse, oklch(0.2178 0 0));
+    --site-header-focus: var(--color-ink-on-inverse, oklch(0.9702 0 0));
+  }
+  & .site-header-brand > a.text-inherit { color: inherit; }
+  & [data-header-action-ghost],
+  & .nav-disclosure-toggle:not([data-tone]) {
+    color: inherit;
+    background-color: transparent;
+    &:hover, &:focus-visible {
+      color: inherit;
+      background-color: var(--site-header-action-hover, var(--color-surface-raised, oklch(1 0 0)));
+    }
+  }
+  & :focus-visible { outline-color: var(--site-header-focus, var(--color-ink-primary, oklch(0.2178 0 0))); }
+}
+
 @utility site-header-overlay {
   --site-header-glass-fill: var(--color-surface-glass, oklch(1 0 0 / 0.6));
   --site-header-glass-line: var(--color-line-base, oklch(0.8761 0 0));
@@ -764,6 +785,11 @@
 }
 }
 @utility site-header-row { min-block-size: max(var(--ui-layout-tap-target, 44px), var(--ui-brandmark-height-lg, 48px)); display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: var(--spacing-md, 12px); padding-inline: max(var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px)), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px)); }
+@utility site-header-leading {
+  @media (width >= 768px) {
+    &:not([data-collapsed]) .site-header-row { grid-template-columns: auto minmax(0, 1fr) auto; }
+  }
+}
 @utility site-header-brand { grid-column: 1; grid-row: 1; min-inline-size: 0; }
 @utility site-header-actions { display: flex; grid-column: 3; grid-row: 1; justify-content: end; gap: var(--spacing-sm, 8px); flex-wrap: wrap; overflow-wrap: anywhere; }
 @utility site-header-mobile {
@@ -1010,62 +1036,6 @@
   }
 }
 
-/* Static scenes: live token paints and a linear accessible form at every width. */
-@utility scene-root { container: scene / inline-size; margin: 0; inline-size: 100%; min-inline-size: 0; font-family: var(--font-body, ui-sans-serif, system-ui, sans-serif); }
-@utility scene-desktop { display: none; }
-@utility scene-svg { display: block; inline-size: 100%; block-size: auto; max-inline-size: calc(var(--sc-w, 880) * 1px); overflow: visible; }
-@utility scene-document { fill: var(--color-surface-raised, oklch(1 0 0)); stroke: var(--color-line-strong, oklch(0.7763 0 0)); stroke-width: var(--ui-border-hairline, 1px); rx: var(--radius-default, 3px); }
-@utility scene-fold { fill: var(--color-surface-sunken, oklch(0.9401 0 0)); stroke: var(--color-line-strong, oklch(0.7763 0 0)); stroke-width: var(--ui-border-hairline, 1px); stroke-linejoin: round; }
-@utility scene-chip { fill: var(--color-surface-sunken, oklch(0.9401 0 0)); rx: var(--radius-subtle, 2px); }
-@utility scene-chip-text { font-family: var(--font-mono, ui-monospace, monospace); font-size: var(--text-caption, 12px); letter-spacing: var(--tracking-meta, 0.06em); fill: var(--color-ink-secondary, oklch(0.36 0 0)); }
-@utility scene-meta { font-size: var(--text-caption, 12px); fill: var(--color-ink-secondary, oklch(0.36 0 0)); }
-@utility scene-title { font-size: var(--text-body, 15px); font-weight: 500; fill: var(--color-ink-primary, oklch(0.2178 0 0)); }
-@utility scene-column { font-family: var(--font-mono, ui-monospace, monospace); font-size: var(--text-caption, 12px); letter-spacing: var(--tracking-label, 0.18em); text-transform: uppercase; fill: var(--color-ink-secondary, oklch(0.36 0 0)); }
-@utility scene-wire { fill: none; stroke: var(--color-line-strong, oklch(0.7763 0 0)); stroke-width: var(--ui-border-hairline, 1px); vector-effect: non-scaling-stroke; }
-@utility scene-wire-subject { stroke: var(--color-ink-primary, oklch(0.2178 0 0)); stroke-width: var(--ui-border-rule, 2px); }
-@utility scene-subject-outline { stroke: var(--color-ink-primary, oklch(0.2178 0 0)); stroke-width: var(--ui-border-rule, 2px); }
-@utility scene-accent { fill: none; stroke: var(--color-accent, oklch(0.4748 0 0)); stroke-width: var(--ui-border-rule, 2px); vector-effect: non-scaling-stroke; }
-@utility scene-terminal { fill: var(--color-surface-raised, oklch(1 0 0)); stroke: var(--color-ink-muted, oklch(0.54 0 0)); stroke-width: var(--ui-border-hairline, 1px); }
-@utility scene-terminal-subject { fill: var(--color-ink-primary, oklch(0.2178 0 0)); stroke: var(--color-ink-primary, oklch(0.2178 0 0)); }
-@utility scene-panel { fill: var(--color-surface-raised, oklch(1 0 0)); stroke: var(--color-line-panel, var(--color-line-base, oklch(0.8761 0 0))); stroke-width: var(--ui-border-panel, var(--ui-border-hairline, 1px)); rx: var(--radius-panel, var(--radius-surface, var(--radius-default, 3px))); }
-@utility scene-rule { stroke: var(--color-line-base, oklch(0.8761 0 0)); stroke-width: var(--ui-border-hairline, 1px); }
-@utility scene-label { font-size: var(--text-body-s, 13px); fill: var(--color-ink-primary, oklch(0.2178 0 0)); }
-@utility scene-value { font-size: var(--text-body-s, 13px); fill: var(--color-ink-primary, oklch(0.2178 0 0)); font-variant-numeric: tabular-nums; }
-@utility scene-figure { font-family: var(--font-mono, ui-monospace, monospace); font-size: var(--text-h2, 18px); fill: var(--color-ink-primary, oklch(0.2178 0 0)); font-variant-numeric: tabular-nums; }
-@utility scene-secondary { fill: var(--color-ink-secondary, oklch(0.36 0 0)); }
-@utility scene-tag { fill: var(--color-surface-base, oklch(0.9702 0 0)); stroke: var(--color-line-strong, oklch(0.7763 0 0)); stroke-width: var(--ui-border-hairline, 1px); rx: var(--radius-pill, 999px); }
-@utility scene-node { fill: var(--color-surface-base, oklch(0.9702 0 0)); stroke: var(--color-ink-muted, oklch(0.54 0 0)); stroke-width: var(--ui-border-hairline, 1px); rx: var(--radius-pill, 999px); }
-@utility scene-node-text { font-family: var(--font-mono, ui-monospace, monospace); font-size: var(--text-caption, 12px); letter-spacing: var(--tracking-meta, 0.06em); fill: var(--color-ink-secondary, oklch(0.36 0 0)); }
-@utility scene-person-disc { fill: var(--color-surface-sunken, oklch(0.9401 0 0)); stroke: var(--color-line-strong, oklch(0.7763 0 0)); stroke-width: var(--ui-border-hairline, 1px); }
-@utility scene-initials { font-family: var(--font-mono, ui-monospace, monospace); font-size: var(--text-caption, 12px); fill: var(--color-ink-primary, oklch(0.2178 0 0)); }
-@utility scene-status-text { font-size: var(--text-caption, 12px); }
-@utility scene-status-mark { fill: inherit; }
-@utility scene-status-success { & > .scene-status-mark { fill: var(--color-status-success, oklch(0.6268 0 0)); } & > .scene-status-text { fill: var(--color-status-success-text, oklch(0.4748 0 0)); } }
-@utility scene-status-warning { & > .scene-status-mark { fill: var(--color-status-warning, oklch(0.4495 0 0)); } & > .scene-status-text { fill: var(--color-status-warning-text, oklch(0.36 0 0)); } }
-@utility scene-status-danger { & > .scene-status-mark { fill: var(--color-status-danger, oklch(0.285 0 0)); } & > .scene-status-text { fill: var(--color-status-danger-text, oklch(0.2178 0 0)); } }
-@utility scene-status-info { & > .scene-status-mark { fill: var(--color-status-info, oklch(0.5658 0 0)); } & > .scene-status-text { fill: var(--color-status-info-text, oklch(0.52 0 0)); } }
-@utility scene-status-neutral { & > .scene-status-mark { fill: var(--color-ink-muted, oklch(0.54 0 0)); } & > .scene-status-text { fill: var(--color-ink-secondary, oklch(0.36 0 0)); } }
-@utility scene-linear { display: flex; flex-direction: column; max-inline-size: var(--ui-scene-card-w, 30rem); }
-@utility scene-linear-heading { margin-block: 0 var(--spacing-sm, 8px); font-family: var(--font-mono, ui-monospace, monospace); font-size: var(--text-caption, 12px); letter-spacing: var(--tracking-label, 0.18em); text-transform: uppercase; color: var(--color-ink-secondary, oklch(0.36 0 0)); }
-@utility scene-linear-panel { padding: var(--spacing-lg, 16px); background: var(--color-surface-raised, oklch(1 0 0)); border: var(--ui-border-panel, var(--ui-border-hairline, 1px)) solid var(--color-line-panel, var(--color-line-base, oklch(0.8761 0 0))); border-radius: var(--radius-panel, var(--radius-surface, var(--radius-default, 3px))); }
-@utility scene-linear-head { display: flex; flex-direction: column; gap: var(--spacing-xs, 4px); padding-block-end: var(--spacing-md, 12px); }
-@utility scene-linear-rows { margin: 0; padding: 0; list-style: none; & > li { border-block-start: var(--ui-border-hairline, 1px) solid var(--color-line-base, oklch(0.8761 0 0)); padding-block: var(--spacing-md, 12px); } }
-@utility scene-linear-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--spacing-md, 12px); align-items: center; overflow-wrap: anywhere; }
-@utility scene-linear-sources { margin: 0; padding-inline-start: var(--spacing-lg, 16px); }
-@utility scene-linear-status { padding-block: var(--spacing-md, 12px); border-block-start: var(--ui-border-hairline, 1px) solid var(--color-line-base, oklch(0.8761 0 0)); }
-@utility scene-linear-person { display: flex; align-items: center; gap: var(--spacing-md, 12px); padding-block: var(--spacing-md, 12px); border-block-start: var(--ui-border-hairline, 1px) solid var(--color-line-base, oklch(0.8761 0 0)); }
-@utility scene-linear-disc { display: inline-grid; place-items: center; flex: none; inline-size: var(--ui-icon-lg, var(--spacing-2xl, 32px)); block-size: var(--ui-icon-lg, var(--spacing-2xl, 32px)); border-radius: var(--radius-pill, 999px); background: var(--color-surface-sunken, oklch(0.9401 0 0)); color: var(--color-ink-primary, oklch(0.2178 0 0)); border: var(--ui-border-hairline, 1px) solid var(--color-line-strong, oklch(0.7763 0 0)); font-family: var(--font-mono, ui-monospace, monospace); font-size: var(--text-caption, 12px); }
-@utility scene-linear-mark { outline: var(--ui-border-rule, 2px) solid var(--color-accent, oklch(0.4748 0 0)); outline-offset: var(--spacing-xs, 4px); }
-@utility scene-linear-findings { display: flex; flex-direction: column; gap: var(--spacing-sm, 8px); padding: 0; margin: 0; list-style: none; }
-@utility scene-linear-finding { display: flex; flex-direction: column; gap: var(--spacing-xs, 4px); padding: var(--spacing-md, 12px) var(--spacing-lg, 16px); background: var(--color-surface-raised, oklch(1 0 0)); border: var(--ui-border-hairline, 1px) solid var(--color-line-strong, oklch(0.7763 0 0)); border-radius: var(--radius-default, 3px); }
-@utility scene-linear-subject { border-color: var(--color-ink-primary, oklch(0.2178 0 0)); border-width: var(--ui-border-rule, 2px); }
-@utility scene-linear-chip { font-family: var(--font-mono, ui-monospace, monospace); font-size: var(--text-caption, 12px); letter-spacing: var(--tracking-meta, 0.06em); color: var(--color-ink-secondary, oklch(0.36 0 0)); background: var(--color-surface-sunken, oklch(0.9401 0 0)); padding-inline: var(--spacing-sm, 8px); border-radius: var(--radius-subtle, 2px); }
-@utility scene-linear-connector { inline-size: var(--ui-border-rule, 2px); block-size: var(--spacing-xl, 24px); margin-inline: auto; background: var(--color-ink-primary, oklch(0.2178 0 0)); }
-@utility scene-linear-node { align-self: center; margin: 0; padding: var(--spacing-xs, 4px) var(--spacing-md, 12px); font-family: var(--font-mono, ui-monospace, monospace); font-size: var(--text-caption, 12px); letter-spacing: var(--tracking-meta, 0.06em); color: var(--color-ink-secondary, oklch(0.36 0 0)); background: var(--color-surface-base, oklch(0.9702 0 0)); border: var(--ui-border-hairline, 1px) solid var(--color-ink-muted, oklch(0.54 0 0)); border-radius: var(--radius-pill, 999px); }
-@utility scene-caption { margin-block: var(--spacing-md, 12px) 0; font-size: var(--text-caption, 12px); color: var(--color-ink-secondary, oklch(0.36 0 0)); }
-@container scene (min-width: 800px) { [data-template="converge"] > [data-scene-desk] { display: block; } [data-template="converge"] > [data-scene-linear] { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; } }
-@container scene (min-width: 520px) { [data-template="evidence-trail"] > [data-scene-desk] { display: block; } [data-template="evidence-trail"] > [data-scene-linear] { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; } }
-@container scene (min-width: 900px) { [data-template="approval-chain"] > [data-scene-desk] { display: block; } [data-template="approval-chain"] > [data-scene-linear] { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; } }
 
 /* Public CSS-only foundations are shipped before their component adoption. */
 @source inline("tap-target focus-ring focus-ring-inset focus-ring-inverse control-row control-text control-h-sm control-h-md control-h-lg table-row-density ui-loading-delayed ui-pending-label ui-skeleton ui-progress-slide ui-nav-trickle");
@@ -1165,3 +1135,59 @@
   @media (prefers-reduced-motion: reduce) { animation: none; inline-size: 100%; transform: scaleX(1); }
 }
 @keyframes ui-nav-trickle { from { transform: scaleX(0); } to { transform: scaleX(.9); } }
+/* Static scenes: live token paints and a linear accessible form at every width. */
+@utility scene-root { container: scene / inline-size; margin: 0; inline-size: 100%; min-inline-size: 0; font-family: var(--font-body, ui-sans-serif, system-ui, sans-serif); }
+@utility scene-desktop { display: none; }
+@utility scene-svg { display: block; inline-size: 100%; block-size: auto; max-inline-size: calc(var(--sc-w, 880) * 1px); overflow: visible; }
+@utility scene-document { fill: var(--color-surface-raised, oklch(1 0 0)); stroke: var(--color-line-strong, oklch(0.7763 0 0)); stroke-width: var(--ui-border-hairline, 1px); rx: var(--radius-default, 3px); }
+@utility scene-fold { fill: var(--color-surface-sunken, oklch(0.9401 0 0)); stroke: var(--color-line-strong, oklch(0.7763 0 0)); stroke-width: var(--ui-border-hairline, 1px); stroke-linejoin: round; }
+@utility scene-chip { fill: var(--color-surface-sunken, oklch(0.9401 0 0)); rx: var(--radius-subtle, 2px); }
+@utility scene-chip-text { font-family: var(--font-mono, ui-monospace, monospace); font-size: var(--text-caption, 12px); letter-spacing: var(--tracking-meta, 0.06em); fill: var(--color-ink-secondary, oklch(0.36 0 0)); }
+@utility scene-meta { font-size: var(--text-caption, 12px); fill: var(--color-ink-secondary, oklch(0.36 0 0)); }
+@utility scene-title { font-size: var(--text-body, 15px); font-weight: 500; fill: var(--color-ink-primary, oklch(0.2178 0 0)); }
+@utility scene-column { font-family: var(--font-mono, ui-monospace, monospace); font-size: var(--text-caption, 12px); letter-spacing: var(--tracking-label, 0.18em); text-transform: uppercase; fill: var(--color-ink-secondary, oklch(0.36 0 0)); }
+@utility scene-wire { fill: none; stroke: var(--color-line-strong, oklch(0.7763 0 0)); stroke-width: var(--ui-border-hairline, 1px); vector-effect: non-scaling-stroke; }
+@utility scene-wire-subject { stroke: var(--color-ink-primary, oklch(0.2178 0 0)); stroke-width: var(--ui-border-rule, 2px); }
+@utility scene-subject-outline { stroke: var(--color-ink-primary, oklch(0.2178 0 0)); stroke-width: var(--ui-border-rule, 2px); }
+@utility scene-accent { fill: none; stroke: var(--color-accent, oklch(0.4748 0 0)); stroke-width: var(--ui-border-rule, 2px); vector-effect: non-scaling-stroke; }
+@utility scene-terminal { fill: var(--color-surface-raised, oklch(1 0 0)); stroke: var(--color-ink-muted, oklch(0.54 0 0)); stroke-width: var(--ui-border-hairline, 1px); }
+@utility scene-terminal-subject { fill: var(--color-ink-primary, oklch(0.2178 0 0)); stroke: var(--color-ink-primary, oklch(0.2178 0 0)); }
+@utility scene-panel { fill: var(--color-surface-raised, oklch(1 0 0)); stroke: var(--color-line-panel, var(--color-line-base, oklch(0.8761 0 0))); stroke-width: var(--ui-border-panel, var(--ui-border-hairline, 1px)); rx: var(--radius-panel, var(--radius-surface, var(--radius-default, 3px))); }
+@utility scene-rule { stroke: var(--color-line-base, oklch(0.8761 0 0)); stroke-width: var(--ui-border-hairline, 1px); }
+@utility scene-label { font-size: var(--text-body-s, 13px); fill: var(--color-ink-primary, oklch(0.2178 0 0)); }
+@utility scene-value { font-size: var(--text-body-s, 13px); fill: var(--color-ink-primary, oklch(0.2178 0 0)); font-variant-numeric: tabular-nums; }
+@utility scene-figure { font-family: var(--font-mono, ui-monospace, monospace); font-size: var(--text-h2, 18px); fill: var(--color-ink-primary, oklch(0.2178 0 0)); font-variant-numeric: tabular-nums; }
+@utility scene-secondary { fill: var(--color-ink-secondary, oklch(0.36 0 0)); }
+@utility scene-tag { fill: var(--color-surface-base, oklch(0.9702 0 0)); stroke: var(--color-line-strong, oklch(0.7763 0 0)); stroke-width: var(--ui-border-hairline, 1px); rx: var(--radius-pill, 999px); }
+@utility scene-node { fill: var(--color-surface-base, oklch(0.9702 0 0)); stroke: var(--color-ink-muted, oklch(0.54 0 0)); stroke-width: var(--ui-border-hairline, 1px); rx: var(--radius-pill, 999px); }
+@utility scene-node-text { font-family: var(--font-mono, ui-monospace, monospace); font-size: var(--text-caption, 12px); letter-spacing: var(--tracking-meta, 0.06em); fill: var(--color-ink-secondary, oklch(0.36 0 0)); }
+@utility scene-person-disc { fill: var(--color-surface-sunken, oklch(0.9401 0 0)); stroke: var(--color-line-strong, oklch(0.7763 0 0)); stroke-width: var(--ui-border-hairline, 1px); }
+@utility scene-initials { font-family: var(--font-mono, ui-monospace, monospace); font-size: var(--text-caption, 12px); fill: var(--color-ink-primary, oklch(0.2178 0 0)); }
+@utility scene-status-text { font-size: var(--text-caption, 12px); }
+@utility scene-status-mark { fill: inherit; }
+@utility scene-status-success { & > .scene-status-mark { fill: var(--color-status-success, oklch(0.6268 0 0)); } & > .scene-status-text { fill: var(--color-status-success-text, oklch(0.4748 0 0)); } }
+@utility scene-status-warning { & > .scene-status-mark { fill: var(--color-status-warning, oklch(0.4495 0 0)); } & > .scene-status-text { fill: var(--color-status-warning-text, oklch(0.36 0 0)); } }
+@utility scene-status-danger { & > .scene-status-mark { fill: var(--color-status-danger, oklch(0.285 0 0)); } & > .scene-status-text { fill: var(--color-status-danger-text, oklch(0.2178 0 0)); } }
+@utility scene-status-info { & > .scene-status-mark { fill: var(--color-status-info, oklch(0.5658 0 0)); } & > .scene-status-text { fill: var(--color-status-info-text, oklch(0.52 0 0)); } }
+@utility scene-status-neutral { & > .scene-status-mark { fill: var(--color-ink-muted, oklch(0.54 0 0)); } & > .scene-status-text { fill: var(--color-ink-secondary, oklch(0.36 0 0)); } }
+@utility scene-linear { display: flex; flex-direction: column; max-inline-size: var(--ui-scene-card-w, 30rem); }
+@utility scene-linear-heading { margin-block: 0 var(--spacing-sm, 8px); font-family: var(--font-mono, ui-monospace, monospace); font-size: var(--text-caption, 12px); letter-spacing: var(--tracking-label, 0.18em); text-transform: uppercase; color: var(--color-ink-secondary, oklch(0.36 0 0)); }
+@utility scene-linear-panel { padding: var(--spacing-lg, 16px); background: var(--color-surface-raised, oklch(1 0 0)); border: var(--ui-border-panel, var(--ui-border-hairline, 1px)) solid var(--color-line-panel, var(--color-line-base, oklch(0.8761 0 0))); border-radius: var(--radius-panel, var(--radius-surface, var(--radius-default, 3px))); }
+@utility scene-linear-head { display: flex; flex-direction: column; gap: var(--spacing-xs, 4px); padding-block-end: var(--spacing-md, 12px); }
+@utility scene-linear-rows { margin: 0; padding: 0; list-style: none; & > li { border-block-start: var(--ui-border-hairline, 1px) solid var(--color-line-base, oklch(0.8761 0 0)); padding-block: var(--spacing-md, 12px); } }
+@utility scene-linear-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--spacing-md, 12px); align-items: center; overflow-wrap: anywhere; }
+@utility scene-linear-sources { margin: 0; padding-inline-start: var(--spacing-lg, 16px); }
+@utility scene-linear-status { padding-block: var(--spacing-md, 12px); border-block-start: var(--ui-border-hairline, 1px) solid var(--color-line-base, oklch(0.8761 0 0)); }
+@utility scene-linear-person { display: flex; align-items: center; gap: var(--spacing-md, 12px); padding-block: var(--spacing-md, 12px); border-block-start: var(--ui-border-hairline, 1px) solid var(--color-line-base, oklch(0.8761 0 0)); }
+@utility scene-linear-disc { display: inline-grid; place-items: center; flex: none; inline-size: var(--ui-icon-lg, var(--spacing-2xl, 32px)); block-size: var(--ui-icon-lg, var(--spacing-2xl, 32px)); border-radius: var(--radius-pill, 999px); background: var(--color-surface-sunken, oklch(0.9401 0 0)); color: var(--color-ink-primary, oklch(0.2178 0 0)); border: var(--ui-border-hairline, 1px) solid var(--color-line-strong, oklch(0.7763 0 0)); font-family: var(--font-mono, ui-monospace, monospace); font-size: var(--text-caption, 12px); }
+@utility scene-linear-mark { outline: var(--ui-border-rule, 2px) solid var(--color-accent, oklch(0.4748 0 0)); outline-offset: var(--spacing-xs, 4px); }
+@utility scene-linear-findings { display: flex; flex-direction: column; gap: var(--spacing-sm, 8px); padding: 0; margin: 0; list-style: none; }
+@utility scene-linear-finding { display: flex; flex-direction: column; gap: var(--spacing-xs, 4px); padding: var(--spacing-md, 12px) var(--spacing-lg, 16px); background: var(--color-surface-raised, oklch(1 0 0)); border: var(--ui-border-hairline, 1px) solid var(--color-line-strong, oklch(0.7763 0 0)); border-radius: var(--radius-default, 3px); }
+@utility scene-linear-subject { border-color: var(--color-ink-primary, oklch(0.2178 0 0)); border-width: var(--ui-border-rule, 2px); }
+@utility scene-linear-chip { font-family: var(--font-mono, ui-monospace, monospace); font-size: var(--text-caption, 12px); letter-spacing: var(--tracking-meta, 0.06em); color: var(--color-ink-secondary, oklch(0.36 0 0)); background: var(--color-surface-sunken, oklch(0.9401 0 0)); padding-inline: var(--spacing-sm, 8px); border-radius: var(--radius-subtle, 2px); }
+@utility scene-linear-connector { inline-size: var(--ui-border-rule, 2px); block-size: var(--spacing-xl, 24px); margin-inline: auto; background: var(--color-ink-primary, oklch(0.2178 0 0)); }
+@utility scene-linear-node { align-self: center; margin: 0; padding: var(--spacing-xs, 4px) var(--spacing-md, 12px); font-family: var(--font-mono, ui-monospace, monospace); font-size: var(--text-caption, 12px); letter-spacing: var(--tracking-meta, 0.06em); color: var(--color-ink-secondary, oklch(0.36 0 0)); background: var(--color-surface-base, oklch(0.9702 0 0)); border: var(--ui-border-hairline, 1px) solid var(--color-ink-muted, oklch(0.54 0 0)); border-radius: var(--radius-pill, 999px); }
+@utility scene-caption { margin-block: var(--spacing-md, 12px) 0; font-size: var(--text-caption, 12px); color: var(--color-ink-secondary, oklch(0.36 0 0)); }
+@container scene (min-width: 800px) { [data-template="converge"] > [data-scene-desk] { display: block; } [data-template="converge"] > [data-scene-linear] { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; } }
+@container scene (min-width: 520px) { [data-template="evidence-trail"] > [data-scene-desk] { display: block; } [data-template="evidence-trail"] > [data-scene-linear] { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; } }
+@container scene (min-width: 900px) { [data-template="approval-chain"] > [data-scene-desk] { display: block; } [data-template="approval-chain"] > [data-scene-linear] { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; } }

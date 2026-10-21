@@ -43,7 +43,7 @@ describe("site chrome: base and inverse are unchanged", () => {
   for (const ground of ["base", "inverse"] as const) {
     it(`renders ${ground} byte-identically to its recorded markup`, () => {
       const host = document.createElement("div");
-      host.innerHTML = html(<SiteHeader ground={ground} brand={brand} nav={<nav>Nav</nav>} actions={<button type="button">Go</button>} />);
+      host.innerHTML = html(<SiteHeader surface={ground.startsWith("transparent") ? "transparent" : "solid"} tone={ground.endsWith("inverse") ? "inverse" : "base"} brand={brand} nav={<nav>Nav</nav>} actions={<button type="button">Go</button>} />);
       expect(host.querySelector("header")).toHaveClass("site-header-contract", ground === "base" ? "bg-surface-raised" : "bg-surface-inverse", "border-b", ground === "base" ? "border-line-base" : "border-line-on-inverse");
       expect((host.querySelector("header") as HTMLElement).style.borderBottomWidth).toBe("var(--ui-border-hairline, 1px)");
       expect(host.querySelector(".site-header-brand")).toHaveTextContent("Home");
@@ -62,7 +62,7 @@ describe("site chrome: base and inverse are unchanged", () => {
   }
 
   it("keeps base as the default ground", () => {
-    expect(html(<SiteHeader brand={brand} />)).toBe(html(<SiteHeader brand={brand} ground="base" />));
+    expect(html(<SiteHeader brand={brand} />)).toBe(html(<SiteHeader brand={brand} surface="solid" tone="base" />));
     expect(html(<SiteFooter secondary={<span>Legal</span>} />)).toBe(MAIN_MARKUP["footer-default"]);
   });
 });
@@ -83,7 +83,7 @@ function paint(markup: string) {
 
 describe("site chrome: transparent ground", () => {
   const cases: ReadonlyArray<readonly [string, React.ReactElement]> = [
-    ["SiteHeader", <SiteHeader ground="transparent" brand={brand} nav={<nav>Nav</nav>} actions={<button type="button">Go</button>} />],
+    ["SiteHeader", <SiteHeader surface="transparent" brand={brand} nav={<nav>Nav</nav>} actions={<button type="button">Go</button>} />],
     ["SiteFooter with columns", <SiteFooter ground="transparent" columns={columns} secondary={<span>Legal</span>} />],
     ["SiteFooter without columns", <SiteFooter ground="transparent" secondary={<span>Legal</span>} />],
     ["SiteFooter with the legal row", <SiteFooter ground="transparent" columns={columns} secondary={legal} />],
@@ -107,7 +107,7 @@ describe("site chrome: transparent ground", () => {
   });
 
   it("still renders the landmarks, the brand slot and the children", () => {
-    const markup = html(<SiteHeader ground="transparent" brand={brand} />);
+    const markup = html(<SiteHeader surface="transparent" brand={brand} />);
     expect(markup).toContain("<header");
     expect(markup).toContain('<a href="/">Home</a>');
   });
@@ -115,7 +115,7 @@ describe("site chrome: transparent ground", () => {
 
 describe("site chrome: transparent-inverse ground", () => {
   const cases: ReadonlyArray<readonly [string, React.ReactElement]> = [
-    ["SiteHeader", <SiteHeader ground="transparent-inverse" brand={brand} nav={<nav>Nav</nav>} actions={<button type="button">Go</button>} />],
+    ["SiteHeader", <SiteHeader surface="transparent" tone="inverse" brand={brand} nav={<nav>Nav</nav>} actions={<button type="button">Go</button>} />],
     ["SiteFooter with columns", <SiteFooter ground="transparent-inverse" columns={columns} secondary={<span>Legal</span>} />],
     ["SiteFooter without columns", <SiteFooter ground="transparent-inverse" secondary={<span>Legal</span>} />],
     ["SiteFooter with the legal row", <SiteFooter ground="transparent-inverse" columns={columns} secondary={legal} />],
@@ -149,10 +149,11 @@ describe("site chrome: transparent-inverse ground", () => {
     );
   });
 
-  it("renders the header exactly as transparent does, since the header sets no ink", () => {
+  it("applies inverse ink independently of the transparent header surface", () => {
     const header = (ground: "transparent" | "transparent-inverse") =>
-      html(<SiteHeader ground={ground} brand={brand} nav={<nav>Nav</nav>} actions={<button type="button">Go</button>} />);
-    expect(header("transparent-inverse")).toBe(header("transparent"));
+      html(<SiteHeader surface={ground.startsWith("transparent") ? "transparent" : "solid"} tone={ground.endsWith("inverse") ? "inverse" : "base"} brand={brand} nav={<nav>Nav</nav>} actions={<button type="button">Go</button>} />);
+    expect(header("transparent-inverse")).toContain("text-ink-on-inverse");
+    expect(header("transparent")).toContain("text-ink-primary");
   });
 });
 
@@ -166,7 +167,7 @@ describe("site chrome: full width", () => {
   for (const ground of ["base", "inverse", "transparent", "transparent-inverse"] as const) {
     it(`carries no max-w-* class and no maxWidth style anywhere (${ground})`, () => {
       const markup =
-        html(<SiteHeader ground={ground} brand={brand} nav={<nav>Nav</nav>} actions={<span>Act</span>} />) +
+        html(<SiteHeader surface={ground.startsWith("transparent") ? "transparent" : "solid"} tone={ground.endsWith("inverse") ? "inverse" : "base"} brand={brand} nav={<nav>Nav</nav>} actions={<span>Act</span>} />) +
         html(<SiteFooter ground={ground} columns={columns} secondary={legal} />);
       const all = inners(markup);
       expect(all.length).toBeGreaterThan(10);
@@ -180,7 +181,7 @@ describe("site chrome: full width", () => {
   it("insets the header and footer inner containers only by the page-padding token", () => {
     const host = document.createElement("div");
     host.innerHTML =
-      html(<SiteHeader ground="transparent" brand={brand} />) + html(<SiteFooter ground="transparent" secondary={legal} />);
+      html(<SiteHeader surface="transparent" brand={brand} />) + html(<SiteFooter ground="transparent" secondary={legal} />);
     const containers = Array.from(host.querySelectorAll("header > div, footer > div"));
     expect(containers).toHaveLength(2);
     expect(containers[0]).toHaveClass("site-header-row");

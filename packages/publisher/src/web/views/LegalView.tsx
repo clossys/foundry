@@ -4,7 +4,7 @@ import { mergeUiClasses } from "@clossys/designer/atoms/server";
 import { ArticleBody, DetailView, PageHeader } from "@clossys/designer/blocks/server";
 import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
 import { assertViewContentRoot } from "../internal/viewContentRoot.js";
-import type { SiteChromeGround } from "../internal/viewChromeGround.js";
+import { siteHeaderPresentation, type SiteChromeGround } from "../internal/viewChromeGround.js";
 import { PAGE_COLUMN_CLASSES, PageLayout, pageColumnStyle } from "../internal/PageLayout.js";
 import { renderViewLinks, type ViewLinksInput } from "../internal/ViewLinks.js";
 import { RenderError } from "../../internal/errors.js";
@@ -250,7 +250,7 @@ export function LegalView({
 
   return (
     <div {...rest} className={mergeUiClasses("flex min-h-dvh flex-col", className)} style={style}>
-      <SiteHeader ground={ground === undefined ? "base" : ground} brand={brand} nav={nav} secondaryAction={secondaryAction} actions={headerAction} />
+      <SiteHeader {...siteHeaderPresentation(ground)} brand={brand} nav={nav} actions={<>{secondaryAction}{headerAction}</>} />
       <main className={PAGE_COLUMN_CLASSES} style={pageColumnStyle("prose")}>
         {content}
       </main>

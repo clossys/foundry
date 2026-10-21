@@ -2,7 +2,7 @@ import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { mergeUiClasses } from "@clossys/designer/atoms/server";
 import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
 import { PAGE_COLUMN_CLASSES, PageLayout, hasContent, pageColumnStyle } from "../internal/PageLayout.js";
-import type { SiteChromeGround } from "../internal/viewChromeGround.js";
+import { siteHeaderPresentation, type SiteChromeGround } from "../internal/viewChromeGround.js";
 import { assertViewContentRoot, usesLegacyChrome } from "../internal/viewContentRoot.js";
 
 export interface AuthViewProps extends HTMLAttributes<HTMLDivElement> {
@@ -42,15 +42,6 @@ export interface AuthViewProps extends HTMLAttributes<HTMLDivElement> {
    * `undefined` (or empty) the markup is unchanged: no `id`, no `tabindex`.
    */
   mainId?: string;
-  /**
-   * @deprecated Chrome belongs to `SiteFrame`; see `brand`.
-   * Optional text-only label naming the surface, such as "admin" or "demo",
-   * shown as a non-interactive badge at the trailing end of the page banner.
-   * A member host omits it. Superseded by environment links: pass one
-   * Designer `SiteHeader.ActionLink` per environment in `headerAction`, with
-   * `isCurrent` on this page's environment. Kept for existing callers.
-   */
-  surfaceLabel?: string;
   /** @deprecated Chrome belongs to `SiteFrame`; see `brand`. The primary navigation, rendered in the banner beside the brand. Absent from the markup when omitted. */
   nav?: ReactNode;
   /**
@@ -63,7 +54,7 @@ export interface AuthViewProps extends HTMLAttributes<HTMLDivElement> {
   /**
    * @deprecated Chrome belongs to `SiteFrame`; see `brand`.
    * A secondary call to action in the banner, rendered just before
-   * `headerAction` (`SiteHeader`'s `secondaryAction`). Named apart from
+   * `headerAction` in `SiteHeader`'s ordered actions list. Named apart from
    * `secondaryAction`, which on this view has always been the lines below
    * the card. Absent from the markup when omitted.
    */
@@ -187,7 +178,6 @@ export interface AuthViewProps extends HTMLAttributes<HTMLDivElement> {
  */
 export function AuthView({
   brand,
-  surfaceLabel,
   nav,
   headerAction,
   headerSecondaryAction,
@@ -237,7 +227,7 @@ export function AuthView({
     </>
   );
 
-  const legacyChrome = usesLegacyChrome({ brand, surfaceLabel, nav, headerAction, headerSecondaryAction, header, footer, mainId: mainId || undefined, ground, footerSecondary });
+  const legacyChrome = usesLegacyChrome({ brand, nav, headerAction, headerSecondaryAction, header, footer, mainId: mainId || undefined, ground, footerSecondary });
   if (!legacyChrome) {
     assertViewContentRoot("AuthView", rest);
     return (
@@ -257,14 +247,7 @@ export function AuthView({
       {header !== undefined ? (
         header
       ) : (
-        <SiteHeader
-          ground={chromeGround}
-          brand={brand}
-          nav={nav}
-          secondaryAction={headerSecondaryAction}
-          actions={headerAction}
-          surfaceLabel={surfaceLabel}
-        />
+        <SiteHeader {...siteHeaderPresentation(chromeGround)} brand={brand} nav={nav} actions={<>{headerSecondaryAction}{headerAction}</>} />
       )}
       <main
         id={mainId || undefined}
