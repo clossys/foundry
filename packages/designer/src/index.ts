@@ -438,3 +438,6 @@ export type { CatalogWorkspaceProps, CatalogWorkspaceItem, CatalogWorkspaceSize 
 export { parseDataTableViewModel, serializeDataTableViewModel, DataTableViewModelError } from "./blocks/data-table/view-model.js";
 export type { DataTableMessages } from "./blocks/data-table/messages.js";
 export type { DataTableViewModel, DataTableViewModelV1, DataTableMode, DataTableDensity, DataTableSortRule } from "./blocks/data-table/view-model.js";
+
+export { FilterBuilder } from "./blocks/FilterBuilder.js";
+export type { FilterBuilderProps, FilterBuilderLabels } from "./blocks/FilterBuilder.js";

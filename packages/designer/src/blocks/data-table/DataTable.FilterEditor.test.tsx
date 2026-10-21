@@ -42,3 +42,16 @@ it.each([
   expect(container).toBeEmptyDOMElement();
   expect(change).not.toHaveBeenCalled();
 });
+
+it("offers the optional operator selector and hides values for empty operators", async () => {
+  const user = userEvent.setup(); const change = vi.fn();
+  const options = [{ id: "notEquals", label: "Differs" }, { id: "empty", label: "Missing" }] as const;
+  const rendered = render(<FilterEditor filter={{ column: "name", kind: "text", op: "notEquals", value: "Guide" }} label="Project" facets={[]} change={change} operatorOptions={options} operatorLabel="Condition" />);
+  expect(screen.getByRole("textbox", { name: "Project value" })).toHaveValue("Guide");
+  await user.click(screen.getByRole("button", { name: /Condition/ }));
+  await user.click(await screen.findByRole("option", { name: "Missing" }));
+  expect(change).toHaveBeenLastCalledWith({ column: "name", kind: "text", op: "empty" });
+  rendered.rerender(<FilterEditor filter={{ column: "name", kind: "text", op: "empty" }} label="Project" facets={[]} change={change} operatorOptions={options} operatorLabel="Condition" />);
+  expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+  expect(screen.getByRole("button", { name: /Condition/ })).toBeInTheDocument();
+});

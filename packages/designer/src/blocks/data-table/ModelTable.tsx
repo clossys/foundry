@@ -8,6 +8,7 @@ import { filterRows, groupRows, type TableGroup } from "../table-model/index.js"
 import { FlatGrid } from "./FlatGrid.js";
 import { PivotGrid } from "./PivotGrid.js";
 import { sortViewRows } from "./presentation.js";
+import { FilterBuilder } from "../FilterBuilder.js";
 import { ViewOptions } from "./ViewOptions.js";
 import { editView, parseDataTableViewModel, type DataTableViewModel, type DataTableViewModelV1 } from "./view-model.js";
 
@@ -30,16 +31,17 @@ export function ModelTable<Row>({
   const visible = model.visibleColumns.map(id => supplied.get(id)!);
   const rowHeader = visible.find(column => column.isRowHeader)?.id ?? visible[0]!.id;
   const columns = visible.map(column => ({ ...column, isRowHeader: column.id === rowHeader, allowsSorting: true }));
-  const filtered = filterRows(props.rows as readonly (Row & object)[], model.table);
-  const sorted = sortViewRows(filtered.rows, model);
+  const remote = props.rowSource === "remote";
+  const filtered = remote ? { rows: props.rows, facets: props.facets ?? {} } : filterRows(props.rows as readonly (Row & object)[], model.table);
+  const sorted = remote ? props.rows : sortViewRows(filtered.rows, model);
   const labels = new Map(props.columns.map(column => [column.id, typeof column.header === "string" ? column.header : column.id]));
   const sortProps = {
     sortDescriptor: model.sort[0] ? { column: model.sort[0].column, direction: model.sort[0].direction } : undefined,
     onSortChange: (sort: { column: Key; direction: "ascending" | "descending" }) => onModelChange(editView(model, { sort: [{ column: String(sort.column), direction: sort.direction }, ...model.sort.filter(rule => rule.column !== sort.column)] })),
   };
   let grid;
-  if (model.mode === "pivot" && !props.isLoading) grid = <PivotGrid {...props.messages} rows={props.rows} model={model} label={props["aria-label"]} />;
-  else if (model.mode === "grouped" && model.table.groupBy?.length && !props.isLoading) {
+  if (!remote && model.mode === "pivot" && !props.isLoading) grid = <PivotGrid {...props.messages} rows={props.rows} model={model} label={props["aria-label"]} />;
+  else if (!remote && model.mode === "grouped" && model.table.groupBy?.length && !props.isLoading) {
     const groups = groupRows(props.rows as readonly (Row & object)[], model.table);
     const allKeys = new Set<string>();
     const collect = (groups: readonly TableGroup<Row>[]) => { for (const group of groups) { allKeys.add(group.key); collect(group.children); } }; collect(groups);
@@ -71,7 +73,8 @@ export function ModelTable<Row>({
   } else grid = <FlatGrid {...props} {...props.messages} {...sortProps} className={undefined} style={undefined} toolbar={undefined} footer={undefined} rows={sorted} columns={columns} density={model.density} />;
   return <div className={cx("flex flex-col gap-md", props.className)} style={props.style}>
     {toolbar ? <div className="flex flex-wrap items-center justify-between gap-md">{toolbar}</div> : null}
-    <ViewOptions {...props.messages} messages={props.messages} model={model} change={onModelChange} facets={filtered.facets} labels={labels} />
+    <ViewOptions {...props.messages} messages={props.messages} model={model} change={onModelChange} facets={filtered.facets} labels={labels} hideFilters={!!props.filterLabels} />
+    {props.filterLabels ? <FilterBuilder model={model.table} onChange={table => onModelChange(editView(model, { table }))} columnLabels={Object.fromEntries(labels)} labels={props.filterLabels} facets={filtered.facets} resultCount={props.resultCount ?? (remote ? undefined : filtered.rows.length)} maxDepth={2} /> : null}
     {grid}
     {footer ? <div className="flex flex-wrap items-center justify-between gap-md">{footer}</div> : null}
   </div>;

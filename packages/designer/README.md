@@ -7530,19 +7530,53 @@ speculatively, just because a related component shipped, is the exact
 un-bounded growth this package's own "variant rule" warns against one level
 up. They get added here only once something real needs them.
 
-**Blocks:** forty-one ship — `AccountMenu`, `PageHeader`, `EmptyState`, `DataTable`,
+**Blocks:** forty-two ship — `AccountMenu`, `PageHeader`, `EmptyState`, `DataTable`, `FilterBuilder`,
 `DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`, `ConfirmDialog`,
 `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `SectionFrame`, `MarketingChapter`,
 `FeatureGrid`, `Item`, `Items`, `Tree`, `AnatomyCallouts`, `RecordLedger`, `Scene`, `Matrix`, `Specimen`,
 `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`, `PricingTable`,
 `Testimonial`, `ArticleBody`, `ConsentBanner`, `Panel`, `Drawer`,
 `ResizablePane`, `CommandMenu` and `AppNavigation` — completing this layer. No
-`FilterBar` block:
-`DataTable`'s own `toolbar` slot (and `Toolbar`'s own `search` slot) are
-deliberately plain `ReactNode`s, not a block with its own opinion about
-what a filter bar contains — a consumer composes filter controls from
-this package's own atoms (`Select`, `TextField`, `Popover`) directly into
-whichever slot fits.
+`FilterBar` block: `FilterBuilder` is bound to `TableModel` and its typed filter tree.
+`DataTable`'s `toolbar` slot and `Toolbar`'s `search` slot stay plain `ReactNode`s
+for host-composed controls.
+
+### FilterBuilder (draft)
+
+`FilterBuilder`, `FilterBuilderProps` and `FilterBuilderLabels` are client exports
+from `@clossys/designer/blocks`. Required props are `model`, `onChange`,
+`columnLabels`, `facets` and `labels`; all copy, including `region`, `dateHint`,
+`depthLimit` and `simplifyGroups`, comes from the host. `formatValue` formats chip
+values and facet choices. Chips wrap, valid edits apply live, incomplete edits
+stay local until discarded on close, and result counts announce after 500 ms.
+`maxDepth: 0` is the bar configuration (`filter-builder.bar`); `maxDepth: 2`
+enables the advanced draft Dialog (`filter-builder.advanced`). These are
+configuration names for future catalog use; nothing is registered here.
+
+Amended R10 nesting contract: at most two **serialized** group levels. Root All
+allows two nested child group levels. Root Any serializes as one OR wrapper,
+which consumes the first level, leaving one child group level. Add group is
+disabled below that with visible `labels.depthLimit` copy. An All draft already
+containing two child group levels cannot switch to Any until simplified; the
+disabled choice explains why with `labels.simplifyGroups`. The tree is never
+flattened or distributed. Apply emits one validated model; Cancel discards it.
+The internal [studio sample](src/blocks/filter-builder/sample.ts) supplies the
+complete fictional dataset and host copy used by tests. This wrapper shows how
+a host passes its own props:
+
+```tsx
+import { FilterBuilder, type FilterBuilderProps } from "@clossys/designer/blocks";
+
+function ProjectFilters(props: FilterBuilderProps) {
+  return <FilterBuilder {...props} maxDepth={2} />;
+}
+```
+
+In DataTable model mode, optional `filterLabels` delegates filters to this block
+between ViewOptions and the grid. Without it, existing filter controls stay in
+ViewOptions. `rowSource: "remote"` renders host rows in their supplied order and
+uses host `facets` (default `{}`) and optional `resultCount`; local mode computes
+facets and defaults the count to the filtered row count.
 
 **Views:** `ErrorView` and `AuthView` moved to `@clossys/publisher/web`; the list is meant to stay
 this short — see "Views" above for the full reasoning. `ListView`,

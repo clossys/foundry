@@ -111,8 +111,8 @@ export function ViewOptions({
   sortChipMessage = defaultSortChipMessage,
   /** @default (column, filter) => `Filter: ${column} ${describeFilter(filter)}` */
   filterChipMessage = defaultFilterChipMessage,
-  model, change, facets, labels, messages,
-}: DataTableMessages & { model: DataTableViewModel; change: (next: DataTableViewModel) => void; facets: TableFilterResult<unknown>["facets"]; labels: ReadonlyMap<string, string>; messages?: DataTableMessages }) {
+  model, change, facets, labels, messages, hideFilters = false,
+}: DataTableMessages & { model: DataTableViewModel; change: (next: DataTableViewModel) => void; facets: TableFilterResult<unknown>["facets"]; labels: ReadonlyMap<string, string>; messages?: DataTableMessages; hideFilters?: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
   const narrow = useSyncExternalStore(subscribeViewport, narrowViewport, () => false);
   const label = (id: string) => labels.get(id) ?? id;
@@ -155,14 +155,14 @@ export function ViewOptions({
       </div>)}
       <div className="flex flex-wrap gap-xs">{columns.filter(column => !model.sort.some(rule => rule.column === column.id)).map(column => <Button key={column.id} variant="secondary" onPress={() => change(editView(model, { sort: [...model.sort, { column: column.id, direction: "ascending" }] }))}>{addSortMessage(label(column.id))}</Button>)}</div>
     </Section>
-    <Section title={filterSectionLabel}>
+    {!hideFilters ? <Section title={filterSectionLabel}>
       {filters.map((filter, index) => <div key={`${filter.kind === "group" ? "group" : filter.column}:${index}`} className="flex flex-col gap-sm rounded-control border border-line-base p-sm">
         {editableFilter(filter) ? <FilterEditor {...messages} messages={messages} filter={filter} label={filterLabel(filter)} facets={facets[filter.column] ?? []} change={next => tableChange({ filters: filters.map((item, i) => i === index ? next : item) })} />
           : <span>{filterChipMessage(filterLabel(filter), filter)}</span>}
         <Button variant="ghost" onPress={() => tableChange({ filters: without(filters, index) })}>{removeFilterMessage(filterLabel(filter), filter)}</Button>
       </div>)}
       <div className="flex flex-wrap gap-xs">{columns.filter(column => !filters.some(filter => filter.kind !== "group" && filter.column === column.id)).map(column => <Button key={column.id} variant="secondary" onPress={() => addFilter(column.id)}>{addFilterMessage(label(column.id))}</Button>)}</div>
-    </Section>
+    </Section> : null}
     <Section title={columnsSectionLabel}>
       {columns.map(column => <Checkbox key={column.id} isSelected={model.visibleColumns.includes(column.id)} isDisabled={model.pinnedColumns?.includes(column.id) || (model.visibleColumns.length === 1 && model.visibleColumns[0] === column.id)} onChange={checked => change(editView(model, { visibleColumns: checked ? [...model.visibleColumns, column.id] : model.visibleColumns.filter(id => id !== column.id) }))}>{showColumnMessage(label(column.id))}</Checkbox>)}
       {model.visibleColumns.map((id, index) => <Button key={id} variant="ghost" isDisabled={index <= (model.pinnedColumns?.length ?? 0)} onPress={() => change(editView(model, { visibleColumns: moveUp(model.visibleColumns, index) }))}>{moveColumnMessage(label(id))}</Button>)}
@@ -182,10 +182,10 @@ export function ViewOptions({
       {narrow ? <Drawer trigger={trigger} heading={viewOptionsLabel} closeLabel={closeViewOptionsLabel} placement="bottom" wide="sheet" isOpen={isOpen} onOpenChange={setIsOpen}>{controls}</Drawer>
         : <Popover trigger={trigger} isOpen={isOpen} onOpenChange={setIsOpen} className="max-w-full max-h-[85vh] overflow-auto"><Dialog.Heading>{viewOptionsLabel}</Dialog.Heading>{controls}</Popover>}
     </div>
-    {groups.length || model.sort.length || filters.length ? <div aria-label={activeRulesLabel} className="flex flex-wrap gap-xs">
+    {groups.length || model.sort.length || (!hideFilters && filters.length) ? <div aria-label={activeRulesLabel} className="flex flex-wrap gap-xs">
       {groups.map((group, index) => <Chip key={`group:${group.column}`} removeLabel={removeGroupMessage(label(group.column))} onRemove={() => tableChange({ groupBy: without(groups, index) })}>{groupChipMessage(label(group.column))}</Chip>)}
       {model.sort.map((sort, index) => <Chip key={`sort:${sort.column}`} removeLabel={removeSortMessage(label(sort.column))} onRemove={() => change(editView(model, { sort: without(model.sort, index) }))}>{sortChipMessage(label(sort.column), sort.direction)}</Chip>)}
-      {filters.map((filter, index) => <Chip key={`filter:${filter.kind === "group" ? "group" : filter.column}:${index}`} removeLabel={removeFilterMessage(filterLabel(filter), filter)} onRemove={() => tableChange({ filters: without(filters, index) })}>{filterChipMessage(filterLabel(filter), filter)}</Chip>)}
+      {!hideFilters ? filters.map((filter, index) => <Chip key={`filter:${filter.kind === "group" ? "group" : filter.column}:${index}`} removeLabel={removeFilterMessage(filterLabel(filter), filter)} onRemove={() => tableChange({ filters: without(filters, index) })}>{filterChipMessage(filterLabel(filter), filter)}</Chip>) : null}
     </div> : null}
   </>;
 }

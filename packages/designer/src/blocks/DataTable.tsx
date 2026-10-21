@@ -6,6 +6,9 @@ import { ModelTable } from "./data-table/ModelTable.js";
 import type { DataTableMessages } from "./data-table/messages.js";
 import type { DataTableViewModel, DataTableViewModelV1 } from "./data-table/view-model.js";
 
+import type { FilterBuilderLabels } from "./FilterBuilder.js";
+import type { TableFilterResult } from "./table-model/index.js";
+
 export type DataTableSelectionMode = "none" | "single" | "multiple";
 
 export interface DataTableColumn<Row> {
@@ -79,8 +82,16 @@ export interface DataTableProps<Row> {
   toolbar?: ReactNode;
   /** Slot below the grid — typically a `Pagination` block. `DataTable` never paginates `rows` itself. */
   footer?: ReactNode;
-  /** Optional saved-view mode. With a model, filtering/sorting/grouping/pivoting are computed locally. */
+  /** Optional saved-view mode. Computes views locally by default; remote mode preserves host rows. */
   model?: DataTableViewModel | DataTableViewModelV1;
+  /** Host copy enables the dedicated TableModel filter builder. */
+  filterLabels?: FilterBuilderLabels;
+  /** Local computation is the default; remote rows retain host order and values. */
+  rowSource?: "local" | "remote";
+  /** Host facets used in remote mode. */
+  facets?: TableFilterResult<unknown>["facets"];
+  /** Host result count; local mode defaults to the filtered row count. */
+  resultCount?: number;
   /** Host labels/formatters with documented English defaults. Kept outside the saved view. */
   messages?: DataTableMessages;
   /** Required with model; persist the complete replacement envelope. Never called just for opening options. */

@@ -641,3 +641,12 @@ describe("compiled DataTable saved-view public contract", () => {
     }
   }, 30_000);
 });
+
+describe("FilterBuilder client public contract", () => {
+  it.each(["blocks/index.js", "index.js"])("exports the component and declarations through %s", entry => {
+    const script = `import {FilterBuilder} from ${JSON.stringify(join(packageRoot, "dist", entry))}; process.stdout.write(typeof FilterBuilder);`;
+    expect(execFileSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8" })).toBe("function");
+    const source = readFileSync(join(packageRoot, "dist", entry.replace(/\.js$/, ".d.ts")), "utf8");
+    for (const name of ["FilterBuilder", "FilterBuilderProps", "FilterBuilderLabels"]) expect(source).toMatch(new RegExp(`\\b${name}\\b`));
+  });
+});
