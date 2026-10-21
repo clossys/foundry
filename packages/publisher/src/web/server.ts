@@ -33,6 +33,8 @@ export { createWebRenderer } from "./internal/createWebRenderer.js";
 export { evaluateWebRouteManifest, evaluateWebRouteManifestWithSources, scanRouteSourceForDirectComposition } from "./checkWebRoutes.js";
 export type { WebRouteCheckResult, WebRouteFinding, WebRouteManifest, WebRouteManifestEntry } from "./checkWebRoutes.js";
 export { AuthView, BoundaryView, BrandGuideView, CaptureView, CollectionView, DocumentView, ErrorView, MarketingView, PackReviewView, SectionedView, StatusView, SystemAuditView } from "#publisher-web-views";
+export { PageView } from "#publisher-web-views";
+export type { PageViewProps } from "#publisher-web-views";
 export type {
   AuthViewProps,
   BoundaryViewProps,
