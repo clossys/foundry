@@ -45,6 +45,11 @@ const MODULE_SPECIFIER =
 const ALLOWED_IMPORT = /^(react|@clossys\/designer\/.+|@clossys\/writer|\.{1,2}\/.+)$/;
 
 describe("ActivateForm :: submit", () => {
+  it.each([false, true])("stretches the activation CTA with collectName=%s", (collectName) => {
+    setup({ collectName });
+    expect(submitButton().parentElement).toHaveAttribute("data-actions-layout", "stretch");
+  });
+
   it("calls activate with the password only, once, then onActivated once, and the button stays pending", async () => {
     const { handlers, user, container } = setup();
 

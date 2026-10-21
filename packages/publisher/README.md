@@ -3766,6 +3766,15 @@ the `surface` noun, so their copy has no slot for the account identifier. The sa
 `AuthView` composition renders equivalent markup from ordinary and
 react-server entries. Interactive forms belong in the host's client boundary.
 
+Contact forms use Designer Form's `end` actions layout: a natural-width
+CTA at the card's inline end from `tablet` (768px). `SignInForm`,
+`ResetForm`, and `ActivateForm` use `stretch`: full-width stacked actions
+at every size. Both layouts stack full width below `tablet`, with existing
+secondary actions before the primary in DOM and Tab order. Use a narrow
+surrounding card for the short forms and a medium card for contact forms;
+PageView's matching `width` API is pending
+[#2332](https://github.com/clossys/foundry/issues/2332).
+
 ### `SignInForm`
 
 `SignInForm`, exported from `@clossys/publisher/web`, is an identifier-first

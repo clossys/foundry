@@ -3436,6 +3436,9 @@
     .tablet\:justify-center {
       justify-content: center;
     }
+    .tablet\:justify-end {
+      justify-content: flex-end;
+    }
     .tablet\:justify-start {
       justify-content: flex-start;
     }
