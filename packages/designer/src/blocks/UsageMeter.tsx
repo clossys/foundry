@@ -52,6 +52,7 @@ export function UsageMeter({
     if (fraction >= threshold.at) matched = threshold;
   }
   const labelId = id === undefined ? undefined : `${id}-label`;
+  const gapClass = size === "compact" ? "gap-xs" : "gap-sm";
 
   return (
     <section
@@ -59,7 +60,7 @@ export function UsageMeter({
       id={id}
       aria-labelledby={labelId}
       data-size={size}
-      className={cx("flex min-w-0 flex-col break-words font-body", size === "compact" ? "gap-xs" : "gap-sm", className)}
+      className={cx("flex min-w-0 flex-col break-words font-body", gapClass, className)}
     >
       <div className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-sm gap-y-xs">
         <p id={labelId} className="m-0 min-w-0 text-body font-semibold text-ink-primary">{label}</p>

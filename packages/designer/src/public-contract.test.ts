@@ -8,9 +8,9 @@ import ts from "typescript";
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 
 describe("compiled UsageMeter public contract", () => {
-  it.each(["index.js", "blocks/index.js", "blocks/server.js"])("exports UsageMeter and its declared props from %s", async entry => {
-    const api = await import(pathToFileURL(join(packageRoot, "dist", entry)).href);
-    expect(api.UsageMeter).toBeTypeOf("function");
+  it.each(["index.js", "blocks/index.js", "blocks/server.js"])("exports UsageMeter and its declared props from %s", entry => {
+    const script = `import {UsageMeter} from ${JSON.stringify(join(packageRoot, "dist", entry))}; process.stdout.write(typeof UsageMeter);`;
+    expect(execFileSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8" })).toBe("function");
     const filename = join(packageRoot, "usage-meter-consumer.check.ts");
     const consumer = `import {UsageMeter, type UsageMeterProps, type UsageMeterThreshold} from ${JSON.stringify(join(packageRoot, "dist", entry))};
       const threshold: UsageMeterThreshold = {at: 0.8, tone: "warning", message: "Check usage"};
