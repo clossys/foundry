@@ -115,7 +115,7 @@ export function AppNavigation({
     };
     measure(); window.addEventListener("resize", measure);
     return () => window.removeEventListener("resize", measure);
-  }, [narrow, requested, customTrigger]);
+  }, [narrow, requested, customTrigger, trigger]);
   const focusedId = useRef<string | undefined>(undefined);
   const handoff = useRef(false);
   const tooltipRequests = useRef(0);
@@ -240,8 +240,12 @@ export function AppNavigation({
     ? <Button variant="ghost" className="icon-control-md shrink-0 border-0 bg-transparent p-0 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent"
         aria-expanded={requested} aria-label={openLabel}><Icon glyph={ChevronRight} decorative size="sm" className="rtl:rotate-180" /></Button>
     : collapsed
-      ? <CornerTooltip trigger={wideControl} label={openLabel} requests={tooltipRequests} />
-      : <CornerTooltip trigger={wideControl} label={closeLabel} requests={tooltipRequests} />)}</span>;
+      ? expandLabel === undefined
+        ? <CornerTooltip trigger={wideControl} label={openLabel} requests={tooltipRequests} />
+        : <CornerTooltip trigger={wideControl} label={expandLabel} requests={tooltipRequests} />
+      : collapseLabel === undefined
+        ? <CornerTooltip trigger={wideControl} label={closeLabel} requests={tooltipRequests} />
+        : <CornerTooltip trigger={wideControl} label={collapseLabel} requests={tooltipRequests} />)}</span>;
   if (narrow) return <Drawer trigger={control}
     heading={<span className="sr-only">{label}</span>} closeLabel={closeLabel} closeButtonStyle={getAppNavigationCloseStyle(cornerMeasurement)} navigationKey={route} dismissAt={dismissAt}
     isOpen={requested} onOpenChange={changeOpen} className="gap-xs p-sm">{links}</Drawer>;

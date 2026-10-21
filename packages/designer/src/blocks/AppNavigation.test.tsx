@@ -54,6 +54,32 @@ describe("AppNavigation", () => {
     expect(getAppNavigationCloseStyle(undefined)).toBeUndefined();
   });
 
+  it("remeasures a changed custom trigger while the narrow Drawer remains open", async () => {
+    wide = false;
+    let left = 35;
+    const original = HTMLElement.prototype.getBoundingClientRect;
+    const measured = vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function (this: HTMLElement) {
+      return this.getAttribute("aria-label") === "Host corner" ? new DOMRect(left, 27, 44, 44) : original.call(this);
+    });
+    try {
+      const view = render(<div dir="ltr"><AppNavigation tree={tree} drawerOpen trigger={<button aria-label="Host corner" style={{ direction: "ltr" }} />} /></div>);
+      const close = await screen.findByRole("button", { name: "Close navigation", expanded: true });
+      await waitFor(() => expect(close).toHaveStyle({ insetBlockStart: "27px", insetInlineStart: "35px", direction: "ltr" }));
+      left = 621;
+      view.rerender(<div dir="rtl"><AppNavigation tree={tree} drawerOpen trigger={<button aria-label="Host corner" style={{ direction: "rtl" }} />} /></div>);
+      await waitFor(() => expect(close).toHaveStyle({ insetBlockStart: "27px", insetInlineStart: "calc(100% - 665px)", direction: "rtl" }));
+    } finally { measured.mockRestore(); }
+  });
+
+  it.each([true, false])("matches the corner tooltip to the host alias when collapsed is %s", async collapsed => {
+    render(<AppNavigation tree={tree} collapsed={collapsed} openLabel="Show destinations" closeLabel="Hide destinations" expandLabel="Expand destinations" collapseLabel="Collapse destinations" />);
+    const label = collapsed ? "Expand destinations" : "Collapse destinations";
+    const trigger = screen.getByRole("button", { name: label });
+    fireEvent.mouseMove(document.body);
+    await userEvent.hover(trigger);
+    expect(await screen.findByRole("tooltip")).toHaveTextContent(label);
+  });
+
   it("uses host copy for panel toggles and both disclosure states", async () => {
     const formatDisclosureLabel = vi.fn((label: string, expanded: boolean) => (expanded ? "Fermer " : "Ouvrir ") + label);
     const copy = { expandLabel: "Agrandir", collapseLabel: "Reduire", formatDisclosureLabel };

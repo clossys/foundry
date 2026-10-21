@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { ModalContext, PopoverContext } from "react-aria-components";
 import { Button, Icon, Link, Menu, Popover } from "@clossys/designer/atoms";
 import { Box, ChevronDown, ExternalLink, Layers, List, Search } from "@clossys/designer/icons";
@@ -207,7 +207,9 @@ function FrameContent({ brand, navigation, account, commands, children, rightPan
   const sidebarProbe = useRef<HTMLSpanElement>(null);
   const currentPanelWidth = rightPanel?.value ?? width;
   const geometry = useRef({ sidebarWidth, panelWidth: currentPanelWidth, navOpen: !navCollapsed, panelOpen: Boolean(rightPanel) && !collapsed });
-  geometry.current = { sidebarWidth, panelWidth: currentPanelWidth, navOpen: !navCollapsed, panelOpen: Boolean(rightPanel) && !collapsed };
+  useLayoutEffect(() => {
+    geometry.current = { sidebarWidth, panelWidth: currentPanelWidth, navOpen: !navCollapsed, panelOpen: Boolean(rightPanel) && !collapsed };
+  });
   const layout = appFramePanels(available, wide, sidebarWidth, currentPanelWidth, !navCollapsed, Boolean(rightPanel) && !collapsed);
   const navigationDocked = !layout.navigationOverlay && !navCollapsed;
   const panelDocked = Boolean(rightPanel) && !narrow && !collapsed;

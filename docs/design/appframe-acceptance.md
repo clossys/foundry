@@ -84,9 +84,11 @@ The new acceptance cases run through AppFrame itself. JSDOM covers semantics,
 interaction, responsive policy and focus. A separate real Chromium fixture loads
 tokens, the canonical preview stylesheet and theme keys in that order to measure
 rectangles and real pointer hit targets. Browser observations are kept separately
-from structural assertions. The final local package commands and 18 named
-mutation pairs pass; hosted verification at the eventual draft head remains
-required before review.
+from structural assertions. The initial local package commands and 18 named
+mutation pairs passed. Hosted verification subsequently passed in
+[CI run 39548902539](https://github.com/clossys/foundry/actions/runs/39548902539)
+at head `2e72c29ac1a234576d89da7f97562eea0b414906`; this is historical evidence
+for that source snapshot. Any later correction requires fresh exact-head proof.
 
 | Class | Named coverage | Initial evidence | Final |
 | --- | --- | --- | --- |

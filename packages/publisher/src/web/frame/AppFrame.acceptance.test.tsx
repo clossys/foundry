@@ -236,6 +236,35 @@ function setViewport(width: number) {
 }
 
 describe("AppFrame floating stage", () => {
+  it("keeps resize geometry committed while a panel-width transition is suspended", async () => {
+    setViewport(1100);
+    let changeWidth!: (width: number) => void;
+    let release!: () => void;
+    let suspended = true;
+    const attempted = vi.fn();
+    const pending = new Promise<void>(resolve => { release = resolve; });
+    function Route({ width }: { width: number }) {
+      attempted(width);
+      if (width === 500 && suspended) throw pending;
+      return <output aria-label="Committed panel width">{width}</output>;
+    }
+    function Host() {
+      const [width, setWidth] = useState(300); changeWidth = setWidth;
+      const props = stageFixture();
+      return <React.Suspense fallback={<p>Pending route</p>}><AppFrame {...props} rightPanel={{ ...props.rightPanel, value: width }}><Route width={width} /></AppFrame></React.Suspense>;
+    }
+    render(<Host />);
+    await waitFor(() => expect(region("stage")).toHaveAttribute("data-stage-panel", "docked"));
+    await act(async () => { React.startTransition(() => changeWidth(500)); });
+    expect(attempted).toHaveBeenCalledWith(500);
+    expect(screen.getByRole("status", { name: "Committed panel width" })).toHaveTextContent("300");
+    act(() => { window.dispatchEvent(new Event("resize")); });
+    expect(region("stage")).toHaveAttribute("data-stage-panel", "docked");
+    await act(async () => { suspended = false; release(); await pending; });
+    await waitFor(() => expect(screen.getByRole("status", { name: "Committed panel width" })).toHaveTextContent("500"));
+    await waitFor(() => expect(region("stage")).toHaveAttribute("data-stage-panel", "overlay"));
+  });
+
   it("a: keeps two corner controls with expanded state, conditional context and return focus", async () => {
     const user = userEvent.setup(); const props = stageFixture(); const view = render(<AppFrame {...props} />);
     const nav = document.querySelector<HTMLButtonElement>('[data-application-frame-navigation="trigger"]')!;
