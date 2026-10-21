@@ -8,7 +8,6 @@ import userEvent from "@testing-library/user-event";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { Button } from "@clossys/designer/atoms";
-import { PageHeader } from "@clossys/designer/blocks/server";
 import { IndexView, type IndexViewProps } from "./IndexView.js";
 import * as web from "../index.js";
 import * as client from "../client.js";
@@ -18,7 +17,7 @@ afterEach(cleanup);
 type Row = { id: string; name: string; state: string };
 const rows: readonly Row[] = [{ id: "one", name: "First record", state: "Available" }, { id: "two", name: "Second record", state: "Planned" }];
 const base: IndexViewProps<Row> = {
-  title: "Records", subtitle: "Browse the current records.", rows,
+  rows,
   collectionLabel: "Record collection", rowKey: row => row.id,
   columns: [{ id: "name", header: "Name", isRowHeader: true, cell: row => row.name }, { id: "state", header: "State", cell: row => row.state }],
   empty: { title: "No records", description: "Create a record to begin." },
@@ -29,7 +28,7 @@ describe("IndexView", () => {
     expect(web.IndexView).toBe(IndexView);
     expect(client.IndexView).toBe(IndexView);
     expect(typeof server.IndexView).toBe("function");
-    expect(renderToStaticMarkup(<server.IndexView {...base} />)).toContain(base.subtitle);
+    expect(renderToStaticMarkup(<server.IndexView {...base} />)).toContain("First record");
     const script = `
       import * as web from "@clossys/publisher/web";
       const results = ["IndexView", "DetailsView"].map(name => {
@@ -44,25 +43,46 @@ describe("IndexView", () => {
     `;
     expect(JSON.parse(execFileSync(process.execPath, ["--conditions=react-server", "--input-type=module", "-e", script], { encoding: "utf8" }))).toEqual(["IndexView", "DetailsView"]);
   });
-  it("uses PageHeader for its title and subtitle, renders one h1 during SSR and owns no frame chrome", () => {
+  it("starts with collection content and renders no page header, title, breadcrumb or page actions", () => {
     const html = renderToStaticMarkup(<IndexView {...base} />);
     const host = document.createElement("div"); host.innerHTML = html;
-    expect(html).toContain(renderToStaticMarkup(<PageHeader title={base.title} description={base.subtitle} />));
-    expect(host.querySelectorAll("h1")).toHaveLength(1);
+    expect(host.querySelector("header, h1, nav")).toBeNull();
+    expect(host.firstElementChild?.firstElementChild?.tagName).toBe("DIV");
+    expect(host.firstElementChild?.firstElementChild?.querySelector("table")).not.toBeNull();
     expect(host.querySelector("main, footer, [role=banner], [role=contentinfo], [data-application-frame], [data-frame-root]")).toBeNull();
     render(<main aria-label="Application content"><IndexView {...base} /></main>);
     expect(screen.getAllByRole("main")).toHaveLength(1);
-    expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+    expect(screen.queryByRole("heading", { level: 1 })).toBeNull();
+    expect(screen.getByRole("grid", { name: base.collectionLabel })).toBeInTheDocument();
   });
 
-  it("arranges the header, Toolbar Block, default DataTable Block and Pagination Block in order", async () => {
+  it.each(["title", "subtitle", "actions"])("rejects the removed %s prop with AppFrame page guidance, even when undefined", key => {
+    for (const value of [undefined, "Page information"]) {
+      const legacy = { [key]: value };
+      const invoke = () => renderToStaticMarkup(<IndexView {...base} {...legacy as never} />);
+      expect(invoke).toThrow(TypeError);
+      expect(invoke).toThrow(`IndexView: unknown prop "${key}"; page-level information belongs in AppFrame page.`);
+    }
+  });
+
+  it.each([undefined, "", "   "])("requires an explicit nonempty collection label (%s)", collectionLabel => {
+    expect(() => renderToStaticMarkup(<IndexView {...base} collectionLabel={collectionLabel as never} />)).toThrow(/collectionLabel/);
+  });
+
+  it("requires its explicit empty state and preserves loading content for zero rows", () => {
+    expect(() => renderToStaticMarkup(<IndexView {...base} empty={undefined as never} />)).toThrow(/empty state/);
+    render(<IndexView {...base} rows={[]} table={{ isLoading: true }} />);
+    expect(screen.getByRole("grid", { name: base.collectionLabel })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "No records" })).toBeNull();
+  });
+
+  it("starts with the Toolbar Block before the default DataTable and Pagination Blocks", async () => {
     const onPageChange = vi.fn();
     const { container } = render(<IndexView {...base} toolbar={{ "aria-label": "Record filters", leading: <Button>New record</Button> }} pagination={{ page: 1, pageCount: 2, onPageChange }} />);
-    const header = screen.getByRole("heading", { level: 1 });
     const toolbar = screen.getByRole("toolbar", { name: "Record filters" });
     const table = screen.getByRole("grid", { name: "Record collection" });
     const pagination = screen.getByRole("navigation", { name: "Pagination" });
-    expect(header.compareDocumentPosition(toolbar) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(container.firstElementChild?.firstElementChild).toBe(toolbar);
     expect(toolbar.compareDocumentPosition(table) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(table.compareDocumentPosition(pagination) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(within(table).getByText("First record")).toBeInTheDocument();
@@ -165,6 +185,7 @@ describe("IndexView", () => {
     const source = readFileSync(join(import.meta.dirname, "IndexView.tsx"), "utf8");
     expect(source).not.toMatch(/<\s*(?:h[1-6]|p|table|thead|tbody|tr|td|th|button|nav|main|footer|header)\b/);
     expect(source).not.toMatch(/\b(?:AppFrame|SiteFrame|SiteHeader|SiteFooter)\s*[,}]/);
-    for (const block of ["PageHeader", "Toolbar", "DataTable", "EmptyState", "Pagination"]) expect(source).toMatch(new RegExp(`<${block}\\b`));
+    expect(source).not.toMatch(/\bPageHeader\b/);
+    for (const block of ["Toolbar", "DataTable", "EmptyState", "Pagination"]) expect(source).toMatch(new RegExp(`<${block}\\b`));
   });
 });

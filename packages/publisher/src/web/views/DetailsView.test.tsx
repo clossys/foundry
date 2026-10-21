@@ -8,7 +8,7 @@ import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderToStaticMarkup, renderToString } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { Banner, Button } from "@clossys/designer/atoms";
+import { Banner } from "@clossys/designer/atoms";
 import { DetailsView, type DetailsViewProps, type DetailsViewSection } from "./DetailsView.js";
 import { IndexView } from "./IndexView.js";
 import { AppFrame } from "../frame/AppFrame.js";
@@ -21,7 +21,7 @@ const sections: readonly DetailsViewSection[] = [
   { id: "identity", title: "Identity", block: { kind: "detail", props: { fields: [{ label: "Identifier", value: "record-one" }] } } },
   { id: "activity", title: "Activity", block: { kind: "panel", props: { children: "Recent activity", footer: "Activity summary" } } },
 ];
-const common = { title: "First record", subtitle: "Details of the selected record.", index: { href: "/records", label: "Records" }, empty: { title: "No sections", description: "Nothing is available in this section." } };
+const common = { empty: { title: "No sections", description: "Nothing is available in this section." } };
 const tabs = [{ id: "overview", label: "Overview", sections }, { id: "history", label: "History", sections: [{ id: "changes", title: "Changes", block: { kind: "stat" as const, props: { label: "Recorded changes", value: "3" } } }] }, { id: "empty", label: "Attachments", sections: [] }];
 const tabbed = (overrides: Partial<DetailsViewProps> = {}): DetailsViewProps => ({ ...common, tabs, tabsLabel: "Record sections", tab: "overview", onTabChange: vi.fn(), ...overrides } as DetailsViewProps);
 
@@ -30,21 +30,35 @@ describe("DetailsView", () => {
     expect(web.DetailsView).toBe(DetailsView);
     expect(client.DetailsView).toBe(DetailsView);
     expect(typeof server.DetailsView).toBe("function");
-    expect(renderToStaticMarkup(<server.DetailsView {...common} sections={sections} />)).toContain(common.subtitle);
+    expect(renderToStaticMarkup(<server.DetailsView {...common} sections={sections} />)).toContain("record-one");
   });
-  it("uses PageHeader for title/subtitle and breadcrumb, with one h1 and no frame chrome during SSR", () => {
+  it("starts with named sections and renders no page header, title, breadcrumb or page actions during SSR", () => {
     const html = renderToStaticMarkup(<DetailsView {...common} sections={sections} />);
     const host = document.createElement("div"); host.innerHTML = html;
-    expect(host.querySelectorAll("h1")).toHaveLength(1);
-    const header = host.querySelector("header")!;
-    expect(header.querySelector("h1")).toHaveTextContent(common.title);
-    expect(header.querySelector("p")).toHaveTextContent(common.subtitle);
-    expect(header.querySelector('nav a[href="/records"]')).toHaveTextContent("Records");
-    expect(header.querySelector('[aria-current="page"]')).toHaveTextContent("First record");
+    expect(host.querySelector("header, h1, nav")).toBeNull();
+    expect(host.firstElementChild?.firstElementChild?.querySelector('[data-details-section="identity"]')).not.toBeNull();
     expect(host.querySelector("main, footer, [role=banner], [role=contentinfo], [data-application-frame], [data-frame-root]")).toBeNull();
     render(<main aria-label="Application content"><DetailsView {...common} sections={sections} /></main>);
     expect(screen.getAllByRole("main")).toHaveLength(1);
-    expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+    expect(screen.queryByRole("heading", { level: 1 })).toBeNull();
+    expect(screen.getByRole("heading", { name: "Identity", level: 2 })).toBeInTheDocument();
+  });
+
+  it.each(["title", "subtitle", "actions", "index"])("rejects the removed %s prop with AppFrame page guidance, even when undefined", key => {
+    for (const value of [undefined, "Page information"]) {
+      const legacy = { [key]: value };
+      const invoke = () => renderToStaticMarkup(<DetailsView {...common} sections={sections} {...legacy as never} />);
+      expect(invoke).toThrow(TypeError);
+      expect(invoke).toThrow(`DetailsView: unknown prop "${key}"; page-level information belongs in AppFrame page.`);
+    }
+  });
+
+  it.each([undefined, "", "   "])("requires an explicit nonempty tabs label (%s)", tabsLabel => {
+    expect(() => renderToStaticMarkup(<DetailsView {...tabbed({ tabsLabel })} />)).toThrow(/tabsLabel/);
+  });
+
+  it("requires its explicit empty state without a page title", () => {
+    expect(() => renderToStaticMarkup(<DetailsView sections={sections} empty={undefined as never} />)).toThrow(/empty state/);
   });
 
   it("defaults regions to main and groups the narrow aside after main regardless of authored region order", () => {
@@ -88,7 +102,7 @@ describe("DetailsView", () => {
     const empty: DetailsViewSection = { id: "attachments", title: "Attachments", region: "aside", block: { kind: "panel", props: { children: "Hidden attachments" } }, state: { kind: "empty", props: { title: "No attachments", description: "Add a file when available." } } };
     const error: DetailsViewSection = { id: "history", title: "History", region: "aside", block: { kind: "panel", props: { children: "Hidden history" } }, state: { kind: "error", props: { children: "History could not load." } } };
     const { container, rerender } = render(<DetailsView {...common} sections={[loading, sections[1]!, empty, error]} />);
-    expect(screen.getByRole("heading", { name: common.title, level: 1 })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { level: 1 })).toBeNull();
     expect(screen.getByRole("status", { name: "Loading identity" })).toHaveAttribute("aria-busy", "true");
     expect(screen.getByRole("heading", { name: "No attachments", level: 2 })).toBeInTheDocument();
     expect(screen.getByText("Add a file when available.")).toBeInTheDocument();
@@ -104,15 +118,16 @@ describe("DetailsView", () => {
     expect(screen.queryByRole("status", { name: "Loading identity" })).toBeNull();
   });
 
-  it("places the optional banner between PageHeader and body and keeps actions in PageHeader", () => {
-    render(<DetailsView {...common} sections={sections} actions={<Button>Edit record</Button>} banner={<Banner variant="warning">Archived record</Banner>} />);
-    const heading = screen.getByRole("heading", { name: common.title, level: 1 });
+  it("starts with the optional content notice before tabs and sections", () => {
+    const { container } = render(<DetailsView {...tabbed()} banner={<Banner variant="warning">Archived record</Banner>} />);
     const banner = screen.getByRole("status");
+    const tablist = screen.getByRole("tablist", { name: "Record sections" });
     const firstSection = screen.getByRole("heading", { name: "Identity", level: 2 });
     expect(banner).toHaveTextContent("Archived record");
-    expect(heading.compareDocumentPosition(banner) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(banner.compareDocumentPosition(firstSection) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Edit record" }).closest("header")).toContainElement(heading);
+    expect(container.firstElementChild?.firstElementChild).toBe(banner);
+    expect(banner.compareDocumentPosition(tablist) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(tablist.compareDocumentPosition(firstSection) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(container.querySelector("header, h1, nav")).toBeNull();
   });
 
   it("renders the shipped StatusList and RecordLedger Blocks through their typed entries", () => {
@@ -203,7 +218,7 @@ describe("DetailsView", () => {
       commands: { heading: "Commands", triggerLabel: "Find a command", searchLabel: "Search commands", closeLabel: "Close commands", emptyMessage: "No matching commands", groups: [] },
     };
     const tree = (tab = "overview") => <AppFrame {...frame}>{kind === "index" ? <IndexView
-      title="Records" subtitle="Browse the current records." rows={[row]} rowKey={entry => entry.id}
+      rows={[row]} rowKey={entry => entry.id}
       columns={[{ id: "name", header: "Name", isRowHeader: true, cell: entry => entry.name }]}
       collectionLabel="Record collection" empty={{ title: "No records" }}
       rowRoute={{ href: entry => "/records/" + entry.id, onNavigate }}
@@ -217,22 +232,21 @@ describe("DetailsView", () => {
     try {
       expect(host.querySelectorAll("[data-application-frame]")).toHaveLength(1);
       expect(host.querySelectorAll("main")).toHaveLength(1);
-      expect(host.querySelectorAll("h1")).toHaveLength(1);
+      expect(host.querySelectorAll("h1")).toHaveLength(0);
       expect(host.querySelector("[data-frame-root]")).toBeNull();
-      expect(within(main).getByText(kind === "index" ? "Browse the current records." : common.subtitle)).toBeInTheDocument();
+      expect(within(main).getByText(kind === "index" ? "First record" : "record-one")).toBeInTheDocument();
       expect(within(host).getByRole("link", { name: "Skip to content" })).toHaveAttribute("href", "#" + mainId);
       await act(async () => { root = hydrateRoot(host, tree(), { onRecoverableError: recoverable }); });
       expect(recoverable).not.toHaveBeenCalled();
       expect(within(host).getByRole("main")).toBe(main);
       expect(main).toHaveAttribute("id", mainId);
-      expect(host.querySelectorAll("h1")).toHaveLength(1);
+      expect(host.querySelectorAll("h1")).toHaveLength(0);
       expect(host.querySelectorAll("main")).toHaveLength(1);
       const user = userEvent.setup();
       if (kind === "index") {
         await user.click(within(main).getByRole("link", { name: "First record" }));
         expect(onNavigate).toHaveBeenCalledExactlyOnceWith("/records/one", row);
       } else {
-        expect(within(main).getByRole("link", { name: "Records" })).toHaveAttribute("href", "/records");
         await user.click(within(main).getByRole("tab", { name: "History" }));
         expect(onTabChange).toHaveBeenCalledWith("history");
         expect(within(main).getByRole("tab", { name: "Overview" })).toHaveAttribute("aria-selected", "true");
@@ -247,14 +261,13 @@ describe("DetailsView", () => {
     }
   });
 
-  it("refuses raw elements instead of Block entries, bad identities, missing controlled selection and unsafe index links", () => {
+  it("refuses raw elements instead of Block entries, bad identities, missing controlled selection", () => {
     for (const block of [<div>Raw detail</div>, { kind: "raw", props: { children: "Raw detail" } }, { kind: "PageHeader", props: { title: "Second title" } }]) {
       expect(() => renderToStaticMarkup(<DetailsView {...common} sections={[{ id: "bad", title: "Bad", block: block as never }]} />)).toThrow(/Block/i);
     }
     expect(() => renderToStaticMarkup(<DetailsView {...common} sections={[sections[0]!, sections[0]!]} />)).toThrow(/section.*id/i);
     expect(() => renderToStaticMarkup(<DetailsView {...tabbed({ tab: "missing" })} />)).toThrow(/tab/i);
     expect(() => renderToStaticMarkup(<DetailsView {...tabbed({ onTabChange: undefined })} />)).toThrow(/onTabChange/);
-    expect(() => renderToStaticMarkup(<DetailsView {...common} index={{ href: "javascript:alert(1)", label: "Records" }} sections={sections} />)).toThrow(/index/i);
     for (const props of [{ role: "main" }, { id: "publisher-main-content" }, { header: <header /> }, { nav: <nav /> }, { leftPanel: <div /> }, { bottomPanel: <div /> }]) {
       expect(() => renderToStaticMarkup(<DetailsView {...common} sections={sections} {...props as never} />)).toThrow(/frame|chrome/i);
     }
@@ -267,9 +280,9 @@ describe("DetailsView", () => {
     const source = readFileSync(join(import.meta.dirname, "DetailsView.tsx"), "utf8");
     expect(source).not.toMatch(/<\s*(?:h[1-6]|p|table|button|nav|main|footer|header)\b/);
     expect(source).not.toMatch(/\b(?:AppFrame|SiteFrame|SiteHeader|SiteFooter)\s*[,}]/);
-    for (const block of ["PageHeader", "SectionHeader", "DetailView", "Panel", "Stat", "StatusList", "RecordLedger", "EmptyState"]) expect(source).toMatch(new RegExp(`<${block}\\b`));
+    for (const block of ["SectionHeader", "DetailView", "Panel", "Stat", "StatusList", "RecordLedger", "EmptyState"]) expect(source).toMatch(new RegExp(`<${block}\\b`));
     expect(source).toMatch(/<Tabs\b/);
-    expect(source).toMatch(/<Breadcrumb\b/);
+    expect(source).not.toMatch(/\b(?:PageHeader|Breadcrumb)\b/);
     expect(source).toMatch(/<Skeleton\b/);
     expect(source).toMatch(/<Banner\b/);
   });
