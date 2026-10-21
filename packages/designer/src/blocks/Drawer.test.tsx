@@ -36,6 +36,31 @@ function heldHost() {
 }
 
 describe("Drawer", () => {
+  it.each(["ltr", "rtl"])("positions only the opted-in existing close at the measured %s corner", async direction => {
+    const closeButtonStyle = { position: "fixed", insetBlockStart: 35, insetInlineStart: 117, insetInlineEnd: "auto", direction };
+    render(<Drawer {...supplied} closeButtonStyle={closeButtonStyle}>Content</Drawer>);
+    const trigger = screen.getByRole("button", { name: "Open tools" });
+    await userEvent.click(trigger);
+    const close = await screen.findByRole("button", { name: "Close tools" });
+    expect(close).toHaveStyle({ position: "fixed", insetBlockStart: "35px", insetInlineStart: "117px", direction });
+    expect(close).toHaveAttribute("aria-expanded", "true");
+    expect(close).toHaveClass("icon-control-md");
+    await userEvent.click(close);
+    await waitFor(() => expect(trigger).toHaveFocus());
+  });
+
+  it("keeps omitted and explicitly undefined close layout byte-identical", async () => {
+    const view = render(<Drawer {...supplied}>Content</Drawer>);
+    await userEvent.click(screen.getByRole("button", { name: "Open tools" }));
+    const dialog = await screen.findByRole("dialog");
+    const before = dialog.outerHTML;
+    view.rerender(<Drawer {...supplied} closeButtonStyle={undefined}>Content</Drawer>);
+    expect(dialog.outerHTML).toBe(before);
+    const close = screen.getByRole("button", { name: "Close tools" });
+    expect(close.style.position).toBe("");
+    expect(close).not.toHaveAttribute("aria-expanded");
+  });
+
   it.each(["Enter", " "])("gives the default close control a native-chrome-free 44px presentation and keyboard focus on %s", async key => {
     render(<Drawer {...supplied}>Content</Drawer>);
     const trigger = screen.getByRole("button", { name: "Open tools" });

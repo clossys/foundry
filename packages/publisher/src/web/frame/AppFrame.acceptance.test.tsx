@@ -10,17 +10,22 @@ import { ThemeToggle, useTheme } from "@clossys/designer/theme";
 import { AppFrame } from "./AppFrame.js";
 import type { AppFrameProps } from "./app-frame-types.js";
 
-let wide: boolean;
+let viewport: number;
 let listeners: Set<() => void>;
 beforeEach(() => {
-  wide = true;
+  viewport = 1280;
+  Object.defineProperty(window, "innerWidth", { configurable: true, get: () => viewport });
   listeners = new Set();
   localStorage.clear();
   // The literal root command has no package JSX configuration.
   vi.stubGlobal("React", React);
   vi.stubGlobal("matchMedia", vi.fn((media: string) => ({
-    media, get matches() { return media === "(min-width: 768px)" && wide; },
-    addEventListener: (_: string, listener: () => void) => { if (media === "(min-width: 768px)") listeners.add(listener); },
+    media, get matches() {
+      if (media === "all") return true;
+      const match = media.match(/^\(min-width: ([\d.]+)(px|rem)\)$/);
+      return match ? viewport >= Number(match[1]) * (match[2] === "rem" ? 16 : 1) : false;
+    },
+    addEventListener: (_: string, listener: () => void) => { listeners.add(listener); },
     removeEventListener: (_: string, listener: () => void) => listeners.delete(listener),
     addListener: () => {}, removeListener: () => {},
   })));
@@ -31,7 +36,7 @@ afterEach(() => {
   document.documentElement.style.removeProperty("color-scheme");
   window.history.replaceState(null, "", "/");
 });
-function resize(matches: boolean) { act(() => { wide = matches; for (const listener of listeners) listener(); }); }
+function resize(matches: boolean) { act(() => { viewport = matches ? 1280 : 375; for (const listener of listeners) listener(); }); }
 function fixture(): AppFrameProps {
   return {
     brand: { markSrc: "/mark.svg", wordmark: "Atlas", label: "Atlas workspace" },
@@ -94,8 +99,8 @@ describe("AppFrame acceptance", () => {
     expect(screen.getByRole("link", { name: "Projects" })).toHaveFocus();
     await user.keyboard("{ArrowRight}");
     expect(screen.getByRole("link", { name: "Tasks" })).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Collapse navigation" }));
-    expect(screen.getByRole("button", { name: "Expand navigation" })).toHaveFocus();
+    await user.click(screen.getByRole("button", { name: "Close navigation" }));
+    expect(screen.getByRole("button", { name: "Open navigation" })).toHaveFocus();
   });
 
   it("commands: opens by shortcut and trigger, filters, selects a host href and restores focus on Escape", async () => {
@@ -139,7 +144,7 @@ describe("AppFrame acceptance", () => {
     expect(destroy).toHaveBeenCalledOnce();
   });
 
-  it("theme: the header slot updates a child Block through the native provider without remount", async () => {
+  it("theme: the navigation footer slot updates a child Block through the native provider without remount", async () => {
     const user = userEvent.setup(); const mounted = vi.fn();
     render(<AppFrame {...fixture()} theme={{ defaultPreference: "light" }} themeControl={<ThemeToggle aria-label="Host theme" />}><ThemeBlock mounted={mounted} /></AppFrame>);
     const block = screen.getByRole("region", { name: "Themed block" });
@@ -208,5 +213,283 @@ describe("AppFrame acceptance", () => {
     const main = screen.getByRole("main"); const skip = screen.getByRole("link", { name: "Skip to content" });
     expect(skip).toHaveAttribute("href", "#" + main.id);
     await user.click(skip); expect(main).toHaveFocus();
+  });
+});
+
+function stageFixture() {
+  return {
+    ...fixture(),
+    brand: { markSrc: "/mark.svg", wordmark: "Atlas", label: "Atlas workspace", href: "#home" },
+    rightPanel: { children: <button>Context action</button>, label: "Context", handleLabel: "Resize context", min: 200, max: 500, defaultValue: 300 },
+    page: {
+      title: "Project board", breadcrumb: [{ id: "projects", label: "Projects", href: "#projects", siblings: [{ id: "library", label: "Library", href: "#library" }] }],
+      status: <span>Ready</span>, description: "Current project details", updatedAt: "Updated today", meta: <span>Owned by the team</span>, scope: <span>All projects</span>,
+      actions: [{ id: "save", label: "Save changes", onAction: vi.fn(), primary: true }, { id: "export", label: "Export project", onAction: vi.fn() }],
+      width: "contained" as const,
+    },
+    children: <><p>Route body</p><button>Route action</button></>,
+  };
+}
+function region(name: string) { return document.querySelector<HTMLElement>(`[data-application-frame-region="${name}"]`)!; }
+function setViewport(width: number) {
+  act(() => { viewport = width; Object.defineProperty(window, "innerWidth", { configurable: true, writable: true, value: width }); for (const listener of listeners) listener(); window.dispatchEvent(new Event("resize")); });
+}
+
+describe("AppFrame floating stage", () => {
+  it("keeps resize geometry committed while a panel-width transition is suspended", async () => {
+    setViewport(1100);
+    let changeWidth!: (width: number) => void;
+    let release!: () => void;
+    let suspended = true;
+    const attempted = vi.fn();
+    const pending = new Promise<void>(resolve => { release = resolve; });
+    function Route({ width }: { width: number }) {
+      attempted(width);
+      if (width === 500 && suspended) throw pending;
+      return <output aria-label="Committed panel width">{width}</output>;
+    }
+    function Host() {
+      const [width, setWidth] = useState(300); changeWidth = setWidth;
+      const props = stageFixture();
+      return <React.Suspense fallback={<p>Pending route</p>}><AppFrame {...props} rightPanel={{ ...props.rightPanel, value: width }}><Route width={width} /></AppFrame></React.Suspense>;
+    }
+    render(<Host />);
+    await waitFor(() => expect(region("stage")).toHaveAttribute("data-stage-panel", "docked"));
+    await act(async () => { React.startTransition(() => changeWidth(500)); });
+    expect(attempted).toHaveBeenCalledWith(500);
+    expect(screen.getByRole("status", { name: "Committed panel width" })).toHaveTextContent("300");
+    act(() => { window.dispatchEvent(new Event("resize")); });
+    expect(region("stage")).toHaveAttribute("data-stage-panel", "docked");
+    await act(async () => { suspended = false; release(); await pending; });
+    await waitFor(() => expect(screen.getByRole("status", { name: "Committed panel width" })).toHaveTextContent("500"));
+    await waitFor(() => expect(region("stage")).toHaveAttribute("data-stage-panel", "overlay"));
+  });
+
+  it("a: keeps two corner controls with expanded state, conditional context and return focus", async () => {
+    const user = userEvent.setup(); const props = stageFixture(); const view = render(<AppFrame {...props} />);
+    const nav = document.querySelector<HTMLButtonElement>('[data-application-frame-navigation="trigger"]')!;
+    const panel = document.querySelector<HTMLButtonElement>('[data-application-frame-panel="trigger"]')!;
+    expect(nav).toHaveAttribute("aria-expanded", "true"); expect(panel).toHaveAttribute("aria-expanded", "true");
+    await user.click(nav); expect(nav).toHaveAttribute("aria-expanded", "false"); expect(nav).toHaveFocus();
+    await user.click(nav); expect(nav).toHaveAttribute("aria-expanded", "true");
+    await user.click(panel); expect(panel).toHaveAttribute("aria-expanded", "false"); expect(panel).toHaveFocus();
+    expect(nav.style.insetInlineStart).not.toBe(""); expect(panel.style.insetInlineEnd).not.toBe("");
+    const { rightPanel: _, ...withoutPanel } = props; view.rerender(<AppFrame {...withoutPanel} />);
+    expect(document.querySelector('[data-application-frame-panel="trigger"]')).toBeNull();
+  });
+
+  it.each(["navigation", "panel"] as const)("a: exposes an expanded corner close control inside the narrow %s modal", async side => {
+    setViewport(375); const user = userEvent.setup(); render(<AppFrame {...stageFixture()} />);
+    const openLabel = side === "navigation" ? "Open navigation" : "Open panel";
+    const closeLabel = side === "navigation" ? "Close navigation" : "Close panel";
+    const trigger = screen.getByRole("button", { name: openLabel });
+    await user.click(trigger);
+    const close = screen.getByRole("button", { name: closeLabel, expanded: true });
+    expect(screen.getByRole("dialog")).toContainElement(close);
+    await user.click(close);
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    await waitFor(() => expect(trigger).toHaveFocus());
+  });
+
+  it.each(["navigation", "panel"] as const)("a: delegates the RTL %s close coordinate to the CSS containing box", async side => {
+    setViewport(899);
+    const original = HTMLElement.prototype.getBoundingClientRect;
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function (this: HTMLElement) {
+      return this.matches('[data-application-frame-navigation="trigger"], [data-application-frame-panel="trigger"]')
+        ? new DOMRect(117, 35, 44, 44) : original.call(this);
+    });
+    const user = userEvent.setup(); render(<AppFrame {...stageFixture()} dir="rtl" />);
+    await user.click(screen.getByRole("button", { name: side === "navigation" ? "Open navigation" : "Open panel" }));
+    const close = screen.getByRole("button", { name: side === "navigation" ? "Close navigation" : "Close panel", expanded: true });
+    await waitFor(() => expect(close).toHaveStyle({ insetBlockStart: "35px", insetInlineStart: "calc(100% - 161px)", direction: "rtl" }));
+  });
+
+  it("a: reserves the token-sized corner row before navigation search", () => {
+    render(<AppFrame {...stageFixture()} />);
+    const header = document.querySelector<HTMLElement>('[data-application-navigation-region="header"]')!;
+    expect(header.firstElementChild).toContainElement(screen.getByRole("button", { name: "Find a command" }));
+    const clearance = (header.firstElementChild as HTMLElement).style.paddingBlockStart;
+    expect(clearance).toContain("--ui-layout-tap-target"); expect(clearance).toContain("--spacing-md");
+  });
+
+  it.each(["ltr", "rtl"] as const)("b: reserves docked widths and overlays panels before the stage drops below its minimum in %s", async dir => {
+    const user = userEvent.setup(); render(<AppFrame {...stageFixture()} dir={dir} />);
+    expect(region("stage")).toHaveAttribute("data-stage-navigation", "docked");
+    expect(region("stage")).toHaveAttribute("data-stage-panel", "docked");
+    expect(Number.parseFloat(region("stage").style.minInlineSize)).toBe(0);
+    setViewport(1000);
+    await waitFor(() => expect(region("stage")).toHaveAttribute("data-stage-panel", "overlay"));
+    setViewport(899);
+    await waitFor(() => expect(region("stage")).toHaveAttribute("data-stage-navigation", "overlay"));
+    expect(region("stage")).toHaveAttribute("data-stage-panel", "overlay");
+    await user.click(screen.getByRole("button", { name: "Open panel" }));
+    expect(await screen.findByRole("dialog", { name: "Context" })).toBeInTheDocument();
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.getByRole("button", { name: "Open panel" })).toHaveFocus());
+  });
+
+  it("b: budgets the bounded default panel width before deciding whether to dock", async () => {
+    setViewport(1000);
+    const props = stageFixture();
+    render(<AppFrame {...props} rightPanel={{ ...props.rightPanel, min: 300, max: 500, defaultValue: 100 }} />);
+    expect(region("stage")).toHaveAttribute("data-stage-navigation", "docked");
+    await waitFor(() => expect(region("stage")).toHaveAttribute("data-stage-panel", "overlay"));
+    expect(screen.queryByRole("region", { name: "Context" })).not.toBeInTheDocument();
+  });
+
+  it("b: rechecks raised panel bounds against the retained width and hands off focus", async () => {
+    setViewport(1100);
+    const props = stageFixture();
+    const view = render(<AppFrame {...props} rightPanel={{ ...props.rightPanel, min: 200, max: 800, value: 300 }} />);
+    await waitFor(() => expect(region("stage")).toHaveAttribute("data-stage-panel", "docked"));
+    screen.getByRole("button", { name: "Context action" }).focus();
+    view.rerender(<AppFrame {...props} rightPanel={{ ...props.rightPanel, min: 500, max: 800, value: 300 }} />);
+    await waitFor(() => expect(region("stage")).toHaveAttribute("data-stage-panel", "overlay"));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Open panel" })).toHaveFocus());
+    expect(screen.queryByRole("region", { name: "Context" })).not.toBeInTheDocument();
+  });
+
+  it("b: budgets the capped maximum rather than an oversized retained panel width", async () => {
+    setViewport(1100);
+    const props = stageFixture();
+    render(<AppFrame {...props} rightPanel={{ ...props.rightPanel, min: 200, max: 300, defaultValue: 700 }} />);
+    await waitFor(() => expect(region("stage")).toHaveAttribute("data-stage-panel", "docked"));
+    expect(screen.getByRole("region", { name: "Context" })).toHaveStyle({ inlineSize: "300px" });
+  });
+
+  it("c: uses the page width until an in-memory override and respects a controlled host value", async () => {
+    const user = userEvent.setup(); const props = stageFixture(); const view = render(<AppFrame {...props} />);
+    expect(region("stage")).toHaveAttribute("data-stage-width", "contained");
+    expect(region("stage").style.maxInlineSize).toContain("--ui-width-wide-max");
+    await user.click(screen.getByRole("button", { name: "Use full width" }));
+    expect(region("stage")).toHaveAttribute("data-stage-width", "full");
+    view.rerender(<AppFrame {...props} page={{ ...props.page, title: "Another project", width: "contained" }} />);
+    expect(region("stage")).toHaveAttribute("data-stage-width", "full");
+    const changed = vi.fn(); view.rerender(<AppFrame {...props} width="contained" onWidthChange={changed} />);
+    await user.click(screen.getByRole("button", { name: "Use full width" }));
+    expect(changed).toHaveBeenCalledWith("full"); expect(region("stage")).toHaveAttribute("data-stage-width", "contained");
+  });
+
+  it("d: keeps the glass bar sticky within the scrolling stage with scroll clearance and an opaque fallback", () => {
+    const supported = vi.fn(() => true);
+    vi.stubGlobal("CSS", Object.assign(Object.create(globalThis.CSS ?? null), { supports: supported }));
+    const view = render(<AppFrame {...stageFixture()} />);
+    const bar = screen.getByRole("banner");
+    expect(bar).toHaveStyle({ position: "sticky" }); expect(region("stage")).toContainElement(bar);
+    expect(region("stage").style.overflowY).toBe("auto"); expect(region("stage").style.scrollPaddingBlockStart).not.toBe("");
+    expect(bar.style.backdropFilter).toContain("blur");
+    view.unmount(); supported.mockReturnValue(false); render(<AppFrame {...stageFixture()} />);
+    expect(screen.getByRole("banner").style.backdropFilter).toBe("none");
+    expect(screen.getByRole("banner").style.backgroundColor).toContain("--color-surface-raised");
+  });
+
+  it("e: exposes the home mark, brand-rooted breadcrumb, page h1 and sibling/workspace menus", async () => {
+    const user = userEvent.setup(); const props = stageFixture(); const view = render(<AppFrame {...props} />);
+    const trail = screen.getByRole("navigation", { name: "Breadcrumb" });
+    expect(within(trail).getByRole("link", { name: "Atlas" })).toHaveAttribute("href", "#home");
+    expect(screen.getByRole("heading", { level: 1, name: "Project board" })).toHaveAttribute("aria-current", "page");
+    await user.click(within(trail).getByRole("button", { name: "Projects" }));
+    expect(await screen.findByRole("menuitem", { name: "Library" })).toHaveAttribute("href", "#library");
+    await user.keyboard("{Escape}");
+    view.rerender(<AppFrame {...props} workspaces={[{ id: "atlas", label: "Atlas", href: "#atlas" }, { id: "research", label: "Research", href: "#research" }]} />);
+    await user.click(within(screen.getByRole("navigation", { name: "Breadcrumb" })).getByRole("button", { name: "Atlas" }));
+    expect(await screen.findByRole("menuitem", { name: "Research" })).toHaveAttribute("href", "#research");
+  });
+
+  it("e: retains ancestor sibling destinations in the collapsed narrow breadcrumb", async () => {
+    setViewport(375); const user = userEvent.setup(); render(<AppFrame {...stageFixture()} />);
+    await user.click(screen.getByRole("button", { name: "More breadcrumb levels" }));
+    expect(await screen.findByRole("menuitem", { name: "Projects" })).toHaveAttribute("href", "#projects");
+    expect(screen.getByRole("menuitem", { name: "Library" })).toHaveAttribute("href", "#library");
+  });
+
+  it.each(["ltr", "rtl"] as const)("f: preserves the explicit %s direction in the portaled information surface", async dir => {
+    const user = userEvent.setup(); render(<AppFrame {...stageFixture()} dir={dir} />);
+    await user.click(screen.getByRole("button", { name: "Page information" }));
+    expect(region("page-info").parentElement?.parentElement).toHaveStyle({ direction: dir });
+  });
+
+  it("f: resolves inherited document direction for the portaled information", async () => {
+    const previous = document.documentElement.dir; document.documentElement.dir = "rtl";
+    try {
+      const user = userEvent.setup(); render(<AppFrame {...stageFixture()} />);
+      await user.click(screen.getByRole("button", { name: "Page information" }));
+      expect(region("page-info").parentElement?.parentElement).toHaveStyle({ direction: "rtl" });
+    } finally { document.documentElement.dir = previous; }
+  });
+
+  it("f: retains token typography and foreground outside the frame portal", async () => {
+    const user = userEvent.setup(); render(<AppFrame {...stageFixture()} />);
+    await user.click(screen.getByRole("button", { name: "Page information" }));
+    expect(region("page-info").parentElement?.parentElement).toHaveClass("text-body", "text-ink-primary");
+  });
+
+  it("g: presents only the first requested primary action as primary", () => {
+    const props = stageFixture();
+    props.page.actions = props.page.actions.map(action => ({ ...action, primary: true }));
+    render(<AppFrame {...props} />);
+    const primary = document.querySelectorAll('[data-application-frame-action="primary"]');
+    expect(primary).toHaveLength(1); expect(primary[0]).toHaveTextContent("Save changes");
+    expect(screen.getByRole("button", { name: "Export project" })).toHaveAttribute("data-application-frame-action", "secondary");
+  });
+
+  it("f: opens optional page information as an overlay and dismisses on Escape and outside press", async () => {
+    const user = userEvent.setup(); const props = stageFixture(); const view = render(<AppFrame {...props} />);
+    const trigger = screen.getByRole("button", { name: "Page information" });
+    expect(trigger).toHaveAttribute("aria-expanded", "false"); await user.click(trigger);
+    expect(trigger).toHaveAttribute("aria-expanded", "true"); expect(screen.getByText("Current project details")).toBeInTheDocument();
+    expect(region("page-info").parentElement?.parentElement).toHaveStyle({ position: "absolute" });
+    await user.keyboard("{Escape}"); await waitFor(() => expect(trigger).toHaveAttribute("aria-expanded", "false")); await waitFor(() => expect(trigger).toHaveFocus());
+    await user.click(trigger); await user.click(screen.getByText("Route action"));
+    await waitFor(() => expect(trigger).toHaveAttribute("aria-expanded", "false"));
+    view.rerender(<AppFrame {...props} page={{ title: "Project board" }} />);
+    expect(screen.queryByRole("button", { name: "Page information" })).not.toBeInTheDocument();
+  });
+
+  it("g: keeps one primary action, narrow secondary overflow and the separated width control last", async () => {
+    const user = userEvent.setup(); const props = stageFixture(); render(<AppFrame {...props} />);
+    await user.click(screen.getByRole("button", { name: "Save changes" })); expect(props.page.actions[0]!.onAction).toHaveBeenCalledOnce();
+    setViewport(375);
+    await user.click(screen.getByRole("button", { name: "More page actions" }));
+    await user.click(await screen.findByRole("menuitem", { name: "Export project" })); expect(props.page.actions[1]!.onAction).toHaveBeenCalledOnce();
+    const width = screen.getByRole("button", { name: "Use full width" });
+    expect(region("bar-actions").lastElementChild).toContainElement(width);
+    expect(region("bar-actions").lastElementChild).toHaveClass("border-s");
+  });
+
+  it("h: puts command search first, profile/theme in the footer, preserves icons and opens commands with navigation closed", async () => {
+    const user = userEvent.setup(); const props = stageFixture();
+    props.navigation.tree[0]!.icon = <span data-testid="home-icon" />;
+    render(<AppFrame {...props} />);
+    const nav = screen.getByRole("navigation", { name: "Workspace navigation" });
+    expect(nav.querySelector("button")).toHaveAccessibleName("Find a command");
+    expect(within(nav).getByRole("link", { name: "Home" })).toContainElement(screen.getByTestId("home-icon"));
+    const footer = nav.querySelector('[data-application-navigation-region="footer"]')!;
+    expect(footer).toContainElement(screen.getByRole("button", { name: "Example member" })); expect(footer).toContainElement(screen.getByRole("button", { name: /Theme:/ }));
+    expect(within(nav).queryByText("Workspace navigation")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Close navigation" }));
+    await user.keyboard("{Control>}k{/Control}"); expect(await screen.findByRole("dialog", { name: "Commands" })).toBeInTheDocument();
+  });
+});
+
+
+describe("AppFrame floating stage ink", () => {
+  it("keeps the existing accent mask and gives the breadcrumb the only visible brand name", () => {
+    render(<AppFrame {...stageFixture()} />);
+    const home = screen.getByRole("link", { name: "Atlas workspace" });
+    expect(home.querySelector('[data-application-frame-mark="accent"]')).toHaveClass("bg-accent");
+    expect(home.querySelector("img")).toBeNull();
+    expect(within(home).queryByText("Atlas")).not.toBeInTheDocument();
+    expect(within(screen.getByRole("navigation", { name: "Breadcrumb" })).getByRole("link", { name: "Atlas" })).toBeInTheDocument();
+  });
+
+  it("uses the existing small Logomark image path when the host opts out of accent ink", () => {
+    const props = stageFixture(); render(<AppFrame {...props} brand={{ ...props.brand, markInk: "image" }} />);
+    const home = screen.getByRole("link", { name: "Atlas workspace" });
+    const mark = home.querySelector("img")!;
+    expect(mark).toHaveAttribute("src", "/mark.svg");
+    expect(mark.style.height).toBe("var(--ui-brandmark-height-sm, 24px)");
+    expect(mark.style.width).toBe("auto");
+    expect(home.querySelector('[data-application-frame-mark="accent"]')).toBeNull();
   });
 });
