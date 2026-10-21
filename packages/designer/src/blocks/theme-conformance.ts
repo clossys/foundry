@@ -57,6 +57,7 @@ export const BLOCK_THEME_CONFORMANCE: readonly BlockThemeRegistration[] = [
   { exportName: "Testimonial", source: "src/blocks/Testimonial.tsx", contrastPairs: BASE_READING },
   { exportName: "ArticleBody", source: "src/blocks/ArticleBody.tsx", contrastPairs: [...BASE_READING, "ink-primary/surface-sunken", "ink-link/surface-base"] },
   { exportName: "SectionFrame", source: "src/blocks/SectionFrame.tsx", contrastPairs: ["ink-primary/surface-base", "ink-primary/surface-sunken", "ink-on-inverse/surface-inverse"] },
+  { exportName: "NewsletterBand", source: "src/blocks/NewsletterBand.tsx", contrastPairs: GROUNDED_READING },
   { exportName: "ConsentBanner", source: "src/blocks/ConsentBanner.tsx", contrastPairs: RAISED_READING },
   {
     exportName: "Panel", source: "src/blocks/Panel.tsx", contrastPairs: [],
