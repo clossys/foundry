@@ -298,7 +298,7 @@ describe("packed frame release", () => {
     expect(menuButton).toContain(' aria-expanded="false"');
     const menuIcon = menuButton.match(/<span\b[^>]*class="nav-disclosure-icon"[^>]*>/)?.[0] ?? "";
     expect(menuIcon).toContain(' aria-hidden="true"');
-    expect(menuButton.replace(/<[^>]*>/g, "")).toBe("");
+    expect(menuButton).not.toMatch(/>\s*[^<\s]/);
     expect(html).toContain('class="flex min-h-dvh flex-col"');
     expect(html).toMatch(/data-landing-hero=""[^>]*class="[^"]*flex-1/);
     expect(html).not.toContain("min-height:100dvh");
