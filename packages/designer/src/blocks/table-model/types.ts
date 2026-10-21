@@ -19,12 +19,20 @@ export interface TableCollation {
 }
 
 export type TableFilter =
-  | { readonly column: string; readonly kind: "text"; readonly op: "contains" | "equals"; readonly value: string }
+  | { readonly column: string; readonly kind: "text"; readonly op: "contains" | "equals" | "notEquals"; readonly value: string }
   | { readonly column: string; readonly kind: "number"; readonly op: "range"; readonly min?: number; readonly max?: number }
   | { readonly column: string; readonly kind: "date"; readonly op: "range"; readonly min?: string | number; readonly max?: string | number }
-  | { readonly column: string; readonly kind: "enum"; readonly op: "in"; readonly values: readonly string[] }
+  | { readonly column: string; readonly kind: "enum"; readonly op: "in" | "notIn"; readonly values: readonly string[] }
   | { readonly column: string; readonly kind: "tags"; readonly op: "any" | "all" | "none"; readonly values: readonly string[] }
-  | { readonly column: string; readonly kind: "boolean"; readonly op: "equals"; readonly value: boolean };
+  | { readonly column: string; readonly kind: "boolean"; readonly op: "equals"; readonly value: boolean }
+  | { readonly column: string; readonly kind: TableColumnKind; readonly op: "empty" | "notEmpty" };
+
+export interface TableFilterGroup {
+  readonly kind: "group";
+  readonly op: "and" | "or";
+  readonly items: readonly TableFilterNode[];
+}
+export type TableFilterNode = TableFilter | TableFilterGroup;
 
 export interface TableDimension {
   readonly column: string;
@@ -42,10 +50,10 @@ export interface TablePivot {
 
 /** Plain saved-view data, with no callbacks, accessors, React nodes or runtime handles. */
 export interface TableModel {
-  readonly version: 1;
+  readonly version: 1 | 2;
   readonly columns: readonly TableColumn[];
   readonly collation: TableCollation;
-  readonly filters?: readonly TableFilter[];
+  readonly filters?: readonly TableFilterNode[];
   readonly search?: string;
   readonly groupBy?: readonly TableDimension[];
   readonly measures?: readonly TableMeasure[];

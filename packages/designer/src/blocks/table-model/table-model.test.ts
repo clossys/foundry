@@ -11,6 +11,7 @@ import {
   type TableModel,
 } from "./index.js";
 
+describe.each([1, 2] as const)("table engine v%s compatibility", version => {
 const columns: TableModel["columns"] = [
   { id: "name", kind: "text" },
   { id: "amount", kind: "number" },
@@ -34,7 +35,7 @@ const rows = [
 
 function model(delta: Partial<TableModel> = {}): TableModel {
   return {
-    version: 1,
+    version,
     columns,
     collation: { locale: "en", sensitivity: "base" },
     measures: [
@@ -278,8 +279,8 @@ describe("table-model saved views and errors", () => {
   });
 
   it("rejects an unknown model version with a typed code", () => {
-    expect(() => parseTableModel({ ...model(), version: 2 })).toThrowError(TableModelError);
-    try { parseTableModel({ ...model(), version: 2 }); } catch (error) { expect(error).toMatchObject({ name: "TableModelError", code: "unsupported-version" }); }
+    expect(() => parseTableModel({ ...model(), version: 3 })).toThrowError(TableModelError);
+    try { parseTableModel({ ...model(), version: 3 }); } catch (error) { expect(error).toMatchObject({ name: "TableModelError", code: "unsupported-version" }); }
   });
 
   it("refuses model accessors and sparse arrays without invoking accessor code", () => {
@@ -355,4 +356,6 @@ describe("table-model performance budget", () => {
     expect(pivot.totals.count).toBe(8_100);
     expect(elapsed).toBeLessThan(2_000);
   });
+});
+
 });

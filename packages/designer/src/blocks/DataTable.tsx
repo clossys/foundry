@@ -4,7 +4,7 @@ import type { Key, SortDescriptor } from "react-aria-components";
 import { FlatGrid } from "./data-table/FlatGrid.js";
 import { ModelTable } from "./data-table/ModelTable.js";
 import type { DataTableMessages } from "./data-table/messages.js";
-import type { DataTableViewModel } from "./data-table/view-model.js";
+import type { DataTableViewModel, DataTableViewModelV1 } from "./data-table/view-model.js";
 
 export type DataTableSelectionMode = "none" | "single" | "multiple";
 
@@ -80,7 +80,7 @@ export interface DataTableProps<Row> {
   /** Slot below the grid — typically a `Pagination` block. `DataTable` never paginates `rows` itself. */
   footer?: ReactNode;
   /** Optional saved-view mode. With a model, filtering/sorting/grouping/pivoting are computed locally. */
-  model?: DataTableViewModel;
+  model?: DataTableViewModel | DataTableViewModelV1;
   /** Host labels/formatters with documented English defaults. Kept outside the saved view. */
   messages?: DataTableMessages;
   /** Required with model; persist the complete replacement envelope. Never called just for opening options. */
