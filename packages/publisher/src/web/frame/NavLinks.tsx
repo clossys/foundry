@@ -1,16 +1,12 @@
 import { SiteHeader } from "@clossys/designer/shell/server";
-import { HEADER_ACTION_VARIANTS } from "./site-frame-contract.js";
 import type { ResolvedSiteLink, ResolvedSiteShell } from "./internal/resolveShell.js";
-
-// Primary leads, so it is the first action in the expanded mobile menu; the rest keep their variant order.
-const actionRank = (emphasis: (typeof HEADER_ACTION_VARIANTS)[number]) => emphasis === "primary" ? -1 : HEADER_ACTION_VARIANTS.indexOf(emphasis);
 
 /**
  * The same full-label links serve the desktop row and the mobile panel. Actions
- * here are text only: the frame renders the mobile header-bar primary, the one
- * action that shows its icon, separately.
+ * keep the resolver's increasing-importance order, including on a narrow menu.
+ * The frame also renders the primary icon in the narrow header bar.
  */
-export function NavLinks({ links, actions, surfaceLabel }: { readonly links: readonly ResolvedSiteLink[]; readonly actions?: ResolvedSiteShell["actions"]; readonly surfaceLabel?: string }) {
+export function NavLinks({ links, actions }: { readonly links: readonly ResolvedSiteLink[]; readonly actions?: ResolvedSiteShell["actions"] }) {
   return (
     <>
       {links.length ? <ul role="list" className="site-header-nav-links m-0 flex list-none flex-wrap items-center gap-sm p-0">
@@ -22,12 +18,11 @@ export function NavLinks({ links, actions, surfaceLabel }: { readonly links: rea
           </li>
         ))}
       </ul> : null}
-      {actions?.length || surfaceLabel ? (
+      {actions?.length ? (
         <ul role="list" className="site-header-desktop-actions m-0 flex list-none gap-sm p-0">
-          {[...(actions ?? [])].sort((a, b) => actionRank(a.emphasis) - actionRank(b.emphasis)).map((action, index) => (
-            <li key={index}><SiteHeader.ActionLink href={action.href} label={action.label} isCurrent={action.isCurrent} variant={action.emphasis} /></li>
+          {actions.map((action, index) => (
+            <li key={index}><SiteHeader.ActionLink href={action.href} label={action.label} icon={action.icon} isCurrent={action.isCurrent} variant={action.emphasis} /></li>
           ))}
-          {surfaceLabel ? <li><span>{surfaceLabel}</span></li> : null}
         </ul>
       ) : null}
     </>
