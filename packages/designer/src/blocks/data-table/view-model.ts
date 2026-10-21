@@ -1,4 +1,4 @@
-import { parseTableModel, type TableModel } from "../table-model/index.js";
+import { parseTableModel, TableModelError, type TableModel } from "../table-model/index.js";
 
 export type DataTableMode = "flat" | "grouped" | "pivot";
 export type DataTableDensity = "comfortable" | "compact";
@@ -7,13 +7,19 @@ export interface DataTableSortRule {
   readonly direction: "ascending" | "descending";
 }
 /** Persist this complete, plain-data envelope; the nested engine model stays unchanged. */
-export interface DataTableViewModel {
+export interface DataTableViewModelV1 {
   readonly version: 1;
   readonly table: TableModel;
   readonly mode: DataTableMode;
   readonly density: DataTableDensity;
   readonly sort: readonly DataTableSortRule[];
   readonly visibleColumns: readonly string[];
+}
+/** Version 2 preserves the nested engine version and adds optional grid metadata. */
+export interface DataTableViewModel extends Omit<DataTableViewModelV1, "version"> {
+  readonly version: 2;
+  readonly columnWidths?: Readonly<Record<string, number>>;
+  readonly pinnedColumns?: readonly string[];
 }
 export class DataTableViewModelError extends TypeError {
   constructor(message: string) {
@@ -51,9 +57,16 @@ export function parseDataTableViewModel(value: unknown): DataTableViewModel {
   if (typeof value === "string") {
     try { value = JSON.parse(value); } catch { invalid("invalid JSON."); }
   }
-  const input = record(value, ["version", "table", "mode", "density", "sort", "visibleColumns"]);
-  if (input.version !== 1) invalid("unsupported or missing version.");
-  const table = parseTableModel(input.table);
+  const fields = ["version", "table", "mode", "density", "sort", "visibleColumns"];
+  const input = record(value, [...fields, "columnWidths", "pinnedColumns"]);
+  if (input.version !== 1 && input.version !== 2) invalid("unsupported or missing version.");
+  if (input.version === 1) record(value, fields);
+  let table: TableModel;
+  try { table = parseTableModel(input.table); }
+  catch (error) {
+    if (error instanceof TableModelError) invalid("invalid nested table model.");
+    throw error;
+  }
   if (!["flat", "grouped", "pivot"].includes(input.mode as string)) invalid("unknown mode.");
   if (!["comfortable", "compact"].includes(input.density as string)) invalid("unknown density.");
   const columns = new Set(table.columns.map(column => column.id));
@@ -72,9 +85,19 @@ export function parseDataTableViewModel(value: unknown): DataTableViewModel {
   });
   const visibleColumns = list(input.visibleColumns).map(columnId);
   if (!visibleColumns.length || new Set(visibleColumns).size !== visibleColumns.length) invalid("visible columns must be nonempty and distinct.");
-  return { version: 1, table, mode: input.mode as DataTableMode, density: input.density as DataTableDensity, sort, visibleColumns };
+  const columnWidths = input.columnWidths === undefined ? undefined : Object.fromEntries(Object.entries(record(input.columnWidths, [...columns])).map(([column, width]) => {
+    if (typeof width !== "number" || !Number.isInteger(width) || width < 48 || width > 2000) invalid("column widths must be integer pixels from 48 to 2000.");
+    return [column, width];
+  }));
+  const pinnedColumns = input.pinnedColumns === undefined ? undefined : list(input.pinnedColumns).map(columnId);
+  if (pinnedColumns !== undefined && (pinnedColumns.length > 3 || new Set(pinnedColumns).size !== pinnedColumns.length || pinnedColumns.some((column, index) => column !== visibleColumns[index]))) invalid("pinned columns must be a distinct leading prefix of at most three visible columns.");
+  return {
+    version: 2, table, mode: input.mode as DataTableMode, density: input.density as DataTableDensity, sort, visibleColumns,
+    ...(columnWidths === undefined ? {} : { columnWidths }),
+    ...(pinnedColumns === undefined ? {} : { pinnedColumns }),
+  };
 }
-export function serializeDataTableViewModel(model: DataTableViewModel): string {
+export function serializeDataTableViewModel(model: DataTableViewModel | DataTableViewModelV1): string {
   return JSON.stringify(parseDataTableViewModel(model));
 }
 

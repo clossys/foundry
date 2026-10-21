@@ -8,6 +8,9 @@ import type { TableFacet, TableFilter } from "../table-model/index.js";
 import { dateValue } from "../table-model/model.js";
 
 type RangeFilter = Extract<TableFilter, { kind: "number" | "date" }>;
+function isEmptyFilter(filter: TableFilter): filter is Extract<TableFilter, { op: "empty" | "notEmpty" }> {
+  return filter.op === "empty" || filter.op === "notEmpty";
+}
 function RangeEditor({
   /** @default column => `Minimum ${column}` */
   minimumMessage = defaultMinimumMessage,
@@ -68,6 +71,8 @@ export function FilterEditor({
   noTagsLabel = "None",
   filter, label, facets, change, messages,
 }: DataTableMessages & { filter: TableFilter; label: string; facets: readonly TableFacet[]; change: (filter: TableFilter) => void; messages?: DataTableMessages }) {
+  if (isEmptyFilter(filter)) return null;
+  if (filter.op === "notEquals" || filter.op === "notIn") return null;
   if (filter.kind === "number" || filter.kind === "date") return <RangeEditor {...messages} filter={filter} label={label} change={change} />;
   if (filter.kind === "text") return <>
     <Select label={comparisonMessage(label)} selectedKey={filter.op} options={[{ id: "contains", label: containsLabel }, { id: "equals", label: equalsLabel }]} onSelectionChange={key => { if (key === "contains" || key === "equals") change({ ...filter, op: key }); }} />
