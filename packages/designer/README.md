@@ -8569,3 +8569,17 @@ function SavedTable() {
 const encoded = serializeDataTableViewModel(initialView);
 const restored = parseDataTableViewModel(encoded);
 ```
+
+### Chat
+
+`Chat` presents a controlled conversation log and composer inside a bounded panel. Supply `messages`, `status` and `onSend`; the host updates the thread and handles cancellation, retry, suggestions and optional message actions. Consecutive messages share an author group, streamed text follows the bottom until the reader scrolls up, and Jump to latest resumes following. Enter sends, Shift+Enter inserts a newline, and Escape calls `onStop` while streaming.
+
+The default renderer supports paragraphs, flat lists, inline code, fenced code with a copy control and safe explicit links. HTML stays escaped text. `renderContent(message, defaultContent)` supplies a trusted React slot for host content. `labels` overrides the documented default copy; `label` names the region and `labels.logLabel` names the live log. Import the Designer styles and give the containing panel a height. The block uses the current light or dark theme tokens.
+
+| Export | Kind | Description |
+| --- | --- | --- |
+| `Chat` | component | Message log, composer, stable streaming/error row, suggestions and optional message actions. |
+| `ChatProps` | type | Controlled messages/status, callbacks, content slot, optional actions and labels. |
+| `ChatMessage` | type | Stable id, user/assistant role, text content and optional display timestamp. |
+| `ChatActions` | type | Optional copy, regeneration and up/down feedback callbacks. |
+| `ChatLabels` | type | Optional host copy overrides with documented English defaults. |

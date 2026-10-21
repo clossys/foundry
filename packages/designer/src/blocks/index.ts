@@ -236,3 +236,6 @@ export type { GraphNode, GraphEdge, GraphInput, GraphModelEdge, GraphModel, Grap
 
 export { CatalogWorkspace } from "./CatalogWorkspace.js";
 export type { CatalogWorkspaceProps, CatalogWorkspaceItem, CatalogWorkspaceSize } from "./CatalogWorkspace.js";
+
+export { Chat } from "./chat/Chat.js";
+export type { ChatProps, ChatMessage, ChatActions, ChatLabels } from "./chat/types.js";
