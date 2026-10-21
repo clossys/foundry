@@ -245,3 +245,6 @@ export type { CatalogWorkspaceProps, CatalogWorkspaceItem, CatalogWorkspaceSize 
 
 export { Chat } from "./chat/Chat.js";
 export type { ChatProps, ChatMessage, ChatActions, ChatLabels } from "./chat/types.js";
+
+export { ResourceList } from "./ResourceList.js";
+export type { ResourceListProps, ResourceListItem, ResourceListAction } from "./ResourceList.js";
