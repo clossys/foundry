@@ -8,8 +8,9 @@ import { AppFrameSpecimen } from "../client.js";
 
 beforeEach(() => {
   localStorage.clear();
+  Object.defineProperty(window, "innerWidth", { configurable: true, value: 1280 });
   vi.stubGlobal("matchMedia", vi.fn((media: string) => ({
-    media, matches: media === "(min-width: 768px)", onchange: null,
+    media, matches: media === "(min-width: 56.25rem)" || media === "all", onchange: null,
     addEventListener: vi.fn(), removeEventListener: vi.fn(),
     addListener: vi.fn(), removeListener: vi.fn(), dispatchEvent: () => true,
   })));
@@ -22,6 +23,14 @@ afterEach(() => {
 });
 
 describe("exported AppFrame specimen", () => {
+  it("uses the frame page contract with one heading in its bar and header-free route content", () => {
+    render(<AppFrameSpecimen />);
+    const heading = screen.getByRole("heading", { level: 1, name: "Overview" });
+    expect(screen.getAllByRole("heading", { level: 1 })).toEqual([heading]);
+    expect(screen.getByRole("banner")).toContainElement(heading);
+    expect(screen.getByRole("main")).not.toContainElement(heading);
+    expect(screen.getByRole("button", { name: "Page information" })).toBeInTheDocument();
+  });
   it("passes a host command index directly to the real menu", async () => {
     const user = userEvent.setup();
     const run = vi.fn();
@@ -56,7 +65,7 @@ describe("exported AppFrame specimen", () => {
   it("retains the generic default copy when no host overrides are supplied", () => {
     render(<AppFrameSpecimen />);
     const main = within(screen.getByRole("main"));
-    expect(main.getByRole("heading", { level: 1, name: "Overview" })).toBeInTheDocument();
+    expect(within(screen.getByRole("banner")).getByRole("heading", { level: 1, name: "Overview" })).toBeInTheDocument();
     expect(main.getByText("A shared place to review projects, open tasks and recent activity.")).toBeInTheDocument();
     expect(main.getByText("Example workspace opened.")).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Example context" })).toHaveTextContent("Current destination: Overview");
@@ -110,7 +119,7 @@ describe("exported AppFrame specimen", () => {
     }} />);
     await user.click(screen.getByRole("link", { name: "HOST projects" }));
     const main = within(screen.getByRole("main"));
-    expect(main.getByRole("heading", { level: 1, name: "HOST projects" })).toBeInTheDocument();
+    expect(within(screen.getByRole("banner")).getByRole("heading", { level: 1, name: "HOST projects" })).toBeInTheDocument();
     expect(main.getByText("HOST project detail")).toBeInTheDocument();
     expect(main.getByRole("status")).toHaveTextContent("HOST projects opened");
   });
@@ -123,11 +132,11 @@ describe("exported AppFrame specimen", () => {
     const projects = within(navigation).getByRole("link", { name: "Projects" });
     expect(projects).toHaveAttribute("href", "#example-projects");
     await user.click(projects);
-    expect(within(screen.getByRole("main")).getByRole("heading", { level: 1, name: "Projects" })).toBeInTheDocument();
+    expect(within(screen.getByRole("banner")).getByRole("heading", { level: 1, name: "Projects" })).toBeInTheDocument();
     expect(projects).toHaveAttribute("aria-current", "page");
     await user.click(screen.getByRole("button", { name: "Expand Projects" }));
     await user.click(within(navigation).getByRole("link", { name: "Tasks" }));
-    expect(within(screen.getByRole("main")).getByRole("heading", { level: 1, name: "Tasks" })).toBeInTheDocument();
+    expect(within(screen.getByRole("banner")).getByRole("heading", { level: 1, name: "Tasks" })).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Example context" })).toHaveTextContent("Tasks");
     await user.click(screen.getByRole("button", { name: "Complete example task" }));
     expect(screen.getByRole("region", { name: "Example context" })).toHaveTextContent("Example task completed.");
@@ -145,7 +154,7 @@ describe("exported AppFrame specimen", () => {
     expect(screen.queryByRole("option", { name: "Open overview" })).not.toBeInTheDocument();
     await user.keyboard("{Enter}");
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
-    expect(within(screen.getByRole("main")).getByRole("heading", { name: "Tasks" })).toBeInTheDocument();
+    expect(within(screen.getByRole("banner")).getByRole("heading", { name: "Tasks" })).toBeInTheDocument();
     await waitFor(() => expect(opener).toHaveFocus());
     await user.click(opener);
     await user.keyboard("{Escape}");
@@ -157,10 +166,10 @@ describe("exported AppFrame specimen", () => {
     render(<AppFrameSpecimen />);
     await user.click(screen.getByRole("button", { name: "Example member" }));
     await user.click(await screen.findByRole("menuitem", { name: "Profile" }));
-    expect(within(screen.getByRole("main")).getByRole("heading", { name: "Profile" })).toBeInTheDocument();
+    expect(within(screen.getByRole("banner")).getByRole("heading", { name: "Profile" })).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Example member" }));
     await user.click(await screen.findByRole("menuitem", { name: "Preferences" }));
-    expect(within(screen.getByRole("main")).getByRole("heading", { name: "Preferences" })).toBeInTheDocument();
+    expect(within(screen.getByRole("banner")).getByRole("heading", { name: "Preferences" })).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Example member" }));
     await user.click(await screen.findByRole("menuitem", { name: "Sign out" }));
     expect(await screen.findByRole("heading", { level: 1, name: "Signed out" })).toBeInTheDocument();

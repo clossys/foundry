@@ -6623,11 +6623,27 @@ already owns a main landmark.
 AppFrame and its stateful specimen are explicit `web/client` islands; SiteFrame and the default/server entries retain their hook-free, server-import boundary, with AppFrame exceptions pinned per file and shared contract imports restricted to types.
 
 Supply `brand` with resolved `markSrc`, `wordmark` and accessible `label` strings.
-The label must contain the visible wordmark. The desktop lockup uses an accent
-mark with the wordmark in the surface's natural foreground. At the mobile breakpoint the mark
-is centered and the wordmark is hidden. Use `markInk: "image"` when the source
-artwork must retain its own colors; the default accent treatment uses a mask.
-An optional `href` makes the brand a host-owned destination.
+The label must contain the brand name. The floating bar starts with a small
+accent-mask home mark; the breadcrumb root supplies the brand name, without a
+second wordmark. Hosts that need multicolor source artwork choose
+`markInk: "image"`, which uses the existing small `Logomark`. An optional `href`
+makes the mark a host-owned destination.
+
+Supply `page` for the frame-owned page header: `title`, `breadcrumb`, `status`,
+`description`, `updatedAt`, `meta`, `actions`, `scope` and `width`. Its title is
+the bar's single page `h1`; route content then supplies no page header. Ancestor
+breadcrumbs may have `siblings` destinations. The optional last crumb matching
+`title` supplies alternatives for the current page. On narrow screens the
+middle levels and their sibling destinations remain reachable in a menu.
+`workspaces` makes the brand root a workspace menu; without it the root is a
+plain link. Semantic breadcrumb containers compose the existing Link and Menu
+atoms; no second menu lifecycle is implemented.
+
+The optional information caret opens page status, description, update time,
+metadata and scope in a dismissible overlay, without moving the route body.
+Host actions remain on the right; only the first `primary` request receives
+primary presentation. Narrow layouts move secondary actions to a menu. The
+width toggle follows a divider at the right edge of the action group.
 
 Supply `navigation.tree`, an `activeId` or `activeHref`, and a `navigationKey`
 that changes on route transitions. Navigation nodes support destinations and
@@ -6653,14 +6669,24 @@ shortcut is enabled by default and can be disabled with
 
 ### Theme, panel and styles
 
-The header's named `themeControl` slot contains Designer's `ThemeToggle` by
-default. Pass a React node to replace it, or `themeControl={null}` to omit the
-slot and its tab stop. The slot stays in the frame header at both viewport
-sizes, outside the navigation drawer. Header keyboard order is brand (when
-linked), command trigger, theme control, then the optional panel trigger;
-the navigation and its account footer follow in document order. A replacement
+The navigation begins with command search and has no synthesized title or
+icon rail. Its footer places the account control on the left and the named
+`themeControl` slot on the right. The slot contains Designer's `ThemeToggle`
+by default; pass a React node to replace it or `themeControl={null}` to omit it.
+On narrow screens these controls travel with the navigation Drawer. A replacement
 owns its accessible name, keyboard behavior and focusable elements; use
-Designer's `ThemeToggle` or `useTheme` to share the frame's provider.
+Designer's `ThemeToggle` or `useTheme` to share the frame's provider. The command
+shortcut remains active even when the navigation is closed.
+
+Logical corner controls open and close the navigation and optional work panel.
+Docked panel widths are reserved before centering the stage. If a panel would
+leave less than the existing 480px minimum stage, it opens as a sheet instead;
+below 900px both panels use sheets. The contained stage uses the existing
+72rem maximum; full width uses the remaining space. `page.width` defaults to
+`"contained"` until an in-memory user override. Controlled `width` and
+`onWidthChange` let the host own the choice; the frame adds no width storage.
+The stage scrolls beneath its sticky glass bar with scroll clearance. Unsupported
+blur, reduced transparency and forced colors use the opaque surface fallback.
 
 The frame assembles a Designer `ThemeProvider` and the existing `ThemeToggle`,
 whose single button cycles System → Light → Dark → System. The control updates

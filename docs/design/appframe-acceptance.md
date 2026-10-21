@@ -5,7 +5,7 @@ routes, account actions and content. It uses JSDOM, user-event and a platform
 `matchMedia` fixture. Results cover DOM interactions and focus; they do not measure
 browser painting, pointer geometry or device layout.
 
-## Feature matrix
+## Historical feature matrix (#2301)
 
 Each row names an `it` in `AppFrame.acceptance.test.tsx`. Base means unchanged
 producers at base `5077a8815685772234a5b68627fc6b4125e19e99`. The initial theme fixture queried a Panel as an
@@ -28,7 +28,7 @@ the platform fixture. The mobile test follows the existing host contract: the ho
 reports updated `activeId` and `navigationKey` after link activation. Destructive
 confirmation composes the existing account action and Dialog without a new API.
 
-## Mutation proof
+## Historical mutation proof (#2301)
 
 Each temporary mutation changes the real AppFrame composition. Each named test runs
 against that mutation, then reruns after restoring producer bytes exactly. No
@@ -45,7 +45,7 @@ other six tests are not selected); the intact final suite runs all seven.
 | Panels | Omit desktop resizable pane | Resize separator missing | 1 | 0 |
 | Landmarks | Omit skip link | Skip link missing | 1 | 0 |
 
-## Command results
+## Historical command results (#2301)
 
 - `npm run agent:cloud:bootstrap < /dev/null`: exit 0.
 - `npm run agent:cloud:check < /dev/null`: exit 0.
@@ -69,3 +69,93 @@ other six tests are not selected); the intact final suite runs all seven.
 
 Local checks do not provide FULL public-safety clearance. Hosted exact-head
 verification remains required before reporting completion.
+
+
+## Floating stage and navigation contract (#2319)
+
+The updated layout keeps the real Designer navigation, command, account, theme,
+Drawer and resizable-panel implementations. The earlier matrix above records the
+original assembly; its header-theme and rail descriptions are historical. The
+current theme control belongs in the navigation footer, and closing navigation
+removes the full panel instead of leaving an icon rail. Existing nested-dialog
+focus-handoff regressions remain in the frame suite.
+
+The new acceptance cases run through AppFrame itself. JSDOM covers semantics,
+interaction, responsive policy and focus. A separate real Chromium fixture loads
+tokens, the canonical preview stylesheet and theme keys in that order to measure
+rectangles and real pointer hit targets. Browser observations are kept separately
+from structural assertions. The final local package commands and 18 named
+mutation pairs pass; hosted verification at the eventual draft head remains
+required before review.
+
+| Class | Named coverage | Initial evidence | Final |
+| --- | --- | --- | --- |
+| a | Logical corner controls, conditional right control, expanded state, focus return and coincident modal close | RED on the old composition; the real browser also demonstrated the original hidden modal opener | PASS (local) |
+| b | Reserved docked widths, centered stage and overlay rules in LTR and RTL | RED on the old composition | PASS (local) |
+| c | Page width default, in-memory override and controlled value | RED on the old composition | PASS (local) |
+| d | Sticky stage-width glass bar, scroll clearance and opaque fallback | RED on the old composition | PASS (local) |
+| e | Home mark, root breadcrumb, final h1, ancestor siblings and workspace switcher | RED on the old composition; collapsed sibling omission also demonstrated before correction | PASS (local) |
+| f | Optional anchored information, Escape/outside dismissal and explicit/inherited direction | RED on the old composition and on missing portaled direction | PASS (local) |
+| g | At most one primary action, narrow secondary overflow and trailing width divider | RED on the old composition; first-primary behavior has a separate multiple-request regression | PASS (local) |
+| h | Search first, full-close navigation, footer account/theme and closed-navigation shortcut | RED before host slots were implemented | PASS (local) |
+
+The two additive overlay hooks retain the existing interaction owners:
+`Drawer.closeButtonStyle` positions its existing close control from the actual
+opener rectangle and direction, while `Popover.anchorRef` selects the bar as its
+positioning anchor. Omitted Drawer layout is compared byte-for-byte with explicit
+undefined; omitted Popover anchoring retains the real trigger and existing focus,
+Escape and outside-dismissal behavior. No second overlay or keyboard lifecycle
+is implemented.
+
+The measured Chromium geometry matrix covers light and dark, LTR and RTL,
+viewport widths 375, 899, 1000, 1280 and 1920, and a separately embedded frame at
+899. All 24 corrected-source cases pass stage centering within the remaining
+area, horizontal containment, information-overlay width and direction, and the
+44px coincident corner controls. Real pointer clicks at the opener coordinates
+close both narrow sheets and restore focus to their openers.
+
+The embedded RTL cases first demonstrated a 15px mismatch after the modal scroll
+lock. The targeted observation found a zero-origin fixed containing box ending
+at 884px while `documentElement.clientWidth` reported 899px. The existing
+scroll-gutter owner reserves the difference. RTL placement now uses CSS
+`calc(100% - measured-right-edge)` so the containing box resolves its own width.
+JSDOM asserts this expression; the Chromium matrix proves its geometry. Original
+failing measurements and corrected observations are retained as session evidence.
+
+Six conditions in the original eight-case fallback probe pass: normal,
+reduced transparency and forced colors in both themes. The bar stays at 12px
+while the stage scrolls, information does not move the route body, and width
+toggling measures 1364px full and 1152px
+contained in the 1920px fixture. Portaled text contrast measures 17.40:1 in light,
+14.24:1 in dark and 21:1 under forced colors. The two unsupported-blur conditions
+did not verify their feature stub, so that original eight-case run exited 1.
+Their bounded two-case replacement waits for a
+fresh document and unique marker, records both producer feature checks returning
+false, and passes the unchanged assertions in light and dark with no blur.
+
+### Local proof commands (#2319)
+
+- Native Publisher frame tests: exit 0, 14 files and 512 tests.
+- Native Designer AppNavigation tests: exit 0, two files and 28 tests.
+- Designer AppNavigation, Drawer and Popover owning tests: exit 0, four files and
+  65 tests, including omitted-default and focus/dismissal controls.
+- Root typecheck, Designer and Publisher contamination checks, Publisher shipped
+  copy lint, both README parity checks and public safety: exit 0 each.
+- Canonical Designer compiled/utilities and Publisher preview generation and
+  freshness: exit 0 each. Token parity and compiled coverage: exit 0, 20 tests.
+- Package dry runs, scoped packed-content readiness against unchanged base
+  `d2ddf2289823646bdb54d5690276306e628b39e6`, and changeset validation: exit 0.
+  Readiness compares the repository's packed source proxy; the built candidate
+  dry runs include its current declarations. Package versions remain unchanged.
+- The original bare `publisher` workspace command exited 1 because that alias
+  does not exist; the admitted native forms use `packages/publisher` and
+  `packages/designer`. The unchanged-base native comparison passed after the
+  repository build supplied the first-party declarations.
+
+All 18 named mutants reach an assertion failure with exit 1 and pass after exact
+producer restoration with exit 0: expanded state, minimum stage, width memory,
+sticky bar, collapsed siblings, optional information, primary cap, search first,
+accent default, image opt-out, Drawer layout hook, Popover anchor hook, tooltip
+label-switch cancellation, reopened tooltip copy, CSS containing-box conversion,
+search clearance, portaled direction and portaled ink. The restoration manifest
+confirms byte equality; no mutated producer is committed.
