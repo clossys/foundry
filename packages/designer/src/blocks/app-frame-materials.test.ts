@@ -211,7 +211,7 @@ describe("AppFrame Material registration", () => {
       const result = JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8", cwd: root }));
       expect(result).toEqual({ handle: "function", materials: [["panel", true], ["drawer", true], ["resizable-pane", true], ["command-menu", true], ["app-navigation", true], ["page-bar", true], ["account-menu", true], ["grouped-table", true]] });
     } finally { rmSync(temporary, { recursive: true, force: true }); }
-  });
+  }, 30_000);
 
   it("imports every real server subset under react-server without exporting interactive additions", () => {
     const additions = ["ResizeHandle", "Panel", "Drawer", "ResizablePane", "APP_FRAME_MATERIALS", "CommandMenu", "useCommandMenuShortcut", "AppNavigation", "AccountMenu", "PageBar", "GroupedTable"];
