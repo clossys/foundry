@@ -1,9 +1,9 @@
+import { siteHeaderPresentation } from "../internal/viewChromeGround.js";
 import { useId } from "react";
 import type { ReactNode } from "react";
 import { Badge, type BadgeVariant } from "@clossys/designer/atoms/server";
 import { DetailView, PageHeader } from "@clossys/designer/blocks/server";
 import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
-import type { SiteHeaderProps } from "@clossys/designer/shell/server";
 import { RenderError } from "../../internal/errors.js";
 import type { PackReviewExportKind, PackReviewStatus } from "../../pack/review-index.js";
 import { BrandGuideView } from "./BrandGuideView.js";
@@ -110,9 +110,7 @@ export interface PackReviewViewLabels {
 export interface PackReviewViewProps {
   /** Persistent site identity, rendered by Designer's `SiteHeader`. Required, as in the other views. */
   brand: ReactNode;
-  /** Text-only label naming the surface, shown as `SiteHeader`'s non-interactive badge. Required: this view is never a member-facing page. */
-  surfaceLabel: string;
-  /** A call to action, rendered in the banner (`SiteHeader`'s `actions`) before the surface badge. Absent from the markup when omitted. */
+  /** A call to action, rendered in the banner (`SiteHeader`'s `actions`) in its ordered actions slot. Absent from the markup when omitted. */
   headerAction?: ReactNode;
   /** A secondary call to action, rendered in the banner just before `headerAction`. Absent from the markup when omitted. */
   secondaryAction?: ReactNode;
@@ -225,8 +223,7 @@ interface SheetFrame {
  * badge (`draft`, `delegated` or `approved`): each page, forced state and
  * contact-sheet frame shows its page's badge, and each export its own.
  *
- * The frame is the other Publisher views': Designer's `SiteHeader` with the
- * surface badge, a `PageHeader`, and `SiteFooter`, with the page held to the
+ * The frame is the other Publisher views': Designer's `SiteHeader`, a `PageHeader`, and `SiteFooter`, with the page held to the
  * form measure (`--ui-width-form-max`). The contact sheet scrolls sideways
  * inside its own section, so the widest frame never widens the page.
  *
@@ -239,7 +236,6 @@ interface SheetFrame {
  */
 export function PackReviewView({
   brand,
-  surfaceLabel,
   headerAction,
   secondaryAction,
   nav,
@@ -282,14 +278,7 @@ export function PackReviewView({
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <SiteHeader
-        ground={ground}
-        brand={brand}
-        nav={nav}
-        secondaryAction={secondaryAction}
-        actions={headerAction}
-        surfaceLabel={surfaceLabel}
-      />
+      <SiteHeader {...siteHeaderPresentation(ground)} brand={brand} nav={nav} actions={<>{secondaryAction}{headerAction}</>} />
       <main
         className="mx-auto flex w-full flex-1 flex-col gap-xl px-lg py-2xl"
         style={{ maxWidth: "var(--ui-width-form-max, none)" }}

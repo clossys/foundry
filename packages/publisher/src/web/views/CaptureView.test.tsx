@@ -166,7 +166,7 @@ describe("CaptureView", () => {
     expect(bare).toContain(renderToStaticMarkup(<SiteHeader brand="Acme" />) + "<main");
     expect(bare).toContain("</main>" + renderToStaticMarkup(<SiteFooter />) + "</div>");
     const grounded = renderToStaticMarkup(<CaptureView brand="Acme" heading="Keep in touch" form="Fields" ground="transparent" />);
-    expect(grounded).toContain(renderToStaticMarkup(<SiteHeader ground="transparent" brand="Acme" />) + "<main");
+    expect(grounded).toContain(renderToStaticMarkup(<SiteHeader surface="transparent" brand="Acme" />) + "<main");
     expect(grounded).toContain("</main>" + renderToStaticMarkup(<SiteFooter ground="transparent" />) + "</div>");
   });
 

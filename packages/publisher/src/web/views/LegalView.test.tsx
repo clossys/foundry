@@ -467,7 +467,7 @@ if (mode === "self-chromed") describe("LegalView header slots", () => {
 
   it("passes ground to both the header and the footer", () => {
     const html = view({ ground: "transparent" });
-    expect(banner(html)).toBe(renderToStaticMarkup(<SiteHeader ground="transparent" brand="Acme" />));
+    expect(banner(html)).toBe(renderToStaticMarkup(<SiteHeader surface="transparent" brand="Acme" />));
     expect(footer(html)).toBe(renderToStaticMarkup(<SiteFooter ground="transparent" />));
   });
 });
@@ -518,7 +518,10 @@ describe("LegalView related references", () => {
     // Only the dates migrate to DetailView; retain the historical fixture's complete remaining bytes.
     const migratedBaseline = baseline.replace(/<dl\b[\s\S]*?<\/dl>/, dateDetails("en"));
     if (mode === "self-chromed") {
-      expect(html).toBe(migratedBaseline);
+      expect(html).toContain('data-surface="solid" data-tone="base"');
+      // Only the new header opening is projected; all body/footer bytes retain the recorded fixture.
+      const legacyHeaderProjection = html.replace(/<header\b[^>]*>/, '<header data-header-root="" class="bg-surface-raised py-sm border-b border-line-base site-header-contract" style="position:relative;z-index:var(--ui-z-shell, 20);border-bottom-width:var(--ui-border-hairline, 1px)">');
+      expect(legacyHeaderProjection).toBe(migratedBaseline);
       return;
     }
     // The framed page moved to the shared page layout on purpose (see "shared page layout" below), so its bytes differ from the
@@ -665,8 +668,7 @@ if (mode === "framed") describe("LegalView header slots owned by SiteFrame", () 
   const banner = (html: string) => /(<header\b[\s\S]*?<\/header>)/.exec(html)?.[1] ?? "";
   const footer = (html: string) => /(<footer\b[\s\S]*<\/footer>)<\/div>$/.exec(html)?.[1] ?? "";
   const chrome: Partial<SiteShellInput> = {
-    actions: [{ href: "/contact", label: ref("fixture.header") }],
-    secondaryAction: { href: "/sign-in", label: ref("fixture.secondary") },
+    actions: [{ href: "/sign-in", label: ref("fixture.secondary"), emphasis: "ghost" }, { href: "/contact", label: ref("fixture.header"), emphasis: "secondary" }],
     nav: { label: LABELS.effectiveDate, links: [{ href: "/placeholder-nav", label: ref("fixture.nav") }] },
     ground: "transparent",
   };
@@ -680,17 +682,17 @@ if (mode === "framed") describe("LegalView header slots owned by SiteFrame", () 
     expect(header.indexOf("SECONDARY-ACTION-SENTINEL")).toBeLessThan(header.indexOf("HEADER-ACTION-SENTINEL"));
   });
   it("renders the same header and footer as bare chrome with an explicit reserved header", () => {
-    const html = renderToStaticMarkup(frame(content, <span>FOOTER-SENTINEL</span>, { header: { placement: "reserved" } }));
+    const html = renderToStaticMarkup(frame(content, <span>FOOTER-SENTINEL</span>, { header: { surface: "solid" } }));
     expect(banner(html)).toBe(banner(renderToStaticMarkup(<SiteHeader brand={mark} />)));
     expect(footer(html)).toBe(renderToStaticMarkup(<SiteFooter secondary={<SiteFooter.Legal entity="FOOTER-SENTINEL" links={[]} home={{ label: "Placeholder label effective", href: "/", markSrc: "/placeholder.svg" }} />} />).replace(/^<link[^>]+>/, ""));
   });
   it("passes ground to both an explicit reserved header and the footer", () => {
-    const html = renderToStaticMarkup(frame(content, undefined, { ground: "transparent", header: { placement: "reserved" } }));
-    expect(banner(html)).toBe(banner(renderToStaticMarkup(<SiteHeader ground="transparent" brand={mark} />)));
+    const html = renderToStaticMarkup(frame(content, undefined, { ground: "transparent", header: { surface: "transparent" } }));
+    expect(banner(html)).toBe(banner(renderToStaticMarkup(<SiteHeader surface="transparent" brand={mark} />)));
     expect(footer(html)).toBe(renderToStaticMarkup(<SiteFooter ground="transparent" secondary={<SiteFooter.Legal entity="Placeholder footer entity" links={[]} home={{ label: "Placeholder label effective", href: "/", markSrc: "/placeholder.svg" }} />} />).replace(/^<link[^>]+>/, ""));
   });
-  it("uses an overlay header when the framed path omits header placement", () => {
-    expect(banner(renderToStaticMarkup(frame(content)))).toContain('data-placement="overlay"');
+  it("uses a solid header when the framed path omits header surface", () => {
+    expect(banner(renderToStaticMarkup(frame(content)))).toContain('data-surface="solid"');
   });
   it("preserves the current header and footer bytes with all chrome slots", () => {
     const old = renderToStaticMarkup(frame(content, <span>FOOTER-SENTINEL</span>, chrome));

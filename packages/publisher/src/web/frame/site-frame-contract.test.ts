@@ -25,15 +25,15 @@ describe("data-readable SiteFrame contract", () => {
   });
   it("normalizes alphabetic flat primitive keys and rejects unknown or dependent inputs", () => {
     expect(Object.keys(SITE_FRAME_CONFIG_SCHEMA)).toEqual([...Object.keys(SITE_FRAME_CONFIG_SCHEMA)].sort());
-    expect(normalizeSiteFrameConfig()).toEqual({ footerGround: "base", footerPlacement: "flow", footerRule: "none", headerGround: "base", headerPlacement: "overlay", headerTone: "base" });
-    expect(normalizeSiteFrameConfig({ headerTone: "inverse" })).toEqual({ footerGround: "base", footerPlacement: "flow", footerRule: "none", headerGround: "base", headerPlacement: "overlay", headerTone: "inverse" });
-    expect(normalizeSiteFrameConfig({ headerPlacement: "overlay", headerTone: "inverse" })).toEqual({ footerGround: "base", footerPlacement: "flow", footerRule: "none", headerGround: "base", headerPlacement: "overlay", headerTone: "inverse" });
-    for (const invalid of [{ headerPlacement: "reserved", headerTone: "inverse" }, { headerPlacement: "overlay", headerGround: "inverse" }, { headerPlacement: "fixed" }, { headerTone: {} }, { sticky: false }, { Header: "{}" }, null, [], new Proxy({}, { ownKeys() { throw new Error("private-shape"); } })]) {
+    expect(normalizeSiteFrameConfig()).toEqual({ footerGround: "base", footerPlacement: "flow", footerRule: "none", headerSurface: "solid", headerTone: "base" });
+    expect(normalizeSiteFrameConfig({ headerTone: "inverse" })).toEqual({ footerGround: "base", footerPlacement: "flow", footerRule: "none", headerSurface: "solid", headerTone: "inverse" });
+    expect(normalizeSiteFrameConfig({ headerSurface: "glass", headerTone: "inverse" })).toEqual({ footerGround: "base", footerPlacement: "flow", footerRule: "none", headerSurface: "glass", headerTone: "inverse" });
+    for (const invalid of [{ headerGround: "inverse" }, { headerPlacement: "overlay" }, { headerSurface: "fixed" }, { headerTone: {} }, { sticky: false }, { Header: "{}" }, null, [], new Proxy({}, { ownKeys() { throw new Error("private-shape"); } })]) {
       expect(() => normalizeSiteFrameConfig(invalid)).toThrow(/SiteFrame/);
     }
     expect(Object.values(normalizeSiteFrameConfig()).every(value => typeof value === "string")).toBe(true);
     expect(Object.isFrozen(normalizeSiteFrameConfig())).toBe(true);
-    for (const input of [{}, { headerPlacement: "overlay", headerTone: "inverse" }]) {
+    for (const input of [{}, { headerSurface: "glass", headerTone: "inverse" }]) {
       const normalized = normalizeSiteFrameConfig(input);
       expect(normalizeSiteFrameConfig(normalized)).toEqual(normalized);
     }
@@ -49,12 +49,12 @@ describe("data-readable SiteFrame contract", () => {
 });
 
 it("publishes navigation defaults as copy references, not audience text", () => {
-  // Revision 2 introduced copy references; revision 3 changes auth/environment-only headers.
-  expect(SITE_FRAME_CONTRACT.revision).toBe(3);
+  // Revision 4 replaces header placement/ground and nested navigation presentation with one surface contract.
+  expect(SITE_FRAME_CONTRACT.revision).toBe(4);
   expect(SITE_FRAME_CONTRACT.defaults).toEqual({
     label: { id: "site-frame.nav.label" },
     triggerLabel: { id: "site-frame.nav.trigger-label" },
-    trigger: "label",
+    trigger: "icon",
   });
   expect(Object.isFrozen(SITE_FRAME_CONTRACT.defaults.label)).toBe(true);
   expect(Object.isFrozen(SITE_FRAME_CONTRACT.defaults.triggerLabel)).toBe(true);
@@ -76,7 +76,7 @@ it("enforces primary content dependencies through the real exported normalizer",
 });
 
 it("normalizes footer configuration without losing inherited header presentation", () => {
-  expect(normalizeSiteFrameConfig({ footerRule: "top" }, { headerPlacement: "overlay", headerTone: "inverse" })).toMatchObject({ footerRule: "top", headerPlacement: "overlay", headerTone: "inverse" });
+  expect(normalizeSiteFrameConfig({ footerRule: "top" }, { headerSurface: "glass", headerTone: "inverse" })).toMatchObject({ footerRule: "top", headerSurface: "glass", headerTone: "inverse" });
   expect(() => normalizeSiteFrameConfig({ footerPlacement: "overlay", footerGround: "transparent" })).toThrow(/SiteFrame/);
   let reads = 0;
   expect(() => normalizeSiteFrameConfig({ get footerRule() { reads++; return "top"; } })).toThrow(/SiteFrame/);
@@ -85,8 +85,8 @@ it("normalizes footer configuration without losing inherited header presentation
 });
 
 it("preserves independent explicit header overrides while inheriting footer-only settings", () => {
-  expect(normalizeSiteFrameConfig({ headerPlacement: "overlay", headerTone: "inverse" }, { headerGround: "inverse", headerPlacement: "reserved" })).toMatchObject({ headerPlacement: "overlay", headerTone: "inverse", headerGround: "base" });
-  expect(normalizeSiteFrameConfig({ headerPlacement: "reserved" }, { headerPlacement: "overlay", headerTone: "inverse" })).toMatchObject({ headerPlacement: "reserved", headerTone: "base" });
+  expect(normalizeSiteFrameConfig({ headerSurface: "glass", headerTone: "inverse" }, { headerSurface: "solid" })).toMatchObject({ headerSurface: "glass", headerTone: "inverse" });
+  expect(normalizeSiteFrameConfig({ headerSurface: "solid" }, { headerSurface: "glass", headerTone: "inverse" })).toMatchObject({ headerSurface: "solid", headerTone: "base" });
 });
 
 it("FOOTER-2 publishes the footer caps, brand-last slot, grouping and exclusions as contract data", () => {
