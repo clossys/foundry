@@ -2683,6 +2683,20 @@ region — five regions that differ in kind, and a page can hold two `Form`s
 (two independent forms on one settings page), which is what makes this a
 block rather than a view.
 
+`actionsLayout` accepts `"end"` (the default) or `"stretch"`. At and above
+the existing `tablet` breakpoint (768px), `end` puts natural-width actions
+in one row at the card's inline end, including in RTL. `stretch` keeps
+every action full width in a single column at every size. Below `tablet`,
+both layouts stack full width. The actions container exposes
+`data-actions-layout`; with no actions, no container renders. An unknown
+layout is a type error and throws a `TypeError` at runtime.
+
+Pass secondary actions first and the primary action last. `Form` keeps
+that DOM order and Tab order in both layouts. Width belongs to the
+surrounding page or card: pair short sign-in, reset, and activation forms
+with a narrow card and contact forms with a medium card. The corresponding
+PageView `width` API is pending [#2332](https://github.com/clossys/foundry/issues/2332).
+
 **`Form` implements no validation logic or form state, deliberately.**
 react-aria-components already carries validation through each field's own
 `isInvalid`/`validationErrors`, and most real consumers layer a form
@@ -6714,7 +6728,7 @@ not a grab-bag).
 | `StatProps` | type | Props for `Stat`: `label`, `value`, `delta`, `trend`, `trendLabels` (default Increase / Decrease / No change), `description`, `className`, `style`, plus every native `<div>` attribute. |
 | `StatTrend` | type | `"up" \| "down" \| "neutral"`. |
 | `Form` | component | Form layout: optional heading, fields region, opt-in error-summary region, submit-error region, actions region. Owns no validation logic; opts into `useFormValidation` through `validation`. |
-| `FormProps` | type | Props for `Form`: `heading`, `children`, `errors`, `errorSummaryMessage` (opt-in: the summary renders only when passed; no default text), `submitError`, `validation`, `onSubmitError` (optional; receives a rejection from the validated `onSubmit`, and does nothing when omitted), `actions`, `onSubmit` (ignored when `validation` is passed), `className`, `style`, plus every native `<form>` attribute. |
+| `FormProps` | type | Props for `Form`: `heading`, `children`, `errors`, `errorSummaryMessage` (opt-in: the summary renders only when passed; no default text), `submitError`, `validation`, `onSubmitError` (optional; receives a rejection from the validated `onSubmit`, and does nothing when omitted), `actions`, `actionsLayout` (`"end"` by default, or `"stretch"`; both stack full width below `tablet`), `onSubmit` (ignored when `validation` is passed), `className`, `style`, plus every native `<form>` attribute. |
 | `FormError` | type | One error-summary entry: `fieldId`, `message`. |
 | `FormValidationBinding` | type | What `Form` reads from a validation source: `handleSubmit`, `summaryErrors`, `isSubmitting`, `formRef`. `useFormValidation`'s return value satisfies it. |
 | `useFormValidation` | function | Hook for the form validation timing: validate on blur, re-validate on change once a field shows an error or after the first submit, focus the first invalid field on a failed submit, pending (never disabled) submit. Returns `FormValidation`. |
