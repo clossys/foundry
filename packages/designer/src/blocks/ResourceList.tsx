@@ -69,7 +69,7 @@ function ResourceListActions({ item, label }: { item: ResourceListItem; label: s
   return <div className="flex shrink-0 items-center gap-sm">
     <div className="hidden items-center gap-sm tablet:flex">
       {actions.slice(0, 2).map((action, index) => <span key={action.id} className="inline-flex">
-        <Button variant="quiet" size="sm" className="border-0 bg-transparent" isDisabled={disabled(action)} onPress={action.onAction}
+        <Button variant="quiet" size="sm" trailingIcon={null} className="border-0 bg-transparent" isDisabled={disabled(action)} onPress={action.onAction}
           aria-describedby={reasonId(action, index, "inline")}>{action.label}</Button>
         {reasonId(action, index, "inline") && <span id={reasonId(action, index, "inline")} className="sr-only">{action.disabledReason}</span>}
       </span>)}
@@ -110,7 +110,7 @@ export function ResourceList({
   return <section {...rest} aria-label={ariaLabel} className={cx("flex min-w-0 flex-col gap-md", className)}>
     {toolbar}
     {hasSelection ? bulkBar : null}
-    {error != null ? error : isLoading ? <div>
+    {error != null && error !== false ? error : isLoading ? <div>
       <span role="status" className="sr-only">{loadingLabel}</span>
       <div aria-hidden="true">
         {Array.from({ length: loadingRowCount }, (_, index) => <div key={index} className="flex items-center px-md py-sm" style={{ minBlockSize: UI_LAYOUT_TAP_TARGET }}><Skeleton /></div>)}

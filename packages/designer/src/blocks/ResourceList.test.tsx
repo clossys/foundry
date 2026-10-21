@@ -34,6 +34,62 @@ describe("ResourceList", () => {
     expect(screen.queryByRole("grid")).not.toBeInTheDocument();
   });
 
+  it("R10 treats a false error slot as absent for populated records", () => {
+    render(<ResourceList {...base} error={false} />);
+    expect(screen.getByRole("grid", { name: "Notes" })).toBeVisible();
+    expect(screen.getByRole("row", { name: /Quarterly planning notes/ })).toBeVisible();
+    expect(screen.queryByRole("heading", { name: "No notes yet" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  });
+
+  it("R11 treats a false error slot as absent while loading", () => {
+    const { container } = render(<ResourceList {...base} error={false} isLoading loadingLabel="Fetching notes" loadingRowCount={3} />);
+    expect(screen.getByRole("status")).toHaveTextContent("Fetching notes");
+    expect(container.querySelectorAll('[aria-hidden="true"] .bg-skeleton-fill')).toHaveLength(3);
+    expect(screen.queryByRole("grid")).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "No notes yet" })).not.toBeInTheDocument();
+  });
+
+  it("R12 treats a false error slot as absent for empty records", () => {
+    render(<ResourceList {...base} error={false} items={[]} />);
+    expect(within(screen.getByRole("region", { name: "Notes" })).getByRole("heading", { name: "No notes yet" })).toBeVisible();
+    expect(screen.queryByRole("grid")).not.toBeInTheDocument();
+    expect(screen.queryByRole("row")).not.toBeInTheDocument();
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  });
+
+  it("R13 preserves a numeric zero error node and its priority", () => {
+    const { rerender } = render(<ResourceList {...base} error={0} />);
+    expect(screen.getByRole("region", { name: "Notes" })).toHaveTextContent("0");
+    expect(screen.queryByRole("grid")).not.toBeInTheDocument();
+    rerender(<ResourceList {...base} error={0} isLoading loadingLabel="Fetching notes" />);
+    expect(screen.getByRole("region", { name: "Notes" })).toHaveTextContent("0");
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  });
+
+  it("R14 omits inline action chevrons while preserving names, reasons and action isolation", async () => {
+    const duplicate = vi.fn(); const remove = vi.fn(); const rowAction = vi.fn(); const selection = vi.fn();
+    const user = userEvent.setup();
+    render(<ResourceList {...base} items={[{ ...items[0]!, href: undefined, actions: [
+      { id: "dup", label: "Duplicate", onAction: duplicate },
+      { id: "del", label: "Delete note", onAction: remove, isDestructive: true, isDisabled: true, disabledReason: "This note is retained." },
+    ] }]} selectionMode="multiple" selectRowLabel={selectRowLabel} onAction={rowAction} onSelectionChange={selection} />);
+    const duplicateButton = screen.getByRole("button", { name: "Duplicate" });
+    const removeButton = screen.getByRole("button", { name: "Delete note" });
+    for (const button of [duplicateButton, removeButton]) {
+      expect(button.querySelectorAll("svg").length).toBe(0);
+      expect(button).toHaveClass("border-0", "bg-transparent");
+    }
+    expect(removeButton).toBeDisabled();
+    expect(removeButton).toHaveAccessibleDescription("This note is retained.");
+    await user.click(duplicateButton); await user.click(removeButton);
+    expect(duplicate).toHaveBeenCalledTimes(1);
+    expect(remove).not.toHaveBeenCalled();
+    expect(rowAction).not.toHaveBeenCalled();
+    expect(selection).not.toHaveBeenCalled();
+    expect(screen.getByRole("checkbox")).not.toBeChecked();
+  });
+
   it("R3 requires host action copy and names each overflow trigger from textValue", () => {
     expect(() => render(<ResourceList {...base} actionsLabel={undefined} />)).toThrow(TypeError);
     render(<ResourceList {...base} />);
