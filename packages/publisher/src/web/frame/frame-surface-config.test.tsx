@@ -30,8 +30,7 @@ describe("the single Publisher header surface contract", () => {
   it("defaults to solid and exposes only surface/tone presentation axes for the header", () => {
     const resolved = resolveShell(base, copy, asset);
     expect(resolved.header).toEqual({ surface: "solid", tone: "base" });
-    expect(normalizeSiteFrameConfig()).toEqual({ footerGround: "base", footerPlacement: "flow",
-      footerRule: "none", headerSurface: "solid", headerTone: "base" });
+    expect(normalizeSiteFrameConfig()).toEqual({ footerTone: "dark", footerPlacement: "flow", headerSurface: "solid", headerTone: "base" });
   });
 
   it.each(["solid", "transparent", "glass"] as const)("resolves the %s surface in either tone", surface => {
@@ -55,14 +54,41 @@ describe("the single Publisher header surface contract", () => {
     try { attempt(); } catch (error) { expect(String(error)).not.toContain("PAYLOAD-SENTINEL"); }
   });
 
-  it("keeps the global ground solely as the unchanged footer fallback", () => {
-    for (const ground of ["base", "inverse", "transparent"] as const) {
-      for (const surface of ["solid", "transparent", "glass"] as const) {
-        const resolved = resolveShell({ ...base, ground, header: { surface, tone: "base" } }, copy, asset);
-        expect(resolved.footer?.ground).toBe(ground);
-        expect(resolved.header).toEqual({ surface, tone: "base" });
-      }
+  it("refuses the removed global ground on shell and configuration", () => {
+    for (const ground of ["base", "inverse", "transparent"]) {
+      expect(() => resolveShell({ ...base, ground } as unknown as SiteShellInput, copy, asset)).toThrow(/unsupported field "ground"/);
+      const config = { brand: base.brand, skipLink: base.skipLink, origin: "https://example.com", legal: base.footer!.legal, ground };
+      for (const kind of ["site", "front-door", "admin", "demo"] as const) expect(() => siteShellFor(config as unknown as SiteFrameConfig, kind)).toThrow(/unsupported field "ground"/);
     }
+    let reads = 0;
+    const stale = { brand: base.brand, skipLink: base.skipLink, origin: "https://example.com", legal: base.footer!.legal, get ground() { reads++; return "PAYLOAD-SENTINEL"; } };
+    expect(() => siteShellFor(stale as unknown as SiteFrameConfig, "site")).toThrow(/unsupported field "ground"/);
+    expect(reads).toBe(0);
+  });
+
+  it.each(["dark", "light"] as const)("resolves and forwards footer tone %s independently of the header", tone => {
+    const shell: SiteShellInput = { ...base, footer: { ...base.footer!, tone } };
+    expect(resolveShell(shell, copy, asset).footer?.tone).toBe(tone);
+    const view = render(<SiteFrame shell={shell} resolveCopy={copy} resolveAsset={asset}><h1>Page</h1></SiteFrame>);
+    expect(view.container.querySelector("footer")).toHaveAttribute("data-footer-tone", tone);
+    view.unmount();
+  });
+
+  it.each(["dark", "light"] as const)("forwards an explicit %s footer presentation override", tone => {
+    const shell: SiteShellInput = { ...base, footer: { ...base.footer!, tone: tone === "dark" ? "light" : "dark" } };
+    const view = render(<SiteFrame shell={shell} presentation={{ footerTone: tone }} resolveCopy={copy} resolveAsset={asset}><h1>Page</h1></SiteFrame>);
+    expect(view.container.querySelector("footer")).toHaveAttribute("data-footer-tone", tone);
+    view.unmount();
+  });
+
+  it("refuses stale footer and presentation options without interpreting their values", () => {
+    for (const key of ["ground", "rule"]) {
+      const attempt = () => resolveShell({ ...base, footer: { ...base.footer!, [key]: "PAYLOAD-SENTINEL" } } as unknown as SiteShellInput, copy, asset);
+      expect(attempt).toThrow(`unsupported field "${key}"`);
+      expect(attempt).not.toThrow(/PAYLOAD-SENTINEL/);
+    }
+    for (const input of [{ footerGround: "base" }, { footerRule: "top" }, { footerTone: "inverse" }]) expect(() => normalizeSiteFrameConfig(input)).toThrow(/SiteFrame/);
+    expect(resolveShell(base, copy, asset).footer?.tone).toBe("dark");
   });
 
   it("uses the same canonical action DOM order for the row and narrow menu", () => {

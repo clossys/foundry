@@ -1,5 +1,4 @@
 import type { IconNode } from "@clossys/designer/atoms/server";
-import { SITE_CHROME_GROUNDS } from "../internal/viewChromeGround.js";
 /** Finite, serializable presentation vocabulary shared by SiteFrame and its metadata. */
 export const HEADER_LINK_LIMIT = 5;
 export const HEADER_ACTION_LIMIT = 3;
@@ -28,16 +27,14 @@ export class SiteFooterContractError extends TypeError {
   }
 }
 export const SITE_FRAME_CONFIG_SCHEMA = Object.freeze({
-  footerGround: Object.freeze({ values: SITE_CHROME_GROUNDS, default: "base" as const }),
   footerPlacement: Object.freeze({ values: Object.freeze(["flow", "overlay"] as const), default: "flow" as const }),
-  footerRule: Object.freeze({ values: Object.freeze(["none", "top"] as const), default: "none" as const }),
+  footerTone: Object.freeze({ values: Object.freeze(["dark", "light"] as const), default: "dark" as const }),
   headerSurface: Object.freeze({ values: Object.freeze(["solid", "transparent", "glass"] as const), default: "solid" as const }),
   headerTone: Object.freeze({ values: Object.freeze(["base", "inverse"] as const), default: "base" as const }),
 });
 export interface SiteFramePresentationConfig {
-  readonly footerGround?: typeof SITE_FRAME_CONFIG_SCHEMA.footerGround.values[number];
+  readonly footerTone?: typeof SITE_FRAME_CONFIG_SCHEMA.footerTone.values[number];
   readonly footerPlacement?: typeof SITE_FRAME_CONFIG_SCHEMA.footerPlacement.values[number];
-  readonly footerRule?: typeof SITE_FRAME_CONFIG_SCHEMA.footerRule.values[number];
   readonly headerSurface?: typeof SITE_FRAME_CONFIG_SCHEMA.headerSurface.values[number];
   readonly headerTone?: typeof SITE_FRAME_CONFIG_SCHEMA.headerTone.values[number];
 }
@@ -59,7 +56,6 @@ export function normalizeSiteFrameConfig(input: unknown = {}, inherited?: SiteFr
   // Explicit header inputs retain their independent defaults; footer-only inputs inherit the shell header.
   const explicitHeader = Object.keys(fields).some(key => key.startsWith("header"));
   const result = Object.fromEntries(Object.entries(SITE_FRAME_CONFIG_SCHEMA).map(([key, field]) => [key, fields[key] ?? (explicitHeader && key.startsWith("header") ? undefined : defaults?.[key as keyof SiteFramePresentationConfig]) ?? field.default])) as Required<SiteFramePresentationConfig>;
-  if (result.footerPlacement === "overlay" && result.footerGround === "transparent") fail();
   return Object.freeze(result);
   } catch { return fail(); }
 }
@@ -79,11 +75,11 @@ export const SITE_FRAME_NAV_DEFAULTS = Object.freeze({
 });
 /**
  * Composition references identify exports; they confer no qualification.
- * Revision 4 uses one header surface and one ordered actions list; environment-only headers retain direct ghost links.
+ * Revision 5 adds footer-local dark or light tone and removes legacy footer ground and rule inputs.
  * Pack owns route placement and Instance pairs Frame with View.
  */
 export const SITE_FRAME_CONTRACT = freeze({
-  identity: "site-frame", role: "frame", revision: 4, medium: "web",
+  identity: "site-frame", role: "frame", revision: 5, medium: "web",
   use: ["persistent public-site chrome surrounding one chrome-free View"],
   avoid: ["route placement", "document bootstrap", "content sections", "application navigation focus bridge"],
   config: SITE_FRAME_CONFIG_SCHEMA,
@@ -92,10 +88,10 @@ export const SITE_FRAME_CONTRACT = freeze({
   normalization: "normalizeSiteFrameConfig",
   actionsNormalization: "normalizeSiteFrameActions",
   defaults: SITE_FRAME_NAV_DEFAULTS,
-  required: ["sticky-header", "dark-footer", "accessible-navigation", "document-scroll", "sole-main"],
+  required: ["sticky-header", "tone-configurable-footer", "accessible-navigation", "document-scroll", "sole-main"],
   constituents: {
     Header: { owner: "@clossys/designer", subpath: "shell/server", export: "SiteHeader", config: ["headerSurface", "headerTone"] },
-    Footer: { owner: "@clossys/designer", subpath: "shell/server", export: "SiteFooter", config: ["footerGround", "footerPlacement", "footerRule"], content: ["columns", "links", "social", "legal"], required: ["dark-in-both-themes", "centered-links", "home-inline-end", "mobile-links-icons-copyright", "named-icons", "external-rel", "safe-area", "44px-targets", "privacy-link-only"], constraints: { links: FOOTER_LINK_LIMIT, linksLayout: "one flat row of shell.footer.links then shell.footer.legal.links", grouping: "shell.footer.columns: labelled columns for links beyond the flat row", icons: FOOTER_ICON_LIMIT, brandMark: "shell.brand, always the last icon slot", excludes: ["home", "header-navigation", "privacy-choices"], error: "SiteFooterContractError", accessibility: "mandatory" } },
+    Footer: { owner: "@clossys/designer", subpath: "shell/server", export: "SiteFooter", config: ["footerTone", "footerPlacement"], content: ["columns", "links", "social", "legal"], required: ["footer-local-tone-in-both-themes", "centered-links", "home-inline-end", "mobile-links-icons-copyright", "named-icons", "external-rel", "safe-area", "44px-targets", "privacy-link-only"], constraints: { links: FOOTER_LINK_LIMIT, linksLayout: "one flat row of shell.footer.links then shell.footer.legal.links", grouping: "shell.footer.columns: labelled columns for links beyond the flat row", icons: FOOTER_ICON_LIMIT, brandMark: "shell.brand, always the last icon slot", excludes: ["home", "header-navigation", "privacy-choices"], error: "SiteFooterContractError", accessibility: "mandatory" } },
   },
 } as const);
 

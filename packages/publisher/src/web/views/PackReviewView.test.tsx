@@ -367,7 +367,7 @@ describe("PackReviewView", () => {
       "<span class=\"inline-flex items-center rounded-pill px-sm py-xs text-caption font-body tracking-meta bg-status-warning-tint text-status-warning-text\">Marker delegated</span></p><div class=\"flex gap-lg\">" +
       "<iframe src=\"/contact?preview=idle\" title=\"Marker frame /contact idle 390\" width=\"390\" height=\"640\" loading=\"lazy\" class=\"shrink-0 border border-line-base\">" +
       "</iframe></div></div></div></section></main>" +
-      "<footer data-footer-root=\"\" class=\"site-footer-dark bg-surface-raised text-ink-primary py-lg border-t border-line-base\" style=\"position:relative;z-index:var(--ui-z-shell, 20);border-top-width:var(--ui-border-hairline, 1px)\"><div class=\"mx-auto flex w-full flex-col gap-lg\" style=\"padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))\"></div></footer></div>",
+      "<footer data-footer-root=\"\" data-footer-tone=\"dark\" class=\"site-footer-dark bg-surface-inverse text-ink-on-inverse py-lg\" style=\"position:relative;z-index:var(--ui-z-shell, 20)\"><div class=\"mx-auto flex w-full flex-col gap-lg\" style=\"padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))\"></div></footer></div>",
     );
   });
 });
@@ -399,11 +399,11 @@ describe("PackReviewView header slots", () => {
     expect(within(banner).queryByRole("navigation")).toBeNull();
   });
 
-  it("passes ground to both the header and the footer", () => {
+  it("passes ground to the header and keeps the default dark footer", () => {
     const html = renderToStaticMarkup(<PackReviewView {...props({ ground: "transparent" })} />);
     expect(html).toContain('data-surface="transparent" data-tone="base"');
     expect(html).toContain('class="site-header-contract site-header-ink py-sm text-ink-primary"');
-    expect(html).toMatch(/<footer data-footer-root="" class="site-footer-dark text-ink-primary py-lg" /);
+    expect(html).toMatch(/<footer data-footer-root="" data-footer-tone="dark" class="site-footer-dark bg-surface-inverse text-ink-on-inverse py-lg" /);
   });
 });
 

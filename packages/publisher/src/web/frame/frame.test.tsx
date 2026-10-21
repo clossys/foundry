@@ -398,7 +398,7 @@ describe("SiteFrame", () => {
     });
 
     it("refuses the inverse-page chrome ground", () => {
-      expect(render$({ ...FRONT_DOOR_SHELL, ground: "transparent-inverse" })).toThrow(/SiteFrame: shell\.ground must be one of base, inverse, transparent\./);
+      expect(render$({ ...FRONT_DOOR_SHELL, ground: "transparent-inverse" })).toThrow(/SiteFrame: shell has an unsupported field "ground"\./);
     });
 
     it("refuses copy that resolves blank", () => {
@@ -955,19 +955,19 @@ describe("frame header placement", () => {
     expect(container.querySelector("main")).toHaveAttribute("id", SITE_MAIN_ID);
   });
 
-  it.each(["solid", "transparent"] as const)("header %s surface and tone are independent of the footer fallback", surface => {
-    const { container } = render(frame({ ...FRONT_DOOR_SHELL, ground: "base", header: { surface, tone: "inverse" } }, <p>content</p>));
+  it.each(["solid", "transparent"] as const)("header %s surface and tone are independent of the footer tone", surface => {
+    const { container } = render(frame({ ...FRONT_DOOR_SHELL, header: { surface, tone: "inverse" } }, <p>content</p>));
     const header = container.querySelector("header")!;
     expect(header).toHaveAttribute("data-surface", surface);
     expect(header).toHaveClass("text-ink-on-inverse");
     expect(header.classList.contains("bg-surface-inverse")).toBe(surface === "solid");
-    expect(container.querySelector("footer")).toHaveClass("bg-surface-raised");
+    expect(container.querySelector("footer")).toHaveClass("bg-surface-inverse");
     expect(header).not.toHaveAttribute("data-placement");
   });
 
-  it("defaults to solid/base independently of the existing footer ground fallback", () => {
-    const omitted = renderToStaticMarkup(frame({ ...FRONT_DOOR_SHELL, ground: "inverse" }, <p>content</p>));
-    expect(renderToStaticMarkup(frame({ ...FRONT_DOOR_SHELL, ground: "inverse", header: {} }, <p>content</p>))).toBe(omitted);
+  it("defaults to solid/base independently of the dark footer", () => {
+    const omitted = renderToStaticMarkup(frame({ ...FRONT_DOOR_SHELL }, <p>content</p>));
+    expect(renderToStaticMarkup(frame({ ...FRONT_DOOR_SHELL, header: {} }, <p>content</p>))).toBe(omitted);
     expect(omitted).toMatch(/<header[^>]*data-surface="solid"[^>]*data-tone="base"/);
     expect(omitted).not.toMatch(/<header[^>]*data-placement="overlay"/);
     expect(omitted).toMatch(/<footer[^>]*bg-surface-inverse/);
@@ -1059,18 +1059,18 @@ describe("SiteFrame chrome parity", () => {
     }
   });
   it("paints an inverse footer independently of a base header", () => {
-    const { container } = render(frame({ ...FRONT_DOOR_SHELL, ground: "base", header: { surface: "solid" }, footer: { ...FRONT_DOOR_SHELL.footer!, ground: "inverse" } } as SiteShellInput, <p>content</p>));
+    const { container } = render(frame({ ...FRONT_DOOR_SHELL, header: { surface: "solid" }, footer: { ...FRONT_DOOR_SHELL.footer!, tone: "dark" } } as SiteShellInput, <p>content</p>));
     expect(container.querySelector("header")).toHaveClass("bg-surface-raised");
     expect(container.querySelector("footer")).toHaveClass("bg-surface-inverse");
   });
-  it("defaults footer ground to shell ground even with a different reserved header ground", () => {
-    const { container } = render(frame({ ...FRONT_DOOR_SHELL, ground: "inverse", header: { surface: "solid", tone: "base" } }, <p>content</p>));
+  it("defaults the footer tone to dark independently of the header", () => {
+    const { container } = render(frame({ ...FRONT_DOOR_SHELL, header: { surface: "solid", tone: "base" } }, <p>content</p>));
     expect(container.querySelector("header")).toHaveClass("bg-surface-raised");
     expect(container.querySelector("footer")).toHaveClass("bg-surface-inverse");
   });
-  it("refuses an invalid footer ground without echoing it", () => {
-    const run = () => renderToStaticMarkup(frame({ ...FRONT_DOOR_SHELL, footer: { ...FRONT_DOOR_SHELL.footer!, ground: "PAYLOAD-SENTINEL" } } as SiteShellInput, <p>content</p>));
-    expect(run).toThrow(/shell\.footer\.ground/);
+  it("refuses an invalid footer tone without echoing it", () => {
+    const run = () => renderToStaticMarkup(frame({ ...FRONT_DOOR_SHELL, footer: { ...FRONT_DOOR_SHELL.footer!, tone: "PAYLOAD-SENTINEL" } } as SiteShellInput, <p>content</p>));
+    expect(run).toThrow(/shell\.footer\.tone/);
     expect(run).not.toThrow(/PAYLOAD-SENTINEL/);
   });
 });
@@ -1275,11 +1275,11 @@ it("retains the current environment indication on the lite header's direct ghost
   expect(mobile.style.boxShadow).toContain("inset");
 });
 
-it("composes the mandatory dark footer with a resolved home after named social icons", () => {
+it("composes the default dark footer with a resolved home after named social icons", () => {
   const shell: SiteShellInput = { brand: CONFIG.brand, skipLink: CONFIG.skipLink, origin: CONFIG.origin,
     header: { surface: "glass", tone: "inverse" },
     footer: { legal: CONFIG.legal, social: { label: ref("social.label"), links: [{ href: "https://example.org/profile", label: ref("social.profile"), icon: ICON }] } } };
-  const { container } = render(<SiteFrame shell={shell} presentation={{ footerRule: "top" }} resolveCopy={resolveCopy} resolveAsset={resolveAsset}><p>Content</p></SiteFrame>);
+  const { container } = render(<SiteFrame shell={shell} presentation={{ footerTone: "dark" }} resolveCopy={resolveCopy} resolveAsset={resolveAsset}><p>Content</p></SiteFrame>);
   const footer = container.querySelector("footer")!;
   expect(footer).toHaveClass("site-footer-dark");
   expect([...footer.querySelectorAll("[data-footer-region]")].map(node => node.getAttribute("data-footer-region"))).toEqual(["links", "icons", "copyright"]);

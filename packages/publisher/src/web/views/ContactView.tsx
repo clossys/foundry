@@ -31,8 +31,8 @@ export interface ContactViewProps extends Omit<HTMLAttributes<HTMLDivElement>, "
   /** The primary navigation, rendered in the banner beside the brand. Absent from the markup when omitted. */
   nav?: ReactNode;
   /**
-   * The plate of the header and footer, passed to both `SiteHeader` and
-   * `SiteFooter`.
+   * The header presentation, passed through the existing `SiteHeader` helper.
+   * The footer uses its default dark tone.
    * @default "transparent"
    */
   ground?: SiteChromeGround;
@@ -101,7 +101,7 @@ function ContactViewFrame({ brand, headerAction, secondaryAction, nav, ground, l
       <main className="mx-auto flex w-full flex-1 flex-col gap-xl px-lg py-2xl" style={{ maxWidth: "var(--ui-width-prose-max, none)" }}>
         {children}
       </main>
-      <SiteFooter ground={ground} secondary={<SiteFooter.Legal {...legal} />} />
+      <SiteFooter secondary={<SiteFooter.Legal {...legal} />} />
     </div>
   );
 }

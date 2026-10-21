@@ -458,13 +458,13 @@ describe("AuthView", () => {
     expect(screen.getByRole("main")).not.toHaveTextContent(/Help|Contact us|NAV-SENTINEL/);
   });
 
-  it("passes ground to both the header and the footer, and keeps the bare chrome when every header slot is omitted", () => {
+  it("passes ground to the header and keeps the default dark footer, and keeps the bare chrome when every header slot is omitted", () => {
     const bare = renderToStaticMarkup(<AuthView brand="Acme" heading="Sign in" description={null} form="form" />);
     expect(bare).toContain(renderToStaticMarkup(<SiteHeader brand="Acme" />) + "<main");
     expect(bare).toContain("</main>" + renderToStaticMarkup(<SiteFooter />) + "</div>");
     const grounded = renderToStaticMarkup(<AuthView brand="Acme" heading="Sign in" description={null} form="form" ground="transparent" />);
     expect(grounded).toContain(renderToStaticMarkup(<SiteHeader surface="transparent" brand="Acme" />) + "<main");
-    expect(grounded).toContain("</main>" + renderToStaticMarkup(<SiteFooter ground="transparent" />) + "</div>");
+    expect(grounded).toContain("</main>" + renderToStaticMarkup(<SiteFooter tone="dark" />) + "</div>");
   });
 
   it("one front-door shell: environment links (icon-only accessible name, aria-current), one <h1>, one top-level banner, one contentinfo holding SiteFooter.Legal", () => {

@@ -465,10 +465,10 @@ if (mode === "self-chromed") describe("LegalView header slots", () => {
     expect(footer(html)).toBe(renderToStaticMarkup(<SiteFooter secondary={<span>FOOTER-SENTINEL</span>} />));
   });
 
-  it("passes ground to both the header and the footer", () => {
+  it("passes ground to the header and keeps the default dark footer", () => {
     const html = view({ ground: "transparent" });
     expect(banner(html)).toBe(renderToStaticMarkup(<SiteHeader surface="transparent" brand="Acme" />));
-    expect(footer(html)).toBe(renderToStaticMarkup(<SiteFooter ground="transparent" />));
+    expect(footer(html)).toBe(renderToStaticMarkup(<SiteFooter tone="dark" />));
   });
 });
 
@@ -515,11 +515,13 @@ describe("LegalView related references", () => {
     const baseline = readFileSync(resolve(import.meta.dirname, "__fixtures__/legal-view-before-related-terms.html"), "utf8");
     expect(baseline.length).toBeGreaterThan(0);
     const html = render(legalDoc("terms"));
-    // Only the dates migrate to DetailView; retain the historical fixture's complete remaining bytes.
-    const migratedBaseline = baseline.replace(/<dl\b[\s\S]*?<\/dl>/, dateDetails("en"));
+    // Dates migrate to DetailView and the footer uses its fixed default dark tone.
+    // The fixture stays untouched; all other historical bytes remain an exact oracle.
+    const migratedBaseline = baseline.replace(/<dl\b[\s\S]*?<\/dl>/, dateDetails("en"))
+      .replace(/<footer\b[\s\S]*?<\/footer>/, '<footer data-footer-root="" data-footer-tone="dark" class="site-footer-dark bg-surface-inverse text-ink-on-inverse py-lg" style="position:relative;z-index:var(--ui-z-shell, 20)"><div class="mx-auto flex w-full flex-col gap-lg" style="padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))"></div></footer>');
     if (mode === "self-chromed") {
       expect(html).toContain('data-surface="solid" data-tone="base"');
-      // Only the new header opening is projected; all body/footer bytes retain the recorded fixture.
+      // Only the header opening is projected; body bytes retain the recorded fixture and footer bytes use the explicit migration above.
       const legacyHeaderProjection = html.replace(/<header\b[^>]*>/, '<header data-header-root="" class="bg-surface-raised py-sm border-b border-line-base site-header-contract" style="position:relative;z-index:var(--ui-z-shell, 20);border-bottom-width:var(--ui-border-hairline, 1px)">');
       expect(legacyHeaderProjection).toBe(migratedBaseline);
       return;
@@ -670,7 +672,6 @@ if (mode === "framed") describe("LegalView header slots owned by SiteFrame", () 
   const chrome: Partial<SiteShellInput> = {
     actions: [{ href: "/sign-in", label: ref("fixture.secondary"), emphasis: "ghost" }, { href: "/contact", label: ref("fixture.header"), emphasis: "secondary" }],
     nav: { label: LABELS.effectiveDate, links: [{ href: "/placeholder-nav", label: ref("fixture.nav") }] },
-    ground: "transparent",
   };
   it("renders headerAction, secondaryAction and nav inside the banner landmark and nowhere else", () => {
     const html = renderToStaticMarkup(frame(content, undefined, chrome));
@@ -686,10 +687,10 @@ if (mode === "framed") describe("LegalView header slots owned by SiteFrame", () 
     expect(banner(html)).toBe(banner(renderToStaticMarkup(<SiteHeader brand={mark} />)));
     expect(footer(html)).toBe(renderToStaticMarkup(<SiteFooter secondary={<SiteFooter.Legal entity="FOOTER-SENTINEL" links={[]} home={{ label: "Placeholder label effective", href: "/", markSrc: "/placeholder.svg" }} />} />).replace(/^<link[^>]+>/, ""));
   });
-  it("passes ground to both an explicit reserved header and the footer", () => {
-    const html = renderToStaticMarkup(frame(content, undefined, { ground: "transparent", header: { surface: "transparent" } }));
+  it("passes ground to an explicit reserved header and keeps the default dark footer", () => {
+    const html = renderToStaticMarkup(frame(content, undefined, { header: { surface: "transparent" } }));
     expect(banner(html)).toBe(banner(renderToStaticMarkup(<SiteHeader surface="transparent" brand={mark} />)));
-    expect(footer(html)).toBe(renderToStaticMarkup(<SiteFooter ground="transparent" secondary={<SiteFooter.Legal entity="Placeholder footer entity" links={[]} home={{ label: "Placeholder label effective", href: "/", markSrc: "/placeholder.svg" }} />} />).replace(/^<link[^>]+>/, ""));
+    expect(footer(html)).toBe(renderToStaticMarkup(<SiteFooter tone="dark" secondary={<SiteFooter.Legal entity="Placeholder footer entity" links={[]} home={{ label: "Placeholder label effective", href: "/", markSrc: "/placeholder.svg" }} />} />).replace(/^<link[^>]+>/, ""));
   });
   it("uses a solid header when the framed path omits header surface", () => {
     expect(banner(renderToStaticMarkup(frame(content)))).toContain('data-surface="solid"');

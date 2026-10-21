@@ -117,8 +117,8 @@ export interface PackReviewViewProps {
   /** The primary navigation, rendered in the banner beside the brand. Absent from the markup when omitted. */
   nav?: ReactNode;
   /**
-   * The plate of the header and footer, passed to both `SiteHeader` and
-   * `SiteFooter`.
+   * The header presentation, passed through the existing `SiteHeader` helper.
+   * The footer uses its default dark tone.
    * @default "base"
    */
   ground?: import("../internal/viewChromeGround.js").SiteChromeGround;
@@ -451,7 +451,7 @@ export function PackReviewView({
           )}
         </section>
       </main>
-      <SiteFooter ground={ground} secondary={footerSecondary} />
+      <SiteFooter secondary={footerSecondary} />
     </div>
   );
 }

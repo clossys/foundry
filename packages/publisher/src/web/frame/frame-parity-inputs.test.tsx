@@ -18,7 +18,7 @@ const resolveCopy: CopyResolver = ref => ({ ref, text: NAV_DEFAULT_COPY[ref.id] 
 const resolveAsset = () => ({ type: "image", src: "/mark.svg", width: 48, height: 48, alt: "Example mark" });
 const brand = { assetId: "mark", label: ref("Example home"), size: "md", variant: "lockup", wordmark: ref("Example") } as const;
 const legal = { entity: ref("Example"), links: [{ href: "/privacy", label: ref("Privacy") }, { href: "/terms", label: ref("Terms") }] };
-const base: SiteShellInput = { brand, skipLink: ref("Skip to content"), actions: [{ href: "/start", label: ref("Start") }], footer: { ground: "transparent", legal } };
+const base: SiteShellInput = { brand, skipLink: ref("Skip to content"), actions: [{ href: "/start", label: ref("Start") }], footer: { tone: "dark", legal } };
 const nav = { label: ref("Primary"), triggerLabel: ref("Menu"), links: [{ href: "#help", label: ref("Help") }] };
 function page(options: Record<string, unknown> = {}): ResolvedSectionedViewDocument {
   return { id: "home", resolutions: [resolveCopy(ref("Welcome"))!], sections: [{ id: "hero", kind: "hero", ground: "inverse", eyebrow: "Eyebrow", heading: "Welcome", description: "Supporting words.", ...options }] } as ResolvedSectionedViewDocument;
@@ -37,7 +37,7 @@ afterEach(cleanup);
 const defaults = {
   reserved: { ...base, header: { surface: "solid" } },
   inverse: { ...base, header: { surface: "glass", tone: "inverse" } },
-  "overlay-footer": { ...base, header: { surface: "glass", tone: "inverse" }, footer: { placement: "overlay", ground: "inverse", legal } },
+  "overlay-footer": { ...base, header: { surface: "glass", tone: "inverse" }, footer: { placement: "overlay", tone: "dark", legal } },
 } satisfies Record<string, SiteShellInput>;
 
 for (const mode of ["server", "client"] as const) {
@@ -74,14 +74,13 @@ for (const mode of ["server", "client"] as const) {
     }
   });
 
-  it(`forwards only the transparent footer top rule: ${mode}`, () => {
-    const shell = { ...base, footer: { ground: "transparent", rule: "top", legal } } as SiteShellInput;
-    const footer = output(frame(shell), mode).querySelector("footer")!;
-    expect(footer).toHaveClass("border-t", "border-line-base");
-    expect(footer.querySelector(".border-t")).toBeNull();
-    for (const ground of ["base", "inverse"] as const) {
-      const ordinary = output(frame({ ...base, footer: { ground, legal } }), mode).querySelector("footer")!.outerHTML;
-      expect(output(frame({ ...base, footer: { ground, rule: "top", legal } } as SiteShellInput), mode).querySelector("footer")!.outerHTML).toBe(ordinary);
+  it(`forwards both footer tones and their fixed divider policies: ${mode}`, () => {
+    for (const tone of ["dark", "light"] as const) {
+      const footer = output(frame({ ...base, footer: { tone, legal } }), mode).querySelector("footer")!;
+      expect(footer).toHaveAttribute("data-footer-tone", tone);
+      expect(footer).toHaveClass(`site-footer-${tone}`);
+      expect(footer.classList.contains("border-t")).toBe(tone === "light");
+      expect(footer.querySelector(".border-t")).toBeNull();
     }
   });
 
@@ -97,7 +96,7 @@ for (const mode of ["server", "client"] as const) {
   });
 
   it(`composes the exact home shape: ${mode}`, () => {
-    const shell = { ...defaults.inverse, actions: [{ ...base.actions![0], emphasis: "primary", icon: [["path", { d: "M4 12h16" }]] }], footer: { ground: "transparent", rule: "top", legal } } as SiteShellInput;
+    const shell = { ...defaults.inverse, actions: [{ ...base.actions![0], emphasis: "primary", icon: [["path", { d: "M4 12h16" }]] }], footer: { tone: "light", legal } } as SiteShellInput;
     const root = output(frame(shell, { eyebrowTone: "muted", measure: "wide", headingScale: "display" }), mode);
     expect(root.querySelectorAll("main")).toHaveLength(1);
     expect(root.querySelectorAll("header")).toHaveLength(1);
@@ -123,7 +122,7 @@ for (const mode of ["server", "client"] as const) {
     expect(description.style.maxWidth).toBe("var(--ui-width-hero-wide, 64rem)");
     const footer = root.querySelector("footer")!;
     expect(footer).toHaveClass("border-t", "border-line-base");
-    expect(footer).not.toHaveClass("bg-surface-base", "bg-surface-inverse");
+    expect(footer).toHaveClass("bg-surface-base");
     expect([...footer.querySelectorAll("a")].map(a => a.getAttribute("aria-label") ?? a.textContent)).toEqual(["Privacy", "Terms", "Example home"]);
     expect(footer.querySelector(".border-t")).toBeNull();
     expect(root.querySelector("[data-frame-footer-overlay]")).toBeNull();
@@ -145,7 +144,7 @@ it.each([
   ["shell.brand.tone", { ...base, brand: { ...brand, tone: "PAYLOAD-SENTINEL" } }],
   ["shell.brand.markInk", { ...base, brand: { ...brand, markInk: "PAYLOAD-SENTINEL" } }],
   ["shell.nav", { ...base, nav: { ...nav, tone: "PAYLOAD-SENTINEL" } }],
-  ["shell.footer.rule", { ...base, footer: { legal, rule: "PAYLOAD-SENTINEL" } }],
+  ["shell.footer.tone", { ...base, footer: { legal, tone: "PAYLOAD-SENTINEL" } }],
 ])("refuses invalid %s without echoing its value", (path, shell) => {
   expect(() => resolveShell(shell as SiteShellInput, resolveCopy, resolveAsset)).toThrow(path);
   try { resolveShell(shell as SiteShellInput, resolveCopy, resolveAsset); } catch (error) { expect(String(error)).not.toContain("PAYLOAD-SENTINEL"); }

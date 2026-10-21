@@ -65,8 +65,8 @@ export interface CaptureViewProps extends HTMLAttributes<HTMLDivElement> {
    */
   headerSecondaryAction?: ReactNode;
   /**
-   * The plate of the header and footer, passed to both `SiteHeader` and
-   * `SiteFooter`.
+   * The header presentation, passed through the existing `SiteHeader` helper.
+   * The footer uses its default dark tone.
    * @default "base"
    * @deprecated Chrome belongs to `SiteFrame`; see `brand`.
    */
@@ -210,7 +210,7 @@ export function CaptureView({
       <main id={mainId || undefined} tabIndex={mainId ? -1 : undefined} className={PAGE_COLUMN_CLASSES} style={pageColumnStyle("prose")}>
         {content}
       </main>
-      {footer !== undefined ? footer : <SiteFooter ground={chromeGround} secondary={footerSecondary} />}
+      {footer !== undefined ? footer : <SiteFooter secondary={footerSecondary} />}
     </div>
   );
 }
