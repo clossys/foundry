@@ -17,6 +17,7 @@
 //   - mutant "one first-party name missing from the block": each name a
 //     sibling depends on, omitted in turn, does the same.
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import { cpSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import test from "node:test";
@@ -25,6 +26,7 @@ import {
   DEFAULT_PACKAGE_DIRS,
   REPO_ROOT,
   checkInstall,
+  cli,
   discoverWorkspace,
   firstPartyClosure,
   firstPartyPredicate,
@@ -128,4 +130,50 @@ test("GREEN: tarballs at the repository version (same version string as the regi
   const result = checkInstall({ root, packed, direct, isFirstParty, label: "same-version" });
   assert.equal(result.install.status, 0, result.install.stderr);
   assert.deepEqual(result.findings, []);
+});
+
+function captureIo() {
+  const out = [];
+  const err = [];
+  return { out, err, io: { log: (line) => out.push(line), error: (line) => err.push(line) } };
+}
+
+test("CLI: --omit-override without a value, or with a flag as its value, could not run (exit 2)", () => {
+  for (const argv of [["--omit-override"], ["--omit-override", "--json"]]) {
+    const { err, io } = captureIo();
+    assert.equal(cli(argv, { io, run: () => assert.fail("must not run") }), 2, argv.join(" "));
+    assert.match(err.join("\n"), /COULD NOT RUN — --omit-override needs a package name/);
+  }
+  const child = spawnSync(process.execPath, ["scripts/tarball-install-check.mjs", "--omit-override"], { cwd: REPO_ROOT, encoding: "utf8" });
+  assert.equal(child.status, 2, child.stderr);
+});
+
+test("CLI: an --omit-override name that matches no packed package could not run (exit 2), never OK", () => {
+  const [name] = publisherSiblings;
+  for (const typo of [`${name}x`, "packages/designer"]) {
+    const { out, err, io } = captureIo();
+    assert.equal(cli(["--omit-override", typo], { io }), 2, typo);
+    assert.match(err.join("\n"), /--omit-override names no packed package/);
+    assert.doesNotMatch(out.join("\n"), /TARBALL INSTALL OK/);
+  }
+});
+
+test("CLI: an unexpected (non-CheckError) failure could not run (exit 2), with its stack", () => {
+  const { err, io } = captureIo();
+  const code = cli([], { io, run: () => { throw new TypeError("boom"); } });
+  assert.equal(code, 2);
+  assert.match(err.join("\n"), /COULD NOT RUN — TypeError: boom\n\s+at /);
+});
+
+test("CLI: --keep prints the kept root, and --json carries it", () => {
+  const kept = { root: "kept-root-dir", packed: [{ name: "@scope/a", version: "0.1.0", integrity: "sha512-x" }], findings: [] };
+  const human = captureIo();
+  assert.equal(cli(["--keep"], { io: human.io, run: (options) => (assert.equal(options.keep, true), kept) }), 0);
+  assert.ok(human.out.includes("  [KEEP ] kept-root-dir"), human.out.join("\n"));
+  const json = captureIo();
+  assert.equal(cli(["--keep", "--json"], { io: json.io, run: () => kept }), 0);
+  assert.equal(JSON.parse(json.out.join("\n")).root, "kept-root-dir");
+  const plain = captureIo();
+  assert.equal(cli([], { io: plain.io, run: () => ({ ...kept, root: null }) }), 0);
+  assert.ok(!plain.out.some((line) => line.includes("[KEEP ]")));
 });

@@ -165,7 +165,13 @@ function npmPack(source, destination, env) {
   mkdirSync(destination, { recursive: true });
   const result = run("npm", ["pack", "--json", "--ignore-scripts", "--pack-destination", destination], { cwd: source, env });
   if (result.status !== 0) throw new CheckError(`npm pack failed in ${source}: ${result.stderr.trim()}`);
-  const [report] = JSON.parse(result.stdout.slice(result.stdout.indexOf("[")));
+  let report;
+  try {
+    [report] = JSON.parse(result.stdout.slice(result.stdout.indexOf("[")));
+  } catch (error) {
+    throw new CheckError(`npm pack in ${source} printed no JSON report: ${error.message}`);
+  }
+  if (typeof report?.filename !== "string") throw new CheckError(`npm pack in ${source} reported no tarball filename`);
   return join(destination, report.filename);
 }
 
@@ -336,6 +342,10 @@ export function firstPartyPredicate(workspace) {
 export function runTarballInstallCheck({ repoRoot = REPO_ROOT, packageDirs = DEFAULT_PACKAGE_DIRS, versionShift = "minor", overrides = true, omit = [], keep = false } = {}) {
   const workspace = discoverWorkspace(repoRoot);
   const closure = firstPartyClosure(workspace, packageDirs);
+  // An omitted name that matches no packed package would remove nothing and
+  // let the full overrides block pass; refuse it instead of reporting OK.
+  const unknown = omit.filter((name) => !closure.some((entry) => entry.manifest.name === name));
+  if (unknown.length > 0) throw new CheckError(`--omit-override names no packed package: ${unknown.join(", ")}`);
   const root = realpathSync(mkdtempSync(join(tmpdir(), "tarball-install-check-")));
   try {
     const packed = packClosure({ repoRoot, closure, root, versionShift });
@@ -353,7 +363,11 @@ function parseArgs(argv) {
     const arg = argv[index];
     if (arg === "--as-packed") options.versionShift = "none";
     else if (arg === "--no-overrides") options.overrides = false;
-    else if (arg === "--omit-override") options.omit.push(argv[++index]);
+    else if (arg === "--omit-override") {
+      const name = argv[++index];
+      if (!name || name.startsWith("--")) throw new CheckError("--omit-override needs a package name");
+      options.omit.push(name);
+    }
     else if (arg === "--keep") options.keep = true;
     else if (arg === "--json") options.json = true;
     else if (arg.startsWith("--")) throw new CheckError(`unknown option ${arg}`);
@@ -363,30 +377,35 @@ function parseArgs(argv) {
   return options;
 }
 
-function main() {
+// The CLI, returning its exit code. `run` and `io` are injectable so the
+// exit contract can be tested without packing.
+export function cli(argv, { run = runTarballInstallCheck, io = console } = {}) {
   let options;
   let result;
   try {
-    options = parseArgs(process.argv.slice(2));
-    result = runTarballInstallCheck(options);
+    options = parseArgs(argv);
+    result = run(options);
   } catch (error) {
-    if (!(error instanceof CheckError)) throw error;
-    console.error(`TARBALL INSTALL CHECK COULD NOT RUN — ${error.message}`);
-    process.exit(2);
+    // Every failure before a verdict is "could not run" (exit 2), never a
+    // finding (exit 1): a CheckError carries its own message, anything else
+    // its stack.
+    io.error(`TARBALL INSTALL CHECK COULD NOT RUN — ${error instanceof CheckError ? error.message : (error?.stack ?? String(error))}`);
+    return 2;
   }
   const ok = result.findings.length === 0;
   if (options.json) {
-    console.log(JSON.stringify({ ok, packed: result.packed.map(({ name, version, integrity }) => ({ name, version, integrity })), findings: result.findings }, null, 2));
+    io.log(JSON.stringify({ ok, root: result.root, packed: result.packed.map(({ name, version, integrity }) => ({ name, version, integrity })), findings: result.findings }, null, 2));
   } else {
-    for (const record of result.packed) console.log(`  [PACK ] ${record.name}@${record.version}`);
-    for (const finding of result.findings) console.log(`  [FIND ] [${finding.kind}] ${finding.message}`);
-    console.log(
+    if (result.root) io.log(`  [KEEP ] ${result.root}`);
+    for (const record of result.packed) io.log(`  [PACK ] ${record.name}@${record.version}`);
+    for (const finding of result.findings) io.log(`  [FIND ] [${finding.kind}] ${finding.message}`);
+    io.log(
       ok
         ? `TARBALL INSTALL OK — ${result.packed.length} first-party packages installed from their tarballs, one copy each.`
         : "TARBALL INSTALL FAIL — a consumer of these tarballs would get a second registry copy or a failed install; see docs/releasing/tarball-install.md.",
     );
   }
-  process.exit(ok ? 0 : 1);
+  return ok ? 0 : 1;
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) process.exitCode = cli(process.argv.slice(2));

@@ -115,6 +115,8 @@ The install is offline: an empty private cache, a sanitized environment with
 no inherited npm configuration or credentials, no install scripts, and peer
 dependencies left to the consumer. A request for a registry copy therefore
 fails with `ENOTCACHED` and is reported as a finding instead of being
-downloaded. `--no-overrides` and `--omit-override <name>` show that failure.
-Exit codes follow the repository's gate convention: `0` clean, `1` findings,
-`2` could not run.
+downloaded. `--no-overrides` and `--omit-override <name>` show that failure;
+an `--omit-override` name must be one of the packed package names, or the
+check does not run. `--keep` leaves the temporary directory in place and
+prints its path. Exit codes follow the repository's gate convention: `0`
+clean, `1` findings, `2` could not run.
