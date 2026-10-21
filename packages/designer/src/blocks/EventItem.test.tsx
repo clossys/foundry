@@ -34,7 +34,8 @@ describe("EventItem", () => {
     expect(container.querySelector("p")).toHaveClass("font-semibold");
     const dot = container.querySelector("p > span[aria-hidden]");
     expect(dot).toHaveAttribute("aria-hidden", "true");
-    expect(dot).toHaveClass("size-2", "rounded-pill", "bg-accent", "forced-colors:bg-current");
+    expect(dot).toHaveClass("size-2", "rounded-pill", "bg-accent", "forced-colors:bg-current", "forced-colors:[forced-color-adjust:preserve-parent-color]");
+    expect(dot).not.toHaveClass("text-ink-primary");
     rerender(<EventItem event={{ ...event, unread: false }} labels={labels} />);
     expect(screen.queryByText(labels.unread)).toBeNull();
     expect(container.querySelector("p")).not.toHaveClass("font-semibold");

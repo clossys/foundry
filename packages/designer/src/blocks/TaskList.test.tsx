@@ -57,6 +57,7 @@ describe("TaskList", () => {
     expect(link).toHaveAttribute("data-card-link", "");
     expect(link).toHaveClass("focus-visible:after:outline-accent");
     expect(rows[1]).toHaveClass("relative", "isolate");
+    expect(rows[1].closest("section")).toHaveClass("px-sm", "tablet:px-md");
     expect((rows[1] as HTMLElement).style.minBlockSize).toBe(UI_LAYOUT_TAP_TARGET);
     expect((rows[1] as HTMLElement).style.borderBlockStartWidth).toBe(UI_BORDER_HAIRLINE);
     expect(rows[0].querySelector("a")).toBeNull();

@@ -56,7 +56,7 @@ export function EventItem({ event, labels, className, ...rest }: EventItemProps)
       ) : <Avatar size="sm" alt={event.actor.name} src={event.actor.avatarSrc} />}
       <div className="min-w-0 break-words">
         <p className={cx("text-body text-ink-primary", event.unread ? "font-semibold" : undefined)}>
-          {event.unread ? <><span aria-hidden="true" className="me-xs inline-block size-2 rounded-pill bg-accent text-ink-primary forced-colors:bg-current" /><span className="sr-only">{labels.unread}</span>{" "}</> : null}
+          {event.unread ? <><span aria-hidden="true" className="me-xs inline-block size-2 rounded-pill bg-accent forced-colors:bg-current forced-colors:[forced-color-adjust:preserve-parent-color]" /><span className="sr-only">{labels.unread}</span>{" "}</> : null}
           {event.summary}
         </p>
         <time dateTime={event.at} className="text-caption text-ink-muted">{event.timeText}</time>

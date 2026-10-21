@@ -3633,6 +3633,9 @@
     .forced-colors\:outline-current {
       outline-color: currentcolor;
     }
+    .forced-colors\:\[forced-color-adjust\:preserve-parent-color\] {
+      forced-color-adjust: preserve-parent-color;
+    }
     .forced-colors\:outline-solid {
       --tw-outline-style: solid;
       outline-style: solid;
