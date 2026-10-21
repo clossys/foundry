@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Button } from "./Button.js";
@@ -10,6 +10,39 @@ import { Popover } from "./Popover.js";
 // own note on the identical requirement. `Button` (this package's own atom)
 // is used here for the same reason.
 describe("Popover", () => {
+  it("anchors to the supplied ref without changing its trigger or dismissal lifecycle", async () => {
+    const anchor = document.createElement("div"); document.body.append(anchor);
+    const measure = vi.spyOn(anchor, "getBoundingClientRect").mockReturnValue(new DOMRect(120, 40, 600, 70));
+    const user = userEvent.setup();
+    const view = render(<Popover anchorRef={{ current: anchor }} trigger={<Button>Open anchored information</Button>} aria-label="Anchored information"><Button>Inside information</Button></Popover>);
+    try {
+      const trigger = screen.getByRole("button", { name: "Open anchored information" });
+      await user.click(trigger);
+      await screen.findByRole("dialog", { name: "Anchored information" });
+      await waitFor(() => expect(measure).toHaveBeenCalled());
+      expect(trigger).not.toHaveFocus();
+      await user.keyboard("{Escape}");
+      await waitFor(() => expect(trigger).toHaveFocus());
+      await user.click(trigger);
+      fireEvent.mouseDown(document.body); fireEvent.mouseUp(document.body);
+      await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    } finally { view.unmount(); anchor.remove(); measure.mockRestore(); }
+  });
+
+  it("keeps positioning against the real trigger when no anchor ref is supplied", async () => {
+    const user = userEvent.setup();
+    render(<Popover trigger={<Button>Original anchor</Button>}><Button>Original content</Button></Popover>);
+    const trigger = screen.getByRole("button", { name: "Original anchor" });
+    const measure = vi.spyOn(trigger, "getBoundingClientRect").mockReturnValue(new DOMRect(220, 90, 44, 44));
+    try {
+      await user.click(trigger);
+      await waitFor(() => expect(measure).toHaveBeenCalled());
+      expect(screen.getByRole("button", { name: "Original content" })).toBeInTheDocument();
+      await user.keyboard("{Escape}");
+      await waitFor(() => expect(trigger).toHaveFocus());
+    } finally { measure.mockRestore(); }
+  });
+
   it("does not render its content until opened", () => {
     render(
       <Popover trigger={<Button>Filters</Button>}>

@@ -7933,7 +7933,12 @@ tablet breakpoint; supply another media query when the host's wide layout
 starts elsewhere. Changing `navigationKey` or entering that query dismisses
 an open drawer, as does ordinary in-panel link navigation. No motion is added.
 The close control renders the `X` glyph through the `Icon` atom as decoration;
-`closeLabel` supplies the control's accessible name.
+`closeLabel` supplies the control's accessible name. The optional
+`closeButtonStyle` layout hook positions that same control from a measured opener
+rectangle and direction; it accepts only position, logical insets and direction.
+The opted-in close reports `aria-expanded="true"` while visible. Omission preserves
+the existing header placement and markup; the host does not replace its action,
+label, focus restoration or Dialog lifecycle.
 
 `wide="sheet"` makes the Drawer an application side sheet that opens at every
 viewport width, for example an inspector at `placement="end"`. It ignores
@@ -8064,6 +8069,12 @@ export function CommandExample() {
 }
 ```
 
+The general `Popover` atom also accepts an optional `anchorRef` positioning
+reference. Omission keeps its actual trigger as the anchor. A different anchor
+changes positioning only: the trigger still owns opening, Escape, outside
+interaction and focus restoration. AppFrame uses its bar reference to align the
+page-information overlay and supplies direction through the existing style hook.
+
 ## Application navigation
 
 `AppNavigation` is a Block Material for host-owned destinations. Supply stable
@@ -8090,8 +8101,10 @@ export function NavigationExample() {
 ```
 
 The host places the Material in a height-constrained frame region. Links scroll
-independently of `footer`, which accepts plain children and imports no account
-control. Navigation stores no preferences, fetches no data and imports no router.
+independently of optional `header` and `footer` slots, which accept plain
+children and import no account control. The header precedes destinations; the
+footer follows them. No title row is synthesized. A frame may supply its own
+`trigger` wired to controlled open/collapsed state. Navigation stores no preferences, fetches no data and imports no router.
 `activeId` takes precedence over `activeHref`; ancestry and breadcrumbs derive
 only from that route identity, with no view-internal selection input.
 
@@ -8102,9 +8115,11 @@ root-to-destination node chain, with id taking precedence over href.
 
 Desktop parents expand inline. A destination link and its disclosure button are
 separate controls. A newly active child expands its ancestor. `collapsed` controls
-the named, tooltipped icon rail; `defaultCollapsed` supplies its initial local
-state and `onCollapsedChange` reports changes. Every child destination remains
-reachable in the rail. Long labels retain their complete accessible names.
+the full panel: when closed, only the named corner control remains, without an
+icon rail. `defaultCollapsed` supplies its initial local state and
+`onCollapsedChange` reports changes. Closing hands destination focus to the
+corner control; reopening retains the active ancestry. Long labels keep their
+complete accessible names.
 
 The narrow layout uses the existing Drawer with full rows. `dismissAt` defaults
 to `(min-width: 768px)`. Escape returns focus; route changes, actions and entering
@@ -8114,8 +8129,10 @@ the trigger. `onDrawerOpenChange` lets the host coordinate other overlays.
 `navigationKey`, `label`, `openLabel` and `closeLabel` are host inputs. The Drawer close control
 uses a 44px ghost icon button; `closeLabel` supplies its accessible name.
 `expandLabel`, `collapseLabel` and `formatDisclosureLabel(nodeLabel, expanded)`
-let the host translate rail toggles and disclosures; their defaults preserve the
-English expand/collapse announcements. All message props are optional.
+let the host translate panel toggles and disclosures. The first two are optional
+legacy aliases for the wide open/close labels; the default control uses
+`openLabel` and `closeLabel`. Disclosure defaults retain the English
+expand/collapse announcements. All message props are optional.
 
 Arrow Up/Down and Home/End move among visible navigation controls. Logical
 Left/Right expand or collapse a parent, reversing in RTL. Enter/Space activate

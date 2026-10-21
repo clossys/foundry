@@ -1367,6 +1367,9 @@
   .cursor-row-resize {
     cursor: row-resize;
   }
+  .resize {
+    resize: both;
+  }
   .resize-none {
     resize: none;
   }
@@ -2127,9 +2130,6 @@
   }
   .p-xs {
     padding: var(--spacing-xs, 4px);
-  }
-  .px-0 {
-    padding-inline: 0px;
   }
   .px-0\.5 {
     padding-inline: calc(var(--spacing, 0.25rem) * 0.5);
