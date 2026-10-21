@@ -328,6 +328,35 @@ describe("AppFrame floating stage", () => {
     await waitFor(() => expect(screen.getByRole("button", { name: "Open panel" })).toHaveFocus());
   });
 
+  it("b: budgets the bounded default panel width before deciding whether to dock", async () => {
+    setViewport(1000);
+    const props = stageFixture();
+    render(<AppFrame {...props} rightPanel={{ ...props.rightPanel, min: 300, max: 500, defaultValue: 100 }} />);
+    expect(region("stage")).toHaveAttribute("data-stage-navigation", "docked");
+    await waitFor(() => expect(region("stage")).toHaveAttribute("data-stage-panel", "overlay"));
+    expect(screen.queryByRole("region", { name: "Context" })).not.toBeInTheDocument();
+  });
+
+  it("b: rechecks raised panel bounds against the retained width and hands off focus", async () => {
+    setViewport(1100);
+    const props = stageFixture();
+    const view = render(<AppFrame {...props} rightPanel={{ ...props.rightPanel, min: 200, max: 800, value: 300 }} />);
+    await waitFor(() => expect(region("stage")).toHaveAttribute("data-stage-panel", "docked"));
+    screen.getByRole("button", { name: "Context action" }).focus();
+    view.rerender(<AppFrame {...props} rightPanel={{ ...props.rightPanel, min: 500, max: 800, value: 300 }} />);
+    await waitFor(() => expect(region("stage")).toHaveAttribute("data-stage-panel", "overlay"));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Open panel" })).toHaveFocus());
+    expect(screen.queryByRole("region", { name: "Context" })).not.toBeInTheDocument();
+  });
+
+  it("b: budgets the capped maximum rather than an oversized retained panel width", async () => {
+    setViewport(1100);
+    const props = stageFixture();
+    render(<AppFrame {...props} rightPanel={{ ...props.rightPanel, min: 200, max: 300, defaultValue: 700 }} />);
+    await waitFor(() => expect(region("stage")).toHaveAttribute("data-stage-panel", "docked"));
+    expect(screen.getByRole("region", { name: "Context" })).toHaveStyle({ inlineSize: "300px" });
+  });
+
   it("c: uses the page width until an in-memory override and respects a controlled host value", async () => {
     const user = userEvent.setup(); const props = stageFixture(); const view = render(<AppFrame {...props} />);
     expect(region("stage")).toHaveAttribute("data-stage-width", "contained");

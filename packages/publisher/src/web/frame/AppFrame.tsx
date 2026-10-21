@@ -205,7 +205,7 @@ function FrameContent({ brand, navigation, account, commands, children, rightPan
     return () => window.removeEventListener("resize", measure);
   }, [narrow, panelOpen, dir]);
   const sidebarProbe = useRef<HTMLSpanElement>(null);
-  const currentPanelWidth = rightPanel?.value ?? width;
+  const currentPanelWidth = rightPanel ? Math.min(rightPanel.max, Math.max(rightPanel.min, rightPanel.value ?? width)) : 0;
   const geometry = useRef({ sidebarWidth, panelWidth: currentPanelWidth, navOpen: !navCollapsed, panelOpen: Boolean(rightPanel) && !collapsed });
   useLayoutEffect(() => {
     geometry.current = { sidebarWidth, panelWidth: currentPanelWidth, navOpen: !navCollapsed, panelOpen: Boolean(rightPanel) && !collapsed };
