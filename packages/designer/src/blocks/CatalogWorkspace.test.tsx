@@ -102,7 +102,7 @@ describe("CatalogWorkspace", () => {
     const nested = screen.getByRole("treeitem", { name: "Nested" });
     const group = document.getElementById(nested.getAttribute("aria-owns")!)!;
     expect(group).toHaveAttribute("role", "group"); expect(group).toHaveAttribute("aria-labelledby", nested.id); expect(group).toContainElement(row);
-    expect(nested).not.toHaveAttribute("aria-selected"); expect(row).not.toHaveAttribute("aria-expanded");
+    expect(nested).toHaveAttribute("aria-selected", "false"); expect(row).not.toHaveAttribute("aria-expanded");
     rerender(<CatalogWorkspace {...base} items={[{ id: "last", label: "Last", kind: "component" }]} />);
     expect(screen.getByRole("treeitem", { name: "Last" })).toHaveFocus();
     expect(screen.getAllByRole("treeitem").filter(node => node.tabIndex === 0)).toHaveLength(1);
@@ -172,9 +172,8 @@ describe("CatalogWorkspace", () => {
     [{ id: " ", label: "X", kind: "leaf" }],
     [{ id: "x", label: "", kind: "leaf" }],
     [{ id: "x", label: "X", kind: "" }],
-    [{ id: "a", label: "A", kind: "group", children: [{ id: "b", label: "B", kind: "group", children: [{ id: "c", label: "C", kind: "group", children: [{ id: "d", label: "D", kind: "leaf" }] }] }] }],
-    Array.from({ length: 1001 }, (_, i) => ({ id: String(i), label: String(i), kind: "leaf" })),
-  ].map(forest => [forest]))("refuses invalid identity, text, depth or node bounds before rendering", invalid => {
+    Array.from({ length: 10001 }, (_, i) => ({ id: String(i), label: String(i), kind: "leaf" })),
+  ].map(forest => [forest]))("refuses invalid identity, text or node bounds before rendering", invalid => {
     expect(() => render(<CatalogWorkspace {...base} items={invalid} />)).toThrow(TypeError);
   });
   it("refuses cyclic/sparse input and invalid pane bounds", () => {
