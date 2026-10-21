@@ -115,7 +115,7 @@ export function ResourceList({
       <div aria-hidden="true">
         {Array.from({ length: loadingRowCount }, (_, index) => <div key={index} className="flex items-center px-md py-sm" style={{ minBlockSize: UI_LAYOUT_TAP_TARGET }}><Skeleton /></div>)}
       </div>
-    </div> : <GridList aria-label={ariaLabel} items={items} selectionMode={selectionMode}
+    </div> : items.length === 0 ? <EmptyState {...emptyState} /> : <GridList aria-label={ariaLabel} items={items} selectionMode={selectionMode}
       selectedKeys={selection === "all" ? "all" : new Set(selection)}
       onSelectionChange={keys => {
         const next = keys === "all" ? "all" : new Set([...keys].map(String));

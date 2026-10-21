@@ -134,7 +134,7 @@ describe("ResourceList", () => {
     const { rerender } = render(<ResourceList {...base} items={[]} />);
     const section = screen.getByRole("region", { name: "Notes" });
     expect(within(section).getByRole("heading", { name: "No notes yet" })).toBeInTheDocument();
-    expect(within(section).queryAllByRole("row").filter(row => row.hasAttribute("data-key"))).toHaveLength(0);
+    expect(within(section).queryAllByRole("row")).toHaveLength(0);
     const long = "Planning notes with a detailed title that should fit a narrow record list";
     rerender(<ResourceList {...base} items={[{ id: "long", textValue: long, title: long }]} />);
     expect(screen.getByText(long)).toHaveClass("truncate");

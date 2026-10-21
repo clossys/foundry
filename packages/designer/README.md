@@ -2541,6 +2541,7 @@ All visible and assistive copy comes from host props. Multiple selection require
 `loadingLabel`. Missing conditional labels throw `TypeError`. Error content has
 priority over loading, then empty content and records. Loading unmounts the grid
 and announces one status while decorative skeleton rows stand in for content.
+An empty collection renders `EmptyState` directly, with no grid rows.
 
 ```tsx
 import { useState } from "react";
