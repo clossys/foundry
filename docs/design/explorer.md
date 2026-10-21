@@ -29,7 +29,7 @@ opens a closed folder or enters its first child; Left closes an open folder or
 moves to its parent. Enter and Space activate the focused row. Focus movement
 and arrow disclosure do not change selection. The tree owns one tab stop and
 preserves focus across host selection changes; removal of the focused node
-recovers to the first row.
+recovers to an available row.
 
 Depth is unrestricted. Every ancestor receives a token-colored branch guide;
 visual indentation stops growing after six steps to keep deep labels inside the
@@ -53,5 +53,5 @@ inline trees use the base `TreeNode` shape without assuming extra metadata.
 nonempty children. Its existing `onAction` callback and icon/link API are retained,
 as are its rendering and two-level limit. `CatalogWorkspace` composes Explorer for
 browsing and retains its metadata, leaf-only controlled selection and original
-objects for preview and inspector slots. Its only size bound is 10,000 nodes;
-it imposes no depth limit.
+objects for preview and inspector slots. The [documented CatalogWorkspace node bound](../../packages/designer/README.md#catalogworkspace)
+limits size; it imposes no depth limit.
