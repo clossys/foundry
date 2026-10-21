@@ -40,6 +40,13 @@ describe("ResourceList", () => {
     expect(screen.getAllByRole("button", { name: "Options for Quarterly planning notes" }).length).toBeGreaterThan(0);
   });
 
+  it("keeps both inline quiet actions transparent and borderless", () => {
+    render(<ResourceList {...base} />);
+    for (const name of ["Duplicate", "Delete note"]) {
+      expect(screen.getByRole("button", { name })).toHaveClass("border-0", "bg-transparent");
+    }
+  });
+
   it("R4 replaces the grid with hidden skeleton rows and a host loading announcement", () => {
     expect(() => render(<ResourceList {...base} isLoading />)).toThrow(TypeError);
     const { container } = render(<ResourceList {...base} isLoading loadingLabel="Fetching notes" loadingRowCount={3} />);

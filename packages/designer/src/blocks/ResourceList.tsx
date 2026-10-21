@@ -69,7 +69,7 @@ function ResourceListActions({ item, label }: { item: ResourceListItem; label: s
   return <div className="flex shrink-0 items-center gap-sm">
     <div className="hidden items-center gap-sm tablet:flex">
       {actions.slice(0, 2).map((action, index) => <span key={action.id} className="inline-flex">
-        <Button variant="quiet" size="sm" isDisabled={disabled(action)} onPress={action.onAction}
+        <Button variant="quiet" size="sm" className="border-0 bg-transparent" isDisabled={disabled(action)} onPress={action.onAction}
           aria-describedby={reasonId(action, index, "inline")}>{action.label}</Button>
         {reasonId(action, index, "inline") && <span id={reasonId(action, index, "inline")} className="sr-only">{action.disabledReason}</span>}
       </span>)}

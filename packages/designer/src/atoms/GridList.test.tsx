@@ -51,6 +51,30 @@ describe("GridList", () => {
     expect(screen.getByRole("row")).toHaveClass("bg-surface-selected");
   });
 
+  it("retains selected paint on hover and forced-colour focus before selection", async () => {
+    const user = userEvent.setup();
+    render(<GridList aria-label="Notes" selectionMode="multiple">
+      <GridList.Item id="one" textValue="Planning note">Planning note</GridList.Item>
+      <GridList.Item id="two" textValue="Research note">Research note</GridList.Item>
+    </GridList>);
+    const rows = screen.getAllByRole("row");
+    act(() => rows[0]!.focus());
+    await user.keyboard("{ArrowDown}");
+    expect(rows[1]).toHaveFocus();
+    expect(rows[1]).toHaveAttribute("aria-selected", "false");
+    expect(rows[1]).toHaveClass("forced-colors:outline-solid", "forced-colors:outline-2", "forced-colors:-outline-offset-2");
+    await user.hover(rows[1]!);
+    await user.keyboard(" ");
+    expect(rows[1]).toHaveAttribute("aria-selected", "true");
+    expect(rows[1]).toHaveClass("bg-surface-selected");
+    expect(rows[1]).not.toHaveClass("hover:bg-surface-sunken");
+    expect(rows[1]).toHaveClass("forced-colors:outline-2");
+    await user.keyboard("{ArrowUp}");
+    expect(rows[0]).toHaveFocus();
+    expect(rows[1]).toHaveClass("forced-colors:outline", "forced-colors:outline-solid");
+    expect(rows[1]).not.toHaveClass("forced-colors:outline-2");
+  });
+
   it("G5 uses only the supplied selection checkbox name", () => {
     expect(() => render(<GridList aria-label="Notes" selectionMode="multiple">
       <GridList.Item id="one" textValue="Planning note"><GridList.SelectionCheckbox {...{} as GridListSelectionCheckboxProps} />Planning note</GridList.Item>

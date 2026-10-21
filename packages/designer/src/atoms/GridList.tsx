@@ -76,9 +76,11 @@ function GridListItem({ className, render, ...rest }: GridListItemProps) {
       };
       return render ? render(adaptedProps, state) : <div {...adaptedProps} />;
     }}
-    className={({ isSelected }) => cx(
-      "flex min-w-0 items-center gap-md px-md py-sm border-b border-line-base last:border-b-0 hover:bg-surface-sunken outline-none",
-      isSelected ? "bg-surface-selected forced-colors:outline forced-colors:outline-solid" : "",
+    className={({ isSelected, isFocusVisible }) => cx(
+      "flex min-w-0 items-center gap-md px-md py-sm border-b border-line-base last:border-b-0 outline-none",
+      isSelected ? "bg-surface-selected" : "hover:bg-surface-sunken",
+      isSelected || isFocusVisible ? "forced-colors:outline forced-colors:outline-solid" : "",
+      isFocusVisible ? "forced-colors:outline-2 forced-colors:-outline-offset-2" : "",
       className,
     )}
     style={({ isDisabled, isFocusVisible }) => ({

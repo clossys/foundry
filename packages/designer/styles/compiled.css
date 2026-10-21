@@ -3620,6 +3620,13 @@
       outline-style: var(--tw-outline-style, solid);
       outline-width: 1px;
     }
+    .forced-colors\:outline-2 {
+      outline-style: var(--tw-outline-style, solid);
+      outline-width: 2px;
+    }
+    .forced-colors\:-outline-offset-2 {
+      outline-offset: calc(2px * -1);
+    }
     .forced-colors\:outline-current {
       outline-color: currentcolor;
     }
