@@ -1,3 +1,4 @@
+import { siteHeaderPresentation } from "../internal/viewChromeGround.js";
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { mergeUiClasses } from "@clossys/designer/atoms/server";
 import { Hero, SECTION_GROUND_CLASSES } from "@clossys/designer/blocks/server";
@@ -105,7 +106,7 @@ export function HeroView({
           {backdrop}
         </div>
       ) : null}
-      <SiteHeader ground={chromeGround} brand={brand} actions={headerAction} />
+      <SiteHeader {...siteHeaderPresentation(chromeGround)} brand={brand} actions={headerAction} />
       <main className="relative flex flex-1 flex-col items-center justify-center px-lg py-2xl">
         <Hero
           eyebrow={eyebrow}

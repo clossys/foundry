@@ -155,7 +155,7 @@ describe("BoundaryView", () => {
 
   it("passes ground to both the header and the footer", () => {
     const html = renderToStaticMarkup(<BoundaryView brand="Example Studio" status={500} title="Something went wrong" ground="transparent" />);
-    expect(html).toContain(renderToStaticMarkup(<SiteHeader ground="transparent" brand="Example Studio" />) + "<main");
+    expect(html).toContain(renderToStaticMarkup(<SiteHeader surface="transparent" brand="Example Studio" />) + "<main");
     expect(html).toContain("</main>" + renderToStaticMarkup(<SiteFooter ground="transparent" />) + "</div>");
   });
 

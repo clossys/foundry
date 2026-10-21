@@ -71,16 +71,18 @@ for (const mode of modes) describe(`frame parity controls: ${mode}`, () => {
     const direct = output(<Brandmark {...brand} {...options({ tone: "inverse" })} />, mode);
     expect(direct.querySelector("a")).toHaveClass("text-ink-on-inverse");
     for (const navPlacement of ["leading", "centered"] as const) {
-      const inherited = output(<SiteHeader placement="overlay" tone="inverse" navPlacement={navPlacement} brand={<Brandmark {...brand} />} />, mode);
+      const inherited = output(<SiteHeader surface="glass" tone="inverse" navPlacement={navPlacement} brand={<Brandmark {...brand} />} />, mode);
       expect(inherited.querySelector("a")).toHaveClass("text-inherit");
-      const overridden = output(<SiteHeader placement="overlay" tone="inverse" navPlacement={navPlacement} brand={<Brandmark {...brand} {...options({ tone: "auto" })} />} />, mode);
+      const overridden = output(<SiteHeader surface="glass" tone="inverse" navPlacement={navPlacement} brand={<Brandmark {...brand} {...options({ tone: "auto" })} />} />, mode);
       expect(overridden.querySelector("a")).toHaveClass("text-ink-primary");
     }
   });
 
-  it("keeps header tone ignored in flow placement", () => {
-    const original = output(<SiteHeader brand={<Brandmark {...brand} />} />, mode).innerHTML;
-    expect(output(<SiteHeader tone="inverse" brand={<Brandmark {...brand} />} />, mode).innerHTML).toBe(original);
+  it("applies header tone to the solid surface", () => {
+    const header = output(<SiteHeader tone="inverse" brand={<Brandmark {...brand} />} />, mode);
+    expect(header.querySelector("header")).toHaveAttribute("data-surface", "solid");
+    expect(header.querySelector("header")).toHaveClass("text-ink-on-inverse");
+    expect(header.querySelector("a")).toHaveClass("text-inherit");
   });
 
   it("uses inverse brand focus outline without a header", () => {

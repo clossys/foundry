@@ -42,7 +42,7 @@ const MOBILE_ACTION_INVERSE = "text-ink-on-inverse hover:text-ink-on-inverse foc
 const ENVIRONMENT_GHOST_CLASS = "site-header-environment-ghost";
 const ICON_LIST_CLASSES = "m-0 flex list-none flex-wrap items-center gap-sm p-0";
 
-function assertOverlayScene(children: ReactNode, headerPlacement: "reserved" | "overlay"): void {
+function assertOverlayScene(children: ReactNode, headerSurface: "solid" | "transparent" | "glass"): void {
   // Read these live bindings only at render time: the views barrel also exports
   // GlobalErrorDocument, which composes SiteFrame.
   const directLanding = isValidElement<LandingViewProps>(children)
@@ -50,7 +50,7 @@ function assertOverlayScene(children: ReactNode, headerPlacement: "reserved" | "
   if (directLanding) {
     const props = children.props;
     const sections = props.document?.sections;
-    if (headerPlacement === "overlay" && props.fit === "frame" && props.landmark === "none"
+    if (headerSurface === "glass" && props.fit === "frame" && props.landmark === "none"
       && (props.header === undefined || props.header === "overlay")
       && Array.isArray(sections) && sections.length === 1 && sections[0]?.kind === "hero" && sections[0].size !== "compact"
       && (props.trailing === undefined || (Array.isArray(props.trailing) && props.trailing.length === 0))
@@ -103,7 +103,7 @@ function LinkList({ links, className }: { readonly links: readonly ResolvedSiteL
 export function SiteFrame({ shell, presentation, resolveCopy, resolveAsset, children }: SiteFrameProps): ReactElement {
   const resolved = resolveShell(shell, resolveCopy, resolveAsset, presentation);
   const { brand, footer } = resolved;
-  if (footer?.placement === "overlay") assertOverlayScene(children, resolved.header.placement);
+  if (footer?.placement === "overlay") assertOverlayScene(children, resolved.header.surface);
 
   const brandmark =
     brand.wordmark === undefined ? (
@@ -113,13 +113,13 @@ export function SiteFrame({ shell, presentation, resolveCopy, resolveAsset, chil
     );
 
   const navigation = resolved.nav;
-  const nav = navigation ? <SiteNavDisclosure nav={navigation} actions={resolved.headerActions} surfaceLabel={resolved.surfaceLabel} /> : undefined;
+  const nav = navigation ? <SiteNavDisclosure nav={navigation} actions={resolved.headerActions} /> : undefined;
   const primary = resolved.headerActions.find(action => action.emphasis === "primary");
-  const inverseHeader = resolved.header.placement === "overlay" ? resolved.header.tone === "inverse" : resolved.header.ground === "inverse";
+  const inverseHeader = resolved.header.tone === "inverse";
   // Environment-only headers keep direct ghost icons; menu headers retain their mobile primary affordance.
   const actions = !navigation && resolved.environments.length > 0
     ? resolved.environments.map((environment, index) => <SiteHeader.ActionLink key={index} href={environment.href} label={environment.label} icon={environment.icon} isCurrent={environment.isCurrent} variant="ghost" className={inverseHeader ? `${ENVIRONMENT_GHOST_CLASS} ${MOBILE_ACTION_INVERSE}` : ENVIRONMENT_GHOST_CLASS} />)
-    : primary && resolved.navPlacement === "centered" && resolved.mobileLayout === "menu-brand-action" ? <SiteHeader.ActionLink data-header-primary="" href={primary.href} label={primary.label} icon={primary.icon} isCurrent={primary.isCurrent} variant="ghost" className={navigation?.tone === "inverse" ? MOBILE_ACTION_INVERSE : undefined} /> : undefined;
+    : primary ? <SiteHeader.ActionLink data-header-primary="" href={primary.href} label={primary.label} icon={primary.icon} isCurrent={primary.isCurrent} variant="ghost" className={inverseHeader ? MOBILE_ACTION_INVERSE : undefined} /> : undefined;
 
   const footerContent = footer ? (
     <SiteFooter
@@ -145,17 +145,15 @@ export function SiteFrame({ shell, presentation, resolveCopy, resolveAsset, chil
 
   return (
     <div data-frame-root="" className="flex min-h-dvh flex-col" {...(footer?.placement === "overlay" ? { style: { position: "relative" as const } } : {})}>
-      <SiteSkipLink targetId={SITE_MAIN_ID} label={resolved.skipLink} followHeaderGround={resolved.header.placement === "overlay"} />
+      <SiteSkipLink targetId={SITE_MAIN_ID} label={resolved.skipLink} followHeaderGround={resolved.header.surface === "glass"} />
       <SiteHeader
-        {...(resolved.header.placement === "overlay"
-          ? { placement: "overlay" as const, tone: resolved.header.tone, className: "site-header-ground-aware" }
-          : { ground: resolved.header.ground })}
+        surface={resolved.header.surface}
+        tone={resolved.header.tone}
+        className={resolved.header.surface === "glass" ? "site-header-ground-aware" : undefined}
         brand={brandmark}
         nav={nav}
         navPlacement={resolved.navPlacement}
-        mobileLayout={resolved.mobileLayout}
         actions={actions}
-        surfaceLabel={nav ? undefined : resolved.surfaceLabel}
       />
       <main id={SITE_MAIN_ID} tabIndex={-1} className="flex w-full flex-1 flex-col">
         {children}

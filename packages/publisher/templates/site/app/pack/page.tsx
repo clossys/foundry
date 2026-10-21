@@ -79,7 +79,6 @@ export default function PackReviewPage() {
   return (
     <PackReviewView
       brand={brand}
-      surfaceLabel={text.surfaceLabel}
       heading={text.heading}
       description={text.description}
       strategy={sections.strategy}

@@ -65,8 +65,7 @@ describe("SiteHeader", () => {
         navPlacement="centered"
         brand={<span>Acme</span>}
         nav={<nav aria-label="Primary">Links</nav>}
-        secondaryAction={<a href="/sign-in">Sign in</a>}
-        actions={<button type="button">Get started</button>}
+        actions={<><a href="/sign-in">Sign in</a><button type="button">Get started</button></>}
       />,
     );
     const row = screen.getByRole("banner").firstElementChild as HTMLElement;
@@ -90,8 +89,7 @@ describe("SiteHeader", () => {
         navPlacement="centered"
         brand={<span>Acme</span>}
         nav={<nav aria-label="Primary">Links</nav>}
-        secondaryAction={<a href="/sign-in">Sign in</a>}
-        actions={<button type="button">Get started</button>}
+        actions={<><a href="/sign-in">Sign in</a><button type="button">Get started</button></>}
       />,
     );
     expect(screen.getAllByRole("banner")).toHaveLength(1);
@@ -102,11 +100,9 @@ describe("SiteHeader", () => {
     render(
       <SiteHeader
         navPlacement="leading"
-        mobileLayout="inline"
         brand={<span>Acme</span>}
         nav={<nav aria-label="Primary">Links</nav>}
-        secondaryAction={<a href="/sign-in">Sign in</a>}
-        actions={<button type="button">Get started</button>}
+        actions={<><a href="/sign-in">Sign in</a><button type="button">Get started</button></>}
       />,
     );
     const row = screen.getByRole("banner").firstElementChild as HTMLElement;
@@ -114,61 +110,24 @@ describe("SiteHeader", () => {
     const nav = screen.getByRole("navigation", { name: "Primary" });
     const secondary = screen.getByRole("link", { name: "Sign in" });
     const primary = screen.getByRole("button", { name: "Get started" });
-    expect(brand.parentElement).toBe(nav.parentElement);
-    expect(row.className).toContain("justify-between");
+    expect(brand.parentElement?.parentElement).toBe(nav.parentElement);
+    expect(screen.getByRole("banner")).toHaveClass("site-header-leading");
     expect(secondary.nextElementSibling).toBe(primary);
   });
 
-  describe("surface badge placement", () => {
-    it.each(["leading", "centered"] as const)(
-      "renders the surface label as the last trailing item with navPlacement=%s",
-      (navPlacement) => {
-        render(
-          <SiteHeader
-            navPlacement={navPlacement}
-            brand={<span>Acme</span>}
-            nav={<nav aria-label="Primary">Links</nav>}
-            secondaryAction={<a href="/sign-in">Sign in</a>}
-            actions={<button type="button">Get started</button>}
-            surfaceLabel="admin"
-          />,
-        );
-        const badge = screen.getByText("admin");
-        const trailing = badge.parentElement as HTMLElement;
-        expect(trailing).toContainElement(screen.getByRole("button", { name: "Get started" }));
-        expect(trailing.lastElementChild).toBe(badge);
-        expect(badge.tagName).toBe("SPAN");
-        expect(badge.className).toContain("bg-surface-sunken");
-        expect(badge).not.toHaveAttribute("href");
-        expect(badge).not.toHaveAttribute("tabindex");
-      },
-    );
+  it("keeps the trailing region empty when actions are omitted", () => {
+    render(<SiteHeader brand={<span>Acme</span>} />);
+    const row = screen.getByRole("banner").firstElementChild!;
+    expect(row.children).toHaveLength(2);
+    expect(row.lastElementChild!.children).toHaveLength(0);
+    expect(screen.getByRole("banner")).not.toHaveTextContent("admin");
   });
 
-  describe("badge alone", () => {
-    it("retains a structural trailing region when only a surface label is given", () => {
-      render(<SiteHeader brand={<span>Acme</span>} surfaceLabel="demo" />);
-      const row = screen.getByRole("banner").firstElementChild as HTMLElement;
-      expect(row.children).toHaveLength(2);
-      const trailing = row.lastElementChild as HTMLElement;
-      expect(trailing).toHaveTextContent("demo");
-      expect(trailing.children).toHaveLength(1);
-    });
-
-    it("keeps empty equal tracks noninteractive without a surface label", () => {
-      render(<SiteHeader brand={<span>Acme</span>} />);
-      const row = screen.getByRole("banner").firstElementChild as HTMLElement;
-      expect(row.children).toHaveLength(2);
-      expect(row.lastElementChild!.children).toHaveLength(0);
-      expect(screen.getByRole("banner")).not.toHaveTextContent("admin");
-    });
-  });
-
-  describe("placement", () => {
+  describe("surface", () => {
     it("documents an inverse overlay whose children inherit the gated ink", () => {
       const readme = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "..", "..", "README.md"), "utf8");
       const blocks = [...readme.matchAll(/```tsx\n([\s\S]*?)```/g)].map((match) => match[1] ?? "");
-      const example = blocks.find((block) => block.includes('placement="overlay"') && block.includes('tone="inverse"'));
+      const example = blocks.find((block) => block.includes('surface="glass"') && block.includes('tone="inverse"'));
       expect(example).toBeDefined();
       // tone sets inherited ink only: no child in the example may set its own.
       expect(example).not.toMatch(/<Link\b|<Brandmark\b|ActionLink|text-ink-/);
@@ -178,7 +137,7 @@ describe("SiteHeader", () => {
       // ...so every child reads in the header's own ink, which the gate checks over the inverse glass.
       const { container } = render(
         <SiteHeader
-          placement="overlay"
+          surface="glass"
           tone="inverse"
           brand={<a href="/" className="text-inherit">Acme</a>}
           actions={<a href="/sign-in" className="text-inherit">Sign in</a>}
@@ -190,20 +149,22 @@ describe("SiteHeader", () => {
       expect(new Set(gated)).toEqual(new Set(["--color-ink-on-inverse"]));
     });
 
-    const FLOW_MARKUP = renderToStaticMarkup(<SiteHeader brand={<span>Acme</span>} navPlacement="centered" mobileLayout="menu-brand-action" placement="flow" />);
+    const FLOW_MARKUP = renderToStaticMarkup(<SiteHeader brand={<span>Acme</span>} navPlacement="centered" surface="solid" />);
 
-    it("defaults to flow, byte-identical to a header given no placement, tone or menu props", () => {
+    it("defaults to solid, byte-identical to the explicit default surface", () => {
       const html = renderToStaticMarkup(<SiteHeader brand={<span>Acme</span>} />);
       expect(html).toBe(FLOW_MARKUP);
-      expect(renderToStaticMarkup(<SiteHeader brand={<span>Acme</span>} placement="flow" />)).toBe(FLOW_MARKUP);
+      expect(renderToStaticMarkup(<SiteHeader brand={<span>Acme</span>} surface="solid" />)).toBe(FLOW_MARKUP);
     });
 
-    it("ignores tone and menuOpen in flow", () => {
-      expect(renderToStaticMarkup(<SiteHeader brand={<span>Acme</span>} tone="inverse" menuOpen />)).toBe(FLOW_MARKUP);
+    it("applies inverse tone to the solid surface", () => {
+      render(<SiteHeader brand={<span>Acme</span>} tone="inverse" menuOpen />);
+      expect(screen.getByRole("banner")).toHaveAttribute("data-tone", "inverse");
+      expect(screen.getByRole("banner")).toHaveClass("bg-surface-inverse", "text-ink-on-inverse");
     });
 
     it("overlay fixes the header to the top of the viewport, out of flow, over the shell z-index", () => {
-      render(<SiteHeader brand={<span>Acme</span>} placement="overlay" />);
+      render(<SiteHeader brand={<span>Acme</span>} surface="glass" />);
       const banner = screen.getByRole("banner");
       expect(banner.style.position).toBe("fixed");
       expect(banner.style.insetBlockStart).toBe("0");
@@ -213,17 +174,18 @@ describe("SiteHeader", () => {
     });
 
     it("overlay paints through the site-header-overlay utility, with no ground plate or border classes", () => {
-      render(<SiteHeader brand={<span>Acme</span>} placement="overlay" ground="inverse" />);
+      render(<SiteHeader brand={<span>Acme</span>} surface="glass" />);
       const classes = screen.getByRole("banner").className.split(" ");
-      expect(classes).toEqual(["site-header-overlay", "text-ink-primary", "py-sm", "site-header-contract"]);
+      expect(classes).toEqual(expect.arrayContaining(["site-header-overlay", "site-header-ink", "text-ink-primary", "py-sm", "site-header-contract"]));
+      expect(classes).not.toEqual(expect.arrayContaining(["bg-surface-raised", "border-b"]));
       expect(screen.getByRole("banner").style.borderBottomWidth).toBe("");
     });
 
     it("overlay tone sets the ink and data-tone, defaulting to base", () => {
-      const { unmount } = render(<SiteHeader brand={<span>Acme</span>} placement="overlay" />);
+      const { unmount } = render(<SiteHeader brand={<span>Acme</span>} surface="glass" />);
       expect(screen.getByRole("banner")).toHaveAttribute("data-tone", "base");
       unmount();
-      render(<SiteHeader brand={<span>Acme</span>} placement="overlay" tone="inverse" />);
+      render(<SiteHeader brand={<span>Acme</span>} surface="glass" tone="inverse" />);
       const banner = screen.getByRole("banner");
       expect(banner).toHaveAttribute("data-tone", "inverse");
       expect(banner.className).toContain("text-ink-on-inverse");
@@ -231,21 +193,21 @@ describe("SiteHeader", () => {
     });
 
     it("overlay renders data-menu-open only while menuOpen is set", () => {
-      const { unmount } = render(<SiteHeader brand={<span>Acme</span>} placement="overlay" />);
+      const { unmount } = render(<SiteHeader brand={<span>Acme</span>} surface="glass" />);
       expect(screen.getByRole("banner")).not.toHaveAttribute("data-menu-open");
       unmount();
-      render(<SiteHeader brand={<span>Acme</span>} placement="overlay" menuOpen />);
+      render(<SiteHeader brand={<span>Acme</span>} surface="glass" menuOpen />);
       expect(screen.getByRole("banner")).toHaveAttribute("data-menu-open", "");
     });
 
     it("overlay keeps the caller's className and style, and renders on the server entry", () => {
       const html = renderToStaticMarkup(
-        <ServerSiteHeader brand={<span>Acme</span>} placement="overlay" className="my-header" style={{ zIndex: 5 }} />,
+        <ServerSiteHeader brand={<span>Acme</span>} surface="glass" className="my-header" style={{ zIndex: 5 }} />,
       );
-      expect(html).toContain('class="site-header-overlay text-ink-primary py-sm site-header-contract my-header"');
+      expect(html).toMatch(/class="[^"]*site-header-overlay[^"]*my-header"/);
       expect(html).toContain("position:fixed");
       expect(html).toContain("z-index:5");
-      expect(html).toContain('data-placement="overlay"');
+      expect(html).toContain('data-surface="glass"');
     });
   });
 

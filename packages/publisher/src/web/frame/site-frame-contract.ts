@@ -31,16 +31,14 @@ export const SITE_FRAME_CONFIG_SCHEMA = Object.freeze({
   footerGround: Object.freeze({ values: SITE_CHROME_GROUNDS, default: "base" as const }),
   footerPlacement: Object.freeze({ values: Object.freeze(["flow", "overlay"] as const), default: "flow" as const }),
   footerRule: Object.freeze({ values: Object.freeze(["none", "top"] as const), default: "none" as const }),
-  headerGround: Object.freeze({ values: SITE_CHROME_GROUNDS, default: "base" as const }),
-  headerPlacement: Object.freeze({ values: Object.freeze(["reserved", "overlay"] as const), default: "overlay" as const }),
+  headerSurface: Object.freeze({ values: Object.freeze(["solid", "transparent", "glass"] as const), default: "solid" as const }),
   headerTone: Object.freeze({ values: Object.freeze(["base", "inverse"] as const), default: "base" as const }),
 });
 export interface SiteFramePresentationConfig {
   readonly footerGround?: typeof SITE_FRAME_CONFIG_SCHEMA.footerGround.values[number];
   readonly footerPlacement?: typeof SITE_FRAME_CONFIG_SCHEMA.footerPlacement.values[number];
   readonly footerRule?: typeof SITE_FRAME_CONFIG_SCHEMA.footerRule.values[number];
-  readonly headerGround?: typeof SITE_FRAME_CONFIG_SCHEMA.headerGround.values[number];
-  readonly headerPlacement?: typeof SITE_FRAME_CONFIG_SCHEMA.headerPlacement.values[number];
+  readonly headerSurface?: typeof SITE_FRAME_CONFIG_SCHEMA.headerSurface.values[number];
   readonly headerTone?: typeof SITE_FRAME_CONFIG_SCHEMA.headerTone.values[number];
 }
 /** Reject unknown fields and incompatible dependent inputs; output keys remain flat primitive values. */
@@ -61,7 +59,6 @@ export function normalizeSiteFrameConfig(input: unknown = {}, inherited?: SiteFr
   // Explicit header inputs retain their independent defaults; footer-only inputs inherit the shell header.
   const explicitHeader = Object.keys(fields).some(key => key.startsWith("header"));
   const result = Object.fromEntries(Object.entries(SITE_FRAME_CONFIG_SCHEMA).map(([key, field]) => [key, fields[key] ?? (explicitHeader && key.startsWith("header") ? undefined : defaults?.[key as keyof SiteFramePresentationConfig]) ?? field.default])) as Required<SiteFramePresentationConfig>;
-  if (result.headerPlacement === "overlay" ? result.headerGround !== "base" : result.headerTone !== "base") fail();
   if (result.footerPlacement === "overlay" && result.footerGround === "transparent") fail();
   return Object.freeze(result);
   } catch { return fail(); }
@@ -78,15 +75,15 @@ function freeze<T>(value: T): T {
 export const SITE_FRAME_NAV_DEFAULTS = Object.freeze({
   label: Object.freeze({ id: "site-frame.nav.label" }),
   triggerLabel: Object.freeze({ id: "site-frame.nav.trigger-label" }),
-  trigger: "label" as const,
+  trigger: "icon" as const,
 });
 /**
  * Composition references identify exports; they confer no qualification.
- * Revision 3 uses current-only auth environments and direct ghost links for environment-only headers.
+ * Revision 4 uses one header surface and one ordered actions list; environment-only headers retain direct ghost links.
  * Pack owns route placement and Instance pairs Frame with View.
  */
 export const SITE_FRAME_CONTRACT = freeze({
-  identity: "site-frame", role: "frame", revision: 3, medium: "web",
+  identity: "site-frame", role: "frame", revision: 4, medium: "web",
   use: ["persistent public-site chrome surrounding one chrome-free View"],
   avoid: ["route placement", "document bootstrap", "content sections", "application navigation focus bridge"],
   config: SITE_FRAME_CONFIG_SCHEMA,
@@ -97,12 +94,13 @@ export const SITE_FRAME_CONTRACT = freeze({
   defaults: SITE_FRAME_NAV_DEFAULTS,
   required: ["sticky-header", "dark-footer", "accessible-navigation", "document-scroll", "sole-main"],
   constituents: {
-    Header: { owner: "@clossys/designer", subpath: "shell/server", export: "SiteHeader", config: ["headerGround", "headerPlacement", "headerTone"] },
+    Header: { owner: "@clossys/designer", subpath: "shell/server", export: "SiteHeader", config: ["headerSurface", "headerTone"] },
     Footer: { owner: "@clossys/designer", subpath: "shell/server", export: "SiteFooter", config: ["footerGround", "footerPlacement", "footerRule"], content: ["columns", "links", "social", "legal"], required: ["dark-in-both-themes", "centered-links", "home-inline-end", "mobile-links-icons-copyright", "named-icons", "external-rel", "safe-area", "44px-targets", "privacy-link-only"], constraints: { links: FOOTER_LINK_LIMIT, linksLayout: "one flat row of shell.footer.links then shell.footer.legal.links", grouping: "shell.footer.columns: labelled columns for links beyond the flat row", icons: FOOTER_ICON_LIMIT, brandMark: "shell.brand, always the last icon slot", excludes: ["home", "header-navigation", "privacy-choices"], error: "SiteFooterContractError", accessibility: "mandatory" } },
   },
 } as const);
 
 type HeaderVariant = typeof HEADER_ACTION_VARIANTS[number];
+const actionImportance = (variant: HeaderVariant) => variant === "primary" ? 2 : variant === "ghost" ? 0 : 1;
 /** Resolved content: URLs/copy and SVG allowlist validation belong to resolveShell, before variant normalization. */
 export interface ResolvedSiteFrameAction { readonly label: string; readonly href: string; readonly emphasis?: HeaderVariant; readonly icon?: IconNode }
 /** Normalize already validated resolved content; enforce nonblank labels and the primary icon dependency here too. */
@@ -119,5 +117,5 @@ export function normalizeSiteFrameActions<T extends ResolvedSiteFrameAction>(inp
     if (typeof action.label !== "string" || !action.label.trim()) throw new Error("SiteFrame: action requires a nonempty resolved label.");
     if (emphasis === "primary" && (!Array.isArray(action.icon) || action.icon.length === 0)) throw new Error("SiteFrame: primary action requires a supplied icon and label.");
     return Object.freeze({ ...action, emphasis });
-  }));
+  }).sort((a, b) => actionImportance(a.emphasis) - actionImportance(b.emphasis)));
 }

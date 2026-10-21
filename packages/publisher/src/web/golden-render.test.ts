@@ -32,6 +32,15 @@ import type { SectionedViewContentBlock, SectionedViewContentSection, SectionedV
 import { renderWebDocument } from "./renderWebDocument.js";
 import { SectionedView as ServerSectionedView } from "./views/SectionedView.server.js";
 
+// Pin the complete new Header opening before projecting only that changed tag.
+// Every other byte remains compared against the original full-page golden.
+const LEGACY_HEADER_OPENING = '<header data-header-root="" class="bg-surface-raised py-sm border-b border-line-base site-header-contract" style="position:relative;z-index:var(--ui-z-shell, 20);border-bottom-width:var(--ui-border-hairline, 1px)">';
+const SOLID_HEADER_OPENING = '<header data-header-root="" data-surface="solid" data-tone="base" class="site-header-contract site-header-ink py-sm text-ink-primary bg-surface-raised border-b border-line-base" style="position:relative;z-index:var(--ui-z-shell, 20);border-bottom-width:var(--ui-border-hairline, 1px)">';
+function projectLegacyHeaderOpening(html: string): string {
+  expect(html.match(/<header\b[^>]*>/)?.[0]).toBe(SOLID_HEADER_OPENING);
+  return html.replace(/<header\b[^>]*>/, LEGACY_HEADER_OPENING);
+}
+
 describe("golden: ErrorView", () => {
   const doc: ComposeDocument = {
     id: "acme-404",
@@ -112,7 +121,7 @@ describe("golden: AuthView", () => {
     });
     const html = renderToStaticMarkup(element);
 
-    expect(html).toBe(
+    expect(projectLegacyHeaderOpening(html)).toBe(
       '<div class="flex min-h-dvh flex-col">' +
         '<header data-header-root="" class="bg-surface-raised py-sm border-b border-line-base site-header-contract" style="position:relative;z-index:var(--ui-z-shell, 20);border-bottom-width:var(--ui-border-hairline, 1px)">' +
         '<div class="site-header-row">' +
@@ -151,7 +160,7 @@ describe("golden: assetId — a real <img>, byte for byte, alt text and intrinsi
     });
     const html = renderToStaticMarkup(element);
 
-    expect(html).toBe(
+    expect(projectLegacyHeaderOpening(html)).toBe(
       '<link rel="preload" as="image" href="https://cdn.example/logo.svg"/>' +
         '<div class="flex min-h-dvh flex-col">' +
         '<header data-header-root="" class="bg-surface-raised py-sm border-b border-line-base site-header-contract" style="position:relative;z-index:var(--ui-z-shell, 20);border-bottom-width:var(--ui-border-hairline, 1px)">' +
@@ -323,7 +332,7 @@ describe("golden: MarketingView", () => {
     });
     const html = renderToStaticMarkup(element);
 
-    expect(html).toBe(
+    expect(projectLegacyHeaderOpening(html)).toBe(
       '<div class="flex min-h-dvh flex-col">' +
         '<header data-header-root="" class="bg-surface-raised py-sm border-b border-line-base site-header-contract" style="position:relative;z-index:var(--ui-z-shell, 20);border-bottom-width:var(--ui-border-hairline, 1px)">' +
         '<div class="site-header-row">' +
@@ -417,7 +426,7 @@ describe("golden: MarketingView", () => {
     const { element } = renderWebDocument(doc, { groups: [{ slot: "features", items: [] }] });
     const html = renderToStaticMarkup(element);
 
-    expect(html).toBe(
+    expect(projectLegacyHeaderOpening(html)).toBe(
       '<div class="flex min-h-dvh flex-col">' +
         '<header data-header-root="" class="bg-surface-raised py-sm border-b border-line-base site-header-contract" style="position:relative;z-index:var(--ui-z-shell, 20);border-bottom-width:var(--ui-border-hairline, 1px)">' +
         '<div class="site-header-row">' +
