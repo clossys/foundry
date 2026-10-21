@@ -116,6 +116,18 @@ describe("Chat", () => {
     expect(view.container).toHaveTextContent("[empty]()");
   });
 
+  it.each([
+    { name: "single backtick", content: "`", text: "`", code: [] },
+    { name: "double backtick", content: "``", text: "``", code: [] },
+    { name: "trailing unmatched backtick", content: "literal`", text: "literal`", code: [] },
+    { name: "code followed by one unmatched backtick", content: "`valid``", text: "valid`", code: ["valid"] },
+    { name: "code followed by two unmatched backticks", content: "`valid```", text: "valid``", code: ["valid"] },
+  ])("review-c: preserves $name as scanner-classified text (mutant: inferred code delimiters)", ({ content, text, code }) => {
+    const view = render(defaultContent(content));
+    expect(view.container.textContent).toBe(text);
+    expect(Array.from(view.container.querySelectorAll("code"), element => element.textContent)).toEqual(code);
+  });
+
   it("d: optional message actions use named icon controls and focus tooltips (mutant: actions omitted)", async () => {
     const onCopy = vi.fn(), onRegenerate = vi.fn(), onFeedback = vi.fn();
     const view = render(<Chat {...defaults} />);

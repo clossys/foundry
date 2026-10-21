@@ -3,8 +3,10 @@ import { Button } from "../../atoms/Button.js";
 import { Link } from "../../atoms/Link.js";
 import type { ChatLabels } from "./types.js";
 
+interface InlinePart { text: string; isCode: boolean }
+
 /** Index each possible ending once, so malformed starts never rescan a suffix. */
-function inlineParts(text: string): string[] {
+function inlineParts(text: string): InlinePart[] {
   const length = text.length;
   const bracket = new Uint32Array(length + 1);
   const tick = new Uint32Array(length + 1);
@@ -23,7 +25,7 @@ function inlineParts(text: string): string[] {
     tick[index] = nextTick;
     urlBoundary[index] = nextBoundary;
   }
-  const parts: string[] = [];
+  const parts: InlinePart[] = [];
   let plainStart = 0, index = 0;
   while (index < length) {
     let end = index;
@@ -39,18 +41,18 @@ function inlineParts(text: string): string[] {
       }
     }
     if (end > index) {
-      parts.push(text.slice(plainStart, index), text.slice(index, end));
+      parts.push({ text: text.slice(plainStart, index), isCode: false }, { text: text.slice(index, end), isCode: text[index] === "`" });
       plainStart = index = end;
     } else index++;
   }
-  parts.push(text.slice(plainStart));
+  parts.push({ text: text.slice(plainStart), isCode: false });
   return parts;
 }
 
 /** Deliberately small text syntax; HTML stays React-escaped text. */
 function inline(text: string): ReactNode[] {
-  return inlineParts(text).map((part, index) => {
-    if (part.startsWith("`") && part.endsWith("`")) {
+  return inlineParts(text).map(({ text: part, isCode }, index) => {
+    if (isCode) {
       return <code key={index} className="rounded-subtle bg-surface-sunken px-xs font-mono text-body-s">{part.slice(1, -1)}</code>;
     }
     const link = /^\[([^\]]+)\]\(([^\s)]+)\)$/.exec(part);
