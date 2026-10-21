@@ -255,7 +255,7 @@ smallest stable subpath that owns what you need:
 
 ### Token details and selection
 
-The flat `TOKENS` registry has 188 stable property identities across brand
+The flat `TOKENS` registry has 217 stable property identities across brand
 and supported theme overlays, with zero per-token configuration. Use the
 property-keyed `TOKEN_GUIDANCE` for purpose, appropriate use, misuse or an
 alternative, the consuming CSS application and its context, and a contextual
@@ -7887,13 +7887,13 @@ static equivalent"). Breakpoint copy props are `thresholdLabel` ("Threshold"),
 `matchLabel` ("Match"), `unavailableMessage` ("unavailable"), `matchesMessage`
 ("yes") and `notMatchesMessage` ("no").
 
-All 188 properties support their authored applications across 19 kinds. The 170
+All 217 properties support their authored applications across 19 kinds. The 193
 static specimens cover surface, text, border, control, status, chart, font,
 space, size, icon, brandmark, radius, shadow, blur, ring, layer and opacity.
 Patterns expose translucent applications; inverse foregrounds receive an inverse
 backing. No override is claimed as measured.
 
-The 12 motion properties show their authored duration or easing and replay a
+The 18 motion properties show their authored duration or easing and replay a
 small transition when Replay is activated. Reduced-motion preferences show the
 same authored information as a static equivalent, with no transition. The six
 breakpoint properties show their resolved threshold and current media-query

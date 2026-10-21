@@ -1289,7 +1289,7 @@ export const TOKEN_GUIDANCE: Readonly<Record<string, TokenGuidance>> = {
   },
   "--ui-z-tooltip": {
     purpose: "The tooltip layer establishes the shared stacking role for the highest shared explanatory or access layer.",
-    use: "Use z-tooltip for supported tooltips or the keyboard skip-link plane that must remain exposed, within the intended stacking context.",
+    use: "Use z-tooltip for supported tooltips within the intended stacking context; focused skip links use their dedicated layer.",
     misuse: "Do not treat z-tooltip as an excuse to place all content above modals or escape clipping ancestors.",
     application: {"cssProperty": "z-index", "valueType": "number", "context": "The tooltip z-index role on positioned or otherwise stackable content; ancestor contexts still bound it."},
     specimen: "layer",
@@ -1350,6 +1350,325 @@ export const TOKEN_GUIDANCE: Readonly<Record<string, TokenGuidance>> = {
     application: {"cssProperty": "opacity", "valueType": "number", "context": "Opacity of disabled control presentation; alpha is an effect, not a color-family leaf."},
     specimen: "opacity",
   },
+  "--ui-control-h-sm": {
+      "purpose": "Small control height names the shared --ui-control-h-sm role.",
+      "use": "Use this visual height with a separate 44px hit region.",
+      "misuse": "Do not shrink the interactive target to the visual height.",
+      "application": {
+          "cssProperty": "min-block-size",
+          "valueType": "length",
+          "context": "Small control height; apply the token to min-block-size within its stated semantic scope."
+      },
+      "specimen": "size"
+  },
+  "--ui-control-h-md": {
+      "purpose": "Default control height names the shared --ui-control-h-md role.",
+      "use": "Use the default control height to meet the shared touch target.",
+      "misuse": "Do not detach the default height from the tap-target role.",
+      "application": {
+          "cssProperty": "min-block-size",
+          "valueType": "length",
+          "context": "Default control height; apply the token to min-block-size within its stated semantic scope."
+      },
+      "specimen": "size"
+  },
+  "--ui-control-h-lg": {
+      "purpose": "Large control height names the shared --ui-control-h-lg role.",
+      "use": "Use the large height for an intentionally prominent control.",
+      "misuse": "Do not enlarge every control without a hierarchy decision.",
+      "application": {
+          "cssProperty": "min-block-size",
+          "valueType": "length",
+          "context": "Large control height; apply the token to min-block-size within its stated semantic scope."
+      },
+      "specimen": "size"
+  },
+  "--ui-control-row-h": {
+      "purpose": "Control option row height names the shared --ui-control-row-h role.",
+      "use": "Use this visual row height with the coarse-pointer target override.",
+      "misuse": "Do not retain compact row geometry for coarse pointer input.",
+      "application": {
+          "cssProperty": "min-block-size",
+          "valueType": "length",
+          "context": "Control option row height; apply the token to min-block-size within its stated semantic scope."
+      },
+      "specimen": "size"
+  },
+  "--ui-control-mark": {
+      "purpose": "Control mark geometry names the shared --ui-control-mark role.",
+      "use": "Use the mark measure for checkbox or radio visual boxes.",
+      "misuse": "Do not mistake the mark box for the full interactive target.",
+      "application": {
+          "cssProperty": "inline-size",
+          "valueType": "length",
+          "context": "Control mark geometry; apply the token to inline-size within its stated semantic scope."
+      },
+      "specimen": "size"
+  },
+  "--ui-control-switch-w": {
+      "purpose": "Switch track width names the shared --ui-control-switch-w role.",
+      "use": "Use this width for the normal switch track.",
+      "misuse": "Do not use track width as the switch thumb diameter.",
+      "application": {
+          "cssProperty": "inline-size",
+          "valueType": "length",
+          "context": "Switch track width; apply the token to inline-size within its stated semantic scope."
+      },
+      "specimen": "size"
+  },
+  "--ui-control-switch-h": {
+      "purpose": "Switch track height names the shared --ui-control-switch-h role.",
+      "use": "Use this height alongside the switch track width.",
+      "misuse": "Do not infer switch height from the control height scale.",
+      "application": {
+          "cssProperty": "block-size",
+          "valueType": "length",
+          "context": "Switch track height; apply the token to block-size within its stated semantic scope."
+      },
+      "specimen": "size"
+  },
+  "--ui-control-switch-thumb": {
+      "purpose": "Switch thumb geometry names the shared --ui-control-switch-thumb role.",
+      "use": "Use the thumb measure inside its track.",
+      "misuse": "Do not enlarge the thumb by changing the track width token.",
+      "application": {
+          "cssProperty": "inline-size",
+          "valueType": "length",
+          "context": "Switch thumb geometry; apply the token to inline-size within its stated semantic scope."
+      },
+      "specimen": "size"
+  },
+  "--ui-border-focus": {
+      "purpose": "Focus outline width names the shared --ui-border-focus role.",
+      "use": "Use this width for the outline that identifies keyboard focus.",
+      "misuse": "Do not use a decorative hairline as the focus indicator.",
+      "application": {
+          "cssProperty": "border-width",
+          "valueType": "length",
+          "context": "Focus outline width; apply the token to border-width within its stated semantic scope."
+      },
+      "specimen": "border"
+  },
+  "--ui-focus-offset": {
+      "purpose": "Focus outline separation names the shared --ui-focus-offset role.",
+      "use": "Use this offset to separate an outside focus ring from its control.",
+      "misuse": "Do not remove the offset without an inset focus treatment.",
+      "application": {
+          "cssProperty": "outline-offset",
+          "valueType": "length",
+          "context": "Focus outline separation; apply the token to outline-offset within its stated semantic scope."
+      },
+      "specimen": "ring"
+  },
+  "--color-focus-ring": {
+      "purpose": "Focus ink on normal grounds names the shared --color-focus-ring role.",
+      "use": "Use this focus ink on base, raised, sunken and overlay grounds.",
+      "misuse": "Do not apply normal focus ink to an inverse ground without checking contrast.",
+      "application": {
+          "cssProperty": "outline-color",
+          "valueType": "color",
+          "context": "Focus ink on normal grounds; apply the token to outline-color within its stated semantic scope."
+      },
+      "specimen": "ring"
+  },
+  "--color-focus-ring-on-inverse": {
+      "purpose": "Focus ink on inverse grounds names the shared --color-focus-ring-on-inverse role.",
+      "use": "Use this ink for a keyboard focus outline on inverse surfaces.",
+      "misuse": "Do not replace inverse focus ink with normal primary ink.",
+      "application": {
+          "cssProperty": "outline-color",
+          "valueType": "color",
+          "context": "Focus ink on inverse grounds; apply the token to outline-color within its stated semantic scope."
+      },
+      "specimen": "ring"
+  },
+  "--ui-z-skip-link": {
+      "purpose": "Focused skip-link layer names the shared --ui-z-skip-link role.",
+      "use": "Use this layer so a focused skip link remains above progress and overlays.",
+      "misuse": "Do not borrow the tooltip layer for keyboard skip navigation.",
+      "application": {
+          "cssProperty": "z-index",
+          "valueType": "number",
+          "context": "Focused skip-link layer; apply the token to z-index within its stated semantic scope."
+      },
+      "specimen": "layer"
+  },
+  "--ui-motion-shift": {
+      "purpose": "Overlay motion distance names the shared --ui-motion-shift role.",
+      "use": "Use this distance for a small enter or exit translation.",
+      "misuse": "Do not use motion distance as page padding or replace it with a duration.",
+      "application": {
+          "cssProperty": "translate",
+          "valueType": "length",
+          "context": "Overlay motion distance; apply the token to translate within its stated semantic scope."
+      },
+      "specimen": "space"
+  },
+  "--ui-radius-overlay": {
+      "purpose": "Overlay corner shape names the shared --ui-radius-overlay role.",
+      "use": "Use this alias for the supported floating overlay corner role.",
+      "misuse": "Do not invent a second control-radius primitive for overlays.",
+      "application": {
+          "cssProperty": "border-radius",
+          "valueType": "length",
+          "context": "Overlay corner shape; apply the token to border-radius within its stated semantic scope."
+      },
+      "specimen": "radius"
+  },
+  "--ui-state-hover-alpha": {
+      "purpose": "Hover state-layer opacity names the shared --ui-state-hover-alpha role.",
+      "use": "Use this alpha for a separate hover feedback layer.",
+      "misuse": "Do not dim content text with the hover layer alpha.",
+      "application": {
+          "cssProperty": "opacity",
+          "valueType": "number",
+          "context": "Hover state-layer opacity; apply the token to opacity within its stated semantic scope."
+      },
+      "specimen": "opacity"
+  },
+  "--ui-state-pressed-alpha": {
+      "purpose": "Pressed state-layer opacity names the shared --ui-state-pressed-alpha role.",
+      "use": "Use this alpha for a separate pressed feedback layer.",
+      "misuse": "Do not use the pressed alpha as disabled semantics.",
+      "application": {
+          "cssProperty": "opacity",
+          "valueType": "number",
+          "context": "Pressed state-layer opacity; apply the token to opacity within its stated semantic scope."
+      },
+      "specimen": "opacity"
+  },
+  "--ui-duration-loading-delay": {
+      "purpose": "Loading reveal delay names the shared --ui-duration-loading-delay role.",
+      "use": "Wait this interval before revealing loading feedback.",
+      "misuse": "Do not show a loading indicator immediately for sub-delay work.",
+      "application": {
+          "cssProperty": "transition-duration",
+          "valueType": "duration",
+          "context": "Loading reveal delay; apply the token to transition-duration within its stated semantic scope."
+      },
+      "specimen": "motion"
+  },
+  "--ui-duration-loading-min": {
+      "purpose": "Minimum loading visibility names the shared --ui-duration-loading-min role.",
+      "use": "Keep revealed loading feedback visible for this minimum interval.",
+      "misuse": "Do not restart work to satisfy the feedback visibility interval.",
+      "application": {
+          "cssProperty": "transition-duration",
+          "valueType": "duration",
+          "context": "Minimum loading visibility; apply the token to transition-duration within its stated semantic scope."
+      },
+      "specimen": "motion"
+  },
+  "--ui-duration-loading-long": {
+      "purpose": "Long-running loading threshold names the shared --ui-duration-loading-long role.",
+      "use": "Use this threshold for extended-progress explanation and cancellation.",
+      "misuse": "Do not use the long threshold as a network timeout.",
+      "application": {
+          "cssProperty": "transition-duration",
+          "valueType": "duration",
+          "context": "Long-running loading threshold; apply the token to transition-duration within its stated semantic scope."
+      },
+      "specimen": "motion"
+  },
+  "--ui-z-progress": {
+      "purpose": "Navigation progress layer names the shared --ui-z-progress role.",
+      "use": "Use this layer for pointer-transparent progress above overlays.",
+      "misuse": "Do not let progress intercept input or cover a focused skip link.",
+      "application": {
+          "cssProperty": "z-index",
+          "valueType": "number",
+          "context": "Navigation progress layer; apply the token to z-index within its stated semantic scope."
+      },
+      "specimen": "layer"
+  },
+  "--ui-alpha-stale": {
+      "purpose": "Stale content opacity names the shared --ui-alpha-stale role.",
+      "use": "Use this alpha while retaining content during a refresh.",
+      "misuse": "Do not describe stale content as disabled merely because it is dimmed.",
+      "application": {
+          "cssProperty": "opacity",
+          "valueType": "number",
+          "context": "Stale content opacity; apply the token to opacity within its stated semantic scope."
+      },
+      "specimen": "opacity"
+  },
+  "--ui-duration-tooltip-delay": {
+      "purpose": "Tooltip open delay names the shared --ui-duration-tooltip-delay role.",
+      "use": "Use this interval before opening explanatory hover content.",
+      "misuse": "Do not delay a keyboard accessible name with a tooltip timer.",
+      "application": {
+          "cssProperty": "transition-duration",
+          "valueType": "duration",
+          "context": "Tooltip open delay; apply the token to transition-duration within its stated semantic scope."
+      },
+      "specimen": "motion"
+  },
+  "--ui-duration-tooltip-close": {
+      "purpose": "Tooltip close delay names the shared --ui-duration-tooltip-close role.",
+      "use": "Use this interval to let the pointer travel into a tooltip.",
+      "misuse": "Do not close explanatory content before its pointer transition can complete.",
+      "application": {
+          "cssProperty": "transition-duration",
+          "valueType": "duration",
+          "context": "Tooltip close delay; apply the token to transition-duration within its stated semantic scope."
+      },
+      "specimen": "motion"
+  },
+  "--ui-layout-toast-w": {
+      "purpose": "Toast measure names the shared --ui-layout-toast-w role.",
+      "use": "Use this cap for toast content while respecting the available viewport.",
+      "misuse": "Do not impose this measure as a minimum on narrow viewports.",
+      "application": {
+          "cssProperty": "max-inline-size",
+          "valueType": "length",
+          "context": "Toast measure; apply the token to max-inline-size within its stated semantic scope."
+      },
+      "specimen": "size"
+  },
+  "--ui-table-row-comfortable": {
+      "purpose": "Comfortable table row height names the shared --ui-table-row-comfortable role.",
+      "use": "Use this row height for the ordinary table density.",
+      "misuse": "Do not apply fine-pointer compact density to coarse-pointer rows.",
+      "application": {
+          "cssProperty": "min-block-size",
+          "valueType": "length",
+          "context": "Comfortable table row height; apply the token to min-block-size within its stated semantic scope."
+      },
+      "specimen": "size"
+  },
+  "--ui-table-row-compact": {
+      "purpose": "Compact table row height names the shared --ui-table-row-compact role.",
+      "use": "Use this row height only for an authored compact fine-pointer table.",
+      "misuse": "Do not select compact density solely because the viewport is narrow.",
+      "application": {
+          "cssProperty": "min-block-size",
+          "valueType": "length",
+          "context": "Compact table row height; apply the token to min-block-size within its stated semantic scope."
+      },
+      "specimen": "size"
+  },
+  "--ui-duration-confirm-hold": {
+      "purpose": "Confirmation feedback hold names the shared --ui-duration-confirm-hold role.",
+      "use": "Keep a completed action confirmation visible for this interval.",
+      "misuse": "Do not delay the underlying action while its confirmation remains visible.",
+      "application": {
+          "cssProperty": "transition-duration",
+          "valueType": "duration",
+          "context": "Confirmation feedback hold; apply the token to transition-duration within its stated semantic scope."
+      },
+      "specimen": "motion"
+  },
+  "--ui-table-max-block-default": {
+      "purpose": "Bounded table region height names the shared --ui-table-max-block-default role.",
+      "use": "Use this cap for a scrollable table region with a sticky header.",
+      "misuse": "Do not force this cap on a table that should flow with the document.",
+      "application": {
+          "cssProperty": "max-block-size",
+          "valueType": "length",
+          "context": "Bounded table region height; apply the token to max-block-size within its stated semantic scope."
+      },
+      "specimen": "size"
+  },
 };
 
 /** Explicit navigation only: every property is a leaf exactly once. */
@@ -1374,36 +1693,36 @@ export const TOKEN_DISPLAY_GROUPS: readonly TokenDisplayGroup[] = [
     { id: "line-height", label: "Line height", properties: ["--leading-display", "--leading-heading"] },
   ] },
   { id: "spacing", label: "Spacing", families: [
-    { id: "scale", label: "Scale", properties: ["--spacing-xs", "--spacing-sm", "--spacing-md", "--spacing-lg", "--spacing-xl", "--spacing-2xl", "--spacing-3xl", "--spacing-4xl", "--spacing-5xl", "--spacing-6xl"] },
+    { id: "scale", label: "Scale", properties: ["--spacing-xs", "--spacing-sm", "--spacing-md", "--spacing-lg", "--spacing-xl", "--spacing-2xl", "--spacing-3xl", "--spacing-4xl", "--spacing-5xl", "--spacing-6xl", "--ui-motion-shift"] },
     { id: "page-inset", label: "Page inset", properties: ["--ui-width-page-padding-x"] },
     { id: "density-spacing", label: "Density spacing", properties: ["--ui-density-pad", "--ui-density-gap"] },
     { id: "brandmark-gaps", label: "Brandmark gaps", properties: ["--ui-brandmark-gap-sm", "--ui-brandmark-gap-md", "--ui-brandmark-gap-lg"] },
   ] },
   { id: "sizing", label: "Sizing", families: [
     { id: "content-widths", label: "Content widths", properties: ["--ui-width-content-max", "--ui-width-display-max", "--ui-width-hero-wide", "--ui-width-prose-max", "--ui-width-wide-max", "--ui-width-form-max", "--ui-width-notice-max"] },
-    { id: "app-regions", label: "App regions", properties: ["--ui-layout-sidebar-w", "--ui-layout-sidebar-rail-w", "--ui-layout-aside-w", "--ui-layout-drawer-w"] },
-    { id: "interaction-target", label: "Interaction target", properties: ["--ui-layout-tap-target"] },
-    { id: "row-height", label: "Row height", properties: ["--ui-density-row"] },
+    { id: "app-regions", label: "App regions", properties: ["--ui-layout-sidebar-w", "--ui-layout-sidebar-rail-w", "--ui-layout-aside-w", "--ui-layout-drawer-w", "--ui-layout-toast-w", "--ui-table-max-block-default"] },
+    { id: "interaction-target", label: "Interaction target", properties: ["--ui-layout-tap-target", "--ui-control-h-sm", "--ui-control-h-md", "--ui-control-h-lg", "--ui-control-row-h", "--ui-control-mark", "--ui-control-switch-w", "--ui-control-switch-h", "--ui-control-switch-thumb"] },
+    { id: "row-height", label: "Row height", properties: ["--ui-density-row", "--ui-table-row-comfortable", "--ui-table-row-compact"] },
     { id: "icon-sizes", label: "Icon sizes", properties: ["--ui-icon-sm", "--ui-icon-md", "--ui-icon-lg"] },
     { id: "brandmark-heights", label: "Brandmark heights", properties: ["--ui-brandmark-height-sm", "--ui-brandmark-height-md", "--ui-brandmark-height-lg"] },
     { id: "scene-card-width", label: "Scene card width", properties: ["--ui-scene-card-w"] },
   ] },
   { id: "shape", label: "Shape", families: [
-    { id: "corner-radii", label: "Corner radii", properties: ["--radius-sharp", "--radius-subtle", "--radius-default", "--radius-control", "--radius-pill", "--radius-surface", "--radius-panel"] },
-    { id: "border-widths", label: "Border widths", properties: ["--ui-border-hairline", "--ui-border-rule", "--ui-border-panel"] },
+    { id: "corner-radii", label: "Corner radii", properties: ["--radius-sharp", "--radius-subtle", "--radius-default", "--radius-control", "--radius-pill", "--radius-surface", "--radius-panel", "--ui-radius-overlay"] },
+    { id: "border-widths", label: "Border widths", properties: ["--ui-border-hairline", "--ui-border-rule", "--ui-border-panel", "--ui-border-focus"] },
     { id: "icon-stroke", label: "Icon stroke", properties: ["--ui-icon-stroke"] },
   ] },
   { id: "effects", label: "Effects", families: [
-    { id: "opacity", label: "Opacity", properties: ["--ui-alpha-disabled"] },
+    { id: "opacity", label: "Opacity", properties: ["--ui-alpha-disabled", "--ui-state-hover-alpha", "--ui-state-pressed-alpha", "--ui-alpha-stale"] },
     { id: "backdrop-blur", label: "Backdrop blur", properties: ["--blur-glass", "--blur-notice"] },
     { id: "shadows", label: "Shadows", properties: ["--ui-elevation-none", "--ui-elevation-raised", "--ui-elevation-floating", "--ui-elevation-panel"] },
-    { id: "rings", label: "Rings", properties: ["--ui-ring-focus", "--ui-ring-on-inverse"] },
+    { id: "rings", label: "Rings", properties: ["--ui-ring-focus", "--ui-ring-on-inverse", "--ui-focus-offset", "--color-focus-ring", "--color-focus-ring-on-inverse"] },
   ] },
   { id: "layering", label: "Layering", families: [
-    { id: "stacking-order", label: "Stacking order", properties: ["--ui-z-base", "--ui-z-sticky", "--ui-z-shell", "--ui-z-aside", "--ui-z-notice", "--ui-z-modal", "--ui-z-toast", "--ui-z-palette", "--ui-z-tooltip"] },
+    { id: "stacking-order", label: "Stacking order", properties: ["--ui-z-base", "--ui-z-sticky", "--ui-z-shell", "--ui-z-aside", "--ui-z-notice", "--ui-z-modal", "--ui-z-toast", "--ui-z-palette", "--ui-z-tooltip", "--ui-z-progress", "--ui-z-skip-link"] },
   ] },
   { id: "motion", label: "Motion", families: [
-    { id: "duration", label: "Duration", properties: ["--ui-duration-instant", "--ui-duration-fast", "--ui-duration-default", "--ui-duration-deliberate", "--ui-duration-flash", "--ui-duration-overlay"] },
+    { id: "duration", label: "Duration", properties: ["--ui-duration-instant", "--ui-duration-fast", "--ui-duration-default", "--ui-duration-deliberate", "--ui-duration-flash", "--ui-duration-overlay", "--ui-duration-loading-delay", "--ui-duration-loading-min", "--ui-duration-loading-long", "--ui-duration-tooltip-delay", "--ui-duration-tooltip-close", "--ui-duration-confirm-hold"] },
     { id: "easing", label: "Easing", properties: ["--ease-default", "--ease-decelerate", "--ease-accelerate", "--ease-bounce", "--ease-enter", "--ease-exit"] },
   ] },
   { id: "responsive", label: "Responsive", families: [

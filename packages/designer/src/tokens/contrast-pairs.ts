@@ -198,6 +198,19 @@ export interface ContrastPair {
 }
 
 export const CONTRAST_PAIRS: readonly ContrastPair[] = [
+  // Focus is measured against its actual outside offset ground, not the button fill.
+  {"id": "focus-ring-on-base", "foreground": "--color-focus-ring", "background": "--color-surface-base", "level": "AA-large", "minimumRatio": AA_LARGE, "description": "Keyboard focus or persistent selection indicator on its actual adjacent ground; both themes require 3:1."},
+  {"id": "focus-ring-on-sunken", "foreground": "--color-focus-ring", "background": "--color-surface-sunken", "level": "AA-large", "minimumRatio": AA_LARGE, "description": "Keyboard focus or persistent selection indicator on its actual adjacent ground; both themes require 3:1."},
+  {"id": "focus-ring-on-raised", "foreground": "--color-focus-ring", "background": "--color-surface-raised", "level": "AA-large", "minimumRatio": AA_LARGE, "description": "Keyboard focus or persistent selection indicator on its actual adjacent ground; both themes require 3:1."},
+  {"id": "focus-ring-on-overlay", "foreground": "--color-focus-ring", "background": "--color-overlay-surface", "level": "AA-large", "minimumRatio": AA_LARGE, "description": "Keyboard focus or persistent selection indicator on its actual adjacent ground; both themes require 3:1."},
+  {"id": "focus-ring-on-inverse-inverse", "foreground": "--color-focus-ring-on-inverse", "background": "--color-surface-inverse", "level": "AA-large", "minimumRatio": AA_LARGE, "description": "Keyboard focus or persistent selection indicator on its actual adjacent ground; both themes require 3:1."},
+  {"id": "focus-ring-on-inverse-inverse-raised", "foreground": "--color-focus-ring-on-inverse", "background": "--color-surface-inverse-raised", "level": "AA-large", "minimumRatio": AA_LARGE, "description": "Keyboard focus or persistent selection indicator on its actual adjacent ground; both themes require 3:1."},
+  {"id": "focus-ring-against-accent-fill", "foreground": "--color-focus-ring", "background": "--color-surface-base", "level": "AA-large", "minimumRatio": AA_LARGE, "description": "Keyboard focus or persistent selection indicator on its actual adjacent ground; both themes require 3:1."},
+  {"id": "selected-indicator-tabs", "foreground": "--color-accent", "background": "--color-surface-base", "level": "AA-large", "minimumRatio": AA_LARGE, "description": "Keyboard focus or persistent selection indicator on its actual adjacent ground; both themes require 3:1."},
+  {"id": "selected-indicator-radio", "foreground": "--color-accent", "background": "--color-surface-raised", "level": "AA-large", "minimumRatio": AA_LARGE, "description": "Keyboard focus or persistent selection indicator on its actual adjacent ground; both themes require 3:1."},
+  {"id": "selected-indicator-checkbox", "foreground": "--color-accent", "background": "--color-surface-raised", "level": "AA-large", "minimumRatio": AA_LARGE, "description": "Keyboard focus or persistent selection indicator on its actual adjacent ground; both themes require 3:1."},
+  {"id": "selected-indicator-switch-on", "foreground": "--color-accent", "background": "--color-surface-base", "level": "AA-large", "minimumRatio": AA_LARGE, "description": "Keyboard focus or persistent selection indicator on its actual adjacent ground; both themes require 3:1."},
+
   // Ledger labels are normal text on the base/sunken record ground and tile
   // plates. Raised-surface status pairs already exist below. Inverse labels
   // follow the separately checked ground-primary ink policy.
