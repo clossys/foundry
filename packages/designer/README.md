@@ -8328,15 +8328,29 @@ properties normalize to one null value. Invalid cells are refused even if a
 later filter would hide that row. Input rows, arrays and models are not mutated;
 returned row arrays retain references to the caller's original rows.
 
-Filters combine with AND, including multiple filters on one column. Text supports
+Version 1 filters combine with AND, including multiple filters on one column. Text supports
 `contains` and `equals`; number and date `range` bounds are inclusive and either
 bound may be omitted. Enum `in` matches exact string values. Tags support `any`,
 `all` and `none`; null tags act as an empty set for filtering. Empty `any` matches
 no rows, while empty `all` and `none` match every row. Boolean uses `equals`.
-Null values fail scalar filters. Global `search` matches any non-null searchable
+Null values fail these scalar filters. Global `search` matches any non-null searchable
 column, with individual tags searched separately; `searchable: false` opts a
 column out. Contains and global search use case folding in the supplied locale;
 text equality uses its collation sensitivity. Enum and tag identity remain exact.
+
+Version 2 adds text `notEquals`, enum `notIn`, and `empty`/`notEmpty` on every
+column kind. Negation (`notEquals`, `notIn` and tags `none`) matches null cells;
+text negation uses the same collation as equality. `empty` matches null, `""`
+and `[]`; `notEmpty` is its inverse. Empty-operator leaves have exactly
+`column`, `kind` and `op`, with no value or bounds. Every leaf's kind must match
+its declared column.
+
+`TableFilterNode` is a `TableFilter` leaf or a `TableFilterGroup` shaped as
+`{ kind: "group", op: "and" | "or", items: readonly TableFilterNode[] }`.
+The root filter array is an implicit AND at depth zero. Root groups are depth
+one, nested groups depth two; deeper groups are refused, even when empty.
+Empty groups are ignored, including empty OR children inside another OR.
+Version 1 refuses groups and all four new operators with `invalid-model`.
 
 `filterRows` returns input-ordered `rows` and `facets` keyed by column ID. Each
 facet applies global search and every other column's filters, omitting all filters
@@ -8345,6 +8359,14 @@ once, an empty tag set contributes no tag and a missing tag value contributes a
 null facet. This disjunctive convention lets a filter menu display alternatives
 to its current selection. Numeric and date facets count distinct normalized
 values rather than histogram buckets.
+
+For groups, each facet applies search and `pruneFilterColumn(filters, column)`:
+remove that column's leaves at every depth, then drop groups left empty.
+Flat AND facets retain version 1 behavior. `tableFilterPredicate(model)` parses
+once and returns a row predicate for filters only; global search is separate.
+`TABLE_FILTER_CONFORMANCE` exports at least 30 plain-data cases with string row
+IDs and input-ordered `expectedIds`; hosts that translate filters to queries run
+`TABLE_FILTER_CONFORMANCE` against their translation.
 
 The locale is required and must be supported by the runtime. Collation options
 control text ordering; a UTF-16 lexical tie break makes equal-collation group keys
@@ -8378,9 +8400,11 @@ high-cardinality output. The test budget is 2,000 ms for filter, three-level gro
 and two-by-two-dimension pivot computation over 10,000 rows with bounded axis
 cardinality and three measures; it is not a timing promise for arbitrary shapes.
 
-Saved views are version 1 plain objects. `serializeTableModel` validates and
+Table saved views are version 1 or 2 plain objects. `serializeTableModel` validates and
 copies a model; `parseTableModel` accepts an unknown plain object and copies it
-after validation. Unknown fields, accessors, column references, kinds, operators,
+after validation. Both preserve the input table version. Other versions, including
+the string `"2"`, are refused with `unsupported-version`.
+Unknown fields, accessors, column references, kinds, operators,
 invalid ranges and unsupported versions are refused. The typed `TableModelError`
 has a stable `code`: `invalid-model`, `unsupported-version`, `unknown-column`,
 `invalid-cell`, `pivot-budget` or `aggregate-overflow`.
@@ -8388,18 +8412,23 @@ has a stable `code`: `invalid-model`, `unsupported-version`, `unknown-column`,
 | Export | Kind | Contract |
 | --- | --- | --- |
 | `filterRows` | function | AND/global filtering with input-ordered rows and disjunctive facets. |
+| `tableFilterPredicate` | function | Parse once and evaluate filters without global search. |
+| `pruneFilterColumn` | function | Remove a column's leaves recursively and drop emptied groups. |
+| `TABLE_FILTER_CONFORMANCE` | value | Plain-data filter cases and input-ordered passing row IDs for host parity. |
 | `groupRows` | function | Deterministically ordered group tree and per-node aggregates. |
 | `pivotRows` | function | Prefix axes, explicit sparse cells, measures, totals and subtotals. |
 | `aggregate` | function | Saved-view measures over filtered rows. |
 | `parseTableModel` | function | Validate and copy an unknown plain saved-view object. |
 | `serializeTableModel` | function | Produce an independent validated plain saved-view object. |
 | `TableModelError` | class | Typed model, cell, output-budget and numeric-overflow refusal. |
-| `TableModel` | type | Version 1 columns, collation, filters, search, groups, measures and pivot. |
+| `TableModel` | type | Version 1 or 2 columns, collation, filters, search, groups, measures and pivot. |
 | `TableValue` | type | Normalized string, number, boolean, tag set or null. |
 | `TableColumnKind` | type | The six supported column kinds. |
 | `TableColumn` | type | Own-property ID, kind and optional global-search participation. |
 | `TableCollation` | type | Required locale and optional sensitivity, numeric and case ordering. |
 | `TableFilter` | type | Discriminated column-kind and operator filter union. |
+| `TableFilterGroup` | type | AND/OR items with at most two group levels in version 2. |
+| `TableFilterNode` | type | A filter leaf or group. |
 | `TableDimension` | type | Column reference and optional ascending or descending order. |
 | `TableMeasure` | type | Named count, sum, min, max, average or distinct measure. |
 | `TablePivot` | type | Row and column dimension arrays. |
@@ -8609,11 +8638,24 @@ Saved views add `model`, `onModelChange`, `messages`, `expandedGroupKeys` and
 
 
 Pass `model` and `onModelChange` to render a local saved view of the supplied
-rows. `DataTableViewModel` is one versioned, plain-data envelope containing the
-unchanged headless `TableModel` in `table`, plus `mode` (`flat`, `grouped`,
+rows. `DataTableViewModel` is the version 2 plain-data envelope containing the
+headless `TableModel` in `table`, plus `mode` (`flat`, `grouped`,
 `pivot`), `density` (`comfortable`, `compact`), ordered `sort` rules and ordered
 `visibleColumns`. Every model column needs a matching `DataTableColumn` renderer;
 React headers and cell callbacks stay in props, outside the saved payload.
+
+The optional `columnWidths` record maps declared column IDs to integer pixels
+48 through 2000 inclusive. Optional `pinnedColumns` contains at most three unique
+IDs, equal to the leading entries of `visibleColumns` in the same order.
+The current flat grid ignores widths and pins. Existing options preserve them;
+pinned columns cannot be hidden or moved, and unpinned columns cannot cross the
+pinned prefix. There are no width or pin editors in this block.
+
+`DataTableViewModelV1` names the version 1 envelope. The `model` prop accepts
+either version; `onModelChange` always emits version 2. Parsing migrates a v1
+envelope to v2 without adding absent width or pin keys, and the nested table keeps
+its own version. Hosts with version 1 literals typed as `DataTableViewModel` now
+type those literals as `DataTableViewModelV1`.
 
 See the [saved-view example](#datatable-saved-view-example) for a complete controlled table.
 
@@ -8641,8 +8683,10 @@ edits copy the envelope and affected nested arrays/objects; frozen inputs work.
 `serializeDataTableViewModel` returns JSON, and `parseDataTableViewModel` accepts
 that JSON or a plain object. Both validate the envelope and delegate nested
 validation to `parseTableModel`; unknown versions, fields, columns, duplicates,
-accessors and non-data values are refused. Envelope errors use
-`DataTableViewModelError`; nested errors retain `TableModelError`.
+accessors and non-data values are refused. The view parser reports envelope and
+nested-table validation failures as `DataTableViewModelError`; direct engine
+validation still reports `TableModelError`. Serialization always writes a version
+2 envelope, preserving the nested table version.
 
 View options composes `Popover`, `Drawer`, `Select`, `Checkbox`, `TextField`,
 `Button` and `Chip`. Group, Sort, Filter and Columns edit the same envelope.
@@ -8650,6 +8694,10 @@ Group and sort priorities can move earlier, each direction is editable, and
 visible columns can be reordered. Filters support text comparison, numeric/UTC
 date ranges (apply valid bounds explicitly), enum values, tag any/all/none and
 booleans. Facet choices come from the engine and retain selected values. Each
+root legacy leaf stays editable in a v2 table. Groups and new-operator leaves
+show their summary and existing remove action only; sibling edits preserve all
+other root nodes and their order. Adding a legacy leaf preserves the table version.
+Each
 active group, sort and filter has its own keyboard-removable chip. Pivot appears
 only with configured group or pivot dimensions; configuring its axes requires
 host-defined measures. Switching to pivot initializes missing axes from groups.
@@ -8683,7 +8731,8 @@ These existing blocks keep their separate contracts.
 | Export | Kind | Description |
 | --- | --- | --- |
 | `DataTableMessages` | type | Optional host labels and formatters with documented English defaults; never persisted in the view. |
-| `DataTableViewModel` | type | Versioned saved-view envelope: `table`, `mode`, `density`, ordered `sort` and `visibleColumns`. |
+| `DataTableViewModel` | type | Version 2 envelope: `table`, `mode`, `density`, ordered `sort`, `visibleColumns`, optional `columnWidths` and `pinnedColumns`. |
+| `DataTableViewModelV1` | type | Version 1 envelope accepted by migration and the model prop. |
 | `DataTableMode`, `DataTableDensity`, `DataTableSortRule` | types | Saved rendering mode, density and row-sort rules. |
 | `parseDataTableViewModel`, `serializeDataTableViewModel`, `DataTableViewModelError` | values | Validate/copy saved views, encode JSON and report envelope validation errors. |
 
@@ -8692,9 +8741,9 @@ These existing blocks keep their separate contracts.
 ```tsx
 import { useState } from "react";
 import { DataTable, parseDataTableViewModel, serializeDataTableViewModel,
-  type DataTableViewModel } from "@clossys/designer/blocks";
+  type DataTableViewModelV1 } from "@clossys/designer/blocks";
 
-const initialView: DataTableViewModel = {
+const initialView: DataTableViewModelV1 = {
   version: 1,
   table: {
     version: 1, collation: { locale: "en", numeric: true },
@@ -8709,7 +8758,7 @@ const initialView: DataTableViewModel = {
 const records = [{ id: "one", name: "Example", team: "Blue", amount: 42 }];
 
 function SavedTable() {
-  const [model, setModel] = useState(initialView);
+  const [model, setModel] = useState(() => parseDataTableViewModel(initialView));
   const [expanded, setExpanded] = useState<ReadonlySet<string> | "all">("all");
   return <DataTable aria-label="Records" rows={records} rowKey={row => row.id}
     columns={[
