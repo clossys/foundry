@@ -179,13 +179,14 @@ surfaces and live in `@clossys/publisher/web`.
   `Separator`, `Chip`, `StatusMark`, `Meter`.
 - **`blocks`** — owns the internal layout of multiple named regions,
   typically by composing one or more atoms (and/or layout) into something
-  with a real job on a page. Forty-two ship: `AccountMenu`, `PageHeader`, `EmptyState`,
+  with a real job on a page. Forty-eight ship: `Lockup`, `AccountMenu`, `PageHeader`, `EmptyState`,
   `DataTable`, `DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`,
   `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `SectionFrame`,
   `MarketingChapter`, `FeatureGrid`, `Item`, `Items`, `Tree`, `AnatomyCallouts`, `RecordLedger`, `Scene`, `Matrix`,
   `Specimen`, `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`,
   `PricingTable`, `Testimonial`, `ArticleBody`, `ConsentBanner`, `Panel`, `Drawer`,
-  `ResizablePane`, `CommandMenu`, `AppNavigation` and `GroupedTable` (see "Blocks" below).
+  `ResizablePane`, `CommandMenu`, `AppNavigation`, `GroupedTable`, `Explorer`,
+  `CatalogWorkspace`, `Chat`, `TaskList` and `EventItem` (see "Blocks" below).
 - **`shell`** — the persistent frame around content (nav, layout chrome)
   that provides the slots content fills. One per app; survives route
   changes that swap out the content underneath it. `Shell` ships with five
@@ -454,7 +455,7 @@ source file's own header for the exact probe and its result). Today that's:
 | Subpath | Server-safe members |
 | --- | --- |
 | `@clossys/designer/atoms/server` | `Logomark`, `Avatar`, `Badge`, `Banner`, `Card`, `Field`, `Icon`, `Meter`, `Skeleton`, `Spinner`, `StatusMark`, `buttonLinkClassName`, `iconButtonClassName`, `iconButtonLinkClassName`, `mergeUiClasses` |
-| `@clossys/designer/blocks/server` | `Lockup`, `AnatomyCallouts`, `ArticleBody`, `Matrix`, `ContentSection`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `Item`, `Items`, `MarketingChapter`, `MediaFigure`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `RecordLedger`, `Scene`, `SectionFrame`, `SectionHeader`, `SectionIntro`, `Specimen`, `SpecimenPanel`, `Stat`, `StatusList`, `Testimonial`, `Tree` |
+| `@clossys/designer/blocks/server` | `Lockup`, `AnatomyCallouts`, `ArticleBody`, `Matrix`, `ContentSection`, `DetailView`, `EmptyState`, `EventItem`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `Item`, `Items`, `MarketingChapter`, `MediaFigure`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `RecordLedger`, `Scene`, `SectionFrame`, `SectionHeader`, `SectionIntro`, `Specimen`, `SpecimenPanel`, `Stat`, `StatusList`, `TaskList`, `Testimonial`, `Tree` |
 | `@clossys/designer/shell/server` | `Shell`, `SiteFooter`, `SiteHeader`, `SkipLink` |
 | `@clossys/designer/charts/server` | `ChartFrame`, `BarChart`, `LineChart` (static), `WaterfallChart`, `RangeChart`, `ScatterChart`, `AreaChart` (static), `Heatmap` (static), `StatusStrip` (static), `Sparkline` |
 | `@clossys/designer/theme/server` | `getThemeInitScript` |
@@ -4316,6 +4317,60 @@ its own type level too.
 
 The `/blocks/server` variant uses the server Avatar; use the ordinary block when you need its image-load-failure fallback.
 
+### `TaskList`
+
+A draft server-safe checklist with visible status labels, an ordered list and
+a completion meter. The host names the section, supplies its heading outside
+the block, and authors progress and empty-state copy. Linked titles provide
+one stretched link per row; linked row content must contain no other controls.
+
+```tsx
+import { TaskList, type TaskListItem } from "@clossys/designer/blocks/server";
+
+const items: TaskListItem[] = [
+  { id: "t1", title: "Invite your team", description: "Add at least two colleagues.", status: "done" },
+  { id: "t2", title: "Connect a data source", status: "in-progress", href: "/settings/sources", meta: "Step 2 of 3" },
+  { id: "t3", title: "Review billing details", status: "blocked", description: "Waiting on an administrator." },
+  { id: "t4", title: "Publish your first report", status: "todo" },
+];
+const statusLabels = { todo: "To do", "in-progress": "In progress", blocked: "Blocked", done: "Done" };
+
+<TaskList
+  aria-label="Getting started"
+  items={items}
+  statusLabels={statusLabels}
+  progressText="1 of 4 done"
+  emptyState={{ title: "No tasks remain", description: "New tasks will appear here." }}
+/>;
+```
+
+### `EventItem`
+
+A draft server-safe history row with an actor, a host-formatted time and a
+complete host-composed summary. Changes form a definition list with authored
+from/to labels; a missing destination announces the supplied cleared label.
+Unread rows pair a decorative dot with screen-reader text. System actors use
+the existing Settings icon; people use the server Avatar. Detail and actions
+are optional host slots.
+
+```tsx
+import { EventItem, type EventRecord, type EventLabels } from "@clossys/designer/blocks/server";
+
+const event: EventRecord = {
+  id: "evt_1042", at: "2026-10-19T14:32:00Z", timeText: "Oct 19, 14:32 UTC",
+  actor: { name: "Priya Nair" },
+  summary: <><strong>Priya Nair</strong> moved invoice 1042 to <strong>Approved</strong></>,
+  changes: [
+    { id: "c1", field: "Status", from: "In review", to: "Approved" },
+    { id: "c2", field: "Approver", from: "Unassigned" },
+  ],
+  unread: true,
+};
+const labels: EventLabels = { unread: "Unread", changedFrom: "changed from", changedTo: "to", cleared: "cleared" };
+
+<EventItem event={event} labels={labels} />;
+```
+
 ### `SectionFrame`
 
 ```tsx
@@ -6857,6 +6912,16 @@ not a grab-bag).
 | `OrderedStepSequenceHeadingLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
 | `OrderedStepSequenceGround` | type | Sequence-specific alias of the shared `SectionGround`: `"base" \| "sunken" \| "inverse"`. |
 | `StatusList` | component | Grouped editorial status list: one legend and a definition list per group. |
+| `TaskList` | component | Draft ordered checklist with visible status labels and a completion meter. |
+| `TaskListProps` | type | Required `aria-label`, `items`, `statusLabels`, `progressText` and `emptyState`, plus native section attributes. |
+| `TaskListItem` | type | Task `id`, `title`, `status`, optional `description`, `href` and `meta`. |
+| `TaskStatus` | type | `"todo" \| "in-progress" \| "blocked" \| "done"`. |
+| `EventItem` | component | Draft history row with actor, time, summary, changes and unread label. |
+| `EventItemProps` | type | Required `event` and `labels`, plus native div attributes. |
+| `EventActor` | type | Actor `name`, optional `avatarSrc` and `kind` (`"person" \| "system"`). |
+| `EventChange` | type | Change `id`, `field`, optional `from` and `to`. |
+| `EventRecord` | type | Event `id`, ISO `at`, host-formatted `timeText`, `actor`, `summary`, optional `changes`, `detail`, `unread` and `actions`. |
+| `EventLabels` | type | Required authored `unread`, `changedFrom`, `changedTo` and `cleared` strings. |
 | `StatusListProps` | type | Props for `StatusList`: `eyebrow`, `heading`, `description`, `labels`, `groups?`, `items?`, `legendLabel`, `headingLevel`, `ground`, `className`, `style`, plus every native `<section>` attribute. Provide `groups` or `items`, never both. |
 | `StatusListGroup` | type | One group: `id`, `heading`, `items`. |
 | `StatusListItem` | type | One row: either `id`, `label`, `detail?`, `state`, or `id`, `label`, `detail?`, `disposition`. |
@@ -7539,13 +7604,14 @@ speculatively, just because a related component shipped, is the exact
 un-bounded growth this package's own "variant rule" warns against one level
 up. They get added here only once something real needs them.
 
-**Blocks:** forty-one ship — `AccountMenu`, `PageHeader`, `EmptyState`, `DataTable`,
+**Blocks:** forty-eight ship — `Lockup`, `AccountMenu`, `PageHeader`, `EmptyState`, `DataTable`,
 `DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`, `ConfirmDialog`,
 `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `SectionFrame`, `MarketingChapter`,
 `FeatureGrid`, `Item`, `Items`, `Tree`, `AnatomyCallouts`, `RecordLedger`, `Scene`, `Matrix`, `Specimen`,
 `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`, `PricingTable`,
 `Testimonial`, `ArticleBody`, `ConsentBanner`, `Panel`, `Drawer`,
-`ResizablePane`, `CommandMenu` and `AppNavigation` — completing this layer. No
+`ResizablePane`, `CommandMenu`, `AppNavigation`, `GroupedTable`, `Explorer`,
+`CatalogWorkspace`, `Chat`, `TaskList` and `EventItem` — completing this layer. No
 `FilterBar` block:
 `DataTable`'s own `toolbar` slot (and `Toolbar`'s own `search` slot) are
 deliberately plain `ReactNode`s, not a block with its own opinion about

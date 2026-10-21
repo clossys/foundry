@@ -125,6 +125,8 @@ describe("server-safe entry points resolve under react-server (test 1)", () => {
         "SpecimenPanel",
         "Stat",
         "StatusList",
+        "TaskList",
+        "EventItem",
         "Testimonial",
         "Tree",
       ],
@@ -155,6 +157,17 @@ it("imports and calls the compiled Testimonial server graph with an avatar under
   const script = `import {Testimonial} from ${JSON.stringify(absolute)}; function nodes(node){if(Array.isArray(node))return node.flatMap(nodes);if(!node||typeof node!=="object"||!node.props)return [];if(typeof node.type==="function")return nodes(node.type(node.props));return [node,...nodes(node.props.children)];} const tree=nodes(Testimonial({quote:"Quote",attributorName:"Alex Example",avatarSrc:"/avatar.png",avatarAlt:"Alex Example"})); if(tree.filter(n=>n.type==="figure").length!==1||tree.filter(n=>n.type==="blockquote"&&n.props.children==="Quote").length!==1||tree.filter(n=>n.type==="img"&&n.props.alt==="Alex Example").length!==1)throw new Error("missing semantic testimonial/avatar");process.stdout.write("OK");`;
   expect(execFileSync(process.execPath, ["--conditions=react-server", "-e", script], { encoding: "utf8", timeout: 10_000 })).toBe("OK");
 }, 15_000);
+
+it("imports and calls TaskList and EventItem under react-server without browser globals", () => {
+  const entry = join(distDir, "blocks/server.js");
+  const script = `import {TaskList, EventItem} from ${JSON.stringify(entry)};
+    if(typeof window!=="undefined")throw new Error("unexpected browser global");
+    const tasks=TaskList({"aria-label":"Tasks",items:[],statusLabels:{todo:"To do","in-progress":"In progress",blocked:"Blocked",done:"Done"},progressText:"No tasks",emptyState:{title:"No tasks"}});
+    const event=EventItem({event:{id:"evt_1042",at:"2026-10-19T14:32:00Z",timeText:"Oct 19, 14:32 UTC",actor:{name:"Priya Nair"},summary:"Priya Nair approved invoice 1042."},labels:{unread:"Unread",changedFrom:"changed from",changedTo:"to",cleared:"cleared"}});
+    if(tasks.type!=="section"||event.type!=="div"||event.props["data-event-item"]!=="")throw new Error("missing semantic task/event blocks");
+    process.stdout.write("OK");`;
+  expect(execFileSync(process.execPath, ["--conditions=react-server", "--input-type=module", "-e", script], { encoding: "utf8", timeout: 10_000 })).toBe("OK");
+});
 
 it("keeps the interactive preview export exact and its emitted client boundary explicit", () => {
   expect(importKeysNormally("tokens/preview/index.js")).toEqual(["TokenPreview"]);
