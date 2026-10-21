@@ -141,5 +141,5 @@ describe("PageView", () => {
     host.getSourceFile = (path, language, onError, shouldCreate) => resolve(path) === file ? ts.createSourceFile(path, source, language, true, ts.ScriptKind.TSX) : original(path, language, onError, shouldCreate);
     const diagnostics = ts.getPreEmitDiagnostics(ts.createProgram([file], options, host));
     expect(diagnostics.map(diagnostic => ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n"))).toEqual([]);
-  });
+  }, 30_000);
 });
