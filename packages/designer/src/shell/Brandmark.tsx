@@ -1,6 +1,9 @@
 import { cx } from "../atoms/internal/cx.js";
-import { BADGE_INSET_SHARE, BADGE_RADIUS_SHARE } from "./badge-plate.js";
+import { Logomark, type LogomarkProps } from "../atoms/Logomark.js";
+import { Lockup, internalLockupWithRootClass } from "../blocks/Lockup.js";
 import {
+  BADGE_INSET_SHARE,
+  BADGE_RADIUS_SHARE,
   UI_BRANDMARK_GAP_LG,
   UI_BRANDMARK_GAP_MD,
   UI_BRANDMARK_GAP_SM,
@@ -10,7 +13,7 @@ import {
   UI_BRANDMARK_WORDMARK_SIZE_LG,
   UI_BRANDMARK_WORDMARK_SIZE_MD,
   UI_BRANDMARK_WORDMARK_SIZE_SM,
-} from "./internal/shell-vars.js";
+} from "../internal/brandmark.js";
 
 /** The two renderings: the mark alone, or the mark beside a live-text wordmark. */
 export const BRANDMARK_VARIANTS = ["mark", "lockup"] as const;
@@ -68,6 +71,10 @@ interface BrandmarkBaseProps {
   origin?: string;
   /** Which step of the closed size set to render at. */
   size: BrandmarkSize;
+  /** Explicit chrome sizing; omission preserves the legacy variant and size. */
+  presentation?: "desktop" | "mobile" | "responsive";
+  /** Producer-measured source viewBox and painted bounds for explicit presentations. */
+  geometry?: LogomarkProps["geometry"];
   /**
    * The link's whole accessible name, supplied by the consumer — this
    * package ships no default copy and no `"{Brand} home"` template (see
@@ -173,10 +180,46 @@ export function Brandmark(props: BrandmarkProps) {
   }
   const href = homeHref(origin);
 
+  const linkClasses = cx(
+    inverse
+      ? "inline-flex items-center no-underline text-ink-on-inverse"
+      : "inline-flex items-center no-underline text-ink-primary",
+    "focus-visible:outline-2 focus-visible:outline-offset-2",
+    inverse ? "focus-visible:outline-ink-on-inverse" : "focus-visible:outline-accent",
+    className,
+  );
+
+  if (props.presentation !== undefined && props.geometry !== undefined) {
+    const desktop = showWordmark
+      ? <Lockup src={markSrc} size={size} wordmark={wordmark} plate={plate} tone={tone}
+          presentation={props.presentation === "responsive" ? "desktop" : props.presentation} geometry={props.geometry} />
+      : <Logomark src={markSrc} size={size} plate={plate}
+          presentation={props.presentation === "responsive" ? "desktop" : props.presentation} geometry={props.geometry} />;
+    const mobile = <Logomark src={markSrc} size={size} plate={plate} geometry={props.geometry}
+      presentation={props.presentation === "responsive" ? "mobile" : props.presentation} />;
+    return <a href={href} aria-label={label} className={linkClasses}>
+      {props.presentation === "responsive"
+        ? <><span className="hidden desktop:block">{desktop}</span><span data-brand-mark="" className="inline-flex desktop:hidden">{mobile}</span></>
+        : props.presentation === "mobile" ? mobile : desktop}
+    </a>;
+  }
+
+  if (markInk !== "accent") {
+    if (showWordmark) {
+      return internalLockupWithRootClass({ as: "a", href, "aria-label": label, src: markSrc, size,
+        wordmark, plate, tone }, linkClasses);
+    }
+    return (
+      <a href={href} aria-label={label} className={linkClasses}>
+        <Logomark src={markSrc} size={size} plate={plate} />
+      </a>
+    );
+  }
+
   // The accent mark is a decorative span masked by the image, filled with the
   // accent token. data-brand-mark names the outermost accent mark element, so
-  // header CSS can hide the wordmark alone; the image forms keep their markup.
-  const mark = (side: string, outermost: boolean) => markInk === "accent" ? (
+  // header CSS can hide the wordmark alone; the image forms above keep their markup.
+  const mark = (side: string, outermost: boolean) => (
     <span
       aria-hidden
       data-brand-mark={outermost ? "" : undefined}
@@ -194,26 +237,14 @@ export function Brandmark(props: BrandmarkProps) {
         WebkitMaskPosition: "center",
       }}
     />
-  ) : null;
+  );
 
   return (
-    <a
-      href={href}
-      aria-label={label}
-      className={cx(
-        inverse
-          ? "inline-flex items-center no-underline text-ink-on-inverse"
-          : "inline-flex items-center no-underline text-ink-primary",
-        "focus-visible:outline-2 focus-visible:outline-offset-2",
-        inverse ? "focus-visible:outline-ink-on-inverse" : "focus-visible:outline-accent",
-        className,
-      )}
-      style={showWordmark ? { gap: vars.gap } : undefined}
-    >
+    <a href={href} aria-label={label} className={linkClasses} style={showWordmark ? { gap: vars.gap } : undefined}>
       {plate === "shared" ? (
         <span
           aria-hidden
-          data-brand-mark={markInk === "accent" ? "" : undefined}
+          data-brand-mark=""
           className="inline-flex shrink-0 items-center justify-center bg-ink-primary"
           style={{
             height: vars.height,
@@ -221,20 +252,10 @@ export function Brandmark(props: BrandmarkProps) {
             borderRadius: `calc(${vars.height} * ${BADGE_RADIUS_SHARE})`,
           }}
         >
-          {mark(`calc(${vars.height} * ${PLATE_IMAGE_SHARE})`, false) ?? (
-            <img
-              src={markSrc}
-              alt=""
-              style={{
-                height: `calc(${vars.height} * ${PLATE_IMAGE_SHARE})`,
-                width: `calc(${vars.height} * ${PLATE_IMAGE_SHARE})`,
-                objectFit: "contain",
-              }}
-            />
-          )}
+          {mark(`calc(${vars.height} * ${PLATE_IMAGE_SHARE})`, false)}
         </span>
       ) : (
-        mark(vars.height, true) ?? <img src={markSrc} alt="" style={{ height: vars.height, width: "auto" }} />
+        mark(vars.height, true)
       )}
       {showWordmark ? (
         <span className="font-display leading-none" style={{ fontSize: vars.wordmark }}>
