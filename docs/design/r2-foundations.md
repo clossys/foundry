@@ -32,7 +32,7 @@ are emitted before their adoption by individual components:
 - `ui-loading-delayed` reveals after the loading-delay token. `ui-pending-label`
   hides only by opacity after the same delay, retaining its layout space.
   `ui-skeleton` supplies a dashed `GrayText` hairline in forced colors.
-- `ui-progress-slide` binds a 40% indeterminate fill to the flash duration and
+- `ui-progress-slide` binds an indeterminate fill with `inline-size: 40%` to the flash duration and
   default easing, with mirrored motion in RTL. `ui-nav-trickle` grows monotonically
   from zero to 0.9 over the long-loading interval, anchored at inline-start.
   Reduced motion stops both animations and shows a static full-width fill at
@@ -77,7 +77,7 @@ Chromium produces a clear `SKIPPED` message, a JSON report and exit 0. A skip is
 not a passing browser observation. Browser/transport failures exit 1.
 
 The four viewport widths are 320, 390, 640 and 768px. The 640px case represents
-the viewport space available at 200% zoom of a 1280px layout; it does not claim
+the available viewport width in the calculation `1280px / 2 = 640px`; it does not claim
 that native browser zoom was changed. Dark preference, forced colors and reduced
 motion are emulated. The report records overflow, measured hit regions including
 pseudo-elements and corner hit testing, keyboard focus outline, running infinite
