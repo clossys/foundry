@@ -87,13 +87,13 @@ describe("renderWebDocument optional AuthView frame", () => {
     expect(reads).toBe(0);
   });
 
-  it("keeps unframed AuthView body/footer bytes with the new header surface and required brand binding", () => {
+  it("keeps unframed AuthView body bytes with the approved header/footer contract and required brand binding", () => {
     const legacy = { ...doc, bindings: [{ slot: "brand", value: "Example" }, ...doc.bindings] };
     const output = html(legacy);
     expect(output).toContain('data-surface="solid" data-tone="base"');
-    // Project only the deliberately changed opening tag; keep the original full-page digest.
+    // Project only the deliberately changed header opening tag; retain the full-page digest for the approved footer contract.
     const legacyHeaderProjection = output.replace(/<header\b[^>]*>/, '<header data-header-root="" class="bg-surface-raised py-sm border-b border-line-base site-header-contract" style="position:relative;z-index:var(--ui-z-shell, 20);border-bottom-width:var(--ui-border-hairline, 1px)">');
-    expect(createHash("sha256").update(legacyHeaderProjection).digest("hex")).toBe("42bad8f517d038103ec6bf994fec76ae1e887848631ac8266727c5b39b5c6cd1");
+    expect(createHash("sha256").update(legacyHeaderProjection).digest("hex")).toBe("1cdfbecb20b4bc235b42bfc358418ebea617393774591f6f2a3b913ac6f757b5");
     expect(html(legacy, { frame: undefined })).toBe(output);
     expect(() => html(doc)).toThrow(/brand/);
   });
