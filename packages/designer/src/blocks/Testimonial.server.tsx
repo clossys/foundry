@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Avatar } from "../atoms/Avatar.server.js";
 import { cx } from "../atoms/internal/cx.js";
 import type { TestimonialBaseProps, TestimonialProps } from "./Testimonial.js";
+import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
 
 /** One markup recipe for both variants; each supplies its own Avatar. */
 export function renderTestimonial(
@@ -14,16 +15,18 @@ export function renderTestimonial(
     ...rest
   }: TestimonialBaseProps,
   avatar: ReactNode,
+  ground: SectionGround = "base",
 ) {
+  const colors = SECTION_GROUND_CLASSES[ground];
   return (
     <figure {...rest} className={cx("flex flex-col gap-md", className)} style={style}>
-      <blockquote className="text-blockquote font-display text-ink-primary">{quote}</blockquote>
+      <blockquote className={cx("text-blockquote font-display", colors.primary)}>{quote}</blockquote>
       <figcaption className="flex items-center gap-sm">
         {avatar}
         <div className="flex flex-col">
-          <span className="text-body font-body font-medium text-ink-primary">{attributorName}</span>
+          <span className={cx("text-body font-body font-medium", colors.primary)}>{attributorName}</span>
           {attributorRole ? (
-            <span className="text-body-s text-ink-secondary">{attributorRole}</span>
+            <span className={cx("text-body-s", colors.secondary)}>{attributorRole}</span>
           ) : null}
         </div>
       </figcaption>

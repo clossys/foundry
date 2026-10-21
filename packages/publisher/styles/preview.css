@@ -1317,6 +1317,14 @@
     width: var(--spacing-2xl, 32px);
     height: var(--spacing-2xl, 32px);
   }
+  .size-10 {
+    width: calc(var(--spacing, 0.25rem) * 10);
+    height: calc(var(--spacing, 0.25rem) * 10);
+  }
+  .size-14 {
+    width: calc(var(--spacing, 0.25rem) * 14);
+    height: calc(var(--spacing, 0.25rem) * 14);
+  }
   .size-lg {
     width: var(--spacing-lg, 16px);
     height: var(--spacing-lg, 16px);
@@ -1385,6 +1393,9 @@
   .min-h-0 {
     min-height: 0px;
   }
+  .min-h-\[3rem\] {
+    min-height: 3rem;
+  }
   .min-h-dvh {
     min-height: 100dvh;
   }
@@ -1441,6 +1452,9 @@
   }
   .w-sm {
     width: var(--spacing-sm, 8px);
+  }
+  .max-w-40 {
+    max-width: calc(var(--spacing, 0.25rem) * 40);
   }
   .max-w-\[24rem\] {
     max-width: 24rem;
@@ -1621,6 +1635,9 @@
   .grid-cols-2 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+  .grid-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
   .grid-cols-\[auto_minmax\(0\,1fr\)_auto\] {
     grid-template-columns: auto minmax(0,1fr) auto;
   }
@@ -1715,6 +1732,9 @@
   .gap-x-sm {
     column-gap: var(--spacing-sm, 8px);
   }
+  .gap-x-xl {
+    column-gap: var(--spacing-xl, 24px);
+  }
   .gap-y-2xl {
     row-gap: var(--spacing-2xl, 32px);
   }
@@ -1729,6 +1749,9 @@
   }
   .gap-y-sm {
     row-gap: var(--spacing-sm, 8px);
+  }
+  .gap-y-xl {
+    row-gap: var(--spacing-xl, 24px);
   }
   .gap-y-xs {
     row-gap: var(--spacing-xs, 4px);
@@ -2724,6 +2747,10 @@
     --tw-blur: blur(8px);
     filter: var(--tw-blur,) var(--tw-brightness,) var(--tw-contrast,) var(--tw-grayscale,) var(--tw-hue-rotate,) var(--tw-invert,) var(--tw-saturate,) var(--tw-sepia,) var(--tw-drop-shadow,);
   }
+  .grayscale {
+    --tw-grayscale: grayscale(100%);
+    filter: var(--tw-blur,) var(--tw-brightness,) var(--tw-contrast,) var(--tw-grayscale,) var(--tw-hue-rotate,) var(--tw-invert,) var(--tw-saturate,) var(--tw-sepia,) var(--tw-drop-shadow,);
+  }
   .filter {
     filter: var(--tw-blur,) var(--tw-brightness,) var(--tw-contrast,) var(--tw-grayscale,) var(--tw-hue-rotate,) var(--tw-invert,) var(--tw-saturate,) var(--tw-sepia,) var(--tw-drop-shadow,);
   }
@@ -2964,6 +2991,10 @@
       --tw-ring-shadow: var(--tw-ring-inset,) 0 0 0 calc(2px + var(--tw-ring-offset-width, 0px)) var(--tw-ring-color, currentcolor);
       box-shadow: var(--tw-inset-shadow, 0 0 #0000), var(--tw-inset-ring-shadow, 0 0 #0000), var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow, 0 0 #0000);
     }
+    .hover\:grayscale-0:hover {
+      --tw-grayscale: grayscale(0%);
+      filter: var(--tw-blur,) var(--tw-brightness,) var(--tw-contrast,) var(--tw-grayscale,) var(--tw-hue-rotate,) var(--tw-invert,) var(--tw-saturate,) var(--tw-sepia,) var(--tw-drop-shadow,);
+    }
     .hover\:before\:bg-surface-inverse-raised:hover::before {
       content: var(--tw-content, "");
       background-color: var(--color-surface-inverse-raised, oklch(0.285 0 0));
@@ -3049,6 +3080,10 @@
   }
   .focus-visible\:outline-ink-on-inverse:focus-visible {
     outline-color: var(--color-ink-on-inverse, oklch(0.9702 0 0));
+  }
+  .focus-visible\:grayscale-0:focus-visible {
+    --tw-grayscale: grayscale(0%);
+    filter: var(--tw-blur,) var(--tw-brightness,) var(--tw-contrast,) var(--tw-grayscale,) var(--tw-hue-rotate,) var(--tw-invert,) var(--tw-saturate,) var(--tw-sepia,) var(--tw-drop-shadow,);
   }
   .focus-visible\:outline-solid:focus-visible {
     --tw-outline-style: solid;
@@ -3242,6 +3277,9 @@
     .tablet\:table-row-group {
       display: table-row-group;
     }
+    .tablet\:h-10 {
+      height: calc(var(--spacing, 0.25rem) * 10);
+    }
     .tablet\:h-px {
       height: 1px;
     }
@@ -3274,6 +3312,9 @@
     }
     .tablet\:grid-cols-3 {
       grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .tablet\:grid-cols-4 {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
     }
     .tablet\:grid-cols-6 {
       grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -3745,6 +3786,9 @@
     .desktop\:rotate-0 {
       rotate: 0deg;
     }
+    .desktop\:grid-cols-2 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
     .desktop\:grid-cols-3 {
       grid-template-columns: repeat(3, minmax(0, 1fr));
     }
@@ -3753,6 +3797,9 @@
     }
     .desktop\:grid-cols-5 {
       grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+    .desktop\:grid-cols-6 {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
     }
     .desktop\:grid-rows-subgrid {
       grid-template-rows: subgrid;

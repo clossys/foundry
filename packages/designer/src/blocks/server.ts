@@ -157,6 +157,15 @@ export type { StatProps, StatTrend } from "./Stat.js";
 export { Testimonial } from "./Testimonial.server.js";
 export type { TestimonialProps } from "./Testimonial.js";
 
+export { TestimonialSet } from "./TestimonialSet.js";
+export type { TestimonialSetProps, TestimonialSetItem } from "./TestimonialSet.js";
+
+export { LogoCloud } from "./LogoCloud.js";
+export type { LogoCloudProps, LogoCloudItem } from "./LogoCloud.js";
+
+export { PeopleGrid } from "./PeopleGrid.js";
+export type { PeopleGridProps, PeopleGridPerson } from "./PeopleGrid.js";
+
 export { RecordLedger } from "./RecordLedger.js";
 export type { RecordLedgerProps, LedgerRowData, LedgerGroupData } from "./RecordLedger.js";
 

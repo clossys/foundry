@@ -179,12 +179,12 @@ surfaces and live in `@clossys/publisher/web`.
   `Separator`, `Chip`, `StatusMark`, `Meter`.
 - **`blocks`** — owns the internal layout of multiple named regions,
   typically by composing one or more atoms (and/or layout) into something
-  with a real job on a page. Forty-two ship: `AccountMenu`, `PageHeader`, `EmptyState`,
+  with a real job on a page. Shipped blocks include `AccountMenu`, `PageHeader`, `EmptyState`,
   `DataTable`, `DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`,
   `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `SectionFrame`,
   `MarketingChapter`, `FeatureGrid`, `Item`, `Items`, `Tree`, `AnatomyCallouts`, `RecordLedger`, `Scene`, `Matrix`,
   `Specimen`, `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`,
-  `PricingTable`, `Testimonial`, `ArticleBody`, `ConsentBanner`, `Panel`, `Drawer`,
+  `PricingTable`, `Testimonial`, `TestimonialSet`, `LogoCloud`, `PeopleGrid`, `ArticleBody`, `ConsentBanner`, `Panel`, `Drawer`,
   `ResizablePane`, `CommandMenu`, `AppNavigation` and `GroupedTable` (see "Blocks" below).
 - **`shell`** — the persistent frame around content (nav, layout chrome)
   that provides the slots content fills. One per app; survives route
@@ -454,7 +454,7 @@ source file's own header for the exact probe and its result). Today that's:
 | Subpath | Server-safe members |
 | --- | --- |
 | `@clossys/designer/atoms/server` | `Logomark`, `Avatar`, `Badge`, `Banner`, `Card`, `Field`, `Icon`, `Meter`, `Skeleton`, `Spinner`, `StatusMark`, `buttonLinkClassName`, `iconButtonClassName`, `iconButtonLinkClassName`, `mergeUiClasses` |
-| `@clossys/designer/blocks/server` | `Lockup`, `AnatomyCallouts`, `ArticleBody`, `Matrix`, `ContentSection`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `Item`, `Items`, `MarketingChapter`, `MediaFigure`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `RecordLedger`, `Scene`, `SectionFrame`, `SectionHeader`, `SectionIntro`, `Specimen`, `SpecimenPanel`, `Stat`, `StatusList`, `Testimonial`, `Tree` |
+| `@clossys/designer/blocks/server` | `Lockup`, `AnatomyCallouts`, `ArticleBody`, `Matrix`, `ContentSection`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `Item`, `Items`, `MarketingChapter`, `MediaFigure`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `RecordLedger`, `Scene`, `SectionFrame`, `SectionHeader`, `SectionIntro`, `Specimen`, `SpecimenPanel`, `Stat`, `StatusList`, `Testimonial`, `TestimonialSet`, `LogoCloud`, `PeopleGrid`, `Tree` |
 | `@clossys/designer/shell/server` | `Shell`, `SiteFooter`, `SiteHeader`, `SkipLink` |
 | `@clossys/designer/charts/server` | `ChartFrame`, `BarChart`, `LineChart` (static), `WaterfallChart`, `RangeChart`, `ScatterChart`, `AreaChart` (static), `Heatmap` (static), `StatusStrip` (static), `Sparkline` |
 | `@clossys/designer/theme/server` | `getThemeInitScript` |
@@ -4377,6 +4377,135 @@ Measure and section padding come from the parent `SectionFrame` (`measure="prose
 article plus a sidebar callout, or two comparison columns), which is what
 keeps it at this layer rather than being a view (test 3).
 
+### `TestimonialSet`
+
+Draft, server-safe quotation plates. The list draws no section heading; name it
+with host-authored `aria-label` or `aria-labelledby`. Each item reuses
+`Testimonial`'s figure, with body-large quote typography scoped to its plate.
+Portraits are decorative because the adjacent attribution supplies the name.
+The host sizes portrait content to its reserved box; the block clips overflow.
+
+| Prop | Contract |
+| --- | --- |
+| `items` | Required readonly `TestimonialSetItem[]`: one, two, three, four or six entries; other counts throw `TypeError`. Each entry supplies `id`, `quote`, `attributorName`, optional `attributorRole` and `portrait`. |
+| `ground` | `"base"` (default), `"sunken"` or `"inverse"`; selects the plate fill and reading inks. |
+| Native list attributes | `aria-label`, `aria-labelledby`, `className`, `style` and other native `<ul>` attributes pass through. |
+
+```tsx
+import { TestimonialSet } from "@clossys/designer/blocks/server";
+
+function ReaderAccounts() {
+  const portrait = (initials: string) => (
+    <svg viewBox="0 0 40 40" fill="currentColor" className="size-full">
+      <circle cx="20" cy="20" r="18" fill="none" stroke="currentColor" />
+      <text x="20" y="25" textAnchor="middle">{initials}</text>
+    </svg>
+  );
+  return <TestimonialSet aria-label="Reader accounts" items={[
+    { id: "mira", quote: "The notes made each decision easier to follow.", attributorName: "Mira Vale", attributorRole: "Research lead", portrait: portrait("MV") },
+    { id: "oren", quote: "We could trace the change back to its source.", attributorName: "Oren Ash", attributorRole: "Editor", portrait: portrait("OA") },
+    { id: "lena", quote: "The shared record kept our review focused.", attributorName: "Lena Reed", attributorRole: "Reviewer" },
+    { id: "tavi", quote: "A clear handoff helped us start with confidence.", attributorName: "Tavi Stone", attributorRole: "Coordinator" },
+  ]} />;
+}
+```
+
+A single plate is centred with a prose-sized maximum width. Two and four
+quotes use two columns from tablet; three and six use three columns on desktop.
+The third of three spans the tablet row. This block adds no animation or state.
+
+### `LogoCloud`
+
+Draft, server-safe mark collection. Supplied artwork is decorative; an `sr-only`
+name remains available when an image fails. `href` creates a link named by that
+text, with host-owned destination policy. Inverse ground changes currentColor
+ink; the host supplies artwork suitable for that ground.
+
+| Prop | Contract |
+| --- | --- |
+| `items` | Required readonly `LogoCloudItem[]`: three, four, six, eight or twelve entries. Each entry supplies `id`, `name`, `logo` and optional `href`. Other counts throw `TypeError`. |
+| `tone` | `"monochrome"` (default) applies grayscale without dimming; `"original"` preserves supplied colours. Linked monochrome marks restore colour on hover and keyboard focus. |
+| `ground` | `"base"` (default), `"sunken"` or `"inverse"`. |
+| Native list attributes | `aria-label`, `aria-labelledby`, `className`, `style` and other native `<ul>` attributes pass through. |
+
+```tsx
+import { LogoCloud, type LogoCloudItem } from "@clossys/designer/blocks/server";
+
+function ContributorMarks() {
+  const names = ["Arc", "Branch", "Field", "Harbor", "Orbit", "Vale"];
+  const marks: LogoCloudItem[] = names.map(name => ({
+    id: name,
+    name,
+    logo: <svg viewBox="0 0 120 32" fill="currentColor" className="h-full w-full object-contain">
+      <path d="M2 16 12 4 22 16 12 28Z" />
+      <text x="28" y="22">{name}</text>
+    </svg>,
+  }));
+  return <>
+    <LogoCloud aria-label="Contributor marks" items={marks} />
+    <LogoCloud aria-label="Contributor destinations" items={marks.map(mark => ({ ...mark, href: `/contributors/${mark.id.toLowerCase()}` }))} />
+  </>;
+}
+```
+
+Six and twelve marks reach six desktop columns; four and eight reach four.
+Logo boxes reserve their height, and links use the section's focus accent.
+The host sizes its artwork inside the reserved, clipped box. Grayscale and its
+hover/focus restoration apply to the owned artwork wrapper. Automatic descendant
+image sizing is omitted under the current compiled-class scanner contract.
+
+### `PeopleGrid`
+
+Draft, server-safe people collection. Names are semantic headings; portraits and
+initials are decorative. A linked person's name uses the shared stretched-link
+title, with one anchor per person. A linked `bio` or `role` cannot contain another
+interactive target; the supplied React tree is checked at render using the same
+probe as `Items`.
+
+| Prop | Contract |
+| --- | --- |
+| `people` | Required readonly `PeopleGridPerson[]`, two through twelve entries; other counts throw `TypeError`. Each person supplies `id`, `name`, `initials`, and optional `role`, `bio`, `portrait`, `href`. |
+| `media` | `"avatar"` (default) places a small portrait beside the text; `"photo"` places square media above it. Missing portraits show authored initials. |
+| `columns` | Desktop `2`, `3` (default) or `4`; tablet uses at most three. Avatar starts at one column, photo at two. |
+| `headingLevel` | `3` (default), `4`, `5` or `6` for person names. |
+| `ground` | `"base"` (default), `"sunken"` or `"inverse"`; selects reading inks and fallback fill. |
+| Native list attributes | `aria-label`, `aria-labelledby`, `className`, `style` and other native `<ul>` attributes pass through. |
+
+```tsx
+import { PeopleGrid, type PeopleGridPerson } from "@clossys/designer/blocks/server";
+
+function ReviewTeam() {
+  const people: PeopleGridPerson[] = [
+    { id: "mira", name: "Mira Vale", initials: "MV", role: "Research lead" },
+    { id: "oren", name: "Oren Ash", initials: "OA", role: "Editor" },
+    { id: "lena", name: "Lena Reed", initials: "LR", role: "Reviewer" },
+    { id: "tavi", name: "Tavi Stone", initials: "TS", role: "Coordinator" },
+    { id: "aya", name: "Aya Glen", initials: "AG", role: "Archivist" },
+    { id: "ivo", name: "Ivo Brook", initials: "IB", role: "Facilitator" },
+    { id: "nela", name: "Nela Fern", initials: "NF", role: "Writer" },
+    { id: "remy", name: "Remy Birch", initials: "RB", role: "Illustrator" },
+  ];
+  const portraits = people.slice(0, 2).map(person => ({
+    ...person,
+    href: `/people/${person.id}`,
+    portrait: <svg viewBox="0 0 160 160" fill="currentColor" className="size-full">
+      <circle cx="80" cy="56" r="24" />
+      <path d="M24 152a56 56 0 0 1 112 0Z" />
+    </svg>,
+  }));
+  return <>
+    <PeopleGrid aria-label="Review team" people={people} columns={4} />
+    <PeopleGrid aria-label="Review leads" people={portraits} media="photo" columns={2} />
+  </>;
+}
+```
+
+Partial rows start at the logical start edge. No image-load handlers, hooks or
+motion are added; the host owns portrait content and external section headings.
+Size supplied portraits to their reserved boxes, for example with `size-full`
+and `object-cover` directly on an image. Descendant sizing is omitted under the
+current compiled-class scanner contract.
+
 ### `AccountMenu`
 
 A Navigation Material combining Avatar, Button, Icon, Tooltip and Menu. The host
@@ -6867,6 +6996,15 @@ not a grab-bag).
 | `PricingTableHeadingLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
 | `Testimonial` | component | Quote plus attribution, rendered as a real `<figure>`/`<blockquote>`/`<figcaption>`: `attributorName` and `attributorRole` are always separate fields. Optional avatar via `avatarSrc`/`avatarAlt`, required together at the type level. |
 | `TestimonialProps` | type | Props for `Testimonial`: `quote`, `attributorName`, `attributorRole`, `avatarSrc`/`avatarAlt` (a discriminated pair — both or neither), `className`, `style`, plus every native `<figure>` attribute except `children`. |
+| `TestimonialSet` | component | Draft, server-safe list of grounded quotation plates with decorative portraits. |
+| `TestimonialSetProps` | type | Native list attributes plus required `items` and optional `ground`. |
+| `TestimonialSetItem` | type | Quote identity, `quote`, `attributorName`, optional `attributorRole` and decorative `portrait`. |
+| `LogoCloud` | component | Draft, server-safe mark list with authored accessible names and optional links. |
+| `LogoCloudProps` | type | Native list attributes plus required `items`, optional `tone` and `ground`. |
+| `LogoCloudItem` | type | Mark identity, accessible `name`, decorative `logo` and optional `href`. |
+| `PeopleGrid` | component | Draft, server-safe people list with semantic name headings and decorative media. |
+| `PeopleGridProps` | type | Native list attributes plus required `people`, optional `media`, `columns`, `headingLevel` and `ground`. |
+| `PeopleGridPerson` | type | Person identity, `name`, `initials`, optional `role`, `bio`, `portrait` and `href`. |
 | `ArticleBody` | component | Thin, token-styled container for pre-structured long-form content (real `<h2>`/`<p>`/`<ul>`/... children) — no markdown parsing, no content-shape schema. |
 | `ArticleBodyProps` | type | Props for `ArticleBody`: `children`, `className`, `style`, plus every native `<article>` attribute. |
 | `SectionFrame` | component | Full-bleed marketing section band: a `ground` surface, vertical section rhythm, horizontal page padding, and a measured inner column. Sets `data-designer-section-frame` on its outer `<section>`. Compose `ArticleBody`, `Stat`, and other blocks that do not own their own band inside it. |
@@ -7535,7 +7673,7 @@ up. They get added here only once something real needs them.
 `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `SectionFrame`, `MarketingChapter`,
 `FeatureGrid`, `Item`, `Items`, `Tree`, `AnatomyCallouts`, `RecordLedger`, `Scene`, `Matrix`, `Specimen`,
 `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`, `PricingTable`,
-`Testimonial`, `ArticleBody`, `ConsentBanner`, `Panel`, `Drawer`,
+`Testimonial`, `TestimonialSet`, `LogoCloud`, `PeopleGrid`, `ArticleBody`, `ConsentBanner`, `Panel`, `Drawer`,
 `ResizablePane`, `CommandMenu` and `AppNavigation` — completing this layer. No
 `FilterBar` block:
 `DataTable`'s own `toolbar` slot (and `Toolbar`'s own `search` slot) are

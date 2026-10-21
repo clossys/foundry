@@ -7,6 +7,30 @@ import ts from "typescript";
 
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 
+describe("compiled evidence blocks public contract", () => {
+  it("exports the three components and their host-facing types through the existing barrels", () => {
+    for (const entry of ["blocks/index.js", "blocks/server.js", "index.js"]) {
+      const filename = join(packageRoot, "evidence-blocks-consumer.check.tsx");
+      const consumer = `
+        import { TestimonialSet, LogoCloud, PeopleGrid, type TestimonialSetProps, type TestimonialSetItem, type LogoCloudProps, type LogoCloudItem, type PeopleGridProps, type PeopleGridPerson } from ${JSON.stringify(join(packageRoot, "dist", entry))};
+        const quote: TestimonialSetItem = {id: "quote", quote: "Clear account.", attributorName: "Author"};
+        const quotes: TestimonialSetProps = {items: [quote], ground: "inverse", "aria-labelledby": "quotes"};
+        const mark: LogoCloudItem = {id: "mark", name: "Mark", logo: null, href: "/mark"};
+        const marks: LogoCloudProps = {items: [mark, mark, mark], tone: "original", ground: "sunken", "aria-label": "Marks"};
+        const person: PeopleGridPerson = {id: "person", name: "Person", initials: "P", role: "Reviewer", bio: "Keeps notes clear.", href: "/person"};
+        const people: PeopleGridProps = {people: [person, person], columns: 4, media: "photo", headingLevel: 6, ground: "inverse"};
+        TestimonialSet(quotes); LogoCloud(marks); PeopleGrid(people);
+      `;
+      const options = { strict: true, noEmit: true, skipLibCheck: true, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler, jsx: ts.JsxEmit.ReactJSX };
+      const host = ts.createCompilerHost(options), original = host.getSourceFile.bind(host);
+      host.getSourceFile = (path, language, error, fresh) => path === filename ? ts.createSourceFile(path, consumer, language, true, ts.ScriptKind.TSX) : original(path, language, error, fresh);
+      expect(ts.getPreEmitDiagnostics(ts.createProgram([filename], options, host)).map(diagnostic => ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n")), entry).toEqual([]);
+      const script = `import * as api from ${JSON.stringify(join(packageRoot, "dist", entry))}; process.stdout.write(JSON.stringify([typeof api.TestimonialSet, typeof api.LogoCloud, typeof api.PeopleGrid]));`;
+      expect(JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8", cwd: packageRoot })), entry).toEqual(["function", "function", "function"]);
+    }
+  }, 30_000);
+});
+
 describe("compiled signature chart public contract", () => {
   it.each(["index", "server"])("exports all three charts from the compiled charts/%s entry", async entry => {
     const exports = await import(pathToFileURL(join(packageRoot, `dist/charts/${entry}.js`)).href);
