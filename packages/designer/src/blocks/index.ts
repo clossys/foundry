@@ -247,3 +247,6 @@ export type { CatalogWorkspaceProps, CatalogWorkspaceItem, CatalogWorkspaceSize 
 
 export { Chat } from "./chat/Chat.js";
 export type { ChatProps, ChatMessage, ChatActions, ChatLabels } from "./chat/types.js";
+
+export { NewsletterBand } from "./NewsletterBand.js";
+export type { NewsletterBandProps, NewsletterStatus } from "./NewsletterBand.js";

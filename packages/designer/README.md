@@ -179,12 +179,12 @@ surfaces and live in `@clossys/publisher/web`.
   `Separator`, `Chip`, `StatusMark`, `Meter`.
 - **`blocks`** — owns the internal layout of multiple named regions,
   typically by composing one or more atoms (and/or layout) into something
-  with a real job on a page. Forty-three ship: `AccountMenu`, `PageHeader`, `EmptyState`,
+  with a real job on a page. Forty-four ship: `AccountMenu`, `PageHeader`, `EmptyState`,
   `DataTable`, `DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`,
   `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `SectionFrame`,
   `MarketingChapter`, `FeatureGrid`, `Item`, `Items`, `Tree`, `AnatomyCallouts`, `RecordLedger`, `Scene`, `Matrix`,
   `Specimen`, `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`,
-  `PricingTable`, `Testimonial`, `ArticleBody`, `ConsentBanner`, `Panel`, `Drawer`,
+  `PricingTable`, `Testimonial`, `ArticleBody`, `ConsentBanner`, `NewsletterBand`, `Panel`, `Drawer`,
   `ResizablePane`, `CommandMenu`, `AppNavigation`, `PageBar` and `GroupedTable` (see "Blocks" below).
 - **`shell`** — the persistent frame around content (nav, layout chrome)
   that provides the slots content fills. One per app; survives route
@@ -4413,6 +4413,94 @@ viewport geometry, normal and forced-color focus, reduced-motion transitions,
 long actor details, retained hidden-host handoff, and client hydration;
 they do not establish a separate native server or browser-qualification claim.
 
+### `NewsletterBand`
+
+Draft email capture with caller-supplied copy and controlled status. Import
+`NewsletterBand`, `NewsletterBandProps` and `NewsletterStatus` from
+`@clossys/designer/blocks`; the internal root entry also exports them.
+
+```tsx
+import { useState } from "react";
+import { NewsletterBand, type NewsletterStatus } from "@clossys/designer/blocks";
+
+function NativeNewsletter() {
+  return <section>
+    <h2 id="native-newsletter">Get product updates</h2>
+    <NewsletterBand
+      aria-labelledby="native-newsletter"
+      layout="stacked"
+      action="/subscribe"
+      emailLabel="Email address"
+      submitLabel="Subscribe"
+      pendingLabel="Subscribing"
+      sentMessage="Thanks, check your inbox to confirm"
+      failedMessage="Something went wrong. Try again."
+      privacyNote="Read our privacy notice before signing up."
+    />
+  </section>;
+}
+
+function ControlledNewsletter({ subscribe }: { subscribe: (email: string) => Promise<void> }) {
+  const [status, setStatus] = useState<NewsletterStatus>("idle");
+  return <section>
+    <h2 id="controlled-newsletter">Get product updates</h2>
+    <NewsletterBand
+      aria-labelledby="controlled-newsletter"
+      layout="inline"
+      status={status}
+      name="address"
+      emailLabel="Email address"
+      submitLabel="Subscribe"
+      pendingLabel="Subscribing"
+      sentMessage="Thanks, check your inbox to confirm"
+      failedMessage="Something went wrong. Try again."
+      hint="Use an address where you can receive a confirmation."
+      privacyNote="Read our privacy notice before signing up."
+      onSubmit={email => {
+        setStatus("pending");
+        void subscribe(email).then(
+          () => setStatus("sent"),
+          () => setStatus("failed"),
+        );
+      }}
+    />
+  </section>;
+}
+```
+
+| Prop | Contract |
+| --- | --- |
+| `emailLabel`, `submitLabel`, `pendingLabel` | Required strings for the field, button and pending announcement. |
+| `sentMessage`, `failedMessage` | Required `ReactNode` status content. |
+| `hint`, `privacyNote` | Optional `ReactNode` paragraphs below the row. |
+| `status` | Controlled `NewsletterStatus`; defaults to `idle`. |
+| `layout` | `inline` (default) places the button beside the field from tablet; `stacked` keeps a column. Both use full-width buttons below tablet. |
+| `action` | Optional native-post destination; a same-origin path beginning with one slash, without whitespace, control characters or backslashes. Invalid values throw `TypeError`, including when a handler is also supplied. |
+| `onSubmit` | Optional `(email, event) => void` handler; receives the trimmed field value after native validation and prevents the native post. Supply this or `action`. |
+| `method`, `name` | `method` is `post`; `name` defaults to the technical key `email`. A supplied name must be non-empty and contain no whitespace. |
+| `ground` | `base` (default), `sunken` or `inverse`. |
+| `aria-label`, `aria-labelledby` | Host-supplied accessible form name or external heading reference. |
+| `className`, `style` | Applied to the form. |
+
+| Status | Behaviour |
+| --- | --- |
+| `idle` | Required native email field and submit button; empty polite status region. |
+| `pending` | Read-only field and focusable pending button; duplicate submissions are cancelled and pending copy is announced. |
+| `sent` | Removes the row, hint and privacy note; places the sent message in the retained status region and focuses it. |
+| `failed` | Marks the input invalid, links the failed paragraph and hint, and focuses the input. A decorative error icon accompanies the message. |
+
+Focus effects run on status changes. Initial idle rendering leaves focus alone.
+The polite atomic status region stays mounted through the four states. The block
+adds no animation; native field borders and the error icon support forced colours.
+An inverse band puts the form and its status region on a rounded
+`bg-surface-raised` plate with base inks, because `TextField` uses base inks.
+
+Without `onSubmit`, the browser posts to the validated `action` after native
+required/email validation. The block sends the one named email field. The host
+owns CSRF protection, rate limiting and double opt-in at the receiving endpoint.
+The controlled example delegates delivery and persistence to the supplied host
+function; the block does not retain the address.
+
 ### `ConsentBanner`
 
 ```tsx
@@ -6872,6 +6960,9 @@ not a grab-bag).
 | `SectionFrame` | component | Full-bleed marketing section band: a `ground` surface, vertical section rhythm, horizontal page padding, and a measured inner column. Sets `data-designer-section-frame` on its outer `<section>`. Compose `ArticleBody`, `Stat`, and other blocks that do not own their own band inside it. |
 | `SectionFrameProps` | type | Props for `SectionFrame`: `ground` (default `"base"`), `measure` (default `"content"`), `children`, `className`, `style`, plus every native `<section>` attribute. |
 | `SectionMeasure` | type | `"content" \| "wide" \| "prose"`. How wide `SectionFrame`'s inner column is: it maps to the `--ui-width-content-max`, `--ui-width-wide-max`, or `--ui-width-prose-max` token. |
+| `NewsletterBand` | component | Draft email capture with native or host submission, validated same-origin action and controlled status. |
+| `NewsletterBandProps` | type | Required field, button and status copy; submission destination, technical field name, layout, ground and form naming props. |
+| `NewsletterStatus` | type | `idle \| pending \| sent \| failed`. |
 | `ConsentBanner` | component | Presentational consent notice: a region landmark named by its title, a body, an optional `privacyLink` slot after it, and two same-variant, same-size `Button`s for accept and reject. Props only: no consent state, storage, network call or built-in copy. Not a dialog. Always mounts an empty polite `role="status"` live region for an optional `status`. Sets `data-consent-banner` on its root. |
 | `ConsentBannerProps` | type | Props for `ConsentBanner`: `title`, `body`, `acceptLabel`, `rejectLabel` (all `ReactNode`), `onAccept`, `onReject` (both `() => void`), `privacyLink?`, `status?` (a `ReactNode` rendered in an always-mounted polite live region), `presentation?` (`banner` by default, or `card`), `selectedChoice?` (`granted` or `denied`, card feedback only), `className?`, `style?`. |
 | `mergeUiClasses` | function | Merges token-aware Tailwind utility classes with last-argument precedence; used by surface-level compositions built from UI primitives. |
@@ -7530,12 +7621,12 @@ speculatively, just because a related component shipped, is the exact
 un-bounded growth this package's own "variant rule" warns against one level
 up. They get added here only once something real needs them.
 
-**Blocks:** forty-two ship — `AccountMenu`, `PageHeader`, `EmptyState`, `DataTable`,
+**Blocks:** forty-three ship — `AccountMenu`, `PageHeader`, `EmptyState`, `DataTable`,
 `DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`, `ConfirmDialog`,
 `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `SectionFrame`, `MarketingChapter`,
 `FeatureGrid`, `Item`, `Items`, `Tree`, `AnatomyCallouts`, `RecordLedger`, `Scene`, `Matrix`, `Specimen`,
 `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`, `PricingTable`,
-`Testimonial`, `ArticleBody`, `ConsentBanner`, `Panel`, `Drawer`,
+`Testimonial`, `ArticleBody`, `ConsentBanner`, `NewsletterBand`, `Panel`, `Drawer`,
 `ResizablePane`, `CommandMenu`, `AppNavigation` and `PageBar` — completing this layer. No
 `FilterBar` block:
 `DataTable`'s own `toolbar` slot (and `Toolbar`'s own `search` slot) are

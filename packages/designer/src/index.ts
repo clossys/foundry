@@ -168,6 +168,7 @@ export {
   ArticleBody,
   SectionFrame,
   ConsentBanner,
+  NewsletterBand,
   SECTION_GROUND_CLASSES,
 } from "./blocks/index.js";
 export type {
@@ -299,6 +300,8 @@ export type {
   ArticleBodyProps,
   SectionFrameProps,
   ConsentBannerProps,
+  NewsletterBandProps,
+  NewsletterStatus,
   SectionMeasure,
 } from "./blocks/index.js";
 

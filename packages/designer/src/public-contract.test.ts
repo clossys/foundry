@@ -652,3 +652,49 @@ it("exports PageBar from the public root and blocks barrels with all seven publi
     for (const name of ["PageBarProps", "PageBarPage", "PageBarCrumb", "PageBarAction", "PageBarDestination", "PageBarLabels", "PageBarWidth"]) expect(source).toContain(name);
   }
 });
+
+describe("compiled NewsletterBand public contract", () => {
+  it("exports the client component from both client barrels and keeps its validator private", () => {
+    for (const entry of ["blocks/index.js", "index.js"]) {
+      const script = `import * as api from ${JSON.stringify(join(packageRoot, "dist", entry))}; process.stdout.write(JSON.stringify({component: typeof api.NewsletterBand, private: ["ACTION_PATTERN", "NewsletterStatus", "NewsletterBandProps"].filter(name => name in api)}));`;
+      expect(JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8", cwd: packageRoot }))).toEqual({ component: "function", private: [] });
+    }
+    const script = `import * as api from ${JSON.stringify(join(packageRoot, "dist/blocks/server.js"))}; process.stdout.write(JSON.stringify("NewsletterBand" in api));`;
+    expect(execFileSync(process.execPath, ["--conditions=react-server", "--input-type=module", "-e", script], { encoding: "utf8", cwd: packageRoot })).toBe("false");
+  });
+
+  it("pins the controlled status, copy, post and callback types in both emitted client entries", () => {
+    const filename = join(packageRoot, "emitted-newsletter-consumer.check.ts");
+    const consumer = ["blocks/index.js", "index.js"].map((entry, index) => `
+      import { NewsletterBand as Band${index}, type NewsletterBandProps as Props${index}, type NewsletterStatus as Status${index} } from ${JSON.stringify(join(packageRoot, "dist", entry))};
+      type Same${index}<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ? true : false;
+      const status${index}: Same${index}<Status${index}, "idle" | "pending" | "sent" | "failed"> = true;
+      const props${index}: Props${index} = {emailLabel: "Email", submitLabel: "Send", pendingLabel: "Sending", sentMessage: "Sent", failedMessage: "Failed", action: "/subscribe", method: "post", name: "address", status: "pending", layout: "stacked", ground: "inverse", "aria-label": "Updates", onSubmit: (email, event) => { const value: string = email; const form: HTMLFormElement = event.currentTarget; }};
+      Band${index}(props${index});
+    `).join("\n");
+    const options = { strict: true, noEmit: true, skipLibCheck: true, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler };
+    const compile = (source: string) => {
+      const host = ts.createCompilerHost(options); const original = host.getSourceFile.bind(host);
+      host.getSourceFile = (path, language, error, fresh) => path === filename ? ts.createSourceFile(path, source, language, true) : original(path, language, error, fresh);
+      return ts.getPreEmitDiagnostics(ts.createProgram([filename], options, host));
+    };
+    expect(compile(consumer).map(diagnostic => ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n"))).toEqual([]);
+    const negative = consumer + [0, 1].map(index => `
+      const missingCopy${index}: Props${index} = {action: "/subscribe"};
+      const invalidMethod${index}: Props${index} = {...props${index}, method: "get"};
+      const invalidStatus${index}: Status${index} = "success";
+    `).join("\n");
+    const diagnostics = compile(negative);
+    const cases = [0, 1].flatMap(index => [
+      { binding: `missingCopy${index}`, code: 2739 },
+      { binding: `invalidMethod${index}`, code: 2322 },
+      { binding: `invalidStatus${index}`, code: 2322 },
+    ]);
+    expect(diagnostics.map(diagnostic => diagnostic.code)).toEqual(cases.map(item => item.code));
+    for (const [index, diagnostic] of diagnostics.entries()) {
+      expect(diagnostic.file?.fileName).toBe(filename);
+      const line = diagnostic.file!.getLineAndCharacterOfPosition(diagnostic.start!).line;
+      expect(negative.split("\n")[line]).toContain(`const ${cases[index]!.binding}:`);
+    }
+  }, 30_000);
+});
