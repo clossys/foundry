@@ -28,7 +28,7 @@ export const APP_FRAME_MATERIALS = [
       { prop: "placement", values: ["start", "end", "bottom"], default: "start", source: "src/blocks/Drawer.tsx" },
       { prop: "wide", values: ["dismiss", "sheet"], default: "dismiss", source: "src/blocks/Drawer.tsx" },
     ],
-    authoredInputs: ["trigger", "heading", "closeLabel", "children", "footer", "navigationKey", "dismissAt"],
+    authoredInputs: ["trigger", "heading", "closeLabel", "children", "footer", "navigationKey", "dismissAt", "closeButtonStyle"],
   },
   {
     id: "resizable-pane", layer: "blocks", exportName: "ResizablePane", component: ResizablePane, source: "src/blocks/ResizablePane.tsx",
@@ -64,7 +64,7 @@ export const APP_FRAME_MATERIALS = [
       { exportName: "Icon", source: "src/atoms/Icon.tsx" },
     ],
     configs: [{ prop: "collapsed", values: [false, true], default: false, source: "src/blocks/AppNavigation.tsx" }],
-    authoredInputs: ["tree", "activeId", "activeHref", "label", "footer", "emptyMessage", "navigationKey", "defaultCollapsed", "onCollapsedChange", "drawerOpen", "onDrawerOpenChange", "dismissAt", "openLabel", "closeLabel", "expandLabel", "collapseLabel", "formatDisclosureLabel"],
+    authoredInputs: ["tree", "activeId", "activeHref", "label", "header", "footer", "trigger", "emptyMessage", "navigationKey", "defaultCollapsed", "onCollapsedChange", "drawerOpen", "onDrawerOpenChange", "dismissAt", "openLabel", "closeLabel", "expandLabel", "collapseLabel", "formatDisclosureLabel"],
   },
   {
     id: "account-menu", layer: "blocks", exportName: "AccountMenu", component: AccountMenu, source: "src/blocks/AccountMenu.tsx",

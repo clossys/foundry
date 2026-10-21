@@ -1,19 +1,18 @@
 "use client";
 
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { ModalContext, PopoverContext } from "react-aria-components";
-import { Button, Icon, Menu } from "@clossys/designer/atoms";
-import { Layers, Search } from "@clossys/designer/icons";
-import { AccountMenu, AppNavigation, CommandMenu, Drawer, ResizablePane, useCommandMenuShortcut } from "@clossys/designer/blocks";
+import { Button, Icon, Link, Menu, Popover } from "@clossys/designer/atoms";
+import { Box, ChevronDown, ExternalLink, Layers, List, Search } from "@clossys/designer/icons";
+import { AccountMenu, AppNavigation, CommandMenu, Drawer, ResizablePane, useCommandMenuShortcut, type DrawerProps } from "@clossys/designer/blocks";
 import { ThemeProvider, ThemeToggle } from "@clossys/designer/theme";
 import { AppFrameBrand } from "./AppFrameBrand.js";
 import { SiteSkipLink } from "./SkipLink.client.js";
-import { APP_FRAME_WIDE_QUERY, appFrameMainId } from "./app-frame-layout.js";
+import { APP_FRAME_ALWAYS_NARROW, APP_FRAME_ALWAYS_WIDE, APP_FRAME_LAYOUT, APP_FRAME_WIDE_QUERY, appFrameMainId, appFramePanels, appFrameCorner, appFrameDirection } from "./app-frame-layout.js";
 import type { AppFrameAccount, AppFrameProps } from "./app-frame-types.js";
 
 const CONTROL = "inline-flex shrink-0 items-center justify-center rounded-control border-0 bg-transparent px-sm text-body text-ink-primary focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent forced-colors:border-current";
 const TAP = { minBlockSize: "var(--ui-layout-tap-target, 44px)", minInlineSize: "var(--ui-layout-tap-target, 44px)" };
-const HEADER = { minBlockSize: "calc(var(--ui-layout-tap-target, 44px) + 2 * var(--spacing-sm, 8px))" };
 
 function SignedOutMenu({ sections, signedOutLabel, onRoute }: AppFrameAccount) {
   const populated = sections.filter(section => section.entries.length > 0);
@@ -38,9 +37,135 @@ function SignedOutMenu({ sections, signedOutLabel, onRoute }: AppFrameAccount) {
   </Menu>;
 }
 
-function FrameContent({ brand, navigation, account, commands, children, rightPanel, theme, themeControl, dir,
+type Page = NonNullable<AppFrameProps["page"]>;
+type Action = NonNullable<Page["actions"]>[number];
+type Crumb = NonNullable<Page["breadcrumb"]>[number];
+type Destination = NonNullable<AppFrameProps["workspaces"]>[number];
+
+function PageAction({ label, href, onAction, isDisabled, primary }: Action) {
+  return href !== undefined
+    ? <Link href={href} buttonVariant={primary ? "primary" : "ghost"} isDisabled={isDisabled} className="min-w-0 max-w-full"
+        data-application-frame-action={primary ? "primary" : "secondary"}><span className="min-w-0 truncate">{label}</span></Link>
+    : <Button variant={primary ? "primary" : "ghost"} onPress={onAction} isDisabled={isDisabled} className="min-w-0 max-w-full"
+        data-application-frame-action={primary ? "primary" : "secondary"}><span className="min-w-0 truncate">{label}</span></Button>;
+}
+
+function CrumbMenu({ label, href, id, siblings }: Crumb) {
+  return <Menu trigger={<Button variant="ghost" className={CONTROL + " min-w-0 gap-xs"} style={TAP}><span className="truncate">{label}</span><Icon glyph={ChevronDown} decorative size="sm" /></Button>}>
+    {href && <Menu.Item id={id} href={href}>{label}</Menu.Item>}
+    {siblings?.map(item => <Menu.Item key={item.id} id={item.id} href={item.href}>{item.label}</Menu.Item>)}
+  </Menu>;
+}
+
+function PageTrail({ brand, title, breadcrumb = [], workspaces, narrow,
+  /** @default "Breadcrumb" */ breadcrumbLabel = "Breadcrumb",
+  /** @default "More breadcrumb levels" */ collapsedBreadcrumbLabel = "More breadcrumb levels",
+}: Pick<AppFrameProps, "brand" | "workspaces" | "breadcrumbLabel" | "collapsedBreadcrumbLabel"> & Pick<Page, "title" | "breadcrumb"> & { narrow: boolean }) {
+  const current = breadcrumb.at(-1)?.label === title ? breadcrumb.at(-1) : undefined;
+  const ancestors = current ? breadcrumb.slice(0, -1) : breadcrumb;
+  return <nav aria-label={breadcrumbLabel} className="min-w-0 flex-1">
+    <ol className="m-0 flex min-w-0 list-none items-center gap-xs p-0">
+      <li className="min-w-0 shrink-0">
+        {workspaces?.length ? <CrumbMenu id="workspace" label={brand.wordmark} siblings={workspaces} /> :
+          <Link href={brand.href} variant="standalone" className={CONTROL} style={TAP}>{brand.wordmark}</Link>}
+      </li>
+      {narrow && ancestors.length > 0
+        ? <li className="shrink-0"><Menu trigger={<Button variant="ghost" className={CONTROL} style={TAP} aria-label={collapsedBreadcrumbLabel}><span aria-hidden="true">...</span></Button>}>
+            {ancestors.map(item => <Menu.Section key={item.id} heading={item.label}>
+              <Menu.Item id={JSON.stringify([item.id])} href={item.href}>{item.label}</Menu.Item>
+              {item.siblings?.map(sibling => <Menu.Item key={sibling.id} id={JSON.stringify([item.id, sibling.id])} href={sibling.href}>{sibling.label}</Menu.Item>)}
+            </Menu.Section>)}
+          </Menu></li>
+        : ancestors.map(item => <li key={item.id} className="min-w-0 shrink-0">
+            {item.siblings?.length ? <CrumbMenu {...item} /> : <Link href={item.href} variant="standalone" className={CONTROL} style={TAP}>{item.label}</Link>}
+          </li>)}
+      <li className="min-w-0 flex-1">
+        <h1 aria-current="page" className="m-0 truncate text-body font-semibold">{title}</h1>
+        {current?.siblings?.length ? <CrumbMenu {...current} /> : null}
+      </li>
+    </ol>
+  </nav>;
+}
+
+interface BarProps extends Pick<AppFrameProps, "brand" | "page" | "workspaces" | "breadcrumbLabel" | "collapsedBreadcrumbLabel" | "pageInfoLabel" | "fullWidthLabel" | "containedWidthLabel" | "pageActionsLabel" | "dir"> {
+  width: "contained" | "full";
+  onWidthChange: (width: "contained" | "full") => void;
+  narrow: boolean;
+  navigationDocked: boolean;
+  panelDocked: boolean;
+  panelPresent: boolean;
+  onHeight: (height: number) => void;
+}
+function FrameBar({ brand, page, workspaces, width, onWidthChange, narrow, navigationDocked, panelDocked, panelPresent, onHeight, dir,
+  breadcrumbLabel, collapsedBreadcrumbLabel,
+  /** @default "Page information" */ pageInfoLabel = "Page information",
+  /** @default "Use full width" */ fullWidthLabel = "Use full width",
+  /** @default "Use contained width" */ containedWidthLabel = "Use contained width",
+  /** @default "More page actions" */ pageActionsLabel = "More page actions",
+}: BarProps) {
+  const bar = useRef<HTMLElement>(null);
+  const [glass, setGlass] = useState(false);
+  const [infoOpen, setInfoOpen] = useState(false);
+  const [barWidth, setBarWidth] = useState<number>();
+  const [direction, setDirection] = useState(dir);
+  useEffect(() => {
+    const reduced = window.matchMedia("(prefers-reduced-transparency: reduce)");
+    const forced = window.matchMedia("(forced-colors: active)");
+    const sync = () => setGlass(!reduced.matches && !forced.matches && Boolean(globalThis.CSS?.supports?.("backdrop-filter", APP_FRAME_LAYOUT.blur) || globalThis.CSS?.supports?.("-webkit-backdrop-filter", APP_FRAME_LAYOUT.blur)));
+    sync(); reduced.addEventListener("change", sync); forced.addEventListener("change", sync);
+    return () => { reduced.removeEventListener("change", sync); forced.removeEventListener("change", sync); };
+  }, []);
+  useEffect(() => {
+    const measure = () => {
+      if (!bar.current) return;
+      const rect = bar.current.getBoundingClientRect();
+      if (rect.height > 0) onHeight(rect.height);
+      setBarWidth(rect.width || undefined);
+      setDirection(dir ?? appFrameDirection(bar.current));
+    };
+    measure();
+    const observer = typeof ResizeObserver === "function" ? new ResizeObserver(measure) : undefined;
+    if (bar.current) observer?.observe(bar.current);
+    window.addEventListener("resize", measure);
+    return () => { observer?.disconnect(); window.removeEventListener("resize", measure); };
+  }, [dir, onHeight, page, narrow, width, infoOpen]);
+  const primary = page?.actions?.find(action => action.primary);
+  const information = page && [page.status, page.description, page.updatedAt, page.meta, page.scope].some(value => value !== undefined && value !== null && value !== false);
+  return <header ref={bar} data-application-frame-region="bar" className="relative flex min-w-0 flex-wrap items-center gap-xs rounded-control border border-line-base p-sm text-ink-primary"
+    style={{ position: "sticky", insetBlockStart: APP_FRAME_LAYOUT.gutter, marginBlockStart: APP_FRAME_LAYOUT.gutter, marginInline: APP_FRAME_LAYOUT.gutter,
+      paddingInlineStart: navigationDocked ? APP_FRAME_LAYOUT.gap : `calc(${APP_FRAME_LAYOUT.tap} + ${APP_FRAME_LAYOUT.gap})`,
+      paddingInlineEnd: panelDocked || !panelPresent ? APP_FRAME_LAYOUT.gap : `calc(${APP_FRAME_LAYOUT.tap} + ${APP_FRAME_LAYOUT.gap})`,
+      backgroundColor: glass ? APP_FRAME_LAYOUT.glass : APP_FRAME_LAYOUT.raised,
+      backdropFilter: glass ? APP_FRAME_LAYOUT.blur : "none", WebkitBackdropFilter: glass ? APP_FRAME_LAYOUT.blur : "none", zIndex: APP_FRAME_LAYOUT.barLayer }}>
+    <AppFrameBrand {...brand} />
+    {page && <PageTrail brand={brand} title={page.title} breadcrumb={page.breadcrumb} workspaces={workspaces} narrow={narrow} breadcrumbLabel={breadcrumbLabel} collapsedBreadcrumbLabel={collapsedBreadcrumbLabel} />}
+    {information && <Popover anchorRef={bar} className="text-body text-ink-primary" aria-label={pageInfoLabel} placement="bottom start" offset={0} isOpen={infoOpen} onOpenChange={setInfoOpen}
+      trigger={<Button variant="ghost" className={CONTROL} style={TAP} aria-label={pageInfoLabel} aria-expanded={infoOpen}><Icon glyph={ChevronDown} decorative className={infoOpen ? "rotate-180" : undefined} /></Button>}
+      style={{ direction, inlineSize: barWidth, maxInlineSize: `calc(100vw - 2 * ${APP_FRAME_LAYOUT.gutter})` }}>
+      <div data-application-frame-region="page-info" className="flex flex-wrap items-start gap-sm">
+        <div>{page?.status}</div><div>{page?.description}</div><div>{page?.updatedAt}</div><div>{page?.meta}</div><div>{page?.scope}</div>
+      </div>
+    </Popover>}
+    <div data-application-frame-region="bar-actions" className="ms-auto flex min-w-0 items-center justify-end gap-xs" style={{ flexBasis: narrow ? "100%" : undefined }}>
+      {page?.actions?.map(action => (!narrow || action === primary) && <PageAction key={action.id} {...action} primary={action === primary} />)}
+      {narrow && page?.actions?.some(action => action !== primary) && <Menu trigger={<Button variant="ghost" className={CONTROL} style={TAP} aria-label={pageActionsLabel}><Icon glyph={ChevronDown} decorative /></Button>}>
+        {page.actions.filter(action => action !== primary).map(action => <Menu.Item key={action.id} id={action.id} href={action.href} isDisabled={action.isDisabled} onAction={action.onAction}>{action.label}</Menu.Item>)}
+      </Menu>}
+      <div className="ms-xs shrink-0 border-s border-line-base ps-xs">
+        {width === "full" ? <Button variant="ghost" className={CONTROL} style={TAP} aria-label={containedWidthLabel} aria-pressed={true} onPress={() => onWidthChange("contained")}><Icon glyph={Box} decorative /></Button> :
+          <Button variant="ghost" className={CONTROL} style={TAP} aria-label={fullWidthLabel} aria-pressed={false} onPress={() => onWidthChange("full")}><Icon glyph={ExternalLink} decorative /></Button>}
+      </div>
+    </div>
+  </header>;
+}
+
+function FrameContent({ brand, navigation, account, commands, children, rightPanel, theme, themeControl, dir, page, workspaces, width: suppliedStageWidth, onWidthChange, breadcrumbLabel, collapsedBreadcrumbLabel, pageInfoLabel, fullWidthLabel, containedWidthLabel, pageActionsLabel,
   /** @default "Skip to content" */
   skipLabel = "Skip to content", mainId }: AppFrameProps) {
+  const {
+    /** @default "Open navigation" */ openLabel: navigationOpenLabel = "Open navigation",
+    /** @default "Close navigation" */ closeLabel: navigationCloseLabel = "Close navigation",
+  } = navigation;
   const generated = useId();
   const target = appFrameMainId(mainId, generated);
   const [commandOpen, setCommandOpen] = useState(false);
@@ -49,6 +174,13 @@ function FrameContent({ brand, navigation, account, commands, children, rightPan
   const { shortcutEnabled = true, triggerLabel, ...commandProps } = commands;
   useCommandMenuShortcut({ onOpen: openCommands, enabled: shortcutEnabled });
   const [narrow, setNarrow] = useState(false);
+  const [available, setAvailable] = useState(Infinity);
+  const [wide, setWide] = useState(true);
+  const [sidebarWidth, setSidebarWidth] = useState(APP_FRAME_LAYOUT.sidebarDefault);
+  const [navDrawerOpen, setNavDrawerOpen] = useState(false);
+  const [stageOverride, setStageOverride] = useState<"contained" | "full">();
+  const stageWidth = suppliedStageWidth ?? stageOverride ?? page?.width ?? "contained";
+  const [barHeight, setBarHeight] = useState(0);
   const [panelOpen, setPanelOpen] = useState(false);
   const [width, setWidth] = useState(rightPanel?.defaultValue ?? 0);
   const [panelCollapsed, setPanelCollapsed] = useState(rightPanel?.defaultCollapsed ?? false);
@@ -62,6 +194,26 @@ function FrameContent({ brand, navigation, account, commands, children, rightPan
   const navCollapsed = navigation.collapsed ?? navigationCollapsed;
   const { openLabel = "Open panel", closeLabel = "Close panel" } = rightPanel ?? {};
   const frame = useRef<HTMLDivElement>(null);
+  const [panelCloseButtonStyle, setPanelCloseButtonStyle] = useState<DrawerProps["closeButtonStyle"]>();
+  useEffect(() => {
+    if (!narrow || !panelOpen) { setPanelCloseButtonStyle(undefined); return; }
+    const measure = () => {
+      const opener = frame.current?.querySelector<HTMLElement>('[data-application-frame-panel="trigger"]');
+      if (opener) setPanelCloseButtonStyle(appFrameCorner(opener));
+    };
+    measure(); window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [narrow, panelOpen, dir]);
+  const sidebarProbe = useRef<HTMLSpanElement>(null);
+  const currentPanelWidth = rightPanel ? Math.min(rightPanel.max, Math.max(rightPanel.min, rightPanel.value ?? width)) : 0;
+  const geometry = useRef({ sidebarWidth, panelWidth: currentPanelWidth, navOpen: !navCollapsed, panelOpen: Boolean(rightPanel) && !collapsed });
+  useLayoutEffect(() => {
+    geometry.current = { sidebarWidth, panelWidth: currentPanelWidth, navOpen: !navCollapsed, panelOpen: Boolean(rightPanel) && !collapsed };
+  });
+  const layout = appFramePanels(available, wide, sidebarWidth, currentPanelWidth, !navCollapsed, Boolean(rightPanel) && !collapsed);
+  const navigationDocked = !layout.navigationOverlay && !navCollapsed;
+  const panelDocked = Boolean(rightPanel) && !narrow && !collapsed;
+  const syncResponsive = useRef<() => void>(() => {});
   const panelFocus = useRef<EventTarget | null>(null);
   const panelState = useRef({ narrow, panelOpen });
   panelState.current = { narrow, panelOpen };
@@ -75,12 +227,19 @@ function FrameContent({ brand, navigation, account, commands, children, rightPan
     responsiveActive.current = true;
     const media = window.matchMedia(APP_FRAME_WIDE_QUERY);
     const sync = () => {
-      const nextNarrow = !media.matches;
+      const nextAvailable = frame.current?.getBoundingClientRect().width || window.innerWidth;
+      const nextSidebar = sidebarProbe.current?.getBoundingClientRect().width || APP_FRAME_LAYOUT.sidebarDefault;
+      const currentGeometry = geometry.current;
+      const nextLayout = appFramePanels(nextAvailable, media.matches, nextSidebar, currentGeometry.panelWidth, currentGeometry.navOpen, currentGeometry.panelOpen);
+      const nextNarrow = nextLayout.panelOverlay;
+      setAvailable(nextAvailable); setWide(media.matches); setSidebarWidth(nextSidebar);
+      const current = panelState.current;
+      desiredNarrow.current = nextNarrow;
+      if (nextNarrow === current.narrow && panelHandoff.current === null) return;
       const active = document.activeElement;
       const panelTrigger = frame.current?.querySelector('[data-application-frame-panel="trigger"]');
       // React focus capture includes nested portals; exact identity avoids stale ownership outside the panel.
       const ownsFocus = active !== null && (panelFocus.current === active || panelTrigger === active);
-      const current = panelState.current;
       const drawerId = current.narrow ? panelTrigger?.getAttribute("aria-controls") : null;
       const drawer = drawerId ? document.getElementById(drawerId) : null;
       const drawerOpen = current.narrow && (current.panelOpen || drawer !== null);
@@ -92,9 +251,14 @@ function FrameContent({ brand, navigation, account, commands, children, rightPan
       // Also process a handoff when closing an already-closed controlled drawer changes no state.
       setHandoffVersion(version => version + 1);
     };
-    sync(); media.addEventListener("change", sync);
-    return () => { responsiveActive.current = false; panelHandoff.current = null; drawerToRelease.current = null; media.removeEventListener("change", sync); };
+    syncResponsive.current = sync;
+    sync(); media.addEventListener("change", sync); window.addEventListener("resize", sync);
+    const observer = typeof ResizeObserver === "function" ? new ResizeObserver(sync) : undefined;
+    if (frame.current) observer?.observe(frame.current);
+    if (sidebarProbe.current) observer?.observe(sidebarProbe.current);
+    return () => { observer?.disconnect(); window.removeEventListener("resize", sync); syncResponsive.current = () => {}; responsiveActive.current = false; panelHandoff.current = null; drawerToRelease.current = null; media.removeEventListener("change", sync); };
   }, []);
+  useEffect(() => { syncResponsive.current(); }, [currentPanelWidth, navCollapsed, collapsed, rightPanel !== undefined]);
   useEffect(() => {
     const handoff = panelHandoff.current;
     if (!handoff || !responsiveActive.current) return;
@@ -128,43 +292,60 @@ function FrameContent({ brand, navigation, account, commands, children, rightPan
     frame.current?.querySelector<HTMLElement>('[data-application-frame-panel="trigger"]')?.focus();
   }, [narrow, panelOpen, handoffVersion]);
   const changeCollapsed = (next: boolean) => { setPanelCollapsed(next); rightPanel?.onCollapsedChange?.(next); };
-  const footer = account.actor ? <AccountMenu {...account} actor={account.actor} collapsed={navCollapsed && !narrow} /> : <SignedOutMenu {...account} />;
+  const accountControl = account.actor ? <AccountMenu {...account} actor={account.actor} /> : <SignedOutMenu {...account} />;
+  const footer = <div className="flex min-w-0 items-center justify-between gap-xs">
+    <div className="min-w-0 flex-1">{accountControl}</div>
+    {themeControl !== null && <div data-application-frame-slot="theme-control" className="shrink-0">
+      {themeControl === undefined ? <ThemeToggle className={CONTROL} style={TAP} preferenceLabels={theme?.preferenceLabels} toggleLabel={theme?.toggleLabel} preferenceAnnouncement={theme?.preferenceAnnouncement} /> : themeControl}
+    </div>}
+  </div>;
+  const corner = { ...TAP, position: "absolute" as const, insetBlockStart: APP_FRAME_LAYOUT.gutter, zIndex: APP_FRAME_LAYOUT.controlLayer };
   const panelTrigger = rightPanel && (narrow ? <div className="contents" onFocusCapture={capturePanelFocus}><ModalContext.Provider value={{ style: { direction: dir } }}><Drawer wide="sheet" placement="end" dismissAt={APP_FRAME_WIDE_QUERY}
-    heading={rightPanel.label} closeLabel={closeLabel} navigationKey={navigation.navigationKey}
+    heading={rightPanel.label} closeLabel={closeLabel} closeButtonStyle={panelCloseButtonStyle} navigationKey={navigation.navigationKey}
     isOpen={panelOpen} onOpenChange={setPanelOpen}
-    trigger={<Button variant="ghost" className={CONTROL} style={TAP} aria-label={openLabel} data-application-frame-panel="trigger"><Icon glyph={Layers} decorative /><span className="sr-only tablet:not-sr-only">{openLabel}</span></Button>}>
+    trigger={<Button variant="ghost" className={CONTROL} style={{ ...corner, insetInlineEnd: APP_FRAME_LAYOUT.gutter }} aria-label={openLabel} aria-expanded={panelOpen} data-application-frame-panel="trigger"><Icon glyph={Layers} decorative /></Button>}>
     {rightPanel.children}
-  </Drawer></ModalContext.Provider></div> : <Button variant="ghost" className={CONTROL} style={TAP} aria-expanded={!collapsed} data-application-frame-panel="trigger"
-    onPress={() => changeCollapsed(!collapsed)}><Icon glyph={Layers} decorative /><span className="sr-only tablet:not-sr-only">{collapsed ? openLabel : closeLabel}</span></Button>);
+  </Drawer></ModalContext.Provider></div> : <Button variant="ghost" className={CONTROL} style={{ ...corner, insetInlineEnd: APP_FRAME_LAYOUT.gutter }} aria-expanded={!collapsed} aria-label={collapsed ? openLabel : closeLabel} data-application-frame-panel="trigger"
+    onPress={() => changeCollapsed(!collapsed)}><Icon glyph={Layers} decorative /></Button>);
+  const navOpen = layout.navigationOverlay ? navigation.drawerOpen ?? navDrawerOpen : !navCollapsed;
+  const changeNav = () => {
+    if (layout.navigationOverlay) { setNavDrawerOpen(!navOpen); navigation.onDrawerOpenChange?.(!navOpen); }
+    else { setNavigationCollapsed(navOpen); navigation.onCollapsedChange?.(navOpen); }
+  };
+  const navigationTrigger = <Button variant="ghost" className={CONTROL}
+    style={{ ...corner, insetInlineStart: APP_FRAME_LAYOUT.gutter }} data-application-frame-navigation="trigger"
+    aria-label={navOpen ? navigationCloseLabel : navigationOpenLabel} aria-expanded={navOpen} onPress={changeNav}><Icon glyph={List} decorative /></Button>;
+  const commandTrigger = <div style={{ paddingBlockStart: `calc(${APP_FRAME_LAYOUT.tap} + ${APP_FRAME_LAYOUT.gutter})` }}><Button variant="ghost" className={CONTROL + " w-full justify-start gap-sm"} style={TAP} onPress={openCommands}><Icon glyph={Search} decorative /><span className="min-w-0 truncate">{triggerLabel}</span></Button></div>;
+  const stageChange = (next: "contained" | "full") => { setStageOverride(next); onWidthChange?.(next); };
   return <ModalContext.Provider value={{ style: { direction: dir } }}><PopoverContext.Provider value={{ style: { direction: dir } }}>
-    <div ref={frame} dir={dir} data-application-frame="" className="relative flex h-dvh min-h-0 min-w-0 flex-col overflow-hidden bg-surface-base text-body text-ink-primary">
+    <div ref={frame} dir={dir} data-application-frame="" className="relative flex h-dvh min-h-0 min-w-0 overflow-hidden bg-surface-base text-body text-ink-primary">
       <SiteSkipLink targetId={target} label={skipLabel} />
-      <header className="relative flex shrink-0 items-center justify-end gap-sm border-b border-line-base bg-surface-raised px-sm tablet:justify-between tablet:px-md"
-        style={HEADER}>
-        <div className="absolute start-1/2 -translate-x-1/2 rtl:translate-x-1/2 tablet:static tablet:translate-x-0 tablet:rtl:translate-x-0"><AppFrameBrand {...brand} /></div>
-        <div className="flex min-w-0 items-center gap-xs">
-          <Button variant="ghost" className={CONTROL} style={TAP} onPress={openCommands}><Icon glyph={Search} decorative /><span className="sr-only tablet:not-sr-only">{triggerLabel}</span></Button>
-          {themeControl !== null && <div data-application-frame-slot="theme-control" className="contents">
-            {themeControl === undefined ? <ThemeToggle className={CONTROL} style={TAP} preferenceLabels={theme?.preferenceLabels} toggleLabel={theme?.toggleLabel} preferenceAnnouncement={theme?.preferenceAnnouncement} /> : themeControl}
-          </div>}
-          {panelTrigger}
-        </div>
-      </header>
-      <div className="flex min-h-0 min-w-0 flex-1">
-        <div className="absolute start-0 top-0 flex items-center px-sm tablet:static tablet:h-full tablet:items-stretch tablet:border-e tablet:border-line-base tablet:px-0"
-          style={narrow ? HEADER : undefined}>
-          <AppNavigation {...navigation} dismissAt={APP_FRAME_WIDE_QUERY} footer={footer} collapsed={navCollapsed}
-            onCollapsedChange={next => { setNavigationCollapsed(next); navigation.onCollapsedChange?.(next); }} />
-        </div>
-        <main id={target} tabIndex={-1} className="min-h-0 min-w-0 flex-1 overflow-auto p-md focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent">{children}</main>
-        {rightPanel && !narrow && !collapsed && <ResizablePane min={rightPanel.min} max={rightPanel.max} defaultValue={rightPanel.defaultValue}
-          value={rightPanel.value ?? width} step={rightPanel.step} label={rightPanel.label} handleLabel={rightPanel.handleLabel}
-          onChange={next => { setWidth(next); rightPanel.onChange?.(next); }}
-          onFocusCapture={capturePanelFocus} data-application-frame-panel="pane" className="h-full min-h-0 shrink-0 rounded-none border-0 border-s border-line-base p-sm">{rightPanel.children}</ResizablePane>}
+      <span aria-hidden="true" className="absolute block overflow-hidden" style={{ inlineSize: 0, blockSize: 0 }}>
+        <span ref={sidebarProbe} className="block" style={{ inlineSize: APP_FRAME_LAYOUT.sidebar, blockSize: 0 }} />
+      </span>
+      <div data-application-frame-region="navigation" className="min-h-0 shrink-0" style={{ inlineSize: navigationDocked ? APP_FRAME_LAYOUT.sidebar : 0 }}>
+        <AppNavigation {...navigation} dismissAt={layout.navigationOverlay ? APP_FRAME_ALWAYS_NARROW : APP_FRAME_ALWAYS_WIDE} header={commandTrigger} footer={footer} trigger={navigationTrigger}
+          drawerOpen={navigation.drawerOpen ?? navDrawerOpen} onDrawerOpenChange={next => { setNavDrawerOpen(next); navigation.onDrawerOpenChange?.(next); }}
+          collapsed={navCollapsed} onCollapsedChange={next => { setNavigationCollapsed(next); navigation.onCollapsedChange?.(next); }} />
       </div>
+      <div className="flex min-h-0 min-w-0 flex-1 justify-center overflow-hidden">
+        <div data-application-frame-region="stage" data-stage-width={stageWidth} data-stage-navigation={layout.navigationOverlay ? "overlay" : "docked"} data-stage-panel={narrow ? "overlay" : "docked"}
+          style={{ inlineSize: "100%", minInlineSize: 0, maxInlineSize: stageWidth === "contained" ? APP_FRAME_LAYOUT.maximum : "none", marginInline: "auto", overflowY: "auto", overflowX: "hidden", scrollPaddingBlockStart: `calc(${barHeight ? `${barHeight}px` : APP_FRAME_LAYOUT.tap} + 2 * ${APP_FRAME_LAYOUT.gutter})` }}>
+          <FrameBar brand={brand} page={page} workspaces={workspaces} width={stageWidth} onWidthChange={stageChange} narrow={!wide}
+            navigationDocked={navigationDocked} panelDocked={panelDocked} panelPresent={Boolean(rightPanel)} onHeight={setBarHeight} dir={dir}
+            breadcrumbLabel={breadcrumbLabel} collapsedBreadcrumbLabel={collapsedBreadcrumbLabel} pageInfoLabel={pageInfoLabel} fullWidthLabel={fullWidthLabel} containedWidthLabel={containedWidthLabel} pageActionsLabel={pageActionsLabel} />
+          <main id={target} tabIndex={-1} className="min-h-0 min-w-0 p-md focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent">{children}</main>
+        </div>
+      </div>
+      {panelTrigger}
+      {rightPanel && !narrow && !collapsed && <ResizablePane min={rightPanel.min} max={rightPanel.max} defaultValue={rightPanel.defaultValue}
+        value={rightPanel.value ?? width} step={rightPanel.step} label={rightPanel.label} handleLabel={rightPanel.handleLabel}
+        onChange={next => { setWidth(next); rightPanel.onChange?.(next); }}
+        onFocusCapture={capturePanelFocus} data-application-frame-panel="pane" className="h-full min-h-0 shrink-0 rounded-none border-0 border-s border-line-base p-sm">{rightPanel.children}</ResizablePane>}
       <CommandMenu {...commandProps} dir={dir} isOpen={commandOpen} onOpenChange={setCommandOpen} query={query} onQueryChange={setQuery} />
     </div>
   </PopoverContext.Provider></ModalContext.Provider>;
+
 }
 
 /** Host-resolved application chrome; the host owns routes, account actions and main-free route content. */

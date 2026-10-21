@@ -13,9 +13,10 @@ import type { AppFrameProps } from "./app-frame-types.js";
 let wide: { matches: boolean; listeners: Set<() => void> };
 beforeEach(() => {
   localStorage.clear();
+  Object.defineProperty(window, "innerWidth", { configurable: true, value: 1280 });
   wide = { matches: true, listeners: new Set() };
   vi.stubGlobal("matchMedia", vi.fn((media: string) => {
-    const state = media === "(min-width: 768px)" ? wide : { matches: false, listeners: new Set<() => void>() };
+    const state = media === "(min-width: 56.25rem)" ? wide : { matches: media === "all", listeners: new Set<() => void>() };
     return { media, get matches() { return state.matches; }, addEventListener: (_: string, listener: () => void) => state.listeners.add(listener),
       removeEventListener: (_: string, listener: () => void) => state.listeners.delete(listener), addListener: () => {}, removeListener: () => {} };
   }));
@@ -49,7 +50,7 @@ function nestedPanelFixture(): AppFrameProps {
 }
 
 function resizeFrame(matches: boolean) {
-  act(() => { wide.matches = matches; for (const listener of wide.listeners) listener(); });
+  act(() => { Object.defineProperty(window, "innerWidth", { configurable: true, value: matches ? 1280 : 375 }); wide.matches = matches; for (const listener of wide.listeners) listener(); });
 }
 
 async function settleFocusRestoration() {
@@ -86,23 +87,20 @@ describe("AppFrame composition", () => {
     await waitFor(() => expect(screen.getByRole("button", { name: /Theme: Light/ })).toBeInTheDocument());
   });
 
-  it.each([true, false])("keeps one named default theme slot in the header keyboard order when wide=%s", async matches => {
+  it.each([true, false])("keeps one named default theme slot in the navigation footer keyboard order when wide=%s", async matches => {
     wide.matches = matches;
     render(<AppFrame {...fixture()} />);
-    const header = screen.getByRole("banner");
-    const slot = header.querySelector('[data-application-frame-slot="theme-control"]');
+    if (!matches) await userEvent.click(screen.getByRole("button", { name: "Open navigation" }));
+    const footer = document.querySelector('[data-application-navigation-region="footer"]')!;
+    const slot = footer.querySelector('[data-application-frame-slot="theme-control"]');
     const toggle = screen.getByRole("button", { name: /Theme: System/ });
     expect(document.querySelectorAll('[data-application-frame-slot="theme-control"]')).toHaveLength(1);
     expect(slot).toContainElement(toggle);
-    expect(header.closest("[data-application-frame]")).toContainElement(toggle);
     expect(screen.getAllByRole("button", { name: /Theme:/, hidden: true })).toHaveLength(1);
-    screen.getByRole("button", { name: "Find a command" }).focus();
+    screen.getByRole("button", { name: "Sam River" }).focus();
     await userEvent.tab();
     expect(toggle).toHaveFocus();
-    await userEvent.tab();
-    expect(screen.getByRole("button", { name: matches ? "Close panel" : "Open panel" })).toHaveFocus();
-    // Account chrome stays in the later navigation footer, after the header controls.
-    if (matches) expect(toggle.compareDocumentPosition(screen.getByRole("button", { name: "Sam River" })) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(screen.getByRole("banner", { hidden: true })).not.toContainElement(toggle);
   });
 
   it("replaces the default with a host control inside the existing persistent provider", async () => {
@@ -111,8 +109,8 @@ describe("AppFrame composition", () => {
     const view = render(<AppFrame {...props} />);
     const control = screen.getByRole("button", { name: "Host theme preference" });
     expect(screen.queryByRole("button", { name: /Theme:/ })).not.toBeInTheDocument();
-    expect(screen.getByRole("banner").querySelector('[data-application-frame-slot="theme-control"]')).toContainElement(control);
-    screen.getByRole("button", { name: "Find a command" }).focus();
+    expect(document.querySelector('[data-application-navigation-region="footer"]')).toContainElement(control);
+    screen.getByRole("button", { name: "Sam River" }).focus();
     await userEvent.tab();
     expect(control).toHaveFocus();
     await userEvent.keyboard("{Enter}");
@@ -128,28 +126,29 @@ describe("AppFrame composition", () => {
     expect(document.documentElement).not.toHaveAttribute("data-theme");
   });
 
-  it.each([true, false])("omits an explicit null theme slot from header focus order when wide=%s", async matches => {
+  it.each([true, false])("omits an explicit null theme slot from navigation focus order when wide=%s", async matches => {
     wide.matches = matches;
     render(<AppFrame {...fixture()} themeControl={null} />);
+    if (!matches) await userEvent.click(screen.getByRole("button", { name: "Open navigation" }));
     expect(document.querySelector('[data-application-frame-slot="theme-control"]')).toBeNull();
     expect(screen.queryByRole("button", { name: /Theme:/, hidden: true })).not.toBeInTheDocument();
-    screen.getByRole("button", { name: "Find a command" }).focus();
-    await userEvent.tab();
-    expect(screen.getByRole("button", { name: matches ? "Close panel" : "Open panel" })).toHaveFocus();
+    const account = screen.getByRole("button", { name: "Sam River" });
+    expect(document.querySelector('[data-application-navigation-region="footer"]')).toContainElement(account);
+    account.focus();
+    expect(account).toHaveFocus();
   });
 
-  it("retains the sole theme control in the frame header while the narrow navigation drawer is open", async () => {
+  it("moves the sole theme control into the narrow navigation drawer with the account", async () => {
     wide.matches = false;
     render(<AppFrame {...fixture()} />);
-    const toggle = screen.getByRole("button", { name: /Theme: System/ });
-    const header = screen.getByRole("banner");
+    expect(screen.queryByRole("button", { name: /Theme:/ })).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Open navigation" }));
     const drawer = await screen.findByRole("dialog", { name: "Workspace navigation" });
+    const toggle = within(drawer).getByRole("button", { name: /Theme: System/ });
     expect(screen.getAllByRole("button", { name: /Theme:/, hidden: true })).toEqual([toggle]);
-    expect(document.querySelectorAll('[data-application-frame-slot="theme-control"]')).toHaveLength(1);
-    expect(header.querySelector('[data-application-frame-slot="theme-control"]')).toContainElement(toggle);
-    expect(header.closest("[data-application-frame]")).toContainElement(toggle);
-    expect(drawer).not.toContainElement(toggle);
+    expect(drawer.querySelector('[data-application-navigation-region="footer"]')).toContainElement(toggle);
+    await userEvent.click(toggle);
+    expect(document.documentElement).toHaveAttribute("data-theme", "light");
     await userEvent.keyboard("{Escape}");
     await waitFor(() => expect(screen.getByRole("button", { name: "Open navigation" })).toHaveFocus());
   });
@@ -169,7 +168,7 @@ describe("AppFrame composition", () => {
       await act(async () => { root = hydrateRoot(container, <AppFrame {...props} />, { onRecoverableError: recoverable }); });
       await waitFor(() => expect(within(container).getByRole("button", { name: new RegExp("Theme: " + preference[0]!.toUpperCase() + preference.slice(1)) })).toBeInTheDocument());
       expect(recoverable).not.toHaveBeenCalled();
-      expect(container.querySelector("header")).toContainElement(container.querySelector('[data-application-frame-slot="theme-control"]'));
+      expect(container.querySelector('[data-application-navigation-region="footer"]')).toContainElement(container.querySelector('[data-application-frame-slot="theme-control"]'));
       if (preference === "system") expect(document.documentElement).not.toHaveAttribute("data-theme");
       else expect(document.documentElement).toHaveAttribute("data-theme", preference);
     } finally {
@@ -277,18 +276,15 @@ describe("AppFrame composition", () => {
     expect(screen.getAllByRole("navigation")).toHaveLength(1);
   });
 
-  it("preserves logical RTL, centered mobile brand geometry, natural wordmark, accent and image opt-out", () => {
+  it("preserves logical RTL and the accent silhouette with a small original-image opt-out", () => {
     const props = fixture(); const view = render(<AppFrame {...props} dir="rtl" />);
-    const header = screen.getByRole("banner");
-    expect(header.closest('[dir="rtl"]')).not.toBeNull();
+    expect(screen.getByRole("banner").closest('[dir="rtl"]')).not.toBeNull();
     const brand = screen.getByRole("link", { name: "Atlas workspace" });
-    expect(brand.parentElement).toHaveClass("absolute", "start-1/2", "-translate-x-1/2", "rtl:translate-x-1/2", "tablet:static", "tablet:translate-x-0");
-    expect(within(brand).getByText("Atlas")).toHaveClass("hidden", "tablet:inline", "whitespace-nowrap");
     const mark = brand.querySelector('[data-application-frame-mark="accent"]') as HTMLElement;
-    expect(mark).toHaveClass("bg-accent", "forced-colors:bg-[CanvasText]");
+    expect(mark).toHaveClass("bg-accent");
     expect(mark.style.maskImage).toContain("/mark.svg");
     expect(brand).toHaveClass("focus-visible:outline-accent");
-    expect(brand).toHaveClass("justify-center", "tablet:justify-start");
+    expect(within(brand).queryByText("Atlas")).not.toBeInTheDocument();
     props.brand.markInk = "image"; view.rerender(<AppFrame {...props} dir="rtl" />);
     expect(brand.querySelector("img")).toHaveAttribute("src", "/mark.svg");
     expect(brand.querySelector('[data-application-frame-mark="accent"]')).toBeNull();
