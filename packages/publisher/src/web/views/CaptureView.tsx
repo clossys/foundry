@@ -2,7 +2,7 @@ import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { mergeUiClasses } from "@clossys/designer/atoms/server";
 import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
 import { PAGE_COLUMN_CLASSES, PageLayout, hasContent, pageColumnStyle } from "../internal/PageLayout.js";
-import type { SiteChromeGround } from "../internal/viewChromeGround.js";
+import { siteHeaderPresentation, type SiteChromeGround } from "../internal/viewChromeGround.js";
 import { assertViewContentRoot, usesLegacyChrome } from "../internal/viewContentRoot.js";
 
 export interface CaptureViewProps extends HTMLAttributes<HTMLDivElement> {
@@ -205,7 +205,7 @@ export function CaptureView({
       {header !== undefined ? (
         header
       ) : (
-        <SiteHeader ground={chromeGround} brand={brand} nav={nav} secondaryAction={headerSecondaryAction} actions={headerAction} />
+        <SiteHeader {...siteHeaderPresentation(chromeGround)} brand={brand} nav={nav} actions={<>{headerSecondaryAction}{headerAction}</>} />
       )}
       <main id={mainId || undefined} tabIndex={mainId ? -1 : undefined} className={PAGE_COLUMN_CLASSES} style={pageColumnStyle("prose")}>
         {content}

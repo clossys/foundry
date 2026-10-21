@@ -201,7 +201,7 @@ function runProbe(reactServer: boolean) {
         brand: { assetId: "mark", label: frameRef("brand"), variant: "mark", size: "md" },
         skipLink: frameRef("skip"),
         ground: "base",
-        header: { placement: "overlay", tone: "inverse" },
+        header: { surface: "glass", tone: "inverse" },
         nav: { label: frameRef("nav"), triggerLabel: frameRef("menu"), links: [{ href: "/help", label: frameRef("help") }] },
         footer: { ground: "inverse", legal: { entity: frameRef("legal"), links: [] } },
       };

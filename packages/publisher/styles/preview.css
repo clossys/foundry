@@ -950,15 +950,6 @@
       }
     }
   }
-  .col-start-1 {
-    grid-column-start: 1;
-  }
-  .col-start-2 {
-    grid-column-start: 2;
-  }
-  .col-start-3 {
-    grid-column-start: 3;
-  }
   .row-start-1 {
     grid-row-start: 1;
   }
@@ -1636,6 +1627,11 @@
   .ledger-row-grid {
     grid-template-columns: minmax(0, 1fr) auto;
   }
+  @media (width >= 768px) {
+    .site-header-leading:not([data-collapsed]) .site-header-row {
+      grid-template-columns: auto minmax(0, 1fr) auto;
+    }
+  }
   .grid-rows-\[auto_minmax\(0\,1fr\)_auto\] {
     grid-template-rows: auto minmax(0,1fr) auto;
   }
@@ -1737,9 +1733,6 @@
   }
   .self-stretch {
     align-self: stretch;
-  }
-  .justify-self-center {
-    justify-self: center;
   }
   .justify-self-end {
     justify-self: flex-end;
@@ -2032,6 +2025,28 @@
   }
   .border-t-accent-on-inverse {
     border-top-color: var(--color-accent-on-inverse, oklch(0.7763 0 0));
+  }
+  .site-header-ink {
+    --site-header-action-hover: var(--color-surface-raised, oklch(1 0 0));
+    --site-header-focus: var(--color-ink-primary, oklch(0.2178 0 0));
+    &[data-tone="inverse"] {
+      --site-header-action-hover: var(--color-surface-inverse, oklch(0.2178 0 0));
+      --site-header-focus: var(--color-ink-on-inverse, oklch(0.9702 0 0));
+    }
+    & .site-header-brand > a.text-inherit {
+      color: inherit;
+    }
+    & [data-header-action-ghost], & .nav-disclosure-toggle:not([data-tone]) {
+      color: inherit;
+      background-color: transparent;
+      &:hover, &:focus-visible {
+        color: inherit;
+        background-color: var(--site-header-action-hover, var(--color-surface-raised, oklch(1 0 0)));
+      }
+    }
+    & :focus-visible {
+      outline-color: var(--site-header-focus, var(--color-ink-primary, oklch(0.2178 0 0)));
+    }
   }
   .bg-accent {
     background-color: var(--color-accent, oklch(0.4748 0 0));
@@ -3290,9 +3305,6 @@
     }
     .tablet\:justify-center {
       justify-content: center;
-    }
-    .tablet\:justify-end {
-      justify-content: flex-end;
     }
     .tablet\:justify-start {
       justify-content: flex-start;
