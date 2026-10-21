@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
 import { execFileSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -130,20 +131,8 @@ describe("PageView", () => {
   });
 
   it("typechecks valid content and form callers while refusing both slots and public modes", () => {
-    const file = resolve(import.meta.dirname, "PageView.contract-probe.tsx");
-    const source = `
-      import { PageView } from "./PageView.js";
-      const content = <PageView title="Details"><p>Content</p></PageView>;
-      const form = <PageView title="Sign in" form={<form aria-label="Sign in" />} />;
-      // @ts-expect-error Content and form cannot both be supplied.
-      const ambiguous = <PageView title="Details" form={<form />}><p>Content</p></PageView>;
-      // @ts-expect-error A public mode is not part of the unified view.
-      const mode = <PageView title="Details" mode="legal"><p>Content</p></PageView>;
-      // @ts-expect-error The visible title is plain text.
-      const title = <PageView title={<strong>Details</strong>}><p>Content</p></PageView>;
-      // @ts-expect-error Metadata copy needs its caller's resolver.
-      const meta = <PageView title="Policy" effectiveDate={{dateTime:"2026-10-01",text:{id:"date"}}}><p>Content</p></PageView>;
-    `;
+    const file = resolve(import.meta.dirname, "PageView.check.tsx");
+    const source = readFileSync(file, "utf8");
     const options: ts.CompilerOptions = { noEmit: true, strict: true, skipLibCheck: true, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler, jsx: ts.JsxEmit.ReactJSX, allowSyntheticDefaultImports: true, types: ["node"] };
     const host = ts.createCompilerHost(options);
     const read = host.readFile.bind(host), exists = host.fileExists.bind(host), original = host.getSourceFile.bind(host);
