@@ -57,6 +57,7 @@ export const BLOCK_THEME_CONFORMANCE: readonly BlockThemeRegistration[] = [
   { exportName: "Testimonial", source: "src/blocks/Testimonial.tsx", contrastPairs: BASE_READING },
   { exportName: "ArticleBody", source: "src/blocks/ArticleBody.tsx", contrastPairs: [...BASE_READING, "ink-primary/surface-sunken", "ink-link/surface-base"] },
   { exportName: "SectionFrame", source: "src/blocks/SectionFrame.tsx", contrastPairs: ["ink-primary/surface-base", "ink-primary/surface-sunken", "ink-on-inverse/surface-inverse"] },
+  { exportName: "NewsletterBand", source: "src/blocks/NewsletterBand.tsx", contrastPairs: GROUNDED_READING },
   { exportName: "ConsentBanner", source: "src/blocks/ConsentBanner.tsx", contrastPairs: RAISED_READING },
   {
     exportName: "Panel", source: "src/blocks/Panel.tsx", contrastPairs: [],
@@ -96,6 +97,9 @@ export const NON_BLOCK_THEME_EXPORTS: Readonly<Record<string, string>> = {
   layoutScene: "Scene geometry calculation; the rendered Scene is registered separately.",
   sceneRelationText: "Scene relation text calculation; the rendered Scene is registered separately.",
   filterRows: "Saved-view row filtering and facet counts over supplied plain data; renders no UI or paint.",
+  tableFilterPredicate: "Pure filter function with no rendered regions or owned paint.",
+  pruneFilterColumn: "Pure filter function with no rendered regions or owned paint.",
+  TABLE_FILTER_CONFORMANCE: "Conformance fixture data with no rendered regions or owned paint.",
   groupRows: "Nested group and aggregate calculation over supplied rows; renders no UI or paint.",
   pivotRows: "Pivot axes, cells and totals calculated from supplied rows; renders no UI or paint.",
   aggregate: "Saved-view measure calculation returning plain aggregate values; renders no UI or paint.",
