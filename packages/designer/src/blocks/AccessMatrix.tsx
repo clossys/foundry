@@ -59,14 +59,17 @@ export function AccessMatrix(props: AccessMatrixProps) {
         <thead className="sr-only focus-within:not-sr-only focus-within:block focus-within:w-full focus-within:overflow-x-auto tablet:not-sr-only tablet:table-header-group tablet:focus-within:table-header-group tablet:focus-within:w-auto tablet:focus-within:overflow-visible">
           <tr role="row">
             <th scope="col" role="columnheader" className={cx(FIRST, "px-md py-sm text-start text-body-s font-medium")}>{labels.permissionHeader}</th>
-            {roles.map((role, roleIndex) => <th key={role.id} scope="col" role="columnheader" className="px-md py-sm text-start align-top text-body-s font-medium">
+            {roles.map((role, roleIndex) => {
+              const reasonId = `${id}-role-${roleIndex}`;
+              return <th key={role.id} scope="col" role="columnheader" className="px-md py-sm text-start align-top text-body-s font-medium">
               <span className="flex min-w-0 flex-col gap-xs"><span className="wrap-anywhere">{role.label}</span>{role.isLocked ? <>
-                {role.lockedReason ? <Tooltip trigger={<Button variant="ghost" aria-describedby={`${id}-role-${roleIndex}`} className="justify-start px-0">
+                {role.lockedReason ? <Tooltip trigger={<Button variant="ghost" aria-describedby={reasonId} className="justify-start px-0">
                   <Icon glyph={Lock} decorative size="sm" /><span>{labels.locked}</span>
                 </Button>}>{role.lockedReason}</Tooltip> : <span className="inline-flex items-center gap-xs"><Icon glyph={Lock} decorative size="sm" />{labels.locked}</span>}
-                {role.lockedReason ? <span id={`${id}-role-${roleIndex}`} className="sr-only">{role.lockedReason}</span> : null}
+                {role.lockedReason ? <span id={reasonId} className="sr-only">{role.lockedReason}</span> : null}
               </> : null}</span>
-            </th>)}
+            </th>;
+            })}
           </tr>
         </thead>
         {groups.map((group, groupIndex) => <tbody key={group.id} role="rowgroup" className="flex min-w-0 flex-col gap-md tablet:table-row-group">

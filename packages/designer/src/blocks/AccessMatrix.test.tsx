@@ -101,6 +101,7 @@ describe("AccessMatrix", () => {
     const admin = screen.getByRole("columnheader", { name: /Admin/ });
     expect(within(admin).getByText("Locked")).toBeVisible();
     expect(admin.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
+    expect(within(admin).getByRole("button", { name: "Locked" })).toHaveAccessibleDescription(/Admin always has every permission/);
     const locked = screen.getByRole("checkbox", { name: "Admin: View projects" });
     expect(locked).toHaveAttribute("aria-readonly", "true");
     expect(locked).not.toBeDisabled();

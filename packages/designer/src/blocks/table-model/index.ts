@@ -1,8 +1,9 @@
 import { dateValue, normalizeCell, parseTableModel, TableModelError } from "./model.js";
-import type { TableAggregates, TableAggregateValue, TableColumn, TableDimension, TableFacet, TableFilter, TableFilterResult, TableGroup, TableModel, TablePivotAxis, TablePivotCell, TablePivotResult, TableValue } from "./types.js";
+import type { TableAggregates, TableAggregateValue, TableColumn, TableDimension, TableFacet, TableFilter, TableFilterNode, TableFilterResult, TableGroup, TableModel, TablePivotAxis, TablePivotCell, TablePivotResult, TableValue } from "./types.js";
 
 export { parseTableModel, serializeTableModel, TableModelError } from "./model.js";
-export type { TableValue, TableColumnKind, TableColumn, TableCollation, TableFilter, TableDimension, TableMeasure, TablePivot, TableModel, TableFacet, TableFilterResult, TableAggregateValue, TableAggregates, TableGroup, TablePivotAxis, TablePivotCell, TablePivotResult, TableModelErrorCode } from "./types.js";
+export { TABLE_FILTER_CONFORMANCE } from "./conformance.js";
+export type { TableValue, TableColumnKind, TableColumn, TableCollation, TableFilter, TableFilterGroup, TableFilterNode, TableDimension, TableMeasure, TablePivot, TableModel, TableFacet, TableFilterResult, TableAggregateValue, TableAggregates, TableGroup, TablePivotAxis, TablePivotCell, TablePivotResult, TableModelErrorCode } from "./types.js";
 
 interface Entry<Row> { readonly row: Row; readonly values: ReadonlyMap<string, TableValue> }
 interface Context<Row> {
@@ -12,19 +13,21 @@ interface Context<Row> {
   readonly collator: Intl.Collator;
 }
 
+function normalizeRow<Row extends object>(row: Row, columns: readonly TableColumn[]): Entry<Row> {
+  if (row === null || typeof row !== "object" || Array.isArray(row)) throw new TableModelError("invalid-cell", "each row must be an object.");
+  const values = new Map(columns.map(column => {
+    const descriptor = Object.getOwnPropertyDescriptor(row, column.id);
+    if (descriptor && !Object.hasOwn(descriptor, "value")) throw new TableModelError("invalid-cell", "cells must be plain data rather than accessors.");
+    return [column.id, normalizeCell(descriptor?.value, column)] as const;
+  }));
+  return { row, values };
+}
+
 function prepare<Row extends object>(rows: readonly Row[], input: TableModel): Context<Row> {
   const model = parseTableModel(input);
   if (!Array.isArray(rows)) throw new TableModelError("invalid-cell", "rows must be an array.");
   const entries: Entry<Row>[] = [];
-  for (const row of rows) {
-    if (row === null || typeof row !== "object" || Array.isArray(row)) throw new TableModelError("invalid-cell", "each row must be an object.");
-    const values = new Map(model.columns.map(column => {
-      const descriptor = Object.getOwnPropertyDescriptor(row, column.id);
-      if (descriptor && !Object.hasOwn(descriptor, "value")) throw new TableModelError("invalid-cell", "cells must be plain data rather than accessors.");
-      return [column.id, normalizeCell(descriptor?.value, column)] as const;
-    }));
-    entries.push({ row, values });
-  }
+  for (const row of rows) entries.push(normalizeRow(row, model.columns));
   return { model, entries, columns: new Map(model.columns.map(column => [column.id, column])), collator: new Intl.Collator(model.collation.locale, model.collation) };
 }
 
@@ -53,17 +56,32 @@ function contains(value: string, query: string, locale: string): boolean {
   return value.toLocaleLowerCase(locale).includes(query.toLocaleLowerCase(locale));
 }
 
+function isEmptyFilter(filter: TableFilter): filter is Extract<TableFilter, { op: "empty" | "notEmpty" }> {
+  return filter.op === "empty" || filter.op === "notEmpty";
+}
+
 function matches(value: TableValue, filter: TableFilter, context: Context<unknown>): boolean {
+  if (isEmptyFilter(filter)) {
+    const empty = value === null || value === "" || (Array.isArray(value) && value.length === 0);
+    return filter.op === "empty" ? empty : !empty;
+  }
   if (filter.kind === "tags") {
     const tags = value === null ? [] : value as readonly string[];
     if (filter.op === "all") return filter.values.every(tag => tags.includes(tag));
     if (filter.op === "any") return filter.values.some(tag => tags.includes(tag));
     return filter.values.every(tag => !tags.includes(tag));
   }
-  if (value === null) return false;
-  if (filter.kind === "text") return filter.op === "contains" ? contains(value as string, filter.value, context.model.collation.locale) : context.collator.compare(value as string, filter.value) === 0;
+  if (value === null) return filter.op === "notEquals" || filter.op === "notIn";
+  if (filter.kind === "text") {
+    if (filter.op === "contains") return contains(value as string, filter.value, context.model.collation.locale);
+    const equal = context.collator.compare(value as string, filter.value) === 0;
+    return filter.op === "notEquals" ? !equal : equal;
+  }
   if (filter.kind === "boolean") return value === filter.value;
-  if (filter.kind === "enum") return filter.values.includes(value as string);
+  if (filter.kind === "enum") {
+    const included = filter.values.includes(value as string);
+    return filter.op === "notIn" ? !included : included;
+  }
   const number = filter.kind === "date" ? Date.parse(value as string) : value as number;
   const bound = (value: string | number): number => filter.kind === "date" ? Date.parse(dateValue(value, "invalid-model")) : value as number;
   if (filter.min !== undefined && number < bound(filter.min)) return false;
@@ -82,20 +100,47 @@ function passesSearch<Row>(entry: Entry<Row>, context: Context<Row>): boolean {
   });
 }
 
-function selected<Row>(context: Context<Row>): readonly Entry<Row>[] {
-  return context.entries.filter(entry => passesSearch(entry, context) && (context.model.filters ?? []).every(filter => matches(entry.values.get(filter.column)!, filter, context)));
+function evaluateNode<Row>(entry: Entry<Row>, node: TableFilterNode, context: Context<Row>): boolean | undefined {
+  if (node.kind !== "group") return matches(entry.values.get(node.column)!, node, context);
+  const results = node.items.map(item => evaluateNode(entry, item, context)).filter((result): result is boolean => result !== undefined);
+  if (!results.length) return undefined;
+  return node.op === "and" ? results.every(Boolean) : results.some(Boolean);
 }
 
-/** Filter with AND/global search and disjunctive, row-counted facets; input order is retained. */
+function passesFilters<Row>(entry: Entry<Row>, nodes: readonly TableFilterNode[], context: Context<Row>): boolean {
+  return nodes.every(node => evaluateNode(entry, node, context) !== false);
+}
+
+/** Compile filters once; global search remains the caller's separate operation. */
+export function tableFilterPredicate<Row extends object>(model: TableModel): (row: Row) => boolean {
+  const context = prepare<Row>([], model);
+  return row => passesFilters(normalizeRow(row, context.model.columns), context.model.filters ?? [], context);
+}
+
+/** Remove a column's leaves at every depth, dropping groups left empty. */
+export function pruneFilterColumn(nodes: readonly TableFilterNode[], column: string): readonly TableFilterNode[] {
+  return nodes.flatMap((node): TableFilterNode[] => {
+    if (node.kind !== "group") return node.column === column ? [] : [node];
+    const items = pruneFilterColumn(node.items, column);
+    return items.length ? [{ ...node, items }] : [];
+  });
+}
+
+function selected<Row>(context: Context<Row>): readonly Entry<Row>[] {
+  return context.entries.filter(entry => passesSearch(entry, context) && passesFilters(entry, context.model.filters ?? [], context));
+}
+
+/** Filter with global search and recursively disjunctive, row-counted facets. */
 export function filterRows<Row extends object>(rows: readonly Row[], model: TableModel): TableFilterResult<Row> {
   const context = prepare(rows, model);
   const searchable = context.entries.filter(entry => passesSearch(entry, context));
   const filters = context.model.filters ?? [];
-  const passing = searchable.map(entry => ({ entry, failures: filters.filter(filter => !matches(entry.values.get(filter.column)!, filter, context)).map(filter => filter.column) }));
+  const passing = searchable.filter(entry => passesFilters(entry, filters, context));
   const facets = context.model.columns.map(column => {
+    const pruned = pruneFilterColumn(filters, column.id);
     const counts = new Map<string, { value: TableValue; count: number }>();
-    for (const { entry, failures } of passing) {
-      if (failures.some(id => id !== column.id)) continue;
+    for (const entry of searchable) {
+      if (!passesFilters(entry, pruned, context)) continue;
       const value = entry.values.get(column.id)!;
       const values: readonly TableValue[] = column.kind === "tags" && value !== null ? value as readonly string[] : [value];
       for (const value of values) {
@@ -110,7 +155,7 @@ export function filterRows<Row extends object>(rows: readonly Row[], model: Tabl
     const values: TableFacet[] = [...counts.values()].sort((a, b) => compareValue(a.value, b.value, facetColumn, context.collator));
     return [column.id, values] as const;
   });
-  return { rows: passing.filter(item => !item.failures.length).map(item => item.entry.row), facets: Object.fromEntries(facets) };
+  return { rows: passing.map(entry => entry.row), facets: Object.fromEntries(facets) };
 }
 
 function summarize<Row>(entries: readonly Entry<Row>[], context: Context<Row>): TableAggregates {

@@ -1257,6 +1257,9 @@
   .max-w-\[28rem\] {
     max-width: 28rem;
   }
+  .max-w-\[32rem\] {
+    max-width: 32rem;
+  }
   .max-w-\[42rem\] {
     max-width: 42rem;
   }
@@ -3018,6 +3021,9 @@
     .tablet\:grid-cols-12 {
       grid-template-columns: repeat(12, minmax(0, 1fr));
     }
+    .tablet\:grid-cols-\[1fr_auto\] {
+      grid-template-columns: 1fr auto;
+    }
     .tablet\:grid-rows-subgrid {
       grid-template-rows: subgrid;
     }
@@ -3029,6 +3035,9 @@
     }
     .tablet\:items-center {
       align-items: center;
+    }
+    .tablet\:items-end {
+      align-items: flex-end;
     }
     .tablet\:justify-between {
       justify-content: space-between;
