@@ -1,7 +1,6 @@
 "use client";
 
-import { useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
-import { flushSync } from "react-dom";
+import { useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
 import { useLocale } from "react-aria-components";
 import { Dialog } from "../atoms/Dialog.js";
 import { IconButton } from "../atoms/IconButton.js";
@@ -56,7 +55,16 @@ const ASPECT_CLASSES = {
 export function MediaGallery({ items, columns = 3, aspect = "4:3", openLabel, closeLabel, previousLabel, nextLabel, positionLabel, ground = "base", className, style, ...rest }: MediaGalleryProps) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const content = useRef<HTMLDivElement>(null);
+  const pendingFocus = useRef<0 | 1 | null>(null);
   const { direction } = useLocale();
+  useLayoutEffect(() => {
+    const requested = pendingFocus.current;
+    pendingFocus.current = null;
+    if (requested !== null) {
+      const buttons = content.current?.querySelectorAll<HTMLButtonElement>("footer button");
+      buttons?.[requested]?.focus();
+    }
+  }, [openIndex]);
   if (items.length < 2 || items.length > 24) throw new TypeError("MediaGallery: items must contain two through twenty-four items.");
   const colors = SECTION_GROUND_CLASSES[ground];
   const inverse = ground === "inverse";
@@ -74,14 +82,10 @@ export function MediaGallery({ items, columns = 3, aspect = "4:3", openLabel, cl
     const transferPrevious = target === 0 && active === buttons?.[0];
     const transferNext = target === items.length - 1 && active === buttons?.[1];
     if (transferPrevious || transferNext) {
-      // Commit disabled states before focusing the opposite arrow: with two
-      // items that arrow was disabled until this same navigation action.
-      flushSync(() => setOpenIndex(target));
-      const enabled = content.current?.querySelectorAll<HTMLButtonElement>("footer button");
-      enabled?.[transferPrevious ? 1 : 0]?.focus();
-    } else {
-      setOpenIndex(target);
+      // The requested arrow may still be disabled until this update commits.
+      pendingFocus.current = transferPrevious ? 1 : 0;
     }
+    setOpenIndex(target);
   }
 
   function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {

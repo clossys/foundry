@@ -238,4 +238,39 @@ describe("MediaGallery", () => {
     expect(full).toHaveStyle({ blockSize: "200%" });
     expect(full.parentElement).toHaveClass("max-h-[60vh]", "max-w-full", "overflow-auto");
   });
+
+  it("focuses boundary arrows only after their disabled state commits", async () => {
+    const attempts: Array<{ name: string; disabled: boolean }> = [];
+    const nativeFocus = HTMLButtonElement.prototype.focus;
+    const focusSpy = vi.spyOn(HTMLButtonElement.prototype, "focus").mockImplementation(function (this: HTMLButtonElement, options?: FocusOptions) {
+      const name = this.getAttribute("aria-label");
+      if (name === "Earlier panel" || name === "Later panel") attempts.push({ name, disabled: this.disabled });
+      nativeFocus.call(this, options);
+    });
+    try {
+      const user = userEvent.setup();
+      render(<MediaGallery {...props({ items: items(2) })} />);
+      await user.click(screen.getByRole("button", { name: "Inspect Panel 1" }));
+      await screen.findByRole("dialog", { name: "Panel 1" });
+      attempts.length = 0;
+      const previous = screen.getByRole("button", { name: "Earlier panel" });
+      const next = screen.getByRole("button", { name: "Later panel" });
+      await user.click(next);
+      expect(previous).toHaveFocus();
+      await user.click(previous);
+      expect(next).toHaveFocus();
+      expect(attempts.map(attempt => attempt.name)).toContain("Earlier panel");
+      expect(attempts.map(attempt => attempt.name)).toContain("Later panel");
+      expect(attempts.every(attempt => !attempt.disabled)).toBe(true);
+
+      const close = screen.getByRole("button", { name: "Dismiss image" });
+      close.focus();
+      attempts.length = 0;
+      await user.keyboard("{End}{Home}");
+      expect(close).toHaveFocus();
+      expect(attempts).toHaveLength(0);
+    } finally {
+      focusSpy.mockRestore();
+    }
+  });
 });
