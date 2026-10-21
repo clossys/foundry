@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { Card, mergeUiClasses } from "@clossys/designer/atoms/server";
 import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
 import { PAGE_COLUMN_CLASSES, hasContent, pageColumnStyle } from "../internal/PageLayout.js";
-import type { SiteChromeGround } from "../internal/viewChromeGround.js";
+import { siteHeaderPresentation, type SiteChromeGround } from "../internal/viewChromeGround.js";
 import { assertViewContentRoot, usesLegacyChrome } from "../internal/viewContentRoot.js";
 import type { ErrorViewProps } from "./ErrorView.js";
 
@@ -168,7 +168,7 @@ export function BoundaryView({
       {header !== undefined ? (
         header
       ) : (
-        <SiteHeader ground={chromeGround} brand={brand} nav={nav} secondaryAction={secondaryAction} actions={headerAction} />
+        <SiteHeader {...siteHeaderPresentation(chromeGround)} brand={brand} nav={nav} actions={<>{secondaryAction}{headerAction}</>} />
       )}
       <main id={mainId || undefined} tabIndex={mainId ? -1 : undefined} className={PAGE_COLUMN_CLASSES} style={pageColumnStyle("form")}>
         {content}
