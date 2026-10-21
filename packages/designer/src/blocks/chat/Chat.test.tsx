@@ -2,11 +2,13 @@
 import "../../../vitest.setup.js";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { performance } from "node:perf_hooks";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { Chat } from "./Chat.js";
+import { defaultContent } from "./content.js";
 import type { ChatMessage } from "./types.js";
 
 const messages: ChatMessage[] = [
@@ -77,6 +79,41 @@ describe("Chat", () => {
     expect(progress).toHaveTextContent("Response interrupted.");
     await userEvent.click(screen.getByRole("button", { name: "Retry" }));
     expect(onRetry).toHaveBeenCalledOnce();
+  });
+
+  it("review-b: Enter in a renderContent editor preserves its event and the composer draft (mutant: any textarea sends)", () => {
+    const onSend = vi.fn();
+    render(<Chat {...defaults} onSend={onSend} renderContent={() => <textarea aria-label="Message editor" defaultValue="Edit this message" />} />);
+    const composer = screen.getByRole("textbox", { name: "Message" });
+    const editor = screen.getAllByRole("textbox", { name: "Message editor" })[0]!;
+    fireEvent.change(composer, { target: { value: "Keep this draft" } });
+    editor.focus();
+    const enter = new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true });
+    fireEvent(editor, enter);
+    expect(enter.defaultPrevented).toBe(false);
+    expect(onSend).not.toHaveBeenCalled();
+    expect(composer).toHaveValue("Keep this draft");
+    expect(editor).toHaveValue("Edit this message");
+    expect(editor).toHaveFocus();
+  });
+
+  it("review-a: malformed inline delimiters preserve literal text within 250ms per 30,000-bracket run (mutant: quadratic regex)", () => {
+    for (const content of ["[".repeat(30_000), "[".repeat(30_000) + "](" + "a".repeat(30_000)]) {
+      const started = performance.now();
+      const fallback = defaultContent(content);
+      const elapsed = performance.now() - started;
+      expect(elapsed).toBeLessThan(250);
+      const view = render(fallback);
+      expect(view.container.textContent).toBe(content);
+      expect(view.container.querySelector("a, code")).toBeNull();
+      view.unmount();
+    }
+    const view = render(defaultContent("[outer [inner](#target) and `code [literal]` then [unfinished\n`open\n[empty]()"));
+    expect(screen.getByRole("link", { name: "outer [inner" })).toHaveAttribute("href", "#target");
+    expect(view.container.querySelector("code")).toHaveTextContent("code [literal]");
+    expect(view.container).toHaveTextContent("then [unfinished");
+    expect(view.container).toHaveTextContent("`open");
+    expect(view.container).toHaveTextContent("[empty]()");
   });
 
   it("d: optional message actions use named icon controls and focus tooltips (mutant: actions omitted)", async () => {

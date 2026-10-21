@@ -134,7 +134,7 @@ function ChatView({
       event.preventDefault();
       event.stopPropagation();
       onStop();
-    } else if (event.target instanceof HTMLTextAreaElement && event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing && event.nativeEvent.keyCode !== 229) {
+    } else if (event.target === composerRef.current?.querySelector("textarea") && event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing && event.nativeEvent.keyCode !== 229) {
       event.preventDefault();
       send();
     }

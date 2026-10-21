@@ -3,9 +3,53 @@ import { Button } from "../../atoms/Button.js";
 import { Link } from "../../atoms/Link.js";
 import type { ChatLabels } from "./types.js";
 
+/** Index each possible ending once, so malformed starts never rescan a suffix. */
+function inlineParts(text: string): string[] {
+  const length = text.length;
+  const bracket = new Uint32Array(length + 1);
+  const tick = new Uint32Array(length + 1);
+  const urlBoundary = new Uint32Array(length + 1);
+  let nextBracket = length, nextTick = length, nextBoundary = length;
+  bracket[length] = tick[length] = urlBoundary[length] = length;
+  for (let index = length - 1; index >= 0; index--) {
+    const character = text[index]!;
+    if (character === "\n") nextBracket = nextTick = length;
+    else {
+      if (character === "]") nextBracket = index;
+      if (character === "`") nextTick = index;
+    }
+    if (character === ")" || /\s/.test(character)) nextBoundary = index;
+    bracket[index] = nextBracket;
+    tick[index] = nextTick;
+    urlBoundary[index] = nextBoundary;
+  }
+  const parts: string[] = [];
+  let plainStart = 0, index = 0;
+  while (index < length) {
+    let end = index;
+    if (text[index] === "`") {
+      const close = tick[index + 1]!;
+      if (close > index + 1 && close < length) end = close + 1;
+    } else if (text[index] === "[") {
+      const close = bracket[index + 1]!;
+      if (close > index + 1 && close < length && text[close + 1] === "(") {
+        const urlStart = close + 2;
+        const boundary = urlBoundary[urlStart]!;
+        if (boundary > urlStart && text[boundary] === ")") end = boundary + 1;
+      }
+    }
+    if (end > index) {
+      parts.push(text.slice(plainStart, index), text.slice(index, end));
+      plainStart = index = end;
+    } else index++;
+  }
+  parts.push(text.slice(plainStart));
+  return parts;
+}
+
 /** Deliberately small text syntax; HTML stays React-escaped text. */
 function inline(text: string): ReactNode[] {
-  return text.split(/(`[^`\n]+`|\[[^\]\n]+\]\([^\s)]+\))/g).map((part, index) => {
+  return inlineParts(text).map((part, index) => {
     if (part.startsWith("`") && part.endsWith("`")) {
       return <code key={index} className="rounded-subtle bg-surface-sunken px-xs font-mono text-body-s">{part.slice(1, -1)}</code>;
     }
