@@ -36,13 +36,15 @@ const FOOTER_TONE_CLASSES = {
 
 function SiteFooterRoot({ columns, secondary, tone = "dark", className, style, ...rest }: SiteFooterProps) {
   const colors = FOOTER_TONE_CLASSES[tone];
+  const isDark = tone === "dark";
+  const isLight = tone === "light";
 
   return (
     <footer
       {...rest}
       data-footer-root=""
       data-footer-tone={tone}
-      className={cx(tone === "dark" ? "site-footer-dark" : "site-footer-light", colors.surface, colors.primary, "py-lg", tone === "light" ? cx("border-t", colors.border) : "", className)}
+      className={cx(isDark ? "site-footer-dark" : "site-footer-light", colors.surface, colors.primary, "py-lg", isLight ? cx("border-t", colors.border) : "", className)}
       style={{
         position: "relative",
         zIndex: UI_Z_SHELL,
