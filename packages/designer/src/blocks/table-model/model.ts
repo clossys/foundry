@@ -1,4 +1,4 @@
-import type { TableCollation, TableColumn, TableDimension, TableFilter, TableMeasure, TableModel, TableModelErrorCode, TableValue } from "./types.js";
+import type { TableCollation, TableColumn, TableDimension, TableFilterNode, TableMeasure, TableModel, TableModelErrorCode, TableValue } from "./types.js";
 
 /** A typed refusal of invalid saved-view data, cells or an oversized pivot. */
 export class TableModelError extends TypeError {
@@ -92,7 +92,8 @@ function collation(value: unknown): TableCollation {
 export function parseTableModel(value: unknown): TableModel {
   const input = record(value, ["version", "columns", "collation", "filters", "search", "groupBy", "measures", "pivot"]);
   if (input.version === undefined) invalid("version is required.");
-  if (input.version !== 1) throw new TableModelError("unsupported-version", "unsupported saved-view version.");
+  if (input.version !== 1 && input.version !== 2) throw new TableModelError("unsupported-version", "unsupported saved-view version.");
+  const version = input.version;
   const byId = new Map<string, TableColumn>();
   const columns = list(input.columns).map(value => {
     const column = record(value, ["id", "kind", "searchable"]);
@@ -121,21 +122,33 @@ export function parseTableModel(value: unknown): TableModel {
       return { column, ...(dimension.order === undefined ? {} : { order: dimension.order as "asc" | "desc" }) };
     });
   };
-  const filters = input.filters === undefined ? undefined : list(input.filters).map((value): TableFilter => {
-    const filter = record(value, ["column", "kind", "op", "value", "values", "min", "max"]);
+  const filterNode = (value: unknown, depth: number): TableFilterNode => {
+    const filter = record(value, ["column", "kind", "op", "value", "values", "min", "max", "items"]);
+    const op = filter.op;
+    if (filter.kind === "group") {
+      record(value, ["kind", "op", "items"]);
+      if (version === 1 || depth >= 2) invalid("filter groups require version 2 and depth at most two.");
+      if (op !== "and" && op !== "or") invalid("invalid filter group operator.");
+      return { kind: "group", op, items: list(filter.items).map(item => filterNode(item, depth + 1)) };
+    }
     const column = find(filter.column);
     const kind = column.kind;
     if (filter.kind !== kind) invalid("filter kind must match its column.");
     const head = { column: column.id, kind };
     const only = (keys: string[]) => record(value, ["column", "kind", "op", ...keys]);
+    if (version === 1 && (op === "notEquals" || op === "notIn" || op === "empty" || op === "notEmpty")) invalid("operator requires version 2.");
+    if (op === "empty" || op === "notEmpty") {
+      only([]);
+      return { ...head, op };
+    }
     if (kind === "text") {
       only(["value"]);
-      if ((filter.op !== "contains" && filter.op !== "equals") || typeof filter.value !== "string") invalid("invalid text filter.");
-      return { ...head, kind, op: filter.op, value: filter.value };
+      if ((op !== "contains" && op !== "equals" && op !== "notEquals") || typeof filter.value !== "string") invalid("invalid text filter.");
+      return { ...head, kind, op, value: filter.value };
     }
     if (kind === "number" || kind === "date") {
       only(["min", "max"]);
-      if (filter.op !== "range") invalid("invalid range operator.");
+      if (op !== "range") invalid("invalid range operator.");
       const bound = (value: unknown): number => kind === "number" ? finite(value) : Date.parse(dateValue(value, "invalid-model"));
       const min = filter.min === undefined ? undefined : bound(filter.min);
       const max = filter.max === undefined ? undefined : bound(filter.max);
@@ -145,18 +158,19 @@ export function parseTableModel(value: unknown): TableModel {
     }
     if (kind === "boolean") {
       only(["value"]);
-      if (filter.op !== "equals" || typeof filter.value !== "boolean") invalid("invalid boolean filter.");
+      if (op !== "equals" || typeof filter.value !== "boolean") invalid("invalid boolean filter.");
       return { ...head, kind, op: "equals", value: filter.value };
     }
     only(["values"]);
     const values = strings(filter.values);
     if (kind === "enum") {
-      if (filter.op !== "in") invalid("invalid enum operator.");
-      return { ...head, kind, op: "in", values };
+      if (op !== "in" && op !== "notIn") invalid("invalid enum operator.");
+      return { ...head, kind, op, values };
     }
-    if (filter.op !== "any" && filter.op !== "all" && filter.op !== "none") invalid("invalid tags operator.");
-    return { ...head, kind, op: filter.op, values };
-  });
+    if (op !== "any" && op !== "all" && op !== "none") invalid("invalid tags operator.");
+    return { ...head, kind, op, values };
+  };
+  const filters = input.filters === undefined ? undefined : list(input.filters).map(value => filterNode(value, 0));
   const measureIds = new Set<string>();
   const measures = input.measures === undefined ? undefined : list(input.measures).map((value): TableMeasure => {
     const measure = record(value, ["id", "op", "column"]);
@@ -179,7 +193,7 @@ export function parseTableModel(value: unknown): TableModel {
   }
   if (input.search !== undefined && typeof input.search !== "string") invalid("search must be a string.");
   return {
-    version: 1, columns, collation: collation(input.collation),
+    version, columns, collation: collation(input.collation),
     ...(filters === undefined ? {} : { filters }),
     ...(input.search === undefined ? {} : { search: input.search as string }),
     ...(input.groupBy === undefined ? {} : { groupBy: dimensions(input.groupBy) }),
