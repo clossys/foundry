@@ -26,8 +26,8 @@ function freeze<T>(value: T): T {
   }
   return value;
 }
-const revision = "97e1ab51c6f0d4cb0de63f24cf65a499c74fb903";
-const measuredAt = "2026-10-20";
+const revision = "1195a9b3f5d1732ecc60b205a249ba7d19cb77e8";
+const measuredAt = "2026-10-21";
 const frame: InstanceBlockBinding["frameBlockRef"] = {
   blockId: "site-frame", role: "frame", medium: "web",
   adapter: { owner: "@clossys/publisher", subpath: "web", export: "SiteFrame", config: {} },
@@ -48,9 +48,9 @@ export const WEB_ROLE_PAIR_BINDINGS: readonly InstanceBlockBinding[] = freeze(ca
 })));
 const known = WEB_ROLE_PAIR_BINDINGS.flatMap(binding => [binding.frameBlockRef, binding.viewBlockRef]);
 const sources = {
-  "src/web/index.ts": "sha256:06f0c556bc260667cf5d1028dee7401480b27afb6394def281270575e0339853",
+  "src/web/index.ts": "sha256:1fad5e9ba87d829074e33e4070a3e3fdd9b1c67e4e23ac2310e9687e1621807d",
   "src/web/frame/index.ts": "sha256:51c265d1680485b457299374b1df944c60f45f19d9c8be6eb0abb0e6c91ed6ef",
-  "src/web/server.ts": "sha256:ea720e5398c31842ba478b781b48387d161d7378905a5ca9b6e79393f3ba73e4",
+  "src/web/server.ts": "sha256:e69b0df86f3408425b1c9d2f46eb5cb046ef6ced3dbfebd1f52e65c84ffe3bb5",
   "src/web/frame/site-frame-contract.ts": "sha256:96b058b7fdcce7baf0d26989a6f12c2e00eb9ccdd8ee200a59f3ae8f73e6a786",
   "src/web/frame/NavLinks.tsx": "sha256:5e519925f5d79ed8ce908a69d2a5ea7644cdbd10d0be416993060446b85aff17",
   "src/web/frame/NavDisclosure.client.tsx": "sha256:c0672b9ccd72bb3c08d0c86e6669ce5b0b0a875e2347a285a5d99a782de53528",
@@ -60,7 +60,7 @@ const sources = {
   "src/web/frame/types.ts": "sha256:708e3e0c4ca21233053a88c1113cc2f7a6b6afdfa3f9523b9cbe18747a66d0cb",
   "src/web/frame/SkipLink.client.tsx": "sha256:4cd4ff41cd290b09f10d6c1079f7fe3ad788c25722c9d023bb740b659148aa01",
   "src/web/frame/internal/resolveShell.ts": "sha256:85781615a9794297be94dc3ef3095ec159ad781acd893f2a5382ae7b7c73b5ae",
-  "src/web/views/index.ts": "sha256:c857a047bedc98905bc8f0558ad83f9b469d33c6016bcd3ac584857654c62a50",
+  "src/web/views/index.ts": "sha256:d1fe427dd29b49f67df327b5589bc48eaf98beb5e80c0a1d92fbe837a81a49ff",
   "src/web/views/LandingView.tsx": "sha256:ad06fd2fd0e76e087c104a67c45630bcd6c02fa310222fae2c4e6d85c3526de7",
   "src/web/views/LandingViewContent.tsx": "sha256:510a846a5e470efaec2415219afa0b5820f79642c5e7bac08a648971e4100324",
   "src/web/views/SectionedViewContent.tsx": "sha256:81dc4a515f3d60db852799aef67208da4c607ac6b98e11bbeb38737ba4dd5a94",

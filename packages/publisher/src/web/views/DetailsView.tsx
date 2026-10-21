@@ -1,12 +1,11 @@
 "use client";
 
 import type { HTMLAttributes, ReactNode } from "react";
-import { Banner, Breadcrumb, Skeleton, Tabs } from "@clossys/designer/atoms";
+import { Banner, Skeleton, Tabs } from "@clossys/designer/atoms";
 import type { BannerProps } from "@clossys/designer/atoms";
 import { mergeUiClasses } from "@clossys/designer/atoms/server";
-import { DetailView, EmptyState, PageHeader, Panel, RecordLedger, SectionHeader, Stat, StatusList } from "@clossys/designer/blocks";
+import { DetailView, EmptyState, Panel, RecordLedger, SectionHeader, Stat, StatusList } from "@clossys/designer/blocks";
 import type { DetailViewProps, EmptyStateProps, PanelProps, RecordLedgerProps, StatProps, StatusListProps } from "@clossys/designer/blocks";
-import { isSanctionedHref } from "../../internal/href.js";
 import { assertViewContentRoot } from "../internal/viewContentRoot.js";
 
 /** Closed Block entries retain each shipped Block's own props and behavior. */
@@ -34,21 +33,14 @@ export interface DetailsViewSection {
   state?: DetailsViewSectionState;
 }
 export interface DetailsViewTab { id: string; label: string; sections: readonly DetailsViewSection[] }
-export interface DetailsViewIndex { href: string; label: string }
 
 interface DetailsViewCommonProps extends Omit<HTMLAttributes<HTMLDivElement>, "title" | "children"> {
   /** Content enters through the declared Block sections. */
   children?: never;
-  title: string;
-  /** Maps to Designer PageHeader's description prop. */
-  subtitle?: string;
-  actions?: ReactNode;
-  /** Required breadcrumb destination back to this entity's Index Instance. */
-  index: DetailsViewIndex;
   empty: EmptyStateProps;
   /** Main content and a narrow aside, or all sections in their original order. @default "main-aside" */
   layout?: DetailsViewLayout;
-  /** A caller-owned state strip, normally a Designer Banner, between header and body. */
+  /** A caller-owned content notice, normally a Designer Banner, before tabs and sections. */
   banner?: ReactNode;
 }
 
@@ -115,20 +107,21 @@ function sectionLayout(sections: readonly DetailsViewSection[], empty: EmptyStat
 }
 
 /**
- * Standard entity details content inside an AppFrame content region. PageHeader
- * owns the title and breadcrumb; Tabs owns tab interaction; named sections
+ * Standard entity details content inside an AppFrame content region. AppFrame
+ * owns page information; Tabs owns tab interaction; named sections
  * arrange typed Designer Blocks through one main/aside or single layout. States
  * remain local to their section; tab selection and URL state belong to the host.
  * This interactive implementation also supports ordinary SSR; the
  * react-server entry exposes the established wrong-channel client-only stub.
  */
-export function DetailsView({ title, subtitle, actions, index, empty, layout = "main-aside", banner, sections, tabs, tab, onTabChange, tabsLabel, className, ...rest }: DetailsViewProps) {
+export function DetailsView({ empty, layout = "main-aside", banner, sections, tabs, tab, onTabChange, tabsLabel, className, ...rest }: DetailsViewProps) {
+  for (const key of ["title", "subtitle", "actions", "index"]) {
+    if (Object.hasOwn(rest, key)) throw new TypeError(`DetailsView: unknown prop "${key}"; page-level information belongs in AppFrame page.`);
+  }
   assertViewContentRoot("DetailsView", rest);
   for (const key of ["brand", "header", "footer", "nav", "mainId", "children", "leftPanel", "rightPanel", "bottomPanel", "sideColumn", "selectedTab"]) {
     if (Object.hasOwn(rest, key)) throw new TypeError("DetailsView: chrome and arbitrary children belong to the frame, not this View.");
   }
-  if (!text(title) || (subtitle !== undefined && typeof subtitle !== "string")) throw new TypeError("DetailsView: title and subtitle must be text.");
-  if (!index || !isSanctionedHref(index.href) || !text(index.label)) throw new TypeError("DetailsView: index requires a sanctioned href and a nonempty label.");
   if (!empty || typeof empty !== "object" || empty.title === undefined) throw new TypeError("DetailsView: an explicit empty state is required.");
   if (layout !== "main-aside" && layout !== "single") throw new TypeError("DetailsView: layout must be main-aside or single.");
   if (tabs !== undefined) {
@@ -147,9 +140,6 @@ export function DetailsView({ title, subtitle, actions, index, empty, layout = "
   }
   return (
     <div {...rest} className={mergeUiClasses("flex min-w-0 flex-col gap-xl", className)}>
-      <PageHeader title={title} description={subtitle} actions={actions} breadcrumb={
-        <Breadcrumb><Breadcrumb.Item href={index.href}>{index.label}</Breadcrumb.Item><Breadcrumb.Item>{title}</Breadcrumb.Item></Breadcrumb>
-      } />
       {banner}
       {tabs === undefined ? sectionLayout(sections!, empty, layout) : (
         <Tabs selectedKey={tab} onSelectionChange={key => onTabChange!(String(key))}>
