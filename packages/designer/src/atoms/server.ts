@@ -92,3 +92,6 @@ export { cx as mergeUiClasses } from "./internal/cx.js";
 /** The `Button` and icon-only control looks for a plain `<a>`, with the focus outline put back. Pure string logic — no React import at all. */
 export { buttonLinkClassName, iconButtonClassName, iconButtonLinkClassName } from "./button-classes.js";
 export type { ControlGround, IconButtonClassOptions, IconButtonLinkGround, IconButtonShape, IconButtonSize } from "./button-classes.js";
+
+export { Logomark } from "./Logomark.js";
+export type { LogomarkProps, LogomarkSize, LogomarkTone, LogomarkPlate } from "./Logomark.js";
