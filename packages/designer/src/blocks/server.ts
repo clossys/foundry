@@ -171,3 +171,6 @@ export { Tree } from "./tree/Tree.js";
 export type { TreeProps, TreeNodeData } from "./tree/Tree.js";
 export { Items } from "./items/Items.server.js";
 export type { ItemData, ItemFigureData, ItemStatusData, ItemProps, ItemBadge, ItemSize, ItemTreatment, ItemSpan, ItemsProps, ItemsArrangement, ItemsColumns, ItemsScale, ItemsGroup, ItemsLane } from "./items/types.js";
+
+export { Lockup } from "./Lockup.js";
+export type { LockupProps } from "./Lockup.js";

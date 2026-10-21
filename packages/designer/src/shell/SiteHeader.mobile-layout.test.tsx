@@ -123,6 +123,38 @@ describe("SiteHeader mobile layout", () => {
     expect(hidden.map(child => child.textContent)).toEqual(["Example"]);
     expect(shown).toHaveLength(1);
   });
+
+  it.each([375, 767, 768, 1279, 1280])("keeps exactly one responsive artwork paint source visible in the default home link at %ipx", width => {
+    const compiled = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "..", "..", "styles", "compiled.css"), "utf8");
+    // jsdom does not evaluate media queries. Select the shipped rules at the
+    // tested viewport, then let its CSS engine apply their actual selectors.
+    const hideSelector = ".site-header-contract[data-header-root] .site-header-brand a > span:not([data-brand-mark]):not(:has(img))";
+    const narrow = cssBlock(compiled.slice(compiled.lastIndexOf("@media", compiled.indexOf(hideSelector))), "@media (width < 768px) {");
+    const desktop = cssBlock(compiled, "@media (width >= 1280px) {");
+    const style = document.createElement("style");
+    style.textContent = cssBlock(compiled, "  .hidden {") + cssBlock(compiled, "  .inline-flex {")
+      + (width < 768 ? cssBlock(narrow, "    .site-header-contract[data-header-root] .site-header-brand a > span:not([data-brand-mark]):not(:has(img)) {") : "")
+      + (width >= 1280 ? cssBlock(desktop, "    .desktop\\:block {") + cssBlock(desktop, "    .desktop\\:hidden {") : "");
+    document.head.append(style);
+    try {
+      render(<SiteHeader brand={<Brandmark variant="lockup" size="sm" label="Example home" wordmark="Example"
+        markSrc="/mark.svg" presentation="responsive"
+        geometry={{ viewBox: { x: 0, y: 0, width: 100, height: 100 }, paintedBounds: { x: 10, y: 10, width: 80, height: 80 } }} />} />);
+      const anchor = screen.getByRole("link", { name: "Example home" });
+      expect(anchor).toHaveAttribute("href", "/");
+      const visiblePaint = [...anchor.querySelectorAll<HTMLElement>("img, [style*='mask-image']")].filter(source => {
+        for (let node: HTMLElement | null = source; node; node = node.parentElement) {
+          if (getComputedStyle(node).display === "none" || getComputedStyle(node).visibility === "hidden") return false;
+          if (node === anchor) return true;
+        }
+        return false;
+      });
+      expect(visiblePaint).toHaveLength(1);
+      expect(anchor.closest("header")?.querySelectorAll('a[href="/"]')).toHaveLength(1);
+    } finally {
+      style.remove();
+    }
+  });
 });
 
 const MOBILE_HIDE_RULE = /& \.site-header-brand a > ([^{,]+?) \{ display: none; \}/.exec(cssBlock(themeKeys, "@utility site-header-mobile {"));

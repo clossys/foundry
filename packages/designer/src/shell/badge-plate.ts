@@ -7,11 +7,8 @@
  * Server-safe and dependency-free: no React, no DOM.
  */
 
-/** The corner radius as a fraction of the plate's side (7/32). */
-export const BADGE_RADIUS_SHARE = 7 / 32;
-
-/** The gap between the plate's edge and the image, as a fraction of the side, on each side. */
-export const BADGE_INSET_SHARE = 0.18;
+import { BADGE_RADIUS_SHARE } from "../internal/brandmark.js";
+export { BADGE_RADIUS_SHARE, BADGE_INSET_SHARE } from "../internal/brandmark.js";
 
 /** Rounds to 3 decimals and writes negative zero as `0`. */
 function num(value: number): string {
