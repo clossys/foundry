@@ -3042,6 +3042,9 @@
     .tablet\:justify-between {
       justify-content: space-between;
     }
+    .tablet\:justify-end {
+      justify-content: flex-end;
+    }
     .tablet\:gap-lg {
       gap: var(--spacing-lg, 16px);
     }
