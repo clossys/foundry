@@ -1392,6 +1392,9 @@
   .max-h-64 {
     max-height: calc(var(--spacing, 0.25rem) * 64);
   }
+  .max-h-\[60vh\] {
+    max-height: 60vh;
+  }
   .max-h-\[85vh\] {
     max-height: 85vh;
   }
@@ -1400,9 +1403,6 @@
   }
   .min-h-0 {
     min-height: 0px;
-  }
-  .min-h-\[var\(--ui-layout-tap-target\)\] {
-    min-height: var(--ui-layout-tap-target);
   }
   .min-h-dvh {
     min-height: 100dvh;
@@ -4126,27 +4126,14 @@
   .\[\&_hr\]\:border-line-base hr {
     border-color: var(--color-line-base, oklch(0.8761 0 0));
   }
-  .\[\&_img\]\:size-full img {
-    width: 100%;
-    height: 100%;
-  }
   .\[\&_img\]\:h-auto img {
     height: auto;
-  }
-  .\[\&_img\]\:max-h-\[60vh\] img {
-    max-height: 60vh;
-  }
-  .\[\&_img\]\:w-auto img {
-    width: auto;
   }
   .\[\&_img\]\:max-w-full img {
     max-width: 100%;
   }
   .\[\&_img\]\:rounded-control img {
     border-radius: var(--radius-control, 6px);
-  }
-  .\[\&_img\]\:object-cover img {
-    object-fit: cover;
   }
   .\[\&_li\]\:text-body li {
     font-size: var(--text-body, 15px);

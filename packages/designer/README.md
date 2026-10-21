@@ -4415,6 +4415,11 @@ Draft thumbnail grid with a controlled Dialog lightbox. The component is
 client-only. The host supplies thumbnail and full media nodes, accessible
 names, optional captions, and the navigation copy.
 
+The thumbnail button owns the selected aspect ratio and clips its host node.
+The lightbox bounds its media viewport to `60vh` and scrolls oversized content.
+Host media keeps its supplied size and object-fit behavior; supply responsive
+media nodes when fitted images are needed.
+
 | Prop | Contract |
 | --- | --- |
 | `items` | Required readonly `MediaGalleryItem[]`, two through twenty-four items, with `id`, `thumbnail`, `full`, `alt`, and optional `caption`. |

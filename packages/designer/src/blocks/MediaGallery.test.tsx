@@ -220,6 +220,22 @@ describe("MediaGallery", () => {
     render(<MediaGallery {...props({ ground })} />);
     expect(screen.getByRole("list")).toHaveClass(ink);
     if (ground !== "base") expect(screen.getByRole("list")).toHaveClass(`bg-surface-${ground}`);
-    for (const button of screen.getAllByRole("button")) expect(button).toHaveClass(outline, "min-h-[var(--ui-layout-tap-target)]");
+    for (const button of screen.getAllByRole("button")) expect(button).toHaveClass(outline);
+  });
+
+  it("bounds owned media viewports while preserving opaque host nodes", async () => {
+    const user = userEvent.setup();
+    const data = items();
+    data[0]!.thumbnail = <span data-testid="host-thumbnail" style={{ inlineSize: "200%" }}>Courtyard detail</span>;
+    data[0]!.full = <span data-testid="host-full" style={{ blockSize: "200%" }}>Courtyard panorama</span>;
+    render(<MediaGallery {...props({ items: data })} />);
+    const thumbnail = screen.getByTestId("host-thumbnail");
+    expect(thumbnail).toHaveStyle({ inlineSize: "200%" });
+    expect(thumbnail.parentElement).toHaveClass("absolute", "inset-0", "overflow-hidden");
+    await user.click(screen.getByRole("button", { name: "Inspect Panel 1" }));
+    await screen.findByRole("dialog", { name: "Panel 1" });
+    const full = screen.getByTestId("host-full");
+    expect(full).toHaveStyle({ blockSize: "200%" });
+    expect(full.parentElement).toHaveClass("max-h-[60vh]", "max-w-full", "overflow-auto");
   });
 });

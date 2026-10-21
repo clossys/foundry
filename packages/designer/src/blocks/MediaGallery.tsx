@@ -6,6 +6,7 @@ import { useLocale } from "react-aria-components";
 import { Dialog } from "../atoms/Dialog.js";
 import { IconButton } from "../atoms/IconButton.js";
 import { cx } from "../atoms/internal/cx.js";
+import { UI_LAYOUT_TAP_TARGET } from "../atoms/internal/ui-vars.js";
 import { ChevronLeft } from "../icons/ChevronLeft.js";
 import { ChevronRight } from "../icons/ChevronRight.js";
 import { X } from "../icons/X.js";
@@ -99,10 +100,12 @@ export function MediaGallery({ items, columns = 3, aspect = "4:3", openLabel, cl
 
   return (
     <>
-      <ul {...rest} role="list" className={cx("grid gap-md", COLUMN_CLASSES[columns], colors.surface, colors.primary, className)} style={style}>
+      <ul {...rest} role="list" className={cx("m-0 grid list-none gap-md p-0", COLUMN_CLASSES[columns], colors.surface, colors.primary, className)} style={style}>
         {items.map((item, index) => (
           <li key={item.id} className="min-w-0">
-            <button type="button" aria-label={openLabel(item.alt)} onClick={() => setOpenIndex(index)} className={cx("block min-h-[var(--ui-layout-tap-target)] w-full overflow-hidden rounded-control [&_img]:size-full [&_img]:object-cover focus-visible:outline-2 focus-visible:outline-offset-2", ASPECT_CLASSES[aspect], focusClass)}>{item.thumbnail}</button>
+            <button type="button" aria-label={openLabel(item.alt)} onClick={() => setOpenIndex(index)} style={{ minBlockSize: UI_LAYOUT_TAP_TARGET }} className={cx("relative block w-full overflow-hidden rounded-control border-0 bg-transparent p-0 focus-visible:outline-2 focus-visible:outline-offset-2", ASPECT_CLASSES[aspect], focusClass)}>
+              <span className="absolute inset-0 flex items-center justify-center overflow-hidden">{item.thumbnail}</span>
+            </button>
           </li>
         ))}
       </ul>
@@ -110,7 +113,7 @@ export function MediaGallery({ items, columns = 3, aspect = "4:3", openLabel, cl
         {current && openIndex !== null ? (
           <div ref={content} onKeyDown={onKeyDown} className="flex min-w-0 flex-col gap-md">
             <Dialog.Heading className="sr-only">{current.alt}</Dialog.Heading>
-            <div className="flex justify-center [&_img]:max-h-[60vh] [&_img]:w-auto [&_img]:max-w-full">{current.full}</div>
+            <div className="max-h-[60vh] w-full min-w-0 max-w-full overflow-auto">{current.full}</div>
             {current.caption !== undefined ? <div className="text-body-s text-ink-secondary">{current.caption}</div> : null}
             <footer className="flex flex-wrap items-center justify-center gap-sm">
               <IconButton icon={previousIcon} label={previousLabel} autoFocus={openIndex > 0} isDisabled={openIndex === 0} onPress={() => navigate(openIndex - 1)} />

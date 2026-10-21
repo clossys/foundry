@@ -1,6 +1,7 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { Badge } from "../atoms/Badge.js";
 import { cx } from "../atoms/internal/cx.js";
+import { UI_LAYOUT_TAP_TARGET } from "../atoms/internal/ui-vars.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
 
 export interface TimelineEntry {
@@ -40,7 +41,7 @@ export function Timeline({ entries, headingLevel = 3, ground = "base", className
   const focusClass = inverse ? "focus-visible:outline-accent-on-inverse" : "focus-visible:outline-accent";
 
   return (
-    <ol {...rest} role="list" className={cx("flex flex-col gap-xl", colors.surface, className)} style={style}>
+    <ol {...rest} role="list" className={cx("m-0 flex list-none flex-col gap-xl p-0", colors.surface, className)} style={style}>
       {entries.map(entry => (
         <li key={entry.id} className="grid min-w-0 gap-sm tablet:grid-cols-[10rem_1fr] tablet:gap-xl">
           <div className="flex flex-wrap items-center gap-sm">
@@ -51,7 +52,7 @@ export function Timeline({ entries, headingLevel = 3, ground = "base", className
             <span aria-hidden="true" className={cx("absolute -start-1 top-2 size-2 rounded-pill", dotClass)} />
             <Heading className={cx("text-body-l font-medium", colors.primary)}>
               {entry.href !== undefined ? (
-                <a href={entry.href} className={cx("inline-flex min-h-[var(--ui-layout-tap-target)] items-center rounded-default underline decoration-transparent underline-offset-4 hover:decoration-current focus-visible:outline-2 focus-visible:outline-offset-2", focusClass)}>{entry.heading}</a>
+                <a href={entry.href} style={{ minBlockSize: UI_LAYOUT_TAP_TARGET }} className={cx("inline-flex items-center rounded-default underline decoration-transparent underline-offset-4 hover:decoration-current focus-visible:outline-2 focus-visible:outline-offset-2", focusClass)}>{entry.heading}</a>
               ) : entry.heading}
             </Heading>
             {entry.body !== undefined ? <div className={cx("text-body", colors.secondary)}>{entry.body}</div> : null}
