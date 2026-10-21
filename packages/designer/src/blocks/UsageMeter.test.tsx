@@ -108,3 +108,23 @@ describe("UsageMeter", () => {
     expect(container.querySelector("[data-part='mark']")).toBeNull();
   });
 });
+
+
+describe("UsageMeter review regressions", () => {
+  it("R1 preserves an external accessible-name reference without an id", () => {
+    render(<><h2 id="host-usage-title">Current allocation</h2><UsageMeter {...sample} aria-labelledby="host-usage-title" /></>);
+    expect(screen.getByRole("region", { name: "Current allocation" })).toHaveAttribute("aria-labelledby", "host-usage-title");
+  });
+
+  it("R2 keeps the generated label reference when an id and external reference coexist", () => {
+    render(<><h2 id="host-usage-title">Current allocation</h2><UsageMeter {...sample} id="request-usage" aria-labelledby="host-usage-title" /></>);
+    expect(screen.getByRole("region", { name: "API requests" })).toHaveAttribute("aria-labelledby", "request-usage-label");
+  });
+
+  it("R3 keeps a block-valued label inside its named container after native HTML parsing", () => {
+    const html = renderToString(<UsageMeter {...sample} id="nested-usage" label={<div><strong>API requests</strong></div>} />);
+    const { container } = render(<div dangerouslySetInnerHTML={{ __html: html }} />);
+    expect(container.querySelector("#nested-usage-label")).toContainElement(screen.getByText("API requests"));
+    expect(screen.getByRole("region", { name: "API requests" })).toBeVisible();
+  });
+});

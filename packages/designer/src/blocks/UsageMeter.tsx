@@ -58,12 +58,12 @@ export function UsageMeter({
     <section
       {...rest}
       id={id}
-      aria-labelledby={labelId}
+      aria-labelledby={labelId ?? rest["aria-labelledby"]}
       data-size={size}
       className={cx("flex min-w-0 flex-col break-words font-body", gapClass, className)}
     >
       <div className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-sm gap-y-xs">
-        <p id={labelId} className="m-0 min-w-0 text-body font-semibold text-ink-primary">{label}</p>
+        <div id={labelId} className="m-0 min-w-0 text-body font-semibold text-ink-primary">{label}</div>
         <p className="m-0 min-w-0 text-body-s text-ink-secondary">{periodText}</p>
       </div>
       <Meter

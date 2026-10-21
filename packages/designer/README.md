@@ -4782,8 +4782,8 @@ provide both for "Showing 11–20 of 42".
 
 Draft, server-safe usage against a limit for a period. The host supplies the
 label, formatted used and limit text, period, projection, threshold messages and
-optional action; `UsageMeter` formats no facts. Exported through the root,
-`/blocks` and `/blocks/server`, with `UsageMeterProps` and `UsageMeterThreshold`.
+optional action; `UsageMeter` formats no facts. Exported through `/blocks` and
+`/blocks/server`, with `UsageMeterProps` and `UsageMeterThreshold`.
 
 ```tsx
 import { UsageMeter } from "@clossys/designer/blocks/server";
@@ -4815,8 +4815,9 @@ The scale expands with over-limit usage so the limit tick sits inside the bar.
 
 `size="compact"` tightens the spacing and omits `projectedText`; the optional
 `action` remains available in either size. An `id` names the section through
-`${id}-label`; omit it to leave the section unnamed. The block adds no heading,
-announcement or motion, and wraps its content in both themes.
+`${id}-label`; without an `id`, a supplied `aria-labelledby` names the section,
+otherwise it stays unnamed. The label container accepts block-level content.
+The block adds no heading, announcement or motion, and wraps its content in both themes.
 
 ### `Stat`
 
