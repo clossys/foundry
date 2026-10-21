@@ -2690,6 +2690,7 @@ every action full width in a single column at every size. Below `tablet`,
 both layouts stack full width. The actions container exposes
 `data-actions-layout`; with no actions, no container renders. An unknown
 layout is a type error and throws a `TypeError` at runtime.
+The tertiary "forgot password" link belongs under its field, outside the actions row.
 
 Pass secondary actions first and the primary action last. `Form` keeps
 that DOM order and Tab order in both layouts. Width belongs to the

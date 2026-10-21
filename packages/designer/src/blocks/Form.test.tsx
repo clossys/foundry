@@ -257,13 +257,14 @@ describe("Form actions layout", () => {
   const actions = [<button key="cancel" type="button">Cancel</button>, <button key="save" type="submit">Save</button>];
 
   it("ships the single-column and logical-end CSS rules at the existing tablet breakpoint", () => {
-    expect(compiledRule("grid")).toContain("display: grid;");
-    expect(compiledRule("grid-cols-1")).toContain("grid-template-columns: repeat(1, minmax(0, 1fr));");
+    expect(compiledRule("flex")).toContain("display: flex;");
+    expect(compiledRule("flex-col")).toContain("flex-direction: column;");
+    expect(compiledRule("items-stretch")).toContain("align-items: stretch;");
     expect(compiledRule("gap-sm")).toContain("gap: var(--spacing-sm, 8px);");
-    expect(compiledRule("tablet\\:flex")).toContain("display: flex;");
+    expect(compiledRule("tablet\\:flex-row")).toContain("flex-direction: row;");
     expect(compiledRule("tablet\\:items-center")).toContain("align-items: center;");
     expect(compiledRule("tablet\\:justify-end")).toContain("justify-content: flex-end;");
-    const start = compiled.indexOf(".tablet\\:flex {");
+    const start = compiled.indexOf(".tablet\\:flex-row {");
     const media = compiled.slice(compiled.lastIndexOf("@media", start), start);
     expect(media).toMatch(/^@media \(width >= 768px\) \{/);
   });
@@ -272,7 +273,7 @@ describe("Form actions layout", () => {
     const { container } = render(<Form actions={actions}><input aria-label="Name" /></Form>);
     const region = screen.getByRole("button", { name: "Save" }).parentElement!;
     expect(region).toHaveAttribute("data-actions-layout", "end");
-    expect(region).toHaveClass("grid", "grid-cols-1", "gap-sm", "tablet:flex", "tablet:items-center", "tablet:justify-end");
+    expect(region).toHaveClass("flex", "flex-col", "items-stretch", "gap-sm", "tablet:flex-row", "tablet:items-center", "tablet:justify-end");
     expect(container.querySelector("form")).not.toHaveAttribute("actionsLayout");
   });
 
@@ -283,7 +284,7 @@ describe("Form actions layout", () => {
     const { container } = render(<Form dir={direction} actionsLayout={layout} actions={actions}><input aria-label="Name" /></Form>);
     const region = screen.getByRole("button", { name: "Save" }).parentElement!;
     expect(region).toHaveAttribute("data-actions-layout", layout);
-    expect(region).toHaveClass("grid", "grid-cols-1", "gap-sm");
+    expect(region).toHaveClass("flex", "flex-col", "items-stretch", "gap-sm");
     expect([...region.children].map(child => child.textContent)).toEqual(["Cancel", "Save"]);
     expect(region.className).not.toMatch(/reverse|order-/);
     expect(container.querySelector("form")).not.toHaveAttribute("actionsLayout");
@@ -299,14 +300,14 @@ describe("Form actions layout", () => {
   it("keeps end actions natural width and aligned to the end at and above tablet", () => {
     render(<Form actionsLayout="end" actions={actions}><input aria-label="Name" /></Form>);
     const region = screen.getByRole("button", { name: "Save" }).parentElement!;
-    expect(region).toHaveClass("tablet:flex", "tablet:items-center", "tablet:justify-end");
+    expect(region).toHaveClass("tablet:flex-row", "tablet:items-center", "tablet:justify-end");
     expect(region.className).not.toMatch(/flex-1|w-full|tablet:grid/);
   });
 
   it("keeps stretch actions in a full-width single column at every size", () => {
     render(<Form actionsLayout="stretch" actions={actions}><input aria-label="Name" /></Form>);
     const region = screen.getByRole("button", { name: "Save" }).parentElement!;
-    expect(region).toHaveClass("grid", "grid-cols-1");
+    expect(region).toHaveClass("flex", "flex-col", "items-stretch", "gap-sm");
     expect(region.className).not.toMatch(/tablet:|justify-items-(start|end|center)|items-(start|end|center)/);
   });
 
@@ -323,6 +324,43 @@ describe("Form actions layout", () => {
         .toThrow(new TypeError('Form actionsLayout must be "end" or "stretch".'));
     } finally {
       quiet.mockRestore();
+    }
+  });
+});
+
+
+describe("shared internal action rows", () => {
+  it("ships every helper class in canonical CSS without changing the scanner", async () => {
+    const { actionRowClassName } = await import("../atoms/internal/action-row.js");
+    const compiled = readFileSync(resolve(import.meta.dirname, "../../styles/compiled.css"), "utf8");
+    for (const classes of [actionRowClassName("form", 2), actionRowClassName("dialog", 2), actionRowClassName("dialog", 3)]) {
+      for (const token of classes.split(" ")) {
+        expect(compiled, token).toContain(`.${token.replaceAll(":", "\\:")} {`);
+      }
+    }
+  });
+
+  it.each([2, 3, 4])("keeps %s form actions stacked until tablet and primary last", async (count) => {
+    const { actionRowClassName } = await import("../atoms/internal/action-row.js");
+    expect(actionRowClassName("form", count)).toBe("flex flex-col items-stretch gap-sm");
+  });
+
+  it("gives exactly two dialog actions an equal grid with an end-aligned tablet row", async () => {
+    const { actionRowClassName } = await import("../atoms/internal/action-row.js");
+    expect(actionRowClassName("dialog", 2)).toBe("grid grid-cols-2 gap-sm tablet:flex tablet:items-center tablet:justify-end");
+  });
+
+  it.each([3, 4])("stacks %s dialog actions with primary last, then uses an end-aligned tablet row", async (count) => {
+    const { actionRowClassName } = await import("../atoms/internal/action-row.js");
+    expect(actionRowClassName("dialog", count)).toBe("flex flex-col items-stretch gap-sm tablet:flex-row tablet:items-center tablet:justify-end");
+  });
+
+  it("keeps mode private to the helper and leaves dialog consumers unchanged", () => {
+    const source = readFileSync(resolve(import.meta.dirname, "Form.tsx"), "utf8");
+    const props = source.slice(source.indexOf("export interface FormProps"), source.indexOf("export function Form"));
+    expect(props).not.toMatch(/\bmode\??:/);
+    for (const barrel of ["../atoms/index.ts", "./index.ts", "../index.ts"]) {
+      expect(readFileSync(resolve(import.meta.dirname, barrel), "utf8")).not.toContain("action-row");
     }
   });
 });

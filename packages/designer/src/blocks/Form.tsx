@@ -10,6 +10,7 @@ import {
 } from "react";
 import { Link } from "../atoms/Link.js";
 import { cx } from "../atoms/internal/cx.js";
+import { actionRowClassName } from "../atoms/internal/action-row.js";
 import { UI_RING_FOCUS } from "../atoms/internal/ui-vars.js";
 
 export interface FormError {
@@ -236,6 +237,9 @@ export function Form({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [errors]);
 
+  const actionsRowClasses = actionRowClassName("form", 0);
+  const endAlignedActions = actionsLayout === "end";
+
   return (
     <form
       {...rest}
@@ -299,8 +303,8 @@ export function Form({
         <div
           data-actions-layout={actionsLayout}
           className={cx(
-            "grid grid-cols-1 gap-sm",
-            actionsLayout === "end" && "tablet:flex tablet:items-center tablet:justify-end",
+            actionsRowClasses,
+            endAlignedActions && "tablet:flex-row tablet:items-center tablet:justify-end",
           )}
         >
           {actions}

@@ -410,7 +410,7 @@
 @source inline("stacks stage.label.length stage.total stage.value standalone standard start start-0 start: starting");
 @source inline("starts state state. state.matches stateRef stateRef.current statement states static status");
 @source inline("status-rows status: statusY stay step steps steps. steps.length still stop stops storageKey stored");
-@source inline("straight streaming string string. string[] strings strings. stroke stroke-current stroke:");
+@source inline("straight streaming stretch string string. string[] strings strings. stroke stroke-current stroke:");
 @source inline("strokeWidth strong structural-difference-through-a-mode-prop structurally structure structure. style");
 @source inline("style.backdropFilter style.transform style: styled stylesheet styling styling. sub sub-part subgrid");
 @source inline("subject subject: submit submit. submitCount submitCount: submitError submits submittingRef");
@@ -451,12 +451,12 @@
 @source inline("tablet:focus-within:overflow-visible tablet:focus-within:table-header-group");
 @source inline("tablet:focus-within:w-auto tablet:gap-lg tablet:gap-x-3xl tablet:gap-x-4xl tablet:gap-x-xl");
 @source inline("tablet:grid tablet:grid-cols-12 tablet:grid-cols-2 tablet:grid-cols-6 tablet:grid-rows-subgrid");
-@source inline("tablet:h-px tablet:hidden tablet:items-center tablet:justify-between tablet:min-w-0 tablet:ms-auto");
-@source inline("tablet:ms-md tablet:my-0 tablet:not-sr-only tablet:p-0 tablet:p-lg tablet:p-xl tablet:pb-0");
-@source inline("tablet:pb-xl tablet:pe-md tablet:px-md tablet:py-4xl tablet:py-5xl tablet:py-6xl tablet:py-lg");
-@source inline("tablet:py-xl tablet:rotate-0 tablet:rounded-none tablet:row-span-1 tablet:row-span-2");
-@source inline("tablet:row-span-3 tablet:row-span-4 tablet:rtl:rotate-180 tablet:shrink-0 tablet:table");
-@source inline("tablet:table-cell tablet:table-fixed tablet:table-header-group tablet:table-row");
+@source inline("tablet:h-px tablet:hidden tablet:items-center tablet:justify-between tablet:justify-end");
+@source inline("tablet:min-w-0 tablet:ms-auto tablet:ms-md tablet:my-0 tablet:not-sr-only tablet:p-0 tablet:p-lg");
+@source inline("tablet:p-xl tablet:pb-0 tablet:pb-xl tablet:pe-md tablet:px-md tablet:py-4xl tablet:py-5xl");
+@source inline("tablet:py-6xl tablet:py-lg tablet:py-xl tablet:rotate-0 tablet:rounded-none tablet:row-span-1");
+@source inline("tablet:row-span-2 tablet:row-span-3 tablet:row-span-4 tablet:rtl:rotate-180 tablet:shrink-0");
+@source inline("tablet:table tablet:table-cell tablet:table-fixed tablet:table-header-group tablet:table-row");
 @source inline("tablet:table-row-group tablet:text-display-l tablet:text-h0 tablet:w-auto tablet:w-full tabular-nums");
 @source inline("tag tags tags: tailwind-merge take takeaway takes target targetH targetId targets targets. tel:");
 @source inline("template terminal terminals: test tests text text-accent text-accent-on-inverse text-accent-text");
