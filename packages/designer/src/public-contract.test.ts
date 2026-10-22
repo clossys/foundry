@@ -24,6 +24,44 @@ describe("compiled UsageMeter public contract", () => {
   });
 });
 
+describe("compiled AccessMatrix and ColumnMapper public contract", () => {
+  it("exports both components and exact required props and value types from client barrels only", () => {
+    const filename = join(packageRoot, "access-matrix-column-mapper-consumer.check.ts");
+    const consumer = ["blocks/index.js", "index.js"].map((entry, i) => `
+      import { AccessMatrix as A${i}, ColumnMapper as C${i}, type AccessCellValue as Cell${i}, type AccessRole as Role${i}, type AccessPermission as Permission${i}, type AccessGroup as Group${i}, type AccessMatrixValue as Value${i}, type AccessMatrixChange as Change${i}, type AccessMatrixLabels as Labels${i}, type AccessMatrixProps as Props${i}, type ColumnMapperTarget as Target${i}, type ColumnMapperSource as Source${i}, type ColumnMapping as Mapping${i}, type ColumnMapperIssue as Issue${i}, type ColumnMapperLabels as MapperLabels${i}, type ColumnMapperProps as MapperProps${i} } from ${JSON.stringify(join(packageRoot, "dist", entry))};
+      type RequiredKeys${i}<T> = { [K in keyof T]-?: {} extends Pick<T,K> ? never : K }[keyof T];
+      type Same${i}<A,B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ? true : false;
+      const requiredAccess${i}: Same${i}<RequiredKeys${i}<Props${i}>, "aria-label" | "roles" | "groups" | "value" | "labels"> = true;
+      const requiredMapper${i}: Same${i}<RequiredKeys${i}<MapperProps${i}>, "targets" | "sourceColumns" | "mapping" | "onMappingChange" | "labels"> = true;
+      const kinds${i}: Same${i}<Target${i}["kind"], "text" | "number" | "date" | "enum" | "tags" | "boolean"> = true;
+      const cell${i}: Cell${i} = {state:"inherited",reason:"Included with Viewer access to reports."};
+      const role${i}: Role${i} = {id:"editor",label:"Editor",isLocked:true,lockedReason:"Host supplied reason"};
+      const permission${i}: Permission${i} = {id:"view",label:"View projects"};
+      const group${i}: Group${i} = {id:"projects",label:"Projects",permissions:[permission${i}]};
+      const value${i}: Value${i} = {editor:{view:cell${i}}};
+      const change${i}: Change${i} = {roleId:"editor",permissionIds:["view"],state:"granted"};
+      const labels${i}: Labels${i} = {permissionHeader:"Permission",cell:(r,p)=>r+p,groupAll:(r,g)=>r+g,inherited:"Inherited",locked:"Locked",changeSummary:(g,r)=>String(g+r)};
+      const props${i}: Props${i} = {"aria-label":"Workspace access",roles:[role${i}],groups:[group${i}],value:value${i},labels:labels${i},onChange:(next,change)=>{const v:Value${i}=next;const c:Change${i}=change;}};
+      const target${i}: Target${i} = {id:"email",label:"Email",kind:"text",required:true};
+      const source${i}: Source${i} = {id:"email",header:"E-mail address",samples:["ada@example.com"]};
+      const mapping${i}: Mapping${i} = {email:null};
+      const issue${i}: Issue${i} = {targetId:"email",message:"Choose a column"};
+      const mapperLabels${i}: MapperLabels${i} = {legend:"Match columns",notMapped:"Not mapped",required:"Required",requiredMissing:t=>t,duplicate:h=>h,samples:v=>v.join(", "),summary:(m,t,p)=>String(m+t+p)};
+      const mapper${i}: MapperProps${i} = {targets:[target${i}],sourceColumns:[source${i}],mapping:mapping${i},onMappingChange:next=>{const m:Mapping${i}=next;},labels:mapperLabels${i},issues:[issue${i}]};
+      const accessComponent${i}: (p:Props${i})=>import("react").ReactNode = A${i};
+      const mapperComponent${i}: (p:MapperProps${i})=>import("react").ReactNode = C${i};
+    `).join("\n");
+    const options = { strict: true, noEmit: true, skipLibCheck: true, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler };
+    const host = ts.createCompilerHost(options), original = host.getSourceFile.bind(host);
+    host.getSourceFile = (path, language, error, fresh) => path === filename ? ts.createSourceFile(path, consumer, language, true) : original(path, language, error, fresh);
+    expect(ts.getPreEmitDiagnostics(ts.createProgram([filename], options, host)).map(d => ts.flattenDiagnosticMessageText(d.messageText, "\n"))).toEqual([]);
+    for (const entry of ["blocks/index.js", "index.js", "blocks/server.js"]) {
+      const script = `import * as api from ${JSON.stringify(join(packageRoot, "dist", entry))}; process.stdout.write(JSON.stringify(["AccessMatrix","ColumnMapper"].filter(name=>typeof api[name]==="function")));`;
+      expect(JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8", cwd: packageRoot }))).toEqual(entry === "blocks/server.js" ? [] : ["AccessMatrix", "ColumnMapper"]);
+    }
+  });
+});
+
 describe("compiled signature chart public contract", () => {
   it.each(["index", "server"])("exports all three charts from the compiled charts/%s entry", async entry => {
     const exports = await import(pathToFileURL(join(packageRoot, `dist/charts/${entry}.js`)).href);
@@ -655,6 +693,52 @@ describe("compiled DataTable saved-view public contract", () => {
       expect(diagnostic.file?.fileName).toBe(filename);
       const line = diagnostic.file!.getLineAndCharacterOfPosition(diagnostic.start!).line;
       expect(negative.split("\n")[line]).toContain(cases[index]!.source);
+    }
+  }, 30_000);
+});
+
+describe("compiled NewsletterBand public contract", () => {
+  it("exports the client component from both client barrels and keeps its validator private", () => {
+    for (const entry of ["blocks/index.js", "index.js"]) {
+      const script = `import * as api from ${JSON.stringify(join(packageRoot, "dist", entry))}; process.stdout.write(JSON.stringify({component: typeof api.NewsletterBand, private: ["ACTION_PATTERN", "NewsletterStatus", "NewsletterBandProps"].filter(name => name in api)}));`;
+      expect(JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8", cwd: packageRoot }))).toEqual({ component: "function", private: [] });
+    }
+    const script = `import * as api from ${JSON.stringify(join(packageRoot, "dist/blocks/server.js"))}; process.stdout.write(JSON.stringify("NewsletterBand" in api));`;
+    expect(execFileSync(process.execPath, ["--conditions=react-server", "--input-type=module", "-e", script], { encoding: "utf8", cwd: packageRoot })).toBe("false");
+  });
+
+  it("pins the controlled status, copy, post and callback types in both emitted client entries", () => {
+    const filename = join(packageRoot, "emitted-newsletter-consumer.check.ts");
+    const consumer = ["blocks/index.js", "index.js"].map((entry, index) => `
+      import { NewsletterBand as Band${index}, type NewsletterBandProps as Props${index}, type NewsletterStatus as Status${index} } from ${JSON.stringify(join(packageRoot, "dist", entry))};
+      type Same${index}<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ? true : false;
+      const status${index}: Same${index}<Status${index}, "idle" | "pending" | "sent" | "failed"> = true;
+      const props${index}: Props${index} = {emailLabel: "Email", submitLabel: "Send", pendingLabel: "Sending", sentMessage: "Sent", failedMessage: "Failed", action: "/subscribe", method: "post", name: "address", status: "pending", layout: "stacked", ground: "inverse", "aria-label": "Updates", onSubmit: (email, event) => { const value: string = email; const form: HTMLFormElement = event.currentTarget; }};
+      Band${index}(props${index});
+    `).join("\n");
+    const options = { strict: true, noEmit: true, skipLibCheck: true, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler };
+    const compile = (source: string) => {
+      const host = ts.createCompilerHost(options); const original = host.getSourceFile.bind(host);
+      host.getSourceFile = (path, language, error, fresh) => path === filename ? ts.createSourceFile(path, source, language, true) : original(path, language, error, fresh);
+      return ts.getPreEmitDiagnostics(ts.createProgram([filename], options, host));
+    };
+    expect(compile(consumer).map(diagnostic => ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n"))).toEqual([]);
+    const negative = consumer + [0, 1].map(index => `
+      const missingCopy${index}: Props${index} = {action: "/subscribe"};
+      const invalidMethod${index}: Props${index} = {...props${index}, method: "get"};
+      const invalidStatus${index}: Status${index} = "success";
+    `).join("\n");
+    const diagnostics = compile(negative);
+    const cases = [0, 1].flatMap(index => [
+      { binding: `missingCopy${index}`, code: 2739 },
+      { binding: `invalidMethod${index}`, code: 2322 },
+      { binding: `invalidStatus${index}`, code: 2322 },
+    ]);
+    expect(diagnostics.map(diagnostic => diagnostic.code)).toEqual(cases.map(item => item.code));
+    for (const [index, diagnostic] of diagnostics.entries()) {
+      expect(diagnostic.file?.fileName).toBe(filename);
+      const line = diagnostic.file!.getLineAndCharacterOfPosition(diagnostic.start!).line;
+      expect(negative.split("\n")[line]).toContain(`const ${cases[index]!.binding}:`);
     }
   }, 30_000);
 });
