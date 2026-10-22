@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { chmodSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { availableParallelism, tmpdir } from "node:os";
+import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 
@@ -48,7 +48,7 @@ function makeStubTsc() {
   const stubPath = join(workRoot, `tsc-stub-${stubCounter++}.mjs`);
   const lines = [
     "#!/usr/bin/env node",
-    "import { readFileSync, existsSync } from 'node:fs';",
+    "import { readFileSync, existsSync, appendFileSync, rmSync } from 'node:fs';",
     "import { dirname, join } from 'node:path';",
     "const args = process.argv.slice(2);",
     "const pIndex = args.indexOf('-p');",
@@ -67,7 +67,19 @@ function makeStubTsc() {
     "  const m = re.exec(content);",
     "  return m ? JSON.parse(m[1]) : null;",
     "}",
-    "if (marker('STUB_ANOMALY')) {",
+    "// STUB_TRACE_FILE (env) records one 'start' and one 'end' line per run, in real time, so a test can",
+    "// measure how many stub runs overlapped; STUB_DELAY_MS (marker) holds the run open so they can.",
+    "if (process.env.STUB_TRACE_FILE) {",
+    "  appendFileSync(process.env.STUB_TRACE_FILE, 'start\\n');",
+    "  process.on('exit', () => appendFileSync(process.env.STUB_TRACE_FILE, 'end\\n'));",
+    "}",
+    "const delayMs = marker('STUB_DELAY_MS');",
+    "if (delayMs) Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, delayMs);",
+    "if (marker('STUB_CRASH')) process.kill(process.pid, 'SIGKILL');",
+    "// STUB_SABOTAGE removes this run's own compile directory afterwards, so the NEXT block that",
+    "// worker slot handles throws inside the harness (not a tsc diagnostic): an internal worker failure.",
+    "if (marker('STUB_SABOTAGE')) process.on('exit', () => rmSync(dir, { recursive: true, force: true }));",
+    "if (marker('STUB_ANOMALY') || (wrapped && marker('STUB_ANOMALY_WRAPPED'))) {",
     "  process.stderr.write('stub: fatal internal error (simulated)\\n');",
     "  process.exit(1);",
     "}",
@@ -543,4 +555,235 @@ test("TS18046 with NO accompanying elided reference: still a real finding", () =
   assert.equal(result.status, 1);
   assert.match(result.stdout, /1 finding/);
   assert.match(result.stdout, /TS18046/);
+});
+
+// ------------------------------------------------- parallel worker pool (#2417)
+
+const JOBS_ENV = "FOUNDRY_README_EXAMPLES_JOBS";
+
+function stubEnv(stub, jobs, extra = {}) {
+  return { FOUNDRY_README_EXAMPLES_TSC_OVERRIDE: stub, [JOBS_ENV]: String(jobs), ...extra };
+}
+
+// Highest number of stub runs that were open at the same moment, from the
+// start/end lines the stub appends in real time.
+function peakOverlap(traceFile) {
+  const lines = readFileSync(traceFile, "utf8").split("\n").filter(Boolean);
+  let open = 0;
+  let peak = 0;
+  for (const line of lines) {
+    open += line === "start" ? 1 : -1;
+    peak = Math.max(peak, open);
+  }
+  return peak;
+}
+
+// Eight blocks whose delays DEcrease with block number, so under any
+// concurrency later blocks finish first and an output built in completion
+// order would visibly differ from the README order. Covers a pass, a skip,
+// two findings, an auto-wrapped finding (second pass), and a waived finding.
+function makeMixedFixture(name) {
+  const blocks = [];
+  const add = (lang, delay, body, markers) => {
+    blocks.push(["```" + lang, ...body, markerLine("STUB_DELAY_MS", delay), ...markers.map(([k, v]) => markerLine(k, v)), "```", ""].join("\n"));
+  };
+  add("ts", 400, ["const a = 1;"], [["STUB_DIAGNOSTICS", []]]);
+  add("ts", 350, ["const b = 1;"], [["STUB_DIAGNOSTICS", [diag("TS2741", "Property 'caseSensitive' is missing.", 3, 5)]]]);
+  add("ts", 300, ["assess(input);"], [["STUB_DIAGNOSTICS", [diag("TS2304", "Cannot find name 'input'.")]]]);
+  add("tsx", 250, ["<A />", "<B />"], [
+    ["STUB_DIAGNOSTICS", [diag("TS2657", "JSX expressions must have one parent element.")]],
+    ["STUB_DIAGNOSTICS_WRAPPED", [diag("TS2322", "Type 'string' is not assignable to type 'number'.", 2, 5)]],
+  ]);
+  add("ts", 200, ["const e = 1;"], [["STUB_DIAGNOSTICS", [diag("TS2345", "waived fixture finding.", 2, 1)]]]);
+  add("ts", 150, ["const f = 1;"], [["STUB_DIAGNOSTICS", []]]);
+  add("ts", 100, ["const g = 1;"], [["STUB_DIAGNOSTICS", [diag("TS2322", "Another real finding.", 1, 7), diag("TS2339", "Second diagnostic.", 2, 1)]]]);
+  add("ts", 50, ["const h = 1;"], [["STUB_DIAGNOSTICS", []]]);
+  const pkgDir = makeFixturePackage(name, { readme: blocks.join("\n") });
+  const waiverPath = join(workRoot, `waiver-${stubCounter++}.json`);
+  writeFileSync(
+    waiverPath,
+    JSON.stringify({ issue: "#908", packages: { [basename(pkgDir)]: [{ block: 5, code: "TS2345", reason: "test fixture" }] } }),
+  );
+  return { pkgDir, waiverPath };
+}
+
+test("parallel run gives byte-identical findings, ordering and exit code to the sequential run (waived finding included)", () => {
+  const stub = makeStubTsc();
+  const { pkgDir, waiverPath } = makeMixedFixture("parity");
+  const seq = run([pkgDir, "--waiver-file", waiverPath], { env: stubEnv(stub, 1) });
+  const par = run([pkgDir, "--waiver-file", waiverPath], { env: stubEnv(stub, 4) });
+  assert.equal(seq.status, 1);
+  assert.equal(par.status, seq.status);
+  assert.equal(par.stdout, seq.stdout);
+  assert.equal(par.stderr, seq.stderr);
+  // Guard the fixture itself: it must really exercise every report section.
+  assert.match(seq.stdout, /8 ts\/tsx block\(s\) found — 3 compiled clean, 1 skipped, 4 finding\(s\) \(1 waived, 3 not\)/);
+  assert.match(seq.stdout, /KNOWN, WAIVED/);
+  assert.match(seq.stdout, /\[auto-wrapped\]/);
+  // Findings are listed in README order (blocks 2, 4, 7), not completion order.
+  const order = [...seq.stdout.matchAll(/^ {4}block (\d+) \(README\.md:\d+-\d+\)/gm)].map((m) => Number(m[1]));
+  assert.deepEqual(order, [2, 4, 7]);
+});
+
+test("parallel --json output equals the sequential --json output", () => {
+  const stub = makeStubTsc();
+  const { pkgDir, waiverPath } = makeMixedFixture("parity-json");
+  const seq = run([pkgDir, "--json", "--waiver-file", waiverPath], { env: stubEnv(stub, 1) });
+  const par = run([pkgDir, "--json", "--waiver-file", waiverPath], { env: stubEnv(stub, 3) });
+  assert.equal(par.status, seq.status);
+  assert.equal(par.stdout, seq.stdout);
+  assert.deepEqual(
+    JSON.parse(par.stdout).findings.map((f) => f.block),
+    [2, 4, 7],
+  );
+  assert.deepEqual(
+    JSON.parse(par.stdout).waived.map((w) => w.block),
+    [5],
+  );
+});
+
+test("a stale waiver and a waived finding behave the same in parallel", () => {
+  const stub = makeStubTsc();
+  const { pkgDir } = makeMixedFixture("parity-stale");
+  const waiverPath = join(workRoot, `waiver-${stubCounter++}.json`);
+  writeFileSync(
+    waiverPath,
+    JSON.stringify({
+      issue: "#908",
+      packages: { [basename(pkgDir)]: [{ block: 5, code: "TS2345", reason: "live" }, { block: 6, code: "TS2345", reason: "stale" }] },
+    }),
+  );
+  const seq = run([pkgDir, "--waiver-file", waiverPath], { env: stubEnv(stub, 1) });
+  const par = run([pkgDir, "--waiver-file", waiverPath], { env: stubEnv(stub, 4) });
+  assert.match(seq.stdout, /STALE WAIVER/);
+  assert.equal(par.status, seq.status);
+  assert.equal(par.stdout, seq.stdout);
+});
+
+test("the worker count bounds real concurrency: JOBS=1 never overlaps, JOBS=3 overlaps but never exceeds 3", () => {
+  const stub = makeStubTsc();
+  const { pkgDir, waiverPath } = makeMixedFixture("bounded");
+  const traceFor = (jobs) => {
+    const traceFile = join(workRoot, `trace-${stubCounter++}.log`);
+    writeFileSync(traceFile, "");
+    run([pkgDir, "--waiver-file", waiverPath], { env: stubEnv(stub, jobs, { STUB_TRACE_FILE: traceFile }) });
+    return peakOverlap(traceFile);
+  };
+  assert.equal(traceFor(1), 1);
+  const peak = traceFor(3);
+  assert.ok(peak >= 2, `expected overlapping runs with JOBS=3, saw peak ${peak}`);
+  assert.ok(peak <= 3, `expected at most 3 concurrent runs with JOBS=3, saw peak ${peak}`);
+});
+
+test("without the env var the default is bounded (at most 4) and still overlaps on a multi-core machine", () => {
+  const stub = makeStubTsc();
+  const { pkgDir, waiverPath } = makeMixedFixture("default-jobs");
+  const traceFile = join(workRoot, `trace-${stubCounter++}.log`);
+  writeFileSync(traceFile, "");
+  const env = { FOUNDRY_README_EXAMPLES_TSC_OVERRIDE: stub, STUB_TRACE_FILE: traceFile };
+  const result = run([pkgDir, "--waiver-file", waiverPath], { env: { ...env, [JOBS_ENV]: "" } });
+  assert.equal(result.status, 1);
+  const peak = peakOverlap(traceFile);
+  assert.ok(peak <= 4, `default must cap at 4 concurrent runs, saw ${peak}`);
+  if (availableParallelism() >= 3) assert.ok(peak >= 2, `default should overlap on ${availableParallelism()} CPUs, saw ${peak}`);
+});
+
+test("a tsc run that fails with no diagnostic fails the whole check in parallel (exit 2), not swallowed", () => {
+  const stub = makeStubTsc();
+  const blocks = [];
+  for (let i = 1; i <= 6; i += 1) {
+    const markers = i === 4 ? [markerLine("STUB_ANOMALY", true)] : [markerLine("STUB_DIAGNOSTICS", [])];
+    blocks.push(["```ts", `const v${i} = ${i};`, markerLine("STUB_DELAY_MS", 60 * (7 - i)), ...markers, "```", ""].join("\n"));
+  }
+  const pkgDir = makeFixturePackage("worker-anomaly", { readme: blocks.join("\n") });
+  const seq = run([pkgDir], { env: stubEnv(stub, 1) });
+  const par = run([pkgDir], { env: stubEnv(stub, 4) });
+  assert.equal(par.status, 2);
+  assert.match(par.stderr, /1 block\(s\) could not be evaluated/);
+  assert.match(par.stderr, /block 4:/);
+  assert.doesNotMatch(par.stdout, /PASS/);
+  assert.equal(par.status, seq.status);
+  assert.equal(par.stderr, seq.stderr);
+});
+
+test("several failing runs are all reported, in README order, in parallel", () => {
+  const stub = makeStubTsc();
+  const blocks = [];
+  for (let i = 1; i <= 5; i += 1) {
+    const marker = i === 2 || i === 5 ? markerLine("STUB_ANOMALY", true) : markerLine("STUB_DIAGNOSTICS", []);
+    blocks.push(["```ts", `const v${i} = ${i};`, markerLine("STUB_DELAY_MS", 60 * (6 - i)), marker, "```", ""].join("\n"));
+  }
+  const pkgDir = makeFixturePackage("worker-anomalies", { readme: blocks.join("\n") });
+  const par = run([pkgDir], { env: stubEnv(stub, 4) });
+  assert.equal(par.status, 2);
+  assert.match(par.stderr, /2 block\(s\) could not be evaluated/);
+  assert.deepEqual([...par.stderr.matchAll(/^ {2}block (\d+):/gm)].map((m) => Number(m[1])), [2, 5]);
+});
+
+test("a tsc run killed by a signal (crashed worker) fails the check in parallel, not swallowed", () => {
+  const stub = makeStubTsc();
+  const blocks = [];
+  for (let i = 1; i <= 4; i += 1) {
+    const marker = i === 3 ? markerLine("STUB_CRASH", true) : markerLine("STUB_DIAGNOSTICS", []);
+    blocks.push(["```ts", `const v${i} = ${i};`, marker, "```", ""].join("\n"));
+  }
+  const pkgDir = makeFixturePackage("worker-crash", { readme: blocks.join("\n") });
+  const par = run([pkgDir], { env: stubEnv(stub, 4) });
+  assert.equal(par.status, 2);
+  assert.match(par.stderr, /could not be evaluated/);
+  assert.match(par.stderr, /block 3:/);
+  assert.doesNotMatch(par.stdout, /PASS/);
+});
+
+test("a failing run in the auto-wrap retry pass is also not swallowed in parallel", () => {
+  const stub = makeStubTsc();
+  const raw = [diag("TS2657", "JSX expressions must have one parent element.")];
+  const readme = [
+    "```tsx",
+    "<A />",
+    "<B />",
+    markerLine("STUB_DIAGNOSTICS", raw),
+    markerLine("STUB_ANOMALY_WRAPPED", true),
+    "```",
+    "",
+    "```ts",
+    "const ok = 1;",
+    markerLine("STUB_DIAGNOSTICS", []),
+    "```",
+    "",
+  ].join("\n");
+  const pkgDir = makeFixturePackage("retry-anomaly", { readme });
+  const par = run([pkgDir], { env: stubEnv(stub, 4) });
+  assert.equal(par.status, 2);
+  assert.match(par.stderr, /block 1 \(fragment retry\):/);
+});
+
+test("a worker that throws inside the harness (not a tsc result) fails the check closed, exit 2", () => {
+  const stub = makeStubTsc();
+  const blocks = [
+    ["```ts", "const a = 1;", markerLine("STUB_SABOTAGE", true), markerLine("STUB_DIAGNOSTICS", []), "```", ""],
+    ["```ts", "const b = 1;", markerLine("STUB_DELAY_MS", 600), markerLine("STUB_DIAGNOSTICS", []), "```", ""],
+    ["```ts", "const c = 1;", markerLine("STUB_DIAGNOSTICS", []), "```", ""],
+  ].map((lines) => lines.join("\n"));
+  const pkgDir = makeFixturePackage("worker-throws", { readme: blocks.join("\n") });
+  // JOBS=2: slot 0 runs block 1 (and sabotages itself), slot 1 is held open
+  // by block 2, so block 3 lands on the sabotaged slot and the write throws.
+  const par = run([pkgDir], { env: stubEnv(stub, 2) });
+  assert.equal(par.status, 2);
+  assert.match(par.stderr, /a compile worker failed/);
+  assert.doesNotMatch(par.stdout, /PASS/);
+  // Control: the same README with no sabotage passes in parallel.
+  const control = makeFixturePackage("worker-throws-control", { readme: blocks.join("\n").replace(markerLine("STUB_SABOTAGE", true), "") });
+  assert.equal(run([control], { env: stubEnv(stub, 2) }).status, 0);
+});
+
+test("invalid worker counts are refused with exit 2 rather than silently defaulted", () => {
+  const stub = makeStubTsc();
+  const readme = ["```ts", "const x = 1;", markerLine("STUB_DIAGNOSTICS", []), "```", ""].join("\n");
+  const pkgDir = makeFixturePackage("bad-jobs", { readme });
+  for (const bad of ["0", "-2", "abc", "1.5", "4x"]) {
+    const result = run([pkgDir], { env: stubEnv(stub, bad) });
+    assert.equal(result.status, 2, `JOBS=${bad}`);
+    assert.match(result.stderr, /FOUNDRY_README_EXAMPLES_JOBS/);
+  }
 });

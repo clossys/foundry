@@ -189,13 +189,13 @@ and its exception list can only shrink.
   `Separator`, `Chip`, `StatusMark`, `Meter`, `ResizeHandle`, `Logomark`, `GridList`.
 - **`blocks`** — owns the internal layout of multiple named regions,
   typically by composing one or more atoms (and/or layout) into something
-  with a real job on a page. Fifty ship: `AccountMenu`, `PageHeader`, `EmptyState`,
+  with a real job on a page. Fifty-one ship: `AccountMenu`, `PageHeader`, `EmptyState`,
   `DataTable`, `DetailView`, `Pagination`, `UsageMeter`, `Stat`, `Form`, `FieldGroup`,
   `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `SectionFrame`,
   `MarketingChapter`, `FeatureGrid`, `Item`, `Items`, `Tree`, `AnatomyCallouts`, `RecordLedger`, `Scene`, `Matrix`,
   `Specimen`, `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`,
   `PricingTable`, `Testimonial`, `ArticleBody`, `ConsentBanner`, `NewsletterBand`, `Panel`, `Drawer`,
-  `ResizablePane`, `CommandMenu`, `AppNavigation`, `PageBar`, `GroupedTable`, `Lockup`, `Explorer`, `CatalogWorkspace`, `Chat` and `ResourceList` (see "Blocks" below).
+  `ResizablePane`, `CommandMenu`, `AppNavigation`, `PageBar`, `GroupedTable`, `Lockup`, `Explorer`, `CatalogWorkspace`, `Chat`, `ResourceList` and `RelationGraph` (see "Blocks" below).
 - **`shell`** — the persistent frame around content (nav, layout chrome)
   that provides the slots content fills. One per app; survives route
   changes that swap out the content underneath it. `Shell` ships with five
@@ -7896,7 +7896,7 @@ speculatively, just because a related component shipped, is the exact
 un-bounded growth this package's own "variant rule" warns against one level
 up. They get added here only once something real needs them.
 
-**Blocks:** fifty-two ship — `AccessMatrix`, `ColumnMapper`, `Lockup`, `PageHeader`, `AccountMenu`, `EmptyState`, `DataTable`, `DetailView`, `Pagination`, `UsageMeter`, `Stat`, `Form`, `FieldGroup`, `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `MarketingChapter`, `FeatureGrid`, `Matrix`, `Specimen`, `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`, `PricingTable`, `Testimonial`, `ArticleBody`, `SectionFrame`, `ConsentBanner`, `Panel`, `Drawer`, `ResizablePane`, `CommandMenu`, `AppNavigation`, `PageBar`, `Explorer`, `RecordLedger`, `AnatomyCallouts`, `Scene`, `Item`, `Tree`, `Items`, `GroupedTable`, `CatalogWorkspace`, `Chat`, `NewsletterBand` and `ResourceList` — completing this layer. No
+**Blocks:** fifty-three ship — `AccessMatrix`, `ColumnMapper`, `Lockup`, `PageHeader`, `AccountMenu`, `EmptyState`, `DataTable`, `DetailView`, `Pagination`, `UsageMeter`, `Stat`, `Form`, `FieldGroup`, `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `MarketingChapter`, `FeatureGrid`, `Matrix`, `Specimen`, `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`, `PricingTable`, `Testimonial`, `ArticleBody`, `SectionFrame`, `ConsentBanner`, `Panel`, `Drawer`, `ResizablePane`, `CommandMenu`, `AppNavigation`, `PageBar`, `Explorer`, `RecordLedger`, `AnatomyCallouts`, `Scene`, `Item`, `Tree`, `Items`, `GroupedTable`, `CatalogWorkspace`, `Chat`, `NewsletterBand`, `ResourceList` and `RelationGraph` — completing this layer. No
 `FilterBar` block:
 `DataTable`'s own `toolbar` slot (and `Toolbar`'s own `search` slot) are
 deliberately plain `ReactNode`s, not a block with its own opinion about
@@ -9329,4 +9329,50 @@ export function PeopleColumnMapping() {
   const [mapping, setMapping] = useState(columnMapperSample.mapping);
   return <ColumnMapper {...columnMapperSample} mapping={mapping} onMappingChange={setMapping} />;
 }
+```
+
+### RelationGraph
+
+`RelationGraph` is a client Material in Navigation, exported from the Block
+barrel and the aggregate entry. Supply the closed `kinds` vocabulary, authored
+nodes and directed edges. The cap is 64 nodes. Duplicate ids, unknown endpoints,
+self-edges and malformed data throw field-specific errors. No nodes or relations
+are inferred. Cycles preserve the list and show `unavailableMessage`, without a
+partial drawing.
+
+The deterministic longest-path layout preserves source order within each layer.
+At tablet-lg and wider, the same list becomes a layered drawing with decorative
+SVG edges measured after hydration; narrower screens use the vertical list.
+SSR emits the complete list and an empty drawing. The sole interactive control
+per node is a Link or Button. ArrowRight/Down follows the first outgoing edge;
+ArrowLeft/Up follows the first incoming edge; Home/End follows layout order.
+PageDown/PageUp visits every node in authored order, wrapping at either end,
+including disconnected nodes and every branch.
+Enter activates and reports the id through `onSelectionChange`; `selectedId`
+remains controlled and is announced through `aria-current`. RTL uses the same
+edge-direction keys. Motion is not required; existing Atom focus treatment and
+a forced-colors outline remain available.
+
+Only same-origin relative paths and HTTPS URLs without credentials become links.
+Protocol-relative, non-HTTPS schemes, backslashes, whitespace and control
+characters are refused: the node remains a Button and appears in the refused
+list. Href bytes are preserved for accepted links. No routing, fetching or
+persistence is owned here.
+
+Host copy props are `emptyMessage` (default “No relationships”),
+`unavailableMessage` (“Drawing unavailable: cycle”), `incomingLabel` (“Incoming”),
+`outgoingLabel` (“Outgoing”) and `refusedLabel` (“Refused links”).
+
+```tsx
+import { RelationGraph } from "@clossys/designer/blocks";
+
+<RelationGraph
+  label="Relationships"
+  kinds={["block", "pack"] as const}
+  nodes={[
+    { id: "detail", label: "Detail", kind: "block", href: "/detail" },
+    { id: "collection", label: "Collection", kind: "pack" },
+  ]}
+  edges={[{ from: "collection", to: "detail", label: "contains" }]}
+/>;
 ```

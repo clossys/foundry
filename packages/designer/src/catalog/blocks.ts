@@ -170,7 +170,7 @@ const PAGE_HEADER_CONTRACT: BlockContract = {
 };
 
 // ---------------------------------------------------------------------------
-// Leaves: 84 (Explain 28, Organize 24, Collect 10, Navigate 15, Respond 7)
+// Leaves: 85 (Explain 28, Organize 24, Collect 10, Navigate 16, Respond 7)
 // ---------------------------------------------------------------------------
 
 const HEADINGS = at("explain", "headings");
@@ -378,6 +378,7 @@ export const BLOCK_ENTRIES: readonly BlockEntry[] = [
   // Navigate / Hierarchy
   exported(HIERARCHY, "Tree", { id: "items.tree", label: "Tree" }),
   exported(HIERARCHY, "Explorer", { id: "items.explorer", label: "Explorer" }),
+  exported(HIERARCHY, "RelationGraph", { id: "items.relation-graph", label: "Relation graph" }),
 
   // Navigate / In-page
   spec(IN_PAGE, { id: "prose.table-of-contents", label: "Table of contents", inFlight: pr(2400, "draft") }),

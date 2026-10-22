@@ -13,9 +13,14 @@ export type IndexViewCollection =
   | { kind: "panel"; props: PanelProps }
   | { kind: "record-ledger"; props: RecordLedgerProps };
 
-/** Controlled DataTable behavior; the View owns its surrounding Blocks. */
+/**
+ * Controlled DataTable behavior; the View owns its surrounding Blocks. `model`
+ * (with its required `onModelChange`), `messages` and the controlled
+ * `expandedGroupKeys` reach DataTable unchanged, so a saved view needs no cast.
+ */
 export type IndexViewTable<Row> = Pick<DataTableProps<Row>,
   "sortDescriptor" | "onSortChange" | "selectionMode" | "selectedKeys" | "onSelectionChange" | "isLoading" | "loadingRowCount"
+  | "model" | "onModelChange" | "messages" | "expandedGroupKeys" | "onExpandedGroupKeysChange"
 >;
 
 export interface IndexViewRowRoute<Row> {

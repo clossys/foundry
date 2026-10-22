@@ -1,4 +1,5 @@
 /** Compiled public contract assertions; this file is not a runtime test. */
+import type { DataTableViewModel } from "@clossys/designer/blocks";
 import { IndexView, type IndexViewCollection, type IndexViewProps } from "./IndexView.js";
 
 type Row = { id: string; name: string };
@@ -20,6 +21,18 @@ export const chrome = <IndexView {...props} header={<header />} />;
 export const rawChildren = <IndexView {...props}><div /></IndexView>;
 // @ts-expect-error page descriptions belong in AppFrame page
 export const renamedSubtitle = <IndexView {...props} description="Supporting copy" />;
+
+declare const model: DataTableViewModel;
+// A saved table view, its host copy and controlled group expansion reach DataTable without a cast.
+export const modelTable = <IndexView {...props} table={{
+  model, onModelChange: next => { void next.mode; }, messages: { viewOptionsLabel: "Table settings" },
+  expandedGroupKeys: new Set(["Available"]), onExpandedGroupKeysChange: keys => { void keys.size; },
+}} />;
+export const expandAll = <IndexView {...props} table={{ model, onModelChange: () => {}, expandedGroupKeys: "all" }} />;
+// @ts-expect-error a model is a complete saved-view envelope, not an arbitrary object
+export const rawModel = <IndexView {...props} table={{ model: { mode: "flat" } }} />;
+// @ts-expect-error group expansion keys are strings
+export const numericGroupKeys = <IndexView {...props} table={{ expandedGroupKeys: new Set([1]) }} />;
 
 export type IndexEntryParity = [
   import("./index.js").IndexViewProps<Row>,
