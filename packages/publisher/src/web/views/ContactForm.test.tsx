@@ -39,6 +39,11 @@ async function fill() {
 const submit = () => screen.getByRole("button", { name: /SUBMIT-SENTINEL|SUBMITTING-SENTINEL/ });
 
 describe("ContactForm extraction", () => {
+  it("uses end actions for the contact CTA", () => {
+    render(page());
+    expect(submit().parentElement).toHaveAttribute("data-actions-layout", "end");
+  });
+
   it("exports the client form from the same entries as the other forms", () => {
     expect(typeof web.ContactForm).toBe("function");
     expect(typeof server.ContactForm).toBe("function");

@@ -18,6 +18,44 @@ describe("compiled task and event public contract", () => {
   });
 });
 
+describe("compiled AccessMatrix and ColumnMapper public contract", () => {
+  it("exports both components and exact required props and value types from client barrels only", () => {
+    const filename = join(packageRoot, "access-matrix-column-mapper-consumer.check.ts");
+    const consumer = ["blocks/index.js", "index.js"].map((entry, i) => `
+      import { AccessMatrix as A${i}, ColumnMapper as C${i}, type AccessCellValue as Cell${i}, type AccessRole as Role${i}, type AccessPermission as Permission${i}, type AccessGroup as Group${i}, type AccessMatrixValue as Value${i}, type AccessMatrixChange as Change${i}, type AccessMatrixLabels as Labels${i}, type AccessMatrixProps as Props${i}, type ColumnMapperTarget as Target${i}, type ColumnMapperSource as Source${i}, type ColumnMapping as Mapping${i}, type ColumnMapperIssue as Issue${i}, type ColumnMapperLabels as MapperLabels${i}, type ColumnMapperProps as MapperProps${i} } from ${JSON.stringify(join(packageRoot, "dist", entry))};
+      type RequiredKeys${i}<T> = { [K in keyof T]-?: {} extends Pick<T,K> ? never : K }[keyof T];
+      type Same${i}<A,B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ? true : false;
+      const requiredAccess${i}: Same${i}<RequiredKeys${i}<Props${i}>, "aria-label" | "roles" | "groups" | "value" | "labels"> = true;
+      const requiredMapper${i}: Same${i}<RequiredKeys${i}<MapperProps${i}>, "targets" | "sourceColumns" | "mapping" | "onMappingChange" | "labels"> = true;
+      const kinds${i}: Same${i}<Target${i}["kind"], "text" | "number" | "date" | "enum" | "tags" | "boolean"> = true;
+      const cell${i}: Cell${i} = {state:"inherited",reason:"Included with Viewer access to reports."};
+      const role${i}: Role${i} = {id:"editor",label:"Editor",isLocked:true,lockedReason:"Host supplied reason"};
+      const permission${i}: Permission${i} = {id:"view",label:"View projects"};
+      const group${i}: Group${i} = {id:"projects",label:"Projects",permissions:[permission${i}]};
+      const value${i}: Value${i} = {editor:{view:cell${i}}};
+      const change${i}: Change${i} = {roleId:"editor",permissionIds:["view"],state:"granted"};
+      const labels${i}: Labels${i} = {permissionHeader:"Permission",cell:(r,p)=>r+p,groupAll:(r,g)=>r+g,inherited:"Inherited",locked:"Locked",changeSummary:(g,r)=>String(g+r)};
+      const props${i}: Props${i} = {"aria-label":"Workspace access",roles:[role${i}],groups:[group${i}],value:value${i},labels:labels${i},onChange:(next,change)=>{const v:Value${i}=next;const c:Change${i}=change;}};
+      const target${i}: Target${i} = {id:"email",label:"Email",kind:"text",required:true};
+      const source${i}: Source${i} = {id:"email",header:"E-mail address",samples:["ada@example.com"]};
+      const mapping${i}: Mapping${i} = {email:null};
+      const issue${i}: Issue${i} = {targetId:"email",message:"Choose a column"};
+      const mapperLabels${i}: MapperLabels${i} = {legend:"Match columns",notMapped:"Not mapped",required:"Required",requiredMissing:t=>t,duplicate:h=>h,samples:v=>v.join(", "),summary:(m,t,p)=>String(m+t+p)};
+      const mapper${i}: MapperProps${i} = {targets:[target${i}],sourceColumns:[source${i}],mapping:mapping${i},onMappingChange:next=>{const m:Mapping${i}=next;},labels:mapperLabels${i},issues:[issue${i}]};
+      const accessComponent${i}: (p:Props${i})=>import("react").ReactNode = A${i};
+      const mapperComponent${i}: (p:MapperProps${i})=>import("react").ReactNode = C${i};
+    `).join("\n");
+    const options = { strict: true, noEmit: true, skipLibCheck: true, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler };
+    const host = ts.createCompilerHost(options), original = host.getSourceFile.bind(host);
+    host.getSourceFile = (path, language, error, fresh) => path === filename ? ts.createSourceFile(path, consumer, language, true) : original(path, language, error, fresh);
+    expect(ts.getPreEmitDiagnostics(ts.createProgram([filename], options, host)).map(d => ts.flattenDiagnosticMessageText(d.messageText, "\n"))).toEqual([]);
+    for (const entry of ["blocks/index.js", "index.js", "blocks/server.js"]) {
+      const script = `import * as api from ${JSON.stringify(join(packageRoot, "dist", entry))}; process.stdout.write(JSON.stringify(["AccessMatrix","ColumnMapper"].filter(name=>typeof api[name]==="function")));`;
+      expect(JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8", cwd: packageRoot }))).toEqual(entry === "blocks/server.js" ? [] : ["AccessMatrix", "ColumnMapper"]);
+    }
+  });
+});
+
 describe("compiled signature chart public contract", () => {
   it.each(["index", "server"])("exports all three charts from the compiled charts/%s entry", async entry => {
     const exports = await import(pathToFileURL(join(packageRoot, `dist/charts/${entry}.js`)).href);
