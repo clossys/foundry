@@ -158,6 +158,16 @@ same way `tokens` sits below all of `ui`). See "Placement rules" below for
 what distinguishes reusable atoms and blocks. Whole-page compositions are
 surfaces and live in `@clossys/publisher/web`.
 
+**Stack boundary.** This package offers only Clossys tokens, atoms and
+blocks, with the shell, charts and theme alongside them. Atoms are built on
+React Aria Components (`react-aria-components`); no other headless or
+component-kit library is used anywhere in the package. Blocks build on
+atoms, tokens, icons and other blocks, and import `react-aria-components`
+only for types, except three listed blocks that still import it directly:
+`Toolbar`, `CommandMenu` and the internal disclosure row
+(`src/blocks/internal/disclosure-row.tsx`). A package test enforces this,
+and its exception list can only shrink.
+
 - **`icons`** — glyph data only, no components: 40 `IconNode` exports
   (`AlertTriangle`, `ArrowRight`, `BookOpen`, `Box`, `Briefcase`,
   `Building2`, `Calendar`, `Check`, `CheckCircle`, `ChevronDown`,
@@ -519,6 +529,13 @@ both.
 **Scope.** `compiled.css` is generated from `src/atoms/`, `src/blocks/`, and
 `src/shell/` — enough for Hero, feature blocks, and site chrome on a pre-auth
 marketing page. `charts` and `theme` remain Tailwind-native only.
+
+**`className` on this path.** Nothing compiles your own markup here, so a
+class passed through `className` takes effect only when it is already in
+`styles/compiled.css` (which holds the utilities the package's own atoms,
+blocks and shell use) or is defined in your own CSS. Any other utility class
+does nothing. Search `compiled.css` for a class before relying on it, or
+style the wrapper with your own CSS.
 
 Verify the stylesheet your app loads with `designer-hero-css-check
 path/to/your.css` (or point it at `node_modules/@clossys/designer/styles/compiled.css`
@@ -1408,7 +1425,7 @@ function Status() {
 import { Card } from "@clossys/designer/atoms";
 
 function Panel() {
-  return <Card className="max-w-sm">Plain content, raised off the page.</Card>;
+  return <Card>Plain content, raised off the page.</Card>;
 }
 ```
 
