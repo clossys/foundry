@@ -54,6 +54,14 @@ describe("Meter", () => {
     expect(screen.queryByRole("meter", { name: "8,420 requests" })).toBeNull();
   });
 
+  it.each([["empty", ""], ["whitespace-only", "   "]])("treats an %s label as absent: the visible value text still names the meter", (_name, label) => {
+    render(<Meter value={8420} scaleMax={10000} tone="warning" valueText="8,420 requests" label={label} />);
+    const meter = screen.getByRole("meter", { name: "8,420 requests" });
+    expect(meter).not.toHaveAttribute("aria-label");
+    const value = screen.getByText("8,420 requests");
+    expect(meter.getAttribute("aria-labelledby")).toBe(value.id);
+  });
+
   it("clamps aria-valuenow to the scale while the visible text keeps the real value", () => {
     render(<Meter value={12} scaleMax={8} tone="warning" valueText="150%" />);
     const meter = screen.getByRole("meter", { name: "150%" });
