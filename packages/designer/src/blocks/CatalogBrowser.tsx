@@ -56,7 +56,10 @@ export function CatalogBrowser<C extends CatalogBrowserCatalog>(props: CatalogBr
   if (revealed.target !== target) {
     setRevealed(revealed.key !== key && fromTree.current === key ? { ...revealed, key, target, leaf: [] } : reveal());
   }
-  useEffect(() => { if (fromTree.current === key) fromTree.current = null; }, [key]);
+  // A tree request describes one selection. The commit it causes consumes it whether the host took or ignored it,
+  // so a later host selection of the same entry is never mistaken for one made in the tree.
+  const [, settleTreeRequest] = useState(0);
+  useEffect(() => { fromTree.current = null; });
   // Uncontrolled configuration belongs to one selection; leaving it restores control defaults.
   if (ownConfig.key !== "" && ownConfig.key !== key) setOwnConfig({ key: "", values: {} });
 
@@ -105,7 +108,7 @@ export function CatalogBrowser<C extends CatalogBrowserCatalog>(props: CatalogBr
         {tree.parkedCount ? <Switch isSelected={state.showParked} onChange={showParked => update({ showParked })}>{labels.showParked(tree.parkedCount)}</Switch> : null}
       </> : undefined} />
     <CatalogWorkspace items={tree.items} selectedId={entry ? entry.id : null}
-      onSelect={id => { const next = { catalog: active.kind, entryId: id }; fromTree.current = selectionKey(next); select(next); }}
+      onSelect={id => { const next = { catalog: active.kind, entryId: id }; fromTree.current = selectionKey(next); settleTreeRequest(n => n + 1); select(next); }}
       label={binding.label} defaultExpandedIds={[...(tree.filtering ? tree.expandIds : revealed.folders), ...revealed.leaf]}
       labels={{ browse: labels.browse, preview: labels.preview, inspector: labels.inspector, resizeBrowse: labels.resizeBrowse, resizeInspector: labels.resizeInspector }}
       preview={() => <EntryDetail entry={entry!} catalog={active} catalogs={catalogs} binding={binding} labels={labels} config={config} onSelect={follow} />}

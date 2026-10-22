@@ -309,6 +309,36 @@ describe("CatalogBrowser", () => {
     expect(row("Links")).toHaveFocus();
   });
 
+  it("reveals a host selection of an entry whose earlier tree request the host ignored", async () => {
+    media(); const onSelectionChange = vi.fn();
+    const view = render(<CatalogBrowser {...base} selection={{ catalog: "atoms", entryId: "act.button" }} onSelectionChange={onSelectionChange} />);
+    await userEvent.click(row("Icon button"));
+    expect(onSelectionChange).toHaveBeenLastCalledWith({ catalog: "atoms", entryId: "act.icon-button" });
+    expect(row("Button")).toHaveAttribute("aria-selected", "true");
+    await userEvent.click(row("Buttons"));
+    expect(row("Buttons")).toHaveAttribute("aria-expanded", "false");
+    view.rerender(<CatalogBrowser {...base} selection={{ catalog: "atoms", entryId: "act.icon-button" }} onSelectionChange={onSelectionChange} />);
+    expect(row("Buttons")).toHaveAttribute("aria-expanded", "true");
+    expect(row("Icon button")).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("keeps the tree and its focus when a host takes a tree selection", async () => {
+    media();
+    function Host() {
+      const [selection, setSelection] = useState<CatalogBrowserSelection>({ catalog: "atoms", entryId: "act.button" });
+      return <CatalogBrowser {...base} selection={selection} onSelectionChange={setSelection} />;
+    }
+    render(<Host />);
+    const explorer = tree();
+    act(() => row("Icon button").focus());
+    await userEvent.keyboard("{Enter}");
+    expect(row("Icon button")).toHaveAttribute("aria-selected", "true");
+    expect(tree()).toBe(explorer);
+    expect(row("Icon button")).toHaveFocus();
+    await userEvent.keyboard("{ArrowUp}");
+    expect(row("Button")).toHaveFocus();
+  });
+
   it("treats prototype member names as ordinary catalog kinds", async () => {
     media(); const names = ["constructor", "toString", "__proto__", "hasOwnProperty"];
     const named = names.map(kind => ({
