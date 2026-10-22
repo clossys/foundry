@@ -4363,7 +4363,7 @@ function InlineContents() {
 | --- | --- |
 | `label` | Required non-empty string. The navigation's accessible name and, for `inline`, the disclosure title. No built-in English. |
 | `items` | Two to thirty `TableOfContentsItem`s: an `id` (the target element's id; no whitespace and no `#`; unique), a `label` and an optional `level` of 2 or 3 (default 2, sets the indent). Anything else throws a `TypeError` prefixed `TableOfContents:`. |
-| `presentation` | `sidebar` (default) is a captioned plain list at every width that sticks from desktop below `--site-header-clearance` (fallback `0px`); `inline` is a bordered disclosure, expanded by default, at every width. |
+| `presentation` | `sidebar` (default) is a captioned plain list at every width that sticks from desktop below the frame header, using the frame's default clearance restated from registered tokens; `inline` is a bordered disclosure, expanded by default, at every width. |
 | `currentId` | Controlled current item; must be one of the item ids. |
 | `trackCurrent` | Default true. Client only, ignored by the server variant and when `currentId` is given. |
 | `className`, `style` | Applied to the root element. |

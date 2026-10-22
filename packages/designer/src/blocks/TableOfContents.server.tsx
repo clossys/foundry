@@ -1,14 +1,20 @@
 import type { ReactNode } from "react";
 import { UI_LAYOUT_TAP_TARGET } from "../atoms/internal/ui-vars.js";
 import { cx } from "../atoms/internal/cx.js";
+import { UI_BRANDMARK_HEIGHT_LG } from "../internal/brandmark.js";
 import type { TableOfContentsItem, TableOfContentsProps } from "./TableOfContents.js";
 
 const MIN_ITEMS = 2;
 const MAX_ITEMS = 30;
 const ID_PATTERN = /^[^\s#]+$/;
 
-/** The frame defines the header clearance; the zero fallback keeps standalone use working. */
-const SITE_HEADER_CLEARANCE = "var(--site-header-clearance, 0px)";
+/**
+ * The frame's default site-header clearance, restated from registered tokens: the
+ * frame's own clearance variable is not a registered token, so a block cannot read it.
+ * Standalone use without a frame header gets the same offset.
+ */
+const SITE_HEADER_CLEARANCE =
+  "calc(max(" + UI_LAYOUT_TAP_TARGET + ", " + UI_BRANDMARK_HEIGHT_LG + ") + 2 * var(--spacing-sm, 8px) + var(--ui-border-hairline, 1px) + env(safe-area-inset-top, 0px))";
 const Z_STICKY = "var(--ui-z-sticky, 10)";
 
 const BOX_CLASSES = "rounded-panel border border-line-base p-md";

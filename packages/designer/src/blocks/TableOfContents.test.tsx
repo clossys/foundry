@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TableOfContents, type TableOfContentsItem, type TableOfContentsProps } from "./TableOfContents.js";
 
 const LABEL = "On this page";
+const CLEARANCE = "calc(max(var(--ui-layout-tap-target, 44px), var(--ui-brandmark-height-lg, 48px)) + 2 * var(--spacing-sm, 8px) + var(--ui-border-hairline, 1px) + env(safe-area-inset-top, 0px))";
 const ITEMS: readonly TableOfContentsItem[] = [
   { id: "a", label: "Overview" },
   { id: "b", label: "Getting started" },
@@ -173,7 +174,7 @@ describe("TableOfContents", () => {
     const nav = screen.getByRole("navigation", { name: LABEL });
     expect(container.firstElementChild).toBe(nav);
     expect(nav).toHaveClass("desktop:sticky", "desktop:max-h-dvh", "desktop:overflow-y-auto", "mt-lg");
-    expect(nav.style.insetBlockStart).toBe("var(--site-header-clearance, 0px)");
+    expect(nav.style.insetBlockStart).toBe(CLEARANCE);
     expect(nav.style.zIndex).toBe("var(--ui-z-sticky, 10)");
     expect(nav.style.maxInlineSize).toBe("20rem");
     const caption = nav.querySelector("p")!;
@@ -184,7 +185,7 @@ describe("TableOfContents", () => {
     const spacer = nav.lastElementChild as HTMLElement;
     expect(spacer).toHaveAttribute("aria-hidden", "true");
     expect(spacer).toHaveClass("hidden", "desktop:block");
-    expect(spacer.style.blockSize).toBe("var(--site-header-clearance, 0px)");
+    expect(spacer.style.blockSize).toBe(CLEARANCE);
   });
 
   it("renders inline as a bordered disclosure named by the label, expanded by default and collapsible", async () => {
