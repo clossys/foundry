@@ -463,6 +463,13 @@ export const BLOCK_EXPORT_EXCLUSIONS: Readonly<Record<string, string>> = {
   radialLayout: MODEL_API,
   forceLayout: MODEL_API,
   edgeRoutingHints: MODEL_API,
+  scheduleProject: MODEL_API,
+  projectRollups: MODEL_API,
+  boardColumns: MODEL_API,
+  timelineLayout: MODEL_API,
+  serializeProject: MODEL_API,
+  parseProject: MODEL_API,
+  ProjectModelError: MODEL_API,
 };
 
 export const BLOCK_CATALOG: Catalog<"blocks", BlockGroupMap, BlockEntry> = {
