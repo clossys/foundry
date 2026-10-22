@@ -257,3 +257,5 @@ export { ColumnMapper } from "./ColumnMapper.js";
 export type { ColumnMapperTarget, ColumnMapperSource, ColumnMapping, ColumnMapperIssue, ColumnMapperLabels, ColumnMapperProps } from "./ColumnMapper.js";
 export { NewsletterBand } from "./NewsletterBand.js";
 export type { NewsletterBandProps, NewsletterStatus } from "./NewsletterBand.js";
+export { ResourceList } from "./ResourceList.js";
+export type { ResourceListProps, ResourceListItem, ResourceListAction } from "./ResourceList.js";
