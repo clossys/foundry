@@ -469,6 +469,15 @@ source file's own header for the exact probe and its result). Today that's:
 | `@clossys/designer/charts/server` | `ChartFrame`, `BarChart`, `LineChart` (static), `WaterfallChart`, `RangeChart`, `ScatterChart`, `AreaChart` (static), `Heatmap` (static), `StatusStrip` (static), `Sparkline` |
 | `@clossys/designer/theme/server` | `getThemeInitScript` |
 
+`Banner`, `Meter` and `Spinner` are server-safe through their own plain
+variants (`Banner.server.tsx`, `Meter.server.tsx`, `Spinner.server.tsx`), the
+way `Avatar` is: the same props, classes and visible markup as the client
+atom exported from `@clossys/designer/atoms`, which is built on
+react-aria-components. The server `Meter` has no `meter` role, the server
+`Spinner` names a labelled ring with `role="status"`, and the server
+`Banner` dismiss control is a native `<button>`. Parity tests pin each pair
+to the same classes and structure.
+
 Everything not listed above stays reachable only from its original barrel,
 inside a client boundary — nothing was removed, renamed, or restructured to
 create these subpaths; each is strictly additive, a second, narrower way to
@@ -1055,7 +1064,8 @@ to another. Also match the script's `defaultTheme` with the provider's
 - **`react-aria-components`** — every interactive atom (`Button`,
   `TextField`, `Link`, `Checkbox`, `Switch`, `Select`, `Textarea`, `Menu`,
   `Dialog`, `Tabs`, `Table`, `Tooltip`, `RadioGroup`, `Popover`, `DateField`,
-  `ComboBox`, `SearchField`, `FileTrigger`, `Disclosure`, `ProgressBar`) is
+  `ComboBox`, `SearchField`, `FileTrigger`, `Disclosure`, `ProgressBar`, and
+  the client `Meter`, `Spinner` and `Banner` dismiss control) is
   built on its primitives rather than a hand-rolled `<button>`/`<input>`/`<a>`. It
   supplies keyboard interaction (Enter/Space activation, focus management,
   arrow-key navigation), the ARIA attributes a screen reader needs
@@ -1063,10 +1073,13 @@ to another. Also match the script's `defaultTheme` with the provider's
   label association, `role="menu"`/`aria-checked`/`aria-expanded` and the
   rest), and disabled-state semantics — the kind of behavior that is easy to
   get subtly wrong by hand and hard to notice is wrong without a screen
-  reader or a keyboard-only pass. `Badge`, `Card`, `Avatar`, `Spinner`,
-  `Skeleton`, and `Banner` compose no other atom and aren't interactive, so
+  reader or a keyboard-only pass. `Badge`, `Card`, `Avatar`, and
+  `Skeleton` compose no other atom and aren't interactive, so
   they're plain markup — there's no react-aria-components primitive for any
-  of them; `Field` renders no react-aria-components primitive of its own
+  of them. `Meter` is built on its `Meter`, a labelled `Spinner` on its
+  `ProgressBar` with `isIndeterminate`, and the `Banner` dismiss control on its
+  `Button`; each has a plain server-safe twin (see "Server Components"
+  below). `Field` renders no react-aria-components primitive of its own
   either, since the whole point of it is wrapping a control that doesn't
   have one. `Breadcrumb`, `Select`, and `Menu` build on it for their
   collection components specifically: `Breadcrumbs`/`Breadcrumb`/`Link`
@@ -1682,10 +1695,14 @@ function LoadingPrompts() {
 its render site (correct by default inside a colored `Button`, with no
 `variant` prop of its own to keep in sync with the parent's). `label` is
 optional: provide it when the spinner is itself the only signal that
-something is loading — it then renders `role="status"` with that as its
-accessible name. Omit it when the spinner is purely decorative (e.g. next
+something is loading — it then renders react-aria-components' `ProgressBar`
+(`role="progressbar"`, indeterminate, so no `aria-valuenow`) with that as its
+accessible name, wrapping the `<svg>` ring, which keeps every class and
+attribute. Omit it when the spinner is purely decorative (e.g. next
 to a button's own "Saving…" text, which already announces the state) — it
-then renders `aria-hidden="true"` instead.
+then renders the bare `<svg>` with `aria-hidden="true"` instead. The
+`Spinner` from `@clossys/designer/atoms/server` is the same `<svg>` without
+react-aria-components, and names a labelled ring with `role="status"`.
 
 ### `Menu`
 
@@ -2080,9 +2097,11 @@ variants and `Badge`'s status variants already share. `role`/`aria-live`
 follow severity: `danger` is an assertive `role="alert"`; every other
 variant is a polite `role="status"`, the identical severity-to-live-region
 mapping `Toaster`'s own `ToasterContent` already uses. `onDismiss` is
-optional — supplying it renders a dismiss control, but `Banner` never
+optional — supplying it renders a dismiss control (react-aria-components'
+`Button`, called through its `onPress`), but `Banner` never
 removes itself from the tree on its own; the caller decides whether/when it
-stops rendering.
+stops rendering. The `Banner` from `@clossys/designer/atoms/server` has the
+same markup with a plain `<button>` for the dismiss control.
 
 ### `RadioGroup`
 
@@ -2449,12 +2468,22 @@ weight), so neither depends on colour alone; the other tones fill solid. `emphas
 panel: `text-h1`, `text-h0` via `@md:text-h0` at container widths of 28rem or more, normal weight,
 tabular, with the limit beside it in secondary ink and the bar under both.
 
-The bar is `aria-hidden` and there is no `<meter>` element: the visible
-text carries the meaning for every reader. Positions use logical inline
+The bar is `aria-hidden`: the visible text carries the meaning for every
+reader. From `@clossys/designer/atoms` the root is react-aria-components'
+`Meter` (`role="meter progressbar"` with `aria-valuenow`, `aria-valuemin`
+and `aria-valuemax`), named by the visible `valueText` and announcing it as
+its value text, so a screen reader hears the words a sighted reader sees.
+From `@clossys/designer/atoms/server` (server-safe, no react-aria-components)
+the markup is identical except that the root carries no role and no value
+attributes. The client `Meter` forwards `id`, `data-*`, the `aria-label`,
+`aria-labelledby`, `aria-describedby` and `aria-details` attributes, `dir`,
+`lang`, `hidden` and the common pointer, mouse and scroll handlers to the
+root; other native `<div>` attributes (for example `title` or `tabIndex`)
+are not forwarded by react-aria-components. Positions use logical inline
 properties, so the bar fills from the inline start in both directions. A
 value beyond `scaleMax` draws a full bar. A non-finite or non-positive
 `scaleMax`, or a non-finite or negative `value`/`limit`, throws a
-`RangeError`. Server-safe.
+`RangeError`.
 
 ## Blocks
 
@@ -6734,7 +6763,7 @@ not a grab-bag).
 | `Avatar` | component | Person/thing picture with an initials fallback. Plain markup — not interactive, composes no other atom. |
 | `AvatarProps` | type | Props for `Avatar`: `alt`, `src`, `size`, plus every native `<span>` attribute except `children`. |
 | `AvatarSize` | type | `"sm" \| "md" \| "lg"`. |
-| `Spinner` | component | Indeterminate loading indicator. Plain SVG — not interactive, composes no other atom. |
+| `Spinner` | component | Indeterminate loading indicator. A labelled spinner is react-aria-components' `ProgressBar` around the SVG ring; a decorative one is the bare SVG. |
 | `SpinnerProps` | type | Props for `Spinner`: `size`, `label`, plus every native `<svg>` attribute except `className`/`children`. |
 | `SpinnerSize` | type | `"sm" \| "md" \| "lg"`. |
 | `Menu` | component | Dropdown menu built on react-aria-components' `MenuTrigger`/`Menu`/`MenuItem`/`Popover`. Carries `Menu.Item`, `Menu.Separator` and `Menu.Section`. |
@@ -6767,7 +6796,7 @@ not a grab-bag).
 | `SkeletonShape` | type | `"text" \| "block" \| "circle"`. |
 | `Tooltip` | component | Hover/focus description built on react-aria-components' `TooltipTrigger`/`Tooltip`. |
 | `TooltipProps` | type | Props for `Tooltip`: `trigger`, `children`, `triggerAction`, `placement`, `className`, plus most of react-aria-components' own `TooltipTrigger` props. |
-| `Banner` | component | Persistent inline message region built over the status tokens. |
+| `Banner` | component | Persistent inline message region built over the status tokens, with an optional dismiss `Button`. |
 | `BannerProps` | type | Props for `Banner`: `variant`, `children`, `onDismiss`, `dismissLabel`, `className`, `style`, plus every native `<div>` attribute except `role`/`children`. |
 | `BannerVariant` | type | `"info" \| "success" \| "warning" \| "danger"`. |
 | `RadioGroup` | component | Single-choice control over a visible set of options, built on react-aria-components' `RadioGroup`/`Radio`. Carries `RadioGroup.Radio`. |
@@ -6795,7 +6824,7 @@ not a grab-bag).
 | `StatusMark` | component | A tone mark (a shape per tone) and a visible label for one data state. Server-safe. |
 | `StatusMarkProps` | type | Props for `StatusMark`: `tone`, `children` (required), plus every native `<span>` attribute. |
 | `StatusMarkTone` | type | `"success" \| "warning" \| "danger" \| "info" \| "neutral"`. |
-| `Meter` | component | A value against a scale and an optional limit, with visible value and limit text and a decorative bar. Server-safe. |
+| `Meter` | component | A value against a scale and an optional limit, with visible value and limit text and a decorative bar. Built on react-aria-components' `Meter`; the `atoms/server` export is the same markup without the meter role. |
 | `MeterProps` | type | Props for `Meter`: `value`, `scaleMax`, `limit`, `direction`, `tone`, `valueText`, `limitText`, `emphasis`, optional paired `previous`/`previousText`, plus every native `<div>` attribute except `children`. |
 | `MeterTone` | type | `"success" \| "warning" \| "danger" \| "info" \| "neutral"`. |
 | `MeterDirection` | type | `"max" \| "min"`: whether the limit is a cap or a floor. |
