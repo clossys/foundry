@@ -158,6 +158,16 @@ same way `tokens` sits below all of `ui`). See "Placement rules" below for
 what distinguishes reusable atoms and blocks. Whole-page compositions are
 surfaces and live in `@clossys/publisher/web`.
 
+**Stack boundary.** This package offers only Clossys tokens, atoms and
+blocks, with the shell, charts and theme alongside them. Atoms are built on
+React Aria Components (`react-aria-components`); no other headless or
+component-kit library is used anywhere in the package. Blocks build on
+atoms, tokens, icons and other blocks, and import `react-aria-components`
+only for types, except three listed blocks that still import it directly:
+`Toolbar`, `CommandMenu` and the internal disclosure row
+(`src/blocks/internal/disclosure-row.tsx`). A package test enforces this,
+and its exception list can only shrink.
+
 - **`icons`** — glyph data only, no components: 40 `IconNode` exports
   (`AlertTriangle`, `ArrowRight`, `BookOpen`, `Box`, `Briefcase`,
   `Building2`, `Calendar`, `Check`, `CheckCircle`, `ChevronDown`,
@@ -179,13 +189,13 @@ surfaces and live in `@clossys/publisher/web`.
   `Separator`, `Chip`, `StatusMark`, `Meter`, `ResizeHandle`, `Logomark`, `GridList`.
 - **`blocks`** — owns the internal layout of multiple named regions,
   typically by composing one or more atoms (and/or layout) into something
-  with a real job on a page. Forty-eight ship: `AccountMenu`, `PageHeader`, `EmptyState`,
-  `DataTable`, `DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`,
+  with a real job on a page. Fifty ship: `AccountMenu`, `PageHeader`, `EmptyState`,
+  `DataTable`, `DetailView`, `Pagination`, `UsageMeter`, `Stat`, `Form`, `FieldGroup`,
   `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `SectionFrame`,
   `MarketingChapter`, `FeatureGrid`, `Item`, `Items`, `Tree`, `AnatomyCallouts`, `RecordLedger`, `Scene`, `Matrix`,
   `Specimen`, `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`,
   `PricingTable`, `Testimonial`, `ArticleBody`, `ConsentBanner`, `NewsletterBand`, `Panel`, `Drawer`,
-  `ResizablePane`, `CommandMenu`, `AppNavigation`, `GroupedTable`, `Lockup`, `Explorer`, `CatalogWorkspace`, `Chat` and `ResourceList` (see "Blocks" below).
+  `ResizablePane`, `CommandMenu`, `AppNavigation`, `PageBar`, `GroupedTable`, `Lockup`, `Explorer`, `CatalogWorkspace`, `Chat` and `ResourceList` (see "Blocks" below).
 - **`shell`** — the persistent frame around content (nav, layout chrome)
   that provides the slots content fills. One per app; survives route
   changes that swap out the content underneath it. `Shell` ships with five
@@ -454,7 +464,7 @@ source file's own header for the exact probe and its result). Today that's:
 | Subpath | Server-safe members |
 | --- | --- |
 | `@clossys/designer/atoms/server` | `Logomark`, `Avatar`, `Badge`, `Banner`, `Card`, `Field`, `Icon`, `Meter`, `Skeleton`, `Spinner`, `StatusMark`, `buttonLinkClassName`, `iconButtonClassName`, `iconButtonLinkClassName`, `mergeUiClasses` |
-| `@clossys/designer/blocks/server` | `Lockup`, `AnatomyCallouts`, `ArticleBody`, `Matrix`, `ContentSection`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `Item`, `Items`, `MarketingChapter`, `MediaFigure`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `RecordLedger`, `Scene`, `SectionFrame`, `SectionHeader`, `SectionIntro`, `Specimen`, `SpecimenPanel`, `Stat`, `StatusList`, `Testimonial`, `Tree` |
+| `@clossys/designer/blocks/server` | `Lockup`, `AnatomyCallouts`, `ArticleBody`, `Matrix`, `ContentSection`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `Item`, `Items`, `MarketingChapter`, `MediaFigure`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `RecordLedger`, `Scene`, `SectionFrame`, `SectionHeader`, `SectionIntro`, `Specimen`, `SpecimenPanel`, `Stat`, `StatusList`, `Testimonial`, `Tree`, `UsageMeter` |
 | `@clossys/designer/shell/server` | `Shell`, `SiteFooter`, `SiteHeader`, `SkipLink` |
 | `@clossys/designer/charts/server` | `ChartFrame`, `BarChart`, `LineChart` (static), `WaterfallChart`, `RangeChart`, `ScatterChart`, `AreaChart` (static), `Heatmap` (static), `StatusStrip` (static), `Sparkline` |
 | `@clossys/designer/theme/server` | `getThemeInitScript` |
@@ -519,6 +529,13 @@ both.
 **Scope.** `compiled.css` is generated from `src/atoms/`, `src/blocks/`, and
 `src/shell/` — enough for Hero, feature blocks, and site chrome on a pre-auth
 marketing page. `charts` and `theme` remain Tailwind-native only.
+
+**`className` on this path.** Nothing compiles your own markup here, so a
+class passed through `className` takes effect only when it is already in
+`styles/compiled.css` (which holds the utilities the package's own atoms,
+blocks and shell use) or is defined in your own CSS. Any other utility class
+does nothing. Search `compiled.css` for a class before relying on it, or
+style the wrapper with your own CSS.
 
 Verify the stylesheet your app loads with `designer-hero-css-check
 path/to/your.css` (or point it at `node_modules/@clossys/designer/styles/compiled.css`
@@ -1408,7 +1425,7 @@ function Status() {
 import { Card } from "@clossys/designer/atoms";
 
 function Panel() {
-  return <Card className="max-w-sm">Plain content, raised off the page.</Card>;
+  return <Card>Plain content, raised off the page.</Card>;
 }
 ```
 
@@ -4941,6 +4958,47 @@ surrounding `<nav>`.
 Omit `totalItems`/`pageSize` for a plain "Page X of Y" range summary;
 provide both for "Showing 11–20 of 42".
 
+### `UsageMeter`
+
+Draft, server-safe usage against a limit for a period. The host supplies the
+label, formatted used and limit text, period, projection, threshold messages and
+optional action; `UsageMeter` formats no facts. Exported through `/blocks` and
+`/blocks/server`, with `UsageMeterProps` and `UsageMeterThreshold`.
+
+```tsx
+import { UsageMeter } from "@clossys/designer/blocks/server";
+
+function RequestUsage() {
+  return (
+    <UsageMeter
+      id="request-usage"
+      label="API requests" used={8420} limit={10000}
+      usedText="8,420 requests" limitText="of 10,000" periodText="Resets Nov 1"
+      thresholds={[
+        { at: 0.8, tone: "warning", message: "You have used at least 80 percent of this limit." },
+        { at: 1, tone: "danger", message: "You have reached this limit." },
+      ]}
+      projectedText="On track for about 11,200 by Oct 31"
+      action={<a href="/account/usage">View usage</a>}
+    />
+  );
+}
+```
+
+Required props are `label`, `used`, `limit`, `usedText`, `limitText` and
+`periodText`. `used` must be finite and nonnegative; `limit` must be finite and
+positive. Optional `thresholds` are strictly ascending finite positive fractions
+of the limit, each with an `info`, `warning` or `danger` tone and host message;
+invalid numeric input throws `RangeError`. Only the highest inclusive match
+shows, with a StatusMark shape and text. Before a match, the Meter uses accent.
+The scale expands with over-limit usage so the limit tick sits inside the bar.
+
+`size="compact"` tightens the spacing and omits `projectedText`; the optional
+`action` remains available in either size. An `id` names the section through
+`${id}-label`; without an `id`, a supplied `aria-labelledby` names the section,
+otherwise it stays unnamed. The label container accepts block-level content.
+The block adds no heading, announcement or motion, and wraps its content in both themes.
+
 ### `Stat`
 
 ```tsx
@@ -6873,6 +6931,9 @@ not a grab-bag).
 | `DetailViewField` | type | One field: `label`, `value` (`ReactNode`), `span?` (`1 \| 2`). |
 | `Pagination` | component | Page navigation: range summary, page controls, optional page-size selector. |
 | `PaginationProps` | type | Props for `Pagination`: `page`, `pageCount`, `onPageChange`, `totalItems`, `pageSize`, `pageSizeOptions`, `onPageSizeChange`, `siblingCount`, `previousPageLabel`, `nextPageLabel`, `noResultsLabel` (default `"No results"`), `rangeSummaryMessage`, `pageSummaryMessage`, `pageSizeLabel` (default `"Rows per page"`), `className`, `style`, plus every native `<nav>` attribute. |
+| `UsageMeter` | component | Draft server-safe usage against a period limit with an inclusive threshold message and an honest over-limit bar. |
+| `UsageMeterProps` | type | Required host label, used/limit values and text, and period text; optional thresholds, projection, action, size and section attributes. |
+| `UsageMeterThreshold` | type | Finite positive `at` fraction, `info` / `warning` / `danger` tone and host-authored message. |
 | `Stat` | component | A single metric: label, value, optional delta/trend, optional description. |
 | `StatProps` | type | Props for `Stat`: `label`, `value`, `delta`, `trend`, `trendLabels` (default Increase / Decrease / No change), `description`, `className`, `style`, plus every native `<div>` attribute. |
 | `StatTrend` | type | `"up" \| "down" \| "neutral"`. |
@@ -7704,7 +7765,7 @@ speculatively, just because a related component shipped, is the exact
 un-bounded growth this package's own "variant rule" warns against one level
 up. They get added here only once something real needs them.
 
-**Blocks:** fifty ship — `AccessMatrix`, `ColumnMapper`, `Lockup`, `PageHeader`, `AccountMenu`, `EmptyState`, `DataTable`, `DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`, `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `MarketingChapter`, `FeatureGrid`, `Matrix`, `Specimen`, `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`, `PricingTable`, `Testimonial`, `ArticleBody`, `SectionFrame`, `ConsentBanner`, `Panel`, `Drawer`, `ResizablePane`, `CommandMenu`, `AppNavigation`, `Explorer`, `RecordLedger`, `AnatomyCallouts`, `Scene`, `Item`, `Tree`, `Items`, `GroupedTable`, `CatalogWorkspace`, `Chat`, `NewsletterBand` and `ResourceList` — completing this layer. No
+**Blocks:** fifty-two ship — `AccessMatrix`, `ColumnMapper`, `Lockup`, `PageHeader`, `AccountMenu`, `EmptyState`, `DataTable`, `DetailView`, `Pagination`, `UsageMeter`, `Stat`, `Form`, `FieldGroup`, `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `MarketingChapter`, `FeatureGrid`, `Matrix`, `Specimen`, `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`, `PricingTable`, `Testimonial`, `ArticleBody`, `SectionFrame`, `ConsentBanner`, `Panel`, `Drawer`, `ResizablePane`, `CommandMenu`, `AppNavigation`, `PageBar`, `Explorer`, `RecordLedger`, `AnatomyCallouts`, `Scene`, `Item`, `Tree`, `Items`, `GroupedTable`, `CatalogWorkspace`, `Chat`, `NewsletterBand` and `ResourceList` — completing this layer. No
 `FilterBar` block:
 `DataTable`'s own `toolbar` slot (and `Toolbar`'s own `search` slot) are
 deliberately plain `ReactNode`s, not a block with its own opinion about
@@ -8307,6 +8368,52 @@ Left/Right expand or collapse a parent, reversing in RTL. Enter/Space activate
 destinations or disclosure. Native forced-color adjustment and reduced motion
 remain supported. The interactive Material and helpers use the existing client
 blocks entry; no server-subset export or application-frame assembly is added.
+
+### PageBar
+
+`PageBar` is the draft standalone page bar that AppFrame composes. It owns a
+page trail, current heading, information popover, actions and width control.
+Supply `root`, `width`, `onWidthChange` and all six `labels`; `brand` is an
+optional leading slot. `narrow` collapses ancestors and secondary actions,
+while `reserveStart` and `reserveEnd` leave room for host corner controls.
+`onHeightChange` reports measured bar height. PageBar uses the explicit `width`
+prop; `page.width` carries AppFrame's optional page default.
+
+`PageBarProps` describes the host inputs. `PageBarPage`, `PageBarCrumb`,
+`PageBarAction` and `PageBarDestination` describe the authored data;
+`PageBarLabels` requires the six strings, and `PageBarWidth` is
+`"contained" | "full"`.
+
+```tsx
+import { useState } from "react";
+import { PageBar, type PageBarPage } from "@clossys/designer/blocks";
+
+const page: PageBarPage = {
+  title: "Quarterly report",
+  breadcrumb: [
+    { id: "projects", label: "Projects", href: "/projects" },
+    { id: "reporting", label: "Reporting", href: "/projects/reporting",
+      siblings: [{ id: "planning", label: "Planning", href: "/projects/planning" }] },
+    { id: "quarterly", label: "Quarterly report",
+      siblings: [{ id: "annual", label: "Annual report", href: "/projects/reporting/annual" }] },
+  ],
+  status: "Draft", description: "Revenue and usage for the last three months.", updatedAt: "Updated 2 hours ago",
+  actions: [
+    { id: "share", label: "Share", primary: true, onAction: () => {} },
+    { id: "export", label: "Export", href: "/projects/reporting/quarterly/export" },
+    { id: "archive", label: "Archive", onAction: () => {} },
+  ],
+};
+
+export function ReportBar() {
+  const [width, setWidth] = useState<"contained" | "full">("contained");
+  return <PageBar root={{ label: "Workspace", href: "/" }} page={page} width={width} onWidthChange={setWidth}
+    workspaces={[{ id: "operations", label: "Operations", href: "/operations" }, { id: "research", label: "Research", href: "/research" }]}
+    labels={{ breadcrumb: "Breadcrumb", collapsedBreadcrumb: "More breadcrumb levels", pageInfo: "Page information",
+      fullWidth: "Use full width", containedWidth: "Use contained width", pageActions: "More page actions" }} />;
+}
+```
+
 ### Account menu composition example
 
 `APP_FRAME_MATERIALS` includes the `account-menu` selection for `AccountMenu`,

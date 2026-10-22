@@ -99,6 +99,7 @@ export const APP_FRAME_CONTRACT = freeze({
     accessibility: "logical direction and forced-colors treatment apply to composed chrome and focus indicators",
   },
   constituents: [
+    { owner: "@clossys/designer", subpath: "blocks", export: "PageBar" },
     { owner: "@clossys/designer", subpath: "atoms", export: "Button" },
     { owner: "@clossys/designer", subpath: "atoms", export: "Icon" },
     { owner: "@clossys/designer", subpath: "atoms", export: "Link" },
