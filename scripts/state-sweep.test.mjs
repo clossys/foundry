@@ -1,4 +1,4 @@
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { createServer } from "node:http";
 import { fileURLToPath } from "node:url";
@@ -60,10 +60,28 @@ test("missing Chromium is reported explicitly as SKIPPED rather than a pass", as
 
 // Real-browser hit-testing: the sweep must only credit a 44px target when the
 // TOPMOST element at each probe point is the target (or inside it).
-const CHROME = [process.env.CHROME_PATH, "/usr/bin/chromium", "/usr/bin/chromium-browser", "/usr/bin/google-chrome",
-  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"].find(path => path && existsSync(path));
+const CANDIDATES = [process.env.CHROME_PATH, "/usr/bin/google-chrome", "/usr/bin/chromium", "/usr/bin/chromium-browser",
+  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"].filter(path => path && existsSync(path));
 
-async function sweepFixture(body) {
+// Pick the first installed browser that can really start headless here. When
+// none can, the browser tests are SKIPPED with the stated reason (never a pass).
+let browserProbe;
+function findBrowser() {
+  browserProbe ??= (() => {
+    if (!CANDIDATES.length) return { reason: "no Chromium executable is installed" };
+    const failures = [];
+    for (const path of CANDIDATES) {
+      const probe = spawnSync(path, ["--headless=new", "--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu", "--dump-dom", "about:blank"],
+        { encoding: "utf8", timeout: 30000, stdio: ["ignore", "pipe", "pipe"] });
+      if (probe.status === 0) return { path };
+      failures.push(`${path}: exit ${probe.status ?? probe.signal ?? probe.error?.message} ${String(probe.stderr ?? "").trim().slice(-300)}`);
+    }
+    return { reason: `no installed Chromium could start headless (${failures.join("; ")})` };
+  })();
+  return browserProbe;
+}
+
+async function sweepFixture(browser, body) {
   const server = createServer((_request, response) => {
     response.setHeader("content-type", "text/html");
     response.end(`<!doctype html><meta name="viewport" content="width=device-width"><body style="margin:0">${body}</body>`);
@@ -72,11 +90,16 @@ async function sweepFixture(body) {
   try {
     const url = `http://127.0.0.1:${server.address().port}/fixture`;
     const script = fileURLToPath(new URL("./state-sweep.mjs", import.meta.url));
-    const child = spawn(process.execPath, [script, "--url", url], { stdio: ["ignore", "pipe", "ignore"] });
-    let output = "";
-    child.stdout.on("data", chunk => { output += String(chunk); });
-    await new Promise(resolve => child.once("exit", resolve));
-    const report = JSON.parse(output);
+    const child = spawn(process.execPath, [script, "--url", url], {
+      env: { ...process.env, CHROME_PATH: browser }, stdio: ["ignore", "pipe", "pipe"] });
+    let stdout = "", stderr = "";
+    child.stdout.on("data", chunk => { stdout += String(chunk); });
+    child.stderr.on("data", chunk => { stderr += String(chunk); });
+    const code = await new Promise(resolve => child.once("exit", resolve));
+    let report;
+    try { report = JSON.parse(stdout); } catch {
+      assert.fail(`state-sweep printed no JSON report (exit ${code}); stderr: ${stderr.trim().slice(-800) || "(empty)"}; stdout: ${stdout.slice(0, 200) || "(empty)"}`);
+    }
     return report.observations.filter(item => item.check === "tap-target");
   } finally {
     server.close();
@@ -85,17 +108,21 @@ async function sweepFixture(body) {
 
 const SIZED = "display:block;width:60px;height:60px;padding:0;border:0";
 
-test("tap-target probe passes when the target is topmost or the topmost hit is its descendant", { skip: !CHROME, timeout: 120000 }, async () => {
-  const plain = await sweepFixture(`<button id="target" style="${SIZED}">go</button>`);
+test("tap-target probe passes when the target is topmost or the topmost hit is its descendant", { timeout: 240000 }, async t => {
+  const browser = findBrowser();
+  if (!browser.path) return t.skip(`SKIPPED: ${browser.reason}`);
+  const plain = await sweepFixture(browser.path, `<button id="target" style="${SIZED}">go</button>`);
   assert.ok(plain.length > 0);
   for (const item of plain) assert.equal(item.status, "pass", JSON.stringify(item));
-  const nested = await sweepFixture(
+  const nested = await sweepFixture(browser.path,
     `<button id="target" style="${SIZED};position:relative"><span style="position:absolute;inset:0"></span></button>`);
   for (const item of nested) assert.equal(item.status, "pass", JSON.stringify(item));
 });
 
-test("OCCLUSION NEGATIVE: a covering element over the probe points is never reported as a verified 44px target", { skip: !CHROME, timeout: 120000 }, async () => {
-  const covered = await sweepFixture(
+test("OCCLUSION NEGATIVE: a covering element over the probe points is never reported as a verified 44px target", { timeout: 240000 }, async t => {
+  const browser = findBrowser();
+  if (!browser.path) return t.skip(`SKIPPED: ${browser.reason}`);
+  const covered = await sweepFixture(browser.path,
     `<button id="target" style="${SIZED}">go</button><div id="cover" style="position:fixed;top:0;left:0;width:100%;height:100%"></div>`);
   assert.ok(covered.length > 0);
   for (const item of covered) {

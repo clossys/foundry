@@ -77,9 +77,10 @@ async function sweep(browser, options) {
     child = spawn(browser, ["--headless=new", "--no-sandbox", "--disable-dev-shm-usage", "--remote-debugging-port=0", `--user-data-dir=${profile}`, "about:blank"], { stdio: ["ignore", "ignore", "pipe"] });
     const endpoint = await new Promise((resolve, reject) => {
       let output = "";
-      const timeout = setTimeout(() => reject(new Error("Chromium did not expose a debugging endpoint")), 15000);
+      const tail = () => output.trim().split("\n").slice(-5).join(" | ").slice(0, 600);
+      const timeout = setTimeout(() => reject(new Error(`Chromium did not expose a debugging endpoint within 30s: ${tail()}`)), 30000);
       child.once("error", error => { clearTimeout(timeout); reject(error); });
-      child.once("exit", code => { clearTimeout(timeout); reject(new Error(`Chromium exited before connection (${code})`)); });
+      child.once("exit", code => { clearTimeout(timeout); reject(new Error(`Chromium exited before connection (${code}): ${tail()}`)); });
       child.stderr.on("data", chunk => {
         output += String(chunk);
         const match = /DevTools listening on (ws:\/\/[^\s]+)/.exec(output);
