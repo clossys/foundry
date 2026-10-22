@@ -220,6 +220,8 @@ export { PageBar } from "./PageBar.js";
 export type { PageBarProps, PageBarPage, PageBarCrumb, PageBarAction, PageBarDestination, PageBarLabels, PageBarWidth } from "./PageBar.js";
 export { validateAppNavigationTree, getAppNavigationAncestry, getAppNavigationBreadcrumbs } from "./app-navigation-tree.js";
 export type { AppNavigationNode, AppNavigationLeaf, AppNavigationDestination, AppNavigationTarget, AppNavigationBreadcrumb } from "./app-navigation-tree.js";
+export { RelationGraph } from "./RelationGraph.js";
+export type { RelationGraphProps, RelationGraphNode, RelationGraphEdge } from "./relation-graph-types.js";
 export { Explorer } from "./Explorer.js";
 export type { ExplorerProps } from "./Explorer.js";
 export { indexTree, getTreeAncestry, getTreeBreadcrumbs } from "./tree-model.js";
