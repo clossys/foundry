@@ -160,6 +160,9 @@ export type { StatProps, StatTrend } from "./Stat.js";
 export { Testimonial } from "./Testimonial.server.js";
 export type { TestimonialProps } from "./Testimonial.js";
 
+export { TableOfContents } from "./TableOfContents.server.js";
+export type { TableOfContentsProps, TableOfContentsItem } from "./TableOfContents.js";
+
 export { RecordLedger } from "./RecordLedger.js";
 export type { RecordLedgerProps, LedgerRowData, LedgerGroupData } from "./RecordLedger.js";
 

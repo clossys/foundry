@@ -2210,6 +2210,9 @@
   .items-order-cell {
     padding-inline-start: calc((1 - var(--items-wide, 0)) * (var(--spacing-2xl, 32px) + var(--spacing-lg, 16px) + var(--items-lane-narrow, 0px)));
   }
+  .ps-0 {
+    padding-inline-start: 0px;
+  }
   .ps-2xl {
     padding-inline-start: var(--spacing-2xl, 32px);
   }
@@ -2221,6 +2224,9 @@
   }
   .ps-sm {
     padding-inline-start: var(--spacing-sm, 8px);
+  }
+  .ps-xl {
+    padding-inline-start: var(--spacing-xl, 24px);
   }
   .ps-xs {
     padding-inline-start: var(--spacing-xs, 4px);
@@ -2713,6 +2719,9 @@
     }
     .hover\:text-ink-on-inverse:hover {
       color: var(--color-ink-on-inverse, oklch(0.9702 0 0));
+    }
+    .hover\:text-ink-primary:hover {
+      color: var(--color-ink-primary, oklch(0.2178 0 0));
     }
     .hover\:text-ink-secondary:hover {
       color: var(--color-ink-secondary, oklch(0.36 0 0));
@@ -3478,6 +3487,9 @@
     .desktop\:absolute {
       position: absolute;
     }
+    .desktop\:sticky {
+      position: sticky;
+    }
     .desktop\:col-span-1 {
       grid-column: span 1 / span 1;
     }
@@ -3499,6 +3511,9 @@
     .desktop\:hidden {
       display: none;
     }
+    .desktop\:max-h-dvh {
+      max-height: 100dvh;
+    }
     .desktop\:rotate-0 {
       rotate: 0deg;
     }
@@ -3513,6 +3528,9 @@
     }
     .desktop\:grid-rows-subgrid {
       grid-template-rows: subgrid;
+    }
+    .desktop\:overflow-y-auto {
+      overflow-y: auto;
     }
     .desktop\:py-5xl {
       padding-block: var(--spacing-5xl, 96px);
