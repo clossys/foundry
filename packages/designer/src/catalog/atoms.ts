@@ -522,11 +522,11 @@ export const ATOM_ENTRIES: readonly AtomEntry[] = [
     racBase: rac("Table", "TableHeader", "TableBody", "Column", "Row", "Cell"),
     disposition: "keep",
   }),
-  building(DATA_DISPLAY, { kind: "pull-request", number: 2389, state: "ready" }, {
+  onMain(DATA_DISPLAY, "GridList", ["src/atoms/GridList.tsx"], {
     id: "group.grid-list",
     label: "Grid list",
     racBase: rac("GridList", "GridListItem", "GridListSection", "GridListHeader"),
-    disposition: "finish",
+    disposition: "keep",
   }),
   gap(DATA_DISPLAY, {
     id: "group.tree",

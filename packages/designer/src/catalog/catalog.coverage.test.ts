@@ -293,9 +293,9 @@ describe("atom catalog coverage", () => {
     expect(leafExports.filter((name) => name === "Toaster")).toHaveLength(1);
   });
 
-  it("counts 46 leaves on the default branch (9 parked), 15 in flight and 17 gaps", () => {
+  it("counts 47 leaves on the default branch (9 parked), 14 in flight and 17 gaps", () => {
     const count = (status: string) => ATOM_ENTRIES.filter((entry) => entry.status === status).length;
-    expect([count("main"), count("parked"), count("in-flight"), count("gap")]).toEqual([37, 9, 15, 17]);
+    expect([count("main"), count("parked"), count("in-flight"), count("gap")]).toEqual([38, 9, 14, 17]);
   });
 
   it("gives built leaves an export and real files, and unbuilt leaves neither", () => {
@@ -350,11 +350,11 @@ describe("block catalog coverage", () => {
     }
   });
 
-  it("counts 4 deprecated, 56 draft and built, 24 not built", () => {
+  it("counts 4 deprecated, 57 draft and built, 23 not built", () => {
     const deprecated = BLOCK_ENTRIES.filter((entry) => entry.lifecycle === "deprecated").length;
     const draftBuilt = BLOCK_ENTRIES.filter((entry) => entry.lifecycle === "draft" && entry.built !== "no").length;
     const notBuilt = BLOCK_ENTRIES.filter((entry) => entry.built === "no").length;
-    expect([deprecated, draftBuilt, notBuilt]).toEqual([4, 56, 24]);
+    expect([deprecated, draftBuilt, notBuilt]).toEqual([4, 57, 23]);
   });
 
   it("marks exactly the four leaves with exact specimens as stable candidates", () => {

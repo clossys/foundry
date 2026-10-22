@@ -303,11 +303,10 @@ export const BLOCK_ENTRIES: readonly BlockEntry[] = [
   built(RECORDS, "DetailView", { id: "matrix.detail", label: "Detail view" }),
   built(RECORDS, "RecordLedger", { id: "items.record-ledger", label: "Record ledger" }),
   exported(RECORDS, "GroupedTable", { id: "matrix.grouped-table", label: "Grouped table" }),
-  spec(RECORDS, {
+  exported(RECORDS, "ResourceList", {
     id: "items.resource-list",
     label: "Resource list",
-    inFlight: pr(2389, "ready"),
-    notes: ["The same pull request adds the grid list atom."],
+    notes: ["Built on the grid list atom."],
   }),
   spec(RECORDS, { id: "matrix.data-grid", label: "Data grid" }),
 
