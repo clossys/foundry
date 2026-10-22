@@ -75,7 +75,15 @@ export interface SiteEnvironmentLinkInput {
 export { SITE_CHROME_GROUNDS } from "../internal/viewChromeGround.js";
 export type { SiteChromeGround } from "../internal/viewChromeGround.js";
 
-/** The footer: optional headed columns, ungrouped links and social profiles, then the legal row. */
+/**
+ * The footer: optional headed columns, ungrouped links and social profiles, then the legal row.
+ *
+ * Contract (`SITE_FRAME_CONTRACT.constituents.Footer.constraints`): `links` and
+ * `legal.links` together form one flat row of at most five; further links go in
+ * labelled `columns`. `social` takes at most four icons, because the `shell.brand` mark always fills the fifth and last slot. No footer link may
+ * repeat home, a `shell.nav` destination or the `#privacy-choices` control.
+ * Breaches throw a `SiteFooterContractError` (`name` and `code`), never truncate.
+ */
 interface SiteFooterFields {
   /** A top hairline on transparent flow footers; other grounds ignore it. @default "none" */
   readonly rule?: "none" | "top";
@@ -117,31 +125,17 @@ export interface SiteShellInput {
     readonly label: CopyRef;
     /** The disclosure toggle copy; defaults to the resolved navigation label. */
     readonly triggerLabel?: CopyRef;
-    /** Toggle content; the icon keeps triggerLabel as its accessible name. @default "label" */
-    readonly trigger?: "label" | "icon";
-    /** Omitted inherits inverse overlay header ink; explicit auto keeps ordinary ink. */
-    readonly tone?: "auto" | "inverse";
     readonly links: readonly (PlainSiteLinkInput & { readonly isCurrent?: boolean })[];
   };
   /** Calls to action at the trailing end of the banner. */
   readonly actions?: readonly SiteLinkInput[];
-  /** Icon-only links after text actions and before environments. */
-  readonly iconActions?: readonly SiteIconLinkInput[];
-  /** A secondary call to action, just before `actions`. */
-  readonly secondaryAction?: PlainSiteLinkInput;
   /** Environment links, after text and icon actions. */
   readonly environments?: readonly SiteEnvironmentLinkInput[];
-  /** A text badge naming the surface. Prefer `environments` with `isCurrent`. */
-  readonly surfaceLabel?: CopyRef;
   readonly navPlacement?: "leading" | "centered";
-  /** Below tablet, put navigation before a centered brand and trailing actions. @default "inline" */
-  readonly mobileLayout?: "inline" | "menu-brand-action";
-  /** @default "base" */
+  /** Existing footer fallback only. Header ink and plate use header.surface/tone. @default "base" */
   readonly ground?: SiteChromeGround;
-  /** Overlay is the default. Its tone is a server hint; the client follows declared ground and page theme. Explicit reserved chrome may choose its own ground. */
-  readonly header?:
-    | { readonly placement: "reserved"; readonly ground?: SiteChromeGround; readonly tone?: never }
-    | { readonly placement?: "overlay"; readonly tone?: "base" | "inverse"; readonly ground?: never };
+  /** One header surface and theme-relative ink polarity. Glass follows declared page ground through the existing client island. */
+  readonly header?: { readonly surface?: "solid" | "transparent" | "glass"; readonly tone?: "base" | "inverse" };
   readonly footer?: SiteFooterInput;
   /**
    * The canonical public origin (`https://example.com`), for a surface served
@@ -184,12 +178,9 @@ export interface SiteFrameConfig {
     readonly header?: SiteShellInput["header"];
     readonly nav?: SiteShellInput["nav"];
     readonly actions?: SiteShellInput["actions"];
-    readonly iconActions?: SiteShellInput["iconActions"];
     readonly footerLinks?: SiteFooterInput["links"];
     readonly social?: SiteFooterInput["social"];
-    readonly secondaryAction?: SiteShellInput["secondaryAction"];
     readonly navPlacement?: SiteShellInput["navPlacement"];
-    readonly mobileLayout?: SiteShellInput["mobileLayout"];
     readonly columns?: SiteFooterInput["columns"];
   };
   /** One link per non-site surface; the one matching the surface kind is marked current. */

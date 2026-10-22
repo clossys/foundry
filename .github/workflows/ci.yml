@@ -1785,6 +1785,46 @@ jobs:
         run: npm run check:packed-consumer
         if: steps.touch.outputs.touches != 'false'
 
+  # Root tests need the same installed dependencies and exact build as the
+  # other consumers, but none of their results. The required build context
+  # below still joins every result and fails closed on a non-success.
+  root-tests:
+    name: root package tests
+    needs: [push-tree, classify]
+    if: always() && (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && (needs.classify.result != 'success' || needs.classify.outputs.tier != 'prose')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+          cache: npm
+      - name: Restore round-trip npm cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/round-trip-npm-cache
+          key: round-trip-npm-cache-${{ runner.os }}-${{ hashFiles('packages/controller/package.json') }}
+          restore-keys: |
+            round-trip-npm-cache-${{ runner.os }}-
+      - name: Point round-trip proofs at the warmed cache
+        run: echo "RELEASE_ROUND_TRIP_NPM_CACHE_DIR=${{ runner.temp }}/round-trip-npm-cache" >> "$GITHUB_ENV"
+      - name: Restore workspace build cache
+        id: workspace-build-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: packages/*/dist
+          key: workspace-build-${{ runner.os }}-${{ hashFiles('package.json', 'package-lock.json', 'packages/*/src/**', 'packages/*/package.json', 'packages/*/tsconfig*.json', 'packages/*/scripts/**', 'scripts/lib/**', 'docs/contracts/**') }}
+      - run: npm ci
+      # Root tests import other workspaces' source before those packages'
+      # own test-time generators run. A dist cache hit lacks that generated
+      # source, so retain the cache but always materialize the full build.
+      - name: Build
+        run: npm run build
+      - run: npm test
+
   build:
     name: build and test
     # candidate-qualification, readme-examples-typecheck and
@@ -1792,15 +1832,15 @@ jobs:
     # with the same names, split into their own parallel jobs (see the
     # measurement in each job's own header comment). `build and test` stays
     # the required context, but it is now a genuine fan-in over their
-    # results -- see the first step below for why `needs` alone is not
-    # enough to make that fan-in honest.
-    needs: [push-tree, candidate-qualification, readme-examples-typecheck, packed-consumer-readiness, classify]
+    # results, including the now-independent root tests -- see the first
+    # step below for why `needs` alone is not enough to make that fan-in honest.
+    needs: [push-tree, candidate-qualification, readme-examples-typecheck, packed-consumer-readiness, classify, root-tests]
     # `always()` is mandatory, not stylistic: GitHub's UNWRITTEN default for
     # any job that `needs` other jobs is "skip unless every needed job
     # succeeded" -- that default applies underneath this job's own `if:`
     # condition regardless of what the condition itself says, exactly like
     # the `credential-lifecycle` job above (see its own comment on the same
-    # point). Without `always()` here, a real failure in any of the three
+    # point). Without `always()` here, a real failure in any of the four
     # split jobs would make GitHub skip `build and test` outright -- and a
     # skipped required context reports as passing, silently erasing the
     # failure it exists to catch. `always()` forces this job to run so the
@@ -1810,7 +1850,7 @@ jobs:
     timeout-minutes: 20
     steps:
       # The other half of the fan-in: `needs` only lets this job SEE the
-      # three split jobs' results, it does not act on them -- GitHub's
+      # four split jobs' results, it does not act on them -- GitHub's
       # implicit needs-gate is what `always()` above just disabled, on
       # purpose, so nothing now fails this job automatically. This step is
       # what does that job explicitly: `if: always()` so it runs even when
@@ -1828,7 +1868,8 @@ jobs:
           for pair in \
             "candidate-qualification=${{ needs.candidate-qualification.result }}" \
             "readme-examples-typecheck=${{ needs.readme-examples-typecheck.result }}" \
-            "packed-consumer-readiness=${{ needs.packed-consumer-readiness.result }}"; do
+            "packed-consumer-readiness=${{ needs.packed-consumer-readiness.result }}" \
+            "root-tests=${{ needs.root-tests.result }}"; do
             name="${pair%%=*}"
             result="${pair#*=}"
             if [ "$result" != "success" ]; then
@@ -2056,10 +2097,9 @@ jobs:
       # `npm ci` to have run first.
       - run: npm run check:typechecked-assertions
       - run: npm run typecheck
-      - run: npm test
       # This stays in the already-required build-and-test context. The normal
-      # repository suite remains on Node 20, while this first-publication
-      # wrapper is only valid on the exact credential-free qualification and
+      # repository suite remains on Node 20 in the parallel worker. This
+      # first-publication wrapper is only valid on the exact credential-free qualification and
       # upload runtime. The focused acceptance starts a real npm client
       # against an isolated loopback registry; it never contacts npmjs.
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0

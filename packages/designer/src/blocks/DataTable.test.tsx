@@ -4,6 +4,7 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { Key, SortDescriptor } from "react-aria-components";
 import { DataTable, type DataTableColumn } from "./DataTable.js";
+import type { DataTableViewModelV1 } from "./data-table/view-model.js";
 
 interface PromptRow {
   id: string;
@@ -23,6 +24,20 @@ const COLUMNS: DataTableColumn<PromptRow>[] = [
 ];
 
 describe("DataTable", () => {
+  it("accepts a v1 saved view and always emits the v2 envelope", async () => {
+    const user = userEvent.setup();
+    const changed = vi.fn();
+    const model: DataTableViewModelV1 = {
+      version: 1, table: { version: 1, columns: [{ id: "name", kind: "text" }, { id: "runs", kind: "number" }], collation: { locale: "en" }, filters: [{ column: "runs", kind: "number", op: "range", min: 0 }] },
+      mode: "flat", density: "comfortable", sort: [], visibleColumns: ["name", "runs"],
+    };
+    render(<DataTable aria-label="Prompts" columns={COLUMNS} rows={ROWS} rowKey={row => row.id} model={model} onModelChange={changed} />);
+    await user.click(screen.getByRole("button", { name: /Density/ }));
+    await user.click(screen.getByRole("option", { name: "Compact" }));
+    expect(changed).toHaveBeenCalledTimes(1);
+    expect(changed.mock.lastCall![0]).toEqual({ ...model, version: 2, density: "compact" });
+    expect(model.version).toBe(1);
+  });
   it.each([
     { name: "populated default", rows: ROWS, isLoading: false, selectionMode: "none" as const, rowCount: 4 },
     { name: "empty default", rows: [], isLoading: false, selectionMode: "none" as const, rowCount: 2 },

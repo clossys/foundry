@@ -998,12 +998,12 @@ export const ATOM_GUIDANCE: Readonly<Record<string, AtomGuidance>> = {
   "content": "Name the group and each choice; optional per-choice descriptions explain differences.",
   "anatomy": "One group label and repeated mutually exclusive labelled choices.",
   "composition": "In a consumer-owned preference-selection block, render at least two RadioGroup.Radio choices.",
-  "accessibility": "Use the group’s label and roving keyboard selection; orientation does not guarantee layout."
+  "accessibility": "Use the group’s label and roving keyboard selection; orientation aligns option layout and keyboard navigation."
 },
 {
   "exportName": "RadioGroup",
   "entrypoint": "atoms",
-  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. The root forwards orientation to AriaRadioGroup, but the options wrapper remains flex-col. A single-option specimen cannot prove selection differences.",
+  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Orientation sets the options to a row or column and forwards matching semantics to AriaRadioGroup. A single-option specimen cannot prove selection differences.",
   "options": [
     {
       "prop": "isDisabled",
@@ -1048,21 +1048,21 @@ export const ATOM_GUIDANCE: Readonly<Record<string, AtomGuidance>> = {
     {
       "prop": "orientation",
       "label": "ARIA orientation",
-      "purpose": "ARIA orientation selects the existing RadioGroup orientation behavior.",
+      "purpose": "Orientation aligns the options layout with keyboard semantics.",
       "values": [
         {
           "value": "horizontal",
-          "purpose": "Horizontal keyboard semantics."
+          "purpose": "Horizontal option layout and keyboard semantics."
         },
         {
           "value": "vertical",
-          "purpose": "Vertical keyboard semantics."
+          "purpose": "Vertical option layout and keyboard semantics."
         }
       ],
-      "applicability": "ARIA and keyboard forwarding only; do not claim matching visual orientation.",
+      "applicability": "Layout and keyboard semantics follow the supplied orientation.",
       "support": {
-        "state": "partial",
-        "reason": "Forwarded to the ARIA primitive, but fixed layout classes do not implement visual orientation."
+        "state": "implemented",
+        "reason": "The component uses orientation for layout and forwards it to the ARIA primitive."
       }
     }
   ],
@@ -1524,7 +1524,7 @@ export const ATOM_GUIDANCE: Readonly<Record<string, AtomGuidance>> = {
       "reason": "direction is accepted without limit but has no visible limit zone until limit is supplied.",
       "enforcement": "ignored",
       "evidence": {
-        "source": "src/atoms/Meter.tsx",
+        "source": "src/atoms/Meter.server.tsx",
         "evidence": "limitPct === undefined"
       },
       "effectiveWhen": {
@@ -1541,7 +1541,7 @@ export const ATOM_GUIDANCE: Readonly<Record<string, AtomGuidance>> = {
       "reason": "previous and nonblank previousText must be supplied together; previous is finite, nonnegative and within scaleMax.",
       "enforcement": "runtime",
       "evidence": {
-        "source": "src/atoms/Meter.tsx",
+        "source": "src/atoms/Meter.server.tsx",
         "evidence": "(previous === undefined) !== (previousText === undefined)"
       }
     }
@@ -1760,6 +1760,21 @@ export const ATOM_GUIDANCE: Readonly<Record<string, AtomGuidance>> = {
     }
   ]
 }, "src/atoms/Card.tsx"),
+  "group.grid-list": entry({
+    purpose: "Work through interactive records with independent selection and actions.",
+    useWhen: "Records have flexible content, selection controls or secondary actions within each row.",
+    avoidWhen: "Column relationships require a table or content has no row interaction.",
+    alternatives: "Use Table for shared columns or ResourceList for an assembled record-list block.",
+    content: "Supply a list name, each row’s plain text identity and host-authored checkbox names.",
+    anatomy: "A named grid with repeated record rows and optional selection checkboxes.",
+    composition: "Compose GridList.Item content with GridList.SelectionCheckbox and named child actions.",
+    accessibility: "Space toggles selection and Enter activates onAction during selection; href routing follows the peer’s toggle-selection semantics."
+  }, {
+    exportName: "GridList", entrypoint: "atoms",
+    notes: "Draft stack layout with toggle selection fixed by the atom. The peer supplies collection, keyboard, disabled and action behavior. Supply aria-label or aria-labelledby; each Item requires textValue and each SelectionCheckbox requires its host aria-label. Direct-row Enter adapts onAction during active selection. Href rows route while selection is empty; active-selection row presses toggle selection without navigation.",
+    options: [],
+    constraints: [{ kind: "data", props: ["aria-label", "aria-labelledby"], reason: "At least one nonblank accessible naming path is required.", enforcement: "runtime", evidence: { source: "src/atoms/GridList.tsx", evidence: "GridList requires aria-label or aria-labelledby." } }]
+  }, "src/atoms/GridList.tsx"),
   "group.table": entry(
 {
   "purpose": "Compare structured records across shared columns.",
@@ -1862,6 +1877,33 @@ export const ATOM_GUIDANCE: Readonly<Record<string, AtomGuidance>> = {
   ],
   "constraints": []
 }, "src/atoms/Separator.tsx"),
+  "depict.logomark": entry({
+    purpose: "Represent a brand with one decorative glyph and an optional shared plate.",
+    useWhen: "A surrounding identity link or adjacent text already names the brand.",
+    avoidWhen: "The image must communicate an accessible name or act as a standalone control.",
+    alternatives: "Use Lockup for a mark beside live text; use Brandmark for the established home link.",
+    content: "Supply the light, dark or mono artwork as an image URL, never injected markup.",
+    anatomy: "One glyph image, optionally inset inside one rounded square plate.",
+    composition: "In Lockup, place Logomark before the live wordmark and center both regions vertically.",
+    accessibility: "The image has empty alternative text; its surrounding text or control supplies the name.",
+  }, {
+    exportName: "Logomark", entrypoint: "atoms",
+    notes: "Size, tone and plate are finite choices. Artwork URLs and optional titles are authored content; artwork contrast remains caller-owned.",
+    options: [
+      { prop: "size", label: "Size", purpose: "Select the mark height from the existing brandmark scale.",
+        values: [{ value: "sm", purpose: "Small mark height." }, { value: "md", purpose: "Medium mark height." }, { value: "lg", purpose: "Large mark height." }],
+        applicability: "Always effective; size is required.", support: { state: "implemented", reason: "The mark consumes its size through the shared height bindings." } },
+      { prop: "tone", label: "Plate ink", purpose: "Choose shared plate ink to match the surrounding ground.",
+        values: [{ value: "auto", purpose: "Primary ink plate." }, { value: "inverse", purpose: "Inverse ink plate." }],
+        applicability: "Effective only with a shared plate; self-plated artwork supplies its own paint.", support: { state: "implemented", reason: "The shared plate selects the corresponding existing ink utility." } },
+      { prop: "plate", label: "Plate ownership", purpose: "Choose whether the caller artwork already includes a plate.",
+        values: [{ value: "self", purpose: "Render the supplied artwork at its natural aspect ratio." }, { value: "shared", purpose: "Inset the glyph in the shared square plate." }],
+        applicability: "Always effective for the mark geometry.", support: { state: "implemented", reason: "The component renders either the image alone or the shared plate." } },
+    ],
+    constraints: [{ kind: "effective-when", props: ["tone"], enforcement: "ignored", effectiveWhen: { prop: "plate", values: ["shared"] },
+      reason: "Tone paints the shared plate only; it never rewrites the supplied artwork URL.",
+      evidence: { source: "src/atoms/Logomark.tsx", evidence: 'if (plate !== "shared")' } }],
+  }, "src/atoms/Logomark.tsx"),
   "depict.avatar": entry(
 {
   "purpose": "Represent one person or entity with a picture or initials.",
@@ -2086,7 +2128,7 @@ export const ATOM_GUIDANCE: Readonly<Record<string, AtomGuidance>> = {
   "content": "Name the trigger and give the panel content an understandable task hierarchy.",
   "anatomy": "One contextual trigger and its anchored content panel.",
   "composition": "In a consumer-owned filter block, put several filter fields inside Popover and manage their state outside it.",
-  "accessibility": "The panel uses dialog behavior; preserve focus entry, outside dismissal and return to the trigger."
+  "accessibility": "The panel uses dialog behavior; supply aria-label for its accessible name when there is no visible title heading, and preserve focus entry, outside dismissal and return to the trigger."
 },
 {
   "exportName": "Popover",
@@ -2161,12 +2203,12 @@ export const ATOM_GUIDANCE: Readonly<Record<string, AtomGuidance>> = {
   "content": "Give each tab a distinct label and match it to the corresponding panel identity.",
   "anatomy": "A repeated set of tab labels and one associated panel per label.",
   "composition": "In a consumer-owned account-details block, compose Tabs.List, multiple Tabs.Tab items and matched Tabs.Panel content.",
-  "accessibility": "Preserve tab-panel IDs and keyboard selection; forwarded orientation does not implement a visual vertical layout."
+  "accessibility": "Preserve tab-panel IDs and keyboard selection; orientation aligns the list layout, indicator edge and keyboard navigation."
 },
 {
   "exportName": "Tabs",
   "entrypoint": "atoms",
-  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. The root forwards orientation to AriaTabs, but the list has a fixed flex row and bottom border. A single-option specimen cannot prove panel switching.",
+  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Orientation sets the list to a row with bottom indicators or a column with start-edge indicators and forwards matching semantics to AriaTabs. A single-option specimen cannot prove panel switching.",
   "options": [
     {
       "prop": "isDisabled",
@@ -2191,21 +2233,21 @@ export const ATOM_GUIDANCE: Readonly<Record<string, AtomGuidance>> = {
     {
       "prop": "orientation",
       "label": "ARIA orientation",
-      "purpose": "ARIA orientation selects the existing Tabs orientation behavior.",
+      "purpose": "Orientation aligns the list layout and indicator edge with keyboard semantics.",
       "values": [
         {
           "value": "horizontal",
-          "purpose": "Horizontal keyboard semantics."
+          "purpose": "Horizontal list with bottom indicators and keyboard semantics."
         },
         {
           "value": "vertical",
-          "purpose": "Vertical keyboard semantics."
+          "purpose": "Vertical list with start-edge indicators and keyboard semantics."
         }
       ],
-      "applicability": "ARIA and keyboard forwarding only; do not claim matching visual orientation.",
+      "applicability": "Layout and keyboard semantics follow the supplied orientation.",
       "support": {
-        "state": "partial",
-        "reason": "Forwarded to the ARIA primitive, but fixed layout classes do not implement visual orientation."
+        "state": "implemented",
+        "reason": "The component uses orientation for layout and forwards it to the ARIA primitive."
       }
     }
   ],
@@ -2423,6 +2465,178 @@ export const ATOM_GUIDANCE: Readonly<Record<string, AtomGuidance>> = {
   ],
   "constraints": []
 }, "src/charts/ScatterChart.tsx"),
+  "depict.area-chart": entry(
+{
+  "purpose": "Compare how one or several quantities change or accumulate across ordered categories or time.",
+  "useWhen": "Filled magnitude, authored series totals or a normalized percentage composition answer the stated question.",
+  "avoidWhen": "Area overlap conceals the comparison, units differ between series or missing observations would be mistaken for zero.",
+  "alternatives": "Use LineChart for precise trends without filled areas, BarChart for categorical comparisons or a table for exact values.",
+  "content": "Author one consistent x domain, named same-length series and explicit null gaps; normalized and stacked quantities must be nonnegative.",
+  "anatomy": "Contiguous filled runs share axes, a named series legend, an inspection crosshair and an equivalent native data table.",
+  "composition": "In a consumer-owned trends block, place AreaChart beside period definitions and an explanation of magnitude, stacking or percentages.",
+  "accessibility": "Retain visible series names, keyboard inspection and the complete table; explain missing values rather than relying on the filled colour alone."
+},
+{
+  "exportName": "AreaChart",
+  "entrypoint": "charts",
+  "notes": "Represented scalar options are a bounded source-checked selection; consult the public prop type and chart README for data, labels, callbacks and other supported props. No Cartesian combination support or consumer demonstration is implied. The stacked prop is supported and described in the public chart contract, but is not a represented comparison axis here. Inspection and selection may be controlled; the server export preserves static geometry and table data.",
+  "options": [
+    {
+      "prop": "normalized",
+      "label": "Percentage composition",
+      "purpose": "Choose whether the visible series use authored magnitude or normalized column totals.",
+      "values": [
+        {
+          "value": false,
+          "purpose": "Retain authored magnitudes on one shared value scale."
+        },
+        {
+          "value": true,
+          "purpose": "Stack each nonzero column to a total of one hundred percent."
+        }
+      ],
+      "applicability": "Normalization implies stacking; all-zero columns remain zero and null values remain missing.",
+      "support": {
+        "state": "implemented",
+        "reason": "The directly imported shared chart view consumes this implemented boolean; callers still author data and accessible labels."
+      }
+    },
+    {
+      "prop": "smooth",
+      "label": "Interpolation",
+      "purpose": "Choose straight or smooth geometry within each contiguous nonmissing area run.",
+      "values": [
+        {
+          "value": false,
+          "purpose": "Connect adjacent samples with straight segments."
+        },
+        {
+          "value": true,
+          "purpose": "Use cubic interpolation within each nonmissing run."
+        }
+      ],
+      "applicability": "Smoothing never connects across an explicit null gap and does not change the table data.",
+      "support": {
+        "state": "implemented",
+        "reason": "The directly imported shared chart view consumes this implemented boolean; callers still author data and accessible labels."
+      }
+    }
+  ],
+  "constraints": [
+    {
+      "kind": "derived",
+      "props": [
+        "normalized",
+        "stacked"
+      ],
+      "reason": "Normalization implies stacking; an unstacked percentage mode is not a separate supported configuration.",
+      "enforcement": "derived",
+      "evidence": {
+        "source": "src/charts/internal/signature-geometry.ts",
+        "evidence": "const bottom = stacked || normalized ? bases[index]! : 0;"
+      }
+    },
+    {
+      "kind": "data",
+      "props": [
+        "x",
+        "series"
+      ],
+      "reason": "Every named series supplies one finite number or explicit null for each x; stacking and normalization refuse negative values.",
+      "enforcement": "runtime",
+      "evidence": {
+        "source": "src/charts/internal/signature-geometry.ts",
+        "evidence": "AreaChart series must have one value for every x."
+      }
+    }
+  ]
+}, "src/charts/AreaChart.tsx"),
+  "depict.heatmap": entry(
+{
+  "purpose": "Compare a rectangular set of magnitudes or categorical identities across named rows and columns.",
+  "useWhen": "The question concerns variation across two discrete dimensions and complete values remain available for inspection.",
+  "avoidWhen": "An unordered set needs precise rank comparisons, the category count exceeds eight identities or missing cells would be interpreted as zero.",
+  "alternatives": "Use BarChart for ranked magnitude, StatusStrip for interval history or a table when the cell values themselves are the primary task.",
+  "content": "Provide unique row and column names and a rectangular matrix; sequential data are finite numbers or null, while categorical identities use a stable domain.",
+  "anatomy": "A labelled matrix of cells shares a sequential ramp or categorical legend, a focused value readout and a complete native table.",
+  "composition": "In a consumer-owned capacity block, place Heatmap beside the meaning of each matrix dimension and its magnitude or identity legend.",
+  "accessibility": "Each cell exposes row, column and value in its name; arrow navigation and the native table retain access without colour matching."
+},
+{
+  "exportName": "Heatmap",
+  "entrypoint": "charts",
+  "notes": "Represented scalar options are a bounded source-checked selection; consult the public prop type and chart README for data, labels, callbacks and other supported props. No Cartesian combination support or consumer demonstration is implied. The categorical domain bounds identity encoding to eight entries. Controlled inspection uses row-major cell indices; the server export retains a static grid and native data table.",
+  "options": [
+    {
+      "prop": "categorical",
+      "label": "Encoding mode",
+      "purpose": "Choose a single-hue numeric magnitude ramp or stable categorical identity colours.",
+      "values": [
+        {
+          "value": false,
+          "purpose": "Map finite numeric magnitudes onto the seven-step sequential ramp."
+        },
+        {
+          "value": true,
+          "purpose": "Assign stable colours to at most eight distinct categorical identities."
+        }
+      ],
+      "applicability": "Sequential mode requires numbers or null; categorical mode accepts names or numbers within the declared identity domain.",
+      "support": {
+        "state": "implemented",
+        "reason": "The directly imported shared chart view consumes this implemented boolean; callers still author data and accessible labels."
+      }
+    }
+  ],
+  "constraints": [
+    {
+      "kind": "data",
+      "props": [
+        "rows",
+        "columns",
+        "values"
+      ],
+      "reason": "The matrix dimensions exactly match its unique nonblank row and column labels; null is a missing value rather than numeric zero.",
+      "enforcement": "runtime",
+      "evidence": {
+        "source": "src/charts/internal/signature-views.tsx",
+        "evidence": "Heatmap requires one value per row and column."
+      }
+    }
+  ]
+}, "src/charts/Heatmap.tsx"),
+  "depict.status-strip": entry(
+{
+  "purpose": "Show a compact chronological history of labelled states with widths proportional to their observed duration.",
+  "useWhen": "Uptime or program history consists of nonoverlapping intervals within a known observation window.",
+  "avoidWhen": "The task needs dependency editing or scheduling, interval bounds overlap or unobserved time would be presented as healthy operation.",
+  "alternatives": "Use RangeChart for authored activity intervals, LineChart for measured numeric trends or a table for detailed incident narratives.",
+  "content": "Author finite increasing bounds with ok, warn, error or unknown states; an optional full domain makes leading and trailing unknown periods explicit.",
+  "anatomy": "Chronological patterned segments share a time axis, a visible status legend, interval inspection and a gap-inclusive native table.",
+  "composition": "In a consumer-owned service-health block, place StatusStrip beside the observation window and the meaning of each operational state.",
+  "accessibility": "Every segment is named with its state and interval; distinct patterns, visible labels, keyboard inspection and table rows supplement colour."
+},
+{
+  "exportName": "StatusStrip",
+  "entrypoint": "charts",
+  "notes": "Represented scalar options are a bounded source-checked selection; consult the public prop type and chart README for data, labels, callbacks and other supported props. No Cartesian combination support or consumer demonstration is implied. No finite scalar configuration axis is represented for this interval-data component. Status keys belong to authored segment data. The server export retains the same chronological intervals, patterns and native table.",
+  "options": [],
+  "constraints": [
+    {
+      "kind": "data",
+      "props": [
+        "segments",
+        "domain"
+      ],
+      "reason": "Intervals must be finite, forward and nonoverlapping inside the observation domain; uncovered intervals are derived unknown segments.",
+      "enforcement": "runtime",
+      "evidence": {
+        "source": "src/charts/internal/signature-geometry.ts",
+        "evidence": "StatusStrip intervals overlap or fall outside the domain."
+      }
+    }
+  ]
+}, "src/charts/StatusStrip.tsx"),
   "enter.resize-handle": entry({
     purpose: "Adjust the bounded size of one adjacent content pane.",
     useWhen: "A host exposes a user-adjustable inline width or block height.",
@@ -3468,7 +3682,7 @@ export const ATOM_API_FACTS: Readonly<Record<string, AtomApiFacts>> = {
           "evidence": "--color-status-danger-text:",
           "via": [
             {
-              "source": "src/atoms/Banner.tsx",
+              "source": "src/atoms/Banner.server.tsx",
               "evidence": "text-status-danger-text"
             }
           ]
@@ -3578,7 +3792,7 @@ export const ATOM_API_FACTS: Readonly<Record<string, AtomApiFacts>> = {
           "reason": "Required by the prop type; no package default is supplied."
         },
         "forwarding": {
-          "source": "src/atoms/Meter.tsx",
+          "source": "src/atoms/Meter.server.tsx",
           "evidence": "FILL_CLASSES[tone]"
         }
       },
@@ -3591,11 +3805,11 @@ export const ATOM_API_FACTS: Readonly<Record<string, AtomApiFacts>> = {
         "default": {
           "kind": "value",
           "value": "max",
-          "source": "src/atoms/Meter.tsx",
+          "source": "src/atoms/Meter.server.tsx",
           "evidence": "direction = \"max\""
         },
         "forwarding": {
-          "source": "src/atoms/Meter.tsx",
+          "source": "src/atoms/Meter.server.tsx",
           "evidence": "direction === \"max\""
         }
       },
@@ -3628,7 +3842,7 @@ export const ATOM_API_FACTS: Readonly<Record<string, AtomApiFacts>> = {
           "evidence": "var(--ui-border-rule,",
           "via": [
             {
-              "source": "src/atoms/Meter.tsx",
+              "source": "src/atoms/Meter.server.tsx",
               "evidence": "inset 0 0 0 ${UI_BORDER_RULE} currentColor"
             }
           ]
@@ -3693,7 +3907,7 @@ export const ATOM_API_FACTS: Readonly<Record<string, AtomApiFacts>> = {
           "evidence": "size = \"md\""
         },
         "forwarding": {
-          "source": "src/atoms/Spinner.tsx",
+          "source": "src/atoms/Spinner.server.tsx",
           "evidence": "SIZE_CLASSES[size]"
         }
       }
@@ -3819,6 +4033,16 @@ export const ATOM_API_FACTS: Readonly<Record<string, AtomApiFacts>> = {
       ]
     }
   },
+  "group.grid-list": {
+    exportName: "GridList", source: "src/atoms/GridList.tsx", options: [],
+    tokens: {
+      coverage: "partial", reason: "Representative row state dependencies; checkbox styling is composed from the existing atom.",
+      dependencies: [
+        { property: "--ui-layout-tap-target", kind: "transitive", source: "src/atoms/internal/ui-vars.ts", evidence: "--ui-layout-tap-target", via: [{ source: "src/atoms/GridList.tsx", evidence: "minBlockSize: UI_LAYOUT_TAP_TARGET" }] },
+        { property: "--ui-ring-focus", kind: "transitive", source: "src/atoms/internal/ui-vars.ts", evidence: "--ui-ring-focus", via: [{ source: "src/atoms/GridList.tsx", evidence: "UI_RING_FOCUS" }] }
+      ]
+    }
+  },
   "group.table": {
     "exportName": "Table",
     "source": "src/atoms/Table.tsx",
@@ -3916,6 +4140,17 @@ export const ATOM_API_FACTS: Readonly<Record<string, AtomApiFacts>> = {
         }
       ]
     }
+  },
+  "depict.logomark": {
+    exportName: "Logomark", source: "src/atoms/Logomark.tsx",
+    options: [
+      { prop: "size", values: ["sm", "md", "lg"], default: { kind: "required", reason: "The caller selects the required height scale." }, forwarding: { source: "src/atoms/Logomark.tsx", evidence: "HEIGHTS[size]" } },
+      { prop: "tone", values: ["auto", "inverse"], default: { kind: "value", value: "auto", source: "src/atoms/Logomark.tsx", evidence: 'tone = "auto"' }, forwarding: { source: "src/atoms/Logomark.tsx", evidence: 'tone === "inverse"' } },
+      { prop: "plate", values: ["shared", "self"], default: { kind: "value", value: "self", source: "src/atoms/Logomark.tsx", evidence: 'plate = "self"' }, forwarding: { source: "src/atoms/Logomark.tsx", evidence: 'plate !== "shared"' } },
+    ],
+    tokens: { coverage: "partial", reason: "The height binding is representative; plate ink uses the existing primary or inverse ink utilities.", dependencies: [
+      { property: "--ui-brandmark-height-md", kind: "transitive", source: "src/internal/brandmark.ts", evidence: '"var(--ui-brandmark-height-md, 36px)"', via: [{ source: "src/atoms/Logomark.tsx", evidence: "HEIGHTS[size]" }] },
+    ] },
   },
   "depict.avatar": {
     "exportName": "Avatar",
@@ -4424,6 +4659,140 @@ export const ATOM_API_FACTS: Readonly<Record<string, AtomApiFacts>> = {
         }
       ]
     }
+  },
+  "depict.area-chart": {
+    "exportName": "AreaChart",
+    "source": "src/charts/AreaChart.tsx",
+    "options": [
+      {
+        "prop": "normalized",
+        "values": [
+          false,
+          true
+        ],
+        "default": {
+          "kind": "value",
+          "value": false,
+          "source": "src/charts/internal/signature-views.tsx",
+          "evidence": "normalized = false"
+        },
+        "forwarding": {
+          "source": "src/charts/internal/signature-views.tsx",
+          "evidence": "normalized = false"
+        }
+      },
+      {
+        "prop": "smooth",
+        "values": [
+          false,
+          true
+        ],
+        "default": {
+          "kind": "value",
+          "value": false,
+          "source": "src/charts/internal/signature-views.tsx",
+          "evidence": "smooth = false"
+        },
+        "forwarding": {
+          "source": "src/charts/internal/signature-views.tsx",
+          "evidence": "smooth = false"
+        }
+      }
+    ],
+    "tokens": {
+      "coverage": "partial",
+      "reason": "One representative chart colour binding is recorded with its actual helper and view consumption; this is not an exhaustive token inventory.",
+      "dependencies": [
+        {
+          "property": "--color-chart-categorical-1",
+          "kind": "transitive",
+          "source": "src/charts/internal/chart-vars.ts",
+          "evidence": "TOKENS[\"--color-chart-categorical-1\"]",
+          "via": [
+            {
+              "source": "src/charts/internal/signature-views.tsx",
+              "evidence": "fill={resolveSeriesColor("
+            },
+            {
+              "source": "src/charts/AreaChart.tsx",
+              "evidence": "<AreaView"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "depict.heatmap": {
+    "exportName": "Heatmap",
+    "source": "src/charts/Heatmap.tsx",
+    "options": [
+      {
+        "prop": "categorical",
+        "values": [
+          false,
+          true
+        ],
+        "default": {
+          "kind": "value",
+          "value": false,
+          "source": "src/charts/internal/signature-views.tsx",
+          "evidence": "categorical = false"
+        },
+        "forwarding": {
+          "source": "src/charts/internal/signature-views.tsx",
+          "evidence": "categorical = false"
+        }
+      }
+    ],
+    "tokens": {
+      "coverage": "partial",
+      "reason": "One representative chart colour binding is recorded with its actual helper and view consumption; this is not an exhaustive token inventory.",
+      "dependencies": [
+        {
+          "property": "--color-chart-sequential-100",
+          "kind": "transitive",
+          "source": "src/charts/internal/chart-vars.ts",
+          "evidence": "TOKENS[\"--color-chart-sequential-100\"]",
+          "via": [
+            {
+              "source": "src/charts/internal/signature-views.tsx",
+              "evidence": "chartSequentialVar("
+            },
+            {
+              "source": "src/charts/Heatmap.tsx",
+              "evidence": "<HeatmapView"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "depict.status-strip": {
+    "exportName": "StatusStrip",
+    "source": "src/charts/StatusStrip.tsx",
+    "options": [],
+    "tokens": {
+      "coverage": "partial",
+      "reason": "One representative chart colour binding is recorded with its actual helper and view consumption; this is not an exhaustive token inventory.",
+      "dependencies": [
+        {
+          "property": "--color-chart-categorical-1",
+          "kind": "transitive",
+          "source": "src/charts/internal/chart-vars.ts",
+          "evidence": "TOKENS[\"--color-chart-categorical-1\"]",
+          "via": [
+            {
+              "source": "src/charts/internal/signature-views.tsx",
+              "evidence": "fill={assignCategoricalColor(index)}"
+            },
+            {
+              "source": "src/charts/StatusStrip.tsx",
+              "evidence": "<StatusView"
+            }
+          ]
+        }
+      ]
+    }
   }
 };
 
@@ -4482,7 +4851,8 @@ export const ATOM_DISPLAY_GROUPS: readonly AtomDisplayGroup[] = [
           "inform.badge",
           "inform.chip",
           "inform.meter",
-          "group.table"
+          "group.table",
+          "group.grid-list"
         ]
       },
       {
@@ -4490,7 +4860,8 @@ export const ATOM_DISPLAY_GROUPS: readonly AtomDisplayGroup[] = [
         "label": "Imagery",
         "atoms": [
           "depict.avatar",
-          "depict.icon"
+          "depict.icon",
+          "depict.logomark"
         ]
       },
       {
@@ -4502,7 +4873,10 @@ export const ATOM_DISPLAY_GROUPS: readonly AtomDisplayGroup[] = [
           "depict.sparkline",
           "depict.waterfall-chart",
           "depict.range-chart",
-          "depict.scatter-chart"
+          "depict.scatter-chart",
+          "depict.area-chart",
+          "depict.heatmap",
+          "depict.status-strip"
         ]
       }
     ]
@@ -4620,6 +4994,7 @@ export const ATOM_COMPARISON = Object.freeze({
   "group.separator": comparison("group.separator", "orientation", "decorative"),
   "depict.avatar": comparison("depict.avatar", "size"),
   "depict.icon": comparison("depict.icon", "size"),
+  "depict.logomark": comparison("depict.logomark", "plate", "size"),
   "reveal.dialog": comparison("reveal.dialog", "size", "isDismissable"),
   "reveal.tooltip": comparison("reveal.tooltip", "triggerAction"),
   "reveal.tabs": comparison("reveal.tabs", "orientation", "isDisabled"),
@@ -4627,4 +5002,6 @@ export const ATOM_COMPARISON = Object.freeze({
   "depict.waterfall-chart": comparison("depict.waterfall-chart", "fit"),
   "depict.range-chart": comparison("depict.range-chart", "fit"),
   "depict.scatter-chart": comparison("depict.scatter-chart", "fit"),
+  "depict.area-chart": comparison("depict.area-chart", "normalized", "smooth"),
+  "depict.heatmap": comparison("depict.heatmap", "categorical"),
 });

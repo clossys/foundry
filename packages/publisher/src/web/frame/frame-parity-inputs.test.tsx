@@ -35,9 +35,9 @@ function output(element: ReactElement, mode: "server" | "client"): HTMLElement {
 afterEach(cleanup);
 
 const defaults = {
-  reserved: { ...base, header: { placement: "reserved" } },
-  inverse: { ...base, header: { placement: "overlay", tone: "inverse" } },
-  "overlay-footer": { ...base, header: { placement: "overlay", tone: "inverse" }, footer: { placement: "overlay", ground: "inverse", legal } },
+  reserved: { ...base, header: { surface: "solid" } },
+  inverse: { ...base, header: { surface: "glass", tone: "inverse" } },
+  "overlay-footer": { ...base, header: { surface: "glass", tone: "inverse" }, footer: { placement: "overlay", ground: "inverse", legal } },
 } satisfies Record<string, SiteShellInput>;
 
 for (const mode of ["server", "client"] as const) {
@@ -85,16 +85,15 @@ for (const mode of ["server", "client"] as const) {
     }
   });
 
-  it(`forwards navigation tone and retains inherited omission: ${mode}`, () => {
-    const shell = { ...base, nav: { ...nav, tone: "inverse" } } as SiteShellInput;
-    const toggle = output(frame(shell), mode).querySelector("header button")!;
-    expect(toggle).toHaveAttribute("data-tone", "inverse");
-    expect(toggle).toHaveClass("text-ink-on-inverse", "hover:text-ink-on-inverse", "aria-expanded:text-ink-on-inverse", "focus-visible:text-ink-on-inverse", "focus-visible:outline-ink-on-inverse", "hover:bg-control-tonal-inverse-hover");
-    expect(toggle).not.toHaveClass("text-ink-primary", "hover:bg-surface-sunken", "focus-visible:outline-accent");
-    const explicit = output(frame({ ...defaults.inverse, nav: { ...nav, tone: "auto" } } as SiteShellInput), mode).querySelector("header button")!;
-    expect(explicit).toHaveAttribute("data-tone", "auto");
-    expect(explicit).toHaveClass("text-ink-primary", "focus-visible:outline-accent");
-    expect(output(frame({ ...defaults.inverse, nav }), mode).querySelector("header button")).not.toHaveAttribute("data-tone");
+  it(`inherits the header ink for icon navigation: ${mode}`, () => {
+    for (const surface of ["solid", "transparent", "glass"] as const) {
+      const root = output(frame({ ...base, header: { surface, tone: "inverse" }, nav }), mode);
+      expect(root.querySelector("header")).toHaveClass("text-ink-on-inverse");
+      expect(root.querySelector("header button")).not.toHaveAttribute("data-tone");
+      expect(root.querySelector("header button")).toHaveAttribute("aria-label", "Menu");
+      expect(root.querySelector("header button .nav-disclosure-icon")).toHaveAttribute("aria-hidden", "true");
+      expect(root.querySelectorAll("header button .nav-disclosure-icon > span")).toHaveLength(2);
+    }
   });
 
   it(`composes the exact home shape: ${mode}`, () => {
@@ -125,7 +124,7 @@ for (const mode of ["server", "client"] as const) {
     const footer = root.querySelector("footer")!;
     expect(footer).toHaveClass("border-t", "border-line-base");
     expect(footer).not.toHaveClass("bg-surface-base", "bg-surface-inverse");
-    expect([...footer.querySelectorAll("a")].map(a => a.textContent)).toEqual(["Privacy", "Terms"]);
+    expect([...footer.querySelectorAll("a")].map(a => a.getAttribute("aria-label") ?? a.textContent)).toEqual(["Privacy", "Terms", "Example home"]);
     expect(footer.querySelector(".border-t")).toBeNull();
     expect(root.querySelector("[data-frame-footer-overlay]")).toBeNull();
   });
@@ -145,7 +144,7 @@ it.each([
   ["shell.actions[0].emphasis", { ...base, actions: [{ ...base.actions![0], emphasis: "PAYLOAD-SENTINEL" }] }],
   ["shell.brand.tone", { ...base, brand: { ...brand, tone: "PAYLOAD-SENTINEL" } }],
   ["shell.brand.markInk", { ...base, brand: { ...brand, markInk: "PAYLOAD-SENTINEL" } }],
-  ["shell.nav.tone", { ...base, nav: { ...nav, tone: "PAYLOAD-SENTINEL" } }],
+  ["shell.nav", { ...base, nav: { ...nav, tone: "PAYLOAD-SENTINEL" } }],
   ["shell.footer.rule", { ...base, footer: { legal, rule: "PAYLOAD-SENTINEL" } }],
 ])("refuses invalid %s without echoing its value", (path, shell) => {
   expect(() => resolveShell(shell as SiteShellInput, resolveCopy, resolveAsset)).toThrow(path);

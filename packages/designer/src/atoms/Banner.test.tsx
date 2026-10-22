@@ -42,6 +42,21 @@ describe("Banner", () => {
     expect(onDismiss).toHaveBeenCalledTimes(1);
   });
 
+  it("is react-aria-components' Button: it carries the data-rac marker and fires onDismiss from the keyboard", async () => {
+    const onDismiss = vi.fn();
+    const user = userEvent.setup();
+    render(<Banner onDismiss={onDismiss}>Dismiss me.</Banner>);
+    const button = screen.getByRole("button", { name: "Dismiss" });
+    expect(button).toHaveAttribute("data-rac");
+    expect(button).toHaveAttribute("type", "button");
+    await user.tab();
+    expect(button).toHaveFocus();
+    await user.keyboard("{Enter}");
+    expect(onDismiss).toHaveBeenCalledTimes(1);
+    await user.keyboard(" ");
+    expect(onDismiss).toHaveBeenCalledTimes(2);
+  });
+
   it("does not remove itself from the DOM on dismiss — the caller owns that decision", async () => {
     const user = userEvent.setup();
     render(<Banner onDismiss={() => {}}>Still here.</Banner>);

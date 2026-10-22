@@ -419,6 +419,27 @@
   }
 }
 
+/* All header surfaces share ink; transparent controls reveal their own header surface. */
+@utility site-header-ink {
+  --site-header-action-hover: var(--color-surface-raised, oklch(1 0 0));
+  --site-header-focus: var(--color-ink-primary, oklch(0.2178 0 0));
+  &[data-tone="inverse"] {
+    --site-header-action-hover: var(--color-surface-inverse, oklch(0.2178 0 0));
+    --site-header-focus: var(--color-ink-on-inverse, oklch(0.9702 0 0));
+  }
+  & .site-header-brand > a.text-inherit { color: inherit; }
+  & [data-header-action-ghost],
+  & .nav-disclosure-toggle:not([data-tone]) {
+    color: inherit;
+    background-color: transparent;
+    &:hover, &:focus-visible {
+      color: inherit;
+      background-color: var(--site-header-action-hover, var(--color-surface-raised, oklch(1 0 0)));
+    }
+  }
+  & :focus-visible { outline-color: var(--site-header-focus, var(--color-ink-primary, oklch(0.2178 0 0))); }
+}
+
 @utility site-header-overlay {
   --site-header-glass-fill: var(--color-surface-glass, oklch(1 0 0 / 0.6));
   --site-header-glass-line: var(--color-line-base, oklch(0.8761 0 0));
@@ -759,6 +780,11 @@
 }
 }
 @utility site-header-row { min-block-size: max(var(--ui-layout-tap-target, 44px), var(--ui-brandmark-height-lg, 48px)); display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: var(--spacing-md, 12px); padding-inline: max(var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px)), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px)); }
+@utility site-header-leading {
+  @media (width >= 768px) {
+    &:not([data-collapsed]) .site-header-row { grid-template-columns: auto minmax(0, 1fr) auto; }
+  }
+}
 @utility site-header-brand { grid-column: 1; grid-row: 1; min-inline-size: 0; }
 @utility site-header-actions { display: flex; grid-column: 3; grid-row: 1; justify-content: end; gap: var(--spacing-sm, 8px); flex-wrap: wrap; overflow-wrap: anywhere; }
 @utility site-header-mobile {
@@ -815,6 +841,127 @@
   [data-frame-root] > header.site-header-contract { position: relative !important; }
   [data-frame-root]:has(> header[data-placement="overlay"]) { padding-block-start: 0; }
 }
+}
+
+/* Footer paint is local: the page's dark theme reverses semantic polarity,
+ * so select its dark base roles instead of the now-light inverse plate. */
+@utility site-footer-dark {
+  &[data-footer-root] {
+    --site-footer-surface: var(--color-surface-inverse, oklch(0.2178 0 0));
+    --site-footer-ink: var(--color-ink-on-inverse, oklch(0.9702 0 0));
+    --site-footer-muted: var(--color-ink-on-inverse-muted, oklch(0.7763 0 0));
+    background-color: var(--site-footer-surface, var(--color-surface-inverse, oklch(0.2178 0 0)));
+    color: var(--site-footer-ink, var(--color-ink-on-inverse, oklch(0.9702 0 0)));
+    color-scheme: dark;
+    container-type: inline-size;
+    padding-bottom: max(var(--spacing-lg, 16px), env(safe-area-inset-bottom, 0px));
+  }
+  &[data-footer-root] > div {
+    /* Override the inline token fallback while keeping both tracks symmetric. */
+    padding-inline: max(var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px)), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px)) !important;
+  }
+  :root[data-theme="dark"] &[data-footer-root] {
+    --site-footer-surface: var(--color-surface-base, oklch(0.19 0 0));
+    --site-footer-ink: var(--color-ink-primary, oklch(0.97 0 0));
+    --site-footer-muted: var(--color-ink-secondary, oklch(0.82 0 0));
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) &[data-footer-root] {
+      --site-footer-surface: var(--color-surface-base, oklch(0.19 0 0));
+      --site-footer-ink: var(--color-ink-primary, oklch(0.97 0 0));
+      --site-footer-muted: var(--color-ink-secondary, oklch(0.82 0 0));
+    }
+  }
+  &[data-footer-root] > div > .text-body-s,
+  &[data-footer-root] [data-footer-region="copyright"] { color: var(--site-footer-muted, var(--color-ink-on-inverse-muted, oklch(0.7763 0 0))); }
+  &[data-footer-root] a,
+  &[data-footer-root] a:visited,
+  &[data-footer-root] a:hover,
+  &[data-footer-root] a:active {
+    color: var(--site-footer-ink, var(--color-ink-on-inverse, oklch(0.9702 0 0)));
+    min-width: var(--ui-layout-tap-target, 44px);
+    min-height: var(--ui-layout-tap-target, 44px);
+  }
+  &[data-footer-root] a:hover { text-decoration-line: underline; }
+  &[data-footer-root] :focus-visible {
+    outline: var(--ui-border-rule, 2px) solid var(--site-footer-ink, var(--color-ink-on-inverse, oklch(0.9702 0 0)));
+    outline-offset: var(--ui-border-rule, 2px);
+  }
+  @media (forced-colors: active) {
+    &[data-footer-root] { background-color: Canvas; color: CanvasText; }
+    &[data-footer-root] a { color: LinkText; }
+    &[data-footer-root] :focus-visible { outline-color: Highlight; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    &[data-footer-root] a { transition: none; animation: none; }
+  }
+}
+
+/* Footer columns and legal row switch on one source: the footer's own
+ * inline size (container-type above), at the theme's tablet and desktop
+ * breakpoint values, so the two can never disagree at a given width. */
+@utility site-footer-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--spacing-lg, 16px);
+  /* Uneven columns top-align on one grid. */
+  align-items: start;
+  /* Group labels read as muted labels, distinct from the bright links. */
+  & h2 {
+    margin: 0;
+    color: var(--site-footer-muted, var(--color-ink-on-inverse-muted, oklch(0.7763 0 0)));
+  }
+  /* Link text starts on the label's edge; the 44px target extends inward. */
+  & a {
+    padding-inline: 0;
+    justify-content: flex-start;
+  }
+  @container (min-width: 768px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  @container (min-width: 1280px) {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@utility site-footer-composition {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--spacing-sm, 8px) var(--spacing-lg, 16px);
+  text-align: center;
+  /* Phone order is DOM order (links, icons, copyright), each centred on both
+   * axes; max-width keeps a long word wrapping inside a centred region. */
+  justify-items: center;
+  & > * { min-width: 0; max-width: 100%; overflow-wrap: break-word; }
+  & [data-footer-region="links"] li { min-width: 0; max-width: 100%; }
+  & [data-footer-region="links"] a { display: grid; grid-template-columns: minmax(0, 1fr); max-width: 100%; }
+  /* An empty region takes no row and adds no gap. */
+  & > [data-footer-region="links"]:not(:has(li)),
+  & > [data-footer-region="icons"]:not(:has(li)) { display: none; }
+  /* 8px between links and icons, 12px before the copyright. */
+  & > [data-footer-region="copyright"] { padding-block-start: var(--spacing-xs, 4px); }
+  & img, & svg { max-width: 100%; object-fit: contain; }
+  & [data-footer-region="icons"] li { max-width: 100%; min-width: 0; }
+  & [data-footer-region="icons"] a { max-width: 100%; }
+  & [data-footer-region="icons"] svg { max-width: var(--ui-layout-tap-target, 44px); max-height: var(--ui-layout-tap-target, 44px); }
+  /* Grid areas and flex-end are logical: in a right-to-left document the
+   * copyright starts on the right and home ends on the left. */
+  @container (min-width: 1280px) {
+    grid-template-areas: "copyright links icons";
+    /* Equal bounded side tracks keep the links on the whole-footer centre.
+     * Uncapped profiles wrap within their end track before any collision. */
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr);
+    align-items: center;
+    justify-items: stretch;
+    & > [data-footer-region="links"] { grid-area: links; }
+    & > [data-footer-region="icons"] { grid-area: icons; }
+    & > [data-footer-region="copyright"] { grid-area: copyright; text-align: start; padding-block-start: 0; }
+    & > [data-footer-region="icons"] > ul { justify-content: flex-end; flex-wrap: wrap; }
+    /* The tap target extends inward so the end art meets the page gutter. */
+    & > [data-footer-region="icons"] li:last-child > a { justify-content: flex-end; padding-inline-end: 0; }
+  }
 }
 
 /* Consent's pinned card; the in-flow banner and header keep their own rules.

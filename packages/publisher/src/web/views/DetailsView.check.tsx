@@ -2,9 +2,9 @@
 import { DetailsView, type DetailsViewBlock, type DetailsViewLayout, type DetailsViewProps, type DetailsViewSection, type DetailsViewSectionState } from "./DetailsView.js";
 
 const section: DetailsViewSection = { id: "identity", title: "Identity", block: { kind: "detail", props: { fields: [{ label: "Identifier", value: "one" }] } } };
-const common = { title: "Record one", subtitle: "Record details.", index: { href: "/records", label: "Records" }, empty: { title: "No sections" } };
+const common = { empty: { title: "No sections" } };
 export const plain = <DetailsView {...common} sections={[section]} />;
-export const withBanner = <DetailsView {...common} sections={[section]} layout="main-aside" banner={null} actions={null} />;
+export const withBanner = <DetailsView {...common} sections={[section]} layout="main-aside" banner={null} />;
 export const tabbed = <DetailsView {...common} tabsLabel="Record sections" tabs={[{ id: "overview", label: "Overview", sections: [section] }]} tab="overview" onTabChange={id => { void id; }} />;
 export const panel: DetailsViewBlock = { kind: "panel", props: { children: "Summary" } };
 export const narrow: DetailsViewSection = { ...section, region: "aside", state: { kind: "loading", label: "Loading identity" } };
@@ -23,8 +23,7 @@ export const uncontrolled = <DetailsView {...common} tabsLabel="Record sections"
 export const silentTabs = <DetailsView {...common} tabsLabel="Record sections" tabs={[]} tab="overview" />;
 // @ts-expect-error sections belong either to tabs or to the untabbed View
 export const outsideTabs = <DetailsView {...common} sections={[section]} tabsLabel="Record sections" tabs={[]} tab="overview" onTabChange={() => {}} />;
-// @ts-expect-error DetailsView requires its breadcrumb back to the Index
-export const noIndex = <DetailsView title="Record one" empty={{ title: "No sections" }} sections={[]} />;
+export const contentOnly = <DetailsView empty={{ title: "No sections" }} sections={[]} />;
 // @ts-expect-error DetailsView cannot own frame chrome
 export const ownChrome = <DetailsView {...common} sections={[]} nav={<nav />} />;
 // @ts-expect-error arbitrary page children bypass the Block composition
@@ -57,3 +56,26 @@ export type DetailsEntryParity = [
   import("../server.js").DetailsViewProps,
 ];
 export const props: DetailsViewProps = { ...common, sections: [section] };
+
+// @ts-expect-error page titles belong in AppFrame page
+export const pageTitle = <DetailsView {...common} sections={[]} title="Record one" />;
+// @ts-expect-error page descriptions belong in AppFrame page
+export const pageSubtitle = <DetailsView {...common} sections={[]} subtitle="Record details" />;
+// @ts-expect-error page actions belong in AppFrame page
+export const pageActions = <DetailsView {...common} sections={[]} actions={null} />;
+// @ts-expect-error page breadcrumbs belong in AppFrame page
+export const pageIndex = <DetailsView {...common} sections={[]} index={{ href: "/records", label: "Records" }} />;
+// @ts-expect-error tab naming is explicit and required
+export const unnamedTabs = <DetailsView {...common} tabs={[]} tab="overview" onTabChange={() => {}} />;
+// @ts-expect-error the page breadcrumb type is outside this content contract
+export type RemovedPageIndex = import("./DetailsView.js").DetailsViewIndex;
+
+type Assert<T extends true> = T;
+type NoPageProps<T> = Extract<keyof T, "title" | "subtitle" | "actions" | "index"> extends never ? true : false;
+export type ContentOnlyDetailsEntries = [
+  Assert<NoPageProps<import("./index.js").DetailsViewProps>>,
+  Assert<NoPageProps<import("./server.js").DetailsViewProps>>,
+  Assert<NoPageProps<import("../index.js").DetailsViewProps>>,
+  Assert<NoPageProps<import("../client.js").DetailsViewProps>>,
+  Assert<NoPageProps<import("../server.js").DetailsViewProps>>,
+];

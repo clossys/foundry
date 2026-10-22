@@ -1,10 +1,10 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import type { CopyRef, CopyResolver } from "@clossys/writer";
 import { mergeUiClasses } from "@clossys/designer/atoms/server";
-import { ArticleBody, PageHeader } from "@clossys/designer/blocks/server";
+import { ArticleBody, DetailView, PageHeader } from "@clossys/designer/blocks/server";
 import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
 import { assertViewContentRoot } from "../internal/viewContentRoot.js";
-import type { SiteChromeGround } from "../internal/viewChromeGround.js";
+import { siteHeaderPresentation, type SiteChromeGround } from "../internal/viewChromeGround.js";
 import { PAGE_COLUMN_CLASSES, PageLayout, pageColumnStyle } from "../internal/PageLayout.js";
 import { renderViewLinks, type ViewLinksInput } from "../internal/ViewLinks.js";
 import { RenderError } from "../../internal/errors.js";
@@ -202,20 +202,18 @@ export function LegalView({
   const references = renderViewLinks(related, "LegalView");
 
   const dates = (
-    <dl className="flex flex-col gap-xs text-body-s text-ink-secondary">
-      <div className="flex flex-wrap gap-sm">
-        <dt>{effectiveLabel}</dt>
-        <dd>
-          <time dateTime={legal.effectiveDate}>{formatDate(formatter, legal.effectiveDate)}</time>
-        </dd>
-      </div>
-      <div className="flex flex-wrap gap-sm">
-        <dt>{updatedLabel}</dt>
-        <dd>
-          <time dateTime={legal.lastUpdated}>{formatDate(formatter, legal.lastUpdated)}</time>
-        </dd>
-      </div>
-    </dl>
+    <DetailView
+      fields={[
+        {
+          label: effectiveLabel,
+          value: <time dateTime={legal.effectiveDate}>{formatDate(formatter, legal.effectiveDate)}</time>,
+        },
+        {
+          label: updatedLabel,
+          value: <time dateTime={legal.lastUpdated}>{formatDate(formatter, legal.lastUpdated)}</time>,
+        },
+      ]}
+    />
   );
 
   if (framed) {
@@ -252,7 +250,7 @@ export function LegalView({
 
   return (
     <div {...rest} className={mergeUiClasses("flex min-h-dvh flex-col", className)} style={style}>
-      <SiteHeader ground={ground === undefined ? "base" : ground} brand={brand} nav={nav} secondaryAction={secondaryAction} actions={headerAction} />
+      <SiteHeader {...siteHeaderPresentation(ground)} brand={brand} nav={nav} actions={<>{secondaryAction}{headerAction}</>} />
       <main className={PAGE_COLUMN_CLASSES} style={pageColumnStyle("prose")}>
         {content}
       </main>

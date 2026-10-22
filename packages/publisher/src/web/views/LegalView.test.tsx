@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { renderToStaticMarkup } from "react-dom/server";
-import { Item, Items } from "@clossys/designer/blocks/server";
+import { DetailView, Item, Items } from "@clossys/designer/blocks/server";
 import { describe, expect, it, vi } from "vitest";
 import type { CopyRegistry, CopyResolver } from "@clossys/writer";
 import { createCopyResolver } from "@clossys/writer";
@@ -118,6 +118,13 @@ function formatted(locale: string, y: number, m: number, d: number): string {
   return new Intl.DateTimeFormat(locale, { dateStyle: "long", timeZone: "UTC" }).format(new Date(Date.UTC(y, m - 1, d)));
 }
 
+function dateDetails(locale: string): string {
+  return renderToStaticMarkup(<DetailView fields={[
+    { label: "Placeholder label effective", value: <time dateTime="2026-01-15">{formatted(locale, 2026, 1, 15)}</time> },
+    { label: "Placeholder label updated", value: <time dateTime="2026-02-01">{formatted(locale, 2026, 2, 1)}</time> },
+  ]} />);
+}
+
 describe.each(["self-chromed", "framed"] as const)("LegalView %s path", (mode) => {
   const shell: SiteShellInput = {
     brand: { assetId: "placeholder-mark", label: LABELS.effectiveDate, size: "md", variant: "mark" },
@@ -217,7 +224,8 @@ describe("LegalView draft marker", () => {
       expect(aside![1]).toContain("Placeholder fact A");
       expect(aside![1]).toContain("Placeholder fact B");
       expect((aside![1]!.match(/<li/g) ?? []).length).toBe(2);
-      expect(html.indexOf('role="note"')).toBeLessThan(html.indexOf("<section"));
+      // DetailView adds an earlier section; the draft note still precedes every document section.
+      expect(html.indexOf('role="note"')).toBeLessThan(html.indexOf("<section id="));
     });
 
     it("throws when a fact does not resolve", () => {
@@ -292,6 +300,18 @@ describe("LegalView sections", () => {
 });
 
 describe("LegalView dates", () => {
+  it("retains zero-string date labels with both ordered time values", () => {
+    const zeroLabels: CopyResolver = (r) => r.id === LABELS.effectiveDate.id || r.id === LABELS.lastUpdated.id
+      ? { ...resolver(r)!, text: "0" } : resolver(r);
+    const html = render(legalDoc("terms"), { resolveCopyId: zeroLabels });
+    expect([...html.matchAll(/<dt\b[^>]*>([^<]*)<\/dt>/g)].map((match) => match[1])).toEqual(["0", "0"]);
+    expect([...html.matchAll(/<time dateTime="([^"]+)"/g)].map((match) => match[1])).toEqual(["2026-01-15", "2026-02-01"]);
+  });
+
+  it("renders the real title-less DetailView with localized time values", () => {
+    expect(render(legalDoc("terms"), { locale: "de" })).toContain(dateDetails("de"));
+  });
+
   for (const locale of ["en", "de"]) {
     it(`renders both dates as <time> with UTC-safe ${locale} text and resolved labels`, () => {
       const html = render(legalDoc("terms"), { locale });
@@ -447,7 +467,7 @@ if (mode === "self-chromed") describe("LegalView header slots", () => {
 
   it("passes ground to both the header and the footer", () => {
     const html = view({ ground: "transparent" });
-    expect(banner(html)).toBe(renderToStaticMarkup(<SiteHeader ground="transparent" brand="Acme" />));
+    expect(banner(html)).toBe(renderToStaticMarkup(<SiteHeader surface="transparent" brand="Acme" />));
     expect(footer(html)).toBe(renderToStaticMarkup(<SiteFooter ground="transparent" />));
   });
 });
@@ -495,15 +515,20 @@ describe("LegalView related references", () => {
     const baseline = readFileSync(resolve(import.meta.dirname, "__fixtures__/legal-view-before-related-terms.html"), "utf8");
     expect(baseline.length).toBeGreaterThan(0);
     const html = render(legalDoc("terms"));
+    // Only the dates migrate to DetailView; retain the historical fixture's complete remaining bytes.
+    const migratedBaseline = baseline.replace(/<dl\b[\s\S]*?<\/dl>/, dateDetails("en"));
     if (mode === "self-chromed") {
-      expect(html).toBe(baseline);
+      expect(html).toContain('data-surface="solid" data-tone="base"');
+      // Only the new header opening is projected; all body/footer bytes retain the recorded fixture.
+      const legacyHeaderProjection = html.replace(/<header\b[^>]*>/, '<header data-header-root="" class="bg-surface-raised py-sm border-b border-line-base site-header-contract" style="position:relative;z-index:var(--ui-z-shell, 20);border-bottom-width:var(--ui-border-hairline, 1px)">');
+      expect(legacyHeaderProjection).toBe(migratedBaseline);
       return;
     }
     // The framed page moved to the shared page layout on purpose (see "shared page layout" below), so its bytes differ from the
     // pre-layout baseline; the title, dates and article body inside it are the same.
     const part = (value: string, pattern: RegExp) => pattern.exec(value)?.[0];
     expect(part(html, /<article\b[\s\S]*<\/article>/)).toBe(part(baseline, /<article\b[\s\S]*<\/article>/));
-    expect(part(html, /<dl\b[\s\S]*<\/dl>/)).toBe(part(baseline, /<dl\b[\s\S]*<\/dl>/));
+    expect(part(html, /<dl\b[\s\S]*<\/dl>/)).toBe(part(migratedBaseline, /<dl\b[\s\S]*<\/dl>/));
     expect(part(html, /<h1\b[^>]*>[^<]*<\/h1>/)?.replace(/<h1[^>]*>/, "")).toBe(part(baseline, /<h1\b[^>]*>[^<]*<\/h1>/)?.replace(/<h1[^>]*>/, ""));
   });
   it("omits the region for omitted, explicit undefined and empty related input", () => {
@@ -626,7 +651,8 @@ describe("LegalView related references", () => {
       expect(html.indexOf(marker)).toBeGreaterThan(-1);
       expect(html.indexOf(marker)).toBeLessThan(html.indexOf(section.markup));
     }
-    if (mode === "self-chromed") expect(html.indexOf('role="note"')).toBeLessThan(html.indexOf("<section"));
+    // DetailView is a section too; retain ordering against the document sections.
+    if (mode === "self-chromed") expect(html.indexOf('role="note"')).toBeLessThan(html.indexOf("<section id="));
   });
   it("still refuses invalid legal content and unresolved labels with related present", () => {
     expect(() => render(legalDoc("terms", { legal: { effectiveDate: "2026-02-30" } }),
@@ -642,8 +668,7 @@ if (mode === "framed") describe("LegalView header slots owned by SiteFrame", () 
   const banner = (html: string) => /(<header\b[\s\S]*?<\/header>)/.exec(html)?.[1] ?? "";
   const footer = (html: string) => /(<footer\b[\s\S]*<\/footer>)<\/div>$/.exec(html)?.[1] ?? "";
   const chrome: Partial<SiteShellInput> = {
-    actions: [{ href: "/contact", label: ref("fixture.header") }],
-    secondaryAction: { href: "/sign-in", label: ref("fixture.secondary") },
+    actions: [{ href: "/sign-in", label: ref("fixture.secondary"), emphasis: "ghost" }, { href: "/contact", label: ref("fixture.header"), emphasis: "secondary" }],
     nav: { label: LABELS.effectiveDate, links: [{ href: "/placeholder-nav", label: ref("fixture.nav") }] },
     ground: "transparent",
   };
@@ -657,17 +682,17 @@ if (mode === "framed") describe("LegalView header slots owned by SiteFrame", () 
     expect(header.indexOf("SECONDARY-ACTION-SENTINEL")).toBeLessThan(header.indexOf("HEADER-ACTION-SENTINEL"));
   });
   it("renders the same header and footer as bare chrome with an explicit reserved header", () => {
-    const html = renderToStaticMarkup(frame(content, <span>FOOTER-SENTINEL</span>, { header: { placement: "reserved" } }));
+    const html = renderToStaticMarkup(frame(content, <span>FOOTER-SENTINEL</span>, { header: { surface: "solid" } }));
     expect(banner(html)).toBe(banner(renderToStaticMarkup(<SiteHeader brand={mark} />)));
-    expect(footer(html)).toBe(renderToStaticMarkup(<SiteFooter secondary={<SiteFooter.Legal entity="FOOTER-SENTINEL" links={[]} />} />));
+    expect(footer(html)).toBe(renderToStaticMarkup(<SiteFooter secondary={<SiteFooter.Legal entity="FOOTER-SENTINEL" links={[]} home={{ label: "Placeholder label effective", href: "/", markSrc: "/placeholder.svg" }} />} />).replace(/^<link[^>]+>/, ""));
   });
   it("passes ground to both an explicit reserved header and the footer", () => {
-    const html = renderToStaticMarkup(frame(content, undefined, { ground: "transparent", header: { placement: "reserved" } }));
-    expect(banner(html)).toBe(banner(renderToStaticMarkup(<SiteHeader ground="transparent" brand={mark} />)));
-    expect(footer(html)).toBe(renderToStaticMarkup(<SiteFooter ground="transparent" secondary={<SiteFooter.Legal entity="Placeholder footer entity" links={[]} />} />));
+    const html = renderToStaticMarkup(frame(content, undefined, { ground: "transparent", header: { surface: "transparent" } }));
+    expect(banner(html)).toBe(banner(renderToStaticMarkup(<SiteHeader surface="transparent" brand={mark} />)));
+    expect(footer(html)).toBe(renderToStaticMarkup(<SiteFooter ground="transparent" secondary={<SiteFooter.Legal entity="Placeholder footer entity" links={[]} home={{ label: "Placeholder label effective", href: "/", markSrc: "/placeholder.svg" }} />} />).replace(/^<link[^>]+>/, ""));
   });
-  it("uses an overlay header when the framed path omits header placement", () => {
-    expect(banner(renderToStaticMarkup(frame(content)))).toContain('data-placement="overlay"');
+  it("uses a solid header when the framed path omits header surface", () => {
+    expect(banner(renderToStaticMarkup(frame(content)))).toContain('data-surface="solid"');
   });
   it("preserves the current header and footer bytes with all chrome slots", () => {
     const old = renderToStaticMarkup(frame(content, <span>FOOTER-SENTINEL</span>, chrome));

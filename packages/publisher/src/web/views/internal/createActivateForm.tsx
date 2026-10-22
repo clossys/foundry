@@ -170,6 +170,7 @@ export function createActivateForm(resolveCopy: FrontDoorResolver) {
 
     return (
       <Form
+        actionsLayout="stretch"
         aria-label={words["front-door.activation.title"]}
         onSubmit={submit}
         noValidate

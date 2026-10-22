@@ -19,80 +19,34 @@ function cssBlock(text: string, opening: string): string {
   throw new Error(`unterminated ${opening}`);
 }
 
-// Captured from main before adding mobileLayout.
-const DEFAULT_HEADERS = {
-  "leading": "<header class=\"bg-surface-raised py-sm border-b border-line-base\" style=\"position:relative;z-index:var(--ui-z-shell, 20);border-bottom-width:var(--ui-border-hairline, 1px)\"><div class=\"mx-auto flex w-full flex-wrap items-center justify-between gap-md\" style=\"padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))\"><div class=\"flex items-center gap-lg\"><a href=\"/\">Example</a><nav aria-label=\"Primary\"><a href=\"/about\">About</a></nav></div><div class=\"flex items-center gap-sm\"><a href=\"/sign-in\">Sign in</a><button type=\"button\">Start</button></div></div></header>",
-  "centered": "<header class=\"bg-surface-raised py-sm border-b border-line-base\" style=\"position:relative;z-index:var(--ui-z-shell, 20);border-bottom-width:var(--ui-border-hairline, 1px)\"><div class=\"mx-auto flex w-full flex-wrap items-center gap-md\" style=\"padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))\"><div class=\"flex flex-1 items-center\"><a href=\"/\">Example</a></div><div class=\"flex items-center\"><nav aria-label=\"Primary\"><a href=\"/about\">About</a></nav></div><div class=\"flex flex-1 items-center justify-end gap-sm\"><a href=\"/sign-in\">Sign in</a><button type=\"button\">Start</button></div></div></header>"
-};
-
-function header(navPlacement: "leading" | "centered", mobileLayout?: "inline" | "menu-brand-action") {
-  return <SiteHeader navPlacement={navPlacement} mobileLayout={mobileLayout}
-    brand={<a href="/">Example</a>}
+function header(navPlacement: "leading" | "centered") {
+  return <SiteHeader navPlacement={navPlacement} brand={<a href="/">Example</a>}
     nav={<nav aria-label="Primary"><a href="/about">About</a></nav>}
-    secondaryAction={<a href="/sign-in">Sign in</a>}
-    actions={<button type="button">Start</button>} />;
+    actions={<><a href="/sign-in">Sign in</a><button type="button">Start</button></>} />;
 }
 
 describe("SiteHeader mobile layout", () => {
-  it.each(["leading", "centered"] as const)("uses the new mobile default and retains explicit inline bytes for %s navigation", navPlacement => {
-    expect(renderToStaticMarkup(header(navPlacement))).toBe(renderToStaticMarkup(header(navPlacement, "menu-brand-action")));
-    expect(renderToStaticMarkup(header(navPlacement, "inline"))).toBe(DEFAULT_HEADERS[navPlacement]);
-  });
-
-  it.each(["leading", "centered"] as const)("menu-brand-action puts nav, brand and actions in columns 1, 2 and 3 for %s navigation", navPlacement => {
-    render(header(navPlacement, "menu-brand-action"));
-    const row = screen.getByRole("banner").firstElementChild!;
-    if (navPlacement === "centered") {
-      expect(row).toHaveClass("site-header-row");
-      expect(screen.getByRole("banner")).toHaveClass("site-header-contract");
-      expect(screen.getByRole("link", { name: "Example" }).parentElement).toHaveClass("site-header-brand");
-      expect(screen.getByRole("navigation").parentElement).toBe(row);
-      expect(screen.getByRole("button", { name: "Start" }).parentElement).toHaveClass("site-header-actions");
-      return;
-    }
-    expect(row).toHaveClass("grid", "tablet:flex", "tablet:flex-wrap");
-    expect((row as HTMLElement).style.gridTemplateColumns).toBe("auto minmax(0, 1fr) auto");
-    expect(screen.getByRole("link", { name: "Example" }).parentElement).toHaveClass("col-start-2", "row-start-1");
-    expect(screen.getByRole("navigation").parentElement).toHaveClass("col-start-1", "row-start-1");
-    expect(screen.getByRole("button", { name: "Start" }).parentElement).toHaveClass("col-start-3", "row-start-1");
-  });
-
-  it.each(["leading", "centered"] as const)("restores the %s navPlacement layout from tablet up", navPlacement => {
-    render(header(navPlacement, "menu-brand-action"));
-    const brand = screen.getByRole("link", { name: "Example" }).parentElement!;
-    const nav = screen.getByRole("navigation").parentElement!;
-    const actions = screen.getByRole("button", { name: "Start" }).parentElement!;
-    if (navPlacement === "leading") {
-      expect(brand).toHaveClass("tablet:contents");
-      expect(nav).toHaveClass("tablet:contents");
-      expect(brand.parentElement).toBe(nav.parentElement);
-      expect(brand.parentElement).toHaveClass("contents", "tablet:flex", "tablet:items-center", "tablet:gap-lg");
-      expect(screen.getByRole("banner").firstElementChild).toHaveClass("tablet:justify-between");
-    } else {
-      expect(brand).toHaveClass("site-header-brand");
-      expect(nav).toHaveClass("site-header-row");
-      expect(actions).toHaveClass("site-header-actions");
-    }
-  });
-
-  it.each(["leading", "centered"] as const)("keeps brand, nav and actions in DOM order and a shrinkable brand track for %s navigation", navPlacement => {
-    render(header(navPlacement, "menu-brand-action"));
+  it.each(["leading", "centered"] as const)("keeps one responsive structure for %s navigation", navPlacement => {
+    render(header(navPlacement));
+    const root = screen.getByRole("banner");
+    const row = root.firstElementChild!;
+    expect(root).toHaveClass("site-header-contract");
+    expect(root.classList.contains("site-header-leading")).toBe(navPlacement === "leading");
+    expect(row).toHaveClass("site-header-row");
     const brand = screen.getByRole("link", { name: "Example" });
     const nav = screen.getByRole("navigation");
-    const actions = screen.getByRole("button", { name: "Start" });
+    expect(brand.parentElement).toHaveClass("site-header-brand");
+    expect(nav.parentElement).toBe(row);
+    expect(screen.getByRole("button", { name: "Start" }).parentElement).toHaveClass("site-header-actions");
     expect(brand.compareDocumentPosition(nav) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(nav.compareDocumentPosition(actions) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    if (navPlacement === "leading") {
-      expect(brand.parentElement).toHaveClass("min-w-0", "justify-self-center");
-      expect((screen.getByRole("banner").firstElementChild as HTMLElement).style.gridTemplateColumns).toBe("auto minmax(0, 1fr) auto");
-    } else expect(brand.parentElement).toHaveClass("site-header-brand");
-    expect(screen.getAllByRole("navigation")).toHaveLength(1);
+    expect(nav.compareDocumentPosition(screen.getByRole("button", { name: "Start" })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(screen.getAllByRole("banner")).toHaveLength(1);
+    expect(screen.getAllByRole("navigation")).toHaveLength(1);
   });
 
-  it.each(["leading", "centered"] as const)("allows omitted optional slots with %s navigation", navPlacement => {
-    render(<SiteHeader mobileLayout="menu-brand-action" navPlacement={navPlacement} brand={<a href="/">Example</a>} />);
-    expect(screen.getByRole("link", { name: "Example" }).parentElement).toHaveClass(navPlacement === "leading" ? "col-start-2" : "site-header-brand");
+  it.each(["leading", "centered"] as const)("allows omitted slots with %s navigation", navPlacement => {
+    render(<SiteHeader navPlacement={navPlacement} brand={<a href="/">Example</a>} />);
+    expect(screen.getByRole("link", { name: "Example" }).parentElement).toHaveClass("site-header-brand");
     expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });
@@ -108,7 +62,7 @@ describe("SiteHeader mobile layout", () => {
     // accent mark are spans too, so the hide selector skips the marked mark element
     // and, for a hand-written brand, any span holding an image.
     expect(MOBILE_HIDE_RULE?.[1]).toBe("span:not([data-brand-mark]):not(:has(img))");
-    render(<SiteHeader mobileLayout="menu-brand-action" brand={<Brandmark size="md" label="Example home" markSrc="/mark.svg" {...props} />} />);
+    render(<SiteHeader brand={<Brandmark size="md" label="Example home" markSrc="/mark.svg" {...props} />} />);
     const anchor = screen.getByRole("link", { name: "Example home" });
     const { hidden, shown } = mobileBrand(anchor);
     expect(shown).toContain(anchor.firstElementChild);
@@ -118,10 +72,42 @@ describe("SiteHeader mobile layout", () => {
   });
 
   it("still hides the text, never the image, of a hand-written brand link", () => {
-    render(<SiteHeader mobileLayout="menu-brand-action" brand={<a href="/" aria-label="Example home"><span><img src="/mark.svg" alt="" /></span><span>Example</span></a>} />);
+    render(<SiteHeader brand={<a href="/" aria-label="Example home"><span><img src="/mark.svg" alt="" /></span><span>Example</span></a>} />);
     const { hidden, shown } = mobileBrand(screen.getByRole("link", { name: "Example home" }));
     expect(hidden.map(child => child.textContent)).toEqual(["Example"]);
     expect(shown).toHaveLength(1);
+  });
+
+  it.each([375, 767, 768, 1279, 1280])("keeps exactly one responsive artwork paint source visible in the default home link at %ipx", width => {
+    const compiled = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "..", "..", "styles", "compiled.css"), "utf8");
+    // jsdom does not evaluate media queries. Select the shipped rules at the
+    // tested viewport, then let its CSS engine apply their actual selectors.
+    const hideSelector = ".site-header-contract[data-header-root] .site-header-brand a > span:not([data-brand-mark]):not(:has(img))";
+    const narrow = cssBlock(compiled.slice(compiled.lastIndexOf("@media", compiled.indexOf(hideSelector))), "@media (width < 768px) {");
+    const desktop = cssBlock(compiled, "@media (width >= 1280px) {");
+    const style = document.createElement("style");
+    style.textContent = cssBlock(compiled, "  .hidden {") + cssBlock(compiled, "  .inline-flex {")
+      + (width < 768 ? cssBlock(narrow, "    .site-header-contract[data-header-root] .site-header-brand a > span:not([data-brand-mark]):not(:has(img)) {") : "")
+      + (width >= 1280 ? cssBlock(desktop, "    .desktop\\:block {") + cssBlock(desktop, "    .desktop\\:hidden {") : "");
+    document.head.append(style);
+    try {
+      render(<SiteHeader brand={<Brandmark variant="lockup" size="sm" label="Example home" wordmark="Example"
+        markSrc="/mark.svg" presentation="responsive"
+        geometry={{ viewBox: { x: 0, y: 0, width: 100, height: 100 }, paintedBounds: { x: 10, y: 10, width: 80, height: 80 } }} />} />);
+      const anchor = screen.getByRole("link", { name: "Example home" });
+      expect(anchor).toHaveAttribute("href", "/");
+      const visiblePaint = [...anchor.querySelectorAll<HTMLElement>("img, [style*='mask-image']")].filter(source => {
+        for (let node: HTMLElement | null = source; node; node = node.parentElement) {
+          if (getComputedStyle(node).display === "none" || getComputedStyle(node).visibility === "hidden") return false;
+          if (node === anchor) return true;
+        }
+        return false;
+      });
+      expect(visiblePaint).toHaveLength(1);
+      expect(anchor.closest("header")?.querySelectorAll('a[href="/"]')).toHaveLength(1);
+    } finally {
+      style.remove();
+    }
   });
 });
 
@@ -151,7 +137,7 @@ describe("header brand slot", () => {
   it.each((["sm", "md", "lg"] as const).flatMap(size => BRAND_FORMS.map(([name, props]) => [size, name, props] as const)))(
     "resolves a %s %s brand to the size's one mark height, at desktop and mobile",
     (size, _name, props) => {
-      render(<SiteHeader mobileLayout="menu-brand-action" brand={<Brandmark size={size} label="Example home" markSrc="/mark.svg" {...props} />} />);
+      render(<SiteHeader brand={<Brandmark size={size} label="Example home" markSrc="/mark.svg" {...props} />} />);
       const anchor = screen.getByRole("link", { name: "Example home" });
       expect(anchor.children).toHaveLength(props.variant === "lockup" ? 2 : 1);
       // The mark's box is the size token at full height; a wordmark is set smaller.
@@ -203,10 +189,10 @@ describe("header brand slot", () => {
     ["lockup", { variant: "lockup", wordmark: "Example" }],
     ["lockup on a shared plate", { variant: "lockup", wordmark: "Example", plate: "shared" }],
   ] as const;
-  const HEADER_CASES = (["inline", "menu-brand-action"] as const).flatMap(mobileLayout => HEADER_BRANDS.map(([name, props]) => [name, mobileLayout, props] as const));
+  const HEADER_CASES = HEADER_BRANDS;
 
-  it.each(HEADER_CASES)("paints a %s header logomark in the accent token by default (%s layout, server and client)", (_name, mobileLayout, props) => {
-    const element = <SiteHeader mobileLayout={mobileLayout} brand={<Brandmark size="md" label="Example home" markSrc="/mark.svg" {...props} />} />;
+  it.each(HEADER_CASES)("paints a %s header logomark in the accent token by default (server and client)", (_name, props) => {
+    const element = <SiteHeader brand={<Brandmark size="md" label="Example home" markSrc="/mark.svg" {...props} />} />;
     const host = document.createElement("div");
     host.innerHTML = renderToStaticMarkup(element);
     const { container } = render(element);
@@ -219,16 +205,15 @@ describe("header brand slot", () => {
       expect(mark.matches(".bg-accent") || mark.querySelector(".bg-accent") !== null).toBe(true);
       // jsdom drops mask properties on the client, so read the paint from the server markup.
       if (root === host) expect((mark.matches("[style*=mask]") ? mark : mark.querySelector("[style*=mask]"))!.getAttribute("style")).toContain('mask-image:url("/mark.svg")');
-      // In the menu-brand-action layout the wordmark hides below tablet and the accent
-      // mark stays, centred on the bar; the inline layout hides nothing.
+      // The wordmark hides below tablet; the accent mark stays centered.
       const { hidden, shown } = mobileBrand(anchor);
       expect(shown[0]).toBe(mark);
-      expect(hidden.map(child => child.textContent)).toEqual(mobileLayout === "menu-brand-action" && props.variant === "lockup" ? ["Example"] : []);
+      expect(hidden.map(child => child.textContent)).toEqual(props.variant === "lockup" ? ["Example"] : []);
     }
   });
 
-  it.each(HEADER_CASES)("keeps a %s header logomark as the image when markInk=\"image\" opts out (%s layout)", (_name, mobileLayout, props) => {
-    render(<SiteHeader mobileLayout={mobileLayout} brand={<Brandmark size="md" label="Example home" markSrc="/mark.svg" markInk="image" {...props} />} />);
+  it.each(HEADER_CASES)("keeps a %s header logomark as the image when markInk=\"image\" opts out", (_name, props) => {
+    render(<SiteHeader brand={<Brandmark size="md" label="Example home" markSrc="/mark.svg" markInk="image" {...props} />} />);
     const anchor = screen.getByRole("link", { name: "Example home" });
     expect(anchor.querySelector("img")).toHaveAttribute("src", "/mark.svg");
     expect(anchor.querySelector("[data-brand-mark]")).toBeNull();

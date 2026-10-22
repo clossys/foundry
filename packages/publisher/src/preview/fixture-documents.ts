@@ -258,7 +258,7 @@ export const previewCaptureViewProps = {
 
 type PreviewIndexRow = { id: string; name: string; state: string };
 export const previewIndexViewProps: IndexViewProps<PreviewIndexRow> = {
-  title: "Records", subtitle: "Browse current records.", collectionLabel: "Records",
+  collectionLabel: "Records",
   rows: [{ id: "one", name: "First record", state: "Available" }], rowKey: row => row.id,
   columns: [{ id: "name", header: "Name", isRowHeader: true, cell: row => row.name }, { id: "state", header: "State", cell: row => row.state }],
   rowRoute: { href: row => `/records/${row.id}`, onNavigate: () => {} },
@@ -267,7 +267,6 @@ export const previewIndexViewProps: IndexViewProps<PreviewIndexRow> = {
   empty: { title: "No records", description: "Create a record to begin." },
 };
 export const previewDetailsViewProps: DetailsViewProps = {
-  title: "First record", subtitle: "Details of the selected record.", index: { href: "/records", label: "Records" },
   tabsLabel: "Record sections", tab: "overview", onTabChange: () => {},
   tabs: [{ id: "overview", label: "Overview", sections: [
     { id: "identity", title: "Identity", block: { kind: "detail", props: { fields: [{ label: "Identifier", value: "one" }, { label: "State", value: "Available" }] } } },

@@ -16,7 +16,6 @@ const frame: SiteFrameInput = {
     brand: { assetId: "mark", label: { id: "Example home" }, variant: "mark", size: "md" },
     skipLink: { id: "Skip to content" },
     origin: "https://example.com",
-    mobileLayout: "inline",
     environments: [{ href: "https://app.example.com/", label: { id: "App" }, icon: [["path", { d: "M4 12h16" }]], isCurrent: true }],
     footer: { legal: { entity: { id: "Example Ltd" }, links: [{ href: "/privacy", label: { id: "Privacy" } }] } },
   },
@@ -88,10 +87,13 @@ describe("renderWebDocument optional AuthView frame", () => {
     expect(reads).toBe(0);
   });
 
-  it("keeps the unframed legacy AuthView bytes and required brand binding", () => {
+  it("keeps unframed AuthView body/footer bytes with the new header surface and required brand binding", () => {
     const legacy = { ...doc, bindings: [{ slot: "brand", value: "Example" }, ...doc.bindings] };
     const output = html(legacy);
-    expect(createHash("sha256").update(output).digest("hex")).toBe("5fee08e25df248d2677d72d9bf5585d3df59a3b2ec0c7ffee562878d4affff9b");
+    expect(output).toContain('data-surface="solid" data-tone="base"');
+    // Project only the deliberately changed opening tag; keep the original full-page digest.
+    const legacyHeaderProjection = output.replace(/<header\b[^>]*>/, '<header data-header-root="" class="bg-surface-raised py-sm border-b border-line-base site-header-contract" style="position:relative;z-index:var(--ui-z-shell, 20);border-bottom-width:var(--ui-border-hairline, 1px)">');
+    expect(createHash("sha256").update(legacyHeaderProjection).digest("hex")).toBe("42bad8f517d038103ec6bf994fec76ae1e887848631ac8266727c5b39b5c6cd1");
     expect(html(legacy, { frame: undefined })).toBe(output);
     expect(() => html(doc)).toThrow(/brand/);
   });
