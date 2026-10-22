@@ -14,6 +14,7 @@ export function assertCatalogProps(props: CatalogWorkspaceProps) {
   if (typeof props.label !== "string" || !props.label.trim() || !props.labels ||
       ![props.labels.browse, props.labels.preview, props.labels.inspector, props.labels.resizeBrowse, props.labels.resizeInspector].every(value => typeof value === "string" && value.trim()) ||
       (props.selectedId !== null && typeof props.selectedId !== "string") || typeof props.onSelect !== "function" || typeof props.preview !== "function" || typeof props.inspector !== "function" ||
+      (props.defaultExpandedIds !== undefined && (!Array.isArray(props.defaultExpandedIds) || !props.defaultExpandedIds.every(id => typeof id === "string"))) ||
       (props.dir !== undefined && props.dir !== "ltr" && props.dir !== "rtl")) throw new TypeError("CatalogWorkspace: names, controlled selection and content slots are required.");
 }
 export function paneSize(size: CatalogWorkspaceSize | undefined): CatalogWorkspaceSize {

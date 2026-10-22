@@ -199,6 +199,20 @@ describe("CatalogWorkspace", () => {
     expect(row).toHaveAttribute("aria-selected", "false");
     expect(screen.getAllByRole("treeitem").filter(item => item.tabIndex === 0)).toEqual([row]);
   });
+  it("opens defaultExpandedIds on first render and re-applies a changed list", async () => {
+    media(); const { rerender } = render(<CatalogWorkspace {...base} defaultExpandedIds={["group", "nested", "absent"]} />);
+    expect(screen.getByRole("treeitem", { name: "Library" })).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByRole("treeitem", { name: "Second" })).toBeVisible();
+    await userEvent.click(screen.getByRole("treeitem", { name: "Nested" }));
+    rerender(<CatalogWorkspace {...base} defaultExpandedIds={["group", "nested", "absent"]} />);
+    expect(screen.getByRole("treeitem", { name: "Nested" })).toHaveAttribute("aria-expanded", "false");
+    rerender(<CatalogWorkspace {...base} defaultExpandedIds={["group", "nested"]} />);
+    expect(screen.getByRole("treeitem", { name: "Nested" })).toHaveAttribute("aria-expanded", "true");
+    rerender(<CatalogWorkspace {...base} defaultExpandedIds={["group"]} />);
+    expect(screen.getByRole("treeitem", { name: "Library" })).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByRole("treeitem", { name: "Nested" })).toHaveAttribute("aria-expanded", "false");
+    expect(() => render(<CatalogWorkspace {...base} defaultExpandedIds={[1] as never} />)).toThrow(TypeError);
+  });
   it("uses the same token-bound surfaces in light and dark with analytical text contrast", () => {
     media(); const { container, rerender } = render(<div data-theme="light"><CatalogWorkspace {...base} selectedId={first.id} /></div>);
     const panel = screen.getByRole("region", { name: labels.preview }); expect(panel).toHaveClass("bg-surface-raised", "rounded-panel", "p-lg");
