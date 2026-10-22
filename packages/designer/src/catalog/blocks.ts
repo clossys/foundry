@@ -238,7 +238,7 @@ export const BLOCK_ENTRIES: readonly BlockEntry[] = [
 
   // Explain / Media
   built(MEDIA, "MediaFigure", { id: "say.media-figure", label: "Media figure" }),
-  spec(MEDIA, { id: "items.media-gallery", label: "Media gallery", inFlight: pr(2391, "draft") }),
+  exported(MEDIA, "MediaGallery", { id: "items.media-gallery", label: "Media gallery" }),
 
   // Explain / Reading
   built(READING, "ArticleBody", {
@@ -257,7 +257,7 @@ export const BLOCK_ENTRIES: readonly BlockEntry[] = [
     id: "items.ordered-step-sequence",
     label: "Ordered steps (legacy)",
   }),
-  spec(SEQUENCE, { id: "items.timeline", label: "Timeline", inFlight: pr(2391, "draft") }),
+  exported(SEQUENCE, "Timeline", { id: "items.timeline", label: "Timeline" }),
 
   // Explain / Brand
   exported(BRAND, "Lockup", { id: "say.lockup", label: "Lockup" }),
