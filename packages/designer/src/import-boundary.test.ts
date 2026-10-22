@@ -30,7 +30,7 @@ const COMPUTED_IMPORT_FILES = ["environment-conformance-worker.ts"];
  */
 const RUNTIME_RAC_EXCEPTIONS = ["blocks/CommandMenu.tsx", "blocks/Toolbar.tsx", "blocks/internal/disclosure-row.tsx"];
 const KNOWN_PEERS = ["@internationalized/date", "react", "react-aria-components", "react-dom", "tailwind-merge", "tailwindcss"];
-const UI_LIBRARY = /radix|base-ui|headlessui|tanstack|shadcn|@mui\/|chakra|ariakit|mantine/;
+const UI_LIBRARY = /radix|base-ui|headlessui|tanstack|shadcn|\bmui\b|chakra|ariakit|mantine/;
 
 function collect(dir: string, out: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {
