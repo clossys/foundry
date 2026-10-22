@@ -4,7 +4,7 @@
 
 Import the shared records from `@clossys/designer/atoms`. This barrel remains client-only; charts render through the existing `@clossys/designer/charts` entry point. No new package subpath is introduced.
 
-45 established leaves appear once in 4 groups and 10 families. Groups and families are navigation; only leaves are selectable. Display placement preserves legacy IDs.
+46 established leaves appear once in 4 groups and 10 families. Groups and families are navigation; only leaves are selectable. Display placement preserves legacy IDs.
 
 Stable purpose, content and anatomy are separate from medium-specific implementation. Web cites current source; email, print and video are unassessed. Import safety, server rendering and visual resemblance establish no other medium’s support.
 
@@ -19,7 +19,7 @@ Consumer-owned demonstration coverage is unassessed here. A fixed controlled val
 | Group | Families | Leaves |
 | --- | --- | ---: |
 | Interaction | Actions, Navigation, Inputs | 18 |
-| Content | Data display, Imagery, Charts | 16 |
+| Content | Data display, Imagery, Charts | 17 |
 | Feedback | Messages, Progress and loading | 5 |
 | Containment | Structure, Overlays | 6 |
 
@@ -704,6 +704,35 @@ Web implementation: `@clossys/designer/atoms` → `Table`. Source: `src/atoms/Ta
 
 Token dependency coverage: partial. Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.
 - `--ui-ring-focus` (transitive): `src/atoms/internal/ui-vars.ts`: `var(--ui-ring-focus,`; consumed via `src/atoms/Table.tsx`: `boxShadow: renderProps.isFocusVisible ? UI_RING_FOCUS : undefined`.
+
+##### `group.grid-list` — GridList
+
+- Purpose: Work through interactive records with independent selection and actions.
+- Use when: Records have flexible content, selection controls or secondary actions within each row.
+- Avoid when: Column relationships require a table or content has no row interaction.
+- Alternatives and boundary: Use Table for shared columns or ResourceList for an assembled record-list block.
+- Content: Supply a list name, each row’s plain text identity and host-authored checkbox names.
+- Anatomy: A named grid with repeated record rows and optional selection checkboxes.
+- Block composition example: Compose GridList.Item content with GridList.SelectionCheckbox and named child actions.
+- Accessibility: Space toggles selection and Enter activates onAction during selection; href routing follows the peer’s toggle-selection semantics.
+- Demonstration coverage: unassessed. Consumer-owned fixtures and interaction evidence have not been assessed here. A supported package option is not proof of a working catalog demonstration.
+
+| Medium | State | Reason and evidence |
+| --- | --- | --- |
+| web | implemented | The existing component renders or forwards its documented web implementation in the named source. Evidence: `src/atoms/GridList.tsx` |
+| email | unassessed | No email renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
+| print | unassessed | No print renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
+| video | unassessed | No video renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
+
+Web implementation: `@clossys/designer/atoms` → `GridList`. Source: `src/atoms/GridList.tsx`. Draft stack layout with toggle selection fixed by the atom. The peer supplies collection, keyboard, disabled and action behavior. Supply aria-label or aria-labelledby; each Item requires textValue and each SelectionCheckbox requires its host aria-label. Direct-row Enter adapts onAction during active selection. Href rows route while selection is empty; active-selection row presses toggle selection without navigation.
+
+No finite scalar options are represented here; read the real prop type for authored content and data.
+
+- data (runtime; `aria-label`, `aria-labelledby`): At least one nonblank accessible naming path is required. Evidence: `src/atoms/GridList.tsx`: `GridList requires aria-label or aria-labelledby.`.
+
+Token dependency coverage: partial. Representative row state dependencies; checkbox styling is composed from the existing atom.
+- `--ui-layout-tap-target` (transitive): `src/atoms/internal/ui-vars.ts`: `--ui-layout-tap-target`; consumed via `src/atoms/GridList.tsx`: `minBlockSize: UI_LAYOUT_TAP_TARGET`.
+- `--ui-ring-focus` (transitive): `src/atoms/internal/ui-vars.ts`: `--ui-ring-focus`; consumed via `src/atoms/GridList.tsx`: `UI_RING_FOCUS`.
 
 #### Imagery
 

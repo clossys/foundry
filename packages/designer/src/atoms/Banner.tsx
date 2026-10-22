@@ -1,14 +1,8 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
-import { cx } from "./internal/cx.js";
+import { Button } from "react-aria-components";
+import { BANNER_DISMISS_CLASSES, bannerClassName } from "./Banner.server.js";
 
 export type BannerVariant = "info" | "success" | "warning" | "danger";
-
-const VARIANT_CLASSES: Record<BannerVariant, string> = {
-  info: "border-status-info bg-status-info-tint text-status-info-text",
-  success: "border-status-success bg-status-success-tint text-status-success-text",
-  warning: "border-status-warning bg-status-warning-tint text-status-warning-text",
-  danger: "border-status-danger bg-status-danger-tint text-status-danger-text",
-};
 
 export interface BannerProps extends Omit<HTMLAttributes<HTMLDivElement>, "role" | "children"> {
   /** @default "info" */
@@ -52,13 +46,19 @@ export interface BannerProps extends Omit<HTMLAttributes<HTMLDivElement>, "role"
  * an informational or success banner doesn't interrupt whatever the user was
  * already doing.
  *
- * The optional dismiss control is a plain native `<button>`, not this
- * package's own `Button` atom: `Banner` is itself an atom, and an atom
+ * The optional dismiss control is react-aria-components' own `Button`, not
+ * this package's `Button` atom: `Banner` is itself an atom, and an atom
  * composing another atom is the layering violation `ladder.test.ts` and this
  * package's README both call out — `Table` composing `Checkbox` is the one
  * explicitly-permitted exception, not a precedent for every atom that
  * happens to need a small interactive affordance (see `Table.tsx`'s own doc
- * comment on why that one case is different).
+ * comment on why that one case is different). It keeps its classes and its
+ * accessible name; `onDismiss` is wired to the button's `onPress`, which
+ * fires on mouse, touch and keyboard activation as `onClick` did.
+ *
+ * Imports react-aria-components, so it is not server-safe. The server-safe
+ * `Banner` from `@clossys/designer/atoms/server` is `Banner.server.tsx`: the
+ * same region with a plain native `<button>` for the dismiss control.
  */
 export function Banner({
   variant = "info",
@@ -75,23 +75,14 @@ export function Banner({
       {...rest}
       role={isAssertive ? "alert" : "status"}
       aria-live={isAssertive ? "assertive" : "polite"}
-      className={cx(
-        "flex items-start gap-sm rounded-control border p-md text-body-s font-body",
-        VARIANT_CLASSES[variant],
-        className,
-      )}
+      className={bannerClassName(variant, className)}
       style={style}
     >
       <div className="flex-1">{children}</div>
       {onDismiss ? (
-        <button
-          type="button"
-          onClick={onDismiss}
-          aria-label={dismissLabel}
-          className="shrink-0 rounded-default px-xs py-xs text-body-s hover:bg-surface-selected focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-        >
+        <Button onPress={onDismiss} aria-label={dismissLabel} className={BANNER_DISMISS_CLASSES}>
           <span aria-hidden="true">×</span>
-        </button>
+        </Button>
       ) : null}
     </div>
   );

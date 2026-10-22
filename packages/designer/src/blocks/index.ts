@@ -69,6 +69,9 @@ export type { DetailViewProps, DetailViewField } from "./DetailView.js";
 export { Pagination } from "./Pagination.js";
 export type { PaginationProps } from "./Pagination.js";
 
+export { UsageMeter } from "./UsageMeter.js";
+export type { UsageMeterProps, UsageMeterThreshold } from "./UsageMeter.js";
+
 export { Stat } from "./Stat.js";
 export type { StatProps, StatTrend } from "./Stat.js";
 
@@ -215,6 +218,8 @@ export { CommandMenu, useCommandMenuShortcut } from "./CommandMenu.js";
 export type { CommandMenuProps, CommandMenuItem, CommandMenuGroup, CommandMenuShortcutOptions } from "./command-menu-types.js";
 export { AppNavigation } from "./AppNavigation.js";
 export type { AppNavigationProps } from "./AppNavigation.js";
+export { PageBar } from "./PageBar.js";
+export type { PageBarProps, PageBarPage, PageBarCrumb, PageBarAction, PageBarDestination, PageBarLabels, PageBarWidth } from "./PageBar.js";
 export { validateAppNavigationTree, getAppNavigationAncestry, getAppNavigationBreadcrumbs } from "./app-navigation-tree.js";
 export type { AppNavigationNode, AppNavigationLeaf, AppNavigationDestination, AppNavigationTarget, AppNavigationBreadcrumb } from "./app-navigation-tree.js";
 export { Explorer } from "./Explorer.js";
@@ -257,3 +262,5 @@ export { ColumnMapper } from "./ColumnMapper.js";
 export type { ColumnMapperTarget, ColumnMapperSource, ColumnMapping, ColumnMapperIssue, ColumnMapperLabels, ColumnMapperProps } from "./ColumnMapper.js";
 export { NewsletterBand } from "./NewsletterBand.js";
 export type { NewsletterBandProps, NewsletterStatus } from "./NewsletterBand.js";
+export { ResourceList } from "./ResourceList.js";
+export type { ResourceListProps, ResourceListItem, ResourceListAction } from "./ResourceList.js";

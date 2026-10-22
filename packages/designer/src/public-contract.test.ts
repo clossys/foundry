@@ -28,6 +28,61 @@ describe("compiled Timeline and MediaGallery public contract", () => {
   }, 30_000);
 });
 
+describe("compiled record-list public contract", () => {
+  it("exports GridList through atoms and internal tooling, and ResourceList through blocks and internal tooling", async () => {
+    for (const entry of ["atoms/index.js", "index.js"]) {
+      const api = await import(pathToFileURL(join(packageRoot, "dist", entry)).href);
+      expect(api.GridList).toBeTypeOf("function");
+      expect(api.GridList.Item).toBeTypeOf("function");
+      expect(api.GridList.SelectionCheckbox).toBeTypeOf("function");
+    }
+    for (const entry of ["blocks/index.js", "index.js"]) {
+      const api = await import(pathToFileURL(join(packageRoot, "dist", entry)).href);
+      expect(api.ResourceList).toBeTypeOf("function");
+    }
+    const server = await import(pathToFileURL(join(packageRoot, "dist/blocks/server.js")).href);
+    expect(server).not.toHaveProperty("ResourceList");
+  });
+
+  it("resolves record-list prop types through emitted barrel declarations", () => {
+    const filename = join(packageRoot, "record-list-consumer.check.tsx");
+    const consumer = ["atoms/index.js", "index.js"].map((entry, index) => `
+      import type {GridListProps as Grid${index}, GridListItemProps as Item${index}, GridListSelectionCheckboxProps as Check${index}} from ${JSON.stringify(join(packageRoot, "dist", entry))};
+      const grid${index}: Grid${index}<{id:string}> = {"aria-label":"Records", children:[]};
+      const item${index}: Item${index} = {id:"one", textValue:"Planning note", children:"Planning note"};
+      const check${index}: Check${index} = {"aria-label":"Choose planning note"};
+    `).join("\n") + ["blocks/index.js", "index.js"].map((entry, index) => `
+      import type {ResourceListProps as List${index}, ResourceListItem as Record${index}, ResourceListAction as Action${index}} from ${JSON.stringify(join(packageRoot, "dist", entry))};
+      const action${index}: Action${index} = {id:"edit",label:"Edit",onAction:()=>{}};
+      const record${index}: Record${index} = {id:"one",textValue:"Planning note",title:"Planning note",actions:[action${index}]};
+      const list${index}: List${index} = {"aria-label":"Notes",items:[record${index}],emptyState:{title:"No notes"}};
+    `).join("\n");
+    const options = {strict:true, noEmit:true, skipLibCheck:true, jsx:ts.JsxEmit.ReactJSX, target:ts.ScriptTarget.ES2022, module:ts.ModuleKind.ESNext, moduleResolution:ts.ModuleResolutionKind.Bundler};
+    const host = ts.createCompilerHost(options);
+    const original = host.getSourceFile.bind(host);
+    host.getSourceFile = (path, language, error, fresh) => path === filename ? ts.createSourceFile(path, consumer, language, true, ts.ScriptKind.TSX) : original(path, language, error, fresh);
+    const diagnostics = ts.getPreEmitDiagnostics(ts.createProgram([filename], options, host));
+    expect(diagnostics.map(diagnostic => ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n"))).toEqual([]);
+  }, 30_000);
+});
+
+describe("compiled UsageMeter public contract", () => {
+  it.each(["index.js", "blocks/index.js", "blocks/server.js"])("exports UsageMeter and its declared props from %s", entry => {
+    const script = `import {UsageMeter} from ${JSON.stringify(join(packageRoot, "dist", entry))}; process.stdout.write(typeof UsageMeter);`;
+    expect(execFileSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8" })).toBe("function");
+    const filename = join(packageRoot, "usage-meter-consumer.check.ts");
+    const consumer = `import {UsageMeter, type UsageMeterProps, type UsageMeterThreshold} from ${JSON.stringify(join(packageRoot, "dist", entry))};
+      const threshold: UsageMeterThreshold = {at: 0.8, tone: "warning", message: "Check usage"};
+      const props: UsageMeterProps = {label: "API requests", used: 8, limit: 10, usedText: "8 requests", limitText: "of 10", periodText: "This period", thresholds: [threshold], size: "compact"};
+      UsageMeter(props);`;
+    const options = { strict: true, noEmit: true, skipLibCheck: true, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler };
+    const host = ts.createCompilerHost(options), original = host.getSourceFile.bind(host);
+    host.getSourceFile = (path, language, error, fresh) => path === filename ? ts.createSourceFile(path, consumer, language, true) : original(path, language, error, fresh);
+    const diagnostics = ts.getPreEmitDiagnostics(ts.createProgram([filename], options, host));
+    expect(diagnostics.map(diagnostic => ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n"))).toEqual([]);
+  });
+});
+
 describe("compiled AccessMatrix and ColumnMapper public contract", () => {
   it("exports both components and exact required props and value types from client barrels only", () => {
     const filename = join(packageRoot, "access-matrix-column-mapper-consumer.check.ts");
@@ -699,6 +754,17 @@ describe("compiled DataTable saved-view public contract", () => {
       expect(negative.split("\n")[line]).toContain(cases[index]!.source);
     }
   }, 30_000);
+});
+
+it("exports PageBar from the public root and blocks barrels with all seven public types", async () => {
+  const blocks = await import("./blocks/index.js");
+  const root = await import("./index.js");
+  expect((blocks as any).PageBar).toBeTypeOf("function");
+  expect((root as any).PageBar).toBe((blocks as any).PageBar);
+  for (const file of ["src/blocks/index.ts", "src/index.ts"]) {
+    const source = readFileSync(join(packageRoot, file), "utf8");
+    for (const name of ["PageBarProps", "PageBarPage", "PageBarCrumb", "PageBarAction", "PageBarDestination", "PageBarLabels", "PageBarWidth"]) expect(source).toContain(name);
+  }
 });
 
 describe("compiled NewsletterBand public contract", () => {

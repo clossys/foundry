@@ -1,6 +1,6 @@
-import type { CSSProperties, HTMLAttributes } from "react";
-import { cx } from "./internal/cx.js";
-import { UI_BORDER_HAIRLINE, UI_BORDER_RULE } from "./internal/ui-vars.js";
+import type { HTMLAttributes } from "react";
+import { Label, Meter as AriaMeter } from "react-aria-components";
+import { MeterBar, VALUE_ROW_CLASSES, meterRootClassName, resolveMeter } from "./Meter.server.js";
 
 /**
  * Fill colour and texture. The four status tones repeat a state; `neutral`
@@ -44,60 +44,22 @@ export interface MeterProps extends Omit<HTMLAttributes<HTMLDivElement>, "childr
   tone: MeterTone;
   /**
    * Required. The value as visible text ("3.4x", "42%"). The bar is
-   * decoration (`aria-hidden`); this text carries the meaning.
+   * decoration (`aria-hidden`); this text carries the meaning, and is also
+   * the meter's accessible name and `aria-valuetext`.
    */
   valueText: string;
+  /**
+   * Optional accessible name for the meter: what it measures ("API
+   * requests"). When given, it names the meter in place of the value text;
+   * `valueText` stays the visible value and the `aria-valuetext`. Omit it and
+   * the visible `valueText` names the meter. The server `Meter` has no role
+   * and ignores it.
+   */
+  label?: string;
   /** Optional visible limit text ("limit 3.0x"), shown after the value. */
   limitText?: string;
   /** @default "default" */
   emphasis?: MeterEmphasis;
-}
-
-const FILL_CLASSES: Record<MeterTone, string> = {
-  success: "bg-status-success",
-  warning: "bg-status-warning-tint text-status-warning",
-  danger: "bg-status-danger",
-  info: "bg-status-info-tint text-status-info",
-  neutral: "bg-ink-secondary",
-  accent: "bg-accent",
-};
-
-// Texture for the two tones a solid fill cannot tell apart in greyscale,
-// drawn in `currentColor` (the tone colour set by the class above) at the
-// emphasis-rule weight, so a brand that re-weights its rules re-weights
-// these too.
-const FILL_TEXTURES: Partial<Record<MeterTone, CSSProperties>> = {
-  warning: {
-    backgroundImage: `repeating-linear-gradient(-45deg, currentColor 0 ${UI_BORDER_RULE}, transparent 0 calc(2 * ${UI_BORDER_RULE}))`,
-  },
-  info: { boxShadow: `inset 0 0 0 ${UI_BORDER_RULE} currentColor` },
-};
-
-/** The value row per emphasis: the row, the value, and the limit. */
-const VALUE_ROW_CLASSES: Record<MeterEmphasis, { row: string; value: string; limit: string }> = {
-  default: {
-    row: "flex flex-wrap items-baseline justify-between gap-x-sm text-body-s",
-    value: "text-ink-primary tabular-nums",
-    limit: "text-ink-secondary tabular-nums",
-  },
-  figure: {
-    row: "flex flex-wrap items-baseline justify-between gap-x-md gap-y-xs",
-    value: "text-h1 @md:text-h0 font-normal leading-heading text-ink-primary tabular-nums",
-    limit: "text-body-s text-ink-secondary tabular-nums",
-  },
-};
-
-/** The gap between the value row and the bar: a figure takes a little more air. */
-const ROOT_GAP_CLASSES: Record<MeterEmphasis, string> = { default: "gap-xs", figure: "gap-sm" };
-
-function percentOf(amount: number, scaleMax: number): number {
-  return Math.min(100, Math.max(0, (amount / scaleMax) * 100));
-}
-
-function assertFiniteNonNegative(name: string, amount: number): void {
-  if (!Number.isFinite(amount) || amount < 0) {
-    throw new RangeError(`Meter: ${name} must be a finite number >= 0 (got ${String(amount)}).`);
-  }
 }
 
 /**
@@ -106,12 +68,30 @@ function assertFiniteNonNegative(name: string, amount: number): void {
  * a cap. One row of visible text (value, then limit) above a thin bar;
  * `emphasis="figure"` sets the value as the focal number of its panel.
  *
- * The bar is `aria-hidden` and there is no `<meter>` element: the visible
- * `valueText`/`limitText` carry the meaning for every reader, and a
- * screen reader hears the same words a sighted reader sees. Bar positions
- * use logical inline properties, so the bar fills from the inline start in
- * both writing directions. Not interactive, composes no other atom and
- * uses no hooks, so it is server-safe (re-exported from `atoms/server.ts`).
+ * Built on react-aria-components' own `Meter`, which supplies the root's
+ * `role="meter progressbar"` (the meter role with a progressbar fallback for
+ * browsers that lack it) and the `aria-valuenow`/`aria-valuemin`/
+ * `aria-valuemax` wiring. The visible `valueText` is rendered through its
+ * `Label`, so it names the meter, and it is also passed as the value label,
+ * so a screen reader announces the same words a sighted reader sees rather
+ * than a derived percentage. With a `label`, that text becomes the meter's
+ * `aria-label` instead and the value text is a plain `<span>`, so the name
+ * says what is measured and the value text stays the value. The bar stays
+ * `aria-hidden`: it is decoration.
+ * Bar positions use logical inline properties, so the bar fills from the
+ * inline start in both writing directions.
+ *
+ * This client `Meter` imports react-aria-components, which cannot load under
+ * React's `react-server` condition. The server-safe `Meter` exported from
+ * `@clossys/designer/atoms/server` is `Meter.server.tsx`: same props and
+ * markup, but with no meter role. Both share their class tables, validation
+ * and bar from that file.
+ *
+ * Attribute forwarding follows react-aria-components: `id`, `data-*`, the
+ * `aria-label`/`aria-labelledby`/`aria-describedby`/`aria-details` set, `dir`,
+ * `lang`, `hidden` and the common pointer/mouse/scroll/animation handlers
+ * reach the root; other native attributes (for example `title` or
+ * `tabIndex`) do not.
  *
  * Throws a `RangeError` for a non-finite or non-positive `scaleMax`, or a
  * non-finite or negative `value`/`limit`: a meter with no scale is a data
@@ -123,78 +103,37 @@ export function Meter({
   limit,
   previous,
   previousText,
-  direction = "max",
+  direction,
   tone,
   valueText,
+  label,
   limitText,
   emphasis = "default",
   className,
   ...rest
 }: MeterProps) {
-  if (!Number.isFinite(scaleMax) || scaleMax <= 0) {
-    throw new RangeError(`Meter: scaleMax must be a finite number > 0 (got ${String(scaleMax)}).`);
-  }
-  assertFiniteNonNegative("value", value);
-  if (limit !== undefined) assertFiniteNonNegative("limit", limit);
-  if ((previous === undefined) !== (previousText === undefined)) throw new TypeError("Meter: previous and previousText must be supplied together.");
-  if (previous !== undefined) {
-    assertFiniteNonNegative("previous", previous);
-    if (previous > scaleMax) throw new RangeError("Meter: previous must be within the scale.");
-    if (typeof previousText !== "string" || !previousText.trim()) throw new TypeError("Meter: previousText must contain authored text.");
-  }
-
-  const valuePct = percentOf(value, scaleMax);
-  const limitPct = limit === undefined ? undefined : percentOf(limit, scaleMax);
-  const previousPct = previous === undefined ? undefined : percentOf(previous, scaleMax);
-  const previousStyle: CSSProperties | undefined = previousPct === undefined ? undefined : {
-    insetInlineStart: `calc(${previousPct}% - ${previousPct / 100} * ${UI_BORDER_HAIRLINE})`,
-    inlineSize: UI_BORDER_HAIRLINE,
-    boxSizing: "border-box",
-    borderWidth: 0,
-    borderInlineStartWidth: UI_BORDER_HAIRLINE,
-  };
-
-  // The disallowed side of the limit: after it for a cap, before it for a floor.
-  const zoneStyle: CSSProperties | undefined =
-    limitPct === undefined
-      ? undefined
-      : direction === "max"
-        ? { insetInlineStart: `${limitPct}%`, inlineSize: `${100 - limitPct}%` }
-        : { insetInlineStart: "0%", inlineSize: `${limitPct}%` };
-
-  // Keeps the tick inside the track at both ends: at 0% it starts at the
-  // edge, at 100% it ends at the edge.
-  const tickStyle: CSSProperties | undefined =
-    limitPct === undefined
-      ? undefined
-      : {
-          insetInlineStart: `calc(${limitPct}% - ${limitPct / 100} * ${UI_BORDER_RULE})`,
-          inlineSize: UI_BORDER_RULE,
-        };
-
+  const resolved = resolveMeter({ value, scaleMax, limit, previous, previousText, direction });
   return (
-    <div
+    <AriaMeter
       {...rest}
-      data-direction={direction}
+      {...(label === undefined ? {} : { "aria-label": label })}
+      value={value}
+      minValue={0}
+      maxValue={scaleMax}
+      valueLabel={valueText}
+      data-direction={resolved.direction}
       data-tone={tone}
       data-emphasis={emphasis}
-      className={cx("flex flex-col font-body", ROOT_GAP_CLASSES[emphasis], className)}
+      className={meterRootClassName(emphasis, className)}
     >
       <div className={VALUE_ROW_CLASSES[emphasis].row}>
-        <span className={VALUE_ROW_CLASSES[emphasis].value}>{valueText}</span>
+        {label === undefined
+          ? <Label className={VALUE_ROW_CLASSES[emphasis].value}>{valueText}</Label>
+          : <span className={VALUE_ROW_CLASSES[emphasis].value}>{valueText}</span>}
         {limitText ? <span className={VALUE_ROW_CLASSES[emphasis].limit}>{limitText}</span> : null}
       </div>
       {previousText !== undefined ? <p className="m-0 text-body-s text-ink-secondary tabular-nums">{previousText}</p> : null}
-      <div aria-hidden="true" className="relative h-2 w-full overflow-hidden rounded-pill bg-surface-sunken">
-        {zoneStyle ? <span data-part="zone" className="absolute inset-y-0 bg-line-base" style={zoneStyle} /> : null}
-        <span
-          data-part="fill"
-          className={cx("absolute inset-y-0 rounded-pill", FILL_CLASSES[tone])}
-          style={{ ...FILL_TEXTURES[tone], insetInlineStart: "0%", inlineSize: `${valuePct}%` }}
-        />
-        {tickStyle ? <span data-part="limit" className="absolute inset-y-0 bg-ink-primary" style={tickStyle} /> : null}
-        {previousStyle ? <span data-part="previous" className="absolute inset-y-0 border-s border-dashed border-ink-secondary bg-surface-base" style={previousStyle} /> : null}
-      </div>
-    </div>
+      <MeterBar tone={tone} {...resolved} />
+    </AriaMeter>
   );
 }
