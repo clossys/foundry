@@ -1,7 +1,6 @@
 import { act, cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { I18nProvider } from "react-aria-components";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { ChevronLeft } from "../icons/ChevronLeft.js";
 import { ChevronRight } from "../icons/ChevronRight.js";
 import { MediaGallery, type MediaGalleryItem, type MediaGalleryProps } from "./MediaGallery.js";
@@ -29,6 +28,8 @@ function props(overrides: Partial<MediaGalleryProps> = {}): MediaGalleryProps {
 }
 
 describe("MediaGallery", () => {
+  afterEach(() => document.documentElement.removeAttribute("dir"));
+
   it("opens the chosen image and restores that thumbnail on Escape (mutant: restore the first thumbnail)", async () => {
     const user = userEvent.setup();
     render(<MediaGallery {...props()} />);
@@ -43,17 +44,21 @@ describe("MediaGallery", () => {
   });
 
   it.each([
-    ["en", "ArrowLeft", "ArrowRight"],
-    ["ar", "ArrowRight", "ArrowLeft"],
-  ])("mirrors arrow navigation for %s (mutant: no RTL mirroring)", async (locale, previous, next) => {
+    ["ltr", "ArrowLeft", "ArrowRight"],
+    ["rtl", "ArrowRight", "ArrowLeft"],
+  ])("mirrors arrow navigation for %s (mutant: no RTL mirroring)", async (direction, previous, next) => {
     const user = userEvent.setup();
-    render(<I18nProvider locale={locale}><MediaGallery {...props()} /></I18nProvider>);
+    document.documentElement.setAttribute("dir", direction);
+    render(<MediaGallery {...props()} />);
     await user.click(screen.getByRole("button", { name: "Inspect Panel 2" }));
     await screen.findByRole("dialog", { name: "Panel 2" });
-    const previousGlyph = locale === "ar" ? ChevronRight : ChevronLeft;
-    const nextGlyph = locale === "ar" ? ChevronLeft : ChevronRight;
-    expect(screen.getByRole("button", { name: "Earlier panel" }).querySelector("path")).toHaveAttribute("d", previousGlyph[0]![1].d);
-    expect(screen.getByRole("button", { name: "Later panel" }).querySelector("path")).toHaveAttribute("d", nextGlyph[0]![1].d);
+    const previousButton = screen.getByRole("button", { name: "Earlier panel" });
+    const nextButton = screen.getByRole("button", { name: "Later panel" });
+    expect(previousButton.querySelector("path")).toHaveAttribute("d", ChevronLeft[0]![1].d);
+    expect(nextButton.querySelector("path")).toHaveAttribute("d", ChevronRight[0]![1].d);
+    // The arrow turns with the writing direction through CSS alone (mutant: drop the class).
+    expect(previousButton).toHaveClass("rtl:rotate-180");
+    expect(nextButton).toHaveClass("rtl:rotate-180");
     await user.keyboard(`{${previous}}`);
     expect(screen.getByRole("dialog", { name: "Panel 1" })).toBeInTheDocument();
     await user.keyboard(`{${next}}`);

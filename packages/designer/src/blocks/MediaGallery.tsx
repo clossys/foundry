@@ -1,7 +1,6 @@
 "use client";
 
 import { useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
-import { useLocale } from "react-aria-components";
 import { Dialog } from "../atoms/Dialog.js";
 import { IconButton } from "../atoms/IconButton.js";
 import { cx } from "../atoms/internal/cx.js";
@@ -45,6 +44,8 @@ const COLUMN_CLASSES = {
   3: "grid-cols-2 tablet:grid-cols-3 desktop:grid-cols-3",
   4: "grid-cols-2 tablet:grid-cols-3 desktop:grid-cols-4",
 } as const;
+/** The chevrons point left and right; under the rtl variant the arrow turns with the writing direction. */
+const MIRROR_IN_RTL = "rtl:rotate-180";
 const ASPECT_CLASSES = {
   "1:1": "aspect-square",
   "4:3": "aspect-4/3",
@@ -56,7 +57,6 @@ export function MediaGallery({ items, columns = 3, aspect = "4:3", openLabel, cl
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const content = useRef<HTMLDivElement>(null);
   const pendingFocus = useRef<0 | 1 | null>(null);
-  const { direction } = useLocale();
   useLayoutEffect(() => {
     const requested = pendingFocus.current;
     pendingFocus.current = null;
@@ -69,9 +69,6 @@ export function MediaGallery({ items, columns = 3, aspect = "4:3", openLabel, cl
   const colors = SECTION_GROUND_CLASSES[ground];
   const inverse = ground === "inverse";
   const focusClass = inverse ? "focus-visible:outline-accent-on-inverse" : "focus-visible:outline-accent";
-  const rtl = direction === "rtl";
-  const previousIcon = rtl ? ChevronRight : ChevronLeft;
-  const nextIcon = rtl ? ChevronLeft : ChevronRight;
   const current = openIndex === null ? undefined : items[openIndex];
 
   function navigate(index: number) {
@@ -90,6 +87,9 @@ export function MediaGallery({ items, columns = 3, aspect = "4:3", openLabel, cl
 
   function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     if (openIndex === null) return;
+    // Read the writing direction when the key is pressed, as ResizeHandle does.
+    const element = event.currentTarget;
+    const rtl = (getComputedStyle(element).direction || element.closest("[dir]")?.getAttribute("dir")) === "rtl";
     let target: number;
     switch (event.key) {
       case "ArrowLeft": target = openIndex + (rtl ? 1 : -1); break;
@@ -120,9 +120,9 @@ export function MediaGallery({ items, columns = 3, aspect = "4:3", openLabel, cl
             <div className="max-h-[60vh] w-full min-w-0 max-w-full overflow-auto">{current.full}</div>
             {current.caption !== undefined ? <div className="text-body-s text-ink-secondary">{current.caption}</div> : null}
             <footer className="flex flex-wrap items-center justify-center gap-sm">
-              <IconButton icon={previousIcon} label={previousLabel} autoFocus={openIndex > 0} isDisabled={openIndex === 0} onPress={() => navigate(openIndex - 1)} />
+              <IconButton icon={ChevronLeft} className={MIRROR_IN_RTL} label={previousLabel} autoFocus={openIndex > 0} isDisabled={openIndex === 0} onPress={() => navigate(openIndex - 1)} />
               <span role="status" aria-live="polite" className="text-body-s text-ink-secondary">{positionLabel(openIndex + 1, items.length)}</span>
-              <IconButton icon={nextIcon} label={nextLabel} autoFocus={openIndex === 0} isDisabled={openIndex === items.length - 1} onPress={() => navigate(openIndex + 1)} />
+              <IconButton icon={ChevronRight} className={MIRROR_IN_RTL} label={nextLabel} autoFocus={openIndex === 0} isDisabled={openIndex === items.length - 1} onPress={() => navigate(openIndex + 1)} />
               <IconButton icon={X} label={closeLabel} onPress={() => setOpenIndex(null)} />
             </footer>
           </div>
