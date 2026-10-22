@@ -520,6 +520,13 @@ both.
 `src/shell/` — enough for Hero, feature blocks, and site chrome on a pre-auth
 marketing page. `charts` and `theme` remain Tailwind-native only.
 
+**`className` on this path.** Nothing compiles your own markup here, so a
+class passed through `className` takes effect only when it is already in
+`styles/compiled.css` (which holds the utilities the package's own atoms,
+blocks and shell use) or is defined in your own CSS. Any other utility class
+does nothing. Search `compiled.css` for a class before relying on it, or
+style the wrapper with your own CSS.
+
 Verify the stylesheet your app loads with `designer-hero-css-check
 path/to/your.css` (or point it at `node_modules/@clossys/designer/styles/compiled.css`
 when you import that file unchanged).
@@ -1408,7 +1415,7 @@ function Status() {
 import { Card } from "@clossys/designer/atoms";
 
 function Panel() {
-  return <Card className="max-w-sm">Plain content, raised off the page.</Card>;
+  return <Card>Plain content, raised off the page.</Card>;
 }
 ```
 
