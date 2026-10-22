@@ -8,6 +8,7 @@ import userEvent from "@testing-library/user-event";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { Button } from "@clossys/designer/atoms";
+import { groupRows, parseDataTableViewModel, type DataTableViewModel } from "@clossys/designer/blocks";
 import { IndexView, type IndexViewProps } from "./IndexView.js";
 import * as web from "../index.js";
 import * as client from "../client.js";
@@ -187,5 +188,74 @@ describe("IndexView", () => {
     expect(source).not.toMatch(/\b(?:AppFrame|SiteFrame|SiteHeader|SiteFooter)\s*[,}]/);
     expect(source).not.toMatch(/\bPageHeader\b/);
     for (const block of ["Toolbar", "DataTable", "EmptyState", "Pagination"]) expect(source).toMatch(new RegExp(`<${block}\\b`));
+  });
+});
+
+describe("IndexView table view model", () => {
+  const tableModel = { version: 1, collation: { locale: "en" }, columns: [{ id: "name", kind: "text" }, { id: "state", kind: "enum" }] } as const;
+  const flat: DataTableViewModel = parseDataTableViewModel({ version: 2, table: tableModel, mode: "flat", density: "comfortable", sort: [], visibleColumns: ["name"] });
+  const grouped: DataTableViewModel = parseDataTableViewModel({ version: 2, table: { ...tableModel, groupBy: [{ column: "state" }] }, mode: "grouped", density: "comfortable", sort: [], visibleColumns: ["name", "state"] });
+  const availableKey = groupRows(rows as readonly Row[], grouped.table).find(group => group.path.join() === "Available")!.key;
+  const sortable = { ...base, columns: [{ ...base.columns[0]!, allowsSorting: true }, base.columns[1]!] } satisfies IndexViewProps<Row>;
+  const views = [["client", IndexView], ["server", server.IndexView]] as const;
+
+  it.each(views)("renders the supplied model through the %s View", (_channel, View) => {
+    const html = renderToStaticMarkup(<View {...base} table={{ model: flat, onModelChange: vi.fn() }} />);
+    expect(html).toContain("View options");
+    expect(html).toContain("First record");
+    expect(html).not.toContain("Available");
+    const groupedHtml = renderToStaticMarkup(<View {...base} table={{ model: grouped, onModelChange: vi.fn() }} />);
+    expect(groupedHtml).toContain("Collapse group Available");
+    expect(groupedHtml).toContain("Collapse group Planned");
+  });
+
+  it("reports a replacement model when a model header is sorted", async () => {
+    const onModelChange = vi.fn();
+    render(<IndexView {...sortable} table={{ model: flat, onModelChange }} />);
+    await userEvent.setup().click(screen.getByRole("columnheader", { name: /Name/ }));
+    expect(onModelChange).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ version: 2, sort: [{ column: "name", direction: "ascending" }] }));
+  });
+
+  it.each(views)("uses host messages for visible copy through the %s View", (_channel, View) => {
+    const html = renderToStaticMarkup(<View {...base} table={{ model: grouped, onModelChange: vi.fn(), messages: { viewOptionsLabel: "Table settings", groupToggleMessage: (path, expanded) => `${expanded ? "Fold" : "Unfold"} ${path.join("/")}` } }} />);
+    expect(html).toContain("Table settings");
+    expect(html).not.toContain("View options");
+    expect(html).toContain("Fold Available");
+  });
+
+  it.each(views)("controls group expansion through the %s View", (_channel, View) => {
+    const html = renderToStaticMarkup(<View {...base} table={{ model: grouped, onModelChange: vi.fn(), expandedGroupKeys: new Set([availableKey]), onExpandedGroupKeysChange: vi.fn() }} />);
+    expect(html).toContain("First record");
+    expect(html).not.toContain("Second record");
+    expect(html).toContain("Collapse group Available");
+    expect(html).toContain("Expand group Planned");
+  });
+
+  it("reports the next expanded group keys from a group toggle", async () => {
+    const onExpandedGroupKeysChange = vi.fn();
+    render(<IndexView {...base} table={{ model: grouped, onModelChange: vi.fn(), expandedGroupKeys: new Set<string>(), onExpandedGroupKeysChange }} />);
+    expect(screen.queryByText("First record")).toBeNull();
+    await userEvent.setup().click(screen.getByRole("button", { name: "Expand group Available" }));
+    expect(onExpandedGroupKeysChange).toHaveBeenCalledExactlyOnceWith(new Set([availableKey]));
+  });
+
+  it("keeps the row-header link wrapper working with a flat or grouped model", async () => {
+    const onNavigate = vi.fn();
+    const user = userEvent.setup();
+    const rowRoute = { href: (row: Row) => `/records/${row.id}`, onNavigate };
+    const { unmount } = render(<IndexView {...sortable} rowRoute={rowRoute} table={{ model: flat, onModelChange: vi.fn() }} />);
+    expect(screen.getByRole("link", { name: "First record" })).toHaveAttribute("href", "/records/one");
+    await user.click(screen.getByRole("link", { name: "Second record" }));
+    expect(onNavigate).toHaveBeenCalledExactlyOnceWith("/records/two", rows[1]);
+    unmount(); onNavigate.mockClear();
+    const onModelChange = vi.fn();
+    render(<IndexView {...sortable} rowRoute={rowRoute} table={{ model: grouped, onModelChange }} />);
+    expect(screen.getByRole("link", { name: "First record" })).toHaveAttribute("href", "/records/one");
+    await user.click(screen.getByRole("link", { name: "First record" }));
+    expect(onNavigate).toHaveBeenCalledExactlyOnceWith("/records/one", rows[0]);
+    expect(onModelChange).not.toHaveBeenCalled();
+    await user.click(screen.getByRole("columnheader", { name: /Name/ }));
+    expect(onModelChange).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ sort: [{ column: "name", direction: "ascending" }] }));
+    expect(screen.getByRole("link", { name: "First record" })).toBeInTheDocument();
   });
 });
