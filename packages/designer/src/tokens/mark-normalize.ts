@@ -82,6 +82,15 @@ interface Contour {
 }
 const identity: Matrix = [1, 0, 0, 1, 0, 0];
 const fail = (feature: string): never => { throw new MarkGeometryError(feature); };
+interface GeometryBudget { generated: number; work: number }
+function reserveGeometry(budget: GeometryBudget, count: number): void {
+  budget.generated += count;
+  if (budget.generated > 100000) fail('generated geometry complexity');
+}
+function reserveWork(budget: GeometryBudget, count: number): void {
+  budget.work += count;
+  if (budget.work > 2000000) fail('paint work complexity');
+}
 const numPattern = /[+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?/g;
 function decodeAttribute(value: string): string {
   const entity = /&(#x[\dA-Fa-f]+|#\d+|amp|lt|gt|quot|apos);/g;
@@ -196,14 +205,19 @@ function parse(svg: string, lockupText = false): Node {
       const attr = attribute.exec(content);
       if (!attr || attrs[attr[1]!] !== undefined)
         fail("XML attribute");
+      const key = attr![1]!;
+      if (!/^[A-Za-z_][A-Za-z0-9_.:-]*$/.test(key)) fail(`XML attribute ${key}`);
+      if (key !== 'viewBox' && /[A-Z]/.test(key)) fail(`attribute ${key}`);
       if (/^on/i.test(attr![1]!)) fail(`event attribute ${attr![1]}`);
       attrs[attr![1]!] = decodeAttribute(attr![2] ?? attr![3]!);
       position = attribute.lastIndex;
     }
     const node: Node = { name, attrs, children: [], start, openEnd: end, end };
     (stack.length ? stack[stack.length - 1]!.children : roots).push(node);
-    if (!selfClosing)
+    if (!selfClosing) {
+      if (stack.length >= 64) fail('nesting depth');
       stack.push(node);
+    }
   }
   if (stack.length || svg.slice(end).trim() || roots.length !== 1 || roots[0]!.name !== "svg")
     fail("svg document");
@@ -228,26 +242,28 @@ function bounds(points: Point[]): MarkBox {
 }
 // Curves are flattened adaptively to one millionth of the source canvas.
 // Bounds and area are computed from that geometry, never from control-point boxes.
-function cubic(a: Point, b: Point, c: Point, d: Point, tolerance: number, out: Point[], depth = 0): void {
+function cubic(a: Point, b: Point, c: Point, d: Point, tolerance: number, out: Point[], budget: GeometryBudget, depth = 0): void {
   const chord = sub(d, a), length = Math.hypot(...chord);
   const distance = (p: Point) => length ? Math.abs(cross(sub(p, a), chord)) / length : Math.hypot(...sub(p, a));
   const polygonLength = Math.hypot(...sub(b, a)) + Math.hypot(...sub(c, b)) + Math.hypot(...sub(d, c));
   if (Math.max(distance(b), distance(c), polygonLength - length) <= tolerance) {
+    reserveGeometry(budget, 1);
     out.push(d);
     return;
   }
   if (depth > 24)
     return fail("curve precision");
   const ab = mul(add(a, b), .5), bc = mul(add(b, c), .5), cd = mul(add(c, d), .5), abc = mul(add(ab, bc), .5), bcd = mul(add(bc, cd), .5), mid = mul(add(abc, bcd), .5);
-  cubic(a, ab, abc, mid, tolerance, out, depth + 1);
-  cubic(mid, bcd, cd, d, tolerance, out, depth + 1);
+  cubic(a, ab, abc, mid, tolerance, out, budget, depth + 1);
+  cubic(mid, bcd, cd, d, tolerance, out, budget, depth + 1);
 }
-function arc(a: Point, v: number[], end: Point, tolerance: number, out: Point[]): void {
+function arc(a: Point, v: number[], end: Point, tolerance: number, out: Point[], budget: GeometryBudget): void {
   let rx = Math.abs(v[0]!), ry = Math.abs(v[1]!);
   const phi = v[2]! * Math.PI / 180, large = v[3]!, sweep = v[4]!;
   if (![0, 1].includes(large) || ![0, 1].includes(sweep))
     fail("arc flags");
   if (!rx || !ry) {
+    reserveGeometry(budget, 1);
     out.push(end);
     return;
   }
@@ -273,12 +289,13 @@ function arc(a: Point, v: number[], end: Point, tolerance: number, out: Point[])
     fail("arc numeric overflow");
   if (count > 100000)
     fail("arc complexity");
+  reserveGeometry(budget, count);
   for (let i = 1; i <= count; i++) {
     const theta = start + delta * i / count, ex = rx * Math.cos(theta), ey = ry * Math.sin(theta);
     out.push(i === count ? end : [centre[0] + c * ex - s * ey, centre[1] + s * ex + c * ey]);
   }
 }
-function path(data: string, tolerance: number): Contour[] {
+function path(data: string, tolerance: number, budget: GeometryBudget): Contour[] {
   const tokens = data.match(/[a-zA-Z]|[+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?/g) ?? [];
   if (data.replace(/[a-zA-Z]|[+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?/g, "").replace(/[\s,]/g, ""))
     fail("path data");
@@ -320,6 +337,7 @@ function path(data: string, tolerance: number): Contour[] {
     if (!v.every(Number.isFinite))
       fail(`path ${command}`);
     if (current?.closed && upper !== 'M') {
+      reserveGeometry(budget, 1);
       current = { points: [at], closed: false };
       contours.push(current);
     }
@@ -328,12 +346,14 @@ function path(data: string, tolerance: number): Contour[] {
     if (upper === "M") {
       at = pair(0);
       start = at;
+      reserveGeometry(budget, 1);
       current = { points: [at], closed: false };
       contours.push(current);
       command = relative ? "l" : "L";
     }
     else if (upper === "L" || upper === "H" || upper === "V") {
       end = upper === "L" ? pair(0) : upper === "H" ? [v[0]! + (relative ? at[0] : 0), at[1]] : [at[0], v[0]! + (relative ? at[1] : 0)];
+      reserveGeometry(budget, 1);
       current!.points.push(end);
       at = end;
     }
@@ -341,42 +361,43 @@ function path(data: string, tolerance: number): Contour[] {
       const first = upper === "C" ? pair(0) : (/[CS]/.test(previous) ? sub(mul(at, 2), control) : at);
       const second = pair(upper === "C" ? 2 : 0);
       end = pair(upper === "C" ? 4 : 2);
-      cubic(at, first, second, end, tolerance, current!.points);
+      cubic(at, first, second, end, tolerance, current!.points, budget);
       control = second;
       at = end;
     }
     else if (upper === "Q" || upper === "T") {
       const middle = upper === "Q" ? pair(0) : (/[QT]/.test(previous) ? sub(mul(at, 2), control) : at);
       end = pair(upper === "Q" ? 2 : 0);
-      cubic(at, add(at, mul(sub(middle, at), 2 / 3)), add(end, mul(sub(middle, end), 2 / 3)), end, tolerance, current!.points);
+      cubic(at, add(at, mul(sub(middle, at), 2 / 3)), add(end, mul(sub(middle, end), 2 / 3)), end, tolerance, current!.points, budget);
       control = middle;
       at = end;
     }
     else {
       end = pair(5);
-      arc(at, v, end, tolerance, current!.points);
+      arc(at, v, end, tolerance, current!.points, budget);
       at = end;
     }
     previous = upper;
   }
   return contours;
 }
-function ellipse(cx: number, cy: number, rx: number, ry: number, tolerance: number): Contour {
+function ellipse(cx: number, cy: number, rx: number, ry: number, tolerance: number, budget: GeometryBudget): Contour {
   const count = Math.max(16, 4 * Math.ceil(Math.PI / (4 * Math.acos(Math.max(-1, 1 - tolerance / Math.max(rx, ry))))));
   if (!Number.isFinite(count) || count > 100000)
     return fail("ellipse complexity");
+  reserveGeometry(budget, count);
   return { closed: true, points: Array.from({ length: count }, (_, i) => [cx + rx * Math.cos(i * 2 * Math.PI / count), cy + ry * Math.sin(i * 2 * Math.PI / count)] as Point) };
 }
-function contours(node: Node, tolerance: number): Contour[] {
+function contours(node: Node, tolerance: number, budget: GeometryBudget): Contour[] {
   const a = node.attrs, n = (key: string, fallback = 0) => number(a, key, fallback);
   switch (node.name) {
-    case "path": return path(a.d ?? "", tolerance);
+    case "path": return path(a.d ?? "", tolerance, budget);
     case "circle":
     case "ellipse": {
       const rx = n(node.name === "circle" ? "r" : "rx"), ry = node.name === "circle" ? rx : n("ry");
       if (rx <= 0 || ry <= 0)
         return fail(node.name);
-      return [ellipse(n("cx"), n("cy"), rx, ry, tolerance)];
+      return [ellipse(n("cx"), n("cy"), rx, ry, tolerance, budget)];
     }
     case "rect": {
       const x = n("x"), y = n("y"), w = n("width"), h = n("height");
@@ -385,14 +406,17 @@ function contours(node: Node, tolerance: number): Contour[] {
       const rx = Math.min(n("rx", n("ry")), w / 2), ry = Math.min(n("ry", n("rx")), h / 2);
       if (rx < 0 || ry < 0)
         return fail("rect radius");
-      if (!rx || !ry)
+      if (!rx || !ry) {
+        reserveGeometry(budget, 4);
         return [{ closed: true, points: [[x, y], [x + w, y], [x + w, y + h], [x, y + h]] }];
-      return path(`M${x + rx} ${y} H${x + w - rx} A${rx} ${ry} 0 0 1 ${x + w} ${y + ry} V${y + h - ry} A${rx} ${ry} 0 0 1 ${x + w - rx} ${y + h} H${x + rx} A${rx} ${ry} 0 0 1 ${x} ${y + h - ry} V${y + ry} A${rx} ${ry} 0 0 1 ${x + rx} ${y} Z`, tolerance);
+      }
+      return path(`M${x + rx} ${y} H${x + w - rx} A${rx} ${ry} 0 0 1 ${x + w} ${y + ry} V${y + h - ry} A${rx} ${ry} 0 0 1 ${x + w - rx} ${y + h} H${x + rx} A${rx} ${ry} 0 0 1 ${x} ${y + h - ry} V${y + ry} A${rx} ${ry} 0 0 1 ${x + rx} ${y} Z`, tolerance, budget);
     }
     case "polygon": {
       const v = numbers(a.points ?? "");
       if (v.length < 6 || v.length % 2)
         return fail("polygon points");
+      reserveGeometry(budget, v.length / 2);
       return [{ closed: true, points: Array.from({ length: v.length / 2 }, (_, i) => [v[2 * i]!, v[2 * i + 1]!] as Point) }];
     }
     default: return fail(node.name);
@@ -404,7 +428,7 @@ interface Region {
   contours: Point[][];
   evenOdd?: boolean;
 }
-function stroke(contour: Contour, width: number, a: Attrs, tolerance: number): Region[] {
+function stroke(contour: Contour, width: number, a: Attrs, tolerance: number, budget: GeometryBudget): Region[] {
   const p = contour.points.filter((v, i, all) => !i || Math.hypot(...sub(v, all[i - 1]!)) > 1e-12);
   if (p.length > 1 && Math.hypot(...sub(p[0]!, p[p.length - 1]!)) < 1e-12)
     p.pop();
@@ -414,12 +438,15 @@ function stroke(contour: Contour, width: number, a: Attrs, tolerance: number): R
     fail(`stroke-linecap ${cap}`);
   if (!['miter', 'round', 'bevel'].includes(join))
     fail(`stroke-linejoin ${join}`);
-  const emit = (points: Point[]) => out.push({ contours: [points] });
+  const emit = (points: Point[]) => {
+    reserveGeometry(budget, points.length);
+    out.push({ contours: [points] });
+  };
   // Bound a drawn zero-length segment before constructing its directions.
   if (p.length === 1 && contour.points.length > 1) {
     const [x, y] = p[0]!;
     if (cap === 'square') emit([[x - radius, y - radius], [x + radius, y - radius], [x + radius, y + radius], [x - radius, y + radius]]);
-    if (cap === 'round') emit(ellipse(x, y, radius, radius, tolerance).points);
+    if (cap === 'round') emit(ellipse(x, y, radius, radius, tolerance, budget).points);
     return out;
   }
   const directions: Point[] = [], normals: Point[] = [];
@@ -432,7 +459,7 @@ function stroke(contour: Contour, width: number, a: Attrs, tolerance: number): R
   for (let i = 0; i < p.length; i++) {
     const prev = (i - 1 + count) % count, next = i % count, endpoint = !contour.closed && (i === 0 || i === p.length - 1);
     if (endpoint && cap === 'round')
-      emit(ellipse(p[i]![0], p[i]![1], radius, radius, tolerance).points);
+      emit(ellipse(p[i]![0], p[i]![1], radius, radius, tolerance, budget).points);
     if (endpoint && cap === 'square' && count) {
       const j = i === 0 ? 0 : count - 1, extended = add(p[i]!, mul(directions[j]!, i === 0 ? -radius : radius)), n = normals[j]!;
       emit([add(p[i]!, n), add(extended, n), sub(extended, n), sub(p[i]!, n)]);
@@ -450,6 +477,7 @@ function stroke(contour: Contour, width: number, a: Attrs, tolerance: number): R
             delta -= 2 * Math.PI;
           const steps = Math.max(1, Math.ceil(Math.abs(delta) / (2 * Math.acos(Math.max(-1, 1 - tolerance / radius)))));
           if (!Number.isFinite(steps) || steps > 100000) fail('round join complexity');
+          reserveGeometry(budget, steps + 2);
           const sector: Point[] = [p[i]!];
           for (let j = 0; j <= steps; j++)
             sector.push(add(p[i]!, [radius * Math.cos(start + delta * j / steps), radius * Math.sin(start + delta * j / steps)]));
@@ -468,6 +496,8 @@ function stroke(contour: Contour, width: number, a: Attrs, tolerance: number): R
 // handles holes; merging spans counts overlapping paint only once. The strip
 // height bounds vertical sampling precision to 1/4096 of the painted height.
 function areaCentroid(regions: Region[], box: MarkBox): Point {
+  const pointCount = regions.reduce((sum, region) => sum + region.contours.reduce((count, contour) => count + contour.length, 0), 0);
+  if (pointCount * 4096 > 20000000) fail('centroid complexity');
   let area = 0, momentX = 0, momentY = 0;
   const edges = regions.map(region => ({ evenOdd: region.evenOdd, edges: region.contours.flatMap(points => points.flatMap((p, i) => {
       const q = points[(i + 1) % points.length]!;
@@ -523,7 +553,7 @@ interface Analysis {
 }
 // Split scan bands at edge crossings, then bound only intervals whose winding
 // actually paints. Separate SVG shapes remain separate regions, never holes.
-function paintedBoundary(region: Region): Point[] {
+function paintedBoundary(region: Region, budget: GeometryBudget): Point[] {
   const points = region.contours.flat();
   if (!points.length) return [];
   bounds(points); // Preserve the finite-coordinate refusal before comparisons.
@@ -540,13 +570,16 @@ function paintedBoundary(region: Region): Point[] {
     const q = contour[(i + 1) % contour.length]!;
     return p[1] === q[1] ? [] : [{ p, q, low: Math.min(p[1], q[1]), high: Math.max(p[1], q[1]), slope: (q[0] - p[0]) / (q[1] - p[1]) }];
   }));
+  const levels = [...new Set(edges.flatMap(edge => [edge.low, edge.high]))].sort((a, b) => a - b);
+  reserveWork(budget, edges.length + levels.length);
   type Edge = typeof edges[number];
   const starts = new Map<number, Edge[]>(), ends = new Map<number, Edge[]>();
   for (const edge of edges) {
-    starts.set(edge.low, [...(starts.get(edge.low) ?? []), edge]);
-    ends.set(edge.high, [...(ends.get(edge.high) ?? []), edge]);
+    const starting = starts.get(edge.low) ?? [], ending = ends.get(edge.high) ?? [];
+    starting.push(edge); ending.push(edge);
+    starts.set(edge.low, starting);
+    ends.set(edge.high, ending);
   }
-  const levels = [...new Set(edges.flatMap(edge => [edge.low, edge.high]))].sort((a, b) => a - b);
   const active = new Set<Edge>(), result: Point[] = [];
   const x = (edge: Edge, y: number) => edge.p[0] + (y - edge.p[1]) * edge.slope;
   let bands = 0;
@@ -556,6 +589,7 @@ function paintedBoundary(region: Region): Point[] {
     const pending: Point[] = [[levels[level]!, levels[level + 1]!]];
     while (pending.length) {
       if (++bands > 100000) return fail('paint complexity');
+      reserveWork(budget, 16 * active.size * Math.max(1, Math.log2(active.size)));
       const [low, high] = pending.pop()!, middle = low + (high - low) / 2;
       const ordered = [...active].sort((a, b) => x(a, middle) - x(b, middle));
       let split = false;
@@ -574,7 +608,10 @@ function paintedBoundary(region: Region): Point[] {
         while (i < ordered.length && Math.abs(x(ordered[i]!, middle) - at) <= Number.EPSILON * 16 * Math.max(Math.abs(at), Math.abs(x(ordered[i]!, middle))));
         const isPainted = region.evenOdd ? Math.abs(winding) % 2 !== 0 : winding !== 0;
         if (!wasPainted && isPainted) left = edge;
-        if (wasPainted && !isPainted && left && at > x(left, middle)) result.push([x(left, low), low], [x(left, high), high], [x(edge, low), low], [x(edge, high), high]);
+        if (wasPainted && !isPainted && left && at > x(left, middle)) {
+          reserveGeometry(budget, 4);
+          result.push([x(left, low), low], [x(left, high), high], [x(edge, low), low], [x(edge, high), high]);
+        }
       }
     }
   }
@@ -638,7 +675,7 @@ function presentation(node: Node, inherited: Presentation): Presentation {
   const cssWidePaint = ['inherit', 'unset', 'initial', 'revert', 'revert-layer'];
   if (['fill', 'stroke', 'color'].some(key => cssWidePaint.includes(attrs[key]?.trim().toLowerCase() ?? '')))
     fail('CSS-wide paint keyword');
-  for (const key of ['clip-path', 'mask', 'filter', 'vector-effect', 'stroke-dasharray', 'stroke-dashoffset', 'display', 'visibility', 'opacity', 'fill-opacity', 'stroke-opacity'])
+  for (const key of ['clip-path', 'mask', 'filter', 'vector-effect', 'stroke-dasharray', 'stroke-dashoffset', 'display', 'visibility', 'opacity', 'fill-opacity', 'stroke-opacity', 'transform-origin', 'marker-start', 'marker-mid', 'marker-end'])
     if (attrs[key] !== undefined) fail(key);
   const color = attrs.color === undefined ? undefined : parsePaint(attrs.color, false);
   return {
@@ -663,6 +700,7 @@ function analyze(svg: string, optical = false, glyphFill?: string): Analysis {
   const plate = root.children.length > 1 && !root.attrs.transform && candidate?.name === 'rect' && !candidate.attrs.transform && number(candidate.attrs, 'x') === viewBox.x && number(candidate.attrs, 'y') === viewBox.y && number(candidate.attrs, 'width') === viewBox.height && number(candidate.attrs, 'height') === viewBox.height && effectivePaint(candidatePresentation!.fill, candidatePresentation!.color, '#000').visible ? candidate : undefined;
   const frame = plate ? { ...viewBox, width: viewBox.height } : viewBox;
   const tolerance = Math.max(viewBox.width, viewBox.height) * 1e-6;
+  const budget: GeometryBudget = { generated: 0, work: 0 };
   const regions: Region[] = [];
   const paints = new Map<Node, ComputedPaint>();
   const visit = (node: Node, m: Matrix, inherited: Presentation): void => {
@@ -686,12 +724,13 @@ function analyze(svg: string, optical = false, glyphFill?: string): Analysis {
     if (node.children.length)
       fail(node.name);
     const localTolerance = tolerance / Math.max(Math.hypot(matrix[0], matrix[1]), Math.hypot(matrix[2], matrix[3]), 1);
-    const shape = contours(node, localTolerance);
+    const shape = contours(node, localTolerance, budget);
     if (glyphFill !== undefined && resolved.fill === undefined)
       fill = shape.some(contour => hasFillArea(contour.points)) ? effectivePaint(undefined, resolved.color, glyphFill) : { css: 'none', visible: false };
     paints.set(node, { attrs: a, fill, stroke: strokePaint });
     if (glyphFill !== undefined && resolved.fill === undefined && !fill.visible && shape.some(contour => hasFillArea(contour.points))) fail('generated glyph paint');
     if (fill.visible) {
+      reserveGeometry(budget, shape.reduce((sum, contour) => sum + contour.points.length, 0));
       const contours = shape.filter(c => hasFillArea(c.points)).map(c => c.points.map(p => point(matrix, p)));
       regions.push({ contours, evenOdd: a['fill-rule'] === 'evenodd' });
     }
@@ -701,14 +740,15 @@ function analyze(svg: string, optical = false, glyphFill?: string): Analysis {
         fail('stroke-width');
       if (width)
         for (const contour of shape)
-          for (const region of stroke(contour, width, a, localTolerance)) {
+          for (const region of stroke(contour, width, a, localTolerance, budget)) {
+            reserveGeometry(budget, region.contours.reduce((sum, contour) => sum + contour.length, 0));
             const transformed = { contours: region.contours.map(c => c.map(p => point(matrix, p))) };
             regions.push(transformed);
           }
     }
   };
   visit(root, identity, { attrs: {} });
-  const box = bounds(regions.flatMap(paintedBoundary)), centre: Point = [box.x + box.width / 2, box.y + box.height / 2];
+  const box = bounds(regions.flatMap(region => paintedBoundary(region, budget))), centre: Point = [box.x + box.width / 2, box.y + box.height / 2];
   const glyphBox = { x: (box.x - frame.x) / frame.width, y: (box.y - frame.y) / frame.height, width: box.width / frame.width, height: box.height / frame.height };
   if (![...centre, ...Object.values(glyphBox)].every(Number.isFinite))
     fail('numeric overflow');

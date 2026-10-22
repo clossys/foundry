@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { createHash } from "node:crypto";
 import { spawnSync } from "node:child_process";
 import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
 import { createRequire } from "node:module";
@@ -6,10 +7,137 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { measureMarkGeometry, normalizeMark, checkMarkConformance, MarkGeometryError } from "./mark-normalize.js";
 import { MARK_FIXTURES } from "./mark-fixtures.js";
-import { adoptSuppliedMark } from "./identity-kit.js";
+import { adoptSuppliedMark, recolorSvg } from "./identity-kit.js";
+import { judgeIdentityKit } from "./identity-checks.js";
 const tokens = { ink: "#000000", onInverse: "#ffffff", surfaceBase: "#ffffff", surfaceInverse: "#000000", accent: "#000000", onAccent: "#ffffff", fontFamily: "sans-serif" };
 const svg = (body: string) => `<svg viewBox="0 0 100 100">${body}</svg>`;
 const box = (body: string) => measureMarkGeometry(svg(body)).glyphBox;
+describe("round-one review regressions", () => {
+  it.each(['x/onclick="alert(1)"', 'TRANSFORM="translate(90)"', 'STYLE="fill:url(https://example.invalid/x)"', 'OPACITY="0"', 'MASK="url(#x)"', 'FILL="none"', 'STROKE="#000"', 'STROKE-WIDTH="99"', 'transform-origin="50 50"', 'marker-start="url(#x)"', 'marker-end="url(#x)"'])("refuses unmeasured attribute %s by name", attribute => {
+    const input = svg(`<rect x="30" y="30" width="40" height="40" ${attribute}/>`);
+    for (const evaluate of [measureMarkGeometry, checkMarkConformance, (value: string) => normalizeMark({ glyphSvg: value, tokens })]) {
+      expect(() => evaluate(input)).toThrow(MarkGeometryError);
+      expect(() => evaluate(input)).toThrow(attribute.split('=')[0]);
+    }
+  });
+  it.each(['#336699', 'oklch(0.4 0 0)'])("retains a stroke-only knockout and its real judgment with %s", accent => {
+    const paletteTokens = { ...tokens, accent };
+    const direction = adoptSuppliedMark({ brand: { name: "Example" }, suppliedSvg: MARK_FIXTURES.strokeOnly, tokens: paletteTokens, normalize: true });
+    for (const role of ['mono', 'light', 'dark', 'favicon'] as const) {
+      const document = new DOMParser().parseFromString(direction.variants[role], 'image/svg+xml');
+      const hole = document.querySelector('mask circle');
+      expect(hole?.getAttribute('fill')).toBe('none');
+      expect(hole?.getAttribute('stroke')).toBe('#000');
+      expect(hole?.getAttribute('stroke-width')).toBe('10');
+      const layers = document.querySelectorAll('svg > g[mask]');
+      expect(layers).toHaveLength(2);
+      expect(layers[0]?.getAttribute('mask')).toBe(`url(#${hole?.closest('mask')?.id})`);
+      expect(layers[1]?.querySelector('circle')?.getAttribute('fill')).toBe('none');
+      expect(layers[1]?.querySelector('circle')?.getAttribute('stroke')).toBe(role === 'dark' ? tokens.onInverse : role === 'light' ? tokens.ink : 'currentColor');
+    }
+    const checks = judgeIdentityKit(direction, paletteTokens).checks;
+    expect(checks['single-colour-legibility'].verdict).toBe('satisfied');
+    expect(checks['mark-conformance']?.verdict).toBe('satisfied');
+  });
+  it("preserves frozen legacy stroke variants and public recolouring bytes", () => {
+    const suppliedSvg = MARK_FIXTURES.strokeOnly;
+    const input = { brand: { name: "Example" }, suppliedSvg, tokens };
+    const legacy = adoptSuppliedMark(input);
+    expect(createHash('sha256').update(JSON.stringify(legacy.variants)).digest('hex')).toBe('06d320ef1a5f565125c948ebc8e630b01fa3272a1a70202ae0b23ef8fe541934');
+    expect(adoptSuppliedMark({ ...input, normalize: false })).toEqual(legacy);
+    expect(createHash('sha256').update(recolorSvg(suppliedSvg, 'currentColor')).digest('hex')).toBe('b4f61ab97d18a8e577e2a1fa7ca1a83de661e1e3afec7dba1e1ef0db051c9a55');
+  });
+  const lockup = (x = 73, size: number | null = 22) => `<svg viewBox="17 9 120 48" data-clear-space="0.2"><rect x="17" y="9" width="48" height="48" rx="10.5"/><rect x="25.64" y="17.64" width="30.72" height="30.72"/><text x="${x}"${size === null ? '' : ` font-size="${size}"`}>Example</text></svg>`;
+  it("accepts the exact lockup frame, gap and wordmark ratios", () => {
+    expect(checkMarkConformance(lockup())).toEqual([]);
+  });
+  it("pins measured and expected lockup values including the viewBox origin", () => {
+    expect(checkMarkConformance(lockup(74, 23))).toEqual([
+      { rule: 'lockup-gap', measured: 9 / 48, expected: 8 / 48 },
+      { rule: 'wordmark-size', measured: 23 / 48, expected: 22 / 48 },
+    ]);
+  });
+  it("reports undeclared clear space and wordmark size rather than passing", () => {
+    expect(checkMarkConformance(lockup(73, null).replace(' data-clear-space="0.2"', ''))).toEqual([
+      { rule: 'clear-space', measured: null, expected: .2 },
+      { rule: 'wordmark-size', measured: null, expected: 22 / 48 },
+    ]);
+  });
+  it("judges a single measured violation as violated", () => {
+    const suppliedSvg = lockup().replace('rx="10.5"', 'rx="12"').replace(/<text.*<\/text>/, '');
+    const result = judgeIdentityKit(adoptSuppliedMark({ brand: { name: "Example" }, suppliedSvg, tokens }), tokens);
+    expect(result.checks['mark-conformance']).toMatchObject({ verdict: 'violated', findings: [{ rule: 'mark-conformance', message: expect.stringContaining('radius: measured 0.25; expected 0.21875') }] });
+  });
+  it("pins implicit relative lineto after moveto", () => {
+    expect(box('<path d="m30 35 40 0 0 30 z"/>')).toEqual({ x: .3, y: .35, width: .4, height: .3 });
+  });
+  it("pins one-argument translation and rotation about an off-origin centre", () => {
+    expect(box('<rect x="10" y="20" width="20" height="10" transform="translate(7)"/>')).toEqual({ x: .17, y: .2, width: .2, height: .1 });
+    const rotated = box('<rect x="10" y="20" width="20" height="10" transform="rotate(90 30 40)"/>');
+    expect(rotated).toEqual({ x: expect.closeTo(.4, 12), y: expect.closeTo(.2, 12), width: expect.closeTo(.1, 12), height: expect.closeTo(.2, 12) });
+  });
+  it("pins round caps and the miter-limit bevel boundary", () => {
+    expect(box('<path d="M20 30H60" fill="none" stroke="#000" stroke-width="10" stroke-linecap="round"/>')).toEqual({ x: .15, y: .25, width: .5, height: .1 });
+    const shape = (limit: number) => box(`<path d="M10 80L50 10L90 80" fill="none" stroke="#000" stroke-width="10" stroke-miterlimit="${limit}"/>`);
+    expect(shape(1.1).y).toBeCloseTo((10 - 20 / Math.sqrt(65)) / 100, 10);
+    expect(shape(2.1).y).toBeCloseTo((10 - 5 * Math.sqrt(65) / 4) / 100, 10);
+  });
+  it.each(['depth', 'depth-small', 'winding', 'winding-small', 'generated', 'centroid', 'crescent'] as const)("refuses %s complexity in a bounded real-source child", feature => {
+    const directory = mkdtempSync(join(tmpdir(), 'mark-budget-'));
+    try {
+      const filename = join(directory, 'probe.cjs'), entry = resolve(process.cwd(), 'src/tokens');
+      const esbuild = createRequire(resolve(process.cwd(), 'package.json')).resolve('esbuild');
+      const source = `export * from ${JSON.stringify(join(entry, 'mark-normalize.ts'))}; export { judgeIdentityKit } from ${JSON.stringify(join(entry, 'identity-checks.ts'))}; export { adoptSuppliedMark } from ${JSON.stringify(join(entry, 'identity-kit.ts'))};`;
+      writeFileSync(filename, `
+const { buildSync } = require(${JSON.stringify(esbuild)});
+const bundle = ${JSON.stringify(join(directory, 'bundle.cjs'))};
+const built = buildSync({
+  stdin: { contents: ${JSON.stringify(source)}, resolveDir: ${JSON.stringify(entry)} },
+  bundle: true, write: false, platform: 'node', format: 'cjs',
+});
+require('node:fs').writeFileSync(bundle, built.outputFiles[0].text);
+const n = require(bundle), tokens = ${JSON.stringify(tokens)};
+n.measureMarkGeometry(${JSON.stringify(MARK_FIXTURES.small)});
+console.log('ready');
+const feature = ${JSON.stringify(feature)};
+let body;
+if (feature === 'depth' || feature === 'depth-small') {
+  const depth = feature === 'depth' ? 20000 : 70;
+  body = '<g>'.repeat(depth) + '<rect width="10" height="10"/>' + '</g>'.repeat(depth);
+} else if (feature === 'winding' || feature === 'winding-small') {
+  const count = feature === 'winding' ? 8000 : 300;
+  const points = Array.from({ length: count }, (_, i) => i + ',' + (i % 2 ? 90 : 10));
+  body = '<polygon points="' + points.join(' ') + '"/>';
+} else if (feature === 'generated') {
+  body = '<circle cx="50" cy="50" r="20"/>'.repeat(64);
+} else if (feature === 'centroid') {
+  body = '<rect width="10" height="10"/>'.repeat(1250);
+} else {
+  body = '<path d="M60 10 A40 40 0 1 0 60 90 A30 30 0 1 1 60 10 Z"/>';
+}
+const input = '<svg viewBox="0 0 100 100">' + body + '</svg>';
+try {
+  if (feature === 'centroid') n.normalizeMark({ glyphSvg: input, tokens, optical: true });
+  else n.measureMarkGeometry(input);
+  console.log('returned');
+} catch (error) {
+  if (!(error instanceof n.MarkGeometryError)) throw error;
+  console.log(error.feature);
+}
+if (feature === 'depth' || feature === 'winding') {
+  const direction = n.adoptSuppliedMark({ brand: { name: 'Example' }, suppliedSvg: input, tokens });
+  console.log(n.judgeIdentityKit(direction, tokens).checks['mark-conformance'].verdict);
+}
+`);
+      const result = spawnSync(process.execPath, ['--max-old-space-size=96', filename], { encoding: 'utf8', timeout: 3_000 });
+      expect(result.stdout).toContain('ready\n');
+      expect(result.error).toBeUndefined();
+      expect(result.status).toBe(0);
+      expect(result.stdout).toContain(feature.startsWith('depth') ? 'nesting depth' : feature === 'generated' ? 'generated geometry complexity' : feature === 'centroid' ? 'centroid complexity' : 'paint work complexity');
+      if (feature === 'depth' || feature === 'winding') expect(result.stdout).toContain('indeterminate');
+    } finally { rmSync(directory, { recursive: true, force: true }); }
+  });
+});
 describe("mark normalization", () => {
   it.each(Object.entries(MARK_FIXTURES))("normalizes %s to measured kit geometry", (_name, glyphSvg) => {
     const result = normalizeMark({ glyphSvg, tokens });

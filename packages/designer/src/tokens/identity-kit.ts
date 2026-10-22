@@ -624,7 +624,7 @@ function normaliseHex(value: string): string | undefined {
 }
 
 /** `attrs` are all allowed on `tag`, and its paint is one hex tone; returns that tone or `null`. */
-function flatShapeTone(tag: string, attrs: FlatAttrs): string | null {
+function flatShapeTone(tag: string, attrs: FlatAttrs, strokeOnly: boolean): string | null {
   const geometry = FLAT_SHAPE_GEOMETRY.get(tag);
   if (geometry === undefined) return null;
   const paint = new Map<string, string>();
@@ -632,10 +632,15 @@ function flatShapeTone(tag: string, attrs: FlatAttrs): string | null {
     if (name === "fill" || name === "stroke") paint.set(name, value);
     else if (!(geometry.includes(name) || name === "transform" || name === "fill-rule" || name === "clip-rule" || FLAT_STROKE_ATTR_RE.test(name))) return null;
   }
-  const tone = normaliseHex(paint.get("fill") ?? "");
+  // The private opt-in receives only concrete paint emitted by normalizeMark.
+  const toneOf = (value: string | undefined): string | undefined => {
+    const hex = normaliseHex(value ?? "");
+    return hex ?? (strokeOnly && value !== undefined && value !== "none" ? value : undefined);
+  };
+  const tone = toneOf(strokeOnly && paint.get("fill") === "none" ? paint.get("stroke") : paint.get("fill"));
   if (tone === undefined) return null;
   const stroke = paint.get("stroke");
-  if (stroke !== undefined && stroke !== "none" && normaliseHex(stroke) !== tone) return null;
+  if (stroke !== undefined && stroke !== "none" && toneOf(stroke) !== tone) return null;
   return tone;
 }
 
@@ -654,8 +659,9 @@ function flatShapeTone(tag: string, attrs: FlatAttrs): string | null {
  *    `fill-rule`, `clip-rule`;
  *  - every attribute value free of `"` `'` `<` `>` `&`; only whitespace
  *    between tags (no text, comment, `<!`, `<?`, CDATA);
- *  - every shape has an explicit hex `fill` (`#rgb`/`#rrggbb`, alpha
- *    rejected) and its `stroke` is `none` or the same hex: one tone each;
+ *  - every shape has a hex fill and an absent/none/matching stroke;
+ *    only the private normalized-adoption opt-in also accepts its validated
+ *    concrete paint literals and fill="none" with a painted stroke;
  *  - exactly two tones, every first-tone shape before every second-tone one;
  *  - within the caps: at most {@link FLAT_MAX_ATTRIBUTES_PER_TAG}
  *    attributes on a tag, {@link FLAT_MAX_ELEMENTS} elements in all and
@@ -666,7 +672,7 @@ function flatShapeTone(tag: string, attrs: FlatAttrs): string | null {
  * the whole recognition is linear in the input; its parse is iterative and
  * its render recursion is bounded by {@link FLAT_MAX_DEPTH}.
  */
-function recogniseFlatTwoTone(svg: string): { root: string; box: NonNullable<ReturnType<typeof parseViewBoxBox>>; nodes: FlatNode[]; toneA: string } | null {
+function recogniseFlatTwoTone(svg: string, strokeOnly: boolean): { root: string; box: NonNullable<ReturnType<typeof parseViewBoxBox>>; nodes: FlatNode[]; toneA: string } | null {
   const text = svg.trim();
   const rootTag = scanFlatTag(text, 0);
   if (rootTag === null || rootTag.name !== "svg" || rootTag.selfClosing) return null;
@@ -714,7 +720,7 @@ function recogniseFlatTwoTone(svg: string): { root: string; box: NonNullable<Ret
       continue;
     }
     if (!selfClosing || !FLAT_SHAPE_GEOMETRY.has(name)) return null;
-    const tone = flatShapeTone(name, attrs);
+    const tone = flatShapeTone(name, attrs, strokeOnly);
     if (tone === null) return null;
     if (!tones.includes(tone)) {
       if (tones.length === 2) return null;
@@ -745,7 +751,7 @@ function renderFlatNodes(nodes: readonly FlatNode[], paintOf: (shape: FlatShape)
     const paint = paintOf(node);
     if (paint === undefined) continue;
     const attrs = node.attrs
-      .map(([name, value]) => ` ${escapeXml(name)}="${name === "fill" || (name === "stroke" && value !== "none") ? paint : escapeXml(value)}"`)
+      .map(([name, value]) => ` ${escapeXml(name)}="${(name === "fill" || name === "stroke") && value !== "none" ? paint : escapeXml(value)}"`)
       .join("");
     out += `<${escapeXml(node.tag)}${attrs} />`;
   }
@@ -807,8 +813,11 @@ function renderFlatNodes(nodes: readonly FlatNode[], paintOf: (shape: FlatShape)
  * knockout, so its tone boundary is lost as it always was.
  */
 export function recolorSvg(svg: string, color: string): string {
+  return recolorSvgInternal(svg, color, false);
+}
+function recolorSvgInternal(svg: string, color: string, strokeOnly: boolean): string {
   const escapedColor = escapeXml(color);
-  const mark = recogniseFlatTwoTone(svg);
+  const mark = recogniseFlatTwoTone(svg, strokeOnly);
   if (mark === null) {
     return svg.replace(PAINT_ATTR_RE, (match, attr: string, _quoted: string, doubleQuoted: string | undefined, singleQuoted: string | undefined) => {
       const value = doubleQuoted ?? singleQuoted ?? "";
@@ -871,7 +880,7 @@ export interface AdoptSuppliedMarkInput {
 /**
  * Adopts an already-drawn mark (`found` -> adopted, per #1210) instead of
  * generating one, and derives the same seven-role variant set from it via
- * {@link recolorSvg}. `primary`/`mark` are the supplied SVG unchanged —
+ * {@link recolorSvg}. `primary`/`mark` preserve the supplied SVG unless normalization is requested;
  * this function does not attempt to separate a wordmark from an icon
  * inside arbitrary supplied art. Throws {@link IdentityKitValidationError}
  * when `suppliedSvg` is not a complete `<svg>` document.
@@ -883,7 +892,8 @@ export function adoptSuppliedMark(input: AdoptSuppliedMarkInput): IdentityDirect
     throw new IdentityKitValidationError(["supplied mark must be a complete <svg>...</svg> document"]);
   }
   const trimmed = input.normalize === true ? normalizeMark({ glyphSvg: suppliedSvg, tokens }) : suppliedSvg.trim();
-  const onAccentGlyph = innerMarkupOf(recolorSvg(trimmed, tokens.onAccent));
+  const recolor = (color: string) => recolorSvgInternal(trimmed, color, input.normalize === true);
+  const onAccentGlyph = innerMarkupOf(recolor(tokens.onAccent));
   const sourceViewBox = sourceViewBoxOf(trimmed);
 
   return {
@@ -893,10 +903,10 @@ export function adoptSuppliedMark(input: AdoptSuppliedMarkInput): IdentityDirect
     variants: {
       primary: trimmed,
       mark: trimmed,
-      mono: recolorSvg(trimmed, "currentColor"),
-      light: recolorSvg(trimmed, tokens.ink),
-      dark: recolorSvg(trimmed, tokens.onInverse),
-      favicon: recolorSvg(trimmed, "currentColor"),
+      mono: recolor("currentColor"),
+      light: recolor(tokens.ink),
+      dark: recolor(tokens.onInverse),
+      favicon: recolor("currentColor"),
       appIcon: input.normalize === true ? trimmed : wrapBadge(onAccentGlyph, tokens.accent, tokens.onAccent, sourceViewBox),
     },
   };
