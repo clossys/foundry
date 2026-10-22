@@ -253,6 +253,8 @@ export type { CatalogWorkspaceProps, CatalogWorkspaceItem, CatalogWorkspaceSize 
 export { Chat } from "./chat/Chat.js";
 export type { ChatProps, ChatMessage, ChatActions, ChatLabels } from "./chat/types.js";
 
+export { FilterBuilder } from "./FilterBuilder.js";
+export type { FilterBuilderProps, FilterBuilderLabels } from "./FilterBuilder.js";
 export { AccessMatrix } from "./AccessMatrix.js";
 export type { AccessCellValue, AccessRole, AccessPermission, AccessGroup, AccessMatrixValue, AccessMatrixChange, AccessMatrixLabels, AccessMatrixProps } from "./AccessMatrix.js";
 export { ColumnMapper } from "./ColumnMapper.js";

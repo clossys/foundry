@@ -28,6 +28,7 @@ export const BLOCK_THEME_CONFORMANCE: readonly BlockThemeRegistration[] = [
   { exportName: "PageHeader", source: "src/blocks/PageHeader.tsx", contrastPairs: BASE_READING },
   { exportName: "AccountMenu", source: "src/blocks/AccountMenu.tsx", contrastPairs: RAISED_READING },
   { exportName: "EmptyState", source: "src/blocks/EmptyState.tsx", contrastPairs: BASE_READING },
+  { exportName: "FilterBuilder", source: "src/blocks/FilterBuilder.tsx", contrastPairs: [...BASE_READING, "ink-secondary/surface-sunken", "ink-primary/surface-raised", "ink-secondary/surface-raised", "status-danger-text/surface-raised"] },
   { exportName: "ResourceList", source: "src/blocks/ResourceList.tsx", contrastPairs: [...BASE_READING, "ink-muted/surface-base"] },
   { exportName: "DataTable", source: "src/blocks/DataTable.tsx", contrastPairs: BASE_READING },
   { exportName: "DetailView", source: "src/blocks/DetailView.tsx", contrastPairs: BASE_READING },

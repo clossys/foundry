@@ -69,19 +69,35 @@ export function FilterEditor({
   allTagsLabel = "All",
   /** @default "None" */
   noTagsLabel = "None",
-  filter, label, facets, change, messages,
-}: DataTableMessages & { filter: TableFilter; label: string; facets: readonly TableFacet[]; change: (filter: TableFilter) => void; messages?: DataTableMessages }) {
-  if (isEmptyFilter(filter)) return null;
-  if (filter.op === "notEquals" || filter.op === "notIn") return null;
-  if (filter.kind === "number" || filter.kind === "date") return <RangeEditor {...messages} filter={filter} label={label} change={change} />;
+  filter, label, facets, change, messages, operatorOptions, operatorLabel,
+}: DataTableMessages & { filter: TableFilter; label: string; facets: readonly TableFacet[]; change: (filter: TableFilter) => void; messages?: DataTableMessages; operatorOptions?: readonly { id: TableFilter["op"]; label: string }[]; operatorLabel?: string }) {
+  const operator = operatorOptions ? <Select label={operatorLabel} selectedKey={filter.op} options={operatorOptions} onSelectionChange={key => {
+    if (!operatorOptions.some(option => option.id === key)) return;
+    const head = { column: filter.column, kind: filter.kind };
+    if (key === "empty" || key === "notEmpty") { change({ ...head, op: key }); return; }
+    const previous = filter;
+    switch (filter.kind) {
+      case "text": if (key === "contains" || key === "equals" || key === "notEquals") change({ ...head, kind: "text", op: key, value: "value" in previous && typeof previous.value === "string" ? previous.value : "" }); break;
+      case "number": change({ ...head, kind: "number", op: "range", ...("min" in previous ? { min: previous.min as number } : {}), ...("max" in previous ? { max: previous.max as number } : {}) }); break;
+      case "date": change({ ...head, kind: "date", op: "range", ...("min" in previous ? { min: previous.min } : {}), ...("max" in previous ? { max: previous.max } : {}) }); break;
+      case "enum": if (key === "in" || key === "notIn") change({ ...head, kind: "enum", op: key, values: "values" in previous ? previous.values : [] }); break;
+      case "tags": if (key === "any" || key === "all" || key === "none") change({ ...head, kind: "tags", op: key, values: "values" in previous ? previous.values : [] }); break;
+      case "boolean": change({ ...head, kind: "boolean", op: "equals", value: "value" in previous && typeof previous.value === "boolean" ? previous.value : true }); break;
+    }
+  }} /> : null;
+  if (isEmptyFilter(filter)) return operator;
+  if (!operatorOptions && (filter.op === "notEquals" || filter.op === "notIn")) return null;
+  if (filter.kind === "number" || filter.kind === "date") return <>{operator}<RangeEditor {...messages} filter={filter} label={label} change={change} /></>;
   if (filter.kind === "text") return <>
-    <Select label={comparisonMessage(label)} selectedKey={filter.op} options={[{ id: "contains", label: containsLabel }, { id: "equals", label: equalsLabel }]} onSelectionChange={key => { if (key === "contains" || key === "equals") change({ ...filter, op: key }); }} />
+    {operator}
+    {!operatorOptions ? <Select label={comparisonMessage(label)} selectedKey={filter.op} options={[{ id: "contains", label: containsLabel }, { id: "equals", label: equalsLabel }]} onSelectionChange={key => { if (key === "contains" || key === "equals") change({ ...filter, op: key }); }} /> : null}
     <TextField label={filterValueMessage(label)} value={filter.value} onChange={value => change({ ...filter, value })} />
   </>;
-  if (filter.kind === "boolean") return <Checkbox isSelected={filter.value} onChange={value => change({ ...filter, value })}>{booleanFilterMessage(label)}</Checkbox>;
+  if (filter.kind === "boolean") return <>{operator}<Checkbox isSelected={filter.value} onChange={value => change({ ...filter, value })}>{booleanFilterMessage(label)}</Checkbox></>;
   const values = [...new Set([...facets.flatMap(facet => typeof facet.value === "string" ? [facet.value] : []), ...filter.values])];
   return <div className="flex flex-col gap-sm">
-    {filter.kind === "tags" ? <Select label={matchingMessage(label)} selectedKey={filter.op} options={[{ id: "any", label: anyTagsLabel }, { id: "all", label: allTagsLabel }, { id: "none", label: noTagsLabel }]} onSelectionChange={key => { if (key === "any" || key === "all" || key === "none") change({ ...filter, op: key }); }} /> : null}
+    {operator}
+    {filter.kind === "tags" && !operatorOptions ? <Select label={matchingMessage(label)} selectedKey={filter.op} options={[{ id: "any", label: anyTagsLabel }, { id: "all", label: allTagsLabel }, { id: "none", label: noTagsLabel }]} onSelectionChange={key => { if (key === "any" || key === "all" || key === "none") change({ ...filter, op: key }); }} /> : null}
     {values.map(value => <Checkbox key={value} isSelected={filter.values.includes(value)} onChange={checked => change({ ...filter, values: checked ? [...filter.values, value] : filter.values.filter(item => item !== value) })}>{facetValueMessage(label, value)}</Checkbox>)}
     {!values.length ? <p className="text-body-s text-ink-muted">{noFacetValuesLabel}</p> : null}
   </div>;

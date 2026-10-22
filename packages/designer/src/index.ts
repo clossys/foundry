@@ -462,6 +462,8 @@ export { parseDataTableViewModel, serializeDataTableViewModel, DataTableViewMode
 export type { DataTableMessages } from "./blocks/data-table/messages.js";
 export type { DataTableViewModel, DataTableViewModelV1, DataTableMode, DataTableDensity, DataTableSortRule } from "./blocks/data-table/view-model.js";
 
+export { FilterBuilder } from "./blocks/FilterBuilder.js";
+export type { FilterBuilderProps, FilterBuilderLabels } from "./blocks/FilterBuilder.js";
 export { AccessMatrix } from "./blocks/AccessMatrix.js";
 export type { AccessCellValue, AccessRole, AccessPermission, AccessGroup, AccessMatrixValue, AccessMatrixChange, AccessMatrixLabels, AccessMatrixProps } from "./blocks/AccessMatrix.js";
 export { ColumnMapper } from "./blocks/ColumnMapper.js";

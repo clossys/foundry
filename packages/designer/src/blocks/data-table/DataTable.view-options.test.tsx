@@ -5,6 +5,8 @@ import userEvent from "@testing-library/user-event";
 import { DataTable, type DataTableColumn } from "../DataTable.js";
 import type { DataTableMessages } from "./messages.js";
 import { parseDataTableViewModel, type DataTableViewModel, type DataTableViewModelV1 } from "./view-model.js";
+import * as tableEngine from "../table-model/index.js";
+import * as presentation from "./presentation.js";
 import type { TableModel } from "../table-model/index.js";
 
 interface Row { id: string; name: string; team: string; region: string; stage: string; amount: number; tags: string[] }
@@ -316,4 +318,42 @@ describe("DataTable host error and selection messages", () => {
     expect(screen.getByRole("checkbox", { name: "Pick every record" })).toBePartiallyChecked();
     expect(screen.getByRole("checkbox", { name: "Pick record Alpha" })).toBeChecked();
   });
+});
+
+it("remote rows retain host order and bypass local filter and sort", () => {
+  const model = view({ table: { ...table, filters: [{ column: "name", kind: "text", op: "equals", value: "Alpha" }] }, sort: [{ column: "amount", direction: "descending" }] });
+  const filter = vi.spyOn(tableEngine, "filterRows"); const sort = vi.spyOn(presentation, "sortViewRows");
+  try {
+    render(<DataTable aria-label="Records" columns={columns} rows={rows} rowKey={rowKey} model={model} onModelChange={() => {}} rowSource="remote" />);
+    expect(names()).toEqual(["Alpha", "Beta", "Gamma"]);
+    expect(filter).not.toHaveBeenCalled(); expect(sort).not.toHaveBeenCalled();
+  } finally { filter.mockRestore(); sort.mockRestore(); }
+});
+
+it("without filterLabels retains ViewOptions filter section and chips", async () => {
+  const user = userEvent.setup(); render(<Harness initial={view({ table: { ...table, filters: [{ column: "name", kind: "text", op: "contains", value: "A" }] } })} />);
+  expect(screen.getByText(/Filter: Name contains.*A/)).toBeInTheDocument();
+  const dialog = await open(user);
+  expect(within(dialog).getByRole("heading", { name: "Filter", exact: true })).toBeInTheDocument();
+});
+
+it("uses host remote facets/count, hides only the delegated filters, and emits complete model changes", async () => {
+  const { sampleLabels } = await import("../filter-builder/sample.js");
+  const user = userEvent.setup(); const changed = vi.fn();
+  const initial = view({ table: { ...table, filters: [{ column: "team", kind: "enum", op: "in", values: ["Blue"] }] }, sort: [{ column: "amount", direction: "descending" }] });
+  render(<DataTable aria-label="Records" columns={columns} rows={rows} rowKey={rowKey} model={initial} onModelChange={changed} rowSource="remote" filterLabels={sampleLabels} facets={{ team: [{ value: "Violet", count: 97 }] }} resultCount={97} />);
+  expect(names()).toEqual(["Alpha", "Beta", "Gamma"]);
+  const chips = screen.getByRole("group", { name: "Filters" });
+  await user.click(within(chips).getByRole("button", { name: "Team is any of Blue", exact: true }));
+  const editor = await screen.findByRole("dialog");
+  expect(within(editor).getByRole("checkbox", { name: "Violet" })).toBeInTheDocument();
+  expect(within(editor).queryByRole("checkbox", { name: "Gold" })).not.toBeInTheDocument();
+  await user.click(within(editor).getByRole("checkbox", { name: "Violet" }));
+  expect(changed.mock.lastCall![0]).toEqual({ ...initial, table: { ...initial.table, filters: [{ column: "team", kind: "enum", op: "in", values: ["Blue", "Violet"] }] } });
+  await user.keyboard("{Escape}");
+  await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("97 projects"));
+  const dialog = await open(user);
+  expect(within(dialog).queryByRole("heading", { name: "Filter", exact: true })).not.toBeInTheDocument();
+  expect(within(dialog).getByRole("heading", { name: "Sort", exact: true })).toBeInTheDocument();
+  await user.keyboard("{Escape}"); expect(screen.queryByText(/Filter: Team/)).not.toBeInTheDocument();
 });
