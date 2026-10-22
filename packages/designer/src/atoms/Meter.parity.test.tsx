@@ -11,7 +11,7 @@ import { Meter as ServerMeter } from "./Meter.server.js";
  * Changing a class, a style, an element or a data attribute in one variant
  * fails here until the other follows.
  */
-const RAC_ONLY = new Set(["role", "id", "data-rac", "aria-labelledby", "aria-valuemin", "aria-valuemax", "aria-valuenow", "aria-valuetext"]);
+const RAC_ONLY = new Set(["role", "id", "data-rac", "aria-label", "aria-labelledby", "aria-valuemin", "aria-valuemax", "aria-valuenow", "aria-valuetext"]);
 
 function normalised(markup: string): string {
   const host = document.createElement("div");
@@ -27,6 +27,7 @@ const CASES: Array<[string, MeterProps]> = [
   ["figure, floor", { value: 2, scaleMax: 4, limit: 1.25, direction: "min", tone: "success", emphasis: "figure", valueText: "2.0x", limitText: "limit 1.25x" }],
   ["warning texture with previous", { value: 6, scaleMax: 8, previous: 2, previousText: "Previously 2 units", tone: "warning", valueText: "6 units" }],
   ["info ring, no limit", { value: 1, scaleMax: 2, tone: "info", valueText: "50%", className: "gap-sm", id: "m" }],
+  ["named by label", { value: 8420, scaleMax: 10000, tone: "warning", valueText: "8,420 requests", label: "API requests", limitText: "of 10,000" }],
   ["neutral, over the scale", { value: 12, scaleMax: 8, tone: "neutral", valueText: "150%" }],
   ["accent, limit at the end", { value: 1, scaleMax: 2, limit: 2, tone: "accent", valueText: "50%" }],
 ];
@@ -45,5 +46,14 @@ describe("Meter server/client parity", () => {
     expect(server).not.toContain("role=");
     expect(client).toContain('role="meter progressbar"');
     expect(client).toContain("data-rac");
+  });
+
+  it("names the client meter by label and leaves the server markup without it", () => {
+    const props: MeterProps = { value: 2, scaleMax: 4, tone: "info", valueText: "50%", label: "Storage" };
+    const server = renderToStaticMarkup(<ServerMeter {...props} />);
+    const client = renderToStaticMarkup(<ClientMeter {...props} />);
+    expect(client).toContain('aria-label="Storage"');
+    expect(client).not.toContain("aria-labelledby");
+    expect(server).not.toContain("Storage");
   });
 });

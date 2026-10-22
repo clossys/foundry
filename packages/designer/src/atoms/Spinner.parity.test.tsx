@@ -8,9 +8,12 @@ import { Spinner as ServerSpinner } from "./Spinner.server.js";
  * and the server `Spinner` draw the same `<svg>`. Only the attributes that
  * name the ring may differ: the server ring is `role="status"` named by
  * `aria-label`, the client ring is named by its progress bar wrapper.
- * A decorative spinner is identical in both variants.
+ * The relationship attributes (`aria-labelledby`, `aria-describedby`,
+ * `aria-details`) sit on the server ring, which is the named element, and on
+ * the client's progress bar. A decorative spinner is identical in both
+ * variants.
  */
-const NAMING = new Set(["role", "aria-label"]);
+const NAMING = new Set(["role", "aria-label", "aria-labelledby", "aria-describedby", "aria-details"]);
 
 function ring(markup: string): string {
   const host = document.createElement("div");
@@ -24,6 +27,7 @@ function ring(markup: string): string {
 const CASES: Array<[string, SpinnerProps]> = [
   ["labelled, default size", { label: "Loading prompts" }],
   ["labelled, small, consumer colour", { label: "Saving", size: "sm", className: "text-status-danger" }],
+  ["labelled, with relationship attributes", { label: "Working", "aria-describedby": "why", "aria-labelledby": "heading", "aria-details": "why" }],
   ["labelled, large, extra attributes", { label: "Working", size: "lg", className: "ms-2", "data-testid": "ring" } as SpinnerProps],
 ];
 
@@ -35,6 +39,16 @@ describe("Spinner server/client parity", () => {
   it("renders a decorative spinner as the identical markup in both variants", () => {
     const props: SpinnerProps = { size: "lg", className: "ms-2" };
     expect(renderToStaticMarkup(<ClientSpinner {...props} />)).toBe(renderToStaticMarkup(<ServerSpinner {...props} />));
+  });
+
+  it("puts the relationship attributes on the named element in each variant", () => {
+    const props: SpinnerProps = { label: "Working", "aria-describedby": "why" };
+    const host = document.createElement("div");
+    host.innerHTML = renderToStaticMarkup(<ClientSpinner {...props} />);
+    expect(host.querySelector("[role='progressbar']")).toHaveAttribute("aria-describedby", "why");
+    expect(host.querySelector("svg")).not.toHaveAttribute("aria-describedby");
+    host.innerHTML = renderToStaticMarkup(<ServerSpinner {...props} />);
+    expect(host.querySelector("svg")).toHaveAttribute("aria-describedby", "why");
   });
 
   it("differs only in what names a labelled ring", () => {

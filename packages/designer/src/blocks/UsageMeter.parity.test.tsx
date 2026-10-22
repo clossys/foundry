@@ -10,7 +10,7 @@ import { UsageMeter as ServerUsageMeter } from "./UsageMeter.server.js";
  * Changing a class, an element or a data attribute in one variant fails here
  * until the other follows.
  */
-const RAC_ONLY = new Set(["role", "data-rac", "aria-valuemin", "aria-valuemax", "aria-valuenow", "aria-valuetext"]);
+const RAC_ONLY = new Set(["role", "data-rac", "aria-label", "aria-valuemin", "aria-valuemax", "aria-valuenow", "aria-valuetext"]);
 
 function normalised(markup: string): string {
   const host = document.createElement("div");
@@ -38,6 +38,7 @@ const base: UsageMeterProps = {
 const CASES: Array<[string, UsageMeterProps]> = [
   ["accent, no thresholds", { ...base, used: 100 }],
   ["warning with projection and id", { ...base, thresholds, projectedText: "About 11,200 by Oct 31", id: "usage", className: "gap-md" }],
+  ["non-string label", { ...base, label: <em>Requests</em>, thresholds }],
   ["danger over the limit, compact, action", { ...base, used: 12000, usedText: "12,000 requests", thresholds, size: "compact", projectedText: "hidden when compact", action: <a href="#upgrade">Upgrade</a> }],
 ];
 

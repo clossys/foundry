@@ -23,6 +23,13 @@ describe("server Meter", () => {
     expect(container.querySelector("[data-rac]")).toBeNull();
   });
 
+  it("accepts label without rendering it: the server meter has no role to name", () => {
+    const { container } = render(<Meter value={3} scaleMax={5} tone="info" valueText="3 units" label="Capacity" />);
+    expect(container.innerHTML).not.toContain("Capacity");
+    expect(container.querySelector("[aria-label], [role]")).toBeNull();
+    expect(screen.getByText("3 units")).toBeVisible();
+  });
+
   it("keeps the previous marker decorative and leaves no role anywhere", () => {
     const { container } = render(<Meter value={6} scaleMax={8} previous={2} previousText="Previously 2 units" tone="neutral" valueText="6 units" />);
     expect(screen.getByText("Previously 2 units")).toBeVisible();

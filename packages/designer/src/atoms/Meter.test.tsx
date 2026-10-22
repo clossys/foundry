@@ -40,6 +40,20 @@ describe("Meter", () => {
     expect(label.id).not.toBe("");
   });
 
+  it("is named by label when given, while valueText stays the visible value and aria-valuetext", () => {
+    const { container } = render(<Meter value={8420} scaleMax={10000} tone="warning" valueText="8,420 requests" label="API requests" />);
+    const meter = screen.getByRole("meter", { name: "API requests" });
+    expect(meter).toBe(container.firstElementChild);
+    expect(meter).toHaveAttribute("aria-valuetext", "8,420 requests");
+    expect(meter).toHaveAttribute("aria-valuenow", "8420");
+    expect(meter).not.toHaveAttribute("aria-labelledby");
+    const value = screen.getByText("8,420 requests");
+    expect(value).toBeVisible();
+    expect(value.tagName).toBe("SPAN");
+    expect(value).not.toHaveAttribute("id");
+    expect(screen.queryByRole("meter", { name: "8,420 requests" })).toBeNull();
+  });
+
   it("clamps aria-valuenow to the scale while the visible text keeps the real value", () => {
     render(<Meter value={12} scaleMax={8} tone="warning" valueText="150%" />);
     const meter = screen.getByRole("meter", { name: "150%" });

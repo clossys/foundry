@@ -21,7 +21,7 @@ describe("Spinner", () => {
     const { container } = render(<Spinner label="Loading prompts" />);
     expect(container.firstElementChild).toHaveAttribute("data-rac");
     // An explicit class, not react-aria-components' default one, which has no rule in compiled.css.
-    expect(container.firstElementChild?.getAttribute("class")).toBe("block");
+    expect(container.firstElementChild?.getAttribute("class")).toBe("inline-block");
     expect(container.querySelector("svg")).not.toHaveAttribute("role");
   });
 
@@ -40,6 +40,43 @@ describe("Spinner", () => {
     expect(ring.tagName).toBe("svg");
     expect(ring.getAttribute("class")).toContain("ms-2");
     expect(container.firstElementChild).not.toBe(ring);
+  });
+
+  it("keeps the progress bar inline: it is inline-block, not block, so it needs no CSS reset", () => {
+    const { container } = render(<Spinner label="Loading" />);
+    expect(container.firstElementChild).toHaveClass("inline-block");
+    expect(container.firstElementChild).not.toHaveClass("block");
+  });
+
+  it("puts relationship attributes on the named progress bar and visual ones on the ring", () => {
+    render(
+      <>
+        <p id="why">Fetching your prompts</p>
+        <Spinner label="Loading" aria-describedby="why" aria-details="why" className="ms-2" data-testid="ring" />
+      </>,
+    );
+    const bar = screen.getByRole("progressbar", { name: "Loading" });
+    const ring = screen.getByTestId("ring");
+    expect(bar).toHaveAttribute("aria-describedby", "why");
+    expect(bar).toHaveAttribute("aria-details", "why");
+    expect(bar).toHaveAccessibleDescription("Fetching your prompts");
+    expect(ring).not.toHaveAttribute("aria-describedby");
+    expect(ring).not.toHaveAttribute("aria-details");
+    expect(ring.getAttribute("class")).toContain("ms-2");
+    expect(bar).not.toHaveAttribute("data-testid");
+    expect(bar.getAttribute("class")).toBe("inline-block");
+  });
+
+  it("names the progress bar from aria-labelledby when given, not from the ring", () => {
+    render(
+      <>
+        <h2 id="heading">Prompt library</h2>
+        <Spinner label="Loading" aria-labelledby="heading" data-testid="ring" />
+      </>,
+    );
+    const bar = screen.getByRole("progressbar");
+    expect(bar.getAttribute("aria-labelledby")).toContain("heading");
+    expect(screen.getByTestId("ring")).not.toHaveAttribute("aria-labelledby");
   });
 
   it("is hidden from assistive tech and carries no role when purely decorative", () => {

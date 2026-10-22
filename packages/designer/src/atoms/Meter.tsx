@@ -48,6 +48,14 @@ export interface MeterProps extends Omit<HTMLAttributes<HTMLDivElement>, "childr
    * the meter's accessible name and `aria-valuetext`.
    */
   valueText: string;
+  /**
+   * Optional accessible name for the meter: what it measures ("API
+   * requests"). When given, it names the meter in place of the value text;
+   * `valueText` stays the visible value and the `aria-valuetext`. Omit it and
+   * the visible `valueText` names the meter. The server `Meter` has no role
+   * and ignores it.
+   */
+  label?: string;
   /** Optional visible limit text ("limit 3.0x"), shown after the value. */
   limitText?: string;
   /** @default "default" */
@@ -66,7 +74,10 @@ export interface MeterProps extends Omit<HTMLAttributes<HTMLDivElement>, "childr
  * `aria-valuemax` wiring. The visible `valueText` is rendered through its
  * `Label`, so it names the meter, and it is also passed as the value label,
  * so a screen reader announces the same words a sighted reader sees rather
- * than a derived percentage. The bar stays `aria-hidden`: it is decoration.
+ * than a derived percentage. With a `label`, that text becomes the meter's
+ * `aria-label` instead and the value text is a plain `<span>`, so the name
+ * says what is measured and the value text stays the value. The bar stays
+ * `aria-hidden`: it is decoration.
  * Bar positions use logical inline properties, so the bar fills from the
  * inline start in both writing directions.
  *
@@ -95,6 +106,7 @@ export function Meter({
   direction,
   tone,
   valueText,
+  label,
   limitText,
   emphasis = "default",
   className,
@@ -104,6 +116,7 @@ export function Meter({
   return (
     <AriaMeter
       {...rest}
+      {...(label === undefined ? {} : { "aria-label": label })}
       value={value}
       minValue={0}
       maxValue={scaleMax}
@@ -114,7 +127,9 @@ export function Meter({
       className={meterRootClassName(emphasis, className)}
     >
       <div className={VALUE_ROW_CLASSES[emphasis].row}>
-        <Label className={VALUE_ROW_CLASSES[emphasis].value}>{valueText}</Label>
+        {label === undefined
+          ? <Label className={VALUE_ROW_CLASSES[emphasis].value}>{valueText}</Label>
+          : <span className={VALUE_ROW_CLASSES[emphasis].value}>{valueText}</span>}
         {limitText ? <span className={VALUE_ROW_CLASSES[emphasis].limit}>{limitText}</span> : null}
       </div>
       {previousText !== undefined ? <p className="m-0 text-body-s text-ink-secondary tabular-nums">{previousText}</p> : null}

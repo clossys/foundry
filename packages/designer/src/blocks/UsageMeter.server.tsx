@@ -52,6 +52,7 @@ export function UsageMeter({
         limit={limit}
         direction="max"
         valueText={usedText}
+        label={typeof label === "string" ? label : undefined}
         limitText={limitText}
         tone={matched ? matched.tone : "accent"}
       />

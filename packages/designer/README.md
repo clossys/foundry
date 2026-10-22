@@ -1700,9 +1700,12 @@ its render site (correct by default inside a colored `Button`, with no
 `variant` prop of its own to keep in sync with the parent's). `label` is
 optional: provide it when the spinner is itself the only signal that
 something is loading — it then renders react-aria-components' `ProgressBar`
-(`role="progressbar"`, indeterminate, so no `aria-valuenow`) with that as its
-accessible name, wrapping the `<svg>` ring, which keeps every class and
-attribute. Omit it when the spinner is purely decorative (e.g. next
+(`role="progressbar"`, indeterminate, so no `aria-valuenow`, and
+`inline-block` so it stays inline without a CSS reset) with that as its
+accessible name, wrapping the `<svg>` ring. The relationship attributes
+(`aria-labelledby`, `aria-describedby`, `aria-details`) go to that named
+progress bar; every other attribute, `className` included, stays on the ring.
+Omit it when the spinner is purely decorative (e.g. next
 to a button's own "Saving…" text, which already announces the state) — it
 then renders the bare `<svg>` with `aria-hidden="true"` instead. The
 `Spinner` from `@clossys/designer/atoms/server` is the same `<svg>` without
@@ -2490,7 +2493,9 @@ reader. From `@clossys/designer/atoms` the root is react-aria-components'
 `Meter` (`role="meter progressbar"` with `aria-valuenow`, `aria-valuemin`
 and `aria-valuemax`), named by the visible `valueText` and announcing it as
 its value text, so a screen reader hears the words a sighted reader sees.
-From `@clossys/designer/atoms/server` (server-safe, no react-aria-components)
+An optional `label` names the meter instead (as its `aria-label`), leaving
+`valueText` as the visible text and the value text; the server `Meter`
+accepts `label` and ignores it. From `@clossys/designer/atoms/server` (server-safe, no react-aria-components)
 the markup is identical except that the root carries no role and no value
 attributes. The client `Meter` forwards `id`, `data-*`, the `aria-label`,
 `aria-labelledby`, `aria-describedby` and `aria-details` attributes, `dir`,
@@ -6939,7 +6944,7 @@ not a grab-bag).
 | `StatusMarkProps` | type | Props for `StatusMark`: `tone`, `children` (required), plus every native `<span>` attribute. |
 | `StatusMarkTone` | type | `"success" \| "warning" \| "danger" \| "info" \| "neutral"`. |
 | `Meter` | component | A value against a scale and an optional limit, with visible value and limit text and a decorative bar. Built on react-aria-components' `Meter`; the `atoms/server` export is the same markup without the meter role. |
-| `MeterProps` | type | Props for `Meter`: `value`, `scaleMax`, `limit`, `direction`, `tone`, `valueText`, `limitText`, `emphasis`, optional paired `previous`/`previousText`, plus every native `<div>` attribute except `children`. |
+| `MeterProps` | type | Props for `Meter`: `value`, `scaleMax`, `limit`, `direction`, `tone`, `valueText`, `limitText`, `emphasis`, optional `label`, optional paired `previous`/`previousText`, plus every native `<div>` attribute except `children`. |
 | `MeterTone` | type | `"success" \| "warning" \| "danger" \| "info" \| "neutral"`. |
 | `MeterDirection` | type | `"max" \| "min"`: whether the limit is a cap or a floor. |
 | `AccountMenu` | component | Navigation Material with actor trigger, grouped commands and controlled preferences. |

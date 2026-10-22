@@ -30,7 +30,9 @@ export interface UsageMeterProps extends Omit<HTMLAttributes<HTMLElement>, "chil
  * Draft usage against a limit for a period. The host supplies every visible
  * fact and state message; Meter draws the quantity and StatusMark repeats the
  * highest threshold in shape and text. The client variant uses the
- * react-aria-components Meter; `UsageMeter.server.tsx` is the server-safe twin.
+ * react-aria-components Meter, named by `label` when that is a string (a
+ * non-string `label` leaves the meter named by `usedText`);
+ * `UsageMeter.server.tsx` is the server-safe twin.
  */
 export function UsageMeter({
   label, used, limit, usedText, limitText, periodText, thresholds = [],
@@ -74,6 +76,7 @@ export function UsageMeter({
         limit={limit}
         direction="max"
         valueText={usedText}
+        label={typeof label === "string" ? label : undefined}
         limitText={limitText}
         tone={matched ? matched.tone : "accent"}
       />

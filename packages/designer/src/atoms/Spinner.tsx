@@ -28,8 +28,12 @@ export interface SpinnerProps extends Omit<SVGAttributes<SVGSVGElement>, "classN
  * with no known value must not claim one); `label` becomes its `aria-label`.
  * The `<svg>` ring inside carries every class, the consumer's `className`
  * and any other SVG attributes, exactly as before, so the visual is
- * unchanged; the wrapper `<div>` (`block`, which is a div's own display) is
- * the progress bar.
+ * unchanged; the wrapper `<div>` (`inline-block`, so a spinner stays inline
+ * without a CSS reset) is the progress bar. The relationship attributes
+ * `aria-labelledby`, `aria-describedby` and `aria-details` go to that
+ * progress bar, the element that has the role and the name, since a progress
+ * bar's descendants are presentational; every other attribute stays on the
+ * ring.
  *
  * A decorative spinner (no `label`) is the same `<svg>` with
  * `aria-hidden="true"` and no wrapper, so it keeps its previous semantics:
@@ -51,9 +55,17 @@ export interface SpinnerProps extends Omit<SVGAttributes<SVGSVGElement>, "classN
  */
 export function Spinner({ size = "md", className, label, ...rest }: SpinnerProps) {
   if (!label) return <ServerSpinner {...rest} size={size} className={className} />;
+  const { "aria-labelledby": labelledBy, "aria-describedby": describedBy, "aria-details": details, ...ring } = rest;
   return (
-    <ProgressBar isIndeterminate aria-label={label} className="block">
-      <SpinnerGraphic {...rest} size={size} className={className} />
+    <ProgressBar
+      isIndeterminate
+      aria-label={label}
+      aria-labelledby={labelledBy}
+      aria-describedby={describedBy}
+      aria-details={details}
+      className="inline-block"
+    >
+      <SpinnerGraphic {...ring} size={size} className={className} />
     </ProgressBar>
   );
 }

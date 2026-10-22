@@ -50,7 +50,10 @@ export function SpinnerGraphic({ size, className, ...rest }: SpinnerGraphicProps
  * `role="status"` named by the label; without one it is `aria-hidden`. The
  * client `Spinner` (`Spinner.tsx`) names a labelled spinner through
  * react-aria-components' `ProgressBar` instead (`role="progressbar"`);
- * a parity test pins the two to the same `<svg>`.
+ * a parity test pins the two to the same `<svg>`. Every attribute stays on
+ * that `<svg>`, including `aria-labelledby` and `aria-describedby`, because
+ * here the ring is the named element; the client moves those two (and
+ * `aria-details`) to its progress bar.
  *
  * Uses `currentColor` for its stroke, so it inherits the text colour in
  * effect at its render site (see `Spinner.tsx`).

@@ -154,7 +154,8 @@ export function MeterBar({ tone, valuePct, zoneStyle, tickStyle, previousStyle }
  * `Meter`, without react-aria-components (which cannot load under React's
  * `react-server` condition): the bar is `aria-hidden` and there is no
  * `role="meter"` element, so the visible `valueText`/`limitText` carry the
- * meaning on their own. The client `Meter` (`Meter.tsx`) is built on
+ * meaning on their own, and the optional `label` (the client meter's
+ * accessible name) is accepted and not rendered. The client `Meter` (`Meter.tsx`) is built on
  * react-aria-components' `Meter` and adds the meter role; a parity
  * test pins the two to the same markup apart from that role wiring.
  *
@@ -171,6 +172,7 @@ export function Meter({
   direction = "max",
   tone,
   valueText,
+  label: _label,
   limitText,
   emphasis = "default",
   className,

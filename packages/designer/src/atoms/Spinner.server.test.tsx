@@ -14,6 +14,18 @@ describe("server Spinner", () => {
     expect(status.tagName).toBe("svg");
   });
 
+  it("keeps relationship attributes on the svg, which is the named status element", () => {
+    render(
+      <>
+        <p id="why">Fetching your prompts</p>
+        <Spinner label="Loading" aria-describedby="why" />
+      </>,
+    );
+    const status = screen.getByRole("status", { name: "Loading" });
+    expect(status).toHaveAttribute("aria-describedby", "why");
+    expect(status).toHaveAccessibleDescription("Fetching your prompts");
+  });
+
   it("is hidden from assistive tech and carries no role when purely decorative", () => {
     const { container } = render(<Spinner />);
     expect(screen.queryByRole("status")).not.toBeInTheDocument();

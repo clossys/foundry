@@ -29,6 +29,7 @@ describe("server UsageMeter", () => {
     expect(meter.props.valueText).toBe(sample.usedText);
     expect(meter.props.scaleMax).toBe(10000);
     expect(meter.props.tone).toBe("warning");
+    expect(meter.props.label).toBe("API requests");
   });
 
   it.each([
