@@ -33,7 +33,9 @@ export interface SpinnerProps extends Omit<SVGAttributes<SVGSVGElement>, "classN
  * `aria-labelledby`, `aria-describedby` and `aria-details` go to that
  * progress bar, the element that has the role and the name, since a progress
  * bar's descendants are presentational; every other attribute stays on the
- * ring.
+ * ring. A passed `aria-label` attribute does not reach the ring: `label` names
+ * the progress bar (as the server `Spinner` names its ring by `label` over
+ * any `aria-label`), so the ring never carries a second, conflicting name.
  *
  * A decorative spinner (no `label`) is the same `<svg>` with
  * `aria-hidden="true"` and no wrapper, so it keeps its previous semantics:
@@ -55,7 +57,7 @@ export interface SpinnerProps extends Omit<SVGAttributes<SVGSVGElement>, "classN
  */
 export function Spinner({ size = "md", className, label, ...rest }: SpinnerProps) {
   if (!label) return <ServerSpinner {...rest} size={size} className={className} />;
-  const { "aria-labelledby": labelledBy, "aria-describedby": describedBy, "aria-details": details, ...ring } = rest;
+  const { "aria-label": _ariaLabel, "aria-labelledby": labelledBy, "aria-describedby": describedBy, "aria-details": details, ...ring } = rest;
   return (
     <ProgressBar
       isIndeterminate

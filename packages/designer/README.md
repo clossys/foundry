@@ -1704,7 +1704,9 @@ something is loading — it then renders react-aria-components' `ProgressBar`
 `inline-block` so it stays inline without a CSS reset) with that as its
 accessible name, wrapping the `<svg>` ring. The relationship attributes
 (`aria-labelledby`, `aria-describedby`, `aria-details`) go to that named
-progress bar; every other attribute, `className` included, stays on the ring.
+progress bar, which `label` alone names (a passed `aria-label` attribute is not
+copied onto the ring); every other attribute, `className` included, stays on
+the ring.
 Omit it when the spinner is purely decorative (e.g. next
 to a button's own "Saving…" text, which already announces the state) — it
 then renders the bare `<svg>` with `aria-hidden="true"` instead. The
@@ -2494,7 +2496,8 @@ reader. From `@clossys/designer/atoms` the root is react-aria-components'
 and `aria-valuemax`), named by the visible `valueText` and announcing it as
 its value text, so a screen reader hears the words a sighted reader sees.
 An optional `label` names the meter instead (as its `aria-label`), leaving
-`valueText` as the visible text and the value text; the server `Meter`
+`valueText` as the visible text and the value text (an empty or blank
+`label` counts as omitted); the server `Meter`
 accepts `label` and ignores it. From `@clossys/designer/atoms/server` (server-safe, no react-aria-components)
 the markup is identical except that the root carries no role and no value
 attributes. The client `Meter` forwards `id`, `data-*`, the `aria-label`,
@@ -6945,7 +6948,7 @@ not a grab-bag).
 | `StatusMarkTone` | type | `"success" \| "warning" \| "danger" \| "info" \| "neutral"`. |
 | `Meter` | component | A value against a scale and an optional limit, with visible value and limit text and a decorative bar. Built on react-aria-components' `Meter`; the `atoms/server` export is the same markup without the meter role. |
 | `MeterProps` | type | Props for `Meter`: `value`, `scaleMax`, `limit`, `direction`, `tone`, `valueText`, `limitText`, `emphasis`, optional `label`, optional paired `previous`/`previousText`, plus every native `<div>` attribute except `children`. |
-| `MeterTone` | type | `"success" \| "warning" \| "danger" \| "info" \| "neutral"`. |
+| `MeterTone` | type | `"success" \| "warning" \| "danger" \| "info" \| "neutral" \| "accent"`. |
 | `MeterDirection` | type | `"max" \| "min"`: whether the limit is a cap or a floor. |
 | `AccountMenu` | component | Navigation Material with actor trigger, grouped commands and controlled preferences. |
 | `AccountMenuProps` | type | Actor, sections, context/collapsed/triggerLabel and host close/route callbacks. |

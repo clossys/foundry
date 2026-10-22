@@ -14,6 +14,12 @@ describe("server Spinner", () => {
     expect(status.tagName).toBe("svg");
   });
 
+  it("names the status svg by label even when an aria-label attribute is also passed", () => {
+    render(<Spinner label="Loading" aria-label="Other" />);
+    expect(screen.getByRole("status", { name: "Loading" })).toBeInTheDocument();
+    expect(screen.queryByRole("status", { name: "Other" })).toBeNull();
+  });
+
   it("keeps relationship attributes on the svg, which is the named status element", () => {
     render(
       <>
