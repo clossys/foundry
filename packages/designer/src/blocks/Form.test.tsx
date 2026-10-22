@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
@@ -241,5 +243,124 @@ describe("Form", () => {
     expect(alerts).toHaveLength(1);
     expect(alerts[0]).toHaveTextContent("We could not send your message.");
     expect(alerts[0]).toHaveTextContent("Check your connection and try again.");
+  });
+});
+
+describe("Form actions layout", () => {
+  const compiled = readFileSync(resolve(import.meta.dirname, "../../styles/compiled.css"), "utf8");
+  function compiledRule(name: string) {
+    const selector = `.${name} {`;
+    const start = compiled.indexOf(selector);
+    expect(start, selector).toBeGreaterThan(-1);
+    return compiled.slice(start, compiled.indexOf("}", start) + 1);
+  }
+  const actions = [<button key="cancel" type="button">Cancel</button>, <button key="save" type="submit">Save</button>];
+
+  it("ships the single-column and logical-end CSS rules at the existing tablet breakpoint", () => {
+    expect(compiledRule("flex")).toContain("display: flex;");
+    expect(compiledRule("flex-col")).toContain("flex-direction: column;");
+    expect(compiledRule("items-stretch")).toContain("align-items: stretch;");
+    expect(compiledRule("gap-sm")).toContain("gap: var(--spacing-sm, 8px);");
+    expect(compiledRule("tablet\\:flex-row")).toContain("flex-direction: row;");
+    expect(compiledRule("tablet\\:items-center")).toContain("align-items: center;");
+    expect(compiledRule("tablet\\:justify-end")).toContain("justify-content: flex-end;");
+    const start = compiled.indexOf(".tablet\\:flex-row {");
+    const media = compiled.slice(compiled.lastIndexOf("@media", start), start);
+    expect(media).toMatch(/^@media \(width >= 768px\) \{/);
+  });
+
+  it("defaults to end and keeps the layout prop off the native form", () => {
+    const { container } = render(<Form actions={actions}><input aria-label="Name" /></Form>);
+    const region = screen.getByRole("button", { name: "Save" }).parentElement!;
+    expect(region).toHaveAttribute("data-actions-layout", "end");
+    expect(region).toHaveClass("flex", "flex-col", "items-stretch", "gap-sm", "tablet:flex-row", "tablet:items-center", "tablet:justify-end");
+    expect(container.querySelector("form")).not.toHaveAttribute("actionsLayout");
+  });
+
+  it.each([
+    ["end", "ltr"], ["end", "rtl"], ["stretch", "ltr"], ["stretch", "rtl"],
+  ] as const)("keeps %s actions in DOM and keyboard order in %s", async (layout, direction) => {
+    const user = userEvent.setup();
+    const { container } = render(<Form dir={direction} actionsLayout={layout} actions={actions}><input aria-label="Name" /></Form>);
+    const region = screen.getByRole("button", { name: "Save" }).parentElement!;
+    expect(region).toHaveAttribute("data-actions-layout", layout);
+    expect(region).toHaveClass("flex", "flex-col", "items-stretch", "gap-sm");
+    expect([...region.children].map(child => child.textContent)).toEqual(["Cancel", "Save"]);
+    expect(region.className).not.toMatch(/reverse|order-/);
+    expect(container.querySelector("form")).not.toHaveAttribute("actionsLayout");
+    expect(container.querySelector("form")).toHaveAttribute("dir", direction);
+    await user.tab();
+    expect(screen.getByRole("textbox", { name: "Name" })).toHaveFocus();
+    await user.tab();
+    expect(screen.getByRole("button", { name: "Cancel" })).toHaveFocus();
+    await user.tab();
+    expect(screen.getByRole("button", { name: "Save" })).toHaveFocus();
+  });
+
+  it("keeps end actions natural width and aligned to the end at and above tablet", () => {
+    render(<Form actionsLayout="end" actions={actions}><input aria-label="Name" /></Form>);
+    const region = screen.getByRole("button", { name: "Save" }).parentElement!;
+    expect(region).toHaveClass("tablet:flex-row", "tablet:items-center", "tablet:justify-end");
+    expect(region.className).not.toMatch(/flex-1|w-full|tablet:grid/);
+  });
+
+  it("keeps stretch actions in a full-width single column at every size", () => {
+    render(<Form actionsLayout="stretch" actions={actions}><input aria-label="Name" /></Form>);
+    const region = screen.getByRole("button", { name: "Save" }).parentElement!;
+    expect(region).toHaveClass("flex", "flex-col", "items-stretch", "gap-sm");
+    expect(region.className).not.toMatch(/tablet:|justify-items-(start|end|center)|items-(start|end|center)/);
+  });
+
+  it.each([undefined, null, false])("renders no actions wrapper when actions is %s", (value) => {
+    const { container } = render(<Form actions={value}><input aria-label="Name" /></Form>);
+    expect(container.querySelector("[data-actions-layout]")).toBeNull();
+    expect(container.querySelector("form")?.children).toHaveLength(1);
+  });
+
+  it.each(["unknown", "split", "", null, 0, false, {}])("refuses invalid untyped actionsLayout %s with a stable TypeError", (value) => {
+    const quiet = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      expect(() => render(<Form actionsLayout={value as "end"} actions={actions}><input aria-label="Name" /></Form>))
+        .toThrow(new TypeError('Form actionsLayout must be "end" or "stretch".'));
+    } finally {
+      quiet.mockRestore();
+    }
+  });
+});
+
+
+describe("shared internal action rows", () => {
+  it("ships every helper class in canonical CSS without changing the scanner", async () => {
+    const { actionRowClassName } = await import("../atoms/internal/action-row.js");
+    const compiled = readFileSync(resolve(import.meta.dirname, "../../styles/compiled.css"), "utf8");
+    for (const classes of [actionRowClassName("form", 2), actionRowClassName("dialog", 2), actionRowClassName("dialog", 3)]) {
+      for (const token of classes.split(" ")) {
+        expect(compiled, token).toContain(`.${token.replaceAll(":", "\\:")} {`);
+      }
+    }
+  });
+
+  it.each([2, 3, 4])("keeps %s form actions stacked until tablet and primary last", async (count) => {
+    const { actionRowClassName } = await import("../atoms/internal/action-row.js");
+    expect(actionRowClassName("form", count)).toBe("flex flex-col items-stretch gap-sm");
+  });
+
+  it("gives exactly two dialog actions an equal grid with an end-aligned tablet row", async () => {
+    const { actionRowClassName } = await import("../atoms/internal/action-row.js");
+    expect(actionRowClassName("dialog", 2)).toBe("grid grid-cols-2 gap-sm tablet:flex tablet:items-center tablet:justify-end");
+  });
+
+  it.each([3, 4])("stacks %s dialog actions with primary last, then uses an end-aligned tablet row", async (count) => {
+    const { actionRowClassName } = await import("../atoms/internal/action-row.js");
+    expect(actionRowClassName("dialog", count)).toBe("flex flex-col items-stretch gap-sm tablet:flex-row tablet:items-center tablet:justify-end");
+  });
+
+  it("keeps mode private to the helper and leaves dialog consumers unchanged", () => {
+    const source = readFileSync(resolve(import.meta.dirname, "Form.tsx"), "utf8");
+    const props = source.slice(source.indexOf("export interface FormProps"), source.indexOf("export function Form"));
+    expect(props).not.toMatch(/\bmode\??:/);
+    for (const barrel of ["../atoms/index.ts", "./index.ts", "../index.ts"]) {
+      expect(readFileSync(resolve(import.meta.dirname, barrel), "utf8")).not.toContain("action-row");
+    }
   });
 });

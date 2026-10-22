@@ -168,6 +168,7 @@ export {
   ArticleBody,
   SectionFrame,
   ConsentBanner,
+  NewsletterBand,
   SECTION_GROUND_CLASSES,
 } from "./blocks/index.js";
 export type {
@@ -304,6 +305,8 @@ export type {
   ArticleBodyProps,
   SectionFrameProps,
   ConsentBannerProps,
+  NewsletterBandProps,
+  NewsletterStatus,
   SectionMeasure,
 } from "./blocks/index.js";
 
@@ -434,12 +437,17 @@ export type { GroupedTableProps, GroupedTableGroup, GroupedTableColumn } from ".
 export type { SignatureChartLabels } from "./charts/index.js";
 export { GraphValidationError, validateGraph, neighbors, subgraph, degrees, components, shortestPath, groupByKind, radialLayout, forceLayout, edgeRoutingHints } from "./blocks/index.js";
 export type { GraphNode, GraphEdge, GraphInput, GraphModelEdge, GraphModel, GraphErrorCode, GraphNeighborOptions, GraphSubgraphOptions, GraphDegree, GraphKindGroup, GraphPosition, GraphRadialOptions, GraphForceOptions, GraphEdgeRoutingHint } from "./blocks/index.js";
-export { filterRows, groupRows, pivotRows, aggregate, parseTableModel, serializeTableModel, TableModelError } from "./blocks/table-model/index.js";
-export type { TableValue, TableColumnKind, TableColumn, TableCollation, TableFilter, TableDimension, TableMeasure, TablePivot, TableModel, TableFacet, TableFilterResult, TableAggregateValue, TableAggregates, TableGroup, TablePivotAxis, TablePivotCell, TablePivotResult, TableModelErrorCode } from "./blocks/table-model/index.js";
+export { filterRows, groupRows, pivotRows, aggregate, parseTableModel, serializeTableModel, TableModelError, tableFilterPredicate, pruneFilterColumn, TABLE_FILTER_CONFORMANCE } from "./blocks/table-model/index.js";
+export type { TableValue, TableColumnKind, TableColumn, TableCollation, TableFilter, TableFilterGroup, TableFilterNode, TableDimension, TableMeasure, TablePivot, TableModel, TableFacet, TableFilterResult, TableAggregateValue, TableAggregates, TableGroup, TablePivotAxis, TablePivotCell, TablePivotResult, TableModelErrorCode } from "./blocks/table-model/index.js";
 
 export { CatalogWorkspace } from "./blocks/index.js";
 export type { CatalogWorkspaceProps, CatalogWorkspaceItem, CatalogWorkspaceSize } from "./blocks/index.js";
 
 export { parseDataTableViewModel, serializeDataTableViewModel, DataTableViewModelError } from "./blocks/data-table/view-model.js";
 export type { DataTableMessages } from "./blocks/data-table/messages.js";
-export type { DataTableViewModel, DataTableMode, DataTableDensity, DataTableSortRule } from "./blocks/data-table/view-model.js";
+export type { DataTableViewModel, DataTableViewModelV1, DataTableMode, DataTableDensity, DataTableSortRule } from "./blocks/data-table/view-model.js";
+
+export { AccessMatrix } from "./blocks/AccessMatrix.js";
+export type { AccessCellValue, AccessRole, AccessPermission, AccessGroup, AccessMatrixValue, AccessMatrixChange, AccessMatrixLabels, AccessMatrixProps } from "./blocks/AccessMatrix.js";
+export { ColumnMapper } from "./blocks/ColumnMapper.js";
+export type { ColumnMapperTarget, ColumnMapperSource, ColumnMapping, ColumnMapperIssue, ColumnMapperLabels, ColumnMapperProps } from "./blocks/ColumnMapper.js";

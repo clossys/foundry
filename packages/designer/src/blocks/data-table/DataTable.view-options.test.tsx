@@ -4,7 +4,7 @@ import { render, screen, within, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { DataTable, type DataTableColumn } from "../DataTable.js";
 import type { DataTableMessages } from "./messages.js";
-import type { DataTableViewModel } from "./view-model.js";
+import { parseDataTableViewModel, type DataTableViewModel, type DataTableViewModelV1 } from "./view-model.js";
 import type { TableModel } from "../table-model/index.js";
 
 interface Row { id: string; name: string; team: string; region: string; stage: string; amount: number; tags: string[] }
@@ -27,7 +27,8 @@ const table: TableModel = {
   measures: [{ id: "total", op: "sum", column: "amount" }],
 };
 function view(overrides: Partial<DataTableViewModel> = {}): DataTableViewModel {
-  return { version: 1, table, mode: "flat", density: "comfortable", sort: [], visibleColumns: ["name", "team", "amount", "tags"], ...overrides };
+  const legacy: DataTableViewModelV1 = { version: 1, table, mode: "flat", density: "comfortable", sort: [], visibleColumns: ["name", "team", "amount", "tags"] };
+  return parseDataTableViewModel({ ...legacy, ...overrides });
 }
 function freeze<T>(value: T): T { if (value && typeof value === "object") { Object.freeze(value); Object.values(value).forEach(freeze); } return value; }
 const rowKey = (row: Row) => row.id;
@@ -44,6 +45,52 @@ beforeEach(() => media(true));
 afterEach(() => { vi.unstubAllGlobals(); document.documentElement.removeAttribute("data-theme"); });
 async function open(user: ReturnType<typeof userEvent.setup>) { await user.click(screen.getByRole("button", { name: "View options" })); return screen.findByRole("dialog", { name: "View options" }); }
 function names() { return screen.getAllByRole("rowheader").map(cell => cell.textContent).filter(name => ["Alpha", "Beta", "Gamma"].includes(name!)); }
+
+describe("DataTable v2 filter preservation", () => {
+  it("edits a legacy sibling without dropping or moving groups and new-operator leaves", async () => {
+    const user = userEvent.setup();
+    const changed = vi.fn();
+    const group = { kind: "group", op: "or", items: [{ column: "stage", kind: "enum", op: "in", values: ["Ready", "Doing"] }] } as const;
+    const legacy = { column: "name", kind: "text", op: "contains", value: "" } as const;
+    const empty = { column: "team", kind: "enum", op: "notEmpty" } as const;
+    const initial = view({ version: 2, table: { ...table, version: 2, filters: [group, legacy, empty] }, columnWidths: { name: 120 }, pinnedColumns: ["name"] });
+    render(<Harness initial={freeze(initial)} changed={changed} />);
+    const dialog = await open(user);
+    expect(within(dialog).getByText("Filter: or (1)")).toBeInTheDocument();
+    expect(within(dialog).getByText("Filter: Team notEmpty")).toBeInTheDocument();
+    expect(within(dialog).getAllByRole("textbox")).toHaveLength(1);
+    await user.type(within(dialog).getByRole("textbox", { name: "Name value" }), "A");
+    const next = changed.mock.lastCall![0] as DataTableViewModel;
+    expect(next.table.filters).toEqual([group, { ...legacy, value: "A" }, empty]);
+    expect(next.columnWidths).toEqual(initial.columnWidths);
+    expect(next.pinnedColumns).toEqual(initial.pinnedColumns);
+    expect(next.table.version).toBe(2);
+    await user.click(within(dialog).getByRole("button", { name: "Remove filter Team notEmpty" }));
+    expect(changed.mock.lastCall![0].table.filters).toEqual([group, { ...legacy, value: "A" }]);
+    await user.click(within(dialog).getByRole("button", { name: "Add filter Amount" }));
+    expect(changed.mock.lastCall![0].table.filters).toEqual([group, { ...legacy, value: "A" }, { column: "amount", kind: "number", op: "range" }]);
+    expect(changed.mock.lastCall![0].table.version).toBe(2);
+  });
+  it("keeps the pinned prefix valid when existing visibility and order controls are used", async () => {
+    const user = userEvent.setup();
+    const changed = vi.fn();
+    const initial = view({ version: 2, pinnedColumns: ["name", "team"], columnWidths: { name: 120 } });
+    render(<Harness initial={initial} changed={changed} />);
+    const dialog = await open(user);
+    expect(within(dialog).getByRole("checkbox", { name: "Show Name" })).toBeDisabled();
+    expect(within(dialog).getByRole("checkbox", { name: "Show Team" })).toBeDisabled();
+    expect(within(dialog).getByRole("button", { name: "Move column Team earlier" })).toBeDisabled();
+    expect(within(dialog).getByRole("button", { name: "Move column Amount earlier" })).toBeDisabled();
+    await user.click(within(dialog).getByRole("button", { name: "Move column Tags earlier" }));
+    expect(changed.mock.lastCall![0].visibleColumns).toEqual(["name", "team", "tags", "amount"]);
+    await user.click(within(dialog).getByRole("checkbox", { name: "Show Amount" }));
+    const next = changed.mock.lastCall![0] as DataTableViewModel;
+    expect(next.visibleColumns).toEqual(["name", "team", "tags"]);
+    expect(next.pinnedColumns).toEqual(initial.pinnedColumns);
+    expect(next.columnWidths).toEqual(initial.columnWidths);
+    expect(parseDataTableViewModel(next)).toEqual(next);
+  });
+});
 
 describe("DataTable model rendering", () => {
   it("filters and stably sorts copied data in flat mode", () => {
