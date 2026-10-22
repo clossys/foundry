@@ -380,7 +380,7 @@ describe("AppFrame floating stage", () => {
     expect(bar.style.backdropFilter).toContain("blur");
     view.unmount(); supported.mockReturnValue(false); render(<AppFrame {...stageFixture()} />);
     expect(screen.getByRole("banner").style.backdropFilter).toBe("none");
-    expect(screen.getByRole("banner").style.backgroundColor).toContain("--color-surface-raised");
+    expect(screen.getByRole("banner")).toHaveClass("bg-surface-raised");
   });
 
   it("e: exposes the home mark, brand-rooted breadcrumb, page h1 and sibling/workspace menus", async () => {
