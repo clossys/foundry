@@ -18,9 +18,10 @@ function DraftGroup({ items, change, depth, rootAny, ...props }: FilterBuilderPr
     {items.map((node, index) => {
       const replace = (next: TableFilterNode) => change(items.map((item, i) => i === index ? next : item));
       const remove = () => change(items.filter((_, i) => i !== index));
-      return node.kind === "group" ? <div key={index} role="group" aria-labelledby={`${id}-${index}`} className="flex min-w-0 max-w-full flex-col gap-sm rounded-control border border-line-base p-sm">
+      const groupId = `${id}-${index}`;
+      return node.kind === "group" ? <div key={index} role="group" aria-labelledby={groupId} className="flex min-w-0 max-w-full flex-col gap-sm rounded-control border border-line-base p-sm">
         <div className="flex flex-wrap items-end gap-sm">
-          <span id={`${id}-${index}`} className="text-body-s text-ink-primary">{labels.connective[node.op]}</span>
+          <span id={groupId} className="text-body-s text-ink-primary">{labels.connective[node.op]}</span>
           <Select label={labels.matchLabel} selectedKey={node.op} options={(["and", "or"] as const).map(id => ({ id, label: labels.connective[id] }))} onSelectionChange={op => { if (op === "and" || op === "or") replace({ ...node, op }); }} />
           <IconButton icon={X} label={labels.removeCondition(sentence(node, props))} onPress={remove} />
         </div>
