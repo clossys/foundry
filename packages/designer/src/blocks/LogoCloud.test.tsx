@@ -23,9 +23,11 @@ type BrowserStep =
 async function driveChromium() {
   const { spawn } = require("node:child_process") as typeof import("node:child_process");
   const fs = require("node:fs") as typeof import("node:fs");
-  const [chrome, page, profile, plan] = process.argv.slice(1) as [string, string, string, string];
+  const [chrome, page, profile, plan, blinkSettings] = process.argv.slice(1) as [string, string, string, string, string];
+  // Pin the input capabilities (hover and a fine pointer) so (hover: hover) holds on a headless host that reports none.
+  const deviceFlags = [`--blink-settings=${blinkSettings}`, "--force-device-scale-factor=1", "--window-size=1280,800", "--lang=en-US"];
   const browser = spawn(chrome, ["--headless", "--no-sandbox", "--disable-dev-shm-usage",
-    "--remote-debugging-port=0", `--user-data-dir=${profile}`, "about:blank"], { stdio: ["ignore", "ignore", "pipe"] });
+    "--remote-debugging-port=0", `--user-data-dir=${profile}`, ...deviceFlags, "about:blank"], { stdio: ["ignore", "ignore", "pipe"] });
   let socket: WebSocket | undefined;
   try {
     const endpoint = await new Promise<string>((resolve, reject) => {
@@ -59,6 +61,11 @@ async function driveChromium() {
     const { sessionId } = await send("Target.attachToTarget", { targetId, flatten: true });
     await send("Page.enable", {}, sessionId);
     await send("Emulation.setFocusEmulationEnabled", { enabled: true }, sessionId);
+    // Never inherit the host's colour scheme, motion, contrast or forced-colours settings.
+    await send("Emulation.setEmulatedMedia", { media: "screen", features: [
+      { name: "prefers-color-scheme", value: "light" }, { name: "prefers-reduced-motion", value: "no-preference" },
+      { name: "forced-colors", value: "none" }, { name: "prefers-contrast", value: "no-preference" },
+    ] }, sessionId);
     const { frameTree } = await send("Page.getFrameTree", {}, sessionId);
     await send("Page.setDocumentContent", { frameId: frameTree.frame.id, html: fs.readFileSync(page, "utf8") }, sessionId);
     const evaluate = async (expression: string) => {
@@ -92,6 +99,9 @@ async function driveChromium() {
   }
 }
 
+// Blink enums: hover 2 = hover; pointer 4 = fine. (1 = none for both.)
+const INPUT_CAPABILITIES = "primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4";
+
 function runInChromium(html: string, steps: readonly BrowserStep[]): Record<string, any> {
   const browser = ["google-chrome", "google-chrome-stable", "chromium", "chromium-browser"]
     .find(name => spawnSync(name, ["--version"], { stdio: "ignore" }).status === 0);
@@ -103,7 +113,7 @@ function runInChromium(html: string, steps: readonly BrowserStep[]): Record<stri
     writeFileSync(page, html);
     writeFileSync(plan, JSON.stringify(steps));
     const output = execFileSync(process.execPath, ["--experimental-websocket", "-e", `(${driveChromium.toString()})().catch(error => { console.error(error.message); process.exitCode = 1; });`,
-      browser, page, join(directory, "profile"), plan],
+      browser, page, join(directory, "profile"), plan, INPUT_CAPABILITIES],
     { encoding: "utf8", timeout: 60000, maxBuffer: 8 * 1024 * 1024, stdio: ["ignore", "pipe", "pipe"] });
     return JSON.parse(output);
   } finally {
