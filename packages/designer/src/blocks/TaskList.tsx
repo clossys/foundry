@@ -1,5 +1,5 @@
 import type { HTMLAttributes, ReactNode } from "react";
-import { Meter } from "../atoms/Meter.js";
+import { Meter } from "../atoms/Meter.server.js";
 import { StatusMark } from "../atoms/StatusMark.js";
 import { cx } from "../atoms/internal/cx.js";
 import { UI_BORDER_HAIRLINE, UI_LAYOUT_TAP_TARGET } from "../atoms/internal/ui-vars.js";
