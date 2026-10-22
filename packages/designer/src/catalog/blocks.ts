@@ -380,7 +380,7 @@ export const BLOCK_ENTRIES: readonly BlockEntry[] = [
   exported(HIERARCHY, "Explorer", { id: "items.explorer", label: "Explorer" }),
 
   // Navigate / In-page
-  spec(IN_PAGE, { id: "prose.table-of-contents", label: "Table of contents", inFlight: pr(2400, "draft") }),
+  exported(IN_PAGE, "TableOfContents", { id: "prose.table-of-contents", label: "Table of contents" }),
 
   // Navigate / Actions
   built(ACTIONS, "Toolbar", { id: "form.toolbar", label: "Toolbar" }),

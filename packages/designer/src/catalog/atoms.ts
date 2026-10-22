@@ -184,7 +184,7 @@ const BUTTON_CONTRACT: AtomContract = {
 };
 
 // ---------------------------------------------------------------------------
-// Leaves: 78 (46 on the default branch, 9 of them parked charts; 15 in flight; 17 gaps)
+// Leaves: 78 (47 on the default branch, 9 of them parked charts; 14 in flight; 17 gaps)
 // ---------------------------------------------------------------------------
 
 const ACTIONS = at("interaction", "actions");
