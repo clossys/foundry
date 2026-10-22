@@ -3,6 +3,7 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const action = process.argv[2] ?? "check";
 const root = process.cwd();
@@ -100,4 +101,5 @@ if (action !== "bootstrap") throw new Error("Usage: node scripts/agent-cloud.mjs
 execFileSync("npm", ["ci"], { cwd: root, stdio: "inherit" });
 ensureFullGitHistory();
 verifyDependencies();
+execFileSync(process.execPath, [fileURLToPath(new URL("./generated-merge.mjs", import.meta.url)), "setup"], { cwd: root, stdio: "inherit" });
 console.log("Cloud bootstrap complete. Run npm run agent:cloud:check before the repository's normal check command.");

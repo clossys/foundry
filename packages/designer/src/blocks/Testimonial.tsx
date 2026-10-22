@@ -1,8 +1,8 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { Avatar } from "../atoms/Avatar.js";
-import { cx } from "../atoms/internal/cx.js";
+import { renderTestimonial } from "./Testimonial.server.js";
 
-interface TestimonialBaseProps extends Omit<HTMLAttributes<HTMLElement>, "children"> {
+export interface TestimonialBaseProps extends Omit<HTMLAttributes<HTMLElement>, "children"> {
   /** The quoted words themselves. */
   quote: ReactNode;
   /** Who said it. A separate field from `attributorRole` so a consumer can style each part independently — never one blob of text. */
@@ -69,27 +69,12 @@ export type TestimonialProps = TestimonialBaseProps &
  * image-load-failure handling `Avatar` already implements come for free.
  */
 export function Testimonial({
-  quote,
-  attributorName,
-  attributorRole,
   avatarSrc,
   avatarAlt,
-  className,
-  style,
-  ...rest
+  ...props
 }: TestimonialProps) {
-  return (
-    <figure {...rest} className={cx("flex flex-col gap-md", className)} style={style}>
-      <blockquote className="text-blockquote font-display text-ink-primary">{quote}</blockquote>
-      <figcaption className="flex items-center gap-sm">
-        {avatarAlt ? <Avatar alt={avatarAlt} src={avatarSrc} /> : null}
-        <div className="flex flex-col">
-          <span className="text-body font-body font-medium text-ink-primary">{attributorName}</span>
-          {attributorRole ? (
-            <span className="text-body-s text-ink-secondary">{attributorRole}</span>
-          ) : null}
-        </div>
-      </figcaption>
-    </figure>
+  return renderTestimonial(
+    props,
+    avatarAlt ? <Avatar alt={avatarAlt} src={avatarSrc} /> : null,
   );
 }

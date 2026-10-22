@@ -24,6 +24,8 @@ const COPY: Readonly<Record<string, string>> = {
   "footer.help": "Help",
   "legal.entity": "Example Ltd",
   "legal.privacy": "Privacy",
+  "site-frame.nav.label": "Primary",
+  "site-frame.nav.trigger-label": "Menu",
 };
 
 const ref = (id: string): CopyRef => ({ id });
@@ -95,7 +97,7 @@ it("renders identical all-slots markup through ordinary and server entries", () 
   const icon = [["path", { d: "M3 12h18" }]] as const;
   const shell = {
     ...siteShellFor(CONFIG, "site"),
-    iconActions: [{ href: "/contact", label: ref("icon.contact"), icon }],
+    actions: [{ href: "/contact", label: ref("icon.contact"), icon }],
     footer: {
       legal: CONFIG.legal,
       links: [{ href: "/help", label: ref("footer.help") }],
@@ -106,7 +108,9 @@ it("renders identical all-slots markup through ordinary and server entries", () 
   const server = renderToStaticMarkup(<webServer.SiteFrame shell={shell} resolveCopy={resolveCopy} resolveAsset={resolveAsset}><p>content</p></webServer.SiteFrame>);
   expect(ordinary).toBe(server);
   expect(server).toContain('href="/contact"');
+  // Header actions are text only; the label is the link's own text, not an icon's hidden span.
   expect(server).toContain('>Contact</span>');
+  expect(server).toContain('aria-hidden="true"');
   expect(server).toContain('aria-label="Profiles"');
   expect(server).toContain('aria-label="Profile"');
   expect(server).toContain('href="/help"');
@@ -115,8 +119,7 @@ it("renders identical all-slots markup through ordinary and server entries", () 
 it("renders disclosure, ActionLinks and independent footer ground without browser globals", () => {
   const shell = { ...siteShellFor(CONFIG, "site"), ground: "base" as const,
     nav: { label: ref("social.label"), triggerLabel: ref("footer.help"), links: [{ href: "/help", label: ref("footer.help") }] },
-    actions: [{ href: "/help", label: ref("footer.help") }],
-    secondaryAction: { href: "/contact", label: ref("icon.contact") },
+    actions: [{ href: "/help", label: ref("footer.help") }, { href: "/contact", label: ref("icon.contact") }],
     footer: { ground: "inverse" as const, legal: { entity: ref("legal.entity"), links: [] } },
   };
   const html = renderToStaticMarkup(<SiteFrame shell={shell} resolveCopy={resolveCopy} resolveAsset={resolveAsset}><p>content</p></SiteFrame>);
@@ -126,8 +129,8 @@ it("renders disclosure, ActionLinks and independent footer ground without browse
   expect(html.match(/<footer\b/g)).toHaveLength(1);
   expect(html).toContain('aria-label="Profiles"');
   expect(html).toContain('aria-expanded="false"');
-  expect(html).toContain('>Help</button>');
-  expect(html).toMatch(/<header[^>]*bg-surface-raised/);
+  expect(html).toContain('aria-label="Help"');
+  expect(html).toMatch(/<header[^>]*data-surface="solid"/);
   expect(html).toMatch(/<footer[^>]*bg-surface-inverse/);
   expect(html).toMatch(/<a href="\/contact"[^>]*rounded-control/);
 });
@@ -140,7 +143,7 @@ describe("SiteFrame footer placement", () => {
   };
   const shell: SiteShellInput = {
     ...siteShellFor(CONFIG, "site"),
-    header: { placement: "overlay", tone: "inverse" },
+    header: { surface: "glass", tone: "inverse" },
     nav: { label: ref("social.label"), links: [{ href: "/help", label: ref("footer.help") }] },
     footer: { legal: { entity: ref("legal.entity"), links: [{ href: "/privacy", label: ref("legal.privacy") }] } },
   };
@@ -238,7 +241,7 @@ describe("SiteFrame footer placement", () => {
   it("refuses fragments and reserved frame headers for overlay scenes", () => {
     const view = <LandingView document={hero} fit="frame" landmark="none" />;
     expect(() => renderToStaticMarkup(<SiteFrame shell={{ ...shell, footer: { ...shell.footer!, placement: "overlay" } }} resolveCopy={resolveCopy} resolveAsset={resolveAsset}><>{view}</></SiteFrame>)).toThrow(/shell\.footer\.placement/);
-    expect(() => renderToStaticMarkup(<SiteFrame shell={{ ...shell, header: { placement: "reserved" }, footer: { ...shell.footer!, placement: "overlay" } }} resolveCopy={resolveCopy} resolveAsset={resolveAsset}>{view}</SiteFrame>)).toThrow(/shell\.footer\.placement/);
+    expect(() => renderToStaticMarkup(<SiteFrame shell={{ ...shell, header: { surface: "solid" }, footer: { ...shell.footer!, placement: "overlay" } }} resolveCopy={resolveCopy} resolveAsset={resolveAsset}>{view}</SiteFrame>)).toThrow(/shell\.footer\.placement/);
   });
 
   it.each(["base", "inverse"])("preserves an explicit opaque %s overlay ground", ground => {

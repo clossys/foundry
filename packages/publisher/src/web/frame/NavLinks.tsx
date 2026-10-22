@@ -1,9 +1,12 @@
 import { SiteHeader } from "@clossys/designer/shell/server";
-import { HEADER_ACTION_VARIANTS } from "./site-frame-contract.js";
 import type { ResolvedSiteLink, ResolvedSiteShell } from "./internal/resolveShell.js";
 
-/** The same full-label links serve the desktop row and the mobile panel. */
-export function NavLinks({ links, actions, surfaceLabel }: { readonly links: readonly ResolvedSiteLink[]; readonly actions?: ResolvedSiteShell["actions"]; readonly surfaceLabel?: string }) {
+/**
+ * The same full-label links serve the desktop row and the mobile panel. Actions
+ * keep the resolver's increasing-importance order, including on a narrow menu.
+ * The frame also renders the primary icon in the narrow header bar.
+ */
+export function NavLinks({ links, actions }: { readonly links: readonly ResolvedSiteLink[]; readonly actions?: ResolvedSiteShell["actions"] }) {
   return (
     <>
       {links.length ? <ul role="list" className="site-header-nav-links m-0 flex list-none flex-wrap items-center gap-sm p-0">
@@ -15,12 +18,11 @@ export function NavLinks({ links, actions, surfaceLabel }: { readonly links: rea
           </li>
         ))}
       </ul> : null}
-      {actions?.length || surfaceLabel ? (
+      {actions?.length ? (
         <ul role="list" className="site-header-desktop-actions m-0 flex list-none gap-sm p-0">
-          {[...(actions ?? [])].sort((a, b) => HEADER_ACTION_VARIANTS.indexOf(a.emphasis) - HEADER_ACTION_VARIANTS.indexOf(b.emphasis)).map((action, index) => (
+          {actions.map((action, index) => (
             <li key={index}><SiteHeader.ActionLink href={action.href} label={action.label} icon={action.icon} isCurrent={action.isCurrent} variant={action.emphasis} /></li>
           ))}
-          {surfaceLabel ? <li><span>{surfaceLabel}</span></li> : null}
         </ul>
       ) : null}
     </>

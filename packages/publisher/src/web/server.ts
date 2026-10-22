@@ -33,6 +33,8 @@ export { createWebRenderer } from "./internal/createWebRenderer.js";
 export { evaluateWebRouteManifest, evaluateWebRouteManifestWithSources, scanRouteSourceForDirectComposition } from "./checkWebRoutes.js";
 export type { WebRouteCheckResult, WebRouteFinding, WebRouteManifest, WebRouteManifestEntry } from "./checkWebRoutes.js";
 export { AuthView, BoundaryView, BrandGuideView, CaptureView, CollectionView, DocumentView, ErrorView, MarketingView, PackReviewView, SectionedView, StatusView, SystemAuditView } from "#publisher-web-views";
+export { PageView } from "#publisher-web-views";
+export type { PageViewProps } from "#publisher-web-views";
 export type {
   AuthViewProps,
   BoundaryViewProps,
@@ -135,6 +137,8 @@ export { SignInForm } from "#publisher-web-views";
 export type { SignInFailure, SignInFormProps, SignInResult } from "#publisher-web-views";
 export { GlobalErrorDocument } from "#publisher-web-views";
 export type { GlobalErrorDocumentErrorViewProps, GlobalErrorDocumentFramedProps, GlobalErrorDocumentHeadProps, GlobalErrorDocumentProps } from "#publisher-web-views";
+export { NotFoundDocument } from "#publisher-web-views";
+export type { NotFoundDocumentProps } from "#publisher-web-views";
 export { ActivateForm, ResetForm } from "#publisher-web-views";
 export type { ActivateDetails, ActivateFailure, ActivateFormProps, ActivateResult, ResetDetails, ResetFailure, ResetFormProps, ResetResult } from "#publisher-web-views";
 
@@ -190,3 +194,6 @@ export type { SectionedViewHeroSection } from "../core/sectioned-view.js";
 
 export { SITE_FRAME_CONTRACT, SITE_FRAME_CONFIG_SCHEMA, normalizeSiteFrameConfig, normalizeSiteFrameActions } from "./frame/site-frame-contract.js";
 export type { SiteFramePresentationConfig } from "./frame/site-frame-contract.js";
+
+export { IndexView, DetailsView } from "#publisher-web-views";
+export type { IndexViewCollection, IndexViewProps, IndexViewRowRoute, IndexViewTable, DetailsViewBlock, DetailsViewLayout, DetailsViewProps, DetailsViewRegion, DetailsViewSection, DetailsViewSectionState, DetailsViewTab } from "#publisher-web-views";

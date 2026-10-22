@@ -4,7 +4,7 @@ import { Card, mergeUiClasses } from "@clossys/designer/atoms/server";
 import { PageHeader } from "@clossys/designer/blocks/server";
 import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
 import type { SiteFooterLegalProps } from "@clossys/designer/shell/server";
-import type { SiteChromeGround } from "../internal/viewChromeGround.js";
+import { siteHeaderPresentation, type SiteChromeGround } from "../internal/viewChromeGround.js";
 import { RenderError } from "../../internal/errors.js";
 import type { ContactResult } from "../contact/types.js";
 import { ContactForm } from "./ContactForm.js";
@@ -97,7 +97,7 @@ function ContactViewFrame({ brand, headerAction, secondaryAction, nav, ground, l
   Pick<ContactViewProps, "brand" | "headerAction" | "secondaryAction" | "nav" | "ground" | "legal"> & HTMLAttributes<HTMLDivElement>) {
   return (
     <div {...rest} className={mergeUiClasses("flex min-h-dvh flex-col", className)} style={style}>
-      <SiteHeader ground={ground} brand={brand} nav={nav} secondaryAction={secondaryAction} actions={headerAction} />
+      <SiteHeader {...siteHeaderPresentation(ground)} brand={brand} nav={nav} actions={<>{secondaryAction}{headerAction}</>} />
       <main className="mx-auto flex w-full flex-1 flex-col gap-xl px-lg py-2xl" style={{ maxWidth: "var(--ui-width-prose-max, none)" }}>
         {children}
       </main>

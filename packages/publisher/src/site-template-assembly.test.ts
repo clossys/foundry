@@ -647,8 +647,10 @@ describe("the template manifest", () => {
     const error = readTemplate("app/error.tsx");
     const notFound = readTemplate("app/not-found.tsx");
     expect(error.trimStart().startsWith('"use client"')).toBe(true);
-    expect(importsFromWeb(error, "ErrorView") || /site-error-view/.test(error)).toBe(true);
-    expect(/site-error-view/.test(notFound) || importsFromWeb(notFound, "ErrorView")).toBe(true);
+    // Both render the framed view (SiteFrame around StatusView), never the deprecated ErrorView.
+    expect(/site-error-view/.test(error)).toBe(true);
+    expect(/site-error-view/.test(notFound)).toBe(true);
+    for (const source of [error, notFound, readTemplate("app/site-error-view.tsx")]) expect(importsFromWeb(source, "ErrorView")).toBe(false);
   });
 
   it("passes the landing page's contact action as the header call to action on every framed route", () => {

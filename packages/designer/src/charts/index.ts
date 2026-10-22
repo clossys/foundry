@@ -23,7 +23,7 @@
  * The scale helpers and color-slot assignment (`internal/scale.ts`,
  * `internal/chart-vars.ts`) are deliberately NOT exported here, the same
  * way `atoms/internal/cx.ts` and `atoms/internal/ui-vars.ts` never appear
- * in `atoms/index.ts` — this layer ships seven components, not a general
+ * in `atoms/index.ts` — this layer ships ten components, not a general
  * numerical/color library.
  */
 
@@ -62,3 +62,12 @@ export type { RangeChartProps } from "./RangeChart.js";
 
 export { ScatterChart } from "./ScatterChart.js";
 export type { ScatterChartProps } from "./ScatterChart.js";
+
+export { AreaChart } from "./AreaChart.js";
+export type { AreaChartProps, AreaChartSeries } from "./AreaChart.js";
+export { Heatmap } from "./Heatmap.js";
+export type { HeatmapProps } from "./Heatmap.js";
+export { StatusStrip } from "./StatusStrip.js";
+export type { StatusStripProps, StatusStripSegment } from "./StatusStrip.js";
+
+export type { SignatureChartLabels } from "./internal/signature-types.js";

@@ -18,7 +18,7 @@
     ],
     "designer": [
       {
-        "block": 69,
+        "block": 70,
         "code": "TS2741",
         "reason": "The MarketingChapter section's ArticleBodyProps example omits the required `children` property — see issue #908."
       }

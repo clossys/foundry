@@ -10,11 +10,13 @@ import * as blocks from "./index.js";
 const Drawer = (blocks as any).Drawer ?? (() => null);
 const supplied = { heading: "Workspace tools", closeLabel: "Close tools", trigger: <Button>Open tools</Button> };
 let wide: { matches: boolean; listeners: Set<(event: { matches: boolean }) => void> };
+let reducedMotion: boolean;
 
 beforeEach(() => {
   wide = { matches: false, listeners: new Set() };
+  reducedMotion = false;
   vi.stubGlobal("matchMedia", vi.fn((media: string) => {
-    const state = media === "(min-width: 768px)" ? wide : { matches: false, listeners: new Set() };
+    const state = media === "(min-width: 768px)" ? wide : { matches: media === "(prefers-reduced-motion: reduce)" && reducedMotion, listeners: new Set() };
     return { media, get matches() { return state.matches; }, onchange: null,
       addEventListener: (_: string, callback: any) => state.listeners.add(callback),
       removeEventListener: (_: string, callback: any) => state.listeners.delete(callback),
@@ -34,6 +36,31 @@ function heldHost() {
 }
 
 describe("Drawer", () => {
+  it.each(["ltr", "rtl"])("positions only the opted-in existing close at the measured %s corner", async direction => {
+    const closeButtonStyle = { position: "fixed", insetBlockStart: 35, insetInlineStart: 117, insetInlineEnd: "auto", direction };
+    render(<Drawer {...supplied} closeButtonStyle={closeButtonStyle}>Content</Drawer>);
+    const trigger = screen.getByRole("button", { name: "Open tools" });
+    await userEvent.click(trigger);
+    const close = await screen.findByRole("button", { name: "Close tools" });
+    expect(close).toHaveStyle({ position: "fixed", insetBlockStart: "35px", insetInlineStart: "117px", direction });
+    expect(close).toHaveAttribute("aria-expanded", "true");
+    expect(close).toHaveClass("icon-control-md");
+    await userEvent.click(close);
+    await waitFor(() => expect(trigger).toHaveFocus());
+  });
+
+  it("keeps omitted and explicitly undefined close layout byte-identical", async () => {
+    const view = render(<Drawer {...supplied}>Content</Drawer>);
+    await userEvent.click(screen.getByRole("button", { name: "Open tools" }));
+    const dialog = await screen.findByRole("dialog");
+    const before = dialog.outerHTML;
+    view.rerender(<Drawer {...supplied} closeButtonStyle={undefined}>Content</Drawer>);
+    expect(dialog.outerHTML).toBe(before);
+    const close = screen.getByRole("button", { name: "Close tools" });
+    expect(close.style.position).toBe("");
+    expect(close).not.toHaveAttribute("aria-expanded");
+  });
+
   it.each(["Enter", " "])("gives the default close control a native-chrome-free 44px presentation and keyboard focus on %s", async key => {
     render(<Drawer {...supplied}>Content</Drawer>);
     const trigger = screen.getByRole("button", { name: "Open tools" });
@@ -193,6 +220,32 @@ describe("Drawer", () => {
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
     expect(changed).toHaveBeenLastCalledWith(false);
     await waitFor(() => expect(trigger).toHaveFocus());
+  });
+
+  it("defaults a wide sheet with omitted placement to the logical start edge", async () => {
+    wide.matches = true;
+    render(<Drawer {...supplied} wide="sheet">Content</Drawer>);
+    await userEvent.click(screen.getByRole("button", { name: "Open tools" }));
+    const dialog = await screen.findByRole("dialog", { name: "Workspace tools" });
+    expect(dialog.querySelector("[data-panel]")).toHaveAttribute("data-drawer-placement", "start");
+    expect(dialog.parentElement?.parentElement).toHaveClass("justify-start");
+    expect(dialog.parentElement?.style.width).toBe("var(--ui-layout-drawer-w, min(20rem, 85vw))");
+  });
+
+  it("keeps a wide sheet free of motion when the reduced-motion query matches", async () => {
+    wide.matches = true;
+    reducedMotion = true;
+    render(<Drawer {...supplied} wide="sheet">Content</Drawer>);
+    await userEvent.click(screen.getByRole("button", { name: "Open tools" }));
+    const dialog = await screen.findByRole("dialog", { name: "Workspace tools" });
+    const panel = dialog.querySelector("[data-panel]")!;
+    for (const layer of [dialog.parentElement!.parentElement!, dialog.parentElement!, dialog, panel]) {
+      expect(layer.className).not.toMatch(/transition|animate/);
+      expect((layer as HTMLElement).style.animation).toBe("");
+      expect((layer as HTMLElement).style.transition).toBe("");
+    }
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
   });
 
   it("keeps an open sheet across a breakpoint change into the wide layout without a media listener", async () => {

@@ -29,6 +29,8 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { Logomark } from "../atoms/Logomark.js";
+import { Lockup } from "../blocks/Lockup.js";
 import { Avatar } from "../atoms/Avatar.js";
 import { Badge } from "../atoms/Badge.js";
 import { Banner } from "../atoms/Banner.js";
@@ -45,6 +47,7 @@ import { Panel } from "../blocks/Panel.js";
 import { Drawer } from "../blocks/Drawer.js";
 import { ResizablePane } from "../blocks/ResizablePane.js";
 import { CommandMenu } from "../blocks/CommandMenu.js";
+import { GroupedTable } from "../blocks/GroupedTable.js";
 import { AppNavigation } from "../blocks/AppNavigation.js";
 import { RelationGraph } from "../blocks/RelationGraph.js";
 import { Skeleton } from "../atoms/Skeleton.js";
@@ -115,6 +118,22 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
       expect(shipped, `shipped ${name}`).toContain(toSelectorText(name));
     }
     view.unmount();
+  });
+  it("covers populated and empty GroupedTable rendered classes", async () => {
+    const classes = new Set<string>();
+    for (const rows of [["Alpha"], []]) {
+      const view = render(<GroupedTable caption="Results" rowHeader={{ id: "name", header: "Name", cell: row => row }}
+        groups={[{ id: "totals", header: "Totals", columns: [{ id: "count", header: "Count", cell: () => 0 }] }]}
+        rows={rows} rowKey={row => row} emptyMessage="No rows" />);
+      for (const name of collectClassNames(view.container)) classes.add(name);
+      view.unmount();
+    }
+    const generated = await generateCompiledCss({ stylesDir: resolve(packageRoot, "styles"), candidates: scanCompiledCssSources(packageRoot).candidates });
+    const shipped = readFileSync(resolve(packageRoot, "styles/compiled.css"), "utf8");
+    for (const name of classes) {
+      expect(generated.css, `grouped table fresh: ${name}`).toContain(toSelectorText(name));
+      expect(shipped, `grouped table shipped: ${name}`).toContain(toSelectorText(name));
+    }
   });
   it("covers CommandMenu enabled, disabled, filtered and empty rendered states", async () => {
     const classes = new Set<string>();
@@ -397,6 +416,10 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
         `Meter history ${tone}`,
         render(<Meter value={2} scaleMax={4} limit={3} previous={1} previousText="Previously 1.0x" tone={tone} valueText="2.0x" limitText="limit 3.0x" />),
       ]);
+    }
+    for (const size of ["sm", "md", "lg"] as const) for (const tone of ["auto", "inverse"] as const) for (const plate of ["shared", "self"] as const) {
+      trees.push([`Logomark ${size} ${tone} ${plate}`, render(<Logomark src="/glyph.svg" size={size} tone={tone} plate={plate} />)]);
+      trees.push([`Lockup ${size} ${tone} ${plate}`, render(<Lockup src="/glyph.svg" wordmark="Example" size={size} tone={tone} plate={plate} clearSpace />)]);
     }
     trees.push(["Avatar sm", render(<Avatar alt="A" size="sm" />)]);
     trees.push(["Avatar md", render(<Avatar alt="A" size="md" />)]);

@@ -107,7 +107,7 @@ export function contactViewCopy(): ContactViewCopy {
 
 // ------------------------------------------------------------------- footer
 
-const FOOTER_COPY_IDS = {
+export const FOOTER_COPY_IDS = {
   terms: "site.footer.terms",
   privacy: "site.footer.privacy",
   contact: "site.footer.contact",
@@ -250,6 +250,18 @@ export const ERROR_COPY_IDS = {
 /** Every id the error pages resolve. */
 export function errorCopyIds(): string[] {
   return [...Object.values(ERROR_COPY_IDS.notFound), ...Object.values(ERROR_COPY_IDS.failed)];
+}
+
+// -------------------------------------------------------------------- frame
+
+/** The frame's own words on the error pages: the skip link. Its legal row reuses the footer ids. */
+export const SITE_FRAME_COPY_IDS = {
+  skipLink: "site.frame.skip-link",
+} as const;
+
+/** Every id the frame around the error pages resolves: the skip link and the footer's legal row. */
+export function siteFrameCopyIds(): string[] {
+  return [SITE_FRAME_COPY_IDS.skipLink, ...FOOTER_IDS];
 }
 
 // ------------------------------------------------------------------ resolve
