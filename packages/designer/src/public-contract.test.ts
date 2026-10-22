@@ -7,6 +7,23 @@ import ts from "typescript";
 
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 
+describe("compiled UsageMeter public contract", () => {
+  it.each(["index.js", "blocks/index.js", "blocks/server.js"])("exports UsageMeter and its declared props from %s", entry => {
+    const script = `import {UsageMeter} from ${JSON.stringify(join(packageRoot, "dist", entry))}; process.stdout.write(typeof UsageMeter);`;
+    expect(execFileSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8" })).toBe("function");
+    const filename = join(packageRoot, "usage-meter-consumer.check.ts");
+    const consumer = `import {UsageMeter, type UsageMeterProps, type UsageMeterThreshold} from ${JSON.stringify(join(packageRoot, "dist", entry))};
+      const threshold: UsageMeterThreshold = {at: 0.8, tone: "warning", message: "Check usage"};
+      const props: UsageMeterProps = {label: "API requests", used: 8, limit: 10, usedText: "8 requests", limitText: "of 10", periodText: "This period", thresholds: [threshold], size: "compact"};
+      UsageMeter(props);`;
+    const options = { strict: true, noEmit: true, skipLibCheck: true, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler };
+    const host = ts.createCompilerHost(options), original = host.getSourceFile.bind(host);
+    host.getSourceFile = (path, language, error, fresh) => path === filename ? ts.createSourceFile(path, consumer, language, true) : original(path, language, error, fresh);
+    const diagnostics = ts.getPreEmitDiagnostics(ts.createProgram([filename], options, host));
+    expect(diagnostics.map(diagnostic => ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n"))).toEqual([]);
+  });
+});
+
 describe("compiled AccessMatrix and ColumnMapper public contract", () => {
   it("exports both components and exact required props and value types from client barrels only", () => {
     const filename = join(packageRoot, "access-matrix-column-mapper-consumer.check.ts");
