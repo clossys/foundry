@@ -259,6 +259,7 @@ export function ContactForm({
     </div>
   ) : (
     <Form
+      actionsLayout="end"
       method="post"
       validation={binding}
       errorSummaryMessage={() => text.errorSummary}

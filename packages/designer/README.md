@@ -2683,6 +2683,21 @@ region — five regions that differ in kind, and a page can hold two `Form`s
 (two independent forms on one settings page), which is what makes this a
 block rather than a view.
 
+`actionsLayout` accepts `"end"` (the default) or `"stretch"`. At and above
+the existing `tablet` breakpoint (768px), `end` puts natural-width actions
+in one row at the card's inline end, including in RTL. `stretch` keeps
+every action full width in a single column at every size. Below `tablet`,
+both layouts stack full width. The actions container exposes
+`data-actions-layout`; with no actions, no container renders. An unknown
+layout is a type error and throws a `TypeError` at runtime.
+The tertiary "forgot password" link belongs under its field, outside the actions row.
+
+Pass secondary actions first and the primary action last. `Form` keeps
+that DOM order and Tab order in both layouts. Width belongs to the
+surrounding page or card: pair short sign-in, reset, and activation forms
+with a narrow card and contact forms with a medium card. The corresponding
+PageView `width` API is pending [#2332](https://github.com/clossys/foundry/issues/2332).
+
 **`Form` implements no validation logic or form state, deliberately.**
 react-aria-components already carries validation through each field's own
 `isInvalid`/`validationErrors`, and most real consumers layer a form
@@ -6793,7 +6808,7 @@ not a grab-bag).
 | `StatProps` | type | Props for `Stat`: `label`, `value`, `delta`, `trend`, `trendLabels` (default Increase / Decrease / No change), `description`, `className`, `style`, plus every native `<div>` attribute. |
 | `StatTrend` | type | `"up" \| "down" \| "neutral"`. |
 | `Form` | component | Form layout: optional heading, fields region, opt-in error-summary region, submit-error region, actions region. Owns no validation logic; opts into `useFormValidation` through `validation`. |
-| `FormProps` | type | Props for `Form`: `heading`, `children`, `errors`, `errorSummaryMessage` (opt-in: the summary renders only when passed; no default text), `submitError`, `validation`, `onSubmitError` (optional; receives a rejection from the validated `onSubmit`, and does nothing when omitted), `actions`, `onSubmit` (ignored when `validation` is passed), `className`, `style`, plus every native `<form>` attribute. |
+| `FormProps` | type | Props for `Form`: `heading`, `children`, `errors`, `errorSummaryMessage` (opt-in: the summary renders only when passed; no default text), `submitError`, `validation`, `onSubmitError` (optional; receives a rejection from the validated `onSubmit`, and does nothing when omitted), `actions`, `actionsLayout` (`"end"` by default, or `"stretch"`; both stack full width below `tablet`), `onSubmit` (ignored when `validation` is passed), `className`, `style`, plus every native `<form>` attribute. |
 | `FormError` | type | One error-summary entry: `fieldId`, `message`. |
 | `FormValidationBinding` | type | What `Form` reads from a validation source: `handleSubmit`, `summaryErrors`, `isSubmitting`, `formRef`. `useFormValidation`'s return value satisfies it. |
 | `useFormValidation` | function | Hook for the form validation timing: validate on blur, re-validate on change once a field shows an error or after the first submit, focus the first invalid field on a failed submit, pending (never disabled) submit. Returns `FormValidation`. |
@@ -7621,13 +7636,7 @@ speculatively, just because a related component shipped, is the exact
 un-bounded growth this package's own "variant rule" warns against one level
 up. They get added here only once something real needs them.
 
-**Blocks:** forty-three ship — `AccountMenu`, `PageHeader`, `EmptyState`, `DataTable`,
-`DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`, `ConfirmDialog`,
-`Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `SectionFrame`, `MarketingChapter`,
-`FeatureGrid`, `Item`, `Items`, `Tree`, `AnatomyCallouts`, `RecordLedger`, `Scene`, `Matrix`, `Specimen`,
-`SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`, `PricingTable`,
-`Testimonial`, `ArticleBody`, `ConsentBanner`, `NewsletterBand`, `Panel`, `Drawer`,
-`ResizablePane`, `CommandMenu`, `AppNavigation` and `PageBar` — completing this layer. No
+**Blocks:** fifty ship — `AccessMatrix`, `ColumnMapper`, `Lockup`, `PageHeader`, `AccountMenu`, `EmptyState`, `DataTable`, `DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`, `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `MarketingChapter`, `FeatureGrid`, `Matrix`, `Specimen`, `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`, `PricingTable`, `Testimonial`, `ArticleBody`, `SectionFrame`, `ConsentBanner`, `Panel`, `Drawer`, `ResizablePane`, `CommandMenu`, `AppNavigation`, `PageBar`, `Explorer`, `RecordLedger`, `AnatomyCallouts`, `Scene`, `Item`, `Tree`, `Items`, `GroupedTable`, `CatalogWorkspace`, `Chat`, `NewsletterBand`. No
 `FilterBar` block:
 `DataTable`'s own `toolbar` slot (and `Toolbar`'s own `search` slot) are
 deliberately plain `ReactNode`s, not a block with its own opinion about
@@ -8887,3 +8896,92 @@ The default renderer supports paragraphs, flat lists, inline code, fenced code w
 | `ChatMessage` | type | Stable id, user/assistant role, text content and optional display timestamp. |
 | `ChatActions` | type | Optional copy, regeneration and up/down feedback callbacks. |
 | `ChatLabels` | type | Optional host copy overrides with documented English defaults. |
+
+
+### AccessMatrix and ColumnMapper
+
+Both blocks are draft components with required host labels and controlled data.
+AccessMatrix displays and edits a host-supplied access table; the host validates and enforces every change.
+It uses a native table with Tab-ordered Checkbox controls, grouped tri-state changes, focusable read-only inherited and locked states, and a 500 ms debounced baseline summary. At narrow widths each permission becomes a card. Omit `onChange` for a read-only table.
+
+ColumnMapper places one Select per target inside a labelled fieldset. Required unmapped targets and reused source columns produce errors beside each affected field; host `issues` append type-specific feedback. Missing mapping keys mean null; an explicit empty string is invalid. Parsing, suggestions and type rules belong to the host. Its mapping summary is debounced 500 ms.
+
+| Export | Kind | Description |
+| --- | --- | --- |
+| `AccessMatrix` | component | Host-supplied access table with grouped changes. |
+| `AccessCellValue` | type | Granted, denied, or inherited with a reason. |
+| `AccessRole` | type | Role identity, label, optional lock and reason. |
+| `AccessPermission` | type | Permission identity, label and optional description. |
+| `AccessGroup` | type | Named permission group. |
+| `AccessMatrixValue` | type | Readonly role and permission cell records. |
+| `AccessMatrixChange` | type | Role, affected permissions and intended granted or denied state. |
+| `AccessMatrixLabels` | type | Required host copy and naming functions. |
+| `AccessMatrixProps` | type | Required accessible name, roles, groups, value and labels; optional change callback and baseline. |
+| `ColumnMapper` | component | Controlled target-to-source column choices and issues. |
+| `ColumnMapperTarget` | type | Target identity, label, six-value kind and required flag. |
+| `ColumnMapperSource` | type | Source identity, header and string samples. |
+| `ColumnMapping` | type | Readonly target-to-source ids or null. |
+| `ColumnMapperIssue` | type | Target-specific host message. |
+| `ColumnMapperLabels` | type | Required legend, field copy, error and summary functions. |
+| `ColumnMapperProps` | type | Required targets, sources, mapping, change callback and labels; optional issues. |
+
+The project workspace sample shows a one-grant change against its baseline.
+
+```tsx
+import { useState } from "react";
+import { AccessMatrix, type AccessMatrixProps } from "@clossys/designer/blocks";
+
+const accessMatrixSample: AccessMatrixProps = {
+  "aria-label": "Workspace access",
+  roles: [{ id: "viewer", label: "Viewer" }, { id: "editor", label: "Editor" }, { id: "admin", label: "Admin", isLocked: true, lockedReason: "Admin always has every permission." }],
+  groups: [
+    { id: "projects", label: "Projects", permissions: [{ id: "view-projects", label: "View projects" }, { id: "create-projects", label: "Create projects" }, { id: "delete-projects", label: "Delete projects", description: "Removes the project and its files." }] },
+    { id: "reports", label: "Reports", permissions: [{ id: "view-reports", label: "View reports" }, { id: "export-reports", label: "Export reports" }] },
+    { id: "members", label: "Members", permissions: [{ id: "invite-members", label: "Invite members" }, { id: "remove-members", label: "Remove members" }] },
+  ],
+  value: {
+    viewer: { "view-projects": { state: "granted" }, "view-reports": { state: "granted" } },
+    editor: { "view-projects": { state: "granted" }, "create-projects": { state: "granted" }, "delete-projects": { state: "granted" }, "export-reports": { state: "inherited", reason: "Included with Viewer access to reports." } },
+    admin: { "view-projects": { state: "granted" }, "create-projects": { state: "granted" }, "delete-projects": { state: "granted" }, "view-reports": { state: "granted" }, "export-reports": { state: "granted" }, "invite-members": { state: "granted" }, "remove-members": { state: "granted" } },
+  },
+  labels: {
+    permissionHeader: "Permission", cell: (role, permission) => `${role}: ${permission}`, groupAll: (role, group) => `${role}: all of ${group}`,
+    inherited: "Inherited", locked: "Locked", changeSummary: (grants, revokes) => `${grants} added, ${revokes} removed`,
+  },
+};
+accessMatrixSample.baseline = { ...accessMatrixSample.value, editor: { ...accessMatrixSample.value.editor, "delete-projects": { state: "denied" } } };
+
+export function WorkspaceAccess() {
+  const [value, setValue] = useState(accessMatrixSample.value);
+  return <AccessMatrix {...accessMatrixSample} value={value} onChange={next => setValue(next)} />;
+}
+```
+
+The people import sample starts with the required Email field unmapped.
+
+```tsx
+import { useState } from "react";
+import { ColumnMapper, type ColumnMapperProps } from "@clossys/designer/blocks";
+
+const columnMapperSample: ColumnMapperProps = {
+  targets: [{ id: "name", label: "Full name", kind: "text", required: true }, { id: "email", label: "Email", kind: "text", required: true }, { id: "department", label: "Department", kind: "enum", required: false }, { id: "start", label: "Start date", kind: "date", required: false }],
+  sourceColumns: [
+    { id: "name", header: "Name", samples: ["Ada Lovelace", "Grace Hopper"] },
+    { id: "email", header: "E-mail address", samples: ["ada@example.com", "grace@example.com"] },
+    { id: "team", header: "Team", samples: ["Research", "Operations"] },
+    { id: "joined", header: "Joined", samples: ["2024-03-01", "2025-11-17"] },
+  ],
+  mapping: { name: "name", email: null, department: "team", start: "joined" },
+  onMappingChange: () => {},
+  labels: {
+    legend: "Match file columns to fields", notMapped: "Not mapped", required: "Required",
+    requiredMissing: target => `${target} needs a column`, duplicate: header => `"${header}" is used more than once`,
+    samples: values => `Examples: ${values.join(", ")}`, summary: (mapped, total, problems) => `${mapped} of ${total} fields mapped, ${problems} to fix`,
+  },
+};
+
+export function PeopleColumnMapping() {
+  const [mapping, setMapping] = useState(columnMapperSample.mapping);
+  return <ColumnMapper {...columnMapperSample} mapping={mapping} onMappingChange={setMapping} />;
+}
+```
