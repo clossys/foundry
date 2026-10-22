@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { renderToString } from "react-dom/server";
 import { UsageMeter, type UsageMeterProps, type UsageMeterThreshold } from "./UsageMeter.js";
+import { UsageMeter as ServerUsageMeter } from "./UsageMeter.server.js";
 import { Meter } from "../atoms/Meter.js";
 
 const thresholds: readonly UsageMeterThreshold[] = [
@@ -86,13 +87,32 @@ describe("UsageMeter", () => {
     expect(screen.queryByRole("link")).toBeNull();
   });
 
-  it("U8 renders to string with no window and omits naming references without an id", () => {
+  it("U8 renders the server variant to string with no window and omits naming references without an id", () => {
     vi.stubGlobal("window", undefined);
     try {
-      const html = renderToString(<UsageMeter {...sample} />);
+      const html = renderToString(<ServerUsageMeter {...sample} />);
       expect(html).toContain(sample.usedText);
       expect(html).not.toContain("aria-labelledby");
     } finally { vi.unstubAllGlobals(); }
+  });
+
+  it("U8 gives the client variant a meter role named by its label, with the used text as the value text", () => {
+    render(<UsageMeter {...sample} />);
+    const meter = screen.getByRole("meter", { name: "API requests" });
+    expect(meter).toHaveAttribute("aria-valuenow", "8420");
+    expect(meter).toHaveAttribute("aria-valuemax", "10000");
+    expect(meter).toHaveAttribute("aria-valuetext", sample.usedText);
+    expect(screen.getByText(sample.usedText)).toBeVisible();
+    expect(screen.queryByRole("meter", { name: sample.usedText })).toBeNull();
+  });
+
+  it("U8 passes a string label to Meter and falls back to the used text for a non-string label", () => {
+    const named = UsageMeter(sample).props.children.find((child: { type?: unknown } | null) => child?.type === Meter);
+    expect(named.props.label).toBe("API requests");
+    render(<UsageMeter {...sample} label={<em>Requests</em>} />);
+    const meter = screen.getByRole("meter");
+    expect(meter).toHaveAccessibleName(sample.usedText);
+    expect(meter).toHaveAttribute("aria-labelledby");
   });
 
   it("U8 calls the real compiled server export under react-server without hooks", () => {
