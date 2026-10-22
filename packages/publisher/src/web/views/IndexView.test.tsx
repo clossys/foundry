@@ -2,6 +2,9 @@
 import "@testing-library/jest-dom/vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import * as React from "react";
+import * as jsxRuntime from "react/jsx-runtime";
+import ts from "typescript";
 import { execFileSync } from "node:child_process";
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -257,5 +260,18 @@ describe("IndexView table view model", () => {
     await user.click(screen.getByRole("columnheader", { name: /Name/ }));
     expect(onModelChange).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ sort: [{ column: "name", direction: "ascending" }] }));
     expect(screen.getByRole("link", { name: "First record" })).toBeInTheDocument();
+  });
+
+  it("renders the README saved-view example with its rows visible in the initial state", () => {
+    const readme = readFileSync(join(import.meta.dirname, "../../../README.md"), "utf8");
+    const blocks = [...readme.matchAll(/^```tsx\n([\s\S]*?)^```/gm)].map(match => match[1]!).filter(block => block.includes("export function TasksArea"));
+    expect(blocks).toHaveLength(1);
+    const output = ts.transpileModule(blocks[0]!, { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2022 } }).outputText;
+    const modules: Record<string, unknown> = { react: React, "react/jsx-runtime": jsxRuntime, "@clossys/publisher/web/client": client };
+    const exported: { exports: Record<string, () => React.ReactElement> } = { exports: {} };
+    new Function("module", "exports", "require", output)(exported, exported.exports, (id: string) => modules[id]);
+    render(React.createElement(exported.exports.TasksArea!));
+    expect(screen.getByText("First task")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Collapse group/ })).toBeInTheDocument();
   });
 });

@@ -6789,7 +6789,9 @@ pagination; `table.isLoading` instead preserves the DataTable loading state.
 props through `table`. The View does not sort, select, paginate or fetch rows.
 `table` also forwards DataTable's saved-view props unchanged: `model`, the
 `onModelChange` it requires, `messages`, `expandedGroupKeys` and
-`onExpandedGroupKeysChange`. With a `model`, DataTable filters, sorts and groups
+`onExpandedGroupKeysChange`. Expansion keys are `groupRows` keys (JSON value
+paths such as `["Ready"]`, not the bare value); `"all"` expands every group. With
+a `model`, DataTable filters, sorts and groups
 `rows` locally, header sorting is reported through `onModelChange`, and
 `rowRoute` still wraps the row-header column when that column is in the model's
 `visibleColumns`. The `model` is the saved-view envelope `DataTable` documents.
@@ -6851,7 +6853,7 @@ const initial: TaskView = {
 
 export function TasksArea() {
   const [model, setModel] = useState<TaskView>(initial);
-  const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set(["Ready"]));
+  const [expanded, setExpanded] = useState<ReadonlySet<string> | "all">("all");
   return <IndexView
     collectionLabel="Tasks"
     rows={rows}
