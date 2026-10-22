@@ -733,7 +733,7 @@ jobs:
       - name: Download gitleaks report
         id: download-report
         continue-on-error: true
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: gitleaks-report
           path: ${{ runner.temp }}/gitleaks-report
@@ -2321,7 +2321,7 @@ jobs:
       # Downloaded before anything this job executes is laid down, so the
       # base-ref checkout below is written after any data.
       - name: Download packed tarballs (data only)
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: artifact-safety-tarballs
           path: ${{ runner.temp }}/packed
