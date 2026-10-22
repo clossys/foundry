@@ -195,8 +195,10 @@ describe("TableOfContents", () => {
     expect(box).toHaveClass("rounded-panel", "border", "border-line-base", "p-md", "mt-lg");
     const trigger = screen.getByRole("button", { name: LABEL });
     expect(trigger).toHaveAttribute("aria-expanded", "true");
+    expect(trigger).toHaveClass("focus-visible:outline-solid", "focus-visible:outline-2", "focus-visible:outline-offset-2", "focus-visible:outline-accent");
     const nav = screen.getByRole("navigation", { name: LABEL });
     expect(nav).toBeVisible();
+    expect(nav.parentElement).toHaveClass("ps-0");
     expect(nav.querySelector("p")).toBeNull();
     expect(nav).not.toHaveClass("desktop:sticky");
     await user.click(trigger);

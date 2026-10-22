@@ -19,7 +19,7 @@ function host(html: string) {
 }
 
 describe("server TableOfContents", () => {
-  it("renders the same markup as the client variant for the sidebar and the inline presentations before any observation", () => {
+  it("renders the same markup as the client variant for the sidebar presentation before any observation", () => {
     const sidebar = { label: LABEL, items: ITEMS, currentId: "b", className: "mt-lg" };
     expect(renderToStaticMarkup(<TableOfContents {...sidebar} />)).toBe(renderToStaticMarkup(<ClientTableOfContents {...sidebar} />));
     const unmarked = { label: LABEL, items: ITEMS };

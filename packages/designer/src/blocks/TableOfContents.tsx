@@ -81,7 +81,12 @@ export function TableOfContents(props: TableOfContentsProps) {
   if (presentation === "inline") {
     return (
       <div className={cx(BOX_CLASSES, className)} style={style}>
-        <Disclosure title={label} defaultExpanded panelClassName="ps-0">
+        <Disclosure
+          title={label}
+          defaultExpanded
+          triggerClassName="text-ink-primary focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          panelClassName="ps-0"
+        >
           {renderTableOfContentsInlineNav({ label, items }, current)}
         </Disclosure>
       </div>
