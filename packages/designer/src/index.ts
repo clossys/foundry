@@ -452,6 +452,9 @@ export type { LockupProps } from "./blocks/index.js";
 export { GroupedTable } from "./blocks/GroupedTable.js";
 export type { GroupedTableProps, GroupedTableGroup, GroupedTableColumn } from "./blocks/GroupedTable.js";
 
+export { scheduleProject, projectRollups, boardColumns, timelineLayout, serializeProject, parseProject, ProjectModelError } from "./blocks/project-model/index.js";
+export type { ProjectDay, TaskDependency, Task, Calendar as ProjectCalendar, ProjectModelErrorCode, ProjectModel, ScheduledTask, ProjectConflict, ProjectSchedule, ProjectRollup, BoardOptions, BoardColumn, TimelineZoom, TimelineOptions, TimelinePoint, TimelineRow, TimelineConnector, TimelineLayout } from "./blocks/project-model/index.js";
+
 export type { SignatureChartLabels } from "./charts/index.js";
 export { GraphValidationError, validateGraph, neighbors, subgraph, degrees, components, shortestPath, groupByKind, radialLayout, forceLayout, edgeRoutingHints } from "./blocks/index.js";
 export type { GraphNode, GraphEdge, GraphInput, GraphModelEdge, GraphModel, GraphErrorCode, GraphNeighborOptions, GraphSubgraphOptions, GraphDegree, GraphKindGroup, GraphPosition, GraphRadialOptions, GraphForceOptions, GraphEdgeRoutingHint } from "./blocks/index.js";

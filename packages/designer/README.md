@@ -9352,3 +9352,152 @@ import { RelationGraph } from "@clossys/designer/blocks";
   edges={[{ from: "collection", to: "detail", label: "contains" }]}
 />;
 ```
+
+### Headless project model
+
+`scheduleProject`, `projectRollups`, `boardColumns` and `timelineLayout` are pure
+functions exported from `@clossys/designer/blocks`. They accept plain data, copy
+the task arrays they return and perform no rendering or I/O. The module graph
+under `blocks/project-model` uses no component runtime; the existing public blocks
+barrel still requires its documented React peers.
+
+```ts
+import {
+  scheduleProject, projectRollups, boardColumns, timelineLayout,
+  serializeProject, parseProject, type Task, type Calendar,
+} from "@clossys/designer/blocks";
+
+const calendar: Calendar = {
+  isWorkingDay: () => true,
+  addWorkingDays: (day, count) => day + count,
+};
+const tasks: Task[] = [
+  { id: "plan", title: "Plan", status: "done", start: 0, durationDays: 2, deps: [] },
+  { id: "build", title: "Build", status: "in-progress", durationDays: 4,
+    deps: [{ id: "plan", type: "finish-to-start" }] },
+  { id: "ship", title: "Ship", status: "todo", milestone: true,
+    deps: [{ id: "build", type: "finish-to-start" }] },
+];
+const schedule = scheduleProject(tasks, calendar);
+const summaries = projectRollups(schedule);
+const columns = boardColumns(tasks, {
+  statusOrder: ["todo", "in-progress", "blocked", "done"],
+  wipLimits: { "in-progress": 2 },
+});
+const layout = timelineLayout(schedule, {
+  zoom: "week", rowOrder: tasks.map(task => task.id),
+});
+const saved = serializeProject(tasks);
+const restored = parseProject(JSON.parse(JSON.stringify(saved)));
+```
+
+Task IDs are unique nonempty strings. Each task has `id`, `title`, `status` and
+`deps`; optional fields are `start`, `end`, `durationDays`, `assignee`, `tags`,
+`parentId` and `milestone`. Only `finish-to-start` dependencies are supported.
+References must name tasks in the same input, with no repeated dependency,
+dependency cycle or parent cycle. Parent membership is separate from dependency
+scheduling: a task with children is scheduled like another task, while
+`projectRollups` replaces its summary span, status and completion with its leaves.
+Summary dependencies therefore refer to the parent's own scheduled task, not an
+implicit dependency on every child.
+
+Days are safe integer day numbers in a caller-defined calendar. Convert ISO dates
+to this representation before passing tasks; the model does not read a clock,
+locale or timezone. End boundaries are **exclusive**: duration 2 from day 0 ends
+at day 2, so a finish-to-start successor can start at 2. `Calendar.isWorkingDay`
+and `addWorkingDays` must be deterministic and agree, with the latter supporting
+positive, zero and negative integer counts. For a Monday-to-Friday calendar, a
+one-working-day task starting Friday ends Monday. A non-working requested start
+moves forward to the next working day and produces a `start` conflict. No working
+day within 3660 calendar days, non-progressing arithmetic, unreachable boundaries
+or a distance requiring over one million working-day steps is refused with
+`invalid-calendar`. Calendar callbacks are trusted caller code; their exceptions
+propagate. This is a day-granularity dependency model, without resource leveling,
+partial days, time-of-day, recurring tasks or automatic holiday definitions.
+
+Ordinary tasks default to one working day. `start` plus `end` derives duration if
+`durationDays` is absent. `end` plus duration derives a requested start by working
+backward. An end alone is refused. Milestones have zero duration; other tasks
+require a positive duration. When both duration and boundaries are present,
+duration determines the scheduled end, and an inconsistent end is reported.
+Without an explicit start, tasks use the earliest requested start in the project,
+or day 0 if none exist. A later explicit start is a lower bound. An earlier
+explicit start that violates a dependency produces a `dependency` conflict naming
+the predecessor; the computed schedule shifts to a feasible start. Any explicit
+end differing from the computed end produces an `end` conflict. Conflicts do not
+change the caller's dates or act as a refusal. There is no implicit deadline.
+
+`schedule.tasks` uses a FIFO topological traversal: roots retain input order,
+newly available tasks append in input/dependency traversal order. The backward
+pass uses the latest project finish as its common horizon. `latestStart`,
+`latestEnd` and nonnegative working-day `slackDays` describe movement within that
+horizon, and `critical` means zero slack. `criticalPath` contains one contiguous
+driving chain; ties select the first finishing sink and first driving dependency
+in traversal order. Explicit start constraints can create idle gaps, so the chain
+need not span the project's entire elapsed interval. Other tied zero-slack tasks
+remain visible through `critical`. Both dependency and parent cycles throw a
+`ProjectModelError` with the repeated closing ID in `cycle`.
+
+`projectRollups(schedule)` returns rows in scheduled order. A parent spans the
+minimum descendant leaf start through maximum leaf end. Completion weights each
+leaf by its working duration, with `done` contributing 100% and every other
+status 0%; ancestors do not double count their descendants. An all-milestone
+subtree uses leaf counts instead of zero duration weights. Status precedence is
+`blocked > in-progress > todo > done`; other statuses are refused by rollups.
+A childless task keeps its scheduled span and own status, even if intended as an
+empty parent. Rollup `durationDays` sums leaf work, rather than elapsed span.
+
+`boardColumns` accepts any caller-defined status vocabulary, preserves
+`statusOrder` including empty columns, and retains task input order within each
+column. Unknown task statuses throw `unknown-status`. WIP limits must name known
+statuses and be nonnegative integers; a column's `overLimit` is true only when
+its count exceeds its limit. The returned tasks are copied, with independent tag
+and dependency arrays. Missing WIP limits mean unlimited capacity.
+
+`timelineLayout` requires `rowOrder` to name every task once. Row indices follow
+that order, offsets start at the earliest scheduled day, and spans measure elapsed
+calendar days. Zoom uses uniform units: day = 1 day, week = 7 days, month = 30
+days, quarter = 90 days. These are scale units rather than civil calendar month
+buckets; a view owns civil labels and pixel mapping. Dependency connectors pair
+the predecessor's end with the successor's start, using the requested row order.
+Milestone markers have zero span. The test budget is 2,000 ms for scheduling and
+layout of a 2,000-task chain; it is not a latency guarantee for arbitrary graphs
+or expensive caller calendars.
+
+`serializeProject(tasks)` validates and copies `{ version: 1, tasks }`.
+`parseProject(unknown)` accepts that plain versioned object and returns an
+independent copy. Persist tasks, not calendar callbacks; inject the calendar when
+rescheduling. Unknown fields, accessors, sparse or accessor-indexed arrays, non-plain
+task/project objects, invalid references and unsupported versions are refused. Typed errors expose `code` and
+`cycle`; codes are `invalid-project`, `unsupported-version`, `invalid-task`,
+`dependency-cycle`, `parent-cycle`, `invalid-calendar`, `unknown-status`,
+`invalid-board` and `invalid-layout`.
+
+| Export | Kind | Contract |
+| --- | --- | --- |
+| `scheduleProject` | function | Earliest feasible working-day schedule, explicit-date conflicts, latest dates, slack and one critical chain. |
+| `projectRollups` | function | Leaf-weighted completion, status and spans for each scheduled task. |
+| `boardColumns` | function | Stable caller-defined status columns with WIP flags. |
+| `timelineLayout` | function | Uniform-unit rows, dependency connector pairs and milestone markers. |
+| `serializeProject` | function | Validate and copy version 1 task data. |
+| `parseProject` | function | Read an unknown plain versioned task object. |
+| `ProjectModelError` | class | Typed refusal with a stable code and optional named cycle. |
+| `ProjectDay` | type | Safe integer calendar day number. |
+| `TaskDependency` | type | Referenced task ID and finish-to-start relation. |
+| `Task` | type | Plain task data and explicit scheduling constraints. |
+| `Calendar` | type | Injected working-day predicate and signed working-day arithmetic, imported from blocks. |
+| `ProjectCalendar` | type | Calendar type alias on the source root barrel, whose Calendar value is an icon. |
+| `ProjectModelErrorCode` | type | The nine model refusal codes. |
+| `ProjectModel` | type | Version 1 persisted task object. |
+| `ScheduledTask` | type | Task with computed dates, duration, latest dates and slack. |
+| `ProjectConflict` | type | Explicit-date conflict with requested and required day numbers. |
+| `ProjectSchedule` | type | Scheduled tasks, project boundaries, conflicts and critical chain. |
+| `ProjectRollup` | type | Summary span, total leaf duration, completion and status. |
+| `BoardOptions` | type | Ordered status vocabulary and optional WIP limits. |
+| `BoardColumn` | type | Status group, copied tasks and capacity flag. |
+| `TimelineZoom` | type | Day, week, month or quarter unit choice. |
+| `TimelineOptions` | type | Zoom and complete task row order. |
+| `TimelinePoint` | type | Task ID, row index and unit offset. |
+| `TimelineRow` | type | Point with span and milestone flag. |
+| `TimelineConnector` | type | Predecessor-end and successor-start pair. |
+| `TimelineLayout` | type | Origin, days per unit, rows, connectors and markers. |
