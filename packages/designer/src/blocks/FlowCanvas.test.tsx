@@ -124,6 +124,71 @@ describe("FlowCanvas", () => {
     expect(button("Review")).toHaveFocus();
   });
 
+  describe.each([
+    { name: "a plain left-to-right document", outer: "", local: undefined, rtl: false },
+    { name: "a right-to-left document", outer: "rtl", local: undefined, rtl: true },
+    { name: "a left-to-right region inside a right-to-left document", outer: "rtl", local: "ltr", rtl: false },
+    { name: "a right-to-left region inside a left-to-right document", outer: "ltr", local: "rtl", rtl: true },
+  ] as const)("in $name, the closest dir drives keys, drawing and layout alike", ({ outer, local, rtl }) => {
+    // The shipped stylesheet's mirroring rules, matched against the drawing the way a browser would select it.
+    const css = readFileSync(resolve(import.meta.dirname, "../../styles/compiled.css"), "utf8");
+    const mirrors = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].filter(rule => /(^|[;{\s])scale:\s*-1\s|--tw-scale-x:\s*calc\(100% \* -1\)/.test(rule[2]!)).map(rule => rule[1]!.split(";").pop()!.trim()).filter(selector => !selector.includes("&"));
+    // jsdom's selector engine rejects complex selectors inside :where(), so test each alternative of a trailing :where() list on its own, as a browser would.
+    const selects = (element: Element, selector: string) => {
+      const list = /^(.+?):where\((.+)\)$/.exec(selector);
+      return list === null ? element.matches(selector) : element.matches(list[1]!) && list[2]!.split(",").some(option => element.matches(option.trim()));
+    };
+    const host = () => {
+      if (outer) document.documentElement.dir = outer;
+      else document.documentElement.removeAttribute("dir");
+      const region = document.createElement("section");
+      if (local !== undefined) region.dir = local;
+      return document.body.appendChild(region);
+    };
+    const [inlineNext, inlinePrevious] = rtl ? ["{ArrowLeft}", "{ArrowRight}"] : ["{ArrowRight}", "{ArrowLeft}"];
+
+    it("follows edges forward with the inline-end key and back with the inline-start key", async () => {
+      const user = userEvent.setup();
+      render(<FlowCanvas nodes={nodes} edges={edges} {...copy} />, { container: host() });
+      button("Draft").focus();
+      await user.keyboard(inlinePrevious);
+      expect(button("Draft")).toHaveFocus();
+      await user.keyboard(inlineNext);
+      expect(button("Review")).toHaveFocus();
+      await user.keyboard(inlineNext);
+      expect(button("Publish")).toHaveFocus();
+      await user.keyboard(inlinePrevious);
+      expect(button("Review")).toHaveFocus();
+    });
+
+    it("moves between siblings with the inline keys when vertical", async () => {
+      const user = userEvent.setup();
+      render(<FlowCanvas nodes={nodes} edges={edges} orientation="vertical" {...copy} />, { container: host() });
+      button("Publish").focus();
+      await user.keyboard(inlineNext);
+      expect(button("Archive")).toHaveFocus();
+      await user.keyboard(inlinePrevious);
+      expect(button("Publish")).toHaveFocus();
+    });
+
+    it("mirrors the drawing exactly when the canvas itself is right-to-left, and positions every box logically", () => {
+      const { container } = render(<FlowCanvas nodes={nodes} edges={edges} {...copy} />, { container: host() });
+      const svg = container.querySelector("svg[data-flowchart-drawing]")!;
+      expect(mirrors.length).toBeGreaterThan(0);
+      expect(mirrors.some(selector => selects(svg, selector))).toBe(rtl);
+      // The canvas sets no direction of its own, so the host's closest dir reaches every box, and boxes sit on logical insets.
+      const canvas = container.querySelector("[data-flowchart-region='content']")!;
+      expect(canvas.closest("[dir]")).toBe(local === undefined ? (outer ? document.documentElement : null) : container);
+      expect(canvas.querySelector("[dir]")).toBeNull();
+      const boxes = [...canvas.querySelectorAll<HTMLElement>("[data-flowchart-node], [data-flowchart-region='edge-labels'] > span")];
+      expect(boxes).toHaveLength(nodes.length + 2);
+      for (const box of boxes) {
+        expect(box.style.insetInlineStart).not.toBe("");
+        expect([box.style.left, box.style.right, box.style.direction]).toEqual(["", "", ""]);
+      }
+    });
+  });
+
   it("selects with Enter, Space or a click, never on focus alone", async () => {
     const user = userEvent.setup();
     const onSelect = vi.fn();

@@ -622,6 +622,19 @@
   }
 }
 
+/*
+ * FlowCanvas draws its edges in left-to-right coordinates and mirrors the
+ * drawing when the drawing itself is right to left. It is keyed on the
+ * element's own `:dir()`, which reads the closest `dir`, never on an ancestor
+ * `[dir]` that a nearer `dir` overrides, so the drawing always agrees with the
+ * logical node positions and the arrow keys.
+ */
+@utility flow-canvas-drawing {
+  &:dir(rtl) {
+    scale: -1 1;
+  }
+}
+
 /* Scoped layout parameters, not brand tokens; every length reads the token root. */
 @utility items-connected {
   --items-wide: 0; --items-gap-inline: var(--spacing-2xl, 32px); --items-gap-block: var(--spacing-2xl, 32px);

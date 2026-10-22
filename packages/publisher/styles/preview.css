@@ -1542,6 +1542,9 @@
       translate: calc(var(--spacing-xs, 4px) / -2) 0;
     }
   }
+  .flow-canvas-drawing:dir(rtl) {
+    scale: -1 1;
+  }
   .rotate-90 {
     rotate: 90deg;
   }
@@ -3891,10 +3894,6 @@
       grid-template-columns: repeat(4, minmax(0, 1fr));
     }
   }
-  .rtl\:-scale-x-100:where(:dir(rtl), [dir="rtl"], [dir="rtl"] *) {
-    --tw-scale-x: calc(100% * -1);
-    scale: var(--tw-scale-x, 1) var(--tw-scale-y, 1);
-  }
   .rtl\:rotate-180:where(:dir(rtl), [dir="rtl"], [dir="rtl"] *) {
     rotate: 180deg;
   }
@@ -4512,21 +4511,6 @@
   initial-value: "";
   inherits: false;
 }
-@property --tw-scale-x {
-  syntax: "*";
-  inherits: false;
-  initial-value: 1;
-}
-@property --tw-scale-y {
-  syntax: "*";
-  inherits: false;
-  initial-value: 1;
-}
-@property --tw-scale-z {
-  syntax: "*";
-  inherits: false;
-  initial-value: 1;
-}
 @keyframes spin {
   to {
     transform: rotate(360deg);
@@ -4599,9 +4583,6 @@
       --tw-backdrop-sepia: initial;
       --tw-ease: initial;
       --tw-content: "";
-      --tw-scale-x: 1;
-      --tw-scale-y: 1;
-      --tw-scale-z: 1;
     }
   }
 }

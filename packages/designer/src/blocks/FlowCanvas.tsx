@@ -35,6 +35,18 @@ const units = (value: number) => "calc(" + value + " * " + UNIT + ")";
 /** In forced colors the border colours collapse to one system colour, so the selected node also gets an outline in the button's system text colour. */
 const SELECTED_FORCED = "forced-colors:outline-solid forced-colors:outline-2 forced-colors:outline-offset-2 forced-colors:outline-current";
 
+/**
+ * The canvas's own direction: the closest `dir`, as `:dir()` reads it, so a
+ * local `dir` overrides the document's. The drawing's mirror
+ * (`flow-canvas-drawing`) is keyed on the same `:dir(rtl)` of the drawing
+ * itself, never on an ancestor's `[dir]`, and the node positions are logical
+ * insets. Engines without `:dir()` fall back to the closest `dir` attribute.
+ */
+function isRtl(element: Element) {
+  try { return element.matches(":dir(rtl)"); }
+  catch { return element.closest("[dir]")?.getAttribute("dir")?.toLowerCase() === "rtl"; }
+}
+
 const PLATE = "box-border flex h-full w-full min-w-0 flex-col items-start justify-start gap-xs overflow-hidden rounded-panel border-solid p-sm text-start font-body forced-colors:border-current focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent";
 
 /**
@@ -51,9 +63,10 @@ const PLATE = "box-border flex h-full w-full min-w-0 flex-col items-start justif
  * The node list is one tab stop. Arrow keys along the layer direction follow
  * edges forward and back (returning along the path just taken where it can),
  * arrow keys across it move between nodes in the same layer, and Home and End
- * jump to the first and last node. Inline keys mirror in RTL
- * documents. Enter, Space or a click calls `onSelect`; the host owns
- * `selectedId`. The canvas has no motion, and scrolls inside its own
+ * jump to the first and last node. Inline keys, the drawing and the node
+ * positions all follow the canvas's closest `dir`, so they mirror together in
+ * RTL and a local `dir` overrides the document's. Enter, Space or a click
+ * calls `onSelect`; the host owns `selectedId`. The canvas has no motion, and scrolls inside its own
  * viewport at narrow widths. Every visible word comes from props.
  */
 export function FlowCanvas({ nodes, edges, label, emptyMessage, outgoingLabel, orientation = "horizontal", selectedId, onSelect, className }: FlowCanvasProps) {
@@ -99,7 +112,7 @@ export function FlowCanvas({ nodes, edges, label, emptyMessage, outgoingLabel, o
     if (event.altKey || event.ctrlKey || event.metaKey) return;
     const current = (event.target as HTMLElement).closest<HTMLElement>("[data-flowchart-node]")?.dataset.flowchartNode;
     if (current === undefined || !graph.byId.has(current)) return;
-    const rtl = getComputedStyle(event.currentTarget).direction === "rtl" || event.currentTarget.closest("[dir=rtl]") !== null;
+    const rtl = isRtl(event.currentTarget);
     const vertical = layout.orientation === "vertical";
     const inlineNext = rtl ? "ArrowLeft" : "ArrowRight", inlinePrevious = rtl ? "ArrowRight" : "ArrowLeft";
     const forwardKey = vertical ? "ArrowDown" : inlineNext, backKey = vertical ? "ArrowUp" : inlinePrevious;
@@ -137,7 +150,7 @@ export function FlowCanvas({ nodes, edges, label, emptyMessage, outgoingLabel, o
             focusable="false"
             viewBox={"0 0 " + layout.width + " " + layout.height}
             preserveAspectRatio="none"
-            className="pointer-events-none absolute inset-0 h-full w-full rtl:-scale-x-100"
+            className="pointer-events-none absolute inset-0 h-full w-full flow-canvas-drawing"
             data-flowchart-region="drawing"
             data-flowchart-drawing=""
           >

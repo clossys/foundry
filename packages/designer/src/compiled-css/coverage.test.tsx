@@ -199,7 +199,7 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
     }
     const generated = await generateCompiledCss({ stylesDir: resolve(packageRoot, "styles"), candidates: scanCompiledCssSources(packageRoot).candidates });
     const shipped = readFileSync(resolve(packageRoot, "styles/compiled.css"), "utf8");
-    for (const name of ["stroke-accent", "stroke-ink-muted", "fill-accent", "rtl:-scale-x-100", "line-clamp-2", "sr-only", "forced-colors:outline-solid", "forced-colors:outline-2", "forced-colors:outline-offset-2", "forced-colors:outline-current"]) expect(classes).toContain(name);
+    for (const name of ["stroke-accent", "stroke-ink-muted", "fill-accent", "flow-canvas-drawing", "line-clamp-2", "sr-only", "forced-colors:outline-solid", "forced-colors:outline-2", "forced-colors:outline-offset-2", "forced-colors:outline-current"]) expect(classes).toContain(name);
     for (const name of classes) {
       expect(generated.css, `flow canvas fresh: ${name}`).toContain(toSelectorText(name));
       expect(shipped, `flow canvas shipped: ${name}`).toContain(toSelectorText(name));
