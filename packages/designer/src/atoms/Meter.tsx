@@ -52,8 +52,9 @@ export interface MeterProps extends Omit<HTMLAttributes<HTMLDivElement>, "childr
    * Optional accessible name for the meter: what it measures ("API
    * requests"). When given, it names the meter in place of the value text;
    * `valueText` stays the visible value and the `aria-valuetext`. Omit it and
-   * the visible `valueText` names the meter. The server `Meter` has no role
-   * and ignores it.
+   * the visible `valueText` names the meter. An empty or whitespace-only
+   * `label` counts as omitted, so it can never leave the meter with an empty
+   * name. The server `Meter` has no role and ignores it.
    */
   label?: string;
   /** Optional visible limit text ("limit 3.0x"), shown after the value. */
@@ -113,10 +114,12 @@ export function Meter({
   ...rest
 }: MeterProps) {
   const resolved = resolveMeter({ value, scaleMax, limit, previous, previousText, direction });
+  // An empty or blank label is treated as absent: an empty aria-label would give the meter no name.
+  const name = label !== undefined && label.trim() !== "" ? label : undefined;
   return (
     <AriaMeter
       {...rest}
-      {...(label === undefined ? {} : { "aria-label": label })}
+      {...(name === undefined ? {} : { "aria-label": name })}
       value={value}
       minValue={0}
       maxValue={scaleMax}
@@ -127,7 +130,7 @@ export function Meter({
       className={meterRootClassName(emphasis, className)}
     >
       <div className={VALUE_ROW_CLASSES[emphasis].row}>
-        {label === undefined
+        {name === undefined
           ? <Label className={VALUE_ROW_CLASSES[emphasis].value}>{valueText}</Label>
           : <span className={VALUE_ROW_CLASSES[emphasis].value}>{valueText}</span>}
         {limitText ? <span className={VALUE_ROW_CLASSES[emphasis].limit}>{limitText}</span> : null}

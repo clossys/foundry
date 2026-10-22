@@ -189,12 +189,12 @@ and its exception list can only shrink.
   `Separator`, `Chip`, `StatusMark`, `Meter`, `ResizeHandle`, `Logomark`, `GridList`.
 - **`blocks`** — owns the internal layout of multiple named regions,
   typically by composing one or more atoms (and/or layout) into something
-  with a real job on a page. Fifty-one ship: `AccountMenu`, `PageHeader`, `EmptyState`,
+  with a real job on a page. Fifty-two ship: `AccountMenu`, `PageHeader`, `EmptyState`,
   `DataTable`, `DetailView`, `Pagination`, `UsageMeter`, `Stat`, `Form`, `FieldGroup`,
   `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `SectionFrame`,
   `MarketingChapter`, `FeatureGrid`, `Item`, `Items`, `Tree`, `AnatomyCallouts`, `RecordLedger`, `Scene`, `Matrix`,
   `Specimen`, `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`,
-  `PricingTable`, `Testimonial`, `ArticleBody`, `ConsentBanner`, `NewsletterBand`, `Panel`, `Drawer`,
+  `PricingTable`, `Testimonial`, `TableOfContents`, `ArticleBody`, `ConsentBanner`, `NewsletterBand`, `Panel`, `Drawer`,
   `ResizablePane`, `CommandMenu`, `AppNavigation`, `PageBar`, `GroupedTable`, `Lockup`, `Explorer`, `CatalogWorkspace`, `Chat`, `ResourceList` and `RelationGraph` (see "Blocks" below).
 - **`shell`** — the persistent frame around content (nav, layout chrome)
   that provides the slots content fills. One per app; survives route
@@ -464,7 +464,7 @@ source file's own header for the exact probe and its result). Today that's:
 | Subpath | Server-safe members |
 | --- | --- |
 | `@clossys/designer/atoms/server` | `Logomark`, `Avatar`, `Badge`, `Banner`, `Card`, `Field`, `Icon`, `Meter`, `Skeleton`, `Spinner`, `StatusMark`, `buttonLinkClassName`, `iconButtonClassName`, `iconButtonLinkClassName`, `mergeUiClasses` |
-| `@clossys/designer/blocks/server` | `Lockup`, `AnatomyCallouts`, `ArticleBody`, `Matrix`, `ContentSection`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `Item`, `Items`, `MarketingChapter`, `MediaFigure`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `RecordLedger`, `Scene`, `SectionFrame`, `SectionHeader`, `SectionIntro`, `Specimen`, `SpecimenPanel`, `Stat`, `StatusList`, `Testimonial`, `Tree`, `UsageMeter` |
+| `@clossys/designer/blocks/server` | `Lockup`, `AnatomyCallouts`, `ArticleBody`, `Matrix`, `ContentSection`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `Item`, `Items`, `MarketingChapter`, `MediaFigure`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `RecordLedger`, `Scene`, `SectionFrame`, `SectionHeader`, `SectionIntro`, `Specimen`, `SpecimenPanel`, `Stat`, `StatusList`, `TableOfContents`, `Testimonial`, `Tree`, `UsageMeter` |
 | `@clossys/designer/shell/server` | `Shell`, `SiteFooter`, `SiteHeader`, `SkipLink` |
 | `@clossys/designer/charts/server` | `ChartFrame`, `BarChart`, `LineChart` (static), `WaterfallChart`, `RangeChart`, `ScatterChart`, `AreaChart` (static), `Heatmap` (static), `StatusStrip` (static), `Sparkline` |
 | `@clossys/designer/theme/server` | `getThemeInitScript` |
@@ -1704,7 +1704,9 @@ something is loading — it then renders react-aria-components' `ProgressBar`
 `inline-block` so it stays inline without a CSS reset) with that as its
 accessible name, wrapping the `<svg>` ring. The relationship attributes
 (`aria-labelledby`, `aria-describedby`, `aria-details`) go to that named
-progress bar; every other attribute, `className` included, stays on the ring.
+progress bar, which `label` alone names (a passed `aria-label` attribute is not
+copied onto the ring); every other attribute, `className` included, stays on
+the ring.
 Omit it when the spinner is purely decorative (e.g. next
 to a button's own "Saving…" text, which already announces the state) — it
 then renders the bare `<svg>` with `aria-hidden="true"` instead. The
@@ -2494,7 +2496,8 @@ reader. From `@clossys/designer/atoms` the root is react-aria-components'
 and `aria-valuemax`), named by the visible `valueText` and announcing it as
 its value text, so a screen reader hears the words a sighted reader sees.
 An optional `label` names the meter instead (as its `aria-label`), leaving
-`valueText` as the visible text and the value text; the server `Meter`
+`valueText` as the visible text and the value text (an empty or blank
+`label` counts as omitted); the server `Meter`
 accepts `label` and ignores it. From `@clossys/designer/atoms/server` (server-safe, no react-aria-components)
 the markup is identical except that the root carries no role and no value
 attributes. The client `Meter` forwards `id`, `data-*`, the `aria-label`,
@@ -4402,6 +4405,56 @@ this package's own `Avatar` atom, which independently requires `alt` at
 its own type level too.
 
 The `/blocks/server` variant uses the server Avatar; use the ordinary block when you need its image-load-failure fallback.
+
+### `TableOfContents`
+
+Draft navigation of in-page links with the current item tracked in the client.
+Import `TableOfContents`, `TableOfContentsProps` and `TableOfContentsItem` from
+`@clossys/designer/blocks`; the server-safe variant is exported under the same
+name from `@clossys/designer/blocks/server`.
+
+```tsx
+import { TableOfContents, type TableOfContentsItem } from "@clossys/designer/blocks";
+
+const headings: readonly TableOfContentsItem[] = [
+  { id: "overview", label: "Overview" },
+  { id: "planning", label: "Planning" },
+  { id: "budget", label: "Budget", level: 3 },
+  { id: "schedule", label: "Schedule", level: 3 },
+  { id: "review", label: "Review" },
+  { id: "next-steps", label: "Next steps" },
+];
+
+function SidebarContents() {
+  return <TableOfContents label="On this page" items={headings} />;
+}
+
+function InlineContents() {
+  return <TableOfContents label="On this page" items={headings} presentation="inline" />;
+}
+```
+
+| Prop | Contract |
+| --- | --- |
+| `label` | Required non-empty string. The navigation's accessible name and, for `inline`, the disclosure title. No built-in English. |
+| `items` | Two to thirty `TableOfContentsItem`s: an `id` (the target element's id; no whitespace and no `#`; unique), a `label` and an optional `level` of 2 or 3 (default 2, sets the indent). Anything else throws a `TypeError` prefixed `TableOfContents:`. |
+| `presentation` | `sidebar` (default) is a captioned plain list at every width that sticks from desktop below the frame header, using the frame's default clearance restated from registered tokens; `inline` is a bordered disclosure, expanded by default, at every width. |
+| `currentId` | Controlled current item; must be one of the item ids. |
+| `trackCurrent` | Default true. Client only, ignored by the server variant and when `currentId` is given. |
+| `className`, `style` | Applied to the root element. |
+
+The current link carries `aria-current="location"`, a start border and a heavier
+weight, so colour is never the only channel; the border follows the text colour
+in forced-colour mode. The client variant builds one `IntersectionObserver` over
+the item targets with a `0px 0px -70% 0px` root margin: the first visible
+target in item order is current, and the previous one stays current while none is
+visible. Targets missing from the page are skipped, a missing
+`IntersectionObserver` leaves no item current, and the observer disconnects on
+unmount. There are no scroll listeners or timers, and no item is current before
+the first observer callback, so the first client render matches the server render.
+The server variant renders the same list and marks only `currentId`; its inline
+presentation is a native `<details open>`. The host owns `scroll-behavior` and the
+`scroll-margin` of the targets. Every link has a 44 px minimum height.
 
 ### `SectionFrame`
 
@@ -6949,7 +7002,7 @@ not a grab-bag).
 | `StatusMarkTone` | type | `"success" \| "warning" \| "danger" \| "info" \| "neutral"`. |
 | `Meter` | component | A value against a scale and an optional limit, with visible value and limit text and a decorative bar. Built on react-aria-components' `Meter`; the `atoms/server` export is the same markup without the meter role. |
 | `MeterProps` | type | Props for `Meter`: `value`, `scaleMax`, `limit`, `direction`, `tone`, `valueText`, `limitText`, `emphasis`, optional `label`, optional paired `previous`/`previousText`, plus every native `<div>` attribute except `children`. |
-| `MeterTone` | type | `"success" \| "warning" \| "danger" \| "info" \| "neutral"`. |
+| `MeterTone` | type | `"success" \| "warning" \| "danger" \| "info" \| "neutral" \| "accent"`. |
 | `MeterDirection` | type | `"max" \| "min"`: whether the limit is a cap or a floor. |
 | `AccountMenu` | component | Navigation Material with actor trigger, grouped commands and controlled preferences. |
 | `AccountMenuProps` | type | Actor, sections, context/collapsed/triggerLabel and host close/route callbacks. |
@@ -7151,6 +7204,9 @@ not a grab-bag).
 | `PricingComparisonRow` | type | A stable `id`, `label`, optional `description` and `cells` keyed by tier id. |
 | `Testimonial` | component | Quote plus attribution, rendered as a real `<figure>`/`<blockquote>`/`<figcaption>`: `attributorName` and `attributorRole` are always separate fields. Optional avatar via `avatarSrc`/`avatarAlt`, required together at the type level. |
 | `TestimonialProps` | type | Props for `Testimonial`: `quote`, `attributorName`, `attributorRole`, `avatarSrc`/`avatarAlt` (a discriminated pair — both or neither), `className`, `style`, plus every native `<figure>` attribute except `children`. |
+| `TableOfContents` | component | Draft navigation of 2 to 30 in-page links with the current item marked by `aria-current="location"`. Client variant tracks the current heading with an `IntersectionObserver`; the `/blocks/server` variant marks only `currentId`. Sidebar or inline presentation. |
+| `TableOfContentsProps` | type | Props for `TableOfContents`: required `label` and `items`, `presentation`, `currentId`, `trackCurrent`, `className`, `style`. |
+| `TableOfContentsItem` | type | One entry: `id` of the target element, `label`, optional `level` of 2 or 3. |
 | `ArticleBody` | component | Thin, token-styled container for pre-structured long-form content (real `<h2>`/`<p>`/`<ul>`/... children) — no markdown parsing, no content-shape schema. |
 | `ArticleBodyProps` | type | Props for `ArticleBody`: `children`, `className`, `style`, plus every native `<article>` attribute. |
 | `SectionFrame` | component | Full-bleed marketing section band: a `ground` surface, vertical section rhythm, horizontal page padding, and a measured inner column. Sets `data-designer-section-frame` on its outer `<section>`. Compose `ArticleBody`, `Stat`, and other blocks that do not own their own band inside it. |
@@ -7816,7 +7872,7 @@ speculatively, just because a related component shipped, is the exact
 un-bounded growth this package's own "variant rule" warns against one level
 up. They get added here only once something real needs them.
 
-**Blocks:** fifty-three ship — `AccessMatrix`, `ColumnMapper`, `Lockup`, `PageHeader`, `AccountMenu`, `EmptyState`, `DataTable`, `DetailView`, `Pagination`, `UsageMeter`, `Stat`, `Form`, `FieldGroup`, `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `MarketingChapter`, `FeatureGrid`, `Matrix`, `Specimen`, `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`, `PricingTable`, `Testimonial`, `ArticleBody`, `SectionFrame`, `ConsentBanner`, `Panel`, `Drawer`, `ResizablePane`, `CommandMenu`, `AppNavigation`, `PageBar`, `Explorer`, `RecordLedger`, `AnatomyCallouts`, `Scene`, `Item`, `Tree`, `Items`, `GroupedTable`, `CatalogWorkspace`, `Chat`, `NewsletterBand`, `ResourceList` and `RelationGraph` — completing this layer. No
+**Blocks:** fifty-four ship — `AccessMatrix`, `ColumnMapper`, `Lockup`, `PageHeader`, `AccountMenu`, `EmptyState`, `DataTable`, `DetailView`, `Pagination`, `UsageMeter`, `Stat`, `Form`, `FieldGroup`, `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `MarketingChapter`, `FeatureGrid`, `Matrix`, `Specimen`, `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`, `PricingTable`, `Testimonial`, `TableOfContents`, `ArticleBody`, `SectionFrame`, `ConsentBanner`, `Panel`, `Drawer`, `ResizablePane`, `CommandMenu`, `AppNavigation`, `PageBar`, `Explorer`, `RecordLedger`, `AnatomyCallouts`, `Scene`, `Item`, `Tree`, `Items`, `GroupedTable`, `CatalogWorkspace`, `Chat`, `NewsletterBand`, `ResourceList` and `RelationGraph` — completing this layer. No
 `FilterBar` block:
 `DataTable`'s own `toolbar` slot (and `Toolbar`'s own `search` slot) are
 deliberately plain `ReactNode`s, not a block with its own opinion about

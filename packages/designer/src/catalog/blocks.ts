@@ -381,7 +381,7 @@ export const BLOCK_ENTRIES: readonly BlockEntry[] = [
   exported(HIERARCHY, "RelationGraph", { id: "items.relation-graph", label: "Relation graph" }),
 
   // Navigate / In-page
-  spec(IN_PAGE, { id: "prose.table-of-contents", label: "Table of contents", inFlight: pr(2400, "draft") }),
+  exported(IN_PAGE, "TableOfContents", { id: "prose.table-of-contents", label: "Table of contents" }),
 
   // Navigate / Actions
   built(ACTIONS, "Toolbar", { id: "form.toolbar", label: "Toolbar" }),

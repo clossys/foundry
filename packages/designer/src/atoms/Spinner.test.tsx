@@ -79,6 +79,13 @@ describe("Spinner", () => {
     expect(screen.getByTestId("ring")).not.toHaveAttribute("aria-labelledby");
   });
 
+  it("names the progress bar by label and keeps a passed aria-label off the ring", () => {
+    render(<Spinner label="Loading" aria-label="Other" data-testid="ring" />);
+    expect(screen.getByRole("progressbar", { name: "Loading" })).toBeInTheDocument();
+    expect(screen.queryByRole("progressbar", { name: "Other" })).toBeNull();
+    expect(screen.getByTestId("ring")).not.toHaveAttribute("aria-label");
+  });
+
   it("is hidden from assistive tech and carries no role when purely decorative", () => {
     const { container } = render(<Spinner />);
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
