@@ -4352,17 +4352,21 @@ A page can hold two `PricingTable`s (a monthly/annual toggle implemented
 as two tables a consumer switches between), which is what makes it a
 block rather than a view (test 3).
 
-Each tier's `name`, `price`, `features` (a plain list of `ReactNode`s —
+Each tier's `name`, one of `price` or `priceByInterval`, `features` (a plain list of `ReactNode`s —
 this block has no opinion about how a consumer represents "not included"),
 and `cta` slot are required; `description` and `badge` are optional.
-`isHighlighted` marks the recommended tier with an accent border ONLY —
+`isHighlighted` marks the recommended tier card with an accent border —
 pair it with `badge` for a visible, non-colour label, since a border alone
 would be invisible to a screen reader and disappear in greyscale, the same
 colour-is-never-the-only-channel reasoning `Stat`'s trend indicator
 documents. `badge` has no built-in default text ("Recommended" or
 similar) — this package ships no copy of its own, so there is nothing
 sensible to default it to. Built on this package's own `Card` and `Badge`
-atoms (blocks may compose atoms).
+atoms and, when `comparison` is supplied, the `Matrix` block, with the
+shared section `ground` inks (blocks may compose atoms and other blocks).
+
+See [interval and comparison examples](#pricingtable-interval-and-comparison-examples)
+for interval prices, grouped comparisons, ground inks and host controls.
 
 ### `Testimonial`
 
@@ -7139,10 +7143,15 @@ not a grab-bag).
 | `FaqProps` | type | Props for `Faq`: `eyebrow`, `heading`, `description`, `items`, `headingLevel`, `ground`, `className`, `style`, plus every native `<div>` attribute. |
 | `FaqItem` | type | One item: `id`, `question`, `answer`. |
 | `FaqHeadingLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
-| `PricingTable` | component | Pricing tiers under an optional heading region: name, price, feature list, CTA slot per tier, `isHighlighted` plus an optional `badge` slot to mark one as recommended. |
-| `PricingTableProps` | type | Props for `PricingTable`: `heading`, `description`, `tiers`, `headingLevel`, `className`, `style`, plus every native `<div>` attribute. |
-| `PricingTier` | type | One tier: `id`, `name`, `price`, `description?`, `features` (`readonly ReactNode[]`), `cta`, `isHighlighted?`, `badge?`. |
+| `PricingTable` | component | Fixed or interval-priced tiers with optional heading, host controls and grouped Matrix comparisons. |
+| `PricingTableProps` | type | Props for `PricingTable`: `heading`, `description`, `tiers`, `headingLevel`, `interval`, `comparison`, `controls`, `ground`, `className`, `style`, plus native `<div>` attributes. |
+| `PricingTier` | type | One tier: `id`, `name`, one of `price` or `priceByInterval`, `description?`, `features` (`readonly ReactNode[]`), `cta`, `isHighlighted?`, `badge?`. |
 | `PricingTableHeadingLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
+| `PricingTierPrice` | type | One interval's visible `amount`, required spoken `priceText` and optional `note`. |
+| `PricingCellData` | type | A comparison cell: `{ kind: "mark", included: boolean }` or `{ kind: "text", text: ReactNode }`. |
+| `PricingComparison` | type | One to four `groups`, optional `featuredLabel`, and `markLabels`/`keyLabel` for mark cells. |
+| `PricingComparisonGroup` | type | A stable `id`, group `label` and comparison `rows`. |
+| `PricingComparisonRow` | type | A stable `id`, `label`, optional `description` and `cells` keyed by tier id. |
 | `Testimonial` | component | Quote plus attribution, rendered as a real `<figure>`/`<blockquote>`/`<figcaption>`: `attributorName` and `attributorRole` are always separate fields. Optional avatar via `avatarSrc`/`avatarAlt`, required together at the type level. |
 | `TestimonialProps` | type | Props for `Testimonial`: `quote`, `attributorName`, `attributorRole`, `avatarSrc`/`avatarAlt` (a discriminated pair — both or neither), `className`, `style`, plus every native `<figure>` attribute except `children`. |
 | `ArticleBody` | component | Thin, token-styled container for pre-structured long-form content (real `<h2>`/`<p>`/`<ul>`/... children) — no markdown parsing, no content-shape schema. |
@@ -9071,6 +9080,91 @@ The default renderer supports paragraphs, flat lists, inline code, fenced code w
 | `ChatActions` | type | Optional copy, regeneration and up/down feedback callbacks. |
 | `ChatLabels` | type | Optional host copy overrides with documented English defaults. |
 
+### PricingTable interval and comparison examples
+
+`priceByInterval` maps host-defined interval keys to `{ amount, priceText,
+note? }`. Pass `interval` to select one amount; its visible figure is hidden
+from assistive technology while the required plain-string `priceText` supplies
+the spoken price. A selected `note` appears below it. Interval-priced tiers
+must share a key set, and fixed-price tiers can accompany them. Render throws
+`TypeError` for both or neither price forms, mismatched keys, a missing or
+unknown interval, an interval without interval-priced tiers, or empty spoken
+prices. The host owns the interval control and passes its current value:
+
+```tsx
+import { PricingTable } from "@clossys/designer/blocks";
+import { Button } from "@clossys/designer/atoms";
+
+function IntervalAmounts() {
+  return <PricingTable heading="Tier amounts" interval="second" tiers={[
+    {
+      id: "one", name: "Tier one", features: ["Feature one"],
+      priceByInterval: {
+        first: { amount: "Amount one", priceText: "Amount one per first interval" },
+        second: { amount: "Amount two", priceText: "Amount two per second interval", note: "Interval note" },
+      },
+      cta: <Button>Choose tier one</Button>,
+    },
+    {
+      id: "two", name: "Tier two", price: "Fixed amount",
+      features: ["Feature two"], cta: <Button>Choose tier two</Button>,
+    },
+  ]} />;
+}
+```
+
+`comparison` adds one to four labelled groups below the tier grid. Each group
+composes a grid `Matrix` with tiers as columns in their input order. Its rows
+have `cells` keyed by tier id: marks use `{ kind: "mark", included }`, and
+text uses `{ kind: "text", text }`. The highlighted tier becomes the featured
+column and requires `featuredLabel`; a comparison permits one highlighted tier.
+Mark-bearing groups require five `markLabels` and a `keyLabel`, with excluded
+and included entries using labels zero and four. Mixed text and mark groups
+share these labels while only mark-bearing groups render a key.
+
+```tsx
+import { PricingTable } from "@clossys/designer/blocks";
+import { Button } from "@clossys/designer/atoms";
+
+function EntitlementComparison() {
+  return <PricingTable heading="Tier entitlements" tiers={[
+    { id: "one", name: "Tier one", price: "Amount one", features: ["Feature one"], cta: <Button>Choose one</Button> },
+    { id: "two", name: "Tier two", price: "Amount two", features: ["Feature two"], cta: <Button>Choose two</Button>, isHighlighted: true, badge: "Featured tier" },
+  ]} comparison={{
+    featuredLabel: "Featured tier",
+    markLabels: ["Not included", "First mark", "Second mark", "Third mark", "Included"],
+    keyLabel: "Entitlement key",
+    groups: [{ id: "features", label: "Feature access", rows: [
+      { id: "first", label: "Feature one", cells: { one: { kind: "mark", included: true }, two: { kind: "mark", included: true } } },
+      { id: "second", label: "Feature two", cells: { one: { kind: "mark", included: false }, two: { kind: "mark", included: true } } },
+    ] }],
+  }} />;
+}
+```
+
+```tsx
+import { PricingTable } from "@clossys/designer/blocks";
+import { Button } from "@clossys/designer/atoms";
+
+function TextComparison() {
+  return <PricingTable heading="Tier details" tiers={[
+    { id: "one", name: "Tier one", price: "Amount one", features: ["Feature one"], cta: <Button>Choose one</Button> },
+    { id: "two", name: "Tier two", price: "Amount two", features: ["Feature two"], cta: <Button>Choose two</Button> },
+  ]} comparison={{ groups: [{ id: "details", label: "Included details", rows: [
+    { id: "capacity", label: "Capacity", cells: { one: { kind: "text", text: "First allowance" }, two: { kind: "text", text: "Second allowance" } } },
+    { id: "support", label: "Support", cells: { one: { kind: "text", text: "Written guidance" }, two: { kind: "text", text: "Guided assistance" } } },
+  ] }] }} />;
+}
+```
+
+Matrix validates two to six tiers, two to eight rows per group, matching cell
+keys, one cell type per column, and meaningful labels. Its contract errors
+surface directly. Group headings follow `headingLevel` by one level, and row
+and key headings follow by two, capped at `h6`. `ground` defaults to `"base"`
+and sets heading, description and comparison inks; tier cards retain their
+raised styling. The optional `controls` slot occupies a centred row between
+the heading region and tier grid. Supply the control from the host;
+`PricingTable` remains server-safe.
 
 ### AccessMatrix and ColumnMapper
 
