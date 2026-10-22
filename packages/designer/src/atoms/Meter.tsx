@@ -92,7 +92,7 @@ export function Meter({
   limit,
   previous,
   previousText,
-  direction = "max",
+  direction,
   tone,
   valueText,
   limitText,
@@ -108,7 +108,7 @@ export function Meter({
       minValue={0}
       maxValue={scaleMax}
       valueLabel={valueText}
-      data-direction={direction}
+      data-direction={resolved.direction}
       data-tone={tone}
       data-emphasis={emphasis}
       className={meterRootClassName(emphasis, className)}

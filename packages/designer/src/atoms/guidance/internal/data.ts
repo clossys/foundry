@@ -3790,7 +3790,7 @@ export const ATOM_API_FACTS: Readonly<Record<string, AtomApiFacts>> = {
         "default": {
           "kind": "value",
           "value": "max",
-          "source": "src/atoms/Meter.tsx",
+          "source": "src/atoms/Meter.server.tsx",
           "evidence": "direction = \"max\""
         },
         "forwarding": {

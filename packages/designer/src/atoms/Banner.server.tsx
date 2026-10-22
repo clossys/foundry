@@ -21,6 +21,12 @@ export function bannerClassName(variant: BannerVariant, className: string | unde
   );
 }
 
+/** The client `BannerProps`, restating the one default this file applies. */
+interface ServerBannerProps extends BannerProps {
+  /** @default "Dismiss" */
+  dismissLabel?: string;
+}
+
 /**
  * The server-safe `Banner`, re-exported as `Banner` from
  * `@clossys/designer/atoms/server`. Same props, region, `role`/`aria-live`
@@ -40,7 +46,7 @@ export function Banner({
   className,
   style,
   ...rest
-}: BannerProps) {
+}: ServerBannerProps) {
   const isAssertive = variant === "danger";
   return (
     <div

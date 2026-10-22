@@ -59,6 +59,8 @@ export function meterRootClassName(emphasis: MeterEmphasis, className: string | 
 }
 
 export interface ResolvedMeter {
+  /** The scale direction after the `"max"` default, for the root's `data-direction`. */
+  direction: NonNullable<MeterProps["direction"]>;
   valuePct: number;
   zoneStyle: CSSProperties | undefined;
   tickStyle: CSSProperties | undefined;
@@ -76,8 +78,9 @@ export function resolveMeter({
   limit,
   previous,
   previousText,
-  direction,
-}: Pick<MeterProps, "value" | "scaleMax" | "limit" | "previous" | "previousText"> & { direction: NonNullable<MeterProps["direction"]> }): ResolvedMeter {
+  direction: requestedDirection,
+}: Pick<MeterProps, "value" | "scaleMax" | "limit" | "previous" | "previousText" | "direction">): ResolvedMeter {
+  const direction = requestedDirection ?? "max";
   if (!Number.isFinite(scaleMax) || scaleMax <= 0) {
     throw new RangeError(`Meter: scaleMax must be a finite number > 0 (got ${String(scaleMax)}).`);
   }
@@ -118,7 +121,7 @@ export function resolveMeter({
           insetInlineStart: `calc(${limitPct}% - ${limitPct / 100} * ${UI_BORDER_RULE})`,
           inlineSize: UI_BORDER_RULE,
         };
-  return { valuePct, zoneStyle, tickStyle, previousStyle };
+  return { direction, valuePct, zoneStyle, tickStyle, previousStyle };
 }
 
 export interface MeterBarProps extends ResolvedMeter {
