@@ -67,6 +67,23 @@ const MODULE_SPECIFIER =
 const ALLOWED_IMPORT = /^(react|@clossys\/designer\/.+|@clossys\/writer|\.{1,2}\/.+)$/;
 
 describe("ResetForm :: steps", () => {
+  it("stretches both steps and keeps secondary actions before the primary in DOM and focus order", async () => {
+    const { user } = setup({ resendCode: vi.fn(async () => OK) });
+    expect(requestButton().parentElement).toHaveAttribute("data-actions-layout", "stretch");
+    await reachResetStep(user);
+    const region = resetButton().parentElement!;
+    expect(region).toHaveAttribute("data-actions-layout", "stretch");
+    expect([...region.children].map(child => child.textContent))
+      .toEqual([defaultText("code.secondary"), defaultText("password.secondary"), defaultText("reset-code.primary")]);
+    passwordField().focus();
+    await user.tab();
+    expect(screen.getByRole("button", { name: defaultText("code.secondary") })).toHaveFocus();
+    await user.tab();
+    expect(screen.getByRole("button", { name: defaultText("password.secondary") })).toHaveFocus();
+    await user.tab();
+    expect(resetButton()).toHaveFocus();
+  });
+
   it("supplies the entered identifier when a legacy custom description declares it", async () => {
     const entry = FRONT_DOOR_COPY_EN.entries.find(candidate => candidate.id === "front-door.code.description")!;
     const saved = { ...entry };

@@ -22,6 +22,8 @@ const GROUNDED_READING = [
 
 /** Exact exported component inventory; a new barrel export requires registration. */
 export const BLOCK_THEME_CONFORMANCE: readonly BlockThemeRegistration[] = [
+  { exportName: "AccessMatrix", source: "src/blocks/AccessMatrix.tsx", contrastPairs: [...BASE_READING, ...RAISED_READING, "ink-on-accent/accent"] },
+  { exportName: "ColumnMapper", source: "src/blocks/ColumnMapper.tsx", contrastPairs: [...RAISED_READING, "ink-muted/surface-raised", "status-danger-text/surface-raised"] },
   { exportName: "Lockup", source: "src/blocks/Lockup.tsx", contrastPairs: ["ink-primary/surface-base", "ink-on-inverse/surface-inverse"] },
   { exportName: "PageHeader", source: "src/blocks/PageHeader.tsx", contrastPairs: BASE_READING },
   { exportName: "AccountMenu", source: "src/blocks/AccountMenu.tsx", contrastPairs: RAISED_READING },
@@ -56,6 +58,7 @@ export const BLOCK_THEME_CONFORMANCE: readonly BlockThemeRegistration[] = [
   { exportName: "Testimonial", source: "src/blocks/Testimonial.tsx", contrastPairs: BASE_READING },
   { exportName: "ArticleBody", source: "src/blocks/ArticleBody.tsx", contrastPairs: [...BASE_READING, "ink-primary/surface-sunken", "ink-link/surface-base"] },
   { exportName: "SectionFrame", source: "src/blocks/SectionFrame.tsx", contrastPairs: ["ink-primary/surface-base", "ink-primary/surface-sunken", "ink-on-inverse/surface-inverse"] },
+  { exportName: "NewsletterBand", source: "src/blocks/NewsletterBand.tsx", contrastPairs: GROUNDED_READING },
   { exportName: "ConsentBanner", source: "src/blocks/ConsentBanner.tsx", contrastPairs: RAISED_READING },
   {
     exportName: "Panel", source: "src/blocks/Panel.tsx", contrastPairs: [],

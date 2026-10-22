@@ -913,6 +913,9 @@
   .mt-xs {
     margin-top: var(--spacing-xs, 4px);
   }
+  .mb-md {
+    margin-bottom: var(--spacing-md, 12px);
+  }
   .mb-sm {
     margin-bottom: var(--spacing-sm, 8px);
   }
@@ -1264,6 +1267,9 @@
   .max-w-\[28rem\] {
     max-width: 28rem;
   }
+  .max-w-\[32rem\] {
+    max-width: 32rem;
+  }
   .max-w-\[42rem\] {
     max-width: 42rem;
   }
@@ -1503,6 +1509,11 @@
   }
   .gap-xs {
     gap: var(--spacing-xs, 4px);
+  }
+  :where(.space-y-md > :not(:last-child)) {
+    --tw-space-y-reverse: 0;
+    margin-block-start: calc(var(--spacing-md, 12px) * var(--tw-space-y-reverse, 0));
+    margin-block-end: calc(var(--spacing-md, 12px) * calc(1 - var(--tw-space-y-reverse, 0)));
   }
   .gap-x-2xl {
     column-gap: var(--spacing-2xl, 32px);
@@ -2915,6 +2926,12 @@
     .tablet\:absolute {
       position: absolute;
     }
+    .tablet\:sticky {
+      position: sticky;
+    }
+    .tablet\:start-0 {
+      inset-inline-start: calc(var(--spacing, 0.25rem) * 0);
+    }
     .tablet\:col-span-2 {
       grid-column: span 2 / span 2;
     }
@@ -3017,6 +3034,9 @@
     .tablet\:grid-cols-12 {
       grid-template-columns: repeat(12, minmax(0, 1fr));
     }
+    .tablet\:grid-cols-\[1fr_auto\] {
+      grid-template-columns: 1fr auto;
+    }
     .tablet\:grid-rows-subgrid {
       grid-template-rows: subgrid;
     }
@@ -3029,8 +3049,14 @@
     .tablet\:items-center {
       align-items: center;
     }
+    .tablet\:items-end {
+      align-items: flex-end;
+    }
     .tablet\:justify-between {
       justify-content: space-between;
+    }
+    .tablet\:justify-end {
+      justify-content: flex-end;
     }
     .tablet\:gap-lg {
       gap: var(--spacing-lg, 16px);
@@ -3085,6 +3111,9 @@
     }
     .tablet\:pb-xl {
       padding-bottom: var(--spacing-xl, 24px);
+    }
+    .tablet\:align-top {
+      vertical-align: top;
     }
     .tablet\:text-display-l {
       font-size: var(--text-display-l, 56px);
@@ -3678,6 +3707,11 @@
   inherits: false;
   initial-value: 0;
 }
+@property --tw-space-y-reverse {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0;
+}
 @property --tw-border-style {
   syntax: "*";
   inherits: false;
@@ -3865,6 +3899,7 @@
       --tw-translate-x: 0;
       --tw-translate-y: 0;
       --tw-translate-z: 0;
+      --tw-space-y-reverse: 0;
       --tw-border-style: solid;
       --tw-leading: initial;
       --tw-font-weight: initial;

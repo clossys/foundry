@@ -246,5 +246,11 @@ export type { CatalogWorkspaceProps, CatalogWorkspaceItem, CatalogWorkspaceSize 
 export { Chat } from "./chat/Chat.js";
 export type { ChatProps, ChatMessage, ChatActions, ChatLabels } from "./chat/types.js";
 
+export { AccessMatrix } from "./AccessMatrix.js";
+export type { AccessCellValue, AccessRole, AccessPermission, AccessGroup, AccessMatrixValue, AccessMatrixChange, AccessMatrixLabels, AccessMatrixProps } from "./AccessMatrix.js";
+export { ColumnMapper } from "./ColumnMapper.js";
+export type { ColumnMapperTarget, ColumnMapperSource, ColumnMapping, ColumnMapperIssue, ColumnMapperLabels, ColumnMapperProps } from "./ColumnMapper.js";
+export { NewsletterBand } from "./NewsletterBand.js";
+export type { NewsletterBandProps, NewsletterStatus } from "./NewsletterBand.js";
 export { ResourceList } from "./ResourceList.js";
 export type { ResourceListProps, ResourceListItem, ResourceListAction } from "./ResourceList.js";
