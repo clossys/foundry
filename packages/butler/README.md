@@ -159,7 +159,9 @@ because asking for help is a run that did exactly what was asked.
 
 ## API
 
-Everything below is exported from the package root.
+Everything below is exported from the package root. The `./inbound`,
+`./web`, `./browser-consent` and `./browser-consent/local-storage`
+subpaths are documented in their own sections after it.
 
 ### Calendar windows
 
@@ -287,10 +289,57 @@ promise, one function on the same object. That is withdrawal parity
 enforced structurally at the API surface rather than asserted in prose.
 
 React and React DOM are optional peers of this subpath specifically.
-Importing the package root or `./inbound` never pulls in React. Importing
+Importing the package root, `./inbound`, `./browser-consent` or
+`./browser-consent/local-storage` never pulls in React. Importing
 `./web` asserts the installed version against the declared range at import
 time, so an absent or incompatible React fails loudly, by name, instead of
 crashing later inside a hook with no version named as the cause.
+
+## The `./browser-consent` subpath
+
+The browser consent lifecycle: the stored record, the pure decision rules
+and a lifecycle object a host creates on the client. It renders nothing and
+ships no wording. Importing it performs no storage read or write, no network
+request and no timer; it reaches no adapter.
+
+```ts
+import { createConsentLifecycle } from "@clossys/butler/browser-consent";
+```
+
+| Export | What it does |
+| --- | --- |
+| `createConsentLifecycle(options)` | Creates a lifecycle over a host-supplied synchronous storage port, an optional evidence port, a policy, a regime, the Global Privacy Control signal and a clock. Its `getSnapshot`, `subscribe`, `grant`, `refuse`, `refresh` and `dispose` methods match the structural `ConsentLifecyclePort` that `@clossys/publisher/web/consent` declares. |
+| `NO_DECISION_SNAPSHOT` | The server and pre-mount snapshot: no choice, analytics not allowed. |
+| `decideChoice(status, now, policy, signals)` | Builds the stored record for one explicit choice, with its expiry fixed at that moment. Throws for a grant the policy does not let override the signal. |
+| `parseStoredChoice(raw, policy)` | Reads a raw stored value into a record, or `null` for a corrupt or unknown shape. |
+| `isLiveChoice(choice, policy, now)` | Whether a parsed record is inside its window and under a policy version that still applies to it. |
+| `effectiveChoice` / `isAllowed` / `shouldPromptAutomatically` | The choice in force, whether analytics may run, and whether the notice opens by itself. |
+| `shouldApplyEvidence(incoming, current)` | Whether an acknowledged choice may replace the one in force: a denial always applies, a grant only when strictly newer. |
+| `normalizeRegime(value)` | `"notice"` only for the exact string `"notice"`, otherwise `"prompt"`. |
+| `BrowserConsentError` | Thrown for an invalid policy, an invalid instant, or a grant the signal forbids. |
+
+Types: `ConsentLifecycle`, `ConsentLifecycleOptions`, `ConsentSnapshot`,
+`ConsentStoragePort`, `ConsentEvidencePort`, `EvidenceResult`,
+`EvidenceStatus`, `StorageRead`, `StorageWrite`, `ConsentPolicy`,
+`ConsentRegime`, `ConsentSignals`, `EffectiveChoice`, `StoredChoice`,
+`StoredInput`, `SequencedChoice` and `BrowserConsentErrorCode`.
+
+## The `./browser-consent/local-storage` subpath
+
+The browser storage adapter, alone, in its own subpath so that importing the
+lifecycle never reaches it. Nothing constructs it except the host's own call,
+and it touches `localStorage` only inside the functions it returns. A blocked
+or throwing storage reads as `unavailable` rather than throwing.
+
+```ts
+import { createLocalStorageConsentPort } from "@clossys/butler/browser-consent/local-storage";
+```
+
+`createLocalStorageConsentPort(options: LocalStorageConsentPortOptions)` returns
+a `ConsentStoragePort` that stores the current record shape under the `key` the
+host chooses. The optional `storage` option has type `() => Storage | undefined`;
+the adapter reads it at each call. When omitted, it reads
+`globalThis.localStorage` at each call.
 
 ## Requirements
 

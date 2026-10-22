@@ -114,7 +114,7 @@ registered `CopyRecord`. It exits 0 when clean, 1 when it finds traceability
 issues, and 2 when it cannot run.
 
 This package does not resolve a claim's `factRef`, infer tone or grammar, or
-ship actual product language, except for the 63 English front-door defaults in
+ship actual product language, except for the 72 English front-door defaults in
 "Front-door copy" below. Those decisions remain with the consumer and the
 product's facts system.
 
@@ -315,7 +315,7 @@ An FAQ and a tagline are out of scope (`site.tagline` already exists).
 The words on a sign-in page and the pages around it are a reserved copy kind
 too, so each page does not carry its own. An id is
 `front-door.<state>.<slot>`, where the slot is one of `title`, `description`,
-`label`, `primary`, `secondary`, `notice` or `alt`. This version ships 63
+`label`, `primary`, `secondary`, `notice` or `alt`. This version ships 72
 ids, listed in `FRONT_DOOR_COPY_IDS` (typed as `FrontDoorKey`), as
 `FRONT_DOOR_COPY_EN`, a `CopyRegistry` with the id `front-door`, locale `en`
 and revision `1`; the same registry ships as data in
@@ -393,6 +393,38 @@ label:
 | `front-door.activation-first-name.label` | First name |
 | `front-door.activation-last-name.label` | Last name |
 | `front-door.name-required.notice` | Enter your first and last name. |
+
+### Restricted front-door variants
+
+These additional reserved ids follow the same placeholder, approval and
+provenance conventions as the open-surface defaults. They are variants;
+hosts select them deliberately for staff-only or invitation-only sign-in.
+
+| Id | Surface | English default |
+| --- | --- | --- |
+| `front-door.sign-in-staff-only.description` | Staff-only | Sign-in is for staff with access to {surface}. |
+| `front-door.sign-in-invite-only.description` | Invitation-only | Sign-in is by invitation to {surface}. |
+| `front-door.not-authorized-staff-only.title` | Staff-only | Staff access required |
+| `front-door.not-authorized-staff-only.description` | Staff-only | This account doesn’t have staff access to {surface}. |
+| `front-door.not-authorized-staff-only.primary` | Staff-only | Switch account |
+| `front-door.not-authorized-invite-only.title` | Invitation-only | Invitation required |
+| `front-door.not-authorized-invite-only.description` | Invitation-only | This account doesn’t have an invitation to {surface}. |
+| `front-door.not-authorized-invite-only.primary` | Invitation-only | Switch account |
+| `front-door.identifier-not-found-neutral.notice` | Either restricted surface | Sign-in couldn’t continue. Check your details and try again. |
+
+Descriptions declare only `surface`; the titles, primary actions and neutral
+notice declare no nouns. No `identifier` or `requestAccessLabel` is required.
+Resolve `front-door.sign-in.title`, `front-door.sign-in.primary` and
+`front-door.unavailable.notice` as usual. Omit request-access and sign-up
+copy on these surfaces. A not-authorized composition uses the three matching
+ids with one primary “Switch account” control and no secondary action. The
+neutral notice uses no first-person plural and does not confirm account
+existence. These words do not enforce access; the host owns authorization.
+
+Passkey, email-code and share-card ids, and consumer-defined catalog ids,
+are outside this sign-in addition.
+
+### Front-door noun resolution
 
 A `{token}` in a text is a noun from the closed set `FRONT_DOOR_NOUNS`:
 `brand`, `surface`, `identifier`, `digest` and `requestAccessLabel` (typed as

@@ -9,6 +9,7 @@ import userEvent from "@testing-library/user-event";
 import { FRONT_DOOR_COPY_EN } from "@clossys/writer";
 import { RenderError } from "../../internal/errors.js";
 import { SignInForm } from "./SignInForm.js";
+import { SignInForm as BrowserSignInForm } from "../client.js";
 import type { SignInFailure, SignInResult } from "./SignInForm.js";
 
 // Pass-through, except one id a test names reads as incomplete, so a test can prove an id is resolved on every render.
@@ -90,6 +91,38 @@ const MODULE_SPECIFIER =
 const ALLOWED_IMPORT = /^(react|@clossys\/designer\/.+|@clossys\/writer|\.{1,2}\/.+)$/;
 
 describe("SignInForm :: steps", () => {
+  it("stretches every step and keeps secondary actions before the primary in DOM and focus order", async () => {
+    const { user } = setupCodeStep();
+    expect(screen.getByRole("button", { name: defaultText("sign-in.primary") }).parentElement)
+      .toHaveAttribute("data-actions-layout", "stretch");
+    await reachPasswordStep(user);
+    const passwordPrimary = screen.getByRole("button", { name: defaultText("password.primary") });
+    const passwordActions = passwordPrimary.parentElement!;
+    expect(passwordActions).toHaveAttribute("data-actions-layout", "stretch");
+    expect([...passwordActions.children].map(child => child.textContent))
+      .toEqual([defaultText("password.secondary"), defaultText("password.primary")]);
+    screen.getByLabelText(defaultText("password.label")).focus();
+    await user.tab();
+    expect(screen.getByRole("button", { name: defaultText("password.secondary") })).toHaveFocus();
+    await user.tab();
+    expect(passwordPrimary).toHaveFocus();
+    await user.type(screen.getByLabelText(defaultText("password.label")), "correct horse");
+    await user.click(passwordPrimary);
+    const code = await screen.findByLabelText(defaultText("code.label"));
+    const primary = screen.getByRole("button", { name: defaultText("code.primary") });
+    const region = primary.parentElement!;
+    expect(region).toHaveAttribute("data-actions-layout", "stretch");
+    expect([...region.children].map(child => child.textContent))
+      .toEqual([defaultText("code.secondary"), defaultText("password.secondary"), defaultText("code.primary")]);
+    code.focus();
+    await user.tab();
+    expect(screen.getByRole("button", { name: defaultText("code.secondary") })).toHaveFocus();
+    await user.tab();
+    expect(screen.getByRole("button", { name: defaultText("password.secondary") })).toHaveFocus();
+    await user.tab();
+    expect(primary).toHaveFocus();
+  });
+
   it("identify ok shows the signed-in-as line; change returns to identify with the value kept; verify ok calls onSignedIn once", async () => {
     const { handlers, user } = setup();
 
@@ -625,5 +658,43 @@ describe("SignInForm :: focus", () => {
     await user.click(resend);
     await waitFor(() => expect(field).toHaveValue(""));
     await waitFor(() => expect(field).toHaveFocus());
+  });
+});
+
+// Restricted surfaces use the neutral identifier failure, including browser defaults.
+describe("restricted sign-in copy", () => {
+  it.each([
+    ["staff-only", SignInForm], ["invite-only", SignInForm],
+    ["staff-only", BrowserSignInForm], ["invite-only", BrowserSignInForm],
+  ] as const)("uses the neutral not-found notice for %s", async (access, RestrictedSignInForm) => {
+    const user = userEvent.setup();
+    render(<RestrictedSignInForm nouns={{ surface: "Acme Console" }} access={access} identify={async () => ({ status: "notFound" })} verify={vi.fn()} onSignedIn={vi.fn()} />);
+    await user.type(screen.getByRole("textbox", { name: "Email" }), "visitor@example.test");
+    await user.click(screen.getByRole("button", { name: "Continue" }));
+    expect(await screen.findByText("Sign-in couldn’t continue. Check your details and try again.")).toBeInTheDocument();
+    expect(screen.queryByText(/We couldn’t find an account/)).not.toBeInTheDocument();
+  });
+  // Mirrors Bouncer's hideAccountExistence, which reads `locked` as `rateLimited`.
+  it.each([
+    ["staff-only", SignInForm], ["invite-only", SignInForm],
+    ["staff-only", BrowserSignInForm], ["invite-only", BrowserSignInForm],
+  ] as const)("shows the rate-limited notice for locked on %s", async (access, RestrictedSignInForm) => {
+    const user = userEvent.setup();
+    render(<RestrictedSignInForm nouns={{ surface: "Acme Console" }} access={access} identify={async () => ({ status: "locked" })} verify={vi.fn()} onSignedIn={vi.fn()} />);
+    await user.type(screen.getByRole("textbox", { name: "Email" }), "visitor@example.test");
+    await user.click(screen.getByRole("button", { name: "Continue" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent(defaultText("rate-limited.notice"));
+    expect(screen.queryByText(defaultText("locked.notice"))).not.toBeInTheDocument();
+  });
+  it("keeps the locked notice on an open surface", async () => {
+    const user = userEvent.setup();
+    render(<SignInForm nouns={{ surface: "Acme Console" }} access="open" identify={async () => ({ status: "locked" })} verify={vi.fn()} onSignedIn={vi.fn()} />);
+    await user.type(screen.getByRole("textbox", { name: "Email" }), "visitor@example.test");
+    await user.click(screen.getByRole("button", { name: "Continue" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent(defaultText("locked.notice"));
+  });
+  it("refuses an unknown access value without echoing it", () => {
+    expect(() => render(<SignInForm nouns={{ surface: "Acme Console" }} access={"untrusted-value" as never} identify={vi.fn()} verify={vi.fn()} onSignedIn={vi.fn()} />))
+      .toThrow("SignInForm access must be open, staff-only or invite-only.");
   });
 });

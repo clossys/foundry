@@ -248,3 +248,25 @@ test("the workflow_dispatch interface auto-qualify.yml dispatches against is unc
   const autoQualify = readFileSync(".github/workflows/auto-qualify.yml", "utf8");
   assert.match(autoQualify, /gh workflow run qualify-candidate\.yml -f "package=\$pkg"/);
 });
+
+test("the pack step never passes the npm pack JSON as a process argument", () => {
+  // A package with a large file list (publisher, run 38488624071) produced an
+  // npm pack --json listing over the OS per-argument limit, so passing it to
+  // node as argv failed with "Argument list too long". The listing goes to a
+  // file under the pack destination and node reads it on stdin instead.
+  const pack = stepsOf(job(QUALIFY)).find((s) => s.name === "Pack one pre-publication candidate");
+  assert.ok(pack, "the qualify job must pack the candidate");
+  const lines = pack.run.split("\n").map((line) => line.trim()).filter(Boolean);
+  assert.equal(lines[0], "set -euo pipefail");
+  assert.doesNotMatch(pack.run, /process\.argv/, "the pack JSON must not be read from process.argv");
+  assert.doesNotMatch(pack.run, /\$\(\s*npm pack/, "npm pack output must not be captured into a shell variable");
+  const packed = pack.run.match(/^ *npm pack --ignore-scripts --json --pack-destination "\$destination" > "(\$destination\/[^"\s]+\.json)"$/m);
+  assert.ok(packed, "npm pack must write its JSON listing to a file under $destination, as its own command so a failure fails the step");
+  const listing = packed[1];
+  const read = lines.find((line) => /^filename="\$\(node /.test(line));
+  assert.ok(read, "the filename must be read by node");
+  assert.ok(read.endsWith(`< "${listing}")"`), "node must read the listing on stdin, not as an argument");
+  assert.match(read, /readFileSync\(0, "utf8"\)/);
+  assert.match(read, /\)\[0\]\.filename\)/);
+  assert.ok(lines.includes('mv "$destination/$filename" "$destination/candidate.tgz"'), "the candidate path is unchanged");
+});

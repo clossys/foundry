@@ -234,8 +234,11 @@ describe("LandingView", () => {
     const padding = (element: HTMLElement) => element.className.split(/\s+/).filter((name) => /(^|:)py-/.test(name));
     expect(padding(band)).toEqual(["py-4xl", "tablet-lg:py-5xl"]);
     expect(padding(close)).toEqual(["py-5xl", "tablet-lg:py-6xl"]);
-    const rest = (element: HTMLElement) => element.className.split(/\s+/).filter((name) => !/(^|:)py-/.test(name) && !name.startsWith("bg-surface-"));
+    const groundInk = /^text-ink-(primary|on-inverse)$/;
+    const rest = (element: HTMLElement) => element.className.split(/\s+/).filter((name) => !/(^|:)py-/.test(name) && !name.startsWith("bg-surface-") && !groundInk.test(name));
     expect(rest(close)).toEqual(rest(band));
+    expect(close.className.split(/\s+/)).toContain("text-ink-on-inverse");
+    expect(band.className.split(/\s+/).filter((name) => groundInk.test(name))).toEqual(["text-ink-primary"]);
     const intro = close.querySelector("[data-section-intro]") as HTMLElement;
     expect(intro.getAttribute("data-section-intro")).toBe("section");
     const heading = close.querySelector("h2") as HTMLElement;
@@ -361,7 +364,7 @@ describe("LandingView close copy", () => {
     // Require the cue rail's token fallback; preserve every other pre-option byte.
     const cueRail = 'class="relative z-[var(--ui-z-sticky,10)] h-0"';
     expect(html.split(cueRail)).toHaveLength(2);
-    const legacyHtml = html.replace(cueRail, cueRail.replace(",10", ""));
+    const legacyHtml = withoutSectionFrameInk(html.replace(cueRail, cueRail.replace(",10", "")));
     expect(createHash("sha256").update(legacyHtml).digest("hex")).toBe(LEGACY_CLOSE_MARKUP_SHA256);
   });
 
@@ -400,6 +403,14 @@ describe("LandingView close copy", () => {
 });
 
 const LEGACY_CLOSE_MARKUP_SHA256 = "84380478f6fa9f7b040b6e7a4780ee3389bbb1224d6b916df1489e28a8febd0d";
+
+// Every SectionFrame root now carries its ground's primary ink; the pinned bytes predate it.
+function withoutSectionFrameInk(html: string): string {
+  const roots = html.match(/data-designer-section-frame="" class="[^"]*"/g) ?? [];
+  expect(roots.length).toBeGreaterThan(0);
+  for (const root of roots) expect(root).toMatch(/[" ]text-ink-(?:primary|on-inverse)[ "]/);
+  return html.replace(/(data-designer-section-frame="" class="(?:[^" ]+ )*?)text-ink-(?:primary|on-inverse) ?/g, "$1");
+}
 
 
 describe("LandingView action ladder", () => {
@@ -539,5 +550,50 @@ describe("LandingView reviewed action-pair and resolved copy contracts", () => {
     const ordinary = renderToStaticMarkup(<webServerEntry.SectionedView document={page} />);
     expect(ordinary).not.toContain("data-landing-action-pair");
     expect(ordinary).not.toContain("<style");
+  });
+});
+
+
+describe("LandingView frame fit", () => {
+  const heroAlone: ResolvedSectionedViewDocument = { ...PAGE, sections: [PAGE.sections[0]!] };
+
+  it("fit frame with the hero alone fills the frame instead of 100dvh", () => {
+    const root = dom({ document: heroAlone, fit: "frame", landmark: "none" });
+    const view = root.querySelector<HTMLElement>("[data-landing-view]")!;
+    const hero = root.querySelector<HTMLElement>("[data-landing-hero]")!;
+    expect(view.classList.contains("flex-1")).toBe(true);
+    expect(hero.classList.contains("flex-1")).toBe(true);
+    expect(hero.style.minHeight).toBe("");
+    expect(view.hasAttribute("fit")).toBe(false);
+    expect(root.querySelector("[data-landing-cue]")).toBeNull();
+    const viewport = dom({ document: heroAlone });
+    expect(viewport.querySelector<HTMLElement>("[data-landing-hero]")!.style.minHeight).toBe("100dvh");
+  });
+
+  it.each([
+    { document: PAGE },
+    { document: heroAlone, trailing: [SHARED] },
+    { document: heroAlone, callToAction: CALL_TO_ACTION },
+  ])("fit frame with content after the hero keeps the peek and cue: %j", (props) => {
+    const root = dom({ ...props, fit: "frame" });
+    const hero = root.querySelector<HTMLElement>("[data-landing-hero]")!;
+    expect(hero.style.minHeight).toBe("calc(100dvh - var(--spacing-5xl, 6rem))");
+    expect(hero.classList.contains("flex-1")).toBe(false);
+    expect(root.querySelector("[data-landing-cue]")).not.toBeNull();
+    expect(root.innerHTML).toBe(dom({ ...props, fit: "viewport" }).innerHTML);
+  });
+
+  it("fit is ignored under a reserved header or for a compact hero", () => {
+    const compact: ResolvedSectionedViewDocument = { ...heroAlone, sections: [{ ...heroAlone.sections[0]!, size: "compact" }] };
+    for (const props of [
+      { document: heroAlone, header: "reserved" as const },
+      { document: compact, header: "overlay" as const },
+      { document: compact, header: "reserved" as const },
+    ]) {
+      expect(dom({ ...props, fit: "frame" }).innerHTML).toBe(dom({ ...props, fit: "viewport" }).innerHTML);
+      const hero = dom({ ...props, fit: "frame" }).querySelector<HTMLElement>("[data-landing-hero]")!;
+      expect(hero.style.minHeight).toBe("");
+      expect(hero.classList.contains("flex-1")).toBe(false);
+    }
   });
 });

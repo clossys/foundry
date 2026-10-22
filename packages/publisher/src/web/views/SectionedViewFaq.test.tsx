@@ -1,9 +1,15 @@
 // @vitest-environment jsdom
+import "@testing-library/jest-dom/vitest";
+import { createHash } from "node:crypto";
+import { cleanup, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { createCopyResolver, type CopyRegistry } from "@clossys/writer";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { resolveSectionedViewDocument, validateSectionedViewDocument, type SectionedViewDocument } from "../../core/sectioned-view.js";
 import { previewCopyResolver, previewSectionedDocument } from "../../preview/fixture-documents.js";
+import { LandingView } from "./LandingView.js";
+import { LandingView as ServerLandingView } from "./LandingView.server.js";
 import { SectionedView } from "./SectionedView.js";
 import { SectionedView as ServerSectionedView } from "./SectionedView.server.js";
 
@@ -43,7 +49,97 @@ function authored(count: number, layout?: "stacked" | "split"): SectionedViewDoc
   };
 }
 
+// Captured from the accepted FAQ recipe before adapter-only cleanup. Keep the
+// generated IDs: their bytes and accessibility references belong to this proof.
+const FAQ_MARKUP_SHA256 = {
+  "sectioned-stacked": ["b7eeb935c83f79f7a4c628748325ff4dacf629674b735eebcf74521f3fca72f6", "f72069c29ece305ab4d69a80dd9dd444c68babe2309991a7e8af24392e151b58"],
+  "sectioned-split": ["03d015060f47406c2de6c13c04030aab2630b265735da8c67c20c79d9c5d45a5", "f5c76a0ed7e21d0dc5d49a35b1bd664bbefcea9040886a27fd2b92e4991f804b"],
+  "landing-stacked": ["b2bcac8358dca7d9a7e6572e0b9368be58d4e5cf7416a14af83de5e4b4d96461", "13210d8e1ed0c1ec75cdfb69b77be17f4aa84b786dc71f59fc09055650f8f838"],
+  "landing-split": ["cb98ac8fb507c7e93bbf84bb26f37e2b3c9f40cbd0f7caf886d8936d999c38a9", "e445d1ac0afb7d3d2ce4e5a6b29e470e1e2bb27df05a77538ad8a43479790117"],
+} as const;
+
+// SectionFrame roots now carry their ground's primary ink; these bytes predate it.
+// Require the ink on every framed root, then compare every other byte to the capture.
+function withoutSectionFrameInk(html: string): string {
+  for (const root of html.match(/data-designer-section-frame="" class="[^"]*"/g) ?? []) {
+    expect(root).toMatch(/[" ]text-ink-(?:primary|on-inverse)[ "]/);
+  }
+  return html.replace(/(data-designer-section-frame="" class="(?:[^" ]+ )*?)text-ink-(?:primary|on-inverse) ?/g, "$1");
+}
+
 describe("published FAQ uses the Index disclosure recipe", () => {
+  afterEach(cleanup);
+
+  it("renders HTML-looking question and answer copy as text in both entries", () => {
+    const question = '<a href="/example">Question?</a>';
+    const answer = '<button type="button">Answer.</button>';
+    const htmlResolver = createCopyResolver({
+      ...registry,
+      entries: registry.entries.map(entry => ({
+        ...entry,
+        text: entry.id === ref("question-0").id ? question : entry.id === ref("answer-0").id ? answer : entry.text,
+      })),
+    });
+    const resolved = resolveSectionedViewDocument(authored(4), htmlResolver);
+    for (const [View, selector] of [[SectionedView, "button"], [ServerSectionedView, "summary"]] as const) {
+      const root = document.createElement("div");
+      root.innerHTML = renderToStaticMarkup(<View document={resolved} />);
+      const row = root.querySelector("#questions [data-items] li")!;
+      const trigger = row.querySelector(selector)!;
+      expect(trigger.textContent).toBe(question);
+      expect(row.textContent).toContain(answer);
+      expect(trigger.querySelector("a, button")).toBeNull();
+      expect(row.querySelectorAll("a, button")).toHaveLength(selector === "button" ? 1 : 0);
+      expect(root.innerHTML).toContain("&lt;button");
+    }
+  });
+
+  it("focuses the first disclosure with Tab and opens its answer with Enter", async () => {
+    const user = userEvent.setup();
+    const resolved = resolveSectionedViewDocument(authored(4), resolver);
+    render(<SectionedView document={resolved} />);
+    const trigger = screen.getByRole("button", { name: copy["question-0"] });
+    await user.tab();
+    expect(trigger).toHaveFocus();
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+    await user.keyboard("{Enter}");
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByText(copy["answer-0"])).toBeVisible();
+  });
+
+  it("puts a final inverse FAQ on base before an inverse closing action in both landing entries", () => {
+    const faq = resolveSectionedViewDocument(authored(4), resolver);
+    const hero = resolveSectionedViewDocument({ id: "faq-intro", sections: [{ id: "intro", kind: "hero", ground: "base", heading: ref("heading") }] }, resolver);
+    expect(faq.sections[0]!.ground).toBe("inverse");
+    for (const View of [LandingView, ServerLandingView]) {
+      const root = document.createElement("div");
+      root.innerHTML = renderToStaticMarkup(<View document={hero} trailing={[faq]} callToAction={{
+        id: "close", heading: "Closing action", action: <a href="/go">Continue</a>,
+      }} />);
+      expect(root.querySelector("#questions")?.closest("[data-landing-ground]")?.getAttribute("data-landing-ground")).toBe("base");
+      expect(root.querySelector("#close")?.getAttribute("data-landing-ground")).toBe("inverse");
+    }
+  });
+
+  it.each(["stacked", "split"] as const)("pins FAQ recipe markup bytes for %s in both views and entries", layout => {
+    const resolved = resolveSectionedViewDocument(authored(4, layout), resolver);
+    const hero = resolveSectionedViewDocument({ id: "faq-intro", sections: [{ id: "intro", kind: "hero", ground: "base", heading: ref("heading") }] }, resolver);
+    const afterSection = { questions: <p>After the questions.</p> };
+    for (const [entry, [Sectioned, Landing]] of ([
+      [SectionedView, LandingView],
+      [ServerSectionedView, ServerLandingView],
+    ] as const).entries()) {
+      const markup = {
+        sectioned: renderToStaticMarkup(<Sectioned document={resolved} />, { identifierPrefix: "faq-proof-" }),
+        landing: renderToStaticMarkup(<Landing document={hero} trailing={[resolved]} afterSection={afterSection} />, { identifierPrefix: "faq-proof-" }),
+      };
+      for (const view of ["sectioned", "landing"] as const) {
+        const hash = createHash("sha256").update(withoutSectionFrameInk(markup[view])).digest("hex");
+        expect.soft(hash, `${view}-${layout} entry ${entry}: ${hash}`).toBe(FAQ_MARKUP_SHA256[`${view}-${layout}`][entry]);
+      }
+    }
+  });
+
   it.each([undefined, "stacked", "split"] as const)("renders layout %s through Items in both entries and retains copy provenance", layout => {
     for (const count of [4, 6]) {
       const input = authored(count, layout);

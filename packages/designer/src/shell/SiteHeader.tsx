@@ -1,155 +1,103 @@
-import type { AnchorHTMLAttributes, HTMLAttributes, ReactNode } from "react";
-import { Badge } from "../atoms/Badge.js";
+import { Children, Fragment, cloneElement, isValidElement, type AnchorHTMLAttributes, type HTMLAttributes, type ReactElement, type ReactNode } from "react";
+import { Brandmark, type BrandmarkProps } from "./Brandmark.js";
 import { buttonLinkClassName } from "../atoms/button-classes.js";
 import { Icon, type IconNode } from "../atoms/Icon.js";
 import { cx } from "../atoms/internal/cx.js";
-import { SITE_CHROME_GROUND_CLASSES, siteChromeHasBorder, type SiteChromeGround } from "./internal/shell-ground.js";
-import { UI_BORDER_HAIRLINE, UI_LAYOUT_TAP_TARGET, UI_WIDTH_PAGE_PADDING_X, UI_Z_SHELL } from "./internal/shell-vars.js";
+import { SHELL_GROUND_CLASSES } from "./internal/shell-ground.js";
+import { UI_BORDER_HAIRLINE, UI_LAYOUT_TAP_TARGET, UI_Z_SHELL } from "./internal/shell-vars.js";
+
+/** One header surface: an in-flow solid plate, an always-transparent row, or fixed scroll glass. */
+export type SiteHeaderSurface = "solid" | "transparent" | "glass";
+/** Theme-relative ink polarity, shared by all three header surfaces. */
+export type SiteHeaderTone = "base" | "inverse";
 
 export interface SiteHeaderProps extends Omit<HTMLAttributes<HTMLElement>, "children"> {
-  /**
-   * The site's identity — a wordmark, a logo image/link, or both. Required:
-   * a header's entire job is announcing what site this is, the same reason
-   * `PageHeader`'s `title` is required. This package ships no `BrandLockup`
-   * of its own (a brand mark is per-product — the same reasoning `AuthView`
-   * ships no `BrandLockup` either; see that view's own section in this
-   * package's README).
-   */
+  /** Site identity. A Brandmark inherits the header ink and uses the accent mark unless markInk="image" opts out. */
   brand: ReactNode;
-  /**
-   * The primary navigation — typically a `NavShell`, but any `ReactNode`
-   * works (a short, static site with no drawer needs might pass a plain
-   * `<nav>` of `Link`s directly).
-   */
+  /** Primary navigation, typically a NavDisclosure or a plain navigation landmark. */
   nav?: ReactNode;
   /**
-   * Trailing controls — a `ThemeToggle` (from `@clossys/designer/theme`,
-   * composed here rather than imported: `shell` may not depend on
-   * `theme` — see `src/ladder.test.ts`), auth controls, a CTA `Button`.
+   * One actions slot, in increasing importance. Direct ActionLinks and fragments
+   * containing only ActionLinks are ordered ghost, secondary, primary. Unknown
+   * custom nodes retain their authored positions, props and relative order;
+   * the host controls their importance and order. No content is duplicated.
+   * A ThemeToggle is composed by the host: shell may not import theme
+   * (see `src/ladder.test.ts`).
    */
   actions?: ReactNode;
-  /**
-   * A secondary call to action — a sign-in link beside a primary CTA. Renders
-   * directly before `actions`, in the same trailing region, so the two stay
-   * adjacent in DOM, visual, and tab order.
-   */
-  secondaryAction?: ReactNode;
-  /**
-   * A short text label naming the surface, such as "admin" or "demo", shown
-   * as a neutral `Badge` at the trailing end of the header, after
-   * `secondaryAction` and `actions`, in both layouts. Text only by type: no
-   * link, button or icon can be passed, so it is never interactive. A member
-   * host omits it.
-   *
-   * Superseded by `SiteHeader.ActionLink`: a site with more than one
-   * environment (an app, an admin, a demo) passes one `ActionLink` per
-   * environment in `actions`, with `isCurrent` on the environment the page
-   * belongs to, instead of a text badge. `surfaceLabel` keeps rendering for
-   * existing callers.
-   */
-  surfaceLabel?: string;
-  /**
-   * Where the `nav` slot sits in the row. `"leading"` keeps it beside the
-   * brand; `"centered"` gives brand, nav, and trailing controls their own
-   * regions, with the brand and trailing regions growing equally so the nav
-   * centers on the header. Logical properties only, so RTL mirrors.
-   * @default "leading"
-   */
+  /** Where navigation sits on a wide header; the narrow menu/brand/actions layout is shared. @default "centered" */
   navPlacement?: "leading" | "centered";
   /**
-   * Semantic plate for the header bar — `inverse` for a dark hero band,
-   * `transparent` for no plate and no border at all (the page beneath shows
-   * through), `transparent-inverse` for the same over a page on the inverse
-   * ground. Like `base`, the header sets no ink class, so its content
-   * inherits ink from the page; the consumer's backdrop owns contrast.
-   * @default "base"
+   * Solid is an in-flow plate with a hairline. Transparent never paints a plate
+   * or border. Glass is fixed over the first block: transparent at the scroll
+   * origin, translucent and blurred after scrolling or while a menu is open.
+   * The opaque fallback is for reduced transparency or missing backdrop blur.
+   * The page owns root scrolling, reserves space beneath a fixed header and
+   * supplies contrast beneath a transparent surface.
+   * @default "solid"
    */
-  ground?: SiteChromeGround;
+  surface?: SiteHeaderSurface;
+  /** Theme-relative inherited ink and the matching solid/glass plate. @default "base" */
+  tone?: SiteHeaderTone;
+  /** Keeps glass painted while a menu is open. Other surfaces ignore this hint. @default false */
+  menuOpen?: boolean;
 }
 
-/**
- * The persistent top chrome a public site needs: a brand slot, the primary
- * navigation, and a trailing actions area — three regions that differ in
- * kind, run through this package's own placement test #1 first ("does it
- * survive a route change?"): a site header's whole job is to still be
- * there after the route beneath it changes, which is what puts it in
- * `shell` rather than `blocks` despite otherwise reading like a
- * `PageHeader`-shaped block (see this package's README, "Placement
- * rules"). Renders a real `<header>` — registering as the page's `banner`
- * landmark automatically, PROVIDED it is rendered at the top level (not
- * nested inside `<main>`/`<article>`/`<aside>`/`<nav>`/`<section>`, which
- * strips the implicit landmark role per the HTML/ARIA spec — the same
- * placement rule `Shell.Header` and `Shell.Footer` already carry).
- *
- * Deliberately no `mode`/`variant` prop, the same reasoning `Shell` itself
- * documents for why it ships no `SiteHeader`/`AppHeader` of its own at the
- * app-shell layer ("Shell" → "How differing chrome is handled" in this
- * package's README): a marketing header, a signed-in member header, and a
- * staff header with genuinely different actions are three different
- * `brand`/`nav`/`actions` fillings of THIS component, not three values of
- * a prop on it. `navPlacement` is not a mode in that sense: it moves the
- * same `nav` slot within the row (layout), where a mode would swap what
- * fills it. The secondary call to action is a filling, so it is the
- * `secondaryAction` slot. A single `nav` slot keeps the header at one
- * navigation landmark by construction.
- */
-function SiteHeaderRoot({
-  brand,
-  nav,
-  actions,
-  secondaryAction,
-  surfaceLabel,
-  navPlacement = "leading",
-  ground = "base",
-  className,
-  style,
-  ...rest
-}: SiteHeaderProps) {
-  const colors = SITE_CHROME_GROUND_CLASSES[ground];
-  const bordered = siteChromeHasBorder(ground);
+const INK_CLASSES: Record<SiteHeaderTone, string> = { base: "text-ink-primary", inverse: "text-ink-on-inverse" };
+const actionPriority = (action: ReactElement<SiteHeaderActionLinkProps>) =>
+  action.props.variant === "primary" ? 2 : action.props.variant === "ghost" ? 0 : 1;
+const isAction = (node: ReactNode): node is ReactElement<SiteHeaderActionLinkProps> =>
+  isValidElement<SiteHeaderActionLinkProps>(node) && node.type === SiteHeaderActionLink;
+function actionGroup(children: ReactNode): boolean {
+  return Children.toArray(children).every(child => isAction(child)
+    || (isValidElement<{ children?: ReactNode }>(child) && child.type === Fragment && actionGroup(child.props.children)));
+}
+/** Flatten only known, stateless ActionLink groups; opaque custom subtrees are not inspected or cloned. */
+function actionNodes(children: ReactNode, prefix = ""): ReactNode[] {
+  return Children.toArray(children).flatMap(child => {
+    if (isValidElement<{ children?: ReactNode }>(child) && child.type === Fragment && actionGroup(child.props.children))
+      return actionNodes(child.props.children, prefix + child.key + "/");
+    return [isAction(child) ? cloneElement(child, { key: prefix + child.key }) : child];
+  });
+}
+function orderedActions(children: ReactNode): ReactNode[] {
+  const nodes = actionNodes(children);
+  const ordered = nodes.filter(isAction).sort((a, b) => actionPriority(a) - actionPriority(b));
+  let index = 0;
+  return nodes.map(node => isAction(node) ? ordered[index++] : node);
+}
 
+/** Persistent site banner with one responsive row and one surface/ink contract. Server-safe: no hooks. */
+function SiteHeaderRoot({ brand, nav, actions, navPlacement = "centered", surface = "solid", tone = "base",
+  menuOpen = false, className, style, ...rest }: SiteHeaderProps) {
+  if (surface !== "solid" && surface !== "transparent" && surface !== "glass")
+    throw new TypeError("SiteHeader: surface must be solid, transparent or glass.");
+  const glass = surface === "glass";
+  const solid = surface === "solid";
+  const leading = navPlacement === "leading";
+  const colors = SHELL_GROUND_CLASSES[tone];
+  const headerBrand = isValidElement<BrandmarkProps>(brand) && brand.type === Brandmark ? brand : undefined;
+  const tonedBrand = headerBrand && (headerBrand.props.tone === undefined || headerBrand.props.markInk === undefined)
+    ? cloneElement(headerBrand, {
+        ...(headerBrand.props.tone === undefined ? { tone: tone === "inverse" ? "inverse" : "auto" } : {}),
+        ...(headerBrand.props.tone === undefined && headerBrand.props.className === undefined ? { className: "text-inherit" } : {}),
+        ...(headerBrand.props.markInk === undefined ? { markInk: "accent" } : {}),
+      } satisfies Partial<BrandmarkProps>)
+    : brand;
   return (
-    <header
-      {...rest}
-      className={cx(colors.surface, "py-sm", bordered ? cx("border-b", colors.border) : "", className)}
-      style={{
-        position: "relative",
-        zIndex: UI_Z_SHELL,
-        ...(bordered ? { borderBottomWidth: UI_BORDER_HAIRLINE } : {}),
-        ...style,
-      }}
-    >
-      {navPlacement === "centered" ? (
-        <div
-          className="mx-auto flex w-full flex-wrap items-center gap-md"
-          style={{ paddingInline: UI_WIDTH_PAGE_PADDING_X }}
-        >
-          <div className="flex flex-1 items-center">{brand}</div>
-          {nav ? <div className="flex items-center">{nav}</div> : null}
-          <div className="flex flex-1 items-center justify-end gap-sm">
-            {secondaryAction}
-            {actions}
-            {surfaceLabel ? <Badge variant="neutral">{surfaceLabel}</Badge> : null}
-          </div>
-        </div>
-      ) : (
-        <div
-          className="mx-auto flex w-full flex-wrap items-center justify-between gap-md"
-          style={{ paddingInline: UI_WIDTH_PAGE_PADDING_X }}
-        >
-          <div className="flex items-center gap-lg">
-            {brand}
-            {nav}
-          </div>
-          {secondaryAction || actions || surfaceLabel ? (
-            <div className="flex items-center gap-sm">
-              {secondaryAction}
-              {actions}
-              {surfaceLabel ? <Badge variant="neutral">{surfaceLabel}</Badge> : null}
-            </div>
-          ) : null}
-        </div>
-      )}
+    <header {...rest} data-header-root="" data-surface={surface} data-tone={tone}
+      {...(glass ? { "data-placement": "overlay", "data-menu-open": menuOpen ? "" : undefined } : {})}
+      className={cx("site-header-contract site-header-ink py-sm", INK_CLASSES[tone],
+        glass ? "site-header-overlay" : solid ? cx(colors.surface, "border-b", colors.border) : undefined,
+        leading ? "site-header-leading" : undefined, className)}
+      style={{ position: glass ? "fixed" : "relative", zIndex: UI_Z_SHELL,
+        ...(glass ? { insetBlockStart: 0, insetInline: 0 } : {}),
+        ...(solid ? { borderBottomWidth: UI_BORDER_HAIRLINE } : {}), ...style }}>
+      <div className="site-header-row">
+        <div className="site-header-brand">{tonedBrand}</div>
+        {nav}
+        <div className="site-header-actions">{orderedActions(actions)}</div>
+      </div>
     </header>
   );
 }
@@ -162,13 +110,13 @@ export interface SiteHeaderActionLinkProps
   /** The destination, rendered as a real `<a href>`. Required: the component assumes no route. */
   href: string;
   /**
-   * The link's words, supplied by the caller. Visible beside the icon from the
-   * `tablet` breakpoint up; below it the text is visually hidden and stays the
-   * link's accessible name, so the icon-only link is still announced.
+   * The link's words, supplied by the caller. With an icon, visible beside it
+   * from `tablet` up and visually hidden below it, still naming the link.
+   * Without an icon, plain visible text at every width.
    */
   label: string;
-  /** The glyph shown before the label, at every width. Decorative: `label` names the link. */
-  icon: IconNode;
+  /** Optional glyph before the label. Decorative: `label` names the link. */
+  icon?: IconNode;
   /**
    * Marks this link as the current item of its set, for example the
    * environment the page belongs to. Renders `aria-current="true"` and an
@@ -185,9 +133,8 @@ export interface SiteHeaderActionLinkProps
 }
 
 /**
- * A call-to-action link for `SiteHeader`'s `actions` or `secondaryAction`
- * slot: an icon plus a label from the `tablet` breakpoint up, the icon alone
- * below it. Built for an environment switcher - one link per environment (an
+ * A call-to-action link for `SiteHeader`'s ordered `actions` slot: a visible text label, or an icon plus a label from `tablet` up and
+ * the icon alone below it. Built for an environment switcher - one link per environment (an
  * app, an admin, a demo), each to that environment's home, with `isCurrent`
  * on the one the page belongs to - but nothing in it is specific to
  * environments.
@@ -202,7 +149,7 @@ export interface SiteHeaderActionLinkProps
  * This component imports no react-aria-components, so it ships from
  * `@clossys/designer/shell/server` as well.
  *
- * It ships no copy and no route: `href`, `label` and `icon` are required props.
+ * It ships no copy and no route: `href` and `label` are required props.
  */
 function SiteHeaderActionLink({
   href,
@@ -220,6 +167,7 @@ function SiteHeaderActionLink({
       {...rest}
       href={href}
       aria-current={isCurrent ? "true" : undefined}
+      data-header-action-ghost={variant === "ghost" ? "" : undefined}
       className={cx(look, className)}
       style={{
         minHeight: UI_LAYOUT_TAP_TARGET,
@@ -228,8 +176,7 @@ function SiteHeaderActionLink({
         ...style,
       }}
     >
-      <Icon glyph={icon} decorative size="sm" />
-      <span className="sr-only tablet:not-sr-only">{label}</span>
+      {icon ? <><Icon glyph={icon} decorative size="sm" /><span className="sr-only tablet:not-sr-only">{label}</span></> : label}
     </a>
   );
 }

@@ -65,7 +65,7 @@ function runProbe(reactServer: boolean) {
         sections: [
           { id: "hero", kind: "hero", ground: "base", heading: "Server-safe sections" },
           { id: "steps", kind: "ordered-step-sequence", ground: "sunken", heading: "Steps", items: [{ id: "one", ordinal: "1", heading: "Start" }] },
-          { id: "status", kind: "status-list", ground: "inverse", heading: "Status", labels: { available: "Available", partial: "Partial", planned: "Planned", dispositions: { "not-offered": "Not offered" } }, groups: [{ id: "core", heading: "Core", items: [{ id: "one", label: "Sections", state: "available" }] }] },
+          { id: "status", kind: "status-list", ground: "inverse", heading: "Status", labels: { available: "Available", partial: "Partial", planned: "Planned", dispositions: { "not-offered": "Not offered" } }, items: [{ id: "one", label: "Sections", state: "available" }, { id: "two", label: "Partial sections", state: "partial" }, { id: "three", label: "Planned sections", state: "planned" }] },
           {
             id: "content",
             kind: "content-section",
@@ -193,6 +193,26 @@ function runProbe(reactServer: boolean) {
       );
     } else {
       const { renderToStaticMarkup } = await import("react-dom/server");
+      const { createElement } = await import("react");
+      const frameCopy = { brand: "Packed frame", skip: "Skip to content", nav: "Primary", menu: "Menu", help: "Help", legal: "Example" };
+      const frameRef = key => ({ id: "frame." + key });
+      const frameResolver = createCopyResolver({ id: "frame", locale: "en", revision: "1", source: { kind: "consumer", reference: "packed-frame-proof" }, entries: Object.entries(frameCopy).map(([key, text]) => ({ id: frameRef(key).id, text, context: "Packed frame proof", status: "approved" })) });
+      const frameShell = {
+        brand: { assetId: "mark", label: frameRef("brand"), variant: "mark", size: "md" },
+        skipLink: frameRef("skip"),
+        ground: "base",
+        header: { surface: "glass", tone: "inverse" },
+        nav: { label: frameRef("nav"), triggerLabel: frameRef("menu"), links: [{ href: "/help", label: frameRef("help") }] },
+        footer: { ground: "inverse", legal: { entity: frameRef("legal"), links: [] } },
+      };
+      const heroDocument = resolveSectionedViewDocument({ id: "packed-frame", sections: [{ id: "packed-frame-hero", kind: "hero", ground: "inverse", heading: ref("heading") }] }, resolver);
+      const framed = fit => createElement(web.SiteFrame, {
+        shell: frameShell,
+        resolveCopy: frameResolver,
+        resolveAsset: () => ({ type: "image", src: "/mark.svg", width: 48, height: 48, alt: "Packed mark" }),
+      }, createElement(web.LandingView, { document: heroDocument, header: "overlay", fit, peek: false, landmark: "none" }));
+      result.frameHtml = renderToStaticMarkup(framed("frame"));
+      result.viewportHtml = renderToStaticMarkup(framed("viewport"));
       result.html = renderToStaticMarkup([element, sectioned]);
       result.contract = { html: renderToStaticMarkup(contractView) };
       result.landingHtml=renderToStaticMarkup(landing);
@@ -212,6 +232,8 @@ function runProbe(reactServer: boolean) {
     tags?: string[];
     text?: string[];
     html?: string;
+    frameHtml?: string;
+    viewportHtml?: string;
     summaryClasses: string[];
     contract?: {
       html?: string;
@@ -251,6 +273,39 @@ afterAll(() => {
   rmSync(fixtureRoot, { recursive: true, force: true });
 });
 
+describe("packed frame release", () => {
+  it("ships the Designer and Publisher minor versions with the new Designer floor", () => {
+    const manifest = (name: string) => JSON.parse(readFileSync(join(consumerRoot, "node_modules", "@clossys", name, "package.json"), "utf8"));
+    expect(manifest("designer").version).toBe("0.12.0");
+    expect(manifest("publisher").version).toBe("0.13.0");
+    expect(manifest("publisher").dependencies["@clossys/designer"]).toBe("^0.12.0");
+  });
+
+  it("renders overlay chrome, mobile navigation and an independent footer around a frame-fitted hero from the tarballs", () => {
+    const html = normal.frameHtml!;
+    expect(html.match(/<main\b/g)).toHaveLength(1);
+    expect(html.match(/<nav\b/g)).toHaveLength(1);
+    const header = html.match(/<header\b[^>]*>/)?.[0] ?? "";
+    expect(header).toContain(' data-surface="glass"');
+    expect(header).toContain(' data-tone="inverse"');
+    expect(header).toContain(' data-placement="overlay"');
+    expect(html).toMatch(/<footer[^>]*class="[^"]*bg-surface-inverse/);
+    expect(html).toContain('aria-label="Primary"');
+    expect(html).toContain('aria-expanded="false"');
+    const navigation = html.match(/<nav\b[^>]*>[\s\S]*?<\/nav>/)?.[0] ?? "";
+    const menuButton = navigation.match(/<button\b[^>]*>[\s\S]*?<\/button>/)?.[0] ?? "";
+    expect(menuButton).toContain(' aria-label="Menu"');
+    expect(menuButton).toContain(' aria-expanded="false"');
+    const menuIcon = menuButton.match(/<span\b[^>]*class="nav-disclosure-icon"[^>]*>/)?.[0] ?? "";
+    expect(menuIcon).toContain(' aria-hidden="true"');
+    expect(menuButton).not.toMatch(/>\s*[^<\s]/);
+    expect(html).toContain('class="flex min-h-dvh flex-col"');
+    expect(html).toMatch(/data-landing-hero=""[^>]*class="[^"]*flex-1/);
+    expect(html).not.toContain("min-height:100dvh");
+    expect(normal.viewportHtml).toContain("min-height:100dvh");
+  });
+});
+
 describe("packed Publisher web React-server boundary", () => {
   it("imports and renders the packed web entry under react-server through native FAQ markup", () => {
     expect(server.tags).toContain("details");
@@ -282,12 +337,17 @@ describe("packed Publisher web React-server boundary", () => {
 
   it("exports the exact same runtime names from the ordinary and react-server targets", () => {
     expect(server.keys).toEqual(normal.keys);
-    expect(server.keys).toEqual(expect.arrayContaining(["CaptureView", "CollectionView", "ContactView", "DocumentView", "SectionedView"]));
+    expect(server.keys).toEqual(expect.arrayContaining(["CaptureView", "CollectionView", "ContactView", "DocumentView", "SectionedView", "IndexView", "DetailsView"]));
   });
 
-  it("renders the packed SectionedView through server-safe ordered-step and status blocks", () => {
-    expect(server.tags).toEqual(expect.arrayContaining(["ol", "dl"]));
-    expect(server.text).toEqual(expect.arrayContaining(["Server-safe sections", "Steps", "Status"]));
+  it("renders packed ordered steps and canonical status Items on both targets", () => {
+    expect(server.tags).toEqual(expect.arrayContaining(["ol", "ul"]));
+    expect(server.text).toEqual(expect.arrayContaining(["Server-safe sections", "Steps", "Status", "Sections", "Partial sections", "Planned sections", "Available", "Partial", "Planned"]));
+    const statusHtml = normal.html!.slice(normal.html!.indexOf('id="status"'), normal.html!.indexOf('id="content"'));
+    expect(statusHtml).toContain("data-items");
+    expect(statusHtml.match(/data-item-heading/g)).toHaveLength(3);
+    expect(statusHtml.match(/data-item-meta/g)).toHaveLength(3);
+    expect(statusHtml).not.toContain("<dl");
   });
 
   it("renders a packed content-section band (text block and specimen) through server-safe blocks on both targets", () => {
@@ -417,7 +477,7 @@ describe("packed Publisher web React-server boundary", () => {
     // does carry the current one. Tracks Designer's current minor — a Designer
     // minor bump updates this line too, the same way `expectedVersions` in
     // scripts/run-candidate-qualification.test.mjs tracks every package.
-    expect(legacyManifest.dependencies["@clossys/designer"]).toBe("^0.8.0");
+    expect(legacyManifest.dependencies["@clossys/designer"]).toBe("^0.12.0");
     legacyManifest.dependencies["@clossys/designer"] = "^0.2.0";
     writeFileSync(legacyManifestPath, `${JSON.stringify(legacyManifest, null, 2)}\n`);
     const legacyPublisherTarball = packPackage(legacyPublisherRoot, join(fixtureRoot, "legacy-packed"));
@@ -626,4 +686,51 @@ describe("packed Publisher web React-server boundary", () => {
     expect(corrected.ok).toBe(false);
     expect(corrected.output).toMatch(/@clossys(?:%2f|\/)designer/i);
   }, 60_000);
+});
+
+// P-22: each consent subpath refuses its forbidden condition at import with
+// an error naming the subpath and the condition, and resolves its allowed
+// condition to the real entry, in the packed artifact.
+function importOutcome(specifier: string, conditions: string[]) {
+  try {
+    const stdout = execFileSync(
+      process.execPath,
+      [...conditions.map((condition) => `--conditions=${condition}`), "--input-type=module", "-e", `const m = await import(${JSON.stringify(specifier)}); process.stdout.write(JSON.stringify(Object.keys(m).sort()));`],
+      { cwd: consumerRoot, encoding: "utf8", timeout: 30_000, stdio: ["ignore", "pipe", "pipe"] },
+    );
+    return { ok: true as const, keys: JSON.parse(stdout) as string[] };
+  } catch (error) {
+    const failure = error as { stdout?: string; stderr?: string };
+    return { ok: false as const, output: `${failure.stdout ?? ""}\n${failure.stderr ?? ""}` };
+  }
+}
+
+describe("packed Publisher consent export conditions (P-22)", () => {
+  it.each([
+    ["@clossys/publisher/web/consent", "react-server"],
+    ["@clossys/publisher/web/consent/preview", "react-server"],
+    ["@clossys/publisher/consent-copy", "browser"],
+  ])("%s refuses the %s condition at import", (specifier, condition) => {
+    const outcome = importOutcome(specifier, [condition]);
+    expect(outcome.ok).toBe(false);
+    if (outcome.ok) return;
+    expect(outcome.output).toContain(`The ${specifier.replace("@clossys/publisher/", "")} subpath of the publisher package`);
+    expect(outcome.output).toContain(`"${condition}"`);
+  });
+
+  it("refuses the preview entry without the development condition and resolves it with one", () => {
+    const refused = importOutcome("@clossys/publisher/web/consent/preview", []);
+    expect(refused.ok).toBe(false);
+    if (!refused.ok) {
+      expect(refused.output).toContain("The web/consent/preview subpath of the publisher package");
+      expect(refused.output).toContain('"development"');
+    }
+    expect(importOutcome("@clossys/publisher/web/consent/preview", ["development"])).toEqual({ ok: true, keys: ["createConsentPreview"] });
+  });
+
+  it("resolves the client and server entries under their own conditions", () => {
+    const client = importOutcome("@clossys/publisher/web/consent", []);
+    expect(client.ok && client.keys).toEqual(["ConsentExperience", "bindTransport", "useAnalyticsAllowed", "useConsentStatus"]);
+    expect(importOutcome("@clossys/publisher/consent-copy", [])).toEqual({ ok: true, keys: ["resolveConsentCopy"] });
+  });
 });

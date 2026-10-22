@@ -15,6 +15,7 @@ beforeEach(() => {
   cpSync(join(packageRoot, "src", "shell"), join(dir, "src", "shell"), { recursive: true });
   cpSync(join(packageRoot, "src", "charts"), join(dir, "src", "charts"), { recursive: true });
   cpSync(join(packageRoot, "src", "theme"), join(dir, "src", "theme"), { recursive: true });
+  cpSync(join(packageRoot, "src", "tokens", "preview"), join(dir, "src", "tokens", "preview"), { recursive: true });
   vi.spyOn(console, "log").mockImplementation(() => {});
   vi.spyOn(console, "error").mockImplementation(() => {});
 });
@@ -62,6 +63,12 @@ describe("main --write", () => {
     rmSync(join(dir, "src"), { recursive: true, force: true });
     const code = await main(["--write", "--package-root", dir]);
     expect(code).toBe(2);
+  });
+
+  it("returns 2 when the required token preview source root is missing", async () => {
+    rmSync(join(dir, "src", "tokens", "preview"), { recursive: true, force: true });
+    expect(await main(["--write", "--package-root", dir])).toBe(2);
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining(join(dir, "src", "tokens", "preview")));
   });
 });
 

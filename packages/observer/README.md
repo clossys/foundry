@@ -452,6 +452,10 @@ const unobservedSurface = computeUnobservedSurface(declaredSubjects, presenceRea
 
 ## API
 
+Everything in the table below is exported from the package root. The
+`./browser-analytics` and `./browser-analytics/posthog` subpaths are
+documented in their own sections after it; the root never imports either.
+
 | Export | Kind | Description |
 | --- | --- | --- |
 | `ObservationState` | type | `"observed" \| "unobserved" \| "could-not-read"`. |
@@ -523,6 +527,70 @@ const unobservedSurface = computeUnobservedSurface(declaredSubjects, presenceRea
 | `HubPlacementCellKind` / `HubPlacementCellInput` | type | The three cell kinds this adapter emits, and the advisor-mirroring cell shape (structural, not imported). |
 | `RepositoryPackageObservation` / `HubPlacementObservationBundle` | type | One package observation, and the bundle this adapter accepts. |
 
+## The `./browser-analytics` subpath
+
+A consent-controlled analytics transport and the event sanitizer it runs
+every event through. Constructing a transport performs no I/O and its
+permission starts `false`. It loads a provider only after the host calls
+`setPermission(true)`, through a loader the host supplies, so this package
+never imports an analytics SDK.
+
+```ts
+import { createAnalyticsTransport } from "@clossys/observer/browser-analytics";
+```
+
+| Export | Kind | Description |
+| --- | --- | --- |
+| `createAnalyticsTransport(options)` | function | Creates a transport with `setPermission`, `pageview`, `conversion` and `dispose`. `setPermission` matches the structural `AnalyticsPermissionPort` that `@clossys/publisher/web/consent` declares. |
+| `sanitizeAnalyticsEvent(input, allow)` | function | Reduces a pageview or an allowlisted conversion to its sendable form (origin and path only, referrer origin only, allowlisted bounded properties), or `null` when it must be dropped. |
+| `MAX_PROPERTY_STRING_LENGTH` | value | Longest string property value kept; a longer value is dropped. |
+| `ANALYTICS_RETRY_DELAY_MS` / `DEFAULT_MAX_QUEUED` | value | The delay before the one retry of a failed provider load, and the default size of the memory queue used while a provider loads. |
+| `AnalyticsTransport` / `AnalyticsTransportOptions` / `AnalyticsTransportState` | type | The transport, its options, and its load states. |
+| `AnalyticsProviderPort` / `ProviderInitContext` / `AnalyticsScheduler` | type | The provider adapter port, what the transport hands a provider at `init`, and the timer port. |
+| `AnalyticsLocation` / `AnalyticsEventInput` / `AnalyticsAllowlist` / `NormalizePath` / `SanitizedAnalyticsEvent` | type | Sanitizer input, rules and output. |
+
+## The `./browser-analytics/posthog` subpath
+
+`@clossys/observer/browser-analytics/posthog` exports `createPostHogProvider(sdk, config)`, the provider adapter for the consent-controlled analytics transport. The adapter takes the SDK object as an argument and imports no SDK, so the entry has no peer dependency. Autocapture and session replay are two separate features of that adapter, off unless a host turns them on. They are not yet part of the consent assembly API; a host that wires them today does so by calling the adapter directly.
+
+```ts
+import {
+  createPostHogProvider,
+  type PostHogLike,
+  type ReplayCapability,
+} from "@clossys/observer/browser-analytics/posthog";
+
+declare const sdk: PostHogLike;
+declare function probeForInstalledSdk(): ReplayCapability;
+
+const provider = createPostHogProvider(sdk, {
+  key: "project-key",
+  apiHost: "https://analytics.example.test",
+  autocapture: { enabled: true },
+  replay: { enabled: true, sampleRate: 0.1, blockSelectors: ["aside"], probe: probeForInstalledSdk },
+});
+```
+
+- **Configuration is checked when the adapter is created.** A missing block means the feature is off. A key outside the type, a wrong type, a missing or out-of-range `sampleRate` or a missing `probe` under `enabled: true` throws a `TypeError` before any SDK call. The replay block has no masking key: masking is constant, and a host can add block selectors but cannot remove the private ones. A block selector outside `BLOCK_SELECTOR_GRAMMAR` leaves replay off and does not throw.
+- **Autocapture records a click or a submit on an element that carries `data-analytics-id`.** The event is rebuilt from the element's tag and that attribute value. Element text, links, classes, ids, positions and ancestors are not sent. Form fields, editable content, and elements inside `data-private`, the consent banner, a password field or a `cc-` autocomplete field are dropped.
+- **Replay starts for a grant when five conditions hold.** The flag is on and the `sampleRate` draw selects the grant; every host block selector is inside the grammar; the SDK instance reports the constant recording options by value, checked at `init` and again before each start; the instance has `startSessionRecording`, `stopSessionRecording`, `reset` and `get_session_id`; and the host's `probe` reports all eight capability fields as `true`.
+- **A replay payload is checked before it leaves.** A payload that does not decode, a record of an unlisted kind and page text that is not in masked form drop the snapshot. Custom records are removed, and a meta record's address is rewritten to the sanitized URL.
+- **A query or fragment in an address drops the snapshot for the rest of the grant.** This covers the page address, the document's load address and an address inside the payload. A host page that loads with a query or fragment in its load address therefore keeps replay off for the document's lifetime, because each new grant meets the same load address.
+- **Each grant starts a new session.** Withdrawal and each re-grant call `reset()` when either feature is on. A session id equal to an earlier one on the page leaves replay off for that grant, and a snapshot with an earlier session id is dropped.
+- **Withdrawal closes the capture gate before any SDK call.** A snapshot flushed after the stop is dropped.
+
+`BLOCK_SELECTOR_GRAMMAR` and the other constants the specification names are exported from the same entry. The two expressions that make up the grammar stay internal.
+
+| Export | Kind | Description |
+| --- | --- | --- |
+| `createPostHogProvider(sdk, config)` | function | Returns an `AnalyticsProviderPort` for the transport's `loadProvider`. |
+| `PostHogLike` / `PostHogProviderConfig` | type | The structural SDK subset and the host's key, API host and optional feature blocks. |
+| `PostHogAutocaptureConfig` / `PostHogReplayConfig` / `ReplayCapability` | type | The closed feature blocks and the host probe's replay capability report. |
+| `POSTHOG_INSTANCE_PREFIX` / `POSTHOG_PROPERTY_ALLOWLIST` / `POSTHOG_EVENT_FIELDS` | value | The instance-name prefix, SDK property allowlist and retained event fields. |
+| `ANALYTICS_ELEMENT_ATTRIBUTE` / `AUTOCAPTURE_ELEMENT_SELECTOR` / `PRIVATE_SUBTREE_SELECTORS` | value | The opt-in attribute and selectors for eligible elements and private subtrees. |
+| `BLOCK_SELECTOR_GRAMMAR` / `MASKED_TEXT_PATTERN` / `REPLAY_RECORD_KINDS` / `REPLAY_RECORDING_OPTIONS` | value | The host selector grammar, masked-text pattern, accepted record kinds and forced recording options. |
+| `POSTHOG_AUTOCAPTURE_PROPERTIES` / `POSTHOG_REPLAY_PROPERTIES` | value | The retained properties for each SDK-originated capture class. |
+
 ## Non-Goals
 
 - **Does not implement a run-history reader.** `RunHistoryReader` is a port;
@@ -549,7 +617,9 @@ const unobservedSurface = computeUnobservedSurface(declaredSubjects, presenceRea
 
 Node.js >= 20. Zero runtime dependencies. The library (everything except
 `cli.ts`/`bin.ts` and `unobserved-outcome-cli.ts`) is zero I/O — every
-function is a pure function of its arguments. This package ships two CLIs:
+function is a pure function of its arguments. The `./browser-analytics`
+subpath is the one exception: its transport reaches the network only
+through the provider the host loads and passes in. This package ships two CLIs:
 `observer-coverage-check` grades a caller-assembled fleet coverage document
 through an injected `CliPort` (`cli.ts`); `observer-check` prints the
 `unobserved outcome rate` assessment as JSON. Each reads one input file and

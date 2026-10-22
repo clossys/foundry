@@ -1,23 +1,30 @@
 // @vitest-environment jsdom
 
 import "@testing-library/jest-dom/vitest";
+import { createHash } from "node:crypto";
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
+import ts from "typescript";
 import type { ReactElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import type { CopyRef, CopyResolution, CopyResolver } from "@clossys/writer";
 import type { IconNode } from "@clossys/designer/atoms/server";
+import { CONTRAST_PAIRS, contrastRatio, parseBrandDeclarations } from "@clossys/designer/tokens";
+import { ThemeProvider, ThemeToggle } from "@clossys/designer/theme";
 import { AuthView } from "../views/AuthView.js";
 import { BoundaryView } from "../views/BoundaryView.js";
 import { CaptureView } from "../views/CaptureView.js";
 import { DocumentView } from "../views/DocumentView.js";
 import { ErrorView } from "../views/ErrorView.js";
 import { StatusView } from "../views/StatusView.js";
+import { LandingView } from "#publisher-web-views";
 import { SITE_MAIN_ID, SITE_SURFACE_KINDS, SiteFrame, siteShellFor } from "./index.js";
 import type { SiteFrameConfig, SiteShellInput } from "./index.js";
 import { resolveShell } from "./internal/resolveShell.js";
+import { FOOTER_ICON_LIMIT, FOOTER_LINK_LIMIT, SiteFooterContractError } from "./site-frame-contract.js";
 
 afterEach(cleanup);
 
@@ -30,6 +37,8 @@ const COPY: Readonly<Record<string, string>> = {
   "brand.label": "Example home",
   "skip": "Skip to content",
   "nav.label": "Primary",
+  "site-frame.nav.label": "Primary",
+  "site-frame.nav.trigger-label": "Menu",
   "nav.pricing": "Pricing",
   "nav.docs": "Docs",
   "cta.start": "Get started",
@@ -44,6 +53,11 @@ const COPY: Readonly<Record<string, string>> = {
   "legal.terms": "Terms",
   "legal.label": "Legal",
   "surface.admin": "Admin",
+  "icon.contact": "Contact",
+  "social.label": "Profiles",
+  "social.profile": "Profile",
+  "footer.help": "Help",
+  "blank": "   ",
   "doc.title": "Privacy notice",
   "doc.section": "Details",
   "doc.body": "Document body.",
@@ -79,8 +93,7 @@ const CONFIG: SiteFrameConfig = {
   origin: "https://example.com",
   site: {
     nav: { label: ref("nav.label"), links: [{ href: "/pricing", label: ref("nav.pricing") }, { href: "/docs", label: ref("nav.docs") }] },
-    actions: [{ href: "/start", label: ref("cta.start") }],
-    secondaryAction: { href: "https://app.example.com/", label: ref("cta.signin") },
+    actions: [{ href: "/start", label: ref("cta.start") }, { href: "https://app.example.com/", label: ref("cta.signin") }],
     columns: [{ heading: ref("footer.company"), links: [{ href: "/about", label: ref("footer.about") }] }],
   },
   environments: [
@@ -171,9 +184,12 @@ describe("SiteFrame", () => {
     const { container } = render(frame(siteShellFor(CONFIG, "site"), <p>content</p>));
     const brand = container.querySelector('header a[aria-label="Example home"]') as HTMLAnchorElement;
     expect(brand).toHaveTextContent("Example");
-    expect(brand.querySelector("img")).toHaveAttribute("src", "/brand/mark.svg");
+    // The header logomark is the resolved asset painted in the accent token by default.
+    expect(brand.querySelector("img")).toBeNull();
+    expect(brand.querySelector("[data-brand-mark]")).toHaveClass("bg-accent");
+    expect(renderToStaticMarkup(frame(siteShellFor(CONFIG, "site"), <p>content</p>))).toContain("mask-image:url(&quot;/brand/mark.svg&quot;)");
     const nav = container.querySelector('header nav[aria-label="Primary"]') as HTMLElement;
-    expect([...nav.querySelectorAll("a")].map((a) => [a.textContent, a.getAttribute("href")])).toEqual([
+    expect([...nav.querySelectorAll(".nav-disclosure-panel > ul:first-child a")].map((a) => [a.textContent, a.getAttribute("href")])).toEqual([
       ["Pricing", "/pricing"],
       ["Docs", "/docs"],
     ]);
@@ -251,7 +267,7 @@ describe("SiteFrame", () => {
     });
 
     it("refuses a node-shaped header, footer or mark slipped past the types", () => {
-      expect(render$({ ...FRONT_DOOR_SHELL, header: <header /> })).toThrow(/SiteFrame: shell has an unsupported field "header"/);
+      expect(render$({ ...FRONT_DOOR_SHELL, header: <header /> })).toThrow(/SiteFrame: shell\.header has an unsupported field/);
       expect(render$({ ...FRONT_DOOR_SHELL, footer: { legal: FRONT_DOOR_SHELL.footer?.legal, secondary: <p /> } })).toThrow(
         /shell\.footer has an unsupported field "secondary"/,
       );
@@ -328,6 +344,9 @@ describe("SiteFrame", () => {
     it.each([
       ["javascript:alert(1)"],
       ["https://example.com/path"],
+      ["https:example.com"],
+      ["https://example.com/."],
+      ["https://@www.example.test/"],
       ["https://example.com?x=1"],
       ["https://user@example.com"],
       ["http://example.com"],
@@ -360,8 +379,7 @@ describe("SiteFrame", () => {
       const site = siteShellFor(CONFIG, "site");
       const resolved = resolveShell({ ...site, origin: "https://example.com" }, resolveCopy, resolveAsset);
       expect(resolved.nav?.links.map((link) => link.href)).toEqual(["https://example.com/pricing", "https://example.com/docs"]);
-      expect(resolved.actions.map((link) => link.href)).toEqual(["https://example.com/start"]);
-      expect(resolved.secondaryAction?.href).toBe("https://app.example.com/");
+      expect(resolved.actions.map((link) => link.href)).toEqual(["https://example.com/start", "https://app.example.com/"]);
       expect(resolved.footer?.columns[0]?.links.map((link) => link.href)).toEqual(["https://example.com/about"]);
     });
 
@@ -490,14 +508,13 @@ const CHROME_VALUES: Readonly<Record<string, unknown>> = {
   secondaryAction: <a href="/signin">Sign in</a>,
   ground: "base",
   footerSecondary: <p>Legal</p>,
-  surfaceLabel: "Admin",
 };
 
 const LEGACY_KEYS: ReadonlyArray<readonly [string, (chrome: Record<string, unknown>) => ReactElement, readonly string[]]> = [
   [
     "AuthView",
     (chrome) => <AuthView heading="Sign in" description="Welcome back." form={null} {...chrome} />,
-    ["brand", "header", "footer", "mainId", "nav", "headerAction", "headerSecondaryAction", "ground", "footerSecondary", "surfaceLabel"],
+    ["brand", "header", "footer", "mainId", "nav", "headerAction", "headerSecondaryAction", "ground", "footerSecondary"],
   ],
   [
     "CaptureView",
@@ -543,7 +560,7 @@ describe("siteShellFor", () => {
   it("site: navigation, calls to action and footer columns, links relative to its own host", () => {
     const shell = siteShellFor(CONFIG, "site");
     expect(shell.nav?.links).toHaveLength(2);
-    expect(shell.actions).toHaveLength(1);
+    expect(shell.actions).toHaveLength(2);
     expect(shell.footer?.columns).toHaveLength(1);
     expect(shell.environments).toBeUndefined();
     expect(shell.origin).toBeUndefined();
@@ -553,20 +570,70 @@ describe("siteShellFor", () => {
     ["front-door", "App"],
     ["admin", "Admin"],
     ["demo", "Demo"],
-  ] as const)("%s: no navigation, environment links with the current one marked, legal links absolute to the public origin", (kind, current) => {
+  ] as const)("%s: one current ghost environment, no menu, public brand and legal-only footer", (kind, current) => {
     const shell = siteShellFor(CONFIG, kind);
     expect(shell.nav).toBeUndefined();
     expect(shell.actions).toBeUndefined();
     expect(shell.footer?.columns).toBeUndefined();
     expect(shell.origin).toBe("https://example.com");
+    expect(shell).not.toHaveProperty("mobileLayout");
+    expect(shell.environments).toHaveLength(1);
+    expect(shell.environments?.[0]?.isCurrent).toBe(true);
 
     const { container } = render(frame(shell, <p>content</p>));
-    expect(container.querySelector("header nav")).toBeNull();
+    expect(container.querySelector("header nav, header button, .nav-disclosure-panel")).toBeNull();
+    expect(container.querySelector('header a[aria-label="Example home"]')).toHaveAttribute("href", "https://example.com/");
+    const header = container.querySelector("header")!;
+    expect(within(header).getAllByRole("link")).toHaveLength(2);
+    const environment = within(header).getByRole("link", { name: current });
+    expect(environment).toHaveClass("site-header-environment-ghost");
+    expect(header.querySelectorAll(".site-header-environment-ghost")).toHaveLength(1);
+    expect(environment).toHaveClass("hover:bg-surface-sunken");
+    expect(environment).not.toHaveClass("bg-accent");
+    expect(environment.querySelector("svg")).not.toBeNull();
     const currents = [...container.querySelectorAll('header a[aria-current="true"]')];
     expect(currents).toHaveLength(1);
     expect(currents[0]).toHaveTextContent(current);
     const legal = [...container.querySelectorAll("footer a")].map((a) => a.getAttribute("href"));
-    expect(legal).toEqual(["https://example.com/privacy", "https://example.com/terms"]);
+    expect(legal).toEqual(["https://example.com/privacy", "https://example.com/terms", "https://example.com/"]);
+    expect(container.querySelector("footer")).toHaveTextContent("Example Ltd");
+    expect(container.querySelector("footer h2, footer .grid, [data-consent-banner], [data-consent-presentation=card], [role=dialog]")).toBeNull();
+  });
+
+  it("preserves explicitly reserved site bytes and its same-host brand link", () => {
+    const config: SiteFrameConfig = { brand: CONFIG.brand, skipLink: CONFIG.skipLink, origin: CONFIG.origin, legal: CONFIG.legal, site: { header: { surface: "solid" } } };
+    const html = renderToStaticMarkup(frame(siteShellFor(config, "site"), <p>content</p>));
+    expect(html).toContain('data-surface="solid"');
+    expect(html).not.toContain('data-placement="overlay"');
+    const { container } = render(frame(siteShellFor(config, "site"), <p>content</p>));
+    expect(container.querySelector('header a[aria-label="Example home"]')).toHaveAttribute("href", "/");
+  });
+
+  it.each(["front-door", "admin", "demo"] as const)("%s with no matching environment shows the brand alone", kind => {
+    for (const environments of [undefined, [], CONFIG.environments!.filter(entry => entry.surface !== kind)]) {
+      const { container, unmount } = render(frame(siteShellFor({ ...CONFIG, environments }, kind), <p>content</p>));
+      expect(container.querySelectorAll("header a")).toHaveLength(1);
+      expect(container.querySelector("header nav, header button")).toBeNull();
+      expect(container.querySelector("header a")).toHaveAttribute("href", "https://example.com/");
+      unmount();
+    }
+  });
+
+  it("renders every direct environment-only link as ghost without requesting default menu copy", () => {
+    const shell = { ...FRONT_DOOR_SHELL, environments: CONFIG.environments!.map(({ surface, ...entry }) => ({ ...entry, isCurrent: surface === "admin" })) };
+    const requested: string[] = [];
+    const copy: CopyResolver = ref => { requested.push(ref.id); return resolveCopy(ref); };
+    const { container } = render(<SiteFrame shell={shell} resolveCopy={copy} resolveAsset={resolveAsset}><p>content</p></SiteFrame>);
+    expect(container.querySelector("header nav, header button")).toBeNull();
+    const header = container.querySelector("header")!;
+    expect(within(header).getAllByRole("link")).toHaveLength(4);
+    for (const name of ["App", "Admin", "Demo"]) {
+      const link = within(header).getByRole("link", { name });
+      expect(link).toHaveClass("hover:bg-surface-sunken");
+      expect(link.querySelector("svg")).not.toBeNull();
+    }
+    expect(requested.filter(id => id.startsWith("site-frame.nav."))).toEqual([]);
+    expect(container.querySelector('header a[aria-current="true"]')).toHaveTextContent("Admin");
   });
 
   it("refuses an unknown surface kind", () => {
@@ -593,6 +660,24 @@ function moduleSpecifiers(source: string): string[] {
 }
 
 const FRAME_ALLOWED_IMPORT = /^(react|@clossys\/designer\/[a-z-]+\/server|@clossys\/writer|\.{1,2}\/[A-Za-z./-]+\.js)$/;
+const FRAME_CLIENT_MODULES = [
+  "AppFrame.specimen.tsx", "AppFrame.tsx", "NavDisclosure.boundary.client.tsx",
+  "NavDisclosure.client.tsx", "SkipLink.client.tsx",
+];
+// AppFrame is an explicit web/client composition; SiteFrame's server rules stay unchanged.
+const FRAME_IMPORT_EXCEPTIONS: Readonly<Record<string, readonly string[]>> = {
+  "NavDisclosure.client.tsx": ["@clossys/designer/shell"],
+  "NavDisclosure.boundary.client.tsx": ["#publisher-frame-navigation"],
+  "SiteFrame.tsx": ["#publisher-web-views"],
+  "AppFrame.tsx": ["react-aria-components", "@clossys/designer/atoms", "@clossys/designer/icons", "@clossys/designer/blocks", "@clossys/designer/theme"],
+  "AppFrame.specimen.tsx": ["@clossys/designer/atoms", "@clossys/designer/blocks"],
+  "app-frame-types.ts": ["@clossys/designer/blocks", "@clossys/designer/theme"],
+  "app-frame-layout.ts": ["@clossys/designer/tokens"],
+};
+
+function allowedFrameImport(name: string, specifier: string): boolean {
+  return FRAME_ALLOWED_IMPORT.test(specifier) || (FRAME_IMPORT_EXCEPTIONS[name]?.includes(specifier) ?? false);
+}
 
 function frameSources(): Array<[string, string]> {
   const files: Array<[string, string]> = [];
@@ -606,21 +691,43 @@ function frameSources(): Array<[string, string]> {
 }
 
 describe("module boundaries", () => {
-  it("the skip-link island is the frame's only client module, and the frame uses no hooks", () => {
+  it("pins the SiteFrame islands and separate AppFrame client composition while SiteFrame uses no hooks", () => {
     const sources = frameSources();
     expect(sources.map(([name]) => name)).toContain("SiteFrame.tsx");
+    expect(sources.filter(([, source]) => source.startsWith('"use client";')).map(([name]) => name).sort()).toEqual(FRAME_CLIENT_MODULES);
     for (const [name, source] of sources) {
-      if (name === "SkipLink.client.tsx") expect(source.startsWith('"use client";')).toBe(true);
+      if (FRAME_CLIENT_MODULES.includes(name)) expect(source.startsWith('"use client";')).toBe(true);
       else expect(source).not.toMatch(/["']use client["']/);
     }
     const frameSource = readFileSync(join(import.meta.dirname, "SiteFrame.tsx"), "utf8");
     expect(frameSource).not.toMatch(/\buse[A-Z][A-Za-z]*\(/);
   });
 
-  it("every frame module imports only react, Designer server entries, Writer and its own relative modules, with no dynamic import or require", () => {
-    for (const [, source] of frameSources()) {
-      for (const specifier of moduleSpecifiers(source)) expect(specifier).toMatch(FRAME_ALLOWED_IMPORT);
+  it("retains server imports with exact per-file client exceptions and no dynamic import or require", () => {
+    for (const [name, source] of frameSources()) {
+      for (const specifier of moduleSpecifiers(source)) {
+        expect(allowedFrameImport(name, specifier), `${name}: ${specifier}`).toBe(true);
+      }
       expect(source).not.toMatch(/\bimport\s*\(|\brequire\s*\(/);
+    }
+  });
+
+  it("refuses AppFrame interactive imports in SiteFrame, unnamed modules and its pure helpers", () => {
+    for (const name of ["SiteFrame.tsx", "UnlistedFrame.tsx", "AppFrame.other.tsx", "app-frame-contract.ts", "AppFrameBrand.tsx"]) {
+      for (const specifier of ["react-aria-components", "@clossys/designer/atoms", "@clossys/designer/blocks", "@clossys/designer/theme", "@clossys/designer/tokens"]) {
+        expect(allowedFrameImport(name, specifier), `${name}: ${specifier}`).toBe(false);
+      }
+    }
+    expect(allowedFrameImport("AppFrame.specimen.tsx", "@clossys/designer/theme")).toBe(false);
+    expect(allowedFrameImport("app-frame-layout.ts", "@clossys/designer/atoms")).toBe(false);
+    expect(allowedFrameImport("AppFrame.tsx", "unlisted-dependency")).toBe(false);
+  });
+
+  it("keeps AppFrame's shared contract imports type-only", () => {
+    const source = ts.createSourceFile("app-frame-types.ts", readFileSync(join(import.meta.dirname, "app-frame-types.ts"), "utf8"), ts.ScriptTarget.Latest, true);
+    for (const statement of source.statements) {
+      if (ts.isImportDeclaration(statement)) expect(statement.importClause?.isTypeOnly).toBe(true);
+      if (ts.isExportDeclaration(statement) && statement.moduleSpecifier) expect(statement.isTypeOnly).toBe(true);
     }
   });
 
@@ -634,10 +741,12 @@ describe("module boundaries", () => {
 describe("SiteFrame list keys", () => {
   it("renders repeated headings and links in full, with no duplicate-key warning", () => {
     const repeated = { href: "/about", label: ref("footer.about") };
+    // The footer never repeats a header navigation destination, so the header repeats its own.
+    const headerRepeated = { href: "/docs", label: ref("nav.docs") };
     const shell: SiteShellInput = {
       ...siteShellFor(CONFIG, "site"),
-      nav: { label: ref("nav.label"), links: [repeated, repeated] },
-      actions: [repeated, repeated],
+      nav: { label: ref("nav.label"), links: [headerRepeated, headerRepeated] },
+      actions: [{ ...headerRepeated, emphasis: "secondary" }, { ...headerRepeated, emphasis: "ghost" }],
       footer: {
         columns: [
           { heading: ref("footer.company"), links: [repeated, repeated] },
@@ -652,12 +761,882 @@ describe("SiteFrame list keys", () => {
       const { container } = render(frame(shell, <p>content</p>));
       const keyWarnings = consoleError.mock.calls.filter((call) => call.some((part) => typeof part === "string" && /same key/i.test(part)));
       expect(keyWarnings).toEqual([]);
-      expect(container.querySelectorAll("header nav li")).toHaveLength(2);
+      expect(container.querySelectorAll("header .nav-disclosure-panel > ul:first-child li")).toHaveLength(2);
       const footer = container.querySelector("footer") as HTMLElement;
       expect([...footer.querySelectorAll("h2, h3, h4, p")].filter((node) => node.textContent === "Company")).toHaveLength(2);
-      expect([...container.querySelectorAll("a")].filter((link) => link.textContent === "About")).toHaveLength(2 + 2 + 2 + 1);
+      expect([...container.querySelectorAll("header a")].filter((link) => link.textContent === "Docs")).toHaveLength(2 + 2);
+      expect([...footer.querySelectorAll("a")].filter((link) => link.textContent === "About")).toHaveLength(2 + 1);
     } finally {
       consoleError.mockRestore();
     }
   });
+});
+
+
+// Icon actions, ungrouped links and social profiles are closed shell data.
+const ICON_LINK = { href: "/contact", label: ref("icon.contact"), icon: ICON };
+const ALL_SLOTS: SiteShellInput = {
+  ...siteShellFor(CONFIG, "site"),
+  actions: [ICON_LINK],
+  environments: [{ href: "/app", label: ref("env.app"), icon: ICON }],
+  footer: {
+    ...siteShellFor(CONFIG, "site").footer!,
+    links: [{ href: "/help", label: ref("footer.help") }],
+    social: { label: ref("social.label"), links: [{ href: "/profile", label: ref("social.profile"), icon: ICON }] },
+  },
+};
+
+describe("SiteFrame icon slots", () => {
+  it("renders all slots with semantic landmarks, resolved accessible names, text-only header actions and decorative footer icons", () => {
+    const { getByRole } = render(frame(ALL_SLOTS, <p>content</p>));
+    const banner = getByRole("banner");
+    const contact = within(banner).getByRole("link", { name: "Contact" });
+    expect(contact).toHaveAttribute("href", "/contact");
+    expect(contact).toHaveTextContent("Contact");
+    expect(contact.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
+    const footer = getByRole("contentinfo");
+    const social = within(footer).getByRole("navigation", { name: "Profiles" });
+    const profile = within(social).getByRole("link", { name: "Profile" });
+    expect(profile).toHaveAttribute("href", "/profile");
+    expect(profile.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
+    expect(within(social).getByRole("list")).toContainElement(profile);
+    const ungrouped = within(footer).getByRole("link", { name: "Help" }).closest("ul")!;
+    expect(ungrouped).toHaveAttribute("role", "list");
+    expect(ungrouped.querySelector("h1,h2,h3,h4,h5,h6")).toBeNull();
+    expect(within(footer).getAllByRole("heading").map((heading) => heading.textContent)).toEqual(["Company"]);
+  });
+
+  it("keeps all slots in document tab order", () => {
+    const { container } = render(frame(ALL_SLOTS, <p>content</p>));
+    const focusable = [...container.querySelectorAll<HTMLElement>('a[href],button,input,select,textarea,[tabindex]')]
+      .filter((element) => element.tabIndex >= 0);
+    expect(focusable.map((element) => element.getAttribute("aria-label") ?? element.textContent)).toEqual([
+      "Skip to content", "Example home", "Primary", "Pricing", "Docs", "App", "Contact",
+      "About", "Help", "Privacy", "Terms", "Profile", "Example home",
+    ]);
+  });
+
+  it("omits empty slots byte for byte", () => {
+    const shell = siteShellFor(CONFIG, "site");
+    const omitted = renderToStaticMarkup(frame({ ...shell, actions: [] }, <p>content</p>));
+    for (const social of [{ links: [] }, { label: ref("social.label"), links: [] }]) {
+      expect(renderToStaticMarkup(frame({ ...shell, actions: [], footer: { ...shell.footer!, links: [], social } }, <p>content</p>))).toBe(omitted);
+    }
+  });
+
+  it("emits no wrapper, list, navigation or divider for empty slots on a shell without columns or actions", () => {
+    const bare: SiteShellInput = { brand: CONFIG.brand, skipLink: CONFIG.skipLink, footer: { legal: CONFIG.legal } };
+    const baseline = renderToStaticMarkup(frame(bare, <p>content</p>));
+    for (const social of [{ links: [] }, { label: ref("social.label"), links: [] }]) {
+      const shell: SiteShellInput = { ...bare, actions: [], footer: { ...bare.footer!, links: [], social } };
+      expect(renderToStaticMarkup(frame(shell, <p>content</p>))).toBe(baseline);
+      const { container, unmount } = render(frame(shell, <p>content</p>));
+      // Empty right track is structural and noninteractive; no disclosure is invented.
+      expect(container.querySelector("header .site-header-actions")!.children).toHaveLength(0);
+      expect(container.querySelector("header nav, header button")).toBeNull();
+      // Footer: the secondary row only, no empty column grid, and no divider above it.
+      const footer = container.querySelector("footer")!;
+      expect(footer.querySelector(".grid")).toBeNull();
+      expect(footer.firstElementChild!.children).toHaveLength(1);
+      const secondary = footer.firstElementChild!.firstElementChild!;
+      expect(secondary.className).not.toContain("border-t");
+      // The secondary row holds the legal row alone: no empty social list or navigation.
+      expect(secondary.children).toHaveLength(1);
+      expect(within(footer).getAllByRole("navigation").map((nav) => nav.getAttribute("aria-label"))).toEqual(["Legal"]);
+      for (const list of container.querySelectorAll("ul")) expect(list.children.length).toBeGreaterThan(0);
+      unmount();
+    }
+  });
+
+  it("keeps social icons in their own composition region and gives icon links a square tap target", () => {
+    const named = render(frame(ALL_SLOTS, <p>content</p>));
+    expect(named.getByRole("navigation", { name: "Profiles" })).toHaveAttribute("data-footer-region", "icons");
+    for (const name of ["Contact", "Profile"]) {
+      const link = named.getByRole("link", { name });
+      expect(link.style.minHeight).toBe("var(--ui-layout-tap-target, 44px)");
+      expect(link.style.minWidth).toBe("var(--ui-layout-tap-target, 44px)");
+      expect(link).toHaveClass("justify-center");
+    }
+    named.unmount();
+    const unnamed = render(frame({ ...ALL_SLOTS, footer: { ...ALL_SLOTS.footer!, social: { links: ALL_SLOTS.footer!.social!.links } } }, <p>content</p>));
+    expect(unnamed.getByRole("link", { name: "Profile" }).closest("[data-footer-region]")).toHaveAttribute("data-footer-region", "icons");
+  });
+
+  it("renders ungrouped links alone and unnamed social without a navigation wrapper", () => {
+    const { getByRole } = render(frame({ ...ALL_SLOTS, footer: { ...ALL_SLOTS.footer!, columns: [], social: { links: ALL_SLOTS.footer!.social!.links } } }, <p>content</p>));
+    const footer = getByRole("contentinfo");
+    expect(within(footer).queryByRole("heading")).toBeNull();
+    expect(within(footer).getByRole("link", { name: "Help" }).closest("ul")).not.toBeNull();
+    expect(within(footer).getByRole("link", { name: "Profile" }).closest("nav")).toBeNull();
+  });
+
+  it("resolves root-relative hrefs in all three slots against origin", () => {
+    const { getByRole } = render(frame({ ...ALL_SLOTS, origin: "https://example.com" }, <p>content</p>));
+    for (const [name, path] of [["Contact", "/contact"], ["Help", "/help"], ["Profile", "/profile"]]) {
+      expect(getByRole("link", { name })).toHaveAttribute("href", `https://example.com${path}`);
+    }
+  });
+
+  describe("fails closed", () => {
+    const resolve = (shell: unknown) => () => resolveShell(shell as SiteShellInput, resolveCopy, resolveAsset);
+    const assertRefusal = (shell: unknown, path: string, hidden: string) => {
+      const call = resolve(shell);
+      expect(call).toThrow(`SiteFrame: ${path}`);
+      try { call(); } catch (error) { expect((error as Error).message).not.toContain(hidden); }
+    };
+    const withIconLink = (entry: unknown, social = false) => social
+      ? { ...ALL_SLOTS, footer: { ...ALL_SLOTS.footer, social: { links: [entry] } } }
+      : { ...ALL_SLOTS, actions: [entry] };
+
+    it("refuses unknown icon-link and social keys without echoing values", () => {
+      for (const social of [false, true]) {
+        assertRefusal(withIconLink({ ...ICON_LINK, extra: "private-value" }, social), social ? "shell.footer.social.links[0]" : "shell.actions[0]", "private-value");
+      }
+      assertRefusal({ ...ALL_SLOTS, footer: { ...ALL_SLOTS.footer, social: { links: [], extra: "private-value" } } }, "shell.footer.social", "private-value");
+    });
+
+    it.each(["javascript:alert(1)", "//unsafe.example/path", "/unsafe\u0000path"])("refuses unsafe href %j in each new slot", (value) => {
+      assertRefusal(withIconLink({ ...ICON_LINK, href: value }), "shell.actions[0].href", value);
+      assertRefusal(withIconLink({ ...ICON_LINK, href: value }, true), "shell.footer.social.links[0].href", value);
+      assertRefusal({ ...ALL_SLOTS, footer: { ...ALL_SLOTS.footer, links: [{ href: value, label: ref("footer.help") }] } }, "shell.footer.links[0].href", value);
+    });
+
+    it.each([undefined, ref("unresolved-label"), ref("blank"), "literal-label"])("refuses missing unresolved blank or literal label %j", (label) => {
+      for (const social of [false, true]) {
+        assertRefusal(withIconLink({ ...ICON_LINK, label }, social), social ? "shell.footer.social.links[0].label" : "shell.actions[0].label", typeof label === "string" ? label : label?.id ?? "missing-label");
+      }
+    });
+
+    it.each([ref("unresolved-label"), ref("blank"), "literal-label"])("refuses invalid social navigation label %j", (label) => {
+      assertRefusal({ ...ALL_SLOTS, footer: { ...ALL_SLOTS.footer, social: { label, links: [ICON_LINK] } } }, "shell.footer.social.label", typeof label === "string" ? label : label.id);
+    });
+
+    it.each([
+      [["script", { src: "forbidden-value" }]],
+      [["path", { href: "forbidden-value" }]],
+      [["path", { fill: "url(forbidden-value)" }]],
+    ])("refuses non-shape icon data %j", (node) => {
+      // Wrap parameterised tuples so each case remains an IconNode array.
+      for (const social of [false, true]) {
+        assertRefusal(withIconLink({ ...ICON_LINK, icon: [node] }, social), social ? "shell.footer.social.links[0].icon" : "shell.actions[0].icon", "forbidden-value");
+      }
+    });
+  });
+});
+
+describe("siteShellFor icon slots", () => {
+  const config: SiteFrameConfig = { ...CONFIG, site: { ...CONFIG.site, actions: ALL_SLOTS.actions, footerLinks: ALL_SLOTS.footer!.links, social: ALL_SLOTS.footer!.social } };
+  it("passes all three slots only to the site", () => {
+    const site = siteShellFor(config, "site");
+    expect(site.actions).toEqual(ALL_SLOTS.actions);
+    expect(site.footer?.links).toEqual(ALL_SLOTS.footer!.links);
+    expect(site.footer?.social).toEqual(ALL_SLOTS.footer!.social);
+    for (const kind of ["front-door", "admin", "demo"] as const) {
+      const shell = siteShellFor(config, kind);
+      expect(shell).not.toHaveProperty("actions");
+      expect(shell.footer).not.toHaveProperty("links");
+      expect(shell.footer).not.toHaveProperty("social");
+    }
+  });
+});
+
+
+describe("frame header placement", () => {
+  it.each([undefined, "base", "inverse"] as const)("mounts Designer's overlay placement with tone %s and keeps one skip link and one main", (tone) => {
+    const shell: SiteShellInput = { ...FRONT_DOOR_SHELL, header: { surface: "glass", ...(tone === undefined ? {} : { tone }) } };
+    const { container } = render(frame(shell, <p>content</p>));
+    const header = container.querySelector("header")!;
+    expect(header).toHaveAttribute("data-placement", "overlay");
+    expect(header).toHaveAttribute("data-tone", tone ?? "base");
+    expect(header).toHaveStyle({ position: "fixed" });
+    expect(header).toHaveClass(tone === "inverse" ? "text-ink-on-inverse" : "text-ink-primary");
+    expect(landmarks(container).skipLinks).toHaveLength(1);
+    expect(landmarks(container).mains).toHaveLength(1);
+    expect(container.querySelector("main")).toHaveAttribute("id", SITE_MAIN_ID);
+  });
+
+  it.each(["solid", "transparent"] as const)("header %s surface and tone are independent of the footer fallback", surface => {
+    const { container } = render(frame({ ...FRONT_DOOR_SHELL, ground: "base", header: { surface, tone: "inverse" } }, <p>content</p>));
+    const header = container.querySelector("header")!;
+    expect(header).toHaveAttribute("data-surface", surface);
+    expect(header).toHaveClass("text-ink-on-inverse");
+    expect(header.classList.contains("bg-surface-inverse")).toBe(surface === "solid");
+    expect(container.querySelector("footer")).toHaveClass("bg-surface-raised");
+    expect(header).not.toHaveAttribute("data-placement");
+  });
+
+  it("defaults to solid/base independently of the existing footer ground fallback", () => {
+    const omitted = renderToStaticMarkup(frame({ ...FRONT_DOOR_SHELL, ground: "inverse" }, <p>content</p>));
+    expect(renderToStaticMarkup(frame({ ...FRONT_DOOR_SHELL, ground: "inverse", header: {} }, <p>content</p>))).toBe(omitted);
+    expect(omitted).toMatch(/<header[^>]*data-surface="solid"[^>]*data-tone="base"/);
+    expect(omitted).not.toMatch(/<header[^>]*data-placement="overlay"/);
+    expect(omitted).toMatch(/<footer[^>]*bg-surface-inverse/);
+  });
+
+  it.each([
+    [{ unknown: "PAYLOAD-SENTINEL" }, /shell\.header has an unsupported field/],
+    [{ placement: "PAYLOAD-SENTINEL" }, /shell\.header has an unsupported field/],
+    [{ ground: "PAYLOAD-SENTINEL" }, /shell\.header has an unsupported field/],
+    [{ surface: "PAYLOAD-SENTINEL" }, /shell\.header\.surface/],
+    [{ surface: "glass", tone: "PAYLOAD-SENTINEL" }, /shell\.header\.tone/],
+    [{ surface: "solid", tone: "PAYLOAD-SENTINEL" }, /shell\.header\.tone/],
+    [{ surface: "transparent", tone: "PAYLOAD-SENTINEL" }, /shell\.header\.tone/],
+    [null, /shell\.header must be a plain object/],
+    [[], /shell\.header must be a plain object/],
+    ["PAYLOAD-SENTINEL", /shell\.header must be a plain object/],
+  ])("refuses invalid header data without echoing its value: %j", (header, pattern) => {
+    const attempt = () => renderToStaticMarkup(frame({ ...FRONT_DOOR_SHELL, header } as SiteShellInput, <p>content</p>));
+    expect(attempt).toThrow(pattern);
+    expect(attempt).not.toThrow(/PAYLOAD-SENTINEL/);
+  });
+
+  it("siteShellFor passes header to the site surface only", () => {
+    const header = { surface: "glass", tone: "inverse" } as const;
+    const config: SiteFrameConfig = { ...CONFIG, site: { ...CONFIG.site, header } };
+    expect(siteShellFor(config, "site").header).toEqual(header);
+    for (const kind of ["front-door", "admin", "demo"] as const) {
+      expect(siteShellFor(config, kind)).not.toHaveProperty("header");
+    }
+  });
+
+  it.each([
+    ["base", "--color-ink-primary", "--color-surface-base"],
+    ["base", "--color-ink-primary", "--color-surface-sunken"],
+    ["inverse", "--color-ink-on-inverse", "--color-surface-inverse"],
+  ])("overlay tone %s uses a gated contrast pair over %s / %s", (_tone, foreground, background) => {
+    expect(CONTRAST_PAIRS.some(pair => pair.foreground === foreground && pair.background === background && pair.minimumRatio >= 4.5)).toBe(true);
+  });
+
+  it("keeps overlay links fail-closed", () => {
+    const shell = { ...FRONT_DOOR_SHELL, header: { surface: "glass" }, actions: [{ href: "javascript:PAYLOAD-SENTINEL", label: ref("cta.start") }] };
+    const attempt = () => renderToStaticMarkup(frame(shell as SiteShellInput, <p>content</p>));
+    expect(attempt).toThrow(/shell\.actions\[0\]\.href is not an allowed link/);
+    expect(attempt).not.toThrow(/PAYLOAD-SENTINEL/);
+  });
+});
+
+
+it("an omitted header uses the same solid defaults as an empty header", () => {
+  expect(renderToStaticMarkup(frame(FRONT_DOOR_SHELL, <p>content</p>))).toBe(renderToStaticMarkup(frame({ ...FRONT_DOOR_SHELL, header: {} }, <p>content</p>)));
+  const { container } = render(frame(FRONT_DOOR_SHELL, <p>content</p>));
+  expect(container.querySelector("header")).toHaveClass("bg-surface-raised");
+  expect(container.querySelector("header")).not.toHaveClass("site-header-overlay", "site-header-ground-aware");
+  expect(container.querySelector("main")).toHaveAttribute("tabindex", "-1");
+  expect(container.querySelectorAll("main,header,footer")).toHaveLength(3);
+});
+
+describe("SiteFrame chrome parity", () => {
+  const navigation = { label: ref("nav.label"), triggerLabel: ref("cta.start"), links: [{ href: "/docs", label: ref("nav.docs") }] };
+  it("renders one named navigation disclosure and operates its mobile toggle", () => {
+    const { container } = render(frame({ ...FRONT_DOOR_SHELL, nav: navigation, footer: { legal: { entity: ref("legal.entity"), links: [] } } } as SiteShellInput, <p>content</p>));
+    expect(container.querySelectorAll("nav")).toHaveLength(1);
+    const nav = within(container).getByRole("navigation", { name: "Primary" });
+    const toggle = within(nav).getByRole("button", { name: "Get started" });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(nav.querySelectorAll('a[href="https://example.com/docs"]')).toHaveLength(1);
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    fireEvent.keyDown(nav, { key: "Escape" });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(toggle).toHaveFocus();
+  });
+  it("uses resolved navigation copy as the toggle label when no separate reference is supplied", () => {
+    const { container } = render(frame({ ...FRONT_DOOR_SHELL, nav: { label: ref("nav.label"), links: [] } }, <p>content</p>));
+    expect(within(container.querySelector("header")!).getByRole("button", { name: "Primary" })).toHaveAttribute("aria-expanded", "false");
+  });
+  it.each([ref("PAYLOAD-SENTINEL"), ref("blank"), "PAYLOAD-SENTINEL"])("refuses unresolved, blank or literal toggle copy without echoing it", triggerLabel => {
+    const run = () => renderToStaticMarkup(frame({ ...FRONT_DOOR_SHELL, nav: { ...navigation, triggerLabel } } as SiteShellInput, <p>content</p>));
+    expect(run).toThrow(/shell\.nav\.triggerLabel/);
+    expect(run).not.toThrow(/PAYLOAD-SENTINEL/);
+  });
+  it("renders primary and secondary actions with Designer ActionLink styling and no icons", () => {
+    const { container } = render(frame(siteShellFor(CONFIG, "site"), <p>content</p>));
+    for (const href of ["/start", "https://app.example.com/"]) {
+      const action = container.querySelector(`header a[href="${href}"]`)!;
+      expect(action).toHaveClass("rounded-control", "justify-center");
+      expect(action.querySelector("svg")).toBeNull();
+      expect(action.querySelector(".sr-only")).toBeNull();
+    }
+  });
+  it("paints an inverse footer independently of a base header", () => {
+    const { container } = render(frame({ ...FRONT_DOOR_SHELL, ground: "base", header: { surface: "solid" }, footer: { ...FRONT_DOOR_SHELL.footer!, ground: "inverse" } } as SiteShellInput, <p>content</p>));
+    expect(container.querySelector("header")).toHaveClass("bg-surface-raised");
+    expect(container.querySelector("footer")).toHaveClass("bg-surface-inverse");
+  });
+  it("defaults footer ground to shell ground even with a different reserved header ground", () => {
+    const { container } = render(frame({ ...FRONT_DOOR_SHELL, ground: "inverse", header: { surface: "solid", tone: "base" } }, <p>content</p>));
+    expect(container.querySelector("header")).toHaveClass("bg-surface-raised");
+    expect(container.querySelector("footer")).toHaveClass("bg-surface-inverse");
+  });
+  it("refuses an invalid footer ground without echoing it", () => {
+    const run = () => renderToStaticMarkup(frame({ ...FRONT_DOOR_SHELL, footer: { ...FRONT_DOOR_SHELL.footer!, ground: "PAYLOAD-SENTINEL" } } as SiteShellInput, <p>content</p>));
+    expect(run).toThrow(/shell\.footer\.ground/);
+    expect(run).not.toThrow(/PAYLOAD-SENTINEL/);
+  });
+});
+
+
+function overlayHero() {
+  return <LandingView document={{ id: "home", resolutions: [resolveCopy(ref("brand.label"))!], sections: [{ id: "hero", kind: "hero", ground: "inverse", heading: "Welcome" }] }} fit="frame" landmark="none" />;
+}
+
+it("keeps overlay legal links keyboard reachable and pointer operable", async () => {
+  const shell = { ...FRONT_DOOR_SHELL, header: { surface: "glass", tone: "inverse" }, environments: [], footer: { placement: "overlay", legal: { ...CONFIG.legal, linksLabel: undefined } } } as SiteShellInput;
+  const user = userEvent.setup();
+  const { container } = render(frame(shell, overlayHero()));
+  const footer = within(container).getByRole("contentinfo");
+  const privacy = within(footer).getByRole("link", { name: "Privacy" });
+  const terms = within(footer).getByRole("link", { name: "Terms" });
+  expect(footer.parentElement).toHaveStyle({ pointerEvents: "none" });
+  expect(footer).toHaveStyle({ pointerEvents: "auto" });
+  await user.tab(); // skip link
+  await user.tab(); // brand
+  await user.tab();
+  expect(privacy).toHaveFocus();
+  await user.tab();
+  expect(terms).toHaveFocus();
+  await user.tab();
+  expect(within(footer).getByRole("link", { name: "Example home" })).toHaveFocus();
+  await user.tab();
+  expect(footer.contains(document.activeElement)).toBe(false);
+  const activate = vi.fn((event: Event) => event.preventDefault());
+  privacy.addEventListener("click", activate);
+  await user.click(privacy);
+  expect(activate).toHaveBeenCalledTimes(1);
+  expect(privacy).toHaveFocus();
+});
+
+
+it.each(["--color-ink-on-inverse", "--color-ink-on-inverse-muted"])("backs overlay footer %s with a gated opaque inverse pair", foreground => {
+  expect(CONTRAST_PAIRS.some(pair => pair.foreground === foreground && pair.background === "--color-surface-inverse" && pair.minimumRatio >= 4.5)).toBe(true);
+});
+
+
+it("keeps a tall overlay footer safely aligned without clipping its tab stops", async () => {
+  const links = Array.from({ length: 30 }, (_, index) => ({ href: `/legal-${index}`, label: ref("legal.privacy") }));
+  // Beyond the five-link flat row, the other twenty-five links arrive as labelled columns.
+  const columns = Array.from({ length: 5 }, (_, column) => ({ heading: ref("footer.company"), links: links.slice(column * 5, column * 5 + 5) }));
+  const shell: SiteShellInput = { ...FRONT_DOOR_SHELL, header: { surface: "glass", tone: "inverse" }, environments: [], footer: { placement: "overlay", columns, legal: { entity: ref("legal.entity"), links: links.slice(25) } } };
+  const user = userEvent.setup();
+  const { container } = render(frame(shell, overlayHero()));
+  const footer = within(container).getByRole("contentinfo");
+  const legalLinks = within(footer).getAllByRole("link", { name: "Privacy" });
+  expect(legalLinks).toHaveLength(30);
+  expect(footer.parentElement?.style.flexDirection).toBe("column");
+  expect(footer.style.marginBlockStart).toBe("auto");
+  expect(footer.style.minWidth).toBe("0");
+  expect(footer.parentElement?.style.overflow).toBe("");
+  expect(footer.style.overflow).toBe("");
+  await user.tab(); // skip link
+  await user.tab(); // brand
+  for (const link of legalLinks) {
+    await user.tab();
+    expect(link).toHaveFocus();
+  }
+  await user.tab();
+  expect(within(footer).getByRole("link", { name: "Example home" })).toHaveFocus();
+  await user.tab();
+  expect(footer.contains(document.activeElement)).toBe(false);
+});
+
+describe("HEADER-1 finite content contract", () => {
+  const base: SiteShellInput = { brand: CONFIG.brand, skipLink: ref("skip") };
+  const link = { href: "/docs", label: ref("nav.docs") };
+  const read = (shell: SiteShellInput) => resolveShell(shell, resolveCopy, resolveAsset);
+  it("accepts zero through five links, refusing the sixth", () => {
+    for (let count = 0; count <= 5; count++) expect(read({ ...base, nav: { label: ref("nav.label"), links: Array(count).fill(link) } }).nav?.links).toHaveLength(count);
+    expect(() => read({ ...base, nav: { label: ref("nav.label"), links: Array(6).fill(link) } })).toThrow(/five|5/);
+  });
+  it("accepts zero through three distinct actions and rejects the fourth and duplicates", () => {
+    const actions = ["secondary", "ghost", "primary"].map(emphasis => ({ ...link, emphasis, icon: ICON })) as SiteShellInput["actions"];
+    for (let count = 0; count <= 3; count++) expect(read({ ...base, actions: actions!.slice(0, count) }).actions).toHaveLength(count);
+    expect(() => read({ ...base, actions: [...actions!, { ...link, icon: ICON, emphasis: "primary" }] })).toThrow(/three|3/);
+    expect(() => read({ ...base, actions: [{ ...link, emphasis: "secondary" }, { ...link, emphasis: "secondary" }] })).toThrow(/distinct|duplicate/);
+  });
+  it("requires a supplied primary icon and label, retaining no-primary and brand union inputs", () => {
+    expect(() => read({ ...base, actions: [{ ...link, emphasis: "primary" }] })).toThrow(/icon/);
+    expect(() => read({ ...base, actions: [{ ...link, label: ref("blank"), emphasis: "primary", icon: ICON }] })).toThrow(/label/);
+    expect(read({ ...base, actions: [{ ...link, emphasis: "ghost" }] }).actions[0]?.emphasis).toBe("ghost");
+    expect(read({ ...base, brand: { assetId: "brand-mark", variant: "mark", size: "md", label: ref("brand.label") } }).brand.wordmark).toBeUndefined();
+    expect(read(base).brand.wordmark).toBe("Example");
+  });
+  it("marks the configured current navigation page without guessing a route", () => {
+    const { container } = render(frame({ ...base, nav: { label: ref("nav.label"), links: [{ ...link, isCurrent: true }] } }, <h1>Content</h1>));
+    expect(container.querySelector('nav a[href="/docs"]')).toHaveAttribute("aria-current", "page");
+  });
+});
+
+it("HEADER-1 renders flat presentation settings through the shared normalizer", () => {
+  const props = { shell: { brand: CONFIG.brand, skipLink: ref("skip") }, resolveCopy, resolveAsset };
+  const { container } = render(<SiteFrame {...props} presentation={{ headerSurface: "glass", headerTone: "inverse" }}><h1>Owned by the View</h1></SiteFrame>);
+  const header = container.querySelector("header")!;
+  expect(header).toHaveAttribute("data-tone", "inverse");
+  expect(header).toHaveAttribute("data-placement", "overlay");
+  expect(header).toHaveClass("site-header-contract");
+  expect(container.querySelectorAll("main")).toHaveLength(1);
+  expect(container.querySelectorAll(`#${SITE_MAIN_ID}`)).toHaveLength(1);
+  expect(container.querySelector("main")).toHaveAttribute("tabindex", "-1");
+  expect(container.firstElementChild).toHaveClass("min-h-dvh", "flex-col");
+  expect(container.querySelector("main")).toHaveClass("flex-1");
+  expect(renderToStaticMarkup(<SiteFrame {...props} presentation={{ headerSurface: "solid", headerTone: "inverse" }}><p>Content</p></SiteFrame>)).toContain('data-surface="solid" data-tone="inverse"');
+  expect(renderToStaticMarkup(<SiteFrame {...props} presentation={{ headerTone: "inverse" }}><p>Content</p></SiteFrame>)).toContain('data-surface="solid"');
+});
+
+
+it("HEADER-1 normalizes implicit legacy controls into distinct finite variants, and counts every interactive slot", () => {
+  const base: SiteShellInput = { brand: CONFIG.brand, skipLink: ref("skip") };
+  const link = { href: "/docs", label: ref("nav.docs") };
+  const resolved = resolveShell({ ...base, actions: [link, link] }, resolveCopy, resolveAsset);
+  expect(resolved.headerActions.map(action => action.emphasis)).toEqual(["ghost", "secondary"]);
+  expect(() => resolveShell({ ...base, actions: [link, link, { ...link, icon: ICON }], environments: [{ ...link, icon: ICON }] }, resolveCopy, resolveAsset)).toThrow(/three/);
+  const { container } = render(frame({ ...base, actions: [link, link] }, <p>Content</p>));
+  expect(container.querySelectorAll('header a[href="/docs"]')).toHaveLength(2);
+  expect(container.querySelector('header nav')).toHaveAttribute("aria-label", "Primary");
+  expect(container.querySelector('header button')).toHaveAttribute("aria-label", "Menu");
+});
+
+describe("HEADER-1 navigation defaults resolve through the consumer's copy", () => {
+  const base: SiteShellInput = { brand: CONFIG.brand, skipLink: ref("skip") };
+  const link = { href: "/docs", label: ref("nav.docs") };
+  const LOCALIZED: Readonly<Record<string, string>> = { "site-frame.nav.label": "Navegación", "site-frame.nav.trigger-label": "Menú" };
+  const localized = (requested: string[]): CopyResolver => (copyRef) => {
+    requested.push(copyRef.id);
+    const text = LOCALIZED[copyRef.id];
+    return text === undefined ? resolveCopy(copyRef) : { ...resolveCopy(ref("skip"))!, ref: copyRef, text, entryId: copyRef.id, recordId: `record-${copyRef.id}` };
+  };
+
+  it("names the fallback navigation and its toggle from the default copy references", () => {
+    const requested: string[] = [];
+    const resolved = resolveShell({ ...base, actions: [link] }, localized(requested), resolveAsset);
+    expect(resolved.nav).toEqual({ label: "Navegación", triggerLabel: "Menú", links: [] });
+    expect(requested).toEqual(expect.arrayContaining(["site-frame.nav.label", "site-frame.nav.trigger-label"]));
+    const { container } = render(<SiteFrame shell={{ ...base, actions: [link] }} resolveCopy={localized([])} resolveAsset={resolveAsset}><p>Content</p></SiteFrame>);
+    const header = container.querySelector("header")!;
+    expect(within(header).getByRole("navigation", { name: "Navegación" })).toBeInTheDocument();
+    expect(within(header).getByRole("button", { name: "Menú" })).toHaveAttribute("aria-label", "Menú");
+    expect(header.textContent).not.toMatch(/Primary|Menu\b/);
+  });
+
+  it("fails closed, naming the default copy id, when the consumer cannot resolve it", () => {
+    const missingLabel: CopyResolver = (copyRef) => (copyRef.id.startsWith("site-frame.") ? undefined : resolveCopy(copyRef));
+    const missingTrigger: CopyResolver = (copyRef) => (copyRef.id === "site-frame.nav.trigger-label" ? undefined : localized([])(copyRef));
+    expect(() => resolveShell({ ...base, actions: [link] }, missingLabel, resolveAsset)).toThrow(/SiteFrame: .*site-frame\.nav\.label.* did not resolve to copy/);
+    expect(() => resolveShell({ ...base, actions: [link] }, missingTrigger, resolveAsset)).toThrow(/SiteFrame: .*site-frame\.nav\.trigger-label.* did not resolve to copy/);
+  });
+
+  it("asks for no default copy when the shell supplies navigation or has no header actions", () => {
+    for (const shell of [base, { ...base, nav: { label: ref("nav.label"), links: [] }, actions: [link] }] as SiteShellInput[]) {
+      const requested: string[] = [];
+      resolveShell(shell, localized(requested), resolveAsset);
+      expect(requested.filter(id => id.startsWith("site-frame."))).toEqual([]);
+    }
+    expect(resolveShell(base, localized([]), resolveAsset).nav).toBeUndefined();
+  });
+});
+
+it("HEADER-1 composes an optional real host notice and returns focus to the live menu opener", async () => {
+  const { ConsentExperience } = await import("../consent/ConsentExperience.client.js");
+  const { NO_DECISION_VIEW } = await import("../consent/ports.js");
+  const field = (text: string) => ({ text, recordId: "notice", entryId: text, revision: "1", locale: "en" });
+  const copy = { title: field("Privacy choices"), promptLead: field("Choose"), noticeLead: field("Notice"), acceptLabel: field("Accept"), rejectLabel: field("Reject"), privacyLinkLabel: field("Policy"), status: Object.fromEntries(["memoryOnly", "withdrawalFailed", "evidenceUnavailable", "evidenceConflict", "storageUnavailable", "gpcInForce"].map(key => [key, field(key)])) } as import("../../consent-copy/types.js").ResolvedConsentCopy;
+  const snapshot = { ...NO_DECISION_VIEW, effective: "granted" as const, allowed: true, persistence: "stored" as const };
+  const lifecycle = { getSnapshot: () => snapshot, subscribe: () => () => {}, grant: () => snapshot, refuse: () => snapshot, refresh: () => snapshot, dispose() {} };
+  const shell = { ...FRONT_DOOR_SHELL, environments: [], nav: { label: ref("nav.label"), links: [{ href: "#privacy-choices", label: ref("nav.docs") }] } };
+  const bare = render(frame(shell, <h1>View heading</h1>));
+  expect(bare.container.querySelector("[data-consent-banner]")).toBeNull();
+  bare.unmount();
+  const view = render(<ConsentExperience copy={copy} createLifecycle={() => lifecycle} reviewSeam={false}>{frame(shell, <h1>View heading</h1>)}</ConsentExperience>);
+  const toggle = view.getByRole("button", { name: "Primary" });
+  fireEvent.click(toggle);
+  const opener = view.getByRole("link", { name: "Docs" });
+  act(() => opener.focus());
+  act(() => document.dispatchEvent(new Event("privacy-choices:open")));
+  const notice = view.container.querySelector("[data-consent-banner]")!;
+  expect(notice).toHaveFocus();
+  expect(toggle).toHaveAttribute("aria-expanded", "true");
+  expect(opener.closest(".nav-disclosure-panel")).not.toHaveAttribute("inert");
+  fireEvent.keyDown(notice, { key: "Escape" });
+  expect(view.container.querySelector("[data-consent-banner]")).toBeNull();
+  expect(opener).toHaveFocus();
+  expect(opener.closest(".nav-disclosure-panel")).not.toHaveAttribute("inert");
+  expect(document.body.style.overflow).toBe("");
+  fireEvent.keyDown(opener, { key: "Escape" });
+  expect(toggle).toHaveFocus();
+  expect(opener.closest(".nav-disclosure-panel")).toHaveAttribute("inert");
+});
+
+
+it("retains the current environment indication on the lite header's direct ghost icon", () => {
+  const { container } = render(frame(siteShellFor(CONFIG, "demo"), <h1>Demo view</h1>));
+  const mobile = within(container.querySelector("header")!).getByRole("link", { name: "Demo" });
+  expect(mobile).not.toHaveAttribute("data-header-primary");
+  expect(mobile).toHaveAttribute("aria-current", "true");
+  expect(mobile).toHaveTextContent("Demo");
+  expect(mobile.style.boxShadow).toContain("inset");
+});
+
+it("composes the mandatory dark footer with a resolved home after named social icons", () => {
+  const shell: SiteShellInput = { brand: CONFIG.brand, skipLink: CONFIG.skipLink, origin: CONFIG.origin,
+    header: { surface: "glass", tone: "inverse" },
+    footer: { legal: CONFIG.legal, social: { label: ref("social.label"), links: [{ href: "https://example.org/profile", label: ref("social.profile"), icon: ICON }] } } };
+  const { container } = render(<SiteFrame shell={shell} presentation={{ footerRule: "top" }} resolveCopy={resolveCopy} resolveAsset={resolveAsset}><p>Content</p></SiteFrame>);
+  const footer = container.querySelector("footer")!;
+  expect(footer).toHaveClass("site-footer-dark");
+  expect([...footer.querySelectorAll("[data-footer-region]")].map(node => node.getAttribute("data-footer-region"))).toEqual(["links", "icons", "copyright"]);
+  const icons = footer.querySelector('[data-footer-region="icons"]')!;
+  expect([...icons.querySelectorAll("a")].map(node => node.getAttribute("aria-label"))).toEqual(["Profile", "Example home"]);
+  expect(icons.querySelector("a")).toHaveAttribute("rel", "noopener noreferrer");
+  expect(icons.querySelector("a:last-child img") ?? icons.querySelector("img")).toHaveAttribute("src", BRAND_ASSET.src);
+  expect(icons.querySelectorAll("a")[1]).toHaveAttribute("href", "https://example.com/");
+  expect(container.querySelector("header")).toHaveAttribute("data-tone", "inverse");
+  expect(footer.querySelector("button")).toBeNull();
+});
+
+it("keeps the real default home with empty footer links and socials", () => {
+  const { container } = render(frame({ brand: CONFIG.brand, skipLink: CONFIG.skipLink, footer: { legal: { entity: CONFIG.legal.entity, links: [] } } }, <p>Content</p>));
+  const links = container.querySelectorAll("footer a");
+  expect(links).toHaveLength(1);
+  expect(links[0]).toHaveAttribute("aria-label", "Example home");
+  expect(links[0]).toHaveAttribute("href", "/");
+});
+
+it("takes the footer mark from shell.brand alone, refusing footer-specific art or a second brand input", () => {
+  const base: SiteShellInput = { brand: CONFIG.brand, skipLink: CONFIG.skipLink, footer: { legal: CONFIG.legal } };
+  expect(resolveShell(base, resolveCopy, resolveAsset).footer!.home).toEqual({ href: "/", label: "Example home", markSrc: BRAND_ASSET.src });
+  for (const [key, value] of [["home", { assetId: "brand-mark" }], ["home", { assetId: "brand-mark", href: "/home", label: ref("brand.label") }], ["brand", CONFIG.brand], ["mark", "brand-mark"]] as const) {
+    const call = () => resolveShell({ ...base, footer: { ...base.footer!, [key]: value } } as SiteShellInput, resolveCopy, resolveAsset);
+    expect(call).toThrow(`SiteFrame: shell.footer has an unsupported field "${key}".`);
+  }
+});
+
+describe("FOOTER-2 footer configuration contract", () => {
+  type Footer = NonNullable<SiteShellInput["footer"]>;
+  const base: SiteShellInput = { brand: CONFIG.brand, skipLink: CONFIG.skipLink, origin: CONFIG.origin, nav: CONFIG.site!.nav, footer: { legal: { entity: ref("legal.entity"), links: [] } } };
+  const pages = (prefix: string, count: number) => Array.from({ length: count }, (_, index) => ({ href: `/${prefix}-${index}`, label: ref("footer.help") }));
+  const profiles = (count: number) => Array.from({ length: count }, (_, index) => ({ href: `https://example.org/profile-${index}`, label: ref("social.profile"), icon: ICON }));
+  const withFooter = (footer: Partial<Footer>): SiteShellInput => ({ ...base, footer: { ...base.footer!, ...footer } as Footer });
+  const refusal = (shell: SiteShellInput, code: string, hidden?: string) => {
+    let caught: unknown;
+    try { resolveShell(shell, resolveCopy, resolveAsset); } catch (error) { caught = error; }
+    expect(caught).toBeInstanceOf(SiteFooterContractError);
+    expect(caught).toMatchObject({ name: "SiteFooterContractError", code });
+    expect((caught as Error).message).toMatch(/^SiteFrame: shell\.footer\./);
+    if (hidden !== undefined) expect((caught as Error).message).not.toContain(hidden);
+    // Rendering refuses the same input; nothing is truncated into a partial footer.
+    expect(() => renderToStaticMarkup(frame(shell, <p>content</p>))).toThrow(SiteFooterContractError);
+  };
+
+  it("renders five flat links, ungrouped then legal, in one row", () => {
+    const { getByRole } = render(frame(withFooter({ links: pages("page", 3), legal: { entity: ref("legal.entity"), links: pages("legal", 2) } }), <p>content</p>));
+    const region = getByRole("contentinfo").querySelector('[data-footer-region="links"]')!;
+    expect(region.querySelectorAll("ul")).toHaveLength(1);
+    expect([...region.querySelectorAll("li > a")].map(link => new URL(link.getAttribute("href")!).pathname)).toEqual(["/page-0", "/page-1", "/page-2", "/legal-0", "/legal-1"]);
+    expect(FOOTER_LINK_LIMIT).toBe(5);
+  });
+
+  it.each([
+    ["six ungrouped links", { links: pages("page", 6) }],
+    ["four ungrouped and two legal links", { links: pages("page", 4), legal: { entity: ref("legal.entity"), links: pages("legal", 2) } }],
+    ["six legal links", { legal: { entity: ref("legal.entity"), links: pages("legal", 6) } }],
+  ] as const)("refuses %s with the named link-limit error instead of truncating", (_name, footer) => {
+    refusal(withFooter(footer as Partial<Footer>), "footer-link-limit");
+  });
+
+  it("groups links beyond five into labelled columns outside the flat row", () => {
+    const columns = [{ heading: ref("footer.company"), links: pages("company", 4) }, { heading: ref("footer.about"), links: pages("about", 3) }];
+    const { getByRole } = render(frame(withFooter({ links: pages("page", 5), columns }), <p>content</p>));
+    const footer = getByRole("contentinfo");
+    const headings = within(footer).getAllByRole("heading", { level: 2 });
+    expect(headings.map(heading => heading.textContent)).toEqual(["Company", "About"]);
+    const paths = (root: Element) => [...root.querySelectorAll("a")].map(link => new URL(link.getAttribute("href")!).pathname);
+    expect(paths(headings[0]!.parentElement!)).toEqual(["/company-0", "/company-1", "/company-2", "/company-3"]);
+    expect(paths(headings[1]!.parentElement!)).toEqual(["/about-0", "/about-1", "/about-2"]);
+    const row = footer.querySelector('[data-footer-region="links"]')!;
+    expect(row.querySelectorAll("li")).toHaveLength(5);
+    expect(paths(row).some(path => /^\/(company|about)-/.test(path))).toBe(false);
+  });
+
+  it("renders up to four social icons with the resolved brand mark as the fifth and last slot", () => {
+    const { getByRole } = render(frame(withFooter({ social: { label: ref("social.label"), links: profiles(4) } }), <p>content</p>));
+    const anchors = [...getByRole("contentinfo").querySelectorAll('[data-footer-region="icons"] a')];
+    expect(anchors).toHaveLength(FOOTER_ICON_LIMIT);
+    expect(anchors.map(anchor => anchor.getAttribute("aria-label"))).toEqual(["Profile", "Profile", "Profile", "Profile", "Example home"]);
+    const mark = anchors.at(-1)!;
+    // Decorative art with an accessible name, the same name the header brand link carries.
+    expect(mark).toHaveAttribute("href", "https://example.com/");
+    expect(mark.querySelector("img")).toHaveAttribute("src", BRAND_ASSET.src);
+    expect(mark.querySelector("img")).toHaveAttribute("alt", "");
+    expect(within(getByRole("banner")).getByRole("link", { name: "Example home" })).toHaveAttribute("aria-label", mark.getAttribute("aria-label"));
+    expect(anchors.slice(0, -1).some(anchor => anchor.querySelector("img"))).toBe(false);
+  });
+
+  it("refuses a fifth social icon because the brand mark always takes the last slot", () => {
+    refusal(withFooter({ social: { links: profiles(5) } }), "footer-icon-limit");
+  });
+
+  it("draws the footer mark from the same shell.brand input as the header", () => {
+    const art = { ...BRAND_ASSET, src: "/brand/other.svg" };
+    const assets = (assetId: string): unknown => (assetId === "other-mark" ? art : undefined);
+    const shell = withFooter({});
+    const { getByRole } = render(<SiteFrame shell={{ ...shell, brand: { ...CONFIG.brand, assetId: "other-mark" } }} resolveCopy={resolveCopy} resolveAsset={assets}><p>content</p></SiteFrame>);
+    const icons = getByRole("contentinfo").querySelectorAll('[data-footer-region="icons"] a');
+    expect(icons).toHaveLength(1);
+    expect(icons[0]!.querySelector("img")).toHaveAttribute("src", art.src);
+  });
+
+  it.each([
+    ["an ungrouped link", "/pricing", (href: string) => ({ links: [{ href, label: ref("footer.help") }] })],
+    ["a legal link", "/docs", (href: string) => ({ legal: { entity: ref("legal.entity"), links: [{ href, label: ref("legal.terms") }] } })],
+    ["a column link", "/pricing", (href: string) => ({ columns: [{ heading: ref("footer.company"), links: [{ href, label: ref("footer.about") }] }] })],
+    ["a social icon", "/docs", (href: string) => ({ social: { links: [{ href, label: ref("social.profile"), icon: ICON }] } })],
+    ["an absolute header destination", "https://example.com/pricing", (href: string) => ({ links: [{ href, label: ref("footer.help") }] })],
+    ["the home destination", "/", (href: string) => ({ links: [{ href, label: ref("footer.help") }] })],
+    ["the absolute home destination", "https://example.com/", (href: string) => ({ legal: { entity: ref("legal.entity"), links: [{ href, label: ref("legal.terms") }] } })],
+  ] as const)("refuses %s that repeats home or header navigation, without echoing it", (_name, href, footer) => {
+    refusal(withFooter(footer(href) as Partial<Footer>), "footer-duplicate-link", href === "/" ? undefined : href);
+  });
+
+  it("allows a destination the header does not navigate to", () => {
+    const shell = { ...withFooter({ links: [{ href: "/pricing", label: ref("footer.help") }] }), nav: undefined };
+    expect(resolveShell(shell, resolveCopy, resolveAsset).footer!.links.map(link => link.href)).toEqual(["https://example.com/pricing"]);
+  });
+
+  it.each([
+    ["an ungrouped link", "#privacy-choices", (href: string) => ({ links: [{ href, label: ref("footer.help") }] })],
+    ["a legal link", "/privacy#privacy-choices", (href: string) => ({ legal: { entity: ref("legal.entity"), links: [{ href, label: ref("legal.privacy") }] } })],
+    ["a column link", "https://example.com/privacy#privacy-choices", (href: string) => ({ columns: [{ heading: ref("footer.company"), links: [{ href, label: ref("footer.about") }] }] })],
+    ["a social icon", "#privacy-choices", (href: string) => ({ social: { links: [{ href, label: ref("social.profile"), icon: ICON }] } })],
+  ] as const)("refuses the privacy-choices reopen control in %s", (_name, href, footer) => {
+    refusal(withFooter(footer(href) as Partial<Footer>), "footer-privacy-choices", "privacy-choices\"");
+  });
+
+  it("keeps the privacy policy link while rendering no reopen control or button", () => {
+    const { getByRole } = render(frame(withFooter({ legal: CONFIG.legal }), <p>content</p>));
+    const footer = getByRole("contentinfo");
+    expect(within(footer).getByRole("link", { name: "Privacy" })).toHaveAttribute("href", "https://example.com/privacy");
+    expect(footer.querySelector("button, [href*='#privacy-choices']")).toBeNull();
+  });
+});
+
+function shippedUtilityToken(utility: string, property: string): string {
+  const css = readFileSync(join(import.meta.dirname, "../../../../designer/styles/compiled.css"), "utf8");
+  const start = css.indexOf(`.${utility.replaceAll(":", "\\:")}`);
+  expect(start).toBeGreaterThanOrEqual(0);
+  const body = css.slice(css.indexOf("{", start) + 1, css.indexOf("}", start));
+  const declaration = body.match(new RegExp(`(?:^|\\s)${property}:\\s*var\\((--[\\w-]+)`));
+  expect(declaration).not.toBeNull();
+  return declaration![1]!;
+}
+
+it.each(["light", "dark"] as const)("keeps inverse environment-only links readable in the %s theme", theme => {
+  const css = readFileSync(join(import.meta.dirname, "../../../../designer/styles/tokens.css"), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+  const block = css.match(theme === "light" ? /:root\s*\{[^}]*\}/ : /:root\[data-theme="dark"\]\s*\{[^}]*\}/);
+  expect(block).not.toBeNull();
+  const values = parseBrandDeclarations(block![0]).declarations;
+  const surface = values["--color-surface-inverse"]!;
+  for (const kind of ["front-door", "admin", "demo"] as const) {
+    for (const header of [{ surface: "solid", tone: "inverse" }, { surface: "glass", tone: "inverse" }] as const) {
+      const view = render(frame({ ...siteShellFor(CONFIG, kind), header }, <p>content</p>));
+      const link = view.container.querySelector<HTMLAnchorElement>('header a[aria-current="true"]')!;
+      const ink = [...link.classList].filter(value => value.startsWith("text-ink-"));
+      const hover = [...link.classList].filter(value => value.startsWith("hover:bg-"));
+      expect(ink).toHaveLength(1);
+      expect(hover).toHaveLength(1);
+      const foreground = values[shippedUtilityToken(ink[0]!, "color")]!;
+      const hoveredSurface = values[shippedUtilityToken(hover[0]!, "background-color")]!;
+      expect(contrastRatio(foreground, surface)).toBeGreaterThanOrEqual(4.5);
+      expect(contrastRatio(foreground, hoveredSurface, surface)).toBeGreaterThanOrEqual(4.5);
+      expect(link).toHaveClass("text-ink-on-inverse", "hover:text-ink-on-inverse", "focus-visible:text-ink-on-inverse", "hover:bg-control-tonal-inverse-hover", "focus-visible:outline-ink-on-inverse");
+      expect(link).not.toHaveClass("text-ink-primary");
+      expect(link).not.toHaveClass("hover:bg-surface-sunken");
+      expect(link).not.toHaveClass("focus-visible:outline-accent");
+      expect(link.querySelector("svg")).toHaveAttribute("stroke", "currentColor");
+      expect(link.querySelector<SVGElement>("svg")!.style.color).toBe("");
+      expect(link.querySelector("span")).toHaveTextContent(kind === "front-door" ? "App" : kind === "admin" ? "Admin" : "Demo");
+      expect(link.style.boxShadow).toContain("currentColor");
+      const focus = values[shippedUtilityToken("focus-visible:outline-ink-on-inverse", "outline-color")]!;
+      expect(contrastRatio(focus, surface)).toBeGreaterThanOrEqual(3);
+      view.unmount();
+    }
+  }
+});
+
+describe("SiteFrame automatic ground glass", () => {
+  const bare: SiteShellInput = { brand: CONFIG.brand, skipLink: CONFIG.skipLink };
+  const overlay = { ...bare, header: { surface: "glass", tone: "base" } } as const;
+
+  async function scene(run: (controls: { visible: (ground: string) => void; darkOS: () => void }) => void | Promise<void>) {
+    const theme = document.documentElement.getAttribute("data-theme");
+    const scheme = document.documentElement.style.colorScheme;
+    let visible = "dark", osDark = false;
+    const mediaListeners = new Set<() => void>();
+    document.documentElement.setAttribute("data-theme", "light");
+    window.localStorage.removeItem("glass-2275-theme");
+    vi.stubGlobal("matchMedia", (query: string) => ({
+      media: query,
+      get matches() { return query === "(prefers-color-scheme: dark)" && osDark; },
+      addEventListener: (_event: string, listener: () => void) => { mediaListeners.add(listener); },
+      removeEventListener: (_event: string, listener: () => void) => { mediaListeners.delete(listener); },
+    }));
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function (this: HTMLElement) {
+      if (this.tagName === "HEADER") return new DOMRect(0, 0, 1280, 64);
+      const ground = this.getAttribute("data-ground") ?? this.getAttribute("data-landing-ground");
+      return ground === null ? new DOMRect() : new DOMRect(0, ground === visible || visible === "*" ? -100 : 1000, 1280, 1000);
+    });
+    try {
+      await run({ visible: ground => { visible = ground; }, darkOS: () => { osDark = true; mediaListeners.forEach(listener => listener()); } });
+    } finally {
+      cleanup();
+      vi.restoreAllMocks();
+      vi.unstubAllGlobals();
+      if (theme === null) document.documentElement.removeAttribute("data-theme");
+      else document.documentElement.setAttribute("data-theme", theme);
+      document.documentElement.style.colorScheme = scheme;
+      window.localStorage.removeItem("glass-2275-theme");
+    }
+  }
+
+  it.each(SITE_SURFACE_KINDS)("starts explicit %s glass headers in the CSS overlay without JavaScript", kind => {
+    const html = renderToStaticMarkup(frame({ ...siteShellFor(CONFIG, kind), header: { surface: "glass" } }, <h1>View</h1>));
+    expect(html).toMatch(/<header[^>]*data-placement="overlay"/);
+    expect(html).toContain("site-header-overlay");
+    expect(html).toContain("site-header-ground-aware");
+    expect(html).not.toMatch(/<header[^>]*bg-surface-raised/);
+  });
+
+  it.each([
+    ["light", "dark", "inverse"], ["dark", "dark", "base"],
+    ["light", "light", "base"], ["dark", "light", "inverse"],
+  ] as const)("matches physical %s-theme / %s-ground ink to its glass", (theme, ground, tone) => scene(({ visible }) => {
+    document.documentElement.setAttribute("data-theme", theme);
+    visible(ground);
+    const { container } = render(frame(overlay, <section data-ground={ground}><h1>View</h1></section>));
+    const header = container.querySelector("header")!;
+    expect(header).toHaveAttribute("data-tone", tone);
+    expect(within(header).getByRole("link", { name: "Example home" })).toHaveClass("text-inherit");
+  }));
+
+  it.each(["base", "inverse"] as const)("recognizes the shipped %s landing ground", ground => scene(({ visible }) => {
+    visible(ground);
+    const { container } = render(frame(overlay, <section data-landing-ground={ground}><h1>View</h1></section>));
+    expect(container.querySelector("header")).toHaveAttribute("data-tone", ground);
+  }));
+
+  it("uses page-theme ink when no ground is declared, rather than retaining the SSR hint", () => scene(() => {
+    const { container } = render(frame({ ...bare, header: { surface: "glass", tone: "inverse" } }, <h1>View</h1>));
+    expect(container.querySelector("header")).toHaveAttribute("data-tone", "base");
+  }));
+
+  it("follows the real theme toggle through light, dark and system", () => scene(async () => {
+    const user = userEvent.setup();
+    const { container } = render(<ThemeProvider storageKey="glass-2275-theme" defaultPreference="light">
+      {frame(overlay, <section data-ground="dark"><h1>View</h1><ThemeToggle /></section>)}
+    </ThemeProvider>);
+    const header = container.querySelector("header")!;
+    expect(header).toHaveAttribute("data-tone", "inverse");
+    await user.click(within(container).getByRole("button", { name: /^Theme: Light/ }));
+    await waitFor(() => expect(header).toHaveAttribute("data-tone", "base"));
+    expect(document.documentElement).toHaveAttribute("data-theme", "dark");
+    await user.click(within(container).getByRole("button", { name: /^Theme: Dark/ }));
+    await waitFor(() => expect(header).toHaveAttribute("data-tone", "inverse"));
+    expect(document.documentElement).not.toHaveAttribute("data-theme");
+  }));
+
+  it("tracks the OS register when the page follows system", () => scene(async ({ darkOS }) => {
+    document.documentElement.removeAttribute("data-theme");
+    const { container } = render(frame(overlay, <section data-ground="dark"><h1>View</h1></section>));
+    const header = container.querySelector("header")!;
+    expect(header).toHaveAttribute("data-tone", "inverse");
+    act(darkOS);
+    await waitFor(() => expect(header).toHaveAttribute("data-tone", "base"));
+  }));
+
+  it("changes tone as sections pass the header and restores it on return", () => scene(async ({ visible }) => {
+    const { container } = render(frame(overlay, <><section data-ground="dark"><h1>View</h1></section><section data-ground="light"><h2>Details</h2></section></>));
+    const header = container.querySelector("header")!;
+    expect(header).toHaveAttribute("data-tone", "inverse");
+    visible("light"); fireEvent.scroll(window);
+    await waitFor(() => expect(header).toHaveAttribute("data-tone", "base"));
+    visible("dark"); fireEvent.scroll(window);
+    await waitFor(() => expect(header).toHaveAttribute("data-tone", "inverse"));
+  }));
+
+  it("leaves solid chrome outside ground observation", () => scene(() => {
+    const { container } = render(frame({ ...bare, header: { surface: "solid", tone: "inverse" } }, <section data-ground="light"><h1>View</h1></section>));
+    const header = container.querySelector("header")!;
+    expect(header).not.toHaveAttribute("data-placement");
+    expect(header).toHaveAttribute("data-tone", "inverse");
+    expect(header).not.toHaveClass("site-header-ground-aware");
+    expect(header).toHaveClass("bg-surface-inverse");
+  }));
+
+  it("uses the innermost declared ground and ignores declarations outside this frame", () => scene(({ visible }) => {
+    visible("*");
+    const { container } = render(<>
+      {frame(overlay, <section data-ground="dark"><div data-ground="light"><h1>View</h1></div></section>)}
+      <section data-ground="dark"><h2>Outside the frame</h2></section>
+    </>);
+    expect(container.querySelector("header")).toHaveAttribute("data-tone", "base");
+  }));
+
+  it("starts and stops observation when the explicit surface changes", () => scene(() => {
+    const reserved = { ...bare, header: { surface: "solid", tone: "inverse" } } as const;
+    const child = <section data-ground="dark"><h1>View</h1></section>;
+    const { container, rerender } = render(frame(reserved, child));
+    expect(container.querySelector("header")).toHaveAttribute("data-tone", "inverse");
+    rerender(frame(overlay, child));
+    expect(container.querySelector("header")).toHaveAttribute("data-tone", "inverse");
+    rerender(frame(reserved, child));
+    fireEvent.scroll(window);
+    expect(container.querySelector("header")).toHaveAttribute("data-tone", "inverse");
+  }));
+
+  it("does not revive a disconnected resize observer from a late mutation callback", () => scene(() => {
+    const observed = vi.fn(), resizeDisconnected = vi.fn();
+    vi.stubGlobal("ResizeObserver", class {
+      observe = observed;
+      unobserve = vi.fn();
+      disconnect = resizeDisconnected;
+    });
+    const mutations: { callback: MutationCallback; observer: MutationObserver; disconnected: ReturnType<typeof vi.fn> }[] = [];
+    vi.stubGlobal("MutationObserver", class {
+      observe = vi.fn();
+      disconnect = vi.fn();
+      constructor(callback: MutationCallback) { mutations.push({ callback, observer: this as unknown as MutationObserver, disconnected: this.disconnect }); }
+    });
+    const { container, unmount } = render(frame(overlay, <section data-ground="dark"><h1>View</h1></section>));
+    const main = container.querySelector("main")!;
+    expect(mutations).toHaveLength(2);
+    const count = observed.mock.calls.length;
+    unmount();
+    const lateSection = document.createElement("section");
+    lateSection.setAttribute("data-ground", "light");
+    main.append(lateSection);
+    act(() => mutations[1]!.callback([], mutations[1]!.observer));
+    expect(observed).toHaveBeenCalledTimes(count);
+    expect(resizeDisconnected).toHaveBeenCalledOnce();
+    for (const mutation of mutations) expect(mutation.disconnected).toHaveBeenCalledOnce();
+  }));
+
+  it("releases its listeners, observers and a pending frame on unmount", () => scene(() => {
+    const queued: FrameRequestCallback[] = [];
+    const cancel = vi.fn();
+    vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => { queued.push(callback); return queued.length; });
+    vi.stubGlobal("cancelAnimationFrame", cancel);
+    const added = vi.spyOn(window, "addEventListener"), removed = vi.spyOn(window, "removeEventListener");
+    const disconnected = vi.spyOn(MutationObserver.prototype, "disconnect");
+    const { container, unmount } = render(frame(overlay, <section data-ground="dark"><h1>View</h1></section>));
+    const header = container.querySelector("header")!;
+    const scroll = added.mock.calls.find(([event]) => event === "scroll");
+    expect(scroll).toBeDefined();
+    fireEvent.scroll(window);
+    expect(queued).toHaveLength(1);
+    unmount();
+    expect(removed.mock.calls.some(([event, listener]) => event === "scroll" && listener === scroll![1])).toBe(true);
+    expect(disconnected).toHaveBeenCalled();
+    expect(cancel).toHaveBeenCalledWith(1);
+    const tone = header.getAttribute("data-tone");
+    queued[0]!(0);
+    expect(header).toHaveAttribute("data-tone", tone);
+  }));
 });

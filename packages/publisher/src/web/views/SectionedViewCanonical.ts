@@ -1,4 +1,5 @@
 import { SECTIONED_VIEW_CONTENT_CONTRACT as CONTRACT, CONTENT_ITEM_EYEBROW_MAX_CHARACTERS, validateSectionedViewDocument } from "../../core/sectioned-view.js";
+import { proseParagraphTextLength } from "../../internal/prose-text.js";
 
 /** Reject executable or inherited data before any rendering discriminator is read. */
 export function assertClosedData(value: unknown, path: string, ancestors = new Set<object>()): void {
@@ -38,6 +39,16 @@ export function assertCanonicalContentSection(section: Record<string, unknown>, 
   axis(section, "ground", ["base", "sunken", "inverse"], path);
   axis(section, "size", CONTRACT.sizes, path); axis(section, "layout", CONTRACT.layouts, path);
   const block = section.block;
+  if (record(block) && block.type === "prose" && Array.isArray(block.paragraphs)) {
+    block.paragraphs.forEach((paragraph, index) => {
+      if (!Array.isArray(paragraph)) return;
+      const spans = paragraph.filter((span): span is { text: string } => record(span) && typeof span.text === "string");
+      if (spans.length !== paragraph.length) return;
+      const length = proseParagraphTextLength(spans);
+      const max = CONTRACT.prose.charactersPerParagraph;
+      if (length > max) throw new Error(`sectioned-view-content-prose-text-length: ${path}.block.paragraphs.${index} holds at most ${max} characters; it holds ${length}.`);
+    });
+  }
   if (record(block) && block.type === "items") {
     for (const [key, values] of [["arrangement", CONTRACT.arrangements], ["order", CONTRACT.orders], ["reveal", CONTRACT.reveals], ["treatment", CONTRACT.treatments], ["scale", CONTRACT.scales]] as const) axis(block, key, values, `${path}.block`);
     if (block.arrangement === "columns") axis(block, "columns", CONTRACT.columnOptions, `${path}.block`);
@@ -95,7 +106,8 @@ export function assertCanonicalContentSection(section: Record<string, unknown>, 
     const sceneInitials = field === "initials" && fieldPath.startsWith(`${path}.media.input.`);
     const numericValue = field === "value" && typeof value === "number";
     const partCopy = partType !== undefined && Object.hasOwn(PART_COPY_FIELDS, partType) && PART_COPY_FIELDS[partType]?.includes(field) === true;
-    if ((COPY_FIELDS.has(field) || partCopy) && !sceneInitials && !numericValue) return copy(value, fieldPath);
+    const assetAlt = media?.type === "asset" && fieldPath === `${path}.media.alt`;
+    if ((COPY_FIELDS.has(field) || partCopy || assetAlt) && !sceneInitials && !numericValue) return copy(value, fieldPath);
     if (record(value)) {
       const localPath = fieldPath.slice(path.length + 1);
       // Only specimen parts own these copy fields; Scene formats and source records stay structural.

@@ -44,7 +44,7 @@ describe.each([
 
   it("passes ground to both the header and the footer, leaving the section bands alone", () => {
     const html = view({ ground: "transparent" });
-    expect(banner(html)).toBe(renderToStaticMarkup(<SiteHeader ground="transparent" brand="BRAND-SENTINEL" />));
+    expect(banner(html)).toBe(renderToStaticMarkup(<SiteHeader surface="transparent" brand="BRAND-SENTINEL" />));
     expect(footer(html)).toBe(renderToStaticMarkup(<SiteFooter ground="transparent" secondary={<span>FOOTER-SENTINEL</span>} />));
     expect(html.replace(banner(html), "").replace(footer(html), "")).toBe(view().replace(banner(view()), "").replace(footer(view()), ""));
   });

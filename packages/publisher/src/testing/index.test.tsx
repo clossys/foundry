@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { Button } from "@clossys/designer/atoms";
 import { renderToStaticMarkup } from "react-dom/server";
 import { AuthView } from "../web/views/AuthView.js";
+import { CaptureView } from "../web/views/CaptureView.js";
 import { BoundaryView } from "../web/views/BoundaryView.js";
 import { GlobalErrorDocument } from "../web/views/GlobalErrorDocument.js";
 import { StatusView } from "../web/views/StatusView.js";
@@ -101,7 +102,7 @@ describe("conforming surfaces", () => {
     expect(() => expectFrontDoorConformance({ surfaces: conforming })).not.toThrow();
   });
 
-  it("gives no findings for framed surfaces: AuthView and StatusView inside SiteFrame, and the framed GlobalErrorDocument", () => {
+  it("gives no findings for framed surfaces: AuthView, CaptureView and StatusView inside SiteFrame, and the framed GlobalErrorDocument", () => {
     const COPY: Readonly<Record<string, string>> = { brand: "Example home", skip: "Skip to content", entity: "Example Ltd", privacy: "Privacy" };
     const resolveCopy: CopyResolver = (copyRef) => {
       const text = COPY[copyRef.id];
@@ -123,6 +124,15 @@ describe("conforming surfaces", () => {
         render: () => (
           <SiteFrame shell={shell} resolveCopy={resolveCopy} resolveAsset={resolveAsset}>
             <AuthView heading="Sign in" description="Welcome back." form={<Button type="submit">Sign in</Button>} />
+          </SiteFrame>
+        ),
+      },
+      {
+        surface: "contact",
+        title: { page: "Contact", brand: "Example Studio" },
+        render: () => (
+          <SiteFrame shell={shell} resolveCopy={resolveCopy} resolveAsset={resolveAsset}>
+            <CaptureView heading="Contact" formLabel="Send a message" form={<form method="post"><Button type="submit">Send</Button></form>} />
           </SiteFrame>
         ),
       },
@@ -176,6 +186,44 @@ describe("conforming surfaces", () => {
 });
 
 describe("each rule fires", () => {
+  it.each([
+    ["zero forms", <main><h1>Contact</h1><Button>Send</Button></main>, "found 0"],
+    ["two forms", <main><h1>Contact</h1><form method="post"><Button>Send</Button></form><form method="post" /></main>, "found 2"],
+    ["get method", <main><h1>Contact</h1><form method="get"><Button>Send</Button></form></main>, "method"],
+    ["missing method", <main><h1>Contact</h1><form><Button>Send</Button></form></main>, "method"],
+    ["two mains", <><main><h1>Contact</h1><form method="post"><Button>Send</Button></form></main><main /></>, "found 2"],
+    ["zero mains", <div><h1>Contact</h1><form method="post"><Button>Send</Button></form></div>, "found 0"],
+    ["form outside main", <><main><h1>Contact</h1><Button>Send</Button></main><form method="post" /></>, "found 0"],
+  ] as const)("contact-form: %s", (_name, element, message) => {
+    const findings = checkFrontDoor({ surfaces: [{ surface: "contact", render: () => element, title }] });
+    expect(findings.map(finding => finding.rule)).toEqual(["contact-form"]);
+    expect(findings[0]?.message).toContain(message);
+  });
+
+  it("contact-form: accepts POST in any letter case", () => {
+    for (const method of ["post", "POST", "PoSt"]) {
+      const render = (): ReactElement => <main><h1>Contact</h1><form method={method}><Button>Send</Button></form></main>;
+      expect(rulesFor({ surface: "contact", render, title })).toEqual([]);
+    }
+  });
+
+  it("contact-form: not asked of the other surfaces", () => {
+    const bare = (): ReactElement => <main><h1>Gone</h1><Button>Go</Button></main>;
+    for (const surface of ["sign-in", "activation", "sign-out-landing", "reset", "boundary", "not-found", "global-error", "service-unavailable"] as const) {
+      expect(rulesFor({ surface, render: bare, title })).not.toContain("contact-form");
+    }
+  });
+
+  it("form-measure: not asked of contact", () => {
+    const render = (): ReactElement => <main><h1>Contact</h1><form method="post"><Button>Send</Button></form></main>;
+    expect(rulesFor({ surface: "contact", render, title })).toEqual([]);
+  });
+
+  it("page-title: required on contact", () => {
+    const render = (): ReactElement => <main><h1>Contact</h1><form method="post"><Button>Send</Button></form></main>;
+    expect(rulesFor({ surface: "contact", render })).toEqual(["page-title"]);
+  });
+
   it("one-primary-action: two primary buttons in main", () => {
     const render = (): ReactElement => (
       <AuthView

@@ -11,6 +11,7 @@ const panel = { id: "panel", title: ref, parts: [part] };
 const media = { type: "specimen" as const, label: ref, panel };
 const features = { type: "items" as const, arrangement: "columns" as const, columns: 2 as const, items: items(2) };
 const statementBlock = { type: "items" as const, recipe: "statement" as const, items: items(3) };
+const prose = { type: "prose" as const, paragraphs: [[{ type: "text" as const, text: ref }]] };
 const matrix = (visual = false) => ({ type: "matrix" as const, sides: ["before", "after"].map((id) => ({ id, label: ref, heading: ref, description: ref, ...(visual ? { visual: panel } : { points: [ref, ref] }) })) });
 const hero: SectionedViewSection = { id: "hero", kind: "hero", heading: ref, actions: [{ id: "start", label: ref, href: "/start" }] };
 const section = (extra: Partial<SectionedViewContentSection> = {}): SectionedViewContentSection => ({ id: "band", kind: "content-section", heading: ref, ...extra });
@@ -49,10 +50,13 @@ describe("sectionWeight derivation", () => {
     ["topics", B(), "B", "list"],
     ["frame", C(), "C", "frame"],
     ["block FAQ", section({ block: { type: "items", recipe: "faq", items: items(4) } }), "C", "reference"],
+    ["prose", section({ block: prose }), "C", "reference"],
+    ...(["split-start", "split-end"] as const).map((layout): [string, SectionedViewSection, string, string] => [layout + " prose with media", section({ layout, block: prose, media }), "B", "specimen"]),
+    ["stacked prose with media", section({ block: prose, media }), "A", "specimen"],
     ["faq", { id: "faq", kind: "faq", heading: ref, items: ["one", "two", "three", "four"].map(id => ({ id, question: ref, answer: ref })) }, "C", "reference"],
     ["feature-grid", { id: "features", kind: "feature-grid", heading: ref, items: [item] }, "C", "list"],
     ["ordered-step-sequence", { id: "steps", kind: "ordered-step-sequence", heading: ref, items: [{ ...item, ordinal: ref }] }, "B", "sequence"],
-    ["status-list", { id: "status", kind: "status-list", heading: ref, labels: { available: ref, partial: ref, planned: ref, dispositions: { "not-offered": ref } }, items: [{ id: "state", label: ref, state: "available" }] }, "B", "table"],
+    ["status-list", { id: "status", kind: "status-list", heading: ref, labels: { available: ref, partial: ref, planned: ref, dispositions: { "not-offered": ref } }, items: ["one", "two", "three"].map(id => ({ id, label: ref, state: "available" as const })) }, "B", "table"],
     ["stat-grid", { id: "stats", kind: "stat-grid", heading: ref, items: [{ id: "s", label: ref, value: ref }] }, "B", "proof"],
     ["stat", { id: "stat", kind: "stat", items: [{ id: "s", label: ref, value: ref }] }, "B", "proof"],
     ["testimonial", { id: "quote", kind: "testimonial", items: [{ id: "q", quote: ref, attributorName: ref }] }, "B", "proof"],

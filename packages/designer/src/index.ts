@@ -29,6 +29,7 @@ export {
   Dialog,
   Tabs,
   Table,
+  GridList,
   Field,
   Skeleton,
   Tooltip,
@@ -94,6 +95,9 @@ export type {
   TabsListProps,
   TabsTabProps,
   TabsPanelProps,
+  GridListProps,
+  GridListItemProps,
+  GridListSelectionCheckboxProps,
   TableProps,
   TableHeaderProps,
   TableColumnProps,
@@ -131,15 +135,20 @@ export type {
 
 export {
   PageHeader,
+  AccountMenu,
   EmptyState,
   DataTable,
+  ResourceList,
   DetailView,
   Pagination,
   Stat,
+  UsageMeter,
   Form,
   useFormValidation,
   FieldGroup,
   ConfirmDialog,
+  CommandMenu,
+  useCommandMenuShortcut,
   Toolbar,
   NavGrid,
   AnatomyCallouts,
@@ -165,6 +174,7 @@ export {
   ArticleBody,
   SectionFrame,
   ConsentBanner,
+  NewsletterBand,
   SECTION_GROUND_CLASSES,
 } from "./blocks/index.js";
 export type {
@@ -172,7 +182,18 @@ export type {
   SectionGroundClasses,
   SectionStatusTone,
   PageHeaderProps,
+  AccountMenuProps,
+  AccountMenuActor,
+  AccountMenuEntry,
+  AccountMenuCommand,
+  AccountMenuLink,
+  AccountMenuAction,
+  AccountMenuPreference,
+  AccountMenuSection,
   EmptyStateProps,
+  ResourceListProps,
+  ResourceListItem,
+  ResourceListAction,
   DataTableProps,
   DataTableColumn,
   DataTableSelectionMode,
@@ -180,6 +201,8 @@ export type {
   DetailViewField,
   PaginationProps,
   StatProps,
+  UsageMeterProps,
+  UsageMeterThreshold,
   StatTrend,
   FormProps,
   FormError,
@@ -195,6 +218,10 @@ export type {
   FieldGroupProps,
   FieldGroupLayout,
   ConfirmDialogProps,
+  CommandMenuProps,
+  CommandMenuItem,
+  CommandMenuGroup,
+  CommandMenuShortcutOptions,
   ConfirmDialogTone,
   ToolbarProps,
   NavGridProps,
@@ -230,6 +257,9 @@ export type {
   FeatureGridItem,
   FeatureGridHeadingLevel,
   MatrixProps,
+  MatrixGridProps,
+  MatrixQuadrantProps,
+  MatrixCellData,
   MatrixSide,
   MatrixHeadingLevel,
   SpecimenProps,
@@ -277,14 +307,21 @@ export type {
   PricingTableProps,
   PricingTier,
   PricingTableHeadingLevel,
+  PricingTierPrice,
+  PricingCellData,
+  PricingComparison,
+  PricingComparisonGroup,
+  PricingComparisonRow,
   TestimonialProps,
   ArticleBodyProps,
   SectionFrameProps,
   ConsentBannerProps,
+  NewsletterBandProps,
+  NewsletterStatus,
   SectionMeasure,
 } from "./blocks/index.js";
 
-export { Shell, Toaster, toast, SkipLink, SiteHeader, NavShell, SiteFooter, Brandmark } from "./shell/index.js";
+export { Shell, Toaster, toast, SkipLink, SiteHeader, NavDisclosure, NavShell, SiteFooter, Brandmark } from "./shell/index.js";
 export type {
   ShellProps,
   ShellHeaderProps,
@@ -300,9 +337,12 @@ export type {
   ToastVariant,
   SkipLinkProps,
   SiteHeaderProps,
+  SiteHeaderSurface,
+  SiteHeaderTone,
   SiteHeaderActionLinkProps,
   SiteHeaderActionLinkVariant,
   NavShellProps,
+  NavDisclosureProps,
   SiteFooterProps,
   SiteFooterColumnProps,
   BrandmarkProps,
@@ -312,7 +352,7 @@ export type {
 export type { BrandmarkPlate } from "./shell/index.js";
 export { BADGE_INSET_SHARE, BADGE_RADIUS_SHARE, badgePlatePath } from "./shell/index.js";
 
-export { ChartFrame, BarChart, LineChart, Sparkline } from "./charts/index.js";
+export { ChartFrame, BarChart, LineChart, WaterfallChart, Sparkline } from "./charts/index.js";
 export type {
   ChartFrameProps,
   ChartMargin,
@@ -324,6 +364,7 @@ export type {
   BarChartSeries,
   LineChartProps,
   LineChartSeries,
+  WaterfallChartProps,
   SparklineProps,
 } from "./charts/index.js";
 
@@ -380,6 +421,46 @@ export {
   XCircle,
 } from "./icons/index.js";
 
+export { RangeChart } from "./charts/RangeChart.js";
+export type { RangeChartProps } from "./charts/RangeChart.js";
+
+export { ScatterChart } from "./charts/ScatterChart.js";
+export type { ScatterChartProps } from "./charts/ScatterChart.js";
+
+export { AreaChart, Heatmap, StatusStrip } from "./charts/index.js";
+export type { AreaChartProps, AreaChartSeries, HeatmapProps, StatusStripProps, StatusStripSegment } from "./charts/index.js";
+
 export { Item } from "./blocks/items/Item.js";
+export { AppNavigation } from "./blocks/AppNavigation.js";
+export type { AppNavigationProps } from "./blocks/AppNavigation.js";
+export { PageBar } from "./blocks/PageBar.js";
+export type { PageBarProps, PageBarPage, PageBarCrumb, PageBarAction, PageBarDestination, PageBarLabels, PageBarWidth } from "./blocks/PageBar.js";
+export { validateAppNavigationTree, getAppNavigationAncestry, getAppNavigationBreadcrumbs } from "./blocks/app-navigation-tree.js";
+export type { AppNavigationNode, AppNavigationLeaf, AppNavigationDestination, AppNavigationTarget, AppNavigationBreadcrumb } from "./blocks/app-navigation-tree.js";
 export { Items } from "./blocks/items/Items.js";
-export type { ItemData, ItemProps, ItemBadge, ItemSize, ItemTreatment, ItemSpan, ItemsProps, ItemsArrangement, ItemsColumns, ItemsScale, ItemsGroup, ItemsLane } from "./blocks/items/types.js";
+export type { ItemData, ItemFigureData, ItemStatusData, ItemProps, ItemBadge, ItemSize, ItemTreatment, ItemSpan, ItemsProps, ItemsArrangement, ItemsColumns, ItemsScale, ItemsGroup, ItemsLane } from "./blocks/items/types.js";
+
+export { Logomark } from "./atoms/index.js";
+export type { LogomarkProps, LogomarkSize, LogomarkTone, LogomarkPlate } from "./atoms/index.js";
+export { Lockup } from "./blocks/index.js";
+export type { LockupProps } from "./blocks/index.js";
+export { GroupedTable } from "./blocks/GroupedTable.js";
+export type { GroupedTableProps, GroupedTableGroup, GroupedTableColumn } from "./blocks/GroupedTable.js";
+
+export type { SignatureChartLabels } from "./charts/index.js";
+export { GraphValidationError, validateGraph, neighbors, subgraph, degrees, components, shortestPath, groupByKind, radialLayout, forceLayout, edgeRoutingHints } from "./blocks/index.js";
+export type { GraphNode, GraphEdge, GraphInput, GraphModelEdge, GraphModel, GraphErrorCode, GraphNeighborOptions, GraphSubgraphOptions, GraphDegree, GraphKindGroup, GraphPosition, GraphRadialOptions, GraphForceOptions, GraphEdgeRoutingHint } from "./blocks/index.js";
+export { filterRows, groupRows, pivotRows, aggregate, parseTableModel, serializeTableModel, TableModelError, tableFilterPredicate, pruneFilterColumn, TABLE_FILTER_CONFORMANCE } from "./blocks/table-model/index.js";
+export type { TableValue, TableColumnKind, TableColumn, TableCollation, TableFilter, TableFilterGroup, TableFilterNode, TableDimension, TableMeasure, TablePivot, TableModel, TableFacet, TableFilterResult, TableAggregateValue, TableAggregates, TableGroup, TablePivotAxis, TablePivotCell, TablePivotResult, TableModelErrorCode } from "./blocks/table-model/index.js";
+
+export { CatalogWorkspace } from "./blocks/index.js";
+export type { CatalogWorkspaceProps, CatalogWorkspaceItem, CatalogWorkspaceSize } from "./blocks/index.js";
+
+export { parseDataTableViewModel, serializeDataTableViewModel, DataTableViewModelError } from "./blocks/data-table/view-model.js";
+export type { DataTableMessages } from "./blocks/data-table/messages.js";
+export type { DataTableViewModel, DataTableViewModelV1, DataTableMode, DataTableDensity, DataTableSortRule } from "./blocks/data-table/view-model.js";
+
+export { AccessMatrix } from "./blocks/AccessMatrix.js";
+export type { AccessCellValue, AccessRole, AccessPermission, AccessGroup, AccessMatrixValue, AccessMatrixChange, AccessMatrixLabels, AccessMatrixProps } from "./blocks/AccessMatrix.js";
+export { ColumnMapper } from "./blocks/ColumnMapper.js";
+export type { ColumnMapperTarget, ColumnMapperSource, ColumnMapping, ColumnMapperIssue, ColumnMapperLabels, ColumnMapperProps } from "./blocks/ColumnMapper.js";

@@ -50,9 +50,11 @@ applies at its cascade scope, or that the template builds.
   `@source` paths assume `@clossys/designer` and `@clossys/publisher` are
   installed in the template's own `node_modules` (not hoisted); a hoisted
   install needs the paths adjusted.
-- `app/layout.tsx` — root layout: sets `data-brand-bound` on `<html>`,
-  injects Designer's theme init script into `<head>`, and sets `metadataBase`
-  from `NEXT_PUBLIC_SITE_URL` (see "`NEXT_PUBLIC_SITE_URL`" below).
+- `app/layout.tsx` — root layout: sets `lang` on `<html>` to the copy
+  registry's locale and `data-brand-bound`, injects Designer's theme init
+  script into `<head>`, and sets `metadataBase` from `NEXT_PUBLIC_SITE_URL`
+  (see "`NEXT_PUBLIC_SITE_URL`" below). It mounts no frame: each page's view
+  carries its own chrome.
 - `app/page.tsx` — the landing route (`HeroView`). Its header call to
   action, a link to `/contact` worded by `site.landing.contact-action`, is
   passed as `headerAction` on every framed route: landing, about, contact,
@@ -75,12 +77,22 @@ applies at its cascade scope, or that the template builds.
   ids `aboutCopyIds()` lists; it reads no `clossys/publisher/surfaces/`
   record and carries no wording.
 - `app/error.tsx` (a client error boundary) and `app/not-found.tsx` — the
-  500 and 404 pages, both rendered by `app/site-error-view.tsx` through
-  `ErrorView`, which has no header, so they carry no header call to action.
+  500 and 404 pages, both rendered by `app/site-error-view.tsx`: Publisher's
+  `SiteFrame` (skip link, banner, the page's one `<main>`, contentinfo) around
+  `StatusView`. The error title is the page's one `<h1>`, the description its
+  line, and the action (home on the 404 page, retry on the 500 page) its one
+  primary action. The banner shows the brand mark and name with no call to
+  action; the footer shows the legal row. `app/site-frame.ts` builds the
+  frame's input from the copy map and the brand facts, and is pure and
+  client-safe, so the client boundary builds the same frame.
+- `app/icon.svg` — a neutral placeholder mark, served by Next as the favicon
+  and used as the error pages' brand mark. The frame paints it in the brand's
+  accent colour through a mask, so replace it with the brand's own
+  single-colour mark.
 - `app/site-records.ts` — the one file that reads the repository's records.
 - `app/site-copy.ts` — the copy ids and the plain copy map the client
   carries; pure and client-safe. `app/site-copy-context.tsx` provides the
-  error boundary's copy from the root layout.
+  error boundary's copy and its frame's brand facts from the root layout.
 - `app/site-wiring.ts` — the pure server wiring (target, delivery choice,
   contact handler, client key, legal gate); `app/site-contact.ts` and
   `app/site-delivery.ts` assemble it.
@@ -157,11 +169,12 @@ records, and one file, `app/site-records.ts`, reads them:
   page resolves the ids it needs when it renders; an id that does not
   resolve fails the render instead of showing a blank. The ids are listed in
   `app/site-copy.ts` (`site.landing.*`, `site.about.*`, `site.share-card.*`,
-  `site.contact.*`, `site.footer.*`, `site.legal.*`, `site.error.*`), and the
+  `site.contact.*`, `site.footer.*`, `site.legal.*`, `site.error.*`,
+  `site.frame.*`), and the
   registry must hold an entry for each. An approved entry resolves on every target; on `production` an entry
   approved only by a delegate is refused, and so is any approval that is
   stale or expired. That refusal comes from the `target` option of Writer's
-  resolver, which Writer 0.5.0 added; the range `^0.5.0` in `package.json`
+  resolver, which Writer 0.5.0 added; the range `^0.6.0` in `package.json`
   requires it.
 - `clossys/publisher/legal/terms.json` and `privacy.json` — the two legal
   documents, whose text is copy ids into the same registry.
@@ -240,7 +253,7 @@ things:
   `production` the Writer resolver also refuses an entry approved only by a
   delegate; a stale or expired approval is refused on every target. The
   `target` option and the delegate refusal on `production` come from Writer
-  0.5.0, which the range `^0.5.0` in `package.json` requires.
+  0.5.0, which the range `^0.6.0` in `package.json` includes.
 - **Crawling and the sitemap**, below.
 - **Contact delivery**, below.
 
@@ -327,9 +340,20 @@ or its build fails: the four about ids `site.about.heading`,
 `site.about.cta-description` (`ABOUT_COPY_IDS` in `app/site-copy.ts`), and the
 share card's alternative text, `site.share-card.alt` (`SHARE_CARD_ALT_ID`).
 
+A copy made before the error pages moved into the frame needs one more entry,
+the skip link's text `site.frame.skip-link` (`SITE_FRAME_COPY_IDS`), and the
+three new or changed files `app/site-frame.ts`, `app/site-error-view.tsx` and
+`app/icon.svg`, with the updated `app/error.tsx`, `app/not-found.tsx`,
+`app/layout.tsx` and `app/site-copy-context.tsx`. The root layout and the
+404 page also resolve the footer ids (`site.footer.*`) for the frame's legal
+row, which the other pages already need.
+
 ## Not yet wired
 
 `app/error.tsx` covers a failure inside a page. A failure in the root layout
 itself (for example a missing copy entry the layout needs) is outside it and
 shows Next.js's own fallback; a `global-error.tsx` is not part of this
-template.
+template. Publisher's `GlobalErrorDocument` is the document for one, but Next
+requires that file to be a client module, and this template resolves copy
+only on the server (Writer's root reads the file system), so the file would
+need its copy built into the client bundle another way first.

@@ -406,3 +406,26 @@ test("the post-publish visibility step itself is bracketed, not merely some step
   const postPublishVisibility = step(publish, "Verify anonymous public npm visibility and exact bytes");
   assert.match(postPublishVisibility, /set \+e\n\s+node scripts\/verify-post-publish-public-npm-artifact\.mjs[^\n]*\n\s+status=\$\?\n\s+set -e\n/);
 });
+
+test("the qualify pack step never passes the npm pack JSON as a process argument", () => {
+  // Publish run 38574443041 (publisher) failed here with "Argument list too
+  // long": a large package's npm pack --json listing exceeds the OS
+  // per-argument limit when handed to node as argv. Same defect and same fix
+  // as qualify-candidate.yml (#2120): the listing goes to a file under the
+  // pack destination and node reads it on stdin.
+  const pack = step(job("qualify"), "Pack one pre-publication candidate");
+  const lines = pack.split("\n").map((line) => line.trim()).filter(Boolean);
+  assert.ok(lines.includes("set -euo pipefail"));
+  assert.doesNotMatch(pack, /process\.argv/, "the pack JSON must not be read from process.argv");
+  assert.doesNotMatch(pack, /\$\(\s*npm pack/, "npm pack output must not be captured into a shell variable");
+  assert.doesNotMatch(pack, /"\$result"/, "no captured pack output may be passed as an argument");
+  const packed = pack.match(/^ *npm pack --ignore-scripts --json --pack-destination "\$destination" > "(\$destination\/[^"\s]+\.json)"$/m);
+  assert.ok(packed, "npm pack must write its JSON listing to a file under $destination, as its own command so a failure fails the step");
+  const listing = packed[1];
+  const read = lines.find((line) => /^filename="\$\(node /.test(line));
+  assert.ok(read, "the filename must be read by node");
+  assert.ok(read.endsWith(`< "${listing}")"`), "node must read the listing on stdin, not as an argument");
+  assert.match(read, /readFileSync\(0, "utf8"\)/);
+  assert.match(read, /\)\[0\]\.filename\)/);
+  assert.ok(lines.includes('mv "$destination/$filename" "$destination/candidate.tgz"'), "the candidate path is unchanged");
+});

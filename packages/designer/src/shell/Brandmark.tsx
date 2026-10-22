@@ -1,6 +1,9 @@
 import { cx } from "../atoms/internal/cx.js";
-import { BADGE_INSET_SHARE, BADGE_RADIUS_SHARE } from "./badge-plate.js";
+import { Logomark, type LogomarkProps } from "../atoms/Logomark.js";
+import { Lockup, internalLockupWithRootClass } from "../blocks/Lockup.js";
 import {
+  BADGE_INSET_SHARE,
+  BADGE_RADIUS_SHARE,
   UI_BRANDMARK_GAP_LG,
   UI_BRANDMARK_GAP_MD,
   UI_BRANDMARK_GAP_SM,
@@ -10,7 +13,7 @@ import {
   UI_BRANDMARK_WORDMARK_SIZE_LG,
   UI_BRANDMARK_WORDMARK_SIZE_MD,
   UI_BRANDMARK_WORDMARK_SIZE_SM,
-} from "./internal/shell-vars.js";
+} from "../internal/brandmark.js";
 
 /** The two renderings: the mark alone, or the mark beside a live-text wordmark. */
 export const BRANDMARK_VARIANTS = ["mark", "lockup"] as const;
@@ -37,14 +40,41 @@ const SIZE_VARS: Readonly<Record<BrandmarkSize, { height: string; gap: string; w
   lg: { height: UI_BRANDMARK_HEIGHT_LG, gap: UI_BRANDMARK_GAP_LG, wordmark: UI_BRANDMARK_WORDMARK_SIZE_LG },
 };
 
+/** `markSrc` as a quoted CSS `url()`; quotes, backslashes and line breaks are escaped. */
+function cssUrl(src: string): string {
+  return `url("${src.replace(/["\\\n\r\f]/g, character => `\\${character.charCodeAt(0).toString(16)} `)}")`;
+}
+
 /** Case-insensitive, whitespace-collapsed form used for the label-in-name comparison. */
 function normalise(text: string): string {
   return text.replace(/\s+/g, " ").trim().toLowerCase();
 }
 
+/** A bare origin only; inspect raw syntax before URL normalization can erase a path or userinfo. */
+function homeHref(value: unknown): string {
+  if (value === undefined) return "/";
+  const refuse = (): never => { throw new Error("Brandmark: `origin` must be an https origin, or an http origin on a loopback host."); };
+  if (typeof value !== "string" || value !== value.trim() || /[\u0000-\u001F\u007F\\]/.test(value)
+    || !/^https?:\/\/[^/?#@]+\/?$/i.test(value)) refuse();
+  let url: URL;
+  try { url = new URL(value as string); } catch { refuse(); }
+  const parsed = url!;
+  const loopback = ["localhost", "127.0.0.1", "[::1]"].includes(parsed.hostname);
+  if ((parsed.protocol !== "https:" && !(parsed.protocol === "http:" && loopback))
+    || parsed.pathname !== "/" || parsed.search !== "" || parsed.hash !== ""
+    || parsed.username !== "" || parsed.password !== "") refuse();
+  return `${parsed.origin}/`;
+}
+
 interface BrandmarkBaseProps {
+  /** Bare public https origin, or http on localhost/127.0.0.1/[::1]. Omitted links to `/`; a trailing root slash is accepted. */
+  origin?: string;
   /** Which step of the closed size set to render at. */
   size: BrandmarkSize;
+  /** Explicit chrome sizing; omission preserves the legacy variant and size. */
+  presentation?: "desktop" | "mobile" | "responsive";
+  /** Producer-measured source viewBox and painted bounds for explicit presentations. */
+  geometry?: LogomarkProps["geometry"];
   /**
    * The link's whole accessible name, supplied by the consumer — this
    * package ships no default copy and no `"{Brand} home"` template (see
@@ -72,13 +102,26 @@ interface BrandmarkBaseProps {
    * the same shares `badgePlatePath` draws.
    */
   plate?: BrandmarkPlate;
+  /**
+   * How the mark is painted. `"image"` (the default, and what an omitted prop
+   * means) renders `markSrc` as it is. `"accent"` paints the mark's shape in
+   * the accent token, using `markSrc` as a mask: supply a single-colour mark
+   * whose transparent areas are its background. The accent mark is drawn in a
+   * square of the size's height. Inside `SiteHeader`, an omitted `markInk`
+   * becomes `"accent"`; pass `"image"` there to keep a multi-colour logo,
+   * which the accent mask would flatten to a one-colour silhouette.
+   * @default "image"
+   */
+  markInk?: "image" | "accent";
+  /** Wordmark ink; auto keeps the base ink. @default "auto" */
+  tone?: "auto" | "inverse";
   className?: string;
 }
 
 /**
  * `lockup` requires a `wordmark`; `mark` takes none. `href` and
- * `aria-label` are deliberately not props at all: the link always goes to
- * `"/"` and is always named by `label`.
+ * `aria-label` are deliberately not props at all: the link goes to the
+ * optional `origin`'s root (otherwise `"/"`) and is always named by `label`.
  */
 export type BrandmarkProps = BrandmarkBaseProps &
   (
@@ -106,8 +149,10 @@ export type BrandmarkProps = BrandmarkBaseProps &
  * hooks, no client directive, no `react-aria-components`. Never accepts or
  * renders markup — `markSrc` is a URL and `wordmark` is text.
  *
- * Deliberately no props spread onto the anchor: nothing a consumer passes
- * can reach `href` or `aria-label`, even past the type system.
+ * Deliberately no props spread onto the anchor: a forced `href` or
+ * `aria-label` cannot override the validated home origin or the label.
+ * A present `origin` must be bare HTTPS or loopback HTTP; invalid values
+ * throw without echoing the supplied value.
  *
  * Refuses (throws a plain `Error` that names the prop and never echoes its
  * value) a `label` that is empty, whitespace-only or not a string, since the
@@ -119,8 +164,9 @@ export type BrandmarkProps = BrandmarkBaseProps &
  * text and is not subject to that second check.
  */
 export function Brandmark(props: BrandmarkProps) {
-  const { variant, size, label, markSrc, className, plate } = props;
+  const { variant, size, label, markSrc, className, plate, origin, markInk = "image", tone = "auto" } = props;
   const vars = SIZE_VARS[size];
+  const inverse = tone === "inverse";
   const wordmark = variant === "lockup" ? props.wordmark : undefined;
   const showWordmark = typeof wordmark === "string" && normalise(wordmark) !== "";
 
@@ -132,21 +178,73 @@ export function Brandmark(props: BrandmarkProps) {
       'Brandmark: for variant="lockup", `label` must contain the visible `wordmark` text (WCAG 2.5.3, label in name).',
     );
   }
+  const href = homeHref(origin);
+
+  const linkClasses = cx(
+    inverse
+      ? "inline-flex items-center no-underline text-ink-on-inverse"
+      : "inline-flex items-center no-underline text-ink-primary",
+    "focus-visible:outline-2 focus-visible:outline-offset-2",
+    inverse ? "focus-visible:outline-ink-on-inverse" : "focus-visible:outline-accent",
+    className,
+  );
+
+  if (props.presentation !== undefined && props.geometry !== undefined) {
+    const desktop = showWordmark
+      ? <Lockup src={markSrc} size={size} wordmark={wordmark} plate={plate} tone={tone}
+          presentation={props.presentation === "responsive" ? "desktop" : props.presentation} geometry={props.geometry} />
+      : <Logomark src={markSrc} size={size} plate={plate}
+          presentation={props.presentation === "responsive" ? "desktop" : props.presentation} geometry={props.geometry} />;
+    const mobile = <Logomark src={markSrc} size={size} plate={plate} geometry={props.geometry}
+      presentation={props.presentation === "responsive" ? "mobile" : props.presentation} />;
+    return <a href={href} aria-label={label} className={linkClasses}>
+      {props.presentation === "responsive"
+        ? <><span className="hidden desktop:block">{desktop}</span><span data-brand-mark="" className="inline-flex desktop:hidden">{mobile}</span></>
+        : props.presentation === "mobile" ? mobile : desktop}
+    </a>;
+  }
+
+  if (markInk !== "accent") {
+    if (showWordmark) {
+      return internalLockupWithRootClass({ as: "a", href, "aria-label": label, src: markSrc, size,
+        wordmark, plate, tone }, linkClasses);
+    }
+    return (
+      <a href={href} aria-label={label} className={linkClasses}>
+        <Logomark src={markSrc} size={size} plate={plate} />
+      </a>
+    );
+  }
+
+  // The accent mark is a decorative span masked by the image, filled with the
+  // accent token. data-brand-mark names the outermost accent mark element, so
+  // header CSS can hide the wordmark alone; the image forms above keep their markup.
+  const mark = (side: string, outermost: boolean) => (
+    <span
+      aria-hidden
+      data-brand-mark={outermost ? "" : undefined}
+      className="inline-block shrink-0 bg-accent"
+      style={{
+        height: side,
+        width: side,
+        maskImage: cssUrl(markSrc),
+        WebkitMaskImage: cssUrl(markSrc),
+        maskSize: "contain",
+        WebkitMaskSize: "contain",
+        maskRepeat: "no-repeat",
+        WebkitMaskRepeat: "no-repeat",
+        maskPosition: "center",
+        WebkitMaskPosition: "center",
+      }}
+    />
+  );
 
   return (
-    <a
-      href="/"
-      aria-label={label}
-      className={cx(
-        "inline-flex items-center no-underline text-ink-primary",
-        "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
-        className,
-      )}
-      style={showWordmark ? { gap: vars.gap } : undefined}
-    >
+    <a href={href} aria-label={label} className={linkClasses} style={showWordmark ? { gap: vars.gap } : undefined}>
       {plate === "shared" ? (
         <span
           aria-hidden
+          data-brand-mark=""
           className="inline-flex shrink-0 items-center justify-center bg-ink-primary"
           style={{
             height: vars.height,
@@ -154,18 +252,10 @@ export function Brandmark(props: BrandmarkProps) {
             borderRadius: `calc(${vars.height} * ${BADGE_RADIUS_SHARE})`,
           }}
         >
-          <img
-            src={markSrc}
-            alt=""
-            style={{
-              height: `calc(${vars.height} * ${PLATE_IMAGE_SHARE})`,
-              width: `calc(${vars.height} * ${PLATE_IMAGE_SHARE})`,
-              objectFit: "contain",
-            }}
-          />
+          {mark(`calc(${vars.height} * ${PLATE_IMAGE_SHARE})`, false)}
         </span>
       ) : (
-        <img src={markSrc} alt="" style={{ height: vars.height, width: "auto" }} />
+        mark(vars.height, true)
       )}
       {showWordmark ? (
         <span className="font-display leading-none" style={{ fontSize: vars.wordmark }}>

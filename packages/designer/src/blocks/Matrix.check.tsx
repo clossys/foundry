@@ -28,3 +28,30 @@ void missingHeading;
 void unlabeled;
 void descriptionOnly;
 void mixedForms;
+
+type GridProps = Extract<import("./Matrix.js").MatrixProps, { arrangement: "grid" }>;
+const grid: GridProps = {
+  arrangement: "grid",
+  columns: [{ id: "copy", label: "Record" }, { id: "figure", label: "Count" }, { id: "status", label: "State" }],
+  rows: [
+    { id: "one", label: "First", cells: { copy: { type: "text", text: "Authored copy" }, figure: { type: "figure", value: 12, delta: "+2", trend: "up" }, status: { type: "status", tone: "success", label: "Reviewed" } } },
+    { id: "two", label: "Second", description: "Supporting copy.", cells: { copy: { type: "empty" }, figure: { type: "figure", value: 0 }, status: { type: "status", tone: "neutral", label: "Pending" } } },
+  ],
+  emptyLabel: "No authored value", featured: { column: "figure" }, featuredLabel: "Selected",
+};
+void <Matrix {...grid} aria-label="Comparison" ground="inverse" headingLevel={6} />;
+void <Matrix arrangement="sides" sides={[side, { ...side, id: "right" }]} />;
+// @ts-expect-error A grid requires its rows.
+void <Matrix arrangement="grid" columns={grid.columns} />;
+// @ts-expect-error Grid and sides cannot be combined.
+void <Matrix {...grid} sides={[side, side]} />;
+// @ts-expect-error One featured axis is selected at a time.
+void <Matrix {...grid} featured={{ row: "one", column: "copy" }} />;
+// @ts-expect-error The grid has no unsupported arrangement.
+void <Matrix {...grid} arrangement="other" />;
+// @ts-expect-error A figure cell requires its authored value.
+const incompleteFigure: GridProps["rows"][number]["cells"][string] = { type: "figure", delta: "+2" };
+// @ts-expect-error A status cell requires a supported tone.
+const unknownStatus: GridProps["rows"][number]["cells"][string] = { type: "status", tone: "other", label: "State" };
+void incompleteFigure;
+void unknownStatus;

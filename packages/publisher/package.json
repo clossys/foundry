@@ -1,6 +1,6 @@
 {
   "name": "@clossys/publisher",
-  "version": "0.9.0",
+  "version": "0.13.0",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -100,9 +100,30 @@
     "./web/client": {
       "types": "./dist/web/client.d.ts",
       "import": "./dist/web/client.js"
+    },
+    "./web/consent": {
+      "types": "./dist/web/consent/index.d.ts",
+      "react-server": "./dist/web/consent/refuse-react-server.js",
+      "default": "./dist/web/consent/index.js"
+    },
+    "./web/consent/preview": {
+      "types": "./dist/web/consent/preview/index.d.ts",
+      "react-server": "./dist/web/consent/preview/refuse-react-server.js",
+      "development": "./dist/web/consent/preview/index.js",
+      "default": "./dist/web/consent/preview/refuse-non-development.js"
+    },
+    "./consent-copy": {
+      "types": "./dist/consent-copy/index.d.ts",
+      "browser": "./dist/consent-copy/refuse-browser.js",
+      "default": "./dist/consent-copy/index.js"
     }
   },
   "imports": {
+    "#publisher-frame-navigation": {
+      "types": "./dist/web/frame/NavDisclosure.client.d.ts",
+      "react-server": "./dist/web/frame/NavDisclosure.server.js",
+      "default": "./dist/web/frame/NavDisclosure.client.js"
+    },
     "#publisher-web-views": {
       "types": "./dist/web/views/index.d.ts",
       "react-server": "./dist/web/views/server.js",
@@ -392,8 +413,8 @@
     "check:preview-css": "node scripts/preview-css.mjs --check"
   },
   "dependencies": {
-    "@clossys/writer": "^0.5.1",
-    "@clossys/designer": "^0.8.0",
+    "@clossys/writer": "^0.6.0",
+    "@clossys/designer": "^0.12.0",
     "@clossys/controller": "^0.10.0"
   },
   "peerDependencies": {

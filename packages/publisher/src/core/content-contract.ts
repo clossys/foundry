@@ -1,4 +1,5 @@
 import type { CopyRef } from "@clossys/writer";
+import type { ContentAssetContract } from "./content-asset.js";
 import type { ContentIconName, SectionedViewSpecimenPanel, SectionedViewSpecimenPart, SectionedViewSpecimenStatus, SectionedViewSpecimenTone } from "./sectioned-view.js";
 
 /** Shared authored and renderer-facing vocabulary; recipes resolve into these axes. */
@@ -15,6 +16,7 @@ export const SECTIONED_VIEW_CONTENT_CONTRACT = Object.freeze({
   spans: Object.freeze({ third: 4, half: 6, "two-thirds": 8, full: 12 }),
   columnOptions: Object.freeze([2, 3] as const),
   rowColumnOptions: Object.freeze([1, 2] as const),
+  prose: Object.freeze({ paragraphs: 8, linksPerParagraph: 6, spansPerParagraph: 24, charactersPerParagraph: 1200 }),
   counts: Object.freeze({ columns: Object.freeze([2, 6] as const), groups: Object.freeze([2, 4] as const), groupItems: Object.freeze([2, 4] as const), laneDefinitions: 2, columns2: Object.freeze([2, 4, 6]), columns3: Object.freeze([3, 6]), rows: Object.freeze([2, 8] as const), bento: Object.freeze([2, 6] as const), stacked: Object.freeze([2, 4] as const), connected: Object.freeze([3, 5] as const), disclose: Object.freeze([4, 6] as const), matrix: 2, points: Object.freeze([2, 4] as const), linked: 6, rowUnits: 12 }),
 });
 export type FrameSize = typeof SECTIONED_VIEW_CONTENT_CONTRACT.sizes[number];
@@ -74,6 +76,12 @@ export type SectionedViewMatrixSide = { id: string; label?: CopyRef; heading: Co
   | { visual: SectionedViewSpecimenPanel; points?: never }
 );
 export interface SectionedViewMatrixBlock { type: "matrix"; recipe?: "comparison"; sides: SectionedViewMatrixSide[]; featured?: string }
+/** Visible span text resolves through Writer; destinations use Publisher's shared href policy. */
+export type SectionedViewProseSpan =
+  | { type: "text"; text: CopyRef }
+  | { type: "link"; text: CopyRef; href: string };
+/** One to eight paragraphs, each with at most 24 spans, six links and 1200 resolved characters. */
+export interface SectionedViewProseBlock { type: "prose"; paragraphs: SectionedViewProseSpan[][] }
 export interface SectionedViewSpecimenKeyItem { id: string; target: string; heading: CopyRef; description: CopyRef }
 export interface SectionedViewSpecimenKey { label: CopyRef; items: SectionedViewSpecimenKeyItem[] }
 export interface SectionedViewSpecimenMedia { type: "specimen"; label: CopyRef; panel: SectionedViewSpecimenPanel; key?: SectionedViewSpecimenKey }
@@ -108,7 +116,12 @@ export interface SectionedViewSceneApprovalChainInput {
 }
 export type SectionedViewSceneInput = SectionedViewSceneConvergeInput | SectionedViewSceneEvidenceTrailInput | SectionedViewSceneApprovalChainInput;
 export interface SectionedViewSceneMedia { type: "scene"; label: CopyRef; relationLabel?: CopyRef; input: SectionedViewSceneInput }
-export type SectionedViewMedia = SectionedViewSpecimenMedia | SectionedViewRecordMedia | SectionedViewSceneMedia;
+/** Consumer-owned image or video data, rendered by the existing media slot. */
+export type SectionedViewAssetMedia = { type: "asset"; assetId: string; contract: ContentAssetContract; caption?: CopyRef } & (
+  | { purpose: "meaningful"; alt: CopyRef }
+  | { purpose: "decorative"; alt?: never; contract: ContentAssetContract & { format: Extract<ContentAssetContract["format"], `image/${string}`> } }
+);
+export type SectionedViewMedia = SectionedViewSpecimenMedia | SectionedViewRecordMedia | SectionedViewSceneMedia | SectionedViewAssetMedia;
 
 interface Recipe {
   readonly fixed: Readonly<Partial<Record<"arrangement" | "order" | "reveal" | "treatment" | "scale" | "columns", string | number>>>;

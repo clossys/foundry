@@ -91,6 +91,8 @@ export interface LandingViewProps extends Omit<HTMLAttributes<HTMLElement>, "chi
   backdrop?: ReactNode;
   /** Where the header band sits. @default "overlay" */
   header?: LandingViewHeader;
+  /** A lone filling hero may flex into its frame instead of sizing against the viewport. @default "viewport" */
+  fit?: "viewport" | "frame";
   /** How the hero copy lines up. @default "center" */
   align?: HeroAlign;
   /**
@@ -120,7 +122,7 @@ export interface LandingViewProps extends Omit<HTMLAttributes<HTMLElement>, "chi
    * `"none"` when the frame already owns `main`.
    */
   landmark?: SectionedViewLandmark;
-  /** Resolves hero `media.assetId`, as for `SectionedView`. */
+  /** Resolves hero and canonical content `media.assetId`, as for `SectionedView`. */
   resolveAssetId?: AssetResolver;
   /** When `true`, applies each video asset's `reducedMotion` policy. */
   prefersReducedMotion?: boolean;
@@ -224,9 +226,9 @@ function bandBlocks(afterSection: Readonly<Record<string, ReactNode>>, canonical
         {after(id)}
       </ContentSection>
     ),
-    ContentSection: ({ section, actions, publishedKind }) => {
+    ContentSection: ({ section, actions, publishedKind, resolveAssetId, prefersReducedMotion }) => {
       const Content = canonicalContentSection;
-      return <Content section={section} actions={actions} publishedKind={publishedKind} after={after(section.id)} className={publishedKind === undefined ? undefined : BAND_ANCHOR_CLASS} style={publishedKind === undefined ? { scrollMarginTop: 0 } : undefined} />;
+      return <Content section={section} actions={actions} resolveAssetId={resolveAssetId} prefersReducedMotion={prefersReducedMotion} after={after(section.id)} className={publishedKind === undefined ? undefined : BAND_ANCHOR_CLASS} style={publishedKind === undefined ? { scrollMarginTop: 0 } : undefined} />;
     },
   };
 }
@@ -303,6 +305,7 @@ return function LandingView({
   callToAction,
   backdrop,
   header = "overlay",
+  fit = "viewport",
   align = "center",
   measure = "wide",
   peek = true,
@@ -368,6 +371,7 @@ return function LandingView({
   const compact = heroSection.size === "compact";
   const hasContent = bands.length > 0 || callToAction !== undefined;
   const fills = !compact && header === "overlay";
+  const fitsFrame = fills && fit === "frame" && !hasContent;
   const peeks = fills && peek && hasContent;
   const firstBand = bands[0]?.section;
   const cue = !peeks
@@ -383,7 +387,7 @@ return function LandingView({
   const Root = landmark === "main" ? "main" : "div";
 
   return (
-    <Root {...rest} data-landing-view="" className={mergeUiClasses("flex flex-col bg-surface-base", className)} style={style}>
+    <Root {...rest} data-landing-view="" className={mergeUiClasses("flex flex-col bg-surface-base", fitsFrame ? "flex-1" : undefined, className)} style={style}>
       {heroSection.actions?.length === 2 || close?.actions?.length === 2 ? <style data-landing-action-pair-style="">{LANDING_ACTION_PAIR_CSS}</style> : null}
       <SectionFrame
         data-landing-hero=""
@@ -391,8 +395,8 @@ return function LandingView({
         data-landing-ground={heroSection.ground}
         ground={heroSection.ground}
         measure={measure}
-        className={mergeUiClasses("relative isolate", (compact ? HERO_PADDING_COMPACT : HERO_PADDING)[header])}
-        style={fills ? { minHeight: peeks ? HERO_FILL.peek : HERO_FILL.full } : undefined}
+        className={mergeUiClasses("relative isolate", (compact ? HERO_PADDING_COMPACT : HERO_PADDING)[header], fitsFrame ? "flex-1" : undefined)}
+        style={fills && !fitsFrame ? { minHeight: peeks ? HERO_FILL.peek : HERO_FILL.full } : undefined}
       >
         {hasBackdrop ? (
           <div aria-hidden="true" data-landing-backdrop="" className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
@@ -410,7 +414,7 @@ return function LandingView({
         </div>
       ) : null}
       {bands.map(({ section, node }) => (
-        <SectionFrame key={section.id} data-landing-ground={section.ground} ground={section.ground} measure={measure} className={BAND_CLASS} style={section.kind === "content-section" ? { paddingBlock: 0 } : undefined}>
+        <SectionFrame key={section.id} data-landing-ground={section.ground} ground={section.ground} measure={measure} className={BAND_CLASS} style={section.kind === "content-section" || section.kind === "status-list" ? { paddingBlock: 0 } : undefined}>
           {ANATOMY_KINDS.has(section.kind) ? (
             node
           ) : (

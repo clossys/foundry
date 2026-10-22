@@ -42,7 +42,7 @@ export const SITE_PAGE_LAYERS: readonly SitePageLayer[] = freezeRows([
     owner: "Publisher shipped views and registry",
     mountOwner: "Publisher frame",
     implementationScope: "implemented",
-    deferred: ["chrome-free HeroView, MarketingView, CollectionView, LegalView, ContactView, PackReviewView, BrandGuideView and SystemAuditView"],
+    deferred: ["chrome-free HeroView, MarketingView, CollectionView, PackReviewView, BrandGuideView and SystemAuditView"],
   },
   { id: 6, name: "Per-page head", owner: "Publisher", mountOwner: "Publisher pageHead", implementationScope: "contract-only", deferred: ["pageHead"] },
   {
@@ -59,7 +59,7 @@ export const SITE_PAGE_LAYERS: readonly SitePageLayer[] = freezeRows([
     owner: "Publisher views",
     mountOwner: "Publisher frame",
     implementationScope: "implemented",
-    deferred: ["loading state", "degraded state", "frame-aware ErrorView root"],
+    deferred: ["loading state", "degraded state"],
   },
   { id: 9, name: "Forms and APIs", owner: "Their owning form/API packages", mountOwner: "Explicit package adapter", implementationScope: "out-of-scope", deferred: [] },
 ]);

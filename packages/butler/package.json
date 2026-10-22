@@ -1,6 +1,6 @@
 {
   "name": "@clossys/butler",
-  "version": "0.1.11",
+  "version": "0.3.1",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -19,6 +19,14 @@
     "./web": {
       "types": "./dist/web/index.d.ts",
       "import": "./dist/web/index.js"
+    },
+    "./browser-consent": {
+      "types": "./dist/browser-consent/index.d.ts",
+      "import": "./dist/browser-consent/index.js"
+    },
+    "./browser-consent/local-storage": {
+      "types": "./dist/browser-consent/adapters/local-storage.d.ts",
+      "import": "./dist/browser-consent/adapters/local-storage.js"
     }
   },
   "bin": {

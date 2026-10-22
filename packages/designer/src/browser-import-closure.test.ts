@@ -33,6 +33,11 @@ async function bundle(entryPoints: string[], plugins: Plugin[] = []) {
 }
 
 describe("client entry import closure", () => {
+  it("bundles the actual CommandMenu and optional shortcut helper for a browser", async () => {
+    const result = await bundle([join(packageDir, "src", "blocks", "CommandMenu.tsx")]);
+    expect(result.outputFiles[0]?.text).toContain("useCommandMenuShortcut");
+    expect(result.outputFiles[0]?.text).toContain("CommandMenu");
+  });
   it("discovers public component barrels and bundles them for a browser", async () => {
     expect(entries.length).toBeGreaterThan(0);
     expect(entries).toContain(join(packageDir, "src", "tokens", "index.ts"));

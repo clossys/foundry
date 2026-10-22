@@ -1,6 +1,6 @@
 {
   "name": "@clossys/observer",
-  "version": "0.4.2",
+  "version": "0.5.0",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -11,6 +11,14 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./browser-analytics": {
+      "types": "./dist/browser-analytics/index.d.ts",
+      "import": "./dist/browser-analytics/index.js"
+    },
+    "./browser-analytics/posthog": {
+      "types": "./dist/browser-analytics/providers/posthog.d.ts",
+      "import": "./dist/browser-analytics/providers/posthog.js"
     }
   },
   "bin": {
@@ -32,7 +40,7 @@
       "invocation": "single-json-input"
     }
   },
-  "description": "Telemetry contracts, redaction as a tested contract, gate efficacy measured from caller-supplied run history, and a fleet package-coverage grader with a CLI. The measurer, never the measured: this package computes whether a gate is working and never judges a change itself. The library stays zero I/O, zero network calls; only the CLI touches a filesystem, and only through an injected port.",
+  "description": "Telemetry contracts, redaction as a tested contract, gate efficacy measured from caller-supplied run history, and a fleet package-coverage grader with a CLI. The measurer, never the measured: this package computes whether a gate is working and never judges a change itself. The library stays zero I/O, zero network calls except for ./browser-analytics, whose transport reaches the network only through the provider the host loads and passes in; only the CLI touches a filesystem, and only through an injected port.",
   "keywords": [
     "telemetry",
     "observability",

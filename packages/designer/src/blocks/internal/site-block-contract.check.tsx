@@ -139,7 +139,7 @@ import { AnatomyCallouts } from "../AnatomyCallouts.js";
 import type { SpecimenPanelContent } from "../specimen/SpecimenPanel.js";
 const anatomyPanel: SpecimenPanelContent = { parts: [{ id: "result", type: "fields", label: "Result", items: [{ id: "latest", label: "Latest result", value: "3.00x" }] }] };
 
-// @ts-expect-error The legacy split alias requires media.
+// @ts-expect-error The supported split alias requires media.
 export const missingSplitMedia = <ContentSection layout="split" heading="Heading" />;
 // @ts-expect-error Specimen requires its accessible-name label.
 export const missingSpecimenLabel = <Specimen panels={[{ id: "panel", ...anatomyPanel }]} />;
@@ -205,14 +205,34 @@ export const defaultPanelBadge: BadgedPanelContent = { parts: [cappedStatusRows]
 // @ts-expect-error Panel badges use the existing five Badge tones.
 export const invalidPanelBadgeTone: BadgedPanelContent = { ...badgedPanelContent, badge: { label: "Reviewed", tone: "accent" } };
 
-// Canonical split layouts allow header-only bands; the temporary alias needs media.
+// Canonical split layouts allow header-only bands; the supported alias needs media.
 void <ContentSection layout="split-start" heading="Heading" />;
 void <ContentSection layout="split-end" heading="Heading" />;
 void <ContentSection layout="split" heading="Heading" media={<p>Visual</p>} />;
-// @ts-expect-error The temporary split alias still requires media.
+// @ts-expect-error The supported split alias requires media.
 void <ContentSection layout="split" heading="Heading" />;
 
 const namedSpecimenPanel = { id: "sample", ...anatomyPanel };
 void <Specimen label="Sample record" panels={[namedSpecimenPanel]} />;
 // @ts-expect-error Every Specimen requires its accessible figure label.
 void <Specimen panels={[namedSpecimenPanel]} />;
+
+import { Tree, type TreeProps, type TreeNodeData } from "../index.js";
+import { Tree as ServerTree, type TreeProps as ServerTreeProps, type TreeNodeData as ServerTreeNodeData } from "../server.js";
+
+const treeRoot: TreeNodeData = { id: "root", heading: "Organization", figure: { value: 42, delta: "+6", trend: "up" }, status: { tone: "success", label: "Open" } };
+const treeChild: ServerTreeNodeData = { id: "one", parent: "root", edgeLabel: <em>Contains</em>, heading: "Team" };
+const treeProps: TreeProps = { nodes: [treeRoot, treeChild, { id: "two", parent: "root", heading: "Team", edgeLabel: "Contains" }], labelledBy: "organization", orientation: "down", ground: "inverse", className: "caller" };
+const serverTreeProps: ServerTreeProps = treeProps;
+void <Tree {...treeProps} />;
+void <ServerTree {...serverTreeProps} />;
+// @ts-expect-error A Tree node carries no navigation destination.
+const linkedTreeNode: TreeNodeData = { ...treeRoot, href: "/root" };
+// @ts-expect-error A Tree node carries no Item visual slot.
+const visualTreeNode: TreeNodeData = { ...treeRoot, visual: <p>Visual</p> };
+// @ts-expect-error Featured remains retired on Tree nodes.
+const featuredTreeNode: TreeNodeData = { ...treeRoot, featured: true };
+// @ts-expect-error Tree orientation has two closed choices.
+void <Tree {...treeProps} orientation="up" />;
+// @ts-expect-error Tree grounds use the existing section vocabulary.
+void <ServerTree {...serverTreeProps} ground="raised" />;

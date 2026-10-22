@@ -68,14 +68,20 @@ function RadioGroupRoot({
 }: RadioGroupProps) {
   return (
     <AriaRadioGroup {...rest} className={cx("flex flex-col gap-xs", className)}>
-      <Label className="text-body-s text-ink-secondary font-body">{label}</Label>
-      <div className="flex flex-col gap-sm">{children}</div>
-      {description ? (
-        <Text slot="description" className="text-caption text-ink-muted">
-          {description}
-        </Text>
-      ) : null}
-      <FieldError className="text-caption text-status-danger-text">{errorMessage}</FieldError>
+      {({ orientation }) => (
+        <>
+          <Label className="text-body-s text-ink-secondary font-body">{label}</Label>
+          <div className={orientation === "horizontal" ? "flex flex-row gap-sm" : "flex flex-col gap-sm"}>
+            {children}
+          </div>
+          {description ? (
+            <Text slot="description" className="text-caption text-ink-muted">
+              {description}
+            </Text>
+          ) : null}
+          <FieldError className="text-caption text-status-danger-text">{errorMessage}</FieldError>
+        </>
+      )}
     </AriaRadioGroup>
   );
 }

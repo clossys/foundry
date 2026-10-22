@@ -32,6 +32,15 @@ import type { SectionedViewContentBlock, SectionedViewContentSection, SectionedV
 import { renderWebDocument } from "./renderWebDocument.js";
 import { SectionedView as ServerSectionedView } from "./views/SectionedView.server.js";
 
+// Pin the complete new Header opening before projecting only that changed tag.
+// Every other byte remains compared against the original full-page golden.
+const LEGACY_HEADER_OPENING = '<header data-header-root="" class="bg-surface-raised py-sm border-b border-line-base site-header-contract" style="position:relative;z-index:var(--ui-z-shell, 20);border-bottom-width:var(--ui-border-hairline, 1px)">';
+const SOLID_HEADER_OPENING = '<header data-header-root="" data-surface="solid" data-tone="base" class="site-header-contract site-header-ink py-sm text-ink-primary bg-surface-raised border-b border-line-base" style="position:relative;z-index:var(--ui-z-shell, 20);border-bottom-width:var(--ui-border-hairline, 1px)">';
+function projectLegacyHeaderOpening(html: string): string {
+  expect(html.match(/<header\b[^>]*>/)?.[0]).toBe(SOLID_HEADER_OPENING);
+  return html.replace(/<header\b[^>]*>/, LEGACY_HEADER_OPENING);
+}
+
 describe("golden: ErrorView", () => {
   const doc: ComposeDocument = {
     id: "acme-404",
@@ -112,11 +121,11 @@ describe("golden: AuthView", () => {
     });
     const html = renderToStaticMarkup(element);
 
-    expect(html).toBe(
+    expect(projectLegacyHeaderOpening(html)).toBe(
       '<div class="flex min-h-dvh flex-col">' +
-        '<header class="bg-surface-raised py-sm border-b border-line-base" style="position:relative;z-index:var(--ui-z-shell, 20);border-bottom-width:var(--ui-border-hairline, 1px)">' +
-        '<div class="mx-auto flex w-full flex-wrap items-center justify-between gap-md" style="padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))">' +
-        '<div class="flex items-center gap-lg">Acme</div></div></header>' +
+        '<header data-header-root="" class="bg-surface-raised py-sm border-b border-line-base site-header-contract" style="position:relative;z-index:var(--ui-z-shell, 20);border-bottom-width:var(--ui-border-hairline, 1px)">' +
+        '<div class="site-header-row">' +
+        '<div class="site-header-brand">Acme</div><div class="site-header-actions"></div></div></header>' +
         '<main class="mx-auto flex w-full flex-1 flex-col gap-xl px-lg py-2xl" style="max-width:var(--ui-width-form-max, none)">' +
         '<div class="flex flex-col items-center gap-xs text-center">' +
         '<h1 class="text-h1 font-display text-ink-primary">Sign in</h1>' +
@@ -125,8 +134,7 @@ describe("golden: AuthView", () => {
         '<div class="rounded-control bg-surface-raised p-lg flex flex-col gap-lg text-start" style="box-shadow:var(--ui-elevation-raised, 0 1px 0 var(--color-line-base, oklch(0.8761 0 0)))">' +
         "email + password form</div>" +
         '<p class="text-center text-body-s text-ink-muted">\u00A9 2026 Acme</p></main>' +
-        '<footer class="bg-surface-raised text-ink-primary py-lg border-t border-line-base" style="position:relative;z-index:var(--ui-z-shell, 20);border-top-width:var(--ui-border-hairline, 1px)">' +
-        '<div class="mx-auto flex w-full flex-col gap-lg" style="padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))"></div></footer></div>',
+        '<footer data-footer-root="" class="site-footer-dark bg-surface-raised text-ink-primary py-lg border-t border-line-base" style="position:relative;z-index:var(--ui-z-shell, 20);border-top-width:var(--ui-border-hairline, 1px)"><div class="mx-auto flex w-full flex-col gap-lg" style="padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))"></div></footer></div>',
     );
   });
 });
@@ -152,22 +160,21 @@ describe("golden: assetId — a real <img>, byte for byte, alt text and intrinsi
     });
     const html = renderToStaticMarkup(element);
 
-    expect(html).toBe(
+    expect(projectLegacyHeaderOpening(html)).toBe(
       '<link rel="preload" as="image" href="https://cdn.example/logo.svg"/>' +
         '<div class="flex min-h-dvh flex-col">' +
-        '<header class="bg-surface-raised py-sm border-b border-line-base" style="position:relative;z-index:var(--ui-z-shell, 20);border-bottom-width:var(--ui-border-hairline, 1px)">' +
-        '<div class="mx-auto flex w-full flex-wrap items-center justify-between gap-md" style="padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))">' +
-        '<div class="flex items-center gap-lg">' +
+        '<header data-header-root="" class="bg-surface-raised py-sm border-b border-line-base site-header-contract" style="position:relative;z-index:var(--ui-z-shell, 20);border-bottom-width:var(--ui-border-hairline, 1px)">' +
+        '<div class="site-header-row">' +
+        '<div class="site-header-brand">' +
         '<img src="https://cdn.example/logo.svg" alt="Acme logo" width="120" height="40"/>' +
-        "</div></div></header>" +
+        '</div><div class="site-header-actions"></div></div></header>' +
         '<main class="mx-auto flex w-full flex-1 flex-col gap-xl px-lg py-2xl" style="max-width:var(--ui-width-form-max, none)">' +
         '<div class="flex flex-col items-center gap-xs text-center">' +
         '<h1 class="text-h1 font-display text-ink-primary">Sign in</h1>' +
         "</div>" +
         '<div class="rounded-control bg-surface-raised p-lg flex flex-col gap-lg text-start" style="box-shadow:var(--ui-elevation-raised, 0 1px 0 var(--color-line-base, oklch(0.8761 0 0)))">' +
         "email + password form</div></main>" +
-        '<footer class="bg-surface-raised text-ink-primary py-lg border-t border-line-base" style="position:relative;z-index:var(--ui-z-shell, 20);border-top-width:var(--ui-border-hairline, 1px)">' +
-        '<div class="mx-auto flex w-full flex-col gap-lg" style="padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))"></div></footer></div>',
+        '<footer data-footer-root="" class="site-footer-dark bg-surface-raised text-ink-primary py-lg border-t border-line-base" style="position:relative;z-index:var(--ui-z-shell, 20);border-top-width:var(--ui-border-hairline, 1px)"><div class="mx-auto flex w-full flex-col gap-lg" style="padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))"></div></footer></div>',
     );
   });
 
@@ -325,12 +332,12 @@ describe("golden: MarketingView", () => {
     });
     const html = renderToStaticMarkup(element);
 
-    expect(html).toBe(
+    expect(projectLegacyHeaderOpening(html)).toBe(
       '<div class="flex min-h-dvh flex-col">' +
-        '<header class="bg-surface-raised py-sm border-b border-line-base" style="position:relative;z-index:var(--ui-z-shell, 20);border-bottom-width:var(--ui-border-hairline, 1px)">' +
-        '<div class="mx-auto flex w-full flex-wrap items-center justify-between gap-md" style="padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))">' +
-        '<div class="flex items-center gap-lg">Acme Wordmark</div>' +
-        "</div>" +
+        '<header data-header-root="" class="bg-surface-raised py-sm border-b border-line-base site-header-contract" style="position:relative;z-index:var(--ui-z-shell, 20);border-bottom-width:var(--ui-border-hairline, 1px)">' +
+        '<div class="site-header-row">' +
+        '<div class="site-header-brand">Acme Wordmark</div>' +
+        '<div class="site-header-actions"></div></div>' +
         "</header>" +
         '<main class="flex flex-col gap-2xl py-2xl">' +
         '<section class="flex flex-col gap-xl">' +
@@ -369,9 +376,7 @@ describe("golden: MarketingView", () => {
         "</div>" +
         "</section>" +
         "</main>" +
-        '<footer class="bg-surface-raised text-ink-primary py-lg border-t border-line-base" style="position:relative;z-index:var(--ui-z-shell, 20);border-top-width:var(--ui-border-hairline, 1px)">' +
-        '<div class="mx-auto flex w-full flex-col gap-lg" style="padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))"></div>' +
-        "</footer>" +
+        '<footer data-footer-root="" class="site-footer-dark bg-surface-raised text-ink-primary py-lg border-t border-line-base" style="position:relative;z-index:var(--ui-z-shell, 20);border-top-width:var(--ui-border-hairline, 1px)"><div class="mx-auto flex w-full flex-col gap-lg" style="padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))"></div>' + "</footer>" +
         "</div>",
     );
   });
@@ -421,20 +426,18 @@ describe("golden: MarketingView", () => {
     const { element } = renderWebDocument(doc, { groups: [{ slot: "features", items: [] }] });
     const html = renderToStaticMarkup(element);
 
-    expect(html).toBe(
+    expect(projectLegacyHeaderOpening(html)).toBe(
       '<div class="flex min-h-dvh flex-col">' +
-        '<header class="bg-surface-raised py-sm border-b border-line-base" style="position:relative;z-index:var(--ui-z-shell, 20);border-bottom-width:var(--ui-border-hairline, 1px)">' +
-        '<div class="mx-auto flex w-full flex-wrap items-center justify-between gap-md" style="padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))">' +
-        '<div class="flex items-center gap-lg">Acme Wordmark</div>' +
-        "</div>" +
+        '<header data-header-root="" class="bg-surface-raised py-sm border-b border-line-base site-header-contract" style="position:relative;z-index:var(--ui-z-shell, 20);border-bottom-width:var(--ui-border-hairline, 1px)">' +
+        '<div class="site-header-row">' +
+        '<div class="site-header-brand">Acme Wordmark</div>' +
+        '<div class="site-header-actions"></div></div>' +
         "</header>" +
         '<main class="flex flex-col gap-2xl py-2xl">' +
         '<section class="flex flex-col gap-xl"><div data-section-intro="display" class="flex w-full flex-col items-start" style="max-width:var(--ui-width-prose-max, 48rem)"><h1 class="text-display-m tablet:text-display-l font-display leading-display text-balance text-ink-primary">Placeholder hero heading</h1></div></section>' +
         '<section class="bg-surface-sunken flex flex-col gap-xl"><div data-section-intro="display" class="flex w-full flex-col items-start" style="max-width:var(--ui-width-prose-max, 48rem)"><h2 class="text-display-m tablet:text-display-l font-display leading-display text-balance text-ink-primary">Placeholder CTA heading</h2></div></section>' +
         "</main>" +
-        '<footer class="bg-surface-raised text-ink-primary py-lg border-t border-line-base" style="position:relative;z-index:var(--ui-z-shell, 20);border-top-width:var(--ui-border-hairline, 1px)">' +
-        '<div class="mx-auto flex w-full flex-col gap-lg" style="padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))"></div>' +
-        "</footer>" +
+        '<footer data-footer-root="" class="site-footer-dark bg-surface-raised text-ink-primary py-lg border-t border-line-base" style="position:relative;z-index:var(--ui-z-shell, 20);border-top-width:var(--ui-border-hairline, 1px)"><div class="mx-auto flex w-full flex-col gap-lg" style="padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))"></div>' + "</footer>" +
         "</div>",
     );
     expect(html).not.toContain("aria-expanded");

@@ -10,6 +10,13 @@ describe("Hero", () => {
     expect(heading.tagName).toBe("H1");
   });
 
+  it.each([[0, "0"], ["", ""], [null, ""], [undefined, ""], [false, ""]])("keeps one h1 for required heading %j", (heading, expectedText) => {
+    const { container } = render(<Hero heading={heading} />);
+    const headings = container.querySelectorAll("h1");
+    expect(headings).toHaveLength(1);
+    expect(headings[0]?.textContent).toBe(expectedText);
+  });
+
   it("renders the heading as an <h2> when headingLevel={2}", () => {
     render(<Hero heading="Heading text" headingLevel={2} />);
     expect(screen.getByRole("heading", { name: "Heading text" }).tagName).toBe("H2");

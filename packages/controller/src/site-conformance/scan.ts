@@ -9,8 +9,8 @@ import { isAbsolute, join, posix, relative, resolve, sep } from "node:path";
 
 export const SITE_CONFORMANCE_RULES = ["site/route-not-publisher-view", "site/template-route-duplicate", "site/raw-style-literal"] as const;
 export type SiteConformanceRule = (typeof SITE_CONFORMANCE_RULES)[number];
-/** `site/waiver-unused` and `site/symlink-unscanned` are never waivable: a waiver cannot vouch for what was not read. */
-export type SiteConformanceFindingRule = SiteConformanceRule | "site/waiver-unused" | "site/symlink-unscanned";
+/** `site/waiver-unused`, `site/symlink-unscanned` and `site/manifest-missing` are never waivable: a waiver cannot vouch for what was not read. */
+export type SiteConformanceFindingRule = SiteConformanceRule | "site/waiver-unused" | "site/symlink-unscanned" | "site/manifest-missing";
 
 export const DEFAULT_SITE = "apps/site";
 export const WAIVERS_PATH = "clossys/conformance-waivers.json";
@@ -277,9 +277,10 @@ function routeOf(appDir: string, file: string): string {
   return `/${segments.join("/")}`;
 }
 
-function loadManifestRouteIds(root: string, siteDir: string): ReadonlySet<string> {
+/** `ids` is empty and `missing` is true when the site has no route manifest; an invalid manifest still throws. */
+function loadManifestRouteIds(root: string, siteDir: string): { readonly ids: ReadonlySet<string>; readonly missing: boolean } {
   const manifestPath = join(siteDir, ROUTE_MANIFEST_FILE);
-  if (!existsOrIsLink(manifestPath)) throw new SiteConformanceError(`${ROUTE_MANIFEST_FILE} is missing from the site directory`);
+  if (!existsOrIsLink(manifestPath)) return { ids: new Set<string>(), missing: true };
   assertNoSymlink(root, manifestPath, relative(root, manifestPath), "route manifest");
   const manifest = readJson(manifestPath, ROUTE_MANIFEST_FILE);
   const routes = isRecord(manifest) ? manifest.routes : undefined;
@@ -290,7 +291,7 @@ function loadManifestRouteIds(root: string, siteDir: string): ReadonlySet<string
     if (typeof id !== "string" || id === "") throw new SiteConformanceError(`${ROUTE_MANIFEST_FILE} has a route without a string id`);
     ids.add(id);
   }
-  return ids;
+  return { ids, missing: false };
 }
 
 interface Waiver {
@@ -424,10 +425,12 @@ export function scanSiteConformance(repoRoot: string, options: { readonly site?:
   }
   if (!isDirectory(siteDir)) throw new SiteConformanceError("site directory does not exist");
   assertNoSymlink(root, siteDir, siteRelative, "site directory");
-  const manifestIds = loadManifestRouteIds(root, siteDir);
+  const manifest = loadManifestRouteIds(root, siteDir);
+  const manifestIds = manifest.ids;
   const waivers = loadWaivers(root);
 
-  const appDir = join(siteDir, "app");
+  const rootAppDir = join(siteDir, "app");
+  const appDir = isDirectory(rootAppDir) ? rootAppDir : join(siteDir, "src", "app");
   const files: string[] = [];
   const links: string[] = [];
   if (isDirectory(appDir)) {
@@ -438,6 +441,9 @@ export function scanSiteConformance(repoRoot: string, options: { readonly site?:
   if (files.length === 0) throw new SiteConformanceError("site app directory has no .ts/.tsx files");
 
   const raw: SiteConformanceFinding[] = [];
+  if (manifest.missing) {
+    raw.push({ rule: "site/manifest-missing", file: relative(root, join(siteDir, ROUTE_MANIFEST_FILE)).split(sep).join(posix.sep), line: 1 });
+  }
   for (const file of files) {
     const rel = relative(root, file).split(sep).join(posix.sep);
     const source = readSource(file);

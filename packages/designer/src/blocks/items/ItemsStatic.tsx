@@ -1,14 +1,15 @@
-import { useId, type ReactNode } from "react";
+import { useId, type HTMLAttributes, type ReactNode } from "react";
 import { cx } from "../../atoms/internal/cx.js";
 import { SECTION_GROUND_CLASSES } from "../section-ground.js";
 import { assertItems, collectionProfile, loneTabletThirds } from "./policies.js";
-import { ItemRenderer } from "./render.js";
+import { ItemRenderer, renderItemStatus } from "./render.js";
 import { ItemPlate } from "./anatomy.js";
 import { UI_BORDER_HAIRLINE, UI_LAYOUT_TAP_TARGET } from "../../atoms/internal/ui-vars.js";
 import { assertNoNestedInteractive, cardLinkContainerClassName } from "../stretched-link.js";
-import { renderConnectedTrack, renderOrdinal, renderTerminal, orderLayout, orderedItemStyle } from "./order.js";
+import { renderConnectedTrack, renderOrdinal, renderTerminal, orderLayout, orderedItemStyle, multiLaneCellStyle, renderMultiLaneTrack, renderMultiLaneTerminal, MULTI_LANE_VARS } from "./order.js";
 import { hasContent } from "./policies.js";
 import type { ItemData, ItemSpan, ItemsProps } from "./types.js";
+import { MULTI_LANE_CLASSES } from "./order-classes.js";
 
 const COLUMN_CLASSES: Record<2 | 3, string> = {
   2: "grid grid-cols-1 gap-x-2xl gap-y-3xl tablet:grid-cols-2",
@@ -40,7 +41,8 @@ function renderItems(props: ItemsProps, columns: number | undefined, disclosure?
     const finalRow = (count: number) => index >= Math.floor((props.items.length - 1) / count) * count;
     const labelRows = sharedBody === undefined || !hasContent(props.endLabel) ? undefined : arrangement === "columns" ? cx(finalRow(2) ? "tablet:row-span-3" : undefined, columns === 3 ? finalRow(3) ? "tablet-lg:row-span-3" : "tablet-lg:row-span-2" : undefined) : props.items.length === 3 ? "tablet-lg:row-span-3" : "desktop:row-span-3";
     const sharedRows = cx(sharedBody, labelRows);
-    const body = props.reveal === "disclose" ? disclosure!(item, props) : <ItemRenderer item={item} treatment={treatment} size={size} ground={ground} statement={scale === "statement"} profile={profile} headingLevel={headingLevel} span={span} sharedVisualRow={withVisuals} orderClassName={cx(sharedBody, connected ? "h-auto items-order-body" : ordered ? "min-w-0 flex-1" : undefined)} />;
+    const disclosureItem = props.reveal !== "disclose" || item.status === undefined ? item : { ...item, meta: <span className="flex w-full flex-wrap items-center gap-sm">{hasContent(item.meta) ? <span>{item.meta}</span> : null}{renderItemStatus(item, true, ground)}</span> };
+    const body = props.reveal === "disclose" ? disclosure!(disclosureItem, props) : <ItemRenderer item={item} treatment={treatment} size={size} ground={ground} statement={scale === "statement"} profile={profile} row={arrangement === "rows"} headingLevel={headingLevel} span={span} sharedVisualRow={withVisuals} orderClassName={cx(sharedBody, connected ? "h-auto items-order-body" : ordered ? "min-w-0 flex-1" : undefined)} />;
     const disclosureBody = props.reveal === "disclose" && treatment === "plate" ? <ItemPlate ground={ground} className="w-full min-w-0">{body}</ItemPlate> : body;
     return <li key={item.id} data-lane={connected ? item.lane : undefined} className={cx("h-full min-w-0", spanClassName, connected ? "relative items-order-cell" : ordered ? "flex items-start gap-lg" : undefined, sharedRows)} style={connected ? orderedItemStyle(item, props) : undefined}>
       {ordered ? renderOrdinal({ ordinal: start + index, props, connected }) : null}
@@ -71,10 +73,35 @@ function GroupedItems({ props, columns, disclosure }: { props: ItemsProps; colum
     })}
   </div>;
 }
+/** New lane counts use a separate shell; the published two-actor child slots stay in renderItems. */
+// React 18 treats inert as unknown; a truthy native attribute value also survives React 19 boolean serialization.
+const INERT_LANE_ROW: HTMLAttributes<HTMLSpanElement> = { inert: "inert" as unknown as boolean };
+function renderMultiLaneItems(props: ItemsProps) {
+  const { ground = "base", treatment = "plain", size = "standard", headingLevel = 3 } = props;
+  const laneCount = props.lanes!.length, count = props.items.length;
+  const frameClassName = laneCount === 3 ? MULTI_LANE_CLASSES.three : MULTI_LANE_CLASSES.four;
+  const colors = SECTION_GROUND_CLASSES[ground];
+  const linkedBodyClassName = treatment === "plate" ? undefined : MULTI_LANE_CLASSES.linkedBody;
+  const frame = <div data-items-lanes={laneCount} className={frameClassName} style={{ gridTemplateColumns: "repeat(" + (count + 1) + ", minmax(0, 1fr))", gridTemplateRows: "repeat(" + laneCount + ", minmax(0, 1fr))" }}>
+    {props.lanes!.map((lane, index) => <span key={lane.id} data-item-lane-row="" aria-hidden="true" {...INERT_LANE_ROW} className={cx(MULTI_LANE_CLASSES.label, colors.secondary)} style={{ gridColumn: 1, gridRow: index + 1, paddingBlockStart: MULTI_LANE_VARS.xs }}>{lane.label}</span>)}
+    <ol role="list" aria-labelledby={props["aria-labelledby"]} data-items="" data-arrangement="stacked" data-treatment={treatment} className={cx(MULTI_LANE_CLASSES.list, props.className)} style={{ gridColumn: "2 / -1", gridRow: "1 / -1", gridTemplateColumns: "repeat(" + count + ", minmax(0, 1fr))", gridTemplateRows: "subgrid" }}>
+      {props.items.map((item, index) => <li key={item.id} data-lane={item.lane} className={MULTI_LANE_CLASSES.cell} style={multiLaneCellStyle(index, props)}>
+        <span className="absolute start-0" style={{ insetBlockStart: 0 }}>{renderOrdinal({ ordinal: index + 1, props })}</span>
+        <span data-item-lane-label="" className={cx(MULTI_LANE_CLASSES.chip, colors.secondary)} style={{ borderWidth: UI_BORDER_HAIRLINE, marginBlockEnd: MULTI_LANE_VARS.sm }}>{props.lanes!.find(lane => lane.id === item.lane)!.label}</span>
+        <div className={cx(MULTI_LANE_CLASSES.body, item.href === undefined ? undefined : linkedBodyClassName)}><span data-item-lane-clearance="" aria-hidden="true" className="hidden tablet-lg:block" style={{ blockSize: "calc(" + MULTI_LANE_VARS.twoXl + " + " + MULTI_LANE_VARS.lg + ")" }} /><ItemRenderer item={item} treatment={treatment} size={size} ground={ground} headingLevel={headingLevel} profile="sequence" orderClassName="h-auto min-w-0" /></div>
+        {renderMultiLaneTrack(index, props)}
+        {index === count - 1 ? renderMultiLaneTerminal(props) : null}
+      </li>)}
+    </ol>
+  </div>;
+  return hasContent(props.caption) ? <div className="flex flex-col gap-lg">{frame}<p data-item-caption="" className={cx("m-0 text-caption", colors.secondary)}>{props.caption}</p></div> : frame;
+}
+
 /** A bounded collection of items, with one canonical validation and rendering path. */
 export function ItemsStatic(props: ItemsProps, disclosure?: DisclosureRenderer) {
   const columns = assertItems(props);
   if (props.reveal === "disclose" && !disclosure) throw new TypeError("Items: a disclosure renderer is required.");
+  if (props.lanes !== undefined && props.lanes.length > 2) return renderMultiLaneItems(props);
   if (props.groups !== undefined) return <GroupedItems props={props} columns={columns!} disclosure={disclosure} />;
   const { arrangement, treatment = "plain", ground = "base" } = props;
   const layout = arrangement === "columns" ? COLUMN_CLASSES[columns as 2 | 3] : arrangement === "rows" ? ROW_CLASSES[columns as 1 | 2 | 3] : arrangement === "bento" ? "grid grid-cols-1 gap-xl tablet:grid-cols-12" : props.order === "connected" ? "flex flex-col gap-2xl" : "flex flex-col gap-3xl";

@@ -1,11 +1,16 @@
 import type { AriaAttributes, ReactNode } from "react";
 import type { BadgeVariant } from "../../atoms/Badge.js";
+import type { StatusMarkTone } from "../../atoms/StatusMark.js";
 import type { SectionGround } from "../section-ground.js";
 
 export type ItemSize = "standard" | "display";
 export type ItemTreatment = "plain" | "rule" | "plate";
 export type ItemSpan = "third" | "half" | "two-thirds" | "full";
 export interface ItemBadge { label: ReactNode; tone?: BadgeVariant }
+/** A focal measurement with authored delta copy and an optional direction. */
+export type ItemFigureData = { value: ReactNode; delta?: ReactNode; trend?: "up" | "down" | "neutral" };
+/** A shaped status mark with its visible state label. */
+export type ItemStatusData = { tone: StatusMarkTone; label: ReactNode };
 /** Copy and visual slots for one item. Linked items must contain no other controls. */
 export interface ItemData {
   id: string;
@@ -18,7 +23,11 @@ export interface ItemData {
   href?: string;
   span?: ItemSpan;
   badge?: ItemBadge;
-  /** Actor id in a connected, two-lane sequence. */
+  /** A focal measurement; its authored delta includes its own sign. */
+  figure?: ItemFigureData;
+  /** A shaped mark and visible state label, distinct from a badge. */
+  status?: ItemStatusData;
+  /** Actor id in a connected sequence with two, three or four lanes. */
   lane?: string;
 }
 /** Standalone items explicitly select their frame's scale, treatment and ground. */
@@ -46,6 +55,7 @@ export interface ItemsProps extends Pick<AriaAttributes, "aria-labelledby"> {
   groups?: readonly ItemsGroup[];
   order?: "none" | "numbered" | "connected";
   reveal?: "all" | "disclose";
+  /** Two lanes allow columns or stacks with 3-5 steps; three/four lanes allow stacks with 4-6/5-8 steps. */
   lanes?: readonly ItemsLane[];
   end?: "ends" | "continues";
   endLabel?: ReactNode;

@@ -1,6 +1,6 @@
 {
   "name": "@clossys/designer",
-  "version": "0.8.0",
+  "version": "0.12.0",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -38,6 +38,10 @@
     "./tokens/server": {
       "types": "./dist/tokens/server.d.ts",
       "import": "./dist/tokens/server.js"
+    },
+    "./tokens/preview": {
+      "types": "./dist/tokens/preview/index.d.ts",
+      "import": "./dist/tokens/preview/index.js"
     },
     "./tokens.css": "./styles/tokens.css",
     "./theme.css": "./styles/theme.css",

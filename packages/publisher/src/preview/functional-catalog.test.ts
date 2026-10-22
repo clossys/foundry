@@ -89,9 +89,9 @@ describe("retained contract configuration reference data", () => {
   const content = resolved.flatMap(document => document.sections.filter(section => section.kind === "content-section"));
   const items = content.flatMap(section => section.block?.type === "items" ? [section.block] : []);
   it("uses exactly public fixture descriptors and validates and resolves all sample copy", () => {
-    expect(CATALOG_FIXTURES).toHaveLength(43);
-    expect(new Set(CATALOG_FIXTURES.map(fixture => fixture.id)).size).toBe(43);
-    expect(Object.fromEntries(["Say", "Frame", "Items", "Matrix", "Media", "Recipes"].map(fn => [fn, CATALOG_FIXTURES.filter(fixture => fixture.fn === fn).length]))).toEqual({ Say: 6, Frame: 8, Items: 18, Matrix: 3, Media: 7, Recipes: 1 });
+    expect(CATALOG_FIXTURES).toHaveLength(44);
+    expect(new Set(CATALOG_FIXTURES.map(fixture => fixture.id)).size).toBe(44);
+    expect(Object.fromEntries(["Say", "Frame", "Items", "Matrix", "Media", "Recipes"].map(fn => [fn, CATALOG_FIXTURES.filter(fixture => fixture.fn === fn).length]))).toEqual({ Say: 6, Frame: 8, Items: 18, Matrix: 3, Media: 7, Recipes: 2 });
     const before = JSON.stringify(CATALOG_FIXTURES);
     for (const [index, fixture] of CATALOG_FIXTURES.entries()) {
       expect(Object.keys(fixture).sort(), fixture.id).toEqual(["axis", "caption", "fn", "id", "section", "value"]);
@@ -153,9 +153,9 @@ describe("retained contract configuration reference data", () => {
       }
       exampleCount += document.querySelectorAll("[data-catalog-fixture]").length;
     }
-    expect(exampleCount).toBe(31);
+    expect(exampleCount).toBe(32);
     const overview = byFile.get("catalog/overview.html")!;
-    expect([...overview.querySelectorAll("[data-catalog-recipe]")].map(row => row.getAttribute("data-catalog-recipe"))).toEqual([...C.recipes, "comparison"]);
+    expect([...overview.querySelectorAll("[data-catalog-recipe]")].map(row => row.getAttribute("data-catalog-recipe"))).toEqual([...C.recipes, "comparison", "prose"]);
     for (const recipe of C.recipes) {
       const row = overview.querySelector(`[data-catalog-recipe="${recipe}"]`)!;
       expect(row.querySelector("a")?.getAttribute("href")).toContain(`#example-${CATALOG_RECIPE_LINKS[recipe]}`);

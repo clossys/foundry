@@ -27,7 +27,7 @@ declare const notAClass: string;
 type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2 ? true : false;
 
 /** The exact accepted prop names; adding any member makes this fail to compile. */
-export const legalPropKeysAreClosed: Equal<keyof SiteFooterLegalProps, "entity" | "links" | "linksLabel"> = true;
+export const legalPropKeysAreClosed: Equal<keyof SiteFooterLegalProps, "entity" | "links" | "linksLabel" | "icons" | "home" | "iconsLabel"> = true;
 
 export const legalAcceptsTheDocumentedProps = (
   <SiteFooter.Legal entity="Acme Studio" links={links} linksLabel="Legal links" />
@@ -50,3 +50,10 @@ export const legalRejectsHtmlAttributes = <SiteFooter.Legal entity="Acme Studio"
 
 // @ts-expect-error — `entity` is required.
 export const legalRequiresEntity = <SiteFooter.Legal links={links} />;
+
+// @ts-expect-error — icon-only links require an explicit accessible name.
+export const legalRequiresIconName = <SiteFooter.Legal entity="Example" links={[]} icons={[{ href: "/profile", icon: null }]} />;
+// @ts-expect-error — every icon requires a destination.
+export const legalRequiresIconDestination = <SiteFooter.Legal entity="Example" links={[]} icons={[{ label: "Profile", icon: null }]} />;
+// @ts-expect-error — the home mark requires named, dark-compatible authored artwork.
+export const legalRequiresHomeArtwork = <SiteFooter.Legal entity="Example" links={[]} home={{ href: "/", label: "Home" }} />;

@@ -2,7 +2,7 @@ import { defineDomainModel } from "./define.js";
 import type { DomainModel, DomainModelDefinition, DomainTypeDefinition, FieldDefinition, RelationDefinition, ValueTypeDefinition, VocabularyDefinition } from "./types.js";
 
 function byId<T extends { id: string }>(left: T, right: T): number {
-  return left.id.localeCompare(right.id);
+  return left.id < right.id ? -1 : left.id > right.id ? 1 : 0;
 }
 
 function normalizeField(field: FieldDefinition): FieldDefinition {

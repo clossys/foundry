@@ -4,7 +4,7 @@
  * full #375 rationale this file shares: `blocks/index.ts` re-exports
  * every block eagerly from one module, so the interactive minority
  * (`DataTable`, `Form`, `ConfirmDialog`, `Toolbar`, `NavGrid`,
- * `Pagination`, `Testimonial`) drags the whole barrel down under React's
+ * `Pagination` and the client `Testimonial`) drags the whole barrel down under React's
  * `react-server` condition even though eleven individual blocks resolve
  * cleanly on their own.
  *
@@ -56,7 +56,7 @@ export type {
   FeatureGridHeadingLevel,
 } from "./FeatureGrid.js";
 export { Matrix } from "./Matrix.js";
-export type { MatrixProps, MatrixSide, MatrixHeadingLevel } from "./Matrix.js";
+export type { MatrixProps, MatrixGridProps, MatrixQuadrantProps, MatrixCellData, MatrixSide, MatrixHeadingLevel } from "./Matrix.js";
 export { Specimen } from "./specimen/Specimen.js";
 export type { SpecimenProps, SpecimenArrangement } from "./specimen/Specimen.js";
 export { SpecimenPanel } from "./specimen/SpecimenPanel.js";
@@ -143,7 +143,7 @@ export { PageHeader } from "./PageHeader.js";
 export type { PageHeaderProps } from "./PageHeader.js";
 
 export { PricingTable } from "./PricingTable.js";
-export type { PricingTableProps, PricingTier, PricingTableHeadingLevel } from "./PricingTable.js";
+export type { PricingTableProps, PricingTier, PricingTableHeadingLevel, PricingTierPrice, PricingCellData, PricingComparison, PricingComparisonGroup, PricingComparisonRow } from "./PricingTable.js";
 
 export { SectionHeader } from "./SectionHeader.js";
 export type { SectionHeaderProps, SectionHeaderLevel } from "./SectionHeader.js";
@@ -151,8 +151,14 @@ export type { SectionHeaderProps, SectionHeaderLevel } from "./SectionHeader.js"
 export { SectionFrame } from "./SectionFrame.js";
 export type { SectionFrameProps, SectionMeasure } from "./SectionFrame.js";
 
+export { UsageMeter } from "./UsageMeter.server.js";
+export type { UsageMeterProps, UsageMeterThreshold } from "./UsageMeter.js";
+
 export { Stat } from "./Stat.js";
 export type { StatProps, StatTrend } from "./Stat.js";
+
+export { Testimonial } from "./Testimonial.server.js";
+export type { TestimonialProps } from "./Testimonial.js";
 
 export { RecordLedger } from "./RecordLedger.js";
 export type { RecordLedgerProps, LedgerRowData, LedgerGroupData } from "./RecordLedger.js";
@@ -164,5 +170,10 @@ export { Scene, layoutScene, sceneRelationText } from "./scene/index.js";
 export type { SceneProps, SceneInput, SceneConverge, SceneEvidenceTrail, SceneApprovalChain, SceneDisorder, SceneFormat, SceneDocument, SceneRow, SceneStatus, ScenePerson, SceneFinding, ScenePoint, ScenePart, SceneWire, SceneTerminal, SceneTag, SceneNode, ScenePersonLayout, SceneLayout } from "./scene/index.js";
 
 export { Item } from "./items/Item.js";
+export { Tree } from "./tree/Tree.js";
+export type { TreeProps, TreeNodeData } from "./tree/Tree.js";
 export { Items } from "./items/Items.server.js";
-export type { ItemData, ItemProps, ItemBadge, ItemSize, ItemTreatment, ItemSpan, ItemsProps, ItemsArrangement, ItemsColumns, ItemsScale, ItemsGroup, ItemsLane } from "./items/types.js";
+export type { ItemData, ItemFigureData, ItemStatusData, ItemProps, ItemBadge, ItemSize, ItemTreatment, ItemSpan, ItemsProps, ItemsArrangement, ItemsColumns, ItemsScale, ItemsGroup, ItemsLane } from "./items/types.js";
+
+export { Lockup } from "./Lockup.js";
+export type { LockupProps } from "./Lockup.js";

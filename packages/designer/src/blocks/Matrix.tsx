@@ -1,11 +1,13 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { Card } from "../atoms/Card.js";
 import { Icon } from "../atoms/Icon.js";
+import type { StatusMarkTone } from "../atoms/StatusMark.js";
 import { cx } from "../atoms/internal/cx.js";
 import { UI_BORDER_HAIRLINE } from "../atoms/internal/ui-vars.js";
 import { Check } from "../icons/Check.js";
 import { hasContent } from "./items/policies.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
+import { MatrixGrid } from "./matrix/grid.js";
 
 /** Heading element for each side's primary heading. */
 export type MatrixHeadingLevel = 2 | 3 | 4 | 5 | 6;
@@ -25,7 +27,8 @@ export type MatrixSide = MatrixSideBase & (
   | { visual: ReactNode; points?: never }
 );
 
-export interface MatrixProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> {
+export interface MatrixQuadrantProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> {
+  arrangement?: "sides";
   sides: readonly [MatrixSide, MatrixSide];
   /** The stable id of the side carrying the accent rule. */
   featured?: string;
@@ -36,6 +39,30 @@ export interface MatrixProps extends Omit<HTMLAttributes<HTMLDivElement>, "title
   className?: string;
   style?: CSSProperties;
 }
+
+export type MatrixCellData =
+  | { type: "text"; text: ReactNode }
+  | { type: "figure"; value: ReactNode; delta?: ReactNode; trend?: "up" | "down" | "neutral" }
+  | { type: "status"; tone: StatusMarkTone; label: ReactNode }
+  | { type: "mark"; value: 0 | 1 | 2 | 3 | 4 }
+  | { type: "empty" };
+
+export interface MatrixGridProps extends Omit<HTMLAttributes<HTMLTableElement>, "title"> {
+  arrangement: "grid";
+  sides?: never;
+  columns: readonly { id: string; label: ReactNode }[];
+  rows: readonly { id: string; label: ReactNode; description?: ReactNode; cells: Readonly<Record<string, MatrixCellData>> }[];
+  featured?: { row: string; column?: never } | { column: string; row?: never };
+  featuredLabel?: ReactNode;
+  emptyLabel?: ReactNode;
+  markLabels?: readonly [ReactNode, ReactNode, ReactNode, ReactNode, ReactNode];
+  keyLabel?: ReactNode;
+  headingLevel?: MatrixHeadingLevel;
+  ground?: SectionGround;
+}
+
+/** Two parallel sides, or a responsive comparison table with authored cells. */
+export type MatrixProps = MatrixQuadrantProps | MatrixGridProps;
 
 const HEADING_TAGS = { 2: "h2", 3: "h3", 4: "h4", 5: "h5", 6: "h6" } as const;
 const DASH_CLASSES: Record<SectionGround, string> = {
@@ -70,7 +97,7 @@ function hasNode(node: ReactNode): boolean {
 
 interface SharedRows { description: boolean; points: boolean; visual: boolean }
 
-function assertMatrix({ sides, featured, ground = "base", headingLevel = 3 }: MatrixProps): void {
+function assertMatrix({ sides, featured, ground = "base", headingLevel = 3 }: MatrixQuadrantProps): void {
   if (ground !== "base" && ground !== "sunken" && ground !== "inverse") throw new TypeError("Matrix: unknown ground.");
   if (![2, 3, 4, 5, 6].includes(headingLevel)) throw new TypeError("Matrix: unknown heading level.");
   if (!Array.isArray(sides) || sides.length !== 2) throw new TypeError("Matrix: exactly two sides are required.");
@@ -126,7 +153,7 @@ function SideBody({ side, featured, headingLevel, ground, shared }: {
 }
 
 /** Private layout renderer for the validated two-sided matrix. */
-export function MatrixRenderer({ sides, featured, headingLevel = 3, ground = "base", className, style, ...rest }: MatrixProps) {
+export function MatrixRenderer({ arrangement: _arrangement, sides, featured, headingLevel = 3, ground = "base", className, style, ...rest }: MatrixQuadrantProps) {
   const shared: SharedRows = {
     description: sides.some(side => hasNode(side.description)),
     points: sides.some(side => side.points !== undefined && side.points.length > 0),
@@ -145,8 +172,10 @@ export function MatrixRenderer({ sides, featured, headingLevel = 3, ground = "ba
   </div>;
 }
 
-/** Two equal plates with parallel content and an optional featured side. Server-safe. */
+/** Two equal plates or one responsive comparison table. Server-safe. */
 export function Matrix(props: MatrixProps) {
+  if (props.arrangement === "grid") return <MatrixGrid {...props} />;
+  if (props.arrangement !== undefined && props.arrangement !== "sides") throw new TypeError("Matrix: unknown arrangement.");
   assertMatrix(props);
   return <MatrixRenderer {...props} />;
 }

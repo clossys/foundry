@@ -8,6 +8,7 @@ export { buildWebHeadMetadata } from "./headMetadata.js";
 export { SiteMetadataError, buildSiteMetadata, formatPageTitle } from "./siteMetadata.js";
 export type {
   SiteIdentityInput,
+  SiteIndexing,
   SiteLegalStatus,
   SiteMetadata,
   SiteMetadataErrorReason,
@@ -32,6 +33,8 @@ export { createWebRenderer } from "./internal/createWebRenderer.js";
 export { evaluateWebRouteManifest, evaluateWebRouteManifestWithSources, scanRouteSourceForDirectComposition } from "./checkWebRoutes.js";
 export type { WebRouteCheckResult, WebRouteFinding, WebRouteManifest, WebRouteManifestEntry } from "./checkWebRoutes.js";
 export { AuthView, BoundaryView, BrandGuideView, CaptureView, CollectionView, DocumentView, ErrorView, MarketingView, PackReviewView, SectionedView, StatusView, SystemAuditView } from "#publisher-web-views";
+export { PageView } from "#publisher-web-views";
+export type { PageViewProps } from "#publisher-web-views";
 export type {
   AuthViewProps,
   BoundaryViewProps,
@@ -92,7 +95,7 @@ export type {
 } from "./types.js";
 
 export { LegalView } from "#publisher-web-views";
-export type { LegalViewLabels, LegalViewProps } from "#publisher-web-views";
+export type { LegalViewFramedLabels, LegalViewLabels, LegalViewProps } from "#publisher-web-views";
 
 // The contact handler is server-only: import it from server code, never a client bundle.
 export {
@@ -134,6 +137,8 @@ export { SignInForm } from "#publisher-web-views";
 export type { SignInFailure, SignInFormProps, SignInResult } from "#publisher-web-views";
 export { GlobalErrorDocument } from "#publisher-web-views";
 export type { GlobalErrorDocumentErrorViewProps, GlobalErrorDocumentFramedProps, GlobalErrorDocumentHeadProps, GlobalErrorDocumentProps } from "#publisher-web-views";
+export { NotFoundDocument } from "#publisher-web-views";
+export type { NotFoundDocumentProps } from "#publisher-web-views";
 export { ActivateForm, ResetForm } from "#publisher-web-views";
 export type { ActivateDetails, ActivateFailure, ActivateFormProps, ActivateResult, ResetDetails, ResetFailure, ResetFormProps, ResetResult } from "#publisher-web-views";
 
@@ -147,6 +152,7 @@ export type {
   SiteFrameConfig,
   SiteFrameInput,
   SiteFrameProps,
+  SiteIconLinkInput,
   SiteLinkInput,
   SitePageLayer,
   SiteShellInput,
@@ -175,5 +181,19 @@ export type {
 export { createShareCardRoute } from "./shareCardRoute.js";
 export type { ShareCardRoute, ShareCardRouteInput } from "./shareCardRoute.js";
 
+export { ConsumerArtSlot } from "./ConsumerArtSlot.js";
+export type { ConsumerArtSlotProps } from "./ConsumerArtSlot.js";
+
+export { constructionStatusProps } from "#publisher-web-views";
+export type { ConstructionStatusInput } from "#publisher-web-views";
+
 export { ContactForm } from "#publisher-web-views";
 export type { ContactFormCopy, ContactFormDevPreview, ContactFormProps, ContactFormTopic, ContactFormValues } from "#publisher-web-views";
+
+export type { SectionedViewHeroSection } from "../core/sectioned-view.js";
+
+export { SITE_FRAME_CONTRACT, SITE_FRAME_CONFIG_SCHEMA, normalizeSiteFrameConfig, normalizeSiteFrameActions } from "./frame/site-frame-contract.js";
+export type { SiteFramePresentationConfig } from "./frame/site-frame-contract.js";
+
+export { IndexView, DetailsView } from "#publisher-web-views";
+export type { IndexViewCollection, IndexViewProps, IndexViewRowRoute, IndexViewTable, DetailsViewBlock, DetailsViewLayout, DetailsViewProps, DetailsViewRegion, DetailsViewSection, DetailsViewSectionState, DetailsViewTab } from "#publisher-web-views";

@@ -1,8 +1,17 @@
 import { useId, type CSSProperties, type ReactNode } from "react";
+import { Icon } from "../atoms/Icon.js";
+import { Check } from "../icons/Check.js";
 import { Button } from "../atoms/Button.js";
 import { cx } from "../atoms/internal/cx.js";
 
+/** Card choices: full-width cells of a two-column grid, current-colour edge, no fill; labels may wrap. */
+const CARD_CHOICE_CLASS = "w-full min-w-0 border border-current bg-transparent font-medium text-center whitespace-normal";
+
 export interface ConsentBannerProps {
+  /** `card` pins a compact notice; the default `banner` retains the in-flow rendering. */
+  presentation?: "banner" | "card";
+  /** Presentational feedback from the host's current choice; it changes no state. Card only. */
+  selectedChoice?: "granted" | "denied";
   /** Heading that names the region. Rendered as an `<h2>`; the region takes its accessible name from it. */
   title: ReactNode;
   /** Supporting copy under the title. */
@@ -15,7 +24,7 @@ export interface ConsentBannerProps {
   onAccept: () => void;
   /** Called with no arguments when the reject button is pressed. */
   onReject: () => void;
-  /** Slot rendered after the body, typically a `Link` atom to a policy page. */
+  /** Policy-link slot: after the body in a banner, inline with the body in a card. */
   privacyLink?: ReactNode;
   /**
    * Optional status line rendered inside an always-mounted polite live region
@@ -36,7 +45,7 @@ export interface ConsentBannerProps {
  *
  * Not a dialog: no `role="dialog"`, no modal wiring, no autofocus, no
  * focus trap, no Escape handling, no portal and no timer. It renders in
- * flow, so the page stays usable around it. A polite live region
+ * flow by default; the opt-in card pins it to the viewport edge. A polite live region
  * (`role="status"`) is always mounted after the body and before the
  * actions; it is empty until a `status` is passed, and neither button is
  * ever disabled by it. The root carries
@@ -44,6 +53,8 @@ export interface ConsentBannerProps {
  * (`overlayIntersectingFold`) when positioning it over the page.
  */
 export function ConsentBanner({
+  presentation = "banner",
+  selectedChoice,
   title,
   body,
   acceptLabel,
@@ -56,33 +67,57 @@ export function ConsentBanner({
   style,
 }: ConsentBannerProps) {
   const titleId = useId();
+  const card = presentation === "card";
   return (
     <section
       data-consent-banner=""
+      data-consent-presentation={card ? "card" : undefined}
       aria-labelledby={titleId}
       style={style}
       className={cx(
-        "flex flex-col gap-md rounded-control border border-overlay-border bg-overlay-surface p-lg text-body text-ink-primary tablet:flex-row tablet:items-center tablet:justify-between",
+        card
+          ? "consent-card flex flex-col gap-md rounded-control p-md tablet:p-lg text-body text-ink-primary"
+          : "flex flex-col gap-md rounded-control border border-overlay-border bg-overlay-surface p-lg text-body text-ink-primary tablet:flex-row tablet:items-center tablet:justify-between",
         className,
       )}
     >
-      <div className="flex min-w-0 flex-col gap-xs tablet-lg:max-w-display wide:max-w-display">
-        <h2 id={titleId} className="text-h3 font-display text-ink-primary">
+      <div className={card ? "flex min-w-0 flex-col gap-xs" : "flex min-w-0 flex-col gap-xs tablet-lg:max-w-display wide:max-w-display"}>
+        <h2 id={titleId} className={card ? "sr-only" : "text-h3 font-display text-ink-primary"}>
           {title}
         </h2>
-        <div className="text-body-s text-ink-secondary">{body}</div>
-        {privacyLink != null && privacyLink !== false ? <div className="text-body-s">{privacyLink}</div> : null}
+        <div className="text-body-s text-ink-secondary">
+          {body}{card && privacyLink != null && privacyLink !== false ? <> {privacyLink}</> : null}
+        </div>
+        {!card && privacyLink != null && privacyLink !== false ? <div className="text-body-s">{privacyLink}</div> : null}
         <div role="status" aria-live="polite">
           {status != null && status !== false && status !== true ? (
             <div className="text-body-s text-ink-secondary">{status}</div>
           ) : null}
         </div>
       </div>
-      <div className="flex flex-col gap-sm tablet:shrink-0 tablet:flex-row">
-        <Button variant="secondary" size="md" className="w-full tablet:w-auto" onPress={() => onAccept()}>
+      <div className={card ? "grid grid-cols-2 gap-sm" : "flex flex-col gap-sm tablet:shrink-0 tablet:flex-row"}>
+        <Button
+          variant="secondary"
+          size="md"
+          className={card ? CARD_CHOICE_CLASS : "w-full tablet:w-auto"}
+          aria-pressed={card ? selectedChoice === "granted" : undefined}
+          onPress={() => onAccept()}
+        >
+          {card && selectedChoice === "granted" ? (
+            <span data-consent-selected="" aria-hidden="true"><Icon glyph={Check} decorative size="sm" /></span>
+          ) : null}
           {acceptLabel}
         </Button>
-        <Button variant="secondary" size="md" className="w-full tablet:w-auto" onPress={() => onReject()}>
+        <Button
+          variant="secondary"
+          size="md"
+          className={card ? CARD_CHOICE_CLASS : "w-full tablet:w-auto"}
+          aria-pressed={card ? selectedChoice === "denied" : undefined}
+          onPress={() => onReject()}
+        >
+          {card && selectedChoice === "denied" ? (
+            <span data-consent-selected="" aria-hidden="true"><Icon glyph={Check} decorative size="sm" /></span>
+          ) : null}
           {rejectLabel}
         </Button>
       </div>

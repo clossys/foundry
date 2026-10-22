@@ -61,18 +61,31 @@ describe('reader function catalog', () => {
         expect(root.defaultView!.getComputedStyle(chooser).display).toBe('grid');
         expect(chooser.classList.contains('catalog-function-grid')).toBe(true);
     });
-    it('renders exactly 31 retained samples with reader-job captions and distinct headings', () => {
+    it('renders exactly 32 retained samples with reader-job captions and distinct headings', () => {
         const rendered = buildCatalogFunctionPages(sheets);
         expect(rendered.map(p => p.file)).toEqual(pages.map(id => `catalog/${id}.html`));
         const samples = rendered.flatMap(p => [...new JSDOM(p.content).window.document.querySelectorAll('[data-catalog-fixture]')]);
-        expect(samples).toHaveLength(31);
-        expect(Object.fromEntries(['Overview', 'Introduce', 'Show', 'Explain', 'Index', 'Sequence', 'Compare', 'Frame', 'Parts'].map(fn => [fn, READER_SAMPLES.filter(f => readerPage(f) === fn).length]))).toEqual({ Overview: 1, Introduce: 5, Show: 9, Explain: 5, Index: 5, Sequence: 3, Compare: 2, Frame: 1, Parts: 0 });
-        expect(new Set(samples.map(n => n.id)).size).toBe(31);
+        expect(samples).toHaveLength(32);
+        expect(Object.fromEntries(['Overview', 'Introduce', 'Show', 'Explain', 'Index', 'Sequence', 'Compare', 'Frame', 'Parts'].map(fn => [fn, READER_SAMPLES.filter(f => readerPage(f) === fn).length]))).toEqual({ Overview: 1, Introduce: 5, Show: 9, Explain: 6, Index: 5, Sequence: 3, Compare: 2, Frame: 1, Parts: 0 });
+        expect(new Set(samples.map(n => n.id)).size).toBe(32);
         for (const sample of samples)
             expect(sample.querySelector('[data-catalog-caption]')?.textContent).toMatch(/(?:Introduce|Show|Explain|Index|Sequence|Compare|Overview|Frame|Parts) › /);
         const headings = samples.map(n => n.querySelector('[data-catalog-native] h1, [data-catalog-native] h2')?.textContent);
         expect(headings.every(Boolean)).toBe(true);
-        expect(new Set(headings).size).toBe(31);
+        expect(new Set(headings).size).toBe(32);
+    });
+    it('shows prose as a sample without adding axis or configuration values', () => {
+        const rendered = buildCatalogFunctionPages(sheets);
+        const root = new JSDOM(rendered.find(page => page.file === 'catalog/explain.html')!.content).window.document;
+        const sample = root.querySelector('[data-catalog-fixture="recipes-prose"]');
+        expect(sample).not.toBeNull();
+        expect(sample?.querySelectorAll('p[data-prose-paragraph]')).toHaveLength(2);
+        expect(sample?.querySelectorAll('[data-catalog-axis-witness]')).toHaveLength(0);
+        const documents = rendered.map(page => new JSDOM(page.content).window.document);
+        expect(documents.reduce((count, page) => count + page.querySelectorAll('[data-catalog-fixture]').length, 0)).toBe(32);
+        expect(documents.reduce((count, page) => count + page.querySelectorAll('[data-catalog-config-cell]').length, 0)).toBe(4);
+        const overview = documents[0]!;
+        expect(overview.querySelector('[data-catalog-recipe="prose"] a')?.getAttribute('href')).toBe('explain.html#example-recipes-prose');
     });
     it('files all nine unchanged published kinds under their actual reader jobs', () => {
         const rendered = buildCatalogFunctionPages(sheets);
@@ -114,7 +127,7 @@ describe('reader function catalog', () => {
                 }
             }
         }
-        expect(count).toBe(35);
+        expect(count).toBe(36);
         expect(count).toBeLessThanOrEqual(40);
         const parts = new JSDOM(rendered.find(page => page.file === 'catalog/parts.html')!.content).window.document;
         expect(parts.querySelectorAll('[data-config-native], [data-catalog-native]')).toHaveLength(0);
@@ -295,6 +308,7 @@ describe('reader function catalog', () => {
             if (label === 'Introduce') return { role: fixture.id === 'say-close' ? 'close' : 'intro', ...(fixture.id === 'say-close' ? {} : { 'intro-layout': section.layout === 'stacked' ? 'stacked' : 'split' }) };
             if (label === 'Show') return { visual: section.media?.type === 'specimen' ? (section.media.key ? 'specimen-key' : 'specimen') : section.media!.type, companion: block?.type === 'items' ? (block.arrangement === 'stacked' ? 'explain-stack' : 'index-rows') : 'none', layout: section.layout };
             if (block?.type === 'matrix') return { form: block.sides[0]!.visual ? 'visual' : 'points', featured: block.featured ? 'one-side' : 'none' };
+            if (block?.type === 'prose') return {};
             if (block?.type !== 'items') throw new Error('Expected items witness');
             if (label === 'Sequence') return { shape: block.lanes ? 'lanes' : block.order === 'numbered' ? 'list' : 'line', ...(block.order === 'connected' ? { end: block.end ?? 'ends' } : {}) };
             if (label === 'Index') return { shape: fixture.section.kind === 'content-section' && fixture.section.block?.type === 'items' && fixture.section.block.recipe === 'link-index' ? 'tiles' : `rows-${block.columns}`, reveal: block.reveal, groups: block.groups ? 'on' : 'off' };
@@ -339,6 +353,10 @@ describe('reader function catalog', () => {
                 const featured = matrix.querySelectorAll('[data-featured="true"]');
                 expect(featured.length).toBeLessThanOrEqual(1);
                 return { form: visual ? 'visual' : 'points', featured: featured.length ? 'one-side' : 'none' };
+            }
+            if (label === 'Explain' && section.querySelector('p[data-prose-paragraph]')) {
+                expect(section.querySelectorAll('p[data-prose-paragraph]').length).toBeGreaterThan(0);
+                return {};
             }
             const items = required('[data-items]');
             const details = items.querySelectorAll('details');
@@ -440,8 +458,10 @@ describe('reader function catalog', () => {
             expect(rules.find(rule => rule.selectorText === '.catalog-example>div')!.style.getPropertyValue('padding-inline')).toBe('');
             for (const wrapper of root.querySelectorAll('[data-catalog-native], [data-config-native]')) {
                 const landing = wrapper.querySelector('[data-landing-hero], [data-landing-call-to-action]') || wrapper.hasAttribute('data-catalog-composition');
-                const band = wrapper.querySelector(':is([data-catalog-native],[data-config-native])>div:not([data-landing-view])>[data-content-section]');
-                expect(band !== null, wrapper.parentElement?.id).toBe(!landing);
+                // Inspect the same direct-child relationship without the selector engine's
+                // unsupported nested :is/:not combination; the CSS selector stays pinned above.
+                const band = [...wrapper.children].some(child => child.tagName === 'DIV' && !child.hasAttribute('data-landing-view') && [...child.children].some(node => node.hasAttribute('data-content-section')));
+                expect(band, wrapper.parentElement?.id).toBe(!landing);
             }
             expect(rules.find(rule => rule.selectorText === '.catalog-note')?.style.getPropertyValue('overflow-wrap')).toBe('break-word');
         }
@@ -586,9 +606,9 @@ describe('reader automatic authored grounds and existing presentation', () => {
             const fresh = await import('./reader-renderer.js');
             const rendered = fresh.buildCatalogFunctionPages(sheets);
             const documents = rendered.map(page => new JSDOM(page.content).window.document);
-            expect(documents.reduce((count, document) => count + document.querySelectorAll('[data-catalog-fixture]').length, 0)).toBe(31);
+            expect(documents.reduce((count, document) => count + document.querySelectorAll('[data-catalog-fixture]').length, 0)).toBe(32);
             expect(documents.reduce((count, document) => count + document.querySelectorAll('[data-catalog-config-cell]').length, 0)).toBe(4);
-            expect(CATALOG_FIXTURES).toHaveLength(43);
+            expect(CATALOG_FIXTURES).toHaveLength(44);
             const frame = new JSDOM(rendered.find(page => page.file === 'catalog/frame.html')!.content).window.document;
             const sample = frame.querySelector('[data-catalog-fixture="frame-actions"]')!;
             expect(sample).not.toBeNull();

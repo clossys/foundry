@@ -1,7 +1,10 @@
 import { createElement } from "react";
+import { TextField } from "@clossys/designer/atoms";
 import { createCopyResolver } from "@clossys/writer";
 import type { ComposeDocument } from "../core/index.js";
 import type { SectionedViewDocument } from "../core/sectioned-view.js";
+import type { IndexViewProps } from "../web/views/IndexView.js";
+import type { DetailsViewProps } from "../web/views/DetailsView.js";
 import { PREVIEW_FIXTURE_COPY_REGISTRY } from "./fixture-copy-registry.js";
 
 export const PREVIEW_BRAND_LABEL = "Preview";
@@ -142,15 +145,11 @@ export const previewSectionedDocument: SectionedViewDocument = {
         planned: ref("preview.sectioned.status.planned"),
         dispositions: { "not-offered": ref("preview.sectioned.status.not-offered") },
       },
-      groups: [
-        {
-          id: "core",
-          heading: ref("preview.sectioned.status.group.heading"),
-          items: [
-            { id: "capability", label: ref("preview.sectioned.status.item.label"), state: "available" },
-            { id: "unavailable", label: ref("preview.sectioned.status.item.label"), disposition: "not-offered" },
-          ],
-        },
+      items: [
+        { id: "available", label: ref("preview.sectioned.status.item.label"), state: "available" },
+        { id: "partial", label: ref("preview.sectioned.status.item.label"), state: "partial" },
+        { id: "planned", label: ref("preview.sectioned.status.item.label"), state: "planned" },
+        { id: "not-offered", label: ref("preview.sectioned.status.item.label"), disposition: "not-offered" },
       ],
     },
     {
@@ -255,4 +254,24 @@ export const previewCaptureViewProps = {
   heading: "Keep in touch",
   description: "Fixture capture surface.",
   form: createElement("form", { id: "preview-capture-form" }, "Fields"),
+};
+
+type PreviewIndexRow = { id: string; name: string; state: string };
+export const previewIndexViewProps: IndexViewProps<PreviewIndexRow> = {
+  collectionLabel: "Records",
+  rows: [{ id: "one", name: "First record", state: "Available" }], rowKey: row => row.id,
+  columns: [{ id: "name", header: "Name", isRowHeader: true, cell: row => row.name }, { id: "state", header: "State", cell: row => row.state }],
+  rowRoute: { href: row => `/records/${row.id}`, onNavigate: () => {} },
+  toolbar: { "aria-label": "Record filters", search: createElement(TextField, { label: "Search records" }) },
+  pagination: { page: 1, pageCount: 2, onPageChange: () => {} },
+  empty: { title: "No records", description: "Create a record to begin." },
+};
+export const previewDetailsViewProps: DetailsViewProps = {
+  tabsLabel: "Record sections", tab: "overview", onTabChange: () => {},
+  tabs: [{ id: "overview", label: "Overview", sections: [
+    { id: "identity", title: "Identity", block: { kind: "detail", props: { fields: [{ label: "Identifier", value: "one" }, { label: "State", value: "Available" }] } } },
+    { id: "activity", title: "Activity", block: { kind: "panel", props: { children: "The record is available.", footer: "Updated recently." } } },
+    { id: "summary", title: "Summary", region: "aside", block: { kind: "stat", props: { label: "Open items", value: "3" } } },
+  ] }, { id: "attachments", label: "Attachments", sections: [] }],
+  empty: { title: "No sections", description: "Nothing is available in this section." },
 };

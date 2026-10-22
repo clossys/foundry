@@ -1,11 +1,35 @@
-import { describe, expect, it } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { describe, expect, it, vi } from "vitest";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { Home, Settings } from "../icons/index.js";
 import { SiteHeader } from "./SiteHeader.js";
+import { NavDisclosure } from "./NavDisclosure.js";
 import { SiteHeader as ServerSiteHeader } from "./server.js";
+import { CONTRAST_PAIRS } from "../tokens/contrast-pairs.js";
 
 describe("SiteHeader", () => {
+  it.each(["plain", "disclosure", "none"])("keeps %s navigation in desktop layout across resize", supply => {
+    vi.stubGlobal("matchMedia", () => ({ matches: true, addEventListener() {}, removeEventListener() {} }));
+    const links = <a href="/about">About</a>;
+    try {
+      render(<SiteHeader brand="Example" nav={supply === "plain" ? <nav>{links}</nav> : supply === "disclosure" ? <NavDisclosure>{links}</NavDisclosure> : undefined} />);
+      fireEvent.resize(window);
+      expect(screen.getByRole("banner")).not.toHaveAttribute("data-collapsed");
+    } finally { vi.unstubAllGlobals(); }
+  });
+
+  it("uses the mandatory centered responsive structure with a plain nav and icon action", () => {
+    const { container } = render(<SiteHeader brand={<a href="/">Example</a>} nav={<nav aria-label="Primary"><a href="/about">About</a></nav>} actions={<SiteHeader.ActionLink href="/app" label="App" icon={Home} />} />);
+    expect(container.querySelector("header")).toHaveClass("site-header-contract");
+    expect(container.querySelector(".site-header-row > .site-header-brand")).toHaveTextContent("Example");
+    expect(container.querySelector(".site-header-row > nav")).toHaveAttribute("aria-label", "Primary");
+    expect(container.querySelector(".site-header-row > .site-header-actions a")).toHaveAttribute("href", "/app");
+    expect(container.querySelectorAll("header, header nav")).toHaveLength(2);
+  });
+
   it("renders the brand, nav, and actions slots", () => {
     render(
       <SiteHeader
@@ -41,24 +65,22 @@ describe("SiteHeader", () => {
         navPlacement="centered"
         brand={<span>Acme</span>}
         nav={<nav aria-label="Primary">Links</nav>}
-        secondaryAction={<a href="/sign-in">Sign in</a>}
-        actions={<button type="button">Get started</button>}
+        actions={<><a href="/sign-in">Sign in</a><button type="button">Get started</button></>}
       />,
     );
     const row = screen.getByRole("banner").firstElementChild as HTMLElement;
     const [leading, center, trailing] = Array.from(row.children) as HTMLElement[];
     expect(row.children).toHaveLength(3);
     expect(leading).toContainElement(screen.getByText("Acme"));
-    expect(center).toContainElement(screen.getByRole("navigation", { name: "Primary" }));
+    expect(center).toBe(screen.getByRole("navigation", { name: "Primary" }));
     const secondary = screen.getByRole("link", { name: "Sign in" });
     const primary = screen.getByRole("button", { name: "Get started" });
     expect(trailing).toContainElement(secondary);
     expect(trailing).toContainElement(primary);
     expect(secondary.compareDocumentPosition(primary) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(leading.className).toContain("flex-1");
-    expect(trailing.className).toContain("flex-1");
-    expect(center.className).not.toContain("flex-1");
-    expect(trailing.className).toContain("justify-end");
+    expect(leading).toHaveClass("site-header-brand");
+    expect(trailing).toHaveClass("site-header-actions");
+    expect(row).toHaveClass("site-header-row");
   });
 
   it("the centered layout has exactly one banner and one navigation landmark", () => {
@@ -67,21 +89,20 @@ describe("SiteHeader", () => {
         navPlacement="centered"
         brand={<span>Acme</span>}
         nav={<nav aria-label="Primary">Links</nav>}
-        secondaryAction={<a href="/sign-in">Sign in</a>}
-        actions={<button type="button">Get started</button>}
+        actions={<><a href="/sign-in">Sign in</a><button type="button">Get started</button></>}
       />,
     );
     expect(screen.getAllByRole("banner")).toHaveLength(1);
     expect(screen.getAllByRole("navigation")).toHaveLength(1);
   });
 
-  it("leading placement stays the default and takes the secondary action", () => {
+  it("explicit legacy leading placement takes the secondary action", () => {
     render(
       <SiteHeader
+        navPlacement="leading"
         brand={<span>Acme</span>}
         nav={<nav aria-label="Primary">Links</nav>}
-        secondaryAction={<a href="/sign-in">Sign in</a>}
-        actions={<button type="button">Get started</button>}
+        actions={<><a href="/sign-in">Sign in</a><button type="button">Get started</button></>}
       />,
     );
     const row = screen.getByRole("banner").firstElementChild as HTMLElement;
@@ -89,56 +110,121 @@ describe("SiteHeader", () => {
     const nav = screen.getByRole("navigation", { name: "Primary" });
     const secondary = screen.getByRole("link", { name: "Sign in" });
     const primary = screen.getByRole("button", { name: "Get started" });
-    expect(brand.parentElement).toBe(nav.parentElement);
-    expect(row.className).toContain("justify-between");
+    expect(brand.parentElement?.parentElement).toBe(nav.parentElement);
+    expect(screen.getByRole("banner")).toHaveClass("site-header-leading");
     expect(secondary.nextElementSibling).toBe(primary);
   });
 
-  describe("surface badge placement", () => {
-    it.each(["leading", "centered"] as const)(
-      "renders the surface label as the last trailing item with navPlacement=%s",
-      (navPlacement) => {
-        render(
-          <SiteHeader
-            navPlacement={navPlacement}
-            brand={<span>Acme</span>}
-            nav={<nav aria-label="Primary">Links</nav>}
-            secondaryAction={<a href="/sign-in">Sign in</a>}
-            actions={<button type="button">Get started</button>}
-            surfaceLabel="admin"
-          />,
-        );
-        const badge = screen.getByText("admin");
-        const trailing = badge.parentElement as HTMLElement;
-        expect(trailing).toContainElement(screen.getByRole("button", { name: "Get started" }));
-        expect(trailing.lastElementChild).toBe(badge);
-        expect(badge.tagName).toBe("SPAN");
-        expect(badge.className).toContain("bg-surface-sunken");
-        expect(badge).not.toHaveAttribute("href");
-        expect(badge).not.toHaveAttribute("tabindex");
-      },
-    );
+  it("keeps the trailing region empty when actions are omitted", () => {
+    render(<SiteHeader brand={<span>Acme</span>} />);
+    const row = screen.getByRole("banner").firstElementChild!;
+    expect(row.children).toHaveLength(2);
+    expect(row.lastElementChild!.children).toHaveLength(0);
+    expect(screen.getByRole("banner")).not.toHaveTextContent("admin");
   });
 
-  describe("badge alone", () => {
-    it("the leading layout renders the trailing region when only a surface label is given", () => {
-      render(<SiteHeader brand={<span>Acme</span>} surfaceLabel="demo" />);
-      const row = screen.getByRole("banner").firstElementChild as HTMLElement;
-      expect(row.children).toHaveLength(2);
-      const trailing = row.lastElementChild as HTMLElement;
-      expect(trailing).toHaveTextContent("demo");
-      expect(trailing.children).toHaveLength(1);
+  describe("surface", () => {
+    it("documents an inverse overlay whose children inherit the gated ink", () => {
+      const readme = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "..", "..", "README.md"), "utf8");
+      const blocks = [...readme.matchAll(/```tsx\n([\s\S]*?)```/g)].map((match) => match[1] ?? "");
+      const example = blocks.find((block) => block.includes('surface="glass"') && block.includes('tone="inverse"'));
+      expect(example).toBeDefined();
+      // tone sets inherited ink only: no child in the example may set its own.
+      expect(example).not.toMatch(/<Link\b|<Brandmark\b|ActionLink|text-ink-/);
+      const anchors = example?.match(/<a\b[^>]*>/g) ?? [];
+      expect(anchors.length).toBeGreaterThan(0);
+      for (const anchor of anchors) expect(anchor).toContain('className="text-inherit"');
+      // ...so every child reads in the header's own ink, which the gate checks over the inverse glass.
+      const { container } = render(
+        <SiteHeader
+          surface="glass"
+          tone="inverse"
+          brand={<a href="/" className="text-inherit">Acme</a>}
+          actions={<a href="/sign-in" className="text-inherit">Sign in</a>}
+        />,
+      );
+      expect(container.querySelector("header")?.classList.contains("text-ink-on-inverse")).toBe(true);
+      for (const link of container.querySelectorAll("a")) expect(link.className).toBe("text-inherit");
+      const gated = CONTRAST_PAIRS.filter((pair) => pair.background === "--color-surface-glass-inverse").map((pair) => pair.foreground);
+      expect(new Set(gated)).toEqual(new Set(["--color-ink-on-inverse"]));
     });
 
-    it("renders no badge, and no trailing region, without a surface label", () => {
-      render(<SiteHeader brand={<span>Acme</span>} />);
-      const row = screen.getByRole("banner").firstElementChild as HTMLElement;
-      expect(row.children).toHaveLength(1);
-      expect(screen.getByRole("banner")).not.toHaveTextContent("admin");
+    const FLOW_MARKUP = renderToStaticMarkup(<SiteHeader brand={<span>Acme</span>} navPlacement="centered" surface="solid" />);
+
+    it("defaults to solid, byte-identical to the explicit default surface", () => {
+      const html = renderToStaticMarkup(<SiteHeader brand={<span>Acme</span>} />);
+      expect(html).toBe(FLOW_MARKUP);
+      expect(renderToStaticMarkup(<SiteHeader brand={<span>Acme</span>} surface="solid" />)).toBe(FLOW_MARKUP);
+    });
+
+    it("applies inverse tone to the solid surface", () => {
+      render(<SiteHeader brand={<span>Acme</span>} tone="inverse" menuOpen />);
+      expect(screen.getByRole("banner")).toHaveAttribute("data-tone", "inverse");
+      expect(screen.getByRole("banner")).toHaveClass("bg-surface-inverse", "text-ink-on-inverse");
+    });
+
+    it("overlay fixes the header to the top of the viewport, out of flow, over the shell z-index", () => {
+      render(<SiteHeader brand={<span>Acme</span>} surface="glass" />);
+      const banner = screen.getByRole("banner");
+      expect(banner.style.position).toBe("fixed");
+      expect(banner.style.insetBlockStart).toBe("0");
+      expect(banner.style.insetInline).toBe("0");
+      expect(banner.style.zIndex).toBe("var(--ui-z-shell, 20)");
+      expect(banner).toHaveAttribute("data-placement", "overlay");
+    });
+
+    it("overlay paints through the site-header-overlay utility, with no ground plate or border classes", () => {
+      render(<SiteHeader brand={<span>Acme</span>} surface="glass" />);
+      const classes = screen.getByRole("banner").className.split(" ");
+      expect(classes).toEqual(expect.arrayContaining(["site-header-overlay", "site-header-ink", "text-ink-primary", "py-sm", "site-header-contract"]));
+      expect(classes).not.toEqual(expect.arrayContaining(["bg-surface-raised", "border-b"]));
+      expect(screen.getByRole("banner").style.borderBottomWidth).toBe("");
+    });
+
+    it("overlay tone sets the ink and data-tone, defaulting to base", () => {
+      const { unmount } = render(<SiteHeader brand={<span>Acme</span>} surface="glass" />);
+      expect(screen.getByRole("banner")).toHaveAttribute("data-tone", "base");
+      unmount();
+      render(<SiteHeader brand={<span>Acme</span>} surface="glass" tone="inverse" />);
+      const banner = screen.getByRole("banner");
+      expect(banner).toHaveAttribute("data-tone", "inverse");
+      expect(banner.className).toContain("text-ink-on-inverse");
+      expect(banner.className).not.toContain("text-ink-primary");
+    });
+
+    it("overlay renders data-menu-open only while menuOpen is set", () => {
+      const { unmount } = render(<SiteHeader brand={<span>Acme</span>} surface="glass" />);
+      expect(screen.getByRole("banner")).not.toHaveAttribute("data-menu-open");
+      unmount();
+      render(<SiteHeader brand={<span>Acme</span>} surface="glass" menuOpen />);
+      expect(screen.getByRole("banner")).toHaveAttribute("data-menu-open", "");
+    });
+
+    it("overlay keeps the caller's className and style, and renders on the server entry", () => {
+      const html = renderToStaticMarkup(
+        <ServerSiteHeader brand={<span>Acme</span>} surface="glass" className="my-header" style={{ zIndex: 5 }} />,
+      );
+      expect(html).toMatch(/class="[^"]*site-header-overlay[^"]*my-header"/);
+      expect(html).toContain("position:fixed");
+      expect(html).toContain("z-index:5");
+      expect(html).toContain('data-surface="glass"');
     });
   });
 
   describe("SiteHeader.ActionLink", () => {
+    it("without an icon shows its label at every width and keeps the tap target", () => {
+      render(<SiteHeader.ActionLink href="/start" label="Get started" variant="primary" />);
+      const link = screen.getByRole("link", { name: "Get started" });
+      expect(link.textContent).toBe("Get started");
+      expect(link.querySelector("svg")).toBeNull();
+      expect(link.querySelector(".sr-only")).toBeNull();
+      expect(link.childNodes).toHaveLength(1);
+      expect(link.firstChild?.nodeType).toBe(Node.TEXT_NODE);
+      expect(link.className).toContain("bg-accent");
+      expect(link.style.minHeight).toBe("var(--ui-layout-tap-target, 44px)");
+      expect(link.style.minWidth).toBe("var(--ui-layout-tap-target, 44px)");
+    });
+
     function renderEnvironments(current: "app" | "admin" | null = "admin") {
       return render(
         <SiteHeader
@@ -220,4 +306,23 @@ describe("SiteHeader", () => {
       expect(html).toContain(">Home</span>");
     });
   });
+});
+
+
+it("ships the default header candidate and a shared frame clearance including safe areas", () => {
+  const styles = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "styles");
+  const css = readFileSync(join(styles, "compiled.css"), "utf8");
+  expect(css).toContain(".site-header-row {");
+  const clearance = "var(--site-header-clearance, calc(max(var(--ui-layout-tap-target, 44px), var(--ui-brandmark-height-lg, 48px)) + 2 * var(--spacing-sm, 8px) + var(--ui-border-hairline, 1px) + env(safe-area-inset-top, 0px)))";
+  expect(css).toContain(`scroll-margin-block-start: ${clearance}`);
+  expect(css).toContain(`padding-block-start: ${clearance}`);
+  expect(css).toContain(`max-block-size: calc(100dvb - ${clearance} - env(safe-area-inset-bottom, 0px))`);
+  expect(css).toContain("env(safe-area-inset-bottom");
+  expect(css).toContain("env(safe-area-inset-top");
+  expect(css).toContain(".site-header-contract[data-header-root] .site-header-actions");
+  expect(readFileSync(join(styles, "theme-keys.css"), "utf8").match(/& \.nav-disclosure-panel \{[^\n]*padding-inline:[^\n]+/g)?.at(-1)).toContain("padding-inline: max(var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px)), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px))");
+});
+
+it("documents the two decorative icon bars", () => {
+  expect(readFileSync(join(dirname(fileURLToPath(import.meta.url)), "..", "..", "README.md"), "utf8")).toContain("icon toggle draws two\ndecorative bars");
 });

@@ -6,7 +6,7 @@
  * the component's test file could never fail. That test file covers the
  * runtime half (a forced `href`/`aria-label` is ignored).
  *
- * Contract checked here: the link's `href` (fixed to "/") and its
+ * Contract checked here: the link's `href` (derived from optional `origin`) and its
  * `aria-label` (the required `label` prop) are not declared props; `lockup`
  * requires a `wordmark` while `mark` refuses one; `variant` and `size` are
  * closed sets; `plate` is the closed set "shared" | "self", optional.
@@ -18,7 +18,11 @@ import { Brandmark } from "../Brandmark.js";
 export const acceptsMark = <Brandmark variant="mark" size="sm" label="x" markSrc="/m.svg" />;
 export const acceptsLockup = <Brandmark variant="lockup" size="lg" label="x" markSrc="/m.svg" wordmark="x" />;
 
-// @ts-expect-error — `href` is not a prop: the link is always "/".
+export const acceptsOrigin = <Brandmark variant="mark" size="sm" label="x" markSrc="/m.svg" origin="https://example.com" />;
+// @ts-expect-error — `origin` is a string; its URL semantics are checked at runtime.
+export const rejectsNonStringOrigin = <Brandmark variant="mark" size="sm" label="x" markSrc="/m.svg" origin={42} />;
+
+// @ts-expect-error — `href` is not a prop: `origin` only selects the home origin.
 export const rejectsHref = <Brandmark variant="mark" size="sm" label="x" markSrc="/m.svg" href="/elsewhere" />;
 
 // Not asserted here: `aria-label`. TypeScript never checks a hyphenated JSX

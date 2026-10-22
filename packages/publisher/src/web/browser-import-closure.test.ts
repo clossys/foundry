@@ -89,5 +89,29 @@ it("bundles real installed packed client/views and rejects an actual Writer-root
     expect(readFileSync(installedClient)).toEqual(original);
     await bundle(full);
     console.info("packed-browser-proof", JSON.stringify({ artifacts: receipts, writerRootMutant: "Node closure refused", restored: true }));
+
+    // P-22: the consent assembly's browser closure reaches the client entry and
+    // nothing of the preview, the Designer shell, Writer or copy resolution.
+    const consentBundle = async (source: string, conditions?: string[]) => {
+      const result = await build({
+        stdin: { contents: source, resolveDir: consumer, sourcefile: "consent-entry.mjs" },
+        bundle: true, absWorkingDir: consumer, platform: "browser", format: "esm",
+        write: false, metafile: true, external, logLevel: "silent", ...(conditions ? { conditions } : {}),
+      });
+      return Object.keys(result.metafile!.inputs);
+    };
+    const consentInputs = await consentBundle('export * from "@clossys/publisher/web/consent";');
+    expect(consentInputs.some(path => path.endsWith("node_modules/@clossys/publisher/dist/web/consent/ConsentExperience.client.js"))).toBe(true);
+    expect(consentInputs.filter(path => /publisher\/dist\/web\/consent\/preview\//.test(path))).toEqual([]);
+    expect(consentInputs.filter(path => /designer\/dist\/shell\//.test(path))).toEqual([]);
+    expect(consentInputs.filter(path => /writer\/dist\//.test(path))).toEqual([]);
+    expect(consentInputs.filter(path => /publisher\/dist\/consent-copy\//.test(path))).toEqual([]);
+    const copyInputs = await consentBundle('import "@clossys/publisher/consent-copy";');
+    expect(copyInputs.filter(path => path.includes("node_modules/@clossys/"))).toEqual([expect.stringMatching(/publisher\/dist\/consent-copy\/refuse-browser\.js$/)]);
+    const previewDefault = await consentBundle('import "@clossys/publisher/web/consent/preview";');
+    expect(previewDefault.filter(path => path.includes("node_modules/@clossys/"))).toEqual([expect.stringMatching(/publisher\/dist\/web\/consent\/preview\/refuse-non-development\.js$/)]);
+    const previewDevelopment = await consentBundle('export * from "@clossys/publisher/web/consent/preview";', ["development"]);
+    expect(previewDevelopment.some(path => path.endsWith("publisher/dist/web/consent/preview/index.js"))).toBe(true);
+    expect(previewDevelopment.some(path => /refuse-/.test(path))).toBe(false);
   } finally { rmSync(fixture, { recursive: true, force: true }); }
 }, 240_000);

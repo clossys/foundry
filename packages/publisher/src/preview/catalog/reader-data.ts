@@ -13,6 +13,8 @@ export function deriveCatalogFunction(section: SectionedViewSection): ReaderFunc
     if (section.kind !== 'content-section')
         throw new Error('Reader samples require a canonical band.');
     const block = section.block;
+    if (block?.type === 'prose')
+        return 'Explain';
     if (block?.type === 'matrix')
         return 'Compare';
     if (block?.type === 'items') {
@@ -149,6 +151,11 @@ function prepare(fixture: CatalogFixture): CatalogFixture {
             });
             if (fixture.id === 'matrix-points')
                 section.block.featured = section.block.sides[1]!.id;
+        }
+        if (section.block?.type === 'prose') {
+            for (const paragraph of section.block.paragraphs)
+                for (const span of paragraph)
+                    if (span.type === 'link') span.href = '/catalog/explain.html#example-items-columns';
         }
     }
     else if (section.kind === 'hero')

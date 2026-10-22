@@ -25,3 +25,8 @@ export const withCodeStep = (
 // `verifyCode` answers a `SignInResult`, not a bare status.
 // @ts-expect-error verifyCode answers the result object
 export const withBareCodeStatus = <SignInForm identify={async () => ({ status: "ok" })} verify={async () => ({ status: "ok" })} verifyCode={async () => "ok"} onSignedIn={() => {}} />;
+
+// Access variants are closed and optional; hosts compose the surrounding view.
+export const inviteOnly = <SignInForm access="invite-only" identify={async () => ({ status: "ok" })} verify={async () => ({ status: "ok" })} onSignedIn={() => {}} />;
+// @ts-expect-error access is a closed union
+export const unknownAccess = <SignInForm access="custom" identify={async () => ({ status: "ok" })} verify={async () => ({ status: "ok" })} onSignedIn={() => {}} />;

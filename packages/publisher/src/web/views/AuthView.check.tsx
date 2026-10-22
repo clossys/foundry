@@ -40,3 +40,8 @@ export const withInternalNoteOnLegacyPage = <AuthView brand="Acme" heading="Sign
 // It keeps only that shape: a bare string was never accepted.
 // @ts-expect-error internalNote takes { label, message }
 export const withStringInternalNote = <AuthView heading="Sign in" description="Welcome back." form={null} internalNote="Keys are not set." />;
+
+// Either optional piece of sign-in copy may be omitted on its own or together.
+export const withoutAccessCopy = <AuthView heading="Sign in" description={null} form={null} />;
+export const promptOnly = <AuthView heading="Sign in" description={null} form={null} noAccountPrompt="No account?" />;
+export const accessLabelOnly = <AuthView heading="Sign in" description={null} form={null} requestAccessLabel={<a href="/request-access">Request access</a>} />;

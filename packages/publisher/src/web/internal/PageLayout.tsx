@@ -44,9 +44,9 @@ export interface PageLayoutHeaderProps {
  * card-free layout renders the same component, so both share the header and
  * its spacing. It ships no copy.
  */
-export function PageLayoutHeader({ title, subtitle }: PageLayoutHeaderProps) {
+export function PageLayoutHeader({ title, subtitle, alignment }: PageLayoutHeaderProps & { alignment?: "start" }) {
   return (
-    <div className="flex flex-col items-center gap-xs text-center">
+    <div className={alignment === "start" ? "flex flex-col items-start gap-xs text-start" : "flex flex-col items-center gap-xs text-center"}>
       <h1 className="text-h1 font-display text-ink-primary">{title}</h1>
       {subtitle ? <p className="text-body text-ink-secondary">{subtitle}</p> : null}
     </div>
@@ -63,22 +63,28 @@ export interface PageLayoutProps extends PageLayoutHeaderProps {
   notes?: ReactNode;
   /** When given, the card sits in a region with this accessible name. */
   cardLabel?: string;
+  /** Internal opt-in content plate. Omitted keeps the existing raised card. */
+  surface?: "plate";
+  /** Internal start alignment. Omitted keeps the existing centered header and notes. */
+  alignment?: "start";
 }
 
 /**
- * The layout shared by `CaptureView`, `DocumentView` and `AuthView`: the
- * header (title and subtitle), the body card and the optional notes, centered
- * in that order. It returns the three slots only, for the view to place in its
+ * The layout shared by `CaptureView`, `DocumentView`, `AuthView` and the framed
+ * `LegalView`: the header (title and subtitle), the body card and the optional
+ * notes, centered in that order. It returns the three slots only, for the view to place in its
  * own column, and renders no header, footer or `<main>` landmark: the page frame
  * owns those. Every string is a prop.
  */
-export function PageLayout({ title, subtitle, children, notes, cardLabel }: PageLayoutProps) {
-  const card = <Card className="flex flex-col gap-lg text-start">{children}</Card>;
+export function PageLayout({ title, subtitle, children, notes, cardLabel, surface, alignment }: PageLayoutProps) {
+  const card = surface === "plate"
+    ? <Card variant="plate" className="border border-line-panel flex flex-col gap-lg text-start">{children}</Card>
+    : <Card className="flex flex-col gap-lg text-start">{children}</Card>;
   return (
     <>
-      <PageLayoutHeader title={title} subtitle={subtitle} />
+      <PageLayoutHeader title={title} subtitle={subtitle} alignment={alignment} />
       {cardLabel === undefined ? card : <section aria-label={cardLabel}>{card}</section>}
-      {hasContent(notes) ? <div className={NOTES_CLASSES}>{notes}</div> : null}
+      {hasContent(notes) ? <div className={alignment === "start" ? "flex flex-col items-start gap-xs text-start text-body-s text-ink-secondary" : NOTES_CLASSES}>{notes}</div> : null}
     </>
   );
 }

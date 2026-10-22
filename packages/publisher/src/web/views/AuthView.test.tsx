@@ -11,7 +11,7 @@ import userEvent from "@testing-library/user-event";
 import { renderToStaticMarkup } from "react-dom/server";
 import { Home, Settings } from "@clossys/designer/icons";
 import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
-import { FRONT_DOOR_COPY_EN } from "@clossys/writer";
+import { resolveFrontDoorCopy, FRONT_DOOR_COPY_EN } from "@clossys/writer";
 import { AuthView } from "./AuthView.js";
 import { SignInForm } from "./SignInForm.js";
 
@@ -86,12 +86,11 @@ describe("AuthView", () => {
     expect(within(siteHeader).getByText("Acme")).toBeInTheDocument();
   });
 
-  it("forwards surfaceLabel to the site header as a Badge inside the banner", () => {
-    render(<AuthView heading="Sign in" brand={<span>Acme</span>} surfaceLabel="admin" form={<div>form</div>} />);
+  it("keeps obsolete surface badges out of the site banner", () => {
+    render(<AuthView heading="Sign in" brand={<span>Acme</span>} form={<div>form</div>} />);
     const siteHeader = screen.getAllByRole("banner")[0] as HTMLElement;
-    const badge = within(siteHeader).getByText("admin");
-    expect(badge.tagName).toBe("SPAN");
-    expect(badge.className).toContain("bg-surface-sunken");
+    expect(within(siteHeader).queryByText("admin")).not.toBeInTheDocument();
+    expect(siteHeader.querySelector(".site-header-actions")!.children).toHaveLength(0);
   });
 
   it("has no mode prop: no mode attribute is rendered, and a stray mode changes no structure (the type error is asserted in AuthView.check.tsx)", () => {
@@ -459,12 +458,12 @@ describe("AuthView", () => {
     expect(screen.getByRole("main")).not.toHaveTextContent(/Help|Contact us|NAV-SENTINEL/);
   });
 
-  it("passes ground to both the header and the footer, and keeps the bare chrome (with surfaceLabel) when every header slot is omitted", () => {
-    const bare = renderToStaticMarkup(<AuthView brand="Acme" surfaceLabel="demo" heading="Sign in" description={null} form="form" />);
-    expect(bare).toContain(renderToStaticMarkup(<SiteHeader brand="Acme" surfaceLabel="demo" />) + "<main");
+  it("passes ground to both the header and the footer, and keeps the bare chrome when every header slot is omitted", () => {
+    const bare = renderToStaticMarkup(<AuthView brand="Acme" heading="Sign in" description={null} form="form" />);
+    expect(bare).toContain(renderToStaticMarkup(<SiteHeader brand="Acme" />) + "<main");
     expect(bare).toContain("</main>" + renderToStaticMarkup(<SiteFooter />) + "</div>");
     const grounded = renderToStaticMarkup(<AuthView brand="Acme" heading="Sign in" description={null} form="form" ground="transparent" />);
-    expect(grounded).toContain(renderToStaticMarkup(<SiteHeader ground="transparent" brand="Acme" />) + "<main");
+    expect(grounded).toContain(renderToStaticMarkup(<SiteHeader surface="transparent" brand="Acme" />) + "<main");
     expect(grounded).toContain("</main>" + renderToStaticMarkup(<SiteFooter ground="transparent" />) + "</div>");
   });
 
@@ -523,4 +522,70 @@ describe("AuthView", () => {
     // The framed markup is identical to a call without the prop.
     expect(framed).toBe(withoutNote);
   });
+});
+
+
+describe("invitation-only AuthView composition", () => {
+  it("renders caller prompt and request-access label independently", () => {
+    const { container, rerender } = render(<AuthView heading="Sign in" description={null} form={null}
+      noAccountPrompt="No account?" requestAccessLabel={<a href="/request-access">Request access</a>} />);
+    expect(screen.getByText("No account?")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Request access" })).toBeInTheDocument();
+    rerender(<AuthView heading="Sign in" description={null} form={null} noAccountPrompt="No account?" />);
+    expect(screen.getByText("No account?")).toBeInTheDocument();
+    expect(container.querySelector("a")).toBeNull();
+    rerender(<AuthView heading="Sign in" description={null} form={null} requestAccessLabel={<a href="/request-access">Request access</a>} />);
+    expect(screen.queryByText("No account?")).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Request access" })).toBeInTheDocument();
+  });
+
+  it.each([undefined, null, "", false])("leaves no row or link for empty optional copy (%s)", empty => {
+    const baseline = renderToStaticMarkup(<AuthView heading="Sign in" description={null} form={null} />);
+    const html = renderToStaticMarkup(<AuthView heading="Sign in" description={null} form={null}
+      noAccountPrompt={empty} requestAccessLabel={empty} />);
+    expect(html).toBe(baseline);
+    expect(html).not.toMatch(/<p|<a\b|noaccountprompt|requestaccesslabel/i);
+  });
+
+  it("has no request-access or sign-up text, one primary action and the unavailable notice", () => {
+    const copy = (key: Parameters<typeof resolveFrontDoorCopy>[0]) => resolveFrontDoorCopy(key, { surface: "Acme Console" }).text;
+    const { container } = render(<AuthView heading={copy("front-door.sign-in.title")}
+      description={copy("front-door.sign-in-invite-only.description")}
+      form={<SignInForm access="invite-only" nouns={{ surface: "Acme Console" }} unavailable identify={vi.fn()} verify={vi.fn()} onSignedIn={vi.fn()} />} />);
+    expect(container.textContent).not.toMatch(/request access|sign up|no account|don’t have an account/i);
+    expect(screen.getByText("Sign-in is by invitation to Acme Console.")).toBeInTheDocument();
+    expect(screen.getAllByRole("button")).toHaveLength(1);
+    expect(screen.getByRole("button", { name: "Continue" })).toBeDisabled();
+    expect(screen.getByRole("alert")).toHaveTextContent(copy("front-door.unavailable.notice")!);
+    expect(container.querySelector("main, a")).toBeNull();
+    expect(container.querySelectorAll("p:empty, a:empty")).toHaveLength(0);
+  });
+
+  it.each(["staff-only", "invite-only"] as const)("composes %s not-authorized with just Switch account", access => {
+    const copy = (slot: "title" | "description" | "primary") => resolveFrontDoorCopy(`front-door.not-authorized-${access}.${slot}`, { surface: "Acme Console" }).text;
+    const { container } = render(<AuthView heading={copy("title")} description={copy("description")}
+      form={<button type="button">{copy("primary")}</button>} />);
+    const expected = access === "staff-only"
+      ? { title: "Staff access required", description: "This account doesn’t have staff access to Acme Console." }
+      : { title: "Invitation required", description: "This account doesn’t have an invitation to Acme Console." };
+    expect(screen.getByRole("heading", { level: 1, name: expected.title })).toBeInTheDocument();
+    expect(screen.getByText(expected.description)).toBeInTheDocument();
+    expect(screen.getAllByRole("button")).toHaveLength(1);
+    expect(screen.getByRole("button", { name: "Switch account" })).toBeInTheDocument();
+    expect(container.textContent).not.toMatch(/sign out|request access|sign up/i);
+    expect(container.querySelector("main, a")).toBeNull();
+  });
+});
+
+
+it("ordinary and react-server entries render equivalent restricted AuthView markup", async () => {
+  const [ordinary, server] = await Promise.all([import("../index.js"), import("../server.js")]);
+  for (const access of ["staff-only", "invite-only"] as const) {
+    const props = {
+      heading: resolveFrontDoorCopy("front-door.sign-in.title", {}).text,
+      description: resolveFrontDoorCopy(`front-door.sign-in-${access}.description`, { surface: "Acme Console" }).text,
+      form: <button type="submit">{resolveFrontDoorCopy("front-door.sign-in.primary", {}).text}</button>,
+    };
+    expect(renderToStaticMarkup(<ordinary.AuthView {...props} />)).toBe(renderToStaticMarkup(<server.AuthView {...props} />));
+  }
 });

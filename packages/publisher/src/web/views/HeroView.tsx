@@ -1,6 +1,7 @@
+import { siteHeaderPresentation } from "../internal/viewChromeGround.js";
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { mergeUiClasses } from "@clossys/designer/atoms/server";
-import { SECTION_GROUND_CLASSES } from "@clossys/designer/blocks/server";
+import { Hero, SECTION_GROUND_CLASSES } from "@clossys/designer/blocks/server";
 import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
 import type { SiteFooterLegalProps } from "@clossys/designer/shell/server";
 
@@ -92,7 +93,6 @@ export function HeroView({
   style,
   ...rest
 }: HeroViewProps) {
-  const centred = align === "center";
   const ink = SECTION_GROUND_CLASSES[ground];
   const chromeGround = ground === "inverse" ? "transparent-inverse" : "transparent";
   return (
@@ -106,15 +106,21 @@ export function HeroView({
           {backdrop}
         </div>
       ) : null}
-      <SiteHeader ground={chromeGround} brand={brand} actions={headerAction} />
+      <SiteHeader {...siteHeaderPresentation(chromeGround)} brand={brand} actions={headerAction} />
       <main className="relative flex flex-1 flex-col items-center justify-center px-lg py-2xl">
-        <div className={mergeUiClasses("flex w-full flex-col gap-md", centred ? "items-center text-center" : "items-start text-start")}>
-          {eyebrow ? <p className={`text-caption uppercase tracking-label ${ink.muted}`}>{eyebrow}</p> : null}
-          <h1 className={`text-display-l font-display ${ink.primary}`}>{heading}</h1>
-          {description ? <p className={`text-body-l max-w-display ${ink.secondary}`}>{description}</p> : null}
-          {heroAction ? <div className="flex flex-wrap items-center gap-sm">{heroAction}</div> : null}
-          {media ? <div className="w-full max-w-display">{media}</div> : null}
-        </div>
+        <Hero
+          eyebrow={eyebrow}
+          eyebrowTone="muted"
+          heading={heading}
+          headingScale="display"
+          description={description}
+          actions={heroAction}
+          media={media}
+          align={align}
+          ground={ground}
+          measure="wide"
+          className="w-full"
+        />
       </main>
       <SiteFooter ground={footer === "surface" ? "base" : chromeGround} secondary={<SiteFooter.Legal {...legal} />} />
     </div>

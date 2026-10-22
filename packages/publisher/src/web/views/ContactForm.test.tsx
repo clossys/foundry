@@ -39,6 +39,11 @@ async function fill() {
 const submit = () => screen.getByRole("button", { name: /SUBMIT-SENTINEL|SUBMITTING-SENTINEL/ });
 
 describe("ContactForm extraction", () => {
+  it("uses end actions for the contact CTA", () => {
+    render(page());
+    expect(submit().parentElement).toHaveAttribute("data-actions-layout", "end");
+  });
+
   it("exports the client form from the same entries as the other forms", () => {
     expect(typeof web.ContactForm).toBe("function");
     expect(typeof server.ContactForm).toBe("function");
@@ -67,9 +72,7 @@ describe("ContactForm extraction", () => {
     expect(container.querySelectorAll("h1")).toHaveLength(1);
     expect(container.querySelectorAll("form")).toHaveLength(1);
     expect(container.querySelectorAll(".rounded-control.bg-surface-raised.p-lg")).toHaveLength(1);
-    // The kit has no contact surface; boundary applies its generic heading,
-    // primary-action and title checks without imposing an auth form measure.
-    expect(checkFrontDoor({ surfaces: [{ surface: "boundary", title: { page: "HEADING-SENTINEL", brand: "BRAND-SENTINEL" }, render: () => page() }] })).toEqual([]);
+    expect(checkFrontDoor({ surfaces: [{ surface: "contact", title: { page: "HEADING-SENTINEL", brand: "BRAND-SENTINEL" }, render: () => page() }] })).toEqual([]);
     expect(renderToStaticMarkup(page())).toBe(renderToStaticMarkup(page(formProps(), server)));
   });
   it("keeps the honeypot inaccessible and sends the handler's fields under its configured name", async () => {

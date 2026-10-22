@@ -2,13 +2,13 @@ import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { JSDOM } from "jsdom";
-import type { ReactNode } from "react";
+import { createElement, type ReactNode } from "react";
 import { NavGrid, type NavGridItem } from "./NavGrid.js";
 import { assertNoNestedInteractive, hasInteractiveContent } from "./stretched-link.js";
 
 const graphic = <svg aria-hidden="true"><use href="#mark" /><image href="/mark.svg" /><use xlinkHref="#mark" /></svg>;
 const items = (count: number): NavGridItem[] => Array.from({ length: count }, (_, index) => ({ id: String(index), title: `Topic ${index}`, href: `/topics/${index}`, description: "Supporting copy" }));
-const withGraphic = (count: number, slot: "description" | "title" | "icon"): NavGridItem[] => items(count).map(item => slot === "title" ? { ...item, title: <>{item.title}{graphic}</> } : { ...item, [slot]: graphic });
+const withGraphic = (count: number, slot: "description" | "title" | "icon"): NavGridItem[] => items(count).map(item => slot === "title" ? { ...item, title: <>{item.title}{graphic}</> } : slot === "description" ? { ...item, description: <>{item.description}{graphic}</> } : { ...item, icon: graphic });
 
 describe("NavGrid passive SVG resources", () => {
   it.each([1, 2, 7].flatMap(count => (["description", "title", "icon"] as const).map(slot => ({ count, slot }))))("keeps a whole-tile link with a sprite in $slot for $count items", ({ count, slot }) => {
@@ -30,7 +30,11 @@ describe("NavGrid passive SVG resources", () => {
       expect(primary).toHaveClass("after:rounded-control");
       expect(primary.closest("[data-nav-grid-card]")).toHaveClass("relative", "isolate");
     }
-    if (slot === "description") expect(primary.querySelector("use, image")).toBeNull();
+    if (slot === "description") {
+      expect(primary.querySelector("use, image")).toBeNull();
+      expect(primary).not.toHaveTextContent("Supporting copy");
+      expect(screen.getAllByText("Supporting copy")).toHaveLength(count);
+    }
   });
 
   it("keeps the eligible sprite description path during ordinary SSR", () => {
@@ -41,6 +45,8 @@ describe("NavGrid passive SVG resources", () => {
     expect(doc.querySelectorAll('use[href="#mark"]')).toHaveLength(2);
     expect(doc.querySelectorAll('image[href="/mark.svg"]')).toHaveLength(2);
     expect(doc.querySelector("button, [data-nav-grid-card]")).toBeNull();
+    expect(doc.textContent?.match(/Supporting copy/g)).toHaveLength(2);
+    for (const link of doc.querySelectorAll("a")) expect(link.textContent).not.toContain("Supporting copy");
   });
 
   it.each([
@@ -89,5 +95,27 @@ describe("shared SVG resource classification", () => {
     expect(hasInteractiveContent([<Sprite href="#mark" />])).toBe(true);
     expect(() => assertNoNestedInteractive("NavGrid", "0", [<Sprite href="#mark" />])).toThrow(TypeError);
     expect(calls).toBe(0);
+  });
+});
+
+describe("conservative SVG reference limits", () => {
+  it("requires a visible literal svg ancestor for sprite children in an opaque wrapper", () => {
+    let calls = 0;
+    const SpriteIcon = ({ children }: { children?: ReactNode }) => { calls++; return <svg>{children}</svg>; };
+    SpriteIcon.displayName = "svg";
+    const wrapped = <SpriteIcon><use href="#mark" /></SpriteIcon>;
+    expect(hasInteractiveContent([wrapped])).toBe(true);
+    expect(() => assertNoNestedInteractive("NavGrid", "0", [wrapped])).toThrow(TypeError);
+    const sample = items(2).map(item => ({ ...item, icon: wrapped }));
+    expect(() => renderToStaticMarkup(<NavGrid items={sample} />)).toThrow(TypeError);
+    expect(calls).toBe(0);
+    expect(hasInteractiveContent([<svg><use href="#mark" /></svg>])).toBe(false);
+  });
+
+  it.each(["linearGradient", "radialGradient", "pattern", "textPath", "feImage", "mpath"])("conservatively refuses the unsupported %s href carrier in a linked title", tag => {
+    const reference = <svg aria-hidden="true">{createElement(tag, { href: "#base" })}</svg>;
+    expect(hasInteractiveContent([reference])).toBe(true);
+    const sample = items(2); sample[0] = { ...sample[0]!, title: <>Topic 0{reference}</> };
+    expect(() => renderToStaticMarkup(<NavGrid items={sample} />)).toThrow(TypeError);
   });
 });

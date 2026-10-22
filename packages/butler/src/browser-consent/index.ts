@@ -1,10 +1,11 @@
 /**
- * Internal barrel for the browser consent lifecycle: the record, the pure
+ * Public entry of the `./browser-consent` subpath: the record, the pure
  * decision rules and the lifecycle with its port types. It deliberately
- * reaches no adapter; the browser storage adapter lives under `adapters/`
- * and is constructed only by a host's explicit call.
+ * reaches no adapter; the browser storage adapter lives under `adapters/`,
+ * ships as its own `./browser-consent/local-storage` subpath and is
+ * constructed only by a host's explicit call (O-5).
  *
- * Not exported from the package root or any package subpath yet.
+ * The package root does not import this subtree.
  */
 
 export {

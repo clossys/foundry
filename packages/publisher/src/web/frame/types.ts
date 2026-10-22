@@ -1,3 +1,4 @@
+import type { SiteFramePresentationConfig } from "./site-frame-contract.js";
 import type { ReactNode } from "react";
 import type { CopyRef, CopyResolver } from "@clossys/writer";
 import type { IconNode } from "@clossys/designer/atoms/server";
@@ -19,7 +20,21 @@ export interface SiteLinkInput {
    */
   readonly href: string;
   readonly label: CopyRef;
+  /** Header action look; accepted only in shell.actions. @default "secondary" */
+  readonly emphasis?: "primary" | "secondary" | "ghost";
+  /** Header action glyph; accepted only in shell.actions and validated as SVG shape data. */
+  readonly icon?: IconNode;
 }
+
+type PlainSiteLinkInput = Omit<SiteLinkInput, "emphasis" | "icon">;
+
+/** An icon-only link: its copy reference supplies the accessible name. */
+export type SiteIconLinkInput = {
+  readonly href: string;
+  readonly label: CopyRef;
+  /** Plain SVG shape data validated against the same allowlist as environment icons. */
+  readonly icon: IconNode;
+};
 
 /**
  * The brand in the banner, as data: an asset id the frame resolves to an image
@@ -32,6 +47,15 @@ export type SiteBrandInput = {
   readonly label: CopyRef;
   readonly size: "sm" | "md" | "lg";
   readonly plate?: "self" | "shared";
+  /** Omitted inherits inverse overlay header ink; explicit auto keeps ordinary ink. */
+  readonly tone?: "auto" | "inverse";
+  /**
+   * How the header's logomark is painted. Omitted or `"accent"` paints the
+   * mark's shape in the accent token, using the asset as a mask, so supply a
+   * single-colour mark. `"image"` opts out and renders the asset as it is, for
+   * a multi-colour logo that the mask would flatten to a one-colour silhouette.
+   */
+  readonly markInk?: "image" | "accent";
 } & ({ readonly variant: "mark"; readonly wordmark?: never } | { readonly variant: "lockup"; readonly wordmark: CopyRef });
 
 /**
@@ -51,16 +75,34 @@ export interface SiteEnvironmentLinkInput {
 export { SITE_CHROME_GROUNDS } from "../internal/viewChromeGround.js";
 export type { SiteChromeGround } from "../internal/viewChromeGround.js";
 
-/** The footer: optional link columns, then the legal row. */
-export interface SiteFooterInput {
-  readonly columns?: readonly { readonly heading: CopyRef; readonly links: readonly SiteLinkInput[] }[];
+/**
+ * The footer: optional headed columns, ungrouped links and social profiles, then the legal row.
+ *
+ * Contract (`SITE_FRAME_CONTRACT.constituents.Footer.constraints`): `links` and
+ * `legal.links` together form one flat row of at most five; further links go in
+ * labelled `columns`. `social` takes at most four icons, because the `shell.brand` mark always fills the fifth and last slot. No footer link may
+ * repeat home, a `shell.nav` destination or the `#privacy-choices` control.
+ * Breaches throw a `SiteFooterContractError` (`name` and `code`), never truncate.
+ */
+interface SiteFooterFields {
+  /** A top hairline on transparent flow footers; other grounds ignore it. @default "none" */
+  readonly rule?: "none" | "top";
+  readonly columns?: readonly { readonly heading: CopyRef; readonly links: readonly PlainSiteLinkInput[] }[];
+  readonly links?: readonly PlainSiteLinkInput[];
+  readonly social?: { readonly label?: CopyRef; readonly links: readonly SiteIconLinkInput[] };
   readonly legal: {
     readonly entity: CopyRef;
-    readonly links: readonly SiteLinkInput[];
+    readonly links: readonly PlainSiteLinkInput[];
     /** When given, the legal links sit in a `<nav>` with this name. */
     readonly linksLabel?: CopyRef;
   };
 }
+
+/** Flow follows the shell ground; overlay reserves its opaque footer within a growing hero scene. */
+export type SiteFooterInput = SiteFooterFields & (
+  | { readonly placement?: "flow"; readonly ground?: SiteChromeGround }
+  | { readonly placement: "overlay"; readonly ground?: "base" | "inverse" }
+);
 
 /**
  * Everything the frame's chrome shows, as data only. There is no node slot for
@@ -70,19 +112,30 @@ export interface SiteShellInput {
   readonly brand: SiteBrandInput;
   /** The skip link's words. Its target is always {@link SITE_MAIN_ID}. */
   readonly skipLink: CopyRef;
-  /** Primary navigation in the banner, in a `<nav>` named by `label`. */
-  readonly nav?: { readonly label: CopyRef; readonly links: readonly SiteLinkInput[] };
+  /**
+   * Primary navigation in the banner, in a `<nav>` named by `label`. When it is
+   * omitted and the header has any action, the frame still renders a menu with
+   * no links and resolves its name and toggle through `resolveCopy` from the
+   * copy references in `SITE_FRAME_CONTRACT.defaults` (`site-frame.nav.label`
+   * and `site-frame.nav.trigger-label`). Unresolved default copy fails closed,
+   * like any other shell label. Supply `nav` (links may be empty) to use other
+   * copy references.
+   */
+  readonly nav?: {
+    readonly label: CopyRef;
+    /** The disclosure toggle copy; defaults to the resolved navigation label. */
+    readonly triggerLabel?: CopyRef;
+    readonly links: readonly (PlainSiteLinkInput & { readonly isCurrent?: boolean })[];
+  };
   /** Calls to action at the trailing end of the banner. */
   readonly actions?: readonly SiteLinkInput[];
-  /** A secondary call to action, just before `actions`. */
-  readonly secondaryAction?: SiteLinkInput;
-  /** Environment links, after `actions`. */
+  /** Environment links, after text and icon actions. */
   readonly environments?: readonly SiteEnvironmentLinkInput[];
-  /** A text badge naming the surface. Prefer `environments` with `isCurrent`. */
-  readonly surfaceLabel?: CopyRef;
   readonly navPlacement?: "leading" | "centered";
-  /** @default "base" */
+  /** Existing footer fallback only. Header ink and plate use header.surface/tone. @default "base" */
   readonly ground?: SiteChromeGround;
+  /** One header surface and theme-relative ink polarity. Glass follows declared page ground through the existing client island. */
+  readonly header?: { readonly surface?: "solid" | "transparent" | "glass"; readonly tone?: "base" | "inverse" };
   readonly footer?: SiteFooterInput;
   /**
    * The canonical public origin (`https://example.com`), for a surface served
@@ -101,6 +154,8 @@ export interface SiteFrameInput {
 }
 
 export interface SiteFrameProps extends SiteFrameInput {
+  /** Flat semantic presentation overrides; content remains in shell bindings. */
+  readonly presentation?: SiteFramePresentationConfig;
   /** The page content: one chrome-free view, rendered inside the frame's `<main>`. */
   readonly children: ReactNode;
 }
@@ -120,9 +175,11 @@ export interface SiteFrameConfig {
   readonly origin: string;
   /** Chrome the public site shows and the other surfaces do not. */
   readonly site?: {
+    readonly header?: SiteShellInput["header"];
     readonly nav?: SiteShellInput["nav"];
     readonly actions?: SiteShellInput["actions"];
-    readonly secondaryAction?: SiteShellInput["secondaryAction"];
+    readonly footerLinks?: SiteFooterInput["links"];
+    readonly social?: SiteFooterInput["social"];
     readonly navPlacement?: SiteShellInput["navPlacement"];
     readonly columns?: SiteFooterInput["columns"];
   };

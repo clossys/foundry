@@ -16,7 +16,7 @@ import {
 } from "./contract.js";
 import type { ValidationResult } from "./validation.js";
 import type { StrategyBundle } from "./reader.js";
-import type { StrategistClaim, StrategyConstraint } from "./schema.js";
+import type { Fact, StrategistClaim, StrategyConstraint } from "./schema.js";
 
 const RECORD_REVISION = "1.0.0";
 const SOURCE = "strategy-directory";
@@ -49,7 +49,7 @@ function evidenceForClaim(
   claim: StrategistClaim,
   productId: string,
   provenance: RecordProvenance,
-  factLabels: Map<string, string>,
+  facts: Map<string, Fact>,
 ): { evidence: EvidenceRecord[]; evidenceIds: string[] } {
   const evidence: EvidenceRecord[] = [];
   const evidenceIds: string[] = [];
@@ -68,6 +68,7 @@ function evidenceForClaim(
   }
   for (const factRef of claim.factRefs ?? []) {
     const id = `${claim.id}-fact-${factRef}`;
+    const fact = facts.get(factRef);
     evidence.push({
       kind: "evidence",
       id,
@@ -75,8 +76,8 @@ function evidenceForClaim(
       provenance,
       productId,
       evidenceKind: "observed-fact",
-      statement: factLabels.get(factRef) ?? `Observed fact ${factRef}.`,
-      observedAt: provenance.recordedAt,
+      statement: fact?.label ?? `Observed fact ${factRef}.`,
+      observedAt: fact?.lastUpdatedAt ?? provenance.recordedAt,
     });
     evidenceIds.push(id);
   }
@@ -108,7 +109,7 @@ export function projectStrategyContract(bundle: StrategyBundle): StrategyContrac
   const productId = slugId(bundle.positioning.productName) || "product";
   const contractId = `${productId}-strategy`;
   const provenance = recordProvenance(bundle);
-  const factLabels = new Map(bundle.facts.map((fact) => [fact.key, fact.label]));
+  const facts = new Map(bundle.facts.map((fact) => [fact.key, fact]));
   const records: StrategyRecord[] = [];
 
   records.push({
@@ -144,7 +145,7 @@ export function projectStrategyContract(bundle: StrategyBundle): StrategyContrac
 
   const approved: ApprovedClaimRecord[] = [];
   for (const claim of bundle.claims ?? []) {
-    const { evidence, evidenceIds } = evidenceForClaim(claim, productId, provenance, factLabels);
+    const { evidence, evidenceIds } = evidenceForClaim(claim, productId, provenance, facts);
     records.push(...evidence);
     if (claim.status === "approved") {
       const approvedRecord: ApprovedClaimRecord = {

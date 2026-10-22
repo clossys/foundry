@@ -184,3 +184,33 @@ export { checkPageFlow, sectionWeight, resolveActionEmphasis } from "./page-flow
 export type { CheckPageFlowOptions, SectionShape, SectionWeight, SectionedViewFlowWarning } from "./page-flow.js";
 
 export * from "./content-contract.js";
+export * from "./content-asset.js";
+export { validateBlockRole } from "./block-role.js";
+export type {
+  BlockRole, BlockRoleClaim, BlockRoleMedium, BlockRoleConfigValue,
+  BlockRoleAdapter, BlockRoleRegion, BlockRoleDescriptor,
+  BlockRoleAdapterContract, BlockRoleReason, BlockRoleValidationResult,
+} from "./block-role.js";
+export { validateBlockRoleBinding } from "./block-role-binding.js";
+export type {
+  InstanceBlockBinding, BlockRoleBindingRefIdentity, BlockRoleBindingIdentity,
+  BlockRoleBindingReason, BlockRoleBindingValidationResult,
+} from "./block-role-binding.js";
+export { WEB_ROLE_PAIR_BINDINGS, WEB_ROLE_PAIR_EVIDENCE, validateWebRolePairEvidence } from "./web-role-pair-evidence.js";
+export type {
+  WebRolePairStatus, WebRolePairCheck, WebRolePairEvidence, WebRolePairEvidenceResult,
+} from "./web-role-pair-evidence.js";
+export { validateRelations } from "./relations.js";
+export type {
+  RelationIdentity, RelationNodeKind, RelationNode, RelationRouteBinding, RelationEndpoint,
+  RelationProvenance, RelationEdge, RelationsInput, RelationsGraph, RelationsReason, RelationsResult,
+} from "./relations.js";
+export {
+  INSTANCE_FRAME_BLOCK_IDS, INSTANCE_VIEW_BLOCK_IDS, INSTANCE_SITE_SURFACE_KINDS,
+  validateInstanceRecord, validatePackRecord, validateInstanceRecords,
+} from "./instance-record.js";
+export type {
+  InstanceFrameBlockId, InstanceViewBlockId, InstanceSiteSurfaceKind, InstanceBlockRef,
+  InstanceRecord, PackRecord, InstanceRecordOptions, InstanceRecordReason, InstanceRecordValidationResult,
+} from "./instance-record.js";
+export { STANDARD_WEBSITE_INSTANCES, STANDARD_WEBSITE_PACK } from "./standard-website-pack.js";

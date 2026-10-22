@@ -8,6 +8,15 @@ export const CATALOG_COPY_REGISTRY = {
         "reference": "generic-preview-fixtures"
     },
     "entries": [
+        { "id": "catalog.sample.readiness.available", "text": "Available", "context": "Generic catalog readiness label", "status": "approved" },
+        { "id": "catalog.sample.readiness.partial", "text": "Partial", "context": "Generic catalog readiness label", "status": "approved" },
+        { "id": "catalog.sample.readiness.planned", "text": "Planned", "context": "Generic catalog readiness label", "status": "approved" },
+        { "id": "catalog.sample.readiness.not-offered", "text": "Not offered", "context": "Generic catalog readiness label", "status": "approved" },
+        { id: "catalog.sample.prose.heading", text: "Prepare a record with context", context: "Prose catalog fixture", status: "approved" },
+        { id: "catalog.sample.prose.before", text: "Read the ", context: "Prose catalog fixture", status: "approved" },
+        { id: "catalog.sample.prose.link", text: "writing guide", context: "Prose catalog fixture", status: "approved" },
+        { id: "catalog.sample.prose.after", text: " before preparing your next record.", context: "Prose catalog fixture", status: "approved" },
+        { id: "catalog.sample.prose.second", text: "Keep source material beside the record so each review starts with context.", context: "Prose catalog fixture", status: "approved" },
         {
             "id": "catalog.sample.approval.decision",
             "text": "Sample decision",

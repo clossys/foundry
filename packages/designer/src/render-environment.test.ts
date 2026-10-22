@@ -33,6 +33,36 @@ if (!existsSync(distDir)) {
 
 type ProbeResult = { ok: true } | { ok: false; message: string };
 
+it("retains the AccountMenu client export and typed host-data contract without a server export", () => {
+  expect(importKeysNormally("blocks/index.js")).toContain("AccountMenu");
+  expect(importKeysNormally("index.js")).toContain("AccountMenu");
+  expect(importKeysNormally("blocks/server.js")).not.toContain("AccountMenu");
+  expect(readFileSync(join(distDir, "blocks/AccountMenu.js"), "utf8")).toMatch(/^"use client";/);
+  const filename = join(packageRoot, "account-menu-consumer.check.ts");
+  const options = { strict: true, noEmit: true, skipLibCheck: true, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler };
+  const diagnosticsFor = (consumer: string) => {
+    const host = ts.createCompilerHost(options), original = host.getSourceFile.bind(host);
+    host.getSourceFile = (path, language, error, fresh) => path === filename ? ts.createSourceFile(path, consumer, language, true) : original(path, language, error, fresh);
+    return ts.getPreEmitDiagnostics(ts.createProgram([filename], options, host));
+  };
+  for (const entry of ["blocks/index.js", "index.js"]) {
+    const prelude = `import type * as B from ${JSON.stringify(join(distDir, entry))};`;
+    const valid = `${prelude}
+      const actor: B.AccountMenuActor = {name:"Actor"};
+      const link: B.AccountMenuLink = {id:"profile",kind:"link",label:"Profile",href:"/profile"};
+      const action: B.AccountMenuAction = {id:"remove",kind:"destructive",label:"Remove",onAction:()=>{}};
+      const preference: B.AccountMenuPreference = {id:"compact",kind:"preference",label:"Compact",checked:false,onCheckedChange:()=>{}};
+      const command: B.AccountMenuCommand = action;
+      const item: B.AccountMenuEntry = preference;
+      const section: B.AccountMenuSection = {id:"prefs",kind:"preferences",label:"Preferences",entries:[preference]};
+      const props: B.AccountMenuProps = {actor,sections:[{id:"commands",entries:[link,command]},section],onRoute:entry=>entry.href,onClose:()=>{}};`;
+    const diagnostics = diagnosticsFor(valid);
+    expect(ts.formatDiagnosticsWithColorAndContext(diagnostics, { getCurrentDirectory: () => packageRoot, getCanonicalFileName: path => path, getNewLine: () => "\n" }), entry).toBe("");
+    const wrong = diagnosticsFor(`${prelude}\nconst wrong: B.AccountMenuSection = {id:"prefs",kind:"preferences",label:"Preferences",entries:[{id:"link",kind:"link",label:"Wrong",href:"/wrong"}]};`);
+    expect(wrong.some(diagnostic => diagnostic.code === 2322), entry).toBe(true);
+  }
+}, 30_000);
+
 /** Spawns a real `node --conditions=react-server` subprocess importing `distRelPath`, and reports what actually happened — never "did not throw" alone. */
 function probeUnderReactServer(distRelPath: string): ProbeResult {
   const absolute = join(distDir, distRelPath);
@@ -61,10 +91,11 @@ function importKeysNormally(distRelPath: string): string[] {
 describe("server-safe entry points resolve under react-server (test 1)", () => {
   const serverEntries: Array<{ distRelPath: string; expectedExports: string[] }> = [
     { distRelPath: "tokens/server.js", expectedExports: ["readBrandCss", "assertTailwindMergeVersion"] },
-    { distRelPath: "atoms/server.js", expectedExports: ["Avatar", "Badge", "Banner", "Card", "Field", "Icon", "Meter", "Skeleton", "Spinner", "StatusMark", "buttonLinkClassName", "iconButtonClassName", "iconButtonLinkClassName", "mergeUiClasses"] },
+    { distRelPath: "atoms/server.js", expectedExports: ["Logomark", "Avatar", "Badge", "Banner", "Card", "Field", "Icon", "Meter", "Skeleton", "Spinner", "StatusMark", "buttonLinkClassName", "iconButtonClassName", "iconButtonLinkClassName", "mergeUiClasses"] },
     {
       distRelPath: "blocks/server.js",
       expectedExports: [
+        "Lockup",
         "AnatomyCallouts",
         "ArticleBody",
         "ContentSection",
@@ -94,10 +125,13 @@ describe("server-safe entry points resolve under react-server (test 1)", () => {
         "SpecimenPanel",
         "Stat",
         "StatusList",
+        "Testimonial",
+        "Tree",
+        "UsageMeter",
       ],
     },
     { distRelPath: "shell/server.js", expectedExports: ["BADGE_INSET_SHARE", "BADGE_RADIUS_SHARE", "Brandmark", "Shell", "SiteFooter", "SiteHeader", "SkipLink", "badgePlatePath"] },
-    { distRelPath: "charts/server.js", expectedExports: ["ChartFrame", "Sparkline"] },
+    { distRelPath: "charts/server.js", expectedExports: ["ChartFrame", "BarChart", "LineChart", "RangeChart", "ScatterChart", "Sparkline", "WaterfallChart", "AreaChart", "Heatmap", "StatusStrip"] },
     { distRelPath: "theme/server.js", expectedExports: ["getThemeInitScript"] },
   ];
 
@@ -112,6 +146,35 @@ describe("server-safe entry points resolve under react-server (test 1)", () => {
       expect(keys).toEqual([...expectedExports].sort());
     });
   }
+});
+
+it("imports and calls the compiled Testimonial server graph with an avatar under react-server", () => {
+  const result = probeUnderReactServer("blocks/Testimonial.server.js");
+  expect(result.ok, result.ok ? undefined : result.message).toBe(true);
+  expect(RENDER_ENVIRONMENT["./blocks/server"]).toBe("server-safe");
+  const absolute = join(distDir, "blocks/Testimonial.server.js");
+  const script = `import {Testimonial} from ${JSON.stringify(absolute)}; function nodes(node){if(Array.isArray(node))return node.flatMap(nodes);if(!node||typeof node!=="object"||!node.props)return [];if(typeof node.type==="function")return nodes(node.type(node.props));return [node,...nodes(node.props.children)];} const tree=nodes(Testimonial({quote:"Quote",attributorName:"Alex Example",avatarSrc:"/avatar.png",avatarAlt:"Alex Example"})); if(tree.filter(n=>n.type==="figure").length!==1||tree.filter(n=>n.type==="blockquote"&&n.props.children==="Quote").length!==1||tree.filter(n=>n.type==="img"&&n.props.alt==="Alex Example").length!==1)throw new Error("missing semantic testimonial/avatar");process.stdout.write("OK");`;
+  expect(execFileSync(process.execPath, ["--conditions=react-server", "-e", script], { encoding: "utf8", timeout: 10_000 })).toBe("OK");
+}, 15_000);
+
+it("keeps the interactive preview export exact and its emitted client boundary explicit", () => {
+  expect(importKeysNormally("tokens/preview/index.js")).toEqual(["TokenPreview"]);
+  expect(readFileSync(join(distDir, "tokens/preview/index.js"), "utf8")).toMatch(/^"use client";/);
+  expect(RENDER_ENVIRONMENT["./tokens/preview"]).toBe("client-only");
+});
+
+describe("compiled Tree server graph", () => {
+  it("calls Tree under react-server and retains its published TreeProps and TreeNodeData declarations", () => {
+    const absolute = join(distDir, "blocks", "server.js");
+    const script = `import {Tree} from ${JSON.stringify(absolute)}; const tree=Tree({nodes:[{id:"root",heading:"Root",figure:{value:"42"},status:{tone:"info",label:"Open"}},{id:"one",parent:"root",heading:"One"},{id:"two",parent:"root",heading:"Two"}]}); if(tree.type!=="ul" || tree.props["data-tree"]!=="") throw new Error("missing semantic Tree"); process.stdout.write("OK");`;
+    expect(execFileSync(process.execPath, ["--conditions=react-server", "-e", script], { encoding: "utf8", timeout: 10_000 })).toBe("OK");
+    const declaration = readFileSync(join(distDir, "blocks", "tree", "Tree.d.ts"), "utf8");
+    expect(declaration).toContain("export type TreeNodeData = Pick<ItemData,");
+    expect(declaration).toContain("export interface TreeProps");
+    for (const entry of ["index.d.ts", "server.d.ts"]) {
+      expect(readFileSync(join(distDir, "blocks", entry), "utf8")).toContain('export type { TreeProps, TreeNodeData } from "./tree/Tree.js"');
+    }
+  }, 15_000);
 });
 
 describe("pure Item and Items compiled graphs", () => {
@@ -174,7 +237,7 @@ describe("compiled grouped Items SSR", () => {
 });
 
 describe("negative control: the original barrels still fail under react-server (test 2)", () => {
-  const originalBarrels = ["atoms/index.js", "blocks/index.js", "shell/index.js", "charts/index.js", "theme/index.js"];
+  const originalBarrels = ["tokens/preview/index.js", "atoms/index.js", "blocks/index.js", "shell/index.js", "charts/index.js", "theme/index.js"];
 
   for (const distRelPath of originalBarrels) {
     it(`${distRelPath} still fails under --conditions=react-server (proves the server entry is doing real work)`, () => {
@@ -214,6 +277,8 @@ describe("no regression: every existing subpath still resolves normally (test 3)
   // a missing export (issue #434). Split, each case sits with its siblings at
   // roughly 200ms, and a failure names the barrel that actually regressed.
   const barrelSpotChecks: Array<[string, string]> = [
+    ["blocks/index.js", "CommandMenu"],
+    ["blocks/index.js", "useCommandMenuShortcut"],
     ["atoms/index.js", "Button"],
     ["blocks/index.js", "DataTable"],
     ["shell/index.js", "NavShell"],
@@ -320,3 +385,32 @@ describe("native compiled collection scale boundary", () => {
     expect(execFileSync(process.execPath, ["--conditions=react-server", "-e", script], { encoding: "utf8", timeout: 10_000 })).toBe("OK");
   }, 15_000);
 });
+
+it("keeps PageBar client-only, emits all seven types and requires authored labels (M10)", () => {
+  expect(importKeysNormally("blocks/index.js")).toContain("PageBar");
+  expect(importKeysNormally("index.js")).toContain("PageBar");
+  expect(importKeysNormally("blocks/server.js")).not.toContain("PageBar");
+  expect(readFileSync(join(distDir, "blocks/PageBar.js"), "utf8")).toMatch(/^"use client";/);
+  const filename = join(packageRoot, "page-bar-consumer.check.ts");
+  const options = { strict: true, noEmit: true, skipLibCheck: true, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler };
+  const diagnosticsFor = (consumer: string) => {
+    const host = ts.createCompilerHost(options), original = host.getSourceFile.bind(host);
+    host.getSourceFile = (path, language, error, fresh) => path === filename ? ts.createSourceFile(path, consumer, language, true) : original(path, language, error, fresh);
+    return ts.getPreEmitDiagnostics(ts.createProgram([filename], options, host));
+  };
+  for (const entry of ["blocks/index.js", "index.js"]) {
+    const prelude = `import type * as B from ${JSON.stringify(join(distDir, entry))};`;
+    const valid = `${prelude}
+      const width: B.PageBarWidth = "full";
+      const destination: B.PageBarDestination = {id:"projects",label:"Projects",href:"/projects"};
+      const crumb: B.PageBarCrumb = {...destination,siblings:[destination]};
+      const action: B.PageBarAction = {id:"share",label:"Share",onAction:()=>{}};
+      const page: B.PageBarPage = {title:"Quarterly report",breadcrumb:[crumb],actions:[action],width};
+      const labels: B.PageBarLabels = {breadcrumb:"Trail",collapsedBreadcrumb:"Levels",pageInfo:"Details",fullWidth:"Expand",containedWidth:"Contain",pageActions:"Actions"};
+      const props: B.PageBarProps = {root:{label:"Workspace"},page,width,onWidthChange:()=>{},labels};`;
+    const diagnostics = diagnosticsFor(valid);
+    expect(diagnostics.map(diagnostic => ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n")), entry).toEqual([]);
+    const missing = diagnosticsFor(`${prelude} const props: B.PageBarProps = {root:{label:"Workspace"},width:"full",onWidthChange:()=>{}};`);
+    expect(missing.some(diagnostic => diagnostic.code === 2741 && /labels/.test(ts.flattenDiagnosticMessageText(diagnostic.messageText, " "))), entry).toBe(true);
+  }
+}, 30_000);

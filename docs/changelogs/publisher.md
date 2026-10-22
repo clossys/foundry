@@ -3,6 +3,71 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## 0.13.0 - 2026-10-16
+
+- Regenerate the shipped preview stylesheet for Designer frame controls.
+- Fill canonical content media with consumer-owned images or captioned videos through asset ids, with checked dimensions, aspect ratios, MIME formats and accessibility intent, plus declared loading applied by the shared renderer.
+- SiteFrame can place its footer over a hero that fits one viewport, with an opaque backing and the existing legal links. The default flow placement keeps its rendered markup.
+- Add optional frame action emphasis, brand and navigation tone, hero appearance controls and a transparent footer top rule while preserving default rendering.
+- Document the package and host responsibilities for SiteFrame brand, CSS, page content and configuration.
+- SectionedView and LandingView render `status-list` as catalog Items topics with localized badges, replacing definition lists and the readiness legend and requiring 3–8 flat entries or 2–4 groups of 2–4 entries with at most eight entries overall.
+- Updated dependency @clossys/designer to ^0.12.0
+- Updated templates/site dependency @clossys/designer to ^0.12.0
+- Updated templates/site dependency @clossys/publisher to ^0.13.0
+
+## 0.12.0 - 2026-10-16
+
+- Site navigation can collapse into a mobile disclosure with an inline fallback when scripting is unavailable, and header action links can show a text label without an icon.
+- The package includes a type-check proof for the published FAQ item fields and section layout.
+- Render SiteFrame primary navigation with Designer NavDisclosure and text actions with SiteHeader.ActionLink, intentionally changing default navigation and action markup. Add a copy reference for the mobile toggle and an independent footer ground that defaults to the shell ground.
+- Allow frame headers to overlay a hero with a selected ink tone, and standalone landing heroes to flex into their page frame.
+- Updated dependency @clossys/designer to ^0.11.0
+- Updated templates/site dependency @clossys/designer to ^0.11.0
+- Updated templates/site dependency @clossys/publisher to ^0.12.0
+
+## 0.11.0 - 2026-10-14
+
+- SiteHeader takes `placement="overlay"` to sit fixed over the first block, transparent at the top of the page and a blurred glass plate once the page scrolls, with `tone` for the ink a light or dark ground needs and `menuOpen` to hold the glass while a menu is open.
+Add the brandable `--color-surface-glass`, `--color-surface-glass-inverse` and `--blur-glass` tokens, all three required brand slots; the brand template lists the two glass colours in every theme block and the blur in the light block.
+Upgrading has four visible effects on an existing site: `designer-brand-check` and `publisher-preview` exit 1 on a brand file until it declares all three new slots, `designer-contrast-check` exits 2 (`unresolvable-token`) on a consumer `tokens.css` that does not declare the two glass colours, and the contrast gate now fails a brand whose `ink-primary` or `ink-on-inverse` is translucent, reporting that the foreground "must be opaque".
+The contrast gate checks primary and on-inverse ink over each glass composited on white and on black, taking the lower of a linear-light blend and the gamma-encoded sRGB blend browsers paint; a pair's `compositeOver` may now be a literal opaque colour, and a translucent or malformed literal is reported unchecked.
+Inside an overlay header, focus indicators (the `--ui-ring-focus` ring and every `:focus-visible` outline) take the tone's ink instead of `--color-accent`, which falls below 3:1 on the glass, and the gate checks that ring on each glass at 3:1 over both backdrops; it checks no child ink other than the tone's own on the glass.
+Publisher's preview stylesheet carries the overlay header rule.
+- Render the framed LegalView on the shared page layout: the document title, an optional `summary` subtitle, one card holding both dates and the document body, and the related references as the notes region below it, with every section id and heading kept. The framed page renders no draft or status text and does not resolve the draft heading or facts to confirm, so `labels.draftHeading` is optional there (`LegalViewFramedLabels`). The self-chromed LegalView is unchanged.
+
+Add an explicit `indexing` option (`"index"` or `"noindex"`, legal pages only) to `buildSiteMetadata`. It decides the robots value by itself and makes no counsel-review claim; without it the `status` rule is unchanged. A non-legal page, an unknown value, or `"index"` on a page whose `status` is `"draft"` is refused with the new `invalid-indexing` reason.
+- Updated dependency @clossys/designer to ^0.10.0
+- Updated templates/site dependency @clossys/designer to ^0.10.0
+- Updated templates/site dependency @clossys/publisher to ^0.11.0
+
+## 0.10.0 - 2026-10-13
+
+- Consumers can validate static art declarations with Designer's typed slot contract and render checked photos or token-painted vectors into Publisher backdrop and media seams.
+- Adds `./web/consent` (the client-only `ConsentExperience` notice assembly, `bindTransport`, `useAnalyticsAllowed` and `useConsentStatus`), `./web/consent/preview` (a fixed-clock `createConsentPreview` resolved under the `development` condition) and `./consent-copy` (server-only `resolveConsentCopy`), each of which throws at import under the condition it refuses.
+- Add `constructionStatusProps` to compose `StatusView` from caller-owned Writer CopyRefs, with validated onward links and guidance for construction routes.
+- Add ContactForm for CaptureView's form slot inside SiteFrame, with caller-approved copy, topic and contact fields, a configurable honeypot, client validation and ContactResult states.
+Native contact submissions use POST to keep contact fields out of URL query parameters.
+Deprecate ContactView in favor of CaptureView plus ContactForm while retaining its compatibility page API.
+- Add a contact surface and contact-form rule to the front-door test kit, requiring one main containing one form with a POST method.
+Use the contact surface in the framed ContactForm conformance test and document its rules.
+- `StatusView` and framed `GlobalErrorDocument` accept an optional caller-labelled `reference` that renders after the subtitle with an escaped, selectable code value.
+- Simplify FAQ band prop forwarding after landing-page fragment spacing is resolved.
+- Compose invitation-only sign-in with optional no-account and request-access copy and a restricted access selector for neutral identifier-failure and lockout notices.
+- Render LegalView inside SiteFrame with the shared validated legal body, effective and last-updated dates, draft callout and canonical related links.
+
+Update the page-layer contract to stop deferring framed LegalView or the deprecated ContactView.
+- Add prose as a new canonical content block type for ordered paragraphs and inline links with Writer copy provenance, sanctioned destinations, and matching ordinary and server markup. Paragraphs use readable measures and spacing, with at most 24 spans, six links and 1,200 Unicode characters each. Consumers with exhaustive block-type switches must handle `prose`.
+- Share card routes can omit alt to derive alternative text from the card's visible text.
+Derived alternative text joins parts with a single space instead of ". " after a part ending in ".", "!", "?", ":", ";", "…", "。", "！", "？" or "；", optionally followed by closing quotes or brackets (`"`, `'`, `”`, `’`, `)`, `]`, `»`, `」`, `』`, `）`, `】`).
+- Add copy-reference-backed icon actions, social profile links and ungrouped footer links to SiteFrame.
+Validate the new slots as closed data using the existing link and SVG shape allowlists, omit empty lists, and map them only to the public site surface.
+- Consumers can compose status lists with Index rows and per-item badges using the topics recipe, with a Publisher preview example and configuration guidance.
+- Updated dependency @clossys/writer to ^0.6.0
+- Updated dependency @clossys/designer to ^0.9.0
+- Updated templates/site dependency @clossys/designer to ^0.9.0
+- Updated templates/site dependency @clossys/publisher to ^0.10.0
+- Updated templates/site dependency @clossys/writer to ^0.6.0
+
 ## 0.9.0 - 2026-10-12
 
 - Give connected item geometry, panel aliases and catalog styling explicit token fallbacks while preserving live theme overrides. Document how source-checkout generators relate to installed packages, and check required labels and supported split media layouts through compiled type assertions.

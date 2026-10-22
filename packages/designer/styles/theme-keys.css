@@ -25,6 +25,8 @@
   --color-surface-inverse-raised: var(--color-surface-inverse-raised, oklch(0.285 0 0));
   --color-surface-aside:          var(--color-surface-aside, oklch(0.9612 0 0));
   --color-surface-selected:       var(--color-surface-selected, oklch(0.4748 0 0 / 0.1));
+  --color-surface-glass:          var(--color-surface-glass, oklch(1 0 0 / 0.6));
+  --color-surface-glass-inverse:  var(--color-surface-glass-inverse, oklch(0.2178 0 0 / 0.85));
 
   /* ── COLOR · INK ──────────────────────────────────────────────── */
   --color-ink-primary:            var(--color-ink-primary, oklch(0.2178 0 0));
@@ -141,6 +143,9 @@
   --radius-surface:                var(--radius-surface, var(--radius-default, 3px));
   --radius-panel:                  var(--radius-panel, var(--radius-surface, var(--radius-default, 3px)));
 
+  /* ── BLUR ─────────────────────────────────────────────────────── */
+  --blur-glass:                    var(--blur-glass, 20px);
+
   /* ── EASING ───────────────────────────────────────────────────── */
   --ease-default:                  var(--ease-default, cubic-bezier(.2, 0, 0, 1));
   --ease-decelerate:               var(--ease-decelerate, cubic-bezier(0, 0, .2, 1));
@@ -247,6 +252,72 @@
   }
 }
 
+@layer foundry-ui-compiled {
+  /* Existing cluster attributes keep the fixed interactive markup unchanged. */
+  [data-chart-part="frame"] [data-chart-part="cluster"] rect[tabindex="0"]:hover,
+  [data-chart-part="frame"] [data-chart-part="cluster"] rect[tabindex="0"]:focus {
+    fill-opacity: .85;
+    stroke: var(--color-chart-surface, var(--color-surface-raised, oklch(1 0 0)));
+    stroke-width: var(--ui-border-rule, 2px);
+  }
+
+  [data-chart-part="frame"] [data-chart-part="cluster"] rect[data-chart-mark="bar"][tabindex="0"]:hover,
+  [data-chart-part="frame"] [data-chart-part="cluster"] rect[data-chart-mark="bar"][tabindex="0"]:focus {
+    stroke-width: var(--ui-border-hairline, 1px);
+  }
+
+  [data-chart-part="frame"]:has([data-chart-mark="bar"]) [data-chart-part="axis"] line {
+    stroke-width: var(--ui-border-hairline, 1px);
+  }
+
+  figure:has(> [data-chart-part="frame"][width="100%"]),
+  figure:has(> [data-chart-part="frame"][width="100%"]) [data-chart-part="table-fallback"] {
+    min-inline-size: 0;
+    max-inline-size: 100%;
+  }
+
+  figure:has(> [data-chart-part="frame"][width="100%"]) table {
+    inline-size: 100%;
+    table-layout: fixed;
+    overflow-wrap: anywhere;
+  }
+
+  @variant max-tablet {
+    @media screen {
+      figure:has(> [data-chart-part="frame"][width="100%"]) table {
+        display: block;
+      }
+      figure:has(> [data-chart-part="frame"][width="100%"]) thead {
+        position: absolute;
+        inline-size: var(--ui-border-hairline, 1px);
+        block-size: var(--ui-border-hairline, 1px);
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+      }
+      figure:has(> [data-chart-part="frame"][width="100%"]) tbody {
+        display: block;
+      }
+      figure:has(> [data-chart-part="frame"][width="100%"]) tbody tr {
+        display: grid;
+        gap: var(--spacing-xs, 4px);
+        padding-block: var(--spacing-sm, 8px);
+      }
+      figure:has(> [data-chart-part="frame"][width="100%"]) tbody td {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        column-gap: var(--spacing-md, 12px);
+        text-align: end;
+      }
+      figure:has(> [data-chart-part="frame"][width="100%"]) tbody td::before {
+        content: attr(data-column-label);
+        color: var(--color-ink-secondary, oklch(0.36 0 0));
+        text-align: start;
+      }
+    }
+  }
+}
+
 /*
  * Scroll cue, CSS only, for a cue that belongs to the first screen
  * (Publisher `LandingView`'s scroll cue). Where scroll-driven animations
@@ -294,6 +365,180 @@
     }
   }
 }
+
+/*
+ * Overlay site header surface (`SiteHeader` with `placement="overlay"`):
+ * transparent over the first block at the top of the page, a glass plate
+ * once the page scrolls beneath it. The component positions the header
+ * (`position: fixed`, inline); this utility owns only paint.
+ *
+ * Glass = `--color-surface-glass` (tone base) or
+ * `--color-surface-glass-inverse` (`data-tone="inverse"`), behind a
+ * `--blur-glass` backdrop blur, over a hairline in the matching line role.
+ * The contrast gate pins each glass alpha against its ink over a white and
+ * a black backdrop, the two extremes a blurred backdrop can average to.
+ *
+ * Focus indicators inside the header take the tone's ink rather than
+ * `--color-accent`: the `--ui-ring-focus` ring and the colour of every
+ * `:focus-visible` outline. Accent falls below the 3:1 non-text floor on
+ * some glass/backdrop combinations, while
+ * the tone's ink is the one ink the gate checks on the glass, and the one
+ * the page guarantees reads over its hero at the transparent top.
+ *
+ * States change paint only (background, border colour, backdrop filter):
+ * the border width is constant, so no state moves layout.
+ *
+ * Fallbacks. The first two replace the glass plate, which is what the
+ * header shows once the page scrolls (and at every position where the
+ * third applies); they do not touch the transparent top:
+ *   - no backdrop-filter: the glass becomes the opaque raised (or inverse)
+ *     plate, since an unblurred translucent plate does not hold contrast
+ *     over busy content;
+ *   - prefers-reduced-transparency: the same opaque plate, no blur;
+ *   - no scroll-driven animations (and so no JavaScript requirement): the
+ *     whole `animation-timeline` block is skipped and the header is glass at
+ *     every scroll position, including the top.
+ * Where scroll-driven animations exist, the header is transparent at the
+ * top in every case, including under the first two fallbacks. That is
+ * intentional: the top is no surface at all, not a translucent one, and
+ * the page supplies its own scrim and tone there (see `SiteHeaderTone`).
+ * The header reaches glass over the first `--spacing-3xl` of root scrolling;
+ * reduced motion swaps the ramp for one step over the first pixel, so the
+ * glass arrives with the first scroll.
+ * `data-menu-open` (the `menuOpen` prop), any descendant with
+ * `aria-expanded="true"` (an open menu toggle) or an open `<details>`
+ * (a disclosure menu) forces glass at any scroll
+ * position, so an open menu never sits on a transparent bar.
+ */
+@keyframes site-header-glass {
+  to {
+    background-color: var(--site-header-glass-fill, oklch(1 0 0 / 0.6));
+    border-block-end-color: var(--site-header-glass-line, oklch(0.8761 0 0));
+    -webkit-backdrop-filter: var(--site-header-glass-blur, blur(20px));
+    backdrop-filter: var(--site-header-glass-blur, blur(20px));
+  }
+}
+
+/* All header surfaces share ink; transparent controls reveal their own header surface. */
+@utility site-header-ink {
+  --site-header-action-hover: var(--color-surface-raised, oklch(1 0 0));
+  --site-header-focus: var(--color-ink-primary, oklch(0.2178 0 0));
+  &[data-tone="inverse"] {
+    --site-header-action-hover: var(--color-surface-inverse, oklch(0.2178 0 0));
+    --site-header-focus: var(--color-ink-on-inverse, oklch(0.9702 0 0));
+  }
+  & .site-header-brand > a.text-inherit { color: inherit; }
+  & [data-header-action-ghost],
+  & .nav-disclosure-toggle:not([data-tone]) {
+    color: inherit;
+    background-color: transparent;
+    &:hover, &:focus-visible {
+      color: inherit;
+      background-color: var(--site-header-action-hover, var(--color-surface-raised, oklch(1 0 0)));
+    }
+  }
+  & :focus-visible { outline-color: var(--site-header-focus, var(--color-ink-primary, oklch(0.2178 0 0))); }
+}
+
+@utility site-header-overlay {
+  --site-header-glass-fill: var(--color-surface-glass, oklch(1 0 0 / 0.6));
+  --site-header-glass-line: var(--color-line-base, oklch(0.8761 0 0));
+  --site-header-glass-blur: blur(var(--blur-glass, 20px));
+  border-block-end-width: var(--ui-border-hairline, 1px);
+  border-block-end-style: solid;
+  background-color: var(--site-header-glass-fill, oklch(1 0 0 / 0.6));
+  border-block-end-color: var(--site-header-glass-line, oklch(0.8761 0 0));
+  -webkit-backdrop-filter: var(--site-header-glass-blur, blur(20px));
+  backdrop-filter: var(--site-header-glass-blur, blur(20px));
+  --site-header-focus: var(--color-ink-primary, oklch(0.2178 0 0));
+  --ui-ring-focus: 0 0 0 2px var(--site-header-focus, oklch(0.2178 0 0));
+  &[data-tone="base"] {
+    color: var(--color-ink-primary, oklch(0.2178 0 0));
+  }
+  & .site-header-brand > a.text-inherit {
+    color: inherit;
+  }
+  &[data-tone="inverse"] {
+    --site-header-glass-fill: var(--color-surface-glass-inverse, oklch(0.2178 0 0 / 0.85));
+    --site-header-glass-line: var(--color-line-on-inverse, oklch(0.9702 0 0 / 0.14));
+    --site-header-focus: var(--color-ink-on-inverse, oklch(0.9702 0 0));
+    color: var(--color-ink-on-inverse, oklch(0.9702 0 0));
+  }
+  /* Unconfigured disclosure triggers follow the header; explicit tones win. */
+  &[data-tone="inverse"] .nav-disclosure-toggle:not([data-tone]) {
+    color: var(--color-ink-on-inverse, oklch(0.9702 0 0));
+    &:hover {
+      background-color: var(--color-control-tonal-inverse-hover, oklch(0.9702 0 0 / 0.16));
+    }
+  }
+  &[data-placement="overlay"] :focus-visible {
+    outline-color: var(--site-header-focus, oklch(0.2178 0 0));
+  }
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    --site-header-glass-fill: var(--color-surface-raised, oklch(1 0 0));
+    &[data-tone="inverse"] {
+      --site-header-glass-fill: var(--color-surface-inverse, oklch(0.2178 0 0));
+    }
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    --site-header-glass-fill: var(--color-surface-raised, oklch(1 0 0));
+    --site-header-glass-blur: none;
+    &[data-tone="inverse"] {
+      --site-header-glass-fill: var(--color-surface-inverse, oklch(0.2178 0 0));
+    }
+  }
+  @supports (animation-timeline: scroll()) {
+    background-color: transparent;
+    border-block-end-color: transparent;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    animation-name: site-header-glass;
+    animation-duration: auto;
+    animation-timing-function: linear;
+    animation-fill-mode: both;
+    animation-timeline: scroll(root block);
+    animation-range: 0 var(--spacing-3xl, 48px);
+    @media (prefers-reduced-motion: reduce) {
+      /* One step over the first pixel: transparent only at the very top,
+         glass from the first scroll. (steps(1, jump-start) would sit at
+         its end value already at progress 0, so never transparent.) */
+      animation-timing-function: steps(1, jump-end);
+      animation-range: 0 1px;
+    }
+    &[data-menu-open],
+    &:has([aria-expanded="true"]),
+    &:has(details[open]) {
+      animation-name: none;
+      background-color: var(--site-header-glass-fill, oklch(1 0 0 / 0.6));
+      border-block-end-color: var(--site-header-glass-line, oklch(0.8761 0 0));
+      -webkit-backdrop-filter: var(--site-header-glass-blur, blur(20px));
+      backdrop-filter: var(--site-header-glass-blur, blur(20px));
+    }
+  }
+  /* Publisher's automatic overlay owns these ghost controls. A static inverse
+     utility must not pin their ink after the observed physical ground changes.
+     Opaque hover plates use the already-gated surface/ink pairs; stacking a
+     second translucent wash over minimum-alpha glass can lose AA contrast. */
+  &.site-header-ground-aware {
+    --site-header-action-hover: var(--color-surface-raised, oklch(1 0 0));
+    &[data-tone="inverse"] {
+      --site-header-action-hover: var(--color-surface-inverse, oklch(0.2178 0 0));
+    }
+    &[data-placement="overlay"][data-tone] .site-header-actions > a,
+    &[data-placement="overlay"][data-tone] .site-header-environment-ghost,
+    &[data-placement="overlay"][data-tone] .site-header-desktop-actions a.text-ink-primary:not(.bg-surface-raised),
+    &[data-placement="overlay"][data-tone] .nav-disclosure-toggle:not([data-tone]) {
+      color: inherit;
+      background-color: transparent;
+      &:hover, &:focus-visible {
+        color: inherit;
+        background-color: var(--site-header-action-hover, var(--color-surface-raised, oklch(1 0 0)));
+      }
+    }
+  }
+}
+
+
 
 /*
  * The quiet call to action (T4, `buttonClassName("quiet", …)`): a chevron
@@ -419,6 +664,70 @@
   inset-block-start: calc((1 - var(--items-wide, 0)) * (100% + var(--spacing-xl, 24px)) + var(--items-wide, 0) * (var(--spacing-2xl, 32px) / 2 + var(--items-lane-wide, 0px)));
 }
 
+/* Responsive navigation shares one panel across the sheet, inline row and
+   no-scripting fallback. SiteHeader supplies its positioned containing block.
+   The sheet's motion reads these tokens from script: it slides down by the
+   shift and fades in, and reverses on close while data-present keeps it
+   painted. Reduced motion zeroes the duration, so the sheet switches at once. */
+@utility nav-disclosure-panel {
+  --site-header-panel-duration: var(--ui-duration-default, 240ms);
+  --site-header-panel-ease: var(--ease-default, cubic-bezier(.2, 0, 0, 1));
+  --site-header-panel-shift: calc(-1 * var(--spacing-sm, 8px));
+  display: none;
+  position: absolute;
+  inset-block-start: 100%;
+  inset-inline: 0;
+  flex-direction: column;
+  gap: var(--spacing-md, 12px);
+  padding-block: var(--spacing-md, 12px);
+  padding-inline: var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px));
+  background-color: var(--color-overlay-surface, oklch(1 0 0));
+  color: var(--color-ink-primary, oklch(0.2178 0 0));
+  border-block-end: var(--ui-border-hairline, 1px) solid var(--color-overlay-border, oklch(0.8761 0 0));
+  &[data-expanded], &[data-present] { display: flex; }
+  @media (prefers-reduced-motion: reduce) { --site-header-panel-duration: 0s; }
+  @media (width >= 768px) {
+    display: flex;
+    position: static;
+    flex-direction: row;
+    padding: 0;
+    background-color: transparent;
+    color: inherit;
+    border: 0;
+  }
+  @media (scripting: none) {
+    display: flex;
+    position: static;
+    flex-direction: row;
+    padding: 0;
+    background-color: transparent;
+    color: inherit;
+    border: 0;
+  }
+}
+@utility nav-disclosure-icon {
+  &[data-open] > span:first-child { transform: translateY(calc((var(--spacing-xs, 4px) + var(--ui-border-hairline, 1px)) / 2)) rotate(45deg); }
+  &[data-open] > span:last-child { transform: translateY(calc((var(--spacing-xs, 4px) + var(--ui-border-hairline, 1px)) / -2)) rotate(-45deg); }
+  display: inline-flex;
+  flex-direction: column;
+  gap: var(--spacing-xs, 4px);
+  inline-size: var(--ui-icon-md, var(--spacing-xl, 24px));
+  & > span {
+    display: block;
+    inline-size: 100%;
+    block-size: var(--ui-border-hairline, 1px);
+    background-color: currentColor;
+    transition: transform var(--ui-duration-default, 240ms) var(--ease-default, cubic-bezier(.2, 0, 0, 1));
+  }
+  @media (prefers-reduced-motion: reduce) { & > span { transition: none; } }
+}
+@utility nav-disclosure-toggle {
+  &[aria-label] { font-size: 0; }
+  @media (forced-colors: active) { &:focus-visible { outline: var(--ui-border-focus, 2px) solid CanvasText; outline-offset: var(--spacing-xs, 4px); } }
+  @media (width >= 768px) { &[aria-expanded] { display: none; } }
+  @media (scripting: none) { &[aria-expanded] { display: none; } }
+}
+
 /* Ledger geometry uses existing spacing, rule and icon slots. Each native
    element resets its own margins in the component, without a page reset. */
 @utility ledger-columns-two {
@@ -459,6 +768,268 @@
 @utility anatomy-columns { grid-template-columns: minmax(0, 8fr) minmax(0, 4fr); }
 @utility anatomy-key-row { grid-template-columns: var(--ui-icon-md, var(--spacing-xl, 24px)) minmax(0, 1fr); }
 @utility anatomy-key-measure { max-inline-size: var(--ui-width-prose-max, 48rem); }
+
+/* One shared offset; the document remains the scroll owner. */
+@layer foundry-ui-compiled {
+[data-frame-root] {
+  --site-header-clearance: calc(max(var(--ui-layout-tap-target, 44px), var(--ui-brandmark-height-lg, 48px)) + 2 * var(--spacing-sm, 8px) + var(--ui-border-hairline, 1px) + env(safe-area-inset-top, 0px));
+  & [id] { scroll-margin-block-start: var(--site-header-clearance, calc(max(var(--ui-layout-tap-target, 44px), var(--ui-brandmark-height-lg, 48px)) + 2 * var(--spacing-sm, 8px) + var(--ui-border-hairline, 1px) + env(safe-area-inset-top, 0px))); }
+  & > header { position: sticky !important; inset-block-start: 0; padding-block-start: calc(var(--spacing-sm, 8px) + env(safe-area-inset-top, 0px)); }
+  & > header[data-placement="overlay"] { position: fixed !important; }
+  &:has(> header[data-placement="overlay"]) { padding-block-start: var(--site-header-clearance, calc(max(var(--ui-layout-tap-target, 44px), var(--ui-brandmark-height-lg, 48px)) + 2 * var(--spacing-sm, 8px) + var(--ui-border-hairline, 1px) + env(safe-area-inset-top, 0px))); }
+}
+}
+@utility site-header-row { min-block-size: max(var(--ui-layout-tap-target, 44px), var(--ui-brandmark-height-lg, 48px)); display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: var(--spacing-md, 12px); padding-inline: max(var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px)), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px)); }
+@utility site-header-leading {
+  @media (width >= 768px) {
+    &:not([data-collapsed]) .site-header-row { grid-template-columns: auto minmax(0, 1fr) auto; }
+  }
+}
+@utility site-header-brand { grid-column: 1; grid-row: 1; min-inline-size: 0; }
+@utility site-header-actions { display: flex; grid-column: 3; grid-row: 1; justify-content: end; gap: var(--spacing-sm, 8px); flex-wrap: wrap; overflow-wrap: anywhere; }
+@utility site-header-mobile {
+    & .site-header-brand { grid-column: 2; justify-self: center; }
+    /* Hide wordmark text only: a shared plate or an accent mark is also a span. */
+    & .site-header-brand a > span:not([data-brand-mark]):not(:has(img)) { display: none; }
+    & nav { display: block; grid-column: 1; grid-row: 1; }
+    & .site-header-actions { grid-column: 3; grid-row: 1; display: flex; justify-content: end; }
+    & .site-header-actions > a > span { @apply sr-only; }
+    & .nav-disclosure-toggle { display: inline-flex; }
+    & .nav-disclosure-panel { --site-header-action-hover: var(--color-surface-raised, oklch(1 0 0)); --site-header-focus: var(--color-ink-primary, oklch(0.2178 0 0)); display: none; position: absolute; inset-block-start: 100%; inset-inline: 0; max-block-size: calc(100dvb - var(--site-header-clearance, calc(max(var(--ui-layout-tap-target, 44px), var(--ui-brandmark-height-lg, 48px)) + 2 * var(--spacing-sm, 8px) + var(--ui-border-hairline, 1px) + env(safe-area-inset-top, 0px))) - env(safe-area-inset-bottom, 0px)); overflow-y: auto; overscroll-behavior: contain; padding-block: var(--spacing-md, 12px) max(var(--spacing-md, 12px), env(safe-area-inset-bottom, 0px)); padding-inline: max(var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px)), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px)); background-color: var(--color-overlay-surface, oklch(1 0 0)); color: var(--color-ink-primary, oklch(0.2178 0 0)); border-block-end: var(--ui-border-hairline, 1px) solid var(--color-overlay-border, oklch(0.8761 0 0)); }
+    & .nav-disclosure-panel[data-expanded], & .nav-disclosure-panel[data-present] { display: flex; flex-direction: column; }
+    & .site-header-nav-links, & .site-header-desktop-actions { flex-direction: column; align-items: stretch; white-space: normal; overflow-wrap: anywhere; }
+}
+@utility site-header-contract {
+  & .nav-disclosure-toggle:not([aria-label]) { position: relative; font-size: 0; }
+  & .nav-disclosure-toggle:not([aria-label])::before, & .nav-disclosure-toggle:not([aria-label])::after { content: ""; position: absolute; inset-inline-start: 50%; inset-block-start: 50%; inline-size: var(--ui-icon-md, 24px); block-size: var(--ui-border-hairline, 1px); margin-inline-start: calc(var(--ui-icon-md, 24px) / -2); background-color: currentColor; transition: transform var(--ui-duration-default, 240ms) var(--ease-default, cubic-bezier(.2, 0, 0, 1)); }
+  @media (prefers-reduced-motion: reduce) { & .nav-disclosure-toggle:not([aria-label])::before, & .nav-disclosure-toggle:not([aria-label])::after { transition: none; } }
+  & .nav-disclosure-toggle:not([aria-label])::before { transform: translateY(calc(var(--spacing-xs, 4px) / -2)); }
+  & .nav-disclosure-toggle:not([aria-label])::after { transform: translateY(calc(var(--spacing-xs, 4px) / 2)); }
+  & .nav-disclosure-toggle:not([aria-label])[aria-expanded="true"]::before { transform: rotate(45deg); }
+  & .nav-disclosure-toggle:not([aria-label])[aria-expanded="true"]::after { transform: rotate(-45deg); }
+  & nav, & .nav-disclosure-panel { display: flex; align-items: center; gap: var(--spacing-sm, 8px); grid-column: 2; grid-row: 1; white-space: nowrap; }
+  & nav:has(.site-header-nav-links), & nav:has(.site-header-desktop-actions), & .nav-disclosure-panel:has(> ul) { display: contents; }
+  & nav a, & .site-header-brand > a, & .site-header-actions > a { display: inline-flex; align-items: center; min-block-size: var(--ui-layout-tap-target, 44px); min-inline-size: var(--ui-layout-tap-target, 44px); }
+  & .nav-disclosure-toggle { display: none; }
+  &:has(.site-header-desktop-actions) .site-header-actions { display: none; }
+  & .site-header-nav-links a[aria-current="page"] { text-decoration-line: underline; }
+  & .site-header-nav-links { grid-column: 2; grid-row: 1; flex-wrap: nowrap; white-space: nowrap; }
+  & .site-header-desktop-actions { grid-column: 3; grid-row: 1; align-items: center; justify-content: end; }
+  & .nav-disclosure-panel a > span { position: static; inline-size: auto; block-size: auto; padding: 0; overflow: visible; clip: auto; white-space: normal; }
+  &[data-collapsed] { @apply site-header-mobile; }
+  @media (width < 768px) {
+    &[data-header-root] { @apply site-header-mobile; }
+  }
+  /* While NavDisclosure measures, each region takes its natural one-line
+     width, so many links, many actions or long labels are counted unwrapped. */
+  &[data-measuring] .site-header-brand, &[data-measuring] .site-header-nav-links, &[data-measuring] .site-header-desktop-actions, &[data-measuring] .site-header-actions { inline-size: max-content; max-inline-size: none; flex-shrink: 0; flex-wrap: nowrap; white-space: nowrap; }
+  &[data-measuring] .site-header-nav-links > li, &[data-measuring] .site-header-desktop-actions > li, &[data-measuring] .site-header-brand > a, &[data-measuring] .site-header-nav-links a, &[data-measuring] .site-header-desktop-actions a, &[data-measuring] .site-header-actions > * { inline-size: max-content; max-inline-size: none; flex-shrink: 0; white-space: nowrap; }
+  @media (scripting: none) {
+    &:has(.nav-disclosure-panel) .site-header-row { display: flex; flex-wrap: wrap; }
+    &:has(.nav-disclosure-panel) nav { inline-size: 100%; }
+    &:has(.nav-disclosure-panel) .nav-disclosure-toggle[aria-expanded] { display: none; }
+    &:has(.nav-disclosure-panel) .nav-disclosure-panel { display: flex; position: static; max-block-size: none; }
+  }
+}
+
+@layer foundry-ui-compiled {
+/* Optional host-mounted notices take visual priority over the mobile header; its opener remains live for the notice's focus return. */
+:root:has([data-consent-banner]) .site-header-contract[data-collapsed] .nav-disclosure-panel { visibility: hidden; }
+
+/* Expanded fallback navigation stays in document flow when scripting is off. */
+@media (scripting: none) {
+  [data-frame-root] > header.site-header-contract { position: relative !important; }
+  [data-frame-root]:has(> header[data-placement="overlay"]) { padding-block-start: 0; }
+}
+}
+
+/* Footer paint is local: the page's dark theme reverses semantic polarity,
+ * so select its dark base roles instead of the now-light inverse plate. */
+@utility site-footer-dark {
+  &[data-footer-root] {
+    --site-footer-surface: var(--color-surface-inverse, oklch(0.2178 0 0));
+    --site-footer-ink: var(--color-ink-on-inverse, oklch(0.9702 0 0));
+    --site-footer-muted: var(--color-ink-on-inverse-muted, oklch(0.7763 0 0));
+    background-color: var(--site-footer-surface, var(--color-surface-inverse, oklch(0.2178 0 0)));
+    color: var(--site-footer-ink, var(--color-ink-on-inverse, oklch(0.9702 0 0)));
+    color-scheme: dark;
+    container-type: inline-size;
+    padding-bottom: max(var(--spacing-lg, 16px), env(safe-area-inset-bottom, 0px));
+  }
+  &[data-footer-root] > div {
+    /* Override the inline token fallback while keeping both tracks symmetric. */
+    padding-inline: max(var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px)), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px)) !important;
+  }
+  :root[data-theme="dark"] &[data-footer-root] {
+    --site-footer-surface: var(--color-surface-base, oklch(0.19 0 0));
+    --site-footer-ink: var(--color-ink-primary, oklch(0.97 0 0));
+    --site-footer-muted: var(--color-ink-secondary, oklch(0.82 0 0));
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) &[data-footer-root] {
+      --site-footer-surface: var(--color-surface-base, oklch(0.19 0 0));
+      --site-footer-ink: var(--color-ink-primary, oklch(0.97 0 0));
+      --site-footer-muted: var(--color-ink-secondary, oklch(0.82 0 0));
+    }
+  }
+  &[data-footer-root] > div > .text-body-s,
+  &[data-footer-root] [data-footer-region="copyright"] { color: var(--site-footer-muted, var(--color-ink-on-inverse-muted, oklch(0.7763 0 0))); }
+  &[data-footer-root] a,
+  &[data-footer-root] a:visited,
+  &[data-footer-root] a:hover,
+  &[data-footer-root] a:active {
+    color: var(--site-footer-ink, var(--color-ink-on-inverse, oklch(0.9702 0 0)));
+    min-width: var(--ui-layout-tap-target, 44px);
+    min-height: var(--ui-layout-tap-target, 44px);
+  }
+  &[data-footer-root] a:hover { text-decoration-line: underline; }
+  &[data-footer-root] :focus-visible {
+    outline: var(--ui-border-rule, 2px) solid var(--site-footer-ink, var(--color-ink-on-inverse, oklch(0.9702 0 0)));
+    outline-offset: var(--ui-border-rule, 2px);
+  }
+  @media (forced-colors: active) {
+    &[data-footer-root] { background-color: Canvas; color: CanvasText; }
+    &[data-footer-root] a { color: LinkText; }
+    &[data-footer-root] :focus-visible { outline-color: Highlight; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    &[data-footer-root] a { transition: none; animation: none; }
+  }
+}
+
+/* Footer columns and legal row switch on one source: the footer's own
+ * inline size (container-type above), at the theme's tablet and desktop
+ * breakpoint values, so the two can never disagree at a given width. */
+@utility site-footer-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--spacing-lg, 16px);
+  /* Uneven columns top-align on one grid. */
+  align-items: start;
+  /* Group labels read as muted labels, distinct from the bright links. */
+  & h2 {
+    margin: 0;
+    color: var(--site-footer-muted, var(--color-ink-on-inverse-muted, oklch(0.7763 0 0)));
+  }
+  /* Link text starts on the label's edge; the 44px target extends inward. */
+  & a {
+    padding-inline: 0;
+    justify-content: flex-start;
+  }
+  @container (min-width: 768px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  @container (min-width: 1280px) {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@utility site-footer-composition {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--spacing-sm, 8px) var(--spacing-lg, 16px);
+  text-align: center;
+  /* Phone order is DOM order (links, icons, copyright), each centred on both
+   * axes; max-width keeps a long word wrapping inside a centred region. */
+  justify-items: center;
+  & > * { min-width: 0; max-width: 100%; overflow-wrap: break-word; }
+  & [data-footer-region="links"] li { min-width: 0; max-width: 100%; }
+  & [data-footer-region="links"] a { display: grid; grid-template-columns: minmax(0, 1fr); max-width: 100%; }
+  /* An empty region takes no row and adds no gap. */
+  & > [data-footer-region="links"]:not(:has(li)),
+  & > [data-footer-region="icons"]:not(:has(li)) { display: none; }
+  /* 8px between links and icons, 12px before the copyright. */
+  & > [data-footer-region="copyright"] { padding-block-start: var(--spacing-xs, 4px); }
+  & img, & svg { max-width: 100%; object-fit: contain; }
+  & [data-footer-region="icons"] li { max-width: 100%; min-width: 0; }
+  & [data-footer-region="icons"] a { max-width: 100%; }
+  & [data-footer-region="icons"] svg { max-width: var(--ui-layout-tap-target, 44px); max-height: var(--ui-layout-tap-target, 44px); }
+  /* Grid areas and flex-end are logical: in a right-to-left document the
+   * copyright starts on the right and home ends on the left. */
+  @container (min-width: 1280px) {
+    grid-template-areas: "copyright links icons";
+    /* Equal bounded side tracks keep the links on the whole-footer centre.
+     * Uncapped profiles wrap within their end track before any collision. */
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr);
+    align-items: center;
+    justify-items: stretch;
+    & > [data-footer-region="links"] { grid-area: links; }
+    & > [data-footer-region="icons"] { grid-area: icons; }
+    & > [data-footer-region="copyright"] { grid-area: copyright; text-align: start; padding-block-start: 0; }
+    & > [data-footer-region="icons"] > ul { justify-content: flex-end; flex-wrap: wrap; }
+    /* The tap target extends inward so the end art meets the page gutter. */
+    & > [data-footer-region="icons"] li:last-child > a { justify-content: flex-end; padding-inline-end: 0; }
+  }
+}
+
+/* Consent's pinned card; the in-flow banner and header keep their own rules.
+   It floats on the notice layer over the page end, footer included. Below
+   tablet width it fills the viewport less safe-area gutters, centred; from
+   tablet width it is capped at the notice width and pinned bottom-start
+   (logical, so RTL flips it). */
+@utility consent-card {
+  position: fixed;
+  z-index: var(--ui-z-notice, 40);
+  --ui-ring-focus: 0 0 0 2px var(--color-ink-primary, oklch(0.2178 0 0));
+  &[data-consent-presentation="card"] :focus-visible {
+    outline-color: var(--color-ink-primary, oklch(0.2178 0 0));
+  }
+  inset-block-end: max(var(--spacing-md, 12px), env(safe-area-inset-bottom, 0px));
+  inset-inline: max(var(--spacing-md, 12px), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
+  margin-inline: auto;
+  max-block-size: calc(100dvh - max(var(--spacing-md, 12px), env(safe-area-inset-bottom, 0px)) - max(var(--spacing-md, 12px), env(safe-area-inset-top, 0px)));
+  overflow-y: auto;
+  overflow-wrap: anywhere;
+  border-width: var(--ui-border-hairline, 1px);
+  border-style: solid;
+  border-color: var(--color-line-base, oklch(0.8761 0 0));
+  background-color: color-mix(in oklab, var(--color-surface-base, oklch(0.9702 0 0)) 90%, transparent);
+  box-shadow: var(--ui-elevation-raised, 0 1px 0 var(--color-line-base, oklch(0.8761 0 0)));
+  -webkit-backdrop-filter: blur(var(--blur-notice, 12px));
+  backdrop-filter: blur(var(--blur-notice, 12px));
+  & button {
+    min-block-size: var(--ui-layout-tap-target, 44px);
+    transition-duration: var(--ui-duration-fast, 160ms);
+    transition-timing-function: var(--ease-default, cubic-bezier(.2, 0, 0, 1));
+  }
+  @media (width >= 48rem) {
+    margin-inline-start: 0;
+    max-inline-size: var(--ui-width-notice-max, 24rem);
+  }
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    background-color: color-mix(in oklab, var(--color-surface-base, oklch(0.9702 0 0)) 95%, transparent);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    transition-property: background-color, backdrop-filter;
+    transition-duration: var(--ui-duration-default, 240ms);
+    transition-timing-function: var(--ease-default, cubic-bezier(.2, 0, 0, 1));
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    background-color: var(--color-surface-base, oklch(0.9702 0 0));
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  @media (forced-colors: active) {
+    &[data-consent-presentation="card"] {
+      background-color: Canvas;
+      color: CanvasText;
+      border-color: CanvasText;
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+      & button {
+        border-width: var(--ui-border-hairline, 1px);
+        border-style: solid;
+        border-color: ButtonText;
+      }
+      &:focus-visible, & :focus-visible {
+        outline: 2px solid Highlight;
+        outline-offset: 2px;
+      }
+    }
+  }
+}
 
 /* Static scenes: live token paints and a linear accessible form at every width. */
 @utility scene-root { container: scene / inline-size; margin: 0; inline-size: 100%; min-inline-size: 0; font-family: var(--font-body, ui-sans-serif, system-ui, sans-serif); }

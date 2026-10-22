@@ -159,7 +159,7 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
 :root {
 
   /* ════════════════════════════════════════════════════════════════
-   * COLOR · SURFACE (7 · depth model — brandable)
+   * COLOR · SURFACE (9 · depth model — brandable)
    * ════════════════════════════════════════════════════════════════ */
   --color-surface-base:           oklch(0.9702 0 0);   /* page ground */
   --color-surface-sunken:         oklch(0.9401 0 0);   /* below base: wells, banded sections, inputs */
@@ -172,6 +172,12 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
   --color-surface-inverse-raised: oklch(0.285 0 0);     /* raised content within --color-surface-inverse */
   --color-surface-aside:          oklch(0.9612 0 0);    /* right-rail panel */
   --color-surface-selected:       oklch(0.4748 0 0 / 0.1); /* selected-row/option wash */
+  /* Glass identity: the translucent plate an overlay SiteHeader takes once
+   * the page scrolls beneath it, one per ink polarity. The alpha is pinned
+   * by the contrast gate: the matching ink must clear AA over the glass
+   * composited on both a white and a black backdrop. */
+  --color-surface-glass:          oklch(1 0 0 / 0.6);
+  --color-surface-glass-inverse:  oklch(0.2178 0 0 / 0.85);
 
   /* ════════════════════════════════════════════════════════════════
    * COLOR · INK (7 · text on surfaces)
@@ -317,9 +323,9 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
    * file's greyscale-by-default rule. Every other color token in this
    * package ships a neutral default so brand binding is FORCED, never
    * assumed — but a categorical hue is not brand expression, it is data
-   * encoding: a categorical chart rendered in greyscale is not
-   * "unbranded", it is unreadable, because series IDENTITY is carried
-   * by hue and nothing else. So these 8 slots ship real, validated hues
+   * encoding: hue supplies an additional series-identity channel,
+   * while visible series names and the matching table preserve meaning
+   * in greyscale. So these 8 slots ship real, validated hues
    * from day one, and are `brandable: false` in src/tokens.ts on
    * purpose — a brand is not expected to override them, the same way
    * it is not expected to override --color-neutral-*. Fixed order,
@@ -430,12 +436,14 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
   --spacing-6xl:                  128px;
 
   /* ════════════════════════════════════════════════════════════════
-   * UI · WIDTH (5 · content max-widths — no Tailwind namespace)
+   * UI · WIDTH (7 · content max-widths — no Tailwind namespace)
    * ════════════════════════════════════════════════════════════════ */
   --ui-width-content-max:         64rem;
   --ui-width-prose-max:           48rem;
+  --ui-width-hero-wide:           64rem;
   --ui-width-wide-max:            72rem;
   --ui-width-form-max:            38rem;
+  --ui-width-notice-max:          24rem;   /* compact pinned notice card, from tablet width */
   --ui-width-page-padding-x:      clamp(16px, 4vw, 48px);
 
   /* ════════════════════════════════════════════════════════════════
@@ -530,6 +538,16 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
   --ui-elevation-panel:           var(--ui-elevation-floating, 0 8px 24px rgba(0, 0, 0, 0.10));
 
   /* ════════════════════════════════════════════════════════════════
+   * BLUR (2 · Tailwind `--blur-*` namespace)
+   * ════════════════════════════════════════════════════════════════ */
+  /* Glass identity: the backdrop blur behind a glass plate. Brandable,
+   * theme invariant. */
+  --blur-glass:                   20px;
+  /* Notice identity: the backdrop blur behind a pinned notice card.
+   * Theme invariant. */
+  --blur-notice:                  12px;
+
+  /* ════════════════════════════════════════════════════════════════
    * UI · RING (2 · focus + on-inverse rings — no Tailwind namespace)
    * ════════════════════════════════════════════════════════════════ */
   --ui-ring-focus:                0 0 0 2px var(--color-accent, oklch(0.4748 0 0));
@@ -616,6 +634,8 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
     --color-surface-inverse-raised: oklch(1 0 0);
     --color-surface-aside:          oklch(0.165 0 0);
     --color-surface-selected:       oklch(0.9702 0 0 / 0.1);
+    --color-surface-glass:          oklch(0.26 0 0 / 0.86);
+    --color-surface-glass-inverse:  oklch(0.96 0 0 / 0.6);
 
     /* ── COLOR · INK ────────────────────────────────────────────── */
     --color-ink-primary:            oklch(0.97 0 0);      /* flips: near-black to near-white */
@@ -719,6 +739,8 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
   --color-surface-inverse-raised: oklch(1 0 0);
   --color-surface-aside:          oklch(0.165 0 0);
   --color-surface-selected:       oklch(0.9702 0 0 / 0.1);
+  --color-surface-glass:          oklch(0.26 0 0 / 0.86);
+  --color-surface-glass-inverse:  oklch(0.96 0 0 / 0.6);
 
   /* ── COLOR · INK ──────────────────────────────────────────────── */
   --color-ink-primary:            oklch(0.97 0 0);
@@ -796,7 +818,7 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
  * parse-css.ts`, used by `parity.test.ts`, `contrast.test.ts`, and
  * `dark-mode-cascade.test.ts`) parses only the FIRST top-level `:root {`
  * block in this file as "the real token layer" and asserts it declares
- * exactly this package's curated 183 tokens; this sentinel is not a
+ * exactly this package's curated 186 tokens; this sentinel is not a
  * design token — it is a structural presence marker — so it stays out
  * of `src/tokens/tokens.ts`'s registry and out of that block entirely,
  * in a second `:root` rule the browser cascades in fine (CSS allows any

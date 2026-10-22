@@ -55,7 +55,10 @@ export { SkipLink } from "./SkipLink.js";
 export type { SkipLinkProps } from "./SkipLink.js";
 
 export { SiteHeader } from "./SiteHeader.js";
-export type { SiteHeaderProps, SiteHeaderActionLinkProps, SiteHeaderActionLinkVariant } from "./SiteHeader.js";
+export type { SiteHeaderProps, SiteHeaderSurface, SiteHeaderTone, SiteHeaderActionLinkProps, SiteHeaderActionLinkVariant } from "./SiteHeader.js";
+
+export { NavDisclosure } from "./NavDisclosure.js";
+export type { NavDisclosureProps } from "./NavDisclosure.js";
 
 export { NavShell } from "./NavShell.js";
 export type { NavShellProps } from "./NavShell.js";

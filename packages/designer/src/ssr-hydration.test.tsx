@@ -1,9 +1,11 @@
-import { act } from "react";
+import { act, useState } from "react";
+import userEvent from "@testing-library/user-event";
 import { hydrateRoot } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { Button } from "./atoms/Button.js";
 import { PageHeader } from "./blocks/PageHeader.js";
+import { CommandMenu, useCommandMenuShortcut } from "./blocks/CommandMenu.js";
 import { Shell } from "./shell/Shell.js";
 import { DEFAULT_STORAGE_KEY, ThemeProvider } from "./theme/ThemeProvider.js";
 import { ThemeToggle } from "./theme/ThemeToggle.js";
@@ -16,6 +18,33 @@ afterEach(() => {
 });
 
 describe("SSR and hydration", () => {
+  it("hydrates a closed CommandMenu, then opens and restores its external opener without a mismatch", async () => {
+    function Host() {
+      const [isOpen, setOpen] = useState(false);
+      const [query, setQuery] = useState("");
+      useCommandMenuShortcut({ onOpen: () => setOpen(true) });
+      return <><button onClick={() => setOpen(true)}>Open commands</button>
+        <CommandMenu heading="Commands" searchLabel="Search commands" closeLabel="Close commands"
+          emptyMessage="No commands" groups={[]} isOpen={isOpen} onOpenChange={setOpen} query={query} onQueryChange={setQuery} />
+      </>;
+    }
+    const container = document.createElement("div");
+    container.innerHTML = renderToString(<Host />);
+    expect(container.querySelector('[role="dialog"]')).toBeNull();
+    document.body.append(container);
+    const onRecoverableError = vi.fn();
+    let root: ReturnType<typeof hydrateRoot> | undefined;
+    await act(async () => { root = hydrateRoot(container, <Host />, { onRecoverableError }); });
+    const opener = container.querySelector("button")!;
+    await userEvent.click(opener);
+    expect(document.querySelector('input[role="combobox"]')).toHaveFocus();
+    await userEvent.keyboard("{Escape}");
+    await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    expect(opener).toHaveFocus();
+    expect(onRecoverableError).not.toHaveBeenCalled();
+    await act(async () => root?.unmount());
+    container.remove();
+  });
   it("renders and hydrates reusable components without a recoverable mismatch", async () => {
     const tree = (
       <Shell>

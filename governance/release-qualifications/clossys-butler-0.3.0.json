@@ -1,0 +1,267 @@
+{
+  "schemaVersion": 2,
+  "timing": "pre-publication",
+  "candidate": {
+    "name": "@clossys/butler",
+    "version": "0.3.0",
+    "packageTreeSha1": "79267f45ce5e3dcd3e5c0908425f699c4be02f4c",
+    "packageManifestSha256": "20881b8cd304bab430ff77cfab22e915a562813d0219ce08dd56075b2502555d",
+    "policySha256": "024a1cddbc1dac8cdb474b51fc281ec4167f0d24f069582352b85a88918b4d63",
+    "adapterSha256": "b030a199b887345efbf71015bcdd3c484af760c89161eed9ec37ea18431ff24a",
+    "fixtureSetSha256": "f87f9a8982c09ff93f5dba6a724ac6adc2590031474b4749b49d535c2a2562a1",
+    "tarball": {
+      "sha1": "b13629f6d43091cb725430e485655ff786b501c0",
+      "sha256": "732c4d7a5e8668d1dc501c58a146c6582701b7f5dc5b5eb4f544ba721ad2f84d",
+      "sha512": "4e826d9a153b4379d29b22bd45d9582fd806331418bd864e5165e6575661446c693bb000372f414593dce1fe8952eb56c23288bd376df1391e4858081d2268d9"
+    }
+  },
+  "archetypes": [
+    {
+      "kind": "current-direct",
+      "status": "qualified"
+    },
+    {
+      "kind": "prior-minor",
+      "status": "unsupported"
+    },
+    {
+      "kind": "oldest-supported",
+      "status": "unsupported"
+    },
+    {
+      "kind": "control-plane",
+      "status": "unsupported"
+    }
+  ],
+  "reviewedCommit": "a1cb9872fc748334ed8f93e1ccc4eac047af9961",
+  "rootPackageJsonSha256": "8e6c3b8dc7ea8ee9c174462fbc19ee8f5a08c3b1f7d401af75612b67cb579826",
+  "rootPackageLockSha256": "c247a22d153b8fa1e5bcae4a80f2919ab9789ca71f42ea21f0e2425e7108738d",
+  "transcript": {
+    "schema": "foundry-candidate-qualification-transcript-v3",
+    "version": 3,
+    "candidate": {
+      "name": "@clossys/butler",
+      "version": "0.3.0"
+    },
+    "archetype": "current-direct",
+    "tarball": {
+      "sha1": "b13629f6d43091cb725430e485655ff786b501c0",
+      "sha256": "732c4d7a5e8668d1dc501c58a146c6582701b7f5dc5b5eb4f544ba721ad2f84d",
+      "sha512": "4e826d9a153b4379d29b22bd45d9582fd806331418bd864e5165e6575661446c693bb000372f414593dce1fe8952eb56c23288bd376df1391e4858081d2268d9"
+    },
+    "peerInstall": {
+      "react": "19.2.8",
+      "react-dom": "19.2.8"
+    },
+    "consumer": {
+      "manifestSha256": "8269e4b6d64b849c66adfbceb4f9390d4d49e104001d981d793cc1cf7e9afcdd",
+      "lockfileSha256": "56932f5a27bd81805f246d859f49b2bfb801b7ad79cf710dccba933d7d1154fa"
+    },
+    "coverage": {
+      "declaredExportKeys": 5,
+      "concreteTargets": 10,
+      "runtimeImports": 5,
+      "reactServerImports": 0,
+      "staticTargets": 5,
+      "frameworkExports": 0,
+      "frameworkBuilds": 0,
+      "failed": 0,
+      "installedManifestSha256": "20881b8cd304bab430ff77cfab22e915a562813d0219ce08dd56075b2502555d",
+      "bins": 2,
+      "lifecycleScriptsDisabled": true
+    },
+    "observations": [
+      {
+        "id": "install",
+        "kind": "install",
+        "launch": "npm-fixed",
+        "expectedExitCode": 0,
+        "observedExitCode": 0,
+        "signal": null,
+        "launchError": false,
+        "stdoutSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+        "stderrSha256": "62d23df6c26cde48b45a87bdd8ca669e2a84da2ad8930aad8d4a3c2004523b97"
+      },
+      {
+        "id": "import:import:@clossys/butler",
+        "kind": "import",
+        "launch": "node-direct",
+        "expectedExitCode": 0,
+        "observedExitCode": 0,
+        "signal": null,
+        "launchError": false,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "import:import:@clossys/butler/browser-consent",
+        "kind": "import",
+        "launch": "node-direct",
+        "expectedExitCode": 0,
+        "observedExitCode": 0,
+        "signal": null,
+        "launchError": false,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "import:import:@clossys/butler/browser-consent/local-storage",
+        "kind": "import",
+        "launch": "node-direct",
+        "expectedExitCode": 0,
+        "observedExitCode": 0,
+        "signal": null,
+        "launchError": false,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "import:import:@clossys/butler/inbound",
+        "kind": "import",
+        "launch": "node-direct",
+        "expectedExitCode": 0,
+        "observedExitCode": 0,
+        "signal": null,
+        "launchError": false,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "import:import:@clossys/butler/web",
+        "kind": "import",
+        "launch": "node-direct",
+        "expectedExitCode": 0,
+        "observedExitCode": 0,
+        "signal": null,
+        "launchError": false,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "help:butler-check",
+        "kind": "help",
+        "launch": "installed-bin",
+        "expectedExitCode": 0,
+        "observedExitCode": 0,
+        "signal": null,
+        "launchError": false,
+        "stdoutSha256": "de6d8b1cad4bbf0f60f2416825bd6e5a3f3b6a569c5c45d2b59b3c2e25c7343a",
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "help:butler-rate-check",
+        "kind": "help",
+        "launch": "installed-bin",
+        "expectedExitCode": 0,
+        "observedExitCode": 0,
+        "signal": null,
+        "launchError": false,
+        "stdoutSha256": "10683d1c37827a4ec96f836f34c31cf0bfd0c9816ae8b4286daf2972ddbe2844",
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "case:confirmation-satisfied",
+        "kind": "case",
+        "launch": "installed-bin",
+        "expectedExitCode": 0,
+        "observedExitCode": 0,
+        "signal": null,
+        "launchError": false,
+        "stdoutSha256": "6016b8985d850f5d3f086a47a7de469be81415864ad3ee75367f06ddccb9e978",
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "case:confirmation-violated",
+        "kind": "case",
+        "launch": "installed-bin",
+        "expectedExitCode": 1,
+        "observedExitCode": 1,
+        "signal": null,
+        "launchError": false,
+        "stdoutSha256": "b93c1c7a0e4e8dadfef172dd652f432661836bf9c193de65547a94150adbef60",
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "case:confirmation-indeterminate",
+        "kind": "case",
+        "launch": "installed-bin",
+        "expectedExitCode": 2,
+        "observedExitCode": 2,
+        "signal": null,
+        "launchError": false,
+        "stdoutSha256": "da885859953bf306b693f27354871080ef1e5770ba8bb06be100132dccdcd39e",
+        "stderrSha256": "31e803cdaec3c82b5da4b5a34314b0352ce605f9a303fa20ffcfe345500f36c6"
+      },
+      {
+        "id": "uninstall",
+        "kind": "uninstall",
+        "launch": "npm-fixed",
+        "expectedExitCode": 0,
+        "observedExitCode": 0,
+        "signal": null,
+        "launchError": false,
+        "stdoutSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+        "stderrSha256": "62d23df6c26cde48b45a87bdd8ca669e2a84da2ad8930aad8d4a3c2004523b97"
+      },
+      {
+        "id": "reinstall",
+        "kind": "reinstall",
+        "launch": "npm-fixed",
+        "expectedExitCode": 0,
+        "observedExitCode": 0,
+        "signal": null,
+        "launchError": false,
+        "stdoutSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+        "stderrSha256": "62d23df6c26cde48b45a87bdd8ca669e2a84da2ad8930aad8d4a3c2004523b97"
+      }
+    ],
+    "dimensions": [
+      {
+        "dimension": "position",
+        "status": "unsupported",
+        "reason": "A disposable consumer makes no installed position claim."
+      },
+      {
+        "dimension": "completion",
+        "status": "unsupported",
+        "reason": "Confirmation completeness is not consumer completion."
+      },
+      {
+        "dimension": "rollback",
+        "status": "supported",
+        "evidence": [
+          "uninstall",
+          "reinstall"
+        ]
+      },
+      {
+        "dimension": "duplicate",
+        "status": "unsupported",
+        "reason": "Peer installation does not establish consumer dependency deduplication."
+      },
+      {
+        "dimension": "cadence",
+        "status": "unsupported",
+        "reason": "Cadence is not established by a disposable installation canary."
+      },
+      {
+        "dimension": "closeWindow",
+        "status": "unsupported",
+        "reason": "Close-window evidence is not established by a disposable installation canary."
+      }
+    ],
+    "restoration": {
+      "manifestRestored": true,
+      "lockfileRestored": true,
+      "packageAbsentAfterUninstall": true
+    },
+    "mismatches": [],
+    "ok": true,
+    "canonicalSha256": "ae27c134018de020e8caaa2ea642f76507cb0b4ba3c9c2c008314197658ad883"
+  },
+  "candidateReview": {
+    "headSha": "a1cb9872fc748334ed8f93e1ccc4eac047af9961",
+    "reference": "github-actions-dispatch:qualify-candidate.yml;run:38647759464;attempt:1"
+  },
+  "findings": []
+}

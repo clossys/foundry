@@ -13,10 +13,15 @@ const conditionOutcomes = (defaultOutcome, reactServerOutcome) => ({
   default: defaultOutcome,
   "react-server": reactServerOutcome,
 });
-const publisherOmissionRow = ({ rejected = [], web = "imports", client = "imports" } = {}) => ({
+const publisherOmissionRow = ({ rejected = [], web = "imports", client = "imports", consent = "imports" } = {}) => ({
   ...omissionRow(publisherExports, rejected),
   "@clossys/publisher/web": typeof web === "string" ? web : conditionOutcomes(web.default, web.reactServer),
   "@clossys/publisher/web/client": client,
+  // #1941's consent subpaths: every `refuses` cell is declared in
+  // BY_DESIGN_REFUSALS below and throws its refusal whatever is installed.
+  "@clossys/publisher/consent-copy": { browser: "refuses", default: "imports" },
+  "@clossys/publisher/web/consent": conditionOutcomes(consent, "refuses"),
+  "@clossys/publisher/web/consent/preview": { default: "refuses", development: "imports", "react-server": "refuses" },
 });
 
 const bouncerExports = [
@@ -49,6 +54,7 @@ const designerExports = [
   "@clossys/designer/theme/server",
   "@clossys/designer/tokens",
   "@clossys/designer/tokens/server",
+  "@clossys/designer/tokens/preview",
 ];
 const designerClientExports = [
   "@clossys/designer/atoms",
@@ -57,6 +63,7 @@ const designerClientExports = [
   "@clossys/designer/theme",
 ];
 const designerReactExports = [
+  "@clossys/designer/tokens/preview",
   "@clossys/designer/atoms",
   "@clossys/designer/atoms/server",
   "@clossys/designer/blocks",
@@ -69,6 +76,7 @@ const designerReactExports = [
 ];
 const publisherExports = [
   "@clossys/publisher/assessment",
+  "@clossys/publisher/consent-copy",
   "@clossys/publisher/core",
   "@clossys/publisher/document",
   "@clossys/publisher/email",
@@ -84,6 +92,8 @@ const publisherExports = [
   "@clossys/publisher/testing",
   "@clossys/publisher/web",
   "@clossys/publisher/web/client",
+  "@clossys/publisher/web/consent",
+  "@clossys/publisher/web/consent/preview",
 ];
 
 /**
@@ -132,11 +142,15 @@ export const OPTIONAL_PEER_POLICY = {
   "@clossys/butler": {
     react: {
       "@clossys/butler": "imports",
+      "@clossys/butler/browser-consent": "imports",
+      "@clossys/butler/browser-consent/local-storage": "imports",
       "@clossys/butler/inbound": "imports",
       "@clossys/butler/web": "rejects",
     },
     "react-dom": {
       "@clossys/butler": "imports",
+      "@clossys/butler/browser-consent": "imports",
+      "@clossys/butler/browser-consent/local-storage": "imports",
       "@clossys/butler/inbound": "imports",
       "@clossys/butler/web": "imports",
     },
@@ -187,10 +201,17 @@ export const OPTIONAL_PEER_POLICY = {
     resend: { "@clossys/messenger": "imports", "@clossys/messenger/providers/resend": "rejects" },
   },
   "@clossys/publisher": {
-    "@internationalized/date": publisherOmissionRow({ web: { default: "rejects", reactServer: "imports" }, client: "rejects" }),
-    react: publisherOmissionRow({ rejected: ["@clossys/publisher/document", "@clossys/publisher/testing"], web: { default: "rejects", reactServer: "rejects" }, client: "rejects" }),
-    "react-aria-components": publisherOmissionRow({ web: { default: "rejects", reactServer: "imports" }, client: "rejects" }),
-    "react-dom": publisherOmissionRow({ rejected: ["@clossys/publisher/testing"], web: { default: "rejects", reactServer: "imports" }, client: "rejects" }),
+    // #1941's consent subpaths. `consent` is the measured default outcome of
+    // `./web/consent` (the client entry reaches Designer's atoms and blocks).
+    // The refusal cells read `refuses` in every row (declared in
+    // BY_DESIGN_REFUSALS): `react-server` on `./web/consent` and
+    // `./web/consent/preview`, the preview's `default` (its real entry sits
+    // under `development`, measured as `imports`) and `browser` on
+    // `./consent-copy` (its server entry is `default`, measured as `imports`).
+    "@internationalized/date": publisherOmissionRow({ web: { default: "rejects", reactServer: "imports" }, client: "rejects", consent: "rejects" }),
+    react: publisherOmissionRow({ rejected: ["@clossys/publisher/document", "@clossys/publisher/testing"], web: { default: "rejects", reactServer: "rejects" }, client: "rejects", consent: "rejects" }),
+    "react-aria-components": publisherOmissionRow({ web: { default: "rejects", reactServer: "imports" }, client: "rejects", consent: "rejects" }),
+    "react-dom": publisherOmissionRow({ rejected: ["@clossys/publisher/testing"], web: { default: "rejects", reactServer: "imports" }, client: "rejects", consent: "rejects" }),
     // #749/#878: publisher/web reaches designer's cx() transitively
     // (publisher has no tailwind-merge import site of its own -- grep
     // confirms it appears only in fixture peer-name lists inside
@@ -253,7 +274,22 @@ export const OPTIONAL_PEER_POLICY = {
  * one refusal message cannot stand in for another condition's. Only literal
  * export keys can be declared; wildcard and Next-context subpaths cannot.
  */
-export const BY_DESIGN_REFUSALS = {};
+export const BY_DESIGN_REFUSALS = {
+  // #1941: the browser consent subpaths. Each marker is a fragment of the
+  // message its refusal module throws.
+  "@clossys/publisher": {
+    "@clossys/publisher/consent-copy": {
+      browser: 'The consent-copy subpath of the publisher package is server-only and refuses the "browser" condition',
+    },
+    "@clossys/publisher/web/consent": {
+      "react-server": 'The web/consent subpath of the publisher package is client-only and refuses the "react-server" condition',
+    },
+    "@clossys/publisher/web/consent/preview": {
+      default: 'The web/consent/preview subpath of the publisher package resolves only under the "development" condition',
+      "react-server": 'The web/consent/preview subpath of the publisher package is client-only and refuses the "react-server" condition',
+    },
+  },
+};
 export const MIN_REFUSAL_MARKER_LENGTH = 16;
 
 const IMPORT_CONDITIONS = ["default", "react-server", "development", "browser"];

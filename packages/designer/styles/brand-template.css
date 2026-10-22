@@ -71,7 +71,7 @@
  *
  *   :root[data-brand-bound][data-theme="dark"] { ... }
  *
- * Only the 37 tokens tokens.css itself marks BOTH brandable and
+ * Only the 39 tokens tokens.css itself marks BOTH brandable and
  * theme-dependent need a value in the two dark blocks: every SURFACE,
  * INK (except the ink-on-accent alias), LINE, and ACCENT token, the four
  * CONTROL tonal fills, and all 12 STATUS tokens. FONT and RADIUS stay in the light block only — a
@@ -85,7 +85,7 @@
 
 :root[data-brand-bound] {
 
-  /* ─── SURFACE (7 required) ───────────────────────────────────────
+  /* ─── SURFACE (9 required) ───────────────────────────────────────
    * --color-surface-base is the single most consequential value in this
    * file — your page ground color, which every other surface is defined
    * relative to. */
@@ -96,6 +96,11 @@
   --color-surface-inverse-raised:  ;
   --color-surface-aside:           ;
   --color-surface-selected:        ;
+  /* Glass: the translucent plates an overlay SiteHeader takes after the
+   * page scrolls beneath it. Keep enough alpha that your primary ink (and
+   * ink-on-inverse) clears AA over the glass on both white and black. */
+  --color-surface-glass:           ;
+  --color-surface-glass-inverse:   ;
 
   /* ─── INK (6 required) ───────────────────────────────────────────
    * --color-ink-muted must hit WCAG AA contrast against --color-surface-base. */
@@ -167,6 +172,12 @@
    * stay as shipped. */
   --radius-default:                ;
 
+  /* ─── BLUR (1 required — the backdrop blur behind the two glass
+   * plates in SURFACE above, the overlay SiteHeader's scrolled state.
+   * Theme invariant, so it stays in this light block; 20px is the
+   * shipped value) ──────────────────────────────────────────────── */
+  --blur-glass:                    ;
+
   /* ─── PANEL (4 optional — the identity of cards, plates and product
        panels. Each defaults to today's look: the surface radius, a
        hairline edge in the base line, and the floating lift. Bind them
@@ -175,6 +186,7 @@
   /* --ui-border-panel:    var(--ui-border-hairline); */
   /* --color-line-panel:   var(--color-line-base); */
   /* --ui-elevation-panel: var(--ui-elevation-floating); */
+
 
   /* ─── WIDTH (3 optional — override only if your brand uses
        non-default reading/content widths) ───────────────────────── */
@@ -196,7 +208,7 @@
 /* ════════════════════════════════════════════════════════════════════
  * DARK · OS PREFERENCE
  * ────────────────────────────────────────────────────────────────────
- * Same 37 required slots as the light block above — every SURFACE, INK
+ * Same 39 required slots as the light block above — every SURFACE, INK
  * (except the `-on-accent` alias, which inherits), LINE, ACCENT, CONTROL
  * tonal, and STATUS token — filled in with this brand's dark values. See
  * tokens.css's header comment for why the `:not([data-theme="light"])`
@@ -205,7 +217,7 @@
 @media (prefers-color-scheme: dark) {
   :root[data-brand-bound]:not([data-theme="light"]) {
 
-    /* ─── SURFACE (7 required) ─────────────────────────────────── */
+    /* ─── SURFACE (9 required) ─────────────────────────────────── */
     --color-surface-base:            ;
     --color-surface-sunken:          ;
     --color-surface-raised:          ;
@@ -213,6 +225,8 @@
     --color-surface-inverse-raised:  ;
     --color-surface-aside:           ;
     --color-surface-selected:        ;
+    --color-surface-glass:           ;
+    --color-surface-glass-inverse:   ;
 
     /* ─── INK (6 required) ─────────────────────────────────────── */
     --color-ink-primary:             ;
@@ -260,14 +274,14 @@
 /* ════════════════════════════════════════════════════════════════════
  * DARK · EXPLICIT OVERRIDE
  * ────────────────────────────────────────────────────────────────────
- * Same 37 slots, same values, as the media-query block above — forces
+ * Same 39 slots, same values, as the media-query block above — forces
  * this brand's dark theme even on a light-OS device. Keep the two dark
  * blocks identical; nothing enforces that for a brand's own file the way
  * `src/theme-parity.test.ts` does for this package's own tokens.css.
  * ════════════════════════════════════════════════════════════════════ */
 :root[data-brand-bound][data-theme="dark"] {
 
-  /* ─── SURFACE (7 required) ───────────────────────────────────── */
+  /* ─── SURFACE (9 required) ───────────────────────────────────── */
   --color-surface-base:            ;
   --color-surface-sunken:          ;
   --color-surface-raised:          ;
@@ -275,6 +289,8 @@
   --color-surface-inverse-raised:  ;
   --color-surface-aside:           ;
   --color-surface-selected:        ;
+  --color-surface-glass:           ;
+  --color-surface-glass-inverse:   ;
 
   /* ─── INK (6 required) ───────────────────────────────────────── */
   --color-ink-primary:             ;

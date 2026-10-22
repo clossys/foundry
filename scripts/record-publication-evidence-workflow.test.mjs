@@ -283,3 +283,23 @@ test("idempotency is checked before any build work: an already-recorded version 
     assert.match(stepBody, /if: steps\.idempotency\.outputs\.already-recorded != 'true'/, `"${stepName}" must be gated on the idempotency check`);
   }
 });
+
+test("determine-package never passes the publish run's jobs list as a process argument", () => {
+  // The jobs list is every job object of the publish run, steps included; it
+  // grows with the workflow and can exceed the OS per-argument limit
+  // ("Argument list too long") when handed to node as argv, as the npm pack
+  // listing did in publish.yml (#2127). It goes to a file and node reads it
+  // on stdin instead.
+  const determinePackage = job("determine-package");
+  const start = determinePackage.indexOf("- name: Find this run's exact published package and the attempt it ran in");
+  assert.notEqual(start, -1, "determine-package must find the published package");
+  const find = determinePackage.slice(start);
+  assert.doesNotMatch(find, /jobs_json/, "the jobs list must not be captured into a shell variable");
+  assert.doesNotMatch(find, /JSON\.parse\(process\.argv\[1\]\)\.jobs/, "the jobs list must not be read from process.argv");
+  const written = find.match(/^ *gh api "repos\/\$\{GITHUB_REPOSITORY\}\/actions\/runs\/\$\{RUN_ID\}\/jobs\?per_page=100" --paginate --slurp \| node -e '$/m);
+  assert.ok(written, "the paginated jobs lookup is unchanged");
+  assert.match(find, /^ *jobs_file="\$RUNNER_TEMP\/[^"\s]+\.json"$/m, "the jobs list file must live under $RUNNER_TEMP");
+  assert.match(find, /^ *' > "\$jobs_file"$/m, "the flattened jobs list must be written to that file");
+  assert.match(find, /const jobs = JSON\.parse\(require\("fs"\)\.readFileSync\(0, "utf8"\)\)\.jobs \?\? \[\];/);
+  assert.match(find, /^ *' < "\$jobs_file"\)"$/m, "node must read the jobs list on stdin, not as an argument");
+});

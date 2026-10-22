@@ -1,5 +1,7 @@
 import type { HTMLAttributes, ReactNode } from "react";
 import { cx } from "../atoms/internal/cx.js";
+import { MAIN_CONTENT_ID } from "./internal/main-content-id.js";
+import { SkipLink } from "./SkipLink.js";
 import { SHELL_GROUND_CLASSES, type ShellGround } from "./internal/shell-ground.js";
 import {
   UI_BORDER_HAIRLINE,
@@ -8,20 +10,7 @@ import {
   UI_WIDTH_PAGE_PADDING_X,
   UI_Z_ASIDE,
   UI_Z_SHELL,
-  UI_Z_SKIP_LINK,
 } from "./internal/shell-vars.js";
-
-/**
- * The `id` `Shell.Main` renders and the skip link's `href` targets. Not
- * exported: there is exactly one `Shell.Main` per `Shell` (see this
- * package's README, "Placement rules" — shell provides slots, cardinality
- * one), so nothing outside this file needs to know or vary it. Kept as a
- * shared constant rather than threaded through props so `ShellRoot` and
- * `ShellMain` — two independent, independently-rendered components (see
- * the note on `ShellRoot` below for why) — stay in sync without either
- * needing a reference to the other.
- */
-const MAIN_CONTENT_ID = "ui-shell-main";
 
 export interface ShellProps extends HTMLAttributes<HTMLDivElement> {
   /**
@@ -79,49 +68,9 @@ function ShellRoot({ children, className, skipLinkLabel = "Skip to content", ...
         gridTemplateAreas: '"header header header" "sidenav main rail" "footer footer footer"',
       }}
     >
-      <SkipLink label={skipLinkLabel} />
+      <SkipLink targetId={MAIN_CONTENT_ID}>{skipLinkLabel}</SkipLink>
       {children}
     </div>
-  );
-}
-
-/**
- * The first focusable element on the page, visually hidden until it
- * receives focus. A real a11y requirement for any persistent frame with
- * navigation chrome above the content: without it, a keyboard user landing
- * on the page must tab through the entire header and side navigation
- * before reaching content that changes per route. Rendered outside the
- * grid's normal flow (Tailwind's `sr-only` is itself `position: absolute`,
- * on or off screen, so it never occupies — or fights for — a grid track)
- * and, while focused, stacked above literally everything else this package
- * renders (`UI_Z_SKIP_LINK`, the highest member of the z-scale) so it's
- * never obscured by the header it's floating above.
- *
- * Focuses `Shell.Main` directly rather than relying on the browser's
- * default fragment-navigation behavior alone: a `<main>` isn't natively
- * focusable, and while `tabIndex={-1}` (which `Shell.Main` sets) makes it
- * focusable, not every browser reliably MOVES focus there just from an
- * anchor's `href="#..."` being activated. Calling `.focus()` explicitly is
- * the same belt-and-braces fix real skip-link implementations use; the
- * `href` is kept too; so the URL fragment and browser history still update
- * normally.
- */
-function SkipLink({ label }: { label: string }) {
-  return (
-    <a
-      href={`#${MAIN_CONTENT_ID}`}
-      onClick={() => {
-        document.getElementById(MAIN_CONTENT_ID)?.focus();
-      }}
-      className={cx(
-        "sr-only focus:not-sr-only",
-        "focus:fixed focus:start-sm focus:top-sm focus:rounded-control focus:bg-accent focus:px-md focus:py-sm",
-        "focus:text-body focus:text-ink-on-accent focus:outline-none",
-      )}
-      style={{ zIndex: UI_Z_SKIP_LINK }}
-    >
-      {label}
-    </a>
   );
 }
 

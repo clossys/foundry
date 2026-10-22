@@ -58,7 +58,7 @@ export function renderCatalogComposition(id: string): string {
     return renderToStaticMarkup(createElement(LandingView, { document: { ...resolved, sections: resolved.sections.slice(0, -1) }, header: "reserved", peek: false, landmark: "none", callToAction: closeProps(close) }));
 }
 export function renderCatalogFixture(fixture: CatalogFixture): string {
-    if (fixture.fn === "Recipes")
+    if (fixture.fn === "Recipes" && fixture.axis === "composition")
         return renderCatalogComposition(fixture.id);
     const resolved = resolveCatalogFixtureDocument(fixture);
     if (fixture.section.kind === "hero")

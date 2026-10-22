@@ -99,7 +99,7 @@ describe("content catalog fixture", () => {
   it("shows linked plates, a linked topic list and a linked bento, each item its own destination", () => {
     const hrefs = (id: string) => {
       const block = contentSections.find((section) => section.id === id)?.block;
-      if (block === undefined || block.type === "matrix") throw new Error(`${id} has no linkable block`);
+      if (block?.type !== "items") throw new Error(`${id} has no linkable block`);
       return block.items.map((item) => ("href" in item ? item.href : undefined));
     };
     for (const id of ["catalog-features-plate", "catalog-topics-linked", "catalog-cards-visual"]) {
@@ -204,6 +204,7 @@ describe("content catalog fixture", () => {
         }
         continue;
       }
+      if (block.type !== "items") continue;
       for (const item of block.items) {
         expect((item.eyebrow ?? "").length, `${at} ${item.id} eyebrow`).toBeLessThanOrEqual(32);
         if (block.arrangement === "columns" && block.order === "none") expect(words(item.eyebrow), `${at} ${item.id} eyebrow`).toBeLessThanOrEqual(3);

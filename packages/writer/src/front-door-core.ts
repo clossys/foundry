@@ -65,6 +65,15 @@ export const CANONICAL_IDS = Object.freeze([
   "front-door.activation-first-name.label",
   "front-door.activation-last-name.label",
   "front-door.name-required.notice",
+  "front-door.sign-in-staff-only.description",
+  "front-door.sign-in-invite-only.description",
+  "front-door.not-authorized-staff-only.title",
+  "front-door.not-authorized-staff-only.description",
+  "front-door.not-authorized-staff-only.primary",
+  "front-door.not-authorized-invite-only.title",
+  "front-door.not-authorized-invite-only.description",
+  "front-door.not-authorized-invite-only.primary",
+  "front-door.identifier-not-found-neutral.notice",
 ] as const);
 
 /** A reserved front-door copy id. */
@@ -173,6 +182,15 @@ const DEFAULTS: Readonly<Record<FrontDoorKey, { text: string; context: string }>
   "front-door.activation-first-name.label": { text: "First name", context: "activation page: first name field label" },
   "front-door.activation-last-name.label": { text: "Last name", context: "activation page: last name field label" },
   "front-door.name-required.notice": { text: "Enter your first and last name.", context: "activation page: notice when a name field is empty" },
+  "front-door.sign-in-staff-only.description": { text: "Sign-in is for staff with access to {surface}.", context: "staff-only sign-in page: line under the heading" },
+  "front-door.sign-in-invite-only.description": { text: "Sign-in is by invitation to {surface}.", context: "invite-only sign-in page: line under the heading" },
+  "front-door.not-authorized-staff-only.title": { text: "Staff access required", context: "staff-only not-authorized page: heading" },
+  "front-door.not-authorized-staff-only.description": { text: "This account doesn’t have staff access to {surface}.", context: "staff-only not-authorized page: line under the heading" },
+  "front-door.not-authorized-staff-only.primary": { text: "Switch account", context: "staff-only not-authorized page: single primary action" },
+  "front-door.not-authorized-invite-only.title": { text: "Invitation required", context: "invite-only not-authorized page: heading" },
+  "front-door.not-authorized-invite-only.description": { text: "This account doesn’t have an invitation to {surface}.", context: "invite-only not-authorized page: line under the heading" },
+  "front-door.not-authorized-invite-only.primary": { text: "Switch account", context: "invite-only not-authorized page: single primary action" },
+  "front-door.identifier-not-found-neutral.notice": { text: "Sign-in couldn’t continue. Check your details and try again.", context: "restricted sign-in page: neutral failure notice without confirming account existence" },
 };
 
 for (const entry of Object.values(DEFAULTS)) Object.freeze(entry);

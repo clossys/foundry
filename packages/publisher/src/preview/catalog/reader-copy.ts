@@ -1,4 +1,11 @@
 export const READER_COPY: Record<string, Record<string, string>> = {
+    "recipes-prose": {
+        ".heading": "Prepare a record with context",
+        ".block.paragraphs.0.0.text": "Read the ",
+        ".block.paragraphs.0.1.text": "writing guide",
+        ".block.paragraphs.0.2.text": " before preparing your next record.",
+        ".block.paragraphs.1.0.text": "Keep source material beside the record so each review starts with context."
+    },
     "status-list": {
         ".heading": "Feature status",
         ".description": "See what is ready and what comes next.",
@@ -72,7 +79,11 @@ export const READER_COPY: Record<string, Record<string, string>> = {
         ".block.items.0.heading": "Projects",
         ".block.items.1.heading": "Reviews",
         ".block.items.2.heading": "Documents",
-        ".block.items.3.heading": "Decisions"
+        ".block.items.3.heading": "Decisions",
+        ".block.items.0.badge.label": "Available",
+        ".block.items.1.badge.label": "Partial",
+        ".block.items.2.badge.label": "Planned",
+        ".block.items.3.badge.label": "Not offered"
     },
     "items-bento": {
         ".heading": "A workspace for the whole project",

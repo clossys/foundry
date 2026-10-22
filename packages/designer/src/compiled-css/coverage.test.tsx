@@ -26,9 +26,11 @@
  */
 import { resolve } from "node:path";
 import { readFileSync } from "node:fs";
-import { describe, expect, it } from "vitest";
-import { render } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { Logomark } from "../atoms/Logomark.js";
+import { Lockup } from "../blocks/Lockup.js";
 import { Avatar } from "../atoms/Avatar.js";
 import { Badge } from "../atoms/Badge.js";
 import { Banner } from "../atoms/Banner.js";
@@ -40,6 +42,13 @@ import { Chip } from "../atoms/Chip.js";
 import { Link } from "../atoms/Link.js";
 import { Meter } from "../atoms/Meter.js";
 import { Separator } from "../atoms/Separator.js";
+import { ResizeHandle } from "../atoms/ResizeHandle.js";
+import { Panel } from "../blocks/Panel.js";
+import { Drawer } from "../blocks/Drawer.js";
+import { ResizablePane } from "../blocks/ResizablePane.js";
+import { CommandMenu } from "../blocks/CommandMenu.js";
+import { GroupedTable } from "../blocks/GroupedTable.js";
+import { AppNavigation } from "../blocks/AppNavigation.js";
 import { Skeleton } from "../atoms/Skeleton.js";
 import { Spinner } from "../atoms/Spinner.js";
 import { StatusMark } from "../atoms/StatusMark.js";
@@ -47,6 +56,7 @@ import { Switch } from "../atoms/Switch.js";
 import { TextField } from "../atoms/TextField.js";
 import { Textarea } from "../atoms/Textarea.js";
 import { Hero } from "../blocks/Hero.js";
+import { AccountMenu } from "../blocks/AccountMenu.js";
 import { Item } from "../blocks/items/Item.js";
 import { Items } from "../blocks/items/Items.js";
 import { Items as NativeItems } from "../blocks/items/Items.server.js";
@@ -96,6 +106,188 @@ function toSelectorText(className: string): string {
 }
 
 describe("coverage: real rendered classes are all present in compiled.css", () => {
+  it("covers populated and empty GroupedTable rendered classes", async () => {
+    const classes = new Set<string>();
+    for (const rows of [["Alpha"], []]) {
+      const view = render(<GroupedTable caption="Results" rowHeader={{ id: "name", header: "Name", cell: row => row }}
+        groups={[{ id: "totals", header: "Totals", columns: [{ id: "count", header: "Count", cell: () => 0 }] }]}
+        rows={rows} rowKey={row => row} emptyMessage="No rows" />);
+      for (const name of collectClassNames(view.container)) classes.add(name);
+      view.unmount();
+    }
+    const generated = await generateCompiledCss({ stylesDir: resolve(packageRoot, "styles"), candidates: scanCompiledCssSources(packageRoot).candidates });
+    const shipped = readFileSync(resolve(packageRoot, "styles/compiled.css"), "utf8");
+    for (const name of classes) {
+      expect(generated.css, `grouped table fresh: ${name}`).toContain(toSelectorText(name));
+      expect(shipped, `grouped table shipped: ${name}`).toContain(toSelectorText(name));
+    }
+  });
+  it("covers CommandMenu enabled, disabled, filtered and empty rendered states", async () => {
+    const classes = new Set<string>();
+    for (const query of ["", "SECOND", "missing"]) {
+      const view = render(<CommandMenu heading="Commands" searchLabel="Search" closeLabel="Close" emptyMessage="No commands"
+        groups={[{ id: "commands", label: "Commands", items: [
+          { id: "first", label: "First", onAction: () => {} },
+          { id: "second", label: "Second", description: "Details", shortcutHint: "S", href: "#second" },
+          { id: "disabled", label: "Unavailable", onAction: () => {}, disabled: true },
+        ] }]} isOpen onOpenChange={() => {}} query={query} onQueryChange={() => {}} />);
+      await view.findByRole("combobox");
+      for (const name of collectClassNames(document.body)) classes.add(name);
+      view.unmount();
+    }
+    const generated = await generateCompiledCss({ stylesDir: resolve(packageRoot, "styles"), candidates: scanCompiledCssSources(packageRoot).candidates });
+    const shipped = readFileSync(resolve(packageRoot, "styles/compiled.css"), "utf8");
+    for (const name of classes) {
+      expect(generated.css, `fresh: ${name}`).toContain(toSelectorText(name));
+      expect(shipped, `shipped: ${name}`).toContain(toSelectorText(name));
+    }
+  });
+  it("covers actual expanded, rail and narrow Drawer navigation classes", async () => {
+    const classes = new Set<string>();
+    const focusClasses: string[][] = [];
+    const tree = [{ id: "catalogs", label: "Catalogs", href: "#catalogs", children: [
+      { id: "blocks", label: "Blocks", href: "#blocks" },
+      { id: "actions", label: "Actions", onAction: () => {} },
+    ] }];
+    try {
+      for (const state of ["expanded", "rail", "drawer"]) {
+        vi.stubGlobal("matchMedia", vi.fn((media: string) => ({
+          matches: media === "(min-width: 768px)" && state !== "drawer", media,
+          addEventListener: () => {}, removeEventListener: () => {}, addListener: () => {}, removeListener: () => {},
+        })));
+        const view = render(<AppNavigation tree={tree} activeId="blocks" collapsed={state === "rail"} footer={<Button>Profile</Button>} />);
+        try {
+          if (state === "drawer") await userEvent.click(view.getByRole("button", { name: "Open navigation" }));
+          for (const name of collectClassNames(document.body)) classes.add(name);
+          for (const row of document.querySelectorAll("[data-application-navigation-control]")) focusClasses.push([...row.classList]);
+        } finally { view.unmount(); }
+      }
+      const generated = await generateCompiledCss({ stylesDir: resolve(packageRoot, "styles"), candidates: scanCompiledCssSources(packageRoot).candidates });
+      const shipped = readFileSync(resolve(packageRoot, "styles/compiled.css"), "utf8");
+      for (const names of focusClasses) expect(names).toContain("focus-visible:-outline-offset-2");
+      for (const name of classes) {
+        expect(generated.css, `navigation fresh: ${name}`).toContain(toSelectorText(name));
+        expect(shipped, `navigation shipped: ${name}`).toContain(toSelectorText(name));
+      }
+      for (const css of [generated.css, shipped]) {
+        for (const [utility, declaration] of [["border-0", /border-width:\s*0(?:px)?;/], ["bg-transparent", /background-color:\s*transparent;/],
+          ["focus-visible:-outline-offset-2", /outline-offset:\s*(?:-2px|calc\(2px\s*\*\s*-1\));/],
+          ["icon-control-md", /inline-size:\s*var\(--ui-layout-tap-target,\s*44px\)/]] as const) {
+          const start = css.indexOf(toSelectorText(utility));
+          expect(start).toBeGreaterThanOrEqual(0);
+          const rule = css.slice(start, css.indexOf("}", start) + 1);
+          expect(rule).toMatch(declaration);
+          if (utility === "icon-control-md") expect(rule).toMatch(/block-size:\s*var\(--ui-layout-tap-target,\s*44px\)/);
+        }
+      }
+      expect(shipped).toContain("forced-colors: active");
+      expect(shipped).toContain("prefers-reduced-motion: reduce");
+    } finally { vi.unstubAllGlobals(); }
+  });
+
+  it("keeps AccountMenu triggers transparent and borderless without a host reset", () => {
+    const css = readFileSync(resolve(packageRoot, "styles/compiled.css"), "utf8");
+    for (const collapsed of [false, true]) {
+      const tree = render(<AccountMenu actor={{ name: "Alex Morgan" }} collapsed={collapsed}
+        sections={[{ id: "account", entries: [{ id: "profile", kind: "link", label: "Profile", href: "#profile" }] }]} />);
+      const trigger = screen.getByRole("button", { name: "Alex Morgan" });
+      const style = document.createElement("style");
+      // jsdom cannot apply layers: project matching shipped base rules, with no reset or invented declarations.
+      style.textContent = [...css.matchAll(/(\.[a-zA-Z_][\w-]*)\s*\{[^{}]*\}/g)]
+        .filter(match => trigger.matches(match[1]!)).map(match => match[0]).join("\n");
+      document.head.append(style);
+      try {
+        const computed = getComputedStyle(trigger);
+        expect(computed.backgroundColor).toBe("rgba(0, 0, 0, 0)");
+        for (const side of ["top", "right", "bottom", "left"]) {
+          expect(computed.getPropertyValue(`border-${side}-width`)).toBe("0px");
+          if (collapsed) expect(computed.getPropertyValue(`padding-${side}`)).toBe("0px");
+        }
+      } finally { style.remove(); tree.unmount(); }
+    }
+  });
+  it("covers AccountMenu portals with normal rings and forced-colors-only outlines", async () => {
+    const classes = new Set<string>(), user = userEvent.setup();
+    for (const collapsed of [false, true]) {
+      const tree = render(<AccountMenu actor={{ name: "Alex Morgan" }} collapsed={collapsed}
+        sections={[{ id: "prefs", kind: "preferences", label: "Preferences", entries: [
+          { id: "on", kind: "preference", label: "Enabled", checked: true, onCheckedChange() {} },
+          { id: "off", kind: "preference", label: "Disabled preference", checked: false, onCheckedChange() {} },
+        ] }]} />);
+      await user.tab();
+      const trigger = screen.getByRole("button", { name: "Alex Morgan" });
+      await waitFor(() => expect(trigger).toHaveFocus());
+      expect(trigger.style.outlineStyle).toBe("");
+      expect(trigger.style.boxShadow).not.toBe("");
+      expect(trigger).toHaveClass("forced-colors:focus-visible:outline", "forced-colors:focus-visible:outline-solid");
+      for (const cls of collectClassNames(document.body)) classes.add(cls);
+      await user.keyboard("{ArrowDown}");
+      const focused = await screen.findByRole("menuitemcheckbox", { name: "Enabled" });
+      const details = within(screen.getByRole("menu")).getByText("Alex Morgan").parentElement!;
+      expect(details.style.maxInlineSize).toBe("min(var(--ui-layout-sidebar-w, 256px), calc(100vw - 2 * var(--spacing-2xl, 32px)))");
+      expect(focused).toHaveFocus(); expect(focused).toHaveClass("outline-none", "forced-colors:outline", "forced-colors:outline-solid");
+      expect(focused).not.toHaveClass("outline");
+      for (const cls of collectClassNames(document.body)) classes.add(cls);
+      tree.unmount();
+    }
+    const scan = scanCompiledCssSources(packageRoot);
+    const generated = await generateCompiledCss({ stylesDir: resolve(packageRoot, "styles"), candidates: scan.candidates });
+    expect([...classes].filter(cls => !generated.css.includes(toSelectorText(cls)))).toEqual([]);
+    expect(generated.css).toMatch(/\.max-w-full\s*\{[^}]*max-width:\s*100%/);
+    expect(generated.css).toMatch(/\.box-border\s*\{[^}]*box-sizing:\s*border-box/);
+    // Both actual rendered outline rules must be nested inside the forced-colors media query.
+    for (const candidate of ["forced-colors:outline", "forced-colors:focus-visible:outline-solid"]) {
+      const offset = generated.css.indexOf(toSelectorText(candidate));
+      const blocks: string[] = [];
+      for (const match of generated.css.slice(0, offset).matchAll(/([^{}]+)\{|\}/g)) {
+        if (match[1]) blocks.push(match[1].trim()); else blocks.pop();
+      }
+      const rule = generated.css.slice(offset, generated.css.indexOf("}", offset));
+      // Tailwind nests the media condition within the candidate selector.
+      expect(blocks.some(block => block.includes("forced-colors: active")) || rule.includes("forced-colors: active")).toBe(true);
+    }
+    expect(generated.css).toContain(".motion-reduce\\:transition-none");
+    expect(generated.css).toContain("prefers-reduced-motion: reduce");
+  }, 30_000);
+  it("covers AppFrame Material and resize states in fresh and shipped CSS", async () => {
+    const classes = new Set<string>();
+    const collect = (container: HTMLElement) => { for (const name of collectClassNames(container)) classes.add(name); };
+    for (const orientation of ["vertical", "horizontal"] as const) {
+      for (const ground of ["base", "inverse"] as const) {
+        const view = render(<ResizablePane ground={ground} orientation={orientation} min={100} max={300} defaultValue={180} label="Tools" handleLabel="Resize tools">Content</ResizablePane>);
+        collect(view.container);
+        view.unmount();
+      }
+    }
+    const atom = render(<ResizeHandle value={100} min={50} max={200} resetValue={100} label="Resize tools" onChange={() => {}} />);
+    collect(atom.container);
+    atom.unmount();
+    for (const ground of ["base", "sunken", "inverse"] as const) {
+      const view = render(<Panel ground={ground} header="Header" footer="Footer">Content</Panel>);
+      collect(view.container);
+      view.unmount();
+    }
+    for (const placement of ["start", "end", "bottom"] as const) {
+      const view = render(<Drawer placement={placement} heading="Tools" closeLabel="Close tools" trigger={<Button>Open tools</Button>}>Content</Drawer>);
+      await userEvent.click(view.getByRole("button", { name: "Open tools" }));
+      collect(document.body);
+      view.unmount();
+    }
+    const generated = await generateCompiledCss({ stylesDir: resolve(packageRoot, "styles"), candidates: scanCompiledCssSources(packageRoot).candidates });
+    const shipped = readFileSync(resolve(packageRoot, "styles/compiled.css"), "utf8");
+    for (const name of classes) {
+      expect(generated.css, `fresh: ${name}`).toContain(toSelectorText(name));
+      expect(shipped, `shipped: ${name}`).toContain(toSelectorText(name));
+    }
+    for (const [label, css] of [["fresh", generated.css], ["shipped", shipped]] as const) {
+      expect(css, `${label}: solid outline`).toContain(".focus-visible\\:outline-solid:focus-visible");
+      const selector = ".focus-visible\\:outline-accent-on-inverse:focus-visible";
+      expect(css, `${label}: inverse focus selector`).toContain(selector);
+      const rule = css.slice(css.indexOf(selector)).split("}", 1)[0];
+      expect(rule, `${label}: inverse focus color`).toContain("outline-color: var(--color-accent-on-inverse,");
+    }
+  });
+
   it("covers actual ordered tracks and native/React Aria disclosure states", async () => {
     const classes = new Set<string>();
     const user = userEvent.setup();
@@ -211,6 +403,10 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
         `Meter history ${tone}`,
         render(<Meter value={2} scaleMax={4} limit={3} previous={1} previousText="Previously 1.0x" tone={tone} valueText="2.0x" limitText="limit 3.0x" />),
       ]);
+    }
+    for (const size of ["sm", "md", "lg"] as const) for (const tone of ["auto", "inverse"] as const) for (const plate of ["shared", "self"] as const) {
+      trees.push([`Logomark ${size} ${tone} ${plate}`, render(<Logomark src="/glyph.svg" size={size} tone={tone} plate={plate} />)]);
+      trees.push([`Lockup ${size} ${tone} ${plate}`, render(<Lockup src="/glyph.svg" wordmark="Example" size={size} tone={tone} plate={plate} clearSpace />)]);
     }
     trees.push(["Avatar sm", render(<Avatar alt="A" size="sm" />)]);
     trees.push(["Avatar md", render(<Avatar alt="A" size="md" />)]);

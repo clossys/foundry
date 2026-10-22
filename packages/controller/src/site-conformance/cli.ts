@@ -8,8 +8,9 @@ import { DEFAULT_SITE, SiteConformanceError, WAIVERS_PATH, scanSiteConformance }
 
 const USAGE = `Usage: site-conformance-check <repoRoot> [--site <dir>]
 
-Report-mode scan of a site's Next.js app directory (<dir>/app, default
-${DEFAULT_SITE}; .ts and .tsx files, skipping node_modules and .next).
+Report-mode scan of a site's Next.js app directory (<dir>/app, or <dir>/src/app
+when <dir>/app is not a directory; default site ${DEFAULT_SITE}; .ts and
+.tsx files, skipping node_modules and .next).
 Rules:
   site/route-not-publisher-view   page.tsx, not-found.tsx and error.tsx must
                                   import @clossys/publisher/web, directly or
@@ -19,10 +20,14 @@ Rules:
                                   contact) outside <dir>/web-route-manifest.json
   site/raw-style-literal          a hex colour or rgb(, hsl(, oklch( on a
                                   line; a same-line token-gate:ignore skips it
-  site/symlink-unscanned          a symlink under <dir>/app that points at a
-                                  .ts/.tsx file, a directory or nothing; it
+  site/symlink-unscanned          a symlink under the selected app directory
+                                  that points at a .ts/.tsx file, a directory
+                                  or nothing; it
                                   is not followed, so what it names was not
                                   scanned (never waivable)
+  site/manifest-missing           <dir>/web-route-manifest.json does not
+                                  exist; the scan continues with no route
+                                  ids (never waivable)
 
 Waivers: ${WAIVERS_PATH}
   { "version": 1, "waivers": [{ "rule", "path", "reason" }] }
@@ -32,7 +37,7 @@ finding site/waiver-unused.
 Prints { mode, site, filesScanned, findings, waived }. Exit codes: 0 = the
 scan ran (findings or not), 2 = it could not run (missing repository or
 site directory, a symlinked site or app directory, no files, an unreadable
-file or directory, bad waiver file or manifest, unknown flag).`;
+file or directory, bad waiver file or an invalid manifest, unknown flag).`;
 
 export function main(argv: readonly string[] = process.argv.slice(2)): number {
   if (argv.includes("--help") || argv.includes("-h")) {

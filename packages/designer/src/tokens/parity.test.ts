@@ -12,7 +12,7 @@ const declarations = parseRootDeclarations(tokensCss);
 /**
  * The important test in this package (see the README's Tests section): two
  * independently hand-authored artifacts, `styles/tokens.css` and
- * `src/tokens.ts`, both claim to describe the same 182 tokens. Nothing
+ * `src/tokens.ts`, both claim to describe the same 188 tokens. Nothing
  * generates one from the other, so nothing but a test keeps them in sync —
  * this is that test, checked in both directions and by value, not just by
  * name.
@@ -48,9 +48,9 @@ describe("tokens.css <-> src/tokens.ts parity", () => {
     expect(mismatched).toEqual([]);
   });
 
-  it("retains exactly 30 families and a structural Scene card-width token", () => {
-    expect(TOKEN_FAMILIES).toHaveLength(30);
-    expect(new Set(TOKEN_FAMILIES).size).toBe(30);
+  it("retains exactly 31 families and a structural Scene card-width token", () => {
+    expect(TOKEN_FAMILIES).toHaveLength(31);
+    expect(new Set(TOKEN_FAMILIES).size).toBe(31);
     expect([...new Set(Object.values(TOKENS).map(token => token.family))].sort()).toEqual([...TOKEN_FAMILIES].sort());
     expect(TOKENS["--ui-scene-card-w"]).toMatchObject({ value: "30rem", family: "scene", brandable: false, themeDependent: false });
     expect(declarations.get("--ui-scene-card-w")).toBe("30rem");
@@ -58,8 +58,8 @@ describe("tokens.css <-> src/tokens.ts parity", () => {
     expect(declarations.has("--ui-scene-tilt")).toBe(false);
   });
 
-  it("declares exactly 182 tokens (the curated set this package promises)", () => {
-    expect(declarations.size).toBe(182);
-    expect(Object.keys(TOKENS).length).toBe(182);
+  it("declares exactly 188 tokens (the curated set this package promises)", () => {
+    expect(declarations.size).toBe(188);
+    expect(Object.keys(TOKENS).length).toBe(188);
   });
 });
