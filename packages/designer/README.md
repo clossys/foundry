@@ -9365,8 +9365,8 @@ or expensive caller calendars.
 `serializeProject(tasks)` validates and copies `{ version: 1, tasks }`.
 `parseProject(unknown)` accepts that plain versioned object and returns an
 independent copy. Persist tasks, not calendar callbacks; inject the calendar when
-rescheduling. Unknown fields, accessors, non-plain task/project objects, invalid
-references and unsupported versions are refused. Typed errors expose `code` and
+rescheduling. Unknown fields, accessors, sparse or accessor-indexed arrays, non-plain
+task/project objects, invalid references and unsupported versions are refused. Typed errors expose `code` and
 `cycle`; codes are `invalid-project`, `unsupported-version`, `invalid-task`,
 `dependency-cycle`, `parent-cycle`, `invalid-calendar`, `unknown-status`,
 `invalid-board` and `invalid-layout`.

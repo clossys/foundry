@@ -24,6 +24,21 @@ function plain(value: unknown, allowed: readonly string[], code: ProjectModelErr
   return value as { [key: string]: unknown };
 }
 
+/**
+ * Copy an array whose every index is an own data property. Holes and accessors are refused
+ * before any element is read, so validation never skips an index and never runs caller code.
+ */
+export function dense(value: unknown, code: ProjectModelErrorCode, message: string): unknown[] {
+  if (!Array.isArray(value)) fail(code, message);
+  const items: unknown[] = [];
+  for (let index = 0; index < value.length; index++) {
+    const descriptor = Object.getOwnPropertyDescriptor(value, index);
+    if (!descriptor || !Object.hasOwn(descriptor, "value")) fail(code, message);
+    items.push(descriptor.value);
+  }
+  return items;
+}
+
 /** Kahn traversal is iterative and FIFO, retaining input order among initial ties. */
 export function ordered(tasks: readonly Task[], parents = false): Task[] {
   const byId = new Map(tasks.map(task => [task.id, task]));
@@ -58,9 +73,9 @@ export function ordered(tasks: readonly Task[], parents = false): Task[] {
 }
 
 export function copyTasks(input: unknown): Task[] {
-  if (!Array.isArray(input)) fail("invalid-task", "Tasks must be an array.");
+  const rows = dense(input, "invalid-task", "Tasks must be a dense array.");
   const ids = new Set<string>();
-  const tasks = input.map(value => {
+  const tasks = rows.map(value => {
     const row = plain(value, ["id", "title", "status", "start", "end", "durationDays", "assignee", "tags", "parentId", "deps", "milestone"], "invalid-task");
     if (!text(row.id) || ids.has(row.id) || typeof row.title !== "string" || !text(row.status)) fail("invalid-task", "Tasks require unique nonempty ids, a title and a status.");
     ids.add(row.id);
@@ -72,16 +87,16 @@ export function copyTasks(input: unknown): Task[] {
     if (row.start !== undefined && row.end !== undefined && ((row.end as number) < (row.start as number) || (!milestone && row.end === row.start))) fail("invalid-task", "Invalid task span.");
     if (milestone && row.start !== undefined && row.end !== undefined && row.start !== row.end) fail("invalid-task", "A milestone has one boundary.");
     for (const key of ["assignee", "parentId"]) if (Object.hasOwn(row, key) && !text(row[key])) fail("invalid-task", `${key} must be a nonempty string.`);
-    if (Object.hasOwn(row, "tags") && (!Array.isArray(row.tags) || !row.tags.every(tag => typeof tag === "string"))) fail("invalid-task", "tags must contain strings.");
-    if (!Array.isArray(row.deps)) fail("invalid-task", "deps must be an array.");
+    const tags = Object.hasOwn(row, "tags") ? dense(row.tags, "invalid-task", "tags must be a dense array of strings.") : undefined;
+    if (tags && !tags.every(tag => typeof tag === "string")) fail("invalid-task", "tags must contain strings.");
     const dependencies = new Set<string>();
-    const deps = row.deps.map(value => {
+    const deps = dense(row.deps, "invalid-task", "deps must be a dense array.").map(value => {
       const dep = plain(value, ["id", "type"], "invalid-task");
       if (!text(dep.id) || dep.type !== "finish-to-start" || dependencies.has(dep.id)) fail("invalid-task", "Invalid or repeated dependency.");
       dependencies.add(dep.id);
       return { id: dep.id, type: "finish-to-start" as const };
     });
-    return { ...row, deps, ...(row.tags === undefined ? {} : { tags: [...row.tags as string[]] }) } as unknown as Task;
+    return { ...row, deps, ...(tags === undefined ? {} : { tags: tags as string[] }) } as unknown as Task;
   });
   ordered(tasks);
   ordered(tasks, true);

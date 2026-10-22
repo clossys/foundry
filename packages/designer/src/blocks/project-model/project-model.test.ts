@@ -226,4 +226,53 @@ describe("project-model serialization", () => {
     expect(reads).toBe(0);
     refusal(() => parseProject(Object.assign(Object.create({}), { version: 1, tasks: [] })), "invalid-project");
   });
+  it("round trips tags, dependencies and an empty tag list through JSON", () => {
+    const saved = serializeProject([task("a", { tags: [] }), task("b", { tags: ["x", "y"], deps: [dep("a")] })]);
+    expect(parseProject(JSON.parse(JSON.stringify(saved)))).toEqual(saved);
+  });
+});
+
+describe("project-model dense arrays", () => {
+  /** An array whose elements are read through accessors; `reads` counts executions. */
+  function accessorArray(reads: { count: number }, ...values: unknown[]): unknown[] {
+    const list: unknown[] = [];
+    values.forEach((value, index) => Object.defineProperty(list, index, { get() { reads.count++; return value; }, enumerable: true }));
+    return list;
+  }
+  const holeyTags = () => new Array(1) as string[];
+  const holeyAt = () => { const list: unknown[] = ["a"]; list.length = 2; return list; };
+
+  it("refuses sparse tags with the model error instead of persisting a hole", () => {
+    refusal(() => serializeProject([task("a", { tags: holeyTags() })]), "invalid-task");
+    refusal(() => serializeProject([task("a", { tags: ["x", , "y"] as string[] })]), "invalid-task");
+    refusal(() => parseProject({ version: 1, tasks: [{ ...task("a"), tags: holeyAt() }] }), "invalid-task");
+  });
+  it("refuses sparse task and dependency arrays with the model error", () => {
+    refusal(() => serializeProject(new Array(1) as Task[]), "invalid-task");
+    refusal(() => serializeProject([task("a"), , task("b")] as Task[]), "invalid-task");
+    refusal(() => scheduleProject(new Array(2) as Task[], allDays), "invalid-task");
+    refusal(() => boardColumns(new Array(1) as Task[], { statusOrder: ["todo"] }), "invalid-task");
+    refusal(() => parseProject({ version: 1, tasks: new Array(1) }), "invalid-task");
+    refusal(() => serializeProject([task("a", { deps: new Array(1) as Task["deps"] })]), "invalid-task");
+  });
+  it("refuses accessor-indexed arrays without executing the accessor", () => {
+    const reads = { count: 0 };
+    refusal(() => serializeProject([task("a", { tags: accessorArray(reads, "x") as string[] })]), "invalid-task");
+    refusal(() => serializeProject([task("a", { deps: accessorArray(reads, dep("b")) as Task["deps"] })]), "invalid-task");
+    refusal(() => serializeProject(accessorArray(reads, task("a")) as Task[]), "invalid-task");
+    refusal(() => parseProject({ version: 1, tasks: accessorArray(reads, task("a")) }), "invalid-task");
+    expect(reads.count).toBe(0);
+  });
+  it("refuses sparse or accessor-indexed schedule rows, status orders and row orders with the model error", () => {
+    const s = scheduleProject([task("a"), task("b")], allDays);
+    const reads = { count: 0 };
+    refusal(() => projectRollups({ ...s, tasks: new Array(1) as typeof s.tasks }), "invalid-project");
+    refusal(() => timelineLayout({ ...s, tasks: accessorArray(reads, s.tasks[0]) as typeof s.tasks }, { zoom: "day", rowOrder: ["a"] }), "invalid-project");
+    refusal(() => timelineLayout({ ...s, tasks: [null] as unknown as typeof s.tasks }, { zoom: "day", rowOrder: ["a"] }), "invalid-task");
+    refusal(() => boardColumns([], { statusOrder: new Array(1) as string[] }), "invalid-board");
+    refusal(() => boardColumns([], { statusOrder: accessorArray(reads, "todo") as string[] }), "invalid-board");
+    refusal(() => timelineLayout(s, { zoom: "day", rowOrder: new Array(2) as string[] }), "invalid-layout");
+    refusal(() => timelineLayout(s, { zoom: "day", rowOrder: accessorArray(reads, "a", "b") as string[] }), "invalid-layout");
+    expect(reads.count).toBe(0);
+  });
 });

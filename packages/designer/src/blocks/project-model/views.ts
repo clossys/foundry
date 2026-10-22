@@ -1,9 +1,10 @@
-import { copyTasks, fail, integer, ordered, text } from "./model.js";
+import { copyTasks, dense, fail, integer, ordered, text } from "./model.js";
 import type { BoardColumn, BoardOptions, ProjectRollup, ProjectSchedule, ScheduledTask, Task, TimelineConnector, TimelineLayout, TimelineOptions } from "./types.js";
 
 function scheduleTasks(schedule: ProjectSchedule): readonly ScheduledTask[] {
-  if (!schedule || !Array.isArray(schedule.tasks)) fail("invalid-project", "Expected a schedule.");
-  copyTasks(schedule.tasks.map(({ latestStart, latestEnd, slackDays, critical, ...task }) => task));
+  if (!schedule) fail("invalid-project", "Expected a schedule.");
+  const rows = dense(schedule.tasks, "invalid-project", "Expected a dense schedule task array.");
+  copyTasks(rows.map(row => row && typeof row === "object" ? (({ latestStart, latestEnd, slackDays, critical, ...task }) => task)(row as ScheduledTask) : row));
   for (const task of schedule.tasks) {
     if (![task.start, task.end, task.durationDays].every(integer) || task.end < task.start) fail("invalid-project", "Invalid scheduled boundaries.");
   }
@@ -42,8 +43,10 @@ export function projectRollups(schedule: ProjectSchedule): readonly ProjectRollu
 /** Group copied tasks in caller-defined status order, retaining input order within columns. */
 export function boardColumns(input: readonly Task[], options: BoardOptions): readonly BoardColumn[] {
   const tasks = copyTasks(input);
-  if (!options || !Array.isArray(options.statusOrder) || !options.statusOrder.every(text) || new Set(options.statusOrder).size !== options.statusOrder.length) fail("invalid-board", "statusOrder must contain unique statuses.");
-  const groups = new Map(options.statusOrder.map(status => [status, [] as Task[]]));
+  if (!options) fail("invalid-board", "statusOrder must contain unique statuses.");
+  const statusOrder = dense(options.statusOrder, "invalid-board", "statusOrder must contain unique statuses.") as string[];
+  if (!statusOrder.every(text) || new Set(statusOrder).size !== statusOrder.length) fail("invalid-board", "statusOrder must contain unique statuses.");
+  const groups = new Map(statusOrder.map(status => [status, [] as Task[]]));
   if (options.wipLimits !== undefined) {
     if (!options.wipLimits || typeof options.wipLimits !== "object" || Array.isArray(options.wipLimits)) fail("invalid-board", "Invalid WIP limits.");
     for (const [status, limit] of Object.entries(options.wipLimits)) if (!groups.has(status) || !integer(limit) || limit < 0) fail("invalid-board", "WIP limits require a known status and nonnegative integer.");
@@ -52,7 +55,7 @@ export function boardColumns(input: readonly Task[], options: BoardOptions): rea
     if (!groups.has(task.status)) fail("unknown-status", `Unknown board status: ${task.status}.`);
     groups.get(task.status)!.push(task);
   }
-  return options.statusOrder.map(status => {
+  return statusOrder.map(status => {
     const tasks = groups.get(status)!;
     const wipLimit = options.wipLimits !== undefined && Object.hasOwn(options.wipLimits, status) ? options.wipLimits[status] : undefined;
     return { status, tasks, ...(wipLimit === undefined ? {} : { wipLimit }), overLimit: wipLimit !== undefined && tasks.length > wipLimit };
@@ -63,10 +66,12 @@ export function boardColumns(input: readonly Task[], options: BoardOptions): rea
 export function timelineLayout(schedule: ProjectSchedule, options: TimelineOptions): TimelineLayout {
   const tasks = scheduleTasks(schedule);
   const daysPerUnit = options?.zoom === "day" ? 1 : options?.zoom === "week" ? 7 : options?.zoom === "month" ? 30 : options?.zoom === "quarter" ? 90 : 0;
-  if (!daysPerUnit || !Array.isArray(options.rowOrder) || options.rowOrder.length !== tasks.length || new Set(options.rowOrder).size !== tasks.length) fail("invalid-layout", "Expected a zoom and a complete unique row order.");
+  if (!daysPerUnit) fail("invalid-layout", "Expected a zoom and a complete unique row order.");
+  const rowOrder = dense(options.rowOrder, "invalid-layout", "Expected a zoom and a complete unique row order.") as string[];
+  if (rowOrder.length !== tasks.length || new Set(rowOrder).size !== tasks.length) fail("invalid-layout", "Expected a zoom and a complete unique row order.");
   const byId = new Map(tasks.map(task => [task.id, task]));
   const origin = tasks.reduce((min, task) => Math.min(min, task.start), tasks[0]?.start ?? 0);
-  const rows = options.rowOrder.map((id, row) => {
+  const rows = rowOrder.map((id, row) => {
     const task = byId.get(id);
     if (!task) fail("invalid-layout", `Unknown layout task: ${id}.`);
     return { id, row, offset: (task.start - origin) / daysPerUnit, span: (task.end - task.start) / daysPerUnit, milestone: task.milestone === true };
