@@ -9,7 +9,7 @@ describe("data-readable SiteFrame contract", () => {
     expect(frame.SITE_FRAME_CONTRACT).toBe(SITE_FRAME_CONTRACT);
     expect(web.SITE_FRAME_CONFIG_SCHEMA).toBe(SITE_FRAME_CONFIG_SCHEMA);
     expect(frame.normalizeSiteFrameActions).toBe(normalizeSiteFrameActions);
-    expect(SITE_FRAME_CONTRACT.constituents.Footer.required).toContain("dark-in-both-themes");
+    expect(SITE_FRAME_CONTRACT.constituents.Footer.required).toContain("footer-local-tone-in-both-themes");
     expect(SITE_FRAME_CONTRACT.identity).toBe("site-frame");
     expect(SITE_FRAME_CONTRACT.role).toBe("frame");
     expect(SITE_FRAME_CONTRACT.medium).toBe("web");
@@ -25,9 +25,9 @@ describe("data-readable SiteFrame contract", () => {
   });
   it("normalizes alphabetic flat primitive keys and rejects unknown or dependent inputs", () => {
     expect(Object.keys(SITE_FRAME_CONFIG_SCHEMA)).toEqual([...Object.keys(SITE_FRAME_CONFIG_SCHEMA)].sort());
-    expect(normalizeSiteFrameConfig()).toEqual({ footerGround: "base", footerPlacement: "flow", footerRule: "none", headerSurface: "solid", headerTone: "base" });
-    expect(normalizeSiteFrameConfig({ headerTone: "inverse" })).toEqual({ footerGround: "base", footerPlacement: "flow", footerRule: "none", headerSurface: "solid", headerTone: "inverse" });
-    expect(normalizeSiteFrameConfig({ headerSurface: "glass", headerTone: "inverse" })).toEqual({ footerGround: "base", footerPlacement: "flow", footerRule: "none", headerSurface: "glass", headerTone: "inverse" });
+    expect(normalizeSiteFrameConfig()).toEqual({ footerPlacement: "flow", footerTone: "dark", headerSurface: "solid", headerTone: "base" });
+    expect(normalizeSiteFrameConfig({ headerTone: "inverse" })).toEqual({ footerPlacement: "flow", footerTone: "dark", headerSurface: "solid", headerTone: "inverse" });
+    expect(normalizeSiteFrameConfig({ headerSurface: "glass", headerTone: "inverse" })).toEqual({ footerPlacement: "flow", footerTone: "dark", headerSurface: "glass", headerTone: "inverse" });
     for (const invalid of [{ headerGround: "inverse" }, { headerPlacement: "overlay" }, { headerSurface: "fixed" }, { headerTone: {} }, { sticky: false }, { Header: "{}" }, null, [], new Proxy({}, { ownKeys() { throw new Error("private-shape"); } })]) {
       expect(() => normalizeSiteFrameConfig(invalid)).toThrow(/SiteFrame/);
     }
@@ -42,15 +42,15 @@ describe("data-readable SiteFrame contract", () => {
       expect(() => normalizeSiteFrameConfig(input)).toThrow("SiteFrame:");
     }
     expect(reads).toBe(0);
-    expect(SITE_FRAME_CONTRACT.required).toEqual(expect.arrayContaining(["sticky-header", "dark-footer", "accessible-navigation", "document-scroll", "sole-main"]));
+    expect(SITE_FRAME_CONTRACT.required).toEqual(expect.arrayContaining(["sticky-header", "tone-configurable-footer", "accessible-navigation", "document-scroll", "sole-main"]));
     expect(SITE_FRAME_CONFIG_SCHEMA).not.toHaveProperty("sticky");
     expect(SITE_FRAME_CONFIG_SCHEMA).not.toHaveProperty("footerDark");
   });
 });
 
 it("publishes navigation defaults as copy references, not audience text", () => {
-  // Revision 4 replaces header placement/ground and nested navigation presentation with one surface contract.
-  expect(SITE_FRAME_CONTRACT.revision).toBe(4);
+  // Revision 5 adds footer tone and removes the legacy footer ground/rule axes.
+  expect(SITE_FRAME_CONTRACT.revision).toBe(5);
   expect(SITE_FRAME_CONTRACT.defaults).toEqual({
     label: { id: "site-frame.nav.label" },
     triggerLabel: { id: "site-frame.nav.trigger-label" },
@@ -76,10 +76,10 @@ it("enforces primary content dependencies through the real exported normalizer",
 });
 
 it("normalizes footer configuration without losing inherited header presentation", () => {
-  expect(normalizeSiteFrameConfig({ footerRule: "top" }, { headerSurface: "glass", headerTone: "inverse" })).toMatchObject({ footerRule: "top", headerSurface: "glass", headerTone: "inverse" });
+  expect(normalizeSiteFrameConfig({ footerTone: "light" }, { headerSurface: "glass", headerTone: "inverse" })).toMatchObject({ footerTone: "light", headerSurface: "glass", headerTone: "inverse" });
   expect(() => normalizeSiteFrameConfig({ footerPlacement: "overlay", footerGround: "transparent" })).toThrow(/SiteFrame/);
   let reads = 0;
-  expect(() => normalizeSiteFrameConfig({ get footerRule() { reads++; return "top"; } })).toThrow(/SiteFrame/);
+  expect(() => normalizeSiteFrameConfig({ get footerTone() { reads++; return "light"; } })).toThrow(/SiteFrame/);
   expect(reads).toBe(0);
   expect(SITE_FRAME_CONTRACT.constituents.Footer.required).toEqual(expect.arrayContaining(["home-inline-end", "named-icons", "external-rel", "privacy-link-only"]));
 });

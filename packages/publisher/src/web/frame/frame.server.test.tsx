@@ -116,11 +116,11 @@ it("renders identical all-slots markup through ordinary and server entries", () 
   expect(server).toContain('href="/help"');
 });
 
-it("renders disclosure, ActionLinks and independent footer ground without browser globals", () => {
-  const shell = { ...siteShellFor(CONFIG, "site"), ground: "base" as const,
+it("renders disclosure, ActionLinks and independent footer tone without browser globals", () => {
+  const shell = { ...siteShellFor(CONFIG, "site"),
     nav: { label: ref("social.label"), triggerLabel: ref("footer.help"), links: [{ href: "/help", label: ref("footer.help") }] },
     actions: [{ href: "/help", label: ref("footer.help") }, { href: "/contact", label: ref("icon.contact") }],
-    footer: { ground: "inverse" as const, legal: { entity: ref("legal.entity"), links: [] } },
+    footer: { tone: "dark" as const, legal: { entity: ref("legal.entity"), links: [] } },
   };
   const html = renderToStaticMarkup(<SiteFrame shell={shell} resolveCopy={resolveCopy} resolveAsset={resolveAsset}><p>content</p></SiteFrame>);
   expect(html.match(/<header\b/g)).toHaveLength(1);
@@ -147,8 +147,8 @@ describe("SiteFrame footer placement", () => {
     nav: { label: ref("social.label"), links: [{ href: "/help", label: ref("footer.help") }] },
     footer: { legal: { entity: ref("legal.entity"), links: [{ href: "/privacy", label: ref("legal.privacy") }] } },
   };
-  const htmlFor = (placement?: unknown, document = hero, ground?: unknown) => renderToStaticMarkup(
-    <SiteFrame shell={{ ...shell, footer: { ...shell.footer!, ...(placement === undefined ? {} : { placement }), ...(ground === undefined ? {} : { ground }) } } as SiteShellInput} resolveCopy={resolveCopy} resolveAsset={resolveAsset}>
+  const htmlFor = (placement?: unknown, document = hero, tone?: unknown) => renderToStaticMarkup(
+    <SiteFrame shell={{ ...shell, footer: { ...shell.footer!, ...(placement === undefined ? {} : { placement }), ...(tone === undefined ? {} : { tone }) } } as SiteShellInput} resolveCopy={resolveCopy} resolveAsset={resolveAsset}>
       <LandingView document={document} header="overlay" fit="frame" landmark="none" />
     </SiteFrame>,
   );
@@ -159,7 +159,7 @@ describe("SiteFrame footer placement", () => {
     expect(html).not.toContain("data-frame-footer-overlay");
     expect(html).not.toContain("publisher-frame-footer-overlay");
     expect(html.lastIndexOf("<footer")).toBeGreaterThan(html.indexOf("</main>"));
-    expect(html).toMatch(/<footer[^>]*bg-surface-raised[^>]*style="position:relative;/);
+    expect(html).toMatch(/<footer[^>]*bg-surface-inverse[^>]*style="position:relative;/);
   });
 
   it("overlays one inverse footer inside the first viewport hero container", () => {
@@ -244,14 +244,14 @@ describe("SiteFrame footer placement", () => {
     expect(() => renderToStaticMarkup(<SiteFrame shell={{ ...shell, header: { surface: "solid" }, footer: { ...shell.footer!, placement: "overlay" } }} resolveCopy={resolveCopy} resolveAsset={resolveAsset}>{view}</SiteFrame>)).toThrow(/shell\.footer\.placement/);
   });
 
-  it.each(["base", "inverse"])("preserves an explicit opaque %s overlay ground", ground => {
-    expect(htmlFor("overlay", hero, ground)).toMatch(ground === "base" ? /<footer[^>]*bg-surface-raised/ : /<footer[^>]*bg-surface-inverse/);
+  it.each(["light", "dark"])("preserves an explicit opaque %s overlay tone", tone => {
+    expect(htmlFor("overlay", hero, tone)).toMatch(tone === "light" ? /<footer[^>]*bg-surface-base/ : /<footer[^>]*bg-surface-inverse/);
   });
 
-  it("refuses transparent overlay backing and unknown placement without echoing values", () => {
-    expect(() => htmlFor("overlay", hero, "transparent")).toThrow(/shell\.footer\.ground/);
+  it("refuses unknown footer tone and placement without echoing values", () => {
+    expect(() => htmlFor("overlay", hero, "transparent")).toThrow(/shell\.footer\.tone/);
     expect(() => htmlFor("PAYLOAD-SENTINEL")).toThrow(/shell\.footer\.placement/);
     expect(() => htmlFor("PAYLOAD-SENTINEL")).not.toThrow(/PAYLOAD-SENTINEL/);
-    expect(() => htmlFor("flow", hero, "transparent")).not.toThrow();
+    expect(() => htmlFor("flow", hero, "transparent")).toThrow(/shell\.footer\.tone/);
   });
 });

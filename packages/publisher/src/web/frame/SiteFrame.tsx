@@ -123,8 +123,7 @@ export function SiteFrame({ shell, presentation, resolveCopy, resolveAsset, chil
 
   const footerContent = footer ? (
     <SiteFooter
-      ground={footer.ground}
-      rule={footer.rule}
+      tone={footer.tone}
       {...(footer.placement === "overlay" ? { className: "publisher-frame-footer-overlay", style: { pointerEvents: "auto" as const, width: "100%", marginBlockStart: "auto", minWidth: 0, overflowWrap: "anywhere" as const } } : {})}
       columns={footer.columns.length ? <>{footer.columns.map((column, columnIndex) => (
         <SiteFooter.Column key={columnIndex} heading={column.heading}>

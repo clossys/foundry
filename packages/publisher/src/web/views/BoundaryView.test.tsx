@@ -153,10 +153,10 @@ describe("BoundaryView", () => {
     expect(html).toContain("</main>" + renderToStaticMarkup(<SiteFooter secondary={<span>FOOTER-SENTINEL</span>} />) + "</div>");
   });
 
-  it("passes ground to both the header and the footer", () => {
+  it("passes ground to the header and keeps the default dark footer", () => {
     const html = renderToStaticMarkup(<BoundaryView brand="Example Studio" status={500} title="Something went wrong" ground="transparent" />);
     expect(html).toContain(renderToStaticMarkup(<SiteHeader surface="transparent" brand="Example Studio" />) + "<main");
-    expect(html).toContain("</main>" + renderToStaticMarkup(<SiteFooter ground="transparent" />) + "</div>");
+    expect(html).toContain("</main>" + renderToStaticMarkup(<SiteFooter tone="dark" />) + "</div>");
   });
 
   it("imports only react, @clossys/designer/*/server, ./ErrorView.js, ../internal/viewChromeGround.js and ../internal/viewContentRoot.js (no router, no hooks)", () => {

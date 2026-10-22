@@ -4,8 +4,7 @@ import { isRenderImageAsset } from "../../../internal/assets.js";
 import type { AssetResolver } from "../../types.js";
 import type { SiteFramePresentationConfig } from "../site-frame-contract.js";
 import { FOOTER_ICON_LIMIT, FOOTER_LINK_LIMIT, HEADER_LINK_LIMIT, HEADER_ACTION_VARIANTS, SITE_FRAME_NAV_DEFAULTS, SiteFooterContractError, normalizeSiteFrameActions, normalizeSiteFrameConfig } from "../site-frame-contract.js";
-import { SITE_CHROME_GROUNDS } from "../types.js";
-import type { SiteChromeGround, SiteShellInput } from "../types.js";
+import type { SiteShellInput } from "../types.js";
 
 export interface ResolvedSiteLink {
   readonly href: string;
@@ -33,14 +32,12 @@ export interface ResolvedSiteShell {
   readonly headerActions: readonly (ResolvedSiteLink & { readonly emphasis: "primary" | "secondary" | "ghost"; readonly icon?: IconNode })[];
   readonly environments: readonly (ResolvedSiteLink & { readonly icon: IconNode; readonly isCurrent: boolean })[];
   readonly navPlacement: "leading" | "centered";
-  readonly ground: SiteChromeGround;
   readonly header: { readonly surface: "solid" | "transparent" | "glass"; readonly tone: "base" | "inverse" };
   readonly footer?: {
     /** The brand's own mark, as resolved for `shell.brand`, linking home in the last icon slot. */
     readonly home: { readonly label: string; readonly href: string; readonly markSrc: string };
-    readonly rule?: "none" | "top";
     readonly placement: "flow" | "overlay";
-    readonly ground: SiteChromeGround;
+    readonly tone: "dark" | "light";
     readonly columns: readonly { readonly heading: string; readonly links: readonly ResolvedSiteLink[] }[];
     readonly links: readonly ResolvedSiteLink[];
     readonly social?: { readonly label?: string; readonly links: readonly ResolvedSiteIconLink[] };
@@ -55,7 +52,6 @@ const SHELL_KEYS = new Set([
   "actions",
   "environments",
   "navPlacement",
-  "ground",
   "header",
   "footer",
   "origin",
@@ -69,7 +65,7 @@ const ACTION_KEYS = new Set(["href", "label", "emphasis", "icon"]);
 const ENVIRONMENT_KEYS = new Set(["href", "label", "icon", "isCurrent"]);
 const ICON_LINK_KEYS = new Set(["href", "label", "icon"]);
 const SOCIAL_KEYS = new Set(["label", "links"]);
-const FOOTER_KEYS = new Set(["placement", "ground", "columns", "links", "social", "legal", "rule"]);
+const FOOTER_KEYS = new Set(["placement", "tone", "columns", "links", "social", "legal"]);
 /** The consent reopen fragment; the footer never carries that control, only the policy link. */
 const PRIVACY_CHOICES_FRAGMENT = "privacy-choices";
 const COLUMN_KEYS = new Set(["heading", "links"]);
@@ -347,13 +343,11 @@ export function resolveShell(input: SiteShellInput, resolveCopy: CopyResolver, r
       });
   if (environments.filter((environment) => environment.isCurrent).length > 1) fail("shell.environments marks more than one environment current.");
 
-  const ground = shell.ground === undefined ? "base" : oneOf(shell.ground, "shell.ground", SITE_CHROME_GROUNDS);
   let footer: ResolvedSiteShell["footer"];
   if (shell.footer !== undefined) {
     const footerFields = record(shell.footer, "shell.footer", FOOTER_KEYS);
     const placement = footerFields.placement === undefined ? "flow" : oneOf(footerFields.placement, "shell.footer.placement", ["flow", "overlay"] as const);
-    const footerGround = footerFields.ground === undefined ? (placement === "overlay" ? "inverse" : ground) : oneOf(footerFields.ground, "shell.footer.ground", SITE_CHROME_GROUNDS);
-    if (placement === "overlay" && footerGround === "transparent") fail("shell.footer.ground must be opaque for overlay placement.");
+    const tone = footerFields.tone === undefined ? "dark" : oneOf(footerFields.tone, "shell.footer.tone", ["dark", "light"] as const);
     const legalFields = record(footerFields.legal, "shell.footer.legal", LEGAL_KEYS);
     let social: NonNullable<ResolvedSiteShell["footer"]>["social"];
     if (footerFields.social !== undefined) {
@@ -368,8 +362,7 @@ export function resolveShell(input: SiteShellInput, resolveCopy: CopyResolver, r
     footer = {
       home,
       placement,
-      ground: footerGround,
-      ...(footerFields.rule === undefined ? {} : { rule: oneOf(footerFields.rule, "shell.footer.rule", ["none", "top"] as const) }),
+      tone,
       links: footerFields.links === undefined ? [] : links(footerFields.links, "shell.footer.links"),
       ...(social === undefined ? {} : { social }),
       columns:
@@ -430,9 +423,9 @@ export function resolveShell(input: SiteShellInput, resolveCopy: CopyResolver, r
   // Renderer and data contract normalize the same dependent presentation inputs.
   const normalized = normalizeSiteFrameConfig(presentation ?? {}, {
     headerSurface: header.surface, headerTone: header.tone,
-    ...(footer ? { footerGround: footer.ground, footerPlacement: footer.placement, footerRule: footer.rule ?? "none" } : {}),
+    ...(footer ? { footerTone: footer.tone, footerPlacement: footer.placement } : {}),
   });
-  if (footer) footer = { ...footer, ground: normalized.footerGround, placement: normalized.footerPlacement, rule: normalized.footerRule };
+  if (footer) footer = { ...footer, tone: normalized.footerTone, placement: normalized.footerPlacement };
   header = { surface: normalized.headerSurface, tone: normalized.headerTone };
 
   return {
@@ -443,7 +436,6 @@ export function resolveShell(input: SiteShellInput, resolveCopy: CopyResolver, r
     headerActions,
     environments,
     navPlacement: shell.navPlacement === undefined ? "centered" : oneOf(shell.navPlacement, "shell.navPlacement", ["leading", "centered"] as const),
-    ground,
     header,
     ...(footer === undefined ? {} : { footer }),
   };

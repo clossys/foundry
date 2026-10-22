@@ -3,7 +3,6 @@ import type { ReactNode } from "react";
 import type { CopyRef, CopyResolver } from "@clossys/writer";
 import type { IconNode } from "@clossys/designer/atoms/server";
 import type { AssetResolver } from "../types.js";
-import type { SiteChromeGround } from "../internal/viewChromeGround.js";
 
 /**
  * The fixed `id` of the one `<main>` a `SiteFrame` renders, and the target of
@@ -85,8 +84,8 @@ export type { SiteChromeGround } from "../internal/viewChromeGround.js";
  * Breaches throw a `SiteFooterContractError` (`name` and `code`), never truncate.
  */
 interface SiteFooterFields {
-  /** A top hairline on transparent flow footers; other grounds ignore it. @default "none" */
-  readonly rule?: "none" | "top";
+  /** Footer-local surface and ink, independent of the global theme. @default "dark" */
+  readonly tone?: "dark" | "light";
   readonly columns?: readonly { readonly heading: CopyRef; readonly links: readonly PlainSiteLinkInput[] }[];
   readonly links?: readonly PlainSiteLinkInput[];
   readonly social?: { readonly label?: CopyRef; readonly links: readonly SiteIconLinkInput[] };
@@ -98,11 +97,8 @@ interface SiteFooterFields {
   };
 }
 
-/** Flow follows the shell ground; overlay reserves its opaque footer within a growing hero scene. */
-export type SiteFooterInput = SiteFooterFields & (
-  | { readonly placement?: "flow"; readonly ground?: SiteChromeGround }
-  | { readonly placement: "overlay"; readonly ground?: "base" | "inverse" }
-);
+/** Flow follows page content; overlay reserves its opaque footer within a growing hero scene. */
+export type SiteFooterInput = SiteFooterFields & { readonly placement?: "flow" | "overlay" };
 
 /**
  * Everything the frame's chrome shows, as data only. There is no node slot for
@@ -132,8 +128,6 @@ export interface SiteShellInput {
   /** Environment links, after text and icon actions. */
   readonly environments?: readonly SiteEnvironmentLinkInput[];
   readonly navPlacement?: "leading" | "centered";
-  /** Existing footer fallback only. Header ink and plate use header.surface/tone. @default "base" */
-  readonly ground?: SiteChromeGround;
   /** One header surface and theme-relative ink polarity. Glass follows declared page ground through the existing client island. */
   readonly header?: { readonly surface?: "solid" | "transparent" | "glass"; readonly tone?: "base" | "inverse" };
   readonly footer?: SiteFooterInput;
@@ -186,7 +180,6 @@ export interface SiteFrameConfig {
   /** One link per non-site surface; the one matching the surface kind is marked current. */
   readonly environments?: readonly (Omit<SiteEnvironmentLinkInput, "isCurrent"> & { readonly surface: Exclude<SiteSurfaceKind, "site"> })[];
   readonly legal: SiteFooterInput["legal"];
-  readonly ground?: SiteChromeGround;
 }
 
 /** One row of the page-assembly contract: a layer, the package that owns it and who mounts it. */

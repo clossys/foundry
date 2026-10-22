@@ -1,6 +1,6 @@
 import { Children, cloneElement, isValidElement, type HTMLAttributes, type ReactNode } from "react";
 import { cx } from "../atoms/internal/cx.js";
-import { SITE_CHROME_GROUND_CLASSES, siteChromeHasBorder, type SiteChromeGround } from "./internal/shell-ground.js";
+import { buttonClassName } from "../atoms/button-classes.js";
 import { BADGE_INSET_SHARE, BADGE_RADIUS_SHARE } from "./badge-plate.js";
 import { UI_BORDER_HAIRLINE, UI_BRANDMARK_HEIGHT_SM, UI_LAYOUT_TAP_TARGET, UI_WIDTH_PAGE_PADDING_X, UI_Z_SHELL } from "./internal/shell-vars.js";
 
@@ -13,19 +13,11 @@ export interface SiteFooterProps extends Omit<HTMLAttributes<HTMLElement>, "chil
   columns?: ReactNode;
   /**
    * The secondary/legal row below the columns — a copyright line, legal
-   * links, a locale switcher. Rendered under a hairline divider once
-   * `columns` is present.
+   * links, a locale switcher. Rendered after `columns` when present.
    */
   secondary?: ReactNode;
-  /**
-   * Legacy ground vocabulary retained for source compatibility and divider
-   * policy. Paint is always footer-local dark with paired light semantic
-   * roles in either global theme; transparent values only omit dividers.
-   * @default "base"
-   */
-  ground?: SiteChromeGround;
-  /** Top hairline on transparent ground only; other grounds keep their own policy. @default "none" */
-  rule?: "none" | "top";
+  /** Footer-local paint in either page theme. Dark has no divider; light has a top hairline. @default "dark" */
+  tone?: "dark" | "light";
 }
 
 /**
@@ -37,20 +29,26 @@ export interface SiteFooterProps extends Omit<HTMLAttributes<HTMLElement>, "chil
  * automatically at the top level, the same placement rule `Shell.Footer`
  * already carries.
  */
-function SiteFooterRoot({ columns, secondary, ground = "base", rule = "none", className, style, ...rest }: SiteFooterProps) {
-  const colors = SITE_CHROME_GROUND_CLASSES[ground];
-  const bordered = siteChromeHasBorder(ground);
-  const topRule = ground === "transparent" && rule === "top";
+const FOOTER_TONE_CLASSES = {
+  dark: { surface: "bg-surface-inverse", primary: "text-ink-on-inverse", secondary: "text-ink-on-inverse-muted", border: "" },
+  light: { surface: "bg-surface-base", primary: "text-ink-primary", secondary: "text-ink-secondary", border: "border-line-base" },
+} as const;
+
+function SiteFooterRoot({ columns, secondary, tone = "dark", className, style, ...rest }: SiteFooterProps) {
+  const colors = FOOTER_TONE_CLASSES[tone];
+  const isDark = tone === "dark";
+  const isLight = tone === "light";
 
   return (
     <footer
       {...rest}
       data-footer-root=""
-      className={cx("site-footer-dark", colors.surface, colors.primary, "py-lg", bordered ? cx("border-t", colors.border) : topRule ? "border-t border-line-base" : "", className)}
+      data-footer-tone={tone}
+      className={cx(isDark ? "site-footer-dark" : "site-footer-light", colors.surface, colors.primary, "py-lg", isLight ? cx("border-t", colors.border) : "", className)}
       style={{
         position: "relative",
         zIndex: UI_Z_SHELL,
-        ...(bordered || topRule ? { borderTopWidth: UI_BORDER_HAIRLINE } : {}),
+        ...(tone === "light" ? { borderTopWidth: UI_BORDER_HAIRLINE } : {}),
         ...style,
       }}
     >
@@ -67,7 +65,6 @@ function SiteFooterRoot({ columns, secondary, ground = "base", rule = "none", cl
               "flex flex-col gap-sm text-body-s",
               colors.secondary,
               "tablet:flex-row tablet:items-center tablet:justify-between",
-              columns && bordered ? cx("border-t pt-lg", colors.border) : "",
             )}
           >
             {secondary}
@@ -170,6 +167,8 @@ const LEGAL_LINK_CLASSES = cx(
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink-on-inverse",
 );
 
+const ICON_LINK_CLASSES = buttonClassName("ghost", "sm");
+
 const LEGAL_LINK_STYLE = { minHeight: UI_LAYOUT_TAP_TARGET, minWidth: UI_LAYOUT_TAP_TARGET } as const;
 
 /** Apply link safety to supported column anchors without changing their artwork or copy. */
@@ -265,9 +264,9 @@ function SiteFooterLegal({ entity, links, linksLabel, icons = [], home, iconsLab
       <IconGroup data-footer-region="icons" aria-label={iconsLabel}>
         <ul role="list" className="m-0 flex list-none flex-wrap items-center justify-center gap-x-sm p-0">
           {icons.map((link, index) => <li key={index}>
-            <a href={link.href} aria-label={link.label} rel={externalRel(link.href)} className={LEGAL_LINK_CLASSES} style={LEGAL_LINK_STYLE}>{link.icon}</a>
+            <a href={link.href} aria-label={link.label} rel={externalRel(link.href)} className={ICON_LINK_CLASSES} style={LEGAL_LINK_STYLE}>{link.icon}</a>
           </li>)}
-          {home ? <li><a href={home.href} aria-label={home.label} rel={externalRel(home.href)} className={LEGAL_LINK_CLASSES} style={LEGAL_LINK_STYLE}>
+          {home ? <li><a href={home.href} aria-label={home.label} rel={externalRel(home.href)} className={ICON_LINK_CLASSES} style={LEGAL_LINK_STYLE}>
             <span data-footer-home-plate="" aria-hidden="true" className="inline-flex items-center justify-center bg-surface-base" style={HOME_PLATE_STYLE}>
               <img src={home.markSrc} alt="" style={{ height: UI_BRANDMARK_HEIGHT_SM, width: "auto" }} />
             </span>

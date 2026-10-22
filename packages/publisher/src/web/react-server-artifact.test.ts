@@ -200,10 +200,9 @@ function runProbe(reactServer: boolean) {
       const frameShell = {
         brand: { assetId: "mark", label: frameRef("brand"), variant: "mark", size: "md" },
         skipLink: frameRef("skip"),
-        ground: "base",
         header: { surface: "glass", tone: "inverse" },
         nav: { label: frameRef("nav"), triggerLabel: frameRef("menu"), links: [{ href: "/help", label: frameRef("help") }] },
-        footer: { ground: "inverse", legal: { entity: frameRef("legal"), links: [] } },
+        footer: { tone: "dark", legal: { entity: frameRef("legal"), links: [] } },
       };
       const heroDocument = resolveSectionedViewDocument({ id: "packed-frame", sections: [{ id: "packed-frame-hero", kind: "hero", ground: "inverse", heading: ref("heading") }] }, resolver);
       const framed = fit => createElement(web.SiteFrame, {

@@ -161,13 +161,13 @@ describe("CaptureView", () => {
     expect(screen.getByRole("main")).not.toHaveTextContent(/Sign in|Contact us|NAV-SENTINEL/);
   });
 
-  it("passes ground to both the header and the footer, and renders the bare chrome when every slot is omitted", () => {
+  it("passes ground to the header and keeps the default dark footer, and renders the bare chrome when every slot is omitted", () => {
     const bare = renderToStaticMarkup(<CaptureView brand="Acme" heading="Keep in touch" form="Fields" />);
     expect(bare).toContain(renderToStaticMarkup(<SiteHeader brand="Acme" />) + "<main");
     expect(bare).toContain("</main>" + renderToStaticMarkup(<SiteFooter />) + "</div>");
     const grounded = renderToStaticMarkup(<CaptureView brand="Acme" heading="Keep in touch" form="Fields" ground="transparent" />);
     expect(grounded).toContain(renderToStaticMarkup(<SiteHeader surface="transparent" brand="Acme" />) + "<main");
-    expect(grounded).toContain("</main>" + renderToStaticMarkup(<SiteFooter ground="transparent" />) + "</div>");
+    expect(grounded).toContain("</main>" + renderToStaticMarkup(<SiteFooter tone="dark" />) + "</div>");
   });
 
   it("one front-door shell: environment links with aria-current, one <h1>, one top-level banner, one contentinfo holding SiteFooter.Legal", () => {

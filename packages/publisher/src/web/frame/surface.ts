@@ -16,17 +16,19 @@ export const SITE_SURFACE_KINDS: readonly SiteSurfaceKind[] = Object.freeze(["si
  *   link, marked current, with the brand leading at every width; and
  *   `origin` set, so the brand and root-relative legal links point at the public site.
  *
- * Every kind shares the brand, the skip link, the footer ground and the legal row, so
+ * Every kind shares the brand, the skip link and the legal row, so
  * a visitor sees one header and one footer across the brand's surfaces.
  */
 export function siteShellFor(config: SiteFrameConfig, kind: SiteSurfaceKind): SiteShellInput {
   if (!SITE_SURFACE_KINDS.includes(kind)) {
     throw new Error("siteShellFor: unknown surface kind; expected site, front-door, admin or demo.");
   }
+  if (Object.hasOwn(config, "ground")) {
+    throw new Error('siteShellFor: config contains unsupported field "ground".');
+  }
   const shared = {
     brand: config.brand,
     skipLink: config.skipLink,
-    ...(config.ground === undefined ? {} : { ground: config.ground }),
   };
   if (kind === "site") {
     const site = config.site ?? {};

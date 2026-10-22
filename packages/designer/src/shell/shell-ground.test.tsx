@@ -5,10 +5,10 @@ import { SiteFooter } from "./SiteFooter.js";
 import { SiteHeader } from "./SiteHeader.js";
 
 describe("shell ground plates (#1057)", () => {
-  it("paints SiteFooter inverse without host className escapes", () => {
+  it("paints SiteFooter dark without host className escapes", () => {
     render(
       <SiteFooter
-        ground="inverse"
+        tone="dark"
         columns={
           <SiteFooter.Column heading="Product">
             <a href="/features">Features</a>

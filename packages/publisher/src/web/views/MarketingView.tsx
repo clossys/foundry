@@ -44,8 +44,8 @@ export interface MarketingViewProps extends HTMLAttributes<HTMLDivElement> {
   /** The primary navigation, rendered in the banner beside the brand. Absent from the markup when omitted. */
   nav?: ReactNode;
   /**
-   * The plate of the header and footer, passed to both `SiteHeader` and
-   * `SiteFooter`. `"transparent"` matches `HeroView`'s chrome. The section
+   * The header presentation, passed through the existing `SiteHeader` helper.
+   * The footer uses its default dark tone. `"transparent"` matches `HeroView`'s chrome. The section
    * bands keep their own `*Ground` props.
    * @default "base"
    */
@@ -171,7 +171,7 @@ export function MarketingView({
         {faq !== undefined ? <Faq heading={faqHeading} description={faqDescription} items={faq} ground={faqGround} /> : null}
         <Hero headingLevel={2} heading={ctaHeading} description={ctaDescription} actions={ctaAction} ground={ctaGround} />
       </main>
-      <SiteFooter ground={ground} secondary={footerSecondary} />
+      <SiteFooter secondary={footerSecondary} />
     </div>
   );
 }

@@ -39,8 +39,8 @@ interface LegalViewChromeProps {
   /** The primary navigation, rendered in the banner beside the brand. Absent from the markup when omitted. */
   nav?: ReactNode;
   /**
-   * The plate of the header and footer, passed to both `SiteHeader` and
-   * `SiteFooter`. `"transparent"` matches `HeroView`'s chrome.
+   * The header presentation, passed through the existing `SiteHeader` helper.
+   * The footer uses its default dark tone. `"transparent"` matches `HeroView`'s chrome.
    * @default "base"
    */
   ground?: SiteChromeGround;
@@ -254,7 +254,7 @@ export function LegalView({
       <main className={PAGE_COLUMN_CLASSES} style={pageColumnStyle("prose")}>
         {content}
       </main>
-      <SiteFooter ground={ground === undefined ? "base" : ground} secondary={footerSecondary} />
+      <SiteFooter secondary={footerSecondary} />
     </div>
   );
 }

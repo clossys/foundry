@@ -1,6 +1,5 @@
 /**
- * Compile-time proof that the `transparent` and `transparent-inverse`
- * grounds belong to SiteFooter; SiteHeader has its separate surface/tone contract. `Shell.Header` and `Shell.Footer`
+ * Compile-time proof that SiteFooter accepts only dark/light tone; SiteHeader has its separate surface/tone contract. `Shell.Header` and `Shell.Footer`
  * keep the closed `base` / `inverse` set, so widening the site chrome's
  * ground type must not widen theirs.
  *
@@ -15,7 +14,7 @@ import { SiteHeader } from "../SiteHeader.js";
 
 export const siteHeaderAcceptsTransparent = <SiteHeader surface="transparent" brand={<a href="/">Home</a>} />;
 
-export const siteFooterAcceptsTransparent = <SiteFooter ground="transparent" secondary={<span>Legal</span>} />;
+export const siteFooterAcceptsDark = <SiteFooter tone="dark" secondary={<span>Legal</span>} />;
 
 export const shellHeaderAcceptsInverse = <Shell.Header ground="inverse">Header</Shell.Header>;
 
@@ -29,10 +28,17 @@ export const shellFooterRejectsTransparent = <Shell.Footer ground="transparent">
 
 export const siteHeaderAcceptsTransparentInverse = <SiteHeader surface="transparent" tone="inverse" brand={<a href="/">Home</a>} />;
 
-export const siteFooterAcceptsTransparentInverse = <SiteFooter ground="transparent-inverse" secondary={<span>Legal</span>} />;
+export const siteFooterAcceptsLight = <SiteFooter tone="light" secondary={<span>Legal</span>} />;
 
 // @ts-expect-error — `transparent-inverse` is a site-chrome ground only: Shell.Header keeps `base` | `inverse`.
 export const shellHeaderRejectsTransparentInverse = <Shell.Header ground="transparent-inverse">Header</Shell.Header>;
 
 // @ts-expect-error — `transparent-inverse` is a site-chrome ground only: Shell.Footer keeps `base` | `inverse`.
 export const shellFooterRejectsTransparentInverse = <Shell.Footer ground="transparent-inverse">Footer</Shell.Footer>;
+
+// @ts-expect-error footer ground is removed without an alias.
+export const siteFooterRejectsGround = <SiteFooter ground="base" />;
+// @ts-expect-error footer rule is fixed by tone.
+export const siteFooterRejectsRule = <SiteFooter rule="top" />;
+// @ts-expect-error footer tone is closed.
+export const siteFooterRejectsTone = <SiteFooter tone="inverse" />;

@@ -85,33 +85,33 @@ export const omittedPlacementGround: SiteShellInput = { ...shell, header: { grou
 // @ts-expect-error neither placement nor header ground is accepted
 export const overlayGround: SiteShellInput = { ...shell, header: { placement: "overlay", ground: "base" } };
 
-export const independentFooter: SiteShellInput = { ...shell, footer: { ground: "inverse", legal: config.legal } };
+export const independentFooter: SiteShellInput = { ...shell, footer: { tone: "dark", legal: config.legal } };
 export const disclosureCopy: SiteShellInput = { ...shell, nav: { label: { id: "nav.label" }, triggerLabel: { id: "nav.toggle" }, links: [] } };
 // @ts-expect-error the disclosure toggle label is a copy reference, never literal text
 export const literalDisclosureCopy: SiteShellInput = { ...shell, nav: { label: { id: "nav.label" }, triggerLabel: "Menu", links: [] } };
-// @ts-expect-error footer ground accepts only the existing chrome grounds
+// @ts-expect-error footer ground is removed
 export const invalidFooterGround: SiteShellInput = { ...shell, footer: { ground: "unknown", legal: config.legal } };
 
 
 export const overlayFooter: SiteShellInput = { ...shell, header: { surface: "glass", tone: "inverse" }, footer: { placement: "overlay", legal: config.legal } };
-export const flowFooter: SiteShellInput = { ...shell, footer: { placement: "flow", ground: "transparent", legal: config.legal } };
+export const flowFooter: SiteShellInput = { ...shell, footer: { placement: "flow", tone: "light", legal: config.legal } };
 // @ts-expect-error footer placement accepts only flow or overlay
 export const invalidFooterPlacement: SiteShellInput = { ...shell, footer: { placement: "fixed", legal: config.legal } };
-// @ts-expect-error overlay placement requires an opaque footer ground
+// @ts-expect-error footer ground is removed even with overlay placement
 export const transparentOverlayFooter: SiteShellInput = { ...shell, footer: { placement: "overlay", ground: "transparent", legal: config.legal } };
 
 // Appearance inputs are reachable from the canonical barrel and both web entries.
 type ActionEmphasis = [import("../../index.js").SiteLinkInput["emphasis"], import("../index.js").SiteLinkInput["emphasis"], import("../server.js").SiteLinkInput["emphasis"]];
 type BrandTone = [import("../../index.js").SiteBrandInput["tone"], import("../index.js").SiteBrandInput["tone"], import("../server.js").SiteBrandInput["tone"]];
 type HeaderTone = [NonNullable<import("../../index.js").SiteShellInput["header"]>["tone"], NonNullable<import("../index.js").SiteShellInput["header"]>["tone"], NonNullable<import("../server.js").SiteShellInput["header"]>["tone"]];
-type FooterRule = [import("../../index.js").SiteFooterInput["rule"], import("../index.js").SiteFooterInput["rule"], import("../server.js").SiteFooterInput["rule"]];
+type FooterTone = [import("../../index.js").SiteFooterInput["tone"], import("../index.js").SiteFooterInput["tone"], import("../server.js").SiteFooterInput["tone"]];
 type HeroEyebrowTone = [import("../../index.js").SectionedViewHeroSection["eyebrowTone"], import("../index.js").SectionedViewHeroSection["eyebrowTone"], import("../server.js").SectionedViewHeroSection["eyebrowTone"]];
 type HeroMeasure = [import("../../index.js").SectionedViewHeroSection["measure"], import("../index.js").SectionedViewHeroSection["measure"], import("../server.js").SectionedViewHeroSection["measure"]];
 type HeroHeadingScale = [import("../../index.js").SectionedViewHeroSection["headingScale"], import("../index.js").SectionedViewHeroSection["headingScale"], import("../server.js").SectionedViewHeroSection["headingScale"]];
 export const actionEmphasis: ActionEmphasis = ["primary", "secondary", undefined];
 export const brandTone: BrandTone = ["auto", "inverse", undefined];
 export const headerTone: HeaderTone = ["base", "inverse", undefined];
-export const footerRule: FooterRule = ["none", "top", undefined];
+export const footerTone: FooterTone = ["dark", "light", undefined];
 export const heroEyebrowTone: HeroEyebrowTone = ["accent", "muted", undefined];
 export const heroMeasure: HeroMeasure = ["prose", "wide", undefined];
 export const heroHeadingScale: HeroHeadingScale = ["default", "display", undefined];
@@ -121,8 +121,8 @@ export const invalidEmphasis: ActionEmphasis = ["danger", "secondary", undefined
 export const invalidBrandTone: BrandTone = ["base", "inverse", undefined];
 // @ts-expect-error header tone is closed
 export const invalidHeaderTone: HeaderTone = ["auto", "inverse", undefined];
-// @ts-expect-error footer rule is closed
-export const invalidRule: FooterRule = ["bottom", "top", undefined];
+// @ts-expect-error footer tone is closed
+export const invalidFooterTone: FooterTone = ["inverse", "light", undefined];
 // @ts-expect-error hero eyebrow tone is closed
 export const invalidEyebrowTone: HeroEyebrowTone = ["quiet", "muted", undefined];
 // @ts-expect-error hero measure is closed
@@ -209,3 +209,13 @@ export const staleNavigationTone: SiteShellInput = { ...shell, nav: { label: { i
 export type RemovedAuthViewBadge = Pick<import("../views/AuthView.js").AuthViewProps, "surfaceLabel">;
 // @ts-expect-error the obsolete PackReviewView badge has no compatibility alias
 export type RemovedPackReviewViewBadge = Pick<import("../views/PackReviewView.js").PackReviewViewProps, "surfaceLabel">;
+
+// @ts-expect-error shell global ground is removed.
+export const staleGlobalGround: SiteShellInput = { ...shell, ground: "base" };
+// @ts-expect-error config global ground is removed.
+export const staleConfigGround: SiteFrameConfig = { ...config, ground: "base" };
+// @ts-expect-error footer rule is removed.
+export const staleFooterRule: SiteShellInput = { ...shell, footer: { legal: config.legal, rule: "top" } };
+
+// @ts-expect-error even a former valid footer ground has no alias.
+export const staleValidFooterGround: SiteShellInput = { ...shell, footer: { legal: config.legal, ground: "base" } };

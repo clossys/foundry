@@ -6,7 +6,7 @@ import type { BrandmarkProps as ServerBrandProps, SiteFooterProps as ServerFoote
 const intro = { eyebrowTone: "muted", measure: "wide", headingScale: "display" } as const;
 const hero = { heading: "Opening", ...intro } as const;
 const brand = { variant: "lockup", size: "md", label: "Example home", markSrc: "/mark.svg", wordmark: "Example", tone: "inverse" } as const;
-const footer = { ground: "transparent", rule: "top" } as const;
+const footer = { tone: "light" } as const;
 intro satisfies SectionIntroProps;
 intro satisfies ServerIntroProps;
 hero satisfies HeroProps;
@@ -22,8 +22,12 @@ footer satisfies ServerFooterProps;
 ({ heading: "Opening", measure: "full" }) satisfies HeroProps;
 // @ts-expect-error Heading scales are closed.
 ({ headingScale: "large" }) satisfies SectionIntroProps;
-// @ts-expect-error Footer rules are closed.
-({ rule: "bottom" }) satisfies SiteFooterProps;
+// @ts-expect-error Footer rules are removed.
+({ rule: "top" }) satisfies SiteFooterProps;
+// @ts-expect-error Footer ground is removed.
+({ ground: "base" }) satisfies SiteFooterProps;
+// @ts-expect-error Footer tones are closed.
+({ tone: "inverse" }) satisfies SiteFooterProps;
 // @ts-expect-error Trigger tones are closed.
 ({ children: null, tone: "base" }) satisfies NavDisclosureProps;
 // @ts-expect-error Brand tones are closed.

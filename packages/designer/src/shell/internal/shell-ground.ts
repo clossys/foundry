@@ -29,7 +29,7 @@ export const SHELL_GROUND_CLASSES = {
 } as const satisfies Readonly<Record<ShellGround, ShellGroundClasses>>;
 
 /**
- * Ground vocabulary for the site chrome (`SiteHeader`, `SiteFooter`) only.
+ * Ground vocabulary for the `SiteHeader` chrome only.
  * `transparent` paints no plate and no border — the page beneath shows
  * through — and keeps the base ink. `transparent-inverse` paints no plate and
  * no border either, and carries the inverse ink, for chrome over a page that

@@ -61,7 +61,7 @@ export function MarketingView({
         {faq !== undefined ? <Faq heading={faqHeading} description={faqDescription} items={faq} ground={faqGround} /> : null}
         <Hero headingLevel={2} heading={ctaHeading} description={ctaDescription} actions={ctaAction} ground={ctaGround} />
       </main>
-      <SiteFooter ground={ground} secondary={footerSecondary} />
+      <SiteFooter secondary={footerSecondary} />
     </div>
   );
 }

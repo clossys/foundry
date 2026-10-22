@@ -61,8 +61,8 @@ export interface AuthViewProps extends HTMLAttributes<HTMLDivElement> {
   headerSecondaryAction?: ReactNode;
   /**
    * @deprecated Chrome belongs to `SiteFrame`; see `brand`.
-   * The plate of the header and footer, passed to both `SiteHeader` and
-   * `SiteFooter`.
+   * The header presentation, passed through the existing `SiteHeader` helper.
+   * The footer uses its default dark tone.
    * @default "base"
    */
   ground?: SiteChromeGround;
@@ -257,7 +257,7 @@ export function AuthView({
       >
         {content}
       </main>
-      {footer !== undefined ? footer : <SiteFooter ground={chromeGround} secondary={footerSecondary} />}
+      {footer !== undefined ? footer : <SiteFooter secondary={footerSecondary} />}
     </div>
   );
 }

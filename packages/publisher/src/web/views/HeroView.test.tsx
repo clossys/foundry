@@ -75,11 +75,11 @@ describe("HeroView Designer composition", () => {
 // Hero now owns the content section and type ramp; these snapshots retain the full shell and slot order.
 describe("HeroView golden markup", () => {
   it("renders every slot", () => {
-    expect(markup(FULL)).toMatchInlineSnapshot(`"<div class="relative flex min-h-dvh flex-col text-ink-primary"><div aria-hidden="true" class="pointer-events-none absolute inset-0 overflow-hidden"><div data-backdrop="">BACKDROP-SENTINEL</div></div><header data-header-root="" data-surface="transparent" data-tone="base" class="site-header-contract site-header-ink py-sm text-ink-primary" style="position:relative;z-index:var(--ui-z-shell, 20)"><div class="site-header-row"><div class="site-header-brand"><a href="/">BRAND-SENTINEL</a></div><div class="site-header-actions"><a href="/go">HEADER-ACTION-SENTINEL</a></div></div></header><main class="relative flex flex-1 flex-col items-center justify-center px-lg py-2xl"><section class="flex flex-col gap-xl w-full"><div data-section-intro="display" class="flex w-full flex-col mx-auto items-center text-center" style="max-width:none"><p class="text-body-s font-medium uppercase tracking-label text-ink-secondary">EYEBROW-SENTINEL</p><h1 class="text-display-m tablet:text-display-l tablet-lg:text-display-xl font-display leading-display text-balance text-ink-primary mt-sm">HEADING-SENTINEL</h1><p class="text-body-l text-pretty text-ink-secondary mt-2xl" style="max-width:var(--ui-width-hero-wide, 64rem)">DESCRIPTION-SENTINEL</p><div data-section-intro-actions="" class="flex flex-wrap items-center gap-x-lg gap-y-sm text-ink-primary justify-center mt-3xl"><a href="/hero">HERO-ACTION-SENTINEL</a></div></div><div class="w-full max-w-display mx-auto"><div data-media="">MEDIA-SENTINEL</div></div></section></main><footer data-footer-root="" class="site-footer-dark text-ink-primary py-lg" style="position:relative;z-index:var(--ui-z-shell, 20)"><div class="mx-auto flex w-full flex-col gap-lg" style="padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))"><div class="flex flex-col gap-sm text-body-s text-ink-secondary tablet:flex-row tablet:items-center tablet:justify-between"><div data-footer-composition="" class="site-footer-composition"><nav data-footer-region="links" aria-label="LINKS-NAME-SENTINEL"><ul role="list" class="m-0 flex list-none flex-wrap items-center justify-center gap-x-sm p-0"><li><a href="/one" class="inline-flex items-center justify-center px-xs text-inherit no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink-on-inverse" style="min-height:var(--ui-layout-tap-target, 44px);min-width:var(--ui-layout-tap-target, 44px)">LINK-ONE-SENTINEL</a></li><li><a href="/two" class="inline-flex items-center justify-center px-xs text-inherit no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink-on-inverse" style="min-height:var(--ui-layout-tap-target, 44px);min-width:var(--ui-layout-tap-target, 44px)">LINK-TWO-SENTINEL</a></li></ul></nav><div data-footer-region="icons"><ul role="list" class="m-0 flex list-none flex-wrap items-center justify-center gap-x-sm p-0"></ul></div><p data-footer-region="copyright" class="m-0">© 2031 ENTITY-SENTINEL</p></div></div></div></footer></div>"`);
+    expect(markup(FULL)).toMatchInlineSnapshot(`"<div class="relative flex min-h-dvh flex-col text-ink-primary"><div aria-hidden="true" class="pointer-events-none absolute inset-0 overflow-hidden"><div data-backdrop="">BACKDROP-SENTINEL</div></div><header data-header-root="" data-surface="transparent" data-tone="base" class="site-header-contract site-header-ink py-sm text-ink-primary" style="position:relative;z-index:var(--ui-z-shell, 20)"><div class="site-header-row"><div class="site-header-brand"><a href="/">BRAND-SENTINEL</a></div><div class="site-header-actions"><a href="/go">HEADER-ACTION-SENTINEL</a></div></div></header><main class="relative flex flex-1 flex-col items-center justify-center px-lg py-2xl"><section class="flex flex-col gap-xl w-full"><div data-section-intro="display" class="flex w-full flex-col mx-auto items-center text-center" style="max-width:none"><p class="text-body-s font-medium uppercase tracking-label text-ink-secondary">EYEBROW-SENTINEL</p><h1 class="text-display-m tablet:text-display-l tablet-lg:text-display-xl font-display leading-display text-balance text-ink-primary mt-sm">HEADING-SENTINEL</h1><p class="text-body-l text-pretty text-ink-secondary mt-2xl" style="max-width:var(--ui-width-hero-wide, 64rem)">DESCRIPTION-SENTINEL</p><div data-section-intro-actions="" class="flex flex-wrap items-center gap-x-lg gap-y-sm text-ink-primary justify-center mt-3xl"><a href="/hero">HERO-ACTION-SENTINEL</a></div></div><div class="w-full max-w-display mx-auto"><div data-media="">MEDIA-SENTINEL</div></div></section></main><footer data-footer-root="" data-footer-tone="dark" class="site-footer-dark bg-surface-inverse text-ink-on-inverse py-lg" style="position:relative;z-index:var(--ui-z-shell, 20)"><div class="mx-auto flex w-full flex-col gap-lg" style="padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))"><div class="flex flex-col gap-sm text-body-s text-ink-on-inverse-muted tablet:flex-row tablet:items-center tablet:justify-between"><div data-footer-composition="" class="site-footer-composition"><nav data-footer-region="links" aria-label="LINKS-NAME-SENTINEL"><ul role="list" class="m-0 flex list-none flex-wrap items-center justify-center gap-x-sm p-0"><li><a href="/one" class="inline-flex items-center justify-center px-xs text-inherit no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink-on-inverse" style="min-height:var(--ui-layout-tap-target, 44px);min-width:var(--ui-layout-tap-target, 44px)">LINK-ONE-SENTINEL</a></li><li><a href="/two" class="inline-flex items-center justify-center px-xs text-inherit no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink-on-inverse" style="min-height:var(--ui-layout-tap-target, 44px);min-width:var(--ui-layout-tap-target, 44px)">LINK-TWO-SENTINEL</a></li></ul></nav><div data-footer-region="icons"><ul role="list" class="m-0 flex list-none flex-wrap items-center justify-center gap-x-sm p-0"></ul></div><p data-footer-region="copyright" class="m-0">© 2031 ENTITY-SENTINEL</p></div></div></div></footer></div>"`);
   });
 
   it("renders only the heading and legal", () => {
-    expect(markup(MINIMAL)).toMatchInlineSnapshot(`"<div class="relative flex min-h-dvh flex-col text-ink-primary"><header data-header-root="" data-surface="transparent" data-tone="base" class="site-header-contract site-header-ink py-sm text-ink-primary" style="position:relative;z-index:var(--ui-z-shell, 20)"><div class="site-header-row"><div class="site-header-brand"><a href="/">BRAND-SENTINEL</a></div><div class="site-header-actions"></div></div></header><main class="relative flex flex-1 flex-col items-center justify-center px-lg py-2xl"><section class="flex flex-col gap-xl w-full"><div data-section-intro="display" class="flex w-full flex-col mx-auto items-center text-center" style="max-width:none"><h1 class="text-display-m tablet:text-display-l tablet-lg:text-display-xl font-display leading-display text-balance text-ink-primary">HEADING-SENTINEL</h1></div></section></main><footer data-footer-root="" class="site-footer-dark text-ink-primary py-lg" style="position:relative;z-index:var(--ui-z-shell, 20)"><div class="mx-auto flex w-full flex-col gap-lg" style="padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))"><div class="flex flex-col gap-sm text-body-s text-ink-secondary tablet:flex-row tablet:items-center tablet:justify-between"><div data-footer-composition="" class="site-footer-composition"><nav data-footer-region="links" aria-label="LINKS-NAME-SENTINEL"><ul role="list" class="m-0 flex list-none flex-wrap items-center justify-center gap-x-sm p-0"><li><a href="/one" class="inline-flex items-center justify-center px-xs text-inherit no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink-on-inverse" style="min-height:var(--ui-layout-tap-target, 44px);min-width:var(--ui-layout-tap-target, 44px)">LINK-ONE-SENTINEL</a></li><li><a href="/two" class="inline-flex items-center justify-center px-xs text-inherit no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink-on-inverse" style="min-height:var(--ui-layout-tap-target, 44px);min-width:var(--ui-layout-tap-target, 44px)">LINK-TWO-SENTINEL</a></li></ul></nav><div data-footer-region="icons"><ul role="list" class="m-0 flex list-none flex-wrap items-center justify-center gap-x-sm p-0"></ul></div><p data-footer-region="copyright" class="m-0">© 2031 ENTITY-SENTINEL</p></div></div></div></footer></div>"`);
+    expect(markup(MINIMAL)).toMatchInlineSnapshot(`"<div class="relative flex min-h-dvh flex-col text-ink-primary"><header data-header-root="" data-surface="transparent" data-tone="base" class="site-header-contract site-header-ink py-sm text-ink-primary" style="position:relative;z-index:var(--ui-z-shell, 20)"><div class="site-header-row"><div class="site-header-brand"><a href="/">BRAND-SENTINEL</a></div><div class="site-header-actions"></div></div></header><main class="relative flex flex-1 flex-col items-center justify-center px-lg py-2xl"><section class="flex flex-col gap-xl w-full"><div data-section-intro="display" class="flex w-full flex-col mx-auto items-center text-center" style="max-width:none"><h1 class="text-display-m tablet:text-display-l tablet-lg:text-display-xl font-display leading-display text-balance text-ink-primary">HEADING-SENTINEL</h1></div></section></main><footer data-footer-root="" data-footer-tone="dark" class="site-footer-dark bg-surface-inverse text-ink-on-inverse py-lg" style="position:relative;z-index:var(--ui-z-shell, 20)"><div class="mx-auto flex w-full flex-col gap-lg" style="padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))"><div class="flex flex-col gap-sm text-body-s text-ink-on-inverse-muted tablet:flex-row tablet:items-center tablet:justify-between"><div data-footer-composition="" class="site-footer-composition"><nav data-footer-region="links" aria-label="LINKS-NAME-SENTINEL"><ul role="list" class="m-0 flex list-none flex-wrap items-center justify-center gap-x-sm p-0"><li><a href="/one" class="inline-flex items-center justify-center px-xs text-inherit no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink-on-inverse" style="min-height:var(--ui-layout-tap-target, 44px);min-width:var(--ui-layout-tap-target, 44px)">LINK-ONE-SENTINEL</a></li><li><a href="/two" class="inline-flex items-center justify-center px-xs text-inherit no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink-on-inverse" style="min-height:var(--ui-layout-tap-target, 44px);min-width:var(--ui-layout-tap-target, 44px)">LINK-TWO-SENTINEL</a></li></ul></nav><div data-footer-region="icons"><ul role="list" class="m-0 flex list-none flex-wrap items-center justify-center gap-x-sm p-0"></ul></div><p data-footer-region="copyright" class="m-0">© 2031 ENTITY-SENTINEL</p></div></div></div></footer></div>"`);
   });
 });
 
@@ -197,10 +197,12 @@ describe("HeroView chrome", () => {
     return [header, ...header.querySelectorAll("*"), footer, ...footer.querySelectorAll("*")];
   }
 
-  it("carries no background, border or max-width class, and no maxWidth style", () => {
-    for (const element of chromeElements(dom(FULL))) {
+  it("keeps header transparent, footer opaque, and neither chrome width capped", () => {
+    const root = dom(FULL);
+    expect(classesOf(root.querySelector("footer")!)).toEqual(expect.arrayContaining(["site-footer-dark", "bg-surface-inverse"]));
+    for (const element of chromeElements(root)) {
       const className = element.getAttribute("class") ?? "";
-      for (const pattern of FORBIDDEN) {
+      for (const pattern of (element.closest("footer") ? FORBIDDEN.slice(1) : FORBIDDEN)) {
         expect(className, `<${element.tagName.toLowerCase()} class="${className}">`).not.toMatch(pattern);
       }
       const style = element.getAttribute("style") ?? "";
@@ -318,19 +320,19 @@ describe("HeroView inverse ground", () => {
     }
   });
 
-  it("passes Designer's transparent-inverse chrome ground to SiteHeader and SiteFooter", () => {
+  it("passes transparent-inverse to SiteHeader and keeps the default dark footer", () => {
     const root = inverse();
     expect(root.querySelector("header")!.outerHTML).toBe(
       renderToStaticMarkup(<SiteHeader surface="transparent" tone="inverse" brand={FULL.brand} actions={FULL.headerAction} />),
     );
     expect(root.querySelector("footer")!.outerHTML).toBe(
-      renderToStaticMarkup(<SiteFooter ground="transparent-inverse" secondary={<SiteFooter.Legal {...LEGAL} />} />),
+      renderToStaticMarkup(<SiteFooter tone="dark" secondary={<SiteFooter.Legal {...LEGAL} />} />),
     );
   });
 
-  it("keeps the banner and footer plate-less over the backdrop", () => {
+  it("keeps the banner plate-less and the footer opaque over the backdrop", () => {
     const root = inverse();
-    for (const chrome of [root.querySelector("header")!, root.querySelector("footer")!]) {
+    for (const chrome of [root.querySelector("header")!]) {
       for (const element of [chrome, ...chrome.querySelectorAll("*")]) {
         expect(element.getAttribute("class") ?? "").not.toMatch(/(^|\s)(?:[a-z-]+:)*(bg-|border(-|\s|$))/);
         expect(element.getAttribute("style") ?? "").not.toMatch(/border|background/i);
@@ -352,23 +354,23 @@ describe("HeroView surface footer", () => {
       const surface = () => dom({ ...FULL, ground, footer: "surface" });
       const transparent = () => dom({ ...FULL, ground });
 
-      it("paints Designer's base chrome plate with a hairline on the top edge only", () => {
+      it("keeps the default dark footer without dividers", () => {
         const footer = surface().querySelector("footer")!;
-        expect(classesOf(footer)).toEqual(expect.arrayContaining(["bg-surface-raised", "border-t", "border-line-base"]));
+        expect(classesOf(footer)).toEqual(expect.arrayContaining(["site-footer-dark", "bg-surface-inverse", "text-ink-on-inverse"]));
         expect(footer.className).not.toMatch(/(^|\s)border-(b|l|r|x|y|s|e)(\s|$)/);
         const style = footer.getAttribute("style") ?? "";
-        expect(style).toContain("border-top-width:var(--ui-border-hairline");
+        expect(style).not.toContain("border-top-width");
         expect(style).not.toMatch(/border-(bottom|left|right|inline|block)/);
         expect(footer.outerHTML).toBe(
-          renderToStaticMarkup(<SiteFooter ground="base" secondary={<SiteFooter.Legal {...LEGAL} />} />),
+          renderToStaticMarkup(<SiteFooter tone="dark" secondary={<SiteFooter.Legal {...LEGAL} />} />),
         );
       });
 
-      it("paints dark through the footer's own scope, with base ink tokens and no inverse ink classes", () => {
+      it("paints dark through the footer's own scope with paired inverse ink", () => {
         const footer = surface().querySelector("footer")!;
-        expect(classesOf(footer)).toContain("text-ink-primary");
-        expect(classesOf(footer.querySelector("nav")!.closest("footer > div > div")!)).toContain("text-ink-secondary");
-        expect(footer.className + " " + footer.querySelector("nav")!.closest("footer > div > div")!.className).not.toContain("on-inverse");
+        expect(classesOf(footer)).toContain("text-ink-on-inverse");
+        expect(classesOf(footer.querySelector("nav")!.closest("footer > div > div")!)).toContain("text-ink-on-inverse-muted");
+        expect(footer.className + " " + footer.querySelector("nav")!.closest("footer > div > div")!.className).not.toMatch(BASE_INK);
       });
 
       it("runs the full width and stays above the backdrop", () => {
