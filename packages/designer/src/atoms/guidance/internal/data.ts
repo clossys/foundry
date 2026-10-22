@@ -1524,7 +1524,7 @@ export const ATOM_GUIDANCE: Readonly<Record<string, AtomGuidance>> = {
       "reason": "direction is accepted without limit but has no visible limit zone until limit is supplied.",
       "enforcement": "ignored",
       "evidence": {
-        "source": "src/atoms/Meter.tsx",
+        "source": "src/atoms/Meter.server.tsx",
         "evidence": "limitPct === undefined"
       },
       "effectiveWhen": {
@@ -1541,7 +1541,7 @@ export const ATOM_GUIDANCE: Readonly<Record<string, AtomGuidance>> = {
       "reason": "previous and nonblank previousText must be supplied together; previous is finite, nonnegative and within scaleMax.",
       "enforcement": "runtime",
       "evidence": {
-        "source": "src/atoms/Meter.tsx",
+        "source": "src/atoms/Meter.server.tsx",
         "evidence": "(previous === undefined) !== (previousText === undefined)"
       }
     }
@@ -3682,7 +3682,7 @@ export const ATOM_API_FACTS: Readonly<Record<string, AtomApiFacts>> = {
           "evidence": "--color-status-danger-text:",
           "via": [
             {
-              "source": "src/atoms/Banner.tsx",
+              "source": "src/atoms/Banner.server.tsx",
               "evidence": "text-status-danger-text"
             }
           ]
@@ -3792,7 +3792,7 @@ export const ATOM_API_FACTS: Readonly<Record<string, AtomApiFacts>> = {
           "reason": "Required by the prop type; no package default is supplied."
         },
         "forwarding": {
-          "source": "src/atoms/Meter.tsx",
+          "source": "src/atoms/Meter.server.tsx",
           "evidence": "FILL_CLASSES[tone]"
         }
       },
@@ -3805,11 +3805,11 @@ export const ATOM_API_FACTS: Readonly<Record<string, AtomApiFacts>> = {
         "default": {
           "kind": "value",
           "value": "max",
-          "source": "src/atoms/Meter.tsx",
+          "source": "src/atoms/Meter.server.tsx",
           "evidence": "direction = \"max\""
         },
         "forwarding": {
-          "source": "src/atoms/Meter.tsx",
+          "source": "src/atoms/Meter.server.tsx",
           "evidence": "direction === \"max\""
         }
       },
@@ -3842,7 +3842,7 @@ export const ATOM_API_FACTS: Readonly<Record<string, AtomApiFacts>> = {
           "evidence": "var(--ui-border-rule,",
           "via": [
             {
-              "source": "src/atoms/Meter.tsx",
+              "source": "src/atoms/Meter.server.tsx",
               "evidence": "inset 0 0 0 ${UI_BORDER_RULE} currentColor"
             }
           ]
@@ -3907,7 +3907,7 @@ export const ATOM_API_FACTS: Readonly<Record<string, AtomApiFacts>> = {
           "evidence": "size = \"md\""
         },
         "forwarding": {
-          "source": "src/atoms/Spinner.tsx",
+          "source": "src/atoms/Spinner.server.tsx",
           "evidence": "SIZE_CLASSES[size]"
         }
       }
