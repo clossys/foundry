@@ -29,6 +29,7 @@ export {
   Dialog,
   Tabs,
   Table,
+  GridList,
   Field,
   Skeleton,
   Tooltip,
@@ -94,6 +95,9 @@ export type {
   TabsListProps,
   TabsTabProps,
   TabsPanelProps,
+  GridListProps,
+  GridListItemProps,
+  GridListSelectionCheckboxProps,
   TableProps,
   TableHeaderProps,
   TableColumnProps,
@@ -134,9 +138,11 @@ export {
   AccountMenu,
   EmptyState,
   DataTable,
+  ResourceList,
   DetailView,
   Pagination,
   Stat,
+  UsageMeter,
   Form,
   useFormValidation,
   FieldGroup,
@@ -168,6 +174,7 @@ export {
   ArticleBody,
   SectionFrame,
   ConsentBanner,
+  NewsletterBand,
   SECTION_GROUND_CLASSES,
 } from "./blocks/index.js";
 export type {
@@ -184,6 +191,9 @@ export type {
   AccountMenuPreference,
   AccountMenuSection,
   EmptyStateProps,
+  ResourceListProps,
+  ResourceListItem,
+  ResourceListAction,
   DataTableProps,
   DataTableColumn,
   DataTableSelectionMode,
@@ -191,6 +201,8 @@ export type {
   DetailViewField,
   PaginationProps,
   StatProps,
+  UsageMeterProps,
+  UsageMeterThreshold,
   StatTrend,
   FormProps,
   FormError,
@@ -295,10 +307,17 @@ export type {
   PricingTableProps,
   PricingTier,
   PricingTableHeadingLevel,
+  PricingTierPrice,
+  PricingCellData,
+  PricingComparison,
+  PricingComparisonGroup,
+  PricingComparisonRow,
   TestimonialProps,
   ArticleBodyProps,
   SectionFrameProps,
   ConsentBannerProps,
+  NewsletterBandProps,
+  NewsletterStatus,
   SectionMeasure,
 } from "./blocks/index.js";
 
@@ -414,6 +433,8 @@ export type { AreaChartProps, AreaChartSeries, HeatmapProps, StatusStripProps, S
 export { Item } from "./blocks/items/Item.js";
 export { AppNavigation } from "./blocks/AppNavigation.js";
 export type { AppNavigationProps } from "./blocks/AppNavigation.js";
+export { PageBar } from "./blocks/PageBar.js";
+export type { PageBarProps, PageBarPage, PageBarCrumb, PageBarAction, PageBarDestination, PageBarLabels, PageBarWidth } from "./blocks/PageBar.js";
 export { validateAppNavigationTree, getAppNavigationAncestry, getAppNavigationBreadcrumbs } from "./blocks/app-navigation-tree.js";
 export type { AppNavigationNode, AppNavigationLeaf, AppNavigationDestination, AppNavigationTarget, AppNavigationBreadcrumb } from "./blocks/app-navigation-tree.js";
 export { Items } from "./blocks/items/Items.js";
@@ -441,3 +462,7 @@ export type { DataTableViewModel, DataTableViewModelV1, DataTableMode, DataTable
 
 export { FilterBuilder } from "./blocks/FilterBuilder.js";
 export type { FilterBuilderProps, FilterBuilderLabels } from "./blocks/FilterBuilder.js";
+export { AccessMatrix } from "./blocks/AccessMatrix.js";
+export type { AccessCellValue, AccessRole, AccessPermission, AccessGroup, AccessMatrixValue, AccessMatrixChange, AccessMatrixLabels, AccessMatrixProps } from "./blocks/AccessMatrix.js";
+export { ColumnMapper } from "./blocks/ColumnMapper.js";
+export type { ColumnMapperTarget, ColumnMapperSource, ColumnMapping, ColumnMapperIssue, ColumnMapperLabels, ColumnMapperProps } from "./blocks/ColumnMapper.js";

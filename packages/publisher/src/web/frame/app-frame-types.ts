@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { AccountMenuActor, AccountMenuProps, AccountMenuSection, AppNavigationProps, CommandMenuProps } from "@clossys/designer/blocks";
+import type { PageBarWidth, PageBarDestination, PageBarCrumb, PageBarAction, PageBarPage, AccountMenuActor, AccountMenuProps, AccountMenuSection, AppNavigationProps, CommandMenuProps } from "@clossys/designer/blocks";
 import type { ThemeProviderProps, ThemeToggleProps } from "@clossys/designer/theme";
 
 /** Resolved host brand. The accessible label must contain the visible wordmark. */
@@ -44,34 +44,11 @@ export interface AppFrameRightPanel {
   closeLabel?: string;
 }
 
-type FrameWidth = "contained" | "full";
-interface FrameDestination { id: string; label: string; href: string }
-interface FrameCrumb {
-  id: string;
-  label: string;
-  href?: string;
-  /** Alternatives at this level, rendered with the existing Menu atom. */
-  siblings?: readonly FrameDestination[];
-}
-type FrameAction = { id: string; label: string; primary?: boolean; isDisabled?: boolean } & (
-  | { href: string; onAction?: never }
-  | { href?: never; onAction: () => void }
-);
-interface FramePage {
-  /** The frame renders this as the one page h1; route content supplies no page header. */
-  title: string;
-  /** Ancestors after the brand; an optional last entry matching title supplies current-page siblings. */
-  breadcrumb?: readonly FrameCrumb[];
-  status?: ReactNode;
-  description?: ReactNode;
-  updatedAt?: ReactNode;
-  meta?: ReactNode;
-  /** Only the first primary request receives primary styling. */
-  actions?: readonly FrameAction[];
-  scope?: ReactNode;
-  /** Default until the user chooses a width; the frame never persists that choice. @default "contained" */
-  width?: FrameWidth;
-}
+type FrameWidth = PageBarWidth;
+type FrameDestination = PageBarDestination;
+type FrameCrumb = PageBarCrumb;
+type FrameAction = PageBarAction;
+type FramePage = PageBarPage;
 
 export interface AppFrameProps {
   brand: AppFrameBrand;

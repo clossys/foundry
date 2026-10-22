@@ -24,7 +24,7 @@ exports from `@clossys/designer/atoms`. The barrel remains client-only. Read
 the packed [atom selection guide](skill/atoms-guide.md) for purpose, use and
 avoidance, alternatives, content, anatomy, block composition, accessibility,
 medium evidence, represented configurations and partial token dependencies.
-Four display groups and ten families place forty-five established atom/chart leaves
+Four display groups and ten families place forty-six established atom/chart leaves
 exactly once. Groups and families are navigation; only leaves are selectable.
 Existing IDs such as `act.link` and `reveal.tabs` remain unchanged.
 
@@ -158,6 +158,16 @@ same way `tokens` sits below all of `ui`). See "Placement rules" below for
 what distinguishes reusable atoms and blocks. Whole-page compositions are
 surfaces and live in `@clossys/publisher/web`.
 
+**Stack boundary.** This package offers only Clossys tokens, atoms and
+blocks, with the shell, charts and theme alongside them. Atoms are built on
+React Aria Components (`react-aria-components`); no other headless or
+component-kit library is used anywhere in the package. Blocks build on
+atoms, tokens, icons and other blocks, and import `react-aria-components`
+only for types, except three listed blocks that still import it directly:
+`Toolbar`, `CommandMenu` and the internal disclosure row
+(`src/blocks/internal/disclosure-row.tsx`). A package test enforces this,
+and its exception list can only shrink.
+
 - **`icons`** — glyph data only, no components: 40 `IconNode` exports
   (`AlertTriangle`, `ArrowRight`, `BookOpen`, `Box`, `Briefcase`,
   `Building2`, `Calendar`, `Check`, `CheckCircle`, `ChevronDown`,
@@ -170,22 +180,22 @@ surfaces and live in `@clossys/publisher/web`.
   meant to be passed to the `Icon` atom's `glyph` prop. See "Icon glyph
   data" below.
 - **`atoms`** — single-purpose: composes no other atom, or its parts are
-  homogeneous repeats rather than named regions. Thirty-three ship:
-  `Button`, `Icon`, `TextField`, `Badge`,
+  homogeneous repeats rather than named regions. Thirty-seven ship:
+  `Button`, `IconButton`, `Icon`, `TextField`, `Badge`,
   `Card`, `Breadcrumb`, `Link`, `Checkbox`, `Switch`, `Select`, `Textarea`,
   `Avatar`, `Spinner`, `Menu`, `Dialog`, `Tabs`, `Table`, `Field`,
   `Skeleton`, `Tooltip`, `Banner`, `RadioGroup`, `Popover`, `DateField`,
   `ComboBox`, `SearchField`, `FileTrigger`, `Disclosure`, `ProgressBar`,
-  `Separator`, `Chip`, `StatusMark`, `Meter`.
+  `Separator`, `Chip`, `StatusMark`, `Meter`, `ResizeHandle`, `Logomark`, `GridList`.
 - **`blocks`** — owns the internal layout of multiple named regions,
   typically by composing one or more atoms (and/or layout) into something
-  with a real job on a page. Forty-two ship: `AccountMenu`, `PageHeader`, `EmptyState`,
-  `DataTable`, `DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`,
+  with a real job on a page. Fifty ship: `AccountMenu`, `PageHeader`, `EmptyState`,
+  `DataTable`, `DetailView`, `Pagination`, `UsageMeter`, `Stat`, `Form`, `FieldGroup`,
   `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `SectionFrame`,
   `MarketingChapter`, `FeatureGrid`, `Item`, `Items`, `Tree`, `AnatomyCallouts`, `RecordLedger`, `Scene`, `Matrix`,
   `Specimen`, `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`,
-  `PricingTable`, `Testimonial`, `ArticleBody`, `ConsentBanner`, `Panel`, `Drawer`,
-  `ResizablePane`, `CommandMenu`, `AppNavigation` and `GroupedTable` (see "Blocks" below).
+  `PricingTable`, `Testimonial`, `ArticleBody`, `ConsentBanner`, `NewsletterBand`, `Panel`, `Drawer`,
+  `ResizablePane`, `CommandMenu`, `AppNavigation`, `PageBar`, `GroupedTable`, `Lockup`, `Explorer`, `CatalogWorkspace`, `Chat` and `ResourceList` (see "Blocks" below).
 - **`shell`** — the persistent frame around content (nav, layout chrome)
   that provides the slots content fills. One per app; survives route
   changes that swap out the content underneath it. `Shell` ships with five
@@ -454,10 +464,23 @@ source file's own header for the exact probe and its result). Today that's:
 | Subpath | Server-safe members |
 | --- | --- |
 | `@clossys/designer/atoms/server` | `Logomark`, `Avatar`, `Badge`, `Banner`, `Card`, `Field`, `Icon`, `Meter`, `Skeleton`, `Spinner`, `StatusMark`, `buttonLinkClassName`, `iconButtonClassName`, `iconButtonLinkClassName`, `mergeUiClasses` |
-| `@clossys/designer/blocks/server` | `Lockup`, `AnatomyCallouts`, `ArticleBody`, `Matrix`, `ContentSection`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `Item`, `Items`, `MarketingChapter`, `MediaFigure`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `RecordLedger`, `Scene`, `SectionFrame`, `SectionHeader`, `SectionIntro`, `Specimen`, `SpecimenPanel`, `Stat`, `StatusList`, `Testimonial`, `Tree` |
+| `@clossys/designer/blocks/server` | `Lockup`, `AnatomyCallouts`, `ArticleBody`, `Matrix`, `ContentSection`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `Item`, `Items`, `MarketingChapter`, `MediaFigure`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `RecordLedger`, `Scene`, `SectionFrame`, `SectionHeader`, `SectionIntro`, `Specimen`, `SpecimenPanel`, `Stat`, `StatusList`, `Testimonial`, `Tree`, `UsageMeter` |
 | `@clossys/designer/shell/server` | `Shell`, `SiteFooter`, `SiteHeader`, `SkipLink` |
 | `@clossys/designer/charts/server` | `ChartFrame`, `BarChart`, `LineChart` (static), `WaterfallChart`, `RangeChart`, `ScatterChart`, `AreaChart` (static), `Heatmap` (static), `StatusStrip` (static), `Sparkline` |
 | `@clossys/designer/theme/server` | `getThemeInitScript` |
+
+`Banner`, `Meter` and `Spinner` are server-safe through their own plain
+variants (`Banner.server.tsx`, `Meter.server.tsx`, `Spinner.server.tsx`), the
+way `Avatar` is: the same props, classes and visible markup as the client
+atom exported from `@clossys/designer/atoms`, which is built on
+react-aria-components. The server `Meter` has no `meter` role, the server
+`Spinner` names a labelled ring with `role="status"`, and the server
+`Banner` dismiss control is a native `<button>`. `UsageMeter` follows the same
+split: `@clossys/designer/blocks/server` exports a twin
+(`UsageMeter.server.tsx`) built on the plain `Meter`, while
+`@clossys/designer/blocks` keeps the client one, whose meter has the `meter`
+role and is named by the used text. Parity tests pin each pair to the same
+classes and structure.
 
 Everything not listed above stays reachable only from its original barrel,
 inside a client boundary — nothing was removed, renamed, or restructured to
@@ -519,6 +542,13 @@ both.
 **Scope.** `compiled.css` is generated from `src/atoms/`, `src/blocks/`, and
 `src/shell/` — enough for Hero, feature blocks, and site chrome on a pre-auth
 marketing page. `charts` and `theme` remain Tailwind-native only.
+
+**`className` on this path.** Nothing compiles your own markup here, so a
+class passed through `className` takes effect only when it is already in
+`styles/compiled.css` (which holds the utilities the package's own atoms,
+blocks and shell use) or is defined in your own CSS. Any other utility class
+does nothing. Search `compiled.css` for a class before relying on it, or
+style the wrapper with your own CSS.
 
 Verify the stylesheet your app loads with `designer-hero-css-check
 path/to/your.css` (or point it at `node_modules/@clossys/designer/styles/compiled.css`
@@ -1038,7 +1068,8 @@ to another. Also match the script's `defaultTheme` with the provider's
 - **`react-aria-components`** — every interactive atom (`Button`,
   `TextField`, `Link`, `Checkbox`, `Switch`, `Select`, `Textarea`, `Menu`,
   `Dialog`, `Tabs`, `Table`, `Tooltip`, `RadioGroup`, `Popover`, `DateField`,
-  `ComboBox`, `SearchField`, `FileTrigger`, `Disclosure`, `ProgressBar`) is
+  `ComboBox`, `SearchField`, `FileTrigger`, `Disclosure`, `ProgressBar`, and
+  the client `Meter`, `Spinner` and `Banner` dismiss control) is
   built on its primitives rather than a hand-rolled `<button>`/`<input>`/`<a>`. It
   supplies keyboard interaction (Enter/Space activation, focus management,
   arrow-key navigation), the ARIA attributes a screen reader needs
@@ -1046,10 +1077,13 @@ to another. Also match the script's `defaultTheme` with the provider's
   label association, `role="menu"`/`aria-checked`/`aria-expanded` and the
   rest), and disabled-state semantics — the kind of behavior that is easy to
   get subtly wrong by hand and hard to notice is wrong without a screen
-  reader or a keyboard-only pass. `Badge`, `Card`, `Avatar`, `Spinner`,
-  `Skeleton`, and `Banner` compose no other atom and aren't interactive, so
+  reader or a keyboard-only pass. `Badge`, `Card`, `Avatar`, and
+  `Skeleton` compose no other atom and aren't interactive, so
   they're plain markup — there's no react-aria-components primitive for any
-  of them; `Field` renders no react-aria-components primitive of its own
+  of them. `Meter` is built on its `Meter`, a labelled `Spinner` on its
+  `ProgressBar` with `isIndeterminate`, and the `Banner` dismiss control on its
+  `Button`; each has a plain server-safe twin (see "Server Components"
+  below). `Field` renders no react-aria-components primitive of its own
   either, since the whole point of it is wrapping a control that doesn't
   have one. `Breadcrumb`, `Select`, and `Menu` build on it for their
   collection components specifically: `Breadcrumbs`/`Breadcrumb`/`Link`
@@ -1408,7 +1442,7 @@ function Status() {
 import { Card } from "@clossys/designer/atoms";
 
 function Panel() {
-  return <Card className="max-w-sm">Plain content, raised off the page.</Card>;
+  return <Card>Plain content, raised off the page.</Card>;
 }
 ```
 
@@ -1665,10 +1699,17 @@ function LoadingPrompts() {
 its render site (correct by default inside a colored `Button`, with no
 `variant` prop of its own to keep in sync with the parent's). `label` is
 optional: provide it when the spinner is itself the only signal that
-something is loading — it then renders `role="status"` with that as its
-accessible name. Omit it when the spinner is purely decorative (e.g. next
+something is loading — it then renders react-aria-components' `ProgressBar`
+(`role="progressbar"`, indeterminate, so no `aria-valuenow`, and
+`inline-block` so it stays inline without a CSS reset) with that as its
+accessible name, wrapping the `<svg>` ring. The relationship attributes
+(`aria-labelledby`, `aria-describedby`, `aria-details`) go to that named
+progress bar; every other attribute, `className` included, stays on the ring.
+Omit it when the spinner is purely decorative (e.g. next
 to a button's own "Saving…" text, which already announces the state) — it
-then renders `aria-hidden="true"` instead.
+then renders the bare `<svg>` with `aria-hidden="true"` instead. The
+`Spinner` from `@clossys/designer/atoms/server` is the same `<svg>` without
+react-aria-components, and names a labelled ring with `role="status"`.
 
 ### `Menu`
 
@@ -1858,6 +1899,19 @@ tab-bar example is called out there by name). `Tabs.List` needs its own
 `aria-label` (or `aria-labelledby`) when a page has more than one tab
 list, the same way `Breadcrumb`'s `<nav>` does — there's no sensible
 default, since "Tabs" describes every tab list equally badly.
+
+### `GridList` (draft)
+
+Named, stacked interactive records. Compose `GridList.Item` with required
+`textValue` and `GridList.SelectionCheckbox` with a host-authored `aria-label`.
+Provide `aria-label` or `aria-labelledby` on the root; missing naming throws
+`TypeError`. The peer supplies arrow navigation, Home/End and typeahead.
+Space toggles selection; Enter performs `onAction` even during selection.
+An `href` row routes on Enter or press while selection is empty; during active
+selection, pressing the row toggles selection without navigating.
+Layout is fixed to stack and selection behavior to toggle. A checked checkbox
+and `data-selected` expose selection alongside its surface color. Supply empty
+content through `renderEmptyState` to keep it within the grid.
 
 ### `Table`
 
@@ -2063,9 +2117,11 @@ variants and `Badge`'s status variants already share. `role`/`aria-live`
 follow severity: `danger` is an assertive `role="alert"`; every other
 variant is a polite `role="status"`, the identical severity-to-live-region
 mapping `Toaster`'s own `ToasterContent` already uses. `onDismiss` is
-optional — supplying it renders a dismiss control, but `Banner` never
+optional — supplying it renders a dismiss control (react-aria-components'
+`Button`, called through its `onPress`), but `Banner` never
 removes itself from the tree on its own; the caller decides whether/when it
-stops rendering.
+stops rendering. The `Banner` from `@clossys/designer/atoms/server` has the
+same markup with a plain `<button>` for the dismiss control.
 
 ### `RadioGroup`
 
@@ -2432,12 +2488,24 @@ weight), so neither depends on colour alone; the other tones fill solid. `emphas
 panel: `text-h1`, `text-h0` via `@md:text-h0` at container widths of 28rem or more, normal weight,
 tabular, with the limit beside it in secondary ink and the bar under both.
 
-The bar is `aria-hidden` and there is no `<meter>` element: the visible
-text carries the meaning for every reader. Positions use logical inline
+The bar is `aria-hidden`: the visible text carries the meaning for every
+reader. From `@clossys/designer/atoms` the root is react-aria-components'
+`Meter` (`role="meter progressbar"` with `aria-valuenow`, `aria-valuemin`
+and `aria-valuemax`), named by the visible `valueText` and announcing it as
+its value text, so a screen reader hears the words a sighted reader sees.
+An optional `label` names the meter instead (as its `aria-label`), leaving
+`valueText` as the visible text and the value text; the server `Meter`
+accepts `label` and ignores it. From `@clossys/designer/atoms/server` (server-safe, no react-aria-components)
+the markup is identical except that the root carries no role and no value
+attributes. The client `Meter` forwards `id`, `data-*`, the `aria-label`,
+`aria-labelledby`, `aria-describedby` and `aria-details` attributes, `dir`,
+`lang`, `hidden` and the common pointer, mouse and scroll handlers to the
+root; other native `<div>` attributes (for example `title` or `tabIndex`)
+are not forwarded by react-aria-components. Positions use logical inline
 properties, so the bar fills from the inline start in both directions. A
 value beyond `scaleMax` draws a full bar. A non-finite or non-positive
 `scaleMax`, or a non-finite or negative `value`/`limit`, throws a
-`RangeError`. Server-safe.
+`RangeError`.
 
 ## Blocks
 
@@ -2682,6 +2750,21 @@ A form's own layout: an optional heading region, the fields region
 region — five regions that differ in kind, and a page can hold two `Form`s
 (two independent forms on one settings page), which is what makes this a
 block rather than a view.
+
+`actionsLayout` accepts `"end"` (the default) or `"stretch"`. At and above
+the existing `tablet` breakpoint (768px), `end` puts natural-width actions
+in one row at the card's inline end, including in RTL. `stretch` keeps
+every action full width in a single column at every size. Below `tablet`,
+both layouts stack full width. The actions container exposes
+`data-actions-layout`; with no actions, no container renders. An unknown
+layout is a type error and throws a `TypeError` at runtime.
+The tertiary "forgot password" link belongs under its field, outside the actions row.
+
+Pass secondary actions first and the primary action last. `Form` keeps
+that DOM order and Tab order in both layouts. Width belongs to the
+surrounding page or card: pair short sign-in, reset, and activation forms
+with a narrow card and contact forms with a medium card. The corresponding
+PageView `width` API is pending [#2332](https://github.com/clossys/foundry/issues/2332).
 
 **`Form` implements no validation logic or form state, deliberately.**
 react-aria-components already carries validation through each field's own
@@ -4266,17 +4349,21 @@ A page can hold two `PricingTable`s (a monthly/annual toggle implemented
 as two tables a consumer switches between), which is what makes it a
 block rather than a view (test 3).
 
-Each tier's `name`, `price`, `features` (a plain list of `ReactNode`s —
+Each tier's `name`, one of `price` or `priceByInterval`, `features` (a plain list of `ReactNode`s —
 this block has no opinion about how a consumer represents "not included"),
 and `cta` slot are required; `description` and `badge` are optional.
-`isHighlighted` marks the recommended tier with an accent border ONLY —
+`isHighlighted` marks the recommended tier card with an accent border —
 pair it with `badge` for a visible, non-colour label, since a border alone
 would be invisible to a screen reader and disappear in greyscale, the same
 colour-is-never-the-only-channel reasoning `Stat`'s trend indicator
 documents. `badge` has no built-in default text ("Recommended" or
 similar) — this package ships no copy of its own, so there is nothing
 sensible to default it to. Built on this package's own `Card` and `Badge`
-atoms (blocks may compose atoms).
+atoms and, when `comparison` is supplied, the `Matrix` block, with the
+shared section `ground` inks (blocks may compose atoms and other blocks).
+
+See [interval and comparison examples](#pricingtable-interval-and-comparison-examples)
+for interval prices, grouped comparisons, ground inks and host controls.
 
 ### `Testimonial`
 
@@ -4377,6 +4464,55 @@ Measure and section padding come from the parent `SectionFrame` (`measure="prose
 article plus a sidebar callout, or two comparison columns), which is what
 keeps it at this layer rather than being a view (test 3).
 
+### `ResourceList` (draft)
+
+A selectable record list with toolbar, bulk, recovery and footer regions.
+All visible and assistive copy comes from host props. A non-blank `aria-label`
+is required in every state (empty, loading, error and populated). Multiple selection requires
+`selectRowLabel`; items with actions require `actionsLabel`; loading requires
+`loadingLabel`. Missing or blank labels throw `TypeError`. Error content has
+priority over loading, then empty content and records. Loading unmounts the grid
+and announces one status while decorative skeleton rows stand in for content.
+An empty collection renders `EmptyState` directly, with no grid rows.
+
+```tsx
+import { useState } from "react";
+import { Badge } from "@clossys/designer/atoms";
+import { ResourceList, type ResourceListItem } from "@clossys/designer/blocks";
+
+const notes: ResourceListItem[] = [
+  { id: "r1", textValue: "Quarterly planning notes", title: "Quarterly planning notes",
+    description: "Shared with the leadership group.", meta: "Edited 2 days ago",
+    status: <Badge variant="info">Draft</Badge>, href: "/docs/r1",
+    actions: [{ id: "dup", label: "Duplicate", onAction: () => {} },
+      { id: "del", label: "Delete note", onAction: () => {}, isDestructive: true }] },
+  { id: "r2", textValue: "Vendor onboarding checklist", title: "Vendor onboarding checklist",
+    meta: "Edited last week", status: <Badge variant="success">Published</Badge> },
+  { id: "r3", textValue: "Archived roadmap", title: "Archived roadmap",
+    isDisabled: true, meta: "Read only" },
+];
+
+export function Notes() {
+  const [selected, setSelected] = useState<"all" | Set<string>>(new Set());
+  return <ResourceList aria-label="Notes" items={notes} selectionMode="multiple"
+    selectedKeys={selected} onSelectionChange={setSelected}
+    selectRowLabel={text => `Select ${text}`} actionsLabel={text => `Actions for ${text}`}
+    emptyState={{ title: "No notes yet", description: "Add a note to begin." }}
+    bulkBar={<p>Selected notes</p>} footer={<a href="/docs">Browse notes</a>} />;
+}
+```
+
+The first two actions appear inline from the tablet breakpoint; smaller layouts
+put them in an overflow menu, with remaining actions in the wide-layout overflow.
+Overflow uses the existing Menu placement. Enter activates `onAction` while
+records are selected. Href activation follows peer toggle semantics: Enter and
+press navigate with empty selection; during active selection, row presses toggle
+selection without navigation. Disabled actions may provide
+`disabledReason`, associated through `aria-describedby`. The host supplies
+`error`, `bulkBar`, and `footer` content; bulk content appears while an enabled
+record is selected. Long titles truncate, descriptions clamp, and meta wraps.
+This client block is exported through `blocks`, not `blocks/server`.
+
 ### `AccountMenu`
 
 A Navigation Material combining Avatar, Button, Icon, Tooltip and Menu. The host
@@ -4412,6 +4548,94 @@ interaction. It is not exported from `blocks/server`. Tests cover synthetic
 viewport geometry, normal and forced-color focus, reduced-motion transitions,
 long actor details, retained hidden-host handoff, and client hydration;
 they do not establish a separate native server or browser-qualification claim.
+
+### `NewsletterBand`
+
+Draft email capture with caller-supplied copy and controlled status. Import
+`NewsletterBand`, `NewsletterBandProps` and `NewsletterStatus` from
+`@clossys/designer/blocks`; the internal root entry also exports them.
+
+```tsx
+import { useState } from "react";
+import { NewsletterBand, type NewsletterStatus } from "@clossys/designer/blocks";
+
+function NativeNewsletter() {
+  return <section>
+    <h2 id="native-newsletter">Get product updates</h2>
+    <NewsletterBand
+      aria-labelledby="native-newsletter"
+      layout="stacked"
+      action="/subscribe"
+      emailLabel="Email address"
+      submitLabel="Subscribe"
+      pendingLabel="Subscribing"
+      sentMessage="Thanks, check your inbox to confirm"
+      failedMessage="Something went wrong. Try again."
+      privacyNote="Read our privacy notice before signing up."
+    />
+  </section>;
+}
+
+function ControlledNewsletter({ subscribe }: { subscribe: (email: string) => Promise<void> }) {
+  const [status, setStatus] = useState<NewsletterStatus>("idle");
+  return <section>
+    <h2 id="controlled-newsletter">Get product updates</h2>
+    <NewsletterBand
+      aria-labelledby="controlled-newsletter"
+      layout="inline"
+      status={status}
+      name="address"
+      emailLabel="Email address"
+      submitLabel="Subscribe"
+      pendingLabel="Subscribing"
+      sentMessage="Thanks, check your inbox to confirm"
+      failedMessage="Something went wrong. Try again."
+      hint="Use an address where you can receive a confirmation."
+      privacyNote="Read our privacy notice before signing up."
+      onSubmit={email => {
+        setStatus("pending");
+        void subscribe(email).then(
+          () => setStatus("sent"),
+          () => setStatus("failed"),
+        );
+      }}
+    />
+  </section>;
+}
+```
+
+| Prop | Contract |
+| --- | --- |
+| `emailLabel`, `submitLabel`, `pendingLabel` | Required strings for the field, button and pending announcement. |
+| `sentMessage`, `failedMessage` | Required `ReactNode` status content. |
+| `hint`, `privacyNote` | Optional `ReactNode` paragraphs below the row. |
+| `status` | Controlled `NewsletterStatus`; defaults to `idle`. |
+| `layout` | `inline` (default) places the button beside the field from tablet; `stacked` keeps a column. Both use full-width buttons below tablet. |
+| `action` | Optional native-post destination; a same-origin path beginning with one slash, without whitespace, control characters or backslashes. Invalid values throw `TypeError`, including when a handler is also supplied. |
+| `onSubmit` | Optional `(email, event) => void` handler; receives the trimmed field value after native validation and prevents the native post. Supply this or `action`. |
+| `method`, `name` | `method` is `post`; `name` defaults to the technical key `email`. A supplied name must be non-empty and contain no whitespace. |
+| `ground` | `base` (default), `sunken` or `inverse`. |
+| `aria-label`, `aria-labelledby` | Host-supplied accessible form name or external heading reference. |
+| `className`, `style` | Applied to the form. |
+
+| Status | Behaviour |
+| --- | --- |
+| `idle` | Required native email field and submit button; empty polite status region. |
+| `pending` | Read-only field and focusable pending button; duplicate submissions are cancelled and pending copy is announced. |
+| `sent` | Removes the row, hint and privacy note; places the sent message in the retained status region and focuses it. |
+| `failed` | Marks the input invalid, links the failed paragraph and hint, and focuses the input. A decorative error icon accompanies the message. |
+
+Focus effects run on status changes. Initial idle rendering leaves focus alone.
+The polite atomic status region stays mounted through the four states. The block
+adds no animation; native field borders and the error icon support forced colours.
+An inverse band puts the form and its status region on a rounded
+`bg-surface-raised` plate with base inks, because `TextField` uses base inks.
+
+Without `onSubmit`, the browser posts to the validated `action` after native
+required/email validation. The block sends the one named email field. The host
+owns CSRF protection, rate limiting and double opt-in at the receiving endpoint.
+The controlled example delegates delivery and persistence to the supplied host
+function; the block does not retain the address.
 
 ### `ConsentBanner`
 
@@ -4776,6 +5000,50 @@ surrounding `<nav>`.
 
 Omit `totalItems`/`pageSize` for a plain "Page X of Y" range summary;
 provide both for "Showing 11–20 of 42".
+
+### `UsageMeter`
+
+Draft usage against a limit for a period, with a server-safe variant. The host supplies the
+label, formatted used and limit text, period, projection, threshold messages and
+optional action; `UsageMeter` formats no facts. Exported through `/blocks` and
+`/blocks/server`, with `UsageMeterProps` and `UsageMeterThreshold`. From
+`/blocks` its meter is react-aria-components' (`meter` role, named by the used
+text); from `/blocks/server` it is the plain `Meter`, with the same classes and
+no role.
+
+```tsx
+import { UsageMeter } from "@clossys/designer/blocks/server";
+
+function RequestUsage() {
+  return (
+    <UsageMeter
+      id="request-usage"
+      label="API requests" used={8420} limit={10000}
+      usedText="8,420 requests" limitText="of 10,000" periodText="Resets Nov 1"
+      thresholds={[
+        { at: 0.8, tone: "warning", message: "You have used at least 80 percent of this limit." },
+        { at: 1, tone: "danger", message: "You have reached this limit." },
+      ]}
+      projectedText="On track for about 11,200 by Oct 31"
+      action={<a href="/account/usage">View usage</a>}
+    />
+  );
+}
+```
+
+Required props are `label`, `used`, `limit`, `usedText`, `limitText` and
+`periodText`. `used` must be finite and nonnegative; `limit` must be finite and
+positive. Optional `thresholds` are strictly ascending finite positive fractions
+of the limit, each with an `info`, `warning` or `danger` tone and host message;
+invalid numeric input throws `RangeError`. Only the highest inclusive match
+shows, with a StatusMark shape and text. Before a match, the Meter uses accent.
+The scale expands with over-limit usage so the limit tick sits inside the bar.
+
+`size="compact"` tightens the spacing and omits `projectedText`; the optional
+`action` remains available in either size. An `id` names the section through
+`${id}-label`; without an `id`, a supplied `aria-labelledby` names the section,
+otherwise it stays unnamed. The label container accepts block-level content.
+The block adds no heading, announcement or motion, and wraps its content in both themes.
 
 ### `Stat`
 
@@ -6614,7 +6882,7 @@ not a grab-bag).
 | `Avatar` | component | Person/thing picture with an initials fallback. Plain markup — not interactive, composes no other atom. |
 | `AvatarProps` | type | Props for `Avatar`: `alt`, `src`, `size`, plus every native `<span>` attribute except `children`. |
 | `AvatarSize` | type | `"sm" \| "md" \| "lg"`. |
-| `Spinner` | component | Indeterminate loading indicator. Plain SVG — not interactive, composes no other atom. |
+| `Spinner` | component | Indeterminate loading indicator. A labelled spinner is react-aria-components' `ProgressBar` around the SVG ring; a decorative one is the bare SVG. |
 | `SpinnerProps` | type | Props for `Spinner`: `size`, `label`, plus every native `<svg>` attribute except `className`/`children`. |
 | `SpinnerSize` | type | `"sm" \| "md" \| "lg"`. |
 | `Menu` | component | Dropdown menu built on react-aria-components' `MenuTrigger`/`Menu`/`MenuItem`/`Popover`. Carries `Menu.Item`, `Menu.Separator` and `Menu.Section`. |
@@ -6630,6 +6898,10 @@ not a grab-bag).
 | `TabsListProps` | type | Props for `Tabs.List`: `children`, `className`, plus most of react-aria-components' own `TabList` props (including `aria-label`). |
 | `TabsTabProps` | type | Props for `Tabs.Tab`: `children`, `className`, `style`, `id`, `isDisabled`, plus everything react-aria-components' own `Tab` accepts. |
 | `TabsPanelProps` | type | Props for `Tabs.Panel`: `children`, `className`, `id`, plus everything react-aria-components' own `TabPanel` accepts. |
+| `GridList` | component | Draft stacked record primitives with peer keyboard, toggle selection, row actions and in-grid empty content. |
+| `GridListProps` | type | Root peer props plus `className`; requires `aria-label` or `aria-labelledby` at runtime; layout and selection behavior are fixed. |
+| `GridListItemProps` | type | Row peer props with required `textValue` and optional `className`. |
+| `GridListSelectionCheckboxProps` | type | Required host-authored `aria-label` for the selection checkbox. |
 | `Table` | component | Table primitives built on react-aria-components' `Table`/`TableHeader`/`TableBody`/`Column`/`Row`/`Cell`. Carries `Table.Header`, `Table.Column`, `Table.Body`, `Table.Row`, `Table.Cell`, `Table.SelectAllCheckbox`, `Table.SelectionCheckbox`. |
 | `TableProps` | type | Props for `Table`: `children`, `className`, `style`, plus react-aria-components' own `Table` props (`aria-label`, `sortDescriptor`, `onSortChange`, `selectionMode`, `selectedKeys`, `onSelectionChange`, ...). |
 | `TableHeaderProps` | type | Props for `Table.Header`: `children` (`Table.Column`s), `className`, plus react-aria-components' own `TableHeader` props. |
@@ -6647,7 +6919,7 @@ not a grab-bag).
 | `SkeletonShape` | type | `"text" \| "block" \| "circle"`. |
 | `Tooltip` | component | Hover/focus description built on react-aria-components' `TooltipTrigger`/`Tooltip`. |
 | `TooltipProps` | type | Props for `Tooltip`: `trigger`, `children`, `triggerAction`, `placement`, `className`, plus most of react-aria-components' own `TooltipTrigger` props. |
-| `Banner` | component | Persistent inline message region built over the status tokens. |
+| `Banner` | component | Persistent inline message region built over the status tokens, with an optional dismiss `Button`. |
 | `BannerProps` | type | Props for `Banner`: `variant`, `children`, `onDismiss`, `dismissLabel`, `className`, `style`, plus every native `<div>` attribute except `role`/`children`. |
 | `BannerVariant` | type | `"info" \| "success" \| "warning" \| "danger"`. |
 | `RadioGroup` | component | Single-choice control over a visible set of options, built on react-aria-components' `RadioGroup`/`Radio`. Carries `RadioGroup.Radio`. |
@@ -6675,8 +6947,8 @@ not a grab-bag).
 | `StatusMark` | component | A tone mark (a shape per tone) and a visible label for one data state. Server-safe. |
 | `StatusMarkProps` | type | Props for `StatusMark`: `tone`, `children` (required), plus every native `<span>` attribute. |
 | `StatusMarkTone` | type | `"success" \| "warning" \| "danger" \| "info" \| "neutral"`. |
-| `Meter` | component | A value against a scale and an optional limit, with visible value and limit text and a decorative bar. Server-safe. |
-| `MeterProps` | type | Props for `Meter`: `value`, `scaleMax`, `limit`, `direction`, `tone`, `valueText`, `limitText`, `emphasis`, optional paired `previous`/`previousText`, plus every native `<div>` attribute except `children`. |
+| `Meter` | component | A value against a scale and an optional limit, with visible value and limit text and a decorative bar. Built on react-aria-components' `Meter`; the `atoms/server` export is the same markup without the meter role. |
+| `MeterProps` | type | Props for `Meter`: `value`, `scaleMax`, `limit`, `direction`, `tone`, `valueText`, `limitText`, `emphasis`, optional `label`, optional paired `previous`/`previousText`, plus every native `<div>` attribute except `children`. |
 | `MeterTone` | type | `"success" \| "warning" \| "danger" \| "info" \| "neutral"`. |
 | `MeterDirection` | type | `"max" \| "min"`: whether the limit is a cap or a floor. |
 | `AccountMenu` | component | Navigation Material with actor trigger, grouped commands and controlled preferences. |
@@ -6692,6 +6964,10 @@ not a grab-bag).
 | `PageHeaderProps` | type | Props for `PageHeader`: `title`, `description`, `actions`, `breadcrumb`, plus every native `<header>` attribute. |
 | `EmptyState` | component | Zero-item placeholder: icon slot, title, description, action slot. |
 | `EmptyStateProps` | type | Props for `EmptyState`: `icon`, `title`, `description`, `action`, plus every native `<div>` attribute. |
+| `ResourceList` | component | Draft selectable records with responsive actions and host loading, empty, error, bulk and footer content. |
+| `ResourceListProps` | type | `aria-label`, `items`, `emptyState`, selection keys and callbacks, conditional label functions, loading options and host region slots. |
+| `ResourceListItem` | type | `id`, `textValue`, `title`, optional description, meta, media, status, href, actions and disabled state. |
+| `ResourceListAction` | type | `id`, `label`, `onAction`, optional destructive or disabled state and host disabled reason. |
 | `DataTable` | component | Controlled data grid built on `Table`'s primitives: toolbar slot, the grid itself, empty state, loading state, footer slot. |
 | `DataTableProps` | type | Props for `DataTable`: `aria-label`, `columns`, `rows`, `rowKey`, `sortDescriptor`, `onSortChange`, `selectionMode`, `selectedKeys`, `onSelectionChange`, `isLoading`, `loadingRowCount`, `emptyStateTitle`, `emptyStateDescription`, `emptyStateAction`, `toolbar`, `footer`, `className`, `style`. |
 | `DataTableColumn` | type | One column definition: `id`, `header`, `cell(row)`, `allowsSorting?`, `isRowHeader?`, `width?`. |
@@ -6701,11 +6977,14 @@ not a grab-bag).
 | `DetailViewField` | type | One field: `label`, `value` (`ReactNode`), `span?` (`1 \| 2`). |
 | `Pagination` | component | Page navigation: range summary, page controls, optional page-size selector. |
 | `PaginationProps` | type | Props for `Pagination`: `page`, `pageCount`, `onPageChange`, `totalItems`, `pageSize`, `pageSizeOptions`, `onPageSizeChange`, `siblingCount`, `previousPageLabel`, `nextPageLabel`, `noResultsLabel` (default `"No results"`), `rangeSummaryMessage`, `pageSummaryMessage`, `pageSizeLabel` (default `"Rows per page"`), `className`, `style`, plus every native `<nav>` attribute. |
+| `UsageMeter` | component | Draft server-safe usage against a period limit with an inclusive threshold message and an honest over-limit bar. |
+| `UsageMeterProps` | type | Required host label, used/limit values and text, and period text; optional thresholds, projection, action, size and section attributes. |
+| `UsageMeterThreshold` | type | Finite positive `at` fraction, `info` / `warning` / `danger` tone and host-authored message. |
 | `Stat` | component | A single metric: label, value, optional delta/trend, optional description. |
 | `StatProps` | type | Props for `Stat`: `label`, `value`, `delta`, `trend`, `trendLabels` (default Increase / Decrease / No change), `description`, `className`, `style`, plus every native `<div>` attribute. |
 | `StatTrend` | type | `"up" \| "down" \| "neutral"`. |
 | `Form` | component | Form layout: optional heading, fields region, opt-in error-summary region, submit-error region, actions region. Owns no validation logic; opts into `useFormValidation` through `validation`. |
-| `FormProps` | type | Props for `Form`: `heading`, `children`, `errors`, `errorSummaryMessage` (opt-in: the summary renders only when passed; no default text), `submitError`, `validation`, `onSubmitError` (optional; receives a rejection from the validated `onSubmit`, and does nothing when omitted), `actions`, `onSubmit` (ignored when `validation` is passed), `className`, `style`, plus every native `<form>` attribute. |
+| `FormProps` | type | Props for `Form`: `heading`, `children`, `errors`, `errorSummaryMessage` (opt-in: the summary renders only when passed; no default text), `submitError`, `validation`, `onSubmitError` (optional; receives a rejection from the validated `onSubmit`, and does nothing when omitted), `actions`, `actionsLayout` (`"end"` by default, or `"stretch"`; both stack full width below `tablet`), `onSubmit` (ignored when `validation` is passed), `className`, `style`, plus every native `<form>` attribute. |
 | `FormError` | type | One error-summary entry: `fieldId`, `message`. |
 | `FormValidationBinding` | type | What `Form` reads from a validation source: `handleSubmit`, `summaryErrors`, `isSubmitting`, `formRef`. `useFormValidation`'s return value satisfies it. |
 | `useFormValidation` | function | Hook for the form validation timing: validate on blur, re-validate on change once a field shows an error or after the first submit, focus the first invalid field on a failed submit, pending (never disabled) submit. Returns `FormValidation`. |
@@ -6861,10 +7140,15 @@ not a grab-bag).
 | `FaqProps` | type | Props for `Faq`: `eyebrow`, `heading`, `description`, `items`, `headingLevel`, `ground`, `className`, `style`, plus every native `<div>` attribute. |
 | `FaqItem` | type | One item: `id`, `question`, `answer`. |
 | `FaqHeadingLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
-| `PricingTable` | component | Pricing tiers under an optional heading region: name, price, feature list, CTA slot per tier, `isHighlighted` plus an optional `badge` slot to mark one as recommended. |
-| `PricingTableProps` | type | Props for `PricingTable`: `heading`, `description`, `tiers`, `headingLevel`, `className`, `style`, plus every native `<div>` attribute. |
-| `PricingTier` | type | One tier: `id`, `name`, `price`, `description?`, `features` (`readonly ReactNode[]`), `cta`, `isHighlighted?`, `badge?`. |
+| `PricingTable` | component | Fixed or interval-priced tiers with optional heading, host controls and grouped Matrix comparisons. |
+| `PricingTableProps` | type | Props for `PricingTable`: `heading`, `description`, `tiers`, `headingLevel`, `interval`, `comparison`, `controls`, `ground`, `className`, `style`, plus native `<div>` attributes. |
+| `PricingTier` | type | One tier: `id`, `name`, one of `price` or `priceByInterval`, `description?`, `features` (`readonly ReactNode[]`), `cta`, `isHighlighted?`, `badge?`. |
 | `PricingTableHeadingLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
+| `PricingTierPrice` | type | One interval's visible `amount`, required spoken `priceText` and optional `note`. |
+| `PricingCellData` | type | A comparison cell: `{ kind: "mark", included: boolean }` or `{ kind: "text", text: ReactNode }`. |
+| `PricingComparison` | type | One to four `groups`, optional `featuredLabel`, and `markLabels`/`keyLabel` for mark cells. |
+| `PricingComparisonGroup` | type | A stable `id`, group `label` and comparison `rows`. |
+| `PricingComparisonRow` | type | A stable `id`, `label`, optional `description` and `cells` keyed by tier id. |
 | `Testimonial` | component | Quote plus attribution, rendered as a real `<figure>`/`<blockquote>`/`<figcaption>`: `attributorName` and `attributorRole` are always separate fields. Optional avatar via `avatarSrc`/`avatarAlt`, required together at the type level. |
 | `TestimonialProps` | type | Props for `Testimonial`: `quote`, `attributorName`, `attributorRole`, `avatarSrc`/`avatarAlt` (a discriminated pair — both or neither), `className`, `style`, plus every native `<figure>` attribute except `children`. |
 | `ArticleBody` | component | Thin, token-styled container for pre-structured long-form content (real `<h2>`/`<p>`/`<ul>`/... children) — no markdown parsing, no content-shape schema. |
@@ -6872,6 +7156,9 @@ not a grab-bag).
 | `SectionFrame` | component | Full-bleed marketing section band: a `ground` surface, vertical section rhythm, horizontal page padding, and a measured inner column. Sets `data-designer-section-frame` on its outer `<section>`. Compose `ArticleBody`, `Stat`, and other blocks that do not own their own band inside it. |
 | `SectionFrameProps` | type | Props for `SectionFrame`: `ground` (default `"base"`), `measure` (default `"content"`), `children`, `className`, `style`, plus every native `<section>` attribute. |
 | `SectionMeasure` | type | `"content" \| "wide" \| "prose"`. How wide `SectionFrame`'s inner column is: it maps to the `--ui-width-content-max`, `--ui-width-wide-max`, or `--ui-width-prose-max` token. |
+| `NewsletterBand` | component | Draft email capture with native or host submission, validated same-origin action and controlled status. |
+| `NewsletterBandProps` | type | Required field, button and status copy; submission destination, technical field name, layout, ground and form naming props. |
+| `NewsletterStatus` | type | `idle \| pending \| sent \| failed`. |
 | `ConsentBanner` | component | Presentational consent notice: a region landmark named by its title, a body, an optional `privacyLink` slot after it, and two same-variant, same-size `Button`s for accept and reject. Props only: no consent state, storage, network call or built-in copy. Not a dialog. Always mounts an empty polite `role="status"` live region for an optional `status`. Sets `data-consent-banner` on its root. |
 | `ConsentBannerProps` | type | Props for `ConsentBanner`: `title`, `body`, `acceptLabel`, `rejectLabel` (all `ReactNode`), `onAccept`, `onReject` (both `() => void`), `privacyLink?`, `status?` (a `ReactNode` rendered in an always-mounted polite live region), `presentation?` (`banner` by default, or `card`), `selectedChoice?` (`granted` or `denied`, card feedback only), `className?`, `style?`. |
 | `mergeUiClasses` | function | Merges token-aware Tailwind utility classes with last-argument precedence; used by surface-level compositions built from UI primitives. |
@@ -7510,14 +7797,13 @@ over the IDENTICAL fixture in the same test, exits `0`.
 
 ## What's deliberately not here
 
-**Atoms:** thirty-three ship —
-`Button`, `Icon`, `TextField`, `Badge`, `Card`, `Breadcrumb`, `Link`,
+**Atoms:** thirty-seven ship —
+`Button`, `IconButton`, `Icon`, `TextField`, `Badge`, `Card`, `Breadcrumb`, `Link`,
 `Checkbox`, `Switch`, `Select`, `Textarea`, `Avatar`, `Spinner`, `Menu`,
 `Dialog`, `Tabs`, `Table`, `Field`, `Skeleton`, `Tooltip`, `Banner`,
 `RadioGroup`, `Popover`, `DateField`, `ComboBox`, `SearchField`,
 `FileTrigger`, `Disclosure`, `ProgressBar`, `Separator`, `Chip`,
-`StatusMark`, `Meter` (the last two added for data shown inside content
-specimens). No `Modal` exposed as a public atom of
+`StatusMark`, `Meter`, `ResizeHandle`, `Logomark` and `GridList`. No `Modal` exposed as a public atom of
 its own beyond what `Dialog` and `Popover` already compose internally —
 that gets added here only once something real needs a bare modal overlay
 with neither `Dialog`'s fixed trigger/content shape nor `Popover`'s
@@ -7530,13 +7816,7 @@ speculatively, just because a related component shipped, is the exact
 un-bounded growth this package's own "variant rule" warns against one level
 up. They get added here only once something real needs them.
 
-**Blocks:** forty-two ship — `AccountMenu`, `PageHeader`, `EmptyState`, `DataTable`, `FilterBuilder`,
-`DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`, `ConfirmDialog`,
-`Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `SectionFrame`, `MarketingChapter`,
-`FeatureGrid`, `Item`, `Items`, `Tree`, `AnatomyCallouts`, `RecordLedger`, `Scene`, `Matrix`, `Specimen`,
-`SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`, `PricingTable`,
-`Testimonial`, `ArticleBody`, `ConsentBanner`, `Panel`, `Drawer`,
-`ResizablePane`, `CommandMenu` and `AppNavigation` — completing this layer. No
+**Blocks:** fifty-three ship — `AccessMatrix`, `ColumnMapper`, `Lockup`, `PageHeader`, `AccountMenu`, `EmptyState`, `DataTable`, `FilterBuilder`, `DetailView`, `Pagination`, `UsageMeter`, `Stat`, `Form`, `FieldGroup`, `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `MarketingChapter`, `FeatureGrid`, `Matrix`, `Specimen`, `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`, `PricingTable`, `Testimonial`, `ArticleBody`, `SectionFrame`, `ConsentBanner`, `Panel`, `Drawer`, `ResizablePane`, `CommandMenu`, `AppNavigation`, `PageBar`, `Explorer`, `RecordLedger`, `AnatomyCallouts`, `Scene`, `Item`, `Tree`, `Items`, `GroupedTable`, `CatalogWorkspace`, `Chat`, `NewsletterBand` and `ResourceList` — completing this layer. No
 `FilterBar` block: `FilterBuilder` is bound to `TableModel` and its typed filter tree.
 `DataTable`'s `toolbar` slot and `Toolbar`'s `search` slot stay plain `ReactNode`s
 for host-composed controls.
@@ -8173,6 +8453,52 @@ Left/Right expand or collapse a parent, reversing in RTL. Enter/Space activate
 destinations or disclosure. Native forced-color adjustment and reduced motion
 remain supported. The interactive Material and helpers use the existing client
 blocks entry; no server-subset export or application-frame assembly is added.
+
+### PageBar
+
+`PageBar` is the draft standalone page bar that AppFrame composes. It owns a
+page trail, current heading, information popover, actions and width control.
+Supply `root`, `width`, `onWidthChange` and all six `labels`; `brand` is an
+optional leading slot. `narrow` collapses ancestors and secondary actions,
+while `reserveStart` and `reserveEnd` leave room for host corner controls.
+`onHeightChange` reports measured bar height. PageBar uses the explicit `width`
+prop; `page.width` carries AppFrame's optional page default.
+
+`PageBarProps` describes the host inputs. `PageBarPage`, `PageBarCrumb`,
+`PageBarAction` and `PageBarDestination` describe the authored data;
+`PageBarLabels` requires the six strings, and `PageBarWidth` is
+`"contained" | "full"`.
+
+```tsx
+import { useState } from "react";
+import { PageBar, type PageBarPage } from "@clossys/designer/blocks";
+
+const page: PageBarPage = {
+  title: "Quarterly report",
+  breadcrumb: [
+    { id: "projects", label: "Projects", href: "/projects" },
+    { id: "reporting", label: "Reporting", href: "/projects/reporting",
+      siblings: [{ id: "planning", label: "Planning", href: "/projects/planning" }] },
+    { id: "quarterly", label: "Quarterly report",
+      siblings: [{ id: "annual", label: "Annual report", href: "/projects/reporting/annual" }] },
+  ],
+  status: "Draft", description: "Revenue and usage for the last three months.", updatedAt: "Updated 2 hours ago",
+  actions: [
+    { id: "share", label: "Share", primary: true, onAction: () => {} },
+    { id: "export", label: "Export", href: "/projects/reporting/quarterly/export" },
+    { id: "archive", label: "Archive", onAction: () => {} },
+  ],
+};
+
+export function ReportBar() {
+  const [width, setWidth] = useState<"contained" | "full">("contained");
+  return <PageBar root={{ label: "Workspace", href: "/" }} page={page} width={width} onWidthChange={setWidth}
+    workspaces={[{ id: "operations", label: "Operations", href: "/operations" }, { id: "research", label: "Research", href: "/research" }]}
+    labels={{ breadcrumb: "Breadcrumb", collapsedBreadcrumb: "More breadcrumb levels", pageInfo: "Page information",
+      fullWidth: "Use full width", containedWidth: "Use contained width", pageActions: "More page actions" }} />;
+}
+```
+
 ### Account menu composition example
 
 `APP_FRAME_MATERIALS` includes the `account-menu` selection for `AccountMenu`,
@@ -8784,3 +9110,177 @@ The default renderer supports paragraphs, flat lists, inline code, fenced code w
 | `ChatMessage` | type | Stable id, user/assistant role, text content and optional display timestamp. |
 | `ChatActions` | type | Optional copy, regeneration and up/down feedback callbacks. |
 | `ChatLabels` | type | Optional host copy overrides with documented English defaults. |
+
+### PricingTable interval and comparison examples
+
+`priceByInterval` maps host-defined interval keys to `{ amount, priceText,
+note? }`. Pass `interval` to select one amount; its visible figure is hidden
+from assistive technology while the required plain-string `priceText` supplies
+the spoken price. A selected `note` appears below it. Interval-priced tiers
+must share a key set, and fixed-price tiers can accompany them. Render throws
+`TypeError` for both or neither price forms, mismatched keys, a missing or
+unknown interval, an interval without interval-priced tiers, or empty spoken
+prices. The host owns the interval control and passes its current value:
+
+```tsx
+import { PricingTable } from "@clossys/designer/blocks";
+import { Button } from "@clossys/designer/atoms";
+
+function IntervalAmounts() {
+  return <PricingTable heading="Tier amounts" interval="second" tiers={[
+    {
+      id: "one", name: "Tier one", features: ["Feature one"],
+      priceByInterval: {
+        first: { amount: "Amount one", priceText: "Amount one per first interval" },
+        second: { amount: "Amount two", priceText: "Amount two per second interval", note: "Interval note" },
+      },
+      cta: <Button>Choose tier one</Button>,
+    },
+    {
+      id: "two", name: "Tier two", price: "Fixed amount",
+      features: ["Feature two"], cta: <Button>Choose tier two</Button>,
+    },
+  ]} />;
+}
+```
+
+`comparison` adds one to four labelled groups below the tier grid. Each group
+composes a grid `Matrix` with tiers as columns in their input order. Its rows
+have `cells` keyed by tier id: marks use `{ kind: "mark", included }`, and
+text uses `{ kind: "text", text }`. The highlighted tier becomes the featured
+column and requires `featuredLabel`; a comparison permits one highlighted tier.
+Mark-bearing groups require five `markLabels` and a `keyLabel`, with excluded
+and included entries using labels zero and four. Mixed text and mark groups
+share these labels while only mark-bearing groups render a key.
+
+```tsx
+import { PricingTable } from "@clossys/designer/blocks";
+import { Button } from "@clossys/designer/atoms";
+
+function EntitlementComparison() {
+  return <PricingTable heading="Tier entitlements" tiers={[
+    { id: "one", name: "Tier one", price: "Amount one", features: ["Feature one"], cta: <Button>Choose one</Button> },
+    { id: "two", name: "Tier two", price: "Amount two", features: ["Feature two"], cta: <Button>Choose two</Button>, isHighlighted: true, badge: "Featured tier" },
+  ]} comparison={{
+    featuredLabel: "Featured tier",
+    markLabels: ["Not included", "First mark", "Second mark", "Third mark", "Included"],
+    keyLabel: "Entitlement key",
+    groups: [{ id: "features", label: "Feature access", rows: [
+      { id: "first", label: "Feature one", cells: { one: { kind: "mark", included: true }, two: { kind: "mark", included: true } } },
+      { id: "second", label: "Feature two", cells: { one: { kind: "mark", included: false }, two: { kind: "mark", included: true } } },
+    ] }],
+  }} />;
+}
+```
+
+```tsx
+import { PricingTable } from "@clossys/designer/blocks";
+import { Button } from "@clossys/designer/atoms";
+
+function TextComparison() {
+  return <PricingTable heading="Tier details" tiers={[
+    { id: "one", name: "Tier one", price: "Amount one", features: ["Feature one"], cta: <Button>Choose one</Button> },
+    { id: "two", name: "Tier two", price: "Amount two", features: ["Feature two"], cta: <Button>Choose two</Button> },
+  ]} comparison={{ groups: [{ id: "details", label: "Included details", rows: [
+    { id: "capacity", label: "Capacity", cells: { one: { kind: "text", text: "First allowance" }, two: { kind: "text", text: "Second allowance" } } },
+    { id: "support", label: "Support", cells: { one: { kind: "text", text: "Written guidance" }, two: { kind: "text", text: "Guided assistance" } } },
+  ] }] }} />;
+}
+```
+
+Matrix validates two to six tiers, two to eight rows per group, matching cell
+keys, one cell type per column, and meaningful labels. Its contract errors
+surface directly. Group headings follow `headingLevel` by one level, and row
+and key headings follow by two, capped at `h6`. `ground` defaults to `"base"`
+and sets heading, description and comparison inks; tier cards retain their
+raised styling. The optional `controls` slot occupies a centred row between
+the heading region and tier grid. Supply the control from the host;
+`PricingTable` remains server-safe.
+
+### AccessMatrix and ColumnMapper
+
+Both blocks are draft components with required host labels and controlled data.
+AccessMatrix displays and edits a host-supplied access table; the host validates and enforces every change.
+It uses a native table with Tab-ordered Checkbox controls, grouped tri-state changes, focusable read-only inherited and locked states, and a 500 ms debounced baseline summary. At narrow widths each permission becomes a card. Omit `onChange` for a read-only table.
+
+ColumnMapper places one Select per target inside a labelled fieldset. Required unmapped targets and reused source columns produce errors beside each affected field; host `issues` append type-specific feedback. Missing mapping keys mean null; an explicit empty string is invalid. Parsing, suggestions and type rules belong to the host. Its mapping summary is debounced 500 ms.
+
+| Export | Kind | Description |
+| --- | --- | --- |
+| `AccessMatrix` | component | Host-supplied access table with grouped changes. |
+| `AccessCellValue` | type | Granted, denied, or inherited with a reason. |
+| `AccessRole` | type | Role identity, label, optional lock and reason. |
+| `AccessPermission` | type | Permission identity, label and optional description. |
+| `AccessGroup` | type | Named permission group. |
+| `AccessMatrixValue` | type | Readonly role and permission cell records. |
+| `AccessMatrixChange` | type | Role, affected permissions and intended granted or denied state. |
+| `AccessMatrixLabels` | type | Required host copy and naming functions. |
+| `AccessMatrixProps` | type | Required accessible name, roles, groups, value and labels; optional change callback and baseline. |
+| `ColumnMapper` | component | Controlled target-to-source column choices and issues. |
+| `ColumnMapperTarget` | type | Target identity, label, six-value kind and required flag. |
+| `ColumnMapperSource` | type | Source identity, header and string samples. |
+| `ColumnMapping` | type | Readonly target-to-source ids or null. |
+| `ColumnMapperIssue` | type | Target-specific host message. |
+| `ColumnMapperLabels` | type | Required legend, field copy, error and summary functions. |
+| `ColumnMapperProps` | type | Required targets, sources, mapping, change callback and labels; optional issues. |
+
+The project workspace sample shows a one-grant change against its baseline.
+
+```tsx
+import { useState } from "react";
+import { AccessMatrix, type AccessMatrixProps } from "@clossys/designer/blocks";
+
+const accessMatrixSample: AccessMatrixProps = {
+  "aria-label": "Workspace access",
+  roles: [{ id: "viewer", label: "Viewer" }, { id: "editor", label: "Editor" }, { id: "admin", label: "Admin", isLocked: true, lockedReason: "Admin always has every permission." }],
+  groups: [
+    { id: "projects", label: "Projects", permissions: [{ id: "view-projects", label: "View projects" }, { id: "create-projects", label: "Create projects" }, { id: "delete-projects", label: "Delete projects", description: "Removes the project and its files." }] },
+    { id: "reports", label: "Reports", permissions: [{ id: "view-reports", label: "View reports" }, { id: "export-reports", label: "Export reports" }] },
+    { id: "members", label: "Members", permissions: [{ id: "invite-members", label: "Invite members" }, { id: "remove-members", label: "Remove members" }] },
+  ],
+  value: {
+    viewer: { "view-projects": { state: "granted" }, "view-reports": { state: "granted" } },
+    editor: { "view-projects": { state: "granted" }, "create-projects": { state: "granted" }, "delete-projects": { state: "granted" }, "export-reports": { state: "inherited", reason: "Included with Viewer access to reports." } },
+    admin: { "view-projects": { state: "granted" }, "create-projects": { state: "granted" }, "delete-projects": { state: "granted" }, "view-reports": { state: "granted" }, "export-reports": { state: "granted" }, "invite-members": { state: "granted" }, "remove-members": { state: "granted" } },
+  },
+  labels: {
+    permissionHeader: "Permission", cell: (role, permission) => `${role}: ${permission}`, groupAll: (role, group) => `${role}: all of ${group}`,
+    inherited: "Inherited", locked: "Locked", changeSummary: (grants, revokes) => `${grants} added, ${revokes} removed`,
+  },
+};
+accessMatrixSample.baseline = { ...accessMatrixSample.value, editor: { ...accessMatrixSample.value.editor, "delete-projects": { state: "denied" } } };
+
+export function WorkspaceAccess() {
+  const [value, setValue] = useState(accessMatrixSample.value);
+  return <AccessMatrix {...accessMatrixSample} value={value} onChange={next => setValue(next)} />;
+}
+```
+
+The people import sample starts with the required Email field unmapped.
+
+```tsx
+import { useState } from "react";
+import { ColumnMapper, type ColumnMapperProps } from "@clossys/designer/blocks";
+
+const columnMapperSample: ColumnMapperProps = {
+  targets: [{ id: "name", label: "Full name", kind: "text", required: true }, { id: "email", label: "Email", kind: "text", required: true }, { id: "department", label: "Department", kind: "enum", required: false }, { id: "start", label: "Start date", kind: "date", required: false }],
+  sourceColumns: [
+    { id: "name", header: "Name", samples: ["Ada Lovelace", "Grace Hopper"] },
+    { id: "email", header: "E-mail address", samples: ["ada@example.com", "grace@example.com"] },
+    { id: "team", header: "Team", samples: ["Research", "Operations"] },
+    { id: "joined", header: "Joined", samples: ["2024-03-01", "2025-11-17"] },
+  ],
+  mapping: { name: "name", email: null, department: "team", start: "joined" },
+  onMappingChange: () => {},
+  labels: {
+    legend: "Match file columns to fields", notMapped: "Not mapped", required: "Required",
+    requiredMissing: target => `${target} needs a column`, duplicate: header => `"${header}" is used more than once`,
+    samples: values => `Examples: ${values.join(", ")}`, summary: (mapped, total, problems) => `${mapped} of ${total} fields mapped, ${problems} to fix`,
+  },
+};
+
+export function PeopleColumnMapping() {
+  const [mapping, setMapping] = useState(columnMapperSample.mapping);
+  return <ColumnMapper {...columnMapperSample} mapping={mapping} onMappingChange={setMapping} />;
+}
+```
