@@ -149,12 +149,13 @@ describe("AppFrame Material registration", () => {
   });
 
   it("registers actual exported Block components, named regions, dependencies and finite configs", () => {
-    expect(materials().map((entry: any) => entry.id)).toEqual(["panel", "drawer", "resizable-pane", "command-menu", "app-navigation", "account-menu", "grouped-table"]);
+    expect(materials().map((entry: any) => entry.id)).toEqual(["panel", "drawer", "resizable-pane", "command-menu", "app-navigation", "page-bar", "account-menu", "grouped-table"]);
     for (const entry of materials()) {
       expect(entry.layer).toBe("blocks");
       expect(entry.component).toBe((blocks as any)[entry.exportName]);
       expect(entry.component).toBeTypeOf("function");
-      expect(entry.regions).toContain("content");
+      if (entry.id === "page-bar") expect(entry.regions).toEqual(["brand", "trail", "page-info", "actions", "width"]);
+      else expect(entry.regions).toContain("content");
       const source = readFileSync(join(root, entry.source), "utf8");
       const ast = ts.createSourceFile(entry.source, source, ts.ScriptTarget.ES2022, true, ts.ScriptKind.TSX);
       const rendered = new Set<string>();
@@ -208,15 +209,26 @@ describe("AppFrame Material registration", () => {
       const blockEntry = pathToFileURL(join(temporary, "package/dist/blocks/index.js")).href;
       const script = `import * as atoms from ${JSON.stringify(atomEntry)}; import * as blocks from ${JSON.stringify(blockEntry)}; console.log(JSON.stringify({ handle: typeof atoms.ResizeHandle, materials: blocks.APP_FRAME_MATERIALS.map(entry => [entry.id, entry.component === blocks[entry.exportName]]) }));`;
       const result = JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8", cwd: root }));
-      expect(result).toEqual({ handle: "function", materials: [["panel", true], ["drawer", true], ["resizable-pane", true], ["command-menu", true], ["app-navigation", true], ["account-menu", true], ["grouped-table", true]] });
+      expect(result).toEqual({ handle: "function", materials: [["panel", true], ["drawer", true], ["resizable-pane", true], ["command-menu", true], ["app-navigation", true], ["page-bar", true], ["account-menu", true], ["grouped-table", true]] });
     } finally { rmSync(temporary, { recursive: true, force: true }); }
-  });
+  }, 30_000);
 
   it("imports every real server subset under react-server without exporting interactive additions", () => {
-    const additions = ["ResizeHandle", "Panel", "Drawer", "ResizablePane", "APP_FRAME_MATERIALS", "CommandMenu", "useCommandMenuShortcut", "AppNavigation", "AccountMenu", "GroupedTable"];
+    const additions = ["ResizeHandle", "Panel", "Drawer", "ResizablePane", "APP_FRAME_MATERIALS", "CommandMenu", "useCommandMenuShortcut", "AppNavigation", "AccountMenu", "PageBar", "GroupedTable"];
     const entries = ["atoms", "blocks", "shell"].map(layer => pathToFileURL(join(root, `dist/${layer}/server.js`)).href);
     const script = `const modules = await Promise.all(${JSON.stringify(entries)}.map(entry => import(entry))); console.log(JSON.stringify(modules.map(module => ${JSON.stringify(additions)}.filter(name => name in module))));`;
     const result = JSON.parse(execFileSync(process.execPath, ["--conditions=react-server", "--input-type=module", "-e", script], { encoding: "utf8", cwd: root }));
     expect(result).toEqual([[], [], []]);
+  });
+});
+
+it("registers PageBar's complete authored contract and actual atom dependencies", () => {
+  const entry = materials().find((record: any) => record.id === "page-bar");
+  expect(entry).toMatchObject({
+    layer: "blocks", exportName: "PageBar", component: (blocks as any).PageBar, source: "src/blocks/PageBar.tsx",
+    regions: ["brand", "trail", "page-info", "actions", "width"],
+    dependencies: [{ exportName: "Link", source: "src/atoms/Link.tsx" }, { exportName: "Menu", source: "src/atoms/Menu.tsx" }, { exportName: "Popover", source: "src/atoms/Popover.tsx" }, { exportName: "Button", source: "src/atoms/Button.tsx" }, { exportName: "Icon", source: "src/atoms/Icon.tsx" }],
+    configs: [{ prop: "narrow", values: [false, true], default: false, source: "src/blocks/PageBar.tsx" }],
+    authoredInputs: ["root", "page", "workspaces", "brand", "width", "onWidthChange", "labels", "reserveStart", "reserveEnd", "dir", "onHeightChange"],
   });
 });

@@ -517,6 +517,12 @@ describe("Block theme conformance", () => {
     expect(conformanceFindings(input)).toContain("PageHeader: missing dark value --color-ink-primary");
   });
 
+  it("registers the muted ink ResourceList renders for descriptions and meta", () => {
+    const entry = BLOCK_THEME_CONFORMANCE.find(candidate => candidate.exportName === "ResourceList");
+    expect(readFileSync(resolve(blocksRoot, "ResourceList.tsx"), "utf8")).toContain("text-ink-muted");
+    expect(entry?.contrastPairs).toContain("ink-muted/surface-base");
+  });
+
   it("rejects an unregistered new Block export", () => {
     const input = realInputs();
     const file = "src/blocks/index.ts";

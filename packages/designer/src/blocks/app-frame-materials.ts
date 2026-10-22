@@ -3,6 +3,7 @@ import { Panel } from "./Panel.js";
 import { Drawer } from "./Drawer.js";
 import { ResizablePane } from "./ResizablePane.js";
 import { CommandMenu } from "./CommandMenu.js";
+import { PageBar } from "./PageBar.js";
 import { AppNavigation } from "./AppNavigation.js";
 import { AccountMenu } from "./AccountMenu.js";
 
@@ -65,6 +66,19 @@ export const APP_FRAME_MATERIALS = [
     ],
     configs: [{ prop: "collapsed", values: [false, true], default: false, source: "src/blocks/AppNavigation.tsx" }],
     authoredInputs: ["tree", "activeId", "activeHref", "label", "header", "footer", "trigger", "emptyMessage", "navigationKey", "defaultCollapsed", "onCollapsedChange", "drawerOpen", "onDrawerOpenChange", "dismissAt", "openLabel", "closeLabel", "expandLabel", "collapseLabel", "formatDisclosureLabel"],
+  },
+  {
+    id: "page-bar", layer: "blocks", exportName: "PageBar", component: PageBar, source: "src/blocks/PageBar.tsx",
+    regions: ["brand", "trail", "page-info", "actions", "width"],
+    dependencies: [
+      { exportName: "Link", source: "src/atoms/Link.tsx" },
+      { exportName: "Menu", source: "src/atoms/Menu.tsx" },
+      { exportName: "Popover", source: "src/atoms/Popover.tsx" },
+      { exportName: "Button", source: "src/atoms/Button.tsx" },
+      { exportName: "Icon", source: "src/atoms/Icon.tsx" },
+    ],
+    configs: [{ prop: "narrow", values: [false, true], default: false, source: "src/blocks/PageBar.tsx" }],
+    authoredInputs: ["root", "page", "workspaces", "brand", "width", "onWidthChange", "labels", "reserveStart", "reserveEnd", "dir", "onHeightChange"],
   },
   {
     id: "account-menu", layer: "blocks", exportName: "AccountMenu", component: AccountMenu, source: "src/blocks/AccountMenu.tsx",
