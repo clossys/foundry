@@ -126,6 +126,7 @@ describe("server-safe entry points resolve under react-server (test 1)", () => {
         "Stat",
         "StatusList",
         "Testimonial",
+        "Timeline",
         "Tree",
         "UsageMeter",
       ],
@@ -146,6 +147,20 @@ describe("server-safe entry points resolve under react-server (test 1)", () => {
       expect(keys).toEqual([...expectedExports].sort());
     });
   }
+});
+
+it("keeps Timeline server-safe and MediaGallery client-only in the compiled blocks graph", () => {
+  for (const entry of ["blocks/index.js", "index.js"]) {
+    const keys = importKeysNormally(entry);
+    expect(keys).toContain("Timeline");
+    expect(keys).toContain("MediaGallery");
+  }
+  expect(importKeysNormally("blocks/server.js")).not.toContain("MediaGallery");
+  expect(readFileSync(join(distDir, "blocks/MediaGallery.js"), "utf8")).toMatch(/^"use client";/);
+  const result = probeUnderReactServer("blocks/Timeline.js");
+  expect(result.ok, result.ok ? undefined : result.message).toBe(true);
+  const script = `import {Timeline} from ${JSON.stringify(join(distDir, "blocks/server.js"))}; const root=Timeline({entries:[{id:"one",dateTime:"2026-01",date:"January",heading:"Release"}]}); if(root.type!=="ol" || root.props.role!=="list") throw new Error("missing ordered timeline"); process.stdout.write("OK");`;
+  expect(execFileSync(process.execPath, ["--conditions=react-server", "--input-type=module", "-e", script], { encoding: "utf8" })).toBe("OK");
 });
 
 it("imports and calls the compiled Testimonial server graph with an avatar under react-server", () => {

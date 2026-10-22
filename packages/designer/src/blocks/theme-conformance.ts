@@ -22,6 +22,8 @@ const GROUNDED_READING = [
 
 /** Exact exported component inventory; a new barrel export requires registration. */
 export const BLOCK_THEME_CONFORMANCE: readonly BlockThemeRegistration[] = [
+  { exportName: "Timeline", source: "src/blocks/Timeline.tsx", contrastPairs: GROUNDED_READING },
+  { exportName: "MediaGallery", source: "src/blocks/MediaGallery.tsx", contrastPairs: GROUNDED_READING },
   { exportName: "AccessMatrix", source: "src/blocks/AccessMatrix.tsx", contrastPairs: [...BASE_READING, ...RAISED_READING, "ink-on-accent/accent"] },
   { exportName: "ColumnMapper", source: "src/blocks/ColumnMapper.tsx", contrastPairs: [...RAISED_READING, "ink-muted/surface-raised", "status-danger-text/surface-raised"] },
   { exportName: "Lockup", source: "src/blocks/Lockup.tsx", contrastPairs: ["ink-primary/surface-base", "ink-on-inverse/surface-inverse"] },

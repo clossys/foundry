@@ -177,3 +177,6 @@ export type { ItemData, ItemFigureData, ItemStatusData, ItemProps, ItemBadge, It
 
 export { Lockup } from "./Lockup.js";
 export type { LockupProps } from "./Lockup.js";
+
+export { Timeline } from "./Timeline.js";
+export type { TimelineProps, TimelineEntry } from "./Timeline.js";

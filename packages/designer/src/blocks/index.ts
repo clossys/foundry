@@ -39,6 +39,11 @@ assertPeerVersion({
 export { SECTION_GROUND_CLASSES } from "./section-ground.js";
 export type { SectionGround, SectionGroundClasses, SectionStatusTone } from "./section-ground.js";
 
+export { Timeline } from "./Timeline.js";
+export type { TimelineProps, TimelineEntry } from "./Timeline.js";
+export { MediaGallery } from "./MediaGallery.js";
+export type { MediaGalleryProps, MediaGalleryItem } from "./MediaGallery.js";
+
 export { PageHeader } from "./PageHeader.js";
 export type { PageHeaderProps } from "./PageHeader.js";
 
