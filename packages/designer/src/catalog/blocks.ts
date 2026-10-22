@@ -391,7 +391,7 @@ export const BLOCK_ENTRIES: readonly BlockEntry[] = [
   spec(PAGING, { id: "form.load-more", label: "Load more" }),
 
   // Navigate / Filtering
-  spec(FILTERING, { id: "form.filter-builder", label: "Filter builder" }),
+  exported(FILTERING, "FilterBuilder", { id: "form.filter-builder", label: "Filter builder" }),
 
   // Respond / States
   built(STATES, "EmptyState", {
