@@ -128,9 +128,12 @@ export type TokenModes =
   | { readonly modes: "invariant"; readonly reference: TokenValue }
   | { readonly modes: "per-mode"; readonly reference: PerMode<TokenValue> };
 
-/** A brand-optional token always names its fallback; no other tier has one. */
+/**
+ * A brand-optional token always names its fallback (one value, or one per
+ * mode for a per-mode token); no other tier has one.
+ */
 export type TokenTierFields =
-  | { readonly tier: "brand-optional"; readonly fallback: TokenValue }
+  | { readonly tier: "brand-optional"; readonly fallback: TokenValue | PerMode<TokenValue> }
   | { readonly tier: Exclude<TokenTier, "brand-optional">; readonly fallback?: never };
 
 /** A contrast obligation: `fg` drawn on `bg` must reach `min` (WCAG ratio). */
@@ -138,6 +141,8 @@ export interface ContrastPair {
   readonly fg: TokenId;
   readonly bg: TokenId;
   readonly min: number;
+  /** For a translucent `bg`: the ground it is composited over before measuring. */
+  readonly over?: TokenValue;
 }
 
 /** One token leaf. `consumers` is computed from source, so it is not authored here. */
