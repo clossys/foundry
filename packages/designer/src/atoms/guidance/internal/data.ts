@@ -1760,6 +1760,21 @@ export const ATOM_GUIDANCE: Readonly<Record<string, AtomGuidance>> = {
     }
   ]
 }, "src/atoms/Card.tsx"),
+  "group.grid-list": entry({
+    purpose: "Work through interactive records with independent selection and actions.",
+    useWhen: "Records have flexible content, selection controls or secondary actions within each row.",
+    avoidWhen: "Column relationships require a table or content has no row interaction.",
+    alternatives: "Use Table for shared columns or ResourceList for an assembled record-list block.",
+    content: "Supply a list name, each row’s plain text identity and host-authored checkbox names.",
+    anatomy: "A named grid with repeated record rows and optional selection checkboxes.",
+    composition: "Compose GridList.Item content with GridList.SelectionCheckbox and named child actions.",
+    accessibility: "Space toggles selection and Enter activates onAction during selection; href routing follows the peer’s toggle-selection semantics."
+  }, {
+    exportName: "GridList", entrypoint: "atoms",
+    notes: "Draft stack layout with toggle selection fixed by the atom. The peer supplies collection, keyboard, disabled and action behavior. Supply aria-label or aria-labelledby; each Item requires textValue and each SelectionCheckbox requires its host aria-label. Direct-row Enter adapts onAction during active selection. Href rows route while selection is empty; active-selection row presses toggle selection without navigation.",
+    options: [],
+    constraints: [{ kind: "data", props: ["aria-label", "aria-labelledby"], reason: "At least one nonblank accessible naming path is required.", enforcement: "runtime", evidence: { source: "src/atoms/GridList.tsx", evidence: "GridList requires aria-label or aria-labelledby." } }]
+  }, "src/atoms/GridList.tsx"),
   "group.table": entry(
 {
   "purpose": "Compare structured records across shared columns.",
@@ -4018,6 +4033,16 @@ export const ATOM_API_FACTS: Readonly<Record<string, AtomApiFacts>> = {
       ]
     }
   },
+  "group.grid-list": {
+    exportName: "GridList", source: "src/atoms/GridList.tsx", options: [],
+    tokens: {
+      coverage: "partial", reason: "Representative row state dependencies; checkbox styling is composed from the existing atom.",
+      dependencies: [
+        { property: "--ui-layout-tap-target", kind: "transitive", source: "src/atoms/internal/ui-vars.ts", evidence: "--ui-layout-tap-target", via: [{ source: "src/atoms/GridList.tsx", evidence: "minBlockSize: UI_LAYOUT_TAP_TARGET" }] },
+        { property: "--ui-ring-focus", kind: "transitive", source: "src/atoms/internal/ui-vars.ts", evidence: "--ui-ring-focus", via: [{ source: "src/atoms/GridList.tsx", evidence: "UI_RING_FOCUS" }] }
+      ]
+    }
+  },
   "group.table": {
     "exportName": "Table",
     "source": "src/atoms/Table.tsx",
@@ -4826,7 +4851,8 @@ export const ATOM_DISPLAY_GROUPS: readonly AtomDisplayGroup[] = [
           "inform.badge",
           "inform.chip",
           "inform.meter",
-          "group.table"
+          "group.table",
+          "group.grid-list"
         ]
       },
       {

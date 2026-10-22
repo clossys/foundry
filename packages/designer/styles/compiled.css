@@ -1083,6 +1083,12 @@
     max-inline-size: calc(var(--sc-w, 880) * 1px);
     overflow: visible;
   }
+  .line-clamp-2 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
   .nav-disclosure-toggle[aria-label] {
     font-size: 0;
   }
@@ -1152,6 +1158,10 @@
   .size-2xl {
     width: var(--spacing-2xl, 32px);
     height: var(--spacing-2xl, 32px);
+  }
+  .size-10 {
+    width: calc(var(--spacing, 0.25rem) * 10);
+    height: calc(var(--spacing, 0.25rem) * 10);
   }
   .size-lg {
     width: var(--spacing-lg, 16px);
@@ -2989,6 +2999,9 @@
     .tablet\:hidden {
       display: none;
     }
+    .tablet\:inline-flex {
+      display: inline-flex;
+    }
     .tablet\:table {
       display: table;
     }
@@ -3660,6 +3673,13 @@
     .forced-colors\:outline {
       outline-style: var(--tw-outline-style, solid);
       outline-width: 1px;
+    }
+    .forced-colors\:outline-2 {
+      outline-style: var(--tw-outline-style, solid);
+      outline-width: 2px;
+    }
+    .forced-colors\:-outline-offset-2 {
+      outline-offset: calc(2px * -1);
     }
     .forced-colors\:outline-current {
       outline-color: currentcolor;

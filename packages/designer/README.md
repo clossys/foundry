@@ -24,7 +24,7 @@ exports from `@clossys/designer/atoms`. The barrel remains client-only. Read
 the packed [atom selection guide](skill/atoms-guide.md) for purpose, use and
 avoidance, alternatives, content, anatomy, block composition, accessibility,
 medium evidence, represented configurations and partial token dependencies.
-Four display groups and ten families place forty-five established atom/chart leaves
+Four display groups and ten families place forty-six established atom/chart leaves
 exactly once. Groups and families are navigation; only leaves are selectable.
 Existing IDs such as `act.link` and `reveal.tabs` remain unchanged.
 
@@ -180,23 +180,22 @@ and its exception list can only shrink.
   meant to be passed to the `Icon` atom's `glyph` prop. See "Icon glyph
   data" below.
 - **`atoms`** — single-purpose: composes no other atom, or its parts are
-  homogeneous repeats rather than named regions. Thirty-three ship:
-  `Button`, `Icon`, `TextField`, `Badge`,
+  homogeneous repeats rather than named regions. Thirty-seven ship:
+  `Button`, `IconButton`, `Icon`, `TextField`, `Badge`,
   `Card`, `Breadcrumb`, `Link`, `Checkbox`, `Switch`, `Select`, `Textarea`,
   `Avatar`, `Spinner`, `Menu`, `Dialog`, `Tabs`, `Table`, `Field`,
   `Skeleton`, `Tooltip`, `Banner`, `RadioGroup`, `Popover`, `DateField`,
   `ComboBox`, `SearchField`, `FileTrigger`, `Disclosure`, `ProgressBar`,
-  `Separator`, `Chip`, `StatusMark`, `Meter`.
+  `Separator`, `Chip`, `StatusMark`, `Meter`, `ResizeHandle`, `Logomark`, `GridList`.
 - **`blocks`** — owns the internal layout of multiple named regions,
   typically by composing one or more atoms (and/or layout) into something
-  with a real job on a page. Forty-nine ship: `Lockup`, `PageHeader`, `AccountMenu`, `EmptyState`,
+  with a real job on a page. Fifty ship: `AccountMenu`, `PageHeader`, `EmptyState`,
   `DataTable`, `DetailView`, `Pagination`, `UsageMeter`, `Stat`, `Form`, `FieldGroup`,
-  `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `ContentSection`, `SectionIntro`,
-  `MediaFigure`, `MarketingChapter`, `FeatureGrid`, `Matrix`, `Specimen`, `SpecimenPanel`,
-  `OrderedStepSequence`, `StatusList`, `Faq`, `PricingTable`, `Testimonial`, `ArticleBody`,
-  `SectionFrame`, `ConsentBanner`, `Panel`, `Drawer`, `ResizablePane`, `CommandMenu`,
-  `AppNavigation`, `PageBar`, `Explorer`, `RecordLedger`, `AnatomyCallouts`, `Scene`, `Item`, `Tree`, `Items`,
-  `GroupedTable`, `CatalogWorkspace`, `Chat` and `NewsletterBand` (see "Blocks" below).
+  `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `SectionFrame`,
+  `MarketingChapter`, `FeatureGrid`, `Item`, `Items`, `Tree`, `AnatomyCallouts`, `RecordLedger`, `Scene`, `Matrix`,
+  `Specimen`, `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`,
+  `PricingTable`, `Testimonial`, `ArticleBody`, `ConsentBanner`, `NewsletterBand`, `Panel`, `Drawer`,
+  `ResizablePane`, `CommandMenu`, `AppNavigation`, `PageBar`, `GroupedTable`, `Lockup`, `Explorer`, `CatalogWorkspace`, `Chat` and `ResourceList` (see "Blocks" below).
 - **`shell`** — the persistent frame around content (nav, layout chrome)
   that provides the slots content fills. One per app; survives route
   changes that swap out the content underneath it. `Shell` ships with five
@@ -1876,6 +1875,19 @@ tab-bar example is called out there by name). `Tabs.List` needs its own
 `aria-label` (or `aria-labelledby`) when a page has more than one tab
 list, the same way `Breadcrumb`'s `<nav>` does — there's no sensible
 default, since "Tabs" describes every tab list equally badly.
+
+### `GridList` (draft)
+
+Named, stacked interactive records. Compose `GridList.Item` with required
+`textValue` and `GridList.SelectionCheckbox` with a host-authored `aria-label`.
+Provide `aria-label` or `aria-labelledby` on the root; missing naming throws
+`TypeError`. The peer supplies arrow navigation, Home/End and typeahead.
+Space toggles selection; Enter performs `onAction` even during selection.
+An `href` row routes on Enter or press while selection is empty; during active
+selection, pressing the row toggles selection without navigating.
+Layout is fixed to stack and selection behavior to toggle. A checked checkbox
+and `data-selected` expose selection alongside its surface color. Supply empty
+content through `renderEmptyState` to keep it within the grid.
 
 ### `Table`
 
@@ -4410,6 +4422,55 @@ Measure and section padding come from the parent `SectionFrame` (`measure="prose
 article plus a sidebar callout, or two comparison columns), which is what
 keeps it at this layer rather than being a view (test 3).
 
+### `ResourceList` (draft)
+
+A selectable record list with toolbar, bulk, recovery and footer regions.
+All visible and assistive copy comes from host props. A non-blank `aria-label`
+is required in every state (empty, loading, error and populated). Multiple selection requires
+`selectRowLabel`; items with actions require `actionsLabel`; loading requires
+`loadingLabel`. Missing or blank labels throw `TypeError`. Error content has
+priority over loading, then empty content and records. Loading unmounts the grid
+and announces one status while decorative skeleton rows stand in for content.
+An empty collection renders `EmptyState` directly, with no grid rows.
+
+```tsx
+import { useState } from "react";
+import { Badge } from "@clossys/designer/atoms";
+import { ResourceList, type ResourceListItem } from "@clossys/designer/blocks";
+
+const notes: ResourceListItem[] = [
+  { id: "r1", textValue: "Quarterly planning notes", title: "Quarterly planning notes",
+    description: "Shared with the leadership group.", meta: "Edited 2 days ago",
+    status: <Badge variant="info">Draft</Badge>, href: "/docs/r1",
+    actions: [{ id: "dup", label: "Duplicate", onAction: () => {} },
+      { id: "del", label: "Delete note", onAction: () => {}, isDestructive: true }] },
+  { id: "r2", textValue: "Vendor onboarding checklist", title: "Vendor onboarding checklist",
+    meta: "Edited last week", status: <Badge variant="success">Published</Badge> },
+  { id: "r3", textValue: "Archived roadmap", title: "Archived roadmap",
+    isDisabled: true, meta: "Read only" },
+];
+
+export function Notes() {
+  const [selected, setSelected] = useState<"all" | Set<string>>(new Set());
+  return <ResourceList aria-label="Notes" items={notes} selectionMode="multiple"
+    selectedKeys={selected} onSelectionChange={setSelected}
+    selectRowLabel={text => `Select ${text}`} actionsLabel={text => `Actions for ${text}`}
+    emptyState={{ title: "No notes yet", description: "Add a note to begin." }}
+    bulkBar={<p>Selected notes</p>} footer={<a href="/docs">Browse notes</a>} />;
+}
+```
+
+The first two actions appear inline from the tablet breakpoint; smaller layouts
+put them in an overflow menu, with remaining actions in the wide-layout overflow.
+Overflow uses the existing Menu placement. Enter activates `onAction` while
+records are selected. Href activation follows peer toggle semantics: Enter and
+press navigate with empty selection; during active selection, row presses toggle
+selection without navigation. Disabled actions may provide
+`disabledReason`, associated through `aria-describedby`. The host supplies
+`error`, `bulkBar`, and `footer` content; bulk content appears while an enabled
+record is selected. Long titles truncate, descriptions clamp, and meta wraps.
+This client block is exported through `blocks`, not `blocks/server`.
+
 ### `AccountMenu`
 
 A Navigation Material combining Avatar, Button, Icon, Tooltip and Menu. The host
@@ -6792,6 +6853,10 @@ not a grab-bag).
 | `TabsListProps` | type | Props for `Tabs.List`: `children`, `className`, plus most of react-aria-components' own `TabList` props (including `aria-label`). |
 | `TabsTabProps` | type | Props for `Tabs.Tab`: `children`, `className`, `style`, `id`, `isDisabled`, plus everything react-aria-components' own `Tab` accepts. |
 | `TabsPanelProps` | type | Props for `Tabs.Panel`: `children`, `className`, `id`, plus everything react-aria-components' own `TabPanel` accepts. |
+| `GridList` | component | Draft stacked record primitives with peer keyboard, toggle selection, row actions and in-grid empty content. |
+| `GridListProps` | type | Root peer props plus `className`; requires `aria-label` or `aria-labelledby` at runtime; layout and selection behavior are fixed. |
+| `GridListItemProps` | type | Row peer props with required `textValue` and optional `className`. |
+| `GridListSelectionCheckboxProps` | type | Required host-authored `aria-label` for the selection checkbox. |
 | `Table` | component | Table primitives built on react-aria-components' `Table`/`TableHeader`/`TableBody`/`Column`/`Row`/`Cell`. Carries `Table.Header`, `Table.Column`, `Table.Body`, `Table.Row`, `Table.Cell`, `Table.SelectAllCheckbox`, `Table.SelectionCheckbox`. |
 | `TableProps` | type | Props for `Table`: `children`, `className`, `style`, plus react-aria-components' own `Table` props (`aria-label`, `sortDescriptor`, `onSortChange`, `selectionMode`, `selectedKeys`, `onSelectionChange`, ...). |
 | `TableHeaderProps` | type | Props for `Table.Header`: `children` (`Table.Column`s), `className`, plus react-aria-components' own `TableHeader` props. |
@@ -6854,6 +6919,10 @@ not a grab-bag).
 | `PageHeaderProps` | type | Props for `PageHeader`: `title`, `description`, `actions`, `breadcrumb`, plus every native `<header>` attribute. |
 | `EmptyState` | component | Zero-item placeholder: icon slot, title, description, action slot. |
 | `EmptyStateProps` | type | Props for `EmptyState`: `icon`, `title`, `description`, `action`, plus every native `<div>` attribute. |
+| `ResourceList` | component | Draft selectable records with responsive actions and host loading, empty, error, bulk and footer content. |
+| `ResourceListProps` | type | `aria-label`, `items`, `emptyState`, selection keys and callbacks, conditional label functions, loading options and host region slots. |
+| `ResourceListItem` | type | `id`, `textValue`, `title`, optional description, meta, media, status, href, actions and disabled state. |
+| `ResourceListAction` | type | `id`, `label`, `onAction`, optional destructive or disabled state and host disabled reason. |
 | `DataTable` | component | Controlled data grid built on `Table`'s primitives: toolbar slot, the grid itself, empty state, loading state, footer slot. |
 | `DataTableProps` | type | Props for `DataTable`: `aria-label`, `columns`, `rows`, `rowKey`, `sortDescriptor`, `onSortChange`, `selectionMode`, `selectedKeys`, `onSelectionChange`, `isLoading`, `loadingRowCount`, `emptyStateTitle`, `emptyStateDescription`, `emptyStateAction`, `toolbar`, `footer`, `className`, `style`. |
 | `DataTableColumn` | type | One column definition: `id`, `header`, `cell(row)`, `allowsSorting?`, `isRowHeader?`, `width?`. |
@@ -7678,14 +7747,13 @@ over the IDENTICAL fixture in the same test, exits `0`.
 
 ## What's deliberately not here
 
-**Atoms:** thirty-three ship —
-`Button`, `Icon`, `TextField`, `Badge`, `Card`, `Breadcrumb`, `Link`,
+**Atoms:** thirty-seven ship —
+`Button`, `IconButton`, `Icon`, `TextField`, `Badge`, `Card`, `Breadcrumb`, `Link`,
 `Checkbox`, `Switch`, `Select`, `Textarea`, `Avatar`, `Spinner`, `Menu`,
 `Dialog`, `Tabs`, `Table`, `Field`, `Skeleton`, `Tooltip`, `Banner`,
 `RadioGroup`, `Popover`, `DateField`, `ComboBox`, `SearchField`,
 `FileTrigger`, `Disclosure`, `ProgressBar`, `Separator`, `Chip`,
-`StatusMark`, `Meter` (the last two added for data shown inside content
-specimens). No `Modal` exposed as a public atom of
+`StatusMark`, `Meter`, `ResizeHandle`, `Logomark` and `GridList`. No `Modal` exposed as a public atom of
 its own beyond what `Dialog` and `Popover` already compose internally —
 that gets added here only once something real needs a bare modal overlay
 with neither `Dialog`'s fixed trigger/content shape nor `Popover`'s
@@ -7698,7 +7766,7 @@ speculatively, just because a related component shipped, is the exact
 un-bounded growth this package's own "variant rule" warns against one level
 up. They get added here only once something real needs them.
 
-**Blocks:** fifty-one ship — `AccessMatrix`, `ColumnMapper`, `Lockup`, `PageHeader`, `AccountMenu`, `EmptyState`, `DataTable`, `DetailView`, `Pagination`, `UsageMeter`, `Stat`, `Form`, `FieldGroup`, `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `MarketingChapter`, `FeatureGrid`, `Matrix`, `Specimen`, `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`, `PricingTable`, `Testimonial`, `ArticleBody`, `SectionFrame`, `ConsentBanner`, `Panel`, `Drawer`, `ResizablePane`, `CommandMenu`, `AppNavigation`, `PageBar`, `Explorer`, `RecordLedger`, `AnatomyCallouts`, `Scene`, `Item`, `Tree`, `Items`, `GroupedTable`, `CatalogWorkspace`, `Chat`, `NewsletterBand`. No
+**Blocks:** fifty-two ship — `AccessMatrix`, `ColumnMapper`, `Lockup`, `PageHeader`, `AccountMenu`, `EmptyState`, `DataTable`, `DetailView`, `Pagination`, `UsageMeter`, `Stat`, `Form`, `FieldGroup`, `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `MarketingChapter`, `FeatureGrid`, `Matrix`, `Specimen`, `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`, `PricingTable`, `Testimonial`, `ArticleBody`, `SectionFrame`, `ConsentBanner`, `Panel`, `Drawer`, `ResizablePane`, `CommandMenu`, `AppNavigation`, `PageBar`, `Explorer`, `RecordLedger`, `AnatomyCallouts`, `Scene`, `Item`, `Tree`, `Items`, `GroupedTable`, `CatalogWorkspace`, `Chat`, `NewsletterBand` and `ResourceList` — completing this layer. No
 `FilterBar` block:
 `DataTable`'s own `toolbar` slot (and `Toolbar`'s own `search` slot) are
 deliberately plain `ReactNode`s, not a block with its own opinion about
