@@ -318,8 +318,8 @@
 @source inline("nav-disclosure-panel nav-disclosure-toggle navigate navigation navigationKey navigational nearest");
 @source inline("nearestDist need needs negative neither nested nesting neutral neutralForeground never new next");
 @source inline("next.lane next: nextPageLabel no no-repeat no-scripting no-underline no: noResultsLabel");
-@source inline("noUncheckedIndexedAccess noValidate noValues: node node.children node.id node.label node.max");
-@source inline("node.nextKey node.style.transform node.style.transitionProperty node: node:fs nodes nodes.");
+@source inline("noUncheckedIndexedAccess noValidate noValues: node node.children node.id node.kind node.label");
+@source inline("node.max node.nextKey node.style.transform node.style.transitionProperty node: node:fs nodes nodes.");
 @source inline("nodes.size nodes: non-empty non-empty. non-finite non-positive non-scaling-stroke nonblank none");
 @source inline("none. nonempty nonempty. nonnegative nonnegative. noopener noreferrer normalised: normalized not");
 @source inline("not-last:after:text-ink-muted not-last:border-b not-offered not. notEmpty notEquals notIn");
