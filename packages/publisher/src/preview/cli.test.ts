@@ -78,7 +78,16 @@ describe("publisher-preview main — brand coverage gate", () => {
     expect(html).toContain("SectionedView");
     expect(html).toContain("AuthView");
     expect(html).toContain("CollectionView");
+    expect(html).toContain("IndexView");
+    expect(html).toContain("DetailsView");
     const page = new JSDOM(html).window.document;
+    for (const name of ["index", "details"]) {
+      const view = page.querySelector(`main[aria-label="publisher-preview-${name}"]`);
+      expect(view).not.toBeNull();
+      expect(view?.querySelectorAll("h1")).toHaveLength(0);
+      expect(view?.querySelector("header")).toBeNull();
+      expect(view?.querySelector("main, footer, [role=banner], [role=contentinfo]")).toBeNull();
+    }
     const sectioned = page.querySelector('main[aria-label="publisher-preview-sectioned"]');
     expect(sectioned).not.toBeNull();
     expect(sectioned?.querySelectorAll("#faq [data-items] details summary")).toHaveLength(4);

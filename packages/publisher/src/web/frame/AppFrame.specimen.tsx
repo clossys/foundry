@@ -177,6 +177,7 @@ export function AppFrameSpecimen({
           if (entry.id === "profile" || entry.id === "preferences") route(entry.id);
         },
       }}
+      page={{ title: destination.title, scope: workspaceLabel, width: "contained" }}
       commands={commands}
       theme={{ storageKey: "example-app-theme", defaultPreference: "system" }}
       rightPanel={{ label: contextLabel, handleLabel: resizeContextLabel, min: 220, max: 420, defaultValue: 280,
@@ -191,7 +192,6 @@ export function AppFrameSpecimen({
       <div className="flex min-w-0 flex-col gap-lg p-lg">
         <div className="flex flex-col gap-sm">
           <p className="m-0 text-caption text-ink-muted">{workspaceLabel}</p>
-          <h1 className="m-0 text-display-s text-ink-primary">{destination.title}</h1>
           <p className="m-0 text-body text-ink-secondary">{destination.description}</p>
         </div>
         {page === "signed-out" ? <p className="m-0 text-body text-ink-secondary">{noAccountMessage}</p> :

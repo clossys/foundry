@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactNode } from "react";
 import { assertNoNestedInteractive } from "../stretched-link.js";
-import { Meter, type MeterDirection } from "../../atoms/Meter.js";
+import { Meter } from "../../atoms/Meter.server.js";
+import type { MeterDirection } from "../../atoms/Meter.js";
 import { StatusMark, type StatusMarkTone } from "../../atoms/StatusMark.js";
 import { cx } from "../../atoms/internal/cx.js";
 import { UI_BORDER_HAIRLINE } from "../../atoms/internal/ui-vars.js";

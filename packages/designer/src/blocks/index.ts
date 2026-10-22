@@ -48,17 +48,24 @@ export type { AccountMenuProps, AccountMenuActor, AccountMenuEntry, AccountMenuC
 export { EmptyState } from "./EmptyState.js";
 export type { EmptyStateProps } from "./EmptyState.js";
 
+export { parseDataTableViewModel, serializeDataTableViewModel, DataTableViewModelError } from "./data-table/view-model.js";
+export type { DataTableMessages } from "./data-table/messages.js";
+export type { DataTableViewModel, DataTableViewModelV1, DataTableMode, DataTableDensity, DataTableSortRule } from "./data-table/view-model.js";
+
 export { DataTable } from "./DataTable.js";
 export type { DataTableProps, DataTableColumn, DataTableSelectionMode } from "./DataTable.js";
 
-export { filterRows, groupRows, pivotRows, aggregate, parseTableModel, serializeTableModel, TableModelError } from "./table-model/index.js";
-export type { TableValue, TableColumnKind, TableColumn, TableCollation, TableFilter, TableDimension, TableMeasure, TablePivot, TableModel, TableFacet, TableFilterResult, TableAggregateValue, TableAggregates, TableGroup, TablePivotAxis, TablePivotCell, TablePivotResult, TableModelErrorCode } from "./table-model/index.js";
+export { filterRows, groupRows, pivotRows, aggregate, parseTableModel, serializeTableModel, TableModelError, tableFilterPredicate, pruneFilterColumn, TABLE_FILTER_CONFORMANCE } from "./table-model/index.js";
+export type { TableValue, TableColumnKind, TableColumn, TableCollation, TableFilter, TableFilterGroup, TableFilterNode, TableDimension, TableMeasure, TablePivot, TableModel, TableFacet, TableFilterResult, TableAggregateValue, TableAggregates, TableGroup, TablePivotAxis, TablePivotCell, TablePivotResult, TableModelErrorCode } from "./table-model/index.js";
 
 export { DetailView } from "./DetailView.js";
 export type { DetailViewProps, DetailViewField } from "./DetailView.js";
 
 export { Pagination } from "./Pagination.js";
 export type { PaginationProps } from "./Pagination.js";
+
+export { UsageMeter } from "./UsageMeter.js";
+export type { UsageMeterProps, UsageMeterThreshold } from "./UsageMeter.js";
 
 export { Stat } from "./Stat.js";
 export type { StatProps, StatTrend } from "./Stat.js";
@@ -182,7 +189,7 @@ export { Faq } from "./Faq.js";
 export type { FaqProps, FaqItem, FaqHeadingLevel } from "./Faq.js";
 
 export { PricingTable } from "./PricingTable.js";
-export type { PricingTableProps, PricingTier, PricingTableHeadingLevel } from "./PricingTable.js";
+export type { PricingTableProps, PricingTier, PricingTableHeadingLevel, PricingTierPrice, PricingCellData, PricingComparison, PricingComparisonGroup, PricingComparisonRow } from "./PricingTable.js";
 
 export { Testimonial } from "./Testimonial.js";
 export type { TestimonialProps } from "./Testimonial.js";
@@ -206,8 +213,14 @@ export { CommandMenu, useCommandMenuShortcut } from "./CommandMenu.js";
 export type { CommandMenuProps, CommandMenuItem, CommandMenuGroup, CommandMenuShortcutOptions } from "./command-menu-types.js";
 export { AppNavigation } from "./AppNavigation.js";
 export type { AppNavigationProps } from "./AppNavigation.js";
+export { PageBar } from "./PageBar.js";
+export type { PageBarProps, PageBarPage, PageBarCrumb, PageBarAction, PageBarDestination, PageBarLabels, PageBarWidth } from "./PageBar.js";
 export { validateAppNavigationTree, getAppNavigationAncestry, getAppNavigationBreadcrumbs } from "./app-navigation-tree.js";
 export type { AppNavigationNode, AppNavigationLeaf, AppNavigationDestination, AppNavigationTarget, AppNavigationBreadcrumb } from "./app-navigation-tree.js";
+export { Explorer } from "./Explorer.js";
+export type { ExplorerProps } from "./Explorer.js";
+export { indexTree, getTreeAncestry, getTreeBreadcrumbs } from "./tree-model.js";
+export type { TreeNode, TreeTarget, TreeBreadcrumb, TreeValidationOptions, TreeIndex } from "./tree-model.js";
 
 export { RecordLedger } from "./RecordLedger.js";
 export type { RecordLedgerProps, LedgerRowData, LedgerGroupData } from "./RecordLedger.js";
@@ -224,5 +237,25 @@ export type { TreeProps, TreeNodeData } from "./tree/Tree.js";
 export { Items } from "./items/Items.js";
 export type { ItemData, ItemFigureData, ItemStatusData, ItemProps, ItemBadge, ItemSize, ItemTreatment, ItemSpan, ItemsProps, ItemsArrangement, ItemsColumns, ItemsScale, ItemsGroup, ItemsLane } from "./items/types.js";
 
+export { Lockup } from "./Lockup.js";
+export type { LockupProps } from "./Lockup.js";
 export { GroupedTable } from "./GroupedTable.js";
 export type { GroupedTableProps, GroupedTableGroup, GroupedTableColumn } from "./GroupedTable.js";
+
+export { GraphValidationError, validateGraph, neighbors, subgraph, degrees, components, shortestPath, groupByKind, radialLayout, forceLayout, edgeRoutingHints } from "./graph-model/index.js";
+export type { GraphNode, GraphEdge, GraphInput, GraphModelEdge, GraphModel, GraphErrorCode, GraphNeighborOptions, GraphSubgraphOptions, GraphDegree, GraphKindGroup, GraphPosition, GraphRadialOptions, GraphForceOptions, GraphEdgeRoutingHint } from "./graph-model/index.js";
+
+export { CatalogWorkspace } from "./CatalogWorkspace.js";
+export type { CatalogWorkspaceProps, CatalogWorkspaceItem, CatalogWorkspaceSize } from "./CatalogWorkspace.js";
+
+export { Chat } from "./chat/Chat.js";
+export type { ChatProps, ChatMessage, ChatActions, ChatLabels } from "./chat/types.js";
+
+export { AccessMatrix } from "./AccessMatrix.js";
+export type { AccessCellValue, AccessRole, AccessPermission, AccessGroup, AccessMatrixValue, AccessMatrixChange, AccessMatrixLabels, AccessMatrixProps } from "./AccessMatrix.js";
+export { ColumnMapper } from "./ColumnMapper.js";
+export type { ColumnMapperTarget, ColumnMapperSource, ColumnMapping, ColumnMapperIssue, ColumnMapperLabels, ColumnMapperProps } from "./ColumnMapper.js";
+export { NewsletterBand } from "./NewsletterBand.js";
+export type { NewsletterBandProps, NewsletterStatus } from "./NewsletterBand.js";
+export { ResourceList } from "./ResourceList.js";
+export type { ResourceListProps, ResourceListItem, ResourceListAction } from "./ResourceList.js";

@@ -10,6 +10,8 @@ import { checkBrandAssetRoster, type BrandAssetEntry } from "../media/brand-asse
 import { renderWebDocument } from "../web/renderWebDocument.js";
 import { CaptureView } from "../web/views/CaptureView.js";
 import { CollectionView } from "../web/views/CollectionView.js";
+import { IndexView } from "../web/views/IndexView.js";
+import { DetailsView } from "../web/views/DetailsView.js";
 import { DocumentView } from "../web/views/DocumentView.js";
 import { LandingView } from "../web/views/LandingView.server.js";
 import { heroCompactCatalogDocument, contentCatalogCopyResolver } from "./fixture-content-catalog.js";
@@ -23,6 +25,8 @@ import {
   previewAuthDocument,
   previewCaptureViewProps,
   previewCollectionViewProps,
+  previewIndexViewProps,
+  previewDetailsViewProps,
   previewDocumentViewAction,
   previewDocumentViewDocument,
   previewCopyResolver,
@@ -128,6 +132,8 @@ export function renderPreviewGalleryEntries(): PreviewGalleryEntry[] {
     { view: "CaptureView", markup: capture },
     { view: "DocumentView", markup: documentView },
     { view: "CollectionView", markup: collection },
+    { view: "IndexView", markup: renderToStaticMarkup(createElement("main", { "aria-label": "publisher-preview-index" }, createElement(IndexView<(typeof previewIndexViewProps.rows)[number]>, previewIndexViewProps))) },
+    { view: "DetailsView", markup: renderToStaticMarkup(createElement("main", { "aria-label": "publisher-preview-details" }, createElement(DetailsView, previewDetailsViewProps))) },
   ];
 }
 

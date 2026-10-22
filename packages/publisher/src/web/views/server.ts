@@ -24,6 +24,9 @@ export type { CaptureViewProps } from "./CaptureView.js";
 export { DocumentView } from "./DocumentView.js";
 export type { DocumentViewEffectiveDate, DocumentViewProps } from "./DocumentView.js";
 
+export { PageView } from "./PageView.js";
+export type { PageViewProps } from "./PageView.js";
+
 export { CollectionView } from "./CollectionView.js";
 export type { CollectionViewEmptyState, CollectionViewEntry, CollectionViewLink, CollectionViewPagination, CollectionViewProps } from "./CollectionView.js";
 
@@ -62,3 +65,8 @@ export type { ConstructionStatusInput } from "./constructionStatus.js";
 
 export { ContactForm } from "./ContactForm.server.js";
 export type { ContactFormCopy, ContactFormDevPreview, ContactFormProps, ContactFormTopic, ContactFormValues } from "./ContactForm.js";
+
+export { IndexView } from "./IndexView.server.js";
+export type { IndexViewCollection, IndexViewProps, IndexViewRowRoute, IndexViewTable } from "./IndexView.js";
+export { DetailsView } from "./DetailsView.server.js";
+export type { DetailsViewBlock, DetailsViewLayout, DetailsViewProps, DetailsViewRegion, DetailsViewSection, DetailsViewSectionState, DetailsViewTab } from "./DetailsView.js";

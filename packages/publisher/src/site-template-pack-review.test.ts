@@ -319,7 +319,6 @@ describe("resolvePackReviewPage", () => {
     const html = renderToStaticMarkup(
       createElement(PackReviewView, {
         brand: "Example Studio",
-        surfaceLabel: text.surfaceLabel,
         heading: text.heading,
         description: text.description,
         pages: model.pages,
@@ -924,7 +923,6 @@ describe("resolvePackReviewSections", () => {
     const html = renderToStaticMarkup(
       createElement(PackReviewView, {
         brand: "Example Studio",
-        surfaceLabel: SECTION_TEXT.surfaceLabel,
         heading: SECTION_TEXT.heading,
         description: SECTION_TEXT.description,
         ...sections,
@@ -1067,7 +1065,6 @@ describe("resolvePackReviewSections", () => {
     const html = renderToStaticMarkup(
       createElement(PackReviewView, {
         brand: "Example Studio",
-        surfaceLabel: SECTION_TEXT.surfaceLabel,
         heading: SECTION_TEXT.heading,
         description: SECTION_TEXT.description,
         ...sectionsFor(presentLoaders()),

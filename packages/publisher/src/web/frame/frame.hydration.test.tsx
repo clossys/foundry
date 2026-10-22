@@ -83,3 +83,24 @@ it("keeps generated panel IDs distinct and matching across server and client dis
   expect(new Set(ids).size).toBe(2);
   for (const id of ids) expect([...container.querySelectorAll(".nav-disclosure-panel")].filter(panel => panel.id === id)).toHaveLength(1);
 });
+
+it("hydrates footer links and the default home without changing names or tab order", async () => {
+  const { SiteFrame } = await import("./SiteFrame.js");
+  const footerShell: SiteShellInput = { ...shell, footer: { legal: { entity: { id: "Example" }, links: [{ href: "/privacy", label: { id: "Privacy" } }] } } };
+  const tree = <SiteFrame shell={footerShell} resolveCopy={resolveCopy} resolveAsset={resolveAsset}><p>content</p></SiteFrame>;
+  const container = document.createElement("div");
+  container.innerHTML = renderToString(tree);
+  const before = container.querySelector("footer")!.outerHTML;
+  document.body.append(container);
+  const recoverable = vi.fn();
+  const root = await act(async () => hydrateRoot(container, tree, { onRecoverableError: recoverable }));
+  try {
+    const footer = container.querySelector("footer")!;
+    expect(footer.outerHTML).toBe(before);
+    const privacy = within(footer).getByRole("link", { name: "Privacy" });
+    privacy.focus();
+    await userEvent.setup().tab();
+    expect(within(footer).getByRole("link", { name: "Home" })).toHaveFocus();
+    expect(recoverable).not.toHaveBeenCalled();
+  } finally { act(() => root.unmount()); container.remove(); }
+});

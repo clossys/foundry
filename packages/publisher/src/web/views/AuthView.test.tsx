@@ -86,12 +86,11 @@ describe("AuthView", () => {
     expect(within(siteHeader).getByText("Acme")).toBeInTheDocument();
   });
 
-  it("forwards surfaceLabel to the site header as a Badge inside the banner", () => {
-    render(<AuthView heading="Sign in" brand={<span>Acme</span>} surfaceLabel="admin" form={<div>form</div>} />);
+  it("keeps obsolete surface badges out of the site banner", () => {
+    render(<AuthView heading="Sign in" brand={<span>Acme</span>} form={<div>form</div>} />);
     const siteHeader = screen.getAllByRole("banner")[0] as HTMLElement;
-    const badge = within(siteHeader).getByText("admin");
-    expect(badge.tagName).toBe("SPAN");
-    expect(badge.className).toContain("bg-surface-sunken");
+    expect(within(siteHeader).queryByText("admin")).not.toBeInTheDocument();
+    expect(siteHeader.querySelector(".site-header-actions")!.children).toHaveLength(0);
   });
 
   it("has no mode prop: no mode attribute is rendered, and a stray mode changes no structure (the type error is asserted in AuthView.check.tsx)", () => {
@@ -459,12 +458,12 @@ describe("AuthView", () => {
     expect(screen.getByRole("main")).not.toHaveTextContent(/Help|Contact us|NAV-SENTINEL/);
   });
 
-  it("passes ground to both the header and the footer, and keeps the bare chrome (with surfaceLabel) when every header slot is omitted", () => {
-    const bare = renderToStaticMarkup(<AuthView brand="Acme" surfaceLabel="demo" heading="Sign in" description={null} form="form" />);
-    expect(bare).toContain(renderToStaticMarkup(<SiteHeader brand="Acme" surfaceLabel="demo" />) + "<main");
+  it("passes ground to both the header and the footer, and keeps the bare chrome when every header slot is omitted", () => {
+    const bare = renderToStaticMarkup(<AuthView brand="Acme" heading="Sign in" description={null} form="form" />);
+    expect(bare).toContain(renderToStaticMarkup(<SiteHeader brand="Acme" />) + "<main");
     expect(bare).toContain("</main>" + renderToStaticMarkup(<SiteFooter />) + "</div>");
     const grounded = renderToStaticMarkup(<AuthView brand="Acme" heading="Sign in" description={null} form="form" ground="transparent" />);
-    expect(grounded).toContain(renderToStaticMarkup(<SiteHeader ground="transparent" brand="Acme" />) + "<main");
+    expect(grounded).toContain(renderToStaticMarkup(<SiteHeader surface="transparent" brand="Acme" />) + "<main");
     expect(grounded).toContain("</main>" + renderToStaticMarkup(<SiteFooter ground="transparent" />) + "</div>");
   });
 

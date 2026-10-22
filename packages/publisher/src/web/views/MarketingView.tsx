@@ -2,7 +2,7 @@ import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { mergeUiClasses } from "@clossys/designer/atoms";
 import { Faq, FeatureGrid, Hero, type SectionGround } from "@clossys/designer/blocks";
 import { SiteFooter, SiteHeader } from "@clossys/designer/shell";
-import type { SiteChromeGround } from "../internal/viewChromeGround.js";
+import { siteHeaderPresentation, type SiteChromeGround } from "../internal/viewChromeGround.js";
 
 /**
  * One entry in {@link MarketingViewProps.features} — deliberately a single
@@ -154,7 +154,7 @@ export function MarketingView({
 }: MarketingViewProps) {
   return (
     <div {...rest} className={mergeUiClasses("flex min-h-dvh flex-col", className)} style={style}>
-      <SiteHeader ground={ground} brand={brand} nav={nav} secondaryAction={secondaryAction} actions={headerAction} />
+      <SiteHeader {...siteHeaderPresentation(ground)} brand={brand} nav={nav} actions={<>{secondaryAction}{headerAction}</>} />
       <main className="flex flex-col gap-2xl py-2xl">
         <Hero
           eyebrow={heroEyebrow}
