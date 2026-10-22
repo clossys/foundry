@@ -64,6 +64,9 @@ export type { DetailViewProps, DetailViewField } from "./DetailView.js";
 export { Pagination } from "./Pagination.js";
 export type { PaginationProps } from "./Pagination.js";
 
+export { UsageMeter } from "./UsageMeter.js";
+export type { UsageMeterProps, UsageMeterThreshold } from "./UsageMeter.js";
+
 export { Stat } from "./Stat.js";
 export type { StatProps, StatTrend } from "./Stat.js";
 
