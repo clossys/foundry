@@ -294,6 +294,20 @@ it("opens a valid boolean draft and applies its default before live Yes/No chang
   expect(changed).toHaveBeenLastCalledWith({ ...base, filters: [{ column: "archived", kind: "boolean", op: "equals", value: false }] });
 });
 
+// Decodes the four entities Chromium's --dump-dom writes into text, in a single pass so a literal "&lt;" (dumped as "&amp;lt;") is not decoded twice.
+const dumpedEntities = { quot: '"', amp: "&", lt: "<", gt: ">" } as const;
+function decodeDumpedText(dumped: string): string {
+  return dumped.replace(/&(quot|amp|lt|gt);/g, (_match, entity: keyof typeof dumpedEntities) => dumpedEntities[entity]);
+}
+
+describe("decoding dumped geometry text", () => {
+  it("decodes each entity once, so an escaped ampersand stays a literal entity", () => {
+    expect(decodeDumpedText("&quot;a&quot; &amp; &lt;b&gt;")).toBe('"a" & <b>');
+    expect(decodeDumpedText("&amp;lt;")).toBe("&lt;");
+    expect(decodeDumpedText("&amp;quot;&amp;amp;&amp;gt;")).toBe("&quot;&amp;&gt;");
+  });
+});
+
 describe("FilterBuilder measured geometry", () => {
   type Frame = {
     viewport: number; scrollWidth: number; theme: string; ink: string; surface: string; offenders: string[];
@@ -361,7 +375,7 @@ describe("FilterBuilder measured geometry", () => {
       if (!dom) throw failure;
       const match = /<pre id="geometry">([\s\S]*?)<\/pre>/.exec(dom);
       if (!match) throw new Error("Chromium did not produce FilterBuilder layout measurements.");
-      frames = JSON.parse(match[1]!.replaceAll("&quot;", '"').replaceAll("&amp;", "&").replaceAll("&lt;", "<").replaceAll("&gt;", ">"));
+      frames = JSON.parse(decodeDumpedText(match[1]!));
     } finally {
       rmSync(directory, { recursive: true, force: true });
     }
