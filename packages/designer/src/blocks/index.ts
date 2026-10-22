@@ -189,7 +189,7 @@ export { Faq } from "./Faq.js";
 export type { FaqProps, FaqItem, FaqHeadingLevel } from "./Faq.js";
 
 export { PricingTable } from "./PricingTable.js";
-export type { PricingTableProps, PricingTier, PricingTableHeadingLevel } from "./PricingTable.js";
+export type { PricingTableProps, PricingTier, PricingTableHeadingLevel, PricingTierPrice, PricingCellData, PricingComparison, PricingComparisonGroup, PricingComparisonRow } from "./PricingTable.js";
 
 export { Testimonial } from "./Testimonial.js";
 export type { TestimonialProps } from "./Testimonial.js";
