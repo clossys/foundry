@@ -2,6 +2,7 @@ import { spawn, spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { createServer } from "node:http";
 import { fileURLToPath } from "node:url";
+import { EXIT_NO_WEBSOCKET } from "./state-sweep.mjs";
 import assert from "node:assert/strict";
 import test from "node:test";
 
@@ -96,11 +97,12 @@ async function sweepFixture(browser, body) {
     child.stdout.on("data", chunk => { stdout += String(chunk); });
     child.stderr.on("data", chunk => { stderr += String(chunk); });
     const code = await new Promise(resolve => child.once("exit", resolve));
+    if (code === EXIT_NO_WEBSOCKET) return { unavailable: stderr.trim().split("\n").pop() };
     let report;
     try { report = JSON.parse(stdout); } catch {
       assert.fail(`state-sweep printed no JSON report (exit ${code}); stderr: ${stderr.trim().slice(-800) || "(empty)"}; stdout: ${stdout.slice(0, 200) || "(empty)"}`);
     }
-    return report.observations.filter(item => item.check === "tap-target");
+    return { observations: report.observations.filter(item => item.check === "tap-target") };
   } finally {
     server.close();
   }
@@ -112,11 +114,13 @@ test("tap-target probe passes when the target is topmost or the topmost hit is i
   const browser = findBrowser();
   if (!browser.path) return t.skip(`SKIPPED: ${browser.reason}`);
   const plain = await sweepFixture(browser.path, `<button id="target" style="${SIZED}">go</button>`);
-  assert.ok(plain.length > 0);
-  for (const item of plain) assert.equal(item.status, "pass", JSON.stringify(item));
+  if (plain.unavailable) return t.skip(`SKIPPED: ${plain.unavailable}`);
+  assert.ok(plain.observations.length > 0);
+  for (const item of plain.observations) assert.equal(item.status, "pass", JSON.stringify(item));
   const nested = await sweepFixture(browser.path,
     `<button id="target" style="${SIZED};position:relative"><span style="position:absolute;inset:0"></span></button>`);
-  for (const item of nested) assert.equal(item.status, "pass", JSON.stringify(item));
+  assert.ok(nested.observations.length > 0);
+  for (const item of nested.observations) assert.equal(item.status, "pass", JSON.stringify(item));
 });
 
 test("OCCLUSION NEGATIVE: a covering element over the probe points is never reported as a verified 44px target", { timeout: 240000 }, async t => {
@@ -124,8 +128,9 @@ test("OCCLUSION NEGATIVE: a covering element over the probe points is never repo
   if (!browser.path) return t.skip(`SKIPPED: ${browser.reason}`);
   const covered = await sweepFixture(browser.path,
     `<button id="target" style="${SIZED}">go</button><div id="cover" style="position:fixed;top:0;left:0;width:100%;height:100%"></div>`);
-  assert.ok(covered.length > 0);
-  for (const item of covered) {
+  if (covered.unavailable) return t.skip(`SKIPPED: ${covered.unavailable}`);
+  assert.ok(covered.observations.length > 0);
+  for (const item of covered.observations) {
     assert.equal(item.status, "finding", JSON.stringify(item));
     assert.equal(item.details.measured.length, 0);
     assert.match(item.details.small[0].reason, /No verified 44px hit area/);

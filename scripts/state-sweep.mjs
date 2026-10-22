@@ -4,8 +4,10 @@ import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 
+/** Distinct exit code: the CDP client needs a WebSocket this Node cannot provide. */
+export const EXIT_NO_WEBSOCKET = 3;
 const WIDTHS = [320, 390, 640, 768];
 const CHECKS = ["overflow", "tap-target", "forced-colors-focus", "reduced-motion-animation", "pending-layout-shift"];
 export function parseArgs(args) {
@@ -218,6 +220,17 @@ async function main() {
     console.error(reason);
     console.log(JSON.stringify(buildReport({ url: options.url, observations: [], skippedReason: reason }), null, 2));
     return 0;
+  }
+  if (typeof globalThis.WebSocket !== "function") {
+    // Node 20.10+ ships the client only behind a flag (global from Node 22), and
+    // a flag cannot be set after startup: re-run this script once with it.
+    if (!process.env.STATE_SWEEP_WEBSOCKET_RETRY) {
+      const rerun = spawnSync(process.execPath, ["--experimental-websocket", ...process.argv.slice(1)],
+        { stdio: "inherit", env: { ...process.env, STATE_SWEEP_WEBSOCKET_RETRY: "1" } });
+      if (rerun.status !== null && rerun.status !== 9) return rerun.status; // 9 = this Node rejects the flag
+    }
+    console.error(`UNAVAILABLE: Node ${process.versions.node} has no WebSocket client (needs Node 20.10+ or 22+); the sweep cannot drive the browser`);
+    return EXIT_NO_WEBSOCKET;
   }
   const report = await sweep(browser, options);
   console.log(JSON.stringify(report, null, 2));
