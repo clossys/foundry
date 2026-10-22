@@ -1,6 +1,6 @@
 /**
  * Compile-time proof that the `transparent` and `transparent-inverse`
- * grounds belong to the site chrome (`SiteHeader`, `SiteFooter`) only. `Shell.Header` and `Shell.Footer`
+ * grounds belong to SiteFooter; SiteHeader has its separate surface/tone contract. `Shell.Header` and `Shell.Footer`
  * keep the closed `base` / `inverse` set, so widening the site chrome's
  * ground type must not widen theirs.
  *
@@ -13,7 +13,7 @@ import { Shell } from "../Shell.js";
 import { SiteFooter } from "../SiteFooter.js";
 import { SiteHeader } from "../SiteHeader.js";
 
-export const siteHeaderAcceptsTransparent = <SiteHeader ground="transparent" brand={<a href="/">Home</a>} />;
+export const siteHeaderAcceptsTransparent = <SiteHeader surface="transparent" brand={<a href="/">Home</a>} />;
 
 export const siteFooterAcceptsTransparent = <SiteFooter ground="transparent" secondary={<span>Legal</span>} />;
 
@@ -27,7 +27,7 @@ export const shellHeaderRejectsTransparent = <Shell.Header ground="transparent">
 // @ts-expect-error — `transparent` is a site-chrome ground only: Shell.Footer keeps `base` | `inverse`.
 export const shellFooterRejectsTransparent = <Shell.Footer ground="transparent">Footer</Shell.Footer>;
 
-export const siteHeaderAcceptsTransparentInverse = <SiteHeader ground="transparent-inverse" brand={<a href="/">Home</a>} />;
+export const siteHeaderAcceptsTransparentInverse = <SiteHeader surface="transparent" tone="inverse" brand={<a href="/">Home</a>} />;
 
 export const siteFooterAcceptsTransparentInverse = <SiteFooter ground="transparent-inverse" secondary={<span>Legal</span>} />;
 

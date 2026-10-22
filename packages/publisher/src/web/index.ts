@@ -40,6 +40,8 @@ export { evaluateWebRouteManifest, evaluateWebRouteManifestWithSources, scanRout
 export type { WebRouteCheckResult, WebRouteFinding, WebRouteManifest, WebRouteManifestEntry } from "./checkWebRoutes.js";
 export { AuthView, BoundaryView, BrandGuideView, CaptureView, CollectionView, DocumentView, ErrorView, MarketingView, PackReviewView, SectionedView, StatusView, SystemAuditView } from "./views/index.js";
 export type { AuthViewProps, BoundaryViewProps, BrandGuideAssetLink, BrandGuideFact, BrandGuideSpecimen, BrandGuideViewProps, CaptureViewProps, CollectionViewEmptyState, CollectionViewEntry, CollectionViewLink, CollectionViewPagination, CollectionViewProps, DocumentViewEffectiveDate, DocumentViewProps, ErrorViewProps, MarketingFaqItem, MarketingFeatureItem, MarketingViewProps, PackReviewViewBrandKit, PackReviewViewExport, PackReviewViewFact, PackReviewViewFaqItem, PackReviewViewLabels, PackReviewViewPage, PackReviewViewProps, PackReviewViewState, PackReviewViewStrategy, PackReviewViewVoice, SectionedViewLandmark, SectionedViewProps, StatusViewProps, SystemAuditViewProps } from "./views/index.js";
+export { PageView } from "./views/index.js";
+export type { PageViewProps } from "./views/index.js";
 
 export { RenderError } from "../internal/errors.js";
 export type { RenderErrorReason } from "../internal/errors.js";
@@ -165,3 +167,6 @@ export type { SectionedViewHeroSection } from "../core/sectioned-view.js";
 
 export { SITE_FRAME_CONTRACT, SITE_FRAME_CONFIG_SCHEMA, normalizeSiteFrameConfig, normalizeSiteFrameActions } from "./frame/site-frame-contract.js";
 export type { SiteFramePresentationConfig } from "./frame/site-frame-contract.js";
+
+export { IndexView, DetailsView } from "./views/index.js";
+export type { IndexViewCollection, IndexViewProps, IndexViewRowRoute, IndexViewTable, DetailsViewBlock, DetailsViewLayout, DetailsViewProps, DetailsViewRegion, DetailsViewSection, DetailsViewSectionState, DetailsViewTab } from "./views/index.js";

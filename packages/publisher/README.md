@@ -1059,7 +1059,7 @@ slots `HeroView`'s banner uses. They are props, not template slots, so a
   `headerAction`.
 - `nav` (optional): the primary navigation, beside the brand.
 - `ground` (`"base"`, `"inverse"` or `"transparent"`, default `"base"`): the
-  plate of both the header and the footer. `"transparent"` matches
+  header plate and footer divider policy; the footer always paints a local dark surface. `"transparent"` matches
   `HeroView`. The section bands keep their own `*Ground` props.
 
 Each slot is absent from the markup when omitted, so a page that passes none
@@ -1167,7 +1167,7 @@ staged and is not part of these publisher shells.
 
 `HeroView`, exported from `@clossys/publisher/web`, is a single-screen
 landing page: a transparent banner, one hero centred both ways, and a
-transparent legal footer, over an optional backdrop. It is server-safe (it
+locally dark legal footer, over an optional backdrop. It is server-safe (it
 imports only Designer's `/shell/server`, `/atoms/server` and `/blocks/server`
 barrels) and ships no wording of its own: every visible word comes from a prop.
 
@@ -1206,19 +1206,19 @@ Props, in addition to the standard `div` attributes (minus `children`) and `styl
 - `legal`: the props of Designer's `SiteFooter.Legal`, passed straight through.
 - `ground` (`HeroViewGround`: `"base"` or `"inverse"`, default `"base"`): the
   page's ground. Unlike the `ground` on the other views, which sets only the
-  header and footer plate, this one sets the ground of the whole page.
+  header plate and footer divider policy, this one sets the ground of the whole page.
   `"inverse"` paints `bg-surface-inverse` on the page root and gives every text
   role the on-inverse ink from Designer's `SECTION_GROUND_CLASSES`:
   `text-ink-on-inverse` on the root (which the banner inherits) and the heading,
   `text-ink-on-inverse-muted` on the eyebrow and the description. The header and
-  footer get Designer's `ground="transparent-inverse"`, so they stay plate-less
-  over the backdrop and the footer's legal row takes
-  `text-ink-on-inverse-muted`.
+  footer get Designer's `ground="transparent-inverse"`. The header stays plate-less
+  over the backdrop; the footer omits dividers but retains its local dark
+  surface and paired light legal text.
 - `footer` (`HeroViewFooter`: `"transparent"` or `"surface"`, default
-  `"transparent"`): the footer's plate. `"surface"` gives the footer Designer's
-  `ground="base"` plate (`bg-surface-raised` with the base ink) across the full
-  width, with a hairline on its top edge only, stacked above the backdrop. The
-  banner and the hero are unchanged, on either `ground`.
+  `"transparent"`): the footer's divider policy. `"surface"` passes Designer's
+  `ground="base"` and adds a top hairline; both values retain the full-width
+  local dark surface and paired light ink above the backdrop. The banner and
+  the hero are unchanged, on either `ground`.
 
 ```tsx
 import { HeroView } from "@clossys/publisher/web";
@@ -1248,11 +1248,10 @@ export function DarkHomePage() {
 
 What it guarantees: one banner, one main and one contentinfo landmark; one
 `<h1>`; a backdrop that is `aria-hidden` and takes no pointer events; a header,
-and unless `footer` is `"surface"` a footer, with a transparent Designer
-ground, so they carry no background, border or width cap and run the full
-viewport width; and text that comes only from props. These hold for every
-`ground` and `footer`, and with both left at their defaults the markup is the
-same as before they existed.
+with a transparent Designer ground, so it carries no background, border or
+width cap and runs the full viewport width; a full-width locally dark footer,
+with a top hairline when `footer="surface"`; and text that comes only from
+props. These hold for every `ground` and `footer`.
 
 What it does not do: check the contrast of the page ink over your backdrop
 (that contract is issue #1523), restyle the actions you pass in, or make
@@ -1501,7 +1500,7 @@ pages; see the [framed contact example](#contactform--framed-contact-example).
 
 `ContactView`, exported from `@clossys/publisher/web`, is a single-screen
 contact page: a transparent banner, a page header, one form in a card, and a
-transparent legal footer. The form asks for a topic, a name, an
+locally dark legal footer. The form asks for a topic, a name, an
 email, an optional phone and a message, and carries a hidden honeypot field.
 It is a client component: it needs Designer's React Aria fields, so import it
 from a module that is a client boundary. Under the `react-server` condition
@@ -1547,7 +1546,7 @@ Props, in addition to the standard `div` attributes (minus `children` and
   sits beside the brand. Each is absent from the markup when omitted, so the
   banner then holds the brand alone.
 - `ground` (`"base"`, `"inverse"` or `"transparent"`, default
-  `"transparent"`): the plate of both the header and the footer.
+  `"transparent"`): the header plate and footer divider policy; the footer always paints a local dark surface.
 - `legal`: the props of Designer's `SiteFooter.Legal`, passed straight through.
 - `resolveCopyId` and `copy`: the approved-copy resolver and one `CopyRef` per
   string (heading, description, every label, the button, the client-side error
@@ -1578,7 +1577,8 @@ order, `aria-hidden` and `autocomplete="off"`, and its value reaches
 `accepted` replaces the form with a `role="status"` confirmation and focuses
 its heading; `invalid`, `rate-limited` and `unavailable` each show a
 `role="alert"` led by the failure label, keep every typed value and focus the submit button; with
-the default `ground` the banner and footer carry no background, border or width cap; and an entry that does not
+the default `ground` the banner carries no background, border or width cap,
+while the footer keeps its dark surface without a border or width cap; and an entry that does not
 resolve throws an error naming its path, never its id.
 
 What it does not do: show which field a server `invalid` result refers to (the
@@ -2584,7 +2584,7 @@ Props, in addition to the standard `div` attributes and `style`:
   `SiteHeader`'s `actions`), `secondaryAction` sits just before it and `nav`
   sits beside the brand. Each is absent from the markup when omitted.
 - `ground` (`"base"`, `"inverse"` or `"transparent"`, default `"base"`): the
-  plate of both the header and the footer. `"transparent"` matches
+  header plate and footer divider policy; the footer always paints a local dark surface. `"transparent"` matches
   `HeroView`.
 - `document`: the `LegalDocument` to render.
 - `resolveCopyId`: `@clossys/writer`'s ref-based `CopyResolver`
@@ -2717,7 +2717,7 @@ legacy boundary page can carry the same header as the rest of the site:
   `headerAction`.
 - `nav` (optional): the primary navigation, beside the brand.
 - `ground` (`"base"`, `"inverse"` or `"transparent"`, default `"base"`): the
-  plate of both the header and the footer. `"transparent"` matches
+  header plate and footer divider policy; the footer always paints a local dark surface. `"transparent"` matches
   `HeroView`.
 
 Each slot is absent from the markup when omitted.
@@ -2730,7 +2730,7 @@ has the CSS-loading details.
 
 | Clossys provides | Consumer supplies |
 | --- | --- |
-| `SiteFrame` mounts Designer's header, responsive mobile navigation disclosure, `SiteHeader.ActionLink` actions and footer. Header placement is `"reserved"` (in flow, the default) or `"overlay"`; the footer has its own ground. | The data in `shell`: brand asset and copy references, `nav`, `actions`, optional `secondaryAction`, `header.placement`, and `footer.ground` (`"base"`, `"inverse"` or `"transparent"`). Supply `resolveCopy` and `resolveAsset`; the frame resolves them before passing strings to its client islands. |
+| `SiteFrame` mounts Designer's header, responsive mobile navigation disclosure, `SiteHeader.ActionLink` actions and footer. Header `surface` defaults to `"solid"`; `"transparent"` has no plate and `"glass"` is fixed over the first block. The footer has its own ground. | The data in `shell`: brand asset and copy references, `nav`, `actions`, `header.surface`, `header.tone`, and `footer.ground` (`"base"`, `"inverse"` or `"transparent"`). Supply `resolveCopy` and `resolveAsset`; the frame resolves them before passing data to its client islands. |
 | `LandingView` provides `fit="viewport"` or `fit="frame"`. A lone, non-compact hero under an overlay header can fill the frame's remaining space with `fit="frame"` and `landmark="none"`. `StatusView`, `LegalView` and `CaptureView` provide the corresponding page bodies. | Page content and copy, and page art through the view's slots, such as the home hero's `backdrop`. Mount a chrome-free view inside `SiteFrame`; use `framed` for `LegalView`. Content after the landing hero keeps its existing peek and scroll cue. |
 | `@clossys/designer/brand-template.css` supplies 48 required token slots, including `--color-surface-glass`, `--color-surface-glass-inverse` and `--blur-glass`, plus optional overrides. The packages own header, footer and chrome styling. | One `brand/brand.css` overlay copied from the template and filled with brand values under `:root[data-brand-bound]`. Fill its light block and both dark blocks: the OS-preference selector and `:root[data-brand-bound][data-theme="dark"]`. Put `data-brand-bound` on the document root after binding every required slot. |
 | Designer's `theme.css` connects its tokens to Tailwind v4; Publisher and Designer ship their built class-bearing modules. | One CSS entry importing `tailwindcss`, `@clossys/designer/theme.css`, then the brand overlay. Add `@source` paths to `node_modules/@clossys/designer/dist` and `node_modules/@clossys/publisher/dist`, relative to that CSS entry. Use this Tailwind path without also importing Designer's `compiled.css`. |
@@ -2751,18 +2751,17 @@ Header appearance inputs and independent hero controls:
 
 | Input | Values and behavior |
 | --- | --- |
-| `shell.actions[].emphasis` | Distinct `"primary"`, `"secondary"`, `"ghost"` variants across at most three total header actions; implicit legacy slots use unoccupied variants. |
-| `shell.actions[].icon` | Supplied validated SVG shape data is required with nonblank copy for a primary action; its default mobile affordance is an icon-only ghost action with an accessible label, and the desktop row and menu panel show the label as text only. |
-| `shell.nav.trigger` | `"label"` (default) or `"icon"`; the icon uses `triggerLabel` as its accessible name. |
-| `shell.mobileLayout` | `"menu-brand-action"` (default) gives equal mobile side tracks, an exact-center mark and a primary icon or empty right track; explicit `"inline"` retains legacy positioning. |
-| `shell.brand.tone` | `"auto"` or `"inverse"`. Omitted tone inherits an inverse overlay header; explicit `"auto"` keeps ordinary brand ink. |
+| `shell.actions[].emphasis` | Distinct `"primary"`, `"secondary"`, `"ghost"` variants across at most three total header actions, normalized in ghost, secondary, primary DOM order. |
+| `shell.actions[].icon` | Supplied validated SVG shape data is required with nonblank copy for a primary action; its mobile affordance is an icon-only ghost action with an accessible label. Ordered desktop/menu actions retain optional decorative icons and their accessible labels. |
+| `shell.header.surface` | `"solid"` (default), `"transparent"` or `"glass"`; the single header surface setting. |
+| `shell.header.tone` | `"base"` (default) or `"inverse"`, applied to all three surfaces. Navigation inherits this ink and always uses an icon trigger named by `triggerLabel`. |
+| `shell.brand.tone` | `"auto"` or `"inverse"`. Omitted tone inherits the header ink on every surface; explicit `"auto"` keeps ordinary brand ink. |
 | `shell.brand.variant` | `"lockup"` (mark plus `wordmark` text) or `"mark"` (a mark-only brand, no `wordmark`). Both name the link from `label` and draw the mark at the one `size` height, so a mark-only brand and a lockup fill the same slot in the desktop row, the mobile bar and the menu panel. The mobile bar hides the wordmark and keeps the mark, centered on the bar, with `label` still naming the link. |
 | `shell.brand.markInk` | `"accent"` (what an omitted value means in the header) or `"image"`. Accent paints the header logomark's shape in the accent token, using the brand asset as a mask, so supply a single-colour mark; the wordmark keeps the brand's ink token from `tone`, which follows the color scheme and an inverse ground. `"image"` is the opt-out for a multi-colour logo: the mask uses only the asset's alpha, so it would flatten that logo to a one-colour silhouette. Other values are refused without echoing them. |
-| `shell.nav.tone` | `"auto"` or `"inverse"`. Omitted tone inherits an inverse overlay header without changing the default markup; explicit `"auto"` keeps ordinary toggle ink. The server and interactive client render the same initial disclosure. |
 | Hero section `eyebrowTone` | `"accent"` (default) or `"muted"`, using the existing secondary text ink. |
 | Hero section `measure` | `"prose"` (default) or `"wide"`. Wide copy removes the headline cap and caps supporting text at 64rem inside the page column. The outer `LandingView.measure` still controls that page column independently. |
 | Hero section `headingScale` | `"default"` or `"display"`, with the existing responsive display ramp reaching 72px at desktop. |
-| `shell.footer.rule` | `"none"` (default) or `"top"`. Top draws one hairline on a transparent flow footer; opaque grounds ignore the option. Overlay footer placement still requires an opaque ground and the existing hero-only frame composition. |
+| `shell.footer.rule` | `"none"` (default) or `"top"`. Top draws one hairline when a flow footer uses the legacy `"transparent"` ground value; other grounds ignore the option. Footer paint remains dark. Overlay footer placement still requires an opaque ground and the existing hero-only frame composition. |
 
 These fields belong to `SiteLinkInput`, `SiteBrandInput`, `SiteShellInput`,
 `SiteFooterInput` and `SectionedViewHeroSection`, available from
@@ -2771,18 +2770,41 @@ implementation. Hero appearance fields pass through
 copy resolution into `SectionedView` and `LandingView`; copy references and
 their provenance stay unchanged. Hero appearance omission preserves the hero defaults; shared header defaults use the responsive contract.
 
+The frame footer is always locally dark. Its standard row centers footer and
+legal links, keeps social icons before the real resolved brand-home mark, and
+stacks links, icons, copyright on phones, each centered. Empty link/social
+lists still retain home, drawn on a plate of the page's base ground.
+The footer mark comes from `shell.brand`, the same declaration as the header
+mark, with its label as the accessible name; there is no footer-specific art
+or second brand input, and `shell.footer.home` is refused as an unknown field.
+
+The footer configuration contract (`SITE_FRAME_CONTRACT.constituents.Footer.constraints`):
+`footer.links` and `footer.legal.links` together form one flat row of at most
+five links; more links go in labelled `footer.columns`. `footer.social` takes
+at most four icons, because the brand mark always fills the fifth and last
+slot. No footer link, column link or social icon may repeat home, a
+`shell.nav` destination (compared after `origin` resolution) or the
+`#privacy-choices` control, which stays on the privacy policy page. A breach
+throws a `SiteFooterContractError` (`name`) with a `code` of
+`"footer-link-limit"`, `"footer-icon-limit"`, `"footer-duplicate-link"` or
+`"footer-privacy-choices"`; its message names the field path, never the value,
+and nothing is truncated.
+Existing columns and social names retain their ordering. The shared frame
+contract exposes `footerGround`, `footerPlacement` and `footerRule`; darkness,
+accessible names, external rel safety and the Privacy link are mandatory facts.
+Footer-only presentation overrides preserve the derived header presentation.
+
 The default header centers desktop navigation on the whole header and measures
 intrinsic brand/link/action widths to collapse before collision. Mobile places
 the menu at inline-start, a mark-only brand at the exact center, and the supplied
 primary as a ghost icon action at inline-end (or an empty noninteractive track).
-A brand mark on a shared plate stays visible there. `nav.trigger:
-"icon"` selects the explicit two-stroke icon; the default label trigger uses the
-same two-line/X visual in the shared header. Both fields pass through
-`SiteFrameConfig.site`. Configure zero to five links and zero to three total
-actions with distinct variants. The panel lists every full label as text
-only: links, then primary, secondary, ghost. Explicit leading/inline positioning retains its
-legacy geometry and renders each action once. The trigger keeps `triggerLabel`
-as its accessible name, falling back to `nav.label` when toggle copy is omitted.
+A brand mark on a shared plate stays visible there. The icon trigger keeps
+`triggerLabel` as its accessible name, falling back to `nav.label` when omitted.
+Configure zero to five links and zero to three actions with distinct variants.
+The shared desktop/panel list shows navigation, then ghost, secondary, primary
+in DOM order. Primary is rightmost on desktop and lowest in the narrow menu;
+there is no CSS order reversal. Both navigation placements use the same narrow
+menu, centered brand and actions structure.
 
 ```tsx
 import type { SiteFrameConfig } from "@clossys/publisher/web";
@@ -2793,9 +2815,8 @@ const mobileFrame: SiteFrameConfig = {
   skipLink: { id: "shell.skipLink" },
   origin: "https://example.com",
   site: {
-    mobileLayout: "menu-brand-action",
     nav: {
-      label: { id: "nav.label" }, triggerLabel: { id: "nav.menu" }, trigger: "icon",
+      label: { id: "nav.label" }, triggerLabel: { id: "nav.menu" },
       links: [{ href: "/about", label: { id: "nav.about" } }],
     },
     actions: [{
@@ -2807,15 +2828,13 @@ const mobileFrame: SiteFrameConfig = {
 };
 ```
 
-An action `icon` uses Designer's SVG shape data and validation. The primary
-requires a supplied icon plus nonblank label. The default mobile bar shows it
-as a ghost action with its icon alone, retaining that accessible label; with an
-inverse `nav.tone` it takes the menu toggle's inverse ink. That bar action is the
-only header action with an icon: each full-label action also lives in the shared
-desktop/panel list as text only, ordered primary, secondary, ghost. Ordinary
-navigation, secondary-action and footer links refuse `icon`. The shared default
-is `mobileLayout: "menu-brand-action"`; explicit `"inline"` preserves legacy
-positioning. `nav.trigger: "label"` remains the trigger-content default.
+An action `icon` uses Designer's validated SVG shape data. A primary action
+requires a supplied icon and nonblank label. The narrow bar shows its icon with
+an accessible label; the ordered desktop/menu list retains each supplied icon
+as decoration. Header ghost controls inherit the header tone. Ordinary
+navigation and footer links still refuse `icon`. There are no separate
+secondary-action or icon-action shell slots and no configurable navigation
+trigger kind or navigation tone.
 
 ```tsx
 import { AuthView, SiteFrame, siteShellFor } from "@clossys/publisher/web";
@@ -2873,8 +2892,10 @@ export function SignInPage() {
   mobile bar's ghost primary shows its icon.
 - **Footer ground.** `shell.footer.ground` accepts `"base"`, `"inverse"` or
   `"transparent"`. In flow placement it defaults to `shell.ground`, regardless
-  of the header's ground or overlay tone. For example, a shell with `ground: "base"` and
-  `footer: { ground: "inverse", legal }` has a base header and inverse footer.
+  of the header's surface or tone. For example, a shell with `ground: "base"` and
+  `footer: { ground: "inverse", legal }` has inverse footer divider roles
+  independently of the ground the overlay header observes; footer paint
+  remains locally dark for every ground.
 - **Footer placement.** `shell.footer.placement` accepts `"flow"` (the default)
   or `"overlay"`. Flow keeps the existing in-flow footer markup. Overlay places
   the same footer in the bottom row of the frame's hero scene, below the
@@ -2882,7 +2903,7 @@ export function SignInPage() {
   scene: the hero fills the remaining room, and the scene grows beyond one
   viewport when enlarged copy or footer links need more room. The footer
   scrolls with that scene instead of covering the hero's action or its focus.
-  Use `header: { placement: "overlay", tone: "inverse" }` with a hero-only
+  Use `header: { surface: "glass", tone: "inverse" }` with a hero-only
   `<LandingView header="overlay" fit="frame" landmark="none" />` for a
   one-viewport composition, and `footer: { placement: "overlay", legal }`.
   Mount the frame as the page's scene; the anchor is this frame, rather than
@@ -2898,24 +2919,24 @@ export function SignInPage() {
   layout and the footer's automatic block-start margin keep its links in
   document flow as the scene grows, without clipping or adding a navigation
   landmark.
-- **Header placement.** `header` defaults to `{ placement: "reserved" }`:
-  the banner stays in flow, with its `ground` defaulting to `shell.ground`.
-  A reserved header may choose `ground` (`"base"`, `"inverse"` or
-  `"transparent"`), independently of the footer. An overlay header
-  takes `{ placement: "overlay", tone?: "base" | "inverse" }`; `tone`
-  defaults to `"base"` and selects Designer's inherited ink over its
-  transparent-to-glass header. Choose base ink over base or sunken hero
-  grounds and inverse ink over an inverse hero ground; children that set
-  their own ink retain it. `ground` with overlay and `tone` with reserved
-  placement are refused. `SiteFrameConfig.site.header` applies this choice
-  to the public site only.
+- **Header surface.** `header` defaults to `{ surface: "solid", tone: "base" }`
+  for every surface kind. Solid is in flow with a plate and hairline;
+  transparent never paints a plate or border. Glass fixes the banner over the
+  first block: transparent at the scroll origin, translucent with backdrop blur
+  after scrolling or while a menu is open. Only reduced-transparency and missing
+  backdrop-filter fallbacks are opaque. `tone` applies to all three surfaces.
+  With glass, the existing skip-link island follows declared physical content
+  grounds (`data-ground="light"` / `"dark"` and LandingView bands), including
+  system theme changes; `tone` supplies its initial server hint. Automatic
+  wordmarks, navigation and ghost controls inherit that ink; explicitly toned
+  brand content keeps its own ink. Solid and transparent do not observe grounds.
+  Global `ground` remains solely the existing footer fallback until the footer
+  configuration migration; it does not choose the header surface or ink.
 
-  The reserved header is sticky and the overlay is fixed. The frame reserves
-  overlay clearance and uses one shared offset for skip/anchor targets; Views
-  do not guess header padding. The page scrolls on the document. Avoid ancestor
-  transforms, filters and containment that establish a fixed containing block.
-  The disclosure panel scrolls below its header, capped to the viewport and safe
-  area; it does not need a separate fixed panel or portal.
+  The frame reserves clearance for glass and shares the skip/anchor offset;
+  Views do not guess header padding. Root document scrolling, no transformed or
+  paint-contained ancestor, and a viewport-capped disclosure panel preserve the
+  fixed-header behavior. `SiteFrameConfig.site.header` configures the site shell.
 - **Fails closed.** An unknown field, copy that does not resolve (or resolves
   blank), a non-image brand asset, a disallowed link, icon data that is not
   plain SVG shape data, a malformed `origin`, a `ground` outside `base`,
@@ -2938,7 +2959,7 @@ export function SignInPage() {
   environments and the legal row.
 - **Origin.** `origin` is a bare `https:` origin; `http:` is accepted only for
   `localhost`, `127.0.0.1` and `[::1]`, for local development.
-- **Icons.** A header action, environment, icon action or social `icon` is Designer
+- **Icons.** A header action, environment or social `icon` is Designer
   `IconNode` data: `path`,
   `circle`, `line`, `rect`, `polyline`, `polygon`, `ellipse` or `g` nodes whose
   attributes come from an allowlist of SVG shape attributes (geometry, fill,
@@ -2946,11 +2967,13 @@ export function SignInPage() {
   `ref`, `children`, `dangerouslySetInnerHTML` and any `url(...)` value are
   refused. The string `key` Designer's generated icons carry is dropped. The
   frame renders a frozen copy, so changing the caller's data afterwards has
-  no effect. Header controls, including icon actions and environments, normalize
-  into the same distinct variants and panel order: primary, secondary, ghost.
-  Social links render before the legal row, in a named navigation when
-  `social.label` is given. Ungrouped footer links render after headed columns
-  without a heading. Empty slot arrays render nothing.
+  no effect. Header actions and environments normalize into distinct variants in
+  ghost, secondary, primary DOM order.
+  Social links occupy the icon group immediately before the home mark, in a
+  named navigation when `social.label` is given. Ungrouped footer links precede
+  legal links in the centered links region, five at most together; social
+  links take at most four icons. Empty content arrays are valid; the frame
+  still supplies its brand home mark.
 - **One main.** The main id is fixed (`SITE_MAIN_ID`); the frame takes no
   main-id prop and the skip link always targets it. A chrome-free view
   (`ErrorView` included) refuses a `role` holding `main`, `banner`,
@@ -2976,7 +2999,7 @@ const profile: SiteIconLinkInput = {
 };
 
 export const publicChrome: SiteFrameConfig["site"] = {
-  iconActions: [{ ...profile, href: "/contact", label: { id: "nav.contact" } }],
+  actions: [{ ...profile, href: "/contact", label: { id: "nav.contact" }, emphasis: "ghost" }],
   footerLinks: [{ href: "/about", label: { id: "footer.about" } }],
   social: { label: { id: "footer.profiles" }, links: [profile] },
 };
@@ -2988,13 +3011,20 @@ export const publicChrome: SiteFrameConfig["site"] = {
 
 | Kind | Banner | Footer | Links |
 | --- | --- | --- | --- |
-| `"site"` | brand, `site.nav`, `site.secondaryAction`, `site.actions`, `site.iconActions` | `site.columns`, `site.footerLinks`, `site.social`, then the legal row | as given (`siteShellFor` sets no `origin` for the site itself) |
-| `"front-door"`, `"admin"`, `"demo"` | brand, the `environments` links (the one whose `surface` matches marked current) | the legal row only | root-relative links resolve against `origin` |
+| `"site"` | brand, `site.nav`, ordered `site.actions` | `site.columns`, then centered `site.footerLinks` and legal links, social icons and home, copyright | as given (`siteShellFor` sets no `origin` for the site itself) |
+| `"front-door"`, `"admin"`, `"demo"` | leading brand and only the matching environment, marked current, as a ghost icon link; no menu | legal links, default home mark, copyright | brand home and root-relative links resolve against `origin` |
 
 Every kind shares the brand, the skip link, the ground and the legal row. A
 surface served from another host (a sign-in host, an admin host) therefore
 links its legal row to the public site's `/privacy` and `/terms` on
 `origin`, not to routes its own host may not serve. An unknown kind throws.
+Every kind uses the same responsive header structure. A kind with
+no matching environment shows the brand alone. The `"site"` shell keeps its
+existing navigation, actions, links and same-host brand home.
+
+Auth chrome mounts no cookie banner or consent card. Sign-up acceptance is
+an `AuthView` notice, such as caller copy in its footnote; it is not cookie
+consent. The footer remains the entity and legal links only.
 
 **Which views fit inside the frame.**
 
@@ -3006,19 +3036,37 @@ links its legal row to the public site's `/privacy` and `/terms` on
 the single `<main>`. Omitting `framed` keeps the self-chromed legal page.
 
 `SectionedView` and `LandingView` render their own `<main>` by default; pass
-`landmark="none"` to place either inside the frame. The built-in registry `AuthView` template
-always passes `brand`, so a registry-rendered sign-in page is still the
-legacy full page, not a framed one.
+`landmark="none"` to place either inside the frame. The built-in registry
+`AuthView` template can also render inside `SiteFrame` through the optional
+`renderWebDocument(document, { frame })` option:
+
+```ts
+import { renderWebDocument } from "@clossys/publisher/web";
+import type { SiteFrameInput } from "@clossys/publisher/web";
+import type { ComposeDocument } from "@clossys/publisher/core";
+
+declare const auth: ComposeDocument; // AuthView heading/form bindings, without chrome bindings
+declare const frame: SiteFrameInput; // shell and its CopyRef-based copy and asset resolvers
+const { element, head } = renderWebDocument(auth, { frame });
+```
+
+`frame` takes the same shell, resolvers and optional `presentation` as
+`SiteFrame`. Its shape and shell resolution are checked synchronously.
+Only the shipped `AuthView` template is accepted, including when registered
+through `createWebRenderer({ includeBuiltins: true })`; a consumer template
+named `AuthView` is refused. Document `brand` and `footerSecondary` bindings
+are refused even when empty or unresolved. The view supplies no chrome and
+the frame owns the sole main, header and footer. Without `frame`, the
+existing output bytes and required `brand` binding remain unchanged.
 
 The deprecated `ErrorView`'s root keeps its `min-h-dvh` (full viewport
 height) class, so inside the frame the page is taller than the viewport and
 scrolls past the footer. `StatusView` has no such root; use it instead.
 
-**Known gaps.** The `Brandmark` links to `/` on the current host and does not
-follow `origin`, so on a sign-in or admin host the logo goes to that host's
-home, not the public site; that is a Designer follow-up. A call-to-action is
-either text or an icon-only link, and Designer has no server-safe link
-component yet, so the frame renders plain anchors.
+The frame passes `shell.origin` to Designer's `Brandmark`. It accepts only
+a bare HTTPS origin or HTTP on `localhost`, `127.0.0.1` or `[::1]`, with an
+optional port and trailing root slash. Paths, userinfo, queries, fragments,
+controls and backslashes are refused without echoing the supplied value.
 
 **Page layers.** `SITE_PAGE_LAYERS` is the page-assembly contract as frozen
 data: nine layers, each with its owning package, who mounts it, its
@@ -3069,8 +3117,8 @@ has no frame and no `<main>`, and that shape's root may carry `role="main"`.
 
 **Deprecated view chrome.** The chrome props on `AuthView`, `CaptureView`,
 `DocumentView` and `BoundaryView` (`brand`, `header`, `footer`, `mainId`, `nav`,
-`headerAction`, the secondary header action, `ground`, `footerSecondary`, and
-`surfaceLabel` on `AuthView`) are deprecated. They still work: passing any one
+`headerAction`, the secondary header action, `ground` and `footerSecondary`)
+are deprecated. The obsolete AuthView surface badge has been removed. They still work: passing any one
 of them selects the legacy page: the view's own header, `<main>` and footer,
 laid out per [Page layout](#page-layout), which changed the legacy markup
 (see [Front-door shell](#front-door-shell)). Omit all of
@@ -3095,8 +3143,8 @@ front-door page reads the same way:
    Designer `SiteHeader.ActionLink` each, with `isCurrent` on the page's own
    environment. Each links to its environment's home. The icon is a
    caller-supplied `IconNode`; below the tablet breakpoint the label is
-   visually hidden and stays the link's accessible name. `surfaceLabel` on
-   `AuthView` still renders and is superseded by these links.
+   visually hidden and stays the link's accessible name. The old surface badge is
+   removed; environment links identify the current environment.
 2. **Page header block.** The page's one `<h1>` and its supporting line,
    centered on `AuthView` and `CaptureView`, which use the shared [page
    layout](#page-layout).
@@ -3551,7 +3599,7 @@ chrome props) moves to the published view in the same steps for every page.
 4. **Drop every deprecated chrome prop.** Delete `brand`, `header`, `footer`,
    `mainId`, `nav`, `headerAction`, `headerSecondaryAction` (`AuthView`,
    `CaptureView`), `secondaryAction` (`BoundaryView`), `ground`,
-   `footerSecondary` and `surfaceLabel` (`AuthView`) from the call site.
+   `footerSecondary` from the call site; remove any obsolete `surfaceLabel` too.
    Delete the prop: `null` still counts as passed and selects the legacy page.
    Delete the local header, footer, skip link and main id with it.
 5. **Move what the chrome showed into the shell.** Each piece has a place in
@@ -3561,9 +3609,9 @@ chrome props) moves to the published view in the same steps for every page.
 | --- | --- |
 | the brand mark or lockup | `brand` (an image asset id and copy references) |
 | the skip link and main id | `skipLink` (copy); the frame owns `SITE_MAIN_ID` |
-| a surface badge (`surfaceLabel`) | `environments`, with the page's own surface marked current by `siteShellFor`; or `surfaceLabel` on a hand-built shell |
+| a surface badge (`surfaceLabel`) | `environments`, with the page's own surface marked current by `siteShellFor` |
 | the banner call to action (`headerAction`) | `site.actions` |
-| a secondary banner action | `site.secondaryAction` |
+| a secondary banner action | `site.actions`, with `emphasis: "secondary"` |
 | primary navigation (`nav`) | `site.nav` |
 | footer link columns | `site.columns` |
 | the legal row (`footerSecondary`) | `legal` (`entity`, `links`, optional `linksLabel`), on every surface |
@@ -3707,6 +3755,15 @@ the `surface` noun, so their copy has no slot for the account identifier. The sa
 `AuthView` composition renders equivalent markup from ordinary and
 react-server entries. Interactive forms belong in the host's client boundary.
 
+Contact forms use Designer Form's `end` actions layout: a natural-width
+CTA at the card's inline end from `tablet` (768px). `SignInForm`,
+`ResetForm`, and `ActivateForm` use `stretch`: full-width stacked actions
+at every size. Both layouts stack full width below `tablet`, with existing
+secondary actions before the primary in DOM and Tab order. Use a narrow
+surrounding card for the short forms and a medium card for contact forms;
+PageView's matching `width` API is pending
+[#2332](https://github.com/clossys/foundry/issues/2332).
+
 ### `SignInForm`
 
 `SignInForm`, exported from `@clossys/publisher/web`, is an identifier-first
@@ -3840,7 +3897,7 @@ the caller builds the entries with
 [`buildPackReviewIndex`](#reviewing-a-pack) and passes every visible string.
 
 The frame is the one `AuthView` uses: Designer's `SiteHeader` with the
-text-only surface badge (`surfaceLabel`, required), a `PageHeader`, and
+ordered header actions, a `PageHeader`, and
 `SiteFooter`, with the page held to `--ui-width-form-max`. The contact sheet
 scrolls sideways inside its own section, so the widest frame never widens the
 page.
@@ -3855,7 +3912,6 @@ export function ReviewPage() {
   return (
     <PackReviewView
       brand={<span>Example Studio</span>}
-      surfaceLabel="Review"
       headerAction={<a href="/">Back to the site</a>}
       heading="Pack review"
       description="Pages, states and exports of this site."
@@ -3876,7 +3932,7 @@ export function ReviewPage() {
 
 Props:
 
-- `brand`, `surfaceLabel`, `heading`, `description`, `footerSecondary`
+- `brand`, `heading`, `description`, `footerSecondary`
   (optional): the frame, as above.
 - `strategy` (optional): `{ source, summary?, context, openQuestions }`.
   `source` is a line naming the record the brief was read from; `context` is
@@ -3891,11 +3947,11 @@ Props:
   `{ question, answer }[]`.
 - `headerAction`, `secondaryAction`, `nav` (optional): the header slots, as on
   `HeroView`. `headerAction` is a banner call to action (Designer
-  `SiteHeader`'s `actions`), shown before the surface badge;
+  `SiteHeader`'s ordered `actions`);
   `secondaryAction` sits just before it and `nav` sits beside the brand. Each
   is absent from the markup when omitted.
 - `ground` (`"base"`, `"inverse"` or `"transparent"`, default `"base"`): the
-  plate of both the header and the footer.
+  header plate and footer divider policy; the footer always paints a local dark surface.
 - `pages`: `{ id, href, status, states: { id, href }[] }[]`. `id` is shown as
   text. Every `href` must be a same-site address (one leading slash, no
   `//`, no backslash, no control character); anything else throws a
@@ -6445,32 +6501,41 @@ consumer runtime qualification. A record alone never qualifies a pair.
 `SITE_FRAME_CONFIG_SCHEMA` metadata through both web and server entries. The
 contract references real Designer Header/Footer exports, separate from Pack
 route placement and Instance binding; it is not measurement or qualification.
-Footer composition facts remain pending the footer unit. `presentation` accepts
-only flat finite `headerGround`, `headerPlacement` and `headerTone` keys, with
-reserved/base defaults; overlay uses tone and reserved uses ground. Shared
+Footer composition facts require local darkness, centered links, named icons,
+home at the inline end (following document direction) and mobile
+links/icons/copyright order. `presentation` accepts
+flat finite `footerGround`, `footerPlacement`, `footerRule`, `headerSurface`
+and `headerTone` keys. Footer defaults remain base/flow/none; header defaults
+are solid/base. Contract revision 4 records the breaking header configuration
+change without changing package versions. Shared
 `normalizeSiteFrameConfig` rejects unknown keys and incompatible dependent
 fields and accepts its own normalized output.
 
 Header navigation permits zero to five links and zero to three total actions,
-including legacy secondary, icon and environment controls. Explicit action
-variants must be distinct `secondary`, `ghost`, `primary`. Implicit legacy slots
-use unoccupied variants in that order; primary requires resolved nonblank copy
+including environment controls. Explicit action variants must be distinct
+`secondary`, `ghost`, `primary`. Unspecified action variants use unoccupied
+variants; the normalized DOM order is ghost, secondary, primary. Primary requires resolved nonblank copy
 and supplied validated SVG icon data. `normalizeSiteFrameActions` accepts
 already-resolved label/href/IconNode content; `resolveShell` owns copy, URL and
 SVG allowlist validation before that helper. No primary means an empty,
-noninteractive right track. Actions without navigation get a menu with no links,
+noninteractive right track. Ordinary actions without navigation get a menu with no links,
 named through the consumer's own `resolveCopy` from the copy references in
 `SITE_FRAME_CONTRACT.defaults`: `site-frame.nav.label` names the navigation and
 `site-frame.nav.trigger-label` labels its toggle. The frame ships no audience
 text for them, and an unresolved default fails closed like any other shell copy.
-The contract is at `revision` 2; revision 1 published these defaults as strings.
-Supply `shell.nav` (links may be empty) to name the menu with other copy; no
-minimum link count or invented brand copy is needed.
-All full labels appear in the panel after links as text only, primary then
-secondary then ghost. Only the default mobile primary affordance has a second
-copy, an icon-only ghost action in the mobile bar.
-Explicit existing leading/inline positioning keeps each full-label action once
-and retains its legacy geometry, without the separate default mobile icon bar.
+An environment-only shell instead renders its links directly as ghost
+`SiteHeader.ActionLink`s with icons and `aria-current`; it requests no default
+navigation copy and mounts no menu. Mixed and ordinary action-only shells
+retain the distinct action variants and default menu behavior.
+The contract is at `revision` 4: it exposes one header surface and one ordered
+actions list, replacing the removed header ground/placement and separate action
+slots. Revision 3 selected current-only auth environments and direct ghost
+links; revision 2 introduced copy-reference defaults. Supply `shell.nav`
+(links may be empty) to name the menu with other copy; no minimum link count
+or invented brand copy is needed. All full labels appear after links in ghost,
+secondary, primary order, with optional decorative icons. The mobile primary
+also has an icon-only ghost affordance in the bar. Both leading and centered
+navigation use the same mobile menu, brand and actions layout.
 
 The frame owns one focusable main/skip target, document scrolling, footer flow,
 and a shared header-clearance CSS property for sticky/fixed chrome and anchors.
@@ -6518,6 +6583,8 @@ PackManifest and the publication map remain separate contracts.
 `AppFrameBrand`, `AppFrameAccount`, `AppFrameRightPanel`, and immutable
 `APP_FRAME_CONTRACT` metadata and `APP_FRAME_CONFIG_SCHEMA`. Import it inside a client boundary. The ordinary
 web and server entries continue to serve their existing page compositions.
+The application frame's page bar is the Designer `PageBar` block.
+
 The application frame composes Designer's `AppNavigation`, `AccountMenu`,
 `CommandMenu`, brand primitives, theme controls and optional
 `ResizablePane`. It owns one focusable main landmark and its skip target;
@@ -6553,11 +6620,27 @@ already owns a main landmark.
 AppFrame and its stateful specimen are explicit `web/client` islands; SiteFrame and the default/server entries retain their hook-free, server-import boundary, with AppFrame exceptions pinned per file and shared contract imports restricted to types.
 
 Supply `brand` with resolved `markSrc`, `wordmark` and accessible `label` strings.
-The label must contain the visible wordmark. The desktop lockup uses an accent
-mark with the wordmark in the surface's natural foreground. At the mobile breakpoint the mark
-is centered and the wordmark is hidden. Use `markInk: "image"` when the source
-artwork must retain its own colors; the default accent treatment uses a mask.
-An optional `href` makes the brand a host-owned destination.
+The label must contain the brand name. The floating bar starts with a small
+accent-mask home mark; the breadcrumb root supplies the brand name, without a
+second wordmark. Hosts that need multicolor source artwork choose
+`markInk: "image"`, which uses the existing small `Logomark`. An optional `href`
+makes the mark a host-owned destination.
+
+Supply `page` for the frame-owned page header: `title`, `breadcrumb`, `status`,
+`description`, `updatedAt`, `meta`, `actions`, `scope` and `width`. Its title is
+the bar's single page `h1`; route content then supplies no page header. Ancestor
+breadcrumbs may have `siblings` destinations. The optional last crumb matching
+`title` supplies alternatives for the current page. On narrow screens the
+middle levels and their sibling destinations remain reachable in a menu.
+`workspaces` makes the brand root a workspace menu; without it the root is a
+plain link. Semantic breadcrumb containers compose the existing Link and Menu
+atoms; no second menu lifecycle is implemented.
+
+The optional information caret opens page status, description, update time,
+metadata and scope in a dismissible overlay, without moving the route body.
+Host actions remain on the right; only the first `primary` request receives
+primary presentation. Narrow layouts move secondary actions to a menu. The
+width toggle follows a divider at the right edge of the action group.
 
 Supply `navigation.tree`, an `activeId` or `activeHref`, and a `navigationKey`
 that changes on route transitions. Navigation nodes support destinations and
@@ -6582,6 +6665,25 @@ shortcut is enabled by default and can be disabled with
 `commands.shortcutEnabled: false`. The host owns each selected task or route.
 
 ### Theme, panel and styles
+
+The navigation begins with command search and has no synthesized title or
+icon rail. Its footer places the account control on the left and the named
+`themeControl` slot on the right. The slot contains Designer's `ThemeToggle`
+by default; pass a React node to replace it or `themeControl={null}` to omit it.
+On narrow screens these controls travel with the navigation Drawer. A replacement
+owns its accessible name, keyboard behavior and focusable elements; use
+Designer's `ThemeToggle` or `useTheme` to share the frame's provider. The command
+shortcut remains active even when the navigation is closed.
+
+Logical corner controls open and close the navigation and optional work panel.
+Docked panel widths are reserved before centering the stage. If a panel would
+leave less than the existing 480px minimum stage, it opens as a sheet instead;
+below 900px both panels use sheets. The contained stage uses the existing
+72rem maximum; full width uses the remaining space. `page.width` defaults to
+`"contained"` until an in-memory user override. Controlled `width` and
+`onWidthChange` let the host own the choice; the frame adds no width storage.
+The stage scrolls beneath its sticky glass bar with scroll clearance. Unsupported
+blur, reduced transparency and forced colors use the opaque surface fallback.
 
 The frame assembles a Designer `ThemeProvider` and the existing `ThemeToggle`,
 whose single button cycles System → Light → Dark → System. The control updates
@@ -6648,3 +6750,190 @@ For example:
 When overriding `wordmark`, keep it in `workspaceLabel` as required by the
 brand's accessible-name contract. Copy changes do not supply authentication,
 routing services or new task effects; the specimen retains its local behavior.
+
+## Standard entity Views: IndexView and DetailsView
+
+`IndexView` and `DetailsView` compose entity administration content for an
+AppFrame content region. Mount the frame in the host and place the View in its
+content slot. The Views arrange Designer Blocks; they own no app header, footer,
+sidebar, routing state or `<main>`. Frame chrome props and frame-owned root
+landmarks are refused. The preview gallery includes both content specimens.
+
+Page titles, descriptions, breadcrumbs and page actions belong in AppFrame's
+`page` contract. These Views start with their content: optional toolbar, collection
+and pagination for IndexView; an optional content notice, tabs and named sections
+for DetailsView. The removed `title`, `subtitle` and `actions` props, plus
+DetailsView's removed `index`, are type errors. At runtime, supplying one throws
+an unknown-prop `TypeError` directing the caller to AppFrame `page`, including
+when its value is `undefined`.
+
+These are interactive client Views, available from `@clossys/publisher/web/client`
+and the ordinary `@clossys/publisher/web` entry. They render content during ordinary
+server-side rendering. Under the `react-server` condition, `/web` preserves both
+export names through named stubs that throw `RenderError` with reason
+`wrong-channel`; render the View from a client module instead. This follows the
+form boundary: the server entry stays import-safe while a client host supplies
+the controlled callbacks. It does not render a reduced server-only View.
+
+### IndexView
+
+`IndexViewProps<Row>` requires `rows`, `columns`, `rowKey`,
+`collectionLabel` and an explicit `empty` (`EmptyState` props). The nonempty
+`collectionLabel` names the collection independently of the page title. It renders
+optional `toolbar` (`Toolbar` props), the primary collection and
+optional `pagination` (`Pagination` props), in that order. The primary collection
+defaults to `DataTable`. Zero rows render `EmptyState`, retaining the toolbar and
+pagination; `table.isLoading` instead preserves the DataTable loading state.
+
+`IndexViewTable<Row>` carries DataTable's controlled sorting, selection and loading
+props through `table`. The View does not sort, select, paginate or fetch rows.
+`IndexViewCollection` is an optional typed Block slot: `{ kind: "panel", props }`
+or `{ kind: "record-ledger", props }`, using that Block's public props. An arbitrary
+element is not a collection Block entry. The row count still determines the empty
+state when using this slot.
+
+`IndexViewRowRoute<Row>` supplies `rowRoute.href(row)` and
+`rowRoute.onNavigate(href, row)`. Exactly one column must be `isRowHeader`.
+That column's content becomes a Designer Link. Activating the row link by pointer
+or Enter reports the sanctioned route and row to `onNavigate`, which handles
+navigation. Modified clicks keep browser link navigation. This is a row-link
+contract: clicking another cell does not activate the route, and selection keeps
+its own controls. Unsafe hrefs are refused.
+
+```tsx
+"use client";
+import { IndexView } from "@clossys/publisher/web/client";
+
+type RecordRow = { id: string; name: string };
+const rows: RecordRow[] = [{ id: "one", name: "First record" }];
+
+export function RecordsArea({ navigate }: { navigate: (href: string) => void }) {
+  return <IndexView
+    collectionLabel="Records"
+    rows={rows}
+    rowKey={row => row.id}
+    columns={[{ id: "name", header: "Name", isRowHeader: true, cell: row => row.name }]}
+    rowRoute={{ href: row => `/records/${row.id}`, onNavigate: href => navigate(href) }}
+    empty={{ title: "No records", description: "Create a record to begin." }}
+  />;
+}
+```
+
+### DetailsView
+
+`DetailsViewProps` requires an explicit `empty` (`EmptyState` props) and either
+sections or controlled tabs. AppFrame `page` owns the breadcrumb back to the
+collection and the page title.
+
+Supply either an ordered `sections` list or `tabs` with a required `tab`,
+`onTabChange` and a nonempty accessible `tabsLabel`, independent of the page title.
+`DetailsViewTab` is `{ id, label, sections }`. Tabs uses Designer's Tabs atom for arrow-key focus and tab/panel
+relationships. Selection changes are reported; the selected content changes when
+the host supplies the new `tab`. The host reads the selected ID from its URL and
+updates that URL in `onTabChange`; the View reads no URL and owns no router. A
+tab's sections and layout stay in its own panel.
+A tab with no sections, or an empty untabbed list, renders the supplied EmptyState.
+The tab list must be nonempty, IDs unique and the selected ID present.
+
+`DetailsViewSection` is `{ id, title, block, region?, state? }`; section IDs must
+be unique within each list. A SectionHeader Block renders the section title. `DetailsViewBlock`
+is a closed union of `{ kind, props }` entries for these shipped Blocks:
+
+| kind | Designer Block |
+| --- | --- |
+| `detail` | DetailView |
+| `panel` | Panel |
+| `stat` | Stat |
+| `status-list` | StatusList |
+| `record-ledger` | RecordLedger |
+
+Each entry uses that Block's public props. Raw elements, unknown kinds and a
+PageHeader entry are refused. Slots inside a Block retain that Block's contract.
+There is one normalized View, with `DetailsViewLayout` values `main-aside` (the
+default) and `single`. A section's `DetailsViewRegion` is `main` (the default) or
+`aside`. Main/aside layout groups main sections first and aside sections second,
+preserving authored order within each region. The aside is a complementary
+region named by its section titles. It stacks **after main** at narrow widths;
+from the Designer tablet breakpoint main takes two columns and aside one.
+An empty aside is omitted. `single` ignores region placement and renders every
+section in the original authored order. It does not discard aside sections.
+There is no independent side-column API and no left, right or bottom work-panel
+control: AppFrame owns navigation and its work panel.
+
+`DetailsViewSectionState` replaces only its section's Block content while
+retaining that section's heading and other sections:
+
+| state data | presentation | required caller copy |
+| --- | --- | --- |
+| `{ kind: "loading", label }` | Skeleton with a busy status | nonempty accessible `label` |
+| `{ kind: "empty", props }` | EmptyState | `props.title`, plus optional description/action |
+| `{ kind: "error", props }` | danger Banner | `props.children`, plus optional Banner dismissal props |
+
+State values are typed payload objects, rather than bare status strings, so each
+region can supply localized state copy. Error severity is fixed to danger. The
+section keeps its required `block`; omitting `state` restores that Block. An empty
+View or empty tab still uses the View's required `empty` props. The optional
+`banner` node slot comes before tabs and sections and carries a content notice,
+normally a Designer Banner for a record state such as archived, degraded or
+read-only. A section state replaces only that section's content.
+
+```tsx
+"use client";
+import { DetailsView, type DetailsViewSection } from "@clossys/publisher/web/client";
+
+const sections: DetailsViewSection[] = [{
+  id: "identity", title: "Identity",
+  block: { kind: "detail", props: { fields: [{ label: "Identifier", value: "one" }] } },
+}];
+
+export function RecordArea() {
+  return <DetailsView
+    sections={sections}
+    empty={{ title: "No sections" }}
+  />;
+}
+```
+
+The Instance registry recognizes both Standard View IDs only on `surface: "app"`
+with `frameBlockRef.blockId: "AppFrame"`. This registration records the composition
+contract; it does not declare an Instance or a Frame/View role pair qualified.
+
+The host can bind tabs to a URL without changing the normalized layout:
+
+```tsx
+"use client";
+import { DetailsView, type DetailsViewTab } from "@clossys/publisher/web/client";
+
+const tabs: DetailsViewTab[] = [{ id: "overview", label: "Overview", sections: [
+  { id: "identity", title: "Identity", block: { kind: "detail", props: { fields: [{ label: "Identifier", value: "one" }] } } },
+  { id: "activity", title: "Activity", block: { kind: "panel", props: { children: "Recent activity" } }, state: { kind: "loading", label: "Loading activity" } },
+  { id: "attachments", title: "Attachments", region: "aside", block: { kind: "panel", props: { children: "Files" } }, state: { kind: "empty", props: { title: "No attachments" } } },
+  { id: "history", title: "History", region: "aside", block: { kind: "panel", props: { children: "Changes" } }, state: { kind: "error", props: { children: "History could not load." } } },
+] }, { id: "notes", label: "Notes", sections: [] }];
+
+export function TabbedRecordArea({ tab, onTabChange }: { tab: string; onTabChange: (tab: string) => void }) {
+  return <DetailsView
+    layout="main-aside"
+    tabs={tabs}
+    tab={tab}
+    onTabChange={onTabChange}
+    tabsLabel="Record sections"
+    empty={{ title: "No sections" }}
+  />;
+}
+```
+
+## PageView
+
+Import `PageView` and `PageViewProps` from `@clossys/publisher/web`; the client
+entry also exports both. PageView renders a plain-text title, optional subtitle,
+a flat bordered plate and optional notes below it. Supply either `children`
+content or a `form` slot; the type contract rejects supplying both. The host form
+keeps its accessible name and submission behavior.
+
+Optional `effectiveDate` and `updated` lines use `{ dateTime, text: CopyRef }` and
+require the caller's `resolveCopyId` resolver. The enclosing frame owns the skip
+link and single main landmark; PageView supplies one h1 and no frame landmarks.
+Use StatusView for a cardless status page with a call to action. See
+[PageView slots and migration guidance](../../docs/design/page-view.md) for
+content, form and date examples. Existing views remain available unchanged.

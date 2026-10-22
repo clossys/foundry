@@ -3,6 +3,7 @@
 import "@testing-library/jest-dom/vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { DetailView } from "@clossys/designer/blocks/server";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, render, within } from "@testing-library/react";
@@ -54,7 +55,6 @@ const LABELS: PackReviewViewLabels = {
 function props(over: Partial<PackReviewViewProps> = {}): PackReviewViewProps {
   return {
     brand: <span>Example Studio</span>,
-    surfaceLabel: "Marker surface",
     heading: "Marker heading",
     description: "Marker description",
     pages: [
@@ -90,12 +90,14 @@ function sectionOf(container: HTMLElement, heading: string): HTMLElement {
 }
 
 describe("PackReviewView", () => {
-  it("frames the page like the other views: header with the surface badge, one main with one h1, footer", () => {
+  it("frames the page with a solid header, no obsolete badge, one main with one h1 and a footer", () => {
     const { container } = render(<PackReviewView {...props()} />);
     const root = container.firstElementChild as HTMLElement;
     expect([...root.children].map((child) => child.tagName)).toEqual(["HEADER", "MAIN", "FOOTER"]);
     expect(root).toHaveClass("min-h-dvh");
-    expect(within(root.children[0] as HTMLElement).getByText("Marker surface")).toBeInTheDocument();
+    expect(within(root.children[0] as HTMLElement).queryByText("Marker surface")).not.toBeInTheDocument();
+    expect(root.children[0]).toHaveAttribute("data-surface", "solid");
+    expect(root.children[0]).toHaveAttribute("data-tone", "base");
     expect(within(root.children[0] as HTMLElement).getByText("Example Studio")).toBeInTheDocument();
     expect(container.querySelectorAll("h1")).toHaveLength(1);
     expect(container.querySelector("h1")?.textContent).toBe("Marker heading");
@@ -326,11 +328,8 @@ describe("PackReviewView", () => {
     });
     expect(html).toBe(
       "<div class=\"flex min-h-dvh flex-col\">" +
-      "<header data-header-root=\"\" class=\"bg-surface-raised py-sm border-b border-line-base site-header-contract\" style=\"position:relative;z-index:var(--ui-z-shell, 20);border-bottom-width:var(--ui-border-hairline, 1px)\">" +
-      "<div class=\"site-header-row\">" +
-      "<div class=\"site-header-brand\"><span>Example Studio</span></div><div class=\"site-header-actions\">" +
-      "<span class=\"inline-flex items-center rounded-pill px-sm py-xs text-caption font-body tracking-meta bg-surface-sunken text-ink-secondary\">Marker surface</span>" +
-      "</div></div></header>" +
+      "<header data-header-root=\"\" data-surface=\"solid\" data-tone=\"base\" class=\"site-header-contract site-header-ink py-sm text-ink-primary bg-surface-raised border-b border-line-base\" style=\"position:relative;z-index:var(--ui-z-shell, 20);border-bottom-width:var(--ui-border-hairline, 1px)\">" +
+      "<div class=\"site-header-row\"><div class=\"site-header-brand\"><span>Example Studio</span></div><div class=\"site-header-actions\"></div></div></header>" +
       "<main class=\"mx-auto flex w-full flex-1 flex-col gap-xl px-lg py-2xl\" style=\"max-width:var(--ui-width-form-max, none)\">" +
       "<header class=\"flex flex-col gap-md\"><div class=\"flex flex-wrap items-start justify-between gap-lg\">" +
       "<div class=\"flex flex-col gap-xs\"><h1 class=\"text-h1 font-display text-ink-primary\">Marker heading</h1>" +
@@ -368,15 +367,13 @@ describe("PackReviewView", () => {
       "<span class=\"inline-flex items-center rounded-pill px-sm py-xs text-caption font-body tracking-meta bg-status-warning-tint text-status-warning-text\">Marker delegated</span></p><div class=\"flex gap-lg\">" +
       "<iframe src=\"/contact?preview=idle\" title=\"Marker frame /contact idle 390\" width=\"390\" height=\"640\" loading=\"lazy\" class=\"shrink-0 border border-line-base\">" +
       "</iframe></div></div></div></section></main>" +
-      "<footer class=\"bg-surface-raised text-ink-primary py-lg border-t border-line-base\" style=\"position:relative;z-index:var(--ui-z-shell, 20);border-top-width:var(--ui-border-hairline, 1px)\">" +
-      "<div class=\"mx-auto flex w-full flex-col gap-lg\" style=\"padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))\">" +
-      "</div></footer></div>",
+      "<footer data-footer-root=\"\" class=\"site-footer-dark bg-surface-raised text-ink-primary py-lg border-t border-line-base\" style=\"position:relative;z-index:var(--ui-z-shell, 20);border-top-width:var(--ui-border-hairline, 1px)\"><div class=\"mx-auto flex w-full flex-col gap-lg\" style=\"padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))\"></div></footer></div>",
     );
   });
 });
 
 describe("PackReviewView header slots", () => {
-  it("renders headerAction, secondaryAction and nav inside the banner landmark, before the surface badge", () => {
+  it("renders headerAction, secondaryAction and nav inside the banner landmark with no obsolete surface badge", () => {
     const { container } = render(
       <PackReviewView
         {...props({
@@ -389,10 +386,9 @@ describe("PackReviewView header slots", () => {
     const banner = container.querySelector(":scope > div > header") as HTMLElement;
     const primary = within(banner).getByRole("link", { name: "Marker action" });
     const secondary = within(banner).getByRole("link", { name: "Marker secondary" });
-    const badge = within(banner).getByText("Marker surface");
+    expect(within(banner).queryByText("Marker surface")).not.toBeInTheDocument();
     expect(within(banner).getByRole("navigation", { name: "Primary" })).toBeInTheDocument();
     expect(secondary.compareDocumentPosition(primary) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(primary.compareDocumentPosition(badge) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(container.querySelector("main")).not.toHaveTextContent(/Marker action|Marker secondary|Marker nav/);
     expect(container.querySelector("footer")).not.toHaveTextContent(/Marker action|Marker secondary|Marker nav/);
   });
@@ -405,8 +401,9 @@ describe("PackReviewView header slots", () => {
 
   it("passes ground to both the header and the footer", () => {
     const html = renderToStaticMarkup(<PackReviewView {...props({ ground: "transparent" })} />);
-    expect(html).toMatch(/^<div class="flex min-h-dvh flex-col"><header data-header-root="" class="py-sm site-header-contract" /);
-    expect(html).toMatch(/<footer class="text-ink-primary py-lg" /);
+    expect(html).toContain('data-surface="transparent" data-tone="base"');
+    expect(html).toContain('class="site-header-contract site-header-ink py-sm text-ink-primary"');
+    expect(html).toMatch(/<footer data-footer-root="" class="site-footer-dark text-ink-primary py-lg" /);
   });
 });
 
@@ -436,6 +433,29 @@ const VOICE: PackReviewViewVoice = {
 };
 
 describe("PackReviewView record sections", () => {
+  it("retains empty and zero strings in every strategy and voice fact list", () => {
+    const entries = [{ name: "", value: "0" }, { name: "0", value: "" }];
+    const voice = { ...VOICE, rules: entries, pitch: entries, boilerplate: entries,
+      faq: entries.map(({ name, value }) => ({ question: name, answer: value })) };
+    const { container } = render(<PackReviewView {...props({ strategy: { ...STRATEGY, context: entries }, voice })} />);
+    const lists = [...container.querySelectorAll("dl")];
+    expect(lists).toHaveLength(5);
+    for (const list of lists) expect([...list.querySelectorAll("dt, dd")].map((node) => node.textContent)).toEqual(["", "0", "0", ""]);
+  });
+
+  it("renders real title-less DetailViews for every strategy and voice fact list", () => {
+    const { container } = render(<PackReviewView {...props({ strategy: STRATEGY, voice: VOICE })} />);
+    const records = [STRATEGY.context, VOICE.rules, VOICE.pitch, VOICE.boilerplate,
+      VOICE.faq.map(({ question, answer }) => ({ name: question, value: answer }))];
+    const lists = [...container.querySelectorAll("dl")];
+    expect(lists).toHaveLength(records.length);
+    records.forEach((entries, index) => {
+      expect(lists[index]?.parentElement?.outerHTML).toBe(renderToStaticMarkup(
+        <DetailView fields={entries.map(({ name, value }) => ({ label: name, value }))} />,
+      ));
+    });
+  });
+
   it("shows each section's own empty label when its record is absent, and no guide markup", () => {
     const { container } = render(<PackReviewView {...props()} />);
     expect(within(sectionOf(container, "Marker strategy")).getByText("Marker no strategy")).toBeInTheDocument();

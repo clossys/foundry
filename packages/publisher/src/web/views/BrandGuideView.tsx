@@ -1,6 +1,6 @@
 import { useId } from "react";
 import type { ReactNode } from "react";
-import { PageHeader } from "@clossys/designer/blocks/server";
+import { DetailView, PageHeader } from "@clossys/designer/blocks/server";
 
 export interface BrandGuideFact {
   name: string;
@@ -73,16 +73,7 @@ function GuideSection({ label, embedded, children }: { label: string; embedded: 
 
 function FactList({ entries, emptyLabel }: { entries: readonly BrandGuideFact[]; emptyLabel: string | undefined }) {
   if (entries.length === 0 && emptyLabel !== undefined) return <p className="text-body-s text-ink-muted">{emptyLabel}</p>;
-  return (
-    <dl>
-      {entries.map((entry) => (
-        <div key={entry.name}>
-          <dt>{entry.name}</dt>
-          <dd>{entry.value}</dd>
-        </div>
-      ))}
-    </dl>
-  );
+  return <DetailView fields={entries.map((entry) => ({ label: entry.name, value: entry.value }))} />;
 }
 
 /**

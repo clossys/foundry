@@ -4,6 +4,7 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { Key, SortDescriptor } from "react-aria-components";
 import { DataTable, type DataTableColumn } from "./DataTable.js";
+import type { DataTableViewModelV1 } from "./data-table/view-model.js";
 
 interface PromptRow {
   id: string;
@@ -23,6 +24,52 @@ const COLUMNS: DataTableColumn<PromptRow>[] = [
 ];
 
 describe("DataTable", () => {
+  it("accepts a v1 saved view and always emits the v2 envelope", async () => {
+    const user = userEvent.setup();
+    const changed = vi.fn();
+    const model: DataTableViewModelV1 = {
+      version: 1, table: { version: 1, columns: [{ id: "name", kind: "text" }, { id: "runs", kind: "number" }], collation: { locale: "en" }, filters: [{ column: "runs", kind: "number", op: "range", min: 0 }] },
+      mode: "flat", density: "comfortable", sort: [], visibleColumns: ["name", "runs"],
+    };
+    render(<DataTable aria-label="Prompts" columns={COLUMNS} rows={ROWS} rowKey={row => row.id} model={model} onModelChange={changed} />);
+    await user.click(screen.getByRole("button", { name: /Density/ }));
+    await user.click(screen.getByRole("option", { name: "Compact" }));
+    expect(changed).toHaveBeenCalledTimes(1);
+    expect(changed.mock.lastCall![0]).toEqual({ ...model, version: 2, density: "compact" });
+    expect(model.version).toBe(1);
+  });
+  it.each([
+    { name: "populated default", rows: ROWS, isLoading: false, selectionMode: "none" as const, rowCount: 4 },
+    { name: "empty default", rows: [], isLoading: false, selectionMode: "none" as const, rowCount: 2 },
+    { name: "loading default", rows: ROWS, isLoading: true, selectionMode: "none" as const, rowCount: 6 },
+    { name: "controlled selection", rows: ROWS, isLoading: false, selectionMode: "multiple" as const, rowCount: 4 },
+  ])("omits the unstyled framework body class with $name", ({ rows, isLoading, selectionMode, rowCount }) => {
+    render(
+      <DataTable
+        aria-label="Prompts"
+        columns={COLUMNS}
+        rows={rows}
+        rowKey={(row) => row.id}
+        isLoading={isLoading}
+        selectionMode={selectionMode}
+        {...(selectionMode === "multiple" ? { selectedKeys: new Set(["1"]), onSelectionChange: vi.fn() } : {})}
+      />,
+    );
+    const grid = screen.getByRole("grid", { name: "Prompts" });
+    const body = grid.querySelector("tbody");
+    expect(body).not.toBeNull();
+    expect(body).not.toHaveClass("react-aria-TableBody");
+    expect(within(grid).getAllByRole("row")).toHaveLength(rowCount);
+    if (selectionMode === "multiple") {
+      expect(within(grid).getByRole("checkbox", { name: /Select row.*Ada/ })).toBeChecked();
+    } else {
+      expect(within(grid).queryByRole("checkbox")).not.toBeInTheDocument();
+    }
+    if (isLoading) expect(within(grid).queryByText("Ada")).not.toBeInTheDocument();
+    else if (rows.length === 0) expect(within(grid).getByRole("heading", { name: "No results" })).toBeInTheDocument();
+    else expect(within(grid).getByText("Ada")).toBeInTheDocument();
+  });
+
   it("renders a grid with a columnheader per column and a row per data row", () => {
     render(<DataTable aria-label="Prompts" columns={COLUMNS} rows={ROWS} rowKey={(row) => row.id} />);
     expect(screen.getByRole("grid", { name: "Prompts" })).toBeInTheDocument();

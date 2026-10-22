@@ -46,6 +46,14 @@ describe("Instance and Pack record contracts", () => {
     refuse({ ...base(), frameBlockRef: { blockId: "AppFrame", configId: "workspace" } }, "pairing");
     refuse({ ...base(), frameBlockRef: { blockId: "CustomFrame", configId: "site" } }, "frame");
   });
+  it("registers Standard IndexView and DetailsView only on AppFrame app surfaces", () => {
+    for (const blockId of ["IndexView", "DetailsView"]) {
+      const record = { ...base(), surface: "app", frameBlockRef: { blockId: "AppFrame", configId: "workspace" }, viewBlockRef: { blockId, configId: "records" } };
+      expect(core.validateInstanceRecord(record)).toEqual({ status: "valid" });
+      refuse({ ...base(), viewBlockRef: record.viewBlockRef }, "pairing");
+      refuse({ ...record, frameBlockRef: { blockId: "SiteFrame", configId: "site" } }, "pairing");
+    }
+  });
   it("permits explicitly registered custom Views without extending the Frame set", () => {
     const record = { ...custom(), viewBlockRef: { blockId: "ExampleView", configId: "overview" } };
     refuse(record, "view");

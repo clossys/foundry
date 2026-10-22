@@ -266,7 +266,7 @@ test("candidate-qualification-shard's matrix count is the single CANDIDATE_QUALI
 test("the build-and-test fan-in genuinely fails when any split job does not succeed", () => {
   const workflow = readFileSync(join(workflowsDir, "ci.yml"), "utf8");
   const build = workflowJob(workflow, "build");
-  const splitJobs = ["candidate-qualification", "readme-examples-typecheck", "packed-consumer-readiness"];
+  const splitJobs = ["candidate-qualification", "readme-examples-typecheck", "packed-consumer-readiness", "root-tests"];
 
   const jobIf = build.match(/^ {4}if: (.+)$/m);
   assert.ok(jobIf, "build and test must declare a job-level if:");
@@ -305,6 +305,64 @@ test("the build-and-test fan-in genuinely fails when any split job does not succ
     "the fan-in check must fail closed on anything other than a clean success (failure, skipped, and cancelled all count)",
   );
   assert.match(stepBody, /exit "?\$status"?/, "the fan-in check must actually exit non-zero when a split job did not succeed");
+});
+
+test("the sixteen required status context names remain unchanged", () => {
+  const workflow = readFileSync(join(workflowsDir, "ci.yml"), "utf8");
+  const standards = readFileSync(join(workflowsDir, "verify-standards.yml"), "utf8");
+  const contexts = [
+    "publish safety", "scope drift", "build and test", "artifact safety (tarball)",
+    "prose quality (README parity, contamination classes)",
+    "release readiness (version bump vs. shipped content)",
+    "workspace link integrity", "registry drift",
+    "controller gates (catalog, neutrality, repository-profile)",
+    "WCAG contrast gate (designer-contrast-check)",
+    "qualification record required (version bump vs. retained record)",
+    "package state (declared vs. evidence)", "secret-scan (inspector judgment)",
+    "prepublish hook drift", "verify-standards", "role-loop archetypes",
+  ];
+  for (const context of contexts) {
+    const matches = `${workflow}\n${standards}`.match(new RegExp(`^    name: ${escapeForRegExp(context)}$`, "gm"));
+    assert.equal(matches?.length, 1, `required context must appear exactly once: ${context}`);
+  }
+});
+
+test("root tests start independently of README and packed consumers with the same build/cache contract", () => {
+  const workflow = readFileSync(join(workflowsDir, "ci.yml"), "utf8");
+  const worker = workflowJob(workflow, "root-tests");
+  const build = workflowJob(workflow, "build");
+  assert.match(worker, /^    name: root package tests$/m);
+  assert.match(worker, /^    needs: \[push-tree, classify\]$/m);
+  assert.deepEqual(
+    build.match(/^    needs: \[(.+)\]$/m)?.[1].split(", "),
+    ["push-tree", "candidate-qualification", "readme-examples-typecheck", "packed-consumer-readiness", "classify", "root-tests"],
+  );
+  assert.equal(worker.match(/^    if: (.+)$/m)?.[1], build.match(/^    if: (.+)$/m)?.[1]);
+  assert.match(worker, /fetch-depth: 0/);
+  assert.match(worker, /node-version: 20/);
+  assert.match(worker, /^    timeout-minutes: 20$/m);
+  assert.match(worker, /^      - run: npm ci$/m);
+  assert.match(worker, /- name: Build\n        run: npm run build/);
+  assert.match(worker, /^      - run: npm test$/m);
+  assert.equal(workflow.match(/^      - run: npm test$/gm)?.length, 1);
+  assert.doesNotMatch(build, /^      - run: npm test$/m);
+  assert.doesNotMatch(worker, /continue-on-error:/);
+  for (const token of ["Restore round-trip npm cache", "round-trip-npm-cache-${{ runner.os }}-", "RELEASE_ROUND_TRIP_NPM_CACHE_DIR=${{ runner.temp }}/round-trip-npm-cache"]) {
+    assert.ok(worker.includes(token), `root tests must retain the existing round-trip cache: ${token}`);
+  }
+});
+
+test("root tests build cross-workspace source contracts even on a dist cache hit", () => {
+  const workflow = readFileSync(join(workflowsDir, "ci.yml"), "utf8");
+  const worker = workflowJob(workflow, "root-tests");
+  const testIndex = worker.indexOf("      - run: npm test\n");
+  // Launcher imports Starter source before Starter's own test script runs;
+  // Publisher similarly imports Writer source. The dist-only cache cannot
+  // supply either package's ignored src/generated contract modules.
+  const step = worker.split(/\n(?=      - )/).find((candidate) => /\brun: npm run build(?:\n|$)/.test(candidate));
+  assert.ok(step, "root tests must materialize source contracts before testing");
+  assert.doesNotMatch(step, /^        if:/m, "source generation must also run on a cache hit");
+  assert.ok(worker.indexOf(step) < testIndex, "the full build must run before root tests");
 });
 
 // #1257: `publish safety` measured ~18-19 minutes as ten serial steps in one
@@ -475,7 +533,7 @@ test("every workspace-build-cache step's key covers every input npm run build ca
     "scripts/lib/**",
     "docs/contracts/**",
   ];
-  const jobsWithTheCache = ["readme-examples-typecheck", "packed-consumer-readiness", "build"];
+  const jobsWithTheCache = ["readme-examples-typecheck", "packed-consumer-readiness", "build", "root-tests"];
   const keyLines = [];
   for (const jobName of jobsWithTheCache) {
     const job = workflowJob(workflow, jobName);
@@ -589,7 +647,7 @@ test("issue #1420: every heavy job depends on the classifier and fails OPEN (run
   // 'success' -- exactly the failure this same fan-in step exists to
   // detect. All seven gate on `tier != 'prose'` (never `== 'full'`): they
   // run for BOTH 'full' and 'packed-prose', and skip only for pure 'prose'.
-  const packedFileGates = ["readme-examples-typecheck", "artifact", "role-loop-archetypes", "build", "candidate-qualification-shard", "candidate-qualification", "packed-consumer-readiness"];
+  const packedFileGates = ["readme-examples-typecheck", "artifact", "role-loop-archetypes", "build", "root-tests", "candidate-qualification-shard", "candidate-qualification", "packed-consumer-readiness"];
   for (const jobName of packedFileGates) {
     const job = workflowJob(workflow, jobName);
     const needsLine = job.match(/^ {4}needs: \[(.+)\]$/m);
@@ -755,6 +813,7 @@ test("issue #1420: a failed, cancelled, or skipped classify job runs every gated
     "artifact",
     "role-loop-archetypes",
     "build",
+    "root-tests",
     "candidate-qualification-shard",
     "candidate-qualification",
     "packed-consumer-readiness",

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { RadioGroupContext } from "react-aria-components";
 import { RadioGroup, type RadioGroupProps } from "./RadioGroup.js";
 
 function BasicGroup(props: Partial<Omit<RadioGroupProps, "label" | "children">> = {}) {
@@ -16,6 +17,40 @@ function BasicGroup(props: Partial<Omit<RadioGroupProps, "label" | "children">> 
 }
 
 describe("RadioGroup", () => {
+  it("inherits horizontal orientation from the native provider when the prop is omitted", () => {
+    render(<RadioGroupContext.Provider value={{ orientation: "horizontal" }}><BasicGroup /></RadioGroupContext.Provider>);
+    expect(screen.getByRole("radiogroup")).toHaveAttribute("aria-orientation", "horizontal");
+    expect(screen.getByRole("radio", { name: "Standard" }).closest("label")?.parentElement)
+      .toHaveClass("flex-row");
+  });
+
+  it("keeps the default vertical option layout and field spacing", () => {
+    render(<BasicGroup />);
+    const group = screen.getByRole("radiogroup");
+    expect(group).toHaveAttribute("aria-orientation", "vertical");
+    expect(group.className).toBe("flex flex-col gap-xs");
+    expect(screen.getByRole("radio", { name: "Standard" }).closest("label")?.parentElement?.className)
+      .toBe("flex flex-col gap-sm");
+  });
+
+  it("changes only the options to a row for horizontal orientation and retains keyboard selection", async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(<BasicGroup orientation="horizontal" defaultValue="standard" />);
+    const group = screen.getByRole("radiogroup");
+    const standard = screen.getByRole("radio", { name: "Standard" });
+    const options = standard.closest("label")?.parentElement;
+    expect(group).toHaveAttribute("aria-orientation", "horizontal");
+    expect(group.className).toBe("flex flex-col gap-xs");
+    expect(options?.className).toBe("flex flex-row gap-sm");
+    standard.focus();
+    await user.keyboard("{ArrowRight}");
+    expect(screen.getByRole("radio", { name: "Express" })).toBeChecked();
+    expect(screen.getByRole("radio", { name: "Express" })).toHaveFocus();
+    rerender(<BasicGroup orientation="vertical" defaultValue="standard" />);
+    expect(group).toHaveAttribute("aria-orientation", "vertical");
+    expect(options?.className).toBe("flex flex-col gap-sm");
+  });
+
   it("renders a labeled group with role='radiogroup', containing labeled radio options", () => {
     render(<BasicGroup />);
     const group = screen.getByRole("radiogroup", { name: "Delivery speed" });

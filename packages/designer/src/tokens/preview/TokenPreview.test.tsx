@@ -1,9 +1,15 @@
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { hydrateRoot } from "react-dom/client";
 import { renderToStaticMarkup, renderToString } from "react-dom/server";
 import { act, cleanup, fireEvent, render } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { TOKENS } from "../tokens.js";
+import { TOKENS, type TokenDefinition } from "../tokens.js";
 import { TOKEN_GUIDANCE } from "../guidance.js";
+import { contrastRatio } from "../color.js";
+import { parseDeclarationsForSelector, parseRootDeclarations } from "../internal/parse-css.js";
+import { resolveTokenValue } from "../internal/resolve-token-value.js";
 import { TokenPreview } from "./index.js";
 
 vi.mock("../guidance.js", async importOriginal => {
@@ -42,7 +48,7 @@ const interactive = [
   "--breakpoint-mobile", "--breakpoint-mobile-lg", "--breakpoint-tablet", "--breakpoint-tablet-lg", "--breakpoint-desktop", "--breakpoint-wide",
 ];
 const examples = [
-  ["--color-surface-glass", "background-color", "var(--color-surface-glass, oklch(1 0 0 / 0.88))", "DIV"],
+  ["--color-surface-glass", "background-color", "var(--color-surface-glass, oklch(1 0 0 / 0.6))", "DIV"],
   ["--text-body", "font-size", "var(--text-body, 15px)", "P"],
   ["--ui-border-rule", "border-width", "var(--ui-border-rule, 2px)", "DIV"],
   ["--color-control-quiet", "color", "var(--color-control-quiet, var(--color-ink-primary, oklch(0.2178 0 0)))", "BUTTON"],
@@ -55,7 +61,7 @@ const examples = [
   ["--ui-brandmark-height-md", "block-size", "var(--ui-brandmark-height-md, 36px)", "DIV"],
   ["--radius-panel", "border-radius", "var(--radius-panel, var(--radius-surface, var(--radius-default, 3px)))", "DIV"],
   ["--ui-elevation-none", "box-shadow", "var(--ui-elevation-none, none)", "DIV"],
-  ["--blur-glass", "backdrop-filter", "blur(var(--blur-glass, 16px))", "DIV"],
+  ["--blur-glass", "backdrop-filter", "blur(var(--blur-glass, 20px))", "DIV"],
   ["--ui-ring-on-inverse", "box-shadow", "var(--ui-ring-on-inverse, 0 0 0 1px rgba(245, 245, 245, 0.12))", "DIV"],
   ["--ui-z-modal", "z-index", "var(--ui-z-modal, 50)", "DIV"],
   ["--ui-alpha-disabled", "opacity", "var(--ui-alpha-disabled, 0.5)", "DIV"],
@@ -64,6 +70,34 @@ function specimen(property: string, copy: Omit<Parameters<typeof TokenPreview>[0
   const host = document.createElement("div");
   host.innerHTML = renderToStaticMarkup(<TokenPreview property={property} {...copy} />);
   return host;
+}
+
+const tokensCss = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "../../../styles/tokens.css"), "utf8");
+const neutralProperties = Object.keys(TOKENS).filter(property => TOKENS[property]!.family === "neutral");
+function themeTokens(theme: "light" | "dark"): Record<string, TokenDefinition> {
+  const declarations = parseRootDeclarations(tokensCss);
+  if (theme === "dark") {
+    for (const [property, value] of parseDeclarationsForSelector(tokensCss, ':root[data-theme="dark"]')) declarations.set(property, value);
+  }
+  return Object.fromEntries(Object.entries(TOKENS).map(([property, definition]) => [property, {
+    ...definition, value: declarations.get(property) ?? definition.value,
+  }]));
+}
+
+// jsdom does not resolve custom properties. Resolve the specimen's actual
+// text/nearest painted ground against the shipped CSS, including dark aliases.
+function samplePaint(sample: HTMLElement, role: "color" | "background", tokens: Record<string, TokenDefinition>): string {
+  for (let node: HTMLElement | null = sample; node; node = node.parentElement) {
+    const value = role === "color" ? node.style.color : node.style.backgroundColor || node.style.background;
+    if (!value || value === "transparent") continue;
+    const property = /^var\((--[\w-]+)/.exec(value)?.[1];
+    if (!property) return value;
+    const resolved = resolveTokenValue(property, tokens);
+    expect(resolved.cycle ?? resolved.missingProperty).toBeUndefined();
+    expect(resolved.value).toBeDefined();
+    return resolved.value!;
+  }
+  throw new Error(`Sample has no authored ${role}`);
 }
 
 describe("exact-property TokenPreview", () => {
@@ -118,6 +152,63 @@ describe("exact-property TokenPreview", () => {
       expect(specimen(property).querySelector("figure")?.getAttribute("style")).toContain("background-image:repeating-conic-gradient(var(--color-surface-base, oklch(0.9702 0 0)) 0% 25%, var(--color-surface-inverse, oklch(0.2178 0 0)) 0% 50%);");
     }
   });
+  it.each([
+    ["--color-neutral-50", "--color-neutral-900"],
+    ["--color-neutral-100", "--color-neutral-900"],
+    ["--color-neutral-200", "--color-neutral-900"],
+    ["--color-neutral-300", "--color-neutral-900"],
+    ["--color-neutral-400", "--color-neutral-900"],
+    ["--color-neutral-600", "--color-neutral-50"],
+    ["--color-neutral-700", "--color-neutral-50"],
+    ["--color-neutral-800", "--color-neutral-50"],
+    ["--color-neutral-900", "--color-neutral-50"],
+    ["--color-neutral-950", "--color-neutral-50"],
+  ])("pairs %s with theme-independent neutral foreground %s", (property, foreground) => {
+    expect(specimen(property).querySelector("figure > div")?.getAttribute("style"))
+      .toContain(`color:var(${foreground}, ${TOKENS[foreground]!.value});`);
+  });
+  it.each((["light", "dark"] as const).flatMap(theme => [...neutralProperties, "--color-accent", "--color-accent-hover"].map(property => [theme, property] as const)))(
+    "keeps the actual %s %s sample text above normal-text AA contrast", (theme, property) => {
+      expect(neutralProperties).toHaveLength(11);
+      const plate = specimen(property).querySelector<HTMLElement>("figure > div, figure > button")!;
+      const sample = [plate, ...plate.querySelectorAll<HTMLElement>("*")].find(node => node.childElementCount === 0 && node.textContent === "Aa 0123")!;
+      expect(sample).toBeDefined();
+      const tokens = themeTokens(theme);
+      const foreground = samplePaint(sample, "color", tokens);
+      const background = samplePaint(sample, "background", tokens);
+      expect(contrastRatio(foreground, background), `${property}: ${foreground} on ${background}`).toBeGreaterThanOrEqual(4.5);
+      expect(plate.style.backgroundColor).toBe(`var(${property}, ${TOKENS[property]!.value})`);
+    },
+  );
+  it.each(["--color-accent", "--color-accent-hover"])("pairs %s with on-accent ink", property => {
+    expect(specimen(property).querySelector("figure > div, figure > button")?.getAttribute("style"))
+      .toContain(`color:var(--color-ink-on-accent, ${TOKENS["--color-ink-on-accent"]!.value});`);
+  });
+  it.each(Object.keys(TOKENS).filter(property => TOKEN_GUIDANCE[property]?.specimen === "layer"))(
+    "keeps the %s target and sample inspectable below the transparent reference", property => {
+      const plates = specimen(property).querySelectorAll<HTMLElement>("figure > div > div");
+      const reference = plates[0]!;
+      const target = plates[1]!;
+      expect(reference.style.background).toBe("transparent");
+      expect(reference.style.padding).toBe("0px");
+      expect(reference.style.zIndex).toBe("1");
+      const caption = reference.querySelector<HTMLElement>("span")!;
+      expect(caption).not.toBeNull();
+      expect(caption.style.display).toBe("block");
+      // The only opaque reference ground stays above the target, including
+      // custom text that would otherwise wrap into its sample area.
+      expect(parseFloat(caption.style.blockSize)).toBeLessThanOrEqual(parseFloat(target.style.top));
+      expect(caption.style.overflow).toBe("hidden");
+      expect(caption.style.whiteSpace).toBe("nowrap");
+      expect(target.style.zIndex).toBe(`var(${property}, ${TOKENS[property]!.value})`);
+      expect(reference.style.right).toBe("24px");
+      expect(reference.style.bottom).toBe("24px");
+      expect(target.style.right).toBe("0px");
+      expect(target.style.bottom).toBe("0px");
+      expect(target.style.left).toBe("24px");
+      expect(target.style.top).toBe("24px");
+    },
+  );
   it("pairs inverse plate grounds and ink", () => {
     for (const property of ["--color-line-on-inverse", "--ui-ring-on-inverse"]) {
       const style = specimen(property).querySelector("figure")?.firstElementChild?.getAttribute("style");
@@ -131,7 +222,7 @@ describe("exact-property TokenPreview", () => {
       ["--radius-panel", "figure > div", "color:var(--color-ink-primary, oklch(0.2178 0 0));"],
       ["--ui-border-rule", "figure > div", "border:2px solid var(--color-line-strong, oklch(0.7763 0 0));"],
       ["--spacing-sm", "span", "background:var(--color-accent, oklch(0.4748 0 0))"],
-      ["--blur-glass", "figure > div > div", "background:var(--color-surface-glass, oklch(1 0 0 / 0.88));"],
+      ["--blur-glass", "figure > div > div", "background:var(--color-surface-glass, oklch(1 0 0 / 0.6));"],
     ];
     for (const [property, selector, declaration] of cases) {
       expect(specimen(property!).querySelector(selector!)?.getAttribute("style"), property).toContain(declaration);

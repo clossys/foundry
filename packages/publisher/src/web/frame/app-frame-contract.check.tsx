@@ -15,6 +15,9 @@ export const props: AppFrameProps = {
   children: <h1>Home</h1>,
 };
 export const composed = <AppFrame {...props} />;
+export const hostThemeControl = <AppFrame {...props} themeControl={<button>Choose theme</button>} />;
+export const omittedThemeControl = <AppFrame {...props} themeControl={null} />;
+export const defaultThemeControl = <AppFrame {...props} themeControl={undefined} />;
 export const originalImage = <AppFrame {...props} brand={{ ...brand, markInk: "image" }} dir="rtl" theme={{ defaultPreference: "dark", storageKey: "example-theme" }} />;
 export const signedIn: AppFrameAccount = { ...signedOut, actor: { name: "Example user" } };
 export const panel: AppFrameRightPanel = { label: "Details", handleLabel: "Resize details", min: 200, max: 480, defaultValue: 320, children: <p>Details</p> };
@@ -71,3 +74,16 @@ type AssertAbsent<T extends false> = T;
 export type OrdinaryWebBoundary = AssertAbsent<"AppFrame" extends keyof typeof import("../index.js") ? true : false>;
 export type ServerBoundary = AssertAbsent<"AppFrame" extends keyof typeof import("../server.js") ? true : false>;
 export type SharedFrameBoundary = AssertAbsent<"AppFrame" extends keyof typeof import("./index.js") ? true : false>;
+
+// New page metadata is reachable through the existing public AppFrameProps contract.
+export const page: NonNullable<AppFrameProps["page"]> = {
+  title: "Projects", breadcrumb: [{ id: "projects", label: "Projects", href: "/projects", siblings: [{ id: "library", label: "Library", href: "/library" }] }],
+  width: "contained", status: <span>Ready</span>, description: "Current projects", updatedAt: "Today", meta: <span>Team</span>, scope: "All projects",
+  actions: [{ id: "save", label: "Save", primary: true, onAction: () => {} }, { id: "export", label: "Export", href: "/export" }],
+};
+export const pageFrame = <AppFrame {...props} page={page} workspaces={[{ id: "workspace", label: "Workspace", href: "/" }]} width="full" onWidthChange={(width: "contained" | "full") => void width} />;
+export const pageWidths: readonly NonNullable<NonNullable<AppFrameProps["page"]>["width"]>[] = APP_FRAME_CONFIG_SCHEMA["page.width"].values;
+// @ts-expect-error stage width is a finite existing-frame configuration
+export const invalidPageWidth: AppFrameProps["page"] = { title: "Projects", width: "fixed" };
+// @ts-expect-error actions have exactly one destination mechanism
+export const ambiguousPageAction: NonNullable<NonNullable<AppFrameProps["page"]>["actions"]>[number] = { id: "run", label: "Run", href: "/", onAction: () => {} };

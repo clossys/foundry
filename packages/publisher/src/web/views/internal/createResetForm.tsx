@@ -246,6 +246,7 @@ export function createResetForm(resolveCopy: FrontDoorResolver) {
     if (step === "request") {
       return (
         <Form
+          actionsLayout="stretch"
           aria-label={words["front-door.reset.title"]}
           onSubmit={submit}
           noValidate
@@ -277,15 +278,13 @@ export function createResetForm(resolveCopy: FrontDoorResolver) {
 
     return (
       <Form
+        actionsLayout="stretch"
         aria-label={words["front-door.code.title"]}
         onSubmit={submit}
         noValidate
         submitError={submitError}
         actions={
           <>
-            <Button type="submit" isPending={pending === "submit"} isDisabled={unavailable}>
-              {words["front-door.reset-code.primary"]}
-            </Button>
             {resendCode === undefined ? null : (
               <Button type="button" variant="ghost" onPress={resend} isPending={pending === "resend"} isDisabled={unavailable}>
                 {words["front-door.code.secondary"]}
@@ -293,6 +292,9 @@ export function createResetForm(resolveCopy: FrontDoorResolver) {
             )}
             <Button type="button" variant="ghost" onPress={changeIdentifier} isDisabled={unavailable}>
               {words["front-door.password.secondary"]}
+            </Button>
+            <Button type="submit" isPending={pending === "submit"} isDisabled={unavailable}>
+              {words["front-door.reset-code.primary"]}
             </Button>
           </>
         }

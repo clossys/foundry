@@ -127,8 +127,8 @@ export const TOKENS: Readonly<Record<string, TokenDefinition>> = {
   // rather than `color-mix()` of the raised/inverse plate because the
   // contrast gate pins it: `ink-primary` and `ink-on-inverse` must clear AA
   // over each glass composited on both a white and a black backdrop.
-  "--color-surface-glass": { property: "--color-surface-glass", family: "surface", value: "oklch(1 0 0 / 0.88)", brandable: true, themeDependent: true },
-  "--color-surface-glass-inverse": { property: "--color-surface-glass-inverse", family: "surface", value: "oklch(0.2178 0 0 / 0.88)", brandable: true, themeDependent: true },
+  "--color-surface-glass": { property: "--color-surface-glass", family: "surface", value: "oklch(1 0 0 / 0.6)", brandable: true, themeDependent: true },
+  "--color-surface-glass-inverse": { property: "--color-surface-glass-inverse", family: "surface", value: "oklch(0.2178 0 0 / 0.85)", brandable: true, themeDependent: true },
 
   // ── COLOR · INK ──────────────────────────────────────────────────────
   "--color-ink-primary": { property: "--color-ink-primary", family: "ink", value: "oklch(0.2178 0 0)", brandable: true, themeDependent: true },
@@ -358,7 +358,7 @@ export const TOKENS: Readonly<Record<string, TokenDefinition>> = {
   // ── BLUR (Tailwind `--blur-*` namespace) ───────────────────────────
   // Glass identity: the backdrop blur behind a glass plate. Theme invariant;
   // a brand lever like the panel tokens.
-  "--blur-glass": { property: "--blur-glass", family: "blur", value: "16px", brandable: true, themeDependent: false },
+  "--blur-glass": { property: "--blur-glass", family: "blur", value: "20px", brandable: true, themeDependent: false },
   // Notice identity: the backdrop blur behind a pinned notice card. Theme
   // invariant and fixed, like the other component measures.
   "--blur-notice": { property: "--blur-notice", family: "blur", value: "12px", brandable: false, themeDependent: false },

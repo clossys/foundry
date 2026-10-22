@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { Button } from "../atoms/Button.js";
 import { Dialog, type DialogProps } from "../atoms/Dialog.js";
 import { Icon } from "../atoms/Icon.js";
@@ -11,6 +11,8 @@ export interface DrawerProps extends Omit<DialogProps, "children" | "size" | "is
   closeLabel: string;
   children: ReactNode;
   footer?: ReactNode;
+  /** Optional measured layout for the existing close control; omitted preserves its header placement. */
+  closeButtonStyle?: Pick<CSSProperties, "position" | "insetBlockStart" | "insetInlineStart" | "insetInlineEnd" | "direction">;
   /** Logical viewport edge. @default "start" */
   placement?: "start" | "end" | "bottom";
   /** Route identity supplied by the host; any change dismisses an open drawer. */
@@ -25,7 +27,7 @@ export interface DrawerProps extends Omit<DialogProps, "children" | "size" | "is
 export function Drawer({
   trigger, heading, closeLabel, children, footer, placement = "start",
   navigationKey, dismissAt = "(min-width: 768px)", wide = "dismiss", isOpen, defaultOpen = false,
-  onOpenChange, className, style, ...rest
+  onOpenChange, className, style, closeButtonStyle, ...rest
 }: DrawerProps) {
   const [internal, setInternal] = useState(defaultOpen);
   const [dismissed, setDismissed] = useState(false);
@@ -79,7 +81,7 @@ export function Drawer({
           header={(
             <div className="flex items-start justify-between gap-md">
               <Dialog.Heading>{heading}</Dialog.Heading>
-              <Button variant="ghost" aria-label={closeLabel} onPress={close}
+              <Button variant="ghost" aria-label={closeLabel} onPress={close} style={closeButtonStyle} aria-expanded={closeButtonStyle ? true : undefined}
                 className="icon-control-md shrink-0 border-0 bg-transparent p-0 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent">
                 <Icon glyph={X} decorative size="md" />
               </Button>

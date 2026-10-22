@@ -91,10 +91,11 @@ function importKeysNormally(distRelPath: string): string[] {
 describe("server-safe entry points resolve under react-server (test 1)", () => {
   const serverEntries: Array<{ distRelPath: string; expectedExports: string[] }> = [
     { distRelPath: "tokens/server.js", expectedExports: ["readBrandCss", "assertTailwindMergeVersion"] },
-    { distRelPath: "atoms/server.js", expectedExports: ["Avatar", "Badge", "Banner", "Card", "Field", "Icon", "Meter", "Skeleton", "Spinner", "StatusMark", "buttonLinkClassName", "iconButtonClassName", "iconButtonLinkClassName", "mergeUiClasses"] },
+    { distRelPath: "atoms/server.js", expectedExports: ["Logomark", "Avatar", "Badge", "Banner", "Card", "Field", "Icon", "Meter", "Skeleton", "Spinner", "StatusMark", "buttonLinkClassName", "iconButtonClassName", "iconButtonLinkClassName", "mergeUiClasses"] },
     {
       distRelPath: "blocks/server.js",
       expectedExports: [
+        "Lockup",
         "AnatomyCallouts",
         "ArticleBody",
         "ContentSection",
@@ -124,11 +125,13 @@ describe("server-safe entry points resolve under react-server (test 1)", () => {
         "SpecimenPanel",
         "Stat",
         "StatusList",
+        "Testimonial",
         "Tree",
+        "UsageMeter",
       ],
     },
     { distRelPath: "shell/server.js", expectedExports: ["BADGE_INSET_SHARE", "BADGE_RADIUS_SHARE", "Brandmark", "Shell", "SiteFooter", "SiteHeader", "SkipLink", "badgePlatePath"] },
-    { distRelPath: "charts/server.js", expectedExports: ["ChartFrame", "BarChart", "LineChart", "RangeChart", "ScatterChart", "Sparkline", "WaterfallChart"] },
+    { distRelPath: "charts/server.js", expectedExports: ["ChartFrame", "BarChart", "LineChart", "RangeChart", "ScatterChart", "Sparkline", "WaterfallChart", "AreaChart", "Heatmap", "StatusStrip"] },
     { distRelPath: "theme/server.js", expectedExports: ["getThemeInitScript"] },
   ];
 
@@ -144,6 +147,15 @@ describe("server-safe entry points resolve under react-server (test 1)", () => {
     });
   }
 });
+
+it("imports and calls the compiled Testimonial server graph with an avatar under react-server", () => {
+  const result = probeUnderReactServer("blocks/Testimonial.server.js");
+  expect(result.ok, result.ok ? undefined : result.message).toBe(true);
+  expect(RENDER_ENVIRONMENT["./blocks/server"]).toBe("server-safe");
+  const absolute = join(distDir, "blocks/Testimonial.server.js");
+  const script = `import {Testimonial} from ${JSON.stringify(absolute)}; function nodes(node){if(Array.isArray(node))return node.flatMap(nodes);if(!node||typeof node!=="object"||!node.props)return [];if(typeof node.type==="function")return nodes(node.type(node.props));return [node,...nodes(node.props.children)];} const tree=nodes(Testimonial({quote:"Quote",attributorName:"Alex Example",avatarSrc:"/avatar.png",avatarAlt:"Alex Example"})); if(tree.filter(n=>n.type==="figure").length!==1||tree.filter(n=>n.type==="blockquote"&&n.props.children==="Quote").length!==1||tree.filter(n=>n.type==="img"&&n.props.alt==="Alex Example").length!==1)throw new Error("missing semantic testimonial/avatar");process.stdout.write("OK");`;
+  expect(execFileSync(process.execPath, ["--conditions=react-server", "-e", script], { encoding: "utf8", timeout: 10_000 })).toBe("OK");
+}, 15_000);
 
 it("keeps the interactive preview export exact and its emitted client boundary explicit", () => {
   expect(importKeysNormally("tokens/preview/index.js")).toEqual(["TokenPreview"]);
@@ -373,3 +385,32 @@ describe("native compiled collection scale boundary", () => {
     expect(execFileSync(process.execPath, ["--conditions=react-server", "-e", script], { encoding: "utf8", timeout: 10_000 })).toBe("OK");
   }, 15_000);
 });
+
+it("keeps PageBar client-only, emits all seven types and requires authored labels (M10)", () => {
+  expect(importKeysNormally("blocks/index.js")).toContain("PageBar");
+  expect(importKeysNormally("index.js")).toContain("PageBar");
+  expect(importKeysNormally("blocks/server.js")).not.toContain("PageBar");
+  expect(readFileSync(join(distDir, "blocks/PageBar.js"), "utf8")).toMatch(/^"use client";/);
+  const filename = join(packageRoot, "page-bar-consumer.check.ts");
+  const options = { strict: true, noEmit: true, skipLibCheck: true, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler };
+  const diagnosticsFor = (consumer: string) => {
+    const host = ts.createCompilerHost(options), original = host.getSourceFile.bind(host);
+    host.getSourceFile = (path, language, error, fresh) => path === filename ? ts.createSourceFile(path, consumer, language, true) : original(path, language, error, fresh);
+    return ts.getPreEmitDiagnostics(ts.createProgram([filename], options, host));
+  };
+  for (const entry of ["blocks/index.js", "index.js"]) {
+    const prelude = `import type * as B from ${JSON.stringify(join(distDir, entry))};`;
+    const valid = `${prelude}
+      const width: B.PageBarWidth = "full";
+      const destination: B.PageBarDestination = {id:"projects",label:"Projects",href:"/projects"};
+      const crumb: B.PageBarCrumb = {...destination,siblings:[destination]};
+      const action: B.PageBarAction = {id:"share",label:"Share",onAction:()=>{}};
+      const page: B.PageBarPage = {title:"Quarterly report",breadcrumb:[crumb],actions:[action],width};
+      const labels: B.PageBarLabels = {breadcrumb:"Trail",collapsedBreadcrumb:"Levels",pageInfo:"Details",fullWidth:"Expand",containedWidth:"Contain",pageActions:"Actions"};
+      const props: B.PageBarProps = {root:{label:"Workspace"},page,width,onWidthChange:()=>{},labels};`;
+    const diagnostics = diagnosticsFor(valid);
+    expect(diagnostics.map(diagnostic => ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n")), entry).toEqual([]);
+    const missing = diagnosticsFor(`${prelude} const props: B.PageBarProps = {root:{label:"Workspace"},width:"full",onWidthChange:()=>{}};`);
+    expect(missing.some(diagnostic => diagnostic.code === 2741 && /labels/.test(ts.flattenDiagnosticMessageText(diagnostic.messageText, " "))), entry).toBe(true);
+  }
+}, 30_000);

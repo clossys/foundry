@@ -2,7 +2,7 @@
 export const INSTANCE_FRAME_BLOCK_IDS = Object.freeze(["SiteFrame", "AppFrame"] as const);
 export const INSTANCE_VIEW_BLOCK_IDS = Object.freeze([
   "AuthView", "CaptureView", "CollectionView", "ContactView", "DocumentView", "HeroView",
-  "LandingView", "LegalView", "MarketingView", "SectionedView", "StatusView",
+  "LandingView", "LegalView", "MarketingView", "SectionedView", "StatusView", "IndexView", "DetailsView",
 ] as const);
 /** Mirrors the web adapter's surface kinds without importing that adapter. */
 export const INSTANCE_SITE_SURFACE_KINDS = Object.freeze(["site", "front-door", "admin", "demo"] as const);
@@ -69,6 +69,7 @@ function instance(input: unknown, options: InstanceRecordOptions): InstanceRecor
   if (!(INSTANCE_FRAME_BLOCK_IDS as readonly string[]).includes(frame.blockId!)) return refused("frame", "frameBlockRef.blockId");
   if (![...INSTANCE_VIEW_BLOCK_IDS, ...(options.customViewIds ?? [])].includes(view.blockId!)) return refused("view", "viewBlockRef.blockId");
   if (view.blockId === "AuthView" && input.surface !== "site") return refused("pairing", "frameBlockRef");
+  if ((view.blockId === "IndexView" || view.blockId === "DetailsView") && input.surface !== "app") return refused("pairing", "frameBlockRef");
   if (input.surface === "app") {
     if (frame.blockId !== "AppFrame") return refused("pairing", "frameBlockRef");
   } else if (frame.blockId !== "SiteFrame" || !(INSTANCE_SITE_SURFACE_KINDS as readonly string[]).includes(frame.configId!) ||

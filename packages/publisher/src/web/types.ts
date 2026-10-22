@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import type { ComposeDocument, FlowLayoutSpec, ResolvedSurfaceGroup, ResolvedSurfaceNode } from "../core/index.js";
+import type { SiteFrameProps } from "./frame/types.js";
 
 // ---------------------------------------------------------------------------
 // CopyResolver — the copyId seam, resolved
@@ -65,6 +66,13 @@ export type AssetResolver = (assetId: string) => unknown;
 // ---------------------------------------------------------------------------
 
 export interface RenderWebOptions {
+  /**
+   * Render the shipped AuthView chrome-free inside SiteFrame. Takes the
+   * frame's shell, copy/asset resolvers and optional presentation. Other
+   * templates and document brand/footerSecondary bindings are refused.
+   * Omitted preserves the existing unframed output and required slots.
+   */
+  frame?: Omit<SiteFrameProps, "children">;
   /** See {@link CopyResolver}. Omit when every binding in the document uses `value`, never `copyId`. */
   resolveCopyId?: CopyResolver;
   /**
@@ -128,7 +136,7 @@ export interface RenderWebOptions {
 
 /** What `renderWebDocument` returns: the two things a web `ComposeDocument` renders to. See `renderWebDocument.ts`'s own doc comment. */
 export interface RenderWebResult {
-  /** The composed `@clossys/designer` view element — the `ComposeDocument.template` view with its bindings resolved into its slots. Render this with your own React tree (or `react-dom/server`) however your app already does. */
+  /** The composed view with bindings resolved into its slots, optionally inside the requested SiteFrame. Render this with your own React tree (or `react-dom/server`) however your app already does. */
   element: ReactNode;
   /** The document's head metadata, as a plain serialisable object — see {@link WebHeadMetadata}. */
   head: WebHeadMetadata;
