@@ -121,7 +121,7 @@ const FROZEN_ATOM_IDS: readonly string[] = [
   "reveal.dialog", "reveal.popover", "reveal.tooltip", "reveal.sheet", "reveal.preview-card",
 ];
 
-/** Frozen block leaf ids, 84. */
+/** Frozen block leaf ids, 85. */
 const FROZEN_BLOCK_IDS: readonly string[] = [
   "say.hero", "say.page-header", "say.section-header", "say.section-intro", "say.takeaway", "say.chapter",
   "items.features", "items.statement", "items.feature-grid",
@@ -146,6 +146,7 @@ const FROZEN_BLOCK_IDS: readonly string[] = [
   "form.pagination", "form.load-more", "form.filter-builder",
   "say.empty-state", "say.error-state", "form.confirm-dialog", "form.consent-banner",
   "say.notice-stack", "form.refresh-status", "items.notification-center",
+  "matrix.canvas-surface",
 ];
 
 /** Ids that appear more than once in a list. */
@@ -319,10 +320,10 @@ describe("block catalog coverage", () => {
   const ids = BLOCK_ENTRIES.map((entry) => entry.id);
   const byId = new Map(BLOCK_ENTRIES.map((entry) => [entry.id, entry]));
 
-  it("matches the frozen id list exactly, 84 leaves", () => {
+  it("matches the frozen id list exactly, 85 leaves", () => {
     expect(duplicates(ids)).toEqual([]);
-    expect(FROZEN_BLOCK_IDS).toHaveLength(84);
-    expect(ids).toHaveLength(84);
+    expect(FROZEN_BLOCK_IDS).toHaveLength(85);
+    expect(ids).toHaveLength(85);
     expect([...ids].sort()).toEqual([...FROZEN_BLOCK_IDS].sort());
   });
 
@@ -350,11 +351,11 @@ describe("block catalog coverage", () => {
     }
   });
 
-  it("counts 4 deprecated, 57 draft and built, 23 not built", () => {
+  it("counts 4 deprecated, 58 draft and built, 23 not built", () => {
     const deprecated = BLOCK_ENTRIES.filter((entry) => entry.lifecycle === "deprecated").length;
     const draftBuilt = BLOCK_ENTRIES.filter((entry) => entry.lifecycle === "draft" && entry.built !== "no").length;
     const notBuilt = BLOCK_ENTRIES.filter((entry) => entry.built === "no").length;
-    expect([deprecated, draftBuilt, notBuilt]).toEqual([4, 57, 23]);
+    expect([deprecated, draftBuilt, notBuilt]).toEqual([4, 58, 23]);
   });
 
   it("marks exactly the four leaves with exact specimens as stable candidates", () => {
