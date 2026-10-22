@@ -123,4 +123,11 @@ export const NON_BLOCK_THEME_EXPORTS: Readonly<Record<string, string>> = {
   radialLayout: "Computes radial graph coordinates; returns plain positions with no UI or paint.",
   forceLayout: "Seeded force simulation with fixed steps and node separation; returns plain positions with no UI or paint.",
   edgeRoutingHints: "Straight routing metadata with loop flags and parallel-edge counts; returns plain records with no UI or paint.",
+  scheduleProject: "Working-day scheduling with dependency conflicts over supplied tasks; returns plain records with no UI or paint.",
+  projectRollups: "Parent-task span, status and completion rollups from a computed schedule; returns plain records with no UI or paint.",
+  boardColumns: "Status column grouping with work-in-progress limit flags over supplied tasks; returns plain arrays with no UI or paint.",
+  timelineLayout: "Timeline row, point and connector geometry from a computed schedule; returns plain records with no UI or paint.",
+  serializeProject: "Validated plain-object project serialization; renders no UI or paint.",
+  parseProject: "Project envelope validation and copying from a plain object; renders no UI or paint.",
+  ProjectModelError: "Typed project-data refusal with an error code and message; renders no UI or paint.",
 };
