@@ -1697,7 +1697,14 @@ jobs:
         run: npm run build
       # Every fenced ts/tsx block in a packages/*/README.md, compiled against
       # that package's own shipped declarations (#908).
+      #
+      # #2417: the examples are compiled by a bounded worker pool. The
+      # script's own default is deliberately conservative for shared local
+      # machines (min(4, CPUs - 1)); this job owns its whole runner, so it
+      # sets the worker count to the runner's four vCPUs.
       - name: README code examples typecheck against shipped declarations
+        env:
+          FOUNDRY_README_EXAMPLES_JOBS: "4"
         run: npm run check:readme-examples
 
   # See `candidate-qualification` above for the measurement and the overall

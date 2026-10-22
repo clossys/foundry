@@ -6787,6 +6787,14 @@ pagination; `table.isLoading` instead preserves the DataTable loading state.
 
 `IndexViewTable<Row>` carries DataTable's controlled sorting, selection and loading
 props through `table`. The View does not sort, select, paginate or fetch rows.
+`table` also forwards DataTable's saved-view props unchanged: `model`, the
+`onModelChange` it requires, `messages`, `expandedGroupKeys` and
+`onExpandedGroupKeysChange`. Expansion keys are `groupRows` keys (JSON value
+paths such as `["Ready"]`, not the bare value); `"all"` expands every group. With
+a `model`, DataTable filters, sorts and groups
+`rows` locally, header sorting is reported through `onModelChange`, and
+`rowRoute` still wraps the row-header column when that column is in the model's
+`visibleColumns`. The `model` is the saved-view envelope `DataTable` documents.
 `IndexViewCollection` is an optional typed Block slot: `{ kind: "panel", props }`
 or `{ kind: "record-ledger", props }`, using that Block's public props. An arbitrary
 element is not a collection Block entry. The row count still determines the empty
@@ -6815,6 +6823,53 @@ export function RecordsArea({ navigate }: { navigate: (href: string) => void }) 
     columns={[{ id: "name", header: "Name", isRowHeader: true, cell: row => row.name }]}
     rowRoute={{ href: row => `/records/${row.id}`, onNavigate: href => navigate(href) }}
     empty={{ title: "No records", description: "Create a record to begin." }}
+  />;
+}
+```
+
+A saved table view, with host copy and controlled group expansion:
+
+```tsx
+"use client";
+import { useState } from "react";
+import { IndexView, type IndexViewTable } from "@clossys/publisher/web/client";
+
+type TaskRow = { id: string; name: string; stage: string };
+type TaskView = NonNullable<IndexViewTable<TaskRow>["model"]>;
+const rows: TaskRow[] = [{ id: "one", name: "First task", stage: "Ready" }];
+const initial: TaskView = {
+  version: 2,
+  table: {
+    version: 1,
+    collation: { locale: "en" },
+    columns: [{ id: "name", kind: "text" }, { id: "stage", kind: "enum" }],
+    groupBy: [{ column: "stage" }],
+  },
+  mode: "grouped",
+  density: "comfortable",
+  sort: [],
+  visibleColumns: ["name", "stage"],
+};
+
+export function TasksArea() {
+  const [model, setModel] = useState<TaskView>(initial);
+  const [expanded, setExpanded] = useState<ReadonlySet<string> | "all">("all");
+  return <IndexView
+    collectionLabel="Tasks"
+    rows={rows}
+    rowKey={row => row.id}
+    columns={[
+      { id: "name", header: "Name", isRowHeader: true, cell: row => row.name },
+      { id: "stage", header: "Stage", cell: row => row.stage },
+    ]}
+    table={{
+      model,
+      onModelChange: setModel,
+      messages: { viewOptionsLabel: "Table settings" },
+      expandedGroupKeys: expanded,
+      onExpandedGroupKeysChange: setExpanded,
+    }}
+    empty={{ title: "No tasks" }}
   />;
 }
 ```
