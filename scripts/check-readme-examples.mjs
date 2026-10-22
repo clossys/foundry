@@ -87,6 +87,21 @@
 // exist to fight. Every run — pass, fail, or waived — prints the skip
 // count and the reason breakdown, never just the pass/fail headline.
 //
+// CONCURRENCY (issue #2417)
+// -----------------------------
+// One tsc per block is the correct unit (see compileOne), but ~300 of them
+// back to back is the slowest step of the gate. Blocks are therefore compiled
+// by a bounded pool of workers, each with its OWN throwaway compile directory
+// (one block file + tsconfig per slot, so concurrent runs never see each
+// other's example.ts). The worker count is FOUNDRY_README_EXAMPLES_JOBS (a
+// positive integer; anything else exits 2 rather than silently defaulting),
+// else min(4, CPUs - 1) and at least 1 — deliberately conservative, because
+// local gate runs share the machine with other work. CI sets a higher value
+// on its own job. Every result is stored by block position and read back in
+// README order, so findings, output ordering and the exit code are identical
+// to a sequential run (FOUNDRY_README_EXAMPLES_JOBS=1). A worker that cannot
+// run its block at all fails the check (exit 2); it is never dropped.
+//
 // WAIVERS (governance/known-readme-example-failures.json)
 // -----------------------------------------------------------
 // Same ratchet discipline scripts/check-contamination-classes.mjs already
@@ -101,9 +116,9 @@
 // in its own printed output, that it is not a clean pass — see the PASS
 // line below, worded the same way check-contamination-classes.mjs words it.
 
-import { execFileSync } from "node:child_process";
-import { existsSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { execFile } from "node:child_process";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { availableParallelism, tmpdir } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -240,6 +255,46 @@ if (!existsSync(distMarker)) {
   );
 }
 
+// ------------------------------------------------------------- concurrency
+
+const MAX_DEFAULT_JOBS = 4;
+
+function resolveJobs() {
+  const raw = process.env.FOUNDRY_README_EXAMPLES_JOBS;
+  if (raw === undefined || raw === "") {
+    return Math.max(1, Math.min(MAX_DEFAULT_JOBS, availableParallelism() - 1));
+  }
+  if (!/^[1-9]\d*$/.test(raw)) {
+    die(`FOUNDRY_README_EXAMPLES_JOBS must be a positive integer, got ${JSON.stringify(raw)}`);
+  }
+  return Number(raw);
+}
+const jobs = resolveJobs();
+
+// Runs fn(item, slot) for every item with at most `limit` in flight, returning
+// results by item position (never completion order). The first rejection
+// stops further dispatch and is rethrown once the in-flight calls settle, so a
+// failed worker fails the whole run rather than leaving a hole in the results.
+async function mapPool(items, limit, fn) {
+  const out = new Array(items.length);
+  let next = 0;
+  let failure = null;
+  async function worker(slot) {
+    while (failure === null) {
+      const i = next++;
+      if (i >= items.length) return;
+      try {
+        out[i] = await fn(items[i], slot);
+      } catch (error) {
+        failure ??= { error };
+      }
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, (_, slot) => worker(slot)));
+  if (failure) throw failure.error;
+  return out;
+}
+
 const workDir = mkdtempSync(join(tmpdir(), "readme-examples-"));
 
 function cleanup() {
@@ -247,20 +302,28 @@ function cleanup() {
 }
 process.on("exit", cleanup);
 
-symlinkSync(join(repoRoot, "node_modules"), join(workDir, "node_modules"));
+// One compile directory per worker slot: compileOne() writes exactly one
+// example file into it, so concurrent workers must not share one.
+
 // "module"/"moduleResolution": "NodeNext" decides each file's module format
 // (ESM vs. CommonJS) from the nearest package.json's "type" field. Every
 // package here is ESM-only (see CONTRIBUTING.md, "Requires Node 20...
 // Packages ship ESM only"), so this is not a guess — it's the one value
 // that would ever be right.
-writeFileSync(join(workDir, "package.json"), JSON.stringify({ type: "module" }, null, 2));
-// `include: ["example.*"]` is a GLOB, not a literal filename — a literal
-// name tsc can't find is itself a hard config error (TS6053), but a glob
-// matching zero files is not, which matters because compileOne() below
-// writes exactly one of "example.ts"/"example.tsx" per invocation and
-// deletes it afterward.
-const tsconfigPath = join(workDir, "tsconfig.json");
-writeFileSync(tsconfigPath, JSON.stringify({ compilerOptions: COMPILER_OPTIONS, include: ["example.*"] }, null, 2));
+const slotDirs = [];
+for (let slot = 0; slot < jobs; slot++) {
+  const dir = join(workDir, `slot-${slot}`);
+  mkdirSync(dir);
+  symlinkSync(join(repoRoot, "node_modules"), join(dir, "node_modules"));
+  writeFileSync(join(dir, "package.json"), JSON.stringify({ type: "module" }, null, 2));
+  writeFileSync(join(dir, "tsconfig.json"), JSON.stringify({ compilerOptions: COMPILER_OPTIONS, include: ["example.*"] }, null, 2));
+  slotDirs.push(dir);
+}
+// Each slot's tsconfig.json (written above) uses `include: ["example.*"]`, a
+// GLOB, not a literal filename — a literal name tsc can't find is itself a
+// hard config error (TS6053), but a glob matching zero files is not, which
+// matters because compileOne() below writes exactly one of
+// "example.ts"/"example.tsx" per invocation and deletes it afterward.
 
 // ------------------------------------------------------------------ compile
 
@@ -280,27 +343,33 @@ writeFileSync(tsconfigPath, JSON.stringify({ compilerOptions: COMPILER_OPTIONS, 
 // ones with real bugs in this repo's own history) — the opposite of what a
 // "how many did you check" gate is for. One invocation per block costs
 // process-spawn time, not correctness.
-function compileOne(filename, content) {
+function runTsc(dir) {
+  return new Promise((resolveRun) => {
+    const child = execFile(
+      tscBin,
+      ["-p", join(dir, "tsconfig.json"), "--pretty", "false"],
+      { cwd: dir, encoding: "utf8" },
+      (error, stdout, stderr) => resolveRun({ error, stdout, stderr }),
+    );
+    child.stdin?.end();
+  });
+}
+
+async function compileOne(slot, filename, content) {
+  const dir = slotDirs[slot];
   for (const f of ["example.ts", "example.tsx"]) {
-    const p = join(workDir, f);
+    const p = join(dir, f);
     if (existsSync(p)) rmSync(p);
   }
-  writeFileSync(join(workDir, filename), content);
-  let raw = "";
-  let failed = false;
-  try {
-    execFileSync(tscBin, ["-p", tsconfigPath, "--pretty", "false"], {
-      cwd: workDir,
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "pipe"],
-    });
-  } catch (error) {
-    // tsc exits non-zero on ANY diagnostic — that is the expected, common
-    // path here (most invocations are checking a block that will fail),
-    // not necessarily a tool failure.
-    failed = true;
-    raw = (error.stdout ?? "") + (error.stderr ?? "");
-  }
+  writeFileSync(join(dir, filename), content);
+  const { error, stdout, stderr } = await runTsc(dir);
+  // tsc exits non-zero on ANY diagnostic — that is the expected, common
+  // path here (most invocations are checking a block that will fail),
+  // not necessarily a tool failure. A spawn error or a signal (a crashed
+  // tsc) also lands here with no positional diagnostic, which the
+  // `anomalous` check below turns into a fail-closed exit 2.
+  const failed = error !== null;
+  const raw = failed ? (stdout ?? "") + (stderr ?? "") : "";
   const diags = [];
   for (const line of raw.split("\n")) {
     const m = DIAGNOSTIC_RE.exec(line.trim());
@@ -349,14 +418,26 @@ const SKIP_CODES = new Set(["TS2304", "TS2552", "TS2503", "TS18004"]);
 // partitionDiagnostics) -- never accepted in isolation.
 const CASCADE_ONLY_SKIP_CODES = new Set(["TS7031", "TS7006", "TS18046"]);
 
+// A worker that throws (not a tsc diagnostic — an I/O or spawn-level failure
+// inside the harness itself) fails the whole run closed, exit 2.
+async function compileAll(items, compile) {
+  try {
+    return await mapPool(items, jobs, compile);
+  } catch (error) {
+    die(`a compile worker failed (${error?.message ?? error}) — refusing to report a result for blocks that were not checked`);
+  }
+}
+
 const anomalies = [];
 const pass1 = new Map(); // block.index -> diags[]
-for (const block of blocks) {
-  block.file = `example.${block.lang}`;
-  const { diags, anomalous, raw } = compileOne(block.file, block.body + "\n");
+for (const block of blocks) block.file = `example.${block.lang}`;
+const pass1Results = await compileAll(blocks, (block, slot) => compileOne(slot, block.file, block.body + "\n"));
+// Read back in README order, whatever order the workers finished in.
+blocks.forEach((block, i) => {
+  const { diags, anomalous, raw } = pass1Results[i];
   if (anomalous) anomalies.push({ block: block.index, raw });
   pass1.set(block.index, diags);
-}
+});
 
 // "';' expected" / "Expression expected" — the shape produced when a block
 // is a bare `{ ... }` object literal, valid as an EXPRESSION but not as a
@@ -433,14 +514,16 @@ const WRAP_TEMPLATES = {
 
 const retryOf = new Map(); // block.index -> { kind }
 const pass2 = new Map(); // block.index -> diags[]
-for (const { block, kind } of retryCandidates) {
+const pass2Results = await compileAll(retryCandidates, ({ block, kind }, slot) => {
   const ext = kind === "fragment" ? "tsx" : block.lang;
-  const wrappedFile = `example.${ext}`;
-  const { diags, anomalous, raw } = compileOne(wrappedFile, WRAP_TEMPLATES[kind](block.body));
+  return compileOne(slot, `example.${ext}`, WRAP_TEMPLATES[kind](block.body));
+});
+retryCandidates.forEach(({ block, kind }, i) => {
+  const { diags, anomalous, raw } = pass2Results[i];
   if (anomalous) anomalies.push({ block: block.index, raw, retry: kind });
   retryOf.set(block.index, { kind });
   pass2.set(block.index, diags);
-}
+});
 
 // ------------------------------------------------------------------ classify
 
