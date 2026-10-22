@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { renderToString } from "react-dom/server";
 import { UsageMeter, type UsageMeterProps, type UsageMeterThreshold } from "./UsageMeter.js";
+import { UsageMeter as ServerUsageMeter } from "./UsageMeter.server.js";
 import { Meter } from "../atoms/Meter.js";
 
 const thresholds: readonly UsageMeterThreshold[] = [
@@ -86,13 +87,21 @@ describe("UsageMeter", () => {
     expect(screen.queryByRole("link")).toBeNull();
   });
 
-  it("U8 renders to string with no window and omits naming references without an id", () => {
+  it("U8 renders the server variant to string with no window and omits naming references without an id", () => {
     vi.stubGlobal("window", undefined);
     try {
-      const html = renderToString(<UsageMeter {...sample} />);
+      const html = renderToString(<ServerUsageMeter {...sample} />);
       expect(html).toContain(sample.usedText);
       expect(html).not.toContain("aria-labelledby");
     } finally { vi.unstubAllGlobals(); }
+  });
+
+  it("U8 gives the client variant a meter role named by the used text", () => {
+    render(<UsageMeter {...sample} />);
+    const meter = screen.getByRole("meter", { name: sample.usedText });
+    expect(meter).toHaveAttribute("aria-valuenow", "8420");
+    expect(meter).toHaveAttribute("aria-valuemax", "10000");
+    expect(meter).toHaveAttribute("aria-valuetext", sample.usedText);
   });
 
   it("U8 calls the real compiled server export under react-server without hooks", () => {

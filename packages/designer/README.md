@@ -476,8 +476,12 @@ way `Avatar` is: the same props, classes and visible markup as the client
 atom exported from `@clossys/designer/atoms`, which is built on
 react-aria-components. The server `Meter` has no `meter` role, the server
 `Spinner` names a labelled ring with `role="status"`, and the server
-`Banner` dismiss control is a native `<button>`. Parity tests pin each pair
-to the same classes and structure.
+`Banner` dismiss control is a native `<button>`. `UsageMeter` follows the same
+split: `@clossys/designer/blocks/server` exports a twin
+(`UsageMeter.server.tsx`) built on the plain `Meter`, while
+`@clossys/designer/blocks` keeps the client one, whose meter has the `meter`
+role and is named by the used text. Parity tests pin each pair to the same
+classes and structure.
 
 Everything not listed above stays reachable only from its original barrel,
 inside a client boundary — nothing was removed, renamed, or restructured to
@@ -4929,10 +4933,13 @@ provide both for "Showing 11–20 of 42".
 
 ### `UsageMeter`
 
-Draft, server-safe usage against a limit for a period. The host supplies the
+Draft usage against a limit for a period, with a server-safe variant. The host supplies the
 label, formatted used and limit text, period, projection, threshold messages and
 optional action; `UsageMeter` formats no facts. Exported through `/blocks` and
-`/blocks/server`, with `UsageMeterProps` and `UsageMeterThreshold`.
+`/blocks/server`, with `UsageMeterProps` and `UsageMeterThreshold`. From
+`/blocks` its meter is react-aria-components' (`meter` role, named by the used
+text); from `/blocks/server` it is the plain `Meter`, with the same classes and
+no role.
 
 ```tsx
 import { UsageMeter } from "@clossys/designer/blocks/server";
