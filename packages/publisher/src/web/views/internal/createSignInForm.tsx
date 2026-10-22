@@ -305,6 +305,7 @@ export function createSignInForm(resolveCopy: FrontDoorResolver) {
     if (step === "identify") {
       return (
         <Form
+          actionsLayout="stretch"
           aria-label={text.identifyTitle}
           onSubmit={submit}
           noValidate
@@ -343,21 +344,22 @@ export function createSignInForm(resolveCopy: FrontDoorResolver) {
     if (step === "code") {
       return (
         <Form
+          actionsLayout="stretch"
           aria-label={text.codeTitle}
           onSubmit={submit}
           noValidate
           submitError={submitError}
           actions={
             <>
-              <Button type="submit" isPending={pending} isDisabled={unavailable}>
-                {text.codePrimary}
-              </Button>
               {resendCode === undefined ? null : (
                 <Button type="button" variant="ghost" isPending={resending} isDisabled={unavailable} onPress={resend}>
                   {text.codeSecondary}
                 </Button>
               )}
               {back}
+              <Button type="submit" isPending={pending} isDisabled={unavailable}>
+                {text.codePrimary}
+              </Button>
             </>
           }
         >
@@ -383,16 +385,17 @@ export function createSignInForm(resolveCopy: FrontDoorResolver) {
 
     return (
       <Form
+        actionsLayout="stretch"
         aria-label={text.passwordTitle}
         onSubmit={submit}
         noValidate
         submitError={submitError}
         actions={
           <>
+            {back}
             <Button type="submit" isPending={pending} isDisabled={unavailable}>
               {text.passwordPrimary}
             </Button>
-            {back}
           </>
         }
       >
