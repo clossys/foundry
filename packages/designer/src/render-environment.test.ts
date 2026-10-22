@@ -125,6 +125,7 @@ describe("server-safe entry points resolve under react-server (test 1)", () => {
         "SpecimenPanel",
         "Stat",
         "StatusList",
+        "TableOfContents",
         "Testimonial",
         "Tree",
       ],
@@ -153,6 +154,14 @@ it("imports and calls the compiled Testimonial server graph with an avatar under
   expect(RENDER_ENVIRONMENT["./blocks/server"]).toBe("server-safe");
   const absolute = join(distDir, "blocks/Testimonial.server.js");
   const script = `import {Testimonial} from ${JSON.stringify(absolute)}; function nodes(node){if(Array.isArray(node))return node.flatMap(nodes);if(!node||typeof node!=="object"||!node.props)return [];if(typeof node.type==="function")return nodes(node.type(node.props));return [node,...nodes(node.props.children)];} const tree=nodes(Testimonial({quote:"Quote",attributorName:"Alex Example",avatarSrc:"/avatar.png",avatarAlt:"Alex Example"})); if(tree.filter(n=>n.type==="figure").length!==1||tree.filter(n=>n.type==="blockquote"&&n.props.children==="Quote").length!==1||tree.filter(n=>n.type==="img"&&n.props.alt==="Alex Example").length!==1)throw new Error("missing semantic testimonial/avatar");process.stdout.write("OK");`;
+  expect(execFileSync(process.execPath, ["--conditions=react-server", "-e", script], { encoding: "utf8", timeout: 10_000 })).toBe("OK");
+}, 15_000);
+
+it("imports and calls the compiled TableOfContents server graph under react-server", () => {
+  const result = probeUnderReactServer("blocks/TableOfContents.server.js");
+  expect(result.ok, result.ok ? undefined : result.message).toBe(true);
+  const absolute = join(distDir, "blocks/TableOfContents.server.js");
+  const script = `import {TableOfContents} from ${JSON.stringify(absolute)}; function nodes(node){if(Array.isArray(node))return node.flatMap(nodes);if(!node||typeof node!=="object"||!node.props)return [];if(typeof node.type==="function")return nodes(node.type(node.props));return [node,...nodes(node.props.children)];} const tree=nodes(TableOfContents({label:"On this page",items:[{id:"a",label:"One"},{id:"b",label:"Two"},{id:"c",label:"Three"}],currentId:"b"})); if(tree.filter(n=>n.type==="nav"&&n.props["aria-label"]==="On this page").length!==1||tree.filter(n=>n.type==="a").length!==3||tree.filter(n=>n.type==="a"&&n.props["aria-current"]==="location").length!==1)throw new Error("missing semantic table of contents");process.stdout.write("OK");`;
   expect(execFileSync(process.execPath, ["--conditions=react-server", "-e", script], { encoding: "utf8", timeout: 10_000 })).toBe("OK");
 }, 15_000);
 

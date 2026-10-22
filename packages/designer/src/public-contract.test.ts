@@ -725,3 +725,14 @@ describe("compiled NewsletterBand public contract", () => {
     }
   }, 30_000);
 });
+
+describe("compiled TableOfContents public contract", () => {
+  it("exports the client component from both client barrels and the server variant from the server barrel, with no helper leaks", () => {
+    for (const entry of ["blocks/index.js", "index.js"]) {
+      const script = `import * as api from ${JSON.stringify(join(packageRoot, "dist", entry))}; process.stdout.write(JSON.stringify({component: typeof api.TableOfContents, private: ["validateTableOfContents", "renderTableOfContentsList", "renderTableOfContentsSidebar", "TableOfContentsProps", "TableOfContentsItem"].filter(name => name in api)}));`;
+      expect(JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8", cwd: packageRoot }))).toEqual({ component: "function", private: [] });
+    }
+    const script = `import * as api from ${JSON.stringify(join(packageRoot, "dist/blocks/server.js"))}; process.stdout.write(JSON.stringify({component: typeof api.TableOfContents, private: ["validateTableOfContents", "renderTableOfContentsList"].filter(name => name in api)}));`;
+    expect(JSON.parse(execFileSync(process.execPath, ["--conditions=react-server", "--input-type=module", "-e", script], { encoding: "utf8", cwd: packageRoot }))).toEqual({ component: "function", private: [] });
+  });
+});

@@ -191,6 +191,9 @@ export type { PricingTableProps, PricingTier, PricingTableHeadingLevel } from ".
 export { Testimonial } from "./Testimonial.js";
 export type { TestimonialProps } from "./Testimonial.js";
 
+export { TableOfContents } from "./TableOfContents.js";
+export type { TableOfContentsProps, TableOfContentsItem } from "./TableOfContents.js";
+
 export { ArticleBody } from "./ArticleBody.js";
 export type { ArticleBodyProps } from "./ArticleBody.js";
 
