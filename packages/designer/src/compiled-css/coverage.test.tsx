@@ -49,6 +49,7 @@ import { ResizablePane } from "../blocks/ResizablePane.js";
 import { CommandMenu } from "../blocks/CommandMenu.js";
 import { GroupedTable } from "../blocks/GroupedTable.js";
 import { AppNavigation } from "../blocks/AppNavigation.js";
+import { RelationGraph } from "../blocks/RelationGraph.js";
 import { FlowCanvas } from "../blocks/FlowCanvas.js";
 import { Skeleton } from "../atoms/Skeleton.js";
 import { Spinner } from "../atoms/Spinner.js";
@@ -107,6 +108,18 @@ function toSelectorText(className: string): string {
 }
 
 describe("coverage: real rendered classes are all present in compiled.css", () => {
+  it("covers RelationGraph nodes, drawing and refusals in fresh and shipped CSS", async () => {
+    const view = render(<RelationGraph kinds={["unit"]} label="Relationships" selectedId="a"
+      nodes={[{ id: "a", label: "Alpha", kind: "unit", href: "/alpha" }, { id: "b", label: "Beta", kind: "unit", href: "javascript:void(0)" }]}
+      edges={[{ from: "a", to: "b", label: "uses" }]} />);
+    const generated = await generateCompiledCss({ stylesDir: resolve(packageRoot, "styles"), candidates: scanCompiledCssSources(packageRoot).candidates });
+    const shipped = readFileSync(resolve(packageRoot, "styles/compiled.css"), "utf8");
+    for (const name of collectClassNames(view.container)) {
+      expect(generated.css, `fresh ${name}`).toContain(toSelectorText(name));
+      expect(shipped, `shipped ${name}`).toContain(toSelectorText(name));
+    }
+    view.unmount();
+  });
   it("covers populated and empty GroupedTable rendered classes", async () => {
     const classes = new Set<string>();
     for (const rows of [["Alpha"], []]) {

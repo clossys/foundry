@@ -442,6 +442,8 @@ export type { FlowCanvasProps } from "./blocks/FlowCanvas.js";
 export { layoutFlowCanvas, FLOW_CANVAS_ORIENTATIONS, FLOW_CANVAS_NODE_LIMIT, FLOW_CANVAS_EDGE_LIMIT } from "./blocks/flow-canvas-layout.js";
 export type { FlowCanvasNode, FlowCanvasEdge, FlowCanvasOrientation, FlowCanvasLayout, FlowCanvasLayoutNode, FlowCanvasLayoutEdge, FlowCanvasLayoutOptions } from "./blocks/flow-canvas-layout.js";
 export { Items } from "./blocks/items/Items.js";
+export { RelationGraph } from "./blocks/RelationGraph.js";
+export type { RelationGraphProps, RelationGraphNode, RelationGraphEdge } from "./blocks/relation-graph-types.js";
 export type { ItemData, ItemFigureData, ItemStatusData, ItemProps, ItemBadge, ItemSize, ItemTreatment, ItemSpan, ItemsProps, ItemsArrangement, ItemsColumns, ItemsScale, ItemsGroup, ItemsLane } from "./blocks/items/types.js";
 
 export { Logomark } from "./atoms/index.js";
