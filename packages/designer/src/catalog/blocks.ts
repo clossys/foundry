@@ -170,7 +170,7 @@ const PAGE_HEADER_CONTRACT: BlockContract = {
 };
 
 // ---------------------------------------------------------------------------
-// Leaves: 84 (Explain 28, Organize 24, Collect 10, Navigate 15, Respond 7)
+// Leaves: 85 (Explain 28, Organize 25, Collect 10, Navigate 15, Respond 7)
 // ---------------------------------------------------------------------------
 
 const HEADINGS = at("explain", "headings");
@@ -324,6 +324,7 @@ export const BLOCK_ENTRIES: readonly BlockEntry[] = [
     notes: ["Depends on the owner decision for the resize handle atom: rebuilt with it, or parked with it."],
   }),
   exported(CONTAINERS, "CatalogWorkspace", { id: "matrix.catalog-workspace", label: "Catalog workspace" }),
+  exported(CONTAINERS, "CatalogBrowser", { id: "matrix.catalog-browser", label: "Catalog browser" }),
 
   // Collect / Forms
   built(FORMS, "Form", { id: "form.form", label: "Form", stableCandidate: true, notes: [STABLE_CANDIDATE] }),
