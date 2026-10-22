@@ -494,3 +494,106 @@ describe("Clerk sign-in handlers", () => {
     expect(calls(f)).toEqual(before);
   });
 });
+
+
+describe("Clerk sign-in auth rule regressions", () => {
+  it.each(["code", "activated"])("makes no out-of-phase Clerk calls after reaching %s", async step => {
+    const f = fake();
+    if (step === "code") await codeStep(f);
+    else {
+      await passwordStep(f);
+      expect(await f.handlers.verify("password-fixture")).toEqual(OK);
+    }
+    const before = calls(f);
+    const result = await f.handlers.verify("password-fixture");
+    expect(vi.mocked(f.resource.attemptFirstFactor).mock.calls.length).toBe(1);
+    expect(result).toEqual(UNAVAILABLE);
+    expect(await f.handlers.verifyCode("code-fixture")).toEqual(UNAVAILABLE);
+    expect(await f.handlers.resendCode()).toEqual(UNAVAILABLE);
+    expect(calls(f)).toEqual(before);
+  });
+
+  it.each([
+    ["network", "identify"], ["rateLimited", "identify"],
+    ["network", "abort"], ["rateLimited", "abort"],
+  ])("rejects a swallowed %s send failure after %s invalidates the operation", async (failureClass, invalidation) => {
+    const f = fake();
+    const owner = {};
+    const controller = new AbortController();
+    const handlers = createClerkSignInHandlers({ ...f.provider, operationOwner: owner, signal: controller.signal });
+    const other = createClerkSignInHandlers({ ...f.provider, operationOwner: owner });
+    expect(await handlers.identify("identifier-fixture")).toEqual(OK);
+    vi.mocked(f.resource.attemptFirstFactor).mockResolvedValueOnce({ ...f.resource,
+      status: "needs_second_factor", supportedSecondFactors: [{ strategy: "email_code", emailAddressId: "address-fixture" }] });
+    const sending = deferred<ClerkSignInResource>();
+    const started = deferred<void>();
+    vi.mocked(f.resource.prepareSecondFactor).mockImplementationOnce(() => {
+      started.resolve(undefined);
+      return sending.promise;
+    });
+    const verifying = handlers.verify("password-fixture");
+    await started.promise;
+    if (invalidation === "identify") expect(await other.identify("identifier-fixture")).toEqual(UNAVAILABLE);
+    else controller.abort();
+    sending.reject(failureClass === "network" ? { code: "clerk_offline" } : { status: 429 });
+    expect(await verifying).toEqual(UNAVAILABLE);
+    expect(handlers.canResendCode()).toBe(false);
+    expect(calls(f)).toEqual([1, 1, 1, 0, 0]);
+  });
+
+  it("does not activate a non-complete code result carrying a session id", async () => {
+    const f = fake();
+    await codeStep(f, "totp");
+    vi.mocked(f.resource.attemptSecondFactor).mockResolvedValueOnce({ ...f.complete(), status: "needs_second_factor" });
+    const result = await f.handlers.verifyCode("code-fixture");
+    expect(vi.mocked(f.provider.setActive).mock.calls.length).toBe(0);
+    expect(result).toEqual(UNAVAILABLE);
+    expect(calls(f)).toEqual([1, 1, 0, 1, 0]);
+  });
+
+  it("keeps the shared-owner lock after a refused second caller until the first settles", async () => {
+    const f = fake();
+    const thirdProvider = fake();
+    const owner = {};
+    const first = createClerkSignInHandlers({ ...f.provider, operationOwner: owner });
+    const second = createClerkSignInHandlers({ ...f.provider, operationOwner: owner });
+    const third = createClerkSignInHandlers({ ...thirdProvider.provider, operationOwner: owner });
+    expect(await first.identify("identifier-fixture")).toEqual(OK);
+    const pending = deferred<ClerkSignInResource>();
+    vi.mocked(f.resource.attemptFirstFactor).mockReturnValueOnce(pending.promise);
+    const verifying = first.verify("password-fixture");
+    try {
+      expect(await second.identify("identifier-fixture")).toEqual(UNAVAILABLE);
+      const thirdResult = third.identify("identifier-fixture");
+      // Measure the third caller before the first provider operation settles.
+      expect(calls(thirdProvider)).toEqual([0, 0, 0, 0, 0]);
+      expect(await thirdResult).toEqual(UNAVAILABLE);
+      expect(calls(f)).toEqual([1, 1, 0, 0, 0]);
+    } finally {
+      pending.resolve(f.complete());
+      await verifying;
+    }
+    expect(vi.mocked(f.provider.setActive).mock.calls.length).toBe(0);
+    expect(await third.identify("identifier-fixture")).toEqual(OK);
+    expect(calls(thirdProvider)).toEqual([1, 0, 0, 0, 0]);
+  });
+
+  it("does not activate a complete create result before password verification", async () => {
+    const f = fake();
+    f.provider.create.mockResolvedValueOnce(f.complete());
+    const result = await f.handlers.identify("identifier-fixture");
+    expect(vi.mocked(f.provider.setActive).mock.calls.length).toBe(0);
+    expect(result).toEqual(UNAVAILABLE);
+    expect(calls(f)).toEqual([1, 0, 0, 0, 0]);
+  });
+
+  it("does not repeat the first factor when verify is called during the code step", async () => {
+    const f = fake();
+    await codeStep(f, "totp");
+    const before = calls(f);
+    const result = await f.handlers.verify("password-fixture");
+    expect(vi.mocked(f.resource.attemptFirstFactor).mock.calls.length).toBe(1);
+    expect(result).toEqual(UNAVAILABLE);
+    expect(calls(f)).toEqual(before);
+  });
+});
