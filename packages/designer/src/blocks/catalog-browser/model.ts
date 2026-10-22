@@ -16,6 +16,11 @@ export interface BrowseState {
 }
 export const INITIAL_BROWSE: BrowseState = { query: "", filters: {}, showParked: false };
 
+/** An own-property read, so a host id such as `constructor` or `__proto__` never resolves to an inherited member. */
+export function own<V>(record: Readonly<Record<string, V>>, key: string): V | undefined {
+  return Object.hasOwn(record, key) ? record[key] : undefined;
+}
+
 export function groupId(l1: string, l2?: string) {
   return GROUP_PREFIX + JSON.stringify(l2 === undefined ? [l1] : [l1, l2]);
 }
@@ -44,7 +49,7 @@ export function assertCatalogBrowserProps(props: CatalogBrowserProps, checkCatal
   for (const catalog of catalogs) {
     if (!nonempty(catalog.kind) || seen.has(catalog.kind)) throw new TypeError("CatalogBrowser: catalog kinds must be nonempty and distinct.");
     seen.add(catalog.kind);
-    const binding = (kinds as Record<string, CatalogBrowserKind | undefined>)[catalog.kind];
+    const binding = own(kinds as Readonly<Record<string, CatalogBrowserKind>>, catalog.kind);
     if (!binding || !nonempty(binding.label) || typeof binding.preview !== "function") {
       throw new TypeError(`CatalogBrowser: kinds.${catalog.kind} needs a label and a preview slot.`);
     }
@@ -73,7 +78,7 @@ function matches<E extends CatalogBrowserEntry>(entry: E, binding: CatalogBrowse
   const query = browse.query.trim().toLowerCase();
   if (query && !entry.label.toLowerCase().includes(query) && !entry.id.toLowerCase().includes(query)) return false;
   return (binding.filters ?? []).every(filter => {
-    const wanted = browse.filters[filter.id];
+    const wanted = own(browse.filters, filter.id);
     return wanted === undefined || wanted === ANY_VALUE || filter.value(entry) === wanted;
   });
 }

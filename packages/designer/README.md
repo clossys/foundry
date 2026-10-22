@@ -8843,8 +8843,9 @@ identities, text, sparse arrays, cycles and excessive node counts throw a
 TypeError. The node limit makes the rendered tree suitable for bounded catalogs;
 this block does not virtualize or fetch more items.
 
-Groups start collapsed unless `defaultExpandedIds` names them; a changed list
-re-applies that disclosure, and ids that name no group are ignored. Pointer,
+Groups start collapsed unless `defaultExpandedIds` names them. A list that gains
+an id re-applies that disclosure; one that only drops ids keeps the current
+disclosure and focus. Ids that name no group open nothing. Pointer,
 Enter and Space toggle groups and request leaf selection. Up/Down follow visible preorder, Right expands or enters a
 group, Left collapses or reaches the parent, and Home/End reach the first/last
 visible row. One visible row owns the tree tab stop. Removing the focused row

@@ -259,6 +259,85 @@ describe("CatalogBrowser", () => {
     expect(rowNames()).toEqual(["Act", "Links", "Link", "Show", "Status", "Badge"]);
   });
 
+  it("reveals an already-selected entry once its catalog loads or its entries arrive", () => {
+    media(); const selection = { catalog: "atoms", entryId: "act.link" };
+    const loading = render(<CatalogBrowser {...base} catalogs={[]} isLoading defaultSelection={selection} />);
+    loading.rerender(<CatalogBrowser {...base} defaultSelection={selection} />);
+    expect(row("Act")).toHaveAttribute("aria-expanded", "true");
+    expect(row("Links")).toHaveAttribute("aria-expanded", "true");
+    expect(row("Link")).toHaveAttribute("aria-selected", "true");
+    loading.unmount();
+    const empty = render(<CatalogBrowser {...base} catalogs={[{ ...atoms, entries: [] }]} defaultSelection={selection} />);
+    expect(row("Act")).toHaveAttribute("aria-expanded", "false");
+    empty.rerender(<CatalogBrowser {...base} catalogs={[atoms]} defaultSelection={selection} />);
+    expect(row("Act")).toHaveAttribute("aria-expanded", "true");
+    expect(row("Link")).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("reveals again when a reference returns to the last revealed entry after tree selections", async () => {
+    media(); render(<CatalogBrowser {...base} defaultSelection={{ catalog: "atoms", entryId: "act.button" }} />);
+    const usedBy = () => within(screen.getByRole("region", { name: "Used by" }));
+    await userEvent.click(usedBy().getByRole("button", { name: "Icon button" }));
+    await userEvent.click(row("Button"));
+    await userEvent.click(row("Act"));
+    expect(row("Act")).toHaveAttribute("aria-expanded", "false");
+    await userEvent.click(usedBy().getByRole("button", { name: "Icon button" }));
+    expect(row("Act")).toHaveAttribute("aria-expanded", "true");
+    expect(row("Icon button")).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("reopens a collapsed group when a reference selects another entry in that group", async () => {
+    media(); render(<CatalogBrowser {...base} defaultSelection={{ catalog: "atoms", entryId: "act.button" }} />);
+    await userEvent.click(row("Buttons"));
+    expect(row("Buttons")).toHaveAttribute("aria-expanded", "false");
+    await userEvent.click(within(screen.getByRole("region", { name: "Used by" })).getByRole("button", { name: "Icon button" }));
+    expect(row("Buttons")).toHaveAttribute("aria-expanded", "true");
+    expect(row("Icon button")).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("keeps the tree, its focus and arrow navigation when a keyboard selection drops retained groups", async () => {
+    media(); render(<CatalogBrowser {...base} defaultSelection={{ catalog: "atoms", entryId: "show.badge" }} />);
+    await userEvent.type(screen.getByRole("searchbox"), "link");
+    const explorer = tree();
+    act(() => row("Link").focus());
+    await userEvent.keyboard("{Enter}");
+    expect(row("Link")).toHaveAttribute("aria-selected", "true");
+    expect(rowNames()).toEqual(["Act", "Links", "Link"]);
+    expect(tree()).toBe(explorer);
+    expect(row("Link")).toHaveFocus();
+    await userEvent.keyboard("{ArrowUp}");
+    expect(row("Links")).toHaveFocus();
+  });
+
+  it("treats prototype member names as ordinary catalog kinds", async () => {
+    media(); const names = ["constructor", "toString", "__proto__", "hasOwnProperty"];
+    const named = names.map(kind => ({
+      kind, groups: [{ id: "__proto__", label: `${kind} group`, children: [{ id: "constructor", label: `${kind} set` }] }],
+      entries: [{ id: "toString", label: `${kind} entry`, l1: "__proto__", l2: "constructor", lifecycle: "stable" as const }],
+    }));
+    const bindings = Object.fromEntries(names.map(kind => [kind, { label: `Kind ${kind}`, preview: () => <p>{kind}</p> }]));
+    render(<CatalogBrowser {...base} catalogs={named} kinds={bindings as never} />);
+    for (const kind of names) {
+      await userEvent.click(screen.getByRole("tab", { name: `Kind ${kind} 1` }));
+      expect(row(`${kind} group`)).toHaveAccessibleDescription("1 entries");
+      await userEvent.type(screen.getByRole("searchbox"), "entry");
+      expect(rowNames()).toEqual([`${kind} group`, `${kind} set`, `${kind} entry`]);
+    }
+  });
+
+  it("treats prototype member names as ordinary filter ids before and after a choice", async () => {
+    media();
+    const filters = ["constructor", "toString", "__proto__", "hasOwnProperty"].map(id => ({
+      id, label: `Filter ${id}`, options: [{ id: "main", label: "On main" }, { id: "gap", label: "Gap" }], value: (entry: AtomEntry) => entry.status,
+    }));
+    render(<CatalogBrowser {...base} kinds={{ ...kinds, atoms: { ...atomKind, filters } }} />);
+    expect(row("Act")).toHaveAccessibleDescription("3 entries");
+    for (const filter of filters) expect(screen.getByRole("button", { name: new RegExp(`Filter ${filter.id}`) })).toHaveTextContent("Any");
+    await userEvent.click(screen.getByRole("button", { name: /Filter __proto__/ }));
+    await userEvent.click(screen.getByRole("option", { name: "Gap" }));
+    expect(rowNames()).toEqual(["Act", "Links", "Link"]);
+  });
+
   it("alerts for an unknown entry id and shows the overview or empty states", () => {
     media(); const { rerender } = render(<CatalogBrowser {...base} defaultSelection={{ catalog: "atoms", entryId: "gone" }} />);
     expect(screen.getByRole("alert")).toHaveTextContent("No entry gone");
@@ -283,6 +362,7 @@ describe("CatalogBrowser", () => {
     ["no catalogs", { catalogs: [] }],
     ["duplicate kinds", { catalogs: [atoms, atoms] }],
     ["a missing kind binding", { kinds: { atoms: atomKind } }],
+    ["an inherited kind binding", { catalogs: [{ ...tokens, kind: "constructor" }] }],
     ["an unplaced entry", { catalogs: [{ ...tokens, entries: [{ ...tokens.entries[0]!, l2: "nowhere" }] }] }],
     ["a duplicate entry id", { catalogs: [{ ...tokens, entries: [tokens.entries[0]!, tokens.entries[0]!] }] }],
     ["a reserved filter option", { kinds: { ...kinds, atoms: { ...atomKind, filters: [{ id: "f", label: "F", options: [{ id: "catalog-browser-any", label: "X" }], value: () => undefined }] } } }],
