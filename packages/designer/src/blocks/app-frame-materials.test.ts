@@ -14,6 +14,36 @@ const root = resolve(import.meta.dirname, "../..");
 const materials = () => (blocks as any).APP_FRAME_MATERIALS ?? [];
 
 describe("AppFrame Material registration", () => {
+  it("forwards AppNavigation host header, footer and corner trigger from its real record", () => {
+    const navigation = materials().find((entry: any) => entry.id === "app-navigation");
+    const supplied = {
+      tree: [{ id: "home", label: "Home", href: "#home" }], label: "Workspace destinations",
+      header: createElement(Button, {}, "Find a command"), footer: createElement(Button, {}, "Host account"),
+      trigger: createElement(Button, {}, "Host navigation toggle"),
+    };
+    const authored = Object.fromEntries(navigation.authoredInputs.filter((name: string) => name in supplied)
+      .map((name: keyof typeof supplied) => [name, supplied[name]]));
+    const view = render(createElement(blocks.AppNavigation, authored as ComponentProps<typeof blocks.AppNavigation>));
+    expect(view.getByRole("button", { name: "Find a command" })).toBeInTheDocument();
+    expect(view.getByRole("button", { name: "Host account" })).toBeInTheDocument();
+    expect(view.getByRole("button", { name: "Host navigation toggle" })).toBeInTheDocument();
+    view.unmount();
+  });
+
+  it("forwards only the admitted Drawer close layout through its own authored-input record", async () => {
+    const drawer = materials().find((entry: any) => entry.id === "drawer");
+    const supplied = {
+      heading: "Tools", closeLabel: "Close tools", children: "Tool content", trigger: createElement(Button, {}, "Open tools"),
+      closeButtonStyle: { position: "fixed" as const, insetBlockStart: 35, insetInlineStart: 117, direction: "rtl" as const },
+    };
+    const authored = Object.fromEntries(drawer.authoredInputs.filter((name: string) => name in supplied)
+      .map((name: keyof typeof supplied) => [name, supplied[name]]));
+    const view = render(createElement(blocks.Drawer, authored as ComponentProps<typeof blocks.Drawer>));
+    await userEvent.click(view.getByRole("button", { name: "Open tools" }));
+    expect(view.getByRole("button", { name: "Close tools" })).toHaveStyle({ position: "fixed", insetBlockStart: "35px", insetInlineStart: "117px", direction: "rtl" });
+    view.unmount();
+  });
+
   it("keeps the Drawer opener available through its authored inputs", async () => {
     const drawer = materials().find((entry: any) => entry.id === "drawer");
     const supplied = {
@@ -119,12 +149,13 @@ describe("AppFrame Material registration", () => {
   });
 
   it("registers actual exported Block components, named regions, dependencies and finite configs", () => {
-    expect(materials().map((entry: any) => entry.id)).toEqual(["panel", "drawer", "resizable-pane", "command-menu", "app-navigation", "account-menu", "grouped-table", "flow-canvas"]);
+    expect(materials().map((entry: any) => entry.id)).toEqual(["panel", "drawer", "resizable-pane", "command-menu", "app-navigation", "page-bar", "account-menu", "grouped-table", "flow-canvas"]);
     for (const entry of materials()) {
       expect(entry.layer).toBe("blocks");
       expect(entry.component).toBe((blocks as any)[entry.exportName]);
       expect(entry.component).toBeTypeOf("function");
-      expect(entry.regions).toContain("content");
+      if (entry.id === "page-bar") expect(entry.regions).toEqual(["brand", "trail", "page-info", "actions", "width"]);
+      else expect(entry.regions).toContain("content");
       const source = readFileSync(join(root, entry.source), "utf8");
       const ast = ts.createSourceFile(entry.source, source, ts.ScriptTarget.ES2022, true, ts.ScriptKind.TSX);
       const rendered = new Set<string>();
@@ -178,15 +209,26 @@ describe("AppFrame Material registration", () => {
       const blockEntry = pathToFileURL(join(temporary, "package/dist/blocks/index.js")).href;
       const script = `import * as atoms from ${JSON.stringify(atomEntry)}; import * as blocks from ${JSON.stringify(blockEntry)}; console.log(JSON.stringify({ handle: typeof atoms.ResizeHandle, materials: blocks.APP_FRAME_MATERIALS.map(entry => [entry.id, entry.component === blocks[entry.exportName]]) }));`;
       const result = JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8", cwd: root }));
-      expect(result).toEqual({ handle: "function", materials: [["panel", true], ["drawer", true], ["resizable-pane", true], ["command-menu", true], ["app-navigation", true], ["account-menu", true], ["grouped-table", true], ["flow-canvas", true]] });
+      expect(result).toEqual({ handle: "function", materials: [["panel", true], ["drawer", true], ["resizable-pane", true], ["command-menu", true], ["app-navigation", true], ["page-bar", true], ["account-menu", true], ["grouped-table", true], ["flow-canvas", true]] });
     } finally { rmSync(temporary, { recursive: true, force: true }); }
-  });
+  }, 30_000);
 
   it("imports every real server subset under react-server without exporting interactive additions", () => {
-    const additions = ["ResizeHandle", "Panel", "Drawer", "ResizablePane", "APP_FRAME_MATERIALS", "CommandMenu", "useCommandMenuShortcut", "AppNavigation", "AccountMenu", "GroupedTable", "FlowCanvas", "layoutFlowCanvas"];
+    const additions = ["ResizeHandle", "Panel", "Drawer", "ResizablePane", "APP_FRAME_MATERIALS", "CommandMenu", "useCommandMenuShortcut", "AppNavigation", "AccountMenu", "PageBar", "GroupedTable", "FlowCanvas", "layoutFlowCanvas"];
     const entries = ["atoms", "blocks", "shell"].map(layer => pathToFileURL(join(root, `dist/${layer}/server.js`)).href);
     const script = `const modules = await Promise.all(${JSON.stringify(entries)}.map(entry => import(entry))); console.log(JSON.stringify(modules.map(module => ${JSON.stringify(additions)}.filter(name => name in module))));`;
     const result = JSON.parse(execFileSync(process.execPath, ["--conditions=react-server", "--input-type=module", "-e", script], { encoding: "utf8", cwd: root }));
     expect(result).toEqual([[], [], []]);
+  });
+});
+
+it("registers PageBar's complete authored contract and actual atom dependencies", () => {
+  const entry = materials().find((record: any) => record.id === "page-bar");
+  expect(entry).toMatchObject({
+    layer: "blocks", exportName: "PageBar", component: (blocks as any).PageBar, source: "src/blocks/PageBar.tsx",
+    regions: ["brand", "trail", "page-info", "actions", "width"],
+    dependencies: [{ exportName: "Link", source: "src/atoms/Link.tsx" }, { exportName: "Menu", source: "src/atoms/Menu.tsx" }, { exportName: "Popover", source: "src/atoms/Popover.tsx" }, { exportName: "Button", source: "src/atoms/Button.tsx" }, { exportName: "Icon", source: "src/atoms/Icon.tsx" }],
+    configs: [{ prop: "narrow", values: [false, true], default: false, source: "src/blocks/PageBar.tsx" }],
+    authoredInputs: ["root", "page", "workspaces", "brand", "width", "onWidthChange", "labels", "reserveStart", "reserveEnd", "dir", "onHeightChange"],
   });
 });

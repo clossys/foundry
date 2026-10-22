@@ -7,13 +7,12 @@ import {
   SECTION_GROUND_CLASSES,
   Stat,
   StatusList,
+  Testimonial,
 } from "@clossys/designer/blocks/server";
 import type { SectionedViewBlockSet } from "./SectionedViewContent.js";
 import { createContentSectionBlock } from "./SectionedViewContentSection.js";
-import { ServerTestimonial } from "./ServerTestimonial.js";
 
 type PricingTableProps = Parameters<SectionedViewBlockSet["PricingTable"]>[0];
-type TestimonialProps = Parameters<SectionedViewBlockSet["Testimonial"]>[0];
 
 function PricingTable({ id, eyebrow, heading, description, items, headingLevel, ground }: PricingTableProps) {
   const colors = SECTION_GROUND_CLASSES[ground];
@@ -35,10 +34,6 @@ function PricingTable({ id, eyebrow, heading, description, items, headingLevel, 
       />
     </div>
   );
-}
-
-function Testimonial(props: TestimonialProps) {
-  return <ServerTestimonial quote={props.quote} attributorName={props.attributorName} attributorRole={props.attributorRole} />;
 }
 
 /** Server-safe Designer-backed blocks for the react-server SectionedView entry. */

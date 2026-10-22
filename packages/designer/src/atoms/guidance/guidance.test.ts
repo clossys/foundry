@@ -28,7 +28,7 @@ const exportedComponents = (layer: string) => {
 };
 const expectedPartition = [
   ["Interaction", ["Actions", ["Button", "IconButton", "Menu"]], ["Navigation", ["Link", "Breadcrumb", "Tabs"]], ["Inputs", ["TextField", "Textarea", "SearchField", "DateField", "Select", "ComboBox", "Checkbox", "Switch", "RadioGroup", "FileTrigger", "Field", "ResizeHandle"]]],
-  ["Content", ["Data display", ["Badge", "Chip", "Meter", "Table"]], ["Imagery", ["Avatar", "Icon"]], ["Charts", ["BarChart", "LineChart", "Sparkline", "WaterfallChart", "RangeChart", "ScatterChart"]]],
+  ["Content", ["Data display", ["Badge", "Chip", "Meter", "Table", "GridList"]], ["Imagery", ["Avatar", "Icon", "Logomark"]], ["Charts", ["BarChart", "LineChart", "Sparkline", "WaterfallChart", "RangeChart", "ScatterChart", "AreaChart", "Heatmap", "StatusStrip"]]],
   ["Feedback", ["Messages", ["Banner", "StatusMark"]], ["Progress and loading", ["ProgressBar", "Spinner", "Skeleton"]]],
   ["Containment", ["Structure", ["Card", "Separator", "Disclosure"]], ["Overlays", ["Dialog", "Popover", "Tooltip"]]],
 ];
@@ -80,23 +80,23 @@ describe("shared atom guidance", () => {
     expect(additions.ATOM_GUIDANCE).toBeDefined();
     expect(additions.ATOM_API_FACTS).toBeDefined();
     const components = [...exportedComponents("atoms"), ...exportedComponents("charts")].sort();
-    expect(components).toHaveLength(41);
+    expect(components).toHaveLength(46);
     expect(Object.values(facts()).map(fact => fact.exportName).sort()).toEqual(components);
     expect(Object.keys(guidance()).sort()).toEqual(Object.keys(facts()).sort());
-    const legacy = { ResizeHandle: "enter", Button: "act", IconButton: "act", Link: "act", Breadcrumb: "act", Menu: "act", TextField: "enter", Textarea: "enter", SearchField: "enter", DateField: "enter", Select: "enter", ComboBox: "enter", Checkbox: "enter", Switch: "enter", RadioGroup: "enter", FileTrigger: "enter", Field: "enter", Badge: "inform", Banner: "inform", Chip: "inform", StatusMark: "inform", Meter: "inform", ProgressBar: "inform", Spinner: "inform", Skeleton: "inform", Card: "group", Table: "group", Separator: "group", Avatar: "depict", Icon: "depict", Dialog: "reveal", Popover: "reveal", Tooltip: "reveal", Disclosure: "reveal", Tabs: "reveal" };
+    const legacy = { ResizeHandle: "enter", Button: "act", IconButton: "act", Link: "act", Breadcrumb: "act", Menu: "act", TextField: "enter", Textarea: "enter", SearchField: "enter", DateField: "enter", Select: "enter", ComboBox: "enter", Checkbox: "enter", Switch: "enter", RadioGroup: "enter", FileTrigger: "enter", Field: "enter", Badge: "inform", Banner: "inform", Chip: "inform", StatusMark: "inform", Meter: "inform", ProgressBar: "inform", Spinner: "inform", Skeleton: "inform", Card: "group", Table: "group", GridList: "group", Separator: "group", Avatar: "depict", Icon: "depict", Dialog: "reveal", Popover: "reveal", Tooltip: "reveal", Disclosure: "reveal", Tabs: "reveal" };
     for (const [id, fact] of Object.entries(facts())) {
       const prefix = legacy[fact.exportName as keyof typeof legacy] ?? "depict";
       expect(id).toBe(`${prefix}.${fact.exportName.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase()}`);
     }
   });
 
-  it("pins four display groups, ten families and forty-one unique selectable leaves", () => {
+  it("pins four display groups, ten families and forty-six unique selectable leaves", () => {
     expect(additions.ATOM_DISPLAY_GROUPS).toBeDefined();
     expect(groups().map(group => [group.label, ...group.families.map((family: any) => [family.label, family.atoms.map((id: string) => facts()[id]?.exportName)])])).toEqual(expectedPartition);
     const leaves = groups().flatMap(group => group.families.flatMap((family: any) => family.atoms));
     expect(groups().flatMap(group => group.families)).toHaveLength(10);
-    expect(leaves).toHaveLength(41);
-    expect(new Set(leaves).size).toBe(41);
+    expect(leaves).toHaveLength(46);
+    expect(new Set(leaves).size).toBe(46);
     expect([...leaves].sort()).toEqual(Object.keys(guidance()).sort());
     expect(new Set(groups().map(group => group.id)).size).toBe(4);
     const families = groups().flatMap(group => group.families);
@@ -105,11 +105,11 @@ describe("shared atom guidance", () => {
   });
 
   it("gives each atom meaningful stable semantics separate from web implementation", () => {
-    expect(Object.keys(guidance())).toHaveLength(41);
+    expect(Object.keys(guidance())).toHaveLength(46);
     for (const field of ["purpose", "useWhen", "avoidWhen", "alternatives", "content", "anatomy", "composition", "accessibility"]) {
       const values = Object.values(guidance()).map(entry => entry[field]);
       expect(values.every(value => typeof value === "string" && value.trim().length > 24), field).toBe(true);
-      expect(new Set(values).size, field).toBe(41);
+      expect(new Set(values).size, field).toBe(46);
     }
     for (const entry of Object.values(guidance())) {
       expect(entry).not.toHaveProperty("props");
@@ -120,7 +120,7 @@ describe("shared atom guidance", () => {
   });
 
   it("records implementation evidence or explicit assessment absence for each medium", () => {
-    expect(Object.keys(guidance())).toHaveLength(41);
+    expect(Object.keys(guidance())).toHaveLength(46);
     for (const [id, entry] of Object.entries(guidance())) {
       expect(Object.keys(entry.media)).toEqual(["web", "email", "print", "video"]);
       for (const [medium, mediumEntry] of Object.entries(entry.media) as [string, any][]) {
@@ -142,7 +142,7 @@ describe("shared atom guidance", () => {
   });
 
   it("checks represented option names and complete finite value sets against real TypeScript props", () => {
-    expect(Object.keys(facts())).toHaveLength(41);
+    expect(Object.keys(facts())).toHaveLength(46);
     const paths = Object.values(facts()).map(fact => join(root, fact.source));
     const filename = join(root, "atom-guidance-consumer.check.ts");
     const consumer = `
@@ -229,7 +229,7 @@ describe("shared atom guidance", () => {
   });
 
   it("links token dependencies to consumed source evidence with explicit coverage", () => {
-    expect(Object.keys(facts())).toHaveLength(41);
+    expect(Object.keys(facts())).toHaveLength(46);
     for (const [id, fact] of Object.entries(facts())) {
       expect(["partial", "none-owned"]).toContain(fact.tokens.coverage);
       expect(fact.tokens.reason.length).toBeGreaterThan(20);
@@ -282,7 +282,7 @@ describe("shared atom guidance", () => {
     expect(matches(find("depict.icon", "label").when, { decorative: true })).toBe(false);
     expect(find("depict.icon", "label").requires).toEqual(["label"]);
     for (const [id, prop] of [["inform.banner", "variant"], ["inform.status-mark", "tone"]]) expect(find(id, prop).enforcement).toBe("derived");
-    for (const id of ["reveal.tabs", "enter.radio-group"]) expect(guidance()[id].media.web.implementation.options.find((option: any) => option.prop === "orientation").support.state).toBe("partial");
+    for (const id of ["reveal.tabs", "enter.radio-group"]) expect(guidance()[id].media.web.implementation.options.find((option: any) => option.prop === "orientation").support.state).toBe("implemented");
     const meter = { value: 5, scaleMax: 10, tone: "neutral" as const, valueText: "5" };
     expect(() => atoms.Meter({ ...meter, direction: "min" })).not.toThrow();
     expect(() => atoms.Meter({ ...meter, previous: 2 })).toThrow(/together/);
@@ -517,6 +517,12 @@ const comparisonGolden: Record<string, {
     maxCells: 3,
     retainedCells: 3,
   },
+  "depict.logomark": {
+    columns: {"option": "plate", "values": ["shared", "self"]},
+    rows: {"option": "size", "values": ["sm", "md", "lg"]},
+    maxCells: 6,
+    retainedCells: 6,
+  },
   "reveal.dialog": {
     columns: {"option": "size", "values": ["sm", "md", "lg"]},
     rows: {"option": "isDismissable", "values": [false, true]},
@@ -552,6 +558,17 @@ const comparisonGolden: Record<string, {
   },
   "depict.scatter-chart": {
     columns: {"option": "fit", "values": ["fixed", "fluid"]},
+    maxCells: 2,
+    retainedCells: 2,
+  },
+  "depict.area-chart": {
+    columns: {"option": "normalized", "values": [false, true]},
+    rows: {"option": "smooth", "values": [false, true]},
+    maxCells: 4,
+    retainedCells: 4,
+  },
+  "depict.heatmap": {
+    columns: {"option": "categorical", "values": [false, true]},
     maxCells: 2,
     retainedCells: 2,
   },

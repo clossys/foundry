@@ -3,7 +3,7 @@ import type { IconNode } from "@clossys/designer/atoms/server";
 import { isRenderImageAsset } from "../../../internal/assets.js";
 import type { AssetResolver } from "../../types.js";
 import type { SiteFramePresentationConfig } from "../site-frame-contract.js";
-import { HEADER_LINK_LIMIT, HEADER_ACTION_VARIANTS, SITE_FRAME_NAV_DEFAULTS, normalizeSiteFrameActions, normalizeSiteFrameConfig } from "../site-frame-contract.js";
+import { FOOTER_ICON_LIMIT, FOOTER_LINK_LIMIT, HEADER_LINK_LIMIT, HEADER_ACTION_VARIANTS, SITE_FRAME_NAV_DEFAULTS, SiteFooterContractError, normalizeSiteFrameActions, normalizeSiteFrameConfig } from "../site-frame-contract.js";
 import { SITE_CHROME_GROUNDS } from "../types.js";
 import type { SiteChromeGround, SiteShellInput } from "../types.js";
 
@@ -28,20 +28,16 @@ export interface ResolvedSiteShell {
     readonly wordmark?: string;
   };
   readonly skipLink: string;
-  readonly nav?: { readonly tone?: "auto" | "inverse"; readonly label: string; readonly triggerLabel: string; readonly trigger: "label" | "icon"; readonly links: readonly ResolvedSiteLink[] };
+  readonly nav?: { readonly label: string; readonly triggerLabel: string; readonly links: readonly ResolvedSiteLink[] };
   readonly actions: readonly (ResolvedSiteLink & { readonly emphasis: "primary" | "secondary" | "ghost"; readonly icon?: IconNode })[];
   readonly headerActions: readonly (ResolvedSiteLink & { readonly emphasis: "primary" | "secondary" | "ghost"; readonly icon?: IconNode })[];
-  readonly iconActions: readonly ResolvedSiteIconLink[];
-  readonly secondaryAction?: ResolvedSiteLink;
   readonly environments: readonly (ResolvedSiteLink & { readonly icon: IconNode; readonly isCurrent: boolean })[];
-  readonly surfaceLabel?: string;
   readonly navPlacement: "leading" | "centered";
-  readonly mobileLayout: "inline" | "menu-brand-action";
   readonly ground: SiteChromeGround;
-  readonly header:
-    | { readonly placement: "reserved"; readonly ground: SiteChromeGround }
-    | { readonly placement: "overlay"; readonly tone: "base" | "inverse" };
+  readonly header: { readonly surface: "solid" | "transparent" | "glass"; readonly tone: "base" | "inverse" };
   readonly footer?: {
+    /** The brand's own mark, as resolved for `shell.brand`, linking home in the last icon slot. */
+    readonly home: { readonly label: string; readonly href: string; readonly markSrc: string };
     readonly rule?: "none" | "top";
     readonly placement: "flow" | "overlay";
     readonly ground: SiteChromeGround;
@@ -57,20 +53,16 @@ const SHELL_KEYS = new Set([
   "skipLink",
   "nav",
   "actions",
-  "iconActions",
-  "secondaryAction",
   "environments",
-  "surfaceLabel",
   "navPlacement",
-  "mobileLayout",
   "ground",
   "header",
   "footer",
   "origin",
 ]);
-const HEADER_KEYS = new Set(["placement", "ground", "tone"]);
+const HEADER_KEYS = new Set(["surface", "tone"]);
 const BRAND_KEYS = new Set(["assetId", "label", "size", "plate", "variant", "wordmark", "tone", "markInk"]);
-const NAV_KEYS = new Set(["label", "triggerLabel", "trigger", "links", "tone"]);
+const NAV_KEYS = new Set(["label", "triggerLabel", "links"]);
 const LINK_KEYS = new Set(["href", "label"]);
 const NAV_LINK_KEYS = new Set(["href", "label", "isCurrent"]);
 const ACTION_KEYS = new Set(["href", "label", "emphasis", "icon"]);
@@ -78,6 +70,8 @@ const ENVIRONMENT_KEYS = new Set(["href", "label", "icon", "isCurrent"]);
 const ICON_LINK_KEYS = new Set(["href", "label", "icon"]);
 const SOCIAL_KEYS = new Set(["label", "links"]);
 const FOOTER_KEYS = new Set(["placement", "ground", "columns", "links", "social", "legal", "rule"]);
+/** The consent reopen fragment; the footer never carries that control, only the policy link. */
+const PRIVACY_CHOICES_FRAGMENT = "privacy-choices";
 const COLUMN_KEYS = new Set(["heading", "links"]);
 const LEGAL_KEYS = new Set(["entity", "links", "linksLabel"]);
 
@@ -168,6 +162,17 @@ function copy(value: unknown, path: string, resolveCopy: CopyResolver): string {
   return resolution.text;
 }
 
+function fragment(href: string): string {
+  const index = href.indexOf("#");
+  if (index < 0) return "";
+  const raw = href.slice(index + 1);
+  try {
+    return decodeURIComponent(raw).toLowerCase();
+  } catch {
+    return raw.toLowerCase();
+  }
+}
+
 function isRootRelative(href: string): boolean {
   return href.startsWith("/") && !href.startsWith("//") && !href.startsWith("/\\");
 }
@@ -197,7 +202,8 @@ function href(value: unknown, path: string, origin: string | undefined): string 
 function origin(value: unknown): string | undefined {
   if (value === undefined) return undefined;
   const refuse = (): never => fail("shell.origin must be an https origin, or an http origin on a loopback host.");
-  if (typeof value !== "string" || UNSAFE_URL_CHARACTER.test(value) || value !== value.trim()) refuse();
+  if (typeof value !== "string" || UNSAFE_URL_CHARACTER.test(value) || value !== value.trim()
+    || !/^https?:\/\/[^/?#@]+\/?$/i.test(value)) refuse();
   let url: URL;
   try {
     url = new URL(value as string);
@@ -236,6 +242,30 @@ function icon(value: unknown, path: string): IconNode {
     return Object.freeze([tag, Object.freeze(copy)] as const);
   });
   return Object.freeze(nodes) as unknown as IconNode;
+}
+
+/**
+ * The footer configuration contract: one flat row of at most five links,
+ * labelled columns beyond it, at most four icons before the brand mark, and
+ * no home, header navigation or privacy-choices destination. Refuses rather
+ * than truncates, naming the field path and never the value.
+ */
+function assertFooterContract(footer: NonNullable<ResolvedSiteShell["footer"]>, navLinks: readonly ResolvedSiteLink[]): void {
+  if (footer.links.length + footer.legal.links.length > FOOTER_LINK_LIMIT) throw new SiteFooterContractError("footer-link-limit", "shell.footer.links");
+  if ((footer.social?.links.length ?? 0) + 1 > FOOTER_ICON_LIMIT) throw new SiteFooterContractError("footer-icon-limit", "shell.footer.social.links");
+  const reserved = new Set([footer.home.href, ...navLinks.map(link => link.href)]);
+  const slots: readonly (readonly [string, readonly { readonly href: string }[]])[] = [
+    ["shell.footer.links", footer.links],
+    ...footer.columns.map((column, index) => [`shell.footer.columns[${index}].links`, column.links] as const),
+    ["shell.footer.social.links", footer.social?.links ?? []],
+    ["shell.footer.legal.links", footer.legal.links],
+  ];
+  for (const [path, entries] of slots) {
+    entries.forEach((entry, index) => {
+      if (fragment(entry.href) === PRIVACY_CHOICES_FRAGMENT) throw new SiteFooterContractError("footer-privacy-choices", `${path}[${index}].href`);
+      if (reserved.has(entry.href)) throw new SiteFooterContractError("footer-duplicate-link", `${path}[${index}].href`);
+    });
+  }
 }
 
 /**
@@ -290,9 +320,7 @@ export function resolveShell(input: SiteShellInput, resolveCopy: CopyResolver, r
     const label = copy(navFields.label, "shell.nav.label", resolveCopy);
     nav = {
       label,
-      ...(navFields.tone === undefined ? {} : { tone: oneOf(navFields.tone, "shell.nav.tone", ["auto", "inverse"] as const) }),
       triggerLabel: navFields.triggerLabel === undefined ? label : copy(navFields.triggerLabel, "shell.nav.triggerLabel", resolveCopy),
-      trigger: navFields.trigger === undefined ? "label" : oneOf(navFields.trigger, "shell.nav.trigger", ["label", "icon"] as const),
       links: list(navFields.links, "shell.nav.links").map((value, index) => {
         const path = `shell.nav.links[${index}]`;
         const fields = record(value, path, NAV_LINK_KEYS);
@@ -335,7 +363,10 @@ export function resolveShell(input: SiteShellInput, resolveCopy: CopyResolver, r
         links: iconLinks(fields.links, "shell.footer.social.links"),
       };
     }
+    // One brand declaration yields the header mark and the footer mark: no footer-specific art or label.
+    const home = { label: brand.label, href: href("/", "shell.brand", base), markSrc: brand.markSrc };
     footer = {
+      home,
       placement,
       ground: footerGround,
       ...(footerFields.rule === undefined ? {} : { rule: oneOf(footerFields.rule, "shell.footer.rule", ["none", "top"] as const) }),
@@ -355,19 +386,16 @@ export function resolveShell(input: SiteShellInput, resolveCopy: CopyResolver, r
         ...(legalFields.linksLabel === undefined ? {} : { linksLabel: copy(legalFields.linksLabel, "shell.footer.legal.linksLabel", resolveCopy) }),
       },
     };
+    assertFooterContract(footer, nav?.links ?? []);
   }
 
-  let header: ResolvedSiteShell["header"] = { placement: "reserved", ground };
+  let header: ResolvedSiteShell["header"] = { surface: "solid", tone: "base" };
   if (shell.header !== undefined) {
     const fields = record(shell.header, "shell.header", HEADER_KEYS);
-    const placement = fields.placement === undefined ? "reserved" : oneOf(fields.placement, "shell.header.placement", ["reserved", "overlay"] as const);
-    if (placement === "overlay") {
-      if ("ground" in fields) fail("shell.header.ground is only for reserved placement.");
-      header = { placement, tone: fields.tone === undefined ? "base" : oneOf(fields.tone, "shell.header.tone", ["base", "inverse"] as const) };
-    } else {
-      if ("tone" in fields) fail("shell.header.tone is only for overlay placement.");
-      header = { placement, ground: fields.ground === undefined ? ground : oneOf(fields.ground, "shell.header.ground", SITE_CHROME_GROUNDS) };
-    }
+    header = {
+      surface: fields.surface === undefined ? "solid" : oneOf(fields.surface, "shell.header.surface", ["solid", "transparent", "glass"] as const),
+      tone: fields.tone === undefined ? "base" : oneOf(fields.tone, "shell.header.tone", ["base", "inverse"] as const),
+    };
   }
 
   const declaredVariants: ("primary" | "secondary" | "ghost" | undefined)[] = [];
@@ -383,36 +411,29 @@ export function resolveShell(input: SiteShellInput, resolveCopy: CopyResolver, r
         emphasis: fields.emphasis === undefined ? "secondary" : oneOf(fields.emphasis, `${path}.emphasis`, HEADER_ACTION_VARIANTS),
       };
     });
-  const secondaryAction = shell.secondaryAction === undefined ? undefined : link(shell.secondaryAction, "shell.secondaryAction");
-  const iconActions = shell.iconActions === undefined ? [] : iconLinks(shell.iconActions, "shell.iconActions");
   const headerActions = normalizeSiteFrameActions([
-    ...(secondaryAction ? [{ ...secondaryAction, emphasis: undefined }] : []),
     ...actions.map((action, index) => ({ ...action, emphasis: declaredVariants[index] })),
-    ...iconActions.map(action => ({ ...action, emphasis: undefined })),
     ...environments.map(action => ({ ...action, emphasis: undefined })),
   ], [
-    ...(secondaryAction ? ["secondary" as const] : []),
     ...actions.map(() => "secondary" as const),
-    ...iconActions.map(() => "ghost" as const),
     ...environments.map(() => "secondary" as const),
   ]);
-  // Actions without navigation still need a named menu; its words come from the consumer's copy.
-  if (nav === undefined && headerActions.length > 0) {
+  // Ordinary actions still need a named menu. Environment-only shells use direct ghost links.
+  if (nav === undefined && actions.length > 0) {
     const defaults = SITE_FRAME_NAV_DEFAULTS;
     nav = {
       label: copy(defaults.label, `shell.nav default label "${defaults.label.id}"`, resolveCopy),
       triggerLabel: copy(defaults.triggerLabel, `shell.nav default triggerLabel "${defaults.triggerLabel.id}"`, resolveCopy),
-      trigger: defaults.trigger,
       links: [],
     };
   }
   // Renderer and data contract normalize the same dependent presentation inputs.
-  const normalized = normalizeSiteFrameConfig(presentation ?? (header.placement === "overlay"
-    ? { headerPlacement: header.placement, headerTone: header.tone }
-    : { headerPlacement: header.placement, headerGround: header.ground }));
-  header = normalized.headerPlacement === "overlay"
-    ? { placement: "overlay", tone: normalized.headerTone }
-    : { placement: "reserved", ground: normalized.headerGround };
+  const normalized = normalizeSiteFrameConfig(presentation ?? {}, {
+    headerSurface: header.surface, headerTone: header.tone,
+    ...(footer ? { footerGround: footer.ground, footerPlacement: footer.placement, footerRule: footer.rule ?? "none" } : {}),
+  });
+  if (footer) footer = { ...footer, ground: normalized.footerGround, placement: normalized.footerPlacement, rule: normalized.footerRule };
+  header = { surface: normalized.headerSurface, tone: normalized.headerTone };
 
   return {
     brand,
@@ -420,12 +441,8 @@ export function resolveShell(input: SiteShellInput, resolveCopy: CopyResolver, r
     ...(nav === undefined ? {} : { nav }),
     actions,
     headerActions,
-    iconActions,
-    ...(secondaryAction === undefined ? {} : { secondaryAction }),
     environments,
-    ...(shell.surfaceLabel === undefined ? {} : { surfaceLabel: copy(shell.surfaceLabel, "shell.surfaceLabel", resolveCopy) }),
     navPlacement: shell.navPlacement === undefined ? "centered" : oneOf(shell.navPlacement, "shell.navPlacement", ["leading", "centered"] as const),
-    mobileLayout: shell.mobileLayout === undefined ? "menu-brand-action" : oneOf(shell.mobileLayout, "shell.mobileLayout", ["inline", "menu-brand-action"] as const),
     ground,
     header,
     ...(footer === undefined ? {} : { footer }),

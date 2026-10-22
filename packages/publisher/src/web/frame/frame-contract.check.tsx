@@ -74,14 +74,15 @@ export type IconLinkEntryParity = [
 ];
 
 
-export const reservedHeader: SiteShellInput = { ...shell, header: { placement: "reserved", ground: "inverse" } };
-export const overlayHeader: SiteShellInput = { ...shell, header: { placement: "overlay", tone: "inverse" } };
+export const solidHeader: SiteShellInput = { ...shell, header: { surface: "solid", tone: "inverse" } };
+export const overlayHeader: SiteShellInput = { ...shell, header: { surface: "glass", tone: "inverse" } };
 export const defaultHeader: SiteShellInput = { ...shell, header: {} };
-// @ts-expect-error reserved headers take a ground, not an overlay tone
+// @ts-expect-error placement is removed for every header surface
 export const reservedTone: SiteShellInput = { ...shell, header: { placement: "reserved", tone: "inverse" } };
-// @ts-expect-error omitting placement still selects reserved chrome
 export const omittedPlacementTone: SiteShellInput = { ...shell, header: { tone: "inverse" } };
-// @ts-expect-error overlay headers take a tone, not a reserved ground
+// @ts-expect-error header ground is removed; use surface and tone
+export const omittedPlacementGround: SiteShellInput = { ...shell, header: { ground: "inverse" } };
+// @ts-expect-error neither placement nor header ground is accepted
 export const overlayGround: SiteShellInput = { ...shell, header: { placement: "overlay", ground: "base" } };
 
 export const independentFooter: SiteShellInput = { ...shell, footer: { ground: "inverse", legal: config.legal } };
@@ -92,7 +93,7 @@ export const literalDisclosureCopy: SiteShellInput = { ...shell, nav: { label: {
 export const invalidFooterGround: SiteShellInput = { ...shell, footer: { ground: "unknown", legal: config.legal } };
 
 
-export const overlayFooter: SiteShellInput = { ...shell, header: { placement: "overlay", tone: "inverse" }, footer: { placement: "overlay", legal: config.legal } };
+export const overlayFooter: SiteShellInput = { ...shell, header: { surface: "glass", tone: "inverse" }, footer: { placement: "overlay", legal: config.legal } };
 export const flowFooter: SiteShellInput = { ...shell, footer: { placement: "flow", ground: "transparent", legal: config.legal } };
 // @ts-expect-error footer placement accepts only flow or overlay
 export const invalidFooterPlacement: SiteShellInput = { ...shell, footer: { placement: "fixed", legal: config.legal } };
@@ -102,14 +103,14 @@ export const transparentOverlayFooter: SiteShellInput = { ...shell, footer: { pl
 // Appearance inputs are reachable from the canonical barrel and both web entries.
 type ActionEmphasis = [import("../../index.js").SiteLinkInput["emphasis"], import("../index.js").SiteLinkInput["emphasis"], import("../server.js").SiteLinkInput["emphasis"]];
 type BrandTone = [import("../../index.js").SiteBrandInput["tone"], import("../index.js").SiteBrandInput["tone"], import("../server.js").SiteBrandInput["tone"]];
-type NavigationTone = [NonNullable<import("../../index.js").SiteShellInput["nav"]>["tone"], NonNullable<import("../index.js").SiteShellInput["nav"]>["tone"], NonNullable<import("../server.js").SiteShellInput["nav"]>["tone"]];
+type HeaderTone = [NonNullable<import("../../index.js").SiteShellInput["header"]>["tone"], NonNullable<import("../index.js").SiteShellInput["header"]>["tone"], NonNullable<import("../server.js").SiteShellInput["header"]>["tone"]];
 type FooterRule = [import("../../index.js").SiteFooterInput["rule"], import("../index.js").SiteFooterInput["rule"], import("../server.js").SiteFooterInput["rule"]];
 type HeroEyebrowTone = [import("../../index.js").SectionedViewHeroSection["eyebrowTone"], import("../index.js").SectionedViewHeroSection["eyebrowTone"], import("../server.js").SectionedViewHeroSection["eyebrowTone"]];
 type HeroMeasure = [import("../../index.js").SectionedViewHeroSection["measure"], import("../index.js").SectionedViewHeroSection["measure"], import("../server.js").SectionedViewHeroSection["measure"]];
 type HeroHeadingScale = [import("../../index.js").SectionedViewHeroSection["headingScale"], import("../index.js").SectionedViewHeroSection["headingScale"], import("../server.js").SectionedViewHeroSection["headingScale"]];
 export const actionEmphasis: ActionEmphasis = ["primary", "secondary", undefined];
 export const brandTone: BrandTone = ["auto", "inverse", undefined];
-export const navigationTone: NavigationTone = ["auto", "inverse", undefined];
+export const headerTone: HeaderTone = ["base", "inverse", undefined];
 export const footerRule: FooterRule = ["none", "top", undefined];
 export const heroEyebrowTone: HeroEyebrowTone = ["accent", "muted", undefined];
 export const heroMeasure: HeroMeasure = ["prose", "wide", undefined];
@@ -118,8 +119,8 @@ export const heroHeadingScale: HeroHeadingScale = ["default", "display", undefin
 export const invalidEmphasis: ActionEmphasis = ["danger", "secondary", undefined];
 // @ts-expect-error brand tone is closed
 export const invalidBrandTone: BrandTone = ["base", "inverse", undefined];
-// @ts-expect-error navigation tone is closed
-export const invalidNavigationTone: NavigationTone = ["base", "inverse", undefined];
+// @ts-expect-error header tone is closed
+export const invalidHeaderTone: HeaderTone = ["auto", "inverse", undefined];
 // @ts-expect-error footer rule is closed
 export const invalidRule: FooterRule = ["bottom", "top", undefined];
 // @ts-expect-error hero eyebrow tone is closed
@@ -137,35 +138,33 @@ export const typedNavigationLinks: SiteShellInput = { ...shell, nav: { label: { 
 export const typedFooterLinks: SiteShellInput = { ...shell, footer: { links: plainLinks, legal: config.legal } };
 export const typedFooterColumnLinks: SiteShellInput = { ...shell, footer: { columns: [{ heading: { id: "help" }, links: plainLinks }], legal: config.legal } };
 export const typedLegalLinks: SiteFrameConfig["legal"] = { entity: { id: "entity" }, links: plainLinks };
-export const typedSecondaryAction: SiteShellInput = { ...shell, secondaryAction: plainLink };
+export const typedOrderedActions: SiteShellInput = { ...shell, actions: [plainLink] };
 // @ts-expect-error footer legal links do not accept header action emphasis
 export const legalEmphasis: SiteShellInput = { ...shell, footer: { legal: { entity: { id: "entity" }, links: [{ href: "/", label: { id: "home" }, emphasis: "primary" }] } } };
 
 const actionIcon = [["path", { d: "M4 12h16" }]] as const;
 export const mobileShell: SiteShellInput = {
   ...shell,
-  mobileLayout: "menu-brand-action",
-  nav: { label: { id: "nav" }, trigger: "icon", links: plainLinks },
+  nav: { label: { id: "nav" }, links: plainLinks },
   actions: [{ href: "/start", label: { id: "start" }, icon: actionIcon, emphasis: "primary" }],
 };
-export const mobileConfig: SiteFrameConfig = { ...config, site: { mobileLayout: "menu-brand-action", nav: mobileShell.nav, actions: mobileShell.actions } };
+export const mobileConfig: SiteFrameConfig = { ...config, site: { nav: mobileShell.nav, actions: mobileShell.actions } };
 export const mobileSite = siteShellFor(mobileConfig, "site");
 
 type ActionIcon = [import("../../index.js").SiteLinkInput["icon"], import("../index.js").SiteLinkInput["icon"], import("../server.js").SiteLinkInput["icon"]];
-type MobileLayout = [import("../../index.js").SiteShellInput["mobileLayout"], import("../index.js").SiteShellInput["mobileLayout"], import("../server.js").SiteShellInput["mobileLayout"]];
-type NavigationTrigger = [NonNullable<import("../../index.js").SiteShellInput["nav"]>["trigger"], NonNullable<import("../index.js").SiteShellInput["nav"]>["trigger"], NonNullable<import("../server.js").SiteShellInput["nav"]>["trigger"]];
+type HeaderSurface = [NonNullable<import("../../index.js").SiteShellInput["header"]>["surface"], NonNullable<import("../index.js").SiteShellInput["header"]>["surface"], NonNullable<import("../server.js").SiteShellInput["header"]>["surface"]];
+
 export const actionIcons: ActionIcon = [actionIcon, undefined, actionIcon];
-export const mobileLayouts: MobileLayout = ["inline", "menu-brand-action", undefined];
-export const navigationTriggers: NavigationTrigger = ["label", "icon", undefined];
-// @ts-expect-error mobile layout is closed
+export const headerSurfaces: HeaderSurface = ["solid", "transparent", "glass"];
+// @ts-expect-error mobile layout is removed
 export const invalidMobileLayout: SiteShellInput = { ...shell, mobileLayout: "stacked" };
-// @ts-expect-error trigger is closed
+// @ts-expect-error the navigation trigger is no longer an input
 export const invalidNavigationTrigger: SiteShellInput = { ...shell, nav: { label: { id: "nav" }, trigger: "drawer", links: [] } };
 // @ts-expect-error icons are SVG shape data, not React nodes
 export const actionIconNode: SiteLinkInput = { href: "/start", label: { id: "start" }, icon: <svg /> };
 // @ts-expect-error icons belong to shell.actions, not navigation links
 export const navigationIcon: SiteShellInput = { ...shell, nav: { label: { id: "nav" }, links: [{ href: "/", label: { id: "home" }, icon: actionIcon }] } };
-// @ts-expect-error secondary actions remain plain links
+// @ts-expect-error secondary actions use the single actions list
 export const secondaryActionIcon: SiteShellInput = { ...shell, secondaryAction: { href: "/", label: { id: "home" }, icon: actionIcon } };
 // @ts-expect-error ordinary footer links remain plain links
 export const footerLinkIcon: SiteShellInput = { ...shell, footer: { legal: config.legal, links: [{ href: "/", label: { id: "home" }, icon: actionIcon }] } };
@@ -174,7 +173,7 @@ export const footerColumnIcon: SiteShellInput = { ...shell, footer: { legal: con
 // @ts-expect-error legal links remain plain links
 export const legalLinkIcon: SiteFrameConfig["legal"] = { entity: { id: "entity" }, links: [{ href: "/", label: { id: "home" }, icon: actionIcon }] };
 
-export const semanticFrame = <SiteFrame {...{ shell, resolveCopy, resolveAsset }} presentation={{ headerPlacement: "overlay", headerTone: "inverse" }}><h1>View content</h1></SiteFrame>;
+export const semanticFrame = <SiteFrame {...{ shell, resolveCopy, resolveAsset }} presentation={{ headerSurface: "glass", headerTone: "inverse" }}><h1>View content</h1></SiteFrame>;
 export type SemanticFrameEntryParity = [import("./index.js").SiteFramePresentationConfig, import("../index.js").SiteFramePresentationConfig, import("../server.js").SiteFramePresentationConfig];
 // @ts-expect-error mandatory behavior is not a disabling option
 export const noSticky: import("./index.js").SiteFramePresentationConfig = { sticky: false };
@@ -186,3 +185,27 @@ export const nestedPresentation: import("./index.js").SiteFramePresentationConfi
 declare const errorDocumentInput: import("../views/GlobalErrorDocument.js").GlobalErrorDocumentFramedProps;
 // @ts-expect-error GlobalErrorDocument forwards only shell and resolver ports, not presentation
 export const ignoredWrapperPresentation: typeof errorDocumentInput = { ...errorDocumentInput, presentation: {} };
+
+// The replacement header contract is positive and refuses each retired field.
+export const solidHeaderSurface: SiteShellInput = { ...shell, header: { surface: "solid", tone: "inverse" } };
+export const transparentHeaderSurface: SiteShellInput = { ...shell, header: { surface: "transparent", tone: "base" } };
+export const glassHeaderSurface: SiteShellInput = { ...shell, header: { surface: "glass", tone: "inverse" } };
+// @ts-expect-error placement is replaced by header.surface
+export const staleShellPlacement: SiteShellInput = { ...shell, header: { placement: "overlay" } };
+// @ts-expect-error a separate icon-actions list no longer exists
+export const staleIconActions: SiteShellInput = { ...shell, iconActions: [] };
+// @ts-expect-error a separate secondary action no longer exists
+export const staleSecondaryAction: SiteShellInput = { ...shell, secondaryAction: plainLink };
+// @ts-expect-error the surface badge is removed
+export const staleSurfaceBadge: SiteShellInput = { ...shell, surfaceLabel: { id: "badge" } };
+// @ts-expect-error only one mobile layout exists
+export const staleMobileHeader: SiteShellInput = { ...shell, mobileLayout: "inline" };
+// @ts-expect-error the navigation always uses its icon trigger
+export const staleNavigationTrigger: SiteShellInput = { ...shell, nav: { label: { id: "nav" }, links: [], trigger: "label" } };
+// @ts-expect-error navigation tone follows the header tone
+export const staleNavigationTone: SiteShellInput = { ...shell, nav: { label: { id: "nav" }, links: [], tone: "inverse" } };
+
+// @ts-expect-error the obsolete AuthView badge has no compatibility alias
+export type RemovedAuthViewBadge = Pick<import("../views/AuthView.js").AuthViewProps, "surfaceLabel">;
+// @ts-expect-error the obsolete PackReviewView badge has no compatibility alias
+export type RemovedPackReviewViewBadge = Pick<import("../views/PackReviewView.js").PackReviewViewProps, "surfaceLabel">;

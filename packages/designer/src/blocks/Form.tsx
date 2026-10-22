@@ -10,6 +10,7 @@ import {
 } from "react";
 import { Link } from "../atoms/Link.js";
 import { cx } from "../atoms/internal/cx.js";
+import { actionRowClassName } from "../atoms/internal/action-row.js";
 import { UI_RING_FOCUS } from "../atoms/internal/ui-vars.js";
 
 export interface FormError {
@@ -125,6 +126,13 @@ export interface FormProps
   /** Slot for the form's submit/cancel controls, rendered at the end. */
   actions?: ReactNode;
   /**
+   * `end` (default): a natural-width row aligned to the inline end at and
+   * above tablet. `stretch`: a full-width single column at every size.
+   * Both stack full width below tablet. Actions keep their DOM and focus
+   * order; pass secondary actions first and the primary action last.
+   */
+  actionsLayout?: "end" | "stretch";
+  /**
    * Native `<form>` submit handler, passed straight through — `Form` adds
    * no logic of its own around it. Ignored when `validation` is passed:
    * the validation source owns submission then, and its own `onSubmit`
@@ -195,11 +203,15 @@ export function Form({
   validation,
   onSubmitError,
   actions,
+  actionsLayout = "end",
   onSubmit,
   className,
   style,
   ...rest
 }: FormProps) {
+  if (actionsLayout !== "end" && actionsLayout !== "stretch") {
+    throw new TypeError('Form actionsLayout must be "end" or "stretch".');
+  }
   const summaryRef = useRef<HTMLDivElement>(null);
   const errorList = errors ?? validation?.summaryErrors ?? [];
   const showSummary = errorSummaryMessage !== undefined && errorList.length > 0;
@@ -224,6 +236,9 @@ export function Form({
     // failed" signal this component has.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [errors]);
+
+  const actionsRowClasses = actionRowClassName("form", 0);
+  const endAlignedActions = actionsLayout === "end";
 
   return (
     <form
@@ -284,7 +299,17 @@ export function Form({
           {submitError}
         </div>
       ) : null}
-      {actions ? <div className="flex items-center gap-sm">{actions}</div> : null}
+      {actions ? (
+        <div
+          data-actions-layout={actionsLayout}
+          className={cx(
+            actionsRowClasses,
+            endAlignedActions && "tablet:flex-row tablet:items-center tablet:justify-end",
+          )}
+        >
+          {actions}
+        </div>
+      ) : null}
     </form>
   );
 }

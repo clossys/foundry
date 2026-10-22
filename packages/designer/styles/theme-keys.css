@@ -25,8 +25,8 @@
   --color-surface-inverse-raised: var(--color-surface-inverse-raised, oklch(0.285 0 0));
   --color-surface-aside:          var(--color-surface-aside, oklch(0.9612 0 0));
   --color-surface-selected:       var(--color-surface-selected, oklch(0.4748 0 0 / 0.1));
-  --color-surface-glass:          var(--color-surface-glass, oklch(1 0 0 / 0.88));
-  --color-surface-glass-inverse:  var(--color-surface-glass-inverse, oklch(0.2178 0 0 / 0.88));
+  --color-surface-glass:          var(--color-surface-glass, oklch(1 0 0 / 0.6));
+  --color-surface-glass-inverse:  var(--color-surface-glass-inverse, oklch(0.2178 0 0 / 0.85));
 
   /* ── COLOR · INK ──────────────────────────────────────────────── */
   --color-ink-primary:            var(--color-ink-primary, oklch(0.2178 0 0));
@@ -144,7 +144,7 @@
   --radius-panel:                  var(--radius-panel, var(--radius-surface, var(--radius-default, 3px)));
 
   /* ── BLUR ─────────────────────────────────────────────────────── */
-  --blur-glass:                    var(--blur-glass, 16px);
+  --blur-glass:                    var(--blur-glass, 20px);
 
   /* ── EASING ───────────────────────────────────────────────────── */
   --ease-default:                  var(--ease-default, cubic-bezier(.2, 0, 0, 1));
@@ -381,7 +381,7 @@
  * Focus indicators inside the header take the tone's ink rather than
  * `--color-accent`: the `--ui-ring-focus` ring and the colour of every
  * `:focus-visible` outline. Accent falls below the 3:1 non-text floor on
- * the glass (dark theme, base glass over a white backdrop, 1.55:1), while
+ * some glass/backdrop combinations, while
  * the tone's ink is the one ink the gate checks on the glass, and the one
  * the page guarantees reads over its hero at the transparent top.
  *
@@ -412,29 +412,57 @@
  */
 @keyframes site-header-glass {
   to {
-    background-color: var(--site-header-glass-fill, oklch(1 0 0 / 0.88));
+    background-color: var(--site-header-glass-fill, oklch(1 0 0 / 0.6));
     border-block-end-color: var(--site-header-glass-line, oklch(0.8761 0 0));
-    -webkit-backdrop-filter: var(--site-header-glass-blur, blur(16px));
-    backdrop-filter: var(--site-header-glass-blur, blur(16px));
+    -webkit-backdrop-filter: var(--site-header-glass-blur, blur(20px));
+    backdrop-filter: var(--site-header-glass-blur, blur(20px));
   }
 }
 
+/* All header surfaces share ink; transparent controls reveal their own header surface. */
+@utility site-header-ink {
+  --site-header-action-hover: var(--color-surface-raised, oklch(1 0 0));
+  --site-header-focus: var(--color-ink-primary, oklch(0.2178 0 0));
+  &[data-tone="inverse"] {
+    --site-header-action-hover: var(--color-surface-inverse, oklch(0.2178 0 0));
+    --site-header-focus: var(--color-ink-on-inverse, oklch(0.9702 0 0));
+  }
+  & .site-header-brand > a.text-inherit { color: inherit; }
+  & [data-header-action-ghost],
+  & .nav-disclosure-toggle:not([data-tone]) {
+    color: inherit;
+    background-color: transparent;
+    &:hover, &:focus-visible {
+      color: inherit;
+      background-color: var(--site-header-action-hover, var(--color-surface-raised, oklch(1 0 0)));
+    }
+  }
+  & :focus-visible { outline-color: var(--site-header-focus, var(--color-ink-primary, oklch(0.2178 0 0))); }
+}
+
 @utility site-header-overlay {
-  --site-header-glass-fill: var(--color-surface-glass, oklch(1 0 0 / 0.88));
+  --site-header-glass-fill: var(--color-surface-glass, oklch(1 0 0 / 0.6));
   --site-header-glass-line: var(--color-line-base, oklch(0.8761 0 0));
-  --site-header-glass-blur: blur(var(--blur-glass, 16px));
+  --site-header-glass-blur: blur(var(--blur-glass, 20px));
   border-block-end-width: var(--ui-border-hairline, 1px);
   border-block-end-style: solid;
-  background-color: var(--site-header-glass-fill, oklch(1 0 0 / 0.88));
+  background-color: var(--site-header-glass-fill, oklch(1 0 0 / 0.6));
   border-block-end-color: var(--site-header-glass-line, oklch(0.8761 0 0));
-  -webkit-backdrop-filter: var(--site-header-glass-blur, blur(16px));
-  backdrop-filter: var(--site-header-glass-blur, blur(16px));
+  -webkit-backdrop-filter: var(--site-header-glass-blur, blur(20px));
+  backdrop-filter: var(--site-header-glass-blur, blur(20px));
   --site-header-focus: var(--color-ink-primary, oklch(0.2178 0 0));
   --ui-ring-focus: 0 0 0 2px var(--site-header-focus, oklch(0.2178 0 0));
+  &[data-tone="base"] {
+    color: var(--color-ink-primary, oklch(0.2178 0 0));
+  }
+  & .site-header-brand > a.text-inherit {
+    color: inherit;
+  }
   &[data-tone="inverse"] {
-    --site-header-glass-fill: var(--color-surface-glass-inverse, oklch(0.2178 0 0 / 0.88));
+    --site-header-glass-fill: var(--color-surface-glass-inverse, oklch(0.2178 0 0 / 0.85));
     --site-header-glass-line: var(--color-line-on-inverse, oklch(0.9702 0 0 / 0.14));
     --site-header-focus: var(--color-ink-on-inverse, oklch(0.9702 0 0));
+    color: var(--color-ink-on-inverse, oklch(0.9702 0 0));
   }
   /* Unconfigured disclosure triggers follow the header; explicit tones win. */
   &[data-tone="inverse"] .nav-disclosure-toggle:not([data-tone]) {
@@ -481,13 +509,36 @@
     &:has([aria-expanded="true"]),
     &:has(details[open]) {
       animation-name: none;
-      background-color: var(--site-header-glass-fill, oklch(1 0 0 / 0.88));
+      background-color: var(--site-header-glass-fill, oklch(1 0 0 / 0.6));
       border-block-end-color: var(--site-header-glass-line, oklch(0.8761 0 0));
-      -webkit-backdrop-filter: var(--site-header-glass-blur, blur(16px));
-      backdrop-filter: var(--site-header-glass-blur, blur(16px));
+      -webkit-backdrop-filter: var(--site-header-glass-blur, blur(20px));
+      backdrop-filter: var(--site-header-glass-blur, blur(20px));
+    }
+  }
+  /* Publisher's automatic overlay owns these ghost controls. A static inverse
+     utility must not pin their ink after the observed physical ground changes.
+     Opaque hover plates use the already-gated surface/ink pairs; stacking a
+     second translucent wash over minimum-alpha glass can lose AA contrast. */
+  &.site-header-ground-aware {
+    --site-header-action-hover: var(--color-surface-raised, oklch(1 0 0));
+    &[data-tone="inverse"] {
+      --site-header-action-hover: var(--color-surface-inverse, oklch(0.2178 0 0));
+    }
+    &[data-placement="overlay"][data-tone] .site-header-actions > a,
+    &[data-placement="overlay"][data-tone] .site-header-environment-ghost,
+    &[data-placement="overlay"][data-tone] .site-header-desktop-actions a.text-ink-primary:not(.bg-surface-raised),
+    &[data-placement="overlay"][data-tone] .nav-disclosure-toggle:not([data-tone]) {
+      color: inherit;
+      background-color: transparent;
+      &:hover, &:focus-visible {
+        color: inherit;
+        background-color: var(--site-header-action-hover, var(--color-surface-raised, oklch(1 0 0)));
+      }
     }
   }
 }
+
+
 
 /*
  * The quiet call to action (T4, `buttonClassName("quiet", …)`): a chevron
@@ -729,6 +780,11 @@
 }
 }
 @utility site-header-row { min-block-size: max(var(--ui-layout-tap-target, 44px), var(--ui-brandmark-height-lg, 48px)); display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: var(--spacing-md, 12px); padding-inline: max(var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px)), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px)); }
+@utility site-header-leading {
+  @media (width >= 768px) {
+    &:not([data-collapsed]) .site-header-row { grid-template-columns: auto minmax(0, 1fr) auto; }
+  }
+}
 @utility site-header-brand { grid-column: 1; grid-row: 1; min-inline-size: 0; }
 @utility site-header-actions { display: flex; grid-column: 3; grid-row: 1; justify-content: end; gap: var(--spacing-sm, 8px); flex-wrap: wrap; overflow-wrap: anywhere; }
 @utility site-header-mobile {
@@ -739,7 +795,7 @@
     & .site-header-actions { grid-column: 3; grid-row: 1; display: flex; justify-content: end; }
     & .site-header-actions > a > span { @apply sr-only; }
     & .nav-disclosure-toggle { display: inline-flex; }
-    & .nav-disclosure-panel { display: none; position: absolute; inset-block-start: 100%; inset-inline: 0; max-block-size: calc(100dvb - var(--site-header-clearance, calc(max(var(--ui-layout-tap-target, 44px), var(--ui-brandmark-height-lg, 48px)) + 2 * var(--spacing-sm, 8px) + var(--ui-border-hairline, 1px) + env(safe-area-inset-top, 0px))) - env(safe-area-inset-bottom, 0px)); overflow-y: auto; overscroll-behavior: contain; padding-block: var(--spacing-md, 12px) max(var(--spacing-md, 12px), env(safe-area-inset-bottom, 0px)); padding-inline: max(var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px)), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px)); background-color: var(--color-overlay-surface, oklch(1 0 0)); color: var(--color-ink-primary, oklch(0.2178 0 0)); border-block-end: var(--ui-border-hairline, 1px) solid var(--color-overlay-border, oklch(0.8761 0 0)); }
+    & .nav-disclosure-panel { --site-header-action-hover: var(--color-surface-raised, oklch(1 0 0)); --site-header-focus: var(--color-ink-primary, oklch(0.2178 0 0)); display: none; position: absolute; inset-block-start: 100%; inset-inline: 0; max-block-size: calc(100dvb - var(--site-header-clearance, calc(max(var(--ui-layout-tap-target, 44px), var(--ui-brandmark-height-lg, 48px)) + 2 * var(--spacing-sm, 8px) + var(--ui-border-hairline, 1px) + env(safe-area-inset-top, 0px))) - env(safe-area-inset-bottom, 0px)); overflow-y: auto; overscroll-behavior: contain; padding-block: var(--spacing-md, 12px) max(var(--spacing-md, 12px), env(safe-area-inset-bottom, 0px)); padding-inline: max(var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px)), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px)); background-color: var(--color-overlay-surface, oklch(1 0 0)); color: var(--color-ink-primary, oklch(0.2178 0 0)); border-block-end: var(--ui-border-hairline, 1px) solid var(--color-overlay-border, oklch(0.8761 0 0)); }
     & .nav-disclosure-panel[data-expanded], & .nav-disclosure-panel[data-present] { display: flex; flex-direction: column; }
     & .site-header-nav-links, & .site-header-desktop-actions { flex-direction: column; align-items: stretch; white-space: normal; overflow-wrap: anywhere; }
 }
@@ -785,6 +841,127 @@
   [data-frame-root] > header.site-header-contract { position: relative !important; }
   [data-frame-root]:has(> header[data-placement="overlay"]) { padding-block-start: 0; }
 }
+}
+
+/* Footer paint is local: the page's dark theme reverses semantic polarity,
+ * so select its dark base roles instead of the now-light inverse plate. */
+@utility site-footer-dark {
+  &[data-footer-root] {
+    --site-footer-surface: var(--color-surface-inverse, oklch(0.2178 0 0));
+    --site-footer-ink: var(--color-ink-on-inverse, oklch(0.9702 0 0));
+    --site-footer-muted: var(--color-ink-on-inverse-muted, oklch(0.7763 0 0));
+    background-color: var(--site-footer-surface, var(--color-surface-inverse, oklch(0.2178 0 0)));
+    color: var(--site-footer-ink, var(--color-ink-on-inverse, oklch(0.9702 0 0)));
+    color-scheme: dark;
+    container-type: inline-size;
+    padding-bottom: max(var(--spacing-lg, 16px), env(safe-area-inset-bottom, 0px));
+  }
+  &[data-footer-root] > div {
+    /* Override the inline token fallback while keeping both tracks symmetric. */
+    padding-inline: max(var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px)), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px)) !important;
+  }
+  :root[data-theme="dark"] &[data-footer-root] {
+    --site-footer-surface: var(--color-surface-base, oklch(0.19 0 0));
+    --site-footer-ink: var(--color-ink-primary, oklch(0.97 0 0));
+    --site-footer-muted: var(--color-ink-secondary, oklch(0.82 0 0));
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) &[data-footer-root] {
+      --site-footer-surface: var(--color-surface-base, oklch(0.19 0 0));
+      --site-footer-ink: var(--color-ink-primary, oklch(0.97 0 0));
+      --site-footer-muted: var(--color-ink-secondary, oklch(0.82 0 0));
+    }
+  }
+  &[data-footer-root] > div > .text-body-s,
+  &[data-footer-root] [data-footer-region="copyright"] { color: var(--site-footer-muted, var(--color-ink-on-inverse-muted, oklch(0.7763 0 0))); }
+  &[data-footer-root] a,
+  &[data-footer-root] a:visited,
+  &[data-footer-root] a:hover,
+  &[data-footer-root] a:active {
+    color: var(--site-footer-ink, var(--color-ink-on-inverse, oklch(0.9702 0 0)));
+    min-width: var(--ui-layout-tap-target, 44px);
+    min-height: var(--ui-layout-tap-target, 44px);
+  }
+  &[data-footer-root] a:hover { text-decoration-line: underline; }
+  &[data-footer-root] :focus-visible {
+    outline: var(--ui-border-rule, 2px) solid var(--site-footer-ink, var(--color-ink-on-inverse, oklch(0.9702 0 0)));
+    outline-offset: var(--ui-border-rule, 2px);
+  }
+  @media (forced-colors: active) {
+    &[data-footer-root] { background-color: Canvas; color: CanvasText; }
+    &[data-footer-root] a { color: LinkText; }
+    &[data-footer-root] :focus-visible { outline-color: Highlight; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    &[data-footer-root] a { transition: none; animation: none; }
+  }
+}
+
+/* Footer columns and legal row switch on one source: the footer's own
+ * inline size (container-type above), at the theme's tablet and desktop
+ * breakpoint values, so the two can never disagree at a given width. */
+@utility site-footer-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--spacing-lg, 16px);
+  /* Uneven columns top-align on one grid. */
+  align-items: start;
+  /* Group labels read as muted labels, distinct from the bright links. */
+  & h2 {
+    margin: 0;
+    color: var(--site-footer-muted, var(--color-ink-on-inverse-muted, oklch(0.7763 0 0)));
+  }
+  /* Link text starts on the label's edge; the 44px target extends inward. */
+  & a {
+    padding-inline: 0;
+    justify-content: flex-start;
+  }
+  @container (min-width: 768px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  @container (min-width: 1280px) {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@utility site-footer-composition {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--spacing-sm, 8px) var(--spacing-lg, 16px);
+  text-align: center;
+  /* Phone order is DOM order (links, icons, copyright), each centred on both
+   * axes; max-width keeps a long word wrapping inside a centred region. */
+  justify-items: center;
+  & > * { min-width: 0; max-width: 100%; overflow-wrap: break-word; }
+  & [data-footer-region="links"] li { min-width: 0; max-width: 100%; }
+  & [data-footer-region="links"] a { display: grid; grid-template-columns: minmax(0, 1fr); max-width: 100%; }
+  /* An empty region takes no row and adds no gap. */
+  & > [data-footer-region="links"]:not(:has(li)),
+  & > [data-footer-region="icons"]:not(:has(li)) { display: none; }
+  /* 8px between links and icons, 12px before the copyright. */
+  & > [data-footer-region="copyright"] { padding-block-start: var(--spacing-xs, 4px); }
+  & img, & svg { max-width: 100%; object-fit: contain; }
+  & [data-footer-region="icons"] li { max-width: 100%; min-width: 0; }
+  & [data-footer-region="icons"] a { max-width: 100%; }
+  & [data-footer-region="icons"] svg { max-width: var(--ui-layout-tap-target, 44px); max-height: var(--ui-layout-tap-target, 44px); }
+  /* Grid areas and flex-end are logical: in a right-to-left document the
+   * copyright starts on the right and home ends on the left. */
+  @container (min-width: 1280px) {
+    grid-template-areas: "copyright links icons";
+    /* Equal bounded side tracks keep the links on the whole-footer centre.
+     * Uncapped profiles wrap within their end track before any collision. */
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr);
+    align-items: center;
+    justify-items: stretch;
+    & > [data-footer-region="links"] { grid-area: links; }
+    & > [data-footer-region="icons"] { grid-area: icons; }
+    & > [data-footer-region="copyright"] { grid-area: copyright; text-align: start; padding-block-start: 0; }
+    & > [data-footer-region="icons"] > ul { justify-content: flex-end; flex-wrap: wrap; }
+    /* The tap target extends inward so the end art meets the page gutter. */
+    & > [data-footer-region="icons"] li:last-child > a { justify-content: flex-end; padding-inline-end: 0; }
+  }
 }
 
 /* Consent's pinned card; the in-flow banner and header keep their own rules.

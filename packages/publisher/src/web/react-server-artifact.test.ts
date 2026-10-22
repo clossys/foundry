@@ -201,7 +201,7 @@ function runProbe(reactServer: boolean) {
         brand: { assetId: "mark", label: frameRef("brand"), variant: "mark", size: "md" },
         skipLink: frameRef("skip"),
         ground: "base",
-        header: { placement: "overlay", tone: "inverse" },
+        header: { surface: "glass", tone: "inverse" },
         nav: { label: frameRef("nav"), triggerLabel: frameRef("menu"), links: [{ href: "/help", label: frameRef("help") }] },
         footer: { ground: "inverse", legal: { entity: frameRef("legal"), links: [] } },
       };
@@ -285,11 +285,20 @@ describe("packed frame release", () => {
     const html = normal.frameHtml!;
     expect(html.match(/<main\b/g)).toHaveLength(1);
     expect(html.match(/<nav\b/g)).toHaveLength(1);
-    expect(html).toMatch(/<header[^>]*data-placement="overlay"[^>]*data-tone="inverse"/);
+    const header = html.match(/<header\b[^>]*>/)?.[0] ?? "";
+    expect(header).toContain(' data-surface="glass"');
+    expect(header).toContain(' data-tone="inverse"');
+    expect(header).toContain(' data-placement="overlay"');
     expect(html).toMatch(/<footer[^>]*class="[^"]*bg-surface-inverse/);
     expect(html).toContain('aria-label="Primary"');
     expect(html).toContain('aria-expanded="false"');
-    expect(html).toContain('>Menu</button>');
+    const navigation = html.match(/<nav\b[^>]*>[\s\S]*?<\/nav>/)?.[0] ?? "";
+    const menuButton = navigation.match(/<button\b[^>]*>[\s\S]*?<\/button>/)?.[0] ?? "";
+    expect(menuButton).toContain(' aria-label="Menu"');
+    expect(menuButton).toContain(' aria-expanded="false"');
+    const menuIcon = menuButton.match(/<span\b[^>]*class="nav-disclosure-icon"[^>]*>/)?.[0] ?? "";
+    expect(menuIcon).toContain(' aria-hidden="true"');
+    expect(menuButton).not.toMatch(/>\s*[^<\s]/);
     expect(html).toContain('class="flex min-h-dvh flex-col"');
     expect(html).toMatch(/data-landing-hero=""[^>]*class="[^"]*flex-1/);
     expect(html).not.toContain("min-height:100dvh");
@@ -328,7 +337,7 @@ describe("packed Publisher web React-server boundary", () => {
 
   it("exports the exact same runtime names from the ordinary and react-server targets", () => {
     expect(server.keys).toEqual(normal.keys);
-    expect(server.keys).toEqual(expect.arrayContaining(["CaptureView", "CollectionView", "ContactView", "DocumentView", "SectionedView"]));
+    expect(server.keys).toEqual(expect.arrayContaining(["CaptureView", "CollectionView", "ContactView", "DocumentView", "SectionedView", "IndexView", "DetailsView"]));
   });
 
   it("renders packed ordered steps and canonical status Items on both targets", () => {

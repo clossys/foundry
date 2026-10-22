@@ -18,7 +18,7 @@ import * as server from "../../../dist/web/server.js";
 import type { StatusViewProps } from "./StatusView.js";
 import type { GlobalErrorDocumentErrorViewProps, GlobalErrorDocumentFramedProps, GlobalErrorDocumentProps } from "./GlobalErrorDocument.js";
 
-const ALLOWED_IMPORTS = ["react", "../frame/SiteFrame.js", "../frame/types.js", "../siteMetadata.js", "./ErrorView.js", "./StatusView.js"];
+const ALLOWED_IMPORTS = ["react", "../frame/SiteFrame.js", "../frame/types.js", "./ErrorView.js", "./StatusView.js", "./statusDocument.js"];
 
 /** Every module specifier named by an `import` statement or an `export ... from` re-export. */
 const MODULE_SPECIFIER =
@@ -60,7 +60,6 @@ const resolveAsset = (assetId: string): unknown =>
 const shell: SiteShellInput = {
   brand: { assetId: "brand-mark", label: ref("brand.label"), size: "md", variant: "mark" },
   skipLink: ref("skip"),
-  surfaceLabel: ref("surface"),
   footer: {
     legal: {
       entity: ref("legal.entity"),
@@ -187,12 +186,13 @@ describe("GlobalErrorDocument", () => {
       expect(main.querySelector(".rounded-control")).toBeNull();
     });
 
-    it("puts the banner before the main and the contentinfo after it, with the shell's surface badge and legal row", () => {
+    it("puts the banner before the main and the contentinfo after it, with the shell's resolved brand and legal row", () => {
       const markup = renderToStaticMarkup(<GlobalErrorDocument {...framedProps} />);
       expect(markup.indexOf("<header")).toBeLessThan(markup.indexOf("<main"));
       expect(markup.lastIndexOf("<footer")).toBeGreaterThan(markup.indexOf("</main>"));
       const body = parse().body;
-      expect(body.querySelector("header")?.textContent).toContain("Sign in");
+      expect(body.querySelector('header a[aria-label="Example home"]')).not.toBeNull();
+      expect(body.querySelector("header")?.textContent).not.toContain("Sign in");
       expect(body.querySelector("footer")?.textContent).toContain("Example Ltd");
       expect(body.querySelector('footer a[href="/terms"]')).not.toBeNull();
     });
@@ -245,9 +245,9 @@ describe("GlobalErrorDocument", () => {
   describe("import boundary", () => {
     const source = readFileSync(join(import.meta.dirname, "GlobalErrorDocument.tsx"), "utf8");
 
-    it("imports only react, the frame, the status view, the deprecated error view and the site-metadata title rule", () => {
+    it("imports only react, the frame, the status view, the deprecated error view and the shared status document head", () => {
       expect(moduleSpecifiers(source)).toEqual(
-        expect.arrayContaining(["../frame/SiteFrame.js", "./StatusView.js", "./ErrorView.js", "../siteMetadata.js"]),
+        expect.arrayContaining(["../frame/SiteFrame.js", "./StatusView.js", "./ErrorView.js", "./statusDocument.js"]),
       );
       for (const specifier of moduleSpecifiers(source)) {
         expect(ALLOWED_IMPORTS).toContain(specifier);

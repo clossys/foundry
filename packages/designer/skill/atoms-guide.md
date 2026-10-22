@@ -4,7 +4,7 @@
 
 Import the shared records from `@clossys/designer/atoms`. This barrel remains client-only; charts render through the existing `@clossys/designer/charts` entry point. No new package subpath is introduced.
 
-41 established leaves appear once in 4 groups and 10 families. Groups and families are navigation; only leaves are selectable. Display placement preserves legacy IDs.
+46 established leaves appear once in 4 groups and 10 families. Groups and families are navigation; only leaves are selectable. Display placement preserves legacy IDs.
 
 Stable purpose, content and anatomy are separate from medium-specific implementation. Web cites current source; email, print and video are unassessed. Import safety, server rendering and visual resemblance establish no other medium’s support.
 
@@ -19,7 +19,7 @@ Consumer-owned demonstration coverage is unassessed here. A fixed controlled val
 | Group | Families | Leaves |
 | --- | --- | ---: |
 | Interaction | Actions, Navigation, Inputs | 18 |
-| Content | Data display, Imagery, Charts | 12 |
+| Content | Data display, Imagery, Charts | 17 |
 | Feedback | Messages, Progress and loading | 5 |
 | Containment | Structure, Overlays | 6 |
 
@@ -192,7 +192,7 @@ Token dependency coverage: partial. Representative consumed dependencies only; t
 - Content: Give each tab a distinct label and match it to the corresponding panel identity.
 - Anatomy: A repeated set of tab labels and one associated panel per label.
 - Block composition example: In a consumer-owned account-details block, compose Tabs.List, multiple Tabs.Tab items and matched Tabs.Panel content.
-- Accessibility: Preserve tab-panel IDs and keyboard selection; forwarded orientation does not implement a visual vertical layout.
+- Accessibility: Preserve tab-panel IDs and keyboard selection; orientation aligns the list layout, indicator edge and keyboard navigation.
 - Demonstration coverage: unassessed. Consumer-owned fixtures and interaction evidence have not been assessed here. A supported package option is not proof of a working catalog demonstration.
 
 | Medium | State | Reason and evidence |
@@ -202,12 +202,12 @@ Token dependency coverage: partial. Representative consumed dependencies only; t
 | print | unassessed | No print renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 | video | unassessed | No video renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 
-Web implementation: `@clossys/designer/atoms` → `Tabs`. Source: `src/atoms/Tabs.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. The root forwards orientation to AriaTabs, but the list has a fixed flex row and bottom border. A single-option specimen cannot prove panel switching.
+Web implementation: `@clossys/designer/atoms` → `Tabs`. Source: `src/atoms/Tabs.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Orientation sets the list to a row with bottom indicators or a column with start-edge indicators and forwards matching semantics to AriaTabs. A single-option specimen cannot prove panel switching.
 
 | Prop | Selection guidance | Package default | Applicability and support |
 | --- | --- | --- | --- |
 | `isDisabled` — Availability | `false`: Enabled interaction.<br>`true`: Disabled interaction. | peer: No local initializer; any inherited default belongs to the installed peer. | Effective for this component when supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/atoms/Tabs.tsx`: `AriaTabs` |
-| `orientation` — ARIA orientation | `horizontal`: Horizontal keyboard semantics.<br>`vertical`: Vertical keyboard semantics. | peer: No local initializer; any inherited default belongs to the installed peer. | ARIA and keyboard forwarding only; do not claim matching visual orientation. partial: Forwarded to the ARIA primitive, but fixed layout classes do not implement visual orientation. Evidence: `src/atoms/Tabs.tsx`: `<AriaTabs {...rest}` |
+| `orientation` — ARIA orientation | `horizontal`: Horizontal list with bottom indicators and keyboard semantics.<br>`vertical`: Vertical list with start-edge indicators and keyboard semantics. | peer: No local initializer; any inherited default belongs to the installed peer. | Layout and keyboard semantics follow the supplied orientation. implemented: The component uses orientation for layout and forwards it to the ARIA primitive. Evidence: `src/atoms/Tabs.tsx`: `<AriaTabs {...rest}` |
 
 
 Token dependency coverage: partial. Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.
@@ -465,7 +465,7 @@ Token dependency coverage: partial. Representative consumed dependencies only; t
 - Content: Name the group and each choice; optional per-choice descriptions explain differences.
 - Anatomy: One group label and repeated mutually exclusive labelled choices.
 - Block composition example: In a consumer-owned preference-selection block, render at least two RadioGroup.Radio choices.
-- Accessibility: Use the group’s label and roving keyboard selection; orientation does not guarantee layout.
+- Accessibility: Use the group’s label and roving keyboard selection; orientation aligns option layout and keyboard navigation.
 - Demonstration coverage: unassessed. Consumer-owned fixtures and interaction evidence have not been assessed here. A supported package option is not proof of a working catalog demonstration.
 
 | Medium | State | Reason and evidence |
@@ -475,13 +475,13 @@ Token dependency coverage: partial. Representative consumed dependencies only; t
 | print | unassessed | No print renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 | video | unassessed | No video renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 
-Web implementation: `@clossys/designer/atoms` → `RadioGroup`. Source: `src/atoms/RadioGroup.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. The root forwards orientation to AriaRadioGroup, but the options wrapper remains flex-col. A single-option specimen cannot prove selection differences.
+Web implementation: `@clossys/designer/atoms` → `RadioGroup`. Source: `src/atoms/RadioGroup.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Orientation sets the options to a row or column and forwards matching semantics to AriaRadioGroup. A single-option specimen cannot prove selection differences.
 
 | Prop | Selection guidance | Package default | Applicability and support |
 | --- | --- | --- | --- |
 | `isDisabled` — Availability | `false`: Enabled interaction.<br>`true`: Disabled interaction. | peer: No local initializer; any inherited default belongs to the installed peer. | Effective for this component when supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/atoms/RadioGroup.tsx`: `AriaRadioGroup` |
 | `isInvalid` — Validation state | `false`: No invalid state requested.<br>`true`: Expose validation state and the authored error. | peer: No local initializer; any inherited default belongs to the installed peer. | Effective for this component when supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/atoms/RadioGroup.tsx`: `<AriaRadioGroup {...rest}` |
-| `orientation` — ARIA orientation | `horizontal`: Horizontal keyboard semantics.<br>`vertical`: Vertical keyboard semantics. | peer: No local initializer; any inherited default belongs to the installed peer. | ARIA and keyboard forwarding only; do not claim matching visual orientation. partial: Forwarded to the ARIA primitive, but fixed layout classes do not implement visual orientation. Evidence: `src/atoms/RadioGroup.tsx`: `<AriaRadioGroup {...rest}` |
+| `orientation` — ARIA orientation | `horizontal`: Horizontal option layout and keyboard semantics.<br>`vertical`: Vertical option layout and keyboard semantics. | peer: No local initializer; any inherited default belongs to the installed peer. | Layout and keyboard semantics follow the supplied orientation. implemented: The component uses orientation for layout and forwards it to the ARIA primitive. Evidence: `src/atoms/RadioGroup.tsx`: `<AriaRadioGroup {...rest}` |
 
 
 Token dependency coverage: partial. Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.
@@ -705,6 +705,35 @@ Web implementation: `@clossys/designer/atoms` → `Table`. Source: `src/atoms/Ta
 Token dependency coverage: partial. Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.
 - `--ui-ring-focus` (transitive): `src/atoms/internal/ui-vars.ts`: `var(--ui-ring-focus,`; consumed via `src/atoms/Table.tsx`: `boxShadow: renderProps.isFocusVisible ? UI_RING_FOCUS : undefined`.
 
+##### `group.grid-list` — GridList
+
+- Purpose: Work through interactive records with independent selection and actions.
+- Use when: Records have flexible content, selection controls or secondary actions within each row.
+- Avoid when: Column relationships require a table or content has no row interaction.
+- Alternatives and boundary: Use Table for shared columns or ResourceList for an assembled record-list block.
+- Content: Supply a list name, each row’s plain text identity and host-authored checkbox names.
+- Anatomy: A named grid with repeated record rows and optional selection checkboxes.
+- Block composition example: Compose GridList.Item content with GridList.SelectionCheckbox and named child actions.
+- Accessibility: Space toggles selection and Enter activates onAction during selection; href routing follows the peer’s toggle-selection semantics.
+- Demonstration coverage: unassessed. Consumer-owned fixtures and interaction evidence have not been assessed here. A supported package option is not proof of a working catalog demonstration.
+
+| Medium | State | Reason and evidence |
+| --- | --- | --- |
+| web | implemented | The existing component renders or forwards its documented web implementation in the named source. Evidence: `src/atoms/GridList.tsx` |
+| email | unassessed | No email renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
+| print | unassessed | No print renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
+| video | unassessed | No video renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
+
+Web implementation: `@clossys/designer/atoms` → `GridList`. Source: `src/atoms/GridList.tsx`. Draft stack layout with toggle selection fixed by the atom. The peer supplies collection, keyboard, disabled and action behavior. Supply aria-label or aria-labelledby; each Item requires textValue and each SelectionCheckbox requires its host aria-label. Direct-row Enter adapts onAction during active selection. Href rows route while selection is empty; active-selection row presses toggle selection without navigation.
+
+No finite scalar options are represented here; read the real prop type for authored content and data.
+
+- data (runtime; `aria-label`, `aria-labelledby`): At least one nonblank accessible naming path is required. Evidence: `src/atoms/GridList.tsx`: `GridList requires aria-label or aria-labelledby.`.
+
+Token dependency coverage: partial. Representative row state dependencies; checkbox styling is composed from the existing atom.
+- `--ui-layout-tap-target` (transitive): `src/atoms/internal/ui-vars.ts`: `--ui-layout-tap-target`; consumed via `src/atoms/GridList.tsx`: `minBlockSize: UI_LAYOUT_TAP_TARGET`.
+- `--ui-ring-focus` (transitive): `src/atoms/internal/ui-vars.ts`: `--ui-ring-focus`; consumed via `src/atoms/GridList.tsx`: `UI_RING_FOCUS`.
+
 #### Imagery
 
 ##### `depict.avatar` — Avatar
@@ -767,6 +796,38 @@ Web implementation: `@clossys/designer/atoms` → `Icon`. Source: `src/atoms/Ico
 
 Token dependency coverage: partial. Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.
 - `--ui-icon-stroke` (direct): `src/atoms/Icon.tsx`: `var(--ui-icon-stroke, 2)`.
+
+##### `depict.logomark` — Logomark
+
+- Purpose: Represent a brand with one decorative glyph and an optional shared plate.
+- Use when: A surrounding identity link or adjacent text already names the brand.
+- Avoid when: The image must communicate an accessible name or act as a standalone control.
+- Alternatives and boundary: Use Lockup for a mark beside live text; use Brandmark for the established home link.
+- Content: Supply the light, dark or mono artwork as an image URL, never injected markup.
+- Anatomy: One glyph image, optionally inset inside one rounded square plate.
+- Block composition example: In Lockup, place Logomark before the live wordmark and center both regions vertically.
+- Accessibility: The image has empty alternative text; its surrounding text or control supplies the name.
+- Demonstration coverage: unassessed. Consumer-owned fixtures and interaction evidence have not been assessed here. A supported package option is not proof of a working catalog demonstration.
+
+| Medium | State | Reason and evidence |
+| --- | --- | --- |
+| web | implemented | The existing component renders or forwards its documented web implementation in the named source. Evidence: `src/atoms/Logomark.tsx` |
+| email | unassessed | No email renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
+| print | unassessed | No print renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
+| video | unassessed | No video renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
+
+Web implementation: `@clossys/designer/atoms` → `Logomark`. Source: `src/atoms/Logomark.tsx`. Size, tone and plate are finite choices. Artwork URLs and optional titles are authored content; artwork contrast remains caller-owned.
+
+| Prop | Selection guidance | Package default | Applicability and support |
+| --- | --- | --- | --- |
+| `size` — Size | `sm`: Small mark height.<br>`md`: Medium mark height.<br>`lg`: Large mark height. | required: The caller selects the required height scale. | Always effective; size is required. implemented: The mark consumes its size through the shared height bindings. Evidence: `src/atoms/Logomark.tsx`: `HEIGHTS[size]` |
+| `tone` — Plate ink | `auto`: Primary ink plate.<br>`inverse`: Inverse ink plate. | `auto` (`src/atoms/Logomark.tsx`: `tone = "auto"`) | Effective only with a shared plate; self-plated artwork supplies its own paint. implemented: The shared plate selects the corresponding existing ink utility. Evidence: `src/atoms/Logomark.tsx`: `tone === "inverse"` |
+| `plate` — Plate ownership | `self`: Render the supplied artwork at its natural aspect ratio.<br>`shared`: Inset the glyph in the shared square plate. | `self` (`src/atoms/Logomark.tsx`: `plate = "self"`) | Always effective for the mark geometry. implemented: The component renders either the image alone or the shared plate. Evidence: `src/atoms/Logomark.tsx`: `plate !== "shared"` |
+
+- effective-when (ignored; `tone`): Tone paints the shared plate only; it never rewrites the supplied artwork URL. Evidence: `src/atoms/Logomark.tsx`: `if (plate !== "shared")`.
+
+Token dependency coverage: partial. The height binding is representative; plate ink uses the existing primary or inverse ink utilities.
+- `--ui-brandmark-height-md` (transitive): `src/internal/brandmark.ts`: `"var(--ui-brandmark-height-md, 36px)"`; consumed via `src/atoms/Logomark.tsx`: `HEIGHTS[size]`.
 
 #### Charts
 
@@ -940,6 +1001,96 @@ Web implementation: `@clossys/designer/charts` → `ScatterChart`. Source: `src/
 
 Token dependency coverage: partial. Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.
 - `--ui-border-hairline` (transitive): `src/charts/internal/marks.ts`: `var(--ui-border-hairline,`; consumed via `src/charts/ScatterChart.tsx`: `strokeWidth={CHART_HAIRLINE}`.
+
+##### `depict.area-chart` — AreaChart
+
+- Purpose: Compare how one or several quantities change or accumulate across ordered categories or time.
+- Use when: Filled magnitude, authored series totals or a normalized percentage composition answer the stated question.
+- Avoid when: Area overlap conceals the comparison, units differ between series or missing observations would be mistaken for zero.
+- Alternatives and boundary: Use LineChart for precise trends without filled areas, BarChart for categorical comparisons or a table for exact values.
+- Content: Author one consistent x domain, named same-length series and explicit null gaps; normalized and stacked quantities must be nonnegative.
+- Anatomy: Contiguous filled runs share axes, a named series legend, an inspection crosshair and an equivalent native data table.
+- Block composition example: In a consumer-owned trends block, place AreaChart beside period definitions and an explanation of magnitude, stacking or percentages.
+- Accessibility: Retain visible series names, keyboard inspection and the complete table; explain missing values rather than relying on the filled colour alone.
+- Demonstration coverage: unassessed. Consumer-owned fixtures and interaction evidence have not been assessed here. A supported package option is not proof of a working catalog demonstration.
+
+| Medium | State | Reason and evidence |
+| --- | --- | --- |
+| web | implemented | The existing component renders or forwards its documented web implementation in the named source. Evidence: `src/charts/AreaChart.tsx` |
+| email | unassessed | No email renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
+| print | unassessed | No print renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
+| video | unassessed | No video renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
+
+Web implementation: `@clossys/designer/charts` → `AreaChart`. Source: `src/charts/AreaChart.tsx`. Represented scalar options are a bounded source-checked selection; consult the public prop type and chart README for data, labels, callbacks and other supported props. No Cartesian combination support or consumer demonstration is implied. The stacked prop is supported and described in the public chart contract, but is not a represented comparison axis here. Inspection and selection may be controlled; the server export preserves static geometry and table data.
+
+| Prop | Selection guidance | Package default | Applicability and support |
+| --- | --- | --- | --- |
+| `normalized` — Percentage composition | `false`: Retain authored magnitudes on one shared value scale.<br>`true`: Stack each nonzero column to a total of one hundred percent. | `false` (`src/charts/internal/signature-views.tsx`: `normalized = false`) | Normalization implies stacking; all-zero columns remain zero and null values remain missing. implemented: The directly imported shared chart view consumes this implemented boolean; callers still author data and accessible labels. Evidence: `src/charts/internal/signature-views.tsx`: `normalized = false` |
+| `smooth` — Interpolation | `false`: Connect adjacent samples with straight segments.<br>`true`: Use cubic interpolation within each nonmissing run. | `false` (`src/charts/internal/signature-views.tsx`: `smooth = false`) | Smoothing never connects across an explicit null gap and does not change the table data. implemented: The directly imported shared chart view consumes this implemented boolean; callers still author data and accessible labels. Evidence: `src/charts/internal/signature-views.tsx`: `smooth = false` |
+
+- derived (derived; `normalized`, `stacked`): Normalization implies stacking; an unstacked percentage mode is not a separate supported configuration. Evidence: `src/charts/internal/signature-geometry.ts`: `const bottom = stacked || normalized ? bases[index]! : 0;`.
+- data (runtime; `x`, `series`): Every named series supplies one finite number or explicit null for each x; stacking and normalization refuse negative values. Evidence: `src/charts/internal/signature-geometry.ts`: `AreaChart series must have one value for every x.`.
+
+Token dependency coverage: partial. One representative chart colour binding is recorded with its actual helper and view consumption; this is not an exhaustive token inventory.
+- `--color-chart-categorical-1` (transitive): `src/charts/internal/chart-vars.ts`: `TOKENS["--color-chart-categorical-1"]`; consumed via `src/charts/internal/signature-views.tsx`: `fill={resolveSeriesColor(` → `src/charts/AreaChart.tsx`: `<AreaView`.
+
+##### `depict.heatmap` — Heatmap
+
+- Purpose: Compare a rectangular set of magnitudes or categorical identities across named rows and columns.
+- Use when: The question concerns variation across two discrete dimensions and complete values remain available for inspection.
+- Avoid when: An unordered set needs precise rank comparisons, the category count exceeds eight identities or missing cells would be interpreted as zero.
+- Alternatives and boundary: Use BarChart for ranked magnitude, StatusStrip for interval history or a table when the cell values themselves are the primary task.
+- Content: Provide unique row and column names and a rectangular matrix; sequential data are finite numbers or null, while categorical identities use a stable domain.
+- Anatomy: A labelled matrix of cells shares a sequential ramp or categorical legend, a focused value readout and a complete native table.
+- Block composition example: In a consumer-owned capacity block, place Heatmap beside the meaning of each matrix dimension and its magnitude or identity legend.
+- Accessibility: Each cell exposes row, column and value in its name; arrow navigation and the native table retain access without colour matching.
+- Demonstration coverage: unassessed. Consumer-owned fixtures and interaction evidence have not been assessed here. A supported package option is not proof of a working catalog demonstration.
+
+| Medium | State | Reason and evidence |
+| --- | --- | --- |
+| web | implemented | The existing component renders or forwards its documented web implementation in the named source. Evidence: `src/charts/Heatmap.tsx` |
+| email | unassessed | No email renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
+| print | unassessed | No print renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
+| video | unassessed | No video renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
+
+Web implementation: `@clossys/designer/charts` → `Heatmap`. Source: `src/charts/Heatmap.tsx`. Represented scalar options are a bounded source-checked selection; consult the public prop type and chart README for data, labels, callbacks and other supported props. No Cartesian combination support or consumer demonstration is implied. The categorical domain bounds identity encoding to eight entries. Controlled inspection uses row-major cell indices; the server export retains a static grid and native data table.
+
+| Prop | Selection guidance | Package default | Applicability and support |
+| --- | --- | --- | --- |
+| `categorical` — Encoding mode | `false`: Map finite numeric magnitudes onto the seven-step sequential ramp.<br>`true`: Assign stable colours to at most eight distinct categorical identities. | `false` (`src/charts/internal/signature-views.tsx`: `categorical = false`) | Sequential mode requires numbers or null; categorical mode accepts names or numbers within the declared identity domain. implemented: The directly imported shared chart view consumes this implemented boolean; callers still author data and accessible labels. Evidence: `src/charts/internal/signature-views.tsx`: `categorical = false` |
+
+- data (runtime; `rows`, `columns`, `values`): The matrix dimensions exactly match its unique nonblank row and column labels; null is a missing value rather than numeric zero. Evidence: `src/charts/internal/signature-views.tsx`: `Heatmap requires one value per row and column.`.
+
+Token dependency coverage: partial. One representative chart colour binding is recorded with its actual helper and view consumption; this is not an exhaustive token inventory.
+- `--color-chart-sequential-100` (transitive): `src/charts/internal/chart-vars.ts`: `TOKENS["--color-chart-sequential-100"]`; consumed via `src/charts/internal/signature-views.tsx`: `chartSequentialVar(` → `src/charts/Heatmap.tsx`: `<HeatmapView`.
+
+##### `depict.status-strip` — StatusStrip
+
+- Purpose: Show a compact chronological history of labelled states with widths proportional to their observed duration.
+- Use when: Uptime or program history consists of nonoverlapping intervals within a known observation window.
+- Avoid when: The task needs dependency editing or scheduling, interval bounds overlap or unobserved time would be presented as healthy operation.
+- Alternatives and boundary: Use RangeChart for authored activity intervals, LineChart for measured numeric trends or a table for detailed incident narratives.
+- Content: Author finite increasing bounds with ok, warn, error or unknown states; an optional full domain makes leading and trailing unknown periods explicit.
+- Anatomy: Chronological patterned segments share a time axis, a visible status legend, interval inspection and a gap-inclusive native table.
+- Block composition example: In a consumer-owned service-health block, place StatusStrip beside the observation window and the meaning of each operational state.
+- Accessibility: Every segment is named with its state and interval; distinct patterns, visible labels, keyboard inspection and table rows supplement colour.
+- Demonstration coverage: unassessed. Consumer-owned fixtures and interaction evidence have not been assessed here. A supported package option is not proof of a working catalog demonstration.
+
+| Medium | State | Reason and evidence |
+| --- | --- | --- |
+| web | implemented | The existing component renders or forwards its documented web implementation in the named source. Evidence: `src/charts/StatusStrip.tsx` |
+| email | unassessed | No email renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
+| print | unassessed | No print renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
+| video | unassessed | No video renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
+
+Web implementation: `@clossys/designer/charts` → `StatusStrip`. Source: `src/charts/StatusStrip.tsx`. Represented scalar options are a bounded source-checked selection; consult the public prop type and chart README for data, labels, callbacks and other supported props. No Cartesian combination support or consumer demonstration is implied. No finite scalar configuration axis is represented for this interval-data component. Status keys belong to authored segment data. The server export retains the same chronological intervals, patterns and native table.
+
+No finite scalar options are represented here; read the real prop type for authored content and data.
+
+- data (runtime; `segments`, `domain`): Intervals must be finite, forward and nonoverlapping inside the observation domain; uncovered intervals are derived unknown segments. Evidence: `src/charts/internal/signature-geometry.ts`: `StatusStrip intervals overlap or fall outside the domain.`.
+
+Token dependency coverage: partial. One representative chart colour binding is recorded with its actual helper and view consumption; this is not an exhaustive token inventory.
+- `--color-chart-categorical-1` (transitive): `src/charts/internal/chart-vars.ts`: `TOKENS["--color-chart-categorical-1"]`; consumed via `src/charts/internal/signature-views.tsx`: `fill={assignCategoricalColor(index)}` → `src/charts/StatusStrip.tsx`: `<StatusView`.
 
 ### Feedback
 
@@ -1227,7 +1378,7 @@ Token dependency coverage: partial. Representative consumed dependencies only; t
 - Content: Name the trigger and give the panel content an understandable task hierarchy.
 - Anatomy: One contextual trigger and its anchored content panel.
 - Block composition example: In a consumer-owned filter block, put several filter fields inside Popover and manage their state outside it.
-- Accessibility: The panel uses dialog behavior; preserve focus entry, outside dismissal and return to the trigger.
+- Accessibility: The panel uses dialog behavior; supply aria-label for its accessible name when there is no visible title heading, and preserve focus entry, outside dismissal and return to the trigger.
 - Demonstration coverage: unassessed. Consumer-owned fixtures and interaction evidence have not been assessed here. A supported package option is not proof of a working catalog demonstration.
 
 | Medium | State | Reason and evidence |

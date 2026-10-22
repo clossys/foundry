@@ -1,12 +1,20 @@
-import type { SiteHeaderProps } from "@clossys/designer/shell/server";
-
 /**
  * The chrome ground the page frame and the views on the base surface accept:
  * one name for both. `"transparent-inverse"` carries the on-inverse ink and is
  * for chrome over an inverse page, which only `HeroView` paints, so the
  * frame and the other views refuse it.
  */
-export type SiteChromeGround = Exclude<SiteHeaderProps["ground"], "transparent-inverse" | undefined>;
+export type SiteChromeGround = "base" | "inverse" | "transparent";
+
+/** Translate legacy View header forwarding without changing the View's own ground or footer. */
+export function siteHeaderPresentation(ground?: SiteChromeGround | "transparent-inverse"): {
+  surface: "solid" | "transparent"; tone: "base" | "inverse";
+} {
+  return {
+    surface: ground === "transparent" || ground === "transparent-inverse" ? "transparent" : "solid",
+    tone: ground === "inverse" || ground === "transparent-inverse" ? "inverse" : "base",
+  };
+}
 
 const GROUNDS = ["base", "inverse", "transparent"] as const;
 
