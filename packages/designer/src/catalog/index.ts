@@ -7,7 +7,7 @@ export { TOKEN_CATALOG, TOKEN_ENTRIES, TOKEN_EXCLUSIONS, TOKEN_GROUPS } from "./
 export { ASSET_CATALOG, ASSET_ENTRIES, ASSET_GROUPS } from "./assets.js";
 export { ICON_CATALOG, ICON_ENTRIES, ICON_GROUPS } from "./icons.js";
 export { ATOM_CATALOG, ATOM_ENTRIES, ATOM_EXPORT_EXCLUSIONS, ATOM_GROUPS } from "./atoms.js";
-export { BLOCK_CATALOG, BLOCK_ENTRIES, BLOCK_GROUPS } from "./blocks.js";
+export { BLOCK_CATALOG, BLOCK_ENTRIES, BLOCK_EXPORT_EXCLUSIONS, BLOCK_GROUPS } from "./blocks.js";
 
 import { ASSET_CATALOG } from "./assets.js";
 import { ATOM_CATALOG } from "./atoms.js";

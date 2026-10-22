@@ -498,9 +498,14 @@ export type BlockEntry = Omit<CatalogLeafBase, "lifecycle"> &
   BlockPlacement &
   BlockLifecycleFields & {
     readonly id: BlockId;
-    /** Export name, or null for a block not built yet. */
+    /** Export name, or null for a block not built yet or for a recipe. */
     readonly export: string | null;
     readonly built: BlockBuilt;
+    /**
+     * Present on a recipe: a built leaf with no export of its own, rendered by
+     * configuring the named leaf's export.
+     */
+    readonly recipeOf?: BlockId;
     readonly inFlight?: WorkRef;
     /** Has an exact specimen and may be promoted to stable with owner sign-off. */
     readonly stableCandidate: boolean;

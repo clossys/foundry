@@ -9,6 +9,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import * as ATOM_EXPORTS from "../atoms/index.js";
+import * as BLOCK_EXPORTS from "../blocks/index.js";
 import * as CHART_EXPORTS from "../charts/index.js";
 import * as ICON_EXPORTS from "../icons/index.js";
 import * as SHELL_EXPORTS from "../shell/index.js";
@@ -18,6 +19,8 @@ import {
   ASSET_ENTRIES,
   ATOM_ENTRIES,
   ATOM_EXPORT_EXCLUSIONS,
+  BLOCK_ENTRIES,
+  BLOCK_EXPORT_EXCLUSIONS,
   ICON_ENTRIES,
   TOKEN_ENTRIES,
   TOKEN_EXCLUSIONS,
@@ -116,6 +119,33 @@ const FROZEN_ATOM_IDS: readonly string[] = [
   "inform.progress-bar", "inform.spinner", "inform.skeleton",
   "group.card", "group.separator", "reveal.disclosure", "reveal.accordion", "group.group", "enter.resize-handle",
   "reveal.dialog", "reveal.popover", "reveal.tooltip", "reveal.sheet", "reveal.preview-card",
+];
+
+/** Frozen block leaf ids, 84. */
+const FROZEN_BLOCK_IDS: readonly string[] = [
+  "say.hero", "say.page-header", "say.section-header", "say.section-intro", "say.takeaway", "say.chapter",
+  "items.features", "items.statement", "items.feature-grid",
+  "say.testimonial", "say.testimonial-set", "items.logo-cloud", "items.people-grid",
+  "say.media-figure", "items.media-gallery",
+  "prose.article", "items.faq", "items.legacy-faq", "say.info-tip",
+  "items.steps", "items.ordered-step-sequence", "items.timeline",
+  "say.lockup",
+  "items.specimen-stack", "say.specimen", "matrix.specimen-panel", "say.anatomy-callouts", "matrix.scene",
+  "items.raw", "items.item", "items.cards", "items.task-list",
+  "matrix.raw", "matrix.comparison", "matrix.pricing",
+  "items.stat", "items.stat-grid", "items.status-list", "items.usage-meter",
+  "matrix.data-table", "matrix.detail", "items.record-ledger", "matrix.grouped-table", "items.resource-list",
+  "matrix.data-grid",
+  "items.event-item", "items.activity-feed", "matrix.audit-log",
+  "matrix.panel", "matrix.drawer", "matrix.resizable-pane", "matrix.catalog-workspace",
+  "form.form", "form.newsletter-band", "form.form-wizard", "form.field-group", "form.file-field",
+  "form.column-mapper", "form.settings-section", "form.save-bar", "matrix.access-matrix", "form.chat",
+  "items.link-index", "items.topics", "items.nav-grid",
+  "items.app-navigation", "form.account-menu", "form.command-menu", "items.page-bar",
+  "items.tree", "items.explorer", "prose.table-of-contents", "form.toolbar", "form.bulk-action-bar",
+  "form.pagination", "form.load-more", "form.filter-builder",
+  "say.empty-state", "say.error-state", "form.confirm-dialog", "form.consent-banner",
+  "say.notice-stack", "form.refresh-status", "items.notification-center",
 ];
 
 /** Ids that appear more than once in a list. */
@@ -282,5 +312,53 @@ describe("atom catalog coverage", () => {
       expect(entry.status === "parked", entry.id).toBe(entry.l2 === "charts");
       expect(entry.disposition === "park", entry.id).toBe(entry.l2 === "charts");
     }
+  });
+});
+
+describe("block catalog coverage", () => {
+  const ids = BLOCK_ENTRIES.map((entry) => entry.id);
+  const byId = new Map(BLOCK_ENTRIES.map((entry) => [entry.id, entry]));
+
+  it("matches the frozen id list exactly, 84 leaves", () => {
+    expect(duplicates(ids)).toEqual([]);
+    expect(FROZEN_BLOCK_IDS).toHaveLength(84);
+    expect(ids).toHaveLength(84);
+    expect([...ids].sort()).toEqual([...FROZEN_BLOCK_IDS].sort());
+  });
+
+  it("places every blocks export exactly once: as a leaf or an exclusion", () => {
+    const exported = Object.keys(BLOCK_EXPORTS);
+    const leafExports = BLOCK_ENTRIES.flatMap((entry) => (entry.export === null ? [] : [entry.export]));
+    const accounted = [...leafExports, ...Object.keys(BLOCK_EXPORT_EXCLUSIONS)];
+    expect(duplicates(accounted)).toEqual([]);
+    expect([...exported].sort()).toEqual([...accounted].sort());
+  });
+
+  it("points every recipe at a built leaf with its own export", () => {
+    for (const entry of BLOCK_ENTRIES) {
+      if (entry.recipeOf === undefined) continue;
+      const host = byId.get(entry.recipeOf);
+      expect(host?.export, entry.id).toEqual(expect.any(String));
+      expect(host?.recipeOf, entry.id).toBeUndefined();
+    }
+  });
+
+  it("names successors that are live leaves", () => {
+    for (const entry of BLOCK_ENTRIES) {
+      if (entry.successor === undefined) continue;
+      expect(byId.get(entry.successor)?.lifecycle, entry.id).toBe("draft");
+    }
+  });
+
+  it("counts 4 deprecated, 56 draft and built, 24 not built", () => {
+    const deprecated = BLOCK_ENTRIES.filter((entry) => entry.lifecycle === "deprecated").length;
+    const draftBuilt = BLOCK_ENTRIES.filter((entry) => entry.lifecycle === "draft" && entry.built !== "no").length;
+    const notBuilt = BLOCK_ENTRIES.filter((entry) => entry.built === "no").length;
+    expect([deprecated, draftBuilt, notBuilt]).toEqual([4, 56, 24]);
+  });
+
+  it("marks exactly the four leaves with exact specimens as stable candidates", () => {
+    const candidates = BLOCK_ENTRIES.filter((entry) => entry.stableCandidate).map((entry) => entry.id);
+    expect([...candidates].sort()).toEqual(["form.form", "prose.article", "say.empty-state", "say.page-header"]);
   });
 });

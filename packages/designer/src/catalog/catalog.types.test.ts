@@ -88,10 +88,11 @@ describe("catalog entry rules", () => {
     }
   });
 
-  it("names a successor for every deprecated block, and an export for every built block", () => {
+  it("names a successor for every deprecated block, and an export for every built block that is not a recipe", () => {
     for (const block of CATALOGS[4].entries) {
       expect(block.lifecycle === "deprecated", block.id).toBe(block.successor !== undefined);
-      expect(block.built === "no", block.id).toBe(block.export === null);
+      expect(block.export === null, block.id).toBe(block.built === "no" || block.recipeOf !== undefined);
+      if (block.recipeOf !== undefined) expect(block.built, block.id).not.toBe("no");
     }
   });
 
