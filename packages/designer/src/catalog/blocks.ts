@@ -273,7 +273,7 @@ export const BLOCK_ENTRIES: readonly BlockEntry[] = [
   built(COLLECTION, "Items", { id: "items.raw", label: "Items" }),
   built(COLLECTION, "Item", { id: "items.item", label: "Item" }),
   recipe(COLLECTION, "items.raw", { id: "items.cards", label: "Card grid" }),
-  spec(COLLECTION, { id: "items.task-list", label: "Task list", inFlight: pr(2378, "draft") }),
+  exported(COLLECTION, "TaskList", { id: "items.task-list", label: "Task list" }),
 
   // Organize / Comparison
   built(COMPARISON, "Matrix", { id: "matrix.raw", label: "Matrix" }),
@@ -311,7 +311,7 @@ export const BLOCK_ENTRIES: readonly BlockEntry[] = [
   spec(RECORDS, { id: "matrix.data-grid", label: "Data grid" }),
 
   // Organize / Activity
-  spec(ACTIVITY, { id: "items.event-item", label: "Event item", inFlight: pr(2378, "draft") }),
+  exported(ACTIVITY, "EventItem", { id: "items.event-item", label: "Event item" }),
   spec(ACTIVITY, { id: "items.activity-feed", label: "Activity feed" }),
   spec(ACTIVITY, { id: "matrix.audit-log", label: "Audit log" }),
 

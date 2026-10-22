@@ -350,11 +350,11 @@ describe("block catalog coverage", () => {
     }
   });
 
-  it("counts 4 deprecated, 57 draft and built, 23 not built", () => {
+  it("counts 4 deprecated, 59 draft and built, 21 not built", () => {
     const deprecated = BLOCK_ENTRIES.filter((entry) => entry.lifecycle === "deprecated").length;
     const draftBuilt = BLOCK_ENTRIES.filter((entry) => entry.lifecycle === "draft" && entry.built !== "no").length;
     const notBuilt = BLOCK_ENTRIES.filter((entry) => entry.built === "no").length;
-    expect([deprecated, draftBuilt, notBuilt]).toEqual([4, 57, 23]);
+    expect([deprecated, draftBuilt, notBuilt]).toEqual([4, 59, 21]);
   });
 
   it("marks exactly the four leaves with exact specimens as stable candidates", () => {
