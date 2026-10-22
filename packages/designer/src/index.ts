@@ -441,3 +441,8 @@ export type { CatalogWorkspaceProps, CatalogWorkspaceItem, CatalogWorkspaceSize 
 export { parseDataTableViewModel, serializeDataTableViewModel, DataTableViewModelError } from "./blocks/data-table/view-model.js";
 export type { DataTableMessages } from "./blocks/data-table/messages.js";
 export type { DataTableViewModel, DataTableViewModelV1, DataTableMode, DataTableDensity, DataTableSortRule } from "./blocks/data-table/view-model.js";
+
+export { AccessMatrix } from "./blocks/AccessMatrix.js";
+export type { AccessCellValue, AccessRole, AccessPermission, AccessGroup, AccessMatrixValue, AccessMatrixChange, AccessMatrixLabels, AccessMatrixProps } from "./blocks/AccessMatrix.js";
+export { ColumnMapper } from "./blocks/ColumnMapper.js";
+export type { ColumnMapperTarget, ColumnMapperSource, ColumnMapping, ColumnMapperIssue, ColumnMapperLabels, ColumnMapperProps } from "./blocks/ColumnMapper.js";
