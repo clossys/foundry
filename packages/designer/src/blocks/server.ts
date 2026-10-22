@@ -147,7 +147,7 @@ export { PageHeader } from "./PageHeader.js";
 export type { PageHeaderProps } from "./PageHeader.js";
 
 export { PricingTable } from "./PricingTable.js";
-export type { PricingTableProps, PricingTier, PricingTableHeadingLevel } from "./PricingTable.js";
+export type { PricingTableProps, PricingTier, PricingTableHeadingLevel, PricingTierPrice, PricingCellData, PricingComparison, PricingComparisonGroup, PricingComparisonRow } from "./PricingTable.js";
 
 export { SectionHeader } from "./SectionHeader.js";
 export type { SectionHeaderProps, SectionHeaderLevel } from "./SectionHeader.js";
