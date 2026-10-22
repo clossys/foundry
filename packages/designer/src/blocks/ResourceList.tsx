@@ -95,6 +95,9 @@ export function ResourceList({
   emptyState, error, toolbar, bulkBar, footer, className, ...rest
 }: ResourceListProps) {
   const [internalKeys, setInternalKeys] = useState<"all" | Set<string>>(new Set());
+  if (!ariaLabel?.trim()) {
+    throw new TypeError("ResourceList requires aria-label.");
+  }
   if (selectionMode === "multiple" && !selectRowLabel) {
     throw new TypeError("ResourceList requires selectRowLabel for multiple selection.");
   }

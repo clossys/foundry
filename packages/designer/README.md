@@ -4425,9 +4425,10 @@ keeps it at this layer rather than being a view (test 3).
 ### `ResourceList` (draft)
 
 A selectable record list with toolbar, bulk, recovery and footer regions.
-All visible and assistive copy comes from host props. Multiple selection requires
+All visible and assistive copy comes from host props. A non-blank `aria-label`
+is required in every state (empty, loading, error and populated). Multiple selection requires
 `selectRowLabel`; items with actions require `actionsLabel`; loading requires
-`loadingLabel`. Missing conditional labels throw `TypeError`. Error content has
+`loadingLabel`. Missing or blank labels throw `TypeError`. Error content has
 priority over loading, then empty content and records. Loading unmounts the grid
 and announces one status while decorative skeleton rows stand in for content.
 An empty collection renders `EmptyState` directly, with no grid rows.

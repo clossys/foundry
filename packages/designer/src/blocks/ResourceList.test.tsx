@@ -196,4 +196,16 @@ describe("ResourceList", () => {
     expect(screen.getByText(long)).toHaveClass("truncate");
     expect(screen.getByText(long)).toHaveAttribute("title", long);
   });
+
+  it("R13 rejects blank accessible names in every state", () => {
+    for (const label of ["", "   ", "\n\t"]) {
+      const named = { ...base, "aria-label": label };
+      expect(() => render(<ResourceList {...named} />)).toThrow(TypeError);
+      expect(() => render(<ResourceList {...named} items={[]} />)).toThrow(TypeError);
+      expect(() => render(<ResourceList {...named} isLoading loadingLabel="Fetching notes" />)).toThrow(TypeError);
+      expect(() => render(<ResourceList {...named} items={[]} error={<p>Notes unavailable</p>} />)).toThrow(TypeError);
+    }
+    render(<ResourceList {...base} items={[]} />);
+    expect(screen.getByRole("region", { name: "Notes" })).toBeVisible();
+  });
 });
