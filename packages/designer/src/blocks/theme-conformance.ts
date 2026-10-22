@@ -70,6 +70,7 @@ export const BLOCK_THEME_CONFORMANCE: readonly BlockThemeRegistration[] = [
     contrastPairs: ["link-grid/accent/surface-raised", "link-grid/accent-on-inverse/surface-inverse-raised"],
   },
   { exportName: "CommandMenu", source: "src/blocks/CommandMenu.tsx", contrastPairs: RAISED_READING },
+  { exportName: "PageBar", source: "src/blocks/PageBar.tsx", contrastPairs: BASE_READING },
   { exportName: "AppNavigation", source: "src/blocks/AppNavigation.tsx", contrastPairs: BASE_READING },
   { exportName: "Explorer", source: "src/blocks/Explorer.tsx", contrastPairs: [...BASE_READING, ...RAISED_READING] },
   { exportName: "RecordLedger", source: "src/blocks/RecordLedger.tsx", contrastPairs: GROUNDED_READING },
