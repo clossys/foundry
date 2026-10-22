@@ -179,13 +179,13 @@ surfaces and live in `@clossys/publisher/web`.
   `Separator`, `Chip`, `StatusMark`, `Meter`.
 - **`blocks`** — owns the internal layout of multiple named regions,
   typically by composing one or more atoms (and/or layout) into something
-  with a real job on a page. Forty-two ship: `AccountMenu`, `PageHeader`, `EmptyState`,
+  with a real job on a page. Forty-four ship: `AccountMenu`, `PageHeader`, `EmptyState`,
   `DataTable`, `DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`,
   `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `SectionFrame`,
   `MarketingChapter`, `FeatureGrid`, `Item`, `Items`, `Tree`, `AnatomyCallouts`, `RecordLedger`, `Scene`, `Matrix`,
   `Specimen`, `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`,
   `PricingTable`, `Testimonial`, `ArticleBody`, `ConsentBanner`, `NewsletterBand`, `Panel`, `Drawer`,
-  `ResizablePane`, `CommandMenu`, `AppNavigation` and `GroupedTable` (see "Blocks" below).
+  `ResizablePane`, `CommandMenu`, `AppNavigation`, `PageBar` and `GroupedTable` (see "Blocks" below).
 - **`shell`** — the persistent frame around content (nav, layout chrome)
   that provides the slots content fills. One per app; survives route
   changes that swap out the content underneath it. `Shell` ships with five
@@ -7636,7 +7636,7 @@ speculatively, just because a related component shipped, is the exact
 un-bounded growth this package's own "variant rule" warns against one level
 up. They get added here only once something real needs them.
 
-**Blocks:** forty-nine ship — `AccessMatrix`, `ColumnMapper`, `Lockup`, `PageHeader`, `AccountMenu`, `EmptyState`, `DataTable`, `DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`, `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `MarketingChapter`, `FeatureGrid`, `Matrix`, `Specimen`, `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`, `PricingTable`, `Testimonial`, `ArticleBody`, `SectionFrame`, `ConsentBanner`, `Panel`, `Drawer`, `ResizablePane`, `CommandMenu`, `AppNavigation`, `Explorer`, `RecordLedger`, `AnatomyCallouts`, `Scene`, `Item`, `Tree`, `Items`, `GroupedTable`, `CatalogWorkspace`, `Chat`, `NewsletterBand`. No
+**Blocks:** fifty ship — `AccessMatrix`, `ColumnMapper`, `Lockup`, `PageHeader`, `AccountMenu`, `EmptyState`, `DataTable`, `DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`, `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `MarketingChapter`, `FeatureGrid`, `Matrix`, `Specimen`, `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`, `PricingTable`, `Testimonial`, `ArticleBody`, `SectionFrame`, `ConsentBanner`, `Panel`, `Drawer`, `ResizablePane`, `CommandMenu`, `AppNavigation`, `PageBar`, `Explorer`, `RecordLedger`, `AnatomyCallouts`, `Scene`, `Item`, `Tree`, `Items`, `GroupedTable`, `CatalogWorkspace`, `Chat`, `NewsletterBand`. No
 `FilterBar` block:
 `DataTable`'s own `toolbar` slot (and `Toolbar`'s own `search` slot) are
 deliberately plain `ReactNode`s, not a block with its own opinion about
@@ -8239,6 +8239,52 @@ Left/Right expand or collapse a parent, reversing in RTL. Enter/Space activate
 destinations or disclosure. Native forced-color adjustment and reduced motion
 remain supported. The interactive Material and helpers use the existing client
 blocks entry; no server-subset export or application-frame assembly is added.
+
+### PageBar
+
+`PageBar` is the draft standalone page bar that AppFrame composes. It owns a
+page trail, current heading, information popover, actions and width control.
+Supply `root`, `width`, `onWidthChange` and all six `labels`; `brand` is an
+optional leading slot. `narrow` collapses ancestors and secondary actions,
+while `reserveStart` and `reserveEnd` leave room for host corner controls.
+`onHeightChange` reports measured bar height. PageBar uses the explicit `width`
+prop; `page.width` carries AppFrame's optional page default.
+
+`PageBarProps` describes the host inputs. `PageBarPage`, `PageBarCrumb`,
+`PageBarAction` and `PageBarDestination` describe the authored data;
+`PageBarLabels` requires the six strings, and `PageBarWidth` is
+`"contained" | "full"`.
+
+```tsx
+import { useState } from "react";
+import { PageBar, type PageBarPage } from "@clossys/designer/blocks";
+
+const page: PageBarPage = {
+  title: "Quarterly report",
+  breadcrumb: [
+    { id: "projects", label: "Projects", href: "/projects" },
+    { id: "reporting", label: "Reporting", href: "/projects/reporting",
+      siblings: [{ id: "planning", label: "Planning", href: "/projects/planning" }] },
+    { id: "quarterly", label: "Quarterly report",
+      siblings: [{ id: "annual", label: "Annual report", href: "/projects/reporting/annual" }] },
+  ],
+  status: "Draft", description: "Revenue and usage for the last three months.", updatedAt: "Updated 2 hours ago",
+  actions: [
+    { id: "share", label: "Share", primary: true, onAction: () => {} },
+    { id: "export", label: "Export", href: "/projects/reporting/quarterly/export" },
+    { id: "archive", label: "Archive", onAction: () => {} },
+  ],
+};
+
+export function ReportBar() {
+  const [width, setWidth] = useState<"contained" | "full">("contained");
+  return <PageBar root={{ label: "Workspace", href: "/" }} page={page} width={width} onWidthChange={setWidth}
+    workspaces={[{ id: "operations", label: "Operations", href: "/operations" }, { id: "research", label: "Research", href: "/research" }]}
+    labels={{ breadcrumb: "Breadcrumb", collapsedBreadcrumb: "More breadcrumb levels", pageInfo: "Page information",
+      fullWidth: "Use full width", containedWidth: "Use contained width", pageActions: "More page actions" }} />;
+}
+```
+
 ### Account menu composition example
 
 `APP_FRAME_MATERIALS` includes the `account-menu` selection for `AccountMenu`,
