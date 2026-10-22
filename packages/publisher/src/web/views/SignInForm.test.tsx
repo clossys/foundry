@@ -91,6 +91,38 @@ const MODULE_SPECIFIER =
 const ALLOWED_IMPORT = /^(react|@clossys\/designer\/.+|@clossys\/writer|\.{1,2}\/.+)$/;
 
 describe("SignInForm :: steps", () => {
+  it("stretches every step and keeps secondary actions before the primary in DOM and focus order", async () => {
+    const { user } = setupCodeStep();
+    expect(screen.getByRole("button", { name: defaultText("sign-in.primary") }).parentElement)
+      .toHaveAttribute("data-actions-layout", "stretch");
+    await reachPasswordStep(user);
+    const passwordPrimary = screen.getByRole("button", { name: defaultText("password.primary") });
+    const passwordActions = passwordPrimary.parentElement!;
+    expect(passwordActions).toHaveAttribute("data-actions-layout", "stretch");
+    expect([...passwordActions.children].map(child => child.textContent))
+      .toEqual([defaultText("password.secondary"), defaultText("password.primary")]);
+    screen.getByLabelText(defaultText("password.label")).focus();
+    await user.tab();
+    expect(screen.getByRole("button", { name: defaultText("password.secondary") })).toHaveFocus();
+    await user.tab();
+    expect(passwordPrimary).toHaveFocus();
+    await user.type(screen.getByLabelText(defaultText("password.label")), "correct horse");
+    await user.click(passwordPrimary);
+    const code = await screen.findByLabelText(defaultText("code.label"));
+    const primary = screen.getByRole("button", { name: defaultText("code.primary") });
+    const region = primary.parentElement!;
+    expect(region).toHaveAttribute("data-actions-layout", "stretch");
+    expect([...region.children].map(child => child.textContent))
+      .toEqual([defaultText("code.secondary"), defaultText("password.secondary"), defaultText("code.primary")]);
+    code.focus();
+    await user.tab();
+    expect(screen.getByRole("button", { name: defaultText("code.secondary") })).toHaveFocus();
+    await user.tab();
+    expect(screen.getByRole("button", { name: defaultText("password.secondary") })).toHaveFocus();
+    await user.tab();
+    expect(primary).toHaveFocus();
+  });
+
   it("identify ok shows the signed-in-as line; change returns to identify with the value kept; verify ok calls onSignedIn once", async () => {
     const { handlers, user } = setup();
 

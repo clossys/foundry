@@ -1092,6 +1092,9 @@
   .mb-lg {
     margin-bottom: var(--spacing-lg, 16px);
   }
+  .mb-md {
+    margin-bottom: var(--spacing-md, 12px);
+  }
   .mb-sm {
     margin-bottom: var(--spacing-sm, 8px);
   }
@@ -1721,6 +1724,11 @@
   }
   .gap-xs {
     gap: var(--spacing-xs, 4px);
+  }
+  :where(.space-y-md > :not(:last-child)) {
+    --tw-space-y-reverse: 0;
+    margin-block-start: calc(var(--spacing-md, 12px) * var(--tw-space-y-reverse, 0));
+    margin-block-end: calc(var(--spacing-md, 12px) * calc(1 - var(--tw-space-y-reverse, 0)));
   }
   .gap-x-2xl {
     column-gap: var(--spacing-2xl, 32px);
@@ -2371,6 +2379,9 @@
   }
   .p-xs {
     padding: var(--spacing-xs, 4px);
+  }
+  .px-0 {
+    padding-inline: 0px;
   }
   .px-0\.5 {
     padding-inline: calc(var(--spacing, 0.25rem) * 0.5);
@@ -3201,6 +3212,12 @@
     .tablet\:absolute {
       position: absolute;
     }
+    .tablet\:sticky {
+      position: sticky;
+    }
+    .tablet\:start-0 {
+      inset-inline-start: calc(var(--spacing, 0.25rem) * 0);
+    }
     .tablet\:col-span-2 {
       grid-column: span 2 / span 2;
     }
@@ -3336,6 +3353,9 @@
     .tablet\:justify-center {
       justify-content: center;
     }
+    .tablet\:justify-end {
+      justify-content: flex-end;
+    }
     .tablet\:justify-start {
       justify-content: flex-start;
     }
@@ -3395,6 +3415,9 @@
     }
     .tablet\:pb-xl {
       padding-bottom: var(--spacing-xl, 24px);
+    }
+    .tablet\:align-top {
+      vertical-align: top;
     }
     .tablet\:text-display-l {
       font-size: var(--text-display-l, 56px);
@@ -4265,6 +4288,11 @@
   syntax: "*";
   inherits: false;
 }
+@property --tw-space-y-reverse {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0;
+}
 @property --tw-border-style {
   syntax: "*";
   inherits: false;
@@ -4493,6 +4521,7 @@
       --tw-rotate-z: initial;
       --tw-skew-x: initial;
       --tw-skew-y: initial;
+      --tw-space-y-reverse: 0;
       --tw-border-style: solid;
       --tw-leading: initial;
       --tw-font-weight: initial;
