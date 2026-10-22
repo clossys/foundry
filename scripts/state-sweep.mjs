@@ -169,7 +169,9 @@ async function sweep(browser, options) {
             const x = box.x + (box.width - 44) / 2, y = box.y + (box.height - 44) / 2;
             const points = [[x+1,y+1],[x+43,y+1],[x+1,y+43],[x+43,y+43],[x+22,y+22],
               [x+22,y+1],[x+22,y+43],[x+1,y+22],[x+43,y+22]];
-            return points.every(([x,y]) => document.elementsFromPoint(x,y).some(node => node === el || el.contains(node)));
+            // Only the TOPMOST hit counts: an element deeper in the stack sits
+            // under a cover and would never receive the click.
+            return points.every(([x,y]) => { const top = document.elementsFromPoint(x,y)[0]; return !!top && el.contains(top); });
           });
           if (hitArea) measured.push({ ...identity, footprint: hitArea, verifiedMinimum: { inlineSize: 44, blockSize: 44 } });
           else if (unresolvedPseudo) unverified.push({ ...identity, reason: 'Pseudo-element geometry needs verification' });
