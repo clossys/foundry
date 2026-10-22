@@ -189,13 +189,13 @@ and its exception list can only shrink.
   `Separator`, `Chip`, `StatusMark`, `Meter`, `ResizeHandle`, `Logomark`, `GridList`.
 - **`blocks`** — owns the internal layout of multiple named regions,
   typically by composing one or more atoms (and/or layout) into something
-  with a real job on a page. Fifty ship: `AccountMenu`, `PageHeader`, `EmptyState`,
+  with a real job on a page. Fifty-one ship: `AccountMenu`, `PageHeader`, `EmptyState`,
   `DataTable`, `DetailView`, `Pagination`, `UsageMeter`, `Stat`, `Form`, `FieldGroup`,
   `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `SectionFrame`,
   `MarketingChapter`, `FeatureGrid`, `Item`, `Items`, `Tree`, `AnatomyCallouts`, `RecordLedger`, `Scene`, `Matrix`,
   `Specimen`, `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`,
   `PricingTable`, `Testimonial`, `ArticleBody`, `ConsentBanner`, `NewsletterBand`, `Panel`, `Drawer`,
-  `ResizablePane`, `CommandMenu`, `AppNavigation`, `PageBar`, `GroupedTable`, `Lockup`, `Explorer`, `CatalogWorkspace`, `Chat` and `ResourceList` (see "Blocks" below).
+  `ResizablePane`, `CommandMenu`, `AppNavigation`, `PageBar`, `GroupedTable`, `Lockup`, `Explorer`, `CatalogWorkspace`, `CatalogBrowser`, `Chat` and `ResourceList` (see "Blocks" below).
 - **`shell`** — the persistent frame around content (nav, layout chrome)
   that provides the slots content fills. One per app; survives route
   changes that swap out the content underneath it. `Shell` ships with five
@@ -7816,7 +7816,7 @@ speculatively, just because a related component shipped, is the exact
 un-bounded growth this package's own "variant rule" warns against one level
 up. They get added here only once something real needs them.
 
-**Blocks:** fifty-two ship — `AccessMatrix`, `ColumnMapper`, `Lockup`, `PageHeader`, `AccountMenu`, `EmptyState`, `DataTable`, `DetailView`, `Pagination`, `UsageMeter`, `Stat`, `Form`, `FieldGroup`, `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `MarketingChapter`, `FeatureGrid`, `Matrix`, `Specimen`, `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`, `PricingTable`, `Testimonial`, `ArticleBody`, `SectionFrame`, `ConsentBanner`, `Panel`, `Drawer`, `ResizablePane`, `CommandMenu`, `AppNavigation`, `PageBar`, `Explorer`, `RecordLedger`, `AnatomyCallouts`, `Scene`, `Item`, `Tree`, `Items`, `GroupedTable`, `CatalogWorkspace`, `Chat`, `NewsletterBand` and `ResourceList` — completing this layer. No
+**Blocks:** fifty-three ship — `AccessMatrix`, `ColumnMapper`, `Lockup`, `PageHeader`, `AccountMenu`, `EmptyState`, `DataTable`, `DetailView`, `Pagination`, `UsageMeter`, `Stat`, `Form`, `FieldGroup`, `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `MarketingChapter`, `FeatureGrid`, `Matrix`, `Specimen`, `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`, `PricingTable`, `Testimonial`, `ArticleBody`, `SectionFrame`, `ConsentBanner`, `Panel`, `Drawer`, `ResizablePane`, `CommandMenu`, `AppNavigation`, `PageBar`, `Explorer`, `RecordLedger`, `AnatomyCallouts`, `Scene`, `Item`, `Tree`, `Items`, `GroupedTable`, `CatalogWorkspace`, `CatalogBrowser`, `Chat`, `NewsletterBand` and `ResourceList` — completing this layer. No
 `FilterBar` block:
 `DataTable`'s own `toolbar` slot (and `Toolbar`'s own `search` slot) are
 deliberately plain `ReactNode`s, not a block with its own opinion about
@@ -8843,8 +8843,9 @@ identities, text, sparse arrays, cycles and excessive node counts throw a
 TypeError. The node limit makes the rendered tree suitable for bounded catalogs;
 this block does not virtualize or fetch more items.
 
-Groups start collapsed. Pointer, Enter and Space toggle groups and request
-leaf selection. Up/Down follow visible preorder, Right expands or enters a
+Groups start collapsed unless `defaultExpandedIds` names them; a changed list
+re-applies that disclosure, and ids that name no group are ignored. Pointer,
+Enter and Space toggle groups and request leaf selection. Up/Down follow visible preorder, Right expands or enters a
 group, Left collapses or reaches the parent, and Home/End reach the first/last
 visible row. One visible row owns the tree tab stop. Removing the focused row
 recovers focus to the first visible row while the tree owns focus. Arrows and
@@ -8872,6 +8873,110 @@ the stacked layout; the client then adopts matchMedia and removes its change
 listener on unmount. Rows, selection, focused controls and slot instances are
 preserved across this change. No animated layout transition is introduced.
 Light and dark surfaces follow the existing Panel, Button and Badge tokens.
+
+
+### CatalogBrowser
+
+`CatalogBrowser` is a whole catalog page in one Block: an explorer, a renderer
+and a configurator over one or more catalog manifests. It composes
+CatalogWorkspace (Explorer browse, preview and inspector panes), Toolbar,
+SearchField, Select, Switch, Tabs, SectionHeader, DetailView, Badge and
+EmptyState. The host binds manifests and one preview slot per catalog kind and
+writes no browser code; every visible string comes from `labels`. Import this
+client composition from `@clossys/designer/blocks`.
+
+| Export | Kind | Contract |
+| --- | --- | --- |
+| `CatalogBrowser` | component | Browse, search, filter, select, render and configure catalog entries. |
+| `CatalogBrowserProps` | type | Catalogs, per-kind bindings, names, selection, configuration and states. |
+| `CatalogBrowserCatalog` | type | One manifest: its kind, two-level groups and entries. |
+| `CatalogBrowserEntry` | type | The entry fields the browser reads: id, label, l1, l2, lifecycle and notes. |
+| `CatalogBrowserEntryOf` | type | The entry type of one kind within a union of catalogs. |
+| `CatalogBrowserGroup` | type | A top-level group with its ordered sub-groups. |
+| `CatalogBrowserKind` | type | One kind's preview slot, controls, not-built rule, detail bindings and filters. |
+| `CatalogBrowserLabels` | type | Every visible string, including count and lifecycle text. |
+| `CatalogBrowserLifecycle` | type | `draft`, `stable`, `deprecated` or `parked`. |
+| `CatalogBrowserSelection` | type | The selected catalog and entry id, or null for none. |
+| `CatalogBrowserConfig` | type | Configurator values keyed by control id. |
+| `CatalogBrowserControl` | type | A choice, toggle or text control with its default value. |
+| `CatalogBrowserPreviewContext` | type | The kind and resolved configuration passed to the preview slot. |
+| `CatalogBrowserReference` | type | A built-from or used-by link to an entry in any catalog. |
+| `CatalogBrowserFilter` | type | A host browse filter and the entry value it compares. |
+| `CatalogBrowserField` | type | One extra metadata row. |
+| `CatalogBrowserBadge` | type | One extra header badge with an optional tone. |
+
+```tsx
+import { CatalogBrowser, type CatalogBrowserLabels } from "@clossys/designer/blocks";
+
+interface IconEntry {
+  id: string; label: string; l1: string; l2: string;
+  lifecycle: "draft" | "stable" | "deprecated" | "parked";
+  vendored: boolean;
+}
+
+const icons = {
+  kind: "icons" as const,
+  groups: [{ id: "actions", label: "Actions", children: [{ id: "edit", label: "Edit" }] }],
+  entries: [
+    { id: "icon.pencil", label: "Pencil", l1: "actions", l2: "edit", lifecycle: "stable", vendored: true },
+    { id: "icon.eraser", label: "Eraser", l1: "actions", l2: "edit", lifecycle: "draft", vendored: false },
+  ] satisfies IconEntry[],
+};
+
+const labels: CatalogBrowserLabels = {
+  catalogs: "Catalogs", toolbar: "Browse tools", search: "Search", anyValue: "Any",
+  showParked: count => `Show parked (${count})`, entryCount: count => `${count} entries`,
+  lifecycle: { draft: "Draft", stable: "Stable", deprecated: "Deprecated", parked: "Parked" },
+  browse: "Entries", preview: "Entry", inspector: "Controls", resizeBrowse: "Resize entries",
+  resizeInspector: "Resize controls", selectEntry: "Select an entry", noMatches: "No entries match",
+  empty: "No entries yet", unknownEntry: id => `No entry ${id}`, loading: "Loading catalog",
+  notBuilt: "Not built", livePreview: "Live preview", metadata: "Metadata", id: "ID", group: "Group",
+  lifecycleField: "Lifecycle", notes: "Notes", states: "States", usage: "Usage",
+  builtFrom: "Built from", usedBy: "Used by", noControls: "No controls", resetControls: "Reset",
+};
+
+export function IconCatalog() {
+  return <CatalogBrowser label="Icon catalog" labels={labels} catalogs={[icons]} kinds={{
+    icons: {
+      label: "Icons",
+      preview: (entry, { config }) => <span data-size={config.size}>{entry.label}</span>,
+      controls: () => [{ type: "choice", id: "size", label: "Size",
+        options: [{ id: "sm", label: "Small" }, { id: "md", label: "Medium" }], defaultValue: "md" }],
+      notBuilt: entry => entry.vendored ? undefined : "Not vendored yet.",
+    },
+  }} />;
+}
+```
+
+The explorer lists each catalog's groups, sub-groups and entries in manifest
+order, one tab per catalog when there is more than one. Search matches an
+entry's label or id; filters compare each host filter's `value(entry)` with
+the chosen option, with `labels.anyValue` first. Parked entries stay hidden
+until the parked switch shows them, and the selected entry stays listed
+through any search or filter. Groups a search or filter leaves empty are
+dropped and matching groups open; otherwise declared groups remain and the
+groups of a selection made outside the tree open. Tree keyboard and focus
+behaviour is Explorer's.
+
+The renderer calls the kind's `preview(entry, { kind, config })` for the
+selected entry and surrounds it with the detail template: a header with the
+group path, id and lifecycle badges, then metadata (ID, group, lifecycle, the
+kind's `fields` and the entry's notes), states, usage, and built-from and
+used-by links that select their target, across catalogs. A reference with no
+target renders as text. When `notBuilt(entry)` returns a reason the preview
+slot is not called; a status shows the reason and the configurator has no
+controls. An unknown selected id shows an alert.
+
+The configurator renders one Select, Switch or TextField per control and a
+reset action. Selection and configuration are each controlled
+(`selection`/`config` with their change callbacks) or uncontrolled
+(`defaultSelection`). Uncontrolled configuration returns to control defaults
+when the selection changes; controlled configuration is completed with
+defaults for missing ids. `isLoading` shows a loading status and `error`
+replaces the browser with host recovery content; neither needs catalogs.
+Missing labels, duplicate kinds or entry ids, missing kind bindings, entries
+that name no declared group and the reserved filter option id
+`catalog-browser-any` throw a TypeError.
 
 
 ### DataTable saved views

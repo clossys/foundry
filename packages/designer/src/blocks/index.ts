@@ -247,6 +247,8 @@ export type { GraphNode, GraphEdge, GraphInput, GraphModelEdge, GraphModel, Grap
 
 export { CatalogWorkspace } from "./CatalogWorkspace.js";
 export type { CatalogWorkspaceProps, CatalogWorkspaceItem, CatalogWorkspaceSize } from "./CatalogWorkspace.js";
+export { CatalogBrowser } from "./CatalogBrowser.js";
+export type { CatalogBrowserProps, CatalogBrowserCatalog, CatalogBrowserEntry, CatalogBrowserEntryOf, CatalogBrowserGroup, CatalogBrowserKind, CatalogBrowserLabels, CatalogBrowserLifecycle, CatalogBrowserSelection, CatalogBrowserConfig, CatalogBrowserControl, CatalogBrowserPreviewContext, CatalogBrowserReference, CatalogBrowserFilter, CatalogBrowserField, CatalogBrowserBadge } from "./CatalogBrowser.js";
 
 export { Chat } from "./chat/Chat.js";
 export type { ChatProps, ChatMessage, ChatActions, ChatLabels } from "./chat/types.js";
