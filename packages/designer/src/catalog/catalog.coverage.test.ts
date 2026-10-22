@@ -4,11 +4,24 @@
  * glyph, atom and block this package declares or exports has exactly one
  * home. Changing a frozen list is a deliberate, reviewed edit.
  */
+import { existsSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import * as ATOM_EXPORTS from "../atoms/index.js";
+import * as CHART_EXPORTS from "../charts/index.js";
 import * as ICON_EXPORTS from "../icons/index.js";
+import * as SHELL_EXPORTS from "../shell/index.js";
 import { IDENTITY_VARIANT_ROLES } from "../tokens/identity-kit.js";
 import { TOKENS } from "../tokens/tokens.js";
-import { ASSET_ENTRIES, ICON_ENTRIES, TOKEN_ENTRIES, TOKEN_EXCLUSIONS } from "./index.js";
+import {
+  ASSET_ENTRIES,
+  ATOM_ENTRIES,
+  ATOM_EXPORT_EXCLUSIONS,
+  ICON_ENTRIES,
+  TOKEN_ENTRIES,
+  TOKEN_EXCLUSIONS,
+} from "./index.js";
 import type { TokenId } from "./types.js";
 
 /** Frozen token leaf ids, 168. */
@@ -78,6 +91,31 @@ const FROZEN_ICON_IDS: readonly string[] = [
   "CreditCard", "Receipt", "Briefcase",
   "ShieldCheck", "Lock", "Scale",
   "Box", "Layers", "Plug",
+];
+
+/** Frozen atom leaf ids, 78. */
+const FROZEN_ATOM_IDS: readonly string[] = [
+  "act.button", "act.icon-button", "act.menu", "act.toolbar", "act.toggle-button",
+  "act.link", "act.breadcrumb", "reveal.tabs", "act.navigation-tree",
+  "enter.text-field", "enter.textarea", "enter.search-field", "enter.token-field",
+  "enter.checkbox", "enter.checkbox-group", "enter.switch", "enter.radio-group", "enter.segmented-control",
+  "enter.select", "enter.combo-box", "enter.listbox", "enter.tag-field",
+  "enter.number-field", "enter.slider",
+  "enter.date-field", "enter.time-field", "enter.calendar", "enter.range-calendar", "enter.date-picker",
+  "enter.date-range-picker",
+  "enter.color-field", "enter.color-picker", "enter.color-area", "enter.color-slider", "enter.color-wheel",
+  "depict.color-swatch", "enter.color-swatch-picker",
+  "enter.file-trigger", "enter.drop-zone",
+  "enter.field", "enter.form",
+  "inform.badge", "inform.chip", "inform.meter", "group.table", "group.grid-list", "group.tree",
+  "depict.text", "depict.kbd",
+  "depict.avatar", "depict.icon", "depict.logomark",
+  "depict.bar-chart", "depict.line-chart", "depict.sparkline", "depict.waterfall-chart", "depict.range-chart",
+  "depict.scatter-chart", "depict.area-chart", "depict.heatmap", "depict.status-strip",
+  "inform.banner", "inform.status-mark", "inform.toast",
+  "inform.progress-bar", "inform.spinner", "inform.skeleton",
+  "group.card", "group.separator", "reveal.disclosure", "reveal.accordion", "group.group", "enter.resize-handle",
+  "reveal.dialog", "reveal.popover", "reveal.tooltip", "reveal.sheet", "reveal.preview-card",
 ];
 
 /** Ids that appear more than once in a list. */
@@ -196,6 +234,53 @@ describe("asset catalog coverage", () => {
     for (const entry of ASSET_ENTRIES) {
       expect(entry.display !== undefined, entry.id).toBe(entry.kind === "display");
       if (entry.kind !== "file") expect(entry.files, entry.id).toEqual([]);
+    }
+  });
+});
+
+describe("atom catalog coverage", () => {
+  const ids = ATOM_ENTRIES.map((entry) => entry.id);
+  const leafExports = ATOM_ENTRIES.flatMap((entry) => (entry.export === null ? [] : [entry.export]));
+  const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
+
+  it("matches the frozen id list exactly, 78 leaves", () => {
+    expect(duplicates(ids)).toEqual([]);
+    expect(FROZEN_ATOM_IDS).toHaveLength(78);
+    expect(ids).toHaveLength(78);
+    expect([...ids].sort()).toEqual([...FROZEN_ATOM_IDS].sort());
+  });
+
+  it("places every atom and chart export exactly once: as a leaf or an exclusion", () => {
+    const exported = [...Object.keys(ATOM_EXPORTS), ...Object.keys(CHART_EXPORTS)];
+    expect(duplicates(exported)).toEqual([]);
+    const accounted = [...leafExports.filter((name) => name !== "Toaster"), ...Object.keys(ATOM_EXPORT_EXCLUSIONS)];
+    expect(duplicates(accounted)).toEqual([]);
+    expect([...exported].sort()).toEqual([...accounted].sort());
+  });
+
+  it("registers the shell's toast once, from the shell entry", () => {
+    expect(Object.keys(SHELL_EXPORTS)).toContain("Toaster");
+    expect(leafExports.filter((name) => name === "Toaster")).toHaveLength(1);
+  });
+
+  it("counts 46 leaves on the default branch (9 parked), 15 in flight and 17 gaps", () => {
+    const count = (status: string) => ATOM_ENTRIES.filter((entry) => entry.status === status).length;
+    expect([count("main"), count("parked"), count("in-flight"), count("gap")]).toEqual([37, 9, 15, 17]);
+  });
+
+  it("gives built leaves an export and real files, and unbuilt leaves neither", () => {
+    for (const entry of ATOM_ENTRIES) {
+      const built = entry.status === "main" || entry.status === "parked";
+      expect(entry.export !== null, entry.id).toBe(built);
+      expect(entry.files.length > 0, entry.id).toBe(built);
+      for (const file of entry.files) expect(existsSync(join(packageRoot, file)), file).toBe(true);
+    }
+  });
+
+  it("parks exactly the charts", () => {
+    for (const entry of ATOM_ENTRIES) {
+      expect(entry.status === "parked", entry.id).toBe(entry.l2 === "charts");
+      expect(entry.disposition === "park", entry.id).toBe(entry.l2 === "charts");
     }
   });
 });
