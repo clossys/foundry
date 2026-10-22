@@ -1,5 +1,7 @@
 import { act, cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type { ReactElement } from "react";
+import { I18nProvider } from "react-aria-components";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ChevronLeft } from "../icons/ChevronLeft.js";
 import { ChevronRight } from "../icons/ChevronRight.js";
@@ -43,26 +45,41 @@ describe("MediaGallery", () => {
     await waitFor(() => expect(thumbnail).toHaveFocus());
   });
 
-  it.each([
-    ["ltr", "ArrowLeft", "ArrowRight"],
-    ["rtl", "ArrowRight", "ArrowLeft"],
-  ])("mirrors arrow navigation for %s (mutant: no RTL mirroring)", async (direction, previous, next) => {
+  // The lightbox is portalled outside the host's DOM subtree, so a provider's
+  // direction never reaches it through inheritance (mutant: read the direction
+  // from the portal only, or ignore the provider).
+  const DIRECTION_CASES: Array<[string, "ltr" | "rtl", (gallery: ReactElement) => ReactElement, string | undefined]> = [
+    ["I18nProvider ar on an ltr document", "rtl", gallery => <I18nProvider locale="ar">{gallery}</I18nProvider>, undefined],
+    ["I18nProvider en on an ltr document", "ltr", gallery => <I18nProvider locale="en">{gallery}</I18nProvider>, undefined],
+    ["document dir ltr", "ltr", gallery => gallery, "ltr"],
+    ["document dir rtl", "rtl", gallery => gallery, "rtl"],
+    ["host dir rtl wrapper", "rtl", gallery => <div dir="rtl">{gallery}</div>, undefined],
+  ];
+
+  it.each(DIRECTION_CASES)("mirrors arrow keys and chevrons for %s (mutant: no RTL mirroring)", async (_name, direction, wrap, documentDir) => {
     const user = userEvent.setup();
-    document.documentElement.setAttribute("dir", direction);
-    render(<MediaGallery {...props()} />);
+    if (documentDir) document.documentElement.setAttribute("dir", documentDir);
+    render(wrap(<MediaGallery {...props()} />));
+    const [previousKey, nextKey] = direction === "rtl" ? ["ArrowRight", "ArrowLeft"] : ["ArrowLeft", "ArrowRight"];
     await user.click(screen.getByRole("button", { name: "Inspect Panel 2" }));
     await screen.findByRole("dialog", { name: "Panel 2" });
     const previousButton = screen.getByRole("button", { name: "Earlier panel" });
     const nextButton = screen.getByRole("button", { name: "Later panel" });
     expect(previousButton.querySelector("path")).toHaveAttribute("d", ChevronLeft[0]![1].d);
     expect(nextButton.querySelector("path")).toHaveAttribute("d", ChevronRight[0]![1].d);
-    // The arrow turns with the writing direction through CSS alone (mutant: drop the class).
+    // The chevrons turn through the rtl variant, which needs the resolved
+    // direction on the portalled content itself (mutant: drop the class or the dir).
     expect(previousButton).toHaveClass("rtl:rotate-180");
     expect(nextButton).toHaveClass("rtl:rotate-180");
-    await user.keyboard(`{${previous}}`);
+    const directionRoot = previousButton.closest("[dir]");
+    expect(directionRoot).toHaveAttribute("dir", direction);
+    expect(screen.getByRole("dialog")).toContainElement(directionRoot as HTMLElement);
+    await user.keyboard(`{${previousKey}}`);
     expect(screen.getByRole("dialog", { name: "Panel 1" })).toBeInTheDocument();
-    await user.keyboard(`{${next}}`);
+    await user.keyboard(`{${nextKey}}`);
     expect(screen.getByRole("dialog", { name: "Panel 2" })).toBeInTheDocument();
+    await user.keyboard(`{${nextKey}}`);
+    expect(screen.getByRole("dialog", { name: "Panel 3" })).toBeInTheDocument();
   });
 
   it("disables boundary controls without wrapping and retains focus inside (mutant: wrap)", async () => {

@@ -4,6 +4,7 @@ import { useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEve
 import { Dialog } from "../atoms/Dialog.js";
 import { IconButton } from "../atoms/IconButton.js";
 import { cx } from "../atoms/internal/cx.js";
+import { useLocaleDirection } from "../atoms/internal/locale-direction.js";
 import { UI_LAYOUT_TAP_TARGET } from "../atoms/internal/ui-vars.js";
 import { ChevronLeft } from "../icons/ChevronLeft.js";
 import { ChevronRight } from "../icons/ChevronRight.js";
@@ -44,8 +45,12 @@ const COLUMN_CLASSES = {
   3: "grid-cols-2 tablet:grid-cols-3 desktop:grid-cols-3",
   4: "grid-cols-2 tablet:grid-cols-3 desktop:grid-cols-4",
 } as const;
-/** The chevrons point left and right; under the rtl variant the arrow turns with the writing direction. */
+/** The chevrons point left and right; under the rtl variant the arrow turns with the lightbox's resolved direction. */
 const MIRROR_IN_RTL = "rtl:rotate-180";
+/** The writing direction the host gives an element, computed or inherited through `dir`. */
+function hostIsRtl(element: Element): boolean {
+  return (getComputedStyle(element).direction || element.closest("[dir]")?.getAttribute("dir")) === "rtl";
+}
 const ASPECT_CLASSES = {
   "1:1": "aspect-square",
   "4:3": "aspect-4/3",
@@ -57,6 +62,10 @@ export function MediaGallery({ items, columns = 3, aspect = "4:3", openLabel, cl
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const content = useRef<HTMLDivElement>(null);
   const pendingFocus = useRef<0 | 1 | null>(null);
+  const [hostRtl, setHostRtl] = useState(false);
+  // The lightbox portals outside both the provider's and the host's DOM subtree,
+  // so it inherits neither; resolve the direction here and set it on the content.
+  const rtl = useLocaleDirection() === "rtl" || hostRtl;
   useLayoutEffect(() => {
     const requested = pendingFocus.current;
     pendingFocus.current = null;
@@ -87,9 +96,6 @@ export function MediaGallery({ items, columns = 3, aspect = "4:3", openLabel, cl
 
   function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     if (openIndex === null) return;
-    // Read the writing direction when the key is pressed, as ResizeHandle does.
-    const element = event.currentTarget;
-    const rtl = (getComputedStyle(element).direction || element.closest("[dir]")?.getAttribute("dir")) === "rtl";
     let target: number;
     switch (event.key) {
       case "ArrowLeft": target = openIndex + (rtl ? 1 : -1); break;
@@ -107,7 +113,7 @@ export function MediaGallery({ items, columns = 3, aspect = "4:3", openLabel, cl
       <ul {...rest} role="list" className={cx("m-0 grid list-none gap-md p-0", COLUMN_CLASSES[columns], colors.surface, colors.primary, className)} style={style}>
         {items.map((item, index) => (
           <li key={item.id} className="min-w-0">
-            <button type="button" aria-label={openLabel(item.alt)} onClick={() => setOpenIndex(index)} style={{ minBlockSize: UI_LAYOUT_TAP_TARGET }} className={cx("relative block w-full overflow-hidden rounded-control border-0 bg-transparent p-0 focus-visible:outline-2 focus-visible:outline-offset-2", ASPECT_CLASSES[aspect], focusClass)}>
+            <button type="button" aria-label={openLabel(item.alt)} onClick={event => { setHostRtl(hostIsRtl(event.currentTarget)); setOpenIndex(index); }} style={{ minBlockSize: UI_LAYOUT_TAP_TARGET }} className={cx("relative block w-full overflow-hidden rounded-control border-0 bg-transparent p-0 focus-visible:outline-2 focus-visible:outline-offset-2", ASPECT_CLASSES[aspect], focusClass)}>
               <span className="absolute inset-0 flex items-center justify-center overflow-hidden">{item.thumbnail}</span>
             </button>
           </li>
@@ -115,7 +121,7 @@ export function MediaGallery({ items, columns = 3, aspect = "4:3", openLabel, cl
       </ul>
       <Dialog trigger={null} isOpen={openIndex !== null} onOpenChange={isOpen => { if (!isOpen) setOpenIndex(null); }} size="lg">
         {current && openIndex !== null ? (
-          <div ref={content} onKeyDown={onKeyDown} className="flex min-w-0 flex-col gap-md">
+          <div ref={content} dir={rtl ? "rtl" : "ltr"} onKeyDown={onKeyDown} className="flex min-w-0 flex-col gap-md">
             <Dialog.Heading className="sr-only">{current.alt}</Dialog.Heading>
             <div className="max-h-[60vh] w-full min-w-0 max-w-full overflow-auto">{current.full}</div>
             {current.caption !== undefined ? <div className="text-body-s text-ink-secondary">{current.caption}</div> : null}
