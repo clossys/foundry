@@ -2,9 +2,9 @@
 
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { ModalContext, PopoverContext } from "react-aria-components";
-import { Button, Icon, Link, Menu, Popover } from "@clossys/designer/atoms";
-import { Box, ChevronDown, ExternalLink, Layers, List, Search } from "@clossys/designer/icons";
-import { AccountMenu, AppNavigation, CommandMenu, Drawer, ResizablePane, useCommandMenuShortcut, type DrawerProps } from "@clossys/designer/blocks";
+import { Button, Icon, Menu } from "@clossys/designer/atoms";
+import { Layers, List, Search } from "@clossys/designer/icons";
+import { AccountMenu, AppNavigation, PageBar, CommandMenu, Drawer, ResizablePane, useCommandMenuShortcut, type DrawerProps } from "@clossys/designer/blocks";
 import { ThemeProvider, ThemeToggle } from "@clossys/designer/theme";
 import { AppFrameBrand } from "./AppFrameBrand.js";
 import { SiteSkipLink } from "./SkipLink.client.js";
@@ -35,128 +35,6 @@ function SignedOutMenu({ sections, signedOutLabel, onRoute }: AppFrameAccount) {
         onAction={entry.kind === "link" ? () => onRoute?.(entry) : entry.kind === "preference" ? undefined : entry.onAction}>{entry.label}</Menu.Item>)}
     </Menu.Section>)}
   </Menu>;
-}
-
-type Page = NonNullable<AppFrameProps["page"]>;
-type Action = NonNullable<Page["actions"]>[number];
-type Crumb = NonNullable<Page["breadcrumb"]>[number];
-type Destination = NonNullable<AppFrameProps["workspaces"]>[number];
-
-function PageAction({ label, href, onAction, isDisabled, primary }: Action) {
-  return href !== undefined
-    ? <Link href={href} buttonVariant={primary ? "primary" : "ghost"} isDisabled={isDisabled} className="min-w-0 max-w-full"
-        data-application-frame-action={primary ? "primary" : "secondary"}><span className="min-w-0 truncate">{label}</span></Link>
-    : <Button variant={primary ? "primary" : "ghost"} onPress={onAction} isDisabled={isDisabled} className="min-w-0 max-w-full"
-        data-application-frame-action={primary ? "primary" : "secondary"}><span className="min-w-0 truncate">{label}</span></Button>;
-}
-
-function CrumbMenu({ label, href, id, siblings }: Crumb) {
-  return <Menu trigger={<Button variant="ghost" className={CONTROL + " min-w-0 gap-xs"} style={TAP}><span className="truncate">{label}</span><Icon glyph={ChevronDown} decorative size="sm" /></Button>}>
-    {href && <Menu.Item id={id} href={href}>{label}</Menu.Item>}
-    {siblings?.map(item => <Menu.Item key={item.id} id={item.id} href={item.href}>{item.label}</Menu.Item>)}
-  </Menu>;
-}
-
-function PageTrail({ brand, title, breadcrumb = [], workspaces, narrow,
-  /** @default "Breadcrumb" */ breadcrumbLabel = "Breadcrumb",
-  /** @default "More breadcrumb levels" */ collapsedBreadcrumbLabel = "More breadcrumb levels",
-}: Pick<AppFrameProps, "brand" | "workspaces" | "breadcrumbLabel" | "collapsedBreadcrumbLabel"> & Pick<Page, "title" | "breadcrumb"> & { narrow: boolean }) {
-  const current = breadcrumb.at(-1)?.label === title ? breadcrumb.at(-1) : undefined;
-  const ancestors = current ? breadcrumb.slice(0, -1) : breadcrumb;
-  return <nav aria-label={breadcrumbLabel} className="min-w-0 flex-1">
-    <ol className="m-0 flex min-w-0 list-none items-center gap-xs p-0">
-      <li className="min-w-0 shrink-0">
-        {workspaces?.length ? <CrumbMenu id="workspace" label={brand.wordmark} siblings={workspaces} /> :
-          <Link href={brand.href} variant="standalone" className={CONTROL} style={TAP}>{brand.wordmark}</Link>}
-      </li>
-      {narrow && ancestors.length > 0
-        ? <li className="shrink-0"><Menu trigger={<Button variant="ghost" className={CONTROL} style={TAP} aria-label={collapsedBreadcrumbLabel}><span aria-hidden="true">...</span></Button>}>
-            {ancestors.map(item => <Menu.Section key={item.id} heading={item.label}>
-              <Menu.Item id={JSON.stringify([item.id])} href={item.href}>{item.label}</Menu.Item>
-              {item.siblings?.map(sibling => <Menu.Item key={sibling.id} id={JSON.stringify([item.id, sibling.id])} href={sibling.href}>{sibling.label}</Menu.Item>)}
-            </Menu.Section>)}
-          </Menu></li>
-        : ancestors.map(item => <li key={item.id} className="min-w-0 shrink-0">
-            {item.siblings?.length ? <CrumbMenu {...item} /> : <Link href={item.href} variant="standalone" className={CONTROL} style={TAP}>{item.label}</Link>}
-          </li>)}
-      <li className="min-w-0 flex-1">
-        <h1 aria-current="page" className="m-0 truncate text-body font-semibold">{title}</h1>
-        {current?.siblings?.length ? <CrumbMenu {...current} /> : null}
-      </li>
-    </ol>
-  </nav>;
-}
-
-interface BarProps extends Pick<AppFrameProps, "brand" | "page" | "workspaces" | "breadcrumbLabel" | "collapsedBreadcrumbLabel" | "pageInfoLabel" | "fullWidthLabel" | "containedWidthLabel" | "pageActionsLabel" | "dir"> {
-  width: "contained" | "full";
-  onWidthChange: (width: "contained" | "full") => void;
-  narrow: boolean;
-  navigationDocked: boolean;
-  panelDocked: boolean;
-  panelPresent: boolean;
-  onHeight: (height: number) => void;
-}
-function FrameBar({ brand, page, workspaces, width, onWidthChange, narrow, navigationDocked, panelDocked, panelPresent, onHeight, dir,
-  breadcrumbLabel, collapsedBreadcrumbLabel,
-  /** @default "Page information" */ pageInfoLabel = "Page information",
-  /** @default "Use full width" */ fullWidthLabel = "Use full width",
-  /** @default "Use contained width" */ containedWidthLabel = "Use contained width",
-  /** @default "More page actions" */ pageActionsLabel = "More page actions",
-}: BarProps) {
-  const bar = useRef<HTMLElement>(null);
-  const [glass, setGlass] = useState(false);
-  const [infoOpen, setInfoOpen] = useState(false);
-  const [barWidth, setBarWidth] = useState<number>();
-  const [direction, setDirection] = useState(dir);
-  useEffect(() => {
-    const reduced = window.matchMedia("(prefers-reduced-transparency: reduce)");
-    const forced = window.matchMedia("(forced-colors: active)");
-    const sync = () => setGlass(!reduced.matches && !forced.matches && Boolean(globalThis.CSS?.supports?.("backdrop-filter", APP_FRAME_LAYOUT.blur) || globalThis.CSS?.supports?.("-webkit-backdrop-filter", APP_FRAME_LAYOUT.blur)));
-    sync(); reduced.addEventListener("change", sync); forced.addEventListener("change", sync);
-    return () => { reduced.removeEventListener("change", sync); forced.removeEventListener("change", sync); };
-  }, []);
-  useEffect(() => {
-    const measure = () => {
-      if (!bar.current) return;
-      const rect = bar.current.getBoundingClientRect();
-      if (rect.height > 0) onHeight(rect.height);
-      setBarWidth(rect.width || undefined);
-      setDirection(dir ?? appFrameDirection(bar.current));
-    };
-    measure();
-    const observer = typeof ResizeObserver === "function" ? new ResizeObserver(measure) : undefined;
-    if (bar.current) observer?.observe(bar.current);
-    window.addEventListener("resize", measure);
-    return () => { observer?.disconnect(); window.removeEventListener("resize", measure); };
-  }, [dir, onHeight, page, narrow, width, infoOpen]);
-  const primary = page?.actions?.find(action => action.primary);
-  const information = page && [page.status, page.description, page.updatedAt, page.meta, page.scope].some(value => value !== undefined && value !== null && value !== false);
-  return <header ref={bar} data-application-frame-region="bar" className="relative flex min-w-0 flex-wrap items-center gap-xs rounded-control border border-line-base p-sm text-ink-primary"
-    style={{ position: "sticky", insetBlockStart: APP_FRAME_LAYOUT.gutter, marginBlockStart: APP_FRAME_LAYOUT.gutter, marginInline: APP_FRAME_LAYOUT.gutter,
-      paddingInlineStart: navigationDocked ? APP_FRAME_LAYOUT.gap : `calc(${APP_FRAME_LAYOUT.tap} + ${APP_FRAME_LAYOUT.gap})`,
-      paddingInlineEnd: panelDocked || !panelPresent ? APP_FRAME_LAYOUT.gap : `calc(${APP_FRAME_LAYOUT.tap} + ${APP_FRAME_LAYOUT.gap})`,
-      backgroundColor: glass ? APP_FRAME_LAYOUT.glass : APP_FRAME_LAYOUT.raised,
-      backdropFilter: glass ? APP_FRAME_LAYOUT.blur : "none", WebkitBackdropFilter: glass ? APP_FRAME_LAYOUT.blur : "none", zIndex: APP_FRAME_LAYOUT.barLayer }}>
-    <AppFrameBrand {...brand} />
-    {page && <PageTrail brand={brand} title={page.title} breadcrumb={page.breadcrumb} workspaces={workspaces} narrow={narrow} breadcrumbLabel={breadcrumbLabel} collapsedBreadcrumbLabel={collapsedBreadcrumbLabel} />}
-    {information && <Popover anchorRef={bar} className="text-body text-ink-primary" aria-label={pageInfoLabel} placement="bottom start" offset={0} isOpen={infoOpen} onOpenChange={setInfoOpen}
-      trigger={<Button variant="ghost" className={CONTROL} style={TAP} aria-label={pageInfoLabel} aria-expanded={infoOpen}><Icon glyph={ChevronDown} decorative className={infoOpen ? "rotate-180" : undefined} /></Button>}
-      style={{ direction, inlineSize: barWidth, maxInlineSize: `calc(100vw - 2 * ${APP_FRAME_LAYOUT.gutter})` }}>
-      <div data-application-frame-region="page-info" className="flex flex-wrap items-start gap-sm">
-        <div>{page?.status}</div><div>{page?.description}</div><div>{page?.updatedAt}</div><div>{page?.meta}</div><div>{page?.scope}</div>
-      </div>
-    </Popover>}
-    <div data-application-frame-region="bar-actions" className="ms-auto flex min-w-0 items-center justify-end gap-xs" style={{ flexBasis: narrow ? "100%" : undefined }}>
-      {page?.actions?.map(action => (!narrow || action === primary) && <PageAction key={action.id} {...action} primary={action === primary} />)}
-      {narrow && page?.actions?.some(action => action !== primary) && <Menu trigger={<Button variant="ghost" className={CONTROL} style={TAP} aria-label={pageActionsLabel}><Icon glyph={ChevronDown} decorative /></Button>}>
-        {page.actions.filter(action => action !== primary).map(action => <Menu.Item key={action.id} id={action.id} href={action.href} isDisabled={action.isDisabled} onAction={action.onAction}>{action.label}</Menu.Item>)}
-      </Menu>}
-      <div className="ms-xs shrink-0 border-s border-line-base ps-xs">
-        {width === "full" ? <Button variant="ghost" className={CONTROL} style={TAP} aria-label={containedWidthLabel} aria-pressed={true} onPress={() => onWidthChange("contained")}><Icon glyph={Box} decorative /></Button> :
-          <Button variant="ghost" className={CONTROL} style={TAP} aria-label={fullWidthLabel} aria-pressed={false} onPress={() => onWidthChange("full")}><Icon glyph={ExternalLink} decorative /></Button>}
-      </div>
-    </div>
-  </header>;
 }
 
 function FrameContent({ brand, navigation, account, commands, children, rightPanel, theme, themeControl, dir, page, workspaces, width: suppliedStageWidth, onWidthChange, breadcrumbLabel, collapsedBreadcrumbLabel, pageInfoLabel, fullWidthLabel, containedWidthLabel, pageActionsLabel,
@@ -331,9 +209,10 @@ function FrameContent({ brand, navigation, account, commands, children, rightPan
       <div className="flex min-h-0 min-w-0 flex-1 justify-center overflow-hidden">
         <div data-application-frame-region="stage" data-stage-width={stageWidth} data-stage-navigation={layout.navigationOverlay ? "overlay" : "docked"} data-stage-panel={narrow ? "overlay" : "docked"}
           style={{ inlineSize: "100%", minInlineSize: 0, maxInlineSize: stageWidth === "contained" ? APP_FRAME_LAYOUT.maximum : "none", marginInline: "auto", overflowY: "auto", overflowX: "hidden", scrollPaddingBlockStart: `calc(${barHeight ? `${barHeight}px` : APP_FRAME_LAYOUT.tap} + 2 * ${APP_FRAME_LAYOUT.gutter})` }}>
-          <FrameBar brand={brand} page={page} workspaces={workspaces} width={stageWidth} onWidthChange={stageChange} narrow={!wide}
-            navigationDocked={navigationDocked} panelDocked={panelDocked} panelPresent={Boolean(rightPanel)} onHeight={setBarHeight} dir={dir}
-            breadcrumbLabel={breadcrumbLabel} collapsedBreadcrumbLabel={collapsedBreadcrumbLabel} pageInfoLabel={pageInfoLabel} fullWidthLabel={fullWidthLabel} containedWidthLabel={containedWidthLabel} pageActionsLabel={pageActionsLabel} />
+          <PageBar brand={<AppFrameBrand {...brand} />} root={{ label: brand.wordmark, href: brand.href }} page={page} workspaces={workspaces} width={stageWidth} onWidthChange={stageChange} narrow={!wide}
+            reserveStart={!navigationDocked} reserveEnd={Boolean(rightPanel) && !panelDocked} onHeightChange={setBarHeight} dir={dir}
+            labels={{ breadcrumb: breadcrumbLabel ?? "Breadcrumb", collapsedBreadcrumb: collapsedBreadcrumbLabel ?? "More breadcrumb levels", pageInfo: pageInfoLabel ?? "Page information",
+              fullWidth: fullWidthLabel ?? "Use full width", containedWidth: containedWidthLabel ?? "Use contained width", pageActions: pageActionsLabel ?? "More page actions" }} />
           <main id={target} tabIndex={-1} className="min-h-0 min-w-0 p-md focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent">{children}</main>
         </div>
       </div>
