@@ -1250,6 +1250,12 @@
     max-inline-size: calc(var(--sc-w, 880) * 1px);
     overflow: visible;
   }
+  .line-clamp-2 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
   .nav-disclosure-toggle[aria-label] {
     font-size: 0;
   }
@@ -2161,6 +2167,9 @@
   }
   .bg-surface-base {
     background-color: var(--color-surface-base, oklch(0.9702 0 0));
+  }
+  .bg-surface-glass {
+    background-color: var(--color-surface-glass, oklch(1 0 0 / 0.6));
   }
   .bg-surface-inverse {
     background-color: var(--color-surface-inverse, oklch(0.2178 0 0));
@@ -3282,6 +3291,9 @@
     .tablet\:hidden {
       display: none;
     }
+    .tablet\:inline-flex {
+      display: inline-flex;
+    }
     .tablet\:table {
       display: table;
     }
@@ -3998,6 +4010,13 @@
     .forced-colors\:outline {
       outline-style: var(--tw-outline-style, solid);
       outline-width: 1px;
+    }
+    .forced-colors\:outline-2 {
+      outline-style: var(--tw-outline-style, solid);
+      outline-width: 2px;
+    }
+    .forced-colors\:-outline-offset-2 {
+      outline-offset: calc(2px * -1);
     }
     .forced-colors\:outline-current {
       outline-color: currentcolor;

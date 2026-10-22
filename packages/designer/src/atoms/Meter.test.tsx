@@ -18,7 +18,47 @@ describe("Meter", () => {
     expect(bar).not.toBeNull();
     expect(bar?.textContent).toBe("");
     expect(container.querySelector("meter")).toBeNull();
-    expect(container.querySelector("[role='meter'], [role='progressbar']")).toBeNull();
+    // The root is the meter, named by the visible value text. The bar stays decoration.
+    const meter = screen.getByRole("meter", { name: "3.4x" });
+    expect(meter).toBe(container.firstElementChild);
+    expect(meter).toHaveAttribute("role", "meter progressbar");
+    expect(meter).toHaveAttribute("aria-valuemin", "0");
+    expect(meter).toHaveAttribute("aria-valuemax", "5");
+    expect(meter).toHaveAttribute("aria-valuenow", "3.4");
+    expect(meter).toHaveAttribute("aria-valuetext", "3.4x");
+    expect(bar?.closest("[role]")).toBe(meter);
+    expect(meter.querySelectorAll("[role]")).toHaveLength(0);
+  });
+
+  it("is react-aria-components' Meter: the root carries its data-rac marker and wiring", () => {
+    const { container } = render(<Meter value={1} scaleMax={2} tone="info" valueText="50%" />);
+    const root = container.firstElementChild as HTMLElement;
+    expect(root).toHaveAttribute("data-rac");
+    // The value text is react-aria-components' Label, so it is what names the meter.
+    const label = screen.getByText("50%");
+    expect(root.getAttribute("aria-labelledby")).toBe(label.id);
+    expect(label.id).not.toBe("");
+  });
+
+  it("is named by label when given, while valueText stays the visible value and aria-valuetext", () => {
+    const { container } = render(<Meter value={8420} scaleMax={10000} tone="warning" valueText="8,420 requests" label="API requests" />);
+    const meter = screen.getByRole("meter", { name: "API requests" });
+    expect(meter).toBe(container.firstElementChild);
+    expect(meter).toHaveAttribute("aria-valuetext", "8,420 requests");
+    expect(meter).toHaveAttribute("aria-valuenow", "8420");
+    expect(meter).not.toHaveAttribute("aria-labelledby");
+    const value = screen.getByText("8,420 requests");
+    expect(value).toBeVisible();
+    expect(value.tagName).toBe("SPAN");
+    expect(value).not.toHaveAttribute("id");
+    expect(screen.queryByRole("meter", { name: "8,420 requests" })).toBeNull();
+  });
+
+  it("clamps aria-valuenow to the scale while the visible text keeps the real value", () => {
+    render(<Meter value={12} scaleMax={8} tone="warning" valueText="150%" />);
+    const meter = screen.getByRole("meter", { name: "150%" });
+    expect(meter).toHaveAttribute("aria-valuenow", "8");
+    expect(meter).toHaveAttribute("aria-valuetext", "150%");
   });
 
   it("fills from the inline start to the value's share of the scale", () => {
@@ -137,7 +177,10 @@ describe("Meter previous measurement", () => {
     expect(prior?.closest("[aria-hidden='true']")).not.toBeNull();
     expect(prior?.style.insetInlineStart).toContain("25%");
     expect(prior?.textContent).toBe("");
-    expect(container.querySelector("[role='meter'], [role='progressbar'], meter")).toBeNull();
+    expect(container.querySelector("meter")).toBeNull();
+    // The decorative marker sits inside the hidden bar; the meter's name is still the current value text.
+    expect(screen.getByRole("meter", { name: "6 units" })).toBe(container.firstElementChild);
+    expect(screen.getAllByRole("meter")).toHaveLength(1);
   });
 
   it.each([0, 8])("keeps a previous value of %s at its valid scale endpoint", previous => {

@@ -189,3 +189,6 @@ export type {
 
 export { Logomark } from "./Logomark.js";
 export type { LogomarkProps, LogomarkSize, LogomarkTone, LogomarkPlate } from "./Logomark.js";
+
+export { GridList } from "./GridList.js";
+export type { GridListProps, GridListItemProps, GridListSelectionCheckboxProps } from "./GridList.js";

@@ -628,6 +628,9 @@
   .static {
     position: static;
   }
+  .sticky {
+    position: sticky;
+  }
   .inset-0 {
     inset: 0px;
   }
@@ -883,6 +886,9 @@
   .ms-md {
     margin-inline-start: var(--spacing-md, 12px);
   }
+  .ms-xs {
+    margin-inline-start: var(--spacing-xs, 4px);
+  }
   .items-order-body {
     margin-block-start: calc((1 - var(--items-wide, 0)) * var(--items-body-narrow, 0px) + var(--items-wide, 0) * (var(--spacing-2xl, 32px) + var(--spacing-lg, 16px) + var(--items-lane-wide, 0px)));
   }
@@ -1076,6 +1082,12 @@
     block-size: auto;
     max-inline-size: calc(var(--sc-w, 880) * 1px);
     overflow: visible;
+  }
+  .line-clamp-2 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
   }
   .nav-disclosure-toggle[aria-label] {
     font-size: 0;
@@ -1946,6 +1958,9 @@
   .bg-surface-base {
     background-color: var(--color-surface-base, oklch(0.9702 0 0));
   }
+  .bg-surface-glass {
+    background-color: var(--color-surface-glass, oklch(1 0 0 / 0.6));
+  }
   .bg-surface-inverse {
     background-color: var(--color-surface-inverse, oklch(0.2178 0 0));
   }
@@ -2226,6 +2241,9 @@
   .ps-sm {
     padding-inline-start: var(--spacing-sm, 8px);
   }
+  .ps-xs {
+    padding-inline-start: var(--spacing-xs, 4px);
+  }
   .pe-2xl {
     padding-inline-end: var(--spacing-2xl, 32px);
   }
@@ -2501,6 +2519,10 @@
   }
   .filter {
     filter: var(--tw-blur,) var(--tw-brightness,) var(--tw-contrast,) var(--tw-grayscale,) var(--tw-hue-rotate,) var(--tw-invert,) var(--tw-saturate,) var(--tw-sepia,) var(--tw-drop-shadow,);
+  }
+  .backdrop-filter {
+    -webkit-backdrop-filter: var(--tw-backdrop-blur,) var(--tw-backdrop-brightness,) var(--tw-backdrop-contrast,) var(--tw-backdrop-grayscale,) var(--tw-backdrop-hue-rotate,) var(--tw-backdrop-invert,) var(--tw-backdrop-opacity,) var(--tw-backdrop-saturate,) var(--tw-backdrop-sepia,);
+    backdrop-filter: var(--tw-backdrop-blur,) var(--tw-backdrop-brightness,) var(--tw-backdrop-contrast,) var(--tw-backdrop-grayscale,) var(--tw-backdrop-hue-rotate,) var(--tw-backdrop-invert,) var(--tw-backdrop-opacity,) var(--tw-backdrop-saturate,) var(--tw-backdrop-sepia,);
   }
   .disclosure-icon-motion {
     transition-property: transform, translate, scale, rotate;
@@ -3007,6 +3029,9 @@
     }
     .tablet\:hidden {
       display: none;
+    }
+    .tablet\:inline-flex {
+      display: inline-flex;
     }
     .tablet\:table {
       display: table;
@@ -3695,6 +3720,13 @@
       outline-style: var(--tw-outline-style, solid);
       outline-width: 1px;
     }
+    .forced-colors\:outline-2 {
+      outline-style: var(--tw-outline-style, solid);
+      outline-width: 2px;
+    }
+    .forced-colors\:-outline-offset-2 {
+      outline-offset: calc(2px * -1);
+    }
     .forced-colors\:outline-current {
       outline-color: currentcolor;
     }
@@ -3902,6 +3934,42 @@
   syntax: "*";
   inherits: false;
 }
+@property --tw-backdrop-blur {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-backdrop-brightness {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-backdrop-contrast {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-backdrop-grayscale {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-backdrop-hue-rotate {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-backdrop-invert {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-backdrop-opacity {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-backdrop-saturate {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-backdrop-sepia {
+  syntax: "*";
+  inherits: false;
+}
 @property --tw-ease {
   syntax: "*";
   inherits: false;
@@ -3967,6 +4035,15 @@
       --tw-drop-shadow-color: initial;
       --tw-drop-shadow-alpha: 100%;
       --tw-drop-shadow-size: initial;
+      --tw-backdrop-blur: initial;
+      --tw-backdrop-brightness: initial;
+      --tw-backdrop-contrast: initial;
+      --tw-backdrop-grayscale: initial;
+      --tw-backdrop-hue-rotate: initial;
+      --tw-backdrop-invert: initial;
+      --tw-backdrop-opacity: initial;
+      --tw-backdrop-saturate: initial;
+      --tw-backdrop-sepia: initial;
       --tw-ease: initial;
       --tw-content: "";
     }
