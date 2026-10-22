@@ -291,7 +291,10 @@ export interface IconSource {
   /** Upstream kebab-case name. */
   readonly name: string;
   readonly version: string;
-  /** Present when this package's export name differs from the upstream name. */
+  /**
+   * The earlier upstream name this package's export still follows, present
+   * when upstream has since renamed the glyph.
+   */
   readonly renamedFrom?: string;
 }
 

@@ -5,8 +5,9 @@
  * home. Changing a frozen list is a deliberate, reviewed edit.
  */
 import { describe, expect, it } from "vitest";
+import * as ICON_EXPORTS from "../icons/index.js";
 import { TOKENS } from "../tokens/tokens.js";
-import { TOKEN_ENTRIES, TOKEN_EXCLUSIONS } from "./index.js";
+import { ICON_ENTRIES, TOKEN_ENTRIES, TOKEN_EXCLUSIONS } from "./index.js";
 import type { TokenId } from "./types.js";
 
 /** Frozen token leaf ids, 168. */
@@ -53,6 +54,21 @@ const FROZEN_TOKEN_IDS: readonly string[] = [
   "--ui-duration-instant", "--ui-duration-fast", "--ui-duration-default", "--ui-duration-deliberate",
   "--default-transition-duration", "--default-transition-timing-function", "--animate-spin",
   "--animate-pulse",
+];
+
+/** Frozen glyph ids, 40. */
+const FROZEN_ICON_IDS: readonly string[] = [
+  "ChevronDown", "ChevronUp", "ChevronLeft", "ChevronRight", "ArrowRight", "ExternalLink",
+  "Search", "X", "Check", "Settings", "List", "Grid3x3",
+  "AlertTriangle", "CheckCircle", "XCircle", "Info",
+  "Sun", "Moon", "Monitor",
+  "User", "Users",
+  "Home", "Building2", "Globe", "Landmark",
+  "BookOpen", "FileText", "FileCheck", "Folder",
+  "Calendar", "Clock",
+  "CreditCard", "Receipt", "Briefcase",
+  "ShieldCheck", "Lock", "Scale",
+  "Box", "Layers", "Plug",
 ];
 
 /** Ids that appear more than once in a list. */
@@ -117,5 +133,27 @@ describe("token catalog coverage", () => {
 
   it("puts only Tailwind namespace keys in the theme", () => {
     for (const entry of TOKEN_ENTRIES) expect(entry.inTheme, entry.id).toBe(!entry.id.startsWith("--ui-"));
+  });
+});
+
+describe("icon catalog coverage", () => {
+  const ids = ICON_ENTRIES.map((entry) => entry.id);
+  const exported = Object.keys(ICON_EXPORTS);
+
+  it("matches the frozen id list exactly, 40 glyphs", () => {
+    expect(duplicates(ids)).toEqual([]);
+    expect(FROZEN_ICON_IDS).toHaveLength(40);
+    expect(ids).toHaveLength(40);
+    expect([...ids].sort()).toEqual([...FROZEN_ICON_IDS].sort());
+  });
+
+  it("places every exported glyph exactly once, and nothing else", () => {
+    expect(exported.length).toBeGreaterThan(0);
+    expect([...exported].sort()).toEqual([...ids].sort());
+  });
+
+  it("vendors each exported glyph's own data", () => {
+    const glyphs = ICON_EXPORTS as unknown as Record<string, unknown>;
+    for (const entry of ICON_ENTRIES) expect(entry.nodes, entry.id).toBe(glyphs[entry.id]);
   });
 });
