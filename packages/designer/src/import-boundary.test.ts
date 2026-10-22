@@ -1,5 +1,5 @@
 import { readFileSync, readdirSync, statSync } from "node:fs";
-import { dirname, extname, join, relative, resolve, sep } from "node:path";
+import { dirname, extname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
@@ -17,18 +17,28 @@ const SHARED = ["icons/", "tokens/", "internal/peer-version.js", "internal/decla
 const RULES = {
   atoms: { bare: /^(?:react|react-aria-components(?:\/package\.json)?|tailwind-merge)$/, local: ["atoms/", ...SHARED] },
   blocks: { bare: /^react$/, typeOnlyBare: /^react-aria-components$/, local: ["blocks/", "atoms/", ...SHARED] },
+  /**
+   * tokens, icons, internal: bare specifiers follow the blocks rule plus Node built-ins (existing
+   * CLIs and the peer probe); relative imports stay inside src (tokens/index.ts re-exports backdrop/, type-record/).
+   */
+  shared: { bare: /^(?:react|node:[a-z_/]+)$/, typeOnlyBare: /^react-aria-components$/, local: [""] },
 } as const;
+const SHARED_DIRS = ["tokens", "icons", "internal"];
+const SOURCE_EXTENSIONS = [".ts", ".tsx", ".mts", ".cts", ".js", ".jsx", ".mjs", ".cjs"];
 const BARREL_EXTRA: Record<string, RegExp> = { "blocks/index.ts": /^react-aria-components\/package\.json$/ };
 /** Every other directory: React, react-aria-components (shell), Node built-ins (CLIs), Tailwind (stylesheet compilers). */
 const OTHER_BARE = /^(?:react|react-aria-components(?:\/package\.json)?|node:[a-z_/]+)$/;
 const TAILWIND_DIRS = ["compiled-css", "hero-css"];
 /** The one computed `import()`: the conformance CLI loads a consumer's declaration file by path. */
 const COMPUTED_IMPORT_FILES = ["environment-conformance-worker.ts"];
+/** The exception list as introduced. Frozen: never add a name here. */
+const ORIGINAL_EXCEPTIONS: readonly string[] = ["blocks/CommandMenu.tsx", "blocks/Toolbar.tsx", "blocks/internal/disclosure-row.tsx"];
 /**
  * Blocks that still import react-aria-components at runtime. Expiry: remove an
- * entry when its block moves the usage behind an atom. This list may only shrink.
+ * entry when its block moves the usage behind an atom. It must stay a subset of
+ * ORIGINAL_EXCEPTIONS, so this list may only shrink.
  */
-const RUNTIME_RAC_EXCEPTIONS = ["blocks/CommandMenu.tsx", "blocks/Toolbar.tsx", "blocks/internal/disclosure-row.tsx"];
+const RUNTIME_RAC_EXCEPTIONS: readonly string[] = ["blocks/CommandMenu.tsx", "blocks/Toolbar.tsx", "blocks/internal/disclosure-row.tsx"];
 const KNOWN_PEERS = ["@internationalized/date", "react", "react-aria-components", "react-dom", "tailwind-merge", "tailwindcss"];
 const UI_LIBRARY = /radix|base-ui|headlessui|tanstack|shadcn|\bmui\b|chakra|ariakit|mantine/;
 
@@ -36,19 +46,29 @@ function collect(dir: string, out: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {
     const full = join(dir, entry);
     if (statSync(full).isDirectory()) collect(full, out);
-    else if ([".ts", ".tsx"].includes(extname(full)) && !entry.includes(".test.")) out.push(full);
+    else if (SOURCE_EXTENSIONS.includes(extname(full)) && !entry.includes(".test.")) out.push(full);
   }
   return out;
 }
 
 const COMPUTED = "<computed specifier>";
 type Ref = { spec: string; typeOnly: boolean };
+/** `import type`/`export type`, or every named specifier marked `type` (elided: verbatimModuleSyntax is off). */
+function isTypeOnly(node: ts.ImportDeclaration | ts.ExportDeclaration): boolean {
+  if (ts.isExportDeclaration(node)) {
+    const clause = node.exportClause;
+    return node.isTypeOnly || (!!clause && ts.isNamedExports(clause) && clause.elements.length > 0 && clause.elements.every(e => e.isTypeOnly));
+  }
+  const clause = node.importClause;
+  if (!clause) return false;
+  const named = clause.namedBindings;
+  return clause.isTypeOnly || (!clause.name && !!named && ts.isNamedImports(named) && named.elements.length > 0 && named.elements.every(e => e.isTypeOnly));
+}
 function importsOf(file: string): Ref[] {
   const refs: Ref[] = [];
   const visit = (node: ts.Node): void => {
     if ((ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) && node.moduleSpecifier && ts.isStringLiteral(node.moduleSpecifier)) {
-      const typeOnly = ts.isImportDeclaration(node) ? !!node.importClause?.isTypeOnly : node.isTypeOnly;
-      refs.push({ spec: node.moduleSpecifier.text, typeOnly });
+      refs.push({ spec: node.moduleSpecifier.text, typeOnly: isTypeOnly(node) });
     } else if (ts.isCallExpression(node) && (node.expression.kind === ts.SyntaxKind.ImportKeyword || (ts.isIdentifier(node.expression) && node.expression.text === "require"))) {
       const [arg] = node.arguments;
       refs.push({ spec: arg && ts.isStringLiteralLike(arg) ? arg.text : COMPUTED, typeOnly: false });
@@ -67,12 +87,13 @@ function rawViolations(): string[] {
   for (const file of collect(srcDir)) {
     const rel = relative(srcDir, file).split(sep).join("/");
     const top = rel.split("/")[0]!;
-    const rule = top === "atoms" || top === "blocks" ? RULES[top] : undefined;
+    const rule = top === "atoms" || top === "blocks" ? RULES[top] : SHARED_DIRS.includes(top) ? RULES.shared : undefined;
     for (const { spec, typeOnly } of importsOf(file)) {
       let ok: boolean;
       if (spec.startsWith(".")) {
         const target = relative(srcDir, resolve(dirname(file), spec)).split(sep).join("/");
-        ok = !rule || rule.local.some(prefix => target.startsWith(prefix)) || (rel.includes(".check.") && target === "index.js");
+        const insideSrc = !target.startsWith("..") && !isAbsolute(target);
+        ok = insideSrc && (!rule || rule.local.some(prefix => target.startsWith(prefix)) || (rel.includes(".check.") && target === "index.js"));
       } else if (rule) {
         ok = rule.bare.test(spec) || (typeOnly && "typeOnlyBare" in rule && rule.typeOnlyBare.test(spec)) || !!BARREL_EXTRA[rel]?.test(spec);
       } else {
@@ -88,12 +109,12 @@ describe("stack import boundary", () => {
   const raw = rawViolations();
   const isException = (v: string) => RUNTIME_RAC_EXCEPTIONS.some(file => v === `${file}: react-aria-components`);
 
-  it("allows only the per-directory specifiers in atoms, blocks and every other source file", () => {
+  it("allows only the per-directory specifiers in atoms, blocks, shared folders and every other source file", () => {
     expect(raw.filter(v => !isException(v))).toEqual([]);
   });
 
   it("keeps the runtime react-aria-components exception list shrink-only and still needed", () => {
-    expect(RUNTIME_RAC_EXCEPTIONS.length).toBeLessThanOrEqual(3);
+    expect(RUNTIME_RAC_EXCEPTIONS.filter(file => !ORIGINAL_EXCEPTIONS.includes(file))).toEqual([]);
     expect([...new Set(raw.filter(isException).map(v => v.split(":")[0]))].sort()).toEqual([...RUNTIME_RAC_EXCEPTIONS].sort());
   });
 
