@@ -127,6 +127,7 @@ describe("server-safe entry points resolve under react-server (test 1)", () => {
         "StatusList",
         "Testimonial",
         "Tree",
+        "UsageMeter",
       ],
     },
     { distRelPath: "shell/server.js", expectedExports: ["BADGE_INSET_SHARE", "BADGE_RADIUS_SHARE", "Brandmark", "Shell", "SiteFooter", "SiteHeader", "SkipLink", "badgePlatePath"] },
@@ -384,3 +385,32 @@ describe("native compiled collection scale boundary", () => {
     expect(execFileSync(process.execPath, ["--conditions=react-server", "-e", script], { encoding: "utf8", timeout: 10_000 })).toBe("OK");
   }, 15_000);
 });
+
+it("keeps PageBar client-only, emits all seven types and requires authored labels (M10)", () => {
+  expect(importKeysNormally("blocks/index.js")).toContain("PageBar");
+  expect(importKeysNormally("index.js")).toContain("PageBar");
+  expect(importKeysNormally("blocks/server.js")).not.toContain("PageBar");
+  expect(readFileSync(join(distDir, "blocks/PageBar.js"), "utf8")).toMatch(/^"use client";/);
+  const filename = join(packageRoot, "page-bar-consumer.check.ts");
+  const options = { strict: true, noEmit: true, skipLibCheck: true, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler };
+  const diagnosticsFor = (consumer: string) => {
+    const host = ts.createCompilerHost(options), original = host.getSourceFile.bind(host);
+    host.getSourceFile = (path, language, error, fresh) => path === filename ? ts.createSourceFile(path, consumer, language, true) : original(path, language, error, fresh);
+    return ts.getPreEmitDiagnostics(ts.createProgram([filename], options, host));
+  };
+  for (const entry of ["blocks/index.js", "index.js"]) {
+    const prelude = `import type * as B from ${JSON.stringify(join(distDir, entry))};`;
+    const valid = `${prelude}
+      const width: B.PageBarWidth = "full";
+      const destination: B.PageBarDestination = {id:"projects",label:"Projects",href:"/projects"};
+      const crumb: B.PageBarCrumb = {...destination,siblings:[destination]};
+      const action: B.PageBarAction = {id:"share",label:"Share",onAction:()=>{}};
+      const page: B.PageBarPage = {title:"Quarterly report",breadcrumb:[crumb],actions:[action],width};
+      const labels: B.PageBarLabels = {breadcrumb:"Trail",collapsedBreadcrumb:"Levels",pageInfo:"Details",fullWidth:"Expand",containedWidth:"Contain",pageActions:"Actions"};
+      const props: B.PageBarProps = {root:{label:"Workspace"},page,width,onWidthChange:()=>{},labels};`;
+    const diagnostics = diagnosticsFor(valid);
+    expect(diagnostics.map(diagnostic => ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n")), entry).toEqual([]);
+    const missing = diagnosticsFor(`${prelude} const props: B.PageBarProps = {root:{label:"Workspace"},width:"full",onWidthChange:()=>{}};`);
+    expect(missing.some(diagnostic => diagnostic.code === 2741 && /labels/.test(ts.flattenDiagnosticMessageText(diagnostic.messageText, " "))), entry).toBe(true);
+  }
+}, 30_000);

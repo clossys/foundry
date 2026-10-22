@@ -143,13 +143,16 @@ export { PageHeader } from "./PageHeader.js";
 export type { PageHeaderProps } from "./PageHeader.js";
 
 export { PricingTable } from "./PricingTable.js";
-export type { PricingTableProps, PricingTier, PricingTableHeadingLevel } from "./PricingTable.js";
+export type { PricingTableProps, PricingTier, PricingTableHeadingLevel, PricingTierPrice, PricingCellData, PricingComparison, PricingComparisonGroup, PricingComparisonRow } from "./PricingTable.js";
 
 export { SectionHeader } from "./SectionHeader.js";
 export type { SectionHeaderProps, SectionHeaderLevel } from "./SectionHeader.js";
 
 export { SectionFrame } from "./SectionFrame.js";
 export type { SectionFrameProps, SectionMeasure } from "./SectionFrame.js";
+
+export { UsageMeter } from "./UsageMeter.server.js";
+export type { UsageMeterProps, UsageMeterThreshold } from "./UsageMeter.js";
 
 export { Stat } from "./Stat.js";
 export type { StatProps, StatTrend } from "./Stat.js";
