@@ -4359,7 +4359,8 @@ colour-is-never-the-only-channel reasoning `Stat`'s trend indicator
 documents. `badge` has no built-in default text ("Recommended" or
 similar) — this package ships no copy of its own, so there is nothing
 sensible to default it to. Built on this package's own `Card` and `Badge`
-atoms (blocks may compose atoms).
+atoms and, when `comparison` is supplied, the `Matrix` block, with the
+shared section `ground` inks (blocks may compose atoms and other blocks).
 
 See [interval and comparison examples](#pricingtable-interval-and-comparison-examples)
 for interval prices, grouped comparisons, ground inks and host controls.

@@ -173,7 +173,9 @@ function comparisonRows(group: PricingComparisonGroup): MatrixGridProps["rows"] 
  * **Built on this package's own `Card` atom** (blocks may compose atoms —
  * see this package's README) for each tier's raised surface; an
  * `isHighlighted` tier layers an accent border on top via `className`,
- * merged last so it always wins over `Card`'s own default styling.
+ * merged last so it always wins over `Card`'s own default styling. When
+ * `comparison` is supplied each group is a `Matrix` grid, and `ground`
+ * selects the shared section-ground inks for the heading region.
  */
 export function PricingTable({
   heading,
