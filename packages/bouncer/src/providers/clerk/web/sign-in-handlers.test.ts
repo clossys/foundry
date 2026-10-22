@@ -514,6 +514,23 @@ describe("Clerk sign-in auth rule regressions", () => {
   });
 
   it.each([
+    ["email_code", "resendCode"], ["email_code", "verifyCode"],
+    ["phone_code", "resendCode"], ["phone_code", "verifyCode"],
+  ])("makes no Clerk calls for %s %s after code-path activation", async (strategy, operation) => {
+    const f = fake();
+    await codeStep(f, strategy);
+    expect(await f.handlers.verifyCode("code-fixture")).toEqual(OK);
+    const before = calls(f);
+    expect(before).toEqual([1, 1, 1, 1, 1]);
+    // Each matrix case owns a fresh activated flow: unavailable resets it.
+    const result = operation === "resendCode"
+      ? await f.handlers.resendCode()
+      : await f.handlers.verifyCode("code-fixture");
+    expect(calls(f)).toEqual(before);
+    expect(result).toEqual(UNAVAILABLE);
+  });
+
+  it.each([
     ["network", "identify"], ["rateLimited", "identify"],
     ["network", "abort"], ["rateLimited", "abort"],
   ])("rejects a swallowed %s send failure after %s invalidates the operation", async (failureClass, invalidation) => {
@@ -541,10 +558,12 @@ describe("Clerk sign-in auth rule regressions", () => {
     expect(calls(f)).toEqual([1, 1, 1, 0, 0]);
   });
 
-  it("does not activate a non-complete code result carrying a session id", async () => {
+  it.each([
+    "needs_second_factor", "needs_client_trust", "needs_first_factor", "missing_requirements", "needs_identifier",
+  ])("does not activate a %s code result carrying a session id", async status => {
     const f = fake();
     await codeStep(f, "totp");
-    vi.mocked(f.resource.attemptSecondFactor).mockResolvedValueOnce({ ...f.complete(), status: "needs_second_factor" });
+    vi.mocked(f.resource.attemptSecondFactor).mockResolvedValueOnce({ ...f.complete(), status });
     const result = await f.handlers.verifyCode("code-fixture");
     expect(vi.mocked(f.provider.setActive).mock.calls.length).toBe(0);
     expect(result).toEqual(UNAVAILABLE);
