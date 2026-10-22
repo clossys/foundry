@@ -7,7 +7,7 @@ import { UsageMeter, type UsageMeterProps, type UsageMeterThreshold } from "./Us
 import { Meter } from "../atoms/Meter.js";
 
 const thresholds: readonly UsageMeterThreshold[] = [
-  { at: 0.8, tone: "warning", message: "You have used more than 80 percent of this limit." },
+  { at: 0.8, tone: "warning", message: "You have used at least 80 percent of this limit." },
   { at: 1, tone: "danger", message: "You have reached this limit." },
 ];
 const sample: UsageMeterProps = {
