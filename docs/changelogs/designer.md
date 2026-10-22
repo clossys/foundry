@@ -5,6 +5,8 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+- Add the RelationGraph Navigation Material: layered directed relationships, one keyboard-navigable list, safe-link refusals and a cycle fallback.
+
 - Add the registered CommandMenu Navigation Material with host-controlled groups, filtering and open state, modal search focus and restoration, keyboard and pointer activation, and an optional SSR-safe opening shortcut.
 - Add the AppNavigation Block Material, a typed two-level host navigation tree, route ancestry and breadcrumbs, accessible rail destinations, Drawer focus handoff and a fixed footer slot. Give the Drawer close button a token-sized ghost icon presentation and visible keyboard focus.
 
