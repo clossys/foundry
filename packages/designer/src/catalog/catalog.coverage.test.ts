@@ -6,8 +6,9 @@
  */
 import { describe, expect, it } from "vitest";
 import * as ICON_EXPORTS from "../icons/index.js";
+import { IDENTITY_VARIANT_ROLES } from "../tokens/identity-kit.js";
 import { TOKENS } from "../tokens/tokens.js";
-import { ICON_ENTRIES, TOKEN_ENTRIES, TOKEN_EXCLUSIONS } from "./index.js";
+import { ASSET_ENTRIES, ICON_ENTRIES, TOKEN_ENTRIES, TOKEN_EXCLUSIONS } from "./index.js";
 import type { TokenId } from "./types.js";
 
 /** Frozen token leaf ids, 168. */
@@ -54,6 +55,14 @@ const FROZEN_TOKEN_IDS: readonly string[] = [
   "--ui-duration-instant", "--ui-duration-fast", "--ui-duration-default", "--ui-duration-deliberate",
   "--default-transition-duration", "--default-transition-timing-function", "--animate-spin",
   "--animate-pulse",
+];
+
+/** Frozen asset slot ids, 19. */
+const FROZEN_ASSET_IDS: readonly string[] = [
+  "logo.lockup.primary", "logo.lockup.on-dark", "logo.lockup.light", "logo.mark.primary", "logo.mark.mono",
+  "logo.display.sm", "logo.display.md", "logo.display.lg",
+  "favicon.svg", "favicon.ico", "app-icon.apple", "app-icon.192", "app-icon.512", "app-icon.maskable", "manifest",
+  "imagery.ratios", "imagery.treatment", "imagery.alt", "imagery.budget",
 ];
 
 /** Frozen glyph ids, 40. */
@@ -155,5 +164,38 @@ describe("icon catalog coverage", () => {
   it("vendors each exported glyph's own data", () => {
     const glyphs = ICON_EXPORTS as unknown as Record<string, unknown>;
     for (const entry of ICON_ENTRIES) expect(entry.nodes, entry.id).toBe(glyphs[entry.id]);
+  });
+});
+
+describe("asset catalog coverage", () => {
+  const ids = ASSET_ENTRIES.map((entry) => entry.id);
+
+  it("matches the frozen id list exactly, 19 slots", () => {
+    expect(duplicates(ids)).toEqual([]);
+    expect(FROZEN_ASSET_IDS).toHaveLength(19);
+    expect(ids).toHaveLength(19);
+    expect([...ids].sort()).toEqual([...FROZEN_ASSET_IDS].sort());
+  });
+
+  it("gives every identity-kit role a slot", () => {
+    const roles = new Set(ASSET_ENTRIES.map((entry) => entry.role));
+    expect(IDENTITY_VARIANT_ROLES.filter((role) => !roles.has(role))).toEqual([]);
+  });
+
+  it("carries exactly the brandmark tokens the token catalog moved here", () => {
+    const moved = Object.entries(TOKEN_EXCLUSIONS)
+      .filter(([, reason]) => reason.includes("assets catalog"))
+      .map(([id]) => id);
+    const carried = ASSET_ENTRIES.flatMap((entry) => entry.display?.tokens ?? []);
+    expect(moved).toHaveLength(6);
+    expect(duplicates(carried)).toEqual([]);
+    expect([...carried].sort()).toEqual([...moved].sort());
+  });
+
+  it("keeps display metrics on display slots only, and files off rule slots", () => {
+    for (const entry of ASSET_ENTRIES) {
+      expect(entry.display !== undefined, entry.id).toBe(entry.kind === "display");
+      if (entry.kind !== "file") expect(entry.files, entry.id).toEqual([]);
+    }
   });
 });
