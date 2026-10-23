@@ -232,9 +232,9 @@ export const BLOCK_ENTRIES: readonly BlockEntry[] = [
 
   // Explain / Evidence
   built(EVIDENCE, "Testimonial", { id: "say.testimonial", label: "Testimonial" }),
-  spec(EVIDENCE, { id: "say.testimonial-set", label: "Testimonial set", inFlight: pr(2394, "draft") }),
-  spec(EVIDENCE, { id: "items.logo-cloud", label: "Logo cloud", inFlight: pr(2394, "draft") }),
-  spec(EVIDENCE, { id: "items.people-grid", label: "People grid", inFlight: pr(2394, "draft") }),
+  exported(EVIDENCE, "TestimonialSet", { id: "say.testimonial-set", label: "Testimonial set" }),
+  exported(EVIDENCE, "LogoCloud", { id: "items.logo-cloud", label: "Logo cloud" }),
+  exported(EVIDENCE, "PeopleGrid", { id: "items.people-grid", label: "People grid" }),
 
   // Explain / Media
   built(MEDIA, "MediaFigure", { id: "say.media-figure", label: "Media figure" }),

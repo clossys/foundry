@@ -201,6 +201,15 @@ export type { TestimonialProps } from "./Testimonial.js";
 export { TableOfContents } from "./TableOfContents.js";
 export type { TableOfContentsProps, TableOfContentsItem } from "./TableOfContents.js";
 
+export { TestimonialSet } from "./TestimonialSet.js";
+export type { TestimonialSetProps, TestimonialSetItem } from "./TestimonialSet.js";
+
+export { LogoCloud } from "./LogoCloud.js";
+export type { LogoCloudProps, LogoCloudItem } from "./LogoCloud.js";
+
+export { PeopleGrid } from "./PeopleGrid.js";
+export type { PeopleGridProps, PeopleGridPerson } from "./PeopleGrid.js";
+
 export { ArticleBody } from "./ArticleBody.js";
 export type { ArticleBodyProps } from "./ArticleBody.js";
 
