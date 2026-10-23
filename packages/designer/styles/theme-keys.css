@@ -16,6 +16,11 @@
  * ════════════════════════════════════════════════════════════════════ */
 
 @theme inline {
+  --default-transition-duration: var(--ui-duration-fast, 160ms);
+  --default-transition-timing-function: var(--ease-default, cubic-bezier(.2, 0, 0, 1));
+  --color-focus-ring: var(--color-focus-ring, var(--color-accent, oklch(0.4748 0 0)));
+  --color-focus-ring-on-inverse: var(--color-focus-ring-on-inverse, var(--color-ink-on-inverse, oklch(0.9702 0 0)));
+  --radius-overlay: var(--ui-radius-overlay, var(--radius-control, 6px));
 
   /* ── COLOR · SURFACE ──────────────────────────────────────────── */
   --color-surface-base:           var(--color-surface-base, oklch(0.9702 0 0));
@@ -622,6 +627,19 @@
   }
 }
 
+/*
+ * FlowCanvas draws its edges in left-to-right coordinates and mirrors the
+ * drawing when the drawing itself is right to left. It is keyed on the
+ * element's own `:dir()`, which reads the closest `dir`, never on an ancestor
+ * `[dir]` that a nearer `dir` overrides, so the drawing always agrees with the
+ * logical node positions and the arrow keys.
+ */
+@utility flow-canvas-drawing {
+  &:dir(rtl) {
+    scale: -1 1;
+  }
+}
+
 /* Scoped layout parameters, not brand tokens; every length reads the token root. */
 @utility items-connected {
   --items-wide: 0; --items-gap-inline: var(--spacing-2xl, 32px); --items-gap-block: var(--spacing-2xl, 32px);
@@ -1031,6 +1049,105 @@
   }
 }
 
+
+/* Public CSS-only foundations are shipped before their component adoption. */
+@source inline("tap-target focus-ring focus-ring-inset focus-ring-inverse control-row control-text control-h-sm control-h-md control-h-lg table-row-density ui-loading-delayed ui-pending-label ui-skeleton ui-progress-slide ui-nav-trickle");
+
+@utility tap-target {
+  position: relative;
+  &::before {
+    content: "";
+    position: absolute;
+    inset-inline: min(0px, calc((100% - var(--ui-layout-tap-target, 44px)) / 2));
+    inset-block: min(0px, calc((100% - var(--ui-layout-tap-target, 44px)) / 2));
+    min-inline-size: var(--ui-layout-tap-target, 44px);
+    min-block-size: var(--ui-layout-tap-target, 44px);
+  }
+}
+@utility focus-ring {
+  outline: var(--ui-border-focus, 2px) solid transparent;
+  outline-offset: var(--ui-focus-offset, 2px);
+  &:focus-visible, &[data-focus-visible] { outline-color: var(--color-focus-ring, var(--color-accent, oklch(0.4748 0 0))); }
+  @media (forced-colors: active) {
+    &:focus-visible, &[data-focus-visible] { outline-color: Highlight; }
+  }
+}
+@utility focus-ring-inset {
+  outline: var(--ui-border-focus, 2px) solid transparent;
+  outline-offset: calc(-1 * var(--ui-focus-offset, 2px));
+  &:focus-visible, &[data-focus-visible] { outline-color: var(--color-focus-ring, var(--color-accent, oklch(0.4748 0 0))); }
+  @media (forced-colors: active) {
+    &:focus-visible, &[data-focus-visible] { outline-color: Highlight; }
+  }
+}
+@utility focus-ring-inverse {
+  outline: var(--ui-border-focus, 2px) solid transparent;
+  outline-offset: var(--ui-focus-offset, 2px);
+  &:focus-visible, &[data-focus-visible] { outline-color: var(--color-focus-ring-on-inverse, var(--color-ink-on-inverse, oklch(0.9702 0 0))); }
+  @media (forced-colors: active) {
+    &:focus-visible, &[data-focus-visible] { outline-color: Highlight; }
+  }
+}
+@utility control-h-sm { @apply tap-target; min-block-size: var(--ui-control-h-sm, 32px); }
+@utility control-h-md { min-block-size: var(--ui-control-h-md, var(--ui-layout-tap-target, 44px)); }
+@utility control-h-lg { min-block-size: var(--ui-control-h-lg, 52px); }
+@utility control-row {
+  min-block-size: var(--ui-control-row-h, 36px);
+  @media (pointer: coarse) { min-block-size: var(--ui-layout-tap-target, 44px); }
+}
+@utility control-text {
+  font-size: var(--text-body, 15px);
+  @media (pointer: coarse) { font-size: var(--text-body-l, 17px); }
+}
+@utility table-row-density {
+  min-block-size: var(--ui-table-row-comfortable, 48px);
+  @media (pointer: fine) {
+    &[data-density="compact"] { min-block-size: var(--ui-table-row-compact, 36px); }
+  }
+}
+
+/* These recipes are defined without adopting them in any existing Atom. */
+@keyframes overlay-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes overlay-pop {
+  from { opacity: 0; transform: translateY(var(--ui-motion-shift, 4px)); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes overlay-zoom {
+  from { opacity: 0; transform: scale(.98); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes sheet-slide {
+  from { opacity: 0; transform: translateX(calc(-1 * var(--ui-motion-shift, 4px))); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  @keyframes overlay-pop { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes overlay-zoom { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes sheet-slide { from { opacity: 0; } to { opacity: 1; } }
+}
+
+@utility ui-loading-delayed { animation: ui-loading-reveal 1ms linear var(--ui-duration-loading-delay,150ms) both; }
+@keyframes ui-loading-reveal { from { opacity: 0; } to { opacity: 1; } }
+@utility ui-pending-label { animation: ui-loading-hide 1ms linear var(--ui-duration-loading-delay, 150ms) both; }
+@keyframes ui-loading-hide { to { opacity: 0; } }
+@utility ui-skeleton {
+  @media (forced-colors: active) { border: var(--ui-border-hairline,1px) dashed GrayText; }
+}
+@utility ui-progress-slide {
+  inline-size: 40%;
+  animation: ui-progress-slide var(--ui-duration-flash, 1200ms) var(--ease-default, cubic-bezier(.2, 0, 0, 1)) infinite;
+  &:dir(rtl) { animation-name: ui-progress-slide-rtl; }
+  @media (prefers-reduced-motion: reduce) { animation: none; inline-size: 100%; transform: scaleX(1); }
+}
+@keyframes ui-progress-slide { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
+@keyframes ui-progress-slide-rtl { from { transform: translateX(100%); } to { transform: translateX(-250%); } }
+@utility ui-nav-trickle {
+  transform-origin: left;
+  animation: ui-nav-trickle var(--ui-duration-loading-long, 10000ms) linear both;
+  &:dir(rtl) { transform-origin: right; }
+  @media (prefers-reduced-motion: reduce) { animation: none; inline-size: 100%; transform: scaleX(1); }
+}
+@keyframes ui-nav-trickle { from { transform: scaleX(0); } to { transform: scaleX(.9); } }
 /* Static scenes: live token paints and a linear accessible form at every width. */
 @utility scene-root { container: scene / inline-size; margin: 0; inline-size: 100%; min-inline-size: 0; font-family: var(--font-body, ui-sans-serif, system-ui, sans-serif); }
 @utility scene-desktop { display: none; }

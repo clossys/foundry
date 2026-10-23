@@ -194,8 +194,8 @@ and its exception list can only shrink.
   `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `SectionFrame`,
   `MarketingChapter`, `FeatureGrid`, `Item`, `Items`, `Tree`, `AnatomyCallouts`, `RecordLedger`, `Scene`, `Matrix`,
   `Specimen`, `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`,
-  `PricingTable`, `Testimonial`, `TableOfContents`, `ArticleBody`, `ConsentBanner`, `NewsletterBand`, `Panel`, `Drawer`,
-  `ResizablePane`, `CommandMenu`, `AppNavigation`, `PageBar`, `GroupedTable`, `Lockup`, `Explorer`, `CatalogWorkspace`, `Chat`, `ResourceList` and `RelationGraph` (see "Blocks" below). Current leaf, group and lifecycle
+  `PricingTable`, `Testimonial`, `TableOfContents`, `TestimonialSet`, `LogoCloud`, `PeopleGrid`, `ArticleBody`, `ConsentBanner`, `NewsletterBand`, `Panel`, `Drawer`,
+  `ResizablePane`, `CommandMenu`, `AppNavigation`, `PageBar`, `GroupedTable`, `Lockup`, `Explorer`, `CatalogWorkspace`, `CatalogBrowser`, `Chat`, `ResourceList`, `RelationGraph`, `TaskList` and `EventItem` (see "Blocks" below). Current leaf, group and lifecycle
   counts are derived from the shared catalog in the repository check
   `src/catalog/catalog.coverage.test.ts` (a repository test, not shipped in the installed package).
 - **`shell`** — the persistent frame around content (nav, layout chrome)
@@ -267,7 +267,7 @@ smallest stable subpath that owns what you need:
 
 ### Token details and selection
 
-The flat `TOKENS` registry has 188 stable property identities across brand
+The flat `TOKENS` registry has 217 stable property identities across brand
 and supported theme overlays, with zero per-token configuration. Use the
 property-keyed `TOKEN_GUIDANCE` for purpose, appropriate use, misuse or an
 alternative, the consuming CSS application and its context, and a contextual
@@ -466,7 +466,7 @@ source file's own header for the exact probe and its result). Today that's:
 | Subpath | Server-safe members |
 | --- | --- |
 | `@clossys/designer/atoms/server` | `Logomark`, `Avatar`, `Badge`, `Banner`, `Card`, `Field`, `Icon`, `Meter`, `Skeleton`, `Spinner`, `StatusMark`, `buttonLinkClassName`, `iconButtonClassName`, `iconButtonLinkClassName`, `mergeUiClasses` |
-| `@clossys/designer/blocks/server` | `Lockup`, `AnatomyCallouts`, `ArticleBody`, `Matrix`, `ContentSection`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `Item`, `Items`, `MarketingChapter`, `MediaFigure`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `RecordLedger`, `Scene`, `SectionFrame`, `SectionHeader`, `SectionIntro`, `Specimen`, `SpecimenPanel`, `Stat`, `StatusList`, `TableOfContents`, `Testimonial`, `Tree`, `UsageMeter` |
+| `@clossys/designer/blocks/server` | `Lockup`, `AnatomyCallouts`, `ArticleBody`, `Matrix`, `ContentSection`, `DetailView`, `EmptyState`, `EventItem`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `Item`, `Items`, `MarketingChapter`, `MediaFigure`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `RecordLedger`, `Scene`, `SectionFrame`, `SectionHeader`, `SectionIntro`, `Specimen`, `SpecimenPanel`, `Stat`, `StatusList`, `TableOfContents`, `TaskList`, `Testimonial`, `TestimonialSet`, `LogoCloud`, `PeopleGrid`, `Tree`, `UsageMeter` |
 | `@clossys/designer/shell/server` | `Shell`, `SiteFooter`, `SiteHeader`, `SkipLink` |
 | `@clossys/designer/charts/server` | `ChartFrame`, `BarChart`, `LineChart` (static), `WaterfallChart`, `RangeChart`, `ScatterChart`, `AreaChart` (static), `Heatmap` (static), `StatusStrip` (static), `Sparkline` |
 | `@clossys/designer/theme/server` | `getThemeInitScript` |
@@ -4458,6 +4458,60 @@ The server variant renders the same list and marks only `currentId`; its inline
 presentation is a native `<details open>`. The host owns `scroll-behavior` and the
 `scroll-margin` of the targets. Every link has a 44 px minimum height.
 
+### `TaskList`
+
+A draft server-safe checklist with visible status labels, an ordered list and
+a completion meter. The host names the section, supplies its heading outside
+the block, and authors progress and empty-state copy. Linked titles provide
+one stretched link per row; linked row content must contain no other controls.
+
+```tsx
+import { TaskList, type TaskListItem } from "@clossys/designer/blocks/server";
+
+const items: TaskListItem[] = [
+  { id: "t1", title: "Invite your team", description: "Add at least two colleagues.", status: "done" },
+  { id: "t2", title: "Connect a data source", status: "in-progress", href: "/settings/sources", meta: "Step 2 of 3" },
+  { id: "t3", title: "Review billing details", status: "blocked", description: "Waiting on an administrator." },
+  { id: "t4", title: "Publish your first report", status: "todo" },
+];
+const statusLabels = { todo: "To do", "in-progress": "In progress", blocked: "Blocked", done: "Done" };
+
+<TaskList
+  aria-label="Getting started"
+  items={items}
+  statusLabels={statusLabels}
+  progressText="1 of 4 done"
+  emptyState={{ title: "No tasks remain", description: "New tasks will appear here." }}
+/>;
+```
+
+### `EventItem`
+
+A draft server-safe history row with an actor, a host-formatted time and a
+complete host-composed summary. Changes form a definition list with authored
+from/to labels; a missing destination announces the supplied cleared label.
+Unread rows pair a decorative dot with screen-reader text. System actors use
+the existing Settings icon; people use the server Avatar. Detail and actions
+are optional host slots.
+
+```tsx
+import { EventItem, type EventRecord, type EventLabels } from "@clossys/designer/blocks/server";
+
+const event: EventRecord = {
+  id: "evt_1042", at: "2026-10-19T14:32:00Z", timeText: "Oct 19, 14:32 UTC",
+  actor: { name: "Priya Nair" },
+  summary: <><strong>Priya Nair</strong> moved invoice 1042 to <strong>Approved</strong></>,
+  changes: [
+    { id: "c1", field: "Status", from: "In review", to: "Approved" },
+    { id: "c2", field: "Approver", from: "Unassigned" },
+  ],
+  unread: true,
+};
+const labels: EventLabels = { unread: "Unread", changedFrom: "changed from", changedTo: "to", cleared: "cleared" };
+
+<EventItem event={event} labels={labels} />;
+```
+
 ### `SectionFrame`
 
 ```tsx
@@ -4518,6 +4572,135 @@ here and belongs to a separate, already-filed proposal in
 Measure and section padding come from the parent `SectionFrame` (`measure="prose"` for long-form copy). This component only applies typography. A page can hold two `ArticleBody`s (a main
 article plus a sidebar callout, or two comparison columns), which is what
 keeps it at this layer rather than being a view (test 3).
+
+### `TestimonialSet`
+
+Draft, server-safe quotation plates. The list draws no section heading; name it
+with host-authored `aria-label` or `aria-labelledby`. Each item reuses
+`Testimonial`'s figure, with body-large quote typography scoped to its plate.
+Portraits are decorative because the adjacent attribution supplies the name.
+The host sizes portrait content to its reserved box; the block clips overflow.
+
+| Prop | Contract |
+| --- | --- |
+| `items` | Required readonly `TestimonialSetItem[]`: one, two, three, four or six entries; other counts throw `TypeError`. Each entry supplies `id`, `quote`, `attributorName`, optional `attributorRole` and `portrait`. |
+| `ground` | `"base"` (default), `"sunken"` or `"inverse"`; selects the plate fill and reading inks. |
+| Native list attributes | `aria-label`, `aria-labelledby`, `className`, `style` and other native `<ul>` attributes pass through. |
+
+```tsx
+import { TestimonialSet } from "@clossys/designer/blocks/server";
+
+function ReaderAccounts() {
+  const portrait = (initials: string) => (
+    <svg viewBox="0 0 40 40" fill="currentColor" className="h-full w-full">
+      <circle cx="20" cy="20" r="18" fill="none" stroke="currentColor" />
+      <text x="20" y="25" textAnchor="middle">{initials}</text>
+    </svg>
+  );
+  return <TestimonialSet aria-label="Reader accounts" items={[
+    { id: "mira", quote: "The notes made each decision easier to follow.", attributorName: "Mira Vale", attributorRole: "Research lead", portrait: portrait("MV") },
+    { id: "oren", quote: "We could trace the change back to its source.", attributorName: "Oren Ash", attributorRole: "Editor", portrait: portrait("OA") },
+    { id: "lena", quote: "The shared record kept our review focused.", attributorName: "Lena Reed", attributorRole: "Reviewer" },
+    { id: "tavi", quote: "A clear handoff helped us start with confidence.", attributorName: "Tavi Stone", attributorRole: "Coordinator" },
+  ]} />;
+}
+```
+
+A single plate is centred with a prose-sized maximum width. Two and four
+quotes use two columns from tablet; three and six use three columns on desktop.
+The third of three spans the tablet row. This block adds no animation or state.
+
+### `LogoCloud`
+
+Draft, server-safe mark collection. Supplied artwork is decorative; an `sr-only`
+name remains available when an image fails. `href` creates a link named by that
+text, with host-owned destination policy. Inverse ground changes currentColor
+ink; the host supplies artwork suitable for that ground.
+
+| Prop | Contract |
+| --- | --- |
+| `items` | Required readonly `LogoCloudItem[]`: three, four, six, eight or twelve entries. Each entry supplies `id`, `name`, `logo` and optional `href`. Other counts throw `TypeError`. |
+| `tone` | `"monochrome"` (default) applies grayscale without dimming; `"original"` preserves supplied colours. Linked monochrome marks restore colour on hover and keyboard focus. |
+| `ground` | `"base"` (default), `"sunken"` or `"inverse"`. |
+| Native list attributes | `aria-label`, `aria-labelledby`, `className`, `style` and other native `<ul>` attributes pass through. |
+
+```tsx
+import { LogoCloud, type LogoCloudItem } from "@clossys/designer/blocks/server";
+
+function ContributorMarks() {
+  const names = ["Arc", "Branch", "Field", "Harbor", "Orbit", "Vale"];
+  const marks: LogoCloudItem[] = names.map(name => ({
+    id: name,
+    name,
+    logo: <svg viewBox="0 0 120 32" fill="currentColor" className="h-full w-full">
+      <path d="M2 16 12 4 22 16 12 28Z" />
+      <text x="28" y="22">{name}</text>
+    </svg>,
+  }));
+  return <>
+    <LogoCloud aria-label="Contributor marks" items={marks} />
+    <LogoCloud aria-label="Contributor destinations" items={marks.map(mark => ({ ...mark, href: `/contributors/${mark.id.toLowerCase()}` }))} />
+  </>;
+}
+```
+
+Six and twelve marks reach six desktop columns; four and eight reach four.
+Logo boxes reserve their height, and links use the section's focus accent.
+The host sizes its artwork inside the reserved, clipped box. Grayscale and its
+hover/focus restoration apply to the owned artwork wrapper. Automatic descendant
+image sizing is omitted under the current compiled-class scanner contract.
+
+### `PeopleGrid`
+
+Draft, server-safe people collection. Names are semantic headings; portraits and
+initials are decorative. A linked person's name uses the shared stretched-link
+title, with one anchor per person. A linked `bio` or `role` cannot contain another
+interactive target; the supplied React tree is checked at render using the same
+probe as `Items`.
+
+| Prop | Contract |
+| --- | --- |
+| `people` | Required readonly `PeopleGridPerson[]`, two through twelve entries; other counts throw `TypeError`. Each person supplies `id`, `name`, `initials`, and optional `role`, `bio`, `portrait`, `href`. |
+| `media` | `"avatar"` (default) places a small portrait beside the text; `"photo"` places square media above it. Missing portraits show authored initials. |
+| `columns` | Desktop `2`, `3` (default) or `4`; tablet uses at most three. Avatar starts at one column, photo at two. |
+| `headingLevel` | `3` (default), `4`, `5` or `6` for person names. |
+| `ground` | `"base"` (default), `"sunken"` or `"inverse"`; selects reading inks and fallback fill. |
+| Native list attributes | `aria-label`, `aria-labelledby`, `className`, `style` and other native `<ul>` attributes pass through. |
+
+```tsx
+import { PeopleGrid, type PeopleGridPerson } from "@clossys/designer/blocks/server";
+
+function ReviewTeam() {
+  const people: PeopleGridPerson[] = [
+    { id: "mira", name: "Mira Vale", initials: "MV", role: "Research lead" },
+    { id: "oren", name: "Oren Ash", initials: "OA", role: "Editor" },
+    { id: "lena", name: "Lena Reed", initials: "LR", role: "Reviewer" },
+    { id: "tavi", name: "Tavi Stone", initials: "TS", role: "Coordinator" },
+    { id: "aya", name: "Aya Glen", initials: "AG", role: "Archivist" },
+    { id: "ivo", name: "Ivo Brook", initials: "IB", role: "Facilitator" },
+    { id: "nela", name: "Nela Fern", initials: "NF", role: "Writer" },
+    { id: "remy", name: "Remy Birch", initials: "RB", role: "Illustrator" },
+  ];
+  const portraits = people.slice(0, 2).map(person => ({
+    ...person,
+    href: `/people/${person.id}`,
+    portrait: <svg viewBox="0 0 160 160" fill="currentColor" className="h-full w-full">
+      <circle cx="80" cy="56" r="24" />
+      <path d="M24 152a56 56 0 0 1 112 0Z" />
+    </svg>,
+  }));
+  return <>
+    <PeopleGrid aria-label="Review team" people={people} columns={4} />
+    <PeopleGrid aria-label="Review leads" people={portraits} media="photo" columns={2} />
+  </>;
+}
+```
+
+Partial rows start at the logical start edge. No image-load handlers, hooks or
+motion are added; the host owns portrait content and external section headings.
+Size supplied portraits to their reserved boxes, for example with `h-full w-full`
+and `object-cover` directly on an image. Descendant sizing is omitted under the
+current compiled-class scanner contract.
 
 ### `ResourceList` (draft)
 
@@ -7024,6 +7207,29 @@ not a grab-bag).
 | `ResourceListItem` | type | `id`, `textValue`, `title`, optional description, meta, media, status, href, actions and disabled state. |
 | `ResourceListAction` | type | `id`, `label`, `onAction`, optional destructive or disabled state and host disabled reason. |
 | `DataTable` | component | Controlled data grid built on `Table`'s primitives: toolbar slot, the grid itself, empty state, loading state, footer slot. |
+| `CanvasSurface` | component | Controlled world layer with native item focus, pan, zoom, marquee, minimap and zoom controls. |
+| `CanvasSurfaceProps` | type | Controlled viewport and selection callbacks, labelled item geometry, world bounds, children, passive item renderer, optional view size and controls. |
+| `CanvasPoint` | type | Readonly physical x/y coordinates. |
+| `CanvasSize` | type | Readonly width/height dimensions. |
+| `CanvasRect` | type | Readonly x/y/width/height rectangle. |
+| `Viewport` | type | Serializable screen translation x/y and positive zoom. |
+| `Selection` | type | Serializable readonly array of unique item ids. |
+| `CanvasItem` | type | Stable id, accessible label and world-space rect. |
+| `CanvasDirection` | type | Spatial direction: left, right, up or down. |
+| `CanvasMinimapModel` | type | World bounds, world-space viewport rectangle and normalized clipped visible rectangle. |
+| `panBy` | function | Return a viewport translated by screen-space delta. |
+| `zoomAt` | function | Scale a viewport while preserving the world point under a screen anchor. |
+| `fitTo` | function | Center world bounds in a view size with screen-space padding. |
+| `clamp` | function | Clamp zoom, optionally constraining translation to world bounds with an explicit view size. |
+| `toWorld` | function | Convert a screen point into world coordinates. |
+| `toScreen` | function | Convert a world point into screen coordinates. |
+| `selectSingle` | function | Return a one-id selection. |
+| `toggleSelection` | function | Toggle an id while preserving existing selection order. |
+| `selectRange` | function | Return an inclusive range in canonical id order. |
+| `selectMarquee` | function | Return ids whose world rectangles intersect an inclusive marquee, in item order. |
+| `clearSelection` | function | Return a fresh empty selection. |
+| `navigate` | function | Find the nearest item center in a directional half-plane, with input-order ties. |
+| `minimapModel` | function | Derive serializable viewport and normalized visible geometry. |
 | `DataTableProps` | type | Props for `DataTable`: `aria-label`, `columns`, `rows`, `rowKey`, `sortDescriptor`, `onSortChange`, `selectionMode`, `selectedKeys`, `onSelectionChange`, `isLoading`, `loadingRowCount`, `emptyStateTitle`, `emptyStateDescription`, `emptyStateAction`, `toolbar`, `footer`, `className`, `style`. |
 | `DataTableColumn` | type | One column definition: `id`, `header`, `cell(row)`, `allowsSorting?`, `isRowHeader?`, `width?`. |
 | `DataTableSelectionMode` | type | `"none" \| "single" \| "multiple"`. |
@@ -7182,6 +7388,16 @@ not a grab-bag).
 | `OrderedStepSequenceHeadingLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
 | `OrderedStepSequenceGround` | type | Sequence-specific alias of the shared `SectionGround`: `"base" \| "sunken" \| "inverse"`. |
 | `StatusList` | component | Grouped editorial status list: one legend and a definition list per group. |
+| `TaskList` | component | Draft ordered checklist with visible status labels and a completion meter. |
+| `TaskListProps` | type | Required `aria-label`, `items`, `statusLabels`, `progressText` and `emptyState`, plus native section attributes. |
+| `TaskListItem` | type | Task `id`, `title`, `status`, optional `description`, `href` and `meta`. |
+| `TaskStatus` | type | `"todo" \| "in-progress" \| "blocked" \| "done"`. |
+| `EventItem` | component | Draft history row with actor, time, summary, changes and unread label. |
+| `EventItemProps` | type | Required `event` and `labels`, plus native div attributes. |
+| `EventActor` | type | Actor `name`, optional `avatarSrc` and `kind` (`"person" \| "system"`). |
+| `EventChange` | type | Change `id`, `field`, optional `from` and `to`. |
+| `EventRecord` | type | Event `id`, ISO `at`, host-formatted `timeText`, `actor`, `summary`, optional `changes`, `detail`, `unread` and `actions`. |
+| `EventLabels` | type | Required authored `unread`, `changedFrom`, `changedTo` and `cleared` strings. |
 | `StatusListProps` | type | Props for `StatusList`: `eyebrow`, `heading`, `description`, `labels`, `groups?`, `items?`, `legendLabel`, `headingLevel`, `ground`, `className`, `style`, plus every native `<section>` attribute. Provide `groups` or `items`, never both. |
 | `StatusListGroup` | type | One group: `id`, `heading`, `items`. |
 | `StatusListItem` | type | One row: either `id`, `label`, `detail?`, `state`, or `id`, `label`, `detail?`, `disposition`. |
@@ -7209,6 +7425,15 @@ not a grab-bag).
 | `TableOfContents` | component | Draft navigation of 2 to 30 in-page links with the current item marked by `aria-current="location"`. Client variant tracks the current heading with an `IntersectionObserver`; the `/blocks/server` variant marks only `currentId`. Sidebar or inline presentation. |
 | `TableOfContentsProps` | type | Props for `TableOfContents`: required `label` and `items`, `presentation`, `currentId`, `trackCurrent`, `className`, `style`. |
 | `TableOfContentsItem` | type | One entry: `id` of the target element, `label`, optional `level` of 2 or 3. |
+| `TestimonialSet` | component | Draft, server-safe list of grounded quotation plates with decorative portraits. |
+| `TestimonialSetProps` | type | Native list attributes plus required `items` and optional `ground`. |
+| `TestimonialSetItem` | type | Quote identity, `quote`, `attributorName`, optional `attributorRole` and decorative `portrait`. |
+| `LogoCloud` | component | Draft, server-safe mark list with authored accessible names and optional links. |
+| `LogoCloudProps` | type | Native list attributes plus required `items`, optional `tone` and `ground`. |
+| `LogoCloudItem` | type | Mark identity, accessible `name`, decorative `logo` and optional `href`. |
+| `PeopleGrid` | component | Draft, server-safe people list with semantic name headings and decorative media. |
+| `PeopleGridProps` | type | Native list attributes plus required `people`, optional `media`, `columns`, `headingLevel` and `ground`. |
+| `PeopleGridPerson` | type | Person identity, `name`, `initials`, optional `role`, `bio`, `portrait` and `href`. |
 | `ArticleBody` | component | Thin, token-styled container for pre-structured long-form content (real `<h2>`/`<p>`/`<ul>`/... children) — no markdown parsing, no content-shape schema. |
 | `ArticleBodyProps` | type | Props for `ArticleBody`: `children`, `className`, `style`, plus every native `<article>` attribute. |
 | `SectionFrame` | component | Full-bleed marketing section band: a `ground` surface, vertical section rhythm, horizontal page padding, and a measured inner column. Sets `data-designer-section-frame` on its outer `<section>`. Compose `ArticleBody`, `Stat`, and other blocks that do not own their own band inside it. |
@@ -7874,7 +8099,7 @@ speculatively, just because a related component shipped, is the exact
 un-bounded growth this package's own "variant rule" warns against one level
 up. They get added here only once something real needs them.
 
-**Blocks:** shipped blocks include `AccessMatrix`, `ColumnMapper`, `Lockup`, `PageHeader`, `AccountMenu`, `EmptyState`, `DataTable`, `DetailView`, `Pagination`, `UsageMeter`, `Stat`, `Form`, `FieldGroup`, `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `MarketingChapter`, `FeatureGrid`, `Matrix`, `Specimen`, `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`, `PricingTable`, `Testimonial`, `TableOfContents`, `ArticleBody`, `SectionFrame`, `ConsentBanner`, `Panel`, `Drawer`, `ResizablePane`, `CommandMenu`, `AppNavigation`, `PageBar`, `Explorer`, `RecordLedger`, `AnatomyCallouts`, `Scene`, `Item`, `Tree`, `Items`, `GroupedTable`, `CatalogWorkspace`, `Chat`, `NewsletterBand`, `ResourceList` and `RelationGraph`. Current inventory counts come from the shared catalog
+**Blocks:** shipped blocks include `AccessMatrix`, `ColumnMapper`, `Lockup`, `PageHeader`, `AccountMenu`, `EmptyState`, `DataTable`, `CanvasSurface`, `DetailView`, `Pagination`, `UsageMeter`, `Stat`, `Form`, `FieldGroup`, `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `MarketingChapter`, `FeatureGrid`, `Matrix`, `Specimen`, `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`, `PricingTable`, `Testimonial`, `TableOfContents`, `TestimonialSet`, `LogoCloud`, `PeopleGrid`, `ArticleBody`, `SectionFrame`, `ConsentBanner`, `Panel`, `Drawer`, `ResizablePane`, `CommandMenu`, `AppNavigation`, `PageBar`, `Explorer`, `RecordLedger`, `AnatomyCallouts`, `Scene`, `Item`, `Tree`, `Items`, `GroupedTable`, `CatalogWorkspace`, `CatalogBrowser`, `Chat`, `NewsletterBand`, `ResourceList`, `RelationGraph`, `TaskList` and `EventItem`. Current inventory counts come from the shared catalog
 in the repository check `src/catalog/catalog.coverage.test.ts` (not shipped in the installed package). No
 `FilterBar` block:
 `DataTable`'s own `toolbar` slot (and `Toolbar`'s own `search` slot) are
@@ -8217,13 +8442,13 @@ static equivalent"). Breakpoint copy props are `thresholdLabel` ("Threshold"),
 `matchLabel` ("Match"), `unavailableMessage` ("unavailable"), `matchesMessage`
 ("yes") and `notMatchesMessage` ("no").
 
-All 188 properties support their authored applications across 19 kinds. The 170
+All 217 properties support their authored applications across 19 kinds. The 193
 static specimens cover surface, text, border, control, status, chart, font,
 space, size, icon, brandmark, radius, shadow, blur, ring, layer and opacity.
 Patterns expose translucent applications; inverse foregrounds receive an inverse
 backing. No override is claimed as measured.
 
-The 12 motion properties show their authored duration or easing and replay a
+The 18 motion properties show their authored duration or easing and replay a
 small transition when Replay is activated. Reduced-motion preferences show the
 same authored information as a static equivalent, with no transition. The six
 breakpoint properties show their resolved threshold and current media-query
@@ -8902,8 +9127,10 @@ identities, text, sparse arrays, cycles and excessive node counts throw a
 TypeError. The node limit makes the rendered tree suitable for bounded catalogs;
 this block does not virtualize or fetch more items.
 
-Groups start collapsed. Pointer, Enter and Space toggle groups and request
-leaf selection. Up/Down follow visible preorder, Right expands or enters a
+Groups start collapsed unless `defaultExpandedIds` names them. A list that gains
+an id re-applies that disclosure; one that only drops ids keeps the current
+disclosure and focus. Ids that name no group open nothing. Pointer,
+Enter and Space toggle groups and request leaf selection. Up/Down follow visible preorder, Right expands or enters a
 group, Left collapses or reaches the parent, and Home/End reach the first/last
 visible row. One visible row owns the tree tab stop. Removing the focused row
 recovers focus to the first visible row while the tree owns focus. Arrows and
@@ -8931,6 +9158,110 @@ the stacked layout; the client then adopts matchMedia and removes its change
 listener on unmount. Rows, selection, focused controls and slot instances are
 preserved across this change. No animated layout transition is introduced.
 Light and dark surfaces follow the existing Panel, Button and Badge tokens.
+
+
+### CatalogBrowser
+
+`CatalogBrowser` is a whole catalog page in one Block: an explorer, a renderer
+and a configurator over one or more catalog manifests. It composes
+CatalogWorkspace (Explorer browse, preview and inspector panes), Toolbar,
+SearchField, Select, Switch, Tabs, SectionHeader, DetailView, Badge and
+EmptyState. The host binds manifests and one preview slot per catalog kind and
+writes no browser code; every visible string comes from `labels`. Import this
+client composition from `@clossys/designer/blocks`.
+
+| Export | Kind | Contract |
+| --- | --- | --- |
+| `CatalogBrowser` | component | Browse, search, filter, select, render and configure catalog entries. |
+| `CatalogBrowserProps` | type | Catalogs, per-kind bindings, names, selection, configuration and states. |
+| `CatalogBrowserCatalog` | type | One manifest: its kind, two-level groups and entries. |
+| `CatalogBrowserEntry` | type | The entry fields the browser reads: id, label, l1, l2, lifecycle and notes. |
+| `CatalogBrowserEntryOf` | type | The entry type of one kind within a union of catalogs. |
+| `CatalogBrowserGroup` | type | A top-level group with its ordered sub-groups. |
+| `CatalogBrowserKind` | type | One kind's preview slot, controls, not-built rule, detail bindings and filters. |
+| `CatalogBrowserLabels` | type | Every visible string, including count and lifecycle text. |
+| `CatalogBrowserLifecycle` | type | `draft`, `stable`, `deprecated` or `parked`. |
+| `CatalogBrowserSelection` | type | The selected catalog and entry id, or null for none. |
+| `CatalogBrowserConfig` | type | Configurator values keyed by control id. |
+| `CatalogBrowserControl` | type | A choice, toggle or text control with its default value. |
+| `CatalogBrowserPreviewContext` | type | The kind and resolved configuration passed to the preview slot. |
+| `CatalogBrowserReference` | type | A built-from or used-by link to an entry in any catalog. |
+| `CatalogBrowserFilter` | type | A host browse filter and the entry value it compares. |
+| `CatalogBrowserField` | type | One extra metadata row. |
+| `CatalogBrowserBadge` | type | One extra header badge with an optional tone. |
+
+```tsx
+import { CatalogBrowser, type CatalogBrowserLabels } from "@clossys/designer/blocks";
+
+interface IconEntry {
+  id: string; label: string; l1: string; l2: string;
+  lifecycle: "draft" | "stable" | "deprecated" | "parked";
+  vendored: boolean;
+}
+
+const icons = {
+  kind: "icons" as const,
+  groups: [{ id: "actions", label: "Actions", children: [{ id: "edit", label: "Edit" }] }],
+  entries: [
+    { id: "icon.pencil", label: "Pencil", l1: "actions", l2: "edit", lifecycle: "stable", vendored: true },
+    { id: "icon.eraser", label: "Eraser", l1: "actions", l2: "edit", lifecycle: "draft", vendored: false },
+  ] satisfies IconEntry[],
+};
+
+const labels: CatalogBrowserLabels = {
+  catalogs: "Catalogs", toolbar: "Browse tools", search: "Search", anyValue: "Any",
+  showParked: count => `Show parked (${count})`, entryCount: count => `${count} entries`,
+  lifecycle: { draft: "Draft", stable: "Stable", deprecated: "Deprecated", parked: "Parked" },
+  browse: "Entries", preview: "Entry", inspector: "Controls", resizeBrowse: "Resize entries",
+  resizeInspector: "Resize controls", selectEntry: "Select an entry", noMatches: "No entries match",
+  empty: "No entries yet", unknownEntry: id => `No entry ${id}`, loading: "Loading catalog",
+  notBuilt: "Not built", livePreview: "Live preview", metadata: "Metadata", id: "ID", group: "Group",
+  lifecycleField: "Lifecycle", notes: "Notes", states: "States", usage: "Usage",
+  builtFrom: "Built from", usedBy: "Used by", noControls: "No controls", resetControls: "Reset",
+};
+
+export function IconCatalog() {
+  return <CatalogBrowser label="Icon catalog" labels={labels} catalogs={[icons]} kinds={{
+    icons: {
+      label: "Icons",
+      preview: (entry, { config }) => <span data-size={config.size}>{entry.label}</span>,
+      controls: () => [{ type: "choice", id: "size", label: "Size",
+        options: [{ id: "sm", label: "Small" }, { id: "md", label: "Medium" }], defaultValue: "md" }],
+      notBuilt: entry => entry.vendored ? undefined : "Not vendored yet.",
+    },
+  }} />;
+}
+```
+
+The explorer lists each catalog's groups, sub-groups and entries in manifest
+order, one tab per catalog when there is more than one. Search matches an
+entry's label or id; filters compare each host filter's `value(entry)` with
+the chosen option, with `labels.anyValue` first. Parked entries stay hidden
+until the parked switch shows them, and the selected entry stays listed
+through any search or filter. Groups a search or filter leaves empty are
+dropped and matching groups open; otherwise declared groups remain and the
+groups of a selection made outside the tree open. Tree keyboard and focus
+behaviour is Explorer's.
+
+The renderer calls the kind's `preview(entry, { kind, config })` for the
+selected entry and surrounds it with the detail template: a header with the
+group path, id and lifecycle badges, then metadata (ID, group, lifecycle, the
+kind's `fields` and the entry's notes), states, usage, and built-from and
+used-by links that select their target, across catalogs. A reference with no
+target renders as text. When `notBuilt(entry)` returns a reason the preview
+slot is not called; a status shows the reason and the configurator has no
+controls. An unknown selected id shows an alert.
+
+The configurator renders one Select, Switch or TextField per control and a
+reset action. Selection and configuration are each controlled
+(`selection`/`config` with their change callbacks) or uncontrolled
+(`defaultSelection`). Uncontrolled configuration returns to control defaults
+when the selection changes; controlled configuration is completed with
+defaults for missing ids. `isLoading` shows a loading status and `error`
+replaces the browser with host recovery content; neither needs catalogs.
+Missing labels, duplicate kinds or entry ids, missing kind bindings, entries
+that name no declared group and the reserved filter option id
+`catalog-browser-any` throw a TypeError.
 
 
 ### DataTable saved views
@@ -9504,3 +9835,182 @@ task/project objects, invalid references and unsupported versions are refused. T
 | `TimelineRow` | type | Point with span and milestone flag. |
 | `TimelineConnector` | type | Predecessor-end and successor-start pair. |
 | `TimelineLayout` | type | Origin, days per unit, rows, connectors and markers. |
+
+## Flow canvas
+
+`FlowCanvas` is a Block Material in `APP_FRAME_MATERIALS` that draws a directed
+node-and-edge diagram: boxes in layers joined by arrowed edges. Each node takes a
+stable `id`, a text `label`, an optional short `kind` and an optional `status`
+(a `StatusMark` tone with its own label). Each edge joins two node ids and may
+carry a `label`. Every visible word comes from props; `label`, `emptyMessage` and
+`outgoingLabel` are required.
+
+```tsx
+import { useState } from "react";
+import { FlowCanvas, type FlowCanvasEdge, type FlowCanvasNode } from "@clossys/designer/blocks";
+
+const steps: readonly FlowCanvasNode[] = [
+  { id: "draft", label: "Draft", kind: "Step" },
+  { id: "review", label: "Review", kind: "Gate", status: { tone: "warning", label: "Waiting" } },
+  { id: "publish", label: "Publish", kind: "Step" },
+];
+const links: readonly FlowCanvasEdge[] = [
+  { from: "draft", to: "review" },
+  { from: "review", to: "publish", label: "Approves" },
+  { from: "review", to: "draft", label: "Returns" },
+];
+
+export function FlowExample() {
+  const [selected, setSelected] = useState<string | null>(null);
+  return <FlowCanvas nodes={steps} edges={links} label="Release flow"
+    emptyMessage="No steps yet" outgoingLabel="Leads to"
+    selectedId={selected} onSelect={setSelected} />;
+}
+```
+
+`layoutFlowCanvas(nodes, edges, { orientation })` computes the drawing from the
+props alone, with no DOM measurement and no layout dependency, so the server
+renders the finished diagram and hydration changes nothing. Equal inputs give
+equal output. Layers come from the longest path; an edge that closes a cycle is
+drawn against the layer direction with its arrow still on its authored target.
+Long edges bend around the layers they cross, each layer is reordered to reduce
+crossings, and each edge gets its own port on the node's side. Invalid input
+(duplicate or empty ids, empty labels, unknown endpoints, self edges, unknown
+status tones) throws a `TypeError` that names the problem; more than
+`FLOW_CANVAS_NODE_LIMIT` nodes or `FLOW_CANVAS_EDGE_LIMIT` edges throws a
+`RangeError`. Positions are in layout units of `--spacing-xs`.
+
+The semantic source is an ordered list, named by `label`, of the nodes in
+reading order. Each node is a native button named by its label and described by
+its kind, its status and, after `outgoingLabel`, the nodes it leads to with any
+edge labels. The SVG lines, arrowheads and edge label boxes are presentation and
+hidden from assistive technology. The list is one tab stop. Arrow keys along the
+layer direction follow edges forward and back, returning along the path just
+taken where they can; arrow keys across it move between nodes in the same
+layer; Home and End jump to the first and last node. Inline keys mirror in
+right-to-left documents. Enter, Space or a click calls `onSelect`; focus alone
+never selects, and the host owns `selectedId`. The selected node and its edges
+use the accent colour and the rule border width; forced-colour mode draws edges
+in the current text colour. The canvas has no motion. It scrolls inside its own
+viewport when wider than its host; `orientation="vertical"` suits narrow
+regions. An empty `nodes` array shows `emptyMessage`. There is no inspector
+slot; the host renders details for `selectedId` beside the canvas. The
+interactive Material uses the client blocks entry and is outside the
+server-safe subsets.
+
+| Export | Kind | Contract |
+| --- | --- | --- |
+| `FlowCanvas` | component | Layered, keyboard-operable diagram with a controlled selection. |
+| `FlowCanvasProps` | type | Nodes, edges, required list name, empty message and outgoing label; optional orientation, `selectedId`, `onSelect` and `className`. |
+| `FlowCanvasNode` | type | Unique id, label, optional kind and optional status tone and label. |
+| `FlowCanvasEdge` | type | Source and target node ids with an optional label. |
+| `FlowCanvasOrientation` | type | `"horizontal"` or `"vertical"`. |
+| `FLOW_CANVAS_ORIENTATIONS` | constant | The accepted orientations. |
+| `layoutFlowCanvas` | function | Deterministic layered layout in `--spacing-xs` units. |
+| `FlowCanvasLayoutOptions` | type | Optional orientation. |
+| `FlowCanvasLayout` | type | Size, layer count, nodes in reading order and edges in authored order. |
+| `FlowCanvasLayoutNode` | type | A node's layer, position and size. |
+| `FlowCanvasLayoutEdge` | type | Route points, arrow tip, SVG path and arrowhead data, reversal flag and optional label box. |
+| `FLOW_CANVAS_NODE_LIMIT` | constant | The largest node count laid out (256). |
+| `FLOW_CANVAS_EDGE_LIMIT` | constant | The largest edge count laid out (1024). |
+
+## Shared canvas interaction layer
+
+Import `CanvasSurface` and the model functions from `@clossys/designer/blocks`.
+The headless modules contain no React or DOM operations. Their state is plain
+readonly data: `Viewport { x, y, zoom }` and `Selection`, an array of unique ids.
+Functions return new values and leave caller points, rectangles and arrays intact.
+
+```tsx
+import { useState } from "react";
+import {
+  CanvasSurface, type CanvasItem, type Selection, type Viewport,
+} from "@clossys/designer/blocks";
+
+const items: readonly CanvasItem[] = [
+  { id: "draft", label: "Draft", rect: { x: 40, y: 40, width: 160, height: 80 } },
+  { id: "review", label: "Review", rect: { x: 300, y: 160, width: 160, height: 80 } },
+];
+
+export function Diagram() {
+  const [viewport, setViewport] = useState<Viewport>({ x: 0, y: 0, zoom: 1 });
+  const [selection, setSelection] = useState<Selection>([]);
+  return <CanvasSurface
+    aria-label="Document workflow"
+    viewport={viewport} onViewportChange={setViewport}
+    selection={selection} onSelectionChange={setSelection}
+    items={items} worldBounds={{ x: 0, y: 0, width: 600, height: 400 }}
+    viewSize={{ width: 600, height: 400 }} minimap zoomControls
+    renderItem={item => <span>{item.label}</span>}
+  />;
+}
+```
+
+`CanvasSurface` requests changes through callbacks and renders the supplied values.
+It keeps transient gestures, focus and fit animation state locally. Provide a sized
+container when omitting `viewSize`; the surface measures its content box and tracks
+resizes. An explicit `viewSize` sets the content-box width and height, in pixels.
+The world layer transforms both `children` and the generated item buttons once.
+Use `children` for decorative world content such as SVG connectors; use `renderItem`
+for passive content inside the generated native button. Nested buttons, links or
+form controls inside `renderItem` are invalid HTML. Labels name the item buttons.
+Item rectangles determine target sizes; author bounds large enough for touch use.
+World geometry uses physical x/y axes, including under right-to-left page layouts;
+controls use logical inline positioning. Surface, border, focus and motion styles
+consume the existing light/dark tokens.
+
+- `toScreen(viewport, world)` computes `world * zoom + translation`;
+  `toWorld(viewport, screen)` reverses it. Surface pointer coordinates are local
+  content-box pixels, accounting for its page position and border.
+- `panBy(viewport, delta)` takes a screen delta. `zoomAt(viewport, screenAnchor,
+  factor)` preserves the anchored world point. Zoom and dimensions must be finite;
+  zoom/factors and view dimensions must be positive. World extents may be zero.
+- `fitTo(bounds, viewSize, padding = 0)` centers the bounds, with padding in screen
+  pixels. Padding must leave positive space along both axes. A point fits at zoom
+  one; a line fits using its nonzero extent.
+- `clamp(viewport, minZoom, maxZoom, worldBounds?, viewSize?)` requires positive,
+  ordered limits. With world bounds it requires a view size, constrains translation
+  to keep the visible area within the world, and centers any smaller world axis.
+  Surface gestures restrict zoom to `minZoom = 0.1` / `maxZoom = 8`; its
+  `worldBounds` supplies fit and minimap geometry. Hosts can apply headless `clamp`
+  in their callback when bounded panning is wanted. Fit recenters after applying
+  zoom limits; a limit may prevent the entire world from fitting.
+- `selectSingle(id)` replaces selection. `toggleSelection(selection, id)` retains
+  existing order and appends a newly selected id. `selectRange(order, anchor,
+  target)` returns both endpoints in canonical order, or an empty array if either
+  id is missing. `selectMarquee(items, worldRect)` includes edge/corner contact
+  and returns item order. `clearSelection()` returns an empty array.
+- `navigate(items, current, direction)` compares item centers in the strict
+  directional half-plane and chooses the smallest Euclidean distance; equal
+  distances use input order. It returns `null` at an edge, or the first item for
+  missing/current-null focus. Ids must be unique and labels nonempty.
+- `minimapModel(worldBounds, viewport, viewSize)` returns a world-space viewport
+  rectangle and a visible rectangle clipped and normalized to `[0, 1]`. A zero
+  world extent produces zero normalized extent on that axis.
+
+Drag empty space (including decorative descendants) to pan. Space+drag also pans
+from an item; Shift+drag on empty space selects an inclusive world-space marquee.
+Wheel and trackpad pinch zoom at the pointer; two touch pointers pinch around
+their midpoint. Touch item taps retain native button activation; a moved gesture
+suppresses its synthetic click. Releasing either pinch pointer ends that gesture.
+Escape, lost capture, window blur and pointer cancellation cancel a marquee.
+Owned pointer captures, wheel/resize/key listeners and observers are released on
+unmount. Wheel handling is non-passive to prevent page scrolling over the canvas.
+
+The generated buttons provide one roving tab stop. Arrow keys move actual DOM
+focus; Shift+arrows add current and destination ids in item order. Click/Enter
+selects one item; Control/Command+click toggles, and Shift+click selects a range
+from the last non-shift click. Plus/minus zoom around the view center; zero and
+Home fit; Escape clears selection. An empty surface is itself keyboard focusable.
+Consumer form inputs and independent controls retain their own keyboard handling.
+If the last non-shift-click anchor is absent from the current items, Shift+click selects only the clicked item.
+Translate the help and control names with `instructionText`, `recenterLabel`,
+`zoomGroupLabel`, `zoomOutLabel`, `zoomPercentageLabel`, `zoomInLabel` and
+`fitLabel`; their documented defaults supply English text.
+
+Set `minimap` and/or `zoomControls` to show the optional controls. A minimap click
+recenters on the clicked world point; keyboard activation recenters on the world
+center. Zoom controls report the supplied viewport percentage. Fit can animate
+using the existing motion duration; `prefers-reduced-motion` disables the fit
+transition, including when the preference changes while mounted. Pan, wheel,
+pinch and ordinary zoom requests use immediate transforms.

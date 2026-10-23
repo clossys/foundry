@@ -55,6 +55,11 @@ export type { DataTableViewModel, DataTableViewModelV1, DataTableMode, DataTable
 export { DataTable } from "./DataTable.js";
 export type { DataTableProps, DataTableColumn, DataTableSelectionMode } from "./DataTable.js";
 
+export { CanvasSurface } from "./canvas/CanvasSurface.js";
+export type { CanvasSurfaceProps } from "./canvas/CanvasSurface.js";
+export { panBy, zoomAt, fitTo, clamp, toWorld, toScreen, selectSingle, toggleSelection, selectRange, selectMarquee, clearSelection, navigate, minimapModel } from "./canvas/models.js";
+export type { CanvasPoint, CanvasSize, CanvasRect, Viewport, Selection, CanvasItem, CanvasDirection, CanvasMinimapModel } from "./canvas/models.js";
+
 export { filterRows, groupRows, pivotRows, aggregate, parseTableModel, serializeTableModel, TableModelError, tableFilterPredicate, pruneFilterColumn, TABLE_FILTER_CONFORMANCE } from "./table-model/index.js";
 export type { TableValue, TableColumnKind, TableColumn, TableCollation, TableFilter, TableFilterGroup, TableFilterNode, TableDimension, TableMeasure, TablePivot, TableModel, TableFacet, TableFilterResult, TableAggregateValue, TableAggregates, TableGroup, TablePivotAxis, TablePivotCell, TablePivotResult, TableModelErrorCode } from "./table-model/index.js";
 
@@ -173,6 +178,10 @@ export type {
 } from "./OrderedStepSequence.js";
 
 export { StatusList } from "./StatusList.js";
+export { EventItem } from "./EventItem.js";
+export type { EventActor, EventChange, EventRecord, EventLabels, EventItemProps } from "./EventItem.js";
+export { TaskList } from "./TaskList.js";
+export type { TaskStatus, TaskListItem, TaskListProps } from "./TaskList.js";
 export type {
   StatusListProps,
   StatusListGroup,
@@ -196,6 +205,15 @@ export type { TestimonialProps } from "./Testimonial.js";
 
 export { TableOfContents } from "./TableOfContents.js";
 export type { TableOfContentsProps, TableOfContentsItem } from "./TableOfContents.js";
+
+export { TestimonialSet } from "./TestimonialSet.js";
+export type { TestimonialSetProps, TestimonialSetItem } from "./TestimonialSet.js";
+
+export { LogoCloud } from "./LogoCloud.js";
+export type { LogoCloudProps, LogoCloudItem } from "./LogoCloud.js";
+
+export { PeopleGrid } from "./PeopleGrid.js";
+export type { PeopleGridProps, PeopleGridPerson } from "./PeopleGrid.js";
 
 export { ArticleBody } from "./ArticleBody.js";
 export type { ArticleBodyProps } from "./ArticleBody.js";
@@ -226,6 +244,10 @@ export { Explorer } from "./Explorer.js";
 export type { ExplorerProps } from "./Explorer.js";
 export { indexTree, getTreeAncestry, getTreeBreadcrumbs } from "./tree-model.js";
 export type { TreeNode, TreeTarget, TreeBreadcrumb, TreeValidationOptions, TreeIndex } from "./tree-model.js";
+export { FlowCanvas } from "./FlowCanvas.js";
+export type { FlowCanvasProps } from "./FlowCanvas.js";
+export { layoutFlowCanvas, FLOW_CANVAS_ORIENTATIONS, FLOW_CANVAS_NODE_LIMIT, FLOW_CANVAS_EDGE_LIMIT } from "./flow-canvas-layout.js";
+export type { FlowCanvasNode, FlowCanvasEdge, FlowCanvasOrientation, FlowCanvasLayout, FlowCanvasLayoutNode, FlowCanvasLayoutEdge, FlowCanvasLayoutOptions } from "./flow-canvas-layout.js";
 
 export { RecordLedger } from "./RecordLedger.js";
 export type { RecordLedgerProps, LedgerRowData, LedgerGroupData } from "./RecordLedger.js";
@@ -255,6 +277,8 @@ export type { GraphNode, GraphEdge, GraphInput, GraphModelEdge, GraphModel, Grap
 
 export { CatalogWorkspace } from "./CatalogWorkspace.js";
 export type { CatalogWorkspaceProps, CatalogWorkspaceItem, CatalogWorkspaceSize } from "./CatalogWorkspace.js";
+export { CatalogBrowser } from "./CatalogBrowser.js";
+export type { CatalogBrowserProps, CatalogBrowserCatalog, CatalogBrowserEntry, CatalogBrowserEntryOf, CatalogBrowserGroup, CatalogBrowserKind, CatalogBrowserLabels, CatalogBrowserLifecycle, CatalogBrowserSelection, CatalogBrowserConfig, CatalogBrowserControl, CatalogBrowserPreviewContext, CatalogBrowserReference, CatalogBrowserFilter, CatalogBrowserField, CatalogBrowserBadge } from "./CatalogBrowser.js";
 
 export { Chat } from "./chat/Chat.js";
 export type { ChatProps, ChatMessage, ChatActions, ChatLabels } from "./chat/types.js";

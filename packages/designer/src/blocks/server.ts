@@ -98,6 +98,10 @@ export type {
 } from "./OrderedStepSequence.js";
 
 export { StatusList } from "./StatusList.js";
+export { EventItem } from "./EventItem.js";
+export type { EventActor, EventChange, EventRecord, EventLabels, EventItemProps } from "./EventItem.js";
+export { TaskList } from "./TaskList.js";
+export type { TaskStatus, TaskListItem, TaskListProps } from "./TaskList.js";
 export type {
   StatusListProps,
   StatusListGroup,
@@ -162,6 +166,15 @@ export type { TestimonialProps } from "./Testimonial.js";
 
 export { TableOfContents } from "./TableOfContents.server.js";
 export type { TableOfContentsProps, TableOfContentsItem } from "./TableOfContents.js";
+
+export { TestimonialSet } from "./TestimonialSet.js";
+export type { TestimonialSetProps, TestimonialSetItem } from "./TestimonialSet.js";
+
+export { LogoCloud } from "./LogoCloud.js";
+export type { LogoCloudProps, LogoCloudItem } from "./LogoCloud.js";
+
+export { PeopleGrid } from "./PeopleGrid.js";
+export type { PeopleGridProps, PeopleGridPerson } from "./PeopleGrid.js";
 
 export { RecordLedger } from "./RecordLedger.js";
 export type { RecordLedgerProps, LedgerRowData, LedgerGroupData } from "./RecordLedger.js";

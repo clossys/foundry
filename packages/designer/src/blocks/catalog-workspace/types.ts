@@ -26,6 +26,8 @@ export interface CatalogWorkspaceProps {
   preview: (item: CatalogWorkspaceItem) => ReactNode;
   inspector: (item: CatalogWorkspaceItem) => ReactNode;
   emptyState: ReactNode;
+  /** Folders open when browse first renders. A list that gains an id re-applies disclosure; one that only drops ids keeps the current disclosure and focus. Ids that name no folder open nothing. */
+  defaultExpandedIds?: readonly string[];
   browseSize?: CatalogWorkspaceSize;
   inspectorSize?: CatalogWorkspaceSize;
   className?: string;

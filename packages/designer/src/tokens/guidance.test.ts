@@ -20,12 +20,12 @@ const additions = namespace as unknown as {
 const expected = {
   color: { surface: 9, ink: 7, line: 4, accent: 5, control: 5, status: 12, chart: 22, neutral: 11, overlay: 3, skeleton: 1 },
   typography: { "font-families": 3, "display-settings": 4, "font-sizes": 13, "letter-spacing": 4, "line-height": 2 },
-  spacing: { scale: 10, "page-inset": 1, "density-spacing": 2, "brandmark-gaps": 3 },
-  sizing: { "content-widths": 7, "app-regions": 4, "interaction-target": 1, "row-height": 1, "icon-sizes": 3, "brandmark-heights": 3, "scene-card-width": 1 },
-  shape: { "corner-radii": 7, "border-widths": 3, "icon-stroke": 1 },
-  effects: { opacity: 1, "backdrop-blur": 2, shadows: 4, rings: 2 },
-  layering: { "stacking-order": 9 },
-  motion: { duration: 6, easing: 6 },
+  spacing: { scale: 11, "page-inset": 1, "density-spacing": 2, "brandmark-gaps": 3 },
+  sizing: { "content-widths": 7, "app-regions": 6, "interaction-target": 9, "row-height": 3, "icon-sizes": 3, "brandmark-heights": 3, "scene-card-width": 1 },
+  shape: { "corner-radii": 8, "border-widths": 4, "icon-stroke": 1 },
+  effects: { opacity: 4, "backdrop-blur": 2, shadows: 4, rings: 5 },
+  layering: { "stacking-order": 11 },
+  motion: { duration: 12, easing: 6 },
   responsive: { breakpoints: 6 },
 };
 
@@ -35,14 +35,14 @@ describe("shared token guidance and display taxonomy", () => {
     expect(Object.keys(additions.TOKEN_GUIDANCE ?? {}).sort()).toEqual(Object.keys(TOKENS).sort());
   });
 
-  it("places all 188 properties once in nine groups and 37 explicitly counted families", () => {
+  it("places all 217 properties once in nine groups and 37 explicitly counted families", () => {
     expect(additions.TOKEN_DISPLAY_GROUPS, "TOKEN_DISPLAY_GROUPS must be public").toBeDefined();
     const groups = additions.TOKEN_DISPLAY_GROUPS ?? [];
     expect(groups.map(group => group.id)).toEqual(Object.keys(expected));
     expect(groups.flatMap(group => group.families)).toHaveLength(37);
     const leaves = groups.flatMap(group => group.families.flatMap(family => family.properties));
-    expect(leaves).toHaveLength(188);
-    expect(new Set(leaves).size).toBe(188);
+    expect(leaves).toHaveLength(217);
+    expect(new Set(leaves).size).toBe(217);
     expect([...leaves].sort()).toEqual(Object.keys(TOKENS).sort());
     for (const group of groups) {
       expect(group.label.trim().length).toBeGreaterThan(0);
@@ -55,11 +55,11 @@ describe("shared token guidance and display taxonomy", () => {
   it("gives every property distinct meaningful purpose, use and misuse guidance", () => {
     expect(additions.TOKEN_GUIDANCE).toBeDefined();
     const entries = Object.entries(additions.TOKEN_GUIDANCE ?? {});
-    expect(entries).toHaveLength(188);
+    expect(entries).toHaveLength(217);
     for (const field of ["purpose", "use", "misuse"] as const) {
       const texts = entries.map(([, guidance]) => guidance[field].trim());
       expect(texts.every(text => text.length > 20), field).toBe(true);
-      expect(new Set(texts).size, `${field} must distinguish properties`).toBe(188);
+      expect(new Set(texts).size, `${field} must distinguish properties`).toBe(217);
     }
     for (const [property, guidance] of entries) {
       expect(new Set([guidance.purpose, guidance.use, guidance.misuse]).size, property).toBe(3);
@@ -96,7 +96,7 @@ describe("shared token guidance and display taxonomy", () => {
   });
 
   it("leaves the source identity, defaults, flags and 31 legacy families intact", () => {
-    expect(Object.keys(TOKENS)).toHaveLength(188);
+    expect(Object.keys(TOKENS)).toHaveLength(217);
     expect(TOKEN_FAMILIES).toHaveLength(31);
     expect(Object.values(TOKENS).filter(token => token.themeDependent)).toHaveLength(50);
     for (const [property, token] of Object.entries(TOKENS)) expect(token.property).toBe(property);
@@ -108,8 +108,8 @@ describe("shared token guidance and display taxonomy", () => {
   it("gives every property one generated-sheet record, including aliases and composites", () => {
     const sheet = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "..", "..", "TOKENS.md"), "utf8");
     const records = [...sheet.matchAll(/^##### `(--[^`]+)`$/gm)].map(match => match[1]);
-    expect(records).toHaveLength(188);
-    expect(new Set(records).size).toBe(188);
+    expect(records).toHaveLength(217);
+    expect(new Set(records).size).toBe(217);
     expect(records.sort()).toEqual(Object.keys(TOKENS).sort());
     expect(records).toContain("--color-ink-on-accent");
     expect(records).toContain("--ui-ring-focus");

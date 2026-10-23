@@ -46,4 +46,7 @@
   --color-surface-glass: oklch(1 0 0 / 0.88);
   --color-surface-glass-inverse: oklch(0.2178 0 0 / 0.88);
   --color-accent-on-inverse: oklch(0.7763 0 0);
+  --color-focus-ring: var(--color-accent, oklch(0.4748 0 0));
+  --color-focus-ring-on-inverse: var(--color-ink-on-inverse, oklch(0.9702 0 0));
+  --color-overlay-surface: var(--color-surface-raised, oklch(1 0 0));
 }

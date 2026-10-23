@@ -93,10 +93,9 @@ export const UI_BORDER_HAIRLINE = "var(--ui-border-hairline, 1px)";
  * literally every other layer this package defines — including an open
  * `Menu`/`Select` popover (`--ui-z-modal`) — because a keyboard user can
  * tab to it, and land on it, at any point while other overlays are open.
- * `--ui-z-tooltip` is the highest member of the z-scale, so it's the
- * correct choice even though the skip link isn't a tooltip.
+ * The dedicated skip-link layer sits above progress and every overlay.
  */
-export const UI_Z_SKIP_LINK = "var(--ui-z-tooltip, 80)";
+export { UI_Z_SKIP_LINK } from "../../tokens/tokens.js";
 
 /** Shared brandmark bindings retain their original shell import path. */
 export {

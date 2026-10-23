@@ -8,6 +8,24 @@ import { SkipLink } from "./SkipLink.js";
 import { Toaster, toast } from "./Toaster.js";
 
 describe("shell RTL logical-direction utilities", () => {
+  it("keeps both public and Shell skip links above progress with the dedicated skip-link token", () => {
+    const { container } = render(
+      <>
+        <SkipLink targetId="public-content">Skip public navigation</SkipLink>
+        <main id="public-content" tabIndex={-1} />
+        <Shell skipLinkLabel="Skip shell navigation">
+          <Shell.Main>Content</Shell.Main>
+        </Shell>
+      </>,
+    );
+    const links = container.querySelectorAll("a");
+    expect(links).toHaveLength(2);
+    for (const link of links) {
+      expect(link.style.zIndex).toBe("var(--ui-z-skip-link, 100)");
+      expect(link.style.zIndex).not.toContain("tooltip");
+    }
+  });
+
   it("puts the SideNav divider at inline-end and Rail divider at inline-start", () => {
     render(
       <Shell>

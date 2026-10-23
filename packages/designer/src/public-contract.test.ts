@@ -7,6 +7,72 @@ import ts from "typescript";
 
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 
+describe("compiled evidence blocks public contract", () => {
+  it("exports the three components and their host-facing types through the existing barrels", () => {
+    for (const entry of ["blocks/index.js", "blocks/server.js", "index.js"]) {
+      const filename = join(packageRoot, "evidence-blocks-consumer.check.tsx");
+      const consumer = `
+        import { TestimonialSet, LogoCloud, PeopleGrid, type TestimonialSetProps, type TestimonialSetItem, type LogoCloudProps, type LogoCloudItem, type PeopleGridProps, type PeopleGridPerson } from ${JSON.stringify(join(packageRoot, "dist", entry))};
+        const quote: TestimonialSetItem = {id: "quote", quote: "Clear account.", attributorName: "Author"};
+        const quotes: TestimonialSetProps = {items: [quote], ground: "inverse", "aria-labelledby": "quotes"};
+        const mark: LogoCloudItem = {id: "mark", name: "Mark", logo: null, href: "/mark"};
+        const marks: LogoCloudProps = {items: [mark, mark, mark], tone: "original", ground: "sunken", "aria-label": "Marks"};
+        const person: PeopleGridPerson = {id: "person", name: "Person", initials: "P", role: "Reviewer", bio: "Keeps notes clear.", href: "/person"};
+        const people: PeopleGridProps = {people: [person, person], columns: 4, media: "photo", headingLevel: 6, ground: "inverse"};
+        TestimonialSet(quotes); LogoCloud(marks); PeopleGrid(people);
+      `;
+      const options = { strict: true, noEmit: true, skipLibCheck: true, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler, jsx: ts.JsxEmit.ReactJSX };
+      const host = ts.createCompilerHost(options), original = host.getSourceFile.bind(host);
+      host.getSourceFile = (path, language, error, fresh) => path === filename ? ts.createSourceFile(path, consumer, language, true, ts.ScriptKind.TSX) : original(path, language, error, fresh);
+      expect(ts.getPreEmitDiagnostics(ts.createProgram([filename], options, host)).map(diagnostic => ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n")), entry).toEqual([]);
+      const script = `import * as api from ${JSON.stringify(join(packageRoot, "dist", entry))}; process.stdout.write(JSON.stringify([typeof api.TestimonialSet, typeof api.LogoCloud, typeof api.PeopleGrid]));`;
+      expect(JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8", cwd: packageRoot })), entry).toEqual(["function", "function", "function"]);
+    }
+  }, 30_000);
+});
+
+
+describe("compiled canvas public contract", () => {
+  it("exports CanvasSurface and the headless functions through the client blocks entry", () => {
+    const script = `import * as blocks from "@clossys/designer/blocks"; process.stdout.write(JSON.stringify(Object.keys(blocks)));`;
+    const keys: string[] = JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e", script], { cwd: packageRoot, encoding: "utf8" }));
+    for (const name of ["CanvasSurface", "panBy", "zoomAt", "fitTo", "clamp", "toWorld", "toScreen", "selectSingle", "toggleSelection", "selectRange", "selectMarquee", "clearSelection", "navigate", "minimapModel"]) expect(keys).toContain(name);
+    expect(keys).not.toContain("validateCanvasItems");
+    expect(readFileSync(join(packageRoot, "src/blocks/canvas/models.ts"), "utf8")).not.toMatch(/\b(?:import|require)\b.*["'](?:react|react-dom)/);
+  });
+
+  it("resolves readonly serializable models and controlled surface props from emitted declarations", () => {
+    const filename = join(packageRoot, "canvas-consumer.check.ts");
+    const source = `
+      import { CanvasSurface, panBy, zoomAt, fitTo, clamp, toWorld, toScreen, selectSingle,
+        toggleSelection, selectRange, selectMarquee, clearSelection, navigate, minimapModel,
+        type CanvasSurfaceProps, type CanvasPoint, type CanvasSize, type CanvasRect, type Viewport,
+        type Selection, type CanvasItem, type CanvasDirection, type CanvasMinimapModel
+      } from ${JSON.stringify(join(packageRoot, "dist/blocks/index.js"))};
+      const point: CanvasPoint = { x: 0, y: 0 };
+      const size: CanvasSize = { width: 800, height: 600 };
+      const bounds: CanvasRect = { ...point, width: 1000, height: 800 };
+      const viewport: Viewport = { ...point, zoom: 1 };
+      const selection: Selection = selectSingle("a");
+      const items: readonly CanvasItem[] = [{ id: "a", label: "Alpha", rect: bounds }];
+      const direction: CanvasDirection = "right";
+      const model: CanvasMinimapModel = minimapModel(bounds, viewport, size);
+      const next: Viewport = clamp(zoomAt(panBy(viewport, point), toScreen(viewport, toWorld(viewport, point)), 2), 0.1, 8, bounds, size);
+      const props: CanvasSurfaceProps = { "aria-label": "Canvas", viewport: next, selection,
+        onViewportChange: (value: Viewport) => void JSON.stringify(value),
+        onSelectionChange: (value: Selection) => void JSON.stringify(value), worldBounds: bounds,
+        items, viewSize: size, minimap: true, zoomControls: true, renderItem: item => item.label };
+      CanvasSurface(props); fitTo(bounds, size, 20); toggleSelection(selection, "b");
+      selectRange(["a", "b"], "a", "b"); selectMarquee(items, bounds); clearSelection(); navigate(items, "a", direction);
+    `;
+    const options = { strict: true, noEmit: true, skipLibCheck: true, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler };
+    const host = ts.createCompilerHost(options), original = host.getSourceFile.bind(host);
+    host.getSourceFile = (path, language, error, fresh) => path === filename ? ts.createSourceFile(path, source, language, true) : original(path, language, error, fresh);
+    const diagnostics = ts.getPreEmitDiagnostics(ts.createProgram([filename], options, host));
+    expect(diagnostics.map(diagnostic => ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n"))).toEqual([]);
+  }, 30_000);
+});
+
 describe("compiled record-list public contract", () => {
   it("exports GridList through atoms and internal tooling, and ResourceList through blocks and internal tooling", async () => {
     for (const entry of ["atoms/index.js", "index.js"]) {
@@ -59,6 +125,17 @@ describe("compiled UsageMeter public contract", () => {
     host.getSourceFile = (path, language, error, fresh) => path === filename ? ts.createSourceFile(path, consumer, language, true) : original(path, language, error, fresh);
     const diagnostics = ts.getPreEmitDiagnostics(ts.createProgram([filename], options, host));
     expect(diagnostics.map(diagnostic => ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n"))).toEqual([]);
+  });
+});
+
+describe("compiled task and event public contract", () => {
+  it.each(["blocks/index.js", "index.js"])("exports TaskList, EventItem and their public declarations from %s", entry => {
+    const script = `import * as api from ${JSON.stringify(join(packageRoot, "dist", entry))}; process.stdout.write(JSON.stringify([typeof api.TaskList, typeof api.EventItem]));`;
+    expect(JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8" }))).toEqual(["function", "function"]);
+    const declaration = readFileSync(join(packageRoot, "dist", entry.replace(/\.js$/, ".d.ts")), "utf8");
+    for (const name of ["TaskListProps", "TaskListItem", "TaskStatus", "EventItemProps", "EventActor", "EventChange", "EventRecord", "EventLabels"]) {
+      expect(declaration).toMatch(new RegExp(`\\b${name}\\b`));
+    }
   });
 });
 
@@ -674,6 +751,52 @@ describe("compiled CatalogWorkspace public contract", () => {
       expect(source.split("\n")[line]).toContain(`const invalid${index}:`);
       expect(source.split("\n")[line]).toContain("id: 1");
       expect(ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n")).toBe("Type 'number' is not assignable to type 'string'.");
+    }
+  });
+});
+
+describe("compiled CatalogBrowser public contract", () => {
+  const consumerFor = (entry: string, index: number) => `
+    import { CatalogBrowser as Browser${index}, type CatalogBrowserProps as Props${index}, type CatalogBrowserKind as Kind${index}, type CatalogBrowserLabels as Labels${index}, type CatalogBrowserSelection as Selection${index} } from ${JSON.stringify(join(packageRoot, "dist", entry))};
+    interface Entry${index} { id: string; label: string; l1: string; l2: string; lifecycle: "draft" | "stable" | "deprecated" | "parked"; tier: "core" | "role" }
+    const catalog${index} = { kind: "tokens" as const, groups: [{ id: "color", label: "Color", children: [{ id: "ink", label: "Ink" }] }], entries: [{ id: "--ink", label: "Ink", l1: "color", l2: "ink", lifecycle: "draft", tier: "role" }] satisfies Entry${index}[] };
+    const kind${index}: Kind${index}<Entry${index}> = { label: "Tokens", preview: (entry, context) => entry.tier + context.kind + String(context.config.tone), controls: () => [{ type: "toggle", id: "tone", label: "Tone", defaultValue: false }] };
+    declare const labels${index}: Labels${index};
+    const selection${index}: Selection${index} = { catalog: "tokens", entryId: null };
+    const props${index}: Props${index}<typeof catalog${index}> = { catalogs: [catalog${index}], kinds: { tokens: kind${index} }, label: "Catalog", labels: labels${index}, defaultSelection: selection${index} };
+    const element${index} = Browser${index}(props${index});
+  `;
+  it("exports the block and its host-facing types from both existing barrels", () => {
+    const filename = join(packageRoot, "catalog-browser-consumer.check.ts");
+    const consumer = ["blocks/index.js", "index.js"].map(consumerFor).join("\n");
+    const options = { strict: true, noEmit: true, skipLibCheck: true, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler };
+    const host = ts.createCompilerHost(options); const original = host.getSourceFile.bind(host);
+    host.getSourceFile = (path, language, error, fresh) => path === filename ? ts.createSourceFile(path, consumer, language, true) : original(path, language, error, fresh);
+    expect(ts.getPreEmitDiagnostics(ts.createProgram([filename], options, host)).map(diagnostic => ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n"))).toEqual([]);
+    for (const entry of ["blocks/index.js", "index.js"]) {
+      const script = `import { CatalogBrowser } from ${JSON.stringify(join(packageRoot, "dist", entry))}; process.stdout.write(typeof CatalogBrowser);`;
+      expect(execFileSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8", cwd: packageRoot })).toBe("function");
+    }
+  }, 30_000);
+
+  it("requires a binding for every catalog kind with native diagnostics in both barrels", () => {
+    const filename = join(packageRoot, "catalog-browser-negative-consumer.check.ts");
+    const source = ["blocks/index.js", "index.js"].map((entry, index) => `
+      import { type CatalogBrowserProps as Props${index}, type CatalogBrowserLabels as Labels${index} } from ${JSON.stringify(join(packageRoot, "dist", entry))};
+      declare const labels${index}: Labels${index};
+      const catalog${index} = { kind: "icons" as const, groups: [], entries: [] };
+      const invalid${index}: Props${index}<typeof catalog${index}> = { catalogs: [catalog${index}], kinds: {}, label: "Catalog", labels: labels${index} };
+    `).join("\n");
+    const options = { strict: true, noEmit: true, skipLibCheck: true, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler };
+    const host = ts.createCompilerHost(options); const original = host.getSourceFile.bind(host);
+    host.getSourceFile = (path, language, error, fresh) => path === filename ? ts.createSourceFile(path, source, language, true) : original(path, language, error, fresh);
+    const diagnostics = ts.getPreEmitDiagnostics(ts.createProgram([filename], options, host));
+    expect(diagnostics).toHaveLength(2);
+    for (const [index, diagnostic] of diagnostics.entries()) {
+      expect(diagnostic.code).toBe(2741); expect(diagnostic.file?.fileName).toBe(filename);
+      const line = diagnostic.file!.getLineAndCharacterOfPosition(diagnostic.start!).line;
+      expect(source.split("\n")[line]).toContain(`const invalid${index}:`);
+      expect(ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n")).toContain("Property 'icons' is missing");
     }
   });
 });
