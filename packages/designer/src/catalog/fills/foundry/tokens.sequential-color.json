@@ -1,0 +1,159 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [
+        "dtcg#format",
+        "dtcg#alias",
+        "wcag-2.2#1.4.3"
+      ],
+      "evidence": [
+        {
+          "check": "C1",
+          "clause": "dtcg#format"
+        },
+        {
+          "check": "C2",
+          "clause": "dtcg#alias"
+        },
+        {
+          "check": "C9",
+          "clause": "wcag-2.2#1.4.3"
+        }
+      ],
+      "id": "foundry/tokens.sequential-color",
+      "license": "MIT",
+      "mode": "implementation",
+      "relation": "same-contract",
+      "slot": "tokens.sequential-color",
+      "source": "foundry",
+      "sourceAddress": "styles/tokens.css",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "tokens": {
+    "sequential-color": {
+      "100": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "#cde2fb"
+          }
+        },
+        "$type": "color",
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.803922,
+            0.886275,
+            0.984314
+          ],
+          "hex": "#cde2fb"
+        }
+      },
+      "200": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "#9ec5f4"
+          }
+        },
+        "$type": "color",
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.619608,
+            0.772549,
+            0.956863
+          ],
+          "hex": "#9ec5f4"
+        }
+      },
+      "300": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "#6da7ec"
+          }
+        },
+        "$type": "color",
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.427451,
+            0.654902,
+            0.92549
+          ],
+          "hex": "#6da7ec"
+        }
+      },
+      "400": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "#3987e5"
+          }
+        },
+        "$type": "color",
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.223529,
+            0.529412,
+            0.898039
+          ],
+          "hex": "#3987e5"
+        }
+      },
+      "500": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "#256abf"
+          }
+        },
+        "$type": "color",
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.145098,
+            0.415686,
+            0.74902
+          ],
+          "hex": "#256abf"
+        }
+      },
+      "600": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "#184f95"
+          }
+        },
+        "$type": "color",
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.094118,
+            0.309804,
+            0.584314
+          ],
+          "hex": "#184f95"
+        }
+      },
+      "700": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "#0d366b"
+          }
+        },
+        "$type": "color",
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.05098,
+            0.211765,
+            0.419608
+          ],
+          "hex": "#0d366b"
+        }
+      }
+    }
+  }
+}
