@@ -1,6 +1,8 @@
 "use client";
 
 import type { CSSProperties, ReactElement } from "react";
+import { TOKENS } from "../tokens/tokens.js";
+import type { StudioLabels } from "./types.js";
 import { TokenPreview } from "../tokens/preview/index.js";
 import { previewRows, type Candidate, type PreviewSpec } from "./model.js";
 
@@ -67,4 +69,18 @@ export function SlotPreview({ members, labels, limit = PREVIEW_LIMIT, fontDeclar
       {hidden > 0 ? <p data-preview-more="">+{hidden}</p> : null}
     </div>
   );
+}
+
+export function CompactPreview({ candidate, labels }: { candidate: Candidate; labels: StudioLabels }): ReactElement | null {
+  const member = candidate.members[0]?.member;
+  if (!candidate.previewable || !member) return null;
+  if (member.$type === "color") return <span data-studio-color-swatch="" className="inline-flex overflow-hidden border border-line-base" style={{ inlineSize: TOKENS["--spacing-xl"]!.value, blockSize: TOKENS["--spacing-xl"]!.value }}>
+    <span role="img" aria-label={`${labels.inspector.light} ${member.css.light}`} style={{ inlineSize: "50%", blockSize: "100%", background: member.css.light }} />
+    <span role="img" aria-label={`${labels.inspector.dark} ${member.css.dark ?? member.css.light}`} style={{ inlineSize: "50%", blockSize: "100%", background: member.css.dark ?? member.css.light }} />
+  </span>;
+  if (member.$type === "duration" || member.$type === "cubicBezier") return <div className="flex flex-col gap-xs">
+    <span aria-hidden="true" className="bg-accent" style={{ blockSize: TOKENS["--spacing-xs"]!.value, inlineSize: member.$type === "duration" ? `${Math.min(100, Math.max(5, Number.parseFloat(member.css.light) * (member.css.light.endsWith("ms") ? 0.1 : 100)))}%` : "100%" }} />
+    <code>{member.css.light}</code>
+  </div>;
+  return <SlotPreview members={candidate.members} labels={labels} limit={1} />;
 }

@@ -274,6 +274,8 @@ show available members from contracts and loaded fills, including open contracts
 this catalog plus the demo consumer has 220 available members versus 217 shipped
 bindings. The existing demo engine resolves only 145 closed-contract members;
 open-contract leaves are browsable with counts but have no resolved member preview.
+`previewUnavailable` supplies their truthful status, such as "Fill available; member
+preview pending"; it is distinct from `noFill` and leaves usable fills selectable.
 The smallest follow-up is open-member enumeration in the demo engine's resolution
 profile; this adapter neither synthesizes values nor changes contracts.
 
@@ -282,9 +284,41 @@ Supply the plain copy through `labels`: `scope.label` = "Apply to",
 "Everything under a group", and `useSource` returns "Use this version".
 `scope.explanation` says "A more specific choice wins: one token beats a whole leaf,
 which beats a group." `memberCount(count)` formats the available-member count.
-Wide and medium layouts compare cards in one horizontal row, with horizontal
-scrolling beyond four sources; narrow layouts retain tabs. The stored picks and
-scope precedence are unchanged.
+The centre pane stacks one self-contained Board per L2 placement group (19 in the
+shipped catalog). Each Board has its group name and an explicit-pick Decided ring;
+libraries are stable columns and the group, leaves and expandable members are rows. Each row has one shared Use radio
+group; missing and reference-only fills stay visible but disabled. Wide and medium
+layouts show up to four library columns before horizontal overflow; narrow layouts
+retain library tabs. The leaf column and library headers are sticky. Group choices
+still fan out to leaf picks; member picks take precedence over whole-leaf picks.
+The optional placement `basket` field controls group-versus-leaf row emphasis only.
+The explorer omits the Tokens layer wrapper and keeps scale/role as leaf tags.
+Its `onSelect(nodeId)` seam scrolls the matching Board or leaf row into view without
+filtering other Boards. Stable Board IDs and refs support this navigation; the
+current layout is a plain vertical scroll stack, with no search, filters, pan or zoom.
+
+Supply `layers` labels for Tokens, Assets, Components, Sections and Frames, with
+`layers.disabled` = "Built after Tokens sign-off". Only Tokens is active. Its
+`progress(decided, total)` label formats Decided percentage from explicit working
+picks, never the default chain. Activating its progress ring opens the scorecard.
+`scorecard` supplies its title, Close, Decided, Resolved, Checks, Issues, empty and
+target copy, category names, `counts(errors, notices)` and `supported(codes)`.
+Resolved counts leaves with at least one usable fill, not resolved member previews.
+The current engine checks only C1 unsafe CSS and C7 reference selection. Contract
+and format reports only C1; Coverage reports only C7 reference-use refusal, not full
+coverage validation. Accessibility, Coherence, Modes and Provenance and license are
+"Target: needs the check engine", with no invented counts. Issue buttons reveal
+and focus their actual leaf row. Errors block a cell; notices never block it.
+
+`matrix` supplies its accessible label, Leaf, Libraries, expansion and
+collapse callbacks, pending marker and "differs from group" copy. The Inspector
+uses a plain definition list, including `inspector.trust`, `representedLeaf`,
+`usedBy` and `none`; used-by entries come only from actual resolved aliases.
+Both light and dark aliases are retained when present. Group-level previews
+identify their representative leaf. A group choice is only
+transient UI context: it is never stored in a Selection or ChangeSet. That context
+survives Save within the session; Discard restores the saved session baseline.
+Leaf overrides and Reset use the actual working picks. No token values are editable.
 
 ### Token details and selection
 

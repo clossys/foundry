@@ -107,6 +107,8 @@ describe("catalog token bindings", () => {
       if (!("children" in domain)) continue;
       for (const group of domain.children) {
         nodeIds.push(group.id);
+        const basket = (group as typeof group & { basket?: string }).basket;
+        if (basket !== undefined) expect(["node", "leaf"]).toContain(basket);
         expect("leaves" in group).toBe(true);
         if ("leaves" in group) placed.push(...group.leaves);
       }

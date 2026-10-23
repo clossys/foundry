@@ -5,21 +5,26 @@ import { TOKENS } from "../tokens/tokens.js";
 import type { ChangeSet, Selection } from "../catalog-core/index.js";
 import { DEMO_CATALOG, DEMO_LIBRARY, DEMO_SELECTION } from "./demo-data.js";
 import { CandidateStage } from "./CandidateStage.js";
+import { studioEngine } from "./engine.js";
 import { buildCandidates } from "./model.js";
 import { Studio, demoStudioAdapter, catalogStudioAdapter } from "./index.js";
 import type { StudioAdapter, StudioLabels } from "./types.js";
 
 const labels: StudioLabels = {
+  layers: { label: "L-layers", tokens: "Tokens", assets: "Assets", components: "Components", sections: "Sections", frames: "Frames", disabled: "Built after Tokens sign-off" },
+  progress: (decided, total) => `Decided ${Math.round(decided * 100 / total)}%`,
+  scorecard: { title: "L-score", close: "L-close", decided: "L-decided", resolved: "L-resolved", checks: "L-checks", issues: "L-issues", noIssues: "L-no-issues", target: "Target: needs the check engine", counts: (errors, notices) => `L-score-count ${errors}/${notices}`, supported: codes => `L-supported ${codes.join("/")}`, categories: { contract: "Contract and format", accessibility: "Accessibility", coherence: "Coherence", modes: "Modes", provenance: "Provenance and license", coverage: "Coverage" } },
+  matrix: { label: "L-matrix", leaf: "L-leaf", libraries: "L-libraries", showAll: "L-show-all", expand: leaf => `L-expand ${leaf}`, collapse: leaf => `L-collapse ${leaf}`, differs: "L-differs", pending: "L-cell-pending" },
   treeLabel: "L-tree", stageLabel: "L-stage", inspectorLabel: "L-inspector", useGroup: "L-use-group",
   useSource: (source, target) => `L-use ${source} @ ${target}`,
   scope: { label: "L-scope", member: "L-member", slot: "L-slot", node: "L-node", memberPicker: "L-member-picker", nodePicker: "L-node-picker", explanation: "L-specificity" },
   memberCount: (count) => `L-count ${count}`,
   checkSummary: (errors, notices) => `L-check ${errors}/${notices}`,
-  referenceOnly: "L-reference-only", inUseByDefault: "L-default", noFill: "L-no-fill",
+  previewUnavailable: "L-preview-unavailable", referenceOnly: "L-reference-only", inUseByDefault: "L-default", noFill: "L-no-fill",
   pending: (count) => `L-pending ${count}`, save: "L-save", discard: "L-discard", resetToDefault: "L-reset",
   saveFailed: { unavailable: "L-unavailable", conflict: "L-conflict", invalid: "L-invalid", failed: "L-failed" },
   loading: "L-loading", loadFailed: "L-load-failed", sampleText: "L-sample", fontNotLoaded: "L-font-note",
-  inspector: { source: "L-i-source", mode: "L-i-mode", licence: "L-i-licence", pin: "L-i-pin", status: "L-i-status", evidence: "L-i-evidence", members: "L-i-members", findings: "L-i-findings", via: "L-i-via", light: "L-i-light", dark: "L-i-dark", alias: "L-i-alias", builtOn: "L-i-built-on", relation: "L-i-relation" },
+  inspector: { representedLeaf: "L-represented-leaf", trust: "L-trust", usedBy: "L-used-by", none: "L-none", source: "L-i-source", mode: "L-i-mode", licence: "L-i-licence", pin: "L-i-pin", status: "L-i-status", evidence: "L-i-evidence", members: "L-i-members", findings: "L-i-findings", via: "L-i-via", light: "L-i-light", dark: "L-i-dark", alias: "L-i-alias", builtOn: "L-i-built-on", relation: "L-i-relation" },
 };
 
 const adapter = (over: Partial<StudioAdapter> = {}): StudioAdapter & { load: ReturnType<typeof vi.fn>; save: ReturnType<typeof vi.fn> } => ({
@@ -39,25 +44,146 @@ const stub = (desktop: boolean, tablet: boolean) => vi.stubGlobal("matchMedia", 
   matches: media === `(width >= ${TOKENS["--breakpoint-desktop"]!.value})` ? desktop : tablet, media, addEventListener: vi.fn(), removeEventListener: vi.fn(),
 })));
 
-afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
+afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.restoreAllMocks(); });
+const scrollSpy = () => {
+  const calls: string[] = [];
+  vi.spyOn(HTMLElement.prototype, "scrollIntoView").mockImplementation(function (this: HTMLElement) { calls.push(this.getAttribute("data-studio-board") ?? this.getAttribute("data-studio-row") ?? ""); });
+  return calls;
+};
+Object.defineProperty(HTMLElement.prototype, "scrollIntoView", { configurable: true, writable: true, value() {} });
 
 describe("Studio", () => {
+  it("retains the saved group baseline after a later Discard", async () => {
+    const user = userEvent.setup();
+    let selection = DEMO_SELECTION;
+    const host = adapter({ save: vi.fn(async (changes: ChangeSet) => { selection = studioEngine.applyChangeSet(selection, changes); return { ok: true as const, selection }; }) });
+    await mount({}, host);
+    await user.click(radio("foundry", "tokens/role-color"));
+    await user.click(screen.getByRole("button", { name: "L-save" }));
+    await screen.findByText("L-pending 0");
+    await user.click(radio("example"));
+    await user.click(screen.getByRole("button", { name: "L-discard" }));
+    await user.click(radio("example"));
+    expect(screen.getByText("L-differs")).toBeInTheDocument();
+  });
+
+  it("scrolls to an issue outside the current explorer position and focuses its real leaf row without later focus theft", async () => {
+    const user = userEvent.setup();
+    const calls = scrollSpy();
+    const host = adapter({ load: vi.fn(async () => ({ library: DEMO_LIBRARY, selection: { ...DEMO_SELECTION, picks: [{ scope: "slot" as const, target: "tokens.accent-color", source: "reference-kit" }] } })) });
+    await mount({}, host);
+    await user.click(screen.getByRole("row", { name: "Scale" }));
+    expect(document.querySelector('[data-studio-row="tokens.accent-color"]')).not.toBeNull();
+    await user.click(screen.getByRole("tab", { name: /Tokens Decided/ }));
+    await user.click(within(screen.getByRole("region", { name: "L-score" })).getByRole("button", { name: /reference cell/ }));
+    const row = document.querySelector('[data-studio-row="tokens.accent-color"]') as HTMLElement;
+    expect(row).toHaveFocus();
+    expect(calls.at(-1)).toBe("tokens.accent-color");
+    await user.click(radio("foundry"));
+    expect(radio("foundry")).toHaveFocus();
+    expect(row).not.toHaveFocus();
+  });
+
+  it("keeps group context transient, restores it on Discard and preserves the session baseline after Save", async () => {
+    const user = userEvent.setup();
+    let selection = DEMO_SELECTION;
+    const host = adapter({ save: vi.fn(async (changes: ChangeSet) => { selection = studioEngine.applyChangeSet(selection, changes); return { ok: true as const, selection }; }) });
+    await mount({}, host);
+    await user.click(radio("foundry", "tokens/role-color"));
+    await user.click(radio("example"));
+    expect(within(document.querySelector('[data-studio-row="tokens.accent-color"]') as HTMLElement).getByText("L-differs")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "L-discard" }));
+    expect(screen.queryByText("L-differs")).toBeNull();
+    await user.click(radio("example"));
+    expect(screen.queryByText("L-differs")).toBeNull();
+    await user.click(screen.getByRole("button", { name: "L-discard" }));
+    await user.click(radio("foundry", "tokens/role-color"));
+    await user.click(screen.getByRole("button", { name: "L-save" }));
+    await screen.findByText("L-pending 0");
+    await user.click(radio("example"));
+    expect(screen.getByText("L-differs")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "L-discard" }));
+    expect(screen.queryByText("L-differs")).toBeNull();
+    expect(radio("foundry")).toBeChecked();
+    await user.click(radio("example"));
+    await user.click(screen.getByRole("button", { name: "L-save" }));
+    await screen.findByText("L-pending 0");
+    expect(screen.getByText("L-differs")).toBeInTheDocument();
+    expect(selection.picks.every(pick => pick.scope === "slot" || pick.scope === "member")).toBe(true);
+    expect(JSON.stringify(selection)).not.toContain("role-color");
+    await user.click(screen.getByRole("button", { name: "L-reset" }));
+    expect(screen.queryByText("L-differs")).toBeNull();
+  });
+
+  it("shows the active Tokens progress tab and four disabled layers, with a scorecard that closes back to the tab", async () => {
+    const user = userEvent.setup();
+    await mount();
+    const tab = screen.getByRole("tab", { name: /Tokens Decided 0%/ });
+    expect(tab).toHaveAttribute("aria-selected", "true");
+    for (const name of ["Assets", "Components", "Sections", "Frames"]) expect(screen.getByRole("tab", { name: new RegExp(name) })).toHaveAttribute("aria-disabled", "true");
+    await user.click(tab);
+    const panel = screen.getByRole("region", { name: "L-score" });
+    expect(within(panel).getByText("0/10")).toBeInTheDocument();
+    await user.click(within(panel).getByRole("button", { name: "L-close" }));
+    expect(screen.queryByRole("region", { name: "L-score" })).toBeNull();
+    expect(tab).toHaveFocus();
+    await user.click(radio("foundry", "tokens/role-color"));
+    const progress = screen.getByRole("tab", { name: /Tokens Decided 20%/ });
+    expect(progress.querySelector("circle[pathLength]")).toHaveAttribute("stroke-dashoffset", "80");
+  });
+
+  it("scrolls boards on pointer and keyboard explorer selection without filtering any board", async () => {
+    const user = userEvent.setup();
+    const calls = scrollSpy();
+    await mount();
+    const boards = [...document.querySelectorAll<HTMLElement>("[data-studio-board]")];
+    expect(boards).toHaveLength(7);
+    expect(boards.every(board => board.id && board.querySelector("h3 circle[pathLength]"))).toBe(true);
+    expect(new Set(boards.map(board => board.id)).size).toBe(7);
+    const ids = boards.map(board => board.id);
+    await user.click(screen.getByRole("row", { name: "Scale" }));
+    expect(calls.at(-1)).toBe("tokens/scale-color");
+    const scale = screen.getByRole("row", { name: "Scale" });
+    await act(async () => { scale.focus(); });
+    await user.keyboard("{ArrowRight}");
+    await user.click(document.querySelector('[data-key="tokens/scale-color"]') as HTMLElement);
+    await act(async () => { (document.querySelector('[data-key="tokens/scale-color"]') as HTMLElement).focus(); });
+    await user.keyboard("{ArrowLeft}");
+    expect(calls.at(-1)).toBe("tokens/scale-color");
+    expect([...document.querySelectorAll<HTMLElement>("[data-studio-board]")].map(board => board.id)).toEqual(ids);
+    expect(document.querySelectorAll('[data-studio-row][data-scope="slot"]')).toHaveLength(10);
+    expect(screen.queryByRole("searchbox")).toBeNull();
+    expect(screen.queryByRole("button", { name: "L-show-all" })).toBeNull();
+    await user.click(radio("foundry", "tokens/role-color"));
+    expect(within(document.querySelector('[data-studio-board="tokens/role-color"]') as HTMLElement).getByRole("heading", { name: /Color Decided 100%/ }).querySelector("circle[pathLength]")).toHaveAttribute("stroke-dashoffset", "0");
+    expect(within(document.querySelector('[data-studio-board="tokens/scale-color"]') as HTMLElement).getByRole("heading", { name: /Color Decided 0%/ })).toBeInTheDocument();
+    const role = document.querySelector('[data-key="tokens/role"]') as HTMLElement;
+    if (role.getAttribute("aria-expanded") !== "true") await user.click(role);
+    const color = document.querySelector('[data-key="tokens/role-color"]') as HTMLElement;
+    if (color.getAttribute("aria-expanded") !== "true") await user.click(color);
+    await user.click(screen.getByRole("row", { name: "tokens.accent-color (L-count 2)" }));
+    expect(calls.at(-1)).toBe("tokens.accent-color");
+    expect(document.querySelectorAll("[data-studio-board]")).toHaveLength(7);
+  });
+
   it("selects the adapter catalog unless an explicit prop overrides it", async () => {
     const view = await mount({ catalog: undefined }, catalogStudioAdapter);
-    expect(screen.getByRole("row", { name: "Color" })).toBeInTheDocument();
-    expect(screen.getByRole("row", { name: "tokens.accent-color (L-count 5)" })).toBeInTheDocument();
-    expect(screen.queryByRole("row", { name: "Role" })).toBeNull();
+    expect(within(screen.getByRole("treegrid", { name: "L-tree" })).getByRole("row", { name: "Color" })).toBeInTheDocument();
+    expect(within(screen.getByRole("treegrid", { name: "L-tree" })).getByRole("row", { name: "tokens.accent-color (L-count 5)" })).toBeInTheDocument();
+    expect(document.querySelectorAll("[data-studio-row][data-scope=slot]")).toHaveLength(52);
+    expect(document.querySelectorAll("[data-studio-board]")).toHaveLength(19);
+    expect(within(screen.getByRole("treegrid", { name: "L-tree" })).queryByRole("row", { name: "Role" })).toBeNull();
     view.unmount();
     await mount({}, catalogStudioAdapter);
-    expect(screen.getByRole("row", { name: "Role" })).toBeInTheDocument();
+    expect(within(screen.getByRole("treegrid", { name: "L-tree" })).getByRole("row", { name: "Role" })).toBeInTheDocument();
   });
 
   it("renders the requested plain copy entirely through the host labels", async () => {
     const plain: StudioLabels = { ...labels, useSource: () => "Use this version", scope: { ...labels.scope, label: "Apply to", member: "One token", slot: "Whole leaf", node: "Everything under a group", explanation: "A more specific choice wins: one token beats a whole leaf, which beats a group." } };
     await mount({ labels: plain });
-    expect(screen.getByRole("radiogroup", { name: "Apply to" })).toBeInTheDocument();
-    for (const name of ["One token", "Whole leaf", "Everything under a group"]) expect(screen.getByRole("radio", { name })).toBeInTheDocument();
-    expect(screen.getAllByRole("radio", { name: "Use this version" })).toHaveLength(3);
+    expect(screen.getByRole("heading", { name: "Apply to" })).toBeInTheDocument();
+    for (const name of ["One token", "Whole leaf", "Everything under a group"]) expect(screen.getByText(name)).toBeInTheDocument();
+    expect(within(document.querySelector('[data-studio-row="tokens.accent-color"]') as HTMLElement).getAllByRole("radio", { name: "Use this version" })).toHaveLength(4);
     expect(screen.getByText(plain.scope.explanation)).toBeVisible();
   });
 
@@ -74,7 +200,7 @@ describe("Studio", () => {
   it("shows the scope explanation from labels and leaves source identities visible", async () => {
     await mount();
     expect(screen.getByText("L-specificity")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "foundry" })).toBeInTheDocument();
+    expect(within(document.querySelector('[data-studio-row="tokens.accent-color"]') as HTMLElement).getByText("foundry", { selector: "span" })).toBeInTheDocument();
     expect(screen.getByText("L-use foundry @ tokens.accent-color")).toBeVisible();
   });
 
@@ -82,13 +208,13 @@ describe("Studio", () => {
     stub(desktop, tablet);
     await mount();
     expect(document.querySelector("[data-studio]")).toHaveAttribute("data-layout", layout);
-    const row = document.querySelector("[data-studio-cards]") as HTMLElement;
-    expect(row).not.toBeNull();
-    expect(row).toHaveClass("grid", "grid-flow-col", "overflow-x-auto");
-    expect(row.style.gridTemplateColumns).toBe("repeat(3, minmax(0, 1fr))");
-    expect(row.style.gridAutoColumns).toContain("/ 4");
-    expect(row.querySelectorAll("[data-studio-card]")).toHaveLength(3);
-    expect(screen.queryByRole("tablist")).toBeNull();
+    const matrix = document.querySelector("[data-studio-matrix]") as HTMLElement;
+    expect(matrix).not.toBeNull();
+    expect(matrix).toHaveClass("overflow-x-auto");
+    expect(matrix.querySelector("table")).toHaveClass("table-fixed");
+    expect(matrix.querySelector("table")?.style.inlineSize).toBe("100%");
+    expect(document.querySelector('[data-studio-row="tokens.accent-color"]')?.querySelectorAll("[data-studio-card]")).toHaveLength(4);
+    expect(screen.queryByRole("tablist", { name: "L-libraries" })).toBeNull();
   });
 
   it("loads once on mount and shows only the loading note until the adapter answers", async () => {
@@ -111,14 +237,14 @@ describe("Studio", () => {
 
   it("lists one Use radio per source, consumer first, and disables a reference-only fill", async () => {
     await mount();
-    const use = within(screen.getByRole("radiogroup", { name: "L-use-group" }));
+    const use = within(screen.getByRole("radiogroup", { name: "L-use-group tokens.accent-color" }));
     expect(use.getAllByRole("radio").map((node) => node.getAttribute("aria-label"))).toEqual([
-      "L-use example @ tokens.accent-color", "L-use foundry @ tokens.accent-color", "L-use reference-kit @ tokens.accent-color",
+      "L-use example @ tokens.accent-color", "L-use foundry @ tokens.accent-color", "L-use reference-kit @ tokens.accent-color", "L-use tailwind-default @ tokens.accent-color",
     ]);
     expect(radio("reference-kit")).toBeDisabled();
     expect(radio("foundry")).toBeEnabled();
-    expect(screen.getByText("L-reference-only")).toBeInTheDocument();
-    expect(screen.getByText("L-default")).toBeInTheDocument();
+    expect(screen.getAllByText("L-reference-only").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("L-default").length).toBeGreaterThan(0);
   });
 
   it("counts a pick as one pending change in a polite region and enables Save and Discard", async () => {
@@ -142,12 +268,12 @@ describe("Studio", () => {
     await mount();
     const inspector = screen.getByRole("complementary", { name: "L-inspector" });
     expect(inspector.querySelector("[data-studio-inspector]")?.getAttribute("data-studio-inspector")).toBe("example");
-    await act(async () => { document.querySelector<HTMLElement>("[data-studio-card=reference-kit]")?.focus(); });
+    await act(async () => { document.querySelector<HTMLElement>('[data-studio-row="tokens.accent-color"] [data-studio-card=reference-kit]')?.focus(); });
     await user.tab();
-    await user.click(document.querySelector("[data-studio-card=reference-kit]") as HTMLElement);
+    await user.click(document.querySelector('[data-studio-row="tokens.accent-color"] [data-studio-card=reference-kit]') as HTMLElement);
     expect(within(inspector).getByText("reference-kit", { selector: "dd" })).toBeInTheDocument();
     expect(screen.getByText("L-pending 0")).toBeInTheDocument();
-    expect(within(screen.getByRole("radiogroup", { name: "L-use-group" })).getAllByRole("radio").filter((node) => (node as HTMLInputElement).checked)).toHaveLength(0);
+    expect(within(screen.getByRole("radiogroup", { name: "L-use-group tokens.accent-color" })).getAllByRole("radio").filter((node) => (node as HTMLInputElement).checked)).toHaveLength(0);
   });
 
   it("hides Save when the adapter cannot save, and keeps the preview live", async () => {
@@ -215,28 +341,28 @@ describe("Studio", () => {
     await mount();
     await user.click(screen.getByRole("row", { name: "tokens.surface-color (L-count 2)" }));
     expect(screen.getByRole("radio", { name: "L-use foundry @ tokens.surface-color" })).toBeInTheDocument();
-    expect(screen.queryByRole("radio", { name: "L-use reference-kit @ tokens.surface-color" })).toBeNull();
+    expect(screen.getByRole("radio", { name: "L-use reference-kit @ tokens.surface-color" })).toBeDisabled();
   });
 
   it("lays out three panes wide, and moves the cards into Tabs below tablet-lg", async () => {
     stub(true, true);
     const wide = await mount();
     expect(document.querySelector("[data-studio]")?.getAttribute("data-layout")).toBe("wide");
-    expect(screen.queryByRole("tablist")).toBeNull();
+    expect(screen.queryByRole("tablist", { name: "L-libraries" })).toBeNull();
     wide.unmount();
     stub(false, false);
     await mount();
     expect(document.querySelector("[data-studio]")?.getAttribute("data-layout")).toBe("narrow");
-    expect(screen.getAllByRole("tab").map((node) => node.textContent)).toEqual(["example", "foundry", "reference-kit"]);
+    expect(within(within(document.querySelector('[data-studio-board="tokens/role-color"]') as HTMLElement).getByRole("tablist", { name: "L-libraries" })).getAllByRole("tab").map((node) => node.textContent)).toEqual(["example", "foundry", "reference-kit", "tailwind-default"]);
     expect(screen.getByRole("button", { name: "L-tree" })).toHaveAttribute("aria-expanded", "false");
   });
 
   it("takes its chrome copy only from labels", async () => {
     await mount();
     expect(screen.getByRole("region", { name: "L-stage" })).toBeInTheDocument();
-    expect(screen.getByRole("radiogroup", { name: "L-use-group" })).toBeInTheDocument();
-    expect(screen.getByRole("radiogroup", { name: "L-scope" })).toBeInTheDocument();
-    expect(screen.getAllByText(/^L-check /)).toHaveLength(3);
+    expect(screen.getByRole("radiogroup", { name: "L-use-group tokens.accent-color" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "L-scope" })).toBeInTheDocument();
+    expect(within(document.querySelector('[data-studio-row="tokens.accent-color"]') as HTMLElement).getAllByText(/^L-check /)).toHaveLength(3);
   });
 
   it("shows the throwaway demo library read-only through demoStudioAdapter", async () => {
@@ -259,7 +385,6 @@ describe("Studio", () => {
     const user = userEvent.setup();
     const host = adapter();
     await mount({}, host);
-    await user.click(screen.getByRole("radio", { name: "L-node" }));
     await user.click(radio("foundry", "tokens/role-color"));
     expect(screen.getByText("L-pending 2")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "L-save" }));
@@ -273,7 +398,6 @@ describe("Studio", () => {
   it("skips a leaf the source does not fill, and clears a node pick back to the default", async () => {
     const user = userEvent.setup();
     await mount({ initialSlotId: "tokens.line-height" });
-    await user.click(screen.getByRole("radio", { name: "L-node" }));
     const reset = screen.getByRole("button", { name: "L-reset" });
     expect(reset).toBeDisabled();
     await user.click(radio("foundry", "tokens/scale-type"));

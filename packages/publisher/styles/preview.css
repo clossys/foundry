@@ -1011,6 +1011,9 @@
   .end-sm {
     inset-inline-end: var(--spacing-sm, 8px);
   }
+  .top-0 {
+    top: 0px;
+  }
   .bottom-md {
     bottom: var(--spacing-md, 12px);
   }
@@ -1654,6 +1657,9 @@
   .grow {
     flex-grow: 1;
   }
+  .table-fixed {
+    table-layout: fixed;
+  }
   .border-collapse {
     border-collapse: collapse;
   }
@@ -2064,6 +2070,9 @@
   }
   .rounded-subtle {
     border-radius: var(--radius-subtle, 2px);
+  }
+  .rounded-surface {
+    border-radius: var(--radius-surface, var(--radius-default, 3px));
   }
   .rounded-s {
     border-start-start-radius: 0.25rem;

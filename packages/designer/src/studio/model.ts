@@ -134,7 +134,7 @@ export interface Candidate {
   readonly findings: readonly Finding[];
   readonly errors: number;
   readonly notices: number;
-  /** False for a reference fill and for a fill whose check has a C1 error. */
+  /** False for a reference fill and for any fill with an error; notices do not block. */
   readonly usable: boolean;
   readonly reason?: "reference" | "invalid";
   /** False when the fill has a C1 error: nothing from it may reach a style element. */
@@ -170,14 +170,14 @@ export function buildCandidates(input: {
     // A node pick also takes in this source's fills for the other leaves under the node, so their findings count too.
     const findings = checked.findings.filter((finding) => finding.subject === fill.id || finding.subject === target || finding.subject === slotId || isPrefixOf(slotId, finding.subject)
       || leaves.some((leaf) => finding.subject === `${source}/${leaf}`));
-    const invalid = findings.some((finding) => finding.code === "C1" && finding.severity === "error");
-    const reference = fill.mode === "reference" || findings.some((finding) => finding.code === "C7");
+    const invalid = findings.some((finding) => finding.severity === "error");
+    const reference = fill.mode === "reference";
     return {
       index, source, fill, members: members.map(([id, member]) => ({ id, member })),
       resolved: { ...resolved, members: Object.fromEntries(members) },
       findings, errors: findings.filter((finding) => finding.severity === "error").length, notices: findings.filter((finding) => finding.severity === "notice").length,
       usable: !reference && !invalid, ...(reference ? { reason: "reference" as const } : invalid ? { reason: "invalid" as const } : {}),
-      previewable: !invalid,
+      previewable: !findings.some((finding) => finding.code === "C1" && finding.severity === "error"),
       selected: changes.length > 0 && changes.every((change) => change.op === "set" && pickAt(working, change.pick.scope, change.pick.target)?.source === change.pick.source),
       inUseByDefault: !touched && defaultSource === source,
     };
