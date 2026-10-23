@@ -2,6 +2,8 @@ import type { CatalogData, ChangeSet, Finding, LibraryData, Selection } from "..
 
 /** How the Studio reads and writes a consumer's library. The host supplies it; the Studio never touches files or the network. */
 export interface StudioAdapter {
+  /** Optional catalog carried by a read-only preview adapter. An explicit Studio catalog takes precedence. */
+  catalog?: CatalogData;
   load(): Promise<{ library: LibraryData; selection: Selection }>;
   save(changes: ChangeSet): Promise<{ ok: true; selection: Selection } | { ok: false; reason: "unavailable" | "conflict" | "invalid" | "failed"; findings?: readonly Finding[] }>;
   /** False hides Save; the preview stays live. */
@@ -17,7 +19,9 @@ export interface StudioLabels {
   useGroup: string;
   /** Accessible name of each Use radio. */
   useSource: (source: string, target: string) => string;
-  scope: { label: string; member: string; slot: string; node: string; memberPicker: string; nodePicker: string };
+  /** Available members from the contract and loaded fills, including members the demo engine cannot yet preview. */
+  memberCount: (count: number) => string;
+  scope: { explanation: string; label: string; member: string; slot: string; node: string; memberPicker: string; nodePicker: string };
   /** One-line status of a card. */
   checkSummary: (errors: number, notices: number) => string;
   referenceOnly: string;
@@ -36,7 +40,7 @@ export interface StudioLabels {
 }
 
 export interface StudioProps {
-  /** Defaults to the engine's catalog: the throwaway demo catalog until the real engine lands. Its `placements` build the slot tree. */
+  /** Defaults to the adapter catalog, then the engine's throwaway demo catalog. Its `placements` build the slot tree. */
   catalog?: CatalogData;
   /** Loaded once, when the Studio mounts. Keep it stable. */
   adapter: StudioAdapter;

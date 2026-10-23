@@ -29,7 +29,7 @@ const GRID_CLASSES: Record<StudioLayout, string> = {
  * document live from the working selection. All copy comes from `labels`; saving goes through the host's adapter.
  */
 export function Studio({ catalog: catalogProp, adapter, labels, initialSlotId = DEFAULT_SLOT_ID, livePreview = true, className }: StudioProps): ReactElement {
-  const catalog: CatalogData = useMemo(() => catalogProp ?? studioEngine.loadCatalog(), [catalogProp]);
+  const catalog: CatalogData = useMemo(() => catalogProp ?? adapter.catalog ?? studioEngine.loadCatalog(), [catalogProp, adapter.catalog]);
   const layout = useStudioLayout();
   const [phase, setPhase] = useState<Phase>({ status: "loading" });
   const [changes, setChanges] = useState<ChangeSet | undefined>(undefined);
@@ -96,7 +96,8 @@ export function Studio({ catalog: catalogProp, adapter, labels, initialSlotId = 
   };
 
   const treeCell = layout === "medium" ? "min-w-0 row-span-2" : "min-w-0";
-  const treeNode = <SlotTree nodes={tree} placements={catalog.placements} label={labels.treeLabel} slotId={slotId} onNavigate={(id) => { setSlotId(id); setPickedTarget(undefined); setFocusedSource(undefined); }} />;
+  const counts = Object.fromEntries(catalog.slots.map((slot) => [slot.id, library ? scopeTargets({ catalog, library, slotId: slot.id, scope: "member" }).length : 0]));
+  const treeNode = <SlotTree counts={counts} memberCount={labels.memberCount} nodes={tree} placements={catalog.placements} label={labels.treeLabel} slotId={slotId} onNavigate={(id) => { setSlotId(id); setPickedTarget(undefined); setFocusedSource(undefined); }} />;
   const inspector = (
     <aside aria-label={labels.inspectorLabel} className="min-w-0">
       {focused && working ? (

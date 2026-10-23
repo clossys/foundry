@@ -3,6 +3,7 @@
 import type { ReactElement } from "react";
 import { RadioGroup } from "../atoms/RadioGroup.js";
 import { Select } from "../atoms/Select.js";
+import { TOKENS } from "../tokens/tokens.js";
 import { Tabs } from "../atoms/Tabs.js";
 import { CandidateCard } from "./CandidateCard.js";
 import type { Candidate, Scope } from "./model.js";
@@ -36,6 +37,7 @@ export function CandidateStage({ labels, layout, scope, onScope, target, targets
           />
         )}
       </div>
+      <p className="text-caption text-ink-secondary">{labels.scope.explanation}</p>
       {candidates.length === 0 ? <p data-studio-empty="" className="text-body text-ink-secondary">{labels.noFill}</p> : (
         <RadioGroup
           label={labels.useGroup}
@@ -50,7 +52,12 @@ export function CandidateStage({ labels, layout, scope, onScope, target, targets
               </Tabs.List>
               {candidates.map((candidate, at) => <Tabs.Panel key={candidate.source} id={candidate.source}>{cards[at]}</Tabs.Panel>)}
             </Tabs>
-          ) : cards}
+          ) : (
+            <div data-studio-cards="" className="grid grid-flow-col min-w-0 gap-md overflow-x-auto"
+              style={{ gridTemplateColumns: `repeat(${Math.min(candidates.length, 4)}, minmax(0, 1fr))`, gridAutoColumns: `calc((100% - 3 * var(--spacing-md, ${TOKENS["--spacing-md"]!.value})) / 4)` }}>
+              {cards}
+            </div>
+          )}
         </RadioGroup>
       )}
     </section>

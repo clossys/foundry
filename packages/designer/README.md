@@ -266,6 +266,26 @@ smallest stable subpath that owns what you need:
 | `@clossys/designer/gate` | Token-purity scanner/gate and the environment-conformance gate (`checkEnvironmentConformance`). |
 | `@clossys/designer/render-environment` | `RENDER_ENVIRONMENT` — a plain data declaration of every subpath's render environment (`"server-safe"` \| `"client-only"`). See "Server Components" below. |
 
+For a read-only view of the shipped 52-leaf token catalog, import
+`catalogStudioAdapter` alongside `Studio` from `@clossys/designer/studio` and pass
+`adapter={catalogStudioAdapter}`. `demoStudioAdapter` and the default catalog remain
+unchanged. An explicit `catalog` prop overrides the adapter's catalog. Leaf counts
+show available members from contracts and loaded fills, including open contracts:
+this catalog plus the demo consumer has 220 available members versus 217 shipped
+bindings. The existing demo engine resolves only 145 closed-contract members;
+open-contract leaves are browsable with counts but have no resolved member preview.
+The smallest follow-up is open-member enumeration in the demo engine's resolution
+profile; this adapter neither synthesizes values nor changes contracts.
+
+Supply the plain copy through `labels`: `scope.label` = "Apply to",
+`scope.member` = "One token", `scope.slot` = "Whole leaf", `scope.node` =
+"Everything under a group", and `useSource` returns "Use this version".
+`scope.explanation` says "A more specific choice wins: one token beats a whole leaf,
+which beats a group." `memberCount(count)` formats the available-member count.
+Wide and medium layouts compare cards in one horizontal row, with horizontal
+scrolling beyond four sources; narrow layouts retain tabs. The stored picks and
+scope precedence are unchanged.
+
 ### Token details and selection
 
 The flat `TOKENS` registry has 217 stable property identities across brand

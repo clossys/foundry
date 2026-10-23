@@ -1,15 +1,19 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { TOKENS } from "../tokens/tokens.js";
 import type { ChangeSet, Selection } from "../catalog-core/index.js";
 import { DEMO_CATALOG, DEMO_LIBRARY, DEMO_SELECTION } from "./demo-data.js";
-import { Studio, demoStudioAdapter } from "./index.js";
+import { CandidateStage } from "./CandidateStage.js";
+import { buildCandidates } from "./model.js";
+import { Studio, demoStudioAdapter, catalogStudioAdapter } from "./index.js";
 import type { StudioAdapter, StudioLabels } from "./types.js";
 
 const labels: StudioLabels = {
   treeLabel: "L-tree", stageLabel: "L-stage", inspectorLabel: "L-inspector", useGroup: "L-use-group",
   useSource: (source, target) => `L-use ${source} @ ${target}`,
-  scope: { label: "L-scope", member: "L-member", slot: "L-slot", node: "L-node", memberPicker: "L-member-picker", nodePicker: "L-node-picker" },
+  scope: { label: "L-scope", member: "L-member", slot: "L-slot", node: "L-node", memberPicker: "L-member-picker", nodePicker: "L-node-picker", explanation: "L-specificity" },
+  memberCount: (count) => `L-count ${count}`,
   checkSummary: (errors, notices) => `L-check ${errors}/${notices}`,
   referenceOnly: "L-reference-only", inUseByDefault: "L-default", noFill: "L-no-fill",
   pending: (count) => `L-pending ${count}`, save: "L-save", discard: "L-discard", resetToDefault: "L-reset",
@@ -32,12 +36,61 @@ const mount = async (props: Partial<Parameters<typeof Studio>[0]> = {}, host: St
 };
 const radio = (source: string, target = "tokens.accent-color") => screen.getByRole("radio", { name: `L-use ${source} @ ${target}` });
 const stub = (desktop: boolean, tablet: boolean) => vi.stubGlobal("matchMedia", vi.fn((media: string) => ({
-  matches: media.includes("1024") || media.includes("desktop") ? desktop : tablet, media, addEventListener: vi.fn(), removeEventListener: vi.fn(),
+  matches: media === `(width >= ${TOKENS["--breakpoint-desktop"]!.value})` ? desktop : tablet, media, addEventListener: vi.fn(), removeEventListener: vi.fn(),
 })));
 
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
 describe("Studio", () => {
+  it("selects the adapter catalog unless an explicit prop overrides it", async () => {
+    const view = await mount({ catalog: undefined }, catalogStudioAdapter);
+    expect(screen.getByRole("row", { name: "Color" })).toBeInTheDocument();
+    expect(screen.getByRole("row", { name: "tokens.accent-color (L-count 5)" })).toBeInTheDocument();
+    expect(screen.queryByRole("row", { name: "Role" })).toBeNull();
+    view.unmount();
+    await mount({}, catalogStudioAdapter);
+    expect(screen.getByRole("row", { name: "Role" })).toBeInTheDocument();
+  });
+
+  it("renders the requested plain copy entirely through the host labels", async () => {
+    const plain: StudioLabels = { ...labels, useSource: () => "Use this version", scope: { ...labels.scope, label: "Apply to", member: "One token", slot: "Whole leaf", node: "Everything under a group", explanation: "A more specific choice wins: one token beats a whole leaf, which beats a group." } };
+    await mount({ labels: plain });
+    expect(screen.getByRole("radiogroup", { name: "Apply to" })).toBeInTheDocument();
+    for (const name of ["One token", "Whole leaf", "Everything under a group"]) expect(screen.getByRole("radio", { name })).toBeInTheDocument();
+    expect(screen.getAllByRole("radio", { name: "Use this version" })).toHaveLength(3);
+    expect(screen.getByText(plain.scope.explanation)).toBeVisible();
+  });
+
+  it.each([1, 2, 4, 5, 6])("caps the explicit horizontal columns at four for %i sources", (count) => {
+    const first = buildCandidates({ catalog: DEMO_CATALOG, library: DEMO_LIBRARY, working: DEMO_SELECTION, slotId: "tokens.accent-color", scope: "slot", target: "tokens.accent-color" })[0]!;
+    const candidates = Array.from({ length: count }, (_, index) => ({ ...first, source: `source-${index}`, index }));
+    render(<CandidateStage labels={labels} layout="wide" scope="slot" onScope={() => undefined} target="tokens.accent-color" targets={[]} onTarget={() => undefined} candidates={candidates} focusedSource="source-0" onFocusSource={() => undefined} onUse={() => undefined} />);
+    const row = document.querySelector("[data-studio-cards]") as HTMLElement;
+    expect(row.style.gridTemplateColumns).toBe(`repeat(${Math.min(count, 4)}, minmax(0, 1fr))`);
+    expect(row).toHaveClass("grid-flow-col", "overflow-x-auto");
+    expect(row.children).toHaveLength(count);
+  });
+
+  it("shows the scope explanation from labels and leaves source identities visible", async () => {
+    await mount();
+    expect(screen.getByText("L-specificity")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "foundry" })).toBeInTheDocument();
+    expect(screen.getByText("L-use foundry @ tokens.accent-color")).toBeVisible();
+  });
+
+  it.each([[true, true, "wide"], [false, true, "medium"]] as const)("keeps %s/%s candidates in one horizontally overflowing row", async (desktop, tablet, layout) => {
+    stub(desktop, tablet);
+    await mount();
+    expect(document.querySelector("[data-studio]")).toHaveAttribute("data-layout", layout);
+    const row = document.querySelector("[data-studio-cards]") as HTMLElement;
+    expect(row).not.toBeNull();
+    expect(row).toHaveClass("grid", "grid-flow-col", "overflow-x-auto");
+    expect(row.style.gridTemplateColumns).toBe("repeat(3, minmax(0, 1fr))");
+    expect(row.style.gridAutoColumns).toContain("/ 4");
+    expect(row.querySelectorAll("[data-studio-card]")).toHaveLength(3);
+    expect(screen.queryByRole("tablist")).toBeNull();
+  });
+
   it("loads once on mount and shows only the loading note until the adapter answers", async () => {
     let finish: (value: Awaited<ReturnType<StudioAdapter["load"]>>) => void = () => undefined;
     const host = adapter({ load: vi.fn(() => new Promise((resolve) => { finish = resolve as never; })) as never });
@@ -160,7 +213,7 @@ describe("Studio", () => {
   it("switches slot from the tree and draws that slot's cards", async () => {
     const user = userEvent.setup();
     await mount();
-    await user.click(screen.getByRole("row", { name: "tokens.surface-color" }));
+    await user.click(screen.getByRole("row", { name: "tokens.surface-color (L-count 2)" }));
     expect(screen.getByRole("radio", { name: "L-use foundry @ tokens.surface-color" })).toBeInTheDocument();
     expect(screen.queryByRole("radio", { name: "L-use reference-kit @ tokens.surface-color" })).toBeNull();
   });
@@ -196,10 +249,10 @@ describe("Studio", () => {
 
   it("builds the slot tree from the placement file and opens it on the current slot", async () => {
     await mount();
-    expect(screen.getByRole("row", { name: "tokens.accent-color" })).toBeInTheDocument();
-    expect(screen.getByRole("row", { name: "tokens.surface-color" })).toBeInTheDocument();
+    expect(screen.getByRole("row", { name: "tokens.accent-color (L-count 2)" })).toBeInTheDocument();
+    expect(screen.getByRole("row", { name: "tokens.surface-color (L-count 2)" })).toBeInTheDocument();
     expect(screen.queryByRole("row", { name: "tokens.line-height" })).toBeNull();
-    expect(screen.getAllByRole("row").map((row) => row.getAttribute("aria-label") ?? row.textContent)).toEqual(expect.arrayContaining(["Scale", "Role", "tokens.accent-color"]));
+    expect(screen.getAllByRole("row").map((row) => row.getAttribute("aria-label") ?? row.textContent)).toEqual(expect.arrayContaining(["Scale", "Role", "tokens.accent-color (L-count 2)"]));
   });
 
   it("expands a node pick into one slot pick per leaf the source fills, and never stores a node", async () => {

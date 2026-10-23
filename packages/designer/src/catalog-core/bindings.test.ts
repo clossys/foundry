@@ -84,25 +84,40 @@ describe("catalog token bindings", () => {
       expect(slot.contract.modes).toEqual(colorRole || themeDependent ? ["light", "dark"] : ["light"]);
     }
   });
-  it("places every slot exactly once, at most three levels deep, under its tier", () => {
+  it("places the signed 52 leaves once under seven domains and two grouping levels, without changing contract tiers", () => {
     const tree = tokenPlacement as unknown as Placement;
-    const placed: { leaf: string; depth: number; top: string }[] = [];
-    const nodeIds: string[] = [];
-    const walk = (nodes: readonly PlacementNode[], depth: number, top: string): void => {
-      for (const node of nodes) {
-        nodeIds.push(node.id);
-        const branch = depth === 1 ? node.id : top;
-        if ("leaves" in node) for (const leaf of node.leaves) placed.push({ leaf, depth: depth + 1, top: branch });
-        else walk(node.children, depth + 1, branch);
-      }
-    };
-    walk(tree.nodes, 1, "");
     expect(tree.layer).toBe("tokens");
-    expect(placed.map(entry => entry.leaf).sort(compare)).toEqual(slots.map(slot => slot.id));
-    expect(placed.every(entry => entry.depth <= 3)).toBe(true);
+    expect(tree.nodes.map(node => node.label)).toEqual(["Color", "Type", "Space", "Shape", "Depth", "Motion", "Interaction"]);
+    const groups = Object.fromEntries(tree.nodes.map(domain => [domain.label, "children" in domain
+      ? Object.fromEntries(domain.children.map(group => [group.label, "leaves" in group ? group.leaves : []])) : {}]));
+    expect(groups).toEqual({
+      Color: { Palette: ["tokens.color-ramp"], "Surfaces And Text": ["tokens.surface-color", "tokens.text-color", "tokens.border-color", "tokens.scrim-color"], "Actions And State": ["tokens.accent-color", "tokens.control-color", "tokens.status-color", "tokens.focus-color"], "Data Viz": ["tokens.chart-color", "tokens.categorical-color", "tokens.sequential-color", "tokens.diverging-color"] },
+      Type: { Faces: ["tokens.typeface", "tokens.display-face"], Metrics: ["tokens.font-size", "tokens.font-weight", "tokens.line-height", "tokens.letter-spacing"], Styles: ["tokens.display-size", "tokens.heading-size", "tokens.body-size", "tokens.caption-size", "tokens.code-size"] },
+      Space: { Spacing: ["tokens.spacing", "tokens.density", "tokens.gutter"], Widths: ["tokens.content-size", "tokens.region-width", "tokens.breakpoint"] },
+      Shape: { Corners: ["tokens.radius", "tokens.control-radius", "tokens.surface-radius"], Strokes: ["tokens.border-width", "tokens.icon-stroke"], Marks: ["tokens.icon-size", "tokens.brandmark-size"] },
+      Depth: { Elevation: ["tokens.shadow", "tokens.elevation", "tokens.focus-shadow"], Layers: ["tokens.blur", "tokens.z-index"] },
+      Motion: { Timing: ["tokens.duration", "tokens.behavior-timing", "tokens.transition-duration"], Easing: ["tokens.easing", "tokens.transition-easing"], Movement: ["tokens.shift-distance"] },
+      Interaction: { States: ["tokens.state-opacity", "tokens.focus-outline"], Targets: ["tokens.touch-target", "tokens.control-size"] },
+    });
+    const placed: string[] = [];
+    const nodeIds: string[] = [];
+    for (const domain of tree.nodes) {
+      nodeIds.push(domain.id);
+      expect("children" in domain).toBe(true);
+      if (!("children" in domain)) continue;
+      for (const group of domain.children) {
+        nodeIds.push(group.id);
+        expect("leaves" in group).toBe(true);
+        if ("leaves" in group) placed.push(...group.leaves);
+      }
+    }
+    expect(placed.sort(compare)).toEqual(Object.keys(counts).sort(compare));
+    expect(placed).toHaveLength(52);
     expect(new Set(nodeIds).size).toBe(nodeIds.length);
-    const tiers = new Map(slots.map(slot => [slot.id, slot.contract.tier]));
-    for (const entry of placed) expect(entry.top).toBe(tiers.get(entry.leaf));
+    for (const id of nodeIds) expect(slots.some(slot => slot.id === id) || placed.includes(id)).toBe(false);
+    expect(nodeIds).not.toContain("scale");
+    expect(nodeIds).not.toContain("role");
+    for (const slot of slots) expect(["scale", "role"]).toContain(slot.contract.tier);
     expect(retired).toEqual([]);
   });
 });

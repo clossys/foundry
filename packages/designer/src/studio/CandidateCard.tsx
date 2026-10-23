@@ -28,8 +28,9 @@ export function CandidateCard({ candidate, target, labels, focused, onFocusSourc
         focused ? "forced-colors:border-2 forced-colors:border-dashed forced-colors:border-[color:CanvasText]" : "",
       )}
     >
+      <h3 className="text-body text-ink-primary">{source}</h3>
       <div className="flex flex-wrap items-start justify-between gap-sm">
-        <RadioGroup.Radio value={source} isDisabled={!candidate.usable} aria-label={labels.useSource(source, target)}>{source}</RadioGroup.Radio>
+        <RadioGroup.Radio value={source} isDisabled={!candidate.usable} aria-label={labels.useSource(source, target)}>{labels.useSource(source, target)}</RadioGroup.Radio>
         {candidate.inUseByDefault ? <Badge variant="info">{labels.inUseByDefault}</Badge> : null}
       </div>
       {candidate.reason === "reference" ? <p className="text-caption text-ink-muted">{labels.referenceOnly}</p> : null}

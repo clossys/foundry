@@ -12,9 +12,13 @@ const branchesAbove = (placements: readonly Placement[], slotId: string): string
     return nodes.length > 0 ? [placement.layer, ...nodes.map((node) => node.id)] : [];
   });
 
-export function SlotTree({ nodes, placements, label, slotId, onNavigate }: {
+export function SlotTree({ nodes, placements, label, slotId, counts, memberCount, onNavigate }: {
+  counts: Readonly<Record<string, number>>; memberCount: (count: number) => string;
   nodes: readonly SlotTreeNode[]; placements: readonly Placement[]; label: string; slotId: string; onNavigate: (slotId: string) => void;
 }): ReactElement {
   const [initial] = useState(() => branchesAbove(placements, slotId));
-  return <TreeView nodes={nodes} aria-label={label} currentId={slotId} onNavigate={onNavigate} defaultExpandedIds={initial} />;
+  const decorate = (node: SlotTreeNode): SlotTreeNode => node.children
+    ? { ...node, children: node.children.map(decorate) }
+    : { ...node, label: `${node.label} (${memberCount(counts[node.id] ?? 0)})` };
+  return <TreeView nodes={nodes.map(decorate)} aria-label={label} currentId={slotId} onNavigate={onNavigate} defaultExpandedIds={initial} />;
 }

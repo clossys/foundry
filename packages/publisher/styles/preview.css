@@ -1794,6 +1794,9 @@
   .list-none {
     list-style-type: none;
   }
+  .grid-flow-col {
+    grid-auto-flow: column;
+  }
   .ledger-columns-two {
     grid-template-columns: minmax(0, 1fr);
     @media (width >= 48rem) {
