@@ -11,6 +11,7 @@ import { Studio, demoStudioAdapter, catalogStudioAdapter } from "./index.js";
 import type { StudioAdapter, StudioLabels } from "./types.js";
 
 const labels: StudioLabels = {
+  canvas: { label: "L-canvas", hint: "L-canvas-hint", search: "L-search", explorerOpen: "L-open-explorer", explorerClose: "L-close-explorer", inspectorClose: "L-close-inspector", minimap: "L-minimap", filters: { all: "All", pending: "Pending", warnings: "Has warnings", undecided: "Undecided", differs: "Differs from group" }, zoomLabel: "L-zoom", zoomIn: "L-zoom-in", zoomOut: "L-zoom-out", fit: "L-fit", zoom: percent => `${Math.round(percent)}%`, openBoard: name => `L-open-board ${name}`, goToBoard: name => `L-go-board ${name}` },
   layers: { label: "L-layers", tokens: "Tokens", assets: "Assets", components: "Components", sections: "Sections", frames: "Frames", disabled: "Built after Tokens sign-off" },
   progress: (decided, total) => `Decided ${Math.round(decided * 100 / total)}%`,
   scorecard: { title: "L-score", close: "L-close", decided: "L-decided", resolved: "L-resolved", checks: "L-checks", issues: "L-issues", noIssues: "L-no-issues", target: "Target: needs the check engine", counts: (errors, notices) => `L-score-count ${errors}/${notices}`, supported: codes => `L-supported ${codes.join("/")}`, categories: { contract: "Contract and format", accessibility: "Accessibility", coherence: "Coherence", modes: "Modes", provenance: "Provenance and license", coverage: "Coverage" } },

@@ -16,6 +16,8 @@ assertPeerVersion({
 });
 
 export { Studio } from "./Studio.js";
+export { StudioProvider } from "./StudioProvider.js";
+export { StudioHeader } from "./StudioHeader.js";
 export { catalogStudioAdapter } from "./catalog-adapter.js";
 export { demoStudioAdapter } from "./demo-adapter.js";
-export type { StudioAdapter, StudioLabels, StudioProps } from "./types.js";
+export type { StudioAdapter, StudioLabels, StudioProps, StudioProviderProps, StudioHeaderProps, StudioCanvasProps, StudioPanelInsets } from "./types.js";

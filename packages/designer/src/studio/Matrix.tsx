@@ -14,11 +14,12 @@ import { CompactPreview } from "./previews.js";
 import type { StudioLabels } from "./types.js";
 
 
-export function Matrix({ rows, sources, labels, working, changes, groupChoices, groups = [], expanded, onExpand, onUse, onFocusCell, focusTarget, onRowElement, layout = "wide" }: {
+export function Matrix({ rows, sources, labels, working, changes, groupChoices, groups = [], expanded, onExpand, onUse, onFocusCell, focusTarget, onRowElement, contained = false, layout = "wide" }: {
   rows: readonly MatrixRow[]; sources: readonly string[]; labels: StudioLabels; working: Selection; changes: ChangeSet;
   groupChoices: Readonly<Record<string, string>>; groups?: readonly NodeOption[]; expanded: ReadonlySet<string>;
   onExpand: (leaf: string) => void; onUse: (row: MatrixRow, source: string) => void; onFocusCell: (row: MatrixRow, candidate: Candidate) => void;
   layout?: StudioLayout;
+  contained?: boolean;
   focusTarget?: { id: string; serial: number };
   onRowElement?: (id: string, element: HTMLTableRowElement | null) => void;
 }): ReactElement {
@@ -31,11 +32,11 @@ export function Matrix({ rows, sources, labels, working, changes, groupChoices, 
   useEffect(() => {
     if (focusTarget && consumedFocus.current !== focusTarget.serial) {
       const element = rowElements.current.get(focusTarget.id);
-      if (element) { consumedFocus.current = focusTarget.serial; element.focus(); }
+      if (element) { consumedFocus.current = focusTarget.serial; element.focus({ preventScroll: true }); }
     }
   }, [focusTarget, rows]);
   const memberships = groups.length ? groups : rows.filter(row => row.scope === "node").map(row => ({ id: row.id, label: row.label, leaves: row.leaves }));
-  const table = <div className="min-w-0 overflow-x-auto" data-studio-matrix="" style={{ maxBlockSize: `var(--ui-table-max-block-default, ${TOKENS["--ui-table-max-block-default"]!.value})`, overflowY: "auto" }}>
+  const table = <div className="min-w-0 overflow-x-auto" data-studio-matrix="" style={{ maxBlockSize: contained ? "100%" : `var(--ui-table-max-block-default, ${TOKENS["--ui-table-max-block-default"]!.value})`, blockSize: contained ? "100%" : undefined, overflowY: "auto" }}>
     <table aria-label={labels.matrix.label} className="table-fixed min-w-0 text-start text-body-s"
       style={{ inlineSize: visibleSources.length > 4 ? `calc(${leafWidth} + (100% - ${leafWidth}) * ${visibleSources.length} / 4)` : "100%" }}>
       <thead className="sticky top-0 bg-surface-base" style={{ zIndex: `var(--ui-z-sticky, ${TOKENS["--ui-z-sticky"]!.value})` }}><tr>
@@ -76,7 +77,7 @@ export function Matrix({ rows, sources, labels, working, changes, groupChoices, 
                       {!candidate ? <p className="text-caption text-ink-muted">{labels.noFill}</p> : null}
                       {pending ? <span aria-label={labels.matrix.pending} data-studio-cell-pending="">●</span> : null}
                       {row.scope === "slot" && leafPick?.source === source && parentSource !== undefined && parentSource !== source ? <small>{labels.matrix.differs}</small> : null}
-                      {candidate ? <><div data-studio-candidate={candidate.index}><CompactPreview candidate={candidate} labels={labels} /></div><small>{labels.checkSummary(candidate.errors, candidate.notices)}</small></> : null}
+                      {candidate ? <><div data-studio-zoom-detail="" data-studio-candidate={candidate.index}><CompactPreview candidate={candidate} labels={labels} /></div><small data-studio-zoom-detail="">{labels.checkSummary(candidate.errors, candidate.notices)}</small></> : null}
                     </div>
                   </td>;
                 })}</tr></tbody>

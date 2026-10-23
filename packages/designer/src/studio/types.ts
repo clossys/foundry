@@ -1,3 +1,5 @@
+import type { CanvasFilter } from "./canvas-model.js";
+import type { CSSProperties, ReactNode } from "react";
 import type { CheckCategory } from "./matrix-model.js";
 import type { CatalogData, ChangeSet, Finding, LibraryData, Selection } from "../catalog-core/index.js";
 
@@ -13,6 +15,7 @@ export interface StudioAdapter {
 
 /** All chrome copy. The Studio has no English of its own. */
 export interface StudioLabels {
+  canvas: { label: string; hint: string; search: string; explorerOpen: string; explorerClose: string; inspectorClose: string; minimap: string; filters: Record<CanvasFilter, string>; zoomLabel: string; zoomIn: string; zoomOut: string; fit: string; zoom: (percent: number) => string; openBoard: (name: string) => string; goToBoard: (name: string) => string };
   layers: { label: string; tokens: string; assets: string; components: string; sections: string; frames: string; disabled: string };
   progress: (decided: number, total: number) => string;
   scorecard: { title: string; close: string; decided: string; resolved: string; checks: string; issues: string; noIssues: string; target: string; categories: Record<CheckCategory, string>; counts: (errors: number, notices: number) => string; supported: (codes: readonly string[]) => string };
@@ -45,7 +48,14 @@ export interface StudioLabels {
   inspector: { representedLeaf: string; trust: string; usedBy: string; none: string; source: string; mode: string; licence: string; pin: string; status: string; evidence: string; members: string; findings: string; via: string; light: string; dark: string; alias: string; builtOn: string; relation: string };
 }
 
-export interface StudioProps {
+export interface StudioPanelInsets {
+  blockStart?: CSSProperties["insetBlockStart"]; blockEnd?: CSSProperties["insetBlockEnd"]; inlineStart?: CSSProperties["insetInlineStart"]; inlineEnd?: CSSProperties["insetInlineEnd"];
+}
+export interface StudioHeaderProps { className?: string }
+export interface StudioCanvasProps { header?: "internal" | "external"; panelInsets?: StudioPanelInsets; className?: string }
+export interface StudioProviderProps extends Omit<StudioProps, "header" | "panelInsets" | "className"> { children: ReactNode }
+
+export interface StudioProps extends StudioCanvasProps {
   /** Defaults to the adapter catalog, then the engine's throwaway demo catalog. Its `placements` build the slot tree. */
   catalog?: CatalogData;
   /** Loaded once, when the Studio mounts. Keep it stable. */

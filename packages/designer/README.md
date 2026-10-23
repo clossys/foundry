@@ -262,7 +262,7 @@ smallest stable subpath that owns what you need:
 | `@clossys/designer/atoms`, `/blocks`, `/shell`, `/charts` | Reusable React visual primitives. |
 | `@clossys/designer/atoms/server`, `/blocks/server`, `/shell/server`, `/charts/server`, `/theme/server` | The server-safe subset of each sibling subpath, importable from a React Server Component. See "Server Components" below. |
 | `@clossys/designer/theme` | `getThemeInitScript`, `ThemeProvider`/`useTheme`, `ThemeToggle` — the runtime half of theming. Not to be confused with the CSS `/theme.css` subpath above. |
-| `@clossys/designer/studio` | `Studio`, the library Studio: pick which source's fill each slot uses, see every candidate in its own values, and re-theme the page live. Client-only, with no `/studio/server`. All copy comes from the host's `labels`; reading and saving go through its `adapter`. `demoStudioAdapter` is a throwaway, read-only demo library for a first look. |
+| `@clossys/designer/studio` | `Studio`, `StudioProvider` and `StudioHeader`, the library Studio: pick which source's fill each slot uses, see every candidate in its own values, and re-theme the page live. Client-only, with no `/studio/server`. All copy comes from the host's `labels`; reading and saving go through its `adapter`. `demoStudioAdapter` is a throwaway, read-only demo library for a first look. |
 | `@clossys/designer/gate` | Token-purity scanner/gate and the environment-conformance gate (`checkEnvironmentConformance`). |
 | `@clossys/designer/render-environment` | `RENDER_ENVIRONMENT` — a plain data declaration of every subpath's render environment (`"server-safe"` \| `"client-only"`). See "Server Components" below. |
 
@@ -284,18 +284,42 @@ Supply the plain copy through `labels`: `scope.label` = "Apply to",
 "Everything under a group", and `useSource` returns "Use this version".
 `scope.explanation` says "A more specific choice wins: one token beats a whole leaf,
 which beats a group." `memberCount(count)` formats the available-member count.
-The centre pane stacks one self-contained Board per L2 placement group (19 in the
-shipped catalog). Each Board has its group name and an explicit-pick Decided ring;
-libraries are stable columns and the group, leaves and expandable members are rows. Each row has one shared Use radio
-group; missing and reference-only fills stay visible but disabled. Wide and medium
-layouts show up to four library columns before horizontal overflow; narrow layouts
-retain library tabs. The leaf column and library headers are sticky. Group choices
-still fan out to leaf picks; member picks take precedence over whole-leaf picks.
+The Studio fills a host with a definite width and height; it does not size itself
+from the viewport. One transformed canvas contains the 19 L2 Boards in seven domain
+rows, with vertical domain labels. Each Board keeps its name and explicit-pick
+Decided ring; libraries are stable columns and groups, leaves and expandable members
+are rows. Each row has one shared Use radio group; missing and reference-only fills
+stay visible but disabled. Boards keep their geometry at every container size, with
+horizontal overflow past four libraries and sticky leaf columns and headers.
+Group choices still fan out to leaf picks; member picks take precedence over leaves.
 The optional placement `basket` field controls group-versus-leaf row emphasis only.
-The explorer omits the Tokens layer wrapper and keeps scale/role as leaf tags.
-Its `onSelect(nodeId)` seam scrolls the matching Board or leaf row into view without
-filtering other Boards. Stable Board IDs and refs support this navigation; the
-current layout is a plain vertical scroll stack, with no search, filters, pan or zoom.
+
+Wheel and drag pan; Ctrl/Command-wheel and pinch zoom. Focus the canvas to use arrow
+keys, +/-, and 0 for Fit all. Zoom is clamped at 12% to 200%; in-memory camera poses
+belong to each layer and never enter Selection or storage. Camera changes update one
+DOM transform without rendering the matrix again. Below 50% the fixed Board boxes
+show summaries; 50–90% keeps quiet cells, and above 90% shows full cells. Hidden
+summary-level matrices are inert; semantic zoom never collapses their layout.
+Navigation flies to a Board or leaf over 250ms, with no animation for reduced motion.
+
+The explorer floats, collapses to a pill, and contains SearchField, the placement
+tree and All/Pending/Has warnings/Undecided/Differs from group filters. Search and
+filters dim Boards and minimap cells without removing them. The tree omits the
+Tokens wrapper and uses `onSelect(nodeId)` to move the camera. The Inspector opens
+on cell focus, dismisses with Escape, and overlays the explorer in narrow containers.
+A compact minimap reflects the world and camera; zoom controls float separately.
+`panelInsets` accepts logical CSS lengths for blockStart/blockEnd/inlineStart/inlineEnd,
+so a host can include its header offset. `canvas` labels supply the canvas name and
+keyboard hint, search/panel controls, the five filter names, minimap and zoom labels,
+`zoom(percent)`, `openBoard(name)` and `goToBoard(name)` for minimap descriptions.
+
+Standalone `Studio` renders its cohesive header internally. To place that unit in
+a host AppFrame header, wrap the existing frame and canvas in one
+`<StudioProvider adapter={adapter} labels={labels}>`, render `<StudioHeader />` in
+the frame's header slot, and render `<Studio header="external" />` in its content.
+The provider loads the adapter once and shares progress, scorecard, pending choices,
+Save and Discard with both components. Keep the provider mounted while moving the
+header or canvas. A read-only adapter hides Save; Discard still clears session picks.
 
 Supply `layers` labels for Tokens, Assets, Components, Sections and Frames, with
 `layers.disabled` = "Built after Tokens sign-off". Only Tokens is active. Its
