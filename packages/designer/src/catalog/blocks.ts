@@ -325,6 +325,7 @@ export const BLOCK_ENTRIES: readonly BlockEntry[] = [
   }),
   exported(CONTAINERS, "CatalogWorkspace", { id: "matrix.catalog-workspace", label: "Catalog workspace" }),
   exported(CONTAINERS, "FlowCanvas", { id: "matrix.flow-canvas", label: "Flow canvas" }),
+  exported(CONTAINERS, "CatalogBrowser", { id: "matrix.catalog-browser", label: "Catalog browser" }),
 
   // Collect / Forms
   built(FORMS, "Form", { id: "form.form", label: "Form", stableCandidate: true, notes: [STABLE_CANDIDATE] }),

@@ -486,6 +486,8 @@ export type { TableValue, TableColumnKind, TableColumn, TableCollation, TableFil
 
 export { CatalogWorkspace } from "./blocks/index.js";
 export type { CatalogWorkspaceProps, CatalogWorkspaceItem, CatalogWorkspaceSize } from "./blocks/index.js";
+export { CatalogBrowser } from "./blocks/index.js";
+export type { CatalogBrowserProps, CatalogBrowserCatalog, CatalogBrowserEntry, CatalogBrowserEntryOf, CatalogBrowserGroup, CatalogBrowserKind, CatalogBrowserLabels, CatalogBrowserLifecycle, CatalogBrowserSelection, CatalogBrowserConfig, CatalogBrowserControl, CatalogBrowserPreviewContext, CatalogBrowserReference, CatalogBrowserFilter, CatalogBrowserField, CatalogBrowserBadge } from "./blocks/index.js";
 
 export { parseDataTableViewModel, serializeDataTableViewModel, DataTableViewModelError } from "./blocks/data-table/view-model.js";
 export type { DataTableMessages } from "./blocks/data-table/messages.js";

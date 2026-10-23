@@ -714,6 +714,52 @@ describe("compiled CatalogWorkspace public contract", () => {
   });
 });
 
+describe("compiled CatalogBrowser public contract", () => {
+  const consumerFor = (entry: string, index: number) => `
+    import { CatalogBrowser as Browser${index}, type CatalogBrowserProps as Props${index}, type CatalogBrowserKind as Kind${index}, type CatalogBrowserLabels as Labels${index}, type CatalogBrowserSelection as Selection${index} } from ${JSON.stringify(join(packageRoot, "dist", entry))};
+    interface Entry${index} { id: string; label: string; l1: string; l2: string; lifecycle: "draft" | "stable" | "deprecated" | "parked"; tier: "core" | "role" }
+    const catalog${index} = { kind: "tokens" as const, groups: [{ id: "color", label: "Color", children: [{ id: "ink", label: "Ink" }] }], entries: [{ id: "--ink", label: "Ink", l1: "color", l2: "ink", lifecycle: "draft", tier: "role" }] satisfies Entry${index}[] };
+    const kind${index}: Kind${index}<Entry${index}> = { label: "Tokens", preview: (entry, context) => entry.tier + context.kind + String(context.config.tone), controls: () => [{ type: "toggle", id: "tone", label: "Tone", defaultValue: false }] };
+    declare const labels${index}: Labels${index};
+    const selection${index}: Selection${index} = { catalog: "tokens", entryId: null };
+    const props${index}: Props${index}<typeof catalog${index}> = { catalogs: [catalog${index}], kinds: { tokens: kind${index} }, label: "Catalog", labels: labels${index}, defaultSelection: selection${index} };
+    const element${index} = Browser${index}(props${index});
+  `;
+  it("exports the block and its host-facing types from both existing barrels", () => {
+    const filename = join(packageRoot, "catalog-browser-consumer.check.ts");
+    const consumer = ["blocks/index.js", "index.js"].map(consumerFor).join("\n");
+    const options = { strict: true, noEmit: true, skipLibCheck: true, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler };
+    const host = ts.createCompilerHost(options); const original = host.getSourceFile.bind(host);
+    host.getSourceFile = (path, language, error, fresh) => path === filename ? ts.createSourceFile(path, consumer, language, true) : original(path, language, error, fresh);
+    expect(ts.getPreEmitDiagnostics(ts.createProgram([filename], options, host)).map(diagnostic => ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n"))).toEqual([]);
+    for (const entry of ["blocks/index.js", "index.js"]) {
+      const script = `import { CatalogBrowser } from ${JSON.stringify(join(packageRoot, "dist", entry))}; process.stdout.write(typeof CatalogBrowser);`;
+      expect(execFileSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8", cwd: packageRoot })).toBe("function");
+    }
+  }, 30_000);
+
+  it("requires a binding for every catalog kind with native diagnostics in both barrels", () => {
+    const filename = join(packageRoot, "catalog-browser-negative-consumer.check.ts");
+    const source = ["blocks/index.js", "index.js"].map((entry, index) => `
+      import { type CatalogBrowserProps as Props${index}, type CatalogBrowserLabels as Labels${index} } from ${JSON.stringify(join(packageRoot, "dist", entry))};
+      declare const labels${index}: Labels${index};
+      const catalog${index} = { kind: "icons" as const, groups: [], entries: [] };
+      const invalid${index}: Props${index}<typeof catalog${index}> = { catalogs: [catalog${index}], kinds: {}, label: "Catalog", labels: labels${index} };
+    `).join("\n");
+    const options = { strict: true, noEmit: true, skipLibCheck: true, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler };
+    const host = ts.createCompilerHost(options); const original = host.getSourceFile.bind(host);
+    host.getSourceFile = (path, language, error, fresh) => path === filename ? ts.createSourceFile(path, source, language, true) : original(path, language, error, fresh);
+    const diagnostics = ts.getPreEmitDiagnostics(ts.createProgram([filename], options, host));
+    expect(diagnostics).toHaveLength(2);
+    for (const [index, diagnostic] of diagnostics.entries()) {
+      expect(diagnostic.code).toBe(2741); expect(diagnostic.file?.fileName).toBe(filename);
+      const line = diagnostic.file!.getLineAndCharacterOfPosition(diagnostic.start!).line;
+      expect(source.split("\n")[line]).toContain(`const invalid${index}:`);
+      expect(ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n")).toContain("Property 'icons' is missing");
+    }
+  });
+});
+
 describe("compiled DataTable saved-view public contract", () => {
   const values = ["DataTable", "DataTableViewModelError", "parseDataTableViewModel", "serializeDataTableViewModel"];
   it("exposes only the intended component and persistence values through both client barrels", () => {

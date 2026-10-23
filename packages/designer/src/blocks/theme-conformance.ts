@@ -88,6 +88,7 @@ export const BLOCK_THEME_CONFORMANCE: readonly BlockThemeRegistration[] = [
   { exportName: "Items", source: "src/blocks/items/Items.tsx", contrastPairs: GROUNDED_READING },
   { exportName: "GroupedTable", source: "src/blocks/GroupedTable.tsx", contrastPairs: [...RAISED_READING, "ink-primary/surface-sunken"] },
   { exportName: "CatalogWorkspace", source: "src/blocks/CatalogWorkspace.tsx", contrastPairs: [...BASE_READING, ...RAISED_READING] },
+  { exportName: "CatalogBrowser", source: "src/blocks/CatalogBrowser.tsx", contrastPairs: [...BASE_READING, ...RAISED_READING] },
   { exportName: "Chat", source: "src/blocks/chat/Chat.tsx", contrastPairs: [...BASE_READING, ...RAISED_READING, "ink-primary/surface-sunken", "ink-secondary/surface-sunken", "ink-link/surface-base"] },
   { exportName: "RelationGraph", source: "src/blocks/RelationGraph.tsx", contrastPairs: [...BASE_READING, ...RAISED_READING, "ink-muted/surface-raised"] },
   { exportName: "FlowCanvas", source: "src/blocks/FlowCanvas.tsx", contrastPairs: ["ink-secondary/surface-base", "ink-muted/surface-base", ...RAISED_READING, "ink-primary/surface-sunken", "ink-secondary/surface-sunken"] },

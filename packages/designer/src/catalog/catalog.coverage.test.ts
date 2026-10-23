@@ -178,6 +178,7 @@ const FROZEN_BLOCK_IDS: readonly string[] = [
   "items.usage-meter",
   "matrix.access-matrix",
   "matrix.audit-log",
+  "matrix.catalog-browser",
   "matrix.catalog-workspace",
   "matrix.comparison",
   "matrix.data-grid",
