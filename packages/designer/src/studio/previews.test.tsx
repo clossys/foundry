@@ -21,7 +21,7 @@ describe("SlotPreview", () => {
     const container = view(cards("tokens.color-ramp")[0] as Candidate);
     expect(kinds(container)).toEqual(["swatch", "swatch", "swatch"]);
     const styles = [...container.querySelectorAll<HTMLElement>("[data-preview-kind=swatch]")].map((node) => node.style.background);
-    expect(styles).toEqual(["var(--studio-m-0)", "var(--studio-m-1)", "var(--studio-m-2)"]);
+    expect(styles).toEqual(["var(--studio-m-0, transparent)", "var(--studio-m-1, transparent)", "var(--studio-m-2, transparent)"]);
     expect([...container.querySelectorAll("code")].map((node) => node.textContent)).toEqual(["slate.500", "#6E7781", "violet.400", "#A371F7", "violet.600", "#8250DF"]);
   });
   it("draws an unbound dimension as a ruler and an unbound number or duration as text", () => {
