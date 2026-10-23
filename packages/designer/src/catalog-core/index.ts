@@ -7,6 +7,8 @@ import standard2 from "../catalog/standards/tailwind-v4-theme.json" with { type:
 import standard3 from "../catalog/standards/wcag-2.2.json" with { type: "json" };
 import standard4 from "../catalog/standards/web-app-manifest.json" with { type: "json" };
 import foundrySource from "../catalog/sources/foundry.json" with { type: "json" };
+import shadcnSource from "../catalog/sources/shadcn@aria.json" with { type: "json" };
+import tailwindSource from "../catalog/sources/tailwind-default.json" with { type: "json" };
 import fill0 from "../catalog/fills/foundry/tokens.accent-color.json" with { type: "json" };
 import fill1 from "../catalog/fills/foundry/tokens.behavior-timing.json" with { type: "json" };
 import fill2 from "../catalog/fills/foundry/tokens.blur.json" with { type: "json" };
@@ -56,6 +58,27 @@ import fill45 from "../catalog/fills/foundry/tokens.transition-duration.json" wi
 import fill46 from "../catalog/fills/foundry/tokens.transition-easing.json" with { type: "json" };
 import fill47 from "../catalog/fills/foundry/tokens.typeface.json" with { type: "json" };
 import fill48 from "../catalog/fills/foundry/tokens.z-index.json" with { type: "json" };
+import shadcn0 from "../catalog/fills/shadcn@aria/tokens.accent-color.json" with { type: "json" };
+import shadcn1 from "../catalog/fills/shadcn@aria/tokens.border-color.json" with { type: "json" };
+import shadcn2 from "../catalog/fills/shadcn@aria/tokens.categorical-color.json" with { type: "json" };
+import shadcn3 from "../catalog/fills/shadcn@aria/tokens.control-color.json" with { type: "json" };
+import shadcn4 from "../catalog/fills/shadcn@aria/tokens.focus-color.json" with { type: "json" };
+import shadcn5 from "../catalog/fills/shadcn@aria/tokens.radius.json" with { type: "json" };
+import shadcn6 from "../catalog/fills/shadcn@aria/tokens.status-color.json" with { type: "json" };
+import shadcn7 from "../catalog/fills/shadcn@aria/tokens.surface-color.json" with { type: "json" };
+import shadcn8 from "../catalog/fills/shadcn@aria/tokens.text-color.json" with { type: "json" };
+import tailwind0 from "../catalog/fills/tailwind-default/tokens.blur.json" with { type: "json" };
+import tailwind1 from "../catalog/fills/tailwind-default/tokens.breakpoint.json" with { type: "json" };
+import tailwind2 from "../catalog/fills/tailwind-default/tokens.color-ramp.json" with { type: "json" };
+import tailwind3 from "../catalog/fills/tailwind-default/tokens.easing.json" with { type: "json" };
+import tailwind4 from "../catalog/fills/tailwind-default/tokens.font-size.json" with { type: "json" };
+import tailwind5 from "../catalog/fills/tailwind-default/tokens.font-weight.json" with { type: "json" };
+import tailwind6 from "../catalog/fills/tailwind-default/tokens.letter-spacing.json" with { type: "json" };
+import tailwind7 from "../catalog/fills/tailwind-default/tokens.line-height.json" with { type: "json" };
+import tailwind8 from "../catalog/fills/tailwind-default/tokens.radius.json" with { type: "json" };
+import tailwind9 from "../catalog/fills/tailwind-default/tokens.shadow.json" with { type: "json" };
+import tailwind10 from "../catalog/fills/tailwind-default/tokens.spacing.json" with { type: "json" };
+import tailwind11 from "../catalog/fills/tailwind-default/tokens.typeface.json" with { type: "json" };
 import { parseFill } from "./cell.js";
 import type { CatalogData, FillDoc, Placement, Retired, Slot, Source, Standard } from "./types.js";
 
@@ -74,6 +97,8 @@ export function loadCatalog(): CatalogData {
     fill32, fill33, fill34, fill35, fill36, fill37, fill38, fill39,
     fill40, fill41, fill42, fill43, fill44, fill45, fill46, fill47,
     fill48,
+    shadcn0, shadcn1, shadcn2, shadcn3, shadcn4, shadcn5, shadcn6, shadcn7, shadcn8,
+    tailwind0, tailwind1, tailwind2, tailwind3, tailwind4, tailwind5, tailwind6, tailwind7, tailwind8, tailwind9, tailwind10, tailwind11,
   ].map(value => {
     const parsed = parseFill(value);
     const error = parsed.findings.find(finding => finding.severity === "error");
@@ -88,7 +113,7 @@ export function loadCatalog(): CatalogData {
   return {
     slots: slots as unknown as readonly Slot[],
     standards: [standard0, standard1, standard2, standard3, standard4] as unknown as readonly Standard[],
-    sources: [foundrySource] as unknown as readonly Source[],
+    sources: [foundrySource, shadcnSource, tailwindSource] as unknown as readonly Source[],
     fills,
     placements: [tokenPlacement] as unknown as readonly Placement[],
     retired: retired as unknown as readonly Retired[],

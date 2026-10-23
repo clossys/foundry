@@ -246,6 +246,11 @@ const ANY_RECORD_MAP_RE = /const\s+([A-Za-z_]+)\s*:\s*Record</g;
 const KNOWN_NON_CLASS_MAPS = new Set([
   // Foundry importer builds nested DTCG token groups, not Tailwind classes.
   "importers/foundry.ts:root",
+  // The external-theme and brand-stylesheet importers build the same nested DTCG groups, and their colour values are DTCG objects, not classes.
+  "importers/brand-css.ts:root",
+  "importers/css-values.ts:value",
+  "importers/shadcn-aria.ts:root",
+  "importers/tailwind-default.ts:root",
   // Token preview's authored CSS application signatures, never class strings.
   "tokens/preview/index.tsx:applications",
   // Token preview's ReactNode specimens, never class strings.

@@ -31,7 +31,7 @@ describe("Foundry fill documents", () => {
     expect(catalog.standards.map(standard => standard.id).sort()).toEqual(["apg", "dtcg", "tailwind-v4-theme", "wcag-2.2", "web-app-manifest"]);
     expect(catalog.placements).toEqual([tokenPlacement]);
     expect(catalog.retired).toEqual([]);
-    expect(catalog.sources).toEqual([{ id: "foundry", kind: "base", author: "foundry", license: "MIT" }]);
-    expect(catalog.fills.map(fill => fill.$extensions["com.clossys.fill"].id)).toEqual(expectedSlots.map(id => "foundry/" + id));
+    expect(catalog.sources.find(source => source.id === "foundry")).toEqual({ id: "foundry", kind: "base", author: "foundry", license: "MIT" });
+    expect(catalog.fills.filter(fill => fill.$extensions["com.clossys.fill"].source === "foundry").map(fill => fill.$extensions["com.clossys.fill"].id)).toEqual(expectedSlots.map(id => "foundry/" + id));
   });
 });

@@ -1,0 +1,208 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "third-party",
+      "builtOn": [
+        "tailwind-v4-theme"
+      ],
+      "conforms": [
+        "dtcg#alias",
+        "dtcg#format",
+        "dtcg#types"
+      ],
+      "evidence": [
+        {
+          "check": "C2",
+          "clause": "dtcg#alias"
+        },
+        {
+          "clause": "dtcg#format",
+          "path": "src/importers/tailwind-default.test.ts"
+        },
+        {
+          "clause": "dtcg#types",
+          "path": "src/importers/tailwind-default.test.ts"
+        }
+      ],
+      "id": "tailwind-default/tokens.blur",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "file": "theme.css",
+        "package": "tailwindcss",
+        "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+        "version": "4.3.3"
+      },
+      "relation": "superset",
+      "slot": "tokens.blur",
+      "source": "tailwind-default",
+      "sourceAddress": "tailwindcss@4.3.3/theme.css",
+      "status": "draft",
+      "trust": "pinned-upstream",
+      "unmapped": [
+        "--font-serif",
+        "--color-black",
+        "--color-white",
+        "--container-3xs",
+        "--container-2xs",
+        "--container-xs",
+        "--container-sm",
+        "--container-md",
+        "--container-lg",
+        "--container-xl",
+        "--container-2xl",
+        "--container-3xl",
+        "--container-4xl",
+        "--container-5xl",
+        "--container-6xl",
+        "--container-7xl",
+        "--inset-shadow-2xs",
+        "--inset-shadow-xs",
+        "--inset-shadow-sm",
+        "--drop-shadow-xs",
+        "--drop-shadow-sm",
+        "--drop-shadow-md",
+        "--drop-shadow-lg",
+        "--drop-shadow-xl",
+        "--drop-shadow-2xl",
+        "--text-shadow-2xs",
+        "--text-shadow-xs",
+        "--text-shadow-sm",
+        "--text-shadow-md",
+        "--text-shadow-lg",
+        "--animate-spin",
+        "--animate-ping",
+        "--animate-pulse",
+        "--animate-bounce",
+        "--perspective-dramatic",
+        "--perspective-near",
+        "--perspective-normal",
+        "--perspective-midrange",
+        "--perspective-distant",
+        "--aspect-video",
+        "--default-transition-duration",
+        "--default-transition-timing-function",
+        "--default-font-family",
+        "--default-font-feature-settings",
+        "--default-font-variation-settings",
+        "--default-mono-font-family",
+        "--default-mono-font-feature-settings",
+        "--default-mono-font-variation-settings",
+        "--blur",
+        "--shadow",
+        "--drop-shadow",
+        "--radius",
+        "--max-width-prose"
+      ]
+    }
+  },
+  "tokens": {
+    "blur": {
+      "2xl": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "40px"
+          },
+          "com.clossys.source": {
+            "line": 481
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "px",
+          "value": 40
+        }
+      },
+      "3xl": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "64px"
+          },
+          "com.clossys.source": {
+            "line": 482
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "px",
+          "value": 64
+        }
+      },
+      "lg": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "16px"
+          },
+          "com.clossys.source": {
+            "line": 479
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "px",
+          "value": 16
+        }
+      },
+      "md": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "12px"
+          },
+          "com.clossys.source": {
+            "line": 478
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "px",
+          "value": 12
+        }
+      },
+      "sm": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "8px"
+          },
+          "com.clossys.source": {
+            "line": 477
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "px",
+          "value": 8
+        }
+      },
+      "xl": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "24px"
+          },
+          "com.clossys.source": {
+            "line": 480
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "px",
+          "value": 24
+        }
+      },
+      "xs": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "4px"
+          },
+          "com.clossys.source": {
+            "line": 476
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "px",
+          "value": 4
+        }
+      }
+    }
+  }
+}
