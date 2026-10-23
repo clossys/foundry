@@ -118,12 +118,32 @@ describe("package reference manifest", () => {
     expect(result.stderr.trim().split("\n")).toHaveLength(1);
   });
 
-  it("ignores source diagnostics outside examples, including the examples-other sibling", () => {
+  it("rejects source diagnostics outside examples, including the examples-other sibling", () => {
     const { fixture, script } = examplesFixture();
     const result = run(script);
+    expect(result.status, result.stderr + result.stdout).toBe(2);
+    expect(result.stderr + result.stdout).toContain("unusedOutside");
+    expect(result.stderr + result.stdout).toContain("unusedSibling");
+    expect(existsSync(join(fixture, "examples", "demo.js"))).toBe(false);
+  });
+
+  it("rejects a substantive type error in imported source", () => {
+    const { fixture, script } = examplesFixture();
+    writeFileSync(join(fixture, "src", "source.ts"), 'export const sourceValue: number = "invalid";');
+    writeFileSync(join(fixture, "examples-other", "source.ts"), "export const siblingValue = 3;");
+    const result = run(script);
+    expect(result.status, result.stderr + result.stdout).toBe(2);
+    expect(result.stderr + result.stdout).toContain("TS2322");
+    expect(result.stderr + result.stdout).toContain("src/source.ts");
+  });
+
+  it("accepts an error-free program without emitting files", () => {
+    const { fixture, script } = examplesFixture();
+    writeFileSync(join(fixture, "src", "source.ts"), "export const sourceValue = 2;");
+    writeFileSync(join(fixture, "examples-other", "source.ts"), "export const siblingValue = 3;");
+    const result = run(script);
     expect(result.status, result.stderr + result.stdout).toBe(0);
-    expect(result.stderr + result.stdout).not.toContain("unusedOutside");
-    expect(result.stderr + result.stdout).not.toContain("unusedSibling");
+    expect(result.stderr).toBe("");
     expect(existsSync(join(fixture, "examples", "demo.js"))).toBe(false);
   });
 
@@ -133,8 +153,8 @@ describe("package reference manifest", () => {
     const result = run(script);
     expect(result.status).not.toBe(0);
     expect(result.stderr + result.stdout).toContain("unusedInside");
-    expect(result.stderr + result.stdout).not.toContain("unusedOutside");
-    expect(result.stderr + result.stdout).not.toContain("unusedSibling");
+    expect(result.stderr + result.stdout).toContain("unusedOutside");
+    expect(result.stderr + result.stdout).toContain("unusedSibling");
   });
 
   it.each(["config", "fileless"])("keeps %s failures", failure => {

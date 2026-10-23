@@ -1,7 +1,8 @@
 #!/usr/bin/env node
+import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { createRequire } from "node:module";
-import { isAbsolute, join, relative, resolve, sep } from "node:path";
+import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 export function checkExamples(packageRoot = fileURLToPath(new URL("../", import.meta.url))) {
@@ -15,23 +16,11 @@ export function checkExamples(packageRoot = fileURLToPath(new URL("../", import.
     return 2;
   }
   try {
-    const ts = createRequire(join(root, "package.json"))("typescript");
-    const host = { getCanonicalFileName: path => path, getCurrentDirectory: () => root, getNewLine: () => "\n" };
-    const report = diagnostics => console.error(ts.formatDiagnostics(diagnostics, host).trimEnd());
-    const config = ts.readConfigFile(configPath, ts.sys.readFile);
-    if (config.error) { report([config.error]); return 2; }
-    const parsed = ts.parseJsonConfigFileContent(config.config, ts.sys, root, { noEmit: true }, configPath);
-    if (parsed.errors.length) { report(parsed.errors); return 2; }
-    const program = ts.createProgram({ rootNames: parsed.fileNames, options: parsed.options, projectReferences: parsed.projectReferences });
-    const configuration = [...program.getConfigFileParsingDiagnostics(), ...program.getOptionsDiagnostics()];
-    const selected = ts.getPreEmitDiagnostics(program).filter(diagnostic => {
-      if (!diagnostic.file) return true;
-      const path = relative(examples, resolve(diagnostic.file.fileName));
-      return path !== "" && path !== ".." && !path.startsWith(".." + sep) && !isAbsolute(path);
-    });
-    const diagnostics = ts.sortAndDeduplicateDiagnostics([...configuration, ...selected]);
-    if (diagnostics.length) report(diagnostics);
-    return diagnostics.some(item => item.category === ts.DiagnosticCategory.Error) ? 1 : 0;
+    const compiler = createRequire(join(root, "package.json")).resolve("typescript/bin/tsc");
+    const result = spawnSync(process.execPath, [compiler, "-p", configPath, "--noEmit"], { cwd: root, stdio: "inherit" });
+    if (result.error) throw result.error;
+    if (result.status === null) throw new Error(`TypeScript terminated by ${result.signal ?? "an unknown signal"}`);
+    return result.status;
   } catch (error) {
     console.error(`Example typecheck failed: ${String(error.message).replace(/\s+/g, " ")}`);
     return 2;
