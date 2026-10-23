@@ -266,3 +266,6 @@ export type {
   ConsumerArtPosition, ConsumerArtAspect, ConsumerArtFormat, ConsumerArtPath,
   ConsumerArtSource, ConsumerArtContract, ConsumerArtFinding, ConsumerArtReport,
 } from "../backdrop/consumer-art.js";
+
+export { measureMarkGeometry, normalizeMark, checkMarkConformance, MarkGeometryError } from "./mark-normalize.js";
+export type { MarkBox, MarkGeometry, NormalizeMarkInput, MarkConformanceFinding } from "./mark-normalize.js";

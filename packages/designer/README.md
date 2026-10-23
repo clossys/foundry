@@ -7857,6 +7857,56 @@ free-hand drawing: both compose the same small set of primitives (a glyph, a
 badge wrapper, `recolorSvg`), the "deterministic mechanics" split #1187's
 "who does what" table draws for this package's role.
 
+**Measure and normalize a supplied mark.** `measureMarkGeometry(svg)` returns
+its `viewBox`, plate presence and horizontal/vertical radius shares, painted
+`glyphBox` shares, `centreOffset`, and `declaredClearSpace`. A leading filled
+square `rect` matching the canvas height is recognized as the plate when
+other artwork follows; wrap a full-canvas glyph in a `g` to distinguish it.
+`normalizeMark({ glyphSvg, tokens })` replaces that plate with the token accent
+plate, radius 7/32, and fits the painted glyph into a 64% box on a 48-unit
+canvas with 0.2 declared clear space. Scaling preserves aspect and centres
+the bounding box. `plate: false` omits the plate; plate conformance then
+reports its absence. `optical: true` uses the painted-area centroid, limits
+the correction vector to 3% of the side, and declares the optical mode so
+conformance can verify the correction from measured geometry.
+
+Accepted XML whitespace is TAB, LF, CR, and SPACE; unsupported separators throw `MarkGeometryError`.
+Supported geometry is `rect`, `circle`, `ellipse`, `polygon`, and SVG paths
+with absolute or relative `M L H V C S Q T A Z`, under `translate`, `rotate`,
+and `scale` transforms. Bounds include strokes, caps, and joins. Curves are
+subdivided to one millionth of the canvas size; optical area integrates the
+painted union over 4096 horizontal strips, including holes and overlaps.
+Unsupported elements, transforms, and rendering effects such as masks or
+opacity throw `MarkGeometryError` naming the feature. Attribute names must use
+XML name syntax and canonical case. Only measured geometry/paint attributes,
+root SVG namespace, and inert id, role, data-* and aria-* metadata are accepted;
+only paint attributes inherit. Conditional, namespaced and unknown attributes
+are refused. Measurement limits nesting to 64 open elements, generated
+geometry to 100,000 points, winding work to 2,000,000 aggregate weighted edge operations
+(including edge/level setup and 16 times the edge-sort estimate), and optical sampling to 20,000,000
+point-by-strip operations. Point limits precede geometry expansion; work limits precede expensive scans.
+Paint literals and inherited paint attributes are limited to 4096 characters.
+Intricate curves can exceed these limits even with few source commands: the
+two-arc crescent `M60 10 A40 40 0 1 0 60 90 A30 30 0 1 1 60 10 Z` is deliberately
+refused with a typed paint work complexity error rather than guessed bounds.
+
+`checkMarkConformance(svg)` returns ordered radius, inset, centring, clear
+space, lockup gap, and wordmark-size findings with `measured` and `expected`
+values (0.005 share tolerance). A direct, untransformed lockup `text` element
+contributes its declared position and font size; its font outline is not
+measured. `adoptSuppliedMark({ brand, suppliedSvg, tokens, normalize: true })`
+opts into normalization; omitted or false preserves the legacy variant bytes.
+Normalized adoption constructs plate-versus-glyph knockouts for all accepted glyph
+paints, including mixed fill/stroke, multiple colors and metadata wrappers. Marks
+exceeding knockout recognition limits or carrying transparent/explicit-alpha paints
+receive a typed refusal, preserving the measured paint boundary. This recognition
+is private to the opt-in; public `recolorSvg` and default adoption retain their
+existing subset.
+`judgeIdentityKit` adds mark-conformance findings for adopted directions,
+reporting unsupported supplied geometry as indeterminate. Generated live-text
+directions retain their existing four checks without claiming measured mark
+geometry.
+
 **Seven variant roles**, every direction: `primary` (the flagship lockup,
 for light surfaces), `mark` (icon/monogram alone), `mono` (`mark`
 recoloured to `currentColor`, single-colour legible), `light` (`primary`

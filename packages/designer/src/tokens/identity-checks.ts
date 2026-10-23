@@ -36,6 +36,7 @@
  * are built to refuse, and this one is no different.
  */
 
+import { checkMarkConformance, MarkGeometryError } from "./mark-normalize.js";
 import { contrastRatio } from "./color.js";
 import type { IdentityDirection, IdentityDirectionKind, IdentityTokenInput, IdentityVariantSet } from "./identity-kit.js";
 
@@ -65,7 +66,7 @@ export type IdentityCheckId = "contrast" | "minimum-size" | "clear-space" | "sin
  * "error"` — an identity kit is judged, not merely advised.
  */
 export interface IdentityFinding {
-  readonly rule: IdentityCheckId;
+  readonly rule: IdentityCheckId | "mark-conformance";
   readonly severity: "error";
   readonly message: string;
   readonly path?: string;
@@ -440,7 +441,7 @@ export interface IdentityCheckJudgement {
 
 export interface IdentityKitJudgement {
   direction: string;
-  checks: Record<IdentityCheckId, IdentityCheckJudgement>;
+  checks: Record<IdentityCheckId, IdentityCheckJudgement> & { "mark-conformance"?: IdentityCheckJudgement };
   verdict: IdentityVerdict;
   findings: readonly IdentityFinding[];
   ok: boolean;
@@ -516,7 +517,28 @@ export function judgeIdentityKit(direction: IdentityDirection, tokens: IdentityT
     },
   };
 
-  const checkList = Object.values(checkVerdicts);
+  // Supplied geometry is measurable independently of fonts. Legacy generated
+  // directions contain live text and retain their existing four checks.
+  const checks: IdentityKitJudgement["checks"] = checkVerdicts;
+  if (direction.kind === "adopted") {
+    try {
+      const measured = checkMarkConformance(variants.mark);
+      checks["mark-conformance"] = {
+        verdict: measured.length ? "violated" : "satisfied",
+        findings: measured.map((finding) => ({
+          rule: "mark-conformance", severity: "error", path: "mark",
+          message: `${finding.rule}: measured ${finding.measured ?? "undeclared"}; expected ${finding.expected}`,
+        })),
+      };
+    } catch (error) {
+      if (!(error instanceof MarkGeometryError)) throw error;
+      checks["mark-conformance"] = {
+        verdict: "indeterminate",
+        findings: [{ rule: "mark-conformance", severity: "error", path: "mark", message: error.message }],
+      };
+    }
+  }
+  const checkList = Object.values(checks);
   const ok = checkList.every((c) => c.verdict === "satisfied");
   const verdict: IdentityVerdict = checkList.some((c) => c.verdict === "indeterminate")
     ? "indeterminate"
@@ -524,11 +546,12 @@ export function judgeIdentityKit(direction: IdentityDirection, tokens: IdentityT
       ? "violated"
       : "satisfied";
   const findings = checkList.flatMap((c) => c.findings);
-  return { direction: direction.id, checks: checkVerdicts, verdict, findings, ok };
+  return { direction: direction.id, checks, verdict, findings, ok };
 }
 
 /** One plain-language sentence for the envelope's required `summary` field — the ONLY field a non-technical reader may be shown without translation. */
 function summaryFor(direction: string, judgement: IdentityKitJudgement): string {
+  if (judgement.verdict === "satisfied" && judgement.checks["mark-conformance"]) return `The "${direction}" identity kit satisfies its checks, including supplied-mark geometry.`;
   if (judgement.verdict === "satisfied") return `The "${direction}" identity kit satisfies all four checks (contrast, minimum size, clear space, single-colour legibility).`;
   if (judgement.verdict === "indeterminate") return `The "${direction}" identity kit could not be fully evaluated (${judgement.findings.length} finding(s)).`;
   return `The "${direction}" identity kit does not satisfy every check (${judgement.findings.length} finding(s)).`;

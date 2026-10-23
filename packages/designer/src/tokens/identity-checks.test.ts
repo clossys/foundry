@@ -314,3 +314,27 @@ describe("identityKitReport", () => {
     expect(typeof report.nextAction).toBe("string");
   });
 });
+
+
+describe("adopted mark geometry judgment", () => {
+  it("adds measured findings for supplied geometry", () => {
+    const suppliedSvg = '<svg viewBox="0 0 100 100" data-clear-space="0.2"><rect width="100" height="100" rx="24"/><rect x="30" y="30" width="40" height="40"/></svg>';
+    const direction = adoptSuppliedMark({ brand: { name: "Example" }, suppliedSvg, tokens: PASSING_TOKENS });
+    const result = judgeIdentityKit(direction, PASSING_TOKENS);
+    expect(result.checks["mark-conformance"]?.verdict).toBe("violated");
+    expect(result.findings.some(f => f.rule === "mark-conformance" && /measured.*expected/.test(f.message))).toBe(true);
+  });
+  it("does not silently pass unsupported supplied text or masks", () => {
+    for (const body of ['<text/>', '<defs><mask/></defs>']) {
+      const direction = adoptSuppliedMark({ brand: { name: "Example" }, suppliedSvg: `<svg viewBox="0 0 48 48">${body}</svg>`, tokens: PASSING_TOKENS });
+      const result = judgeIdentityKit(direction, PASSING_TOKENS);
+      expect(result.checks["mark-conformance"]?.verdict).toBe("indeterminate");
+      expect(result.verdict).toBe("indeterminate");
+      expect(result.ok).toBe(false);
+    }
+  });
+  it("keeps generated live text under the legacy checks without claiming measured geometry", () => {
+    const [direction] = generateIdentityDirections({ name: "Example" }, PASSING_TOKENS);
+    expect(judgeIdentityKit(direction, PASSING_TOKENS).checks).not.toHaveProperty("mark-conformance");
+  });
+});

@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import { contrastRatio } from "./color.js";
 import { checkSingleColourLegibility, IDENTITY_MIN_CONTRAST } from "./identity-checks.js";
@@ -923,5 +924,116 @@ describe("composeLockup (issue #1535, live-text lockup from a supplied mark)", (
       composeLockup(input({ wordmark: " ", header: "x" as never, fontLicence: { family: "a;b", outlining: "y" as never } })),
     );
     expect(reasons).toHaveLength(4);
+  });
+});
+
+
+describe("supplied mark normalization opt-in", () => {
+  it("keeps all seven legacy variant bytes, pinned before normalization existed", () => {
+    const suppliedSvg = '<svg viewBox="0 0 100 100" data-clear-space="0.2"><path d="M30 35h40v30H30z" fill="currentColor"/></svg>';
+    const variants = adoptSuppliedMark({ brand: { name: "Example" }, suppliedSvg, tokens: TOKENS }).variants;
+    expect(createHash("sha256").update(JSON.stringify(variants)).digest("hex")).toBe("afe0d1539ebe0d74789514b6075ec0528e3183f8e0d28b4b350df206e16e4521");
+  });
+});
+
+
+describe("post1070 normalized variant metadata", () => {
+  const roles = ["mono", "light", "dark", "favicon"] as const;
+  const parse = (svg: string): Document => new DOMParser().parseFromString(svg, "image/svg+xml");
+  const adopt = (attributes: string, shapeAttributes = "") => adoptSuppliedMark({
+    brand: { name: "Example" }, tokens: TOKENS, normalize: true,
+    suppliedSvg: `<svg viewBox="0 0 100 100" ${attributes}><rect width="40" height="40" ${shapeAttributes}/></svg>`,
+  });
+
+  it.each(roles)("preserves the root accessible name in %s", role => {
+    const document = parse(adopt('role="img" aria-label="Example mark"', 'id="glyph" role="presentation" aria-label="Inner glyph" aria-hidden="true" data-note="metadata"').variants[role]);
+    expect(document.querySelector("parsererror")).toBeNull();
+    expect(document.documentElement.getAttribute("role")).toBe("img");
+    expect(document.documentElement.getAttribute("aria-label")).toBe("Example mark");
+    expect(document.querySelectorAll("svg [role], [id=glyph], [aria-label='Inner glyph'], [aria-hidden], [data-note]")).toHaveLength(0);
+    expect(document.querySelectorAll("mask")).toHaveLength(2);
+  });
+
+  it.each(roles)("does not strip across an attribute value in %s", role => {
+    const adopted = adopt('', 'font-family="a id=" transform="translate(30 0)"');
+    const source = parse(adopted.variants.mark).querySelector('rect[font-family]')!;
+    const document = parse(adopted.variants[role]);
+    expect(document.querySelector("parsererror")).toBeNull();
+    const shapes = document.querySelectorAll('rect[font-family]');
+    expect(shapes.length).toBeGreaterThan(0);
+    for (const shape of shapes) {
+      expect(shape.getAttribute("font-family")).toBe(source.getAttribute("font-family"));
+      expect(shape.getAttribute("transform")).toBe(source.getAttribute("transform"));
+      expect(shape.getAttribute("transform")).toBe("translate(30 0)");
+    }
+  });
+
+  it.each([
+    ['&quot; onload=&quot;alert(1)', '" onload="alert(1)'],
+    ['&lt;glyph&gt;', '<glyph>'],
+    ['A &amp; B &amp;quot;', 'A & B &quot;'],
+  ])("round-trips escaped root labels %s without breakout", (encoded, decoded) => {
+    const adopted = adopt(`role="img" aria-label="${encoded}"`, `id="${encoded}"`);
+    for (const role of roles) {
+      const document = parse(adopted.variants[role]);
+      expect(document.querySelector("parsererror")).toBeNull();
+      expect(document.querySelector("[onload]")).toBeNull();
+      expect(document.documentElement.getAttribute("role")).toBe("img");
+      expect(document.documentElement.getAttribute("aria-label")).toBe(decoded);
+      expect(document.querySelectorAll("mask")).toHaveLength(2);
+    }
+  });
+});
+
+
+describe("post1075 normalized metadata compatibility", () => {
+  const roles = ["mono", "light", "dark", "favicon"] as const;
+  const parse = (svg: string): Document => new DOMParser().parseFromString(svg, "image/svg+xml");
+  const adopt = (attributes: string, body: string) => adoptSuppliedMark({
+    brand: { name: "Example" }, tokens: TOKENS, normalize: true,
+    suppliedSvg: `<svg viewBox="0 0 100 100" ${attributes}>${body}</svg>`,
+  });
+
+  it.each(['data-a.b="metadata"', 'aria-x.y="metadata"', 'data-.="metadata"', 'data-a.="metadata"', 'data-a..b="metadata"', 'aria-.="metadata"'])("removes dotted descendant metadata %s without refusing adoption", attribute => {
+    const adopted = adopt('', `<g ${attribute}><rect width="40" height="40" ${attribute}/></g>`);
+    for (const role of roles) {
+      const document = parse(adopted.variants[role]);
+      expect(document.querySelector("parsererror")).toBeNull();
+      expect(document.querySelectorAll("mask")).toHaveLength(2);
+      for (const element of document.querySelectorAll("*")) {
+        expect(element.hasAttribute("data-a.b")).toBe(false);
+        expect(element.hasAttribute("aria-x.y")).toBe(false);
+      }
+    }
+  });
+
+  it.each([
+    ['img&amp;x', 'img&x'],
+    ['img&amp;amp;amp;x', 'img&amp;amp;x'],
+    ['img&amp;lt;x', 'img&lt;x'],
+    ['img&quot; onload=&quot;alert(1)', 'img" onload="alert(1)'],
+    ["img'", "img'"],
+    ['img&gt;x', 'img>x'],
+  ])("preserves encoded root role %s safely without refusing adoption", (encoded, decoded) => {
+    const adopted = adopt(`role="${encoded}" aria-label="Example mark"`, '<rect width="40" height="40"/>');
+    for (const role of roles) {
+      const document = parse(adopted.variants[role]);
+      expect(document.querySelector("parsererror")).toBeNull();
+      expect(document.querySelector("[onload]")).toBeNull();
+      expect(document.documentElement.getAttribute("role")).toBe(decoded);
+      expect(document.documentElement.getAttribute("aria-label")).toBe("Example mark");
+      expect(document.querySelectorAll("mask")).toHaveLength(2);
+    }
+  });
+
+  it("removes role and all aria metadata from groups, retaining descendant clear-space", () => {
+    const adopted = adopt('role="img"', '<g role="presentation" aria-hidden="true" aria-label="Inner group"><rect width="40" height="40" data-clear-space="0.2"/></g>');
+    for (const role of roles) {
+      const document = parse(adopted.variants[role]);
+      expect(document.querySelector("parsererror")).toBeNull();
+      expect(document.querySelectorAll("svg [role], svg [aria-hidden], svg [aria-label]")).toHaveLength(0);
+      expect(document.querySelectorAll('rect[data-clear-space="0.2"]').length).toBeGreaterThan(0);
+      expect(document.querySelectorAll("mask")).toHaveLength(2);
+    }
   });
 });
