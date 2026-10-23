@@ -208,7 +208,8 @@ async function sweep(browser, options) {
       await Promise.race([new Promise(done => child.once("exit", done)), delay(2000)]);
       if (child.exitCode === null) { child.kill("SIGKILL"); await new Promise(done => child.once("exit", done)); }
     }
-    rmSync(profile, { recursive: true, force: true });
+    // Best-effort: browser helper processes can still be writing into the profile, and a leaked temp profile must never lose the report.
+    try { rmSync(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } catch {}
   }
 }
 

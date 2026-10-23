@@ -1,5 +1,7 @@
 import { spawn, spawnSync } from "node:child_process";
-import { existsSync } from "node:fs";
+import { chmodSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { createServer } from "node:http";
 import { fileURLToPath } from "node:url";
 import { EXIT_NO_WEBSOCKET } from "./state-sweep.mjs";
@@ -134,5 +136,33 @@ test("OCCLUSION NEGATIVE: a covering element over the probe points is never repo
     assert.equal(item.status, "finding", JSON.stringify(item));
     assert.equal(item.details.measured.length, 0);
     assert.match(item.details.small[0].reason, /No verified 44px hit area/);
+  }
+});
+
+test("a profile cleanup failure never loses the JSON report", { timeout: 240000 }, async t => {
+  const browser = findBrowser();
+  if (!browser.path) return t.skip(`SKIPPED: ${browser.reason}`);
+  if (process.platform === "win32" || process.getuid?.() === 0) return t.skip("SKIPPED: needs POSIX permissions enforced for this user");
+  // A wrapper browser plants a read-only directory inside the profile so removing
+  // the profile deterministically fails, then hands over to the real browser.
+  const scratch = mkdtempSync(join(tmpdir(), "state-sweep-cleanup-"));
+  const marker = join(scratch, "profile-path");
+  const wrapper = join(scratch, "browser.sh");
+  writeFileSync(wrapper, `#!/bin/sh
+for arg in "$@"; do case "$arg" in --user-data-dir=*) profile="\${arg#--user-data-dir=}";; esac; done
+mkdir "$profile/locked" && : > "$profile/locked/keep" && chmod 555 "$profile/locked"
+printf '%s' "$profile" > '${marker}'
+exec '${browser.path}' "$@"
+`, { mode: 0o755 });
+  let profile;
+  try {
+    const swept = await sweepFixture(wrapper, `<button id="target" style="${SIZED}">go</button>`);
+    if (swept.unavailable) return t.skip(`SKIPPED: ${swept.unavailable}`);
+    profile = readFileSync(marker, "utf8");
+    assert.ok(existsSync(join(profile, "locked", "keep")), "the profile removal really was blocked");
+    assert.ok(swept.observations.length > 0, "the report survived the cleanup failure");
+  } finally {
+    if (profile) { try { chmodSync(join(profile, "locked"), 0o755); } catch {} rmSync(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); }
+    rmSync(scratch, { recursive: true, force: true });
   }
 });
