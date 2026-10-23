@@ -1,0 +1,327 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [
+        "dtcg#format",
+        "dtcg#alias",
+        "wcag-2.2#1.4.3"
+      ],
+      "evidence": [
+        {
+          "check": "C1",
+          "clause": "dtcg#format"
+        },
+        {
+          "check": "C2",
+          "clause": "dtcg#alias"
+        },
+        {
+          "check": "C9",
+          "clause": "wcag-2.2#1.4.3"
+        }
+      ],
+      "id": "foundry/tokens.role.color.status",
+      "license": "MIT",
+      "mode": "implementation",
+      "relation": "same-contract",
+      "slot": "tokens.role.color.status",
+      "source": "foundry",
+      "sourceAddress": "styles/tokens.css",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "tokens": {
+    "role": {
+      "color": {
+        "status": {
+          "danger": {
+            "$extensions": {
+              "com.clossys.css": {
+                "raw": "oklch(0.285 0 0)"
+              },
+              "com.clossys.modes": {
+                "dark": "oklch(0.60 0 0)"
+              }
+            },
+            "$type": "color",
+            "$value": {
+              "colorSpace": "oklch",
+              "components": [
+                0.285,
+                0,
+                0
+              ]
+            }
+          },
+          "danger-text": {
+            "$extensions": {
+              "com.clossys.css": {
+                "raw": "oklch(0.2178 0 0)"
+              },
+              "com.clossys.modes": {
+                "dark": {
+                  "colorSpace": "oklch",
+                  "components": [
+                    0.86,
+                    0,
+                    0
+                  ]
+                }
+              }
+            },
+            "$type": "color",
+            "$value": {
+              "colorSpace": "oklch",
+              "components": [
+                0.2178,
+                0,
+                0
+              ]
+            }
+          },
+          "danger-tint": {
+            "$extensions": {
+              "com.clossys.css": {
+                "raw": "oklch(0.285 0 0 / 0.12)"
+              },
+              "com.clossys.modes": {
+                "dark": "oklch(0.60 0 0 / 0.20)"
+              }
+            },
+            "$type": "color",
+            "$value": {
+              "alpha": 0.12,
+              "colorSpace": "oklch",
+              "components": [
+                0.285,
+                0,
+                0
+              ]
+            }
+          },
+          "info": {
+            "$extensions": {
+              "com.clossys.css": {
+                "raw": "oklch(0.5658 0 0)"
+              },
+              "com.clossys.modes": {
+                "dark": {
+                  "colorSpace": "oklch",
+                  "components": [
+                    0.66,
+                    0,
+                    0
+                  ]
+                }
+              }
+            },
+            "$type": "color",
+            "$value": {
+              "colorSpace": "oklch",
+              "components": [
+                0.5658,
+                0,
+                0
+              ]
+            }
+          },
+          "info-text": {
+            "$extensions": {
+              "com.clossys.css": {
+                "raw": "oklch(0.52 0 0)"
+              },
+              "com.clossys.modes": {
+                "dark": "oklch(0.80 0 0)"
+              }
+            },
+            "$type": "color",
+            "$value": {
+              "colorSpace": "oklch",
+              "components": [
+                0.52,
+                0,
+                0
+              ]
+            }
+          },
+          "info-tint": {
+            "$extensions": {
+              "com.clossys.css": {
+                "raw": "oklch(0.5658 0 0 / 0.08)"
+              },
+              "com.clossys.modes": {
+                "dark": {
+                  "alpha": 0.16,
+                  "colorSpace": "oklch",
+                  "components": [
+                    0.68,
+                    0,
+                    0
+                  ]
+                }
+              }
+            },
+            "$type": "color",
+            "$value": {
+              "alpha": 0.08,
+              "colorSpace": "oklch",
+              "components": [
+                0.5658,
+                0,
+                0
+              ]
+            }
+          },
+          "success": {
+            "$extensions": {
+              "com.clossys.css": {
+                "raw": "oklch(0.6268 0 0)"
+              },
+              "com.clossys.modes": {
+                "dark": {
+                  "colorSpace": "oklch",
+                  "components": [
+                    0.72,
+                    0,
+                    0
+                  ]
+                }
+              }
+            },
+            "$type": "color",
+            "$value": {
+              "colorSpace": "oklch",
+              "components": [
+                0.6268,
+                0,
+                0
+              ]
+            }
+          },
+          "success-text": {
+            "$extensions": {
+              "com.clossys.css": {
+                "raw": "oklch(0.4748 0 0)"
+              },
+              "com.clossys.modes": {
+                "dark": "oklch(0.80 0 0)"
+              }
+            },
+            "$type": "color",
+            "$value": {
+              "colorSpace": "oklch",
+              "components": [
+                0.4748,
+                0,
+                0
+              ]
+            }
+          },
+          "success-tint": {
+            "$extensions": {
+              "com.clossys.css": {
+                "raw": "oklch(0.6268 0 0 / 0.1)"
+              },
+              "com.clossys.modes": {
+                "dark": "oklch(0.70 0 0 / 0.16)"
+              }
+            },
+            "$type": "color",
+            "$value": {
+              "alpha": 0.1,
+              "colorSpace": "oklch",
+              "components": [
+                0.6268,
+                0,
+                0
+              ]
+            }
+          },
+          "warning": {
+            "$extensions": {
+              "com.clossys.css": {
+                "raw": "oklch(0.4495 0 0)"
+              },
+              "com.clossys.modes": {
+                "dark": {
+                  "colorSpace": "oklch",
+                  "components": [
+                    0.62,
+                    0,
+                    0
+                  ]
+                }
+              }
+            },
+            "$type": "color",
+            "$value": {
+              "colorSpace": "oklch",
+              "components": [
+                0.4495,
+                0,
+                0
+              ]
+            }
+          },
+          "warning-text": {
+            "$extensions": {
+              "com.clossys.css": {
+                "raw": "oklch(0.36 0 0)"
+              },
+              "com.clossys.modes": {
+                "dark": {
+                  "colorSpace": "oklch",
+                  "components": [
+                    0.82,
+                    0,
+                    0
+                  ]
+                }
+              }
+            },
+            "$type": "color",
+            "$value": {
+              "colorSpace": "oklch",
+              "components": [
+                0.36,
+                0,
+                0
+              ]
+            }
+          },
+          "warning-tint": {
+            "$extensions": {
+              "com.clossys.css": {
+                "raw": "oklch(0.4495 0 0 / 0.12)"
+              },
+              "com.clossys.modes": {
+                "dark": {
+                  "alpha": 0.18,
+                  "colorSpace": "oklch",
+                  "components": [
+                    0.62,
+                    0,
+                    0
+                  ]
+                }
+              }
+            },
+            "$type": "color",
+            "$value": {
+              "alpha": 0.12,
+              "colorSpace": "oklch",
+              "components": [
+                0.4495,
+                0,
+                0
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

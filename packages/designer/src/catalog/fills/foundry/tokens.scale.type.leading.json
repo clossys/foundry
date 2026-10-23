@@ -1,0 +1,57 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [
+        "dtcg#format",
+        "dtcg#alias"
+      ],
+      "evidence": [
+        {
+          "check": "C1",
+          "clause": "dtcg#format"
+        },
+        {
+          "check": "C2",
+          "clause": "dtcg#alias"
+        }
+      ],
+      "id": "foundry/tokens.scale.type.leading",
+      "license": "MIT",
+      "mode": "implementation",
+      "relation": "same-contract",
+      "slot": "tokens.scale.type.leading",
+      "source": "foundry",
+      "sourceAddress": "styles/tokens.css",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "tokens": {
+    "scale": {
+      "type": {
+        "leading": {
+          "display": {
+            "$extensions": {
+              "com.clossys.css": {
+                "raw": "1.05"
+              }
+            },
+            "$type": "number",
+            "$value": 1.05
+          },
+          "heading": {
+            "$extensions": {
+              "com.clossys.css": {
+                "raw": "1.15"
+              }
+            },
+            "$type": "number",
+            "$value": 1.15
+          }
+        }
+      }
+    }
+  }
+}

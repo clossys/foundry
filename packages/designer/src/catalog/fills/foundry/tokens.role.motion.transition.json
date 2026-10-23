@@ -1,0 +1,63 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [
+        "dtcg#format",
+        "dtcg#alias"
+      ],
+      "evidence": [
+        {
+          "check": "C1",
+          "clause": "dtcg#format"
+        },
+        {
+          "check": "C2",
+          "clause": "dtcg#alias"
+        }
+      ],
+      "id": "foundry/tokens.role.motion.transition",
+      "license": "MIT",
+      "mode": "implementation",
+      "relation": "same-contract",
+      "slot": "tokens.role.motion.transition",
+      "source": "foundry",
+      "sourceAddress": "styles/tokens.css",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "tokens": {
+    "role": {
+      "motion": {
+        "transition": {
+          "enter-easing": {
+            "$type": "cubicBezier",
+            "$value": "{tokens.scale.motion.easing.decelerate}"
+          },
+          "exit-easing": {
+            "$type": "cubicBezier",
+            "$value": "{tokens.scale.motion.easing.accelerate}"
+          },
+          "overlay-duration": {
+            "$type": "duration",
+            "$value": "{tokens.scale.motion.duration.fast}"
+          },
+          "shift": {
+            "$extensions": {
+              "com.clossys.css": {
+                "raw": "4px"
+              }
+            },
+            "$type": "dimension",
+            "$value": {
+              "unit": "px",
+              "value": 4
+            }
+          }
+        }
+      }
+    }
+  }
+}

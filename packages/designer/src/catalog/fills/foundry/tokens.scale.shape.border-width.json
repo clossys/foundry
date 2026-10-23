@@ -1,0 +1,76 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [
+        "dtcg#format",
+        "dtcg#alias"
+      ],
+      "evidence": [
+        {
+          "check": "C1",
+          "clause": "dtcg#format"
+        },
+        {
+          "check": "C2",
+          "clause": "dtcg#alias"
+        }
+      ],
+      "id": "foundry/tokens.scale.shape.border-width",
+      "license": "MIT",
+      "mode": "implementation",
+      "relation": "same-contract",
+      "slot": "tokens.scale.shape.border-width",
+      "source": "foundry",
+      "sourceAddress": "styles/tokens.css",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "tokens": {
+    "scale": {
+      "shape": {
+        "border-width": {
+          "hairline": {
+            "$extensions": {
+              "com.clossys.css": {
+                "raw": "1px"
+              }
+            },
+            "$type": "dimension",
+            "$value": {
+              "unit": "px",
+              "value": 1
+            }
+          },
+          "icon-stroke": {
+            "$extensions": {
+              "com.clossys.css": {
+                "raw": "2"
+              }
+            },
+            "$type": "number",
+            "$value": 2
+          },
+          "panel": {
+            "$type": "dimension",
+            "$value": "{tokens.scale.shape.border-width.hairline}"
+          },
+          "rule": {
+            "$extensions": {
+              "com.clossys.css": {
+                "raw": "2px"
+              }
+            },
+            "$type": "dimension",
+            "$value": {
+              "unit": "px",
+              "value": 2
+            }
+          }
+        }
+      }
+    }
+  }
+}

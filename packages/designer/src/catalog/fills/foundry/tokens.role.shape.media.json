@@ -1,0 +1,111 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [
+        "dtcg#format",
+        "dtcg#alias"
+      ],
+      "evidence": [
+        {
+          "check": "C1",
+          "clause": "dtcg#format"
+        },
+        {
+          "check": "C2",
+          "clause": "dtcg#alias"
+        }
+      ],
+      "id": "foundry/tokens.role.shape.media",
+      "license": "MIT",
+      "mode": "implementation",
+      "relation": "same-contract",
+      "slot": "tokens.role.shape.media",
+      "source": "foundry",
+      "sourceAddress": "styles/tokens.css",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "tokens": {
+    "role": {
+      "shape": {
+        "media": {
+          "brandmark-gap-lg": {
+            "$extensions": {
+              "com.clossys.css": {
+                "raw": "8px"
+              }
+            },
+            "$type": "dimension",
+            "$value": {
+              "unit": "px",
+              "value": 8
+            }
+          },
+          "brandmark-gap-md": {
+            "$extensions": {
+              "com.clossys.css": {
+                "raw": "6px"
+              }
+            },
+            "$type": "dimension",
+            "$value": {
+              "unit": "px",
+              "value": 6
+            }
+          },
+          "brandmark-gap-sm": {
+            "$extensions": {
+              "com.clossys.css": {
+                "raw": "4px"
+              }
+            },
+            "$type": "dimension",
+            "$value": {
+              "unit": "px",
+              "value": 4
+            }
+          },
+          "brandmark-height-lg": {
+            "$extensions": {
+              "com.clossys.css": {
+                "raw": "48px"
+              }
+            },
+            "$type": "dimension",
+            "$value": {
+              "unit": "px",
+              "value": 48
+            }
+          },
+          "brandmark-height-md": {
+            "$extensions": {
+              "com.clossys.css": {
+                "raw": "36px"
+              }
+            },
+            "$type": "dimension",
+            "$value": {
+              "unit": "px",
+              "value": 36
+            }
+          },
+          "brandmark-height-sm": {
+            "$extensions": {
+              "com.clossys.css": {
+                "raw": "24px"
+              }
+            },
+            "$type": "dimension",
+            "$value": {
+              "unit": "px",
+              "value": 24
+            }
+          }
+        }
+      }
+    }
+  }
+}

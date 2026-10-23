@@ -299,7 +299,8 @@
     "LICENSE",
     "skill",
     "THIRD-PARTY-NOTICES.md",
-    "fit-signal-declarations.json"
+    "fit-signal-declarations.json",
+    "!dist/catalog-core/__fixtures__/**"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",

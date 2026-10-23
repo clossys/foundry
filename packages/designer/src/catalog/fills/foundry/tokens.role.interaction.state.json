@@ -1,0 +1,75 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [
+        "dtcg#format",
+        "dtcg#alias"
+      ],
+      "evidence": [
+        {
+          "check": "C1",
+          "clause": "dtcg#format"
+        },
+        {
+          "check": "C2",
+          "clause": "dtcg#alias"
+        }
+      ],
+      "id": "foundry/tokens.role.interaction.state",
+      "license": "MIT",
+      "mode": "implementation",
+      "relation": "same-contract",
+      "slot": "tokens.role.interaction.state",
+      "source": "foundry",
+      "sourceAddress": "styles/tokens.css",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "tokens": {
+    "role": {
+      "interaction": {
+        "state": {
+          "disabled-alpha": {
+            "$extensions": {
+              "com.clossys.css": {
+                "raw": "0.5"
+              }
+            },
+            "$type": "number",
+            "$value": 0.5
+          },
+          "hover-alpha": {
+            "$extensions": {
+              "com.clossys.css": {
+                "raw": "0.08"
+              }
+            },
+            "$type": "number",
+            "$value": 0.08
+          },
+          "pressed-alpha": {
+            "$extensions": {
+              "com.clossys.css": {
+                "raw": "0.14"
+              }
+            },
+            "$type": "number",
+            "$value": 0.14
+          },
+          "stale-alpha": {
+            "$extensions": {
+              "com.clossys.css": {
+                "raw": "0.7"
+              }
+            },
+            "$type": "number",
+            "$value": 0.7
+          }
+        }
+      }
+    }
+  }
+}
