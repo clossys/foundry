@@ -757,6 +757,68 @@ function renderFlatNodes(nodes: readonly FlatNode[], paintOf: (shape: FlatShape)
   return out;
 }
 
+/** Exact normalized-only knockout preflight; legacy recolouring keeps its original renderer. */
+function renderNormalizedKnockout(svg: string, color: string, mark: NonNullable<ReturnType<typeof recogniseFlatTwoTone>>): string {
+  const { root, box, nodes, toneA } = mark;
+  const id = `recolor-${fnv1a32Hex(`${svg}\u0000${color}`)}`;
+  const region = `x="${round4(box.minX)}" y="${round4(box.minY)}" width="${round4(box.width)}" height="${round4(box.height)}"`;
+  let size = 0, writing = false;
+  const chunks: string[] = [];
+  const reserve = (length: number): void => {
+    size += length;
+    if (size > 1000000) throw new MarkGeometryError('normalized output complexity');
+  };
+  const write = (text: string): void => { if (writing) chunks.push(text); else reserve(text.length); };
+  const value = (text: string): void => {
+    if (writing) { chunks.push(escapeXml(text)); return; }
+    reserve(text.length); // Count UTF-16 units and reject giant raw colors before escaping.
+    for (let i = 0; i < text.length; i++) {
+      const code = text.charCodeAt(i);
+      if (code === 38) reserve(4);
+      else if (code === 60 || code === 62) reserve(3);
+      else if (code === 34 || code === 39) reserve(5);
+    }
+  };
+  const hasPaint = (items: readonly FlatNode[], paintOf: (shape: FlatShape) => string | undefined): boolean =>
+    items.some(node => node.kind === 'group' ? hasPaint(node.children, paintOf) : paintOf(node) !== undefined);
+  const render = (items: readonly FlatNode[], paintOf: (shape: FlatShape) => string | undefined): void => {
+    for (const node of items) {
+      if (node.kind === 'group') {
+        if (!hasPaint(node.children, paintOf)) continue;
+        write('<g');
+        if (node.transform !== undefined) { write(' transform="'); value(node.transform); write('"'); }
+        write('>'); render(node.children, paintOf); write('</g>');
+      } else {
+        const paint = paintOf(node);
+        if (paint === undefined) continue;
+        write('<'); value(node.tag);
+        for (const [name, text] of node.attrs) {
+          write(' '); value(name); write('="');
+          value((name === 'fill' || name === 'stroke') && text !== 'none' ? paint : text);
+          write('"');
+        }
+        write(' />');
+      }
+    }
+  };
+  const isA = (shape: FlatShape): boolean => shape.tone === toneA;
+  const emit = (): void => {
+    write(`${root}<defs><mask id="${id}-a" maskUnits="userSpaceOnUse" ${region}><rect ${region} fill="#fff" />`);
+    render(nodes, shape => isA(shape) ? undefined : '#000');
+    write(`</mask><mask id="${id}-b" maskUnits="userSpaceOnUse" ${region}><rect ${region} fill="#fff" />`);
+    render(nodes, shape => isA(shape) ? '#000' : undefined);
+    write(`</mask></defs><g mask="url(#${id}-a)">`);
+    render(nodes, shape => isA(shape) ? color : undefined);
+    write(`</g><g mask="url(#${id}-b)">`);
+    render(nodes, shape => isA(shape) ? undefined : color);
+    write('</g></svg>');
+  };
+  emit();
+  writing = true;
+  emit();
+  return chunks.join('');
+}
+
 /**
  * Best-effort structural recolour onto the single paint `color`.
  *
@@ -815,6 +877,12 @@ export function recolorSvg(svg: string, color: string): string {
   return recolorSvgInternal(svg, color, false);
 }
 function recolorSvgInternal(svg: string, color: string, normalized: boolean): string {
+  if (normalized) {
+    if (color.length > 1000000) throw new MarkGeometryError('normalized output complexity');
+    const mark = recogniseFlatTwoTone(svg, true);
+    if (mark === null) throw new MarkGeometryError('normalized knockout complexity');
+    return renderNormalizedKnockout(svg, color, mark);
+  }
   const escapedColor = escapeXml(color);
   const mark = recogniseFlatTwoTone(svg, normalized);
   if (mark === null) {

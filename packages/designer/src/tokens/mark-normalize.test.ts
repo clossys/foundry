@@ -909,3 +909,139 @@ it.each([11, 12, 160, 5760, 8192, 8193, 8194, 8195, 8196, 8197, 8198, 8199, 8200
   for (const evaluate of [measureMarkGeometry, checkMarkConformance, (glyphSvg: string) => normalizeMark({ glyphSvg, tokens })])
     expect.soft(() => evaluate(malformed)).toThrow(MarkGeometryError);
 });
+function probeMarkResources(fixture: string, api: string): void {
+  const directory = mkdtempSync(join(tmpdir(), 'mark-resource-'));
+  try {
+    const entry = resolve(process.cwd(), 'src/tokens'), filename = join(directory, 'probe.cjs'), bundle = join(directory, 'bundle.cjs');
+    const esbuild = createRequire(resolve(process.cwd(), 'package.json')).resolve('esbuild');
+    const source = `export * from ${JSON.stringify(join(entry, 'mark-normalize.ts'))}; export { adoptSuppliedMark } from ${JSON.stringify(join(entry, 'identity-kit.ts'))}; export { judgeIdentityKit } from ${JSON.stringify(join(entry, 'identity-checks.ts'))};`;
+    writeFileSync(filename, `
+const assert = require('node:assert/strict'), { buildSync } = require(${JSON.stringify(esbuild)});
+require('node:fs').writeFileSync(${JSON.stringify(bundle)}, buildSync({ stdin: { contents: ${JSON.stringify(source)}, resolveDir: ${JSON.stringify(entry)} }, bundle: true, write: false, platform: 'node', format: 'cjs' }).outputFiles[0].text);
+const n = require(${JSON.stringify(bundle)}), tokens = ${JSON.stringify(tokens)}, fixture = ${JSON.stringify(fixture)}, api = ${JSON.stringify(api)};
+const paint = 'rgb(' + '0'.repeat(4087) + ' 0 0)';
+assert.equal(paint.length, 4096);
+const longPaint = ' color="' + paint + '" fill="' + paint + '" stroke="' + paint + '"';
+const strokeMetadata = ' stroke="none" stroke-width="' + '1'.repeat(4096) + '" stroke-miterlimit="' + '1'.repeat(4096) + '" stroke-linecap="' + 'a'.repeat(4096) + '" stroke-linejoin="' + 'a'.repeat(4096) + '"';
+const rect = '<rect width="1" height="1"/>';
+let input = '<svg viewBox="0 0 100 100"' + (fixture === 'elements' ? '' : fixture === 'paint-work' || fixture === 'review-paint' ? longPaint : ' fill="' + (fixture === 'review-output' ? paint : '#000') + '"' + strokeMetadata) + '>' +
+  (fixture === 'elements' || fixture === 'review-paint' ? '<g/>'.repeat(120000) + rect : fixture === 'paint-work' ? '<g/>'.repeat(1200) + rect : rect.repeat(fixture === 'review-output' ? 12000 : 100)) + '</svg>';
+if (fixture === 'generated-paint') { input = '<svg viewBox="0 0 100 100">' + rect.repeat(1200) + '</svg>'; tokens.onAccent = ' '.repeat(4089) + '#ffffff'; }
+if (fixture === 'derived-ink') { input = '<svg viewBox="0 0 100 100">' + rect.repeat(300) + '</svg>'; tokens.ink = ' '.repeat(4089) + '#000000'; }
+if (fixture === 'derived-metadata') input = '<svg viewBox="0 0 100 100" fill="#000"' + strokeMetadata + '>' + rect.repeat(40) + '</svg>';
+const evaluate = (glyphSvg) => api === 'measure' ? n.measureMarkGeometry(glyphSvg) : api === 'conformance' ? n.checkMarkConformance(glyphSvg) : api === 'normalize' ? n.normalizeMark({ glyphSvg, tokens }) : api === 'adopt' ? n.adoptSuppliedMark({ brand: { name: 'Example' }, suppliedSvg: glyphSvg, tokens, normalize: true }) : n.judgeIdentityKit(n.adoptSuppliedMark({ brand: { name: 'Example' }, suppliedSvg: glyphSvg, tokens }), tokens);
+evaluate(${JSON.stringify(control)});
+if (fixture === 'output-small') { n.measureMarkGeometry(input); n.checkMarkConformance(input); }
+let normalizedLength;
+if (fixture.startsWith('derived-')) { normalizedLength = n.normalizeMark({ glyphSvg: input, tokens }).length; assert.ok(normalizedLength < 1000000); }
+process.stdout.write('ready\\n');
+let value, error;
+const start = performance.now();
+try { value = evaluate(input); } catch (caught) { error = caught; }
+const elapsed = performance.now() - start;
+const feature = fixture === 'elements' || fixture === 'review-paint' ? 'element complexity' : fixture === 'paint-work' || fixture === 'generated-paint' ? 'paint parsing complexity' : 'normalized output complexity';
+process.stdout.write(JSON.stringify({ bytes: Buffer.byteLength(input), normalizedLength, elapsed, feature: error?.feature, error: error?.name, outputLength: typeof value === 'string' ? value.length : undefined, verdict: value?.checks?.['mark-conformance']?.verdict }));
+if (api === 'judge') {
+  assert.equal(error, undefined);
+  assert.equal(value.checks['mark-conformance'].verdict, 'indeterminate');
+  assert.ok(value.checks['mark-conformance'].findings[0].message.includes(feature));
+} else {
+  assert.ok(error instanceof n.MarkGeometryError, 'expected typed refusal');
+  if (fixture !== 'review-output') assert.equal(error.feature, feature);
+}
+assert.ok(elapsed < 500, 'measured API exceeds 500ms');
+`);
+    const result = spawnSync(process.execPath, ['--max-old-space-size=192', filename], { encoding: 'utf8', timeout: 2_000 });
+    const observation = JSON.stringify({ fixture, api, status: result.status, signal: result.signal, error: result.error?.message, stdout: result.stdout, stderr: result.stderr.slice(-1500) });
+    expect(result.stdout, observation).toContain('ready\n');
+    expect(result.error, observation).toBeUndefined();
+    expect(result.status, observation).toBe(0);
+  } finally { rmSync(directory, { recursive: true, force: true }); }
+}
+it.each(['elements', 'review-paint', 'paint-work'].flatMap(fixture => ['measure', 'conformance', 'normalize', 'adopt', 'judge'].map(api => [fixture, api])))("bounds %s resource work through %s", (fixture, api) => {
+  probeMarkResources(fixture!, api!);
+});
+it.each(['normalize', 'adopt'])("refuses independent small output amplification through %s before large serialization", api => {
+  probeMarkResources('output-small', api);
+});
+it.each(['normalize', 'adopt'])("refuses the 12000-leaf reviewer output through %s", api => {
+  probeMarkResources('review-output', api);
+});
+it.each([
+  ['quote', '&quot; onload=&quot;alert(1)', '" onload="alert(1)'],
+  ['less-than', '&lt;g&gt;', '<g>'],
+  ['ampersand', '&amp;quot;', '&quot;'],
+])("round-trips escaped %s metadata without attribute breakout", (_name, encoded, decoded) => {
+  const input = control.replace('<svg ', `<svg aria-label="${encoded}" `).replace('x="18"', `id="${encoded}" x="18"`);
+  const normalized = normalizeMark({ glyphSvg: input, tokens });
+  const document = new DOMParser().parseFromString(normalized, 'image/svg+xml');
+  expect(document.querySelector('parsererror')).toBeNull();
+  expect(document.querySelector('[onload]')).toBeNull();
+  expect(document.documentElement.getAttribute('aria-label')).toBe(decoded);
+  expect(document.querySelector('rect[id]')?.getAttribute('id')).toBe(decoded);
+  expect(checkMarkConformance(normalized)).toEqual([]);
+  const adopted = adoptSuppliedMark({ brand: { name: 'Example' }, suppliedSvg: input, tokens, normalize: true });
+  for (const output of Object.values(adopted.variants)) {
+    const variant = new DOMParser().parseFromString(output, 'image/svg+xml');
+    expect(variant.querySelector('parsererror')).toBeNull();
+    expect(variant.querySelector('[onload]')).toBeNull();
+  }
+});
+
+it("preflights the exact one-million-character output boundary including wrappers", () => {
+  const template = control.replace('x="18"', 'data-budget="" x="18"');
+  const overhead = normalizeMark({ glyphSvg: template, tokens }).length;
+  const input = template.replace('data-budget=""', `data-budget="${'x'.repeat(1_000_000 - overhead)}"`);
+  expect(normalizeMark({ glyphSvg: input, tokens })).toHaveLength(1_000_000);
+  expect(() => normalizeMark({ glyphSvg: input.replace('data-budget="', 'data-budget="x'), tokens })).toThrow('normalized output complexity');
+});
+it.each([['&amp;', 200000], ['&quot;', 166667], ['&lt;', 250000]] as const)("counts escaped %s expansion before allocation", (entity, count) => {
+  const input = control.replace('x="18"', `data-budget="${entity.repeat(count)}" x="18"`);
+  expect(() => normalizeMark({ glyphSvg: input, tokens })).toThrow('normalized output complexity');
+});
+it("bounds own style parsing independently of elements and output", () => {
+  const input = control.replace('<svg ', `<svg style="${' '.repeat(1_000_000)}fill:#000" `);
+  for (const evaluate of [measureMarkGeometry, checkMarkConformance, (glyphSvg: string) => normalizeMark({ glyphSvg, tokens })])
+    expect(() => evaluate(input)).toThrow('paint parsing complexity');
+});
+it("counts root and empty groups at the exact element boundary", () => {
+  const input = svg('<g/>'.repeat(16382) + '<rect width="1" height="1"/>');
+  expect(measureMarkGeometry(input).glyphBox).toEqual({ x: 0, y: 0, width: .01, height: .01 });
+  expect(() => measureMarkGeometry(input.replace('</svg>', '<g/></svg>'))).toThrow('element complexity');
+});
+it.each([
+  '<path d="Z M30 30H70V70H30Z"/>',
+  '<g><svg viewBox="0 0 100 100"><rect width="10" height="10"/></svg></g>',
+  '<rect x="18" x="19" y="18" width="64" height="64"/>',
+  '<rect width="10" height="10" data-label="&nbsp;"/>',
+  '<rect width="10" height="10" data-label="&#xD800;"/>',
+])("keeps existing typed refusal for a parser survivor %s", body => {
+  for (const evaluate of [measureMarkGeometry, checkMarkConformance, (glyphSvg: string) => normalizeMark({ glyphSvg, tokens })])
+    expect(() => evaluate(svg(body))).toThrow(MarkGeometryError);
+});
+it("retains single-quoted attributes and a single full-canvas glyph without a plate", () => {
+  expect(box("<rect x='18' y='18' width='64' height='64'/>")).toEqual({ x: .18, y: .18, width: .64, height: .64 });
+  const geometry = measureMarkGeometry(svg('<rect width="100" height="100"/>'));
+  expect(geometry.plate.present).toBe(false);
+  expect(geometry.glyphBox).toEqual({ x: 0, y: 0, width: 1, height: 1 });
+});
+it("pins the existing 64-open-element nesting boundary", () => {
+  const body = '<g>'.repeat(63) + '<rect width="1" height="1"/>' + '</g>'.repeat(63);
+  expect(box(body)).toEqual({ x: 0, y: 0, width: .01, height: .01 });
+  expect(() => box('<g>' + body + '</g>')).toThrow(MarkGeometryError);
+});
+it("refuses unsupported middle anchoring of live lockup text", () => {
+  expect(() => checkMarkConformance(control.replace('</svg>', '<text x="117" font-size="46" text-anchor="middle">Example</text></svg>'))).toThrow(MarkGeometryError);
+});
+it.each(['normalize', 'adopt'])("bounds generated token paint work through %s", api => {
+  probeMarkResources('generated-paint', api);
+});
+it.each(['derived-ink', 'derived-metadata'])("preflights derived normalized output for %s after normalization succeeds", fixture => {
+  probeMarkResources(fixture, 'adopt');
+});
+it("reserves generated element wrappers before accepting normalization", () => {
+  const atParseLimit = svg('<g/>'.repeat(16382) + '<rect width="1" height="1"/>');
+  expect(() => normalizeMark({ glyphSvg: atParseLimit, tokens })).toThrow('element complexity');
+  const accepted = normalizeMark({ glyphSvg: svg('<g/>'.repeat(16379) + '<rect width="1" height="1"/>'), tokens });
+  expect(checkMarkConformance(accepted)).toEqual([]);
+});

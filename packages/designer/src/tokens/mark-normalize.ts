@@ -87,7 +87,7 @@ const measuredAttributes = new Set([
 ]);
 const identity: Matrix = [1, 0, 0, 1, 0, 0];
 const fail = (feature: string): never => { throw new MarkGeometryError(feature); };
-interface GeometryBudget { generated: number; work: number }
+interface GeometryBudget { generated: number; work: number; paint: number }
 function reserveGeometry(budget: GeometryBudget, count: number): void {
   budget.generated += count;
   if (budget.generated > 100000) fail('generated geometry complexity');
@@ -95,6 +95,10 @@ function reserveGeometry(budget: GeometryBudget, count: number): void {
 function reserveWork(budget: GeometryBudget, count: number): void {
   budget.work += count;
   if (budget.work > 2000000) fail('paint work complexity');
+}
+function reservePaint(budget: GeometryBudget, length: number): void {
+  budget.paint += length;
+  if (budget.paint > 1000000) fail('paint parsing complexity');
 }
 const svgSpace = String.raw`\x09\x0a\x0d\x20`;
 const isSvgSpace = (code: number): boolean => code === 9 || code === 10 || code === 13 || code === 32;
@@ -169,7 +173,7 @@ function transform(value = ""): Matrix {
 function parse(svg: string, lockupText = false): Node {
   if (/[\x0b\x0c]/.test(svg)) fail('XML whitespace');
   const stack: Node[] = [], roots: Node[] = [];
-  let end = 0;
+  let end = 0, elements = 0;
   while (end < svg.length) {
     const start = svg.indexOf('<', end);
     if (start < 0)
@@ -215,6 +219,8 @@ function parse(svg: string, lockupText = false): Node {
     }
     if (!["svg", "g", "rect", "circle", "ellipse", "polygon", "path"].includes(name) && !(lockupText && name === "text"))
       fail(name);
+    // Count all elements, including the root and empty groups, before allocating nodes.
+    if (++elements > 16384) fail('element complexity');
     const attrs: Attrs = {};
     const selfClosing = tag.endsWith('/'), content = trimSvg(selfClosing ? tag.slice(0, -1) : tag, true);
     const attribute = svgAttribute;
@@ -682,10 +688,12 @@ function effectivePaint(paint: Paint | undefined, color: LiteralPaint | undefine
   const specified = paint ?? parsePaint(fallback);
   return specified === 'currentColor' ? color ?? fail('ambient currentColor') : specified;
 }
-function presentation(node: Node, inherited: Presentation): Presentation {
+function presentation(node: Node, inherited: Presentation, budget: GeometryBudget): Presentation {
   const attrs = { ...node.attrs };
   for (const key of paintKeys)
     if (attrs[key] === undefined && inherited.attrs[key] !== undefined) attrs[key] = inherited.attrs[key]!;
+  // Charge effective inherited paints and own inline styles before parsing any strings.
+  reservePaint(budget, (node.attrs.style?.length ?? 0) + ['color', 'fill', 'stroke'].reduce((sum, key) => sum + (attrs[key]?.length ?? 0), 0));
   if (attrs.style) {
     if (/!|\/\*|\*\/|[^\x09\x0a\x0c\x0d\x20-\x7e]/.test(attrs.style)) fail('style syntax');
     for (const declaration of attrs.style.split(';').map(value => value.trim()).filter(Boolean)) {
@@ -720,16 +728,16 @@ function analyze(svg: string, optical = false, glyphFill?: string): Analysis {
     return fail("viewBox");
   const viewBox: MarkBox = { x: v[0]!, y: v[1]!, width: v[2]!, height: v[3]! };
   const candidate = root.children[0];
-  const rootPresentation = presentation(root, { attrs: {} });
-  const candidatePresentation = candidate ? presentation(candidate, rootPresentation) : undefined;
+  const budget: GeometryBudget = { generated: 0, work: 0, paint: 0 };
+  const rootPresentation = presentation(root, { attrs: {} }, budget);
+  const candidatePresentation = candidate ? presentation(candidate, rootPresentation, budget) : undefined;
   const plate = root.children.length > 1 && !root.attrs.transform && candidate?.name === 'rect' && !candidate.attrs.transform && number(candidate.attrs, 'x') === viewBox.x && number(candidate.attrs, 'y') === viewBox.y && number(candidate.attrs, 'width') === viewBox.height && number(candidate.attrs, 'height') === viewBox.height && effectivePaint(candidatePresentation!.fill, candidatePresentation!.color, '#000').visible ? candidate : undefined;
   const frame = plate ? { ...viewBox, width: viewBox.height } : viewBox;
   const tolerance = Math.max(viewBox.width, viewBox.height) * 1e-6;
-  const budget: GeometryBudget = { generated: 0, work: 0 };
   const regions: Region[] = [];
   const paints = new Map<Node, ComputedPaint>();
   const visit = (node: Node, m: Matrix, inherited: Presentation): void => {
-    const resolved = presentation(node, inherited), a = resolved.attrs;
+    const resolved = presentation(node, inherited, budget), a = resolved.attrs;
     if (a['fill-rule'] && !['nonzero', 'evenodd'].includes(a['fill-rule']))
       fail('fill-rule');
     const matrix = product(m, transform(node.attrs.transform));
@@ -750,8 +758,12 @@ function analyze(svg: string, optical = false, glyphFill?: string): Analysis {
       fail(node.name);
     const localTolerance = tolerance / Math.max(Math.hypot(matrix[0], matrix[1]), Math.hypot(matrix[2], matrix[3]), 1);
     const shape = contours(node, localTolerance, budget);
-    if (glyphFill !== undefined && resolved.fill === undefined)
-      fill = shape.some(contour => hasFillArea(contour.points)) ? effectivePaint(undefined, resolved.color, glyphFill) : { css: 'none', visible: false };
+    if (glyphFill !== undefined && resolved.fill === undefined) {
+      if (shape.some(contour => hasFillArea(contour.points))) {
+        reservePaint(budget, glyphFill.length);
+        fill = effectivePaint(undefined, resolved.color, glyphFill);
+      } else fill = { css: 'none', visible: false };
+    }
     paints.set(node, { attrs: a, fill, stroke: strokePaint });
     if (glyphFill !== undefined && resolved.fill === undefined && !fill.visible && shape.some(contour => hasFillArea(contour.points))) fail('generated glyph paint');
     if (fill.visible) {
@@ -796,23 +808,70 @@ export function normalizeMark(input: NormalizeMarkInput): string {
   const shift = (axis: 0 | 1) => correction[axis];
   const tx = side / 2 - centre[0] * scale + shift(0), ty = side / 2 - centre[1] * scale + shift(1);
   const root = measured.root;
-  const attributesOf = (attrs: Attrs) => Object.entries(attrs).map(([key, value]) => ` ${key}="${escape(value)}"`).join('');
-  const render = (node: Node): string => {
+  const attributesFor = (node: Node): Attrs => {
     const attrs: Attrs = Object.fromEntries(Object.entries(node.attrs).filter(([key]) => key !== 'style' && !paintKeys.includes(key)));
-    if (node.name === 'g') return `<g${attributesOf(attrs)}>${node.children.map(render).join('')}</g>`;
-    const resolved = measured.paints.get(node)!;
-    for (const key of paintKeys) if (!['fill', 'stroke', 'color'].includes(key) && resolved.attrs[key] !== undefined) attrs[key] = resolved.attrs[key]!;
-    attrs.fill = resolved.fill.css;
-    attrs.stroke = resolved.stroke.css;
-    return `<${node.name}${attributesOf(attrs)}/>`;
+    if (node.name !== 'g') {
+      const resolved = measured.paints.get(node)!;
+      for (const key of paintKeys) if (!['fill', 'stroke', 'color'].includes(key) && resolved.attrs[key] !== undefined) attrs[key] = resolved.attrs[key]!;
+      attrs.fill = resolved.fill.css;
+      attrs.stroke = resolved.stroke.css;
+    }
+    return attrs;
   };
-  const body = root.children.filter(node => node !== measured.plate).map(render).join('');
-  const rootMetadata = attributesOf(Object.fromEntries(Object.entries(root.attrs).filter(([key]) => ['role', 'aria-label'].includes(key))));
-  const attributes = attributesOf(Object.fromEntries(Object.entries(root.attrs).filter(([key]) => !['xmlns', 'viewBox', 'width', 'height', 'data-clear-space', 'style', 'role', 'aria-label', ...paintKeys].includes(key))));
+  const rootMetadata = Object.fromEntries(Object.entries(root.attrs).filter(([key]) => ['role', 'aria-label'].includes(key)));
+  const rootAttributes = Object.fromEntries(Object.entries(root.attrs).filter(([key]) => !['xmlns', 'viewBox', 'width', 'height', 'data-clear-space', 'style', 'role', 'aria-label', ...paintKeys].includes(key)));
   const accent = input.plate === false ? undefined : effectivePaint(parsePaint(input.tokens.accent), measured.rootColor, '#000');
   if (accent && !accent.visible) fail('generated plate paint');
-  const plate = accent ? `<rect width="48" height="48" rx="10.5" fill="${escape(accent.css)}"/>` : '';
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" data-clear-space="0.2"${rootMetadata}${input.optical ? ' data-optical-centering="true"' : ''}>${plate}<g transform="translate(${format(tx)} ${format(ty)}) scale(${format(scale)})"><g${attributes}>${body}</g></g></svg>`;
+  // Preflight the exact emission in UTF-16 code units before escaping values or joining output.
+  // The same layout and attribute selection run in both passes; the limit is 1,000,000 characters.
+  let outputSize = 0, outputElements = 0, writing = false;
+  const chunks: string[] = [];
+  const reserveOutput = (length: number): void => {
+    outputSize += length;
+    if (outputSize > 1000000) fail('normalized output complexity');
+  };
+  const write = (text: string): void => { if (writing) chunks.push(text); else reserveOutput(text.length); };
+  const writeValue = (value: string): void => {
+    if (writing) { chunks.push(escape(value)); return; }
+    reserveOutput(value.length); // Reject giant metadata before scanning or expanding it.
+    for (let i = 0; i < value.length; i++) {
+      const code = value.charCodeAt(i);
+      if (code === 38) reserveOutput(4);
+      else if (code === 34) reserveOutput(5);
+      else if (code === 60) reserveOutput(3);
+    }
+  };
+  const attributesOf = (attrs: Attrs): void => {
+    for (const [key, value] of Object.entries(attrs)) {
+      write(` ${key}="`); writeValue(value); write('"');
+    }
+  };
+  const render = (node: Node): void => {
+    if (!writing && ++outputElements > 16384) fail('element complexity');
+    write(`<${node.name}`); attributesOf(attributesFor(node));
+    if (node.name === 'g') {
+      write('>');
+      for (const child of node.children) render(child);
+      write('</g>');
+    } else write('/>');
+  };
+  const emit = (): void => {
+    if (!writing) outputElements = 3 + (accent ? 1 : 0); // Root, two wrapper groups, optional plate.
+    write('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" data-clear-space="0.2"');
+    attributesOf(rootMetadata);
+    write(input.optical ? ' data-optical-centering="true">' : '>');
+    if (accent) {
+      write('<rect width="48" height="48" rx="10.5"'); attributesOf({ fill: accent.css }); write('/>');
+    }
+    write(`<g transform="translate(${format(tx)} ${format(ty)}) scale(${format(scale)})"><g`);
+    attributesOf(rootAttributes); write('>');
+    for (const node of root.children) if (node !== measured.plate) render(node);
+    write('</g></g></svg>');
+  };
+  emit();
+  writing = true;
+  emit();
+  return chunks.join('');
 }
 /** Ordered violations. Live lockup text contributes position/font size, never an outline box. */
 export function checkMarkConformance(svg: string): MarkConformanceFinding[] {
