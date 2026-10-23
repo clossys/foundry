@@ -17,6 +17,8 @@ const SHARED = ["icons/", "tokens/", "internal/peer-version.js", "internal/decla
 const RULES = {
   atoms: { bare: /^(?:react|react-aria-components(?:\/package\.json)?|tailwind-merge)$/, local: ["atoms/", ...SHARED] },
   blocks: { bare: /^react$/, typeOnlyBare: /^react-aria-components$/, local: ["blocks/", "atoms/", ...SHARED] },
+  /** Studio composes atoms, tokens, the catalog contract and its own files; it needs no Node built-in and no other library. */
+  studio: { bare: /^react$/, typeOnlyBare: /^react-aria-components$/, local: ["studio/", "atoms/", "catalog-core/", ...SHARED] },
   /**
    * tokens, icons, internal: bare specifiers follow the blocks rule plus Node built-ins (existing
    * CLIs and the peer probe); relative imports stay inside src (tokens/index.ts re-exports backdrop/, type-record/).
@@ -25,7 +27,10 @@ const RULES = {
 } as const;
 const SHARED_DIRS = ["tokens", "icons", "internal"];
 const SOURCE_EXTENSIONS = [".ts", ".tsx", ".mts", ".cts", ".js", ".jsx", ".mjs", ".cjs"];
-const BARREL_EXTRA: Record<string, RegExp> = { "blocks/index.ts": /^react-aria-components\/package\.json$/ };
+const BARREL_EXTRA: Record<string, RegExp> = {
+  "blocks/index.ts": /^react-aria-components\/package\.json$/,
+  "studio/index.ts": /^react-aria-components\/package\.json$/,
+};
 /** Every other directory: React, react-aria-components (shell), Node built-ins (CLIs), Tailwind (stylesheet compilers). */
 const OTHER_BARE = /^(?:react|react-aria-components(?:\/package\.json)?|node:[a-z_/]+)$/;
 const TAILWIND_DIRS = ["compiled-css", "hero-css"];
@@ -87,7 +92,7 @@ function rawViolations(): string[] {
   for (const file of collect(srcDir)) {
     const rel = relative(srcDir, file).split(sep).join("/");
     const top = rel.split("/")[0]!;
-    const rule = top === "atoms" || top === "blocks" ? RULES[top] : SHARED_DIRS.includes(top) ? RULES.shared : undefined;
+    const rule = top === "atoms" || top === "blocks" || top === "studio" ? RULES[top] : SHARED_DIRS.includes(top) ? RULES.shared : undefined;
     for (const { spec, typeOnly } of importsOf(file)) {
       let ok: boolean;
       if (spec.startsWith(".")) {

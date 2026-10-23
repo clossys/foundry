@@ -24,7 +24,7 @@ exports from `@clossys/designer/atoms`. The barrel remains client-only. Read
 the packed [atom selection guide](skill/atoms-guide.md) for purpose, use and
 avoidance, alternatives, content, anatomy, block composition, accessibility,
 medium evidence, represented configurations and partial token dependencies.
-Four display groups and ten families place forty-six established atom/chart leaves
+Four display groups and ten families place forty-seven established atom/chart leaves
 exactly once. Groups and families are navigation; only leaves are selectable.
 Existing IDs such as `act.link` and `reveal.tabs` remain unchanged.
 
@@ -186,7 +186,7 @@ and its exception list can only shrink.
   `Avatar`, `Spinner`, `Menu`, `Dialog`, `Tabs`, `Table`, `Field`,
   `Skeleton`, `Tooltip`, `Banner`, `RadioGroup`, `Popover`, `DateField`,
   `ComboBox`, `SearchField`, `FileTrigger`, `Disclosure`, `ProgressBar`,
-  `Separator`, `Chip`, `StatusMark`, `Meter`, `ResizeHandle`, `Logomark`, `GridList`.
+  `Separator`, `Chip`, `StatusMark`, `Meter`, `ResizeHandle`, `Logomark`, `GridList`, `TreeView`.
 - **`blocks`** — owns the internal layout of multiple named regions,
   typically by composing one or more atoms (and/or layout) into something
   with a real job on a page. Shipped blocks include: `AccountMenu`, `PageHeader`, `EmptyState`,
@@ -262,8 +262,63 @@ smallest stable subpath that owns what you need:
 | `@clossys/designer/atoms`, `/blocks`, `/shell`, `/charts` | Reusable React visual primitives. |
 | `@clossys/designer/atoms/server`, `/blocks/server`, `/shell/server`, `/charts/server`, `/theme/server` | The server-safe subset of each sibling subpath, importable from a React Server Component. See "Server Components" below. |
 | `@clossys/designer/theme` | `getThemeInitScript`, `ThemeProvider`/`useTheme`, `ThemeToggle` — the runtime half of theming. Not to be confused with the CSS `/theme.css` subpath above. |
+| `@clossys/designer/studio` | `Studio`, the library Studio: pick which source's fill each slot uses, see every candidate in its own values, and re-theme the page live. Client-only, with no `/studio/server`. All copy comes from the host's `labels`; reading and saving go through its `adapter`. `demoStudioAdapter` is a throwaway, read-only demo library for a first look. |
 | `@clossys/designer/gate` | Token-purity scanner/gate and the environment-conformance gate (`checkEnvironmentConformance`). |
 | `@clossys/designer/render-environment` | `RENDER_ENVIRONMENT` — a plain data declaration of every subpath's render environment (`"server-safe"` \| `"client-only"`). See "Server Components" below. |
+
+For a read-only view of the shipped 52-leaf token catalog, import
+`catalogStudioAdapter` alongside `Studio` from `@clossys/designer/studio` and pass
+`adapter={catalogStudioAdapter}`. `demoStudioAdapter` and the default catalog remain
+unchanged. An explicit `catalog` prop overrides the adapter's catalog. Leaf counts
+show available members from contracts and loaded fills, including open contracts:
+this catalog plus the demo consumer has 220 available members versus 217 shipped
+bindings. The existing demo engine resolves only 145 closed-contract members;
+open-contract leaves are browsable with counts but have no resolved member preview.
+`previewUnavailable` supplies their truthful status, such as "Fill available; member
+preview pending"; it is distinct from `noFill` and leaves usable fills selectable.
+The smallest follow-up is open-member enumeration in the demo engine's resolution
+profile; this adapter neither synthesizes values nor changes contracts.
+
+Supply the plain copy through `labels`: `scope.label` = "Apply to",
+`scope.member` = "One token", `scope.slot` = "Whole leaf", `scope.node` =
+"Everything under a group", and `useSource` returns "Use this version".
+`scope.explanation` says "A more specific choice wins: one token beats a whole leaf,
+which beats a group." `memberCount(count)` formats the available-member count.
+The centre pane stacks one self-contained Board per L2 placement group (19 in the
+shipped catalog). Each Board has its group name and an explicit-pick Decided ring;
+libraries are stable columns and the group, leaves and expandable members are rows. Each row has one shared Use radio
+group; missing and reference-only fills stay visible but disabled. Wide and medium
+layouts show up to four library columns before horizontal overflow; narrow layouts
+retain library tabs. The leaf column and library headers are sticky. Group choices
+still fan out to leaf picks; member picks take precedence over whole-leaf picks.
+The optional placement `basket` field controls group-versus-leaf row emphasis only.
+The explorer omits the Tokens layer wrapper and keeps scale/role as leaf tags.
+Its `onSelect(nodeId)` seam scrolls the matching Board or leaf row into view without
+filtering other Boards. Stable Board IDs and refs support this navigation; the
+current layout is a plain vertical scroll stack, with no search, filters, pan or zoom.
+
+Supply `layers` labels for Tokens, Assets, Components, Sections and Frames, with
+`layers.disabled` = "Built after Tokens sign-off". Only Tokens is active. Its
+`progress(decided, total)` label formats Decided percentage from explicit working
+picks, never the default chain. Activating its progress ring opens the scorecard.
+`scorecard` supplies its title, Close, Decided, Resolved, Checks, Issues, empty and
+target copy, category names, `counts(errors, notices)` and `supported(codes)`.
+Resolved counts leaves with at least one usable fill, not resolved member previews.
+The current engine checks only C1 unsafe CSS and C7 reference selection. Contract
+and format reports only C1; Coverage reports only C7 reference-use refusal, not full
+coverage validation. Accessibility, Coherence, Modes and Provenance and license are
+"Target: needs the check engine", with no invented counts. Issue buttons reveal
+and focus their actual leaf row. Errors block a cell; notices never block it.
+
+`matrix` supplies its accessible label, Leaf, Libraries, expansion and
+collapse callbacks, pending marker and "differs from group" copy. The Inspector
+uses a plain definition list, including `inspector.trust`, `representedLeaf`,
+`usedBy` and `none`; used-by entries come only from actual resolved aliases.
+Both light and dark aliases are retained when present. Group-level previews
+identify their representative leaf. A group choice is only
+transient UI context: it is never stored in a Selection or ChangeSet. That context
+survives Save within the session; Discard restores the saved session baseline.
+Leaf overrides and Reset use the actual working picks. No token values are editable.
 
 ### Token details and selection
 
@@ -1916,6 +1971,19 @@ selection, pressing the row toggles selection without navigating.
 Layout is fixed to stack and selection behavior to toggle. A checked checkbox
 and `data-selected` expose selection alongside its surface color. Supply empty
 content through `renderEmptyState` to keep it within the grid.
+
+### `TreeView` (draft)
+
+Named hierarchy of destinations. Pass `nodes` (each with a unique `id`, a
+host-authored `label` and optional `children`) and a required `aria-label`; a
+missing name throws `TypeError`. The current leaf is `currentId`. Enter, Space
+or a click on a leaf calls `onNavigate` with its id once, and choosing the
+current leaf again does nothing. A branch only expands or collapses, through its
+chevron, click, Enter or Space. The peer supplies arrow navigation, Right and
+Left expand and collapse, Home/End and typeahead. Expansion is uncontrolled with
+`defaultExpandedIds`, or controlled with `expandedIds` and `onExpandedChange`.
+The chevron mirrors in right-to-left text, and the current row keeps a visible
+selected surface and focus ring in forced-colors mode.
 
 ### `Table`
 
@@ -7140,6 +7208,9 @@ not a grab-bag).
 | `GridListProps` | type | Root peer props plus `className`; requires `aria-label` or `aria-labelledby` at runtime; layout and selection behavior are fixed. |
 | `GridListItemProps` | type | Row peer props with required `textValue` and optional `className`. |
 | `GridListSelectionCheckboxProps` | type | Required host-authored `aria-label` for the selection checkbox. |
+| `TreeView` | component | Draft hierarchy navigation: expandable branches, one current leaf, `onNavigate` on leaf choice, controlled or uncontrolled expansion. |
+| `TreeViewProps` | type | `nodes`, required `aria-label`, `currentId`, `onNavigate`, `defaultExpandedIds`, `expandedIds`, `onExpandedChange` and `className`. |
+| `TreeViewNode` | type | One node: unique `id`, host-authored `label` and optional `children`. |
 | `Table` | component | Table primitives built on react-aria-components' `Table`/`TableHeader`/`TableBody`/`Column`/`Row`/`Cell`. Carries `Table.Header`, `Table.Column`, `Table.Body`, `Table.Row`, `Table.Cell`, `Table.SelectAllCheckbox`, `Table.SelectionCheckbox`. |
 | `TableProps` | type | Props for `Table`: `children`, `className`, `style`, plus react-aria-components' own `Table` props (`aria-label`, `sortDescriptor`, `onSortChange`, `selectionMode`, `selectedKeys`, `onSelectionChange`, ...). |
 | `TableHeaderProps` | type | Props for `Table.Header`: `children` (`Table.Column`s), `className`, plus react-aria-components' own `TableHeader` props. |
@@ -8086,7 +8157,7 @@ over the IDENTICAL fixture in the same test, exits `0`.
 `Dialog`, `Tabs`, `Table`, `Field`, `Skeleton`, `Tooltip`, `Banner`,
 `RadioGroup`, `Popover`, `DateField`, `ComboBox`, `SearchField`,
 `FileTrigger`, `Disclosure`, `ProgressBar`, `Separator`, `Chip`,
-`StatusMark`, `Meter`, `ResizeHandle`, `Logomark` and `GridList`. No `Modal` exposed as a public atom of
+`StatusMark`, `Meter`, `ResizeHandle`, `Logomark`, `GridList` and `TreeView`. No `Modal` exposed as a public atom of
 its own beyond what `Dialog` and `Popover` already compose internally —
 that gets added here only once something real needs a bare modal overlay
 with neither `Dialog`'s fixed trigger/content shape nor `Popover`'s

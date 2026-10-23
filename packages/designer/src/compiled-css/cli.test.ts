@@ -14,6 +14,7 @@ beforeEach(() => {
   cpSync(join(packageRoot, "src", "blocks"), join(dir, "src", "blocks"), { recursive: true });
   cpSync(join(packageRoot, "src", "shell"), join(dir, "src", "shell"), { recursive: true });
   cpSync(join(packageRoot, "src", "charts"), join(dir, "src", "charts"), { recursive: true });
+  cpSync(join(packageRoot, "src", "studio"), join(dir, "src", "studio"), { recursive: true });
   cpSync(join(packageRoot, "src", "theme"), join(dir, "src", "theme"), { recursive: true });
   cpSync(join(packageRoot, "src", "tokens", "preview"), join(dir, "src", "tokens", "preview"), { recursive: true });
   vi.spyOn(console, "log").mockImplementation(() => {});

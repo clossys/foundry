@@ -340,11 +340,12 @@ const JS_SUBPATHS = [
   "./shell/server",
   "./theme",
   "./theme/server",
+  "./studio",
   "./gate",
   "./render-environment",
 ] as const;
 const CSS_SUBPATHS = ["./tokens.css", "./theme.css", "./theme-keys.css", "./utilities.css", "./compiled.css", "./brand-template.css"] as const;
-const COMPONENT_DIRS = ["atoms", "blocks", "charts", "shell", "theme"] as const;
+const COMPONENT_DIRS = ["atoms", "blocks", "charts", "shell", "studio", "theme"] as const;
 
 function sourceFiles(dir: string, out: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {

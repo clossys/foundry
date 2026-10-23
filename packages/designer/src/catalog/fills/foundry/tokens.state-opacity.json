@@ -1,0 +1,71 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [
+        "dtcg#format",
+        "dtcg#alias"
+      ],
+      "evidence": [
+        {
+          "check": "C1",
+          "clause": "dtcg#format"
+        },
+        {
+          "check": "C2",
+          "clause": "dtcg#alias"
+        }
+      ],
+      "id": "foundry/tokens.state-opacity",
+      "license": "MIT",
+      "mode": "implementation",
+      "relation": "same-contract",
+      "slot": "tokens.state-opacity",
+      "source": "foundry",
+      "sourceAddress": "styles/tokens.css",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "tokens": {
+    "state-opacity": {
+      "disabled": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "0.5"
+          }
+        },
+        "$type": "number",
+        "$value": 0.5
+      },
+      "hover": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "0.08"
+          }
+        },
+        "$type": "number",
+        "$value": 0.08
+      },
+      "pressed": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "0.14"
+          }
+        },
+        "$type": "number",
+        "$value": 0.14
+      },
+      "stale": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "0.7"
+          }
+        },
+        "$type": "number",
+        "$value": 0.7
+      }
+    }
+  }
+}

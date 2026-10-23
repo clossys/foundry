@@ -1,0 +1,12 @@
+{
+  "clauses": [
+    {
+      "id": "theme-color",
+      "title": "theme_color member"
+    }
+  ],
+  "id": "web-app-manifest",
+  "title": "Web Application Manifest",
+  "url": "https://www.w3.org/TR/appmanifest/",
+  "version": "living"
+}

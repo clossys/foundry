@@ -1775,6 +1775,21 @@ export const ATOM_GUIDANCE: Readonly<Record<string, AtomGuidance>> = {
     options: [],
     constraints: [{ kind: "data", props: ["aria-label", "aria-labelledby"], reason: "At least one nonblank accessible naming path is required.", enforcement: "runtime", evidence: { source: "src/atoms/GridList.tsx", evidence: "GridList requires aria-label or aria-labelledby." } }]
   }, "src/atoms/GridList.tsx"),
+  "group.tree-view": entry({
+    purpose: "Navigate a hierarchy of destinations by expanding branches and choosing one current leaf.",
+    useWhen: "Destinations nest in groups and exactly one leaf is current, as in an outline or an index of slots.",
+    avoidWhen: "The hierarchy is flat, or rows carry records, selection or actions that need a list.",
+    alternatives: "Use Tabs for a few sibling views, Breadcrumb for a single path or GridList for interactive records.",
+    content: "Supply a tree name and nodes with stable ids, host-authored labels and optional children.",
+    anatomy: "A named tree of levelled rows; branch rows carry a disclosure chevron and leaf rows align beneath them.",
+    composition: "Keep the current id and expansion in the host and route to the leaf id passed to onNavigate.",
+    accessibility: "Arrow keys move, Right and Left expand and collapse, Home and End jump, and Enter on a leaf navigates."
+  }, {
+    exportName: "TreeView", entrypoint: "atoms",
+    notes: "Single-selection tree built on the peer Tree. The current leaf is the controlled selection; leaves call onNavigate and branches only expand or collapse. Supply aria-label; node ids must be unique across the whole tree. The peer supplies keyboard, typeahead and expansion state; expansion is controlled with expandedIds or uncontrolled with defaultExpandedIds.",
+    options: [],
+    constraints: [{ kind: "data", props: ["aria-label"], reason: "A nonblank accessible name is required.", enforcement: "runtime", evidence: { source: "src/atoms/TreeView.tsx", evidence: "TreeView requires aria-label." } }]
+  }, "src/atoms/TreeView.tsx"),
   "group.table": entry(
 {
   "purpose": "Compare structured records across shared columns.",
@@ -4043,6 +4058,16 @@ export const ATOM_API_FACTS: Readonly<Record<string, AtomApiFacts>> = {
       ]
     }
   },
+  "group.tree-view": {
+    exportName: "TreeView", source: "src/atoms/TreeView.tsx", options: [],
+    tokens: {
+      coverage: "partial", reason: "Representative row state dependencies; the chevron is composed from the existing Icon atom.",
+      dependencies: [
+        { property: "--ui-layout-tap-target", kind: "transitive", source: "src/atoms/internal/ui-vars.ts", evidence: "--ui-layout-tap-target", via: [{ source: "src/atoms/TreeView.tsx", evidence: "minBlockSize: UI_LAYOUT_TAP_TARGET" }] },
+        { property: "--ui-ring-focus", kind: "transitive", source: "src/atoms/internal/ui-vars.ts", evidence: "--ui-ring-focus", via: [{ source: "src/atoms/TreeView.tsx", evidence: "UI_RING_FOCUS" }] }
+      ]
+    }
+  },
   "group.table": {
     "exportName": "Table",
     "source": "src/atoms/Table.tsx",
@@ -4852,7 +4877,8 @@ export const ATOM_DISPLAY_GROUPS: readonly AtomDisplayGroup[] = [
           "inform.chip",
           "inform.meter",
           "group.table",
-          "group.grid-list"
+          "group.grid-list",
+          "group.tree-view"
         ]
       },
       {

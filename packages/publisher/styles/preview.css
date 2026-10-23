@@ -1011,6 +1011,9 @@
   .end-sm {
     inset-inline-end: var(--spacing-sm, 8px);
   }
+  .top-0 {
+    top: 0px;
+  }
   .bottom-md {
     bottom: var(--spacing-md, 12px);
   }
@@ -1073,6 +1076,9 @@
         grid-column: auto;
       }
     }
+  }
+  .row-span-2 {
+    grid-row: span 2 / span 2;
   }
   .row-start-1 {
     grid-row-start: 1;
@@ -1651,6 +1657,9 @@
   .grow {
     flex-grow: 1;
   }
+  .table-fixed {
+    table-layout: fixed;
+  }
   .border-collapse {
     border-collapse: collapse;
   }
@@ -1791,6 +1800,9 @@
   .list-none {
     list-style-type: none;
   }
+  .grid-flow-col {
+    grid-auto-flow: column;
+  }
   .ledger-columns-two {
     grid-template-columns: minmax(0, 1fr);
     @media (width >= 48rem) {
@@ -1829,6 +1841,12 @@
   }
   .grid-cols-3 {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .grid-cols-\[17\.5rem_1fr\] {
+    grid-template-columns: 17.5rem 1fr;
+  }
+  .grid-cols-\[17\.5rem_1fr_22\.5rem\] {
+    grid-template-columns: 17.5rem 1fr 22.5rem;
   }
   .grid-cols-\[auto_1fr\] {
     grid-template-columns: auto 1fr;
@@ -2052,6 +2070,9 @@
   }
   .rounded-subtle {
     border-radius: var(--radius-subtle, 2px);
+  }
+  .rounded-surface {
+    border-radius: var(--radius-surface, var(--radius-default, 3px));
   }
   .rounded-s {
     border-start-start-radius: 0.25rem;
@@ -2673,6 +2694,9 @@
   .pe-2xl {
     padding-inline-end: var(--spacing-2xl, 32px);
   }
+  .pe-md {
+    padding-inline-end: var(--spacing-md, 12px);
+  }
   .pe-sm {
     padding-inline-end: var(--spacing-sm, 8px);
   }
@@ -2948,6 +2972,9 @@
   .ring-2 {
     --tw-ring-shadow: var(--tw-ring-inset,) 0 0 0 calc(2px + var(--tw-ring-offset-width, 0px)) var(--tw-ring-color, currentcolor);
     box-shadow: var(--tw-inset-shadow, 0 0 #0000), var(--tw-inset-ring-shadow, 0 0 #0000), var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow, 0 0 #0000);
+  }
+  .ring-accent {
+    --tw-ring-color: var(--color-accent, oklch(0.4748 0 0));
   }
   .ring-current {
     --tw-ring-color: currentcolor;
@@ -4283,9 +4310,20 @@
     }
   }
   @media (forced-colors: active) {
+    .forced-colors\:border-2 {
+      border-style: var(--tw-border-style, solid);
+      border-width: 2px;
+    }
+    .forced-colors\:border-dashed {
+      --tw-border-style: dashed;
+      border-style: dashed;
+    }
     .forced-colors\:border-solid {
       --tw-border-style: solid;
       border-style: solid;
+    }
+    .forced-colors\:border-\[color\:CanvasText\] {
+      border-color: CanvasText;
     }
     .forced-colors\:border-current {
       border-color: currentcolor;
@@ -4315,6 +4353,9 @@
     }
     .forced-colors\:outline-offset-2 {
       outline-offset: 2px;
+    }
+    .forced-colors\:outline-\[color\:Highlight\] {
+      outline-color: Highlight;
     }
     .forced-colors\:outline-current {
       outline-color: currentcolor;

@@ -93,6 +93,10 @@
       "types": "./dist/theme/server.d.ts",
       "import": "./dist/theme/server.js"
     },
+    "./studio": {
+      "types": "./dist/studio/index.d.ts",
+      "import": "./dist/studio/index.js"
+    },
     "./gate": {
       "types": "./dist/gate-index.d.ts",
       "import": "./dist/gate-index.js"
@@ -300,7 +304,8 @@
     "LICENSE",
     "skill",
     "THIRD-PARTY-NOTICES.md",
-    "fit-signal-declarations.json"
+    "fit-signal-declarations.json",
+    "!dist/catalog-core/__fixtures__/**"
   ],
   "scripts": {
     "generate:reference": "node scripts/generate-reference.mjs",

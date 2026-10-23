@@ -192,3 +192,6 @@ export type { LogomarkProps, LogomarkSize, LogomarkTone, LogomarkPlate } from ".
 
 export { GridList } from "./GridList.js";
 export type { GridListProps, GridListItemProps, GridListSelectionCheckboxProps } from "./GridList.js";
+
+export { TreeView } from "./TreeView.js";
+export type { TreeViewProps, TreeViewNode } from "./TreeView.js";

@@ -1,0 +1,52 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [
+        "dtcg#format",
+        "dtcg#alias",
+        "wcag-2.2#1.4.3"
+      ],
+      "evidence": [
+        {
+          "check": "C1",
+          "clause": "dtcg#format"
+        },
+        {
+          "check": "C2",
+          "clause": "dtcg#alias"
+        },
+        {
+          "check": "C9",
+          "clause": "wcag-2.2#1.4.3"
+        }
+      ],
+      "id": "foundry/tokens.diverging-color",
+      "license": "MIT",
+      "mode": "implementation",
+      "relation": "same-contract",
+      "slot": "tokens.diverging-color",
+      "source": "foundry",
+      "sourceAddress": "styles/tokens.css",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "tokens": {
+    "diverging-color": {
+      "negative": {
+        "$type": "color",
+        "$value": "{tokens.categorical-color.8}"
+      },
+      "neutral": {
+        "$type": "color",
+        "$value": "{tokens.border-color.base}"
+      },
+      "positive": {
+        "$type": "color",
+        "$value": "{tokens.categorical-color.1}"
+      }
+    }
+  }
+}
