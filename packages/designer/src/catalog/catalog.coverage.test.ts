@@ -184,6 +184,7 @@ const FROZEN_BLOCK_IDS: readonly string[] = [
   "matrix.data-table",
   "matrix.detail",
   "matrix.drawer",
+  "matrix.flow-canvas",
   "matrix.grouped-table",
   "matrix.panel",
   "matrix.pricing",

@@ -90,6 +90,7 @@ export const BLOCK_THEME_CONFORMANCE: readonly BlockThemeRegistration[] = [
   { exportName: "CatalogWorkspace", source: "src/blocks/CatalogWorkspace.tsx", contrastPairs: [...BASE_READING, ...RAISED_READING] },
   { exportName: "Chat", source: "src/blocks/chat/Chat.tsx", contrastPairs: [...BASE_READING, ...RAISED_READING, "ink-primary/surface-sunken", "ink-secondary/surface-sunken", "ink-link/surface-base"] },
   { exportName: "RelationGraph", source: "src/blocks/RelationGraph.tsx", contrastPairs: [...BASE_READING, ...RAISED_READING, "ink-muted/surface-raised"] },
+  { exportName: "FlowCanvas", source: "src/blocks/FlowCanvas.tsx", contrastPairs: ["ink-secondary/surface-base", "ink-muted/surface-base", ...RAISED_READING, "ink-primary/surface-sunken", "ink-secondary/surface-sunken"] },
 ];
 
 /** Explicitly classified value exports, never a casing-based escape for new Blocks. */
@@ -137,4 +138,8 @@ export const NON_BLOCK_THEME_EXPORTS: Readonly<Record<string, string>> = {
   serializeProject: "Validated plain-object project serialization; renders no UI or paint.",
   parseProject: "Project envelope validation and copying from a plain object; renders no UI or paint.",
   ProjectModelError: "Typed project-data refusal with an error code and message; renders no UI or paint.",
+  layoutFlowCanvas: "Flow canvas layering and routing calculation; the rendered FlowCanvas is registered separately.",
+  FLOW_CANVAS_ORIENTATIONS: "Accepted flow canvas orientations as plain constant data; renders no UI or paint.",
+  FLOW_CANVAS_NODE_LIMIT: "Flow canvas node limit as a plain constant; renders no UI or paint.",
+  FLOW_CANVAS_EDGE_LIMIT: "Flow canvas edge limit as a plain constant; renders no UI or paint.",
 };

@@ -324,6 +324,7 @@ export const BLOCK_ENTRIES: readonly BlockEntry[] = [
     notes: ["Depends on the owner decision for the resize handle atom: rebuilt with it, or parked with it."],
   }),
   exported(CONTAINERS, "CatalogWorkspace", { id: "matrix.catalog-workspace", label: "Catalog workspace" }),
+  exported(CONTAINERS, "FlowCanvas", { id: "matrix.flow-canvas", label: "Flow canvas" }),
 
   // Collect / Forms
   built(FORMS, "Form", { id: "form.form", label: "Form", stableCandidate: true, notes: [STABLE_CANDIDATE] }),
@@ -471,6 +472,10 @@ export const BLOCK_EXPORT_EXCLUSIONS: Readonly<Record<string, string>> = {
   serializeProject: MODEL_API,
   parseProject: MODEL_API,
   ProjectModelError: MODEL_API,
+  layoutFlowCanvas: MODEL_API,
+  FLOW_CANVAS_ORIENTATIONS: MODEL_API,
+  FLOW_CANVAS_NODE_LIMIT: MODEL_API,
+  FLOW_CANVAS_EDGE_LIMIT: MODEL_API,
 };
 
 export const BLOCK_CATALOG: Catalog<"blocks", BlockGroupMap, BlockEntry> = {

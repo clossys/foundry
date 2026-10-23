@@ -50,6 +50,7 @@ import { CommandMenu } from "../blocks/CommandMenu.js";
 import { GroupedTable } from "../blocks/GroupedTable.js";
 import { AppNavigation } from "../blocks/AppNavigation.js";
 import { RelationGraph } from "../blocks/RelationGraph.js";
+import { FlowCanvas } from "../blocks/FlowCanvas.js";
 import { Skeleton } from "../atoms/Skeleton.js";
 import { Spinner } from "../atoms/Spinner.js";
 import { StatusMark } from "../atoms/StatusMark.js";
@@ -196,6 +197,26 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
       expect(shipped).toContain("forced-colors: active");
       expect(shipped).toContain("prefers-reduced-motion: reduce");
     } finally { vi.unstubAllGlobals(); }
+  });
+
+  it("covers FlowCanvas plates, edges, arrowheads and labels in both orientations", async () => {
+    const classes = new Set<string>();
+    const nodes = [{ id: "a", label: "Intake", kind: "Step" }, { id: "b", label: "Check", status: { tone: "warning" as const, label: "Waiting" } }, { id: "c", label: "Done" }];
+    const edges = [{ from: "a", to: "b", label: "Sends" }, { from: "b", to: "c" }, { from: "c", to: "a" }];
+    for (const orientation of ["horizontal", "vertical"] as const) {
+      for (const nodeList of [nodes, []]) {
+        const view = render(<FlowCanvas nodes={nodeList} edges={nodeList.length ? edges : []} label="Flow" emptyMessage="Empty" outgoingLabel="Leads to" orientation={orientation} selectedId="b" />);
+        for (const name of collectClassNames(view.container)) classes.add(name);
+        view.unmount();
+      }
+    }
+    const generated = await generateCompiledCss({ stylesDir: resolve(packageRoot, "styles"), candidates: scanCompiledCssSources(packageRoot).candidates });
+    const shipped = readFileSync(resolve(packageRoot, "styles/compiled.css"), "utf8");
+    for (const name of ["stroke-accent", "stroke-ink-muted", "fill-accent", "flow-canvas-drawing", "line-clamp-2", "sr-only", "forced-colors:outline-solid", "forced-colors:outline-2", "forced-colors:outline-offset-2", "forced-colors:outline-current"]) expect(classes).toContain(name);
+    for (const name of classes) {
+      expect(generated.css, `flow canvas fresh: ${name}`).toContain(toSelectorText(name));
+      expect(shipped, `flow canvas shipped: ${name}`).toContain(toSelectorText(name));
+    }
   });
 
   it("keeps AccountMenu triggers transparent and borderless without a host reset", () => {

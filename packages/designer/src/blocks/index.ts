@@ -239,6 +239,10 @@ export { Explorer } from "./Explorer.js";
 export type { ExplorerProps } from "./Explorer.js";
 export { indexTree, getTreeAncestry, getTreeBreadcrumbs } from "./tree-model.js";
 export type { TreeNode, TreeTarget, TreeBreadcrumb, TreeValidationOptions, TreeIndex } from "./tree-model.js";
+export { FlowCanvas } from "./FlowCanvas.js";
+export type { FlowCanvasProps } from "./FlowCanvas.js";
+export { layoutFlowCanvas, FLOW_CANVAS_ORIENTATIONS, FLOW_CANVAS_NODE_LIMIT, FLOW_CANVAS_EDGE_LIMIT } from "./flow-canvas-layout.js";
+export type { FlowCanvasNode, FlowCanvasEdge, FlowCanvasOrientation, FlowCanvasLayout, FlowCanvasLayoutNode, FlowCanvasLayoutEdge, FlowCanvasLayoutOptions } from "./flow-canvas-layout.js";
 
 export { RecordLedger } from "./RecordLedger.js";
 export type { RecordLedgerProps, LedgerRowData, LedgerGroupData } from "./RecordLedger.js";

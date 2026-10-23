@@ -1511,6 +1511,9 @@
       translate: calc(var(--spacing-xs, 4px) / -2) 0;
     }
   }
+  .flow-canvas-drawing:dir(rtl) {
+    scale: -1 1;
+  }
   .rotate-90 {
     rotate: 90deg;
   }
@@ -2285,6 +2288,9 @@
   .scene-status-warning > .scene-status-text {
     fill: var(--color-status-warning-text, oklch(0.36 0 0));
   }
+  .fill-accent {
+    fill: var(--color-accent, oklch(0.4748 0 0));
+  }
   .fill-current {
     fill: currentcolor;
   }
@@ -2321,8 +2327,14 @@
     stroke: var(--color-ink-primary, oklch(0.2178 0 0));
     stroke-width: var(--ui-border-rule, 2px);
   }
+  .stroke-accent {
+    stroke: var(--color-accent, oklch(0.4748 0 0));
+  }
   .stroke-current {
     stroke: currentcolor;
+  }
+  .stroke-ink-muted {
+    stroke: var(--color-ink-muted, oklch(0.5658 0 0));
   }
   .object-cover {
     object-fit: cover;
@@ -3981,6 +3993,12 @@
     .forced-colors\:bg-current {
       background-color: currentcolor;
     }
+    .forced-colors\:fill-current {
+      fill: currentcolor;
+    }
+    .forced-colors\:stroke-current {
+      stroke: currentcolor;
+    }
     .forced-colors\:outline {
       outline-style: var(--tw-outline-style, solid);
       outline-width: 1px;
@@ -3991,6 +4009,9 @@
     }
     .forced-colors\:-outline-offset-2 {
       outline-offset: calc(2px * -1);
+    }
+    .forced-colors\:outline-offset-2 {
+      outline-offset: 2px;
     }
     .forced-colors\:outline-current {
       outline-color: currentcolor;
