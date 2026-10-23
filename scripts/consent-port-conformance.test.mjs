@@ -154,5 +154,5 @@ test("O-5: each root subpath exposes no adapter, and each adapter subpath expose
   assert.equal(typeof analytics.sanitizeAnalyticsEvent, "function");
   assert.equal("createPostHogProvider" in analytics, false, "the browser-analytics entry must not expose the provider adapter");
   assert.equal(typeof posthog.createPostHogProvider, "function");
-  assert.deepEqual(Object.keys(posthog).sort(), ["ANALYTICS_ELEMENT_ATTRIBUTE", "AUTOCAPTURE_ELEMENT_SELECTOR", "BLOCK_SELECTOR_GRAMMAR", "MASKED_TEXT_PATTERN", "POSTHOG_AUTOCAPTURE_PROPERTIES", "POSTHOG_EVENT_FIELDS", "POSTHOG_INSTANCE_PREFIX", "POSTHOG_PROPERTY_ALLOWLIST", "POSTHOG_REPLAY_PROPERTIES", "PRIVATE_SUBTREE_SELECTORS", "REPLAY_RECORDING_OPTIONS", "REPLAY_RECORD_KINDS", "createPostHogProvider"]);
+  assert.deepEqual(Object.keys(posthog).sort(), ["ANALYTICS_ELEMENT_ATTRIBUTE", "AUTOCAPTURE_ELEMENT_SELECTOR", "BLOCK_SELECTOR_GRAMMAR", "MASKED_TEXT_PATTERN", "POSTHOG_AUTOCAPTURE_PROPERTIES", "POSTHOG_EVENT_FIELDS", "POSTHOG_FLAG_EXPOSURE_PROPERTIES", "POSTHOG_INSTANCE_PREFIX", "POSTHOG_PROPERTY_ALLOWLIST", "POSTHOG_REPLAY_PROPERTIES", "PRIVATE_SUBTREE_SELECTORS", "REPLAY_RECORDING_OPTIONS", "REPLAY_RECORD_KINDS", "createPostHogProvider"]);
 });

@@ -4,12 +4,16 @@ import {
   CHAIN_PARTS,
   chain,
   clickProperties,
+  configFor,
+  createFake,
   initOnly,
   setPage,
   snapshotProperties,
   start,
   validSnapshot,
 } from "./posthog-fake.test.js";
+import { createPostHogProvider } from "./providers/posthog.js";
+import { FLAGS_BLOCK, exposures, flagsEligible, flagsEvaluated, flagsInit } from "./posthog-flags-host.test.js";
 
 const RAW_URL = "https://example.test/pricing/plans?token=abc123&email=a@b.test#frag";
 const SAFE_URL = "https://example.test/pricing/plans";
@@ -141,5 +145,47 @@ describe("P-35 posthog-gate: every event class takes the same final steps (C-65)
       expect(() => fake.emitRaw(value)).not.toThrow();
     }
     expect(fake.sent).toEqual([]);
+  });
+  it("a flag-called event is dropped with flags off, before init, with the gate closed or without the experiments grant", () => {
+    const exposure = { $feature_flag: "hero-copy", $feature_flag_response: "short" };
+    const flagsOff = flagsEligible({ flags: null });
+    flagsOff.fake.emit("$feature_flag_called", exposure);
+    flagsOff.provider.flags.lookup("hero-copy", "control");
+
+    const uninitializedFake = createFake();
+    const uninitialized = createPostHogProvider(uninitializedFake.sdk, configFor({ flags: FLAGS_BLOCK }));
+    uninitialized.flags.setExperimentsPermission(true);
+    uninitialized.flags.lookup("hero-copy", "control");
+    expect(uninitializedFake.calls).toEqual([]);
+    expect(uninitializedFake.hostCalls).toEqual([]);
+
+    const gateClosed = flagsInit();
+    gateClosed.provider.flags.setExperimentsPermission(true);
+    gateClosed.fake.flagReply({ "hero-copy": "short" });
+    gateClosed.fake.emit("$feature_flag_called", exposure);
+    gateClosed.provider.flags.lookup("hero-copy", "control");
+
+    const noExperiments = flagsInit();
+    noExperiments.provider.optIn();
+    noExperiments.fake.flagReply({ "hero-copy": "short" });
+    noExperiments.fake.emit("$feature_flag_called", exposure);
+    noExperiments.provider.flags.lookup("hero-copy", "control");
+
+    for (const { fake } of [flagsOff, gateClosed, noExperiments]) {
+      expect(exposures(fake)).toEqual([]);
+      expect(fake.names()).not.toContain("capture:$feature_flag_called");
+    }
+  });
+
+  it("the jointly eligible exposure keeps only its validated key and variant, the delivery fields and the rebuilt URL fields", () => {
+    const { fake, provider } = flagsEvaluated(undefined, {
+      fakeOptions: { autoProperties: { $current_url: RAW_URL, $set: { email: "p@example.test" }, $feature_flag_payload: 1 }, sdkWins: true },
+    });
+    provider.flags.lookup("hero-copy", "control");
+    fake.emit("$autocapture", clickProperties(chain(CHAIN_PARTS.target)));
+    fake.emit("$feature_flag_called", { $feature_flag: "hero-copy", $feature_flag_response: "short" });
+    expect(fake.sent.map((event) => event.event)).toEqual(["$feature_flag_called"]);
+    expect(keys(fake.sent[0])).toEqual([...DELIVERY, ...URLS, "$feature_flag", "$feature_flag_response"].sort());
+    expect((fake.sent[0]!.properties as Record<string, unknown>).$current_url).toBe(SAFE_URL);
   });
 });
