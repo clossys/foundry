@@ -152,6 +152,7 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+
 }
 
 
@@ -605,6 +606,37 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
   --ui-scene-card-w:               30rem;
 
   --ui-alpha-disabled:            0.5;
+  /* Shared control, focus, motion and state roles. */
+  --ui-control-h-sm: 32px;
+  --ui-control-h-md: var(--ui-layout-tap-target, 44px);
+  --ui-control-h-lg: 52px;
+  --ui-control-row-h: 36px;
+  --ui-control-mark: 16px;
+  --ui-control-switch-w: 36px;
+  --ui-control-switch-h: 20px;
+  --ui-control-switch-thumb: 14px;
+  --ui-border-focus: 2px;
+  --ui-focus-offset: 2px;
+  --color-focus-ring: var(--color-accent, oklch(0.4748 0 0));
+  --color-focus-ring-on-inverse: var(--color-ink-on-inverse, oklch(0.9702 0 0));
+  --ui-z-skip-link: 100;
+  --ui-motion-shift: 4px;
+  --ui-radius-overlay: var(--radius-control, 6px);
+  --ui-state-hover-alpha: 0.08;
+  --ui-state-pressed-alpha: 0.14;
+  --ui-duration-loading-delay: 150ms;
+  --ui-duration-loading-min: 400ms;
+  --ui-duration-loading-long: 10000ms;
+  --ui-z-progress: 90;
+  --ui-alpha-stale: 0.7;
+  --ui-duration-tooltip-delay: 500ms;
+  --ui-duration-tooltip-close: 300ms;
+  --ui-layout-toast-w: 24rem;
+  --ui-table-row-comfortable: 48px;
+  --ui-table-row-compact: 36px;
+  --ui-duration-confirm-hold: 2000ms;
+  --ui-table-max-block-default: min(70vh, 40rem);
+
 }
 }
 
@@ -818,7 +850,7 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
  * parse-css.ts`, used by `parity.test.ts`, `contrast.test.ts`, and
  * `dark-mode-cascade.test.ts`) parses only the FIRST top-level `:root {`
  * block in this file as "the real token layer" and asserts it declares
- * exactly this package's curated 186 tokens; this sentinel is not a
+ * exactly this package's curated 217 tokens; this sentinel is not a
  * design token — it is a structural presence marker — so it stays out
  * of `src/tokens/tokens.ts`'s registry and out of that block entirely,
  * in a second `:root` rule the browser cascades in fine (CSS allows any
@@ -831,4 +863,15 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
  * `assertTokenStylesLoaded`. */
 :root {
   --ui-tokens-loaded: 1;
+}
+
+/* Coarse-pointer control geometry does not change the curated defaults. */
+@layer foundry-ui-tokens {
+@media (pointer: coarse) {
+  :root {
+    --ui-control-mark: 20px;
+    --ui-control-switch-w: 44px;
+    --ui-control-switch-h: 24px;
+  }
+}
 }

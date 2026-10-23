@@ -74,7 +74,7 @@ shared `TOKEN_GUIDANCE` from `@clossys/designer/tokens` and the generated
 `TOKENS.md` reference. Read purpose, appropriate use, misuse and context before
 comparing values. `TOKEN_DISPLAY_GROUPS` supplies Group > Family navigation
 only: 9 groups and 37 display families. It does not configure tokens or imply their type.
-All 188 properties, including aliases and composites, are independently referenceable
+All 217 properties, including aliases and composites, are independently referenceable
 leaves with stable identity across brand and supported theme overlays and zero
 per-token configuration. Name the inspector "Token details"; configurable
 components begin at Atoms. Preserve the 31 legacy source families, references and
@@ -87,7 +87,7 @@ and check their freshness with `node scripts/check-token-docs.mjs`
 (repository tooling, not shipped in the installed package).
 <!-- token-selection:end -->
 
-`@clossys/designer/tokens/preview` provides exact-property React specimens for all 186
+`@clossys/designer/tokens/preview` provides exact-property React specimens for all 217
 tokens, including motion replay with a reduced-motion static equivalent and
 breakpoint thresholds with live match state, for token selection tooling; configurable components still begin at Atoms.
 

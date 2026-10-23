@@ -12,7 +12,7 @@ const declarations = parseRootDeclarations(tokensCss);
 /**
  * The important test in this package (see the README's Tests section): two
  * independently hand-authored artifacts, `styles/tokens.css` and
- * `src/tokens.ts`, both claim to describe the same 188 tokens. Nothing
+ * `src/tokens.ts`, both claim to describe the same 217 tokens. Nothing
  * generates one from the other, so nothing but a test keeps them in sync —
  * this is that test, checked in both directions and by value, not just by
  * name.
@@ -58,8 +58,8 @@ describe("tokens.css <-> src/tokens.ts parity", () => {
     expect(declarations.has("--ui-scene-tilt")).toBe(false);
   });
 
-  it("declares exactly 188 tokens (the curated set this package promises)", () => {
-    expect(declarations.size).toBe(188);
-    expect(Object.keys(TOKENS).length).toBe(188);
+  it("declares exactly 217 tokens (the curated set this package promises)", () => {
+    expect(declarations.size).toBe(217);
+    expect(Object.keys(TOKENS).length).toBe(217);
   });
 });

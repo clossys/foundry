@@ -22,14 +22,14 @@ const applications: Record<string, readonly string[]> = {
   status: ["status|background-color|color", "status|color|color"],
   chart: ["chart|fill|color", "chart|stroke|color"],
   font: ["font|font-family|font-family", "font|font-style|font-style", "font|font-weight|font-weight", "font|font-stretch|font-stretch", "font|transform|number"],
-  space: ["space|gap|length", "space|padding|length", "space|padding-inline|length"],
-  size: ["size|inline-size|length", "size|max-inline-size|length", "size|min-inline-size|length", "size|min-block-size|length"],
+  space: ["space|gap|length", "space|padding|length", "space|padding-inline|length", "space|translate|length"],
+  size: ["size|inline-size|length", "size|max-inline-size|length", "size|min-inline-size|length", "size|min-block-size|length", "size|block-size|length", "size|max-block-size|length"],
   icon: ["icon|inline-size|length", "icon|stroke-width|number"],
   brandmark: ["brandmark|block-size|length", "brandmark|gap|length"],
   radius: ["radius|border-radius|length"],
   shadow: ["shadow|box-shadow|shadow"],
   blur: ["blur|backdrop-filter|length"],
-  ring: ["ring|box-shadow|shadow"],
+  ring: ["ring|box-shadow|shadow", "ring|outline-color|color", "ring|outline-offset|length"],
   layer: ["layer|z-index|number"],
   opacity: ["opacity|opacity|number"],
   motion: ["motion|transition-duration|duration", "motion|transition-timing-function|easing"],
@@ -38,7 +38,7 @@ const applications: Record<string, readonly string[]> = {
 const inverse = new Set([
   "--color-ink-on-inverse", "--color-ink-on-inverse-muted", "--color-line-on-inverse",
   "--color-accent-on-inverse", "--color-control-tonal-inverse", "--color-control-tonal-inverse-hover",
-  "--color-surface-glass-inverse", "--ui-ring-on-inverse",
+  "--color-surface-glass-inverse", "--ui-ring-on-inverse", "--color-focus-ring-on-inverse",
 ]);
 const translucent = new Set([
   "--color-surface-glass", "--color-surface-glass-inverse", "--color-accent-tint",
@@ -239,7 +239,7 @@ export function TokenPreview({
         <div style={{ ...plate, background: tokenReference("--color-surface-glass"), ...style }}>{sampleText}</div>
       </div>
     ),
-    ring: <div style={{ ...plate, ...style }}>{sampleText}</div>,
+    ring: <div style={{ ...plate, ...(application.cssProperty.startsWith("outline-") ? { outline: `2px solid ${tokenReference("--color-focus-ring")}`, outlineOffset: 2 } : {}), ...style }}>{sampleText}</div>,
     layer: (
       <div style={{ position: "relative", isolation: "isolate", blockSize: 90 }}>
         <div style={{ ...plate, background: "transparent", padding: 0, outline: `2px solid ${tokenReference("--color-line-strong")}`, position: "absolute", top: 0, right: 24, bottom: 24, left: 0, zIndex: 1 }}>

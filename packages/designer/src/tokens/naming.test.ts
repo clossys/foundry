@@ -55,6 +55,28 @@ const UI_NAMESPACE_PREFIX: Record<string, string> = {
   scene: "--ui-scene-",
 };
 
+// These 18 prescribed role names retain their existing semantic source families.
+const ROLE_FAMILIES: Readonly<Record<string, TokenFamily>> = {
+  "--ui-control-h-sm": "control",
+  "--ui-control-h-md": "control",
+  "--ui-control-h-lg": "control",
+  "--ui-control-row-h": "control",
+  "--ui-control-mark": "control",
+  "--ui-control-switch-w": "control",
+  "--ui-control-switch-h": "control",
+  "--ui-control-switch-thumb": "control",
+  "--ui-focus-offset": "ring",
+  "--color-focus-ring": "ring",
+  "--color-focus-ring-on-inverse": "ring",
+  "--ui-motion-shift": "spacing",
+  "--ui-radius-overlay": "radius",
+  "--ui-state-hover-alpha": "alpha",
+  "--ui-state-pressed-alpha": "alpha",
+  "--ui-table-row-comfortable": "density",
+  "--ui-table-row-compact": "density",
+  "--ui-table-max-block-default": "layout"
+};
+
 /**
  * A property "matches" a family prefix either by starting with it
  * (`--color-surface-raised` under `--color-surface-`) OR by being the
@@ -68,6 +90,10 @@ function matchesFamilyPrefix(property: string, prefix: string): boolean {
 }
 
 describe("naming: Tailwind-namespace vs --ui- prefix", () => {
+  it("maps exactly the 18 prescribed role names to their reviewed source families", () => {
+    expect(Object.keys(ROLE_FAMILIES)).toHaveLength(18);
+    for (const [property, family] of Object.entries(ROLE_FAMILIES)) expect(TOKENS[property]?.family, property).toBe(family);
+  });
   it("the two prefix tables together cover every declared family, with no overlap", () => {
     const tailwindFamilies = Object.keys(TAILWIND_NAMESPACE_PREFIX);
     const uiFamilies = Object.keys(UI_NAMESPACE_PREFIX);
@@ -83,7 +109,7 @@ describe("naming: Tailwind-namespace vs --ui- prefix", () => {
     for (const def of Object.values(TOKENS)) {
       const prefix = TAILWIND_NAMESPACE_PREFIX[def.family as TokenFamily];
       if (prefix === undefined) continue; // a --ui- family, checked below
-      if (!matchesFamilyPrefix(def.property, prefix)) {
+      if (!matchesFamilyPrefix(def.property, prefix) && ROLE_FAMILIES[def.property] !== def.family) {
         violations.push(`${def.property} (family "${def.family}") does not start with "${prefix}"`);
       }
     }
@@ -95,10 +121,10 @@ describe("naming: Tailwind-namespace vs --ui- prefix", () => {
     for (const def of Object.values(TOKENS)) {
       const prefix = UI_NAMESPACE_PREFIX[def.family as TokenFamily];
       if (prefix === undefined) continue; // a Tailwind-namespace family, checked above
-      if (!def.property.startsWith("--ui-")) {
+      if (!def.property.startsWith("--ui-") && ROLE_FAMILIES[def.property] !== def.family) {
         violations.push(`${def.property} (family "${def.family}") is missing the --ui- prefix`);
       }
-      if (!matchesFamilyPrefix(def.property, prefix)) {
+      if (!matchesFamilyPrefix(def.property, prefix) && ROLE_FAMILIES[def.property] !== def.family) {
         violations.push(`${def.property} (family "${def.family}") does not start with "${prefix}"`);
       }
     }
@@ -109,7 +135,7 @@ describe("naming: Tailwind-namespace vs --ui- prefix", () => {
     const allPrefixes = [...Object.values(TAILWIND_NAMESPACE_PREFIX), ...Object.values(UI_NAMESPACE_PREFIX)];
     const bare = Object.values(TOKENS)
       .map((def) => def.property)
-      .filter((property) => !allPrefixes.some((prefix) => matchesFamilyPrefix(property, prefix)));
+      .filter((property) => !allPrefixes.some((prefix) => matchesFamilyPrefix(property, prefix)) && ROLE_FAMILIES[property] !== TOKENS[property]?.family);
     expect(bare).toEqual([]);
   });
 
