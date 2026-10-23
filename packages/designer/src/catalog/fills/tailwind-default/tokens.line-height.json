@@ -1,0 +1,264 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "third-party",
+      "builtOn": [
+        "tailwind-v4-theme"
+      ],
+      "conforms": [
+        "dtcg#alias",
+        "dtcg#format",
+        "dtcg#types"
+      ],
+      "evidence": [
+        {
+          "check": "C2",
+          "clause": "dtcg#alias"
+        },
+        {
+          "clause": "dtcg#format",
+          "path": "src/importers/tailwind-default.test.ts"
+        },
+        {
+          "clause": "dtcg#types",
+          "path": "src/importers/tailwind-default.test.ts"
+        }
+      ],
+      "id": "tailwind-default/tokens.line-height",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "file": "theme.css",
+        "package": "tailwindcss",
+        "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+        "version": "4.3.3"
+      },
+      "relation": "superset",
+      "slot": "tokens.line-height",
+      "source": "tailwind-default",
+      "sourceAddress": "tailwindcss@4.3.3/theme.css",
+      "status": "draft",
+      "trust": "pinned-upstream"
+    }
+  },
+  "tokens": {
+    "line-height": {
+      "2xl": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "calc(2 / 1.5)"
+          },
+          "com.clossys.source": {
+            "line": 358
+          }
+        },
+        "$type": "number",
+        "$value": 1.333333
+      },
+      "3xl": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "calc(2.25 / 1.875)"
+          },
+          "com.clossys.source": {
+            "line": 360
+          }
+        },
+        "$type": "number",
+        "$value": 1.2
+      },
+      "4xl": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "calc(2.5 / 2.25)"
+          },
+          "com.clossys.source": {
+            "line": 362
+          }
+        },
+        "$type": "number",
+        "$value": 1.111111
+      },
+      "5xl": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "1"
+          },
+          "com.clossys.source": {
+            "line": 364
+          }
+        },
+        "$type": "number",
+        "$value": 1
+      },
+      "6xl": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "1"
+          },
+          "com.clossys.source": {
+            "line": 366
+          }
+        },
+        "$type": "number",
+        "$value": 1
+      },
+      "7xl": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "1"
+          },
+          "com.clossys.source": {
+            "line": 368
+          }
+        },
+        "$type": "number",
+        "$value": 1
+      },
+      "8xl": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "1"
+          },
+          "com.clossys.source": {
+            "line": 370
+          }
+        },
+        "$type": "number",
+        "$value": 1
+      },
+      "9xl": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "1"
+          },
+          "com.clossys.source": {
+            "line": 372
+          }
+        },
+        "$type": "number",
+        "$value": 1
+      },
+      "base": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "calc(1.5 / 1)"
+          },
+          "com.clossys.source": {
+            "line": 352
+          }
+        },
+        "$type": "number",
+        "$value": 1.5
+      },
+      "lg": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "calc(1.75 / 1.125)"
+          },
+          "com.clossys.source": {
+            "line": 354
+          }
+        },
+        "$type": "number",
+        "$value": 1.555556
+      },
+      "loose": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "2"
+          },
+          "com.clossys.source": {
+            "line": 395
+          }
+        },
+        "$type": "number",
+        "$value": 2
+      },
+      "normal": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "1.5"
+          },
+          "com.clossys.source": {
+            "line": 393
+          }
+        },
+        "$type": "number",
+        "$value": 1.5
+      },
+      "relaxed": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "1.625"
+          },
+          "com.clossys.source": {
+            "line": 394
+          }
+        },
+        "$type": "number",
+        "$value": 1.625
+      },
+      "sm": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "calc(1.25 / 0.875)"
+          },
+          "com.clossys.source": {
+            "line": 350
+          }
+        },
+        "$type": "number",
+        "$value": 1.428571
+      },
+      "snug": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "1.375"
+          },
+          "com.clossys.source": {
+            "line": 392
+          }
+        },
+        "$type": "number",
+        "$value": 1.375
+      },
+      "tight": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "1.25"
+          },
+          "com.clossys.source": {
+            "line": 391
+          }
+        },
+        "$type": "number",
+        "$value": 1.25
+      },
+      "xl": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "calc(1.75 / 1.25)"
+          },
+          "com.clossys.source": {
+            "line": 356
+          }
+        },
+        "$type": "number",
+        "$value": 1.4
+      },
+      "xs": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "calc(1 / 0.75)"
+          },
+          "com.clossys.source": {
+            "line": 348
+          }
+        },
+        "$type": "number",
+        "$value": 1.333333
+      }
+    }
+  }
+}

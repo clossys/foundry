@@ -1,0 +1,99 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "third-party",
+      "builtOn": [
+        "tailwind-v4-theme"
+      ],
+      "conforms": [
+        "dtcg#alias",
+        "dtcg#format",
+        "dtcg#types"
+      ],
+      "evidence": [
+        {
+          "check": "C2",
+          "clause": "dtcg#alias"
+        },
+        {
+          "clause": "dtcg#format",
+          "path": "src/importers/tailwind-default.test.ts"
+        },
+        {
+          "clause": "dtcg#types",
+          "path": "src/importers/tailwind-default.test.ts"
+        }
+      ],
+      "id": "tailwind-default/tokens.easing",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "file": "theme.css",
+        "package": "tailwindcss",
+        "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+        "version": "4.3.3"
+      },
+      "relation": "superset",
+      "slot": "tokens.easing",
+      "source": "tailwind-default",
+      "sourceAddress": "tailwindcss@4.3.3/theme.css",
+      "status": "draft",
+      "trust": "pinned-upstream"
+    }
+  },
+  "tokens": {
+    "easing": {
+      "in": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "cubic-bezier(0.4, 0, 1, 1)"
+          },
+          "com.clossys.source": {
+            "line": 434
+          }
+        },
+        "$type": "cubicBezier",
+        "$value": [
+          0.4,
+          0,
+          1,
+          1
+        ]
+      },
+      "in-out": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "cubic-bezier(0.4, 0, 0.2, 1)"
+          },
+          "com.clossys.source": {
+            "line": 436
+          }
+        },
+        "$type": "cubicBezier",
+        "$value": [
+          0.4,
+          0,
+          0.2,
+          1
+        ]
+      },
+      "out": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "cubic-bezier(0, 0, 0.2, 1)"
+          },
+          "com.clossys.source": {
+            "line": 435
+          }
+        },
+        "$type": "cubicBezier",
+        "$value": [
+          0,
+          0,
+          0.2,
+          1
+        ]
+      }
+    }
+  }
+}

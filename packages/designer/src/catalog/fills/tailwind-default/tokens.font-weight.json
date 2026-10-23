@@ -1,0 +1,156 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "third-party",
+      "builtOn": [
+        "tailwind-v4-theme"
+      ],
+      "conforms": [
+        "dtcg#alias",
+        "dtcg#format",
+        "dtcg#types"
+      ],
+      "evidence": [
+        {
+          "check": "C2",
+          "clause": "dtcg#alias"
+        },
+        {
+          "clause": "dtcg#format",
+          "path": "src/importers/tailwind-default.test.ts"
+        },
+        {
+          "clause": "dtcg#types",
+          "path": "src/importers/tailwind-default.test.ts"
+        }
+      ],
+      "id": "tailwind-default/tokens.font-weight",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "file": "theme.css",
+        "package": "tailwindcss",
+        "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+        "version": "4.3.3"
+      },
+      "relation": "superset",
+      "slot": "tokens.font-weight",
+      "source": "tailwind-default",
+      "sourceAddress": "tailwindcss@4.3.3/theme.css",
+      "status": "draft",
+      "trust": "pinned-upstream"
+    }
+  },
+  "tokens": {
+    "font-weight": {
+      "black": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "900"
+          },
+          "com.clossys.source": {
+            "line": 382
+          }
+        },
+        "$type": "fontWeight",
+        "$value": 900
+      },
+      "bold": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "700"
+          },
+          "com.clossys.source": {
+            "line": 380
+          }
+        },
+        "$type": "fontWeight",
+        "$value": 700
+      },
+      "extrabold": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "800"
+          },
+          "com.clossys.source": {
+            "line": 381
+          }
+        },
+        "$type": "fontWeight",
+        "$value": 800
+      },
+      "extralight": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "200"
+          },
+          "com.clossys.source": {
+            "line": 375
+          }
+        },
+        "$type": "fontWeight",
+        "$value": 200
+      },
+      "light": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "300"
+          },
+          "com.clossys.source": {
+            "line": 376
+          }
+        },
+        "$type": "fontWeight",
+        "$value": 300
+      },
+      "medium": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "500"
+          },
+          "com.clossys.source": {
+            "line": 378
+          }
+        },
+        "$type": "fontWeight",
+        "$value": 500
+      },
+      "normal": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "400"
+          },
+          "com.clossys.source": {
+            "line": 377
+          }
+        },
+        "$type": "fontWeight",
+        "$value": 400
+      },
+      "semibold": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "600"
+          },
+          "com.clossys.source": {
+            "line": 379
+          }
+        },
+        "$type": "fontWeight",
+        "$value": 600
+      },
+      "thin": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "100"
+          },
+          "com.clossys.source": {
+            "line": 374
+          }
+        },
+        "$type": "fontWeight",
+        "$value": 100
+      }
+    }
+  }
+}

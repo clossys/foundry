@@ -1,0 +1,139 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "third-party",
+      "builtOn": [
+        "tailwind-v4-theme"
+      ],
+      "conforms": [
+        "dtcg#alias",
+        "dtcg#format"
+      ],
+      "evidence": [
+        {
+          "check": "C2",
+          "clause": "dtcg#alias"
+        },
+        {
+          "clause": "dtcg#format",
+          "path": "src/importers/tailwind-default.test.ts"
+        }
+      ],
+      "id": "tailwind-default/tokens.shadow",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "file": "theme.css",
+        "package": "tailwindcss",
+        "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+        "version": "4.3.3"
+      },
+      "relation": "superset",
+      "slot": "tokens.shadow",
+      "source": "tailwind-default",
+      "sourceAddress": "tailwindcss@4.3.3/theme.css",
+      "status": "draft",
+      "trust": "pinned-upstream"
+    }
+  },
+  "tokens": {
+    "shadow": {
+      "2xl": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "0 25px 50px -12px rgb(0 0 0 / 0.25)"
+          },
+          "com.clossys.source": {
+            "line": 412
+          }
+        },
+        "$type": "shadow",
+        "$value": "0 25px 50px -12px rgb(0 0 0 / 0.25)"
+      },
+      "2xs": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "0 1px rgb(0 0 0 / 0.05)"
+          },
+          "com.clossys.source": {
+            "line": 406
+          }
+        },
+        "$type": "shadow",
+        "$value": "0 1px rgb(0 0 0 / 0.05)"
+      },
+      "inner": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "inset 0 2px 4px 0 rgb(0 0 0 / 0.05)"
+          },
+          "com.clossys.source": {
+            "line": 506
+          }
+        },
+        "$type": "shadow",
+        "$value": "inset 0 2px 4px 0 rgb(0 0 0 / 0.05)"
+      },
+      "lg": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)"
+          },
+          "com.clossys.source": {
+            "line": 410
+          }
+        },
+        "$type": "shadow",
+        "$value": "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)"
+      },
+      "md": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)"
+          },
+          "com.clossys.source": {
+            "line": 409
+          }
+        },
+        "$type": "shadow",
+        "$value": "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)"
+      },
+      "sm": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)"
+          },
+          "com.clossys.source": {
+            "line": 408
+          }
+        },
+        "$type": "shadow",
+        "$value": "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)"
+      },
+      "xl": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)"
+          },
+          "com.clossys.source": {
+            "line": 411
+          }
+        },
+        "$type": "shadow",
+        "$value": "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)"
+      },
+      "xs": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "0 1px 2px 0 rgb(0 0 0 / 0.05)"
+          },
+          "com.clossys.source": {
+            "line": 407
+          }
+        },
+        "$type": "shadow",
+        "$value": "0 1px 2px 0 rgb(0 0 0 / 0.05)"
+      }
+    }
+  }
+}

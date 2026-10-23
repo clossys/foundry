@@ -1,0 +1,201 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "third-party",
+      "builtOn": [],
+      "conforms": [
+        "dtcg#format",
+        "dtcg#alias",
+        "wcag-2.2#1.4.3"
+      ],
+      "evidence": [
+        {
+          "clause": "dtcg#format",
+          "path": "src/importers/shadcn-aria.test.ts"
+        },
+        {
+          "check": "C2",
+          "clause": "dtcg#alias"
+        },
+        {
+          "check": "C9",
+          "clause": "wcag-2.2#1.4.3"
+        }
+      ],
+      "id": "shadcn@aria/tokens.surface-color",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+        "file": "apps/v4/registry/themes.ts",
+        "package": "shadcn",
+        "sha256": "b20a53a86974df48c3394b29b866383f4fc9d68ade96118010cecc0a74cb5d4b"
+      },
+      "relation": "subset",
+      "slot": "tokens.surface-color",
+      "source": "shadcn@aria",
+      "sourceAddress": "shadcn/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts#--background,--card,--popover,--muted,--accent",
+      "status": "draft",
+      "trust": "pinned-upstream"
+    }
+  },
+  "tokens": {
+    "surface-color": {
+      "base": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "oklch(1 0 0)"
+          },
+          "com.clossys.modes": {
+            "dark": {
+              "alpha": 1,
+              "colorSpace": "oklch",
+              "components": [
+                0.145,
+                0,
+                0
+              ]
+            }
+          },
+          "com.clossys.source": {
+            "line": 36
+          }
+        },
+        "$type": "color",
+        "$value": {
+          "alpha": 1,
+          "colorSpace": "oklch",
+          "components": [
+            1,
+            0,
+            0
+          ]
+        }
+      },
+      "overlay": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "oklch(1 0 0)"
+          },
+          "com.clossys.modes": {
+            "dark": {
+              "alpha": 1,
+              "colorSpace": "oklch",
+              "components": [
+                0.205,
+                0,
+                0
+              ]
+            }
+          },
+          "com.clossys.source": {
+            "line": 40
+          }
+        },
+        "$type": "color",
+        "$value": {
+          "alpha": 1,
+          "colorSpace": "oklch",
+          "components": [
+            1,
+            0,
+            0
+          ]
+        }
+      },
+      "raised": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "oklch(1 0 0)"
+          },
+          "com.clossys.modes": {
+            "dark": {
+              "alpha": 1,
+              "colorSpace": "oklch",
+              "components": [
+                0.205,
+                0,
+                0
+              ]
+            }
+          },
+          "com.clossys.source": {
+            "line": 38
+          }
+        },
+        "$type": "color",
+        "$value": {
+          "alpha": 1,
+          "colorSpace": "oklch",
+          "components": [
+            1,
+            0,
+            0
+          ]
+        }
+      },
+      "selected": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "oklch(0.97 0 0)"
+          },
+          "com.clossys.modes": {
+            "dark": {
+              "alpha": 1,
+              "colorSpace": "oklch",
+              "components": [
+                0.269,
+                0,
+                0
+              ]
+            }
+          },
+          "com.clossys.source": {
+            "line": 48
+          }
+        },
+        "$type": "color",
+        "$value": {
+          "alpha": 1,
+          "colorSpace": "oklch",
+          "components": [
+            0.97,
+            0,
+            0
+          ]
+        }
+      },
+      "sunken": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "oklch(0.97 0 0)"
+          },
+          "com.clossys.modes": {
+            "dark": {
+              "alpha": 1,
+              "colorSpace": "oklch",
+              "components": [
+                0.269,
+                0,
+                0
+              ]
+            }
+          },
+          "com.clossys.source": {
+            "line": 46
+          }
+        },
+        "$type": "color",
+        "$value": {
+          "alpha": 1,
+          "colorSpace": "oklch",
+          "components": [
+            0.97,
+            0,
+            0
+          ]
+        }
+      }
+    }
+  }
+}

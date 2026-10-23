@@ -1,0 +1,202 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "third-party",
+      "builtOn": [
+        "tailwind-v4-theme"
+      ],
+      "conforms": [
+        "dtcg#alias",
+        "dtcg#format",
+        "dtcg#types"
+      ],
+      "derivation": {
+        "from": "tailwind-v4-theme#spacing-multiplier",
+        "rule": "n x --spacing"
+      },
+      "evidence": [
+        {
+          "check": "C2",
+          "clause": "dtcg#alias"
+        },
+        {
+          "clause": "dtcg#format",
+          "path": "src/importers/tailwind-default.test.ts"
+        },
+        {
+          "clause": "dtcg#types",
+          "path": "src/importers/tailwind-default.test.ts"
+        }
+      ],
+      "id": "tailwind-default/tokens.spacing",
+      "license": "MIT",
+      "mode": "derived",
+      "pin": {
+        "file": "theme.css",
+        "package": "tailwindcss",
+        "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+        "version": "4.3.3"
+      },
+      "relation": "derived",
+      "slot": "tokens.spacing",
+      "source": "tailwind-default",
+      "sourceAddress": "tailwindcss@4.3.3/theme.css",
+      "status": "draft",
+      "trust": "pinned-upstream"
+    }
+  },
+  "tokens": {
+    "spacing": {
+      "2xl": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "2rem"
+          },
+          "com.clossys.source": {
+            "line": 325
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "rem",
+          "value": 2
+        }
+      },
+      "3xl": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "3rem"
+          },
+          "com.clossys.source": {
+            "line": 325
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "rem",
+          "value": 3
+        }
+      },
+      "4xl": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "4rem"
+          },
+          "com.clossys.source": {
+            "line": 325
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "rem",
+          "value": 4
+        }
+      },
+      "5xl": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "6rem"
+          },
+          "com.clossys.source": {
+            "line": 325
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "rem",
+          "value": 6
+        }
+      },
+      "6xl": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "8rem"
+          },
+          "com.clossys.source": {
+            "line": 325
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "rem",
+          "value": 8
+        }
+      },
+      "lg": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "1rem"
+          },
+          "com.clossys.source": {
+            "line": 325
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "rem",
+          "value": 1
+        }
+      },
+      "md": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "0.75rem"
+          },
+          "com.clossys.source": {
+            "line": 325
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "rem",
+          "value": 0.75
+        }
+      },
+      "sm": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "0.5rem"
+          },
+          "com.clossys.source": {
+            "line": 325
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "rem",
+          "value": 0.5
+        }
+      },
+      "xl": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "1.5rem"
+          },
+          "com.clossys.source": {
+            "line": 325
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "rem",
+          "value": 1.5
+        }
+      },
+      "xs": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "0.25rem"
+          },
+          "com.clossys.source": {
+            "line": 325
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "rem",
+          "value": 0.25
+        }
+      }
+    }
+  }
+}

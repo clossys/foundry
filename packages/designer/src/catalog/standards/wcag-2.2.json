@@ -1,0 +1,16 @@
+{
+  "clauses": [
+    {
+      "id": "1.4.3",
+      "title": "Contrast (Minimum)"
+    },
+    {
+      "id": "1.4.11",
+      "title": "Non-text Contrast"
+    }
+  ],
+  "id": "wcag-2.2",
+  "title": "Web Content Accessibility Guidelines 2.2",
+  "url": "https://www.w3.org/TR/WCAG22/",
+  "version": "2.2"
+}

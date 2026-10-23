@@ -1,0 +1,126 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "third-party",
+      "builtOn": [
+        "tailwind-v4-theme"
+      ],
+      "conforms": [
+        "dtcg#alias",
+        "dtcg#format",
+        "dtcg#types"
+      ],
+      "evidence": [
+        {
+          "check": "C2",
+          "clause": "dtcg#alias"
+        },
+        {
+          "clause": "dtcg#format",
+          "path": "src/importers/tailwind-default.test.ts"
+        },
+        {
+          "clause": "dtcg#types",
+          "path": "src/importers/tailwind-default.test.ts"
+        }
+      ],
+      "id": "tailwind-default/tokens.letter-spacing",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "file": "theme.css",
+        "package": "tailwindcss",
+        "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+        "version": "4.3.3"
+      },
+      "relation": "superset",
+      "slot": "tokens.letter-spacing",
+      "source": "tailwind-default",
+      "sourceAddress": "tailwindcss@4.3.3/theme.css",
+      "status": "draft",
+      "trust": "pinned-upstream"
+    }
+  },
+  "tokens": {
+    "letter-spacing": {
+      "normal": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "0em"
+          },
+          "com.clossys.source": {
+            "line": 386
+          },
+          "com.clossys.unit": "em"
+        },
+        "$type": "number",
+        "$value": 0
+      },
+      "tight": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "-0.025em"
+          },
+          "com.clossys.source": {
+            "line": 385
+          },
+          "com.clossys.unit": "em"
+        },
+        "$type": "number",
+        "$value": -0.025
+      },
+      "tighter": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "-0.05em"
+          },
+          "com.clossys.source": {
+            "line": 384
+          },
+          "com.clossys.unit": "em"
+        },
+        "$type": "number",
+        "$value": -0.05
+      },
+      "wide": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "0.025em"
+          },
+          "com.clossys.source": {
+            "line": 387
+          },
+          "com.clossys.unit": "em"
+        },
+        "$type": "number",
+        "$value": 0.025
+      },
+      "wider": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "0.05em"
+          },
+          "com.clossys.source": {
+            "line": 388
+          },
+          "com.clossys.unit": "em"
+        },
+        "$type": "number",
+        "$value": 0.05
+      },
+      "widest": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "0.1em"
+          },
+          "com.clossys.source": {
+            "line": 389
+          },
+          "com.clossys.unit": "em"
+        },
+        "$type": "number",
+        "$value": 0.1
+      }
+    }
+  }
+}
