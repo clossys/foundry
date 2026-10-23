@@ -24,7 +24,7 @@ export function isFontDeclared(family: string): boolean {
 const firstFamily = (css: string): string => (css.split(",")[0] ?? "").trim().replace(/^["']|["']$/g, "");
 const list: CSSProperties = { listStyle: "none", margin: 0, padding: 0, display: "grid", gap: "var(--spacing-sm, 8px)" };
 const swatch = (variable: string): CSSProperties => ({
-  display: "inline-block", inlineSize: 40, blockSize: 40, flexShrink: 0, background: `var(${variable})`,
+  display: "inline-block", inlineSize: 40, blockSize: 40, flexShrink: 0, background: `var(${variable}, transparent)`,
   borderStyle: "solid", borderWidth: 1, borderColor: "var(--color-line-strong, currentColor)",
 });
 
@@ -35,9 +35,9 @@ function Specimen({ spec, labels }: { spec: PreviewSpec; labels: PreviewLabels }
     case "swatch":
       return <span style={{ display: "inline-flex", alignItems: "center", gap: "var(--spacing-sm, 8px)" }}><span aria-hidden="true" data-preview-kind="swatch" style={swatch(spec.variable)} /><code>{spec.css}</code></span>;
     case "font":
-      return <span data-preview-kind="font" style={{ fontFamily: `var(${spec.variable})` }}>{labels.sampleText}</span>;
+      return <span data-preview-kind="font" style={{ fontFamily: `var(${spec.variable}, inherit)` }}>{labels.sampleText}</span>;
     case "ruler":
-      return <span style={{ display: "grid", gap: "var(--spacing-xs, 4px)" }}><span aria-hidden="true" data-preview-kind="ruler" style={{ display: "block", blockSize: 8, inlineSize: `var(${spec.variable})`, maxInlineSize: "100%", background: "var(--color-accent, currentColor)" }} /><code>{spec.css}</code></span>;
+      return <span style={{ display: "grid", gap: "var(--spacing-xs, 4px)" }}><span aria-hidden="true" data-preview-kind="ruler" style={{ display: "block", blockSize: 8, inlineSize: `var(${spec.variable}, 0px)`, maxInlineSize: "100%", background: "var(--color-accent, currentColor)" }} /><code>{spec.css}</code></span>;
     case "text":
       return <code data-preview-kind="text">{spec.css}</code>;
   }
