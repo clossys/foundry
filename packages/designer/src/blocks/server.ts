@@ -98,6 +98,10 @@ export type {
 } from "./OrderedStepSequence.js";
 
 export { StatusList } from "./StatusList.js";
+export { EventItem } from "./EventItem.js";
+export type { EventActor, EventChange, EventRecord, EventLabels, EventItemProps } from "./EventItem.js";
+export { TaskList } from "./TaskList.js";
+export type { TaskStatus, TaskListItem, TaskListProps } from "./TaskList.js";
 export type {
   StatusListProps,
   StatusListGroup,

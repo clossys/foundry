@@ -1013,6 +1013,9 @@
   .ms-xs {
     margin-inline-start: var(--spacing-xs, 4px);
   }
+  .me-xs {
+    margin-inline-end: var(--spacing-xs, 4px);
+  }
   .items-order-body {
     margin-block-start: calc((1 - var(--items-wide, 0)) * var(--items-body-narrow, 0px) + var(--items-wide, 0) * (var(--spacing-2xl, 32px) + var(--spacing-lg, 16px) + var(--items-lane-wide, 0px)));
   }
@@ -1279,9 +1282,17 @@
       height: 100%;
     }
   }
+  .size-2 {
+    width: calc(var(--spacing, 0.25rem) * 2);
+    height: calc(var(--spacing, 0.25rem) * 2);
+  }
   .size-2xl {
     width: var(--spacing-2xl, 32px);
     height: var(--spacing-2xl, 32px);
+  }
+  .size-6 {
+    width: calc(var(--spacing, 0.25rem) * 6);
+    height: calc(var(--spacing, 0.25rem) * 6);
   }
   .size-10 {
     width: calc(var(--spacing, 0.25rem) * 10);
@@ -1596,6 +1607,9 @@
   }
   .grid-cols-2 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .grid-cols-\[auto_1fr\] {
+    grid-template-columns: auto 1fr;
   }
   @media (width >= 64rem) {
     .ledger-owner-columns {
@@ -2616,6 +2630,9 @@
     --tw-numeric-spacing: tabular-nums;
     font-variant-numeric: var(--tw-ordinal,) var(--tw-slashed-zero,) var(--tw-numeric-figure,) var(--tw-numeric-spacing,) var(--tw-numeric-fraction,);
   }
+  .line-through {
+    text-decoration-line: line-through;
+  }
   .no-underline {
     text-decoration-line: none;
   }
@@ -3292,6 +3309,9 @@
     .tablet\:flex-row {
       flex-direction: row;
     }
+    .tablet\:flex-wrap {
+      flex-wrap: wrap;
+    }
     .tablet\:items-center {
       align-items: center;
     }
@@ -3312,6 +3332,9 @@
     }
     .tablet\:gap-x-4xl {
       column-gap: var(--spacing-4xl, 64px);
+    }
+    .tablet\:gap-x-md {
+      column-gap: var(--spacing-md, 12px);
     }
     .tablet\:gap-x-xl {
       column-gap: var(--spacing-xl, 24px);
@@ -3909,6 +3932,9 @@
     .forced-colors\:border-current {
       border-color: currentcolor;
     }
+    .forced-colors\:bg-current {
+      background-color: currentcolor;
+    }
     .forced-colors\:outline {
       outline-style: var(--tw-outline-style, solid);
       outline-width: 1px;
@@ -3922,6 +3948,9 @@
     }
     .forced-colors\:outline-current {
       outline-color: currentcolor;
+    }
+    .forced-colors\:\[forced-color-adjust\:preserve-parent-color\] {
+      forced-color-adjust: preserve-parent-color;
     }
     .forced-colors\:outline-solid {
       --tw-outline-style: solid;

@@ -62,6 +62,17 @@ describe("compiled UsageMeter public contract", () => {
   });
 });
 
+describe("compiled task and event public contract", () => {
+  it.each(["blocks/index.js", "index.js"])("exports TaskList, EventItem and their public declarations from %s", entry => {
+    const script = `import * as api from ${JSON.stringify(join(packageRoot, "dist", entry))}; process.stdout.write(JSON.stringify([typeof api.TaskList, typeof api.EventItem]));`;
+    expect(JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8" }))).toEqual(["function", "function"]);
+    const declaration = readFileSync(join(packageRoot, "dist", entry.replace(/\.js$/, ".d.ts")), "utf8");
+    for (const name of ["TaskListProps", "TaskListItem", "TaskStatus", "EventItemProps", "EventActor", "EventChange", "EventRecord", "EventLabels"]) {
+      expect(declaration).toMatch(new RegExp(`\\b${name}\\b`));
+    }
+  });
+});
+
 describe("compiled AccessMatrix and ColumnMapper public contract", () => {
   it("exports both components and exact required props and value types from client barrels only", () => {
     const filename = join(packageRoot, "access-matrix-column-mapper-consumer.check.ts");

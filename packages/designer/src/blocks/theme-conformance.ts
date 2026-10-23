@@ -54,6 +54,8 @@ export const BLOCK_THEME_CONFORMANCE: readonly BlockThemeRegistration[] = [
   { exportName: "SpecimenPanel", source: "src/blocks/specimen/SpecimenPanel.tsx", contrastPairs: RAISED_READING },
   { exportName: "OrderedStepSequence", source: "src/blocks/OrderedStepSequence.tsx", contrastPairs: GROUNDED_READING },
   { exportName: "StatusList", source: "src/blocks/StatusList.tsx", contrastPairs: GROUNDED_READING },
+  { exportName: "TaskList", source: "src/blocks/TaskList.tsx", contrastPairs: BASE_READING },
+  { exportName: "EventItem", source: "src/blocks/EventItem.tsx", contrastPairs: BASE_READING },
   { exportName: "Faq", source: "src/blocks/Faq.tsx", contrastPairs: GROUNDED_READING },
   { exportName: "PricingTable", source: "src/blocks/PricingTable.tsx", contrastPairs: RAISED_READING },
   { exportName: "Testimonial", source: "src/blocks/Testimonial.tsx", contrastPairs: BASE_READING },
