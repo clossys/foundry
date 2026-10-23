@@ -841,3 +841,71 @@ process.stdout.write(JSON.stringify(timings));
     expect(Object.values(timings).reduce((sum, elapsed) => sum + elapsed, 0)).toBeLessThan(500);
   } finally { rmSync(directory, { recursive: true, force: true }); }
 });
+function probeParserBoundary(position: string, input: string, refusal: boolean): void {
+  const directory = mkdtempSync(join(tmpdir(), "mark-parser-boundary-"));
+  try {
+    const filename = join(directory, "normalizer.cjs"), bundle = join(directory, "bundle.cjs");
+    const entry = resolve(process.cwd(), "src/tokens/mark-normalize.ts");
+    const esbuild = createRequire(resolve(process.cwd(), "package.json")).resolve("esbuild");
+    writeFileSync(filename, `
+const assert = require('node:assert/strict'), { buildSync } = require(${JSON.stringify(esbuild)});
+require('node:fs').writeFileSync(${JSON.stringify(bundle)}, buildSync({ entryPoints: [${JSON.stringify(entry)}], bundle: true, write: false, platform: 'node', format: 'cjs' }).outputFiles[0].text);
+const normalizer = require(${JSON.stringify(bundle)}), input = ${JSON.stringify(input)}, control = ${JSON.stringify(control)}, tokens = ${JSON.stringify(tokens)};
+const evaluators = { measure: normalizer.measureMarkGeometry, normalize: glyphSvg => normalizer.normalizeMark({ glyphSvg, tokens }), conformance: normalizer.checkMarkConformance };
+const normalizedControl = evaluators.normalize(control);
+for (const evaluate of Object.values(evaluators)) evaluate(control);
+process.stdout.write('ready\\n');
+const timings = {};
+for (const [api, evaluate] of Object.entries(evaluators)) {
+  let value, error;
+  const start = performance.now();
+  try { value = evaluate(input); } catch (caught) { error = caught; }
+  timings[api] = performance.now() - start;
+  if (${JSON.stringify(refusal)}) assert.ok(error instanceof normalizer.MarkGeometryError, api + ': expected typed refusal');
+  else {
+    assert.equal(error, undefined);
+    if (api === 'measure') assert.deepEqual(value.glyphBox, { x: .18, y: .18, width: .64, height: .64 });
+    else if (api === 'normalize') assert.equal(value, normalizedControl);
+    else assert.deepEqual(value, []);
+  }
+}
+process.stdout.write(JSON.stringify(timings));
+`);
+    const result = spawnSync(process.execPath, [filename], { encoding: "utf8", timeout: 2_000 });
+    const observation = JSON.stringify({ position, status: result.status, signal: result.signal, error: result.error?.message, stdout: result.stdout });
+    expect(result.stdout, observation).toContain("ready\n");
+    expect(result.error, observation).toBeUndefined();
+    expect(result.status, observation).toBe(0);
+    const timings = JSON.parse(result.stdout.split("\n")[1]!) as Record<string, number>;
+    expect(Object.keys(timings)).toEqual(['measure', 'normalize', 'conformance']);
+    expect(Object.values(timings).reduce((sum, elapsed) => sum + elapsed, 0), observation).toBeLessThan(500);
+  } finally { rmSync(directory, { recursive: true, force: true }); }
+}
+const interiorWhitespaceRun = ' '.repeat(200_000);
+it.each([
+  ['closing suffix', control.replace('</svg>', `</svg !${interiorWhitespaceRun}!>`)],
+  ['between tags', control.replace('/><rect', `/>x${interiorWhitespaceRun}y<rect`)],
+  ['transform gap', control.replace('x="18"', `transform="translate(0) !${interiorWhitespaceRun}! scale(1)" x="18"`)],
+  ['document tail', control + `x${interiorWhitespaceRun}y`],
+])("bounds a 200 KB interior whitespace run at the full trim site %s", (position, input) => {
+  probeParserBoundary(position!, input!, true);
+});
+it.each([
+  ['self-closing', control.replace('height="64"/>', `height="64"${interiorWhitespaceRun}/>`)],
+  ['opening', control.replace('height="64"/>', `height="64"${interiorWhitespaceRun}></rect>`)],
+])("accepts a 200 KB trailing whitespace run before the %s delimiter", (position, input) => {
+  probeParserBoundary(position!, input!, false);
+});
+it.each([
+  ['long alphabetic name', 'a'.repeat(99_999) + '('],
+  ['nested opening', 'a('.repeat(50_000)],
+])("bounds the 100 KB transform %s with typed refusals on all APIs", (position, transform) => {
+  probeParserBoundary(position!, control.replace('x="18"', `transform="${transform}" x="18"`), true);
+});
+it.each([11, 12, 160, 5760, 8192, 8193, 8194, 8195, 8196, 8197, 8198, 8199, 8200, 8201, 8202, 8232, 8233, 8239, 8287, 12288, 65279].flatMap(code => Object.entries(splitSiblingMarks).map(([kind, input]) => [kind, code, input] as const)))("refuses foreign separator after the %s slash U+%s", (kind, code, input) => {
+  const separator = kind === 'rect' ? '/><rect x="50"' : kind === 'path' ? '/><path' : '/><rect x="18"';
+  const malformed = input.replace(separator, separator.replace('/>', `/${String.fromCodePoint(code)}>`));
+  expect(malformed).not.toBe(input);
+  for (const evaluate of [measureMarkGeometry, checkMarkConformance, (glyphSvg: string) => normalizeMark({ glyphSvg, tokens })])
+    expect.soft(() => evaluate(malformed)).toThrow(MarkGeometryError);
+});

@@ -108,7 +108,7 @@ function trimSvg(value: string, endOnly = false): string {
 const svgSeparators = new RegExp(`[${svgSpace},]`, 'g');
 const svgTagName = new RegExp(`^/?([a-zA-Z][^${svgSpace}/>]*)`);
 const svgAttribute = new RegExp(`[${svgSpace}]+([^${svgSpace}=]+)[${svgSpace}]*=[${svgSpace}]*(?:"([^"]*)"|'([^']*)')`, 'y');
-const svgTransform = new RegExp(`([a-zA-Z]+)[${svgSpace}]*\\(([^)]*)\\)`, 'g');
+const svgTransform = new RegExp(`(?<![a-zA-Z])([a-zA-Z]+)[${svgSpace}]*\\(([^()]*)\\)`, 'g');
 const numPattern = /[+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?/g;
 function decodeAttribute(value: string): string {
   const entity = /&(#x[\dA-Fa-f]+|#\d+|amp|lt|gt|quot|apos);/g;
