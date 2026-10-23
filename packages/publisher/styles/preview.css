@@ -2673,6 +2673,9 @@
   .pe-2xl {
     padding-inline-end: var(--spacing-2xl, 32px);
   }
+  .pe-md {
+    padding-inline-end: var(--spacing-md, 12px);
+  }
   .pe-sm {
     padding-inline-end: var(--spacing-sm, 8px);
   }

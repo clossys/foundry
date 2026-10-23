@@ -24,7 +24,7 @@ exports from `@clossys/designer/atoms`. The barrel remains client-only. Read
 the packed [atom selection guide](skill/atoms-guide.md) for purpose, use and
 avoidance, alternatives, content, anatomy, block composition, accessibility,
 medium evidence, represented configurations and partial token dependencies.
-Four display groups and ten families place forty-six established atom/chart leaves
+Four display groups and ten families place forty-seven established atom/chart leaves
 exactly once. Groups and families are navigation; only leaves are selectable.
 Existing IDs such as `act.link` and `reveal.tabs` remain unchanged.
 
@@ -186,7 +186,7 @@ and its exception list can only shrink.
   `Avatar`, `Spinner`, `Menu`, `Dialog`, `Tabs`, `Table`, `Field`,
   `Skeleton`, `Tooltip`, `Banner`, `RadioGroup`, `Popover`, `DateField`,
   `ComboBox`, `SearchField`, `FileTrigger`, `Disclosure`, `ProgressBar`,
-  `Separator`, `Chip`, `StatusMark`, `Meter`, `ResizeHandle`, `Logomark`, `GridList`.
+  `Separator`, `Chip`, `StatusMark`, `Meter`, `ResizeHandle`, `Logomark`, `GridList`, `TreeView`.
 - **`blocks`** — owns the internal layout of multiple named regions,
   typically by composing one or more atoms (and/or layout) into something
   with a real job on a page. Shipped blocks include: `AccountMenu`, `PageHeader`, `EmptyState`,
@@ -1916,6 +1916,19 @@ selection, pressing the row toggles selection without navigating.
 Layout is fixed to stack and selection behavior to toggle. A checked checkbox
 and `data-selected` expose selection alongside its surface color. Supply empty
 content through `renderEmptyState` to keep it within the grid.
+
+### `TreeView` (draft)
+
+Named hierarchy of destinations. Pass `nodes` (each with a unique `id`, a
+host-authored `label` and optional `children`) and a required `aria-label`; a
+missing name throws `TypeError`. The current leaf is `currentId`. Enter, Space
+or a click on a leaf calls `onNavigate` with its id once, and choosing the
+current leaf again does nothing. A branch only expands or collapses, through its
+chevron, click, Enter or Space. The peer supplies arrow navigation, Right and
+Left expand and collapse, Home/End and typeahead. Expansion is uncontrolled with
+`defaultExpandedIds`, or controlled with `expandedIds` and `onExpandedChange`.
+The chevron mirrors in right-to-left text, and the current row keeps a visible
+selected surface and focus ring in forced-colors mode.
 
 ### `Table`
 
@@ -7140,6 +7153,9 @@ not a grab-bag).
 | `GridListProps` | type | Root peer props plus `className`; requires `aria-label` or `aria-labelledby` at runtime; layout and selection behavior are fixed. |
 | `GridListItemProps` | type | Row peer props with required `textValue` and optional `className`. |
 | `GridListSelectionCheckboxProps` | type | Required host-authored `aria-label` for the selection checkbox. |
+| `TreeView` | component | Draft hierarchy navigation: expandable branches, one current leaf, `onNavigate` on leaf choice, controlled or uncontrolled expansion. |
+| `TreeViewProps` | type | `nodes`, required `aria-label`, `currentId`, `onNavigate`, `defaultExpandedIds`, `expandedIds`, `onExpandedChange` and `className`. |
+| `TreeViewNode` | type | One node: unique `id`, host-authored `label` and optional `children`. |
 | `Table` | component | Table primitives built on react-aria-components' `Table`/`TableHeader`/`TableBody`/`Column`/`Row`/`Cell`. Carries `Table.Header`, `Table.Column`, `Table.Body`, `Table.Row`, `Table.Cell`, `Table.SelectAllCheckbox`, `Table.SelectionCheckbox`. |
 | `TableProps` | type | Props for `Table`: `children`, `className`, `style`, plus react-aria-components' own `Table` props (`aria-label`, `sortDescriptor`, `onSortChange`, `selectionMode`, `selectedKeys`, `onSelectionChange`, ...). |
 | `TableHeaderProps` | type | Props for `Table.Header`: `children` (`Table.Column`s), `className`, plus react-aria-components' own `TableHeader` props. |
@@ -8086,7 +8102,7 @@ over the IDENTICAL fixture in the same test, exits `0`.
 `Dialog`, `Tabs`, `Table`, `Field`, `Skeleton`, `Tooltip`, `Banner`,
 `RadioGroup`, `Popover`, `DateField`, `ComboBox`, `SearchField`,
 `FileTrigger`, `Disclosure`, `ProgressBar`, `Separator`, `Chip`,
-`StatusMark`, `Meter`, `ResizeHandle`, `Logomark` and `GridList`. No `Modal` exposed as a public atom of
+`StatusMark`, `Meter`, `ResizeHandle`, `Logomark`, `GridList` and `TreeView`. No `Modal` exposed as a public atom of
 its own beyond what `Dialog` and `Popover` already compose internally —
 that gets added here only once something real needs a bare modal overlay
 with neither `Dialog`'s fixed trigger/content shape nor `Popover`'s
