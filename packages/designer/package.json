@@ -300,7 +300,8 @@
     "LICENSE",
     "skill",
     "THIRD-PARTY-NOTICES.md",
-    "fit-signal-declarations.json"
+    "fit-signal-declarations.json",
+    "!dist/catalog-core/__fixtures__/**"
   ],
   "scripts": {
     "generate:reference": "node scripts/generate-reference.mjs",

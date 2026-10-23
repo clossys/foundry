@@ -1,0 +1,24 @@
+{
+  "clauses": [
+    {
+      "id": "format",
+      "title": "Format"
+    },
+    {
+      "id": "types",
+      "title": "Types"
+    },
+    {
+      "id": "alias",
+      "title": "Aliases"
+    },
+    {
+      "id": "color",
+      "title": "Color"
+    }
+  ],
+  "id": "dtcg",
+  "title": "Design Tokens Format Module",
+  "url": "https://www.designtokens.org/tr/2025.10/format/",
+  "version": "2025.10"
+}
