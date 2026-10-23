@@ -262,6 +262,7 @@ smallest stable subpath that owns what you need:
 | `@clossys/designer/atoms`, `/blocks`, `/shell`, `/charts` | Reusable React visual primitives. |
 | `@clossys/designer/atoms/server`, `/blocks/server`, `/shell/server`, `/charts/server`, `/theme/server` | The server-safe subset of each sibling subpath, importable from a React Server Component. See "Server Components" below. |
 | `@clossys/designer/theme` | `getThemeInitScript`, `ThemeProvider`/`useTheme`, `ThemeToggle` — the runtime half of theming. Not to be confused with the CSS `/theme.css` subpath above. |
+| `@clossys/designer/studio` | `Studio`, the library Studio: pick which source's fill each slot uses, see every candidate in its own values, and re-theme the page live. Client-only, with no `/studio/server`. All copy comes from the host's `labels`; reading and saving go through its `adapter`. `demoStudioAdapter` is a throwaway, read-only demo library for a first look. |
 | `@clossys/designer/gate` | Token-purity scanner/gate and the environment-conformance gate (`checkEnvironmentConformance`). |
 | `@clossys/designer/render-environment` | `RENDER_ENVIRONMENT` — a plain data declaration of every subpath's render environment (`"server-safe"` \| `"client-only"`). See "Server Components" below. |
 

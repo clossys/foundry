@@ -72,6 +72,7 @@ export const RENDER_ENVIRONMENT: Readonly<Record<string, RenderEnvironment>> = {
   "./shell/server": "server-safe",
   "./theme": "client-only",
   "./theme/server": "server-safe",
+  "./studio": "client-only",
   "./gate": "server-safe",
   "./render-environment": "server-safe",
 };

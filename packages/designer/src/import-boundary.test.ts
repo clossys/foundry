@@ -27,7 +27,10 @@ const RULES = {
 } as const;
 const SHARED_DIRS = ["tokens", "icons", "internal"];
 const SOURCE_EXTENSIONS = [".ts", ".tsx", ".mts", ".cts", ".js", ".jsx", ".mjs", ".cjs"];
-const BARREL_EXTRA: Record<string, RegExp> = { "blocks/index.ts": /^react-aria-components\/package\.json$/ };
+const BARREL_EXTRA: Record<string, RegExp> = {
+  "blocks/index.ts": /^react-aria-components\/package\.json$/,
+  "studio/index.ts": /^react-aria-components\/package\.json$/,
+};
 /** Every other directory: React, react-aria-components (shell), Node built-ins (CLIs), Tailwind (stylesheet compilers). */
 const OTHER_BARE = /^(?:react|react-aria-components(?:\/package\.json)?|node:[a-z_/]+)$/;
 const TAILWIND_DIRS = ["compiled-css", "hero-css"];
