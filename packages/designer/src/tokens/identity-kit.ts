@@ -570,7 +570,7 @@ interface FlatTag {
  * re-emitting it. Returns `null` on anything else, on a duplicate
  * attribute name, and on more than {@link FLAT_MAX_ATTRIBUTES_PER_TAG}
  * attributes. The private normalized path alone decodes canonical escaped
- * root labels and discards descendant metadata by parsed attribute name;
+ * root metadata and discards descendant metadata by parsed attribute name;
  * the root allow-list still validates every retained root attribute.
  *
  * A single left-to-right pass with no backtracking: every character is
@@ -594,7 +594,8 @@ function scanFlatTag(text: string, at: number, metadata?: "root" | "descendants"
     if (code === CHAR_SLASH) return text.charCodeAt(afterSpace + 1) === CHAR_GT ? { name, attrs, selfClosing: true, end: afterSpace + 2 } : null;
     if (afterSpace === i || !isAsciiLetter(code)) return null; // an attribute needs leading whitespace and a letter to start its name
     let nameEnd = afterSpace + 1;
-    while (nameEnd < text.length && isFlatNameChar(text.charCodeAt(nameEnd))) nameEnd++;
+    const dottedMetadata = metadata === "descendants" && (text.startsWith("data-", afterSpace) || text.startsWith("aria-", afterSpace));
+    while (nameEnd < text.length && (isFlatNameChar(text.charCodeAt(nameEnd)) || (dottedMetadata && text.charCodeAt(nameEnd) === 46))) nameEnd++;
     const attrName = text.slice(afterSpace, nameEnd);
     const omitted = metadata === "descendants" && (attrName === "id" || attrName === "role" || attrName.startsWith("aria-") || (attrName.startsWith("data-") && attrName !== "data-clear-space"));
     if (!omitted && attrs.length === FLAT_MAX_ATTRIBUTES_PER_TAG) return null;
@@ -607,7 +608,7 @@ function scanFlatTag(text: string, at: number, metadata?: "root" | "descendants"
     if (quote !== CHAR_DQUOTE && quote !== CHAR_SQUOTE) return null;
     // Only normalized metadata may contain the normalizer's escaped text.
     // Descendant metadata is omitted by its parsed name, never by a text-wide strip.
-    const encodedMetadata = omitted || (metadata === "root" && attrName === "aria-label");
+    const encodedMetadata = omitted || (metadata === "root" && (attrName === "aria-label" || attrName === "role"));
     let valueEnd = quoteAt + 1;
     for (;;) {
       if (valueEnd >= text.length) return null;

@@ -946,11 +946,11 @@ describe("post1070 normalized variant metadata", () => {
   });
 
   it.each(roles)("preserves the root accessible name in %s", role => {
-    const document = parse(adopt('role="img" aria-label="Example mark"', 'id="glyph" role="presentation" aria-label="Inner glyph" data-note="metadata"').variants[role]);
+    const document = parse(adopt('role="img" aria-label="Example mark"', 'id="glyph" role="presentation" aria-label="Inner glyph" aria-hidden="true" data-note="metadata"').variants[role]);
     expect(document.querySelector("parsererror")).toBeNull();
     expect(document.documentElement.getAttribute("role")).toBe("img");
     expect(document.documentElement.getAttribute("aria-label")).toBe("Example mark");
-    expect(document.querySelectorAll("[id=glyph], [aria-label='Inner glyph'], [data-note]")).toHaveLength(0);
+    expect(document.querySelectorAll("svg [role], [id=glyph], [aria-label='Inner glyph'], [aria-hidden], [data-note]")).toHaveLength(0);
     expect(document.querySelectorAll("mask")).toHaveLength(2);
   });
 
@@ -980,6 +980,57 @@ describe("post1070 normalized variant metadata", () => {
       expect(document.querySelector("[onload]")).toBeNull();
       expect(document.documentElement.getAttribute("role")).toBe("img");
       expect(document.documentElement.getAttribute("aria-label")).toBe(decoded);
+      expect(document.querySelectorAll("mask")).toHaveLength(2);
+    }
+  });
+});
+
+
+describe("post1075 normalized metadata compatibility", () => {
+  const roles = ["mono", "light", "dark", "favicon"] as const;
+  const parse = (svg: string): Document => new DOMParser().parseFromString(svg, "image/svg+xml");
+  const adopt = (attributes: string, body: string) => adoptSuppliedMark({
+    brand: { name: "Example" }, tokens: TOKENS, normalize: true,
+    suppliedSvg: `<svg viewBox="0 0 100 100" ${attributes}>${body}</svg>`,
+  });
+
+  it.each(['data-a.b="metadata"', 'aria-x.y="metadata"'])("removes dotted descendant metadata %s without refusing adoption", attribute => {
+    const adopted = adopt('', `<g ${attribute}><rect width="40" height="40" ${attribute}/></g>`);
+    for (const role of roles) {
+      const document = parse(adopted.variants[role]);
+      expect(document.querySelector("parsererror")).toBeNull();
+      expect(document.querySelectorAll("mask")).toHaveLength(2);
+      for (const element of document.querySelectorAll("*")) {
+        expect(element.hasAttribute("data-a.b")).toBe(false);
+        expect(element.hasAttribute("aria-x.y")).toBe(false);
+      }
+    }
+  });
+
+  it.each([
+    ['img&amp;x', 'img&x'],
+    ['img&quot; onload=&quot;alert(1)', 'img" onload="alert(1)'],
+    ["img'", "img'"],
+    ['img&gt;x', 'img>x'],
+  ])("preserves encoded root role %s safely without refusing adoption", (encoded, decoded) => {
+    const adopted = adopt(`role="${encoded}" aria-label="Example mark"`, '<rect width="40" height="40"/>');
+    for (const role of roles) {
+      const document = parse(adopted.variants[role]);
+      expect(document.querySelector("parsererror")).toBeNull();
+      expect(document.querySelector("[onload]")).toBeNull();
+      expect(document.documentElement.getAttribute("role")).toBe(decoded);
+      expect(document.documentElement.getAttribute("aria-label")).toBe("Example mark");
+      expect(document.querySelectorAll("mask")).toHaveLength(2);
+    }
+  });
+
+  it("removes role and all aria metadata from groups, retaining descendant clear-space", () => {
+    const adopted = adopt('role="img"', '<g role="presentation" aria-hidden="true" aria-label="Inner group"><rect width="40" height="40" data-clear-space="0.2"/></g>');
+    for (const role of roles) {
+      const document = parse(adopted.variants[role]);
+      expect(document.querySelector("parsererror")).toBeNull();
+      expect(document.querySelectorAll("svg [role], svg [aria-hidden], svg [aria-label]")).toHaveLength(0);
+      expect(document.querySelectorAll('rect[data-clear-space="0.2"]').length).toBeGreaterThan(0);
       expect(document.querySelectorAll("mask")).toHaveLength(2);
     }
   });
