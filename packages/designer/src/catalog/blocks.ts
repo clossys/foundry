@@ -232,9 +232,9 @@ export const BLOCK_ENTRIES: readonly BlockEntry[] = [
 
   // Explain / Evidence
   built(EVIDENCE, "Testimonial", { id: "say.testimonial", label: "Testimonial" }),
-  spec(EVIDENCE, { id: "say.testimonial-set", label: "Testimonial set", inFlight: pr(2394, "draft") }),
-  spec(EVIDENCE, { id: "items.logo-cloud", label: "Logo cloud", inFlight: pr(2394, "draft") }),
-  spec(EVIDENCE, { id: "items.people-grid", label: "People grid", inFlight: pr(2394, "draft") }),
+  exported(EVIDENCE, "TestimonialSet", { id: "say.testimonial-set", label: "Testimonial set" }),
+  exported(EVIDENCE, "LogoCloud", { id: "items.logo-cloud", label: "Logo cloud" }),
+  exported(EVIDENCE, "PeopleGrid", { id: "items.people-grid", label: "People grid" }),
 
   // Explain / Media
   built(MEDIA, "MediaFigure", { id: "say.media-figure", label: "Media figure" }),
@@ -273,7 +273,7 @@ export const BLOCK_ENTRIES: readonly BlockEntry[] = [
   built(COLLECTION, "Items", { id: "items.raw", label: "Items" }),
   built(COLLECTION, "Item", { id: "items.item", label: "Item" }),
   recipe(COLLECTION, "items.raw", { id: "items.cards", label: "Card grid" }),
-  spec(COLLECTION, { id: "items.task-list", label: "Task list", inFlight: pr(2378, "draft") }),
+  exported(COLLECTION, "TaskList", { id: "items.task-list", label: "Task list" }),
 
   // Organize / Comparison
   built(COMPARISON, "Matrix", { id: "matrix.raw", label: "Matrix" }),
@@ -311,7 +311,7 @@ export const BLOCK_ENTRIES: readonly BlockEntry[] = [
   spec(RECORDS, { id: "matrix.data-grid", label: "Data grid" }),
 
   // Organize / Activity
-  spec(ACTIVITY, { id: "items.event-item", label: "Event item", inFlight: pr(2378, "draft") }),
+  exported(ACTIVITY, "EventItem", { id: "items.event-item", label: "Event item" }),
   spec(ACTIVITY, { id: "items.activity-feed", label: "Activity feed" }),
   spec(ACTIVITY, { id: "matrix.audit-log", label: "Audit log" }),
 
@@ -324,6 +324,9 @@ export const BLOCK_ENTRIES: readonly BlockEntry[] = [
     notes: ["Depends on the owner decision for the resize handle atom: rebuilt with it, or parked with it."],
   }),
   exported(CONTAINERS, "CatalogWorkspace", { id: "matrix.catalog-workspace", label: "Catalog workspace" }),
+  exported(CONTAINERS, "FlowCanvas", { id: "matrix.flow-canvas", label: "Flow canvas" }),
+  exported(CONTAINERS, "CatalogBrowser", { id: "matrix.catalog-browser", label: "Catalog browser" }),
+  exported(CONTAINERS, "CanvasSurface", { id: "matrix.canvas-surface", label: "Canvas surface" }),
 
   // Collect / Forms
   built(FORMS, "Form", { id: "form.form", label: "Form", stableCandidate: true, notes: [STABLE_CANDIDATE] }),
@@ -471,6 +474,23 @@ export const BLOCK_EXPORT_EXCLUSIONS: Readonly<Record<string, string>> = {
   serializeProject: MODEL_API,
   parseProject: MODEL_API,
   ProjectModelError: MODEL_API,
+  layoutFlowCanvas: MODEL_API,
+  FLOW_CANVAS_ORIENTATIONS: MODEL_API,
+  FLOW_CANVAS_NODE_LIMIT: MODEL_API,
+  FLOW_CANVAS_EDGE_LIMIT: MODEL_API,
+  panBy: MODEL_API,
+  zoomAt: MODEL_API,
+  fitTo: MODEL_API,
+  clamp: MODEL_API,
+  toWorld: MODEL_API,
+  toScreen: MODEL_API,
+  selectSingle: MODEL_API,
+  toggleSelection: MODEL_API,
+  selectRange: MODEL_API,
+  selectMarquee: MODEL_API,
+  clearSelection: MODEL_API,
+  navigate: MODEL_API,
+  minimapModel: MODEL_API,
 };
 
 export const BLOCK_CATALOG: Catalog<"blocks", BlockGroupMap, BlockEntry> = {

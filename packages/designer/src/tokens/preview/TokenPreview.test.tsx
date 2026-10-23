@@ -29,21 +29,22 @@ const signatures = {
   status: ["background-color/color", "color/color"],
   chart: ["stroke/color", "fill/color"],
   font: ["font-family/font-family", "font-style/font-style", "font-weight/font-weight", "font-stretch/font-stretch", "transform/number"],
-  space: ["gap/length", "padding/length", "padding-inline/length"],
-  size: ["inline-size/length", "max-inline-size/length", "min-inline-size/length", "min-block-size/length"],
+  space: ["gap/length", "padding/length", "padding-inline/length", "translate/length"],
+  size: ["inline-size/length", "max-inline-size/length", "min-inline-size/length", "min-block-size/length", "block-size/length", "max-block-size/length"],
   icon: ["inline-size/length", "stroke-width/number"],
   brandmark: ["block-size/length", "gap/length"],
   radius: ["border-radius/length"], shadow: ["box-shadow/shadow"], blur: ["backdrop-filter/length"],
-  ring: ["box-shadow/shadow"], layer: ["z-index/number"], opacity: ["opacity/number"],
+  ring: ["box-shadow/shadow", "outline-color/color", "outline-offset/length"], layer: ["z-index/number"], opacity: ["opacity/number"],
   motion: ["transition-duration/duration", "transition-timing-function/easing"], breakpoint: ["@media (min-width)/length"],
 };
 const counts = {
-  surface: 24, text: 28, border: 8, control: 7, status: 12, chart: 22,
-  font: 7, space: 13, size: 14, icon: 4, brandmark: 6, radius: 7,
-  shadow: 4, blur: 2, ring: 2, layer: 9, opacity: 1, motion: 12, breakpoint: 6,
+  surface: 24, text: 28, border: 9, control: 7, status: 12, chart: 22,
+  font: 7, space: 14, size: 26, icon: 4, brandmark: 6, radius: 8,
+  shadow: 4, blur: 2, ring: 5, layer: 11, opacity: 4, motion: 18, breakpoint: 6,
 };
 const interactive = [
   "--ui-duration-instant", "--ui-duration-fast", "--ui-duration-default", "--ui-duration-deliberate", "--ui-duration-flash", "--ui-duration-overlay",
+  "--ui-duration-loading-delay", "--ui-duration-loading-min", "--ui-duration-loading-long", "--ui-duration-tooltip-delay", "--ui-duration-tooltip-close", "--ui-duration-confirm-hold",
   "--ease-default", "--ease-decelerate", "--ease-accelerate", "--ease-bounce", "--ease-enter", "--ease-exit",
   "--breakpoint-mobile", "--breakpoint-mobile-lg", "--breakpoint-tablet", "--breakpoint-tablet-lg", "--breakpoint-desktop", "--breakpoint-wide",
 ];
@@ -101,16 +102,16 @@ function samplePaint(sample: HTMLElement, role: "color" | "background", tokens: 
 }
 
 describe("exact-property TokenPreview", () => {
-  it("partitions all 188 supported properties bidirectionally with zero unavailable", () => {
+  it("partitions all 217 supported properties bidirectionally with zero unavailable", () => {
     const supported = Object.keys(TOKEN_GUIDANCE);
     expect(Object.keys(TOKEN_GUIDANCE).sort()).toEqual(Object.keys(TOKENS).sort());
-    expect(supported).toHaveLength(188);
-    expect(new Set(interactive).size).toBe(18);
+    expect(supported).toHaveLength(217);
+    expect(new Set(interactive).size).toBe(24);
     expect(supported.sort()).toEqual(Object.keys(TOKENS).sort());
     expect(interactive.slice().sort()).toEqual(supported.filter(property => ["motion", "breakpoint"].includes(TOKEN_GUIDANCE[property]!.specimen)).sort());
     expect(Object.fromEntries(Object.keys(counts).map(kind => [kind, supported.filter(property => TOKEN_GUIDANCE[property]?.specimen === kind).length]))).toEqual(counts);
     expect(new Set(supported.map(property => TOKEN_GUIDANCE[property]?.specimen))).toEqual(new Set(Object.keys(signatures)));
-    expect(interactive.filter(property => TOKEN_GUIDANCE[property]?.specimen === "motion")).toHaveLength(12);
+    expect(interactive.filter(property => TOKEN_GUIDANCE[property]?.specimen === "motion")).toHaveLength(18);
     expect(interactive.filter(property => TOKEN_GUIDANCE[property]?.specimen === "breakpoint")).toHaveLength(6);
   });
   it("covers every authored application triple exactly", () => {
@@ -118,7 +119,7 @@ describe("exact-property TokenPreview", () => {
       .map(([, item]) => `${item.specimen}/${item.application.cssProperty}/${item.application.valueType}`);
     const expected = Object.entries(signatures).flatMap(([kind, applications]) => applications.map(application => `${kind}/${application}`));
     expect([...new Set(actual)].sort()).toEqual(expected.sort());
-    expect(expected).toHaveLength(38);
+    expect(expected).toHaveLength(43);
   });
   it("actually renders every supported property through its own cascade variable, without tables", () => {
     for (const property of Object.keys(TOKENS)) {
@@ -264,7 +265,7 @@ describe("exact-property TokenPreview", () => {
     vi.stubGlobal("matchMedia", matchMedia);
     return { queries, matchMedia };
   }
-  it.each(interactive.slice(0, 12))("replays %s only on user action through the exact authored application", property => {
+  it.each(interactive.filter(property => TOKEN_GUIDANCE[property]!.specimen === "motion"))("replays %s only on user action through the exact authored application", property => {
     media();
     const { container, getByRole } = render(<TokenPreview property={property} />);
     const moving = container.querySelector<HTMLElement>("[data-token-preview-motion]")!;
@@ -291,7 +292,7 @@ describe("exact-property TokenPreview", () => {
     expect(moving.style.transform).toBe("translateX(64px)");
     expect(moving.style.transitionProperty).toBe("");
   });
-  it.each(interactive.slice(0, 12))("keeps %s static with identical authored information under reduced motion", property => {
+  it.each(interactive.filter(property => TOKEN_GUIDANCE[property]!.specimen === "motion"))("keeps %s static with identical authored information under reduced motion", property => {
     const { queries } = media(true);
     const { container, queryByRole, unmount } = render(<TokenPreview property={property} />);
     expect(container.textContent).toContain(TOKENS[property]!.value);
@@ -315,7 +316,7 @@ describe("exact-property TokenPreview", () => {
     act(() => preference.addEventListener.mock.calls[0]![1]({ matches: false }));
     expect(container.querySelector<HTMLElement>("[data-token-preview-motion]")?.style.transform).toBe("translateX(0)");
   });
-  it.each(interactive.slice(12))("resolves %s and tracks its exact query once, cleaning up on unmount", property => {
+  it.each(interactive.filter(property => TOKEN_GUIDANCE[property]!.specimen === "breakpoint"))("resolves %s and tracks its exact query once, cleaning up on unmount", property => {
     const { queries, matchMedia } = media();
     const { container, rerender, unmount } = render(<TokenPreview property={property} />);
     const query = `(min-width: ${TOKENS[property]!.value})`;

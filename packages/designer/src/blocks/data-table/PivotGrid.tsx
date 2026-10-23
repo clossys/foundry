@@ -1,7 +1,7 @@
 import { defaultPivotAxisMessage, defaultPivotColumnMessage, defaultPivotValueMessage, type DataTableMessages } from "./messages.js";
 import { Table } from "../../atoms/Table.js";
 import { EmptyState } from "../EmptyState.js";
-import { pivotRows, type TablePivotAxis } from "../table-model/index.js";
+import { pivotRows } from "../table-model/index.js";
 import type { DataTableViewModel } from "./view-model.js";
 
 export function PivotGrid<Row>({

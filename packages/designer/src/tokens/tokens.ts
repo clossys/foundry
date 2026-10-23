@@ -2,7 +2,7 @@
  * The token catalog: every custom property this package declares in
  * `styles/tokens.css`, as data. This file is the JS/TS half of the package;
  * `styles/tokens.css` is the CSS half. Both are hand-authored and both are
- * meant to describe the exact same 188 tokens — a test in this package
+ * meant to describe the exact same 217 tokens — a test in this package
  * (`parity.test.ts`) parses `styles/tokens.css` and asserts its custom
  * property names and values match this file entry-for-entry, in both
  * directions. That test is what keeps this file honest; nothing generates
@@ -35,7 +35,7 @@
  */
 
 /**
- * The 31 semantic groups the 188 tokens fall into. Each maps to exactly one
+ * The 31 semantic groups the 217 tokens fall into. Each maps to exactly one
  * CSS custom property prefix — see `FAMILY_PREFIX` in `parity.test.ts` (and
  * the README's naming table) for the concrete mapping.
  */
@@ -109,7 +109,7 @@ export interface TokenDefinition {
 }
 
 /**
- * All 188 tokens, keyed by their CSS custom property name. A `Record` rather
+ * All 217 tokens, keyed by their CSS custom property name. A `Record` rather
  * than an array because the natural question from JS — "what is
  * `--color-surface-raised` set to?" — is a lookup, not a scan.
  */
@@ -407,6 +407,37 @@ export const TOKENS: Readonly<Record<string, TokenDefinition>> = {
 
   // ── UI · ALPHA ──────────────────────────────────────────────────────
   "--ui-alpha-disabled": { property: "--ui-alpha-disabled", family: "alpha", value: "0.5", brandable: false, themeDependent: false },
+  // Shared control, focus, motion and state roles.
+  "--ui-control-h-sm": { property: "--ui-control-h-sm", family: "control", value: "32px", brandable: false, themeDependent: false },
+  "--ui-control-h-md": { property: "--ui-control-h-md", family: "control", value: "var(--ui-layout-tap-target, 44px)", brandable: false, themeDependent: false },
+  "--ui-control-h-lg": { property: "--ui-control-h-lg", family: "control", value: "52px", brandable: false, themeDependent: false },
+  "--ui-control-row-h": { property: "--ui-control-row-h", family: "control", value: "36px", brandable: false, themeDependent: false },
+  "--ui-control-mark": { property: "--ui-control-mark", family: "control", value: "16px", brandable: false, themeDependent: false },
+  "--ui-control-switch-w": { property: "--ui-control-switch-w", family: "control", value: "36px", brandable: false, themeDependent: false },
+  "--ui-control-switch-h": { property: "--ui-control-switch-h", family: "control", value: "20px", brandable: false, themeDependent: false },
+  "--ui-control-switch-thumb": { property: "--ui-control-switch-thumb", family: "control", value: "14px", brandable: false, themeDependent: false },
+  "--ui-border-focus": { property: "--ui-border-focus", family: "border", value: "2px", brandable: false, themeDependent: false },
+  "--ui-focus-offset": { property: "--ui-focus-offset", family: "ring", value: "2px", brandable: false, themeDependent: false },
+  "--color-focus-ring": { property: "--color-focus-ring", family: "ring", value: "var(--color-accent, oklch(0.4748 0 0))", brandable: false, themeDependent: false },
+  "--color-focus-ring-on-inverse": { property: "--color-focus-ring-on-inverse", family: "ring", value: "var(--color-ink-on-inverse, oklch(0.9702 0 0))", brandable: false, themeDependent: false },
+  "--ui-z-skip-link": { property: "--ui-z-skip-link", family: "z", value: "100", brandable: false, themeDependent: false },
+  "--ui-motion-shift": { property: "--ui-motion-shift", family: "spacing", value: "4px", brandable: false, themeDependent: false },
+  "--ui-radius-overlay": { property: "--ui-radius-overlay", family: "radius", value: "var(--radius-control, 6px)", brandable: false, themeDependent: false },
+  "--ui-state-hover-alpha": { property: "--ui-state-hover-alpha", family: "alpha", value: "0.08", brandable: false, themeDependent: false },
+  "--ui-state-pressed-alpha": { property: "--ui-state-pressed-alpha", family: "alpha", value: "0.14", brandable: false, themeDependent: false },
+  "--ui-duration-loading-delay": { property: "--ui-duration-loading-delay", family: "duration", value: "150ms", brandable: false, themeDependent: false },
+  "--ui-duration-loading-min": { property: "--ui-duration-loading-min", family: "duration", value: "400ms", brandable: false, themeDependent: false },
+  "--ui-duration-loading-long": { property: "--ui-duration-loading-long", family: "duration", value: "10000ms", brandable: false, themeDependent: false },
+  "--ui-z-progress": { property: "--ui-z-progress", family: "z", value: "90", brandable: false, themeDependent: false },
+  "--ui-alpha-stale": { property: "--ui-alpha-stale", family: "alpha", value: "0.7", brandable: false, themeDependent: false },
+  "--ui-duration-tooltip-delay": { property: "--ui-duration-tooltip-delay", family: "duration", value: "500ms", brandable: false, themeDependent: false },
+  "--ui-duration-tooltip-close": { property: "--ui-duration-tooltip-close", family: "duration", value: "300ms", brandable: false, themeDependent: false },
+  "--ui-layout-toast-w": { property: "--ui-layout-toast-w", family: "layout", value: "24rem", brandable: false, themeDependent: false },
+  "--ui-table-row-comfortable": { property: "--ui-table-row-comfortable", family: "density", value: "48px", brandable: false, themeDependent: false },
+  "--ui-table-row-compact": { property: "--ui-table-row-compact", family: "density", value: "36px", brandable: false, themeDependent: false },
+  "--ui-duration-confirm-hold": { property: "--ui-duration-confirm-hold", family: "duration", value: "2000ms", brandable: false, themeDependent: false },
+  "--ui-table-max-block-default": { property: "--ui-table-max-block-default", family: "layout", value: "min(70vh, 40rem)", brandable: false, themeDependent: false },
+
 };
 
 /** The 31 semantic families, in the order they appear in the README's reference table. */
@@ -443,3 +474,10 @@ export const TOKEN_FAMILIES: readonly TokenFamily[] = [
   "alpha",
   "scene",
 ];
+
+/** Internal CSS mirrors; intentionally absent from the public token barrel. */
+export const UI_Z_PROGRESS = "var(--ui-z-progress, 90)";
+export const UI_ALPHA_STALE = "var(--ui-alpha-stale, 0.7)";
+export const UI_Z_SKIP_LINK = "var(--ui-z-skip-link, 100)";
+export const TOOLTIP_DELAY_MS = 500;
+export const TOOLTIP_CLOSE_DELAY_MS = 300;

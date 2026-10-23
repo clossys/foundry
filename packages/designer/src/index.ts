@@ -11,6 +11,9 @@
  * `./shell/index.js`, `./charts/index.js`, and `./theme/index.js` each
  * export, nothing more.
  */
+export { CanvasSurface, panBy, zoomAt, fitTo, clamp, toWorld, toScreen, selectSingle, toggleSelection, selectRange, selectMarquee, clearSelection, navigate, minimapModel } from "./blocks/index.js";
+export type { CanvasSurfaceProps, CanvasPoint, CanvasSize, CanvasRect, Viewport, Selection, CanvasItem, CanvasDirection, CanvasMinimapModel } from "./blocks/index.js";
+
 export {
   Button,
   Icon,
@@ -168,10 +171,15 @@ export {
   SpecimenPanel,
   OrderedStepSequence,
   StatusList,
+  EventItem,
+  TaskList,
   Faq,
   PricingTable,
   Testimonial,
   TableOfContents,
+  TestimonialSet,
+  LogoCloud,
+  PeopleGrid,
   ArticleBody,
   SectionFrame,
   ConsentBanner,
@@ -294,6 +302,14 @@ export type {
   OrderedStepSequenceHeadingLevel,
   OrderedStepSequenceGround,
   StatusListProps,
+  EventActor,
+  EventChange,
+  EventRecord,
+  EventLabels,
+  EventItemProps,
+  TaskStatus,
+  TaskListItem,
+  TaskListProps,
   StatusListGroup,
   StatusListItem,
   StatusListReadinessItem,
@@ -316,6 +332,12 @@ export type {
   TestimonialProps,
   TableOfContentsProps,
   TableOfContentsItem,
+  TestimonialSetProps,
+  TestimonialSetItem,
+  LogoCloudProps,
+  LogoCloudItem,
+  PeopleGridProps,
+  PeopleGridPerson,
   ArticleBodyProps,
   SectionFrameProps,
   ConsentBannerProps,
@@ -440,6 +462,10 @@ export { PageBar } from "./blocks/PageBar.js";
 export type { PageBarProps, PageBarPage, PageBarCrumb, PageBarAction, PageBarDestination, PageBarLabels, PageBarWidth } from "./blocks/PageBar.js";
 export { validateAppNavigationTree, getAppNavigationAncestry, getAppNavigationBreadcrumbs } from "./blocks/app-navigation-tree.js";
 export type { AppNavigationNode, AppNavigationLeaf, AppNavigationDestination, AppNavigationTarget, AppNavigationBreadcrumb } from "./blocks/app-navigation-tree.js";
+export { FlowCanvas } from "./blocks/FlowCanvas.js";
+export type { FlowCanvasProps } from "./blocks/FlowCanvas.js";
+export { layoutFlowCanvas, FLOW_CANVAS_ORIENTATIONS, FLOW_CANVAS_NODE_LIMIT, FLOW_CANVAS_EDGE_LIMIT } from "./blocks/flow-canvas-layout.js";
+export type { FlowCanvasNode, FlowCanvasEdge, FlowCanvasOrientation, FlowCanvasLayout, FlowCanvasLayoutNode, FlowCanvasLayoutEdge, FlowCanvasLayoutOptions } from "./blocks/flow-canvas-layout.js";
 export { Items } from "./blocks/items/Items.js";
 export { RelationGraph } from "./blocks/RelationGraph.js";
 export type { RelationGraphProps, RelationGraphNode, RelationGraphEdge } from "./blocks/relation-graph-types.js";
@@ -463,6 +489,8 @@ export type { TableValue, TableColumnKind, TableColumn, TableCollation, TableFil
 
 export { CatalogWorkspace } from "./blocks/index.js";
 export type { CatalogWorkspaceProps, CatalogWorkspaceItem, CatalogWorkspaceSize } from "./blocks/index.js";
+export { CatalogBrowser } from "./blocks/index.js";
+export type { CatalogBrowserProps, CatalogBrowserCatalog, CatalogBrowserEntry, CatalogBrowserEntryOf, CatalogBrowserGroup, CatalogBrowserKind, CatalogBrowserLabels, CatalogBrowserLifecycle, CatalogBrowserSelection, CatalogBrowserConfig, CatalogBrowserControl, CatalogBrowserPreviewContext, CatalogBrowserReference, CatalogBrowserFilter, CatalogBrowserField, CatalogBrowserBadge } from "./blocks/index.js";
 
 export { parseDataTableViewModel, serializeDataTableViewModel, DataTableViewModelError } from "./blocks/data-table/view-model.js";
 export type { DataTableMessages } from "./blocks/data-table/messages.js";

@@ -12,7 +12,7 @@ export type { CatalogWorkspaceProps, CatalogWorkspaceItem, CatalogWorkspaceSize 
 /** Controlled browse, arbitrary preview and inspector composition; no data fetching or persistence. */
 export function CatalogWorkspace(props: CatalogWorkspaceProps) {
   assertCatalogProps(props);
-  const { items, selectedId, onSelect, label, labels, preview, inspector, emptyState, className, dir } = props;
+  const { items, selectedId, onSelect, label, labels, preview, inspector, emptyState, defaultExpandedIds, className, dir } = props;
   const index = catalogIndex(items);
   const browseSize = paneSize(props.browseSize);
   const inspectorSize = paneSize(props.inspectorSize);
@@ -35,7 +35,7 @@ export function CatalogWorkspace(props: CatalogWorkspaceProps) {
     <ResizablePane {...browseSize} step={browseSize.step ?? 16} label={labels.browse} handleLabel={labels.resizeBrowse}
       orientation={orientation} handleEdge="end" value={stacked ? browseHeight : browseWidth} onChange={stacked ? setBrowseHeight : setBrowseWidth}
       className="w-full shrink-0" header={<h3 className="text-body font-body text-ink-primary">{labels.browse}</h3>}>
-      <Browse items={items} index={index} selectedId={selectedId} onSelect={onSelect} label={labels.browse} />
+      <Browse items={items} index={index} selectedId={selectedId} onSelect={onSelect} label={labels.browse} defaultExpandedIds={defaultExpandedIds} />
     </ResizablePane>
     <Panel role="region" aria-label={labels.preview} className="min-h-0 min-w-0 flex-1" header={<h3 className="text-body font-body text-ink-primary">{labels.preview}</h3>}>
       {selected ? preview(selected) : emptyState}

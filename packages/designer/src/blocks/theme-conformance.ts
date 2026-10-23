@@ -19,6 +19,15 @@ const GROUNDED_READING = [
   "ink-primary/surface-sunken", "ink-secondary/surface-sunken",
   "ink-on-inverse/surface-inverse", "ink-on-inverse-muted/surface-inverse",
 ];
+/*
+ * Body-scale reading text on an inverse raised plate (a quote plate, an
+ * initials fill, a linked item's hover plate). These are the package's AA
+ * text pairs for that plate; "ink-on-inverse/surface-inverse-raised" is the
+ * 3:1 icon-glyph pair and never covers text.
+ */
+const INVERSE_RAISED_READING = ["link-grid/ink-on-inverse/surface-inverse-raised", "link-grid/ink-on-inverse-muted/surface-inverse-raised"];
+/** A grounded Block whose plates or hover plates step to the next surface: sunken to raised, inverse to inverse-raised. */
+const PLATED_READING = [...GROUNDED_READING, ...RAISED_READING, ...INVERSE_RAISED_READING];
 
 /** Exact exported component inventory; a new barrel export requires registration. */
 export const BLOCK_THEME_CONFORMANCE: readonly BlockThemeRegistration[] = [
@@ -54,10 +63,15 @@ export const BLOCK_THEME_CONFORMANCE: readonly BlockThemeRegistration[] = [
   { exportName: "SpecimenPanel", source: "src/blocks/specimen/SpecimenPanel.tsx", contrastPairs: RAISED_READING },
   { exportName: "OrderedStepSequence", source: "src/blocks/OrderedStepSequence.tsx", contrastPairs: GROUNDED_READING },
   { exportName: "StatusList", source: "src/blocks/StatusList.tsx", contrastPairs: GROUNDED_READING },
+  { exportName: "TaskList", source: "src/blocks/TaskList.tsx", contrastPairs: [...BASE_READING, "ink-muted/surface-base"] },
+  { exportName: "EventItem", source: "src/blocks/EventItem.tsx", contrastPairs: [...BASE_READING, "ink-muted/surface-base", "ink-secondary/surface-sunken"] },
   { exportName: "Faq", source: "src/blocks/Faq.tsx", contrastPairs: GROUNDED_READING },
   { exportName: "PricingTable", source: "src/blocks/PricingTable.tsx", contrastPairs: RAISED_READING },
   { exportName: "Testimonial", source: "src/blocks/Testimonial.tsx", contrastPairs: BASE_READING },
   { exportName: "TableOfContents", source: "src/blocks/TableOfContents.tsx", contrastPairs: BASE_READING },
+  { exportName: "TestimonialSet", source: "src/blocks/TestimonialSet.tsx", contrastPairs: PLATED_READING },
+  { exportName: "LogoCloud", source: "src/blocks/LogoCloud.tsx", contrastPairs: GROUNDED_READING },
+  { exportName: "PeopleGrid", source: "src/blocks/PeopleGrid.tsx", contrastPairs: PLATED_READING },
   { exportName: "ArticleBody", source: "src/blocks/ArticleBody.tsx", contrastPairs: [...BASE_READING, "ink-primary/surface-sunken", "ink-link/surface-base"] },
   { exportName: "SectionFrame", source: "src/blocks/SectionFrame.tsx", contrastPairs: ["ink-primary/surface-base", "ink-primary/surface-sunken", "ink-on-inverse/surface-inverse"] },
   { exportName: "NewsletterBand", source: "src/blocks/NewsletterBand.tsx", contrastPairs: GROUNDED_READING },
@@ -82,9 +96,12 @@ export const BLOCK_THEME_CONFORMANCE: readonly BlockThemeRegistration[] = [
   { exportName: "Tree", source: "src/blocks/tree/Tree.tsx", contrastPairs: GROUNDED_READING },
   { exportName: "Items", source: "src/blocks/items/Items.tsx", contrastPairs: GROUNDED_READING },
   { exportName: "GroupedTable", source: "src/blocks/GroupedTable.tsx", contrastPairs: [...RAISED_READING, "ink-primary/surface-sunken"] },
+  { exportName: "CanvasSurface", source: "src/blocks/canvas/CanvasSurface.tsx", contrastPairs: ["ink-primary/surface-base", "ink-primary/surface-raised"] },
   { exportName: "CatalogWorkspace", source: "src/blocks/CatalogWorkspace.tsx", contrastPairs: [...BASE_READING, ...RAISED_READING] },
+  { exportName: "CatalogBrowser", source: "src/blocks/CatalogBrowser.tsx", contrastPairs: [...BASE_READING, ...RAISED_READING] },
   { exportName: "Chat", source: "src/blocks/chat/Chat.tsx", contrastPairs: [...BASE_READING, ...RAISED_READING, "ink-primary/surface-sunken", "ink-secondary/surface-sunken", "ink-link/surface-base"] },
   { exportName: "RelationGraph", source: "src/blocks/RelationGraph.tsx", contrastPairs: [...BASE_READING, ...RAISED_READING, "ink-muted/surface-raised"] },
+  { exportName: "FlowCanvas", source: "src/blocks/FlowCanvas.tsx", contrastPairs: ["ink-secondary/surface-base", "ink-muted/surface-base", ...RAISED_READING, "ink-primary/surface-sunken", "ink-secondary/surface-sunken"] },
 ];
 
 /** Explicitly classified value exports, never a casing-based escape for new Blocks. */
@@ -132,4 +149,21 @@ export const NON_BLOCK_THEME_EXPORTS: Readonly<Record<string, string>> = {
   serializeProject: "Validated plain-object project serialization; renders no UI or paint.",
   parseProject: "Project envelope validation and copying from a plain object; renders no UI or paint.",
   ProjectModelError: "Typed project-data refusal with an error code and message; renders no UI or paint.",
+  layoutFlowCanvas: "Flow canvas layering and routing calculation; the rendered FlowCanvas is registered separately.",
+  FLOW_CANVAS_ORIENTATIONS: "Accepted flow canvas orientations as plain constant data; renders no UI or paint.",
+  FLOW_CANVAS_NODE_LIMIT: "Flow canvas node limit as a plain constant; renders no UI or paint.",
+  FLOW_CANVAS_EDGE_LIMIT: "Flow canvas edge limit as a plain constant; renders no UI or paint.",
+  panBy: "Adds a screen delta to supplied viewport data; returns plain coordinates with no UI or paint.",
+  zoomAt: "Computes anchored viewport data from a screen point and factor; renders no UI or paint.",
+  fitTo: "Computes a viewport for supplied bounds and view dimensions; renders no UI or paint.",
+  clamp: "Bounds supplied viewport zoom and position; returns plain data with no UI or paint.",
+  toWorld: "Converts a screen point to world coordinates; renders no UI or paint.",
+  toScreen: "Converts a world point to screen coordinates; renders no UI or paint.",
+  selectSingle: "Returns the supplied selection identifier in a new array; renders no UI or paint.",
+  toggleSelection: "Returns a new selection identifier array after membership toggling; renders no UI or paint.",
+  selectRange: "Returns selection identifiers between supplied ordered endpoints; renders no UI or paint.",
+  selectMarquee: "Queries supplied item rectangles for selection identifiers; renders no UI or paint.",
+  clearSelection: "Returns an empty selection identifier array; renders no UI or paint.",
+  navigate: "Queries supplied item geometry for the next spatial identifier; renders no UI or paint.",
+  minimapModel: "Computes plain minimap dimensions and viewport coordinates; renders no UI or paint.",
 };

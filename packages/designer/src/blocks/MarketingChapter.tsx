@@ -1,6 +1,5 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { cx } from "../atoms/internal/cx.js";
-import { DISPLAY_HEADING_CLASS } from "./internal/block-vars.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
 
 export type MarketingChapterHeadingLevel = 2 | 3;
