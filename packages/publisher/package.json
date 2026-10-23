@@ -393,6 +393,7 @@
   "files": [
     "dist",
     "src",
+    "examples",
     "!src/**/*.test.ts",
     "!src/**/*.test.tsx",
     "!src/**/*.test.json",
@@ -405,10 +406,12 @@
     "fit-signals.json"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "generate:reference": "node scripts/generate-reference.mjs",
+    "typecheck:examples": "node scripts/typecheck-examples.mjs",
+    "build": "npm run generate:reference && tsc -p tsconfig.json",
     "prepublishOnly": "node ../../scripts/check-name-collision.mjs . && npm run build",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run",
+    "typecheck": "npm run generate:reference && tsc -p tsconfig.json --noEmit && npm run typecheck:examples",
+    "test": "npm run generate:reference && vitest run",
     "generate:preview-css": "node scripts/preview-css.mjs --write",
     "check:preview-css": "node scripts/preview-css.mjs --check"
   },
