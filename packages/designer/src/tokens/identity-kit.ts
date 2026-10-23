@@ -72,7 +72,7 @@
  * auditable one.
  */
 
-import { normalizeMark } from "./mark-normalize.js";
+import { MarkGeometryError, normalizeMark } from "./mark-normalize.js";
 
 const MARK_VIEW_BOX = "0 0 48 48";
 const WORDMARK_VIEW_BOX = "0 0 200 48";
@@ -624,7 +624,7 @@ function normaliseHex(value: string): string | undefined {
 }
 
 /** `attrs` are all allowed on `tag`, and its paint is one hex tone; returns that tone or `null`. */
-function flatShapeTone(tag: string, attrs: FlatAttrs, strokeOnly: boolean): string | null {
+function flatShapeTone(tag: string, attrs: FlatAttrs): string | null {
   const geometry = FLAT_SHAPE_GEOMETRY.get(tag);
   if (geometry === undefined) return null;
   const paint = new Map<string, string>();
@@ -632,15 +632,10 @@ function flatShapeTone(tag: string, attrs: FlatAttrs, strokeOnly: boolean): stri
     if (name === "fill" || name === "stroke") paint.set(name, value);
     else if (!(geometry.includes(name) || name === "transform" || name === "fill-rule" || name === "clip-rule" || FLAT_STROKE_ATTR_RE.test(name))) return null;
   }
-  // The private opt-in receives only concrete paint emitted by normalizeMark.
-  const toneOf = (value: string | undefined): string | undefined => {
-    const hex = normaliseHex(value ?? "");
-    return hex ?? (strokeOnly && value !== undefined && value !== "none" ? value : undefined);
-  };
-  const tone = toneOf(strokeOnly && paint.get("fill") === "none" ? paint.get("stroke") : paint.get("fill"));
+  const tone = normaliseHex(paint.get("fill") ?? "");
   if (tone === undefined) return null;
   const stroke = paint.get("stroke");
-  if (stroke !== undefined && stroke !== "none" && toneOf(stroke) !== tone) return null;
+  if (stroke !== undefined && stroke !== "none" && normaliseHex(stroke) !== tone) return null;
   return tone;
 }
 
@@ -661,7 +656,7 @@ function flatShapeTone(tag: string, attrs: FlatAttrs, strokeOnly: boolean): stri
  *    between tags (no text, comment, `<!`, `<?`, CDATA);
  *  - every shape has a hex fill and an absent/none/matching stroke;
  *    only the private normalized-adoption opt-in also accepts its validated
- *    concrete paint literals and fill="none" with a painted stroke;
+ *    concrete paints as two layers: the generated plate, then the whole glyph;
  *  - exactly two tones, every first-tone shape before every second-tone one;
  *  - within the caps: at most {@link FLAT_MAX_ATTRIBUTES_PER_TAG}
  *    attributes on a tag, {@link FLAT_MAX_ELEMENTS} elements in all and
@@ -672,8 +667,10 @@ function flatShapeTone(tag: string, attrs: FlatAttrs, strokeOnly: boolean): stri
  * the whole recognition is linear in the input; its parse is iterative and
  * its render recursion is bounded by {@link FLAT_MAX_DEPTH}.
  */
-function recogniseFlatTwoTone(svg: string, strokeOnly: boolean): { root: string; box: NonNullable<ReturnType<typeof parseViewBoxBox>>; nodes: FlatNode[]; toneA: string } | null {
-  const text = svg.trim();
+function recogniseFlatTwoTone(svg: string, normalized: boolean): { root: string; box: NonNullable<ReturnType<typeof parseViewBoxBox>>; nodes: FlatNode[]; toneA: string } | null {
+  // Input from normalizeMark has one generated plate followed by validated glyph paint.
+  // Metadata is inert and omitted from duplicated layers; it does not define paint tones.
+  const text = normalized ? svg.trim().replace(/\s(?:id|role|aria-[a-z0-9_.-]+|data-(?!clear-space=)[a-z0-9_.-]+)="[^"]*"/g, '') : svg.trim();
   const rootTag = scanFlatTag(text, 0);
   if (rootTag === null || rootTag.name !== "svg" || rootTag.selfClosing) return null;
   // Re-emit the root from constant names and escaped values; never slice it out of the input.
@@ -720,7 +717,9 @@ function recogniseFlatTwoTone(svg: string, strokeOnly: boolean): { root: string;
       continue;
     }
     if (!selfClosing || !FLAT_SHAPE_GEOMETRY.has(name)) return null;
-    const tone = flatShapeTone(name, attrs, strokeOnly);
+    if (normalized && attrs.some(([key, value]) => (key === 'fill' || key === 'stroke') &&
+      (value === 'transparent' || /^#(?:[\da-f]{4}|[\da-f]{8})$/.test(value) || value.includes('/') || value.split(',').length > 3))) return null;
+    const tone = normalized ? (elements === 1 ? 'plate' : 'glyph') : flatShapeTone(name, attrs);
     if (tone === null) return null;
     if (!tones.includes(tone)) {
       if (tones.length === 2) return null;
@@ -815,10 +814,11 @@ function renderFlatNodes(nodes: readonly FlatNode[], paintOf: (shape: FlatShape)
 export function recolorSvg(svg: string, color: string): string {
   return recolorSvgInternal(svg, color, false);
 }
-function recolorSvgInternal(svg: string, color: string, strokeOnly: boolean): string {
+function recolorSvgInternal(svg: string, color: string, normalized: boolean): string {
   const escapedColor = escapeXml(color);
-  const mark = recogniseFlatTwoTone(svg, strokeOnly);
+  const mark = recogniseFlatTwoTone(svg, normalized);
   if (mark === null) {
+    if (normalized) throw new MarkGeometryError('normalized knockout complexity');
     return svg.replace(PAINT_ATTR_RE, (match, attr: string, _quoted: string, doubleQuoted: string | undefined, singleQuoted: string | undefined) => {
       const value = doubleQuoted ?? singleQuoted ?? "";
       if (value === "none" || value === "transparent" || value === "") return match;

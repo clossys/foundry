@@ -7594,11 +7594,14 @@ subdivided to one millionth of the canvas size; optical area integrates the
 painted union over 4096 horizontal strips, including holes and overlaps.
 Unsupported elements, transforms, and rendering effects such as masks or
 opacity throw `MarkGeometryError` naming the feature. Attribute names must use
-XML name syntax and canonical case; event attributes, transform origins and
-markers are refused. Measurement limits nesting to 64 open elements, generated
+XML name syntax and canonical case. Only measured geometry/paint attributes,
+root SVG namespace, and inert id, role, data-* and aria-* metadata are accepted;
+only paint attributes inherit. Conditional, namespaced and unknown attributes
+are refused. Measurement limits nesting to 64 open elements, generated
 geometry to 100,000 points, winding work to 2,000,000 aggregate weighted edge operations
 (including edge/level setup and 16 times the edge-sort estimate), and optical sampling to 20,000,000
 point-by-strip operations. Point limits precede geometry expansion; work limits precede expensive scans.
+Paint literals and inherited paint attributes are limited to 4096 characters.
 Intricate curves can exceed these limits even with few source commands: the
 two-arc crescent `M60 10 A40 40 0 1 0 60 90 A30 30 0 1 1 60 10 Z` is deliberately
 refused with a typed paint work complexity error rather than guessed bounds.
@@ -7609,9 +7612,12 @@ values (0.005 share tolerance). A direct, untransformed lockup `text` element
 contributes its declared position and font size; its font outline is not
 measured. `adoptSuppliedMark({ brand, suppliedSvg, tokens, normalize: true })`
 opts into normalization; omitted or false preserves the legacy variant bytes.
-Normalized adoption also constructs knockout variants for stroke-only glyphs,
-including validated functional paint colors. This recognition is private to the
-opt-in; public `recolorSvg` and default adoption retain their existing subset.
+Normalized adoption constructs plate-versus-glyph knockouts for all accepted glyph
+paints, including mixed fill/stroke, multiple colors and metadata wrappers. Marks
+exceeding knockout recognition limits or carrying transparent/explicit-alpha paints
+receive a typed refusal, preserving the measured paint boundary. This recognition
+is private to the opt-in; public `recolorSvg` and default adoption retain their
+existing subset.
 `judgeIdentityKit` adds mark-conformance findings for adopted directions,
 reporting unsupported supplied geometry as indeterminate. Generated live-text
 directions retain their existing four checks without claiming measured mark

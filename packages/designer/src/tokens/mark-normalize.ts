@@ -80,6 +80,11 @@ interface Contour {
   points: Point[];
   closed: boolean;
 }
+const paintKeys = ['color', 'fill', 'stroke', 'stroke-width', 'stroke-linecap', 'stroke-linejoin', 'stroke-miterlimit', 'fill-rule'];
+const measuredAttributes = new Set([
+  ...paintKeys, 'viewBox', 'width', 'height', 'x', 'y', 'rx', 'ry', 'cx', 'cy', 'r', 'points', 'd',
+  'transform', 'style', 'font-size', 'font-family', 'font-weight', 'text-anchor', 'role', 'id',
+]);
 const identity: Matrix = [1, 0, 0, 1, 0, 0];
 const fail = (feature: string): never => { throw new MarkGeometryError(feature); };
 interface GeometryBudget { generated: number; work: number }
@@ -207,8 +212,12 @@ function parse(svg: string, lockupText = false): Node {
         fail("XML attribute");
       const key = attr![1]!;
       if (!/^[A-Za-z_][A-Za-z0-9_.:-]*$/.test(key)) fail(`XML attribute ${key}`);
+      if (lockupText && ['dx', 'dy', 'rotate', 'textLength', 'lengthAdjust', 'writing-mode', 'direction'].includes(key)) fail('lockup text positioning');
       if (key !== 'viewBox' && /[A-Z]/.test(key)) fail(`attribute ${key}`);
       if (/^on/i.test(attr![1]!)) fail(`event attribute ${attr![1]}`);
+      if (key === 'xmlns') {
+        if (stack.length || roots.length || decodeAttribute(attr![2] ?? attr![3]!) !== 'http://www.w3.org/2000/svg') fail('attribute xmlns');
+      } else if (!measuredAttributes.has(key) && !/^(?:data|aria)-[a-z0-9_.-]+$/.test(key)) fail(`attribute ${key}`);
       attrs[attr![1]!] = decodeAttribute(attr![2] ?? attr![3]!);
       position = attribute.lastIndex;
     }
@@ -621,6 +630,7 @@ function paintedBoundary(region: Region, budget: GeometryBudget): Point[] {
 // numeric color(srgb ...); transparent/none; internally resolved currentColor.
 // Named colors, angle units, relative/context colors and the full CSS cascade are unsupported.
 function parsePaint(value: string, allowNone = true): Paint {
+  if (value.length > 4096) fail('paint complexity');
   if (/[^\x09\x0a\x0c\x0d\x20-\x7e]/.test(value)) fail('paint syntax');
   const paint = value.trim().toLowerCase();
   if (/url\s*\(|\\/.test(paint)) fail('paint reference');
@@ -659,7 +669,9 @@ function effectivePaint(paint: Paint | undefined, color: LiteralPaint | undefine
   return specified === 'currentColor' ? color ?? fail('ambient currentColor') : specified;
 }
 function presentation(node: Node, inherited: Presentation): Presentation {
-  const attrs = { ...inherited.attrs, ...node.attrs };
+  const attrs = { ...node.attrs };
+  for (const key of paintKeys)
+    if (attrs[key] === undefined && inherited.attrs[key] !== undefined) attrs[key] = inherited.attrs[key]!;
   if (attrs.style) {
     if (/!|\/\*|\*\/|[^\x09\x0a\x0c\x0d\x20-\x7e]/.test(attrs.style)) fail('style syntax');
     for (const declaration of attrs.style.split(';').map(value => value.trim()).filter(Boolean)) {
@@ -670,13 +682,12 @@ function presentation(node: Node, inherited: Presentation): Presentation {
     }
     delete attrs.style;
   }
+  if (paintKeys.some(key => (attrs[key]?.length ?? 0) > 4096)) fail('paint complexity');
   // Concrete paint and currentColor are supported; full CSS cascade resolution is not.
   // Check the effective inline value so a supported override can replace a keyword attribute.
   const cssWidePaint = ['inherit', 'unset', 'initial', 'revert', 'revert-layer'];
   if (['fill', 'stroke', 'color'].some(key => cssWidePaint.includes(attrs[key]?.trim().toLowerCase() ?? '')))
     fail('CSS-wide paint keyword');
-  for (const key of ['clip-path', 'mask', 'filter', 'vector-effect', 'stroke-dasharray', 'stroke-dashoffset', 'display', 'visibility', 'opacity', 'fill-opacity', 'stroke-opacity', 'transform-origin', 'marker-start', 'marker-mid', 'marker-end'])
-    if (attrs[key] !== undefined) fail(key);
   const color = attrs.color === undefined ? undefined : parsePaint(attrs.color, false);
   return {
     attrs,
@@ -771,7 +782,6 @@ export function normalizeMark(input: NormalizeMarkInput): string {
   const shift = (axis: 0 | 1) => correction[axis];
   const tx = side / 2 - centre[0] * scale + shift(0), ty = side / 2 - centre[1] * scale + shift(1);
   const root = measured.root;
-  const paintKeys = ['color', 'fill', 'stroke', 'stroke-width', 'stroke-linecap', 'stroke-linejoin', 'stroke-miterlimit', 'fill-rule'];
   const attributesOf = (attrs: Attrs) => Object.entries(attrs).map(([key, value]) => ` ${key}="${escape(value)}"`).join('');
   const render = (node: Node): string => {
     const attrs: Attrs = Object.fromEntries(Object.entries(node.attrs).filter(([key]) => key !== 'style' && !paintKeys.includes(key)));

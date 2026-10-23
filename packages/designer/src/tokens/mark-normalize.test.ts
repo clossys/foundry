@@ -12,6 +12,78 @@ import { judgeIdentityKit } from "./identity-checks.js";
 const tokens = { ink: "#000000", onInverse: "#ffffff", surfaceBase: "#ffffff", surfaceInverse: "#000000", accent: "#000000", onAccent: "#ffffff", fontFamily: "sans-serif" };
 const svg = (body: string) => `<svg viewBox="0 0 100 100">${body}</svg>`;
 const box = (body: string) => measureMarkGeometry(svg(body)).glyphBox;
+describe("round-two review regressions", () => {
+  it.each(['systemlanguage="zz"', 'requiredextensions="urn:unsupported"', 'xmlns="http://www.w3.org/1999/xhtml"', 'xml:base="https://example.invalid/"', 'unknown="1"', 'tRansform="translate(40 40)"', 'sTyle="fill:none"', 'marker-mid="url(#host)"',
+    `fill="rgb(0${' '.repeat(4096)}0 0)"`,
+    `stroke-width="${' '.repeat(4096)}1"`,
+  ])("refuses unsupported attribute %s at every level", attribute => {
+    const shape = '<rect x="30" y="30" width="40" height="40"/>';
+    for (const input of [svg(shape.replace('/>', ` ${attribute}/>`)), svg(`<g ${attribute}>${shape}</g>`), svg(shape).replace('<svg ', `<svg ${attribute} `)]) {
+      for (const evaluate of [measureMarkGeometry, checkMarkConformance, (glyphSvg: string) => normalizeMark({ glyphSvg, tokens })])
+        expect(() => evaluate(input)).toThrow(MarkGeometryError);
+    }
+  });
+  it.each(['<circle cx="50" cy="50" r="30" stroke="#c00" stroke-width="6"/>', '<rect x="20" y="20" width="30" height="60" fill="#c00"/><rect x="50" y="20" width="30" height="60" fill="#00c"/>', '<circle id="glyph" cx="50" cy="50" r="30"/>', '<g data-x="metadata"><circle cx="50" cy="50" r="30"/></g>'])("knocks out every accepted glyph paint: %s", body => {
+    const direction = adoptSuppliedMark({ brand: { name: 'Example' }, suppliedSvg: svg(body), tokens, normalize: true });
+    for (const role of ['mono', 'light', 'dark', 'favicon'] as const) {
+      const document = new DOMParser().parseFromString(direction.variants[role], 'image/svg+xml');
+      const layers = document.querySelectorAll('svg > g[mask]');
+      expect(layers).toHaveLength(2);
+      const hole = document.querySelector('mask');
+      expect(hole?.querySelectorAll('g circle, g rect').length).toBeGreaterThan(0);
+      for (const shape of hole!.querySelectorAll('g circle, g rect')) {
+        expect(shape.getAttribute('fill')).toBe('#000');
+        if (shape.getAttribute('stroke') !== 'none') expect(shape.getAttribute('stroke')).toBe('#000');
+      }
+      for (const shape of layers[1]!.querySelectorAll('circle, rect')) {
+        const paint = role === 'dark' ? tokens.onInverse : role === 'light' ? tokens.ink : 'currentColor';
+        expect(shape.getAttribute('fill')).toBe(paint);
+        if (shape.getAttribute('stroke') !== 'none') expect(shape.getAttribute('stroke')).toBe(paint);
+      }
+    }
+    const checks = judgeIdentityKit(direction, tokens).checks;
+    expect(checks['single-colour-legibility'].verdict).toBe('satisfied');
+    expect(checks['mark-conformance']?.verdict).toBe('satisfied');
+  });
+  it("refuses normalization beyond knockout limits instead of flattening", () => {
+    const suppliedSvg = svg('<g>'.repeat(34) + '<rect width="10" height="10"/>' + '</g>'.repeat(34));
+    expect(() => adoptSuppliedMark({ brand: { name: 'Example' }, suppliedSvg, tokens, normalize: true })).toThrow(MarkGeometryError);
+  });
+  it.each(['transparent', '#0000', '#00000000', 'rgba(0,0,0,0)', 'rgb(0 0 0 / -1)'])("refuses knockout promotion of invisible %s", paint => {
+    for (const property of ['fill', 'stroke']) {
+      const suppliedSvg = svg(`<rect x="-500" width="100" height="100" ${property}="${paint}"${property === 'stroke' ? ' fill="none"' : ''}/><circle cx="50" cy="50" r="30"/>`);
+      expect(() => normalizeMark({ glyphSvg: suppliedSvg, tokens })).not.toThrow();
+      expect(() => adoptSuppliedMark({ brand: { name: 'Example' }, suppliedSvg, tokens, normalize: true })).toThrow(MarkGeometryError);
+    }
+  });
+  it("bounds token fallback paint literals", () => {
+    expect(() => normalizeMark({ glyphSvg: svg('<rect width="10" height="10"/>'), tokens: { ...tokens, onAccent: ' '.repeat(4096) + '#ffffff' } })).toThrow(MarkGeometryError);
+  });
+  it("bounds metadata inheritance on the default judge path", () => {
+    const directory = mkdtempSync(join(tmpdir(), 'mark-inheritance-'));
+    try {
+      const filename = join(directory, 'probe.cjs'), entry = resolve(process.cwd(), 'src/tokens');
+      const esbuild = createRequire(resolve(process.cwd(), 'package.json')).resolve('esbuild');
+      const source = `export { judgeIdentityKit } from ${JSON.stringify(join(entry, 'identity-checks.ts'))}; export { adoptSuppliedMark } from ${JSON.stringify(join(entry, 'identity-kit.ts'))};`;
+      writeFileSync(filename, `
+const { buildSync } = require(${JSON.stringify(esbuild)}), fs = require('node:fs');
+const bundle = ${JSON.stringify(join(directory, 'bundle.cjs'))};
+fs.writeFileSync(bundle, buildSync({ stdin: { contents: ${JSON.stringify(source)}, resolveDir: ${JSON.stringify(entry)} }, bundle: true, write: false, platform: 'node', format: 'cjs' }).outputFiles[0].text);
+const n = require(bundle), tokens = ${JSON.stringify(tokens)};
+for (const shape of ['<rect width="1" height="1"/>', '<g/>']) {
+  const attrs = Array.from({ length: 12000 }, (_, i) => ' data-a' + i + '="x"').join('');
+  const suppliedSvg = '<svg viewBox="0 0 100 100"' + attrs + '>' + shape.repeat(12000) + '<rect x="30" y="30" width="40" height="40"/></svg>';
+  const direction = n.adoptSuppliedMark({ brand: { name: 'Example' }, suppliedSvg, tokens });
+  console.log(n.judgeIdentityKit(direction, tokens).checks['mark-conformance'].verdict);
+}
+`);
+      const result = spawnSync(process.execPath, ['--max-old-space-size=96', filename], { encoding: 'utf8' });
+      expect(result.error).toBeUndefined();
+      expect({ status: result.status, signal: result.signal }).toEqual({ status: 0, signal: null });
+      expect(result.stdout.trim().split('\n')).toEqual(['violated', 'violated']);
+    } finally { rmSync(directory, { recursive: true, force: true }); }
+  });
+});
 describe("round-one review regressions", () => {
   it.each(['x/onclick="alert(1)"', 'TRANSFORM="translate(90)"', 'STYLE="fill:url(https://example.invalid/x)"', 'OPACITY="0"', 'MASK="url(#x)"', 'FILL="none"', 'STROKE="#000"', 'STROKE-WIDTH="99"', 'transform-origin="50 50"', 'marker-start="url(#x)"', 'marker-end="url(#x)"'])("refuses unmeasured attribute %s by name", attribute => {
     const input = svg(`<rect x="30" y="30" width="40" height="40" ${attribute}/>`);
