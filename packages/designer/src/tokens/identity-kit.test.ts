@@ -935,3 +935,52 @@ describe("supplied mark normalization opt-in", () => {
     expect(createHash("sha256").update(JSON.stringify(variants)).digest("hex")).toBe("afe0d1539ebe0d74789514b6075ec0528e3183f8e0d28b4b350df206e16e4521");
   });
 });
+
+
+describe("post1070 normalized variant metadata", () => {
+  const roles = ["mono", "light", "dark", "favicon"] as const;
+  const parse = (svg: string): Document => new DOMParser().parseFromString(svg, "image/svg+xml");
+  const adopt = (attributes: string, shapeAttributes = "") => adoptSuppliedMark({
+    brand: { name: "Example" }, tokens: TOKENS, normalize: true,
+    suppliedSvg: `<svg viewBox="0 0 100 100" ${attributes}><rect width="40" height="40" ${shapeAttributes}/></svg>`,
+  });
+
+  it.each(roles)("preserves the root accessible name in %s", role => {
+    const document = parse(adopt('role="img" aria-label="Example mark"', 'id="glyph" role="presentation" aria-label="Inner glyph" data-note="metadata"').variants[role]);
+    expect(document.querySelector("parsererror")).toBeNull();
+    expect(document.documentElement.getAttribute("role")).toBe("img");
+    expect(document.documentElement.getAttribute("aria-label")).toBe("Example mark");
+    expect(document.querySelectorAll("[id=glyph], [aria-label='Inner glyph'], [data-note]")).toHaveLength(0);
+    expect(document.querySelectorAll("mask")).toHaveLength(2);
+  });
+
+  it.each(roles)("does not strip across an attribute value in %s", role => {
+    const adopted = adopt('', 'font-family="a id=" transform="translate(30 0)"');
+    const source = parse(adopted.variants.mark).querySelector('rect[font-family]')!;
+    const document = parse(adopted.variants[role]);
+    expect(document.querySelector("parsererror")).toBeNull();
+    const shapes = document.querySelectorAll('rect[font-family]');
+    expect(shapes.length).toBeGreaterThan(0);
+    for (const shape of shapes) {
+      expect(shape.getAttribute("font-family")).toBe(source.getAttribute("font-family"));
+      expect(shape.getAttribute("transform")).toBe(source.getAttribute("transform"));
+      expect(shape.getAttribute("transform")).toBe("translate(30 0)");
+    }
+  });
+
+  it.each([
+    ['&quot; onload=&quot;alert(1)', '" onload="alert(1)'],
+    ['&lt;glyph&gt;', '<glyph>'],
+    ['A &amp; B &amp;quot;', 'A & B &quot;'],
+  ])("round-trips escaped root labels %s without breakout", (encoded, decoded) => {
+    const adopted = adopt(`role="img" aria-label="${encoded}"`, `id="${encoded}"`);
+    for (const role of roles) {
+      const document = parse(adopted.variants[role]);
+      expect(document.querySelector("parsererror")).toBeNull();
+      expect(document.querySelector("[onload]")).toBeNull();
+      expect(document.documentElement.getAttribute("role")).toBe("img");
+      expect(document.documentElement.getAttribute("aria-label")).toBe(decoded);
+      expect(document.querySelectorAll("mask")).toHaveLength(2);
+    }
+  });
+});

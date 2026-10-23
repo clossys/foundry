@@ -569,7 +569,9 @@ interface FlatTag {
  * not accepted, so the recogniser rejects the whole document instead of
  * re-emitting it. Returns `null` on anything else, on a duplicate
  * attribute name, and on more than {@link FLAT_MAX_ATTRIBUTES_PER_TAG}
- * attributes.
+ * attributes. The private normalized path alone decodes canonical escaped
+ * root labels and discards descendant metadata by parsed attribute name;
+ * the root allow-list still validates every retained root attribute.
  *
  * A single left-to-right pass with no backtracking: every character is
  * looked at a bounded number of times, so the cost is linear in the length
@@ -577,7 +579,7 @@ interface FlatTag {
  * {@link FLAT_MAX_ATTRIBUTES_PER_TAG} attributes). Duplicates are found with
  * a `Set`, not by comparing every pair.
  */
-function scanFlatTag(text: string, at: number): FlatTag | null {
+function scanFlatTag(text: string, at: number, metadata?: "root" | "descendants"): FlatTag | null {
   if (text.charCodeAt(at) !== CHAR_LT) return null;
   let i = at + 1;
   while (i < text.length && isLowerLetter(text.charCodeAt(i))) i++;
@@ -591,10 +593,11 @@ function scanFlatTag(text: string, at: number): FlatTag | null {
     if (code === CHAR_GT) return { name, attrs, selfClosing: false, end: afterSpace + 1 };
     if (code === CHAR_SLASH) return text.charCodeAt(afterSpace + 1) === CHAR_GT ? { name, attrs, selfClosing: true, end: afterSpace + 2 } : null;
     if (afterSpace === i || !isAsciiLetter(code)) return null; // an attribute needs leading whitespace and a letter to start its name
-    if (attrs.length === FLAT_MAX_ATTRIBUTES_PER_TAG) return null;
     let nameEnd = afterSpace + 1;
     while (nameEnd < text.length && isFlatNameChar(text.charCodeAt(nameEnd))) nameEnd++;
     const attrName = text.slice(afterSpace, nameEnd);
+    const omitted = metadata === "descendants" && (attrName === "id" || attrName === "role" || attrName.startsWith("aria-") || (attrName.startsWith("data-") && attrName !== "data-clear-space"));
+    if (!omitted && attrs.length === FLAT_MAX_ATTRIBUTES_PER_TAG) return null;
     if (seen.has(attrName)) return null;
     seen.add(attrName);
     const eq = skipFlatSpace(text, nameEnd);
@@ -602,15 +605,31 @@ function scanFlatTag(text: string, at: number): FlatTag | null {
     const quoteAt = skipFlatSpace(text, eq + 1);
     const quote = text.charCodeAt(quoteAt);
     if (quote !== CHAR_DQUOTE && quote !== CHAR_SQUOTE) return null;
+    // Only normalized metadata may contain the normalizer's escaped text.
+    // Descendant metadata is omitted by its parsed name, never by a text-wide strip.
+    const encodedMetadata = omitted || (metadata === "root" && attrName === "aria-label");
     let valueEnd = quoteAt + 1;
     for (;;) {
       if (valueEnd >= text.length) return null;
       const c = text.charCodeAt(valueEnd);
       if (c === quote) break;
-      if (c === CHAR_DQUOTE || c === CHAR_SQUOTE || c === CHAR_LT || c === CHAR_GT || c === CHAR_AMP) return null;
+      if (c === CHAR_LT || (!encodedMetadata && (c === CHAR_DQUOTE || c === CHAR_SQUOTE || c === CHAR_GT || c === CHAR_AMP))) return null;
       valueEnd++;
     }
-    attrs.push([attrName, text.slice(quoteAt + 1, valueEnd)]);
+    let value = text.slice(quoteAt + 1, valueEnd);
+    if (encodedMetadata) {
+      let valid = true;
+      // Decode exactly once, only the three entities emitted by normalizeMark.
+      value = value.replace(/&amp;|&quot;|&lt;|&/g, entity => {
+        if (entity === "&amp;") return "&";
+        if (entity === "&quot;") return '"';
+        if (entity === "&lt;") return "<";
+        valid = false;
+        return entity;
+      });
+      if (!valid) return null;
+    }
+    if (!omitted) attrs.push([attrName, value]);
     i = valueEnd + 1;
   }
 }
@@ -669,9 +688,9 @@ function flatShapeTone(tag: string, attrs: FlatAttrs): string | null {
  */
 function recogniseFlatTwoTone(svg: string, normalized: boolean): { root: string; box: NonNullable<ReturnType<typeof parseViewBoxBox>>; nodes: FlatNode[]; toneA: string } | null {
   // Input from normalizeMark has one generated plate followed by validated glyph paint.
-  // Metadata is inert and omitted from duplicated layers; it does not define paint tones.
-  const text = normalized ? svg.trim().replace(/\s(?:id|role|aria-[a-z0-9_.-]+|data-(?!clear-space=)[a-z0-9_.-]+)="[^"]*"/g, '') : svg.trim();
-  const rootTag = scanFlatTag(text, 0);
+  // Only descendant metadata is omitted from duplicated layers; keep root accessibility.
+  const text = svg.trim();
+  const rootTag = scanFlatTag(text, 0, normalized ? "root" : undefined);
   if (rootTag === null || rootTag.name !== "svg" || rootTag.selfClosing) return null;
   // Re-emit the root from constant names and escaped values; never slice it out of the input.
   const rootAttrs: FlatAttrs = [];
@@ -703,7 +722,7 @@ function recogniseFlatTwoTone(svg: string, normalized: boolean): { root: string;
       at = groupEnd;
       continue;
     }
-    const tag = scanFlatTag(text, at);
+    const tag = scanFlatTag(text, at, normalized ? "descendants" : undefined);
     if (tag === null) return null;
     at = tag.end;
     elements++;
