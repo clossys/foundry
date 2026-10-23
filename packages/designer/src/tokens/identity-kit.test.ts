@@ -994,7 +994,7 @@ describe("post1075 normalized metadata compatibility", () => {
     suppliedSvg: `<svg viewBox="0 0 100 100" ${attributes}>${body}</svg>`,
   });
 
-  it.each(['data-a.b="metadata"', 'aria-x.y="metadata"'])("removes dotted descendant metadata %s without refusing adoption", attribute => {
+  it.each(['data-a.b="metadata"', 'aria-x.y="metadata"', 'data-.="metadata"', 'data-a.="metadata"', 'data-a..b="metadata"', 'aria-.="metadata"'])("removes dotted descendant metadata %s without refusing adoption", attribute => {
     const adopted = adopt('', `<g ${attribute}><rect width="40" height="40" ${attribute}/></g>`);
     for (const role of roles) {
       const document = parse(adopted.variants[role]);
@@ -1009,6 +1009,8 @@ describe("post1075 normalized metadata compatibility", () => {
 
   it.each([
     ['img&amp;x', 'img&x'],
+    ['img&amp;amp;amp;x', 'img&amp;amp;x'],
+    ['img&amp;lt;x', 'img&lt;x'],
     ['img&quot; onload=&quot;alert(1)', 'img" onload="alert(1)'],
     ["img'", "img'"],
     ['img&gt;x', 'img>x'],
