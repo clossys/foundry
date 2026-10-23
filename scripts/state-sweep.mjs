@@ -36,6 +36,27 @@ export function buildReport({ url, observations, skippedReason }) {
     ...(skippedReason ? { reason: skippedReason } : {}) };
 }
 
+/**
+ * True only when the target's own host is a loopback address: `localhost`,
+ * 127.0.0.0/8 or `[::1]` (the URL parser has already normalized shorthand
+ * IPv4 forms such as `127.1`).
+ *
+ * Documented limit: this checks the initial target's hostname only. It does
+ * not contain where the page goes next: a loopback page can still redirect,
+ * navigate, or load subresources from a remote origin, and nothing here
+ * blocks or re-checks those requests.
+ */
+export function isLoopbackTarget(url) {
+  const { hostname } = new URL(url);
+  return hostname === "localhost" || hostname === "[::1]" || /^127(?:\.(?:25[0-5]|2[0-4]\d|1?\d?\d)){3}$/.test(hostname);
+}
+
+/** Chromium's own sandbox stays on for any non-loopback target; it is disabled only for a local fixture or dev server. */
+export function browserLaunchArgs(url, profile) {
+  return ["--headless=new", ...(isLoopbackTarget(url) ? ["--no-sandbox"] : []), "--disable-dev-shm-usage",
+    "--remote-debugging-port=0", `--user-data-dir=${profile}`, "about:blank"];
+}
+
 function chromePath() {
   // Only the explicit browser selector is read; no ambient credentials or caches.
   return [process.env.CHROME_PATH, "/usr/bin/chromium", "/usr/bin/chromium-browser", "/usr/bin/google-chrome",
@@ -76,7 +97,7 @@ async function sweep(browser, options) {
   let child;
   let cdp;
   try {
-    child = spawn(browser, ["--headless=new", "--no-sandbox", "--disable-dev-shm-usage", "--remote-debugging-port=0", `--user-data-dir=${profile}`, "about:blank"], { stdio: ["ignore", "ignore", "pipe"] });
+    child = spawn(browser, browserLaunchArgs(options.url, profile), { stdio: ["ignore", "ignore", "pipe"] });
     const endpoint = await new Promise((resolve, reject) => {
       let output = "";
       const tail = () => output.trim().split("\n").slice(-5).join(" | ").slice(0, 600);
