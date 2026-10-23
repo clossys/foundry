@@ -274,6 +274,15 @@ describe("token catalog coverage", () => {
     for (const entry of TOKEN_ENTRIES) expect(entry.lifecycle === "parked", entry.id).toBe(entry.tier === "parked");
   });
 
+  it("keeps each stacking-order leaf's literal reference equal to its canonical token value", () => {
+    // Leaves not yet declared in TOKENS (proposed layers) have no canonical value to match.
+    const layers = TOKEN_ENTRIES.filter((entry) => entry.l2 === "z" && entry.id in TOKENS);
+    expect(layers.map((entry) => entry.id)).toContain("--ui-z-skip-link");
+    for (const entry of layers) {
+      expect("literal" in entry.reference && entry.reference.literal, entry.id).toBe(TOKENS[entry.id]?.value);
+    }
+  });
+
   it("puts only Tailwind namespace keys in the theme", () => {
     for (const entry of TOKEN_ENTRIES) expect(entry.inTheme, entry.id).toBe(!entry.id.startsWith("--ui-"));
   });

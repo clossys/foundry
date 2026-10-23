@@ -1598,7 +1598,7 @@ export const TOKEN_ENTRIES: readonly TokenEntry[] = [
   {
     id: "--ui-z-skip-link", label: "Z skip link",
     l1: "depth", l2: "z", tier: "fixed-standard", lever: false, inTheme: false, lifecycle: "draft", ownerReview: "not-yet-reviewed",
-    modes: "invariant", reference: { literal: "90" },
+    modes: "invariant", reference: { literal: "100" },
     utilities: [],
     pairs: [],
     sourceRows: [], previousIds: [],
