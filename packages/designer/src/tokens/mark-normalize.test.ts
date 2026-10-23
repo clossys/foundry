@@ -771,3 +771,73 @@ it.each([
     expect(checkMarkConformance(normalized)).toEqual([]);
   }
 });
+const splitSiblingMarks = {
+  rect: control.replace('<rect x="18" y="18" width="64" height="64"/>', '<rect x="18" y="18" width="32" height="64"/><rect x="50" y="18" width="32" height="64"/>'),
+  path: control.replace('<rect x="18" y="18" width="64" height="64"/>', '<path d="M18 18H50V82H18Z"/><path d="M50 18H82V82H50Z"/>'),
+  plate: control,
+};
+it.each([9, 10, 13, 32].flatMap(code => Object.entries(splitSiblingMarks).map(([kind, input]) => [kind, code, input] as const)))("refuses XML whitespace after the %s self-closing slash U+%s", (kind, code, input) => {
+  const separator = kind === 'rect' ? '/><rect x="50"' : kind === 'path' ? '/><path' : '/><rect x="18"';
+  const malformed = input.replace(separator, separator.replace('/>', `/${String.fromCodePoint(code)}>`));
+  expect(malformed).not.toBe(input);
+  for (const evaluate of [measureMarkGeometry, checkMarkConformance, (glyphSvg: string) => normalizeMark({ glyphSvg, tokens })])
+    expect.soft(() => evaluate(malformed)).toThrow(MarkGeometryError);
+});
+it.each([9, 10, 13, 32])("accepts XML whitespace before a slash and around opening/closing tag boundaries U+%s", code => {
+  const char = String.fromCodePoint(code);
+  const opening = control.replace('<rect x="18" y="18" width="64" height="64"/>', `<rect x="18" y="18" width="64" height="64"${char}></rect${char}>`);
+  for (const input of [...Object.values(splitSiblingMarks), opening].map(mark => mark.replaceAll('/>', `${char}/>`).replace('</svg>', `</svg${char}>`))) {
+    expect(measureMarkGeometry(input).glyphBox).toEqual({ x: .18, y: .18, width: .64, height: .64 });
+    expect(checkMarkConformance(input)).toEqual([]);
+    expect(checkMarkConformance(normalizeMark({ glyphSvg: input, tokens }))).toEqual([]);
+  }
+});
+it.each([11, 12, 160, 5760, 8192, 8193, 8194, 8195, 8196, 8197, 8198, 8199, 8200, 8201, 8202, 8232, 8233, 8239, 8287, 12288, 65279].flatMap(code => [
+  ['before equals', control.replace('x="18"', `x ${String.fromCodePoint(code)}="18"`)],
+  ['closing suffix', control.replace('</svg>', `</svg ${String.fromCodePoint(code)}>`)],
+].map(([position, input]) => [position, code, input] as const)))("refuses space then foreign separator at %s U+%s", (_position, _code, input) => {
+  for (const evaluate of [measureMarkGeometry, checkMarkConformance, (glyphSvg: string) => normalizeMark({ glyphSvg, tokens })])
+    expect.soft(() => evaluate(input!)).toThrow(MarkGeometryError);
+});
+it("trims 200 KB XML whitespace runs within a bounded parser time", () => {
+  const directory = mkdtempSync(join(tmpdir(), "mark-linear-trim-"));
+  try {
+    const run = ' '.repeat(200_000);
+    const inputs = [
+      ['tag_inner', control.replace('<rect x=', `<rect ${run}x=`), false],
+      ['numeric', control.replace('x="18"', `x="${run}18"`), false],
+      ['tf_lead_bad', control.replace('x="18"', `transform="${run}!" x="18"`), true],
+      ['tag_end', control.replace('height="64"/>', `height="64"${run}!/>`), true],
+      ['closing', control.replace('</svg>', `</svg ${run}!>`), true],
+    ];
+    const filename = join(directory, "normalizer.cjs"), bundle = join(directory, "bundle.cjs");
+    const entry = resolve(process.cwd(), "src/tokens/mark-normalize.ts");
+    const esbuild = createRequire(resolve(process.cwd(), "package.json")).resolve("esbuild");
+    writeFileSync(filename, `
+const { buildSync } = require(${JSON.stringify(esbuild)});
+require('node:fs').writeFileSync(${JSON.stringify(bundle)}, buildSync({ entryPoints: [${JSON.stringify(entry)}], bundle: true, write: false, platform: 'node', format: 'cjs' }).outputFiles[0].text);
+const normalizer = require(${JSON.stringify(bundle)}), inputs = ${JSON.stringify(inputs)};
+normalizer.measureMarkGeometry(${JSON.stringify(control)});
+process.stdout.write('ready\\n');
+const timings = {};
+for (const [position, input, refusal] of inputs) {
+  const start = performance.now();
+  try {
+    normalizer.measureMarkGeometry(input);
+    if (refusal) throw new Error('Expected typed refusal at ' + position);
+  } catch (error) {
+    if (!refusal || !(error instanceof normalizer.MarkGeometryError)) throw error;
+  }
+  timings[position] = performance.now() - start;
+}
+process.stdout.write(JSON.stringify(timings));
+`);
+    const result = spawnSync(process.execPath, [filename], { encoding: "utf8", timeout: 2_000 });
+    expect(result.stdout).toContain("ready\n");
+    expect(result.error).toBeUndefined();
+    expect(result.status).toBe(0);
+    const timings = JSON.parse(result.stdout.split("\n")[1]!) as Record<string, number>;
+    expect(Object.keys(timings)).toEqual(['tag_inner', 'numeric', 'tf_lead_bad', 'tag_end', 'closing']);
+    expect(Object.values(timings).reduce((sum, elapsed) => sum + elapsed, 0)).toBeLessThan(500);
+  } finally { rmSync(directory, { recursive: true, force: true }); }
+});

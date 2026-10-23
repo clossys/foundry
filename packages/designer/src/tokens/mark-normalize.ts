@@ -97,8 +97,14 @@ function reserveWork(budget: GeometryBudget, count: number): void {
   if (budget.work > 2000000) fail('paint work complexity');
 }
 const svgSpace = String.raw`\x09\x0a\x0d\x20`;
-const svgTrim = new RegExp(`^[${svgSpace}]+|[${svgSpace}]+$`, 'g');
-const svgTrimEnd = new RegExp(`[${svgSpace}]+$`);
+const isSvgSpace = (code: number): boolean => code === 9 || code === 10 || code === 13 || code === 32;
+function trimSvg(value: string, endOnly = false): string {
+  let start = 0, end = value.length;
+  if (!endOnly)
+    while (start < end && isSvgSpace(value.charCodeAt(start))) start++;
+  while (end > start && isSvgSpace(value.charCodeAt(end - 1))) end--;
+  return value.slice(start, end);
+}
 const svgSeparators = new RegExp(`[${svgSpace},]`, 'g');
 const svgTagName = new RegExp(`^/?([a-zA-Z][^${svgSpace}/>]*)`);
 const svgAttribute = new RegExp(`[${svgSpace}]+([^${svgSpace}=]+)[${svgSpace}]*=[${svgSpace}]*(?:"([^"]*)"|'([^']*)')`, 'y');
@@ -139,7 +145,7 @@ function number(attrs: Attrs, key: string, fallback = 0): number {
 function transform(value = ""): Matrix {
   let result = identity, consumed = 0;
   for (const match of value.matchAll(svgTransform)) {
-    if (value.slice(consumed, match.index).replace(svgTrim, '').replace(/,/g, ""))
+    if (trimSvg(value.slice(consumed, match.index)).replace(/,/g, ""))
       fail("transform");
     const name = match[1]!, v = numbers(match[2]!);
     let next: Matrix;
@@ -156,7 +162,7 @@ function transform(value = ""): Matrix {
     result = product(result, next);
     consumed = match.index! + match[0].length;
   }
-  if (value.slice(consumed).replace(svgTrim, ''))
+  if (trimSvg(value.slice(consumed)))
     fail("transform");
   return result;
 }
@@ -168,7 +174,7 @@ function parse(svg: string, lockupText = false): Node {
     const start = svg.indexOf('<', end);
     if (start < 0)
       break;
-    if (svg.slice(end, start).replace(svgTrim, '') && !(lockupText && stack[stack.length - 1]?.name === "text"))
+    if (trimSvg(svg.slice(end, start)) && !(lockupText && stack[stack.length - 1]?.name === "text"))
       fail("XML content");
     if (svg.startsWith('<!--', start)) {
       const close = svg.indexOf('-->', start + 4);
@@ -195,14 +201,14 @@ function parse(svg: string, lockupText = false): Node {
     if (cursor === svg.length)
       fail("XML tag");
     end = cursor + 1;
-    const tag = svg.slice(start + 1, cursor).replace(svgTrimEnd, ''), closing = tag.startsWith('/');
+    const tag = svg.slice(start + 1, cursor), closing = tag.startsWith('/');
     const nameMatch = svgTagName.exec(tag);
     if (!nameMatch)
       fail("XML tag");
     const name = nameMatch![1]!;
     if (closing) {
       const node = stack.pop();
-      if (!node || node.name !== name || tag.slice(name.length + 1).replace(svgTrim, ''))
+      if (!node || node.name !== name || trimSvg(tag.slice(name.length + 1)))
         fail("XML nesting");
       node!.end = end;
       continue;
@@ -210,7 +216,7 @@ function parse(svg: string, lockupText = false): Node {
     if (!["svg", "g", "rect", "circle", "ellipse", "polygon", "path"].includes(name) && !(lockupText && name === "text"))
       fail(name);
     const attrs: Attrs = {};
-    const selfClosing = tag.endsWith('/'), content = (selfClosing ? tag.slice(0, -1) : tag).replace(svgTrimEnd, '');
+    const selfClosing = tag.endsWith('/'), content = trimSvg(selfClosing ? tag.slice(0, -1) : tag, true);
     const attribute = svgAttribute;
     let position = name.length;
     while (position < content.length) {
@@ -236,7 +242,7 @@ function parse(svg: string, lockupText = false): Node {
       stack.push(node);
     }
   }
-  if (stack.length || svg.slice(end).replace(svgTrim, '') || roots.length !== 1 || roots[0]!.name !== "svg")
+  if (stack.length || trimSvg(svg.slice(end)) || roots.length !== 1 || roots[0]!.name !== "svg")
     fail("svg document");
   return roots[0]!;
 }
