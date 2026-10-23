@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
+import tokenPlacement from "../catalog/ia/tokens.json" with { type: "json" };
+import retired from "../catalog/retired.json" with { type: "json" };
 import tokenSlots from "../catalog/slots/tokens.json" with { type: "json" };
 import { TOKENS } from "../tokens/tokens.js";
 import { isValidId } from "./ids.js";
-import type { Slot } from "./types.js";
+import type { Placement, PlacementNode, Slot } from "./types.js";
 
 const slots = tokenSlots as unknown as readonly Slot[];
 const tokens = Object.values(TOKENS);
@@ -26,43 +28,41 @@ function bindingFindings(input: readonly Slot[], properties: readonly string[]):
   return findings.sort(compare);
 }
 const counts: Record<string, number> = {
-  "tokens.scale.color.ramp": 11, "tokens.scale.color.alpha": 0, "tokens.scale.color.fixed": 17,
-  "tokens.scale.type.family": 3, "tokens.scale.type.size": 0, "tokens.scale.type.leading": 2, "tokens.scale.type.weight": 0, "tokens.scale.type.tracking": 4,
-  "tokens.scale.space.step": 10, "tokens.scale.space.container": 14, "tokens.scale.space.breakpoint": 6,
-  "tokens.scale.shape.radius": 4, "tokens.scale.shape.border-width": 4, "tokens.scale.shape.ring-width": 2, "tokens.scale.shape.aspect": 0,
-  "tokens.scale.depth.shadow": 0, "tokens.scale.depth.blur": 2, "tokens.scale.depth.layer-order": 11,
-  "tokens.scale.motion.duration": 8, "tokens.scale.motion.easing": 4, "tokens.scale.motion.spring": 0, "tokens.scale.motion.delay": 3,
-  "tokens.role.color.surface": 12, "tokens.role.color.text": 8, "tokens.role.color.border": 8, "tokens.role.color.action": 10, "tokens.role.color.status": 12, "tokens.role.color.focus": 4, "tokens.role.color.scrim": 1,
-  "tokens.role.type.display": 7, "tokens.role.type.heading": 4, "tokens.role.type.body": 4, "tokens.role.type.label": 0, "tokens.role.type.code": 1, "tokens.role.type.caption": 1,
-  "tokens.role.depth.elevation": 4, "tokens.role.space.rhythm": 0, "tokens.role.space.section": 0, "tokens.role.space.gutter": 1,
-  "tokens.role.shape.control": 1, "tokens.role.shape.surface": 3, "tokens.role.shape.media": 6,
-  "tokens.role.motion.transition": 4, "tokens.role.interaction.state": 4, "tokens.role.interaction.control-size": 11, "tokens.role.interaction.density": 5, "tokens.role.interaction.touch-target": 1,
+  "tokens.accent-color": 5, "tokens.behavior-timing": 6, "tokens.blur": 2, "tokens.body-size": 4, "tokens.border-color": 5, "tokens.border-width": 3,
+  "tokens.brandmark-size": 6, "tokens.breakpoint": 6, "tokens.caption-size": 1, "tokens.categorical-color": 8, "tokens.chart-color": 4, "tokens.code-size": 1,
+  "tokens.color-ramp": 11, "tokens.content-size": 10, "tokens.control-color": 5, "tokens.control-radius": 1, "tokens.control-size": 8, "tokens.density": 5,
+  "tokens.display-face": 4, "tokens.display-size": 3, "tokens.diverging-color": 3, "tokens.duration": 5, "tokens.easing": 4, "tokens.elevation": 4,
+  "tokens.focus-color": 2, "tokens.focus-outline": 2, "tokens.focus-shadow": 2, "tokens.font-size": 0, "tokens.font-weight": 0, "tokens.gutter": 1,
+  "tokens.heading-size": 4, "tokens.icon-size": 3, "tokens.icon-stroke": 1, "tokens.letter-spacing": 4, "tokens.line-height": 2, "tokens.radius": 4,
+  "tokens.region-width": 4, "tokens.scrim-color": 1, "tokens.sequential-color": 7, "tokens.shadow": 0, "tokens.shift-distance": 1, "tokens.spacing": 10,
+  "tokens.state-opacity": 4, "tokens.status-color": 12, "tokens.surface-color": 11, "tokens.surface-radius": 3, "tokens.text-color": 7, "tokens.touch-target": 1,
+  "tokens.transition-duration": 1, "tokens.transition-easing": 2, "tokens.typeface": 3, "tokens.z-index": 11,
 };
-const fixtureSlot = (id: string, emit: Record<string, `--${string}`>): Slot => ({ id, layer: "tokens", status: "draft", requires: [], contract: { kind: "token", $type: "number", members: { mode: "closed", names: Object.keys(emit) }, modes: ["light"], emit } });
+const fixtureSlot = (id: string, emit: Record<string, `--${string}`>): Slot => ({ id, layer: "tokens", status: "draft", requires: [], contract: { kind: "token", tier: "scale", $type: "number", members: { mode: "closed", names: Object.keys(emit) }, modes: ["light"], emit } });
 
 describe("catalog token bindings", () => {
   it("binds the shipped token corpus without defects", () => expect(bindingFindings(slots, tokens.map(token => token.property))).toEqual([]));
   it("reports both owners of duplicate bindings in id order", () => {
-    expect(bindingFindings([fixtureSlot("tokens.scale.type.weight", { a: "--x" }), fixtureSlot("tokens.scale.color.alpha", { a: "--x" })], ["--x"])).toEqual(["binding: --x is bound to tokens.scale.color.alpha.a and tokens.scale.type.weight.a"]);
+    expect(bindingFindings([fixtureSlot("tokens.shadow", { a: "--x" }), fixtureSlot("tokens.font-weight", { a: "--x" })], ["--x"])).toEqual(["binding: --x is bound to tokens.font-weight.a and tokens.shadow.a"]);
   });
   it("reports an unshipped emit property", () => {
-    expect(bindingFindings([fixtureSlot("tokens.scale.color.alpha", { a: "--x" }), fixtureSlot("tokens.scale.type.weight", {})], [])).toEqual(["binding: --x is not a shipped token"]);
+    expect(bindingFindings([fixtureSlot("tokens.font-weight", { a: "--x" }), fixtureSlot("tokens.shadow", {})], [])).toEqual(["binding: --x is not a shipped token"]);
   });
   it("reports a shipped property without a binding", () => {
-    expect(bindingFindings([fixtureSlot("tokens.scale.color.alpha", {}), fixtureSlot("tokens.scale.type.weight", {})], ["--x"])).toEqual(["binding: shipped token --x is not bound"]);
+    expect(bindingFindings([fixtureSlot("tokens.font-weight", {}), fixtureSlot("tokens.shadow", {})], ["--x"])).toEqual(["binding: shipped token --x is not bound"]);
   });
-  it("pins 47 slots and every slot's bound count", () => {
-    expect(slots).toHaveLength(47);
+  it("pins 52 slots and every slot's bound count", () => {
+    expect(slots).toHaveLength(52);
     expect(Object.fromEntries(slots.map(slot => [slot.id, Object.keys(slot.contract.emit ?? {}).length]))).toEqual(counts);
     expect(slots.map(slot => slot.id)).toEqual(Object.keys(counts).sort(compare));
   });
-  it("pins 217 bindings, 59 brandable bindings, 39 fill slots and nine dark slots", () => {
+  it("pins 217 bindings, 59 brandable bindings, 49 fill slots and thirteen dark slots", () => {
     const properties = slots.flatMap(slot => Object.values(slot.contract.emit ?? {}));
     expect(properties).toHaveLength(217);
     expect(tokens.filter(token => token.brandable && properties.includes(token.property as `--${string}`))).toHaveLength(59);
-    expect(slots.filter(slot => Object.keys(slot.contract.emit ?? {}).length > 0 || slot.id === "tokens.scale.motion.spring")).toHaveLength(39);
+    expect(slots.filter(slot => Object.keys(slot.contract.emit ?? {}).length > 0)).toHaveLength(49);
     expect(slots.filter(slot => slot.contract.modes.includes("dark")).map(slot => slot.id)).toEqual([
-      "tokens.role.color.action", "tokens.role.color.border", "tokens.role.color.focus", "tokens.role.color.scrim", "tokens.role.color.status", "tokens.role.color.surface", "tokens.role.color.text", "tokens.role.depth.elevation", "tokens.scale.color.fixed",
+      "tokens.accent-color", "tokens.border-color", "tokens.categorical-color", "tokens.chart-color", "tokens.control-color", "tokens.diverging-color", "tokens.elevation", "tokens.focus-color", "tokens.scrim-color", "tokens.sequential-color", "tokens.status-color", "tokens.surface-color", "tokens.text-color",
     ]);
   });
   it("uses valid members, closed names, modes and clause defaults", () => {
@@ -78,10 +78,31 @@ describe("catalog token bindings", () => {
         expect(isValidId("member", slot.id + "." + member)).toBe(true);
       }
       if (slot.contract.members.mode === "closed") expect(slot.contract.members.names).toEqual(entries.map(([member]) => member));
-      const colorRole = slot.id.startsWith("tokens.role.color.");
+      const colorRole = slot.contract.tier === "role" && slot.contract.$type === "color";
       expect(slot.requires).toEqual(colorRole ? ["dtcg#format", "dtcg#alias", "wcag-2.2#1.4.3"] : ["dtcg#format", "dtcg#alias"]);
       const themeDependent = entries.some(([, property]) => TOKENS[property]?.themeDependent);
       expect(slot.contract.modes).toEqual(colorRole || themeDependent ? ["light", "dark"] : ["light"]);
     }
+  });
+  it("places every slot exactly once, at most three levels deep, under its tier", () => {
+    const tree = tokenPlacement as unknown as Placement;
+    const placed: { leaf: string; depth: number; top: string }[] = [];
+    const nodeIds: string[] = [];
+    const walk = (nodes: readonly PlacementNode[], depth: number, top: string): void => {
+      for (const node of nodes) {
+        nodeIds.push(node.id);
+        const branch = depth === 1 ? node.id : top;
+        if ("leaves" in node) for (const leaf of node.leaves) placed.push({ leaf, depth: depth + 1, top: branch });
+        else walk(node.children, depth + 1, branch);
+      }
+    };
+    walk(tree.nodes, 1, "");
+    expect(tree.layer).toBe("tokens");
+    expect(placed.map(entry => entry.leaf).sort(compare)).toEqual(slots.map(slot => slot.id));
+    expect(placed.every(entry => entry.depth <= 3)).toBe(true);
+    expect(new Set(nodeIds).size).toBe(nodeIds.length);
+    const tiers = new Map(slots.map(slot => [slot.id, slot.contract.tier]));
+    for (const entry of placed) expect(entry.top).toBe(tiers.get(entry.leaf));
+    expect(retired).toEqual([]);
   });
 });

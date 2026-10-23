@@ -2,8 +2,8 @@ import type { FillDoc, FillMeta, LibraryData, Resolved, Selection, Source } from
 
 /**
  * Hand-written fixture for the consumer id `example`: one colour ramp (violet 400 and 600),
- * two role colours (action.default aliasing the ramp, surface.base as a literal with a dark value)
- * and one type family (body). Used by tests and by Studio previews. Not a real brand.
+ * two role colours (accent-color.default aliasing the ramp, surface-color.base as a literal with a dark value)
+ * and one typeface (body). Used by tests and by Studio previews. Not a real brand.
  */
 export const EXAMPLE_SOURCE: Source = { id: "example", kind: "consumer", author: "consumer", license: "UNLICENSED", extends: "foundry" };
 
@@ -23,26 +23,26 @@ const ink900 = { colorSpace: "srgb", components: [0.05098, 0.066667, 0.090196], 
 
 export const EXAMPLE_FILLS: readonly FillDoc[] = [
   {
-    $extensions: { "com.clossys.fill": meta("tokens.scale.color.ramp", BASE, "library/fills/tokens.scale.color.ramp.json") },
-    tokens: { scale: { color: { ramp: { violet: { "400": { $type: "color", $value: violet400 }, "600": { $type: "color", $value: violet600 } } } } } },
+    $extensions: { "com.clossys.fill": meta("tokens.color-ramp", BASE, "library/fills/tokens.color-ramp.json") },
+    tokens: { "color-ramp": { violet: { "400": { $type: "color", $value: violet400 }, "600": { $type: "color", $value: violet600 } } } },
   },
   {
-    $extensions: { "com.clossys.fill": meta("tokens.role.color.action", ROLE, "library/fills/tokens.role.color.action.json") },
-    tokens: { role: { color: { action: { default: {
-      $type: "color", $value: "{tokens.scale.color.ramp.violet.600}",
-      $extensions: { "com.clossys.modes": { dark: "{tokens.scale.color.ramp.violet.400}" } },
-    } } } } },
+    $extensions: { "com.clossys.fill": meta("tokens.accent-color", ROLE, "library/fills/tokens.accent-color.json") },
+    tokens: { "accent-color": { default: {
+      $type: "color", $value: "{tokens.color-ramp.violet.600}",
+      $extensions: { "com.clossys.modes": { dark: "{tokens.color-ramp.violet.400}" } },
+    } } },
   },
   {
-    $extensions: { "com.clossys.fill": meta("tokens.role.color.surface", ROLE, "library/fills/tokens.role.color.surface.json") },
-    tokens: { role: { color: { surface: { base: { $type: "color", $value: white, $extensions: { "com.clossys.modes": { dark: ink900 } } } } } } },
+    $extensions: { "com.clossys.fill": meta("tokens.surface-color", ROLE, "library/fills/tokens.surface-color.json") },
+    tokens: { "surface-color": { base: { $type: "color", $value: white, $extensions: { "com.clossys.modes": { dark: ink900 } } } } },
   },
   {
-    $extensions: { "com.clossys.fill": meta("tokens.scale.type.family", BASE, "library/fills/tokens.scale.type.family.json") },
-    tokens: { scale: { type: { family: { body: {
+    $extensions: { "com.clossys.fill": meta("tokens.typeface", BASE, "library/fills/tokens.typeface.json") },
+    tokens: { typeface: { body: {
       $type: "fontFamily", $value: ["Inter", "sans-serif"],
       $extensions: { "com.clossys.font": { kind: "fontsource", package: "example-fonts-inter", version: "5.3.0", weights: [400, 600], styles: ["normal"], license: "OFL-1.1" } },
-    } } } } },
+    } } },
   },
 ];
 
@@ -54,25 +54,25 @@ export const EXAMPLE_SELECTION: Selection = { version: 1, consumer: "example", d
 export const EXAMPLE_RESOLVED: Resolved = {
   version: 1, consumer: "example", selectionHash: "fnv1a64:03524439ea8d0b8f",
   members: {
-    "tokens.role.color.action.default": {
-      slot: "tokens.role.color.action", source: "example", fill: "example/tokens.role.color.action", via: "default", $type: "color",
+    "tokens.accent-color.default": {
+      slot: "tokens.accent-color", source: "example", fill: "example/tokens.accent-color", via: "default", $type: "color",
       value: { light: violet600, dark: violet400 }, css: { light: "#8250DF", dark: "#A371F7" },
-      alias: { light: "tokens.scale.color.ramp.violet.600", dark: "tokens.scale.color.ramp.violet.400" }, emit: "--color-accent",
+      alias: { light: "tokens.color-ramp.violet.600", dark: "tokens.color-ramp.violet.400" }, emit: "--color-accent",
     },
-    "tokens.role.color.surface.base": {
-      slot: "tokens.role.color.surface", source: "example", fill: "example/tokens.role.color.surface", via: "default", $type: "color",
-      value: { light: white, dark: ink900 }, css: { light: "#FFFFFF", dark: "#0D1117" }, alias: {}, emit: "--color-surface-base",
-    },
-    "tokens.scale.color.ramp.violet.400": {
-      slot: "tokens.scale.color.ramp", source: "example", fill: "example/tokens.scale.color.ramp", via: "default", $type: "color",
+    "tokens.color-ramp.violet.400": {
+      slot: "tokens.color-ramp", source: "example", fill: "example/tokens.color-ramp", via: "default", $type: "color",
       value: { light: violet400 }, css: { light: "#A371F7" }, alias: {},
     },
-    "tokens.scale.color.ramp.violet.600": {
-      slot: "tokens.scale.color.ramp", source: "example", fill: "example/tokens.scale.color.ramp", via: "default", $type: "color",
+    "tokens.color-ramp.violet.600": {
+      slot: "tokens.color-ramp", source: "example", fill: "example/tokens.color-ramp", via: "default", $type: "color",
       value: { light: violet600 }, css: { light: "#8250DF" }, alias: {},
     },
-    "tokens.scale.type.family.body": {
-      slot: "tokens.scale.type.family", source: "example", fill: "example/tokens.scale.type.family", via: "default", $type: "fontFamily",
+    "tokens.surface-color.base": {
+      slot: "tokens.surface-color", source: "example", fill: "example/tokens.surface-color", via: "default", $type: "color",
+      value: { light: white, dark: ink900 }, css: { light: "#FFFFFF", dark: "#0D1117" }, alias: {}, emit: "--color-surface-base",
+    },
+    "tokens.typeface.body": {
+      slot: "tokens.typeface", source: "example", fill: "example/tokens.typeface", via: "default", $type: "fontFamily",
       value: { light: ["Inter", "sans-serif"] }, css: { light: "\"Inter\", sans-serif" }, alias: {}, emit: "--font-body",
       font: { kind: "fontsource", package: "example-fonts-inter", version: "5.3.0", weights: [400, 600], styles: ["normal"], license: "OFL-1.1" },
     },

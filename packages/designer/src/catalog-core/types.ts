@@ -12,8 +12,10 @@ export interface Finding { code: CheckCode | "R"; rule: string; severity: "error
 export type DtcgValue = string | number | boolean | null | readonly DtcgValue[] | { readonly [key: string]: DtcgValue };
 export type DtcgDocType = DtcgType;
 
+export type Tier = "scale" | "role";
 export interface TokenContract {
   kind: "token";
+  tier: Tier;
   $type: DtcgType;
   memberTypes?: Readonly<Record<string, DtcgType>>;
   members: { mode: "closed"; names: readonly string[] } | { mode: "open"; pattern: string; required?: readonly string[] };
@@ -51,7 +53,7 @@ export interface FillMeta {
   unmapped?: readonly string[];
 }
 export interface Standard { id: string; title: string; version: string; url: string; clauses: readonly { id: string; title: string }[] }
-export type Pick = { scope: "member" | "slot" | "subtree"; target: string; source: string };
+export type Pick = { scope: "member" | "slot"; target: string; source: string };
 export interface Selection { version: 1; consumer: string; defaultChain: readonly string[]; picks: readonly Pick[] }
 export type ResolvedValue = DtcgValue;
 export type FontPayload =
@@ -59,7 +61,7 @@ export type FontPayload =
   | { kind: "fontsource"; package: string; version: string; weights: readonly number[]; styles: readonly ("normal" | "italic")[]; license: string };
 export interface ResolvedMember {
   slot: string; source: string; fill: string;
-  via: "member" | "slot" | "subtree" | "default";
+  via: "member" | "slot" | "default";
   $type: DtcgType;
   value: Readonly<Partial<Record<Mode, ResolvedValue>>> & { light: ResolvedValue };
   css: Readonly<Partial<Record<Mode, string>>> & { light: string };
@@ -89,4 +91,10 @@ export type DtcgNode = DtcgToken | { readonly [key: string]: DtcgNode };
 export type DtcgGroup = { readonly [key: string]: DtcgNode };
 export interface FillDoc { $extensions: { "com.clossys.fill": FillMeta }; tokens: DtcgGroup }
 export interface LibraryData { source: Source; fills: readonly FillDoc[] }
-export interface CatalogData { slots: readonly Slot[]; standards: readonly Standard[]; sources: readonly Source[]; fills: readonly FillDoc[] }
+export type PlacementNode = { id: string; label: string; children: readonly PlacementNode[] } | { id: string; label: string; leaves: readonly string[] };
+export interface Placement { layer: LayerId; nodes: readonly PlacementNode[] }
+export interface Retired { id: string; retiredAt: string; replacedBy?: string }
+export interface CatalogData {
+  slots: readonly Slot[]; standards: readonly Standard[]; sources: readonly Source[]; fills: readonly FillDoc[];
+  placements: readonly Placement[]; retired: readonly Retired[];
+}

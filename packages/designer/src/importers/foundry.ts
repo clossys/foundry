@@ -109,7 +109,7 @@ export function importFoundry(input: { tokens: readonly TokenDefinition[]; token
   const fills: FillDoc[] = [];
   for (const slot of [...input.slots].sort((a, b) => compare(a.id, b.id))) {
     const entries = Object.entries(slot.contract.emit ?? {});
-    if (entries.length === 0 && slot.id !== "tokens.scale.motion.spring") continue;
+    if (entries.length === 0) continue;
     const meta: FillMeta = {
       id: "foundry/" + slot.id, slot: slot.id, source: "foundry", mode: "implementation", sourceAddress: "styles/tokens.css", relation: "same-contract", builtOn: [], conforms: slot.requires,
       evidence: slot.requires.map(clause => ({ clause, check: clause === "dtcg#format" ? "C1" : clause === "dtcg#alias" ? "C2" : "C9" })),
@@ -140,9 +140,8 @@ export function importFoundry(input: { tokens: readonly TokenDefinition[]; token
           token.$extensions = { ...token.$extensions, "com.clossys.modes": { dark: formatTyped(classified, type) === darkText ? classified.value : darkText } };
         }
       }
-      putToken(root, [...slot.id.split(".").slice(1), ...member.split(".")], token);
+      putToken(root, [slot.id.split(".")[1]!, ...member.split(".")], token);
     }
-    if (slot.id === "tokens.scale.motion.spring") for (const [member, value] of Object.entries({ stiffness: 300, damping: 30, mass: 1 })) putToken(root, ["scale", "motion", "spring", "default", member], { $type: "number", $value: value });
     fills.push({ $extensions: { "com.clossys.fill": meta }, tokens: root });
   }
   return fills;

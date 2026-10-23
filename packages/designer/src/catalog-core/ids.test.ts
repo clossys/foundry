@@ -2,20 +2,18 @@ import { describe, expect, it } from "vitest";
 import { idFinding, isPrefixOf, isValidId, splitFillId, type IdKind } from "./ids.js";
 
 const valid: Record<IdKind, readonly string[]> = {
-  slot: ["tokens.scale.color.ramp", "tokens.role.color.action", "components.button.shape.corner"],
-  member: ["tokens.role.color.action.default", "tokens.scale.color.ramp.red.500", "tokens.scale.color.ramp.neutral.50"],
+  slot: ["tokens.color-ramp", "tokens.accent-color", "tokens.z-index", "components.button"],
+  member: ["tokens.accent-color.default", "tokens.color-ramp.red.500", "tokens.color-ramp.neutral.50", "tokens.categorical-color.1"],
   source: ["foundry", "tailwind-default", "shadcn@aria"],
-  subtree: ["tokens", "tokens.scale", "tokens.scale.color"],
-  fill: ["tailwind-default/tokens.scale.color.ramp"],
+  fill: ["tailwind-default/tokens.color-ramp"],
   clause: ["dtcg#alias", "wcag-2.2#1.4.3"],
 };
 // Build the deliberately invalid source sigil from parts for the account scanner.
 const invalid: Record<IdKind, readonly string[]> = {
-  slot: ["tokens.scale.color", "tokens.scale.color.ramp.red", "token.scale.color.ramp", "tokens..color.ramp", "tokens.scale.color.ramp.", "tokens.scale.color.Ramp", "tokens.scale.color.rаmp", "tokens.scale.color.ｒamp", "Tokens.scale.color.ramp", ""],
-  member: ["tokens.scale.color.ramp", "tokens.scale.color.ramp.", "tokens.scale.color.ramp..500", "tokens.scale.color.ramp.Red.500", "tokens.scale.color.ramp.red_500"],
+  slot: ["tokens.scale.color.ramp", "tokens.color-ramp.red", "token.color-ramp", "tokens..color-ramp", "tokens.color-ramp.", "tokens.Color-ramp", "tokens.color-rаmp", "tokens.color-ｒamp", "Tokens.color-ramp", "", "tokens"],
+  member: ["tokens.color-ramp", "tokens.color-ramp.", "tokens.color-ramp..500", "tokens.color-ramp.Red.500", "tokens.color-ramp.red_500"],
   source: ["Tailwind-default", "tailwind_default", "shadcn@", "@" + "aria", "shadcn@aria@x", "1tailwind", "tailwind-"],
-  subtree: ["tokens.scale.color.ramp", "Tokens", "tokens."],
-  fill: ["tailwind-default/tokens.scale.color", "a/b/c", "/tokens.scale.color.ramp", "foundry"],
+  fill: ["tailwind-default/tokens.scale.color.ramp", "a/b/c", "/tokens.color-ramp", "foundry"],
   clause: ["dtcg#", "#alias", "DTCG#alias", "dtcg#Alias", "dtcg alias"],
 };
 describe("catalog ids", () => {
@@ -24,16 +22,16 @@ describe("catalog ids", () => {
     it.each(invalid[kind])(`rejects ${kind} %s`, value => expect(isValidId(kind, value)).toBe(false));
   }
   it.each([
-    ["tokens.scale.type", "tokens.scale.type.family"], ["tokens.scale", "tokens.scale"], ["tokens", "tokens.role.color.action"],
+    ["tokens.color-ramp", "tokens.color-ramp.red.500"], ["tokens.color-ramp", "tokens.color-ramp"], ["tokens", "tokens.accent-color"],
   ])("matches whole-segment prefix %s of %s", (prefix, id) => expect(isPrefixOf(prefix!, id!)).toBe(true));
   it.each([
-    ["tokens.scale.ty", "tokens.scale.type.family"], ["tokens.scale.type", "tokens.scale.typeface.x"], ["tokens.scale.type.family", "tokens.scale.type"],
+    ["tokens.color", "tokens.color-ramp.red.500"], ["tokens.color-ramp", "tokens.color-ramps.x"], ["tokens.color-ramp.red", "tokens.color-ramp"],
   ])("rejects non-prefix %s of %s", (prefix, id) => expect(isPrefixOf(prefix!, id!)).toBe(false));
   it("splits only validated fill ids", () => {
-    expect(splitFillId(valid.fill[0]!)).toEqual({ source: "tailwind-default", slot: "tokens.scale.color.ramp" });
+    expect(splitFillId(valid.fill[0]!)).toEqual({ source: "tailwind-default", slot: "tokens.color-ramp" });
     for (const value of invalid.fill) expect(splitFillId(value)).toBeUndefined();
   });
   it("returns the exact id finding", () => {
-    expect(idFinding("slot", "tokens.scale.color.Ramp", "s")).toEqual({ code: "C1", rule: "id", severity: "error", subject: "s", message: "id: slot tokens.scale.color.Ramp is not a valid slot id" });
+    expect(idFinding("slot", "tokens.Color-ramp", "s")).toEqual({ code: "C1", rule: "id", severity: "error", subject: "s", message: "id: slot tokens.Color-ramp is not a valid slot id" });
   });
 });

@@ -1,0 +1,107 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [
+        "dtcg#format",
+        "dtcg#alias"
+      ],
+      "evidence": [
+        {
+          "check": "C1",
+          "clause": "dtcg#format"
+        },
+        {
+          "check": "C2",
+          "clause": "dtcg#alias"
+        }
+      ],
+      "id": "foundry/tokens.breakpoint",
+      "license": "MIT",
+      "mode": "implementation",
+      "relation": "same-contract",
+      "slot": "tokens.breakpoint",
+      "source": "foundry",
+      "sourceAddress": "styles/tokens.css",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "tokens": {
+    "breakpoint": {
+      "desktop": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "1280px"
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "px",
+          "value": 1280
+        }
+      },
+      "mobile": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "375px"
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "px",
+          "value": 375
+        }
+      },
+      "mobile-lg": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "480px"
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "px",
+          "value": 480
+        }
+      },
+      "tablet": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "768px"
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "px",
+          "value": 768
+        }
+      },
+      "tablet-lg": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "1024px"
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "px",
+          "value": 1024
+        }
+      },
+      "wide": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "1440px"
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "px",
+          "value": 1440
+        }
+      }
+    }
+  }
+}
