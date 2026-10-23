@@ -795,3 +795,51 @@ describe("compiled NewsletterBand public contract", () => {
     }
   }, 30_000);
 });
+
+describe("compiled TableOfContents public contract", () => {
+  it("exports the client component from both client barrels and the server variant from the server barrel, with no helper leaks", () => {
+    for (const entry of ["blocks/index.js", "index.js"]) {
+      const script = `import * as api from ${JSON.stringify(join(packageRoot, "dist", entry))}; process.stdout.write(JSON.stringify({component: typeof api.TableOfContents, private: ["validateTableOfContents", "renderTableOfContentsList", "renderTableOfContentsSidebar", "TableOfContentsProps", "TableOfContentsItem"].filter(name => name in api)}));`;
+      expect(JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8", cwd: packageRoot }))).toEqual({ component: "function", private: [] });
+    }
+    const script = `import * as api from ${JSON.stringify(join(packageRoot, "dist/blocks/server.js"))}; process.stdout.write(JSON.stringify({component: typeof api.TableOfContents, private: ["validateTableOfContents", "renderTableOfContentsList"].filter(name => name in api)}));`;
+    expect(JSON.parse(execFileSync(process.execPath, ["--conditions=react-server", "--input-type=module", "-e", script], { encoding: "utf8", cwd: packageRoot }))).toEqual({ component: "function", private: [] });
+  });
+});
+
+describe("headless project model public contract", () => {
+  it("exposes working functions through the emitted blocks and source-root barrels", () => {
+    const blocks = join(packageRoot, "dist/blocks/index.js");
+    const root = join(packageRoot, "dist/index.js");
+    const script = `
+      import * as blocks from ${JSON.stringify(blocks)};
+      import * as root from ${JSON.stringify(root)};
+      const names = ['scheduleProject','projectRollups','boardColumns','timelineLayout','serializeProject','parseProject','ProjectModelError'];
+      const tasks = [{id:'a',title:'A',status:'done',durationDays:2,deps:[]}];
+      const schedule = blocks.scheduleProject(tasks,{isWorkingDay:()=>true,addWorkingDays:(d,n)=>d+n});
+      process.stdout.write(JSON.stringify({same:names.every(name=>typeof blocks[name]==='function' && blocks[name]===root[name]),end:schedule.end,completion:blocks.projectRollups(schedule)[0].percentComplete,version:blocks.parseProject(blocks.serializeProject(tasks)).version}));
+    `;
+    expect(JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e", script], { cwd: packageRoot, encoding: "utf8" }))).toEqual({ same: true, end: 2, completion: 100, version: 1 });
+  });
+  it("accepts a typed downstream consumer of emitted project declarations", () => {
+    const filename = join(packageRoot, "project-model-consumer.check.ts");
+    const consumer = `
+      import { scheduleProject, projectRollups, boardColumns, timelineLayout, serializeProject, parseProject, ProjectModelError, type Task, type Calendar, type ProjectSchedule, type ProjectRollup, type BoardColumn, type TimelineLayout, type ProjectModel } from ${JSON.stringify(join(packageRoot, "dist/blocks/index.js"))};
+      import type { ProjectCalendar } from ${JSON.stringify(join(packageRoot, "dist/index.js"))};
+      const calendar: Calendar & ProjectCalendar = { isWorkingDay: () => true, addWorkingDays: (day, count) => day + count };
+      const tasks: readonly Task[] = [{id:'a',title:'A',status:'done',deps:[]}];
+      const schedule: ProjectSchedule = scheduleProject(tasks, calendar);
+      const rollups: readonly ProjectRollup[] = projectRollups(schedule);
+      const columns: readonly BoardColumn[] = boardColumns(tasks, {statusOrder:['done']});
+      const layout: TimelineLayout = timelineLayout(schedule, {zoom:'month', rowOrder:['a']});
+      const saved: ProjectModel = parseProject(serializeProject(tasks));
+      const error = new ProjectModelError('unsupported-version', 'version');
+      const cycle: readonly string[] = error.cycle;
+    `;
+    const options = { strict: true, noEmit: true, skipLibCheck: true, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler };
+    const host = ts.createCompilerHost(options);
+    const original = host.getSourceFile.bind(host);
+    host.getSourceFile = (path, language, error, fresh) => path === filename ? ts.createSourceFile(path, consumer, language, true) : original(path, language, error, fresh);
+    expect(ts.getPreEmitDiagnostics(ts.createProgram([filename], options, host)).map(diagnostic => ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n"))).toEqual([]);
+  });
+});

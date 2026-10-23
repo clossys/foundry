@@ -5,6 +5,7 @@ import { ResizablePane } from "./ResizablePane.js";
 import { CommandMenu } from "./CommandMenu.js";
 import { PageBar } from "./PageBar.js";
 import { AppNavigation } from "./AppNavigation.js";
+import { RelationGraph } from "./RelationGraph.js";
 import { AccountMenu } from "./AccountMenu.js";
 
 /** Source-backed Material selections within the Block tier; these records grant no role qualification. */
@@ -99,5 +100,12 @@ export const APP_FRAME_MATERIALS = [
     dependencies: [{ exportName: "Card", source: "src/atoms/Card.tsx" }],
     configs: [],
     authoredInputs: ["caption", "rowHeader", "groups", "rows", "rowKey", "emptyMessage"],
+  },
+  {
+    id: "relation-graph", layer: "blocks", informationArchitecture: "navigation", exportName: "RelationGraph", component: RelationGraph, source: "src/blocks/RelationGraph.tsx",
+    regions: ["content", "drawing", "list"],
+    dependencies: [{ exportName: "Link", source: "src/atoms/Link.tsx" }, { exportName: "Button", source: "src/atoms/Button.tsx" }],
+    configs: [],
+    authoredInputs: ["nodes", "edges", "kinds", "label", "selectedId", "onSelectionChange", "emptyMessage", "unavailableMessage", "incomingLabel", "outgoingLabel", "refusedLabel"],
   },
 ] as const;

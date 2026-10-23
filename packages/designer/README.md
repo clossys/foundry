@@ -189,13 +189,13 @@ and its exception list can only shrink.
   `Separator`, `Chip`, `StatusMark`, `Meter`, `ResizeHandle`, `Logomark`, `GridList`.
 - **`blocks`** — owns the internal layout of multiple named regions,
   typically by composing one or more atoms (and/or layout) into something
-  with a real job on a page. Fifty ship: `AccountMenu`, `PageHeader`, `EmptyState`,
+  with a real job on a page. Fifty-two ship: `AccountMenu`, `PageHeader`, `EmptyState`,
   `DataTable`, `DetailView`, `Pagination`, `UsageMeter`, `Stat`, `Form`, `FieldGroup`,
   `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `SectionFrame`,
   `MarketingChapter`, `FeatureGrid`, `Item`, `Items`, `Tree`, `AnatomyCallouts`, `RecordLedger`, `Scene`, `Matrix`,
   `Specimen`, `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`,
-  `PricingTable`, `Testimonial`, `ArticleBody`, `ConsentBanner`, `NewsletterBand`, `Panel`, `Drawer`,
-  `ResizablePane`, `CommandMenu`, `AppNavigation`, `PageBar`, `GroupedTable`, `Lockup`, `Explorer`, `CatalogWorkspace`, `Chat` and `ResourceList` (see "Blocks" below).
+  `PricingTable`, `Testimonial`, `TableOfContents`, `ArticleBody`, `ConsentBanner`, `NewsletterBand`, `Panel`, `Drawer`,
+  `ResizablePane`, `CommandMenu`, `AppNavigation`, `PageBar`, `GroupedTable`, `Lockup`, `Explorer`, `CatalogWorkspace`, `Chat`, `ResourceList` and `RelationGraph` (see "Blocks" below).
 - **`shell`** — the persistent frame around content (nav, layout chrome)
   that provides the slots content fills. One per app; survives route
   changes that swap out the content underneath it. `Shell` ships with five
@@ -464,7 +464,7 @@ source file's own header for the exact probe and its result). Today that's:
 | Subpath | Server-safe members |
 | --- | --- |
 | `@clossys/designer/atoms/server` | `Logomark`, `Avatar`, `Badge`, `Banner`, `Card`, `Field`, `Icon`, `Meter`, `Skeleton`, `Spinner`, `StatusMark`, `buttonLinkClassName`, `iconButtonClassName`, `iconButtonLinkClassName`, `mergeUiClasses` |
-| `@clossys/designer/blocks/server` | `Lockup`, `AnatomyCallouts`, `ArticleBody`, `Matrix`, `ContentSection`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `Item`, `Items`, `MarketingChapter`, `MediaFigure`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `RecordLedger`, `Scene`, `SectionFrame`, `SectionHeader`, `SectionIntro`, `Specimen`, `SpecimenPanel`, `Stat`, `StatusList`, `Testimonial`, `Tree`, `UsageMeter` |
+| `@clossys/designer/blocks/server` | `Lockup`, `AnatomyCallouts`, `ArticleBody`, `Matrix`, `ContentSection`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `Item`, `Items`, `MarketingChapter`, `MediaFigure`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `RecordLedger`, `Scene`, `SectionFrame`, `SectionHeader`, `SectionIntro`, `Specimen`, `SpecimenPanel`, `Stat`, `StatusList`, `TableOfContents`, `Testimonial`, `Tree`, `UsageMeter` |
 | `@clossys/designer/shell/server` | `Shell`, `SiteFooter`, `SiteHeader`, `SkipLink` |
 | `@clossys/designer/charts/server` | `ChartFrame`, `BarChart`, `LineChart` (static), `WaterfallChart`, `RangeChart`, `ScatterChart`, `AreaChart` (static), `Heatmap` (static), `StatusStrip` (static), `Sparkline` |
 | `@clossys/designer/theme/server` | `getThemeInitScript` |
@@ -1704,7 +1704,9 @@ something is loading — it then renders react-aria-components' `ProgressBar`
 `inline-block` so it stays inline without a CSS reset) with that as its
 accessible name, wrapping the `<svg>` ring. The relationship attributes
 (`aria-labelledby`, `aria-describedby`, `aria-details`) go to that named
-progress bar; every other attribute, `className` included, stays on the ring.
+progress bar, which `label` alone names (a passed `aria-label` attribute is not
+copied onto the ring); every other attribute, `className` included, stays on
+the ring.
 Omit it when the spinner is purely decorative (e.g. next
 to a button's own "Saving…" text, which already announces the state) — it
 then renders the bare `<svg>` with `aria-hidden="true"` instead. The
@@ -2494,7 +2496,8 @@ reader. From `@clossys/designer/atoms` the root is react-aria-components'
 and `aria-valuemax`), named by the visible `valueText` and announcing it as
 its value text, so a screen reader hears the words a sighted reader sees.
 An optional `label` names the meter instead (as its `aria-label`), leaving
-`valueText` as the visible text and the value text; the server `Meter`
+`valueText` as the visible text and the value text (an empty or blank
+`label` counts as omitted); the server `Meter`
 accepts `label` and ignores it. From `@clossys/designer/atoms/server` (server-safe, no react-aria-components)
 the markup is identical except that the root carries no role and no value
 attributes. The client `Meter` forwards `id`, `data-*`, the `aria-label`,
@@ -4402,6 +4405,56 @@ this package's own `Avatar` atom, which independently requires `alt` at
 its own type level too.
 
 The `/blocks/server` variant uses the server Avatar; use the ordinary block when you need its image-load-failure fallback.
+
+### `TableOfContents`
+
+Draft navigation of in-page links with the current item tracked in the client.
+Import `TableOfContents`, `TableOfContentsProps` and `TableOfContentsItem` from
+`@clossys/designer/blocks`; the server-safe variant is exported under the same
+name from `@clossys/designer/blocks/server`.
+
+```tsx
+import { TableOfContents, type TableOfContentsItem } from "@clossys/designer/blocks";
+
+const headings: readonly TableOfContentsItem[] = [
+  { id: "overview", label: "Overview" },
+  { id: "planning", label: "Planning" },
+  { id: "budget", label: "Budget", level: 3 },
+  { id: "schedule", label: "Schedule", level: 3 },
+  { id: "review", label: "Review" },
+  { id: "next-steps", label: "Next steps" },
+];
+
+function SidebarContents() {
+  return <TableOfContents label="On this page" items={headings} />;
+}
+
+function InlineContents() {
+  return <TableOfContents label="On this page" items={headings} presentation="inline" />;
+}
+```
+
+| Prop | Contract |
+| --- | --- |
+| `label` | Required non-empty string. The navigation's accessible name and, for `inline`, the disclosure title. No built-in English. |
+| `items` | Two to thirty `TableOfContentsItem`s: an `id` (the target element's id; no whitespace and no `#`; unique), a `label` and an optional `level` of 2 or 3 (default 2, sets the indent). Anything else throws a `TypeError` prefixed `TableOfContents:`. |
+| `presentation` | `sidebar` (default) is a captioned plain list at every width that sticks from desktop below the frame header, using the frame's default clearance restated from registered tokens; `inline` is a bordered disclosure, expanded by default, at every width. |
+| `currentId` | Controlled current item; must be one of the item ids. |
+| `trackCurrent` | Default true. Client only, ignored by the server variant and when `currentId` is given. |
+| `className`, `style` | Applied to the root element. |
+
+The current link carries `aria-current="location"`, a start border and a heavier
+weight, so colour is never the only channel; the border follows the text colour
+in forced-colour mode. The client variant builds one `IntersectionObserver` over
+the item targets with a `0px 0px -70% 0px` root margin: the first visible
+target in item order is current, and the previous one stays current while none is
+visible. Targets missing from the page are skipped, a missing
+`IntersectionObserver` leaves no item current, and the observer disconnects on
+unmount. There are no scroll listeners or timers, and no item is current before
+the first observer callback, so the first client render matches the server render.
+The server variant renders the same list and marks only `currentId`; its inline
+presentation is a native `<details open>`. The host owns `scroll-behavior` and the
+`scroll-margin` of the targets. Every link has a 44 px minimum height.
 
 ### `SectionFrame`
 
@@ -6949,7 +7002,7 @@ not a grab-bag).
 | `StatusMarkTone` | type | `"success" \| "warning" \| "danger" \| "info" \| "neutral"`. |
 | `Meter` | component | A value against a scale and an optional limit, with visible value and limit text and a decorative bar. Built on react-aria-components' `Meter`; the `atoms/server` export is the same markup without the meter role. |
 | `MeterProps` | type | Props for `Meter`: `value`, `scaleMax`, `limit`, `direction`, `tone`, `valueText`, `limitText`, `emphasis`, optional `label`, optional paired `previous`/`previousText`, plus every native `<div>` attribute except `children`. |
-| `MeterTone` | type | `"success" \| "warning" \| "danger" \| "info" \| "neutral"`. |
+| `MeterTone` | type | `"success" \| "warning" \| "danger" \| "info" \| "neutral" \| "accent"`. |
 | `MeterDirection` | type | `"max" \| "min"`: whether the limit is a cap or a floor. |
 | `AccountMenu` | component | Navigation Material with actor trigger, grouped commands and controlled preferences. |
 | `AccountMenuProps` | type | Actor, sections, context/collapsed/triggerLabel and host close/route callbacks. |
@@ -7151,6 +7204,9 @@ not a grab-bag).
 | `PricingComparisonRow` | type | A stable `id`, `label`, optional `description` and `cells` keyed by tier id. |
 | `Testimonial` | component | Quote plus attribution, rendered as a real `<figure>`/`<blockquote>`/`<figcaption>`: `attributorName` and `attributorRole` are always separate fields. Optional avatar via `avatarSrc`/`avatarAlt`, required together at the type level. |
 | `TestimonialProps` | type | Props for `Testimonial`: `quote`, `attributorName`, `attributorRole`, `avatarSrc`/`avatarAlt` (a discriminated pair — both or neither), `className`, `style`, plus every native `<figure>` attribute except `children`. |
+| `TableOfContents` | component | Draft navigation of 2 to 30 in-page links with the current item marked by `aria-current="location"`. Client variant tracks the current heading with an `IntersectionObserver`; the `/blocks/server` variant marks only `currentId`. Sidebar or inline presentation. |
+| `TableOfContentsProps` | type | Props for `TableOfContents`: required `label` and `items`, `presentation`, `currentId`, `trackCurrent`, `className`, `style`. |
+| `TableOfContentsItem` | type | One entry: `id` of the target element, `label`, optional `level` of 2 or 3. |
 | `ArticleBody` | component | Thin, token-styled container for pre-structured long-form content (real `<h2>`/`<p>`/`<ul>`/... children) — no markdown parsing, no content-shape schema. |
 | `ArticleBodyProps` | type | Props for `ArticleBody`: `children`, `className`, `style`, plus every native `<article>` attribute. |
 | `SectionFrame` | component | Full-bleed marketing section band: a `ground` surface, vertical section rhythm, horizontal page padding, and a measured inner column. Sets `data-designer-section-frame` on its outer `<section>`. Compose `ArticleBody`, `Stat`, and other blocks that do not own their own band inside it. |
@@ -7865,7 +7921,7 @@ speculatively, just because a related component shipped, is the exact
 un-bounded growth this package's own "variant rule" warns against one level
 up. They get added here only once something real needs them.
 
-**Blocks:** fifty-two ship — `AccessMatrix`, `ColumnMapper`, `Lockup`, `PageHeader`, `AccountMenu`, `EmptyState`, `DataTable`, `DetailView`, `Pagination`, `UsageMeter`, `Stat`, `Form`, `FieldGroup`, `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `MarketingChapter`, `FeatureGrid`, `Matrix`, `Specimen`, `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`, `PricingTable`, `Testimonial`, `ArticleBody`, `SectionFrame`, `ConsentBanner`, `Panel`, `Drawer`, `ResizablePane`, `CommandMenu`, `AppNavigation`, `PageBar`, `Explorer`, `RecordLedger`, `AnatomyCallouts`, `Scene`, `Item`, `Tree`, `Items`, `GroupedTable`, `CatalogWorkspace`, `Chat`, `NewsletterBand` and `ResourceList` — completing this layer. No
+**Blocks:** fifty-four ship — `AccessMatrix`, `ColumnMapper`, `Lockup`, `PageHeader`, `AccountMenu`, `EmptyState`, `DataTable`, `DetailView`, `Pagination`, `UsageMeter`, `Stat`, `Form`, `FieldGroup`, `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `MarketingChapter`, `FeatureGrid`, `Matrix`, `Specimen`, `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`, `PricingTable`, `Testimonial`, `TableOfContents`, `ArticleBody`, `SectionFrame`, `ConsentBanner`, `Panel`, `Drawer`, `ResizablePane`, `CommandMenu`, `AppNavigation`, `PageBar`, `Explorer`, `RecordLedger`, `AnatomyCallouts`, `Scene`, `Item`, `Tree`, `Items`, `GroupedTable`, `CatalogWorkspace`, `Chat`, `NewsletterBand`, `ResourceList` and `RelationGraph` — completing this layer. No
 `FilterBar` block:
 `DataTable`'s own `toolbar` slot (and `Toolbar`'s own `search` slot) are
 deliberately plain `ReactNode`s, not a block with its own opinion about
@@ -9299,3 +9355,198 @@ export function PeopleColumnMapping() {
   return <ColumnMapper {...columnMapperSample} mapping={mapping} onMappingChange={setMapping} />;
 }
 ```
+
+### RelationGraph
+
+`RelationGraph` is a client Material in Navigation, exported from the Block
+barrel and the aggregate entry. Supply the closed `kinds` vocabulary, authored
+nodes and directed edges. The cap is 64 nodes. Duplicate ids, unknown endpoints,
+self-edges and malformed data throw field-specific errors. No nodes or relations
+are inferred. Cycles preserve the list and show `unavailableMessage`, without a
+partial drawing.
+
+The deterministic longest-path layout preserves source order within each layer.
+At tablet-lg and wider, the same list becomes a layered drawing with decorative
+SVG edges measured after hydration; narrower screens use the vertical list.
+SSR emits the complete list and an empty drawing. The sole interactive control
+per node is a Link or Button. ArrowRight/Down follows the first outgoing edge;
+ArrowLeft/Up follows the first incoming edge; Home/End follows layout order.
+PageDown/PageUp visits every node in authored order, wrapping at either end,
+including disconnected nodes and every branch.
+Enter activates and reports the id through `onSelectionChange`; `selectedId`
+remains controlled and is announced through `aria-current`. RTL uses the same
+edge-direction keys. Motion is not required; existing Atom focus treatment and
+a forced-colors outline remain available.
+
+Only same-origin relative paths and HTTPS URLs without credentials become links.
+Protocol-relative, non-HTTPS schemes, backslashes, whitespace and control
+characters are refused: the node remains a Button and appears in the refused
+list. Href bytes are preserved for accepted links. No routing, fetching or
+persistence is owned here.
+
+Host copy props are `emptyMessage` (default “No relationships”),
+`unavailableMessage` (“Drawing unavailable: cycle”), `incomingLabel` (“Incoming”),
+`outgoingLabel` (“Outgoing”) and `refusedLabel` (“Refused links”).
+
+```tsx
+import { RelationGraph } from "@clossys/designer/blocks";
+
+<RelationGraph
+  label="Relationships"
+  kinds={["block", "pack"] as const}
+  nodes={[
+    { id: "detail", label: "Detail", kind: "block", href: "/detail" },
+    { id: "collection", label: "Collection", kind: "pack" },
+  ]}
+  edges={[{ from: "collection", to: "detail", label: "contains" }]}
+/>;
+```
+
+### Headless project model
+
+`scheduleProject`, `projectRollups`, `boardColumns` and `timelineLayout` are pure
+functions exported from `@clossys/designer/blocks`. They accept plain data, copy
+the task arrays they return and perform no rendering or I/O. The module graph
+under `blocks/project-model` uses no component runtime; the existing public blocks
+barrel still requires its documented React peers.
+
+```ts
+import {
+  scheduleProject, projectRollups, boardColumns, timelineLayout,
+  serializeProject, parseProject, type Task, type Calendar,
+} from "@clossys/designer/blocks";
+
+const calendar: Calendar = {
+  isWorkingDay: () => true,
+  addWorkingDays: (day, count) => day + count,
+};
+const tasks: Task[] = [
+  { id: "plan", title: "Plan", status: "done", start: 0, durationDays: 2, deps: [] },
+  { id: "build", title: "Build", status: "in-progress", durationDays: 4,
+    deps: [{ id: "plan", type: "finish-to-start" }] },
+  { id: "ship", title: "Ship", status: "todo", milestone: true,
+    deps: [{ id: "build", type: "finish-to-start" }] },
+];
+const schedule = scheduleProject(tasks, calendar);
+const summaries = projectRollups(schedule);
+const columns = boardColumns(tasks, {
+  statusOrder: ["todo", "in-progress", "blocked", "done"],
+  wipLimits: { "in-progress": 2 },
+});
+const layout = timelineLayout(schedule, {
+  zoom: "week", rowOrder: tasks.map(task => task.id),
+});
+const saved = serializeProject(tasks);
+const restored = parseProject(JSON.parse(JSON.stringify(saved)));
+```
+
+Task IDs are unique nonempty strings. Each task has `id`, `title`, `status` and
+`deps`; optional fields are `start`, `end`, `durationDays`, `assignee`, `tags`,
+`parentId` and `milestone`. Only `finish-to-start` dependencies are supported.
+References must name tasks in the same input, with no repeated dependency,
+dependency cycle or parent cycle. Parent membership is separate from dependency
+scheduling: a task with children is scheduled like another task, while
+`projectRollups` replaces its summary span, status and completion with its leaves.
+Summary dependencies therefore refer to the parent's own scheduled task, not an
+implicit dependency on every child.
+
+Days are safe integer day numbers in a caller-defined calendar. Convert ISO dates
+to this representation before passing tasks; the model does not read a clock,
+locale or timezone. End boundaries are **exclusive**: duration 2 from day 0 ends
+at day 2, so a finish-to-start successor can start at 2. `Calendar.isWorkingDay`
+and `addWorkingDays` must be deterministic and agree, with the latter supporting
+positive, zero and negative integer counts. For a Monday-to-Friday calendar, a
+one-working-day task starting Friday ends Monday. A non-working requested start
+moves forward to the next working day and produces a `start` conflict. No working
+day within 3660 calendar days, non-progressing arithmetic, unreachable boundaries
+or a distance requiring over one million working-day steps is refused with
+`invalid-calendar`. Calendar callbacks are trusted caller code; their exceptions
+propagate. This is a day-granularity dependency model, without resource leveling,
+partial days, time-of-day, recurring tasks or automatic holiday definitions.
+
+Ordinary tasks default to one working day. `start` plus `end` derives duration if
+`durationDays` is absent. `end` plus duration derives a requested start by working
+backward. An end alone is refused. Milestones have zero duration; other tasks
+require a positive duration. When both duration and boundaries are present,
+duration determines the scheduled end, and an inconsistent end is reported.
+Without an explicit start, tasks use the earliest requested start in the project,
+or day 0 if none exist. A later explicit start is a lower bound. An earlier
+explicit start that violates a dependency produces a `dependency` conflict naming
+the predecessor; the computed schedule shifts to a feasible start. Any explicit
+end differing from the computed end produces an `end` conflict. Conflicts do not
+change the caller's dates or act as a refusal. There is no implicit deadline.
+
+`schedule.tasks` uses a FIFO topological traversal: roots retain input order,
+newly available tasks append in input/dependency traversal order. The backward
+pass uses the latest project finish as its common horizon. `latestStart`,
+`latestEnd` and nonnegative working-day `slackDays` describe movement within that
+horizon, and `critical` means zero slack. `criticalPath` contains one contiguous
+driving chain; ties select the first finishing sink and first driving dependency
+in traversal order. Explicit start constraints can create idle gaps, so the chain
+need not span the project's entire elapsed interval. Other tied zero-slack tasks
+remain visible through `critical`. Both dependency and parent cycles throw a
+`ProjectModelError` with the repeated closing ID in `cycle`.
+
+`projectRollups(schedule)` returns rows in scheduled order. A parent spans the
+minimum descendant leaf start through maximum leaf end. Completion weights each
+leaf by its working duration, with `done` contributing 100% and every other
+status 0%; ancestors do not double count their descendants. An all-milestone
+subtree uses leaf counts instead of zero duration weights. Status precedence is
+`blocked > in-progress > todo > done`; other statuses are refused by rollups.
+A childless task keeps its scheduled span and own status, even if intended as an
+empty parent. Rollup `durationDays` sums leaf work, rather than elapsed span.
+
+`boardColumns` accepts any caller-defined status vocabulary, preserves
+`statusOrder` including empty columns, and retains task input order within each
+column. Unknown task statuses throw `unknown-status`. WIP limits must name known
+statuses and be nonnegative integers; a column's `overLimit` is true only when
+its count exceeds its limit. The returned tasks are copied, with independent tag
+and dependency arrays. Missing WIP limits mean unlimited capacity.
+
+`timelineLayout` requires `rowOrder` to name every task once. Row indices follow
+that order, offsets start at the earliest scheduled day, and spans measure elapsed
+calendar days. Zoom uses uniform units: day = 1 day, week = 7 days, month = 30
+days, quarter = 90 days. These are scale units rather than civil calendar month
+buckets; a view owns civil labels and pixel mapping. Dependency connectors pair
+the predecessor's end with the successor's start, using the requested row order.
+Milestone markers have zero span. The test budget is 2,000 ms for scheduling and
+layout of a 2,000-task chain; it is not a latency guarantee for arbitrary graphs
+or expensive caller calendars.
+
+`serializeProject(tasks)` validates and copies `{ version: 1, tasks }`.
+`parseProject(unknown)` accepts that plain versioned object and returns an
+independent copy. Persist tasks, not calendar callbacks; inject the calendar when
+rescheduling. Unknown fields, accessors, sparse or accessor-indexed arrays, non-plain
+task/project objects, invalid references and unsupported versions are refused. Typed errors expose `code` and
+`cycle`; codes are `invalid-project`, `unsupported-version`, `invalid-task`,
+`dependency-cycle`, `parent-cycle`, `invalid-calendar`, `unknown-status`,
+`invalid-board` and `invalid-layout`.
+
+| Export | Kind | Contract |
+| --- | --- | --- |
+| `scheduleProject` | function | Earliest feasible working-day schedule, explicit-date conflicts, latest dates, slack and one critical chain. |
+| `projectRollups` | function | Leaf-weighted completion, status and spans for each scheduled task. |
+| `boardColumns` | function | Stable caller-defined status columns with WIP flags. |
+| `timelineLayout` | function | Uniform-unit rows, dependency connector pairs and milestone markers. |
+| `serializeProject` | function | Validate and copy version 1 task data. |
+| `parseProject` | function | Read an unknown plain versioned task object. |
+| `ProjectModelError` | class | Typed refusal with a stable code and optional named cycle. |
+| `ProjectDay` | type | Safe integer calendar day number. |
+| `TaskDependency` | type | Referenced task ID and finish-to-start relation. |
+| `Task` | type | Plain task data and explicit scheduling constraints. |
+| `Calendar` | type | Injected working-day predicate and signed working-day arithmetic, imported from blocks. |
+| `ProjectCalendar` | type | Calendar type alias on the source root barrel, whose Calendar value is an icon. |
+| `ProjectModelErrorCode` | type | The nine model refusal codes. |
+| `ProjectModel` | type | Version 1 persisted task object. |
+| `ScheduledTask` | type | Task with computed dates, duration, latest dates and slack. |
+| `ProjectConflict` | type | Explicit-date conflict with requested and required day numbers. |
+| `ProjectSchedule` | type | Scheduled tasks, project boundaries, conflicts and critical chain. |
+| `ProjectRollup` | type | Summary span, total leaf duration, completion and status. |
+| `BoardOptions` | type | Ordered status vocabulary and optional WIP limits. |
+| `BoardColumn` | type | Status group, copied tasks and capacity flag. |
+| `TimelineZoom` | type | Day, week, month or quarter unit choice. |
+| `TimelineOptions` | type | Zoom and complete task row order. |
+| `TimelinePoint` | type | Task ID, row index and unit offset. |
+| `TimelineRow` | type | Point with span and milestone flag. |
+| `TimelineConnector` | type | Predecessor-end and successor-start pair. |
+| `TimelineLayout` | type | Origin, days per unit, rows, connectors and markers. |

@@ -28,6 +28,7 @@ const CASES: Array<[string, SpinnerProps]> = [
   ["labelled, default size", { label: "Loading prompts" }],
   ["labelled, small, consumer colour", { label: "Saving", size: "sm", className: "text-status-danger" }],
   ["labelled, with relationship attributes", { label: "Working", "aria-describedby": "why", "aria-labelledby": "heading", "aria-details": "why" }],
+  ["labelled, with a conflicting aria-label attribute", { label: "Working", "aria-label": "Other" }],
   ["labelled, large, extra attributes", { label: "Working", size: "lg", className: "ms-2", "data-testid": "ring" } as SpinnerProps],
 ];
 
@@ -49,6 +50,16 @@ describe("Spinner server/client parity", () => {
     expect(host.querySelector("svg")).not.toHaveAttribute("aria-describedby");
     host.innerHTML = renderToStaticMarkup(<ServerSpinner {...props} />);
     expect(host.querySelector("svg")).toHaveAttribute("aria-describedby", "why");
+  });
+
+  it("names both variants by label when an aria-label attribute is also passed", () => {
+    const props: SpinnerProps = { label: "Working", "aria-label": "Other" };
+    const host = document.createElement("div");
+    host.innerHTML = renderToStaticMarkup(<ClientSpinner {...props} />);
+    expect(host.querySelector("[role='progressbar']")).toHaveAttribute("aria-label", "Working");
+    expect(host.querySelector("svg")).not.toHaveAttribute("aria-label");
+    host.innerHTML = renderToStaticMarkup(<ServerSpinner {...props} />);
+    expect(host.querySelector("svg")).toHaveAttribute("aria-label", "Working");
   });
 
   it("differs only in what names a labelled ring", () => {

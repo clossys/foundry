@@ -57,6 +57,7 @@ export const BLOCK_THEME_CONFORMANCE: readonly BlockThemeRegistration[] = [
   { exportName: "Faq", source: "src/blocks/Faq.tsx", contrastPairs: GROUNDED_READING },
   { exportName: "PricingTable", source: "src/blocks/PricingTable.tsx", contrastPairs: RAISED_READING },
   { exportName: "Testimonial", source: "src/blocks/Testimonial.tsx", contrastPairs: BASE_READING },
+  { exportName: "TableOfContents", source: "src/blocks/TableOfContents.tsx", contrastPairs: BASE_READING },
   { exportName: "ArticleBody", source: "src/blocks/ArticleBody.tsx", contrastPairs: [...BASE_READING, "ink-primary/surface-sunken", "ink-link/surface-base"] },
   { exportName: "SectionFrame", source: "src/blocks/SectionFrame.tsx", contrastPairs: ["ink-primary/surface-base", "ink-primary/surface-sunken", "ink-on-inverse/surface-inverse"] },
   { exportName: "NewsletterBand", source: "src/blocks/NewsletterBand.tsx", contrastPairs: GROUNDED_READING },
@@ -83,6 +84,7 @@ export const BLOCK_THEME_CONFORMANCE: readonly BlockThemeRegistration[] = [
   { exportName: "GroupedTable", source: "src/blocks/GroupedTable.tsx", contrastPairs: [...RAISED_READING, "ink-primary/surface-sunken"] },
   { exportName: "CatalogWorkspace", source: "src/blocks/CatalogWorkspace.tsx", contrastPairs: [...BASE_READING, ...RAISED_READING] },
   { exportName: "Chat", source: "src/blocks/chat/Chat.tsx", contrastPairs: [...BASE_READING, ...RAISED_READING, "ink-primary/surface-sunken", "ink-secondary/surface-sunken", "ink-link/surface-base"] },
+  { exportName: "RelationGraph", source: "src/blocks/RelationGraph.tsx", contrastPairs: [...BASE_READING, ...RAISED_READING, "ink-muted/surface-raised"] },
 ];
 
 /** Explicitly classified value exports, never a casing-based escape for new Blocks. */
@@ -123,4 +125,11 @@ export const NON_BLOCK_THEME_EXPORTS: Readonly<Record<string, string>> = {
   radialLayout: "Computes radial graph coordinates; returns plain positions with no UI or paint.",
   forceLayout: "Seeded force simulation with fixed steps and node separation; returns plain positions with no UI or paint.",
   edgeRoutingHints: "Straight routing metadata with loop flags and parallel-edge counts; returns plain records with no UI or paint.",
+  scheduleProject: "Working-day scheduling with dependency conflicts over supplied tasks; returns plain records with no UI or paint.",
+  projectRollups: "Parent-task span, status and completion rollups from a computed schedule; returns plain records with no UI or paint.",
+  boardColumns: "Status column grouping with work-in-progress limit flags over supplied tasks; returns plain arrays with no UI or paint.",
+  timelineLayout: "Timeline row, point and connector geometry from a computed schedule; returns plain records with no UI or paint.",
+  serializeProject: "Validated plain-object project serialization; renders no UI or paint.",
+  parseProject: "Project envelope validation and copying from a plain object; renders no UI or paint.",
+  ProjectModelError: "Typed project-data refusal with an error code and message; renders no UI or paint.",
 };

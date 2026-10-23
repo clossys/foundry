@@ -194,6 +194,9 @@ export type { PricingTableProps, PricingTier, PricingTableHeadingLevel, PricingT
 export { Testimonial } from "./Testimonial.js";
 export type { TestimonialProps } from "./Testimonial.js";
 
+export { TableOfContents } from "./TableOfContents.js";
+export type { TableOfContentsProps, TableOfContentsItem } from "./TableOfContents.js";
+
 export { ArticleBody } from "./ArticleBody.js";
 export type { ArticleBodyProps } from "./ArticleBody.js";
 
@@ -217,6 +220,8 @@ export { PageBar } from "./PageBar.js";
 export type { PageBarProps, PageBarPage, PageBarCrumb, PageBarAction, PageBarDestination, PageBarLabels, PageBarWidth } from "./PageBar.js";
 export { validateAppNavigationTree, getAppNavigationAncestry, getAppNavigationBreadcrumbs } from "./app-navigation-tree.js";
 export type { AppNavigationNode, AppNavigationLeaf, AppNavigationDestination, AppNavigationTarget, AppNavigationBreadcrumb } from "./app-navigation-tree.js";
+export { RelationGraph } from "./RelationGraph.js";
+export type { RelationGraphProps, RelationGraphNode, RelationGraphEdge } from "./relation-graph-types.js";
 export { Explorer } from "./Explorer.js";
 export type { ExplorerProps } from "./Explorer.js";
 export { indexTree, getTreeAncestry, getTreeBreadcrumbs } from "./tree-model.js";
@@ -241,6 +246,9 @@ export { Lockup } from "./Lockup.js";
 export type { LockupProps } from "./Lockup.js";
 export { GroupedTable } from "./GroupedTable.js";
 export type { GroupedTableProps, GroupedTableGroup, GroupedTableColumn } from "./GroupedTable.js";
+
+export { scheduleProject, projectRollups, boardColumns, timelineLayout, serializeProject, parseProject, ProjectModelError } from "./project-model/index.js";
+export type { ProjectDay, TaskDependency, Task, Calendar, ProjectModelErrorCode, ProjectModel, ScheduledTask, ProjectConflict, ProjectSchedule, ProjectRollup, BoardOptions, BoardColumn, TimelineZoom, TimelineOptions, TimelinePoint, TimelineRow, TimelineConnector, TimelineLayout } from "./project-model/index.js";
 
 export { GraphValidationError, validateGraph, neighbors, subgraph, degrees, components, shortestPath, groupByKind, radialLayout, forceLayout, edgeRoutingHints } from "./graph-model/index.js";
 export type { GraphNode, GraphEdge, GraphInput, GraphModelEdge, GraphModel, GraphErrorCode, GraphNeighborOptions, GraphSubgraphOptions, GraphDegree, GraphKindGroup, GraphPosition, GraphRadialOptions, GraphForceOptions, GraphEdgeRoutingHint } from "./graph-model/index.js";

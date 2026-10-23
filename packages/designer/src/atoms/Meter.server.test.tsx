@@ -30,6 +30,12 @@ describe("server Meter", () => {
     expect(screen.getByText("3 units")).toBeVisible();
   });
 
+  it.each([["empty", ""], ["whitespace-only", "   "]])("accepts an %s label without rendering it", (_name, label) => {
+    const { container } = render(<Meter value={3} scaleMax={5} tone="info" valueText="3 units" label={label} />);
+    expect(container.querySelector("[aria-label], [role]")).toBeNull();
+    expect(screen.getByText("3 units")).toBeVisible();
+  });
+
   it("keeps the previous marker decorative and leaves no role anywhere", () => {
     const { container } = render(<Meter value={6} scaleMax={8} previous={2} previousText="Previously 2 units" tone="neutral" valueText="6 units" />);
     expect(screen.getByText("Previously 2 units")).toBeVisible();
