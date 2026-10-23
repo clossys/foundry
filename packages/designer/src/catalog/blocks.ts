@@ -170,7 +170,7 @@ const PAGE_HEADER_CONTRACT: BlockContract = {
 };
 
 // ---------------------------------------------------------------------------
-// Leaves: 85 (Explain 28, Organize 24, Collect 10, Navigate 16, Respond 7)
+// Leaves: shared inventory below; catalog.coverage.test.ts reports counts (repository test, not shipped).
 // ---------------------------------------------------------------------------
 
 const HEADINGS = at("explain", "headings");
