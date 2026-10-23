@@ -79,6 +79,10 @@ export interface AppFrameProps {
   containedWidthLabel?: string;
   /** @default "More page actions" */
   pageActionsLabel?: string;
+  /** Additional host content inside the existing PageBar, after the brand. */
+  headerContent?: ReactNode;
+  /** Immersive fills a sized parent with an unpadded, non-scrolling canvas beneath the chrome. @default "standard" */
+  contentLayout?: "standard" | "immersive";
   /** Route content must not render another main landmark or, when page is supplied, another page header. */
   children: ReactNode;
   rightPanel?: AppFrameRightPanel;

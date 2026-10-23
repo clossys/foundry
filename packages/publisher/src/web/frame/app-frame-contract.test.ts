@@ -60,6 +60,7 @@ describe("data-readable AppFrame contract", () => {
     expect(APP_FRAME_CONFIG_SCHEMA).toEqual({
       "page.width": { values: ["contained", "full"], default: "contained" },
       width: { values: ["contained", "full"], default: null },
+      contentLayout: { values: ["standard", "immersive"], default: "standard" },
       "brand.markInk": { values: ["accent", "image"], default: "accent" },
       "commands.shortcutEnabled": { values: [false, true], default: true },
       "navigation.defaultCollapsed": { values: [false, true], default: false },

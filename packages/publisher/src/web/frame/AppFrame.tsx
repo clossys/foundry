@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import { ModalContext, PopoverContext } from "react-aria-components";
 import { Button, Icon, Menu } from "@clossys/designer/atoms";
 import { Layers, List, Search } from "@clossys/designer/icons";
@@ -37,7 +37,7 @@ function SignedOutMenu({ sections, signedOutLabel, onRoute }: AppFrameAccount) {
   </Menu>;
 }
 
-function FrameContent({ brand, navigation, account, commands, children, rightPanel, theme, themeControl, dir, page, workspaces, width: suppliedStageWidth, onWidthChange, breadcrumbLabel, collapsedBreadcrumbLabel, pageInfoLabel, fullWidthLabel, containedWidthLabel, pageActionsLabel,
+function FrameContent({ brand, navigation, account, commands, children, rightPanel, theme, themeControl, dir, page, workspaces, width: suppliedStageWidth, onWidthChange, breadcrumbLabel, collapsedBreadcrumbLabel, pageInfoLabel, fullWidthLabel, containedWidthLabel, pageActionsLabel, headerContent, contentLayout = "standard",
   /** @default "Skip to content" */
   skipLabel = "Skip to content", mainId }: AppFrameProps) {
   const {
@@ -58,6 +58,7 @@ function FrameContent({ brand, navigation, account, commands, children, rightPan
   const [navDrawerOpen, setNavDrawerOpen] = useState(false);
   const [stageOverride, setStageOverride] = useState<"contained" | "full">();
   const stageWidth = suppliedStageWidth ?? stageOverride ?? page?.width ?? "contained";
+  const immersive = contentLayout === "immersive";
   const [barHeight, setBarHeight] = useState(0);
   const [panelOpen, setPanelOpen] = useState(false);
   const [width, setWidth] = useState(rightPanel?.defaultValue ?? 0);
@@ -195,32 +196,38 @@ function FrameContent({ brand, navigation, account, commands, children, rightPan
     aria-label={navOpen ? navigationCloseLabel : navigationOpenLabel} aria-expanded={navOpen} onPress={changeNav}><Icon glyph={List} decorative /></Button>;
   const commandTrigger = <div style={{ paddingBlockStart: `calc(${APP_FRAME_LAYOUT.tap} + ${APP_FRAME_LAYOUT.gutter})` }}><Button variant="ghost" className={CONTROL + " w-full justify-start gap-sm"} style={TAP} onPress={openCommands}><Icon glyph={Search} decorative /><span className="min-w-0 truncate">{triggerLabel}</span></Button></div>;
   const stageChange = (next: "contained" | "full") => { setStageOverride(next); onWidthChange?.(next); };
+  const pageBar = <PageBar brand={headerContent === undefined ? <AppFrameBrand {...brand} /> : <><AppFrameBrand {...brand} />{headerContent}</>} root={{ label: brand.wordmark, href: brand.href }} page={page} workspaces={workspaces} width={stageWidth} onWidthChange={stageChange} narrow={!wide}
+    reserveStart={!navigationDocked} reserveEnd={Boolean(rightPanel) && !panelDocked} onHeightChange={setBarHeight} dir={dir}
+    labels={{ breadcrumb: breadcrumbLabel ?? "Breadcrumb", collapsedBreadcrumb: collapsedBreadcrumbLabel ?? "More breadcrumb levels", pageInfo: pageInfoLabel ?? "Page information",
+      fullWidth: fullWidthLabel ?? "Use full width", containedWidth: containedWidthLabel ?? "Use contained width", pageActions: pageActionsLabel ?? "More page actions" }} />;
   return <ModalContext.Provider value={{ style: { direction: dir } }}><PopoverContext.Provider value={{ style: { direction: dir } }}>
-    <div ref={frame} dir={dir} data-application-frame="" className="relative flex h-dvh min-h-0 min-w-0 overflow-hidden bg-surface-base text-body text-ink-primary">
+    <div ref={frame} dir={dir} data-application-frame="" className={"relative flex " + (immersive ? "h-full w-full" : "h-dvh") + " min-h-0 min-w-0 overflow-hidden bg-surface-base text-body text-ink-primary"}
+      style={barHeight > 0 ? { "--app-frame-header-height": `${barHeight}px` } as CSSProperties : undefined}>
       <SiteSkipLink targetId={target} label={skipLabel} />
       <span aria-hidden="true" className="absolute block overflow-hidden" style={{ inlineSize: 0, blockSize: 0 }}>
         <span ref={sidebarProbe} className="block" style={{ inlineSize: APP_FRAME_LAYOUT.sidebar, blockSize: 0 }} />
       </span>
-      <div data-application-frame-region="navigation" className="min-h-0 shrink-0" style={{ inlineSize: navigationDocked ? APP_FRAME_LAYOUT.sidebar : 0 }}>
+      <div data-application-frame-region="navigation" className="min-h-0 shrink-0" style={{ inlineSize: navigationDocked ? APP_FRAME_LAYOUT.sidebar : 0,
+        ...(immersive ? { position: "absolute", insetBlock: 0, insetInlineStart: 0, zIndex: APP_FRAME_LAYOUT.controlLayer } as const : {}) }}>
         <AppNavigation {...navigation} dismissAt={layout.navigationOverlay ? APP_FRAME_ALWAYS_NARROW : APP_FRAME_ALWAYS_WIDE} header={commandTrigger} footer={footer} trigger={navigationTrigger}
           drawerOpen={navigation.drawerOpen ?? navDrawerOpen} onDrawerOpenChange={next => { setNavDrawerOpen(next); navigation.onDrawerOpenChange?.(next); }}
           collapsed={navCollapsed} onCollapsedChange={next => { setNavigationCollapsed(next); navigation.onCollapsedChange?.(next); }} />
       </div>
       <div className="flex min-h-0 min-w-0 flex-1 justify-center overflow-hidden">
         <div data-application-frame-region="stage" data-stage-width={stageWidth} data-stage-navigation={layout.navigationOverlay ? "overlay" : "docked"} data-stage-panel={narrow ? "overlay" : "docked"}
-          style={{ inlineSize: "100%", minInlineSize: 0, maxInlineSize: stageWidth === "contained" ? APP_FRAME_LAYOUT.maximum : "none", marginInline: "auto", overflowY: "auto", overflowX: "hidden", scrollPaddingBlockStart: `calc(${barHeight ? `${barHeight}px` : APP_FRAME_LAYOUT.tap} + 2 * ${APP_FRAME_LAYOUT.gutter})` }}>
-          <PageBar brand={<AppFrameBrand {...brand} />} root={{ label: brand.wordmark, href: brand.href }} page={page} workspaces={workspaces} width={stageWidth} onWidthChange={stageChange} narrow={!wide}
-            reserveStart={!navigationDocked} reserveEnd={Boolean(rightPanel) && !panelDocked} onHeightChange={setBarHeight} dir={dir}
-            labels={{ breadcrumb: breadcrumbLabel ?? "Breadcrumb", collapsedBreadcrumb: collapsedBreadcrumbLabel ?? "More breadcrumb levels", pageInfo: pageInfoLabel ?? "Page information",
-              fullWidth: fullWidthLabel ?? "Use full width", containedWidth: containedWidthLabel ?? "Use contained width", pageActions: pageActionsLabel ?? "More page actions" }} />
-          <main id={target} tabIndex={-1} className="min-h-0 min-w-0 p-md focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent">{children}</main>
+          style={{ inlineSize: "100%", minInlineSize: 0, maxInlineSize: !immersive && stageWidth === "contained" ? APP_FRAME_LAYOUT.maximum : "none", marginInline: "auto", overflowY: immersive ? "hidden" : "auto", overflowX: "hidden", scrollPaddingBlockStart: `calc(${barHeight ? `${barHeight}px` : APP_FRAME_LAYOUT.tap} + 2 * ${APP_FRAME_LAYOUT.gutter})`,
+            ...(immersive ? { position: "relative", blockSize: "100%" } as const : {}) }}>
+          {immersive ? <div style={{ position: "absolute", insetBlockStart: 0, insetInlineStart: navigationDocked ? APP_FRAME_LAYOUT.sidebar : 0,
+            insetInlineEnd: panelDocked ? currentPanelWidth : 0, zIndex: APP_FRAME_LAYOUT.barLayer }}>{pageBar}</div> : pageBar}
+          <main id={target} tabIndex={-1} className={"min-h-0 min-w-0 " + (immersive ? "h-full w-full overflow-hidden" : "p-md") + " focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent"}>{children}</main>
         </div>
       </div>
       {panelTrigger}
       {rightPanel && !narrow && !collapsed && <ResizablePane min={rightPanel.min} max={rightPanel.max} defaultValue={rightPanel.defaultValue}
         value={rightPanel.value ?? width} step={rightPanel.step} label={rightPanel.label} handleLabel={rightPanel.handleLabel}
         onChange={next => { setWidth(next); rightPanel.onChange?.(next); }}
-        onFocusCapture={capturePanelFocus} data-application-frame-panel="pane" className="h-full min-h-0 shrink-0 rounded-none border-0 border-s border-line-base p-sm">{rightPanel.children}</ResizablePane>}
+        onFocusCapture={capturePanelFocus} data-application-frame-panel="pane" className="h-full min-h-0 shrink-0 rounded-none border-0 border-s border-line-base p-sm"
+        style={immersive ? { position: "absolute", insetBlock: 0, insetInlineEnd: 0, zIndex: APP_FRAME_LAYOUT.barLayer } : undefined}>{rightPanel.children}</ResizablePane>}
       <CommandMenu {...commandProps} dir={dir} isOpen={commandOpen} onOpenChange={setCommandOpen} query={query} onQueryChange={setQuery} />
     </div>
   </PopoverContext.Provider></ModalContext.Provider>;

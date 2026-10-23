@@ -10,6 +10,7 @@ function freeze<T>(value: T): T {
 export const APP_FRAME_CONFIG_SCHEMA = freeze({
   "page.width": { values: ["contained", "full"], default: "contained" },
   width: { values: ["contained", "full"], default: null },
+  contentLayout: { values: ["standard", "immersive"], default: "standard" },
   "brand.markInk": { values: ["accent", "image"], default: "accent" },
   "commands.shortcutEnabled": { values: [false, true], default: true },
   "navigation.defaultCollapsed": { values: [false, true], default: false },
@@ -58,7 +59,7 @@ export const APP_FRAME_CONTRACT = freeze({
     "commands.groups", "commands.triggerLabel", "commands.heading", "commands.searchLabel", "commands.closeLabel", "commands.emptyMessage",
     "page.title", "page.breadcrumb", "page.status", "page.description", "page.updatedAt", "page.meta", "page.actions", "page.scope", "page.width", "workspaces",
     "breadcrumbLabel", "collapsedBreadcrumbLabel", "pageInfoLabel", "fullWidthLabel", "containedWidthLabel", "pageActionsLabel",
-    "children", "rightPanel.children", "rightPanel.label", "rightPanel.handleLabel", "rightPanel.min", "rightPanel.max", "rightPanel.defaultValue",
+    "children", "headerContent", "contentLayout", "rightPanel.children", "rightPanel.label", "rightPanel.handleLabel", "rightPanel.min", "rightPanel.max", "rightPanel.defaultValue",
     "theme.storageKey", "theme.preferenceLabels", "theme.toggleLabel", "theme.preferenceAnnouncement", "skipLabel", "mainId",
   ],
   statePorts: [
@@ -94,6 +95,8 @@ export const APP_FRAME_CONTRACT = freeze({
     stage: "remaining docked widths are reserved; a centered contained stage uses the existing wide maximum, full uses all remaining width; user choice remains in memory unless controlled",
     page: "optional page owns the bar h1, brand-rooted breadcrumb and sibling/workspace menus, optional information overlay and host actions; only the first primary request receives primary styling",
     bar: "sticky within the stage, translucent with supported backdrop blur; opaque for reduced transparency, forced colors or unsupported blur",
+    headerContent: "optional host ReactNode after the brand inside the same PageBar; measured bar height is exposed as --app-frame-header-height after the first positive measurement",
+    contentLayout: "standard preserves the scrolling padded stage; immersive fills a sized parent with a full-width, full-height, unpadded non-scrolling main beneath overlay navigation, page bar and optional panel; stage width preference still applies when returning to standard",
     responsiveQuery: "(min-width: 56.25rem)",
     brand: "small accent-mask home mark with the brand name at the breadcrumb root, never a second wordmark; markInk image uses the small Logomark and preserves multicolor source artwork",
     accessibility: "logical direction and forced-colors treatment apply to composed chrome and focus indicators",

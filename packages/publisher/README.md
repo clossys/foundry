@@ -6585,6 +6585,8 @@ PackManifest and the publication map remain separate contracts.
 web and server entries continue to serve their existing page compositions.
 The application frame's page bar is the Designer `PageBar` block.
 
+Supply `headerContent` to place host controls or status beside the brand inside the same page bar. The default `contentLayout="standard"` retains the scrolling, padded stage; opt into `contentLayout="immersive"` inside a parent with an explicit height for an unpadded, non-scrolling canvas spanning the full container beneath overlay navigation, header and optional panel. Width preferences are retained for standard layout. After the first positive page-bar measurement, the frame exposes `--app-frame-header-height` and updates it as the bar resizes; floating child panels can use `calc(var(--app-frame-header-height, 0px) + 2 * var(--spacing-md))` for a header inset including its gutters.
+
 The application frame composes Designer's `AppNavigation`, `AccountMenu`,
 `CommandMenu`, brand primitives, theme controls and optional
 `ResizablePane`. It owns one focusable main landmark and its skip target;

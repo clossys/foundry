@@ -15,6 +15,11 @@ export const props: AppFrameProps = {
   children: <h1>Home</h1>,
 };
 export const composed = <AppFrame {...props} />;
+export const immersive = <AppFrame {...props} contentLayout="immersive" headerContent={<button>Workspace action</button>} />;
+export const standard = <AppFrame {...props} contentLayout="standard" headerContent={null} />;
+export const contentLayouts: readonly NonNullable<AppFrameProps["contentLayout"]>[] = APP_FRAME_CONFIG_SCHEMA.contentLayout.values;
+// @ts-expect-error layout modes are finite
+export const unsupportedLayout = <AppFrame {...props} contentLayout="viewport" />;
 export const hostThemeControl = <AppFrame {...props} themeControl={<button>Choose theme</button>} />;
 export const omittedThemeControl = <AppFrame {...props} themeControl={null} />;
 export const defaultThemeControl = <AppFrame {...props} themeControl={undefined} />;
