@@ -6,7 +6,7 @@
     "baseUrl": ".",
     "ignoreDeprecations": "6.0",
     "verbatimModuleSyntax": true,
-    "noUnusedLocals": true,
+    "noUnusedLocals": false,
     "paths": {
       "@clossys/publisher/assessment": [
         "./src/verified-publication-rate.ts"
