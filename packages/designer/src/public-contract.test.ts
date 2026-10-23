@@ -32,13 +32,42 @@ describe("compiled evidence blocks public contract", () => {
 });
 
 
+/** Module specifiers naming React or ReactDOM, read from the syntax tree so a multi-line import or require cannot slip past. */
+function reactModuleSpecifiers(source: string): string[] {
+  const found: string[] = [];
+  const react = /^react(?:-dom)?(?:\/|$)/;
+  const record = (node: ts.Node | undefined) => { if (node && ts.isStringLiteralLike(node) && react.test(node.text)) found.push(node.text); };
+  const visit = (node: ts.Node): void => {
+    if (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) record(node.moduleSpecifier);
+    else if (ts.isImportEqualsDeclaration(node) && ts.isExternalModuleReference(node.moduleReference)) record(node.moduleReference.expression);
+    else if (ts.isCallExpression(node) && (node.expression.kind === ts.SyntaxKind.ImportKeyword || (ts.isIdentifier(node.expression) && node.expression.text === "require"))) record(node.arguments[0]);
+    else if (ts.isImportTypeNode(node) && ts.isLiteralTypeNode(node.argument)) record(node.argument.literal);
+    ts.forEachChild(node, visit);
+  };
+  visit(ts.createSourceFile("source.ts", source, ts.ScriptTarget.ESNext, true, ts.ScriptKind.TS));
+  return found;
+}
+
 describe("compiled canvas public contract", () => {
   it("exports CanvasSurface and the headless functions through the client blocks entry", () => {
     const script = `import * as blocks from "@clossys/designer/blocks"; process.stdout.write(JSON.stringify(Object.keys(blocks)));`;
     const keys: string[] = JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e", script], { cwd: packageRoot, encoding: "utf8" }));
     for (const name of ["CanvasSurface", "panBy", "zoomAt", "fitTo", "clamp", "toWorld", "toScreen", "selectSingle", "toggleSelection", "selectRange", "selectMarquee", "clearSelection", "navigate", "minimapModel"]) expect(keys).toContain(name);
     expect(keys).not.toContain("validateCanvasItems");
-    expect(readFileSync(join(packageRoot, "src/blocks/canvas/models.ts"), "utf8")).not.toMatch(/\b(?:import|require)\b.*["'](?:react|react-dom)/);
+    expect(reactModuleSpecifiers(readFileSync(join(packageRoot, "src/blocks/canvas/models.ts"), "utf8"))).toEqual([]);
+  });
+
+  it("finds React module specifiers in import, export, require and dynamic import forms across lines [mutant: single-line regex]", () => {
+    const prohibited: Record<string, string> = {
+      "single-line import": 'import { useState } from "react";',
+      "multi-line import": 'import {\n  createElement,\n  Fragment,\n} from\n  "react";',
+      "multi-line require": 'const dom = require(\n  "react-dom/client"\n);',
+      "re-export": 'export {\n  useId,\n} from "react";',
+      "dynamic import": 'const lazy = () => import(\n  "react-dom"\n);',
+    };
+    for (const [name, source] of Object.entries(prohibited)) expect(reactModuleSpecifiers(source), name).not.toEqual([]);
+    const control = 'import { finite } from "./react-free.js";\nconst note = "never import from \'react\' here";\nexport const requireFinite = (value: number) => finite(value);';
+    expect(reactModuleSpecifiers(control)).toEqual([]);
   });
 
   it("resolves readonly serializable models and controlled surface props from emitted declarations", () => {

@@ -523,6 +523,35 @@ describe("Block theme conformance", () => {
     expect(entry?.contrastPairs).toContain("ink-muted/surface-base");
   });
 
+  // Each row pins pairs a Block renders beyond its ground reading set: the
+  // source evidence that paints it, then every pair id it needs.
+  const RAISED_PLATE = ["ink-primary/surface-raised", "ink-secondary/surface-raised"];
+  const INVERSE_RAISED_PLATE = ["link-grid/ink-on-inverse/surface-inverse-raised", "link-grid/ink-on-inverse-muted/surface-inverse-raised"];
+  it.each([
+    ["TaskList", "muted", ["text-ink-muted"], ["ink-muted/surface-base"]],
+    ["EventItem", "muted", ["text-ink-muted"], ["ink-muted/surface-base"]],
+    ["EventItem", "secondary on sunken", ["bg-surface-sunken text-ink-secondary"], ["ink-secondary/surface-sunken"]],
+    ["TestimonialSet", "raised plate", ["bg-surface-raised"], RAISED_PLATE],
+    ["TestimonialSet", "inverse raised plate", ["bg-surface-inverse-raised"], INVERSE_RAISED_PLATE],
+    ["PeopleGrid", "raised initials and hover plate", ["bg-surface-raised"], RAISED_PLATE],
+    ["PeopleGrid", "inverse raised initials and hover plate", ["bg-surface-inverse-raised"], INVERSE_RAISED_PLATE],
+  ] as const)("registers %s %s pairs [mutant: remove the group]", (name, _group, painted, pairs) => {
+    const input = realInputs();
+    const entry = BLOCK_THEME_CONFORMANCE.find(candidate => candidate.exportName === name)!;
+    const graph = sourceGraph(entry.source, input.sources).map(file => input.sources.get(file)!).join("\n");
+    for (const paint of painted) expect(graph, `${name} paints ${paint}`).toContain(paint);
+    for (const id of pairs) expect(entry.contrastPairs, `${name} registers ${id}`).toContain(id);
+  });
+
+  it("checks body-scale text on an inverse raised plate at the text threshold, not the 3:1 icon pair", () => {
+    const icon = CONTRAST_PAIRS.find(pair => pair.id === "ink-on-inverse/surface-inverse-raised");
+    expect(icon?.minimumRatio).toBe(3);
+    for (const id of INVERSE_RAISED_PLATE) expect(CONTRAST_PAIRS.find(pair => pair.id === id)?.minimumRatio, id).toBe(4.5);
+    for (const name of ["TestimonialSet", "PeopleGrid"]) {
+      expect(BLOCK_THEME_CONFORMANCE.find(candidate => candidate.exportName === name)?.contrastPairs, name).not.toContain("ink-on-inverse/surface-inverse-raised");
+    }
+  });
+
   it("rejects an unregistered new Block export", () => {
     const input = realInputs();
     const file = "src/blocks/index.ts";

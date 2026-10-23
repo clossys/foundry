@@ -4667,9 +4667,9 @@ image sizing is omitted under the current compiled-class scanner contract.
 
 Draft, server-safe people collection. Names are semantic headings; portraits and
 initials are decorative. A linked person's name uses the shared stretched-link
-title, with one anchor per person. A linked `bio` or `role` cannot contain another
-interactive target; the supplied React tree is checked at render using the same
-probe as `Items`.
+title, with one anchor per person. A linked person's `name`, `bio` or `role`
+cannot contain another interactive target (the name renders inside the anchor);
+the supplied React tree is checked at render using the same probe as `Items`.
 
 | Prop | Contract |
 | --- | --- |

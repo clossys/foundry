@@ -51,7 +51,7 @@ function PersonCard({ person, media, headingLevel, ground }: {
   const initialsClasses = cx("flex items-center justify-center font-medium", INITIALS_FILL_CLASSES[ground], initialsInk);
   const Heading = headingLevel === 3 ? "h3" : headingLevel === 4 ? "h4" : headingLevel === 5 ? "h5" : "h6";
   const linked = person.href !== undefined;
-  if (linked) assertNoNestedInteractive("PeopleGrid", person.id, [person.bio, person.role]);
+  if (linked) assertNoNestedInteractive("PeopleGrid", person.id, [person.name, person.bio, person.role]);
   const linkedClasses = linked ? cardLinkContainerClassName("plain", ground) : undefined;
   const fallbackClasses = person.portrait == null ? initialsClasses : undefined;
   return <li className={cx(itemClasses, linkedClasses)} style={{ minBlockSize: linked ? UI_LAYOUT_TAP_TARGET : undefined }}>
