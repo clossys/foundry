@@ -1,0 +1,769 @@
+[
+  {
+    "file": "examples/atoms/act.breadcrumb.tsx",
+    "heading": "### `Breadcrumb`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/atoms/act.button-2.tsx",
+    "heading": "### `Button`",
+    "ordinal": 2
+  },
+  {
+    "file": "examples/atoms/act.button-3.tsx",
+    "heading": "### `Button`",
+    "ordinal": 3
+  },
+  {
+    "file": "examples/atoms/act.button-4.tsx",
+    "heading": "### `Button`",
+    "ordinal": 4
+  },
+  {
+    "file": "examples/atoms/act.button.tsx",
+    "heading": "### `Button`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/atoms/act.icon-button.tsx",
+    "heading": "### `IconButton`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/atoms/act.link-2.tsx",
+    "heading": "### `Link`",
+    "ordinal": 2
+  },
+  {
+    "file": "examples/atoms/act.link.tsx",
+    "heading": "### `Link`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/atoms/act.menu-2.tsx",
+    "heading": "### `Menu`",
+    "ordinal": 2
+  },
+  {
+    "file": "examples/atoms/act.menu.tsx",
+    "heading": "### `Menu`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/atoms/depict.avatar.tsx",
+    "heading": "### `Avatar`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/atoms/depict.icon-2.tsx",
+    "heading": "### `Icon`",
+    "ordinal": 2
+  },
+  {
+    "file": "examples/atoms/depict.icon.tsx",
+    "heading": "### `Icon`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/atoms/depict.logomark.tsx",
+    "heading": "### `Logomark` and `Lockup`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/atoms/enter.checkbox.tsx",
+    "heading": "### `Checkbox`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/atoms/enter.combo-box.tsx",
+    "heading": "### `ComboBox`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/atoms/enter.date-field.tsx",
+    "heading": "### `DateField`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/atoms/enter.field.tsx",
+    "heading": "### `Field`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/atoms/enter.file-trigger.tsx",
+    "heading": "### `FileTrigger`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/atoms/enter.radio-group.tsx",
+    "heading": "### `RadioGroup`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/atoms/enter.search-field.tsx",
+    "heading": "### `SearchField`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/atoms/enter.select.tsx",
+    "heading": "### `Select`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/atoms/enter.switch.tsx",
+    "heading": "### `Switch`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/atoms/enter.text-field.tsx",
+    "heading": "### `TextField`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/atoms/enter.textarea.tsx",
+    "heading": "### `Textarea`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/atoms/group.card-2.tsx",
+    "heading": "### `Card`",
+    "ordinal": 2
+  },
+  {
+    "file": "examples/atoms/group.card.tsx",
+    "heading": "### `Card`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/atoms/group.separator.tsx",
+    "heading": "### `Separator`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/atoms/group.table-2.tsx",
+    "heading": "### `Table`",
+    "ordinal": 2
+  },
+  {
+    "file": "examples/atoms/group.table.tsx",
+    "heading": "### `Table`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/atoms/inform.badge.tsx",
+    "heading": "### `Badge`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/atoms/inform.banner.tsx",
+    "heading": "### `Banner`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/atoms/inform.chip.tsx",
+    "heading": "### `Chip`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/atoms/inform.meter.tsx",
+    "heading": "### `Meter`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/atoms/inform.progress-bar.tsx",
+    "heading": "### `ProgressBar`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/atoms/inform.skeleton.tsx",
+    "heading": "### `Skeleton`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/atoms/inform.spinner.tsx",
+    "heading": "### `Spinner`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/atoms/inform.status-mark.tsx",
+    "heading": "### `StatusMark`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/atoms/inform.toast-2.tsx",
+    "heading": "### `Toaster` and `toast`",
+    "ordinal": 2
+  },
+  {
+    "file": "examples/atoms/inform.toast.tsx",
+    "heading": "### `Toaster` and `toast`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/atoms/reveal.dialog-2.tsx",
+    "heading": "### `Dialog`",
+    "ordinal": 2
+  },
+  {
+    "file": "examples/atoms/reveal.dialog.tsx",
+    "heading": "### `Dialog`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/atoms/reveal.disclosure.tsx",
+    "heading": "### `Disclosure`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/atoms/reveal.popover.tsx",
+    "heading": "### `Popover`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/atoms/reveal.tabs.tsx",
+    "heading": "### `Tabs`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/atoms/reveal.tooltip.tsx",
+    "heading": "### `Tooltip`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/blocks/form.confirm-dialog.tsx",
+    "heading": "### `ConfirmDialog`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/blocks/form.consent-banner.tsx",
+    "heading": "### `ConsentBanner`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/blocks/form.field-group.tsx",
+    "heading": "### `FieldGroup`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/blocks/form.form.tsx",
+    "heading": "### `Form`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/blocks/form.newsletter-band.tsx",
+    "heading": "### `NewsletterBand`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/blocks/form.pagination.tsx",
+    "heading": "### `Pagination`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/blocks/form.toolbar.tsx",
+    "heading": "### `Toolbar`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/blocks/items.feature-grid.tsx",
+    "heading": "### `FeatureGrid`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/blocks/items.item-2.tsx",
+    "heading": "### `Item` and `Items`",
+    "ordinal": 2
+  },
+  {
+    "file": "examples/blocks/items.item.tsx",
+    "heading": "### `Item` and `Items`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/blocks/items.legacy-faq.tsx",
+    "heading": "### `Faq`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/blocks/items.nav-grid.tsx",
+    "heading": "### `NavGrid`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/blocks/items.ordered-step-sequence.tsx",
+    "heading": "### `OrderedStepSequence`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/blocks/items.resource-list.tsx",
+    "heading": "### `ResourceList` (draft)",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/blocks/items.stat.tsx",
+    "heading": "### `Stat`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/blocks/items.status-list.tsx",
+    "heading": "### `StatusList`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/blocks/items.tree.tsx",
+    "heading": "### `Tree`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/blocks/items.usage-meter.tsx",
+    "heading": "### `UsageMeter`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/blocks/matrix.data-table.tsx",
+    "heading": "### `DataTable`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/blocks/matrix.detail.tsx",
+    "heading": "### `DetailView`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/blocks/matrix.pricing.tsx",
+    "heading": "### `PricingTable`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/blocks/matrix.raw-2.tsx",
+    "heading": "### `Matrix`",
+    "ordinal": 2
+  },
+  {
+    "file": "examples/blocks/matrix.raw.tsx",
+    "heading": "### `Matrix`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/blocks/prose.article.tsx",
+    "heading": "### `ArticleBody`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/blocks/prose.table-of-contents.tsx",
+    "heading": "### `TableOfContents`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/blocks/say.chapter.tsx",
+    "heading": "### `MarketingChapter`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/blocks/say.empty-state.tsx",
+    "heading": "### `EmptyState`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/blocks/say.hero-2.tsx",
+    "heading": "### `Hero`",
+    "ordinal": 2
+  },
+  {
+    "file": "examples/blocks/say.hero-3.tsx",
+    "heading": "### `Hero`",
+    "ordinal": 3
+  },
+  {
+    "file": "examples/blocks/say.hero.tsx",
+    "heading": "### `Hero`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/blocks/say.media-figure.tsx",
+    "heading": "### `MediaFigure`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/blocks/say.page-header.tsx",
+    "heading": "### `PageHeader`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/blocks/say.section-header.tsx",
+    "heading": "### `SectionHeader`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/blocks/say.section-intro.tsx",
+    "heading": "### `SectionIntro`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/blocks/say.specimen.tsx",
+    "heading": "### `Specimen`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/blocks/say.takeaway-2.tsx",
+    "heading": "### `ContentSection`",
+    "ordinal": 2
+  },
+  {
+    "file": "examples/blocks/say.takeaway.tsx",
+    "heading": "### `ContentSection`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/blocks/say.testimonial.tsx",
+    "heading": "### `Testimonial`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/guides/accent-mark.tsx",
+    "heading": "#### Accent mark",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/guides/accessmatrix-and-columnmapper-2.tsx",
+    "heading": "### AccessMatrix and ColumnMapper",
+    "ordinal": 2
+  },
+  {
+    "file": "examples/guides/accessmatrix-and-columnmapper.tsx",
+    "heading": "### AccessMatrix and ColumnMapper",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/guides/account-menu-composition-example.tsx",
+    "heading": "### Account menu composition example",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/guides/application-navigation.tsx",
+    "heading": "## Application navigation",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/guides/application-panels-2.tsx",
+    "heading": "## Application panels",
+    "ordinal": 2
+  },
+  {
+    "file": "examples/guides/application-panels-3.tsx",
+    "heading": "## Application panels",
+    "ordinal": 3
+  },
+  {
+    "file": "examples/guides/application-panels.tsx",
+    "heading": "## Application panels",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/guides/areachart-heatmap-and-statusstrip.tsx",
+    "heading": "### `AreaChart`, `Heatmap`, and `StatusStrip`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/guides/barchart.tsx",
+    "heading": "### `BarChart`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/guides/brandmark.tsx",
+    "heading": "### `Brandmark`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/guides/catalogworkspace.tsx",
+    "heading": "### CatalogWorkspace",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/guides/chartframe.tsx",
+    "heading": "### `ChartFrame`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/guides/commandmenu.tsx",
+    "heading": "### CommandMenu",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/guides/composing-chrome-and-blocks.tsx",
+    "heading": "### Composing chrome and blocks",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/guides/consumer-owned-art-slots.ts",
+    "heading": "## Consumer-owned art slots",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/guides/datatable-saved-view-example.tsx",
+    "heading": "### DataTable saved-view example",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/guides/design-conformance-rate.ts",
+    "heading": "## Design conformance rate",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/guides/destination-collections.tsx",
+    "heading": "### Destination collections",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/guides/getthemeinitscript-2.tsx",
+    "heading": "### `getThemeInitScript`",
+    "ordinal": 2
+  },
+  {
+    "file": "examples/guides/getthemeinitscript.tsx",
+    "heading": "### `getThemeInitScript`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/guides/groupedtable.tsx",
+    "heading": "### GroupedTable",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/guides/headless-graph-model-2.ts",
+    "heading": "### Headless graph model",
+    "ordinal": 2
+  },
+  {
+    "file": "examples/guides/headless-graph-model.ts",
+    "heading": "### Headless graph model",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/guides/headless-project-model.ts",
+    "heading": "### Headless project model",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/guides/headless-table-model.ts",
+    "heading": "### Headless table model",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/guides/hero-backdrop-contract-clossys-designer-tokens.ts",
+    "heading": "## Hero backdrop contract (`@clossys/designer/tokens`)",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/guides/how-differing-chrome-is-handled.tsx",
+    "heading": "#### How differing chrome is handled",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/guides/icon-glyph-data-clossys-designer-icons.tsx",
+    "heading": "## Icon glyph data (`@clossys/designer/icons`)",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/guides/identity-kit-clossys-designer-tokens-1210-2.ts",
+    "heading": "## Identity kit (`@clossys/designer/tokens`) \u2014 #1210",
+    "ordinal": 2
+  },
+  {
+    "file": "examples/guides/identity-kit-clossys-designer-tokens-1210.ts",
+    "heading": "## Identity kit (`@clossys/designer/tokens`) \u2014 #1210",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/guides/index-configuration-status-list.tsx",
+    "heading": "#### Index configuration: status list",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/guides/linechart.tsx",
+    "heading": "### `LineChart`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/guides/node-token-helper-migration.ts",
+    "heading": "### Node token helper migration",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/guides/pagebar.tsx",
+    "heading": "### PageBar",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/guides/pricingtable-interval-and-comparison-examples-2.tsx",
+    "heading": "### PricingTable interval and comparison examples",
+    "ordinal": 2
+  },
+  {
+    "file": "examples/guides/pricingtable-interval-and-comparison-examples-3.tsx",
+    "heading": "### PricingTable interval and comparison examples",
+    "ordinal": 3
+  },
+  {
+    "file": "examples/guides/pricingtable-interval-and-comparison-examples.tsx",
+    "heading": "### PricingTable interval and comparison examples",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/guides/rangechart.tsx",
+    "heading": "### `RangeChart`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/guides/recordledger-and-item-visuals.tsx",
+    "heading": "### RecordLedger and item visuals",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/guides/relationgraph.tsx",
+    "heading": "### RelationGraph",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/guides/scatterchart.tsx",
+    "heading": "### `ScatterChart`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/guides/sectionframe.tsx",
+    "heading": "### `SectionFrame`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/guides/setup-2.ts",
+    "heading": "## Setup",
+    "ordinal": 2
+  },
+  {
+    "file": "examples/guides/setup.ts",
+    "heading": "## Setup",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/guides/shared-atom-selection.ts",
+    "heading": "## Shared atom selection",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/guides/shared-plate.tsx",
+    "heading": "#### Shared plate",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/guides/shell-2.tsx",
+    "heading": "### `Shell`",
+    "ordinal": 2
+  },
+  {
+    "file": "examples/guides/shell.tsx",
+    "heading": "### `Shell`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/guides/site-chrome-skiplink-siteheader-navdisclosure-navshell-sitefooter-2.tsx",
+    "heading": "### Site chrome: `SkipLink`, `SiteHeader`, `NavDisclosure`, `NavShell`, `SiteFooter`",
+    "ordinal": 2
+  },
+  {
+    "file": "examples/guides/site-chrome-skiplink-siteheader-navdisclosure-navshell-sitefooter-3.tsx",
+    "heading": "### Site chrome: `SkipLink`, `SiteHeader`, `NavDisclosure`, `NavShell`, `SiteFooter`",
+    "ordinal": 3
+  },
+  {
+    "file": "examples/guides/site-chrome-skiplink-siteheader-navdisclosure-navshell-sitefooter-4.tsx",
+    "heading": "### Site chrome: `SkipLink`, `SiteHeader`, `NavDisclosure`, `NavShell`, `SiteFooter`",
+    "ordinal": 4
+  },
+  {
+    "file": "examples/guides/site-chrome-skiplink-siteheader-navdisclosure-navshell-sitefooter-5.tsx",
+    "heading": "### Site chrome: `SkipLink`, `SiteHeader`, `NavDisclosure`, `NavShell`, `SiteFooter`",
+    "ordinal": 5
+  },
+  {
+    "file": "examples/guides/site-chrome-skiplink-siteheader-navdisclosure-navshell-sitefooter-6.tsx",
+    "heading": "### Site chrome: `SkipLink`, `SiteHeader`, `NavDisclosure`, `NavShell`, `SiteFooter`",
+    "ordinal": 6
+  },
+  {
+    "file": "examples/guides/site-chrome-skiplink-siteheader-navdisclosure-navshell-sitefooter-7.tsx",
+    "heading": "### Site chrome: `SkipLink`, `SiteHeader`, `NavDisclosure`, `NavShell`, `SiteFooter`",
+    "ordinal": 7
+  },
+  {
+    "file": "examples/guides/site-chrome-skiplink-siteheader-navdisclosure-navshell-sitefooter.tsx",
+    "heading": "### Site chrome: `SkipLink`, `SiteHeader`, `NavDisclosure`, `NavShell`, `SiteFooter`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/guides/sparkline.tsx",
+    "heading": "### `Sparkline`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/guides/themeprovider-and-usetheme.tsx",
+    "heading": "### `ThemeProvider` and `useTheme`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/guides/themetoggle.tsx",
+    "heading": "### `ThemeToggle`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/guides/token-specimens.tsx",
+    "heading": "## Token specimens",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/guides/transparent-chrome-and-full-width-2.tsx",
+    "heading": "#### Transparent chrome and full width",
+    "ordinal": 2
+  },
+  {
+    "file": "examples/guides/transparent-chrome-and-full-width.tsx",
+    "heading": "#### Transparent chrome and full width",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/guides/waterfallchart.tsx",
+    "heading": "### `WaterfallChart`",
+    "ordinal": 1
+  },
+  {
+    "file": "examples/guides/wiring-up-a-theme-toggle-2.tsx",
+    "heading": "### Wiring up a theme toggle",
+    "ordinal": 2
+  },
+  {
+    "file": "examples/guides/wiring-up-a-theme-toggle-3.tsx",
+    "heading": "### Wiring up a theme toggle",
+    "ordinal": 3
+  },
+  {
+    "file": "examples/guides/wiring-up-a-theme-toggle-4.tsx",
+    "heading": "### Wiring up a theme toggle",
+    "ordinal": 4
+  },
+  {
+    "file": "examples/guides/wiring-up-a-theme-toggle.tsx",
+    "heading": "### Wiring up a theme toggle",
+    "ordinal": 1
+  },
+  {
+    "file": null,
+    "heading": "### `AuthView`",
+    "ordinal": 1,
+    "reason": "AuthView"
+  },
+  {
+    "file": null,
+    "heading": "### `ErrorView`",
+    "ordinal": 1,
+    "reason": "ErrorView"
+  }
+]
