@@ -61,6 +61,44 @@ test("missing Chromium is reported explicitly as SKIPPED rather than a pass", as
   assert.deepEqual(report.counts, { pass: 0, finding: 0, unverified: 0 });
 });
 
+test("the browser sandbox is disabled only for a loopback target", async () => {
+  const { browserLaunchArgs, isLoopbackTarget } = await loadSweep();
+  for (const url of ["http://127.0.0.1:4501/fixture", "http://127.0.0.2/", "http://localhost:3000/", "http://[::1]:8080/"]) {
+    assert.equal(isLoopbackTarget(url), true, url);
+    assert.ok(browserLaunchArgs(url, "/profile").includes("--no-sandbox"), url);
+  }
+  for (const url of ["https://example.invalid/", "http://localhost.example.invalid/", "http://127.0.0.1.example.invalid/", "http://10.0.0.1/", "http://[::2]/"]) {
+    assert.equal(isLoopbackTarget(url), false, url);
+    assert.ok(!browserLaunchArgs(url, "/profile").includes("--no-sandbox"), url);
+  }
+  assert.deepEqual(browserLaunchArgs("https://example.invalid/", "/profile"),
+    ["--headless=new", "--disable-dev-shm-usage", "--remote-debugging-port=0", "--user-data-dir=/profile", "about:blank"]);
+});
+
+test("the launched browser receives the target-dependent sandbox flag", { timeout: 60000 }, async t => {
+  if (process.platform === "win32") return t.skip("SKIPPED: the recording browser is a POSIX shell script");
+  // A recording stand-in browser saves its arguments and exits before any
+  // navigation, so this proves the real spawn path without network or Chromium.
+  const scratch = mkdtempSync(join(tmpdir(), "state-sweep-launch-"));
+  const script = fileURLToPath(new URL("./state-sweep.mjs", import.meta.url));
+  try {
+    const launched = {};
+    for (const [label, url] of [["loopback", "http://127.0.0.1:9/fixture"], ["remote", "https://example.invalid/fixture"]]) {
+      const record = join(scratch, `${label}.args`);
+      const browser = join(scratch, `${label}.sh`);
+      writeFileSync(browser, `#!/bin/sh\nprintf '%s\\n' "$@" > '${record}'\nexit 1\n`, { mode: 0o755 });
+      const run = spawnSync(process.execPath, [script, "--url", url], { encoding: "utf8", timeout: 45000, env: { ...process.env, CHROME_PATH: browser } });
+      if (run.status === EXIT_NO_WEBSOCKET) return t.skip(`SKIPPED: ${run.stderr.trim().split("\n").pop()}`);
+      assert.ok(existsSync(record), `${label}: the stand-in browser was launched (exit ${run.status}; ${run.stderr.trim().slice(-300)})`);
+      launched[label] = readFileSync(record, "utf8").split("\n").filter(Boolean);
+    }
+    assert.ok(launched.loopback.includes("--no-sandbox"), launched.loopback.join(" "));
+    assert.ok(!launched.remote.includes("--no-sandbox"), launched.remote.join(" "));
+  } finally {
+    rmSync(scratch, { recursive: true, force: true });
+  }
+});
+
 // Real-browser hit-testing: the sweep must only credit a 44px target when the
 // TOPMOST element at each probe point is the target (or inside it).
 const CANDIDATES = [process.env.CHROME_PATH, "/usr/bin/google-chrome", "/usr/bin/chromium", "/usr/bin/chromium-browser",

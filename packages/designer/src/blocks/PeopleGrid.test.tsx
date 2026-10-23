@@ -188,6 +188,18 @@ describe("PeopleGrid", () => {
     }
   });
 
+  it("refuses an interactive name inside a linked person, whose name renders inside the card anchor [mutant: drop name from the guard]", () => {
+    for (const name of [<a key="a" href="/other">Other destination</a>, <button key="b" type="button">Follow</button>]) {
+      const entries = people(2);
+      entries[0] = { ...entries[0]!, href: "/person", name: <>Person {name}</> };
+      expect(() => renderToStaticMarkup(<PeopleGrid people={entries} />)).toThrow(TypeError);
+      expect(() => renderToStaticMarkup(<PeopleGrid people={entries} />)).toThrow(/^PeopleGrid:/);
+    }
+    const unlinked = people(2);
+    unlinked[0] = { ...unlinked[0]!, name: <>Person <a href="/other">Other destination</a></> };
+    expect(() => renderToStaticMarkup(<PeopleGrid people={unlinked} />)).not.toThrow();
+  });
+
   it("uses ground-relative initials fills and secondary role ink", () => {
     for (const [ground, fill, primary, secondary] of [["base", "bg-surface-sunken", "text-ink-primary", "text-ink-secondary"], ["sunken", "bg-surface-raised", "text-ink-primary", "text-ink-secondary"], ["inverse", "bg-surface-inverse-raised", "text-ink-on-inverse", "text-ink-on-inverse-muted"]] as const) {
       const result = render(<PeopleGrid people={people(2)} ground={ground} />);

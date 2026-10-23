@@ -19,6 +19,15 @@ const GROUNDED_READING = [
   "ink-primary/surface-sunken", "ink-secondary/surface-sunken",
   "ink-on-inverse/surface-inverse", "ink-on-inverse-muted/surface-inverse",
 ];
+/*
+ * Body-scale reading text on an inverse raised plate (a quote plate, an
+ * initials fill, a linked item's hover plate). These are the package's AA
+ * text pairs for that plate; "ink-on-inverse/surface-inverse-raised" is the
+ * 3:1 icon-glyph pair and never covers text.
+ */
+const INVERSE_RAISED_READING = ["link-grid/ink-on-inverse/surface-inverse-raised", "link-grid/ink-on-inverse-muted/surface-inverse-raised"];
+/** A grounded Block whose plates or hover plates step to the next surface: sunken to raised, inverse to inverse-raised. */
+const PLATED_READING = [...GROUNDED_READING, ...RAISED_READING, ...INVERSE_RAISED_READING];
 
 /** Exact exported component inventory; a new barrel export requires registration. */
 export const BLOCK_THEME_CONFORMANCE: readonly BlockThemeRegistration[] = [
@@ -54,15 +63,15 @@ export const BLOCK_THEME_CONFORMANCE: readonly BlockThemeRegistration[] = [
   { exportName: "SpecimenPanel", source: "src/blocks/specimen/SpecimenPanel.tsx", contrastPairs: RAISED_READING },
   { exportName: "OrderedStepSequence", source: "src/blocks/OrderedStepSequence.tsx", contrastPairs: GROUNDED_READING },
   { exportName: "StatusList", source: "src/blocks/StatusList.tsx", contrastPairs: GROUNDED_READING },
-  { exportName: "TaskList", source: "src/blocks/TaskList.tsx", contrastPairs: BASE_READING },
-  { exportName: "EventItem", source: "src/blocks/EventItem.tsx", contrastPairs: BASE_READING },
+  { exportName: "TaskList", source: "src/blocks/TaskList.tsx", contrastPairs: [...BASE_READING, "ink-muted/surface-base"] },
+  { exportName: "EventItem", source: "src/blocks/EventItem.tsx", contrastPairs: [...BASE_READING, "ink-muted/surface-base", "ink-secondary/surface-sunken"] },
   { exportName: "Faq", source: "src/blocks/Faq.tsx", contrastPairs: GROUNDED_READING },
   { exportName: "PricingTable", source: "src/blocks/PricingTable.tsx", contrastPairs: RAISED_READING },
   { exportName: "Testimonial", source: "src/blocks/Testimonial.tsx", contrastPairs: BASE_READING },
   { exportName: "TableOfContents", source: "src/blocks/TableOfContents.tsx", contrastPairs: BASE_READING },
-  { exportName: "TestimonialSet", source: "src/blocks/TestimonialSet.tsx", contrastPairs: GROUNDED_READING },
+  { exportName: "TestimonialSet", source: "src/blocks/TestimonialSet.tsx", contrastPairs: PLATED_READING },
   { exportName: "LogoCloud", source: "src/blocks/LogoCloud.tsx", contrastPairs: GROUNDED_READING },
-  { exportName: "PeopleGrid", source: "src/blocks/PeopleGrid.tsx", contrastPairs: GROUNDED_READING },
+  { exportName: "PeopleGrid", source: "src/blocks/PeopleGrid.tsx", contrastPairs: PLATED_READING },
   { exportName: "ArticleBody", source: "src/blocks/ArticleBody.tsx", contrastPairs: [...BASE_READING, "ink-primary/surface-sunken", "ink-link/surface-base"] },
   { exportName: "SectionFrame", source: "src/blocks/SectionFrame.tsx", contrastPairs: ["ink-primary/surface-base", "ink-primary/surface-sunken", "ink-on-inverse/surface-inverse"] },
   { exportName: "NewsletterBand", source: "src/blocks/NewsletterBand.tsx", contrastPairs: GROUNDED_READING },
