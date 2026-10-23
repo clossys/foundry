@@ -326,6 +326,7 @@ export const BLOCK_ENTRIES: readonly BlockEntry[] = [
   exported(CONTAINERS, "CatalogWorkspace", { id: "matrix.catalog-workspace", label: "Catalog workspace" }),
   exported(CONTAINERS, "FlowCanvas", { id: "matrix.flow-canvas", label: "Flow canvas" }),
   exported(CONTAINERS, "CatalogBrowser", { id: "matrix.catalog-browser", label: "Catalog browser" }),
+  exported(CONTAINERS, "CanvasSurface", { id: "matrix.canvas-surface", label: "Canvas surface" }),
 
   // Collect / Forms
   built(FORMS, "Form", { id: "form.form", label: "Form", stableCandidate: true, notes: [STABLE_CANDIDATE] }),
@@ -477,6 +478,19 @@ export const BLOCK_EXPORT_EXCLUSIONS: Readonly<Record<string, string>> = {
   FLOW_CANVAS_ORIENTATIONS: MODEL_API,
   FLOW_CANVAS_NODE_LIMIT: MODEL_API,
   FLOW_CANVAS_EDGE_LIMIT: MODEL_API,
+  panBy: MODEL_API,
+  zoomAt: MODEL_API,
+  fitTo: MODEL_API,
+  clamp: MODEL_API,
+  toWorld: MODEL_API,
+  toScreen: MODEL_API,
+  selectSingle: MODEL_API,
+  toggleSelection: MODEL_API,
+  selectRange: MODEL_API,
+  selectMarquee: MODEL_API,
+  clearSelection: MODEL_API,
+  navigate: MODEL_API,
+  minimapModel: MODEL_API,
 };
 
 export const BLOCK_CATALOG: Catalog<"blocks", BlockGroupMap, BlockEntry> = {

@@ -55,6 +55,11 @@ export type { DataTableViewModel, DataTableViewModelV1, DataTableMode, DataTable
 export { DataTable } from "./DataTable.js";
 export type { DataTableProps, DataTableColumn, DataTableSelectionMode } from "./DataTable.js";
 
+export { CanvasSurface } from "./canvas/CanvasSurface.js";
+export type { CanvasSurfaceProps } from "./canvas/CanvasSurface.js";
+export { panBy, zoomAt, fitTo, clamp, toWorld, toScreen, selectSingle, toggleSelection, selectRange, selectMarquee, clearSelection, navigate, minimapModel } from "./canvas/models.js";
+export type { CanvasPoint, CanvasSize, CanvasRect, Viewport, Selection, CanvasItem, CanvasDirection, CanvasMinimapModel } from "./canvas/models.js";
+
 export { filterRows, groupRows, pivotRows, aggregate, parseTableModel, serializeTableModel, TableModelError, tableFilterPredicate, pruneFilterColumn, TABLE_FILTER_CONFORMANCE } from "./table-model/index.js";
 export type { TableValue, TableColumnKind, TableColumn, TableCollation, TableFilter, TableFilterGroup, TableFilterNode, TableDimension, TableMeasure, TablePivot, TableModel, TableFacet, TableFilterResult, TableAggregateValue, TableAggregates, TableGroup, TablePivotAxis, TablePivotCell, TablePivotResult, TableModelErrorCode } from "./table-model/index.js";
 
