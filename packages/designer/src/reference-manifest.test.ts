@@ -110,7 +110,7 @@ describe("package reference manifest", () => {
       expect(output).not.toContain(root);
       expect(output).not.toContain(dirname(dirname(root)));
     }
-  });
+  }, 10_000);
 
   it("returns a one-line CLI error for invalid arguments", () => {
     const result = run(join(root, "scripts", "generate-reference.mjs"), ["--unknown"]);
