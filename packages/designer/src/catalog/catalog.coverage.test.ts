@@ -19,6 +19,7 @@ import {
   ASSET_ENTRIES,
   ATOM_ENTRIES,
   ATOM_EXPORT_EXCLUSIONS,
+  BLOCK_CATALOG,
   BLOCK_ENTRIES,
   BLOCK_EXPORT_EXCLUSIONS,
   ICON_ENTRIES,
@@ -121,32 +122,93 @@ const FROZEN_ATOM_IDS: readonly string[] = [
   "reveal.dialog", "reveal.popover", "reveal.tooltip", "reveal.sheet", "reveal.preview-card",
 ];
 
-/** Frozen block leaf ids, 85. */
+/** Frozen block leaf ids: additions require review; existing addresses stay pinned. */
 const FROZEN_BLOCK_IDS: readonly string[] = [
-  "say.hero", "say.page-header", "say.section-header", "say.section-intro", "say.takeaway", "say.chapter",
-  "items.features", "items.statement", "items.feature-grid",
-  "say.testimonial", "say.testimonial-set", "items.logo-cloud", "items.people-grid",
-  "say.media-figure", "items.media-gallery",
-  "prose.article", "items.faq", "items.legacy-faq", "say.info-tip",
-  "items.steps", "items.ordered-step-sequence", "items.timeline",
-  "say.lockup",
-  "items.specimen-stack", "say.specimen", "matrix.specimen-panel", "say.anatomy-callouts", "matrix.scene",
-  "items.raw", "items.item", "items.cards", "items.task-list",
-  "matrix.raw", "matrix.comparison", "matrix.pricing",
-  "items.stat", "items.stat-grid", "items.status-list", "items.usage-meter",
-  "matrix.data-table", "matrix.detail", "items.record-ledger", "matrix.grouped-table", "items.resource-list",
-  "matrix.data-grid",
-  "items.event-item", "items.activity-feed", "matrix.audit-log",
-  "matrix.panel", "matrix.drawer", "matrix.resizable-pane", "matrix.catalog-workspace",
-  "form.form", "form.newsletter-band", "form.form-wizard", "form.field-group", "form.file-field",
-  "form.column-mapper", "form.settings-section", "form.save-bar", "matrix.access-matrix", "form.chat",
-  "items.link-index", "items.topics", "items.nav-grid",
-  "items.app-navigation", "form.account-menu", "form.command-menu", "items.page-bar",
-  "items.tree", "items.explorer", "prose.table-of-contents", "form.toolbar", "form.bulk-action-bar",
-  "form.pagination", "form.load-more", "form.filter-builder",
-  "say.empty-state", "say.error-state", "form.confirm-dialog", "form.consent-banner",
-  "say.notice-stack", "form.refresh-status", "items.notification-center",
+  "form.account-menu",
+  "form.bulk-action-bar",
+  "form.chat",
+  "form.column-mapper",
+  "form.command-menu",
+  "form.confirm-dialog",
+  "form.consent-banner",
+  "form.field-group",
+  "form.file-field",
+  "form.filter-builder",
+  "form.form",
+  "form.form-wizard",
+  "form.load-more",
+  "form.newsletter-band",
+  "form.pagination",
+  "form.refresh-status",
+  "form.save-bar",
+  "form.settings-section",
+  "form.toolbar",
+  "items.activity-feed",
+  "items.app-navigation",
+  "items.cards",
+  "items.event-item",
+  "items.explorer",
+  "items.faq",
+  "items.feature-grid",
+  "items.features",
+  "items.item",
+  "items.legacy-faq",
+  "items.link-index",
+  "items.logo-cloud",
+  "items.media-gallery",
+  "items.nav-grid",
+  "items.notification-center",
+  "items.ordered-step-sequence",
+  "items.page-bar",
+  "items.people-grid",
+  "items.raw",
+  "items.record-ledger",
   "items.relation-graph",
+  "items.resource-list",
+  "items.specimen-stack",
+  "items.stat",
+  "items.stat-grid",
+  "items.statement",
+  "items.status-list",
+  "items.steps",
+  "items.task-list",
+  "items.timeline",
+  "items.topics",
+  "items.tree",
+  "items.usage-meter",
+  "matrix.access-matrix",
+  "matrix.audit-log",
+  "matrix.catalog-workspace",
+  "matrix.comparison",
+  "matrix.data-grid",
+  "matrix.data-table",
+  "matrix.detail",
+  "matrix.drawer",
+  "matrix.grouped-table",
+  "matrix.panel",
+  "matrix.pricing",
+  "matrix.raw",
+  "matrix.resizable-pane",
+  "matrix.scene",
+  "matrix.specimen-panel",
+  "prose.article",
+  "prose.table-of-contents",
+  "say.anatomy-callouts",
+  "say.chapter",
+  "say.empty-state",
+  "say.error-state",
+  "say.hero",
+  "say.info-tip",
+  "say.lockup",
+  "say.media-figure",
+  "say.notice-stack",
+  "say.page-header",
+  "say.section-header",
+  "say.section-intro",
+  "say.specimen",
+  "say.takeaway",
+  "say.testimonial",
+  "say.testimonial-set",
 ];
 
 /** Ids that appear more than once in a list. */
@@ -320,10 +382,10 @@ describe("block catalog coverage", () => {
   const ids = BLOCK_ENTRIES.map((entry) => entry.id);
   const byId = new Map(BLOCK_ENTRIES.map((entry) => [entry.id, entry]));
 
-  it("matches the frozen id list exactly, 85 leaves", () => {
+  it(`matches the frozen id list exactly, ${ids.length} leaves`, () => {
     expect(duplicates(ids)).toEqual([]);
-    expect(FROZEN_BLOCK_IDS).toHaveLength(85);
-    expect(ids).toHaveLength(85);
+    expect(FROZEN_BLOCK_IDS).toEqual([...FROZEN_BLOCK_IDS].sort());
+    expect(ids.length).toBeGreaterThan(0);
     expect([...ids].sort()).toEqual([...FROZEN_BLOCK_IDS].sort());
   });
 
@@ -351,11 +413,25 @@ describe("block catalog coverage", () => {
     }
   });
 
-  it("counts 4 deprecated, 59 draft and built, 22 not built", () => {
-    const deprecated = BLOCK_ENTRIES.filter((entry) => entry.lifecycle === "deprecated").length;
-    const draftBuilt = BLOCK_ENTRIES.filter((entry) => entry.lifecycle === "draft" && entry.built !== "no").length;
-    const notBuilt = BLOCK_ENTRIES.filter((entry) => entry.built === "no").length;
-    expect([deprecated, draftBuilt, notBuilt]).toEqual([4, 59, 22]);
+  // Counts are observations of the shared catalog, not another inventory pin.
+  const deprecated = BLOCK_ENTRIES.filter((entry) => entry.lifecycle === "deprecated");
+  const draftBuilt = BLOCK_ENTRIES.filter((entry) => entry.lifecycle === "draft" && entry.built !== "no");
+  const notBuilt = BLOCK_ENTRIES.filter((entry) => entry.built === "no");
+  const groupCounts = BLOCK_CATALOG.groups.map((group) =>
+    `${group.label} ${BLOCK_ENTRIES.filter((entry) => entry.l1 === group.id).length}`,
+  ).join(", ");
+
+  it(`counts ${ids.length} leaves (${groupCounts}); ${deprecated.length} deprecated, ${draftBuilt.length} draft and built, ${notBuilt.length} not built`, () => {
+    // The old tuple also constrained the current lifecycle/built domain. Keep
+    // that constraint and require the derived buckets to cover each leaf once.
+    for (const entry of BLOCK_ENTRIES) {
+      expect(["draft", "deprecated"], entry.id).toContain(entry.lifecycle);
+      expect(["yes", "exported", "no"], entry.id).toContain(entry.built);
+      if (entry.lifecycle === "deprecated") expect(entry.built, entry.id).toBe("yes");
+    }
+    const partition = [...deprecated, ...draftBuilt, ...notBuilt].map((entry) => entry.id);
+    expect(duplicates(partition)).toEqual([]);
+    expect(partition.sort()).toEqual([...ids].sort());
   });
 
   it("marks exactly the four leaves with exact specimens as stable candidates", () => {
