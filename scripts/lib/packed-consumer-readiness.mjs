@@ -46,6 +46,7 @@ const designerExports = [
   "@clossys/designer/icons",
   "@clossys/designer/render-environment",
   "@clossys/designer/shell",
+  "@clossys/designer/studio",
   "@clossys/designer/shell/server",
   "@clossys/designer/theme",
   "@clossys/designer/theme/server",
@@ -57,6 +58,7 @@ const designerClientExports = [
   "@clossys/designer/atoms",
   "@clossys/designer/blocks",
   "@clossys/designer/shell",
+  "@clossys/designer/studio",
   "@clossys/designer/theme",
 ];
 const designerReactExports = [
@@ -68,6 +70,7 @@ const designerReactExports = [
   "@clossys/designer/charts",
   "@clossys/designer/charts/server",
   "@clossys/designer/shell",
+  "@clossys/designer/studio",
   "@clossys/designer/shell/server",
   "@clossys/designer/theme",
 ];
