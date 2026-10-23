@@ -96,6 +96,13 @@ function reserveWork(budget: GeometryBudget, count: number): void {
   budget.work += count;
   if (budget.work > 2000000) fail('paint work complexity');
 }
+const svgSpace = String.raw`\x09\x0a\x0d\x20`;
+const svgTrim = new RegExp(`^[${svgSpace}]+|[${svgSpace}]+$`, 'g');
+const svgTrimEnd = new RegExp(`[${svgSpace}]+$`);
+const svgSeparators = new RegExp(`[${svgSpace},]`, 'g');
+const svgTagName = new RegExp(`^/?([a-zA-Z][^${svgSpace}/>]*)`);
+const svgAttribute = new RegExp(`[${svgSpace}]+([^${svgSpace}=]+)[${svgSpace}]*=[${svgSpace}]*(?:"([^"]*)"|'([^']*)')`, 'y');
+const svgTransform = new RegExp(`([a-zA-Z]+)[${svgSpace}]*\\(([^)]*)\\)`, 'g');
 const numPattern = /[+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?/g;
 function decodeAttribute(value: string): string {
   const entity = /&(#x[\dA-Fa-f]+|#\d+|amp|lt|gt|quot|apos);/g;
@@ -103,7 +110,7 @@ function decodeAttribute(value: string): string {
   return value.replace(entity, (_match, name: string) => {
     if (name[0] !== '#') return name === 'amp' ? '&' : name === 'lt' ? '<' : name === 'gt' ? '>' : name === 'quot' ? '"' : "'";
     const code = name[1] === 'x' || name[1] === 'X' ? parseInt(name.slice(2), 16) : Number(name.slice(1));
-    if (!Number.isInteger(code) || code <= 0 || code > 0x10ffff || code >= 0xd800 && code <= 0xdfff) return fail('XML entity');
+    if (!Number.isInteger(code) || (code < 0x20 && ![9, 10, 13].includes(code)) || code > 0x10ffff || code >= 0xd800 && code <= 0xdfff) return fail('XML entity');
     return String.fromCodePoint(code);
   });
 }
@@ -116,7 +123,7 @@ function product(a: Matrix, b: Matrix): Matrix {
   return [a[0] * b[0] + a[2] * b[1], a[1] * b[0] + a[3] * b[1], a[0] * b[2] + a[2] * b[3], a[1] * b[2] + a[3] * b[3], a[0] * b[4] + a[2] * b[5] + a[4], a[1] * b[4] + a[3] * b[5] + a[5]];
 }
 function numbers(value: string): number[] {
-  if (value.replace(numPattern, "").replace(/[\s,]/g, ""))
+  if (value.replace(numPattern, "").replace(svgSeparators, ""))
     return fail(value);
   const result = (value.match(numPattern) ?? []).map(Number);
   if (!result.every(Number.isFinite))
@@ -131,8 +138,8 @@ function number(attrs: Attrs, key: string, fallback = 0): number {
 }
 function transform(value = ""): Matrix {
   let result = identity, consumed = 0;
-  for (const match of value.matchAll(/([a-zA-Z]+)\s*\(([^)]*)\)/g)) {
-    if (value.slice(consumed, match.index).trim().replace(/,/g, ""))
+  for (const match of value.matchAll(svgTransform)) {
+    if (value.slice(consumed, match.index).replace(svgTrim, '').replace(/,/g, ""))
       fail("transform");
     const name = match[1]!, v = numbers(match[2]!);
     let next: Matrix;
@@ -149,18 +156,19 @@ function transform(value = ""): Matrix {
     result = product(result, next);
     consumed = match.index! + match[0].length;
   }
-  if (value.slice(consumed).trim())
+  if (value.slice(consumed).replace(svgTrim, ''))
     fail("transform");
   return result;
 }
 function parse(svg: string, lockupText = false): Node {
+  if (/[\x0b\x0c]/.test(svg)) fail('XML whitespace');
   const stack: Node[] = [], roots: Node[] = [];
   let end = 0;
   while (end < svg.length) {
     const start = svg.indexOf('<', end);
     if (start < 0)
       break;
-    if (svg.slice(end, start).trim() && !(lockupText && stack[stack.length - 1]?.name === "text"))
+    if (svg.slice(end, start).replace(svgTrim, '') && !(lockupText && stack[stack.length - 1]?.name === "text"))
       fail("XML content");
     if (svg.startsWith('<!--', start)) {
       const close = svg.indexOf('-->', start + 4);
@@ -187,14 +195,14 @@ function parse(svg: string, lockupText = false): Node {
     if (cursor === svg.length)
       fail("XML tag");
     end = cursor + 1;
-    const tag = svg.slice(start + 1, cursor).trimEnd(), closing = tag.startsWith('/');
-    const nameMatch = /^\/?([a-zA-Z][^\s/>]*)/.exec(tag);
+    const tag = svg.slice(start + 1, cursor).replace(svgTrimEnd, ''), closing = tag.startsWith('/');
+    const nameMatch = svgTagName.exec(tag);
     if (!nameMatch)
       fail("XML tag");
     const name = nameMatch![1]!;
     if (closing) {
       const node = stack.pop();
-      if (!node || node.name !== name || tag.slice(name.length + 1).trim())
+      if (!node || node.name !== name || tag.slice(name.length + 1).replace(svgTrim, ''))
         fail("XML nesting");
       node!.end = end;
       continue;
@@ -202,8 +210,8 @@ function parse(svg: string, lockupText = false): Node {
     if (!["svg", "g", "rect", "circle", "ellipse", "polygon", "path"].includes(name) && !(lockupText && name === "text"))
       fail(name);
     const attrs: Attrs = {};
-    const selfClosing = tag.endsWith('/'), content = (selfClosing ? tag.slice(0, -1) : tag).trimEnd();
-    const attribute = /\s+([^\s=]+)\s*=\s*(?:"([^"]*)"|'([^']*)')/y;
+    const selfClosing = tag.endsWith('/'), content = (selfClosing ? tag.slice(0, -1) : tag).replace(svgTrimEnd, '');
+    const attribute = svgAttribute;
     let position = name.length;
     while (position < content.length) {
       attribute.lastIndex = position;
@@ -228,7 +236,7 @@ function parse(svg: string, lockupText = false): Node {
       stack.push(node);
     }
   }
-  if (stack.length || svg.slice(end).trim() || roots.length !== 1 || roots[0]!.name !== "svg")
+  if (stack.length || svg.slice(end).replace(svgTrim, '') || roots.length !== 1 || roots[0]!.name !== "svg")
     fail("svg document");
   return roots[0]!;
 }
@@ -306,7 +314,7 @@ function arc(a: Point, v: number[], end: Point, tolerance: number, out: Point[],
 }
 function path(data: string, tolerance: number, budget: GeometryBudget): Contour[] {
   const tokens = data.match(/[a-zA-Z]|[+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?/g) ?? [];
-  if (data.replace(/[a-zA-Z]|[+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?/g, "").replace(/[\s,]/g, ""))
+  if (data.replace(/[a-zA-Z]|[+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?/g, "").replace(svgSeparators, ""))
     fail("path data");
   let i = 0, command = "", previous = "", at: Point = [0, 0], start: Point = [0, 0], control: Point = [0, 0];
   const contours: Contour[] = [];

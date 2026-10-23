@@ -7643,6 +7643,7 @@ reports its absence. `optical: true` uses the painted-area centroid, limits
 the correction vector to 3% of the side, and declares the optical mode so
 conformance can verify the correction from measured geometry.
 
+Accepted XML whitespace is TAB, LF, CR, and SPACE; unsupported separators throw `MarkGeometryError`.
 Supported geometry is `rect`, `circle`, `ellipse`, `polygon`, and SVG paths
 with absolute or relative `M L H V C S Q T A Z`, under `translate`, `rotate`,
 and `scale` transforms. Bounds include strokes, caps, and joins. Curves are

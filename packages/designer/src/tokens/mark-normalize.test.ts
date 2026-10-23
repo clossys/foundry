@@ -709,3 +709,65 @@ describe("zero-length drawn stroke caps", () => {
     expect(box(capPath('M10 10H40H10Z', cap))).toEqual({ x: .1, y: 0, width: .3, height: .2 });
   });
 });
+const control = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" data-clear-space="0.2"><rect width="100" height="100" rx="21.875"/><rect x="18" y="18" width="64" height="64"/></svg>';
+const cases = (char: string) => [
+  ['root name', control.replace('<svg ', `<svg${char}`)],
+  ['glyph name', control.replace('<rect x=', `<rect${char}x=`)],
+  ['quoted attributes', control.replace('x="18" y=', `x="18"${char}y=`)],
+  ['before equals', control.replace('x="18"', `x${char}="18"`)],
+  ['after equals', control.replace('x="18"', `x=${char}"18"`)],
+  ['self closing suffix', control.replace('height="64"/>', `height="64"${char}/>`)],
+  ['closing tag suffix', control.replace('</svg>', `</svg${char}>`)],
+  ['before document', char + control],
+  ['after document', control + char],
+  ['between elements', control.replace('/><rect', `/>${char}<rect`)],
+  ['numeric suffix', control.replace('x="18"', `x="18${char}"`)],
+  ['viewBox separator', control.replace('0 0 100 100', `0${char}0 100 100`)],
+  ['polygon separator', control.replace('<rect x="18" y="18" width="64" height="64"/>', `<polygon points="18${char}18 82 18 82 82 18 82"/>`)],
+  ['path separator', control.replace('<rect x="18" y="18" width="64" height="64"/>', `<path d="M18${char}18H82V82H18Z"/>`)],
+  ['transform name', control.replace('x="18"', `transform="translate${char}(0)" x="18"`)],
+  ['transform leading', control.replace('x="18"', `transform="${char}translate(0)" x="18"`)],
+  ['transform between', control.replace('x="18"', `transform="translate(0)${char}scale(1)" x="18"`)],
+  ['transform trailing', control.replace('x="18"', `transform="translate(0)${char}" x="18"`)],
+  ['paint prefix', control.replace('x="18"', `fill="${char}#000" x="18"`)],
+];
+it.each([11, 12, 160, 5760, 8192, 8193, 8194, 8195, 8196, 8197, 8198, 8199, 8200, 8201, 8202, 8232, 8233, 8239, 8287, 12288, 65279])("refuses foreign separator U+%s at every XML boundary", code => {
+  const char = String.fromCodePoint(code), raw = control.replace('<rect x=', `<rect${char}x=`);
+  expect(new DOMParser().parseFromString(raw, 'image/svg+xml').querySelector('parsererror')).not.toBeNull();
+  expect(new DOMParser().parseFromString(raw, 'text/html').querySelectorAll('svg rect')).toHaveLength(code === 12 ? 2 : 1);
+  for (const [position, input] of cases(char))
+    for (const evaluate of [measureMarkGeometry, checkMarkConformance, (glyphSvg: string) => normalizeMark({ glyphSvg, tokens })])
+      expect(() => evaluate(input!), position).toThrow(MarkGeometryError);
+});
+it.each([9, 10, 13, 32])("accepts common XML whitespace U+%s without repairing raw source", code => {
+  const char = String.fromCodePoint(code), raw = control.replace('<rect x=', `<rect${char}x=`);
+  const xml = new DOMParser().parseFromString(raw, 'image/svg+xml'), html = new DOMParser().parseFromString(raw, 'text/html');
+  expect(xml.querySelector('parsererror')).toBeNull();
+  for (const document of [xml, html]) {
+    expect(document.querySelectorAll('svg rect')).toHaveLength(2);
+    expect(document.querySelectorAll('svg rect')[1]?.getAttribute('x')).toBe('18');
+  }
+  for (const [, input] of cases(char)) {
+    expect(measureMarkGeometry(input!).glyphBox).toEqual({ x: .18, y: .18, width: .64, height: .64 });
+    expect(checkMarkConformance(input!)).toEqual([]);
+    expect(checkMarkConformance(normalizeMark({ glyphSvg: input!, tokens }))).toEqual([]);
+  }
+});
+it("refuses an encoded XML form feed before serializing paint", () => {
+  for (const evaluate of [measureMarkGeometry, checkMarkConformance, (glyphSvg: string) => normalizeMark({ glyphSvg, tokens })])
+    expect(() => evaluate(control.replace('x="18"', 'fill="&#12;#000" x="18"'))).toThrow(MarkGeometryError);
+});
+it.each([
+  ['fill-rule', 'evenodd', 'M0 0H100V100H0Z M0 0H100V100H0Z M30 30H70V70H30Z', 'width', .4],
+  ['stroke-linecap', 'round', 'M20 30H60', 'width', .5],
+  ['stroke-linejoin', 'bevel', 'M10 80L50 10L90 80', 'y', (10 - 20 / Math.sqrt(65)) / 100],
+  ['stroke-miterlimit', '1.1', 'M10 80L50 10L90 80', 'y', (10 - 20 / Math.sqrt(65)) / 100],
+] as const)("inherits %s from the root and an outer group", (key, value, d, dimension, expected) => {
+  const path = `<g><path d="${d}"${key === 'fill-rule' ? '' : ' fill="none" stroke="#000" stroke-width="10"'}/></g>`;
+  for (const input of [svg(path).replace('<svg ', `<svg ${key}="${value}" `), svg(`<g ${key}="${value}">${path}</g>`)]) {
+    expect(measureMarkGeometry(input).glyphBox[dimension]).toBeCloseTo(expected, 10);
+    const normalized = normalizeMark({ glyphSvg: input, tokens });
+    expect(new DOMParser().parseFromString(normalized, 'image/svg+xml').querySelector('path')?.getAttribute(key)).toBe(value);
+    expect(checkMarkConformance(normalized)).toEqual([]);
+  }
+});
