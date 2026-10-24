@@ -33,8 +33,11 @@ const bouncerExports = [
   "@clossys/bouncer/providers/clerk/web/client",
   "@clossys/bouncer/providers/clerk/web/proxy",
   "@clossys/bouncer/providers/clerk/web/server",
+  "@clossys/bouncer/providers/clerk/web/sign-in-handlers",
 ];
-const bouncerWebExports = bouncerExports.filter((specifier) => specifier.includes("/web"));
+// The sign-in handlers subpath imports no optional peer, so it loads without them.
+const bouncerWebExports = bouncerExports.filter((specifier) => specifier.includes("/web")
+  && specifier !== "@clossys/bouncer/providers/clerk/web/sign-in-handlers");
 const designerExports = [
   "@clossys/designer/atoms",
   "@clossys/designer/atoms/server",

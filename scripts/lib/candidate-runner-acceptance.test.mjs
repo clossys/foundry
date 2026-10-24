@@ -43,13 +43,25 @@ test("the production runner qualifies Bouncer's four framework exports in one is
     releaseRuntimeRun,
   });
   assert.equal(transcript.ok, true);
+  // The export-surface counts come from the source manifest read above, so a new
+  // Bouncer subpath does not need a literal bump here. The runner reads the packed
+  // manifest, so a runner (or pack) that dropped or skipped a declared export still
+  // fails this comparison. The shape is asserted so a wildcard or a condition this
+  // derivation does not model fails loudly instead of miscounting.
+  const exportEntries = Object.entries(manifest.exports);
+  for (const [key, value] of exportEntries) {
+    assert.ok(key === "." || (key.startsWith("./") && !key.includes("*")), `unmodelled export key ${key}`);
+    assert.deepEqual(Object.keys(value).sort(), ["import", "types"], `unmodelled export conditions for ${key}`);
+  }
+  const declaredExportKeys = exportEntries.length;
+  const frameworkExports = 4;
   assert.deepEqual(transcript.coverage, {
-    declaredExportKeys: 8,
-    concreteTargets: 16,
-    runtimeImports: 4,
+    declaredExportKeys,
+    concreteTargets: declaredExportKeys * 2,
+    runtimeImports: declaredExportKeys - frameworkExports,
     reactServerImports: 0,
-    staticTargets: 8,
-    frameworkExports: 4,
+    staticTargets: declaredExportKeys,
+    frameworkExports,
     frameworkBuilds: 1,
     failed: 0,
     installedManifestSha256: transcript.coverage.installedManifestSha256,

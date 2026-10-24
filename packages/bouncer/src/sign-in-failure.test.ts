@@ -139,7 +139,9 @@ describe("Clerk table", () => {
       form_password_incorrect: "credential",
       form_password_or_identifier_incorrect: "credential",
       form_code_incorrect: "credential",
+      form_param_format_invalid: "credential",
       form_identifier_not_found: "notFound",
+      invitation_account_not_exists: "notFound",
       user_locked: "locked",
       clerk_offline: "network",
     });
@@ -150,8 +152,8 @@ describe("Clerk table", () => {
     }
   });
 
-  it("has six keys", () => {
-    expect(Object.keys(CLERK_SIGN_IN_FAILURE_CODES)).toHaveLength(6);
+  it("has eight keys", () => {
+    expect(Object.keys(CLERK_SIGN_IN_FAILURE_CODES)).toHaveLength(8);
   });
 
   it("reads the code Clerk sends with enumeration protection on as credential", () => {

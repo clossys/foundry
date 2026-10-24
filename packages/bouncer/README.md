@@ -509,8 +509,9 @@ default keeps `notFound`.
 The Clerk table, `CLERK_SIGN_IN_FAILURE_CODES`, ships from
 `./providers/clerk/web` and `./providers/clerk/web/client`. It holds
 `form_password_incorrect`, `form_password_or_identifier_incorrect` (the code
-Clerk sends with enumeration protection on) and `form_code_incorrect`
-(`credential`), `form_identifier_not_found` (`notFound`), `user_locked`
+Clerk sends with enumeration protection on), `form_code_incorrect` and
+`form_param_format_invalid` (`credential`), `form_identifier_not_found` and
+`invitation_account_not_exists` (`notFound`), `user_locked`
 (`locked`) and `clerk_offline` (`network`), each checked against the installed
 Clerk packages. Clerk codes not in it read as
 `unknown`, or by status when one is set. `humaniseClerkError` returns the
@@ -529,6 +530,133 @@ export function copyIdForSignInError(error: unknown, codes: SignInFailureCodeTab
   return signInFailureCopyId(failureClass, { factor: "password" });
 }
 ```
+
+## Clerk sign-in handlers
+
+`createClerkSignInHandlers` from `./providers/clerk/web/sign-in-handlers`
+drives Clerk's password and second-factor flow through Publisher's
+`SignInForm` handlers. The subpath uses structural types; it imports no
+React, Clerk SDK or Publisher code and needs no optional peer. Its answers
+contain only a status. Unknown failures become `unavailable`; recognised
+rejections go through `classifySignInFailure` with
+`CLERK_SIGN_IN_FAILURE_CODES`.
+
+Pass a stable `ClerkSignInProvider` for the current screen. Bind `create` to
+the loaded `clerk.client.signIn.create` and `setActive` to `clerk.setActive`.
+The declarations stand in for the caller's own Clerk instance and screen state:
+
+```ts
+import type { ClerkSignInProvider, ClerkSignInResource } from "@clossys/bouncer/providers/clerk/web/sign-in-handlers";
+
+declare const clerk: {
+  client: { signIn: { create: (params: { identifier: string }) => Promise<ClerkSignInResource> } };
+  setActive: (params: { session: string }) => Promise<void>;
+};
+declare function isScreenCurrent(): boolean;
+declare const screenAbortController: AbortController;
+
+const signIn = clerk.client.signIn;
+export const provider: ClerkSignInProvider = {
+  create: params => signIn.create(params),
+  setActive: params => clerk.setActive(params),
+  operationOwner: clerk,
+  isCurrent: () => isScreenCurrent(),
+  signal: screenAbortController.signal,
+};
+```
+
+The caller owns `isScreenCurrent()` and aborts `screenAbortController` when
+the screen is disposed. The handlers call `isCurrent` when a handler starts and
+before and after every Clerk call. Any answer other than `true`, a throw or an
+aborted `signal` ends the operation as `unavailable`. That is the only currency
+check: the handlers do not compare SignIn resources or watch `clerk.client`.
+Use the shared Clerk instance as `operationOwner` across screens or handler
+sets; without it the provider object is the owner. One operation runs per
+owner. Every `identify`, including one refused while busy, invalidates older
+flows on the same owner. An invalidated or aborted operation makes no further
+Clerk call and answers `unavailable`. The handlers do not cancel a Clerk call
+that is already in flight, including `setActive`; when such a call settles
+after the operation was invalidated or aborted, the handler answers
+`unavailable`, never `ok`.
+
+`identify` may be called in any step and always starts a new flow. Other calls
+made out of step answer `unavailable` without calling Clerk. After
+`unavailable`, `locked` or `notFound`, `verify`, `verifyCode` and `resendCode`
+answer `unavailable` until `identify` runs again. After `credential`,
+`rateLimited` or `network` from any Clerk call except `setActive` and the
+message-code send in `verify` (below), the step is unchanged and the same
+handler may be called again. Session activation is
+attempted once per flow: a rejected activation never answers `ok`, and only
+`identify` continues after it.
+
+`verify` alone can answer `needsCode`. From Clerk's `supportedSecondFactors`
+it picks `totp` first, then `phone_code` with a `phoneNumberId`, then
+`email_code` with an `emailAddressId`, then `backup_code`, whatever order Clerk
+lists them in; other entries are skipped. Message factors are prepared before
+`needsCode`; authenticator and backup codes need no preparation. When a
+message code cannot be sent from `verify` because of `rateLimited` or
+`network`, `verify` still answers `needsCode`: the flow moves to the code step
+with `canResendCode()` true, and `resendCode` sends it again. The same
+failure from `resendCode` answers its class and keeps the code step. A
+rejection while sending a message code that reads as `credential` or
+`notFound`, from `verify` or `resendCode`, answers `unavailable`. `locked`
+keeps its meaning. `canResendCode()` is a pure query and is true only for a
+current, idle message code step. Refresh that capability after verification
+so `SignInForm` can show its resend control.
+
+Account existence: the handlers add no hiding of their own to `identify`,
+`verify` or `verifyCode`. A Clerk rejection there that reads as `notFound` or
+`locked` is answered as that class, so an unknown identifier is revealed
+whenever Clerk reports it; with Clerk's enumeration protection on, Clerk sends
+`form_password_or_identifier_incorrect`, which answers `credential`. Sending a
+message code never answers `notFound` or `credential`.
+
+`SignInForm` comes from Publisher's web client subpath; the declaration below
+stands in for it:
+
+```tsx
+import { useMemo, useState } from "react";
+import type { ReactElement } from "react";
+import { createClerkSignInHandlers } from "@clossys/bouncer/providers/clerk/web/sign-in-handlers";
+import type { ClerkSignInHandlers, ClerkSignInProvider } from "@clossys/bouncer/providers/clerk/web/sign-in-handlers";
+
+declare function SignInForm(props: {
+  identify: ClerkSignInHandlers["identify"];
+  verify: ClerkSignInHandlers["verify"];
+  verifyCode?: ClerkSignInHandlers["verifyCode"];
+  resendCode?: ClerkSignInHandlers["resendCode"];
+  nouns: { surface: "site" };
+  onSignedIn: () => void;
+}): ReactElement;
+
+export function ClerkPasswordForm({ provider, onSignedIn }: {
+  provider: ClerkSignInProvider;
+  onSignedIn: () => void;
+}) {
+  const handlers = useMemo(() => createClerkSignInHandlers(provider), [provider]);
+  const [canResend, setCanResend] = useState(false);
+  return <SignInForm
+    identify={identifier => {
+      setCanResend(false);
+      return handlers.identify(identifier);
+    }}
+    verify={async secret => {
+      const result = await handlers.verify(secret);
+      setCanResend(handlers.canResendCode());
+      return result;
+    }}
+    verifyCode={handlers.verifyCode}
+    resendCode={canResend ? handlers.resendCode : undefined}
+    nouns={{ surface: "site" }}
+    onSignedIn={onSignedIn}
+  />;
+}
+```
+
+The exported types are `ClerkSignInProvider`, `ClerkSignInResource`,
+`ClerkSignInFactor`, `ClerkSignInCodeFactor`, `ClerkSignInResult` and
+`ClerkSignInHandlers`. Navigation after a successful activation stays with
+the caller's `onSignedIn`.
 
 ## Front-door conformance
 
@@ -682,6 +810,7 @@ webhook verification) plus `./providers/clerk/web`,
 `./providers/clerk/web/client`, `./providers/clerk/web/server`, and
 `./providers/clerk/web/proxy`, split so importing the edge-safe proxy entry
 never pulls `next/headers`, `next/navigation`, React, or client components.
+`./providers/clerk/web/sign-in-handlers` imports no optional peer.
 
 `createClerkSignInPage` (from `./providers/clerk/web/server`) writes one line
 to the server log, the first time its page renders without a sign-in provider
