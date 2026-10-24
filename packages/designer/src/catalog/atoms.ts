@@ -184,7 +184,7 @@ const BUTTON_CONTRACT: AtomContract = {
 };
 
 // ---------------------------------------------------------------------------
-// Leaves: 78 (47 on the default branch, 9 of them parked charts; 14 in flight; 17 gaps)
+// Leaves: 78 (48 on the default branch, 9 of them parked charts; 14 in flight; 16 gaps)
 // ---------------------------------------------------------------------------
 
 const ACTIONS = at("interaction", "actions");
@@ -528,13 +528,13 @@ export const ATOM_ENTRIES: readonly AtomEntry[] = [
     racBase: rac("GridList", "GridListItem", "GridListSection", "GridListHeader"),
     disposition: "keep",
   }),
-  gap(DATA_DISPLAY, {
+  onMain(DATA_DISPLAY, "TreeView", ["src/atoms/TreeView.tsx"], {
     id: "group.tree",
     label: "Tree",
     racBase: rac("Tree", "TreeItem", "TreeItemContent", "TreeSection"),
-    disposition: "build-now",
+    disposition: "keep",
     notes: [
-      "The tree block is an org-chart list and the explorer block a custom model today. Third in the build order.",
+      "Exported as TreeView because the tree block already holds the name Tree.",
     ],
   }),
 

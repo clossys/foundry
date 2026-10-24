@@ -368,9 +368,9 @@ describe("atom catalog coverage", () => {
     expect(leafExports.filter((name) => name === "Toaster")).toHaveLength(1);
   });
 
-  it("counts 47 leaves on the default branch (9 parked), 14 in flight and 17 gaps", () => {
+  it("counts 48 leaves on the default branch (9 parked), 14 in flight and 16 gaps", () => {
     const count = (status: string) => ATOM_ENTRIES.filter((entry) => entry.status === status).length;
-    expect([count("main"), count("parked"), count("in-flight"), count("gap")]).toEqual([38, 9, 14, 17]);
+    expect([count("main"), count("parked"), count("in-flight"), count("gap")]).toEqual([39, 9, 14, 16]);
   });
 
   it("gives built leaves an export and real files, and unbuilt leaves neither", () => {

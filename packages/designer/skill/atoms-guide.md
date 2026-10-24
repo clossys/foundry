@@ -4,7 +4,7 @@
 
 Import the shared records from `@clossys/designer/atoms`. This barrel remains client-only; charts render through the existing `@clossys/designer/charts` entry point. No new package subpath is introduced.
 
-46 established leaves appear once in 4 groups and 10 families. Groups and families are navigation; only leaves are selectable. Display placement preserves legacy IDs.
+47 established leaves appear once in 4 groups and 10 families. Groups and families are navigation; only leaves are selectable. Display placement preserves legacy IDs.
 
 Stable purpose, content and anatomy are separate from medium-specific implementation. Web cites current source; email, print and video are unassessed. Import safety, server rendering and visual resemblance establish no other medium’s support.
 
@@ -19,7 +19,7 @@ Consumer-owned demonstration coverage is unassessed here. A fixed controlled val
 | Group | Families | Leaves |
 | --- | --- | ---: |
 | Interaction | Actions, Navigation, Inputs | 18 |
-| Content | Data display, Imagery, Charts | 17 |
+| Content | Data display, Imagery, Charts | 18 |
 | Feedback | Messages, Progress and loading | 5 |
 | Containment | Structure, Overlays | 6 |
 
@@ -666,15 +666,15 @@ Web implementation: `@clossys/designer/atoms` → `Meter`. Source: `src/atoms/Me
 
 | Prop | Selection guidance | Package default | Applicability and support |
 | --- | --- | --- | --- |
-| `tone` — Measurement tone | `success`: Success state.<br>`warning`: Warning with hatching.<br>`danger`: Danger state.<br>`info`: Information with inset ring.<br>`neutral`: Plain neutral quantity.<br>`accent`: Brand-accent quantity, not a status. | required: Required by the prop type; no package default is supplied. | Effective for this component when supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/atoms/Meter.tsx`: `FILL_CLASSES[tone]` |
-| `direction` — Limit direction | `max`: Value should remain at or below the cap.<br>`min`: Value should remain at or above the floor. | `max` (`src/atoms/Meter.tsx`: `direction = "max"`) | Accepted without limit but produces no limit zone or tick until limit is supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/atoms/Meter.tsx`: `direction === "max"` |
+| `tone` — Measurement tone | `success`: Success state.<br>`warning`: Warning with hatching.<br>`danger`: Danger state.<br>`info`: Information with inset ring.<br>`neutral`: Plain neutral quantity.<br>`accent`: Brand-accent quantity, not a status. | required: Required by the prop type; no package default is supplied. | Effective for this component when supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/atoms/Meter.server.tsx`: `FILL_CLASSES[tone]` |
+| `direction` — Limit direction | `max`: Value should remain at or below the cap.<br>`min`: Value should remain at or above the floor. | `max` (`src/atoms/Meter.server.tsx`: `direction = "max"`) | Accepted without limit but produces no limit zone or tick until limit is supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/atoms/Meter.server.tsx`: `direction === "max"` |
 | `emphasis` — Value emphasis | `default`: Compact value row.<br>`figure`: Large focal measurement. | `default` (`src/atoms/Meter.tsx`: `emphasis = "default"`) | Effective for this component when supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/atoms/Meter.tsx`: `VALUE_ROW_CLASSES[emphasis]` |
 
-- effective-when (ignored; `direction`, `limit`): direction is accepted without limit but has no visible limit zone until limit is supplied. Evidence: `src/atoms/Meter.tsx`: `limitPct === undefined`.
-- paired (runtime; `previous`, `previousText`): previous and nonblank previousText must be supplied together; previous is finite, nonnegative and within scaleMax. Evidence: `src/atoms/Meter.tsx`: `(previous === undefined) !== (previousText === undefined)`.
+- effective-when (ignored; `direction`, `limit`): direction is accepted without limit but has no visible limit zone until limit is supplied. Evidence: `src/atoms/Meter.server.tsx`: `limitPct === undefined`.
+- paired (runtime; `previous`, `previousText`): previous and nonblank previousText must be supplied together; previous is finite, nonnegative and within scaleMax. Evidence: `src/atoms/Meter.server.tsx`: `(previous === undefined) !== (previousText === undefined)`.
 
 Token dependency coverage: partial. Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.
-- `--ui-border-rule` (transitive): `src/atoms/internal/ui-vars.ts`: `var(--ui-border-rule,`; consumed via `src/atoms/Meter.tsx`: `inset 0 0 0 ${UI_BORDER_RULE} currentColor`.
+- `--ui-border-rule` (transitive): `src/atoms/internal/ui-vars.ts`: `var(--ui-border-rule,`; consumed via `src/atoms/Meter.server.tsx`: `inset 0 0 0 ${UI_BORDER_RULE} currentColor`.
 
 ##### `group.table` — Table
 
@@ -733,6 +733,35 @@ No finite scalar options are represented here; read the real prop type for autho
 Token dependency coverage: partial. Representative row state dependencies; checkbox styling is composed from the existing atom.
 - `--ui-layout-tap-target` (transitive): `src/atoms/internal/ui-vars.ts`: `--ui-layout-tap-target`; consumed via `src/atoms/GridList.tsx`: `minBlockSize: UI_LAYOUT_TAP_TARGET`.
 - `--ui-ring-focus` (transitive): `src/atoms/internal/ui-vars.ts`: `--ui-ring-focus`; consumed via `src/atoms/GridList.tsx`: `UI_RING_FOCUS`.
+
+##### `group.tree-view` — TreeView
+
+- Purpose: Navigate a hierarchy of destinations by expanding branches and choosing one current leaf.
+- Use when: Destinations nest in groups and exactly one leaf is current, as in an outline or an index of slots.
+- Avoid when: The hierarchy is flat, or rows carry records, selection or actions that need a list.
+- Alternatives and boundary: Use Tabs for a few sibling views, Breadcrumb for a single path or GridList for interactive records.
+- Content: Supply a tree name and nodes with stable ids, host-authored labels and optional children.
+- Anatomy: A named tree of levelled rows; branch rows carry a disclosure chevron and leaf rows align beneath them.
+- Block composition example: Keep the current id and expansion in the host and route to the leaf id passed to onNavigate.
+- Accessibility: Arrow keys move, Right and Left expand and collapse, Home and End jump, and Enter on a leaf navigates.
+- Demonstration coverage: unassessed. Consumer-owned fixtures and interaction evidence have not been assessed here. A supported package option is not proof of a working catalog demonstration.
+
+| Medium | State | Reason and evidence |
+| --- | --- | --- |
+| web | implemented | The existing component renders or forwards its documented web implementation in the named source. Evidence: `src/atoms/TreeView.tsx` |
+| email | unassessed | No email renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
+| print | unassessed | No print renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
+| video | unassessed | No video renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
+
+Web implementation: `@clossys/designer/atoms` → `TreeView`. Source: `src/atoms/TreeView.tsx`. Single-selection tree built on the peer Tree. The current leaf is the controlled selection; leaves call onNavigate and branches only expand or collapse. Supply aria-label; node ids must be unique across the whole tree. The peer supplies keyboard, typeahead and expansion state; expansion is controlled with expandedIds or uncontrolled with defaultExpandedIds.
+
+No finite scalar options are represented here; read the real prop type for authored content and data.
+
+- data (runtime; `aria-label`): A nonblank accessible name is required. Evidence: `src/atoms/TreeView.tsx`: `TreeView requires aria-label.`.
+
+Token dependency coverage: partial. Representative row state dependencies; the chevron is composed from the existing Icon atom.
+- `--ui-layout-tap-target` (transitive): `src/atoms/internal/ui-vars.ts`: `--ui-layout-tap-target`; consumed via `src/atoms/TreeView.tsx`: `minBlockSize: UI_LAYOUT_TAP_TARGET`.
+- `--ui-ring-focus` (transitive): `src/atoms/internal/ui-vars.ts`: `--ui-ring-focus`; consumed via `src/atoms/TreeView.tsx`: `UI_RING_FOCUS`.
 
 #### Imagery
 
@@ -1124,7 +1153,7 @@ Web implementation: `@clossys/designer/atoms` → `Banner`. Source: `src/atoms/B
 - derived (derived; `variant`): danger couples danger appearance with alert/assertive; other severities use status/polite. No independent live-region option. Evidence: `src/atoms/Banner.tsx`: `aria-live={isAssertive ? "assertive" : "polite"}`.
 
 Token dependency coverage: partial. Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.
-- `--color-status-danger-text` (transitive): `styles/theme-keys.css`: `--color-status-danger-text:`; consumed via `src/atoms/Banner.tsx`: `text-status-danger-text`.
+- `--color-status-danger-text` (transitive): `styles/theme-keys.css`: `--color-status-danger-text:`; consumed via `src/atoms/Banner.server.tsx`: `text-status-danger-text`.
 
 ##### `inform.status-mark` — StatusMark
 
@@ -1210,7 +1239,7 @@ Web implementation: `@clossys/designer/atoms` → `Spinner`. Source: `src/atoms/
 
 | Prop | Selection guidance | Package default | Applicability and support |
 | --- | --- | --- | --- |
-| `size` — Size | `sm`: sm size within the existing component scale.<br>`md`: md size within the existing component scale.<br>`lg`: lg size within the existing component scale. | `md` (`src/atoms/Spinner.tsx`: `size = "md"`) | Effective for this component when supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/atoms/Spinner.tsx`: `SIZE_CLASSES[size]` |
+| `size` — Size | `sm`: sm size within the existing component scale.<br>`md`: md size within the existing component scale.<br>`lg`: lg size within the existing component scale. | `md` (`src/atoms/Spinner.tsx`: `size = "md"`) | Effective for this component when supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/atoms/Spinner.server.tsx`: `SIZE_CLASSES[size]` |
 
 
 Token dependency coverage: partial. Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.
