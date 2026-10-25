@@ -30,7 +30,7 @@ const firstFamily = (css: string): string => (css.split(",")[0] ?? "").trim().re
 function Specimen({ id, member, spec, labels }: { id: string; member: Candidate["members"][number]["member"]; spec: PreviewSpec; labels: PreviewLabels }): ReactElement {
   if (member.slot.startsWith("assets.")) {
     if (member.$type !== "svg" || typeof member.value.light !== "string") return <code>{member.css.light}</code>;
-    try { inspectSvg(member.value.light); }
+    try { inspectSvg(member.value.light, id === "assets.favicon.vector" ? { favicon: true } : undefined); }
     catch { return <code>{member.css.light}</code>; }
     return <Logomark src={`data:image/svg+xml,${encodeURIComponent(member.value.light)}`} size="lg" title={id} />;
   }
