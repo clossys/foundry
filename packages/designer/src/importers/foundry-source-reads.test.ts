@@ -53,6 +53,14 @@ describe("Foundry source token reads", () => {
     for (const read of derived()["tag-group"]!) expect(reads).toContain(read);
     expect(reads).toEqual(expect.arrayContaining(["tokens.control-size", "tokens.focus-outline", "tokens.focus-color"]));
   });
+  it("declares the control height DateField and SearchField consume through control-h-md, matching the other Foundry fields", () => {
+    const fills = importFoundryComponents({ slots: componentSlots as unknown as readonly ComponentSlot[] }).fills;
+    for (const leaf of ["date-field", "search-field"]) {
+      expect(derived()[leaf]).toContain("tokens.control-size");
+      const fill = fills.find(row => row.$extensions["com.clossys.fill"].slot === `components.${leaf}`)!;
+      expect(Object.values(fill.components)[0]!.reads.tokens).toContain("tokens.control-size");
+    }
+  });
   it("commits the derivation for every mapped component (UPDATE_FOUNDRY_COMPONENT_FILLS=1 rewrites it)", () => {
     const bytes = JSON.stringify(derived(), null, 2) + "\n";
     if (process.env.UPDATE_FOUNDRY_COMPONENT_FILLS === "1") writeFileSync(resolve(here, "foundry-source-reads.json"), bytes);
