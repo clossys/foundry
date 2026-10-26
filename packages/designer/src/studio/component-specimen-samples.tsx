@@ -143,6 +143,13 @@ function sourceSample(key: string, exports: Namespace): ComponentSpecimenSample 
       // Non-modal, so holding it open never hides the rest of Studio or locks its scroll.
       return { props: { isNonModal: true }, children: [<Title key="title">{title}</Title>, <Description key="content">{content}</Description>], host: specimen => <OverlayHost>{container => <Trigger isOpen><TriggerButton>{trigger}</TriggerButton>{cloneElement(specimen as ReactElement<Record<string, unknown>>, { UNSTABLE_portalContainer: container })}</Trigger>}</OverlayHost> };
     }
+    case "components/menu/dropdown-menu.tsx#DropdownMenu": {
+      // The module's own InlineMenu is the same RAC Menu without the Popover: it draws open, in place, on the server too.
+      const found = parts("InlineMenu", "DropdownMenuItem"); if (!found) return undefined;
+      const [Inline, Item] = found as [Renderable, Renderable];
+      const { label, items } = s[key];
+      return { props: { "aria-label": label }, children: items.map(item => <Item key={item.id} id={item.id}>{item.label}</Item>), host: specimen => <Inline {...(specimen as ReactElement<Record<string, unknown>>).props} /> };
+    }
     case "components/tooltip/tooltip.tsx#Tooltip": {
       const found = parts("TooltipTrigger"); if (!found) return undefined;
       const [Trigger] = found as [Renderable];

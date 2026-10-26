@@ -114,7 +114,11 @@ it("binds and server-renders every adopted shadcn@aria leaf from its vendored so
   const bad = Object.fromEntries(Object.entries(outcome).filter(([, state]) => state !== "live" && !state.startsWith("unavailable:")));
   expect(bad).toEqual({});
   // Only the modal-only overlays stay unavailable, each with its named reason.
-  expect(Object.entries(outcome).filter(([, state]) => state !== "live")).toEqual(["dialog", "menu"].map(name => [`components.${name}`, "unavailable:needs-host-trigger"]));
+  expect(Object.entries(outcome).filter(([, state]) => state !== "live")).toEqual([["components.dialog", "unavailable:needs-host-trigger"]]);
+  // The menu draws open in place through the module's own InlineMenu, with no Popover, so it server-renders.
+  const menu = renderToString(<>{specimens.preview("components.menu", leaves.find(entry => entry.leaf === "components.menu")!.profile)}</>);
+  expect(menu).toContain("Archive item");
+  expect(menu).toMatch(/role="menu"/);
   // Compound leaves draw the designer sample through their own vendored parts, not the leaf label.
   for (const [leaf, text] of [["components.tabs", "Summary content"], ["components.breadcrumbs", "Overview"], ["components.disclosure", "Returns"], ["components.radio-group", "Yearly"], ["components.card", "Card title"]] as const) {
     expect(renderToString(<>{specimens.preview(leaf, leaves.find(entry => entry.leaf === leaf)!.profile)}</>), leaf).toContain(text);
