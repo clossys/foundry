@@ -1313,6 +1313,8 @@
 @utility canvas-domain-rail { width: var(--ui-layout-sidebar-rail-w); writing-mode: vertical-rl; }
 @utility canvas-map-rail-height { height: var(--ui-layout-sidebar-rail-w); }
 @utility candidate-variant-min-inline { min-width: var(--ui-control-h-lg); }
+/* FilterBuilder match select: caps the control at the aside measure (max-w-xs resolved to the 4px spacing token). */
+@utility filter-match-width { max-width: var(--ui-layout-aside-w, 320px); }
 /* A token specimen and its value text stay inside one token-bounded box at every zoom tier (VR2 studio-01). */
 @utility token-specimen-contain { max-inline-size: var(--ui-layout-sidebar-w); overflow: hidden; overflow-wrap: anywhere; }
 @utility calendar-cell-size { width: var(--ui-control-h-sm, 32px); height: var(--ui-control-h-sm, 32px); }
@@ -1326,6 +1328,7 @@
 /* Frames own region motion. Content stays mounted through open and closed states.
    Navigation never animates a layout property: it snaps between its media-ruled widths,
    so neither hydration nor a collapse reflows the stage over several frames. */
+@layer foundry-ui-compiled {
 .frame-docked-navigation[data-open="false"] { visibility: hidden; }
 .frame-docked-panel {
   transition-property: inline-size, visibility;
@@ -1346,4 +1349,5 @@
 @media (prefers-reduced-motion: reduce) {
   .frame-docked-panel { transition: none; }
   [data-drawer-placement="start"], [data-drawer-placement="end"] { animation: none; }
+}
 }
