@@ -38,7 +38,7 @@ describe("Studio boards across canvas tiers", () => {
   it("reaches all three tiers through the camera and keeps every board's outer box", async () => {
     await mount();
     const board = document.querySelector<HTMLElement>("[data-studio-world] [data-studio-board]")!;
-    const outer = () => ({ className: board.className, style: board.getAttribute("style"), hidden: board.hidden, layers: [...board.querySelectorAll<HTMLElement>("[data-canvas-lod-layer]")].map(layer => [layer.dataset.canvasLodLayer, layer.hidden, layer.style.gridArea, layer.style.display]) });
+    const outer = () => ({ className: board.className, style: board.getAttribute("style"), hidden: board.hidden, layers: [...board.querySelectorAll<HTMLElement>("[data-canvas-lod-layer]")].map(layer => [layer.dataset.canvasLodLayer, layer.style.gridArea, layer.style.display]) });
     const seen = new Map<string, ReturnType<typeof outer>>();
     press(labels.canvas.zoomIn, 20); seen.set(tier()!, outer());
     for (let step = 0; step < 25; step += 1) { press(labels.canvas.zoomOut, 1); seen.set(tier()!, outer()); }
@@ -46,7 +46,27 @@ describe("Studio boards across canvas tiers", () => {
     const [first, ...rest] = [...seen.values()];
     for (const box of rest) expect(box).toEqual(first);
     expect(first!.layers.map(layer => layer[0])).toEqual(["full", "compact", "overview"]);
-    expect(first!.layers.every(layer => layer[1] === false)).toBe(true);
+  });
+  // The board takes the active layer's height and two tiers never paint together (no crossfade overlap).
+  it("paints exactly one tier: the inactive full layer keeps width only, other inactive layers are hidden, nothing crossfades", async () => {
+    await mount();
+    const board = document.querySelector<HTMLElement>("[data-studio-world] [data-studio-board]")!;
+    const check = () => {
+      const active = tier()!;
+      for (const layer of board.querySelectorAll<HTMLElement>("[data-canvas-lod-layer]")) {
+        const id = layer.dataset.canvasLodLayer!, on = id === active;
+        expect(layer.className, id).not.toMatch(/transition|duration/);
+        expect(layer.style.transition, id).toBe("");
+        expect(layer.style.opacity, id).toBe("");
+        if (on) { expect(layer.hidden, id).toBe(false); expect(layer.style.visibility, id).toBe(""); expect(layer.style.blockSize, id).toBe(""); continue; }
+        if (id === "full") expect([layer.hidden, layer.style.blockSize, layer.style.overflow, layer.style.visibility], `${active}: full`).toEqual([false, "0", "hidden", "hidden"]);
+        else expect(layer.hidden, `${active}: ${id}`).toBe(true);
+      }
+    };
+    press(labels.canvas.zoomIn, 20); expect(tier()).toBe("full"); check();
+    const seen = new Set<string>();
+    for (let step = 0; step < 25; step += 1) { press(labels.canvas.zoomOut, 1); seen.add(tier()!); check(); }
+    expect(seen).toEqual(new Set(["full", "compact", "overview"]));
   });
   it("shows only the active tier, with Open in the overview tier alone and no overlap or clipping", async () => {
     await mount();
@@ -66,7 +86,7 @@ describe("Studio boards across canvas tiers", () => {
     expect(column.className).toMatch(/(?:^|\s)gap-\S+/);
     for (let node: HTMLElement | null = summary; node && node !== board.parentElement; node = node.parentElement) expect(node.className, node.outerHTML.slice(0, 80)).not.toMatch(OUT_OF_FLOW);
     for (let node: HTMLElement | null = open[0]!; node && node !== board.parentElement; node = node.parentElement) expect(node.className).not.toMatch(OUT_OF_FLOW);
-    for (const element of [board, ...board.querySelectorAll<HTMLElement>('[data-canvas-lod-layer="compact"] *, [data-canvas-lod-layer="overview"] *, [data-canvas-lod-layer]')]) {
+    for (const element of [board, ...board.querySelectorAll<HTMLElement>('[data-canvas-lod-layer="compact"] *, [data-canvas-lod-layer="overview"] *, [data-canvas-lod-layer="compact"], [data-canvas-lod-layer="overview"]')]) {
       expect(element.className, element.outerHTML.slice(0, 80)).not.toMatch(CLIPPING);
       expect(element.style.overflow).toBe("");
     }
@@ -74,7 +94,7 @@ describe("Studio boards across canvas tiers", () => {
       const active = layer.dataset.canvasLodLayer === "overview";
       expect(layer.hasAttribute("inert")).toBe(!active);
       expect(layer.getAttribute("aria-hidden")).toBe(active ? null : "true");
-      expect(layer.style.opacity).toBe(active ? "1" : "0");
+      expect(layer.style.visibility).toBe(active || layer.hidden ? "" : "hidden");
     }
     press(labels.canvas.zoomIn, 25); expect(tier()).toBe("full");
     expect(screen.queryByRole("button", { name: labels.canvas.openBoard(name) })).toBeNull();
