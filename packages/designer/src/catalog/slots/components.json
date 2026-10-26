@@ -1787,7 +1787,8 @@
           "tokens.focus-color",
           "tokens.focus-outline",
           "tokens.spacing",
-          "tokens.state-opacity"
+          "tokens.state-opacity",
+          "tokens.control-size"
         ],
         "assets": []
       },

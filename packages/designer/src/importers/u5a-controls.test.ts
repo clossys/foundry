@@ -35,6 +35,15 @@ describe("six pinned control evidence surfaces", () => {
     expect(group.reads.tokens).toEqual(expect.arrayContaining(inherited));
     expect(result.fills.find(doc => doc.components.calendar)!.components.calendar!.reads.tokens.filter(read => /^tokens\.control-size\./.test(read))).toEqual(result.rewrites.calendar!.reads.tokens.filter(read => /^tokens\.control-size\./.test(read)));
   });
+  it("binds the slider thumb's size-3 to the control mark, leaving the track untouched, inside the slider contract", () => {
+    const result = importShadcnAriaComponents(input());
+    const fill = result.fills.find(doc => doc.components.slider)!.components.slider!;
+    expect(fill.reads.tokens).toContain("tokens.control-size.mark");
+    const source = result.rewrites.slider!.files.find(file => file.path === "components/slider/slider.tsx")!.content;
+    expect(source).toMatch(/ relative size-\(--ui-control-mark\) rounded-full /);
+    expect(source).not.toMatch(/h-\(--ui-control-mark/);
+    expect(slots.find(slot => slot.id === "components.slider")!.contract.allowedReads.tokens).toContain("tokens.control-size");
+  });
   it("binds the radio item's 16px box to the control mark and keeps its focus outline, inside the radio contract", () => {
     const result = importShadcnAriaComponents(input());
     const fill = result.fills.find(doc => doc.components["radio-group"])!.components["radio-group"]!;

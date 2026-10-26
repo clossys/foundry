@@ -612,7 +612,7 @@
       "missing": [],
       "notes": [
         "A range is a value array with one thumbLabels name per thumb; the fill spans the selected range. Source and runtime qualification remain unmeasured.",
-        "Frozen reads omit source-consumed tokens.body-size, tokens.control-size, tokens.radius, tokens.text-color, tokens.typeface; the contract's allowedReads must widen before this is enforced.",
+        "Frozen reads omit source-consumed tokens.body-size, tokens.radius, tokens.text-color, tokens.typeface; the contract's allowedReads must widen before this is enforced.",
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
       ],
       "slot": "components.slider",

@@ -92,7 +92,7 @@ describe("Foundry source token reads", () => {
     // Slider (Foundry slot added by the slider mapping) and tag-group (mapped with its craft record) extend the ask list: their sources consume type, radius,
     // text-colour and focus tokens that the frozen contracts' allowedReads do not yet list. Both are genuine omissions of the same class as the rest.
     expect(Object.keys(omissions).sort()).toEqual(["chart-range", "chart-scatter", "chart-sparkline", "checkbox", "disclosure", "grid-list", "menu", "slider", "tabs", "toast", "tree"]);
-    expect(omissions["slider"]).toBe("tokens.body-size, tokens.control-size, tokens.radius, tokens.text-color, tokens.typeface");
+    expect(omissions["slider"]).toBe("tokens.body-size, tokens.radius, tokens.text-color, tokens.typeface");
     // tag-group: its contract now lists the control-size and focus-outline/colour its TagGroup source consumes.
     expect(omissions["tag-group"]).toBeUndefined();
     expect(omissions["color-picker"]).toBeUndefined();
