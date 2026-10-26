@@ -98,7 +98,7 @@ describe("Foundry component package descriptors", () => {
     expect(rows.get("components.checkbox")!.missing).toContain("scope.group");
     expect(rows.get("components.disclosure")!.missing).toContain("scope.group");
     expect(rows.get("components.breadcrumbs")!.missing).toContain("collapsed");
-    expect(rows.get("components.dialog")!.missing).toContain("role.alert");
+    expect(rows.get("components.dialog")!.supported).toEqual(["dismissable", "role.alert", "role.modal"]);
     expect(rows.get("components.popover")!.supported).toEqual(["arrow", "placement"]);
     for (const leaf of ["form", "navigation-tree", "field", "text-field", "date-field", "grid-list", "toast", "chart-area", "chart-heatmap", "chart-range", "chart-scatter", "chart-status-strip", "chart-waterfall"]) {
       expect(rows.get(`components.${leaf}`)!.missing).toEqual([]);

@@ -13,15 +13,12 @@
         "package": "@clossys/designer",
         "version": "0.12.0"
       },
-      "relation": "subset",
+      "relation": "same-contract",
       "slot": "components.dialog",
       "source": "foundry",
       "sourceAddress": "./components#Dialog",
       "status": "draft",
-      "trust": "foundry",
-      "unmapped": [
-        "role.alert"
-      ]
+      "trust": "foundry"
     }
   },
   "components": {
@@ -52,6 +49,7 @@
       "license": "MIT",
       "members": [
         "dismissable",
+        "role.alert",
         "role.modal"
       ],
       "pin": {
@@ -61,6 +59,7 @@
       },
       "propMap": {
         "dismissable": "./components#Dialog.isDismissable",
+        "role.alert": "./components#Dialog.role=alertdialog",
         "role.modal": "./components#Dialog"
       },
       "props": [
@@ -69,6 +68,7 @@
         "isDismissable",
         "isOpen",
         "onOpenChange",
+        "role",
         "size",
         "trigger"
       ],

@@ -318,17 +318,16 @@
       "supported": []
     },
     {
-      "missing": [
-        "role.alert"
-      ],
+      "missing": [],
       "notes": [
-        "Dialog does not expose an alert-dialog role.",
+        "role=alertdialog keeps the modal surface and Escape, and ignores a scrim press unless isDismissable is set.",
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
       ],
       "slot": "components.dialog",
-      "status": "subset",
+      "status": "candidate",
       "supported": [
         "dismissable",
+        "role.alert",
         "role.modal"
       ]
     },
