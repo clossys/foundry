@@ -6,7 +6,8 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { importFoundryFrames, importFoundrySections, loadBuildCatalog, planSurfaceDefaults } from "../catalog-core/index.js";
 import type { SurfaceDefaultCandidateDocument, SurfaceDefaultsInput } from "../catalog-core/index.js";
 import * as studioEntry from "./index.js";
-import { packageSurfacePreview, planSurfacePreviews } from "./planned-surface-previews.js";
+import { packageSurfacePreview, planSurfacePreviews, SURFACE_SAMPLE_STATES } from "./planned-surface-previews.js";
+import { surfaceStateSample } from "./surface-preview-sample-content.js";
 
 const SITE_SHELL_GAP = { slot: "frames.site-shell", reason: "@clossys/publisher/web#SiteFrame is not a designer export; the designer does not render it" };
 
@@ -145,5 +146,84 @@ describe("planSurfacePreviews", () => {
     const result = planSurfacePreviews({ plan, fills: [] });
     expect(Object.keys(result.previews)).toHaveLength(0);
     expect(result.unrenderable.find(gap => gap.slot === "sections.faq")?.reason).toBe("planned fill foundry/sections.faq is not among the candidate documents");
+  });
+});
+
+/*
+ * vf35 capture fixtures: a host (or a capture harness driving it) asks for one sample state for every
+ * planned or adopted package preview. A preview whose export supports that state renders it from the
+ * real export's own props; every other preview stays on its default sample and says so.
+ */
+describe("surface sample states", () => {
+  const html = (preview: ReturnType<typeof packageSurfacePreview>) => renderToStaticMarkup(<>{"render" in preview ? preview.render() : null}</>);
+  const doc = (slot: string) => realPlan().fills.find(candidate => candidate.$extensions["com.clossys.fill"].slot === slot)!;
+
+  it("lists the selectable states, default first", () => {
+    expect(SURFACE_SAMPLE_STATES).toEqual(["default", "empty", "loading", "error", "long-content"]);
+    expect(studioEntry.SURFACE_SAMPLE_STATES).toBe(SURFACE_SAMPLE_STATES);
+  });
+
+  it("renders a supported state from the real export and names it", () => {
+    const list = doc("sections.resource-list");
+    expect(packageSurfacePreview(list)).toMatchObject({ state: "default" });
+    const empty = packageSurfacePreview(list, {}, "empty");
+    expect(empty).toMatchObject({ pointer: "@clossys/designer/blocks#ResourceList", state: "empty" });
+    expect(html(empty)).toContain("No projects yet");
+    expect(html(empty)).not.toContain("Help centre");
+    const loading = packageSurfacePreview(list, {}, "loading");
+    expect(loading).toMatchObject({ state: "loading" });
+    expect(html(loading)).toContain('role="status"');
+    expect(html(loading)).toContain(surfaceStateSample.loadingLabel);
+    expect(html(loading)).not.toContain("Help centre");
+    const error = packageSurfacePreview(list, {}, "error");
+    expect(error).toMatchObject({ state: "error" });
+    expect(html(error)).toContain(surfaceStateSample.error.title);
+    expect(html(error)).not.toContain("Help centre");
+    const long = packageSurfacePreview(list, {}, "long-content");
+    expect(long).toMatchObject({ state: "long-content" });
+    expect(html(long)).toContain(surfaceStateSample.longTitle);
+  });
+
+  it("keeps an export without that state on its default sample, and says it is the default", () => {
+    const table = packageSurfacePreview(doc("sections.data-table"), {}, "error");
+    expect(table).toMatchObject({ state: "default" });
+    expect(html(table)).toContain("Fabrikam");
+    const faq = packageSurfacePreview(doc("sections.faq"), {}, "empty");
+    expect(faq).toMatchObject({ state: "default" });
+    expect(html(faq)).toContain("How does billing work?");
+  });
+
+  it("never applies a state to a host-owned sample", () => {
+    const host = { "@clossys/publisher/web#SiteFrame": () => <p>host-site-frame</p> };
+    expect(packageSurfacePreview(doc("frames.site-shell"), host, "empty")).toMatchObject({ state: "default" });
+  });
+
+  it("threads the requested state through every planned preview and records it", () => {
+    const { plan, fills } = realPlan();
+    const result = planSurfacePreviews({ plan, fills, sampleState: "empty" });
+    expect(result.sampleState).toBe("empty");
+    expect(result.previews["sections.resource-list"]?.state).toBe("empty");
+    expect(result.previews["sections.faq"]?.state).toBe("default");
+    expect(planSurfacePreviews({ plan, fills }).sampleState).toBe("default");
+  });
+
+  it("renders every supported state of every planned preview, and each differs from its default", () => {
+    const { plan, fills } = realPlan();
+    const base = planSurfacePreviews({ plan, fills });
+    const supported: string[] = [];
+    for (const state of SURFACE_SAMPLE_STATES.slice(1)) {
+      for (const preview of Object.values(planSurfacePreviews({ plan, fills, sampleState: state }).previews)) {
+        if (preview.state === "default") continue;
+        supported.push(`${preview.slot}:${state}`);
+        const markup = renderToStaticMarkup(<>{preview.render()}</>);
+        expect(markup, `${preview.slot}:${state}`).not.toBe(renderToStaticMarkup(<>{base.previews[preview.slot]!.render()}</>));
+      }
+    }
+    expect(supported.sort()).toEqual([
+      "sections.activity-feed:empty", "sections.audit-log:empty", "sections.audit-log:loading",
+      "sections.data-grid:empty", "sections.data-grid:loading", "sections.data-grid:long-content",
+      "sections.data-table:empty", "sections.data-table:loading", "sections.data-table:long-content",
+      "sections.resource-list:empty", "sections.resource-list:error", "sections.resource-list:loading", "sections.resource-list:long-content",
+    ]);
   });
 });

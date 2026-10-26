@@ -2,13 +2,27 @@
 import type { HTMLAttributes, ReactNode } from 'react';
 import { Button } from '../../components/Button.js';
 import { IconButton } from '../../components/IconButton.js';
-import { Card } from '../../components/Card.js';
+import { Card, type CardGround } from '../../components/Card.js';
 import { Tooltip } from '../../components/Tooltip.js';
 import { Settings } from '../../icons/Settings.js';
 import { SectionHeader } from '../SectionHeader.js';
 import { CANVAS_COUNTER_SCALED_TITLE } from '../canvas/CanvasLod.js';
 
+/**
+ * What a leaf cell shows, decided by its caller from the same branch that picks the status line:
+ * a live preview, a planned default (previewed, not adopted), a chosen leaf whose preview cannot
+ * render, or an unchosen leaf. Rendered as `data-preview-state` so a capture harness never reads copy.
+ */
+export type LeafPreviewState = 'live' | 'planned' | 'unavailable' | 'not-chosen';
+
+/** The ground the cell plate sits on; a plate fills with the other ground (see Card). */
+const LEAF_CELL_GROUND: CardGround = 'base';
+/** The ground a plate fills with, by the ground it sits on: the surface a leaf specimen is drawn on. */
+const PLATE_FILL_GROUND: Readonly<Record<CardGround, string>> = { base: 'sunken', sunken: 'raised', inverse: 'inverse-raised' };
+
 export interface LeafCellProps extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
+  /** What this cell shows; rendered as `data-preview-state`. */
+  readonly previewState: LeafPreviewState;
   /** The leaf's rendered members; absent for an unchosen leaf. */
   readonly preview?: ReactNode;
   /** The one status line: "Not chosen", an unavailable preview, or nothing for a filled leaf. */
@@ -23,8 +37,8 @@ export interface LeafCellProps extends Omit<HTMLAttributes<HTMLDivElement>, 'chi
  * Empty slots stay in place but are hidden, so a filled cell looks exactly as before.
  * The slots share one centre line, so a status reads level with its action buttons.
  */
-export function LeafCell({ preview, status, actions, className, ...rest }: LeafCellProps) {
-  return <Card {...rest} variant="plate" data-candidate-cell="" className={['flex w-max items-center gap-md p-sm', className].filter(Boolean).join(' ')}>
+export function LeafCell({ preview, status, actions, previewState, className, ...rest }: LeafCellProps) {
+  return <Card {...rest} variant="plate" ground={LEAF_CELL_GROUND} data-candidate-cell="" data-preview-state={previewState} data-ground={PLATE_FILL_GROUND[LEAF_CELL_GROUND]} className={['flex w-max items-center gap-md p-sm', className].filter(Boolean).join(' ')}>
     {preview}
     <div data-cell-status="" hidden={status == null} className={status == null ? undefined : 'text-ink-muted'}>{status}</div>
     <div data-cell-actions="" hidden={actions == null} className={actions == null ? undefined : 'flex items-center gap-sm'}>{actions}</div>
@@ -50,7 +64,7 @@ export interface BoardHeaderProps {
 export function BoardHeader({ id, title, editing, labels, onEdit, onDone, action }: BoardHeaderProps) {
   return <SectionHeader data-board-header="" title={<span id={id} data-canvas-title="" className={CANVAS_COUNTER_SCALED_TITLE}>{title}</span>} level={3} actions={<>
     {action}
-    {editing ? <Button size="sm" onPress={onDone}>{labels.done}</Button> : <Tooltip trigger={<IconButton size="sm" shape="square" icon={Settings} label={labels.changeSelection} onPress={onEdit} />}>{labels.changeSelection}</Tooltip>}
+    {editing ? <Button size="sm" data-studio-control="edit-mode" onPress={onDone}>{labels.done}</Button> : <Tooltip trigger={<IconButton size="sm" shape="square" icon={Settings} label={labels.changeSelection} data-studio-control="edit-mode" onPress={onEdit} />}>{labels.changeSelection}</Tooltip>}
   </>} />;
 }
 

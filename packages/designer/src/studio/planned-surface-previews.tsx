@@ -51,7 +51,10 @@ import { PageBar } from "../blocks/PageBar.js";
 import { SECTION_BLOCK_SAMPLES } from "../blocks/section-samples.js";
 import { SiteHeader } from "../shell/SiteHeader.js";
 import { SiteFooter } from "../shell/SiteFooter.js";
-import { APP_SIDEBAR_SAMPLES, STRUCTURED_BLOCK_SAMPLES, STRUCTURED_FRAME_SAMPLES } from "./surface-preview-samples.js";
+import { APP_SIDEBAR_SAMPLES, STRUCTURED_BLOCK_SAMPLES, STRUCTURED_BLOCK_STATE_SAMPLES, STRUCTURED_FRAME_SAMPLES, type SurfaceStateSamples } from "./surface-preview-samples.js";
+import { SURFACE_SAMPLE_STATES, type SurfaceSampleState } from "./surface-preview-sample-content.js";
+
+export { SURFACE_SAMPLE_STATES, type SurfaceSampleState };
 
 /** This designer build renders only its own package exports. Another package's export (for example a Publisher frame) is reported, not imitated. */
 const DESIGNER_PACKAGE = "@clossys/designer/";
@@ -91,6 +94,15 @@ const BLOCK_SAMPLES: Readonly<Record<string, () => ReactNode>> = {
   ...STRUCTURED_BLOCK_SAMPLES,
   ...APP_SIDEBAR_SAMPLES,
 };
+/** vf35: block exports' own non-default sample states, by export name (see surface-preview-samples.tsx). */
+const BLOCK_STATE_SAMPLES: SurfaceStateSamples = {
+  ActivityFeed: { empty: () => <ActivityFeed {...activityFeedSample} events={[]} groups={[]} /> },
+  AuditLog: {
+    empty: () => <AuditLog {...auditLogSample} entries={[]} />,
+    loading: () => <AuditLog {...auditLogSample} isLoading />,
+  },
+  ...STRUCTURED_BLOCK_STATE_SAMPLES,
+};
 const SHELL_SAMPLES: Readonly<Record<string, () => ReactNode>> = {
   SiteHeader: () => <SiteHeader position="static" brand={<span>Northwind</span>} nav={<a href="#product">Product</a>} />,
   SiteFooter: () => <SiteFooter secondary={<p>Northwind, sample footer</p>} />,
@@ -104,6 +116,7 @@ const SAMPLES: Readonly<Record<string, () => ReactNode>> = {
   ...Object.fromEntries(Object.entries(SHELL_SAMPLES).map(([name, sample]) => [SHELL + name, sample])),
   ...Object.fromEntries(Object.entries(FRAME_SAMPLES).map(([name, sample]) => [FRAMES + name, sample])),
 };
+const STATE_SAMPLES: SurfaceStateSamples = Object.fromEntries(Object.entries(BLOCK_STATE_SAMPLES).map(([name, states]) => [BLOCKS + name, states]));
 
 export interface PlannedSurfacePreview {
   slot: string;
@@ -113,6 +126,8 @@ export interface PlannedSurfacePreview {
   pointer: string;
   /** Renders the real export with fixed sample content. Preview only: not adoption, not conformance evidence. */
   render(): ReactNode;
+  /** The sample state `render` draws: the requested one when the export supports it, otherwise `default` (also when absent). */
+  state?: SurfaceSampleState;
 }
 export interface PlannedSurfacePreviewGap { slot: string; reason: string }
 export interface PlannedSurfacePreviews {
@@ -120,6 +135,8 @@ export interface PlannedSurfacePreviews {
   previews: Readonly<Record<string, PlannedSurfacePreview>>;
   /** Planned leaves without a preview, with the reason. */
   unrenderable: readonly PlannedSurfacePreviewGap[];
+  /** The sample state the host asked for; adopted package previews on the board use the same one. Absent means `default`. */
+  sampleState?: SurfaceSampleState;
 }
 /** Sample renderers keyed by package export pointer (`module#export`). */
 export type SurfacePreviewSamples = Readonly<Record<string, () => ReactNode>>;
@@ -132,6 +149,12 @@ export interface PlannedSurfacePreviewsInput {
    * Publisher site frame). The host renders its own real export; the designer never imitates one.
    */
   samples?: SurfacePreviewSamples;
+  /**
+   * The sample state to draw every preview in (vf35), for a capture harness or a host's own state review.
+   * An export without that state, and every host-owned sample, keeps its default sample.
+   * @default "default"
+   */
+  sampleState?: SurfaceSampleState;
 }
 
 type PackageImpl = { kind?: unknown; module?: unknown; export?: unknown };
@@ -141,16 +164,18 @@ type SurfacePointerDocument = Pick<SurfaceDefaultCandidateDocument, "sections" |
  * The preview for one package-pointer surface document, planned or adopted: the real export its single entry
  * points at, rendered with sample content, or the reason there is none. Host samples cover non-designer exports.
  */
-export function packageSurfacePreview(doc: SurfacePointerDocument, samples: SurfacePreviewSamples = {}): { pointer: string; render(): ReactNode } | { reason: string } {
+export function packageSurfacePreview(doc: SurfacePointerDocument, samples: SurfacePreviewSamples = {}, state: SurfaceSampleState = "default"): { pointer: string; render(): ReactNode; state: SurfaceSampleState } | { reason: string } {
   const entries = Object.values({ ...doc.sections, ...doc.frames });
   const impl = (entries.length === 1 ? (entries[0] as { impl?: PackageImpl }).impl : undefined) ?? {};
   if (impl.kind !== "package" || typeof impl.module !== "string" || typeof impl.export !== "string") return { reason: "planned fill has no package export pointer" };
   const pointer = `${impl.module}#${impl.export}`;
   const hosted = Object.hasOwn(samples, pointer) ? samples[pointer] : undefined;
-  if (hosted) return { pointer, render: hosted };
+  if (hosted) return { pointer, render: hosted, state: "default" };
   if (!impl.module.startsWith(DESIGNER_PACKAGE)) return { reason: `${pointer} is not a designer export; the designer does not render it` };
   const sample = Object.hasOwn(SAMPLES, pointer) ? SAMPLES[pointer] : undefined;
-  return sample ? { pointer, render: sample } : { reason: `no preview sample content for ${pointer}` };
+  if (!sample) return { reason: `no preview sample content for ${pointer}` };
+  const stated = state === "default" || !Object.hasOwn(STATE_SAMPLES, pointer) ? undefined : STATE_SAMPLES[pointer]![state];
+  return stated ? { pointer, render: stated, state } : { pointer, render: sample, state: "default" };
 }
 
 /** Preview producers for every planned row; not-chosen rows are ignored. */
@@ -161,9 +186,9 @@ export function planSurfacePreviews(input: PlannedSurfacePreviewsInput): Planned
     if (row.status === "not-chosen" || !row.fill || !row.source) continue;
     const doc = input.fills.find(candidate => candidate.$extensions["com.clossys.fill"].id === row.fill && candidate.$extensions["com.clossys.fill"].slot === row.slot);
     if (!doc) { unrenderable.push({ slot: row.slot, reason: `planned fill ${row.fill} is not among the candidate documents` }); continue; }
-    const preview = packageSurfacePreview(doc, input.samples);
+    const preview = packageSurfacePreview(doc, input.samples, input.sampleState);
     if ("reason" in preview) { unrenderable.push({ slot: row.slot, reason: preview.reason }); continue; }
-    previews[row.slot] = { slot: row.slot, source: row.source, fill: row.fill, pointer: preview.pointer, render: preview.render };
+    previews[row.slot] = { slot: row.slot, source: row.source, fill: row.fill, pointer: preview.pointer, render: preview.render, state: preview.state };
   }
-  return { previews, unrenderable };
+  return { previews, unrenderable, sampleState: input.sampleState ?? "default" };
 }

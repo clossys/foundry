@@ -24,7 +24,8 @@ import { StatusList } from "../blocks/StatusList.js";
 import { TaskList } from "../blocks/TaskList.js";
 import { AppNavigation } from "../blocks/AppNavigation.js";
 import { AppFrame } from "../frames/AppFrame.js";
-import { appFrameSample, appSidebarSample, chatSample, commandSample, comparisonSample, contentSample, dataTableSample, explorerSample, formSample, heroSample, newsletterSample, pricingSample, resourceListSample, sheetSample, statusListSample, taskListSample, type SampleOrder } from "./surface-preview-sample-content.js";
+import { ErrorState } from "../blocks/ErrorState.js";
+import { appFrameSample, appSidebarSample, chatSample, commandSample, comparisonSample, contentSample, dataTableSample, explorerSample, formSample, heroSample, newsletterSample, pricingSample, resourceListSample, sheetSample, statusListSample, surfaceStateSample, taskListSample, type SampleOrder, type SurfaceSampleState } from "./surface-preview-sample-content.js";
 
 const noop = () => {};
 const ORDER_COLUMNS = (["id", "customer", "status", "total"] as const).map(id => ({ id, header: dataTableSample.headers[id], cell: (row: SampleOrder) => row[id], isRowHeader: id === "id" }));
@@ -62,6 +63,30 @@ export const STRUCTURED_BLOCK_SAMPLES: Readonly<Record<string, () => ReactNode>>
   Drawer: () => <Drawer heading={sheetSample.heading} closeLabel={sheetSample.closeLabel} placement="end" wide="sheet" trigger={<Button variant="secondary">{sheetSample.trigger}</Button>}>
     <p>{sheetSample.body}</p>
   </Drawer>,
+};
+
+/** A non-default sample state renderer per supported state; an absent state means the export keeps its default sample. */
+export type SurfaceStateSamples = Readonly<Record<string, Partial<Record<Exclude<SurfaceSampleState, "default">, () => ReactNode>>>>;
+
+const LONG_ORDER: SampleOrder = { id: "1045", customer: surfaceStateSample.longCustomer, status: surfaceStateSample.longDescription, total: surfaceStateSample.longTotal };
+const LONG_RESOURCE = { id: "research", textValue: surfaceStateSample.longTitle, title: surfaceStateSample.longTitle, description: surfaceStateSample.longDescription, meta: surfaceStateSample.longMeta };
+
+/**
+ * vf35: the structured exports' own empty, loading, error and long-content states, keyed like
+ * STRUCTURED_BLOCK_SAMPLES. Each renders the same real export through the props it documents for that state.
+ */
+export const STRUCTURED_BLOCK_STATE_SAMPLES: SurfaceStateSamples = {
+  DataTable: {
+    empty: () => <DataTable<SampleOrder> aria-label={dataTableSample.label} rows={[]} rowKey={row => row.id} columns={ORDER_COLUMNS} emptyStateTitle={surfaceStateSample.tableEmpty.title} emptyStateDescription={surfaceStateSample.tableEmpty.description} />,
+    loading: () => <DataTable<SampleOrder> aria-label={dataTableSample.label} rows={[]} rowKey={row => row.id} columns={ORDER_COLUMNS} isLoading />,
+    "long-content": () => <DataTable<SampleOrder> aria-label={dataTableSample.label} rows={[...dataTableSample.rows, LONG_ORDER]} rowKey={row => row.id} columns={ORDER_COLUMNS} />,
+  },
+  ResourceList: {
+    empty: () => <ResourceList {...resourceListSample} items={[]} onAction={noop} />,
+    loading: () => <ResourceList {...resourceListSample} isLoading loadingLabel={surfaceStateSample.loadingLabel} onAction={noop} />,
+    error: () => <ResourceList {...resourceListSample} error={<ErrorState kind="failure" title={surfaceStateSample.error.title} description={surfaceStateSample.error.description} />} onAction={noop} />,
+    "long-content": () => <ResourceList {...resourceListSample} items={[LONG_RESOURCE, ...resourceListSample.items]} onAction={noop} />,
+  },
 };
 
 /** vf34: the app sidebar frame renders the real AppNavigation docked, with a sample tree. Separate from the structured samples above. */

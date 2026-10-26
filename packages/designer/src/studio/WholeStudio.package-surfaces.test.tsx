@@ -29,9 +29,11 @@ const SAMPLE_TEXT: Record<string, string> = {
   "sections.newsletter": "One email a month", "frames.app-shell": "Review the spring launch", "frames.command": "Open command menu",
 };
 
-function mount(preview: CompositeStudioSnapshot["preview"], samples: Parameters<typeof planSurfacePreviews>[0]["samples"] = HOST_SAMPLES) {
+function mount(preview: CompositeStudioSnapshot["preview"], samples: Parameters<typeof planSurfacePreviews>[0]["samples"] = HOST_SAMPLES, sampleState?: Parameters<typeof planSurfacePreviews>[0]["sampleState"], dropPlanned: (pointer: string) => boolean = () => false) {
   const fills = fixture.catalog.surfaces!.fills as unknown as SurfaceDefaultCandidateDocument[], slots = fixture.catalog.surfaces!.slots as unknown as SurfaceDefaultsInput["catalog"]["slots"];
-  const plannedPreviews = planSurfacePreviews({ fills, samples, plan: planSurfaceDefaults({ catalog: { slots, fills }, slots: slots.map(slot => slot.id), preference: ["foundry"] }) });
+  const plannedPreviews = planSurfacePreviews({ fills, samples, sampleState, plan: planSurfaceDefaults({ catalog: { slots, fills }, slots: slots.map(slot => slot.id), preference: ["foundry"] }) });
+  // A test may withhold planned rows so an adopted leaf can only draw its state through its own package preview.
+  for (const [leaf, planned] of Object.entries(plannedPreviews.previews)) if (dropPlanned(planned.pointer)) delete plannedPreviews.previews[leaf];
   const load = vi.fn(async (): Promise<CompositeStudioSnapshot> => ({ library: structuredClone(fixture.library), surfaceOptions: fixture.options, preview, plannedPreviews }));
   render(<WholeStudioProvider adapter={{ kind: "composite", catalog: fixture.catalog, load, save: async () => ({ ok: false, reason: "unavailable" }) }} labels={wholeLabels} initialSlotId="sections.faq"><StudioHeader /><StudioView header="external" /><StudioRightPanel /></WholeStudioProvider>);
 }
@@ -52,6 +54,8 @@ describe("adopted package-pointer surfaces on the Studio board", { timeout: 120_
         // Adopted, not planned: the cell is the chosen preview, never the planned-default label.
         expect(cell!.querySelector("[data-studio-planned]"), slot).toBeNull();
         if (SAMPLE_TEXT[slot]) expect(cell, slot).toHaveTextContent(SAMPLE_TEXT[slot]!);
+        // vf35: the capture hook says the same thing the cell shows.
+        expect(cell!.querySelector("[data-candidate-cell]"), slot).toHaveAttribute("data-preview-state", "live");
       }
     };
     check(fixture.decisions.map(row => row.slot).filter(slot => slot.startsWith("sections.")));
@@ -69,6 +73,7 @@ describe("adopted package-pointer surfaces on the Studio board", { timeout: 120_
     await user.click(screen.getByRole("link", { name: /Frames/ }));
     await waitFor(() => expect(row("frames.sheet")).not.toBeNull());
     expect(row("frames.site-shell")).toHaveTextContent(labels.previewUnavailable);
+    expect(row("frames.site-shell")!.querySelector("[data-candidate-cell]")).toHaveAttribute("data-preview-state", "unavailable");
     expect(row("frames.sheet")).toHaveTextContent("Open filters");
   });
 
@@ -81,5 +86,27 @@ describe("adopted package-pointer surfaces on the Studio board", { timeout: 120_
     const editing = document.querySelector<HTMLElement>('[data-studio-board][data-board-mode="edit"] [data-studio-row="sections.data-table"]');
     expect(editing).not.toBeNull();
     expect(editing).toHaveTextContent("Fabrikam");
+  });
+
+  it("vf35: renders adopted package leaves in the host's requested sample state and names it on the cell", async () => {
+    mount(() => undefined, HOST_SAMPLES, "empty");
+    await screen.findByText("L-saved");
+    const list = row("sections.resource-list")!.querySelector<HTMLElement>("[data-candidate-cell]")!;
+    expect(list).toHaveAttribute("data-sample-state", "empty");
+    expect(list).toHaveTextContent("No projects yet");
+    expect(list).not.toHaveTextContent("Help centre");
+    // An export without that state keeps its default sample and says so.
+    const table = row("sections.form")!.querySelector<HTMLElement>("[data-candidate-cell]")!;
+    expect(table).toHaveAttribute("data-sample-state", "default");
+    expect(table).toHaveTextContent("Work email");
+  });
+
+  it("vf35: an adopted leaf with no planned row still draws the requested state through its own package preview", async () => {
+    mount(() => undefined, HOST_SAMPLES, "empty", pointer => pointer.endsWith("#DataTable"));
+    await screen.findByText("L-saved");
+    const orders = row("sections.data-table")!.querySelector<HTMLElement>("[data-candidate-cell]")!;
+    expect(orders).toHaveAttribute("data-sample-state", "empty");
+    expect(orders).toHaveTextContent("No orders yet");
+    expect(orders).not.toHaveTextContent("Fabrikam");
   });
 });

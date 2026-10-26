@@ -4,7 +4,7 @@ import { Board } from "./Board.js";
 import { BoardChosenSummary, CompactLeafLine, LeafLabel } from "./board-summary.js";
 import { matrixBoards, matrixRows } from "./matrix-model.js";
 import { emptyChanges } from "./model.js";
-import { adopt, labels, smallCatalog } from "./__fixtures__/studio.js";
+import { adopt, emptyLibrary, labels, smallCatalog } from "./__fixtures__/studio.js";
 import { CanvasLod } from "../blocks/canvas/CanvasLod.js";
 import { BOARD_SURFACE_CLASS } from "../blocks/library-board/LeafCell.js";
 import type { StudioLabels } from "./types.js";
@@ -115,4 +115,19 @@ it("keeps an unnamed compact row's id primary in mono and its not-chosen words p
   expect(line.querySelector("[data-studio-leaf-id]")).toHaveClass("font-mono", "text-ink-primary");
   expect(line.querySelector("[data-studio-compact-source]")).toHaveTextContent("Not chosen");
   expect(line.querySelector("[data-studio-compact-source]")).not.toHaveClass("font-mono");
+});
+
+it("vf35: marks each full-zoom leaf cell live when chosen and not-chosen otherwise", () => {
+  board(FULL_ZOOM);
+  const chosen = layer("full").querySelector<HTMLElement>("[data-candidate-cell]")!;
+  expect(chosen).not.toHaveTextContent(labels.board.notChosen);
+  expect(chosen).toHaveAttribute("data-preview-state", "live");
+  cleanup();
+  const library = emptyLibrary();
+  const rows = matrixRows({ catalog: smallCatalog, library, working: library, changes: emptyChanges(library), expanded: new Set() });
+  const matrixBoard = matrixBoards({ catalog: smallCatalog, library, working: library }, rows).find(entry => entry.leaves.includes("tokens.surface-color"))!;
+  render(<CanvasLod zoom={FULL_ZOOM}><Board boardRef={null} sources={["foundry"]} labels={named} working={library} changes={emptyChanges(library)} expanded={new Set<string>()} groupChoices={{}} onExpand={() => {}} onUse={() => {}} onFocusCell={() => {}} board={matrixBoard} summary={{ errors: 0, warnings: 0, sources: ["foundry"] }} /></CanvasLod>);
+  const unchosen = layer("full").querySelector<HTMLElement>("[data-candidate-cell]")!;
+  expect(unchosen).toHaveTextContent(labels.board.notChosen);
+  expect(unchosen).toHaveAttribute("data-preview-state", "not-chosen");
 });

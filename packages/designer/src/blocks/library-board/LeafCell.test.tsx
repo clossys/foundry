@@ -35,7 +35,7 @@ describe('board anatomy visual pass (VF-1)', () => {
   });
 
   it('centres the leaf cell slots on one line (components-07)', () => {
-    const { container } = render(<LeafCell status="Not chosen" actions={<button type="button">Choose</button>} />);
+    const { container } = render(<LeafCell previewState="not-chosen" status="Not chosen" actions={<button type="button">Choose</button>} />);
     const cell = container.querySelector('[data-candidate-cell]');
     expect(cell).toHaveClass('flex', 'items-center');
     expect(cell).not.toHaveClass('items-start');
@@ -63,5 +63,41 @@ describe('board anatomy visual pass (VF-1)', () => {
     const i = input('assets.icon-search');
     render(<LibraryBoardSection records={valueLibraryBoardRecords(i)} previews={valueLibraryBoardPreviews(i, labels)} labels={labels} onCommand={vi.fn()} />);
     expect(screen.getByText('assets.icon-search', { selector: '[data-leaf-id]' })).toHaveClass('font-mono');
+  });
+});
+
+/*
+ * Capture hooks (vf35): stable, product-neutral attributes a screenshot harness reads
+ * instead of matching copy. Each names the decision the cell or control already made.
+ */
+describe('board capture hooks (vf35)', () => {
+  it('marks every leaf cell with the preview state its caller decided', () => {
+    for (const state of ['live', 'planned', 'unavailable', 'not-chosen'] as const) {
+      const { container, unmount } = render(<LeafCell previewState={state} />);
+      expect(container.querySelector('[data-candidate-cell]')).toHaveAttribute('data-preview-state', state);
+      unmount();
+    }
+  });
+
+  it('names the ground a leaf specimen is drawn on, matching the plate fill it actually renders', () => {
+    const { container } = render(<LeafCell previewState="live" preview={<span>specimen</span>} />);
+    const cell = container.querySelector<HTMLElement>('[data-candidate-cell]')!;
+    expect(cell).toHaveAttribute('data-ground', 'sunken');
+    expect(cell).toHaveClass(`bg-surface-${cell.dataset.ground}`);
+  });
+
+  it('gives the board gear and its Done button one edit-mode control hook', () => {
+    const view = render(<BoardHeader id="h" title="Icons" editing={false} labels={labels.board} onEdit={() => {}} onDone={() => {}} />);
+    expect(screen.getByRole('button', { name: labels.board.changeSelection })).toHaveAttribute('data-studio-control', 'edit-mode');
+    view.rerender(<BoardHeader id="h" title="Icons" editing labels={labels.board} onEdit={() => {}} onDone={() => {}} />);
+    expect(screen.getByRole('button', { name: labels.board.done })).toHaveAttribute('data-studio-control', 'edit-mode');
+  });
+
+  it('marks an unchosen library board leaf as not chosen', () => {
+    const i = input('Search');
+    const { container } = render(<LibraryBoardSection records={valueLibraryBoardRecords(i)} previews={valueLibraryBoardPreviews(i, labels)} labels={labels} onCommand={vi.fn()} />);
+    const cell = container.querySelector('[data-candidate-cell]');
+    expect(cell).toHaveTextContent(labels.board.notChosen);
+    expect(cell).toHaveAttribute('data-preview-state', 'not-chosen');
   });
 });
