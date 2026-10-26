@@ -59,8 +59,8 @@ function defaultDisclosureLabel(nodeLabel: string, expanded: boolean): string {
   return (expanded ? "Collapse " : "Expand ") + nodeLabel;
 }
 
-/** The disclosure chevron turns on the fast duration and default easing tokens and snaps under reduced motion. */
-const CHEVRON_MOTION = "transition-transform duration-(--ui-duration-fast) ease-(--ease-default) motion-reduce:transition-none";
+/** The disclosure chevron turns on the theme's default transition duration (bound to --ui-duration-fast) and snaps under reduced motion. */
+const CHEVRON_MOTION = "transition-transform motion-reduce:transition-none";
 const CONTROL = "flex min-w-0 items-center justify-start gap-sm rounded-control border-0 bg-transparent px-sm py-sm text-start text-ink-primary no-underline hover:no-underline hover:bg-control-tonal-hover focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent focus-visible:-outline-offset-2";
 
 /*
@@ -197,8 +197,8 @@ export function AppNavigation({ onNavigate, fullViewport = false, retainMounted 
       data-navigation-node-id={node.id}
       data-active-ancestor={node.id === ancestor ? "true" : undefined}
       className={cx("min-w-0 rounded-control data-focus-visible:outline-solid data-focus-visible:outline-2 data-focus-visible:outline-accent data-focus-visible:-outline-offset-2", parentId && "ms-md border-s border-line-base ps-sm")}>
-      <NavigationTreeItemContent>{({ isExpanded, isCurrentAncestor }) =>
-        <div className={cx("flex min-w-0 items-center gap-xs rounded-control", (isCurrentAncestor || node.id === ancestor) && "bg-control-tonal")}>
+      <NavigationTreeItemContent>{({ isExpanded }) =>
+        <div className="flex min-w-0 items-center gap-xs rounded-control">
           {(node.href !== undefined || node.onAction) && destination(node, parentId)}
           {children.length > 0 && <Button slot="chevron" variant="ghost"
             className={cx(CONTROL, "shrink-0", node.href || node.onAction ? "icon-control-md justify-center" : "control-h-md flex-1")}

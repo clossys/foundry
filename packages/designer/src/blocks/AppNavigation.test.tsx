@@ -156,13 +156,22 @@ describe("AppNavigation", () => {
   it("turns the disclosure chevron on the motion tokens and snaps under reduced motion", async () => {
     render(<AppNavigation tree={tree} activeId="home" />);
     const glyph = (name: string) => screen.getByRole("button", { name }).querySelector("svg")!;
-    const MOTION = ["transition-transform", "duration-(--ui-duration-fast)", "ease-(--ease-default)", "motion-reduce:transition-none"];
+    const MOTION = ["transition-transform", "motion-reduce:transition-none"];
     const closed = glyph("Expand Catalogs");
     expect(closed).toHaveClass(...MOTION);
+    // Named classes only: arbitrary-value classes ship no compiled CSS.
+    expect([...closed.classList].filter(name => name.includes("("))).toEqual([]);
     expect(closed).not.toHaveClass("rotate-180");
     await userEvent.click(screen.getByRole("button", { name: "Expand Catalogs" }));
     const open = glyph("Collapse Catalogs");
     expect(open).toHaveClass(...MOTION, "rotate-180");
+  });
+
+  it("leaves the current destination's group header row without a fill", () => {
+    render(<AppNavigation tree={tree} activeId="blocks" />);
+    const row = screen.getByRole("button", { name: "Collapse Catalogs" }).parentElement!;
+    expect([...row.classList].filter(name => name.startsWith("bg-"))).toEqual([]);
+    expect(screen.getByRole("link", { name: "Blocks" })).toHaveClass("bg-surface-selected");
   });
 
   it("uses the existing named 44px target contracts without caller inline sizing", () => {
