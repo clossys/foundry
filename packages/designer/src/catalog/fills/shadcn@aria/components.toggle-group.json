@@ -134,6 +134,13 @@
         "tokens": [
           "tokens.border-width.hairline",
           "tokens.control-radius.default",
+          "tokens.control-size.h-lg",
+          "tokens.control-size.h-md",
+          "tokens.control-size.h-sm",
+          "tokens.control-size.switch-thumb",
+          "tokens.focus-color.default",
+          "tokens.focus-outline.offset",
+          "tokens.focus-outline.width",
           "tokens.spacing.sm",
           "tokens.spacing.xs",
           "tokens.z-index.sticky"

@@ -2177,7 +2177,10 @@
           "tokens.text-color",
           "tokens.typeface",
           "tokens.border-width",
-          "tokens.z-index"
+          "tokens.z-index",
+          "tokens.control-size",
+          "tokens.focus-color",
+          "tokens.focus-outline"
         ],
         "assets": []
       },
