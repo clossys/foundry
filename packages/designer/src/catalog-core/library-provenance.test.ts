@@ -27,8 +27,8 @@ describe("item-specific library provenance", () => {
     expect(column.license).toBe("MIT");
     expect(column.candidates).toHaveLength(26);
     expect(new Set(column.candidates.map(candidate => candidate.fill.slot)).size).toBe(26);
-    expect(column.candidates.filter(candidate => candidate.fill.relation === "subset")).toHaveLength(6);
-    expect(column.candidates.filter(candidate => candidate.fill.relation === "same-contract")).toHaveLength(20);
+    expect(column.candidates.filter(candidate => candidate.fill.relation === "subset")).toHaveLength(0);
+    expect(column.candidates.filter(candidate => candidate.fill.relation === "same-contract")).toHaveLength(26);
     for (const candidate of column.candidates) {
       const original = documents.find(doc => doc.$extensions["com.clossys.fill"].id === candidate.fill.id)!;
       expect(candidate.fill).toEqual(original.$extensions["com.clossys.fill"]);
@@ -56,9 +56,9 @@ describe("item-specific library provenance", () => {
     }
   });
 
-  it("preserves exact button gaps and item hashes alongside separate token-theme context", () => {
+  it("maps every button member (no gaps) and preserves item hashes alongside separate token-theme context", () => {
     const button = columns()[0]!.candidates.find(candidate => candidate.fill.slot === "components.button")!;
-    expect(button.fill.unmapped).toEqual(["variant.tonal", "variant.quiet", "state.pressed", "state.pending", "ground.inverse"]);
+    expect(button.fill.unmapped).toEqual([]);
     expect(button.fill.pin?.sha256).toBe("8bcff6f70522e6e6cb0ff67f050830ea1a93596403d2d9b035f3b543c7a42e2c");
     expect(button.sourceRecordPin?.file).toBe("apps/v4/registry/themes.ts#neutral");
     expect(button.fill.pin).not.toEqual(button.sourceRecordPin);
@@ -79,14 +79,12 @@ describe("item-specific library provenance", () => {
     }
     expect(componentLibraryColumns(catalog.sources, [], slots, "preview")).toEqual([]);
     for (const id of ["shadcn-ui", "base-ui", "radix-themes"]) {
-      expect(libraryRoster("components", "components.button").find(entry => entry.id === id)?.role).toBe("reference");
+      expect(libraryRoster("components", "components.button").some(entry => entry.id === id)).toBe(false);
     }
     const reference = structuredClone(documents.find(doc => doc.$extensions["com.clossys.fill"].slot === "components.button")!);
     reference.$extensions["com.clossys.fill"].source = "shadcn-ui";
     Object.values(reference.components)[0]!.source = "shadcn-ui";
-    const projected = componentLibraryColumns(catalog.sources, [reference], ["components.button"], "preview");
-    expect(projected[0]?.id).toBe("shadcn-ui");
-    expect(projected[0]?.referenceOnly).toBe(true);
+    expect(componentLibraryColumns(catalog.sources, [reference], ["components.button"], "preview")).toEqual([]);
   });
 
   it("returns detached evidence without changing sources, fills or engine metadata", () => {

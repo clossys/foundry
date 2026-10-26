@@ -52,7 +52,6 @@
       },
       "license": "MIT",
       "members": [
-        "resize-columns",
         "selection",
         "sort"
       ],
@@ -62,7 +61,6 @@
         "version": "0.12.0"
       },
       "propMap": {
-        "resize-columns": "./components#Table.ResizableContainer",
         "selection": "./components#Table.selectionMode",
         "sort": "./components#Table.sortDescriptor"
       },
@@ -84,7 +82,12 @@
           "tokens.accent-color",
           "tokens.body-size",
           "tokens.border-color",
+          "tokens.border-width",
+          "tokens.duration",
+          "tokens.easing",
           "tokens.focus-shadow",
+          "tokens.font-size",
+          "tokens.font-weight",
           "tokens.spacing",
           "tokens.surface-color",
           "tokens.text-color",

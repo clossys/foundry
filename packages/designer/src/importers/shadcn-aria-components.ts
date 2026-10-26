@@ -151,6 +151,21 @@ function memberMap(item: string, code: string, slot: ComponentSlot): Record<stri
     if (/data-slot="kbd"/.test(code)) add("scope.single", "Kbd: children forwarded to RAC Keyboard");
     if (/data-slot="kbd-group"/.test(code)) add("scope.chord", "KbdGroup: chord children forwarded to RAC Keyboard");
   }
+  if (item === "badge") {
+    for (const [member, value] of Object.entries({ neutral: "secondary", danger: "destructive" })) if (new RegExp(`\\b${value}: "cn-badge-variant-${value}"`).test(code)) add(`tone.${member}`, `Badge.variant=${value}`);
+  }
+  if (item === "alert") {
+    for (const [member, value] of Object.entries({ info: "default", danger: "destructive" })) if (new RegExp(`\\b${value}: "cn-alert-variant-${value}"`).test(code)) add(`tone.${member}`, `Alert.variant=${value}`);
+  }
+  if (item === "progress" && /ProgressBar as ProgressPrimitive/.test(code) && forwardsProps) {
+    if (/percentage/.test(code)) add("progress.determinate", "ProgressBarProps.value forwarded to RAC ProgressBar; percentage drives the indicator");
+    if (/isIndeterminate/.test(code)) add("progress.indeterminate", "ProgressBarProps.isIndeterminate forwarded to RAC ProgressBar");
+  }
+  if (item === "skeleton" && /data-slot="skeleton"/.test(code)) add("shape.block", "Skeleton: block placeholder div");
+  if (item === "table" && /type TableProps/.test(code) && /type ColumnProps/.test(code) && forwardsProps) {
+    add("selection", "TableProps.selectionMode forwarded to RAC Table");
+    add("sort", "TableProps.sortDescriptor and ColumnProps.allowsSorting forwarded to RAC Table and Column");
+  }
   if (item === "calendar") { add("selection.single", "Calendar"); if (/RangeCalendar/.test(code)) add("selection.range", "RangeCalendar"); }
   if (item === "accordion" || item === "collapsible") add(item === "accordion" ? "scope.group" : "scope.single", item === "accordion" ? "Accordion" : "Collapsible");
   if (/isDisabled|disabled:/.test(code)) add("state.disabled", "isDisabled");

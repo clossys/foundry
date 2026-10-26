@@ -13,10 +13,10 @@ import { checkCounts } from '../../studio/runtime-pending.js';
 function compositeInput(): PreparedCompositeLibraryBoardInput {
   const input = componentIntegration(), doc = structuredClone(input.catalog.components.fills[0]!);
   const meta = doc.$extensions['com.clossys.fill'];
-  meta.source = 'foundry'; meta.id = 'foundry/components.button'; meta.status = 'built';
-  for (const candidate of Object.values(doc.components)) candidate.source = 'foundry';
+  meta.source = 'shadcn@aria'; meta.id = 'shadcn@aria/components.button'; meta.status = 'built';
+  for (const candidate of Object.values(doc.components)) candidate.source = 'shadcn@aria';
   input.catalog = { ...input.catalog, components: { ...input.catalog.components, fills: [doc] } };
-  return { layer: 'components', board: { id: 'components/actions', label: 'Component actions', leaves: [{ id: 'components.button' }] }, input, changes: { baseHash: libraryHash(input.library), changes: [] }, contracts: loadBuildCatalog(), snapshot: { library: input.library, preview: vi.fn(() => <button>Static specimen</button>) }, sources: input.catalog.values.sources, sourceHashes: { foundry: runtimeHash(doc) }, mode: 'edit', canSave: true, pending: false, labels,
+  return { layer: 'components', board: { id: 'components/actions', label: 'Component actions', leaves: [{ id: 'components.button' }] }, input, changes: { baseHash: libraryHash(input.library), changes: [] }, contracts: loadBuildCatalog(), snapshot: { library: input.library, preview: vi.fn(() => <button>Static specimen</button>) }, sources: input.catalog.values.sources, sourceHashes: { 'shadcn@aria': runtimeHash(doc) }, mode: 'edit', canSave: true, pending: false, labels,
     prompt: leaf => ({ consumer: input.library.source.id, board: { id: 'components/actions', label: 'Component actions' }, slot: { id: leaf, label: leaf }, variants: [], tokens: [], siblings: [], returnStep: labels.board.returnStep }) };
 }
 const unqualifiedInput = () => { const input = compositeInput(); return { ...input, input: { ...input.input, componentOptions: undefined } }; };
@@ -30,7 +30,7 @@ it('vf13: an edit tile awaiting runtime qualification renders its static specime
   render(<LibraryBoardSection records={prepared.records} previews={prepared.previews} labels={labels} onCommand={vi.fn()} />);
   expect(screen.getByText('Static specimen')).toBeInTheDocument();
   expect(screen.queryByText(labels.previewUnavailable)).toBeNull();
-  expect(screen.getByRole('radio', { name: labels.useSource('foundry', 'components.button') })).toBeDisabled();
+  expect(screen.getByRole('radio', { name: labels.useSource('shadcn@aria', 'components.button') })).toBeDisabled();
 });
 
 it('vf13: a runtime-pending tile shows the neutral pending line and never a bare "!" error badge', () => {

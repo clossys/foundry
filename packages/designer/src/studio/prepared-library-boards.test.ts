@@ -103,10 +103,10 @@ it('keeps composite records available with a named pending preview and preserves
 function normalizedComponentInput() {
   const input = componentIntegration(), doc = structuredClone(input.catalog.components.fills[0]!);
   const meta = doc.$extensions['com.clossys.fill'];
-  meta.source = 'foundry'; meta.id = 'foundry/components.button'; meta.status = 'built';
-  for (const candidate of Object.values(doc.components)) candidate.source = 'foundry';
+  meta.source = 'shadcn@aria'; meta.id = 'shadcn@aria/components.button'; meta.status = 'built';
+  for (const candidate of Object.values(doc.components)) candidate.source = 'shadcn@aria';
   input.catalog = { ...input.catalog, components: { ...input.catalog.components, fills: [doc] } };
-  input.library = applyLibraryChange(input.catalog, input.library, { baseHash: libraryHash(input.library), changes: [{ portion: 'components', change: { op: 'adopt', slot: 'components.button', source: 'foundry' } }] });
+  input.library = applyLibraryChange(input.catalog, input.library, { baseHash: libraryHash(input.library), changes: [{ portion: 'components', change: { op: 'adopt', slot: 'components.button', source: 'shadcn@aria' } }] });
   return input;
 }
 
@@ -120,7 +120,7 @@ it('does not evaluate alternative proposals in view mode and evaluates them only
     expect(preview).not.toHaveBeenCalled();
     expect(view.records.rows.items[0]!.candidates).toHaveLength(input.catalog.components.fills.length);
     expect(view.records.rows.items[0]!.candidates.every(candidate => candidate.provenance.fill.slot === 'components.button')).toBe(true);
-    expect(view.records.rows.items[0]!.candidates[0]).toMatchObject({ source: 'foundry', usable: false, findings: [{ code: 'CANDIDATE_EVALUATION_NOT_REQUESTED', severity: 'notice' }] });
+    expect(view.records.rows.items[0]!.candidates[0]).toMatchObject({ source: 'shadcn@aria', usable: false, findings: [{ code: 'CANDIDATE_EVALUATION_NOT_REQUESTED', severity: 'notice' }] });
     expect(view.records.rows.items[0]!.candidates[0]!.previewIdentity).toBeUndefined();
     const edit = prepareCompositeLibraryBoard({ ...options, mode: 'edit' });
     expect(preview).toHaveBeenCalledTimes(input.catalog.components.fills.length);
@@ -136,6 +136,6 @@ it('does not evaluate alternative proposals in view mode and evaluates them only
     expect(blocked.usable).toBe(false); expect(blocked.previewIdentity).toBeUndefined();
     expect(blocked.findings).toContainEqual({ code: 'K5', severity: 'error', message: 'Accessibility evidence is stale for source or consumer tokens' });
     expect(blocked.findings).toContainEqual({ code: 'K6', severity: 'error', message: 'Contrast evidence is stale for source or consumer tokens' });
-    expect(legacy.changeFor({ version: 1, command: 'use-source', boardId: options.board.id, leafId: 'components.button', source: 'foundry' })).toBeUndefined();
+    expect(legacy.changeFor({ version: 1, command: 'use-source', boardId: options.board.id, leafId: 'components.button', source: 'shadcn@aria' })).toBeUndefined();
   } finally { preview.mockRestore(); }
 });

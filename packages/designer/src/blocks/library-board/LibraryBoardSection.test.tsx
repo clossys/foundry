@@ -100,31 +100,31 @@ it('dispatches only explicit library-board configuration while preserving Matrix
 });
 
 /** Explicit SYNTHETIC evidence corpus, never a real source qualification claim.
- * Only this fixture rebinds test-kit to existing foundry and draft to built; the
+ * Only this fixture rebinds test-kit to the roster's shadcn@aria seat and draft to built; the
  * original engine still checks all implementation evidence independently.
  */
 function compositeInput(): PreparedCompositeLibraryBoardInput {
   const input = componentIntegration(), doc = structuredClone(input.catalog.components.fills[0]!);
   const meta = doc.$extensions['com.clossys.fill'];
-  meta.source = 'foundry'; meta.id = 'foundry/components.button'; meta.status = 'built';
-  for (const candidate of Object.values(doc.components)) candidate.source = 'foundry';
+  meta.source = 'shadcn@aria'; meta.id = 'shadcn@aria/components.button'; meta.status = 'built';
+  for (const candidate of Object.values(doc.components)) candidate.source = 'shadcn@aria';
   input.catalog = { ...input.catalog, components: { ...input.catalog.components, fills: [doc] } };
-  return { layer: 'components', board: { id: 'components/actions', label: 'Component actions', leaves: [{ id: 'components.button' }] }, input, changes: { baseHash: libraryHash(input.library), changes: [] }, contracts: loadBuildCatalog(), snapshot: { library: input.library, preview: vi.fn(() => <button>Checked live preview</button>) }, sources: input.catalog.values.sources, sourceHashes: { foundry: runtimeHash(doc) }, mode: 'edit', canSave: true, pending: false, labels,
+  return { layer: 'components', board: { id: 'components/actions', label: 'Component actions', leaves: [{ id: 'components.button' }] }, input, changes: { baseHash: libraryHash(input.library), changes: [] }, contracts: loadBuildCatalog(), snapshot: { library: input.library, preview: vi.fn(() => <button>Checked live preview</button>) }, sources: input.catalog.values.sources, sourceHashes: { 'shadcn@aria': runtimeHash(doc) }, mode: 'edit', canSave: true, pending: false, labels,
     prompt: leaf => ({ consumer: input.library.source.id, board: { id: 'components/actions', label: 'Component actions' }, slot: { id: leaf, label: leaf }, variants: [], tokens: [], siblings: [], returnStep: labels.board.returnStep }) };
 }
 it('SYNTHETIC composite proposals retain real engine checks, exact provenance and original change shape', () => {
   const input = compositeInput(), prepared = compositeLibraryBoard(input), candidate = prepared.records.rows.items[0]!.candidates[0]!;
   expect(candidate.usable).toBe(true);
-  expect(candidate.provenance).toEqual(expect.objectContaining({ source: 'foundry', layer: 'components', fill: input.input.catalog.components.fills[0]!.$extensions['com.clossys.fill'] }));
-  expect(prepared.records.columns.items[0]).toEqual(expect.objectContaining({ label: 'Foundry', license: 'MIT', referenceOnly: false }));
+  expect(candidate.provenance).toEqual(expect.objectContaining({ source: 'shadcn@aria', layer: 'components', fill: input.input.catalog.components.fills[0]!.$extensions['com.clossys.fill'] }));
+  expect(prepared.records.columns.items[0]).toEqual(expect.objectContaining({ label: 'shadcn/ui (React Aria)', license: 'MIT', referenceOnly: false }));
   render(<LibraryBoardSection records={prepared.records} previews={prepared.previews} labels={labels} onCommand={vi.fn()} />);
   expect(screen.getByRole('button', { name: 'Checked live preview' })).toBeInTheDocument();
-  expect(prepared.changeFor({ version: 1, command: 'use-source', boardId: input.board.id, leafId: 'components.button', source: 'foundry' })).toEqual([{ portion: 'components', change: { op: 'adopt', slot: 'components.button', source: 'foundry' } }]);
+  expect(prepared.changeFor({ version: 1, command: 'use-source', boardId: input.board.id, leafId: 'components.button', source: 'shadcn@aria' })).toEqual([{ portion: 'components', change: { op: 'adopt', slot: 'components.button', source: 'shadcn@aria' } }]);
   expect(prepared.previews.render({ ...candidate.previewIdentity!, selectionHash: 'stale' })).toBeUndefined();
   expect(prepared.previews.render({ ...candidate.previewIdentity!, sourceHash: 'stale' })).toBeUndefined();
 });
 it('SYNTHETIC composite save, pending, draft and unqualified proposals never produce an adoption command', () => {
-  const input = compositeInput(), command = { version: 1 as const, command: 'use-source' as const, boardId: input.board.id, leafId: 'components.button', source: 'foundry' };
+  const input = compositeInput(), command = { version: 1 as const, command: 'use-source' as const, boardId: input.board.id, leafId: 'components.button', source: 'shadcn@aria' };
   expect(compositeLibraryBoard({ ...input, canSave: false }).changeFor(command)).toBeUndefined();
   expect(compositeLibraryBoard({ ...input, pending: true }).changeFor(command)).toBeUndefined();
   expect(compositeLibraryBoard(input).changeFor({ ...command, boardId: 'foreign' })).toBeUndefined();
@@ -138,10 +138,10 @@ it('SYNTHETIC composite save, pending, draft and unqualified proposals never pro
 });
 it('retains actual registered component draft provenance and does not infer qualification from a source column', () => {
   const input = compositeInput(), registry = loadComponentRegistry();
-  const documents = importFoundryComponents().fills.filter(doc => doc.$extensions['com.clossys.fill'].slot === 'components.button');
+  const documents = importFoundryComponents().fills.filter(doc => doc.$extensions['com.clossys.fill'].slot === 'components.native-action');
   expect(documents).toHaveLength(1);
   expect(documents[0]!.$extensions['com.clossys.fill']).toEqual(expect.objectContaining({ source: 'foundry', status: 'draft', evidence: [] }));
-  const prepared = compositeLibraryBoard({ ...input, input: { ...input.input, catalog: { ...input.input.catalog, components: { slots: registry.slots, fills: documents } } }, sourceHashes: Object.fromEntries(documents.map(doc => [doc.$extensions['com.clossys.fill'].source, runtimeHash(doc)])) });
+  const prepared = compositeLibraryBoard({ ...input, board: { ...input.board, leaves: [{ id: 'components.native-action' }] }, input: { ...input.input, catalog: { ...input.input.catalog, components: { slots: registry.slots, fills: documents } } }, sourceHashes: Object.fromEntries(documents.map(doc => [doc.$extensions['com.clossys.fill'].source, runtimeHash(doc)])) });
   expect(prepared.records.rows.items[0]!.candidates.length).toBeGreaterThan(0);
   for (const candidate of prepared.records.rows.items[0]!.candidates) {
     expect(candidate.provenance.fill).toEqual(documents.find(doc => doc.$extensions['com.clossys.fill'].source === candidate.source)!.$extensions['com.clossys.fill']);

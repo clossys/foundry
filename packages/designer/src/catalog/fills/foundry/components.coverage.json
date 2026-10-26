@@ -24,10 +24,7 @@
       "status": "candidate",
       "supported": [
         "tone.danger",
-        "tone.info",
-        "tone.neutral",
-        "tone.success",
-        "tone.warning"
+        "tone.neutral"
       ]
     },
     {
@@ -38,11 +35,8 @@
       "slot": "components.banner",
       "status": "candidate",
       "supported": [
-        "dismissible",
         "tone.danger",
-        "tone.info",
-        "tone.success",
-        "tone.warning"
+        "tone.info"
       ]
     },
     {
@@ -68,7 +62,6 @@
       "status": "candidate",
       "supported": [
         "ground.base",
-        "ground.inverse",
         "shape.icon-only",
         "shape.text",
         "size.lg",
@@ -77,15 +70,11 @@
         "state.disabled",
         "state.focus-visible",
         "state.hover",
-        "state.pending",
-        "state.pressed",
         "variant.danger",
         "variant.ghost",
         "variant.outline",
         "variant.primary",
-        "variant.quiet",
-        "variant.secondary",
-        "variant.tonal"
+        "variant.secondary"
       ]
     },
     {
@@ -603,9 +592,7 @@
       "slot": "components.skeleton",
       "status": "candidate",
       "supported": [
-        "shape.block",
-        "shape.circle",
-        "shape.text"
+        "shape.block"
       ]
     },
     {
@@ -674,7 +661,6 @@
       "slot": "components.table",
       "status": "candidate",
       "supported": [
-        "resize-columns",
         "selection",
         "sort"
       ]

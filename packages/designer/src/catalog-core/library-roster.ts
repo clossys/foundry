@@ -3,54 +3,44 @@ import type { ComponentCandidate, ComponentCandidateDocument } from "./resolve-c
 import { flatten } from "./model.js";
 import { tokenContent } from "./library.js";
 import { stableStringify } from "./stable.js";
+import { rosterOffers, rosterRow, sourceRoster } from "./token-contract.js";
 
 /** Display policy only. An entry is never proof of a fill, licence clearance or executable implementation. */
 export interface LibraryRosterEntry {
   readonly id: string;
   readonly label: string;
+  /** "reference" stays in the type for older callers; the roster never offers a reference source. */
   readonly role: "candidate-source" | "reference" | "consumer";
   readonly license: string;
   readonly restriction?: string;
+  /** Foundry seats only: why Foundry is offered (no external source ships the whole component). */
+  readonly reason?: string;
 }
-const custom: LibraryRosterEntry = { id: "custom", label: "Custom", role: "consumer", license: "consumer-owned" };
-const foundry: LibraryRosterEntry = { id: "foundry", label: "Foundry", role: "candidate-source", license: "MIT" };
-const reference = (id: string, label: string, license: string, restriction?: string): LibraryRosterEntry => ({ id, label, role: "reference", license, ...(restriction ? { restriction } : {}) });
-const blocks = reference("shadcn-blocks", "shadcn blocks", "MIT", "Official free blocks only; dashboard/sidebar frame references. No third-party or commercial block kits.");
-const components: readonly LibraryRosterEntry[] = [
-  { id: "shadcn@aria", label: "shadcn/ui (React Aria)", role: "candidate-source", license: "MIT", restriction: "Existing item-specific drafts only; preserve MIT notices. Selection requires normal engine qualification." },
-  reference("shadcn-ui", "shadcn/ui", "MIT", "Reference anatomy metadata only; distinct from official shadcn@aria implementation candidates."),
-  foundry,
-  reference("heroui-v3", "HeroUI v3", "Apache-2.0", "Preserve licence, NOTICE and modification notices; Pro excluded."),
-  reference("untitled-ui-react", "Untitled UI React", "MIT", "Verified MIT-marked subset only; paid assets excluded."),
-  reference("radix-themes", "Radix Themes", "MIT"),
-  reference("mantine", "Mantine", "MIT"),
-  reference("park-ui", "Park UI", "MIT"),
-  reference("base-ui", "Base UI", "MIT"),
-  custom,
-];
+type SourceDisplay = Omit<LibraryRosterEntry, "id" | "role" | "reason">;
+const DISPLAY: Readonly<Record<string, SourceDisplay>> = {
+  "shadcn@aria": { label: "shadcn/ui (React Aria)", license: "MIT", restriction: "Existing item-specific drafts only; preserve MIT notices. Selection requires normal engine qualification." },
+  "shadcn-charts": { label: "shadcn/ui charts", license: "MIT", restriction: "Preserve MIT notices. Selection requires normal engine qualification." },
+  foundry: { label: "Foundry", license: "MIT" },
+  lucide: { label: "Lucide", license: "ISC AND MIT" },
+  phosphor: { label: "Phosphor", license: "MIT" },
+};
+const display = (id: string): SourceDisplay => DISPLAY[id] ?? { label: id, license: "unknown" };
 
-/** Allowed column roster per slot, before hiding empty columns. Never rewrites catalog sources or provenance. */
+/**
+ * Allowed column roster per slot, before hiding empty columns, read from the source roster
+ * (`catalog/rules/source-roster.json`): the offered sources in roster order, then Custom last.
+ * Never-offered sources (references, rac-starter, block kits) cannot appear. Tokens offer presets,
+ * not sources, so a token slot shows Custom only. Never rewrites catalog sources or provenance.
+ */
 export function libraryRoster(layer: LayerId, slot: string): readonly LibraryRosterEntry[] {
   if (!slot.startsWith(`${layer}.`)) return [];
-  if (layer === "tokens") return [{ ...custom }];
-  if (layer === "components") return components.map(entry => ({ ...entry }));
-  if (layer === "sections") return [custom, foundry, blocks].map(entry => ({ ...entry }));
-  if (layer === "frames") return [foundry, blocks, custom].map(entry => ({ ...entry }));
-  if (slot.startsWith("assets.icon-")) return [
-    { id: "lucide", label: "Lucide", role: "candidate-source", license: "ISC AND MIT" },
-    { id: "phosphor", label: "Phosphor", role: "candidate-source", license: "MIT" },
-    { ...custom },
-  ];
-  if (slot === "assets.typeface") return [
-    { id: "google-fonts", label: "Google Fonts", role: "candidate-source", license: "per-family", restriction: "Verify and preserve each selected family's licence." },
-    { id: "fontshare-ofl", label: "Fontshare (OFL)", role: "candidate-source", license: "OFL-1.1", restriction: "Verified OFL subset only; ITF FFL fonts excluded without separate rights." },
-    { ...custom },
-  ];
-  if (slot === "assets.pattern") return [
-    { id: "hero-patterns", label: "Hero Patterns", role: "candidate-source", license: "CC-BY-4.0", restriction: "Retain attribution, source, licence and modification notices." },
-    { ...custom },
-  ];
-  return [{ ...custom }];
+  const row = rosterRow(sourceRoster, slot);
+  const never = new Set(sourceRoster.never);
+  return rosterOffers(sourceRoster, slot).filter(id => !never.has(id)).map(id => {
+    if (id === sourceRoster.custom.id) return { id, label: sourceRoster.custom.label, role: "consumer" as const, license: "consumer-owned" };
+    const reason = row?.offers.find(offer => offer.source === id && offer.leaves.includes(slot))?.reason;
+    return { id, ...display(id), role: "candidate-source" as const, ...(reason ? { reason } : {}) };
+  });
 }
 
 export interface LibraryColumn extends LibraryRosterEntry {
