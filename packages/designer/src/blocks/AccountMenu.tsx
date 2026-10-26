@@ -44,7 +44,7 @@ export function AccountMenu({ actor, sections, contextLabel, triggerLabel, colla
   const label = triggerLabel?.trim() ? triggerLabel : actor.name;
   const keyFor = (sectionId: string, entryId: string) => JSON.stringify([sectionId, entryId]);
   const trigger = <Button variant="ghost" aria-label={collapsed ? label : actor.name}
-    className={collapsed ? "icon-control-md border-0 bg-transparent p-0 forced-colors:focus-visible:outline forced-colors:focus-visible:outline-solid" : "border-0 bg-transparent w-full justify-start gap-sm text-start forced-colors:focus-visible:outline forced-colors:focus-visible:outline-solid"}>
+    className={collapsed ? "icon-control-md border-0 bg-transparent p-0 forced-colors:focus-visible:outline forced-colors:focus-visible:outline-solid" : "control-h-lg border-0 bg-transparent w-full justify-start gap-sm text-start forced-colors:focus-visible:outline forced-colors:focus-visible:outline-solid"}>
     <span aria-hidden="true" className="shrink-0"><Avatar alt={actor.name} src={actor.image} /></span>
     {!collapsed && <>
       <span className="flex min-w-0 flex-1 flex-col text-start">

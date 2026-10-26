@@ -2,7 +2,7 @@ import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CanvasSurface, type CanvasSurfaceProps } from "./CanvasSurface.js";
-import { fitTo, toWorld, zoomAt, type CanvasItem } from "./models.js";
+import { CANVAS_WHEEL_ZOOM_RATE, fitTo, toWorld, zoomAt, type CanvasItem } from "./models.js";
 
 const items: readonly CanvasItem[] = [
   { id: "a", label: "Alpha", rect: { x: 0, y: 0, width: 20, height: 20 } },
@@ -369,7 +369,7 @@ describe("canvas wheel intent and focus visibility", () => {
     { id: "near", label: "Near", rect: { x: 20, y: 20, width: 20, height: 20 } },
     { id: "far", label: "Far", rect: { x: 1200, y: 900, width: 20, height: 20 } },
   ];
-  const factor = Math.exp(0.2);
+  const factor = Math.exp(100 * CANVAS_WHEEL_ZOOM_RATE);
   const wheel = (surface: HTMLElement, point = { x: 100, y: 100 }, deltaY = -100, deltaMode = 0) => {
     const event = new WheelEvent("wheel", { bubbles: true, cancelable: true, clientX: 40 + surface.clientLeft + point.x,
       clientY: 30 + surface.clientTop + point.y, deltaY, deltaMode });
@@ -443,8 +443,9 @@ describe("canvas wheel intent and focus visibility", () => {
 
   it("keeps wheel normalization, anchors and zoom limits while accumulating", () => {
     const { surface, props } = setup({ viewport: frozen, maxZoom: 2 });
-    act(() => { wheel(surface, { x: 70, y: 80 }, -2, 1); wheel(surface, { x: 70, y: 80 }, -1, 2); });
-    const first = zoomAt(frozen, { x: 70, y: 80 }, Math.exp(0.064));
+    // Three pages reach the 2x limit at the gentler per-notch rate (the per-event delta cap still applies).
+    act(() => { wheel(surface, { x: 70, y: 80 }, -2, 1); wheel(surface, { x: 70, y: 80 }, -3, 2); });
+    const first = zoomAt(frozen, { x: 70, y: 80 }, Math.exp(32 * CANVAS_WHEEL_ZOOM_RATE));
     expectViewport(vi.mocked(props.onViewportChange).mock.calls[0]![0], first);
     expectViewport(vi.mocked(props.onViewportChange).mock.calls[1]![0], zoomAt(first, { x: 70, y: 80 }, 2 / first.zoom));
   });

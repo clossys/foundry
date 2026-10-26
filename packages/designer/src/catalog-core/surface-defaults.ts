@@ -12,6 +12,7 @@
  * materialized or runtime-qualified, and adopting it through the source path
  * still needs a verified surface source bundle.
  */
+import { isSelectableComponentSource, NON_SELECTABLE_SOURCE_REASON } from "./component-sources.js";
 import { surfacePrimary } from "./surface-library.js";
 import type { SectionSlot } from "./sections-contract.js";
 import type { SurfaceFinding, SurfaceSlot } from "./surface-types.js";
@@ -117,6 +118,7 @@ export function planSurfaceDefaults(input: SurfaceDefaultsInput): SurfaceDefault
     for (const source of order) {
       const doc = docs.find(candidate => candidate.$extensions["com.clossys.fill"].source === source);
       if (!doc) { if (basis !== "preference") why.push(`${source}: no implementation candidate`); continue; }
+      if (!isSelectableComponentSource(source)) { why.push(`${source}: ${NON_SELECTABLE_SOURCE_REASON}`); continue; }
       const entries = Object.values((contract.layer === "sections" ? doc.sections : doc.frames) ?? {});
       const own = entries.length === 1 ? contractFindings(contract, entries[0]!) : [`S1 expected one ${contract.layer} descriptor`];
       if (own.length) { why.push(`${source}: ${own.join("; ")}`); continue; }

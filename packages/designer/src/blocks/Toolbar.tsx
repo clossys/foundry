@@ -1,9 +1,8 @@
 import type { CSSProperties, ReactNode } from "react";
-import { Toolbar as AriaToolbar, type ToolbarProps as AriaToolbarProps } from "react-aria-components";
-import { cx } from "../components/internal/cx.js";
+import { Toolbar as FoundryToolbar, type ToolbarProps as FoundryToolbarProps } from "../components/Toolbar.js";
 
 export interface ToolbarProps
-  extends Omit<AriaToolbarProps, "children" | "className" | "style"> {
+  extends Omit<FoundryToolbarProps, "children" | "className" | "style" | "variant"> {
   /** Slot for the toolbar's leading actions — typically one or more `Button` components (bulk actions, view toggles). */
   leading?: ReactNode;
   /** Slot for a search/filter control — typically a `TextField` or `Select` component. Grows to fill the space between `leading` and `trailing`. */
@@ -27,7 +26,8 @@ export interface ToolbarProps
  * toolbar, side by side), which is what makes this a block rather than a
  * view.
  *
- * **Built on react-aria-components' own `Toolbar` primitive**, which this
+ * **Rendered through this package's own `Toolbar` component** (`variant="bare"`),
+ * which is built on react-aria-components' own `Toolbar` primitive, which this
  * package's installed version (`react-aria-components@1.20.0`) ships —
  * so this uses it rather than hand-rolling `role="toolbar"` and arrow-key
  * handling from scratch. Its underlying `useToolbar` hook (from `react-aria`)
@@ -67,11 +67,12 @@ export function Toolbar({
   ...rest
 }: ToolbarProps) {
   return (
-    <AriaToolbar
+    <FoundryToolbar
       {...rest}
+      variant="bare"
       orientation={orientation}
       aria-label={ariaLabel}
-      className={cx("flex flex-wrap items-center gap-md", className)}
+      className={className}
       style={style}
     >
       {leading ? <div className="flex flex-wrap items-center gap-sm">{leading}</div> : null}
@@ -79,6 +80,6 @@ export function Toolbar({
       {trailing ? (
         <div className="ms-auto flex flex-wrap items-center gap-sm">{trailing}</div>
       ) : null}
-    </AriaToolbar>
+    </FoundryToolbar>
   );
 }

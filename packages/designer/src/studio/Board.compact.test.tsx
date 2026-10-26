@@ -26,6 +26,8 @@ it("renders a miniature specimen for every L3 row in the compact tier", () => {
   const specimens = [...compact.querySelectorAll<HTMLElement>("[data-studio-compact-specimen]")];
   expect(specimens.map(specimen => specimen.dataset.studioCompactSpecimen)).toEqual(slots.map(row => row.id));
   for (const specimen of specimens) expect(specimen.querySelector("[data-compact-plate]")).not.toBeNull();
+  // vf13: the plate is width-bounded (token-mapped containment) so a specimen never paints past the board.
+  for (const specimen of specimens) expect(specimen.querySelector("[data-compact-plate]")).toHaveClass("token-specimen-contain");
   // A chosen row paints its active library's specimen; an unchosen row keeps an empty plate of the same shape.
   const chosen = specimens.find(specimen => specimen.dataset.studioCompactSpecimen === "tokens.surface-color")!;
   expect(chosen.querySelector("[data-compact-plate]")!.childElementCount).toBeGreaterThan(0);

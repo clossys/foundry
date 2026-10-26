@@ -1949,6 +1949,11 @@
   .justify-self-end {
     justify-self: flex-end;
   }
+  .token-specimen-contain {
+    max-inline-size: var(--ui-layout-sidebar-w);
+    overflow: hidden;
+    overflow-wrap: anywhere;
+  }
   .truncate {
     overflow: hidden;
     text-overflow: ellipsis;
@@ -2151,6 +2156,14 @@
           background-color: var(--site-header-action-hover, var(--color-surface-raised, oklch(1 0 0)));
         }
       }
+    }
+  }
+  .layer-tab-indicator {
+    border-block-end-style: solid;
+    border-block-end-width: var(--ui-border-rule, 2px);
+    border-block-end-color: transparent;
+    &[data-selected] {
+      border-block-end-color: var(--color-accent, currentColor);
     }
   }
   .border-t {
@@ -2743,6 +2756,10 @@
   .align-top {
     vertical-align: top;
   }
+  .type-id {
+    font-family: var(--font-mono, ui-monospace, monospace);
+    font-variant-numeric: tabular-nums;
+  }
   .font-body {
     font-family: var(--font-body, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif);
   }
@@ -3042,13 +3059,16 @@
       transition-duration: 0s;
     }
   }
+  .frame-chevron-motion {
+    transition-property: transform, rotate;
+    transition-duration: var(--ui-duration-fast, 120ms);
+    transition-timing-function: var(--ease-default, cubic-bezier(.2, 0, 0, 1));
+    @media (prefers-reduced-motion: reduce) {
+      transition-duration: 0s;
+    }
+  }
   .transition-\[width\] {
     transition-property: width;
-    transition-timing-function: var(--tw-ease, var(--ease-default, cubic-bezier(.2, 0, 0, 1)));
-    transition-duration: var(--tw-duration, var(--ui-duration-fast, 120ms));
-  }
-  .transition-all {
-    transition-property: all;
     transition-timing-function: var(--tw-ease, var(--ease-default, cubic-bezier(.2, 0, 0, 1)));
     transition-duration: var(--tw-duration, var(--ui-duration-fast, 120ms));
   }

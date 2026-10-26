@@ -54,7 +54,9 @@ describe('board anatomy visual pass (VF-1)', () => {
     expect(screen.getByText('tokens.color-ramp')).toHaveClass('font-mono', 'tabular-nums');
     view.rerender(<LeafLabel id="tokens.color-ramp" label="Colour ramp" />);
     expect(screen.getByText('Colour ramp')).not.toHaveClass('font-mono');
-    expect(view.container.querySelector('[data-leaf-id]')).toBeNull();
+    // vf13 (r2 sf-11 / components-09): the human label leads and the id stays underneath in the mono face.
+    expect(view.container.querySelector('[data-leaf-id]')).toHaveTextContent('tokens.color-ramp');
+    expect(view.container.querySelector('[data-leaf-id]')).toHaveClass('font-mono', 'text-ink-secondary');
   });
 
   it('renders an id-labelled board row in the mono face', () => {

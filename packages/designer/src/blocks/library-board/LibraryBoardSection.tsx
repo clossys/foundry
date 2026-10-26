@@ -9,6 +9,8 @@ import { BOARD_SURFACE_CLASS, BoardHeader, LeafCell, LeafLabel } from './LeafCel
 import { MatrixChoices } from '../matrix/choices.js';
 import { CandidatePromptDialog } from './CandidatePromptDialog.js';
 import { ErrorReason } from './ErrorReason.js';
+import { checkCounts, isRuntimePending } from '../../studio/runtime-pending.js';
+import { RuntimePendingLine } from '../../studio/board-summary.js';
 import { assertLibraryBoardRecords, assertLibraryPreviewIdentity, type LibraryBoardCommand, type LibraryBoardRecords, type LibraryPreviewIdentity } from './model.js';
 import type { CandidateWorkflow, LibraryBoardLabels } from './types.js';
 export interface LibraryBoardPreviewPort {
@@ -58,13 +60,16 @@ export function LibraryBoardSection({ records, labels, previews, workflow, onCom
         onCommand({ version: 1, command: 'use-source', boardId: rows.boardId, leafId: id, source });
       }}
       onFocusCell={(id, source) => onCommand({ version: 1, command: 'reveal', boardId: rows.boardId, leafId: id, source })}
-      rows={rows.items.map(row => ({ id: row.id, label: row.label, name: row.label, selected: row.selectedSource,
+      rows={rows.items.map(row => ({ id: row.id, label: <LeafLabel id={row.id} label={row.label} />, name: row.label, selected: row.selectedSource,
         cells: { ...Object.fromEntries(choiceColumns.map(column => {
           const candidate = row.candidates.find(candidate => candidate.source === column.source);
           if (!candidate) return [column.source, null];
-          const errors = candidate.findings.filter(finding => finding.severity === 'error').length, notices = candidate.findings.filter(finding => finding.severity === 'notice').length;
+          const errors = candidate.findings.filter(finding => finding.severity === 'error').length;
+          // Display only: a runtime-pending finding reads as the neutral pending line, never as an error badge. Selection gating stays on `errors`.
+          const shown = checkCounts(candidate.findings), notices = shown.notices;
           return [column.source, <div className="relative"><RadioGroup.Radio value={candidate.source} aria-label={labels.useSource(candidate.source, row.id)} isDisabled={!controls.canSave || controls.pending || !candidate.usable || column.referenceOnly || errors > 0} className={PREVIEW_CHOICE_CLASS}>{cell(candidate.previewIdentity)}</RadioGroup.Radio>
-            {errors > 0 ? <Tooltip trigger={<Button variant="ghost" size="sm" aria-label={labels.checkSummary(errors, notices)}><Badge variant="danger">!</Badge></Button>}>{candidate.findings.map((finding, index) => <p key={index}>{finding.code}: {finding.message}</p>)}</Tooltip> : null}{errors > 0 ? <ErrorReason findings={candidate.findings} /> : null}</div>];
+            {shown.errors > 0 ? <Tooltip trigger={<Button variant="ghost" size="sm" aria-label={labels.checkSummary(shown.errors, notices)}><Badge variant="danger"><span aria-hidden>!</span> {labels.checkSummary(shown.errors, notices)}</Badge></Button>}>{candidate.findings.map((finding, index) => <p key={index}>{finding.code}: {finding.message}</p>)}</Tooltip> : null}{shown.errors > 0 ? <ErrorReason findings={candidate.findings.filter(finding => !isRuntimePending(finding))} /> : null}
+            <RuntimePendingLine count={shown.errors > 0 ? 0 : shown.pending} label={labels.runtimePending} className="text-caption" /></div>];
         })), 'library-board-custom-actions': <div className="flex gap-sm">{prompt(row)}{custom && row.refreshPrompt ? prompt(row, true) : null}</div> }
       }))} />}
   </section>;

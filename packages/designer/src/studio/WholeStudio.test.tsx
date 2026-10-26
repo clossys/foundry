@@ -520,3 +520,21 @@ it("contract boards preview planned surface defaults labelled as planned, withou
     else { expect(other.querySelector("[data-studio-planned]")).toBeNull(); expect(other).toHaveTextContent(labels.board.notChosen); }
   }
 });
+
+it("vf13: a runtime-pending component tile shows its static specimen, a worded badge, the shared leaf label and the raised board plate", async () => {
+  const user = userEvent.setup(); const input = componentIntegration();
+  const preview = vi.fn(() => <p>vf13-static-specimen</p>);
+  render(<Studio adapter={{ kind: "composite", catalog: structuredClone(input.catalog), load: async () => ({ library: input.library, preview }), save: async () => ({ ok: false, reason: "unavailable" }) }} labels={wholeLabels} />);
+  await screen.findByText("L-saved"); await user.click(screen.getByRole("link", { name: /Components/ }));
+  await user.click(within(await expandTree(user, "components", "components.button")).getByRole("row", { name: "components.button", exact: true }));
+  await editBoard(user, "components.button");
+  const board = document.querySelector<HTMLElement>('[data-studio-board][data-board-mode="edit"]')!;
+  expect(board).toHaveClass("bg-surface-raised");
+  expect(within(board).getAllByText("vf13-static-specimen").length).toBeGreaterThan(0);
+  expect(within(board).queryByText(labels.previewUnavailable)).toBeNull();
+  const header = board.querySelector('th[scope="row"]')!;
+  expect(header.querySelector("[data-studio-leaf-label]")).toHaveClass("font-normal");
+  expect(header.querySelector("[data-studio-leaf-id]")).toHaveClass("font-mono");
+  for (const badge of board.querySelectorAll("[data-studio-check-tone]")) expect(badge.textContent!.trim().length).toBeGreaterThan(1);
+  expect(screen.getByRole("radio", { name: labels.useSource("test-kit", "components.button") })).toBeDisabled();
+});
