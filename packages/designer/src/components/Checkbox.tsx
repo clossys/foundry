@@ -3,7 +3,13 @@ import { useGlyph, useIndeterminateGlyph } from "./glyph-context.js";
 import type { ReactNode } from "react";
 import {
   Checkbox as AriaCheckbox,
+  CheckboxGroup as AriaCheckboxGroup,
+  FieldError,
+  Label,
+  Text,
+  type CheckboxGroupProps as AriaCheckboxGroupProps,
   type CheckboxProps as AriaCheckboxProps,
+  type ValidationResult,
 } from "react-aria-components";
 import { cx } from "./internal/cx.js";
 import { UI_ALPHA_DISABLED, UI_RING_FOCUS } from "./internal/ui-vars.js";
@@ -41,7 +47,7 @@ const BOX_BASE =
  * both `isIndeterminate` (some rows selected) and `isSelected` (all rows
  * selected) from its own selection state.
  */
-export function Checkbox({ children, className, style, ...rest }: CheckboxProps) {
+function CheckboxRoot({ children, className, style, ...rest }: CheckboxProps) {
   const checkGlyph = useGlyph("assets.icon-check");
   const mixedGlyph = useIndeterminateGlyph();
   return (
@@ -90,3 +96,65 @@ export function Checkbox({ children, className, style, ...rest }: CheckboxProps)
     </AriaCheckbox>
   );
 }
+
+export interface CheckboxGroupProps extends Omit<AriaCheckboxGroupProps, "children" | "className"> {
+  /**
+   * Required. Rendered as the group's own label and programmatically
+   * associated with the `role="group"` region, the same way `RadioGroup`'s
+   * `label` names its `role="radiogroup"`.
+   */
+  label: ReactNode;
+  /** Helper text below the options, read by assistive tech via `aria-describedby`. */
+  description?: ReactNode;
+  /**
+   * Validation error text. Rendered, and wired to the group, only while the
+   * group `isInvalid`; the same convention `RadioGroup` and `TextField` follow.
+   */
+  errorMessage?: ReactNode | ((validation: ValidationResult) => ReactNode);
+  /** Layout of the options: a stacked column, or a wrapping row. @default "vertical" */
+  orientation?: "horizontal" | "vertical";
+  /** One or more `Checkbox`es, each with its own `value`. */
+  children: ReactNode;
+  /** Merged onto the group root. */
+  className?: string;
+}
+
+/**
+ * A labelled set of independent checkboxes sharing one value array: the
+ * group scope of `Checkbox`, as `RadioGroup` is for a single choice. Built on
+ * react-aria-components' `CheckboxGroup`, which supplies the `role="group"`
+ * naming, the selected-values array, and the disabled, read-only, required
+ * and invalid states every member `Checkbox` inherits through context, so
+ * each member's own mark draws the group's invalid edge without a prop of
+ * its own. Each member keeps its own Tab stop and Space toggle (the APG
+ * checkbox pattern has no roving focus across a group).
+ */
+function CheckboxGroup({
+  label,
+  description,
+  errorMessage,
+  orientation = "vertical",
+  children,
+  className,
+  ...rest
+}: CheckboxGroupProps) {
+  return (
+    <AriaCheckboxGroup {...rest} className={cx("flex flex-col gap-xs", className)}>
+      <Label className="text-body-s text-ink-secondary font-body">{label}</Label>
+      <div
+        data-part="checkbox-group-items"
+        className={orientation === "horizontal" ? "flex flex-row flex-wrap gap-md" : "flex flex-col gap-sm"}
+      >
+        {children}
+      </div>
+      {description ? (
+        <Text slot="description" className="text-caption text-ink-muted">
+          {description}
+        </Text>
+      ) : null}
+      <FieldError className="text-caption text-status-danger-text">{errorMessage}</FieldError>
+    </AriaCheckboxGroup>
+  );
+}
+
+export const Checkbox = Object.assign(CheckboxRoot, { Group: CheckboxGroup });

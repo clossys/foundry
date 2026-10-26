@@ -95,12 +95,12 @@ describe("Foundry component package descriptors", () => {
     const rows = new Map(imported().coverage.map(row => [row.slot, row]));
     for (const leaf of dynamicBlockedLeaves) expect(rows.get(`components.${leaf}`)!.status).toBe("blocked");
     for (const leaf of ["keyboard", "toggle-button", "toggle-group", "slider", "calendar", "date-picker"]) expect(rows.get(`components.${leaf}`)!.status).toBe("unavailable");
-    expect(rows.get("components.checkbox")!.missing).toContain("scope.group");
-    expect(rows.get("components.disclosure")!.missing).toContain("scope.group");
+    expect(rows.get("components.checkbox")!.supported).toContain("scope.group");
+    expect(rows.get("components.disclosure")!.supported).toContain("scope.group");
     expect(rows.get("components.breadcrumbs")!.missing).toContain("collapsed");
     expect(rows.get("components.dialog")!.missing).toContain("role.alert");
     expect(rows.get("components.popover")!.missing).toContain("arrow");
-    for (const leaf of ["form", "navigation-tree", "field", "text-field", "date-field", "grid-list", "toast", "chart-area", "chart-heatmap", "chart-range", "chart-scatter", "chart-status-strip", "chart-waterfall"]) {
+    for (const leaf of ["checkbox", "disclosure", "select", "tabs", "form", "navigation-tree", "field", "text-field", "date-field", "grid-list", "toast", "chart-area", "chart-heatmap", "chart-range", "chart-scatter", "chart-status-strip", "chart-waterfall"]) {
       expect(rows.get(`components.${leaf}`)!.missing).toEqual([]);
       expect(rows.get(`components.${leaf}`)!.status).toBe("candidate");
     }
@@ -137,7 +137,7 @@ describe("Foundry component package descriptors", () => {
     expect(consumerSubset.findings.filter(finding => finding.code === "K1")).toEqual([expect.objectContaining({ code: "K1", subject: "components.menu", message: "Root mapping names unsupported member presentation.inline" })]);
     expect(consumerSubset.ok).toBe(false);
     expect(result.ok).toBe(false);
-    expect(result.findings).toContainEqual(expect.objectContaining({ code: "K1", subject: "components.checkbox", message: "Required member scope.group is not mapped" }));
+    expect(result.findings).toContainEqual(expect.objectContaining({ code: "K1", subject: "components.dialog", message: "Required member role.alert is not mapped" }));
     expect(result.findings).toContainEqual(expect.objectContaining({ code: "K5", subject: "components.button", message: "Source and runtime observations are unavailable" }));
   });
 });

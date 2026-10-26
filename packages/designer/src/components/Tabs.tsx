@@ -12,16 +12,28 @@ import {
 import { cx } from "./internal/cx.js";
 import { UI_ALPHA_DISABLED, UI_RING_FOCUS } from "./internal/ui-vars.js";
 
+export type TabsSize = "sm" | "md" | "lg";
+
 export interface TabsProps extends Omit<AriaTabsProps, "className" | "children"> {
   /** A `Tabs.List` plus one `Tabs.Panel` per tab, in any order. */
   children: ReactNode;
   className?: string;
+  /** Padding and type step of every `Tabs.Tab`. Defaults to `md`. */
+  size?: TabsSize;
 }
 
 // Tab children are collected before AriaTabs provides its own context.
 const TabsOrientationContext = createContext<"horizontal" | "vertical">("horizontal");
+const TabsSizeContext = createContext<TabsSize>("md");
 
-function TabsRoot({ children, className, ...rest }: TabsProps) {
+// One spacing and type step per size; md is the long-standing default.
+const TAB_SIZE_CLASSES: Record<TabsSize, string> = {
+  sm: "px-sm py-xs text-caption",
+  md: "px-md py-sm text-body-s",
+  lg: "px-lg py-md text-body",
+};
+
+function TabsRoot({ children, className, size = "md", ...rest }: TabsProps) {
   return (
     <AriaTabs {...rest}
       className={({ orientation }) => {
@@ -31,7 +43,7 @@ function TabsRoot({ children, className, ...rest }: TabsProps) {
     >
       {({ orientation }) => (
         <TabsOrientationContext.Provider value={orientation}>
-          {children}
+          <TabsSizeContext.Provider value={size}>{children}</TabsSizeContext.Provider>
         </TabsOrientationContext.Provider>
       )}
     </AriaTabs>
@@ -83,6 +95,7 @@ export interface TabsTabProps extends Omit<AriaTabProps, "className" | "style"> 
  */
 function TabsTab({ children, className, style, ...rest }: TabsTabProps) {
   const vertical = useContext(TabsOrientationContext) === "vertical";
+  const size = useContext(TabsSizeContext);
   return (
     <AriaTab
       {...rest}
@@ -91,7 +104,8 @@ function TabsTab({ children, className, style, ...rest }: TabsTabProps) {
           // Reserve the indicator track in every state to avoid selection jumps.
           "cursor-default",
           vertical ? "border-s-2" : "border-b-2",
-          "px-md py-sm text-body-s font-body text-ink-muted outline-none transition-colors motion-reduce:transition-none disabled:cursor-not-allowed",
+          TAB_SIZE_CLASSES[size],
+          "font-body text-ink-muted outline-none transition-colors motion-reduce:transition-none disabled:cursor-not-allowed",
           renderProps.isSelected ? "border-accent text-ink-primary" : "border-transparent",
           className,
         )

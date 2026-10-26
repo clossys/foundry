@@ -89,7 +89,7 @@ export type { ControlGround, IconButtonClassOptions, IconButtonLinkGround, IconB
 export type { LinkProps, LinkVariant } from "./Link.js";
 
 export { Checkbox } from "./Checkbox.js";
-export type { CheckboxProps } from "./Checkbox.js";
+export type { CheckboxProps, CheckboxGroupProps } from "./Checkbox.js";
 
 export { Switch } from "./Switch.js";
 export type { SwitchProps } from "./Switch.js";
@@ -158,7 +158,7 @@ export { FileTrigger } from "./FileTrigger.js";
 export type { FileTriggerProps } from "./FileTrigger.js";
 
 export { Disclosure } from "./Disclosure.js";
-export type { DisclosureProps } from "./Disclosure.js";
+export type { DisclosureProps, DisclosureGroupProps } from "./Disclosure.js";
 
 export { ProgressBar } from "./ProgressBar.js";
 export type { ProgressBarProps } from "./ProgressBar.js";

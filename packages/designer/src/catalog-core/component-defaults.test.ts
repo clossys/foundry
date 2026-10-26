@@ -60,15 +60,15 @@ const ledger = (rows: ReturnType<typeof planComponentDefaults>["rows"]) => Objec
 const EXPECTED_DEFAULTS = {
   avatar: "shadcn@aria", badge: "foundry", banner: "foundry", breadcrumbs: "shadcn@aria", button: "foundry", card: "foundry",
   "chart-area": "foundry", "chart-bar": "foundry", "chart-heatmap": "foundry", "chart-line": "foundry", "chart-range": "foundry",
-  "chart-scatter": "foundry", "chart-status-strip": "foundry", "chart-waterfall": "foundry", "combo-box": "foundry", "date-field": "foundry",
-  field: "foundry", "file-trigger": "foundry", form: "foundry", icon: "foundry", keyboard: "shadcn@aria", link: "foundry", logo: "foundry",
+  "chart-scatter": "foundry", "chart-status-strip": "foundry", "chart-waterfall": "foundry", checkbox: "foundry", "combo-box": "foundry",
+  "date-field": "foundry", disclosure: "foundry", field: "foundry", "grid-list": "foundry", "file-trigger": "foundry", form: "foundry", icon: "foundry", keyboard: "shadcn@aria", link: "foundry", logo: "foundry",
   meter: "foundry", "native-action": "foundry", "navigation-tree": "foundry", "progress-bar": "foundry", "radio-group": "foundry",
-  "resize-handle": "foundry", "search-field": "foundry", "semantic-content": "foundry", separator: "shadcn@aria", skeleton: "foundry",
-  spinner: "foundry", "status-mark": "foundry", switch: "foundry", "text-field": "foundry", toast: "foundry", toolbar: "rac-starter",
+  "resize-handle": "foundry", "search-field": "foundry", select: "foundry", "semantic-content": "foundry", separator: "shadcn@aria", skeleton: "foundry",
+  spinner: "foundry", "status-mark": "foundry", switch: "foundry", tabs: "foundry", "text-field": "foundry", toast: "foundry", toolbar: "rac-starter",
   tooltip: "shadcn@aria",
 };
-const NOT_CHOSEN = ["calendar", "chart-sparkline", "checkbox", "color-picker", "date-picker", "dialog", "disclosure", "grid-list", "menu",
-  "number-field", "popover", "select", "slider", "table", "tabs", "tag-group", "toggle-button", "toggle-group", "tree"];
+const NOT_CHOSEN = ["calendar", "chart-sparkline", "color-picker", "date-picker", "dialog", "menu",
+  "number-field", "popover", "slider", "table", "tag-group", "toggle-button", "toggle-group", "tree"];
 const reasons = (plan: ReturnType<typeof planComponentDefaults>, leaf: string) => plan.rows.find(row => row.slot === `components.${leaf}`)!.reasons.join(" || ");
 
 describe("component default fills", () => {
@@ -93,7 +93,6 @@ describe("component default fills", () => {
     expect(reasons(plan, "table")).toContain("foundry: K1 Required member resize-columns is not mapped");
     expect(reasons(plan, "table")).toContain("owner pick foundry is not eligible");
     expect(reasons(plan, "slider")).toBe("controls coherence: one source per group, led by foundry; shadcn@aria would mix sources");
-    expect(reasons(plan, "grid-list")).toBe("foundry: dependency not chosen components.checkbox");
     expect(reasons(plan, "date-picker")).toContain("compose:date-picker@1: inputs not chosen components.calendar,components.popover");
     expect(reasons(plan, "tree")).toBe("foundry: blocked K5 || rac-starter: blocked K4");
   });
@@ -116,6 +115,24 @@ describe("component default fills", () => {
     const profile = resolveComponents({ catalog: input.catalog, library: { ...adopted.components, source, adoptedAt: "2026-10-26" }, values: { tokens: input.tokens, assets: input.assets }, evidence: { observations: {}, installedRac: input.installedRac } });
     expect(profile.check.findings.filter(finding => !finding.message.endsWith("Source and runtime observations are unavailable"))).toEqual([]);
   });
+  it("fills the group-scope leaves from Foundry once Checkbox.Group and Disclosure.Group are mapped, and grid-list follows checkbox", () => {
+    const { input } = setup();
+    const plan = planComponentDefaults(input);
+    for (const leaf of ["checkbox", "disclosure", "grid-list"]) {
+      expect(plan.rows.find(row => row.slot === `components.${leaf}`), leaf).toMatchObject({ status: "default", basis: "preference", source: "foundry", fill: `foundry/components.${leaf}` });
+    }
+    const order = plan.decisions.map(row => row.slot);
+    expect(order.indexOf("components.checkbox")).toBeLessThan(order.indexOf("components.grid-list"));
+    expect(plan.findings).toEqual([]);
+  });
+  it("fills tabs and select from Foundry by preference once size.sm/md/lg are mapped, keeping the controls group coherent", () => {
+    const { input } = setup();
+    const plan = planComponentDefaults(input);
+    for (const leaf of ["tabs", "select"]) {
+      expect(plan.rows.find(row => row.slot === `components.${leaf}`), leaf).toMatchObject({ status: "default", basis: "preference", source: "foundry", fill: `foundry/components.${leaf}`, reasons: [] });
+    }
+    expect(plan.findings).toEqual([]);
+  });
   it("fills a listed leaf from the fallback source when its owner pick is ineligible, keeping why", () => {
     const { input } = setup();
     const plan = planComponentDefaults(input);
@@ -128,7 +145,6 @@ describe("component default fills", () => {
     const { input } = setup();
     const plan = planComponentDefaults(input);
     expect(reasons(plan, "table")).toContain("foundry: K1 Required member resize-columns is not mapped");
-    expect(reasons(plan, "checkbox")).toContain("foundry: K1 Required member scope.group is not mapped");
     expect(reasons(plan, "tree")).toContain("foundry: blocked K5");
     expect(reasons(plan, "calendar")).toContain("foundry: no implementation candidate");
     expect(reasons(plan, "toggle-button")).toContain("foundry: no implementation candidate");

@@ -4,7 +4,9 @@ import type { ReactNode } from "react";
 import {
   Button as AriaButton,
   Disclosure as AriaDisclosure,
+  DisclosureGroup as AriaDisclosureGroup,
   DisclosurePanel as AriaDisclosurePanel,
+  type DisclosureGroupProps as AriaDisclosureGroupProps,
   type DisclosureProps as AriaDisclosureProps,
 } from "react-aria-components";
 import { cx } from "./internal/cx.js";
@@ -23,11 +25,8 @@ export interface DisclosureProps extends Omit<AriaDisclosureProps, "children"> {
 }
 
 /**
- * An expandable/collapsible section of content — a single disclosure, not
- * an accordion of several coordinated ones (react-aria-components' own
- * `DisclosureGroup` covers that case; this package exposes the single-
- * section primitive, the same way `Table`'s primitives ship ahead of a
- * finished `DataTable`). Built on react-aria-components' `Disclosure` +
+ * An expandable/collapsible section of content — a single disclosure; an
+ * accordion of several coordinated ones is `Disclosure.Group`, below. Built on react-aria-components' `Disclosure` +
  * `DisclosurePanel`, installed at `1.20.0` in this package — both ship in
  * that version, so no `<details>` fallback was needed. Between them these
  * primitives supply: `aria-expanded` on the trigger and `aria-controls`
@@ -48,7 +47,7 @@ export interface DisclosureProps extends Omit<AriaDisclosureProps, "children"> {
  * `Button` in `children` never accidentally inherits the trigger's own
  * behavior).
  */
-export function Disclosure({ title, children, className, triggerClassName, panelClassName, ...rest }: DisclosureProps) {
+function DisclosureRoot({ title, children, className, triggerClassName, panelClassName, ...rest }: DisclosureProps) {
   const expandGlyph = useGlyph("assets.icon-chevron-right");
   return (
     <AriaDisclosure {...rest} className={cx("flex flex-col", className)}>
@@ -81,3 +80,35 @@ export function Disclosure({ title, children, className, triggerClassName, panel
     </AriaDisclosure>
   );
 }
+
+export interface DisclosureGroupProps extends Omit<AriaDisclosureGroupProps, "children" | "className"> {
+  /** Two or more `Disclosure`s, each with its own `id`. */
+  children: ReactNode;
+  /** Merged onto the group root. */
+  className?: string;
+}
+
+/**
+ * Several coordinated disclosures (an accordion): the group scope of
+ * `Disclosure`. Built on react-aria-components' `DisclosureGroup`, which
+ * owns the expanded-key set: by default expanding one section collapses the
+ * others, `allowsMultipleExpanded` lets several stay open, and
+ * `expandedKeys`/`defaultExpandedKeys`/`onExpandedChange` address sections
+ * by each member's `id`. `isDisabled` reaches every member through context.
+ * Each section keeps its own trigger in the Tab sequence and toggles on
+ * Enter/Space, as a lone `Disclosure` does. Sections are separated by the
+ * base line token, so a stacked accordion reads as one unit.
+ */
+function DisclosureGroup({ children, className, ...rest }: DisclosureGroupProps) {
+  return (
+    <AriaDisclosureGroup
+      {...rest}
+      data-part="disclosure-group"
+      className={cx("flex flex-col divide-y divide-line-base", className)}
+    >
+      {children}
+    </AriaDisclosureGroup>
+  );
+}
+
+export const Disclosure = Object.assign(DisclosureRoot, { Group: DisclosureGroup });

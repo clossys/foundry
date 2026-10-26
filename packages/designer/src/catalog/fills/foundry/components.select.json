@@ -13,17 +13,12 @@
         "package": "@clossys/designer",
         "version": "0.12.0"
       },
-      "relation": "subset",
+      "relation": "same-contract",
       "slot": "components.select",
       "source": "foundry",
       "sourceAddress": "./components#Select",
       "status": "draft",
-      "trust": "foundry",
-      "unmapped": [
-        "size.lg",
-        "size.md",
-        "size.sm"
-      ]
+      "trust": "foundry"
     }
   },
   "components": {
@@ -54,6 +49,9 @@
       "license": "MIT",
       "members": [
         "selection.single",
+        "size.lg",
+        "size.md",
+        "size.sm",
         "state.invalid"
       ],
       "pin": {
@@ -63,6 +61,9 @@
       },
       "propMap": {
         "selection.single": "./components#Select.selectedKey",
+        "size.lg": "./components#Select.size=lg",
+        "size.md": "./components#Select.size=md",
+        "size.sm": "./components#Select.size=sm",
         "state.invalid": "./components#Select.isInvalid"
       },
       "props": [
@@ -73,7 +74,8 @@
         "label",
         "onSelectionChange",
         "options",
-        "selectedKey"
+        "selectedKey",
+        "size"
       ],
       "reads": {
         "assets": [],

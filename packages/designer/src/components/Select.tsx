@@ -39,6 +39,16 @@ export interface SelectOption {
   textValue?: string;
 }
 
+export type SelectSize = "sm" | "md" | "lg";
+
+// Trigger padding and type step per size, matching Button's size scale; md is
+// the long-standing default look.
+const SIZE_CLASSES: Record<SelectSize, string> = {
+  sm: "px-sm py-xs text-body-s",
+  md: "px-md py-sm text-body",
+  lg: "px-lg py-md text-body-l",
+};
+
 export interface SelectProps
   extends Omit<AriaSelectProps<SelectOption>, "children" | "placeholder"> {
   /**
@@ -63,6 +73,8 @@ export interface SelectProps
   className?: string;
   /** Merged onto the trigger button. */
   triggerClassName?: string;
+  /** Trigger padding and type step. @default "md" */
+  size?: SelectSize;
 }
 
 /**
@@ -109,6 +121,7 @@ export function Select({
   options,
   className,
   triggerClassName,
+  size = "md",
   isDisabled,
   isInvalid,
   ...rest
@@ -128,7 +141,8 @@ export function Select({
         isDisabled={isDisabled}
         className={(renderProps) =>
           cx(
-            "flex w-full items-center justify-between gap-sm rounded-control border bg-surface-raised px-md py-sm text-body text-ink-primary outline-none disabled:cursor-not-allowed",
+            "flex w-full items-center justify-between gap-sm rounded-control border bg-surface-raised text-ink-primary outline-none disabled:cursor-not-allowed",
+            SIZE_CLASSES[size],
             isInvalid ? "border-status-danger" : "border-line-base",
             triggerClassName,
           )
