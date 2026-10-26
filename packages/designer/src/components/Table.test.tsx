@@ -2,7 +2,7 @@ import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type { Key, SortDescriptor } from "react-aria-components";
+import type { ColumnSize, Key, SortDescriptor } from "react-aria-components";
 import { Table } from "./Table.js";
 
 interface PromptRow {
@@ -206,5 +206,75 @@ describe("Table", () => {
     const table = screen.getByRole("grid", { name: "Prompts" });
     expect(table.style.borderCollapse).toBe("separate");
     expect(table.style.padding).toBe("4px");
+  });
+});
+
+function ResizableTable({ onResize, onResizeEnd }: { onResize?: (widths: Map<Key, ColumnSize>) => void; onResizeEnd?: (widths: Map<Key, ColumnSize>) => void } = {}) {
+  return (
+    <Table.ResizableContainer onResize={onResize} onResizeEnd={onResizeEnd}>
+      <Table aria-label="Prompts">
+        <Table.Header>
+          <Table.Column id="name" isRowHeader allowsResizing defaultWidth={200} minWidth={120} resizerLabel="Resize">
+            Name
+          </Table.Column>
+          <Table.Column id="runs" defaultWidth={160}>
+            Runs
+          </Table.Column>
+        </Table.Header>
+        <Table.Body>
+          {ROWS.map((row) => (
+            <Table.Row key={row.id} id={row.id}>
+              <Table.Cell>{row.name}</Table.Cell>
+              <Table.Cell>{row.runs}</Table.Cell>
+            </Table.Row>
+          ))}
+        </Table.Body>
+      </Table>
+    </Table.ResizableContainer>
+  );
+}
+
+describe("Table column resizing", () => {
+  it("renders a labelled resizer only on columns that allow resizing", () => {
+    render(<ResizableTable />);
+    const resizers = screen.getAllByRole("slider");
+    expect(resizers).toHaveLength(1);
+    // Named by the resizer label plus its own column header.
+    expect(resizers[0]).toHaveAccessibleName("Resize Name");
+    const header = screen.getByRole("columnheader", { name: /Name/ });
+    expect(header.contains(resizers[0]!)).toBe(true);
+    expect(screen.getByRole("columnheader", { name: "Runs" }).querySelector("[data-table-resizer]")).toBeNull();
+  });
+
+  it("keyboard: Enter on the header starts resizing, arrows change the width, Escape finishes with the committed width", async () => {
+    const onResize = vi.fn();
+    const onResizeEnd = vi.fn();
+    const user = userEvent.setup();
+    render(<ResizableTable onResize={onResize} onResizeEnd={onResizeEnd} />);
+    const header = screen.getByRole("columnheader", { name: /Name/ });
+    header.focus();
+    await user.keyboard("{Enter}");
+    expect(document.activeElement).toBe(screen.getByRole("slider"));
+    await user.keyboard("{ArrowRight}");
+    expect(onResize).toHaveBeenCalled();
+    const widths = onResize.mock.lastCall![0] as Map<Key, ColumnSize>;
+    expect(widths.get("name")).toBeGreaterThan(200);
+    await user.keyboard("{Escape}");
+    expect(onResizeEnd).toHaveBeenCalledTimes(1);
+    expect((onResizeEnd.mock.lastCall![0] as Map<Key, ColumnSize>).get("name")).toBe(widths.get("name"));
+  });
+
+  it("the resizer sits on the logical inline-end edge and marks the active state with the accent", () => {
+    render(<ResizableTable />);
+    const resizer = document.querySelector<HTMLElement>("[data-table-resizer]")!;
+    expect(resizer).not.toBeNull();
+    expect(resizer.className).toContain("end-0");
+    expect(resizer.className).not.toMatch(/\bright-0\b/);
+    expect(resizer.querySelector("[aria-hidden='true']")!.getAttribute("class")).toContain("group-data-[resizing]:bg-accent");
+  });
+
+  it("a table outside a resizable container keeps its non-resizing markup", () => {
+    render(<BasicTable />);
+    expect(screen.queryByRole("slider")).toBeNull();
   });
 });

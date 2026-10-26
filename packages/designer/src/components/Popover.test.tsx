@@ -160,6 +160,31 @@ describe("Popover", () => {
     expect(screen.getByText("Filter controls here.")).toBeInTheDocument();
   });
 
+  it("draws no arrow by default", () => {
+    render(<Popover trigger={<Button>Filters</Button>} isOpen><p>Filter controls here.</p></Popover>);
+    expect(document.querySelector("[data-popover-arrow]")).toBeNull();
+  });
+
+  it("renders a decorative arrow pointing at the trigger, oriented by the resolved placement", () => {
+    const { unmount } = render(<Popover trigger={<Button>Filters</Button>} isOpen arrow aria-label="Filters"><p>Filter controls here.</p></Popover>);
+    const dialog = screen.getByRole("dialog", { name: "Filters" });
+    const arrow = document.querySelector<HTMLElement>("[data-popover-arrow]");
+    expect(arrow).not.toBeNull();
+    // Inside the anchored surface, outside the dialog's own content, and hidden from assistive tech.
+    expect(arrow!.closest('[class*="rounded-control"]')).not.toBeNull();
+    expect(dialog.contains(arrow)).toBe(false);
+    expect(arrow!.getAttribute("data-placement")).toBe("bottom");
+    const svg = arrow!.querySelector("svg")!;
+    expect(svg).toHaveAttribute("aria-hidden", "true");
+    // The surface's own colours: fill joins the panel, stroke continues its hairline border.
+    expect(svg.getAttribute("class")).toContain("fill-overlay-surface");
+    expect(svg.getAttribute("class")).toContain("stroke-overlay-border");
+    expect(svg.getAttribute("class")).toContain("group-data-[placement=bottom]:rotate-180");
+    unmount();
+    render(<Popover trigger={<Button>Filters</Button>} isOpen arrow placement="top"><p>Filter controls here.</p></Popover>);
+    expect(document.querySelector("[data-popover-arrow]")!.getAttribute("data-placement")).toBe("top");
+  });
+
   it("forwards className onto the popover surface, and the consumer's conflicting class wins the merge", () => {
     render(
       <Popover trigger={<Button>Filters</Button>} isOpen className="p-lg">

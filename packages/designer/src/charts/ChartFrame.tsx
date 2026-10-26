@@ -37,6 +37,11 @@ export interface ChartTableSpec {
   readonly rows: ReadonlyArray<ReadonlyArray<string | number>>;
 }
 
+/** The hover/focus reveal rule every `ChartFrame.Tooltip` trigger relies on; an SVG that hosts the part outside `ChartFrame` embeds the same rule. */
+export const CHART_TOOLTIP_REVEAL_CSS = `[data-chart-tooltip-trigger] > [data-chart-part="tooltip"] { visibility: hidden; }
+[data-chart-tooltip-trigger]:hover > [data-chart-part="tooltip"],
+[data-chart-tooltip-trigger]:focus > [data-chart-part="tooltip"] { visibility: visible; }`;
+
 const DEFAULT_MARGIN: ChartMargin = { top: 16, right: 16, bottom: 32, left: 48 };
 
 export interface ChartFrameProps {
@@ -133,9 +138,7 @@ export function ChartFrame({
         data-chart-part="frame"
         style={fit === "fluid" ? { maxWidth: width * 1.5, height: "auto" } : undefined}
       >
-        <style>{`[data-chart-tooltip-trigger] > [data-chart-part="tooltip"] { visibility: hidden; }
-[data-chart-tooltip-trigger]:hover > [data-chart-part="tooltip"],
-[data-chart-tooltip-trigger]:focus > [data-chart-part="tooltip"] { visibility: visible; }`}</style>
+        <style>{CHART_TOOLTIP_REVEAL_CSS}</style>
         <title id={titleId}>{title}</title>
         {description ? <desc id={descId}>{description}</desc> : null}
 

@@ -202,19 +202,18 @@
       ]
     },
     {
-      "missing": [
-        "axes",
-        "legend",
-        "tooltip"
-      ],
+      "missing": [],
       "notes": [
-        "Sparkline has no axes, legend or tooltip API.",
+        "Axes, legend and tooltip are opt-in (off by default, so the bare inline trend is unchanged). The tooltip reuses the shared ChartFrame.Tooltip part; accessibility and browser behavior remain unmeasured, static CSS inspection has no Escape dismissal, and long labels may clip. The complete table remains available.",
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
       ],
       "slot": "components.chart-sparkline",
-      "status": "subset",
+      "status": "candidate",
       "supported": [
-        "series"
+        "axes",
+        "legend",
+        "series",
+        "tooltip"
       ]
     },
     {
@@ -317,17 +316,16 @@
       "supported": []
     },
     {
-      "missing": [
-        "role.alert"
-      ],
+      "missing": [],
       "notes": [
-        "Dialog does not expose an alert-dialog role.",
+        "role=alertdialog keeps the modal surface and Escape, and ignores a scrim press unless isDismissable is set.",
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
       ],
       "slot": "components.dialog",
-      "status": "subset",
+      "status": "candidate",
       "supported": [
         "dismissable",
+        "role.alert",
         "role.modal"
       ]
     },
@@ -455,20 +453,19 @@
       ]
     },
     {
-      "missing": [
-        "presentation.inline",
-        "selection.multiple",
-        "selection.none",
-        "selection.single"
-      ],
+      "missing": [],
       "notes": [
-        "The package Menu is a trigger-owned popup. It exports no inline Menu or root selection API; Section selection is not a root contract member.",
+        "Menu is the trigger-owned popup; Menu.Inline presents the same menu inline. Root selectionMode applies to both; selected items show the check glyph.",
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
       ],
       "slot": "components.menu",
-      "status": "subset",
+      "status": "candidate",
       "supported": [
-        "presentation.popup"
+        "presentation.inline",
+        "presentation.popup",
+        "selection.multiple",
+        "selection.none",
+        "selection.single"
       ]
     },
     {
@@ -509,16 +506,15 @@
       "supported": []
     },
     {
-      "missing": [
-        "arrow"
-      ],
+      "missing": [],
       "notes": [
-        "No arrow part is exported.",
+        "The arrow is opt-in (arrow=false by default) and decorative; it follows the resolved placement.",
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
       ],
       "slot": "components.popover",
-      "status": "subset",
+      "status": "candidate",
       "supported": [
+        "arrow",
         "placement"
       ]
     },
@@ -669,16 +665,15 @@
       ]
     },
     {
-      "missing": [
-        "resize-columns"
-      ],
+      "missing": [],
       "notes": [
-        "No ColumnResizer or resize-columns API is exported.",
+        "Column resizing: wrap in Table.ResizableContainer and set allowsResizing (with defaultWidth/minWidth/maxWidth) on Table.Column.",
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
       ],
       "slot": "components.table",
-      "status": "subset",
+      "status": "candidate",
       "supported": [
+        "resize-columns",
         "selection",
         "sort"
       ]

@@ -60,9 +60,18 @@ export interface DialogProps extends Omit<AriaDialogTriggerProps, "children"> {
    * own `ModalOverlay` only gates the keyboard dismiss behind a SEPARATE
    * `isKeyboardDismissDisabled` prop (not exposed here, so Escape can never
    * be silently disabled), not behind this one.
-   * @default true
+   * @default true, or false when `role` is `"alertdialog"`
    */
   isDismissable?: boolean;
+  /**
+   * `"alertdialog"` for an interruption that needs a response, such as
+   * confirming a destructive action (WAI-ARIA APG alert dialog). It keeps the
+   * same surface, focus trap, Escape and focus restoration, but is announced
+   * as an alert dialog and, unless `isDismissable` says otherwise, ignores a
+   * scrim press so the choice is made with one of its own actions.
+   * @default "dialog"
+   */
+  role?: "dialog" | "alertdialog";
   /** Merged onto the dialog surface element itself. */
   className?: string;
   /** Merged onto the dialog surface element's inline style. */
@@ -101,7 +110,8 @@ function DialogRoot({
   trigger,
   children,
   size = "md",
-  isDismissable = true,
+  role = "dialog",
+  isDismissable = role !== "alertdialog",
   className,
   style,
   overlayClassName,
@@ -122,6 +132,7 @@ function DialogRoot({
       >
         <Modal className={cx("flex w-full", SIZE_CLASSES[size], modalClassName)} style={modalStyle}>
           <AriaDialog
+            role={role}
             className={cx(
               "flex max-h-[85vh] w-full flex-col gap-md overflow-auto rounded-control border border-overlay-border bg-overlay-surface p-lg text-body text-ink-primary outline-none",
               className,

@@ -13,15 +13,12 @@
         "package": "@clossys/designer",
         "version": "0.12.0"
       },
-      "relation": "subset",
+      "relation": "same-contract",
       "slot": "components.popover",
       "source": "foundry",
       "sourceAddress": "./components#Popover",
       "status": "draft",
-      "trust": "foundry",
-      "unmapped": [
-        "arrow"
-      ]
+      "trust": "foundry"
     }
   },
   "components": {
@@ -51,6 +48,7 @@
       },
       "license": "MIT",
       "members": [
+        "arrow",
         "placement"
       ],
       "pin": {
@@ -59,11 +57,13 @@
         "version": "0.12.0"
       },
       "propMap": {
+        "arrow": "./components#Popover.arrow",
         "placement": "./components#Popover.placement"
       },
       "props": [
         "anchorRef",
         "aria-label",
+        "arrow",
         "children",
         "className",
         "offset",

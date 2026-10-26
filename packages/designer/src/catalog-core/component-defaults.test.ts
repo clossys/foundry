@@ -60,15 +60,15 @@ const ledger = (rows: ReturnType<typeof planComponentDefaults>["rows"]) => Objec
 const EXPECTED_DEFAULTS = {
   avatar: "shadcn@aria", badge: "foundry", banner: "foundry", breadcrumbs: "shadcn@aria", button: "foundry", card: "foundry",
   "chart-area": "foundry", "chart-bar": "foundry", "chart-heatmap": "foundry", "chart-line": "foundry", "chart-range": "foundry",
-  "chart-scatter": "foundry", "chart-status-strip": "foundry", "chart-waterfall": "foundry", checkbox: "foundry", "combo-box": "foundry",
-  "date-field": "foundry", disclosure: "foundry", field: "foundry", "grid-list": "foundry", "file-trigger": "foundry", form: "foundry", icon: "foundry", keyboard: "shadcn@aria", link: "foundry", logo: "foundry",
-  meter: "foundry", "native-action": "foundry", "navigation-tree": "foundry", "progress-bar": "foundry", "radio-group": "foundry",
+  "chart-scatter": "foundry", "chart-sparkline": "foundry", "chart-status-strip": "foundry", "chart-waterfall": "foundry", checkbox: "foundry", "combo-box": "foundry",
+  "date-field": "foundry", dialog: "foundry", disclosure: "foundry", field: "foundry", "grid-list": "foundry", "file-trigger": "foundry", form: "foundry", icon: "foundry", keyboard: "shadcn@aria", link: "foundry", logo: "foundry",
+  menu: "foundry", meter: "foundry", "native-action": "foundry", "navigation-tree": "foundry", popover: "foundry", "progress-bar": "foundry", "radio-group": "foundry",
   "resize-handle": "foundry", "search-field": "foundry", select: "foundry", "semantic-content": "foundry", separator: "shadcn@aria", skeleton: "foundry",
-  spinner: "foundry", "status-mark": "foundry", switch: "foundry", tabs: "foundry", "text-field": "foundry", toast: "foundry", toolbar: "rac-starter",
+  spinner: "foundry", "status-mark": "foundry", switch: "foundry", table: "foundry", tabs: "foundry", "text-field": "foundry", toast: "foundry", toolbar: "rac-starter",
   tooltip: "shadcn@aria",
 };
-const NOT_CHOSEN = ["calendar", "chart-sparkline", "color-picker", "date-picker", "dialog", "menu",
-  "number-field", "popover", "slider", "table", "tag-group", "toggle-button", "toggle-group", "tree"];
+const NOT_CHOSEN = ["calendar", "color-picker", "date-picker",
+  "number-field", "slider", "tag-group", "toggle-button", "toggle-group", "tree"];
 const reasons = (plan: ReturnType<typeof planComponentDefaults>, leaf: string) => plan.rows.find(row => row.slot === `components.${leaf}`)!.reasons.join(" || ");
 
 describe("component default fills", () => {
@@ -90,10 +90,10 @@ describe("component default fills", () => {
       expect(row.source ?? row.rule, leaf).toBeUndefined();
       expect(row.reasons.length, leaf).toBeGreaterThan(0);
     }
-    expect(reasons(plan, "table")).toContain("foundry: K1 Required member resize-columns is not mapped");
-    expect(reasons(plan, "table")).toContain("owner pick foundry is not eligible");
+    // Column resizing and Checkbox.Group are both mapped, so the owner-picked Foundry table now resolves.
+    expect(plan.rows.find(row => row.slot === "components.table")).toMatchObject({ status: "default", basis: "owner-pick", source: "foundry", fill: "foundry/components.table", reasons: [] });
     expect(reasons(plan, "slider")).toBe("controls coherence: one source per group, led by foundry; shadcn@aria would mix sources");
-    expect(reasons(plan, "date-picker")).toContain("compose:date-picker@1: inputs not chosen components.calendar,components.popover");
+    expect(reasons(plan, "date-picker")).toContain("compose:date-picker@1: inputs not chosen components.calendar");
     expect(reasons(plan, "tree")).toBe("foundry: blocked K5 || rac-starter: blocked K4");
   });
   it("emits decisions the existing apply path adopts, and the adopted graph resolves as a closed executable set", () => {
@@ -144,10 +144,20 @@ describe("component default fills", () => {
   it("the fallback never bypasses the checker: a listed leaf whose Foundry candidate fails keeps the exact finding", () => {
     const { input } = setup();
     const plan = planComponentDefaults(input);
-    expect(reasons(plan, "table")).toContain("foundry: K1 Required member resize-columns is not mapped");
     expect(reasons(plan, "tree")).toContain("foundry: blocked K5");
     expect(reasons(plan, "calendar")).toContain("foundry: no implementation candidate");
     expect(reasons(plan, "toggle-button")).toContain("foundry: no implementation candidate");
+  });
+  it("fills the Foundry candidates whose members are now implemented, under the unchanged checker", () => {
+    const { input } = setup();
+    const plan = planComponentDefaults(input);
+    const row = (leaf: string) => plan.rows.find(candidate => candidate.slot === `components.${leaf}`)!;
+    expect(row("popover")).toMatchObject({ status: "default", source: "foundry", fill: "foundry/components.popover" });
+    expect(row("dialog")).toMatchObject({ status: "default", source: "foundry", fill: "foundry/components.dialog" });
+    expect(reasons(plan, "table")).not.toContain("K1");
+    expect(row("menu")).toMatchObject({ status: "default", source: "foundry", fill: "foundry/components.menu" });
+    expect(row("chart-sparkline")).toMatchObject({ status: "default", source: "foundry", fill: "foundry/components.chart-sparkline" });
+    expect(reasons(plan, "date-picker")).toMatch(/compose:date-picker@1: inputs not chosen components.calendar$/);
   });
   it("the fallback is scoped to its listed leaves", () => {
     const { input } = setup({ fallback: { source: "foundry", slots: FALLBACK.slots.filter(slot => slot !== "components.card") } });
@@ -173,7 +183,7 @@ describe("component default fills", () => {
     const { input } = setup({ choices: { "components.table": "foundry", "components.avatar": "foundry", "components.card": "foundry" } });
     const plan = planComponentDefaults(input);
     expect(plan.rows.find(row => row.slot === "components.card")).toMatchObject({ status: "chosen", basis: "choose", source: "foundry" });
-    expect(plan.rows.find(row => row.slot === "components.table")).toMatchObject({ status: "not-chosen" });
+    expect(plan.rows.find(row => row.slot === "components.table")).toMatchObject({ status: "chosen", basis: "choose", source: "foundry" });
     expect(reasons(plan, "table")).not.toContain("owner pick");
     expect(plan.findings).toEqual([]);
   });

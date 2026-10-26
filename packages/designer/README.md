@@ -6796,9 +6796,9 @@ their labels; these charts do not resolve label collisions automatically.
 
 ### `Sparkline`
 
-A bare inline trend — no axes, no grid, no legend, and (the one exception
-in this layer) no hover layer, meant to sit inline in running text or a
-stat tile at a size too small for a crosshair to make sense:
+A compact inline trend. By default it is bare — no axes, no grid, no
+legend and no hover layer — so it can sit inline in running text or a stat
+tile:
 
 ```tsx
 import { Sparkline } from "@clossys/designer/charts";
@@ -6809,6 +6809,13 @@ import { Sparkline } from "@clossys/designer/charts";
 Still ships its table-view fallback — that requirement has no exception —
 collapsed behind the same `<details>` pattern `ChartFrame` uses, so it
 costs no layout space until opened.
+
+Three optional parts, all off by default, add chrome when a sparkline
+stands alone: `axes` draws the zero baseline and labels the plotted range
+with `valueFormat`; `legend="…"` shows a one-item series legend; `tooltip`
+makes each point inspectable on hover and keyboard focus through the
+shared `ChartFrame.Tooltip` part (one tab stop per point, so leave it off
+for sparklines repeated in running text).
 
 ### The categorical palette, and what happens past 8 series
 
@@ -7604,7 +7611,7 @@ not a grab-bag).
 | `StatusStrip` | component | Proportional patterned status intervals with explicit unknown gaps and a native table. |
 | `StatusStripProps` | type | Required `title`, `segments`; optional `domain: readonly [number \| Date, number \| Date]`, `intervalFormat`, and shared chart inspection/selection, loading, description, dimensions, table and style props. |
 | `StatusStripSegment` | type | `{ from: number \| Date, to: number \| Date, status: "ok" \| "warn" \| "error" \| "unknown" }`. |
-| `Sparkline` | component | A bare inline trend — no axes/grid/legend/hover, still ships a table-view fallback. |
+| `Sparkline` | component | A compact inline trend — bare by default, with opt-in axes, legend and tooltip; always ships a table-view fallback. |
 | `SparklineProps` | type | Props for `Sparkline`: `values`, `title`, `width`, `height`, `color`, `valueFormat`, `tableFallbackLabel` (default `"View as table"`), `valueColumnLabel` (default `"Value"`), `className`, `style`. |
 | `getThemeInitScript` | function | Returns a self-contained head script (string) that stamps `data-theme` before first paint. Takes `{ storageKey?, defaultTheme? }`. |
 | `ThemeInitScriptOptions` | type | Options for `getThemeInitScript`: `storageKey?` (default `"ui-theme"`) and `defaultTheme?` (default `"system"`). |

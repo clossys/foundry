@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -141,6 +141,51 @@ describe("Dialog", () => {
     // dismissal is.
     await user.keyboard("{Escape}");
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("a default dialog closes on a scrim press (control for the alert-dialog case below)", async () => {
+    const user = userEvent.setup();
+    render(<BasicDialog />);
+    await user.click(screen.getByRole("button", { name: "Open settings" }));
+    const dialog = await screen.findByRole("dialog");
+    const scrim = dialog.parentElement!.parentElement!;
+    fireEvent.mouseDown(scrim); fireEvent.mouseUp(scrim);
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+  });
+
+  it("role alertdialog exposes the alert-dialog role, labelled by its heading, with focus inside", async () => {
+    const user = userEvent.setup();
+    render(
+      <Dialog trigger={<AriaButton>Delete project</AriaButton>} role="alertdialog">
+        <Dialog.Heading>Delete project?</Dialog.Heading>
+        <p>This cannot be undone.</p>
+        <AriaButton>Cancel</AriaButton>
+      </Dialog>,
+    );
+    await user.click(screen.getByRole("button", { name: "Delete project" }));
+    const alert = await screen.findByRole("alertdialog", { name: "Delete project?" });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    await waitFor(() => expect(alert.contains(document.activeElement)).toBe(true));
+  });
+
+  it("an alert dialog ignores a scrim press by default, yet still closes on Escape and restores focus", async () => {
+    const user = userEvent.setup();
+    render(
+      <Dialog trigger={<AriaButton>Discard draft</AriaButton>} role="alertdialog">
+        <Dialog.Heading>Discard draft?</Dialog.Heading>
+        <AriaButton>Keep editing</AriaButton>
+      </Dialog>,
+    );
+    const trigger = screen.getByRole("button", { name: "Discard draft" });
+    await user.click(trigger);
+    const alert = await screen.findByRole("alertdialog");
+    const scrim = alert.parentElement!.parentElement!;
+    fireEvent.mouseDown(scrim); fireEvent.mouseUp(scrim);
+    await new Promise(resolve => setTimeout(resolve, 50));
+    expect(screen.getByRole("alertdialog")).toBeInTheDocument();
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
+    await waitFor(() => expect(trigger).toHaveFocus());
   });
 
   it("supports a function child with an imperative close()", async () => {
