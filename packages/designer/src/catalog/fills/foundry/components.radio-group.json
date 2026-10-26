@@ -81,6 +81,7 @@
           "tokens.border-color",
           "tokens.border-width",
           "tokens.caption-size",
+          "tokens.control-size",
           "tokens.focus-color",
           "tokens.focus-outline",
           "tokens.focus-shadow",

@@ -1521,7 +1521,8 @@
           "tokens.action-color",
           "tokens.border-width",
           "tokens.focus-color",
-          "tokens.focus-outline"
+          "tokens.focus-outline",
+          "tokens.control-size"
         ],
         "assets": []
       },

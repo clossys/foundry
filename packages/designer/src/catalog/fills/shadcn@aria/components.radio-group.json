@@ -72,7 +72,7 @@
         },
         {
           "path": "components/radio-group/radio-group.tsx",
-          "sha256": "c1cfcf84274efe483d55463861c8be5dbf70977d931e342f86a0c0734c968784"
+          "sha256": "b3af964e2451a836f42224e0da7c2d4ae92101fad0a2953fca58597f93898703"
         },
         {
           "path": "notices/THIRD-PARTY.md",
@@ -115,6 +115,7 @@
           "tokens.action-color.default",
           "tokens.border-color.strong",
           "tokens.border-width.hairline",
+          "tokens.control-size.mark",
           "tokens.focus-color.default",
           "tokens.focus-outline.offset",
           "tokens.focus-outline.width",

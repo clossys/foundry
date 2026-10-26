@@ -24,6 +24,14 @@ const supported: Record<string, string[]> = {
 const counts: Record<string, number> = { checkbox: 1, "radio-group": 0, switch: 6, slider: 4, "toggle-button": 11, "toggle-group": 8 };
 
 describe("six pinned control evidence surfaces", () => {
+  it("binds the radio item's 16px box to the control mark and keeps its focus outline, inside the radio contract", () => {
+    const result = importShadcnAriaComponents(input());
+    const fill = result.fills.find(doc => doc.components["radio-group"])!.components["radio-group"]!;
+    expect(fill.reads.tokens).toEqual(expect.arrayContaining(["tokens.control-size.mark", "tokens.focus-outline.width", "tokens.focus-color.default"]));
+    const source = result.rewrites["radio-group"]!.files.find(file => file.path === "components/radio-group/radio-group.tsx")!.content;
+    expect(source).toContain("size-(--ui-control-mark,calc(var(--spacing)*4))");
+    expect(slots.find(slot => slot.id === "components.radio-group")!.contract.allowedReads.tokens).toContain("tokens.control-size");
+  });
   it("partitions every closed contract into source-backed members and explicit gaps", () => {
     const result = importShadcnAriaComponents(input());
     for (const [leaf, members] of Object.entries(supported)) {
