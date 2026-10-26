@@ -18,6 +18,7 @@
     "tokens.typeface"
   ],
   "button": [
+    "tokens.focus-color",
     "tokens.focus-outline",
     "tokens.state-opacity"
   ],
@@ -192,6 +193,7 @@
   "link": [
     "tokens.accent-color",
     "tokens.body-size",
+    "tokens.focus-color",
     "tokens.focus-outline",
     "tokens.state-opacity",
     "tokens.text-color",
@@ -320,6 +322,15 @@
     "tokens.radius",
     "tokens.surface-color"
   ],
+  "slider": [
+    "tokens.action-color",
+    "tokens.body-size",
+    "tokens.radius",
+    "tokens.spacing",
+    "tokens.surface-color",
+    "tokens.text-color",
+    "tokens.typeface"
+  ],
   "spinner": [
     "tokens.text-color"
   ],
@@ -365,6 +376,8 @@
   "tag-group": [
     "tokens.accent-color",
     "tokens.caption-size",
+    "tokens.focus-color",
+    "tokens.focus-outline",
     "tokens.focus-shadow",
     "tokens.radius",
     "tokens.spacing",
@@ -401,6 +414,7 @@
     "tokens.state-opacity",
     "tokens.text-color"
   ],
+  "toggle-group": [],
   "toolbar": [
     "tokens.border-color",
     "tokens.spacing"
