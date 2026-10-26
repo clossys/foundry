@@ -34,6 +34,10 @@ export interface StudioLabels {
   scope: { explanation: string; label: string; member: string; slot: string; node: string; memberPicker: string; nodePicker: string };
   /** One-line status of a card. An empty string renders no board check line. */
   checkSummary: (errors: number, notices: number) => string;
+  /** Neutral count of statically eligible fills awaiting runtime qualification (never counted as errors). Omitted: "N runtime pending". */
+  runtimePending?: (count: number) => string;
+  /** Plain words for an engine exemption notice (e.g. kind "logotype"). Omitted: "<Kind> exemption: <reason>". */
+  assetExemption?: (kind: string, reason: string) => string;
   /** Plain "n of m chosen" board summary line. Omitted: no chosen line. */
   chosenSummary?: (chosen: number, total: number) => string;
   /** Human name for a leaf id, shown above the id (in the mono face) in a board row. Omitted or undefined: the id alone. */
