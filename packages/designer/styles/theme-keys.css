@@ -1237,13 +1237,16 @@
 @utility library-slide-left { --library-x: calc(-1 * var(--ui-motion-shift, 4px)); }
 @utility library-slide-right { --library-x: var(--ui-motion-shift, 4px); }
 
-/* Frames own region motion. Content stays mounted through inline-size transitions. */
-.frame-docked-navigation, .frame-docked-panel {
+/* Frames own region motion. Content stays mounted through open and closed states.
+   Navigation never animates a layout property: it snaps between its media-ruled widths,
+   so neither hydration nor a collapse reflows the stage over several frames. */
+.frame-docked-navigation[data-open="false"] { visibility: hidden; }
+.frame-docked-panel {
   transition-property: inline-size, visibility;
   transition-duration: var(--ui-duration-default), 0s;
   transition-timing-function: var(--ease-enter);
 }
-.frame-docked-navigation[data-open="false"], .frame-docked-panel[data-open="false"] {
+.frame-docked-panel[data-open="false"] {
   visibility: hidden;
   transition-timing-function: var(--ease-exit);
   transition-delay: 0s, var(--ui-duration-default);
@@ -1255,6 +1258,6 @@
   animation: sheet-slide var(--ui-duration-default) var(--ease-enter) both;
 }
 @media (prefers-reduced-motion: reduce) {
-  .frame-docked-navigation, .frame-docked-panel { transition: none; }
+  .frame-docked-panel { transition: none; }
   [data-drawer-placement="start"], [data-drawer-placement="end"] { animation: none; }
 }

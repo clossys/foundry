@@ -55,6 +55,16 @@ describe("AppFrame first paint (cross-08)", () => {
     expect(css).toMatch(narrowRule);
     expect(css).toMatch(wideRule);
   });
+  it("never animates a layout property on the docked navigation, in source or in the compiled theme keys", async () => {
+    const source = readFileSync(resolve(packageRoot, "styles/theme-keys.css"), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+    const rules = [...source.matchAll(/([^{}]*)\{([^{}]*)\}/g)].filter(([, selector]) => selector!.includes(".frame-docked-navigation"));
+    expect(rules.length).toBeGreaterThan(0);
+    for (const [, selector, body] of rules) expect(body, selector).not.toMatch(/transition|animation/);
+    expect(rules.map(([, , body]) => body!.trim())).toContain("visibility: hidden;");
+    const compiled = await utilities([]);
+    expect(compiled).toMatch(/\.frame-docked-navigation\[data-open="false"\] \{\s*visibility: hidden;\s*\}/);
+    expect(compiled).not.toMatch(/\.frame-docked-navigation[^{]*\{[^}]*transition/);
+  });
 });
 
 describe("AppFrame route notices at short heights (cross-18)", () => {
