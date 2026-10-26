@@ -95,25 +95,6 @@ function refusalOf(fill: Persisted): string | undefined {
  * below until it is removed, and a refusal not listed here fails the main check.
  */
 const KNOWN_REFUSED: Readonly<Record<string, string>> = {
-  // shadcn@aria: import forms the emitter's source scanner does not accept, or a named import it parses as empty.
-  "shadcn@aria/components.avatar": "unsupported import syntax in components/avatar/avatar.tsx",
-  "shadcn@aria/components.banner": "unsupported import syntax in components/banner/alert.tsx",
-  "shadcn@aria/components.breadcrumbs": "unsupported import syntax in components/breadcrumbs/breadcrumb.tsx",
-  "shadcn@aria/components.button": "unsupported import syntax in components/button/button.tsx",
-  "shadcn@aria/components.card": "unsupported import syntax in components/card/card.tsx",
-  "shadcn@aria/components.disclosure": "unsupported import syntax in components/disclosure/accordion.tsx",
-  "shadcn@aria/components.progress-bar": "unsupported import syntax in components/progress-bar/progress.tsx",
-  "shadcn@aria/components.radio-group": "unavailable named import  from react-aria-components",
-  "shadcn@aria/components.slider": "unavailable named import  from react-aria-components",
-  "shadcn@aria/components.switch": "unavailable named import  from react-aria-components",
-  "shadcn@aria/components.table": "unsupported import syntax in components/table/table.tsx",
-  "shadcn@aria/components.tabs": "unsupported import syntax in components/tabs/tabs.tsx",
-  "shadcn@aria/components.toggle-button": "unavailable named import  from react-aria-components",
-  "shadcn@aria/components.toggle-group": "unsupported import syntax in components/toggle-group/toggle-group.tsx",
-  "shadcn@aria/components.tooltip": "unsupported import syntax in components/tooltip/tooltip.tsx",
-  // shadcn@aria popover and the date-picker composition: a named import the emitter parses as empty.
-  "shadcn@aria/components.popover": "unavailable named import  from react-aria-components",
-  "compose:date-picker@1": "unavailable named import  from react-aria-components",
   // rac-starter: import forms the emitter's source scanner does not accept.
   "rac-starter/components.form": "unsupported import syntax in components/form/Form.tsx",
   "rac-starter/components.toolbar": "unsupported import syntax in components/toolbar/Toolbar.tsx",
