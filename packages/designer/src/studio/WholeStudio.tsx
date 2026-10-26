@@ -100,7 +100,7 @@ function ContractCanvas({ className, candidateWorkflow }: StudioCanvasProps) {
       onSurfaceElement={canvas.onSurfaceElement} onWorldElement={canvas.onWorldElement} actionsRef={canvas.actions}
       worldClassName="flex h-max w-max flex-col gap-3xl p-3xl" className="absolute inset-0 rounded-none border-0">
       <CanvasLod zoom={canvas.pose.zoom}><ContractBoards narrow={canvas.overlayLayout === "narrow"} boards={boards} layer={s.layer} query={query} editing={editing} setEditing={setEditing} open={open}
-        candidates={candidates} libraries={libraries} profile={profile} previewLeaf={s.snapshot?.preview} runtime={s.snapshot?.runtime}
+        candidates={candidates} libraries={libraries} profile={profile} previewLeaf={s.snapshot?.preview} runtime={s.snapshot?.runtime} planned={s.snapshot?.plannedPreviews}
         slots={s.contracts.slots} consumer={s.input?.library.source.id} t={t} candidateWorkflow={candidateWorkflow}
         setLeaf={s.setLeaf} edit={edit} canEdit={Boolean(s.changes)} /></CanvasLod>
     </CanvasSurface>
@@ -147,6 +147,7 @@ interface ContractBoardsProps {
   profile: CompositeResolved | undefined;
   previewLeaf: CompositeStudioSnapshot["preview"];
   runtime: CompositeStudioSnapshot["runtime"];
+  planned: CompositeStudioSnapshot["plannedPreviews"];
   slots: BuildCatalogData["slots"];
   consumer: string | undefined;
   t: CompositeStudioLabels;
@@ -158,7 +159,7 @@ interface ContractBoardsProps {
 }
 // Session revision notifications also reach this canvas through portal blur.
 // Only actual board inputs should prepare its tables, previews and prompts again.
-const ContractBoards = memo(function ContractBoards({ narrow, boards, layer, query, editing, setEditing, candidates, libraries, profile, previewLeaf, runtime, slots, consumer, t, candidateWorkflow, setLeaf, edit, canEdit, open }: ContractBoardsProps) {
+const ContractBoards = memo(function ContractBoards({ narrow, boards, layer, query, editing, setEditing, candidates, libraries, profile, previewLeaf, runtime, planned, slots, consumer, t, candidateWorkflow, setLeaf, edit, canEdit, open }: ContractBoardsProps) {
   const headingBase = useId();
   return <>{boards.map(domain => <CanvasDomain key={domain.id} id={domain.id} label={domain.label} narrow={narrow}>
         {domain.boards.map(board => {
@@ -194,7 +195,11 @@ const ContractBoards = memo(function ContractBoards({ narrow, boards, layer, que
               const runtimeSelected = Object.keys(profile?.surfaces?.fills ?? {}).includes(leaf.id) || runtime?.manifest.fills.some(fill => fill.leaf === leaf.id);
               let preview: ReactNode;
               if (selected || runtimeSelected) try { preview = profile ? previewLeaf?.(leaf.id, profile) : undefined; } catch { /* Findings remain in the inspector; preview never fabricates a sample. */ }
-              return <Table.Row key={leaf.id} id={leaf.id} data-studio-row={leaf.id}><Table.Cell><LeafLabel id={leaf.id} name={t.leafName?.(leaf.id)} /></Table.Cell><Table.Cell>{selected || runtimeSelected ? <CandidateCell labels={t} preview={preview} /> : <LeafCell status={t.board.notChosen} actions={<><Button variant="ghost" size="sm" onPress={() => setBoardEditing(true)}>{t.board.choose}</Button><CandidatePromptDialog trigger={<Button variant="ghost" size="sm">{t.board.askAgent}</Button>} data={data(leaf.id)} labels={t} workflow={candidateWorkflow} /></>} />}</Table.Cell></Table.Row>;
+              // A planned default is previewed, never adopted: it stays out of the chosen count and keeps the choose actions.
+              const plannedPreview = selected || runtimeSelected ? undefined : planned?.previews[leaf.id];
+              let plannedNode: ReactNode;
+              if (plannedPreview) try { plannedNode = plannedPreview.render(); } catch { /* An unrenderable sample shows the plain not-chosen cell. */ }
+              return <Table.Row key={leaf.id} id={leaf.id} data-studio-row={leaf.id}><Table.Cell><LeafLabel id={leaf.id} name={t.leafName?.(leaf.id)} /></Table.Cell><Table.Cell>{selected || runtimeSelected ? <CandidateCell labels={t} preview={preview} /> : <LeafCell data-studio-planned={plannedNode != null ? plannedPreview!.fill : undefined} preview={plannedNode} status={plannedNode != null ? t.plannedPreview ?? "Planned default, not adopted" : t.board.notChosen} actions={<><Button variant="ghost" size="sm" onPress={() => setBoardEditing(true)}>{t.board.choose}</Button><CandidatePromptDialog trigger={<Button variant="ghost" size="sm">{t.board.askAgent}</Button>} data={data(leaf.id)} labels={t} workflow={candidateWorkflow} /></>} />}</Table.Cell></Table.Row>;
             })}</Table.Body></Table> : layer === "components" ? <Comparison arrangement="choices" aria-label={t.matrix.label} columns={[...columns.map(id => ({ id, label: id })), { id: "studio-custom-actions", label: t.board.custom }]} onFocusCell={id => setLeaf(id)}
               onChange={(id, source) => { const candidate = candidates.find(candidate => candidate.meta.slot === id && candidate.meta.source === source); if (candidate?.result?.available && !candidate.result.findings.some(f => f.severity === "error") && canEdit) edit(id, [candidate.result.change]); }}
               rows={leaves.map(leaf => ({ id: leaf.id, label: leaf.id, name: <>{t.useGroup} {leaf.id}</>, selected: profile?.components.components[leaf.id]?.descriptor.source ?? null,

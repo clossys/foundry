@@ -42,6 +42,8 @@ export interface StudioLabels {
   chosenSummary?: (chosen: number, total: number) => string;
   /** Human name for a leaf id, shown above the id (in the mono face) in a board row. Omitted or undefined: the id alone. */
   leafName?: (id: string) => string | undefined;
+  /** Status beside a planned (not adopted) Sections/Frames preview. Omitted: "Planned default, not adopted". */
+  plannedPreview?: string;
   previewUnavailable: string;
   visualPreviewUnsupported: string;
   referenceOnly: string;
@@ -108,6 +110,8 @@ export interface CompositeStudioSnapshot {
   runtime?: import("../catalog-core/index.js").ConsumerRuntimePorts<ReactNode>;
   /** Host preview is separate from conformance evidence. Called only for the inspected leaf. */
   preview?: (leaf: string, profile: import("../catalog-core/index.js").CompositeResolved) => ReactNode | undefined;
+  /** Preview-only renderings of planned Sections/Frames defaults (planSurfacePreviews). Never adopts, chooses or counts a leaf. */
+  plannedPreviews?: import("./planned-surface-previews.js").PlannedSurfacePreviews;
 }
 export interface CompositeStudioAdapter {
   kind: "composite";
