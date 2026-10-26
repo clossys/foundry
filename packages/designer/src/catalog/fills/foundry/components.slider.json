@@ -87,6 +87,7 @@
           "tokens.accent-color",
           "tokens.action-color",
           "tokens.border-width",
+          "tokens.control-size",
           "tokens.duration",
           "tokens.easing",
           "tokens.focus-color",

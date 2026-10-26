@@ -73,7 +73,7 @@
         },
         {
           "path": "components/slider/slider.tsx",
-          "sha256": "b3b9c918d26822753b8cb3b60da36c0f2dee7fb1a167c46e3be6a16fc22eaecc"
+          "sha256": "81577be3bcefd049ce775449be7328ae2891c6fb9ba614809407193bbdb17dbc"
         },
         {
           "path": "notices/THIRD-PARTY.md",
@@ -117,13 +117,13 @@
           "tokens.action-color.default",
           "tokens.border-width.hairline",
           "tokens.border-width.rule",
+          "tokens.control-size.mark",
           "tokens.duration.default",
           "tokens.easing.default",
           "tokens.focus-color.default",
           "tokens.focus-outline.offset",
           "tokens.focus-outline.width",
           "tokens.spacing.6xl",
-          "tokens.spacing.md",
           "tokens.spacing.sm",
           "tokens.spacing.xs",
           "tokens.state-opacity.disabled",

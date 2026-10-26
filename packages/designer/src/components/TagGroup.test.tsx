@@ -51,4 +51,10 @@ describe("TagGroup craft (vf30, K5 craft)", () => {
     expect(remove.style.outline).toBe(outline);
     expect(remove.style.outlineOffset).toBe(offset);
   });
+  it("sets its group label in the same body-s field label type as the other fields", () => {
+    render(<TagGroup label="Filters"><TagGroup.List><TagGroup.Item id="one" textValue="Design">Design</TagGroup.Item></TagGroup.List></TagGroup>);
+    const label = screen.getByText("Filters");
+    expect(label.className.split(/\s+/)).toEqual(expect.arrayContaining(["text-body-s", "font-body"]));
+    expect(label.className).not.toMatch(/\btext-caption\b/);
+  });
 });

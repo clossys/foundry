@@ -9,7 +9,7 @@ export interface TagGroupProps extends AriaTagGroupProps { label: ReactNode; des
 export interface TagGroupItemProps extends Omit<TagProps, "children"> { children: ReactNode; textValue: string; removeLabel?: string }
 const Root = forwardRef<HTMLDivElement, TagGroupProps>(function TagGroup({ label, description, children, className, ...props }, ref) {
   return <AriaTagGroup {...props} ref={ref} className={cx("flex flex-col gap-sm", className)}>
-    <Label className="text-caption text-ink-secondary">{label}</Label>{children}
+    <Label className="text-body-s text-ink-secondary font-body">{label}</Label>{children}
     {description && <Text slot="description" className="text-caption text-ink-muted">{description}</Text>}
   </AriaTagGroup>;
 });

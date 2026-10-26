@@ -886,13 +886,14 @@ function rewriteSource(input: RewriteInput): RewriteResult {
       const control = /^cn-button-size-(default|sm|lg|icon|icon-sm|icon-lg)$/.test(base)
         || (["toggle-button", "toggle-group"].includes(input.leaf) && /^cn-toggle-size-(default|sm|lg)$/.test(base))
         || (fieldControl && ["cn-select-trigger", "cn-input-group"].includes(base));
-      // The radio item's own box is the control mark (16px), the same role Foundry's mark reads.
-      const mark = base === "cn-radio-group-item";
+      // The radio item's own box (16px) and the slider thumb (12px) are the control mark, the same role
+      // Foundry's radio and slider thumb read; the slider track keeps its own spacing reads.
+      const mark = ({ "cn-radio-group-item": "size-4", "cn-slider-thumb": "size-3" } as Record<string, string>)[base];
       const expanded = rule.split(/\s+/).map(term => {
         const [variants, atom] = variantParts(term);
-        if (mark && atom === "size-4") {
+        if (mark && atom === mark) {
           tokens.add("tokens.control-size.mark");
-          return `${prefix}${variants}size-${styleRead(adapter.controlProperties.mark!, "size-4")}`;
+          return `${prefix}${variants}size-${styleRead(adapter.controlProperties.mark!, mark)}`;
         }
         const size = /^(h|size)-(7|8|9)$/.exec(atom);
         if (control && size) {

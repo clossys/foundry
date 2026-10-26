@@ -1798,7 +1798,8 @@
           "tokens.focus-color",
           "tokens.focus-outline",
           "tokens.spacing",
-          "tokens.state-opacity"
+          "tokens.state-opacity",
+          "tokens.control-size"
         ],
         "assets": []
       },
@@ -2011,6 +2012,7 @@
       "allowedReads": {
         "tokens": [
           "tokens.accent-color",
+          "tokens.body-size",
           "tokens.caption-size",
           "tokens.control-size",
           "tokens.focus-color",
@@ -2021,7 +2023,8 @@
           "tokens.spacing",
           "tokens.state-opacity",
           "tokens.surface-color",
-          "tokens.text-color"
+          "tokens.text-color",
+          "tokens.typeface"
         ],
         "assets": [
           "assets.icon-close"
