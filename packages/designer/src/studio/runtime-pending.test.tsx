@@ -26,6 +26,16 @@ it("classifies exactly the checker's unobserved-fill codes as runtime pending", 
   expect(others.some(isRuntimePending)).toBe(false);
 });
 
+it("classifies the checker's unobserved part and controls-parity notices as runtime pending, and their errors as errors", () => {
+  const part = { code: "K9", severity: "notice", message: `Registry dependency input-group: ${OBSERVATIONS_UNAVAILABLE}` };
+  const parity = { code: "K11", severity: "notice", message: `Mixed controls geometry parity: ${OBSERVATIONS_UNAVAILABLE}` };
+  const unmaterialized = { code: "K9", severity: "error", message: "Registry dependency dialog is neither materialized nor rebound" };
+  const labels = { code: "K11", severity: "error", message: "Mixed controls bind labels to different type leaves" };
+  expect([part, parity].every(isRuntimePending)).toBe(true);
+  expect([unmaterialized, labels].some(isRuntimePending)).toBe(false);
+  expect(checkCounts([part, parity, unmaterialized, labels])).toEqual({ errors: 2, notices: 0, pending: 2 });
+});
+
 it("keeps a pending code loud on a fill whose observations were supplied, and other codes loud", () => {
   const supplied = { code: "K5", severity: "error", message: "Accessibility evidence is stale for source or consumer tokens" };
   const memberPrefixed = { code: "K6", severity: "notice", message: `label: ${OBSERVATIONS_UNAVAILABLE}` };

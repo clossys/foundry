@@ -7,7 +7,8 @@ import { isObservationPending } from "../catalog-core/check-components.js";
  */
 export const RUNTIME_PENDING_CODES = ["K2", "K4", "K5", "K6", "K7", "K10", "K12"] as const;
 
-const PENDING = new Set<string>(RUNTIME_PENDING_CODES);
+/** K9 (declared private part) and K11 (controls parity) are pending only with a reason-prefixed notice on an unobserved fill. */
+const PENDING = new Set<string>([...RUNTIME_PENDING_CODES, "K9", "K11"]);
 
 /** Minimal finding shape shared by component, value and composite checks. */
 export interface ClassifiedFinding { code: string; severity: string; message: string }

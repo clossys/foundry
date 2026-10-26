@@ -119,7 +119,21 @@ describe("component consumer checks K1-K12", () => {
       (p: Mutable<ComponentCheckInput>) => { p.observations["components.select"]!.measurements = []; },
       (p: Mutable<ComponentCheckInput>) => { const o = p.observations["components.select"]!; o.files[0]!.content += 'const bad = "var(--foreign)";'; o.sourceHash = componentSourceHash(o.files); },
     ];
-    for (const mutate of negatives) { const profile = mixed(); mutate(profile); code(profile, "K11"); }
+    for (const mutate of negatives) {
+      const profile = mixed(); mutate(profile); code(profile, "K11");
+      // Supplied observations that fail parity, and static read gaps, stay errors.
+      expect(checkComponentProfile(profile).findings.filter(f => f.code === "K11").every(f => f.severity === "error" && !isObservationPending(f))).toBe(true);
+    }
+    // An unobserved member whose static reads hold is runtime-pending, not refused.
+    const unobserved = mixed(); delete unobserved.observations["components.select"];
+    const pendingK11 = checkComponentProfile(unobserved).findings.filter(f => f.code === "K11");
+    expect(pendingK11).toEqual([{ code: "K11", rule: "K11", subject: "components.select", severity: "notice", message: `Mixed controls geometry parity: ${OBSERVATIONS_UNAVAILABLE}` }]);
+    expect(pendingK11.every(isObservationPending)).toBe(true);
+    // Static gaps on an unobserved member still refuse: control-size, focus and label type are read from the descriptor.
+    for (const mutate of negatives.slice(0, 3)) {
+      const profile = mixed(); delete profile.observations["components.select"]; mutate(profile);
+      expect(checkComponentProfile(profile).findings.some(f => f.code === "K11" && f.severity === "error")).toBe(true);
+    }
     const deduplicated = mixed(); deduplicated.fills[1]!.reads.tokens.push("tokens.body-size", "tokens.body-size.default");
     expect(checkComponentProfile(deduplicated).findings.filter(f => f.code === "K11")).toEqual([]);
   });
@@ -189,6 +203,30 @@ describe("component consumer checks K1-K12", () => {
     profile.fills[0]!.parts = [{ item: "input-group" }]; code(profile, "K9");
     profile.observations["components.button"]!.files.push({ path: "_parts/input-group/index.tsx", content: "export const Group = () => null;" });
     profile.observations["components.button"]!.sourceHash = componentSourceHash(profile.observations["components.button"]!.files); expect(checkComponentProfile(profile).ok).toBe(true);
+  });
+  it("K9 on a declared part of an unobserved fill is runtime-pending; an undeclared or unrebound dependency stays an error", () => {
+    const k9 = (profile: ComponentCheckInput) => checkComponentProfile(profile).findings.filter(finding => finding.code === "K9");
+    const pending = fixture(); pending.observations = {};
+    pending.fills[0]!.deps.push({ name: "input-group", version: "1.0.0", license: "MIT", registryItem: "input-group" });
+    pending.fills[0]!.parts = [{ item: "input-group" }];
+    expect(k9(pending)).toEqual([{ code: "K9", rule: "K9", subject: "components.button", severity: "notice", message: `Registry dependency input-group: ${OBSERVATIONS_UNAVAILABLE}` }]);
+    expect(k9(pending).every(isObservationPending)).toBe(true);
+    expect(checkComponentProfile(pending).ok).toBe(true);
+    // No declared part: no observation could ever materialize it, so it refuses unobserved too.
+    const undeclared = structuredClone(pending); undeclared.fills[0]!.parts = [];
+    expect(k9(undeclared)).toEqual([expect.objectContaining({ severity: "error", message: "Registry dependency input-group is neither materialized nor rebound" })]);
+    // A leaf dependency that is not composed is not rebound, observed or not.
+    const unbound = fixture(); unbound.observations = {};
+    unbound.fills[0]!.deps.push({ name: "dialog", version: "1.0.0", license: "MIT", registryItem: "dialog", slot: "components.dialog" });
+    expect(k9(unbound)).toEqual([expect.objectContaining({ severity: "error", message: "Registry dependency dialog is neither materialized nor rebound" })]);
+    expect(checkComponentProfile(unbound).ok).toBe(false);
+  });
+  it("K9 with supplied observations that omit the declared part stays an error, never pending", () => {
+    const profile = fixture(); profile.fills[0]!.deps.push({ name: "input-group", version: "1.0.0", license: "MIT", registryItem: "input-group" });
+    profile.fills[0]!.parts = [{ item: "input-group" }];
+    const findings = checkComponentProfile(profile).findings.filter(finding => finding.code === "K9");
+    expect(findings).toEqual([expect.objectContaining({ severity: "error", message: "Registry dependency input-group is neither materialized nor rebound" })]);
+    expect(findings.some(isObservationPending)).toBe(false);
   });
   it("K10 requires every declared mode, ground and state exactly once", () => {
     const profile = fixture(); profile.observations["components.button"]!.measurements.pop(); code(profile, "K10"); code(profile, "K5"); code(profile, "K6");
