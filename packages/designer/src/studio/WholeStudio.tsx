@@ -24,7 +24,7 @@ import { Tooltip } from "../components/Tooltip.js";
 import { PREVIEW_CHOICE_CLASS } from "./CandidateChoice.js";
 import { CandidateCell } from "./CandidateCell.js";
 import { ErrorReason } from "../blocks/library-board/ErrorReason.js";
-import { BoardHeader, LeafCell } from "../blocks/library-board/LeafCell.js";
+import { BOARD_SURFACE_CLASS, BoardHeader, LeafCell } from "../blocks/library-board/LeafCell.js";
 import { BoardChosenSummary, CompactLeafLine, defaultRuntimePendingLabel, LeafLabel, RuntimePendingLine, WrappingLabel } from "./board-summary.js";
 import { checkCounts, isRuntimePending } from "./runtime-pending.js";
 import { CandidatePromptDialog } from "./CandidatePromptDialog.js";
@@ -83,7 +83,8 @@ function ContractCanvas({ className, candidateWorkflow }: StudioCanvasProps) {
     const edited = boards.some(domain => domain.boards.some(board => editing.has(`${s.layer}/${board.id}`) && board.leaves.some(leaf => leaf.id === meta.slot)));
     // View mode uses the evaluated selection; alternative profiles belong to open edit boards.
     const result = edited ? previewComponent(s.input!, meta.slot, meta.source, s.changes!) : undefined;
-    if (edited && result?.available && !result.findings.some(finding => finding.severity === "error")) try { node = s.snapshot?.preview?.(meta.slot, result.profile); } catch (value) { error = value instanceof Error ? value.message : String(value); }
+    // A fill whose only errors await runtime qualification still renders its real component from the checked profile; selection stays gated below.
+    if (edited && result?.available && !result.findings.some(finding => finding.severity === "error" && !isRuntimePending(finding))) try { node = s.snapshot?.preview?.(meta.slot, result.profile); } catch (value) { error = value instanceof Error ? value.message : String(value); }
     return { meta, result, node, error };
   }) : [], [s.layer, s.input?.library, s.adapter.catalog, s.snapshot, s.changes, boards, editing]);
   // Session notifications leave placement and query unchanged; keep the explorer's immutable nodes.
@@ -174,7 +175,7 @@ const ContractBoards = memo(function ContractBoards({ narrow, boards, layer, que
           const counts = checkCounts(findings), summary = t.checkSummary(counts.errors, counts.notices);
           const chosen = (id: string) => profile?.components.components[id]?.descriptor.source ?? runtime?.manifest.fills.find(fill => fill.leaf === id)?.library;
           const chosenLine = (className: string) => t.chosenSummary ? <BoardChosenSummary className={className} label={t.chosenSummary} chosen={leaves.filter(leaf => chosen(leaf.id)).length} total={leaves.length} /> : null;
-          return <section key={board.id} tabIndex={-1} data-studio-board={boardKey} data-board-mode={isEditing ? "edit" : "view"} aria-labelledby={`${headingBase}${boardKey}`} className="h-max w-max shrink-0 rounded-surface border border-line-base bg-surface-base p-md">
+          return <section key={board.id} tabIndex={-1} data-studio-board={boardKey} data-board-mode={isEditing ? "edit" : "view"} aria-labelledby={`${headingBase}${boardKey}`} className={BOARD_SURFACE_CLASS}>
             <BoardHeader id={`${headingBase}${boardKey}`} title={board.label} editing={isEditing} labels={t.board} onEdit={() => setBoardEditing(true)} onDone={() => setBoardEditing(false)} />
             <CanvasLodLayers compact={<div data-studio-zoom-compact="" className="flex flex-col gap-md text-h0">
               {chosenLine("text-ink-primary")}
@@ -197,7 +198,7 @@ const ContractBoards = memo(function ContractBoards({ narrow, boards, layer, que
               return <Table.Row key={leaf.id} id={leaf.id} data-studio-row={leaf.id}><Table.Cell><LeafLabel id={leaf.id} name={t.leafName?.(leaf.id)} /></Table.Cell><Table.Cell>{selected || runtimeSelected ? <CandidateCell labels={t} preview={preview} /> : <LeafCell status={t.board.notChosen} actions={<><Button variant="ghost" size="sm" onPress={() => setBoardEditing(true)}>{t.board.choose}</Button><CandidatePromptDialog trigger={<Button variant="ghost" size="sm">{t.board.askAgent}</Button>} data={data(leaf.id)} labels={t} workflow={candidateWorkflow} /></>} />}</Table.Cell></Table.Row>;
             })}</Table.Body></Table> : layer === "components" ? <Comparison arrangement="choices" aria-label={t.matrix.label} columns={[...columns.map(id => ({ id, label: id })), { id: "studio-custom-actions", label: t.board.custom }]} onFocusCell={id => setLeaf(id)}
               onChange={(id, source) => { const candidate = candidates.find(candidate => candidate.meta.slot === id && candidate.meta.source === source); if (candidate?.result?.available && !candidate.result.findings.some(f => f.severity === "error") && canEdit) edit(id, [candidate.result.change]); }}
-              rows={leaves.map(leaf => ({ id: leaf.id, label: leaf.id, name: <>{t.useGroup} {leaf.id}</>, selected: profile?.components.components[leaf.id]?.descriptor.source ?? null,
+              rows={leaves.map(leaf => ({ id: leaf.id, label: <LeafLabel id={leaf.id} name={t.leafName?.(leaf.id)} />, name: <>{t.useGroup} {leaf.id}</>, selected: profile?.components.components[leaf.id]?.descriptor.source ?? null,
                 cells: { "studio-custom-actions": <div className="flex gap-sm">{prompt(leaf.id)}{profile?.components.components[leaf.id]?.descriptor.source === consumer ? prompt(leaf.id, true) : null}</div>, ...Object.fromEntries(columns.map(source => {
                   const candidate = candidates.find(candidate => candidate.meta.slot === leaf.id && candidate.meta.source === source);
                   if (!candidate?.result) return [source, null];
@@ -205,14 +206,14 @@ const ContractBoards = memo(function ContractBoards({ narrow, boards, layer, que
                   // Selection still requires a clean check; only the badge tone separates pending from real errors.
                   const blocked = counts.errors + counts.pending + (candidate.error || !candidate.result.available ? 1 : 0), errors = blocked - counts.pending, notices = counts.notices;
                   return [source, <div className="relative"><RadioGroup.Radio value={source} aria-label={t.useSource(source, leaf.id)} isDisabled={!candidate.result.available || blocked > 0} className={PREVIEW_CHOICE_CLASS}><CandidateCell labels={t} preview={candidate.node} /></RadioGroup.Radio>
-                    {blocked > 0 ? <Tooltip trigger={<Button variant="ghost" size="sm" aria-label={[errors > 0 ? t.checkSummary(errors, notices) : "", counts.pending ? (t.runtimePending ?? defaultRuntimePendingLabel)(counts.pending) : ""].filter(Boolean).join(", ")}><Badge data-studio-check-tone={errors > 0 ? "error" : "runtime-pending"} variant={errors > 0 ? "danger" : "neutral"}>{errors > 0 ? "!" : "…"}</Badge></Button>}>{errors > 0 ? t.checkSummary(errors, notices) : null}<RuntimePendingLine count={counts.pending} label={t.runtimePending} />{candidate.result.findings.map((finding, index) => <p key={index} data-studio-runtime-pending-finding={isRuntimePending(finding) ? "" : undefined}>{finding.code}: {finding.message}</p>)}{candidate.error ?? (!candidate.result.available ? candidate.result.error : null)}</Tooltip> : null}
+                    {blocked > 0 ? <Tooltip trigger={<Button variant="ghost" size="sm" aria-label={[errors > 0 ? t.checkSummary(errors, notices) : "", counts.pending ? (t.runtimePending ?? defaultRuntimePendingLabel)(counts.pending) : ""].filter(Boolean).join(", ")}><Badge data-studio-check-tone={errors > 0 ? "error" : "runtime-pending"} variant={errors > 0 ? "danger" : "neutral"}>{errors > 0 ? <><span aria-hidden>!</span> {t.checkSummary(errors, notices)}</> : (t.runtimePending ?? defaultRuntimePendingLabel)(counts.pending)}</Badge></Button>}>{errors > 0 ? t.checkSummary(errors, notices) : null}<RuntimePendingLine count={counts.pending} label={t.runtimePending} />{candidate.result.findings.map((finding, index) => <p key={index} data-studio-runtime-pending-finding={isRuntimePending(finding) ? "" : undefined}>{finding.code}: {finding.message}</p>)}{candidate.error ?? (!candidate.result.available ? candidate.result.error : null)}</Tooltip> : null}
                     {errors > 0 ? <ErrorReason findings={candidate.result.findings.filter(finding => !isRuntimePending(finding))} /> : null}
                   </div>];
                 })) }
               }))} /> : leaves.map(leaf => {
                 let node: ReactNode; let error: string | undefined;
                 try { node = profile ? previewLeaf?.(leaf.id, profile) : undefined; } catch (value) { error = value instanceof Error ? value.message : String(value); }
-                return <section key={leaf.id} data-studio-row={leaf.id} className="p-sm"><h4>{leaf.id}</h4><p>{t.whole.unassessed}</p>{node}{error ? <Tooltip trigger={<Button variant="ghost" aria-label={t.checkSummary(1, 0)}><Badge variant="danger">!</Badge></Button>}>{error}</Tooltip> : null}{prompt(leaf.id)}</section>;
+                return <section key={leaf.id} data-studio-row={leaf.id} className="p-sm"><h4>{leaf.id}</h4><p>{t.whole.unassessed}</p>{node}{error ? <Tooltip trigger={<Button variant="ghost" aria-label={t.checkSummary(1, 0)}><Badge variant="danger"><span aria-hidden>!</span> {t.checkSummary(1, 0)}</Badge></Button>}>{error}</Tooltip> : null}{prompt(leaf.id)}</section>;
               })}</div>} />
           </section>;
         })}
