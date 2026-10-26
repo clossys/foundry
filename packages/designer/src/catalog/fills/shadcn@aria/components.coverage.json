@@ -7,6 +7,7 @@
         "popover"
       ],
       "depth": 0,
+      "items": [],
       "leaf": "date-picker",
       "reason": "constituent components.date-field=foundry is not shadcn@aria",
       "slot": "components.date-picker",
@@ -18,8 +19,11 @@
         "field"
       ],
       "depth": 0,
+      "items": [
+        "input-group"
+      ],
       "leaf": "date-field",
-      "reason": "new styling: no pinned item imports RAC DateField/DateInput/DateSegment; segment, placeholder and focus styling would be new",
+      "reason": "new styling: pinned input and input-group render RAC Input, not DateInput/DateSegment; segment, placeholder and focus styling would be new",
       "slot": "components.date-field",
       "source": "foundry",
       "status": "gap"
@@ -27,31 +31,40 @@
     {
       "constituents": [],
       "depth": 0,
+      "items": [
+        "label",
+        "field"
+      ],
       "leaf": "field",
-      "reason": "K2: pinned field.tsx renders div/p FieldDescription and FieldError, not RAC Text+FieldError, and no registered leaf supplies them; an executable profile over field.tsx is needed, not a composition",
+      "reason": "K1: state.required/invalid/disabled have no owner, since a Label+Text+FieldError root takes them only from a parent field context; and K2: pinned field.tsx renders description and error as p/div, so a RAC Text/FieldError wrap needs new structure",
       "slot": "components.field",
       "source": "foundry",
       "status": "gap"
     },
     {
-      "constituents": [
-        "field"
-      ],
+      "constituents": [],
       "depth": 0,
+      "items": [
+        "label",
+        "input"
+      ],
       "leaf": "text-field",
-      "reason": "K1: size.sm/md/lg unmapped; pinned input and textarea carry one control size",
+      "reason": "K1: size.sm/md/lg unmapped; the RAC TextField wrap maps line and state, but pinned label and input carry one control size and textarea is not a D1 item",
       "slot": "components.text-field",
       "source": "foundry",
       "status": "gap"
     },
     {
       "constituents": [
-        "field",
         "button"
       ],
       "depth": 0,
+      "items": [
+        "input-group",
+        "input"
+      ],
       "leaf": "search-field",
-      "reason": "K2: no pinned item imports RAC SearchField; part.clear/part.submit need the input-group addon layout and input-group is rejected (Group is not SearchField)",
+      "reason": "K1: state.empty/state.filled have no pointer; RAC data-empty is render state, and the propMap grammar admits only exports, props, values and hovered/pressed/focus-visible",
       "slot": "components.search-field",
       "source": "foundry",
       "status": "gap"
@@ -59,8 +72,9 @@
     {
       "constituents": [],
       "depth": 0,
+      "items": [],
       "leaf": "form",
-      "reason": "K2: form is absent at the pinned commit (404) and Form renders no constituent leaf that could carry a source",
+      "reason": "K2: form is absent at the pinned commit (no files), and no D1 item supplies a form; the RAC Form root alone is the Foundry seat",
       "slot": "components.form",
       "source": "foundry",
       "status": "gap"
@@ -70,6 +84,7 @@
         "button"
       ],
       "depth": 0,
+      "items": [],
       "leaf": "file-trigger",
       "reason": "every constituent is shadcn@aria; no new styling",
       "slot": "components.file-trigger",
@@ -79,8 +94,11 @@
     {
       "constituents": [],
       "depth": 0,
+      "items": [
+        "spinner"
+      ],
       "leaf": "spinner",
-      "reason": "K2: pinned spinner is an IconPlaceholder svg, not RAC ProgressBar; size.sm/md/lg and the spin glyph would be new styling",
+      "reason": "K1: size.sm/md/lg unmapped; the RAC ProgressBar wrap holds role and value, but pinned spinner is one size-4 IconPlaceholder svg, so sizes and the spin glyph binding would be new",
       "slot": "components.spinner",
       "source": "foundry",
       "status": "gap"
@@ -88,8 +106,9 @@
     {
       "constituents": [],
       "depth": 0,
+      "items": [],
       "leaf": "toolbar",
-      "reason": "new styling: no pinned item imports RAC Toolbar; orientation.horizontal/vertical layout would be new styling",
+      "reason": "new styling: button-group is not pinned at the commit, so no D1 item supplies the group; a bare RAC Toolbar needs new orientation layout styling",
       "slot": "components.toolbar",
       "source": "foundry",
       "status": "gap"
