@@ -9,7 +9,7 @@ import { compile } from "tailwindcss";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { TOKENS } from "../tokens/index.js";
 import { AppFrame } from "./AppFrame.js";
-import { APP_FRAME_NAVIGATION_SIZE } from "./app-frame-layout.js";
+import { APP_FRAME_NAVIGATION_SIZE, APP_FRAME_PANEL_SIZE, APP_FRAME_PANEL_WIDTH_VAR } from "./app-frame-layout.js";
 import type { AppFrameProps } from "./app-frame-types.js";
 
 const packageRoot = resolve(import.meta.dirname, "../..");
@@ -54,6 +54,21 @@ describe("AppFrame first paint (cross-08)", () => {
     expect(css).toMatch(/\.\\\[inline-size\\:0\\\] \{\s*inline-size: 0;/);
     expect(css).toMatch(narrowRule);
     expect(css).toMatch(wideRule);
+  });
+  it("server-renders a docked right panel whose inline-size comes from a media-ruled class; only its width travels inline, as a custom property", async () => {
+    const host = document.createElement("div");
+    host.innerHTML = renderToString(<AppFrame {...fixture()} rightPanel={{ label: "Inspector", handleLabel: "Resize inspector", min: 240, max: 420, defaultValue: 300, children: <p>Panel</p> }} />);
+    const panel = host.querySelector<HTMLElement>(".frame-docked-panel")!;
+    expect(panel.style.inlineSize).toBe("");
+    expect(panel.style.width).toBe("");
+    const docked = panel.dataset.open !== "false";
+    expect(panel).toHaveClass(...APP_FRAME_PANEL_SIZE[docked ? "docked" : "closed"].split(" "));
+    if (docked) expect(panel.style.getPropertyValue(APP_FRAME_PANEL_WIDTH_VAR)).toBe("300px");
+    const css = await utilities(APP_FRAME_PANEL_SIZE.docked.split(" "));
+    const wide = TOKENS["--breakpoint-tablet-lg"]!.value;
+    const rem = `${Number.parseFloat(wide) / 16}rem`;
+    expect(css).toMatch(new RegExp(`@media \\(width < (${wide}|${rem})\\)\\s*\\{\\s*\\.max-tablet-lg\\\\:invisible \\{\\s*visibility: hidden;`));
+    expect(css).toMatch(new RegExp(`@media \\(width >= (${wide}|${rem})\\)\\s*\\{\\s*\\.tablet-lg\\\\:[^{]+\\{\\s*inline-size: var\\(${APP_FRAME_PANEL_WIDTH_VAR}\\);`));
   });
   it("never animates a layout property on the docked navigation, in source or in the compiled theme keys", async () => {
     const source = readFileSync(resolve(packageRoot, "styles/theme-keys.css"), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
