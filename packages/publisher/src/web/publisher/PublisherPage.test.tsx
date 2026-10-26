@@ -326,3 +326,20 @@ it.each(["Site", "Admin App"] as const)("restores the bound format and focus whe
   expect(store.current).toBeUndefined();
   expect(draft.status).toBe("draft");
 });
+
+// shell-18 / shell-19: one filled primary action per view, and no stage column that would only ever be empty.
+const primaryButtons = () => screen.getAllByRole("button").filter(button => button.classList.contains("bg-action"));
+it("keeps exactly one primary action per view, the plan alignment, with the item details open too", () => {
+  render(<Host {...props} planStore={planStore} productionSettings={{}} onProductionSettingsChange={vi.fn()} />);
+  expect(primaryButtons().map(button => button.getAttribute("aria-label") ?? button.textContent)).toEqual(["Align plan"]);
+  fireEvent.click(screen.getByRole("button", { name: "Open Home · to do" }));
+  fireEvent.click(screen.getByRole("button", { name: "Inspect output format" }));
+  expect(primaryButtons().map(button => button.getAttribute("aria-label") ?? button.textContent)).toEqual(["Align plan"]);
+});
+it("collapses lane stage columns that hold no item instead of drawing empty columns", () => {
+  render(<Host {...props} planStore={planStore} />);
+  const process = screen.getByRole("grid", { name: "M1 Site lane process" });
+  const headers = within(process).getAllByRole("columnheader").map(header => header.textContent);
+  expect(headers).toEqual(["Lane", "Configure"]);
+  for (const cell of within(process).getAllByRole("gridcell").slice(1)) expect(cell.textContent).not.toBe("");
+});

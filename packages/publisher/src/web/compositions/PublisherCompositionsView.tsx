@@ -59,7 +59,7 @@ export function PublisherCompositionsView({ library, breakpointValues, designerH
       <Card variant="outline"><nav aria-label="Composition arrangements">
         <ul className="grid gap-lg">
           {LAYOUT_IA.nodes.filter(node => allowedLayoutIds === undefined || node.children.some(family => family.leaves.some(id => offered.some(leaf => leaf.id === id)))).map(node => <li key={node.id}>
-            {node.id !== "page" ? <Button type="button" isDisabled>{node.label} · concept only</Button> : <>
+            {node.id !== "page" ? <Button variant="secondary" type="button" isDisabled>{node.label} · concept only</Button> : <>
               <span>Page</span>
               <ul aria-label="Page families" className="grid gap-md pl-md">
                 {node.children.filter(family => allowedLayoutIds === undefined || family.leaves.some(id => offered.some(leaf => leaf.id === id))).map(family => <li key={family.id}>
@@ -68,7 +68,7 @@ export function PublisherCompositionsView({ library, breakpointValues, designerH
                     {family.leaves.filter(id => allowedLayoutIds === undefined || offered.some(leaf => leaf.id === id)).map(layoutId => {
                       const item = getLayoutLeaf(layoutId)!;
                       const held = item.status === "held" || item.status === "deprecated";
-                      return <li key={layoutId}><Button type="button" isDisabled={held} aria-current={selection.leaf === layoutId ? "true" : undefined}
+                      return <li key={layoutId}><Button variant="secondary" type="button" isDisabled={held} aria-current={selection.leaf === layoutId ? "true" : undefined}
                         onPress={() => chooseLeaf(layoutId)}>{label(layoutId)}{held ? ` · ${item.status}` : ""}</Button></li>;
                     })}
                   </ul>

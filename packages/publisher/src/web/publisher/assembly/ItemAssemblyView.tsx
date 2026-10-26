@@ -59,7 +59,7 @@ export function ItemAssemblyView({ item, registries, designerHref, ownerHref, on
               {node.references.length > 0 && <ul className="grid gap-xs text-sm">{node.references.map(reference => <li key={reference}>{reference}</li>)}</ul>}
               <p className="text-sm">{node.detail}</p>
               {node.findings.length > 0 && <ul className="text-sm">{node.findings.map((finding, i) => <li key={i}>{finding.code} · {finding.path}: {finding.message}</li>)}</ul>}
-              {node.owner === "Format" ? <Button type="button" onPress={onOpenFormats} aria-controls={`${targetPrefix}-formats`}>Open Formats</Button> : href ? <Link href={href}>Open {node.owner} in Designer</Link> : null}
+              {node.owner === "Format" ? <Button variant="secondary" type="button" onPress={onOpenFormats} aria-controls={`${targetPrefix}-formats`}>Open Formats</Button> : href ? <Link href={href}>Open {node.owner} in Designer</Link> : null}
             </Card>;
           }
           if (canvasItem.id === "instance") return <Card variant="outline" className={card}><SectionHeader level={4} title="Instance" /><StatusChip status={instanceStatus} /><p>{item.binding.label}</p><p className="text-sm">{item.binding.instanceId}</p><p className="text-sm">{item.binding.path ?? "No route path"}</p><Link href={`#${inspectorId}`}>Open item inspector</Link></Card>;
