@@ -1,0 +1,44 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "id": "foundry/assets.app-icon",
+      "slot": "assets.app-icon",
+      "source": "foundry",
+      "mode": "derived",
+      "sourceAddress": "catalog-assets/identity.ts",
+      "relation": "derived",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "author": "foundry",
+      "trust": "foundry",
+      "license": "MIT",
+      "status": "draft",
+      "reads": {
+        "tokens": [
+          "tokens.text-color",
+          "tokens.accent-color"
+        ],
+        "assets": [
+          "assets.mark"
+        ]
+      },
+      "derivation": {
+        "from": "asset-identity#consumer-seed",
+        "rule": "identity-app-icon@1"
+      }
+    }
+  },
+  "assets": {
+    "app-icon": {
+      "standard": {
+        "$type": "svg",
+        "$value": "{{assets.mark.positive}}"
+      },
+      "maskable": {
+        "$type": "svg",
+        "$value": "{{assets.mark.positive}}"
+      }
+    }
+  }
+}

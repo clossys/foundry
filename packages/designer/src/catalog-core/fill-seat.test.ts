@@ -15,6 +15,7 @@ const ENGINE = "the engine catalog (catalog-core/index.ts) still loads it and re
 const U4_TAIL = "its L2 is not fully covered by shadcn@aria; waits for the component tail";
 const PRESET_FOLD = "token rows offer presets only; this external token fill waits for its preset fold-in";
 const GENERATED = "shadcn@aria covers its L2 in full, but the Foundry component generator (importers/foundry-components) still emits and pins it; deleting it needs the generator to skip covered leaves";
+const BRAND_DERIVE = "brand rows offer nothing (Custom + Generate starter), but the Studio identity recipes (studio/model.ts derive routing) and catalog-bundles still read this derived Foundry fill";
 const NEVER = "never-offered reference fill (R6); kept as importer evidence, not a seat";
 const pendingFamilies: Readonly<Record<string, string>> = {
   "foundry/tokens.": ENGINE,
@@ -29,6 +30,7 @@ const COVERED_IN_FULL = ["avatar", "badge", "checkbox", "combo-box", "dialog", "
 /** Single fills pending replacement, by fill id, with the reason they still ship. */
 export const PENDING_REPLACEMENT: Readonly<Record<string, string>> = {
   "foundry/assets.image-ratio": "waits for Open Props (SF14-A); the Foundry fill stays until then",
+  ...Object.fromEntries(["lockup", "mark", "favicon", "app-icon"].map(leaf => [`foundry/assets.${leaf}`, BRAND_DERIVE])),
   ...Object.fromEntries(["banner", "breadcrumbs", "button", "calendar", "card", "chart-area", "chart-bar", "chart-line", "disclosure", "progress-bar", "separator", "skeleton", "slider", "table", "toggle-button"]
     .map(leaf => [`foundry/components.${leaf}`, U4_TAIL])),
   ...Object.fromEntries(COVERED_IN_FULL.map(leaf => [`foundry/components.${leaf}`, GENERATED])),
@@ -67,7 +69,7 @@ describe("C10 fill seats", () => {
   });
 
   it("flags a fill that lost its seat and has no record", () => {
-    expect(unseatedFills([...fills, { id: "foundry/assets.lockup", source: "foundry", slot: "assets.lockup" }])).toEqual(["foundry/assets.lockup"]);
+    expect(unseatedFills([...fills, { id: "example/assets.lockup", source: "example", slot: "assets.lockup" }])).toEqual(["example/assets.lockup"]);
     expect(unseatedFills([...fills, { id: "foundry/components.keyboard", source: "foundry", slot: "components.keyboard" }])).toEqual(["foundry/components.keyboard"]);
   });
 
@@ -76,12 +78,12 @@ describe("C10 fill seats", () => {
     expect(Object.keys(PENDING_REPLACEMENT).filter(id => !ids.has(id))).toEqual([]);
   });
 
-  it("brand rows offer nothing, ship no fill and carry the identity-kit starter", () => {
+  it("brand rows offer nothing, carry the identity-kit starter, and ship a fill only under its pending record", () => {
     for (const slot of BRAND) {
       expect(rosterRow(sourceRoster, slot), slot).toBeDefined();
       expect(rosterOffers(sourceRoster, slot), slot).toEqual(["custom"]);
       expect(rosterStarter(sourceRoster, slot), slot).toBe("identity-kit");
-      expect(fills.filter(fill => fill.slot === slot).map(fill => fill.id), slot).toEqual([]);
+      for (const fill of fills.filter(fill => fill.slot === slot)) expect(pendingReason(fill), fill.id).toBe(BRAND_DERIVE);
     }
   });
 

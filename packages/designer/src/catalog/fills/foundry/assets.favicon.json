@@ -1,0 +1,39 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "id": "foundry/assets.favicon",
+      "slot": "assets.favicon",
+      "source": "foundry",
+      "mode": "derived",
+      "sourceAddress": "catalog-assets/identity.ts",
+      "relation": "derived",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "author": "foundry",
+      "trust": "foundry",
+      "license": "MIT",
+      "status": "draft",
+      "reads": {
+        "tokens": [
+          "tokens.text-color"
+        ],
+        "assets": [
+          "assets.mark"
+        ]
+      },
+      "derivation": {
+        "from": "asset-identity#consumer-seed",
+        "rule": "identity-favicon@1"
+      }
+    }
+  },
+  "assets": {
+    "favicon": {
+      "vector": {
+        "$type": "svg",
+        "$value": "{{assets.mark.positive}}"
+      }
+    }
+  }
+}
