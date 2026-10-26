@@ -23,8 +23,7 @@
         "chrome.full",
         "chrome.minimal",
         "slot.consent",
-        "slot.progress",
-        "slot.toasts"
+        "slot.progress"
       ]
     }
   },
@@ -48,7 +47,8 @@
         "footer": "shell.footer",
         "header": "shell",
         "main": "children",
-        "skip-link": "shell.skipLink"
+        "skip-link": "shell.skipLink",
+        "toasts": "toasts"
       },
       "statePorts": {}
     }

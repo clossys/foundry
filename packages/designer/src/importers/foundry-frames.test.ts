@@ -77,11 +77,37 @@ describe("Foundry frame descriptors", () => {
     const rows = new Map(result().coverage.map(row => [row.slot, row]));
     expect(rows.get("frames.inspector")).toMatchObject({ status: "unavailable", supported: [], missingRequiredSlots: ["content"] });
     expect(rows.get("frames.app-shell")!.missing).toEqual(["layout.immersive", "layout.standard", "stage.contained", "stage.full"]);
-    expect(rows.get("frames.site-shell")!.missingSlots).toContain("toasts");
-    expect(rows.get("frames.app-header")!.missingSlots).toContain("context");
+    expect(rows.get("frames.site-shell")!.missingSlots).toEqual(["consent", "progress"]);
+    expect(rows.get("frames.app-header")!.missingSlots).toEqual([]);
+    expect(rows.get("frames.app-header")!.missing).toEqual([]);
     expect(rows.get("frames.command")!.missingRequiredSlots).toContain("search");
     expect(rows.get("frames.command")!.missing).toEqual(["shortcut.off", "shortcut.on"]);
   });
+  it("maps the app-header context slot and glass/opaque surface, and the site-shell toasts slot, to named public props", () => {
+    const rows = new Map(result().coverage.map(row => [row.slot, row]));
+    expect(FOUNDRY_FRAME_MAP["app-header"]!.slots.context).toBe("context");
+    expect(FOUNDRY_FRAME_MAP["app-header"]!.members["surface.glass"]).toBe("surface=glass");
+    expect(FOUNDRY_FRAME_MAP["app-header"]!.members["fallback.opaque"]).toBe("surface=glass");
+    expect(FOUNDRY_FRAME_MAP["site-shell"]!.slots.toasts).toBe("toasts");
+    expect(rows.get("frames.app-header")!.supported).toEqual(["fallback.opaque", "position.static", "position.sticky", "surface.glass"]);
+    expect(rows.get("frames.app-header")!.status).toBe("candidate");
+    const pageBar = readFileSync(resolve(here, "../blocks/PageBar.tsx"), "utf8");
+    expect(pageBar).toContain('surface?: "solid" | "transparent" | "glass"');
+    expect(readFileSync(resolve(here, "../../../publisher/src/web/frame/types.ts"), "utf8")).toContain("readonly toasts?: ReactNode");
+  });
+
+  it("keeps no descriptor note claiming a member or slot unmapped that is mapped", () => {
+    for (const [leaf, mapping] of Object.entries(FOUNDRY_FRAME_MAP)) {
+      const mapped = [...Object.keys(mapping.members), ...Object.keys(mapping.slots), ...Object.keys(mapping.statePorts)];
+      for (const note of mapping.notes) {
+        for (const name of mapped.flatMap(key => key.split("."))) {
+          expect(note, `${leaf} note vs mapped ${name}`).not.toMatch(new RegExp(`\\b${name}\\b[^.]*\\b(?:remain unmapped|unmapped)\\b`, "i"));
+          expect(note, `${leaf} note vs mapped ${name}`).not.toMatch(new RegExp(`\\bno\\b[^.]*\\b${name}\\b[^.]*\\bslot\\b`, "i"));
+        }
+      }
+    }
+  });
+
   it("pins supported configurations to named public API members", () => {
     const rows = new Map(result().coverage.map(row => [row.slot, row]));
     expect(rows.get("frames.sheet")!.supported).toEqual(["placement.bottom", "placement.end", "placement.start", "wide.dismiss", "wide.sheet"]);

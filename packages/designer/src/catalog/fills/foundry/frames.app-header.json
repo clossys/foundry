@@ -13,17 +13,12 @@
         "package": "@clossys/designer",
         "version": "0.12.0"
       },
-      "relation": "subset",
+      "relation": "same-contract",
       "slot": "frames.app-header",
       "source": "foundry",
       "sourceAddress": "./blocks#PageBar",
       "status": "draft",
-      "trust": "foundry",
-      "unmapped": [
-        "fallback.opaque",
-        "slot.context",
-        "surface.glass"
-      ]
+      "trust": "foundry"
     }
   },
   "frames": {
@@ -34,16 +29,21 @@
         "module": "@clossys/designer/blocks"
       },
       "members": [
+        "fallback.opaque",
         "position.static",
-        "position.sticky"
+        "position.sticky",
+        "surface.glass"
       ],
       "propMap": {
+        "fallback.opaque": "surface=glass",
         "position.static": "position=static",
-        "position.sticky": "position=sticky"
+        "position.sticky": "position=sticky",
+        "surface.glass": "surface=glass"
       },
       "slot": "frames.app-header",
       "slots": {
         "actions": "page.actions",
+        "context": "context",
         "info": "page",
         "trail": "page.breadcrumb"
       },

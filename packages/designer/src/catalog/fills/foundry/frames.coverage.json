@@ -1,24 +1,21 @@
 {
   "coverage": [
     {
-      "missing": [
-        "fallback.opaque",
-        "surface.glass"
-      ],
+      "missing": [],
       "missingRequiredSlots": [],
-      "missingSlots": [
-        "context"
-      ],
+      "missingSlots": [],
       "missingStatePorts": [],
       "notes": [
-        "No brand slot: the host mark is the AppFrame profile Avatar. Context and glass/opaque surface members remain unmapped in this descriptor.",
+        "No brand slot: the host mark is the AppFrame profile Avatar. The opaque fallback is automatic: surface=glass paints an opaque raised surface when backdrop blur is unsupported or reduced transparency or forced colors is active; it is not separately selectable.",
         "Descriptor only; anatomy, source, accessibility, contrast, layout and rendered conformance are unmeasured."
       ],
       "slot": "frames.app-header",
-      "status": "subset",
+      "status": "candidate",
       "supported": [
+        "fallback.opaque",
         "position.static",
-        "position.sticky"
+        "position.sticky",
+        "surface.glass"
       ]
     },
     {
@@ -192,12 +189,11 @@
       "missingRequiredSlots": [],
       "missingSlots": [
         "consent",
-        "progress",
-        "toasts"
+        "progress"
       ],
       "missingStatePorts": [],
       "notes": [
-        "No chrome full/minimal configuration, consent or toasts slot is exposed.",
+        "No chrome full/minimal configuration, consent or progress slot is exposed.",
         "Descriptor only; anatomy, source, accessibility, contrast, layout and rendered conformance are unmeasured."
       ],
       "slot": "frames.site-shell",
