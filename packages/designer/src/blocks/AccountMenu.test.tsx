@@ -45,6 +45,13 @@ it("renders the expanded actor and context with one truthful menu trigger", () =
   expect(screen.queryByRole("menu")).not.toBeInTheDocument();
 });
 
+it("sizes the expanded trigger from the control-height set without inline sizing", () => {
+  render(<AccountMenu {...props()} />);
+  expect(trigger()).toHaveClass("control-h-lg");
+  expect(trigger().style.minBlockSize).toBe("");
+  expect(trigger().style.blockSize).toBe("");
+});
+
 it("keeps the collapsed avatar trigger named and described on keyboard focus", async () => {
   render(<AccountMenu {...props()} collapsed />);
   expect(trigger()).toHaveAccessibleName(actor.name);
