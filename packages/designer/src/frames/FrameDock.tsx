@@ -74,7 +74,7 @@ export function FrameDock({ notices = [], dock, sheet = false }: { notices?: rea
   return <>{gestures}<section ref={region} data-application-frame-region="dock" className="min-w-0 shrink-0 border-t border-line-base bg-surface-raised">
     <div ref={noticesRegion} data-frame-notices="" data-frame-notices-compact={short || undefined} className="flex w-full flex-col">
       {visible.map(notice => <Banner key={notice.id} variant={notice.severity === "error" ? "danger" : notice.severity}
-        className={cx("w-full rounded-none", short && "items-center py-xs [&>:first-child]:min-w-0")} onDismiss={notice.severity !== "error" && notice.dismissible !== false ? () => dismiss(notice.id) : undefined}>
+        className={cx("w-full rounded-none", short && "items-center py-xs first-child-shrink")} onDismiss={notice.severity !== "error" && notice.dismissible !== false ? () => dismiss(notice.id) : undefined}>
         <div className="mx-auto flex w-full max-w-wide items-center justify-between gap-sm"><span className={cx(short && "min-w-0 truncate")}>{notice.text}</span>{notice.action && <Button variant="ghost" onPress={notice.action.onAction}>{notice.action.label}</Button>}</div>
       </Banner>)}
     </div>

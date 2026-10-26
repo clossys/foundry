@@ -42,7 +42,7 @@ export const CANVAS_ZOOM_VAR = "--canvas-zoom";
  * paints smaller on screen than the caption text token at any camera zoom.
  * Outside a canvas the zoom is 1, so the title is unchanged.
  */
-export const CANVAS_COUNTER_SCALED_TITLE = "text-[length:max(1em,calc(var(--text-caption)/var(--canvas-zoom,1)))]";
+export const CANVAS_COUNTER_SCALED_TITLE = "canvas-caption-zoom-floor";
 export const useCanvasLodTier = () => useContext(Tier);
 
 /**

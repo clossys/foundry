@@ -16,7 +16,7 @@ const PREFERENCES: readonly ThemePreference[] = ["system", "light", "dark"];
  * sidebar. Colour-only motion on the fast tier.
  */
 const SELECTED_STEP =
-  "icon-control-md shrink-0 transition-colors duration-(--ui-duration-fast) data-selected:bg-surface-selected data-selected:text-ink-primary data-selected:ring-1 data-selected:ring-inset data-selected:ring-current aria-pressed:bg-surface-selected aria-pressed:text-ink-primary";
+  "icon-control-md shrink-0 transition-colors motion-tier-fast data-selected:bg-surface-selected data-selected:text-ink-primary data-selected:ring-1 data-selected:ring-inset data-selected:ring-current aria-pressed:bg-surface-selected aria-pressed:text-ink-primary";
 
 export interface ThemePreferenceLabels {
   readonly system: string;

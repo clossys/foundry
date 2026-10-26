@@ -38,7 +38,7 @@ export function CanvasMap({ label, items, bounds, viewport, viewSize, onViewport
         onViewportChange({ ...current.viewport, x: current.viewport.x - (event.clientX - current.x) / box.width * bounds.width * current.viewport.zoom,
           y: current.viewport.y - (event.clientY - current.y) / box.height * bounds.height * current.viewport.zoom });
       }} onPointerUp={event => { if (drag.current?.pointer === event.pointerId) { drag.current = null; event.currentTarget.releasePointerCapture(event.pointerId); } }} onPointerCancel={() => { drag.current = null; }} onLostPointerCapture={() => { drag.current = null; }} />}>
-      <svg aria-hidden="true" focusable="false" viewBox={`${bounds.x} ${bounds.y} ${Math.max(1, bounds.width)} ${Math.max(1, bounds.height)}`} className="h-[var(--ui-layout-sidebar-rail-w)] w-full overflow-hidden rounded-control border border-line-base bg-surface-sunken touch-none">
+      <svg aria-hidden="true" focusable="false" viewBox={`${bounds.x} ${bounds.y} ${Math.max(1, bounds.width)} ${Math.max(1, bounds.height)}`} className="canvas-map-rail-height w-full overflow-hidden rounded-control border border-line-base bg-surface-sunken touch-none">
         {items.map(item => { const rect = within(item.rect, bounds); return rect ? <rect key={item.id} data-canvas-map-item={item.id} x={rect.x} y={rect.y} width={rect.width} height={rect.height} className="fill-surface-raised stroke-line-base" vectorEffect="non-scaling-stroke">{item.label ? <title>{item.label}</title> : null}</rect> : null; })}
         <rect data-canvas-map-viewport="" x={visible.x} y={visible.y} width={visible.width} height={visible.height} className="fill-accent-tint stroke-accent" vectorEffect="non-scaling-stroke" />
       </svg>

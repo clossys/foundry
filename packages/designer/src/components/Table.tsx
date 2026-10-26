@@ -156,7 +156,7 @@ function TableColumnResizer({ "aria-label": ariaLabel }: { "aria-label"?: string
     >
       <span
         aria-hidden="true"
-        className="h-full w-px bg-line-base group-data-[hovered]:bg-accent group-data-[resizing]:bg-accent group-data-[focus-visible]:bg-accent"
+        className="h-full w-px bg-line-base group-data-hovered:bg-accent group-data-resizing:bg-accent group-data-focus-visible:bg-accent"
       />
     </AriaColumnResizer>
   );

@@ -7,7 +7,7 @@ export const CANVAS_DOMAIN_CLASS = {
   narrow: "flex flex-col items-start gap-lg",
 } as const;
 export const CANVAS_DOMAIN_LABEL_CLASS = {
-  wide: "w-[var(--ui-layout-sidebar-rail-w)] shrink-0 text-body text-ink-secondary [writing-mode:vertical-rl]",
+  wide: "canvas-domain-rail shrink-0 text-body text-ink-secondary",
   narrow: "text-body text-ink-secondary",
 } as const;
 

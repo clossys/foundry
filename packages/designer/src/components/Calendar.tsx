@@ -37,7 +37,7 @@ export interface RangeCalendarProps<T extends DateValue = DateValue> extends Omi
 
 export type CalendarProps<T extends DateValue = DateValue> = SingleCalendarProps<T> | RangeCalendarProps<T>;
 
-const CELL = "inline-flex size-[var(--ui-control-h-sm,32px)] cursor-default items-center justify-center rounded-control tabular-nums outline-none";
+const CELL = "inline-flex calendar-cell-size cursor-default items-center justify-center rounded-control tabular-nums outline-none";
 
 /**
  * A day's look from its state. Selected (and a range's two ends) binds to the

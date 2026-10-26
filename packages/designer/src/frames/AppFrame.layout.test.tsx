@@ -69,7 +69,7 @@ describe("AppFrame reserved layout", () => {
     expect(region("stage")).toHaveClass("relative", "isolate", "flex-1", "overflow-hidden");
     expect(screen.getByRole("main")).toHaveClass("h-full", "overflow-auto");
     // cross-10: page content sits on the 16/24 spacing-scale inset; a bleeding canvas child drops it.
-    expect(screen.getByRole("main")).toHaveClass("p-lg", "tablet-lg:p-xl", "has-[[data-frame-bleed]]:p-0");
+    expect(screen.getByRole("main")).toHaveClass("p-lg", "tablet-lg:p-xl", "frame-main-bleed");
     expect(region("header").parentElement).toBe(region("stage").parentElement);
     expect(region("stage").nextElementSibling).toBe(region("dock"));
     expect(region("dock")).toHaveClass("shrink-0");
@@ -82,7 +82,7 @@ describe("AppFrame reserved layout", () => {
     const view = screen.getByTestId("view-scroll");
     expect(region("navigation")).toHaveClass(...APP_FRAME_NAVIGATION_SIZE.docked.split(" "));
     await userEvent.click(screen.getByRole("button", { name: "Close navigation" }));
-    expect(region("navigation").className).toMatch(/ \[inline-size:0\]$/);
+    expect(region("navigation").className).toMatch(/ frame-region-closed$/);
     expect(region("navigation")).toHaveAttribute("inert");
     expect(screen.getByTestId("view-scroll")).toBe(view);
     await userEvent.click(screen.getByRole("button", { name: "Open navigation" }));

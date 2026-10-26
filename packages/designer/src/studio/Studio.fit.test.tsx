@@ -28,7 +28,7 @@ describe("studio canvas domain rail (VR1 studio-01/02, components-12)", () => {
     expect(domain.dataset.studioDomainLayout).toBe("wide");
     expect(domain).toHaveClass("flex", "items-start");
     expect(domain).not.toHaveClass("flex-col");
-    expect(label.className.split(/\s+/)).toContain("w-[var(--ui-layout-sidebar-rail-w)]");
+    expect(label.className.split(/\s+/)).toContain("canvas-domain-rail");
     expect(label.className).not.toMatch(/aside-w|(?:^|\s)h-\[/);
     expect(label.nextElementSibling?.querySelector("[data-studio-board]")).not.toBeNull();
   });
@@ -45,7 +45,7 @@ describe("studio canvas domain rail (VR1 studio-01/02, components-12)", () => {
     const domain = document.querySelector<HTMLElement>("[data-studio-world] [data-studio-domain]")!;
     await waitFor(() => expect(domain.dataset.studioDomainLayout).toBe("narrow"));
     expect(domain).toHaveClass("flex", "flex-col");
-    expect(domain.querySelector("[data-studio-domain-label]")!.className).not.toMatch(/writing-mode|rail-w/);
+    expect(domain.querySelector("[data-studio-domain-label]")!.className).not.toMatch(/canvas-domain-rail|writing-mode|rail-w/);
     const gutter = px("--spacing-md"), zoom = Math.min(1, Math.max(legibleZoomFloor(), (390 - gutter * 2) / 1200));
     await waitFor(() => expect(pose().zoom).toBeCloseTo(zoom, 5));
     expect(pose().x).toBeCloseTo(gutter - 48 * zoom, 5);
@@ -102,7 +102,7 @@ describe("counter-scaled board titles (VR1 sf-13, sf-14, studio-15)", () => {
     plainRender(<CanvasLod zoom={.25}><BoardHeader id="t" title="Palettes" editing={false} labels={{ changeSelection: "Change", done: "Done" }} onEdit={() => {}} onDone={() => {}} /></CanvasLod>);
     const title = document.getElementById("t")!;
     expect(title.closest<HTMLElement>("[data-canvas-lod]")!.style.getPropertyValue("--canvas-zoom")).toBe("0.25");
-    expect(title.className.split(/\s+/)).toContain("text-[length:max(1em,calc(var(--text-caption)/var(--canvas-zoom,1)))]");
+    expect(title.className.split(/\s+/)).toContain("canvas-caption-zoom-floor");
   });
 });
 

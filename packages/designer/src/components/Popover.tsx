@@ -131,7 +131,7 @@ export function Popover({
               width={12}
               height={6}
               viewBox="0 0 12 6"
-              className="block fill-overlay-surface stroke-overlay-border stroke-1 group-data-[placement=bottom]:rotate-180 group-data-[placement=left]:-rotate-90 group-data-[placement=right]:rotate-90"
+              className="block fill-overlay-surface stroke-overlay-border stroke-1 popover-arrow-rotate"
             >
               <path d="M0 0 L6 6 L12 0" />
             </svg>

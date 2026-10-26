@@ -1255,6 +1255,40 @@
 @utility library-slide-left { --library-x: calc(-1 * var(--ui-motion-shift, 4px)); }
 @utility library-slide-right { --library-x: var(--ui-motion-shift, 4px); }
 
+/* Named replacements for arbitrary-value classes the compiled-CSS scanner
+   cannot see (a leading `-` or `[`, parentheses, or a non-trailing bracket).
+   Each keeps the declarations the arbitrary class meant; tablet-lg is the
+   theme's --breakpoint-tablet-lg (1024px). */
+@utility motion-tier-fast {
+  --tw-duration: var(--ui-duration-fast, 120ms);
+  transition-duration: var(--ui-duration-fast, 120ms);
+}
+@utility frame-main-bleed { &:has([data-frame-bleed]) { padding: 0; } }
+@utility frame-region-closed { inline-size: 0; }
+@utility frame-nav-width {
+  inline-size: 0;
+  @media (width >= 1024px) { inline-size: var(--ui-layout-sidebar-w); }
+}
+@utility frame-panel-width {
+  inline-size: 0;
+  @media (width >= 1024px) { inline-size: var(--frame-panel-w); }
+}
+@utility first-child-shrink { & > :first-child { min-width: 0; } }
+@utility prompt-actions-bleed {
+  margin-inline: calc(var(--spacing-lg, 16px) * -1);
+  margin-block-end: calc(var(--spacing-lg, 16px) * -1);
+}
+@utility canvas-domain-rail { width: var(--ui-layout-sidebar-rail-w); writing-mode: vertical-rl; }
+@utility canvas-map-rail-height { height: var(--ui-layout-sidebar-rail-w); }
+@utility candidate-variant-min-inline { min-width: var(--ui-control-h-lg); }
+@utility calendar-cell-size { width: var(--ui-control-h-sm, 32px); height: var(--ui-control-h-sm, 32px); }
+@utility canvas-caption-zoom-floor { font-size: max(1em, calc(var(--text-caption) / var(--canvas-zoom, 1))); }
+@utility popover-arrow-rotate {
+  &:is(:where(.group)[data-placement="bottom"] *) { rotate: 180deg; }
+  &:is(:where(.group)[data-placement="left"] *) { rotate: -90deg; }
+  &:is(:where(.group)[data-placement="right"] *) { rotate: 90deg; }
+}
+
 /* Frames own region motion. Content stays mounted through open and closed states.
    Navigation never animates a layout property: it snaps between its media-ruled widths,
    so neither hydration nor a collapse reflows the stage over several frames. */

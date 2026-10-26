@@ -32,7 +32,7 @@ export function memberFamilies(members: readonly Member[]): { family: string; me
  */
 export const CandidateCell = memo(function CandidateCell({ candidate, labels, preview }: { candidate?: Candidate; labels: StudioLabels; preview?: ReactNode }) {
   if (!candidate) return <LeafCell className={LIBRARY_COLUMN_FLOW} style={LIBRARY_COLUMN_BOUND} preview={preview} status={preview == null ? labels.previewUnavailable : undefined} />;
-  const variant = (entry: Member) => <div key={entry.id} data-candidate-variant={entry.id} className="min-w-[var(--ui-control-h-lg)]">
+  const variant = (entry: Member) => <div key={entry.id} data-candidate-variant={entry.id} className="candidate-variant-min-inline">
     <p data-member-key="" className="text-caption text-ink-secondary">{memberKey(entry)}</p>
     <CompactPreview candidate={{ ...candidate, members: [entry] }} labels={labels} />
   </div>;

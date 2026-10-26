@@ -270,7 +270,7 @@ describe("Table column resizing", () => {
     expect(resizer).not.toBeNull();
     expect(resizer.className).toContain("end-0");
     expect(resizer.className).not.toMatch(/\bright-0\b/);
-    expect(resizer.querySelector("[aria-hidden='true']")!.getAttribute("class")).toContain("group-data-[resizing]:bg-accent");
+    expect(resizer.querySelector("[aria-hidden='true']")!.getAttribute("class")).toContain("group-data-resizing:bg-accent");
   });
 
   it("a table outside a resizable container keeps its non-resizing markup", () => {

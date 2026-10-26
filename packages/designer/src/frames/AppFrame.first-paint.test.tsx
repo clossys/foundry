@@ -50,8 +50,8 @@ describe("AppFrame first paint (cross-08)", () => {
     const wide = TOKENS["--breakpoint-tablet-lg"]!.value;
     const rem = `${Number.parseFloat(wide) / 16}rem`;
     const narrowRule = new RegExp(`@media \\(width < (${wide}|${rem})\\)\\s*\\{\\s*\\.max-tablet-lg\\\\:invisible \\{\\s*visibility: hidden;`);
-    const wideRule = new RegExp(`@media \\(width >= (${wide}|${rem})\\)\\s*\\{\\s*\\.tablet-lg\\\\:[^{]+\\{\\s*inline-size: var\\(--ui-layout-sidebar-w\\);`);
-    expect(css).toMatch(/\.\\\[inline-size\\:0\\\] \{\s*inline-size: 0;/);
+    const wideRule = new RegExp(`\\.frame-nav-width \\{\\s*inline-size: 0;\\s*@media \\(width >= (${wide}|${rem})\\)\\s*\\{\\s*inline-size: var\\(--ui-layout-sidebar-w\\);`);
+    expect(css).toMatch(/\.frame-nav-width \{\s*inline-size: 0;/);
     expect(css).toMatch(narrowRule);
     expect(css).toMatch(wideRule);
   });
@@ -68,7 +68,7 @@ describe("AppFrame first paint (cross-08)", () => {
     const wide = TOKENS["--breakpoint-tablet-lg"]!.value;
     const rem = `${Number.parseFloat(wide) / 16}rem`;
     expect(css).toMatch(new RegExp(`@media \\(width < (${wide}|${rem})\\)\\s*\\{\\s*\\.max-tablet-lg\\\\:invisible \\{\\s*visibility: hidden;`));
-    expect(css).toMatch(new RegExp(`@media \\(width >= (${wide}|${rem})\\)\\s*\\{\\s*\\.tablet-lg\\\\:[^{]+\\{\\s*inline-size: var\\(${APP_FRAME_PANEL_WIDTH_VAR}\\);`));
+    expect(css).toMatch(new RegExp(`\\.frame-panel-width \\{\\s*inline-size: 0;\\s*@media \\(width >= (${wide}|${rem})\\)\\s*\\{\\s*inline-size: var\\(${APP_FRAME_PANEL_WIDTH_VAR}\\);`));
   });
   it("never animates a layout property on the docked navigation, in source or in the compiled theme keys", async () => {
     const source = readFileSync(resolve(packageRoot, "styles/theme-keys.css"), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
@@ -101,7 +101,7 @@ describe("AppFrame route notices at short heights (cross-18)", () => {
     expect(region().children).toHaveLength(1);
     expect(region()).toHaveTextContent("Changes pending");
     expect(screen.getByText("Changes pending")).toHaveClass("min-w-0", "truncate");
-    expect(region().firstElementChild).toHaveClass("py-xs", "items-center", "[&>:first-child]:min-w-0");
+    expect(region().firstElementChild).toHaveClass("py-xs", "items-center", "first-child-shrink");
   });
   it("stacks every notice at full size in a tall frame", () => {
     measure(900);

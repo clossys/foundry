@@ -179,7 +179,7 @@ describe("Popover", () => {
     // The surface's own colours: fill joins the panel, stroke continues its hairline border.
     expect(svg.getAttribute("class")).toContain("fill-overlay-surface");
     expect(svg.getAttribute("class")).toContain("stroke-overlay-border");
-    expect(svg.getAttribute("class")).toContain("group-data-[placement=bottom]:rotate-180");
+    expect(svg.getAttribute("class")).toContain("popover-arrow-rotate");
     unmount();
     render(<Popover trigger={<Button>Filters</Button>} isOpen arrow placement="top"><p>Filter controls here.</p></Popover>);
     expect(document.querySelector("[data-popover-arrow]")!.getAttribute("data-placement")).toBe("top");

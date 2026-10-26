@@ -10,7 +10,7 @@ import type { CandidateWorkflow, LibraryBoardLabels, PendingCandidate } from "./
 /** The prompt is data to copy, not to read in full: a bounded, scrollable mono region on the sunken ground. */
 const PROMPT_CODE = "max-h-[40vh] min-h-0 shrink overflow-auto whitespace-pre-wrap break-words rounded-control border border-overlay-border bg-surface-sunken p-md font-mono text-code-block text-ink-primary";
 /** The actions stay reachable while the dialog scrolls: a footer pinned to the dialog's bottom edge, across its padding. */
-const PROMPT_ACTIONS = "sticky bottom-0 -mx-lg -mb-lg flex flex-wrap items-center justify-end gap-sm border-t border-overlay-border bg-overlay-surface px-lg pt-md pb-lg";
+const PROMPT_ACTIONS = "sticky bottom-0 prompt-actions-bleed flex flex-wrap items-center justify-end gap-sm border-t border-overlay-border bg-overlay-surface px-lg pt-md pb-lg";
 
 /** Prompt section: native Dialog, read-only code, copy/open actions and an explicit host check seam. */
 export function CandidatePromptDialog({ trigger, data, labels, workflow }: { trigger: ReactNode; data: CandidatePromptData; labels: LibraryBoardLabels; workflow?: CandidateWorkflow }) {

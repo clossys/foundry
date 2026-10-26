@@ -91,7 +91,7 @@ describe("theme toggle selected state (cross-19)", () => {
   it("is a surface step with the primary ink and an ink ring, not the action fill, with colour-only fast motion", () => {
     render(<ThemeProvider><ThemeToggle /></ThemeProvider>);
     const option = screen.getByRole("radio", { name: "System" });
-    expect(option).toHaveClass("data-selected:bg-surface-selected", "data-selected:text-ink-primary", "data-selected:ring-current", "transition-colors", "duration-(--ui-duration-fast)");
+    expect(option).toHaveClass("data-selected:bg-surface-selected", "data-selected:text-ink-primary", "data-selected:ring-current", "transition-colors", "motion-tier-fast");
     expect(option.className).not.toMatch(/data-selected:bg-\(--color-action\)|data-selected:text-\(--color-ink-on-action\)|\btransition-all\b|duration-\(--ui-duration-default\)/);
   });
 });
