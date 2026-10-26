@@ -33,4 +33,6 @@ export { studioOpenHrefs } from "./open-targets.js";
 export type { StudioCandidateWorkflow, StudioCandidateCheckResult, StudioPendingCandidate } from "./types.js";
 
 export { valueLibraryBoardRecords, valueLibraryBoardPreviews, compositeLibraryBoard } from "./library-board-adapter.js";
+export { planSurfacePreviews } from "./planned-surface-previews.js";
+export type { PlannedSurfacePreview, PlannedSurfacePreviewGap, PlannedSurfacePreviews, PlannedSurfacePreviewsInput } from "./planned-surface-previews.js";
 export type { PreparedLibraryBoardInput, PreparedCompositeLibraryBoardInput } from "./library-board-adapter.js";

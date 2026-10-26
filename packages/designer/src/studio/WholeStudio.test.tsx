@@ -16,6 +16,8 @@ import { useStudioSession } from './StudioProvider.js';
 import { deriveDesignerLayerBoardsV1, DESIGNER_LAYER_BOARDS_QUERY } from './designer-layer-boards.js';
 import { runtimeHash } from '../catalog-core/runtime-ports.js';
 import { valueLibraryBoardRecords, valueLibraryBoardPreviews } from './library-board-adapter.js';
+import { importFoundryFrames, importFoundrySections, planSurfaceDefaults, type SurfaceDefaultsInput } from "../catalog-core/index.js";
+import { planSurfacePreviews } from "./planned-surface-previews.js";
 
 const wholeLabels: CompositeStudioLabels = { ...labels, whole: { signoff: "W-signoff", proposed: "W-proposed", contract: "W-contract", contentSlots: "W-slots", configurations: "W-config", unresolved: "W-unresolved", unassessed: "W-unassessed" } };
 it('state-only original provider keeps children mounted while loading and uses one shared value session', async () => {
@@ -491,4 +493,30 @@ it("contract boards count runtime-pending findings neutrally, apart from errors,
   expect(badge.className).not.toMatch(/danger/);
   expect(badge.closest("button")).toHaveAccessibleName(`P-pending ${pending}`);
   expect(radio).toBeDisabled();
+});
+
+it("contract boards preview planned surface defaults labelled as planned, without choosing or counting them", async () => {
+  const f = adapterFixture();
+  const slots = loadBuildCatalog().slots.filter(slot => slot.layer === "sections" || slot.layer === "frames") as SurfaceDefaultsInput["catalog"]["slots"];
+  const fills = [...importFoundrySections().fills, ...importFoundryFrames().fills];
+  const plannedPreviews = planSurfacePreviews({ fills, plan: planSurfaceDefaults({ catalog: { slots, fills }, slots: slots.map(slot => slot.id), preference: ["foundry"] }) });
+  const preview = vi.fn(() => <p>host-preview</p>);
+  const load = vi.fn(async () => ({ ...await f.load(), preview, plannedPreviews }));
+  const named: CompositeStudioLabels = { ...wholeLabels, chosenSummary: (chosen, total) => `${chosen} of ${total} chosen`, plannedPreview: "P-planned" };
+  render(<Studio adapter={{ ...f.adapter, load }} labels={named} initialSlotId="sections.band" />);
+  await screen.findByText("L-saved");
+  const row = document.querySelector<HTMLElement>('[data-studio-zoom-full] [data-studio-row="sections.band"]')!;
+  const cell = row.querySelector<HTMLElement>("[data-studio-planned]")!;
+  expect(cell).toHaveAttribute("data-studio-planned", "foundry/sections.band");
+  expect(cell).toHaveTextContent("A full-width band that holds one section.");
+  expect(cell).toHaveTextContent("P-planned");
+  // Planned is not chosen: the host preview is never asked and the chosen line stays at zero.
+  expect(preview).not.toHaveBeenCalled();
+  const board = row.closest<HTMLElement>("[data-studio-board]")!;
+  for (const line of board.querySelectorAll<HTMLElement>("[data-studio-chosen-summary]")) expect(line).toHaveTextContent(/^0 of \d+ chosen$/);
+  for (const other of board.querySelectorAll<HTMLElement>("[data-studio-zoom-full] [data-studio-row]")) {
+    const id = other.dataset.studioRow!;
+    if (plannedPreviews.previews[id]) expect(other.querySelector("[data-studio-planned]")).not.toBeNull();
+    else { expect(other.querySelector("[data-studio-planned]")).toBeNull(); expect(other).toHaveTextContent(labels.board.notChosen); }
+  }
 });
