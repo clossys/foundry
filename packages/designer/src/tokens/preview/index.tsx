@@ -292,8 +292,8 @@ export function TokenPreview({
     opacity: <div style={{ ...plate, ...style }}>{sampleText}</div>,
   };
   return (
-    <figure aria-label={property} data-kind={kind} style={{
-      margin: 0, padding: 16, overflow: "auto", background: backing,
+    <figure aria-label={property} data-kind={kind} className="token-specimen-contain" style={{
+      margin: 0, padding: 16, background: backing,
       backgroundImage: translucent.has(property) ? checker : undefined, backgroundSize: 16,
     }}>
       {specimens[kind]}

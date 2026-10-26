@@ -7,6 +7,7 @@ import { unsafeText } from "../../catalog-core/model.js";
 import type { ResolvedMember } from "../../catalog-core/types.js";
 import { TOKENS } from "../tokens.js";
 import { checkedPreviewCss } from "./checked-css.js";
+import { displayTokenValue } from "./member-order.js";
 
 /**
  * One specimen type per token leaf (C21-4). Every member of a leaf paints the same specimen;
@@ -255,16 +256,22 @@ export function oklchSwatchable(member: ResolvedMember): boolean {
 }
 
 /**
- * A member value as readable text. An `oklch()` value shows its channels labelled L, C and H;
- * the exact source string stays on the element for copy and as its title.
+ * A member value as readable text, resolved: a `var()` reference shows its resolved value and,
+ * when the whole value is an alias, the referenced token's name as a quiet chip. An `oklch()`
+ * value shows its channels labelled L, C and H. The exact source string stays on the element
+ * for copy and as its title. The text wraps inside the token-bounded specimen box.
  */
 export function TokenValueText({ css }: { css: string }): ReactElement {
-  const channels = oklchChannels(css);
-  if (!channels) return <code data-member-value="">{css}</code>;
+  const { text, alias } = displayTokenValue(css);
+  const chip = alias ? <span data-token-alias="" className="text-ink-muted">{alias}</span> : null;
+  const channels = oklchChannels(text);
+  // The exact source rides on the element only when the visible text differs from it.
+  if (!channels) return <code data-member-value="" data-copy-value={text === css && !alias ? undefined : css} title={text === css ? undefined : css} className="token-specimen-contain inline-flex flex-wrap gap-x-sm">{alias ? <span>{text}</span> : text}{chip}</code>;
   const entries: Array<[string, string]> = [["L", channels.l], ["C", channels.c], ["H", channels.h], ...(channels.alpha ? [["A", channels.alpha] as [string, string]] : [])];
-  return <code data-member-value="" data-copy-value={css} title={css} className="inline-flex flex-wrap gap-x-sm">
+  return <code data-member-value="" data-copy-value={css} title={css} className="token-specimen-contain inline-flex flex-wrap gap-x-sm">
     {entries.map(([channel, value]) => <span key={channel} data-channel={channel} className="inline-flex gap-xs whitespace-nowrap">
       <span className="text-ink-muted">{channel}</span><span data-channel-value="">{value}</span>
     </span>)}
+    {chip}
   </code>;
 }
