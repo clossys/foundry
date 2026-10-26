@@ -20,7 +20,9 @@ export function importTailwindDefault(input: { css: string; slots?: readonly Slo
     else if ((hit = /^--text-([a-z0-9-]+)$/.exec(property))) { leaf = "font-size"; member = hit[1]!; }
     else if ((hit = /^--(font-weight|tracking|leading|breakpoint|radius|shadow|blur|ease)-([a-z0-9-]+)$/.exec(property))) {
       leaf = ({ "font-weight": "font-weight", tracking: "letter-spacing", leading: "line-height", breakpoint: "breakpoint", radius: "radius", shadow: "shadow", blur: "blur", ease: "easing" } as Record<string, string>)[hit[1]!]; member = hit[2]!;
-    } else if (property === "--font-sans" || property === "--font-mono") { leaf = "typeface"; member = property === "--font-sans" ? "body" : "mono"; }
+    } else if ((hit = /^--container-([a-z0-9-]+)$/.exec(property))) { leaf = "container-width"; member = hit[1]!; }
+    else if ((hit = /^--animate-([a-z0-9-]+)$/.exec(property))) { leaf = "animation"; member = hit[1]!; }
+    else if (property === "--font-sans" || property === "--font-mono") { leaf = "typeface"; member = property === "--font-sans" ? "body" : "mono"; }
     else if (property === "--spacing") {
       const dimension = /^([\d.]+)rem$/.exec(text.trim());
       if (!dimension) throw new Error("importer: --spacing must be a rem dimension");

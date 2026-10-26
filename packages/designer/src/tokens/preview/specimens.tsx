@@ -34,6 +34,8 @@ export const TOKEN_LEAF_SPECIMENS: Readonly<Record<string, TokenSpecimenKind>> =
   "tokens.control-size": "ruler",
   "tokens.content-size": "ruler",
   "tokens.region-width": "ruler",
+  "tokens.container-width": "ruler",
+  "tokens.animation": "motion",
   "tokens.density": "density",
   "tokens.focus-outline": "focus",
   "tokens.z-index": "layer-fan",
@@ -64,6 +66,7 @@ const RULERS: Readonly<Record<string, { readonly scale: string; readonly factor:
   "tokens.breakpoint": { scale: "1:6.25", factor: 0.16, ticks: [0, 400, 800, 1200, 1600] },
   "tokens.content-size": { scale: "1:5", factor: 0.2, ticks: [0, 320, 640, 960, 1280] },
   "tokens.region-width": { scale: "1:1.5625", factor: 0.64, ticks: [0, 100, 200, 300, 400] },
+  "tokens.container-width": { scale: "1:5", factor: 0.2, ticks: [0, 320, 640, 960, 1280] },
   "tokens.control-size": { scale: "4:1", factor: 4, ticks: [0, 16, 32, 48, 64] },
 };
 // Static class strings so the utilities are generated; index = tick position on the track.
@@ -81,10 +84,14 @@ const CAPTION = "text-caption text-ink-muted";
 const join = (...classes: Array<string | false | undefined>): string => classes.filter(Boolean).join(" ");
 const bound = (css: string, extra?: Record<string, string | number>): CSSProperties => ({ "--studio-specimen-value": css, ...extra }) as CSSProperties;
 
+/** A CSS `animation` shorthand: a keyframes name, a time, then plain timing words or one cubic-bezier. */
+const ANIMATION = /^[a-z][a-z0-9-]*\s+(?:\d*\.)?\d+m?s(?:\s+(?:[a-z-]+|cubic-bezier\([\d.\s,+-]+\)))*$/;
+
 /** The checked value a specimen may paint, or undefined when the member is outside its grammar. */
 function paintable(member: ResolvedMember): string | undefined {
   const css = member.css.light;
-  return typeof css === "string" && css.trim() && !unsafeText(css) && checkedPreviewCss(member.$type, css) ? css : undefined;
+  const checked = member.slot === "tokens.animation" ? ANIMATION.test(css.trim()) : checkedPreviewCss(member.$type, css);
+  return typeof css === "string" && css.trim() && !unsafeText(css) && checked ? css : undefined;
 }
 
 /** The four control points of a cubic-bezier value (a `var()` reads its authored fallback). */
@@ -96,8 +103,14 @@ export function cubicBezierPoints(css: string): readonly [number, number, number
   return points && points.every(Number.isFinite) ? points as unknown as [number, number, number, number] : undefined;
 }
 
-function MotionSpecimen({ css, role, linear, curve, playLabel }: { css: string; role: "duration" | "easing"; linear: boolean; curve?: readonly [number, number, number, number]; playLabel: string }): ReactElement {
+function MotionSpecimen({ css, role, linear, curve, playLabel }: { css: string; role: "duration" | "easing" | "animation"; linear: boolean; curve?: readonly [number, number, number, number]; playLabel: string }): ReactElement {
   const [playing, setPlaying] = useState(false);
+  if (role === "animation") return <figure data-token-specimen="motion" data-kind="motion" data-playing={String(playing)} style={bound(css)}
+    className={join("m-0 grid justify-items-start gap-xs overflow-hidden", TOKEN_SPECIMEN_WIDTHS.motion.className)}>
+    {/* The member's own keyframes run on the sample only while playing; reduced motion keeps it still. */}
+    <span aria-hidden="true" data-motion-target="" className={join("block size-xl rounded-control bg-accent", playing && "animate-(--studio-specimen-value) motion-reduce:animate-none")} />
+    <Toggle size="sm" variant="outline" isSelected={playing} onChange={setPlaying}>{playLabel}</Toggle>
+  </figure>;
   const timing = role === "duration"
     ? join("duration-(--studio-specimen-value)", linear ? "ease-linear" : "ease-(--ease-default)")
     : "duration-(--ui-duration-deliberate) ease-(--studio-specimen-value)";
@@ -176,7 +189,7 @@ export function tokenLeafSpecimenKind(member: ResolvedMember): TokenSpecimenKind
   const css = kind ? paintable(member) : undefined;
   if (!kind || css === undefined) return undefined;
   if (kind === "motion" && member.$type === "cubicBezier" && !cubicBezierPoints(css)) return undefined;
-  if (kind === "motion" && member.$type !== "cubicBezier" && member.$type !== "duration") return undefined;
+  if (kind === "motion" && member.slot !== "tokens.animation" && member.$type !== "cubicBezier" && member.$type !== "duration") return undefined;
   return kind;
 }
 
@@ -188,7 +201,7 @@ export function TokenLeafSpecimen({ id, member, sampleText, playLabel = "Play" }
   const key = id.slice(member.slot.length + 1);
   switch (kind) {
     case "motion": {
-      const role = member.$type === "cubicBezier" ? "easing" : "duration";
+      const role = member.slot === "tokens.animation" ? "animation" : member.$type === "cubicBezier" ? "easing" : "duration";
       const curve = role === "easing" ? cubicBezierPoints(css) : undefined;
       return <MotionSpecimen key={id} css={css} role={role} linear={member.slot === "tokens.behavior-timing"} curve={curve} playLabel={playLabel} />;
     }

@@ -11,12 +11,12 @@ const catalog = loadCatalog();
 const library = completedCatalogLibrary(catalog, source, "2026-10-23");
 
 describe("complete consumer token and asset library", () => {
-  it("serves every one of 101 leaves and all 227 CSS bindings with zero check errors", () => {
+  it("serves every one of 103 leaves (101 + the two owner-signed token leaves) and all 227 CSS bindings with zero check errors", () => {
     const result = check({ catalog, library });
     expect(result.findings.filter(finding => finding.severity === "error")).toEqual([]); expect(result.ok).toBe(true);
-    expect(library.complete).toBe(true); expect(library.fills).toHaveLength(101);
+    expect(library.complete).toBe(true); expect(library.fills).toHaveLength(103);
     const profile = resolve({ catalog, library });
-    expect(new Set(Object.values(profile.members).map(member => member.slot)).size).toBe(101);
+    expect(new Set(Object.values(profile.members).map(member => member.slot)).size).toBe(103);
     expect(Object.values(profile.members).filter(member => member.emit)).toHaveLength(227);
     expect(assetCoverageReport(catalog, library)).toMatchObject({ total: 48, served: 48 });
     expect(catalog.rules?.map(rule => rule.id)).toContain("token-diverging-neutral@1");
@@ -27,7 +27,7 @@ describe("complete consumer token and asset library", () => {
 
   it("records generated reverse edges, orphan counts and per-leaf consumer origins", async () => {
     const profile = resolve({ catalog, library }); const consumption = consumptionReport({ catalog, library });
-    expect(consumption.counts.orphanEdges).toBe(0); expect(consumption.leaves).toHaveLength(101);
+    expect(consumption.counts.orphanEdges).toBe(0); expect(consumption.leaves).toHaveLength(103);
     const leaves = catalog.slots.map(slot => {
       const members = Object.entries(profile.members).filter(([, member]) => member.slot === slot.id);
       return { slot: slot.id, members: members.length, sources: [...new Set(members.map(([, member]) => member.origin?.kind === "adopted" ? member.origin.source : source.id))].sort(compare), originKinds: [...new Set(members.map(([, member]) => member.origin?.kind))].sort(), rules: [...new Set(members.flatMap(([, member]) => member.origin?.kind === "derived" ? [member.origin.rule] : []))].sort(compare) };

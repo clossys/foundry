@@ -66,6 +66,8 @@ import fill63 from "../catalog/fills/tailwind-default/tokens.sequential-color.js
 import fill64 from "../catalog/fills/tailwind-default/tokens.shadow.json" with { type: "json" };
 import fill65 from "../catalog/fills/tailwind-default/tokens.spacing.json" with { type: "json" };
 import fill66 from "../catalog/fills/tailwind-default/tokens.typeface.json" with { type: "json" };
+import twAnimationFill from "../catalog/fills/tailwind-default/tokens.animation.json" with { type: "json" };
+import twContainerWidthFill from "../catalog/fills/tailwind-default/tokens.container-width.json" with { type: "json" };
 import source0 from "../catalog/sources/carbon-colors.json" with { type: "json" };
 import source1 from "../catalog/sources/foundry-baseline.json" with { type: "json" };
 import source2 from "../catalog/sources/foundry.json" with { type: "json" };
@@ -105,7 +107,7 @@ export * from "./cell.js";
 export * from "./stable.js";
 export * from "../catalog-assets/index.js";
 export function loadCatalog(): CatalogData {
-  const fills = [actionColorFill, fill0, fill1, fill2, fill3, fill4, fill5, fill6, fill7, fill8, fill9, fill10, fill11, fill12, fill13, fill14, fill15, fill16, fill17, fill18, fill19, fill20, fill21, fill22, fill23, fill24, fill25, fill26, fill27, fill28, fill29, fill30, fill31, fill32, fill33, fill34, fill35, fill36, fill37, fill38, fill39, fill40, fill41, fill42, fill43, fill44, fill45, fill46, fill47, fill48, fill49, fill50, fill51, fill52, fill53, fill54, fill55, fill56, fill57, fill58, fill59, fill60, fill61, fill62, fill63, fill64, fill65, fill66].map(value => {
+  const fills = [actionColorFill, fill0, fill1, fill2, fill3, fill4, fill5, fill6, fill7, fill8, fill9, fill10, fill11, fill12, fill13, fill14, fill15, fill16, fill17, fill18, fill19, fill20, fill21, fill22, fill23, fill24, fill25, fill26, fill27, fill28, fill29, fill30, fill31, fill32, fill33, fill34, fill35, fill36, fill37, fill38, fill39, fill40, fill41, fill42, fill43, fill44, fill45, fill46, fill47, fill48, fill49, fill50, fill51, fill52, fill53, fill54, fill55, fill56, fill57, fill58, fill59, fill60, fill61, fill62, fill63, fill64, fill65, fill66, twAnimationFill, twContainerWidthFill].map(value => {
     const parsed = parseFill(value);
     const error = parsed.findings.find(finding => finding.severity === "error");
     if (error) throw new Error("catalog: " + error.message);

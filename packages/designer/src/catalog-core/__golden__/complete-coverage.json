@@ -566,6 +566,17 @@
       ]
     },
     {
+      "members": 4,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "tokens.animation",
+      "sources": [
+        "tailwind-default"
+      ]
+    },
+    {
       "members": 6,
       "originKinds": [
         "adopted"
@@ -695,6 +706,17 @@
       ],
       "rules": [],
       "slot": "tokens.color-ramp",
+      "sources": [
+        "tailwind-default"
+      ]
+    },
+    {
+      "members": 13,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "tokens.container-width",
       "sources": [
         "tailwind-default"
       ]
@@ -1136,7 +1158,7 @@
       ]
     }
   ],
-  "served": 101,
-  "slots": 101,
-  "tokenLeaves": 53
+  "served": 103,
+  "slots": 103,
+  "tokenLeaves": 55
 }
