@@ -337,10 +337,15 @@ describe("member-specific root observations", () => {
 });
 
 describe("controls coherence group membership", () => {
-  it("keeps the label/description/error field but not the form container, which owns no control geometry", () => {
+  it("holds neither the form container nor the field wrapper, which render no control geometry of their own", () => {
     const controls = DEFAULT_COHERENCE_GROUPS.find(group => group.id === "controls")!;
-    expect(controls.slots).toContain("components.field");
     expect(controls.slots).toContain("components.text-field");
     expect(controls.slots).not.toContain("components.form");
+    // Field renders only a label, description and error around a caller-supplied control: no control height or focus of its own.
+    expect(controls.slots).not.toContain("components.field");
+  });
+  it("still compares label type leaves across the remaining labelled controls once field leaves", () => {
+    const controls = DEFAULT_COHERENCE_GROUPS.find(group => group.id === "controls")!;
+    expect(controls.slots).toEqual(expect.arrayContaining(["components.text-field", "components.search-field", "components.date-field", "components.number-field", "components.select", "components.combo-box"]));
   });
 });

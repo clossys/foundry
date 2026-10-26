@@ -99,9 +99,10 @@ export function isObservationPending(finding: { code: string; severity: string; 
     && (finding.message === OBSERVATIONS_UNAVAILABLE || finding.message.endsWith(`: ${OBSERVATIONS_UNAVAILABLE}`));
 }
 /** Coherence groups every profile check applies, before caller-supplied groups. */
-/** form is a validation container (rac:Form) with no control geometry, so it is not a controls-group member. */
+/** form is a validation container (rac:Form) and field a label/description/error wrapper around a caller-supplied control;
+ * neither renders control geometry of its own, so neither is a controls-group member. */
 export const DEFAULT_COHERENCE_GROUPS: NonNullable<ComponentCheckInput["coherenceGroups"]> = [
-  { id: "controls", kind: "controls", slots: ["field", "text-field", "search-field", "checkbox", "radio-group", "switch", "select", "combo-box", "toggle-group", "tag-group", "number-field", "slider", "date-field"].map(name => `components.${name}`) },
+  { id: "controls", kind: "controls", slots: ["text-field", "search-field", "checkbox", "radio-group", "switch", "select", "combo-box", "toggle-group", "tag-group", "number-field", "slider", "date-field"].map(name => `components.${name}`) },
   { id: "charts", kind: "charts", slots: [...CHARTS] }, { id: "date", kind: "date", slots: ["components.date-field", "components.calendar", "components.date-picker"] },
 ];
 const GLYPHS = /[✓✔✕✖×✗▾▴▸◂▶◀▲▼←→↑↓⌄⌃⌵⌫⊕⊖⚠ℹ]/u;
