@@ -208,3 +208,16 @@ describe("Table", () => {
     expect(table.style.padding).toBe("4px");
   });
 });
+
+describe("Table visual pass (VF-1 components-07, sf-15)", () => {
+  it("sets column headers in the medium weight, never the browser's bold th", () => {
+    render(<BasicTable />);
+    expect(screen.getByRole("columnheader", { name: "Name" })).toHaveClass("font-medium");
+  });
+
+  it("paints a selected row with the accent tint", () => {
+    render(<SelectableTable selectedKeys={[ROWS[0]!.id]} onSelectionChange={() => {}} />);
+    const selected = screen.getAllByRole("row").find((row) => row.getAttribute("aria-selected") === "true");
+    expect(selected).toHaveClass("bg-accent-tint");
+  });
+});

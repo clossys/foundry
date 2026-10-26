@@ -96,7 +96,7 @@ function TableColumn({ children, className, style, ...rest }: TableColumnProps) 
       {...rest}
       className={(renderProps) =>
         cx(
-          "px-md py-sm text-start text-body-s font-body text-ink-secondary outline-none",
+          "px-md py-sm text-start text-body-s font-body font-medium text-ink-secondary outline-none",
           renderProps.allowsSorting ? "cursor-pointer select-none" : "",
           className,
         )
@@ -154,7 +154,7 @@ function TableRow<T extends object>({ className, style, ...rest }: TableRowProps
           // read — the same pattern `Breadcrumb.Item` already uses for its
           // `not-last:after:content-['/']` separator.
           "not-last:border-b border-line-base outline-none",
-          renderProps.isSelected ? "bg-surface-selected" : "",
+          renderProps.isSelected ? "bg-accent-tint" : "",
           renderProps.isDisabled ? "text-ink-muted" : "",
           className,
         )

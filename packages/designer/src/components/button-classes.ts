@@ -8,12 +8,12 @@ import type { ButtonSize, ButtonVariant } from "./Button.js";
 export type ControlGround = "base" | "sunken" | "inverse";
 
 const BASE =
-  "inline-flex items-center justify-center gap-sm rounded-control text-body font-body transition-colors motion-reduce:transition-none outline-none disabled:cursor-not-allowed";
+  "inline-flex max-w-full items-center justify-center gap-sm whitespace-nowrap rounded-control text-body font-body transition-colors motion-reduce:transition-none outline-none disabled:cursor-not-allowed";
 
 const VARIANT_CLASSES: Record<Exclude<ButtonVariant, "tonal" | "quiet">, string> = {
   primary: "bg-action text-ink-on-action hover:bg-action-hover data-pressed:bg-action-pressed",
-  secondary: "bg-surface-raised text-ink-primary border border-line-base hover:bg-surface-sunken",
-  ghost: "text-ink-primary hover:bg-surface-sunken",
+  secondary: "bg-surface-raised text-ink-primary border border-line-base hover:bg-control-tonal-hover",
+  ghost: "text-ink-primary hover:bg-control-tonal-hover",
   danger: "bg-status-danger text-ink-on-accent hover:bg-status-danger-text",
   outline:
     "bg-transparent ring-inset ring-current ring-1 hover:ring-2",
@@ -67,10 +67,19 @@ const QUIET_GROUND_CLASSES: Record<ControlGround, string> = {
  * width.
  */
 
+/*
+ * Heights come from the control-height scale (`--ui-control-h-sm/md/lg`,
+ * 28/32/36) through the `control-h-*` utilities, whose transparent
+ * `::before` keeps the 44px hit area. No block padding: the height is the
+ * token, not padding plus line height. Ghost and secondary hover take the
+ * translucent tonal step (`--color-control-tonal-hover`), so hover lifts
+ * toward the ink in both themes (lighter on a dark ground) instead of
+ * sinking to the sunken surface.
+ */
 const SIZE_CLASSES: Record<ButtonSize, string> = {
-  sm: "px-sm py-xs text-body-s",
-  md: "px-md py-sm text-body",
-  lg: "px-lg py-md text-body-l",
+  sm: "control-h-sm px-sm text-body-s",
+  md: "control-h-md px-md text-body",
+  lg: "control-h-lg px-lg text-body-l",
 };
 
 /**
@@ -108,7 +117,7 @@ export function buttonLinkClassName(variant: ButtonVariant, size: ButtonSize, gr
 /** The grounds a round icon link is drawn for. Kept as a name for `ControlGround`. */
 export type IconButtonLinkGround = ControlGround;
 
-/** An icon-only control's box: `md` is the 44px tap target, `sm` a 36px box with a 44px hit area. */
+/** An icon-only control's box: `md` is the 44px tap target, `sm` a 28px box (`--ui-control-h-sm`) with a 44px hit area. */
 export type IconButtonSize = "sm" | "md";
 
 /** An icon-only control's outline: `circle` on the pill radius, `square` on the control radius. */
@@ -127,7 +136,7 @@ export interface IconButtonClassOptions {
  * One centred icon in a box with a hairline edge. The box sizes and the
  * colour transition (the fast motion tier) come from `theme.css` utilities,
  * `icon-control-md` (44px, `--ui-layout-tap-target`) and `icon-control-sm`
- * (36px, with a transparent `::before` that pads the hit area to 44px), so
+ * (28px, `--ui-control-h-sm`, with a transparent `::before` that pads the hit area to 44px), so
  * they compile into `compiled.css` too. Reduced motion changes colours
  * instantly.
  */
@@ -153,9 +162,9 @@ const ICON_SHAPE_CLASSES: Record<IconButtonShape, string> = {
  * other tone. A disabled control takes no hover.
  */
 const ICON_GROUND_CLASSES: Record<ControlGround, string> = {
-  base: "bg-surface-raised text-ink-primary border-line-base hover:bg-surface-sunken hover:border-line-strong active:bg-surface-sunken active:border-ink-primary aria-pressed:bg-surface-inverse aria-pressed:text-ink-on-inverse aria-pressed:border-surface-inverse aria-expanded:bg-surface-inverse aria-expanded:text-ink-on-inverse aria-expanded:border-surface-inverse focus-visible:ring-2 focus-visible:ring-surface-raised",
+  base: "bg-surface-raised text-ink-primary border-line-base hover:bg-control-tonal-hover hover:border-line-strong active:bg-surface-sunken active:border-ink-primary aria-pressed:bg-surface-inverse aria-pressed:text-ink-on-inverse aria-pressed:border-surface-inverse aria-expanded:bg-surface-inverse aria-expanded:text-ink-on-inverse aria-expanded:border-surface-inverse focus-visible:ring-2 focus-visible:ring-surface-raised",
   sunken:
-    "bg-surface-raised text-ink-primary border-line-base hover:bg-surface-base hover:border-line-strong active:bg-surface-base active:border-ink-primary aria-pressed:bg-surface-inverse aria-pressed:text-ink-on-inverse aria-pressed:border-surface-inverse aria-expanded:bg-surface-inverse aria-expanded:text-ink-on-inverse aria-expanded:border-surface-inverse focus-visible:ring-2 focus-visible:ring-surface-raised",
+    "bg-surface-raised text-ink-primary border-line-base hover:bg-control-tonal-hover hover:border-line-strong active:bg-surface-base active:border-ink-primary aria-pressed:bg-surface-inverse aria-pressed:text-ink-on-inverse aria-pressed:border-surface-inverse aria-expanded:bg-surface-inverse aria-expanded:text-ink-on-inverse aria-expanded:border-surface-inverse focus-visible:ring-2 focus-visible:ring-surface-raised",
   inverse:
     "bg-surface-inverse-raised text-ink-on-inverse border-line-on-inverse hover:bg-surface-inverse hover:border-ink-on-inverse-muted active:bg-surface-inverse active:border-ink-on-inverse aria-pressed:bg-surface-raised aria-pressed:text-ink-primary aria-pressed:border-surface-raised aria-expanded:bg-surface-raised aria-expanded:text-ink-primary aria-expanded:border-surface-raised focus-visible:ring-2 focus-visible:ring-surface-inverse-raised",
 };

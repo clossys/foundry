@@ -80,13 +80,13 @@ export function SearchField({
             <Input
               placeholder={placeholder}
               className={cx(
-                "w-full rounded-control border bg-surface-raised py-sm ps-md pe-2xl text-body text-ink-primary",
+                "w-full rounded-control border bg-surface-raised py-sm ps-md pe-2xl text-body text-ink-primary outline-hidden",
                 isInvalid ? "border-status-danger" : "border-line-base",
                 inputClassName,
               )}
               style={(renderProps) => ({
                 opacity: isDisabled ? UI_ALPHA_DISABLED : undefined,
-                boxShadow: renderProps.isFocusVisible ? UI_RING_FOCUS : undefined,
+                boxShadow: renderProps.isFocused ? UI_RING_FOCUS : undefined,
               })}
             />
             {!isEmpty ? (
