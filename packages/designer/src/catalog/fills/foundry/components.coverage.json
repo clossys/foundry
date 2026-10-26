@@ -89,16 +89,16 @@
       ]
     },
     {
-      "missing": [
-        "selection.range",
-        "selection.single"
-      ],
+      "missing": [],
       "notes": [
-        "No package implementation is available."
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
       ],
       "slot": "components.calendar",
-      "status": "unavailable",
-      "supported": []
+      "status": "candidate",
+      "supported": [
+        "selection.range",
+        "selection.single"
+      ]
     },
     {
       "missing": [],

@@ -58,7 +58,7 @@ function setup(overrides: Partial<ComponentDefaultsInput> = {}, order?: readonly
 const ledger = (rows: ReturnType<typeof planComponentDefaults>["rows"]) => Object.fromEntries(rows.map(row => [row.slot.slice(11), row.status === "not-chosen" ? "-" : row.source ?? row.rule!]));
 
 const EXPECTED_DEFAULTS = {
-  avatar: "shadcn@aria", badge: "foundry", banner: "foundry", breadcrumbs: "shadcn@aria", button: "foundry", card: "foundry",
+  avatar: "shadcn@aria", badge: "foundry", banner: "foundry", breadcrumbs: "shadcn@aria", button: "foundry", calendar: "foundry", card: "foundry",
   "chart-area": "foundry", "chart-bar": "foundry", "chart-heatmap": "foundry", "chart-line": "foundry", "chart-range": "foundry",
   "chart-scatter": "foundry", "chart-status-strip": "foundry", "chart-waterfall": "foundry", "combo-box": "foundry", "date-field": "foundry",
   field: "foundry", "file-trigger": "foundry", form: "foundry", icon: "foundry", keyboard: "shadcn@aria", link: "foundry", logo: "foundry",
@@ -67,7 +67,7 @@ const EXPECTED_DEFAULTS = {
   spinner: "foundry", "status-mark": "foundry", switch: "foundry", "text-field": "foundry", toast: "foundry", "toggle-button": "foundry",
   toolbar: "rac-starter", tooltip: "shadcn@aria",
 };
-const NOT_CHOSEN = ["calendar", "chart-sparkline", "checkbox", "color-picker", "date-picker", "dialog", "disclosure", "grid-list", "menu",
+const NOT_CHOSEN = ["chart-sparkline", "checkbox", "color-picker", "date-picker", "dialog", "disclosure", "grid-list", "menu",
   "number-field", "popover", "select", "slider", "table", "tabs", "tag-group", "toggle-group", "tree"];
 const reasons = (plan: ReturnType<typeof planComponentDefaults>, leaf: string) => plan.rows.find(row => row.slot === `components.${leaf}`)!.reasons.join(" || ");
 
@@ -94,7 +94,7 @@ describe("component default fills", () => {
     expect(reasons(plan, "table")).toContain("owner pick foundry is not eligible");
     expect(reasons(plan, "slider")).toBe("controls coherence: one source per group, led by foundry; shadcn@aria would mix sources");
     expect(reasons(plan, "grid-list")).toBe("foundry: dependency not chosen components.checkbox");
-    expect(reasons(plan, "date-picker")).toContain("compose:date-picker@1: inputs not chosen components.calendar,components.popover");
+    expect(reasons(plan, "date-picker")).toContain("compose:date-picker@1: inputs not chosen components.popover");
     expect(reasons(plan, "tree")).toBe("foundry: blocked K5 || rac-starter: blocked K4");
   });
   it("emits decisions the existing apply path adopts, and the adopted graph resolves as a closed executable set", () => {
@@ -130,7 +130,7 @@ describe("component default fills", () => {
     expect(reasons(plan, "table")).toContain("foundry: K1 Required member resize-columns is not mapped");
     expect(reasons(plan, "checkbox")).toContain("foundry: K1 Required member scope.group is not mapped");
     expect(reasons(plan, "tree")).toContain("foundry: blocked K5");
-    expect(reasons(plan, "calendar")).toContain("foundry: no implementation candidate");
+    expect(plan.rows.find(row => row.slot === "components.calendar")).toMatchObject({ status: "default", basis: "preference", source: "foundry", fill: "foundry/components.calendar" });
     expect(plan.rows.find(row => row.slot === "components.toggle-button")).toMatchObject({ status: "default", basis: "preference", source: "foundry", fill: "foundry/components.toggle-button" });
   });
   it("the fallback is scoped to its listed leaves", () => {

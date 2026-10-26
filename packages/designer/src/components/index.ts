@@ -25,7 +25,7 @@
  * same way.
  *
  * Thirty-six ship as of this file. See the README's "What's deliberately
- * not here" for what was left out on purpose (`Slider`, `Calendar`, `NumberField`, `Toolbar`, `Accordion`, ...).
+ * not here" for what was left out on purpose (`Slider`, `NumberField`, `Toolbar`, `Accordion`, ...).
  */
 
 import { version as reactVersion } from "react";
@@ -145,6 +145,8 @@ export type { RadioGroupProps, RadioGroupRadioProps } from "./RadioGroup.js";
 export { Popover } from "./Popover.js";
 export type { PopoverProps } from "./Popover.js";
 
+export { Calendar } from "./Calendar.js";
+export type { CalendarProps, SingleCalendarProps, RangeCalendarProps } from "./Calendar.js";
 export { DateField } from "./DateField.js";
 export type { DateFieldProps } from "./DateField.js";
 

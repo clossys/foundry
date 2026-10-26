@@ -4,6 +4,7 @@ import type { IconNode } from "../icons/types.js";
 import { Check } from "../icons/Check.js";
 import { ChevronDown } from "../icons/ChevronDown.js";
 import { ChevronUp } from "../icons/ChevronUp.js";
+import { ChevronLeft } from "../icons/ChevronLeft.js";
 import { ChevronRight } from "../icons/ChevronRight.js";
 import { Minus } from "../icons/Minus.js";
 import { X } from "../icons/X.js";
@@ -14,6 +15,7 @@ const DEFAULT_GLYPHS = {
   "assets.icon-check": Check,
   "assets.icon-chevron-down": ChevronDown,
   "assets.icon-chevron-up": ChevronUp,
+  "assets.icon-chevron-left": ChevronLeft,
   "assets.icon-chevron-right": ChevronRight,
   "assets.icon-close": X,
 } as const;
