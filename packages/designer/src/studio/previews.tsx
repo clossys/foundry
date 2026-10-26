@@ -6,6 +6,7 @@ import { IconSpecimen, RatioSpecimen, SvgSpecimen, ratioOf } from "./asset-speci
 import type { ReactElement } from "react";
 import type { StudioLabels } from "./types.js";
 import { TokenPreview, TokenValuePreview } from "../tokens/preview/index.js";
+import { OklchSwatch, TokenLeafSpecimen, TokenValueText, oklchSwatchable, tokenLeafSpecimenKind } from "../tokens/preview/specimens.js";
 import { describePreview, previewRows, type Candidate, type PreviewSpec } from "./model.js";
 
 /** Copy for the previews. The host supplies it; this module holds no English. */
@@ -81,16 +82,23 @@ export function SlotPreview({ members, labels, limit = PREVIEW_LIMIT, fontDeclar
 export function CompactPreview({ candidate, labels }: { candidate: Candidate; labels: StudioLabels }): ReactElement | null {
   const id = candidate.members[0]?.id, member = candidate.members[0]?.member;
   if (!candidate.previewable || !id || !member) return null;
+  const family = member.$type === "fontFamily" && member.font?.kind === "fontsource" ? firstFamily(member.css.light) : undefined;
+  // A token leaf with its own specimen (C21-4) paints it; the value stays as separate readable text.
+  if (tokenLeafSpecimenKind(member)) return <><TokenLeafSpecimen id={id} member={member} sampleText={labels.sampleText} /><TokenValueText css={member.css.light} /></>;
+  // An achromatic oklch value with a `none` channel paints from its strictly parsed channels.
+  if (oklchSwatchable(member)) return <>
+    <OklchSwatch id={id} light={member.css.light} dark={member.css.dark} lightLabel={labels.inspector.light} darkLabel={labels.inspector.dark} />
+    <TokenValueText css={member.css.light} />
+  </>;
   const spec = describePreview(member, 0);
   const compact = !(spec.kind === "text" && spec.visualUnsupported) && (member.$type === "color" || member.$type === "duration" || member.$type === "cubicBezier");
   const specimen = compact
     ? <TokenValuePreview id={id} member={member} sampleText={labels.sampleText} lightLabel={labels.inspector.light} darkLabel={labels.inspector.dark} compact />
     : <Specimen id={id} member={member} spec={spec} labels={labels} />;
   const valueShown = member.slot.startsWith("assets.") || spec.kind === "text" || spec.kind === "ruler";
-  const family = member.$type === "fontFamily" && member.font?.kind === "fontsource" ? firstFamily(member.css.light) : undefined;
   return <>
     {specimen}
-    {valueShown ? null : <code data-member-value="">{member.css.light}</code>}
+    {valueShown ? null : <TokenValueText css={member.css.light} />}
     {family !== undefined && !isFontDeclared(family) ? <small data-preview-note="font">{labels.fontNotLoaded}</small> : null}
   </>;
 }

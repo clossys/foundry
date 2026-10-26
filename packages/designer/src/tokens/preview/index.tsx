@@ -9,6 +9,7 @@ import { REACT_DECLARED_RANGE } from "../../internal/declared-peer-ranges.js";
 import tokenSlots from "../../catalog/slots/tokens.json" with { type: "json" };
 import { malformed, unsafeText } from "../../catalog-core/model.js";
 import type { ResolvedMember, TokenContract } from "../../catalog-core/types.js";
+import { checkedPreviewCss } from "./checked-css.js";
 
 assertPeerVersion({ peer: "react", declaredRange: REACT_DECLARED_RANGE, foundVersion: version });
 
@@ -19,19 +20,6 @@ export interface TokenValuePreviewProps {
   lightLabel: string;
   darkLabel: string;
   compact?: boolean;
-}
-function checkedPreviewCss(type: ResolvedMember["$type"], input: string): boolean {
-  const css = input.trim();
-  const reference = /^var\((--[a-zA-Z][\w-]*),\s*([\s\S]+)\)$/.exec(css);
-  if (reference) return checkedPreviewCss(type, reference[2]!);
-  if (type === "color") return /^(?:#[a-f\d]{3,8}|transparent|currentColor|(?:rgb|rgba|hsl|hsla|hwb|oklch|oklab|lab|lch)\([\deE.%+\-\s,/]+\)|color\((?:srgb|srgb-linear|display-p3|a98-rgb|prophoto-rgb|rec2020|xyz-d50|xyz-d65) [\deE.%+\-\s/]+\))$/i.test(css);
-  if (type === "fontFamily") return /^[\p{L}\p{N}\s,\-_'".]+$/u.test(css);
-  if (type === "dimension") return css === "0" || /^-?(?:\d*\.)?\d+(?:px|rem|em|%|vh|vw|vmin|vmax|ch|ex)$/.test(css) || /^(?:calc|min|max|clamp)\([\d.\s+*/(),%a-z-]+\)$/i.test(css) && !/[a-z]{4,}/i.test(css.replace(/(?:calc|min|max|clamp|rem|vmin|vmax)/g, ""));
-  if (type === "duration") return /^-?(?:\d*\.)?\d+m?s$/.test(css);
-  if (type === "number" || type === "fontWeight") return /^(?:normal|bold|[+-]?(?:\d*\.)?\d+(?:em)?)$/.test(css);
-  if (type === "cubicBezier") return /^cubic-bezier\([\d.\s,+-]+\)$/.test(css);
-  // Other member types are rendered as text, never as a CSS property.
-  return true;
 }
 /** Selected consumer values use the registered member/type/property binding.
  * This mechanism paints data; callers cannot supply CSS property names or styles.

@@ -96,7 +96,9 @@ it.each(["tokens.breakpoint", "tokens.control-size", "tokens.content-size", "tok
   expect(figure, key).not.toBeNull();
   expect(binding(figure), key).toBe(member.css.light);
   const bar = figure!.querySelector<HTMLElement>("[data-ruler-bar]")!;
-  expect(bar.className).toMatch(/w-\[calc\(var\(--studio-specimen-value\)\*[\d.]+\)\]/);
+  // The bar is the member's own length at the leaf's one scale factor.
+  expect(bar.className).toContain("w-(--studio-ruler-bar)");
+  expect(figure!.style.getPropertyValue("--studio-ruler-bar"), key).toMatch(new RegExp(`^calc\\(${member.css.light.replace(/[()*+.?[\]\\^$|]/g, "\\$&")} \\* [\\d.]+\\)$`));
   scales.add(figure!.dataset.rulerScale!);
   expect(figure!.querySelectorAll("[data-ruler-tick]").length).toBeGreaterThanOrEqual(3);
  }
