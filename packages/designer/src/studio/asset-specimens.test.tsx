@@ -1,9 +1,17 @@
+import { readFileSync } from "node:fs";
+import { dirname, resolve as resolvePath } from "node:path";
+import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, render } from "@testing-library/react";
-import { SvgSpecimen } from "./asset-specimens.js";
+import { parseRootDeclarations } from "../tokens/internal/parse-css.js";
+import { contrastRatio } from "../tokens/color.js";
+import { AA_LARGE } from "../tokens/contrast-pairs.js";
+import { IconSpecimen, SvgSpecimen } from "./asset-specimens.js";
 
 afterEach(cleanup);
 
+const tokensCss = readFileSync(resolvePath(dirname(fileURLToPath(import.meta.url)), "../../styles/tokens.css"), "utf8");
+const lightTokens = parseRootDeclarations(tokensCss);
 const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" color="#111111"><circle cx="24" cy="24" r="20" fill="currentColor"/></svg>';
 const uri = `data:image/svg+xml,${encodeURIComponent(svg)}`;
 const show = (slot: string, role: string): HTMLElement => {
@@ -12,30 +20,70 @@ const show = (slot: string, role: string): HTMLElement => {
 };
 const sized = (root: Element, side: number): HTMLImageElement[] =>
   [...root.querySelectorAll<HTMLImageElement>("img")].filter(image => image.getAttribute("width") === String(side) && image.getAttribute("height") === String(side));
+/** The colour classes of an element and every ancestor up to the specimen root. */
+const groundClasses = (element: Element): string[] => {
+  const classes: string[] = [];
+  for (let node: Element | null = element; node; node = node.parentElement) classes.push(...node.className.toString().split(/\s+/).filter(name => name.startsWith("bg-")));
+  return classes;
+};
+/** A ground token that is declared once, at the root, and never redefined for the dark theme. */
+const fixedPolarity = (token: string): boolean => (tokensCss.match(new RegExp(`${token}:`, "g")) ?? []).length === 1;
+
+describe("specimen grounds follow the variant's role, never the theme", () => {
+  const LIGHT = "bg-neutral-50", DARK = "bg-neutral-900";
+
+  it.each([["positive", "light", LIGHT], ["mono", "light", LIGHT], ["reversed", "dark", DARK]])("%s sits on the %s ground", (role, ground, token) => {
+    const specimen = show("assets.mark", role);
+    const image = specimen.querySelector(`img[src='${uri}']`)!;
+    expect(specimen.getAttribute("data-ground")).toBe(ground);
+    expect(groundClasses(image)).toEqual([token]);
+  });
+
+  it("the app icon sits on the light ground", () => {
+    const specimen = show("assets.app-icon", "standard");
+    expect(groundClasses(specimen.querySelector("img")!)).toEqual([LIGHT]);
+  });
+
+  it("both grounds are neutral references that never flip, and each separates from the ink drawn for it", () => {
+    for (const token of ["--color-neutral-50", "--color-neutral-900"]) expect(fixedPolarity(token), token).toBe(true);
+    expect(fixedPolarity("--color-surface-base")).toBe(false);
+    expect(contrastRatio(lightTokens.get("--color-ink-primary")!, lightTokens.get("--color-neutral-50")!)).toBeGreaterThanOrEqual(AA_LARGE);
+    expect(contrastRatio(lightTokens.get("--color-ink-on-inverse")!, lightTokens.get("--color-neutral-900")!)).toBeGreaterThanOrEqual(AA_LARGE);
+  });
+});
 
 describe("favicon specimen", () => {
-  it("shows the favicon in tab chrome at exactly 16 CSS px and again at exactly 32 CSS px, sized by attributes, never inline style", () => {
+  it("shows the favicon at exactly 16, 32 and 48 CSS px on the light and the dark ground, sized by attributes, never inline style", () => {
     const specimen = show("assets.favicon", "vector");
     expect(specimen.getAttribute("data-asset-specimen")).toBe("favicon");
-    const tab = specimen.querySelector("[role='tablist'] [role='tab']");
-    expect(tab).not.toBeNull();
-    expect(sized(tab!, 16)).toHaveLength(1);
-    expect(sized(specimen, 32)).toHaveLength(1);
-    for (const image of [...sized(specimen, 16), ...sized(specimen, 32)]) {
+    expect(specimen.querySelector("[role='tablist']")).toBeNull();
+    const grounds = [...specimen.querySelectorAll<HTMLElement>("[data-ground]")];
+    expect(grounds.map(ground => ground.getAttribute("data-ground"))).toEqual(["light", "dark"]);
+    expect(grounds.map(ground => groundClasses(ground))).toEqual([["bg-neutral-50"], ["bg-neutral-900"]]);
+    for (const ground of grounds) {
+      expect([...ground.querySelectorAll("img")].map(image => Number(image.getAttribute("width")))).toEqual([16, 32, 48]);
+      for (const side of [16, 32, 48]) expect(sized(ground, side)).toHaveLength(1);
+    }
+    for (const image of specimen.querySelectorAll("img")) {
       expect(image.getAttribute("src")).toBe(uri);
       expect(image.hasAttribute("style")).toBe(false);
       expect(image.getAttribute("alt")).toBe("");
     }
-    expect(specimen.querySelectorAll("img")).toHaveLength(2);
+    expect(specimen.querySelectorAll("img")).toHaveLength(6);
   });
 
-  it("labels each size with its pixels, and the tab it draws is one the tab panel answers", () => {
-    const specimen = show("assets.favicon", "vector");
-    expect(specimen.textContent).toContain("16 px");
-    expect(specimen.textContent).toContain("32 px");
-    const tab = specimen.querySelector("[role='tab']")!;
-    const panel = specimen.querySelector("[role='tabpanel']");
-    expect(panel?.id).toBe(tab.getAttribute("aria-controls"));
+  it("labels the sizes it draws in pixels", () => {
+    expect(show("assets.favicon", "vector").textContent).toContain("16, 32, 48 px");
+  });
+});
+
+describe("icon specimen", () => {
+  it("draws the glyph once at each icon size token, smallest first, labelled with its name", () => {
+    const view = render(<IconSpecimen glyph={[["circle", { cx: "12", cy: "12", r: "8" }]]} name="dot" />);
+    const specimen = view.container.querySelector("[data-asset-specimen='icon']")!;
+    const widths = [...specimen.querySelectorAll<SVGElement>("svg")].map(icon => icon.style.width);
+    expect(widths.map(width => /--ui-icon-(sm|md|lg)/.exec(width)?.[1])).toEqual(["sm", "md", "lg"]);
+    expect(specimen.textContent).toContain("dot");
   });
 });
 
