@@ -130,7 +130,6 @@ export function addChanges(input: { base: LibraryData; changes: ChangeSet; list:
   return input.list.reduce((changes, change) => addChange({ ...input, changes, change }), input.changes);
 }
 export const emptyChanges = (base: LibraryData, engine: StudioEngine = studioEngine): ChangeSet => ({ baseHash: engine.libraryHash(base), changes: [] });
-export const pendingCount = (changes: ChangeSet): number => changes.changes.length;
 export function workingLibrary(input: { catalog: CatalogData; base: LibraryData; changes: ChangeSet; engine?: StudioEngine }): LibraryData {
   return input.changes.changes.length === 0 ? input.base : (input.engine ?? studioEngine).applyLibraryChange(input.catalog, input.base, input.changes);
 }
