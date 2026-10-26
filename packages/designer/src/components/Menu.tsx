@@ -8,9 +8,12 @@ import {
   Popover,
   Separator,
   type MenuItemProps as AriaMenuItemProps,
+  type MenuProps as AriaMenuProps,
   type MenuTriggerProps as AriaMenuTriggerProps,
   type MenuSectionProps as AriaMenuSectionProps,
 } from "react-aria-components";
+import { Icon } from "./Icon.js";
+import { useGlyph } from "./glyph-context.js";
 import { cx } from "./internal/cx.js";
 import { UI_ELEVATION_FLOATING, UI_Z_POPOVER } from "./internal/ui-vars.js";
 
@@ -39,7 +42,21 @@ export interface MenuProps extends Omit<AriaMenuTriggerProps, "children" | "trig
   className?: string;
   /** Merged onto the popover panel that holds the menu. */
   popoverClassName?: string;
+  /**
+   * Root selection: `"single"` makes every item a radio item, `"multiple"` a
+   * checkbox item; selected items show a leading check. Sections keep their
+   * own `selectionMode` for mixed menus.
+   * @default "none"
+   */
+  selectionMode?: MenuSelectionMode;
+  selectedKeys?: AriaMenuProps<object>["selectedKeys"];
+  defaultSelectedKeys?: AriaMenuProps<object>["defaultSelectedKeys"];
+  onSelectionChange?: AriaMenuProps<object>["onSelectionChange"];
+  /** Called with the activated item's id. */
+  onAction?: AriaMenuProps<object>["onAction"];
 }
+
+export type MenuSelectionMode = "none" | "single" | "multiple";
 
 /**
  * A dropdown menu of actions, opened from a trigger element. Built on
@@ -83,6 +100,11 @@ function MenuRoot({
   children,
   className,
   popoverClassName,
+  selectionMode,
+  selectedKeys,
+  defaultSelectedKeys,
+  onSelectionChange,
+  onAction,
   ...rest
 }: MenuProps) {
   return (
@@ -95,9 +117,46 @@ function MenuRoot({
         )}
         style={{ boxShadow: UI_ELEVATION_FLOATING, zIndex: UI_Z_POPOVER }}
       >
-        <AriaMenu className={cx("flex flex-col outline-none", className)}>{children}</AriaMenu>
+        <AriaMenu
+          className={cx("flex flex-col outline-none", className)}
+          selectionMode={selectionMode}
+          selectedKeys={selectedKeys}
+          defaultSelectedKeys={defaultSelectedKeys}
+          onSelectionChange={onSelectionChange}
+          onAction={onAction}
+        >
+          {children}
+        </AriaMenu>
       </Popover>
     </MenuTrigger>
+  );
+}
+
+export interface MenuInlineProps extends Omit<AriaMenuProps<object>, "className" | "children" | "selectionMode"> {
+  children: ReactNode;
+  selectionMode?: MenuSelectionMode;
+  /** Merged onto the menu surface. */
+  className?: string;
+}
+
+/**
+ * The same menu presented inline: always visible in the page, with no
+ * trigger or popover, on the overlay surface without its floating
+ * elevation. Name it with `aria-label` or `aria-labelledby`. Arrow keys,
+ * Home/End, typeahead, actions and root or section selection behave as in
+ * the popup menu; Tab moves focus into it and on past it.
+ */
+function MenuInline({ children, className, ...rest }: MenuInlineProps) {
+  return (
+    <AriaMenu
+      {...rest}
+      className={cx(
+        "flex flex-col rounded-control border border-overlay-border bg-overlay-surface p-xs outline-none",
+        className,
+      )}
+    >
+      {children}
+    </AriaMenu>
   );
 }
 
@@ -115,10 +174,14 @@ export interface MenuItemProps extends Omit<AriaMenuItemProps, "className"> {
   className?: string;
 }
 
-function MenuItem({ children, isDestructive = false, className, ...rest }: MenuItemProps) {
+function MenuItem({ children, isDestructive = false, className, textValue, ...rest }: MenuItemProps) {
+  const checkGlyph = useGlyph("assets.icon-check");
   return (
     <AriaMenuItem
       {...rest}
+      // The render function below hides string children from the collection,
+      // so typeahead keeps its text explicitly.
+      textValue={textValue ?? (typeof children === "string" ? children : undefined)}
       className={(renderProps) =>
         cx(
           "flex cursor-default items-center gap-sm rounded-default px-sm py-xs text-body-s font-body outline-none",
@@ -137,7 +200,16 @@ function MenuItem({ children, isDestructive = false, className, ...rest }: MenuI
         )
       }
     >
-      {children}
+      {(renderProps) => (
+        <>
+          {renderProps.selectionMode !== "none" ? (
+            <span data-menu-check="" className={cx("inline-flex shrink-0", renderProps.isSelected ? "" : "invisible")}>
+              <Icon glyph={checkGlyph} decorative size="sm" className={renderProps.isDisabled ? "" : "text-accent-text"} />
+            </span>
+          ) : null}
+          {children}
+        </>
+      )}
     </AriaMenuItem>
   );
 }
@@ -206,4 +278,4 @@ function MenuSection({ heading, children, ...rest }: MenuSectionProps) {
   </AriaMenuSection>;
 }
 
-export const Menu = Object.assign(MenuRoot, { Item: MenuItem, Separator: MenuSeparator, Section: MenuSection });
+export const Menu = Object.assign(MenuRoot, { Inline: MenuInline, Item: MenuItem, Separator: MenuSeparator, Section: MenuSection });

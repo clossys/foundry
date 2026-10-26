@@ -13,18 +13,12 @@
         "package": "@clossys/designer",
         "version": "0.12.0"
       },
-      "relation": "subset",
+      "relation": "same-contract",
       "slot": "components.menu",
       "source": "foundry",
       "sourceAddress": "./components#Menu",
       "status": "draft",
-      "trust": "foundry",
-      "unmapped": [
-        "presentation.inline",
-        "selection.multiple",
-        "selection.none",
-        "selection.single"
-      ]
+      "trust": "foundry"
     }
   },
   "components": {
@@ -54,7 +48,11 @@
       },
       "license": "MIT",
       "members": [
-        "presentation.popup"
+        "presentation.inline",
+        "presentation.popup",
+        "selection.multiple",
+        "selection.none",
+        "selection.single"
       ],
       "pin": {
         "export": "./components#Menu",
@@ -62,17 +60,28 @@
         "version": "0.12.0"
       },
       "propMap": {
-        "presentation.popup": "./components#Menu"
+        "presentation.inline": "./components#Menu.Inline",
+        "presentation.popup": "./components#Menu",
+        "selection.multiple": "./components#Menu.selectionMode=multiple",
+        "selection.none": "./components#Menu.selectionMode=none",
+        "selection.single": "./components#Menu.selectionMode=single"
       },
       "props": [
         "children",
         "className",
+        "defaultSelectedKeys",
+        "onAction",
+        "onSelectionChange",
         "popoverClassName",
+        "selectedKeys",
+        "selectionMode",
         "trigger",
         "triggerAction"
       ],
       "reads": {
-        "assets": [],
+        "assets": [
+          "assets.icon-check"
+        ],
         "components": [],
         "tokens": [
           "tokens.body-size",

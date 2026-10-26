@@ -62,12 +62,12 @@ const EXPECTED_DEFAULTS = {
   "chart-area": "foundry", "chart-bar": "foundry", "chart-heatmap": "foundry", "chart-line": "foundry", "chart-range": "foundry",
   "chart-scatter": "foundry", "chart-status-strip": "foundry", "chart-waterfall": "foundry", "combo-box": "foundry", "date-field": "foundry", dialog: "foundry",
   field: "foundry", "file-trigger": "foundry", form: "foundry", icon: "foundry", keyboard: "shadcn@aria", link: "foundry", logo: "foundry",
-  meter: "foundry", "native-action": "foundry", "navigation-tree": "foundry", popover: "foundry", "progress-bar": "foundry", "radio-group": "foundry",
+  menu: "foundry", meter: "foundry", "native-action": "foundry", "navigation-tree": "foundry", popover: "foundry", "progress-bar": "foundry", "radio-group": "foundry",
   "resize-handle": "foundry", "search-field": "foundry", "semantic-content": "foundry", separator: "shadcn@aria", skeleton: "foundry",
   spinner: "foundry", "status-mark": "foundry", switch: "foundry", "text-field": "foundry", toast: "foundry", toolbar: "rac-starter",
   tooltip: "shadcn@aria",
 };
-const NOT_CHOSEN = ["calendar", "chart-sparkline", "checkbox", "color-picker", "date-picker", "disclosure", "grid-list", "menu",
+const NOT_CHOSEN = ["calendar", "chart-sparkline", "checkbox", "color-picker", "date-picker", "disclosure", "grid-list",
   "number-field", "select", "slider", "table", "tabs", "tag-group", "toggle-button", "toggle-group", "tree"];
 const reasons = (plan: ReturnType<typeof planComponentDefaults>, leaf: string) => plan.rows.find(row => row.slot === `components.${leaf}`)!.reasons.join(" || ");
 
@@ -139,6 +139,7 @@ describe("component default fills", () => {
     expect(row("popover")).toMatchObject({ status: "default", source: "foundry", fill: "foundry/components.popover" });
     expect(row("dialog")).toMatchObject({ status: "default", source: "foundry", fill: "foundry/components.dialog" });
     expect(reasons(plan, "table")).not.toContain("K1");
+    expect(row("menu")).toMatchObject({ status: "default", source: "foundry", fill: "foundry/components.menu" });
     expect(reasons(plan, "date-picker")).toMatch(/compose:date-picker@1: inputs not chosen components.calendar$/);
   });
   it("the fallback is scoped to its listed leaves", () => {

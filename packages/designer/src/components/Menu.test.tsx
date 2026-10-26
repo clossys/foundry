@@ -242,3 +242,96 @@ it("keeps ordinary Menu hover and keyboard focus free of normal-mode outlines", 
   await user.keyboard("{Home}");
   expect(edit).toHaveFocus(); expect(edit).toHaveClass("outline-none", "forced-colors:outline");
 });
+
+describe("Menu root selection", () => {
+  it("selection none (the default) keeps plain menu items with no check slot", async () => {
+    render(<BasicMenu />);
+    await userEvent.setup().click(screen.getByRole("button", { name: "Actions" }));
+    const edit = await screen.findByRole("menuitem", { name: "Edit" });
+    expect(edit).not.toHaveAttribute("aria-checked");
+    expect(edit.querySelector("[data-menu-check]")).toBeNull();
+  });
+
+  it("selection single exposes radio items, checks exactly one, and reports the change", async () => {
+    const changed = vi.fn();
+    function Sort() {
+      const [selected, setSelected] = useState<Set<string>>(new Set(["newest"]));
+      return <Menu trigger={<AriaButton>Sort</AriaButton>} selectionMode="single" selectedKeys={selected}
+        onSelectionChange={keys => { changed(keys); setSelected(new Set([...(keys === "all" ? [] : keys)].map(String))); }}>
+        <Menu.Item id="newest">Newest</Menu.Item>
+        <Menu.Item id="oldest">Oldest</Menu.Item>
+      </Menu>;
+    }
+    render(<Sort />);
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "Sort" }));
+    const newest = await screen.findByRole("menuitemradio", { name: "Newest" });
+    expect(newest).toHaveAttribute("aria-checked", "true");
+    expect(newest.querySelector("[data-menu-check]")).not.toHaveClass("invisible");
+    const oldest = screen.getByRole("menuitemradio", { name: "Oldest" });
+    expect(oldest.querySelector("[data-menu-check]")).toHaveClass("invisible");
+    await user.click(oldest);
+    expect(changed).toHaveBeenCalledTimes(1);
+    expect([...changed.mock.lastCall![0]]).toEqual(["oldest"]);
+    await user.click(screen.getByRole("button", { name: "Sort" }));
+    expect(await screen.findByRole("menuitemradio", { name: "Oldest" })).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByRole("menuitemradio", { name: "Newest" })).toHaveAttribute("aria-checked", "false");
+  });
+
+  it("selection multiple exposes checkbox items and toggles with Space from the keyboard", async () => {
+    const changed = vi.fn();
+    render(<Menu trigger={<AriaButton>Columns</AriaButton>} selectionMode="multiple" defaultSelectedKeys={["name"]} onSelectionChange={changed}>
+      <Menu.Item id="name">Name</Menu.Item>
+      <Menu.Item id="owner">Owner</Menu.Item>
+    </Menu>);
+    const user = userEvent.setup();
+    screen.getByRole("button", { name: "Columns" }).focus();
+    await user.keyboard("{ArrowDown}");
+    expect(await screen.findByRole("menuitemcheckbox", { name: "Name" })).toHaveAttribute("aria-checked", "true");
+    await user.keyboard("{ArrowDown}");
+    await user.keyboard(" ");
+    expect([...changed.mock.lastCall![0]].sort()).toEqual(["name", "owner"]);
+  });
+  it("keeps typeahead on plain string items now that items render a check slot", async () => {
+    render(<Menu.Inline aria-label="Sort" selectionMode="single">
+      <Menu.Item id="newest">Newest</Menu.Item>
+      <Menu.Item id="oldest">Oldest</Menu.Item>
+    </Menu.Inline>);
+    const user = userEvent.setup();
+    await user.tab();
+    await user.keyboard("old");
+    expect(screen.getByRole("menuitemradio", { name: "Oldest" })).toHaveFocus();
+  });
+});
+
+describe("Menu.Inline", () => {
+  it("renders a labelled, always-visible menu with arrow-key navigation and actions, and no trigger", async () => {
+    const onAction = vi.fn();
+    render(<Menu.Inline aria-label="Workspace" onAction={onAction}>
+      <Menu.Item id="rename">Rename</Menu.Item>
+      <Menu.Item id="archive">Archive</Menu.Item>
+    </Menu.Inline>);
+    const menu = screen.getByRole("menu", { name: "Workspace" });
+    expect(screen.queryByRole("button")).toBeNull();
+    expect(menu.className).toContain("rounded-control");
+    const user = userEvent.setup();
+    await user.tab();
+    expect(screen.getByRole("menuitem", { name: "Rename" })).toHaveFocus();
+    await user.keyboard("{ArrowDown}");
+    expect(screen.getByRole("menuitem", { name: "Archive" })).toHaveFocus();
+    await user.keyboard("{Enter}");
+    expect(onAction).toHaveBeenCalledTimes(1);
+    expect(onAction.mock.lastCall![0]).toBe("archive");
+    expect(screen.getByRole("menu", { name: "Workspace" })).toBeInTheDocument();
+  });
+
+  it("supports the same root selection inline", async () => {
+    render(<Menu.Inline aria-label="Density" selectionMode="single" defaultSelectedKeys={["compact"]}>
+      <Menu.Item id="compact">Compact</Menu.Item>
+      <Menu.Item id="comfortable">Comfortable</Menu.Item>
+    </Menu.Inline>);
+    await userEvent.setup().click(screen.getByRole("menuitemradio", { name: "Comfortable" }));
+    expect(screen.getByRole("menuitemradio", { name: "Comfortable" })).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByRole("menuitemradio", { name: "Compact" })).toHaveAttribute("aria-checked", "false");
+  });
+});

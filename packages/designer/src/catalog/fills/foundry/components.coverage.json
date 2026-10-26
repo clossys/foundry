@@ -456,20 +456,19 @@
       ]
     },
     {
-      "missing": [
-        "presentation.inline",
-        "selection.multiple",
-        "selection.none",
-        "selection.single"
-      ],
+      "missing": [],
       "notes": [
-        "The package Menu is a trigger-owned popup. It exports no inline Menu or root selection API; Section selection is not a root contract member.",
+        "Menu is the trigger-owned popup; Menu.Inline presents the same menu inline. Root selectionMode applies to both; selected items show the check glyph.",
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
       ],
       "slot": "components.menu",
-      "status": "subset",
+      "status": "candidate",
       "supported": [
-        "presentation.popup"
+        "presentation.inline",
+        "presentation.popup",
+        "selection.multiple",
+        "selection.none",
+        "selection.single"
       ]
     },
     {

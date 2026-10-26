@@ -107,15 +107,17 @@ describe("Foundry component package descriptors", () => {
     expect(rows.get("components.chart-sparkline")!.supported).toEqual(["series"]);
   });
 
-  it("keeps the package Menu as a popup-only subset rather than borrowing Section selection for the root", () => {
+  it("maps the package Menu popup, its inline presentation and root selection to real exports", () => {
     const result = imported(), coverage = result.coverage.find(row => row.slot === "components.menu")!;
     const fill = result.fills.find(doc => doc.components.menu)!.components.menu!;
-    expect(fill.propMap).toEqual({ "presentation.popup": "./components#Menu" });
-    expect(coverage.status).toBe("subset");
-    expect(coverage.supported).toEqual(["presentation.popup"]);
-    expect(coverage.missing).toEqual(["presentation.inline", "selection.multiple", "selection.none", "selection.single"]);
-    expect(fill.props).not.toContain("presentation");
-    expect(fill.props).not.toContain("selectionMode");
+    expect(fill.propMap).toEqual({
+      "presentation.inline": "./components#Menu.Inline", "presentation.popup": "./components#Menu",
+      "selection.multiple": "./components#Menu.selectionMode=multiple", "selection.none": "./components#Menu.selectionMode=none", "selection.single": "./components#Menu.selectionMode=single",
+    });
+    expect(coverage.status).toBe("candidate");
+    expect(coverage.missing).toEqual([]);
+    expect(fill.props).toContain("selectionMode");
+    expect(fill.reads.assets).toEqual(["assets.icon-check"]);
   });
 
   it("rejects nonexistent primary and alternate exports", () => {
@@ -134,7 +136,8 @@ describe("Foundry component package descriptors", () => {
     const fills = imported().fills.flatMap(doc => Object.values(doc.components));
     const result = checkComponentProfile({ slots, fills, observations: {}, tokens: {}, assets: [], installedRac: { version: "1.21.1", instance: "consumer" } });
     const consumerSubset = checkComponentProfile({ slots, fills, observations: {}, tokens: {}, assets: [], installedRac: { version: "1.21.1", instance: "consumer" }, requiredMembers: Object.fromEntries(fills.map(fill => [fill.slot, fill.members])) });
-    expect(consumerSubset.findings.filter(finding => finding.code === "K1")).toEqual([expect.objectContaining({ code: "K1", subject: "components.menu", message: "Root mapping names unsupported member presentation.inline" })]);
+    // Menu now supports presentation.inline, so its root mapping names only supported members.
+    expect(consumerSubset.findings.filter(finding => finding.code === "K1")).toEqual([]);
     expect(consumerSubset.ok).toBe(false);
     expect(result.ok).toBe(false);
     expect(result.findings).toContainEqual(expect.objectContaining({ code: "K1", subject: "components.checkbox", message: "Required member scope.group is not mapped" }));
