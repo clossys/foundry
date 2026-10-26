@@ -59,7 +59,13 @@
             "components.switch",
             "components.select",
             "components.combo-box",
-            "components.toggle-group",
+            "components.toggle-group"
+          ]
+        },
+        {
+          "id": "inputs-tags",
+          "label": "Tags",
+          "leaves": [
             "components.tag-group"
           ]
         },
@@ -122,24 +128,42 @@
           "id": "display-media",
           "label": "Media",
           "leaves": [
-            "components.avatar",
+            "components.avatar"
+          ]
+        },
+        {
+          "id": "display-assets",
+          "label": "Assets",
+          "leaves": [
             "components.icon",
             "components.logo"
           ]
         },
         {
-          "id": "display-charts",
-          "label": "Charts",
+          "id": "charts-core",
+          "label": "Core charts",
           "leaves": [
             "components.chart-bar",
             "components.chart-line",
-            "components.chart-area",
-            "components.chart-scatter",
+            "components.chart-area"
+          ]
+        },
+        {
+          "id": "charts-compact",
+          "label": "Compact charts",
+          "leaves": [
             "components.chart-sparkline",
+            "components.chart-status-strip"
+          ]
+        },
+        {
+          "id": "charts-analytic",
+          "label": "Analytic charts",
+          "leaves": [
+            "components.chart-scatter",
             "components.chart-heatmap",
             "components.chart-range",
-            "components.chart-waterfall",
-            "components.chart-status-strip"
+            "components.chart-waterfall"
           ]
         },
         {
@@ -160,7 +184,13 @@
           "label": "Messages",
           "leaves": [
             "components.banner",
-            "components.toast",
+            "components.toast"
+          ]
+        },
+        {
+          "id": "feedback-indicators",
+          "label": "Indicators",
+          "leaves": [
             "components.status-mark"
           ]
         },

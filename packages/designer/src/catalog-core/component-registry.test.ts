@@ -9,7 +9,8 @@ const families: Record<string, readonly string[]> = {
   "actions-toolbars": ["toolbar"],
   "inputs-form": ["field", "form"],
   "inputs-text": ["text-field", "search-field"],
-  "inputs-choice": ["checkbox", "radio-group", "switch", "select", "combo-box", "toggle-group", "tag-group"],
+  "inputs-choice": ["checkbox", "radio-group", "switch", "select", "combo-box", "toggle-group"],
+  "inputs-tags": ["tag-group"],
   "inputs-number": ["number-field", "slider"],
   "inputs-date": ["date-field", "date-picker", "calendar"],
   "inputs-color": ["color-picker"],
@@ -17,9 +18,13 @@ const families: Record<string, readonly string[]> = {
   "display-data": ["table", "grid-list", "tree", "meter"],
   "display-labels": ["badge", "keyboard"],
   "display-content": ["semantic-content"],
-  "display-media": ["avatar", "icon", "logo"],
-  "display-charts": ["chart-bar", "chart-line", "chart-area", "chart-scatter", "chart-sparkline", "chart-heatmap", "chart-range", "chart-waterfall", "chart-status-strip"],
-  "feedback-messages": ["banner", "toast", "status-mark"],
+  "display-media": ["avatar"],
+  "display-assets": ["icon", "logo"],
+  "charts-core": ["chart-bar", "chart-line", "chart-area"],
+  "charts-compact": ["chart-sparkline", "chart-status-strip"],
+  "charts-analytic": ["chart-scatter", "chart-heatmap", "chart-range", "chart-waterfall"],
+  "feedback-messages": ["banner", "toast"],
+  "feedback-indicators": ["status-mark"],
   "feedback-progress": ["progress-bar", "spinner", "skeleton"],
   "navigation-links": ["link", "breadcrumbs"],
   "navigation-panels": ["tabs"],
@@ -55,10 +60,10 @@ describe("component build IA registry", () => {
     expect(componentRegistryFindings(registry)).toEqual([]);
   });
 
-  it("places every id once under six L1 groups and twenty-two L2 families", () => {
+  it("places every id once under six L1 groups and twenty-seven L2 families", () => {
     const registry = loadComponentRegistry();
     expect(registry.placement.nodes.map(node => node.id)).toEqual(["actions", "inputs", "display", "feedback", "navigation", "containment"]);
-    expect(registry.placement.nodes.flatMap(node => "children" in node ? node.children : [])).toHaveLength(22);
+    expect(registry.placement.nodes.flatMap(node => "children" in node ? node.children : [])).toHaveLength(27);
     const nodes = leafNodes(registry.placement.nodes);
     expect(Object.fromEntries(nodes.map(node => [node.id, "leaves" in node ? node.leaves : []]))).toEqual(Object.fromEntries(Object.entries(families).map(([id, leaves]) => [id, leaves.map(fullId)])));
     expect(nodes.flatMap(node => "leaves" in node ? node.leaves : []).sort()).toEqual(inventory);
