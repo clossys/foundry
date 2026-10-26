@@ -2,7 +2,8 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Banner, Button, Icon, Tabs } from "../components/index.js";
 import { ChevronDown } from "../icons/index.js";
-import { ResizablePane } from "../blocks/index.js";
+import { Drawer, ResizablePane } from "../blocks/index.js";
+import { cx } from "../components/internal/cx.js";
 import { FrameModuleOutlet, FrameSlotOutlet, useFrameSlotModules } from "../shell/index.js";
 import { useFrameNoticeLeases, visibleFrameNotices, type AppFrameNotice } from "./frame-notices.js";
 import { frameDockGeometry, FRAME_DOCK_DEFAULTS, type FrameDockBounds } from "./frame-dock-layout.js";
@@ -15,12 +16,18 @@ export interface AppFrameDock extends FrameDockBounds {
   onChange?: (height: number) => void;
 }
 const DISMISS_KEY = "frame-dismissed-notices";
-export function FrameDock({ notices = [], dock }: { notices?: readonly AppFrameNotice[]; dock?: AppFrameDock }) {
+/** Disclosure chevrons turn on the shared motion tokens; reduced motion snaps. */
+export const FRAME_CHEVRON_MOTION = "transition-transform duration-(--ui-duration-fast) ease-(--ease-default) motion-reduce:transition-none";
+/** `sheet` is the frame's narrow layout (the sidebar-overlay breakpoint): the dock body becomes a bottom-sheet Drawer. */
+export function FrameDock({ notices = [], dock, sheet = false }: { notices?: readonly AppFrameNotice[]; dock?: AppFrameDock; sheet?: boolean }) {
   const modules = useFrameSlotModules("dock-tab");
   const strips = useFrameSlotModules("dock-strip");
   const [active, setActive] = useState<string>();
   const selected = modules.some(module => module.id === active) ? active : modules[0]?.id;
   const [expanded, setExpanded] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  // A layout change never opens a modal sheet on its own.
+  useEffect(() => { if (!sheet) setSheetOpen(false); }, [sheet]);
   const [height, setHeight] = useState(dock?.defaultValue ?? FRAME_DOCK_DEFAULTS.defaultValue);
   const [available, setAvailable] = useState<number>();
   const region = useRef<HTMLElement>(null);
@@ -66,12 +73,23 @@ export function FrameDock({ notices = [], dock }: { notices?: readonly AppFrameN
         <div className="mx-auto flex w-full max-w-wide items-center justify-between gap-sm"><span>{notice.text}</span>{notice.action && <Button variant="ghost" onPress={notice.action.onAction}>{notice.action.label}</Button>}</div>
       </Banner>)}
     </div>
-    {modules.length > 0 ? <Tabs selectedKey={selected} onSelectionChange={key => { setActive(String(key)); setExpanded(true); }} className="gap-0">
+    {modules.length > 0 && sheet ? <div ref={strip} data-frame-dock-strip="" className="flex min-w-0 items-center justify-between gap-xs px-sm">
+      <Drawer placement="bottom" wide="sheet" heading={dock?.label ?? "Page modules"} closeLabel="Collapse page modules" isOpen={sheetOpen} onOpenChange={setSheetOpen}
+        trigger={<Button variant="ghost" className="min-h-[var(--ui-layout-tap-target)] min-w-0 gap-xs" aria-expanded={sheetOpen}><span className="min-w-0 truncate">{dock?.label ?? "Page modules"}</span><Icon glyph={ChevronDown} decorative className={cx(FRAME_CHEVRON_MOTION, !sheetOpen && "rotate-180")} /></Button>}>
+        <Tabs selectedKey={selected} onSelectionChange={key => setActive(String(key))} className="flex h-full min-h-0 flex-col gap-0">
+          <Tabs.List aria-label={dock?.label ?? "Page modules"} className="min-w-0 shrink-0 overflow-x-auto">
+            {modules.map(module => <Tabs.Tab key={module.id} id={module.id} className="min-h-[var(--ui-layout-tap-target)]">{module.label}</Tabs.Tab>)}
+          </Tabs.List>
+          {modules.map(module => <Tabs.Panel key={module.id} id={module.id} className="min-h-0 min-w-0 flex-1 overflow-auto"><FrameModuleOutlet id={module.id} /></Tabs.Panel>)}
+        </Tabs>
+      </Drawer>
+      <div className="ms-auto flex shrink-0 items-center gap-xs"><FrameSlotOutlet slot="dock-strip" /></div>
+    </div> : modules.length > 0 ? <Tabs selectedKey={selected} onSelectionChange={key => { setActive(String(key)); setExpanded(true); }} className="gap-0">
       <div ref={strip} data-frame-dock-strip="" className="flex min-w-0 items-center justify-between gap-xs px-sm">
         {modules.length > 0 && <Tabs.List aria-label={dock?.label ?? "Page modules"} className="min-w-0 flex-1 overflow-x-auto border-0">
           {modules.map(module => <Tabs.Tab key={module.id} id={module.id} onPress={() => setExpanded(true)} className="min-h-[var(--ui-layout-tap-target)]">{module.label}</Tabs.Tab>)}
         </Tabs.List>}
-        {modules.length > 0 && <Button variant="ghost" className="icon-control-md" aria-label={expanded ? "Collapse page modules" : "Expand page modules"} aria-expanded={expanded} onPress={() => setExpanded(!expanded)}><Icon glyph={ChevronDown} decorative className={expanded ? "" : "rotate-180"} /></Button>}
+        {modules.length > 0 && <Button variant="ghost" className="icon-control-md" aria-label={expanded ? "Collapse page modules" : "Expand page modules"} aria-expanded={expanded} onPress={() => setExpanded(!expanded)}><Icon glyph={ChevronDown} decorative className={cx(FRAME_CHEVRON_MOTION, !expanded && "rotate-180")} /></Button>}
         <div className="ms-auto flex shrink-0 items-center gap-xs"><FrameSlotOutlet slot="dock-strip" /></div>
       </div>
       {expanded && content}

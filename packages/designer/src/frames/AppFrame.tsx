@@ -242,7 +242,7 @@ function FrameContent({ brand, navigation, account, commands, children, toasts, 
             className="relative isolate min-h-0 min-w-0 flex-1 overflow-hidden">
             <main id={target} tabIndex={-1} className="h-full min-h-0 min-w-0 overflow-auto focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent">{children}</main>
           </div>
-          <FrameDock notices={notices} dock={dock} />
+          <FrameDock notices={notices} dock={dock} sheet={!wide} />
         </div>
         {rightPanel && <aside id={generated + "-panel"} aria-label={rightPanel.label} data-open={panelDocked} aria-hidden={!panelDocked} inert={!panelDocked}
           className="frame-docked-panel h-full min-h-0 shrink-0 overflow-hidden" style={{ inlineSize: panelDocked ? currentPanelWidth : 0 }}>

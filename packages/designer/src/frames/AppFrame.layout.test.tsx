@@ -135,7 +135,8 @@ describe("AppFrame reserved layout", () => {
     expect(within(notice as HTMLElement).queryByRole("button", { name: "Dismiss" })).toBeNull();
     sessionStorage.clear();
   });
-  it.each([390, 1024, 1440])("reserves a measured resizable dock below the stage at width %s without a modal", async width => {
+  // Below the sidebar-overlay breakpoint the dock is a bottom sheet instead (D8): FrameDock.sheet.test.tsx.
+  it.each([1024, 1440])("reserves a measured resizable dock below the stage at width %s without a modal", async width => {
     viewport = width;
     let frameHeight = 600;
     const original = nativeBounds;
