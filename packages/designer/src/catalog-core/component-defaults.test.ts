@@ -64,10 +64,10 @@ const EXPECTED_DEFAULTS = {
   "date-field": "foundry", "date-picker": "compose:date-picker@1", dialog: "foundry", disclosure: "foundry", field: "foundry", "grid-list": "foundry", "file-trigger": "foundry", form: "foundry", icon: "foundry", keyboard: "shadcn@aria", link: "foundry", logo: "foundry",
   menu: "foundry", meter: "foundry", "native-action": "foundry", "navigation-tree": "foundry", popover: "foundry", "progress-bar": "foundry", "radio-group": "foundry",
   "resize-handle": "foundry", "search-field": "foundry", select: "foundry", "semantic-content": "foundry", separator: "shadcn@aria", skeleton: "foundry",
-  spinner: "foundry", "status-mark": "foundry", switch: "foundry", table: "foundry", tabs: "foundry", "text-field": "foundry", toast: "foundry", "toggle-button": "foundry",
+  spinner: "foundry", "status-mark": "foundry", switch: "foundry", table: "foundry", tabs: "foundry", "text-field": "foundry", toast: "foundry", "toggle-button": "foundry", "toggle-group": "foundry",
   toolbar: "rac-starter", tooltip: "shadcn@aria",
 };
-const NOT_CHOSEN = ["color-picker", "number-field", "slider", "tag-group", "toggle-group", "tree"];
+const NOT_CHOSEN = ["color-picker", "number-field", "slider", "tag-group", "tree"];
 const reasons = (plan: ReturnType<typeof planComponentDefaults>, leaf: string) => plan.rows.find(row => row.slot === `components.${leaf}`)!.reasons.join(" || ");
 
 describe("component default fills", () => {
