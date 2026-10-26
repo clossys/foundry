@@ -59,4 +59,16 @@ describe("readSurfacePackageEvidence", () => {
     const shell = fills.filter(doc => doc.$extensions["com.clossys.fill"].slot === "frames.site-shell");
     expect(await readSurfacePackageEvidence(shell, { from: join(root, "app") })).toEqual([]);
   });
+
+  it("reads the package that owns the resolving directory itself, with no node_modules copy", async () => {
+    const root = await fs.realpath(await fs.mkdtemp(join(tmpdir(), "surface-evidence-own-")));
+    temporary.push(root);
+    await fs.mkdir(join(root, "dist", "blocks"), { recursive: true });
+    await fs.mkdir(join(root, "src", "library-cli"), { recursive: true });
+    await fs.writeFile(join(root, "package.json"), JSON.stringify({ name: "@clossys/designer", version: "0.10.0", exports: { "./blocks": { import: "./dist/blocks/index.js" } } }));
+    const built = `export { Faq } from "./Faq.js";\n`;
+    await fs.writeFile(join(root, "dist", "blocks", "index.js"), built);
+    const faq = fills.filter(doc => doc.$extensions["com.clossys.fill"].slot === "sections.faq");
+    expect(await readSurfacePackageEvidence(faq, { from: join(root, "src", "library-cli") })).toEqual([{ module: "@clossys/designer/blocks", version: "0.10.0", artifactSha256: sha256(built), values: ["Faq"], types: [] }]);
+  });
 });
