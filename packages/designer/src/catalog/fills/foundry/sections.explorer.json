@@ -16,15 +16,12 @@
         "package": "@clossys/designer",
         "version": "0.12.0"
       },
-      "relation": "subset",
+      "relation": "same-contract",
       "slot": "sections.explorer",
       "source": "foundry",
       "sourceAddress": "./blocks#Explorer",
       "status": "draft",
-      "trust": "foundry",
-      "unmapped": [
-        "slot.list"
-      ]
+      "trust": "foundry"
     }
   },
   "sections": {
@@ -37,7 +34,7 @@
       },
       "license": "MIT",
       "notes": [
-        "The tree prop is structured data, not a replaceable tree region. No list-pane region API; renderDetails is a selected-node detail callback. Host supplies label. Source implements tree keyboard handling locally.",
+        "The tree prop is structured data, not a replaceable tree region. The list region is a host-owned pane laid out beside the tree (named by listLabel); renderDetails is a separate per-node detail callback. Host supplies label. Source implements tree keyboard handling locally.",
         "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "parts": [],
@@ -49,6 +46,7 @@
       "propMap": {},
       "slot": "sections.explorer",
       "slotMap": {
+        "list": "./blocks#Explorer.list",
         "selection": "./blocks#Explorer.selectedId",
         "tree": "./blocks#Explorer.tree"
       },

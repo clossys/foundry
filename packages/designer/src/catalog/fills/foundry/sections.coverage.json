@@ -147,14 +147,10 @@
         "part.questionnaire",
         "part.trace"
       ],
-      "missingRequiredSlots": [
-        "composer"
-      ],
-      "missingSlots": [
-        "composer"
-      ],
+      "missingRequiredSlots": [],
+      "missingSlots": [],
       "notes": [
-        "Messages cover only the message subset of the parts union. Composer is built in, not a host region slot. Host supplies status and onSend. English fallback labels and direct glyph imports remain; no attachment, trace or questionnaire API.",
+        "Messages cover only the message subset of the parts union. Composer is a built-in region (Textarea and Send button) that the host adapts through onSend and composerLabel; it is not replaceable by a host node. Host supplies status. English fallback labels and direct glyph imports remain; no attachment, trace or questionnaire API.",
         "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.chat",
@@ -165,6 +161,7 @@
         "part.scroller"
       ],
       "supportedSlots": [
+        "composer",
         "parts"
       ],
       "unresolvedMemberAxes": []
@@ -188,16 +185,20 @@
       "unresolvedMemberAxes": []
     },
     {
-      "missingMembers": [],
+      "missingMembers": [
+        "arrangement.library-board"
+      ],
       "missingRequiredSlots": [],
-      "missingSlots": [],
+      "missingSlots": [
+        "controls"
+      ],
       "notes": [
         "The exported Matrix supports arrangement=grid for authored comparison cells and arrangement=choices for content-sized native RadioGroup rows. Choices accepts one or more library columns and unbounded leaf rows without an internal scroll region.",
         "The choices assembly consumes SectionHeader, RadioGroup, Card, Badge, Tooltip and token-backed table layout; Studio supplies checked token, asset or component previews.",
         "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.comparison",
-      "status": "candidate",
+      "status": "subset",
       "supportedMembers": [],
       "supportedSlots": [
         "columns",
@@ -342,20 +343,17 @@
     },
     {
       "missingMembers": [],
-      "missingRequiredSlots": [
-        "list"
-      ],
-      "missingSlots": [
-        "list"
-      ],
+      "missingRequiredSlots": [],
+      "missingSlots": [],
       "notes": [
-        "The tree prop is structured data, not a replaceable tree region. No list-pane region API; renderDetails is a selected-node detail callback. Host supplies label. Source implements tree keyboard handling locally.",
+        "The tree prop is structured data, not a replaceable tree region. The list region is a host-owned pane laid out beside the tree (named by listLabel); renderDetails is a separate per-node detail callback. Host supplies label. Source implements tree keyboard handling locally.",
         "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.explorer",
-      "status": "subset",
+      "status": "candidate",
       "supportedMembers": [],
       "supportedSlots": [
+        "list",
         "selection",
         "tree"
       ],
@@ -465,18 +463,14 @@
     },
     {
       "missingMembers": [],
-      "missingRequiredSlots": [
-        "header"
-      ],
-      "missingSlots": [
-        "header"
-      ],
+      "missingRequiredSlots": [],
+      "missingSlots": [],
       "notes": [
-        "Host supplies required heading. Header is distributed over heading and supporting props, not a section-header region. Source composes SectionIntro; headingLevel permits h1.",
+        "Header is a built-in SectionIntro region keyed by the required heading, with eyebrow and description as supporting props; it is not a replaceable section-header node. Source composes SectionIntro; headingLevel permits h1.",
         "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.hero",
-      "status": "subset",
+      "status": "candidate",
       "supportedMembers": [
         "layout.editorial",
         "layout.split",
@@ -486,6 +480,7 @@
       ],
       "supportedSlots": [
         "actions",
+        "header",
         "media"
       ],
       "unresolvedMemberAxes": []
@@ -553,21 +548,18 @@
     },
     {
       "missingMembers": [],
-      "missingRequiredSlots": [
-        "email"
-      ],
-      "missingSlots": [
-        "email"
-      ],
+      "missingRequiredSlots": [],
+      "missingSlots": [],
       "notes": [
-        "Email field is built in, not a host region; submitLabel is copy for the built-in action. Host supplies emailLabel, pendingLabel, sentMessage and failedMessage. Consent text does not prove confirmation behavior.",
+        "Email is a built-in email TextField the host adapts through emailLabel; it is not replaceable by a host node. submitLabel is copy for the built-in action. Host supplies pendingLabel, sentMessage and failedMessage. Consent text does not prove confirmation behavior.",
         "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.newsletter",
-      "status": "subset",
+      "status": "candidate",
       "supportedMembers": [],
       "supportedSlots": [
         "consent",
+        "email",
         "submit"
       ],
       "unresolvedMemberAxes": []

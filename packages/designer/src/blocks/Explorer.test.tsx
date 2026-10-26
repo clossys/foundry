@@ -139,4 +139,21 @@ describe("Explorer", () => {
     });
     expect(missing).toEqual([]);
   });
+
+  it("lays out a host list region beside the tree and keeps the tree semantics unchanged", () => {
+    const view = render(<Explorer tree={chain(2)} label="Files" list={<ul aria-label="Folder contents"><li>Report.pdf</li></ul>} listLabel="Contents" />);
+    const tree = screen.getByRole("tree", { name: "Files" });
+    const list = screen.getByRole("region", { name: "Contents" });
+    expect(within(list).getByRole("list", { name: "Folder contents" })).toBeInTheDocument();
+    expect(tree.contains(list)).toBe(false);
+    const root = view.container.firstElementChild!;
+    expect(root).toHaveAttribute("data-explorer-layout", "panes");
+    expect(root.contains(tree) && root.contains(list)).toBe(true);
+    for (const name of (root.getAttribute("class") ?? "").split(/\s+/).filter(Boolean)) expect(name, name).not.toMatch(/^\[|\[.*\]./);
+  });
+  it("renders the bare tree when no list region is supplied", () => {
+    const view = render(<Explorer tree={chain(2)} label="Files" />);
+    expect(view.container.firstElementChild).toHaveAttribute("role", "tree");
+    expect(screen.queryByRole("region")).toBeNull();
+  });
 });

@@ -270,5 +270,5 @@ function FrameContent({ brand, navigation, account: { avatar = "initials", ...ac
 
 /** Host-resolved application chrome; the host owns routes, account actions and main-free route content. */
 export function AppFrame(props: AppFrameProps) {
-  return <ThemeProvider storageKey={props.theme?.storageKey} defaultPreference={props.theme?.defaultPreference}><FrameSlotProvider><FrameNoticeProvider><FrameContent {...props} /></FrameNoticeProvider></FrameSlotProvider></ThemeProvider>;
+  return <ThemeProvider storageKey={props.theme?.storageKey} defaultPreference={props.theme?.defaultPreference} preference={props.theme?.preference} onPreferenceChange={props.theme?.onPreferenceChange}><FrameSlotProvider><FrameNoticeProvider><FrameContent {...props} /></FrameNoticeProvider></FrameSlotProvider></ThemeProvider>;
 }

@@ -22,15 +22,15 @@ function setup(overrides: Partial<SurfaceDefaultsInput> = {}) {
 const ledger = (plan: ReturnType<typeof planSurfaceDefaults>) => Object.fromEntries(plan.rows.map(row => [row.slot, row.status === "not-chosen" ? "-" : row.source!]));
 const reasons = (plan: ReturnType<typeof planSurfaceDefaults>, slot: string) => plan.rows.find(row => row.slot === slot)!.reasons.join(" || ");
 
-const SECTION_DEFAULTS = ["access-matrix", "article", "band", "column-mapper", "comparison", "content", "data-table", "empty-state", "faq", "features",
-  "form", "link-index", "logo-cloud", "media", "page-header", "pagination", "people", "pricing", "record-detail", "resource-list", "section-header",
+const SECTION_DEFAULTS = ["access-matrix", "article", "band", "chat", "column-mapper", "comparison", "content", "data-table", "empty-state", "explorer", "faq", "features",
+  "form", "hero", "link-index", "logo-cloud", "media", "newsletter", "page-header", "pagination", "people", "pricing", "record-detail", "resource-list", "section-header",
   "status-list", "steps", "table-of-contents", "task-list", "testimonials"].map(leaf => `sections.${leaf}`);
-/** A Foundry candidate exists but leaves a required content slot unmapped. */
-const SECTION_INELIGIBLE = { "sections.chat": ["composer"], "sections.explorer": ["list"], "sections.hero": ["header"], "sections.newsletter": ["email"] };
+/** Every Foundry candidate now maps its required content slots; none is ineligible. */
+const SECTION_INELIGIBLE: Readonly<Record<string, readonly string[]>> = {};
 const SECTION_NO_CANDIDATE = ["activity-feed", "audit-log", "call-to-action", "cards", "consent", "data-grid", "error-state", "filter-builder", "gallery",
   "notices", "settings", "stats", "timeline", "usage", "wizard"].map(leaf => `sections.${leaf}`);
-const FRAME_DEFAULTS = ["app-header", "sheet", "site-footer", "site-header", "site-shell"].map(leaf => `frames.${leaf}`);
-const FRAME_NOT_CHOSEN = ["app-shell", "app-sidebar", "command", "inspector"].map(leaf => `frames.${leaf}`);
+const FRAME_DEFAULTS = ["app-header", "app-shell", "command", "sheet", "site-footer", "site-header", "site-shell"].map(leaf => `frames.${leaf}`);
+const FRAME_NOT_CHOSEN = ["app-sidebar", "inspector"].map(leaf => `frames.${leaf}`);
 
 describe("surface default fills", () => {
   it("defaults every Section and Frame whose candidate passes the static contract rule, and only those", () => {
@@ -41,7 +41,7 @@ describe("surface default fills", () => {
     expect(input.slots.filter(slot => slot.startsWith("frames.")).length).toBe(9);
     const expected = Object.fromEntries(input.slots.map(slot => [slot, [...SECTION_DEFAULTS, ...FRAME_DEFAULTS].includes(slot) ? "foundry" : "-"]));
     expect(ledger(plan)).toEqual(expected);
-    expect(Object.values(ledger(plan)).filter(value => value !== "-")).toHaveLength(31);
+    expect(Object.values(ledger(plan)).filter(value => value !== "-")).toHaveLength(37);
     expect(plan.findings).toEqual([]);
     expect(plan.rows.find(row => row.slot === "frames.site-header")).toEqual({ slot: "frames.site-header", status: "default", basis: "preference", source: "foundry", fill: "foundry/frames.site-header", reasons: [] });
   });
@@ -54,11 +54,12 @@ describe("surface default fills", () => {
       expect(row.source ?? row.fill, slot).toBeUndefined();
       expect(row.reasons.length, slot).toBeGreaterThan(0);
     }
-    expect(reasons(plan, "sections.hero")).toBe("foundry: S5 content/member mapping differs: required slot header is not mapped");
     expect(reasons(plan, "sections.wizard")).toBe("no implementation candidate");
-    expect(reasons(plan, "frames.app-shell")).toBe("foundry: S5 frame rendering/state ownership differs: state port width is not owned, state port theme is not owned");
-    expect(reasons(plan, "frames.command")).toBe("foundry: S5 content/member mapping differs: required slot search is not mapped");
     expect(reasons(plan, "frames.inspector")).toBe("no implementation candidate");
+    expect(reasons(plan, "frames.app-sidebar")).toBe("foundry: S5 frame rendering/state ownership differs: state port theme is not owned");
+    for (const slot of ["sections.chat", "sections.explorer", "sections.hero", "sections.newsletter", "frames.app-shell", "frames.command"]) {
+      expect(plan.rows.find(row => row.slot === slot), slot).toMatchObject({ status: "default", source: "foundry", reasons: [] });
+    }
   });
 
   it("agrees with the importer's committed coverage for every leaf", () => {
@@ -82,9 +83,9 @@ describe("surface default fills", () => {
   });
 
   it("an owner pick or a choice is exclusive and never falls back", () => {
-    const picked = planSurfaceDefaults(setup({ picks: { "sections.hero": "foundry", "sections.faq": "other" } }));
-    expect(picked.rows.find(row => row.slot === "sections.hero")!.status).toBe("not-chosen");
-    expect(reasons(picked, "sections.hero")).toContain("owner pick foundry is not eligible; another source needs the owner's choice");
+    const picked = planSurfaceDefaults(setup({ picks: { "frames.inspector": "foundry", "sections.faq": "other" } }));
+    expect(picked.rows.find(row => row.slot === "frames.inspector")!.status).toBe("not-chosen");
+    expect(reasons(picked, "frames.inspector")).toContain("owner pick foundry is not eligible; another source needs the owner's choice");
     expect(reasons(picked, "sections.faq")).toBe("other: no implementation candidate || owner pick other is not eligible; another source needs the owner's choice");
     const chosen = planSurfaceDefaults(setup({ choices: { "frames.sheet": "foundry", "frames.site-header": "other" }, picks: { "frames.sheet": "other" } }));
     expect(chosen.rows.find(row => row.slot === "frames.sheet")).toMatchObject({ status: "chosen", basis: "choose", source: "foundry" });

@@ -60,6 +60,15 @@ export interface ThemeProviderProps {
    * @default "system"
    */
   defaultPreference?: ThemePreference;
+  /**
+   * Controlled preference: the host owns the value (the frames.app-shell
+   * `theme` state port). Storage is not read over it; `setPreference` still
+   * persists the choice for the head script and reports it through
+   * `onPreferenceChange`, and the provider renders the host's next value.
+   */
+  preference?: ThemePreference;
+  /** Called with every preference a consumer sets, controlled or not. */
+  onPreferenceChange?: (preference: ThemePreference) => void;
 }
 
 function subscribeToPrefersDark(onStoreChange: () => void): () => void {
@@ -134,14 +143,18 @@ export function ThemeProvider({
   children,
   storageKey = DEFAULT_STORAGE_KEY,
   defaultPreference = "system",
+  preference: controlledPreference,
+  onPreferenceChange,
 }: ThemeProviderProps) {
-  const [preference, setPreferenceState] = useState<ThemePreference>(defaultPreference);
+  const [ownPreference, setPreferenceState] = useState<ThemePreference>(controlledPreference ?? defaultPreference);
+  const controlled = controlledPreference !== undefined;
+  const preference = controlledPreference ?? ownPreference;
 
   // The one-tick correction described in this component's own doc comment
   // above — client-only, runs after mount and when the key or fallback changes.
   useEffect(() => {
-    setPreferenceState(readStoredPreference(storageKey, defaultPreference));
-  }, [storageKey, defaultPreference]);
+    if (!controlled) setPreferenceState(readStoredPreference(storageKey, defaultPreference));
+  }, [storageKey, defaultPreference, controlled]);
 
   // Keeps `<html data-theme>`/`color-scheme` in sync with React state on
   // every change, including the one-tick correction effect above and any
@@ -160,9 +173,10 @@ export function ThemeProvider({
   const setPreference = useCallback(
     (next: ThemePreference) => {
       writeStoredPreference(storageKey, next);
-      setPreferenceState(next);
+      if (!controlled) setPreferenceState(next);
+      onPreferenceChange?.(next);
     },
-    [storageKey],
+    [storageKey, controlled, onPreferenceChange],
   );
 
   const prefersDark = useSyncExternalStore(
@@ -201,4 +215,9 @@ export function useTheme(): ThemeContextValue {
     throw new Error("useTheme() must be called within a <ThemeProvider>.");
   }
   return context;
+}
+
+/** The nearest provider's value, or undefined outside one (for host-controlled controls). */
+export function useOptionalTheme(): ThemeContextValue | undefined {
+  return useContext(ThemeContext);
 }

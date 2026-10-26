@@ -23,7 +23,6 @@
       "status": "draft",
       "trust": "foundry",
       "unmapped": [
-        "slot.composer",
         "part.attachment",
         "part.questionnaire",
         "part.trace"
@@ -40,7 +39,7 @@
       },
       "license": "MIT",
       "notes": [
-        "Messages cover only the message subset of the parts union. Composer is built in, not a host region slot. Host supplies status and onSend. English fallback labels and direct glyph imports remain; no attachment, trace or questionnaire API.",
+        "Messages cover only the message subset of the parts union. Composer is a built-in region (Textarea and Send button) that the host adapts through onSend and composerLabel; it is not replaceable by a host node. Host supplies status. English fallback labels and direct glyph imports remain; no attachment, trace or questionnaire API.",
         "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "parts": [],
@@ -56,6 +55,7 @@
       },
       "slot": "sections.chat",
       "slotMap": {
+        "composer": "./blocks#Chat.onSend",
         "parts": "./blocks#Chat.messages"
       },
       "source": "foundry"

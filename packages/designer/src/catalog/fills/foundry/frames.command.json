@@ -21,8 +21,7 @@
       "trust": "foundry",
       "unmapped": [
         "shortcut.off",
-        "shortcut.on",
-        "slot.search"
+        "shortcut.on"
       ]
     }
   },
@@ -38,7 +37,8 @@
       "slot": "frames.command",
       "slots": {
         "empty": "emptyMessage",
-        "groups": "groups"
+        "groups": "groups",
+        "search": "searchLabel"
       },
       "statePorts": {
         "open": "isOpen/onOpenChange",

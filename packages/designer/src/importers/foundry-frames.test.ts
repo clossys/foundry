@@ -80,7 +80,9 @@ describe("Foundry frame descriptors", () => {
     expect(rows.get("frames.site-shell")!.missingSlots).toEqual(["consent", "progress"]);
     expect(rows.get("frames.app-header")!.missingSlots).toEqual([]);
     expect(rows.get("frames.app-header")!.missing).toEqual([]);
-    expect(rows.get("frames.command")!.missingRequiredSlots).toContain("search");
+    expect(rows.get("frames.command")!.missingRequiredSlots).toEqual([]);
+    for (const leaf of ["app-shell", "command"]) expect(rows.get(`frames.${leaf}`)!.missingStatePorts, leaf).toEqual([]);
+    expect(rows.get("frames.app-sidebar")!.missingStatePorts).toEqual(["theme"]);
     expect(rows.get("frames.command")!.missing).toEqual(["shortcut.off", "shortcut.on"]);
   });
   it("maps the app-header context slot and glass/opaque surface, and the site-shell toasts slot, to named public props", () => {
@@ -125,6 +127,19 @@ describe("Foundry frame descriptors", () => {
     const theme = readFileSync(resolve(here, "../theme/ThemeProvider.tsx"), "utf8");
     expect(theme).toContain("defaultPreference?: ThemePreference");
     expect(FOUNDRY_FRAME_MAP["app-shell"]!.members["theme.dark"]).toBe("theme.defaultPreference=dark");
+  });
+  it("owns every app-shell and command state port and the command search slot through named public props", () => {
+    const read = (path: string) => readFileSync(resolve(here, path), "utf8");
+    expect(FOUNDRY_FRAME_MAP["app-shell"]!.statePorts.width).toBe("rightPanel.value/rightPanel.onChange");
+    expect(read("../frames/app-frame-types.ts")).toMatch(/value\?: number;[\s\S]*onChange\?: \(value: number\) => void;/);
+    expect(FOUNDRY_FRAME_MAP["app-shell"]!.statePorts.theme).toBe("theme.preference/theme.onPreferenceChange");
+    expect(read("../theme/ThemeProvider.tsx")).toContain("preference?: ThemePreference;");
+    expect(read("../theme/ThemeProvider.tsx")).toContain("onPreferenceChange?: (preference: ThemePreference) => void;");
+    expect(read("../frames/AppFrame.tsx")).toMatch(/<ThemeProvider[^>]*preference=\{props\.theme\?\.preference\}[^>]*onPreferenceChange=\{props\.theme\?\.onPreferenceChange\}/);
+    expect(FOUNDRY_FRAME_MAP["app-sidebar"]!.statePorts.theme).toBeUndefined();
+    expect(FOUNDRY_FRAME_MAP.command!.slots.search).toBe("searchLabel");
+    expect(read("../blocks/command-menu-types.ts")).toMatch(/searchLabel: string/);
+    expect(read("../blocks/CommandMenu.tsx")).toMatch(/<SearchField label=\{searchLabel\} value=\{query\} onChange=\{onQueryChange\}/);
   });
   it("rejects export and contract-member mutations", () => {
     expect(() => importFoundryFrames({ exports, mappings: changed("sheet", { export: "AbsentDrawer" }) })).toThrow("unavailable package export");

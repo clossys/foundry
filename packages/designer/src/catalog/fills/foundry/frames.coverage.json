@@ -29,12 +29,9 @@
       "missingSlots": [
         "progress"
       ],
-      "missingStatePorts": [
-        "theme",
-        "width"
-      ],
+      "missingStatePorts": [],
       "notes": [
-        "Canonical Designer Frames owns AppFrame. Removed width and layout modes remain unsupported contract members. Theme and command state are internally owned; no numeric width state port or progress slot is exposed.",
+        "Canonical Designer Frames owns AppFrame. Removed width and layout modes remain unsupported contract members. The width port is the resizable inspector (rightPanel) width in pixels; the sidebar width is fixed. The theme port is a controlled preference passed through to ThemeProvider; without it the provider owns and stores the preference. Command state is internally owned; no progress slot is exposed.",
         "Descriptor only; anatomy, source, accessibility, contrast, layout and rendered conformance are unmeasured."
       ],
       "slot": "frames.app-shell",
@@ -72,15 +69,11 @@
         "shortcut.off",
         "shortcut.on"
       ],
-      "missingRequiredSlots": [
-        "search"
-      ],
-      "missingSlots": [
-        "search"
-      ],
+      "missingRequiredSlots": [],
+      "missingSlots": [],
       "missingStatePorts": [],
       "notes": [
-        "CommandMenu has no shortcut configuration. useCommandMenuShortcut is separately exported but requires host composition; no shortcut member is mapped. Search is a labelled internal input, not a replaceable SearchField slot; no RAC conformance is claimed.",
+        "CommandMenu has no shortcut configuration. useCommandMenuShortcut is separately exported but requires host composition; no shortcut member is mapped. Search is a built-in SearchField the host adapts through searchLabel and the query state port; it is not replaceable by a host node. No RAC conformance is claimed.",
         "Descriptor only; anatomy, source, accessibility, contrast, layout and rendered conformance are unmeasured."
       ],
       "slot": "frames.command",
