@@ -1,0 +1,1451 @@
+{
+  "order": "per L2: shadcn@aria (or shadcn-charts on core charts) first, then a Foundry gap seat only where no external ships the whole component, then Custom (last, hidden when empty)",
+  "custom": {
+    "id": "custom",
+    "label": "Custom",
+    "position": "last",
+    "hiddenWhenEmpty": true
+  },
+  "never": [
+    "rac-starter",
+    "shadcn-ui",
+    "heroui-v3",
+    "untitled-ui-react",
+    "radix-themes",
+    "mantine",
+    "park-ui",
+    "base-ui",
+    "shadcn-blocks",
+    "carbon",
+    "material-3",
+    "fluent",
+    "primer",
+    "bootstrap"
+  ],
+  "components": [
+    {
+      "l2": "actions-buttons",
+      "leaves": [
+        "components.button",
+        "components.native-action",
+        "components.toggle-button"
+      ],
+      "offers": [
+        {
+          "source": "shadcn@aria",
+          "leaves": [
+            "components.button",
+            "components.toggle-button"
+          ]
+        },
+        {
+          "source": "foundry",
+          "leaves": [
+            "components.native-action"
+          ],
+          "reason": "no external covers"
+        }
+      ]
+    },
+    {
+      "l2": "actions-menus",
+      "leaves": [
+        "components.menu"
+      ],
+      "offers": [
+        {
+          "source": "shadcn@aria",
+          "leaves": [
+            "components.menu"
+          ]
+        }
+      ]
+    },
+    {
+      "l2": "actions-toolbars",
+      "leaves": [
+        "components.toolbar"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "components.toolbar"
+          ],
+          "reason": "no external covers"
+        }
+      ]
+    },
+    {
+      "l2": "inputs-form",
+      "leaves": [
+        "components.field",
+        "components.form"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "components.field",
+            "components.form"
+          ],
+          "reason": "no external covers"
+        }
+      ]
+    },
+    {
+      "l2": "inputs-text",
+      "leaves": [
+        "components.text-field",
+        "components.search-field"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "components.text-field",
+            "components.search-field"
+          ],
+          "reason": "no external covers"
+        }
+      ]
+    },
+    {
+      "l2": "inputs-choice",
+      "leaves": [
+        "components.checkbox",
+        "components.radio-group",
+        "components.switch",
+        "components.select",
+        "components.combo-box",
+        "components.toggle-group"
+      ],
+      "offers": [
+        {
+          "source": "shadcn@aria",
+          "leaves": [
+            "components.checkbox",
+            "components.radio-group",
+            "components.switch",
+            "components.select",
+            "components.combo-box",
+            "components.toggle-group"
+          ]
+        }
+      ]
+    },
+    {
+      "l2": "inputs-tags",
+      "leaves": [
+        "components.tag-group"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "components.tag-group"
+          ],
+          "reason": "no external covers"
+        }
+      ]
+    },
+    {
+      "l2": "inputs-number",
+      "leaves": [
+        "components.number-field",
+        "components.slider"
+      ],
+      "offers": [
+        {
+          "source": "shadcn@aria",
+          "leaves": [
+            "components.slider"
+          ]
+        },
+        {
+          "source": "foundry",
+          "leaves": [
+            "components.number-field"
+          ],
+          "reason": "no external covers"
+        }
+      ]
+    },
+    {
+      "l2": "inputs-date",
+      "leaves": [
+        "components.date-field",
+        "components.date-picker",
+        "components.calendar"
+      ],
+      "offers": [
+        {
+          "source": "shadcn@aria",
+          "leaves": [
+            "components.calendar"
+          ]
+        },
+        {
+          "source": "foundry",
+          "leaves": [
+            "components.date-field",
+            "components.date-picker"
+          ],
+          "reason": "no external covers"
+        }
+      ]
+    },
+    {
+      "l2": "inputs-color",
+      "leaves": [
+        "components.color-picker"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "components.color-picker"
+          ],
+          "reason": "no external covers"
+        }
+      ]
+    },
+    {
+      "l2": "inputs-files",
+      "leaves": [
+        "components.file-trigger"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "components.file-trigger"
+          ],
+          "reason": "no external covers"
+        }
+      ]
+    },
+    {
+      "l2": "display-data",
+      "leaves": [
+        "components.table",
+        "components.grid-list",
+        "components.tree",
+        "components.meter"
+      ],
+      "offers": [
+        {
+          "source": "shadcn@aria",
+          "leaves": [
+            "components.table"
+          ]
+        },
+        {
+          "source": "foundry",
+          "leaves": [
+            "components.grid-list",
+            "components.tree",
+            "components.meter"
+          ],
+          "reason": "no external covers"
+        }
+      ]
+    },
+    {
+      "l2": "display-labels",
+      "leaves": [
+        "components.badge",
+        "components.keyboard"
+      ],
+      "offers": [
+        {
+          "source": "shadcn@aria",
+          "leaves": [
+            "components.badge",
+            "components.keyboard"
+          ]
+        }
+      ]
+    },
+    {
+      "l2": "display-media",
+      "leaves": [
+        "components.avatar"
+      ],
+      "offers": [
+        {
+          "source": "shadcn@aria",
+          "leaves": [
+            "components.avatar"
+          ]
+        }
+      ]
+    },
+    {
+      "l2": "display-assets",
+      "leaves": [
+        "components.icon",
+        "components.logo"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "components.icon",
+            "components.logo"
+          ],
+          "reason": "no external covers"
+        }
+      ]
+    },
+    {
+      "l2": "charts-core",
+      "leaves": [
+        "components.chart-bar",
+        "components.chart-line",
+        "components.chart-area"
+      ],
+      "offers": [
+        {
+          "source": "shadcn-charts",
+          "leaves": [
+            "components.chart-bar",
+            "components.chart-line",
+            "components.chart-area"
+          ]
+        }
+      ]
+    },
+    {
+      "l2": "charts-compact",
+      "leaves": [
+        "components.chart-sparkline",
+        "components.chart-status-strip"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "components.chart-sparkline",
+            "components.chart-status-strip"
+          ],
+          "reason": "no external covers"
+        }
+      ]
+    },
+    {
+      "l2": "charts-analytic",
+      "leaves": [
+        "components.chart-scatter",
+        "components.chart-heatmap",
+        "components.chart-range",
+        "components.chart-waterfall"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "components.chart-scatter",
+            "components.chart-heatmap",
+            "components.chart-range",
+            "components.chart-waterfall"
+          ],
+          "reason": "no external covers"
+        }
+      ]
+    },
+    {
+      "l2": "display-content",
+      "leaves": [
+        "components.semantic-content"
+      ],
+      "offers": []
+    },
+    {
+      "l2": "feedback-messages",
+      "leaves": [
+        "components.banner",
+        "components.toast"
+      ],
+      "offers": [
+        {
+          "source": "shadcn@aria",
+          "leaves": [
+            "components.banner"
+          ]
+        },
+        {
+          "source": "foundry",
+          "leaves": [
+            "components.toast"
+          ],
+          "reason": "no external covers"
+        }
+      ]
+    },
+    {
+      "l2": "feedback-indicators",
+      "leaves": [
+        "components.status-mark"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "components.status-mark"
+          ],
+          "reason": "no external covers"
+        }
+      ]
+    },
+    {
+      "l2": "feedback-progress",
+      "leaves": [
+        "components.progress-bar",
+        "components.spinner",
+        "components.skeleton"
+      ],
+      "offers": [
+        {
+          "source": "shadcn@aria",
+          "leaves": [
+            "components.progress-bar",
+            "components.skeleton"
+          ]
+        },
+        {
+          "source": "foundry",
+          "leaves": [
+            "components.spinner"
+          ],
+          "reason": "no external covers"
+        }
+      ]
+    },
+    {
+      "l2": "navigation-links",
+      "leaves": [
+        "components.link",
+        "components.breadcrumbs"
+      ],
+      "offers": [
+        {
+          "source": "shadcn@aria",
+          "leaves": [
+            "components.breadcrumbs"
+          ]
+        },
+        {
+          "source": "foundry",
+          "leaves": [
+            "components.link"
+          ],
+          "reason": "no external covers"
+        }
+      ]
+    },
+    {
+      "l2": "navigation-panels",
+      "leaves": [
+        "components.tabs"
+      ],
+      "offers": [
+        {
+          "source": "shadcn@aria",
+          "leaves": [
+            "components.tabs"
+          ]
+        }
+      ]
+    },
+    {
+      "l2": "navigation-trees",
+      "leaves": [
+        "components.navigation-tree"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "components.navigation-tree"
+          ],
+          "reason": "no external covers"
+        }
+      ]
+    },
+    {
+      "l2": "containment-structure",
+      "leaves": [
+        "components.card",
+        "components.separator",
+        "components.disclosure",
+        "components.resize-handle"
+      ],
+      "offers": [
+        {
+          "source": "shadcn@aria",
+          "leaves": [
+            "components.card",
+            "components.separator",
+            "components.disclosure"
+          ]
+        },
+        {
+          "source": "foundry",
+          "leaves": [
+            "components.resize-handle"
+          ],
+          "reason": "no external covers"
+        }
+      ]
+    },
+    {
+      "l2": "containment-overlays",
+      "leaves": [
+        "components.dialog",
+        "components.popover",
+        "components.tooltip"
+      ],
+      "offers": [
+        {
+          "source": "shadcn@aria",
+          "leaves": [
+            "components.dialog",
+            "components.popover",
+            "components.tooltip"
+          ]
+        }
+      ]
+    }
+  ],
+  "assets": [
+    {
+      "l2": "logo-artwork",
+      "leaves": [
+        "assets.lockup",
+        "assets.mark"
+      ],
+      "offers": []
+    },
+    {
+      "l2": "app-identity-browser",
+      "leaves": [
+        "assets.favicon"
+      ],
+      "offers": []
+    },
+    {
+      "l2": "app-identity-application",
+      "leaves": [
+        "assets.app-icon"
+      ],
+      "offers": []
+    },
+    {
+      "l2": "icons-navigation",
+      "leaves": [
+        "assets.icon-chevron-down",
+        "assets.icon-chevron-up",
+        "assets.icon-chevron-left",
+        "assets.icon-chevron-right",
+        "assets.icon-arrow-right",
+        "assets.icon-external-link",
+        "assets.icon-home"
+      ],
+      "offers": [
+        {
+          "source": "lucide",
+          "leaves": [
+            "assets.icon-chevron-down",
+            "assets.icon-chevron-up",
+            "assets.icon-chevron-left",
+            "assets.icon-chevron-right",
+            "assets.icon-arrow-right",
+            "assets.icon-external-link",
+            "assets.icon-home"
+          ]
+        },
+        {
+          "source": "phosphor",
+          "leaves": [
+            "assets.icon-chevron-down",
+            "assets.icon-chevron-up",
+            "assets.icon-chevron-left",
+            "assets.icon-chevron-right",
+            "assets.icon-arrow-right",
+            "assets.icon-external-link",
+            "assets.icon-home"
+          ]
+        }
+      ]
+    },
+    {
+      "l2": "icons-actions",
+      "leaves": [
+        "assets.icon-search",
+        "assets.icon-close",
+        "assets.icon-check",
+        "assets.icon-settings",
+        "assets.icon-list-view",
+        "assets.icon-grid-view",
+        "assets.icon-theme-light",
+        "assets.icon-theme-dark",
+        "assets.icon-theme-system"
+      ],
+      "offers": [
+        {
+          "source": "lucide",
+          "leaves": [
+            "assets.icon-search",
+            "assets.icon-close",
+            "assets.icon-check",
+            "assets.icon-settings",
+            "assets.icon-list-view",
+            "assets.icon-grid-view",
+            "assets.icon-theme-light",
+            "assets.icon-theme-dark",
+            "assets.icon-theme-system"
+          ]
+        },
+        {
+          "source": "phosphor",
+          "leaves": [
+            "assets.icon-search",
+            "assets.icon-close",
+            "assets.icon-check",
+            "assets.icon-settings",
+            "assets.icon-list-view",
+            "assets.icon-grid-view",
+            "assets.icon-theme-light",
+            "assets.icon-theme-dark",
+            "assets.icon-theme-system"
+          ]
+        }
+      ]
+    },
+    {
+      "l2": "icons-status",
+      "leaves": [
+        "assets.icon-success",
+        "assets.icon-warning",
+        "assets.icon-danger",
+        "assets.icon-info"
+      ],
+      "offers": [
+        {
+          "source": "lucide",
+          "leaves": [
+            "assets.icon-success",
+            "assets.icon-warning",
+            "assets.icon-danger",
+            "assets.icon-info"
+          ]
+        },
+        {
+          "source": "phosphor",
+          "leaves": [
+            "assets.icon-success",
+            "assets.icon-warning",
+            "assets.icon-danger",
+            "assets.icon-info"
+          ]
+        }
+      ]
+    },
+    {
+      "l2": "icons-objects",
+      "leaves": [
+        "assets.icon-user",
+        "assets.icon-team",
+        "assets.icon-organization",
+        "assets.icon-website",
+        "assets.icon-institution",
+        "assets.icon-guide",
+        "assets.icon-document",
+        "assets.icon-document-approved",
+        "assets.icon-folder",
+        "assets.icon-date",
+        "assets.icon-time",
+        "assets.icon-payment",
+        "assets.icon-receipt",
+        "assets.icon-business",
+        "assets.icon-security",
+        "assets.icon-locked",
+        "assets.icon-legal",
+        "assets.icon-package",
+        "assets.icon-layers",
+        "assets.icon-integration"
+      ],
+      "offers": [
+        {
+          "source": "lucide",
+          "leaves": [
+            "assets.icon-user",
+            "assets.icon-team",
+            "assets.icon-organization",
+            "assets.icon-website",
+            "assets.icon-institution",
+            "assets.icon-guide",
+            "assets.icon-document",
+            "assets.icon-document-approved",
+            "assets.icon-folder",
+            "assets.icon-date",
+            "assets.icon-time",
+            "assets.icon-payment",
+            "assets.icon-receipt",
+            "assets.icon-business",
+            "assets.icon-security",
+            "assets.icon-locked",
+            "assets.icon-legal",
+            "assets.icon-package",
+            "assets.icon-layers",
+            "assets.icon-integration"
+          ]
+        },
+        {
+          "source": "phosphor",
+          "leaves": [
+            "assets.icon-user",
+            "assets.icon-team",
+            "assets.icon-organization",
+            "assets.icon-website",
+            "assets.icon-institution",
+            "assets.icon-guide",
+            "assets.icon-document",
+            "assets.icon-document-approved",
+            "assets.icon-folder",
+            "assets.icon-date",
+            "assets.icon-time",
+            "assets.icon-payment",
+            "assets.icon-receipt",
+            "assets.icon-business",
+            "assets.icon-security",
+            "assets.icon-locked",
+            "assets.icon-legal",
+            "assets.icon-package",
+            "assets.icon-layers",
+            "assets.icon-integration"
+          ]
+        }
+      ]
+    },
+    {
+      "l2": "imagery-framing",
+      "leaves": [
+        "assets.image-ratio"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "assets.image-ratio"
+          ],
+          "reason": "no external covers"
+        }
+      ]
+    },
+    {
+      "l2": "imagery-resources",
+      "leaves": [
+        "assets.image",
+        "assets.video"
+      ],
+      "offers": []
+    },
+    {
+      "l2": "imagery-patterns",
+      "leaves": [
+        "assets.pattern"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "assets.pattern"
+          ],
+          "reason": "no external covers"
+        }
+      ]
+    }
+  ],
+  "sections": [
+    {
+      "l2": "parts-structure",
+      "leaves": [
+        "sections.band",
+        "sections.section-header"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "sections.band",
+            "sections.section-header"
+          ],
+          "reason": "no external covers"
+        }
+      ]
+    },
+    {
+      "l2": "parts-navigation",
+      "leaves": [
+        "sections.pagination"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "sections.pagination"
+          ],
+          "reason": "no external covers"
+        }
+      ]
+    },
+    {
+      "l2": "explain-introductions",
+      "leaves": [
+        "sections.hero",
+        "sections.page-header"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "sections.hero",
+            "sections.page-header"
+          ],
+          "reason": "no external covers"
+        }
+      ]
+    },
+    {
+      "l2": "explain-reading",
+      "leaves": [
+        "sections.content",
+        "sections.article"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "sections.content",
+            "sections.article"
+          ],
+          "reason": "no external covers"
+        }
+      ]
+    },
+    {
+      "l2": "explain-promotion",
+      "leaves": [
+        "sections.features",
+        "sections.call-to-action"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "sections.features",
+            "sections.call-to-action"
+          ],
+          "reason": "no external covers"
+        }
+      ]
+    },
+    {
+      "l2": "explain-social-proof",
+      "leaves": [
+        "sections.testimonials",
+        "sections.logo-cloud",
+        "sections.people"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "sections.testimonials",
+            "sections.logo-cloud",
+            "sections.people"
+          ],
+          "reason": "no external covers"
+        }
+      ]
+    },
+    {
+      "l2": "explain-media",
+      "leaves": [
+        "sections.media",
+        "sections.gallery"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "sections.media",
+            "sections.gallery"
+          ],
+          "reason": "no external covers"
+        }
+      ]
+    },
+    {
+      "l2": "explain-guidance",
+      "leaves": [
+        "sections.faq",
+        "sections.steps",
+        "sections.timeline"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "sections.faq",
+            "sections.steps",
+            "sections.timeline"
+          ],
+          "reason": "no external covers"
+        }
+      ]
+    },
+    {
+      "l2": "organize-collections",
+      "leaves": [
+        "sections.cards",
+        "sections.resource-list",
+        "sections.task-list"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "sections.cards",
+            "sections.resource-list",
+            "sections.task-list"
+          ],
+          "reason": "no external covers"
+        }
+      ]
+    },
+    {
+      "l2": "organize-comparison",
+      "leaves": [
+        "sections.comparison",
+        "sections.pricing"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "sections.comparison",
+            "sections.pricing"
+          ],
+          "reason": "no external covers"
+        }
+      ]
+    },
+    {
+      "l2": "organize-summaries",
+      "leaves": [
+        "sections.stats",
+        "sections.status-list",
+        "sections.usage"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "sections.stats",
+            "sections.status-list",
+            "sections.usage"
+          ],
+          "reason": "no external covers"
+        }
+      ]
+    },
+    {
+      "l2": "organize-records",
+      "leaves": [
+        "sections.data-table",
+        "sections.data-grid",
+        "sections.record-detail"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "sections.data-table",
+            "sections.data-grid",
+            "sections.record-detail"
+          ],
+          "reason": "no external covers"
+        }
+      ]
+    },
+    {
+      "l2": "organize-history",
+      "leaves": [
+        "sections.activity-feed",
+        "sections.audit-log"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "sections.activity-feed",
+            "sections.audit-log"
+          ],
+          "reason": "no external covers"
+        }
+      ]
+    },
+    {
+      "l2": "collect-forms",
+      "leaves": [
+        "sections.form",
+        "sections.newsletter"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "sections.form",
+            "sections.newsletter"
+          ],
+          "reason": "no external covers"
+        }
+      ]
+    },
+    {
+      "l2": "collect-workflows",
+      "leaves": [
+        "sections.wizard"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "sections.wizard"
+          ],
+          "reason": "no external covers"
+        }
+      ]
+    },
+    {
+      "l2": "collect-preferences",
+      "leaves": [
+        "sections.settings"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "sections.settings"
+          ],
+          "reason": "no external covers"
+        }
+      ]
+    },
+    {
+      "l2": "collect-configuration",
+      "leaves": [
+        "sections.column-mapper",
+        "sections.access-matrix"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "sections.column-mapper",
+            "sections.access-matrix"
+          ],
+          "reason": "no external covers"
+        }
+      ]
+    },
+    {
+      "l2": "collect-conversation",
+      "leaves": [
+        "sections.chat"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "sections.chat"
+          ],
+          "reason": "no external covers"
+        }
+      ]
+    },
+    {
+      "l2": "navigate-indexes",
+      "leaves": [
+        "sections.link-index",
+        "sections.table-of-contents"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "sections.link-index",
+            "sections.table-of-contents"
+          ],
+          "reason": "no external covers"
+        }
+      ]
+    },
+    {
+      "l2": "navigate-discovery",
+      "leaves": [
+        "sections.explorer",
+        "sections.filter-builder"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "sections.explorer",
+            "sections.filter-builder"
+          ],
+          "reason": "no external covers"
+        }
+      ]
+    },
+    {
+      "l2": "respond-states",
+      "leaves": [
+        "sections.empty-state",
+        "sections.error-state"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "sections.empty-state",
+            "sections.error-state"
+          ],
+          "reason": "no external covers"
+        }
+      ]
+    },
+    {
+      "l2": "respond-messages",
+      "leaves": [
+        "sections.notices",
+        "sections.consent"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "sections.notices",
+            "sections.consent"
+          ],
+          "reason": "no external covers"
+        }
+      ]
+    }
+  ],
+  "frames": [
+    {
+      "l2": "page-shells-documents",
+      "leaves": [
+        "frames.site-shell"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "frames.site-shell"
+          ],
+          "reason": "no external covers"
+        }
+      ]
+    },
+    {
+      "l2": "page-shells-workspaces",
+      "leaves": [
+        "frames.app-shell"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "frames.app-shell"
+          ],
+          "reason": "no external covers"
+        }
+      ]
+    },
+    {
+      "l2": "headers",
+      "leaves": [
+        "frames.site-header",
+        "frames.app-header"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "frames.site-header",
+            "frames.app-header"
+          ],
+          "reason": "no external covers"
+        }
+      ]
+    },
+    {
+      "l2": "navigation",
+      "leaves": [
+        "frames.app-sidebar"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "frames.app-sidebar"
+          ],
+          "reason": "no external covers"
+        }
+      ]
+    },
+    {
+      "l2": "panels",
+      "leaves": [
+        "frames.inspector"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "frames.inspector"
+          ],
+          "reason": "no external covers"
+        }
+      ]
+    },
+    {
+      "l2": "footers",
+      "leaves": [
+        "frames.site-footer"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "frames.site-footer"
+          ],
+          "reason": "no external covers"
+        }
+      ]
+    },
+    {
+      "l2": "overlay-shells-panels",
+      "leaves": [
+        "frames.sheet"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "frames.sheet"
+          ],
+          "reason": "no external covers"
+        }
+      ]
+    },
+    {
+      "l2": "overlay-shells-commands",
+      "leaves": [
+        "frames.command"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "frames.command"
+          ],
+          "reason": "no external covers"
+        }
+      ]
+    }
+  ],
+  "tokens": {
+    "presets": [
+      {
+        "id": "shadcn-neutral",
+        "label": "shadcn neutral",
+        "default": true,
+        "theme": {
+          "source": "shadcn@aria",
+          "baseColor": "neutral",
+          "pin": {
+            "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts",
+            "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+            "file": "apps/v4/registry/themes.ts#neutral",
+            "sha256": "60cb5ed25f7b39d9973e2280f476dd2119a4268317f45bd7ee3cac7883db8ea0"
+          },
+          "vars": {
+            "light": {
+              "--background": "oklch(1 0 0)",
+              "--foreground": "oklch(0.145 0 0)",
+              "--card": "oklch(1 0 0)",
+              "--card-foreground": "oklch(0.145 0 0)",
+              "--popover": "oklch(1 0 0)",
+              "--popover-foreground": "oklch(0.145 0 0)",
+              "--primary": "oklch(0.205 0 0)",
+              "--primary-foreground": "oklch(0.985 0 0)",
+              "--secondary": "oklch(0.97 0 0)",
+              "--secondary-foreground": "oklch(0.205 0 0)",
+              "--muted": "oklch(0.97 0 0)",
+              "--muted-foreground": "oklch(0.556 0 0)",
+              "--accent": "oklch(0.97 0 0)",
+              "--accent-foreground": "oklch(0.205 0 0)",
+              "--destructive": "oklch(0.577 0.245 27.325)",
+              "--border": "oklch(0.922 0 0)",
+              "--input": "oklch(0.922 0 0)",
+              "--ring": "oklch(0.708 0 0)",
+              "--chart-1": "oklch(0.87 0 0)",
+              "--chart-2": "oklch(0.556 0 0)",
+              "--chart-3": "oklch(0.439 0 0)",
+              "--chart-4": "oklch(0.371 0 0)",
+              "--chart-5": "oklch(0.269 0 0)",
+              "--radius": "0.625rem",
+              "--sidebar": "oklch(0.985 0 0)",
+              "--sidebar-foreground": "oklch(0.145 0 0)",
+              "--sidebar-primary": "oklch(0.205 0 0)",
+              "--sidebar-primary-foreground": "oklch(0.985 0 0)",
+              "--sidebar-accent": "oklch(0.97 0 0)",
+              "--sidebar-accent-foreground": "oklch(0.205 0 0)",
+              "--sidebar-border": "oklch(0.922 0 0)",
+              "--sidebar-ring": "oklch(0.708 0 0)"
+            },
+            "dark": {
+              "--background": "oklch(0.145 0 0)",
+              "--foreground": "oklch(0.985 0 0)",
+              "--card": "oklch(0.205 0 0)",
+              "--card-foreground": "oklch(0.985 0 0)",
+              "--popover": "oklch(0.205 0 0)",
+              "--popover-foreground": "oklch(0.985 0 0)",
+              "--primary": "oklch(0.922 0 0)",
+              "--primary-foreground": "oklch(0.205 0 0)",
+              "--secondary": "oklch(0.269 0 0)",
+              "--secondary-foreground": "oklch(0.985 0 0)",
+              "--muted": "oklch(0.269 0 0)",
+              "--muted-foreground": "oklch(0.708 0 0)",
+              "--accent": "oklch(0.269 0 0)",
+              "--accent-foreground": "oklch(0.985 0 0)",
+              "--destructive": "oklch(0.704 0.191 22.216)",
+              "--border": "oklch(1 0 0 / 10%)",
+              "--input": "oklch(1 0 0 / 15%)",
+              "--ring": "oklch(0.556 0 0)",
+              "--chart-1": "oklch(0.87 0 0)",
+              "--chart-2": "oklch(0.556 0 0)",
+              "--chart-3": "oklch(0.439 0 0)",
+              "--chart-4": "oklch(0.371 0 0)",
+              "--chart-5": "oklch(0.269 0 0)",
+              "--sidebar": "oklch(0.205 0 0)",
+              "--sidebar-foreground": "oklch(0.985 0 0)",
+              "--sidebar-primary": "oklch(0.488 0.243 264.376)",
+              "--sidebar-primary-foreground": "oklch(0.985 0 0)",
+              "--sidebar-accent": "oklch(0.269 0 0)",
+              "--sidebar-accent-foreground": "oklch(0.985 0 0)",
+              "--sidebar-border": "oklch(1 0 0 / 10%)",
+              "--sidebar-ring": "oklch(0.556 0 0)"
+            }
+          }
+        },
+        "namespace": {
+          "source": "tailwind-default"
+        }
+      },
+      {
+        "id": "shadcn-zinc",
+        "label": "shadcn zinc",
+        "theme": {
+          "source": "shadcn@aria",
+          "baseColor": "zinc",
+          "pin": {
+            "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts",
+            "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+            "file": "apps/v4/registry/themes.ts#zinc",
+            "sha256": "60cb5ed25f7b39d9973e2280f476dd2119a4268317f45bd7ee3cac7883db8ea0"
+          },
+          "vars": {
+            "light": {
+              "--background": "oklch(1 0 0)",
+              "--foreground": "oklch(0.141 0.005 285.823)",
+              "--card": "oklch(1 0 0)",
+              "--card-foreground": "oklch(0.141 0.005 285.823)",
+              "--popover": "oklch(1 0 0)",
+              "--popover-foreground": "oklch(0.141 0.005 285.823)",
+              "--primary": "oklch(0.21 0.006 285.885)",
+              "--primary-foreground": "oklch(0.985 0 0)",
+              "--secondary": "oklch(0.967 0.001 286.375)",
+              "--secondary-foreground": "oklch(0.21 0.006 285.885)",
+              "--muted": "oklch(0.967 0.001 286.375)",
+              "--muted-foreground": "oklch(0.552 0.016 285.938)",
+              "--accent": "oklch(0.967 0.001 286.375)",
+              "--accent-foreground": "oklch(0.21 0.006 285.885)",
+              "--destructive": "oklch(0.577 0.245 27.325)",
+              "--border": "oklch(0.92 0.004 286.32)",
+              "--input": "oklch(0.92 0.004 286.32)",
+              "--ring": "oklch(0.705 0.015 286.067)",
+              "--chart-1": "oklch(0.871 0.006 286.286)",
+              "--chart-2": "oklch(0.552 0.016 285.938)",
+              "--chart-3": "oklch(0.442 0.017 285.786)",
+              "--chart-4": "oklch(0.37 0.013 285.805)",
+              "--chart-5": "oklch(0.274 0.006 286.033)",
+              "--radius": "0.625rem",
+              "--sidebar": "oklch(0.985 0 0)",
+              "--sidebar-foreground": "oklch(0.141 0.005 285.823)",
+              "--sidebar-primary": "oklch(0.21 0.006 285.885)",
+              "--sidebar-primary-foreground": "oklch(0.985 0 0)",
+              "--sidebar-accent": "oklch(0.967 0.001 286.375)",
+              "--sidebar-accent-foreground": "oklch(0.21 0.006 285.885)",
+              "--sidebar-border": "oklch(0.92 0.004 286.32)",
+              "--sidebar-ring": "oklch(0.705 0.015 286.067)"
+            },
+            "dark": {
+              "--background": "oklch(0.141 0.005 285.823)",
+              "--foreground": "oklch(0.985 0 0)",
+              "--card": "oklch(0.21 0.006 285.885)",
+              "--card-foreground": "oklch(0.985 0 0)",
+              "--popover": "oklch(0.21 0.006 285.885)",
+              "--popover-foreground": "oklch(0.985 0 0)",
+              "--primary": "oklch(0.92 0.004 286.32)",
+              "--primary-foreground": "oklch(0.21 0.006 285.885)",
+              "--secondary": "oklch(0.274 0.006 286.033)",
+              "--secondary-foreground": "oklch(0.985 0 0)",
+              "--muted": "oklch(0.274 0.006 286.033)",
+              "--muted-foreground": "oklch(0.705 0.015 286.067)",
+              "--accent": "oklch(0.274 0.006 286.033)",
+              "--accent-foreground": "oklch(0.985 0 0)",
+              "--destructive": "oklch(0.704 0.191 22.216)",
+              "--border": "oklch(1 0 0 / 10%)",
+              "--input": "oklch(1 0 0 / 15%)",
+              "--ring": "oklch(0.552 0.016 285.938)",
+              "--chart-1": "oklch(0.871 0.006 286.286)",
+              "--chart-2": "oklch(0.552 0.016 285.938)",
+              "--chart-3": "oklch(0.442 0.017 285.786)",
+              "--chart-4": "oklch(0.37 0.013 285.805)",
+              "--chart-5": "oklch(0.274 0.006 286.033)",
+              "--sidebar": "oklch(0.21 0.006 285.885)",
+              "--sidebar-foreground": "oklch(0.985 0 0)",
+              "--sidebar-primary": "oklch(0.488 0.243 264.376)",
+              "--sidebar-primary-foreground": "oklch(0.985 0 0)",
+              "--sidebar-accent": "oklch(0.274 0.006 286.033)",
+              "--sidebar-accent-foreground": "oklch(0.985 0 0)",
+              "--sidebar-border": "oklch(1 0 0 / 10%)",
+              "--sidebar-ring": "oklch(0.552 0.016 285.938)"
+            }
+          }
+        },
+        "namespace": {
+          "source": "tailwind-default"
+        }
+      }
+    ],
+    "default": "shadcn-neutral"
+  }
+}
