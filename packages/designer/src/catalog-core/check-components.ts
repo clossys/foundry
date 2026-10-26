@@ -86,6 +86,8 @@ const FORBIDDEN = new RegExp("^(?:" + FORBIDDEN_MODULES.map(module => module.end
 /** Emitted per fill (or `member: ` prefixed) when no source/runtime observation was gathered. */
 export const OBSERVATIONS_UNAVAILABLE = "Source and runtime observations are unavailable";
 const RUNTIME_PENDING: readonly ComponentCheckCode[] = ["K2", "K4", "K5", "K6", "K7", "K10", "K12"];
+/** K9 (a declared private part) and K11 (controls geometry parity) are proven only from observed source, so they are pending on an unobserved fill too. */
+const PENDING_CODES: readonly ComponentCheckCode[] = [...RUNTIME_PENDING, "K9", "K11"];
 /**
  * Absent observations are runtime-pending, not a refusal: the fill is statically checked and
  * adoptable, never runtime-qualified. They are notices, so `ok` (no errors) admits adoption and
@@ -93,7 +95,7 @@ const RUNTIME_PENDING: readonly ComponentCheckCode[] = ["K2", "K4", "K5", "K6", 
  * pending until real observations are supplied. Supplied observations that fail stay errors.
  */
 export function isObservationPending(finding: { code: string; severity: string; message: string }): boolean {
-  return finding.severity === "notice" && (RUNTIME_PENDING as readonly string[]).includes(finding.code)
+  return finding.severity === "notice" && (PENDING_CODES as readonly string[]).includes(finding.code)
     && (finding.message === OBSERVATIONS_UNAVAILABLE || finding.message.endsWith(`: ${OBSERVATIONS_UNAVAILABLE}`));
 }
 /** Coherence groups every profile check applies, before caller-supplied groups. */
@@ -241,7 +243,14 @@ export function checkComponentProfile(input: ComponentCheckInput): ComponentChec
       } catch (error) { add("K8", fill.slot, `Registered composition proof failed: ${(error as Error).message}`); }
     }
     if (fill.impl.kind === "source" && !ownedRule && (!fill.pin?.url || !/^[a-f0-9]{40}$/.test(fill.pin.commit ?? "") || !fill.pin.files?.length || !fill.notice?.trim())) add("K8", fill.slot, "Source fill requires commit, file hashes and licence notice");
-    for (const dep of fill.deps) if (dep.registryItem && (!dep.slot || !fill.composes.includes(dep.slot)) && !fill.parts?.some(part => part.item === dep.registryItem && input.observations[fill.slot]?.files.some(file => file.path.includes(`_parts/${part.item}/`)))) add("K9", fill.slot, `Registry dependency ${dep.registryItem} is neither materialized nor rebound`);
+    const observedFiles = input.observations[fill.slot]?.files;
+    for (const dep of fill.deps) if (dep.registryItem && (!dep.slot || !fill.composes.includes(dep.slot))) {
+      const declared = !!fill.parts?.some(part => part.item === dep.registryItem);
+      if (declared && observedFiles?.some(file => file.path.includes(`_parts/${dep.registryItem}/`))) continue;
+      // A declared part is proven only by observed source: unobserved it is runtime-pending; observed without it, or undeclared, it fails.
+      if (declared && !observedFiles?.length) findings.push({ code: "K9", rule: "K9", subject: fill.slot, severity: "notice", message: `Registry dependency ${dep.registryItem}: ${OBSERVATIONS_UNAVAILABLE}` });
+      else add("K9", fill.slot, `Registry dependency ${dep.registryItem} is neither materialized nor rebound`);
+    }
     for (const part of fill.parts ?? []) if (part.slot || slots.has(`components.${part.item}`)) add("K12", fill.slot, `Private part ${part.item} duplicates a component leaf`, "CC4");
     const commonObservation = input.observations[fill.slot];
     const mappedRoots = Object.entries(contract.memberRoots ?? {});
@@ -390,7 +399,11 @@ export function checkComponentProfile(input: ComponentCheckInput): ComponentChec
     for (const fill of members) {
       const observation = input.observations[fill.slot];
       const leaves = readLeaves(fill);
-      if (!leaves.includes("tokens.control-size") || !leaves.some(read => /^tokens\.focus-/.test(read)) || !observation?.measurements.length || fill.members.filter(member => member.startsWith("size.")).some(member => { const token = observation?.geometry?.[member]; return !token || !token.startsWith("tokens.control-size.") || !input.tokens[token]; }) || observation.measurements.some(measurement => measurement.focusTokens.some(member => !/^tokens\.focus-/.test(member))) || findings.some(finding => finding.subject === fill.slot && finding.code === "K4")) add("K11", fill.slot, "Mixed controls lack joint control-size/focus/type geometry parity");
+      const parity = "Mixed controls lack joint control-size/focus/type geometry parity";
+      // Descriptor reads and real K4 errors refuse statically; geometry and focus measurements need observations.
+      if (!leaves.includes("tokens.control-size") || !leaves.some(read => /^tokens\.focus-/.test(read)) || findings.some(finding => finding.subject === fill.slot && finding.code === "K4" && finding.severity === "error")) { add("K11", fill.slot, parity); continue; }
+      if (!observation?.files.length) { findings.push({ code: "K11", rule: "K11", subject: fill.slot, severity: "notice", message: `Mixed controls geometry parity: ${OBSERVATIONS_UNAVAILABLE}` }); continue; }
+      if (!observation.measurements.length || fill.members.filter(member => member.startsWith("size.")).some(member => { const token = observation.geometry?.[member]; return !token || !token.startsWith("tokens.control-size.") || !input.tokens[token]; }) || observation.measurements.some(measurement => measurement.focusTokens.some(member => !/^tokens\.focus-/.test(member))) || findings.some(finding => finding.subject === fill.slot && finding.code === "K4")) add("K11", fill.slot, parity);
     }
   }
   const unique = new Map(findings.map(finding => [stableStringify(finding), finding]));
