@@ -46,7 +46,14 @@ export function assertComponentImportClosure(files: readonly ComponentFile[], pa
   const paths = new Set(files.map(file => file.path));
   for (const file of files.filter(file => /\.tsx?$/.test(file.path))) {
     // Comments can contain import-looking text; strip them without modifying quoted module text.
-    const code = file.content.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+    const commentless = file.content.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+    // A namespace import binds no individual name, so its closure is the package itself being an observed dependency.
+    const code = commentless.replace(/\bimport\s+(?:type\s+)?\*\s+as\s+[A-Za-z_$][\w$]*\s+from\s*["']([^"']+)["']\s*;?/g, (statement, specifier: string) => {
+      if (specifier.startsWith(".")) throw new CatalogError(`components: unsupported import syntax in ${file.path}`);
+      assertPackageSpecifier(specifier);
+      if (!Object.hasOwn(packageExports, specifier)) throw new CatalogError(`components: unsupported import syntax in ${file.path}`);
+      return "";
+    });
     if (/\b(?:import|require)\s*\(/.test(code) || /\bimport\s+(?!type\s*\{|\{)[^;\n]*\bfrom\b/.test(code) || /\bimport\s*["']/.test(code)) throw new CatalogError(`components: unsupported import syntax in ${file.path}`);
     for (const match of code.matchAll(/\b(?:import|export)\s+(?:type\s+)?\{([^}]+)\}\s*from\s*["']([^"']+)["']/g)) {
       const specifier = match[2]!;
@@ -59,7 +66,8 @@ export function assertComponentImportClosure(files: readonly ComponentFile[], pa
         assertPackageSpecifier(specifier);
         names = packageExports[specifier] ?? [];
       }
-      for (const binding of match[1]!.split(",")) {
+      // One trailing comma closes a multi-line list in valid source; any other empty binding is refused.
+      for (const binding of match[1]!.replace(/,\s*$/, "").split(",")) {
         const imported = binding.trim().replace(/^type\s+/, "").split(/\s+as\s+/)[0];
         if (!imported || !/^[A-Za-z_$][\w$]*$/.test(imported) || !names.includes(imported)) throw new CatalogError(`components: unavailable named import ${imported} from ${specifier}`);
       }

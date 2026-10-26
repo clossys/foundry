@@ -73,6 +73,21 @@ describe("SYNTHETIC component code generation; no shipped conformance claims", (
   it("specifier guard rejects generated-code injection", () => {
     expect(() => assertPackageSpecifier('test-kit/components";throw Error("injected")')).toThrow(/specifier/);
   });
+  it("accepts one trailing comma in a named import list and refuses any other empty binding", () => {
+    const file = (content: string) => [{ path: "components/button/button.tsx", content }];
+    const observed = { "react-aria-components": ["Button", "Link"] };
+    expect(() => assertComponentImportClosure(file('import {\n  Button,\n  type Link,\n} from "react-aria-components";'), observed)).not.toThrow();
+    expect(() => assertComponentImportClosure(file('import { Button,, Link } from "react-aria-components";'), observed)).toThrow(/unavailable named import {2}from/);
+    expect(() => assertComponentImportClosure(file('import { , } from "react-aria-components";'), observed)).toThrow(/unavailable named import {2}from/);
+  });
+  it("admits a namespace import only of an observed package dependency", () => {
+    const file = (content: string) => [{ path: "components/button/button.tsx", content }];
+    expect(() => assertComponentImportClosure(file('import * as React from "react";\nimport type * as Types from "react";'), { react: [] })).not.toThrow();
+    expect(() => assertComponentImportClosure(file('import * as React from "react";'), {})).toThrow(/unsupported import syntax/);
+    expect(() => assertComponentImportClosure([...file('import * as Parts from "../_parts/utils/index.js";'), { path: "components/_parts/utils/index.ts", content: "export function cn() {}" }], { react: [] })).toThrow(/unsupported import syntax/);
+    expect(() => assertComponentImportClosure(file('import React from "react";'), { react: [] })).toThrow(/unsupported import syntax/);
+    expect(() => assertComponentImportClosure(file('import * as React, { useState } from "react";'), { react: ["useState"] })).toThrow(/unsupported import syntax/);
+  });
   it("closes named imports and rejects unsupported mapping grammar or unavailable observations", () => {
     expect(() => assertComponentImportClosure([{ path: "components/calendar/calendar.tsx", content: 'import { buttonVariants } from "../button/index.js";' }, { path: "components/button/index.ts", content: 'export { Button } from "test-kit/components";' }], packageExports)).toThrow(/unavailable named import/);
     const profile = packageProfile();
@@ -148,9 +163,9 @@ describe("SYNTHETIC component code generation; no shipped conformance claims", (
     const withStoredIndex = { ...profile, files: [...profile.files, { path, content: `export { ${name} } from "./${leaf}.js";` }] };
     expect(() => emitComponents(withStoredIndex, ["component-index"])).toThrow(/generated entrypoint conflicts/);
   });
-  it("still refuses raw namespace/wildcard syntax and unavailable selected subparts", () => {
+  it("still refuses unobserved namespace, wildcard syntax and unavailable selected subparts", () => {
     const path = "components/select/select.tsx";
-    expect(() => assertComponentImportClosure([{ path, content: 'import * as React from "react"; export const Select = React.Fragment;' }], { react: ["Fragment"] })).toThrow(/unsupported import syntax/);
+    expect(() => assertComponentImportClosure([{ path, content: 'import * as React from "react"; export const Select = React.Fragment;' }], { "react-dom": ["Fragment"] })).toThrow(/unsupported import syntax/);
     expect(() => assertComponentImportClosure([{ path, content: 'export * from "react";' }], { react: ["Fragment"] })).toThrow(/wildcard/);
     expect(() => assertComponentImportClosure([
       { path: "components/calendar/calendar.tsx", content: 'import { SelectTrigger } from "../select/index.js";' },
