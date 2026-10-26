@@ -13,6 +13,7 @@ import { componentSpecimenPreview, Studio as StudioView, StudioHeader, StudioRig
 import * as studioEntry from "./index.js";
 import { componentSpecimenPreview as fromModule } from "./component-specimens.js";
 import { labels } from "./__fixtures__/studio.js";
+import { CandidateCell } from "./CandidateCell.js";
 import type { CompositeStudioLabels, CompositeStudioSnapshot } from "./types.js";
 
 const wholeLabels: CompositeStudioLabels = { ...labels, whole: { signoff: "W-signoff", proposed: "W-proposed", contract: "W-contract", contentSlots: "W-slots", configurations: "W-config", unresolved: "W-unresolved", unassessed: "W-unassessed" } };
@@ -143,4 +144,96 @@ it("draws literal-valued and state-flag members; interaction and data members wa
   expect([...document.querySelectorAll<HTMLElement>("[data-component-specimen]")].map(node => node.dataset.componentSpecimen)).toEqual(["components.button", "state.disabled", "size.sm"]);
   expect(screen.getByRole("button", { name: "state.disabled" })).toBeDisabled();
   expect(screen.getByRole("button", { name: "components.button" })).toBeEnabled();
+});
+
+/** Every Foundry package-implemented component leaf, each as the only chosen leaf of an adopted profile. */
+function foundryLeaves() {
+  const slots = new Set(loadBuildCatalog().slots.map(slot => slot.id));
+  return loadCatalogBundles().componentFills.flatMap(doc => Object.values(doc.components))
+    .filter(fill => fill.source === "foundry" && fill.impl.kind === "package" && slots.has(fill.slot))
+    .map(fill => {
+      const component = { slot: fill.slot, originKind: "adopted", origin: { kind: "adopted", source: "foundry" }, impl: fill.impl, propMap: fill.propMap, reads: { tokens: {}, assets: [], components: [] }, descriptor: fill } as unknown as ResolvedComponent;
+      return { leaf: fill.slot, profile: { selectionHash: `selection-${fill.slot}`, components: { components: { [fill.slot]: component } } } as unknown as CompositeResolved };
+    });
+}
+
+it("host perspective: a chosen cell whose every specimen throws reads unavailable with a named reason, never live", async () => {
+  const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+  const Boom = () => { throw new Error("cannot draw"); };
+  hostStudio(componentSpecimenPreview({ modules: { "@clossys/designer/components": { ...components, Button: Boom } } }).preview);
+  await screen.findByText("L-saved");
+  const [only] = chosenCells();
+  await vi.waitFor(() => expect(only!.cell).toHaveAttribute("data-preview-state", "unavailable"));
+  expect(only!.cell).toHaveAttribute("data-preview-reason", "specimen-error");
+  expect(within(only!.cell).getByText(labels.previewUnavailable)).toBeVisible();
+  errors.mockRestore();
+});
+
+it("a cell whose failing specimens are replaced by other host content reads live again", async () => {
+  const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+  const profile = resolve(adoptedComponentIntegration());
+  const Boom = () => { throw new Error("cannot draw"); };
+  const failing = componentSpecimenPreview({ modules: { "@clossys/designer/components": { ...components, Button: Boom } } }).preview("components.button", profile);
+  const view = render(<CandidateCell labels={labels} preview={failing} />);
+  const cell = () => document.querySelector<HTMLElement>("[data-candidate-cell]")!;
+  await vi.waitFor(() => expect(cell()).toHaveAttribute("data-preview-reason", "specimen-error"));
+  view.rerender(<CandidateCell labels={labels} preview={<span>Host preview</span>} />);
+  await vi.waitFor(() => expect(cell()).toHaveAttribute("data-preview-state", "live"));
+  expect(cell()).not.toHaveAttribute("data-preview-reason");
+  errors.mockRestore();
+});
+
+it("a provider that throws leaves nothing drawn, so the cell reads unavailable with the same reason", async () => {
+  const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+  const profile = resolve(adoptedComponentIntegration());
+  const provider = () => { throw new Error("provider unavailable"); };
+  render(<CandidateCell labels={labels} preview={componentSpecimenPreview({ modules: hostModules, provider }).preview("components.button", profile)} />);
+  const cell = document.querySelector<HTMLElement>("[data-candidate-cell]")!;
+  await vi.waitFor(() => expect(cell).toHaveAttribute("data-preview-state", "unavailable"));
+  expect(cell).toHaveAttribute("data-preview-reason", "specimen-error");
+  errors.mockRestore();
+});
+
+it("stays live while at least one specimen renders", async () => {
+  const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+  const profile = resolve(adoptedComponentIntegration());
+  const Partial = (props: Record<string, unknown>) => { if (props.variant) throw new Error("variant unsupported"); return <components.Button {...props} />; };
+  const preview = componentSpecimenPreview({ modules: { "@clossys/designer/components": { ...components, Button: Partial } } }).preview("components.button", profile);
+  render(<CandidateCell labels={labels} preview={preview} />);
+  const cell = document.querySelector<HTMLElement>("[data-candidate-cell]")!;
+  expect(cell.querySelectorAll("[data-specimen-error]").length).toBeGreaterThan(0);
+  await new Promise(resolve => setTimeout(resolve, 0));
+  expect(cell).toHaveAttribute("data-preview-state", "live");
+  expect(cell).not.toHaveAttribute("data-preview-reason");
+  expect(screen.getByRole("button", { name: "components.button" })).toBeVisible();
+  errors.mockRestore();
+});
+
+it("draws every Foundry package component live from designer sample content when the host passes none", async () => {
+  const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+  const specimens = componentSpecimenPreview({ modules: hostModules });
+  const leaves = foundryLeaves();
+  expect(leaves.length).toBeGreaterThan(50);
+  const blank: string[] = [];
+  for (const { leaf, profile } of leaves) {
+    render(<CandidateCell labels={labels} preview={specimens.preview(leaf, profile)} />);
+    const cell = document.querySelector<HTMLElement>("[data-candidate-cell]")!;
+    await new Promise(resolve => setTimeout(resolve, 0));
+    const drawn = [...cell.querySelectorAll<HTMLElement>("[data-component-specimen]")].filter(node => !node.querySelector("[data-specimen-error]") && node.childElementCount > 0);
+    // The base specimen, drawn with the sample content, never throws.
+    expect(cell.querySelector(`[data-component-specimen="${leaf}"] [data-specimen-error]`), leaf).toBeNull();
+    if (cell.dataset.previewState !== "live" || drawn.length === 0) blank.push(leaf);
+    cleanup();
+  }
+  // The toast region draws only what the app-wide `toast()` queue holds; a preview never pushes into it.
+  expect(blank).toEqual(["components.toast"]);
+  errors.mockRestore();
+});
+
+it("host specimens override designer sample content", () => {
+  const leaf = foundryLeaves().find(entry => entry.leaf === "components.chart-bar")!;
+  const specimens = componentSpecimenPreview({ modules: hostModules, specimens: { "components.chart-bar": binding => <p data-testid="host-chart">{binding.exportName}</p> } });
+  render(<>{specimens.preview(leaf.leaf, leaf.profile)}</>);
+  expect(screen.getByTestId("host-chart")).toHaveTextContent("BarChart");
+  expect(document.querySelector("svg")).toBeNull();
 });

@@ -1,7 +1,9 @@
 "use client";
-import { Component as ReactComponent, createElement, type ComponentType, type ErrorInfo, type ReactNode } from "react";
+import { Component as ReactComponent, createElement, useCallback, useContext, useEffect, useState, type ComponentType, type ErrorInfo, type ReactNode } from "react";
 import { componentMemberBinding } from "../catalog-core/emit-components.js";
 import type { CompositeResolved, ResolvedComponent } from "../catalog-core/index.js";
+import { componentSpecimenSample, type ComponentSpecimenSample } from "./component-specimen-samples.js";
+import { PreviewOutcomeContext } from "./preview-outcome.js";
 
 /** The named exports of one module the host imported, e.g. `import * as components from "@clossys/designer/components"`. */
 export type ComponentSpecimenModule = Readonly<Record<string, unknown>>;
@@ -26,6 +28,12 @@ export interface ComponentSpecimenBinding {
   readonly source: string;
   /** The implementation export the descriptor names (`impl.export`). */
   readonly Component: ComponentSpecimenComponent;
+  /** The module specifier the export was read from (`impl.module` or `impl.entry`), the key in `modules`. */
+  readonly specifier: string;
+  /** The export's name in that module (`impl.export`). */
+  readonly exportName: string;
+  /** That whole module, for a specimen that draws the component with its sibling parts. */
+  readonly exports: ComponentSpecimenModule;
   /** Mapped contract members, in descriptor order. Unmapped members are absent. */
   readonly members: readonly ComponentSpecimenMember[];
   /** Mapped members whose pointer the component dispatcher cannot express (a compound part or a prose note), with the reason. */
@@ -51,9 +59,10 @@ export interface ComponentSpecimenOptions {
    */
   readonly modules: Readonly<Record<string, ComponentSpecimenModule>>;
   /**
-   * Specimen content by leaf. A leaf without one renders the implementation export once, labelled with the leaf,
-   * then once per drawn member, labelled with its member key. Data-driven components (charts, tables, lists)
-   * need an entry here: a bare render has no data to draw.
+   * Specimen content by leaf; an entry replaces everything below. A leaf without one renders the implementation
+   * export once, labelled with the leaf, then once per drawn member, labelled with its member key. A data-driven
+   * Foundry component (charts, table, tree, field, ...) draws with designer-provided neutral sample content
+   * instead of the label; another library's data-driven component needs an entry here.
    */
   readonly specimens?: Readonly<Record<string, ComponentSpecimenRender>>;
   /** Wraps every specimen, e.g. the library's emitted `LibraryProvider`. */
@@ -71,19 +80,43 @@ const renderable = (value: unknown): value is ComponentSpecimenComponent =>
   typeof value === "function" || (typeof value === "object" && value !== null && "$$typeof" in value);
 
 /** A specimen that throws while rendering keeps its cell, marked for the capture harness, instead of unmounting Studio. */
-class SpecimenBoundary extends ReactComponent<{ readonly name: string; readonly children?: ReactNode }, { readonly failed: boolean }> {
+class SpecimenBoundary extends ReactComponent<{ readonly name: string; readonly onFail: (name: string) => void; readonly children?: ReactNode }, { readonly failed: boolean }> {
   override state = { failed: false };
   static getDerivedStateFromError(): { failed: boolean } { return { failed: true }; }
-  override componentDidCatch(_error: unknown, _info: ErrorInfo): void { /* The marker below is the record; Studio keeps running. */ }
+  override componentDidCatch(_error: unknown, _info: ErrorInfo): void { this.props.onFail(this.props.name); }
   override render(): ReactNode { return this.state.failed ? <span hidden data-specimen-error={this.props.name} /> : this.props.children; }
 }
 
-function defaultSpecimen(binding: ComponentSpecimenBinding): ReactNode {
+/**
+ * The specimens of one leaf. Once every one of them has thrown (or the provider around them has), it reports
+ * `specimen-error` to the leaf cell, which then reads unavailable with that reason instead of live.
+ */
+function SpecimenSet({ total, children }: { readonly total: number; readonly children: (onFail: (name: string) => void, onProviderFail: () => void) => ReactNode }) {
+  const report = useContext(PreviewOutcomeContext);
+  const [failed, setFailed] = useState<{ readonly names: ReadonlySet<string>; readonly provider: boolean }>(() => ({ names: new Set(), provider: false }));
+  const onFail = useCallback((name: string) => setFailed(previous => previous.names.has(name) ? previous : { ...previous, names: new Set(previous.names).add(name) }), []);
+  const onProviderFail = useCallback(() => setFailed(previous => previous.provider ? previous : { ...previous, provider: true }), []);
+  const reason = failed.provider || failed.names.size >= total ? "specimen-error" : undefined;
+  useEffect(() => { report?.(reason); }, [report, reason]);
+  useEffect(() => () => report?.(undefined), [report]);
+  return children(onFail, onProviderFail);
+}
+
+/** A sample describes the base export; a member bound to another export (`./shell#Brandmark`) keeps its label. */
+function defaultSpecimen(binding: ComponentSpecimenBinding, sample: ComponentSpecimenSample | undefined, onFail: (name: string) => void): ReactNode {
   const rows = [{ member: binding.leaf, Component: binding.Component, props: {} }, ...binding.members.filter(member => member.drawn)];
   return rows.map(row => <div key={row.member} data-component-specimen={row.member}>
-    <SpecimenBoundary name={row.member}>{createElement(row.Component, { ...row.props }, row.member)}</SpecimenBoundary>
+    <SpecimenBoundary name={row.member} onFail={onFail}>{sample && row.Component === binding.Component
+      ? createElement(row.Component, { ...sample.props, children: sample.children, ...row.props })
+      : createElement(row.Component, { ...row.props }, row.member)}</SpecimenBoundary>
   </div>);
 }
+
+/** `@scope/name/charts` is `./charts`; a sample key is the export address a Foundry fill pins (`./charts#BarChart`). */
+const sampleKey = (specifier: string, exportName: string) => {
+  const parts = specifier.split("/");
+  return `./${parts.slice(specifier.startsWith("@") ? 2 : 1).join("/")}#${exportName}`;
+};
 
 /**
  * Live component specimens for Studio, bound from the host's adopted library. Each chosen component leaf
@@ -93,17 +126,18 @@ function defaultSpecimen(binding: ComponentSpecimenBinding): ReactNode {
  */
 export function componentSpecimenPreview(options: ComponentSpecimenOptions): ComponentSpecimenPreview {
   const refuse = (leaf: string, code: ComponentSpecimenRefusalCode, detail: string) => ({ refusal: { leaf, code, detail } });
-  const exportOf = (leaf: string, module: string, name: string): { value: ComponentSpecimenComponent } | ReturnType<typeof refuse> => {
+  const exportOf = (leaf: string, module: string, name: string): { value: ComponentSpecimenComponent; namespace: ComponentSpecimenModule } | ReturnType<typeof refuse> => {
     const namespace = Object.hasOwn(options.modules, module) ? options.modules[module] : undefined;
     if (!namespace) return refuse(leaf, "module-unavailable", module);
     const value = Object.hasOwn(namespace, name) ? namespace[name] : undefined;
-    return renderable(value) ? { value } : refuse(leaf, "export-unavailable", `${module}#${name}`);
+    return renderable(value) ? { value, namespace } : refuse(leaf, "export-unavailable", `${module}#${name}`);
   };
   const bind: ComponentSpecimenPreview["bind"] = (leaf, profile) => {
     if (!leaf.startsWith("components.")) return refuse(leaf, "not-a-component", leaf);
     const component: ResolvedComponent | undefined = profile.components.components[leaf];
     if (!component) return refuse(leaf, "not-chosen", leaf);
-    const base = exportOf(leaf, component.impl.kind === "package" ? component.impl.module : component.impl.entry, component.impl.export);
+    const specifier = component.impl.kind === "package" ? component.impl.module : component.impl.entry;
+    const base = exportOf(leaf, specifier, component.impl.export);
     if ("refusal" in base) return base;
     const members: ComponentSpecimenMember[] = [], unbound: { member: string; detail: string }[] = [];
     for (const member of component.descriptor.members) {
@@ -119,16 +153,24 @@ export function componentSpecimenPreview(options: ComponentSpecimenOptions): Com
       members.push({ member, Component: target.value, props: binding.property ? { [binding.property]: binding.value } : {}, interaction, drawn });
     }
     const source = component.origin.kind === "adopted" ? component.origin.source : component.descriptor.source;
-    return { binding: { leaf, source, Component: base.value, members, unbound } };
+    return { binding: { leaf, source, Component: base.value, specifier, exportName: component.impl.export, exports: base.namespace, members, unbound } };
   };
   return { bind, preview(leaf, profile) {
     const bound = bind(leaf, profile);
     if ("refusal" in bound) return undefined;
+    const { binding } = bound;
     const render = options.specimens && Object.hasOwn(options.specimens, leaf) ? options.specimens[leaf] : undefined;
-    const content = render ? <SpecimenBoundary name={leaf}>{render(bound.binding)}</SpecimenBoundary> : defaultSpecimen(bound.binding);
+    const descriptor = profile.components.components[leaf]!.descriptor;
+    const sample = render || descriptor.source !== "foundry" || profile.components.components[leaf]!.impl.kind !== "package" ? undefined
+      : componentSpecimenSample(sampleKey(binding.specifier, binding.exportName), binding.Component, binding.exports);
+    const total = render ? 1 : 1 + binding.members.filter(member => member.drawn).length;
     const Provider = options.provider;
-    return <div data-component-specimens={leaf} data-specimen-source={bound.binding.source} className="flex flex-wrap items-center gap-md">
-      {Provider ? <Provider>{content}</Provider> : content}
+    // A new selection or library remounts the set, so an earlier failure never outlives the specimens it described.
+    return <div data-component-specimens={leaf} data-specimen-source={binding.source} className="flex flex-wrap items-center gap-md">
+      <SpecimenSet key={`${profile.selectionHash}:${binding.specifier}#${binding.exportName}`} total={total}>{(onFail, onProviderFail) => {
+        const content = render ? <SpecimenBoundary name={leaf} onFail={onFail}>{render(binding)}</SpecimenBoundary> : defaultSpecimen(binding, sample, onFail);
+        return Provider ? <SpecimenBoundary name={leaf} onFail={onProviderFail}><Provider>{content}</Provider></SpecimenBoundary> : content;
+      }}</SpecimenSet>
     </div>;
   } };
 }

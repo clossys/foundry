@@ -10348,7 +10348,7 @@ import { componentSpecimenPreview, type CompositeStudioAdapter } from "@clossys/
 
 const specimens = componentSpecimenPreview({
   modules: { "@clossys/designer/components": components, "@clossys/designer/charts": charts },
-  // Optional: content for data-driven leaves, and the library's provider.
+  // Optional: your own content for a leaf (it replaces the designer sample), and the library's provider.
   specimens: { "components.chart-bar": ({ Component }) => <Component title="Sample" categories={["A", "B"]} series={[{ name: "Count", values: [3, 5] }]} /> },
 });
 
@@ -10370,12 +10370,21 @@ each member that has a literal value (`Button.size=sm`) or a `state.*` flag
 is any member whose pointer the dispatcher cannot express; those are listed in
 `binding.unbound`.
 
+Data-driven Foundry components (charts, table, tree, field, menus and other
+overlays) draw with neutral sample content the designer provides, so every
+Foundry package component renders without host data. That content is preview
+material only, never adoption or conformance evidence. A `specimens` entry for a
+leaf replaces it. Another library's data-driven component needs its own
+`specimens` entry. The binding also carries `specifier`, `exportName` and the
+whole module as `exports`, so that entry can draw compound parts.
+
 `bind(leaf, profile)` returns the binding or a named refusal: `not-a-component`,
 `not-chosen`, `module-unavailable` or `export-unavailable`. On a refusal,
 `preview` returns `undefined`, so the cell stays unavailable rather than showing
-a placeholder. A specimen that throws, such as a chart drawn without data, is
-replaced by a hidden `data-specimen-error` marker inside its live cell. Supply
-`specimens` for those leaves.
+a placeholder. A specimen that throws is replaced by a hidden
+`data-specimen-error` marker. The cell stays live while at least one specimen
+renders. Once every specimen of a leaf has thrown, or the provider has, the cell
+reads `data-preview-state="unavailable"` with `data-preview-reason="specimen-error"`.
 
 ### Consumer runtime ports and responsive assembly evidence
 

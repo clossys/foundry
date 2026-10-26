@@ -1,6 +1,7 @@
 "use client";
 import type { Candidate } from "./model.js";
-import { memo, type CSSProperties, type ReactNode } from "react";
+import { memo, useState, type CSSProperties, type ReactNode } from "react";
+import { PreviewOutcomeContext, type PreviewFailureReason } from "./preview-outcome.js";
 import { CompactPreview } from "./previews.js";
 import { LeafCell } from "../blocks/library-board/LeafCell.js";
 import type { StudioLabels } from "./types.js";
@@ -27,13 +28,22 @@ export function memberFamilies(members: readonly Member[]): { family: string; me
   return runs;
 }
 
+/** A host-supplied preview is live only while it draws something; content that reports a failure makes it unavailable, named. */
+function HostPreviewCell({ labels, preview, sampleState }: { labels: StudioLabels; preview?: ReactNode; sampleState?: SurfaceSampleState }) {
+  const [failure, setFailure] = useState<PreviewFailureReason>();
+  const live = preview != null && failure === undefined;
+  return <PreviewOutcomeContext.Provider value={setFailure}>
+    <LeafCell className={LIBRARY_COLUMN_FLOW} style={LIBRARY_COLUMN_BOUND} data-sample-state={sampleState} data-preview-reason={preview == null ? undefined : failure} preview={preview} previewState={live ? "live" : "unavailable"} status={live ? undefined : labels.previewUnavailable} />
+  </PreviewOutcomeContext.Provider>;
+}
+
 /**
  * Every library supplies the same resolved data shape; all L4 variants flow in rows inside the one bounded leaf cell.
  * A leaf with several member families (a palette's ramps) starts each family on its own row, so a ramp reads as one
  * run instead of breaking wherever the cap falls.
  */
 export const CandidateCell = memo(function CandidateCell({ candidate, labels, preview, sampleState }: { candidate?: Candidate; labels: StudioLabels; preview?: ReactNode; sampleState?: SurfaceSampleState }) {
-  if (!candidate) return <LeafCell className={LIBRARY_COLUMN_FLOW} style={LIBRARY_COLUMN_BOUND} data-sample-state={sampleState} preview={preview} previewState={preview == null ? "unavailable" : "live"} status={preview == null ? labels.previewUnavailable : undefined} />;
+  if (!candidate) return <HostPreviewCell labels={labels} preview={preview} sampleState={sampleState} />;
   const variant = (entry: Member) => <div key={entry.id} data-candidate-variant={entry.id} className="candidate-variant-min-inline token-specimen-contain">
     <p data-member-key="" className="text-caption text-ink-secondary">{memberKey(entry)}</p>
     <CompactPreview candidate={{ ...candidate, members: [entry] }} labels={labels} />
