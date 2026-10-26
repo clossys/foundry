@@ -1,5 +1,5 @@
 /* Shared neutral theme, shadcn-ui/ui @ daaf156ee00ed91cc7e6bdd937c1b4973152d141.
- * MIT; Copyright (c) 2023 shadcn. See shadcn-LICENSE.md.
+ * MIT; Copyright (c) 2023 shadcn. See src/importers/vendor/shadcn-LICENSE.md for the adjacent notice.
  * Extracted from apps/v4/registry/themes.ts; aria is a component base, not a separate theme. */
 :root {
   --background: oklch(1 0 0);

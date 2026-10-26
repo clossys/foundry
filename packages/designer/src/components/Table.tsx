@@ -204,7 +204,7 @@ export interface TableSelectAllCheckboxProps {
  * checkbox — `Checkbox` already supports the `isIndeterminate` visual
  * state a select-all control needs (see `Checkbox`'s own doc comment), and
  * this file composing that component is the exception this package's ladder
- * rule allows explicitly: `ladder.test.ts` forbids an component importing from
+ * rule allows explicitly: `ladder.test.ts` (a repository-only test that does not ship) forbids an component importing from
  * `blocks/`, never a sibling component importing another sibling component, and
  * `Table` reaching for `Checkbox` is exactly that — one component composing
  * another, both still one level below `blocks/`.

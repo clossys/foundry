@@ -6634,18 +6634,10 @@ The application frame composes Designer's `AppNavigation`, `AccountMenu`,
 `ResizablePane`. It owns one focusable main landmark and its skip target;
 its children supply the route body without another `main`, banner or sidebar.
 
-The contract points to a real, interactive whole-frame specimen. Mount it
-directly in a client route or a frame-capable catalog canvas:
-
-```tsx
-"use client";
-
-import { AppFrameSpecimen } from "@clossys/designer/frames";
-
-export default function ExampleWorkspace() {
-  return <AppFrameSpecimen />;
-}
-```
+The contract points to a real, interactive whole-frame specimen owned by Designer.
+The runnable [Application Frames example](https://github.com/clossys/foundry/tree/main/packages/designer#application-frames)
+uses the canonical Designer export; mount it directly in a client route or a
+frame-capable catalog canvas.
 
 The specimen uses a public, inline Example brand mark and local host state.
 Its navigation links update route content and the active navigation index;
@@ -6661,7 +6653,7 @@ already owns a main landmark.
 
 ### Host-owned data and behavior
 
-AppFrame and its stateful specimen are client-only exports of `@clossys/designer/frames`. Publisher's SiteFrame and default/server entries retain their hook-free server-import boundary; shared Frame header contracts are type-only imports.
+AppFrame and its stateful specimen are client-only exports of `@clossys/designer/frames`. Publisher's SiteFrame and default/server entries retain their hook-free server-module boundary; shared Frame header contracts are type-only imports.
 
 Supply `brand` with resolved `markSrc`, `wordmark` and accessible `label` strings.
 The label must contain the brand name. The existing mark appears in the

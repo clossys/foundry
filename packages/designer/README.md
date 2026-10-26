@@ -229,7 +229,7 @@ narrower sibling: it may import `components`, and nothing else in this package
 imports from it. `theme` is the same shape: it may import `components` and
 `icons` (its `Button`/`Icon` components and `Sun`/`Moon`/`Monitor` glyphs), and
 nothing else in this package imports from it. `icons` sits at the very
-bottom: `components` may import `icons` (and does — `components/Icon.tsx` imports the
+bottom: `components` may import `icons` (and does — `src/components/Icon.tsx` imports the
 `IconNode` type from `icons/types.ts`), and nothing under `icons/` may
 import from anywhere else in this package. `src/ladder.test.ts` enforces
 every one of these directions structurally, not just by convention: it
@@ -3657,7 +3657,7 @@ import { ArticleBody } from "@clossys/designer/blocks";
 function FoldChapter() {
   return (
     <MarketingChapter title="Chapter heading" description="Supporting line.">
-      <ArticleBody>{/* long-form prose */}</ArticleBody>
+      <ArticleBody><p>Long-form chapter content.</p></ArticleBody>
     </MarketingChapter>
   );
 }
@@ -7767,7 +7767,7 @@ its own subpath and an installable CLI:
   mirroring `copy-gate:ignore` exactly) or — the one legitimate exception —
   a Tailwind arbitrary-value class that is a bare `var(--custom-property)`
   reference with no fallback, the documented "no Tailwind namespace, raw
-  `var()` only" escape hatch `components/internal/ui-vars.ts` describes. THREE
+  `var()` only" escape hatch `src/components/internal/ui-vars.ts` describes. THREE
   rules, not one: a BARE literal (no `var()` at all — the token system is
   never consulted at this call site) is `severity: "error"`
   (`"hardcodes-token-value"` if it matches a real token's value exactly,
@@ -8259,7 +8259,7 @@ omission is not a gap to fill later, it's the one hard rule this layer
 does not bend on. No charting library is a dependency, and the scale/color
 helpers under `charts/internal/` stay unexported — this ships ten
 components, not a general-purpose numerical or color library (see
-`components/internal/cx.ts`/`ui-vars.ts` for the same precedent one layer down).
+`src/components/internal/cx.ts`/`src/components/internal/ui-vars.ts` for the same precedent one layer down).
 
 ## Requirements
 
@@ -10273,8 +10273,30 @@ and synthetic geometry tests are not browser clearance.
 
 ## Application Frames
 
+`APP_FRAME_CONTRACT` is the recursively frozen composition metadata exported from `@clossys/designer/frames`: frame identity, adapter, regions, host inputs, configuration and defaults. Its qualification remains `unverified` with `measurement-required`; the metadata does not establish runtime qualification. `APP_FRAME_CONFIG_SCHEMA` is the same immutable configuration schema referenced by that contract, recording accepted values, defaults and omission behavior for header presentation, commands, navigation, right panel, theme preference and direction.
+
 `AppFrame`, `AppFrameSpecimen`, their typed host contracts and immutable composition metadata are exported from `@clossys/designer/frames`. Publisher consumes this canonical implementation; it has no AppFrame compatibility export. PageHeaderModule remains a typed page lease inside the frame provider, preserving page context and live action callbacks while the frame owns responsive header presentation.
 
+
+### Interactive frame specimen
+
+Mount the canonical `AppFrameSpecimen` directly in a client route or a
+frame-capable catalog canvas. It supplies its own main landmark; do not nest
+it inside a section-only page that already owns one.
+
+```tsx
+"use client";
+
+import { AppFrameSpecimen } from "@clossys/designer/frames";
+
+export default function ExampleWorkspace() {
+  return <AppFrameSpecimen />;
+}
+```
+
+The specimen uses an inline Example brand mark and local host state. Its
+navigation, commands, account menu, task action and right panel demonstrate
+whole-frame behavior without authentication, routing or network services.
 
 ### Consumer source dogfood boundary
 

@@ -3,8 +3,8 @@
  * package that is NOT wired in automatically. `tailwind-merge` is
  * imported from exactly one file, `components/internal/cx.ts` — but that file
  * is transitively reachable from essentially every component (`cx()` is this
- * package's shared class-merge helper; `components/internal/cx.test.ts`'s own
- * header notes "every component in this package calls `cx(...)`"), and
+ * package's shared class-merge helper; `src/components/internal/cx.test.ts` (a repository-only test that
+ * does not ship) notes "every component in this package calls `cx(...)`"), and
  * `tailwind-merge` has neither an exported version constant NOR a
  * `"./package.json"` entry in its own `exports` map (confirmed by hand:
  * its `exports` field lists only `"."` and `"./es5"` — unlike

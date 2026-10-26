@@ -49,7 +49,8 @@ const pascal = (id: string) => id.split(".").at(-1)!.split("-").map(part => part
 const symbolSlots = new Map([...components.map(slot => [pascal(slot.id), slot.id] as const), ...aliases.map(alias => [pascal(alias.id), alias.target] as const), ["Breadcrumb", "components.breadcrumbs"]]);
 const knownSlot = (symbol: string): string | undefined => symbolSlots.get(symbol) ?? symbolSlots.get(symbol.split(".")[0]!);
 // Exact public server-barrel witnesses, checked against their real source in
-// dogfood.test.ts. Export presence still requires an existing registered leaf.
+// dogfood.test.ts (a repository-only test that does not ship). Export presence
+// still requires an existing registered leaf.
 const serverExports = new Map<string, ReadonlySet<string>>([
   [`${DOGFOOD_PACKAGE_NAME}/components/server`, new Set(["Avatar", "Badge", "Banner", "Card", "Field", "Icon", "Meter", "Skeleton", "Spinner", "StatusMark", "Logomark"])],
   [`${DOGFOOD_PACKAGE_NAME}/blocks/server`, new Set(["SECTION_GROUND_CLASSES", "ArticleBody", "DetailView", "EmptyState", "FeatureGrid", "Matrix", "Specimen", "SpecimenPanel", "OrderedStepSequence", "StatusList", "EventItem", "TaskList", "Faq", "FieldGroup", "Hero", "ContentSection", "SectionIntro", "MediaFigure", "MarketingChapter", "PageHeader", "PricingTable", "SectionHeader", "SectionFrame", "UsageMeter", "Stat", "Testimonial", "TableOfContents", "TestimonialSet", "LogoCloud", "PeopleGrid", "RecordLedger", "AnatomyCallouts", "Scene", "Item", "Tree", "Items", "Lockup"])],

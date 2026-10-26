@@ -50,7 +50,7 @@ export interface BannerProps extends Omit<HTMLAttributes<HTMLDivElement>, "role"
  *
  * The optional dismiss control is react-aria-components' own `Button`, not
  * this package's `Button` component: `Banner` is itself an component, and an component
- * composing another component is the layering violation `ladder.test.ts` and this
+ * composing another component is the layering violation `ladder.test.ts` (a repository-only test that does not ship) and this
  * package's README both call out — `Table` composing `Checkbox` is the one
  * explicitly-permitted exception, not a precedent for every component that
  * happens to need a small interactive affordance (see `Table.tsx`'s own doc

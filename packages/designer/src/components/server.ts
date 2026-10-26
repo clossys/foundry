@@ -28,7 +28,8 @@
  * deliberately NOT re-exported here. Do not add a name to this file
  * without re-running that probe against its real compiled output — see
  * `src/render-environment.ts` for where this file's own verdict is
- * recorded, and `render-environment.test.ts` for the negative control
+ * recorded, and `render-environment.test.ts` (a repository-only test that
+ * does not ship) for the negative control
  * proving `components/index.ts` still fails the identical probe.
  *
  * This is ADDITIVE: every name below already ships from `components/index.ts`

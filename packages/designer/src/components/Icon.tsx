@@ -15,9 +15,10 @@ export type IconSize = "sm" | "md" | "lg";
  * silent default: omitting both `decorative` and `label` doesn't fail
  * closed to "hidden" or fail open to "unlabeled" — it doesn't type-check at
  * all. Ported from this scope's own pre-merge, standalone `icons`
- * package's `src/types.ts` `IconAccessibilityProps` (that package is
+ * package's `IconAccessibilityProps`, formerly in `src/types.ts` (that
+ * historical path no longer exists and does not ship). That package is
  * folded into this one — see this file's own "Why a render contract lives
- * here" note below) — same shape, same reasoning.
+ * here" note below — same shape, same reasoning.
  *
  * See `src/components/internal/icon-contract.check.tsx` for the
  * compile-time enforcement (a `.check.tsx` file, not `.test.tsx` — this

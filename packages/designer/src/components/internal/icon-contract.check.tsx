@@ -18,7 +18,8 @@
  * what makes this file part of the REAL `tsc` run, the same way
  * `packages/icons`' own (now-folded-in) `src/internal/accessibility-
  * contract.check.tsx` did, and the same way this package's own
- * `src/ladder.test.ts` structural checks run for real in `npm test`.
+ * `src/ladder.test.ts` structural checks run for real in `npm test`; that
+ * repository-only test does not ship.
  *
  * Nothing here is ever imported by `src/index.ts`, `components/index.ts`, or any
  * runtime code — its only job is to make `tsc` fail if either contract
@@ -98,7 +99,8 @@ export const contentChildrenOnly = (
 // ── Owned-by-the-token props (color/fill/stroke/width/height/strokeWidth)
 //    are Omit'd from IconProps, so a call site can't silently defeat the
 //    size/colour contract by passing one directly. These belong here, not
-//    in Icon.test.tsx: a `@ts-expect-error` in a `*.test.tsx` file is the
+//    in Icon.test.tsx (a repository-only test that does not ship): a
+//    `@ts-expect-error` in a `*.test.tsx` file is the
 //    exact inert-check trap this file's own header comment (and issue #24)
 //    describes — vitest transpiles test files without type-checking them,
 //    so an assertion like these placed there would silently stop proving

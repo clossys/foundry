@@ -71,7 +71,7 @@ export interface SelectProps
  * instead of free text. Built on react-aria-components' `Select` composed
  * with its `Button`, `Popover`, and `ListBox`/`ListBoxItem` — NOT this
  * package's own `Button` component: an component composing another component is a layering
- * violation this package's `ladder.test.ts` and README both call out (see
+ * violation this package's `ladder.test.ts` (a repository-only test that does not ship) and README both call out (see
  * "Components compose no other component"). react-aria-components' `Select` supplies
  * the behavior that's hard to get right by hand: opening on click AND on
  * ArrowUp/ArrowDown/Enter/Space when focused, closing on Escape or an

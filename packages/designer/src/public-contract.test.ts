@@ -1034,10 +1034,11 @@ describe("compiled composite component catalog contract", () => {
   it("exposes one typed consumer composite from catalog and catalog/server", () => {
     for (const entry of ["catalog-core/index.js", "catalog-core/server.js"]) {
       const filename = join(packageRoot, "composite-consumer.check.ts");
-      const consumer = `
+      const negativeFixture = readFileSync(join(packageRoot, "src/catalog-core/composite-change-set.check.ts"), "utf8");
+      const consumer = negativeFixture.replace('from "./index.js"', `from ${JSON.stringify(join(packageRoot, "dist", entry))}`) + `
         import { check, resolve, emit, applyLibraryChange, libraryHash, materializeSourceFill,
           type CompositeCatalogData, type CompositeLibraryData, type CompositeEngineInput,
-          type CompositeChangeSet, type CompositeResolved, type CompositeCheckResult,
+          type CompositeResolved, type CompositeCheckResult,
           type CompositeEmitFile, type ComponentObservation, type SourceBundle,
           buildComponentsConsumption, scanComponentReads, type ConsumptionInput, type ConsumptionFinding } from ${JSON.stringify(join(packageRoot, "dist", entry))};
         declare const catalog: CompositeCatalogData;
@@ -1059,8 +1060,6 @@ describe("compiled composite component catalog contract", () => {
         const inventory = buildComponentsConsumption(staticInput);
         const scan = scanComponentReads("", [], "");
         void inventory; void scan;
-        // @ts-expect-error Component authoring requires its typed fill and source files.
-        const invalid: CompositeChangeSet = {baseHash: "x", changes: [{portion: "components", change: {op: "author", slot: "components.button", tokens: {}}}]};
       `;
       const options = { strict: true, noEmit: true, skipLibCheck: true, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler };
       const host = ts.createCompilerHost(options), original = host.getSourceFile.bind(host);

@@ -19,7 +19,7 @@ import { TOKENS } from "../../tokens/tokens.js";
  * check first, `tailwind-merge` classifies BOTH as the text-COLOR group
  * (color accepts any suffix) and treats them as conflicting — silently
  * dropping `text-body` entirely. `cx.test.ts` pins both of these as
- * regressions.
+ * regressions; that repository-only test does not ship.
  *
  * The fix is `extendTailwindMerge`, teaching it this package's actual
  * spacing/radius/font-size/tracking scale — derived from the real

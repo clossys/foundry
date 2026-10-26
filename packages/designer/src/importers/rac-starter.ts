@@ -103,7 +103,8 @@ export function importRacStarter(input: RacStarterInput) {
     // The source materializer accepts extension-bearing code/metadata paths.
     // Keep upstream LICENSE at its real path in the authenticated adapter and
     // complete closure; its exact bytes are also bound by the output receipt.
-    // Do not invent LICENSE.md or weaken the engine's upstream path grammar.
+    // LICENSE.md does not exist in this upstream source and does not ship; do not invent it or
+    // weaken the engine's upstream path grammar.
     const upstreamFiles = closureFiles.filter(file => file.path !== "LICENSE");
     const external = new Set<string>(), components = new Set<string>();
     const issues: RewriteIssue[] = [];
