@@ -4,7 +4,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { importFoundryFrames, importFoundrySections, loadBuildCatalog, planSurfaceDefaults } from "../catalog-core/index.js";
 import type { SurfaceDefaultCandidateDocument, SurfaceDefaultsInput } from "../catalog-core/index.js";
 import * as studioEntry from "./index.js";
-import { planSurfacePreviews } from "./planned-surface-previews.js";
+import { packageSurfacePreview, planSurfacePreviews } from "./planned-surface-previews.js";
 
 function realPlan() {
   const slots = loadBuildCatalog().slots.filter(slot => slot.layer === "sections" || slot.layer === "frames") as SurfaceDefaultsInput["catalog"]["slots"];
@@ -25,13 +25,31 @@ describe("planSurfacePreviews", () => {
     const result = planSurfacePreviews({ plan, fills });
     const previewed = Object.keys(result.previews), gaps = result.unrenderable.map(gap => gap.slot);
     expect([...previewed, ...gaps].sort()).toEqual(planned.map(row => row.slot).sort());
-    expect(previewed.filter(slot => slot.startsWith("sections."))).toHaveLength(18);
-    expect(previewed.filter(slot => slot.startsWith("frames.")).sort()).toEqual(["frames.app-header", "frames.site-footer", "frames.site-header"]);
-    expect(result.unrenderable.every(gap => gap.reason.length > 0)).toBe(true);
-    // A Publisher frame is reported, never imitated by a designer export.
-    expect(result.unrenderable.find(gap => gap.slot === "frames.site-shell")?.reason).toBe("@clossys/publisher/web#SiteFrame is not a designer export; the designer does not render it");
-    expect(result.unrenderable.find(gap => gap.slot === "sections.data-table")?.reason).toBe("no preview sample content for @clossys/designer/blocks#DataTable");
-    expect(result.unrenderable.find(gap => gap.slot === "frames.sheet")?.reason).toBe("no preview sample content for @clossys/designer/blocks#Drawer");
+    // Every planned designer export has sample content; only the Publisher frame waits for its host.
+    expect(previewed.filter(slot => slot.startsWith("sections."))).toHaveLength(26);
+    expect(previewed.filter(slot => slot.startsWith("frames.")).sort()).toEqual(["frames.app-header", "frames.sheet", "frames.site-footer", "frames.site-header"]);
+    expect(result.unrenderable).toEqual([{ slot: "frames.site-shell", reason: "@clossys/publisher/web#SiteFrame is not a designer export; the designer does not render it" }]);
+  });
+
+  it("renders a non-designer export only from the host's own sample for that exact pointer", () => {
+    const { plan, fills } = realPlan();
+    const host = { "@clossys/publisher/web#SiteFrame": () => <p>host-site-frame</p> };
+    const result = planSurfacePreviews({ plan, fills, samples: host });
+    expect(result.unrenderable).toEqual([]);
+    expect(result.previews["frames.site-shell"]).toMatchObject({ pointer: "@clossys/publisher/web#SiteFrame", fill: "foundry/frames.site-shell" });
+    expect(renderToStaticMarkup(<>{result.previews["frames.site-shell"]!.render()}</>)).toBe("<p>host-site-frame</p>");
+    // A sample for another pointer is never borrowed.
+    expect(planSurfacePreviews({ plan, fills, samples: { "@clossys/publisher/web#Other": host["@clossys/publisher/web#SiteFrame"] } }).previews["frames.site-shell"]).toBeUndefined();
+  });
+
+  it("previews an adopted package pointer document through the same samples, and names why it cannot", () => {
+    const { fills } = realPlan();
+    const doc = (slot: string) => fills.find(candidate => candidate.$extensions["com.clossys.fill"].slot === slot)!;
+    const table = packageSurfacePreview(doc("sections.data-table"));
+    expect(table).toMatchObject({ pointer: "@clossys/designer/blocks#DataTable" });
+    expect(renderToStaticMarkup(<>{"render" in table ? table.render() : null}</>)).toContain("Northwind");
+    expect(packageSurfacePreview(doc("frames.site-shell"))).toEqual({ reason: "@clossys/publisher/web#SiteFrame is not a designer export; the designer does not render it" });
+    expect(packageSurfacePreview({ ...doc("sections.faq"), sections: {} } as SurfaceDefaultCandidateDocument)).toEqual({ reason: "planned fill has no package export pointer" });
   });
 
   it("previews only planned rows and carries the plan's own fill and source, never a new provenance", () => {
@@ -58,6 +76,11 @@ describe("planSurfacePreviews", () => {
     expect(html["sections.access-matrix"]).toContain("View projects");
     expect(html["sections.pagination"]).toContain("nav");
     expect(html["frames.site-header"]).toContain("Northwind");
+    // Structured Sections render their real block with sample rows, tiers and items.
+    const samples: Record<string, string> = { "sections.comparison": "Version history", "sections.content": "One place for every project", "sections.data-table": "Fabrikam", "sections.form": "Work email", "sections.pricing": "Choose Team", "sections.resource-list": "Help centre", "sections.status-list": "Mobile alerts", "sections.task-list": "Publish the launch page", "frames.sheet": "Open filters" };
+    for (const [slot, text] of Object.entries(samples)) expect(html[slot], slot).toContain(text);
+    expect(result.previews["sections.comparison"]?.pointer).toBe("@clossys/designer/blocks#Matrix");
+    expect(html["sections.comparison"]).toContain("<table");
     expect(result.previews["frames.site-header"]?.pointer).toBe("@clossys/designer/shell/server#SiteHeader");
   });
 

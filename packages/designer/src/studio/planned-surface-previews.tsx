@@ -7,6 +7,8 @@
  * Studio board can show what the planned default looks like. It never adds a
  * leaf to the profile, the runtime manifest or the chosen count, and it records
  * every planned leaf it cannot render with the reason instead of inventing one.
+ * An adopted package-pointer leaf owns no source to render, so the Studio
+ * previews it through the same pointer-to-sample resolution.
  */
 import type { ReactNode } from "react";
 import type { SurfaceDefaultCandidateDocument, SurfaceDefaultsPlan } from "../catalog-core/surface-defaults.js";
@@ -33,6 +35,7 @@ import { TestimonialSet } from "../blocks/TestimonialSet.js";
 import { PageBar } from "../blocks/PageBar.js";
 import { SiteHeader } from "../shell/SiteHeader.js";
 import { SiteFooter } from "../shell/SiteFooter.js";
+import { STRUCTURED_BLOCK_SAMPLES } from "./surface-preview-samples.js";
 
 /** This designer build renders only its own package exports. Another package's export (for example a Publisher frame) is reported, not imitated. */
 const DESIGNER_PACKAGE = "@clossys/designer/";
@@ -61,6 +64,7 @@ const BLOCK_SAMPLES: Readonly<Record<string, () => ReactNode>> = {
   TableOfContents: () => <TableOfContents label="On this page" presentation="inline" trackCurrent={false} items={[{ id: "intro", label: "Introduction" }, { id: "setup", label: "Setup" }, { id: "options", label: "Options", level: 3 }]} />,
   TestimonialSet: () => <TestimonialSet items={[{ id: "one", quote: "We shipped our redesign in a week.", attributorName: "Ada Park", attributorRole: "Design lead" }, { id: "two", quote: "Reviews take minutes, not days.", attributorName: "Sam Ortiz", attributorRole: "Engineering" }]} />,
   PageBar: () => <PageBar position="static" root={{ label: "Workspace" }} labels={{ breadcrumb: "Breadcrumb", collapsedBreadcrumb: "More pages", pageInfo: "Page details", pageActions: "Page actions" }} />,
+  ...STRUCTURED_BLOCK_SAMPLES,
 };
 const SHELL_SAMPLES: Readonly<Record<string, () => ReactNode>> = {
   SiteHeader: () => <SiteHeader position="static" brand={<span>Northwind</span>} nav={<a href="#product">Product</a>} />,
@@ -87,13 +91,37 @@ export interface PlannedSurfacePreviews {
   /** Planned leaves without a preview, with the reason. */
   unrenderable: readonly PlannedSurfacePreviewGap[];
 }
+/** Sample renderers keyed by package export pointer (`module#export`). */
+export type SurfacePreviewSamples = Readonly<Record<string, () => ReactNode>>;
 export interface PlannedSurfacePreviewsInput {
   plan: Pick<SurfaceDefaultsPlan, "rows">;
   /** The candidate documents the plan was made from (importFoundrySections().fills, importFoundryFrames().fills). */
   fills: readonly SurfaceDefaultCandidateDocument[];
+  /**
+   * Host-owned samples for exports this designer build cannot render, by exact pointer (for example the
+   * Publisher site frame). The host renders its own real export; the designer never imitates one.
+   */
+  samples?: SurfacePreviewSamples;
 }
 
 type PackageImpl = { kind?: unknown; module?: unknown; export?: unknown };
+type SurfacePointerDocument = Pick<SurfaceDefaultCandidateDocument, "sections" | "frames">;
+
+/**
+ * The preview for one package-pointer surface document, planned or adopted: the real export its single entry
+ * points at, rendered with sample content, or the reason there is none. Host samples cover non-designer exports.
+ */
+export function packageSurfacePreview(doc: SurfacePointerDocument, samples: SurfacePreviewSamples = {}): { pointer: string; render(): ReactNode } | { reason: string } {
+  const entries = Object.values({ ...doc.sections, ...doc.frames });
+  const impl = (entries.length === 1 ? (entries[0] as { impl?: PackageImpl }).impl : undefined) ?? {};
+  if (impl.kind !== "package" || typeof impl.module !== "string" || typeof impl.export !== "string") return { reason: "planned fill has no package export pointer" };
+  const pointer = `${impl.module}#${impl.export}`;
+  const hosted = Object.hasOwn(samples, pointer) ? samples[pointer] : undefined;
+  if (hosted) return { pointer, render: hosted };
+  if (!impl.module.startsWith(DESIGNER_PACKAGE)) return { reason: `${pointer} is not a designer export; the designer does not render it` };
+  const sample = Object.hasOwn(SAMPLES, pointer) ? SAMPLES[pointer] : undefined;
+  return sample ? { pointer, render: sample } : { reason: `no preview sample content for ${pointer}` };
+}
 
 /** Preview producers for every planned row; not-chosen rows are ignored. */
 export function planSurfacePreviews(input: PlannedSurfacePreviewsInput): PlannedSurfacePreviews {
@@ -103,14 +131,9 @@ export function planSurfacePreviews(input: PlannedSurfacePreviewsInput): Planned
     if (row.status === "not-chosen" || !row.fill || !row.source) continue;
     const doc = input.fills.find(candidate => candidate.$extensions["com.clossys.fill"].id === row.fill && candidate.$extensions["com.clossys.fill"].slot === row.slot);
     if (!doc) { unrenderable.push({ slot: row.slot, reason: `planned fill ${row.fill} is not among the candidate documents` }); continue; }
-    const entries = Object.values({ ...doc.sections, ...doc.frames });
-    const impl = (entries.length === 1 ? (entries[0] as { impl?: PackageImpl }).impl : undefined) ?? {};
-    if (impl.kind !== "package" || typeof impl.module !== "string" || typeof impl.export !== "string") { unrenderable.push({ slot: row.slot, reason: "planned fill has no package export pointer" }); continue; }
-    const pointer = `${impl.module}#${impl.export}`;
-    if (!impl.module.startsWith(DESIGNER_PACKAGE)) { unrenderable.push({ slot: row.slot, reason: `${pointer} is not a designer export; the designer does not render it` }); continue; }
-    const sample = SAMPLES[pointer];
-    if (!sample) { unrenderable.push({ slot: row.slot, reason: `no preview sample content for ${pointer}` }); continue; }
-    previews[row.slot] = { slot: row.slot, source: row.source, fill: row.fill, pointer, render: sample };
+    const preview = packageSurfacePreview(doc, input.samples);
+    if ("reason" in preview) { unrenderable.push({ slot: row.slot, reason: preview.reason }); continue; }
+    previews[row.slot] = { slot: row.slot, source: row.source, fill: row.fill, pointer: preview.pointer, render: preview.render };
   }
   return { previews, unrenderable };
 }
