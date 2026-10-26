@@ -121,6 +121,8 @@ describe("pack check: shadcn@aria materialized sources persist through the real 
   // The entrypoint-ownership refusals: a materialized file at an emitter-owned leaf index, or a wildcard re-export.
   // Later closure findings (third-party inventories, glyph provider, import syntax) are measured elsewhere.
   const OWNERSHIP_REFUSAL = /components: (?:generated entrypoint conflicts with materialized source|wildcard (?:source )?exports)/;
+  // The import-grammar refusals on valid source: a namespace import of an observed package, or a trailing comma.
+  const IMPORT_GRAMMAR_REFUSAL = /components: (?:unsupported import syntax|unverified import syntax|unavailable named import {2}from)/;
   const refusal = (docs: readonly ComponentCandidateDocument[]): string => { try { persistTogether(docs); return ""; } catch (error) { return (error as Error).message; } };
   it("materializes no emitter-owned leaf entrypoint and no wildcard re-export", () => {
     expect(shadcn).toHaveLength(26);
@@ -133,12 +135,16 @@ describe("pack check: shadcn@aria materialized sources persist through the real 
   it("all 26 fills persisted together hit no entrypoint-ownership refusal", () => {
     expect(refusal([...shadcn, icon])).not.toMatch(OWNERSHIP_REFUSAL);
   });
-  it.each(shadcn.map(doc => [Object.values(doc.components)[0]!.slot, doc] as const))("%s with the leaves it composes hits no entrypoint-ownership refusal", (_slot, doc) => {
+  it("all 26 fills persisted together hit no import-grammar refusal", () => {
+    expect(refusal([...shadcn, icon])).not.toMatch(IMPORT_GRAMMAR_REFUSAL);
+  });
+  it.each(shadcn.map(doc => [Object.values(doc.components)[0]!.slot, doc] as const))("%s with the leaves it composes hits no entrypoint-ownership or import-grammar refusal", (_slot, doc) => {
     const bySlot = new Map([...shadcn, icon].map(other => [Object.values(other.components)[0]!.slot, other]));
     const composes = new Set<string>();
     const visit = (slot: string): void => { for (const next of Object.values(bySlot.get(slot)!.components)[0]!.reads.components) if (!composes.has(next)) { composes.add(next); visit(next); } };
     visit(Object.values(doc.components)[0]!.slot);
     expect(refusal([doc, ...shadcn.filter(other => composes.has(Object.values(other.components)[0]!.slot)), ...composes.has("components.icon") ? [icon] : []])).not.toMatch(OWNERSHIP_REFUSAL);
+    expect(refusal([doc, ...shadcn.filter(other => composes.has(Object.values(other.components)[0]!.slot)), ...composes.has("components.icon") ? [icon] : []])).not.toMatch(IMPORT_GRAMMAR_REFUSAL);
   });
 });
 
