@@ -83,8 +83,11 @@ export function planComponentDefaults(input: ComponentDefaultsInput): ComponentD
     const fallback = !choice && input.fallback?.slots.includes(slot) ? input.fallback.source : undefined;
     const why: string[] = [];
     const eligible: Offer[] = [];
+    const ruled = (input.catalog.rules ?? []).find(rule => rule.kind === "compose" && rule.slot === slot);
     for (const source of fallback && !order.includes(fallback) ? [...order, fallback] : order) {
       const doc = docs.find(candidate => candidate.$extensions["com.clossys.fill"].source === source);
+      // A registered composition is its template source's offer for the seat: it outranks every later source.
+      if (!doc && ruled?.template.source === source) break;
       if (!doc) { if (basis !== "preference" || source === fallback) why.push(`${source}: no implementation candidate`); continue; }
       if (!isSelectableComponentSource(source)) { why.push(`${source}: ${NON_SELECTABLE_SOURCE_REASON}`); continue; }
       const fill = componentOf(doc);
@@ -130,7 +133,8 @@ export function planComponentDefaults(input: ComponentDefaultsInput): ComponentD
     changed = false;
     for (const rule of input.catalog.rules ?? []) {
       if (rule.kind !== "compose" || !input.slots.includes(rule.slot) || selected.has(rule.slot) || composed.has(rule.slot)) continue;
-      if (input.choices?.[rule.slot] || input.picks?.[rule.slot]) continue;
+      const locked = input.choices?.[rule.slot] ?? input.picks?.[rule.slot];
+      if (locked && locked !== rule.template.source) continue;
       if (rule.inputs.every(id => selected.has(id) || composed.has(id))) { composed.set(rule.slot, { rule: rule.id, inputs: rule.inputs }); changed = true; }
     }
     for (const [slot, offer] of selected) {

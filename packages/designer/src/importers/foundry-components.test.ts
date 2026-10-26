@@ -33,7 +33,7 @@ describe("Foundry component package descriptors", () => {
     // Explicit local regeneration writes only this generator's enumerated component artifacts.
     if (process.env.UPDATE_FOUNDRY_COMPONENT_FILLS === "1") for (const [name, bytes] of Object.entries(files)) writeFileSync(resolve(fillsDirectory, name), bytes);
     const committed = readdirSync(fillsDirectory).filter(name => name.startsWith("components.") && name.endsWith(".json")).sort();
-    expect(committed).toEqual([...Object.keys(files), ...loadComponentCompositionRules().map(rule => `${rule.slot}.json`), "components.native-action.json"].sort());
+    expect(committed).toEqual([...Object.keys(files), ...loadComponentCompositionRules().filter(rule => rule.template.source === "foundry").map(rule => `${rule.slot}.json`), "components.native-action.json"].sort());
     for (const [name, bytes] of Object.entries(files)) expect(readFileSync(resolve(fillsDirectory, name), "utf8"), name).toBe(bytes);
     expect(imported().coverage.map(row => row.slot)).toEqual(slots.map(slot => slot.id).sort());
     expect(imported().coverage).toHaveLength(59);
@@ -54,7 +54,7 @@ describe("Foundry component package descriptors", () => {
     const storedCoverage = importFoundryComponents({ exports, mappings: storedMappings, slots: signedSlots }).coverage;
     const baselineRows = (rows: typeof storedCoverage) => rows.filter(row => !["components.semantic-content", "components.native-action"].includes(row.slot) && !dynamicBlockedLeaves.some(leaf => row.slot === `components.${leaf}`));
     expect(baselineRows(imported().coverage)).toEqual(baselineRows(storedCoverage));
-    expect(loadComponentCompositionRules().map(rule => rule.slot)).toEqual(["components.date-picker"]);
+    expect(loadComponentCompositionRules().map(rule => rule.slot)).toEqual(["components.date-picker", "components.file-trigger"]);
   });
 
   it("pins real primary and member-dispatched package exports without copied source", () => {

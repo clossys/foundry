@@ -4,6 +4,10 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import slots from "../catalog/slots/components.json" with { type: "json" };
 import datePickerRule from "../catalog/rules/components.date-picker.json" with { type: "json" };
+import composedFileTrigger from "../catalog/fills/shadcn@aria/components.file-trigger.json" with { type: "json" };
+import { loadComponentCompositionRules } from "../catalog-core/component-compositions.js";
+import { validateComponentRuleTemplate } from "../catalog-core/component-rule-validation.js";
+import { stableStringify } from "../catalog-core/stable.js";
 import { importShadcnAriaComponents, resolveShadcnComposeRules, SHADCN_COMPOSE_MAX_DEPTH, SHADCN_COMPOSE_RULES, type ShadcnComposeRule } from "./shadcn-aria-components.js";
 
 const here = resolve(import.meta.dirname, "__fixtures__/shadcn-aria");
@@ -43,6 +47,15 @@ describe("shadcn@aria compose rules", () => {
     expect(result.compose.filter(row => row.status === "composed").map(row => row.leaf)).toEqual(["file-trigger"]);
   });
 
+  it("emits the composed file-trigger as a shadcn@aria rule template that validates against its registered rule", () => {
+    expect(result.composed.map(doc => doc.$extensions["com.clossys.fill"].id)).toEqual(["shadcn@aria/components.file-trigger"]);
+    expect(stableStringify(result.composed[0])).toBe(stableStringify(composedFileTrigger));
+    expect(result.fills.some(doc => doc.$extensions["com.clossys.fill"].slot === "components.file-trigger")).toBe(false);
+    const rule = loadComponentCompositionRules().find(candidate => candidate.slot === "components.file-trigger")!;
+    expect(rule.template).toMatchObject({ source: "shadcn@aria", root: "rac:FileTrigger", composes: ["components.button"], reads: { components: ["components.button"] } });
+    expect(composedFileTrigger.$extensions["com.clossys.fill"]).toMatchObject({ source: "shadcn@aria", originKinds: ["composed"], sourceAddress: "rules/components.file-trigger.json#compose:file-trigger@1" });
+    expect(() => validateComponentRuleTemplate(rule)).not.toThrow();
+  });
   it("refuses a cycle", () => {
     const rules: ShadcnComposeRule[] = [{ leaf: "date-picker", constituents: ["date-field"] }, { leaf: "date-field", constituents: ["date-picker"] }];
     expect(() => resolveShadcnComposeRules(rules, { slots: registered, sources: shadcn() })).toThrow(/cycle date-picker -> date-field -> date-picker/);

@@ -1,0 +1,18 @@
+{
+  "files": [
+    {
+      "content": "import { forwardRef, type ReactNode, type Ref } from \"react\";\nimport { FileTrigger as AriaFileTrigger, type FileTriggerProps as AriaFileTriggerProps } from \"react-aria-components\";\nimport { Button } from \"../button/index.js\";\n\nexport interface FileTriggerProps extends Omit<AriaFileTriggerProps, \"children\"> {\n  /** Visible name of the selected button that opens the file picker. */\n  label: ReactNode;\n}\n\nexport const FileTrigger = forwardRef(function FileTrigger(\n  { label, ...props }: FileTriggerProps,\n  ref: Ref<HTMLInputElement>,\n) {\n  return <AriaFileTrigger {...props} ref={ref}><Button>{label}</Button></AriaFileTrigger>;\n});\n",
+      "path": "components/file-trigger/file-trigger.tsx"
+    },
+    {
+      "content": "# File trigger composition\n\nCopyright contributors. Licensed under the MIT License.\n\nOwned wiring of the selected button onto the file trigger. The button's notice remains separate.\n",
+      "path": "notices/file-trigger.md"
+    }
+  ],
+  "id": "compose:file-trigger@1",
+  "inputs": [
+    "components.button"
+  ],
+  "kind": "compose",
+  "slot": "components.file-trigger"
+}
