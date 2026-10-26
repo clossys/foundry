@@ -70,7 +70,11 @@ describe("Foundry source token reads", () => {
   });
   it("pins which mapped components' frozen reads still omit source-consumed tokens (owner ASK: widen contracts, then enforce)", () => {
     const omissions = Object.fromEntries(importFoundryComponents().coverage.flatMap(row => row.notes.filter(note => note.includes("source-consumed")).map(note => [row.slot.slice(11), note.replace(/^Frozen reads omit source-consumed (.*); .*$/, "$1")])));
-    expect(Object.keys(omissions).sort()).toEqual(["chart-range", "chart-scatter", "chart-sparkline", "checkbox", "disclosure", "grid-list", "menu", "tabs", "toast", "tree"]);
+    // Slider (Foundry slot added by the slider mapping) and tag-group (mapped with its craft record) extend the ask list: their sources consume type, radius,
+    // text-colour and focus tokens that the frozen contracts' allowedReads do not yet list. Both are genuine omissions of the same class as the rest.
+    expect(Object.keys(omissions).sort()).toEqual(["chart-range", "chart-scatter", "chart-sparkline", "checkbox", "disclosure", "grid-list", "menu", "slider", "tabs", "tag-group", "toast", "tree"]);
+    expect(omissions["slider"]).toBe("tokens.body-size, tokens.radius, tokens.text-color, tokens.typeface");
+    expect(omissions["tag-group"]).toBe("tokens.focus-color, tokens.focus-outline");
     expect(omissions["color-picker"]).toBeUndefined();
     expect(omissions["number-field"]).toBeUndefined();
   });

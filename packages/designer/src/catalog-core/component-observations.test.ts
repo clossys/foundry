@@ -13,7 +13,7 @@ import { planComponentDefaults } from "./component-defaults.js";
 import { applyDecisions } from "../library-cli/apply-decisions.js";
 import { componentOf, resolveComponents, type ComponentCandidate } from "./resolve-components.js";
 import { componentSourceHash, OBSERVATIONS_UNAVAILABLE, type ComponentSourceFile } from "./check-components.js";
-import { observeComponentSources, type ComponentObservationInput } from "./component-observations.js";
+import { exportSource, observeComponentSources, type ComponentObservationInput } from "./component-observations.js";
 import { stableStringify } from "./stable.js";
 import type { CompositeCatalogData, CompositeLibraryData, LibraryData } from "./types.js";
 
@@ -49,17 +49,14 @@ function consumer() {
   return { values, tokens, assets };
 }
 
-/** Foundry package source: the module file that declares the pinned export, read from this package's own tree. */
+/** Foundry package source: the module file that declares the pinned export (following re-exports), read from this package's own tree. */
 function packageSource(module: string, name: string): ComponentSourceFile[] | undefined {
   const dir = { "@clossys/designer/components": "components", "@clossys/designer/charts": "charts", "@clossys/designer/shell": "shell" }[module];
   if (!dir) return undefined;
-  const direct = join(src, dir, `${name}.tsx`);
-  const candidates = existsSync(direct) ? [`${name}.tsx`] : readdirSync(join(src, dir)).filter(file => /\.tsx?$/.test(file) && !/\.(?:test|server)\./.test(file));
-  for (const file of candidates) {
-    const content = readFileSync(join(src, dir, file), "utf8");
-    if (new RegExp(`export\\s+(?:function|const|class)\\s+${name}\\b|export\\s*\\{[^}]*\\b${name}\\b[^}]*\\}\\s*from\\s*["']react-aria-components["']`).test(content)) return [{ path: `${dir}/${file}`, content }];
-  }
-  return undefined;
+  const read = (path: string) => existsSync(join(src, path)) ? readFileSync(join(src, path), "utf8") : undefined;
+  const direct = `${dir}/${name}.tsx`;
+  const candidates = existsSync(join(src, direct)) ? [direct] : readdirSync(join(src, dir)).filter(file => /\.tsx?$/.test(file) && !/\.(?:test|server)\./.test(file)).map(file => `${dir}/${file}`);
+  return exportSource(read, candidates, name);
 }
 
 let cached: ReturnType<typeof build> | undefined;
@@ -81,6 +78,47 @@ function build() {
 }
 const real = () => (cached ??= build());
 const unavailable = (findings: ReturnType<ReturnType<typeof build>["check"]>) => new Set(findings.filter(finding => finding.message === OBSERVATIONS_UNAVAILABLE || finding.message.endsWith(`: ${OBSERVATIONS_UNAVAILABLE}`)).map(finding => finding.subject));
+
+describe("exportSource", () => {
+  const tree: Record<string, string> = {
+    "c/Direct.tsx": "export function Direct() { return null }\n",
+    "c/Local.tsx": "function Local() { return null }\nexport { Local, LocalItem }\n",
+    "c/Rac.tsx": 'export { Tabs, TabList } from "react-aria-components"\n',
+    "c/Shim.ts": 'export { Shim, ShimItem } from "./v/shim.js"\nexport type ShimProps = never\n',
+    "c/v/shim.tsx": "function Shim() { return null }\nfunction ShimItem() { return null }\nexport { Shim, ShimItem }\n",
+    "c/Renamed.ts": 'export { Inner as Renamed } from "./v/inner.js"\n',
+    "c/v/inner.tsx": "export const Inner = () => null\n",
+    "c/Chain.ts": 'export { Chain } from "./Hop.js"\n',
+    "c/Hop.ts": 'export { Chain } from "../d/chain.js"\n',
+    "d/chain.tsx": "export class Chain {}\n",
+    "c/CycleA.ts": 'export { Cycle } from "./CycleB.js"\n',
+    "c/CycleB.ts": 'export { Cycle } from "./CycleA.js"\n',
+    "c/Dangling.ts": 'export { Dangling } from "./nowhere.js"\n',
+    "c/Bare.ts": 'export { Bare } from "some-package"\n',
+  };
+  const read = (path: string) => tree[path];
+  it("returns the declaring file for a direct declaration, a local export list and a react-aria passthrough", () => {
+    expect(exportSource(read, ["c/Direct.tsx"], "Direct")?.map(file => file.path)).toEqual(["c/Direct.tsx"]);
+    expect(exportSource(read, ["c/Local.tsx"], "Local")?.map(file => file.path)).toEqual(["c/Local.tsx"]);
+    expect(exportSource(read, ["c/Rac.tsx"], "Tabs")?.map(file => file.path)).toEqual(["c/Rac.tsx"]);
+  });
+  it("follows a relative re-export to the defining file, not the shim, with that file's bytes", () => {
+    const found = exportSource(read, ["c/Shim.ts"], "Shim")!;
+    expect(found.map(file => file.path)).toEqual(["c/v/shim.tsx"]);
+    expect(found[0]!.content).toBe(tree["c/v/shim.tsx"]);
+    expect(exportSource(read, ["c/Shim.ts"], "ShimItem")?.map(file => file.path)).toEqual(["c/v/shim.tsx"]);
+  });
+  it("follows a rename and a chain of re-exports across directories", () => {
+    expect(exportSource(read, ["c/Renamed.ts"], "Renamed")?.map(file => file.path)).toEqual(["c/v/inner.tsx"]);
+    expect(exportSource(read, ["c/Chain.ts"], "Chain")?.map(file => file.path)).toEqual(["d/chain.tsx"]);
+  });
+  it("stays unresolved for a name nothing exports, a cycle, a dangling re-export and a bare package", () => {
+    expect(exportSource(read, ["c/Shim.ts"], "Absent")).toBeUndefined();
+    expect(exportSource(read, ["c/CycleA.ts"], "Cycle")).toBeUndefined();
+    expect(exportSource(read, ["c/Dangling.ts"], "Dangling")).toBeUndefined();
+    expect(exportSource(read, ["c/Bare.ts"], "Bare")).toBeUndefined();
+  });
+});
 
 describe("observeComponentSources on the real catalog", () => {
   it("clears 'observations unavailable' for every adopted slot whose run bytes exist, including the 17 named slots", () => {

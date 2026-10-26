@@ -166,12 +166,32 @@ describe("component default fills", () => {
     expect(reasons(plan, "card")).not.toContain("owner pick");
     expect(plan.decisions.find(row => row.slot === "components.card")).toMatchObject({ kind: "adopt", source: "foundry", note: "Default fill (fallback)" });
   });
-  it("the fallback never bypasses the checker: a listed leaf whose Foundry candidate fails keeps the exact finding", () => {
+  it("the fallback never bypasses the checker: a listed leaf whose Foundry candidate is blocked keeps the exact finding", () => {
     const { input } = setup();
-    const plan = planComponentDefaults(input);
-    expect(reasons(plan, "number-field")).toContain("foundry: blocked K11");
-    expect(plan.rows.find(row => row.slot === "components.calendar")).toMatchObject({ status: "default", basis: "preference", source: "foundry", fill: "foundry/components.calendar" });
-    expect(plan.rows.find(row => row.slot === "components.toggle-button")).toMatchObject({ status: "default", basis: "preference", source: "foundry", fill: "foundry/components.toggle-button" });
+    /** Injects an offer blocker into the Foundry candidate of one leaf, re-hashing its bundle so only the blocker can exclude it. */
+    const blocked = (leaf: string, code: string) => {
+      const target = input.catalog.fills.find(doc => doc.$extensions["com.clossys.fill"].id === `foundry/components.${leaf}`)!;
+      const [key, fill] = Object.entries(target.components)[0]!;
+      const withBlocker = { ...target, components: { [key]: { ...fill, blockers: [{ code, message: `synthetic ${code}` }] } } } as typeof target;
+      const bundle = input.bundles.find(row => row.slot === `components.${leaf}`);
+      const bundles = bundle ? [...input.bundles.filter(row => row !== bundle), { ...bundle, descriptorHash: componentDescriptorHash(componentOf(withBlocker)) }] : input.bundles;
+      return planComponentDefaults({ ...input, catalog: { ...input.catalog, fills: input.catalog.fills.map(doc => doc === target ? withBlocker : doc) }, bundles });
+    };
+    const clean = planComponentDefaults(input);
+    // A real, unblocked Foundry candidate is chosen on a fallback leaf (number-field) and on a preference leaf (calendar).
+    expect(clean.rows.find(row => row.slot === "components.number-field")).toMatchObject({ status: "default", source: "foundry" });
+    expect(reasons(clean, "number-field")).not.toContain("blocked");
+    // The same leaf with a synthetic K11 blocker stays unchosen: listing it as a fallback leaf does not lift the finding.
+    const k11 = blocked("number-field", "K11");
+    expect(k11.rows.find(row => row.slot === "components.number-field")).toMatchObject({ status: "not-chosen" });
+    expect(reasons(k11, "number-field")).toContain("foundry: blocked K11");
+    expect(k11.decisions.some(row => row.slot === "components.number-field")).toBe(false);
+    // A different offer blocker on a leaf chosen only through the fallback (card) behaves the same way, and other leaves are untouched.
+    const k5 = blocked("card", "K5");
+    expect(k5.rows.find(row => row.slot === "components.card")).toMatchObject({ status: "not-chosen" });
+    expect(reasons(k5, "card")).toContain("foundry: blocked K5");
+    expect(k5.rows.find(row => row.slot === "components.calendar")).toMatchObject({ status: "default", basis: "preference", source: "foundry", fill: "foundry/components.calendar" });
+    expect(k5.rows.find(row => row.slot === "components.toggle-button")).toMatchObject({ status: "default", basis: "preference", source: "foundry", fill: "foundry/components.toggle-button" });
   });
   it("fills the Foundry candidates whose members are now implemented, under the unchanged checker", () => {
     const { input } = setup();
