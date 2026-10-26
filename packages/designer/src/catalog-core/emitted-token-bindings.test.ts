@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import * as client from "./index.js";
 import { componentIntegration } from "./__fixtures__/component-integration.js";
 import { TOKENS } from "../tokens/tokens.js";
+import { completedTokenLibrary } from "../importers/__fixtures__/completed-token-library.js";
 import * as publicCatalog from "@clossys/designer/catalog";
 import * as publicServer from "@clossys/designer/catalog/server";
 
@@ -32,6 +33,13 @@ describe("selected emitted token bindings (SYNTHETIC component, real value catal
     const manifest = publicCatalog.emittedTokenManifest(profile.values, ["tailwind-theme"]);
     expect(manifest.tokens.find(row => row.id === "tokens.line-height.snug")).toMatchObject({ outputs: ["--leading-snug"], values: { light: "1.375", dark: "1.375" } });
     expect(manifest.tokens.find(row => row.id === "tokens.letter-spacing.widest")).toMatchObject({ outputs: ["--tracking-widest"], values: { light: "0.1em", dark: "0.1em" } });
+  });
+  it("emits the owner-signed container-width and animation leaves into their Tailwind namespaces", () => {
+    const catalog = client.loadCatalog();
+    const library = completedTokenLibrary(catalog, { id: "example", kind: "consumer", author: "consumer", license: "UNLICENSED" }, "2026-10-26");
+    const outputs = client.emittedTokenProperties(client.resolve({ catalog, library }));
+    expect(outputs.get("tokens.container-width.sm")).toEqual({ property: "--container-sm", theme: "--container-sm" });
+    expect(outputs.get("tokens.animation.spin")).toEqual({ property: "--animate-spin", theme: "--animate-spin" });
   });
   it("checks the public full value catalog with an empty consumer without C4 errors", () => {
     expect(Object.keys(TOKENS)).toHaveLength(227);

@@ -2,13 +2,13 @@
   "counts": {
     "assetEdges": 4,
     "assets": 48,
-    "members": 635,
+    "members": 652,
     "orphanEdges": 0,
-    "resolvedMembers": 634,
+    "resolvedMembers": 651,
     "tokenEdges": 24,
-    "tokens": 53,
+    "tokens": 55,
     "unusedAssets": 46,
-    "unusedTokens": 41
+    "unusedTokens": 43
   },
   "leaves": [
     {
@@ -439,6 +439,14 @@
     {
       "assets": [],
       "consumedBy": [],
+      "id": "tokens.animation",
+      "resolved": 4,
+      "tokens": [],
+      "total": 4
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
       "id": "tokens.behavior-timing",
       "resolved": 6,
       "tokens": [],
@@ -546,6 +554,14 @@
       "resolved": 286,
       "tokens": [],
       "total": 286
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "tokens.container-width",
+      "resolved": 13,
+      "tokens": [],
+      "total": 13
     },
     {
       "assets": [],

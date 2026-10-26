@@ -53,6 +53,7 @@ export function scanComponentReads(content: string, tokens: readonly Consumption
       ["text", ["text"]], ["font", ["font"]], ["font-weight", ["font"]],
       ["radius", ["rounded", "rounded-t", "rounded-b", "rounded-l", "rounded-r", "rounded-tl", "rounded-tr", "rounded-bl", "rounded-br"]],
       ["tracking", ["tracking"]], ["leading", ["leading"]], ["ease", ["ease"]], ["blur", ["blur", "backdrop-blur"]], ["shadow", ["shadow"]],
+      ["container", ["max-w", "min-w", "w"]], ["animate", ["animate"]],
     ] as const) {
       if (key.startsWith(`--${namespace}-`)) for (const prefix of prefixes) add(`${prefix}-${key.slice(namespace.length + 3)}`, key);
     }

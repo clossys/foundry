@@ -7,7 +7,7 @@ import type { Resolved, ResolvedMember } from "./types.js";
 
 const brandSelectors = { light: ":root[data-brand-bound]", mediaDark: '@media (prefers-color-scheme: dark) { :root[data-brand-bound]:not([data-theme="light"])', dark: ':root[data-brand-bound][data-theme="dark"]' };
 const scaleSelectors = { light: ":root", mediaDark: '@media (prefers-color-scheme: dark) { :root:not([data-theme="light"])', dark: ':root[data-theme="dark"]' };
-const namespaces: Readonly<Record<string, string>> = { "color-ramp": "color", "font-size": "text", "font-weight": "font-weight", "letter-spacing": "tracking", "line-height": "leading", typeface: "font", spacing: "spacing", breakpoint: "breakpoint", radius: "radius", shadow: "shadow", blur: "blur", easing: "ease" };
+const namespaces: Readonly<Record<string, string>> = { "color-ramp": "color", "font-size": "text", "font-weight": "font-weight", "letter-spacing": "tracking", "line-height": "leading", typeface: "font", spacing: "spacing", breakpoint: "breakpoint", radius: "radius", shadow: "shadow", blur: "blur", easing: "ease", "container-width": "container", animation: "animate" };
 /** Actual named outputs of the selected consumer, shared with component reads.
  * Explicit bindings name shipped CSS; open scale members name @theme outputs.
  * Different consumer members must never claim the same output property.
