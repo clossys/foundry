@@ -3,7 +3,7 @@ import * as fs from "node:fs/promises";
 import { constants } from "node:fs";
 import { dirname, relative, resolve as pathResolve, sep } from "node:path";
 import { resolve } from "../catalog-core/api.js";
-import { surfaceOf, surfacePath } from "../catalog-core/surface-library.js";
+import { surfaceEntryOf, surfacePath } from "../catalog-core/surface-library.js";
 import { surfaceRuntimeIdentity } from "../catalog-core/surface-check.js";
 import { runtimeSnapshot } from "../catalog-core/runtime-ports.js";
 import { stableStringify } from "../catalog-core/stable.js";
@@ -96,7 +96,7 @@ export async function readSelectedSurfaceRuntimeArtifacts(input: SelectedSurface
       if (finding.severity === "error" && finding.code !== "S8") findings.push(`${finding.code}: ${finding.subject}: ${finding.message}`);
     const rows: { leaf: SurfaceSlot; measurement: SurfaceMeasurement; compiledRoot: string }[] = [];
     for (const leaf of selected) {
-      const owned = engine.library.surfaces.fills.filter(doc => surfaceOf(doc).slot === leaf);
+      const owned = engine.library.surfaces.fills.filter(doc => surfaceEntryOf(doc).slot === leaf);
       const row = profile.surfaces?.fills[leaf];
       if (owned.length !== 1 || !row) { findings.push(`SELECTED_SURFACE_NOT_OWNED: ${leaf}`); continue; }
       const measurements = engine.surfaceOptions!.measurements.filter(measurement => measurement.slot === leaf);

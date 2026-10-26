@@ -8,3 +8,8 @@ type Writer = typeof writeCompositeLibrary;
 export type WriterCatalogParameter = Expect<Equal<Parameters<Writer>[1], CompositeCatalogData>>;
 export type WriterChangesParameter = Expect<Equal<Parameters<Writer>[2], CompositeChangeSet>>;
 export type WriterReturn = Expect<Equal<ReturnType<Writer>, Promise<CompositeLibraryData>>>;
+
+import type { readSurfacePackageEvidence, SurfaceAnyDocument, SurfacePackageEvidence } from "./server.js";
+type EvidenceReader = typeof readSurfacePackageEvidence;
+export type EvidenceReaderDocuments = Expect<Equal<Parameters<EvidenceReader>[0], readonly SurfaceAnyDocument[]>>;
+export type EvidenceReaderReturn = Expect<Equal<ReturnType<EvidenceReader>, Promise<SurfacePackageEvidence[]>>>;

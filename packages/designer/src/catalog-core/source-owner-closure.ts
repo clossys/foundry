@@ -6,13 +6,13 @@ import { flatten, references } from "./model.js";
 import { originOf, tokenContent } from "./library.js";
 import { componentDescriptorHash, componentOf, verifyComponentOutput, assertComponentFiles } from "./resolve-components.js";
 import { validateInstalledComponentRule } from "./component-rule-validation.js";
-import { surfaceOf, surfaceDescriptorHash, verifySurfaceFiles, verifySurfaceProvenance } from "./surface-library.js";
+import { isSurfacePackageEntry, surfaceEntryOf, surfaceOf, surfaceDescriptorHash, verifySurfaceFiles, verifySurfacePackageProvenance, verifySurfaceProvenance } from "./surface-library.js";
 import { runtimeHash, runtimeSnapshot } from "./runtime-ports.js";
 import type { RuntimeDigest } from "./runtime-ports.js";
 import type { CatalogBundles, SourceCandidateBytes } from "../catalog-bundles.js";
 import type { CompositeEngineInput, CompositeFinding, DtcgToken, FillDoc, FillMeta, Origin } from "./types.js";
 import type { ComponentCandidate, ComponentCandidateDocument, ComponentDocument, ComponentFile, ComponentOrigin, ComponentRule } from "./resolve-components.js";
-import type { SurfaceCandidate, SurfaceCandidateDocument, SurfaceDocument, SurfaceOrigin, SurfaceRule, SurfaceTransform } from "./surface-types.js";
+import type { SurfaceCandidate, SurfaceCandidateDocument, SurfaceDocument, SurfaceOrigin, SurfacePackageEntry, SurfacePackageOrigin, SurfaceRule, SurfaceTransform } from "./surface-types.js";
 
 export interface SourceOwnerNeed {
   readonly code: "SOURCE_RECORD_MISSING" | "SOURCE_RECORD_AMBIGUOUS" | "SOURCE_RECORD_STALE" | "SOURCE_BYTES_MISSING" | "SOURCE_RULE_INPUT_MISSING";
@@ -22,7 +22,7 @@ export interface SourceOwnerNeed {
 interface RecordBase {
   readonly id: string; readonly source: string; readonly portion: "values" | "components" | "surfaces";
   readonly fill: string; readonly slot: string; readonly member?: string;
-  readonly origin?: Origin | ComponentOrigin | SurfaceOrigin;
+  readonly origin?: Origin | ComponentOrigin | SurfaceOrigin | SurfacePackageOrigin;
   readonly upstream?: { readonly fill: string; readonly slot: string; readonly member?: string };
   readonly files: readonly ComponentFile[];
   readonly evidence?: SourceCandidateBytes;
@@ -36,8 +36,8 @@ interface RecordBase {
 export type SourceOwnerRecord = RecordBase & (
   | { readonly kind: "value-member"; readonly document: FillDoc; readonly token: DtcgToken; readonly candidate?: FillDoc }
   | { readonly kind: "component"; readonly document: ComponentDocument; readonly descriptor: ComponentCandidate; readonly candidate?: ComponentCandidateDocument }
-  | { readonly kind: "surface"; readonly document: SurfaceDocument; readonly descriptor: SurfaceCandidate; readonly candidate?: SurfaceCandidateDocument }
-  | { readonly kind: "offer"; readonly document: FillDoc | ComponentCandidateDocument | SurfaceCandidateDocument; readonly token?: DtcgToken; readonly descriptor?: ComponentCandidate | SurfaceCandidate; readonly notices: CatalogBundles["notices"] }
+  | { readonly kind: "surface"; readonly document: SurfaceDocument; readonly descriptor: SurfaceCandidate | SurfacePackageEntry; readonly candidate?: SurfaceCandidateDocument }
+  | { readonly kind: "offer"; readonly document: FillDoc | ComponentCandidateDocument | SurfaceCandidateDocument; readonly token?: DtcgToken; readonly descriptor?: ComponentCandidate | SurfaceCandidate | SurfacePackageEntry; readonly notices: CatalogBundles["notices"] }
 );
 export type SourceOwnerClosureResult = {
   readonly consumer: string; readonly records: readonly SourceOwnerRecord[]; readonly runtimeQualification: "unavailable";
@@ -163,6 +163,19 @@ export function associateSourceOwnerRecords(original: CompositeEngineInput, bund
   for (const file of ownedComponents.files) if (!receipted.has(file.path)) need("SOURCE_BYTES_MISSING", `Unassociated component file ${file.path}`);
   const surfacePaths = new Set<string>();
   for (const doc of input.library.surfaces?.fills ?? []) guarded(() => {
+    const entry = surfaceEntryOf(doc);
+    if (isSurfacePackageEntry(entry)) {
+      // Package pointer: owns no bytes; joined to exactly one catalog package candidate and the installed export evidence for its pin.
+      const meta = metaOf(doc), origin = entry.origin, at = { fill: meta.id, slot: meta.slot };
+      if (!origin) { need("SOURCE_RECORD_STALE", "Package pointer origin missing", at); return; }
+      guarded(() => verifySurfacePackageProvenance(input.catalog, entry as SurfacePackageEntry & { origin: SurfacePackageOrigin }), at);
+      const candidate = exactly(input.catalog.surfaces?.fills.filter(up => metaOf(up).id === origin.fill && metaOf(up).slot === meta.slot) ?? [], at);
+      const pack = exactly(input.surfaceOptions?.packages.filter(row => row.module === entry.impl.module && row.version === origin.pin.version && row.values.includes(entry.impl.export)) ?? [], at);
+      const id = identity("surface", "surfaces", meta.id, meta.slot);
+      add({ kind: "surface", id, source: origin.source, portion: "surfaces", fill: meta.id, slot: meta.slot, document: doc, descriptor: entry, origin, candidate, upstream: { fill: origin.fill, slot: meta.slot }, packages: pack ? [pack] : [], files: [], findings: atFindings(meta.slot), inputs: [] });
+      pendingInputs.set(id, []);
+      return;
+    }
     const meta = metaOf(doc), descriptor = surfaceOf(doc) as SurfaceCandidate & { origin: SurfaceOrigin }, origin = descriptor.origin, at = { fill: meta.id, slot: meta.slot };
     let candidate: SurfaceCandidateDocument | undefined, rule: RecordBase["rule"], transform: RecordBase["transform"];
     if (origin.kind !== "authored") {
@@ -193,7 +206,7 @@ export function associateSourceOwnerRecords(original: CompositeEngineInput, bund
   });
   for (const file of input.library.surfaces?.files ?? []) if (!surfacePaths.has(file.path)) need("SOURCE_BYTES_MISSING", `Unassociated surface file ${file.path}`);
   for (const doc of input.catalog.surfaces?.fills ?? []) guarded(() => {
-    const meta = metaOf(doc); add({ kind: "offer", id: identity("offer", "surfaces", meta.id, meta.slot), source: meta.source, portion: "surfaces", fill: meta.id, slot: meta.slot, document: doc, descriptor: surfaceOf(doc), files: [], findings: [], inputs: [], notices: bundles.notices });
+    const meta = metaOf(doc); add({ kind: "offer", id: identity("offer", "surfaces", meta.id, meta.slot), source: meta.source, portion: "surfaces", fill: meta.id, slot: meta.slot, document: doc, descriptor: surfaceEntryOf(doc) as SurfaceCandidate | SurfacePackageEntry, files: [], findings: [], inputs: [], notices: bundles.notices });
   });
   // Existing provenance refusals retain their original messages, including upstream drift notices.
   for (const finding of findings) if (finding.rule === "provenance" || finding.code === "C7" || finding.code === "R" || ["S1", "S2", "S6"].includes(finding.code) && finding.severity === "error") need("SOURCE_RECORD_STALE", finding.message, { slot: finding.subject });

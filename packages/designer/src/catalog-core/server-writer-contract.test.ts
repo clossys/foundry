@@ -2,12 +2,17 @@
 import { describe, expect, it } from "vitest";
 import * as server from "./server.js";
 import * as disk from "../library-cli/fs-library.js";
+import * as evidence from "../library-cli/surface-package-evidence.js";
 import type { CompositeCatalogData } from "./server.js";
 
 describe("public composite writer contract", () => {
   it("exports the existing atomic writer and validator unchanged through the server entry", () => {
     expect(server.writeCompositeLibrary).toBe(disk.writeCompositeLibrary);
     expect(server.isCompositeChangeSet).toBe(disk.isCompositeChangeSet);
+  });
+
+  it("exports the host package-evidence reader for Section and Frame package pointers", () => {
+    expect((server as Record<string, unknown>).readSurfacePackageEvidence).toBe(evidence.readSurfacePackageEvidence);
   });
 
   it("retains fail-closed changeset validation at the public entry", () => {

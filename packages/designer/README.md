@@ -10325,6 +10325,17 @@ map S2 leaf keys such as `icon-close` to `assets.icon-close` using consumer glyp
 bytes, with no candidate or default-glyph fallback. The `notices` target retains
 both engines' records in combined `notices.json` and `notices/components.json`.
 
+Sections and Frames adopted as package pointers own no bytes. When a host passes
+a composite catalog without a `surfaces` portion, the `catalog/server` disk calls
+(`readLibrary`, `checkLibrary`, `writeCompositeLibrary`, `emitLibrary` and
+`isCompositeChangeSet`) use this package's own Section and Frame contracts; a
+host-supplied `surfaces` portion is used as given. When a host passes no surface
+options and surfaces are in play, those calls read package-pointer export
+evidence from the installed package barrels and supply no measurements. Hosts
+that resolve in memory can read the same evidence themselves with
+`readSurfacePackageEvidence(documents)` (documents typed `SurfaceAnyDocument`),
+exported from `catalog/server`.
+
 Synthetic integration tests demonstrate dispatch and refusal behavior. They are
 not shipped-component conformance evidence. The real source corpus still has
 26 of 26 blocked descriptors and no real positive golden. Runtime frame/section

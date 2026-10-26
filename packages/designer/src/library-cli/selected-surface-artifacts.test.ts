@@ -4,15 +4,17 @@ import * as fs from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { readSelectedSurfaceRuntimeArtifacts } from "./selected-surface-artifacts.js";
-import { resolve } from "../catalog-core/api.js";
-import { loadCatalog } from "../catalog-core/index.js";
-import { surfaceDescriptorHash, surfaceDocument, surfaceManifest } from "../catalog-core/surface-library.js";
+import { applyLibraryChange, libraryHash, resolve } from "../catalog-core/api.js";
+import { importFoundrySections } from "../importers/foundry-sections.js";
+import { readSurfacePackageEvidence } from "./surface-package-evidence.js";
+import { loadCatalog, loadSectionRegistry } from "../catalog-core/index.js";
+import { isSurfacePackageEntry, surfaceDescriptorHash, surfaceDocument, surfaceEntryOf, surfaceManifest } from "../catalog-core/surface-library.js";
 import { surfaceRuntimeIdentity } from "../catalog-core/surface-check.js";
 import { runtimeHash, runtimeSnapshot } from "../catalog-core/runtime-ports.js";
 import { adoptedSurface, syntheticDerivation } from "../catalog-core/__fixtures__/surface-engine/synthetic.js";
 import { sha256 } from "../catalog-core/digest.js";
 import type { CompositeEngineInput } from "../catalog-core/types.js";
-import type { SurfaceCandidate, SurfaceMeasurement, SurfaceSlot } from "../catalog-core/surface-types.js";
+import type { SurfaceCandidate, SurfaceCandidateDocument, SurfaceMeasurement, SurfaceSlot } from "../catalog-core/surface-types.js";
 
 // SYNTHETIC unit-test records and modeled receipts exercise real/synthetic input branches.
 // No compiler, module loader, production observation or runtime qualification runs here.
@@ -236,6 +238,22 @@ describe("selected surface artifact reader", () => {
     for (const object of [catalog, catalog.values, catalog.values.slots, catalog.components, catalog.surfaces, catalog.surfaces!.slots, catalog.surfaces!.transforms, catalog.surfaces!.transforms[0], catalog.surfaces!.transforms[0]!.source, catalog.surfaces!.rules, catalog.surfaces!.rules[0], catalog.surfaces!.rules[0]!.source]) expect(Object.isFrozen(object)).toBe(true);
     expect(resolve(result.engine).check.findings.filter(row => row.severity === "error")).toEqual([]);
     expect(transformRun).not.toHaveBeenCalled(); expect(ruleRun).not.toHaveBeenCalled(); expect(fileExists).not.toHaveBeenCalled();
+  });
+
+  it("reads a selected source leaf in a library that also holds an adopted package pointer", async () => {
+    const f = await fixture();
+    const pkg = (importFoundrySections().fills as unknown as SurfaceCandidateDocument[]).find(doc => isSurfacePackageEntry(surfaceEntryOf(doc)))!;
+    const meta = pkg.$extensions["com.clossys.fill"];
+    const surfaces = f.engine.catalog.surfaces!;
+    f.engine.catalog = { ...f.engine.catalog, surfaces: { ...surfaces, slots: [...loadSectionRegistry().slots.filter(slot => slot.id === meta.slot), ...surfaces.slots], fills: [pkg] } };
+    const surfaceOptions = { ...f.engine.surfaceOptions!, packages: await readSurfacePackageEvidence([pkg]) };
+    const adopted = applyLibraryChange(f.engine.catalog, { ...f.engine.library, adoptedAt: "2026-10-26" }, { baseHash: libraryHash({ ...f.engine.library, adoptedAt: "2026-10-26" }), changes: [{ portion: "surfaces", change: { op: "adopt", slot: meta.slot as `sections.${string}`, source: meta.source } }] }, { surfaceOptions });
+    // The pointer sorts ahead of the selected source leaf, so every owned-fill lookup meets it first.
+    f.engine.library = { ...adopted, surfaces: { ...adopted.surfaces!, fills: [...adopted.surfaces!.fills].sort(doc => isSurfacePackageEntry(surfaceEntryOf(doc)) ? -1 : 1) } };
+    f.engine.surfaceOptions = surfaceOptions;
+    expect(isSurfacePackageEntry(surfaceEntryOf(f.engine.library.surfaces!.fills[0]!))).toBe(true);
+    const result = await available(f);
+    expect(result.surfaces.map(row => row.leaf)).toEqual([f.leaf]);
   });
 
 });
