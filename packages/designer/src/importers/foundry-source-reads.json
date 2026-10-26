@@ -378,6 +378,7 @@
   ],
   "tag-group": [
     "tokens.accent-color",
+    "tokens.body-size",
     "tokens.caption-size",
     "tokens.control-size",
     "tokens.focus-color",
@@ -387,7 +388,8 @@
     "tokens.spacing",
     "tokens.state-opacity",
     "tokens.surface-color",
-    "tokens.text-color"
+    "tokens.text-color",
+    "tokens.typeface"
   ],
   "text-field": [
     "tokens.body-size",
