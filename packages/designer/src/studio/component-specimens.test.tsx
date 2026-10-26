@@ -219,7 +219,7 @@ it("draws every Foundry package component live from designer sample content when
     render(<CandidateCell labels={labels} preview={specimens.preview(leaf, profile)} />);
     const cell = document.querySelector<HTMLElement>("[data-candidate-cell]")!;
     await new Promise(resolve => setTimeout(resolve, 0));
-    expect(cell.querySelector(`[data-component-specimen="${leaf}"] [data-specimen-error]`), leaf).toBeNull();
+    expect(cell.querySelector("[data-specimen-error]"), leaf).toBeNull();
     for (const node of cell.querySelectorAll<HTMLElement>("[data-component-specimen]")) {
       const marker = node.querySelector<HTMLElement>("[data-specimen-unavailable]");
       if (marker && cell.dataset.previewState === "live") unavailableMembers[`${leaf}/${node.dataset.componentSpecimen}`] = marker.dataset.specimenUnavailable!;
@@ -233,7 +233,8 @@ it("draws every Foundry package component live from designer sample content when
   expect(blank).toEqual([]);
   // The toast region draws only the app-wide queue, which it does not let a preview replace; the cell names why.
   expect(unavailableCells).toEqual({ "components.toast": "needs-host-queue" });
-  expect(unavailableMembers).toEqual({});
+  // A member that needs the host's own brand assets says so instead of throwing; the leaf's other specimens draw.
+  expect(unavailableMembers).toEqual({ "components.logo/content.lockup": "needs-brand-asset" });
   errors.mockRestore();
 });
 

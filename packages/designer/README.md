@@ -10388,6 +10388,10 @@ reads `data-preview-state="unavailable"` with `data-preview-reason="specimen-err
 The toast region draws only the app-wide `toast()` queue and takes no queue of
 its own, so without a host specimen its cell reads unavailable with
 `data-preview-reason="needs-host-queue"`; a preview never pushes into that queue.
+A logo's `content.lockup` member is drawn by the shell `Brandmark`, which needs
+the host's own mark asset and wordmark; without a host specimen that member is
+marked `data-specimen-unavailable="needs-brand-asset"` and the logo's other
+specimens draw.
 
 ### Consumer runtime ports and responsive assembly evidence
 
