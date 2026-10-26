@@ -20,8 +20,8 @@ describe("planSurfacePreviews", () => {
   it("accounts for every planned Sections/Frames leaf of the real catalog: a preview or a named reason", () => {
     const { plan, fills } = realPlan();
     const planned = plan.rows.filter(row => row.status !== "not-chosen");
-    expect(planned.filter(row => row.slot.startsWith("sections."))).toHaveLength(41);
-    expect(planned.filter(row => row.slot.startsWith("frames."))).toHaveLength(6);
+    expect(planned.filter(row => row.slot.startsWith("sections."))).toHaveLength(45);
+    expect(planned.filter(row => row.slot.startsWith("frames."))).toHaveLength(8);
     const result = planSurfacePreviews({ plan, fills });
     const previewed = Object.keys(result.previews), gaps = result.unrenderable.map(gap => gap.slot);
     expect([...previewed, ...gaps].sort()).toEqual(planned.map(row => row.slot).sort());

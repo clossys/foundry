@@ -24,9 +24,7 @@
         "layout.standard",
         "slot.progress",
         "stage.contained",
-        "stage.full",
-        "state.theme",
-        "state.width"
+        "stage.full"
       ]
     }
   },
@@ -59,7 +57,9 @@
       },
       "statePorts": {
         "inspector-collapsed": "rightPanel.collapsed/rightPanel.onCollapsedChange",
-        "sidebar-collapsed": "navigation.collapsed/navigation.onCollapsedChange"
+        "sidebar-collapsed": "navigation.collapsed/navigation.onCollapsedChange",
+        "theme": "theme.preference/theme.onPreferenceChange",
+        "width": "rightPanel.value/rightPanel.onChange"
       }
     }
   }

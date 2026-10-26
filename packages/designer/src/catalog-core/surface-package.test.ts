@@ -58,9 +58,9 @@ const surfaceErrors = (library: CompositeLibraryData, catalog: CompositeCatalogD
 describe("package-pointer surface origin", () => {
   it("adopts every planned Section and Frame default without a bundle, from the real catalog", () => {
     const { catalog, plan, empty } = setup();
-    expect(plan.decisions).toHaveLength(47);
+    expect(plan.decisions).toHaveLength(53);
     const library = adopt(catalog, empty, plan.decisions);
-    expect(library.surfaces!.fills).toHaveLength(47);
+    expect(library.surfaces!.fills).toHaveLength(53);
     expect(library.surfaces!.files).toEqual([]);
     const selection = surfaceSelection(library);
     expect(selection.slots.map(row => row.slot)).toEqual(plan.decisions.map(row => row.slot).sort());
@@ -74,7 +74,7 @@ describe("package-pointer surface origin", () => {
     const library = adopt(catalog, empty, plan.decisions);
     expect(surfaceErrors(library, catalog)).toEqual([]);
     const profile = resolveComposite({ catalog, library, surfaceOptions: options().surfaceOptions });
-    expect(Object.keys(profile.surfaces!.fills)).toHaveLength(47);
+    expect(Object.keys(profile.surfaces!.fills)).toHaveLength(53);
     const files = emitComposite(profile, ["surface-index", "surfaces-consumption"]);
     const file = (path: string) => files.find(row => row.path === path)?.contents;
     expect(file("frames/sheet/index.ts")).toBe('export { Drawer as Sheet } from "@clossys/designer/blocks";\n');
@@ -87,8 +87,8 @@ describe("package-pointer surface origin", () => {
     expect(file("sections/stats/index.ts")).toBe('export { StatGroup as Stats } from "@clossys/designer/blocks";\n');
     expect(file("sections/consent/index.ts")).toBe('export { ConsentBanner as Consent } from "@clossys/designer/blocks";\n');
     expect(file("surface-index.ts")).toContain('export { Faq } from "./sections/faq/index.js";\n');
-    expect(file("surface-index.ts")!.split("\n").filter(Boolean)).toHaveLength(47);
-    expect(JSON.parse(file("surfaces-consumption.json")!).fills).toHaveLength(47);
+    expect(file("surface-index.ts")!.split("\n").filter(Boolean)).toHaveLength(53);
+    expect(JSON.parse(file("surfaces-consumption.json")!).fills).toHaveLength(53);
   });
 
   it("refuses a missing or differing package export, version or module in the evidence", () => {
@@ -139,7 +139,8 @@ describe("package-pointer surface origin", () => {
   });
 
   it("keeps the static contract rule: an ineligible candidate adopts only with an S5 finding, and the source path is unchanged", () => {
-    const { catalog, empty } = setup();
+    // An importer that left the hero header region unmapped: the catalog candidate is ineligible and adopts only with S5.
+    const { catalog, empty } = setup(doc => { if (doc.$extensions["com.clossys.fill"].slot === "sections.hero") delete (doc.sections!.hero!.slotMap as Record<string, unknown>).header; });
     const hero = adopt(catalog, empty, [{ slot: "sections.hero", source: "foundry" }]);
     expect(surfaceErrors(hero, catalog).map(row => `${row.code} ${row.message}`)).toEqual(["S5 content/member mapping differs: required slot header is not mapped"]);
     const noCandidate = setup();

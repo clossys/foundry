@@ -206,3 +206,25 @@ describe("ThemeProvider", () => {
     await waitFor(() => expect(screen.getByTestId("preference")).toHaveTextContent("system"));
   });
 });
+
+describe("ThemeProvider controlled preference (frames.app-shell theme state port)", () => {
+  function Probe() {
+    const { preference, setPreference } = useTheme();
+    return <><span data-testid="controlled">{preference}</span><button type="button" onClick={() => setPreference("light")}>light</button></>;
+  }
+  it("renders the host's preference over storage, reports changes to the host and follows the host's next value", async () => {
+    installMatchMediaMock(false);
+    window.localStorage.setItem(DEFAULT_STORAGE_KEY, "light");
+    const onPreferenceChange = vi.fn();
+    const view = render(<ThemeProvider preference="dark" onPreferenceChange={onPreferenceChange}><Probe /></ThemeProvider>);
+    await waitFor(() => expect(document.documentElement.getAttribute("data-theme")).toBe("dark"));
+    expect(screen.getByTestId("controlled")).toHaveTextContent("dark");
+    await userEvent.click(screen.getByRole("button", { name: "light" }));
+    expect(onPreferenceChange).toHaveBeenCalledExactlyOnceWith("light");
+    // Controlled: the host has not changed its value yet, so the provider keeps rendering it.
+    expect(screen.getByTestId("controlled")).toHaveTextContent("dark");
+    view.rerender(<ThemeProvider preference="light" onPreferenceChange={onPreferenceChange}><Probe /></ThemeProvider>);
+    expect(screen.getByTestId("controlled")).toHaveTextContent("light");
+    await waitFor(() => expect(document.documentElement.getAttribute("data-theme")).toBe("light"));
+  });
+});

@@ -4,7 +4,7 @@ import { ToggleGroup, ToggleGroupItem, type ToggleGroupProps } from "../componen
 import { Toolbar } from "../components/Toolbar.js";
 import { Tooltip } from "../components/Tooltip.js";
 import { Monitor, Moon, Sun, type IconNode } from "../icons/index.js";
-import { useTheme } from "./ThemeProvider.js";
+import { useOptionalTheme } from "./ThemeProvider.js";
 import type { ThemePreference } from "./internal/theme-core.js";
 
 const PREFERENCES: readonly ThemePreference[] = ["system", "light", "dark"];
@@ -46,6 +46,10 @@ export interface ThemeToggleProps extends Omit<ToggleGroupProps,
   toggleLabel?: (current: ThemePreference, target: ThemePreference, labels: ThemePreferenceLabels) => string;
   /** Polite announcement after the preference changes. */
   preferenceAnnouncement?: (next: ThemePreference, labels: ThemePreferenceLabels) => string;
+  /** Host-controlled preference; overrides the nearest ThemeProvider and works without one. */
+  preference?: ThemePreference;
+  /** Called with the chosen preference; with `preference`, the host applies it. */
+  onPreferenceChange?: (preference: ThemePreference) => void;
 }
 
 function defaultToggleLabel(_current: ThemePreference, target: ThemePreference, labels: ThemePreferenceLabels): string {
@@ -64,9 +68,17 @@ export function ThemeToggle({
   preferenceAnnouncement = defaultPreferenceAnnouncement,
   "aria-label": ariaLabel = "Theme",
   "aria-describedby": describedby,
+  preference: hostPreference,
+  onPreferenceChange,
   ...rest
 }: ThemeToggleProps) {
-  const { preference, setPreference } = useTheme();
+  const context = useOptionalTheme();
+  if (hostPreference === undefined && !context) throw new Error("useTheme() must be called within a <ThemeProvider>.");
+  const preference = hostPreference ?? context!.preference;
+  const setPreference = (next: ThemePreference) => {
+    if (hostPreference === undefined) context!.setPreference(next);
+    onPreferenceChange?.(next);
+  };
   const [announcedPreference, setAnnouncedPreference] = useState<ThemePreference | null>(null);
   const statusId = useId();
 

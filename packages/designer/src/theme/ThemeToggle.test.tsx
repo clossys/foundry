@@ -136,3 +136,13 @@ describe("ThemeToggle", () => {
     expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
   });
 });
+
+describe("ThemeToggle controlled by its host", () => {
+  it("selects the supplied preference and reports a choice without a ThemeProvider", async () => {
+    const onPreferenceChange = vi.fn();
+    render(<ThemeToggle preference="dark" onPreferenceChange={onPreferenceChange} />);
+    expect(screen.getByRole("radio", { name: "Dark" })).toBeChecked();
+    await userEvent.click(screen.getByRole("radio", { name: "Light" }));
+    expect(onPreferenceChange).toHaveBeenCalledExactlyOnceWith("light");
+  });
+});

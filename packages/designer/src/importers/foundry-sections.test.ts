@@ -103,7 +103,7 @@ describe("Foundry section package descriptors", () => {
     expect(rows.get("sections.band")!.unresolvedMemberAxes).toEqual(["rhythm"]);
     expect(rows.get("sections.pagination")!.missingMembers).toEqual(["mode.cursor", "mode.load-more"]);
     expect(rows.get("sections.section-header")!.supportedMembers).toEqual([]);
-    expect(rows.get("sections.hero")!.missingRequiredSlots).toEqual(["header"]);
+    expect(rows.get("sections.hero")!.missingRequiredSlots).toEqual([]);
     expect(rows.get("sections.page-header")!.missingMembers).toEqual(["config.record", "config.standard"]);
     expect(rows.get("sections.features")!.missingMembers).toEqual(["layout.list", "layout.split"]);
     expect(rows.get("sections.faq")!.missingMembers).toEqual(["layout.two-column"]);
@@ -126,6 +126,23 @@ describe("Foundry section package descriptors", () => {
       expect(doc.parts).toEqual([]);
       expect(doc.notes.join(" ")).toContain("anatomy");
     }
+  });
+
+  it("maps every required region to the block part that implements it, and records which are built in", () => {
+    const rows = new Map(imported().coverage.map(row => [row.slot, row]));
+    for (const leaf of ["chat", "explorer", "hero", "newsletter"]) expect(rows.get(`sections.${leaf}`)!.missingRequiredSlots, leaf).toEqual([]);
+    expect(FOUNDRY_SECTION_MAP.chat!.slotMap.composer).toBe("./blocks#Chat.onSend");
+    expect(FOUNDRY_SECTION_MAP.explorer!.slotMap.list).toBe("./blocks#Explorer.list");
+    expect(FOUNDRY_SECTION_MAP.hero!.slotMap.header).toBe("./blocks#Hero.heading");
+    expect(FOUNDRY_SECTION_MAP.newsletter!.slotMap.email).toBe("./blocks#NewsletterBand.emailLabel");
+    const source = (path: string) => readFileSync(resolve(here, "../blocks", path), "utf8");
+    // Built-in regions: the block renders the contract's composed component itself.
+    expect(source("chat/Chat.tsx")).toMatch(/<Textarea label=\{composerLabel\}/);
+    expect(source("NewsletterBand.tsx")).toMatch(/<TextField\s+type="email"/);
+    expect(source("Hero.tsx")).toMatch(/<SectionIntro[\s\S]*heading=/);
+    // The list pane is a host region the Explorer lays out beside its tree.
+    expect(source("Explorer.tsx")).toMatch(/list\?: ReactNode/);
+    for (const leaf of ["chat", "hero", "newsletter"]) expect(FOUNDRY_SECTION_MAP[leaf]!.notes!.join(" "), leaf).toMatch(/built.in/i);
   });
 
   it("grounds fixed layouts and data-count members in source branches", () => {

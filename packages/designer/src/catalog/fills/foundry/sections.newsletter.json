@@ -16,15 +16,12 @@
         "package": "@clossys/designer",
         "version": "0.12.0"
       },
-      "relation": "subset",
+      "relation": "same-contract",
       "slot": "sections.newsletter",
       "source": "foundry",
       "sourceAddress": "./blocks#NewsletterBand",
       "status": "draft",
-      "trust": "foundry",
-      "unmapped": [
-        "slot.email"
-      ]
+      "trust": "foundry"
     }
   },
   "sections": {
@@ -37,7 +34,7 @@
       },
       "license": "MIT",
       "notes": [
-        "Email field is built in, not a host region; submitLabel is copy for the built-in action. Host supplies emailLabel, pendingLabel, sentMessage and failedMessage. Consent text does not prove confirmation behavior.",
+        "Email is a built-in email TextField the host adapts through emailLabel; it is not replaceable by a host node. submitLabel is copy for the built-in action. Host supplies pendingLabel, sentMessage and failedMessage. Consent text does not prove confirmation behavior.",
         "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "parts": [],
@@ -50,6 +47,7 @@
       "slot": "sections.newsletter",
       "slotMap": {
         "consent": "./blocks#NewsletterBand.privacyNote",
+        "email": "./blocks#NewsletterBand.emailLabel",
         "submit": "./blocks#NewsletterBand.submitLabel"
       },
       "source": "foundry"
