@@ -61,8 +61,8 @@
       "propMap": {
         "orientation.horizontal": "./components#Slider.orientation=horizontal",
         "orientation.vertical": "./components#Slider.orientation=vertical",
-        "selection.range": "./components#Slider.value=number[]",
-        "selection.single": "./components#Slider.value=number"
+        "selection.range": "./components#Slider",
+        "selection.single": "./components#Slider"
       },
       "props": [
         "className",

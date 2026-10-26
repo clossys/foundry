@@ -59,7 +59,7 @@
         "version": "0.12.0"
       },
       "propMap": {
-        "removable": "./components#TagGroup.onRemove",
+        "removable": "./components#TagGroup",
         "selection.multiple": "./components#TagGroup.selectionMode=multiple",
         "selection.none": "./components#TagGroup.selectionMode=none",
         "selection.single": "./components#TagGroup.selectionMode=single"

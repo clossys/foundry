@@ -12,7 +12,7 @@ export interface ComponentEmitOptions {
   glyphModule?: { path: string; glyphs: Readonly<Record<string, unknown>> };
 }
 /** One contract member bound to its implementation export, as the emitted component index dispatches it. */
-export interface ComponentMemberBinding { module: string; name: string; property?: string; value?: string | boolean; intrinsic?: true }
+export interface ComponentMemberBinding { module: string; name: string; part?: string; property?: string; value?: string | boolean; intrinsic?: true }
 type Binding = ComponentMemberBinding;
 const nameOf = (slot: string): string => slot.slice(11).split("-").map(part => part[0]!.toUpperCase() + part.slice(1)).join("");
 const quote = (value: unknown): string => JSON.stringify(value);
@@ -74,12 +74,16 @@ export function assertComponentImportClosure(files: readonly ComponentFile[], pa
  * this rule, so a specimen dispatches each member exactly as the generated adapter would.
  */
 export function componentMemberBinding(component: ResolvedComponent, member: string, pointer: string): ComponentMemberBinding { return parseBinding(component, member, pointer); }
+// Interaction states the implementation sets itself: RAC data attributes, or CSS pseudo-classes on a native element.
+const INTRINSIC_STATE = /(?:\[data-(?:hovered|pressed|focus-visible)\]|:(?:hover|active|focus-visible))$/;
+/** Export, Export.Part (a static compound sub-component), then optionally .prop or .prop=value. */
 function parseBinding(component: ResolvedComponent, member: string, pointer: string): Binding {
-  const intrinsic = /\[data-(?:hovered|pressed|focus-visible)\]$/.test(pointer) && member.startsWith("state.");
-  const clean = intrinsic ? pointer.replace(/\[data-(?:hovered|pressed|focus-visible)\]$/, "") : pointer;
-  const match = /^(?:\.\/([A-Za-z0-9_/-]+)#)?([A-Z][A-Za-z0-9]*)(?:\.([a-z][A-Za-z0-9]*)(?:=([a-z0-9-]+))?)?$/.exec(clean);
+  const intrinsic = INTRINSIC_STATE.test(pointer) && member.startsWith("state.");
+  const clean = intrinsic ? pointer.replace(INTRINSIC_STATE, "") : pointer;
+  const match = /^(?:\.\/([A-Za-z0-9_/-]+)#)?([A-Z][A-Za-z0-9]*)(?:\.([A-Z][A-Za-z0-9]*))?(?:\.([a-z][A-Za-z0-9]*)(?:=([a-z0-9-]+))?)?$/.exec(clean);
   if (!match) throw new CatalogError(`components: unsupported propMap ${component.slot}.${member}`);
   assertComponentIdentifier(match[2]!);
+  if (match[3]) assertComponentIdentifier(match[3]);
   let module: string;
   if (component.impl.kind === "package") {
     const pin = component.descriptor.pin;
@@ -89,8 +93,8 @@ function parseBinding(component: ResolvedComponent, member: string, pointer: str
     if (match[1]) throw new CatalogError("components: source propMap cannot select a package subpath");
     module = component.impl.entry;
   }
-  const value = match[4] === "true" ? true : match[4] === "false" ? false : match[4];
-  return { module, name: match[2]!, ...(match[3] ? { property: match[3], value: value ?? true } : {}), ...(intrinsic ? { intrinsic: true } : {}) };
+  const value = match[5] === "true" ? true : match[5] === "false" ? false : match[5];
+  return { module, name: match[2]!, ...(match[3] ? { part: match[3] } : {}), ...(match[4] ? { property: match[4], value: value ?? true } : {}), ...(intrinsic ? { intrinsic: true } : {}) };
 }
 function leafModule(component: ResolvedComponent, packageExports: ResolvedComponents["packageExports"], files: readonly ComponentFile[], glyphModule?: ComponentEmitOptions["glyphModule"]): ComponentFile {
   const path = `components/${component.slot.slice(11)}/index.ts`;
@@ -130,21 +134,25 @@ function leafModule(component: ResolvedComponent, packageExports: ResolvedCompon
     return { path, content: rows.join("\n") + "\n" };
   }
   // A transparent alias is sufficient only when every contract member maps to the same export.
-  const identity = bindings.every(({ binding }) => binding.module === base.module && binding.name === base.name && !binding.property);
+  const identity = bindings.every(({ binding }) => binding.module === base.module && binding.name === base.name && !binding.part && !binding.property);
   if (identity) return { path, content: rows.join("\n") + `\nexport { ${imports.get(`${base.module}#${base.name}`)} as ${name} };\n` };
   rows.unshift('import { createElement, forwardRef, type ComponentType } from "react";');
   const table: Record<string, Record<string, { target: string; property?: string; value?: string | boolean }>> = Object.create(null);
+  const partTargets = new Set<string>();
   for (const { member, binding } of bindings) {
     if (binding.intrinsic) continue;
     const parts = member.split(".");
     // A single-axis capability member mapped to the root export itself is served by that root: nothing to dispatch.
-    if (parts.length === 1 && binding.module === base.module && binding.name === base.name && !binding.property) continue;
+    if (parts.length === 1 && binding.module === base.module && binding.name === base.name && !binding.part && !binding.property) continue;
     if (parts.length !== 2 || !/^[a-z][a-z0-9-]*$/.test(parts[0]!) || !/^[a-z][a-z0-9-]*$/.test(parts[1]!)) throw new CatalogError(`components: unsupported member dispatch ${member}`);
     const axis = parts[0]!, value = parts[1]!;
+    // A compound sub-part dispatches to a static property of its imported export (Disclosure.Group).
+    const target = `${imports.get(`${binding.module}#${binding.name}`)!}${binding.part ? `.${binding.part}` : ""}`;
+    if (binding.part) partTargets.add(target);
     table[axis] ??= Object.create(null) as Record<string, { target: string; property?: string; value?: string | boolean }>;
-    table[axis]![value] = { target: imports.get(`${binding.module}#${binding.name}`)!, ...(binding.property ? { property: binding.property, value: binding.value } : {}) };
+    table[axis]![value] = { target, ...(binding.property ? { property: binding.property, value: binding.value } : {}) };
   }
-  const targets = [...imports.values()].join(", ");
+  const targets = [...imports.values(), ...[...partTargets].sort().map(target => `${quote(target)}: ${target}`)].join(", ");
   rows.push(`const targets: Record<string, ComponentType<Record<string, unknown>>> = { ${targets} };`);
   rows.push(`const mappings: Record<string, Record<string, {target: string; property?: string; value?: unknown}>> = ${JSON.stringify(table, null, 2)};`);
   rows.push(`export const ${name} = forwardRef<unknown, Record<string, unknown>>(function ${name}(props, ref) {`);

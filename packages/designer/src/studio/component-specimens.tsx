@@ -160,9 +160,12 @@ export function componentSpecimenPreview(options: ComponentSpecimenOptions): Com
       // A member naming a non-renderable export (a props type such as `SliderPrimitiveProps`) drops that member, named.
       if ("refusal" in target && target.refusal.code === "export-unavailable") { unbound.push({ member, detail: `export-unavailable: ${target.refusal.detail}` }); continue; }
       if ("refusal" in target) return target;
+      // A compound sub-part (Disclosure.Group) is a static property of the export, as the emitted adapter dispatches it.
+      const part = binding.part === undefined ? target.value : (target.value as unknown as Record<string, unknown>)[binding.part];
+      if (!renderable(part)) { unbound.push({ member, detail: `export-unavailable: ${binding.module}#${binding.name}.${binding.part}` }); continue; }
       const interaction = binding.intrinsic === true;
       const drawn = !interaction && binding.property !== undefined && (typeof binding.value === "string" || (member.startsWith("state.") && binding.value === true));
-      members.push({ member, Component: target.value, specifier: binding.module, exportName: binding.name, props: binding.property ? { [binding.property]: binding.value } : {}, interaction, drawn });
+      members.push({ member, Component: part, specifier: binding.module, exportName: binding.name, props: binding.property ? { [binding.property]: binding.value } : {}, interaction, drawn });
     }
     const source = component.origin.kind === "adopted" ? component.origin.source : component.descriptor.source;
     return { binding: { leaf, source, Component: base.value, specifier, exportName: component.impl.export, exports: base.namespace, members, unbound } };

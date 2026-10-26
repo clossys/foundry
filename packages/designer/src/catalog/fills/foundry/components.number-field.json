@@ -62,9 +62,9 @@
         "version": "0.12.0"
       },
       "propMap": {
-        "format": "./components#NumberField.formatOptions",
+        "format": "./components#NumberField",
         "state.invalid": "./components#NumberField.isInvalid",
-        "step": "./components#NumberField.step"
+        "step": "./components#NumberField"
       },
       "props": [
         "className",

@@ -58,9 +58,9 @@
         "version": "0.12.0"
       },
       "propMap": {
-        "accept": "./components#FileTrigger.acceptedFileTypes",
-        "directory": "./components#FileTrigger.acceptDirectory",
-        "multiple": "./components#FileTrigger.allowsMultiple"
+        "accept": "./components#FileTrigger",
+        "directory": "./components#FileTrigger",
+        "multiple": "./components#FileTrigger"
       },
       "props": [
         "acceptDirectory",

@@ -59,10 +59,10 @@
         "version": "0.12.0"
       },
       "propMap": {
-        "part.clear": "./components#SearchField[clear-button]",
-        "part.submit": "./components#SearchField.onSubmit",
-        "state.empty": "./components#SearchField[isEmpty]",
-        "state.filled": "./components#SearchField[!isEmpty]"
+        "part.clear": "./components#SearchField",
+        "part.submit": "./components#SearchField",
+        "state.empty": "./components#SearchField",
+        "state.filled": "./components#SearchField"
       },
       "props": [
         "className",

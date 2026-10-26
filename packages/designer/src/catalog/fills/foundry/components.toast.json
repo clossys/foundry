@@ -65,12 +65,12 @@
         "version": "0.12.0"
       },
       "propMap": {
-        "action": "./shell#toast[options.action]",
-        "timeout": "./shell#toast[options.timeout]",
-        "tone.danger": "./shell#toast.error",
-        "tone.info": "./shell#toast.info",
-        "tone.success": "./shell#toast.success",
-        "tone.warning": "./shell#toast.warning"
+        "action": "./shell#Toaster",
+        "timeout": "./shell#Toaster",
+        "tone.danger": "./shell#Toaster",
+        "tone.info": "./shell#Toaster",
+        "tone.success": "./shell#Toaster",
+        "tone.warning": "./shell#Toaster"
       },
       "props": [
         "aria-label",

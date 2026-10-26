@@ -56,7 +56,7 @@
         "version": "0.12.0"
       },
       "propMap": {
-        "placement": "./components#Popover.placement"
+        "placement": "./components#Popover"
       },
       "props": [
         "anchorRef",

@@ -59,7 +59,7 @@
         "version": "0.12.0"
       },
       "propMap": {
-        "current": "./components#Breadcrumb.Item[aria-current=page]"
+        "current": "./components#Breadcrumb"
       },
       "props": [
         "aria-label",
