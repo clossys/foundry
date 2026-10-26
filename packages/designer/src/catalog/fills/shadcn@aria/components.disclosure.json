@@ -73,10 +73,6 @@
           "sha256": "81a7df328e65212ea38a2dd20f684abb6ea76282f8888b460e04d0b337d56345"
         },
         {
-          "path": "components/disclosure/index.ts",
-          "sha256": "922e22161baa9dcd3dc72fa61a5388b16c00ee155876f5b0de5d3808cf93b59e"
-        },
-        {
           "path": "notices/THIRD-PARTY.md",
           "sha256": "6148b3941d0eff3d024e4d3a0e630f009484163560272ae6ec79c649c67fc964"
         }

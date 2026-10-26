@@ -65,10 +65,6 @@
           "sha256": "d3753f708b15cc1ec47bc3136827134b702e2069eebdb0ddefb1806b95d7c1d9"
         },
         {
-          "path": "components/tooltip/index.ts",
-          "sha256": "cb69618ece1d29b69c26f43b41dbbebe15d4d595e485567dccd37a7a07d82f82"
-        },
-        {
           "path": "components/tooltip/tooltip.tsx",
           "sha256": "fbad0ba771961a73e008ba38e70c4d45e0b74b8406cb5e9975971652d5eaf95c"
         },

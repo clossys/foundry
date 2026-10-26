@@ -78,10 +78,6 @@
           "sha256": "d3753f708b15cc1ec47bc3136827134b702e2069eebdb0ddefb1806b95d7c1d9"
         },
         {
-          "path": "components/toggle-button/index.ts",
-          "sha256": "04a05024a10cfa630d9dc843b465cfc37a80f6dcb7861418351cb4b28870c155"
-        },
-        {
           "path": "components/toggle-button/toggle.tsx",
           "sha256": "308c3c9abb39d85ab28d1087c622fe7f863a68af08c54bc823497ef5ee2d8130"
         },

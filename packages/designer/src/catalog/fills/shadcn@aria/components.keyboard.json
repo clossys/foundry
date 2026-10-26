@@ -66,10 +66,6 @@
           "sha256": "d3753f708b15cc1ec47bc3136827134b702e2069eebdb0ddefb1806b95d7c1d9"
         },
         {
-          "path": "components/keyboard/index.ts",
-          "sha256": "c1d70c46c5d8c3fe40f29db929f9d2183d2497e30796c45e2a5ec9eb4fae8790"
-        },
-        {
           "path": "components/keyboard/kbd.tsx",
           "sha256": "ff538cdfb8b11478377d5cc43c0a07f59814964beb6fde574b7d8592e0f21ee6"
         },

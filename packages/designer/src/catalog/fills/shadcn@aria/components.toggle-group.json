@@ -84,10 +84,6 @@
           "sha256": "d3753f708b15cc1ec47bc3136827134b702e2069eebdb0ddefb1806b95d7c1d9"
         },
         {
-          "path": "components/toggle-group/index.ts",
-          "sha256": "0c18ed85d00da94030c564a3658be1eb9d3bb6d1687aa21d44ede9f6d92068e9"
-        },
-        {
           "path": "components/toggle-group/toggle-group.tsx",
           "sha256": "56f69f2968acbd448637ea5c84cc6d4808563231e6b9825c380bcb82a9e24fb9"
         },
