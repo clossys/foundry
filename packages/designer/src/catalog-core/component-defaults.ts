@@ -10,6 +10,7 @@ import type { ComponentCheckInput, ComponentFinding } from "./check-components.j
 import type { ComponentCandidate, ComponentCatalog } from "./resolve-components.js";
 import type { LibraryDecision } from "./library-decisions.js";
 import type { SourceBundle } from "./changeset-components.js";
+import { isSelectableComponentSource, NON_SELECTABLE_SOURCE_REASON } from "./component-sources.js";
 
 export interface ComponentDefaultsInput {
   catalog: ComponentCatalog;
@@ -85,6 +86,7 @@ export function planComponentDefaults(input: ComponentDefaultsInput): ComponentD
     for (const source of fallback && !order.includes(fallback) ? [...order, fallback] : order) {
       const doc = docs.find(candidate => candidate.$extensions["com.clossys.fill"].source === source);
       if (!doc) { if (basis !== "preference" || source === fallback) why.push(`${source}: no implementation candidate`); continue; }
+      if (!isSelectableComponentSource(source)) { why.push(`${source}: ${NON_SELECTABLE_SOURCE_REASON}`); continue; }
       const fill = componentOf(doc);
       if (fill.blockers?.length) { why.push(`${source}: blocked ${unique(fill.blockers.map(blocker => blocker.code)).join(",")}`); continue; }
       if (!bundled(fill)) { why.push(`${source}: no verified source bundle`); continue; }

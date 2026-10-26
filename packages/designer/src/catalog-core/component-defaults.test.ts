@@ -65,9 +65,10 @@ const EXPECTED_DEFAULTS = {
   menu: "foundry", meter: "foundry", "native-action": "foundry", "navigation-tree": "foundry", popover: "foundry", "progress-bar": "foundry", "radio-group": "foundry",
   "resize-handle": "foundry", "search-field": "foundry", select: "foundry", "semantic-content": "foundry", separator: "shadcn@aria", skeleton: "foundry",
   spinner: "foundry", "status-mark": "foundry", switch: "foundry", table: "foundry", tabs: "foundry", "text-field": "foundry", toast: "foundry", "toggle-button": "foundry",
-  toolbar: "rac-starter", tooltip: "shadcn@aria",
+  tooltip: "shadcn@aria",
 };
-const NOT_CHOSEN = ["color-picker", "number-field", "slider", "tag-group", "toggle-group", "tree"];
+/** Toolbar was the one rac-starter default; rac-starter is not a selectable component source (owner rule 2026-10-26). */
+const NOT_CHOSEN = ["color-picker", "number-field", "slider", "tag-group", "toggle-group", "toolbar", "tree"];
 const reasons = (plan: ReturnType<typeof planComponentDefaults>, leaf: string) => plan.rows.find(row => row.slot === `components.${leaf}`)!.reasons.join(" || ");
 
 describe("component default fills", () => {
@@ -93,7 +94,26 @@ describe("component default fills", () => {
     expect(plan.rows.find(row => row.slot === "components.table")).toMatchObject({ status: "default", basis: "owner-pick", source: "foundry", fill: "foundry/components.table", reasons: [] });
     expect(reasons(plan, "slider")).toBe("controls coherence: one source per group, led by foundry; shadcn@aria would mix sources");
     expect(plan.rows.find(row => row.slot === "components.date-picker")).toMatchObject({ status: "default", basis: "rule", rule: "compose:date-picker@1", reasons: [] });
-    expect(reasons(plan, "tree")).toBe("foundry: blocked K5 || rac-starter: blocked K4");
+    expect(reasons(plan, "tree")).toBe("foundry: blocked K5 || rac-starter: not a selectable component source (shadcn-on-aria, foundry or consumer-authored only)");
+    expect(reasons(plan, "toolbar")).toBe("foundry: blocked K5 || rac-starter: not a selectable component source (shadcn-on-aria, foundry or consumer-authored only)");
+  });
+  it("never offers or defaults a rac-starter fill, whether preferred, owner-picked or chosen (real catalog)", () => {
+    const { input } = setup();
+    const starterSlots = input.catalog.fills.filter(doc => doc.$extensions["com.clossys.fill"].source === "rac-starter").map(doc => doc.$extensions["com.clossys.fill"].slot);
+    expect(starterSlots.length).toBeGreaterThan(0);
+    const plan = planComponentDefaults(input);
+    expect(plan.rows.filter(row => row.source === "rac-starter")).toEqual([]);
+    expect(plan.rows.filter(row => row.status !== "not-chosen")).toHaveLength(52);
+    expect(plan.rows).toHaveLength(59);
+    const forced = Object.fromEntries(starterSlots.map(slot => [slot, "rac-starter"]));
+    for (const plan of [planComponentDefaults({ ...input, picks: forced }), planComponentDefaults({ ...input, choices: forced })]) {
+      for (const slot of starterSlots) {
+        const row = plan.rows.find(candidate => candidate.slot === slot)!;
+        expect(row.source, slot).not.toBe("rac-starter");
+        expect(row.reasons.join(" || "), slot).toContain("rac-starter: not a selectable component source");
+      }
+      expect(plan.decisions.filter(row => row.kind === "adopt" && row.source === "rac-starter")).toEqual([]);
+    }
   });
   it("emits decisions the existing apply path adopts, and the adopted graph resolves as a closed executable set", () => {
     const { input, values, bundles } = setup();

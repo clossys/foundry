@@ -1,6 +1,7 @@
 import { Icon } from "./Icon.js";
 import { useGlyph } from "./glyph-context.js";
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
+import { ChevronDown } from "../icons/ChevronDown.js";
 import {
   Button as AriaButton,
   Disclosure as AriaDisclosure,
@@ -111,4 +112,49 @@ function DisclosureGroup({ children, className, ...rest }: DisclosureGroupProps)
   );
 }
 
-export const Disclosure = Object.assign(DisclosureRoot, { Group: DisclosureGroup });
+export interface DisclosureRowProps extends Omit<AriaDisclosureProps, "children" | "className" | "style"> {
+  /** The always-visible trigger text; the chevron trails it. */
+  title: ReactNode;
+  /** The panel content, kept in the DOM and hidden until expanded. */
+  children: ReactNode;
+  /** Wraps the trigger in a heading of this level (FAQ outlines); omitted renders the bare trigger. */
+  headingLevel?: 3 | 4;
+  className?: string;
+  style?: CSSProperties;
+  /** Recipe classes for the trigger, the trailing chevron (closed/open) and the panel. */
+  triggerClassName?: string;
+  chevronClassName?: string;
+  chevronOpenClassName?: string;
+  panelClassName?: string;
+}
+
+/**
+ * A full-width disclosure row with a trailing chevron: the FAQ / reveal shape.
+ * Same primitives and semantics as `Disclosure` (`aria-expanded`/`aria-controls`
+ * on the trigger, Enter/Space toggling, panel kept in the DOM); the row's
+ * look comes entirely from the caller's recipe classes, so blocks render a
+ * styled Foundry component rather than raw react-aria primitives.
+ */
+function DisclosureRow({ title, children, headingLevel, className, style, triggerClassName, chevronClassName, chevronOpenClassName, panelClassName, ...rest }: DisclosureRowProps) {
+  const Heading = headingLevel === 4 ? "h4" : "h3";
+  return (
+    <AriaDisclosure {...rest} className={className} style={style}>
+      {({ isExpanded }) => {
+        const trigger = (
+          <AriaButton slot="trigger" className={triggerClassName}>
+            {title}
+            <Icon glyph={ChevronDown} decorative size="md" className={cx(chevronClassName, isExpanded ? chevronOpenClassName : undefined)} />
+          </AriaButton>
+        );
+        return (
+          <>
+            {headingLevel === undefined ? trigger : <Heading className="m-0">{trigger}</Heading>}
+            <AriaDisclosurePanel className={panelClassName}>{children}</AriaDisclosurePanel>
+          </>
+        );
+      }}
+    </AriaDisclosure>
+  );
+}
+
+export const Disclosure = Object.assign(DisclosureRoot, { Group: DisclosureGroup, Row: DisclosureRow });
