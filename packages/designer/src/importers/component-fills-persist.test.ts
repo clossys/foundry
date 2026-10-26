@@ -33,13 +33,13 @@ function thirdPartyExports(files: readonly ComponentFile[]): Record<string, stri
   return Object.fromEntries(Object.entries(exports).map(([module, names]) => [module, [...names].sort()]));
 }
 function fillId(doc: ComponentCandidateDocument): string { return doc.$extensions["com.clossys.fill"].id; }
-function persistOne(doc: ComponentCandidateDocument, owned?: readonly ComponentFile[]): void {
+function persistOne(doc: ComponentCandidateDocument, owned?: readonly ComponentFile[]): ComponentFile[] {
   const descriptor = Object.values(doc.components)[0]!;
-  if (descriptor.impl.kind === "composed") return;
-  persistDescriptor(fillId(doc), descriptor, owned ?? (descriptor.impl.kind === "source" ? outputs.get(fillId(doc)) ?? [] : []));
+  if (descriptor.impl.kind === "composed") return [];
+  return persistDescriptor(fillId(doc), descriptor, owned ?? (descriptor.impl.kind === "source" ? outputs.get(fillId(doc)) ?? [] : []));
 }
 // A composition rule persists its template against the rule's own materialized files.
-function persistDescriptor(fill: string, descriptor: ComponentCandidate, files: readonly ComponentFile[]): void {
+function persistDescriptor(fill: string, descriptor: ComponentCandidate, files: readonly ComponentFile[]): ComponentFile[] {
   if (descriptor.impl.kind === "composed") throw new Error(`composed descriptor reached persist for ${fill}`);
   if (descriptor.impl.kind === "source" && !files.length) throw new Error(`no materialized output for ${fill}`);
   const component: ResolvedComponent = {
@@ -54,7 +54,7 @@ function persistDescriptor(fill: string, descriptor: ComponentCandidate, files: 
     check: { ok: true, findings: [] } as unknown as ResolvedComponents["check"],
     packageExports: { ...thirdPartyExports(files), ...designerExports },
   };
-  emitComponents(profile, ["component-index"], { glyphModule: { path: "assets/glyphs.ts", glyphs: {} } });
+  return emitComponents(profile, ["component-index"], { glyphModule: { path: "assets/glyphs.ts", glyphs: {} } });
 }
 
 // The propMap refusals: parseBinding's pointer grammar and the generated adapter's member dispatch.
@@ -201,6 +201,22 @@ describe("pack check: every registered composition template persists", () => {
     for (const [member, pointer] of Object.entries(rule.template.propMap)) expect(() => componentMemberBinding(component, member, pointer), `${rule.slot}.${member} = ${pointer}`).not.toThrow();
     expect(Object.keys(rule.template.propMap).sort()).toEqual([...rule.template.members].sort());
     expect(persistThrows([doc(rule)], () => rule.files).filter(message => PROPMAP_REFUSAL.test(message))).toEqual([]);
+  });
+});
+
+describe("pack check: the asset Icon adapter persists with no asset-reading leaf selected", () => {
+  // The Icon leaf always imports the consumer glyph module, so selecting Icon is what requires that module,
+  // whether or not any other selected leaf reads an asset. This is not an isolation artifact: it is the
+  // whole library of a consumer that selects Icon and nothing that reads an asset.
+  const byId = (id: string) => bundles.componentFills.find(doc => fillId(doc) === id)!;
+  it("emits the glyph module the Icon leaf imports, and no glyph provider", () => {
+    const files = persistOne(byId("foundry/components.icon"));
+    expect(files.find(file => file.path === "components/icon/index.ts")!.content).toContain('from "../../assets/glyphs.js"');
+    expect(files.find(file => file.path === "assets/glyphs.ts")!.content).toBe("export const glyphs = {} as const;\n");
+    expect(files.find(file => file.path === "component-index.ts")!.content).not.toContain("GlyphProvider");
+  });
+  it("emits no glyph module for a library without Icon whose leaves read no asset", () => {
+    expect(persistOne(byId("foundry/components.button")).map(file => file.path)).not.toContain("assets/glyphs.ts");
   });
 });
 

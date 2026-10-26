@@ -5,6 +5,7 @@ import { applyLibraryChange, check, emit, generateSelection, libraryHash, parseF
 
 import { applyCompositeLibraryChange, compositeLibraryHash, checkComposite, resolveComposite, emitComposite } from "../catalog-core/library-components.js";
 import { assertComponentFiles, componentOf, type ComponentDocument } from "../catalog-core/resolve-components.js";
+import { emitsGlyphModule } from "../catalog-core/emit-components.js";
 import type { CompositeCatalogData, CompositeLibraryData, CompositeChangeSet, CompositeCheckResult, CompositeEmitTarget, CompositeEngineInput } from "../catalog-core/types.js";
 
 import { canonicalSurfacePortion, isSurfacePackageEntry, surfaceEntryOf, surfaceOutputs, surfaceSelection, verifySurfaceFiles } from "../catalog-core/surface-library.js";
@@ -460,7 +461,7 @@ function projectionManagedPaths(catalog:CompositeCatalogData,library:CompositeLi
   for(const doc of library.components.fills){const fill=componentOf(doc);paths.add(`fills/${fill.slot}.json`);paths.add(`components/${fill.slot.slice(11)}/index.ts`);}
   for(const file of library.components.files)paths.add(file.path);
   for(const path of ["component-index.ts","components-consumption.json","notices/components.json"])paths.add(path);
-  if(library.components.fills.some(doc=>componentOf(doc).reads.assets.length))paths.add("adapters/glyphs.ts");
+  if(emitsGlyphModule(library.components.fills.map(componentOf)))paths.add("adapters/glyphs.ts");
   if(library.surfaces!==undefined){const portion=canonicalSurfacePortion(library.surfaces);for(const doc of portion.fills){const fill=surfaceEntryOf(doc);ownedSurfacePaths(fill,portion.files);paths.add(`fills/${fill.slot}.json`);paths.add(fill.slot.replace(".","/")+"/index.ts");}for(const file of portion.files)paths.add(file.path);for(const path of ["surface-index.ts","surface-selection.json","surfaces-consumption.json","notices/surfaces.json"])paths.add(path);}
   return new Map([...paths].map(path=>[path,""]));
 }
