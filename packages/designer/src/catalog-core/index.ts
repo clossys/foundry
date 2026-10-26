@@ -169,6 +169,8 @@ export { importFoundryComponents } from "../importers/foundry-components.js";
 export type { FoundryComponentImportInput, FoundryComponentImport, FoundryComponentCoverage, FoundryComponentFillDoc } from "../importers/foundry-components.js";
 
 export { loadComponentCompositionRules } from "./component-compositions.js";
+export { planComponentDefaults } from "./component-defaults.js";
+export type { ComponentDefaultsInput, ComponentDefaultsPlan, ComponentDefaultRow, ComponentDefaultBasis } from "./component-defaults.js";
 
 export { materializeSurfaceSourceFill } from "./surface-materialize.js";
 export type { SurfaceSlot, SurfaceFile, SurfaceFileHash, SurfacePin, SurfaceApi, SurfacePropBinding, SurfaceLiteralBinding, SurfaceConfig, SurfaceComponentBinding, SurfaceDependency, SurfaceBase, SurfaceInputRef, SurfaceInputIdentity, SurfaceRuleIdentity, SurfaceOrigin, SurfaceEntryBase, SurfaceSectionEntry, SurfaceFrameEntry, SurfaceCandidate, SurfaceCandidateDocument, SurfaceDocument, SurfaceLibraryPortion, SurfacePackageEvidence, SurfaceCommandReceipt, SurfaceMeasurement, SurfaceResolutionOptions, SurfaceApplyOptions, SurfaceFinding, SurfaceCheckResult, SurfaceResolvedFill, SurfaceResolved, SurfaceOperation, SurfaceTransformResult, SurfaceTransform, SurfaceRule, SurfaceCatalog, SurfaceFetchPort, SurfaceMaterializationInput, SurfaceSourceBundle, SurfaceSelection, SurfaceEmitTarget, SurfaceRuntimeIdentity, SurfaceMaterializationReceipt } from "./surface-types.js";
