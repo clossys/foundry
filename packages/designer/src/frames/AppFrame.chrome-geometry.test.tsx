@@ -74,3 +74,10 @@ it("sizes the header row from its own content, with no inline measured block siz
   render(<AppFrame {...props}><p>Page</p></AppFrame>);
   expect(document.querySelector<HTMLElement>('[data-application-frame-region="header"]')!.style.minBlockSize).toBe("");
 });
+
+it("stacks main content children on the lg spacing token so a banner never touches the content below it", () => {
+  render(<AppFrame {...props}><div role="status">Banner</div><section aria-label="Cards">Cards</section></AppFrame>);
+  const main = screen.getByRole("main");
+  expect(main).toHaveClass("flex", "flex-col", "gap-lg");
+  expect(main.style.gap).toBe("");
+});
