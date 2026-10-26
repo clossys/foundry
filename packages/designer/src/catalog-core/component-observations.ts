@@ -78,6 +78,41 @@ function callSites(fill: ComponentCandidate, byslot: ReadonlyMap<string, Compone
   return calls;
 }
 
+const posixJoin = (from: string, relative: string): string => {
+  const out = from.split("/").slice(0, -1);
+  for (const part of relative.split("/")) { if (part === "..") out.pop(); else if (part !== "." && part !== "") out.push(part); }
+  return out.join("/");
+};
+/**
+ * The file that defines `name`, starting from `paths` (candidate module files, repo-relative posix).
+ * An `export function|const|class name`, a local `export { name }` list or an
+ * `export { name } from "react-aria-components"` passthrough defines it; a relative
+ * `export { name } from "./x.js"` re-export is followed, through renames (`a as name`) and
+ * chained re-exports, to the file that declares it, never to the shim. Unresolvable, missing
+ * or cyclic re-exports give `undefined`, so the slot stays unobserved.
+ */
+export function exportSource(read: (path: string) => string | undefined, paths: readonly string[], name: string, seen: ReadonlySet<string> = new Set()): ComponentSourceFile[] | undefined {
+  for (const path of paths) {
+    if (seen.has(path)) continue;
+    const content = read(path);
+    if (content === undefined) continue;
+    if (new RegExp(`export\\s+(?:function|const|class)\\s+${name}\\b`).test(content)) return [{ path, content }];
+    for (const match of content.matchAll(/export\s*\{([^}]+)\}(?:\s*from\s*["']([^"']+)["'])?/g)) {
+      for (const binding of match[1]!.split(",")) {
+        const [imported, exported = imported] = binding.trim().split(/\s+as\s+/).map(part => part.trim());
+        if (exported !== name || !imported) continue;
+        const specifier = match[2];
+        if (specifier === undefined || specifier === "react-aria-components") return [{ path, content }];
+        if (!specifier.startsWith(".")) continue;
+        const stem = posixJoin(path, specifier).replace(/\.[jt]sx?$/, "");
+        const found = exportSource(read, [`${stem}.tsx`, `${stem}.ts`], imported, new Set([...seen, path]));
+        if (found) return found;
+      }
+    }
+  }
+  return undefined;
+}
+
 export function observeComponentSources(input: ComponentObservationInput): ComponentObservationResult {
   const tokensHash = componentTokensHash(input.tokens);
   const slots = new Map(input.slots.map(slot => [slot.id, slot]));
