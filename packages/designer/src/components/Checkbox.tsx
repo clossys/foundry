@@ -66,7 +66,7 @@ export function Checkbox({ children, className, style, ...rest }: CheckboxProps)
             className={cx(
               BOX_BASE,
               renderProps.isSelected || renderProps.isIndeterminate
-                ? "border-accent bg-accent text-ink-on-accent"
+                ? "border-action bg-action text-ink-on-action"
                 : "border-line-base bg-surface-raised",
               renderProps.isInvalid ? "border-status-danger" : "",
             )}

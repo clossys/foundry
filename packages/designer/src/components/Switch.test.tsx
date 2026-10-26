@@ -67,4 +67,12 @@ describe("Switch", () => {
     rerender(<Switch isSelected>Email notifications</Switch>);
     expect(screen.getByRole("switch", { name: "Email notifications" })).toBeChecked();
   });
+
+  it("C12: the on track binds action-color (ink), never the accent", () => {
+    const { container } = render(<Switch isSelected onChange={() => {}}>Email notifications</Switch>);
+    const track = container.querySelector('[data-part="switch-track"]')!;
+    expect(track.classList).toContain("border-action");
+    expect(track.classList).toContain("bg-action");
+    expect(track.className).not.toMatch(/\b(?:bg|border)-accent\b/);
+  });
 });

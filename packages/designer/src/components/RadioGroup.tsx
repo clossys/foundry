@@ -124,7 +124,7 @@ function RadioGroupRadio({ children, description, className, ...rest }: RadioGro
             aria-hidden="true"
             className={cx(
               DOT_BASE,
-              renderProps.isSelected ? "border-accent" : "border-line-base bg-surface-raised",
+              renderProps.isSelected ? "border-action" : "border-line-base bg-surface-raised",
               renderProps.isInvalid ? "border-status-danger" : "",
             )}
             style={{
@@ -132,7 +132,7 @@ function RadioGroupRadio({ children, description, className, ...rest }: RadioGro
               boxShadow: renderProps.isFocusVisible ? UI_RING_FOCUS : undefined,
             }}
           >
-            {renderProps.isSelected ? <span className="h-2 w-2 rounded-pill bg-accent" /> : null}
+            {renderProps.isSelected ? <span className="h-2 w-2 rounded-pill bg-action" /> : null}
           </span>
           <span className="flex flex-col">
             <span>{children}</span>

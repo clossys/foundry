@@ -130,4 +130,13 @@ describe("RadioGroup", () => {
     expect(wrapper.className).toContain("gap-lg");
     expect(wrapper.className).not.toContain("gap-xs");
   });
+
+  it("C12: the selected ring and dot bind action-color (ink), never the accent", () => {
+    render(<BasicGroup value="express" onChange={() => {}} />);
+    const label = screen.getByRole("radio", { name: "Express" }).closest("label")!;
+    const ring = label.querySelector('span[aria-hidden="true"]')!;
+    expect(ring.classList).toContain("border-action");
+    expect(ring.querySelector("span")!.classList).toContain("bg-action");
+    expect(label.innerHTML).not.toMatch(/\b(?:bg|border)-accent\b/);
+  });
 });

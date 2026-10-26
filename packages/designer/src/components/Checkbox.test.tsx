@@ -86,4 +86,14 @@ describe("Checkbox", () => {
     expect(checkbox.checked).toBe(false);
     expect(checkbox.indeterminate).toBe(true);
   });
+
+  it("C12: the checked and indeterminate mark binds action-color (ink), never the accent", () => {
+    const { container, rerender } = render(<Checkbox isSelected onChange={() => {}}>Select all</Checkbox>);
+    const mark = () => container.querySelector('[data-part="control-mark"]')!;
+    for (const name of ["border-action", "bg-action", "text-ink-on-action"]) expect(mark().classList).toContain(name);
+    expect(mark().className).not.toMatch(/\b(?:bg|border|text-ink-on)-accent\b/);
+    rerender(<Checkbox isIndeterminate>Select all</Checkbox>);
+    expect(mark().classList).toContain("bg-action");
+    expect(mark().className).not.toMatch(/\bbg-accent\b/);
+  });
 });
