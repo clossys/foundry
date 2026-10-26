@@ -64,11 +64,11 @@ const EXPECTED_DEFAULTS = {
   field: "foundry", "file-trigger": "foundry", form: "foundry", icon: "foundry", keyboard: "shadcn@aria", link: "foundry", logo: "foundry",
   meter: "foundry", "native-action": "foundry", "navigation-tree": "foundry", "progress-bar": "foundry", "radio-group": "foundry",
   "resize-handle": "foundry", "search-field": "foundry", "semantic-content": "foundry", separator: "shadcn@aria", skeleton: "foundry",
-  spinner: "foundry", "status-mark": "foundry", switch: "foundry", "text-field": "foundry", toast: "foundry", toolbar: "rac-starter",
-  tooltip: "shadcn@aria",
+  spinner: "foundry", "status-mark": "foundry", switch: "foundry", "text-field": "foundry", toast: "foundry", "toggle-button": "foundry",
+  toolbar: "rac-starter", tooltip: "shadcn@aria",
 };
 const NOT_CHOSEN = ["calendar", "chart-sparkline", "checkbox", "color-picker", "date-picker", "dialog", "disclosure", "grid-list", "menu",
-  "number-field", "popover", "select", "slider", "table", "tabs", "tag-group", "toggle-button", "toggle-group", "tree"];
+  "number-field", "popover", "select", "slider", "table", "tabs", "tag-group", "toggle-group", "tree"];
 const reasons = (plan: ReturnType<typeof planComponentDefaults>, leaf: string) => plan.rows.find(row => row.slot === `components.${leaf}`)!.reasons.join(" || ");
 
 describe("component default fills", () => {
@@ -131,7 +131,7 @@ describe("component default fills", () => {
     expect(reasons(plan, "checkbox")).toContain("foundry: K1 Required member scope.group is not mapped");
     expect(reasons(plan, "tree")).toContain("foundry: blocked K5");
     expect(reasons(plan, "calendar")).toContain("foundry: no implementation candidate");
-    expect(reasons(plan, "toggle-button")).toContain("foundry: no implementation candidate");
+    expect(plan.rows.find(row => row.slot === "components.toggle-button")).toMatchObject({ status: "default", basis: "preference", source: "foundry", fill: "foundry/components.toggle-button" });
   });
   it("the fallback is scoped to its listed leaves", () => {
     const { input } = setup({ fallback: { source: "foundry", slots: FALLBACK.slots.filter(slot => slot !== "components.card") } });

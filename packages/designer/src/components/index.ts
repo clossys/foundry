@@ -215,7 +215,7 @@ export type { NavigationTreeProps, NavigationTreeItemProps, NavigationTreeItemCo
 export { ToggleGroup, ToggleGroupItem } from "./ToggleGroup.js";
 export type { ToggleGroupProps, ToggleGroupItemProps } from "./ToggleGroup.js";
 export { ToggleButton } from "./ToggleButton.js";
-export type { ToggleButtonProps } from "./ToggleButton.js";
+export type { ToggleButtonProps, ToggleButtonShape } from "./ToggleButton.js";
 
 export { CanvasZoom } from "./CanvasZoom.js";
 export type { CanvasZoomProps } from "./CanvasZoom.js";
