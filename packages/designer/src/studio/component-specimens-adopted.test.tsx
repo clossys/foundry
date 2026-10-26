@@ -2,6 +2,7 @@ import { createRequire } from "node:module";
 import { execFileSync } from "node:child_process";
 import { expect, it, vi } from "vitest";
 import { renderToString } from "react-dom/server";
+import { cleanup, render, within } from "@testing-library/react";
 import * as components from "../components/index.js";
 import * as charts from "../charts/index.js";
 import * as shell from "../shell/index.js";
@@ -112,12 +113,27 @@ it("binds and server-renders every adopted shadcn@aria leaf from its vendored so
   }
   const bad = Object.fromEntries(Object.entries(outcome).filter(([, state]) => state !== "live" && !state.startsWith("unavailable:")));
   expect(bad).toEqual({});
-  // Only the overlay surfaces that open from the host's own trigger stay unavailable, each with that named reason.
-  expect(Object.entries(outcome).filter(([, state]) => state !== "live")).toEqual(["dialog", "menu", "popover", "tooltip"].map(name => [`components.${name}`, "unavailable:needs-host-trigger"]));
+  // Only the modal-only overlays stay unavailable, each with its named reason.
+  expect(Object.entries(outcome).filter(([, state]) => state !== "live")).toEqual(["dialog", "menu"].map(name => [`components.${name}`, "unavailable:needs-host-trigger"]));
   // Compound leaves draw the designer sample through their own vendored parts, not the leaf label.
   for (const [leaf, text] of [["components.tabs", "Summary content"], ["components.breadcrumbs", "Overview"], ["components.disclosure", "Returns"], ["components.radio-group", "Yearly"], ["components.card", "Card title"]] as const) {
     expect(renderToString(<>{specimens.preview(leaf, leaves.find(entry => entry.leaf === leaf)!.profile)}</>), leaf).toContain(text);
   }
   expect(errors.mock.calls.map(call => String(call[0])).filter(message => /NaN/.test(message))).toEqual([]);
+  errors.mockRestore();
+}, 120_000);
+
+it("draws the non-modal shadcn@aria overlays open in the browser, inside the specimen cell", async () => {
+  const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+  const { leaves, modules } = adoptedShadcnLeaves();
+  const specimens = componentSpecimenPreview({ modules: { ...hostModules, ...modules } });
+  for (const [leaf, text, slot] of [["components.popover", "Popover content", "popover-content"], ["components.tooltip", "Tooltip content", "tooltip-content"]] as const) {
+    const { container } = render(<>{specimens.preview(leaf, leaves.find(entry => entry.leaf === leaf)!.profile)}</>);
+    const host = container.querySelector("[data-specimen-overlay-host]")!;
+    expect(await within(host as HTMLElement).findByText(text), leaf).toBeTruthy();
+    expect(host.querySelector(`[data-slot="${slot}"]`), leaf).not.toBeNull();
+    expect(container.querySelector("[data-specimen-error]"), leaf).toBeNull();
+    cleanup();
+  }
   errors.mockRestore();
 }, 120_000);
