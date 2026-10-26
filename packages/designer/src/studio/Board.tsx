@@ -14,6 +14,13 @@ import type { MatrixBoard } from "./matrix-model.js";
 import type { StudioCandidateWorkflow } from "./types.js";
 import { activeCandidateSource } from "./candidate-display.js";
 import { valueBoardPrompt } from "./prepared-library-boards.js";
+import { CompactPreview } from "./previews.js";
+
+/**
+ * One fixed-shape plate per row so chosen and unchosen rows line up. It shows the specimen alone:
+ * member values and notes are caption-sized text the compact tier cannot keep legible.
+ */
+const COMPACT_PLATE = "flex shrink-0 min-h-[var(--ui-control-h-lg)] min-w-[var(--ui-control-h-lg)] items-center justify-center rounded-control border border-line-base bg-surface-raised p-sm [&_[data-member-value]]:hidden [&_[data-preview-note]]:hidden";
 
 /** Self-contained placement group: its title and complete library matrix. */
 export const Board = memo(function Board({ board, boardRef, summary, onOpen, workflow, contextTokens = [], variants, ...matrix }: Omit<ComponentProps<typeof Matrix>, "rows"> & { board: MatrixBoard; boardRef: Ref<HTMLElement>; summary?: { errors: number; warnings: number; sources: readonly string[] }; onOpen?: () => void; workflow?: StudioCandidateWorkflow; contextTokens?: readonly { id: string; value: string }[]; variants?: Readonly<Record<string, readonly string[]>> }): ReactElement {
@@ -38,11 +45,12 @@ export const Board = memo(function Board({ board, boardRef, summary, onOpen, wor
         <Table.Cell><span ref={element => { matrix.onRowElement?.(row.id, element?.closest("tr") ?? null); }}>{row.label}</span></Table.Cell><Table.Cell>{active ? <CandidateCell candidate={active} labels={matrix.labels} /> : <LeafCell className={LIBRARY_COLUMN_FLOW} style={LIBRARY_COLUMN_BOUND} status={text.notChosen} actions={<><Button variant="ghost" size="sm" onPress={edit}>{text.choose}</Button><CandidatePromptDialog trigger={<Button variant="ghost" size="sm">{text.askAgent}</Button>} data={promptData(row)} labels={matrix.labels} workflow={workflow} /></>} />}</Table.Cell>
       </Table.Row>; })}</Table.Body>
     </Table>}</div>}
-    // Compact: each row's name and chosen library, legible at text-h0.
+    // Compact: per L3 row a miniature of its chosen specimen beside its name and library, legible at text-h0.
     compact={summary ? <div data-studio-zoom-compact="" className="flex flex-col gap-md text-h0">
       <p className="break-words text-ink-secondary">{matrix.labels.checkSummary(summary.errors, summary.warnings)}</p>
-      <ul className="flex flex-col gap-sm">{rows.map(row => { const source = activeCandidateSource(row.candidates); return <li key={row.id} className="break-words">
-        <span className="text-ink-primary">{row.label}</span> <span className={source ? "text-ink-secondary" : "text-ink-muted"}>{source ?? text.notChosen}</span>
+      <ul className="flex flex-col gap-md">{rows.map(row => { const active = row.candidates.find(candidate => candidate.selected), source = activeCandidateSource(row.candidates); return <li key={row.id} data-studio-compact-specimen={row.id} className="flex min-w-0 items-center gap-md">
+        <div data-compact-plate="" aria-hidden className={COMPACT_PLATE}>{active ? <CompactPreview candidate={active} labels={matrix.labels} /> : null}</div>
+        <p className="min-w-0 break-words"><span className="text-ink-primary">{row.label}</span> <span className={source ? "text-ink-secondary" : "text-ink-muted"}>{source ?? text.notChosen}</span></p>
       </li>; })}</ul>
     </div> : undefined}
     // Overview: the board name, its check summary and the only Open action.
