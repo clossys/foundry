@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import componentSlots from "../catalog/slots/components.json" with { type: "json" };
 import { loadCatalogBundles } from "../catalog-bundles.js";
+import { loadComponentCompositionRules } from "../catalog-core/component-compositions.js";
 import { componentMemberBinding, emitComponents } from "../catalog-core/emit-components.js";
 import { componentDescriptorHash } from "../catalog-core/resolve-components.js";
 import type { ComponentCandidateDocument, ComponentFile, ResolvedComponent, ResolvedComponents } from "../catalog-core/resolve-components.js";
@@ -32,10 +33,10 @@ function thirdPartyExports(files: readonly ComponentFile[]): Record<string, stri
   return Object.fromEntries(Object.entries(exports).map(([module, names]) => [module, [...names].sort()]));
 }
 function fillId(doc: ComponentCandidateDocument): string { return doc.$extensions["com.clossys.fill"].id; }
-function persistOne(doc: ComponentCandidateDocument): void {
+function persistOne(doc: ComponentCandidateDocument, owned?: readonly ComponentFile[]): void {
   const descriptor = Object.values(doc.components)[0]!;
   if (descriptor.impl.kind === "composed") return;
-  const files = descriptor.impl.kind === "source" ? outputs.get(fillId(doc)) ?? [] : [];
+  const files = owned ?? (descriptor.impl.kind === "source" ? outputs.get(fillId(doc)) ?? [] : []);
   if (descriptor.impl.kind === "source" && !files.length) throw new Error(`no materialized output for ${fillId(doc)}`);
   const component: ResolvedComponent = {
     slot: descriptor.slot, originKind: "adopted",
@@ -54,8 +55,8 @@ function persistOne(doc: ComponentCandidateDocument): void {
 
 // The propMap refusals: parseBinding's pointer grammar and the generated adapter's member dispatch.
 const PROPMAP_REFUSAL = /components: (?:unsupported propMap|unsupported member dispatch|unavailable package export) /;
-function persistThrows(docs: readonly ComponentCandidateDocument[]): string[] {
-  return docs.flatMap(doc => { try { persistOne(doc); return []; } catch (error) { return [`${fillId(doc)}: ${(error as Error).message}`]; } });
+function persistThrows(docs: readonly ComponentCandidateDocument[], owned?: (doc: ComponentCandidateDocument) => readonly ComponentFile[]): string[] {
+  return docs.flatMap(doc => { try { persistOne(doc, owned?.(doc)); return []; } catch (error) { return [`${fillId(doc)}: ${(error as Error).message}`]; } });
 }
 
 describe("pack check: every selectable component fill persists", () => {
@@ -81,5 +82,20 @@ describe("pack check: every selectable component fill persists", () => {
     const committed = JSON.parse(readFileSync(resolve(import.meta.dirname, `../catalog/fills/shadcn@aria/${descriptor.slot}.json`), "utf8")) as ComponentCandidateDocument;
     expect(Object.values(committed.components)[0]!.propMap).toEqual(descriptor.propMap);
     expect(committed.$extensions["com.clossys.fill"].unmapped).toEqual(meta.unmapped);
+  });
+});
+
+describe("pack check: every registered composition template persists", () => {
+  // A rule template is not a bundled fill: its owned bytes are the rule's files, and its pointers bind into its own entry.
+  const rules = loadComponentCompositionRules();
+  const doc = (rule: (typeof rules)[number]) => ({ $extensions: { "com.clossys.fill": { id: `${rule.template.source}/${rule.slot}`, source: rule.template.source, slot: rule.slot } }, components: { [rule.slot.slice(11)]: rule.template } }) as unknown as ComponentCandidateDocument;
+  it("covers every registered composition", () => {
+    expect(rules.map(rule => rule.slot)).toEqual(["components.date-picker", "components.file-trigger"]);
+  });
+  it.each(rules.map(rule => [rule.slot, rule] as const))("%s: every composed propMap value is a pointer the persist emitter accepts", (_slot, rule) => {
+    const component = { slot: rule.slot, impl: rule.template.impl, descriptor: rule.template } as unknown as ResolvedComponent;
+    for (const [member, pointer] of Object.entries(rule.template.propMap)) expect(() => componentMemberBinding(component, member, pointer), `${rule.slot}.${member} = ${pointer}`).not.toThrow();
+    expect(Object.keys(rule.template.propMap).sort()).toEqual([...rule.template.members].sort());
+    expect(persistThrows([doc(rule)], () => rule.files).filter(message => PROPMAP_REFUSAL.test(message))).toEqual([]);
   });
 });

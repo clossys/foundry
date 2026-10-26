@@ -53,9 +53,9 @@ export interface ShadcnComposedFillDoc {
   components: Readonly<Record<string, ComponentCheckFill>>;
 }
 interface RegisteredComposeRule { id: string; kind: string; slot: string; inputs: readonly string[]; files: readonly SourceFile[] }
-/** Owned wiring for a composed leaf; the rule file under catalog/rules carries its bytes. */
+/** Owned wiring for a composed leaf; the rule file under catalog/rules carries its bytes. Single-axis members are served by the bare root export (pointer-only, no dispatch). */
 const SHADCN_COMPOSED_TEMPLATES: Readonly<Record<string, { rule: RegisteredComposeRule; export: string; members: Readonly<Record<string, string>>; props: readonly string[] }>> = {
-  "file-trigger": { rule: fileTriggerRule, export: "FileTrigger", members: { accept: "FileTrigger.acceptedFileTypes", directory: "FileTrigger.acceptDirectory", multiple: "FileTrigger.allowsMultiple" }, props: ["label", "acceptedFileTypes", "allowsMultiple", "acceptDirectory", "defaultCamera", "onSelect"] },
+  "file-trigger": { rule: fileTriggerRule, export: "FileTrigger", members: { accept: "FileTrigger", directory: "FileTrigger", multiple: "FileTrigger" }, props: ["label", "acceptedFileTypes", "allowsMultiple", "acceptDirectory", "defaultCamera", "onSelect"] },
 };
 function composedTemplate(row: ShadcnComposeReceipt, slot: ComponentSlot): ShadcnComposedFillDoc | undefined {
   const template = SHADCN_COMPOSED_TEMPLATES[row.leaf];
