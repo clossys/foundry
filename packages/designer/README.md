@@ -194,7 +194,7 @@ and its exception list can only shrink.
   `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `SectionFrame`,
   `MarketingChapter`, `FeatureGrid`, `Item`, `Items`, `Tree`, `AnatomyCallouts`, `RecordLedger`, `Scene`, `Matrix`,
   `Specimen`, `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`,
-  `PricingTable`, `Testimonial`, `TableOfContents`, `TestimonialSet`, `LogoCloud`, `PeopleGrid`, `ArticleBody`, `ConsentBanner`, `NewsletterBand`, `Panel`, `Drawer`,
+  `PricingTable`, `Testimonial`, `TableOfContents`, `TestimonialSet`, `LogoCloud`, `PeopleGrid`, `ArticleBody`, `ConsentBanner`, `ErrorState`, `StatGroup`, `RecordCards`, `CallToAction`, `NoticeList`, `Gallery`, `NewsletterBand`, `Panel`, `Drawer`,
   `ResizablePane`, `CommandMenu`, `AppNavigation`, `PageBar`, `GroupedTable`, `Lockup`, `Explorer`, `CatalogWorkspace`, `CatalogBrowser`, `Chat`, `ResourceList`, `RelationGraph`, `TaskList` and `EventItem` (see "Blocks" below). Current leaf, group and lifecycle
   counts are derived from the shared catalog in the repository check
   `src/catalog/catalog.coverage.test.ts` (a repository test, not shipped in the installed package).
@@ -466,7 +466,7 @@ source file's own header for the exact probe and its result). Today that's:
 | Subpath | Server-safe members |
 | --- | --- |
 | `@clossys/designer/components/server` | `NativeAction`, `SemanticContent`, `Logomark`, `Avatar`, `Badge`, `Banner`, `Card`, `Field`, `Icon`, `Meter`, `Skeleton`, `Spinner`, `StatusMark`, `buttonLinkClassName`, `iconButtonClassName`, `iconButtonLinkClassName`, `mergeUiClasses` |
-| `@clossys/designer/blocks/server` | `Lockup`, `AnatomyCallouts`, `ArticleBody`, `Matrix`, `ContentSection`, `DetailView`, `EmptyState`, `EventItem`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `Item`, `Items`, `MarketingChapter`, `MediaFigure`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `RecordLedger`, `Scene`, `SectionFrame`, `SectionHeader`, `SectionIntro`, `Specimen`, `SpecimenPanel`, `Stat`, `StatusList`, `TableOfContents`, `TaskList`, `Testimonial`, `TestimonialSet`, `LogoCloud`, `PeopleGrid`, `Tree`, `UsageMeter` |
+| `@clossys/designer/blocks/server` | `Lockup`, `AnatomyCallouts`, `ArticleBody`, `Matrix`, `ContentSection`, `CallToAction`, `DetailView`, `EmptyState`, `ErrorState`, `EventItem`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `Item`, `Items`, `MarketingChapter`, `MediaFigure`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `RecordLedger`, `Scene`, `SectionFrame`, `SectionHeader`, `SectionIntro`, `Specimen`, `SpecimenPanel`, `Stat`, `StatGroup`, `StatusList`, `TableOfContents`, `TaskList`, `Testimonial`, `TestimonialSet`, `LogoCloud`, `PeopleGrid`, `Tree`, `UsageMeter` |
 | `@clossys/designer/shell/server` | `Shell`, `SiteFooter`, `SiteHeader`, `SkipLink` |
 | `@clossys/designer/charts/server` | `ChartFrame`, `BarChart`, `LineChart` (static), `WaterfallChart`, `RangeChart`, `ScatterChart`, `AreaChart` (static), `Heatmap` (static), `StatusStrip` (static), `Sparkline` |
 | `@clossys/designer/theme/server` | `getThemeInitScript` |
@@ -5039,6 +5039,56 @@ inline with the body, and both choices fill a two-column row as full-width
 tap targets whose labels may wrap. Pass `selectedChoice="granted"` or `"denied"` from
 host state to show a decorative check and `aria-pressed`; the component
 stores no choice. The live region stays mounted in either presentation.
+
+### Section blocks: `ErrorState`, `StatGroup`, `RecordCards`, `CallToAction`, `NoticeList`, `Gallery`
+
+```tsx
+import { CallToAction, ErrorState, Gallery, NoticeList, RecordCards, StatGroup } from "@clossys/designer/blocks";
+import type { NoticeListItem } from "@clossys/designer/blocks";
+import { Button, Link } from "@clossys/designer/components";
+
+function SectionExamples({ notices, onRetry, onDismiss }: { notices: readonly NoticeListItem[]; onRetry: () => void; onDismiss: (id: string) => void }) {
+  return (
+    <>
+      <ErrorState kind="failure" code="Error code" title="Error title" description="Error description." retry={<Button variant="primary" onPress={onRetry}>Retry label</Button>} report={<Link href="/status">Report label</Link>} />
+      <StatGroup layout="grid" items={[{ id: "a", label: "Stat label", value: "10", delta: "+2%", trend: "up" }]} />
+      <RecordCards layout="grid" records={[{ id: "a", title: "Record title", href: "/a", description: "Record description.", badge: { label: "Badge", variant: "success" }, meta: "Record meta" }]} />
+      <CallToAction eyebrow="Eyebrow" title="Call title" description="Call description." primaryAction={<Link href="/start" buttonVariant="primary">Primary</Link>} secondaryAction={<Link href="/sales" buttonVariant="secondary">Secondary</Link>} />
+      <NoticeList label="Notices label" notices={notices} onDismiss={onDismiss} />
+      <Gallery label="Gallery label" images={[{ id: "i", label: "Image name", media: <img src="/image.png" alt="Image name" />, caption: "Caption" }]} />
+    </>
+  );
+}
+```
+
+Each is a props-only section with no state, storage, timer or network call of
+its own; every word arrives through props.
+Their prop types are exported alongside them: `ErrorStateProps`, `ErrorStateKind`,
+`StatGroupProps`, `StatGroupItem`, `StatGroupLayout`, `RecordCardsProps`,
+`RecordCardsRecord`, `RecordCardsLayout`, `RecordCardsHeadingLevel`, `CallToActionProps`,
+`NoticeListProps`, `NoticeListItem`, `GalleryProps` and `GalleryImage`.
+
+- `ErrorState` is a `<section>` named by its title. It composes the centred
+  `SectionHeader` with `code` as the eyebrow, then `retry` before `report`.
+  `kind` (`not-found`, `failure`, `forbidden`, `offline`) renders as
+  `data-error-kind`. It is not a live region: the host moves focus or
+  announces the change when it replaces content with it.
+- `StatGroup` renders a list of `Stat`s, in a responsive grid (`layout="grid"`,
+  one, two then four columns) or a wrapping row (`layout="row"`).
+- `RecordCards` renders a list of outline `Card`s. A record's title is its one
+  link (when `href` is set), with an optional `Badge` and a muted meta line;
+  `layout` is `grid` or `list`, and `headingLevel` sets the title heading.
+- `CallToAction` is a `<section>` named by its title, on a section ground
+  (`sunken` by default), with a centred `SectionHeader` and at most a primary
+  and a secondary action, so the two-action limit is structural.
+- `NoticeList` is a labelled region holding one `Banner` per notice. The tone
+  sets the banner's live-region role, and `onDismiss(id)` reports a dismissal
+  for the host to remove; `dismissible: false` pins a notice.
+- `Gallery` is a labelled grid of figures. With `lightbox` on (the default)
+  each image is a React Aria button that opens the image in a modal `Dialog`
+  named by its `label`, with its caption and a close action; with it off the
+  images are plain figures. The host supplies every image node and its
+  alternative text.
 
 ### Composing chrome and blocks
 

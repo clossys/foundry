@@ -1,0 +1,58 @@
+import type { HTMLAttributes, ReactNode } from "react";
+import { Banner, type BannerVariant } from "../components/Banner.js";
+import { cx } from "../components/internal/cx.js";
+
+export interface NoticeListItem {
+  /** Stable key, passed back to `onDismiss`. */
+  id: string;
+  /** Severity; drives the `Banner` tone and its live-region politeness. @default "info" */
+  tone?: BannerVariant;
+  /** Short lead-in, rendered in the strong weight before the message. */
+  title?: ReactNode;
+  /** The notice itself. */
+  message: ReactNode;
+  /** Optional follow-up, typically a `Link` ("Review billing"). */
+  action?: ReactNode;
+  /** Whether this notice can be dismissed; needs `onDismiss` on the list. @default true */
+  dismissible?: boolean;
+}
+export interface NoticeListProps extends Omit<HTMLAttributes<HTMLElement>, "children"> {
+  /** The notices, most important first. Each renders one `Banner`. */
+  notices: readonly NoticeListItem[];
+  /** Accessible name of the notices region ("Account notices"). */
+  label: string;
+  /** Called with a notice's id when its dismiss control is pressed. The host removes it. */
+  onDismiss?: (id: string) => void;
+  /** Accessible label for each dismiss control. @default "Dismiss" */
+  dismissLabel?: string;
+}
+
+/**
+ * A stack of page-level notices: a labelled region holding a list of Foundry
+ * `Banner`s, one per notice, each with its own tone and live-region role. It
+ * owns no queue, timer or storage: the host supplies the notices, decides
+ * their order and removes one when `onDismiss` reports it.
+ */
+export function NoticeList({ notices, label, onDismiss, dismissLabel, className, ...rest }: NoticeListProps) {
+  return (
+    <section {...rest} aria-label={label} className={cx("flex flex-col", className)}>
+      <ul role="list" className="flex flex-col gap-sm">
+        {notices.map(notice => (
+          <li key={notice.id}>
+            <Banner
+              variant={notice.tone ?? "info"}
+              dismissLabel={dismissLabel}
+              onDismiss={onDismiss && notice.dismissible !== false ? () => onDismiss(notice.id) : undefined}
+            >
+              <span className="flex flex-wrap items-baseline gap-x-sm gap-y-xs">
+                {notice.title ? <strong className="font-medium">{notice.title}</strong> : null}
+                <span>{notice.message}</span>
+                {notice.action ?? null}
+              </span>
+            </Banner>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}

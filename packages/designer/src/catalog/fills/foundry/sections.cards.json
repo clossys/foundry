@@ -1,0 +1,57 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/sections.cards",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "export": "./blocks#RecordCards",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "sections.cards",
+      "source": "foundry",
+      "sourceAddress": "./blocks#RecordCards",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "sections": {
+    "cards": {
+      "configs": {},
+      "impl": {
+        "export": "RecordCards",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "license": "MIT",
+      "notes": [
+        "Each record renders a Foundry Card (outline) with the title as its single Link and an optional Badge. Loading, empty and error states stay host-owned around the list.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "parts": [],
+      "pin": {
+        "export": "./blocks#RecordCards",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {
+        "layout.grid": "./blocks#RecordCards.layout=grid",
+        "layout.list": "./blocks#RecordCards.layout=list"
+      },
+      "slot": "sections.cards",
+      "slotMap": {
+        "records": "./blocks#RecordCards.records"
+      },
+      "source": "foundry"
+    }
+  }
+}

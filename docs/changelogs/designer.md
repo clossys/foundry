@@ -5,6 +5,8 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+- Add the ErrorState, StatGroup, RecordCards, CallToAction, NoticeList and Gallery Section blocks, and give the consent, error-state, stats, data-grid, cards, call-to-action, notices and gallery Section slots a Foundry candidate (ConsentBanner and DataTable cover consent and data-grid).
+
 - Add the RelationGraph Navigation Material: layered directed relationships, one keyboard-navigable list, safe-link refusals and a cycle fallback.
 
 - Add the FlowCanvas Block Material: a server-rendered node-and-edge diagram with a deterministic layered layout (`layoutFlowCanvas`), arrowheads and edge labels drawn from tokens, an ordered node list as its accessible source, edge-following keyboard navigation and a host-controlled selection.

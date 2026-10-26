@@ -38,6 +38,7 @@ import { SectionHeader } from "../blocks/SectionHeader.js";
 import { TableOfContents } from "../blocks/TableOfContents.js";
 import { TestimonialSet } from "../blocks/TestimonialSet.js";
 import { PageBar } from "../blocks/PageBar.js";
+import { SECTION_BLOCK_SAMPLES } from "../blocks/section-samples.js";
 import { SiteHeader } from "../shell/SiteHeader.js";
 import { SiteFooter } from "../shell/SiteFooter.js";
 
@@ -70,6 +71,7 @@ const BLOCK_SAMPLES: Readonly<Record<string, () => ReactNode>> = {
   SectionHeader: () => <SectionHeader eyebrow="Overview" title="Plan your launch" description="The pieces you need, in the order you need them." />,
   TableOfContents: () => <TableOfContents label="On this page" presentation="inline" trackCurrent={false} items={[{ id: "intro", label: "Introduction" }, { id: "setup", label: "Setup" }, { id: "options", label: "Options", level: 3 }]} />,
   TestimonialSet: () => <TestimonialSet items={[{ id: "one", quote: "We shipped our redesign in a week.", attributorName: "Ada Park", attributorRole: "Design lead" }, { id: "two", quote: "Reviews take minutes, not days.", attributorName: "Sam Ortiz", attributorRole: "Engineering" }]} />,
+  ...SECTION_BLOCK_SAMPLES,
   PageBar: () => <PageBar position="static" root={{ label: "Workspace" }} labels={{ breadcrumb: "Breadcrumb", collapsedBreadcrumb: "More pages", pageInfo: "Page details", pageActions: "Page actions" }} />,
 };
 const SHELL_SAMPLES: Readonly<Record<string, () => ReactNode>> = {

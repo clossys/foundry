@@ -1,0 +1,57 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/sections.stats",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "export": "./blocks#StatGroup",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "sections.stats",
+      "source": "foundry",
+      "sourceAddress": "./blocks#StatGroup",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "sections": {
+    "stats": {
+      "configs": {},
+      "impl": {
+        "export": "StatGroup",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "license": "MIT",
+      "notes": [
+        "Each item renders one Stat (label, value, optional delta/trend and description); no sparkline or meter composition is claimed.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "parts": [],
+      "pin": {
+        "export": "./blocks#StatGroup",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {
+        "layout.grid": "./blocks#StatGroup.layout=grid",
+        "layout.row": "./blocks#StatGroup.layout=row"
+      },
+      "slot": "sections.stats",
+      "slotMap": {
+        "stats": "./blocks#StatGroup.items"
+      },
+      "source": "foundry"
+    }
+  }
+}

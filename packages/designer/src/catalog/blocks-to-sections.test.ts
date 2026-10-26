@@ -38,7 +38,7 @@ const unmapped = [
   "matrix.resizable-pane", "form.consent-banner", "items.notification-center",
   "items.specimen-stack", "say.specimen", "matrix.specimen-panel", "say.anatomy-callouts", "matrix.scene",
   "matrix.catalog-workspace", "matrix.flow-canvas", "matrix.catalog-browser", "matrix.canvas-surface",
-  "items.raw", "matrix.raw", "items.relation-graph", "form.refresh-status",
+  "items.raw", "matrix.raw", "items.relation-graph", "form.refresh-status", "say.call-to-action",
 ];
 
 describe("legacy block section homes", () => {
@@ -54,11 +54,11 @@ describe("legacy block section homes", () => {
 
   it("agrees with existing retirement aliases without replacing legacy IDs", () => {
     expect(mapping).toEqual(Object.fromEntries(retired.map(row => [row.id, row.replacedBy])));
-    expect(BLOCK_ENTRIES).toHaveLength(88);
+    expect(BLOCK_ENTRIES).toHaveLength(89);
     expect(BLOCK_ENTRIES.map(block => block.id).sort()).toEqual([...Object.keys(expected), ...unmapped].sort());
   });
 
-  it("attaches homes to mapped entries and leaves the other 31 addresses absent", () => {
+  it("attaches homes to mapped entries and leaves the other 32 addresses absent", () => {
     const mapped = BLOCK_ENTRIES.filter(block => block.sectionLeaf !== undefined);
     expect(Object.fromEntries(mapped.map(block => [block.id, block.sectionLeaf]))).toEqual(expected);
     expect(BLOCK_ENTRIES.filter(block => block.sectionLeaf === undefined).map(block => block.id).sort()).toEqual([...unmapped].sort());
@@ -66,18 +66,18 @@ describe("legacy block section homes", () => {
   });
 
   it("keeps recipes and unbuilt specs distinct from public implementations", () => {
-    const recipes = ["items.features", "items.statement", "items.cards", "items.faq", "items.steps", "items.stat-grid", "matrix.comparison", "items.link-index", "items.topics"];
+    const recipes = ["items.features", "items.statement", "items.faq", "items.steps", "matrix.comparison", "items.link-index", "items.topics"];
     for (const id of recipes) {
       const block = BLOCK_ENTRIES.find(block => block.id === id);
       expect(block?.export, id).toBeNull();
       expect(block?.recipeOf, id).toBe(id === "matrix.comparison" ? "matrix.raw" : "items.raw");
     }
-    for (const id of ["items.media-gallery", "items.timeline", "matrix.data-grid", "items.activity-feed", "matrix.audit-log", "form.save-bar", "say.error-state", "say.notice-stack", "form.load-more"]) {
+    for (const id of ["items.timeline", "matrix.data-grid", "items.activity-feed", "matrix.audit-log", "form.save-bar", "form.load-more"]) {
       const block = BLOCK_ENTRIES.find(block => block.id === id);
       expect(block?.export, id).toBeNull();
       expect(block?.built, id).toBe("no");
     }
-    for (const [id, name] of [["items.stat", "Stat"], ["items.usage-meter", "UsageMeter"], ["items.event-item", "EventItem"], ["say.testimonial", "Testimonial"], ["matrix.grouped-table", "GroupedTable"], ["items.record-ledger", "RecordLedger"], ["form.filter-builder", "FilterBuilder"], ["form.form-wizard", "FormWizard"], ["form.settings-section", "SettingsSection"]]) {
+    for (const [id, name] of [["items.stat", "Stat"], ["items.usage-meter", "UsageMeter"], ["items.event-item", "EventItem"], ["say.testimonial", "Testimonial"], ["matrix.grouped-table", "GroupedTable"], ["items.record-ledger", "RecordLedger"], ["form.filter-builder", "FilterBuilder"], ["form.form-wizard", "FormWizard"], ["form.settings-section", "SettingsSection"], ["items.cards", "RecordCards"], ["items.stat-grid", "StatGroup"], ["items.media-gallery", "Gallery"], ["say.error-state", "ErrorState"], ["say.notice-stack", "NoticeList"], ["say.call-to-action", "CallToAction"]]) {
       expect(BLOCK_ENTRIES.find(block => block.id === id)?.export, id).toBe(name);
     }
   });

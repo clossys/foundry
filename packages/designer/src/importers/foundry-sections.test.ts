@@ -17,12 +17,12 @@ const imported = () => importFoundrySections({ exports });
 const change = (leaf: string, patch: Partial<(typeof FOUNDRY_SECTION_MAP)[string]>) => ({ ...FOUNDRY_SECTION_MAP, [leaf]: { ...FOUNDRY_SECTION_MAP[leaf]!, ...patch } });
 
 describe("Foundry section package descriptors", () => {
-  it("regenerates exactly 33 descriptors and coverage for all 45 leaves", () => {
+  it("regenerates exactly 41 descriptors and coverage for all 45 leaves", () => {
     const files = generatedFoundrySectionFiles({ exports });
     if (process.env.UPDATE_FOUNDRY_SECTION_FILLS === "1") for (const [name, bytes] of Object.entries(files)) writeFileSync(resolve(directory, name), bytes);
     expect(readdirSync(directory).filter(name => name.startsWith("sections.") && name.endsWith(".json")).sort()).toEqual(Object.keys(files).sort());
     for (const [name, bytes] of Object.entries(files)) expect(readFileSync(resolve(directory, name), "utf8"), name).toBe(bytes);
-    expect(imported().fills).toHaveLength(33);
+    expect(imported().fills).toHaveLength(41);
     expect(imported().coverage.map(row => row.slot)).toEqual(slots.map(slot => slot.id).sort());
     expect(imported().coverage).toHaveLength(45);
     expect(generatedFoundrySectionFiles({ exports, slots: [...slots].reverse() })).toEqual(files);
@@ -68,11 +68,22 @@ describe("Foundry section package descriptors", () => {
 
   it("keeps unavailable sections and aggregate recipes explicit", () => {
     expect(imported().coverage.filter(row => row.status === "unavailable").map(row => row.slot)).toEqual([
-      "activity-feed", "audit-log", "call-to-action", "cards", "consent", "data-grid", "error-state", "gallery", "notices", "stats", "timeline", "usage",
+      "activity-feed", "audit-log", "timeline", "usage",
     ].map(leaf => `sections.${leaf}`));
     const docs = imported().fills.flatMap(doc => Object.values(doc.sections));
     for (const name of ["EventItem", "Stat", "UsageMeter", "Items"]) expect(docs.some(doc => doc.impl.export === name)).toBe(false);
     expect(docs.find(doc => doc.slot === "sections.comparison")!.configs).toEqual({ arrangement: "grid" });
+  });
+
+  it("gives consent, error-state, stats, data-grid, cards, call-to-action, notices and gallery a Foundry export with every required slot mapped", () => {
+    const rows = new Map(imported().coverage.map(row => [row.slot, row]));
+    const exportOf = (leaf: string) => Object.values(imported().fills.find(doc => doc.$extensions["com.clossys.fill"].slot === `sections.${leaf}`)!.sections)[0]!.impl.export;
+    expect(Object.fromEntries(["consent", "error-state", "stats", "data-grid", "cards", "call-to-action", "notices", "gallery"].map(leaf => [leaf, exportOf(leaf)]))).toEqual({
+      consent: "ConsentBanner", "error-state": "ErrorState", stats: "StatGroup", "data-grid": "DataTable", cards: "RecordCards", "call-to-action": "CallToAction", notices: "NoticeList", gallery: "Gallery",
+    });
+    for (const leaf of ["consent", "error-state", "stats", "data-grid", "cards", "call-to-action", "notices", "gallery"]) expect(rows.get(`sections.${leaf}`)!.missingRequiredSlots, leaf).toEqual([]);
+    for (const leaf of ["consent", "error-state", "stats", "cards", "call-to-action", "notices", "gallery"]) expect(rows.get(`sections.${leaf}`)!.status, leaf).toBe("candidate");
+    expect(rows.get("sections.data-grid")!.missingSlots).toEqual(["pinning"]);
   });
 
   it("does not infer absent APIs from contract names or matching legacy labels", () => {

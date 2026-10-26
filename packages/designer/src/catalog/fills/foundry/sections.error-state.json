@@ -1,0 +1,61 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/sections.error-state",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "export": "./blocks#ErrorState",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "sections.error-state",
+      "source": "foundry",
+      "sourceAddress": "./blocks#ErrorState",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "sections": {
+    "error-state": {
+      "configs": {},
+      "impl": {
+        "export": "ErrorState",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "license": "MIT",
+      "notes": [
+        "Kind is host data rendered as data-error-kind; title and description copy stay host-authored. Not a live region: the host moves focus or announces the replacement.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "parts": [],
+      "pin": {
+        "export": "./blocks#ErrorState",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {
+        "kind.failure": "./blocks#ErrorState.kind=failure",
+        "kind.forbidden": "./blocks#ErrorState.kind=forbidden",
+        "kind.not-found": "./blocks#ErrorState.kind=not-found",
+        "kind.offline": "./blocks#ErrorState.kind=offline"
+      },
+      "slot": "sections.error-state",
+      "slotMap": {
+        "code": "./blocks#ErrorState.code",
+        "report": "./blocks#ErrorState.report",
+        "retry": "./blocks#ErrorState.retry"
+      },
+      "source": "foundry"
+    }
+  }
+}
