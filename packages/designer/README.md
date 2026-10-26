@@ -10348,6 +10348,67 @@ The emitted `components-consumption.json` instead describes this resolved
 consumer's component fills, reads and measured-check findings. Keep those
 reports separate when presenting coverage or adoption evidence.
 
+### Live component specimens in Studio
+
+Studio draws a chosen component cell live only when the host's
+`CompositeStudioSnapshot.preview` returns content for that leaf; otherwise the
+cell reads `data-preview-state="unavailable"`. The runtime manifest ports below
+cover frames and sections, not components. For components, the
+`@clossys/designer/studio` entry exports `componentSpecimenPreview`, which
+binds each chosen leaf to modules the host has already imported.
+
+```tsx
+import * as components from "@clossys/designer/components";
+import * as charts from "@clossys/designer/charts";
+import { componentSpecimenPreview, type CompositeStudioAdapter } from "@clossys/designer/studio";
+
+const specimens = componentSpecimenPreview({
+  modules: { "@clossys/designer/components": components, "@clossys/designer/charts": charts },
+  // Optional: your own content for a leaf (it replaces the designer sample), and the library's provider.
+  specimens: { "components.chart-bar": ({ Component }) => <Component title="Sample" categories={["A", "B"]} series={[{ name: "Count", values: [3, 5] }]} /> },
+});
+
+declare const base: CompositeStudioAdapter;
+const adapter: CompositeStudioAdapter = { ...base, load: async () => ({
+  ...(await base.load()),
+  preview: (leaf, profile) => specimens.preview(leaf, profile) ?? otherPreview(leaf, profile),
+}) };
+declare function otherPreview(...args: Parameters<typeof specimens.preview>): ReturnType<typeof specimens.preview>;
+```
+
+`modules` is keyed by the exact specifier each adopted descriptor names: the
+package module, `<package>/<subpath>` for a member pointer such as
+`./charts#BarChart`, or a source fill's library entry path. Nothing is imported,
+guessed or substituted. Each member is dispatched by the same pointer rule as
+the emitted component index. By default the export renders once, then once for
+each member that has a literal value (`Button.size=sm`) or a `state.*` flag
+(`Button.isDisabled`). Hover, press and focus-visible states are skipped, and so
+is any member whose pointer the dispatcher cannot express; those are listed in
+`binding.unbound`.
+
+Data-driven Foundry components (charts, table, tree, field, menus and other
+overlays) draw with neutral sample content the designer provides, so every
+Foundry package component renders without host data. That content is preview
+material only, never adoption or conformance evidence. A `specimens` entry for a
+leaf replaces it. Another library's data-driven component needs its own
+`specimens` entry. The binding also carries `specifier`, `exportName` and the
+whole module as `exports`, so that entry can draw compound parts.
+
+`bind(leaf, profile)` returns the binding or a named refusal: `not-a-component`,
+`not-chosen`, `module-unavailable` or `export-unavailable`. On a refusal,
+`preview` returns `undefined`, so the cell stays unavailable rather than showing
+a placeholder. A specimen that throws is replaced by a hidden
+`data-specimen-error` marker. The cell stays live while at least one specimen
+renders. Once every specimen of a leaf has thrown, or the provider has, the cell
+reads `data-preview-state="unavailable"` with `data-preview-reason="specimen-error"`.
+The toast region draws only the app-wide `toast()` queue and takes no queue of
+its own, so without a host specimen its cell reads unavailable with
+`data-preview-reason="needs-host-queue"`; a preview never pushes into that queue.
+A logo's `content.lockup` member is drawn by the shell `Brandmark`, which needs
+the host's own mark asset and wordmark; without a host specimen that member is
+marked `data-specimen-unavailable="needs-brand-asset"` and the logo's other
+specimens draw.
+
 ### Consumer runtime ports and responsive assembly evidence
 
 The existing `@clossys/designer/catalog` entry exports generic
