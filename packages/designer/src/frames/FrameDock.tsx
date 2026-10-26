@@ -17,7 +17,7 @@ export interface AppFrameDock extends FrameDockBounds {
 }
 const DISMISS_KEY = "frame-dismissed-notices";
 /** Disclosure chevrons turn on the shared motion tokens; reduced motion snaps. */
-export const FRAME_CHEVRON_MOTION = "transition-transform duration-(--ui-duration-fast) ease-(--ease-default) motion-reduce:transition-none";
+export const FRAME_CHEVRON_MOTION = "frame-chevron-motion";
 /** `sheet` is the frame's narrow layout (the sidebar-overlay breakpoint): the dock body becomes a bottom-sheet Drawer. */
 export function FrameDock({ notices = [], dock, sheet = false }: { notices?: readonly AppFrameNotice[]; dock?: AppFrameDock; sheet?: boolean }) {
   const modules = useFrameSlotModules("dock-tab");
@@ -80,7 +80,7 @@ export function FrameDock({ notices = [], dock, sheet = false }: { notices?: rea
     </div>
     {modules.length > 0 && sheet ? <div ref={strip} data-frame-dock-strip="" className="flex min-w-0 items-center justify-between gap-xs px-sm">
       <Drawer placement="bottom" wide="sheet" heading={dock?.label ?? "Page modules"} closeLabel="Collapse page modules" isOpen={sheetOpen} onOpenChange={setSheetOpen}
-        trigger={<Button variant="ghost" className="min-h-[var(--ui-layout-tap-target)] min-w-0 gap-xs" aria-expanded={sheetOpen}><span className="min-w-0 truncate">{dock?.label ?? "Page modules"}</span><Icon glyph={ChevronDown} decorative className={cx(FRAME_CHEVRON_MOTION, !sheetOpen && "rotate-180")} /></Button>}>
+        trigger={<Button variant="ghost" className="icon-control-sm rounded-control p-0" aria-label={dock?.label ?? "Page modules"} aria-expanded={sheetOpen}><Icon glyph={ChevronDown} decorative className={cx(FRAME_CHEVRON_MOTION, !sheetOpen && "rotate-180")} /></Button>}>
         <Tabs selectedKey={selected} onSelectionChange={key => setActive(String(key))} className="flex h-full min-h-0 flex-col gap-0">
           <Tabs.List aria-label={dock?.label ?? "Page modules"} className="min-w-0 shrink-0 overflow-x-auto">
             {modules.map(module => <Tabs.Tab key={module.id} id={module.id} className="control-h-sm">{module.label}</Tabs.Tab>)}

@@ -13,7 +13,7 @@ beforeEach(() => {
 });
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
-const MOTION = ["transition-transform", "duration-(--ui-duration-fast)", "ease-(--ease-default)", "motion-reduce:transition-none"];
+const MOTION = ["frame-chevron-motion"];
 const glyph = (button: HTMLElement) => button.querySelector("svg")!;
 const props: Omit<AppFrameProps, "children"> = {
   brand: { markSrc: "/mark.svg" },

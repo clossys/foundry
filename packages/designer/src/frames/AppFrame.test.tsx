@@ -277,12 +277,13 @@ describe("AppFrame composition", () => {
     expect(screen.getAllByRole("navigation")).toHaveLength(1);
   });
 
-  it("preserves logical RTL and puts the existing mark in the profile Avatar", () => {
+  it("preserves logical RTL and puts the actor initials in the profile Avatar", () => {
     render(<AppFrame {...fixture()} dir="rtl" />);
     expect(screen.getByRole("banner").closest('[dir="rtl"]')).not.toBeNull();
     expect(screen.queryByRole("link", { name: "Atlas workspace" })).toBeNull();
     const profile = screen.getByRole("button", { name: "Sam River" });
-    expect(profile.querySelector("img")).toHaveAttribute("src", "/mark.svg");
+    expect(profile.querySelector("img")).toBeNull();
+    expect(profile.querySelector('[role="img"][aria-label="Sam River"]')).toHaveTextContent("SR");
     expect(profile.closest('[data-application-navigation-region="footer"]')).not.toBeNull();
   });
 

@@ -27,11 +27,16 @@ const navTop = () => document.querySelector<HTMLElement>('[data-application-navi
 const navFooter = () => document.querySelector<HTMLElement>('[data-application-navigation-region="footer"]')!;
 
 describe("AppFrame navigation brand mark", () => {
-  it("renders no navigation brand by default, keeping the reserved corner row", () => {
+  it("renders the host mark at the navigation top by default, in the reserved corner row, at its plate radius", () => {
     render(<AppFrame {...fixture()} />);
-    expect(navTop().querySelector('[data-application-frame-slot="brand"]')).toBeNull();
-    expect(navTop().querySelector("img")).toBeNull();
-    expect((navTop().firstElementChild as HTMLElement).style.paddingBlockStart).toContain("--ui-layout-tap-target");
+    const slot = navTop().querySelector<HTMLElement>('[data-application-frame-slot="brand"]')!;
+    expect(slot).not.toBeNull();
+    const mark = slot.querySelector("img")!;
+    expect(mark).toHaveAttribute("src", MARK);
+    // The plate keeps its own radius: no pill-clipped Avatar wraps the mark.
+    expect(mark.closest(".rounded-pill")).toBeNull();
+    expect(slot.compareDocumentPosition(screen.getByRole("button", { name: "Commands" })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(slot.style.minBlockSize).toContain("--ui-layout-tap-target");
   });
 
   it("renders the host mark and its name at the navigation top, before search, never in the header bar", () => {
@@ -54,8 +59,15 @@ describe("AppFrame navigation brand mark", () => {
 });
 
 describe("AppFrame account avatar", () => {
-  it("keeps the host mark in the profile Avatar by default", () => {
+  it("shows the actor's initials in the profile Avatar by default, never the circle-clipped mark", () => {
     render(<AppFrame {...fixture()} />);
+    const profile = screen.getByRole("button", { name: "Sam River" });
+    expect(profile.querySelector("img")).toBeNull();
+    expect(profile.querySelector('[role="img"][aria-label="Sam River"]')).toHaveTextContent("SR");
+  });
+
+  it("keeps the host mark in the profile Avatar when avatar is mark", () => {
+    render(<AppFrame {...fixture({ avatar: "mark" })} />);
     expect(screen.getByRole("button", { name: "Sam River" }).querySelector("img")).toHaveAttribute("src", MARK);
   });
 
@@ -71,7 +83,10 @@ describe("AppFrame account avatar", () => {
 
   it("keeps the mark for a signed-out row, which has no person to take initials from", () => {
     render(<AppFrame {...fixture({ actor: false, avatar: "initials" })} />);
-    expect(navFooter().querySelector("img")).toHaveAttribute("src", MARK);
+    const mark = navFooter().querySelector("img")!;
+    expect(mark).toHaveAttribute("src", MARK);
+    // The signed-out mark is the plate itself, not a 999px circle crop.
+    expect(mark.closest(".rounded-pill")).toBeNull();
   });
 });
 
