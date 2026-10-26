@@ -2,9 +2,9 @@
   "counts": {
     "assetEdges": 4,
     "assets": 45,
-    "members": 629,
+    "members": 630,
     "orphanEdges": 0,
-    "resolvedMembers": 628,
+    "resolvedMembers": 629,
     "tokenEdges": 24,
     "tokens": 53,
     "unusedAssets": 43,
@@ -445,11 +445,11 @@
         "tokens.elevation"
       ],
       "id": "tokens.border-color",
-      "resolved": 5,
+      "resolved": 6,
       "tokens": [
         "tokens.border-color"
       ],
-      "total": 5
+      "total": 6
     },
     {
       "assets": [],
