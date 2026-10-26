@@ -13,19 +13,13 @@
         "sha256": "8bcff6f70522e6e6cb0ff67f050830ea1a93596403d2d9b035f3b543c7a42e2c",
         "url": "https://github.com/shadcn-ui/ui"
       },
-      "relation": "subset",
+      "relation": "same-contract",
       "slot": "components.button",
       "source": "shadcn@aria",
       "sourceAddress": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/bases/aria/ui/button.tsx",
       "status": "draft",
       "trust": "pinned-upstream",
-      "unmapped": [
-        "variant.tonal",
-        "variant.quiet",
-        "state.pressed",
-        "state.pending",
-        "ground.inverse"
-      ]
+      "unmapped": []
     }
   },
   "components": {

@@ -58,12 +58,12 @@ function setup(overrides: Partial<ComponentDefaultsInput> = {}, order?: readonly
 const ledger = (rows: ReturnType<typeof planComponentDefaults>["rows"]) => Object.fromEntries(rows.map(row => [row.slot.slice(11), row.status === "not-chosen" ? "-" : row.source ?? row.rule!]));
 
 const EXPECTED_DEFAULTS = {
-  avatar: "shadcn@aria", badge: "foundry", banner: "foundry", breadcrumbs: "shadcn@aria", button: "foundry", calendar: "shadcn@aria", card: "foundry",
+  avatar: "shadcn@aria", badge: "shadcn@aria", banner: "shadcn@aria", breadcrumbs: "shadcn@aria", button: "foundry", calendar: "shadcn@aria", card: "foundry",
   "chart-area": "foundry", "chart-bar": "foundry", "chart-heatmap": "foundry", "chart-line": "foundry", "chart-range": "foundry",
   "chart-scatter": "foundry", "chart-sparkline": "foundry", "chart-status-strip": "foundry", "chart-waterfall": "foundry", checkbox: "foundry", "color-picker": "foundry", "combo-box": "foundry",
   "date-field": "foundry", "date-picker": "compose:date-picker@1", dialog: "shadcn@aria", disclosure: "shadcn@aria", field: "foundry", "grid-list": "foundry", "file-trigger": "foundry", form: "foundry", icon: "foundry", keyboard: "shadcn@aria", link: "foundry", logo: "foundry",
-  menu: "foundry", meter: "foundry", "native-action": "foundry", "navigation-tree": "foundry", "number-field": "foundry", popover: "shadcn@aria", "progress-bar": "foundry", "radio-group": "foundry",
-  "resize-handle": "foundry", "search-field": "foundry", select: "foundry", "semantic-content": "foundry", separator: "shadcn@aria", skeleton: "foundry", slider: "foundry",
+  menu: "foundry", meter: "foundry", "native-action": "foundry", "navigation-tree": "foundry", "number-field": "foundry", popover: "shadcn@aria", "progress-bar": "shadcn@aria", "radio-group": "foundry",
+  "resize-handle": "foundry", "search-field": "foundry", select: "foundry", "semantic-content": "foundry", separator: "shadcn@aria", skeleton: "shadcn@aria", slider: "foundry",
   spinner: "foundry", "status-mark": "foundry", switch: "foundry", table: "foundry", tabs: "shadcn@aria", "tag-group": "foundry", "text-field": "foundry", toast: "foundry", "toggle-button": "shadcn@aria", "toggle-group": "foundry",
   toolbar: "foundry", tooltip: "shadcn@aria", tree: "foundry",
 };
@@ -243,7 +243,7 @@ describe("component default fills", () => {
     const { input } = setup({ preference: ["shadcn@aria"], picks: {} });
     const plan = planComponentDefaults(input);
     expect(plan.rows.find(row => row.slot === "components.card")).toMatchObject({ status: "default", basis: "fallback", source: "foundry" });
-    expect(plan.rows.find(row => row.slot === "components.badge")).toMatchObject({ status: "not-chosen" });
+    expect(plan.rows.find(row => row.slot === "components.meter")).toMatchObject({ status: "not-chosen" });
     expect(plan.findings).toEqual([]);
   });
   it("Choose overrides the owner pick and preference, exclusively", () => {

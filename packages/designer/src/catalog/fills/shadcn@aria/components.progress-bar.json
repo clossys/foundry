@@ -13,16 +13,13 @@
         "sha256": "3037eb4fd45d538216a2aa12d32a2e2a70c4f90678440939e1cb9dc30c467a61",
         "url": "https://github.com/shadcn-ui/ui"
       },
-      "relation": "subset",
+      "relation": "same-contract",
       "slot": "components.progress-bar",
       "source": "shadcn@aria",
       "sourceAddress": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/bases/aria/ui/progress.tsx",
       "status": "draft",
       "trust": "pinned-upstream",
-      "unmapped": [
-        "progress.determinate",
-        "progress.indeterminate"
-      ]
+      "unmapped": []
     }
   },
   "components": {
@@ -58,7 +55,10 @@
       },
       "item": "progress",
       "license": "MIT",
-      "members": [],
+      "members": [
+        "progress.determinate",
+        "progress.indeterminate"
+      ],
       "notice": "notices/THIRD-PARTY.md",
       "outputSha256": [
         {
@@ -101,7 +101,10 @@
         ],
         "url": "https://github.com/shadcn-ui/ui"
       },
-      "propMap": {},
+      "propMap": {
+        "progress.determinate": "ProgressBarProps.value forwarded to RAC ProgressBar; percentage drives the indicator",
+        "progress.indeterminate": "ProgressBarProps.isIndeterminate forwarded to RAC ProgressBar"
+      },
       "props": [],
       "reads": {
         "assets": [],

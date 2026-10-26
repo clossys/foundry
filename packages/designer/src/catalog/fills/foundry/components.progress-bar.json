@@ -71,7 +71,12 @@
         "components": [],
         "tokens": [
           "tokens.accent-color",
+          "tokens.action-color",
           "tokens.body-size",
+          "tokens.duration",
+          "tokens.easing",
+          "tokens.font-size",
+          "tokens.font-weight",
           "tokens.radius",
           "tokens.spacing",
           "tokens.surface-color",

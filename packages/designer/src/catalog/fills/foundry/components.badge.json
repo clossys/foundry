@@ -49,10 +49,7 @@
       "license": "MIT",
       "members": [
         "tone.danger",
-        "tone.info",
-        "tone.neutral",
-        "tone.success",
-        "tone.warning"
+        "tone.neutral"
       ],
       "pin": {
         "export": "./components#Badge",
@@ -61,10 +58,7 @@
       },
       "propMap": {
         "tone.danger": "./components#Badge.variant=danger",
-        "tone.info": "./components#Badge.variant=info",
-        "tone.neutral": "./components#Badge.variant=neutral",
-        "tone.success": "./components#Badge.variant=success",
-        "tone.warning": "./components#Badge.variant=warning"
+        "tone.neutral": "./components#Badge.variant=neutral"
       },
       "props": [
         "children",
@@ -75,7 +69,18 @@
         "assets": [],
         "components": [],
         "tokens": [
+          "tokens.accent-color",
+          "tokens.action-color",
+          "tokens.border-color",
+          "tokens.border-width",
           "tokens.caption-size",
+          "tokens.control-color",
+          "tokens.duration",
+          "tokens.easing",
+          "tokens.focus-color",
+          "tokens.focus-outline",
+          "tokens.font-size",
+          "tokens.font-weight",
           "tokens.letter-spacing",
           "tokens.radius",
           "tokens.spacing",

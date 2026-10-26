@@ -49,10 +49,7 @@
         "mode": "closed",
         "names": [
           "tone.neutral",
-          "tone.success",
-          "tone.warning",
-          "tone.danger",
-          "tone.info"
+          "tone.danger"
         ]
       },
       "props": [],
@@ -65,7 +62,18 @@
           "tokens.status-color",
           "tokens.surface-color",
           "tokens.text-color",
-          "tokens.typeface"
+          "tokens.typeface",
+          "tokens.accent-color",
+          "tokens.action-color",
+          "tokens.border-color",
+          "tokens.border-width",
+          "tokens.control-color",
+          "tokens.duration",
+          "tokens.easing",
+          "tokens.focus-color",
+          "tokens.focus-outline",
+          "tokens.font-size",
+          "tokens.font-weight"
         ],
         "assets": []
       }
@@ -83,10 +91,7 @@
         "mode": "closed",
         "names": [
           "tone.info",
-          "tone.success",
-          "tone.warning",
-          "tone.danger",
-          "dismissible"
+          "tone.danger"
         ]
       },
       "props": [],
@@ -99,7 +104,11 @@
           "tokens.spacing",
           "tokens.status-color",
           "tokens.surface-color",
-          "tokens.typeface"
+          "tokens.typeface",
+          "tokens.border-width",
+          "tokens.font-size",
+          "tokens.font-weight",
+          "tokens.text-color"
         ],
         "assets": [
           "assets.icon-success",
@@ -169,20 +178,15 @@
           "variant.ghost",
           "variant.danger",
           "variant.outline",
-          "variant.tonal",
-          "variant.quiet",
           "state.hover",
-          "state.pressed",
           "state.focus-visible",
           "state.disabled",
-          "state.pending",
           "size.sm",
           "size.md",
           "size.lg",
           "shape.text",
           "shape.icon-only",
-          "ground.base",
-          "ground.inverse"
+          "ground.base"
         ]
       },
       "props": [],
@@ -206,7 +210,11 @@
           "tokens.text-color",
           "tokens.typeface",
           "tokens.border-width",
-          "tokens.caption-size"
+          "tokens.caption-size",
+          "tokens.control-size",
+          "tokens.duration",
+          "tokens.font-size",
+          "tokens.font-weight"
         ],
         "assets": [
           "assets.icon-chevron-right"
@@ -1481,7 +1489,12 @@
           "tokens.spacing",
           "tokens.surface-color",
           "tokens.text-color",
-          "tokens.typeface"
+          "tokens.typeface",
+          "tokens.action-color",
+          "tokens.duration",
+          "tokens.easing",
+          "tokens.font-size",
+          "tokens.font-weight"
         ],
         "assets": []
       }
@@ -1738,9 +1751,7 @@
       "members": {
         "mode": "closed",
         "names": [
-          "shape.text",
-          "shape.block",
-          "shape.circle"
+          "shape.block"
         ]
       },
       "props": [],
@@ -1906,8 +1917,7 @@
         "mode": "closed",
         "names": [
           "selection",
-          "sort",
-          "resize-columns"
+          "sort"
         ]
       },
       "props": [],
@@ -1920,7 +1930,12 @@
           "tokens.spacing",
           "tokens.surface-color",
           "tokens.text-color",
-          "tokens.typeface"
+          "tokens.typeface",
+          "tokens.border-width",
+          "tokens.duration",
+          "tokens.easing",
+          "tokens.font-size",
+          "tokens.font-weight"
         ],
         "assets": []
       },
