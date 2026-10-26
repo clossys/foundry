@@ -2,7 +2,7 @@
 
 import { inspectGlyph, inspectSvg } from "../catalog-assets/svg.js";
 import type { IconNode } from "../components/Icon.js";
-import { IconSpecimen, RatioSpecimen, SvgSpecimen, ratioOf } from "./asset-specimens.js";
+import { IconSpecimen, RatioSpecimen, SvgSpecimen, mediaSpecimen, ratioOf } from "./asset-specimens.js";
 import type { ReactElement } from "react";
 import type { StudioLabels } from "./types.js";
 import { TokenPreview, TokenValuePreview } from "../tokens/preview/index.js";
@@ -37,7 +37,11 @@ function Specimen({ id, member, spec, labels }: { id: string; member: Candidate[
       try { inspectGlyph(member.value.light); } catch { return unsupported; }
       return <IconSpecimen glyph={member.value.light as IconNode} name={member.slot.replace(/^assets\.icon-/, "")} />;
     }
-    if (member.$type === "rules") { const ratio = ratioOf(member.value.light); return ratio ? <RatioSpecimen {...ratio} /> : unsupported; }
+    if (member.$type === "rules") {
+      const media = mediaSpecimen(member.slot, id, member.value.light);
+      if (media !== undefined) return media ?? unsupported;
+      const ratio = ratioOf(member.value.light); return ratio ? <RatioSpecimen {...ratio} /> : unsupported;
+    }
     if (member.$type !== "svg" || typeof member.value.light !== "string") return unsupported;
     try { inspectSvg(member.value.light, id === "assets.favicon.vector" ? { favicon: true } : undefined); }
     catch { return <code>{member.css.light}</code>; }

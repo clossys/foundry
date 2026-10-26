@@ -104,6 +104,61 @@
     "status": "draft"
   },
   {
+    "id": "assets.image",
+    "layer": "assets",
+    "contract": {
+      "kind": "asset",
+      "valueKind": "rules",
+      "members": {
+        "mode": "open",
+        "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+      },
+      "modes": [
+        "light"
+      ]
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "assets.video",
+    "layer": "assets",
+    "contract": {
+      "kind": "asset",
+      "valueKind": "rules",
+      "members": {
+        "mode": "open",
+        "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+      },
+      "modes": [
+        "light"
+      ]
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "assets.pattern",
+    "layer": "assets",
+    "contract": {
+      "kind": "asset",
+      "valueKind": "rules",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "dots",
+          "lines",
+          "grid"
+        ]
+      },
+      "modes": [
+        "light"
+      ]
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
     "id": "assets.icon-chevron-down",
     "layer": "assets",
     "contract": {

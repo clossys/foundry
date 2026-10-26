@@ -1,0 +1,63 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/assets.pattern",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "export": "PATTERN_RECIPES",
+        "file": "src/tokens/pattern.ts",
+        "sha256": "ef37d1918b7b96fee413d4c67229019d1a9f4d7e51905831ce9c34e06d871afb"
+      },
+      "reads": {
+        "assets": [],
+        "tokens": [
+          "tokens.border-color.base",
+          "tokens.border-width.hairline",
+          "tokens.spacing.xl"
+        ]
+      },
+      "relation": "same-contract",
+      "slot": "assets.pattern",
+      "source": "foundry",
+      "sourceAddress": "importers/pattern.ts",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "assets": {
+    "pattern": {
+      "dots": {
+        "$type": "rules",
+        "$value": {
+          "ink": "--color-line-base",
+          "shape": "dots",
+          "tile": "--spacing-xl",
+          "weight": "--ui-border-hairline"
+        }
+      },
+      "grid": {
+        "$type": "rules",
+        "$value": {
+          "ink": "--color-line-base",
+          "shape": "grid",
+          "tile": "--spacing-xl",
+          "weight": "--ui-border-hairline"
+        }
+      },
+      "lines": {
+        "$type": "rules",
+        "$value": {
+          "ink": "--color-line-base",
+          "shape": "lines",
+          "tile": "--spacing-xl",
+          "weight": "--ui-border-hairline"
+        }
+      }
+    }
+  }
+}

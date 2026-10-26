@@ -8,6 +8,7 @@ import componentSlots from "../catalog/slots/components.json" with { type: "json
 import tokenFreeze from "../catalog/ia/tokens.leaf-freeze.json" with { type: "json" };
 import assetFreeze from "../catalog/ia/assets.leaf-freeze.json" with { type: "json" };
 import componentAmendments from "../catalog/ia/components.leaf-amendments.json" with { type: "json" };
+import assetAmendments from "../catalog/ia/assets.leaf-amendments.json" with { type: "json" };
 import componentFreeze from "../catalog/ia/components.leaf-freeze.json" with { type: "json" };
 import { sha256 } from "./digest.js";
 import { checkFrozenLeafSets, assertFrozenLeafSets, type FrozenLeafLayer } from "./leaf-freeze.js";
@@ -58,7 +59,7 @@ describe("owner-signed leaf membership", () => {
     });
     it(`${layer}: allows regrouping, reordering, labels and metadata changes`, () => {
       const value = input();
-      const ids = fixture.layer === "components" ? [...fixture.freeze.leafIds, "components.semantic-content", "components.native-action"] : fixture.freeze.leafIds;
+      const ids = fixture.layer === "components" ? [...fixture.freeze.leafIds, "components.semantic-content", "components.native-action"] : fixture.layer === "assets" ? [...fixture.freeze.leafIds, ...assetAmendments.addedLeafIds] : fixture.freeze.leafIds;
       value.ia.nodes = [{ id: "new-domain", label: "New domain", children: [{ id: "new-family", label: "New family", leaves: [...ids].reverse() }] }];
       value.slots.reverse();
       Object.assign(value.slots[0]!, { description: "Metadata remains separate" });
@@ -90,7 +91,7 @@ describe("owner-signed leaf membership", () => {
       }
       expect(fixture.slots).toEqual(beforeSlots);
       expect(fixture.ia).toEqual(beforeIA);
-      expect(loadBuildCatalog().slots).toHaveLength(211);
+      expect(loadBuildCatalog().slots).toHaveLength(214);
     });
   }
 
@@ -110,6 +111,28 @@ describe("owner-signed leaf membership", () => {
   });
 });
 
+
+describe("owner-signed Media leaf amendment", () => {
+  const added = ["assets.image", "assets.pattern", "assets.video"];
+  it("adds exactly image, video and pattern to the unchanged 45 signed IDs: 48 leaves, 0 removals", () => {
+    expect(assetAmendments).toEqual({ schemaVersion: 1, layer: "assets", baseSignedHead: assetFreeze.signedHead, status: "owner-signed", ownerSignoffComment: "6408363557", receiptComment: "6404876885", addedLeafIds: added });
+    expect(assetFreeze.leafIds).toHaveLength(45);
+    expect(sha256([...assetFreeze.leafIds].sort().join("\n"))).toBe("dc3c75b4dee91fb500da9548a147fa0bf530215764b58df7a9ec12b2a966ae54");
+    const ids = assetSlots.map(slot => slot.id).sort();
+    expect(ids).toHaveLength(48);
+    expect(sha256(ids.join("\n"))).toBe("413698a4fe2af41b64f02e23353ba29760397c06ed54c94f790a3ce93cf9fdda");
+    expect(assetFreeze.leafIds.filter(id => !ids.includes(id))).toEqual([]);
+    expect(ids.filter(id => !assetFreeze.leafIds.includes(id))).toEqual(added);
+    expect(checkFrozenLeafSets([assetIA as Placement], assetSlots, ["assets"])).toEqual([]);
+  });
+  it("refuses a fourth unsigned Media leaf and a missing signed addition", () => {
+    const slots = structuredClone(assetSlots);
+    slots.push({ ...slots[0]!, id: "assets.audio" });
+    expect(checkFrozenLeafSets([assetIA as Placement], slots, ["assets"])).toEqual([expect.objectContaining({ source: "slots", unexpected: ["assets.audio"], missing: [] })]);
+    const without = structuredClone(assetSlots).filter(slot => slot.id !== "assets.pattern");
+    expect(checkFrozenLeafSets([assetIA as Placement], without, ["assets"])).toEqual([expect.objectContaining({ source: "slots", missing: ["assets.pattern"], unexpected: [] })]);
+  });
+});
 
 describe("explicit local component amendment", () => {
   const amendedId = "components.semantic-content";

@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, render } from "@testing-library/react";
 import { applyLibraryChange, authorImageRatios, createConsumerIdentitySeeds, deriveIdentity, libraryHash, loadCatalog } from "../catalog-core/index.js";
 import { metaOf } from "../catalog-core/model.js";
+import { authorConsumerMedia } from "../catalog-core/__fixtures__/completed-catalog-library.js";
 import type { DtcgToken, LibraryData } from "../catalog-core/types.js";
 import { inspectSvg } from "../catalog-assets/svg.js";
 import { parseRootDeclarations } from "../tokens/internal/parse-css.js";
@@ -33,7 +34,7 @@ function consumerLibrary(): LibraryData {
     ...catalog.fills.filter(fill => metaOf(fill).source === "lucide").map(fill => ({ op: "adopt" as const, slot: metaOf(fill).slot, source: "lucide" })),
   ] });
   library = deriveIdentity(catalog, createConsumerIdentitySeeds(catalog, library, { name: "Example", fontLicence: { family: "sans-serif", outlining: "unknown" } }));
-  return authorImageRatios(catalog, library, { ratios: { landscape: { width: 3, height: 2 } }, source: "Consumer editorial brief", rationale: "Landscape crop for editorial media" });
+  return authorConsumerMedia(catalog, authorImageRatios(catalog, library, { ratios: { landscape: { width: 3, height: 2 } }, source: "Consumer editorial brief", rationale: "Landscape crop for editorial media" }));
 }
 
 /** The CSS colour a ground class paints in the light theme (a neutral ground paints it in both), read from the shipped token file. */
@@ -138,6 +139,29 @@ function artworkFaults(kind: string | undefined, svg: string, ground?: string): 
   return faults;
 }
 
+/** What a Media resource or pattern specimen must actually render from its value: the real image, a playable captioned video, or the recipe's own tile. */
+function mediaFaults(slot: string, specimen: HTMLElement, value: unknown): string[] {
+  const v = value as Record<string, unknown>;
+  if (slot === "assets.image") {
+    const img = specimen.querySelector("img");
+    if (!img || img.getAttribute("src") !== v.src) return ["no rendered image"];
+    return [...(img.getAttribute("width") === String(v.width) && img.getAttribute("height") === String(v.height) ? [] : ["image without its dimensions"]),
+      ...(img.getAttribute("alt") === (v.decorative === true ? "" : v.alt) ? [] : ["image without its alt policy"])];
+  }
+  if (slot === "assets.video") {
+    const video = specimen.querySelector("video"), source = video?.querySelector("source");
+    if (!video || source?.getAttribute("src") !== v.src || source?.getAttribute("type") !== v.mediaType) return ["no playable video"];
+    const captions = v.captions as { src: string } | undefined;
+    return [...(video.hasAttribute("autoplay") ? ["video autoplays"] : []), ...(video.hasAttribute("controls") ? [] : ["video without controls"]),
+      ...(captions && video.querySelector("track[kind='captions']")?.getAttribute("src") !== captions.src ? ["video without its captions"] : [])];
+  }
+  if (slot === "assets.pattern") {
+    const recipe = v as { ink: string; tile: string };
+    return [...specimen.querySelectorAll<HTMLElement>("*")].some(element => element.style.backgroundImage.includes(`var(${recipe.ink})`) && element.style.backgroundSize.includes(`var(${recipe.tile})`)) ? [] : ["no pattern tile from its recipe"];
+  }
+  return [`unexpected rules leaf ${slot}`];
+}
+
 const EXPECTED = (slot: string): string => slot.startsWith("assets.icon-") ? "icon" : slot === "assets.lockup" || slot === "assets.mark" ? "logo" : slot === "assets.image-ratio" ? "ratio" : slot.slice("assets.".length);
 type Row = { slot: string; source: string; member: string; faults: string[]; kind?: string };
 function specimenRow(candidate: Candidate, entry: Candidate["members"][number]): Row {
@@ -158,7 +182,8 @@ function specimenRow(candidate: Candidate, entry: Candidate["members"][number]):
     if (kind === "logo") faults.push(...contrastFaults(specimen, entry.member.value.light as string));
     if (kind === "logo" || kind === "favicon" || kind === "app-icon") faults.push(...artworkFaults(kind, entry.member.value.light as string, groundColor(specimen.querySelector("img") ?? specimen)));
   }
-  if (specimen && entry.member.$type === "rules") {
+  if (specimen && slot !== "assets.image-ratio" && entry.member.$type === "rules") faults.push(...mediaFaults(slot, specimen, entry.member.value.light));
+  if (specimen && slot === "assets.image-ratio" && entry.member.$type === "rules") {
     const { width, height } = entry.member.value.light as { width: number; height: number };
     if (![...specimen.querySelectorAll<HTMLElement>("*")].some(element => element.style.aspectRatio.replace(/\s/g, "") === `${width}/${height}`)) faults.push("no ratio frame");
   }

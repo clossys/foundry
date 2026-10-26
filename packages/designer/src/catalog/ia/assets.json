@@ -115,6 +115,21 @@
           "leaves": [
             "assets.image-ratio"
           ]
+        },
+        {
+          "id": "imagery-resources",
+          "label": "Resources",
+          "leaves": [
+            "assets.image",
+            "assets.video"
+          ]
+        },
+        {
+          "id": "imagery-patterns",
+          "label": "Patterns",
+          "leaves": [
+            "assets.pattern"
+          ]
         }
       ]
     }

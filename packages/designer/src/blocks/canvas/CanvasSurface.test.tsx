@@ -2,6 +2,7 @@ import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CanvasSurface, type CanvasSurfaceProps } from "./CanvasSurface.js";
+import { PATTERN_RECIPES, patternBackground } from "../../tokens/pattern.js";
 import { CANVAS_WHEEL_ZOOM_RATE, fitTo, toWorld, zoomAt, type CanvasItem } from "./models.js";
 
 const items: readonly CanvasItem[] = [
@@ -639,4 +640,25 @@ it("opens only one compact panel, reserves the bottom controls, and returns Esca
   fireEvent.keyDown(input,{key:"Escape"});
   expect(screen.getByRole("button",{name:"Open inspector"})).toHaveFocus();
   expect(screen.queryByRole("textbox",{name:"Inspector edit"})).not.toBeInTheDocument();
+});
+
+describe("canvas pattern layer consumes assets.pattern", () => {
+  it("paints the dots and grid recipes, never a definition of its own", () => {
+    for (const [grid, shape] of [["dots", "dots"], ["crosses", "grid"]] as const) {
+      const { surface, unmount } = setup({ grid });
+      expect(surface.style.backgroundImage).toBe(patternBackground(PATTERN_RECIPES[shape], 1).backgroundImage);
+      unmount();
+    }
+  });
+  it("paints a selected recipe's own token references, scaled by zoom and offset by pan", () => {
+    const recipe = { ...PATTERN_RECIPES.dots, ink: "--color-line-strong", tile: "--spacing-2xl" };
+    const { surface } = setup({ grid: "dots", gridPattern: recipe, viewport: { x: 12, y: -8, zoom: 2 } });
+    expect(surface.style.backgroundImage).toContain("var(--color-line-strong)");
+    expect(surface.style.backgroundSize).toBe("calc(var(--spacing-2xl) * 2) calc(var(--spacing-2xl) * 2)");
+    expect(surface.style.backgroundPosition).toBe("12px -8px");
+  });
+  it("draws no pattern layer without a grid", () => {
+    const { surface } = setup({ gridPattern: PATTERN_RECIPES.lines });
+    expect(surface.style.backgroundImage).toBe("");
+  });
 });

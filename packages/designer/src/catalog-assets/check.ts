@@ -6,6 +6,9 @@ import { checkClearSpace, checkMinimumSize, checkSingleColourLegibility } from '
 import { inspectSvg, inspectGlyph, type SvgElement } from './svg.js';
 import { checkIdentityDerivations } from './identity.js';
 import { flatten } from '../catalog-core/model.js';
+import { isPatternRecipe } from '../tokens/pattern.js';
+import { isImageResource, isVideoResource, type ImageResource, type VideoResource } from './media.js';
+export { VIDEO_REDUCED_MOTION, isImageResource, isVideoResource, type ImageResource, type VideoResource } from './media.js';
 export type AssetCheckCode = `A${1|2|3|4|5|6|7|8|9|10|11|12}`;
 export interface AssetFinding {code:AssetCheckCode;subject:string;verdict:'satisfied'|'violated'|'indeterminate'|'exempt';message:string}
 export interface ImageRecord {id:string;width:number;height:number;alt?:string;decorative?:boolean;bakedCorners?:boolean;format:string;bytes:number;maxBytes?:number}
@@ -74,6 +77,7 @@ export function checkAssetProfileWithContext(catalog:CatalogData,library:Library
   try{if(!fg||!bg)throw Error();const ratios=['light','dark'].map(mode=>contrastRatio(fg.css[mode as 'light'|'dark']??fg.css.light,bg.css[mode as 'light'|'dark']??bg.css.light));add('A9',`assets.icon-${icon}`,ratios.every(r=>r>=3)?'satisfied':'violated',`Status paint contrast minimum ${Math.min(...ratios).toFixed(2)}:1`);}catch{add('A9',`assets.icon-${icon}`,'indeterminate','Status ink or tint is absent or cannot be parsed');}
  }
  for(const [id,member] of Object.entries(profile.members).filter(([id])=>id.startsWith('assets.image-ratio.'))){const v=member.value.light as Record<string,unknown>|null;const valid=v&&typeof v==='object'&&!Array.isArray(v)&&typeof v.width==='number'&&typeof v.height==='number'&&Number.isFinite(v.width)&&Number.isFinite(v.height)&&v.width>0&&v.height>0;add('A10',id,valid?'satisfied':'violated','Image ratio must have finite positive width and height');}
+ for(const [id,member] of Object.entries(profile.members).filter(([,m])=>MEDIA_RULES[m.slot])){const rule=MEDIA_RULES[member.slot]!;add('A10',id,rule.valid(member.value.light,id.slice(member.slot.length+1))?'satisfied':'violated',rule.message);}
  const ratios=Object.entries(profile.members).filter(([id])=>id.startsWith('assets.image-ratio.')).map(([,m])=>m.value.light).filter((v):v is {width:number;height:number}=>!!v&&typeof v==='object'&&!Array.isArray(v)&&typeof (v as Record<string,unknown>).width==='number'&&typeof (v as Record<string,unknown>).height==='number');
  for(const image of input.images??[]){const crop=image.width/image.height;const match=Number.isFinite(crop)&&image.width>0&&image.height>0&&ratios.some(r=>Math.abs(crop/(r.width/r.height)-1)<=.01);add('A10',image.id,match&&(image.decorative||!!image.alt?.trim())&&!image.bakedCorners?'satisfied':'violated','Crop within 1%; meaningful alt unless decorative; no baked corners');if(!['avif','webp','png','jpeg','svg'].includes(image.format)||image.maxBytes===undefined||image.bytes>image.maxBytes)add('A10',image.id,'indeterminate','Review image format and weight budget');}
  for(const leaf of ['lockup','mark'])for(const member of ['positive','reversed']){const id=`assets.${leaf}.${member}`,value=profile.members[id]?.value.light;if(typeof value!=='string')continue;const clear=checkClearSpace(value),size=checkMinimumSize(value);add('A11',id,clear.indeterminate?'indeterminate':clear.ok?'satisfied':'violated',clear.reason??'Clear-space declaration is sufficient');add('A11',id,size.indeterminate?'indeterminate':size.ok?'satisfied':'violated',size.reason??'Minimum size is sufficient');}
@@ -83,6 +87,17 @@ export function checkAssetProfileWithContext(catalog:CatalogData,library:Library
  }
  for(const error of identityErrors())add('A12','assets.identity','violated',error);
  return findings.sort((a,b)=>a.code.localeCompare(b.code)||a.subject.localeCompare(b.subject)||a.message.localeCompare(b.message));
+}
+const MEDIA_RULES:Readonly<Record<string,{valid:(value:unknown,name:string)=>boolean;message:string}>>={
+ 'assets.image':{valid:isImageResource,message:'Image needs a photo|illustration kind, a source, finite positive dimensions and alt text unless decorative'},
+ 'assets.video':{valid:isVideoResource,message:'Video needs a video/* source, finite positive dimensions, an explicit reduced-motion policy and complete captions when supplied'},
+ 'assets.pattern':{valid:isPatternRecipe,message:'Pattern recipe shape must be its member and every paint input a token custom property'},
+};
+/** Explicit consumer media resources: open stable member ids, values judged by A10 like every other member. */
+export function authorMediaResources(catalog:CatalogData,library:LibraryData,input:{slot:'assets.image';resources:Readonly<Record<string,ImageResource>>;source:string;rationale:string}|{slot:'assets.video';resources:Readonly<Record<string,VideoResource>>;source:string;rationale:string}):LibraryData{
+ if(!input.source.trim()||!input.rationale.trim()||!Object.keys(input.resources).length)throw Error('consumer media source, rationale and resources required');
+ const values:Record<string,DtcgToken>={};for(const [name,resource] of Object.entries(input.resources)){if(!/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/.test(name))throw Error('invalid media resource name');values[name]={$type:'rules',$value:{...resource},$extensions:{'com.clossys.origin':{kind:'authored',license:library.source.license,note:`${input.source}: ${input.rationale}`}}}}
+ return applyLibraryChange(catalog,library,{baseHash:libraryHash(library),changes:[{op:'author',slot:input.slot,tokens:values}]});
 }
 /** Explicit consumer crop choice; no Foundry candidate and no mandatory square member. */
 export function authorImageRatios(catalog:CatalogData,library:LibraryData,input:{ratios:Readonly<Record<string,{width:number;height:number}>>;source:string;rationale:string}):LibraryData{

@@ -2,6 +2,7 @@ import tokens from "../catalog/ia/tokens.leaf-freeze.json" with { type: "json" }
 import assets from "../catalog/ia/assets.leaf-freeze.json" with { type: "json" };
 import components from "../catalog/ia/components.leaf-freeze.json" with { type: "json" };
 import componentAmendments from "../catalog/ia/components.leaf-amendments.json" with { type: "json" };
+import assetAmendments from "../catalog/ia/assets.leaf-amendments.json" with { type: "json" };
 import type { Placement, PlacementNode } from "./types.js";
 
 export type FrozenLeafLayer = "tokens" | "assets" | "components";
@@ -25,10 +26,18 @@ if (componentAmendments.schemaVersion !== 1 || componentAmendments.layer !== "co
     componentAmendments.addedLeafIds.some(id => !id.startsWith("components.") || components.leafIds.includes(id))) {
   throw new Error("LEAF_FREEZE: invalid explicit component amendment");
 }
+// The owner-signed Media amendment adds exactly its listed leaves on top of the signed asset baseline.
+if (assetAmendments.schemaVersion !== 1 || assetAmendments.layer !== "assets" ||
+    assetAmendments.baseSignedHead !== assets.signedHead ||
+    assetAmendments.status !== "owner-signed" ||
+    new Set(assetAmendments.addedLeafIds).size !== assetAmendments.addedLeafIds.length ||
+    assetAmendments.addedLeafIds.some(id => !id.startsWith("assets.") || assets.leafIds.includes(id))) {
+  throw new Error("LEAF_FREEZE: invalid explicit asset amendment");
+}
 // Copy signed IDs plus the explicit versioned additions once, never current slots or IA.
 const baseline: Readonly<Record<FrozenLeafLayer, ReadonlySet<string>>> = {
   tokens: new Set(tokens.leafIds),
-  assets: new Set(assets.leafIds),
+  assets: new Set([...assets.leafIds, ...assetAmendments.addedLeafIds]),
   components: new Set([...components.leafIds, ...componentAmendments.addedLeafIds]),
 };
 const leaves = (nodes: readonly PlacementNode[]): string[] => nodes.flatMap(node => "leaves" in node ? node.leaves : leaves(node.children));
