@@ -1328,6 +1328,7 @@
 /* Frames own region motion. Content stays mounted through open and closed states.
    Navigation never animates a layout property: it snaps between its media-ruled widths,
    so neither hydration nor a collapse reflows the stage over several frames. */
+@layer foundry-ui-compiled {
 .frame-docked-navigation[data-open="false"] { visibility: hidden; }
 .frame-docked-panel {
   transition-property: inline-size, visibility;
@@ -1348,4 +1349,5 @@
 @media (prefers-reduced-motion: reduce) {
   .frame-docked-panel { transition: none; }
   [data-drawer-placement="start"], [data-drawer-placement="end"] { animation: none; }
+}
 }
