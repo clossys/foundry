@@ -4,6 +4,7 @@ import type { ComponentCandidate } from "../catalog-core/resolve-components.js";
 import { stableStringify } from "../catalog-core/stable.js";
 import { FOUNDRY_COMPONENT_GAPS, FOUNDRY_COMPONENT_MAP } from "./foundry-components.map.js";
 import type { FoundryComponentMapping, FoundryComponentSubpath } from "./foundry-components.map.js";
+import foundrySourceReads from "./foundry-source-reads.json" with { type: "json" };
 
 export interface FoundryComponentFillDoc {
   $extensions: { "com.clossys.fill": FillMeta };
@@ -25,6 +26,8 @@ export interface FoundryComponentImportInput {
   mappings?: Readonly<Record<string, FoundryComponentMapping>>;
   /** An independently read public barrel export inventory, when validating package pointers. */
   exports?: Readonly<Record<FoundryComponentSubpath, readonly string[]>>;
+  /** Token slots each leaf's own module source consumes; defaults to the committed derivation (foundry-source-reads.json). */
+  sourceReads?: Readonly<Record<string, readonly string[]>>;
 }
 const PACKAGE = "@clossys/designer";
 const VERSION = "0.12.0";
@@ -35,6 +38,7 @@ const sorted = (values: readonly string[]): string[] => [...new Set(values)].sor
 export function importFoundryComponents(input: FoundryComponentImportInput = {}): FoundryComponentImport {
   const slots = input.slots ?? componentSlots as unknown as readonly ComponentSlot[];
   const mappings = input.mappings ?? FOUNDRY_COMPONENT_MAP;
+  const sourceReads: Readonly<Record<string, readonly string[]>> = input.sourceReads ?? foundrySourceReads;
   const fills: FoundryComponentFillDoc[] = [];
   const coverage: FoundryComponentCoverage[] = [];
   const seen = new Set<string>();
@@ -66,14 +70,19 @@ export function importFoundryComponents(input: FoundryComponentImportInput = {})
       }
     }
     const composes = sorted(mapping.composes ?? []);
+    const tokenReads = sorted(slot.contract.allowedReads.tokens);
+    // Frozen reads are checked against what the component's own source consumes (foundry-source-reads.json).
+    // An omission is recorded, not yet enforced: the fix is widening the slot contract's allowedReads.
+    const omitted = sorted((sourceReads[leaf] ?? []).filter(read => !tokenReads.includes(read)));
+    const blockers = mapping.blockers ?? [];
     const pin = { package: PACKAGE, version: VERSION, export: `./${mapping.subpath}#${mapping.export}` };
     const descriptor: ComponentCandidate = {
       slot: slot.id, source: "foundry", root: slot.contract.root, members: supported,
       props: sorted(mapping.props), propMap,
       // Contract bindings are declarations. Source scans and runtime observations remain separate.
-      reads: { tokens: sorted(slot.contract.allowedReads.tokens), assets: sorted(mapping.assets ?? (leaf === "button" ? ["assets.icon-chevron-right"] : [])), components: composes },
+      reads: { tokens: tokenReads, assets: sorted(mapping.assets ?? (leaf === "button" ? ["assets.icon-chevron-right"] : [])), components: composes },
       composes, impl: { kind: "package", module: `${PACKAGE}/${mapping.subpath}`, export: mapping.export },
-      ...(mapping.blockers?.length ? { blockers: structuredClone(mapping.blockers) } : {}),
+      ...(blockers.length ? { blockers: structuredClone(blockers) } : {}),
       license: "MIT", pin, deps: [
         { name: "react", version: ">=18", license: "MIT" },
         { name: "tailwind-merge", version: "^3.7.0", license: "MIT" },
@@ -88,8 +97,9 @@ export function importFoundryComponents(input: FoundryComponentImportInput = {})
       conforms: [], evidence: [], author: "foundry", trust: "foundry", license: "MIT", pin, status: "draft",
       ...(missing.length ? { unmapped: missing } : {}),
     } }, components: { [leaf]: descriptor } });
-    coverage.push({ slot: slot.id, status: mapping.blockers?.length ? "blocked" : missing.length ? "subset" : "candidate", supported, missing,
-      notes: [...(mapping.notes ?? []), ...(mapping.blockers?.map(blocker => blocker.message) ?? []), "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."] });
+    coverage.push({ slot: slot.id, status: blockers.length ? "blocked" : missing.length ? "subset" : "candidate", supported, missing,
+      notes: [...(mapping.notes ?? []), ...blockers.map(blocker => blocker.message),
+        ...(omitted.length ? [`Frozen reads omit source-consumed ${omitted.join(", ")}; the contract's allowedReads must widen before this is enforced.`] : []), "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."] });
   }
   for (const leaf of Object.keys(mappings)) if (!seen.has(`components.${leaf}`)) throw new Error(`foundry-components: mapping has no contract components.${leaf}`);
   return { fills, coverage };

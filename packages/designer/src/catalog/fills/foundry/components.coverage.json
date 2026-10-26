@@ -175,6 +175,7 @@
       "missing": [],
       "notes": [
         "Shared tooltip part is present; accessibility and browser behavior remain unmeasured. Static CSS inspection has no Escape dismissal; long labels in narrow plots may clip. The complete table remains available.",
+        "Frozen reads omit source-consumed tokens.status-color; the contract's allowedReads must widen before this is enforced.",
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
       ],
       "slot": "components.chart-range",
@@ -190,6 +191,7 @@
       "missing": [],
       "notes": [
         "Shared tooltip part is present; accessibility and browser behavior remain unmeasured. Static CSS inspection has no Escape dismissal; long labels in narrow plots may clip. The complete table remains available.",
+        "Frozen reads omit source-consumed tokens.body-size, tokens.spacing; the contract's allowedReads must widen before this is enforced.",
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
       ],
       "slot": "components.chart-scatter",
@@ -205,6 +207,7 @@
       "missing": [],
       "notes": [
         "Axes, legend and tooltip are opt-in (off by default, so the bare inline trend is unchanged). The tooltip reuses the shared ChartFrame.Tooltip part; accessibility and browser behavior remain unmeasured, static CSS inspection has no Escape dismissal, and long labels may clip. The complete table remains available.",
+        "Frozen reads omit source-consumed tokens.caption-size, tokens.spacing; the contract's allowedReads must widen before this is enforced.",
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
       ],
       "slot": "components.chart-sparkline",
@@ -250,6 +253,7 @@
       "missing": [],
       "notes": [
         "Group scope dispatches to Checkbox.Group (RAC CheckboxGroup); each member Checkbox takes a value.",
+        "Frozen reads omit source-consumed tokens.caption-size, tokens.typeface; the contract's allowedReads must widen before this is enforced.",
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
       ],
       "slot": "components.checkbox",
@@ -263,19 +267,19 @@
       ]
     },
     {
-      "missing": [
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.color-picker",
+      "status": "candidate",
+      "supported": [
         "part.area",
         "part.field",
         "part.slider",
         "part.swatch-picker",
         "part.wheel"
-      ],
-      "notes": [
-        "No package implementation is available."
-      ],
-      "slot": "components.color-picker",
-      "status": "unavailable",
-      "supported": []
+      ]
     },
     {
       "missing": [],
@@ -333,6 +337,7 @@
       "missing": [],
       "notes": [
         "Group scope dispatches to Disclosure.Group (RAC DisclosureGroup); members are addressed by id.",
+        "Frozen reads omit source-consumed tokens.border-color; the contract's allowedReads must widen before this is enforced.",
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
       ],
       "slot": "components.disclosure",
@@ -387,6 +392,7 @@
     {
       "missing": [],
       "notes": [
+        "Frozen reads omit source-consumed tokens.control-color; the contract's allowedReads must widen before this is enforced.",
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
       ],
       "slot": "components.grid-list",
@@ -456,6 +462,7 @@
       "missing": [],
       "notes": [
         "Menu is the trigger-owned popup; Menu.Inline presents the same menu inline. Root selectionMode applies to both; selected items show the check glyph.",
+        "Frozen reads omit source-consumed tokens.accent-color; the contract's allowedReads must widen before this is enforced.",
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
       ],
       "slot": "components.menu",
@@ -493,17 +500,17 @@
       ]
     },
     {
-      "missing": [
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.number-field",
+      "status": "candidate",
+      "supported": [
         "format",
         "state.invalid",
         "step"
-      ],
-      "notes": [
-        "No package implementation is available."
-      ],
-      "slot": "components.number-field",
-      "status": "unavailable",
-      "supported": []
+      ]
     },
     {
       "missing": [],
@@ -681,6 +688,7 @@
     {
       "missing": [],
       "notes": [
+        "Frozen reads omit source-consumed tokens.caption-size; the contract's allowedReads must widen before this is enforced.",
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
       ],
       "slot": "components.tabs",
@@ -730,6 +738,7 @@
       "missing": [],
       "notes": [
         "Toaster is the region; tone, timeout and authored action dispatch through shell toast.",
+        "Frozen reads omit source-consumed tokens.body-size, tokens.control-radius, tokens.elevation, tokens.spacing, tokens.status-color, tokens.text-color, tokens.typeface, tokens.z-index; the contract's allowedReads must widen before this is enforced.",
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
       ],
       "slot": "components.toast",
