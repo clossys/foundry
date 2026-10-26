@@ -3,13 +3,14 @@ import { resolve } from "./api.js";
 import { runtimeSnapshot } from "./runtime-ports.js";
 import { sha256 } from "./digest.js";
 import { stableStringify } from "./stable.js";
-import { assertRegistryIdentity, surfaceDerivationHash, surfaceDescriptorHash, surfaceDocument, surfaceFault, surfaceInputs, surfaceManifest, surfaceOf, surfacePath, verifySurfaceFiles, verifySurfaceProvenance } from "./surface-library.js";
+import { assertRegistryIdentity, isSurfacePackageEntry, surfaceDerivationHash, surfaceDescriptorHash, surfaceDocument, surfaceEntryOf, surfaceFault, surfaceInputs, surfaceManifest, surfaceOf, surfacePath, verifySurfaceFiles, verifySurfaceProvenance } from "./surface-library.js";
 import type { SurfaceMaterializationInput, SurfaceSourceBundle, SurfaceCandidate, SurfaceBase, SurfaceOrigin, SurfaceFile, SurfaceInputIdentity } from "./surface-types.js";
 export async function materializeSurfaceSourceFill(input: SurfaceMaterializationInput): Promise<SurfaceSourceBundle> {
     const registry = input.catalog.surfaces;
     if (!registry)
         surfaceFault("S2 surface registry missing");
-    const candidates = registry.fills.filter(doc => { const fill = surfaceOf(doc); return fill.slot === input.slot && fill.source === input.source; });
+    // Package-pointer candidates copy no bytes and are adopted by applySurfaceOperation, never materialized.
+    const candidates = registry.fills.filter(doc => { const fill = surfaceEntryOf(doc); return !isSurfacePackageEntry(fill) && fill.slot === input.slot && fill.source === input.source; });
     if (candidates.length !== 1)
         surfaceFault("S2 unique upstream candidate required");
     const candidate = surfaceOf(candidates[0]!);

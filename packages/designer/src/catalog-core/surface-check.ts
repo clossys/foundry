@@ -1,11 +1,12 @@
 /** Surface diagnostics retain failed provenance, source, contract and evidence boundaries. */
-import { surfaceOf, surfacePrimary, canonicalSurfacePortion, surfaceDescriptorHash, surfaceDigest, sortedManifest, verifySurfaceFiles, verifySurfaceProvenance, surfaceInputs, surfaceDerivationHash, surfaceFault, assertSurfaceResolutionOptions } from "./surface-library.js";
+import { surfaceEntryOf, isSurfacePackageEntry, verifySurfacePackageProvenance, surfaceOf, surfacePrimary, canonicalSurfacePortion, surfaceDescriptorHash, surfaceDigest, sortedManifest, verifySurfaceFiles, verifySurfaceProvenance, surfaceInputs, surfaceDerivationHash, surfaceFault, assertSurfaceResolutionOptions } from "./surface-library.js";
 import { bindSurfaceSource } from "./surface-bindings.js";
 import { runtimeHash, runtimeSourceFindings, runtimeSnapshot } from "./runtime-ports.js";
 import { buildSurfaceConsumption } from "./surface-consumption.js";
 import { emit as emitValues } from "./emit.js";
 import { stableStringify } from "./stable.js";
 import type { CompositeEngineInput, CompositeResolved } from "./types.js";
+import { contractFindings } from "./surface-defaults.js";
 import type { SurfaceFinding, SurfaceResolved, SurfaceResolvedFill, SurfaceRuntimeIdentity, SurfaceCandidate, SurfaceResolutionOptions } from "./surface-types.js";
 export function surfaceRuntimeIdentity(row: SurfaceResolvedFill): SurfaceRuntimeIdentity { return { version: 1, descriptorHash: row.descriptorHash, outputHash: row.outputHash, apiHash: row.apiHash, inputsHash: row.inputsHash }; }
 export function surfaceMeasurementFindings(fill: SurfaceCandidate, row: SurfaceResolvedFill, bound: ReturnType<typeof bindSurfaceSource>, options: SurfaceResolutionOptions): string[] {
@@ -40,6 +41,34 @@ export function resolveSurfaces(input: CompositeEngineInput, profile: CompositeR
     const seen = new Set<string>();
     assertSurfaceResolutionOptions(options);
     for (const doc of portion.fills) {
+        const entry = surfaceEntryOf(doc);
+        if (isSurfacePackageEntry(entry)) {
+            // Package pointer: catalog-joined provenance, static contract rule, and independent package export evidence.
+            const meta = doc.$extensions["com.clossys.fill"], origin = entry.origin;
+            if (!origin)
+                surfaceFault("S1 consumer origin missing");
+            const primary = surfacePrimary(entry.slot);
+            if (primaryNames.has(primary))
+                add("S1", entry.slot, "cross-kind primary collision");
+            primaryNames.add(primary);
+            if (meta.id !== `${input.library.source.id}/${entry.slot}` || meta.source !== input.library.source.id || meta.sourceAddress !== `fills/${entry.slot}.json` || meta.author !== "consumer" || meta.trust !== "consumer" || meta.status !== "draft" || meta.conforms.length || meta.evidence.length || stableStringify(meta.originKinds) !== stableStringify(["package"]))
+                surfaceFault("S1 consumer metadata differs");
+            verifySurfacePackageProvenance(input.catalog, entry);
+            const slot = input.catalog.surfaces?.slots.find(row => row.id === entry.slot);
+            if (!slot)
+                add("S1", entry.slot, "authored contract missing");
+            else
+                for (const message of contractFindings(slot, entry as Parameters<typeof contractFindings>[1]))
+                    add(/^S[1-8]/.test(message) ? message.slice(0, 2) as SurfaceFinding["code"] : "S5", entry.slot, message.replace(/^S[1-8] /, ""));
+            const evidence = options.packages.filter(row => row.module === entry.impl.module && row.version === origin.pin.version && row.values.includes(entry.impl.export));
+            if (evidence.length !== 1)
+                add("S4", entry.slot, "package export evidence missing or differs");
+            else
+                add("S8", entry.slot, "package pointer: runtime qualification belongs to the pinned package release", "notice");
+            const descriptorHash = origin.descriptorHash, outputHash = surfaceDigest([]);
+            fills[entry.slot] = { document: doc, descriptorHash, outputHash, apiHash: surfaceDigest({ module: entry.impl.module, export: entry.impl.export, pin: origin.pin }), inputsHash: surfaceDigest({ pin: origin.pin, descriptorHash, evidence: evidence.map(row => row.artifactSha256) }) };
+            continue;
+        }
         const fill = surfaceOf(doc);
         if (!fill.origin)
             surfaceFault("S1 consumer origin missing");
@@ -121,7 +150,7 @@ export function resolveSurfaces(input: CompositeEngineInput, profile: CompositeR
     if (validateDerivations) {
         const topology = (id: string, chain: readonly string[]) => { if (chain.includes(id))
             surfaceFault("S6 surface input cycle"); const row = fills[id as SurfaceCandidate["slot"]]; if (!row)
-            return; const origin = surfaceOf(row.document).origin; if (origin?.kind !== "derived")
+            return; const origin = surfaceEntryOf(row.document).origin; if (origin?.kind !== "derived")
             return; for (const ref of origin.inputs)
             if (ref.input.kind === "surface")
                 topology(ref.input.id, [...chain, id]); };
@@ -129,7 +158,8 @@ export function resolveSurfaces(input: CompositeEngineInput, profile: CompositeR
     }
     const visit = (id: string, chain: readonly string[]) => { if (chain.includes(id))
         surfaceFault("S6 surface input cycle"); const entry = fills[id as SurfaceCandidate["slot"]]; if (!entry)
-        return; const fill = surfaceOf(entry.document); if (fill.origin?.kind !== "derived")
+        return; const leaf = surfaceEntryOf(entry.document); if (isSurfacePackageEntry(leaf) || leaf.origin?.kind !== "derived")
+        return; const fill = leaf; if (fill.origin?.kind !== "derived")
         return; const origin = fill.origin; const rules = input.catalog.surfaces?.rules.filter(rule => rule.slot === id && stableStringify(rule.identity) === stableStringify(origin.rule)) ?? []; if (rules.length !== 1)
         surfaceFault("S6 registered derivation missing"); const actual = surfaceInputs(input.catalog, input.library, joined, rules[0]!.inputs, options); if (stableStringify(actual) !== stableStringify(origin.inputs) || origin.inputsHash !== surfaceDerivationHash(origin.base, origin.transform, origin.rule, input.catalog, id, actual))
         surfaceFault("S6 stale derivation input identity"); for (const ref of actual)

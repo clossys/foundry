@@ -4,7 +4,7 @@ import { sha256 } from "./digest.js";
 import { stableStringify } from "./stable.js";
 import { runtimeSnapshot } from "./runtime-ports.js";
 import type { CompositeCatalogData, CompositeLibraryData, CompositeResolved } from "./types.js";
-import type { SurfaceBase, SurfaceCandidate, SurfaceCandidateDocument, SurfaceDocument, SurfaceFile, SurfaceFileHash, SurfaceInputIdentity, SurfaceInputRef, SurfaceLibraryPortion, SurfaceOperation, SurfaceOrigin, SurfaceRuleIdentity, SurfaceSourceBundle, SurfaceSelection, SurfaceResolutionOptions } from "./surface-types.js";
+import type { SurfaceAnyDocument, SurfaceEntry, SurfacePackageDocument, SurfacePackageEntry, SurfacePackageOrigin, SurfacePackagePin, SurfaceBase, SurfaceCandidate, SurfaceCandidateDocument, SurfaceDocument, SurfaceFile, SurfaceFileHash, SurfaceInputIdentity, SurfaceInputRef, SurfaceLibraryPortion, SurfaceOperation, SurfaceOrigin, SurfaceRuleIdentity, SurfaceSourceBundle, SurfaceSelection, SurfaceResolutionOptions } from "./surface-types.js";
 export const surfaceDigest = (value: unknown): string => `sha256:${sha256(stableStringify(value))}`;
 export function surfaceFault(message: string): never { throw new CatalogError(`surfaces: ${message}`); }
 const safeKey = (key: string): boolean => !["__proto__", "constructor", "prototype"].includes(key);
@@ -190,9 +190,62 @@ export function assertSurfaceCandidate(value: unknown, installed = false): asser
     if (installed)
         origin(value.origin);
 }
-export function surfaceOf(doc: SurfaceCandidateDocument | SurfaceDocument): SurfaceCandidate & {
-    origin?: SurfaceOrigin;
-} {
+const PACKAGE_SPECIFIER = /^(?:@[a-z0-9-]+\/)?[a-z0-9-]+(?:\/[A-Za-z0-9_-]+)*$/;
+function packagePin(value: unknown): asserts value is SurfacePackagePin {
+    object(value, ["package", "version", "export"]);
+    [value.package, value.version, value.export].forEach(string);
+    if (!PACKAGE_SPECIFIER.test(value.package as string) || !/^\d+\.\d+\.\d+$/.test(value.version as string))
+        surfaceFault("S2 exact package pin required");
+}
+/** The component K8 rule for surfaces: exact semver, and the pin export names exactly the implementation module and export. */
+export function assertSurfacePackagePin(impl: SurfacePackageEntry["impl"], pin: unknown): asserts pin is SurfacePackagePin {
+    packagePin(pin);
+    const pointer = /^\.\/([A-Za-z0-9_/-]+)#([A-Z][A-Za-z0-9]*)$/.exec(pin.export);
+    if (!pointer || `${pin.package}/${pointer[1]}` !== impl.module || pointer[2] !== impl.export)
+        surfaceFault("S2 package export differs from pin");
+}
+function packageOrigin(value: unknown): asserts value is SurfacePackageOrigin {
+    object(value, ["kind", "source", "fill", "pin", "license", "descriptorHash", "adoptedAt"]);
+    choice(value.kind, ["package"]);
+    [value.source, value.fill, value.license, value.adoptedAt].forEach(string);
+    packagePin(value.pin);
+    hash(value.descriptorHash, true);
+    if (!Number.isFinite(Date.parse(value.adoptedAt as string)))
+        surfaceFault("S2 invalid date");
+}
+const pointers = (value: unknown): void => map(value, entry => string(entry));
+/** Closed schema of a package-pointer descriptor, exactly the importer shape. `pin` is the fill-meta pin (catalog) or origin pin (installed). */
+export function assertSurfacePackageEntry(value: unknown, pin: unknown, installed = false): asserts value is SurfacePackageEntry {
+    const section = value && typeof value === "object" && typeof (value as Node).slot === "string" && ((value as Node).slot as string).startsWith("sections.");
+    const fields = section ? ["slot", "source", "slotMap", "propMap", "configs", "parts", "impl", "license", "pin", "notes"] : ["slot", "members", "propMap", "slots", "statePorts", "impl"];
+    object(value, [...fields, ...(installed ? ["origin"] : [])]);
+    if (typeof value.slot !== "string" || !/^(sections|frames)\.[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/.test(value.slot))
+        surfaceFault("S1 slot/kind differs");
+    object(value.impl, ["kind", "module", "export"]);
+    choice(value.impl.kind, ["package"]);
+    string(value.impl.module);
+    if (!PACKAGE_SPECIFIER.test(value.impl.module as string) || !pascal(value.impl.export))
+        surfaceFault("S1 implementation identifier");
+    pointers(value.propMap);
+    if (section) {
+        [value.source, value.license].forEach(string);
+        pointers(value.slotMap);
+        pointers(value.configs);
+        strings(value.parts);
+        strings(value.notes);
+        if (stableStringify(value.pin) !== stableStringify(pin))
+            surfaceFault("S2 package pin differs");
+    }
+    else {
+        strings(value.members);
+        pointers(value.slots);
+        pointers(value.statePorts);
+    }
+    assertSurfacePackagePin(value.impl as SurfacePackageEntry["impl"], pin);
+}
+export const isSurfacePackageEntry = (fill: SurfaceEntry): fill is SurfacePackageEntry & { origin?: SurfacePackageOrigin } => fill.impl.kind === "package";
+/** Validated whole leaf of either origin family; `surfaceOf` stays the source-only view. */
+export function surfaceEntryOf(doc: SurfaceAnyDocument): SurfaceEntry {
     const snapshot = runtimeSnapshot(doc);
     object(snapshot, ["$extensions"], ["sections", "frames"]);
     object(snapshot.$extensions, ["com.clossys.fill"]);
@@ -213,10 +266,46 @@ export function surfaceOf(doc: SurfaceCandidateDocument | SurfaceDocument): Surf
     object(entries, [(meta.slot as string).split(".")[1]!]);
     const fill = entries[(meta.slot as string).split(".")[1]!]!;
     const installed = !!fill && typeof fill === "object" && Object.hasOwn(fill, "origin");
+    const impl = fill && typeof fill === "object" ? (fill as unknown as Node).impl : undefined;
+    if (impl && typeof impl === "object" && (impl as Node).kind === "package") {
+        if (installed)
+            packageOrigin((fill as unknown as Node).origin);
+        const pin = installed ? ((fill as unknown as Node).origin as SurfacePackageOrigin).pin : meta.pin;
+        assertSurfacePackageEntry(fill, pin, installed);
+        const origin = (fill as SurfacePackageEntry & { origin?: SurfacePackageOrigin }).origin;
+        if (fill.slot !== meta.slot || (origin ? origin.license !== meta.license || "source" in fill && fill.source !== origin.source : "source" in fill && fill.source !== meta.source || "license" in fill && fill.license !== meta.license))
+            surfaceFault("S1 inconsistent whole leaf");
+        return fill as SurfaceEntry;
+    }
     assertSurfaceCandidate(fill, installed);
     if (fill.slot !== meta.slot || fill.source !== meta.source || fill.license !== meta.license)
         surfaceFault("S1 inconsistent whole leaf");
     return fill;
+}
+export function surfaceOf(doc: SurfaceAnyDocument): SurfaceCandidate & {
+    origin?: SurfaceOrigin;
+} {
+    const fill = surfaceEntryOf(doc);
+    if (isSurfacePackageEntry(fill))
+        surfaceFault("S1 closed object schema differs");
+    return fill;
+}
+/** Output rows a leaf owns; a package pointer owns none. */
+export const surfaceOutputs = (fill: SurfaceEntry): readonly SurfaceFileHash[] => isSurfacePackageEntry(fill) ? [] : fill.outputSha256;
+export const surfacePackageDescriptorHash = (fill: SurfacePackageEntry): string => { const { origin: _origin, ...descriptor } = fill as SurfacePackageEntry & { origin?: unknown }; return surfaceDigest(descriptor); };
+const packageCandidates = (catalog: CompositeCatalogData, slot: string, source: string) => (catalog.surfaces?.fills ?? []).filter(doc => { const meta = doc.$extensions["com.clossys.fill"]; return meta.slot === slot && meta.source === source && meta.mode === "implementation"; }).map(doc => ({ doc, fill: surfaceEntryOf(doc) })).filter(row => isSurfacePackageEntry(row.fill));
+/** Catalog join: the installed descriptor and pin equal exactly one catalog package candidate. Nothing the library carries vouches for itself. */
+export function verifySurfacePackageProvenance(catalog: CompositeCatalogData, fill: SurfacePackageEntry & { origin?: SurfacePackageOrigin }): void {
+    const o = fill.origin;
+    if (!o || o.descriptorHash !== surfacePackageDescriptorHash(fill))
+        surfaceFault("S6 descriptor hand edit requires author");
+    const candidates = packageCandidates(catalog, fill.slot, o.source);
+    if (candidates.length !== 1 || surfacePackageDescriptorHash(candidates[0]!.fill as SurfacePackageEntry) !== o.descriptorHash || stableStringify(candidates[0]!.doc.$extensions["com.clossys.fill"].pin) !== stableStringify(o.pin) || candidates[0]!.doc.$extensions["com.clossys.fill"].license !== o.license || candidates[0]!.doc.$extensions["com.clossys.fill"].id !== o.fill)
+        surfaceFault("S2 upstream candidate identity differs");
+}
+export function surfacePackageDocument(library: CompositeLibraryData, fill: SurfacePackageEntry, origin: SurfacePackageOrigin): SurfacePackageDocument {
+    const meta = { id: `${library.source.id}/${fill.slot}`, slot: fill.slot, source: library.source.id, mode: "implementation" as const, sourceAddress: `fills/${fill.slot}.json`, relation: "same-contract" as const, builtOn: [], conforms: [], evidence: [], author: "consumer" as const, trust: "consumer" as const, license: origin.license, status: "draft" as const, originKinds: ["package"] };
+    return fill.slot.startsWith("sections.") ? { $extensions: { "com.clossys.fill": meta as unknown as SurfacePackageDocument["$extensions"]["com.clossys.fill"] }, sections: { [fill.slot.slice(9)]: { ...structuredClone(fill), origin } } } : { $extensions: { "com.clossys.fill": meta as unknown as SurfacePackageDocument["$extensions"]["com.clossys.fill"] }, frames: { [fill.slot.slice(7)]: { ...structuredClone(fill), origin } } };
 }
 export const sortedManifest = (rows: readonly SurfaceFileHash[]): SurfaceFileHash[] => [...rows].sort((a, b) => a.path < b.path ? -1 : a.path > b.path ? 1 : 0);
 export const surfaceManifest = (files: readonly SurfaceFile[]): SurfaceFileHash[] => sortedManifest(files.map(file => ({ path: file.path, sha256: sha256(file.content) })));
@@ -229,14 +318,17 @@ export function canonicalSurfacePortion(input: SurfaceLibraryPortion): SurfaceLi
     const copy = runtimeSnapshot(input);
     object(copy, ["version", "fills", "files"]);
     choice(copy.version, [1]);
-    list(copy.fills, row => { surfaceOf(row as SurfaceDocument); });
+    list(copy.fills, row => { surfaceEntryOf(row as SurfaceDocument); });
     list(copy.files, row => { object(row, ["path", "content"]); string(row.path); if (typeof row.content !== "string" || row.content.includes("\0") || /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/.test(row.content))
         surfaceFault("S1 invalid UTF-8 source"); surfacePath(row.path); });
-    const fills = [...input.fills].map(doc => structuredClone(doc)).sort((a, b) => surfaceOf(a).slot < surfaceOf(b).slot ? -1 : 1), files = [...input.files].sort((a, b) => a.path < b.path ? -1 : 1);
-    if (new Set(fills.map(doc => surfaceOf(doc).slot)).size !== fills.length || new Set(files.map(file => file.path)).size !== files.length)
+    const fills = [...input.fills].map(doc => structuredClone(doc)).sort((a, b) => surfaceEntryOf(a).slot < surfaceEntryOf(b).slot ? -1 : 1), files = [...input.files].sort((a, b) => a.path < b.path ? -1 : 1);
+    if (new Set(fills.map(doc => surfaceEntryOf(doc).slot)).size !== fills.length || new Set(files.map(file => file.path)).size !== files.length)
         surfaceFault("S1 duplicate ownership");
     for (const doc of fills) {
-        const fill = canonicalSurfaceEntry(surfaceOf(doc));
+        const entry = surfaceEntryOf(doc);
+        if (isSurfacePackageEntry(entry))
+            continue;
+        const fill = canonicalSurfaceEntry(entry);
         // Replace the cloned entry (surfaceOf deliberately returns a frozen validation snapshot).
         const layer = fill.kind === "section" ? "sections" : "frames";
         Object.assign((doc as unknown as Record<string, Record<string, unknown>>)[layer]!, { [fill.slot.split(".")[1]!]: fill });
@@ -258,7 +350,7 @@ export function verifySurfaceFiles(fill: SurfaceCandidate, files: readonly Surfa
     if (!fill.outputSha256.some(row => row.path === fill.impl.entry) || !fill.outputSha256.some(row => row.path === fill.notice) || !files.find(file => file.path === fill.notice)?.content.trim())
         surfaceFault("S2 missing entry/notice");
 }
-export function surfaceSelection(library: CompositeLibraryData): SurfaceSelection { return { version: 1, consumer: library.source.id, slots: (library.surfaces?.fills ?? []).map(doc => { const fill = surfaceOf(doc), origin = fill.origin!; return { slot: fill.slot, fill: doc.$extensions["com.clossys.fill"].id, originKind: origin.kind, source: origin.kind === "authored" ? library.source.id : origin.base.source }; }).sort((a, b) => a.slot < b.slot ? -1 : 1) }; }
+export function surfaceSelection(library: CompositeLibraryData): SurfaceSelection { return { version: 1, consumer: library.source.id, slots: (library.surfaces?.fills ?? []).map(doc => { const fill = surfaceEntryOf(doc), origin = fill.origin!; return { slot: fill.slot, fill: doc.$extensions["com.clossys.fill"].id, originKind: origin.kind, source: origin.kind === "authored" ? library.source.id : origin.kind === "package" ? origin.source : origin.base.source }; }).sort((a, b) => a.slot < b.slot ? -1 : 1) }; }
 export function surfaceInputs(catalog: CompositeCatalogData, library: CompositeLibraryData, resolved: CompositeResolved, inputs: readonly SurfaceInputRef[], options: SurfaceResolutionOptions): SurfaceInputIdentity[] {
     const result = inputs.map(input => {
         inputRef(input);
@@ -313,7 +405,7 @@ export function verifySurfaceProvenance(catalog: CompositeCatalogData, library: 
     if (transform.length !== 1)
         surfaceFault("S2 transform identity missing");
     assertRegistryIdentity(transform[0]!.identity, transform[0]!.source);
-    const candidate = registry.fills.map(surfaceOf).filter(row => row.slot === fill.slot && row.source === o.base.source);
+    const candidate = registry.fills.map(surfaceEntryOf).filter((row): row is SurfaceCandidate => !isSurfacePackageEntry(row) && row.slot === fill.slot && row.source === o.base.source);
     if (candidate.length !== 1 || surfaceDescriptorHash(candidate[0]!) !== o.base.descriptorHash || stableStringify(candidate[0]!.pin) !== stableStringify(o.base.pin))
         surfaceFault("S2 upstream candidate identity differs");
     const inputs = o.kind === "derived" ? o.inputs : [];
@@ -328,14 +420,26 @@ export function verifySurfaceProvenance(catalog: CompositeCatalogData, library: 
 }
 export function applySurfaceOperation(catalog: CompositeCatalogData, library: CompositeLibraryData, operation: SurfaceOperation, bundles: readonly SurfaceSourceBundle[], resolved: CompositeResolved, options: SurfaceResolutionOptions): CompositeLibraryData {
     const copy = structuredClone(library);
-    const current = copy.surfaces?.fills.find(doc => surfaceOf(doc).slot === operation.slot);
+    const current = copy.surfaces?.fills.find(doc => surfaceEntryOf(doc).slot === operation.slot);
     if (operation.op === "remove" && !current)
         return copy;
     if (!catalog.surfaces?.slots.some(row => row.id === operation.slot))
         surfaceFault("S1 unknown surface contract");
     let document: SurfaceDocument | undefined;
     let newFiles: readonly SurfaceFile[] = [];
-    if (operation.op === "adopt" || operation.op === "derive") {
+    const pointer = operation.op === "adopt" && !bundles.some(bundle => bundle.operation === "adopt" && bundle.slot === operation.slot) ? packageCandidates(catalog, operation.slot, operation.source) : [];
+    if (pointer.length) {
+        // Package pointer: no bundle, no bytes; origin is joined to the catalog candidate, as components adopt K8 pins.
+        if (pointer.length !== 1 || operation.op !== "adopt")
+            surfaceFault("S2 unique package candidate required");
+        if (!copy.adoptedAt || !/^\d{4}-\d{2}-\d{2}$/.test(copy.adoptedAt))
+            surfaceFault("S2 adoption date required");
+        const { doc, fill } = pointer[0]!;
+        const meta = doc.$extensions["com.clossys.fill"];
+        const entry = fill as SurfacePackageEntry;
+        document = surfacePackageDocument(copy, entry, { kind: "package", source: operation.source, fill: meta.id, pin: structuredClone(meta.pin) as SurfacePackagePin, license: meta.license, descriptorHash: surfacePackageDescriptorHash(entry), adoptedAt: copy.adoptedAt }) as unknown as SurfaceDocument;
+    }
+    else if (operation.op === "adopt" || operation.op === "derive") {
         const matches = bundles.filter(bundle => bundle.operation === operation.op && bundle.slot === operation.slot);
         if (matches.length !== 1)
             surfaceFault("S2 unique bundle required");
@@ -356,7 +460,7 @@ export function applySurfaceOperation(catalog: CompositeCatalogData, library: Co
         if (stableStringify(surfaceManifest(bundle.upstream)) !== stableStringify(sortedManifest(bundle.base.upstreamSha256)))
             surfaceFault("S2 upstream bytes differ");
         if (operation.op === "derive") {
-            if (!current || surfaceOf(current).origin?.kind === "authored")
+            if (!current || isSurfacePackageEntry(surfaceEntryOf(current)) || surfaceOf(current).origin?.kind === "authored")
                 surfaceFault("S6 derive requires retained adopted base");
             const rules = catalog.surfaces.rules.filter(rule => rule.identity.id === operation.rule && rule.slot === operation.slot);
             if (rules.length !== 1)
@@ -390,8 +494,8 @@ export function applySurfaceOperation(catalog: CompositeCatalogData, library: Co
     }
     else if (operation.op !== "remove")
         surfaceFault("S1 unknown operation");
-    const fills = (copy.surfaces?.fills ?? []).filter(doc => surfaceOf(doc).slot !== operation.slot);
-    const keptPaths = new Set(fills.flatMap(doc => surfaceOf(doc).outputSha256.map(row => row.path)));
+    const fills = (copy.surfaces?.fills ?? []).filter(doc => surfaceEntryOf(doc).slot !== operation.slot);
+    const keptPaths = new Set(fills.flatMap(doc => surfaceOutputs(surfaceEntryOf(doc)).map(row => row.path)));
     const files = (copy.surfaces?.files ?? []).filter(file => keptPaths.has(file.path));
     for (const file of newFiles) {
         const prior = files.find(row => row.path === file.path);
@@ -400,7 +504,11 @@ export function applySurfaceOperation(catalog: CompositeCatalogData, library: Co
         if (!prior)
             files.push(file);
     }
-    if (document) {
+    if (document && isSurfacePackageEntry(surfaceEntryOf(document))) {
+        verifySurfacePackageProvenance(catalog, surfaceEntryOf(document) as SurfacePackageEntry & { origin: SurfacePackageOrigin });
+        fills.push(document);
+    }
+    else if (document) {
         const fill = surfaceOf(document);
         verifySurfaceFiles(fill, newFiles);
         if (newFiles.length !== fill.outputSha256.length)

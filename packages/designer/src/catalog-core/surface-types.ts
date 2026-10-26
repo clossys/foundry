@@ -180,8 +180,56 @@ export type SurfaceDocument = {
     }>>;
     sections?: never;
 };
+/** Exact package pointer, the component K8 shape: `export` is `./<subpath>#<Export>`. */
+export interface SurfacePackagePin {
+    package: string;
+    version: string;
+    export: string;
+}
+/** A package-pointer descriptor exactly as the Foundry importers emit it; it carries no source bytes. */
+export interface SurfacePackageSectionEntry {
+    slot: `sections.${string}`;
+    source: string;
+    slotMap: Readonly<Record<string, string>>;
+    propMap: Readonly<Record<string, string>>;
+    configs: Readonly<Record<string, string>>;
+    parts: readonly string[];
+    impl: { kind: "package"; module: string; export: string };
+    license: string;
+    pin: SurfacePackagePin;
+    notes: readonly string[];
+}
+export interface SurfacePackageFrameEntry {
+    slot: `frames.${string}`;
+    members: readonly string[];
+    propMap: Readonly<Record<string, string>>;
+    slots: Readonly<Record<string, string>>;
+    statePorts: Readonly<Record<string, string>>;
+    impl: { kind: "package"; module: string; export: string };
+}
+export type SurfacePackageEntry = SurfacePackageSectionEntry | SurfacePackageFrameEntry;
+/** Joined to the catalog candidate (descriptorHash, pin) at adopt and at every check; never minted by the library. */
+export interface SurfacePackageOrigin {
+    kind: "package";
+    source: string;
+    fill: string;
+    pin: SurfacePackagePin;
+    license: string;
+    descriptorHash: string;
+    adoptedAt: string;
+}
+export type SurfacePackageDocument = {
+    $extensions: {
+        "com.clossys.fill": FillMeta;
+    };
+    sections?: Readonly<Record<string, SurfacePackageEntry & { origin?: SurfacePackageOrigin }>>;
+    frames?: Readonly<Record<string, SurfacePackageEntry & { origin?: SurfacePackageOrigin }>>;
+};
+export type SurfaceAnyDocument = SurfaceCandidateDocument | SurfaceDocument | SurfacePackageDocument;
+export type SurfaceEntry = (SurfaceCandidate & { origin?: SurfaceOrigin }) | (SurfacePackageEntry & { origin?: SurfacePackageOrigin });
 export interface SurfaceLibraryPortion {
     version: 1;
+    /** Package-pointer leaves are stored here too (validated by surfaceEntryOf at every read). */
     fills: readonly SurfaceDocument[];
     files: readonly SurfaceFile[];
 }
@@ -303,6 +351,7 @@ export interface SurfaceRule {
 }
 export interface SurfaceCatalog {
     slots: readonly (SectionSlot | FrameSlot)[];
+    /** Package-pointer candidates (importFoundrySections/Frames) are listed here too; surfaceEntryOf tells them apart. */
     fills: readonly SurfaceCandidateDocument[];
     transforms: readonly SurfaceTransform[];
     rules: readonly SurfaceRule[];
@@ -343,7 +392,7 @@ export interface SurfaceSelection {
     slots: readonly {
         slot: SurfaceSlot;
         fill: string;
-        originKind: SurfaceOrigin["kind"];
+        originKind: SurfaceOrigin["kind"] | "package";
         source: string;
     }[];
 }

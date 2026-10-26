@@ -77,7 +77,7 @@ export interface SurfaceDefaultsPlan {
 const unique = (values: readonly string[]): string[] => [...new Set(values)];
 
 /** The static S5 mapping rule of resolveSurfaces, over one declared descriptor. */
-function contractFindings(slot: SectionSlot | FrameSlot, fill: SurfaceDefaultDescriptor): string[] {
+export function contractFindings(slot: SectionSlot | FrameSlot, fill: SurfaceDefaultDescriptor): string[] {
   const contract = slot.contract;
   const mapping: string[] = [], frame: string[] = [], other: string[] = [];
   if (fill.slot !== slot.id) other.push(`S1 descriptor slot ${fill.slot} differs`);
