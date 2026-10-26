@@ -57,8 +57,8 @@
         "version": "0.12.0"
       },
       "propMap": {
-        "expand": "./components#Tree.expandedKeys",
-        "selection": "./components#Tree.selectionMode"
+        "expand": "./components#Tree",
+        "selection": "./components#Tree"
       },
       "props": [
         "aria-label",

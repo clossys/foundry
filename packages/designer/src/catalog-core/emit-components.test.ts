@@ -7,7 +7,7 @@ import { synthetic, syntheticSource } from "./__fixtures__/component-engine/synt
 import { applyComponentLibraryChange, materializeSourceFill } from "./changeset-components.js";
 import { assertComponentIdentifier, assertPackageSpecifier, componentLibraryHash, componentMaterializationReport, resolveComponents } from "./resolve-components.js";
 import type { ComponentCandidateDocument } from "./resolve-components.js";
-import { assertComponentImportClosure, emitComponents } from "./emit-components.js";
+import { assertComponentImportClosure, componentMemberBinding, emitComponents } from "./emit-components.js";
 import { stableStringify } from "./stable.js";
 import { sha256 } from "./digest.js";
 import { componentSourceHash } from "./check-components.js";
@@ -82,6 +82,24 @@ describe("SYNTHETIC component code generation; no shipped conformance claims", (
     const missing = packageProfile(); missing.check = { ok: false, findings: [] };
     expect(() => emitComponents(missing, ["component-index"])).toThrow(/checks failed/);
     expect(JSON.parse(emitComponents(missing, ["components-consumption"])[0]!.content).status).toBe("blocked");
+  });
+  it("dispatches a compound sub-part (Export.Part) and serves CSS pseudo-class states intrinsically", () => {
+    const profile = packageProfile(), button = profile.components["components.button"]!;
+    const axis = button.descriptor.members.find(member => member.includes("."))!;
+    expect(componentMemberBinding(button, "scope.group", "./components#Button.Group")).toEqual({ module: "test-kit/components", name: "Button", part: "Group" });
+    expect(componentMemberBinding(button, "presentation.inline", "./components#Button.Inline.size=sm")).toEqual({ module: "test-kit/components", name: "Button", part: "Inline", property: "size", value: "sm" });
+    for (const [member, pseudo] of [["state.hover", ":hover"], ["state.pressed", ":active"], ["state.focus-visible", ":focus-visible"]] as const) {
+      expect(componentMemberBinding(button, member, `./components#Button${pseudo}`)).toEqual({ module: "test-kit/components", name: "Button", intrinsic: true });
+    }
+    // A pseudo-class is an interaction state only: it never binds a non-state member, and a part is never lower-case.
+    expect(() => componentMemberBinding(button, "variant.primary", "./components#Button:hover")).toThrow(/unsupported propMap/);
+    expect(() => componentMemberBinding(button, "scope.group", "./components#Button.group.Group")).toThrow(/unsupported propMap/);
+    button.descriptor.propMap = { ...button.descriptor.propMap, [axis]: "./components#Button.Group" };
+    button.propMap = button.descriptor.propMap;
+    const index = emitComponents(profile, ["component-index"]).find(file => file.path === "components/button/index.ts")!.content;
+    expect(index).toContain('"Impl0.Group": Impl0.Group');
+    expect(index).toContain('"target": "Impl0.Group"');
+    expect(ts.transpileModule(index, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext }, reportDiagnostics: true }).diagnostics).toEqual([]);
   });
   it("emits a runtime-pending selection with the same code and never reports it as observations-pass", () => {
     const observed = packageProfile(), input = synthetic();

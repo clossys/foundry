@@ -63,8 +63,8 @@
       },
       "propMap": {
         "layout.grid": "./components#GridList.layout=grid",
-        "layout.list": "./components#GridList[layout=stack]",
-        "selection": "./components#GridList.selectionMode"
+        "layout.list": "./components#GridList.layout=stack",
+        "selection": "./components#GridList"
       },
       "props": [
         "aria-label",

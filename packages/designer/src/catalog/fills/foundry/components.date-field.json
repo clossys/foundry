@@ -59,10 +59,10 @@
         "version": "0.12.0"
       },
       "propMap": {
-        "granularity": "./components#DateField.granularity",
+        "granularity": "./components#DateField",
         "state.invalid": "./components#DateField.isInvalid",
-        "value.date": "./components#DateField.value",
-        "value.time": "./components#DateField.value[granularity=hour|minute|second]"
+        "value.date": "./components#DateField",
+        "value.time": "./components#DateField"
       },
       "props": [
         "className",

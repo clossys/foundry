@@ -57,7 +57,7 @@
         "version": "0.12.0"
       },
       "propMap": {
-        "dismissable": "./components#Dialog.isDismissable",
+        "dismissable": "./components#Dialog",
         "role.modal": "./components#Dialog"
       },
       "props": [

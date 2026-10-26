@@ -61,8 +61,8 @@
         "version": "0.12.0"
       },
       "propMap": {
-        "selection": "./components#Table.selectionMode",
-        "sort": "./components#Table.sortDescriptor"
+        "selection": "./components#Table",
+        "sort": "./components#Table"
       },
       "props": [
         "children",
