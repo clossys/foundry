@@ -13,4 +13,6 @@ export interface LibraryBoardLabels {
   stageLabel: string; previewUnavailable: string;
   useSource(source: string, target: string): string;
   checkSummary(errors: number, notices: number): string;
+  /** Neutral count of fills awaiting runtime qualification; a default English line is used when absent. */
+  runtimePending?: (count: number) => string;
 }

@@ -80,7 +80,8 @@ it("shows an error badge only for positive errors and keeps notices in its toolt
   const library = emptyLibrary(); const base = buildCandidates({ catalog: smallCatalog, library, working: library, slotId: "tokens.surface-color", scope: "slot", target: "tokens.surface-color" })[0]!;
   render(<RadioGroup label="Choices"><CandidateChoice candidate={{ ...base, errors: 1, notices: 2 }} target="leaf" labels={labels} /></RadioGroup>);
   const trigger = screen.getByRole("button", { name: labels.checkSummary(1, 2) });
-  expect(screen.queryByText(labels.checkSummary(1, 2))).toBeNull();
+  // vf13 (r2 components-02): the badge carries its words, never a bare "!".
+  expect(trigger).toHaveTextContent(labels.checkSummary(1, 2));
   const user = userEvent.setup(); fireEvent.mouseMove(document.body); await user.hover(trigger);
   expect(await screen.findByRole("tooltip", {}, { timeout: 2500 })).toHaveTextContent(labels.checkSummary(1, 2));
 });

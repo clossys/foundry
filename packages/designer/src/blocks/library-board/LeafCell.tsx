@@ -62,9 +62,14 @@ export function BoardHeader({ id, title, editing, labels, onEdit, onDone, action
 export const BOARD_SURFACE_CLASS = 'flex h-max w-max shrink-0 flex-col gap-sm rounded-surface border border-line-base bg-surface-raised p-md';
 
 /**
- * A leaf's row label. A label that is still the leaf's id is set in the mono face
- * with tabular figures, so ids read as ids; a human label keeps the body face.
+ * A leaf's row label, one treatment in view and edit mode: the human label (when it is not the id)
+ * in the body face, then the leaf id underneath in the mono face with tabular figures. The weight is
+ * set to regular so a row-header cell (`th`) never bolds it.
  */
 export function LeafLabel({ id, label }: { readonly id: string; readonly label: ReactNode }) {
-  return label === id ? <span data-leaf-id="" className="font-mono tabular-nums">{label}</span> : <>{label}</>;
+  const human = label !== id && label != null && label !== '' ? label : undefined;
+  return <span data-leaf-label="" className="flex min-w-0 flex-col text-start font-normal">
+    {human !== undefined ? <span className="break-words text-ink-primary">{human}</span> : null}
+    <span data-leaf-id="" className={human !== undefined ? 'break-words font-mono tabular-nums text-caption text-ink-secondary' : 'break-words font-mono tabular-nums text-ink-primary'}>{id}</span>
+  </span>;
 }
