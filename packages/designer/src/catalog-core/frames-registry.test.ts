@@ -130,7 +130,9 @@ describe("draft frame registry", () => {
       for (const slot of contract.slots) expect(slot.accepts).toMatch(/^(view|host-node|components\.[a-z][a-z0-9-]*|sections\.\*)$/);
     }
     expect(byId("site-shell").slots.find(slot => slot.id === "consent")?.accepts).toBe("sections.*");
-    expect(byId("app-header").slots.slice(0, 2).map(slot => slot.id)).toEqual(["brand", "context"]);
+    expect(byId("app-header").slots.slice(0, 2).map(slot => slot.id)).toEqual(["context", "trail"]);
+    expect(byId("app-header").slots.some(slot => slot.id === "brand")).toBe(false);
+    expect(byId("app-header").composes).not.toContain("components.logo");
     expect(byId("app-header").slots.find(slot => slot.id === "context")?.accepts).toBe("sections.*");
   });
 

@@ -2,13 +2,9 @@ import type { ReactNode } from "react";
 import type { PageBarHeader, FrameNavigate, PageBarDestination, PageBarCrumb, PageBarAction, PageBarPage, AccountMenuActor, AccountMenuProps, AccountMenuSection, AppNavigationProps, CommandMenuProps } from "../blocks/index.js";
 import type { ThemeProviderProps, ThemeToggleProps } from "../theme/index.js";
 
-/** Resolved host brand. The accessible label must contain the visible wordmark. */
+/** Host mark. It appears only as the profile Avatar image; the header carries no brand text or link. */
 export interface AppFrameBrand {
   markSrc: string;
-  wordmark: string;
-  label: string;
-  /** Optional host destination; otherwise the brand is not interactive. */
-  href?: string;
 }
 
 export interface AppFrameAccount {
@@ -64,11 +60,13 @@ export interface AppFrameProps {
   /** Omitted retains the floating sticky bar; glass always uses fixed overlay positioning. */
   headerPosition?: "sticky" | "static";
   headerSurface?: "solid" | "transparent" | "glass";
-  /** App-header slot immediately after the brand. Supply accessible, landmark-free content. */
+  /** App-header slot at the start of the bar, before the page trail. Supply accessible, landmark-free content. */
   context?: ReactNode;
+  /** Optional host breadcrumb root for the page trail; never derived from brand. Omitted: the trail starts at page.breadcrumb. */
+  root?: { label: string; href?: string };
   /** Optional route metadata; when present it owns the page heading in the floating bar. */
   page?: FramePage;
-  /** Supplying destinations makes the breadcrumb root a workspace menu; otherwise it is a link. */
+  /** With root, supplying destinations makes the breadcrumb root a workspace menu; otherwise root is a link. */
   workspaces?: readonly FrameDestination[];
   /** @default "Breadcrumb" */
   breadcrumbLabel?: string;

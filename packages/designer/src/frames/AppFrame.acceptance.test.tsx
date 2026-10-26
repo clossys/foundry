@@ -382,8 +382,8 @@ describe("AppFrame floating stage", () => {
     expect(screen.getByRole("banner")).toHaveClass("bg-surface-raised");
   });
 
-  it("e: exposes the home mark, brand-rooted breadcrumb, page h1 and sibling/workspace menus", async () => {
-    const user = userEvent.setup(); const props = stageFixture(); const view = render(<AppFrame {...props} />);
+  it("e: exposes the host-rooted breadcrumb, page h1 and sibling/workspace menus", async () => {
+    const user = userEvent.setup(); const props = { ...stageFixture(), root: { label: "Atlas", href: "#home" } }; const view = render(<AppFrame {...props} />);
     const trail = screen.getByRole("navigation", { name: "Breadcrumb" });
     expect(within(trail).getByRole("link", { name: "Atlas" })).toHaveAttribute("href", "#home");
     expect(screen.getByRole("heading", { level: 1, name: "Project board" })).toHaveAttribute("aria-current", "page");
@@ -471,10 +471,13 @@ describe("AppFrame floating stage", () => {
 
 
 describe("AppFrame profile brand", () => {
-  it("moves the host mark to the profile Avatar and retains the document breadcrumb root", () => {
-    render(<AppFrame {...stageFixture()} />);
+  it("moves the host mark to the profile Avatar and roots the breadcrumb only from an explicit host root", () => {
+    const view = render(<AppFrame {...stageFixture()} root={{ label: "Atlas", href: "#home" }} />);
     expect(screen.queryByRole("link", { name: "Atlas workspace" })).toBeNull();
     expect(screen.getByRole("button", { name: "Example member" }).querySelector("img")).toHaveAttribute("src", "/mark.svg");
     expect(within(screen.getByRole("navigation", { name: "Breadcrumb" })).getByRole("link", { name: "Atlas" })).toBeInTheDocument();
+    view.rerender(<AppFrame {...stageFixture()} />);
+    expect(within(screen.getByRole("navigation", { name: "Breadcrumb" })).queryByRole("link", { name: "Atlas" })).toBeNull();
+    expect(within(screen.getByRole("navigation", { name: "Breadcrumb" })).getByRole("button", { name: "Projects" })).toBeInTheDocument();
   });
 });

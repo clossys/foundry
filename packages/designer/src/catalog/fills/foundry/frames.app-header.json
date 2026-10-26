@@ -44,7 +44,6 @@
       "slot": "frames.app-header",
       "slots": {
         "actions": "page.actions",
-        "brand": "brand",
         "info": "page",
         "trail": "page.breadcrumb"
       },

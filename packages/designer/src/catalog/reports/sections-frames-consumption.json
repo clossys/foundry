@@ -11,7 +11,6 @@
         "components.breadcrumbs",
         "components.button",
         "components.link",
-        "components.logo",
         "components.menu",
         "components.popover",
         "components.status-mark",
@@ -20,14 +19,12 @@
       "declaredReads": {
         "assets": [
           "assets.icon-chevron-down",
-          "assets.icon-external-link",
-          "assets.mark"
+          "assets.icon-external-link"
         ],
         "components": [
           "components.breadcrumbs",
           "components.button",
           "components.link",
-          "components.logo",
           "components.menu",
           "components.popover",
           "components.status-mark",
@@ -49,7 +46,6 @@
         "components.button",
         "components.icon",
         "components.link",
-        "components.logo",
         "components.menu",
         "components.popover",
         "components.status-mark",
@@ -59,15 +55,13 @@
       "effectiveReads": {
         "assets": [
           "assets.icon-chevron-down",
-          "assets.icon-external-link",
-          "assets.mark"
+          "assets.icon-external-link"
         ],
         "components": [
           "components.breadcrumbs",
           "components.button",
           "components.icon",
           "components.link",
-          "components.logo",
           "components.menu",
           "components.popover",
           "components.status-mark",
@@ -92,6 +86,7 @@
       "expandedUtilities": [
         "bg-surface-glass",
         "bg-surface-raised",
+        "border-accent",
         "border-line-base",
         "gap-sm",
         "gap-xs",
@@ -212,7 +207,7 @@
         },
         {
           "file": "packages/designer/src/blocks/PageBar.tsx",
-          "line": 61,
+          "line": 63,
           "module": "../components/Link.js",
           "slotId": "components.link",
           "symbol": "Link",
@@ -220,7 +215,7 @@
         },
         {
           "file": "packages/designer/src/blocks/PageBar.tsx",
-          "line": 81,
+          "line": 84,
           "module": "../components/Link.js",
           "slotId": "components.link",
           "symbol": "Link",
@@ -228,7 +223,7 @@
         },
         {
           "file": "packages/designer/src/blocks/PageBar.tsx",
-          "line": 82,
+          "line": 85,
           "module": "../components/Button.js",
           "slotId": "components.button",
           "symbol": "Button",
@@ -236,7 +231,7 @@
         },
         {
           "file": "packages/designer/src/blocks/PageBar.tsx",
-          "line": 139,
+          "line": 142,
           "module": "../components/Popover.js",
           "slotId": "components.popover",
           "symbol": "Popover",
@@ -244,7 +239,7 @@
         },
         {
           "file": "packages/designer/src/blocks/PageBar.tsx",
-          "line": 139,
+          "line": 142,
           "module": "../components/Button.js",
           "slotId": "components.button",
           "symbol": "Button",
@@ -252,7 +247,7 @@
         },
         {
           "file": "packages/designer/src/blocks/PageBar.tsx",
-          "line": 139,
+          "line": 142,
           "module": "../components/Icon.js",
           "slotId": "components.icon",
           "symbol": "Icon",
@@ -260,7 +255,7 @@
         },
         {
           "file": "packages/designer/src/blocks/PageBar.tsx",
-          "line": 146,
+          "line": 149,
           "module": "../components/Menu.js",
           "slotId": "components.menu",
           "symbol": "Menu",
@@ -268,7 +263,7 @@
         },
         {
           "file": "packages/designer/src/blocks/PageBar.tsx",
-          "line": 146,
+          "line": 149,
           "module": "../components/Button.js",
           "slotId": "components.button",
           "symbol": "Button",
@@ -276,7 +271,7 @@
         },
         {
           "file": "packages/designer/src/blocks/PageBar.tsx",
-          "line": 146,
+          "line": 149,
           "module": "../components/Icon.js",
           "slotId": "components.icon",
           "symbol": "Icon",
@@ -284,7 +279,7 @@
         },
         {
           "file": "packages/designer/src/blocks/PageBar.tsx",
-          "line": 147,
+          "line": 150,
           "module": "../components/Menu.js",
           "slotId": "components.menu",
           "symbol": "Menu",
@@ -292,7 +287,7 @@
         },
         {
           "file": "packages/designer/src/blocks/PageBar.tsx",
-          "line": 162,
+          "line": 165,
           "module": "../components/Link.js",
           "slotId": "components.link",
           "symbol": "Link",
@@ -300,7 +295,7 @@
         },
         {
           "file": "packages/designer/src/blocks/PageBar.tsx",
-          "line": 165,
+          "line": 168,
           "module": "../components/Menu.js",
           "slotId": "components.menu",
           "symbol": "Menu",
@@ -308,7 +303,7 @@
         },
         {
           "file": "packages/designer/src/blocks/PageBar.tsx",
-          "line": 165,
+          "line": 168,
           "module": "../components/Button.js",
           "slotId": "components.button",
           "symbol": "Button",
@@ -316,7 +311,7 @@
         },
         {
           "file": "packages/designer/src/blocks/PageBar.tsx",
-          "line": 166,
+          "line": 169,
           "module": "../components/Menu.js",
           "slotId": "components.menu",
           "symbol": "Menu",
@@ -324,7 +319,7 @@
         },
         {
           "file": "packages/designer/src/blocks/PageBar.tsx",
-          "line": 167,
+          "line": 170,
           "module": "../components/Menu.js",
           "slotId": "components.menu",
           "symbol": "Menu",
@@ -332,7 +327,7 @@
         },
         {
           "file": "packages/designer/src/blocks/PageBar.tsx",
-          "line": 168,
+          "line": 171,
           "module": "../components/Menu.js",
           "slotId": "components.menu",
           "symbol": "Menu",
@@ -340,7 +335,7 @@
         },
         {
           "file": "packages/designer/src/blocks/PageBar.tsx",
-          "line": 172,
+          "line": 175,
           "module": "../components/Link.js",
           "slotId": "components.link",
           "symbol": "Link",
@@ -3003,7 +2998,7 @@
         },
         {
           "file": "packages/publisher/src/web/frame/SiteFrame.tsx",
-          "line": 37,
+          "line": 36,
           "module": "@clossys/designer/shell/server",
           "slotId": "components.logo",
           "symbol": "Brandmark",
@@ -3011,11 +3006,19 @@
         },
         {
           "file": "packages/publisher/src/web/frame/SiteFrame.tsx",
-          "line": 37,
+          "line": 36,
           "module": "@clossys/designer/shell/server",
           "slotId": "components.logo",
           "symbol": "Brandmark",
           "tag": "Brandmark"
+        },
+        {
+          "file": "packages/publisher/src/web/frame/SiteFrame.tsx",
+          "line": 42,
+          "module": "@clossys/designer/shell/server",
+          "slotId": "frames.site-header",
+          "symbol": "SiteHeader",
+          "tag": "SiteHeader.ActionLink"
         },
         {
           "file": "packages/publisher/src/web/frame/SiteFrame.tsx",
@@ -3029,21 +3032,13 @@
           "file": "packages/publisher/src/web/frame/SiteFrame.tsx",
           "line": 44,
           "module": "@clossys/designer/shell/server",
-          "slotId": "frames.site-header",
-          "symbol": "SiteHeader",
-          "tag": "SiteHeader.ActionLink"
-        },
-        {
-          "file": "packages/publisher/src/web/frame/SiteFrame.tsx",
-          "line": 45,
-          "module": "@clossys/designer/shell/server",
           "slotId": "frames.site-footer",
           "symbol": "SiteFooter",
           "tag": "SiteFooter"
         },
         {
           "file": "packages/publisher/src/web/frame/SiteFrame.tsx",
-          "line": 45,
+          "line": 44,
           "module": "@clossys/designer/shell/server",
           "slotId": "frames.site-footer",
           "symbol": "SiteFooter",
@@ -3051,7 +3046,7 @@
         },
         {
           "file": "packages/publisher/src/web/frame/SiteFrame.tsx",
-          "line": 47,
+          "line": 46,
           "module": "@clossys/designer/shell/server",
           "slotId": "frames.site-footer",
           "symbol": "SiteFooter",
@@ -3059,7 +3054,7 @@
         },
         {
           "file": "packages/publisher/src/web/frame/SiteFrame.tsx",
-          "line": 47,
+          "line": 46,
           "module": "@clossys/designer/components/server",
           "slotId": "components.icon",
           "symbol": "Icon",
@@ -3067,7 +3062,7 @@
         },
         {
           "file": "packages/publisher/src/web/frame/SiteFrame.tsx",
-          "line": 50,
+          "line": 49,
           "module": "@clossys/designer/shell/server",
           "slotId": "frames.site-header",
           "symbol": "SiteHeader",
@@ -4811,8 +4806,12 @@
     {
       "declaredComposes": [
         "components.badge",
+        "components.button",
         "components.card",
+        "components.dialog",
         "components.icon",
+        "components.link",
+        "components.menu",
         "components.radio-group",
         "components.status-mark",
         "components.table",
@@ -4824,8 +4823,12 @@
         "assets": [],
         "components": [
           "components.badge",
+          "components.button",
           "components.card",
+          "components.dialog",
           "components.icon",
+          "components.link",
+          "components.menu",
           "components.radio-group",
           "components.status-mark",
           "components.table",
@@ -4843,8 +4846,12 @@
       },
       "effectiveComposes": [
         "components.badge",
+        "components.button",
         "components.card",
+        "components.dialog",
         "components.icon",
+        "components.link",
+        "components.menu",
         "components.radio-group",
         "components.status-mark",
         "components.table",
@@ -4856,8 +4863,12 @@
         "assets": [],
         "components": [
           "components.badge",
+          "components.button",
           "components.card",
+          "components.dialog",
           "components.icon",
+          "components.link",
+          "components.menu",
           "components.radio-group",
           "components.status-mark",
           "components.table",
@@ -4870,6 +4881,8 @@
           "tokens.border-width",
           "tokens.breakpoint",
           "tokens.content-size",
+          "tokens.control-radius",
+          "tokens.control-size",
           "tokens.gutter",
           "tokens.heading-size",
           "tokens.letter-spacing",
@@ -4892,10 +4905,12 @@
         "bg-status-info",
         "bg-status-success",
         "bg-status-warning",
+        "bg-surface-base",
         "bg-surface-inverse",
         "bg-surface-inverse-raised",
         "bg-surface-raised",
         "bg-surface-sunken",
+        "border-accent",
         "border-line-base",
         "border-line-on-inverse",
         "border-t-accent",
@@ -4911,15 +4926,20 @@
         "mt-md",
         "mt-xs",
         "p-lg",
+        "p-md",
         "p-sm",
         "p-xl",
         "ps-md",
+        "pt-3xl",
         "pt-md",
         "px-md",
         "py-lg",
+        "ring-accent",
         "ring-ink-on-inverse",
         "ring-ink-primary",
+        "rounded-control",
         "rounded-panel",
+        "rounded-surface",
         "size-lg",
         "text-accent",
         "text-accent-on-inverse",
@@ -4934,6 +4954,7 @@
         "text-ink-secondary",
         "text-status-danger-text",
         "text-status-success-text",
+        "top-xs",
         "tracking-label",
         "w-sm"
       ],
@@ -4948,6 +4969,8 @@
           "tokens.body-size",
           "tokens.border-color",
           "tokens.border-width",
+          "tokens.control-radius",
+          "tokens.control-size",
           "tokens.heading-size",
           "tokens.letter-spacing",
           "tokens.line-height",
@@ -4959,8 +4982,304 @@
       },
       "observedComposes": [
         {
+          "file": "packages/designer/src/blocks/library-board/CandidatePromptDialog.tsx",
+          "line": 45,
+          "module": "../../components/Dialog.js",
+          "slotId": "components.dialog",
+          "symbol": "Dialog",
+          "tag": "Dialog"
+        },
+        {
+          "file": "packages/designer/src/blocks/library-board/CandidatePromptDialog.tsx",
+          "line": 46,
+          "module": "../../components/Dialog.js",
+          "slotId": "components.dialog",
+          "symbol": "Dialog",
+          "tag": "Dialog.Heading"
+        },
+        {
+          "file": "packages/designer/src/blocks/library-board/CandidatePromptDialog.tsx",
+          "line": 49,
+          "module": "../../components/Button.js",
+          "slotId": "components.button",
+          "symbol": "Button",
+          "tag": "Button"
+        },
+        {
+          "file": "packages/designer/src/blocks/library-board/CandidatePromptDialog.tsx",
+          "line": 51,
+          "module": "../../components/Button.js",
+          "slotId": "components.button",
+          "symbol": "Button",
+          "tag": "Button"
+        },
+        {
+          "file": "packages/designer/src/blocks/library-board/CandidatePromptDialog.tsx",
+          "line": 52,
+          "module": "../../components/Button.js",
+          "slotId": "components.button",
+          "symbol": "Button",
+          "tag": "Button"
+        },
+        {
+          "file": "packages/designer/src/blocks/library-board/LibraryBoardSection.tsx",
+          "line": 31,
+          "module": "../../components/Button.js",
+          "slotId": "components.button",
+          "symbol": "Button",
+          "tag": "Button"
+        },
+        {
+          "file": "packages/designer/src/blocks/library-board/LibraryBoardSection.tsx",
+          "line": 35,
+          "module": "../SectionHeader.js",
+          "slotId": "sections.section-header",
+          "symbol": "SectionHeader",
+          "tag": "SectionHeader"
+        },
+        {
+          "file": "packages/designer/src/blocks/library-board/LibraryBoardSection.tsx",
+          "line": 35,
+          "module": "../../components/Button.js",
+          "slotId": "components.button",
+          "symbol": "Button",
+          "tag": "Button"
+        },
+        {
+          "file": "packages/designer/src/blocks/library-board/LibraryBoardSection.tsx",
+          "line": 35,
+          "module": "../../components/Tooltip.js",
+          "slotId": "components.tooltip",
+          "symbol": "Tooltip",
+          "tag": "Tooltip"
+        },
+        {
+          "file": "packages/designer/src/blocks/library-board/LibraryBoardSection.tsx",
+          "line": 35,
+          "module": "../../components/Button.js",
+          "slotId": "components.button",
+          "symbol": "Button",
+          "tag": "Button"
+        },
+        {
+          "file": "packages/designer/src/blocks/library-board/LibraryBoardSection.tsx",
+          "line": 36,
+          "module": "../../components/Table.js",
+          "slotId": "components.table",
+          "symbol": "Table",
+          "tag": "Table"
+        },
+        {
+          "file": "packages/designer/src/blocks/library-board/LibraryBoardSection.tsx",
+          "line": 37,
+          "module": "../../components/Table.js",
+          "slotId": "components.table",
+          "symbol": "Table",
+          "tag": "Table.Header"
+        },
+        {
+          "file": "packages/designer/src/blocks/library-board/LibraryBoardSection.tsx",
+          "line": 37,
+          "module": "../../components/Table.js",
+          "slotId": "components.table",
+          "symbol": "Table",
+          "tag": "Table.Column"
+        },
+        {
+          "file": "packages/designer/src/blocks/library-board/LibraryBoardSection.tsx",
+          "line": 37,
+          "module": "../../components/Table.js",
+          "slotId": "components.table",
+          "symbol": "Table",
+          "tag": "Table.Column"
+        },
+        {
+          "file": "packages/designer/src/blocks/library-board/LibraryBoardSection.tsx",
+          "line": 38,
+          "module": "../../components/Table.js",
+          "slotId": "components.table",
+          "symbol": "Table",
+          "tag": "Table.Body"
+        },
+        {
+          "file": "packages/designer/src/blocks/library-board/LibraryBoardSection.tsx",
+          "line": 38,
+          "module": "../../components/Table.js",
+          "slotId": "components.table",
+          "symbol": "Table",
+          "tag": "Table.Row"
+        },
+        {
+          "file": "packages/designer/src/blocks/library-board/LibraryBoardSection.tsx",
+          "line": 38,
+          "module": "../../components/Table.js",
+          "slotId": "components.table",
+          "symbol": "Table",
+          "tag": "Table.Cell"
+        },
+        {
+          "file": "packages/designer/src/blocks/library-board/LibraryBoardSection.tsx",
+          "line": 38,
+          "module": "../../components/Table.js",
+          "slotId": "components.table",
+          "symbol": "Table",
+          "tag": "Table.Cell"
+        },
+        {
+          "file": "packages/designer/src/blocks/library-board/LibraryBoardSection.tsx",
+          "line": 38,
+          "module": "../../components/Card.js",
+          "slotId": "components.card",
+          "symbol": "Card",
+          "tag": "Card"
+        },
+        {
+          "file": "packages/designer/src/blocks/library-board/LibraryBoardSection.tsx",
+          "line": 38,
+          "module": "../../components/Button.js",
+          "slotId": "components.button",
+          "symbol": "Button",
+          "tag": "Button"
+        },
+        {
+          "file": "packages/designer/src/blocks/library-board/LibraryBoardSection.tsx",
+          "line": 38,
+          "module": "../../components/Button.js",
+          "slotId": "components.button",
+          "symbol": "Button",
+          "tag": "Button"
+        },
+        {
+          "file": "packages/designer/src/blocks/library-board/LibraryBoardSection.tsx",
+          "line": 39,
+          "module": "../../components/Tooltip.js",
+          "slotId": "components.tooltip",
+          "symbol": "Tooltip",
+          "tag": "Tooltip"
+        },
+        {
+          "file": "packages/designer/src/blocks/library-board/LibraryBoardSection.tsx",
+          "line": 51,
+          "module": "../../components/RadioGroup.js",
+          "slotId": "components.radio-group",
+          "symbol": "RadioGroup",
+          "tag": "RadioGroup.Radio"
+        },
+        {
+          "file": "packages/designer/src/blocks/library-board/LibraryBoardSection.tsx",
+          "line": 51,
+          "module": "../../components/Card.js",
+          "slotId": "components.card",
+          "symbol": "Card",
+          "tag": "Card"
+        },
+        {
+          "file": "packages/designer/src/blocks/library-board/LibraryBoardSection.tsx",
+          "line": 52,
+          "module": "../../components/Tooltip.js",
+          "slotId": "components.tooltip",
+          "symbol": "Tooltip",
+          "tag": "Tooltip"
+        },
+        {
+          "file": "packages/designer/src/blocks/library-board/LibraryBoardSection.tsx",
+          "line": 52,
+          "module": "../../components/Button.js",
+          "slotId": "components.button",
+          "symbol": "Button",
+          "tag": "Button"
+        },
+        {
+          "file": "packages/designer/src/blocks/library-board/LibraryBoardSection.tsx",
+          "line": 52,
+          "module": "../../components/Badge.js",
+          "slotId": "components.badge",
+          "symbol": "Badge",
+          "tag": "Badge"
+        },
+        {
+          "file": "packages/designer/src/blocks/library-board/OpenWithActions.tsx",
+          "line": 53,
+          "module": "../../components/Menu.js",
+          "slotId": "components.menu",
+          "symbol": "Menu",
+          "tag": "Menu"
+        },
+        {
+          "file": "packages/designer/src/blocks/library-board/OpenWithActions.tsx",
+          "line": 53,
+          "module": "../../components/Button.js",
+          "slotId": "components.button",
+          "symbol": "Button",
+          "tag": "Button"
+        },
+        {
+          "file": "packages/designer/src/blocks/library-board/OpenWithActions.tsx",
+          "line": 53,
+          "module": "../../components/Icon.js",
+          "slotId": "components.icon",
+          "symbol": "Icon",
+          "tag": "Icon"
+        },
+        {
+          "file": "packages/designer/src/blocks/library-board/OpenWithActions.tsx",
+          "line": 53,
+          "module": "../../components/Icon.js",
+          "slotId": "components.icon",
+          "symbol": "Icon",
+          "tag": "Icon"
+        },
+        {
+          "file": "packages/designer/src/blocks/library-board/OpenWithActions.tsx",
+          "line": 54,
+          "module": "../../components/Menu.js",
+          "slotId": "components.menu",
+          "symbol": "Menu",
+          "tag": "Menu.Item"
+        },
+        {
+          "file": "packages/designer/src/blocks/library-board/OpenWithActions.tsx",
+          "line": 55,
+          "module": "../../components/Menu.js",
+          "slotId": "components.menu",
+          "symbol": "Menu",
+          "tag": "Menu.Separator"
+        },
+        {
+          "file": "packages/designer/src/blocks/library-board/OpenWithActions.tsx",
+          "line": 56,
+          "module": "../../components/Menu.js",
+          "slotId": "components.menu",
+          "symbol": "Menu",
+          "tag": "Menu.Item"
+        },
+        {
+          "file": "packages/designer/src/blocks/library-board/OpenWithActions.tsx",
+          "line": 57,
+          "module": "../../components/Menu.js",
+          "slotId": "components.menu",
+          "symbol": "Menu",
+          "tag": "Menu.Item"
+        },
+        {
+          "file": "packages/designer/src/blocks/library-board/OpenWithActions.tsx",
+          "line": 60,
+          "module": "../../components/Button.js",
+          "slotId": "components.button",
+          "symbol": "Button",
+          "tag": "Button"
+        },
+        {
+          "file": "packages/designer/src/blocks/library-board/OpenWithActions.tsx",
+          "line": 64,
+          "module": "../../components/Tooltip.js",
+          "slotId": "components.tooltip",
+          "symbol": "Tooltip",
+          "tag": "Tooltip"
+        },
+        {
           "file": "packages/designer/src/blocks/Matrix.tsx",
-          "line": 91,
+          "line": 94,
           "module": "../components/Card.js",
           "slotId": "components.card",
           "symbol": "Card",
@@ -4968,7 +5287,7 @@
         },
         {
           "file": "packages/designer/src/blocks/Matrix.tsx",
-          "line": 130,
+          "line": 133,
           "module": "../components/Icon.js",
           "slotId": "components.icon",
           "symbol": "Icon",
@@ -5023,10 +5342,16 @@
       "scanStatus": "lower-bound",
       "scannedComposes": [
         "components.badge",
+        "components.button",
         "components.card",
+        "components.dialog",
         "components.icon",
+        "components.menu",
         "components.radio-group",
-        "components.status-mark"
+        "components.status-mark",
+        "components.table",
+        "components.tooltip",
+        "sections.section-header"
       ],
       "scannedProperties": [
         "--color-accent",
@@ -5043,6 +5368,7 @@
         "--color-status-success",
         "--color-status-success-text",
         "--color-status-warning",
+        "--color-surface-base",
         "--color-surface-inverse",
         "--color-surface-inverse-raised",
         "--color-surface-raised",
@@ -5050,9 +5376,11 @@
         "--font-body",
         "--font-display",
         "--leading-heading",
+        "--radius-control",
         "--radius-default",
         "--radius-panel",
         "--radius-surface",
+        "--spacing-3xl",
         "--spacing-4xl",
         "--spacing-lg",
         "--spacing-md",
@@ -5065,22 +5393,30 @@
         "--text-h2",
         "--tracking-label",
         "--ui-border-hairline",
+        "--ui-control-h-lg",
         "--ui-layout-sidebar-w"
       ],
       "scannedReads": {
         "assets": [],
         "components": [
           "components.badge",
+          "components.button",
           "components.card",
+          "components.dialog",
           "components.icon",
+          "components.menu",
           "components.radio-group",
-          "components.status-mark"
+          "components.status-mark",
+          "components.table",
+          "components.tooltip"
         ],
         "tokens": [
           "tokens.accent-color",
           "tokens.body-size",
           "tokens.border-color",
           "tokens.border-width",
+          "tokens.control-radius",
+          "tokens.control-size",
           "tokens.heading-size",
           "tokens.letter-spacing",
           "tokens.line-height",
@@ -5103,11 +5439,14 @@
         "tokens.border-color.base",
         "tokens.border-color.on-inverse",
         "tokens.border-width.hairline",
+        "tokens.control-radius.default",
+        "tokens.control-size.h-lg",
         "tokens.heading-size.h2",
         "tokens.letter-spacing.label",
         "tokens.line-height.heading",
         "tokens.radius.default",
         "tokens.region-width.sidebar",
+        "tokens.spacing.3xl",
         "tokens.spacing.4xl",
         "tokens.spacing.lg",
         "tokens.spacing.md",
@@ -5119,6 +5458,7 @@
         "tokens.status-color.success",
         "tokens.status-color.success-text",
         "tokens.status-color.warning",
+        "tokens.surface-color.base",
         "tokens.surface-color.inverse",
         "tokens.surface-color.inverse-raised",
         "tokens.surface-color.raised",
@@ -5139,20 +5479,46 @@
         "packages/designer/src/blocks/Matrix.tsx",
         "packages/designer/src/blocks/internal/trend.ts",
         "packages/designer/src/blocks/items/policies.ts",
+        "packages/designer/src/blocks/library-board/CandidatePromptDialog.tsx",
+        "packages/designer/src/blocks/library-board/LibraryBoardSection.tsx",
+        "packages/designer/src/blocks/library-board/OpenWithActions.tsx",
+        "packages/designer/src/blocks/library-board/candidate-prompt.ts",
+        "packages/designer/src/blocks/library-board/choice-class.ts",
+        "packages/designer/src/blocks/library-board/model.ts",
         "packages/designer/src/blocks/matrix/choices.tsx",
         "packages/designer/src/blocks/matrix/grid.tsx",
         "packages/designer/src/blocks/matrix/harvey-mark.tsx",
         "packages/designer/src/blocks/section-ground.ts",
+        "packages/designer/src/catalog-core/runtime-ports.ts",
         "packages/designer/src/components/internal/cx.ts",
         "packages/designer/src/components/internal/ui-vars.ts",
-        "packages/designer/src/icons/Check.ts"
+        "packages/designer/src/icons/Check.ts",
+        "packages/designer/src/icons/ChevronDown.ts",
+        "packages/designer/src/icons/ExternalLink.ts"
       ],
       "structural": {
-        "div": 5,
-        "span": 5,
-        "ul": 2
+        "code": 1,
+        "div": 11,
+        "h4": 1,
+        "li": 1,
+        "p": 5,
+        "section": 1,
+        "span": 8,
+        "ul": 3
       },
       "unresolved": [
+        {
+          "code": "DF5",
+          "evidence": "unregistered asset import ../../icons/ChevronDown.js#ChevronDown",
+          "file": "packages/designer/src/blocks/library-board/OpenWithActions.tsx",
+          "line": 7
+        },
+        {
+          "code": "DF5",
+          "evidence": "unregistered asset import ../../icons/ExternalLink.js#ExternalLink",
+          "file": "packages/designer/src/blocks/library-board/OpenWithActions.tsx",
+          "line": 8
+        },
         {
           "code": "DF5",
           "evidence": "unregistered asset import ../icons/Check.js#Check",
@@ -6974,8 +7340,11 @@
       "declaredComposes": [
         "components.banner",
         "components.button",
+        "components.checkbox",
+        "components.combo-box",
         "components.field",
         "components.form",
+        "components.select",
         "components.text-field",
         "sections.band",
         "sections.section-header"
@@ -6985,8 +7354,11 @@
         "components": [
           "components.banner",
           "components.button",
+          "components.checkbox",
+          "components.combo-box",
           "components.field",
           "components.form",
+          "components.select",
           "components.text-field"
         ],
         "tokens": [
@@ -7001,9 +7373,12 @@
       "effectiveComposes": [
         "components.banner",
         "components.button",
+        "components.checkbox",
+        "components.combo-box",
         "components.field",
         "components.form",
         "components.link",
+        "components.select",
         "components.text-field",
         "sections.band",
         "sections.section-header"
@@ -7013,9 +7388,12 @@
         "components": [
           "components.banner",
           "components.button",
+          "components.checkbox",
+          "components.combo-box",
           "components.field",
           "components.form",
           "components.link",
+          "components.select",
           "components.text-field"
         ],
         "tokens": [
@@ -9179,7 +9557,10 @@
     {
       "declaredComposes": [
         "components.badge",
+        "components.button",
         "components.card",
+        "components.disclosure",
+        "components.link",
         "components.skeleton",
         "components.tabs",
         "sections.band",
@@ -9189,7 +9570,10 @@
         "assets": [],
         "components": [
           "components.badge",
+          "components.button",
           "components.card",
+          "components.disclosure",
+          "components.link",
           "components.skeleton",
           "components.tabs"
         ],
@@ -9204,7 +9588,10 @@
       },
       "effectiveComposes": [
         "components.badge",
+        "components.button",
         "components.card",
+        "components.disclosure",
+        "components.link",
         "components.skeleton",
         "components.tabs",
         "sections.band",
@@ -9214,7 +9601,10 @@
         "assets": [],
         "components": [
           "components.badge",
+          "components.button",
           "components.card",
+          "components.disclosure",
+          "components.link",
           "components.skeleton",
           "components.tabs"
         ],
@@ -11003,7 +11393,7 @@
     },
     {
       "code": "DF4",
-      "evidence": "missing-declared-reads: tokens.body-size, tokens.control-radius",
+      "evidence": "missing-declared-reads: tokens.accent-color, tokens.body-size, tokens.control-radius",
       "file": "packages/designer/src/blocks/PageBar.tsx",
       "fill": "foundry/frames.app-header",
       "line": 1
@@ -11171,402 +11561,416 @@
     },
     {
       "code": "DF2",
+      "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
+      "file": "packages/designer/src/blocks/PageBar.tsx",
+      "fill": "foundry/frames.app-header",
+      "line": 63
+    },
+    {
+      "code": "DF2",
       "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
       "file": "packages/designer/src/blocks/PageBar.tsx",
       "fill": "foundry/frames.app-header",
-      "line": 61
+      "line": 63
+    },
+    {
+      "code": "DF4",
+      "evidence": "missing-declared-reads: tokens.accent-color",
+      "file": "packages/designer/src/blocks/PageBar.tsx",
+      "fill": "foundry/frames.app-header",
+      "line": 63
     },
     {
       "code": "DF1",
       "evidence": "Raw <div> has visual classes; bind a library surface.",
       "file": "packages/designer/src/blocks/PageBar.tsx",
       "fill": "foundry/frames.app-header",
-      "line": 63
+      "line": 66
     },
     {
       "code": "DF2",
       "evidence": "unresolved class utilities: min-w-0",
       "file": "packages/designer/src/blocks/PageBar.tsx",
       "fill": "foundry/frames.app-header",
-      "line": 63
+      "line": 66
     },
     {
       "code": "DF1",
       "evidence": "Raw <span> has visual classes; bind a library surface.",
       "file": "packages/designer/src/blocks/PageBar.tsx",
       "fill": "foundry/frames.app-header",
-      "line": 81
+      "line": 84
     },
     {
       "code": "DF2",
       "evidence": "unresolved class utilities: min-w-0",
       "file": "packages/designer/src/blocks/PageBar.tsx",
       "fill": "foundry/frames.app-header",
-      "line": 81
+      "line": 84
     },
     {
       "code": "DF2",
       "evidence": "unresolved class utilities: min-w-0, max-w-full",
       "file": "packages/designer/src/blocks/PageBar.tsx",
       "fill": "foundry/frames.app-header",
-      "line": 81
+      "line": 84
     },
     {
       "code": "DF1",
       "evidence": "Raw <span> has visual classes; bind a library surface.",
       "file": "packages/designer/src/blocks/PageBar.tsx",
       "fill": "foundry/frames.app-header",
-      "line": 82
+      "line": 85
     },
     {
       "code": "DF2",
       "evidence": "unresolved class utilities: min-w-0",
       "file": "packages/designer/src/blocks/PageBar.tsx",
       "fill": "foundry/frames.app-header",
-      "line": 82
+      "line": 85
     },
     {
       "code": "DF2",
       "evidence": "unresolved class utilities: min-w-0, max-w-full",
       "file": "packages/designer/src/blocks/PageBar.tsx",
       "fill": "foundry/frames.app-header",
-      "line": 82
+      "line": 85
     },
     {
       "code": "DF1",
       "evidence": "Raw <header> has visual classes; bind a library surface.",
       "file": "packages/designer/src/blocks/PageBar.tsx",
       "fill": "foundry/frames.app-header",
-      "line": 122
+      "line": 125
     },
     {
       "code": "DF2",
       "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
       "file": "packages/designer/src/blocks/PageBar.tsx",
       "fill": "foundry/frames.app-header",
-      "line": 122
+      "line": 125
     },
     {
       "code": "DF2",
       "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
       "file": "packages/designer/src/blocks/PageBar.tsx",
       "fill": "foundry/frames.app-header",
-      "line": 122
+      "line": 125
     },
     {
       "code": "DF4",
       "evidence": "missing-declared-reads: tokens.control-radius",
       "file": "packages/designer/src/blocks/PageBar.tsx",
       "fill": "foundry/frames.app-header",
-      "line": 122
+      "line": 125
     },
     {
       "code": "DF5",
       "evidence": "Unknown visual import or local component <HeaderSlots>; no registered slot resolves.",
       "file": "packages/designer/src/blocks/PageBar.tsx",
       "fill": "foundry/frames.app-header",
-      "line": 136
+      "line": 139
     },
     {
       "code": "DF1",
       "evidence": "Raw <div> has visual classes; bind a library surface.",
       "file": "packages/designer/src/blocks/PageBar.tsx",
       "fill": "foundry/frames.app-header",
-      "line": 137
+      "line": 140
     },
     {
       "code": "DF2",
       "evidence": "unresolved class utilities: min-w-0, max-w-full",
       "file": "packages/designer/src/blocks/PageBar.tsx",
       "fill": "foundry/frames.app-header",
-      "line": 137
+      "line": 140
     },
     {
       "code": "DF5",
       "evidence": "Unknown visual import or local component <PageTrail>; no registered slot resolves.",
       "file": "packages/designer/src/blocks/PageBar.tsx",
       "fill": "foundry/frames.app-header",
-      "line": 138
+      "line": 141
     },
     {
       "code": "DF2",
       "evidence": "Hard-coded raw-length: 100vw",
       "file": "packages/designer/src/blocks/PageBar.tsx",
       "fill": "foundry/frames.app-header",
-      "line": 139
+      "line": 142
     },
     {
       "code": "DF2",
       "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
       "file": "packages/designer/src/blocks/PageBar.tsx",
       "fill": "foundry/frames.app-header",
-      "line": 139
+      "line": 142
     },
     {
       "code": "DF2",
       "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
       "file": "packages/designer/src/blocks/PageBar.tsx",
       "fill": "foundry/frames.app-header",
-      "line": 139
+      "line": 142
     },
     {
       "code": "DF2",
       "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
       "file": "packages/designer/src/blocks/PageBar.tsx",
       "fill": "foundry/frames.app-header",
-      "line": 139
+      "line": 142
     },
     {
       "code": "DF2",
       "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
       "file": "packages/designer/src/blocks/PageBar.tsx",
       "fill": "foundry/frames.app-header",
-      "line": 139
+      "line": 142
     },
     {
       "code": "DF4",
       "evidence": "missing-declared-compose: components.icon",
       "file": "packages/designer/src/blocks/PageBar.tsx",
       "fill": "foundry/frames.app-header",
-      "line": 139
+      "line": 142
     },
     {
       "code": "DF4",
       "evidence": "missing-declared-reads: tokens.body-size",
       "file": "packages/designer/src/blocks/PageBar.tsx",
       "fill": "foundry/frames.app-header",
-      "line": 139
+      "line": 142
     },
     {
       "code": "DF1",
       "evidence": "Raw <div> has visual classes; bind a library surface.",
       "file": "packages/designer/src/blocks/PageBar.tsx",
       "fill": "foundry/frames.app-header",
-      "line": 144
+      "line": 147
     },
     {
       "code": "DF2",
       "evidence": "unresolved class utilities: ms-auto, min-w-0",
       "file": "packages/designer/src/blocks/PageBar.tsx",
       "fill": "foundry/frames.app-header",
-      "line": 144
+      "line": 147
     },
     {
       "code": "DF2",
       "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
       "file": "packages/designer/src/blocks/PageBar.tsx",
       "fill": "foundry/frames.app-header",
-      "line": 144
+      "line": 147
     },
     {
       "code": "DF2",
       "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
       "file": "packages/designer/src/blocks/PageBar.tsx",
       "fill": "foundry/frames.app-header",
-      "line": 145
+      "line": 148
     },
     {
       "code": "DF5",
       "evidence": "Unknown visual import or local component <PageAction>; no registered slot resolves.",
       "file": "packages/designer/src/blocks/PageBar.tsx",
       "fill": "foundry/frames.app-header",
-      "line": 145
+      "line": 148
     },
     {
       "code": "DF2",
       "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
       "file": "packages/designer/src/blocks/PageBar.tsx",
       "fill": "foundry/frames.app-header",
-      "line": 146
+      "line": 149
     },
     {
       "code": "DF2",
       "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
       "file": "packages/designer/src/blocks/PageBar.tsx",
       "fill": "foundry/frames.app-header",
-      "line": 146
+      "line": 149
     },
     {
       "code": "DF4",
       "evidence": "missing-declared-compose: components.icon",
       "file": "packages/designer/src/blocks/PageBar.tsx",
       "fill": "foundry/frames.app-header",
-      "line": 146
+      "line": 149
     },
     {
       "code": "DF1",
       "evidence": "Raw <nav> has visual classes; bind a library surface.",
       "file": "packages/designer/src/blocks/PageBar.tsx",
       "fill": "foundry/frames.app-header",
-      "line": 158
+      "line": 161
     },
     {
       "code": "DF2",
       "evidence": "unresolved class utilities: min-w-0",
       "file": "packages/designer/src/blocks/PageBar.tsx",
       "fill": "foundry/frames.app-header",
-      "line": 158
+      "line": 161
     },
     {
       "code": "DF1",
       "evidence": "Raw <ol> has visual classes; bind a library surface.",
       "file": "packages/designer/src/blocks/PageBar.tsx",
       "fill": "foundry/frames.app-header",
-      "line": 159
+      "line": 162
     },
     {
       "code": "DF2",
       "evidence": "unresolved class utilities: m-0, min-w-0, list-none, p-0",
       "file": "packages/designer/src/blocks/PageBar.tsx",
       "fill": "foundry/frames.app-header",
-      "line": 159
+      "line": 162
     },
     {
       "code": "DF1",
       "evidence": "Raw <li> has visual classes; bind a library surface.",
       "file": "packages/designer/src/blocks/PageBar.tsx",
       "fill": "foundry/frames.app-header",
-      "line": 160
+      "line": 163
     },
     {
       "code": "DF2",
       "evidence": "unresolved class utilities: min-w-0, shrink-0",
       "file": "packages/designer/src/blocks/PageBar.tsx",
       "fill": "foundry/frames.app-header",
-      "line": 160
+      "line": 163
     },
     {
       "code": "DF5",
       "evidence": "Unknown visual import or local component <CrumbMenu>; no registered slot resolves.",
       "file": "packages/designer/src/blocks/PageBar.tsx",
       "fill": "foundry/frames.app-header",
-      "line": 161
+      "line": 164
     },
     {
       "code": "DF2",
       "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
       "file": "packages/designer/src/blocks/PageBar.tsx",
       "fill": "foundry/frames.app-header",
-      "line": 162
+      "line": 165
     },
     {
       "code": "DF2",
       "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
       "file": "packages/designer/src/blocks/PageBar.tsx",
       "fill": "foundry/frames.app-header",
-      "line": 162
+      "line": 165
     },
     {
       "code": "DF2",
       "evidence": "unresolved class utilities: shrink-0",
       "file": "packages/designer/src/blocks/PageBar.tsx",
       "fill": "foundry/frames.app-header",
-      "line": 165
+      "line": 168
     },
     {
       "code": "DF2",
       "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
       "file": "packages/designer/src/blocks/PageBar.tsx",
       "fill": "foundry/frames.app-header",
-      "line": 165
+      "line": 168
     },
     {
       "code": "DF2",
       "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
       "file": "packages/designer/src/blocks/PageBar.tsx",
       "fill": "foundry/frames.app-header",
-      "line": 165
+      "line": 168
     },
     {
       "code": "DF1",
       "evidence": "Raw <li> has visual classes; bind a library surface.",
       "file": "packages/designer/src/blocks/PageBar.tsx",
       "fill": "foundry/frames.app-header",
-      "line": 171
+      "line": 174
     },
     {
       "code": "DF2",
       "evidence": "unresolved class utilities: min-w-0, shrink-0",
       "file": "packages/designer/src/blocks/PageBar.tsx",
       "fill": "foundry/frames.app-header",
-      "line": 171
+      "line": 174
     },
     {
       "code": "DF2",
       "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
       "file": "packages/designer/src/blocks/PageBar.tsx",
       "fill": "foundry/frames.app-header",
-      "line": 172
+      "line": 175
     },
     {
       "code": "DF2",
       "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
       "file": "packages/designer/src/blocks/PageBar.tsx",
       "fill": "foundry/frames.app-header",
-      "line": 172
+      "line": 175
     },
     {
       "code": "DF2",
       "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
       "file": "packages/designer/src/blocks/PageBar.tsx",
       "fill": "foundry/frames.app-header",
-      "line": 172
+      "line": 175
     },
     {
       "code": "DF5",
       "evidence": "Unknown visual import or local component <CrumbMenu>; no registered slot resolves.",
       "file": "packages/designer/src/blocks/PageBar.tsx",
       "fill": "foundry/frames.app-header",
-      "line": 172
+      "line": 175
     },
     {
       "code": "DF1",
       "evidence": "Raw <li> has visual classes; bind a library surface.",
       "file": "packages/designer/src/blocks/PageBar.tsx",
       "fill": "foundry/frames.app-header",
-      "line": 174
+      "line": 177
     },
     {
       "code": "DF2",
       "evidence": "unresolved class utilities: min-w-0",
       "file": "packages/designer/src/blocks/PageBar.tsx",
       "fill": "foundry/frames.app-header",
-      "line": 174
+      "line": 177
     },
     {
       "code": "DF1",
       "evidence": "Raw <h1> has visual classes; bind a library surface.",
       "file": "packages/designer/src/blocks/PageBar.tsx",
       "fill": "foundry/frames.app-header",
-      "line": 175
+      "line": 178
     },
     {
       "code": "DF2",
       "evidence": "unresolved class utilities: m-0, font-semibold",
       "file": "packages/designer/src/blocks/PageBar.tsx",
       "fill": "foundry/frames.app-header",
-      "line": 175
+      "line": 178
     },
     {
       "code": "DF4",
       "evidence": "missing-declared-reads: tokens.body-size",
       "file": "packages/designer/src/blocks/PageBar.tsx",
       "fill": "foundry/frames.app-header",
-      "line": 175
+      "line": 178
     },
     {
       "code": "DF2",
       "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
       "file": "packages/designer/src/blocks/PageBar.tsx",
       "fill": "foundry/frames.app-header",
-      "line": 176
+      "line": 179
     },
     {
       "code": "DF5",
       "evidence": "Unknown visual import or local component <CrumbMenu>; no registered slot resolves.",
       "file": "packages/designer/src/blocks/PageBar.tsx",
       "fill": "foundry/frames.app-header",
-      "line": 176
+      "line": 179
     },
     {
       "code": "DF4",
@@ -19063,21 +19467,28 @@
       "evidence": "missing-declared-compose: components.logo",
       "file": "packages/publisher/src/web/frame/SiteFrame.tsx",
       "fill": "foundry/frames.site-shell",
-      "line": 37
+      "line": 36
     },
     {
       "code": "DF4",
       "evidence": "missing-declared-compose: components.logo",
       "file": "packages/publisher/src/web/frame/SiteFrame.tsx",
       "fill": "foundry/frames.site-shell",
-      "line": 37
+      "line": 36
     },
     {
       "code": "DF5",
       "evidence": "Unknown visual import or local component <SiteNavDisclosure>; no registered slot resolves.",
       "file": "packages/publisher/src/web/frame/SiteFrame.tsx",
       "fill": "foundry/frames.site-shell",
-      "line": 39
+      "line": 38
+    },
+    {
+      "code": "DF2",
+      "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
+      "file": "packages/publisher/src/web/frame/SiteFrame.tsx",
+      "fill": "foundry/frames.site-shell",
+      "line": 42
     },
     {
       "code": "DF2",
@@ -19094,88 +19505,88 @@
       "line": 44
     },
     {
-      "code": "DF2",
-      "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
-      "file": "packages/publisher/src/web/frame/SiteFrame.tsx",
-      "fill": "foundry/frames.site-shell",
-      "line": 45
-    },
-    {
       "code": "DF1",
       "evidence": "Raw <a> has no library component. Bind components.link.",
       "file": "packages/publisher/src/web/frame/SiteFrame.tsx",
       "fill": "foundry/frames.site-shell",
-      "line": 46
+      "line": 45
     },
     {
       "code": "DF2",
       "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
       "file": "packages/publisher/src/web/frame/SiteFrame.tsx",
       "fill": "foundry/frames.site-shell",
-      "line": 46
-    },
-    {
-      "code": "DF2",
-      "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
-      "file": "packages/publisher/src/web/frame/SiteFrame.tsx",
-      "fill": "foundry/frames.site-shell",
-      "line": 46
+      "line": 45
     },
     {
       "code": "DF4",
       "evidence": "missing-declared-compose: components.icon",
       "file": "packages/publisher/src/web/frame/SiteFrame.tsx",
       "fill": "foundry/frames.site-shell",
-      "line": 47
+      "line": 46
     },
     {
       "code": "DF1",
       "evidence": "Raw <div> has visual classes; bind a library surface.",
       "file": "packages/publisher/src/web/frame/SiteFrame.tsx",
       "fill": "foundry/frames.site-shell",
-      "line": 48
-    },
-    {
-      "code": "DF2",
-      "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
-      "file": "packages/publisher/src/web/frame/SiteFrame.tsx",
-      "fill": "foundry/frames.site-shell",
-      "line": 48
-    },
-    {
-      "code": "DF2",
-      "evidence": "unresolved class utilities: min-h-dvh",
-      "file": "packages/publisher/src/web/frame/SiteFrame.tsx",
-      "fill": "foundry/frames.site-shell",
-      "line": 48
-    },
-    {
-      "code": "DF5",
-      "evidence": "Unknown visual import or local component <SiteSkipLink>; no registered slot resolves.",
-      "file": "packages/publisher/src/web/frame/SiteFrame.tsx",
-      "fill": "foundry/frames.site-shell",
-      "line": 49
+      "line": 47
     },
     {
       "code": "DF2",
       "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
       "file": "packages/publisher/src/web/frame/SiteFrame.tsx",
       "fill": "foundry/frames.site-shell",
-      "line": 50
+      "line": 47
+    },
+    {
+      "code": "DF5",
+      "evidence": "Unknown visual import or local component <SiteSkipLink>; no registered slot resolves.",
+      "file": "packages/publisher/src/web/frame/SiteFrame.tsx",
+      "fill": "foundry/frames.site-shell",
+      "line": 48
+    },
+    {
+      "code": "DF2",
+      "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
+      "file": "packages/publisher/src/web/frame/SiteFrame.tsx",
+      "fill": "foundry/frames.site-shell",
+      "line": 49
     },
     {
       "code": "DF1",
       "evidence": "Raw <main> has visual classes; bind a library surface.",
       "file": "packages/publisher/src/web/frame/SiteFrame.tsx",
       "fill": "foundry/frames.site-shell",
-      "line": 51
+      "line": 50
     },
     {
       "code": "DF2",
       "evidence": "unresolved class utilities: w-full",
       "file": "packages/publisher/src/web/frame/SiteFrame.tsx",
       "fill": "foundry/frames.site-shell",
-      "line": 51
+      "line": 50
+    },
+    {
+      "code": "DF1",
+      "evidence": "Raw <div> has visual classes; bind a library surface.",
+      "file": "packages/publisher/src/web/frame/SiteFrame.tsx",
+      "fill": "foundry/frames.site-shell",
+      "line": 53
+    },
+    {
+      "code": "DF2",
+      "evidence": "Hard-coded tw-arbitrary: z-[var(--ui-z-sticky)]",
+      "file": "packages/publisher/src/web/frame/SiteFrame.tsx",
+      "fill": "foundry/frames.site-shell",
+      "line": 53
+    },
+    {
+      "code": "DF2",
+      "evidence": "unresolved class utilities: shrink-0, min-w-0",
+      "file": "packages/publisher/src/web/frame/SiteFrame.tsx",
+      "fill": "foundry/frames.site-shell",
+      "line": 53
     },
     {
       "code": "DF5",
@@ -19292,13 +19703,6 @@
     {
       "code": "DF2",
       "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
-      "file": "packages/publisher/src/web/views/LandingViewContent.tsx",
-      "fill": "foundry/frames.site-shell",
-      "line": 80
-    },
-    {
-      "code": "DF2",
-      "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
       "file": "packages/publisher/src/web/views/LandingViewContent.tsx",
       "fill": "foundry/frames.site-shell",
       "line": 80
@@ -19453,13 +19857,6 @@
     {
       "code": "DF2",
       "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
-      "file": "packages/publisher/src/web/views/LandingViewContent.tsx",
-      "fill": "foundry/frames.site-shell",
-      "line": 174
-    },
-    {
-      "code": "DF2",
-      "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
       "file": "packages/publisher/src/web/views/LandingViewContent.tsx",
       "fill": "foundry/frames.site-shell",
       "line": 174
@@ -21398,6 +21795,167 @@
     },
     {
       "code": "DF4",
+      "evidence": "missing-declared-reads: tokens.body-size",
+      "file": "packages/designer/src/blocks/library-board/CandidatePromptDialog.tsx",
+      "fill": "foundry/sections.comparison",
+      "line": 1
+    },
+    {
+      "code": "DF1",
+      "evidence": "Raw <pre> has visual classes; bind a library surface.",
+      "file": "packages/designer/src/blocks/library-board/CandidatePromptDialog.tsx",
+      "fill": "foundry/sections.comparison",
+      "line": 47
+    },
+    {
+      "code": "DF4",
+      "evidence": "missing-declared-reads: tokens.body-size",
+      "file": "packages/designer/src/blocks/library-board/CandidatePromptDialog.tsx",
+      "fill": "foundry/sections.comparison",
+      "line": 47
+    },
+    {
+      "code": "DF2",
+      "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
+      "file": "packages/designer/src/blocks/library-board/CandidatePromptDialog.tsx",
+      "fill": "foundry/sections.comparison",
+      "line": 50
+    },
+    {
+      "code": "DF5",
+      "evidence": "Unknown visual import or local component <OpenWithActions>; no registered slot resolves.",
+      "file": "packages/designer/src/blocks/library-board/CandidatePromptDialog.tsx",
+      "fill": "foundry/sections.comparison",
+      "line": 50
+    },
+    {
+      "code": "DF4",
+      "evidence": "missing-declared-reads: tokens.accent-color, tokens.border-color, tokens.control-radius, tokens.control-size",
+      "file": "packages/designer/src/blocks/library-board/choice-class.ts",
+      "fill": "foundry/sections.comparison",
+      "line": 1
+    },
+    {
+      "code": "DF4",
+      "evidence": "missing-declared-reads: tokens.border-color, tokens.radius, tokens.surface-radius, tokens.text-color",
+      "file": "packages/designer/src/blocks/library-board/LibraryBoardSection.tsx",
+      "fill": "foundry/sections.comparison",
+      "line": 1
+    },
+    {
+      "code": "DF5",
+      "evidence": "Unknown visual import or local component <CandidatePromptDialog>; no registered slot resolves.",
+      "file": "packages/designer/src/blocks/library-board/LibraryBoardSection.tsx",
+      "fill": "foundry/sections.comparison",
+      "line": 31
+    },
+    {
+      "code": "DF1",
+      "evidence": "Raw <section> has visual classes; bind a library surface.",
+      "file": "packages/designer/src/blocks/library-board/LibraryBoardSection.tsx",
+      "fill": "foundry/sections.comparison",
+      "line": 34
+    },
+    {
+      "code": "DF2",
+      "evidence": "unresolved class utilities: h-max, w-max, shrink-0, border",
+      "file": "packages/designer/src/blocks/library-board/LibraryBoardSection.tsx",
+      "fill": "foundry/sections.comparison",
+      "line": 34
+    },
+    {
+      "code": "DF4",
+      "evidence": "missing-declared-reads: tokens.border-color, tokens.radius, tokens.surface-radius",
+      "file": "packages/designer/src/blocks/library-board/LibraryBoardSection.tsx",
+      "fill": "foundry/sections.comparison",
+      "line": 34
+    },
+    {
+      "code": "DF2",
+      "evidence": "unresolved class utilities: w-max",
+      "file": "packages/designer/src/blocks/library-board/LibraryBoardSection.tsx",
+      "fill": "foundry/sections.comparison",
+      "line": 36
+    },
+    {
+      "code": "DF2",
+      "evidence": "unresolved class utilities: sr-only",
+      "file": "packages/designer/src/blocks/library-board/LibraryBoardSection.tsx",
+      "fill": "foundry/sections.comparison",
+      "line": 37
+    },
+    {
+      "code": "DF1",
+      "evidence": "Raw <div> has visual classes; bind a library surface.",
+      "file": "packages/designer/src/blocks/library-board/LibraryBoardSection.tsx",
+      "fill": "foundry/sections.comparison",
+      "line": 38
+    },
+    {
+      "code": "DF2",
+      "evidence": "unresolved class utilities: w-max",
+      "file": "packages/designer/src/blocks/library-board/LibraryBoardSection.tsx",
+      "fill": "foundry/sections.comparison",
+      "line": 38
+    },
+    {
+      "code": "DF4",
+      "evidence": "missing-declared-reads: tokens.text-color",
+      "file": "packages/designer/src/blocks/library-board/LibraryBoardSection.tsx",
+      "fill": "foundry/sections.comparison",
+      "line": 38
+    },
+    {
+      "code": "DF5",
+      "evidence": "Unknown visual import or local component <CandidatePromptDialog>; no registered slot resolves.",
+      "file": "packages/designer/src/blocks/library-board/LibraryBoardSection.tsx",
+      "fill": "foundry/sections.comparison",
+      "line": 38
+    },
+    {
+      "code": "DF5",
+      "evidence": "Unknown visual import or local component <MatrixChoices>; no registered slot resolves.",
+      "file": "packages/designer/src/blocks/library-board/LibraryBoardSection.tsx",
+      "fill": "foundry/sections.comparison",
+      "line": 39
+    },
+    {
+      "code": "DF2",
+      "evidence": "unresolved class utilities: w-max",
+      "file": "packages/designer/src/blocks/library-board/LibraryBoardSection.tsx",
+      "fill": "foundry/sections.comparison",
+      "line": 51
+    },
+    {
+      "code": "DF2",
+      "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
+      "file": "packages/designer/src/blocks/library-board/LibraryBoardSection.tsx",
+      "fill": "foundry/sections.comparison",
+      "line": 51
+    },
+    {
+      "code": "DF5",
+      "evidence": "unregistered asset import ../../icons/ChevronDown.js#ChevronDown",
+      "file": "packages/designer/src/blocks/library-board/OpenWithActions.tsx",
+      "fill": "foundry/sections.comparison",
+      "line": 7
+    },
+    {
+      "code": "DF5",
+      "evidence": "unregistered asset import ../../icons/ExternalLink.js#ExternalLink",
+      "file": "packages/designer/src/blocks/library-board/OpenWithActions.tsx",
+      "fill": "foundry/sections.comparison",
+      "line": 8
+    },
+    {
+      "code": "DF2",
+      "evidence": "unresolved class utilities: shrink-0",
+      "file": "packages/designer/src/blocks/library-board/OpenWithActions.tsx",
+      "fill": "foundry/sections.comparison",
+      "line": 59
+    },
+    {
+      "code": "DF4",
       "evidence": "missing-declared-reads: tokens.accent-color, tokens.body-size, tokens.heading-size, tokens.letter-spacing, tokens.line-height, tokens.text-color, tokens.typeface",
       "file": "packages/designer/src/blocks/Matrix.tsx",
       "fill": "foundry/sections.comparison",
@@ -21415,259 +21973,273 @@
       "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
       "file": "packages/designer/src/blocks/Matrix.tsx",
       "fill": "foundry/sections.comparison",
-      "line": 73
+      "line": 74
+    },
+    {
+      "code": "DF5",
+      "evidence": "Unknown visual import or local component <LibraryBoardSection>; no registered slot resolves.",
+      "file": "packages/designer/src/blocks/Matrix.tsx",
+      "fill": "foundry/sections.comparison",
+      "line": 74
+    },
+    {
+      "code": "DF2",
+      "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
+      "file": "packages/designer/src/blocks/Matrix.tsx",
+      "fill": "foundry/sections.comparison",
+      "line": 76
     },
     {
       "code": "DF5",
       "evidence": "Unknown visual import or local component <MatrixChoices>; no registered slot resolves.",
       "file": "packages/designer/src/blocks/Matrix.tsx",
       "fill": "foundry/sections.comparison",
-      "line": 73
+      "line": 76
     },
     {
       "code": "DF2",
       "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
       "file": "packages/designer/src/blocks/Matrix.tsx",
       "fill": "foundry/sections.comparison",
-      "line": 75
+      "line": 78
     },
     {
       "code": "DF5",
       "evidence": "Unknown visual import or local component <MatrixGrid>; no registered slot resolves.",
       "file": "packages/designer/src/blocks/Matrix.tsx",
       "fill": "foundry/sections.comparison",
-      "line": 75
+      "line": 78
     },
     {
       "code": "DF2",
       "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
       "file": "packages/designer/src/blocks/Matrix.tsx",
       "fill": "foundry/sections.comparison",
-      "line": 79
+      "line": 82
     },
     {
       "code": "DF5",
       "evidence": "Unknown visual import or local component <MatrixRenderer>; no registered slot resolves.",
       "file": "packages/designer/src/blocks/Matrix.tsx",
       "fill": "foundry/sections.comparison",
-      "line": 79
+      "line": 82
     },
     {
       "code": "DF2",
       "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
       "file": "packages/designer/src/blocks/Matrix.tsx",
       "fill": "foundry/sections.comparison",
-      "line": 89
+      "line": 92
     },
     {
       "code": "DF2",
       "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
       "file": "packages/designer/src/blocks/Matrix.tsx",
       "fill": "foundry/sections.comparison",
-      "line": 89
+      "line": 92
     },
     {
       "code": "DF2",
       "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
-      "file": "packages/designer/src/blocks/Matrix.tsx",
-      "fill": "foundry/sections.comparison",
-      "line": 89
-    },
-    {
-      "code": "DF1",
-      "evidence": "Raw <section> has visual classes; bind a library surface.",
-      "file": "packages/designer/src/blocks/Matrix.tsx",
-      "fill": "foundry/sections.comparison",
-      "line": 90
-    },
-    {
-      "code": "DF2",
-      "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
-      "file": "packages/designer/src/blocks/Matrix.tsx",
-      "fill": "foundry/sections.comparison",
-      "line": 90
-    },
-    {
-      "code": "DF2",
-      "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
-      "file": "packages/designer/src/blocks/Matrix.tsx",
-      "fill": "foundry/sections.comparison",
-      "line": 91
-    },
-    {
-      "code": "DF2",
-      "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
-      "file": "packages/designer/src/blocks/Matrix.tsx",
-      "fill": "foundry/sections.comparison",
-      "line": 91
-    },
-    {
-      "code": "DF5",
-      "evidence": "Unknown visual import or local component <SideBody>; no registered slot resolves.",
       "file": "packages/designer/src/blocks/Matrix.tsx",
       "fill": "foundry/sections.comparison",
       "line": 92
     },
     {
       "code": "DF1",
-      "evidence": "Raw <p> has visual classes; bind a library surface.",
+      "evidence": "Raw <section> has visual classes; bind a library surface.",
       "file": "packages/designer/src/blocks/Matrix.tsx",
       "fill": "foundry/sections.comparison",
-      "line": 123
+      "line": 93
     },
     {
       "code": "DF2",
       "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
       "file": "packages/designer/src/blocks/Matrix.tsx",
       "fill": "foundry/sections.comparison",
-      "line": 123
+      "line": 93
+    },
+    {
+      "code": "DF2",
+      "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
+      "file": "packages/designer/src/blocks/Matrix.tsx",
+      "fill": "foundry/sections.comparison",
+      "line": 94
+    },
+    {
+      "code": "DF2",
+      "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
+      "file": "packages/designer/src/blocks/Matrix.tsx",
+      "fill": "foundry/sections.comparison",
+      "line": 94
+    },
+    {
+      "code": "DF5",
+      "evidence": "Unknown visual import or local component <SideBody>; no registered slot resolves.",
+      "file": "packages/designer/src/blocks/Matrix.tsx",
+      "fill": "foundry/sections.comparison",
+      "line": 95
+    },
+    {
+      "code": "DF1",
+      "evidence": "Raw <p> has visual classes; bind a library surface.",
+      "file": "packages/designer/src/blocks/Matrix.tsx",
+      "fill": "foundry/sections.comparison",
+      "line": 126
+    },
+    {
+      "code": "DF2",
+      "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
+      "file": "packages/designer/src/blocks/Matrix.tsx",
+      "fill": "foundry/sections.comparison",
+      "line": 126
     },
     {
       "code": "DF4",
       "evidence": "missing-declared-reads: tokens.body-size, tokens.letter-spacing",
       "file": "packages/designer/src/blocks/Matrix.tsx",
       "fill": "foundry/sections.comparison",
-      "line": 123
+      "line": 126
     },
     {
       "code": "DF2",
       "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
       "file": "packages/designer/src/blocks/Matrix.tsx",
       "fill": "foundry/sections.comparison",
-      "line": 124
+      "line": 127
     },
     {
       "code": "DF4",
       "evidence": "missing-declared-reads: tokens.heading-size, tokens.line-height, tokens.typeface",
       "file": "packages/designer/src/blocks/Matrix.tsx",
       "fill": "foundry/sections.comparison",
-      "line": 124
+      "line": 127
     },
     {
       "code": "DF5",
       "evidence": "Unknown visual import or local component <HeadingTag>; no registered slot resolves.",
       "file": "packages/designer/src/blocks/Matrix.tsx",
       "fill": "foundry/sections.comparison",
-      "line": 124
+      "line": 127
     },
     {
       "code": "DF1",
       "evidence": "Raw <p> has visual classes; bind a library surface.",
       "file": "packages/designer/src/blocks/Matrix.tsx",
       "fill": "foundry/sections.comparison",
-      "line": 126
+      "line": 129
     },
     {
       "code": "DF2",
       "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
       "file": "packages/designer/src/blocks/Matrix.tsx",
       "fill": "foundry/sections.comparison",
-      "line": 126
+      "line": 129
     },
     {
       "code": "DF2",
       "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
       "file": "packages/designer/src/blocks/Matrix.tsx",
       "fill": "foundry/sections.comparison",
-      "line": 126
+      "line": 129
     },
     {
       "code": "DF4",
       "evidence": "missing-declared-reads: tokens.body-size",
       "file": "packages/designer/src/blocks/Matrix.tsx",
       "fill": "foundry/sections.comparison",
-      "line": 126
+      "line": 129
     },
     {
       "code": "DF1",
       "evidence": "Raw <li> has visual classes; bind a library surface.",
       "file": "packages/designer/src/blocks/Matrix.tsx",
       "fill": "foundry/sections.comparison",
-      "line": 128
+      "line": 131
     },
     {
       "code": "DF2",
       "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
       "file": "packages/designer/src/blocks/Matrix.tsx",
       "fill": "foundry/sections.comparison",
-      "line": 128
+      "line": 131
     },
     {
       "code": "DF4",
       "evidence": "missing-declared-reads: tokens.body-size",
       "file": "packages/designer/src/blocks/Matrix.tsx",
       "fill": "foundry/sections.comparison",
-      "line": 128
+      "line": 131
     },
     {
       "code": "DF1",
       "evidence": "Raw <span> has visual classes; bind a library surface.",
       "file": "packages/designer/src/blocks/Matrix.tsx",
       "fill": "foundry/sections.comparison",
-      "line": 129
+      "line": 132
     },
     {
       "code": "DF2",
       "evidence": "unresolved class utilities: shrink-0",
       "file": "packages/designer/src/blocks/Matrix.tsx",
       "fill": "foundry/sections.comparison",
-      "line": 129
+      "line": 132
     },
     {
       "code": "DF2",
       "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
       "file": "packages/designer/src/blocks/Matrix.tsx",
       "fill": "foundry/sections.comparison",
-      "line": 130
+      "line": 133
     },
     {
       "code": "DF2",
       "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
       "file": "packages/designer/src/blocks/Matrix.tsx",
       "fill": "foundry/sections.comparison",
-      "line": 130
+      "line": 133
     },
     {
       "code": "DF1",
       "evidence": "Raw <span> has visual classes; bind a library surface.",
       "file": "packages/designer/src/blocks/Matrix.tsx",
       "fill": "foundry/sections.comparison",
-      "line": 132
+      "line": 135
     },
     {
       "code": "DF2",
       "evidence": "unresolved class utilities: min-w-0",
       "file": "packages/designer/src/blocks/Matrix.tsx",
       "fill": "foundry/sections.comparison",
-      "line": 132
+      "line": 135
     },
     {
       "code": "DF2",
       "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
       "file": "packages/designer/src/blocks/Matrix.tsx",
       "fill": "foundry/sections.comparison",
-      "line": 134
+      "line": 137
     },
     {
       "code": "DF1",
       "evidence": "Raw <div> has visual classes; bind a library surface.",
       "file": "packages/designer/src/blocks/Matrix.tsx",
       "fill": "foundry/sections.comparison",
-      "line": 135
+      "line": 138
     },
     {
       "code": "DF2",
       "evidence": "unresolved class utilities: w-full, min-w-0",
       "file": "packages/designer/src/blocks/Matrix.tsx",
       "fill": "foundry/sections.comparison",
-      "line": 135
+      "line": 138
     },
     {
       "code": "DF2",
       "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
       "file": "packages/designer/src/blocks/Matrix.tsx",
       "fill": "foundry/sections.comparison",
-      "line": 135
+      "line": 138
     },
     {
       "code": "DF4",
@@ -28053,6 +28625,7 @@
         "foundry/frames.site-header",
         "foundry/sections.access-matrix",
         "foundry/sections.chat",
+        "foundry/sections.comparison",
         "foundry/sections.data-table",
         "foundry/sections.empty-state",
         "foundry/sections.form",
@@ -28062,6 +28635,7 @@
         "foundry/sections.page-header",
         "foundry/sections.pagination",
         "foundry/sections.pricing",
+        "foundry/sections.record-detail",
         "foundry/sections.section-header"
       ],
       "effective": [
@@ -28073,6 +28647,7 @@
         "foundry/frames.site-header",
         "foundry/sections.access-matrix",
         "foundry/sections.chat",
+        "foundry/sections.comparison",
         "foundry/sections.data-table",
         "foundry/sections.empty-state",
         "foundry/sections.explorer",
@@ -28083,6 +28658,7 @@
         "foundry/sections.page-header",
         "foundry/sections.pagination",
         "foundry/sections.pricing",
+        "foundry/sections.record-detail",
         "foundry/sections.resource-list",
         "foundry/sections.section-header"
       ],
@@ -28094,6 +28670,7 @@
         "foundry/frames.sheet",
         "foundry/sections.access-matrix",
         "foundry/sections.chat",
+        "foundry/sections.comparison",
         "foundry/sections.data-table",
         "foundry/sections.explorer",
         "foundry/sections.link-index",
@@ -28189,12 +28766,14 @@
       "declared": [
         "foundry/sections.access-matrix",
         "foundry/sections.data-table",
+        "foundry/sections.form",
         "foundry/sections.resource-list",
         "foundry/sections.task-list"
       ],
       "effective": [
         "foundry/sections.access-matrix",
         "foundry/sections.data-table",
+        "foundry/sections.form",
         "foundry/sections.resource-list",
         "foundry/sections.task-list"
       ],
@@ -28209,8 +28788,12 @@
       "scanned": []
     },
     "components.combo-box": {
-      "declared": [],
-      "effective": [],
+      "declared": [
+        "foundry/sections.form"
+      ],
+      "effective": [
+        "foundry/sections.form"
+      ],
       "scanned": []
     },
     "components.date-field": {
@@ -28228,17 +28811,20 @@
         "foundry/frames.command",
         "foundry/frames.sheet",
         "foundry/frames.site-header",
+        "foundry/sections.comparison",
         "foundry/sections.data-table"
       ],
       "effective": [
         "foundry/frames.command",
         "foundry/frames.sheet",
         "foundry/frames.site-header",
+        "foundry/sections.comparison",
         "foundry/sections.data-table"
       ],
       "scanned": [
         "foundry/frames.command",
         "foundry/frames.sheet",
+        "foundry/sections.comparison",
         "foundry/sections.data-table"
       ]
     },
@@ -28246,11 +28832,13 @@
       "declared": [
         "foundry/frames.site-header",
         "foundry/sections.faq",
+        "foundry/sections.record-detail",
         "foundry/sections.table-of-contents"
       ],
       "effective": [
         "foundry/frames.site-header",
         "foundry/sections.faq",
+        "foundry/sections.record-detail",
         "foundry/sections.table-of-contents"
       ],
       "scanned": [
@@ -28369,6 +28957,7 @@
         "foundry/frames.site-header",
         "foundry/sections.article",
         "foundry/sections.chat",
+        "foundry/sections.comparison",
         "foundry/sections.content",
         "foundry/sections.empty-state",
         "foundry/sections.features",
@@ -28377,6 +28966,7 @@
         "foundry/sections.logo-cloud",
         "foundry/sections.pagination",
         "foundry/sections.people",
+        "foundry/sections.record-detail",
         "foundry/sections.section-header",
         "foundry/sections.table-of-contents"
       ],
@@ -28387,6 +28977,7 @@
         "foundry/frames.site-header",
         "foundry/sections.article",
         "foundry/sections.chat",
+        "foundry/sections.comparison",
         "foundry/sections.content",
         "foundry/sections.empty-state",
         "foundry/sections.explorer",
@@ -28397,6 +28988,7 @@
         "foundry/sections.logo-cloud",
         "foundry/sections.pagination",
         "foundry/sections.people",
+        "foundry/sections.record-detail",
         "foundry/sections.section-header",
         "foundry/sections.table-of-contents"
       ],
@@ -28410,12 +29002,10 @@
     },
     "components.logo": {
       "declared": [
-        "foundry/frames.app-header",
         "foundry/frames.site-footer",
         "foundry/frames.site-header"
       ],
       "effective": [
-        "foundry/frames.app-header",
         "foundry/frames.site-footer",
         "foundry/frames.site-header",
         "foundry/frames.site-shell"
@@ -28429,6 +29019,7 @@
         "foundry/frames.app-header",
         "foundry/frames.app-shell",
         "foundry/frames.app-sidebar",
+        "foundry/sections.comparison",
         "foundry/sections.data-table",
         "foundry/sections.resource-list"
       ],
@@ -28436,12 +29027,14 @@
         "foundry/frames.app-header",
         "foundry/frames.app-shell",
         "foundry/frames.app-sidebar",
+        "foundry/sections.comparison",
         "foundry/sections.data-table",
         "foundry/sections.resource-list"
       ],
       "scanned": [
         "foundry/frames.app-header",
         "foundry/frames.app-shell",
+        "foundry/sections.comparison",
         "foundry/sections.resource-list"
       ]
     },
@@ -28527,11 +29120,13 @@
       "declared": [
         "foundry/sections.column-mapper",
         "foundry/sections.data-table",
+        "foundry/sections.form",
         "foundry/sections.pagination"
       ],
       "effective": [
         "foundry/sections.column-mapper",
         "foundry/sections.data-table",
+        "foundry/sections.form",
         "foundry/sections.pagination"
       ],
       "scanned": [
@@ -28621,6 +29216,7 @@
         "foundry/sections.data-table"
       ],
       "scanned": [
+        "foundry/sections.comparison",
         "foundry/sections.data-table"
       ]
     },
@@ -28725,7 +29321,8 @@
         "foundry/frames.app-sidebar",
         "foundry/frames.command",
         "foundry/sections.access-matrix",
-        "foundry/sections.chat"
+        "foundry/sections.chat",
+        "foundry/sections.comparison"
       ]
     },
     "components.tree": {
@@ -29148,6 +29745,7 @@
         "foundry/sections.testimonials"
       ],
       "scanned": [
+        "foundry/sections.comparison",
         "foundry/sections.data-table",
         "foundry/sections.empty-state",
         "foundry/sections.faq",
@@ -29512,12 +30110,10 @@
     },
     "assets.mark": {
       "declared": [
-        "foundry/frames.app-header",
         "foundry/frames.site-footer",
         "foundry/frames.site-header"
       ],
       "effective": [
-        "foundry/frames.app-header",
         "foundry/frames.site-footer",
         "foundry/frames.site-header"
       ],
@@ -30050,6 +30646,7 @@
         "foundry/frames.site-shell",
         "foundry/sections.article",
         "foundry/sections.chat",
+        "foundry/sections.comparison",
         "foundry/sections.data-table",
         "foundry/sections.features",
         "foundry/sections.form",
@@ -30068,6 +30665,7 @@
         "foundry/frames.site-shell",
         "foundry/sections.article",
         "foundry/sections.chat",
+        "foundry/sections.comparison",
         "foundry/sections.data-table",
         "foundry/sections.features",
         "foundry/sections.form",
@@ -30084,10 +30682,12 @@
       ],
       "effective": [
         "foundry/frames.app-shell",
+        "foundry/sections.comparison",
         "foundry/sections.data-table"
       ],
       "scanned": [
-        "foundry/frames.app-shell"
+        "foundry/frames.app-shell",
+        "foundry/sections.comparison"
       ]
     },
     "tokens.density": {
@@ -31482,7 +32082,7 @@
   ],
   "summary": {
     "descriptors": 38,
-    "findings": 2394,
+    "findings": 2420,
     "scanned": 38,
     "undeclaredComposes": 12,
     "undeclaredReads": 38

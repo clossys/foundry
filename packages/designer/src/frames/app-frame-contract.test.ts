@@ -102,7 +102,7 @@ describe("data-readable AppFrame contract", () => {
     expect(APP_FRAME_CONTRACT.regions.find(region => region.key === "right-panel")).toMatchObject({ required: false, content: "rightPanel.children" });
     expect(APP_FRAME_CONTRACT.hostInputs).toEqual(expect.arrayContaining(["brand", "navigation.tree", "account.sections", "account.signedOutLabel", "commands.groups", "children"]));
     expect(APP_FRAME_CONTRACT.required).toEqual(expect.arrayContaining([
-      "sole-main", "skip-target", "bottom-account-menu", "signed-out-without-actor", "host-command-index", "command-shortcut", "persisted-three-state-theme", "mobile-navigation-drawer", "resizable-right-panel", "collapsible-right-panel", "narrow-right-panel-drawer", "rtl", "forced-colors", "profile-avatar-mark", "brand-rooted-breadcrumb", "page-owned-heading", "positioned-isolated-stage", "page-header-slots",
+      "sole-main", "skip-target", "bottom-account-menu", "signed-out-without-actor", "host-command-index", "command-shortcut", "persisted-three-state-theme", "mobile-navigation-drawer", "resizable-right-panel", "collapsible-right-panel", "narrow-right-panel-drawer", "rtl", "forced-colors", "profile-avatar-mark", "host-rooted-breadcrumb", "page-owned-heading", "positioned-isolated-stage", "page-header-slots",
     ]));
     expect(APP_FRAME_CONTRACT.specimen).toEqual({ owner: "@clossys/designer", subpath: "frames", export: "AppFrameSpecimen", source: "src/frames/AppFrame.specimen.tsx" });
     expect(client.AppFrameSpecimen).toBeTypeOf("function");

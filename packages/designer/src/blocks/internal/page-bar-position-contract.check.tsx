@@ -10,3 +10,6 @@ export const staticPageBar = <PageBar {...props} position="static" surface="tran
 export const fixedPageBar = <PageBar {...props} position="fixed" />;
 // @ts-expect-error position is finite vocabulary, not a boolean switch
 export const booleanPageBar = <PageBar {...props} position={false} />;
+// @ts-expect-error brand is not a PageBar slot; the host mark belongs to the profile Avatar
+export const brandedPageBar = <PageBar {...props} brand={<span>Example</span>} />;
+export const unrootedPageBar = <PageBar labels={props.labels} page={{ title: "Example" }} />;

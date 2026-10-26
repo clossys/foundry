@@ -397,20 +397,8 @@
     "contract": {
       "kind": "frame",
       "root": "header",
-      "landmarks": [
-        {
-          "slot": "brand",
-          "role": "banner",
-          "topLevel": true,
-          "nameRequired": false
-        }
-      ],
+      "landmarks": [],
       "slots": [
-        {
-          "id": "brand",
-          "required": true,
-          "accepts": "components.logo"
-        },
         {
           "id": "context",
           "required": false,
@@ -459,7 +447,6 @@
           "tokens.touch-target"
         ],
         "assets": [
-          "assets.mark",
           "assets.icon-chevron-down",
           "assets.icon-external-link"
         ]
@@ -470,7 +457,6 @@
         "components.popover",
         "components.button",
         "components.link",
-        "components.logo",
         "components.toggle-button",
         "components.status-mark"
       ]

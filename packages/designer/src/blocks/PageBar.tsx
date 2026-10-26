@@ -54,17 +54,15 @@ export interface PageBarProps {
   surface?: "solid" | "transparent" | "glass";
   /** Static stays in document flow and reads no sticky layer. Glass is fixed and refuses static. */
   position?: "sticky" | "static";
-  /** Trail root: a link or, with workspaces, a menu labelled by root.label. */
-  root: { label: string; href?: string };
+  /** Optional trail root: a link or, with workspaces, a menu labelled by root.label. Omitted: the trail starts at page.breadcrumb. */
+  root?: { label: string; href?: string };
   header?: PageBarHeader;
   onNavigate?: FrameNavigate;
   labels: PageBarLabels;
-  /** Absent: optional brand and context slots, without a trail. */
+  /** Absent: optional context slot, without a trail. */
   page?: PageBarPage;
   workspaces?: readonly PageBarDestination[];
-  /** Leading slot before the trail; AppFrame supplies its own brand renderer. */
-  brand?: ReactNode;
-  /** Optional app-header content immediately after brand and before the page trail. */
+  /** Optional app-header content at the start of the bar, before the page trail. */
   context?: ReactNode;
   /** Collapse ancestors and overflow non-primary actions. @default false */
   narrow?: boolean;
@@ -98,10 +96,10 @@ function PageTrail({ root, title, breadcrumb = [], workspaces, narrow,
   const ancestors = current ? breadcrumb.slice(0, -1) : breadcrumb;
   return <nav aria-label={breadcrumbLabel} className="min-w-0 flex-1">
     <ol className="m-0 flex min-w-0 list-none items-center gap-xs p-0">
-      <li className="min-w-0 shrink-0">
+      {root && <li className="min-w-0 shrink-0">
         {workspaces?.length ? <CrumbMenu id="workspace" label={root.label} siblings={workspaces} /> :
           <Link href={root.href} variant="standalone" className={CONTROL} style={TAP}>{root.label}</Link>}
-      </li>
+      </li>}
       {narrow && ancestors.length > 0
         ? <li className="shrink-0"><Menu trigger={<Button variant="ghost" className={CONTROL} style={TAP} aria-label={collapsedBreadcrumbLabel}><span aria-hidden="true">...</span></Button>}>
             {ancestors.map(item => <Menu.Section key={item.id} heading={item.label}>
@@ -121,7 +119,7 @@ function PageTrail({ root, title, breadcrumb = [], workspaces, narrow,
 }
 
 /** Page header and metadata composition. The frame owns stage sizing. */
-export function PageBar({ root, brand, context, page, workspaces, header, onNavigate, labels, narrow = false, reserveStart = false, reserveEnd = false, onHeightChange, dir, position, surface }: PageBarProps) {
+export function PageBar({ root, context, page, workspaces, header, onNavigate, labels, narrow = false, reserveStart = false, reserveEnd = false, onHeightChange, dir, position, surface }: PageBarProps) {
   const headerPosition = resolveFrameHeaderOptions("frames.app-header", { position, surface }).position;
   const legacy = surface === undefined && position === undefined;
   const { pageInfo: pageInfoLabel, pageActions: pageActionsLabel } = labels;
@@ -170,7 +168,7 @@ export function PageBar({ root, brand, context, page, workspaces, header, onNavi
       ...(headerPosition === "sticky" ? { zIndex: PAGE_BAR_LAYOUT.barLayer }
         : headerPosition === "fixed" ? { zIndex: "var(--ui-z-shell, 20)" } : {}) }}>
     {header ? <HeaderSlots header={header} onNavigate={onNavigate} /> : <>
-    {context === undefined || context === null ? brand : <>{brand}<div data-application-frame-slot="context" className="min-w-0 max-w-full">{context}</div></>}
+    {context === undefined || context === null ? null : <div data-application-frame-slot="context" className="min-w-0 max-w-full">{context}</div>}
     {page && <PageTrail root={root} title={page.title} breadcrumb={page.breadcrumb} workspaces={workspaces} narrow={narrow} labels={labels} />}
     {information && <Popover anchorRef={bar} className="text-body text-ink-primary" aria-label={pageInfoLabel} placement="bottom start" offset={0} isOpen={infoOpen} onOpenChange={setInfoOpen}
       trigger={<Button variant="ghost" className={CONTROL} style={TAP} aria-label={pageInfoLabel} aria-expanded={infoOpen}><Icon glyph={ChevronDown} decorative className={infoOpen ? "rotate-180" : undefined} /></Button>}
@@ -235,7 +233,11 @@ function HeaderSlots({ header, onNavigate }: { header: PageBarHeader; onNavigate
     </div>
     <nav ref={nav} aria-label={header.nav?.label} aria-hidden={overflow.compactNav || undefined} inert={overflow.compactNav}
       className={(overflow.compactNav ? "invisible pointer-events-none absolute " : "") + "flex w-max min-w-0 items-center justify-center gap-xs"}>
-      {header.nav?.items.map(item => <Link key={item.id} href={item.href} onClick={event => frameLinkNavigation(event, onNavigate)} aria-current={item.id === header.nav?.activeId ? "page" : undefined} buttonVariant="ghost" className="whitespace-nowrap" style={TAP}>{item.label}</Link>)}
+      {header.nav?.items.map(item => {
+        const selected = item.id === header.nav?.activeId;
+        return <Link key={item.id} href={item.href} onClick={event => frameLinkNavigation(event, onNavigate)} aria-current={selected ? "page" : undefined} data-selected={selected || undefined} buttonVariant="ghost"
+          className={"whitespace-nowrap border-b-2 " + (selected ? "border-accent text-ink-primary" : "border-transparent")} style={TAP}>{item.label}</Link>;
+      })}
     </nav>
     <div ref={actions} className="flex min-w-0 items-center justify-self-end" data-frame-header-actions="">{header.actions?.render({ compact: overflow.compactActions })}</div>
   </div>;

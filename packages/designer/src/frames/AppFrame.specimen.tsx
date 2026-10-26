@@ -23,9 +23,7 @@ type Activity = { kind: "initial" | "complete" | "reopen" } | { kind: "route"; p
 export interface AppFrameSpecimenProps {
   /** Titles and descriptions for all six local destinations. @default The generic Example page copy declared in this module. */
   pages?: PageCopy;
-  /** Visible brand wordmark. @default "Example" */
-  wordmark?: string;
-  /** Brand, account context and content eyebrow. Must contain wordmark. @default "Example workspace" */
+  /** Account context, page scope and content eyebrow. @default "Example workspace" */
   workspaceLabel?: string;
   /** Navigation accessible name. @default "Example navigation" */
   navigationLabel?: string;
@@ -103,7 +101,7 @@ export interface AppFrameSpecimenProps {
  * Mount directly: the AppFrame owns the only main landmark.
  */
 export function AppFrameSpecimen({
-  pages = PAGES, wordmark = "Example", workspaceLabel = "Example workspace", navigationLabel = "Example navigation",
+  pages = PAGES, workspaceLabel = "Example workspace", navigationLabel = "Example navigation",
   accountName = "Example member", accountDescription = "Local demonstration account", guestLabel = "Guest account",
   accountSectionLabel = "Account", signOutLabel = "Sign out", signInLabel = "Use example account",
   commandTriggerLabel = "Search Example commands", commandHeading = "Example commands", commandSearchLabel = "Find a command",
@@ -168,7 +166,7 @@ export function AppFrameSpecimen({
   } }] }];
   return <div onClickCapture={onHostLink}>
     <AppFrame
-      brand={{ markSrc: EXAMPLE_MARK, wordmark, label: workspaceLabel, href: "#example-overview" }}
+      brand={{ markSrc: EXAMPLE_MARK }}
       navigation={{ tree: navigation, activeId: page, navigationKey: page, label: navigationLabel }}
       account={{
         ...(signedIn ? { actor: { name: accountName, secondaryText: accountDescription } } : {}),

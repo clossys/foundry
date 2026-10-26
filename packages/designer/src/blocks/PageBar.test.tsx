@@ -4,9 +4,9 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as blocks from "./index.js";
 import type { PageBarProps, PageBarPage } from "./PageBar.js";
-import { AppFrame } from "../../../publisher/src/web/frame/AppFrame.js";
-import { APP_FRAME_WIDE_QUERY } from "../../../publisher/src/web/frame/app-frame-layout.js";
-import type { AppFrameProps } from "../../../publisher/src/web/frame/app-frame-types.js";
+import { AppFrame } from "../frames/AppFrame.js";
+import { APP_FRAME_WIDE_QUERY } from "../frames/app-frame-layout.js";
+import type { AppFrameProps } from "../frames/app-frame-types.js";
 
 const PageBar = (blocks as typeof blocks & { PageBar: (props: PageBarProps) => React.ReactNode }).PageBar;
 const labels = { breadcrumb: "Report trail", collapsedBreadcrumb: "Earlier report levels", pageInfo: "Report information", pageActions: "Other report actions" };
@@ -56,20 +56,27 @@ describe("PageBar", () => {
     await userEvent.click(within(bar()).getByRole("button", { name: "Archive" }));
     expect(supplied.actions![2]!.onAction).toHaveBeenCalledOnce();
   });
-  it("places accessible context after brand and before the brand-rooted trail without taking heading ownership", async () => {
-    const view = standalone({ brand: <a href="#brand">Workspace mark</a>, context: <button>Switch project</button>, page: { title: "Project report" } });
-    const brand = within(bar()).getByRole("link", { name: "Workspace mark" });
+  it("leads with accessible context before the host-rooted trail and renders no brand slot", async () => {
+    // A retired brand value supplied by an untyped host is not rendered at the old leading position.
+    const view = standalone({ brand: <a href="#brand">Workspace mark</a>, context: <button>Switch project</button>, page: { title: "Project report" } } as Partial<PageBarProps>);
+    expect(within(bar()).queryByRole("link", { name: "Workspace mark" })).toBeNull();
+    expect(bar().querySelector('a[href="#brand"]')).toBeNull();
     const context = within(bar()).getByRole("button", { name: "Switch project" });
     const trail = within(bar()).getByRole("navigation", { name: labels.breadcrumb });
-    expect(brand.nextElementSibling).toContainElement(context);
+    expect(context.parentElement).toBe(bar().firstElementChild);
     expect(context.parentElement?.nextElementSibling).toBe(trail);
     expect(within(bar()).getAllByRole("heading", { level: 1 })).toHaveLength(1);
-    brand.focus(); await userEvent.tab(); expect(context).toHaveFocus();
-    await userEvent.tab(); expect(within(trail).getByRole("link", { name: root.label })).toHaveFocus();
+    context.focus(); await userEvent.tab(); expect(within(trail).getByRole("link", { name: root.label })).toHaveFocus();
     view.rerender(<PageBar root={root} labels={labels} context={<button>Switch project</button>} />);
     expect(within(bar()).getByRole("button", { name: "Switch project" })).toBeInTheDocument();
     expect(within(bar()).queryByRole("heading")).not.toBeInTheDocument();
     expect(within(bar()).queryByRole("navigation")).not.toBeInTheDocument();
+  });
+  it("omits the trail root when no host root is supplied", () => {
+    standalone({ root: undefined, page: { title: "Project report", breadcrumb: [{ id: "projects", label: "Projects", href: "/projects" }] } });
+    const trail = within(bar()).getByRole("navigation", { name: labels.breadcrumb });
+    expect(within(trail).queryByRole("link", { name: root.label })).toBeNull();
+    expect(within(trail).getByRole("link", { name: "Projects" })).toHaveAttribute("href", "/projects");
   });
   it("M4: follows forced colors and reduced transparency on initial render and media changes", () => {
     standalone();
@@ -155,7 +162,7 @@ const informationValues: readonly [string, React.ReactNode, boolean][] = [["unde
 function corpusRender(renderer: "PageBar" | "AppFrame", props: Partial<PageBarProps>) {
   if (renderer === "PageBar") return standalone({ ...props });
   const supplied: AppFrameProps = {
-    brand: { markSrc: "/mark.svg", wordmark: root.label, label: root.label, href: root.href },
+    brand: { markSrc: "/mark.svg" }, root,
     navigation: { tree: [{ id: "projects", label: "Projects", href: "/projects" }], activeId: "projects" },
     account: { signedOutLabel: "Signed out", sections: [] },
     commands: { heading: "Commands", triggerLabel: "Find commands", searchLabel: "Search commands", closeLabel: "Close commands", emptyMessage: "No commands", groups: [] },

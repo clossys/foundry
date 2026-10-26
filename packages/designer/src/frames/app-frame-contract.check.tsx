@@ -2,7 +2,7 @@
 import { AppFrame, APP_FRAME_CONTRACT, APP_FRAME_CONFIG_SCHEMA } from "./index.js";
 import type { AppFrameProps, AppFrameBrand, AppFrameAccount, AppFrameRightPanel } from "./index.js";
 
-export const brand: AppFrameBrand = { markSrc: "/mark.svg", wordmark: "Example", label: "Example home" };
+export const brand: AppFrameBrand = { markSrc: "/mark.svg" };
 export const signedOut: AppFrameAccount = {
   signedOutLabel: "Account",
   sections: [{ id: "access", entries: [{ id: "sign-in", kind: "link", label: "Sign in", href: "/sign-in" }] }],
@@ -35,8 +35,10 @@ export const browserEntry: "frames" = APP_FRAME_CONTRACT.adapter.subpath;
 
 // @ts-expect-error mark rendering has a finite image opt-out
 export const unsupportedMarkInk: AppFrameBrand = { ...brand, markInk: "inverse" };
-// @ts-expect-error the visible wordmark is resolved text, not an arbitrary node
-export const wordmarkNode: AppFrameBrand = { ...brand, wordmark: <strong>Example</strong> };
+// @ts-expect-error the header carries no brand wordmark; the host mark is only the profile Avatar
+export const retiredWordmark: AppFrameBrand = { ...brand, wordmark: "Example" };
+// @ts-expect-error the header carries no brand home link
+export const retiredBrandLink: AppFrameBrand = { ...brand, href: "/" };
 // @ts-expect-error an actor must have a real host-supplied name
 export const inventedActor: AppFrameAccount = { ...signedOut, actor: {} };
 // @ts-expect-error account chrome is composed from data, not a replacement node
@@ -82,7 +84,7 @@ export const page: NonNullable<AppFrameProps["page"]> = {
   status: <span>Ready</span>, description: "Current projects", updatedAt: "Today", meta: <span>Team</span>, scope: "All projects",
   actions: [{ id: "save", label: "Save", primary: true, onAction: () => {} }, { id: "export", label: "Export", href: "/export" }],
 };
-export const pageFrame = <AppFrame {...props} page={page} workspaces={[{ id: "workspace", label: "Workspace", href: "/" }]} />;
+export const pageFrame = <AppFrame {...props} page={page} root={{ label: "Workspace", href: "/" }} workspaces={[{ id: "workspace", label: "Workspace", href: "/" }]} />;
 // @ts-expect-error page width controls are not part of the frame API
 export const invalidPageWidth: AppFrameProps["page"] = { title: "Projects", width: "fixed" };
 // @ts-expect-error actions have exactly one destination mechanism

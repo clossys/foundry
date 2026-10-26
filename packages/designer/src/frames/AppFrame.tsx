@@ -2,12 +2,11 @@
 
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import { ModalContext, PopoverContext } from "react-aria-components";
-import { Avatar, Button, Icon, Link, Menu, Tooltip } from "../components/index.js";
+import { Avatar, Button, Icon, Menu, Tooltip } from "../components/index.js";
 import { Layers, List, Search } from "../icons/index.js";
 import { AccountMenu, AppNavigation, PageBar, CommandMenu, Drawer, ResizablePane, useCommandMenuShortcut, type DrawerProps } from "../blocks/index.js";
 import { ThemeProvider, ThemeToggle } from "../theme/index.js";
 import { FrameSlotProvider, FrameSlotOutlet, useFramePageHeader } from "../shell/index.js";
-import { frameLinkNavigation } from "../blocks/frame-navigation.js";
 import { assertAppFrameBrand } from "./AppFrameBrand.js";
 import { FrameDock } from "./FrameDock.js";
 import { SkipLink } from "../shell/SkipLink.js";
@@ -40,7 +39,7 @@ function SignedOutMenu({ sections, signedOutLabel, onRoute, markSrc }: AppFrameA
   </Menu>;
 }
 
-function FrameContent({ brand, navigation, account, commands, children, toasts, rightPanel, theme, themeControl, dir, header, onNavigate, notices, dock, headerPosition, headerSurface, context, page, workspaces, breadcrumbLabel, collapsedBreadcrumbLabel, pageInfoLabel, pageActionsLabel,
+function FrameContent({ brand, navigation, account, commands, children, toasts, rightPanel, theme, themeControl, dir, header, onNavigate, notices, dock, headerPosition, headerSurface, context, root, page, workspaces, breadcrumbLabel, collapsedBreadcrumbLabel, pageInfoLabel, pageActionsLabel,
   /** @default "Skip to content" */
   skipLabel = "Skip to content", mainId }: AppFrameProps) {
   const resolvedHeader = useFramePageHeader(header);
@@ -198,7 +197,7 @@ function FrameContent({ brand, navigation, account, commands, children, toasts, 
     style={corner} data-application-frame-navigation="trigger"
     aria-controls={generated + "-navigation"} aria-label={navOpen ? navigationCloseLabel : navigationOpenLabel} aria-expanded={navOpen} onPress={changeNav}><Icon glyph={List} decorative /></Button>;
   const commandTrigger = <div style={{ paddingBlockStart: `calc(${APP_FRAME_LAYOUT.tap} + ${APP_FRAME_LAYOUT.gutter})` }}><Button variant="ghost" className={CONTROL + " w-full justify-start gap-sm"} style={TAP} onPress={openCommands}><Icon glyph={Search} decorative /><span className="min-w-0 truncate">{triggerLabel}</span></Button></div>;
-  const pageBar = <PageBar position={headerPosition} surface={headerSurface} header={resolvedHeader} onNavigate={onNavigate} context={context} root={{ label: brand.wordmark, href: brand.href }} page={page} workspaces={workspaces} narrow={!wide}
+  const pageBar = <PageBar position={headerPosition} surface={headerSurface} header={resolvedHeader} onNavigate={onNavigate} context={context} root={root} page={page} workspaces={workspaces} narrow={!wide}
     reserveStart={false} reserveEnd={false} onHeightChange={setBarHeight} dir={dir}
     labels={{ breadcrumb: breadcrumbLabel ?? "Breadcrumb", collapsedBreadcrumb: collapsedBreadcrumbLabel ?? "More breadcrumb levels", pageInfo: pageInfoLabel ?? "Page information",
       pageActions: pageActionsLabel ?? "More page actions" }} />;
@@ -217,7 +216,6 @@ function FrameContent({ brand, navigation, account, commands, children, toasts, 
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <div data-application-frame-region="header" className="frame-header-container relative flex min-w-0 shrink-0 items-center gap-xs px-sm" style={{ minBlockSize: barHeight || APP_FRAME_LAYOUT.tap }}>
             <span ref={setNavigationControlHost} className="contents">{!navigationControlHost && <Tooltip trigger={navigationTrigger}>{navOpen ? navigationCloseLabel : navigationOpenLabel}</Tooltip>}</span>
-            <span className="min-w-0 shrink-0" onClickCapture={event => frameLinkNavigation(event, onNavigate)}>{brand.href ? <Link href={brand.href} aria-label={brand.label} variant="standalone" className="inline-flex max-w-full items-center px-sm py-sm"><span className="truncate">{brand.wordmark}</span></Link> : null}</span>
             <div className="min-w-0 flex-1">{pageBar}</div>
             {rightPanel ? <Tooltip trigger={panelTrigger}>{panelOpen || panelDocked ? closeLabel : openLabel}</Tooltip> : <span aria-hidden="true" className="icon-control-md shrink-0" />}
           </div>

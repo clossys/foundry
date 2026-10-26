@@ -154,7 +154,7 @@ describe("AppFrame Material registration", () => {
       expect(entry.layer).toBe("blocks");
       expect(entry.component).toBe((blocks as any)[entry.exportName]);
       expect(entry.component).toBeTypeOf("function");
-      if (entry.id === "page-bar") expect(entry.regions).toEqual(["brand", "trail", "page-info", "actions"]);
+      if (entry.id === "page-bar") expect(entry.regions).toEqual(["trail", "page-info", "actions"]);
       else expect(entry.regions).toContain("content");
       const source = readFileSync(join(root, entry.source), "utf8");
       const ast = ts.createSourceFile(entry.source, source, ts.ScriptTarget.ES2022, true, ts.ScriptKind.TSX);
@@ -226,9 +226,9 @@ it("registers PageBar's complete authored contract and actual component dependen
   const entry = materials().find((record: any) => record.id === "page-bar");
   expect(entry).toMatchObject({
     layer: "blocks", exportName: "PageBar", component: (blocks as any).PageBar, source: "src/blocks/PageBar.tsx",
-    regions: ["brand", "trail", "page-info", "actions"],
+    regions: ["trail", "page-info", "actions"],
     dependencies: [{ exportName: "Link", source: "src/components/Link.tsx" }, { exportName: "Menu", source: "src/components/Menu.tsx" }, { exportName: "Popover", source: "src/components/Popover.tsx" }, { exportName: "Button", source: "src/components/Button.tsx" }, { exportName: "Icon", source: "src/components/Icon.tsx" }],
     configs: [{ prop: "narrow", values: [false, true], default: false, source: "src/blocks/PageBar.tsx" }],
-    authoredInputs: ["root", "page", "workspaces", "brand", "header", "onNavigate", "labels", "reserveStart", "reserveEnd", "dir", "onHeightChange"],
+    authoredInputs: ["root", "page", "workspaces", "header", "onNavigate", "labels", "reserveStart", "reserveEnd", "dir", "onHeightChange"],
   });
 });

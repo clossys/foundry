@@ -48,6 +48,9 @@ describe("page-level header slots", () => {
     render(<Fixture />);
     expect(screen.getByRole("heading", { level: 1, name: "Workspace" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "Second" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: "Second" })).toHaveAttribute("data-selected", "true");
+    expect(screen.getByRole("link", { name: "First" })).not.toHaveAttribute("data-selected");
+    expect(screen.getByRole("link", { name: "First" })).not.toHaveAttribute("aria-current");
     expect(document.querySelector("[data-frame-header-overflow]")).toHaveClass("frame-header-grid");
     expect(screen.getByRole("button", { name: "Open context" })).toHaveAttribute("data-compact", "false");
   });

@@ -286,10 +286,10 @@ describe("AppFrame composition", () => {
     expect(profile.closest('[data-application-navigation-region="footer"]')).not.toBeNull();
   });
 
-  it("rejects unnamed or label-in-name-invalid brands without echoing host values", () => {
-    const props = fixture(); props.brand.label = "private-value";
+  it("rejects an empty host mark source without echoing host values", () => {
+    const props = fixture(); props.brand = { markSrc: "  " };
     const silent = vi.spyOn(console, "error").mockImplementation(() => {});
-    expect(() => render(<AppFrame {...props} />)).toThrow("AppFrame: brand label must contain the visible wordmark.");
+    expect(() => render(<AppFrame {...props} />)).toThrow("AppFrame: brand mark source must be non-empty.");
     silent.mockRestore();
   });
 

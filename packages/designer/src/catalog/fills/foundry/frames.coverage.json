@@ -11,7 +11,7 @@
       ],
       "missingStatePorts": [],
       "notes": [
-        "Context and glass/opaque surface members remain unmapped in this descriptor.",
+        "No brand slot: the host mark is the AppFrame profile Avatar. Context and glass/opaque surface members remain unmapped in this descriptor.",
         "Descriptor only; anatomy, source, accessibility, contrast, layout and rendered conformance are unmeasured."
       ],
       "slot": "frames.app-header",

@@ -71,7 +71,7 @@ export const APP_FRAME_MATERIALS = [
   },
   {
     id: "page-bar", layer: "blocks", exportName: "PageBar", component: PageBar, source: "src/blocks/PageBar.tsx",
-    regions: ["brand", "trail", "page-info", "actions"],
+    regions: ["trail", "page-info", "actions"],
     dependencies: [
       { exportName: "Link", source: "src/components/Link.tsx" },
       { exportName: "Menu", source: "src/components/Menu.tsx" },
@@ -80,7 +80,7 @@ export const APP_FRAME_MATERIALS = [
       { exportName: "Icon", source: "src/components/Icon.tsx" },
     ],
     configs: [{ prop: "narrow", values: [false, true], default: false, source: "src/blocks/PageBar.tsx" }],
-    authoredInputs: ["root", "page", "workspaces", "brand", "header", "onNavigate", "labels", "reserveStart", "reserveEnd", "dir", "onHeightChange"],
+    authoredInputs: ["root", "page", "workspaces", "header", "onNavigate", "labels", "reserveStart", "reserveEnd", "dir", "onHeightChange"],
   },
   {
     id: "account-menu", layer: "blocks", exportName: "AccountMenu", component: AccountMenu, source: "src/blocks/AccountMenu.tsx",
