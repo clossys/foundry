@@ -23,6 +23,7 @@ import { Badge } from "../components/Badge.js";
 import { Tooltip } from "../components/Tooltip.js";
 import { PREVIEW_CHOICE_CLASS } from "./CandidateChoice.js";
 import { CandidateCell } from "./CandidateCell.js";
+import { ErrorReason } from "../blocks/library-board/ErrorReason.js";
 import { BoardHeader, LeafCell } from "../blocks/library-board/LeafCell.js";
 import { CandidatePromptDialog } from "./CandidatePromptDialog.js";
 import { Table } from "../components/Table.js";
@@ -196,6 +197,7 @@ const ContractBoards = memo(function ContractBoards({ narrow, boards, layer, que
                   const notices = candidate.result.findings.filter(f => f.severity === "notice").length;
                   return [source, <div className="relative"><RadioGroup.Radio value={source} aria-label={t.useSource(source, leaf.id)} isDisabled={!candidate.result.available || errors > 0} className={PREVIEW_CHOICE_CLASS}><CandidateCell labels={t} preview={candidate.node} /></RadioGroup.Radio>
                     {errors > 0 ? <Tooltip trigger={<Button variant="ghost" size="sm" aria-label={t.checkSummary(errors, notices)}><Badge variant="danger">!</Badge></Button>}>{t.checkSummary(errors, notices)}{candidate.result.findings.map((finding, index) => <p key={index}>{finding.code}: {finding.message}</p>)}{candidate.error ?? (!candidate.result.available ? candidate.result.error : null)}</Tooltip> : null}
+                    {errors > 0 ? <ErrorReason findings={candidate.result.findings} /> : null}
                   </div>];
                 })) }
               }))} /> : leaves.map(leaf => {

@@ -8,6 +8,7 @@ import { Badge } from '../../components/Badge.js';
 import { BoardHeader, LeafCell } from './LeafCell.js';
 import { MatrixChoices } from '../matrix/choices.js';
 import { CandidatePromptDialog } from './CandidatePromptDialog.js';
+import { ErrorReason } from './ErrorReason.js';
 import { assertLibraryBoardRecords, assertLibraryPreviewIdentity, type LibraryBoardCommand, type LibraryBoardRecords, type LibraryPreviewIdentity } from './model.js';
 import type { CandidateWorkflow, LibraryBoardLabels } from './types.js';
 export interface LibraryBoardPreviewPort {
@@ -63,7 +64,7 @@ export function LibraryBoardSection({ records, labels, previews, workflow, onCom
           if (!candidate) return [column.source, null];
           const errors = candidate.findings.filter(finding => finding.severity === 'error').length, notices = candidate.findings.filter(finding => finding.severity === 'notice').length;
           return [column.source, <div className="relative"><RadioGroup.Radio value={candidate.source} aria-label={labels.useSource(candidate.source, row.id)} isDisabled={!controls.canSave || controls.pending || !candidate.usable || column.referenceOnly || errors > 0} className={PREVIEW_CHOICE_CLASS}>{cell(candidate.previewIdentity)}</RadioGroup.Radio>
-            {errors > 0 ? <Tooltip trigger={<Button variant="ghost" size="sm" aria-label={labels.checkSummary(errors, notices)}><Badge variant="danger">!</Badge></Button>}>{candidate.findings.map((finding, index) => <p key={index}>{finding.code}: {finding.message}</p>)}</Tooltip> : null}</div>];
+            {errors > 0 ? <Tooltip trigger={<Button variant="ghost" size="sm" aria-label={labels.checkSummary(errors, notices)}><Badge variant="danger">!</Badge></Button>}>{candidate.findings.map((finding, index) => <p key={index}>{finding.code}: {finding.message}</p>)}</Tooltip> : null}{errors > 0 ? <ErrorReason findings={candidate.findings} /> : null}</div>];
         })), 'library-board-custom-actions': <div className="flex gap-sm">{prompt(row)}{custom && row.refreshPrompt ? prompt(row, true) : null}</div> }
       }))} />}
   </section>;
