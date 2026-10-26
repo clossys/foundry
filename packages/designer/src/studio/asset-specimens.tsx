@@ -4,6 +4,7 @@ import { Card } from "../components/Card.js";
 import { Icon, type IconNode, type IconSize } from "../components/Icon.js";
 import { Logomark } from "../components/Logomark.js";
 import { UI_BRANDMARK_HEIGHT_LG } from "../internal/brandmark.js";
+import { RatioFixture } from "./ratio-fixture.js";
 
 /** One specimen type per assets leaf; every member and candidate of a leaf shares it. */
 export type AssetSpecimenKind = "logo" | "favicon" | "app-icon" | "icon" | "ratio";
@@ -67,10 +68,10 @@ export function IconSpecimen({ glyph, name }: { glyph: IconNode; name: string })
   </div>;
 }
 
-/** An image ratio as an empty frame of that ratio, with the ratio as its label. */
+/** An image ratio as the crop it makes of one generated fixture image, with the ratio as its label. */
 export function RatioSpecimen({ width, height }: { width: number; height: number }): ReactElement {
   return <div data-asset-specimen="ratio" className="flex w-max flex-col items-start gap-xs">
-    <Card variant="outline" aria-hidden className="p-0" style={{ height: UI_BRANDMARK_HEIGHT_LG, aspectRatio: `${width} / ${height}` }} />
+    <Card variant="outline" aria-hidden className="overflow-hidden p-0" style={{ height: UI_BRANDMARK_HEIGHT_LG, aspectRatio: `${width} / ${height}` }}><RatioFixture /></Card>
     <span className={CAPTION}>{width}:{height}</span>
   </div>;
 }

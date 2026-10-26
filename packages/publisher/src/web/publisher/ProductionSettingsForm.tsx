@@ -153,7 +153,7 @@ export function ProductionSettingsFields({ draft, setDraft, configured, registri
     {draft.media && <p>{mediaLabel}: <span>{configurationValueLabel(draft.media)}</span></p>}
     <DeliverySettingsFields format={format} choices={draft.deliveries ?? []} onChange={deliveries => setDraft({ ...draft, deliveries })} deploymentSurface={draft.deploymentSurface} onSurfaceChange={deploymentSurface => setDraft({ ...draft, deploymentSurface })} deploymentSurfaceIds={deploymentSurfaceIds} messages={messages} />
     <p className="text-sm">{rendererDescription}</p>
-    <div className="flex flex-wrap gap-sm"><Button type="submit" isDisabled={!draft.format || !draft.frame.leaf || !draft.layout.leaf || !draft.layout.config.trim() || (draft.deliveries ?? []).some(choice => (choice.id === "pptx" || choice.id === "google-slides") && !choice.fidelity)}>{applyLabel}</Button><Button type="button" onPress={onReset}>{resetLabel}</Button></div>
+    <div className="flex flex-wrap gap-sm"><Button variant="secondary" type="submit" isDisabled={!draft.format || !draft.frame.leaf || !draft.layout.leaf || !draft.layout.config.trim() || (draft.deliveries ?? []).some(choice => (choice.id === "pptx" || choice.id === "google-slides") && !choice.fidelity)}>{applyLabel}</Button><Button variant="ghost" type="button" onPress={onReset}>{resetLabel}</Button></div>
   </>;
 }
 

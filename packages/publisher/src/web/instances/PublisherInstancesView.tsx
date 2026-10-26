@@ -118,7 +118,7 @@ export function PublisherInstancesView({ instances, library, registries, compile
   </li>;
   const renderList = (members: typeof rows) => <>{(["site", "app"] as const).filter(surface => members.some(row => row.binding.surface === surface)).map(surface => <section key={surface} aria-label={`${surface} instances`} className="grid gap-sm">
     <SectionHeader level={5} title={<>{surface}</>} /><ul className="grid gap-sm">{members.filter(row => row.binding.surface === surface).map(row => <li key={row.key}>
-      <Button type="button" aria-current={selected?.key === row.key ? "true" : undefined} onPress={() => setSelection(row.key)}
+      <Button variant="ghost" type="button" aria-current={selected?.key === row.key ? "true" : undefined} onPress={() => setSelection(row.key)}
         className="grid w-full gap-xs text-left break-words">
         <strong>{row.binding.label}</strong><span>{row.binding.path ?? "No route path"}</span><span>{row.binding.frame.leaf}</span>
         <span>{row.binding.layout.leaf} · {row.binding.layout.config || "config missing"}</span><span>{status(row.checked.findings.length)}</span>

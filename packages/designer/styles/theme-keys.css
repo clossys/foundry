@@ -1117,7 +1117,7 @@
   }
 }
 
-/* These recipes are defined without adopting them in any existing Component. */
+/* Overlay motion recipes; Dialog adopts overlay-fade and overlay-pop below. */
 @keyframes overlay-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes overlay-pop {
   from { opacity: 0; transform: translateY(var(--ui-motion-shift, 4px)); }
@@ -1136,6 +1136,10 @@
   @keyframes overlay-zoom { from { opacity: 0; } to { opacity: 1; } }
   @keyframes sheet-slide { from { opacity: 0; } to { opacity: 1; } }
 }
+/* Dialog adopts two of the recipes: the scrim fades and the surface pops in on the
+ * overlay timing role. Reduced motion keeps only the fade (the keyframes above). */
+@utility overlay-enter { animation: overlay-pop var(--ui-duration-overlay, 160ms) var(--ease-enter, cubic-bezier(0, 0, .2, 1)) both; }
+@utility overlay-scrim-enter { animation: overlay-fade var(--ui-duration-overlay, 160ms) var(--ease-enter, cubic-bezier(0, 0, .2, 1)) both; }
 
 @utility ui-loading-delayed { animation: ui-loading-reveal 1ms linear var(--ui-duration-loading-delay,150ms) both; }
 @keyframes ui-loading-reveal { from { opacity: 0; } to { opacity: 1; } }
