@@ -55,5 +55,6 @@ const result = importShadcnAriaComponents(input);
 const destination = resolve(src, "catalog/fills/shadcn@aria");
 mkdirSync(destination, { recursive: true });
 for (const [name, bytes] of Object.entries(files)) writeFileSync(resolve(destination, name), bytes);
-for (const item of ["button", "select", "calendar"]) writeFileSync(resolve(here, `${item}.golden.json`), JSON.stringify(result.rewrites[item], null, 2) + "\n");
+// Every committed adapter golden is written here, so none is ever edited by hand.
+for (const [item, golden] of [["button", "button"], ["select", "select"], ["calendar", "calendar"], ["checkbox", "checkbox"], ["combobox", "combo-box"], ["dialog", "dialog"], ["switch", "switch"], ["tabs", "tabs"]]) writeFileSync(resolve(here, `${golden}.golden.json`), JSON.stringify(result.rewrites[item], null, 2) + "\n");
 console.log(JSON.stringify({ fills: result.fills.length, receipt: result.receipt.length, rejected: result.receipt.filter(row => row.status === "rejected").map(row => row.item), blockers: Object.fromEntries(["button", "select", "calendar"].map(item => [item, result.rewrites[item].issues.length])) }));

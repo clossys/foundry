@@ -298,6 +298,7 @@ function emittablePropMap(slot: string, impl: { kind: "source"; entry: string; e
   return Object.fromEntries(bindings.filter(([member, binding]) => "intrinsic" in binding || root(binding) || /^[a-z][a-z0-9-]*\.[a-z][a-z0-9-]*$/.test(member)).map(([member]) => [member, map[member]!]));
 }
 const exportNames: Record<string, string> = { toggle: "Toggle", "dropdown-menu": "DropdownMenu", "context-menu": "ContextMenu", combobox: "Combobox", kbd: "Kbd", alert: "Alert", progress: "Progress", breadcrumb: "Breadcrumb", accordion: "Accordion", collapsible: "Collapsible", "alert-dialog": "AlertDialog", "hover-card": "HoverCard", "radio-group": "RadioGroup", "toggle-group": "ToggleGroup" };
+const partExports: Readonly<Record<string, readonly string[]>> = { "input-group": ["InputGroup", "InputGroupAddon", "InputGroupButton", "InputGroupText", "InputGroupInput", "InputGroupTextarea"] };
 const utils = 'import { clsx, type ClassValue } from "clsx"\nimport { twMerge } from "tailwind-merge"\nexport function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)) }\n';
 const npmDeps = [
   { name: "react", version: "19.2.3", license: "MIT" },
@@ -393,8 +394,13 @@ export function importShadcnAriaComponents(input: ShadcnComponentInput): ShadcnC
     });
     files.push({ path: adapter.notice, content: `# Third-party notice\n\nSource: ${SHADCN_ARIA_COMPONENT_PIN.url}\nCommit: ${SHADCN_ARIA_COMPONENT_PIN.commit}\nTransform: shadcn-aria-rewrite@1\n\n${input.notice.content}` });
     if (result.parts.includes("utils")) files.push({ path: "components/_parts/utils/index.ts", content: utils });
-    if (!["select", "combobox", "calendar", "popover", "checkbox"].includes(name)) files.push({ path: `components/${leaf}/index.ts`, content: `export * from "./${name}.js"\n` });
-    for (const part of result.parts.filter(part => part !== "utils")) files.push({ path: `components/_parts/${part}/index.ts`, content: part === "input-group" ? 'export { InputGroup, InputGroupAddon, InputGroupButton, InputGroupText, InputGroupInput, InputGroupTextarea } from "./input-group.js"\n' : `export * from "./${part}.js"\n` });
+    // The consumer's emitter owns every `components/<leaf>/index.ts` entrypoint, so no leaf barrel is
+    // materialized here. A private part re-exports an explicit name list; one without a list is a blocker,
+    // never a wildcard the emitter would refuse.
+    for (const part of result.parts.filter(part => part !== "utils")) {
+      if (!partExports[part]) { closureIssues.push({ code: "K9", file: original.path, value: part, message: "Private part needs an explicit export list" }); continue; }
+      files.push({ path: `components/_parts/${part}/index.ts`, content: `export { ${partExports[part]!.join(", ")} } from "./${part}.js"\n` });
+    }
     for (const dep of sorted([...closure.values()].flatMap(file => dependencies(file.content)))) {
       const dependency = items.get(dep), contract = slots.get(`components.${SHADCN_COMPONENT_ITEMS[dep]}`);
       if (dependency && contract && runtimeFailure(dependency, contract) && !result.contextualInputs?.includes(dep)) closureIssues.push({ code: "K9", file: original.path, value: dep, message: "Dependency cannot fill its required leaf at this pin; consumer rebind must pass CC" });

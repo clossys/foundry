@@ -71,10 +71,6 @@
           "sha256": "d3753f708b15cc1ec47bc3136827134b702e2069eebdb0ddefb1806b95d7c1d9"
         },
         {
-          "path": "components/tabs/index.ts",
-          "sha256": "6b1a1f74389f6b8cd7d9ef9de816c45e21f2e9e37e336963a169d003a4cb4d19"
-        },
-        {
           "path": "components/tabs/tabs.tsx",
           "sha256": "be7feceb1caa7055f2e999b39ae031c39c658dc4849bd8286c18dba315520360"
         },

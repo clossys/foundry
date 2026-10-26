@@ -66,10 +66,6 @@
           "sha256": "d3753f708b15cc1ec47bc3136827134b702e2069eebdb0ddefb1806b95d7c1d9"
         },
         {
-          "path": "components/separator/index.ts",
-          "sha256": "85a54557d36183644ea1ce3a03a247373cc63f55ba27583b37ead4c0baa0460d"
-        },
-        {
           "path": "components/separator/separator.tsx",
           "sha256": "e725fc24e4f64fb8606c3e2bc3a32ec6351edf317857dc1576d9e467fe42e5c1"
         },

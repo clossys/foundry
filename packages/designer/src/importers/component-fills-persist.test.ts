@@ -152,6 +152,63 @@ describe("pack check: every selectable component fill persists", () => {
   });
 });
 
+describe("pack check: shadcn@aria materialized sources persist through the real emitter", () => {
+  // As a product persist does: shadcn@aria fills selected together, with the materializer's exact
+  // output bytes, beside the package Icon leaf the rewritten sources compose.
+  const shadcn = bundles.componentFills.filter(doc => doc.$extensions["com.clossys.fill"].source === "shadcn@aria");
+  const icon = bundles.componentFills.find(doc => doc.$extensions["com.clossys.fill"].id === "foundry/components.icon")!;
+  const materialized = new Map(bundles.sourceBundles.map(bundle => [bundle.slot, bundle.files]));
+  function resolved(doc: ComponentCandidateDocument): ResolvedComponent {
+    const descriptor = Object.values(doc.components)[0]!;
+    return {
+      slot: descriptor.slot, originKind: "adopted",
+      origin: { kind: "adopted", source: descriptor.source, fill: fillId(doc), pin: descriptor.pin, license: descriptor.license ?? "MIT", sha256: componentDescriptorHash(descriptor), adoptedAt: "2026-01-01T00:00:00.000Z" },
+      impl: descriptor.impl, propMap: structuredClone(descriptor.propMap),
+      reads: { tokens: {}, assets: [...descriptor.reads.assets], components: [...descriptor.reads.components] }, descriptor,
+    };
+  }
+  function persistTogether(docs: readonly ComponentCandidateDocument[]): ComponentFile[] {
+    const files = new Map<string, ComponentFile>();
+    for (const doc of docs) for (const file of materialized.get(Object.values(doc.components)[0]!.slot) ?? []) {
+      const previous = files.get(file.path);
+      if (previous && previous.content !== file.content) throw new Error(`materialized bytes differ at ${file.path}`);
+      files.set(file.path, file);
+    }
+    const owned = [...files.values()];
+    const profile: ResolvedComponents = {
+      consumer: "pack-check", selectionHash: `sha256:${"0".repeat(64)}`,
+      components: Object.fromEntries(docs.map(doc => [Object.values(doc.components)[0]!.slot, resolved(doc)])), files: owned,
+      check: { ok: true, findings: [] } as unknown as ResolvedComponents["check"],
+      packageExports: { ...thirdPartyExports(owned), ...designerExports },
+    };
+    // Glyph geometry is not what this check measures: each read asset gets one valid stand-in path.
+    const glyphs = Object.fromEntries(docs.flatMap(doc => Object.values(doc.components)[0]!.reads.assets).map(asset => [asset, [["path", { d: "M4 12h16" }]]]));
+    return emitComponents(profile, ["component-index"], { glyphModule: { path: "assets/glyphs.ts", glyphs } });
+  }
+  // The entrypoint-ownership refusals: a materialized file at an emitter-owned leaf index, or a wildcard re-export.
+  // Later closure findings (third-party inventories, glyph provider, import syntax) are measured elsewhere.
+  const OWNERSHIP_REFUSAL = /components: (?:generated entrypoint conflicts with materialized source|wildcard (?:source )?exports)/;
+  const refusal = (docs: readonly ComponentCandidateDocument[]): string => { try { persistTogether(docs); return ""; } catch (error) { return (error as Error).message; } };
+  it("materializes no emitter-owned leaf entrypoint and no wildcard re-export", () => {
+    expect(shadcn).toHaveLength(26);
+    expect(shadcn.filter(doc => !materialized.has(Object.values(doc.components)[0]!.slot)).map(fillId)).toEqual([]);
+    const files = shadcn.flatMap(doc => materialized.get(Object.values(doc.components)[0]!.slot)!);
+    expect(files.filter(file => /^components\/[a-z][a-z0-9-]*\/index\.ts$/.test(file.path)).map(file => file.path)).toEqual([]);
+    expect(files.filter(file => /\bexport\s*\*/.test(file.content)).map(file => file.path)).toEqual([]);
+    expect(files.filter(file => /^components\/_parts\/[a-z-]+\/index\.ts$/.test(file.path) && !file.path.includes("/utils/")).every(file => /^export \{ [A-Za-z, ]+ \} from "\.\/[a-z-]+\.js"\n$/.test(file.content))).toBe(true);
+  });
+  it("all 26 fills persisted together hit no entrypoint-ownership refusal", () => {
+    expect(refusal([...shadcn, icon])).not.toMatch(OWNERSHIP_REFUSAL);
+  });
+  it.each(shadcn.map(doc => [Object.values(doc.components)[0]!.slot, doc] as const))("%s with the leaves it composes hits no entrypoint-ownership refusal", (_slot, doc) => {
+    const bySlot = new Map([...shadcn, icon].map(other => [Object.values(other.components)[0]!.slot, other]));
+    const composes = new Set<string>();
+    const visit = (slot: string): void => { for (const next of Object.values(bySlot.get(slot)!.components)[0]!.reads.components) if (!composes.has(next)) { composes.add(next); visit(next); } };
+    visit(Object.values(doc.components)[0]!.slot);
+    expect(refusal([doc, ...shadcn.filter(other => composes.has(Object.values(other.components)[0]!.slot)), ...composes.has("components.icon") ? [icon] : []])).not.toMatch(OWNERSHIP_REFUSAL);
+  });
+});
+
 describe("pack check: every registered composition template persists", () => {
   // A rule template is not a bundled fill: its owned bytes are the rule's files, and its pointers bind into its own entry.
   const rules = loadComponentCompositionRules();

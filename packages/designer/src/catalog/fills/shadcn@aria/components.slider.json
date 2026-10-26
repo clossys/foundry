@@ -68,10 +68,6 @@
           "sha256": "d3753f708b15cc1ec47bc3136827134b702e2069eebdb0ddefb1806b95d7c1d9"
         },
         {
-          "path": "components/slider/index.ts",
-          "sha256": "4675f995e65f2a91aca786acb0a6d5ac70ce3f61ba6a9daa437a55bc52263704"
-        },
-        {
           "path": "components/slider/slider.tsx",
           "sha256": "81577be3bcefd049ce775449be7328ae2891c6fb9ba614809407193bbdb17dbc"
         },

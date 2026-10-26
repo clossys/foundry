@@ -70,10 +70,6 @@
           "sha256": "485eca0c6c59df569bcccd7855fda1ca07c4a1a0e073f62df6d3e062d15cd732"
         },
         {
-          "path": "components/banner/index.ts",
-          "sha256": "ac354896467a021c1c453a1dfbcd09159e49541c0aef7778f1fcd23b2ebf15df"
-        },
-        {
           "path": "notices/THIRD-PARTY.md",
           "sha256": "6148b3941d0eff3d024e4d3a0e630f009484163560272ae6ec79c649c67fc964"
         }

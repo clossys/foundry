@@ -66,10 +66,6 @@
           "sha256": "d3753f708b15cc1ec47bc3136827134b702e2069eebdb0ddefb1806b95d7c1d9"
         },
         {
-          "path": "components/progress-bar/index.ts",
-          "sha256": "b3e1418822e8a9943bf00922e786eaa9de981eb7978b33c0f458fdb97416e755"
-        },
-        {
           "path": "components/progress-bar/progress.tsx",
           "sha256": "fbe69f704709b1f87fac331f24ab9b9eac3ca383bc5b2cc682c780d9a9c2fc03"
         },

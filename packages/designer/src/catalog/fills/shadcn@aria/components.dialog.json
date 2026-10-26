@@ -83,10 +83,6 @@
           "sha256": "dd09f450ca194ce3be22c5fba8858632ae0486c18abf361d751bcf4c6778f579"
         },
         {
-          "path": "components/dialog/index.ts",
-          "sha256": "b3def5e2119e9b5e3386e0fb1b2dc586229f919e3fcec51ca050fc86c6d5f291"
-        },
-        {
           "path": "notices/THIRD-PARTY.md",
           "sha256": "6148b3941d0eff3d024e4d3a0e630f009484163560272ae6ec79c649c67fc964"
         }

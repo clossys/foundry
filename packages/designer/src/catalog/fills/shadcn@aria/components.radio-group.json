@@ -67,10 +67,6 @@
           "sha256": "d3753f708b15cc1ec47bc3136827134b702e2069eebdb0ddefb1806b95d7c1d9"
         },
         {
-          "path": "components/radio-group/index.ts",
-          "sha256": "b848ac5db740df79d1e6cf6f3ea87ed192ba26db70a7dcde0190fea89a7486ec"
-        },
-        {
           "path": "components/radio-group/radio-group.tsx",
           "sha256": "b3af964e2451a836f42224e0da7c2d4ae92101fad0a2953fca58597f93898703"
         },

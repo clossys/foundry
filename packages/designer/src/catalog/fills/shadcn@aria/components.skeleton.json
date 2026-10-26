@@ -60,10 +60,6 @@
           "sha256": "d3753f708b15cc1ec47bc3136827134b702e2069eebdb0ddefb1806b95d7c1d9"
         },
         {
-          "path": "components/skeleton/index.ts",
-          "sha256": "f4fc418cfde04c3a73779ae34fafdc629921379bbd43d7fb79386ade76506ad8"
-        },
-        {
           "path": "components/skeleton/skeleton.tsx",
           "sha256": "81256f63abeead7c449266b170fb1f70a20a2e9b261406e31430f72e135babc5"
         },
