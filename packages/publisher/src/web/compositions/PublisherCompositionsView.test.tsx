@@ -69,3 +69,14 @@ it("keeps viewport/theme previews as contract placeholders with no consumer sect
   }
   expect(screen.getByText("Contract preview · no consumer sections rendered")).toBeVisible();
 });
+
+// Row 310 (REAL, hand-styled scroll region): each skeleton preview scroller is a Foundry Card, never a raw div.
+it("renders every skeleton preview scroller through the Foundry Card surface", () => {
+  render(<PublisherCompositionsView {...props} />);
+  const regions = screen.getAllByRole("region", { name: /px (light|dark) skeleton$/ });
+  expect(regions.map(region => region.getAttribute("aria-label"))).toEqual(["320 px light skeleton", "320 px dark skeleton", "1280 px light skeleton", "1280 px dark skeleton"]);
+  for (const region of regions) {
+    expect(region).toHaveAttribute("data-variant", "outline");
+    expect(region).toHaveAttribute("tabindex", "0");
+  }
+});

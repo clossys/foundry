@@ -211,3 +211,11 @@ it("keeps absent frame host content explicit without inferring required slots", 
   expect(host).toHaveTextContent("required-slot, value and hash verification pending");
   expect(within(host).queryByText(/required.*missing/i)).toBeNull();
 });
+
+// Row 397 (REAL, hand-styled scroll region): the placeholder scroller is a Foundry Card, never a raw div.
+it("renders the placeholder scroller through the Foundry Card surface", () => {
+  render(<PublisherInstancesView {...base} />);
+  const region = screen.getByRole("region", { name: "Scrollable instance placeholder" });
+  expect(region).toHaveAttribute("data-variant", "outline");
+  expect(region).toHaveAttribute("tabindex", "0");
+});

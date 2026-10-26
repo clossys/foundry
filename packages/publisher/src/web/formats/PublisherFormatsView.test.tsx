@@ -55,3 +55,24 @@ it("uses replacement registry data and refuses an empty allowed composition set"
   expect(screen.getByText("No registered formats supplied.")).toBeVisible();
   expect(document.querySelector("iframe")).toBeNull();
 });
+
+// Rows 332 and 351 (REAL, hand-styled badge spans inside raw headers): header actions are Foundry Badges inside SectionHeader / Panel regions.
+it("places the fixture and status badges in Foundry header regions, not raw header markup", () => {
+  const { container } = render(<PublisherFormatsView {...props} fixtureLibrary />);
+  expect(container.querySelector("header")).toBeNull();
+  const title = screen.getByRole("heading", { level: 2, name: "Formats" });
+  expect(title.closest("div")!.parentElement!.parentElement).toContainElement(screen.getByText("fixture library"));
+  const panelHeader = container.querySelector("[data-panel] [data-panel-region='header']") as HTMLElement;
+  expect(within(panelHeader).getByRole("heading", { level: 3, name: FORMAT_LEAVES[0]!.label })).toBeVisible();
+  expect(within(panelHeader).getByText(FORMAT_LEAVES[0]!.status === "concept" ? "Concept only" : "Built")).toBeVisible();
+});
+
+// Bound-format return: a host-supplied selectedFormatId wins over the first available format and over any local choice.
+it("shows the host-bound format instead of the first registered format", () => {
+  const { rerender } = render(<PublisherFormatsView {...props} selectedFormatId="deck.16x9" />);
+  expect(screen.getByRole("heading", { level: 3, name: FORMAT_LEAVES.find(format => format.id === "deck.16x9")!.label })).toBeVisible();
+  expect(screen.getByText(/No renderer is available/)).toBeVisible();
+  rerender(<PublisherFormatsView {...props} selectedFormatId={FORMAT_LEAVES[0]!.id} />);
+  expect(screen.getByRole("heading", { level: 3, name: FORMAT_LEAVES[0]!.label })).toBeVisible();
+  expect(screen.queryByText(/No renderer is available/)).toBeNull();
+});
