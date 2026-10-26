@@ -272,3 +272,46 @@ it("returns from a browsed concept to the bound format and focuses the swimlane 
   expect(onChange.mock.calls[0]![0]).toEqual(configured);
   expect(screen.getByRole("region", { name: "Assembly render result" })).toHaveTextContent("Ready remains pending");
 });
+
+
+it.each(["Site", "Admin App"] as const)("restores the bound format and focus when proposed %s inspection reopens", async channel => {
+  const fixture = appBindingFixture();
+  const store = new PublisherPlanStore(channel === "Site" ? STANDARD_PACK_REGISTRIES : fixture.registries);
+  const onApply = vi.fn(() => true), onChange = vi.fn();
+  const draft = channel === "Site" ? createM1ExampleDraft() : createAppExampleDraft(fixture.inventory);
+  render(<Host {...props} planStore={store} draftPlan={draft} onApplyPlan={onApply} onProductionSettingsChange={onChange}
+    {...(channel === "Admin App" ? { instances: [], library: fixture.library, registries: fixture.registries, appInventory: fixture.inventory,
+      routeChannels: { "sample.record": "admin", "sample.dashboard": "admin" } } : {})} />);
+  const opener = screen.getAllByRole("button", { name: channel === "Site" ? "Open Home · proposed" : "Open App operations inventory · proposed" })[0]!;
+  fireEvent.click(opener);
+  const detail = screen.getByRole("region", { name: / · item details$/ });
+  const inspect = within(detail).getByRole("button", { name: "Inspect output format" });
+  inspect.focus();
+  fireEvent.click(inspect);
+  let target = within(detail).getByRole("region", { name: / · output format$/ });
+  expect(inspect).toHaveAttribute("aria-controls", target.id);
+  await waitFor(() => expect(target).toHaveFocus());
+  expect(within(target).getByRole("heading", { name: "Responsive web page", exact: true })).toBeVisible();
+  const tree = within(target).getByRole("treegrid", { name: "Formats by medium and family" });
+  fireEvent.click(within(tree).getByRole("row", { name: "16:9 deck", exact: true }));
+  expect(within(target).getByRole("heading", { name: "16:9 deck", exact: true })).toBeVisible();
+  expect(target).toHaveTextContent("No renderer is available");
+  inspect.focus();
+  fireEvent.click(inspect);
+  expect(within(detail).queryByRole("region", { name: / · output format$/ })).toBeNull();
+  expect(inspect).toHaveAttribute("aria-expanded", "false");
+  fireEvent.click(inspect);
+  target = within(detail).getByRole("region", { name: / · output format$/ });
+  await waitFor(() => expect(target).toHaveFocus());
+  expect(inspect).toHaveAttribute("aria-expanded", "true");
+  expect(inspect).toHaveAttribute("aria-controls", target.id);
+  expect(within(target).getByRole("heading", { name: "Responsive web page", exact: true })).toBeVisible();
+  expect(within(target).getByRole("row", { name: "Responsive web page", exact: true })).toHaveAttribute("aria-selected", "true");
+  expect(within(target).queryByRole("heading", { name: "16:9 deck", exact: true })).toBeNull();
+  expect(detail).toHaveTextContent("Align this proposal before configuring production choices");
+  expect(detail).toHaveTextContent("No production clearance");
+  expect(onApply).not.toHaveBeenCalled();
+  expect(onChange).not.toHaveBeenCalled();
+  expect(store.current).toBeUndefined();
+  expect(draft.status).toBe("draft");
+});
