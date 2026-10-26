@@ -1108,3 +1108,30 @@ describe("compiled generic runtime assembly public contract", () => {
     expect(browser.imports).toEqual([]);
   }, 30_000);
 });
+
+describe("compiled usage graph public contract", () => {
+  it("exports the usage graph API additively through catalog and catalog/server", () => {
+    for (const entry of ["catalog-core/index.js", "catalog-core/server.js"]) {
+      const filename = join(packageRoot, "usage-graph-consumer.check.ts");
+      const consumer = `
+        import { buildUsageGraph, uses, usedBy, closure, graphFindings, type UsageGraph, type UsageGraphInputs, type UsageEdge, type UsageNode, type UsageGraphFinding } from ${JSON.stringify(join(packageRoot, "dist", entry))};
+        const input: UsageGraphInputs = { inventory: { tokens: ["tokens.color"], components: ["components.button"] }, selection: { "components.button": "example/components.button" },
+          components: { fills: [{ id: "example/components.button", slot: "components.button", declaredReads: { tokens: ["tokens.color"], assets: [] } }] } };
+        const graph: UsageGraph = buildUsageGraph(input);
+        const out: readonly UsageEdge[] = uses(graph, "components.button"), into: readonly UsageEdge[] = usedBy(graph, "tokens.color");
+        const reach: readonly string[] = closure(graph, "tokens.color", "usedBy");
+        const findings: readonly UsageGraphFinding[] = graphFindings(graph);
+        const node: UsageNode | undefined = graph.nodes[0];
+        void out; void into; void reach; void findings; void node;
+      `;
+      const options = { strict: true, noEmit: true, skipLibCheck: true, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler };
+      const host = ts.createCompilerHost(options), original = host.getSourceFile.bind(host);
+      host.getSourceFile = (path, language, error, fresh) => path === filename ? ts.createSourceFile(path, consumer, language, true) : original(path, language, error, fresh);
+      expect(ts.getPreEmitDiagnostics(ts.createProgram([filename], options, host)).map(d => ts.flattenDiagnosticMessageText(d.messageText, "\n")), entry).toEqual([]);
+      const script = `import * as api from ${JSON.stringify(join(packageRoot, "dist", entry))};
+        const graph = api.buildUsageGraph({ inventory: { tokens: ["tokens.color"], components: ["components.button"] }, selection: { "components.button": "example/components.button" }, components: { fills: [{ id: "example/components.button", slot: "components.button", declaredReads: { tokens: ["tokens.color"], assets: [] } }] } });
+        process.stdout.write(JSON.stringify({ types: ["buildUsageGraph","uses","usedBy","closure","graphFindings"].map(name => typeof api[name]), usedBy: api.usedBy(graph, "tokens.color").map(edge => edge.from), closure: api.closure(graph, "tokens.color", "usedBy") }));`;
+      expect(JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8", cwd: packageRoot })), entry).toEqual({ types: Array(5).fill("function"), usedBy: ["components.button"], closure: ["components.button"] });
+    }
+  }, 30_000);
+});

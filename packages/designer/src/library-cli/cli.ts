@@ -11,7 +11,10 @@ import type { SurfaceResolutionOptions } from "../catalog-core/surface-types.js"
 import { readSurfacePackageEvidence } from "./surface-package-evidence.js";
 import { foundrySurfaceCatalog } from "./surface-catalog.js";
 import { compositeLibraryHash } from "../catalog-core/library-components.js";
-import type { EngineInput } from "../catalog-core/resolve.js";
+import { choose, type EngineInput } from "../catalog-core/resolve.js";
+import { consumptionReport } from "../catalog-core/relationships.js";
+import { buildSurfaceConsumption } from "../catalog-core/surface-consumption.js";
+import { buildUsageGraph, serializeUsageGraph, type UsageGraphInputs } from "../catalog-core/usage-graph.js";
 import { checkLibrary, emitLibrary, isLibraryChangeSet, isCompositeChangeSet, writeCompositeLibrary, LIBRARY_EMIT_TARGETS, LibraryCheckError, LibraryConflictError, LibraryInputError, readLibrary, writeLibrary, readNeeds, writeNeeds, setNeed, NEED_STATUSES, isNeedCandidate } from "./fs-library.js";
 
 const USAGE = `Usage: designer-library <command> --root <consumer-library>
@@ -25,6 +28,7 @@ Commands:
   dogfood-consumer <path...> --contract <file> [--json]  Check reachable consumer sources with zero exceptions.
   needs [--status open,proposed] [--json]    List needs and blocked parents.
   needs set NEED-NNN --status <status> [--candidate <json>] [--closed-by <ref>]
+  graph --check|--write                  Derive usage-graph.json from consumption producers, or fail on drift.
   recommend                              Unavailable until the chooser ships.
 
 Emit targets: css-brand, css-scales, css-fonts, tailwind-theme, notices, component-index, components-consumption, surface-index, surfaces-consumption.
@@ -32,19 +36,19 @@ Composite folders also emit component targets by default; value folders retain a
 Chooser output belongs in the Studio basket; apply requires the human's explicit instruction in this session.
 Exit codes: 0 = success, 1 = failed verdict or conflict, 2 = usage, invalid input or unavailable.
 `;
-type Command = "status" | "check" | "emit" | "apply" | "recommend" | "dogfood" | "dogfood-consumer" | "needs";
-type Args = { command: Command; root: string; layer?: string; changeset?: string; json: boolean; drift: boolean; targets?: CompositeEmitTarget[]; paths: string[]; writeNeeds: boolean; status?: string; candidate?: string; closedBy?: string; contract?: string };
+type Command = "status" | "check" | "emit" | "apply" | "recommend" | "dogfood" | "dogfood-consumer" | "needs" | "graph";
+type Args = { command: Command; root: string; layer?: string; changeset?: string; json: boolean; drift: boolean; write: boolean; targets?: CompositeEmitTarget[]; paths: string[]; writeNeeds: boolean; status?: string; candidate?: string; closedBy?: string; contract?: string };
 export interface LibraryCliIO { out(text: string): void; error(text: string): void }
 const defaultIO: LibraryCliIO = { out: text => console.log(text), error: text => console.error(text) };
 
 function parseArgs(argv: string[]): Args {
   const [command, ...flags] = argv;
-  if (!["status", "check", "emit", "apply", "recommend", "dogfood", "dogfood-consumer", "needs"].includes(command ?? "")) throw new LibraryInputError("A known command is required");
+  if (!["status", "check", "emit", "apply", "recommend", "dogfood", "dogfood-consumer", "needs", "graph"].includes(command ?? "")) throw new LibraryInputError("A known command is required");
   const values = new Map<string, string>(), toggles = new Set<string>(), targets: CompositeEmitTarget[] = [], paths: string[] = [];
   for (let i = 0; i < flags.length; i++) {
     const flag = flags[i]!;
     if (!flag.startsWith("-") && ["dogfood", "dogfood-consumer", "needs"].includes(command!)) { paths.push(flag); continue; }
-    if (["--json", "--check", "--write-needs"].includes(flag)) {
+    if (["--json", "--check", "--write", "--write-needs"].includes(flag)) {
       if (toggles.has(flag)) throw new LibraryInputError(`Duplicate ${flag}`);
       toggles.add(flag); continue;
     }
@@ -64,15 +68,17 @@ function parseArgs(argv: string[]): Args {
   const layer = values.get("--layer"), changeset = values.get("--changeset");
   if (layer && (command !== "check" || !["tokens", "assets", "components", "sections", "frames"].includes(layer))) throw new LibraryInputError("--layer requires check and a known layer");
   if ((command === "apply") !== !!changeset) throw new LibraryInputError("apply requires --changeset; other commands do not accept it");
-  if ((toggles.has("--check") || targets.length) && command !== "emit") throw new LibraryInputError("--check and --target require emit");
-  if (toggles.has("--json") && (command === "emit" || command === "recommend")) throw new LibraryInputError("--json requires status, check or apply");
+  if ((toggles.has("--check") && command !== "emit" && command !== "graph") || (targets.length && command !== "emit")) throw new LibraryInputError("--check requires emit or graph; --target requires emit");
+  if (toggles.has("--write") && command !== "graph") throw new LibraryInputError("--write requires graph");
+  if (command === "graph" && toggles.has("--check") === toggles.has("--write")) throw new LibraryInputError("graph requires exactly one of --check or --write");
+  if (toggles.has("--json") && (command === "emit" || command === "recommend" || command === "graph")) throw new LibraryInputError("--json requires status, check or apply");
   if (toggles.has("--write-needs") && command !== "dogfood") throw new LibraryInputError("--write-needs requires dogfood");
   if ((command === "dogfood-consumer") !== values.has("--contract")) throw new LibraryInputError("dogfood-consumer requires --contract; other commands do not accept it");
   if (["dogfood", "dogfood-consumer"].includes(command!) && !paths.length) throw new LibraryInputError("dogfood requires source paths");
   if (command === "needs" && paths.length && (paths.length !== 2 || paths[0] !== "set")) throw new LibraryInputError("needs accepts only set NEED-NNN");
   if (["--status", "--candidate", "--closed-by"].some(flag => values.has(flag)) && command !== "needs") throw new LibraryInputError("NEED options require needs");
   if (command === "needs" && !paths.length && (values.has("--candidate") || values.has("--closed-by"))) throw new LibraryInputError("candidate and closed-by require needs set");
-  return { paths, contract: values.get("--contract"), writeNeeds: toggles.has("--write-needs"), status: values.get("--status"), candidate: values.get("--candidate"), closedBy: values.get("--closed-by"), command: command as Command, root, layer, changeset, json: toggles.has("--json"), drift: toggles.has("--check"), ...(targets.length ? { targets } : {}) };
+  return { paths, contract: values.get("--contract"), writeNeeds: toggles.has("--write-needs"), status: values.get("--status"), candidate: values.get("--candidate"), closedBy: values.get("--closed-by"), command: command as Command, root, layer, changeset, json: toggles.has("--json"), drift: toggles.has("--check"), write: toggles.has("--write"), ...(targets.length ? { targets } : {}) };
 }
 
 /** Filter only findings attributable to the other layer; cross-layer findings stay visible. */
@@ -130,6 +136,48 @@ export async function dogfoodSources(paths: readonly string[], cwd = process.cwd
   return { files: [...files].map(([path, content]) => ({ file: relative(cwd, path).split("\\").join("/"), content })), localModules };
 }
 
+async function readOptionalJson(path: string): Promise<unknown> {
+  try { return JSON.parse(await readRegularText(path)); } catch (error) { if ((error as NodeJS.ErrnoException).code === "ENOENT") return undefined; throw error; }
+}
+type CompositeCatalogInput = Parameters<typeof readLibrary>[1] & { values: ReturnType<typeof loadCatalog>; components: { slots: readonly { id: string }[] }; surfaces: ReturnType<typeof foundrySurfaceCatalog> };
+/**
+ * Usage-graph inputs for one consumer library, derived only from existing producers: consumptionReport
+ * (token/asset reads), the emitted components-consumption.json and declared buildSurfaceConsumption.
+ * Routes live with the product's route registry, outside the library root, so no pages are derived here.
+ */
+async function libraryUsageGraphInputs(root: string, catalog: ReturnType<typeof loadCatalog>, compositeCatalog: CompositeCatalogInput): Promise<UsageGraphInputs> {
+  const metadata = await readOptionalJson(pathResolve(root, "metadata.json")) as { format?: string } | undefined;
+  if (!metadata) throw new LibraryInputError("graph requires a library metadata.json");
+  const composite = metadata.format === "composite-v1" ? await readLibrary(root, compositeCatalog) : undefined;
+  const tokenLibrary: EngineInput = composite ? { catalog, library: { ...composite.values, source: composite.source, adoptedAt: composite.adoptedAt } } : { catalog, library: await readLibrary(root, catalog) };
+  const selection: Record<string, string> = {};
+  for (const row of Object.values(choose(tokenLibrary).chosen)) { const meta = row.fill.$extensions["com.clossys.fill"]; selection[meta.slot] ??= meta.id; }
+  const surfaceFills = (composite?.surfaces?.fills ?? []).map(fill => fill.$extensions["com.clossys.fill"]);
+  for (const meta of [...(composite?.components.fills ?? []).map(fill => fill.$extensions["com.clossys.fill"]), ...surfaceFills]) selection[meta.slot] = meta.id;
+  const layer = (name: string) => catalog.slots.filter(slot => slot.layer === name);
+  const surfaceSlots = composite?.surfaces ? compositeCatalog.surfaces.slots : [];
+  const emitted = composite ? await readOptionalJson(pathResolve(root, "components-consumption.json")) as { leaves?: { slot: string; reads?: { tokens?: string[]; assets?: string[] } }[]; reverseComposes?: Record<string, string[]> } | undefined : undefined;
+  const surfaces = composite?.surfaces ? buildSurfaceConsumption({
+    tokens: layer("tokens").map(slot => ({ id: slot.id, contract: { emit: "emit" in slot.contract ? slot.contract.emit : undefined } })) as Parameters<typeof buildSurfaceConsumption>[0]["tokens"],
+    assets: layer("assets"), components: compositeCatalog.components.slots,
+    sections: surfaceSlots.filter(slot => slot.layer === "sections") as unknown as Parameters<typeof buildSurfaceConsumption>[0]["sections"],
+    frames: surfaceSlots.filter(slot => slot.layer === "frames") as unknown as Parameters<typeof buildSurfaceConsumption>[0]["frames"],
+    // Declared contracts only: consumer surface source is not scanned here, so scanStatus stays "unavailable".
+    fills: surfaceFills.map(meta => ({ id: meta.id, slot: meta.slot, source: meta.source })), sourceScans: [], themeCss: "",
+  }) : undefined;
+  return {
+    inventory: {
+      tokens: layer("tokens").map(slot => slot.id), assets: layer("assets").map(slot => slot.id),
+      ...(composite ? { components: compositeCatalog.components.slots.map(slot => slot.id) } : {}),
+      ...(composite?.surfaces ? { sections: surfaceSlots.filter(slot => slot.layer === "sections").map(slot => slot.id), frames: surfaceSlots.filter(slot => slot.layer === "frames").map(slot => slot.id) } : {}),
+    },
+    selection,
+    consumption: { leaves: consumptionReport(tokenLibrary).leaves },
+    ...(emitted ? { components: { fills: (emitted.leaves ?? []).filter(leaf => selection[leaf.slot]).map(leaf => ({ id: selection[leaf.slot]!, slot: leaf.slot, declaredReads: { tokens: leaf.reads?.tokens ?? [], assets: leaf.reads?.assets ?? [] } })), reverseComposes: emitted.reverseComposes ?? {} } } : {}),
+    ...(surfaces ? { surfaces: { fills: surfaces.fills, reverseComposes: surfaces.reverseComposes } } : {}),
+  };
+}
+
 /** Testable CLI entry point; importing this module never writes to a consumer library. */
 export async function main(argv: string[], io: LibraryCliIO = defaultIO): Promise<number> {
   if (argv.length === 1 && ["--help", "-h"].includes(argv[0]!)) { io.out(USAGE); return 0; }
@@ -184,6 +232,18 @@ export async function main(argv: string[], io: LibraryCliIO = defaultIO): Promis
       }
       io.out(args.json ? JSON.stringify(report) : `${report.findings.map(row => `${row.file}:${row.line} ${row.code} ${row.evidence}${row.needId ? ` (${row.needId})` : row.missing ? " (would open NEED; --write-needs to persist)" : ""}`).join("\n")}\nsummary: ${report.summary.elements} elements, ${report.summary.library} library, ${report.summary.structural} structural, ${report.summary.findings} findings; ${report.needs.length} needs`);
       return report.ok ? 0 : 1;
+    }
+    if (args.command === "graph") {
+      const output = serializeUsageGraph(buildUsageGraph(await libraryUsageGraphInputs(args.root, catalog, compositeCatalog))), path = pathResolve(args.root, "usage-graph.json");
+      if (args.write) {
+        const handle = await fs.open(path, constants.O_WRONLY | constants.O_CREAT | constants.O_TRUNC | constants.O_NOFOLLOW, 0o644);
+        try { await handle.writeFile(output); } finally { await handle.close(); }
+        io.out("usage-graph.json written"); return 0;
+      }
+      let current: string | undefined;
+      try { current = await readRegularText(path); } catch (error) { if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error; }
+      if (current !== output) { io.error("usage-graph.json is stale; run designer-library graph --root <library> --write"); return 1; }
+      io.out("usage-graph.json is current"); return 0;
     }
     if (args.command === "status") {
       const metadata = JSON.parse(await readRegularText(pathResolve(args.root, "metadata.json")));
