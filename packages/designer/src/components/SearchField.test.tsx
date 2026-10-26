@@ -4,6 +4,13 @@ import userEvent from "@testing-library/user-event";
 import { SearchField } from "./SearchField.js";
 
 describe("SearchField", () => {
+  it("takes its input height from the md control-size token, not from block padding", () => {
+    render(<SearchField label="Search prompts" />);
+    const input = screen.getByRole("searchbox", { name: /Search prompts/ });
+    expect(input.className.split(/\s+/)).toContain("control-h-md");
+    expect(input.className).not.toMatch(/(?:^|\s)py-/);
+  });
+
   it("renders a labeled input with the correct type=search semantics", () => {
     render(<SearchField label="Search prompts" />);
     const input = screen.getByRole("searchbox", { name: /Search prompts/ });

@@ -80,7 +80,7 @@ export function SearchField({
             <Input
               placeholder={placeholder}
               className={cx(
-                "w-full rounded-control border bg-surface-raised py-sm ps-md pe-2xl text-body text-ink-primary outline-hidden",
+                "control-h-md w-full rounded-control border bg-surface-raised ps-md pe-2xl text-body text-ink-primary outline-hidden",
                 isInvalid ? "border-status-danger" : "border-line-control",
                 inputClassName,
               )}

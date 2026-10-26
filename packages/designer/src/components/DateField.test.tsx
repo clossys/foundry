@@ -8,6 +8,18 @@ import { createRef } from "react";
 import { UI_RING_FOCUS } from "./internal/ui-vars.js";
 
 describe("DateField", () => {
+  it("takes its input and picker-trigger height from the md control-size token, not from block padding", () => {
+    render(<DateField label="Start date" defaultValue={new CalendarDate(2024, 1, 15)} pickerTrigger={{ label: "Open calendar", children: "+" }} />);
+    const input = screen.getAllByRole("spinbutton")[0]!.parentElement!;
+    const trigger = screen.getByRole("button", { name: "Open calendar" });
+    for (const element of [input, trigger]) {
+      expect(element.className.split(/\s+/)).toContain("control-h-md");
+      expect(element.className).not.toMatch(/(?:^|\s)py-/);
+    }
+    // control-h-md lays a positioned tap-target ::before over the input; positioned segments stay above it and keep pointer hits.
+    for (const segment of screen.getAllByRole("spinbutton")) expect(segment.className.split(/\s+/)).toContain("relative");
+  });
+
   it("renders a labeled group of editable segments", () => {
     render(<DateField label="Start date" defaultValue={new CalendarDate(2024, 1, 15)} />);
     expect(screen.getByText("Start date")).toBeInTheDocument();

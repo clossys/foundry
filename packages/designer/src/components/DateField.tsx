@@ -86,11 +86,13 @@ export const DateField = forwardRef(function DateField<T extends DateValue = Dat
   return (
     <AriaDateField {...rest} ref={ref} className={state => cx("flex flex-col gap-xs", typeof className === "function" ? className(state) : className)}>
       {state => {
+        // Height comes from the md control-size token (control-h-md), as TextField, NumberField and TagGroup read it; the
+        // segments are positioned so they stay above that utility's tap-target layer and keep receiving pointer input.
         const input = (
             <DateInput
               className={(renderProps) =>
                 cx(
-                  "flex items-center gap-0.5 rounded-control border bg-surface-raised px-md py-sm text-body text-ink-primary",
+                  "control-h-md flex items-center gap-0.5 rounded-control border bg-surface-raised px-md text-body text-ink-primary",
                   renderProps.isInvalid ? "border-status-danger" : "border-line-control",
                   inputClassName,
                 )
@@ -105,7 +107,7 @@ export const DateField = forwardRef(function DateField<T extends DateValue = Dat
                   segment={segment}
                   className={(renderProps) =>
                     cx(
-                      "rounded-default px-0.5 text-body tabular-nums outline-none",
+                      "relative rounded-default px-0.5 text-body tabular-nums outline-none",
                       renderProps.isPlaceholder ? "text-ink-muted" : "text-ink-primary",
                       renderProps.isFocused ? "bg-surface-selected" : "",
                     )
@@ -122,7 +124,7 @@ export const DateField = forwardRef(function DateField<T extends DateValue = Dat
               type="button"
               aria-label={pickerTrigger.label}
               isDisabled={state.isDisabled || state.isReadOnly}
-              className="rounded-control border border-line-control bg-surface-raised px-md py-sm text-body text-ink-primary"
+              className="control-h-md rounded-control border border-line-control bg-surface-raised px-md text-body text-ink-primary"
               style={button => ({
                 opacity: button.isDisabled ? UI_ALPHA_DISABLED : undefined,
                 boxShadow: button.isFocusVisible ? UI_RING_FOCUS : undefined,

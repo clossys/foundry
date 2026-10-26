@@ -258,7 +258,9 @@ describe("component default fills", () => {
     const { input } = setup({ choices: { "components.slider": "shadcn@aria" } });
     const plan = planComponentDefaults(input);
     expect(plan.rows.find(row => row.slot === "components.slider")).toMatchObject({ status: "chosen", source: "shadcn@aria" });
-    expect(reasons(plan, "field")).toBe("controls coherence: one source per group, led by shadcn@aria; foundry would mix sources");
+    expect(reasons(plan, "date-field")).toBe("controls coherence: one source per group, led by shadcn@aria; foundry would mix sources");
+    // field is a label/description/error wrapper, not a controls-group member, so the group's lead does not constrain it.
+    expect(reasons(plan, "field")).not.toContain("controls coherence");
     expect(plan.findings).toEqual([]);
   });
   it("without a pick the same leaf falls to preference; a source without a verified bundle is never defaulted", () => {

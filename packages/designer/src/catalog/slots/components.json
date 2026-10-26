@@ -786,7 +786,8 @@
           "tokens.status-color",
           "tokens.surface-color",
           "tokens.text-color",
-          "tokens.typeface"
+          "tokens.typeface",
+          "tokens.control-size"
         ],
         "assets": []
       }
@@ -1588,7 +1589,8 @@
           "tokens.status-color",
           "tokens.surface-color",
           "tokens.text-color",
-          "tokens.typeface"
+          "tokens.typeface",
+          "tokens.control-size"
         ],
         "assets": [
           "assets.icon-search",
