@@ -13,15 +13,12 @@
         "package": "@clossys/designer",
         "version": "0.12.0"
       },
-      "relation": "subset",
+      "relation": "same-contract",
       "slot": "components.checkbox",
       "source": "foundry",
       "sourceAddress": "./components#Checkbox",
       "status": "draft",
-      "trust": "foundry",
-      "unmapped": [
-        "scope.group"
-      ]
+      "trust": "foundry"
     }
   },
   "components": {
@@ -51,6 +48,7 @@
       },
       "license": "MIT",
       "members": [
+        "scope.group",
         "scope.single",
         "state.checked",
         "state.indeterminate",
@@ -62,6 +60,7 @@
         "version": "0.12.0"
       },
       "propMap": {
+        "scope.group": "./components#Checkbox.Group",
         "scope.single": "./components#Checkbox",
         "state.checked": "./components#Checkbox.isSelected",
         "state.indeterminate": "./components#Checkbox.isIndeterminate",
@@ -75,7 +74,8 @@
         "isInvalid",
         "isSelected",
         "onChange",
-        "slot"
+        "slot",
+        "value"
       ],
       "reads": {
         "assets": [],

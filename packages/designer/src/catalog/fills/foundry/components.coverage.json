@@ -248,16 +248,15 @@
       ]
     },
     {
-      "missing": [
-        "scope.group"
-      ],
+      "missing": [],
       "notes": [
-        "CheckboxGroup is not exported; group scope is unsupported.",
+        "Group scope dispatches to Checkbox.Group (RAC CheckboxGroup); each member Checkbox takes a value.",
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
       ],
       "slot": "components.checkbox",
-      "status": "subset",
+      "status": "candidate",
       "supported": [
+        "scope.group",
         "scope.single",
         "state.checked",
         "state.indeterminate",
@@ -333,16 +332,15 @@
       ]
     },
     {
-      "missing": [
-        "scope.group"
-      ],
+      "missing": [],
       "notes": [
-        "DisclosureGroup is not exported.",
+        "Group scope dispatches to Disclosure.Group (RAC DisclosureGroup); members are addressed by id.",
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
       ],
       "slot": "components.disclosure",
-      "status": "subset",
+      "status": "candidate",
       "supported": [
+        "scope.group",
         "scope.single"
       ]
     },

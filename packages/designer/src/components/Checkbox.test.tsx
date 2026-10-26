@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Checkbox } from "./Checkbox.js";
 
@@ -95,5 +95,68 @@ describe("Checkbox", () => {
     rerender(<Checkbox isIndeterminate>Select all</Checkbox>);
     expect(mark().classList).toContain("bg-action");
     expect(mark().className).not.toMatch(/\bbg-accent\b/);
+  });
+});
+
+describe("Checkbox.Group (scope.group)", () => {
+  const plans = (props: Partial<Parameters<typeof Checkbox.Group>[0]> = {}) => (
+    <Checkbox.Group label="Notify me about" description="Choose any number." {...props}>
+      <Checkbox value="mentions">Mentions</Checkbox>
+      <Checkbox value="replies">Replies</Checkbox>
+      <Checkbox value="digest">Weekly digest</Checkbox>
+    </Checkbox.Group>
+  );
+
+  it("renders a labelled group of checkboxes with its description associated", () => {
+    render(plans());
+    const group = screen.getByRole("group", { name: "Notify me about" });
+    expect(group).toHaveAccessibleDescription("Choose any number.");
+    expect(within(group).getAllByRole("checkbox")).toHaveLength(3);
+  });
+
+  it("reports the selected values as one array, on click and on Space", async () => {
+    const onChange = vi.fn();
+    const user = userEvent.setup();
+    render(plans({ onChange }));
+    await user.click(screen.getByRole("checkbox", { name: "Mentions" }));
+    expect(onChange).toHaveBeenLastCalledWith(["mentions"]);
+    screen.getByRole("checkbox", { name: "Weekly digest" }).focus();
+    await user.keyboard(" ");
+    expect(onChange).toHaveBeenLastCalledWith(["mentions", "digest"]);
+  });
+
+  it("a controlled value selects exactly its members", () => {
+    render(plans({ value: ["replies"] }));
+    expect(screen.getByRole("checkbox", { name: "Replies" })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Mentions" })).not.toBeChecked();
+  });
+
+  it("disables every member when the group is disabled", () => {
+    render(plans({ isDisabled: true }));
+    for (const box of screen.getAllByRole("checkbox")) expect(box).toBeDisabled();
+  });
+
+  it("propagates the invalid state to every member's mark and announces the error", () => {
+    const { container } = render(plans({ isInvalid: true, errorMessage: "Pick at least one." }));
+    expect(screen.getByText("Pick at least one.")).toBeInTheDocument();
+    const marks = container.querySelectorAll('[data-part="control-mark"]');
+    expect(marks).toHaveLength(3);
+    for (const mark of marks) expect(mark.classList).toContain("border-status-danger");
+  });
+
+  it("stacks members vertically by default and wraps them in a row when horizontal", () => {
+    const { container, rerender } = render(plans());
+    const list = () => container.querySelector('[data-part="checkbox-group-items"]')!;
+    expect(list().className).toContain("flex-col");
+    rerender(plans({ orientation: "horizontal" }));
+    expect(list().className).toContain("flex-row");
+    expect(list().className).toContain("flex-wrap");
+  });
+
+  it("forwards className onto the group root, and the consumer's conflicting class wins", () => {
+    render(plans({ className: "gap-md" }));
+    const group = screen.getByRole("group", { name: "Notify me about" });
+    expect(group.className).toContain("gap-md");
+    expect(group.className).not.toContain("gap-xs");
   });
 });

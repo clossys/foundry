@@ -13,15 +13,12 @@
         "package": "@clossys/designer",
         "version": "0.12.0"
       },
-      "relation": "subset",
+      "relation": "same-contract",
       "slot": "components.disclosure",
       "source": "foundry",
       "sourceAddress": "./components#Disclosure",
       "status": "draft",
-      "trust": "foundry",
-      "unmapped": [
-        "scope.group"
-      ]
+      "trust": "foundry"
     }
   },
   "components": {
@@ -51,6 +48,7 @@
       },
       "license": "MIT",
       "members": [
+        "scope.group",
         "scope.single"
       ],
       "pin": {
@@ -59,11 +57,13 @@
         "version": "0.12.0"
       },
       "propMap": {
+        "scope.group": "./components#Disclosure.Group",
         "scope.single": "./components#Disclosure"
       },
       "props": [
         "children",
         "className",
+        "id",
         "isExpanded",
         "onExpandedChange",
         "title"

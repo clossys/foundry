@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Disclosure } from "./Disclosure.js";
@@ -104,3 +104,57 @@ describe("Disclosure", () => {
     expect(trigger).toHaveAttribute("aria-expanded", "false");
   });
 });
+
+describe("Disclosure.Group (scope.group)", () => {
+  const faq = (props: Partial<Parameters<typeof Disclosure.Group>[0]> = {}) => (
+    <Disclosure.Group {...props}>
+      <Disclosure id="plans" title="Which plans exist?">Three plans.</Disclosure>
+      <Disclosure id="refunds" title="Can I get a refund?">Within 30 days.</Disclosure>
+    </Disclosure.Group>
+  );
+  const trigger = (name: string) => screen.getByRole("button", { name });
+
+  it("coordinates its sections: expanding one collapses the other by default", async () => {
+    const user = userEvent.setup();
+    render(faq());
+    await user.click(trigger("Which plans exist?"));
+    expect(trigger("Which plans exist?")).toHaveAttribute("aria-expanded", "true");
+    await user.click(trigger("Can I get a refund?"));
+    expect(trigger("Can I get a refund?")).toHaveAttribute("aria-expanded", "true");
+    expect(trigger("Which plans exist?")).toHaveAttribute("aria-expanded", "false");
+    expect(screen.getByText("Three plans.")).not.toBeVisible();
+  });
+
+  it("keeps several sections open when allowsMultipleExpanded is set", async () => {
+    const user = userEvent.setup();
+    render(faq({ allowsMultipleExpanded: true }));
+    await user.click(trigger("Which plans exist?"));
+    await user.click(trigger("Can I get a refund?"));
+    expect(trigger("Which plans exist?")).toHaveAttribute("aria-expanded", "true");
+    expect(trigger("Can I get a refund?")).toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("starts from defaultExpandedKeys and reports changes as the expanded key set, from the keyboard too", async () => {
+    const onExpandedChange = vi.fn();
+    const user = userEvent.setup();
+    render(faq({ defaultExpandedKeys: ["refunds"], onExpandedChange }));
+    expect(screen.getByText("Within 30 days.")).toBeVisible();
+    trigger("Which plans exist?").focus();
+    await user.keyboard("{Enter}");
+    expect([...onExpandedChange.mock.lastCall![0]]).toEqual(["plans"]);
+  });
+
+  it("disables every section when the group is disabled", () => {
+    render(faq({ isDisabled: true }));
+    expect(trigger("Which plans exist?")).toBeDisabled();
+    expect(trigger("Can I get a refund?")).toBeDisabled();
+  });
+
+  it("separates sections with a token rule and merges the consumer's class onto the group root", () => {
+    render(faq({ className: "gap-md" }));
+    const root = trigger("Which plans exist?").closest('[data-part="disclosure-group"]') as HTMLElement;
+    expect(root).not.toBeNull();
+    for (const name of ["flex", "flex-col", "divide-y", "divide-line-base", "gap-md"]) expect(root).toHaveClass(name);
+  });
+});
+
