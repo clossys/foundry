@@ -63,12 +63,12 @@ const EXPECTED_DEFAULTS = {
   "chart-scatter": "foundry", "chart-status-strip": "foundry", "chart-waterfall": "foundry", checkbox: "foundry", "combo-box": "foundry",
   "date-field": "foundry", disclosure: "foundry", field: "foundry", "grid-list": "foundry", "file-trigger": "foundry", form: "foundry", icon: "foundry", keyboard: "shadcn@aria", link: "foundry", logo: "foundry",
   meter: "foundry", "native-action": "foundry", "navigation-tree": "foundry", "progress-bar": "foundry", "radio-group": "foundry",
-  "resize-handle": "foundry", "search-field": "foundry", "semantic-content": "foundry", separator: "shadcn@aria", skeleton: "foundry",
-  spinner: "foundry", "status-mark": "foundry", switch: "foundry", "text-field": "foundry", toast: "foundry", toolbar: "rac-starter",
+  "resize-handle": "foundry", "search-field": "foundry", select: "foundry", "semantic-content": "foundry", separator: "shadcn@aria", skeleton: "foundry",
+  spinner: "foundry", "status-mark": "foundry", switch: "foundry", tabs: "foundry", "text-field": "foundry", toast: "foundry", toolbar: "rac-starter",
   tooltip: "shadcn@aria",
 };
 const NOT_CHOSEN = ["calendar", "chart-sparkline", "color-picker", "date-picker", "dialog", "menu",
-  "number-field", "popover", "select", "slider", "table", "tabs", "tag-group", "toggle-button", "toggle-group", "tree"];
+  "number-field", "popover", "slider", "table", "tag-group", "toggle-button", "toggle-group", "tree"];
 const reasons = (plan: ReturnType<typeof planComponentDefaults>, leaf: string) => plan.rows.find(row => row.slot === `components.${leaf}`)!.reasons.join(" || ");
 
 describe("component default fills", () => {
@@ -123,6 +123,14 @@ describe("component default fills", () => {
     }
     const order = plan.decisions.map(row => row.slot);
     expect(order.indexOf("components.checkbox")).toBeLessThan(order.indexOf("components.grid-list"));
+    expect(plan.findings).toEqual([]);
+  });
+  it("fills tabs and select from Foundry by preference once size.sm/md/lg are mapped, keeping the controls group coherent", () => {
+    const { input } = setup();
+    const plan = planComponentDefaults(input);
+    for (const leaf of ["tabs", "select"]) {
+      expect(plan.rows.find(row => row.slot === `components.${leaf}`), leaf).toMatchObject({ status: "default", basis: "preference", source: "foundry", fill: `foundry/components.${leaf}`, reasons: [] });
+    }
     expect(plan.findings).toEqual([]);
   });
   it("fills a listed leaf from the fallback source when its owner pick is ineligible, keeping why", () => {

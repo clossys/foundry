@@ -574,19 +574,17 @@
       ]
     },
     {
-      "missing": [
-        "size.lg",
-        "size.md",
-        "size.sm"
-      ],
+      "missing": [],
       "notes": [
-        "No size prop; size.sm/md/lg are unsupported.",
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
       ],
       "slot": "components.select",
-      "status": "subset",
+      "status": "candidate",
       "supported": [
         "selection.single",
+        "size.lg",
+        "size.md",
+        "size.sm",
         "state.invalid"
       ]
     },
@@ -686,20 +684,18 @@
       ]
     },
     {
-      "missing": [
-        "size.lg",
-        "size.md",
-        "size.sm"
-      ],
+      "missing": [],
       "notes": [
-        "No size prop; size.sm/md/lg are unsupported.",
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
       ],
       "slot": "components.tabs",
-      "status": "subset",
+      "status": "candidate",
       "supported": [
         "orientation.horizontal",
-        "orientation.vertical"
+        "orientation.vertical",
+        "size.lg",
+        "size.md",
+        "size.sm"
       ]
     },
     {

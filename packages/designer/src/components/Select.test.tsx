@@ -132,6 +132,46 @@ describe("Select", () => {
     expect(screen.getByRole("button", { name: /Select an option/ })).toBeInTheDocument();
   });
 
+  it.each([
+    ["sm", "px-sm py-xs text-body-s"],
+    ["md", "px-md py-sm text-body"],
+    ["lg", "px-lg py-md text-body-l"],
+  ] as const)("size=%s sets the trigger's padding and type step", (size, classes) => {
+    render(<Select label="Favorite fruit" options={FRUIT_OPTIONS} size={size} />);
+    const trigger = screen.getByRole("button", { name: /Favorite fruit/ });
+    const own = classes.split(" ");
+    expect(trigger).toHaveClass(...own);
+    for (const cls of ["px-sm", "py-xs", "text-body-s", "px-md", "py-sm", "text-body", "px-lg", "py-md", "text-body-l"]) {
+      if (!own.includes(cls)) expect(trigger).not.toHaveClass(cls);
+    }
+    expect(trigger).not.toHaveAttribute("size");
+  });
+
+  it("defaults to md, the long-standing trigger look", () => {
+    render(<Select label="Favorite fruit" options={FRUIT_OPTIONS} />);
+    expect(screen.getByRole("button", { name: /Favorite fruit/ })).toHaveClass("px-md", "py-sm", "text-body");
+  });
+
+  it("keeps keyboard selection and the invalid border at every size", async () => {
+    const user = userEvent.setup();
+    const onSelectionChange = vi.fn();
+    render(<Select label="Favorite fruit" options={FRUIT_OPTIONS} size="sm" isInvalid errorMessage="Pick a fruit" onSelectionChange={onSelectionChange} />);
+    const trigger = screen.getByRole("button", { name: /Favorite fruit/ });
+    expect(trigger).toHaveClass("border-status-danger", "px-sm");
+    trigger.focus();
+    await user.keyboard("{ArrowDown}");
+    expect(screen.getByRole("listbox")).toBeInTheDocument();
+    await user.keyboard("{Enter}");
+    expect(onSelectionChange).toHaveBeenCalledWith("apple");
+  });
+
+  it("lets triggerClassName override the size padding", () => {
+    render(<Select label="Favorite fruit" options={FRUIT_OPTIONS} size="lg" triggerClassName="px-sm" />);
+    const trigger = screen.getByRole("button", { name: /Favorite fruit/ });
+    expect(trigger).toHaveClass("px-sm", "py-md", "text-body-l");
+    expect(trigger).not.toHaveClass("px-lg");
+  });
+
   it("disabled: the trigger is disabled and does not open", async () => {
     const user = userEvent.setup();
     render(<Select label="Favorite fruit" options={FRUIT_OPTIONS} isDisabled />);

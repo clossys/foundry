@@ -13,17 +13,12 @@
         "package": "@clossys/designer",
         "version": "0.12.0"
       },
-      "relation": "subset",
+      "relation": "same-contract",
       "slot": "components.tabs",
       "source": "foundry",
       "sourceAddress": "./components#Tabs",
       "status": "draft",
-      "trust": "foundry",
-      "unmapped": [
-        "size.lg",
-        "size.md",
-        "size.sm"
-      ]
+      "trust": "foundry"
     }
   },
   "components": {
@@ -54,7 +49,10 @@
       "license": "MIT",
       "members": [
         "orientation.horizontal",
-        "orientation.vertical"
+        "orientation.vertical",
+        "size.lg",
+        "size.md",
+        "size.sm"
       ],
       "pin": {
         "export": "./components#Tabs",
@@ -63,14 +61,18 @@
       },
       "propMap": {
         "orientation.horizontal": "./components#Tabs.orientation=horizontal",
-        "orientation.vertical": "./components#Tabs.orientation=vertical"
+        "orientation.vertical": "./components#Tabs.orientation=vertical",
+        "size.lg": "./components#Tabs.size=lg",
+        "size.md": "./components#Tabs.size=md",
+        "size.sm": "./components#Tabs.size=sm"
       },
       "props": [
         "children",
         "className",
         "onSelectionChange",
         "orientation",
-        "selectedKey"
+        "selectedKey",
+        "size"
       ],
       "reads": {
         "assets": [],

@@ -100,7 +100,7 @@ describe("Foundry component package descriptors", () => {
     expect(rows.get("components.breadcrumbs")!.missing).toContain("collapsed");
     expect(rows.get("components.dialog")!.missing).toContain("role.alert");
     expect(rows.get("components.popover")!.missing).toContain("arrow");
-    for (const leaf of ["checkbox", "disclosure", "form", "navigation-tree", "field", "text-field", "date-field", "grid-list", "toast", "chart-area", "chart-heatmap", "chart-range", "chart-scatter", "chart-status-strip", "chart-waterfall"]) {
+    for (const leaf of ["checkbox", "disclosure", "select", "tabs", "form", "navigation-tree", "field", "text-field", "date-field", "grid-list", "toast", "chart-area", "chart-heatmap", "chart-range", "chart-scatter", "chart-status-strip", "chart-waterfall"]) {
       expect(rows.get(`components.${leaf}`)!.missing).toEqual([]);
       expect(rows.get(`components.${leaf}`)!.status).toBe("candidate");
     }

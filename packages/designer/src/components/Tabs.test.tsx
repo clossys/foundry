@@ -72,6 +72,48 @@ describe("Tabs", () => {
     expect(details).not.toHaveClass("border-s-2");
   });
 
+  it.each([
+    ["sm", "px-sm py-xs text-caption"],
+    ["md", "px-md py-sm text-body-s"],
+    ["lg", "px-lg py-md text-body"],
+  ] as const)("size=%s sets every tab's padding and type step", (size, classes) => {
+    render(<BasicTabs size={size} />);
+    for (const tab of screen.getAllByRole("tab")) {
+      expect(tab).toHaveClass(...classes.split(" "));
+    }
+    const others = ["px-sm py-xs text-caption", "px-md py-sm text-body-s", "px-lg py-md text-body"].filter(set => set !== classes);
+    for (const set of others) for (const cls of set.split(" ")) if (!classes.split(" ").includes(cls)) {
+      expect(screen.getByRole("tab", { name: "Details" })).not.toHaveClass(cls);
+    }
+  });
+
+  it("keeps size independent of orientation and keyboard navigation", async () => {
+    const user = userEvent.setup();
+    render(<BasicTabs size="lg" orientation="vertical" />);
+    const details = screen.getByRole("tab", { name: "Details" });
+    const settings = screen.getByRole("tab", { name: "Settings" });
+    expect(details).toHaveClass("border-s-2", "px-lg", "py-md", "text-body");
+    expect(screen.getByRole("tablist")).not.toHaveAttribute("size");
+    details.focus();
+    await user.keyboard("{ArrowDown}");
+    expect(settings).toHaveFocus();
+    expect(settings).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("lets a consumer class override the size padding", () => {
+    render(
+      <Tabs size="sm">
+        <Tabs.List aria-label="Sections">
+          <Tabs.Tab id="a" className="px-lg">A</Tabs.Tab>
+        </Tabs.List>
+        <Tabs.Panel id="a">A content.</Tabs.Panel>
+      </Tabs>,
+    );
+    const tab = screen.getByRole("tab", { name: "A" });
+    expect(tab).toHaveClass("px-lg", "py-xs", "text-caption");
+    expect(tab).not.toHaveClass("px-sm");
+  });
+
   it("renders a tablist with every tab, and shows only the first tab's panel by default", () => {
     render(<BasicTabs />);
     expect(screen.getByRole("tablist", { name: "Prompt sections" })).toBeInTheDocument();
