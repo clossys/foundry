@@ -1153,6 +1153,18 @@
   &[data-exiting] { animation: overlay-fade var(--ui-duration-overlay, 120ms) var(--ease-exit, cubic-bezier(.4, 0, 1, 1)) reverse both; }
 }
 
+/*
+ * Studio layer tab indicator (cross-16): the selected tab's underline is the
+ * rule thickness (`--ui-border-rule`) in the accent colour; unselected tabs keep
+ * the same transparent rule so selection never shifts the row.
+ */
+@utility layer-tab-indicator {
+  border-block-end-style: solid;
+  border-block-end-width: var(--ui-border-rule, 2px);
+  border-block-end-color: transparent;
+  &[data-selected] { border-block-end-color: var(--color-accent, currentColor); }
+}
+
 /* A theme switch flips every colour at once, not through each control's transition. */
 :root[data-theme-switching] *, :root[data-theme-switching] *::before, :root[data-theme-switching] *::after { transition: none !important; }
 

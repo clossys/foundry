@@ -10,7 +10,7 @@ export function StudioTopBar({ labels, layer = "tokens", layers = ["tokens"], on
 }): ReactElement {
   return <nav aria-label={labels.layers.label} className="flex min-w-0 gap-sm overflow-x-auto whitespace-nowrap">
     {STUDIO_LAYERS.map(id => <Link key={id} href={layerHref(id)} isDisabled={!layers.includes(id)} aria-current={id === layer ? "page" : undefined} data-selected={id === layer || undefined}
-      className={"shrink-0 border-b-2 px-sm py-xs " + (id === layer ? "border-accent text-ink-primary" : "border-transparent")} aria-label={!layers.includes(id) ? `${labels.layers[id]}: ${labels.layers.disabled}` : undefined}
+      className={"layer-tab-indicator shrink-0 px-sm py-xs" + (id === layer ? " text-ink-primary" : "")} aria-label={!layers.includes(id) ? `${labels.layers[id]}: ${labels.layers.disabled}` : undefined}
       onClick={event => {
         const target = event.currentTarget.getAttribute("target");
         if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.currentTarget.hasAttribute("download") || target && target.toLowerCase() !== "_self") return;
