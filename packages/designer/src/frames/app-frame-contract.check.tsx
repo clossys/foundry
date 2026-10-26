@@ -31,6 +31,15 @@ export const navigationModes: readonly NonNullable<AppFrameProps["navigation"]["
 export const panelModes: readonly NonNullable<AppFrameRightPanel["defaultCollapsed"]>[] = APP_FRAME_CONFIG_SCHEMA["rightPanel.defaultCollapsed"].values;
 export const themeModes: readonly NonNullable<NonNullable<AppFrameProps["theme"]>["defaultPreference"]>[] = APP_FRAME_CONFIG_SCHEMA["theme.defaultPreference"].values;
 export const directions: readonly NonNullable<AppFrameProps["dir"]>[] = APP_FRAME_CONFIG_SCHEMA.dir.values;
+export const avatarModes: readonly NonNullable<AppFrameAccount["avatar"]>[] = APP_FRAME_CONFIG_SCHEMA["account.avatar"].values;
+export const footerLayouts: readonly NonNullable<AppFrameProps["footerLayout"]>[] = APP_FRAME_CONFIG_SCHEMA.footerLayout.values;
+export const navigationBrand = <AppFrame {...props} brand={{ ...brand, navigationMark: { label: "Example" } }} account={{ ...signedOut, avatar: "initials" }} footerLayout="stacked" />;
+// @ts-expect-error avatar content is finite
+export const unsupportedAvatar: AppFrameAccount = { ...signedOut, avatar: "photo" };
+// @ts-expect-error footer layout is finite
+export const unsupportedFooter = <AppFrame {...props} footerLayout="grid" />;
+// @ts-expect-error the navigation brand needs a visible name
+export const unnamedNavigationBrand: AppFrameBrand = { ...brand, navigationMark: {} };
 export const browserEntry: "frames" = APP_FRAME_CONTRACT.adapter.subpath;
 
 // @ts-expect-error mark rendering has a finite image opt-out

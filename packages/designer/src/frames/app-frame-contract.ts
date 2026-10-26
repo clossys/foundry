@@ -16,6 +16,8 @@ export const APP_FRAME_CONFIG_SCHEMA = freeze({
   "navigation.defaultCollapsed": { values: [false, true], default: false },
   "rightPanel.defaultCollapsed": { values: [false, true], default: false },
   "theme.defaultPreference": { values: ["system", "light", "dark"], default: "system" },
+  "account.avatar": { values: ["mark", "initials"], default: "mark" },
+  footerLayout: { values: ["inline", "stacked"], default: "inline" },
   dir: { values: ["ltr", "rtl"], default: null, omission: "inherit document direction" },
 } as const);
 
@@ -54,15 +56,15 @@ export const APP_FRAME_CONTRACT = freeze({
     { key: "dock", required: false, content: "leased page modules and notices" },
   ],
   hostInputs: [
-    "brand", "brand.markSrc",
+    "brand", "brand.markSrc", "brand.navigationMark.label",
     "navigation.tree", "navigation.activeId", "navigation.activeHref", "navigation.navigationKey",
-    "account.actor", "account.sections", "account.signedOutLabel", "account.contextLabel", "account.triggerLabel", "account.onRoute",
+    "account.actor", "account.sections", "account.signedOutLabel", "account.contextLabel", "account.triggerLabel", "account.onRoute", "account.avatar",
     "commands.groups", "commands.triggerLabel", "commands.heading", "commands.searchLabel", "commands.closeLabel", "commands.emptyMessage",
     "header", "onNavigate", "notices", "dock", "headerPosition", "headerSurface", "context", "root.label", "root.href",
     "page.title", "page.breadcrumb", "page.status", "page.description", "page.updatedAt", "page.meta", "page.actions", "page.scope", "workspaces",
     "breadcrumbLabel", "collapsedBreadcrumbLabel", "pageInfoLabel", "pageActionsLabel",
     "children", "rightPanel.children", "rightPanel.label", "rightPanel.handleLabel", "rightPanel.min", "rightPanel.max", "rightPanel.defaultValue",
-    "theme.storageKey", "theme.preferenceLabels", "theme.toggleLabel", "theme.preferenceAnnouncement", "skipLabel", "mainId",
+    "theme.storageKey", "theme.preferenceLabels", "theme.toggleLabel", "theme.preferenceAnnouncement", "footerLayout", "skipLabel", "mainId",
   ],
   statePorts: [
     "navigation.collapsed", "navigation.defaultCollapsed", "navigation.onCollapsedChange",
@@ -102,7 +104,8 @@ export const APP_FRAME_CONTRACT = freeze({
     page: "optional page owns the bar h1, optional host-rooted breadcrumb and sibling/workspace menus, optional information overlay and host actions; only the first primary request receives primary styling",
     bar: "sticky within the stage, translucent with supported backdrop blur; opaque for reduced transparency, forced colors or unsupported blur",
     responsiveQuery: APP_FRAME_WIDE_QUERY,
-    brand: "existing host mark appears only in the profile Avatar; no header brand text, link or slot",
+    brand: "host mark appears in the profile Avatar unless account.avatar is initials; brand.navigationMark adds the mark and its name at the navigation top; no header brand text, link or slot",
+    footer: "inline keeps account beside the theme control; stacked gives the theme control its own row above a full-width account row; long labels truncate",
     accessibility: "logical direction and forced-colors treatment apply to composed chrome and focus indicators",
   },
   constituents: [
@@ -112,6 +115,7 @@ export const APP_FRAME_CONTRACT = freeze({
     { owner: "@clossys/designer", subpath: "components", export: "Link" },
     { owner: "@clossys/designer", subpath: "components", export: "Popover" },
     { owner: "@clossys/designer", subpath: "components", export: "Avatar" },
+    { owner: "@clossys/designer", subpath: "components", export: "Logomark" },
     { owner: "@clossys/designer", subpath: "components", export: "Banner" },
     { owner: "@clossys/designer", subpath: "components", export: "Tooltip" },
     { owner: "@clossys/designer", subpath: "shell", export: "FrameSlotProvider" },

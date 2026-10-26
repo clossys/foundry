@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import { ModalContext, PopoverContext } from "react-aria-components";
-import { Avatar, Button, Icon, Menu, Tooltip } from "../components/index.js";
+import { Avatar, Button, Icon, Logomark, Menu, Tooltip } from "../components/index.js";
 import { Layers, List, Search } from "../icons/index.js";
 import { AccountMenu, AppNavigation, PageBar, CommandMenu, Drawer, ResizablePane, useCommandMenuShortcut, type DrawerProps } from "../blocks/index.js";
 import { ThemeProvider, ThemeToggle } from "../theme/index.js";
@@ -21,12 +21,12 @@ const TAP = { minBlockSize: APP_FRAME_LAYOUT.tap, minInlineSize: APP_FRAME_LAYOU
 const NAVIGATION_GLYPH = "rtl:-scale-x-100";
 const PANEL_GLYPH = "-scale-x-100 rtl:scale-x-100";
 
-function SignedOutMenu({ sections, signedOutLabel, onRoute, markSrc }: AppFrameAccount & { markSrc: string }) {
+function SignedOutMenu({ sections, signedOutLabel, onRoute, markSrc }: Omit<AppFrameAccount, "avatar"> & { markSrc: string }) {
   const populated = sections.filter(section => section.entries.length > 0);
   if (!signedOutLabel.trim()) throw new TypeError("AppFrame: signed-out label must be non-empty.");
-  if (!populated.length) return <div className="flex items-center gap-sm px-sm py-sm"><Avatar src={markSrc} alt="" /><span>{signedOutLabel}</span></div>;
+  if (!populated.length) return <div className="flex min-w-0 items-center gap-sm px-sm py-sm"><Avatar src={markSrc} alt="" /><span className="min-w-0 truncate">{signedOutLabel}</span></div>;
   const itemKey = (section: string, entry: string) => JSON.stringify([section, entry]);
-  return <Menu trigger={<Button variant="ghost" className={CONTROL + " w-full justify-start text-start"} style={TAP}><Avatar src={markSrc} alt="" /><span>{signedOutLabel}</span></Button>}>
+  return <Menu trigger={<Button variant="ghost" className={CONTROL + " w-full justify-start text-start"} style={TAP}><Avatar src={markSrc} alt="" /><span className="min-w-0 truncate">{signedOutLabel}</span></Button>}>
     {populated.map(section => <Menu.Section key={section.id} heading={section.label} aria-label={section.label ?? signedOutLabel}
       selectionMode={section.kind === "preferences" ? "multiple" : "none"}
       selectedKeys={section.kind === "preferences" ? section.entries.filter(entry => entry.checked).map(entry => itemKey(section.id, entry.id)) : undefined}
@@ -44,7 +44,7 @@ function SignedOutMenu({ sections, signedOutLabel, onRoute, markSrc }: AppFrameA
   </Menu>;
 }
 
-function FrameContent({ brand, navigation, account, commands, children, toasts, rightPanel, theme, themeControl, dir, header, onNavigate, notices, dock, headerPosition, headerSurface, context, root, page, workspaces, breadcrumbLabel, collapsedBreadcrumbLabel, pageInfoLabel, pageActionsLabel,
+function FrameContent({ brand, navigation, account: { avatar = "mark", ...account }, commands, children, toasts, rightPanel, theme, themeControl, footerLayout = "inline", dir, header, onNavigate, notices, dock, headerPosition, headerSurface, context, root, page, workspaces, breadcrumbLabel, collapsedBreadcrumbLabel, pageInfoLabel, pageActionsLabel,
   /** @default "Skip to content" */
   skipLabel = "Skip to content", mainId }: AppFrameProps) {
   const resolvedHeader = useFramePageHeader(header);
@@ -195,12 +195,17 @@ function FrameContent({ brand, navigation, account, commands, children, toasts, 
     return () => { observer?.disconnect(); window.removeEventListener("resize", measure); };
   }, [hasToasts, dir]);
   const changeCollapsed = (next: boolean) => { setPanelCollapsed(next); rightPanel?.onCollapsedChange?.(next); };
-  const accountControl = account.actor ? <AccountMenu {...account} actor={{ ...account.actor, image: brand.markSrc }} /> : <SignedOutMenu {...account} markSrc={brand.markSrc} />;
-  const footer = <div className="flex min-w-0 items-center justify-between gap-xs">
+  // Initials come from the actor name (Avatar's fallback); a signed-out row has no person, so it keeps the mark.
+  const accountControl = account.actor ? <AccountMenu {...account} actor={{ ...account.actor, image: avatar === "initials" ? undefined : brand.markSrc }} /> : <SignedOutMenu {...account} markSrc={brand.markSrc} />;
+  const themeSlot = themeControl !== null && <div data-application-frame-slot="theme-control" className="shrink-0">
+    {themeControl === undefined ? <ThemeToggle className={CONTROL} style={TAP} preferenceLabels={theme?.preferenceLabels} toggleLabel={theme?.toggleLabel} preferenceAnnouncement={theme?.preferenceAnnouncement} /> : themeControl}
+  </div>;
+  const footer = footerLayout === "stacked" ? <div data-application-frame-footer="stacked" className="flex min-w-0 flex-col gap-xs">
+    {themeSlot}
+    <div data-application-frame-slot="account" className="w-full min-w-0">{accountControl}</div>
+  </div> : <div className="flex min-w-0 items-center justify-between gap-xs">
     <div className="min-w-0 flex-1">{accountControl}</div>
-    {themeControl !== null && <div data-application-frame-slot="theme-control" className="shrink-0">
-      {themeControl === undefined ? <ThemeToggle className={CONTROL} style={TAP} preferenceLabels={theme?.preferenceLabels} toggleLabel={theme?.toggleLabel} preferenceAnnouncement={theme?.preferenceAnnouncement} /> : themeControl}
-    </div>}
+    {themeSlot}
   </div>;
   const corner = TAP;
   const panelTrigger = rightPanel && (narrow ? <div className="contents" onFocusCapture={capturePanelFocus}><ModalContext.Provider value={{ style: { direction: dir } }}><Drawer fullViewport wide="sheet" placement="end" dismissAt={APP_FRAME_WIDE_QUERY}
@@ -218,7 +223,12 @@ function FrameContent({ brand, navigation, account, commands, children, toasts, 
   const navigationTrigger = <Button variant="ghost" className={CONTROL}
     style={corner} data-application-frame-navigation="trigger"
     aria-controls={generated + "-navigation"} aria-label={navOpen ? navigationCloseLabel : navigationOpenLabel} aria-expanded={navOpen} onPress={changeNav}><Icon glyph={List} decorative className={NAVIGATION_GLYPH} /></Button>;
-  const commandTrigger = <div style={{ paddingBlockStart: `calc(${APP_FRAME_LAYOUT.tap} + ${APP_FRAME_LAYOUT.gutter})` }}><Button variant="ghost" className={CONTROL + " w-full justify-start gap-sm"} style={TAP} onPress={openCommands}><Icon glyph={Search} decorative /><span className="min-w-0 truncate">{triggerLabel}</span></Button></div>;
+  // The navigation top reserves one tap-sized corner row (the drawer close control sits at its start); a brand row takes that row instead of bare padding.
+  const navigationBrand = brand.navigationMark && <div data-application-frame-slot="brand" className="flex min-w-0 items-center gap-sm"
+    style={{ minBlockSize: APP_FRAME_LAYOUT.tap, marginBlockEnd: APP_FRAME_LAYOUT.gutter, paddingInlineStart: layout.navigationOverlay ? `calc(${APP_FRAME_LAYOUT.tap} + ${APP_FRAME_LAYOUT.gap})` : undefined }}>
+    <Logomark src={brand.markSrc} size="sm" /><span className="min-w-0 truncate text-body text-ink-primary">{brand.navigationMark.label}</span>
+  </div>;
+  const commandTrigger = <div style={navigationBrand ? undefined : { paddingBlockStart: `calc(${APP_FRAME_LAYOUT.tap} + ${APP_FRAME_LAYOUT.gutter})` }}>{navigationBrand}<Button variant="ghost" className={CONTROL + " w-full justify-start gap-sm"} style={TAP} onPress={openCommands}><Icon glyph={Search} decorative /><span className="min-w-0 truncate">{triggerLabel}</span></Button></div>;
   const pageBar = <PageBar position={headerPosition} surface={headerSurface} header={resolvedHeader} onNavigate={onNavigate} context={context} root={root} page={page} workspaces={workspaces} narrow={!wide}
     reserveStart={false} reserveEnd={false} onHeightChange={setBarHeight} dir={dir}
     labels={{ breadcrumb: breadcrumbLabel ?? "Breadcrumb", collapsedBreadcrumb: collapsedBreadcrumbLabel ?? "More breadcrumb levels", pageInfo: pageInfoLabel ?? "Page information",
