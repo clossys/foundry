@@ -186,7 +186,7 @@
 @source inline("boards boards. boards: body body.arrangement.kind body.kind body: boolean boolean.");
 @source inline("booleanFilterMessage boolean[] bootstrap border border- border-0 border-2 border-accent");
 @source inline("border-action border-b border-b-2 border-collapse border-current border-dashed border-e");
-@source inline("border-ink-on-inverse border-ink-primary border-ink-secondary border-line-base");
+@source inline("border-ink-on-inverse border-ink-primary border-ink-secondary border-line-base border-line-control");
 @source inline("border-line-on-inverse border-line-panel border-line-strong border-none border-overlay-border");
 @source inline("border-s border-s-2 border-s-accent border-s-accent-on-inverse border-s-transparent border-separate");
 @source inline("border-solid border-spacing-0 border-status-danger border-status-info border-status-success");

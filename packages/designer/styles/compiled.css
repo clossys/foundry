@@ -2198,6 +2198,9 @@
   .border-line-base {
     border-color: var(--color-line-base, oklch(0.8761 0 0));
   }
+  .border-line-control {
+    border-color: var(--color-line-control, oklch(0.62 0 0));
+  }
   .border-line-on-inverse {
     border-color: var(--color-line-on-inverse, oklch(0.9702 0 0 / 0.14));
   }
