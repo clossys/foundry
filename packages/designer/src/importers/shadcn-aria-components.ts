@@ -244,7 +244,9 @@ export function importShadcnAriaComponents(input: ShadcnComponentInput): ShadcnC
     visit(item, [name]);
     const command = name === "dropdown-menu" ? items.get("command")?.files[0] : undefined;
     if (name === "dropdown-menu" && !command) throw new Error("menu-profile: authenticated Command source required");
-    if (command) { verifyShadcnSource(command); closure.set(command.path, command); }
+    // Menu borrows only CommandList (RAC Menu + cn) from command.tsx: the file is
+    // pinned provenance, but its dialog/input-group imports never ship.
+    if (command) verifyShadcnSource(command);
     const selected = name === "dialog" ? dialogExecutableSource(original) : name === "dropdown-menu" ? menuExecutableSource(original, command!) : name === "toggle" || name === "toggle-group" ? toggleExecutableSource(name, original) : original;
     const result = rewriteShadcnAria({ item: name, leaf, files: [selected, ...privateFiles], styles: input.styles.content, leafByItem: SHADCN_COMPONENT_ITEMS, styleDefaults: true });
     const files: SourceFile[] = result.files.map(file => {
@@ -266,7 +268,7 @@ export function importShadcnAriaComponents(input: ShadcnComponentInput): ShadcnC
     filled.add(slot.id);
     const propMap = memberMap(name, original.content + (rewritten.files.find(file => file.path === `components/${leaf}/${name}.tsx`)?.content ?? ""), slot);
     const members = Object.keys(propMap), required = slot.contract.members.mode === "closed" ? slot.contract.members.names : slot.contract.members.required ?? [];
-    const pin = { url: SHADCN_ARIA_COMPONENT_PIN.url, commit: SHADCN_ARIA_COMPONENT_PIN.commit, files: [...closure.values(), input.styles, input.notice].map(file => ({ path: file.path, sha256: pinDigest(file.content) })).sort((a, b) => a.path.localeCompare(b.path)) };
+    const pin = { url: SHADCN_ARIA_COMPONENT_PIN.url, commit: SHADCN_ARIA_COMPONENT_PIN.commit, files: [...closure.values(), ...(command ? [command] : []), input.styles, input.notice].map(file => ({ path: file.path, sha256: pinDigest(file.content) })).sort((a, b) => a.path.localeCompare(b.path)) };
     const composes = result.reads.components;
     const descriptor: ShadcnComponentFillDoc["components"][string] = {
       slot: slot.id, source: SOURCE, root: slot.contract.root, members, props: name === "calendar" ? ["id", "className", "style", "children", "aria-label", "aria-labelledby", "value", "defaultValue", "onChange", "isDisabled", "isReadOnly", "isInvalid", "minValue", "maxValue", "defaultFocusedValue", "focusedValue", "onFocusChange", "isDateUnavailable", "firstDayOfWeek", "numberOfMonths", "buttonVariant", "captionLayout", "showWeekNumber", "headerFormat", "renderCell"] : [], propMap, reads: result.reads, composes,
