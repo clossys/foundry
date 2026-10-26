@@ -15,7 +15,7 @@ import type { StudioCandidateWorkflow } from "./types.js";
 import { activeCandidateSource } from "./candidate-display.js";
 import { valueBoardPrompt } from "./prepared-library-boards.js";
 import { CompactPreview } from "./previews.js";
-import { BoardChosenSummary, CompactLeafLine, LeafLabel } from "./board-summary.js";
+import { BoardChosenSummary, CompactLeafLine, LeafLabel, WrappingLabel } from "./board-summary.js";
 
 /**
  * One fixed-shape plate per row so chosen and unchosen rows line up. It shows the specimen alone:
@@ -64,7 +64,7 @@ export const Board = memo(function Board({ board, boardRef, summary, onOpen, wor
       <p className="break-words text-display-xl text-ink-primary">{board.label}</p>
       {chosenLine("text-display-m text-ink-primary")}
       {check ? <p className="break-words text-display-m text-ink-secondary">{check}</p> : null}
-      {onOpen ? <Button variant="ghost" size="sm" onPress={onOpen}>{matrix.labels.canvas.openBoard(board.label)}</Button> : null}
+      {onOpen ? <Button variant="ghost" size="sm" onPress={onOpen}><WrappingLabel>{matrix.labels.canvas.openBoard(board.label)}</WrappingLabel></Button> : null}
     </div> : undefined} />
   </section>;
 });

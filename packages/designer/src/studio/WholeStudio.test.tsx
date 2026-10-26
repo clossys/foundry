@@ -450,6 +450,17 @@ it("contract boards show the host chosen line in tabular figures and name leaf r
   for (const line of lines) { expect(line).toHaveTextContent(new RegExp(`^\\d+ of ${total} chosen$`)); expect(line).toHaveClass("tabular-nums"); }
 });
 
+it("contract boards wrap the overview Open label inside the board instead of ellipsising it", async () => {
+  const f = adapterFixture();
+  render(<Studio adapter={f.adapter} labels={wholeLabels} initialSlotId="sections.band" />);
+  await screen.findByText("L-saved");
+  const board = document.querySelector<HTMLElement>('[data-studio-row="sections.band"]')!.closest<HTMLElement>("[data-studio-board]")!;
+  const overview = board.querySelector<HTMLElement>("[data-studio-zoom-summary]")!;
+  const label = overview.querySelector<HTMLElement>("button [data-studio-wrapping-label]")!;
+  expect(label).toHaveClass("whitespace-normal", "break-words");
+  expect(overview.querySelector(".truncate")).toBeNull();
+});
+
 it("contract boards count runtime-pending findings neutrally, apart from errors, without hiding them", async () => {
   const input = adoptedComponentIntegration(), slot = "components.button";
   const componentOptions = { ...input.componentOptions!, evidence: { ...input.componentOptions!.evidence!, observations: {} } };

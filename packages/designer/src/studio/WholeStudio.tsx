@@ -25,7 +25,7 @@ import { PREVIEW_CHOICE_CLASS } from "./CandidateChoice.js";
 import { CandidateCell } from "./CandidateCell.js";
 import { ErrorReason } from "../blocks/library-board/ErrorReason.js";
 import { BoardHeader, LeafCell } from "../blocks/library-board/LeafCell.js";
-import { BoardChosenSummary, CompactLeafLine, defaultRuntimePendingLabel, LeafLabel, RuntimePendingLine } from "./board-summary.js";
+import { BoardChosenSummary, CompactLeafLine, defaultRuntimePendingLabel, LeafLabel, RuntimePendingLine, WrappingLabel } from "./board-summary.js";
 import { checkCounts, isRuntimePending } from "./runtime-pending.js";
 import { CandidatePromptDialog } from "./CandidatePromptDialog.js";
 import { Table } from "../components/Table.js";
@@ -187,7 +187,7 @@ const ContractBoards = memo(function ContractBoards({ narrow, boards, layer, que
               {chosenLine("text-display-m text-ink-primary")}
               {summary ? <p className="break-words text-display-m text-ink-secondary">{summary}</p> : null}
               <RuntimePendingLine count={counts.pending} label={t.runtimePending} className="text-display-m" />
-              <Button variant="ghost" size="sm" onPress={event => { const element = (event.target as HTMLElement).closest<HTMLElement>("[data-studio-board]"); if (element) open(element); }}>{t.canvas.openBoard(board.label)}</Button>
+              <Button variant="ghost" size="sm" onPress={event => { const element = (event.target as HTMLElement).closest<HTMLElement>("[data-studio-board]"); if (element) open(element); }}><WrappingLabel>{t.canvas.openBoard(board.label)}</WrappingLabel></Button>
             </div>}
             full={<div data-studio-zoom-full="" className="w-max">{!isEditing ? <Table aria-label={t.matrix.label} className="w-max"><Table.Header><Table.Column id="leaf" isRowHeader>{t.matrix.leaf}</Table.Column><Table.Column id="preview"><span className="sr-only">{t.stageLabel}</span></Table.Column></Table.Header><Table.Body>{leaves.map(leaf => {
               const selected = profile?.components.components[leaf.id];

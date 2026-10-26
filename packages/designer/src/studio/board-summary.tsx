@@ -5,6 +5,15 @@ export function BoardChosenSummary({ chosen, total, label, className }: { chosen
   return <p data-studio-chosen-summary="" className={["break-words tabular-nums", className].filter(Boolean).join(" ")}>{label(chosen, total)}</p>;
 }
 
+/**
+ * The label of an overview-tier action. Overview and compact layers take the full layer's width
+ * (CanvasLodLayers), so a long "Open <board>" label wraps onto more lines inside the board instead
+ * of Button's default one-line ellipsis; the control's min-height grows with it.
+ */
+export function WrappingLabel({ children }: { children: string }): ReactElement {
+  return <span data-studio-wrapping-label="" className="min-w-0 whitespace-normal break-words">{children}</span>;
+}
+
 /** A leaf row label: the host's human name, then the leaf id in the mono face; the id alone when the host has no name. */
 export function LeafLabel({ id, name }: { id: string; name?: string }): ReactElement {
   const human = name?.trim() ? name : undefined;

@@ -14,12 +14,12 @@ const OVERVIEW_ZOOM = .05, COMPACT_ZOOM = .5, FULL_ZOOM = 1;
 const NAMES: Record<string, string> = { "tokens.surface-color": "Surface colour" };
 const named: StudioLabels = { ...labels, chosenSummary: (chosen, total) => `${chosen} of ${total} chosen`, leafName: id => NAMES[id] };
 
-function board(zoom: number, boardLabels: StudioLabels = named, summary: { chosen?: number; total?: number } = {}) {
+function board(zoom: number, boardLabels: StudioLabels = named, summary: { chosen?: number; total?: number } = {}, onOpen?: () => void) {
   const library = adopt(undefined, "tokens.surface-color", "foundry");
   const rows = matrixRows({ catalog: smallCatalog, library, working: library, changes: emptyChanges(library), expanded: new Set() });
   const matrixBoard = matrixBoards({ catalog: smallCatalog, library, working: library }, rows).find(board => board.leaves.includes("tokens.surface-color"))!;
   const props = { boardRef: null, sources: ["foundry"], labels: boardLabels, working: library, changes: emptyChanges(library), expanded: new Set<string>(), groupChoices: {}, onExpand: () => {}, onUse: () => {}, onFocusCell: () => {} };
-  const view = render(<CanvasLod zoom={zoom}><Board {...props} board={matrixBoard} summary={{ errors: 0, warnings: 0, sources: ["foundry"], ...summary }} /></CanvasLod>);
+  const view = render(<CanvasLod zoom={zoom}><Board {...props} board={matrixBoard} onOpen={onOpen} summary={{ errors: 0, warnings: 0, sources: ["foundry"], ...summary }} /></CanvasLod>);
   const slots = matrixBoard.rows.filter(row => row.scope === "slot");
   return { view, slots, chosen: slots.filter(row => row.candidates.some(candidate => candidate.selected)).length };
 }
@@ -82,6 +82,15 @@ it("labels an unnamed leaf row once, with its id alone in the mono face", () => 
   expect(label.textContent).toBe("tokens.surface-color");
   expect(header.textContent).toBe("tokens.surface-color");
   expect(label.querySelector("[data-studio-leaf-id]")).toHaveClass("font-mono", "tabular-nums", "text-ink-primary");
+});
+
+it("wraps the overview Open label inside the board plate instead of ellipsising it", () => {
+  board(OVERVIEW_ZOOM, named, {}, () => {});
+  const overview = layer("overview");
+  const label = overview.querySelector<HTMLElement>("button [data-studio-wrapping-label]")!;
+  expect(label).toHaveTextContent(labels.canvas.openBoard(document.querySelector("[data-studio-zoom-summary] p")!.textContent!));
+  expect(label).toHaveClass("whitespace-normal", "break-words");
+  expect(overview.querySelector(".truncate")).toBeNull();
 });
 
 it("formats the chosen line only through the host label", () => {
