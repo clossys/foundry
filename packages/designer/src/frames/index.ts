@@ -8,3 +8,6 @@ export type { AppFrameSpecimenProps } from "./AppFrame.specimen.js";
 
 export { FrameStage, frameSectionRefKey } from "./FrameStage.js";
 export type { FrameStageProps, FrameStageSectionRef } from "./FrameStage.js";
+
+export { useFrameNotice } from "./frame-notices.js";
+export type { FrameNoticeApi } from "./frame-notices.js";
