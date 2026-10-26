@@ -47,7 +47,9 @@ it.each(cases)("%s members show one visible key and one separate value (%s)", (_
     const named = leafTexts(variant, key);
     const keys = named.filter(element => element.hasAttribute("data-member-key"));
     if (key !== value) keys.push(...named.filter(element => !element.hasAttribute("data-member-key")));
-    const values = leafTexts(variant, value).filter(element => !element.hasAttribute("data-member-key"));
+    // A labelled-channel value (oklch) keeps the exact source string on the one value element for copy.
+    const values = [...leafTexts(variant, value), ...[...variant.querySelectorAll<HTMLElement>("[data-copy-value]")].filter(element => visible(element) && element.dataset.copyValue === value)]
+      .filter(element => !element.hasAttribute("data-member-key"));
     if (keys.length !== 1) problems.push(`${key}: ${keys.length} visible keys`);
     if (key !== value && values.length !== 1) problems.push(`${key}: ${values.length} visible values`);
   }

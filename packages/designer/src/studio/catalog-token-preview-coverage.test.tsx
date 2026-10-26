@@ -18,24 +18,7 @@ import { labels } from "./__fixtures__/studio.js";
  * starts passing, or an unlisted leaf that starts failing, turns this test red.
  * Label conformance has no ratchet.
  */
-const SPECIMEN_NEED: readonly string[] = [
-  "tokens.behavior-timing", // NEED off-the-shelf event-timeline capability with source-bound event semantics
-  "tokens.blur", // NEED exact off-the-shelf blur capability
-  "tokens.breakpoint", // NEED existing-component shared ruler/scale/axis contract
-  "tokens.color-ramp", // NEED exact inert off-the-shelf OKLCH component
-  "tokens.density", // NEED single component contract for heterogeneous gap/pad/row-height roles
-  "tokens.duration", // NEED exact off-the-shelf movement target/application contract
-  "tokens.easing", // NEED exact off-the-shelf movement target/application contract
-  "tokens.focus-outline", // NEED exact selected focus shadow/outline application contract
-  "tokens.font-size", // NEED exact selected font/metric application contract
-  "tokens.font-weight", // NEED exact selected font/metric application contract
-  "tokens.letter-spacing", // NEED exact selected font/metric application contract
-  "tokens.line-height", // NEED paired typography component contract with actual font-size association
-  "tokens.radius", // NEED exact radius application contract for scale and role values
-  "tokens.shadow", // NEED exact off-the-shelf selected shadow application
-  "tokens.transition-duration", // NEED exact off-the-shelf movement target/application contract
-  "tokens.transition-easing", // NEED exact off-the-shelf movement target/application contract
-];
+const SPECIMEN_NEED: readonly string[] = [];
 
 const catalog = loadCatalog();
 const metaOf = (doc: FillDoc) => doc.$extensions["com.clossys.fill"];
