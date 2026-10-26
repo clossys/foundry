@@ -29,9 +29,11 @@ const SAMPLE_TEXT: Record<string, string> = {
   "sections.newsletter": "One email a month", "frames.app-shell": "Review the spring launch", "frames.command": "Open command menu",
 };
 
-function mount(preview: CompositeStudioSnapshot["preview"], samples: Parameters<typeof planSurfacePreviews>[0]["samples"] = HOST_SAMPLES, sampleState?: Parameters<typeof planSurfacePreviews>[0]["sampleState"]) {
+function mount(preview: CompositeStudioSnapshot["preview"], samples: Parameters<typeof planSurfacePreviews>[0]["samples"] = HOST_SAMPLES, sampleState?: Parameters<typeof planSurfacePreviews>[0]["sampleState"], dropPlanned: (pointer: string) => boolean = () => false) {
   const fills = fixture.catalog.surfaces!.fills as unknown as SurfaceDefaultCandidateDocument[], slots = fixture.catalog.surfaces!.slots as unknown as SurfaceDefaultsInput["catalog"]["slots"];
   const plannedPreviews = planSurfacePreviews({ fills, samples, sampleState, plan: planSurfaceDefaults({ catalog: { slots, fills }, slots: slots.map(slot => slot.id), preference: ["foundry"] }) });
+  // A test may withhold planned rows so an adopted leaf can only draw its state through its own package preview.
+  for (const [leaf, planned] of Object.entries(plannedPreviews.previews)) if (dropPlanned(planned.pointer)) delete plannedPreviews.previews[leaf];
   const load = vi.fn(async (): Promise<CompositeStudioSnapshot> => ({ library: structuredClone(fixture.library), surfaceOptions: fixture.options, preview, plannedPreviews }));
   render(<WholeStudioProvider adapter={{ kind: "composite", catalog: fixture.catalog, load, save: async () => ({ ok: false, reason: "unavailable" }) }} labels={wholeLabels} initialSlotId="sections.faq"><StudioHeader /><StudioView header="external" /><StudioRightPanel /></WholeStudioProvider>);
 }
@@ -97,5 +99,14 @@ describe("adopted package-pointer surfaces on the Studio board", { timeout: 120_
     const table = row("sections.form")!.querySelector<HTMLElement>("[data-candidate-cell]")!;
     expect(table).toHaveAttribute("data-sample-state", "default");
     expect(table).toHaveTextContent("Work email");
+  });
+
+  it("vf35: an adopted leaf with no planned row still draws the requested state through its own package preview", async () => {
+    mount(() => undefined, HOST_SAMPLES, "empty", pointer => pointer.endsWith("#DataTable"));
+    await screen.findByText("L-saved");
+    const orders = row("sections.data-table")!.querySelector<HTMLElement>("[data-candidate-cell]")!;
+    expect(orders).toHaveAttribute("data-sample-state", "empty");
+    expect(orders).toHaveTextContent("No orders yet");
+    expect(orders).not.toHaveTextContent("Fabrikam");
   });
 });
