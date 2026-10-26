@@ -74,6 +74,20 @@ describe("Foundry section package descriptors", () => {
     expect(docs.find(doc => doc.slot === "sections.comparison")!.configs).toEqual({ arrangement: "grid" });
   });
 
+  it("maps the comparison library-board member and controls records to the real Matrix library-board API", () => {
+    const row = imported().coverage.find(candidate => candidate.slot === "sections.comparison")!;
+    expect(row).toMatchObject({ status: "candidate", supportedSlots: ["columns", "controls", "highlight", "rows"], missingSlots: [], supportedMembers: ["arrangement.library-board"], missingMembers: [] });
+    const doc = imported().fills.find(candidate => candidate.$extensions["com.clossys.fill"].slot === "sections.comparison")!;
+    expect(doc.$extensions["com.clossys.fill"].relation).toBe("same-contract");
+    expect(doc.$extensions["com.clossys.fill"]).not.toHaveProperty("unmapped");
+    expect(doc.sections.comparison!.slotMap.controls).toBe("./blocks#Matrix.records.controls");
+    expect(doc.sections.comparison!.propMap["arrangement.library-board"]).toBe("./blocks#Matrix.arrangement=library-board");
+    // The bindings name real public API: LIBRARY_BOARD_CONFIG selects arrangement=library-board and LibraryBoardRecords carries controls.
+    const matrix = readFileSync(resolve(here, "../blocks/Matrix.tsx"), "utf8");
+    expect(matrix).toContain('LIBRARY_BOARD_CONFIG = { id: "library-board", members: ["arrangement.library-board"], props: { arrangement: "library-board" } }');
+    expect(readFileSync(resolve(here, "../blocks/library-board/model.ts"), "utf8")).toMatch(/interface LibraryBoardRecords \{[\s\S]*readonly controls:/);
+  });
+
   it("gives consent, error-state, stats, data-grid, cards, call-to-action, notices and gallery a Foundry export with every required slot mapped", () => {
     const rows = new Map(imported().coverage.map(row => [row.slot, row]));
     const exportOf = (leaf: string) => Object.values(imported().fills.find(doc => doc.$extensions["com.clossys.fill"].slot === `sections.${leaf}`)!.sections)[0]!.impl.export;

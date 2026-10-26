@@ -82,7 +82,7 @@ describe("Foundry frame descriptors", () => {
     expect(rows.get("frames.app-header")!.missing).toEqual([]);
     expect(rows.get("frames.command")!.missingRequiredSlots).toEqual([]);
     for (const leaf of ["app-shell", "command"]) expect(rows.get(`frames.${leaf}`)!.missingStatePorts, leaf).toEqual([]);
-    expect(rows.get("frames.app-sidebar")!.missingStatePorts).toEqual(["theme"]);
+    expect(rows.get("frames.app-sidebar")!.missingStatePorts).toEqual([]);
     expect(rows.get("frames.command")!.missing).toEqual(["shortcut.off", "shortcut.on"]);
   });
   it("maps the app-header context slot and glass/opaque surface, and the site-shell toasts slot, to named public props", () => {
@@ -137,6 +137,11 @@ describe("Foundry frame descriptors", () => {
     expect(read("../theme/ThemeProvider.tsx")).toContain("onPreferenceChange?: (preference: ThemePreference) => void;");
     expect(read("../frames/AppFrame.tsx")).toMatch(/<ThemeProvider[^>]*preference=\{props\.theme\?\.preference\}[^>]*onPreferenceChange=\{props\.theme\?\.onPreferenceChange\}/);
     expect(FOUNDRY_FRAME_MAP["app-sidebar"]!.statePorts.theme).toBeUndefined();
+    // The app shell owns theme state; the sidebar contract declares no theme port, so its descriptor owns every port it has.
+    const contract = (id: string) => (slots as unknown as FrameSlot[]).find(slot => slot.id === id)!.contract;
+    expect(contract("frames.app-sidebar").statePorts.map(port => port.id)).toEqual(["collapsed"]);
+    expect(contract("frames.app-shell").statePorts.map(port => port.id)).toContain("theme");
+    expect(result().coverage.find(row => row.slot === "frames.app-sidebar")).toMatchObject({ status: "subset", missingSlots: ["account", "theme"], missingStatePorts: [], missingRequiredSlots: [] });
     expect(FOUNDRY_FRAME_MAP.command!.slots.search).toBe("searchLabel");
     expect(read("../blocks/command-menu-types.ts")).toMatch(/searchLabel: string/);
     expect(read("../blocks/CommandMenu.tsx")).toMatch(/<SearchField label=\{searchLabel\} value=\{query\} onChange=\{onQueryChange\}/);

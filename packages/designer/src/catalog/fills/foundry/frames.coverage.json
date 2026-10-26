@@ -49,11 +49,9 @@
         "account",
         "theme"
       ],
-      "missingStatePorts": [
-        "theme"
-      ],
+      "missingStatePorts": [],
       "notes": [
-        "account and theme can be composed by the host in footer; they are not dedicated slots. No theme state port. Tree uses disclosure navigation; no navigation-tree conformance is claimed.",
+        "account and theme can be composed by the host in footer; they are not dedicated slots. Theme state is owned by the app shell (AppFrame theme port), so the sidebar contract has no theme state port. Tree uses disclosure navigation; no navigation-tree conformance is claimed.",
         "Descriptor only; anatomy, source, accessibility, contrast, layout and rendered conformance are unmeasured."
       ],
       "slot": "frames.app-sidebar",

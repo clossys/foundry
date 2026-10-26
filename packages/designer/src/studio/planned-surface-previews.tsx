@@ -51,7 +51,7 @@ import { PageBar } from "../blocks/PageBar.js";
 import { SECTION_BLOCK_SAMPLES } from "../blocks/section-samples.js";
 import { SiteHeader } from "../shell/SiteHeader.js";
 import { SiteFooter } from "../shell/SiteFooter.js";
-import { STRUCTURED_BLOCK_SAMPLES } from "./surface-preview-samples.js";
+import { APP_SIDEBAR_SAMPLES, STRUCTURED_BLOCK_SAMPLES } from "./surface-preview-samples.js";
 
 /** This designer build renders only its own package exports. Another package's export (for example a Publisher frame) is reported, not imitated. */
 const DESIGNER_PACKAGE = "@clossys/designer/";
@@ -89,6 +89,7 @@ const BLOCK_SAMPLES: Readonly<Record<string, () => ReactNode>> = {
   ...SECTION_BLOCK_SAMPLES,
   PageBar: () => <PageBar position="static" root={{ label: "Workspace" }} labels={{ breadcrumb: "Breadcrumb", collapsedBreadcrumb: "More pages", pageInfo: "Page details", pageActions: "Page actions" }} />,
   ...STRUCTURED_BLOCK_SAMPLES,
+  ...APP_SIDEBAR_SAMPLES,
 };
 const SHELL_SAMPLES: Readonly<Record<string, () => ReactNode>> = {
   SiteHeader: () => <SiteHeader position="static" brand={<span>Northwind</span>} nav={<a href="#product">Product</a>} />,

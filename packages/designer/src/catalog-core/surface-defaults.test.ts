@@ -29,8 +29,8 @@ const SECTION_DEFAULTS = ["access-matrix", "activity-feed", "article", "audit-lo
 /** Every Foundry candidate now maps its required content slots; none is ineligible. */
 const SECTION_INELIGIBLE: Readonly<Record<string, readonly string[]>> = {};
 const SECTION_NO_CANDIDATE: string[] = [];
-const FRAME_DEFAULTS = ["app-header", "app-shell", "command", "inspector", "sheet", "site-footer", "site-header", "site-shell"].map(leaf => `frames.${leaf}`);
-const FRAME_NOT_CHOSEN = ["app-sidebar"].map(leaf => `frames.${leaf}`);
+const FRAME_DEFAULTS = ["app-header", "app-shell", "app-sidebar", "command", "inspector", "sheet", "site-footer", "site-header", "site-shell"].map(leaf => `frames.${leaf}`);
+const FRAME_NOT_CHOSEN: string[] = [];
 
 describe("surface default fills", () => {
   it("defaults every Section and Frame whose candidate passes the static contract rule, and only those", () => {
@@ -41,7 +41,7 @@ describe("surface default fills", () => {
     expect(input.slots.filter(slot => slot.startsWith("frames.")).length).toBe(9);
     const expected = Object.fromEntries(input.slots.map(slot => [slot, [...SECTION_DEFAULTS, ...FRAME_DEFAULTS].includes(slot) ? "foundry" : "-"]));
     expect(ledger(plan)).toEqual(expected);
-    expect(Object.values(ledger(plan)).filter(value => value !== "-")).toHaveLength(53);
+    expect(Object.values(ledger(plan)).filter(value => value !== "-")).toHaveLength(54);
     expect(plan.findings).toEqual([]);
     expect(plan.rows.find(row => row.slot === "frames.site-header")).toEqual({ slot: "frames.site-header", status: "default", basis: "preference", source: "foundry", fill: "foundry/frames.site-header", reasons: [] });
   });
@@ -56,8 +56,7 @@ describe("surface default fills", () => {
     }
     expect(plan.rows.find(row => row.slot === "frames.inspector")).toEqual({ slot: "frames.inspector", status: "default", basis: "preference", source: "foundry", fill: "foundry/frames.inspector", reasons: [] });
     for (const leaf of ["filter-builder", "settings", "wizard"]) expect(plan.rows.find(row => row.slot === `sections.${leaf}`), leaf).toMatchObject({ status: "default", source: "foundry", fill: `foundry/sections.${leaf}`, reasons: [] });
-    expect(reasons(plan, "frames.app-sidebar")).toBe("foundry: S5 frame rendering/state ownership differs: state port theme is not owned");
-    for (const slot of ["sections.chat", "sections.explorer", "sections.hero", "sections.newsletter", "frames.app-shell", "frames.command"]) {
+    for (const slot of ["sections.chat", "sections.explorer", "sections.hero", "sections.newsletter", "frames.app-shell", "frames.app-sidebar", "frames.command"]) {
       expect(plan.rows.find(row => row.slot === slot), slot).toMatchObject({ status: "default", source: "foundry", reasons: [] });
     }
   });
@@ -83,9 +82,9 @@ describe("surface default fills", () => {
   });
 
   it("an owner pick or a choice is exclusive and never falls back", () => {
-    const picked = planSurfaceDefaults(setup({ picks: { "frames.app-sidebar": "foundry", "sections.faq": "other" } }));
+    const picked = planSurfaceDefaults(setup({ picks: { "frames.app-sidebar": "other", "sections.faq": "other" } }));
     expect(picked.rows.find(row => row.slot === "frames.app-sidebar")!.status).toBe("not-chosen");
-    expect(reasons(picked, "frames.app-sidebar")).toContain("owner pick foundry is not eligible; another source needs the owner's choice");
+    expect(reasons(picked, "frames.app-sidebar")).toContain("owner pick other is not eligible; another source needs the owner's choice");
     expect(reasons(picked, "sections.faq")).toBe("other: no implementation candidate || owner pick other is not eligible; another source needs the owner's choice");
     const chosen = planSurfaceDefaults(setup({ choices: { "frames.sheet": "foundry", "frames.site-header": "other" }, picks: { "frames.sheet": "other" } }));
     expect(chosen.rows.find(row => row.slot === "frames.sheet")).toMatchObject({ status: "chosen", basis: "choose", source: "foundry" });

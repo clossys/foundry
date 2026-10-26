@@ -17,6 +17,8 @@ import { PricingTable } from "../blocks/PricingTable.js";
 import { ResourceList } from "../blocks/ResourceList.js";
 import { StatusList } from "../blocks/StatusList.js";
 import { TaskList } from "../blocks/TaskList.js";
+import { AppNavigation } from "../blocks/AppNavigation.js";
+import { appSidebarSample } from "./surface-preview-sample-content.js";
 import { comparisonSample, contentSample, dataTableSample, formSample, pricingSample, resourceListSample, sheetSample, statusListSample, taskListSample, type SampleOrder } from "./surface-preview-sample-content.js";
 
 const noop = () => {};
@@ -38,4 +40,9 @@ export const STRUCTURED_BLOCK_SAMPLES: Readonly<Record<string, () => ReactNode>>
   Drawer: () => <Drawer heading={sheetSample.heading} closeLabel={sheetSample.closeLabel} placement="end" wide="sheet" trigger={<Button variant="secondary">{sheetSample.trigger}</Button>}>
     <p>{sheetSample.body}</p>
   </Drawer>,
+};
+
+/** vf34: the app sidebar frame renders the real AppNavigation docked, with a sample tree. Separate from the structured samples above. */
+export const APP_SIDEBAR_SAMPLES: Readonly<Record<string, () => ReactNode>> = {
+  AppNavigation: () => <AppNavigation {...appSidebarSample} />,
 };

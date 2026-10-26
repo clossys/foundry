@@ -47,7 +47,9 @@
         "package": "@clossys/designer",
         "version": "0.12.0"
       },
-      "propMap": {},
+      "propMap": {
+        "arrangement.library-board": "./blocks#Matrix.arrangement=library-board"
+      },
       "slot": "sections.comparison",
       "slotMap": {
         "columns": "./blocks#Matrix.columns",
