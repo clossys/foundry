@@ -81,6 +81,21 @@ describe("fit uses the union box of the world content (VR1 components-11, assets
     expect(worldExtent(w)).toEqual({ width: 3048 + 48, height: 9700 + 48 });
     host.remove();
   });
+  it("a compact layout narrower than the stage-stretched world fits its own content box, so Fit centres it", () => {
+    const host = document.createElement("div");
+    host.innerHTML = '<div data-w style="padding-right:48px;padding-bottom:48px"><section data-a></section><section data-b></section></div>';
+    document.body.append(host);
+    const define = (node: Element, values: Record<string, number>) => { for (const [name, value] of Object.entries(values)) Object.defineProperty(node, name, { value, configurable: true }); };
+    const w = host.querySelector<HTMLElement>("[data-w]")!;
+    define(w, { offsetWidth: 1184, offsetHeight: 788 });
+    define(host.querySelector("[data-a]")!, { offsetLeft: 48, offsetTop: 48, offsetWidth: 300, offsetHeight: 200 });
+    define(host.querySelector("[data-b]")!, { offsetLeft: 48, offsetTop: 300, offsetWidth: 334, offsetHeight: 130 });
+    expect(worldExtent(w)).toEqual({ width: 382 + 48, height: 430 + 48 });
+    define(host.querySelector("[data-a]")!, { offsetWidth: 0, offsetHeight: 0 });
+    define(host.querySelector("[data-b]")!, { offsetWidth: 0, offsetHeight: 0 });
+    expect(worldExtent(w)).toEqual({ width: 1184, height: 788 });
+    host.remove();
+  });
   it("the studio world sizes to its content on both axes", async () => {
     await mount();
     expect(world()).toHaveClass("h-max", "w-max");
