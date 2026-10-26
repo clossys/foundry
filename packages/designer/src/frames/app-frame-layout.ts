@@ -33,6 +33,16 @@ export const APP_FRAME_LAYOUT = {
   controlLayer: variable("--ui-z-shell"),
 } as const;
 
+/**
+ * Docked navigation width as classes, not inline style, so a media rule can close it before hydration:
+ * server markup assumes a wide stage, and below the overlay breakpoint the docked width is zero and
+ * hidden from first paint instead of collapsing once the client measures.
+ */
+export const APP_FRAME_NAVIGATION_SIZE = {
+  docked: "[inline-size:0] max-tablet-lg:invisible tablet-lg:[inline-size:var(--ui-layout-sidebar-w)]",
+  closed: "[inline-size:0]",
+} as const;
+
 /** Reserve only docked panels; opening a panel that cannot leave the minimum stage uses a sheet. */
 export function appFramePanels(available: number, wide: boolean, sidebar: number, panel: number, navigationOpen: boolean, panelOpen: boolean) {
   if (!wide) return { navigationOverlay: true, panelOverlay: true };

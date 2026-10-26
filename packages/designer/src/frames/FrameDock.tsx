@@ -6,7 +6,7 @@ import { Drawer, ResizablePane } from "../blocks/index.js";
 import { cx } from "../components/internal/cx.js";
 import { FrameModuleOutlet, FrameSlotOutlet, useFrameSlotModules } from "../shell/index.js";
 import { useFrameNoticeLeases, visibleFrameNotices, type AppFrameNotice } from "./frame-notices.js";
-import { frameDockGeometry, FRAME_DOCK_DEFAULTS, type FrameDockBounds } from "./frame-dock-layout.js";
+import { frameDockGeometry, FRAME_DOCK_DEFAULTS, FRAME_NOTICE_COMPACT_BLOCK, type FrameDockBounds } from "./frame-dock-layout.js";
 import { FrameZoomGestures } from "./frame-zoom-gestures.js";
 
 export interface AppFrameDock extends FrameDockBounds {
@@ -30,6 +30,7 @@ export function FrameDock({ notices = [], dock, sheet = false }: { notices?: rea
   useEffect(() => { if (!sheet) setSheetOpen(false); }, [sheet]);
   const [height, setHeight] = useState(dock?.defaultValue ?? FRAME_DOCK_DEFAULTS.defaultValue);
   const [available, setAvailable] = useState<number>();
+  const [short, setShort] = useState(false);
   const region = useRef<HTMLElement>(null);
   const noticesRegion = useRef<HTMLDivElement>(null);
   const strip = useRef<HTMLDivElement>(null);
@@ -41,7 +42,9 @@ export function FrameDock({ notices = [], dock, sheet = false }: { notices?: rea
     return next;
   });
   const leased = useFrameNoticeLeases();
-  const visible = visibleFrameNotices(leased.length ? [...notices, ...leased] : notices, dismissed);
+  const sorted = visibleFrameNotices(leased.length ? [...notices, ...leased] : notices, dismissed);
+  // Severity order puts the most urgent notice first, so a short frame keeps that one.
+  const visible = short ? sorted.slice(0, 1) : sorted;
   useLayoutEffect(() => {
     const root = region.current;
     const frame = root?.closest<HTMLElement>("[data-application-frame]");
@@ -49,6 +52,8 @@ export function FrameDock({ notices = [], dock, sheet = false }: { notices?: rea
     if (!root || !frame || !header) return;
     const measure = () => {
       const frameHeight = frame.getBoundingClientRect().height;
+      // A short frame keeps the stage: one single-line notice instead of a stack.
+      setShort(frameHeight > 0 && frameHeight < FRAME_NOTICE_COMPACT_BLOCK);
       const css = getComputedStyle(root);
       const border = (Number.parseFloat(css.borderBlockStartWidth) || 0) + (Number.parseFloat(css.borderBlockEndWidth) || 0);
       setAvailable(Math.max(0, frameHeight - header.getBoundingClientRect().height - (noticesRegion.current?.getBoundingClientRect().height ?? 0) - (strip.current?.getBoundingClientRect().height ?? 0) - border));
@@ -67,10 +72,10 @@ export function FrameDock({ notices = [], dock, sheet = false }: { notices?: rea
   const content = <ResizablePane orientation="horizontal" handleEdge="start" label={dock?.label ?? "Page modules"} handleLabel={dock?.handleLabel ?? "Page modules"}
     {...geometry} onChange={next => { setHeight(next); dock?.onChange?.(next); }} className="min-h-0 rounded-none border-0 p-0">{panels}</ResizablePane>;
   return <>{gestures}<section ref={region} data-application-frame-region="dock" className="min-w-0 shrink-0 border-t border-line-base bg-surface-raised">
-    <div ref={noticesRegion} data-frame-notices="" className="flex w-full flex-col">
+    <div ref={noticesRegion} data-frame-notices="" data-frame-notices-compact={short || undefined} className="flex w-full flex-col">
       {visible.map(notice => <Banner key={notice.id} variant={notice.severity === "error" ? "danger" : notice.severity}
-        className="w-full rounded-none" onDismiss={notice.severity !== "error" && notice.dismissible !== false ? () => dismiss(notice.id) : undefined}>
-        <div className="mx-auto flex w-full max-w-wide items-center justify-between gap-sm"><span>{notice.text}</span>{notice.action && <Button variant="ghost" onPress={notice.action.onAction}>{notice.action.label}</Button>}</div>
+        className={cx("w-full rounded-none", short && "items-center py-xs [&>:first-child]:min-w-0")} onDismiss={notice.severity !== "error" && notice.dismissible !== false ? () => dismiss(notice.id) : undefined}>
+        <div className="mx-auto flex w-full max-w-wide items-center justify-between gap-sm"><span className={cx(short && "min-w-0 truncate")}>{notice.text}</span>{notice.action && <Button variant="ghost" onPress={notice.action.onAction}>{notice.action.label}</Button>}</div>
       </Banner>)}
     </div>
     {modules.length > 0 && sheet ? <div ref={strip} data-frame-dock-strip="" className="flex min-w-0 items-center justify-between gap-xs px-sm">

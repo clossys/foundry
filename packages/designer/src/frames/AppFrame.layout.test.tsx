@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PageHeaderModule, SlotModule } from "../shell/index.js";
 import { TOKENS } from "../tokens/index.js";
 import { AppFrame } from "./AppFrame.js";
-import { APP_FRAME_WIDE_QUERY } from "./app-frame-layout.js";
+import { APP_FRAME_NAVIGATION_SIZE, APP_FRAME_WIDE_QUERY } from "./app-frame-layout.js";
 import type { AppFrameProps } from "./app-frame-types.js";
 
 const nativeBounds = HTMLElement.prototype.getBoundingClientRect;
@@ -78,9 +78,9 @@ describe("AppFrame reserved layout", () => {
   it("keeps the View mounted while the sidebar pushes open and closed", async () => {
     render(<AppFrame {...fixture()} />);
     const view = screen.getByTestId("view-scroll");
-    expect(region("navigation").style.inlineSize).toContain("--ui-layout-sidebar-w");
+    expect(region("navigation")).toHaveClass(...APP_FRAME_NAVIGATION_SIZE.docked.split(" "));
     await userEvent.click(screen.getByRole("button", { name: "Close navigation" }));
-    expect(region("navigation").style.inlineSize).toBe("0");
+    expect(region("navigation").className).toMatch(/ \[inline-size:0\]$/);
     expect(region("navigation")).toHaveAttribute("inert");
     expect(screen.getByTestId("view-scroll")).toBe(view);
     await userEvent.click(screen.getByRole("button", { name: "Open navigation" }));
