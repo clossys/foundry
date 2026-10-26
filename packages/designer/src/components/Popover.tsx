@@ -2,6 +2,7 @@ import type { CSSProperties, ReactNode, RefObject } from "react";
 import {
   Dialog as AriaDialog,
   DialogTrigger,
+  OverlayArrow,
   Popover as AriaPopover,
   type DialogRenderProps,
   type DialogTriggerProps as AriaDialogTriggerProps,
@@ -40,6 +41,16 @@ export interface PopoverProps extends Omit<AriaDialogTriggerProps, "children"> {
    * @default 8
    */
   offset?: number;
+  /**
+   * Draws a small arrow on the surface edge facing `anchorRef` (or `trigger`),
+   * in the surface's own fill with its hairline border continued around the
+   * tip. It follows the resolved placement, so it stays on the correct edge
+   * after a viewport flip and after `start`/`end` resolve in a right-to-left
+   * document. Decorative: hidden from assistive tech. Keep `offset` at least
+   * the arrow's 6px depth so the tip never overlaps the anchor.
+   * @default false
+   */
+  arrow?: boolean;
   /** Merged onto the popover surface element itself. */
   className?: string;
   /** Merged onto the popover surface element's inline style. */
@@ -95,6 +106,7 @@ export function Popover({
   children,
   placement = "bottom",
   offset = 8,
+  arrow = false,
   className,
   style,
   ...rest
@@ -112,6 +124,19 @@ export function Popover({
         )}
         style={{ boxShadow: UI_ELEVATION_FLOATING, zIndex: UI_Z_POPOVER, ...style }}
       >
+        {arrow ? (
+          <OverlayArrow data-popover-arrow="" className="group">
+            <svg
+              aria-hidden="true"
+              width={12}
+              height={6}
+              viewBox="0 0 12 6"
+              className="block fill-overlay-surface stroke-overlay-border stroke-1 group-data-[placement=bottom]:rotate-180 group-data-[placement=left]:-rotate-90 group-data-[placement=right]:rotate-90"
+            >
+              <path d="M0 0 L6 6 L12 0" />
+            </svg>
+          </OverlayArrow>
+        ) : null}
         <AriaDialog aria-label={ariaLabel} className="outline-none">{children}</AriaDialog>
       </AriaPopover>
     </DialogTrigger>

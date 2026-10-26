@@ -511,16 +511,15 @@
       "supported": []
     },
     {
-      "missing": [
-        "arrow"
-      ],
+      "missing": [],
       "notes": [
-        "No arrow part is exported.",
+        "The arrow is opt-in (arrow=false by default) and decorative; it follows the resolved placement.",
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
       ],
       "slot": "components.popover",
-      "status": "subset",
+      "status": "candidate",
       "supported": [
+        "arrow",
         "placement"
       ]
     },
