@@ -36,10 +36,10 @@ function consumerLibrary(): LibraryData {
   return authorImageRatios(catalog, library, { ratios: { landscape: { width: 3, height: 2 } }, source: "Consumer editorial brief", rationale: "Landscape crop for editorial media" });
 }
 
-/** The CSS colour a ground class paints in the light theme, read from the shipped token file. */
+/** The CSS colour a ground class paints in the light theme (a neutral ground paints it in both), read from the shipped token file. */
 function groundColor(element: Element): string | undefined {
-  const ground = element.closest("[class*='bg-surface-']");
-  const token = ground?.className.toString().split(/\s+/).find(name => name.startsWith("bg-surface-"));
+  const ground = element.closest("[class*='bg-surface-'], [class*='bg-neutral-']");
+  const token = ground?.className.toString().split(/\s+/).find(name => name.startsWith("bg-surface-") || name.startsWith("bg-neutral-"));
   return token ? lightTokens.get(`--color-${token.slice(3)}`) : undefined;
 }
 const NAMED: Record<string, string> = { black: "#000000", white: "#ffffff" };

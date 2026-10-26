@@ -386,6 +386,10 @@ describe("recolorSvg knocks out only a recognised flat two-tone mark (issue #153
         '<polyline points="1,1 2,2" fill="#f5f5f5" />' +
         '<line x1="0" y1="0" x2="4" y2="4" fill="#f5f5f5" stroke="#f5f5f5" />',
     )],
+    // Brand marks are commonly exported with the glyph's paint on its group.
+    ["group fill inherited by its shapes", doc(`<g fill="#1a1a1a"><rect width="48" height="48" /></g>${FIGURE_PATH}`)],
+    ["group fill overridden by a shape's own fill", doc(`<g fill="#1a1a1a">${FIELD_RECT}</g>${FIGURE_PATH}`)],
+    ["nested groups inherit the nearest fill", doc(`${FIELD_RECT}<g fill="#1a1a1a"><g transform="translate(1 1)" fill="#F5F5F5"><path d="${FIGURE_D}" /></g></g>`)],
   ];
 
   /** Documents outside the recognised subset: each must come back exactly as main's flat recolour. */
@@ -406,7 +410,9 @@ describe("recolorSvg knocks out only a recognised flat two-tone mark (issue #153
     ["root fill", doc(`<rect width="48" height="48" />${FIGURE_PATH}`, ' fill="#1a1a1a"')],
     ["root style fill", doc(`<rect width="48" height="48" />${FIGURE_PATH}`, ' style="fill:#1a1a1a"')],
     ["root stroke", doc(`<rect width="48" height="48" />${FIGURE_PATH}`, ' fill="none" stroke="#1a1a1a"')],
-    ["group fill", doc(`<g fill="#1a1a1a"><rect width="48" height="48" /></g>${FIGURE_PATH}`)],
+    ["group named fill", doc(`<g fill="black"><rect width="48" height="48" /></g>${FIGURE_PATH}`)],
+    ["group alpha fill", doc(`<g fill="#1a1a1a80"><rect width="48" height="48" /></g>${FIGURE_PATH}`)],
+    ["group fill none", doc(`<g fill="none"><rect width="48" height="48" /></g>${FIGURE_PATH}`)],
     ["use href", doc(`${FIELD_RECT}<defs><path id="fig" d="${FIGURE_D}" fill="#f5f5f5" /></defs><use href="#fig" />`)],
     ["use xlink:href", doc(`${FIELD_RECT}<defs><path id="fig" d="${FIGURE_D}" fill="#f5f5f5" /></defs><use xlink:href="#fig" />`, XLINK)],
     ["aria-labelledby", doc(`<title id="t">Acme</title>${FIELD_RECT}${FIGURE_PATH}`, ' aria-labelledby="t"')],
@@ -432,7 +438,7 @@ describe("recolorSvg knocks out only a recognised flat two-tone mark (issue #153
     ["opacity attribute", doc(`${FIELD_RECT}<path d="${FIGURE_D}" fill="#f5f5f5" opacity="0.5" />`)],
     ["fill-opacity attribute", doc(`${FIELD_RECT}<path d="${FIGURE_D}" fill="#f5f5f5" fill-opacity="0.5" />`)],
     ["unknown attribute on a shape", doc(`${FIELD_RECT}<path d="${FIGURE_D}" fill="#f5f5f5" data-x="1" />`)],
-    ["paint attribute on a group", doc(`<g fill="#1a1a1a">${FIELD_RECT}</g>${FIGURE_PATH}`)],
+    ["stroke on a group", doc(`<g stroke="#1a1a1a">${FIELD_RECT}</g>${FIGURE_PATH}`)],
     ["own <mask>", doc(`<defs><mask id="m"><rect width="48" height="48" fill="#fff" /></mask></defs>${FIELD_RECT}${FIGURE_PATH}`)],
     ["text element", doc(`${FIELD_RECT}${FIGURE_PATH}<text fill="#f5f5f5">A</text>`)],
     ["text node between tags", doc(`${FIELD_RECT} hello ${FIGURE_PATH}`)],
@@ -776,7 +782,7 @@ describe("recolorSvg knocks out only a recognised flat two-tone mark (issue #153
     });
 
     it("adoptSuppliedMark on a mark outside the subset returns the flat variants of the previous release", () => {
-      const svg = doc(`<g fill="#1a1a1a"><rect width="48" height="48" /></g>${FIGURE_PATH}`);
+      const svg = doc(`<g fill="black"><rect width="48" height="48" /></g>${FIGURE_PATH}`);
       const { variants } = adoptSuppliedMark({ brand: { name: "Acme" }, suppliedSvg: svg, tokens: TOKENS });
       expect(variants.mono).toBe(mainRecolorSvg(svg, "currentColor"));
       expect(variants.light).toBe(mainRecolorSvg(svg, TOKENS.ink));

@@ -385,6 +385,18 @@ export function identityPlateSvg(svg: string, ink: string, onInverse: string, fa
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${box.minX} ${box.minY} ${box.width} ${box.height}" color="${glyph}" fill="${plate}" data-clear-space="${CLEAR_SPACE_RATIO}">${style}${body}</svg>`;
 }
 
+/**
+ * The reversed role of a recognised two-tone mark: the first tone's layer
+ * (the plate) takes `plate`, and the second layer keeps the mark's own
+ * first tone, so the glyph reads as the original ink cut into a light
+ * plate instead of collapsing into one flat colour. Returns `undefined` for
+ * a mark outside the recognised subset; callers keep their flat recolour.
+ */
+export function reverseTwoToneSvg(svg: string, plate: string): string | undefined {
+  const mark = recogniseFlatTwoTone(svg);
+  return mark ? identityPlateSvg(svg, plate, mark.toneA) : undefined;
+}
+
 function buildVariantSet(input: {
   lockupGlyph: string;
   markGlyph: string;
@@ -529,10 +541,14 @@ interface FlatShape {
   tag: string;
   attrs: FlatAttrs;
   tone: string;
+  /** The shape carries no `fill` of its own; its tone is its nearest group's hex `fill`. */
+  inherited: boolean;
 }
 interface FlatGroup {
   kind: "group";
   transform: string | undefined;
+  /** The group's own hex `fill`, normalised; never re-emitted, only inherited by its shapes. */
+  fill: string | undefined;
   children: FlatNode[];
 }
 type FlatNode = FlatShape | FlatGroup;
@@ -641,8 +657,11 @@ function normaliseHex(value: string): string | undefined {
   return `#${digits}`;
 }
 
-/** `attrs` are all allowed on `tag`, and its paint is one hex tone; returns that tone or `null`. */
-function flatShapeTone(tag: string, attrs: FlatAttrs): string | null {
+/**
+ * `attrs` are all allowed on `tag`, and its paint is one hex tone; returns that tone or `null`.
+ * A shape with no `fill` attribute takes `inherited` (its nearest group's hex fill), if any.
+ */
+function flatShapeTone(tag: string, attrs: FlatAttrs, inherited?: string): string | null {
   const geometry = FLAT_SHAPE_GEOMETRY.get(tag);
   if (geometry === undefined) return null;
   const paint = new Map<string, string>();
@@ -650,7 +669,7 @@ function flatShapeTone(tag: string, attrs: FlatAttrs): string | null {
     if (name === "fill" || name === "stroke") paint.set(name, value);
     else if (!(geometry.includes(name) || name === "transform" || name === "fill-rule" || name === "clip-rule" || FLAT_STROKE_ATTR_RE.test(name))) return null;
   }
-  const tone = normaliseHex(paint.get("fill") ?? "");
+  const tone = paint.has("fill") ? normaliseHex(paint.get("fill")!) : inherited;
   if (tone === undefined) return null;
   const stroke = paint.get("stroke");
   if (stroke !== undefined && stroke !== "none" && normaliseHex(stroke) !== tone) return null;
@@ -666,14 +685,16 @@ function flatShapeTone(tag: string, attrs: FlatAttrs): string | null {
  *    `height`, `role`, `aria-label`, `data-clear-space` — no paint, no
  *    reference, no `id`. It is re-emitted from those constant names and
  *    the escaped values, double-quoted;
- *  - children: balanced `<g transform="…">` and self-closing `path`,
+ *  - children: balanced `<g>` (carrying only `transform` and a hex `fill`
+ *    its shapes inherit) and self-closing `path`,
  *    `rect`, `circle`, `ellipse`, `polygon`, `polyline`, `line`, carrying
  *    only geometry, `transform`, `fill`, `stroke`, `stroke-*`,
  *    `fill-rule`, `clip-rule`;
  *  - every attribute value free of `"` `'` `<` `>` `&`; only whitespace
  *    between tags (no text, comment, `<!`, `<?`, CDATA);
- *  - every shape has an explicit hex `fill` (`#rgb`/`#rrggbb`, alpha
- *    rejected) and its `stroke` is `none` or the same hex: one tone each;
+ *  - every shape has a hex `fill` (`#rgb`/`#rrggbb`, alpha rejected), its
+ *    own or inherited from its nearest group's, and its `stroke` is `none`
+ *    or the same hex: one tone each;
  *  - exactly two tones, every first-tone shape before every second-tone one;
  *  - within the caps: at most {@link FLAT_MAX_ATTRIBUTES_PER_TAG}
  *    attributes on a tag, {@link FLAT_MAX_ELEMENTS} elements in all and
@@ -725,14 +746,18 @@ function recogniseFlatTwoTone(svg: string): { root: string; box: NonNullable<Ret
     if (elements > FLAT_MAX_ELEMENTS) return null;
     const { name, attrs, selfClosing } = tag;
     if (name === "g") {
-      if (selfClosing || attrs.some(([attr]) => attr !== "transform") || open.length >= FLAT_MAX_DEPTH) return null;
-      const group: FlatGroup = { kind: "group", transform: attrs[0]?.[1], children: [] };
+      if (selfClosing || attrs.some(([attr]) => attr !== "transform" && attr !== "fill") || open.length >= FLAT_MAX_DEPTH) return null;
+      const ownFill = attrs.find(([attr]) => attr === "fill")?.[1];
+      const fill = ownFill === undefined ? open[open.length - 1]?.fill : normaliseHex(ownFill);
+      if (ownFill !== undefined && fill === undefined) return null;
+      const group: FlatGroup = { kind: "group", transform: attrs.find(([attr]) => attr === "transform")?.[1], fill, children: [] };
       siblings().push(group);
       open.push(group);
       continue;
     }
     if (!selfClosing || !FLAT_SHAPE_GEOMETRY.has(name)) return null;
-    const tone = flatShapeTone(name, attrs);
+    const inherited = !attrs.some(([attr]) => attr === "fill");
+    const tone = flatShapeTone(name, attrs, open[open.length - 1]?.fill);
     if (tone === null) return null;
     if (!tones.includes(tone)) {
       if (tones.length === 2) return null;
@@ -740,7 +765,7 @@ function recogniseFlatTwoTone(svg: string): { root: string; box: NonNullable<Ret
     }
     if (tone === tones[1]) seenSecondTone = true;
     else if (seenSecondTone) return null;
-    siblings().push({ kind: "shape", tag: name, attrs, tone });
+    siblings().push({ kind: "shape", tag: name, attrs, tone, inherited });
   }
 }
 
@@ -765,7 +790,7 @@ function renderFlatNodes(nodes: readonly FlatNode[], paintOf: (shape: FlatShape)
     const attrs = node.attrs
       .map(([name, value]) => ` ${escapeXml(name)}="${name === "fill" || (name === "stroke" && value !== "none") ? paint : escapeXml(value)}"`)
       .join("");
-    out += `<${escapeXml(node.tag)}${attrs} />`;
+    out += `<${escapeXml(node.tag)}${attrs}${node.inherited ? ` fill="${paint}"` : ""} />`;
   }
   return out;
 }
@@ -802,9 +827,10 @@ function renderFlatNodes(nodes: readonly FlatNode[], paintOf: (shape: FlatShape)
  * values, double-quoted), not sliced out of the input.
  *
  * WHAT IS RECOGNISED: the whole document is a flat mark: groups (with only
- * `transform`) and basic shapes (`path`, `rect`, `circle`, `ellipse`,
- * `polygon`, `polyline`, `line`) with an explicit hex `fill` (`#rgb` or
- * `#rrggbb`), every first-tone shape before every second-tone shape,
+ * `transform` and a hex `fill`) and basic shapes (`path`, `rect`, `circle`,
+ * `ellipse`, `polygon`, `polyline`, `line`) whose hex `fill` (`#rgb` or
+ * `#rrggbb`) is their own or inherited from the nearest group that sets
+ * one, every first-tone shape before every second-tone shape,
  * exactly two tones (`#fff` and `#FFFFFF` are one tone), and no ids,
  * references, styles, classes, text, comments or root paint. The root
  * carries only `xmlns`, a parseable `viewBox`, `width`, `height`, `role`,
@@ -813,7 +839,8 @@ function renderFlatNodes(nodes: readonly FlatNode[], paintOf: (shape: FlatShape)
  *
  * WHAT IS NOT: everything else stays FLAT, byte-identical to the previous
  * release: one tone, three or more tones, a tone order A-B-A, alpha or
- * named or `currentColor` paint, root or group paint, `<use>`, `<style>`,
+ * named or `currentColor` paint, root paint, a shape with no fill of its
+ * own or inherited, `<use>`, `<style>`,
  * `style=`, `class=`, any `id` or `url(#…)`, text, comments, and any
  * value containing a quote, `<` or `&`, and any input over a cap above. A
  * derived variant is therefore never broken by this function and never

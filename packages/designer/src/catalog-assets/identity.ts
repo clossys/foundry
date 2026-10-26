@@ -1,4 +1,4 @@
-import { generateIdentityDirections, recolorSvg, composeLockup, identityPlateSvg, type IdentityTokenInput, type LockupFontLicence } from '../tokens/identity-kit.js';
+import { generateIdentityDirections, recolorSvg, composeLockup, identityPlateSvg, reverseTwoToneSvg, type IdentityTokenInput, type LockupFontLicence } from '../tokens/identity-kit.js';
 import { resolve, libraryHash } from '../catalog-core/resolve.js';
 import { applyLibraryChange, createDerivationInputsHasher } from '../catalog-core/library.js';
 import { cssText, flatten } from '../catalog-core/model.js';
@@ -29,10 +29,39 @@ export function createConsumerIdentitySeeds(catalog: CatalogData, library: Libra
  let mark=normalizeGenerated(generated.variants.mark); let lockup=normalizeGenerated(generated.variants.primary);
  if(input.suppliedSvg) {
   inspectSvg(input.suppliedSvg); const spec=composeLockup({brand:{name:input.name},suppliedSvg:input.suppliedSvg,tokens:t,wordmark:input.name,fontLicence:input.fontLicence,header:'lockup'});
-  mark=spec.mark; lockup=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 48" data-clear-space="0.2"><svg x="0" y="0" width="48" height="48" viewBox="${svgViewBox(mark)}">${svgBody(mark)}</svg><text x="56" y="31" font-size="22" font-family="${escapeXml(t.fontFamily)}" fill="${escapeXml(t.ink)}">${escapeXml(input.name)}</text></svg>`;
+  mark=spec.mark; lockup=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${wordmarkWidth(input.name)} 48" data-clear-space="0.2"><svg x="0" y="0" width="48" height="48" viewBox="${svgViewBox(mark)}">${svgBody(mark)}</svg><text x="56" y="31" font-size="${WORDMARK_SIZE}" font-weight="600" letter-spacing="${WORDMARK_TRACKING}" font-family="${escapeXml(t.fontFamily)}" fill="${escapeXml(t.ink)}">${escapeXml(input.name)}</text></svg>`;
  }
  const token=(svg:string): DtcgToken => ({$type:'svg',$value:named(svg,input.name),$extensions:{'com.clossys.origin':{kind:'authored',license:library.source.license,note:`Consumer identity seed; live text; font outlining ${input.fontLicence.outlining}; family ${input.fontLicence.family}`}}});
  return applyLibraryChange(catalog,library,{baseHash:libraryHash(library),changes:[{op:'author',slot:'assets.mark',tokens:{positive:token(mark)}},{op:'author',slot:'assets.lockup',tokens:{positive:token(lockup)}}]});
+}
+/** Live-text wordmark: 22px at weight 600, tracked -0.02em (the tight tracking token). */
+const WORDMARK_SIZE=22, WORDMARK_TRACKING=-0.44;
+/**
+ * The lockup's width trimmed to its wordmark: the 56px mark column plus an
+ * advance estimate per character (capitals and figures 0.72em, spaces 0.28em,
+ * the rest 0.6em, less the tracking), rounded up to the 4px grid. Live text
+ * cannot be measured here; an outlined wordmark replaces this estimate.
+ */
+function wordmarkWidth(name:string):number {
+ let em=0; for(const ch of name) em+=/[A-Z0-9]/.test(ch)?0.72:/\s/.test(ch)?0.28:0.6;
+ return Math.ceil((56+em*WORDMARK_SIZE+[...name].length*WORDMARK_TRACKING)/4)*4;
+}
+/** Reversed mark: a recognised two-tone mark keeps its ink glyph on an inverse plate; any other mark is recoloured flat. */
+function reversedMark(svg:string,onInverse:string):string { return reverseTwoToneSvg(svg,onInverse)??recolour(svg,onInverse); }
+/**
+ * Reversed lockup: the nested mark is reversed as a two-tone mark and the rest (the
+ * wordmark) is recoloured flat. A lockup without exactly one nested, recognised mark
+ * directly after its root tag is recoloured flat as a whole, as before.
+ */
+function reversedLockup(seed:string,onInverse:string):string {
+ const root=/^\s*<svg\b[^>]*>/.exec(seed)?.[0]; const nested=root?/^<svg\b([^>]*)>([\s\S]*?)<\/svg>/.exec(seed.slice(root.length)):null;
+ if(!root||!nested||/<svg\b/.test(nested[2]!)) return recolour(seed,onInverse);
+ const box=/\bviewBox="([^"]*)"/.exec(nested[1]!)?.[1]; const reversed=box===undefined?undefined:reverseTwoToneSvg(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="${box}">${nested[2]}</svg>`,onInverse);
+ if(reversed===undefined) return recolour(seed,onInverse);
+ const paint=/^<svg\b[^>]*?\s(color="[^"]*")\s(fill="[^"]*")/.exec(reversed)!;
+ const markTag=`<svg${nested[1]!.replace(/\s(?:color|fill)="[^"]*"/g,'')} ${paint[1]} ${paint[2]}>${svgBody(reversed)}</svg>`;
+ const rest=recolour(root+seed.slice(root.length+nested[0].length),onInverse); const restRoot=/^\s*<svg\b[^>]*>/.exec(rest)![0];
+ return restRoot+markTag+rest.slice(restRoot.length);
 }
 function recolour(svg:string,color:string):string { return recolorSvg(svg,color).replace(/\bcolor=(?:"[^"]*"|'[^']*')/g,`color="${escapeXml(safeColor(color))}"`); }
 function badge(mark: string, background: string, foreground: string, maskable: boolean): string {
@@ -50,10 +79,10 @@ export function instantiateIdentityRuleFromResolved(profile: Resolved, id: Ident
  if(!IDENTITY_RULES.includes(id)) throw new AssetValidationError('unknown identity rule');
  const inputs=INPUTS[id]; for(const member of inputs) if(!profile.members[member]) throw new AssetValidationError(`missing consumer input ${member}`);
  const values: Record<string,DtcgToken>={}; const put=(member:string,svg:string):void=>{inspectSvg(svg,{favicon:id==='identity-favicon@1'});values[member]={$type:'svg',$value:svg};};
- if(id==='identity-lockup@1') { const seed=string(profile,'assets.lockup.positive'); inspectSvg(seed); put('reversed',recolour(seed,ink(profile,'tokens.text-color.on-inverse'))); }
+ if(id==='identity-lockup@1') { const seed=string(profile,'assets.lockup.positive'); inspectSvg(seed); put('reversed',reversedLockup(seed,ink(profile,'tokens.text-color.on-inverse'))); }
  else {
   const seed=string(profile,'assets.mark.positive'); inspectSvg(seed);
-  if(id==='identity-mark@1') { put('reversed',recolour(seed,ink(profile,'tokens.text-color.on-inverse'))); put('mono',recolour(seed,'currentColor')); }
+  if(id==='identity-mark@1') { put('reversed',reversedMark(seed,ink(profile,'tokens.text-color.on-inverse'))); put('mono',recolour(seed,'currentColor')); }
   if(id==='identity-favicon@1') put('vector',identityPlateSvg(seed,ink(profile,'tokens.text-color.primary'),ink(profile,'tokens.text-color.on-inverse'),true));
   if(id==='identity-app-icon@1') { const bg=ink(profile,'tokens.text-color.primary'),fg=ink(profile,'tokens.text-color.on-inverse'); put('standard',badge(seed,bg,fg,false));put('maskable',badge(seed,bg,fg,true)); }
  }
