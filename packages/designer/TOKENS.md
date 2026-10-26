@@ -1198,7 +1198,7 @@ Application type describes the consuming CSS syntax, not a new field on TokenDef
 - CSS binding: `line-height: var(--leading-heading)`. Application type: `number`.
 - Context: Unitless ordinary-heading line-height; wrapping, diacritics and font metrics still need review.
 - Specimen kind: `text`.
-- Default: `1.15`. Source family: `leading`. Brandable: no. Theme-dependent declaration: no.
+- Default: `1.2`. Source family: `leading`. Brandable: no. Theme-dependent declaration: no.
 
 ### Spacing
 
@@ -1566,17 +1566,17 @@ Application type describes the consuming CSS syntax, not a new field on TokenDef
 - CSS binding: `min-block-size: var(--ui-control-h-sm)`. Application type: `length`.
 - Context: Small control height; apply the token to min-block-size within its stated semantic scope.
 - Specimen kind: `size`.
-- Default: `32px`. Source family: `control`. Brandable: no. Theme-dependent declaration: no.
+- Default: `28px`. Source family: `control`. Brandable: no. Theme-dependent declaration: no.
 
 ##### `--ui-control-h-md`
 
 - Purpose: Default control height names the shared --ui-control-h-md role.
-- Appropriate use: Use the default control height to meet the shared touch target.
-- Misuse or alternative: Do not detach the default height from the tap-target role.
+- Appropriate use: Use this visual height with a separate 44px hit region.
+- Misuse or alternative: Do not shrink the interactive target to the visual height.
 - CSS binding: `min-block-size: var(--ui-control-h-md)`. Application type: `length`.
 - Context: Default control height; apply the token to min-block-size within its stated semantic scope.
 - Specimen kind: `size`.
-- Default: `var(--ui-layout-tap-target, 44px)`. Source family: `control`. Brandable: no. Theme-dependent declaration: no.
+- Default: `32px`. Source family: `control`. Brandable: no. Theme-dependent declaration: no.
 
 ##### `--ui-control-h-lg`
 
@@ -1586,7 +1586,7 @@ Application type describes the consuming CSS syntax, not a new field on TokenDef
 - CSS binding: `min-block-size: var(--ui-control-h-lg)`. Application type: `length`.
 - Context: Large control height; apply the token to min-block-size within its stated semantic scope.
 - Specimen kind: `size`.
-- Default: `52px`. Source family: `control`. Brandable: no. Theme-dependent declaration: no.
+- Default: `36px`. Source family: `control`. Brandable: no. Theme-dependent declaration: no.
 
 ##### `--ui-control-row-h`
 
@@ -2180,7 +2180,7 @@ Application type describes the consuming CSS syntax, not a new field on TokenDef
 - CSS binding: `transition-duration: var(--ui-duration-fast)`. Application type: `duration`.
 - Context: The fast timing role in transition or animation duration; it does not choose an easing curve.
 - Specimen kind: `motion`.
-- Default: `160ms`. Source family: `duration`. Brandable: no. Theme-dependent declaration: no.
+- Default: `120ms`. Source family: `duration`. Brandable: no. Theme-dependent declaration: no.
 
 ##### `--ui-duration-default`
 
@@ -2220,7 +2220,7 @@ Application type describes the consuming CSS syntax, not a new field on TokenDef
 - CSS binding: `transition-duration: var(--ui-duration-overlay)`. Application type: `duration`.
 - Context: The overlay timing role in transition or animation duration; it does not choose an easing curve.
 - Specimen kind: `motion`.
-- Default: `var(--ui-duration-fast, 160ms)`. Source family: `duration`. Brandable: no. Theme-dependent declaration: no.
+- Default: `var(--ui-duration-fast, 120ms)`. Source family: `duration`. Brandable: no. Theme-dependent declaration: no.
 
 ##### `--ui-duration-loading-delay`
 

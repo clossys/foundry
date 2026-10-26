@@ -50,17 +50,19 @@ describe("Dialog", () => {
     render(<BasicDialog />);
     await userEvent.click(screen.getByRole("button", { name: "Open settings" }));
     const dialog = await screen.findByRole("dialog");
-    expect(dialog.parentElement?.className).toBe("flex w-full overlay-enter max-w-[28rem]");
+    expect(dialog.parentElement?.className).toBe("flex w-full overlay-motion-pop max-w-[28rem]");
     expect(dialog.parentElement?.getAttribute("style")).toBeNull();
     expect(dialog.className).toBe("flex max-h-[85vh] w-full flex-col gap-md overflow-auto rounded-control border border-overlay-border bg-overlay-surface p-lg text-body text-ink-primary outline-none");
-    expect(dialog.parentElement?.parentElement?.className).toBe("fixed inset-0 flex items-center justify-center bg-overlay-scrim p-lg overlay-scrim-enter");
+    expect(dialog.parentElement?.parentElement?.className).toBe("fixed inset-0 flex items-center justify-center bg-overlay-scrim p-lg overlay-motion-fade");
   });
 
-  it("enters on the existing overlay recipes, timed by the overlay duration and enter easing tokens", () => {
+  it("enters on the shared overlay recipes, timed by the overlay duration and enter easing tokens", () => {
     const themeKeys = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "..", "..", "styles", "theme-keys.css"), "utf8");
     const utility = (name: string) => new RegExp(`@utility ${name} \\{([^}]*)\\}`).exec(themeKeys)?.[1] ?? "";
-    expect(utility("overlay-enter")).toMatch(/animation:\s*overlay-pop var\(--ui-duration-overlay\b[^)]*\) var\(--ease-enter\b/);
-    expect(utility("overlay-scrim-enter")).toMatch(/animation:\s*overlay-fade var\(--ui-duration-overlay\b[^)]*\) var\(--ease-enter\b/);
+    // One overlay binding set: the surface uses overlay-motion-pop and the scrim overlay-motion-fade, both on entering.
+    expect(utility("overlay-motion-pop")).toMatch(/&\[data-entering\] \{ animation:\s*overlay-pop var\(--ui-duration-overlay\b[^)]*\) var\(--ease-enter\b/);
+    expect(utility("overlay-motion-fade")).toMatch(/&\[data-entering\] \{ animation:\s*overlay-fade var\(--ui-duration-overlay\b[^)]*\) var\(--ease-enter\b/);
+    expect(themeKeys).not.toMatch(/@utility overlay-(?:scrim-)?enter\b/);
     for (const name of ["overlay-pop", "overlay-fade"]) expect(themeKeys).toContain(`@keyframes ${name} `);
   });
 

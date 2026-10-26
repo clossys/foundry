@@ -112,7 +112,7 @@ function MenuRoot({
       {trigger}
       <Popover
         className={cx(
-          "rounded-control border border-overlay-border bg-overlay-surface p-xs outline-none",
+          "overlay-motion-pop rounded-control border border-overlay-border bg-overlay-surface p-xs outline-none",
           popoverClassName,
         )}
         style={{ boxShadow: UI_ELEVATION_FLOATING, zIndex: UI_Z_POPOVER }}

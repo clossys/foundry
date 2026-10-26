@@ -16,7 +16,7 @@
  * ════════════════════════════════════════════════════════════════════ */
 
 @theme inline {
-  --default-transition-duration: var(--ui-duration-fast, 160ms);
+  --default-transition-duration: var(--ui-duration-fast, 120ms);
   --default-transition-timing-function: var(--ease-default, cubic-bezier(.2, 0, 0, 1));
   --color-focus-ring: var(--color-focus-ring, var(--color-accent, oklch(0.4748 0 0)));
   --color-focus-ring-on-inverse: var(--color-focus-ring-on-inverse, var(--color-ink-on-inverse, oklch(0.9702 0 0)));
@@ -136,7 +136,7 @@
 
   /* ── LEADING ──────────────────────────────────────────────────── */
   --leading-display:               var(--leading-display, 1.05);
-  --leading-heading:               var(--leading-heading, 1.15);
+  --leading-heading:               var(--leading-heading, 1.2);
 
   /* ── SPACING ──────────────────────────────────────────────────── */
   --spacing-xs:                    var(--spacing-xs, 4px);
@@ -575,7 +575,7 @@
   @media (prefers-reduced-motion: no-preference) {
     & > svg:last-child {
       transition-property: translate;
-      transition-duration: var(--ui-duration-fast, 160ms);
+      transition-duration: var(--ui-duration-fast, 120ms);
       transition-timing-function: var(--ease-default, cubic-bezier(.2, 0, 0, 1));
     }
     @media (hover: hover) {
@@ -613,28 +613,29 @@
 
 /*
  * Icon-only control boxes (`iconButtonClassName`). `icon-control-md` is the
- * 44px tap target. `icon-control-sm` is a 36px box (the tap target less
- * `--spacing-sm`) whose transparent `::before` reaches 4px past each edge,
- * so the hit area is still 44px. Both set the control colour transition to
+ * 44px tap target. `icon-control-sm` is a square on the small control
+ * height (`--ui-control-h-sm`, 28px) whose transparent `::before` reaches
+ * half the difference to the tap target past each edge, so the hit area is
+ * still 44px. Both set the control colour transition to
  * the fast motion tier.
  */
 @utility icon-control-md {
   inline-size: var(--ui-layout-tap-target, 44px);
   block-size: var(--ui-layout-tap-target, 44px);
-  --tw-duration: var(--ui-duration-fast, 160ms);
-  transition-duration: var(--ui-duration-fast, 160ms);
+  --tw-duration: var(--ui-duration-fast, 120ms);
+  transition-duration: var(--ui-duration-fast, 120ms);
 }
 
 @utility icon-control-sm {
   position: relative;
-  inline-size: calc(var(--ui-layout-tap-target, 44px) - var(--spacing-sm, 8px));
-  block-size: calc(var(--ui-layout-tap-target, 44px) - var(--spacing-sm, 8px));
-  --tw-duration: var(--ui-duration-fast, 160ms);
-  transition-duration: var(--ui-duration-fast, 160ms);
+  inline-size: var(--ui-control-h-sm, 28px);
+  block-size: var(--ui-control-h-sm, 28px);
+  --tw-duration: var(--ui-duration-fast, 120ms);
+  transition-duration: var(--ui-duration-fast, 120ms);
   &::before {
     content: "";
     position: absolute;
-    inset: calc(var(--spacing-sm, 8px) / -2);
+    inset: calc((var(--ui-control-h-sm, 28px) - var(--ui-layout-tap-target, 44px)) / 2);
   }
 }
 
@@ -1020,7 +1021,7 @@
   backdrop-filter: blur(var(--blur-notice, 12px));
   & button {
     min-block-size: var(--ui-layout-tap-target, 44px);
-    transition-duration: var(--ui-duration-fast, 160ms);
+    transition-duration: var(--ui-duration-fast, 120ms);
     transition-timing-function: var(--ease-default, cubic-bezier(.2, 0, 0, 1));
   }
   @media (width >= 48rem) {
@@ -1099,9 +1100,9 @@
     &:focus-visible, &[data-focus-visible] { outline-color: Highlight; }
   }
 }
-@utility control-h-sm { @apply tap-target; min-block-size: var(--ui-control-h-sm, 32px); }
-@utility control-h-md { @apply tap-target; min-block-size: var(--ui-control-h-md, var(--ui-layout-tap-target, 44px)); }
-@utility control-h-lg { @apply tap-target; min-block-size: var(--ui-control-h-lg, 52px); }
+@utility control-h-sm { @apply tap-target; min-block-size: var(--ui-control-h-sm, 28px); }
+@utility control-h-md { @apply tap-target; min-block-size: var(--ui-control-h-md, 32px); }
+@utility control-h-lg { @apply tap-target; min-block-size: var(--ui-control-h-lg, 36px); }
 @utility control-row {
   min-block-size: var(--ui-control-row-h, 36px);
   @media (pointer: coarse) { min-block-size: var(--ui-layout-tap-target, 44px); }
@@ -1117,7 +1118,13 @@
   }
 }
 
-/* Overlay motion recipes; Dialog adopts overlay-fade and overlay-pop below. */
+/*
+ * Overlay motion recipes. `overlay-motion-pop` (anchored popovers, menus and the
+ * Dialog surface) and `overlay-motion-fade` (tooltips and the Dialog scrim) bind
+ * them to react-aria's entering and exiting states on the overlay tier
+ * (`--ui-duration-overlay`); reduced motion keeps the opacity step only, through
+ * the reduced keyframes below.
+ */
 @keyframes overlay-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes overlay-pop {
   from { opacity: 0; transform: translateY(var(--ui-motion-shift, 4px)); }
@@ -1136,10 +1143,17 @@
   @keyframes overlay-zoom { from { opacity: 0; } to { opacity: 1; } }
   @keyframes sheet-slide { from { opacity: 0; } to { opacity: 1; } }
 }
-/* Dialog adopts two of the recipes: the scrim fades and the surface pops in on the
- * overlay timing role. Reduced motion keeps only the fade (the keyframes above). */
-@utility overlay-enter { animation: overlay-pop var(--ui-duration-overlay, 160ms) var(--ease-enter, cubic-bezier(0, 0, .2, 1)) both; }
-@utility overlay-scrim-enter { animation: overlay-fade var(--ui-duration-overlay, 160ms) var(--ease-enter, cubic-bezier(0, 0, .2, 1)) both; }
+@utility overlay-motion-pop {
+  &[data-entering] { animation: overlay-pop var(--ui-duration-overlay, 120ms) var(--ease-enter, cubic-bezier(0, 0, .2, 1)) both; }
+  &[data-exiting] { animation: overlay-fade var(--ui-duration-overlay, 120ms) var(--ease-exit, cubic-bezier(.4, 0, 1, 1)) reverse both; }
+}
+@utility overlay-motion-fade {
+  &[data-entering] { animation: overlay-fade var(--ui-duration-overlay, 120ms) var(--ease-enter, cubic-bezier(0, 0, .2, 1)) both; }
+  &[data-exiting] { animation: overlay-fade var(--ui-duration-overlay, 120ms) var(--ease-exit, cubic-bezier(.4, 0, 1, 1)) reverse both; }
+}
+
+/* A theme switch flips every colour at once, not through each control's transition. */
+:root[data-theme-switching] *, :root[data-theme-switching] *::before, :root[data-theme-switching] *::after { transition: none !important; }
 
 @utility ui-loading-delayed { animation: ui-loading-reveal 1ms linear var(--ui-duration-loading-delay,150ms) both; }
 @keyframes ui-loading-reveal { from { opacity: 0; } to { opacity: 1; } }
@@ -1227,11 +1241,11 @@
   to { opacity: 1; transform: translate(0, 0) scale(1); }
 }
 @utility library-enter {
-  animation: library-transition var(--ui-duration-fast, 160ms) var(--ease-enter, cubic-bezier(0, 0, .2, 1)) both;
+  animation: library-transition var(--ui-duration-fast, 120ms) var(--ease-enter, cubic-bezier(0, 0, .2, 1)) both;
   @media (prefers-reduced-motion: reduce) { animation-duration: 0s; }
 }
 @utility library-exit {
-  animation: library-transition var(--ui-duration-fast, 160ms) var(--ease-exit, cubic-bezier(.4, 0, 1, 1)) reverse both;
+  animation: library-transition var(--ui-duration-fast, 120ms) var(--ease-exit, cubic-bezier(.4, 0, 1, 1)) reverse both;
   @media (prefers-reduced-motion: reduce) { animation-duration: 0s; }
 }
 @utility library-fade { --library-opacity: 0; }

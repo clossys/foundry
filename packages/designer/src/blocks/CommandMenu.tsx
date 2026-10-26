@@ -133,7 +133,7 @@ export function CommandMenu({
                     item.onAction?.();
                     onOpenChange(false);
                   }}
-                  className={`flex min-w-0 items-center gap-sm rounded-control border px-sm py-sm text-body text-ink-primary forced-colors:border-current ${active?.id === item.id ? "border-line-base bg-surface-selected underline" : "border-transparent"}`}
+                  className={`flex min-w-0 items-center gap-sm rounded-control border-s-2 px-sm py-sm text-body text-ink-primary no-underline ${active?.id === item.id ? "border-s-accent bg-accent-tint forced-colors:border-current" : "border-s-transparent"}`}
                   style={{ opacity: item.disabled ? UI_ALPHA_DISABLED : undefined }}
                 >
                   {item.icon ? <Icon glyph={item.icon} decorative size="sm" /> : null}

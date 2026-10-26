@@ -1,3 +1,4 @@
+import type { ReactElement } from "react";
 import {
   Button as AriaButton,
   type ButtonProps as AriaButtonProps,
@@ -85,13 +86,22 @@ export function Button({
       })}
     >
       {trailing === null
-        ? children
+        ? truncatable(children)
         : (renderProps) => (
             <>
-              {typeof children === "function" ? children(renderProps) : children}
+              {truncatable(typeof children === "function" ? children(renderProps) : children)}
               <Icon glyph={trailing} decorative size="sm" />
             </>
           )}
     </AriaButton>
   );
+}
+
+/*
+ * A plain-text label sits in its own span so a label longer than the
+ * container ends in an ellipsis on one line (the box is `whitespace-nowrap`
+ * and `max-w-full`). Element children keep their own layout.
+ */
+function truncatable<T>(children: T): T | ReactElement {
+  return typeof children === "string" ? <span className="min-w-0 truncate">{children}</span> : children;
 }

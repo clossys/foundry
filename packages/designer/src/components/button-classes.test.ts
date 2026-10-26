@@ -31,9 +31,9 @@ const LADDER_GROUND_CLASSES: Record<"tonal" | "quiet", Record<ControlGround, rea
 };
 
 const BOX_SIZE_CLASSES: Record<ButtonSize, readonly string[]> = {
-  sm: ["px-sm", "py-xs", "text-body-s"],
-  md: ["px-md", "py-sm", "text-body"],
-  lg: ["px-lg", "py-md", "text-body-l"],
+  sm: ["control-h-sm", "px-sm", "text-body-s"],
+  md: ["control-h-md", "px-md", "text-body"],
+  lg: ["control-h-lg", "px-lg", "text-body-l"],
 };
 
 const TEXT_SIZE_CLASSES: Record<ButtonSize, string> = { sm: "text-body-s", md: "text-body", lg: "text-body-l" };
@@ -111,8 +111,8 @@ describe("iconButtonClassName: size x shape x ground", () => {
   const ICON_SIZES: readonly IconButtonSize[] = ["sm", "md"];
   const SHAPES: readonly IconButtonShape[] = ["circle", "square"];
   const REST: Record<ControlGround, readonly string[]> = {
-    base: ["bg-surface-raised", "text-ink-primary", "border-line-base", "hover:bg-surface-sunken", "focus-visible:ring-surface-raised"],
-    sunken: ["bg-surface-raised", "text-ink-primary", "border-line-base", "hover:bg-surface-base", "focus-visible:ring-surface-raised"],
+    base: ["bg-surface-raised", "text-ink-primary", "border-line-base", "hover:bg-control-tonal-hover", "focus-visible:ring-surface-raised"],
+    sunken: ["bg-surface-raised", "text-ink-primary", "border-line-base", "hover:bg-control-tonal-hover", "focus-visible:ring-surface-raised"],
     inverse: ["bg-surface-inverse-raised", "text-ink-on-inverse", "border-line-on-inverse", "hover:bg-surface-inverse", "focus-visible:ring-surface-inverse-raised"],
   };
 
@@ -152,6 +152,32 @@ describe("iconButtonClassName: size x shape x ground", () => {
     }
     for (const variant of VARIANTS) {
       for (const ground of GROUNDS) expect(buttonClassName(variant, "md", ground)).not.toContain("var(");
+    }
+  });
+});
+
+describe("VF-1: control heights, single-line labels and hover step", () => {
+  it("boxed sizes take the control-height scale and no block padding", () => {
+    for (const size of SIZES) {
+      const classes = classesOf(buttonClassName("primary", size));
+      expect(classes).toContain(`control-h-${size}`);
+      expect(classes.some((c) => /^py-/.test(c)), size).toBe(false);
+    }
+  });
+
+  it("a boxed label never wraps and the box never exceeds its container", () => {
+    for (const variant of VARIANTS.filter((v) => v !== "quiet")) {
+      const classes = classesOf(buttonClassName(variant, "md"));
+      expect(classes, variant).toEqual(expect.arrayContaining(["whitespace-nowrap", "max-w-full"]));
+    }
+  });
+
+  it("ghost, secondary and the icon-only control hover on the tonal step, never the sunken surface", () => {
+    for (const look of [buttonClassName("ghost", "md"), buttonClassName("secondary", "md"), iconButtonClassName({ ground: "base" }), iconButtonClassName({ ground: "sunken" })]) {
+      const classes = classesOf(look);
+      expect(classes).toContain("hover:bg-control-tonal-hover");
+      expect(classes).not.toContain("hover:bg-surface-sunken");
+      expect(classes).not.toContain("hover:bg-surface-base");
     }
   });
 });

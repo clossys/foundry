@@ -60,5 +60,5 @@ it("leads with a summary, bounds the prompt in a scrollable mono region and pins
   expect(primary.map(button => button.textContent)).toEqual([labels.board.copy]);
   expect(within(actions).getByRole("button", { name: labels.board.checkCandidates })).toBeVisible();
   expect(within(actions).getByRole("button", { name: labels.board.close })).toBeVisible();
-  expect(dialog.parentElement!.classList).toContain("overlay-enter");
+  expect(dialog.parentElement!.classList).toContain("overlay-motion-pop");
 });

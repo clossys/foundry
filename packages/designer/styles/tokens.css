@@ -424,7 +424,7 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
    * ramp stays font-size only, so a heading names its leading role)
    * ════════════════════════════════════════════════════════════════ */
   --leading-display:              1.05;     /* display steps: hero headings */
-  --leading-heading:              1.15;     /* section titles and smaller headings */
+  --leading-heading:              1.2;      /* section titles and smaller headings */
 
   /* ════════════════════════════════════════════════════════════════
    * SPACING (10 · 4px-rooted scale, t-shirt names — deliberately NOT
@@ -567,13 +567,13 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
    * UI · DURATION (6 · no Tailwind namespace)
    * ════════════════════════════════════════════════════════════════ */
   --ui-duration-instant:          80ms;
-  --ui-duration-fast:             160ms;
+  --ui-duration-fast:             120ms;
   --ui-duration-default:          240ms;
   --ui-duration-deliberate:       500ms;
   --ui-duration-flash:            1200ms;
   /* Overlay open/close reads as the same "fast" tier as hover/reveal, under
    * its own role name so overlay CSS never reaches past its own vocabulary. */
-  --ui-duration-overlay:          var(--ui-duration-fast, 160ms);
+  --ui-duration-overlay:          var(--ui-duration-fast, 120ms);
 
   /* ════════════════════════════════════════════════════════════════
    * EASING (6 · Tailwind `--ease-*` namespace)
@@ -616,9 +616,9 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
 
   --ui-alpha-disabled:            0.5;
   /* Shared control, focus, motion and state roles. */
-  --ui-control-h-sm: 32px;
-  --ui-control-h-md: var(--ui-layout-tap-target, 44px);
-  --ui-control-h-lg: 52px;
+  --ui-control-h-sm: 28px;
+  --ui-control-h-md: 32px;
+  --ui-control-h-lg: 36px;
   --ui-control-row-h: 36px;
   --ui-control-mark: 16px;
   --ui-control-switch-w: 36px;
@@ -681,7 +681,7 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
     /* ── COLOR · INK ────────────────────────────────────────────── */
     --color-ink-primary:            oklch(0.97 0 0);      /* flips: near-black to near-white */
     --color-ink-secondary:          oklch(0.82 0 0);
-    --color-ink-muted:              oklch(0.66 0 0);
+    --color-ink-muted:              oklch(0.7763 0 0);
     --color-ink-link:               oklch(0.86 0 0);
     --color-ink-on-inverse:         oklch(0.2178 0 0);    /* flips with --color-surface-inverse */
     --color-ink-on-inverse-muted:   oklch(0.42 0 0);
@@ -791,7 +791,7 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
   /* ── COLOR · INK ──────────────────────────────────────────────── */
   --color-ink-primary:            oklch(0.97 0 0);
   --color-ink-secondary:          oklch(0.82 0 0);
-  --color-ink-muted:              oklch(0.66 0 0);
+  --color-ink-muted:              oklch(0.7763 0 0);
   --color-ink-link:               oklch(0.86 0 0);
   --color-ink-on-inverse:         oklch(0.2178 0 0);
   --color-ink-on-inverse-muted:   oklch(0.42 0 0);

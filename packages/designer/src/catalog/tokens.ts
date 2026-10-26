@@ -184,7 +184,7 @@ export const TOKEN_ENTRIES: readonly TokenEntry[] = [
   {
     id: "--color-ink-muted", label: "Ink muted",
     l1: "color", l2: "ink", tier: "brand-required", lever: false, inTheme: true, lifecycle: "draft", ownerReview: "not-yet-reviewed",
-    modes: "per-mode", reference: { light: { literal: "oklch(0.54 0 0)" }, dark: { literal: "oklch(0.66 0 0)" } },
+    modes: "per-mode", reference: { light: { literal: "oklch(0.54 0 0)" }, dark: { literal: "oklch(0.7763 0 0)" } },
     utilities: ["bg-ink-muted", "text-ink-muted", "border-ink-muted"],
     pairs: [
       { fg: "--color-ink-muted", bg: "--color-surface-raised", min: 3 },
@@ -1642,7 +1642,7 @@ export const TOKEN_ENTRIES: readonly TokenEntry[] = [
   {
     id: "--ui-duration-fast", label: "Duration fast",
     l1: "motion", l2: "duration", tier: "fixed-standard", lever: false, inTheme: false, lifecycle: "draft", ownerReview: "not-yet-reviewed",
-    modes: "invariant", reference: { literal: "160ms" },
+    modes: "invariant", reference: { literal: "120ms" },
     utilities: [],
     pairs: [],
     sourceRows: [161, 165], previousIds: ["--ui-duration-overlay"],

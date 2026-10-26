@@ -1959,7 +1959,7 @@
     },
     {
       "path": "catalog/fills/foundry/tokens.control-size.json",
-      "sha256": "c1832d5b54252ffba1fc42194a4b09f8f9d18b48e3f5c04ed2f1fef9f60b4a05",
+      "sha256": "c1c6c2f2ad2a106ba8e117b8f9f599fad7497e8017c83b90582a9bdfb8ddd123",
       "document": {
         "$extensions": {
           "com.clossys.fill": {
@@ -1995,20 +1995,16 @@
             "h-lg": {
               "$extensions": {
                 "com.clossys.css": {
-                  "raw": "52px"
+                  "raw": "36px"
                 }
               },
               "$type": "dimension",
               "$value": {
                 "unit": "px",
-                "value": 52
+                "value": 36
               }
             },
             "h-md": {
-              "$type": "dimension",
-              "$value": "{tokens.touch-target.default}"
-            },
-            "h-sm": {
               "$extensions": {
                 "com.clossys.css": {
                   "raw": "32px"
@@ -2018,6 +2014,18 @@
               "$value": {
                 "unit": "px",
                 "value": 32
+              }
+            },
+            "h-sm": {
+              "$extensions": {
+                "com.clossys.css": {
+                  "raw": "28px"
+                }
+              },
+              "$type": "dimension",
+              "$value": {
+                "unit": "px",
+                "value": 28
               }
             },
             "mark": {
@@ -2086,7 +2094,7 @@
     },
     {
       "path": "catalog/fills/foundry/tokens.density.json",
-      "sha256": "90bda47601141924209b14d9d0be85e78d21f1a863631a793ac0af1c9638e8b5",
+      "sha256": "257ef557b80a994afe0022b246cc4b4f09076da6325f9190038783189d888de1",
       "document": {
         "$extensions": {
           "com.clossys.fill": {
@@ -2115,7 +2123,7 @@
             "mode": "derived",
             "pin": {
               "file": "historical Foundry token cells",
-              "sha256": "f01c048dd4396977a0fba16075553b3d8ed453317450f616533f4fd5211670de"
+              "sha256": "ccc1f47619299450e9461e414fd832c76bb4436ef32355e0e45e28f89c201081"
             },
             "relation": "same-contract",
             "slot": "tokens.density",
@@ -2328,7 +2336,7 @@
     },
     {
       "path": "catalog/fills/foundry/tokens.duration.json",
-      "sha256": "23f94b2e3766f40b52e98427e7b9b58442e2cb2a0c4ddaf5d2e133b91e06edd1",
+      "sha256": "31ed9d4fd4994a52677045603f8ef8ecdb14844f85e7fcd6e3aaa4b83a518072",
       "document": {
         "$extensions": {
           "com.clossys.fill": {
@@ -2388,13 +2396,13 @@
             "fast": {
               "$extensions": {
                 "com.clossys.css": {
-                  "raw": "160ms"
+                  "raw": "120ms"
                 }
               },
               "$type": "duration",
               "$value": {
                 "unit": "ms",
-                "value": 160
+                "value": 120
               }
             },
             "flash": {
@@ -2883,7 +2891,7 @@
     },
     {
       "path": "catalog/fills/foundry/tokens.icon-size.json",
-      "sha256": "40ab5b6d71c8adf68498cfe9de09819fe6c787290ac08fd198bb04c787041796",
+      "sha256": "3c46f07fda6c702aa41445c074a9f8e05f0602fd23d741bb17db701ca867427a",
       "document": {
         "$extensions": {
           "com.clossys.fill": {
@@ -2912,7 +2920,7 @@
             "mode": "derived",
             "pin": {
               "file": "historical Foundry token cells",
-              "sha256": "f01c048dd4396977a0fba16075553b3d8ed453317450f616533f4fd5211670de"
+              "sha256": "ccc1f47619299450e9461e414fd832c76bb4436ef32355e0e45e28f89c201081"
             },
             "relation": "same-contract",
             "slot": "tokens.icon-size",
@@ -3020,7 +3028,7 @@
     },
     {
       "path": "catalog/fills/foundry/tokens.line-height.json",
-      "sha256": "c1ba2ca2bd084a29072bba9dd1e8f55af2f277f8e60d74f94a40cff1ad9ecba4",
+      "sha256": "78f6e12d476de67c03f9ab39cd69993affa8a89767b110bf9bed71aecd5c097e",
       "document": {
         "$extensions": {
           "com.clossys.fill": {
@@ -3065,11 +3073,11 @@
             "heading": {
               "$extensions": {
                 "com.clossys.css": {
-                  "raw": "1.15"
+                  "raw": "1.2"
                 }
               },
               "$type": "number",
-              "$value": 1.15
+              "$value": 1.2
             }
           }
         }
@@ -3579,7 +3587,7 @@
     },
     {
       "path": "catalog/fills/foundry/tokens.surface-radius.json",
-      "sha256": "39dcbcbd93740a9b72b315bd8dce4cc30cf450d4317b3ef1dca5a6467cdc4fb4",
+      "sha256": "f0b16daeade66d5bd0dfe786e1dce6799cf912c7813ce34a1a5999e255987590",
       "document": {
         "$extensions": {
           "com.clossys.fill": {
@@ -3608,7 +3616,7 @@
             "mode": "derived",
             "pin": {
               "file": "historical Foundry token cells",
-              "sha256": "f01c048dd4396977a0fba16075553b3d8ed453317450f616533f4fd5211670de"
+              "sha256": "ccc1f47619299450e9461e414fd832c76bb4436ef32355e0e45e28f89c201081"
             },
             "relation": "same-contract",
             "slot": "tokens.surface-radius",
@@ -3641,7 +3649,7 @@
     },
     {
       "path": "catalog/fills/foundry/tokens.text-color.json",
-      "sha256": "32ad7028eab97b1aa8a73740a8a00fdee2b73a2b8daa0bb7147434c9ae8decd1",
+      "sha256": "8119be96ba7b144abc6ddfedf17f19de60328307456cf696899e05652c19f64b",
       "document": {
         "$extensions": {
           "com.clossys.fill": {
@@ -3714,7 +3722,7 @@
                   "dark": {
                     "colorSpace": "oklch",
                     "components": [
-                      0.66,
+                      0.7763,
                       0,
                       0
                     ]
@@ -3943,7 +3951,7 @@
     },
     {
       "path": "catalog/fills/foundry/tokens.transition-easing.json",
-      "sha256": "78f5deee80a77a452d77e36f16fa27dc75cae4f9093eb69feaa4806bc3f232f1",
+      "sha256": "9cc6488609dd6f3e303b16e892cd1d4b233ac05bb2e98105264c0a01bf31d99a",
       "document": {
         "$extensions": {
           "com.clossys.fill": {
@@ -3972,7 +3980,7 @@
             "mode": "derived",
             "pin": {
               "file": "historical Foundry token cells",
-              "sha256": "f01c048dd4396977a0fba16075553b3d8ed453317450f616533f4fd5211670de"
+              "sha256": "ccc1f47619299450e9461e414fd832c76bb4436ef32355e0e45e28f89c201081"
             },
             "relation": "same-contract",
             "slot": "tokens.transition-easing",

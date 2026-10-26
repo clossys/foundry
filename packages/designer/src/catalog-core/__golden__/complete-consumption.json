@@ -5,10 +5,10 @@
     "members": 629,
     "orphanEdges": 0,
     "resolvedMembers": 628,
-    "tokenEdges": 25,
+    "tokenEdges": 24,
     "tokens": 53,
     "unusedAssets": 43,
-    "unusedTokens": 40
+    "unusedTokens": 41
   },
   "leaves": [
     {
@@ -560,9 +560,7 @@
       "consumedBy": [],
       "id": "tokens.control-size",
       "resolved": 8,
-      "tokens": [
-        "tokens.touch-target"
-      ],
+      "tokens": [],
       "total": 8
     },
     {
@@ -845,9 +843,7 @@
     },
     {
       "assets": [],
-      "consumedBy": [
-        "tokens.control-size"
-      ],
+      "consumedBy": [],
       "id": "tokens.touch-target",
       "resolved": 1,
       "tokens": [],

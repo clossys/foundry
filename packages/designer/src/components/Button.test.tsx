@@ -152,3 +152,14 @@ describe("primary action palette", () => {
     expect(control.style.outlineOffset).toBe("var(--ui-focus-offset, 2px)");
   });
 });
+
+describe("Button label truncation (VF-1 cross-09)", () => {
+  it("puts a plain-text label in a truncating span inside a single-line box", () => {
+    render(<Button>A label far longer than its container</Button>);
+    const button = screen.getByRole("button", { name: "A label far longer than its container" });
+    expect(button.className).toContain("whitespace-nowrap");
+    const label = button.querySelector("span.truncate");
+    expect(label?.textContent).toBe("A label far longer than its container");
+    expect(label?.className).toContain("min-w-0");
+  });
+});

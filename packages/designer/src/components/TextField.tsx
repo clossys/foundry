@@ -65,7 +65,7 @@ export function TextField({
         placeholder={placeholder}
         className={(renderProps) =>
           cx(
-            "rounded-control border bg-surface-raised px-md py-sm text-body text-ink-primary",
+            "rounded-control border bg-surface-raised px-md py-sm text-body text-ink-primary outline-hidden",
             SIZE_CLASSES[size],
             renderProps.isInvalid ? "border-status-danger" : "border-line-base",
             inputClassName,
@@ -73,7 +73,7 @@ export function TextField({
         }
         style={(renderProps) => ({
           opacity: renderProps.isDisabled ? UI_ALPHA_DISABLED : undefined,
-          boxShadow: renderProps.isFocusVisible ? UI_RING_FOCUS : undefined,
+          boxShadow: renderProps.isFocused ? UI_RING_FOCUS : undefined,
         })}
       />
       {description ? (

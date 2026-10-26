@@ -69,7 +69,7 @@ it("chooses one whole L3 candidate and renders every actual L4 variant horizonta
   const candidate = board.rows.find(row => row.id === "tokens.surface-color")!.candidates.find(candidate => candidate.source === "foundry")!;
   const variants = radio.closest("label")!.querySelectorAll<HTMLElement>("[data-candidate-variant]");
   expect([...variants].map(variant => variant.dataset.candidateVariant)).toEqual(candidate.members.map(member => member.id));
-  expect(radio.closest("label")!.querySelector("[data-candidate-cell]")).toHaveClass("flex", "items-start");
+  expect(radio.closest("label")!.querySelector("[data-candidate-cell]")).toHaveClass("flex", "items-center");
   expect(view.container.querySelectorAll('[data-scope="member"]')).toHaveLength(0);
   await user.click(variants[0]!.querySelector("[data-studio-color-swatch]")!);
   expect(use).toHaveBeenCalledOnce();

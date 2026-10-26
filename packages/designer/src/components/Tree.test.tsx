@@ -20,3 +20,17 @@ describe("Tree candidate", () => {
     expect(screen.getByRole("row", { name: /Locked/ })).toHaveAttribute("aria-disabled", "true");
   });
 });
+
+describe("Tree selected row (VF-1 studio-23)", () => {
+  it("marks the selected row with the accent tint and an inline-start accent edge; rows at rest hover on the tonal step", async () => {
+    const user = userEvent.setup();
+    render(<Tree aria-label="Layers" selectionMode="single"><Tree.Node id="a" textValue="Alpha" label="Alpha" expandLabel="Toggle Alpha" /><Tree.Node id="b" textValue="Beta" label="Beta" expandLabel="Toggle Beta" /></Tree>);
+    const alpha = screen.getByRole("row", { name: /Alpha/ });
+    const beta = screen.getByRole("row", { name: /Beta/ });
+    await user.click(alpha);
+    expect(alpha).toHaveAttribute("aria-selected", "true");
+    expect(alpha).toHaveClass("bg-accent-tint", "border-s-2", "border-s-accent");
+    expect(beta).toHaveClass("border-s-2", "border-s-transparent", "hover:bg-control-tonal-hover");
+    expect(beta).not.toHaveClass("hover:bg-surface-sunken");
+  });
+});

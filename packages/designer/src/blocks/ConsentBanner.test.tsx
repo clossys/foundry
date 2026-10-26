@@ -386,7 +386,7 @@ describe("CONSENT-1 card presentation", () => {
     for (const presentation of [undefined, "banner"] as const) {
       const html = renderToStaticMarkup(<ConsentBanner title="Banner title" body="Banner body" acceptLabel="Accept label" rejectLabel="Reject label" onAccept={() => {}} onReject={() => {}} privacyLink={<a href="/privacy">Privacy link</a>} presentation={presentation} />)
         .replace(/\bid="[^"]+"/g, 'id="ID"').replace(/\baria-labelledby="[^"]+"/g, 'aria-labelledby="ID"');
-      expect(createHash("sha256").update(html).digest("hex")).toBe("cfb61e6eb29a35cd8d643f517852d1ce9027db3dabd53e1b0483035c195405d0");
+      expect(createHash("sha256").update(html).digest("hex")).toBe("4c11cfd188883db4e64ba36ea087b757806362f34808b884513a56c226282f01");
     }
   });
 
@@ -529,7 +529,7 @@ describe("CONSENT-1 card geometry matches the signed-off reference", () => {
     expect(accept.parentElement).toHaveClass("grid", "grid-cols-2", "gap-sm");
     expect(accept).not.toHaveClass("whitespace-nowrap");
     const card = consentCardUtility();
-    expect(card).toMatch(/& button \{\s*min-block-size: var\(--ui-layout-tap-target, 44px\);\s*transition-duration: var\(--ui-duration-fast, 160ms\);\s*transition-timing-function: var\(--ease-default, cubic-bezier\(\.2, 0, 0, 1\)\);/);
+    expect(card).toMatch(/& button \{\s*min-block-size: var\(--ui-layout-tap-target, 44px\);\s*transition-duration: var\(--ui-duration-fast, 120ms\);\s*transition-timing-function: var\(--ease-default, cubic-bezier\(\.2, 0, 0, 1\)\);/);
   });
 });
 

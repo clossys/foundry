@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { cloneElement, isValidElement, useEffect, useId, useRef, useState, type ReactElement, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "../components/Button.js";
 import { Icon } from "../components/Icon.js";
@@ -61,7 +61,21 @@ function defaultDisclosureLabel(nodeLabel: string, expanded: boolean): string {
 
 /** The disclosure chevron turns on the fast duration and default easing tokens and snaps under reduced motion. */
 const CHEVRON_MOTION = "transition-transform duration-(--ui-duration-fast) ease-(--ease-default) motion-reduce:transition-none";
-const CONTROL = "flex min-w-0 items-center justify-start gap-sm rounded-control border-0 bg-transparent px-sm py-sm text-start text-ink-primary no-underline hover:no-underline hover:bg-surface-sunken focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent focus-visible:-outline-offset-2";
+const CONTROL = "flex min-w-0 items-center justify-start gap-sm rounded-control border-0 bg-transparent px-sm py-sm text-start text-ink-primary no-underline hover:no-underline hover:bg-control-tonal-hover focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent focus-visible:-outline-offset-2";
+
+/*
+ * A destination's icon sits in a small-icon slot (`--ui-icon-sm`, 16px) and a
+ * package `Icon` is drawn at the small step, so every row's glyph matches
+ * whatever size the caller built it at. The current destination takes the
+ * selected surface and an inline-start accent edge (the edge keeps a
+ * transparent width at rest so the label never shifts); forced colours draw
+ * an outline instead, because neither paint survives there.
+ */
+const ICON_SLOT = { inlineSize: "var(--ui-icon-sm, var(--spacing-lg, 16px))" } as const;
+const CURRENT = "bg-surface-selected font-medium border-s-accent forced-colors:outline-solid forced-colors:outline-1 forced-colors:outline-current";
+function smallIcon(icon: ReactNode): ReactNode {
+  return isValidElement(icon) && icon.type === Icon ? cloneElement(icon as ReactElement<{ size?: string }>, { size: "sm" }) : icon;
+}
 
 /** Keep the overlay absent until the browser has completed focus-induced scrolling. */
 function CornerTooltip({ trigger, label, requests }: { trigger: ReactNode; label: string; requests: { current: number } }) {
@@ -169,9 +183,8 @@ export function AppNavigation({ onNavigate, fullViewport = false, retainMounted 
 
   const destination = (node: AppNavigationNode, parentId?: string) => {
     const current = node.id === active;
-    const className = cx(CONTROL, "control-h-md flex-1", current &&
-      "bg-control-tonal font-semibold outline-solid outline-1 outline-line-strong forced-colors:outline-current");
-    const content = <><span aria-hidden="true" className="flex shrink-0 items-center justify-center" style={{ inlineSize: "var(--ui-icon-md, 24px)" }}>{node.icon ?? node.label.slice(0, 1)}</span>
+    const className = cx(CONTROL, "control-h-md flex-1 border-s-2", current ? CURRENT : "border-s-transparent");
+    const content = <><span aria-hidden="true" className="flex shrink-0 items-center justify-center" style={ICON_SLOT}>{node.icon == null ? node.label.slice(0, 1) : smallIcon(node.icon)}</span>
       <span className="min-w-0 truncate">{node.label}</span></>;
     const shared = { "data-application-navigation-control": "", "data-navigation-node-id": node.id, "data-parent-id": parentId,
       "aria-current": current ? "page" as const : undefined, className };

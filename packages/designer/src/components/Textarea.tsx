@@ -72,14 +72,14 @@ export function Textarea({
         rows={rows}
         className={(renderProps) =>
           cx(
-            "resize-y rounded-control border bg-surface-raised px-md py-sm text-body text-ink-primary",
+            "resize-y rounded-control border bg-surface-raised px-md py-sm text-body text-ink-primary outline-hidden",
             renderProps.isInvalid ? "border-status-danger" : "border-line-base",
             textareaClassName,
           )
         }
         style={(renderProps) => ({
           opacity: renderProps.isDisabled ? UI_ALPHA_DISABLED : undefined,
-          boxShadow: renderProps.isFocusVisible ? UI_RING_FOCUS : undefined,
+          boxShadow: renderProps.isFocused ? UI_RING_FOCUS : undefined,
         })}
       />
       {description ? (

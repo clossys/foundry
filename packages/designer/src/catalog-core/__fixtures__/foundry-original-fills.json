@@ -2040,20 +2040,16 @@
         "h-lg": {
           "$extensions": {
             "com.clossys.css": {
-              "raw": "52px"
+              "raw": "36px"
             }
           },
           "$type": "dimension",
           "$value": {
             "unit": "px",
-            "value": 52
+            "value": 36
           }
         },
         "h-md": {
-          "$type": "dimension",
-          "$value": "{tokens.touch-target.default}"
-        },
-        "h-sm": {
           "$extensions": {
             "com.clossys.css": {
               "raw": "32px"
@@ -2063,6 +2059,18 @@
           "$value": {
             "unit": "px",
             "value": 32
+          }
+        },
+        "h-sm": {
+          "$extensions": {
+            "com.clossys.css": {
+              "raw": "28px"
+            }
+          },
+          "$type": "dimension",
+          "$value": {
+            "unit": "px",
+            "value": 28
           }
         },
         "mark": {
@@ -2452,13 +2460,13 @@
         "fast": {
           "$extensions": {
             "com.clossys.css": {
-              "raw": "160ms"
+              "raw": "120ms"
             }
           },
           "$type": "duration",
           "$value": {
             "unit": "ms",
-            "value": 160
+            "value": 120
           }
         },
         "flash": {
@@ -3154,11 +3162,11 @@
         "heading": {
           "$extensions": {
             "com.clossys.css": {
-              "raw": "1.15"
+              "raw": "1.2"
             }
           },
           "$type": "number",
-          "$value": 1.15
+          "$value": 1.2
         }
       }
     }
@@ -4556,7 +4564,7 @@
               "dark": {
                 "colorSpace": "oklch",
                 "components": [
-                  0.66,
+                  0.7763,
                   0,
                   0
                 ]

@@ -1451,8 +1451,8 @@ export const TOKEN_GUIDANCE: Readonly<Record<string, TokenGuidance>> = {
   },
   "--ui-control-h-md": {
       "purpose": "Default control height names the shared --ui-control-h-md role.",
-      "use": "Use the default control height to meet the shared touch target.",
-      "misuse": "Do not detach the default height from the tap-target role.",
+      "use": "Use this visual height with a separate 44px hit region.",
+      "misuse": "Do not shrink the interactive target to the visual height.",
       "application": {
           "cssProperty": "min-block-size",
           "valueType": "length",

@@ -22,7 +22,7 @@ export interface IconButtonProps extends Omit<AriaButtonProps, "children" | "ari
   label: string;
   /** The glyph, as `@clossys/designer/icons` data. Rendered decorative; `label` names the control. */
   icon: IconNode;
-  /** `md` is a 44px box; `sm` a 36px box with a 44px hit area. @default "md" */
+  /** `md` is a 44px box; `sm` a 28px box (`--ui-control-h-sm`) with a 44px hit area. @default "md" */
   size?: IconButtonSize;
   /** `circle` (pill radius) or `square` (control radius). @default "circle" */
   shape?: IconButtonShape;

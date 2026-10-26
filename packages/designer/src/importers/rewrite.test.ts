@@ -251,8 +251,8 @@ describe("shadcn-aria-rewrite@1", () => {
     expect(css).toContain("outline-color: var(--color-focus-ring)");
     expect(css).toContain("var(--ui-elevation-floating)");
     expect(css).toContain("background-color: var(--color-action)");
-    expect(css).toContain("animation: library-transition var(--ui-duration-fast, 160ms) var(--ease-enter");
-    expect(css).toContain("animation: library-transition var(--ui-duration-fast, 160ms) var(--ease-exit");
+    expect(css).toContain("animation: library-transition var(--ui-duration-fast, 120ms) var(--ease-enter");
+    expect(css).toContain("animation: library-transition var(--ui-duration-fast, 120ms) var(--ease-exit");
     expect(css).toContain("@keyframes library-transition");
     expect(css).toContain("animation-duration: 0s");
   });

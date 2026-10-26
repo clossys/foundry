@@ -125,12 +125,12 @@ function DialogRoot({
       <ModalOverlay
         isDismissable={isDismissable}
         className={cx(
-          "fixed inset-0 flex items-center justify-center bg-overlay-scrim p-lg overlay-scrim-enter",
+          "fixed inset-0 flex items-center justify-center bg-overlay-scrim p-lg overlay-motion-fade",
           overlayClassName,
         )}
         style={{ zIndex: UI_Z_MODAL }}
       >
-        <Modal className={cx("flex w-full overlay-enter", SIZE_CLASSES[size], modalClassName)} style={modalStyle}>
+        <Modal className={cx("flex w-full overlay-motion-pop", SIZE_CLASSES[size], modalClassName)} style={modalStyle}>
           <AriaDialog
             role={role}
             className={cx(
