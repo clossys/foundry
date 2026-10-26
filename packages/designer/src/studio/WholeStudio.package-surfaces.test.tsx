@@ -27,6 +27,9 @@ const SAMPLE_TEXT: Record<string, string> = {
   "frames.site-shell": "host-site-frame", "frames.sheet": "Open filters",
 };
 
+/** Leaves adopted by vf26 whose designer exports have no preview sample content yet (follow-up lane): shown as unavailable, never imitated. */
+const SAMPLE_GAPS = new Set(["sections.chat", "sections.explorer", "sections.hero", "sections.newsletter", "frames.app-shell", "frames.command"]);
+
 function mount(preview: CompositeStudioSnapshot["preview"], samples: Parameters<typeof planSurfacePreviews>[0]["samples"] = HOST_SAMPLES) {
   const fills = fixture.catalog.surfaces!.fills as unknown as SurfaceDefaultCandidateDocument[], slots = fixture.catalog.surfaces!.slots as unknown as SurfaceDefaultsInput["catalog"]["slots"];
   const plannedPreviews = planSurfacePreviews({ fills, samples, plan: planSurfaceDefaults({ catalog: { slots, fills }, slots: slots.map(slot => slot.id), preference: ["foundry"] }) });
@@ -44,6 +47,7 @@ describe("adopted package-pointer surfaces on the Studio board", { timeout: 120_
       for (const slot of slots) {
         const cell = row(slot);
         expect(cell, slot).not.toBeNull();
+        if (SAMPLE_GAPS.has(slot)) { expect(cell, slot).toHaveTextContent(labels.previewUnavailable); continue; }
         expect(cell, slot).not.toHaveTextContent(labels.previewUnavailable);
         // Adopted, not planned: the cell is the chosen preview, never the planned-default label.
         expect(cell!.querySelector("[data-studio-planned]"), slot).toBeNull();
