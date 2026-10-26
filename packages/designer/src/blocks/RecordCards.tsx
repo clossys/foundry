@@ -1,0 +1,63 @@
+import type { HTMLAttributes, ReactNode } from "react";
+import { Badge, type BadgeVariant } from "../components/Badge.js";
+import { Card } from "../components/Card.js";
+import { Link } from "../components/Link.js";
+import { cx } from "../components/internal/cx.js";
+
+export type RecordCardsLayout = "grid" | "list";
+export type RecordCardsHeadingLevel = 2 | 3 | 4;
+export interface RecordCardsRecord {
+  /** Stable key for the record. */
+  id: string;
+  /** The record's name; a link when `href` is given. */
+  title: ReactNode;
+  /** One or two lines of supporting copy. */
+  description?: ReactNode;
+  /** Destination of the record. The title becomes the link; the card is not a nested interactive. */
+  href?: string;
+  /** Short status or category shown beside the title. */
+  badge?: { label: ReactNode; variant?: BadgeVariant };
+  /** Secondary detail at the foot of the card ("Updated 2 days ago"). */
+  meta?: ReactNode;
+}
+export interface RecordCardsProps extends Omit<HTMLAttributes<HTMLUListElement>, "children"> {
+  /** The records, in reading order. Each renders one `Card`. */
+  records: readonly RecordCardsRecord[];
+  /** `grid` lays cards in columns (one, two, then three); `list` stacks them full width. @default "grid" */
+  layout?: RecordCardsLayout;
+  /** Heading level of each card title. @default 3 */
+  headingLevel?: RecordCardsHeadingLevel;
+}
+
+const LAYOUT_CLASSES: Record<RecordCardsLayout, string> = {
+  grid: "grid grid-cols-1 gap-md tablet:grid-cols-2 desktop:grid-cols-3",
+  list: "flex flex-col gap-sm",
+};
+
+/**
+ * A collection of records as cards: the Foundry `Card` (outline), a title
+ * that is the record's single link, an optional `Badge` and supporting copy.
+ * Renders a list; the host injects the records and owns sorting, paging and
+ * empty, loading and error states around it.
+ */
+export function RecordCards({ records, layout = "grid", headingLevel = 3, className, ...rest }: RecordCardsProps) {
+  const Heading = `h${headingLevel}` as "h2" | "h3" | "h4";
+  return (
+    <ul {...rest} role="list" data-layout={layout} className={cx(LAYOUT_CLASSES[layout], className)}>
+      {records.map(record => (
+        <li key={record.id} className="flex min-w-0">
+          <Card variant="outline" className="flex w-full flex-col gap-xs p-lg">
+            <div className="flex flex-wrap items-start justify-between gap-sm">
+              <Heading className="m-0 text-body-l font-medium text-ink-primary">
+                {record.href ? <Link href={record.href} variant="standalone">{record.title}</Link> : record.title}
+              </Heading>
+              {record.badge ? <Badge variant={record.badge.variant}>{record.badge.label}</Badge> : null}
+            </div>
+            {record.description ? <p className="text-body-s text-ink-secondary">{record.description}</p> : null}
+            {record.meta ? <p className="mt-auto text-caption text-ink-muted">{record.meta}</p> : null}
+          </Card>
+        </li>
+      ))}
+    </ul>
+  );
+}

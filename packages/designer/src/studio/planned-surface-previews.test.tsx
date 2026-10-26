@@ -20,17 +20,18 @@ describe("planSurfacePreviews", () => {
   it("accounts for every planned Sections/Frames leaf of the real catalog: a preview or a named reason", () => {
     const { plan, fills } = realPlan();
     const planned = plan.rows.filter(row => row.status !== "not-chosen");
-    expect(planned.filter(row => row.slot.startsWith("sections."))).toHaveLength(26);
+    expect(planned.filter(row => row.slot.startsWith("sections."))).toHaveLength(34);
     expect(planned.filter(row => row.slot.startsWith("frames."))).toHaveLength(5);
     const result = planSurfacePreviews({ plan, fills });
     const previewed = Object.keys(result.previews), gaps = result.unrenderable.map(gap => gap.slot);
     expect([...previewed, ...gaps].sort()).toEqual(planned.map(row => row.slot).sort());
-    expect(previewed.filter(slot => slot.startsWith("sections."))).toHaveLength(18);
+    expect(previewed.filter(slot => slot.startsWith("sections."))).toHaveLength(27);
     expect(previewed.filter(slot => slot.startsWith("frames.")).sort()).toEqual(["frames.app-header", "frames.site-footer", "frames.site-header"]);
     expect(result.unrenderable.every(gap => gap.reason.length > 0)).toBe(true);
     // A Publisher frame is reported, never imitated by a designer export.
     expect(result.unrenderable.find(gap => gap.slot === "frames.site-shell")?.reason).toBe("@clossys/publisher/web#SiteFrame is not a designer export; the designer does not render it");
-    expect(result.unrenderable.find(gap => gap.slot === "sections.data-table")?.reason).toBe("no preview sample content for @clossys/designer/blocks#DataTable");
+    expect(result.unrenderable.find(gap => gap.slot === "sections.form")?.reason).toBe("no preview sample content for @clossys/designer/blocks#Form");
+    for (const leaf of ["consent", "error-state", "stats", "data-grid", "cards", "call-to-action", "notices", "gallery", "data-table"]) expect(previewed, leaf).toContain(`sections.${leaf}`);
     expect(result.unrenderable.find(gap => gap.slot === "frames.sheet")?.reason).toBe("no preview sample content for @clossys/designer/blocks#Drawer");
   });
 

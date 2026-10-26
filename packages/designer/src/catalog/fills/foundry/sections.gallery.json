@@ -1,0 +1,57 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/sections.gallery",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "export": "./blocks#Gallery",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "sections.gallery",
+      "source": "foundry",
+      "sourceAddress": "./blocks#Gallery",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "sections": {
+    "gallery": {
+      "configs": {},
+      "impl": {
+        "export": "Gallery",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "license": "MIT",
+      "notes": [
+        "Images are host nodes with their own alternative text; the lightbox is the Foundry Dialog opened from a React Aria button per image. Host supplies label.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "parts": [],
+      "pin": {
+        "export": "./blocks#Gallery",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {
+        "lightbox.disabled": "./blocks#Gallery.lightbox=false",
+        "lightbox.enabled": "./blocks#Gallery.lightbox=true"
+      },
+      "slot": "sections.gallery",
+      "slotMap": {
+        "images": "./blocks#Gallery.images"
+      },
+      "source": "foundry"
+    }
+  }
+}

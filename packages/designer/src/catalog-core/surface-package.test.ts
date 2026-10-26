@@ -58,9 +58,9 @@ const surfaceErrors = (library: CompositeLibraryData, catalog: CompositeCatalogD
 describe("package-pointer surface origin", () => {
   it("adopts every planned Section and Frame default without a bundle, from the real catalog", () => {
     const { catalog, plan, empty } = setup();
-    expect(plan.decisions).toHaveLength(31);
+    expect(plan.decisions).toHaveLength(39);
     const library = adopt(catalog, empty, plan.decisions);
-    expect(library.surfaces!.fills).toHaveLength(31);
+    expect(library.surfaces!.fills).toHaveLength(39);
     expect(library.surfaces!.files).toEqual([]);
     const selection = surfaceSelection(library);
     expect(selection.slots.map(row => row.slot)).toEqual(plan.decisions.map(row => row.slot).sort());
@@ -74,15 +74,17 @@ describe("package-pointer surface origin", () => {
     const library = adopt(catalog, empty, plan.decisions);
     expect(surfaceErrors(library, catalog)).toEqual([]);
     const profile = resolveComposite({ catalog, library, surfaceOptions: options().surfaceOptions });
-    expect(Object.keys(profile.surfaces!.fills)).toHaveLength(31);
+    expect(Object.keys(profile.surfaces!.fills)).toHaveLength(39);
     const files = emitComposite(profile, ["surface-index", "surfaces-consumption"]);
     const file = (path: string) => files.find(row => row.path === path)?.contents;
     expect(file("frames/sheet/index.ts")).toBe('export { Drawer as Sheet } from "@clossys/designer/blocks";\n');
     expect(file("frames/site-shell/index.ts")).toBe('export { SiteFrame as SiteShell } from "@clossys/publisher/web";\n');
     expect(file("sections/faq/index.ts")).toBe('export { Faq } from "@clossys/designer/blocks";\n');
+    expect(file("sections/stats/index.ts")).toBe('export { StatGroup as Stats } from "@clossys/designer/blocks";\n');
+    expect(file("sections/consent/index.ts")).toBe('export { ConsentBanner as Consent } from "@clossys/designer/blocks";\n');
     expect(file("surface-index.ts")).toContain('export { Faq } from "./sections/faq/index.js";\n');
-    expect(file("surface-index.ts")!.split("\n").filter(Boolean)).toHaveLength(31);
-    expect(JSON.parse(file("surfaces-consumption.json")!).fills).toHaveLength(31);
+    expect(file("surface-index.ts")!.split("\n").filter(Boolean)).toHaveLength(39);
+    expect(JSON.parse(file("surfaces-consumption.json")!).fills).toHaveLength(39);
   });
 
   it("refuses a missing or differing package export, version or module in the evidence", () => {

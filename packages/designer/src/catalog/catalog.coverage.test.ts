@@ -197,6 +197,7 @@ const FROZEN_BLOCK_IDS: readonly string[] = [
   "prose.article",
   "prose.table-of-contents",
   "say.anatomy-callouts",
+  "say.call-to-action",
   "say.chapter",
   "say.empty-state",
   "say.error-state",

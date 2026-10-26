@@ -1,0 +1,56 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/sections.consent",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "export": "./blocks#ConsentBanner",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "sections.consent",
+      "source": "foundry",
+      "sourceAddress": "./blocks#ConsentBanner",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "sections": {
+    "consent": {
+      "configs": {},
+      "impl": {
+        "export": "ConsentBanner",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "license": "MIT",
+      "notes": [
+        "Accept and reject are two equal-prominence built-in buttons labelled by the host, who also supplies onAccept and onReject. The banner owns no consent state, storage or network call.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "parts": [],
+      "pin": {
+        "export": "./blocks#ConsentBanner",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {},
+      "slot": "sections.consent",
+      "slotMap": {
+        "actions": "./blocks#ConsentBanner.acceptLabel,rejectLabel",
+        "copy": "./blocks#ConsentBanner.title,body",
+        "policy": "./blocks#ConsentBanner.privacyLink"
+      },
+      "source": "foundry"
+    }
+  }
+}

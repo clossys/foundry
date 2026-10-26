@@ -1,0 +1,55 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/sections.call-to-action",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "export": "./blocks#CallToAction",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "sections.call-to-action",
+      "source": "foundry",
+      "sourceAddress": "./blocks#CallToAction",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "sections": {
+    "call-to-action": {
+      "configs": {},
+      "impl": {
+        "export": "CallToAction",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "license": "MIT",
+      "notes": [
+        "Header is the composed SectionHeader (eyebrow, title, description) on a section ground; actions are one primary and at most one secondary host node, so the two-action ceiling is structural.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "parts": [],
+      "pin": {
+        "export": "./blocks#CallToAction",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {},
+      "slot": "sections.call-to-action",
+      "slotMap": {
+        "actions": "./blocks#CallToAction.primaryAction,secondaryAction",
+        "header": "./blocks#CallToAction.title,eyebrow,description"
+      },
+      "source": "foundry"
+    }
+  }
+}

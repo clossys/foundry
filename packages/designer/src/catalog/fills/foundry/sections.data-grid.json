@@ -1,0 +1,58 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/sections.data-grid",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "export": "./blocks#DataTable",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "subset",
+      "slot": "sections.data-grid",
+      "source": "foundry",
+      "sourceAddress": "./blocks#DataTable",
+      "status": "draft",
+      "trust": "foundry",
+      "unmapped": [
+        "slot.pinning"
+      ]
+    }
+  },
+  "sections": {
+    "data-grid": {
+      "configs": {},
+      "impl": {
+        "export": "DataTable",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "license": "MIT",
+      "notes": [
+        "Cells are rendered by the column definitions (cell renderers); no column pinning API, so pinning stays unmapped. Host supplies rowKey and label.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "parts": [],
+      "pin": {
+        "export": "./blocks#DataTable",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {},
+      "slot": "sections.data-grid",
+      "slotMap": {
+        "cells": "./blocks#DataTable.columns",
+        "rows": "./blocks#DataTable.rows"
+      },
+      "source": "foundry"
+    }
+  }
+}

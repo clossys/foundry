@@ -102,43 +102,38 @@
     },
     {
       "missingMembers": [],
-      "missingRequiredSlots": [
-        "actions",
-        "header"
-      ],
-      "missingSlots": [
-        "actions",
-        "header"
-      ],
+      "missingRequiredSlots": [],
+      "missingSlots": [],
       "notes": [
-        "No Designer section export; a Publisher check fixture is not an implementation.",
+        "Header is the composed SectionHeader (eyebrow, title, description) on a section ground; actions are one primary and at most one secondary host node, so the two-action ceiling is structural.",
         "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.call-to-action",
-      "status": "unavailable",
+      "status": "candidate",
       "supportedMembers": [],
-      "supportedSlots": [],
+      "supportedSlots": [
+        "actions",
+        "header"
+      ],
       "unresolvedMemberAxes": []
     },
     {
-      "missingMembers": [
-        "layout.grid",
-        "layout.list"
-      ],
-      "missingRequiredSlots": [
-        "records"
-      ],
-      "missingSlots": [
-        "records"
-      ],
+      "missingMembers": [],
+      "missingRequiredSlots": [],
+      "missingSlots": [],
       "notes": [
-        "Items is a generic engine; the recipe row supplies no independently evidenced configured section.",
+        "Each record renders a Foundry Card (outline) with the title as its single Link and an optional Badge. Loading, empty and error states stay host-owned around the list.",
         "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.cards",
-      "status": "unavailable",
-      "supportedMembers": [],
-      "supportedSlots": [],
+      "status": "candidate",
+      "supportedMembers": [
+        "layout.grid",
+        "layout.list"
+      ],
+      "supportedSlots": [
+        "records"
+      ],
       "unresolvedMemberAxes": []
     },
     {
@@ -188,16 +183,20 @@
       "unresolvedMemberAxes": []
     },
     {
-      "missingMembers": [],
+      "missingMembers": [
+        "arrangement.library-board"
+      ],
       "missingRequiredSlots": [],
-      "missingSlots": [],
+      "missingSlots": [
+        "controls"
+      ],
       "notes": [
         "The exported Matrix supports arrangement=grid for authored comparison cells and arrangement=choices for content-sized native RadioGroup rows. Choices accepts one or more library columns and unbounded leaf rows without an internal scroll region.",
         "The choices assembly consumes SectionHeader, RadioGroup, Card, Badge, Tooltip and token-backed table layout; Studio supplies checked token, asset or component previews.",
         "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.comparison",
-      "status": "candidate",
+      "status": "subset",
       "supportedMembers": [],
       "supportedSlots": [
         "columns",
@@ -208,24 +207,20 @@
     },
     {
       "missingMembers": [],
-      "missingRequiredSlots": [
-        "actions",
-        "copy",
-        "policy"
-      ],
-      "missingSlots": [
-        "actions",
-        "copy",
-        "policy"
-      ],
+      "missingRequiredSlots": [],
+      "missingSlots": [],
       "notes": [
-        "No package implementation is available.",
+        "Accept and reject are two equal-prominence built-in buttons labelled by the host, who also supplies onAccept and onReject. The banner owns no consent state, storage or network call.",
         "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.consent",
-      "status": "unavailable",
+      "status": "candidate",
       "supportedMembers": [],
-      "supportedSlots": [],
+      "supportedSlots": [
+        "actions",
+        "copy",
+        "policy"
+      ],
       "unresolvedMemberAxes": []
     },
     {
@@ -254,22 +249,21 @@
     },
     {
       "missingMembers": [],
-      "missingRequiredSlots": [
-        "rows"
-      ],
+      "missingRequiredSlots": [],
       "missingSlots": [
-        "cells",
-        "pinning",
-        "rows"
+        "pinning"
       ],
       "notes": [
-        "Registry row is a spec; internal PivotGrid is not a public data-grid section export.",
+        "Cells are rendered by the column definitions (cell renderers); no column pinning API, so pinning stays unmapped. Host supplies rowKey and label.",
         "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.data-grid",
-      "status": "unavailable",
+      "status": "subset",
       "supportedMembers": [],
-      "supportedSlots": [],
+      "supportedSlots": [
+        "cells",
+        "rows"
+      ],
       "unresolvedMemberAxes": []
     },
     {
@@ -318,26 +312,26 @@
       "unresolvedMemberAxes": []
     },
     {
-      "missingMembers": [
+      "missingMembers": [],
+      "missingRequiredSlots": [],
+      "missingSlots": [],
+      "notes": [
+        "Kind is host data rendered as data-error-kind; title and description copy stay host-authored. Not a live region: the host moves focus or announces the replacement.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.error-state",
+      "status": "candidate",
+      "supportedMembers": [
         "kind.failure",
         "kind.forbidden",
         "kind.not-found",
         "kind.offline"
       ],
-      "missingRequiredSlots": [],
-      "missingSlots": [
+      "supportedSlots": [
         "code",
         "report",
         "retry"
       ],
-      "notes": [
-        "Registry row is a spec; no error-state package export.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
-      ],
-      "slot": "sections.error-state",
-      "status": "unavailable",
-      "supportedMembers": [],
-      "supportedSlots": [],
       "unresolvedMemberAxes": []
     },
     {
@@ -443,24 +437,22 @@
       "unresolvedMemberAxes": []
     },
     {
-      "missingMembers": [
-        "lightbox.disabled",
-        "lightbox.enabled"
-      ],
-      "missingRequiredSlots": [
-        "images"
-      ],
-      "missingSlots": [
-        "images"
-      ],
+      "missingMembers": [],
+      "missingRequiredSlots": [],
+      "missingSlots": [],
       "notes": [
-        "Registry row is a spec; no gallery package export.",
+        "Images are host nodes with their own alternative text; the lightbox is the Foundry Dialog opened from a React Aria button per image. Host supplies label.",
         "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.gallery",
-      "status": "unavailable",
-      "supportedMembers": [],
-      "supportedSlots": [],
+      "status": "candidate",
+      "supportedMembers": [
+        "lightbox.disabled",
+        "lightbox.enabled"
+      ],
+      "supportedSlots": [
+        "images"
+      ],
       "unresolvedMemberAxes": []
     },
     {
@@ -574,20 +566,18 @@
     },
     {
       "missingMembers": [],
-      "missingRequiredSlots": [
-        "notices"
-      ],
-      "missingSlots": [
-        "notices"
-      ],
+      "missingRequiredSlots": [],
+      "missingSlots": [],
       "notes": [
-        "Registry row is a spec; no notices package export.",
+        "Each notice renders a Foundry Banner whose tone sets its live-region role; the host supplies label and removes a notice on onDismiss. No queue or timer.",
         "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.notices",
-      "status": "unavailable",
+      "status": "candidate",
       "supportedMembers": [],
-      "supportedSlots": [],
+      "supportedSlots": [
+        "notices"
+      ],
       "unresolvedMemberAxes": []
     },
     {
@@ -755,24 +745,22 @@
       "unresolvedMemberAxes": []
     },
     {
-      "missingMembers": [
-        "layout.grid",
-        "layout.row"
-      ],
-      "missingRequiredSlots": [
-        "stats"
-      ],
-      "missingSlots": [
-        "stats"
-      ],
+      "missingMembers": [],
+      "missingRequiredSlots": [],
+      "missingSlots": [],
       "notes": [
-        "Stat accepts one scalar measurement; no verified configured stats-array section.",
+        "Each item renders one Stat (label, value, optional delta/trend and description); no sparkline or meter composition is claimed.",
         "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.stats",
-      "status": "unavailable",
-      "supportedMembers": [],
-      "supportedSlots": [],
+      "status": "candidate",
+      "supportedMembers": [
+        "layout.grid",
+        "layout.row"
+      ],
+      "supportedSlots": [
+        "stats"
+      ],
       "unresolvedMemberAxes": []
     },
     {

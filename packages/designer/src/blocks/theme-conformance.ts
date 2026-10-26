@@ -76,6 +76,12 @@ export const BLOCK_THEME_CONFORMANCE: readonly BlockThemeRegistration[] = [
   { exportName: "SectionFrame", source: "src/blocks/SectionFrame.tsx", contrastPairs: ["ink-primary/surface-base", "ink-primary/surface-sunken", "ink-on-inverse/surface-inverse"] },
   { exportName: "NewsletterBand", source: "src/blocks/NewsletterBand.tsx", contrastPairs: GROUNDED_READING },
   { exportName: "ConsentBanner", source: "src/blocks/ConsentBanner.tsx", contrastPairs: RAISED_READING },
+  { exportName: "ErrorState", source: "src/blocks/ErrorState.tsx", contrastPairs: [...BASE_READING, "ink-muted/surface-base"] },
+  { exportName: "StatGroup", source: "src/blocks/StatGroup.tsx", contrastPairs: BASE_READING },
+  { exportName: "RecordCards", source: "src/blocks/RecordCards.tsx", contrastPairs: [...RAISED_READING, "ink-muted/surface-raised"] },
+  { exportName: "CallToAction", source: "src/blocks/CallToAction.tsx", contrastPairs: GROUNDED_READING },
+  { exportName: "NoticeList", source: "src/blocks/NoticeList.tsx", contrastPairs: ["status-info-text/status-info-tint", "status-success-text/status-success-tint", "status-warning-text/status-warning-tint", "status-danger-text/status-danger-tint"] },
+  { exportName: "Gallery", source: "src/blocks/Gallery.tsx", contrastPairs: ["ink-secondary/surface-raised", "ink-muted/surface-base"] },
   {
     exportName: "Panel", source: "src/blocks/Panel.tsx", contrastPairs: [],
     exemptionReason: "Owns header, content and footer regions on Card's tokenized outline surface; supplies no foreground text or mark. Caller-supplied content owns its reading ink and contrast pairs; Card's surface and edge remain in the token checks.",

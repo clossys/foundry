@@ -19,7 +19,7 @@ describe("catalog entry surface-defaults surface", () => {
     const fills: SurfaceDefaultCandidateDocument[] = [...catalogEntry.importFoundrySections().fills, ...catalogEntry.importFoundryFrames().fills];
     const plan: SurfaceDefaultsPlan = catalogEntry.planSurfaceDefaults({ catalog: { slots, fills }, slots: slots.map(slot => slot.id), preference: ["foundry"] });
     expect(plan.rows).toHaveLength(54);
-    expect(plan.decisions).toHaveLength(31);
+    expect(plan.decisions).toHaveLength(39);
     const basis: SurfaceDefaultBasis = "preference";
     const row: SurfaceDefaultRow = plan.rows.find(candidate => candidate.slot === "frames.sheet")!;
     const decision: SurfaceDefaultDecision = plan.decisions.find(candidate => candidate.slot === "frames.sheet")!;

@@ -229,6 +229,7 @@ export const BLOCK_ENTRIES: readonly BlockEntry[] = [
   // Explain / Sections
   built(SECTIONS, "ContentSection", { id: "say.takeaway", label: "Content section" }),
   deprecated(SECTIONS, "MarketingChapter", "say.takeaway", { id: "say.chapter", label: "Marketing chapter" }),
+  built(SECTIONS, "CallToAction", { id: "say.call-to-action", label: "Call to action" }),
 
   // Explain / Capabilities
   recipe(CAPABILITIES, "items.raw", { id: "items.features", label: "Feature list" }),
@@ -243,7 +244,7 @@ export const BLOCK_ENTRIES: readonly BlockEntry[] = [
 
   // Explain / Media
   built(MEDIA, "MediaFigure", { id: "say.media-figure", label: "Media figure" }),
-  spec(MEDIA, { id: "items.media-gallery", label: "Media gallery", inFlight: pr(2391, "draft") }),
+  built(MEDIA, "Gallery", { id: "items.media-gallery", label: "Media gallery" }),
 
   // Explain / Reading
   built(READING, "ArticleBody", {
@@ -277,7 +278,7 @@ export const BLOCK_ENTRIES: readonly BlockEntry[] = [
   // Organize / Collection
   built(COLLECTION, "Items", { id: "items.raw", label: "Items" }),
   built(COLLECTION, "Item", { id: "items.item", label: "Item" }),
-  recipe(COLLECTION, "items.raw", { id: "items.cards", label: "Card grid" }),
+  built(COLLECTION, "RecordCards", { id: "items.cards", label: "Card grid" }),
   exported(COLLECTION, "TaskList", { id: "items.task-list", label: "Task list" }),
 
   // Organize / Comparison
@@ -299,7 +300,7 @@ export const BLOCK_ENTRIES: readonly BlockEntry[] = [
 
   // Organize / Metrics
   built(METRICS, "Stat", { id: "items.stat", label: "Stat" }),
-  recipe(METRICS, "items.raw", { id: "items.stat-grid", label: "Stat grid" }),
+  built(METRICS, "StatGroup", { id: "items.stat-grid", label: "Stat grid" }),
   built(METRICS, "StatusList", { id: "items.status-list", label: "Status list" }),
   exported(METRICS, "UsageMeter", { id: "items.usage-meter", label: "Usage meter" }),
 
@@ -409,18 +410,14 @@ export const BLOCK_ENTRIES: readonly BlockEntry[] = [
     stableCandidate: true,
     notes: [STABLE_CANDIDATE],
   }),
-  spec(STATES, {
-    id: "say.error-state",
-    label: "Error state",
-    notes: ["Check the admin routes for a consumer before building."],
-  }),
+  built(STATES, "ErrorState", { id: "say.error-state", label: "Error state" }),
 
   // Respond / Decisions
   built(DECISIONS, "ConfirmDialog", { id: "form.confirm-dialog", label: "Confirm dialog" }),
   built(DECISIONS, "ConsentBanner", { id: "form.consent-banner", label: "Consent banner" }),
 
   // Respond / Notices
-  spec(NOTICES, { id: "say.notice-stack", label: "Notice stack" }),
+  built(NOTICES, "NoticeList", { id: "say.notice-stack", label: "Notice stack" }),
   spec(NOTICES, { id: "form.refresh-status", label: "Refresh status" }),
 
   // Respond / Notifications
