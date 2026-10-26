@@ -25,7 +25,7 @@
  * same way.
  *
  * Thirty-six ship as of this file. See the README's "What's deliberately
- * not here" for what was left out on purpose (`Slider`, `NumberField`, `Toolbar`, `Accordion`, ...).
+ * not here" for what was left out on purpose (`Toolbar`, `Accordion`, ...).
  */
 
 import { version as reactVersion } from "react";
@@ -93,6 +93,9 @@ export type { CheckboxProps, CheckboxGroupProps } from "./Checkbox.js";
 
 export { Switch } from "./Switch.js";
 export type { SwitchProps } from "./Switch.js";
+
+export { Slider } from "./Slider.js";
+export type { SliderProps, SliderValue } from "./Slider.js";
 
 export { Select } from "./Select.js";
 export type { SelectProps, SelectOption } from "./Select.js";

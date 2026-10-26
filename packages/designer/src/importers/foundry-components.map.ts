@@ -56,6 +56,7 @@ export const FOUNDRY_COMPONENT_MAP: Readonly<Record<string, FoundryComponentMapp
   "search-field": component("SearchField", { "part.clear": "[clear-button]", "part.submit": ".onSubmit", "state.empty": "[isEmpty]", "state.filled": "[!isEmpty]" }, ["label", "value", "onChange", "onSubmit", "description", "errorMessage", "className"]),
   select: component("Select", { "selection.single": ".selectedKey", "state.invalid": ".isInvalid", ...sizes }, ["label", "options", "selectedKey", "onSelectionChange", "isInvalid", "size", "description", "errorMessage", "className"]),
   separator: component("Separator", orientations, ["orientation", "decorative", "className"]),
+  slider: component("Slider", { ...orientations, "selection.single": ".value=number", "selection.range": ".value=number[]" }, ["label", "value", "defaultValue", "onChange", "onChangeEnd", "minValue", "maxValue", "step", "formatOptions", "orientation", "isDisabled", "thumbLabels", "showValue", "className"], { notes: ["A range is a value array with one thumbLabels name per thumb; the fill spans the selected range. Source and runtime qualification remain unmeasured."] }),
   skeleton: component("Skeleton", dimension("shape", "shape", ["text", "block", "circle"]), ["shape", "aria-label", "className"]),
   spinner: component("Spinner", sizes, ["size", "label", "className"]),
   "status-mark": component("StatusMark", tones("tone"), ["tone", "children", "className"]),

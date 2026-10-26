@@ -610,18 +610,19 @@
       ]
     },
     {
-      "missing": [
+      "missing": [],
+      "notes": [
+        "A range is a value array with one thumbLabels name per thumb; the fill spans the selected range. Source and runtime qualification remain unmeasured.",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.slider",
+      "status": "candidate",
+      "supported": [
         "orientation.horizontal",
         "orientation.vertical",
         "selection.range",
         "selection.single"
-      ],
-      "notes": [
-        "No package implementation is available."
-      ],
-      "slot": "components.slider",
-      "status": "unavailable",
-      "supported": []
+      ]
     },
     {
       "missing": [],

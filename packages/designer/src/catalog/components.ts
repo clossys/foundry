@@ -367,11 +367,11 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
     racBase: rac("NumberField"),
     disposition: "finish",
   }),
-  building(NUMBER, issue(2362), {
+  onMain(NUMBER, "Slider", ["src/components/Slider.tsx"], {
     id: "enter.slider",
     label: "Slider",
-    racBase: rac("Slider", "SliderTrack", "SliderThumb", "SliderOutput"),
-    disposition: "finish",
+    racBase: rac("Slider", "SliderTrack", "SliderFill", "SliderThumb", "SliderOutput"),
+    disposition: "keep",
   }),
 
   // Interaction / Date and time

@@ -8191,24 +8191,24 @@ over the IDENTICAL fixture in the same test, exits `0`.
 
 ## What's deliberately not here
 
-**Components:** forty ship —
+**Components:** forty-one ship —
 `Button`, `NativeAction`, `IconButton`, `Icon`, `TextField`, `Badge`, `Card`, `Breadcrumb`, `Link`,
 `Checkbox`, `Switch`, `Select`, `Textarea`, `Avatar`, `Spinner`, `Menu`,
 `Dialog`, `Tabs`, `Table`, `Field`, `Skeleton`, `Tooltip`, `Banner`,
 `RadioGroup`, `Popover`, `DateField`, `Calendar`, `ComboBox`, `SearchField`,
 `FileTrigger`, `Disclosure`, `ProgressBar`, `Separator`, `Chip`,
-`StatusMark`, `Meter`, `ResizeHandle`, `Logomark`, `GridList` and `ToggleButton`. No `Modal` exposed as a public component of
+`StatusMark`, `Meter`, `ResizeHandle`, `Logomark`, `GridList`, `ToggleButton` and `Slider`. No `Modal` exposed as a public component of
 its own beyond what `Dialog` and `Popover` already compose internally —
 that gets added here only once something real needs a bare modal overlay
 with neither `Dialog`'s fixed trigger/content shape nor `Popover`'s
-anchored one, not speculatively. `Slider`, `NumberField`, `Toolbar`, and
-`Accordion` are all deliberately NOT here either — each is a real,
+anchored one, not speculatively. `Toolbar` and
+`Accordion` are deliberately NOT here either — each is a real,
 plausible future component, but none was asked for by this rung. Adding one
 speculatively, just because a related component shipped, is the exact
 un-bounded growth this package's own "variant rule" warns against one level
-up. They get added here only once something real needs them, as `Calendar`
-and `ToggleButton` were when the catalog's date-picker and toggle-button
-slots needed Foundry implementations.
+up. They get added here only once something real needs them, as `Calendar`,
+`ToggleButton` and `Slider` were when the catalog's date-picker, toggle-button
+and slider slots needed Foundry implementations.
 
 **Blocks:** shipped blocks include `AccessMatrix`, `ColumnMapper`, `Lockup`, `PageHeader`, `AccountMenu`, `EmptyState`, `DataTable`, `CanvasSurface`, `DetailView`, `Pagination`, `UsageMeter`, `Stat`, `Form`, `FieldGroup`, `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `MarketingChapter`, `FeatureGrid`, `Matrix`, `Specimen`, `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`, `PricingTable`, `Testimonial`, `TableOfContents`, `TestimonialSet`, `LogoCloud`, `PeopleGrid`, `ArticleBody`, `SectionFrame`, `ConsentBanner`, `Panel`, `Drawer`, `ResizablePane`, `CommandMenu`, `AppNavigation`, `PageBar`, `Explorer`, `RecordLedger`, `AnatomyCallouts`, `Scene`, `Item`, `Tree`, `Items`, `GroupedTable`, `CatalogWorkspace`, `CatalogBrowser`, `Chat`, `NewsletterBand`, `ResourceList`, `RelationGraph`, `TaskList` and `EventItem`. Current inventory counts come from the shared catalog
 in the repository check `src/catalog/catalog.coverage.test.ts` (not shipped in the installed package). No
