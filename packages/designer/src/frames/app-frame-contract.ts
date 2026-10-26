@@ -104,7 +104,7 @@ export const APP_FRAME_CONTRACT = freeze({
     page: "optional page owns the bar h1, optional host-rooted breadcrumb and sibling/workspace menus, optional information overlay and host actions; only the first primary request receives primary styling",
     bar: "sticky within the stage, translucent with supported backdrop blur; opaque for reduced transparency, forced colors or unsupported blur",
     responsiveQuery: APP_FRAME_WIDE_QUERY,
-    brand: "host mark appears in the profile Avatar unless account.avatar is initials; brand.navigationMark adds the mark and its name at the navigation top; no header brand text, link or slot",
+    brand: "host mark sits at the navigation top at its plate radius (Logomark), with the brand.navigationMark name when supplied; the profile Avatar shows initials unless account.avatar is mark; a signed-out row shows the plate mark; no header brand text, link or slot",
     footer: "inline keeps account beside the theme control; stacked gives the theme control its own row above a full-width account row; long labels truncate",
     accessibility: "logical direction and forced-colors treatment apply to composed chrome and focus indicators",
   },

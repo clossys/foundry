@@ -26,7 +26,7 @@ function fixture(actor: boolean): AppFrameProps {
 }
 
 describe("AppFrame header carries no brand", () => {
-  it.each([true, false])("renders no wordmark or brand link in the header and keeps the mark in the profile Avatar (actor %s)", actor => {
+  it.each([true, false])("renders no wordmark or brand link in the header; the profile shows initials, the signed-out row the plate mark (actor %s)", actor => {
     render(<AppFrame {...fixture(actor)} />);
     const header = document.querySelector('[data-application-frame-region="header"]');
     expect(header).not.toBeNull();
@@ -36,7 +36,8 @@ describe("AppFrame header carries no brand", () => {
     expect(screen.queryByRole("link", { name: "Example console" })).toBeNull();
     expect(header!.querySelector("img")).toBeNull();
     const profile = screen.getByRole("button", { name: actor ? "Sam River" : "Signed out" });
-    expect(profile.querySelector("img")).toHaveAttribute("src", "/example-mark.svg");
+    if (actor) expect(profile.querySelector("img")).toBeNull();
+    else expect(profile.querySelector("img")).toHaveAttribute("src", "/example-mark.svg");
     expect(profile.closest('[data-application-navigation-region="footer"]')).not.toBeNull();
   });
 });

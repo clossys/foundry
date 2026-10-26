@@ -273,7 +273,7 @@ describe("AppFrame floating stage", () => {
     await user.click(nav); expect(nav).toHaveAttribute("aria-expanded", "true");
     await user.click(panel); expect(panel).toHaveAttribute("aria-expanded", "false"); expect(panel).toHaveFocus();
     expect(region("header")).toContainElement(nav); expect(region("header")).toContainElement(panel);
-    expect(nav.style.minBlockSize).toContain("--ui-layout-tap-target"); expect(panel.style.minBlockSize).toBe(nav.style.minBlockSize);
+    expect(nav).toHaveClass("control-h-md"); expect(panel).toHaveClass("control-h-md");
     const { rightPanel: _, ...withoutPanel } = props; view.rerender(<AppFrame {...withoutPanel} />);
     expect(document.querySelector('[data-application-frame-panel="trigger"]')).toBeNull();
   });
@@ -308,8 +308,10 @@ describe("AppFrame floating stage", () => {
     render(<AppFrame {...stageFixture()} />);
     const header = document.querySelector<HTMLElement>('[data-application-navigation-region="header"]')!;
     expect(header.firstElementChild).toContainElement(screen.getByRole("button", { name: "Find a command" }));
-    const clearance = (header.firstElementChild as HTMLElement).style.paddingBlockStart;
-    expect(clearance).toContain("--ui-layout-tap-target"); expect(clearance).toContain("--spacing-md");
+    // The brand row takes the token-sized corner row before search.
+    const brand = header.querySelector<HTMLElement>('[data-application-frame-slot="brand"]')!;
+    expect(brand.style.minBlockSize).toContain("--ui-layout-tap-target"); expect(brand.style.marginBlockEnd).toContain("--spacing-md");
+    expect(brand.compareDocumentPosition(screen.getByRole("button", { name: "Find a command" })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it.each(["ltr", "rtl"] as const)("b: reserves docked widths and overlays panels before the stage drops below its minimum in %s", async dir => {
@@ -368,7 +370,7 @@ describe("AppFrame floating stage", () => {
     expect(stage.style.maxInlineSize).toBe("");
   });
 
-  it("d: reserves the adaptive sticky bar above the independently scrolling stage with an opaque fallback", () => {
+  it("d: reserves the sticky, unboxed raised bar above the independently scrolling stage", () => {
     const supported = vi.fn(() => true);
     vi.stubGlobal("CSS", Object.assign(Object.create(globalThis.CSS ?? null), { supports: supported }));
     const view = render(<AppFrame {...stageFixture()} />);
@@ -376,7 +378,8 @@ describe("AppFrame floating stage", () => {
     expect(bar).toHaveStyle({ position: "sticky" }); expect(region("header")).toContainElement(bar);
     expect(region("stage")).not.toContainElement(bar);
     expect(screen.getByRole("main")).toHaveClass("overflow-auto");
-    expect(bar.style.backdropFilter).toContain("blur");
+    // The frame default is the solid raised step, never the inset glass box, even where blur is supported.
+    expect(bar.style.backdropFilter).toBe("none"); expect(bar).toHaveClass("bg-surface-raised");
     view.unmount(); supported.mockReturnValue(false); render(<AppFrame {...stageFixture()} />);
     expect(screen.getByRole("banner").style.backdropFilter).toBe("none");
     expect(screen.getByRole("banner")).toHaveClass("bg-surface-raised");
@@ -471,10 +474,10 @@ describe("AppFrame floating stage", () => {
 
 
 describe("AppFrame profile brand", () => {
-  it("moves the host mark to the profile Avatar and roots the breadcrumb only from an explicit host root", () => {
+  it("keeps the host mark out of the profile Avatar and roots the breadcrumb only from an explicit host root", () => {
     const view = render(<AppFrame {...stageFixture()} root={{ label: "Atlas", href: "#home" }} />);
     expect(screen.queryByRole("link", { name: "Atlas workspace" })).toBeNull();
-    expect(screen.getByRole("button", { name: "Example member" }).querySelector("img")).toHaveAttribute("src", "/mark.svg");
+    expect(screen.getByRole("button", { name: "Example member" }).querySelector("img")).toBeNull();
     expect(within(screen.getByRole("navigation", { name: "Breadcrumb" })).getByRole("link", { name: "Atlas" })).toBeInTheDocument();
     view.rerender(<AppFrame {...stageFixture()} />);
     expect(within(screen.getByRole("navigation", { name: "Breadcrumb" })).queryByRole("link", { name: "Atlas" })).toBeNull();

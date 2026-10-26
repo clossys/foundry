@@ -260,6 +260,16 @@
   }
 }
 
+/* Frame chrome chevrons (dock toggle, sheet trigger) turn on the fast motion tier, property-specific, never `all`. */
+@utility frame-chevron-motion {
+  transition-property: transform, rotate;
+  transition-duration: var(--ui-duration-fast, 120ms);
+  transition-timing-function: var(--ease-default, cubic-bezier(.2, 0, 0, 1));
+  @media (prefers-reduced-motion: reduce) {
+    transition-duration: 0s;
+  }
+}
+
 @utility disclosure-icon-motion {
   transition-property: transform, translate, scale, rotate;
   transition-duration: var(--ui-duration-default, 240ms);

@@ -78,9 +78,11 @@ describe("data-readable AppFrame contract", () => {
     expect(APP_FRAME_CONFIG_SCHEMA).not.toHaveProperty("skipLink");
   });
 
-  it("records the actual Avatar and slot provider used by the frame", () => {
+  it("records the actual Logomark and slot provider used by the frame", () => {
     const source = readFileSync(resolve(import.meta.dirname, "./AppFrame.tsx"), "utf8");
-    expect(source).toContain("<Avatar");
+    expect(source).toContain("<Logomark");
+    expect(source).not.toContain("<Avatar src={markSrc}");
+    expect(APP_FRAME_CONTRACT.constituents).toContainEqual({ owner: "@clossys/designer", subpath: "components", export: "Logomark" });
     expect(source).toContain("<FrameSlotProvider>");
     expect(APP_FRAME_CONTRACT.constituents).toContainEqual({ owner: "@clossys/designer", subpath: "components", export: "Avatar" });
     expect(APP_FRAME_CONTRACT.constituents).toContainEqual({ owner: "@clossys/designer", subpath: "shell", export: "FrameSlotProvider" });
