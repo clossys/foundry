@@ -1,5 +1,5 @@
 import { afterEach, expect, it, vi } from "vitest";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Button } from "../components/Button.js";
 import { CandidatePromptDialog } from "./CandidatePromptDialog.js";
@@ -41,4 +41,24 @@ it("reports an unavailable host check explicitly", async () => {
   const user = await open();
   await user.click(screen.getByRole("button", { name: labels.board.checkCandidates }));
   expect(await screen.findByRole("status")).toHaveTextContent(labels.board.candidatesUnavailable);
+});
+it("leads with a summary, bounds the prompt in a scrollable mono region and pins one primary action in a sticky footer", async () => {
+  await open({ returnStep: data.returnStep, checkCandidates: vi.fn() });
+  const dialog = screen.getByRole("dialog");
+  const title = screen.getByRole("heading", { level: 2, name: labels.board.promptTitle });
+  expect(title.classList).toContain("text-h2");
+  const summary = dialog.querySelector<HTMLElement>("[data-prompt-summary]")!;
+  expect(summary).toHaveTextContent(`${data.board.label} · ${data.slot.label} ${data.slot.id}`);
+  const code = dialog.querySelector<HTMLElement>("pre")!;
+  expect(summary.compareDocumentPosition(code) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  for (const name of ["font-mono", "text-code-block", "overflow-auto", "max-h-[40vh]"]) expect(code.classList).toContain(name);
+  expect(code.tabIndex).toBe(0);
+  const actions = dialog.querySelector<HTMLElement>("[data-dialog-actions]")!;
+  expect(dialog.lastElementChild).toBe(actions);
+  for (const name of ["sticky", "bottom-0", "bg-overlay-surface"]) expect(actions.classList).toContain(name);
+  const primary = [...dialog.querySelectorAll("button")].filter(button => button.classList.contains("bg-action"));
+  expect(primary.map(button => button.textContent)).toEqual([labels.board.copy]);
+  expect(within(actions).getByRole("button", { name: labels.board.checkCandidates })).toBeVisible();
+  expect(within(actions).getByRole("button", { name: labels.board.close })).toBeVisible();
+  expect(dialog.parentElement!.classList).toContain("overlay-enter");
 });
