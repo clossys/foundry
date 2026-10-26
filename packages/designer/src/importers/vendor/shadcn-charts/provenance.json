@@ -1,0 +1,16 @@
+{
+  "repository": "https://github.com/shadcn-ui/ui",
+  "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+  "base": "aria",
+  "license": "MIT",
+  "notice": "../shadcn-LICENSE.md",
+  "engine": { "name": "recharts", "version": "3.8.0", "license": "MIT", "pinnedBy": "apps/v4/package.json" },
+  "files": [
+    {
+      "path": "apps/v4/registry/bases/aria/ui/chart.tsx",
+      "vendored": "chart.tsx.txt",
+      "sha256": "1bbf2ff917b84dde3c715477618a244e374eaa490732c976dadf91c9b80328d7"
+    }
+  ],
+  "rendering": "client only: upstream marks the file \"use client\"; Recharts 3 sizes the chart in an effect, so a server render draws no SVG"
+}
