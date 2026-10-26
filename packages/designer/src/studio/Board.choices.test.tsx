@@ -121,6 +121,21 @@ it("keeps an authored active choice unchanged when refresh returns a new pending
   expect(changes.changes).toEqual([]); expect(use).not.toHaveBeenCalled();
 });
 
+it("keeps only the requested column for pending rows while editing, never one empty column per library (studio-16)", async () => {
+  const base = emptyLibrary();
+  const catalog = { ...smallCatalog, fills: [] };
+  const rows = matrixRows({ catalog, library: base, working: base, changes: emptyChanges(base), expanded: new Set(), evaluateRows: new Set() });
+  const board = { id: "pending-fixture", label: "Pending fixture", rows: rows.filter(row => row.id === "tokens.surface-color" || row.id === "tokens.spacing"), leaves: ["tokens.surface-color", "tokens.spacing"] };
+  expect(board.rows.every(row => row.candidatesReady === false)).toBe(true);
+  const request = vi.fn();
+  render(<Board board={board} boardRef={null} sources={["foundry", "second", "third"]} labels={labels} working={base} changes={emptyChanges(base)} expanded={new Set()} groupChoices={{}} onExpand={() => {}} onUse={() => {}} onFocusCell={() => {}} onRequestRow={request} />);
+  await userEvent.setup().click(screen.getByRole("button", { name: labels.board.changeSelection }));
+  expect(request.mock.calls.map(([row, source]) => [row.id, source])).toEqual(board.rows.map(row => [row.id, "foundry"]));
+  expect(screen.getByRole("columnheader", { name: "foundry" })).toBeInTheDocument();
+  expect(screen.queryByRole("columnheader", { name: "second" })).toBeNull();
+  expect(screen.queryByRole("columnheader", { name: "third" })).toBeNull();
+});
+
 it("shows actual selected values before alternative demand with no comparison columns", () => {
   const base = emptyLibrary();
   const library = applyLibraryChange(smallCatalog, base, { baseHash: libraryHash(base), changes: [{ op: "author", slot: "tokens.surface-color", tokens: { base: { $type: "color", $value: "#abcdef", $extensions: { "com.clossys.css": { raw: "#abcdef" } } } } }] });

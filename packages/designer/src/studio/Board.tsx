@@ -29,9 +29,10 @@ export const Board = memo(function Board({ board, boardRef, summary, onOpen, wor
   const [editing, setEditing] = useState(false);
   const rows = board.rows.filter(row => row.scope === "slot");
   const text = matrix.labels.board;
-  const edit = () => { setEditing(true); for (const row of rows) if (row.candidatesReady === false) matrix.onRequestRow?.(row, matrix.sources[0] ?? matrix.working.source.id); };
+  const requested = matrix.sources[0] ?? matrix.working.source.id;
+  const edit = () => { setEditing(true); for (const row of rows) if (row.candidatesReady === false) matrix.onRequestRow?.(row, requested); };
   const promptData = (row: MatrixRow, current = false): CandidatePromptData => valueBoardPrompt({ board, row, consumer: matrix.working.source.id, contextTokens, variants, workflow, returnStep: text.returnStep }, current);
-  const sources = matrix.sources.filter(source => rows.some(row => row.candidates.some(candidate => candidate.source === source && (candidate.fill.sourceAddress !== "" || candidate.members.length > 0))) || rows.some(row => row.candidatesReady === false));
+  const sources = matrix.sources.filter(source => rows.some(row => row.candidates.some(candidate => candidate.source === source && (candidate.fill.sourceAddress !== "" || candidate.members.length > 0))) || (source === requested && rows.some(row => row.candidatesReady === false)));
   return <section tabIndex={-1} id={id} ref={boardRef} data-studio-board={board.id} data-board-mode={editing ? "edit" : "view"} aria-labelledby={headingId} className="flex h-max w-max shrink-0 flex-col gap-sm rounded-surface border border-line-base bg-surface-base p-md">
     <BoardHeader id={headingId} title={board.label} editing={editing} labels={text} onEdit={edit} onDone={() => setEditing(false)} />
     <CanvasLodLayers full={<div data-studio-zoom-full="" className="w-max">{editing ? <>
