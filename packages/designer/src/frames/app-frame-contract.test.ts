@@ -68,6 +68,8 @@ describe("data-readable AppFrame contract", () => {
       "navigation.defaultCollapsed": { values: [false, true], default: false },
       "rightPanel.defaultCollapsed": { values: [false, true], default: false },
       "theme.defaultPreference": { values: ["system", "light", "dark"], default: "system" },
+      "account.avatar": { values: ["mark", "initials"], default: "mark" },
+      footerLayout: { values: ["inline", "stacked"], default: "inline" },
       dir: { values: ["ltr", "rtl"], default: null, omission: "inherit document direction" },
     });
     expect(APP_FRAME_CONTRACT.defaults).toMatchObject({ skipLabel: "Skip to content", themeStorageKey: "ui-theme", rightPanelOpenLabel: "Open panel", rightPanelCloseLabel: "Close panel" });

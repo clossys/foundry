@@ -10281,6 +10281,8 @@ and synthetic geometry tests are not browser clearance.
 
 `APP_FRAME_CONTRACT` is the recursively frozen composition metadata exported from `@clossys/designer/frames`: frame identity, adapter, regions, host inputs, configuration and defaults. Its qualification remains `unverified` with `measurement-required`; the metadata does not establish runtime qualification. `APP_FRAME_CONFIG_SCHEMA` is the same immutable configuration schema referenced by that contract, recording accepted values, defaults and omission behavior for header presentation, commands, navigation, right panel, theme preference and direction.
 
+Three optional AppFrame inputs leave existing hosts unchanged when omitted. `brand.navigationMark` (`AppFrameBrandNavigationMark`, a visible `label`) puts the host mark and that name in the navigation's top corner row, above command search; the header bar still carries no brand. `account.avatar` (`AppFrameAccountAvatar`, `"mark"` by default) set to `"initials"` shows the signed-in actor's initials in the profile `Avatar`; a signed-out row keeps the mark. `footerLayout` (`AppFrameFooterLayout`, `"inline"` by default) set to `"stacked"` gives the theme control its own row above a full-width account row. Long account labels truncate in either layout.
+
 `AppFrame`, `AppFrameSpecimen`, their typed host contracts and immutable composition metadata are exported from `@clossys/designer/frames`. Publisher consumes this canonical implementation; it has no AppFrame compatibility export. PageHeaderModule remains a typed page lease inside the frame provider, preserving page context and live action callbacks while the frame owns responsive header presentation.
 
 

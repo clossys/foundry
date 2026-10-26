@@ -432,3 +432,20 @@ it('dispatches adapter-kind changes at the Studio host without changing hook or 
   await waitFor(() => expect(document.querySelector("[data-studio-row]")).not.toBeNull()); expect(legacyLoad).toHaveBeenCalledTimes(2);
   expect(composite.save).not.toHaveBeenCalled(); expect(legacy.save).not.toHaveBeenCalled();
 });
+
+it("contract boards show the host chosen line in tabular figures and name leaf rows with a mono id", async () => {
+  const f = adapterFixture();
+  const named: CompositeStudioLabels = { ...wholeLabels, chosenSummary: (chosen, total) => `${chosen} of ${total} chosen`, leafName: id => id === "sections.band" ? "Band" : undefined };
+  render(<Studio adapter={f.adapter} labels={named} initialSlotId="sections.band" />);
+  await screen.findByText("L-saved");
+  const row = document.querySelector<HTMLElement>('[data-studio-row="sections.band"]')!;
+  const label = row.querySelector<HTMLElement>("[data-studio-leaf-label]")!;
+  expect(label).toHaveTextContent("Band");
+  expect(label.querySelector("[data-studio-leaf-id]")).toHaveTextContent("sections.band");
+  expect(label.querySelector("[data-studio-leaf-id]")).toHaveClass("font-mono", "tabular-nums");
+  const board = row.closest<HTMLElement>("[data-studio-board]")!;
+  const lines = [...board.querySelectorAll<HTMLElement>("[data-studio-chosen-summary]")];
+  expect(lines.length).toBeGreaterThan(0);
+  const total = board.querySelectorAll('[data-studio-zoom-full] [data-studio-row]').length;
+  for (const line of lines) { expect(line).toHaveTextContent(new RegExp(`^\\d+ of ${total} chosen$`)); expect(line).toHaveClass("tabular-nums"); }
+});

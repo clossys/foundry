@@ -32,8 +32,12 @@ export interface StudioLabels {
   /** Available members from the contract and loaded fills, including members without a visual preview. */
   memberCount: (count: number) => string;
   scope: { explanation: string; label: string; member: string; slot: string; node: string; memberPicker: string; nodePicker: string };
-  /** One-line status of a card. */
+  /** One-line status of a card. An empty string renders no board check line. */
   checkSummary: (errors: number, notices: number) => string;
+  /** Plain "n of m chosen" board summary line. Omitted: no chosen line. */
+  chosenSummary?: (chosen: number, total: number) => string;
+  /** Human name for a leaf id, shown above the id (in the mono face) in a board row. Omitted or undefined: the id alone. */
+  leafName?: (id: string) => string | undefined;
   previewUnavailable: string;
   visualPreviewUnsupported: string;
   referenceOnly: string;

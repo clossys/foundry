@@ -2,10 +2,24 @@ import type { ReactNode } from "react";
 import type { PageBarHeader, FrameNavigate, PageBarDestination, PageBarCrumb, PageBarAction, PageBarPage, AccountMenuActor, AccountMenuProps, AccountMenuSection, AppNavigationProps, CommandMenuProps } from "../blocks/index.js";
 import type { ThemeProviderProps, ThemeToggleProps } from "../theme/index.js";
 
-/** Host mark. It appears only as the profile Avatar image; the header carries no brand text or link. */
+/** Host mark beside its visible name at the top of the navigation, above command search. */
+export interface AppFrameBrandNavigationMark {
+  /** Visible brand name; it truncates to the navigation width. */
+  label: string;
+}
+
+/** Host mark. By default it appears only as the profile Avatar image; the header bar never carries brand text or a link. */
 export interface AppFrameBrand {
   markSrc: string;
+  /** Also renders the mark with this name at the navigation top. Omitted: no navigation brand row. */
+  navigationMark?: AppFrameBrandNavigationMark;
 }
+
+/** Profile Avatar content: the host mark, or the signed-in actor's initials. A signed-out row always keeps the mark. */
+export type AppFrameAccountAvatar = "mark" | "initials";
+
+/** Navigation footer arrangement: one row (account beside the theme control), or the theme control on its own row above a full-width account row. */
+export type AppFrameFooterLayout = "inline" | "stacked";
 
 export interface AppFrameAccount {
   actor?: AccountMenuActor;
@@ -15,6 +29,8 @@ export interface AppFrameAccount {
   contextLabel?: string;
   triggerLabel?: string;
   onRoute?: AccountMenuProps["onRoute"];
+  /** @default "mark" */
+  avatar?: AppFrameAccountAvatar;
 }
 
 export interface AppFrameRightPanel {
@@ -84,6 +100,8 @@ export interface AppFrameProps {
   theme?: Omit<ThemeProviderProps, "children"> & Pick<ThemeToggleProps, "preferenceLabels" | "toggleLabel" | "preferenceAnnouncement">;
   /** Navigation-footer theme control; undefined uses ThemeToggle, null omits the slot. */
   themeControl?: ReactNode;
+  /** @default "inline" */
+  footerLayout?: AppFrameFooterLayout;
   dir?: "ltr" | "rtl";
   /** @default "Skip to content" */
   skipLabel?: string;
