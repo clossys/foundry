@@ -798,16 +798,16 @@
       ]
     },
     {
-      "missing": [
-        "orientation.horizontal",
-        "orientation.vertical"
-      ],
+      "missing": [],
       "notes": [
-        "No package implementation is available."
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
       ],
       "slot": "components.toolbar",
-      "status": "unavailable",
-      "supported": []
+      "status": "candidate",
+      "supported": [
+        "orientation.horizontal",
+        "orientation.vertical"
+      ]
     },
     {
       "missing": [],

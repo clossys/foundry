@@ -1,4 +1,5 @@
-/** Package pointers and supported public surfaces; these are claims, never runtime measurements. */
+import { craftBlockers, type CRAFT_COMPARED_LEAVES } from "./foundry-craft.js";
+/** Package pointers and supported public surfaces; these are claims, never runtime measurements (K5 craft blockers read a measured record). */
 export type FoundryComponentSubpath = "components" | "charts" | "shell";
 export interface FoundryComponentMapping {
   subpath: FoundryComponentSubpath;
@@ -18,6 +19,8 @@ const sizes = dimension("size", "size", ["sm", "md", "lg"]);
 const tones = (prop: string) => dimension("tone", prop, ["neutral", "success", "warning", "danger", "info"]);
 const orientations = dimension("orientation", "orientation", ["horizontal", "vertical"]);
 const component = (name: string, entries: Readonly<Record<string, string>>, props: readonly string[], extra: Partial<FoundryComponentMapping> = {}): FoundryComponentMapping => ({ subpath: "components", export: name, propMap: map("components", name, entries), props, ...extra });
+/** K5: tag-group, toolbar and tree stay blocked exactly while their measured craft comparison (foundry-craft.json) has findings. */
+const craft = (leaf: (typeof CRAFT_COMPARED_LEAVES)[number]): Partial<FoundryComponentMapping> => { const blockers = craftBlockers(leaf); return blockers ? { blockers } : {}; };
 const chart = (name: string, entries: Readonly<Record<string, string>>, props: readonly string[]): FoundryComponentMapping => ({ subpath: "charts", export: name, propMap: map("charts", name, entries), props });
 
 export const FOUNDRY_COMPONENT_MAP: Readonly<Record<string, FoundryComponentMapping>> = {
@@ -27,9 +30,9 @@ export const FOUNDRY_COMPONENT_MAP: Readonly<Record<string, FoundryComponentMapp
   "navigation-tree": component("NavigationTree", { expand: "", current: "" }, ["children", "items", "selectedRoute", "expandedKeys", "defaultExpandedKeys", "onExpandedChange", "disabledKeys", "aria-label", "aria-labelledby", "className"]),
   "color-picker": component("ColorPicker", { "part.area": ".Area", "part.wheel": ".Wheel", "part.slider": ".Slider", "part.field": ".Field", "part.swatch-picker": ".SwatchPicker" }, ["value", "defaultValue", "onChange", "onChangeEnd", "children"]),
   "number-field": component("NumberField", { format: ".formatOptions", step: ".step", "state.invalid": ".isInvalid" }, ["label", "value", "defaultValue", "onChange", "formatOptions", "step", "minValue", "maxValue", "isInvalid", "isDisabled", "isReadOnly", "description", "errorMessage", "incrementLabel", "decrementLabel", "className"], { assets: ["assets.icon-chevron-up", "assets.icon-chevron-down"], composes: ["components.button"] }),
-  "tag-group": component("TagGroup", { removable: ".onRemove", "selection.none": ".selectionMode=none", "selection.single": ".selectionMode=single", "selection.multiple": ".selectionMode=multiple" }, ["label", "description", "children", "onRemove", "selectionMode", "selectedKeys", "onSelectionChange", "disabledKeys", "className"], { assets: ["assets.icon-close"], blockers: [{ code: "K5", message: "Offer blocked: tag/remove target geometry, focus, dark and forced-colour craft comparison is pending; native selection/removal behavior alone is insufficient." }] }),
-  toolbar: component("Toolbar", orientations, ["orientation", "children", "aria-label", "aria-labelledby", "className"], { blockers: [{ code: "K5", message: "Offer blocked: joint density, focus and disabled-control craft comparison across both orientations is pending." }] }),
-  tree: component("Tree", { selection: ".selectionMode", expand: ".expandedKeys" }, ["children", "selectionMode", "selectedKeys", "onSelectionChange", "expandedKeys", "onExpandedChange", "disabledKeys", "aria-label", "aria-labelledby", "className"], { assets: ["assets.icon-chevron-right"], blockers: [{ code: "K5", message: "Offer blocked: nested tree focus, dark, forced-colour, disabled and touch-target craft matrix has not been compared to the benchmark." }] }),
+  "tag-group": component("TagGroup", { removable: ".onRemove", "selection.none": ".selectionMode=none", "selection.single": ".selectionMode=single", "selection.multiple": ".selectionMode=multiple" }, ["label", "description", "children", "onRemove", "selectionMode", "selectedKeys", "onSelectionChange", "disabledKeys", "className"], { assets: ["assets.icon-close"], ...craft("tag-group") }),
+  toolbar: component("Toolbar", orientations, ["orientation", "children", "aria-label", "aria-labelledby", "className"], craft("toolbar")),
+  tree: component("Tree", { selection: ".selectionMode", expand: ".expandedKeys" }, ["children", "selectionMode", "selectedKeys", "onSelectionChange", "expandedKeys", "onExpandedChange", "disabledKeys", "aria-label", "aria-labelledby", "className"], { assets: ["assets.icon-chevron-right"], ...craft("tree") }),
   avatar: component("Avatar", { ...sizes, "content.image": ".src", "content.initials": ".alt" }, ["alt", "src", "size", "className"]),
   badge: component("Badge", tones("variant"), ["variant", "children", "className"]),
   banner: component("Banner", { ...dimension("tone", "variant", ["info", "success", "warning", "danger"]), dismissible: ".onDismiss" }, ["variant", "children", "onDismiss", "dismissLabel", "className"]),
