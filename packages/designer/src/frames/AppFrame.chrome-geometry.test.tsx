@@ -61,3 +61,16 @@ it("turns the dock chevron on the named fast chrome motion, with no arbitrary du
   expect(chevron).toHaveClass("frame-chevron-motion");
   expect(chevron.getAttribute("class")).not.toMatch(/duration-\(|ease-\(|transition-all/);
 });
+
+it("binds frame controls and main to the one focus-ring token, never the raw accent", () => {
+  render(<AppFrame {...props}><p>Page</p></AppFrame>);
+  for (const element of [screen.getByRole("button", { name: "Find commands" }), screen.getByRole("main")]) {
+    expect(element).toHaveClass("focus-visible:outline-focus-ring");
+    expect(element).not.toHaveClass("focus-visible:outline-accent");
+  }
+});
+
+it("sizes the header row from its own content, with no inline measured block size", () => {
+  render(<AppFrame {...props}><p>Page</p></AppFrame>);
+  expect(document.querySelector<HTMLElement>('[data-application-frame-region="header"]')!.style.minBlockSize).toBe("");
+});

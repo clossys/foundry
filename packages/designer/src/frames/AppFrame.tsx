@@ -15,7 +15,7 @@ import { FrameNoticeProvider } from "./frame-notices.js";
 import { APP_FRAME_ALWAYS_NARROW, APP_FRAME_ALWAYS_WIDE, APP_FRAME_LAYOUT, APP_FRAME_NAVIGATION_SIZE, APP_FRAME_PANEL_SIZE, APP_FRAME_PANEL_WIDTH_VAR, APP_FRAME_WIDE_QUERY, appFrameMainId, appFramePanels, appFrameCorner, appFrameDirection } from "./app-frame-layout.js";
 import type { AppFrameAccount, AppFrameProps } from "./app-frame-types.js";
 
-const CONTROL = "control-h-md inline-flex shrink-0 items-center justify-center rounded-control border-0 bg-transparent px-sm text-body text-ink-primary focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent forced-colors:border-current";
+const CONTROL = "control-h-md inline-flex shrink-0 items-center justify-center rounded-control border-0 bg-transparent px-sm text-body text-ink-primary focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-focus-ring forced-colors:border-current";
 /** The two edge toggles share one glyph, each facing its own edge: the panel toggle is the navigation toggle's mirror in either direction. */
 const NAVIGATION_GLYPH = "rtl:-scale-x-100";
 const PANEL_GLYPH = "-scale-x-100 rtl:scale-x-100";
@@ -64,7 +64,6 @@ function FrameContent({ brand, navigation, account: { avatar = "initials", ...ac
   const [wide, setWide] = useState(true);
   const [sidebarWidth, setSidebarWidth] = useState(APP_FRAME_LAYOUT.sidebarDefault);
   const [navDrawerOpen, setNavDrawerOpen] = useState(false);
-  const [barHeight, setBarHeight] = useState(0);
   const [panelOpen, setPanelOpen] = useState(false);
   const [width, setWidth] = useState(rightPanel?.defaultValue ?? 0);
   const [panelCollapsed, setPanelCollapsed] = useState(rightPanel?.defaultCollapsed ?? false);
@@ -228,7 +227,7 @@ function FrameContent({ brand, navigation, account: { avatar = "initials", ...ac
   </div>;
   const commandTrigger = <div>{navigationBrand}<Button variant="ghost" className={CONTROL + " w-full justify-start gap-sm"} onPress={openCommands}><Icon glyph={Search} decorative /><span className="min-w-0 truncate">{triggerLabel}</span></Button></div>;
   const pageBar = <PageBar position={headerPosition} surface={headerSurface ?? "solid"} header={resolvedHeader} onNavigate={onNavigate} context={context} root={root} page={page} workspaces={workspaces} narrow={!wide}
-    reserveStart={false} reserveEnd={false} onHeightChange={setBarHeight} dir={dir}
+    reserveStart={false} reserveEnd={false} dir={dir}
     labels={{ breadcrumb: breadcrumbLabel ?? "Breadcrumb", collapsedBreadcrumb: collapsedBreadcrumbLabel ?? "More breadcrumb levels", pageInfo: pageInfoLabel ?? "Page information",
       pageActions: pageActionsLabel ?? "More page actions" }} />;
   return <ModalContext.Provider value={{ style: { direction: dir } }}><PopoverContext.Provider value={{ style: { direction: dir } }}>
@@ -243,14 +242,14 @@ function FrameContent({ brand, navigation, account: { avatar = "initials", ...ac
             collapsed={navCollapsed} onCollapsedChange={next => { setNavigationCollapsed(next); navigation.onCollapsedChange?.(next); }} /></FrameSlotOutlet>
         </div>
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-          <div data-application-frame-region="header" className="frame-header-container relative flex min-w-0 shrink-0 items-center gap-xs px-sm" style={{ minBlockSize: barHeight || APP_FRAME_LAYOUT.tap }}>
+          <div data-application-frame-region="header" className="frame-header-container relative flex min-w-0 shrink-0 items-center gap-xs px-sm">
             <span ref={setNavigationControlHost} className="contents">{!navigationControlHost && <Tooltip trigger={navigationTrigger}>{navOpen ? navigationCloseLabel : navigationOpenLabel}</Tooltip>}</span>
             <div className="min-w-0 flex-1">{pageBar}</div>
             {rightPanel ? <Tooltip trigger={panelTrigger}>{panelOpen || panelDocked ? closeLabel : openLabel}</Tooltip> : <span aria-hidden="true" className="icon-control-md shrink-0" />}
           </div>
           <div ref={stage} data-application-frame-region="stage" data-stage-navigation={layout.navigationOverlay ? "overlay" : "docked"} data-stage-panel={narrow ? "overlay" : "docked"}
             className="relative isolate min-h-0 min-w-0 flex-1 overflow-hidden">
-            <main id={target} tabIndex={-1} className="h-full min-h-0 min-w-0 overflow-auto p-lg tablet-lg:p-xl frame-main-bleed focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent">{children}</main>
+            <main id={target} tabIndex={-1} className="h-full min-h-0 min-w-0 overflow-auto p-lg tablet-lg:p-xl frame-main-bleed focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-focus-ring">{children}</main>
           </div>
           <FrameDock notices={notices} dock={dock} sheet={!wide} />
         </div>

@@ -41,7 +41,11 @@ it("renders the dock as a bottom-sheet Drawer with the same tabs below the sideb
   viewport = 390;
   render(<AppFrame {...props}>{page}</AppFrame>);
   expect(within(dock()).queryByRole("tab")).toBeNull();
-  await userEvent.click(within(dock()).getByRole("button", { name: "Page modules" }));
+  const trigger = within(dock()).getByRole("button", { name: "Page modules" });
+  // Narrow sheet trigger is icon-only: the accessible name is the label, no truncating visible text.
+  expect(trigger).toHaveAttribute("aria-label", "Page modules");
+  expect(trigger.querySelector(".truncate")).toBeNull();
+  await userEvent.click(trigger);
   const sheet = await screen.findByRole("dialog", { name: "Page modules" });
   expect(sheet.closest("[data-drawer-placement]") ?? sheet.querySelector("[data-drawer-placement]")).toHaveAttribute("data-drawer-placement", "bottom");
   expect(tabNames(sheet)).toEqual(["Explorer", "Map"]);
