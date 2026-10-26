@@ -60,7 +60,7 @@ export function FilterBuilder({ fields, operators, groups, onGroupsChange, label
   return <fieldset className={cx("m-0 flex min-w-0 flex-col gap-lg border-0 p-0 text-body text-ink-primary", className)}>
     <legend className="mb-md text-body-l font-medium">{labels.legend}</legend>
     {groups.map((group, groupIndex) => <div key={group.id} role="group" aria-label={labels.group(groupIndex + 1)} className="flex min-w-0 flex-col gap-md rounded-surface border border-line-base bg-surface-raised p-md">
-      <Select label={labels.match} size="sm" className="max-w-xs" selectedKey={group.match}
+      <Select label={labels.match} size="sm" className="filter-match-width" selectedKey={group.match}
         options={[{ id: "all", label: labels.matchAll }, { id: "any", label: labels.matchAny }]}
         onSelectionChange={key => { if (key === "all" || key === "any") replace(group.id, current => ({ ...current, match: key })); }} />
       <ol className="m-0 flex list-none flex-col gap-sm p-0">
