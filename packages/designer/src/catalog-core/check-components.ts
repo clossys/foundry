@@ -396,8 +396,9 @@ export function checkComponentProfile(input: ComponentCheckInput): ComponentChec
     if (new Set(members.map(fill => fill.source)).size < 2) continue;
     if (group.kind === "charts") { add("K11", group.id, "Chart coherence group must have one source"); continue; }
     if (group.kind !== "controls") continue;
-    const labelLeaves = members.map(fill => readLeaves(fill).filter(read => /(?:body-size|caption-size|typeface|font-size)$/.test(read)).sort().join(","));
-    if (new Set(labelLeaves).size !== 1) add("K11", group.id, "Mixed controls bind labels to different type leaves");
+    // A member that renders no label of its own binds no label type; only members that bind label type are compared.
+    const labelLeaves = members.map(fill => readLeaves(fill).filter(read => /(?:body-size|caption-size|typeface|font-size)$/.test(read)).sort().join(",")).filter(leaves => leaves !== "");
+    if (new Set(labelLeaves).size > 1) add("K11", group.id, "Mixed controls bind labels to different type leaves");
     for (const fill of members) {
       const observation = input.observations[fill.slot];
       const leaves = readLeaves(fill);

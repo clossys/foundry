@@ -349,3 +349,25 @@ describe("controls coherence group membership", () => {
     expect(controls.slots).toEqual(expect.arrayContaining(["components.text-field", "components.search-field", "components.date-field", "components.number-field", "components.select", "components.combo-box"]));
   });
 });
+
+describe("controls label type parity", () => {
+  const mixed = () => {
+    const profile = fixture(true); profile.fills[1]!.source = "second-kit";
+    profile.coherenceGroups = [{ id: "fixture-controls", slots: profile.fills.map(fill => fill.slot), kind: "controls" }];
+    exactReads(profile, 1); return profile;
+  };
+  const labelFinding = (profile: ComponentCheckInput) => checkComponentProfile(profile).findings.some(f => f.code === "K11" && f.subject === "fixture-controls");
+  it("excludes a member that binds no label type read from the label comparison, not from size/focus parity", () => {
+    const profile = mixed();
+    profile.fills[1]!.reads.tokens = profile.fills[1]!.reads.tokens.filter(r => !/(?:body-size|caption-size|typeface|font-size)(?:\.|$)/.test(r));
+    expect(labelFinding(profile)).toBe(false);
+    profile.fills[1]!.reads.tokens = profile.fills[1]!.reads.tokens.filter(r => !r.startsWith("tokens.control-size"));
+    expect(checkComponentProfile(profile).findings.some(f => f.code === "K11" && f.subject === profile.fills[1]!.slot && f.severity === "error")).toBe(true);
+  });
+  it("still fails two members that bind different nonempty label type sets", () => {
+    const profile = mixed();
+    profile.tokens["tokens.caption-size.default"] = { property: "--caption", light: "12px" };
+    profile.fills[1]!.reads.tokens = profile.fills[1]!.reads.tokens.map(r => r === "tokens.body-size.default" ? "tokens.caption-size.default" : r);
+    expect(labelFinding(profile)).toBe(true);
+  });
+});
