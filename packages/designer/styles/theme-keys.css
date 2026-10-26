@@ -122,6 +122,11 @@
   --font-display:                 var(--font-display, system-ui, ui-sans-serif, -apple-system, "Segoe UI", sans-serif);
   --font-body:                    var(--font-body, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif);
   --font-mono:                    var(--font-mono, ui-monospace, "SF Mono", Menlo, Consolas, monospace);
+  /* Tailwind's preflight reads these two for the document and for code, kbd,
+     samp and pre; routing them here makes the brand body/mono face the
+     inherited default everywhere, not only under the font-body utility. */
+  --default-font-family:          var(--font-body, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif);
+  --default-mono-font-family:     var(--font-mono, ui-monospace, "SF Mono", Menlo, Consolas, monospace);
 
   /* ── TRACKING ─────────────────────────────────────────────────── */
   --tracking-tight:                var(--tracking-tight, -0.02em);
