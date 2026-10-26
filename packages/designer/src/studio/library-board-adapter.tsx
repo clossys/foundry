@@ -77,13 +77,15 @@ export function compositeLibraryBoard(input: PreparedCompositeLibraryBoardInput,
     : libraryColumns(input.layer, leaves, surfaceDocuments.map(doc => doc.$extensions['com.clossys.fill'].source), consumer);
   const identity = (leaf: string, source: string): LibraryPreviewIdentity | undefined => input.sourceHashes[source] ? { leaf, source, selectionHash: profile.selectionHash, sourceHash: input.sourceHashes[source]! } : undefined;
   const selectedSource = (leaf: string): string | null => input.layer === 'components' ? profile.components.components[leaf]?.descriptor.source ?? null : Object.values(profile.surfaces?.fills ?? {}).find(fill => fill.document.$extensions['com.clossys.fill'].slot === leaf)?.document.$extensions['com.clossys.fill'].source ?? null;
-  const allowed = (proposal: typeof proposals[number]) => proposal.meta.status !== 'draft' && proposal.result?.available && !proposal.result.findings.some(finding => finding.severity === 'error');
-  // A proposal whose only errors await runtime qualification still renders its checked static specimen in edit mode.
+  // Studio selection stays stricter than engine adoption: a runtime-pending candidate is not selectable here.
+  const blocking = (finding: { code: string; severity: string; message: string }) => finding.severity === 'error' || isRuntimePending(finding);
+  const allowed = (proposal: typeof proposals[number]) => proposal.meta.status !== 'draft' && proposal.result?.available && !proposal.result.findings.some(blocking);
+  // A proposal that only awaits runtime qualification still renders its checked static specimen in edit mode.
   // Display only: `allowed` (selection and adoption) is unchanged, so the tile stays unselectable.
   const staticSpecimen = (proposal: typeof proposals[number]) => proposal.meta.status !== 'draft' && !!proposal.result?.available
-    && proposal.result.findings.some(finding => finding.severity === 'error') && proposal.result.findings.every(finding => finding.severity !== 'error' || isRuntimePending(finding));
+    && proposal.result.findings.some(isRuntimePending) && !proposal.result.findings.some(finding => finding.severity === 'error');
   const selectedAvailable = (leaf: string) => input.layer === 'components'
-    ? !!profile.components.components[leaf] && !input.input.library.components.fills.some(doc => doc.$extensions['com.clossys.fill'].slot === leaf && doc.$extensions['com.clossys.fill'].status === 'draft') && !profile.check.findings.some(finding => (finding.subject === leaf || finding.subject.startsWith(leaf + '.')) && finding.severity === 'error')
+    ? !!profile.components.components[leaf] && !input.input.library.components.fills.some(doc => doc.$extensions['com.clossys.fill'].slot === leaf && doc.$extensions['com.clossys.fill'].status === 'draft') && !profile.check.findings.some(finding => (finding.subject === leaf || finding.subject.startsWith(leaf + '.')) && blocking(finding))
     : evaluated.runtime?.status === 'valid' && !!Object.values(profile.surfaces?.fills ?? {}).find(fill => fill.document.$extensions['com.clossys.fill'].slot === leaf && fill.document.$extensions['com.clossys.fill'].status !== 'draft') && !profile.check.findings.some(finding => (finding.subject === leaf || finding.subject.startsWith(leaf + '.')) && finding.severity === 'error');
   const records: LibraryBoardRecords = {
     columns: { version: 1, items: columns }, controls: { version: 1, mode: input.mode, canSave: input.canSave, pending: input.pending },

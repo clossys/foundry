@@ -6,6 +6,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vite
 import { applyLibraryChange, check, generateSelection, libraryHash, loadCatalog, stableStringify, type ChangeSet, type LibraryData, type CompositeCatalogData, type CompositeLibraryData } from "../catalog-core/index.js";
 import { adoptedComponentIntegration, componentIntegration } from "../catalog-core/__fixtures__/component-integration.js";
 import { sha256 } from "../catalog-core/digest.js";
+import { isObservationPending } from "../catalog-core/check-components.js";
 import { syntheticSource } from "../catalog-core/__fixtures__/component-engine/synthetic.js";
 import { completedCatalogLibrary } from "../catalog-core/__fixtures__/completed-catalog-library.js";
 import { checkLibrary, emitLibrary, isLibraryChangeSet, libraryFiles, LibraryCheckError, LibraryConflictError, readLibrary, writeLibrary, writeCompositeLibrary } from "./fs-library.js";
@@ -236,9 +237,13 @@ describe("composite consumer library disk format", () => {
   it("checks composite components through the existing engine without inventing runtime evidence", async () => {
     const input = compositeFixture(); await save(libraryFiles(input.catalog, input.library, []));
     const checked = await checkLibrary(root, input.catalog);
-    expect(checked.ok).toBe(false);
-    expect(checked.findings.some(finding => finding.subject === "components.button")).toBe(true);
-    await expect(emitLibrary(root, input.catalog)).rejects.toBeInstanceOf(LibraryCheckError);
+    // Without supplied observations the fill is runtime-pending (notices, never a pass), and without declared
+    // package exports emission still refuses: nothing is inferred from absent evidence.
+    const button = checked.findings.filter(finding => finding.subject === "components.button");
+    expect(checked.ok).toBe(true);
+    expect(button.map(finding => finding.code).sort()).toEqual(["K10", "K12", "K2", "K4", "K5", "K6", "K7"]);
+    expect(button.every(isObservationPending)).toBe(true);
+    await expect(emitLibrary(root, input.catalog)).rejects.toThrow(/unavailable named import Button/);
   });
   function needRecord(id = "NEED-001") {
     return { id, raisedBy: "components.button", missing: "disabled state", kind: "leaf", status: "open", candidate: null, evidence: [{ file: "src/Page.tsx", line: 1, code: "DF5" }], createdBy: "owner", createdAt: "2026-10-01T00:00:00Z", updatedAt: "2026-10-01T00:00:00Z", closedBy: null };

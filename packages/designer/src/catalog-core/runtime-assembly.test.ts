@@ -235,6 +235,13 @@ it("binds synthetic consumer glyph payload changes and component descriptors", a
     return { ...runtime, ports: { ...runtime.ports, manifest: { ...runtime.ports.manifest, assetClosure: { complete: true, ids: ["assets.icon-close"] } } } };
   };
   const before = prepareRuntimeAssembly(configure()); expect(before.status, JSON.stringify(before)).toBe("ready");
+  // Adoption accepts a selection whose observations are absent; runtime assembly still requires them.
+  const componentEvidence: Record<string, unknown> = component.componentOptions!.evidence!.observations;
+  const observed = componentEvidence["components.button"];
+  delete componentEvidence["components.button"];
+  expect(resolve(component).check.ok).toBe(true);
+  expect(prepareRuntimeAssembly(configure())).toEqual({ status: "pending", findings: ["component runtime observations required: components.button"] });
+  componentEvidence["components.button"] = observed;
   component.library.components.fills[0]!.components.button!.license = "ISC";
   const after = prepareRuntimeAssembly(configure());
   expect(after.status).not.toBe("pending");

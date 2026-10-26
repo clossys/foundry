@@ -470,8 +470,10 @@ it("contract boards count runtime-pending findings neutrally, apart from errors,
   const save = vi.fn(async () => ({ ok: true as const, library: structuredClone(input.library) }));
   const findings = evaluateWhole({ ...input, componentOptions }, { library: input.library, componentOptions }, loadBuildCatalog()).profile.check.findings.filter(finding => finding.subject === slot || finding.subject.startsWith(`${slot}.`));
   const pending = findings.filter(finding => finding.message.endsWith("Source and runtime observations are unavailable")).length;
-  const errors = findings.filter(finding => finding.severity === "error").length - pending, notices = findings.filter(finding => finding.severity === "notice").length;
+  // Pending findings are notices; they count neither as errors nor as notices on the board.
+  const errors = findings.filter(finding => finding.severity === "error").length, notices = findings.filter(finding => finding.severity === "notice").length - pending;
   expect(pending).toBe(7); expect(errors).toBe(0);
+  expect(findings.filter(finding => finding.message.endsWith("Source and runtime observations are unavailable")).every(finding => finding.severity === "notice")).toBe(true);
   render(<Studio adapter={{ kind: "composite", catalog: input.catalog, load, save }} labels={{ ...wholeLabels, runtimePending: count => `P-pending ${count}` }} initialSlotId={slot} />);
   await screen.findByText("L-saved");
   const board = document.querySelector<HTMLElement>(`[data-studio-zoom-full] [data-studio-row="${slot}"]`)!.closest<HTMLElement>("[data-studio-board]")!;

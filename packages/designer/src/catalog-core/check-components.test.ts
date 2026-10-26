@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { checkComponentProfile, componentRacRangeIncludes, componentSourceHash, componentTokensHash } from "./check-components.js";
+import { checkComponentProfile, componentRacRangeIncludes, componentSourceHash, componentTokensHash, isObservationPending, OBSERVATIONS_UNAVAILABLE } from "./check-components.js";
 import type { ComponentCheckInput, ComponentCheckCode, ComponentCompatibilityCode } from "./check-components.js";
 import { componentProfile, composedProfile } from "./__fixtures__/components/profile.js";
 import { sha256 } from "./digest.js";
@@ -200,9 +200,29 @@ describe("component consumer checks K1-K12", () => {
   it("K11 prohibits mixed chart sources", () => {
     const profile = fixture(true); profile.fills[1]!.source = "second-kit"; profile.coherenceGroups = [{ id: "fixture-charts", slots: profile.fills.map(fill => fill.slot), kind: "charts" }]; code(profile, "K11");
   });
-  it("missing observations never become runtime clearance", () => {
-    const profile = fixture(); profile.observations = {}; expect(checkComponentProfile(profile).ok).toBe(false);
-    for (const expected of ["K2", "K4", "K5", "K6", "K7", "K10", "K12"] as const) code(profile, expected);
+  it("missing observations are runtime-pending notices: never clearance, never an adoption refusal", () => {
+    const profile = fixture(); profile.observations = {};
+    const result = checkComponentProfile(profile);
+    expect(result.ok).toBe(true);
+    for (const expected of ["K2", "K4", "K5", "K6", "K7", "K10", "K12"] as const) {
+      code(profile, expected);
+      expect(result.findings).toContainEqual(expect.objectContaining({ code: expected, severity: "notice", message: OBSERVATIONS_UNAVAILABLE }));
+    }
+    expect(result.findings.length).toBeGreaterThan(0);
+    expect(result.findings.every(isObservationPending)).toBe(true);
+    // A real error beside pending notices still refuses.
+    const mixed = fixture(); mixed.observations = {}; mixed.fills[0]!.license = "unknown";
+    expect(checkComponentProfile(mixed).ok).toBe(false);
+  });
+  it("supplied observations that fail stay errors, never pending", () => {
+    const profile = fixture(); profile.observations["components.button"]!.sourceHash = `sha256:${"0".repeat(64)}`;
+    const result = checkComponentProfile(profile);
+    expect(result.ok).toBe(false);
+    expect(result.findings).toContainEqual(expect.objectContaining({ code: "K5", severity: "error", message: "Accessibility evidence is stale for source or consumer tokens" }));
+    expect(result.findings.some(isObservationPending)).toBe(false);
+    expect(isObservationPending({ code: "K5", severity: "error", message: OBSERVATIONS_UNAVAILABLE })).toBe(false);
+    expect(isObservationPending({ code: "K8", severity: "notice", message: OBSERVATIONS_UNAVAILABLE })).toBe(false);
+    expect(isObservationPending({ code: "K6", severity: "notice", message: `selection.range: ${OBSERVATIONS_UNAVAILABLE}` })).toBe(true);
   });
   it("produces stable findings regardless of fill order without mutating inputs", () => {
     const profile = fixture(true); profile.fills[0]!.license = "unknown"; const before = JSON.stringify(profile); const first = checkComponentProfile(profile);

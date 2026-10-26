@@ -2,6 +2,7 @@ import { CatalogError } from "./api.js";
 import { stableStringify } from "./stable.js";
 import { assertComponentDescriptor, assertComponentIdentifier, assertComponentPath, assertPackageSpecifier, componentDescriptorHash, sortedComponentIds, verifyComponentOutput } from "./resolve-components.js";
 import { componentSecondaryExports } from "./component-secondary-exports.js";
+import { isObservationPending } from "./check-components.js";
 import { inspectGlyph } from "../catalog-assets/svg.js";
 import type { ComponentFile, ResolvedComponent, ResolvedComponents } from "./resolve-components.js";
 
@@ -151,17 +152,21 @@ function leafModule(component: ResolvedComponent, packageExports: ResolvedCompon
   rows.push('});');
   return { path, content: rows.join("\n") + "\n" };
 }
-/** Code generation is refused while measured checks are missing or failing. */
+/**
+ * Code generation is refused while checks fail. A selection whose observations are absent is
+ * runtime-pending: its code is emitted and its consumption status is `runtime-pending`, never
+ * `observations-pass`, which requires every fill observed with no pending finding.
+ */
 export function emitComponents(profile: ResolvedComponents, targets: readonly ComponentEmitTarget[], options: ComponentEmitOptions = {}): ComponentFile[] {
   if (!/^[a-z][a-z0-9-]*$/.test(profile.consumer) || !/^sha256:[a-f0-9]{64}$/.test(profile.selectionHash)) throw new CatalogError("components: invalid profile identity");
   const files: ComponentFile[] = [];
   const components = Object.values(profile.components).sort((a, b) => a.slot < b.slot ? -1 : 1);
-  const consumption = { version: 1, consumer: profile.consumer, selectionHash: profile.selectionHash, status: profile.check.ok ? "observations-pass" : "blocked", findings: profile.check.findings, leaves: components.map(component => ({ slot: component.slot, originKind: component.originKind, reads: component.reads })), reverseComposes: Object.fromEntries(components.map(component => [component.slot, components.filter(parent => parent.reads.components.includes(component.slot)).map(parent => parent.slot)])) };
+  const consumption = { version: 1, consumer: profile.consumer, selectionHash: profile.selectionHash, status: !profile.check.ok ? "blocked" : profile.check.findings.some(isObservationPending) ? "runtime-pending" : "observations-pass", findings: profile.check.findings, leaves: components.map(component => ({ slot: component.slot, originKind: component.originKind, reads: component.reads })), reverseComposes: Object.fromEntries(components.map(component => [component.slot, components.filter(parent => parent.reads.components.includes(component.slot)).map(parent => parent.slot)])) };
   for (const target of [...new Set(targets)]) {
     if (target === "components-consumption") { files.push({ path: "components-consumption.json", content: stableStringify(consumption) }); continue; }
     if (target === "notices") { files.push({ path: "notices/components.json", content: stableStringify({ version: 1, consumer: profile.consumer, origins: components.map(component => ({ slot: component.slot, origin: component.origin })) }) }); continue; }
     if (target !== "component-index") throw new CatalogError("components: unknown emit target");
-    if (!profile.check.ok) throw new CatalogError("components: checked observations are missing or failed");
+    if (!profile.check.ok) throw new CatalogError("components: checks failed; code generation refused");
     const names = new Set<string>();
     for (const component of components) { const name = nameOf(component.slot); assertComponentIdentifier(name); if (names.has(name)) throw new CatalogError("components: colliding contract names"); names.add(name); }
     const generated = components.map(component => leafModule(component, profile.packageExports, profile.files, options.glyphModule));

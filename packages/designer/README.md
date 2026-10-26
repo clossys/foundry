@@ -10314,8 +10314,13 @@ adoption requires verified bundles supplied through `bundles` on the changeset;
 `componentOptions` supplies required members, independently inspected package
 exports, and measured observations. Checks always resolve fresh consumer token
 values and asset availability, then retain component K/CC findings alongside
-value C/asset A findings. Missing evidence is a failure. Code emission refuses
-failed findings; diagnostic reports remain available. Generated glyph bindings
+value C/asset A findings. A fill with no supplied observation is runtime-pending:
+its K2/K4/K5/K6/K7/K10/K12 findings are notices rather than errors, so the
+selection is accepted and its code emits with consumption status
+`runtime-pending`, never `observations-pass`. Runtime assembly still refuses a
+pending component, and qualification still requires measured observations.
+Supplied observations that fail, or that omit a mapped member, stay errors. Code
+emission refuses failed findings; diagnostic reports remain available. Generated glyph bindings
 map S2 leaf keys such as `icon-close` to `assets.icon-close` using consumer glyph
 bytes, with no candidate or default-glyph fallback. The `notices` target retains
 both engines' records in combined `notices.json` and `notices/components.json`.

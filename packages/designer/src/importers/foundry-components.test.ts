@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import componentFreeze from "../catalog/ia/components.leaf-freeze.json" with { type: "json" };
 import componentSlots from "../catalog/slots/components.json" with { type: "json" };
 import type { ComponentSlot } from "../catalog-core/types.js";
-import { checkComponentProfile } from "../catalog-core/check-components.js";
+import { checkComponentProfile, isObservationPending } from "../catalog-core/check-components.js";
 import { loadComponentCompositionRules } from "../catalog-core/component-compositions.js";
 import { FOUNDRY_COMPONENT_MAP } from "./foundry-components.map.js";
 import type { FoundryComponentMapping, FoundryComponentSubpath } from "./foundry-components.map.js";
@@ -147,7 +147,7 @@ describe("Foundry component package descriptors", () => {
     expect(consumerSubset.ok).toBe(false);
     expect(result.ok).toBe(false);
     expect(result.findings).toContainEqual(expect.objectContaining({ code: "K1", subject: "components.breadcrumbs", message: "Required member collapsed is not mapped" }));
-    expect(result.findings).toContainEqual(expect.objectContaining({ code: "K5", subject: "components.button", message: "Source and runtime observations are unavailable" }));
+    expect(result.findings).toContainEqual(expect.objectContaining({ code: "K5", subject: "components.button", severity: "notice", message: "Source and runtime observations are unavailable" }));
   });
 });
 
@@ -168,8 +168,10 @@ it("offers the exact new SemanticContent package binding as a draft without adop
   expect(doc!.$extensions["com.clossys.fill"]).toMatchObject({ status: "draft", conforms: [], evidence: [] });
   expect(() => importFoundryComponents({ exports: { ...exports, components: exports.components.filter(name => name !== "SemanticContent") } })).toThrow("unavailable package export");
   const profile = checkComponentProfile({ slots, fills: [fill], observations: {}, tokens: {}, assets: [], installedRac: { version: "1.21.1", instance: "consumer" } });
-  expect(profile.ok).toBe(false);
-  expect(profile.findings).toContainEqual(expect.objectContaining({ subject: fill.slot, message: "Source and runtime observations are unavailable" }));
+  // Adoptable, never runtime-qualified: every finding is a runtime-pending notice.
+  expect(profile.ok).toBe(true);
+  expect(profile.findings).toContainEqual(expect.objectContaining({ subject: fill.slot, severity: "notice", message: "Source and runtime observations are unavailable" }));
+  expect(profile.findings.every(isObservationPending)).toBe(true);
 });
 
 it("stores the exact pending NativeAction draft with real exports, native states and no invented RAC dependency", () => {

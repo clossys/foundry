@@ -9,7 +9,8 @@ export type ComponentCheckCode = `K${1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11
 export type ComponentCompatibilityCode = `CC${1 | 2 | 3 | 4 | 5}`;
 export interface ComponentFinding {
   code: ComponentCheckCode; compatibility?: ComponentCompatibilityCode;
-  rule: string; severity: "error"; subject: string; message: string;
+  /** `notice` is only ever a runtime-pending finding (see `isObservationPending`); every other finding is an error. */
+  rule: string; severity: "error" | "notice"; subject: string; message: string;
 }
 /** Descriptors carry claims. Independently gathered observations are supplied separately. */
 export interface ComponentCheckFill {
@@ -84,6 +85,17 @@ const FORBIDDEN_MODULES = ["@radix-ui/", "radix-ui", "@base-ui/", "@tanstack/", 
 const FORBIDDEN = new RegExp("^(?:" + FORBIDDEN_MODULES.map(module => module.endsWith("/") ? module : `${module}(?:/|$)`).join("|") + ")");
 /** Emitted per fill (or `member: ` prefixed) when no source/runtime observation was gathered. */
 export const OBSERVATIONS_UNAVAILABLE = "Source and runtime observations are unavailable";
+const RUNTIME_PENDING: readonly ComponentCheckCode[] = ["K2", "K4", "K5", "K6", "K7", "K10", "K12"];
+/**
+ * Absent observations are runtime-pending, not a refusal: the fill is statically checked and
+ * adoptable, never runtime-qualified. They are notices, so `ok` (no errors) admits adoption and
+ * persistence, while emitted consumption reports `runtime-pending` and runtime assembly stays
+ * pending until real observations are supplied. Supplied observations that fail stay errors.
+ */
+export function isObservationPending(finding: { code: string; severity: string; message: string }): boolean {
+  return finding.severity === "notice" && (RUNTIME_PENDING as readonly string[]).includes(finding.code)
+    && (finding.message === OBSERVATIONS_UNAVAILABLE || finding.message.endsWith(`: ${OBSERVATIONS_UNAVAILABLE}`));
+}
 /** Coherence groups every profile check applies, before caller-supplied groups. */
 export const DEFAULT_COHERENCE_GROUPS: NonNullable<ComponentCheckInput["coherenceGroups"]> = [
   { id: "controls", kind: "controls", slots: ["field", "form", "text-field", "search-field", "checkbox", "radio-group", "switch", "select", "combo-box", "toggle-group", "tag-group", "number-field", "slider", "date-field"].map(name => `components.${name}`) },
@@ -240,7 +252,8 @@ export function checkComponentProfile(input: ComponentCheckInput): ComponentChec
     const add = (code: ComponentCheckCode, subject: string, message: string, compatibility?: ComponentCompatibilityCode): void => { findings.push({ code, rule: compatibility ?? code, subject, severity: "error", message: observedMember ? `${observedMember}: ${message}` : message, ...(compatibility ? { compatibility } : {}) }); };
     const memberObservation = observedMember ? commonObservation?.memberObservations?.[observedMember] : undefined;
     const observation = observedMember ? memberObservation && commonObservation ? { ...commonObservation, ...memberObservation } : undefined : commonObservation;
-    if (!observation?.files.length) { for (const code of ["K2", "K4", "K5", "K6", "K7", "K10", "K12"] as const) add(code, fill.slot, OBSERVATIONS_UNAVAILABLE); continue; }
+    // An unobserved fill is runtime-pending; a supplied observation that omits a mapped member is incomplete evidence and fails.
+    if (!observation?.files.length) { for (const code of RUNTIME_PENDING) findings.push({ code, rule: code, subject: fill.slot, severity: commonObservation?.files.length ? "error" : "notice", message: observedMember ? `${observedMember}: ${OBSERVATIONS_UNAVAILABLE}` : OBSERVATIONS_UNAVAILABLE }); continue; }
     if (ownedRule && (!input.compositions || !observation.files.some(file => file.path === (fill.impl.kind === "source" ? fill.impl.entry : "")) || observation.files.some(file => !input.compositions!.library.files.some(actual => actual.path === file.path && actual.content === file.content)))) add("K8", fill.slot, "Observed composition source differs from current materialized output");
     const freshEvidence = observation.sourceHash === componentSourceHash(observation.files) && observation.tokensHash === tokenHash;
     if (!freshEvidence) { add("K5", fill.slot, "Accessibility evidence is stale for source or consumer tokens"); add("K6", fill.slot, "Contrast evidence is stale for source or consumer tokens"); }
@@ -382,5 +395,5 @@ export function checkComponentProfile(input: ComponentCheckInput): ComponentChec
   }
   const unique = new Map(findings.map(finding => [stableStringify(finding), finding]));
   const sorted = [...unique.values()].sort((a, b) => a.code.localeCompare(b.code) || a.subject.localeCompare(b.subject) || a.message.localeCompare(b.message));
-  return { ok: sorted.length === 0, findings: sorted };
+  return { ok: !sorted.some(finding => finding.severity === "error"), findings: sorted };
 }
