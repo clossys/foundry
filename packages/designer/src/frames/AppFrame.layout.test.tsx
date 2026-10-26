@@ -127,6 +127,14 @@ describe("AppFrame reserved layout", () => {
     expect(screen.queryByText("Warning message")).toBeNull();
     expect(screen.getByText("Error message")).toBeVisible();
   });
+  it("keeps a non-dismissible pending notice in view with no dismiss control, even after an earlier dismissal of its id", () => {
+    sessionStorage.setItem("frame-dismissed-notices", JSON.stringify(["pending"]));
+    render(<AppFrame {...fixture()} notices={[{ id: "pending", severity: "info", text: "Route pending", dismissible: false }]} />);
+    const notice = screen.getByText("Route pending").closest('[role="status"]')!;
+    expect(notice).toBeVisible();
+    expect(within(notice as HTMLElement).queryByRole("button", { name: "Dismiss" })).toBeNull();
+    sessionStorage.clear();
+  });
   it.each([390, 1024, 1440])("reserves a measured resizable dock below the stage at width %s without a modal", async width => {
     viewport = width;
     let frameHeight = 600;

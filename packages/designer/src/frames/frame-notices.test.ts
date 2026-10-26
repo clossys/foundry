@@ -6,3 +6,7 @@ it("keeps at most three messages by severity, newest nearest the stage", () => {
   expect(visibleFrameNotices(notices, new Set(["error", "warning"])).map(item => item.id)).toEqual(["error", "new", "old"]);
 });
 it("refuses ambiguous message ids", () => expect(() => visibleFrameNotices([{ id: "x", severity: "info", text: "a" }, { id: "x", severity: "error", text: "b" }], new Set())).toThrow());
+it("keeps a non-dismissible notice visible even when its id was dismissed earlier", () => {
+  const notices: AppFrameNotice[] = [{ id: "pending", severity: "info", text: "Pending", dismissible: false }, { id: "other", severity: "info", text: "Other" }];
+  expect(visibleFrameNotices(notices, new Set(["pending", "other"])).map(item => item.id)).toEqual(["pending"]);
+});
