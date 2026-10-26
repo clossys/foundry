@@ -49,7 +49,6 @@
       "license": "MIT",
       "members": [
         "dismissable",
-        "role.alert",
         "role.modal"
       ],
       "pin": {
@@ -59,7 +58,6 @@
       },
       "propMap": {
         "dismissable": "./components#Dialog.isDismissable",
-        "role.alert": "./components#Dialog.role=alertdialog",
         "role.modal": "./components#Dialog"
       },
       "props": [

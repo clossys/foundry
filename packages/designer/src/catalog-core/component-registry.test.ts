@@ -68,7 +68,7 @@ describe("component build IA registry", () => {
     expect(Object.fromEntries(nodes.map(node => [node.id, "leaves" in node ? node.leaves : []]))).toEqual(Object.fromEntries(Object.entries(families).map(([id, leaves]) => [id, leaves.map(fullId)])));
     expect(nodes.flatMap(node => "leaves" in node ? node.leaves : []).sort()).toEqual(inventory);
     // Sheet, drawer and command placement stay outside this primitive layer.
-    expect(registry.slots.find(slot => slot.id === "components.dialog")?.contract.members).toEqual({ mode: "closed", names: ["role.modal", "role.alert", "dismissable"] });
+    expect(registry.slots.find(slot => slot.id === "components.dialog")?.contract.members).toEqual({ mode: "closed", names: ["role.modal", "dismissable"] });
   });
 
   it("records all audited runtime roots: 39 React Aria, nine presentational, eleven without an engine", () => {

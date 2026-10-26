@@ -47,21 +47,13 @@
         "module": "@clossys/designer/components"
       },
       "license": "MIT",
-      "members": [
-        "variant.outline",
-        "variant.plate",
-        "variant.raised"
-      ],
+      "members": [],
       "pin": {
         "export": "./components#Card",
         "package": "@clossys/designer",
         "version": "0.12.0"
       },
-      "propMap": {
-        "variant.outline": "./components#Card.variant=outline",
-        "variant.plate": "./components#Card.variant=plate",
-        "variant.raised": "./components#Card.variant=raised"
-      },
+      "propMap": {},
       "props": [
         "children",
         "className",

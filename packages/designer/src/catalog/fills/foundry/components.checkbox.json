@@ -48,7 +48,6 @@
       },
       "license": "MIT",
       "members": [
-        "scope.group",
         "scope.single",
         "state.checked",
         "state.indeterminate",
@@ -60,7 +59,6 @@
         "version": "0.12.0"
       },
       "propMap": {
-        "scope.group": "./components#Checkbox.Group",
         "scope.single": "./components#Checkbox",
         "state.checked": "./components#Checkbox.isSelected",
         "state.indeterminate": "./components#Checkbox.isIndeterminate",

@@ -15,15 +15,13 @@
         "sha256": "1fe5c781263e046e1c897eb6a32a6f9f188963d53b1bef2ea23b8686597949ed",
         "url": "https://github.com/shadcn-ui/ui"
       },
-      "relation": "subset",
+      "relation": "same-contract",
       "slot": "components.disclosure",
       "source": "shadcn@aria",
       "sourceAddress": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/bases/aria/ui/accordion.tsx",
       "status": "draft",
       "trust": "pinned-upstream",
-      "unmapped": [
-        "scope.single"
-      ]
+      "unmapped": []
     }
   },
   "components": {

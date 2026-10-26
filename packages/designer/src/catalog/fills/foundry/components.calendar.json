@@ -101,6 +101,7 @@
           "tokens.control-radius",
           "tokens.control-size",
           "tokens.focus-color",
+          "tokens.focus-outline",
           "tokens.focus-shadow",
           "tokens.font-size",
           "tokens.font-weight",

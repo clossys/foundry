@@ -58,13 +58,13 @@ function setup(overrides: Partial<ComponentDefaultsInput> = {}, order?: readonly
 const ledger = (rows: ReturnType<typeof planComponentDefaults>["rows"]) => Object.fromEntries(rows.map(row => [row.slot.slice(11), row.status === "not-chosen" ? "-" : row.source ?? row.rule!]));
 
 const EXPECTED_DEFAULTS = {
-  avatar: "shadcn@aria", badge: "foundry", banner: "foundry", breadcrumbs: "shadcn@aria", button: "foundry", calendar: "foundry", card: "foundry",
+  avatar: "shadcn@aria", badge: "foundry", banner: "foundry", breadcrumbs: "shadcn@aria", button: "foundry", calendar: "shadcn@aria", card: "foundry",
   "chart-area": "foundry", "chart-bar": "foundry", "chart-heatmap": "foundry", "chart-line": "foundry", "chart-range": "foundry",
   "chart-scatter": "foundry", "chart-sparkline": "foundry", "chart-status-strip": "foundry", "chart-waterfall": "foundry", checkbox: "foundry", "color-picker": "foundry", "combo-box": "foundry",
-  "date-field": "foundry", "date-picker": "compose:date-picker@1", dialog: "foundry", disclosure: "foundry", field: "foundry", "grid-list": "foundry", "file-trigger": "foundry", form: "foundry", icon: "foundry", keyboard: "shadcn@aria", link: "foundry", logo: "foundry",
-  menu: "foundry", meter: "foundry", "native-action": "foundry", "navigation-tree": "foundry", "number-field": "foundry", popover: "foundry", "progress-bar": "foundry", "radio-group": "foundry",
+  "date-field": "foundry", "date-picker": "compose:date-picker@1", dialog: "shadcn@aria", disclosure: "shadcn@aria", field: "foundry", "grid-list": "foundry", "file-trigger": "foundry", form: "foundry", icon: "foundry", keyboard: "shadcn@aria", link: "foundry", logo: "foundry",
+  menu: "foundry", meter: "foundry", "native-action": "foundry", "navigation-tree": "foundry", "number-field": "foundry", popover: "shadcn@aria", "progress-bar": "foundry", "radio-group": "foundry",
   "resize-handle": "foundry", "search-field": "foundry", select: "foundry", "semantic-content": "foundry", separator: "shadcn@aria", skeleton: "foundry", slider: "foundry",
-  spinner: "foundry", "status-mark": "foundry", switch: "foundry", table: "foundry", tabs: "foundry", "tag-group": "foundry", "text-field": "foundry", toast: "foundry", "toggle-button": "foundry", "toggle-group": "foundry",
+  spinner: "foundry", "status-mark": "foundry", switch: "foundry", table: "foundry", tabs: "shadcn@aria", "tag-group": "foundry", "text-field": "foundry", toast: "foundry", "toggle-button": "shadcn@aria", "toggle-group": "foundry",
   toolbar: "foundry", tooltip: "shadcn@aria", tree: "foundry",
 };
 /** rac-starter is not a selectable component source (owner rule 2026-10-26); Toolbar, TagGroup and Tree are Foundry's since their measured K5 craft comparison passes. */
@@ -140,20 +140,22 @@ describe("component default fills", () => {
     const profile = resolveComponents({ catalog: input.catalog, library: { ...adopted.components, source, adoptedAt: "2026-10-26" }, values: { tokens: input.tokens, assets: input.assets }, evidence: { observations: {}, installedRac: input.installedRac } });
     expect(profile.check.findings.filter(finding => !finding.message.endsWith("Source and runtime observations are unavailable"))).toEqual([]);
   });
-  it("fills the group-scope leaves from Foundry once Checkbox.Group and Disclosure.Group are mapped, and grid-list follows checkbox", () => {
+  it("fills the group-scope leaves (checkbox from Foundry in the controls group, disclosure from shadcn@aria, which holds its seat), and grid-list follows checkbox", () => {
     const { input } = setup();
     const plan = planComponentDefaults(input);
-    for (const leaf of ["checkbox", "disclosure", "grid-list"]) {
+    expect(plan.rows.find(row => row.slot === "components.disclosure")).toMatchObject({ status: "default", basis: "preference", source: "shadcn@aria", fill: "shadcn@aria/components.disclosure" });
+    for (const leaf of ["checkbox", "grid-list"]) {
       expect(plan.rows.find(row => row.slot === `components.${leaf}`), leaf).toMatchObject({ status: "default", basis: "preference", source: "foundry", fill: `foundry/components.${leaf}` });
     }
     const order = plan.decisions.map(row => row.slot);
     expect(order.indexOf("components.checkbox")).toBeLessThan(order.indexOf("components.grid-list"));
     expect(plan.findings).toEqual([]);
   });
-  it("fills tabs and select from Foundry by preference once size.sm/md/lg are mapped, keeping the controls group coherent", () => {
+  it("fills tabs from shadcn@aria (its seat, no Foundry-only size members) and select from Foundry by preference, keeping the controls group coherent", () => {
     const { input } = setup();
     const plan = planComponentDefaults(input);
-    for (const leaf of ["tabs", "select"]) {
+    expect(plan.rows.find(row => row.slot === "components.tabs")).toMatchObject({ status: "default", basis: "preference", source: "shadcn@aria", fill: "shadcn@aria/components.tabs", reasons: [] });
+    for (const leaf of ["select"]) {
       expect(plan.rows.find(row => row.slot === `components.${leaf}`), leaf).toMatchObject({ status: "default", basis: "preference", source: "foundry", fill: `foundry/components.${leaf}`, reasons: [] });
     }
     expect(plan.findings).toEqual([]);
@@ -162,7 +164,7 @@ describe("component default fills", () => {
     const { input } = setup();
     const plan = planComponentDefaults(input);
     expect(plan.rows.find(row => row.slot === "components.card")).toMatchObject({ status: "default", basis: "fallback", source: "foundry", fill: "foundry/components.card" });
-    expect(reasons(plan, "card")).toMatch(/^shadcn@aria: .*K1 Required member variant\.raised is not mapped/);
+    expect(reasons(plan, "card")).toMatch(/^shadcn@aria: .*K3 Token read tokens\.line-height/);
     expect(reasons(plan, "card")).not.toContain("owner pick");
     expect(plan.decisions.find(row => row.slot === "components.card")).toMatchObject({ kind: "adopt", source: "foundry", note: "Default fill (fallback)" });
   });
@@ -190,15 +192,15 @@ describe("component default fills", () => {
     const k5 = blocked("card", "K5");
     expect(k5.rows.find(row => row.slot === "components.card")).toMatchObject({ status: "not-chosen" });
     expect(reasons(k5, "card")).toContain("foundry: blocked K5");
-    expect(k5.rows.find(row => row.slot === "components.calendar")).toMatchObject({ status: "default", basis: "preference", source: "foundry", fill: "foundry/components.calendar" });
-    expect(k5.rows.find(row => row.slot === "components.toggle-button")).toMatchObject({ status: "default", basis: "preference", source: "foundry", fill: "foundry/components.toggle-button" });
+    expect(k5.rows.find(row => row.slot === "components.calendar")).toMatchObject({ status: "default", basis: "preference", source: "shadcn@aria", fill: "shadcn@aria/components.calendar" });
+    expect(k5.rows.find(row => row.slot === "components.toggle-button")).toMatchObject({ status: "default", basis: "preference", source: "shadcn@aria", fill: "shadcn@aria/components.toggle-button" });
   });
   it("fills the Foundry candidates whose members are now implemented, under the unchanged checker", () => {
     const { input } = setup();
     const plan = planComponentDefaults(input);
     const row = (leaf: string) => plan.rows.find(candidate => candidate.slot === `components.${leaf}`)!;
-    expect(row("popover")).toMatchObject({ status: "default", source: "foundry", fill: "foundry/components.popover" });
-    expect(row("dialog")).toMatchObject({ status: "default", source: "foundry", fill: "foundry/components.dialog" });
+    expect(row("popover")).toMatchObject({ status: "default", source: "shadcn@aria", fill: "shadcn@aria/components.popover" });
+    expect(row("dialog")).toMatchObject({ status: "default", source: "shadcn@aria", fill: "shadcn@aria/components.dialog" });
     expect(reasons(plan, "table")).not.toContain("K1");
     expect(row("menu")).toMatchObject({ status: "default", source: "foundry", fill: "foundry/components.menu" });
     expect(row("chart-sparkline")).toMatchObject({ status: "default", source: "foundry", fill: "foundry/components.chart-sparkline" });
