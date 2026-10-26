@@ -1429,6 +1429,9 @@
   .h-4 {
     height: calc(var(--spacing, 0.25rem) * 4);
   }
+  .h-4xl {
+    height: var(--spacing-4xl, 64px);
+  }
   .h-5 {
     height: calc(var(--spacing, 0.25rem) * 5);
   }

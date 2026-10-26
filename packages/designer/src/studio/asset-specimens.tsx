@@ -5,9 +5,12 @@ import { Icon, type IconNode, type IconSize } from "../components/Icon.js";
 import { Logomark } from "../components/Logomark.js";
 import { UI_BRANDMARK_HEIGHT_LG } from "../internal/brandmark.js";
 import { RatioFixture } from "./ratio-fixture.js";
+import { MediaFigure } from "../blocks/MediaFigure.js";
+import { isImageResource, isVideoResource, mediaLeafOf, type ImageResource, type VideoResource } from "../catalog-assets/media.js";
+import { isPatternRecipe, patternBackground, type PatternRecipe } from "../tokens/pattern.js";
 
 /** One specimen type per assets leaf; every member and candidate of a leaf shares it. */
-export type AssetSpecimenKind = "logo" | "favicon" | "app-icon" | "icon" | "ratio";
+export type AssetSpecimenKind = "logo" | "favicon" | "app-icon" | "icon" | "ratio" | "image" | "video" | "pattern";
 
 /**
  * The ground a variant was drawn for, fixed by its role and never by the theme: positive and
@@ -81,4 +84,40 @@ export function ratioOf(value: unknown): { width: number; height: number } | und
   if (!value || typeof value !== "object") return undefined;
   const { width, height } = value as { width?: unknown; height?: unknown };
   return typeof width === "number" && typeof height === "number" && Number.isFinite(width) && Number.isFinite(height) && width > 0 && height > 0 ? { width, height } : undefined;
+}
+
+/** The media classes every image and video specimen shares: one framed figure, the media at one height and its own aspect. */
+const MEDIA = "block h-4xl w-auto";
+/** A checked image resource as the image it is, framed, at its intrinsic aspect, with its alt policy and kind facet. */
+export function ImageSpecimen({ image }: { image: ImageResource }): ReactElement {
+  return <MediaFigure data-asset-specimen="image" framed className="w-max" caption={<span className={CAPTION}>{image.kind}</span>}>
+    <img src={image.src} alt={image.decorative === true ? "" : image.alt} width={image.width} height={image.height} className={MEDIA} />
+  </MediaFigure>;
+}
+/** A checked video resource as a player the viewer starts: controls, metadata only, never autoplay, captions attached. */
+export function VideoSpecimen({ video }: { video: VideoResource }): ReactElement {
+  return <MediaFigure data-asset-specimen="video" framed className="w-max" caption={<span className={CAPTION}>{video.width}×{video.height}</span>}>
+    <video controls preload="metadata" poster={video.poster} width={video.width} height={video.height} className={MEDIA}>
+      <source src={video.src} type={video.mediaType} />
+      {video.captions ? <track kind="captions" src={video.captions.src} srcLang={video.captions.srclang} label={video.captions.label} default /> : null}
+    </video>
+  </MediaFigure>;
+}
+/** A pattern recipe painted at its real tile size on the light reference ground, named by its shape. */
+export function PatternSpecimen({ recipe }: { recipe: PatternRecipe }): ReactElement {
+  return <div data-asset-specimen="pattern" className="flex w-max flex-col items-start gap-xs">
+    <Ground ground="light"><span aria-hidden className="block size-3xl" style={patternBackground(recipe)} /></Ground>
+    <span className={CAPTION}>{recipe.shape}</span>
+  </div>;
+}
+/**
+ * The specimen of a Media rules member by its leaf: the specimen, `null` when the value fails that
+ * leaf's check (never drawn as artwork), or undefined when the slot is not a Media resource or pattern leaf.
+ */
+export function mediaSpecimen(slot: string, id: string, value: unknown): ReactElement | null | undefined {
+  const leaf = mediaLeafOf(slot);
+  if (!leaf) return undefined;
+  if (leaf === "image") return isImageResource(value) ? <ImageSpecimen image={value} /> : null;
+  if (leaf === "video") return isVideoResource(value) ? <VideoSpecimen video={value} /> : null;
+  return isPatternRecipe(value, id.slice(slot.length + 1)) ? <PatternSpecimen recipe={value} /> : null;
 }

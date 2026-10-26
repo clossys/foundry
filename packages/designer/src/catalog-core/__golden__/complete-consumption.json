@@ -1,13 +1,13 @@
 {
   "counts": {
     "assetEdges": 4,
-    "assets": 45,
-    "members": 630,
+    "assets": 48,
+    "members": 635,
     "orphanEdges": 0,
-    "resolvedMembers": 629,
+    "resolvedMembers": 634,
     "tokenEdges": 24,
     "tokens": 53,
-    "unusedAssets": 43,
+    "unusedAssets": 46,
     "unusedTokens": 41
   },
   "leaves": [
@@ -358,6 +358,14 @@
     {
       "assets": [],
       "consumedBy": [],
+      "id": "assets.image",
+      "resolved": 1,
+      "tokens": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
       "id": "assets.image-ratio",
       "resolved": 1,
       "tokens": [],
@@ -392,6 +400,22 @@
         "tokens.text-color"
       ],
       "total": 3
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.pattern",
+      "resolved": 3,
+      "tokens": [],
+      "total": 3
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.video",
+      "resolved": 1,
+      "tokens": [],
+      "total": 1
     },
     {
       "assets": [],

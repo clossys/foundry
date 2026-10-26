@@ -1,5 +1,5 @@
 {
-  "assetLeaves": 45,
+  "assetLeaves": 48,
   "boundProperties": 227,
   "complete": true,
   "consumer": "example-complete-catalog",
@@ -477,6 +477,17 @@
         "authored"
       ],
       "rules": [],
+      "slot": "assets.image",
+      "sources": [
+        "example-complete-catalog"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "authored"
+      ],
+      "rules": [],
       "slot": "assets.image-ratio",
       "sources": [
         "example-complete-catalog"
@@ -506,6 +517,28 @@
         "identity-mark@1"
       ],
       "slot": "assets.mark",
+      "sources": [
+        "example-complete-catalog"
+      ]
+    },
+    {
+      "members": 3,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "assets.pattern",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "authored"
+      ],
+      "rules": [],
+      "slot": "assets.video",
       "sources": [
         "example-complete-catalog"
       ]
@@ -1103,7 +1136,7 @@
       ]
     }
   ],
-  "served": 98,
-  "slots": 98,
+  "served": 101,
+  "slots": 101,
   "tokenLeaves": 53
 }

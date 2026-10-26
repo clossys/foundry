@@ -5,6 +5,7 @@ import { Info } from "../../icons/Info.js";
 import { X } from "../../icons/X.js";
 import { Button } from "../../components/Button.js";
 import { cx } from "../../components/internal/cx.js";
+import { PATTERN_RECIPES, patternBackground, type PatternRecipe } from "../../tokens/pattern.js";
 import { UI_BORDER_HAIRLINE, UI_ELEVATION_FLOATING } from "../../components/internal/ui-vars.js";
 import {
   clamp, clearSelection, fitTo, minimapModel, navigate, panBy, selectMarquee, selectRange,
@@ -69,8 +70,10 @@ export interface CanvasSurfaceProps {
   viewSize?: CanvasSize;
   minimap?: boolean;
   zoomControls?: boolean;
-  /** Camera-relative token grid; Studio uses this as its working surface. */
+  /** Camera-relative token grid; Studio uses this as its working surface. `dots` paints the `assets.pattern` dots recipe, `crosses` its grid recipe. */
   grid?: "dots" | "crosses";
+  /** A selected `assets.pattern` recipe to paint instead of the `grid` default; only applies while `grid` is set. */
+  gridPattern?: PatternRecipe;
   minZoom?: number;
   maxZoom?: number;
   fitPadding?: number;
@@ -111,7 +114,7 @@ const rectangle = (a: CanvasPoint, b: CanvasPoint): CanvasRect => ({ x: Math.min
 export function CanvasSurface(props: CanvasSurfaceProps) {
   const {
   "aria-label": label, viewport, onViewportChange, selection, onSelectionChange, worldBounds, items, edges = [],
-  children, renderItem, itemInteraction = "select", worldClassName, contentLayout = "positioned", contentScroll = "region", onSurfaceElement, onWorldElement, actionsRef, overlays = [], overlayInsets, overlayLayout = "wide", viewSize, minimap = false, zoomControls = false, grid,
+  children, renderItem, itemInteraction = "select", worldClassName, contentLayout = "positioned", contentScroll = "region", onSurfaceElement, onWorldElement, actionsRef, overlays = [], overlayInsets, overlayLayout = "wide", viewSize, minimap = false, zoomControls = false, grid, gridPattern,
   minZoom = 0.1, maxZoom = 8, fitPadding = 0, className, style,
   instructionText = "Arrow keys move item focus. Shift and arrows extend selection. Plus and minus zoom; zero or Home fits. Escape clears selection. Drag empty space or hold Space to pan; Shift and drag selects.",
   recenterLabel = "Recenter canvas", zoomGroupLabel = "Canvas zoom", zoomOutLabel = "Zoom out",
@@ -467,7 +470,8 @@ export function CanvasSurface(props: CanvasSurfaceProps) {
       }
     }}
     className={cx("relative isolate h-full min-h-0 min-w-0 overflow-hidden rounded-control border border-line-base bg-surface-base text-ink-primary focus-visible:outline-2 focus-visible:outline-accent", className)}
-    style={{ ...(grid && !flowing ? { backgroundImage: grid === "dots" ? "radial-gradient(circle, var(--color-line-base) calc(var(--ui-border-hairline) * var(--canvas-grid-zoom)), transparent calc(var(--ui-border-hairline) * var(--canvas-grid-zoom)))" : "linear-gradient(var(--color-line-base) var(--ui-border-hairline), transparent var(--ui-border-hairline)), linear-gradient(90deg, var(--color-line-base) var(--ui-border-hairline), transparent var(--ui-border-hairline))", backgroundSize: `calc(var(--spacing-xl) * ${viewport.zoom}) calc(var(--spacing-xl) * ${viewport.zoom})`, backgroundPosition: `${viewport.x}px ${viewport.y}px`, "--canvas-grid-zoom": viewport.zoom } : {}), ...style, touchAction: flowing ? "auto" : "none", overflow: flowing ? contentScroll === "document" ? "visible" : "auto" : "hidden", ...(viewSize ? { width: viewSize.width, height: flowing && contentScroll === "document" ? "auto" : viewSize.height, boxSizing: "content-box" } : {}) }}>
+    /* Named inline-style exception: the camera-relative pattern layer (recipe from assets.pattern, offset by pan, scaled by zoom). */
+    style={{ ...(grid && !flowing ? { ...patternBackground(gridPattern ?? PATTERN_RECIPES[grid === "dots" ? "dots" : "grid"], viewport.zoom), backgroundPosition: `${viewport.x}px ${viewport.y}px`, "--canvas-grid-zoom": viewport.zoom } : {}), ...style, touchAction: flowing ? "auto" : "none", overflow: flowing ? contentScroll === "document" ? "visible" : "auto" : "hidden", ...(viewSize ? { width: viewSize.width, height: flowing && contentScroll === "document" ? "auto" : viewSize.height, boxSizing: "content-box" } : {}) }}>
     <p id={instructionId} className="sr-only">{instructionText}</p>
     <div ref={element => { worldRef.current = element; onWorldElement?.(element); }} data-canvas-world="" dir="ltr" className={cx(flowing ? "relative" : "absolute inset-0", worldClassName, fitting && !reducedMotion && "transition-transform motion-reduce:transition-none")}
       onTransitionEnd={event => { if (event.target === event.currentTarget) setFitting(false); }}

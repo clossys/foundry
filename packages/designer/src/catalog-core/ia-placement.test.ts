@@ -7,7 +7,7 @@ import frames from "../catalog/ia/frames.json" with { type: "json" };
 import { checkIAPlacement, assertIAPlacements, loadBuildCatalog, loadCatalog, type Placement } from "./index.js";
 
 const fixtures = [tokens, assets, components, sections, frames];
-const counts = { tokens: [7, 20, 53], assets: [4, 8, 45], components: [6, 22, 58], sections: [6, 22, 45], frames: [3, 8, 9] };
+const counts = { tokens: [7, 20, 53], assets: [4, 10, 48], components: [6, 22, 58], sections: [6, 22, 45], frames: [3, 8, 9] };
 const leafIds = (tree: Placement): string[] => tree.nodes.flatMap(group => "children" in group ? group.children.flatMap(family => "leaves" in family ? family.leaves : []) : []);
 
 describe("IA1 exact three levels and IA2 unmixed nodes", () => {
@@ -51,7 +51,7 @@ describe("IA1 exact three levels and IA2 unmixed nodes", () => {
         expect(() => loadBuildCatalog()).toThrow("IA1");
         if (layer === "tokens" || layer === "assets") expect(() => loadCatalog()).toThrow("IA1");
       } finally { Object.assign(input, { nodes: original }); }
-      expect(loadBuildCatalog().slots).toHaveLength(210);
+      expect(loadBuildCatalog().slots).toHaveLength(214);
     });
   }
 
