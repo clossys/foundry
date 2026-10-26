@@ -6,6 +6,7 @@ import { ResizablePane } from "../blocks/index.js";
 import { FrameModuleOutlet, FrameSlotOutlet, useFrameSlotModules } from "../shell/index.js";
 import { visibleFrameNotices, type AppFrameNotice } from "./frame-notices.js";
 import { frameDockGeometry, FRAME_DOCK_DEFAULTS, type FrameDockBounds } from "./frame-dock-layout.js";
+import { FrameZoomGestures } from "./frame-zoom-gestures.js";
 
 export interface AppFrameDock extends FrameDockBounds {
   label: string;
@@ -51,11 +52,13 @@ export function FrameDock({ notices = [], dock }: { notices?: readonly AppFrameN
     return () => { observer?.disconnect(); window.removeEventListener("resize", measure); };
   }, [modules.length, strips.length, visible.length]);
   const geometry = frameDockGeometry(available, dock, dock?.value ?? height);
-  if (!modules.length && !strips.length && !visible.length) return null;
+  // Mounted in every dock state so the frame gesture owner keeps one identity as the dock appears.
+  const gestures = <FrameZoomGestures />;
+  if (!modules.length && !strips.length && !visible.length) return <>{gestures}</>;
   const panels = modules.map(module => <Tabs.Panel key={module.id} id={module.id} className="min-h-0 min-w-0 overflow-auto"><FrameModuleOutlet id={module.id} /></Tabs.Panel>);
   const content = <ResizablePane orientation="horizontal" handleEdge="start" label={dock?.label ?? "Page modules"} handleLabel={dock?.handleLabel ?? "Page modules"}
     {...geometry} onChange={next => { setHeight(next); dock?.onChange?.(next); }} className="min-h-0 rounded-none border-0 p-0">{panels}</ResizablePane>;
-  return <section ref={region} data-application-frame-region="dock" className="min-w-0 shrink-0 border-t border-line-base bg-surface-raised">
+  return <>{gestures}<section ref={region} data-application-frame-region="dock" className="min-w-0 shrink-0 border-t border-line-base bg-surface-raised">
     <div ref={noticesRegion} data-frame-notices="" className="flex w-full flex-col">
       {visible.map(notice => <Banner key={notice.id} variant={notice.severity === "error" ? "danger" : notice.severity}
         className="w-full rounded-none" onDismiss={notice.severity !== "error" && notice.dismissible !== false ? () => dismiss(notice.id) : undefined}>
@@ -73,5 +76,5 @@ export function FrameDock({ notices = [], dock }: { notices?: readonly AppFrameN
       {expanded && content}
     </Tabs> : strips.length > 0 ? <div className="flex min-w-0 items-center justify-end gap-xs px-sm"><FrameSlotOutlet slot="dock-strip" /></div> : null}
 
-  </section>;
+  </section></>;
 }

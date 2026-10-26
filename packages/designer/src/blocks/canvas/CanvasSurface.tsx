@@ -8,8 +8,8 @@ import { cx } from "../../components/internal/cx.js";
 import { UI_BORDER_HAIRLINE, UI_ELEVATION_FLOATING } from "../../components/internal/ui-vars.js";
 import {
   clamp, clearSelection, fitTo, minimapModel, navigate, panBy, selectMarquee, selectRange,
-  selectSingle, toggleSelection, toWorld, validateCanvasItems, zoomAt,
-  type CanvasDirection, type CanvasItem, type CanvasPoint, type CanvasRect, type CanvasSize, type Selection, type Viewport,
+  selectSingle, toggleSelection, toWorld, validateCanvasItems, zoomAt, wheelZoomFactor, gestureZoomFactor, CANVAS_ZOOM_REQUEST_EVENT,
+  type CanvasDirection, type CanvasZoomRequestDetail, type CanvasItem, type CanvasPoint, type CanvasRect, type CanvasSize, type Selection, type Viewport,
 } from "./models.js";
 
 export interface CanvasSurfaceActions {
@@ -187,11 +187,11 @@ export function CanvasSurface(props: CanvasSurfaceProps) {
   const roving = items.some(item => item.id === focused) ? focused : items[0]?.id ?? null;
   const selectedIds = new Set(selection);
   const pendingWheel = useRef<Viewport | null>(null);
-  const wheelState = useRef({ viewport, minZoom, maxZoom, onViewportChange, height: size.height });
+  const wheelState = useRef({ viewport, minZoom, maxZoom, onViewportChange, width: size.width, height: size.height });
   // The whole props object marks an authoritative host commit, including a rejection
   // that supplies the same viewport and callback. Internal focus/gesture state keeps its intent.
   useLayoutEffect(() => {
-    wheelState.current = { viewport, minZoom, maxZoom, onViewportChange, height: size.height };
+    wheelState.current = { viewport, minZoom, maxZoom, onViewportChange, width: size.width, height: size.height };
     pendingWheel.current = null;
   }, [props, size.width, size.height]);
   const requestViewport = (next: Viewport) => {
@@ -279,32 +279,59 @@ export function CanvasSurface(props: CanvasSurfaceProps) {
   useEffect(() => {
     const node = surfaceRef.current;
     if (!node) return;
-    const wheel = (event: WheelEvent) => {
-      if (flowing) return;
-      if (itemInteraction === "content" && (event.target as Element).closest?.("button, a, [role=radio], [role=tab]")) return;
-      if ((event.target as Element).closest?.("[data-canvas-controls], [data-canvas-minimap], [data-canvas-panel], input, textarea, select, [contenteditable]:not([contenteditable=false])")) return;
-      event.preventDefault();
-      setFitting(false);
+    const pointAt = (event: { clientX: number; clientY: number }) => {
       const bounds = node.getBoundingClientRect();
-      if (itemInteraction === "content" && !event.ctrlKey && !event.metaKey) {
-        const state = wheelState.current, base = pendingWheel.current ?? state.viewport;
-        const next = panBy(base, { x: -event.deltaX, y: -event.deltaY });
-        pendingWheel.current = next; state.onViewportChange(next); return;
-      }
-      const point = { x: event.clientX - bounds.left - node.clientLeft, y: event.clientY - bounds.top - node.clientTop };
-      // Normalize line/page wheels; cap extreme deltas to keep every factor finite.
-      const state = wheelState.current;
-      const base = pendingWheel.current ?? state.viewport;
-      const units = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? state.height : 1;
-      const factor = Math.exp(-Math.max(-1000, Math.min(1000, event.deltaY * units)) * 0.002);
+      return { x: event.clientX - bounds.left - node.clientLeft, y: event.clientY - bounds.top - node.clientTop };
+    };
+    const zoomBy = (point: CanvasPoint, factor: number) => {
+      setFitting(false);
+      const state = wheelState.current, base = pendingWheel.current ?? state.viewport;
       const zoom = Math.min(state.maxZoom, Math.max(state.minZoom, base.zoom * factor));
       const next = zoomAt(base, point, zoom / base.zoom);
       // Store before notifying: a synchronous host commit may accept, clamp, or reject it.
       pendingWheel.current = next;
       state.onViewportChange(next);
     };
+    const wheel = (event: WheelEvent) => {
+      if (flowing) return;
+      const target = event.target as Element;
+      // A modified wheel (trackpad pinch) is always the camera's, even over nested controls.
+      const modified = event.ctrlKey || event.metaKey;
+      if (!modified && itemInteraction === "content" && target.closest?.("button, a, [role=radio], [role=tab]")) return;
+      if (!modified && target.closest?.("[data-canvas-controls], [data-canvas-minimap], [data-canvas-panel], input, textarea, select, [contenteditable]:not([contenteditable=false])")) return;
+      event.preventDefault();
+      if (itemInteraction === "content" && !modified) {
+        setFitting(false);
+        const state = wheelState.current, base = pendingWheel.current ?? state.viewport;
+        const next = panBy(base, { x: -event.deltaX, y: -event.deltaY });
+        pendingWheel.current = next; state.onViewportChange(next); return;
+      }
+      zoomBy(pointAt(event), wheelZoomFactor(event.deltaY, event.deltaMode, wheelState.current.height));
+    };
+    // Safari trackpad pinch arrives as non-standard gesture events with a cumulative scale.
+    let gestureScale = 1;
+    const gesture = (event: Event) => {
+      if (flowing) return;
+      event.preventDefault();
+      const scale = (event as Event & { scale?: number }).scale ?? 1;
+      if (event.type === "gesturestart") { gestureScale = 1; return; }
+      if (event.type === "gesturechange") zoomBy(pointAt(event as Event & { clientX: number; clientY: number }), gestureZoomFactor(scale, gestureScale));
+      gestureScale = event.type === "gestureend" ? 1 : scale;
+    };
+    // A frame-level owner routes gestures from its chrome here, anchored at the surface center.
+    const request = (event: Event) => {
+      const factor = (event as CustomEvent<CanvasZoomRequestDetail>).detail?.factor;
+      if (flowing || typeof factor !== "number" || !Number.isFinite(factor) || factor <= 0) return;
+      zoomBy({ x: wheelState.current.width / 2, y: wheelState.current.height / 2 }, factor);
+    };
     node.addEventListener("wheel", wheel, { passive: false });
-    return () => node.removeEventListener("wheel", wheel);
+    for (const type of ["gesturestart", "gesturechange", "gestureend"]) node.addEventListener(type, gesture, { passive: false });
+    node.addEventListener(CANVAS_ZOOM_REQUEST_EVENT, request);
+    return () => {
+      node.removeEventListener("wheel", wheel);
+      for (const type of ["gesturestart", "gesturechange", "gestureend"]) node.removeEventListener(type, gesture);
+      node.removeEventListener(CANVAS_ZOOM_REQUEST_EVENT, request);
+    };
   }, [itemInteraction, flowing]);
 
   const requestFit = () => {
@@ -332,16 +359,6 @@ export function CanvasSurface(props: CanvasSurfaceProps) {
       if (options.focus) element.focus({ preventScroll: true });
     },
   }));
-  useLayoutEffect(() => {
-    if (itemInteraction !== "content") return;
-    const world = worldRef.current;
-    if (!world) return;
-    const semantic = viewport.zoom < .5 ? "summary" : viewport.zoom <= .9 ? "quiet" : "full";
-    world.dataset.semantic = semantic;
-    world.querySelectorAll<HTMLElement>("[data-studio-zoom-full]").forEach(element => { element.hidden = semantic === "summary"; element.inert = semantic === "summary"; });
-    world.querySelectorAll<HTMLElement>("[data-studio-zoom-detail]").forEach(element => { element.hidden = semantic !== "full"; });
-    world.querySelectorAll<HTMLElement>("[data-studio-zoom-summary]").forEach(element => { element.hidden = semantic !== "summary"; });
-  }, [viewport.zoom, itemInteraction, children]);
   const keydown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (flowing) return;
     const target = event.target as Element;
@@ -436,6 +453,7 @@ export function CanvasSurface(props: CanvasSurfaceProps) {
   };
 
   return <div ref={element => { surfaceRef.current = element; onSurfaceElement?.(element); }} role="region" aria-label={label} aria-describedby={instructionId}
+    data-canvas-surface="" data-canvas-layout={contentLayout}
     onScroll={event => { if (!flowing && event.target === event.currentTarget) neutralizeScroll(); }}
     tabIndex={items.length ? -1 : 0} onKeyDown={keydown} onPointerDown={pointerdown} onPointerMove={pointermove}
     onPointerUp={event => pointerend(event, true)} onPointerCancel={event => pointerend(event, false)}

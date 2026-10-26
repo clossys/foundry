@@ -13,6 +13,7 @@ import { EditFeedback } from "./EditFeedback.js";
 import { AssetExemptions } from "./AssetExemptions.js";
 import { boardMatches, boardSources, canvasDomains, type CanvasFilter } from "./canvas-model.js";
 import { CanvasSurface } from "../blocks/canvas/CanvasSurface.js";
+import { CanvasLod } from "../blocks/canvas/CanvasLod.js";
 import { useCanvasWorld } from "./useCanvasWorld.js";
 import { Inspector } from "./Inspector.js";
 import { SlotTree } from "./SlotTree.js";
@@ -79,7 +80,7 @@ export function LegacyStudioCanvas({ panelInsets, className, candidateWorkflow }
       instructionText={text.hint} grid="dots" recenterLabel={text.minimap}
       zoomOutLabel={text.zoomOut} zoomInLabel={text.zoomIn} zoomPercentageLabel={text.zoomLabel} fitLabel={text.fit}
       >
-        {domains.map(domain => <section key={domain.id} data-studio-domain={domain.id} aria-label={domain.label} className="flex items-start gap-2xl">
+        <CanvasLod zoom={canvas.pose.zoom}>{domains.map(domain => <section key={domain.id} data-studio-domain={domain.id} aria-label={domain.label} className="flex items-start gap-2xl">
           <h2 className="h-[var(--ui-layout-sidebar-rail-w)] w-[calc(var(--ui-layout-aside-w)*2)] shrink-0 text-body text-ink-secondary [writing-mode:vertical-rl]">{domain.label}</h2>
           {domain.boards.map(board => {
             if (!boardRefs.current.has(board.id)) boardRefs.current.set(board.id, element => { const elements = latest.current.boardElements.current; if (element) elements.set(board.id, element); else elements.delete(board.id); });
@@ -89,7 +90,7 @@ export function LegacyStudioCanvas({ panelInsets, className, candidateWorkflow }
               {state.working && state.pending ? <Board board={board} boardRef={boardRefs.current.get(board.id)!} summary={summary} onOpen={openActions.current.get(board.id)!} workflow={candidateWorkflow} variants={variants} contextTokens={contextTokens} sources={state.sources} labels={state.labels} working={state.working} changes={state.pending} groups={state.groups} groupChoices={state.groupChoices} expanded={state.expanded} layout="wide" onExpand={expand} onUse={use} onRowElement={registerRow} onFocusCell={focusCell} onRequestRow={requestRow} /> : null}
             </div>;
           })}
-        </section>)}
+        </section>)}</CanvasLod>
     </CanvasSurface>
     {state.focused && state.focusedRow ? <SlotModule id="value-inspector" slot="right-panel" label={state.labels.inspectorLabel}><aside data-studio-panel="inspector" aria-label={state.labels.inspectorLabel} className="p-md">
       {state.autosave ? <EditFeedback leaf={state.focused.fill.slot} state={state.autosave} labels={state.labels} /> : null}

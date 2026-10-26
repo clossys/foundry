@@ -1,7 +1,9 @@
-/** Candidate controls are hidden at overview zoom. At other zooms both the canvas and each scrolling matrix clip rows. */
+import { canvasLodTier } from "../blocks/canvas/CanvasLod.js";
+
+/** Rows live in the full detail tier; below it none are visible. In the full tier the canvas and each matrix clip rows. */
 export function visibleStudioRows(viewport: HTMLElement, rows: Iterable<readonly [string, HTMLElement]>, zoom: number): Set<string> {
   const visible = new Set<string>();
-  if (zoom < .5) return visible;
+  if (canvasLodTier(zoom) !== "full") return visible;
   const host = viewport.getBoundingClientRect();
   for (const [id, element] of rows) {
     const rect = element.getBoundingClientRect();

@@ -7,6 +7,7 @@ import { Settings } from "../icons/Settings.js";
 import { Table } from "../components/Table.js";
 import { Tooltip } from "../components/Tooltip.js";
 import { SectionHeader } from "../blocks/SectionHeader.js";
+import { CanvasLodLayers } from "../blocks/canvas/CanvasLod.js";
 import { Matrix } from "./Matrix.js";
 import { CandidateCell } from "./CandidateCell.js";
 import { CandidatePromptDialog } from "./CandidatePromptDialog.js";
@@ -27,10 +28,10 @@ export const Board = memo(function Board({ board, boardRef, summary, onOpen, wor
   const edit = () => { setEditing(true); for (const row of rows) if (row.candidatesReady === false) matrix.onRequestRow?.(row, matrix.sources[0] ?? matrix.working.source.id); };
   const promptData = (row: MatrixRow, current = false): CandidatePromptData => valueBoardPrompt({ board, row, consumer: matrix.working.source.id, contextTokens, variants, workflow, returnStep: text.returnStep }, current);
   const sources = matrix.sources.filter(source => rows.some(row => row.candidates.some(candidate => candidate.source === source && (candidate.fill.sourceAddress !== "" || candidate.members.length > 0))) || rows.some(row => row.candidatesReady === false));
-  return <section tabIndex={-1} id={id} ref={boardRef} data-studio-board={board.id} data-board-mode={editing ? "edit" : "view"} aria-labelledby={headingId} className="relative flex h-max w-max shrink-0 flex-col gap-sm rounded-surface border border-line-base bg-surface-base p-md">
+  return <section tabIndex={-1} id={id} ref={boardRef} data-studio-board={board.id} data-board-mode={editing ? "edit" : "view"} aria-labelledby={headingId} className="flex h-max w-max shrink-0 flex-col gap-sm rounded-surface border border-line-base bg-surface-base p-md">
     <SectionHeader id={headingId} title={board.label} level={3} actions={editing ? <Button size="sm" onPress={() => setEditing(false)}>{text.done}</Button> : <Tooltip trigger={<Button variant="ghost" size="sm" aria-label={text.changeSelection} onPress={edit}><Icon glyph={Settings} decorative size="sm" /></Button>}>{text.changeSelection}</Tooltip>} />
-    <div data-studio-zoom-full="" className="w-max">{editing ? <>
-      <Matrix {...matrix} rows={rows} sources={sources} layout="wide" contained customCell={row => <div className="flex items-center gap-sm">
+    <CanvasLodLayers full={<div data-studio-zoom-full="" className="w-max">{editing ? <>
+      <Matrix {...matrix} rows={rows} sources={sources} layout="wide" customCell={row => <div className="flex items-center gap-sm">
         <CandidatePromptDialog trigger={<Button variant="ghost" size="sm">{text.create}</Button>} data={promptData(row)} labels={matrix.labels} workflow={workflow} />
         {row.candidates.some(candidate => candidate.selected && candidate.source === matrix.working.source.id && candidate.members.some(({ member }) => member.origin?.kind !== "adopted")) ? <CandidatePromptDialog trigger={<Button variant="ghost" size="sm">{text.refresh}</Button>} data={promptData(row, true)} labels={matrix.labels} workflow={workflow} /> : null}
       </div>} />
@@ -39,10 +40,19 @@ export const Board = memo(function Board({ board, boardRef, summary, onOpen, wor
       <Table.Body>{rows.map(row => { const active = row.candidates.find(candidate => candidate.selected); return <Table.Row key={row.id} id={row.id} data-studio-row={row.id} data-scope="slot">
         <Table.Cell><span ref={element => { matrix.onRowElement?.(row.id, element?.closest("tr") ?? null); }}>{row.label}</span></Table.Cell><Table.Cell>{active ? <CandidateCell candidate={active} labels={matrix.labels} /> : <div className="flex items-center gap-sm text-ink-muted"><span>{text.notChosen}</span><Button variant="ghost" size="sm" onPress={edit}>{text.choose}</Button><CandidatePromptDialog trigger={<Button variant="ghost" size="sm">{text.askAgent}</Button>} data={promptData(row)} labels={matrix.labels} workflow={workflow} /></div>}</Table.Cell>
       </Table.Row>; })}</Table.Body>
-    </Table>}</div>
-    {summary ? <div data-studio-zoom-summary="" hidden className="absolute inset-md top-3xl flex-col gap-md">
-      <p className="text-body-s text-ink-secondary">{matrix.labels.checkSummary(summary.errors, summary.warnings)}</p>
+    </Table>}</div>}
+    // Compact: each row's name and chosen library, legible at text-h0.
+    compact={summary ? <div data-studio-zoom-compact="" className="flex flex-col gap-md text-h0">
+      <p className="break-words text-ink-secondary">{matrix.labels.checkSummary(summary.errors, summary.warnings)}</p>
+      <ul className="flex flex-col gap-sm">{rows.map(row => { const source = activeCandidateSource(row.candidates); return <li key={row.id} className="break-words">
+        <span className="text-ink-primary">{row.label}</span> <span className={source ? "text-ink-secondary" : "text-ink-muted"}>{source ?? text.notChosen}</span>
+      </li>; })}</ul>
+    </div> : undefined}
+    // Overview: the board name, its check summary and the only Open action.
+    overview={summary ? <div data-studio-zoom-summary="" className="flex flex-col items-start gap-md">
+      <p className="break-words text-display-xl text-ink-primary">{board.label}</p>
+      <p className="break-words text-display-m text-ink-secondary">{matrix.labels.checkSummary(summary.errors, summary.warnings)}</p>
       {onOpen ? <Button variant="ghost" size="sm" onPress={onOpen}>{matrix.labels.canvas.openBoard(board.label)}</Button> : null}
-    </div> : null}
+    </div> : undefined} />
   </section>;
 });
