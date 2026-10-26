@@ -16,13 +16,15 @@ const PREFERENCE = ["shadcn@aria", "foundry", "rac-starter"];
 /** C8–C11 owner picks; C12 is a binding inside the selected fills, not a pick. */
 const PICKS = { "components.button": "foundry", "components.table": "foundry", "components.tooltip": "shadcn@aria", "components.card": "shadcn@aria" };
 
-/** A real consumer: every token leaf adopts its Foundry offer, every icon glyph its first offer. */
-function consumer() {
+/** Value-source order for the test consumer: Foundry first, then the generic open-contract fills. */
+const VALUE_ORDER = ["foundry", "tailwind-default"];
+/** A real consumer: every token leaf and icon glyph adopts its first offer in `order`, else its first offer. */
+function consumer(order: readonly string[] = VALUE_ORDER) {
   const values = loadCatalog();
   const offers = (slot: string) => values.fills.filter(doc => doc.$extensions["com.clossys.fill"].slot === slot && doc.$extensions["com.clossys.fill"].mode !== "reference").map(doc => doc.$extensions["com.clossys.fill"].source);
   const changes = values.slots.filter(slot => slot.layer === "tokens" || slot.id.startsWith("assets.icon-")).flatMap(slot => {
     const sources = offers(slot.id);
-    const source = sources.includes("foundry") ? "foundry" : sources[0];
+    const source = order.find(name => sources.includes(name)) ?? sources[0];
     return source ? [{ op: "adopt" as const, slot: slot.id, source }] : [];
   });
   let library: LibraryData = { source: { kind: "consumer", author: "consumer", id: "defaults-consumer" } as LibraryData["source"], fills: [], adoptedAt: "2026-10-26" };
@@ -38,10 +40,10 @@ function consumer() {
   return { values, library, tokens, assets };
 }
 
-function setup(overrides: Partial<ComponentDefaultsInput> = {}) {
+function setup(overrides: Partial<ComponentDefaultsInput> = {}, order?: readonly string[]) {
   const bundles = loadCatalogBundles();
   const registry = loadComponentRegistry();
-  const { values, library, tokens, assets } = consumer();
+  const { values, library, tokens, assets } = consumer(order);
   const catalog = { slots: registry.slots, fills: bundles.componentFills, rules: loadComponentCompositionRules() };
   const input: ComponentDefaultsInput = {
     catalog, slots: registry.slots.map(slot => slot.id), tokens, assets,
@@ -60,9 +62,10 @@ const EXPECTED_DEFAULTS = {
   meter: "foundry", "native-action": "foundry", "navigation-tree": "foundry", "progress-bar": "foundry", "radio-group": "foundry",
   "resize-handle": "foundry", "search-field": "foundry", "semantic-content": "foundry", separator: "shadcn@aria", skeleton: "foundry",
   spinner: "foundry", "status-mark": "foundry", switch: "foundry", "text-field": "foundry", toast: "foundry", toolbar: "rac-starter",
+  tooltip: "shadcn@aria",
 };
 const NOT_CHOSEN = ["calendar", "card", "chart-sparkline", "checkbox", "color-picker", "date-picker", "dialog", "disclosure", "grid-list", "menu",
-  "number-field", "popover", "select", "slider", "table", "tabs", "tag-group", "toggle-button", "toggle-group", "tooltip", "tree"];
+  "number-field", "popover", "select", "slider", "table", "tabs", "tag-group", "toggle-button", "toggle-group", "tree"];
 const reasons = (plan: ReturnType<typeof planComponentDefaults>, leaf: string) => plan.rows.find(row => row.slot === `components.${leaf}`)!.reasons.join(" || ");
 
 describe("component default fills", () => {
@@ -134,5 +137,12 @@ describe("component default fills", () => {
     expect(unbundled.rows.find(row => row.slot === "components.avatar")).toMatchObject({ status: "default", source: "foundry" });
     expect(reasons(unbundled, "keyboard")).toContain("shadcn@aria: no verified source bundle");
     expect(unbundled.findings).toEqual([]);
+  });
+  it("eligibility follows the consumer's own values: an unresolved token read keeps the owner pick unchosen", () => {
+    const { input } = setup({}, ["foundry", "shadcn@aria"]);
+    const plan = planComponentDefaults(input);
+    expect(plan.rows.find(row => row.slot === "components.tooltip")).toMatchObject({ status: "not-chosen" });
+    expect(reasons(plan, "tooltip")).toMatch(/^shadcn@aria: .*K3 Token read tokens\.radius\.subtle does not resolve.* \|\| owner pick shadcn@aria is not eligible/);
+    expect(plan.findings).toEqual([]);
   });
 });
