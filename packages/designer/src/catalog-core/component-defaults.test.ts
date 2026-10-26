@@ -15,6 +15,9 @@ import type { CompositeCatalogData, CompositeLibraryData, LibraryData } from "./
 const PREFERENCE = ["shadcn@aria", "foundry", "rac-starter"];
 /** C8–C11 owner picks; C12 is a binding inside the selected fills, not a pick. */
 const PICKS = { "components.button": "foundry", "components.table": "foundry", "components.tooltip": "shadcn@aria", "components.card": "shadcn@aria" };
+/** Planner decision DF1-1: these leaves take the whole Foundry component where the preferred candidates are ineligible. */
+const FALLBACK = { source: "foundry", slots: ["checkbox", "dialog", "popover", "tabs", "toggle-button", "disclosure", "select", "chart-sparkline", "color-picker",
+  "number-field", "tag-group", "tree", "calendar", "menu", "table", "card"].map(leaf => `components.${leaf}`) };
 
 /** Value-source order for the test consumer: Foundry first, then the generic open-contract fills. */
 const VALUE_ORDER = ["foundry", "tailwind-default"];
@@ -48,14 +51,14 @@ function setup(overrides: Partial<ComponentDefaultsInput> = {}, order?: readonly
   const input: ComponentDefaultsInput = {
     catalog, slots: registry.slots.map(slot => slot.id), tokens, assets,
     installedRac: { version: "1.0.0", instance: "react-aria-components" }, bundles: bundles.sourceBundles,
-    preference: PREFERENCE, picks: PICKS, ...overrides,
+    preference: PREFERENCE, picks: PICKS, fallback: FALLBACK, ...overrides,
   };
   return { input, bundles, values, library };
 }
 const ledger = (rows: ReturnType<typeof planComponentDefaults>["rows"]) => Object.fromEntries(rows.map(row => [row.slot.slice(11), row.status === "not-chosen" ? "-" : row.source ?? row.rule!]));
 
 const EXPECTED_DEFAULTS = {
-  avatar: "shadcn@aria", badge: "foundry", banner: "foundry", breadcrumbs: "shadcn@aria", button: "foundry",
+  avatar: "shadcn@aria", badge: "foundry", banner: "foundry", breadcrumbs: "shadcn@aria", button: "foundry", card: "foundry",
   "chart-area": "foundry", "chart-bar": "foundry", "chart-heatmap": "foundry", "chart-line": "foundry", "chart-range": "foundry",
   "chart-scatter": "foundry", "chart-status-strip": "foundry", "chart-waterfall": "foundry", "combo-box": "foundry", "date-field": "foundry",
   field: "foundry", "file-trigger": "foundry", form: "foundry", icon: "foundry", keyboard: "shadcn@aria", link: "foundry", logo: "foundry",
@@ -64,7 +67,7 @@ const EXPECTED_DEFAULTS = {
   spinner: "foundry", "status-mark": "foundry", switch: "foundry", "text-field": "foundry", toast: "foundry", toolbar: "rac-starter",
   tooltip: "shadcn@aria",
 };
-const NOT_CHOSEN = ["calendar", "card", "chart-sparkline", "checkbox", "color-picker", "date-picker", "dialog", "disclosure", "grid-list", "menu",
+const NOT_CHOSEN = ["calendar", "chart-sparkline", "checkbox", "color-picker", "date-picker", "dialog", "disclosure", "grid-list", "menu",
   "number-field", "popover", "select", "slider", "table", "tabs", "tag-group", "toggle-button", "toggle-group", "tree"];
 const reasons = (plan: ReturnType<typeof planComponentDefaults>, leaf: string) => plan.rows.find(row => row.slot === `components.${leaf}`)!.reasons.join(" || ");
 
@@ -89,8 +92,6 @@ describe("component default fills", () => {
     }
     expect(reasons(plan, "table")).toContain("foundry: K1 Required member resize-columns is not mapped");
     expect(reasons(plan, "table")).toContain("owner pick foundry is not eligible");
-    expect(reasons(plan, "card")).toMatch(/^shadcn@aria: .*K1 Required member variant\.raised is not mapped/);
-    expect(reasons(plan, "card")).not.toContain("foundry:");
     expect(reasons(plan, "slider")).toBe("controls coherence: one source per group, led by foundry; shadcn@aria would mix sources");
     expect(reasons(plan, "grid-list")).toBe("foundry: dependency not chosen components.checkbox");
     expect(reasons(plan, "date-picker")).toContain("compose:date-picker@1: inputs not chosen components.calendar,components.popover");
@@ -114,6 +115,43 @@ describe("component default fills", () => {
     }
     const profile = resolveComponents({ catalog: input.catalog, library: { ...adopted.components, source, adoptedAt: "2026-10-26" }, values: { tokens: input.tokens, assets: input.assets }, evidence: { observations: {}, installedRac: input.installedRac } });
     expect(profile.check.findings.filter(finding => !finding.message.endsWith("Source and runtime observations are unavailable"))).toEqual([]);
+  });
+  it("fills a listed leaf from the fallback source when its owner pick is ineligible, keeping why", () => {
+    const { input } = setup();
+    const plan = planComponentDefaults(input);
+    expect(plan.rows.find(row => row.slot === "components.card")).toMatchObject({ status: "default", basis: "fallback", source: "foundry", fill: "foundry/components.card" });
+    expect(reasons(plan, "card")).toMatch(/^shadcn@aria: .*K1 Required member variant\.raised is not mapped/);
+    expect(reasons(plan, "card")).not.toContain("owner pick");
+    expect(plan.decisions.find(row => row.slot === "components.card")).toMatchObject({ kind: "adopt", source: "foundry", note: "Default fill (fallback)" });
+  });
+  it("the fallback never bypasses the checker: a listed leaf whose Foundry candidate fails keeps the exact finding", () => {
+    const { input } = setup();
+    const plan = planComponentDefaults(input);
+    expect(reasons(plan, "table")).toContain("foundry: K1 Required member resize-columns is not mapped");
+    expect(reasons(plan, "checkbox")).toContain("foundry: K1 Required member scope.group is not mapped");
+    expect(reasons(plan, "tree")).toContain("foundry: blocked K5");
+    expect(reasons(plan, "calendar")).toContain("foundry: no implementation candidate");
+    expect(reasons(plan, "toggle-button")).toContain("foundry: no implementation candidate");
+  });
+  it("the fallback is scoped to its listed leaves", () => {
+    const { input } = setup({ fallback: { source: "foundry", slots: FALLBACK.slots.filter(slot => slot !== "components.card") } });
+    const plan = planComponentDefaults(input);
+    expect(plan.rows.find(row => row.slot === "components.card")).toMatchObject({ status: "not-chosen" });
+    expect(reasons(plan, "card")).toContain("owner pick shadcn@aria is not eligible");
+    expect(reasons(plan, "card")).not.toContain("foundry:");
+  });
+  it("a choice stays exclusive on a fallback leaf", () => {
+    const { input } = setup({ choices: { "components.card": "shadcn@aria" } });
+    const plan = planComponentDefaults(input);
+    expect(plan.rows.find(row => row.slot === "components.card")).toMatchObject({ status: "not-chosen" });
+    expect(reasons(plan, "card")).not.toContain("foundry:");
+  });
+  it("the fallback also follows a preference that does not list its source", () => {
+    const { input } = setup({ preference: ["shadcn@aria"], picks: {} });
+    const plan = planComponentDefaults(input);
+    expect(plan.rows.find(row => row.slot === "components.card")).toMatchObject({ status: "default", basis: "fallback", source: "foundry" });
+    expect(plan.rows.find(row => row.slot === "components.badge")).toMatchObject({ status: "not-chosen" });
+    expect(plan.findings).toEqual([]);
   });
   it("Choose overrides the owner pick and preference, exclusively", () => {
     const { input } = setup({ choices: { "components.table": "foundry", "components.avatar": "foundry", "components.card": "foundry" } });

@@ -26,8 +26,13 @@ export interface ComponentDefaultsInput {
   picks?: Readonly<Record<string, string>>;
   /** Choose: overrides picks and preference, and is equally exclusive. */
   choices?: Readonly<Record<string, string>>;
+  /**
+   * Whole-component fallback for the listed leaves only: tried after an ineligible
+   * owner pick or every preferred source, under the same checker. Never applies to a choice.
+   */
+  fallback?: { source: string; slots: readonly string[] };
 }
-export type ComponentDefaultBasis = "choose" | "owner-pick" | "preference" | "rule";
+export type ComponentDefaultBasis = "choose" | "owner-pick" | "preference" | "fallback" | "rule";
 export interface ComponentDefaultRow {
   slot: string;
   status: "chosen" | "default" | "not-chosen";
@@ -73,17 +78,18 @@ export function planComponentDefaults(input: ComponentDefaultsInput): ComponentD
     const choice = input.choices?.[slot], pick = input.picks?.[slot];
     const basis: ComponentDefaultBasis = choice ? "choose" : pick ? "owner-pick" : "preference";
     const order = choice ? [choice] : pick ? [pick] : input.preference;
+    const fallback = !choice && input.fallback?.slots.includes(slot) ? input.fallback.source : undefined;
     const why: string[] = [];
     const eligible: Offer[] = [];
-    for (const source of order) {
+    for (const source of fallback && !order.includes(fallback) ? [...order, fallback] : order) {
       const doc = docs.find(candidate => candidate.$extensions["com.clossys.fill"].source === source);
-      if (!doc) { if (basis !== "preference") why.push(`${source}: no implementation candidate`); continue; }
+      if (!doc) { if (basis !== "preference" || source === fallback) why.push(`${source}: no implementation candidate`); continue; }
       const fill = componentOf(doc);
       if (fill.blockers?.length) { why.push(`${source}: blocked ${unique(fill.blockers.map(blocker => blocker.code)).join(",")}`); continue; }
       if (!bundled(fill)) { why.push(`${source}: no verified source bundle`); continue; }
       const own = check([fill]).filter(finding => finding.subject === slot && !dependency(fill, finding));
       if (own.length) { why.push(`${source}: ${describe(own)}`); continue; }
-      eligible.push({ fill, id: doc.$extensions["com.clossys.fill"].id, basis });
+      eligible.push({ fill, id: doc.$extensions["com.clossys.fill"].id, basis: order.includes(source) ? basis : "fallback" });
     }
     if (basis === "owner-pick" && !eligible.length) why.push(`owner pick ${pick} is not eligible; another source needs the owner's choice`);
     if (basis === "preference" && !docs.length) why.push("no implementation candidate");
@@ -146,7 +152,7 @@ export function planComponentDefaults(input: ComponentDefaultsInput): ComponentD
   const findings = check([...[...selected.values()].map(offer => offer.fill), ...templates]);
   const rows: ComponentDefaultRow[] = input.slots.map(slot => {
     const offer = selected.get(slot), rule = composed.get(slot);
-    if (offer) return { slot, status: offer.basis === "choose" ? "chosen" : "default", basis: offer.basis, source: offer.fill.source, fill: offer.id, reasons: [] };
+    if (offer) return { slot, status: offer.basis === "choose" ? "chosen" : "default", basis: offer.basis, source: offer.fill.source, fill: offer.id, reasons: offer.basis === "fallback" ? reasons.get(slot)! : [] };
     if (rule) return { slot, status: "default", basis: "rule", rule: rule.rule, reasons: [] };
     const why = reasons.get(slot)!;
     return { slot, status: "not-chosen", reasons: why.length ? why : ["no eligible candidate"] };
