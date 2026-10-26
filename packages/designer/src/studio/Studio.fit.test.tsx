@@ -7,6 +7,7 @@ import { TOKENS } from "../tokens/tokens.js";
 import { CanvasSurface } from "../blocks/canvas/CanvasSurface.js";
 import { CANVAS_LOD_TEXT, CanvasLod } from "../blocks/canvas/CanvasLod.js";
 import { BoardHeader } from "../blocks/library-board/LeafCell.js";
+import { CanvasMap } from "../components/CanvasMap.js";
 import { legibleZoomFloor, openOnFirstBoard, revealDelta, worldExtent } from "./useCanvasWorld.js";
 
 afterEach(() => { cleanup(); vi.restoreAllMocks(); window.history.replaceState(null, "", "/"); });
@@ -128,5 +129,27 @@ describe("keyboard focus stays inside the visible stage (VR1 studio-18)", () => 
     act(() => { control.focus(); surface.scrollTop = 120; });
     await waitFor(() => expect(pose().y).toBeCloseTo(before.y + (600 - px("--spacing-md") - 928), 5));
     expect(surface.scrollTop).toBe(0);
+  });
+});
+
+describe("board map (VR1 studio-19)", () => {
+  it("clips every board to the world bounds and names it", () => {
+    plainRender(<CanvasMap label="Map" bounds={{ x: 0, y: 0, width: 1000, height: 500 }} viewport={{ x: 0, y: 0, zoom: 1 }} viewSize={{ width: 200, height: 100 }} onViewportChange={() => {}}
+      items={[{ id: "a", label: "Palettes", rect: { x: 900, y: 400, width: 300, height: 1994 } }, { id: "gone", rect: { x: 2000, y: 0, width: 10, height: 10 } }]} />);
+    const svg = document.querySelector("svg")!;
+    expect(svg).toHaveClass("overflow-hidden");
+    const a = svg.querySelector<SVGRectElement>('[data-canvas-map-item="a"]')!;
+    expect([a.getAttribute("x"), a.getAttribute("y"), a.getAttribute("width"), a.getAttribute("height")]).toEqual(["900", "400", "100", "100"]);
+    expect(a.querySelector("title")).toHaveTextContent("Palettes");
+    expect(svg.querySelector('[data-canvas-map-item="gone"]')).toBeNull();
+  });
+  it("the studio map names each board rectangle with its board heading", async () => {
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function (this: HTMLElement) { return this.matches("[data-studio-board]") ? rect(10, 10, 100, 100) : rect(0, 0, 800, 600); });
+    vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockReturnValue(4000);
+    vi.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockReturnValue(4000);
+    await mount();
+    const board = document.querySelector<HTMLElement>("[data-studio-world] [data-studio-board]")!;
+    const name = document.getElementById(board.getAttribute("aria-labelledby")!)!.textContent;
+    await waitFor(() => expect(document.querySelector(`[data-canvas-map-item="${board.dataset.studioBoard}"] title`)).toHaveTextContent(name!));
   });
 });
