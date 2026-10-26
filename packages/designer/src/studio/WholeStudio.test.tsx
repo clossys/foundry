@@ -463,11 +463,17 @@ it("contract boards count runtime-pending findings neutrally, apart from errors,
   await screen.findByText("L-saved");
   const board = document.querySelector<HTMLElement>(`[data-studio-zoom-full] [data-studio-row="${slot}"]`)!.closest<HTMLElement>("[data-studio-board]")!;
   const lines = [...board.querySelectorAll<HTMLElement>("[data-studio-runtime-pending]")];
-  expect(lines.length).toBeGreaterThan(0);
+  for (const tier of ["[data-studio-zoom-summary]", "[data-studio-zoom-compact]"]) expect(board.querySelector(`${tier} [data-studio-runtime-pending]`)).not.toBeNull();
   for (const line of lines) { expect(line).toHaveTextContent(`P-pending ${pending}`); expect(line).toHaveClass("text-ink-secondary"); expect(line.className).not.toMatch(/danger|success/); }
   expect(board).toHaveTextContent(`L-check ${errors}/${notices}`);
+  // Scorecard: the same split, with every pending finding still listed.
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: labels.scorecard.title }));
+  const card = screen.getByRole("region", { name: labels.scorecard.title });
+  expect(card.querySelector("[data-studio-runtime-pending]")).toHaveTextContent(/^P-pending \d+$/);
+  expect(within(card).getAllByText(/Source and runtime observations are unavailable/).length).toBe(Number(card.querySelector("[data-studio-runtime-pending]")!.textContent!.split(" ")[1]));
   // Choosing view: a candidate whose only blockers are runtime-pending wears the neutral badge, stays unselectable, and lists every finding.
-  await editBoard(userEvent.setup(), slot);
+  await editBoard(user, slot);
   const radio = await screen.findByRole("radio", { name: labels.useSource("test-kit", slot) });
   const badge = await waitFor(() => { const found = radio.closest("label")!.parentElement!.querySelector<HTMLElement>("[data-studio-check-tone]"); expect(found).not.toBeNull(); return found!; });
   expect(badge).toHaveAttribute("data-studio-check-tone", "runtime-pending");
