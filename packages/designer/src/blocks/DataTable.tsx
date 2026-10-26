@@ -29,6 +29,11 @@ export interface DataTableColumn<Row> {
   isRowHeader?: boolean;
   /** Fixed column width (`"120px"`, `"10rem"`, or a bare number of pixels). */
   width?: string | number;
+  /**
+   * `"id"` renders this column's cells through the `type-id` binding
+   * (`--font-mono` with tabular figures) — for identifiers, versions, digests and codes.
+   */
+  format?: "id";
 }
 
 export interface DataTableProps<Row> {
@@ -75,6 +80,13 @@ export interface DataTableProps<Row> {
   emptyStateDescription?: ReactNode;
   /** Recovery-action slot for the empty-state region — e.g. a "Clear filters" `Button`. */
   emptyStateAction?: ReactNode;
+  /**
+   * Hides each column whose `cell` renders nothing (null, false, empty string or an
+   * empty fragment) for every row. Headers and the row-header column stay whenever any
+   * row fills them; with no rows every column stays.
+   * @default false
+   */
+  hideEmptyColumns?: boolean;
   /** Slot above the grid — a title, search, filters, bulk actions for the current selection. */
   toolbar?: ReactNode;
   /** Slot below the grid — typically a `Pagination` block. `DataTable` never paginates `rows` itself. */

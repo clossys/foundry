@@ -6,6 +6,7 @@ import { cx } from "../../components/internal/cx.js";
 import { SectionHeader } from "../SectionHeader.js";
 import type { DataTableProps } from "../DataTable.js";
 import type { DataTableDensity } from "./view-model.js";
+import { visibleColumns } from "./empty-columns.js";
 
 function columnStyle(width: string | number | undefined): CSSProperties | undefined {
   if (width === undefined) return undefined;
@@ -23,7 +24,7 @@ export function FlatGrid<Row>({
   /** @default "Select row" */
   selectRowLabel = "Select row",
   "aria-label": ariaLabel,
-  columns,
+  columns: allColumns,
   rows,
   rowKey,
   sortDescriptor,
@@ -43,7 +44,9 @@ export function FlatGrid<Row>({
   style,
   density,
   disabledKeys,
+  hideEmptyColumns = false,
 }: DataTableProps<Row> & DataTableMessages & { density?: DataTableDensity; disabledKeys?: Iterable<Key> }) {
+  const columns = hideEmptyColumns && !isLoading ? visibleColumns(allColumns, rows) : allColumns;
   const showSelectionColumn = selectionMode === "multiple";
   const disabled = new Set(disabledKeys);
 
@@ -113,7 +116,7 @@ export function FlatGrid<Row>({
                         </Table.Cell>
                       ) : null}
                       {columns.map((column) => (
-                        <Table.Cell key={column.id} className={density === "compact" ? "py-xs" : undefined}>{column.cell(row)}</Table.Cell>
+                        <Table.Cell key={column.id} className={cx(density === "compact" && "py-xs", column.format === "id" && "type-id") || undefined}>{column.cell(row)}</Table.Cell>
                       ))}
                     </Table.Row>
                   );
