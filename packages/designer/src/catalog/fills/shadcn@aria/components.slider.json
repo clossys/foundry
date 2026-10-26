@@ -104,10 +104,10 @@
         "url": "https://github.com/shadcn-ui/ui"
       },
       "propMap": {
-        "orientation.horizontal": "SliderPrimitiveProps.orientation=horizontal",
-        "orientation.vertical": "SliderPrimitiveProps.orientation=vertical",
-        "selection.range": "SliderProps<number[]>.value; state.values maps indexed thumbs",
-        "selection.single": "SliderProps<number>.value; state.values maps one thumb"
+        "orientation.horizontal": "Slider.orientation=horizontal",
+        "orientation.vertical": "Slider.orientation=vertical",
+        "selection.range": "Slider",
+        "selection.single": "Slider"
       },
       "props": [],
       "reads": {

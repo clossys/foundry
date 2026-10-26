@@ -96,7 +96,7 @@
         "url": "https://github.com/shadcn-ui/ui"
       },
       "propMap": {
-        "shape.block": "Skeleton: block placeholder div"
+        "shape.block": "Skeleton"
       },
       "props": [],
       "reads": {

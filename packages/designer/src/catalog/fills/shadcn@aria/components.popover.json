@@ -97,7 +97,7 @@
         "url": "https://github.com/shadcn-ui/ui"
       },
       "propMap": {
-        "placement": "Popover.placement forwarded to RAC primitive"
+        "placement": "Popover"
       },
       "props": [],
       "reads": {

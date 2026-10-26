@@ -137,6 +137,8 @@ function leafModule(component: ResolvedComponent, packageExports: ResolvedCompon
   for (const { member, binding } of bindings) {
     if (binding.intrinsic) continue;
     const parts = member.split(".");
+    // A single-axis capability member mapped to the root export itself is served by that root: nothing to dispatch.
+    if (parts.length === 1 && binding.module === base.module && binding.name === base.name && !binding.property) continue;
     if (parts.length !== 2 || !/^[a-z][a-z0-9-]*$/.test(parts[0]!) || !/^[a-z][a-z0-9-]*$/.test(parts[1]!)) throw new CatalogError(`components: unsupported member dispatch ${member}`);
     const axis = parts[0]!, value = parts[1]!;
     table[axis] ??= Object.create(null) as Record<string, { target: string; property?: string; value?: string | boolean }>;

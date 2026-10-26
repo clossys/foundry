@@ -102,8 +102,8 @@
         "url": "https://github.com/shadcn-ui/ui"
       },
       "propMap": {
-        "orientation.horizontal": "Separator.orientation=horizontal: RAC prop and aria-orientation utility",
-        "orientation.vertical": "Separator.orientation=vertical: RAC prop and aria-orientation utility"
+        "orientation.horizontal": "Separator.orientation=horizontal",
+        "orientation.vertical": "Separator.orientation=vertical"
       },
       "props": [],
       "reads": {

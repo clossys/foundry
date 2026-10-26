@@ -101,7 +101,7 @@
         "url": "https://github.com/shadcn-ui/ui"
       },
       "propMap": {
-        "placement": "Tooltip.placement forwarded to RAC primitive"
+        "placement": "Tooltip"
       },
       "props": [],
       "reads": {

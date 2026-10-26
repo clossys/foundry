@@ -122,8 +122,8 @@
       "propMap": {
         "orientation.horizontal": "ToggleGroup.orientation=horizontal",
         "orientation.vertical": "ToggleGroup.orientation=vertical",
-        "selection.multiple": "ToggleButtonGroupProps.selectionMode=multiple forwarded to ToggleGroupPrimitive",
-        "selection.single": "ToggleButtonGroupProps.selectionMode=single forwarded to ToggleGroupPrimitive"
+        "selection.multiple": "ToggleGroup.selectionMode=multiple",
+        "selection.single": "ToggleGroup.selectionMode=single"
       },
       "props": [],
       "reads": {

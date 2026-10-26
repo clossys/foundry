@@ -102,8 +102,8 @@
         "url": "https://github.com/shadcn-ui/ui"
       },
       "propMap": {
-        "progress.determinate": "ProgressBarProps.value forwarded to RAC ProgressBar; percentage drives the indicator",
-        "progress.indeterminate": "ProgressBarProps.isIndeterminate forwarded to RAC ProgressBar"
+        "progress.determinate": "Progress.isIndeterminate=false",
+        "progress.indeterminate": "Progress.isIndeterminate=true"
       },
       "props": [],
       "reads": {
