@@ -6,7 +6,7 @@ import { Table } from "../components/Table.js";
 import { BoardHeader, LeafCell } from "../blocks/library-board/LeafCell.js";
 import { CanvasLodLayers } from "../blocks/canvas/CanvasLod.js";
 import { Matrix } from "./Matrix.js";
-import { CandidateCell } from "./CandidateCell.js";
+import { CandidateCell, LIBRARY_COLUMN_BOUND, LIBRARY_COLUMN_FLOW } from "./CandidateCell.js";
 import { CandidatePromptDialog } from "./CandidatePromptDialog.js";
 import type { CandidatePromptData } from "./candidate-prompt.js";
 import type { MatrixRow } from "./matrix-model.js";
@@ -28,14 +28,14 @@ export const Board = memo(function Board({ board, boardRef, summary, onOpen, wor
   return <section tabIndex={-1} id={id} ref={boardRef} data-studio-board={board.id} data-board-mode={editing ? "edit" : "view"} aria-labelledby={headingId} className="flex h-max w-max shrink-0 flex-col gap-sm rounded-surface border border-line-base bg-surface-base p-md">
     <BoardHeader id={headingId} title={board.label} editing={editing} labels={text} onEdit={edit} onDone={() => setEditing(false)} />
     <CanvasLodLayers full={<div data-studio-zoom-full="" className="w-max">{editing ? <>
-      <Matrix {...matrix} rows={rows} sources={sources} layout="wide" customCell={row => <div className="flex items-center gap-sm">
+      <Matrix {...matrix} rows={rows} sources={sources} layout="wide" customCell={row => <div data-studio-edit-actions="" className={`flex items-center gap-sm ${LIBRARY_COLUMN_FLOW}`} style={LIBRARY_COLUMN_BOUND}>
         <CandidatePromptDialog trigger={<Button variant="ghost" size="sm">{text.create}</Button>} data={promptData(row)} labels={matrix.labels} workflow={workflow} />
         {row.candidates.some(candidate => candidate.selected && candidate.source === matrix.working.source.id && candidate.members.some(({ member }) => member.origin?.kind !== "adopted")) ? <CandidatePromptDialog trigger={<Button variant="ghost" size="sm">{text.refresh}</Button>} data={promptData(row, true)} labels={matrix.labels} workflow={workflow} /> : null}
       </div>} />
-    </> : <Table aria-label={matrix.labels.matrix.label} className="w-max">
+    </> : <Table aria-label={matrix.labels.matrix.label} className="w-fit">
       <Table.Header><Table.Column id="leaf" isRowHeader>{matrix.labels.matrix.leaf}</Table.Column><Table.Column id="preview"><span className="sr-only">{matrix.labels.stageLabel}</span></Table.Column></Table.Header>
       <Table.Body>{rows.map(row => { const active = row.candidates.find(candidate => candidate.selected); return <Table.Row key={row.id} id={row.id} data-studio-row={row.id} data-scope="slot">
-        <Table.Cell><span ref={element => { matrix.onRowElement?.(row.id, element?.closest("tr") ?? null); }}>{row.label}</span></Table.Cell><Table.Cell>{active ? <CandidateCell candidate={active} labels={matrix.labels} /> : <LeafCell status={text.notChosen} actions={<><Button variant="ghost" size="sm" onPress={edit}>{text.choose}</Button><CandidatePromptDialog trigger={<Button variant="ghost" size="sm">{text.askAgent}</Button>} data={promptData(row)} labels={matrix.labels} workflow={workflow} /></>} />}</Table.Cell>
+        <Table.Cell><span ref={element => { matrix.onRowElement?.(row.id, element?.closest("tr") ?? null); }}>{row.label}</span></Table.Cell><Table.Cell>{active ? <CandidateCell candidate={active} labels={matrix.labels} /> : <LeafCell className={LIBRARY_COLUMN_FLOW} style={LIBRARY_COLUMN_BOUND} status={text.notChosen} actions={<><Button variant="ghost" size="sm" onPress={edit}>{text.choose}</Button><CandidatePromptDialog trigger={<Button variant="ghost" size="sm">{text.askAgent}</Button>} data={promptData(row)} labels={matrix.labels} workflow={workflow} /></>} />}</Table.Cell>
       </Table.Row>; })}</Table.Body>
     </Table>}</div>}
     // Compact: each row's name and chosen library, legible at text-h0.

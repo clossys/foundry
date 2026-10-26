@@ -9,6 +9,7 @@ import { labels, smallCatalog, emptyLibrary } from "./__fixtures__/studio.js";
 import { CandidateChoice } from "./CandidateChoice.js";
 import { RadioGroup } from "../components/RadioGroup.js";
 import { applyLibraryChange, libraryHash } from "../catalog-core/index.js";
+import { APP_FRAME_RIGHT_PANEL_CONFIG } from "../frames/right-panel-config.js";
 
 afterEach(cleanup);
 it("defaults to active-only View and edits just one content-sized board with actual library columns", async () => {
@@ -28,7 +29,8 @@ it("defaults to active-only View and edits just one content-sized board with act
   expect(screen.queryByRole("columnheader", { name: "empty-library" })).toBeNull();
   expect(screen.getByRole("columnheader", { name: "foundry" })).toBeInTheDocument();
   expect(boards[0]!.querySelectorAll("[data-studio-row]")).toHaveLength(board.leaves.length);
-  expect(view.container.querySelector("[data-studio-board]")).toHaveClass("w-max", "h-max");
+  expect(view.container.querySelector("[data-studio-board]")).toHaveClass("h-max");
+  for (const column of boards[0]!.querySelectorAll<HTMLElement>("[data-studio-card]")) expect(column.querySelector<HTMLElement>("[data-candidate-cell], [data-studio-edit-actions]")?.style.maxWidth).toBe(`${APP_FRAME_RIGHT_PANEL_CONFIG.max}px`);
   expect([...view.container.querySelectorAll<HTMLElement>("[class]")].some(element => /(?:overflow-(?:auto|scroll)|max-h-)/.test(element.className))).toBe(false);
   expect(screen.queryByRole("progressbar")).toBeNull();
   expect(screen.queryByText(labels.previewUnavailable)).toBeNull();

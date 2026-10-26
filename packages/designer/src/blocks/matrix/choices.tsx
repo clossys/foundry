@@ -10,9 +10,10 @@ export interface MatrixChoicesProps {
   onChange(row: string, column: string): void;
   onFocusCell?(row: string, column: string): void;
 }
-/** Comparison section branch for unbounded, content-sized, single-choice rows. */
+/** Comparison section branch for single-choice rows over fixed-width library columns. */
 export function MatrixChoices({ columns, rows, onChange, onFocusCell, "aria-label": label }: MatrixChoicesProps) {
-  return <div data-studio-matrix="" className="w-max"><table aria-label={label} className="w-max text-start text-body-s">
+  // Normal flow: the matrix is as wide as its fixed library columns, and each column's content wraps at its own bound.
+  return <div data-studio-matrix=""><table aria-label={label} className="w-fit text-start text-body-s">
     <thead><tr><th scope="col" className="min-w-[var(--ui-layout-sidebar-w)] p-sm text-start" />{columns.map(column => <th key={column.id} scope="col" className="w-[var(--ui-layout-sidebar-w)] min-w-[var(--ui-layout-sidebar-w)] p-sm text-start">{column.label}</th>)}</tr></thead>
     <tbody>{rows.map(row => <tr key={row.id} ref={row.ref} data-studio-row={row.id} data-scope="slot" data-emphasized={row.emphasized ? "" : undefined} tabIndex={-1}>
       <th scope="row" className="p-sm text-start align-top">{row.label}</th>
