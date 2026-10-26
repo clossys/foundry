@@ -21,7 +21,8 @@ import { BoardChosenSummary, CompactLeafLine, LeafLabel, WrappingLabel } from ".
  * One fixed-shape plate per row so chosen and unchosen rows line up. It shows the specimen alone:
  * member values and notes are caption-sized text the compact tier cannot keep legible.
  */
-const COMPACT_PLATE = "flex shrink-0 min-h-[var(--ui-control-h-lg)] min-w-[var(--ui-control-h-lg)] items-center justify-center rounded-control border border-line-base bg-surface-raised p-sm [&_[data-member-value]]:hidden [&_[data-preview-note]]:hidden";
+// token-specimen-contain (vf12, theme-keys.css) bounds the plate to the sidebar-width token and clips the specimen.
+const COMPACT_PLATE = "token-specimen-contain flex shrink-0 min-h-[var(--ui-control-h-lg)] min-w-[var(--ui-control-h-lg)] items-center justify-center rounded-control border border-line-base bg-surface-raised p-sm [&_[data-member-value]]:hidden [&_[data-preview-note]]:hidden";
 
 /** Self-contained placement group: its title and complete library matrix. */
 export const Board = memo(function Board({ board, boardRef, summary, onOpen, workflow, contextTokens = [], variants, ...matrix }: Omit<ComponentProps<typeof Matrix>, "rows"> & { board: MatrixBoard; boardRef: Ref<HTMLElement>; summary?: { errors: number; warnings: number; sources: readonly string[]; chosen?: number; total?: number }; onOpen?: () => void; workflow?: StudioCandidateWorkflow; contextTokens?: readonly { id: string; value: string }[]; variants?: Readonly<Record<string, readonly string[]>> }): ReactElement {

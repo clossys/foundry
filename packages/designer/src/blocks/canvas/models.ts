@@ -59,10 +59,15 @@ export function toScreen(viewport: Viewport, world: CanvasPoint): CanvasPoint {
  */
 export const CANVAS_ZOOM_REQUEST_EVENT = "canvaszoomrequest";
 export interface CanvasZoomRequestDetail { readonly factor: number }
+/**
+ * Zoom rate per wheel pixel: one 100px mouse-wheel notch scales the camera by about 9%
+ * (e^0.09), so stepping through zoom stays controllable. Every wheel owner shares it.
+ */
+export const CANVAS_WHEEL_ZOOM_RATE = 0.0009;
 /** One wheel normalization for every owner: line and page deltas, capped so each factor stays finite. */
 export function wheelZoomFactor(deltaY: number, deltaMode: number, pageHeight: number): number {
   const units = deltaMode === 1 ? 16 : deltaMode === 2 ? pageHeight : 1;
-  return Math.exp(-Math.max(-1000, Math.min(1000, deltaY * units)) * 0.002);
+  return Math.exp(-Math.max(-1000, Math.min(1000, deltaY * units)) * CANVAS_WHEEL_ZOOM_RATE);
 }
 /** Safari `GestureEvent.scale` is cumulative from gesturestart; each change applies its ratio to the last. */
 export function gestureZoomFactor(scale: number, previous: number): number {

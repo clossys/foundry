@@ -17,7 +17,7 @@ export function WrappingLabel({ children }: { children: string }): ReactElement 
 /** A leaf row label: the host's human name, then the leaf id in the mono face; the id alone when the host has no name. */
 export function LeafLabel({ id, name }: { id: string; name?: string }): ReactElement {
   const human = name?.trim() ? name : undefined;
-  return <span data-studio-leaf-label="" className="flex min-w-0 flex-col">
+  return <span data-studio-leaf-label="" className="flex min-w-0 flex-col text-start font-normal">
     {human ? <span className="break-words text-ink-primary">{human}</span> : null}
     <span data-studio-leaf-id="" className={human ? "break-words font-mono tabular-nums text-caption text-ink-secondary" : "break-words font-mono tabular-nums text-ink-primary"}>{id}</span>
   </span>;

@@ -7,6 +7,7 @@ import type { ChangeSet, LibraryData } from "../catalog-core/index.js";
 import type { Candidate, NodeOption } from "./model.js";
 import type { MatrixRow } from "./matrix-model.js";
 import { CandidateChoice } from "./CandidateChoice.js";
+import { LeafLabel } from "./board-summary.js";
 import { activeCandidateSource } from "./candidate-display.js";
 import type { StudioLabels } from "./types.js";
 
@@ -29,7 +30,8 @@ export function Matrix({ rows, sources, labels, working, changes, onUse, onFocus
     onFocusCell={(id, source) => { const row = rows.find(row => row.id === id); if (!row) return; if (row.candidatesReady === false) onRequestRow?.(row, source); else { const candidate = row.candidates.find(candidate => candidate.source === source); if (candidate) onFocusCell(row, candidate); } }}
     rows={rows.map(row => ({ id: row.id, emphasized: row.emphasized,
       name: <>{labels.useGroup} {row.label}</>,
-      label: <><span>{row.label}</span>{row.tier ? <small className="text-ink-muted"> {row.tier}</small> : null}</>,
+      // One leaf-label treatment in view and edit mode (the view table uses the same LeafLabel).
+      label: <><LeafLabel id={row.id} name={labels.leafName?.(row.id) ?? (row.label !== row.id ? row.label : undefined)} />{row.tier ? <small className="font-normal text-ink-muted"> {row.tier}</small> : null}</>,
       selected: activeCandidateSource(row.candidates) ?? (row.candidatesReady === false && working.fills.some(fill => fill.$extensions["com.clossys.fill"].slot === row.id) ? working.source.id : null),
       ref: (element: HTMLTableRowElement | null) => { onRowElement?.(row.id, element); if (element) elements.current.set(row.id, element); else elements.current.delete(row.id); },
       cells: { ...Object.fromEntries(visibleSources.filter(source => !customCell || source !== customId).map(source => { const candidate = row.candidates.find(candidate => candidate.source === source); const pending = changes.changes.some(change => row.leaves.includes(change.slot) && (change.op === "adopt" ? change.source === source : source === working.source.id));
