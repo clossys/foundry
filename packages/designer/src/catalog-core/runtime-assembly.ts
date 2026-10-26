@@ -1,4 +1,4 @@
-import { surfaceOf } from "./surface-library.js";
+import { isSurfacePackageEntry, surfaceEntryOf } from "./surface-library.js";
 import { surfaceRuntimeIdentity } from "./surface-check.js";
 import { libraryHash, resolve } from "./api.js";
 import { checkConsumerRuntimePorts, isRuntimeDigest, runtimeHash, runtimeSnapshot, runtimeSourceFindings, runtimeStageModuleIdentity } from "./runtime-ports.js";
@@ -147,7 +147,16 @@ export function prepareRuntimeAssembly<Node>(input: RuntimeAssemblyInput<Node>):
       for(const descriptor of manifest.fills){
         const row=profile.surfaces.fills[descriptor.leaf];
         if(!row||descriptor.fill!==row.document.$extensions["com.clossys.fill"].id||!descriptor.surface||runtimeHash(descriptor.surface)!==runtimeHash(surfaceRuntimeIdentity(row)))fail("refused","S7 stale, orphan or foreign surface record");
-        const fill=surfaceOf(row.document);const slots=Object.keys(fill.kind==="section"?fill.slotMap:fill.slots).sort();
+        const entry=surfaceEntryOf(row.document);
+        if(isSurfacePackageEntry(entry)){
+          // A package pointer carries its contract support (slots, members, configs) but no states or module bytes:
+          // runtime qualification belongs to the pinned package release, the same notice rule the check applies.
+          const kind=entry.slot.startsWith("sections.")?"section":"frame",slots=Object.keys("slotMap" in entry?entry.slotMap:entry.slots).sort(),members="members" in entry?entry.members:Object.keys(entry.propMap);
+          if(kind!==descriptor.kind||runtimeHash([...descriptor.slots].sort())!==runtimeHash(slots)||descriptor.members.some(member=>!members.includes(member)))fail("refused","S7 surface contract support differs");
+          if(descriptor.config!==null&&("configs" in entry?!Object.hasOwn(entry.configs,descriptor.config):!descriptor.members.includes(descriptor.config)))fail("refused","S7 surface config differs");
+          continue;
+        }
+        const fill=entry;const slots=Object.keys(fill.kind==="section"?fill.slotMap:fill.slots).sort();
         if(fill.kind!==descriptor.kind||runtimeHash([...descriptor.slots].sort())!==runtimeHash(slots)||runtimeHash([...descriptor.states].sort())!==runtimeHash([...fill.states].sort())||descriptor.members.some(member=>!fill.members.includes(member)))fail("refused","S7 surface contract support differs");
         if(fill.kind==="section"&&descriptor.config!==null){const config=fill.configs[descriptor.config];if(!config||runtimeHash([...config.members].sort())!==runtimeHash([...descriptor.members].sort()))fail("refused","S7 surface config differs");}
         if(fill.kind==="frame"&&descriptor.config!==null&&!descriptor.members.includes(descriptor.config))fail("refused","S7 unsupported frame configuration");
@@ -214,7 +223,7 @@ export function prepareRuntimeAssembly<Node>(input: RuntimeAssemblyInput<Node>):
       const fill = manifest.fills.find(fill => fill.leaf === selected.leaf && fill.config === selected.config && fill.fill === selected.fill && fill.kind === kind);
       if (!fill) fail("pending", `${path}: exact consumer runtime fill missing`);
       if (cells.some(cell => !fill.states.includes(cell.state)) || selected.members.some(member => !fill.members.includes(member)) || new Set(selected.members).size !== selected.members.length) fail("refused", `${path}: unsupported members or states`);
-      if(profile.surfaces){const owned=surfaceOf(profile.surfaces.fills[fill.leaf]!.document);if(owned.kind==="section"&&selected.config!==null&&runtimeHash([...selected.members].sort())!==runtimeHash([...owned.configs[selected.config]!.members].sort()))fail("refused",`${path}: S7 selected config members differ`);}
+      if(profile.surfaces){const owned=surfaceEntryOf(profile.surfaces.fills[fill.leaf]!.document);if(!isSurfacePackageEntry(owned)&&owned.kind==="section"&&selected.config!==null&&runtimeHash([...selected.members].sort())!==runtimeHash([...owned.configs[selected.config]!.members].sort()))fail("refused",`${path}: S7 selected config members differ`);}
       const contract = input.contracts.slots.find(slot => slot.id === fill.leaf)?.contract;
       if (!contract || (contract.kind !== "frame" && contract.kind !== "section")) fail("refused", `${path}: contract unavailable`);
       const allowed = contract.kind === "section" ? contract.slots.map(slot => slot.name) : contract.slots.filter(slot => slot.accepts === "host-node").map(slot => slot.id);

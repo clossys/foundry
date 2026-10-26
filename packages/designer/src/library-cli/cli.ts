@@ -6,7 +6,9 @@ import { fileURLToPath } from "node:url";
 import { runDogfood, dogfoodSourceModules, DOGFOOD_PACKAGE_NAME, type DogfoodException, type NeedStatus } from "../catalog-core/dogfood.js";
 import { consumerDogfoodSources, parseConsumerDogfoodContract, runConsumerDogfood } from "./consumer-dogfood.js";
 import tokenSlots from "../catalog/slots/tokens.json" with { type: "json" };
-import { libraryHash, loadCatalog, loadComponentRegistry, loadSectionRegistry, loadBuildCatalog, type CompositeFinding, type CompositeEmitTarget } from "../catalog-core/index.js";
+import { importFoundryFrames, importFoundrySections, libraryHash, loadCatalog, loadComponentRegistry, loadSectionRegistry, loadBuildCatalog, type CompositeFinding, type CompositeEmitTarget } from "../catalog-core/index.js";
+import type { SurfaceCandidateDocument, SurfaceResolutionOptions } from "../catalog-core/surface-types.js";
+import { readSurfacePackageEvidence } from "./surface-package-evidence.js";
 import { compositeLibraryHash } from "../catalog-core/library-components.js";
 import type { EngineInput } from "../catalog-core/resolve.js";
 import { checkLibrary, emitLibrary, isLibraryChangeSet, isCompositeChangeSet, writeCompositeLibrary, LIBRARY_EMIT_TARGETS, LibraryCheckError, LibraryConflictError, LibraryInputError, readLibrary, writeLibrary, readNeeds, writeNeeds, setNeed, NEED_STATUSES, isNeedCandidate } from "./fs-library.js";
@@ -149,7 +151,9 @@ export async function main(argv: string[], io: LibraryCliIO = defaultIO): Promis
       io.out(args.json ? JSON.stringify({ needs, open: open.length, parents }) : `${open.length} needs are open; ${parents.length} block these parents.\nID\tStatus\tParent\tMissing\n${needs.map(row => `${row.id}\t${row.status}\t${row.raisedBy}\t${row.missing}`).join("\n")}`); return 0;
     }
     const catalog = loadCatalog();
-    const compositeCatalog = { values: catalog, components: { slots: loadComponentRegistry().slots, fills: [] }, surfaces: {slots:[...loadSectionRegistry().slots,...loadBuildCatalog().slots.filter((slot):slot is import("../catalog-core/types.js").FrameSlot=>slot.layer==="frames")],fills:[],transforms:[],rules:[],materializations:[]} };
+    const compositeCatalog = { values: catalog, components: { slots: loadComponentRegistry().slots, fills: [] }, surfaces: {slots:[...loadSectionRegistry().slots,...loadBuildCatalog().slots.filter((slot):slot is import("../catalog-core/types.js").FrameSlot=>slot.layer==="frames")],fills:[...importFoundrySections().fills,...importFoundryFrames().fills] as unknown as SurfaceCandidateDocument[],transforms:[],rules:[],materializations:[]} };
+    // Package-pointer leaves are checked against the export inventory of the packages actually installed beside this CLI.
+    const surfaceOptions = async (): Promise<SurfaceResolutionOptions> => ({ packages: await readSurfacePackageEvidence(compositeCatalog.surfaces.fills), measurements: [] });
     if (args.command === "dogfood" || args.command === "dogfood-consumer") {
       const needs = await readNeeds(args.root);
       const consumerSources = args.contract ? await consumerDogfoodSources(args.paths, parseConsumerDogfoodContract(JSON.parse(await readRegularText(pathResolve(args.contract)))), dirname(pathResolve(args.contract))) : undefined;
@@ -195,13 +199,13 @@ export async function main(argv: string[], io: LibraryCliIO = defaultIO): Promis
     }
     if (args.command === "check") {
       if((args.layer==="sections"||args.layer==="frames")&&(await readLibrary(args.root,compositeCatalog)).surfaces===undefined)throw new LibraryInputError("Surface layers unavailable until the library opts in");
-      const result = await checkLibrary(args.root, compositeCatalog), findings = layerFindings(result.findings, args.layer);
+      const result = await checkLibrary(args.root, compositeCatalog, undefined, await surfaceOptions()), findings = layerFindings(result.findings, args.layer);
       const ok = !findings.some(finding => finding.severity === "error");
       io.out(args.json ? JSON.stringify({ ok, findings }) : `${ok ? "Library check passed" : "Library check failed"}\n${findings.map(finding => `[${finding.severity}] ${finding.code} ${finding.message}`).join("\n")}`);
       return ok ? 0 : 1;
     }
     if (args.command === "emit") {
-      const result = await emitLibrary(args.root, compositeCatalog, { check: args.drift, targets: args.targets });
+      const result = await emitLibrary(args.root, compositeCatalog, { check: args.drift, targets: args.targets, surfaceOptions: await surfaceOptions() });
       io.out(result.ok ? args.drift ? "Library emission is current" : "Library emission written" : `Library emission drift: ${result.drift.join(", ")}`);
       return result.ok ? 0 : 1;
     }
@@ -212,7 +216,7 @@ export async function main(argv: string[], io: LibraryCliIO = defaultIO): Promis
       changes = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(await handle.readFile()));
     } finally { await handle.close(); }
     if(changes&&typeof changes==="object"&&"baseHash" in changes&&typeof changes.baseHash==="string"&&changes.baseHash.startsWith("sha256:")){
-      if(!isCompositeChangeSet(changes,compositeCatalog))throw new LibraryInputError("Invalid composite changeset");const library=await writeCompositeLibrary(args.root,compositeCatalog,changes);const result={ok:true,baseHash:compositeLibraryHash(library)};io.out(args.json?JSON.stringify(result):`Library changes applied; baseHash ${result.baseHash}`);return 0;
+      if(!isCompositeChangeSet(changes,compositeCatalog))throw new LibraryInputError("Invalid composite changeset");const library=await writeCompositeLibrary(args.root,compositeCatalog,changes,undefined,await surfaceOptions());const result={ok:true,baseHash:compositeLibraryHash(library)};io.out(args.json?JSON.stringify(result):`Library changes applied; baseHash ${result.baseHash}`);return 0;
     }
     if (!isLibraryChangeSet(changes, catalog)) throw new LibraryInputError("Invalid library changeset");
     const library = await writeLibrary(args.root, catalog, changes);
