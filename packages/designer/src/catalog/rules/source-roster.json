@@ -217,11 +217,10 @@
       ],
       "offers": [
         {
-          "source": "foundry",
+          "source": "shadcn@aria",
           "leaves": [
             "components.file-trigger"
-          ],
-          "reason": "no external covers"
+          ]
         }
       ]
     },
