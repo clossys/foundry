@@ -13,7 +13,9 @@ import type { Viewport } from "../blocks/canvas/models.js";
 export function worldExtent(world: HTMLElement): { width: number; height: number } {
   const style = getComputedStyle(world);
   const end = { x: Number.parseFloat(style.paddingRight) || 0, y: Number.parseFloat(style.paddingBottom) || 0 };
-  let width = world.offsetWidth, height = world.offsetHeight;
+  // Seed from the content, not the world box: a compact layout narrower than a
+  // stage-stretched world would otherwise fit (and centre) the empty stage.
+  let width = 0, height = 0;
   const visit = (parent: Element) => {
     for (const child of parent.children) {
       if (!(child instanceof HTMLElement)) continue;
@@ -23,7 +25,7 @@ export function worldExtent(world: HTMLElement): { width: number; height: number
     }
   };
   visit(world);
-  return { width, height };
+  return width || height ? { width, height } : { width: world.offsetWidth, height: world.offsetHeight };
 }
 
 /**
