@@ -48,9 +48,7 @@
       },
       "license": "MIT",
       "members": [
-        "shape.block",
-        "shape.circle",
-        "shape.text"
+        "shape.block"
       ],
       "pin": {
         "export": "./components#Skeleton",
@@ -58,9 +56,7 @@
         "version": "0.12.0"
       },
       "propMap": {
-        "shape.block": "./components#Skeleton.shape=block",
-        "shape.circle": "./components#Skeleton.shape=circle",
-        "shape.text": "./components#Skeleton.shape=text"
+        "shape.block": "./components#Skeleton.shape=block"
       },
       "props": [
         "aria-label",

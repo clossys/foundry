@@ -13,17 +13,13 @@
         "sha256": "8fcbad84e494a75484a0975221fb40f54c4a7d68f79cfc305cb158d1feb1badf",
         "url": "https://github.com/shadcn-ui/ui"
       },
-      "relation": "subset",
+      "relation": "same-contract",
       "slot": "components.skeleton",
       "source": "shadcn@aria",
       "sourceAddress": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/bases/aria/ui/skeleton.tsx",
       "status": "draft",
       "trust": "pinned-upstream",
-      "unmapped": [
-        "shape.text",
-        "shape.block",
-        "shape.circle"
-      ]
+      "unmapped": []
     }
   },
   "components": {
@@ -54,7 +50,9 @@
       },
       "item": "skeleton",
       "license": "MIT",
-      "members": [],
+      "members": [
+        "shape.block"
+      ],
       "notice": "notices/THIRD-PARTY.md",
       "outputSha256": [
         {
@@ -97,7 +95,9 @@
         ],
         "url": "https://github.com/shadcn-ui/ui"
       },
-      "propMap": {},
+      "propMap": {
+        "shape.block": "Skeleton: block placeholder div"
+      },
       "props": [],
       "reads": {
         "assets": [],

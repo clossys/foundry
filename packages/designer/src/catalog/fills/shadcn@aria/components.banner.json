@@ -13,19 +13,13 @@
         "sha256": "639c846b57885d8af4dbdf7ddab7b15fd4d392c051f7496c67e811154e7861d9",
         "url": "https://github.com/shadcn-ui/ui"
       },
-      "relation": "subset",
+      "relation": "same-contract",
       "slot": "components.banner",
       "source": "shadcn@aria",
       "sourceAddress": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/bases/aria/ui/alert.tsx",
       "status": "draft",
       "trust": "pinned-upstream",
-      "unmapped": [
-        "tone.info",
-        "tone.success",
-        "tone.warning",
-        "tone.danger",
-        "dismissible"
-      ]
+      "unmapped": []
     }
   },
   "components": {
@@ -61,7 +55,10 @@
       },
       "item": "alert",
       "license": "MIT",
-      "members": [],
+      "members": [
+        "tone.danger",
+        "tone.info"
+      ],
       "notice": "notices/THIRD-PARTY.md",
       "outputSha256": [
         {
@@ -104,7 +101,10 @@
         ],
         "url": "https://github.com/shadcn-ui/ui"
       },
-      "propMap": {},
+      "propMap": {
+        "tone.danger": "Alert.variant=destructive",
+        "tone.info": "Alert.variant=default"
+      },
       "props": [],
       "reads": {
         "assets": [],

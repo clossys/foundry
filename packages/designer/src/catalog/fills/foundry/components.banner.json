@@ -48,11 +48,8 @@
       },
       "license": "MIT",
       "members": [
-        "dismissible",
         "tone.danger",
-        "tone.info",
-        "tone.success",
-        "tone.warning"
+        "tone.info"
       ],
       "pin": {
         "export": "./components#Banner",
@@ -60,11 +57,8 @@
         "version": "0.12.0"
       },
       "propMap": {
-        "dismissible": "./components#Banner.onDismiss",
         "tone.danger": "./components#Banner.variant=danger",
-        "tone.info": "./components#Banner.variant=info",
-        "tone.success": "./components#Banner.variant=success",
-        "tone.warning": "./components#Banner.variant=warning"
+        "tone.info": "./components#Banner.variant=info"
       },
       "props": [
         "children",
@@ -79,11 +73,15 @@
         "tokens": [
           "tokens.accent-color",
           "tokens.body-size",
+          "tokens.border-width",
           "tokens.control-radius",
+          "tokens.font-size",
+          "tokens.font-weight",
           "tokens.radius",
           "tokens.spacing",
           "tokens.status-color",
           "tokens.surface-color",
+          "tokens.text-color",
           "tokens.typeface"
         ]
       },

@@ -13,17 +13,13 @@
         "sha256": "138adfb5e7e8b93375a914d6fc22121f798f029d07f0ed2f52c15f35e805dd06",
         "url": "https://github.com/shadcn-ui/ui"
       },
-      "relation": "subset",
+      "relation": "same-contract",
       "slot": "components.table",
       "source": "shadcn@aria",
       "sourceAddress": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/bases/aria/ui/table.tsx",
       "status": "draft",
       "trust": "pinned-upstream",
-      "unmapped": [
-        "selection",
-        "sort",
-        "resize-columns"
-      ]
+      "unmapped": []
     }
   },
   "components": {
@@ -59,7 +55,10 @@
       },
       "item": "table",
       "license": "MIT",
-      "members": [],
+      "members": [
+        "selection",
+        "sort"
+      ],
       "notice": "notices/THIRD-PARTY.md",
       "outputSha256": [
         {
@@ -102,7 +101,10 @@
         ],
         "url": "https://github.com/shadcn-ui/ui"
       },
-      "propMap": {},
+      "propMap": {
+        "selection": "TableProps.selectionMode forwarded to RAC Table",
+        "sort": "TableProps.sortDescriptor and ColumnProps.allowsSorting forwarded to RAC Table and Column"
+      },
       "props": [],
       "reads": {
         "assets": [],

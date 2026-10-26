@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { loadCatalog } from "./index.js";
 import { assetPresentation, assetSlotDetails, libraryColumns, libraryRoster, tokenBaseline, tokenBaselineReset } from "./library-roster.js";
+import { checkBoardColumns, rosterOffers, sourceRoster } from "./token-contract.js";
 
 describe("library roster presentation contract", () => {
   it("offers only Custom token proposals, preserving historical source data", () => {
@@ -11,23 +12,39 @@ describe("library roster presentation contract", () => {
     expect(catalog.sources.some(source => source.id === "tailwind-default")).toBe(true);
     expect(libraryRoster("assets", "assets.icon-home").map(entry => entry.id)).toEqual(["lucide", "phosphor", "custom"]);
     expect(libraryRoster("assets", "assets.lockup").map(entry => entry.id)).toEqual(["custom"]);
-    expect(libraryRoster("assets", "assets.typeface").map(entry => entry.id)).toEqual(["google-fonts", "fontshare-ofl", "custom"]);
-    expect(libraryRoster("assets", "assets.pattern").map(entry => entry.id)).toEqual(["hero-patterns", "custom"]);
+    expect(libraryRoster("assets", "assets.favicon").map(entry => entry.id)).toEqual(["custom"]);
   });
 
-  it("keeps reference catalog entries separate from implementation availability", () => {
+  it("reads every column from the source roster: shadcn@aria first, Foundry gap seats, Custom last, no references", () => {
     const components = libraryRoster("components", "components.button");
-    expect(components.map(entry => entry.id)).toEqual(["shadcn@aria", "shadcn-ui", "foundry", "heroui-v3", "untitled-ui-react", "radix-themes", "mantine", "park-ui", "base-ui", "custom"]);
-    expect(components.find(entry => entry.id === "base-ui")?.role).toBe("reference");
-    expect(components.find(entry => entry.id === "heroui-v3")?.license).toBe("Apache-2.0");
-    expect(libraryRoster("sections", "sections.hero").map(entry => entry.id)).toEqual(["custom", "foundry", "shadcn-blocks"]);
-    expect(libraryRoster("frames", "frames.app-shell").map(entry => entry.id)).toEqual(["foundry", "shadcn-blocks", "custom"]);
-    expect(libraryRoster("assets", "assets.typeface")[1]?.restriction).toContain("OFL");
+    expect(components.map(entry => entry.id)).toEqual(["shadcn@aria", "custom"]);
+    expect(components[0]?.license).toBe("MIT");
+    expect(libraryRoster("components", "components.native-action").map(entry => [entry.id, entry.reason])).toEqual([["foundry", "no external covers"], ["custom", undefined]]);
+    expect(libraryRoster("components", "components.chart-bar").map(entry => entry.id)).toEqual(["shadcn-charts", "custom"]);
+    expect(libraryRoster("sections", "sections.band").map(entry => entry.id)).toEqual(["foundry", "custom"]);
+    expect(libraryRoster("frames", "frames.app-shell").map(entry => entry.id)).toEqual(["foundry", "custom"]);
+    const catalog = loadCatalog();
+    const never = new Set(sourceRoster.never);
+    for (const slot of catalog.slots) {
+      const roster = libraryRoster(slot.layer, slot.id).map(entry => entry.id);
+      expect(roster, slot.id).toEqual(rosterOffers(sourceRoster, slot.id));
+      expect(roster.at(-1), slot.id).toBe("custom");
+      expect(roster.filter(id => never.has(id)), slot.id).toEqual([]);
+      expect(libraryRoster(slot.layer, slot.id).some(entry => entry.role === "reference"), slot.id).toBe(false);
+    }
     expect(libraryColumns("tokens", ["tokens.color-ramp"], ["tailwind-default", "foundry", "example"], "example").map(column => column.source)).toEqual(["example"]);
     expect(libraryColumns("tokens", ["tokens.color-ramp"], ["tailwind-default"], "example")).toEqual([]);
     expect(libraryColumns("assets", ["assets.icon-home", "assets.icon-check"], ["lucide", "phosphor", "example"], "example").map(column => column.source)).toEqual(["lucide", "phosphor", "example"]);
-    expect(libraryColumns("components", ["components.button"], ["base-ui"], "example")[0]?.referenceOnly).toBe(true);
+    expect(libraryColumns("components", ["components.button"], ["base-ui", "rac-starter", "heroui-v3"], "example")).toEqual([]);
     expect(libraryColumns("components", ["components.button"], [], "example")).toEqual([]);
+  });
+
+  it("R8: every roster row renders as at most three columns, all from the roster", () => {
+    for (const layer of ["components", "assets", "sections", "frames"] as const) for (const row of sourceRoster[layer]) {
+      const offered = row.offers.map(offer => offer.source);
+      const columns = libraryColumns(layer, row.leaves, [...offered, "example"], "example").map(column => column.id);
+      expect(checkBoardColumns(sourceRoster, row.leaves, columns), row.l2).toEqual([]);
+    }
   });
 
   it("presents Media and pending additions without forging frozen leaf membership", () => {

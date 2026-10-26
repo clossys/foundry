@@ -13,19 +13,13 @@
         "sha256": "7771524b64abcdf8dd0d1a0dad02ae5dd78b6865ec69be6d19ff204e73302c64",
         "url": "https://github.com/shadcn-ui/ui"
       },
-      "relation": "subset",
+      "relation": "same-contract",
       "slot": "components.badge",
       "source": "shadcn@aria",
       "sourceAddress": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/bases/aria/ui/badge.tsx",
       "status": "draft",
       "trust": "pinned-upstream",
-      "unmapped": [
-        "tone.neutral",
-        "tone.success",
-        "tone.warning",
-        "tone.danger",
-        "tone.info"
-      ]
+      "unmapped": []
     }
   },
   "components": {
@@ -61,7 +55,10 @@
       },
       "item": "badge",
       "license": "MIT",
-      "members": [],
+      "members": [
+        "tone.danger",
+        "tone.neutral"
+      ],
       "notice": "notices/THIRD-PARTY.md",
       "outputSha256": [
         {
@@ -104,7 +101,10 @@
         ],
         "url": "https://github.com/shadcn-ui/ui"
       },
-      "propMap": {},
+      "propMap": {
+        "tone.danger": "Badge.variant=destructive",
+        "tone.neutral": "Badge.variant=secondary"
+      },
       "props": [],
       "reads": {
         "assets": [],
