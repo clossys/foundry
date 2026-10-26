@@ -62,9 +62,10 @@ export interface ThemeProviderProps {
   defaultPreference?: ThemePreference;
   /**
    * Controlled preference: the host owns the value (the frames.app-shell
-   * `theme` state port). Storage is not read over it; `setPreference` still
-   * persists the choice for the head script and reports it through
-   * `onPreferenceChange`, and the provider renders the host's next value.
+   * `theme` state port). It wins over storage and the provider's own state;
+   * `setPreference` still persists the choice for the head script and reports
+   * it through `onPreferenceChange`, and the provider renders the host's next
+   * value.
    */
   preference?: ThemePreference;
   /** Called with every preference a consumer sets, controlled or not. */
@@ -147,14 +148,13 @@ export function ThemeProvider({
   onPreferenceChange,
 }: ThemeProviderProps) {
   const [ownPreference, setPreferenceState] = useState<ThemePreference>(controlledPreference ?? defaultPreference);
-  const controlled = controlledPreference !== undefined;
   const preference = controlledPreference ?? ownPreference;
 
   // The one-tick correction described in this component's own doc comment
   // above — client-only, runs after mount and when the key or fallback changes.
   useEffect(() => {
-    if (!controlled) setPreferenceState(readStoredPreference(storageKey, defaultPreference));
-  }, [storageKey, defaultPreference, controlled]);
+    setPreferenceState(readStoredPreference(storageKey, defaultPreference));
+  }, [storageKey, defaultPreference]);
 
   // Keeps `<html data-theme>`/`color-scheme` in sync with React state on
   // every change, including the one-tick correction effect above and any
@@ -173,10 +173,10 @@ export function ThemeProvider({
   const setPreference = useCallback(
     (next: ThemePreference) => {
       writeStoredPreference(storageKey, next);
-      if (!controlled) setPreferenceState(next);
+      setPreferenceState(next);
       onPreferenceChange?.(next);
     },
-    [storageKey, controlled, onPreferenceChange],
+    [storageKey, onPreferenceChange],
   );
 
   const prefersDark = useSyncExternalStore(
