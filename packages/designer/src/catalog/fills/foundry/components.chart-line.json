@@ -54,10 +54,10 @@
         "version": "0.12.0"
       },
       "propMap": {
-        "axes": "./charts#LineChart.xFormat",
-        "legend": "./charts#LineChart[ChartFrame.legend]",
-        "series": "./charts#LineChart.series",
-        "tooltip": "./charts#LineChart[inspection]"
+        "axes": "./charts#LineChart",
+        "legend": "./charts#LineChart",
+        "series": "./charts#LineChart",
+        "tooltip": "./charts#LineChart"
       },
       "props": [
         "className",

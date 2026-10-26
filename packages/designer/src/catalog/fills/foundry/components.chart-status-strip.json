@@ -54,10 +54,10 @@
         "version": "0.12.0"
       },
       "propMap": {
-        "axes": "./charts#StatusStrip[ChartFrame.axes]",
-        "legend": "./charts#StatusStrip[status-legend]",
-        "series": "./charts#StatusStrip.segments",
-        "tooltip": "./charts#StatusStrip[ChartFrame.Tooltip]"
+        "axes": "./charts#StatusStrip",
+        "legend": "./charts#StatusStrip",
+        "series": "./charts#StatusStrip",
+        "tooltip": "./charts#StatusStrip"
       },
       "props": [
         "className",
