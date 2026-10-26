@@ -525,21 +525,24 @@
         "assets.lockup",
         "assets.mark"
       ],
-      "offers": []
+      "offers": [],
+      "starter": "identity-kit"
     },
     {
       "l2": "app-identity-browser",
       "leaves": [
         "assets.favicon"
       ],
-      "offers": []
+      "offers": [],
+      "starter": "identity-kit"
     },
     {
       "l2": "app-identity-application",
       "leaves": [
         "assets.app-icon"
       ],
-      "offers": []
+      "offers": [],
+      "starter": "identity-kit"
     },
     {
       "l2": "icons-navigation",

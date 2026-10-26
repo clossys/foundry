@@ -43,7 +43,8 @@ export interface TokenContract {
 }
 
 export interface RosterOffer { readonly source: string; readonly leaves: readonly string[]; readonly reason?: string }
-export interface RosterRow { readonly l2: string; readonly leaves: readonly string[]; readonly offers: readonly RosterOffer[] }
+/** `starter`: a Foundry scaffold run from the Custom cell; it writes an authored Custom fill and is never an offered seat. */
+export interface RosterRow { readonly l2: string; readonly leaves: readonly string[]; readonly offers: readonly RosterOffer[]; readonly starter?: string }
 export interface TokenPreset {
   readonly id: string;
   readonly label: string;
@@ -86,6 +87,11 @@ export function rosterOffers(roster: SourceRoster, slot: string): readonly strin
   const row = rosterRow(roster, slot);
   const offered = row ? row.offers.filter(offer => offer.leaves.includes(slot)).map(offer => offer.source) : [];
   return [...new Set(offered), roster.custom.id];
+}
+
+/** The starter the Custom cell offers for one slot (brand rows: the identity kit), or undefined. */
+export function rosterStarter(roster: SourceRoster, slot: string): string | undefined {
+  return rosterRow(roster, slot)?.starter;
 }
 
 export function defaultPreset(roster: SourceRoster): TokenPreset {
@@ -241,6 +247,7 @@ export function checkSourceRoster(input: RosterCheckInput): readonly RosterFindi
     const sources = row.offers.map(offer => offer.source);
     if (row.l2.startsWith("icons-") && stableStringify(sources) !== stableStringify(ICON_SOURCES)) error("R5", row.l2, `${row.l2} must offer ${ICON_SOURCES.join(", ")}`);
     if (BRAND_L2.has(row.l2) && sources.length) error("R5", row.l2, `${row.l2} is brand: offers nothing`);
+    if (BRAND_L2.has(row.l2) && !row.starter) error("R5", row.l2, `${row.l2} is brand: Custom carries a Generate starter`);
   }
 
   // R6: never-offered sources.

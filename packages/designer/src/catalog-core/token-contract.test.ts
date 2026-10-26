@@ -4,7 +4,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import {
-  assertCustomDistinct, checkBoardColumns, checkSourceRoster, defaultPreset, presetValues, rosterOffers, sourceRoster, tokenContract,
+  assertCustomDistinct, checkBoardColumns, checkSourceRoster, defaultPreset, presetValues, rosterOffers, rosterStarter, sourceRoster, tokenContract,
   type RosterCheckInput, type RosterCode, type SourceRoster, type TokenContract,
 } from "./token-contract.js";
 import { scanContractVars } from "./token-contract-scan.js";
@@ -113,6 +113,9 @@ describe("source roster", () => {
     expect(rosterOffers(sourceRoster, "components.chart-sparkline")).toEqual(["foundry", "custom"]);
     expect(rosterOffers(sourceRoster, "assets.favicon")).toEqual(["custom"]);
     for (const row of sourceRoster.components) for (const offer of row.offers.filter(entry => entry.source === "foundry")) expect(offer.reason).toBe("no external covers");
+    expect(["assets.lockup", "assets.mark", "assets.favicon", "assets.app-icon"].map(slot => rosterStarter(sourceRoster, slot))).toEqual(Array(4).fill("identity-kit"));
+    expect(rosterStarter(sourceRoster, "assets.icon-home")).toBeUndefined();
+    expect(rosterStarter(sourceRoster, "components.button")).toBeUndefined();
   });
   it("R8: at most three columns, all from the roster", () => {
     expect(checkBoardColumns(sourceRoster, ["components.button", "components.toolbar"], ["shadcn@aria", "foundry", "custom"])).toEqual([]);
@@ -130,6 +133,7 @@ describe("mutation proofs", () => {
     ["a preset that leaves a live key empty", "R3", () => ({ roster: mutateRoster(roster => { delete roster.tokens.presets[1].theme.vars.dark["--ring"]; }) })],
     ["Custom not last", "R4", () => ({ roster: mutateRoster(roster => { roster.custom.position = "first"; }) })],
     ["a brand row offering Foundry", "R5", () => ({ roster: mutateRoster(roster => { roster.assets.find((row: any) => row.l2 === "logo-artwork").offers.push({ source: "foundry", leaves: ["assets.mark"], reason: "no external covers" }); }) })],
+    ["a brand row without its Generate starter", "R5", () => ({ roster: mutateRoster(roster => { delete roster.assets.find((row: any) => row.l2 === "app-identity-browser").starter; }) })],
     ["rac-starter offered", "R6", () => ({ roster: mutateRoster(roster => { roster.components.find((row: any) => row.l2 === "inputs-choice").offers.push({ source: "rac-starter", leaves: [] }); }) })],
     ["a slot with no roster row", "R1", () => ({ slots: [...slotIds, "components.orphan"] })],
   ];

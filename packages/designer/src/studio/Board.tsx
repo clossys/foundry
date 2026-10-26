@@ -16,6 +16,7 @@ import { activeCandidateSource } from "./candidate-display.js";
 import { valueBoardPrompt } from "./prepared-library-boards.js";
 import { CompactPreview } from "./previews.js";
 import { BoardChosenSummary, CompactLeafLine, LeafLabel, WrappingLabel } from "./board-summary.js";
+import { rosterStarter, sourceRoster } from "../catalog-core/token-contract.js";
 
 /**
  * One fixed-shape plate per row so chosen and unchosen rows line up. It shows the specimen alone:
@@ -24,8 +25,14 @@ import { BoardChosenSummary, CompactLeafLine, LeafLabel, WrappingLabel } from ".
 // token-specimen-contain (vf12, theme-keys.css) bounds the plate to the sidebar-width token and clips the specimen.
 const COMPACT_PLATE = "token-specimen-contain flex shrink-0 min-h-[var(--ui-control-h-lg)] min-w-[var(--ui-control-h-lg)] items-center justify-center rounded-control border border-line-base bg-surface-raised p-sm [&_[data-member-value]]:hidden [&_[data-preview-note]]:hidden";
 
+/**
+ * Generate starter: the Custom-cell action for slots whose roster row names a starter (brand rows run the
+ * identity kit). The host runs the starter and must write an authored Custom fill, never an adopted one.
+ */
+export interface BoardStarter { readonly label: string; readonly onGenerate: (row: MatrixRow, starter: string) => void }
+
 /** Self-contained placement group: its title and complete library matrix. */
-export const Board = memo(function Board({ board, boardRef, summary, onOpen, workflow, contextTokens = [], variants, ...matrix }: Omit<ComponentProps<typeof Matrix>, "rows"> & { board: MatrixBoard; boardRef: Ref<HTMLElement>; summary?: { errors: number; warnings: number; sources: readonly string[]; chosen?: number; total?: number }; onOpen?: () => void; workflow?: StudioCandidateWorkflow; contextTokens?: readonly { id: string; value: string }[]; variants?: Readonly<Record<string, readonly string[]>> }): ReactElement {
+export const Board = memo(function Board({ board, boardRef, summary, onOpen, workflow, contextTokens = [], variants, starter, ...matrix }: Omit<ComponentProps<typeof Matrix>, "rows"> & { board: MatrixBoard; starter?: BoardStarter; boardRef: Ref<HTMLElement>; summary?: { errors: number; warnings: number; sources: readonly string[]; chosen?: number; total?: number }; onOpen?: () => void; workflow?: StudioCandidateWorkflow; contextTokens?: readonly { id: string; value: string }[]; variants?: Readonly<Record<string, readonly string[]>> }): ReactElement {
   const id = `studio-board-${encodeURIComponent(board.id)}`;
   const headingId = useId();
   const [editing, setEditing] = useState(false);
@@ -33,6 +40,10 @@ export const Board = memo(function Board({ board, boardRef, summary, onOpen, wor
   const text = matrix.labels.board;
   const edit = () => { setEditing(true); for (const row of rows) if (row.candidatesReady === false) matrix.onRequestRow?.(row, matrix.sources[0] ?? matrix.working.source.id); };
   const promptData = (row: MatrixRow, current = false): CandidatePromptData => valueBoardPrompt({ board, row, consumer: matrix.working.source.id, contextTokens, variants, workflow, returnStep: text.returnStep }, current);
+  const starterAction = (row: MatrixRow) => {
+    const kit = starter ? rosterStarter(sourceRoster, row.id) : undefined;
+    return starter && kit ? <Button variant="ghost" size="sm" data-studio-generate-starter={kit} onPress={() => starter.onGenerate(row, kit)}>{starter.label}</Button> : null;
+  };
   const check = summary ? matrix.labels.checkSummary(summary.errors, summary.warnings) : "";
   const chosenLabel = matrix.labels.chosenSummary;
   const chosenLine = (className: string) => summary && chosenLabel ? <BoardChosenSummary className={className} label={chosenLabel}
@@ -43,6 +54,7 @@ export const Board = memo(function Board({ board, boardRef, summary, onOpen, wor
     <CanvasLodLayers full={<div data-studio-zoom-full="" className="w-max">{editing ? <>
       <Matrix {...matrix} rows={rows} sources={sources} layout="wide" customCell={row => <div data-studio-edit-actions="" className={`flex items-center gap-sm ${LIBRARY_COLUMN_FLOW}`} style={LIBRARY_COLUMN_BOUND}>
         <CandidatePromptDialog trigger={<Button variant="ghost" size="sm">{text.create}</Button>} data={promptData(row)} labels={matrix.labels} workflow={workflow} />
+        {starterAction(row)}
         {row.candidates.some(candidate => candidate.selected && candidate.source === matrix.working.source.id && candidate.members.some(({ member }) => member.origin?.kind !== "adopted")) ? <CandidatePromptDialog trigger={<Button variant="ghost" size="sm">{text.refresh}</Button>} data={promptData(row, true)} labels={matrix.labels} workflow={workflow} /> : null}
       </div>} />
     </> : <Table aria-label={matrix.labels.matrix.label} className="w-fit">
