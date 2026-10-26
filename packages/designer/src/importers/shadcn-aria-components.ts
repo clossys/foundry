@@ -1,5 +1,6 @@
 import adapter from "../catalog/adapters/shadcn@aria.json" with { type: "json" };
 import componentSlots from "../catalog/slots/components.json" with { type: "json" };
+import datePickerRule from "../catalog/rules/components.date-picker.json" with { type: "json" };
 import type { ComponentCheckFill } from "../catalog-core/check-components.js";
 import type { ComponentSlot, FillMeta } from "../catalog-core/types.js";
 import { sha256 } from "../catalog-core/digest.js";
@@ -40,6 +41,78 @@ export interface ShadcnComponentFillDoc {
 export interface ShadcnComponentImport {
   fills: readonly ShadcnComponentFillDoc[]; receipt: readonly ShadcnItemReceipt[];
   rewrites: Readonly<Record<string, RewriteResult>>;
+  compose: readonly ShadcnComposeReceipt[];
+}
+/**
+ * A compose rule builds one leaf from registered constituent leaves instead of
+ * one upstream item. It names direct constituents only; a constituent may itself
+ * be composed from plain leaves (one level of nesting), never deeper, never cyclic.
+ * `blocker` records why the rule cannot ship without new styling or a failing
+ * K1/K2 check; such a leaf stays on its Foundry gap seat.
+ */
+export interface ShadcnComposeRule { readonly leaf: string; readonly constituents: readonly string[]; readonly blocker?: string }
+export interface ShadcnComposeReceipt {
+  leaf: string; slot: string; constituents: readonly string[];
+  /** Composed levels nested under this leaf: 0 = all constituents plain, 1 = a constituent is itself composed. */
+  depth: number;
+  source: string; status: "composed" | "gap"; reason: string;
+}
+export const SHADCN_COMPOSE_MAX_DEPTH = 1;
+/** The registered date-picker composition is the model; its inputs are read, never restated. */
+const registeredDatePicker = datePickerRule.inputs.map(input => input.replace(/^components\./, ""));
+export const SHADCN_COMPOSE_RULES: readonly ShadcnComposeRule[] = [
+  { leaf: "date-picker", constituents: registeredDatePicker },
+  { leaf: "date-field", constituents: ["field"], blocker: "new styling: no pinned item imports RAC DateField/DateInput/DateSegment; segment, placeholder and focus styling would be new" },
+  { leaf: "field", constituents: [], blocker: "K2: pinned field.tsx renders div/p FieldDescription and FieldError, not RAC Text+FieldError, and no registered leaf supplies them; an executable profile over field.tsx is needed, not a composition" },
+  { leaf: "text-field", constituents: ["field"], blocker: "K1: size.sm/md/lg unmapped; pinned input and textarea carry one control size" },
+  { leaf: "search-field", constituents: ["field", "button"], blocker: "K2: no pinned item imports RAC SearchField; part.clear/part.submit need the input-group addon layout and input-group is rejected (Group is not SearchField)" },
+  { leaf: "form", constituents: [], blocker: "K2: form is absent at the pinned commit (404) and Form renders no constituent leaf that could carry a source" },
+  { leaf: "file-trigger", constituents: ["button"] },
+  { leaf: "spinner", constituents: [], blocker: "K2: pinned spinner is an IconPlaceholder svg, not RAC ProgressBar; size.sm/md/lg and the spin glyph would be new styling" },
+  { leaf: "toolbar", constituents: [], blocker: "new styling: no pinned item imports RAC Toolbar; orientation.horizontal/vertical layout would be new styling" },
+];
+
+/** Resolve compose rules against registered leaves and the sources that fill them. */
+export function resolveShadcnComposeRules(rules: readonly ShadcnComposeRule[], input: { slots: ReadonlySet<string>; sources: ReadonlyMap<string, string> }): ShadcnComposeReceipt[] {
+  const byLeaf = new Map<string, ShadcnComposeRule>();
+  for (const rule of rules) {
+    if (byLeaf.has(rule.leaf)) throw new Error(`shadcn-compose: duplicate rule ${rule.leaf}`);
+    if (!input.slots.has(`components.${rule.leaf}`)) throw new Error(`shadcn-compose: ${rule.leaf} is not a registered leaf`);
+    if (new Set(rule.constituents).size !== rule.constituents.length || rule.constituents.includes(rule.leaf)) throw new Error(`shadcn-compose: ${rule.leaf} constituents repeat or name the leaf itself`);
+    for (const constituent of rule.constituents) if (!input.slots.has(`components.${constituent}`)) throw new Error(`shadcn-compose: ${rule.leaf} constituent ${constituent} is not a registered leaf`);
+    if (!rule.constituents.length && !rule.blocker) throw new Error(`shadcn-compose: ${rule.leaf} composes nothing`);
+    byLeaf.set(rule.leaf, rule);
+  }
+  // Cycles are refused over every rule edge; nesting counts only shippable
+  // compositions, because a blocked rule leaves a plain Foundry seat behind.
+  const visited = new Set<string>(), active: string[] = [];
+  const walk = (leaf: string): void => {
+    if (active.includes(leaf)) throw new Error(`shadcn-compose: cycle ${[...active.slice(active.indexOf(leaf)), leaf].join(" -> ")}`);
+    if (visited.has(leaf) || !byLeaf.has(leaf)) return;
+    active.push(leaf); for (const constituent of byLeaf.get(leaf)!.constituents) walk(constituent); active.pop(); visited.add(leaf);
+  };
+  for (const rule of rules) walk(rule.leaf);
+  const composes = (leaf: string): boolean => !!byLeaf.get(leaf) && !byLeaf.get(leaf)!.blocker;
+  const depths = new Map<string, number>();
+  const depth = (leaf: string): number => {
+    const known = depths.get(leaf); if (known !== undefined) return known;
+    const value = Math.max(0, ...byLeaf.get(leaf)!.constituents.filter(composes).map(constituent => 1 + depth(constituent)));
+    if (value > SHADCN_COMPOSE_MAX_DEPTH) throw new Error(`shadcn-compose: ${leaf} nests compositions ${value} levels deep; at most ${SHADCN_COMPOSE_MAX_DEPTH} is allowed`);
+    depths.set(leaf, value); return value;
+  };
+  const resolved = new Map<string, ShadcnComposeReceipt>();
+  const resolve = (leaf: string): ShadcnComposeReceipt => {
+    const known = resolved.get(leaf); if (known) return known;
+    const rule = byLeaf.get(leaf)!;
+    const levels = depth(leaf);
+    const sourceOf = (constituent: string): string => byLeaf.has(constituent) ? resolve(constituent).source : input.sources.get(`components.${constituent}`) ?? "foundry";
+    const foreign = rule.constituents.filter(constituent => sourceOf(constituent) !== SOURCE);
+    const reason = rule.blocker ?? (foreign.length ? `constituent ${foreign.map(constituent => `components.${constituent}=${sourceOf(constituent)}`).join(", ")} is not ${SOURCE}` : `every constituent is ${SOURCE}; no new styling`);
+    const composed = !rule.blocker && !foreign.length;
+    const row: ShadcnComposeReceipt = { leaf, slot: `components.${leaf}`, constituents: [...rule.constituents], depth: levels, source: composed ? SOURCE : "foundry", status: composed ? "composed" : "gap", reason };
+    resolved.set(leaf, row); return row;
+  };
+  return rules.map(rule => resolve(rule.leaf));
 }
 /** Explicit item aliases avoid deriving a contract from a registry item's name. */
 export const SHADCN_COMPONENT_ITEMS: Readonly<Record<string, string>> = {
@@ -308,7 +381,8 @@ export function importShadcnAriaComponents(input: ShadcnComponentInput): ShadcnC
   if (!inputGroup) throw new Error("shadcn-components: missing inspection input input-group");
   receipt.push({ item: "input-group", slot: "components.text-field", runtime: "X", status: "rejected", reason: "K2: Group is not TextField; retained only as a private registry part", issues: [] });
   receipt.push({ item: "button#LinkButton", slot: "components.link", runtime: "U-V", status: "alternate", reason: "Pinned button item imports Link; a derived link rule belongs to the component change engine", issues: [] });
-  return { fills: fills.sort((a, b) => a.$extensions["com.clossys.fill"].slot.localeCompare(b.$extensions["com.clossys.fill"].slot)), receipt, rewrites };
+  const compose = resolveShadcnComposeRules(SHADCN_COMPOSE_RULES, { slots: new Set(slots.keys()), sources: new Map([...filled].map(slot => [slot, SOURCE])) });
+  return { fills: fills.sort((a, b) => a.$extensions["com.clossys.fill"].slot.localeCompare(b.$extensions["com.clossys.fill"].slot)), receipt, rewrites, compose };
 }
 
 /** Adoption may only consume a fully rewritten bundle; draft descriptors are inspectable. */
@@ -327,5 +401,5 @@ export function materializeShadcnComponent(result: ShadcnComponentImport, item: 
 export function generatedShadcnComponentFiles(input: ShadcnComponentInput): Readonly<Record<string, string>> {
   const result = importShadcnAriaComponents(input);
   return Object.fromEntries([...result.fills.map(fill => [fill.$extensions["com.clossys.fill"].slot + ".json", stableStringify(fill)]),
-    ["components.coverage.json", stableStringify({ source: SOURCE, pin: SHADCN_ARIA_COMPONENT_PIN, receipt: result.receipt, unmeasured: ["ref and render-prop forwarding", "consumer RAC singleton", "axe", "keyboard", "forced colours", "contrast", "state/mode/ground matrix", "consumer Tailwind v4 build"] })]]);
+    ["components.coverage.json", stableStringify({ source: SOURCE, pin: SHADCN_ARIA_COMPONENT_PIN, receipt: result.receipt, compose: result.compose, unmeasured: ["ref and render-prop forwarding", "consumer RAC singleton", "axe", "keyboard", "forced colours", "contrast", "state/mode/ground matrix", "consumer Tailwind v4 build"] })]]);
 }
