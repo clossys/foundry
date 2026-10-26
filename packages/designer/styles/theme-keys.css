@@ -1260,6 +1260,10 @@
    cannot see (a leading `-` or `[`, parentheses, or a non-trailing bracket).
    Each keeps the declarations the arbitrary class meant; tablet-lg is the
    theme's --breakpoint-tablet-lg (1024px). */
+/* Identifier text binding: ids, versions, digests and codes set in the mono
+   family token with tabular figures, so columns of ids align. DataTable's
+   `format: "id"` columns bind to it. */
+@utility type-id { font-family: var(--font-mono, ui-monospace, monospace); font-variant-numeric: tabular-nums; }
 @utility frame-main-bleed { &:has([data-frame-bleed]) { padding: 0; } }
 @utility frame-region-closed { inline-size: 0; }
 @utility frame-nav-width {

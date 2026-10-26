@@ -17,15 +17,14 @@ export function PublisherChannelProcess({ process, label, onOpen, openItemLabel,
   const [expandedPages, setExpandedPages] = useState<ReadonlySet<string>>(new Set());
   const toggle = (current: ReadonlySet<string>, id: string) => { const next = new Set(current); if (next.has(id)) next.delete(id); else next.add(id); return next; };
   const open = (item: PublisherProcessItem, inspect = false) => <Button variant="ghost" id={`${id}-${inspect ? "inspect" : "open"}-${encodeURIComponent(item.id)}`} type="button" aria-label={inspect ? `Inspect ${item.label}` : openItemLabel?.(item.label, item.state) ?? `Open ${item.label} · ${item.state}`} onPress={event => onOpen(item, event.target as HTMLButtonElement)}>{item.label}</Button>;
-  // A stage column no top-level item sits in would only draw an empty column; it is not rendered.
-  const occupiedStages = process.stages.filter(stage => process.lanes.some(lane => lane.items.some(item => !item.parentId && item.column === stage)));
+  // A stage column no top-level item sits in would only draw an empty column; DataTable hides it.
   return <>
-    <DataTable aria-label={`${label} lane process`} rowKey={lane => lane.id} rows={process.lanes} columns={[
+    <DataTable aria-label={`${label} lane process`} hideEmptyColumns rowKey={lane => lane.id} rows={process.lanes} columns={[
       { id: "lane", header: "Lane", isRowHeader: true, cell: (lane: PublisherProcessLane) => {
         const count = lane.items.filter(item => !item.parentId).length;
         return <Button variant="ghost" type="button" aria-expanded={expandedLanes.has(lane.id)} onPress={() => setExpandedLanes(current => toggle(current, lane.id))}>{expandedLanes.has(lane.id) ? "Collapse" : "Expand"} {lane.id} · {count} items · {count - lane.readyCount} not ready</Button>;
       } },
-      ...occupiedStages.map(stage => ({ id: stage, header: stage, cell: (lane: PublisherProcessLane) => <>{lane.items.filter(item => !item.parentId && item.column === stage).map(item => <div key={item.id} data-publisher-item={item.id}>{open(item)}<p>{item.state} · {item.findingCount} findings</p><p>Output format: {outputFor(item.row).format}</p><p>Export: {outputFor(item.row).export} · Deploy: {outputFor(item.row).deploy}</p></div>)}</> })),
+      ...process.stages.map(stage => ({ id: stage, header: stage, cell: (lane: PublisherProcessLane) => <>{lane.items.filter(item => !item.parentId && item.column === stage).map(item => <div key={item.id} data-publisher-item={item.id}>{open(item)}<p>{item.state} · {item.findingCount} findings</p><p>Output format: {outputFor(item.row).format}</p><p>Export: {outputFor(item.row).export} · Deploy: {outputFor(item.row).deploy}</p></div>)}</> })),
     ]} />
     {process.lanes.filter(lane => expandedLanes.has(lane.id)).map(lane => <section key={lane.id} aria-label={`${label} ${lane.id} expanded items`}>
       <SectionHeader level={3} title={`${lane.id} items`} />
