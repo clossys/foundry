@@ -9,15 +9,17 @@ import { buildCandidates, emptyChanges } from "./model.js";
 import { emptyLibrary, labels, smallCatalog } from "./__fixtures__/studio.js";
 import { loadCatalog } from "../catalog-core/index.js";
 import { completedTokenLibrary } from "../importers/__fixtures__/completed-token-library.js";
+import { orderTokenMembers } from "../tokens/preview/member-order.js";
 
 afterEach(cleanup);
 const catalog = loadCatalog();
 const library = completedTokenLibrary(catalog, { id: "palette-consumer", kind: "consumer", author: "consumer", license: "UNLICENSED" }, "2026-10-25");
 const ramp = () => buildCandidates({ catalog, library, working: library, slotId: "tokens.color-ramp", scope: "slot", target: "tokens.color-ramp" }).find(candidate => candidate.selected)!;
 
-it("starts every palette ramp on its own row, in member order, with no member lost (studio-20)", () => {
+it("starts every palette ramp on its own row, in display order, with no member lost (studio-20)", () => {
   const candidate = ramp();
-  const families = memberFamilies(candidate.members);
+  // Display order: each ramp ordinal (amber.50 before amber.100), VR2 studio-04.
+  const families = memberFamilies(orderTokenMembers(candidate.members));
   expect(families.length).toBeGreaterThan(1);
   expect(new Set(families.map(run => run.family)).size).toBe(families.length);
   const view = render(<CandidateCell candidate={candidate} labels={labels} />);
@@ -28,7 +30,8 @@ it("starts every palette ramp on its own row, in member order, with no member lo
     expect(row).toHaveClass("basis-full", "flex", "flex-wrap");
     expect([...row.querySelectorAll<HTMLElement>("[data-candidate-variant]")].map(variant => variant.dataset.candidateVariant)).toEqual(families[index]!.members.map(entry => entry.id));
   }
-  expect([...cell.querySelectorAll<HTMLElement>("[data-candidate-variant]")].map(variant => variant.dataset.candidateVariant)).toEqual(candidate.members.map(entry => entry.id));
+  expect([...cell.querySelectorAll<HTMLElement>("[data-candidate-variant]")].map(variant => variant.dataset.candidateVariant)).toEqual(families.flatMap(run => run.members.map(entry => entry.id)));
+  expect(new Set(families.flatMap(run => run.members.map(entry => entry.id)))).toEqual(new Set(candidate.members.map(entry => entry.id)));
 });
 
 it("keeps a single-family leaf flat, with no family rows", () => {
