@@ -1521,7 +1521,8 @@
           "tokens.action-color",
           "tokens.border-width",
           "tokens.focus-color",
-          "tokens.focus-outline"
+          "tokens.focus-outline",
+          "tokens.control-size"
         ],
         "assets": []
       },
@@ -1994,6 +1995,9 @@
         "tokens": [
           "tokens.accent-color",
           "tokens.caption-size",
+          "tokens.control-size",
+          "tokens.focus-color",
+          "tokens.focus-outline",
           "tokens.focus-shadow",
           "tokens.letter-spacing",
           "tokens.radius",
@@ -2173,7 +2177,10 @@
           "tokens.text-color",
           "tokens.typeface",
           "tokens.border-width",
-          "tokens.z-index"
+          "tokens.z-index",
+          "tokens.control-size",
+          "tokens.focus-color",
+          "tokens.focus-outline"
         ],
         "assets": []
       },

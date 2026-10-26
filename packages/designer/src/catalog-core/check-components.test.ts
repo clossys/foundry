@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { checkComponentProfile, componentRacRangeIncludes, componentSourceHash, componentTokensHash, isObservationPending, OBSERVATIONS_UNAVAILABLE } from "./check-components.js";
+import { checkComponentProfile, DEFAULT_COHERENCE_GROUPS, componentRacRangeIncludes, componentSourceHash, componentTokensHash, isObservationPending, OBSERVATIONS_UNAVAILABLE } from "./check-components.js";
 import type { ComponentCheckInput, ComponentCheckCode, ComponentCompatibilityCode } from "./check-components.js";
 import { componentProfile, composedProfile } from "./__fixtures__/components/profile.js";
 import { sha256 } from "./digest.js";
@@ -333,5 +333,14 @@ describe("member-specific root observations", () => {
       (p: ReturnType<typeof members>) => { p.observations["components.button"]!.memberObservations!["size.md"]!.measurements.pop(); },
       (p: ReturnType<typeof members>) => { p.observations["components.button"]!.memberObservations!["size.md"]!.forwardsRef = false; },
     ]) { const input = members(); mutate(input); expect(checkComponentProfile(input).ok).toBe(false); }
+  });
+});
+
+describe("controls coherence group membership", () => {
+  it("keeps the label/description/error field but not the form container, which owns no control geometry", () => {
+    const controls = DEFAULT_COHERENCE_GROUPS.find(group => group.id === "controls")!;
+    expect(controls.slots).toContain("components.field");
+    expect(controls.slots).toContain("components.text-field");
+    expect(controls.slots).not.toContain("components.form");
   });
 });

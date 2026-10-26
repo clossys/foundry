@@ -24,6 +24,25 @@ const supported: Record<string, string[]> = {
 const counts: Record<string, number> = { checkbox: 1, "radio-group": 0, switch: 6, slider: 4, "toggle-button": 11, "toggle-group": 8 };
 
 describe("six pinned control evidence surfaces", () => {
+  it("declares on toggle-group the toggle control height and focus outline its items render through the composed toggleVariants call", () => {
+    const result = importShadcnAriaComponents(input());
+    const group = result.fills.find(doc => doc.components["toggle-group"])!.components["toggle-group"]!;
+    const toggle = result.fills.find(doc => doc.components["toggle-button"])!.components["toggle-button"]!;
+    expect(group.composes).toContain("components.toggle-button");
+    expect(result.rewrites["toggle-group"]!.files.find(file => file.path === "components/toggle-group/toggle-group.tsx")!.content).toMatch(/\btoggleVariants\(/);
+    const inherited = toggle.reads.tokens.filter(read => /^tokens\.(?:control-size|focus-outline|focus-color)\./.test(read));
+    expect(inherited.length).toBeGreaterThan(0);
+    expect(group.reads.tokens).toEqual(expect.arrayContaining(inherited));
+    expect(result.fills.find(doc => doc.components.calendar)!.components.calendar!.reads.tokens.filter(read => /^tokens\.control-size\./.test(read))).toEqual(result.rewrites.calendar!.reads.tokens.filter(read => /^tokens\.control-size\./.test(read)));
+  });
+  it("binds the radio item's 16px box to the control mark and keeps its focus outline, inside the radio contract", () => {
+    const result = importShadcnAriaComponents(input());
+    const fill = result.fills.find(doc => doc.components["radio-group"])!.components["radio-group"]!;
+    expect(fill.reads.tokens).toEqual(expect.arrayContaining(["tokens.control-size.mark", "tokens.focus-outline.width", "tokens.focus-color.default"]));
+    const source = result.rewrites["radio-group"]!.files.find(file => file.path === "components/radio-group/radio-group.tsx")!.content;
+    expect(source).toContain("size-(--ui-control-mark,calc(var(--spacing)*4))");
+    expect(slots.find(slot => slot.id === "components.radio-group")!.contract.allowedReads.tokens).toContain("tokens.control-size");
+  });
   it("partitions every closed contract into source-backed members and explicit gaps", () => {
     const result = importShadcnAriaComponents(input());
     for (const [leaf, members] of Object.entries(supported)) {
