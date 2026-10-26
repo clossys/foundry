@@ -54,10 +54,10 @@
         "version": "0.12.0"
       },
       "propMap": {
-        "axes": "./charts#RangeChart.ticks",
-        "legend": "./charts#RangeChart[ChartFrame.legend]",
-        "series": "./charts#RangeChart.rows",
-        "tooltip": "./charts#RangeChart[ChartFrame.Tooltip]"
+        "axes": "./charts#RangeChart",
+        "legend": "./charts#RangeChart",
+        "series": "./charts#RangeChart",
+        "tooltip": "./charts#RangeChart"
       },
       "props": [
         "className",

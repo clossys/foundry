@@ -54,10 +54,10 @@
         "version": "0.12.0"
       },
       "propMap": {
-        "axes": "./charts#AreaChart[ChartFrame.axes]",
-        "legend": "./charts#AreaChart[series-controls]",
-        "series": "./charts#AreaChart.series",
-        "tooltip": "./charts#AreaChart[ChartFrame.Tooltip]"
+        "axes": "./charts#AreaChart",
+        "legend": "./charts#AreaChart",
+        "series": "./charts#AreaChart",
+        "tooltip": "./charts#AreaChart"
       },
       "props": [
         "className",

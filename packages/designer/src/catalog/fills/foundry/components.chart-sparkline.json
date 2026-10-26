@@ -54,10 +54,10 @@
         "version": "0.12.0"
       },
       "propMap": {
-        "axes": "./charts#Sparkline.axes",
-        "legend": "./charts#Sparkline.legend",
-        "series": "./charts#Sparkline.values",
-        "tooltip": "./charts#Sparkline.tooltip"
+        "axes": "./charts#Sparkline",
+        "legend": "./charts#Sparkline",
+        "series": "./charts#Sparkline",
+        "tooltip": "./charts#Sparkline"
       },
       "props": [
         "axes",

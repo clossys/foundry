@@ -54,10 +54,10 @@
         "version": "0.12.0"
       },
       "propMap": {
-        "axes": "./charts#Heatmap[ChartFrame.axes]",
-        "legend": "./charts#Heatmap[categorical-legend-or-ramp]",
-        "series": "./charts#Heatmap.values",
-        "tooltip": "./charts#Heatmap[ChartFrame.Tooltip]"
+        "axes": "./charts#Heatmap",
+        "legend": "./charts#Heatmap",
+        "series": "./charts#Heatmap",
+        "tooltip": "./charts#Heatmap"
       },
       "props": [
         "className",

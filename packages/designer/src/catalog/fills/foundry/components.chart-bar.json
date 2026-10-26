@@ -54,10 +54,10 @@
         "version": "0.12.0"
       },
       "propMap": {
-        "axes": "./charts#BarChart.categories",
-        "legend": "./charts#BarChart[ChartFrame.legend]",
-        "series": "./charts#BarChart.series",
-        "tooltip": "./charts#BarChart[native-svg-title]"
+        "axes": "./charts#BarChart",
+        "legend": "./charts#BarChart",
+        "series": "./charts#BarChart",
+        "tooltip": "./charts#BarChart"
       },
       "props": [
         "categories",
