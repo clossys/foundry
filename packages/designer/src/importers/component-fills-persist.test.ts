@@ -7,7 +7,7 @@ import { loadCatalogBundles } from "../catalog-bundles.js";
 import { loadComponentCompositionRules } from "../catalog-core/component-compositions.js";
 import { componentMemberBinding, emitComponents } from "../catalog-core/emit-components.js";
 import { componentDescriptorHash } from "../catalog-core/resolve-components.js";
-import type { ComponentCandidateDocument, ComponentFile, ResolvedComponent, ResolvedComponents } from "../catalog-core/resolve-components.js";
+import type { ComponentCandidate, ComponentCandidateDocument, ComponentFile, ResolvedComponent, ResolvedComponents } from "../catalog-core/resolve-components.js";
 import type { ComponentSlot } from "../catalog-core/types.js";
 
 /**
@@ -36,17 +36,21 @@ function fillId(doc: ComponentCandidateDocument): string { return doc.$extension
 function persistOne(doc: ComponentCandidateDocument, owned?: readonly ComponentFile[]): void {
   const descriptor = Object.values(doc.components)[0]!;
   if (descriptor.impl.kind === "composed") return;
-  const files = owned ?? (descriptor.impl.kind === "source" ? outputs.get(fillId(doc)) ?? [] : []);
-  if (descriptor.impl.kind === "source" && !files.length) throw new Error(`no materialized output for ${fillId(doc)}`);
+  persistDescriptor(fillId(doc), descriptor, owned ?? (descriptor.impl.kind === "source" ? outputs.get(fillId(doc)) ?? [] : []));
+}
+// A composition rule persists its template against the rule's own materialized files.
+function persistDescriptor(fill: string, descriptor: ComponentCandidate, files: readonly ComponentFile[]): void {
+  if (descriptor.impl.kind === "composed") throw new Error(`composed descriptor reached persist for ${fill}`);
+  if (descriptor.impl.kind === "source" && !files.length) throw new Error(`no materialized output for ${fill}`);
   const component: ResolvedComponent = {
     slot: descriptor.slot, originKind: "adopted",
-    origin: { kind: "adopted", source: descriptor.source, fill: fillId(doc), pin: descriptor.pin, license: descriptor.license ?? "MIT", sha256: componentDescriptorHash(descriptor), adoptedAt: "2026-01-01T00:00:00.000Z" },
-    impl: descriptor.impl, propMap: structuredClone(descriptor.propMap),
+    origin: { kind: "adopted", source: descriptor.source, fill, pin: descriptor.pin, license: descriptor.license ?? "MIT", sha256: componentDescriptorHash(descriptor), adoptedAt: "2026-01-01T00:00:00.000Z" },
+    impl: descriptor.impl as ResolvedComponent["impl"], propMap: structuredClone(descriptor.propMap),
     reads: { tokens: {}, assets: [], components: [] }, descriptor,
   };
   const profile: ResolvedComponents = {
     consumer: "pack-check", selectionHash: `sha256:${"0".repeat(64)}`,
-    components: { [descriptor.slot]: component }, files,
+    components: { [descriptor.slot]: component }, files: [...files],
     check: { ok: true, findings: [] } as unknown as ResolvedComponents["check"],
     packageExports: { ...thirdPartyExports(files), ...designerExports },
   };
@@ -58,6 +62,69 @@ const PROPMAP_REFUSAL = /components: (?:unsupported propMap|unsupported member d
 function persistThrows(docs: readonly ComponentCandidateDocument[], owned?: (doc: ComponentCandidateDocument) => readonly ComponentFile[]): string[] {
   return docs.flatMap(doc => { try { persistOne(doc, owned?.(doc)); return []; } catch (error) { return [`${fillId(doc)}: ${(error as Error).message}`]; } });
 }
+
+/**
+ * Every selectable fill, every source: imported packs, Foundry's own map (charts included) and every
+ * composition rule's template. A fill is selectable when its slot is in the registry and its
+ * materialization is not blocked (resolution refuses blockers before persist is ever reached).
+ */
+const selectable = bundles.componentFills.filter(doc => {
+  const descriptor = Object.values(doc.components)[0]!;
+  return slots.has(descriptor.slot) && !descriptor.blockers?.length;
+});
+const rules = loadComponentCompositionRules();
+type Persisted = { id: string; source: string; slot: string; persist: () => void };
+const everyFill: Persisted[] = [
+  ...selectable.map(doc => ({ id: fillId(doc), source: doc.$extensions["com.clossys.fill"].source, slot: Object.values(doc.components)[0]!.slot, persist: () => persistOne(doc) })),
+  ...rules.map(rule => ({ id: rule.id, source: "compose", slot: rule.slot, persist: () => persistDescriptor(rule.id, rule.template, rule.files) })),
+];
+/**
+ * Persisting one fill alone leaves out its sibling slots' files, so a relative import of another
+ * slot's module is unresolvable here by construction; that one message is an isolation artifact,
+ * not a persist refusal. Every other throw is what the product's whole-library persist would raise.
+ */
+const ISOLATION_ARTIFACT = /^components: missing import \.\.?\//;
+/** The refusal each fill raises on the persist path, or undefined when it persists. */
+function refusalOf(fill: Persisted): string | undefined {
+  try { fill.persist(); return undefined; } catch (error) { const message = (error as Error).message; return ISOLATION_ARTIFACT.test(message) ? undefined : message; }
+}
+
+/**
+ * Fills the persist emitter still refuses, keyed by fill id, each with its reason (the refusal it
+ * raises today, without the "components: " prefix). This list may only shrink: a listed fill that now persists fails the stale check
+ * below until it is removed, and a refusal not listed here fails the main check.
+ */
+const KNOWN_REFUSED: Readonly<Record<string, string>> = {
+  // shadcn@aria: the materialized output carries its own components/<slot>/index.ts, which the
+  // component-index target would overwrite with the generated adapter, so persist refuses.
+  "shadcn@aria/components.avatar": "generated entrypoint conflicts with materialized source",
+  "shadcn@aria/components.badge": "generated entrypoint conflicts with materialized source",
+  "shadcn@aria/components.banner": "generated entrypoint conflicts with materialized source",
+  "shadcn@aria/components.breadcrumbs": "generated entrypoint conflicts with materialized source",
+  "shadcn@aria/components.button": "generated entrypoint conflicts with materialized source",
+  "shadcn@aria/components.card": "generated entrypoint conflicts with materialized source",
+  "shadcn@aria/components.dialog": "generated entrypoint conflicts with materialized source",
+  "shadcn@aria/components.disclosure": "generated entrypoint conflicts with materialized source",
+  "shadcn@aria/components.keyboard": "generated entrypoint conflicts with materialized source",
+  "shadcn@aria/components.menu": "generated entrypoint conflicts with materialized source",
+  "shadcn@aria/components.progress-bar": "generated entrypoint conflicts with materialized source",
+  "shadcn@aria/components.radio-group": "generated entrypoint conflicts with materialized source",
+  "shadcn@aria/components.separator": "generated entrypoint conflicts with materialized source",
+  "shadcn@aria/components.skeleton": "generated entrypoint conflicts with materialized source",
+  "shadcn@aria/components.slider": "generated entrypoint conflicts with materialized source",
+  "shadcn@aria/components.switch": "generated entrypoint conflicts with materialized source",
+  "shadcn@aria/components.table": "generated entrypoint conflicts with materialized source",
+  "shadcn@aria/components.tabs": "generated entrypoint conflicts with materialized source",
+  "shadcn@aria/components.toggle-button": "generated entrypoint conflicts with materialized source",
+  "shadcn@aria/components.toggle-group": "generated entrypoint conflicts with materialized source",
+  "shadcn@aria/components.tooltip": "generated entrypoint conflicts with materialized source",
+  // shadcn@aria popover and the date-picker composition: a named import the emitter parses as empty.
+  "shadcn@aria/components.popover": "unavailable named import  from react-aria-components",
+  "compose:date-picker@1": "unavailable named import  from react-aria-components",
+  // rac-starter: import forms the emitter's source scanner does not accept.
+  "rac-starter/components.form": "unsupported import syntax in components/form/Form.tsx",
+  "rac-starter/components.toolbar": "unsupported import syntax in components/toolbar/Toolbar.tsx",
+};
 
 describe("pack check: every selectable component fill persists", () => {
   const fills = bundles.componentFills.filter(doc => slots.has(Object.values(doc.components)[0]!.slot));
@@ -97,5 +164,29 @@ describe("pack check: every registered composition template persists", () => {
     for (const [member, pointer] of Object.entries(rule.template.propMap)) expect(() => componentMemberBinding(component, member, pointer), `${rule.slot}.${member} = ${pointer}`).not.toThrow();
     expect(Object.keys(rule.template.propMap).sort()).toEqual([...rule.template.members].sort());
     expect(persistThrows([doc(rule)], () => rule.files).filter(message => PROPMAP_REFUSAL.test(message))).toEqual([]);
+  });
+});
+
+describe("pack check: every selectable fill from every source persists, except a shrinking known-refused list", () => {
+  const bySource = (source: string) => everyFill.filter(fill => fill.source === source);
+  it("covers every source: shadcn@aria, Foundry including charts, and every composition template", () => {
+    expect(bySource("shadcn@aria")).toHaveLength(26);
+    expect(bySource("foundry").length).toBeGreaterThanOrEqual(57);
+    expect(bySource("foundry").filter(fill => fill.slot.startsWith("components.chart-")).length).toBeGreaterThanOrEqual(9);
+    expect(bySource("compose").map(fill => fill.slot)).toContain("components.date-picker");
+    expect(bySource("compose")).toHaveLength(rules.length);
+    expect(new Set(everyFill.map(fill => fill.id)).size).toBe(everyFill.length);
+  });
+  it("no fill outside KNOWN_REFUSED is refused by the persist emitter", () => {
+    const refused = everyFill.flatMap(fill => { const refusal = refusalOf(fill); return refusal === undefined || fill.id in KNOWN_REFUSED ? [] : [`${fill.id}: ${refusal}`]; });
+    expect(refused).toEqual([]);
+  });
+  it("stale known-refused: every listed fill exists and is still refused (remove it once it persists)", () => {
+    const ids = new Set(everyFill.map(fill => fill.id));
+    expect(Object.keys(KNOWN_REFUSED).filter(id => !ids.has(id))).toEqual([]);
+    const persisted = everyFill.filter(fill => fill.id in KNOWN_REFUSED && refusalOf(fill) === undefined).map(fill => fill.id);
+    expect(persisted, "now persists; delete from KNOWN_REFUSED").toEqual([]);
+    // Each reason is the refusal the fill raises today; a changed refusal is a changed entry.
+    for (const fill of everyFill.filter(fill => fill.id in KNOWN_REFUSED)) expect(refusalOf(fill), fill.id).toBe(`components: ${KNOWN_REFUSED[fill.id]}`);
   });
 });
