@@ -53,9 +53,9 @@ export interface ShadcnComposedFillDoc {
   components: Readonly<Record<string, ComponentCheckFill>>;
 }
 interface RegisteredComposeRule { id: string; kind: string; slot: string; inputs: readonly string[]; files: readonly SourceFile[] }
-/** Owned wiring for a composed leaf; the rule file under catalog/rules carries its bytes. */
+/** Owned wiring for a composed leaf; the rule file under catalog/rules carries its bytes. Single-axis members are served by the bare root export (pointer-only, no dispatch). */
 const SHADCN_COMPOSED_TEMPLATES: Readonly<Record<string, { rule: RegisteredComposeRule; export: string; members: Readonly<Record<string, string>>; props: readonly string[] }>> = {
-  "file-trigger": { rule: fileTriggerRule, export: "FileTrigger", members: { accept: "FileTrigger.acceptedFileTypes", directory: "FileTrigger.acceptDirectory", multiple: "FileTrigger.allowsMultiple" }, props: ["label", "acceptedFileTypes", "allowsMultiple", "acceptDirectory", "defaultCamera", "onSelect"] },
+  "file-trigger": { rule: fileTriggerRule, export: "FileTrigger", members: { accept: "FileTrigger", directory: "FileTrigger", multiple: "FileTrigger" }, props: ["label", "acceptedFileTypes", "allowsMultiple", "acceptDirectory", "defaultCamera", "onSelect"] },
 };
 function composedTemplate(row: ShadcnComposeReceipt, slot: ComponentSlot): ShadcnComposedFillDoc | undefined {
   const template = SHADCN_COMPOSED_TEMPLATES[row.leaf];
@@ -81,37 +81,46 @@ function composedTemplate(row: ShadcnComposeReceipt, slot: ComponentSlot): Shadc
  * `blocker` records why the rule cannot ship without new styling or a failing
  * K1/K2 check; such a leaf stays on its Foundry gap seat.
  */
-export interface ShadcnComposeRule { readonly leaf: string; readonly constituents: readonly string[]; readonly blocker?: string }
+/** `items`: pinned shadcn@aria registry items (D1 amendment) the leaf's own RAC root would wrap; they never nest. */
+export interface ShadcnComposeRule { readonly leaf: string; readonly constituents: readonly string[]; readonly items?: readonly string[]; readonly blocker?: string }
 export interface ShadcnComposeReceipt {
-  leaf: string; slot: string; constituents: readonly string[];
+  leaf: string; slot: string; constituents: readonly string[]; items: readonly string[];
   /** Composed levels nested under this leaf: 0 = all constituents plain, 1 = a constituent is itself composed. */
   depth: number;
   source: string; status: "composed" | "gap"; reason: string;
 }
 export const SHADCN_COMPOSE_MAX_DEPTH = 1;
+/** Registry items a composition may wrap, by planner decision D1 (amended). */
+export const SHADCN_COMPOSE_ITEMS: readonly string[] = ["input", "label", "field", "input-group", "spinner", "button-group"];
 /** The registered date-picker composition is the model; its inputs are read, never restated. */
 const registeredDatePicker = datePickerRule.inputs.map(input => input.replace(/^components\./, ""));
 export const SHADCN_COMPOSE_RULES: readonly ShadcnComposeRule[] = [
   { leaf: "date-picker", constituents: registeredDatePicker },
-  { leaf: "date-field", constituents: ["field"], blocker: "new styling: no pinned item imports RAC DateField/DateInput/DateSegment; segment, placeholder and focus styling would be new" },
-  { leaf: "field", constituents: [], blocker: "K2: pinned field.tsx renders div/p FieldDescription and FieldError, not RAC Text+FieldError, and no registered leaf supplies them; an executable profile over field.tsx is needed, not a composition" },
-  { leaf: "text-field", constituents: ["field"], blocker: "K1: size.sm/md/lg unmapped; pinned input and textarea carry one control size" },
-  { leaf: "search-field", constituents: ["field", "button"], blocker: "K2: no pinned item imports RAC SearchField; part.clear/part.submit need the input-group addon layout and input-group is rejected (Group is not SearchField)" },
-  { leaf: "form", constituents: [], blocker: "K2: form is absent at the pinned commit (404) and Form renders no constituent leaf that could carry a source" },
+  { leaf: "date-field", constituents: ["field"], items: ["input-group"], blocker: "new styling: pinned input and input-group render RAC Input, not DateInput/DateSegment; segment, placeholder and focus styling would be new" },
+  { leaf: "field", constituents: [], items: ["label", "field"], blocker: "K1: state.required/invalid/disabled have no owner, since a Label+Text+FieldError root takes them only from a parent field context; and K2: pinned field.tsx renders description and error as p/div, so a RAC Text/FieldError wrap needs new structure" },
+  { leaf: "text-field", constituents: [], items: ["label", "input"], blocker: "K1: size.sm/md/lg unmapped; the RAC TextField wrap maps line and state, but pinned label and input carry one control size and textarea is not a D1 item" },
+  { leaf: "search-field", constituents: ["button"], items: ["input-group", "input"], blocker: "K1: state.empty/state.filled have no pointer; RAC data-empty is render state, and the propMap grammar admits only exports, props, values and hovered/pressed/focus-visible" },
+  { leaf: "form", constituents: [], blocker: "K2: form is absent at the pinned commit (no files), and no D1 item supplies a form; the RAC Form root alone is the Foundry seat" },
   { leaf: "file-trigger", constituents: ["button"] },
-  { leaf: "spinner", constituents: [], blocker: "K2: pinned spinner is an IconPlaceholder svg, not RAC ProgressBar; size.sm/md/lg and the spin glyph would be new styling" },
-  { leaf: "toolbar", constituents: [], blocker: "new styling: no pinned item imports RAC Toolbar; orientation.horizontal/vertical layout would be new styling" },
+  { leaf: "spinner", constituents: [], items: ["spinner"], blocker: "K1: size.sm/md/lg unmapped; the RAC ProgressBar wrap holds role and value, but pinned spinner is one size-4 IconPlaceholder svg, so sizes and the spin glyph binding would be new" },
+  { leaf: "toolbar", constituents: [], blocker: "new styling: button-group is not pinned at the commit, so no D1 item supplies the group; a bare RAC Toolbar needs new orientation layout styling" },
 ];
 
 /** Resolve compose rules against registered leaves and the sources that fill them. */
-export function resolveShadcnComposeRules(rules: readonly ShadcnComposeRule[], input: { slots: ReadonlySet<string>; sources: ReadonlyMap<string, string> }): ShadcnComposeReceipt[] {
+export function resolveShadcnComposeRules(rules: readonly ShadcnComposeRule[], input: { slots: ReadonlySet<string>; sources: ReadonlyMap<string, string>; items?: ReadonlySet<string> }): ShadcnComposeReceipt[] {
   const byLeaf = new Map<string, ShadcnComposeRule>();
   for (const rule of rules) {
     if (byLeaf.has(rule.leaf)) throw new Error(`shadcn-compose: duplicate rule ${rule.leaf}`);
     if (!input.slots.has(`components.${rule.leaf}`)) throw new Error(`shadcn-compose: ${rule.leaf} is not a registered leaf`);
     if (new Set(rule.constituents).size !== rule.constituents.length || rule.constituents.includes(rule.leaf)) throw new Error(`shadcn-compose: ${rule.leaf} constituents repeat or name the leaf itself`);
     for (const constituent of rule.constituents) if (!input.slots.has(`components.${constituent}`)) throw new Error(`shadcn-compose: ${rule.leaf} constituent ${constituent} is not a registered leaf`);
-    if (!rule.constituents.length && !rule.blocker) throw new Error(`shadcn-compose: ${rule.leaf} composes nothing`);
+    const items = rule.items ?? [];
+    if (new Set(items).size !== items.length) throw new Error(`shadcn-compose: ${rule.leaf} items repeat`);
+    for (const item of items) {
+      if (!SHADCN_COMPOSE_ITEMS.includes(item)) throw new Error(`shadcn-compose: ${rule.leaf} item ${item} is not a D1 registry item`);
+      if (!input.items?.has(item)) throw new Error(`shadcn-compose: ${rule.leaf} item ${item} is not pinned`);
+    }
+    if (!rule.constituents.length && !items.length && !rule.blocker) throw new Error(`shadcn-compose: ${rule.leaf} composes nothing`);
     byLeaf.set(rule.leaf, rule);
   }
   // Cycles are refused over every rule edge; nesting counts only shippable
@@ -140,7 +149,7 @@ export function resolveShadcnComposeRules(rules: readonly ShadcnComposeRule[], i
     const foreign = rule.constituents.filter(constituent => sourceOf(constituent) !== SOURCE);
     const reason = rule.blocker ?? (foreign.length ? `constituent ${foreign.map(constituent => `components.${constituent}=${sourceOf(constituent)}`).join(", ")} is not ${SOURCE}` : `every constituent is ${SOURCE}; no new styling`);
     const composed = !rule.blocker && !foreign.length;
-    const row: ShadcnComposeReceipt = { leaf, slot: `components.${leaf}`, constituents: [...rule.constituents], depth: levels, source: composed ? SOURCE : "foundry", status: composed ? "composed" : "gap", reason };
+    const row: ShadcnComposeReceipt = { leaf, slot: `components.${leaf}`, constituents: [...rule.constituents], items: [...rule.items ?? []], depth: levels, source: composed ? SOURCE : "foundry", status: composed ? "composed" : "gap", reason };
     resolved.set(leaf, row); return row;
   };
   return rules.map(rule => resolve(rule.leaf));
@@ -423,7 +432,8 @@ export function importShadcnAriaComponents(input: ShadcnComponentInput): ShadcnC
   if (!inputGroup) throw new Error("shadcn-components: missing inspection input input-group");
   receipt.push({ item: "input-group", slot: "components.text-field", runtime: "X", status: "rejected", reason: "K2: Group is not TextField; retained only as a private registry part", issues: [] });
   receipt.push({ item: "button#LinkButton", slot: "components.link", runtime: "U-V", status: "alternate", reason: "Pinned button item imports Link; a derived link rule belongs to the component change engine", issues: [] });
-  const compose = resolveShadcnComposeRules(SHADCN_COMPOSE_RULES, { slots: new Set(slots.keys()), sources: new Map([...filled].map(slot => [slot, SOURCE])) });
+  const compose = resolveShadcnComposeRules(SHADCN_COMPOSE_RULES, { slots: new Set(slots.keys()), sources: new Map([...filled].map(slot => [slot, SOURCE])),
+    items: new Set([...items].filter(([, item]) => !item.missing && item.files.length).map(([name]) => name)) });
   const composed = compose.flatMap(row => composedTemplate(row, slots.get(row.slot)!) ?? []);
   return { fills: fills.sort((a, b) => a.$extensions["com.clossys.fill"].slot.localeCompare(b.$extensions["com.clossys.fill"].slot)), receipt, rewrites, compose, composed };
 }

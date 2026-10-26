@@ -61,9 +61,9 @@
         }
       ],
       "propMap": {
-        "accept": "FileTrigger.acceptedFileTypes",
-        "directory": "FileTrigger.acceptDirectory",
-        "multiple": "FileTrigger.allowsMultiple"
+        "accept": "FileTrigger",
+        "directory": "FileTrigger",
+        "multiple": "FileTrigger"
       },
       "props": [
         "label",

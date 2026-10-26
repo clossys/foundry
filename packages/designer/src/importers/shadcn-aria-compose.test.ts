@@ -8,7 +8,7 @@ import composedFileTrigger from "../catalog/fills/shadcn@aria/components.file-tr
 import { loadComponentCompositionRules } from "../catalog-core/component-compositions.js";
 import { validateComponentRuleTemplate } from "../catalog-core/component-rule-validation.js";
 import { stableStringify } from "../catalog-core/stable.js";
-import { importShadcnAriaComponents, resolveShadcnComposeRules, SHADCN_COMPOSE_MAX_DEPTH, SHADCN_COMPOSE_RULES, type ShadcnComposeRule } from "./shadcn-aria-components.js";
+import { importShadcnAriaComponents, resolveShadcnComposeRules, SHADCN_COMPOSE_ITEMS, SHADCN_COMPOSE_MAX_DEPTH, SHADCN_COMPOSE_RULES, type ShadcnComposeRule } from "./shadcn-aria-components.js";
 
 const here = resolve(import.meta.dirname, "__fixtures__/shadcn-aria");
 const read = (name: string): string => readFileSync(resolve(here, name), "utf8");
@@ -55,6 +55,25 @@ describe("shadcn@aria compose rules", () => {
     expect(rule.template).toMatchObject({ source: "shadcn@aria", root: "rac:FileTrigger", composes: ["components.button"], reads: { components: ["components.button"] } });
     expect(composedFileTrigger.$extensions["com.clossys.fill"]).toMatchObject({ source: "shadcn@aria", originKinds: ["composed"], sourceAddress: "rules/components.file-trigger.json#compose:file-trigger@1" });
     expect(() => validateComponentRuleTemplate(rule)).not.toThrow();
+  });
+  it("records the pinned D1 registry items each seat would wrap and keeps all seven on their gap seats with the measured reason", () => {
+    const by = Object.fromEntries(result.compose.map(row => [row.leaf, row]));
+    const seven = ["date-field", "field", "text-field", "search-field", "form", "spinner", "toolbar"];
+    expect(Object.fromEntries(seven.map(leaf => [leaf, by[leaf]!.items]))).toEqual({
+      "date-field": ["input-group"], field: ["label", "field"], "text-field": ["label", "input"], "search-field": ["input-group", "input"], form: [], spinner: ["spinner"], toolbar: [],
+    });
+    for (const leaf of seven) expect(by[leaf], leaf).toMatchObject({ status: "gap", source: "foundry" });
+    for (const row of result.compose) for (const item of row.items) expect(SHADCN_COMPOSE_ITEMS, `${row.leaf}<-${item}`).toContain(item);
+    // button-group and form ship no pinned bytes, so no rule may name them.
+    for (const absent of ["button-group", "form"]) expect(() => resolveShadcnComposeRules([{ leaf: "toolbar", constituents: [], items: [absent] }], { slots: registered, sources: shadcn(), items: new Set(result.compose.flatMap(row => row.items)) })).toThrow(/not pinned|not a D1/);
+  });
+  it("composes over pinned registry items and refuses unlisted, unpinned and repeated items", () => {
+    const items = new Set(["input", "label"]);
+    expect(resolveShadcnComposeRules([{ leaf: "text-field", constituents: [], items: ["label", "input"] }], { slots: registered, sources: shadcn(), items })[0]).toMatchObject({ status: "composed", source: "shadcn@aria", items: ["label", "input"], depth: 0 });
+    expect(() => resolveShadcnComposeRules([{ leaf: "text-field", constituents: [], items: ["textarea"] }], { slots: registered, sources: shadcn(), items: new Set(["textarea"]) })).toThrow(/textarea is not a D1 registry item/);
+    expect(() => resolveShadcnComposeRules([{ leaf: "toolbar", constituents: [], items: ["button-group"] }], { slots: registered, sources: shadcn(), items })).toThrow(/button-group is not pinned/);
+    expect(() => resolveShadcnComposeRules([{ leaf: "text-field", constituents: [], items: ["input", "input"] }], { slots: registered, sources: shadcn(), items })).toThrow(/items repeat/);
+    expect(() => resolveShadcnComposeRules([{ leaf: "text-field", constituents: [], items: [] }], { slots: registered, sources: shadcn(), items })).toThrow(/composes nothing/);
   });
   it("refuses a cycle", () => {
     const rules: ShadcnComposeRule[] = [{ leaf: "date-picker", constituents: ["date-field"] }, { leaf: "date-field", constituents: ["date-picker"] }];
