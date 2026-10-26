@@ -90,8 +90,8 @@ describe("component default fills", () => {
       expect(row.source ?? row.rule, leaf).toBeUndefined();
       expect(row.reasons.length, leaf).toBeGreaterThan(0);
     }
-    expect(reasons(plan, "table")).toContain("foundry: K1 Required member resize-columns is not mapped");
-    expect(reasons(plan, "table")).toContain("owner pick foundry is not eligible");
+    // Column resizing is mapped; the owner-picked Foundry table now waits only on its checkbox dependency.
+    expect(reasons(plan, "table")).toBe("foundry: dependency not chosen components.checkbox");
     expect(reasons(plan, "slider")).toBe("controls coherence: one source per group, led by foundry; shadcn@aria would mix sources");
     expect(reasons(plan, "grid-list")).toBe("foundry: dependency not chosen components.checkbox");
     expect(reasons(plan, "date-picker")).toContain("compose:date-picker@1: inputs not chosen components.calendar");
@@ -127,7 +127,6 @@ describe("component default fills", () => {
   it("the fallback never bypasses the checker: a listed leaf whose Foundry candidate fails keeps the exact finding", () => {
     const { input } = setup();
     const plan = planComponentDefaults(input);
-    expect(reasons(plan, "table")).toContain("foundry: K1 Required member resize-columns is not mapped");
     expect(reasons(plan, "checkbox")).toContain("foundry: K1 Required member scope.group is not mapped");
     expect(reasons(plan, "tree")).toContain("foundry: blocked K5");
     expect(reasons(plan, "calendar")).toContain("foundry: no implementation candidate");
@@ -139,6 +138,7 @@ describe("component default fills", () => {
     const row = (leaf: string) => plan.rows.find(candidate => candidate.slot === `components.${leaf}`)!;
     expect(row("popover")).toMatchObject({ status: "default", source: "foundry", fill: "foundry/components.popover" });
     expect(row("dialog")).toMatchObject({ status: "default", source: "foundry", fill: "foundry/components.dialog" });
+    expect(reasons(plan, "table")).not.toContain("K1");
     expect(reasons(plan, "date-picker")).toMatch(/compose:date-picker@1: inputs not chosen components.calendar$/);
   });
   it("the fallback is scoped to its listed leaves", () => {

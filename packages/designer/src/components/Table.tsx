@@ -2,12 +2,15 @@ import type { CSSProperties, ReactNode } from "react";
 import {
   Cell as AriaCell,
   Column as AriaColumn,
+  ColumnResizer as AriaColumnResizer,
+  ResizableTableContainer as AriaResizableTableContainer,
   Row as AriaRow,
   Table as AriaTable,
   TableBody as AriaTableBody,
   TableHeader as AriaTableHeader,
   type CellProps as AriaCellProps,
   type ColumnProps as AriaColumnProps,
+  type ResizableTableContainerProps as AriaResizableTableContainerProps,
   type RowProps as AriaRowProps,
   type TableBodyProps as AriaTableBodyProps,
   type TableHeaderProps as AriaTableHeaderProps,
@@ -80,6 +83,18 @@ export interface TableColumnProps extends Omit<AriaColumnProps, "className" | "s
   children: ReactNode;
   className?: string;
   style?: CSSProperties;
+  /**
+   * Adds a column resizer on the header's inline-end edge. Only takes effect
+   * inside `Table.ResizableContainer`; size the column with `defaultWidth`,
+   * `minWidth` and `maxWidth`. Pointer users drag the edge; keyboard users
+   * press Enter on the header, adjust with the arrow keys, and press Enter or
+   * Escape to finish (react-aria-components' column-resize behavior, which
+   * also mirrors the arrows in a right-to-left document).
+   * @default false
+   */
+  allowsResizing?: boolean;
+  /** Accessible name for the resizer; react-aria-components' localized default otherwise. */
+  resizerLabel?: string;
 }
 
 /**
@@ -90,7 +105,7 @@ export interface TableColumnProps extends Omit<AriaColumnProps, "className" | "s
  * handler this component wires up by hand. The sort indicator glyph below
  * reflects `sortDirection` from that same render state.
  */
-function TableColumn({ children, className, style, ...rest }: TableColumnProps) {
+function TableColumn({ children, className, style, allowsResizing = false, resizerLabel, ...rest }: TableColumnProps) {
   return (
     <AriaColumn
       {...rest}
@@ -98,6 +113,7 @@ function TableColumn({ children, className, style, ...rest }: TableColumnProps) 
         cx(
           "px-md py-sm text-start text-body-s font-body text-ink-secondary outline-none",
           renderProps.allowsSorting ? "cursor-pointer select-none" : "",
+          allowsResizing ? "relative" : "",
           className,
         )
       }
@@ -118,9 +134,50 @@ function TableColumn({ children, className, style, ...rest }: TableColumnProps) 
                   : "↕"}
             </span>
           ) : null}
+          {allowsResizing ? <TableColumnResizer aria-label={resizerLabel} /> : null}
         </span>
       )}
     </AriaColumn>
+  );
+}
+
+/**
+ * The column's resize affordance: a hit area on the header's inline-end
+ * edge holding a hairline that turns accent while hovered, focused or
+ * dragging. Its focus ring is the package's shared focus ring.
+ */
+function TableColumnResizer({ "aria-label": ariaLabel }: { "aria-label"?: string }) {
+  return (
+    <AriaColumnResizer
+      aria-label={ariaLabel}
+      data-table-resizer=""
+      className="group absolute inset-y-0 end-0 flex w-md cursor-col-resize touch-none select-none justify-center outline-none"
+      style={(renderProps) => ({ boxShadow: renderProps.isFocusVisible ? UI_RING_FOCUS : undefined })}
+    >
+      <span
+        aria-hidden="true"
+        className="h-full w-px bg-line-base group-data-[hovered]:bg-accent group-data-[resizing]:bg-accent group-data-[focus-visible]:bg-accent"
+      />
+    </AriaColumnResizer>
+  );
+}
+
+export interface TableResizableContainerProps extends Omit<AriaResizableTableContainerProps, "className" | "style"> {
+  children: ReactNode;
+  className?: string;
+  style?: CSSProperties;
+}
+
+/**
+ * Wraps a `Table` whose columns may be resized. It owns the measured width
+ * the column sizes resolve against and scrolls horizontally when the columns
+ * outgrow it. `onResize` reports widths while dragging; `onResizeEnd` once.
+ */
+function TableResizableContainer({ children, className, style, ...rest }: TableResizableContainerProps) {
+  return (
+    <AriaResizableTableContainer {...rest} className={cx("relative w-full overflow-auto", className)} style={style}>
+      {children}
+    </AriaResizableTableContainer>
   );
 }
 
@@ -273,6 +330,7 @@ function TableSelectionCheckbox({
 export const Table = Object.assign(TableRoot, {
   Header: TableHeaderRoot,
   Column: TableColumn,
+  ResizableContainer: TableResizableContainer,
   Body: TableBodyRoot,
   Row: TableRow,
   Cell: TableCell,

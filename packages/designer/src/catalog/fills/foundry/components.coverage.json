@@ -671,16 +671,15 @@
       ]
     },
     {
-      "missing": [
-        "resize-columns"
-      ],
+      "missing": [],
       "notes": [
-        "No ColumnResizer or resize-columns API is exported.",
+        "Column resizing: wrap in Table.ResizableContainer and set allowsResizing (with defaultWidth/minWidth/maxWidth) on Table.Column.",
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
       ],
       "slot": "components.table",
-      "status": "subset",
+      "status": "candidate",
       "supported": [
+        "resize-columns",
         "selection",
         "sort"
       ]
