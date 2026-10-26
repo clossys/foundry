@@ -82,7 +82,7 @@
         },
         {
           "path": "components/dialog/dialog.tsx",
-          "sha256": "3285b5dfb0ac070adbbcec87a981269df810c2cf9095151658425ff7caef20d4"
+          "sha256": "dd09f450ca194ce3be22c5fba8858632ae0486c18abf361d751bcf4c6778f579"
         },
         {
           "path": "components/dialog/index.ts",

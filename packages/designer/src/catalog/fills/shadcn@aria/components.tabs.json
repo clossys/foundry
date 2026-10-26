@@ -80,7 +80,7 @@
         },
         {
           "path": "components/tabs/tabs.tsx",
-          "sha256": "401eb29ed2a63d5e5c9d6973165202620728fb800823fcaa54ca0fe061deb6bc"
+          "sha256": "be7feceb1caa7055f2e999b39ae031c39c658dc4849bd8286c18dba315520360"
         },
         {
           "path": "notices/THIRD-PARTY.md",

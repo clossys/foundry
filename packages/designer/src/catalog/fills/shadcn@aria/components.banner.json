@@ -70,7 +70,7 @@
         },
         {
           "path": "components/banner/alert.tsx",
-          "sha256": "7b14bcfb3bafa1ccb58c70fe6f50925181155bdc1dd5ab0cee1645bea58cd192"
+          "sha256": "485eca0c6c59df569bcccd7855fda1ca07c4a1a0e073f62df6d3e062d15cd732"
         },
         {
           "path": "components/banner/index.ts",

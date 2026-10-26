@@ -71,7 +71,7 @@
         },
         {
           "path": "components/breadcrumbs/breadcrumb.tsx",
-          "sha256": "ddb328407b6c2d16eaa2899900c8e401290ab1957c44c6faeefb5eeed9f49c84"
+          "sha256": "6e5e0e861a25988cb2a4dce8c5f27578ec22310ebf6e005f62d43e23267abc03"
         },
         {
           "path": "components/breadcrumbs/index.ts",

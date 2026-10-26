@@ -75,7 +75,7 @@
         },
         {
           "path": "components/checkbox/checkbox.tsx",
-          "sha256": "14af67b50a46bfa5329dae146ab8635213a2ab24db5a6e753ab57c3308f0a6c3"
+          "sha256": "e4e0fc1ba9fd80036c8f031d34fadd8758a25791ebb5879692473fc6b314b4a0"
         },
         {
           "path": "notices/THIRD-PARTY.md",

@@ -246,7 +246,7 @@ export function importShadcnAriaComponents(input: ShadcnComponentInput): ShadcnC
     if (name === "dropdown-menu" && !command) throw new Error("menu-profile: authenticated Command source required");
     if (command) { verifyShadcnSource(command); closure.set(command.path, command); }
     const selected = name === "dialog" ? dialogExecutableSource(original) : name === "dropdown-menu" ? menuExecutableSource(original, command!) : name === "toggle" || name === "toggle-group" ? toggleExecutableSource(name, original) : original;
-    const result = rewriteShadcnAria({ item: name, leaf, files: [selected, ...privateFiles], styles: input.styles.content, leafByItem: SHADCN_COMPONENT_ITEMS });
+    const result = rewriteShadcnAria({ item: name, leaf, files: [selected, ...privateFiles], styles: input.styles.content, leafByItem: SHADCN_COMPONENT_ITEMS, styleDefaults: true });
     const files: SourceFile[] = result.files.map(file => {
       const normalized = normalizeSelectedSource(name === "calendar" && file.path === "components/calendar/calendar.tsx" ? { ...file, content: calendarContextSource(file.content) } : file);
       return ["select", "calendar"].includes(name) ? selectedCaptionSource(normalized) : normalized;

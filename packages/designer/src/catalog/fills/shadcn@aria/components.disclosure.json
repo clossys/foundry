@@ -72,7 +72,7 @@
         },
         {
           "path": "components/disclosure/accordion.tsx",
-          "sha256": "08386a9b09039d080bf71de888a65df74811923d742bced33e6e4694811a9328"
+          "sha256": "81a7df328e65212ea38a2dd20f684abb6ea76282f8888b460e04d0b337d56345"
         },
         {
           "path": "components/disclosure/index.ts",
