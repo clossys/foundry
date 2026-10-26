@@ -64,11 +64,11 @@ const EXPECTED_DEFAULTS = {
   "date-field": "foundry", "date-picker": "compose:date-picker@1", dialog: "foundry", disclosure: "foundry", field: "foundry", "grid-list": "foundry", "file-trigger": "foundry", form: "foundry", icon: "foundry", keyboard: "shadcn@aria", link: "foundry", logo: "foundry",
   menu: "foundry", meter: "foundry", "native-action": "foundry", "navigation-tree": "foundry", "number-field": "foundry", popover: "foundry", "progress-bar": "foundry", "radio-group": "foundry",
   "resize-handle": "foundry", "search-field": "foundry", select: "foundry", "semantic-content": "foundry", separator: "shadcn@aria", skeleton: "foundry", slider: "foundry",
-  spinner: "foundry", "status-mark": "foundry", switch: "foundry", table: "foundry", tabs: "foundry", "text-field": "foundry", toast: "foundry", "toggle-button": "foundry", "toggle-group": "foundry",
-  toolbar: "foundry", tooltip: "shadcn@aria",
+  spinner: "foundry", "status-mark": "foundry", switch: "foundry", table: "foundry", tabs: "foundry", "tag-group": "foundry", "text-field": "foundry", toast: "foundry", "toggle-button": "foundry", "toggle-group": "foundry",
+  toolbar: "foundry", tooltip: "shadcn@aria", tree: "foundry",
 };
-/** rac-starter is not a selectable component source (owner rule 2026-10-26); Toolbar is Foundry's again since its measured K5 craft comparison passes. */
-const NOT_CHOSEN = ["tag-group", "tree"];
+/** rac-starter is not a selectable component source (owner rule 2026-10-26); Toolbar, TagGroup and Tree are Foundry's since their measured K5 craft comparison passes. */
+const NOT_CHOSEN: string[] = [];
 const reasons = (plan: ReturnType<typeof planComponentDefaults>, leaf: string) => plan.rows.find(row => row.slot === `components.${leaf}`)!.reasons.join(" || ");
 
 describe("component default fills", () => {
@@ -95,7 +95,7 @@ describe("component default fills", () => {
     // The Foundry Slider keeps the foundry-led controls group coherent, so the slot is no longer left unchosen.
     expect(plan.rows.find(row => row.slot === "components.slider")).toMatchObject({ status: "default", source: "foundry", fill: "foundry/components.slider" });
     expect(plan.rows.find(row => row.slot === "components.date-picker")).toMatchObject({ status: "default", basis: "rule", rule: "compose:date-picker@1", reasons: [] });
-    expect(reasons(plan, "tree")).toBe("foundry: blocked K5 || rac-starter: not a selectable component source (shadcn-on-aria, foundry or consumer-authored only)");
+    for (const leaf of ["tag-group", "tree"]) expect(plan.rows.find(row => row.slot === `components.${leaf}`), leaf).toMatchObject({ status: "default", basis: "preference", source: "foundry", fill: `foundry/components.${leaf}`, reasons: [] });
     expect(plan.rows.find(row => row.slot === "components.toolbar")).toMatchObject({ status: "default", basis: "preference", source: "foundry", fill: "foundry/components.toolbar", reasons: [] });
   });
   it("never offers or defaults a rac-starter fill, whether preferred, owner-picked or chosen (real catalog)", () => {
@@ -104,8 +104,8 @@ describe("component default fills", () => {
     expect(starterSlots.length).toBeGreaterThan(0);
     const plan = planComponentDefaults(input);
     expect(plan.rows.filter(row => row.source === "rac-starter")).toEqual([]);
-    // 52 after vf15 (toolbar unchosen) + toggle-group (vf19) + color-picker and number-field (vf22) + toolbar (vf21) + slider (vf23) = 57.
-    expect(plan.rows.filter(row => row.status !== "not-chosen")).toHaveLength(57);
+    // 52 after vf15 (toolbar unchosen) + toggle-group (vf19) + color-picker and number-field (vf22) + toolbar (vf21) + slider (vf23) + tag-group and tree (vf30) = 59.
+    expect(plan.rows.filter(row => row.status !== "not-chosen")).toHaveLength(59);
     expect(plan.rows).toHaveLength(59);
     const forced = Object.fromEntries(starterSlots.map(slot => [slot, "rac-starter"]));
     for (const plan of [planComponentDefaults({ ...input, picks: forced }), planComponentDefaults({ ...input, choices: forced })]) {
@@ -169,7 +169,7 @@ describe("component default fills", () => {
   it("the fallback never bypasses the checker: a listed leaf whose Foundry candidate fails keeps the exact finding", () => {
     const { input } = setup();
     const plan = planComponentDefaults(input);
-    expect(reasons(plan, "tree")).toContain("foundry: blocked K5");
+    expect(reasons(plan, "number-field")).toContain("foundry: blocked K11");
     expect(plan.rows.find(row => row.slot === "components.calendar")).toMatchObject({ status: "default", basis: "preference", source: "foundry", fill: "foundry/components.calendar" });
     expect(plan.rows.find(row => row.slot === "components.toggle-button")).toMatchObject({ status: "default", basis: "preference", source: "foundry", fill: "foundry/components.toggle-button" });
   });

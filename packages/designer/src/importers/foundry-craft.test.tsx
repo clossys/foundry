@@ -197,12 +197,8 @@ describe("craft comparison rule", () => {
 
 /** The measured deficits that keep these offers blocked; a component fix changes the measurement, not this rule. */
 const EXPECTED_FINDINGS: Record<"tree" | "tag-group", string[]> = {
-  tree: ["tree chevron (nested+disabled+selection=single): target floor absent differs from the benchmark"],
-  "tag-group": [
-    "tag-group tag (removable+disabled): target floor absent differs from the benchmark",
-    "tag-group remove (removable+disabled): focus-visible indicator focus-visible:underline differs from the benchmark",
-    "tag-group remove (removable+disabled): target floor absent differs from the benchmark",
-    "tag-group remove (removable+disabled): no forced-colours focus treatment",
-    "tag-group tag-disabled (removable+disabled): target floor absent differs from the benchmark",
-  ],
+  // Tree.tsx: the chevron carries control-h-md (vf30), so selection-mode rows keep a benchmark expand target.
+  tree: [],
+  // TagGroup.tsx: tags and the remove button carry control-h-md; remove renders the Button focus outline (vf30).
+  "tag-group": [],
 };

@@ -34,3 +34,11 @@ describe("Tree selected row (VF-1 studio-23)", () => {
     expect(beta).not.toHaveClass("hover:bg-surface-sunken");
   });
 });
+
+describe("Tree expansion target (vf30, K5 craft)", () => {
+  it("gives the chevron button the benchmark control target floor, square, so a selecting row still has a reachable expand target", () => {
+    render(<Tree aria-label="Documents" selectionMode="single" defaultExpandedKeys={["folder"]}><Tree.Node id="folder" textValue="Folder" label="Folder" expandLabel="Toggle Folder"><Tree.Node id="child" textValue="Notes" label="Notes" expandLabel="Toggle Notes" /></Tree.Node></Tree>);
+    const chevron = screen.getByRole("button", { name: "Toggle Folder", hidden: true });
+    expect(chevron).toHaveClass("control-h-md", "aspect-square");
+  });
+});

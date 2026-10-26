@@ -703,18 +703,18 @@
       ]
     },
     {
-      "missing": [
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.tag-group",
+      "status": "candidate",
+      "supported": [
         "removable",
         "selection.multiple",
         "selection.none",
         "selection.single"
-      ],
-      "notes": [
-        "No package implementation is available."
-      ],
-      "slot": "components.tag-group",
-      "status": "unavailable",
-      "supported": []
+      ]
     },
     {
       "missing": [],
@@ -822,16 +822,16 @@
       ]
     },
     {
-      "missing": [
-        "expand",
-        "selection"
-      ],
+      "missing": [],
       "notes": [
-        "No package implementation is available."
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
       ],
       "slot": "components.tree",
-      "status": "unavailable",
-      "supported": []
+      "status": "candidate",
+      "supported": [
+        "expand",
+        "selection"
+      ]
     }
   ],
   "package": "@clossys/designer",
