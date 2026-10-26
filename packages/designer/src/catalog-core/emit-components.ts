@@ -10,7 +10,9 @@ export interface ComponentEmitOptions {
   /** Generated S2 module, with its exact export inventory supplied by the integration caller. */
   glyphModule?: { path: string; glyphs: Readonly<Record<string, unknown>> };
 }
-interface Binding { module: string; name: string; property?: string; value?: string | boolean; intrinsic?: true }
+/** One contract member bound to its implementation export, as the emitted component index dispatches it. */
+export interface ComponentMemberBinding { module: string; name: string; property?: string; value?: string | boolean; intrinsic?: true }
+type Binding = ComponentMemberBinding;
 const nameOf = (slot: string): string => slot.slice(11).split("-").map(part => part[0]!.toUpperCase() + part.slice(1)).join("");
 const quote = (value: unknown): string => JSON.stringify(value);
 function relative(from: string, to: string): string {
@@ -66,6 +68,11 @@ export function assertComponentImportClosure(files: readonly ComponentFile[], pa
     if (/\bimport\b/.test(remaining)) throw new CatalogError("components: unverified import syntax");
   }
 }
+/**
+ * Parse one propMap pointer. The emitted component index and the Studio specimen renderer share
+ * this rule, so a specimen dispatches each member exactly as the generated adapter would.
+ */
+export function componentMemberBinding(component: ResolvedComponent, member: string, pointer: string): ComponentMemberBinding { return parseBinding(component, member, pointer); }
 function parseBinding(component: ResolvedComponent, member: string, pointer: string): Binding {
   const intrinsic = /\[data-(?:hovered|pressed|focus-visible)\]$/.test(pointer) && member.startsWith("state.");
   const clean = intrinsic ? pointer.replace(/\[data-(?:hovered|pressed|focus-visible)\]$/, "") : pointer;

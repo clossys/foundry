@@ -36,3 +36,7 @@ export { valueLibraryBoardRecords, valueLibraryBoardPreviews, compositeLibraryBo
 export { planSurfacePreviews, SURFACE_SAMPLE_STATES } from "./planned-surface-previews.js";
 export type { PlannedSurfacePreview, PlannedSurfacePreviewGap, PlannedSurfacePreviews, PlannedSurfacePreviewsInput, SurfaceSampleState } from "./planned-surface-previews.js";
 export type { PreparedLibraryBoardInput, PreparedCompositeLibraryBoardInput } from "./library-board-adapter.js";
+
+// Live component specimens: a host binds its adopted library's modules into `CompositeStudioSnapshot.preview`.
+export { componentSpecimenPreview } from "./component-specimens.js";
+export type { ComponentSpecimenBinding, ComponentSpecimenComponent, ComponentSpecimenMember, ComponentSpecimenModule, ComponentSpecimenOptions, ComponentSpecimenPreview, ComponentSpecimenRefusal, ComponentSpecimenRefusalCode, ComponentSpecimenRender } from "./component-specimens.js";
