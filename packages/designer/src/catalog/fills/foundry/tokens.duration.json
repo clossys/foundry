@@ -57,13 +57,13 @@
       "fast": {
         "$extensions": {
           "com.clossys.css": {
-            "raw": "160ms"
+            "raw": "120ms"
           }
         },
         "$type": "duration",
         "$value": {
           "unit": "ms",
-          "value": 160
+          "value": 120
         }
       },
       "flash": {

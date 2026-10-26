@@ -201,9 +201,9 @@ const legacyProperties = [
 ] as const;
 
 const expectedNew = {
-  "--ui-control-h-sm": ["32px", "control"],
-  "--ui-control-h-md": ["var(--ui-layout-tap-target, 44px)", "control"],
-  "--ui-control-h-lg": ["52px", "control"],
+  "--ui-control-h-sm": ["28px", "control"],
+  "--ui-control-h-md": ["32px", "control"],
+  "--ui-control-h-lg": ["36px", "control"],
   "--ui-control-row-h": ["36px", "control"],
   "--ui-control-mark": ["16px", "control"],
   "--ui-control-switch-w": ["36px", "control"],

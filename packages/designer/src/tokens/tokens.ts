@@ -275,7 +275,7 @@ export const TOKENS: Readonly<Record<string, TokenDefinition>> = {
 
   // ── LEADING (fixed heading line-height role scale) ─────────────────
   "--leading-display": { property: "--leading-display", family: "leading", value: "1.05", brandable: false, themeDependent: false },
-  "--leading-heading": { property: "--leading-heading", family: "leading", value: "1.15", brandable: false, themeDependent: false },
+  "--leading-heading": { property: "--leading-heading", family: "leading", value: "1.2", brandable: false, themeDependent: false },
 
   // ── SPACING (fixed 4px-rooted scale) ───────────────────────────────
   "--spacing-xs": { property: "--spacing-xs", family: "spacing", value: "4px", brandable: false, themeDependent: false },
@@ -379,11 +379,11 @@ export const TOKENS: Readonly<Record<string, TokenDefinition>> = {
 
   // ── UI · DURATION ───────────────────────────────────────────────────
   "--ui-duration-instant": { property: "--ui-duration-instant", family: "duration", value: "80ms", brandable: false, themeDependent: false },
-  "--ui-duration-fast": { property: "--ui-duration-fast", family: "duration", value: "160ms", brandable: false, themeDependent: false },
+  "--ui-duration-fast": { property: "--ui-duration-fast", family: "duration", value: "120ms", brandable: false, themeDependent: false },
   "--ui-duration-default": { property: "--ui-duration-default", family: "duration", value: "240ms", brandable: false, themeDependent: false },
   "--ui-duration-deliberate": { property: "--ui-duration-deliberate", family: "duration", value: "500ms", brandable: false, themeDependent: false },
   "--ui-duration-flash": { property: "--ui-duration-flash", family: "duration", value: "1200ms", brandable: false, themeDependent: false },
-  "--ui-duration-overlay": { property: "--ui-duration-overlay", family: "duration", value: "var(--ui-duration-fast, 160ms)", brandable: false, themeDependent: false },
+  "--ui-duration-overlay": { property: "--ui-duration-overlay", family: "duration", value: "var(--ui-duration-fast, 120ms)", brandable: false, themeDependent: false },
 
   // ── EASING (Tailwind `--ease-*` namespace) ─────────────────────────
   "--ease-default": { property: "--ease-default", family: "easing", value: "cubic-bezier(.2, 0, 0, 1)", brandable: false, themeDependent: false },
@@ -418,9 +418,9 @@ export const TOKENS: Readonly<Record<string, TokenDefinition>> = {
   // ── UI · ALPHA ──────────────────────────────────────────────────────
   "--ui-alpha-disabled": { property: "--ui-alpha-disabled", family: "alpha", value: "0.5", brandable: false, themeDependent: false },
   // Shared control, focus, motion and state roles.
-  "--ui-control-h-sm": { property: "--ui-control-h-sm", family: "control", value: "32px", brandable: false, themeDependent: false },
-  "--ui-control-h-md": { property: "--ui-control-h-md", family: "control", value: "var(--ui-layout-tap-target, 44px)", brandable: false, themeDependent: false },
-  "--ui-control-h-lg": { property: "--ui-control-h-lg", family: "control", value: "52px", brandable: false, themeDependent: false },
+  "--ui-control-h-sm": { property: "--ui-control-h-sm", family: "control", value: "28px", brandable: false, themeDependent: false },
+  "--ui-control-h-md": { property: "--ui-control-h-md", family: "control", value: "32px", brandable: false, themeDependent: false },
+  "--ui-control-h-lg": { property: "--ui-control-h-lg", family: "control", value: "36px", brandable: false, themeDependent: false },
   "--ui-control-row-h": { property: "--ui-control-row-h", family: "control", value: "36px", brandable: false, themeDependent: false },
   "--ui-control-mark": { property: "--ui-control-mark", family: "control", value: "16px", brandable: false, themeDependent: false },
   "--ui-control-switch-w": { property: "--ui-control-switch-w", family: "control", value: "36px", brandable: false, themeDependent: false },

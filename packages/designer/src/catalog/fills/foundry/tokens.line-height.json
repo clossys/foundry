@@ -42,11 +42,11 @@
       "heading": {
         "$extensions": {
           "com.clossys.css": {
-            "raw": "1.15"
+            "raw": "1.2"
           }
         },
         "$type": "number",
-        "$value": 1.15
+        "$value": 1.2
       }
     }
   }

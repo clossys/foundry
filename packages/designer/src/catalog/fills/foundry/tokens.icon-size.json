@@ -26,7 +26,7 @@
       "mode": "derived",
       "pin": {
         "file": "historical Foundry token cells",
-        "sha256": "f01c048dd4396977a0fba16075553b3d8ed453317450f616533f4fd5211670de"
+        "sha256": "ccc1f47619299450e9461e414fd832c76bb4436ef32355e0e45e28f89c201081"
       },
       "relation": "same-contract",
       "slot": "tokens.icon-size",

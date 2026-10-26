@@ -69,7 +69,7 @@
       "light": "var(--color-line-strong, oklch(0.7763 0 0))"
     },
     "--color-chart-axis-label": {
-      "dark": "var(--color-ink-muted, oklch(0.66 0 0))",
+      "dark": "var(--color-ink-muted, oklch(0.7763 0 0))",
       "light": "var(--color-ink-muted, oklch(0.54 0 0))"
     },
     "--color-chart-categorical-1": {
@@ -185,7 +185,7 @@
       "light": "oklch(0.36 0 0)"
     },
     "--color-ink-muted": {
-      "dark": "oklch(0.66 0 0)",
+      "dark": "oklch(0.7763 0 0)",
       "light": "oklch(0.54 0 0)"
     },
     "--color-ink-on-accent": {
@@ -404,7 +404,7 @@
       "light": "1.05"
     },
     "--leading-heading": {
-      "light": "1.15"
+      "light": "1.2"
     },
     "--radius-control": {
       "light": "6px"
@@ -545,13 +545,13 @@
       "light": "24px"
     },
     "--ui-control-h-lg": {
-      "light": "52px"
+      "light": "36px"
     },
     "--ui-control-h-md": {
-      "light": "var(--ui-layout-tap-target, 44px)"
+      "light": "32px"
     },
     "--ui-control-h-sm": {
-      "light": "32px"
+      "light": "28px"
     },
     "--ui-control-mark": {
       "light": "16px"
@@ -587,7 +587,7 @@
       "light": "500ms"
     },
     "--ui-duration-fast": {
-      "light": "160ms"
+      "light": "120ms"
     },
     "--ui-duration-flash": {
       "light": "1200ms"
@@ -605,7 +605,7 @@
       "light": "400ms"
     },
     "--ui-duration-overlay": {
-      "light": "var(--ui-duration-fast, 160ms)"
+      "light": "var(--ui-duration-fast, 120ms)"
     },
     "--ui-duration-tooltip-close": {
       "light": "300ms"
@@ -2483,7 +2483,7 @@
         "light": "tokens.text-color.muted"
       },
       "css": {
-        "dark": "var(--color-ink-muted, oklch(0.66 0 0))",
+        "dark": "var(--color-ink-muted, oklch(0.7763 0 0))",
         "light": "var(--color-ink-muted, oklch(0.54 0 0))"
       },
       "emit": "--color-chart-axis-label",
@@ -2503,7 +2503,7 @@
         "dark": {
           "colorSpace": "oklch",
           "components": [
-            0.66,
+            0.7763,
             0,
             0
           ]
@@ -3562,7 +3562,7 @@
       "$type": "dimension",
       "alias": {},
       "css": {
-        "light": "52px"
+        "light": "36px"
       },
       "emit": "--ui-control-h-lg",
       "fill": "example/tokens.control-size",
@@ -3572,7 +3572,7 @@
         "kind": "adopted",
         "license": "MIT",
         "member": "tokens.control-size.h-lg",
-        "sha256": "4b3d36ca64849089f84cb91e69bb710504c1da6bed44148ee0c41326af12de86",
+        "sha256": "12e0ae34202a8b6e3fc881dca6da5081705e8e5dc450d45047eb8fc9da4ece03",
         "source": "foundry"
       },
       "slot": "tokens.control-size",
@@ -3580,18 +3580,16 @@
       "value": {
         "light": {
           "unit": "px",
-          "value": 52
+          "value": 36
         }
       },
       "via": "adopted"
     },
     "tokens.control-size.h-md": {
       "$type": "dimension",
-      "alias": {
-        "light": "tokens.touch-target.default"
-      },
+      "alias": {},
       "css": {
-        "light": "var(--ui-layout-tap-target, 44px)"
+        "light": "32px"
       },
       "emit": "--ui-control-h-md",
       "fill": "example/tokens.control-size",
@@ -3601,33 +3599,6 @@
         "kind": "adopted",
         "license": "MIT",
         "member": "tokens.control-size.h-md",
-        "sha256": "9a24bbb2acfe60f272cd34f1d7533d181c0f6d5c1bab7b798f0b0534ec4a12ae",
-        "source": "foundry"
-      },
-      "slot": "tokens.control-size",
-      "source": "example",
-      "value": {
-        "light": {
-          "unit": "px",
-          "value": 44
-        }
-      },
-      "via": "adopted"
-    },
-    "tokens.control-size.h-sm": {
-      "$type": "dimension",
-      "alias": {},
-      "css": {
-        "light": "32px"
-      },
-      "emit": "--ui-control-h-sm",
-      "fill": "example/tokens.control-size",
-      "origin": {
-        "adoptedAt": "2026-10-23",
-        "fill": "foundry/tokens.control-size",
-        "kind": "adopted",
-        "license": "MIT",
-        "member": "tokens.control-size.h-sm",
         "sha256": "b61a20c5c5519c593154052406554fcc1fab2b7ff53f9106b74692117604b3ed",
         "source": "foundry"
       },
@@ -3637,6 +3608,33 @@
         "light": {
           "unit": "px",
           "value": 32
+        }
+      },
+      "via": "adopted"
+    },
+    "tokens.control-size.h-sm": {
+      "$type": "dimension",
+      "alias": {},
+      "css": {
+        "light": "28px"
+      },
+      "emit": "--ui-control-h-sm",
+      "fill": "example/tokens.control-size",
+      "origin": {
+        "adoptedAt": "2026-10-23",
+        "fill": "foundry/tokens.control-size",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "tokens.control-size.h-sm",
+        "sha256": "e8bc8f375bd8f1b450d493d77b6736c8b53d8e4599a32214c18d4f0c5f73f13e",
+        "source": "foundry"
+      },
+      "slot": "tokens.control-size",
+      "source": "example",
+      "value": {
+        "light": {
+          "unit": "px",
+          "value": 28
         }
       },
       "via": "adopted"
@@ -4278,7 +4276,7 @@
       "$type": "duration",
       "alias": {},
       "css": {
-        "light": "160ms"
+        "light": "120ms"
       },
       "emit": "--ui-duration-fast",
       "fill": "example/tokens.duration",
@@ -4288,7 +4286,7 @@
         "kind": "adopted",
         "license": "MIT",
         "member": "tokens.duration.fast",
-        "sha256": "cfbf5fa129db3ec1ab217325197a9b8351e28dd5e162ddce7af749d4d0077974",
+        "sha256": "781aca5c67ff05c23be0d9f071d7ab5940b784c36a33e78dd6991717c3abf53f",
         "source": "foundry"
       },
       "slot": "tokens.duration",
@@ -4296,7 +4294,7 @@
       "value": {
         "light": {
           "unit": "ms",
-          "value": 160
+          "value": 120
         }
       },
       "via": "adopted"
@@ -5133,7 +5131,7 @@
       "$type": "number",
       "alias": {},
       "css": {
-        "light": "1.15"
+        "light": "1.2"
       },
       "emit": "--leading-heading",
       "fill": "example/tokens.line-height",
@@ -5143,13 +5141,13 @@
         "kind": "adopted",
         "license": "MIT",
         "member": "tokens.line-height.heading",
-        "sha256": "452e203103e9b9b88fbcdc8d0f8217ae48faaf81b3e360925f0a6ca6024bad40",
+        "sha256": "1d8afb8221ed72a60e45edfee3100ca25e6c44a4a06c07a7de79a25bf63aefe0",
         "source": "foundry"
       },
       "slot": "tokens.line-height",
       "source": "example",
       "value": {
-        "light": 1.15
+        "light": 1.2
       },
       "via": "adopted"
     },
@@ -7129,7 +7127,7 @@
       "$type": "color",
       "alias": {},
       "css": {
-        "dark": "oklch(0.66 0 0)",
+        "dark": "oklch(0.7763 0 0)",
         "light": "oklch(0.54 0 0)"
       },
       "emit": "--color-ink-muted",
@@ -7140,7 +7138,7 @@
         "kind": "adopted",
         "license": "MIT",
         "member": "tokens.text-color.muted",
-        "sha256": "ad041466a2423d848210b78bd6e50e5887699c4faaac8dbbca89a12a31a03651",
+        "sha256": "37620536950686a11972afeb663c1a3d289aff3ddd0425bb0486a1498ad8254d",
         "source": "foundry"
       },
       "slot": "tokens.text-color",
@@ -7149,7 +7147,7 @@
         "dark": {
           "colorSpace": "oklch",
           "components": [
-            0.66,
+            0.7763,
             0,
             0
           ]
@@ -7444,7 +7442,7 @@
         "light": "tokens.duration.fast"
       },
       "css": {
-        "light": "var(--ui-duration-fast, 160ms)"
+        "light": "var(--ui-duration-fast, 120ms)"
       },
       "emit": "--ui-duration-overlay",
       "fill": "example/tokens.transition-duration",
@@ -7462,7 +7460,7 @@
       "value": {
         "light": {
           "unit": "ms",
-          "value": 160
+          "value": 120
         }
       },
       "via": "adopted"
@@ -7894,6 +7892,6 @@
     }
   },
   "notices": [],
-  "selectionHash": "fnv1a64:18fb51ce9373bd60",
+  "selectionHash": "fnv1a64:5b6b2491195597f6",
   "version": 1
 }

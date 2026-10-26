@@ -33,20 +33,16 @@
       "h-lg": {
         "$extensions": {
           "com.clossys.css": {
-            "raw": "52px"
+            "raw": "36px"
           }
         },
         "$type": "dimension",
         "$value": {
           "unit": "px",
-          "value": 52
+          "value": 36
         }
       },
       "h-md": {
-        "$type": "dimension",
-        "$value": "{tokens.touch-target.default}"
-      },
-      "h-sm": {
         "$extensions": {
           "com.clossys.css": {
             "raw": "32px"
@@ -56,6 +52,18 @@
         "$value": {
           "unit": "px",
           "value": 32
+        }
+      },
+      "h-sm": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "28px"
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "px",
+          "value": 28
         }
       },
       "mark": {

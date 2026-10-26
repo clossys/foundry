@@ -80,7 +80,7 @@ function buildFixture(fixture: string, next: string, bundler: typeof bundlers[nu
   expect(html).toContain('data-kind="chart"');
   expect(html).toContain('aria-label="--ui-duration-overlay"');
   expect(html).toContain('data-kind="motion"');
-  expect(html).toContain("<code>var(--ui-duration-fast, 160ms)</code>");
+  expect(html).toContain("<code>var(--ui-duration-fast, 120ms)</code>");
   expect(html).toContain('aria-label="--breakpoint-tablet"');
   expect(html).toContain('data-kind="breakpoint"');
   expect(html).toContain("var(--breakpoint-tablet, 768px)");

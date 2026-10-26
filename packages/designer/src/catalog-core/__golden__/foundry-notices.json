@@ -868,7 +868,7 @@
       "kind": "adopted",
       "license": "MIT",
       "member": "tokens.control-size.h-lg",
-      "sha256": "4b3d36ca64849089f84cb91e69bb710504c1da6bed44148ee0c41326af12de86",
+      "sha256": "12e0ae34202a8b6e3fc881dca6da5081705e8e5dc450d45047eb8fc9da4ece03",
       "source": "foundry"
     },
     {
@@ -878,7 +878,7 @@
       "kind": "adopted",
       "license": "MIT",
       "member": "tokens.control-size.h-md",
-      "sha256": "9a24bbb2acfe60f272cd34f1d7533d181c0f6d5c1bab7b798f0b0534ec4a12ae",
+      "sha256": "b61a20c5c5519c593154052406554fcc1fab2b7ff53f9106b74692117604b3ed",
       "source": "foundry"
     },
     {
@@ -888,7 +888,7 @@
       "kind": "adopted",
       "license": "MIT",
       "member": "tokens.control-size.h-sm",
-      "sha256": "b61a20c5c5519c593154052406554fcc1fab2b7ff53f9106b74692117604b3ed",
+      "sha256": "e8bc8f375bd8f1b450d493d77b6736c8b53d8e4599a32214c18d4f0c5f73f13e",
       "source": "foundry"
     },
     {
@@ -1118,7 +1118,7 @@
       "kind": "adopted",
       "license": "MIT",
       "member": "tokens.duration.fast",
-      "sha256": "cfbf5fa129db3ec1ab217325197a9b8351e28dd5e162ddce7af749d4d0077974",
+      "sha256": "781aca5c67ff05c23be0d9f071d7ab5940b784c36a33e78dd6991717c3abf53f",
       "source": "foundry"
     },
     {
@@ -1428,7 +1428,7 @@
       "kind": "adopted",
       "license": "MIT",
       "member": "tokens.line-height.heading",
-      "sha256": "452e203103e9b9b88fbcdc8d0f8217ae48faaf81b3e360925f0a6ca6024bad40",
+      "sha256": "1d8afb8221ed72a60e45edfee3100ca25e6c44a4a06c07a7de79a25bf63aefe0",
       "source": "foundry"
     },
     {
@@ -2018,7 +2018,7 @@
       "kind": "adopted",
       "license": "MIT",
       "member": "tokens.text-color.muted",
-      "sha256": "ad041466a2423d848210b78bd6e50e5887699c4faaac8dbbca89a12a31a03651",
+      "sha256": "37620536950686a11972afeb663c1a3d289aff3ddd0425bb0486a1498ad8254d",
       "source": "foundry"
     },
     {
