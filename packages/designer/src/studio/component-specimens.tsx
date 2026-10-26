@@ -2,8 +2,8 @@
 import { Component as ReactComponent, createElement, useCallback, useContext, useEffect, useState, type ComponentType, type ErrorInfo, type ReactNode } from "react";
 import { componentMemberBinding } from "../catalog-core/emit-components.js";
 import type { CompositeResolved, ResolvedComponent } from "../catalog-core/index.js";
-import { componentSpecimenSample, type ComponentSpecimenSample } from "./component-specimen-samples.js";
-import { PreviewOutcomeContext } from "./preview-outcome.js";
+import { componentSpecimenSample, componentSpecimenUnavailableReason, type ComponentSpecimenSample } from "./component-specimen-samples.js";
+import { PreviewOutcomeContext, type SpecimenUnavailableReason } from "./preview-outcome.js";
 
 /** The named exports of one module the host imported, e.g. `import * as components from "@clossys/designer/components"`. */
 export type ComponentSpecimenModule = Readonly<Record<string, unknown>>;
@@ -14,6 +14,9 @@ export type ComponentSpecimenComponent = ComponentType<Record<string, unknown>>;
 export interface ComponentSpecimenMember {
   readonly member: string;
   readonly Component: ComponentSpecimenComponent;
+  /** The module specifier and export name the member's pointer dispatches to (`./shell#Brandmark` reads from the shell module). */
+  readonly specifier: string;
+  readonly exportName: string;
   readonly props: Readonly<Record<string, unknown>>;
   /** A hover, press or focus-visible state: the implementation sets it on interaction, a static render cannot. */
   readonly interaction: boolean;
@@ -88,28 +91,35 @@ class SpecimenBoundary extends ReactComponent<{ readonly name: string; readonly 
 }
 
 /**
- * The specimens of one leaf. Once every one of them has thrown (or the provider around them has), it reports
- * `specimen-error` to the leaf cell, which then reads unavailable with that reason instead of live.
+ * The specimens of one leaf. Once every one it tries has thrown (or the provider around them has), it reports
+ * `specimen-error` to the leaf cell, which then reads unavailable with that reason instead of live. When it
+ * tries none, because sample data cannot draw any of them, it reports their named reason.
  */
-function SpecimenSet({ total, children }: { readonly total: number; readonly children: (onFail: (name: string) => void, onProviderFail: () => void) => ReactNode }) {
+function SpecimenSet({ total, unavailable, children }: { readonly total: number; readonly unavailable?: SpecimenUnavailableReason; readonly children: (onFail: (name: string) => void, onProviderFail: () => void) => ReactNode }) {
   const report = useContext(PreviewOutcomeContext);
   const [failed, setFailed] = useState<{ readonly names: ReadonlySet<string>; readonly provider: boolean }>(() => ({ names: new Set(), provider: false }));
   const onFail = useCallback((name: string) => setFailed(previous => previous.names.has(name) ? previous : { ...previous, names: new Set(previous.names).add(name) }), []);
   const onProviderFail = useCallback(() => setFailed(previous => previous.provider ? previous : { ...previous, provider: true }), []);
-  const reason = failed.provider || failed.names.size >= total ? "specimen-error" : undefined;
+  const reason = failed.provider || (total > 0 && failed.names.size >= total) ? "specimen-error" : total === 0 ? unavailable ?? "specimen-error" : undefined;
   useEffect(() => { report?.(reason); }, [report, reason]);
   useEffect(() => () => report?.(undefined), [report]);
   return children(onFail, onProviderFail);
 }
 
-/** A sample describes the base export; a member bound to another export (`./shell#Brandmark`) keeps its label. */
-function defaultSpecimen(binding: ComponentSpecimenBinding, sample: ComponentSpecimenSample | undefined, onFail: (name: string) => void): ReactNode {
-  const rows = [{ member: binding.leaf, Component: binding.Component, props: {} }, ...binding.members.filter(member => member.drawn)];
-  return rows.map(row => <div key={row.member} data-component-specimen={row.member}>
-    <SpecimenBoundary name={row.member} onFail={onFail}>{sample && row.Component === binding.Component
+type SpecimenRow = { readonly member: string; readonly Component: ComponentSpecimenComponent; readonly props: Readonly<Record<string, unknown>>; readonly specifier: string; readonly exportName: string };
+const specimenRows = (binding: ComponentSpecimenBinding): SpecimenRow[] =>
+  [{ member: binding.leaf, Component: binding.Component, props: {}, specifier: binding.specifier, exportName: binding.exportName }, ...binding.members.filter(member => member.drawn)];
+
+/**
+ * A sample describes the base export; a member bound to another export keeps its label. A row whose export
+ * sample data cannot draw (`unavailableOf`) is marked with the reason and never rendered.
+ */
+function defaultSpecimen(binding: ComponentSpecimenBinding, sample: ComponentSpecimenSample | undefined, unavailableOf: (row: SpecimenRow) => SpecimenUnavailableReason | undefined, onFail: (name: string) => void): ReactNode {
+  return specimenRows(binding).map(row => { const unavailable = unavailableOf(row); return <div key={row.member} data-component-specimen={row.member}>
+    {unavailable ? <span hidden data-specimen-unavailable={unavailable} /> : <SpecimenBoundary name={row.member} onFail={onFail}>{sample && row.Component === binding.Component
       ? createElement(row.Component, { ...sample.props, children: sample.children, ...row.props })
-      : createElement(row.Component, { ...row.props }, row.member)}</SpecimenBoundary>
-  </div>);
+      : createElement(row.Component, { ...row.props }, row.member)}</SpecimenBoundary>}
+  </div>; });
 }
 
 /** `@scope/name/charts` is `./charts`; a sample key is the export address a Foundry fill pins (`./charts#BarChart`). */
@@ -150,7 +160,7 @@ export function componentSpecimenPreview(options: ComponentSpecimenOptions): Com
       if ("refusal" in target) return target;
       const interaction = binding.intrinsic === true;
       const drawn = !interaction && binding.property !== undefined && (typeof binding.value === "string" || (member.startsWith("state.") && binding.value === true));
-      members.push({ member, Component: target.value, props: binding.property ? { [binding.property]: binding.value } : {}, interaction, drawn });
+      members.push({ member, Component: target.value, specifier: binding.module, exportName: binding.name, props: binding.property ? { [binding.property]: binding.value } : {}, interaction, drawn });
     }
     const source = component.origin.kind === "adopted" ? component.origin.source : component.descriptor.source;
     return { binding: { leaf, source, Component: base.value, specifier, exportName: component.impl.export, exports: base.namespace, members, unbound } };
@@ -160,15 +170,19 @@ export function componentSpecimenPreview(options: ComponentSpecimenOptions): Com
     if ("refusal" in bound) return undefined;
     const { binding } = bound;
     const render = options.specimens && Object.hasOwn(options.specimens, leaf) ? options.specimens[leaf] : undefined;
-    const descriptor = profile.components.components[leaf]!.descriptor;
-    const sample = render || descriptor.source !== "foundry" || profile.components.components[leaf]!.impl.kind !== "package" ? undefined
-      : componentSpecimenSample(sampleKey(binding.specifier, binding.exportName), binding.Component, binding.exports);
-    const total = render ? 1 : 1 + binding.members.filter(member => member.drawn).length;
+    const component = profile.components.components[leaf]!;
+    // Designer samples (and the reasons sample data cannot draw an export) cover Foundry's own package exports only.
+    const samples = !render && component.descriptor.source === "foundry" && component.impl.kind === "package";
+    const sample = samples ? componentSpecimenSample(sampleKey(binding.specifier, binding.exportName), binding.Component, binding.exports) : undefined;
+    const unavailableOf = (row: SpecimenRow) => samples ? componentSpecimenUnavailableReason(sampleKey(row.specifier, row.exportName)) : undefined;
+    const rows = render ? [] : specimenRows(binding);
+    const unavailable = rows.map(unavailableOf).filter(reason => reason !== undefined);
+    const total = render ? 1 : rows.length - unavailable.length;
     const Provider = options.provider;
     // A new selection or library remounts the set, so an earlier failure never outlives the specimens it described.
     return <div data-component-specimens={leaf} data-specimen-source={binding.source} className="flex flex-wrap items-center gap-md">
-      <SpecimenSet key={`${profile.selectionHash}:${binding.specifier}#${binding.exportName}`} total={total}>{(onFail, onProviderFail) => {
-        const content = render ? <SpecimenBoundary name={leaf} onFail={onFail}>{render(binding)}</SpecimenBoundary> : defaultSpecimen(binding, sample, onFail);
+      <SpecimenSet key={`${profile.selectionHash}:${binding.specifier}#${binding.exportName}`} total={total} unavailable={unavailable[0]}>{(onFail, onProviderFail) => {
+        const content = render ? <SpecimenBoundary name={leaf} onFail={onFail}>{render(binding)}</SpecimenBoundary> : defaultSpecimen(binding, sample, unavailableOf, onFail);
         return Provider ? <SpecimenBoundary name={leaf} onFail={onProviderFail}><Provider>{content}</Provider></SpecimenBoundary> : content;
       }}</SpecimenSet>
     </div>;

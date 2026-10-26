@@ -1,6 +1,7 @@
 "use client";
 import type { ComponentType, ReactNode } from "react";
-import { componentSpecimenCollections, componentSpecimenColor, componentSpecimenField, componentSpecimenOverlays, componentSpecimenProps, componentSpecimenTable, componentSpecimenText } from "./component-specimen-sample-content.js";
+import { componentSpecimenCollections, componentSpecimenColor, componentSpecimenField, componentSpecimenOverlays, componentSpecimenProps, componentSpecimenTable, componentSpecimenText, componentSpecimenUnavailable } from "./component-specimen-sample-content.js";
+import type { SpecimenUnavailableReason } from "./preview-outcome.js";
 
 type Renderable = ComponentType<Record<string, unknown>>;
 type Namespace = Readonly<Record<string, unknown>>;
@@ -79,6 +80,10 @@ function colorPicker(Component: unknown): ComponentSpecimenSample | undefined {
   const { label, defaultValue, swatches } = componentSpecimenColor;
   return { props: { defaultValue }, children: <SwatchPicker aria-label={label}>{swatches.map(color => <Swatch key={color} color={color} />)}</SwatchPicker> };
 }
+
+/** Why sample data cannot draw this export (`./shell#Toaster`), or undefined when it can. */
+export const componentSpecimenUnavailableReason = (key: string): SpecimenUnavailableReason | undefined =>
+  Object.hasOwn(componentSpecimenUnavailable, key) ? componentSpecimenUnavailable[key] : undefined;
 
 /**
  * Designer-provided sample content for a Foundry component export (`./components#Meter`), so a data-driven

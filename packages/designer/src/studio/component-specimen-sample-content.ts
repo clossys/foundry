@@ -1,3 +1,5 @@
+import type { SpecimenUnavailableReason } from "./preview-outcome.js";
+
 /**
  * Neutral sample content for Studio specimens of data-driven Foundry components. Data only:
  * component-specimen-samples.tsx renders each bound implementation export with it. Keyed by the
@@ -76,3 +78,11 @@ export const componentSpecimenColor = {
   defaultValue: "hsl(215, 65%, 50%)",
   swatches: ["hsl(215, 65%, 50%)", "hsl(155, 55%, 40%)", "hsl(30, 75%, 55%)"],
 } as const;
+
+/**
+ * Exports a preview cannot draw from sample data, and why. The toast region renders only the app-wide queue
+ * (it takes no queue of its own).
+ */
+export const componentSpecimenUnavailable: Readonly<Record<string, SpecimenUnavailableReason>> = {
+  "./shell#Toaster": "needs-host-queue",
+};

@@ -10385,6 +10385,9 @@ a placeholder. A specimen that throws is replaced by a hidden
 `data-specimen-error` marker. The cell stays live while at least one specimen
 renders. Once every specimen of a leaf has thrown, or the provider has, the cell
 reads `data-preview-state="unavailable"` with `data-preview-reason="specimen-error"`.
+The toast region draws only the app-wide `toast()` queue and takes no queue of
+its own, so without a host specimen its cell reads unavailable with
+`data-preview-reason="needs-host-queue"`; a preview never pushes into that queue.
 
 ### Consumer runtime ports and responsive assembly evidence
 

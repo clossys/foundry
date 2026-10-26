@@ -214,19 +214,26 @@ it("draws every Foundry package component live from designer sample content when
   const specimens = componentSpecimenPreview({ modules: hostModules });
   const leaves = foundryLeaves();
   expect(leaves.length).toBeGreaterThan(50);
-  const blank: string[] = [];
+  const blank: string[] = [], unavailableCells: Record<string, string | undefined> = {}, unavailableMembers: Record<string, string> = {};
   for (const { leaf, profile } of leaves) {
     render(<CandidateCell labels={labels} preview={specimens.preview(leaf, profile)} />);
     const cell = document.querySelector<HTMLElement>("[data-candidate-cell]")!;
     await new Promise(resolve => setTimeout(resolve, 0));
-    const drawn = [...cell.querySelectorAll<HTMLElement>("[data-component-specimen]")].filter(node => !node.querySelector("[data-specimen-error]") && node.childElementCount > 0);
-    // The base specimen, drawn with the sample content, never throws.
     expect(cell.querySelector(`[data-component-specimen="${leaf}"] [data-specimen-error]`), leaf).toBeNull();
-    if (cell.dataset.previewState !== "live" || drawn.length === 0) blank.push(leaf);
+    for (const node of cell.querySelectorAll<HTMLElement>("[data-component-specimen]")) {
+      const marker = node.querySelector<HTMLElement>("[data-specimen-unavailable]");
+      if (marker && cell.dataset.previewState === "live") unavailableMembers[`${leaf}/${node.dataset.componentSpecimen}`] = marker.dataset.specimenUnavailable!;
+    }
+    const drawn = [...cell.querySelectorAll<HTMLElement>("[data-component-specimen]")].filter(node => !node.querySelector("[data-specimen-error], [data-specimen-unavailable]") && node.childElementCount > 0);
+    if (cell.dataset.previewState === "unavailable") unavailableCells[leaf] = cell.dataset.previewReason;
+    else if (cell.dataset.previewState !== "live" || drawn.length === 0) blank.push(leaf);
     cleanup();
   }
-  // The toast region draws only what the app-wide `toast()` queue holds; a preview never pushes into it.
-  expect(blank).toEqual(["components.toast"]);
+  // Live means drawn: no cell reads live over an empty plate.
+  expect(blank).toEqual([]);
+  // The toast region draws only the app-wide queue, which it does not let a preview replace; the cell names why.
+  expect(unavailableCells).toEqual({ "components.toast": "needs-host-queue" });
+  expect(unavailableMembers).toEqual({});
   errors.mockRestore();
 });
 
