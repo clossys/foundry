@@ -151,6 +151,18 @@ describe("AppNavigation", () => {
     expect(screen.getByRole("link", { name: "Catalogs" })).toHaveAttribute("href", "#catalogs");
   });
 
+  it("turns the disclosure chevron on the motion tokens and snaps under reduced motion", async () => {
+    render(<AppNavigation tree={tree} activeId="home" />);
+    const glyph = (name: string) => screen.getByRole("button", { name }).querySelector("svg")!;
+    const MOTION = ["transition-transform", "duration-(--ui-duration-fast)", "ease-(--ease-default)", "motion-reduce:transition-none"];
+    const closed = glyph("Expand Catalogs");
+    expect(closed).toHaveClass(...MOTION);
+    expect(closed).not.toHaveClass("rotate-180");
+    await userEvent.click(screen.getByRole("button", { name: "Expand Catalogs" }));
+    const open = glyph("Collapse Catalogs");
+    expect(open).toHaveClass(...MOTION, "rotate-180");
+  });
+
   it("uses the existing named 44px target contracts without caller inline sizing", () => {
     render(<AppNavigation tree={tree} activeId="blocks" />);
     for (const name of ["Home", "Catalogs", "Blocks"]) {
@@ -405,7 +417,7 @@ describe("AppNavigation", () => {
       expect(source).not.toMatch(/(?:from|import\s*)\s*["'][^"']*(?:router|storage|theme|shell|AccountMenu|publisher)/i);
       expect(source).not.toMatch(/\b(?:localStorage|sessionStorage|fetch|XMLHttpRequest)\b/);
       expect(source).not.toMatch(/#[\da-f]{3,8}\b|\b(?:rgb|oklch)\(/i);
-      expect(source).not.toMatch(/forced-color-adjust-none|animate-|transition-(?!none)/);
+      expect(source).not.toMatch(/forced-color-adjust-none|animate-|transition-(?!none|transform\b)/);
     }
   });
 });

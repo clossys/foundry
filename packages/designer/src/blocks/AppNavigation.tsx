@@ -59,6 +59,8 @@ function defaultDisclosureLabel(nodeLabel: string, expanded: boolean): string {
   return (expanded ? "Collapse " : "Expand ") + nodeLabel;
 }
 
+/** The disclosure chevron turns on the fast duration and default easing tokens and snaps under reduced motion. */
+const CHEVRON_MOTION = "transition-transform duration-(--ui-duration-fast) ease-(--ease-default) motion-reduce:transition-none";
 const CONTROL = "flex min-w-0 items-center justify-start gap-sm rounded-control border-0 bg-transparent px-sm py-sm text-start text-ink-primary no-underline hover:no-underline hover:bg-surface-sunken focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent focus-visible:-outline-offset-2";
 
 /** Keep the overlay absent until the browser has completed focus-induced scrolling. */
@@ -190,7 +192,7 @@ export function AppNavigation({ onNavigate, fullViewport = false, retainMounted 
             data-application-navigation-control="" data-navigation-node-id={node.id}
             aria-label={formatDisclosureLabel(node.label, isExpanded)} aria-labelledby="" aria-expanded={isExpanded}>
             {!node.href && !node.onAction && <span className="min-w-0 flex-1 truncate">{node.label}</span>}
-            <Icon glyph={ChevronDown} decorative size="sm" className={isExpanded ? "rotate-180" : undefined} />
+            <Icon glyph={ChevronDown} decorative size="sm" className={cx(CHEVRON_MOTION, isExpanded && "rotate-180")} />
           </Button>}
         </div>
       }</NavigationTreeItemContent>
