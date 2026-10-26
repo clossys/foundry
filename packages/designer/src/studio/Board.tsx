@@ -15,7 +15,7 @@ import type { StudioCandidateWorkflow } from "./types.js";
 import { activeCandidateSource } from "./candidate-display.js";
 import { valueBoardPrompt } from "./prepared-library-boards.js";
 import { CompactPreview } from "./previews.js";
-import { BoardChosenSummary, LeafLabel } from "./board-summary.js";
+import { BoardChosenSummary, CompactLeafLine, LeafLabel } from "./board-summary.js";
 
 /**
  * One fixed-shape plate per row so chosen and unchosen rows line up. It shows the specimen alone:
@@ -56,7 +56,7 @@ export const Board = memo(function Board({ board, boardRef, summary, onOpen, wor
       {check ? <p className="break-words text-ink-secondary">{check}</p> : null}
       <ul className="flex flex-col gap-md">{rows.map(row => { const active = row.candidates.find(candidate => candidate.selected), source = activeCandidateSource(row.candidates); return <li key={row.id} data-studio-compact-specimen={row.id} className="flex min-w-0 items-center gap-md">
         <div data-compact-plate="" aria-hidden className={COMPACT_PLATE}>{active ? <CompactPreview candidate={active} labels={matrix.labels} /> : null}</div>
-        <p className="min-w-0 break-words"><span className="text-ink-primary">{row.label}</span> <span className={source ? "text-ink-secondary" : "text-ink-muted"}>{source ?? text.notChosen}</span></p>
+        <CompactLeafLine id={row.id} name={matrix.labels.leafName?.(row.id) ?? (row.label !== row.id ? row.label : undefined)} source={source ?? undefined} notChosen={text.notChosen} />
       </li>; })}</ul>
     </div> : undefined}
     // Overview: the board name, its check summary and the only Open action.

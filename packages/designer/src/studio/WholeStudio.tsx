@@ -24,7 +24,8 @@ import { Tooltip } from "../components/Tooltip.js";
 import { PREVIEW_CHOICE_CLASS } from "./CandidateChoice.js";
 import { CandidateCell } from "./CandidateCell.js";
 import { BoardHeader, LeafCell } from "../blocks/library-board/LeafCell.js";
-import { BoardChosenSummary, LeafLabel } from "./board-summary.js";
+import { BoardChosenSummary, CompactLeafLine, defaultRuntimePendingLabel, LeafLabel, RuntimePendingLine } from "./board-summary.js";
+import { checkCounts, isRuntimePending } from "./runtime-pending.js";
 import { CandidatePromptDialog } from "./CandidatePromptDialog.js";
 import { Table } from "../components/Table.js";
 import { CanvasSurface } from "../blocks/canvas/CanvasSurface.js";
@@ -44,10 +45,10 @@ export function WholeStudioRightPanel() {
   const slots = s.contracts.slots.filter(slot => slot.layer === s.layer);
   const findings = profile?.check.findings.filter(f => s.layer === "components" ? f.code.startsWith("K") : !f.code.startsWith("K")) ?? [];
   const runtimeLayer = s.layer === "sections" || s.layer === "frames";
-  const errors = findings.filter(f => f.severity === "error").length;
+  const counts = checkCounts(findings), errors = counts.errors;
   return <><StudioStatus labels={s.labels} state={s.valueSession && s.feedback ? { ...s.valueSession, ...s.feedback } : undefined} />
     <Button variant="ghost" onPress={() => s.setScore(v => !v)} aria-expanded={s.score}>{s.labels.scorecard.title}</Button>
-    {s.score && (s.layer === "tokens" || s.layer === "assets") && values.summary ? <Scorecard summary={values.summary} labels={s.labels} onClose={() => s.setScore(false)} onIssue={id => values.canvasActions.current?.reveal(id, true)} /> : s.score ? <section aria-label={s.labels.scorecard.title} className="border border-line-base bg-surface-base p-md"><Button onPress={() => s.setScore(false)}>{s.labels.scorecard.close}</Button><p>{s.labels.scorecard.title}</p><p>{runtimeLayer ? s.labels.whole.unassessed : s.labels.checkSummary(errors, 0)}</p>{!runtimeLayer ? <p>{s.labels.whole.unassessed}</p> : null}{findings.map((f, i) => <p key={i}>{f.code}: {f.message}</p>)}{s.evaluated?.error ? <p role="alert">{s.evaluated.error}</p> : null}</section> : null}
+    {s.score && (s.layer === "tokens" || s.layer === "assets") && values.summary ? <Scorecard summary={values.summary} labels={s.labels} onClose={() => s.setScore(false)} onIssue={id => values.canvasActions.current?.reveal(id, true)} /> : s.score ? <section aria-label={s.labels.scorecard.title} className="border border-line-base bg-surface-base p-md"><Button onPress={() => s.setScore(false)}>{s.labels.scorecard.close}</Button><p>{s.labels.scorecard.title}</p><p>{runtimeLayer ? s.labels.whole.unassessed : s.labels.checkSummary(errors, 0)}</p>{!runtimeLayer ? <RuntimePendingLine count={counts.pending} label={s.labels.runtimePending} /> : null}{!runtimeLayer ? <p>{s.labels.whole.unassessed}</p> : null}{findings.map((f, i) => <p key={i}>{f.code}: {f.message}</p>)}{s.evaluated?.error ? <p role="alert">{s.evaluated.error}</p> : null}</section> : null}
   </>;
 }
 
@@ -167,7 +168,8 @@ const ContractBoards = memo(function ContractBoards({ boards, layer, query, edit
           const data = (id: string, refresh = false) => compositeBoardPrompt({ board: { id: boardKey, label: board.label, leaves }, leaf: id, consumer: consumer ?? "", slots, profile, workflow: candidateWorkflow, returnStep: t.board.returnStep }, refresh);
           const prompt = (id: string, refresh = false) => <CandidatePromptDialog trigger={<Button variant="ghost" size="sm">{refresh ? t.board.refresh : t.board.create}</Button>} data={data(id, refresh)} labels={t} workflow={candidateWorkflow} />;
           const findings = profile?.check.findings.filter(finding => board.leaves.some(leaf => finding.subject === leaf.id || finding.subject.startsWith(leaf.id + "."))) ?? [];
-          const summary = t.checkSummary(findings.filter(finding => finding.severity === "error").length, findings.filter(finding => finding.severity === "notice").length);
+          // Runtime-pending findings keep their own neutral count; they never add to the error count.
+          const counts = checkCounts(findings), summary = t.checkSummary(counts.errors, counts.notices);
           const chosen = (id: string) => profile?.components.components[id]?.descriptor.source ?? runtime?.manifest.fills.find(fill => fill.leaf === id)?.library;
           const chosenLine = (className: string) => t.chosenSummary ? <BoardChosenSummary className={className} label={t.chosenSummary} chosen={leaves.filter(leaf => chosen(leaf.id)).length} total={leaves.length} /> : null;
           return <section key={board.id} tabIndex={-1} data-studio-board={boardKey} data-board-mode={isEditing ? "edit" : "view"} aria-labelledby={`${headingBase}${boardKey}`} className="h-max w-max shrink-0 rounded-surface border border-line-base bg-surface-base p-md">
@@ -175,12 +177,14 @@ const ContractBoards = memo(function ContractBoards({ boards, layer, query, edit
             <CanvasLodLayers compact={<div data-studio-zoom-compact="" className="flex flex-col gap-md text-h0">
               {chosenLine("text-ink-primary")}
               {summary ? <p className="break-words text-ink-secondary">{summary}</p> : null}
-              <ul className="flex flex-col gap-sm">{leaves.map(leaf => { const source = chosen(leaf.id); return <li key={leaf.id} className="break-words"><span className="text-ink-primary">{leaf.id}</span> <span className={source ? "text-ink-secondary" : "text-ink-muted"}>{source ?? t.board.notChosen}</span></li>; })}</ul>
+              <RuntimePendingLine count={counts.pending} label={t.runtimePending} />
+              <ul className="flex flex-col gap-sm">{leaves.map(leaf => <li key={leaf.id}><CompactLeafLine id={leaf.id} name={t.leafName?.(leaf.id)} source={chosen(leaf.id)} notChosen={t.board.notChosen} /></li>)}</ul>
             </div>}
             overview={<div data-studio-zoom-summary="" className="flex flex-col items-start gap-md">
               <p className="break-words text-display-xl text-ink-primary">{board.label}</p>
               {chosenLine("text-display-m text-ink-primary")}
               {summary ? <p className="break-words text-display-m text-ink-secondary">{summary}</p> : null}
+              <RuntimePendingLine count={counts.pending} label={t.runtimePending} className="text-display-m" />
               <Button variant="ghost" size="sm" onPress={event => { const element = (event.target as HTMLElement).closest<HTMLElement>("[data-studio-board]"); if (element) open(element); }}>{t.canvas.openBoard(board.label)}</Button>
             </div>}
             full={<div data-studio-zoom-full="" className="w-max">{!isEditing ? <Table aria-label={t.matrix.label} className="w-max"><Table.Header><Table.Column id="leaf" isRowHeader>{t.matrix.leaf}</Table.Column><Table.Column id="preview"><span className="sr-only">{t.stageLabel}</span></Table.Column></Table.Header><Table.Body>{leaves.map(leaf => {
@@ -195,10 +199,11 @@ const ContractBoards = memo(function ContractBoards({ boards, layer, query, edit
                 cells: { "studio-custom-actions": <div className="flex gap-sm">{prompt(leaf.id)}{profile?.components.components[leaf.id]?.descriptor.source === consumer ? prompt(leaf.id, true) : null}</div>, ...Object.fromEntries(columns.map(source => {
                   const candidate = candidates.find(candidate => candidate.meta.slot === leaf.id && candidate.meta.source === source);
                   if (!candidate?.result) return [source, null];
-                  const errors = candidate.result.findings.filter(f => f.severity === "error").length + (candidate.error || !candidate.result.available ? 1 : 0);
-                  const notices = candidate.result.findings.filter(f => f.severity === "notice").length;
-                  return [source, <div className="relative"><RadioGroup.Radio value={source} aria-label={t.useSource(source, leaf.id)} isDisabled={!candidate.result.available || errors > 0} className={PREVIEW_CHOICE_CLASS}><CandidateCell labels={t} preview={candidate.node} /></RadioGroup.Radio>
-                    {errors > 0 ? <Tooltip trigger={<Button variant="ghost" size="sm" aria-label={t.checkSummary(errors, notices)}><Badge variant="danger">!</Badge></Button>}>{t.checkSummary(errors, notices)}{candidate.result.findings.map((finding, index) => <p key={index}>{finding.code}: {finding.message}</p>)}{candidate.error ?? (!candidate.result.available ? candidate.result.error : null)}</Tooltip> : null}
+                  const counts = checkCounts(candidate.result.findings);
+                  // Selection still requires a clean check; only the badge tone separates pending from real errors.
+                  const blocked = counts.errors + counts.pending + (candidate.error || !candidate.result.available ? 1 : 0), errors = blocked - counts.pending, notices = counts.notices;
+                  return [source, <div className="relative"><RadioGroup.Radio value={source} aria-label={t.useSource(source, leaf.id)} isDisabled={!candidate.result.available || blocked > 0} className={PREVIEW_CHOICE_CLASS}><CandidateCell labels={t} preview={candidate.node} /></RadioGroup.Radio>
+                    {blocked > 0 ? <Tooltip trigger={<Button variant="ghost" size="sm" aria-label={[errors > 0 ? t.checkSummary(errors, notices) : "", counts.pending ? (t.runtimePending ?? defaultRuntimePendingLabel)(counts.pending) : ""].filter(Boolean).join(", ")}><Badge data-studio-check-tone={errors > 0 ? "error" : "runtime-pending"} variant={errors > 0 ? "danger" : "neutral"}>{errors > 0 ? "!" : "…"}</Badge></Button>}>{errors > 0 ? t.checkSummary(errors, notices) : null}<RuntimePendingLine count={counts.pending} label={t.runtimePending} />{candidate.result.findings.map((finding, index) => <p key={index} data-studio-runtime-pending-finding={isRuntimePending(finding) ? "" : undefined}>{finding.code}: {finding.message}</p>)}{candidate.error ?? (!candidate.result.available ? candidate.result.error : null)}</Tooltip> : null}
                   </div>];
                 })) }
               }))} /> : leaves.map(leaf => {

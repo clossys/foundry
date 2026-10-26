@@ -1,7 +1,7 @@
 import { afterEach, expect, it } from "vitest";
 import { cleanup, render, screen, within } from "@testing-library/react";
 import { Board } from "./Board.js";
-import { BoardChosenSummary, LeafLabel } from "./board-summary.js";
+import { BoardChosenSummary, CompactLeafLine, LeafLabel } from "./board-summary.js";
 import { matrixBoards, matrixRows } from "./matrix-model.js";
 import { emptyChanges } from "./model.js";
 import { adopt, labels, smallCatalog } from "./__fixtures__/studio.js";
@@ -69,4 +69,23 @@ it("shows the id alone, still in the mono face, when the host has no name for a 
 it("formats the chosen line only through the host label", () => {
   render(<BoardChosenSummary chosen={3} total={7} label={(chosen, total) => `${chosen}/${total}`} />);
   expect(screen.getByText("3/7")).toHaveClass("tabular-nums");
+});
+
+it("renders compact rows as plain text: the human name, then the leaf and library ids in mono secondary", () => {
+  board(COMPACT_ZOOM);
+  const row = layer("compact").querySelector<HTMLElement>('[data-studio-compact-specimen="tokens.surface-color"]')!;
+  const line = row.querySelector<HTMLElement>("[data-studio-compact-leaf]")!;
+  expect(line).toHaveTextContent("Surface colour");
+  const id = line.querySelector<HTMLElement>("[data-studio-leaf-id]")!, source = line.querySelector<HTMLElement>("[data-studio-compact-source]")!;
+  expect(id).toHaveTextContent("tokens.surface-color");
+  expect(source).toHaveTextContent("foundry");
+  for (const element of [id, source]) expect(element).toHaveClass("font-mono", "text-ink-secondary");
+});
+
+it("keeps an unnamed compact row's id primary in mono and its not-chosen words plain", () => {
+  render(<CompactLeafLine id="assets.lockup" notChosen="Not chosen" />);
+  const line = document.querySelector<HTMLElement>("[data-studio-compact-leaf]")!;
+  expect(line.querySelector("[data-studio-leaf-id]")).toHaveClass("font-mono", "text-ink-primary");
+  expect(line.querySelector("[data-studio-compact-source]")).toHaveTextContent("Not chosen");
+  expect(line.querySelector("[data-studio-compact-source]")).not.toHaveClass("font-mono");
 });
