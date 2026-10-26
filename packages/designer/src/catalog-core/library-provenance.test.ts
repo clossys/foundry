@@ -79,14 +79,12 @@ describe("item-specific library provenance", () => {
     }
     expect(componentLibraryColumns(catalog.sources, [], slots, "preview")).toEqual([]);
     for (const id of ["shadcn-ui", "base-ui", "radix-themes"]) {
-      expect(libraryRoster("components", "components.button").find(entry => entry.id === id)?.role).toBe("reference");
+      expect(libraryRoster("components", "components.button").some(entry => entry.id === id)).toBe(false);
     }
     const reference = structuredClone(documents.find(doc => doc.$extensions["com.clossys.fill"].slot === "components.button")!);
     reference.$extensions["com.clossys.fill"].source = "shadcn-ui";
     Object.values(reference.components)[0]!.source = "shadcn-ui";
-    const projected = componentLibraryColumns(catalog.sources, [reference], ["components.button"], "preview");
-    expect(projected[0]?.id).toBe("shadcn-ui");
-    expect(projected[0]?.referenceOnly).toBe(true);
+    expect(componentLibraryColumns(catalog.sources, [reference], ["components.button"], "preview")).toEqual([]);
   });
 
   it("returns detached evidence without changing sources, fills or engine metadata", () => {
