@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
+import "@testing-library/jest-dom/vitest";
 import { useState } from 'react';
 import userEvent from '@testing-library/user-event';
-import { fireEvent, render, screen, within } from '@testing-library/react';
-import { expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { afterEach, expect, it, vi } from 'vitest';
 import { PublisherSection } from './PublisherSection.js';
 import { projectPublisherSections, type PublisherSectionData, type PublisherSectionsInput } from './publisher-sections.js';
 import { acceptedExampleStore, createDeliveryExampleDraft } from './__fixtures__/example-plan.js';
@@ -10,6 +11,7 @@ import { STANDARD_PACK_INSTANCES, STANDARD_PACK_REGISTRIES, createStandardPackLi
 import { projectPublisherChannels } from './publisher-channels.js';
 import { derivePackPipeline } from './pipeline.js';
 import { type ProductionSettings, productionSettingsFromBinding } from './production-settings.js';
+afterEach(cleanup);
 async function input(configured = false): Promise<PublisherSectionsInput> {
   const store = await acceptedExampleStore(), binding = STANDARD_PACK_INSTANCES[0]!;
   const settings = configured ? { [binding.instanceId]: productionSettingsFromBinding(binding) } : {};

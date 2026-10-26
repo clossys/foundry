@@ -32,6 +32,17 @@ function Host({ delegate, ...inputs }: PublisherPageProps & { delegate?: (href: 
   }}><PublisherPage {...inputs} activeChannel={channel} /></AppFrame>;
 }
 
+// Row 668 (REAL, hand-styled raw li): each milestone step is a Foundry Card inside a bare list item.
+it("renders every channel milestone as a Foundry Card inside an unstyled list item", () => {
+  render(<Host {...props} planStore={planStore} />);
+  const items = within(screen.getByRole("list", { name: "Site milestones" })).getAllByRole("listitem");
+  expect(items).toHaveLength(4);
+  for (const item of items) {
+    expect(item.getAttribute("class") ?? "").toBe("");
+    expect(item.firstElementChild).toHaveAttribute("data-variant", "outline");
+  }
+  expect(items.filter(item => item.hasAttribute("aria-current"))).toHaveLength(1);
+});
 it("leases one Frame header and shows channel milestones instead of Plan, Formats or a body header", () => {
   render(<Host {...props} planStore={planStore} />);
   expect(screen.getAllByRole("heading", { level: 1 }).map(heading => heading.textContent)).toEqual(["Publisher"]);

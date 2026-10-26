@@ -1,5 +1,5 @@
 "use client";
-import { Button, Link, Select } from "@clossys/designer/components";
+import { Button, Card, Link, Select } from "@clossys/designer/components";
 import { Panel, SectionHeader } from "@clossys/designer/blocks";
 import { PageHeaderModule } from "@clossys/designer/shell";
 import { useCallback, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore } from "react";
@@ -207,7 +207,7 @@ export function PublisherPage({ lanes: _lanes, planStore, draftPlan, onApplyPlan
       {!!registryProjection?.findings.length && <ul aria-label="Registered route findings">{registryProjection.findings.map((finding, index) => <li key={index}>{finding.routeId} · {finding.path}: {finding.message}</li>)}</ul>}
       {!active && <Panel><SectionHeader title={messages?.emptyLabel ?? "Tell Publisher your milestones"} /><p>No delivery items are aligned or proposed.</p></Panel>}
       {active && <section aria-label={`${active.label} delivery channel`} className="grid min-w-0 gap-lg">
-        <ol aria-label={`${active.label} milestones`} className="grid gap-sm tablet:grid-cols-4">{PUBLISHER_MILESTONES.map(milestone => <li key={milestone.id} aria-current={plan?.currentMilestone === milestone.id ? "step" : undefined} className="rounded border border-line-base p-md"><strong>{milestone.id} · {milestone.label}</strong><p>{active.items.filter(row => row.milestone === milestone.id).length} items · {aligned ? `aligned v${aligned.version}` : `proposed v${draftPlan?.version ?? 0}`}</p></li>)}</ol>
+        <ol aria-label={`${active.label} milestones`} className="grid gap-sm tablet:grid-cols-4">{PUBLISHER_MILESTONES.map(milestone => <li key={milestone.id} aria-current={plan?.currentMilestone === milestone.id ? "step" : undefined} ><Card variant="outline" className="p-md"><strong>{milestone.id} · {milestone.label}</strong><p>{active.items.filter(row => row.milestone === milestone.id).length} items · {aligned ? `aligned v${aligned.version}` : `proposed v${draftPlan?.version ?? 0}`}</p></Card></li>)}</ol>
         <p>{aligned ? `${messages?.alignedVersionLabel ?? "Aligned version"} ${aligned.version}` : "Proposed items · alignment required before production evidence"}</p>
         {active.items.some(row => row.facets.includes("commerce")) && <Button type="button" aria-pressed={commerceOnly} onPress={() => setCommerceOnly(value => !value)}>Commerce</Button>}
         {MILESTONE_IDS.map(milestone => {

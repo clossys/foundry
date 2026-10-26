@@ -21,6 +21,31 @@ it("shows only page chips in collapsed lanes and keeps detail tabs hidden", () =
   expect(screen.queryByRole("button", { name: /Overview/ })).toBeNull();
   expect(screen.getByText("3 pages · 0 Ready · 3 not ready")).toBeVisible();
 });
+// Row 511 (REAL, hand-styled scroll region div): the lane matrix scroller is a Foundry Card, focusable, with the matrix inside it.
+it("scrolls the lane matrix inside a Foundry Card region", () => {
+  render(<AppPack inventory={projectAppInventory(genericInventory())} />);
+  const region = screen.getByRole("region", { name: "Scrollable App lane matrix" });
+  expect(region).toHaveAttribute("data-variant", "outline");
+  expect(region).toHaveAttribute("tabindex", "0");
+  expect(within(region).getByRole("table", { name: "App publish stages" })).toBeVisible();
+});
+// Row 494 (REAL, hand-styled raw li): each stage status is a Foundry Badge inside a bare list item; stage count and text are unchanged.
+it("renders every publish stage status as a Foundry Badge inside an unstyled list item", () => {
+  render(<AppPack inventory={projectAppInventory(genericInventory())} />);
+  fireEvent.click(screen.getByRole("button", { name: /Expand Record/ }));
+  fireEvent.click(screen.getByRole("button", { name: "Expand Sample record tabs · 1" }));
+  fireEvent.click(screen.getByRole("button", { name: "↳ Overview" }));
+  const detail = screen.getByRole("heading", { name: "Overview · route details" }).closest("section")!;
+  const stages = within(detail).getByRole("list", { name: "Full App publish stages" });
+  expect(stages.children).toHaveLength(5);
+  for (const item of Array.from(stages.children)) {
+    expect(item.getAttribute("class") ?? "").toBe("");
+    const badge = item.firstElementChild!;
+    expect(badge.tagName).toBe("SPAN");
+    expect(badge.className).toContain("rounded-pill");
+    expect(badge).toHaveTextContent(/^\w+: \S/);
+  }
+});
 it("expands route evidence and opens accessible details without inventing a binding", () => {
   render(<AppPack inventory={projectAppInventory(genericInventory())} />);
   fireEvent.click(screen.getByRole("button", { name: /Expand Record/ }));

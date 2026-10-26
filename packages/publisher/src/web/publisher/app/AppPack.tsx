@@ -1,5 +1,5 @@
 "use client";
-import { Button } from "@clossys/designer/components";
+import { Badge, Button, Card } from "@clossys/designer/components";
 import { Fragment, useEffect, useId, useRef, useState } from "react";
 import type { PublisherRequirementMessages } from "../../../planning/configuration.js";
 import type { PublisherPlanItem } from "../../../planning/plan.js";
@@ -33,7 +33,7 @@ function StageStrip({ stages, configured, toDoLabel = "to do", waitingLabel = "w
   return <ol aria-label="Full App publish stages" className="flex flex-wrap gap-xs">{stages.map(stage => {
     /** @default The derived stage status, or "to do"/"waiting" before configuration. */
     const statusLabel = !configured ? stage.name === "Configure" ? toDoLabel : waitingLabel : stage.status;
-    return <li key={stage.name} className={`rounded border p-sm text-sm ${stage.status === "failed" ? "border-status-danger bg-status-danger-tint text-status-danger-text" : stage.status === "passed" ? "border-status-success bg-status-success-tint text-status-success-text" : pending}`} title={stage.reasons.join(" · ")}>{stage.name}: {statusLabel}</li>;
+    return <li key={stage.name}><Badge variant={stage.status === "failed" ? "danger" : stage.status === "passed" ? "success" : "warning"} title={stage.reasons.join(" · ")}>{stage.name}: {statusLabel}</Badge></li>;
   })}</ol>;
 }
 interface PlanningDescriptionProps {
@@ -231,7 +231,7 @@ export function AppPack({ inventory, pageBindings, subrowBindings, library, comp
       <p>{stageDescription}</p>
       <p>{missingDecisions.length} {decisionsSummary}</p>
     </header>
-    <div role="region" aria-label="Scrollable App lane matrix" tabIndex={0} className="min-w-0 overflow-x-auto rounded border border-line-base">
+    <Card variant="outline" role="region" aria-label="Scrollable App lane matrix" tabIndex={0} className="min-w-0 overflow-x-auto">
       <table aria-label="App publish stages" className="w-full min-w-[calc(var(--ui-layout-aside-w)*4)] border-collapse"><thead className="bg-surface-sunken"><tr><th scope="col" className={cell}>Lane</th>{APP_STAGES.map(stage => <th scope="col" className={cell} key={stage}>{stage}</th>)}</tr></thead>
         <tbody>{APP_LANES.map(lane => {
           const items = pages.filter(route => route.lane === lane), decisions = missingDecisions.filter(row => row.lane === lane), isExpanded = expanded.has(lane);
@@ -251,7 +251,7 @@ export function AppPack({ inventory, pageBindings, subrowBindings, library, comp
               return <tr key={route.id} id={`${id}-route-${encodeURIComponent(route.id)}`} hidden={route.parentRecordRoute !== null && !expandedPages.has(route.parentRecordRoute)} data-parent-page={route.parentRecordRoute ?? undefined} data-parent-subrow={route.parentSubrowId}><th scope="row" className={cell}><Button type="button" className="underline focus-visible:outline" onPress={event => open(route, (event.target as HTMLButtonElement))}>{route.parentRecordRoute ? `↳ ${route.label}` : route.label}</Button>{tabs(route).length > 0 && <Button type="button" className="mt-sm block underline focus-visible:outline" aria-expanded={expandedPages.has(route.id)} aria-controls={tabs(route).map(tab => `${id}-route-${encodeURIComponent(tab.id)}`).join(" ")} onPress={() => setExpandedPages(current => { const next = new Set(current); if (next.has(route.id)) next.delete(route.id); else next.add(route.id); return next; })}>{expandedPages.has(route.id) ? "Collapse" : "Expand"} {route.label} tabs · {tabs(route).length}</Button>}</th><td className={cell}><RouteIdentity route={route} /></td><td className={cell}>{route.kind === "detail-tab" ? "N/A · parent page owns Frame" : <>{configuration(route)?.frame.leaf ?? evidence(route).pipeline?.sourceBinding.frame.leaf ?? route.frame}<br />{configuration(route)?.frame.config ?? evidence(route).pipeline?.sourceBinding.frame.config ?? <>{missingConfigLabel}</>}<br />{!evidence(route).pipeline && <PlanningDescription description={messages?.defaultSettingsDescription} />}</>}</td><td className={cell}>{route.kind === "detail-tab" ? "N/A · parent page owns Layout" : <>{configuration(route)?.layout.config ?? evidence(route).pipeline?.sourceBinding.layout.config ?? route.layoutConfig}<br />{!evidence(route).pipeline && <PlanningDescription description={messages?.defaultSettingsDescription} />}</>}</td><td className={cell}>{stageStrip(route)}</td><td className={cell}>{configuration(route) ? <>{findingLabel} · {renderedPendingLabel}</> : <>{waitingForConfigureLabel}</>}</td></tr>; })}</tbody></table>}
           </td></tr></Fragment>;
         })}</tbody></table>
-    </div>
+    </Card>
     {decision && <section aria-labelledby={decisionTitleId} className={`${panel} grid gap-md`}><header className="flex flex-wrap justify-between gap-md"><h2 id={decisionTitleId} ref={title} tabIndex={-1}>{decision.label} {decisionLabel}</h2><Button type="button" onPress={close}>{closeDecisionLabel}</Button></header><p>{decisionConfigureLabel}</p><p>{decision.lane} {decisionDescription}</p><p>{decisionInstructions}</p></section>}
     {selected && <section aria-labelledby={`${id}-detail`} className={`${panel} grid gap-md`}><header className="flex flex-wrap justify-between gap-md"><h2 id={`${id}-detail`} ref={title} tabIndex={-1}>{selected.label} · route details</h2><Button type="button" className="rounded border border-line-base p-sm focus-visible:outline" onPress={close}>Close route details</Button></header>
       <RouteIdentity route={selected} />
