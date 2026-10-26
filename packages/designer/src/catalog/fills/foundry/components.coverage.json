@@ -774,18 +774,19 @@
       ]
     },
     {
-      "missing": [
+      "missing": [],
+      "notes": [
+        "ToggleGroupItem renders its own RAC ToggleButton with the shared toggle variants; it does not dispatch to the toggle-button leaf, so no composition is claimed.",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.toggle-group",
+      "status": "candidate",
+      "supported": [
         "orientation.horizontal",
         "orientation.vertical",
         "selection.multiple",
         "selection.single"
-      ],
-      "notes": [
-        "No package implementation is available."
-      ],
-      "slot": "components.toggle-group",
-      "status": "unavailable",
-      "supported": []
+      ]
     },
     {
       "missing": [
