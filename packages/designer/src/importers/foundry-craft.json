@@ -27,15 +27,14 @@
           "scenario": "removable+disabled",
           "spacing": [
             "gap-xs",
-            "px-sm",
-            "py-xs"
+            "px-sm"
           ],
-          "target": null
+          "target": "control-h-md"
         },
         {
           "disabled": null,
-          "focus": "focus-visible:underline",
-          "forcedColors": false,
+          "focus": "var(--ui-border-focus, 2px) solid var(--color-focus-ring)",
+          "forcedColors": true,
           "inDisabledState": false,
           "keyboard": true,
           "literalPaint": [],
@@ -43,7 +42,7 @@
           "pressable": true,
           "scenario": "removable+disabled",
           "spacing": [],
-          "target": null
+          "target": "control-h-md"
         },
         {
           "disabled": "var(--ui-alpha-disabled, 0.5)",
@@ -57,10 +56,9 @@
           "scenario": "removable+disabled",
           "spacing": [
             "gap-xs",
-            "px-sm",
-            "py-xs"
+            "px-sm"
           ],
-          "target": null
+          "target": "control-h-md"
         }
       ],
       "scenarios": [
@@ -242,7 +240,7 @@
           "pressable": true,
           "scenario": "nested+disabled+selection=single",
           "spacing": [],
-          "target": null
+          "target": "control-h-md"
         },
         {
           "disabled": "var(--ui-alpha-disabled, 0.5)",

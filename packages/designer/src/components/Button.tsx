@@ -8,7 +8,7 @@ import type { IconNode } from "../icons/types.js";
 import { buttonClassName, type ControlGround } from "./button-classes.js";
 import { Icon } from "./Icon.js";
 import { cx } from "./internal/cx.js";
-import { UI_ALPHA_DISABLED } from "./internal/ui-vars.js";
+import { UI_ALPHA_DISABLED, UI_FOCUS_OFFSET, UI_OUTLINE_FOCUS, UI_OUTLINE_FOCUS_INVERSE } from "./internal/ui-vars.js";
 
 export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger" | "outline" | "tonal" | "quiet";
 export type ButtonSize = "sm" | "md" | "lg";
@@ -80,8 +80,8 @@ export function Button({
       }
       style={(renderProps) => ({
         opacity: renderProps.isDisabled ? UI_ALPHA_DISABLED : undefined,
-        outline: renderProps.isFocusVisible ? `var(--ui-border-focus, 2px) solid var(${ground === "inverse" ? "--color-focus-ring-on-inverse" : "--color-focus-ring"})` : undefined,
-        outlineOffset: renderProps.isFocusVisible ? "var(--ui-focus-offset, 2px)" : undefined,
+        outline: renderProps.isFocusVisible ? (ground === "inverse" ? UI_OUTLINE_FOCUS_INVERSE : UI_OUTLINE_FOCUS) : undefined,
+        outlineOffset: renderProps.isFocusVisible ? UI_FOCUS_OFFSET : undefined,
         ...(typeof style === "function" ? style(renderProps) : style),
       })}
     >

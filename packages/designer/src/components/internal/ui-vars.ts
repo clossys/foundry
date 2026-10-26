@@ -15,6 +15,17 @@
 /** Focus-visible ring. Applied only when `isFocusVisible` is true. */
 export const UI_RING_FOCUS = "var(--ui-ring-focus, 0 0 0 2px var(--color-accent, oklch(0.4748 0 0)))";
 
+/**
+ * The control focus outline (Button, Link, and every icon-only control inside a composite part): a
+ * solid outline on the focus-ring token, offset by the focus-offset token. A solid outline survives
+ * forced-colours mode, which a box-shadow ring does not.
+ */
+export const UI_OUTLINE_FOCUS = "var(--ui-border-focus, 2px) solid var(--color-focus-ring)";
+/** The same outline on an inverse ground. */
+export const UI_OUTLINE_FOCUS_INVERSE = "var(--ui-border-focus, 2px) solid var(--color-focus-ring-on-inverse)";
+/** Offset of the control focus outline. */
+export const UI_FOCUS_OFFSET = "var(--ui-focus-offset, 2px)";
+
 /** Disabled-state opacity. Applied only when `isDisabled` is true. */
 export const UI_ALPHA_DISABLED = "var(--ui-alpha-disabled, 0.5)";
 

@@ -4,7 +4,7 @@ import { TagGroup as AriaTagGroup, TagList, Tag, Button, Label, Text, type TagGr
 import { Icon } from "./Icon.js";
 import { useGlyph } from "./glyph-context.js";
 import { cx } from "./internal/cx.js";
-import { UI_ALPHA_DISABLED, UI_RING_FOCUS } from "./internal/ui-vars.js";
+import { UI_ALPHA_DISABLED, UI_FOCUS_OFFSET, UI_OUTLINE_FOCUS, UI_RING_FOCUS } from "./internal/ui-vars.js";
 export interface TagGroupProps extends AriaTagGroupProps { label: ReactNode; description?: ReactNode; children: ReactNode }
 export interface TagGroupItemProps extends Omit<TagProps, "children"> { children: ReactNode; textValue: string; removeLabel?: string }
 const Root = forwardRef<HTMLDivElement, TagGroupProps>(function TagGroup({ label, description, children, className, ...props }, ref) {
@@ -19,10 +19,10 @@ function List<T extends object>({ className, ...props }: TagListProps<T>) {
 const Item = forwardRef<HTMLDivElement, TagGroupItemProps>(function TagGroupItem({ children, removeLabel, className, style, ...props }, ref) {
   const close = useGlyph("assets.icon-close");
   if (removeLabel !== undefined && !removeLabel.trim()) throw new TypeError("TagGroup.Item requires a nonempty removeLabel.");
-  return <Tag {...props} ref={ref} className={state => cx("inline-flex items-center gap-xs rounded-pill px-sm py-xs text-caption outline-none forced-colors:outline", state.isSelected ? "bg-accent text-ink-on-accent" : "bg-surface-sunken text-ink-primary", typeof className === "function" ? className(state) : className)} style={state => ({ opacity: state.isDisabled ? UI_ALPHA_DISABLED : undefined, boxShadow: state.isFocusVisible ? UI_RING_FOCUS : undefined, ...(typeof style === "function" ? style(state) : style) })}>
+  return <Tag {...props} ref={ref} className={state => cx("control-h-md inline-flex items-center gap-xs rounded-pill px-sm text-caption outline-none forced-colors:outline", state.isSelected ? "bg-accent text-ink-on-accent" : "bg-surface-sunken text-ink-primary", typeof className === "function" ? className(state) : className)} style={state => ({ opacity: state.isDisabled ? UI_ALPHA_DISABLED : undefined, boxShadow: state.isFocusVisible ? UI_RING_FOCUS : undefined, ...(typeof style === "function" ? style(state) : style) })}>
     {state => {
       if (state.allowsRemoving && !removeLabel?.trim()) throw new TypeError("Removable TagGroup.Item requires a host removeLabel.");
-      return <>{children}{state.allowsRemoving && <Button slot="remove" aria-label={removeLabel} aria-labelledby="" className="inline-flex items-center justify-center rounded-pill outline-none focus-visible:underline"><Icon glyph={close} decorative /></Button>}</>;
+      return <>{children}{state.allowsRemoving && <Button slot="remove" aria-label={removeLabel} aria-labelledby="" className="control-h-md aspect-square inline-flex items-center justify-center rounded-pill outline-none" style={remove => ({ outline: remove.isFocusVisible ? UI_OUTLINE_FOCUS : undefined, outlineOffset: remove.isFocusVisible ? UI_FOCUS_OFFSET : undefined })}><Icon glyph={close} decorative /></Button>}</>;
     }}
   </Tag>;
 });
