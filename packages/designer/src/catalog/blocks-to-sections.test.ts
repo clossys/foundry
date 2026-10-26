@@ -54,7 +54,7 @@ describe("legacy block section homes", () => {
 
   it("agrees with existing retirement aliases without replacing legacy IDs", () => {
     expect(mapping).toEqual(Object.fromEntries(retired.map(row => [row.id, row.replacedBy])));
-    expect(BLOCK_ENTRIES).toHaveLength(89);
+    expect(BLOCK_ENTRIES).toHaveLength(90);
     expect(BLOCK_ENTRIES.map(block => block.id).sort()).toEqual([...Object.keys(expected), ...unmapped].sort());
   });
 
