@@ -9,7 +9,7 @@ import { loadComponentCompositionRules } from "./component-compositions.js";
 import { planComponentDefaults, type ComponentDefaultsInput } from "./component-defaults.js";
 import { isLibraryDecisions } from "./library-decisions.js";
 import { applyDecisions } from "../library-cli/apply-decisions.js";
-import { componentOf, resolveComponents } from "./resolve-components.js";
+import { componentDescriptorHash, componentOf, resolveComponents } from "./resolve-components.js";
 import type { CompositeCatalogData, CompositeLibraryData, LibraryData } from "./types.js";
 
 const PREFERENCE = ["shadcn@aria", "foundry", "rac-starter"];
@@ -161,6 +161,26 @@ describe("component default fills", () => {
     expect(row("menu")).toMatchObject({ status: "default", source: "foundry", fill: "foundry/components.menu" });
     expect(row("chart-sparkline")).toMatchObject({ status: "default", source: "foundry", fill: "foundry/components.chart-sparkline" });
     expect(row("date-picker")).toMatchObject({ status: "default", basis: "rule", rule: "compose:date-picker@1" });
+  });
+  it("sets aside only the pin-provenance K8 on a registered composition, never another finding or another slot", () => {
+    const { input } = setup();
+    const plan = planComponentDefaults(input);
+    expect(plan.rows.find(row => row.slot === "components.date-picker")).toMatchObject({ status: "default", basis: "rule" });
+    expect(plan.findings.filter(finding => finding.subject === "components.date-picker")).toEqual([]);
+    // Any other finding on the composed template is still reported.
+    const rules = input.catalog.rules!.map(rule => rule.slot === "components.date-picker" ? { ...rule, template: { ...rule.template, license: "UNLICENSED" } } : rule);
+    const unlicensed = planComponentDefaults({ ...input, catalog: { ...input.catalog, rules } });
+    expect(unlicensed.findings).toContainEqual(expect.objectContaining({ code: "K8", subject: "components.date-picker", message: "Fill and every dependency require an allowed SPDX licence" }));
+    // A non-composed source fill without its pin still fails K8, even with a matching bundle.
+    const avatar = input.catalog.fills.find(doc => doc.$extensions["com.clossys.fill"].id === "shadcn@aria/components.avatar")!;
+    const [key, fill] = Object.entries(avatar.components)[0]!;
+    const unpinned = { ...avatar, components: { [key]: { ...fill, pin: { ...fill.pin, commit: undefined } } } } as typeof avatar;
+    const fills = input.catalog.fills.map(doc => doc === avatar ? unpinned : doc);
+    const bundle = input.bundles.find(row => row.slot === "components.avatar")!;
+    const bundles = [...input.bundles.filter(row => row !== bundle), { ...bundle, descriptorHash: componentDescriptorHash(componentOf(unpinned)) }];
+    const pinless = planComponentDefaults({ ...input, catalog: { ...input.catalog, fills }, bundles, preference: ["shadcn@aria"], picks: {}, fallback: undefined });
+    expect(pinless.rows.find(row => row.slot === "components.avatar")!.status).toBe("not-chosen");
+    expect(reasons(pinless, "avatar")).toContain("shadcn@aria: K8 Source fill requires commit, file hashes and licence notice");
   });
   it("the fallback is scoped to its listed leaves", () => {
     const { input } = setup({ fallback: { source: "foundry", slots: FALLBACK.slots.filter(slot => slot !== "components.card") } });

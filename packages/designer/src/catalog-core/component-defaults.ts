@@ -53,6 +53,7 @@ export interface ComponentDefaultsPlan {
 interface Offer { fill: ComponentCandidate; id: string; basis: ComponentDefaultBasis }
 
 const unique = (values: readonly string[]): string[] => [...new Set(values)];
+const SOURCE_PIN_REQUIRED = "Source fill requires commit, file hashes and licence notice";
 const describe = (findings: readonly ComponentFinding[]): string => unique(findings.map(finding => `${finding.code} ${finding.message}`)).join("; ");
 
 export function planComponentDefaults(input: ComponentDefaultsInput): ComponentDefaultsPlan {
@@ -149,7 +150,12 @@ export function planComponentDefaults(input: ComponentDefaultsInput): ComponentD
   }
 
   const templates = (input.catalog.rules ?? []).filter(rule => composed.get(rule.slot)?.rule === rule.id).map(rule => rule.template);
-  const findings = check([...[...selected.values()].map(offer => offer.fill), ...templates]);
+  // A registered-composition template is not a pinned upstream source: its rule bytes and
+  // notice are validated when the rules load and again at apply (applyDecisions /
+  // resolveComponents), and the planner never holds that composition context. Only the
+  // pin-provenance K8 is set aside, and only for a composed slot; every other finding stays.
+  const findings = check([...[...selected.values()].map(offer => offer.fill), ...templates])
+    .filter(finding => !(composed.has(finding.subject) && finding.code === "K8" && finding.message === SOURCE_PIN_REQUIRED));
   const rows: ComponentDefaultRow[] = input.slots.map(slot => {
     const offer = selected.get(slot), rule = composed.get(slot);
     if (offer) return { slot, status: offer.basis === "choose" ? "chosen" : "default", basis: offer.basis, source: offer.fill.source, fill: offer.id, reasons: offer.basis === "fallback" ? reasons.get(slot)! : [] };
