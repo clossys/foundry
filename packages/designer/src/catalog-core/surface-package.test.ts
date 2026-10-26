@@ -143,7 +143,8 @@ describe("package-pointer surface origin", () => {
     const { catalog, empty } = setup(doc => { if (doc.$extensions["com.clossys.fill"].slot === "sections.hero") delete (doc.sections!.hero!.slotMap as Record<string, unknown>).header; });
     const hero = adopt(catalog, empty, [{ slot: "sections.hero", source: "foundry" }]);
     expect(surfaceErrors(hero, catalog).map(row => `${row.code} ${row.message}`)).toEqual(["S5 content/member mapping differs: required slot header is not mapped"]);
-    const noCandidate = setup();
+    // A gallery fill that is not an implementation candidate: with no package candidate and no bundle, adoption requires a unique bundle (S2).
+    const noCandidate = setup(doc => { if (doc.$extensions["com.clossys.fill"].slot === "sections.gallery") doc.$extensions["com.clossys.fill"].mode = "reference"; });
     expect(() => adopt(noCandidate.catalog, noCandidate.empty, [{ slot: "sections.gallery", source: "foundry" }])).toThrow(/S2 unique bundle required/);
   });
 });
