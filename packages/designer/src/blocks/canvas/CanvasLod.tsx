@@ -1,5 +1,5 @@
 "use client";
-import { createContext, useContext, useLayoutEffect, useRef, type ReactNode } from "react";
+import { createContext, useContext, useLayoutEffect, useRef, type CSSProperties, type ReactNode } from "react";
 import { TOKENS } from "../../tokens/tokens.js";
 
 /** The three canvas detail tiers, from most to least detailed. */
@@ -22,6 +22,9 @@ export function canvasLodTier(zoom: number): CanvasLodTier {
   return CANVAS_LOD_TIERS.find(tier => tier === "overview" || textPx(tier) * zoom >= CANVAS_LEGIBLE_TEXT_PX)!;
 }
 
+/** An inactive full layer keeps its width contribution and gives up its height and paint. */
+const COLLAPSED = { blockSize: 0, overflow: "hidden", visibility: "hidden" } as const;
+
 const Tier = createContext<CanvasLodTier>("full");
 /**
  * The single owner of canvas level of detail. A canvas host wraps its world
@@ -30,16 +33,26 @@ const Tier = createContext<CanvasLodTier>("full");
  */
 export function CanvasLod({ zoom, children }: { zoom: number; children: ReactNode }) {
   const tier = canvasLodTier(zoom);
-  return <Tier.Provider value={tier}><div data-canvas-lod={tier} className="contents">{children}</div></Tier.Provider>;
+  return <Tier.Provider value={tier}><div data-canvas-lod={tier} className="contents" style={{ [CANVAS_ZOOM_VAR]: zoom } as CSSProperties}>{children}</div></Tier.Provider>;
 }
+/** The camera zoom, exposed to world content as a unitless custom property. */
+export const CANVAS_ZOOM_VAR = "--canvas-zoom";
+/**
+ * Counter-scales a canvas title: it keeps its own type-scale size and never
+ * paints smaller on screen than the caption text token at any camera zoom.
+ * Outside a canvas the zoom is 1, so the title is unchanged.
+ */
+export const CANVAS_COUNTER_SCALED_TITLE = "text-[length:max(1em,calc(var(--text-caption)/var(--canvas-zoom,1)))]";
 export const useCanvasLodTier = () => useContext(Tier);
 
 /**
- * Stacks a board's tier layers in one grid cell. Every supplied layer stays
- * mounted and in normal flow, so a tier change never moves or resizes the
- * board: only opacity crossfades, and inactive layers are inert and hidden
- * from assistive technology. Compact and overview layers take the width of
- * the full layer rather than widening the board. A missing layer falls back to
+ * Stacks a board's tier layers in one grid cell and paints only the active
+ * one. The board takes the active layer's height: an inactive full layer stays
+ * mounted with no block size so it still sets the board width (compact and
+ * overview layers take that width rather than widening the board), and every
+ * other inactive layer is hidden. A tier change swaps layers in one frame with
+ * no crossfade, so two tiers never paint over each other. Inactive layers are
+ * inert and hidden from assistive technology. A missing layer falls back to
  * the next more detailed one that is supplied.
  */
 export function CanvasLodLayers({ full, compact, overview }: { full: ReactNode; compact?: ReactNode; overview?: ReactNode }) {
@@ -59,7 +72,7 @@ export function CanvasLodLayers({ full, compact, overview }: { full: ReactNode; 
   }, [active]);
   return <div ref={host} data-canvas-lod-layers="" onFocus={event => { focused.current = event.target; }} style={{ display: "grid" }}>
     {supplied.map(id => <div key={id} data-canvas-lod-layer={id} inert={id !== active} aria-hidden={id === active ? undefined : true}
-      className="transition-opacity motion-reduce:transition-none"
-      style={{ gridArea: "1 / 1", opacity: id === active ? 1 : 0, ...(id === "full" ? {} : { inlineSize: 0, minInlineSize: "100%" }) }}>{layers[id]}</div>)}
+      hidden={id !== active && id !== "full"}
+      style={{ gridArea: "1 / 1", ...(id === "full" ? id === active ? {} : COLLAPSED : { inlineSize: 0, minInlineSize: "100%" }) }}>{layers[id]}</div>)}
   </div>;
 }

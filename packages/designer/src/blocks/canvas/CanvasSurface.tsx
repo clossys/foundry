@@ -338,8 +338,10 @@ export function CanvasSurface(props: CanvasSurfaceProps) {
     setFitting(!reducedMotion);
     const fitted = fitTo(worldBounds, size, effectiveFitPadding);
     const zoom = Math.min(maxZoom, Math.max(minZoom, fitted.zoom));
-    requestViewport({ x: size.width / 2 - (worldBounds.x + worldBounds.width / 2) * zoom,
-      y: size.height / 2 - (worldBounds.y + worldBounds.height / 2) * zoom, zoom });
+    // A world that still overflows at the zoom floor starts at its own origin on that axis rather than centring away its beginning.
+    const axis = (origin: number, extent: number, view: number) => extent * zoom > view - effectiveFitPadding * 2 + 0.5
+      ? effectiveFitPadding - origin * zoom : view / 2 - (origin + extent / 2) * zoom;
+    requestViewport({ x: axis(worldBounds.x, worldBounds.width, size.width), y: axis(worldBounds.y, worldBounds.height, size.height), zoom });
   };
   const requestZoom = (factor: number) => {
     setFitting(false); requestViewport(boundedZoom(viewport, { x: size.width / 2, y: size.height / 2 }, factor));

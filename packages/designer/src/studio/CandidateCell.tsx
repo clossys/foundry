@@ -11,14 +11,36 @@ export const LIBRARY_COLUMN_BOUND: CSSProperties = { maxWidth: APP_FRAME_RIGHT_P
 /** Fit the column and wrap members at the cap instead of sizing the cell to max-content. */
 export const LIBRARY_COLUMN_FLOW = "w-fit flex-wrap";
 
-/** Every library supplies the same resolved data shape; all L4 variants flow in rows inside the one bounded leaf cell. */
+type Member = Candidate["members"][number];
+const memberKey = (entry: Member) => entry.id.slice(entry.member.slot.length + 1);
+/** A dotted member key names its family (`amber.50` is in `amber`); a flat key has none. */
+const familyOf = (entry: Member) => { const key = memberKey(entry), dot = key.lastIndexOf("."); return dot > 0 ? key.slice(0, dot) : ""; };
+/** Contiguous members of one family, in member order. */
+export function memberFamilies(members: readonly Member[]): { family: string; members: Member[] }[] {
+  const runs: { family: string; members: Member[] }[] = [];
+  for (const entry of members) {
+    const family = familyOf(entry), last = runs[runs.length - 1];
+    if (last && last.family === family) last.members.push(entry); else runs.push({ family, members: [entry] });
+  }
+  return runs;
+}
+
+/**
+ * Every library supplies the same resolved data shape; all L4 variants flow in rows inside the one bounded leaf cell.
+ * A leaf with several member families (a palette's ramps) starts each family on its own row, so a ramp reads as one
+ * run instead of breaking wherever the cap falls.
+ */
 export const CandidateCell = memo(function CandidateCell({ candidate, labels, preview }: { candidate?: Candidate; labels: StudioLabels; preview?: ReactNode }) {
   if (!candidate) return <LeafCell className={LIBRARY_COLUMN_FLOW} style={LIBRARY_COLUMN_BOUND} preview={preview} status={preview == null ? labels.previewUnavailable : undefined} />;
+  const variant = (entry: Member) => <div key={entry.id} data-candidate-variant={entry.id} className="min-w-[var(--ui-control-h-lg)]">
+    <p data-member-key="" className="text-caption text-ink-secondary">{memberKey(entry)}</p>
+    <CompactPreview candidate={{ ...candidate, members: [entry] }} labels={labels} />
+  </div>;
+  const families = candidate.previewable ? memberFamilies(candidate.members) : [];
   return <LeafCell className={LIBRARY_COLUMN_FLOW} style={LIBRARY_COLUMN_BOUND} data-studio-candidate={candidate.index} status={candidate.previewable ? undefined : labels.previewUnavailable}
-    preview={candidate.previewable ? candidate.members.map(entry => <div key={entry.id} data-candidate-variant={entry.id} className="min-w-[var(--ui-control-h-lg)]">
-      <p data-member-key="" className="text-caption text-ink-secondary">{entry.id.slice(entry.member.slot.length + 1)}</p>
-      <CompactPreview candidate={{ ...candidate, members: [entry] }} labels={labels} />
-    </div>) : undefined} />;
+    preview={!candidate.previewable ? undefined : families.length > 1
+      ? families.map(({ family, members }, index) => <div key={family + index} data-candidate-family={family} className="flex basis-full flex-wrap items-start gap-md">{members.map(variant)}</div>)
+      : candidate.members.map(variant)} />;
 }, (previous, next) => {
   if (previous.labels !== next.labels || previous.preview !== next.preview) return false;
   const a = previous.candidate, b = next.candidate;

@@ -6,6 +6,7 @@ import { Card } from '../../components/Card.js';
 import { Tooltip } from '../../components/Tooltip.js';
 import { Settings } from '../../icons/Settings.js';
 import { SectionHeader } from '../SectionHeader.js';
+import { CANVAS_COUNTER_SCALED_TITLE } from '../canvas/CanvasLod.js';
 
 export interface LeafCellProps extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
   /** The leaf's rendered members; absent for an unchosen leaf. */
@@ -47,7 +48,7 @@ export interface BoardHeaderProps {
  * while editing). The gear is the square small icon control (28px box, 44px hit area).
  */
 export function BoardHeader({ id, title, editing, labels, onEdit, onDone, action }: BoardHeaderProps) {
-  return <SectionHeader data-board-header="" title={<span id={id}>{title}</span>} level={3} actions={<>
+  return <SectionHeader data-board-header="" title={<span id={id} data-canvas-title="" className={CANVAS_COUNTER_SCALED_TITLE}>{title}</span>} level={3} actions={<>
     {action}
     {editing ? <Button size="sm" onPress={onDone}>{labels.done}</Button> : <Tooltip trigger={<IconButton size="sm" shape="square" icon={Settings} label={labels.changeSelection} onPress={onEdit} />}>{labels.changeSelection}</Tooltip>}
   </>} />;

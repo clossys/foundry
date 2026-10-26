@@ -14,6 +14,7 @@ import { AssetExemptions } from "./AssetExemptions.js";
 import { boardMatches, boardSources, canvasDomains, type CanvasFilter } from "./canvas-model.js";
 import { CanvasSurface } from "../blocks/canvas/CanvasSurface.js";
 import { CanvasLod } from "../blocks/canvas/CanvasLod.js";
+import { CanvasDomain } from "./CanvasDomain.js";
 import { useCanvasWorld } from "./useCanvasWorld.js";
 import { Inspector } from "./Inspector.js";
 import { SlotTree } from "./SlotTree.js";
@@ -38,7 +39,7 @@ export function LegacyStudioCanvas({ panelInsets, className, candidateWorkflow }
   const canvas = useCanvasWorld(state.layer, pose => {
     latest.current.cameras.current.set(latest.current.layer, pose);
     if (canvas.surface.current) latest.current.showRows(visibleStudioRows(canvas.surface.current, latest.current.rowElements.current, pose.zoom));
-  }, state.cameras.current.get(state.layer));
+  }, state.cameras.current.get(state.layer), Boolean(state.working && state.pending && state.boards.length));
   const camera = canvas.actions, narrow = canvas.overlayLayout !== "wide";
   const domains = useMemo(() => canvasDomains(state.activeCatalog, state.boards), [state.activeCatalog, state.boards]);
   const candidateStyles = useMemo(() => candidatesCss(state.rows.flatMap(row => row.candidates)), [state.rows]);
@@ -77,12 +78,11 @@ export function LegacyStudioCanvas({ panelInsets, className, candidateWorkflow }
     <CanvasSurface aria-label={text.label} viewport={canvas.pose} onViewportChange={canvas.setPose} selection={[]} onSelectionChange={() => {}}
       worldBounds={canvas.bounds} items={[]} itemInteraction="content" minZoom={.12} maxZoom={2}
       onSurfaceElement={canvas.onSurfaceElement} onWorldElement={canvas.onWorldElement} actionsRef={canvas.actions}
-      worldClassName="flex w-max flex-col gap-3xl p-3xl" className="absolute inset-0 rounded-none border-0 bg-surface-raised"
+      worldClassName="flex h-max w-max flex-col gap-3xl p-3xl" className="absolute inset-0 rounded-none border-0 bg-surface-raised"
       instructionText={text.hint} grid="dots" recenterLabel={text.minimap}
       zoomOutLabel={text.zoomOut} zoomInLabel={text.zoomIn} zoomPercentageLabel={text.zoomLabel} fitLabel={text.fit}
       >
-        <CanvasLod zoom={canvas.pose.zoom}>{domains.map(domain => <section key={domain.id} data-studio-domain={domain.id} aria-label={domain.label} className="flex items-start gap-2xl">
-          <h2 className="h-[var(--ui-layout-sidebar-rail-w)] w-[calc(var(--ui-layout-aside-w)*2)] shrink-0 text-body text-ink-secondary [writing-mode:vertical-rl]">{domain.label}</h2>
+        <CanvasLod zoom={canvas.pose.zoom}>{domains.map(domain => <CanvasDomain key={domain.id} id={domain.id} label={domain.label} narrow={canvas.overlayLayout === "narrow"}>
           {domain.boards.map(board => {
             if (!boardRefs.current.has(board.id)) boardRefs.current.set(board.id, element => { const elements = latest.current.boardElements.current; if (element) elements.set(board.id, element); else elements.delete(board.id); });
             if (!openActions.current.has(board.id)) openActions.current.set(board.id, () => { const element = latest.current.boardElements.current.get(board.id); if (element) camera.current?.flyTo(element, { focus: true }); });
@@ -91,7 +91,7 @@ export function LegacyStudioCanvas({ panelInsets, className, candidateWorkflow }
               {state.working && state.pending ? <Board board={board} boardRef={boardRefs.current.get(board.id)!} summary={summary} onOpen={openActions.current.get(board.id)!} workflow={candidateWorkflow} variants={variants} contextTokens={contextTokens} sources={state.sources} labels={state.labels} working={state.working} changes={state.pending} groups={state.groups} groupChoices={state.groupChoices} expanded={state.expanded} layout="wide" onExpand={expand} onUse={use} onRowElement={registerRow} onFocusCell={focusCell} onRequestRow={requestRow} /> : null}
             </div>;
           })}
-        </section>)}</CanvasLod>
+        </CanvasDomain>)}</CanvasLod>
     </CanvasSurface>
     {state.focused && state.focusedRow ? <SlotModule id="value-inspector" slot="right-panel" label={state.labels.inspectorLabel}><aside data-studio-panel="inspector" aria-label={state.labels.inspectorLabel} className="p-md">
       {state.autosave ? <EditFeedback leaf={state.focused.fill.slot} state={state.autosave} labels={state.labels} /> : null}

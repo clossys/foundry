@@ -6,9 +6,16 @@ type CanvasSize = { width: number; height: number };
 type Viewport = { x: number; y: number; zoom: number };
 
 export interface CanvasMapProps {
-  label: string; items: readonly { id: string; rect: CanvasRect }[];
+  /** Board rectangles in world coordinates; `label` names the board for pointer hover. */
+  label: string; items: readonly { id: string; rect: CanvasRect; label?: string }[];
   bounds: CanvasRect; viewport: Viewport; viewSize: CanvasSize;
   onViewportChange(value: Viewport): void;
+}
+/** The part of a board inside the world bounds; a board never paints outside the map. */
+function within(rect: CanvasRect, bounds: CanvasRect): CanvasRect | undefined {
+  const x = Math.max(rect.x, bounds.x), y = Math.max(rect.y, bounds.y);
+  const width = Math.min(rect.x + rect.width, bounds.x + bounds.width) - x, height = Math.min(rect.y + rect.height, bounds.y + bounds.height) - y;
+  return width > 0 && height > 0 ? { x, y, width, height } : undefined;
 }
 /** A world overview with the same coordinate projection as CanvasSurface. */
 export function CanvasMap({ label, items, bounds, viewport, viewSize, onViewportChange }: CanvasMapProps) {
@@ -31,8 +38,8 @@ export function CanvasMap({ label, items, bounds, viewport, viewSize, onViewport
         onViewportChange({ ...current.viewport, x: current.viewport.x - (event.clientX - current.x) / box.width * bounds.width * current.viewport.zoom,
           y: current.viewport.y - (event.clientY - current.y) / box.height * bounds.height * current.viewport.zoom });
       }} onPointerUp={event => { if (drag.current?.pointer === event.pointerId) { drag.current = null; event.currentTarget.releasePointerCapture(event.pointerId); } }} onPointerCancel={() => { drag.current = null; }} onLostPointerCapture={() => { drag.current = null; }} />}>
-      <svg aria-hidden="true" focusable="false" viewBox={`${bounds.x} ${bounds.y} ${Math.max(1, bounds.width)} ${Math.max(1, bounds.height)}`} className="h-[var(--ui-layout-sidebar-rail-w)] w-full rounded-control border border-line-base bg-surface-sunken touch-none">
-        {items.map(item => <rect key={item.id} x={item.rect.x} y={item.rect.y} width={item.rect.width} height={item.rect.height} className="fill-surface-raised stroke-line-base" vectorEffect="non-scaling-stroke" />)}
+      <svg aria-hidden="true" focusable="false" viewBox={`${bounds.x} ${bounds.y} ${Math.max(1, bounds.width)} ${Math.max(1, bounds.height)}`} className="h-[var(--ui-layout-sidebar-rail-w)] w-full overflow-hidden rounded-control border border-line-base bg-surface-sunken touch-none">
+        {items.map(item => { const rect = within(item.rect, bounds); return rect ? <rect key={item.id} data-canvas-map-item={item.id} x={rect.x} y={rect.y} width={rect.width} height={rect.height} className="fill-surface-raised stroke-line-base" vectorEffect="non-scaling-stroke">{item.label ? <title>{item.label}</title> : null}</rect> : null; })}
         <rect data-canvas-map-viewport="" x={visible.x} y={visible.y} width={visible.width} height={visible.height} className="fill-accent-tint stroke-accent" vectorEffect="non-scaling-stroke" />
       </svg>
     </Button>

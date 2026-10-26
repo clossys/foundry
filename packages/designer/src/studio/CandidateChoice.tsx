@@ -5,6 +5,7 @@ import { RadioGroup } from "../components/RadioGroup.js";
 import { Tooltip } from "../components/Tooltip.js";
 import type { Candidate } from "./model.js";
 import { CandidateCell } from "./CandidateCell.js";
+import { ErrorReason } from "../blocks/library-board/ErrorReason.js";
 import type { StudioLabels } from "./types.js";
 
 import { PREVIEW_CHOICE_CLASS } from "../blocks/library-board/choice-class.js";
@@ -23,5 +24,6 @@ export function CandidateChoice({ candidate, source = candidate?.source, target,
     {candidate && candidate.errors > 0 ? <div className="absolute start-xs top-xs"><Tooltip trigger={<Button variant="ghost" size="sm" aria-label={labels.checkSummary(candidate.errors, candidate.notices)}><Badge variant="danger">!</Badge></Button>}>
       {labels.checkSummary(candidate.errors, candidate.notices)}
     </Tooltip></div> : null}
+    {candidate && candidate.errors > 0 ? <ErrorReason findings={candidate.findings} /> : null}
   </div>;
 }

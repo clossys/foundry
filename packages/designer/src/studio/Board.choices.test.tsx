@@ -84,6 +84,21 @@ it("shows an error badge only for positive errors and keeps notices in its toolt
   const user = userEvent.setup(); fireEvent.mouseMove(document.body); await user.hover(trigger);
   expect(await screen.findByRole("tooltip", {}, { timeout: 2500 })).toHaveTextContent(labels.checkSummary(1, 2));
 });
+it("gives an error card a one-line reason from its first error, not its notices", () => {
+  const library = emptyLibrary(); const base = buildCandidates({ catalog: smallCatalog, library, working: library, slotId: "tokens.surface-color", scope: "slot", target: "tokens.surface-color" })[0]!;
+  const findings = [
+    { code: "C2" as const, rule: "r", severity: "notice" as const, subject: "s", message: "A notice first" },
+    { code: "C3" as const, rule: "r", severity: "error" as const, subject: "s", message: "Surface colour has no dark value" },
+    { code: "C4" as const, rule: "r", severity: "error" as const, subject: "s", message: "Second error" },
+  ];
+  const view = render(<RadioGroup label="Choices"><CandidateChoice candidate={{ ...base, findings, errors: 2, notices: 1 }} target="leaf" labels={labels} /></RadioGroup>);
+  const reason = view.container.querySelector<HTMLElement>("[data-error-reason]")!;
+  expect(reason).toHaveTextContent(/^Surface colour has no dark value$/);
+  expect(reason).toHaveClass("truncate", "max-w-full");
+  expect(reason).toHaveAttribute("title", "Surface colour has no dark value");
+  view.rerender(<RadioGroup label="Choices"><CandidateChoice candidate={{ ...base, findings: findings.slice(0, 1), errors: 0, notices: 1 }} target="leaf" labels={labels} /></RadioGroup>);
+  expect(view.container.querySelector("[data-error-reason]")).toBeNull();
+});
 it("keeps an authored active choice unchanged when refresh returns a new pending candidate", async () => {
   const base = emptyLibrary();
   const library = applyLibraryChange(smallCatalog, base, { baseHash: libraryHash(base), changes: [{ op: "author", slot: "tokens.surface-color", tokens: { base: { $type: "color", $value: "#abcdef", $extensions: { "com.clossys.css": { raw: "#abcdef" } } } } }] });

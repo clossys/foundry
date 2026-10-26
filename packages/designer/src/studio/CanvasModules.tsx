@@ -8,7 +8,7 @@ import type { useCanvasWorld } from "./useCanvasWorld.js";
 import type { CanvasRect } from "../blocks/canvas/models.js";
 
 export function CanvasModules({ canvas, labels, explorer }: { canvas: ReturnType<typeof useCanvasWorld>; labels: StudioLabels; explorer: ReactNode }) {
-  const [items, setItems] = useState<readonly { id: string; rect: CanvasRect }[]>([]);
+  const [items, setItems] = useState<readonly { id: string; rect: CanvasRect; label?: string }[]>([]);
   const [size, setSize] = useState({ width: 1, height: 1 });
   useLayoutEffect(() => {
     const surface = canvas.surface.current, world = canvas.world.current;
@@ -18,7 +18,8 @@ export function CanvasModules({ canvas, labels, explorer }: { canvas: ReturnType
       setSize({ width: Math.max(1, surface.clientWidth || box.width), height: Math.max(1, surface.clientHeight || box.height) });
       setItems([...world.querySelectorAll<HTMLElement>("[data-studio-board]")].map(board => {
         const rect = board.getBoundingClientRect();
-        return { id: board.dataset.studioBoard!, rect: { x: (rect.left - box.left - canvas.pose.x) / canvas.pose.zoom,
+        const label = board.ownerDocument.getElementById(board.getAttribute("aria-labelledby") ?? "")?.textContent ?? undefined;
+        return { id: board.dataset.studioBoard!, label, rect: { x: (rect.left - box.left - canvas.pose.x) / canvas.pose.zoom,
           y: (rect.top - box.top - canvas.pose.y) / canvas.pose.zoom, width: rect.width / canvas.pose.zoom, height: rect.height / canvas.pose.zoom } };
       }));
     };
