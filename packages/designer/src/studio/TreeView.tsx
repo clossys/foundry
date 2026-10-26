@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import { Tree, type TreeProps } from "../components/Tree.js";
 import { cx } from "../components/internal/cx.js";
 
@@ -37,12 +37,13 @@ function indexNodes(nodes: readonly TreeViewNode[], into = new Map<string, TreeV
   return into;
 }
 
-function Rows({ nodes }: { nodes: readonly TreeViewNode[] }) {
+// Rows depend only on the immutable nodes; selection, expansion and handlers stay on the native Tree.
+const Rows = memo(function Rows({ nodes }: { nodes: readonly TreeViewNode[] }) {
   return nodes.map(node => <Tree.Node key={node.id} id={node.id} textValue={node.label}
     label={<span className="min-w-0 truncate">{node.label}</span>} expandLabel={node.label}>
     {node.children ? <Rows nodes={node.children} /> : null}
   </Tree.Node>);
-}
+});
 
 export function TreeView({ nodes, "aria-label": ariaLabel, currentId, onNavigate, defaultExpandedIds, expandedIds, onExpandedChange, className }: TreeViewProps) {
   if (!ariaLabel?.trim()) throw new TypeError("TreeView requires aria-label.");

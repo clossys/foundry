@@ -82,7 +82,8 @@ function ContractCanvas({ className, candidateWorkflow }: StudioCanvasProps) {
     if (edited && result?.available && !result.findings.some(finding => finding.severity === "error")) try { node = s.snapshot?.preview?.(meta.slot, result.profile); } catch (value) { error = value instanceof Error ? value.message : String(value); }
     return { meta, result, node, error };
   }) : [], [s.layer, s.input?.library, s.adapter.catalog, s.snapshot, s.changes, boards, editing]);
-  const tree = placement?.nodes.map(domain => ({ id: domain.id, label: domain.label, children: ("children" in domain ? domain.children : [domain]).map(group => ({ id: group.id, label: group.label, children: placedLeaves([group]).filter(leaf => leaf.id.toLocaleLowerCase().includes(query.toLocaleLowerCase())).map(leaf => ({ id: leaf.id, label: leaf.id })) })) })) ?? [];
+  // Session notifications leave placement and query unchanged; keep the explorer's immutable nodes.
+  const tree = useMemo(() => placement?.nodes.map(domain => ({ id: domain.id, label: domain.label, children: ("children" in domain ? domain.children : [domain]).map(group => ({ id: group.id, label: group.label, children: placedLeaves([group]).filter(leaf => leaf.id.toLocaleLowerCase().includes(query.toLocaleLowerCase())).map(leaf => ({ id: leaf.id, label: leaf.id })) })) })) ?? [], [placement, query]);
   const libraries = useMemo(() => [...new Set(s.layer === "components" ? candidates.map(candidate => candidate.meta.source) : s.snapshot?.runtime?.manifest.fills.map(fill => fill.library) ?? [])], [s.layer, candidates, s.snapshot?.runtime]);
   const session = s.session;
   const edit = useCallback((leaf: string, operations: readonly CompositeLibraryOperation[]) => { session?.edit(leaf, operations); }, [session]);
