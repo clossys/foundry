@@ -22,8 +22,20 @@ vi.mock("../components/Disclosure.js", async importOriginal => {
   const actual = await importOriginal<typeof import("../components/Disclosure.js")>();
   return { ...actual, Disclosure: vi.fn(actual.Disclosure) };
 });
+// Counts each preparation of the actual native Tree.Node; rendering delegates to the original RAC row.
+const treeRows = vi.hoisted(() => ({ prepared: new Map<string, number>() }));
+vi.mock("../components/Tree.js", async importOriginal => {
+  const actual = await importOriginal<typeof import("../components/Tree.js")>();
+  const { createElement, forwardRef } = await import("react");
+  const Node = forwardRef<HTMLDivElement, import("../components/Tree.js").TreeNodeProps>(function CountedNode(props, ref) {
+    const id = String(props.id);
+    treeRows.prepared.set(id, (treeRows.prepared.get(id) ?? 0) + 1);
+    return createElement(actual.Tree.Node, { ...props, ref });
+  });
+  return { ...actual, Tree: Object.assign(forwardRef<HTMLDivElement, import("../components/Tree.js").TreeProps<object>>(function CountedTree(props, ref) { return createElement(actual.Tree, { ...props, ref }); }), { Node }) };
+});
 const wholeLabels: CompositeStudioLabels = { ...labels, whole: { signoff: "W-signoff", proposed: "W-proposed", contract: "W-contract", contentSlots: "W-slots", configurations: "W-config", unresolved: "W-unresolved", unassessed: "W-unassessed" } };
-afterEach(() => { cleanup(); vi.clearAllMocks(); window.history.replaceState(null, "", "/"); });
+afterEach(() => { cleanup(); vi.clearAllMocks(); treeRows.prepared.clear(); window.history.replaceState(null, "", "/"); });
 function contractsFor(...ids: string[]): BuildCatalogData {
   const contracts = loadBuildCatalog(), keep = new Set(ids);
   const prune = (node: PlacementNode): PlacementNode[] => {
@@ -125,6 +137,63 @@ it("keeps contract board preparation stable when native Tree blur advances the o
   expect(within(explorer()).getByRole("row", { name: "components.button", exact: true })).toHaveAttribute("aria-selected", "true");
   await user.keyboard("{ArrowDown}{Enter}");
   expect(state.leaf).not.toBe("components.button");
+});
+
+// Expands every canonical branch of one layer through the native chevron (as the installed Admin
+// traversal probe does), then advances the original session revision without an edit.
+async function canonicalTraversal(layer: "components" | "sections", initial: string) {
+  const f = fixture(false, true); let state!: WholeStudioState;
+  const mountedAt = performance.now();
+  render(<Surface adapter={f.adapter} initial={initial} onState={value => { state = value; }} />);
+  await screen.findByText(labels.autosave.saved);
+  const mountMs = Math.round(performance.now() - mountedAt);
+  const contracts = f.adapter.contracts!, placement = contracts.placements.find(entry => entry.layer === layer)!;
+  const expected = contracts.slots.filter(slot => slot.layer === layer).map(slot => slot.id);
+  const tree = within(explorer()).getByRole("treegrid", { name: wholeLabels.treeLabel });
+  const total = () => [...treeRows.prepared.values()].reduce((sum, count) => sum + count, 0);
+  const mounted = total(), started = performance.now(); let branches = 0;
+  for (const domain of placement.nodes) for (const branch of [domain, ...("children" in domain ? domain.children : [])]) {
+    const button = [...tree.querySelectorAll<HTMLButtonElement>("button")].find(candidate => candidate.getAttribute("aria-label") === branch.label);
+    expect(button, branch.id).toBeDefined();
+    const row = button!.closest('[role="row"]')!;
+    if (row.getAttribute("aria-expanded") !== "false") continue;
+    act(() => button!.click()); branches++;
+    expect(row.getAttribute("aria-expanded"), branch.id).toBe("true");
+  }
+  const expanded = total(), traversalMs = Math.round(performance.now() - started);
+  const session = state.session, revision = state.sessionState!.revision, library = state.input!.library;
+  fireEvent.focusOut(tree.querySelector('[role="row"]')!);
+  await act(async () => { await state.session!.flush(); });
+  expect(state.sessionState!.revision).toBeGreaterThan(revision + 1);
+  expect(state.session).toBe(session); expect(state.input!.library).toBe(library); expect(f.save).not.toHaveBeenCalled();
+  const rows = [...tree.querySelectorAll<HTMLElement>('[role="row"]')];
+  for (const id of expected) {
+    const leafRow = rows.find(candidate => candidate.textContent?.trim() === id);
+    expect(leafRow, id).toBeDefined(); expect(leafRow!.getAttribute("aria-disabled"), id).not.toBe("true");
+  }
+  const counts = [...treeRows.prepared.values()];
+  const result = { layer, leaves: expected.length, branches, identities: counts.length, mounted, afterExpansion: expanded, afterRevision: total(), maxPerIdentity: Math.max(...counts), mountMs, traversalMs, qualifier: "warm module jsdom source fixture; not installed Admin qualification" };
+  console.info("PERF6 explorer row preparation", JSON.stringify(result));
+  return result;
+}
+
+it("PERF6 canonical traversal prepares each explorer row once per node identity", async () => {
+  const components = await canonicalTraversal("components", "components.button");
+  // The user query still re-projects the explorer rows.
+  fireEvent.change(screen.getByRole("searchbox", { name: labels.canvas.search }), { target: { value: "button" } });
+  const tree = within(explorer()).getByRole("treegrid", { name: wholeLabels.treeLabel });
+  const leafRows = [...tree.querySelectorAll<HTMLElement>('[role="row"]')].map(leafRow => leafRow.textContent?.trim() ?? "").filter(id => id.startsWith("components."));
+  expect(leafRows).toContain("components.button"); expect(leafRows).not.toContain("components.select");
+  expect(leafRows.length).toBeGreaterThan(0); expect(leafRows.filter(id => !id.includes("button"))).toEqual([]);
+  cleanup(); treeRows.prepared.clear();
+  const sections = await canonicalTraversal("sections", "sections.hero");
+  // Floors are the C14 canonical counts; the current catalog may only grow.
+  expect(components.leaves).toBeGreaterThanOrEqual(57); expect(components.branches).toBeGreaterThanOrEqual(26);
+  expect(sections.leaves).toBeGreaterThanOrEqual(45);
+  for (const layer of [components, sections]) {
+    expect(layer.maxPerIdentity, layer.layer).toBe(1);
+    expect(layer.afterRevision, layer.layer).toBe(layer.identities);
+  }
 });
 
 it("updates contract labels and the complete workflow including real prompt callbacks", async () => {
