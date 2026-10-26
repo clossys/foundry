@@ -22,6 +22,10 @@ describe("view link region heading references", () => {
       expect(target).toContainElement(heading);
       expect(target?.textContent).toBe("Next destinations");
       expect(heading).toHaveClass("text-h3", "font-display", "text-ink-primary");
+      // The label reference names the Foundry SectionHeader block, never a hand-styled heading of its own.
+      expect(target).not.toBe(heading);
+      expect(heading).not.toHaveAttribute("id");
+      expect(target).toHaveClass("flex", "flex-col", "gap-xs");
       expect(region).not.toHaveAttribute("aria-label");
       return targetId;
     });

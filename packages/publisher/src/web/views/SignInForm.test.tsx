@@ -698,3 +698,27 @@ describe("restricted sign-in copy", () => {
       .toThrow("SignInForm access must be open, staff-only or invite-only.");
   });
 });
+
+describe("SignInForm :: Foundry step descriptions", () => {
+  /** A step description is the lone copy of a Foundry SectionHeader block, never a hand-styled paragraph among the fields. */
+  function expectSectionHeaderDescription(line: HTMLElement) {
+    expect(line.tagName).toBe("P");
+    expect(line).toHaveClass("text-body", "text-ink-secondary");
+    const block = line.parentElement as HTMLElement;
+    expect(block.tagName).toBe("DIV");
+    expect(block.children).toHaveLength(1);
+    expect(block).toHaveClass("flex", "flex-col", "gap-xs");
+  }
+
+  it("renders the password step's signed-in-as line through SectionHeader", async () => {
+    const { user } = setup();
+    await reachPasswordStep(user);
+    expectSectionHeaderDescription(screen.getByText(defaultText("password.description", { identifier: IDENTIFIER })));
+  });
+
+  it("renders the code step's description through SectionHeader", async () => {
+    const { user } = setupCodeStep();
+    await reachCodeStep(user);
+    expectSectionHeaderDescription(screen.getByText(defaultText("code.description", { identifier: IDENTIFIER })));
+  });
+});

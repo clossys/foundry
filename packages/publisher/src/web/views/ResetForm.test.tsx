@@ -614,3 +614,17 @@ describe("ResetForm :: copy and source", () => {
     }
   });
 });
+
+describe("ResetForm :: Foundry step description", () => {
+  it("renders the code step's description as the lone copy of a Foundry SectionHeader block", async () => {
+    const { user } = setup();
+    await reachResetStep(user);
+    const line = screen.getByText(defaultText("code.description"));
+    expect(line.tagName).toBe("P");
+    expect(line).toHaveClass("text-body", "text-ink-secondary");
+    const block = line.parentElement as HTMLElement;
+    expect(block.tagName).toBe("DIV");
+    expect(block.children).toHaveLength(1);
+    expect(block).toHaveClass("flex", "flex-col", "gap-xs");
+  });
+});

@@ -76,6 +76,23 @@ describe("BoundaryView", () => {
     expect(notes.className).toContain("flex flex-col gap-xs text-body-s text-ink-secondary");
   });
 
+  it("renders the title and description through one Foundry SectionHeader block beside the status heading", () => {
+    const { container } = renderBoundary();
+    const headerBlock = (container.querySelector("main") as HTMLElement).children[0] as HTMLElement;
+    const status = within(headerBlock).getByRole("heading", { level: 1, name: "500" });
+    const title = within(headerBlock).getByRole("heading", { level: 2, name: "Something went wrong" });
+    const description = within(headerBlock).getByText("Please try again.");
+    expect(headerBlock.children).toHaveLength(2);
+    expect(status.parentElement).toBe(headerBlock);
+    const sectionHeader = title.parentElement as HTMLElement;
+    expect(sectionHeader).not.toBe(headerBlock);
+    expect(sectionHeader.parentElement).toBe(headerBlock);
+    expect(sectionHeader).toHaveClass("flex", "flex-col", "gap-xs");
+    expect([...sectionHeader.children]).toEqual([title, description]);
+    expect(description.tagName).toBe("P");
+    expect(description).toHaveClass("text-body", "text-ink-secondary");
+  });
+
   it("omits the card when there is no action and the notes block when there are no notes", () => {
     const { container } = renderBoundary({ action: undefined });
     const main = container.querySelector("main") as HTMLElement;
