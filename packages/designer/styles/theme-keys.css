@@ -1259,10 +1259,6 @@
    cannot see (a leading `-` or `[`, parentheses, or a non-trailing bracket).
    Each keeps the declarations the arbitrary class meant; tablet-lg is the
    theme's --breakpoint-tablet-lg (1024px). */
-@utility motion-tier-fast {
-  --tw-duration: var(--ui-duration-fast, 120ms);
-  transition-duration: var(--ui-duration-fast, 120ms);
-}
 @utility frame-main-bleed { &:has([data-frame-bleed]) { padding: 0; } }
 @utility frame-region-closed { inline-size: 0; }
 @utility frame-nav-width {

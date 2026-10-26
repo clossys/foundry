@@ -19,15 +19,14 @@ interface Replacement {
   readonly declarations: readonly RegExp[];
   readonly source: string;
   readonly retired: readonly string[];
-  /** Theme files ship through utilities.css (compiled by the consumer), not compiled.css. */
-  readonly shipsIn: "compiled" | "utilities";
+  readonly shipsIn: "compiled";
 }
 
 const REPLACEMENTS: readonly Replacement[] = [
   { name: "frame-main-bleed", declarations: [/&:has\(\[data-frame-bleed\]\)\s*\{\s*padding: 0;/], source: "src/frames/AppFrame.tsx", retired: ["has-[[data-frame-bleed]]:p-0"], shipsIn: "compiled" },
-  { name: "frame-nav-width", declarations: [/inline-size: 0;/, /@media \(width >= 1024px\)\s*\{\s*inline-size: var\(--ui-layout-sidebar-w\);/], source: "src/frames/app-frame-layout.ts", retired: ["tablet-lg:[inline-size:var(--ui-layout-sidebar-w)]"], shipsIn: "compiled" },
-  { name: "frame-panel-width", declarations: [/inline-size: 0;/, /@media \(width >= 1024px\)\s*\{\s*inline-size: var\(--frame-panel-w\);/], source: "src/frames/app-frame-layout.ts", retired: ["tablet-lg:[inline-size:var(--frame-panel-w)]"], shipsIn: "compiled" },
-  { name: "frame-region-closed", declarations: [/inline-size: 0;/], source: "src/frames/app-frame-layout.ts", retired: ["[inline-size:0]"], shipsIn: "compiled" },
+  { name: "frame-nav-width", declarations: [/inline-size: 0;/, /@media \(width >= 1024px\)\s*\{\s*inline-size: var\(--ui-layout-sidebar-w\);/], source: "src/frames/app-frame-size-classes.ts", retired: ["tablet-lg:[inline-size:var(--ui-layout-sidebar-w)]"], shipsIn: "compiled" },
+  { name: "frame-panel-width", declarations: [/inline-size: 0;/, /@media \(width >= 1024px\)\s*\{\s*inline-size: var\(--frame-panel-w\);/], source: "src/frames/app-frame-size-classes.ts", retired: ["tablet-lg:[inline-size:var(--frame-panel-w)]"], shipsIn: "compiled" },
+  { name: "frame-region-closed", declarations: [/inline-size: 0;/], source: "src/frames/app-frame-size-classes.ts", retired: ["[inline-size:0]"], shipsIn: "compiled" },
   { name: "first-child-shrink", declarations: [/& > :first-child\s*\{\s*min-width: 0;/], source: "src/frames/FrameDock.tsx", retired: ["[&>:first-child]:min-w-0"], shipsIn: "compiled" },
   { name: "prompt-actions-bleed", declarations: [/margin-inline: calc\(var\(--spacing-lg, 16px\) \* -1\);/, /margin-block-end: calc\(var\(--spacing-lg, 16px\) \* -1\);/], source: "src/blocks/library-board/CandidatePromptDialog.tsx", retired: ["-mx-lg", "-mb-lg"], shipsIn: "compiled" },
   { name: "canvas-domain-rail", declarations: [/width: var\(--ui-layout-sidebar-rail-w\);/, /writing-mode: vertical-rl;/], source: "src/studio/CanvasDomain.tsx", retired: ["w-[var(--ui-layout-sidebar-rail-w)]", "[writing-mode:vertical-rl]"], shipsIn: "compiled" },
@@ -36,7 +35,6 @@ const REPLACEMENTS: readonly Replacement[] = [
   { name: "calendar-cell-size", declarations: [/width: var\(--ui-control-h-sm, 32px\);/, /height: var\(--ui-control-h-sm, 32px\);/], source: "src/components/Calendar.tsx", retired: ["size-[var(--ui-control-h-sm,32px)]"], shipsIn: "compiled" },
   { name: "canvas-caption-zoom-floor", declarations: [/font-size: max\(1em, calc\(var\(--text-caption\) \/ var\(--canvas-zoom, 1\)\)\);/], source: "src/blocks/canvas/CanvasLod.tsx", retired: ["text-[length:max(1em,calc(var(--text-caption)/var(--canvas-zoom,1)))]"], shipsIn: "compiled" },
   { name: "popover-arrow-rotate", declarations: [/\[data-placement="bottom"\] \*\)\s*\{\s*rotate: 180deg;/, /\[data-placement="left"\] \*\)\s*\{\s*rotate: -90deg;/, /\[data-placement="right"\] \*\)\s*\{\s*rotate: 90deg;/], source: "src/components/Popover.tsx", retired: ["group-data-[placement=bottom]:rotate-180", "group-data-[placement=left]:-rotate-90", "group-data-[placement=right]:rotate-90"], shipsIn: "compiled" },
-  { name: "motion-tier-fast", declarations: [/--tw-duration: var\(--ui-duration-fast, 120ms\);/, /transition-duration: var\(--ui-duration-fast, 120ms\);/], source: "src/theme/ThemeToggle.tsx", retired: ["duration-(--ui-duration-fast)"], shipsIn: "utilities" },
 ];
 
 /** Plain Tailwind variants that replace bracketed ones: the bare `data-*` form is scanner-visible. */
@@ -62,7 +60,6 @@ const escapeClass = (name: string) => name.replace(/[^a-zA-Z0-9_-]/g, (c) => `\\
 describe("named replacements for scanner-invisible arbitrary classes", () => {
   const themeKeys = read("styles/theme-keys.css");
   const compiled = read("styles/compiled.css");
-  const utilities = read("styles/utilities.css");
   const candidates = new Set(scanCompiledCssSources(packageRoot).candidates);
 
   it.each(REPLACEMENTS)("$name is defined in theme-keys.css with the declarations the arbitrary class meant", ({ name, declarations }) => {
@@ -75,12 +72,9 @@ describe("named replacements for scanner-invisible arbitrary classes", () => {
     const text = read(source);
     expect(text).toMatch(new RegExp(`["\\s]${name}["\\s]`));
     for (const token of retired) expect(text).not.toContain(token);
-    if (shipsIn === "compiled") {
-      expect(candidates.has(name), `${name} scanned`).toBe(true);
-      expect(compiled).toContain(`.${escapeClass(name)}`);
-    } else {
-      expect(utilities).toMatch(new RegExp(`(^|[\\s"])${name}([\\s"]|$)`, "m"));
-    }
+    expect(shipsIn).toBe("compiled");
+    expect(candidates.has(name), `${name} scanned`).toBe(true);
+    expect(compiled).toContain(`.${escapeClass(name)}`);
   });
 
   it.each(VARIANT_REPLACEMENTS)("$name replaces $retired and ships in compiled.css", ({ name, source, retired }) => {
