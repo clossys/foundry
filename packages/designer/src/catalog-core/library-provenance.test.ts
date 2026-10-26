@@ -27,8 +27,8 @@ describe("item-specific library provenance", () => {
     expect(column.license).toBe("MIT");
     expect(column.candidates).toHaveLength(26);
     expect(new Set(column.candidates.map(candidate => candidate.fill.slot)).size).toBe(26);
-    expect(column.candidates.filter(candidate => candidate.fill.relation === "subset")).toHaveLength(13);
-    expect(column.candidates.filter(candidate => candidate.fill.relation === "same-contract")).toHaveLength(13);
+    expect(column.candidates.filter(candidate => candidate.fill.relation === "subset")).toHaveLength(6);
+    expect(column.candidates.filter(candidate => candidate.fill.relation === "same-contract")).toHaveLength(20);
     for (const candidate of column.candidates) {
       const original = documents.find(doc => doc.$extensions["com.clossys.fill"].id === candidate.fill.id)!;
       expect(candidate.fill).toEqual(original.$extensions["com.clossys.fill"]);

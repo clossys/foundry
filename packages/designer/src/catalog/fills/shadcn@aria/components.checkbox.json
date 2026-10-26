@@ -15,15 +15,13 @@
         "sha256": "bd74264abb104368774e95baa3246982052e74bc9f7e174982105d715fdb7c14",
         "url": "https://github.com/shadcn-ui/ui"
       },
-      "relation": "subset",
+      "relation": "same-contract",
       "slot": "components.checkbox",
       "source": "shadcn@aria",
       "sourceAddress": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/bases/aria/ui/checkbox.tsx",
       "status": "draft",
       "trust": "pinned-upstream",
-      "unmapped": [
-        "scope.group"
-      ]
+      "unmapped": []
     }
   },
   "components": {

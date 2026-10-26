@@ -13,25 +13,13 @@
         "sha256": "0c17862bfbdc3f9c59ace9677226bc4316e71b289b49666536ac37409b2c6f30",
         "url": "https://github.com/shadcn-ui/ui"
       },
-      "relation": "subset",
+      "relation": "same-contract",
       "slot": "components.toggle-button",
       "source": "shadcn@aria",
       "sourceAddress": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/bases/aria/ui/toggle.tsx",
       "status": "draft",
       "trust": "pinned-upstream",
-      "unmapped": [
-        "variant.primary",
-        "variant.secondary",
-        "variant.danger",
-        "variant.tonal",
-        "variant.quiet",
-        "state.pressed",
-        "state.pending",
-        "shape.text",
-        "shape.icon-only",
-        "ground.base",
-        "ground.inverse"
-      ]
+      "unmapped": []
     }
   },
   "components": {

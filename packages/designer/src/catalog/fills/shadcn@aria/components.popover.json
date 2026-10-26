@@ -13,15 +13,13 @@
         "sha256": "ff617496f63c49105c177be5c2d21a2e4174a5417c3d675179b21cf98854deea",
         "url": "https://github.com/shadcn-ui/ui"
       },
-      "relation": "subset",
+      "relation": "same-contract",
       "slot": "components.popover",
       "source": "shadcn@aria",
       "sourceAddress": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/bases/aria/ui/popover.tsx",
       "status": "draft",
       "trust": "pinned-upstream",
-      "unmapped": [
-        "arrow"
-      ]
+      "unmapped": []
     }
   },
   "components": {

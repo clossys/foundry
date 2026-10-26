@@ -101,11 +101,11 @@ describe("Foundry component package descriptors", () => {
     expect(rows.get("components.slider")).toMatchObject({ status: "candidate", missing: [], supported: ["orientation.horizontal", "orientation.vertical", "selection.range", "selection.single"] });
     expect(rows.get("components.toggle-button")).toMatchObject({ status: "candidate", missing: [] });
     expect(rows.get("components.calendar")).toMatchObject({ status: "candidate", missing: [] });
-    expect(rows.get("components.checkbox")!.supported).toContain("scope.group");
+    expect(rows.get("components.checkbox")!.supported).toContain("scope.single");
     expect(rows.get("components.disclosure")!.supported).toContain("scope.group");
     expect(rows.get("components.breadcrumbs")!.missing).toContain("collapsed");
-    expect(rows.get("components.dialog")!.supported).toEqual(["dismissable", "role.alert", "role.modal"]);
-    expect(rows.get("components.popover")!.supported).toEqual(["arrow", "placement"]);
+    expect(rows.get("components.dialog")!.supported).toEqual(["dismissable", "role.modal"]);
+    expect(rows.get("components.popover")!.supported).toEqual(["placement"]);
     for (const leaf of ["checkbox", "disclosure", "select", "tabs", "form", "navigation-tree", "field", "text-field", "date-field", "grid-list", "toast", "chart-area", "chart-heatmap", "chart-range", "chart-scatter", "chart-status-strip", "chart-waterfall"]) {
       expect(rows.get(`components.${leaf}`)!.missing).toEqual([]);
       expect(rows.get(`components.${leaf}`)!.status).toBe("candidate");

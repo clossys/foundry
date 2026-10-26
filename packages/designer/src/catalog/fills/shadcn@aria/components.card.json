@@ -13,17 +13,13 @@
         "sha256": "0d525c03e086b0047f7c0700850281023359cfc020eb233fdb0d74ec870ebea0",
         "url": "https://github.com/shadcn-ui/ui"
       },
-      "relation": "subset",
+      "relation": "same-contract",
       "slot": "components.card",
       "source": "shadcn@aria",
       "sourceAddress": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/bases/aria/ui/card.tsx",
       "status": "draft",
       "trust": "pinned-upstream",
-      "unmapped": [
-        "variant.raised",
-        "variant.plate",
-        "variant.outline"
-      ]
+      "unmapped": []
     }
   },
   "components": {

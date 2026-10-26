@@ -48,26 +48,15 @@
       },
       "license": "MIT",
       "members": [
-        "ground.base",
-        "ground.inverse",
-        "shape.icon-only",
-        "shape.text",
         "size.lg",
         "size.md",
         "size.sm",
         "state.disabled",
         "state.focus-visible",
         "state.hover",
-        "state.pending",
-        "state.pressed",
         "state.selected",
-        "variant.danger",
         "variant.ghost",
-        "variant.outline",
-        "variant.primary",
-        "variant.quiet",
-        "variant.secondary",
-        "variant.tonal"
+        "variant.outline"
       ],
       "pin": {
         "export": "./components#ToggleButton",
@@ -75,26 +64,15 @@
         "version": "0.12.0"
       },
       "propMap": {
-        "ground.base": "./components#ToggleButton.ground=base",
-        "ground.inverse": "./components#ToggleButton.ground=inverse",
-        "shape.icon-only": "./components#ToggleButton.shape=icon-only",
-        "shape.text": "./components#ToggleButton.shape=text",
         "size.lg": "./components#ToggleButton.size=lg",
         "size.md": "./components#ToggleButton.size=md",
         "size.sm": "./components#ToggleButton.size=sm",
         "state.disabled": "./components#ToggleButton.isDisabled",
         "state.focus-visible": "./components#ToggleButton[data-focus-visible]",
         "state.hover": "./components#ToggleButton[data-hovered]",
-        "state.pending": "./components#ToggleButton.isPending",
-        "state.pressed": "./components#ToggleButton[data-pressed]",
         "state.selected": "./components#ToggleButton.isSelected",
-        "variant.danger": "./components#ToggleButton.variant=danger",
         "variant.ghost": "./components#ToggleButton.variant=ghost",
-        "variant.outline": "./components#ToggleButton.variant=outline",
-        "variant.primary": "./components#ToggleButton.variant=primary",
-        "variant.quiet": "./components#ToggleButton.variant=quiet",
-        "variant.secondary": "./components#ToggleButton.variant=secondary",
-        "variant.tonal": "./components#ToggleButton.variant=tonal"
+        "variant.outline": "./components#ToggleButton.variant=outline"
       },
       "props": [
         "aria-label",

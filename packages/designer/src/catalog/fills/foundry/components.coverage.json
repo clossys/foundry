@@ -107,11 +107,7 @@
       ],
       "slot": "components.card",
       "status": "candidate",
-      "supported": [
-        "variant.outline",
-        "variant.plate",
-        "variant.raised"
-      ]
+      "supported": []
     },
     {
       "missing": [],
@@ -259,7 +255,6 @@
       "slot": "components.checkbox",
       "status": "candidate",
       "supported": [
-        "scope.group",
         "scope.single",
         "state.checked",
         "state.indeterminate",
@@ -329,7 +324,6 @@
       "status": "candidate",
       "supported": [
         "dismissable",
-        "role.alert",
         "role.modal"
       ]
     },
@@ -343,8 +337,7 @@
       "slot": "components.disclosure",
       "status": "candidate",
       "supported": [
-        "scope.group",
-        "scope.single"
+        "scope.group"
       ]
     },
     {
@@ -521,7 +514,6 @@
       "slot": "components.popover",
       "status": "candidate",
       "supported": [
-        "arrow",
         "placement"
       ]
     },
@@ -697,10 +689,7 @@
       "status": "candidate",
       "supported": [
         "orientation.horizontal",
-        "orientation.vertical",
-        "size.lg",
-        "size.md",
-        "size.sm"
+        "orientation.vertical"
       ]
     },
     {
@@ -763,26 +752,15 @@
       "slot": "components.toggle-button",
       "status": "candidate",
       "supported": [
-        "ground.base",
-        "ground.inverse",
-        "shape.icon-only",
-        "shape.text",
         "size.lg",
         "size.md",
         "size.sm",
         "state.disabled",
         "state.focus-visible",
         "state.hover",
-        "state.pending",
-        "state.pressed",
         "state.selected",
-        "variant.danger",
         "variant.ghost",
-        "variant.outline",
-        "variant.primary",
-        "variant.quiet",
-        "variant.secondary",
-        "variant.tonal"
+        "variant.outline"
       ]
     },
     {

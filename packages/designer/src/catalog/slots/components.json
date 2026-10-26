@@ -254,7 +254,8 @@
           "tokens.z-index",
           "tokens.line-height",
           "tokens.caption-size",
-          "tokens.control-size"
+          "tokens.control-size",
+          "tokens.focus-outline"
         ],
         "assets": [
           "assets.icon-chevron-left",
@@ -278,11 +279,7 @@
       "root": "presentational",
       "members": {
         "mode": "closed",
-        "names": [
-          "variant.raised",
-          "variant.plate",
-          "variant.outline"
-        ]
+        "names": []
       },
       "props": [],
       "allowedReads": {
@@ -630,7 +627,6 @@
         "mode": "closed",
         "names": [
           "scope.single",
-          "scope.group",
           "state.checked",
           "state.indeterminate",
           "state.invalid"
@@ -747,7 +743,8 @@
         ],
         "assets": [
           "assets.icon-chevron-down",
-          "assets.icon-check"
+          "assets.icon-check",
+          "assets.icon-close"
         ]
       },
       "composes": [
@@ -841,7 +838,6 @@
         "mode": "closed",
         "names": [
           "role.modal",
-          "role.alert",
           "dismissable"
         ]
       },
@@ -886,7 +882,6 @@
       "members": {
         "mode": "closed",
         "names": [
-          "scope.single",
           "scope.group"
         ]
       },
@@ -909,7 +904,8 @@
           "tokens.transition-easing"
         ],
         "assets": [
-          "assets.icon-chevron-down"
+          "assets.icon-chevron-down",
+          "assets.icon-chevron-up"
         ]
       },
       "apg": "disclosure"
@@ -1435,8 +1431,7 @@
       "members": {
         "mode": "closed",
         "names": [
-          "placement",
-          "arrow"
+          "placement"
         ]
       },
       "props": [],
@@ -1652,7 +1647,8 @@
         ],
         "assets": [
           "assets.icon-chevron-down",
-          "assets.icon-check"
+          "assets.icon-check",
+          "assets.icon-search"
         ]
       },
       "composes": [
@@ -1946,10 +1942,7 @@
         "mode": "closed",
         "names": [
           "orientation.horizontal",
-          "orientation.vertical",
-          "size.sm",
-          "size.md",
-          "size.lg"
+          "orientation.vertical"
         ]
       },
       "props": [],
@@ -2102,25 +2095,14 @@
       "members": {
         "mode": "closed",
         "names": [
-          "variant.primary",
-          "variant.secondary",
           "variant.ghost",
-          "variant.danger",
           "variant.outline",
-          "variant.tonal",
-          "variant.quiet",
           "state.hover",
-          "state.pressed",
           "state.focus-visible",
           "state.disabled",
-          "state.pending",
           "size.sm",
           "size.md",
           "size.lg",
-          "shape.text",
-          "shape.icon-only",
-          "ground.base",
-          "ground.inverse",
           "state.selected"
         ]
       },

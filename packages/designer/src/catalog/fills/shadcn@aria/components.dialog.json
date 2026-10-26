@@ -16,15 +16,13 @@
         "sha256": "ff8a8e6b372e7eb06c931975d8ac1ea59d9271051ac178a62c95f6acae20bb35",
         "url": "https://github.com/shadcn-ui/ui"
       },
-      "relation": "subset",
+      "relation": "same-contract",
       "slot": "components.dialog",
       "source": "shadcn@aria",
       "sourceAddress": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/bases/aria/ui/dialog.tsx",
       "status": "draft",
       "trust": "pinned-upstream",
-      "unmapped": [
-        "role.alert"
-      ]
+      "unmapped": []
     }
   },
   "components": {

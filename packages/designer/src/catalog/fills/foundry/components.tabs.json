@@ -49,10 +49,7 @@
       "license": "MIT",
       "members": [
         "orientation.horizontal",
-        "orientation.vertical",
-        "size.lg",
-        "size.md",
-        "size.sm"
+        "orientation.vertical"
       ],
       "pin": {
         "export": "./components#Tabs",
@@ -61,10 +58,7 @@
       },
       "propMap": {
         "orientation.horizontal": "./components#Tabs.orientation=horizontal",
-        "orientation.vertical": "./components#Tabs.orientation=vertical",
-        "size.lg": "./components#Tabs.size=lg",
-        "size.md": "./components#Tabs.size=md",
-        "size.sm": "./components#Tabs.size=sm"
+        "orientation.vertical": "./components#Tabs.orientation=vertical"
       },
       "props": [
         "children",

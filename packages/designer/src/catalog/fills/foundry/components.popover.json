@@ -48,7 +48,6 @@
       },
       "license": "MIT",
       "members": [
-        "arrow",
         "placement"
       ],
       "pin": {
@@ -57,7 +56,6 @@
         "version": "0.12.0"
       },
       "propMap": {
-        "arrow": "./components#Popover.arrow",
         "placement": "./components#Popover.placement"
       },
       "props": [
