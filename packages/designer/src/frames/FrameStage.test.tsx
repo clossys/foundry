@@ -37,6 +37,8 @@ it('uses one observer for stage and content-sized boards and exact arrangement b
   const view = render(<FrameStage {...props()} />);
   expect(observed).toHaveLength(3);
   expect(screen.getByRole('list')).toHaveAttribute('data-frame-stage-bounds', '300,248');
+  // The canvas bleeds to the stage edge: AppFrame drops its page inset around it (cross-10).
+  expect(view.container.querySelector('[data-frame-stage]')).toHaveAttribute('data-frame-bleed');
   expect(screen.getAllByRole('listitem')).toHaveLength(2);
   expect(screen.getByRole('region', { name: 'Spacing' }).closest('[data-frame-stage-board]')).toHaveStyle({ top: '108px' });
   view.unmount(); expect(disconnect).toHaveBeenCalledOnce();
@@ -53,6 +55,7 @@ it('preserves board identity, current board and Edit across lanes, grid and 400 
   expect(screen.getByRole('button', { name: 'Editing' })).toBeInTheDocument();
   expect(board).toBe(screen.getByRole('region', { name: 'Colors' }));
   expect(screen.getByRole('list')).toHaveAttribute('data-frame-stage-layout', 'flow');
+  expect(screen.getByRole('region', { name: 'Library boards' })).not.toHaveAttribute('data-frame-bleed');
   expect(screen.getByRole('region', { name: 'Library boards' })).toHaveStyle({ overflow: 'auto' });
 });
 it('moves focus in readingOrder while preserving native key ownership', () => {

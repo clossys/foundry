@@ -83,7 +83,7 @@ export function FrameDock({ notices = [], dock, sheet = false }: { notices?: rea
         trigger={<Button variant="ghost" className="min-h-[var(--ui-layout-tap-target)] min-w-0 gap-xs" aria-expanded={sheetOpen}><span className="min-w-0 truncate">{dock?.label ?? "Page modules"}</span><Icon glyph={ChevronDown} decorative className={cx(FRAME_CHEVRON_MOTION, !sheetOpen && "rotate-180")} /></Button>}>
         <Tabs selectedKey={selected} onSelectionChange={key => setActive(String(key))} className="flex h-full min-h-0 flex-col gap-0">
           <Tabs.List aria-label={dock?.label ?? "Page modules"} className="min-w-0 shrink-0 overflow-x-auto">
-            {modules.map(module => <Tabs.Tab key={module.id} id={module.id} className="min-h-[var(--ui-layout-tap-target)]">{module.label}</Tabs.Tab>)}
+            {modules.map(module => <Tabs.Tab key={module.id} id={module.id} className="control-h-sm">{module.label}</Tabs.Tab>)}
           </Tabs.List>
           {modules.map(module => <Tabs.Panel key={module.id} id={module.id} className="min-h-0 min-w-0 flex-1 overflow-auto"><FrameModuleOutlet id={module.id} /></Tabs.Panel>)}
         </Tabs>
@@ -92,9 +92,9 @@ export function FrameDock({ notices = [], dock, sheet = false }: { notices?: rea
     </div> : modules.length > 0 ? <Tabs selectedKey={selected} onSelectionChange={key => { setActive(String(key)); setExpanded(true); }} className="gap-0">
       <div ref={strip} data-frame-dock-strip="" className="flex min-w-0 items-center justify-between gap-xs px-sm">
         {modules.length > 0 && <Tabs.List aria-label={dock?.label ?? "Page modules"} className="min-w-0 flex-1 overflow-x-auto border-0">
-          {modules.map(module => <Tabs.Tab key={module.id} id={module.id} onPress={() => setExpanded(true)} className="min-h-[var(--ui-layout-tap-target)]">{module.label}</Tabs.Tab>)}
+          {modules.map(module => <Tabs.Tab key={module.id} id={module.id} onPress={() => setExpanded(true)} className="control-h-sm">{module.label}</Tabs.Tab>)}
         </Tabs.List>}
-        {modules.length > 0 && <Button variant="ghost" className="icon-control-md" aria-label={expanded ? "Collapse page modules" : "Expand page modules"} aria-expanded={expanded} onPress={() => setExpanded(!expanded)}><Icon glyph={ChevronDown} decorative className={cx(FRAME_CHEVRON_MOTION, !expanded && "rotate-180")} /></Button>}
+        {modules.length > 0 && <Button size="sm" variant="ghost" className="icon-control-sm rounded-control p-0" aria-label={expanded ? "Collapse page modules" : "Expand page modules"} aria-expanded={expanded} onPress={() => setExpanded(!expanded)}><Icon glyph={ChevronDown} decorative size="sm" className={cx(FRAME_CHEVRON_MOTION, !expanded && "rotate-180")} /></Button>}
         <div className="ms-auto flex shrink-0 items-center gap-xs"><FrameSlotOutlet slot="dock-strip" /></div>
       </div>
       {expanded && content}

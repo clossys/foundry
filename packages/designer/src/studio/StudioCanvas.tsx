@@ -69,7 +69,7 @@ export function LegacyStudioCanvas({ panelInsets, className, candidateWorkflow }
     if (focus) { setQuery(""); setFilter("all"); current.setFocusedCell({ row: id }); }
   }, [state.layer]);
   useEffect(() => { state.canvasActions.current = { reveal }; return () => { state.canvasActions.current = null; }; }, [state.canvasActions, reveal]);
-  return <div data-studio="" data-layout={narrow ? "narrow" : "wide"} data-studio-canvas="" className={cx("relative isolate h-full w-full min-h-0 min-w-0 flex-1 overflow-hidden bg-surface-raised text-ink-primary", className)}>
+  return <div data-studio="" data-layout={narrow ? "narrow" : "wide"} data-studio-canvas="" data-frame-bleed="" className={cx("relative isolate h-full w-full min-h-0 min-w-0 flex-1 overflow-hidden bg-surface-raised text-ink-primary", className)}>
     {state.layer === "assets" && state.summary ? <AssetExemptions findings={state.summary.issues.map(issue => issue.finding)} /> : null}
     {state.livePreview && state.live?.css ? <style data-studio-preview="">{state.live.css}</style> : null}
     {state.ready ? <style data-studio-candidates="">{candidateStyles}</style> : null}
