@@ -40,7 +40,7 @@ describe("Foundry frame descriptors", () => {
     for (const [name, bytes] of Object.entries(files)) expect(readFileSync(resolve(directory, name), "utf8"), name).toBe(bytes);
     expect(result().coverage.map(row => row.slot)).toEqual(slots.map(slot => slot.id).sort());
     expect(result().coverage).toHaveLength(9);
-    expect(result().fills).toHaveLength(8);
+    expect(result().fills).toHaveLength(9);
     expect(generatedFoundryFrameFiles({ slots: [...slots].reverse() as unknown as readonly FrameSlot[], exports })).toEqual(files);
   });
   it("pins independently available public exports at actual manifest versions", () => {
@@ -75,7 +75,7 @@ describe("Foundry frame descriptors", () => {
       if (fill) expect(fill.$extensions["com.clossys.fill"].relation).toBe(row.missing.length + row.missingSlots.length + row.missingStatePorts.length ? "subset" : "same-contract");
     }
     const rows = new Map(result().coverage.map(row => [row.slot, row]));
-    expect(rows.get("frames.inspector")).toMatchObject({ status: "unavailable", supported: [], missingRequiredSlots: ["content"] });
+    expect(rows.get("frames.inspector")).toMatchObject({ status: "candidate", supported: ["presentation.collapsed", "presentation.docked", "presentation.overlay"], missingSlots: [], missingRequiredSlots: [], missingStatePorts: [] });
     expect(rows.get("frames.app-shell")!.missing).toEqual(["layout.immersive", "layout.standard", "stage.contained", "stage.full"]);
     expect(rows.get("frames.site-shell")!.missingSlots).toEqual(["consent", "progress"]);
     expect(rows.get("frames.app-header")!.missingSlots).toEqual([]);

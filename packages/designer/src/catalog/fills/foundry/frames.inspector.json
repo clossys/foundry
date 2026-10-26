@@ -1,0 +1,54 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/frames.inspector",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "export": "./frames#InspectorFrame",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "frames.inspector",
+      "source": "foundry",
+      "sourceAddress": "./frames#InspectorFrame",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "frames": {
+    "inspector": {
+      "impl": {
+        "export": "InspectorFrame",
+        "kind": "package",
+        "module": "@clossys/designer/frames"
+      },
+      "members": [
+        "presentation.collapsed",
+        "presentation.docked",
+        "presentation.overlay"
+      ],
+      "propMap": {
+        "presentation.collapsed": "collapsed=true",
+        "presentation.docked": "presentation=docked",
+        "presentation.overlay": "presentation=overlay"
+      },
+      "slot": "frames.inspector",
+      "slots": {
+        "content": "children"
+      },
+      "statePorts": {
+        "collapsed": "collapsed/onCollapsedChange",
+        "max": "max",
+        "min": "min",
+        "step": "step",
+        "width": "value/onChange"
+      }
+    }
+  }
+}

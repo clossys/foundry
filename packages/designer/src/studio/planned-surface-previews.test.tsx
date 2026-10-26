@@ -20,13 +20,13 @@ describe("planSurfacePreviews", () => {
   it("accounts for every planned Sections/Frames leaf of the real catalog: a preview or a named reason", () => {
     const { plan, fills } = realPlan();
     const planned = plan.rows.filter(row => row.status !== "not-chosen");
-    expect(planned.filter(row => row.slot.startsWith("sections."))).toHaveLength(26);
-    expect(planned.filter(row => row.slot.startsWith("frames."))).toHaveLength(5);
+    expect(planned.filter(row => row.slot.startsWith("sections."))).toHaveLength(29);
+    expect(planned.filter(row => row.slot.startsWith("frames."))).toHaveLength(6);
     const result = planSurfacePreviews({ plan, fills });
     const previewed = Object.keys(result.previews), gaps = result.unrenderable.map(gap => gap.slot);
     expect([...previewed, ...gaps].sort()).toEqual(planned.map(row => row.slot).sort());
-    expect(previewed.filter(slot => slot.startsWith("sections."))).toHaveLength(18);
-    expect(previewed.filter(slot => slot.startsWith("frames.")).sort()).toEqual(["frames.app-header", "frames.site-footer", "frames.site-header"]);
+    expect(previewed.filter(slot => slot.startsWith("sections."))).toHaveLength(21);
+    expect(previewed.filter(slot => slot.startsWith("frames.")).sort()).toEqual(["frames.app-header", "frames.inspector", "frames.site-footer", "frames.site-header"]);
     expect(result.unrenderable.every(gap => gap.reason.length > 0)).toBe(true);
     // A Publisher frame is reported, never imitated by a designer export.
     expect(result.unrenderable.find(gap => gap.slot === "frames.site-shell")?.reason).toBe("@clossys/publisher/web#SiteFrame is not a designer export; the designer does not render it");
@@ -58,6 +58,11 @@ describe("planSurfacePreviews", () => {
     expect(html["sections.access-matrix"]).toContain("View projects");
     expect(html["sections.pagination"]).toContain("nav");
     expect(html["frames.site-header"]).toContain("Northwind");
+    expect(html["sections.filter-builder"]).toContain("Filter records");
+    expect(html["sections.settings"]).toContain("Workspace settings");
+    expect(html["sections.wizard"]).toContain("Setup steps");
+    expect(html["frames.inspector"]).toContain("<aside");
+    expect(result.previews["frames.inspector"]?.pointer).toBe("@clossys/designer/frames#InspectorFrame");
     expect(result.previews["frames.site-header"]?.pointer).toBe("@clossys/designer/shell/server#SiteHeader");
   });
 

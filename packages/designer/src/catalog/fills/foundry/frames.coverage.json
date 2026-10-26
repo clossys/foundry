@@ -88,31 +88,21 @@
       "supported": []
     },
     {
-      "missing": [
-        "presentation.collapsed",
-        "presentation.docked",
-        "presentation.overlay"
-      ],
-      "missingRequiredSlots": [
-        "content"
-      ],
-      "missingSlots": [
-        "content"
-      ],
-      "missingStatePorts": [
-        "collapsed",
-        "max",
-        "min",
-        "step",
-        "width"
-      ],
+      "missing": [],
+      "missingRequiredSlots": [],
+      "missingSlots": [],
+      "missingStatePorts": [],
       "notes": [
-        "No standalone inspector frame export exists. AppFrame rightPanel composes ResizablePane and Drawer; neither is a complete inspector frame contract.",
+        "InspectorFrame is a named aside around a start-edge ResizablePane when docked and an end-placed Drawer when overlay; collapse and width are host-ownable state. AppFrame rightPanel does not yet compose it.",
         "Descriptor only; anatomy, source, accessibility, contrast, layout and rendered conformance are unmeasured."
       ],
       "slot": "frames.inspector",
-      "status": "unavailable",
-      "supported": []
+      "status": "candidate",
+      "supported": [
+        "presentation.collapsed",
+        "presentation.docked",
+        "presentation.overlay"
+      ]
     },
     {
       "missing": [],

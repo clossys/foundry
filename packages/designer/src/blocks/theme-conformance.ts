@@ -33,6 +33,9 @@ const PLATED_READING = [...GROUNDED_READING, ...RAISED_READING, ...INVERSE_RAISE
 export const BLOCK_THEME_CONFORMANCE: readonly BlockThemeRegistration[] = [
   { exportName: "AccessMatrix", source: "src/blocks/AccessMatrix.tsx", contrastPairs: [...BASE_READING, ...RAISED_READING, "ink-on-accent/accent"] },
   { exportName: "ColumnMapper", source: "src/blocks/ColumnMapper.tsx", contrastPairs: [...RAISED_READING, "ink-muted/surface-raised", "status-danger-text/surface-raised"] },
+  { exportName: "FilterBuilder", source: "src/blocks/FilterBuilder.tsx", contrastPairs: [...BASE_READING, ...RAISED_READING] },
+  { exportName: "SettingsSection", source: "src/blocks/SettingsSection.tsx", contrastPairs: [...BASE_READING, ...RAISED_READING] },
+  { exportName: "FormWizard", source: "src/blocks/FormWizard.tsx", contrastPairs: [...BASE_READING, ...RAISED_READING] },
   { exportName: "Lockup", source: "src/blocks/Lockup.tsx", contrastPairs: ["ink-primary/surface-base", "ink-on-inverse/surface-inverse"] },
   { exportName: "PageHeader", source: "src/blocks/PageHeader.tsx", contrastPairs: BASE_READING },
   { exportName: "AccountMenu", source: "src/blocks/AccountMenu.tsx", contrastPairs: RAISED_READING },
