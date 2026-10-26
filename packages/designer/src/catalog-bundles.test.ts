@@ -28,9 +28,11 @@ describe("offline catalog candidate bundle", () => {
       expect(fill.pin).toMatchObject({ package: pkg.name, version: pkg.version });
       expect(doc.$extensions["com.clossys.fill"].conforms).toEqual([]);
     }
-    for (const slot of ["color-picker", "number-field", "tag-group", "toolbar", "tree"]) {
+    for (const slot of ["color-picker", "number-field", "tag-group", "tree"]) {
       expect(Object.values(foundry.find(doc => doc.components[slot])!.components)[0]!.blockers?.length).toBeGreaterThan(0);
     }
+    // Toolbar's measured K5 craft comparison (importers/foundry-craft.json) passes, so its offer is unblocked.
+    expect(Object.values(foundry.find(doc => doc.components.toolbar)!.components)[0]!.blockers).toBeUndefined();
     expect(bundle.notices.some(file => file.path.endsWith("phosphor/LICENSE"))).toBe(true);
   });
 

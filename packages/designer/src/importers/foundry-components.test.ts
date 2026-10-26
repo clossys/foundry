@@ -21,13 +21,13 @@ const exports = Object.fromEntries((["components", "charts", "shell"] as const).
   return [subpath, names];
 })) as Record<FoundryComponentSubpath, string[]>;
 const imported = () => importFoundryComponents({ exports });
-// I1 retains five blocked candidates in its dynamic bundle, not stored JSON files.
-const dynamicBlockedLeaves = ["color-picker", "number-field", "tag-group", "toolbar", "tree"];
+// I1 retains four blocked candidates in its dynamic bundle, not stored JSON files (toolbar's measured K5 craft comparison passes).
+const dynamicBlockedLeaves = ["color-picker", "number-field", "tag-group", "tree"];
 const storedMappings = Object.fromEntries(Object.entries(FOUNDRY_COMPONENT_MAP).filter(([leaf]) => !dynamicBlockedLeaves.includes(leaf) && !["semantic-content", "native-action"].includes(leaf)));
 const changedMap = (leaf: string, change: Partial<FoundryComponentMapping>) => ({ ...FOUNDRY_COMPONENT_MAP, [leaf]: { ...FOUNDRY_COMPONENT_MAP[leaf]!, ...change } });
 
 describe("Foundry component package descriptors", () => {
-  it("regenerates 48 stored package descriptors and keeps five dynamic blocked candidates distinct", () => {
+  it("regenerates 49 stored package descriptors and keeps four dynamic blocked candidates distinct", () => {
     const files = generatedFoundryComponentFiles({ exports, mappings: storedMappings, slots: signedSlots });
     // Explicit local regeneration writes only this generator's enumerated component artifacts.
     if (process.env.UPDATE_FOUNDRY_COMPONENT_FILLS === "1") for (const [name, bytes] of Object.entries(files)) writeFileSync(resolve(fillsDirectory, name), bytes);
@@ -37,7 +37,7 @@ describe("Foundry component package descriptors", () => {
     expect(imported().coverage.map(row => row.slot)).toEqual(slots.map(slot => slot.id).sort());
     expect(imported().coverage).toHaveLength(59);
     expect(signedSlots).toHaveLength(57);
-    expect(importFoundryComponents({ exports, mappings: storedMappings, slots: signedSlots }).fills).toHaveLength(48);
+    expect(importFoundryComponents({ exports, mappings: storedMappings, slots: signedSlots }).fills).toHaveLength(49);
     expect(imported().fills).toHaveLength(55);
     expect(imported().fills.filter(doc => !["components.semantic-content", "components.native-action"].includes(doc.$extensions["com.clossys.fill"].slot))).toHaveLength(53);
     const blocked = imported().fills.filter(doc => Object.values(doc.components)[0]!.blockers?.length);
