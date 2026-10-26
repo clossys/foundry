@@ -18,7 +18,7 @@
  * `ChartFrame` is the shared container (plot area, axes, grid, legend
  * slot, accessible title/description, table-view fallback) that
  * `BarChart`, `LineChart`, `WaterfallChart`, `RangeChart`, and `ScatterChart` compose; `Sparkline` is the one
- * exception (see its own doc comment for why it doesn't use `ChartFrame`).
+ * exception (see its own doc comment for why it doesn't use `ChartFrame`; it reuses only `ChartFrame.Tooltip`).
  *
  * The scale helpers and color-slot assignment (`internal/scale.ts`,
  * `internal/chart-vars.ts`) are deliberately NOT exported here, the same

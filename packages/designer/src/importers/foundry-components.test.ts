@@ -104,7 +104,7 @@ describe("Foundry component package descriptors", () => {
       expect(rows.get(`components.${leaf}`)!.missing).toEqual([]);
       expect(rows.get(`components.${leaf}`)!.status).toBe("candidate");
     }
-    expect(rows.get("components.chart-sparkline")!.supported).toEqual(["series"]);
+    expect(rows.get("components.chart-sparkline")!.supported).toEqual(["axes", "legend", "series", "tooltip"]);
   });
 
   it("maps the package Menu popup, its inline presentation and root selection to real exports", () => {

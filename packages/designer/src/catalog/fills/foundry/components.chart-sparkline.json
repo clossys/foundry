@@ -13,17 +13,12 @@
         "package": "@clossys/designer",
         "version": "0.12.0"
       },
-      "relation": "subset",
+      "relation": "same-contract",
       "slot": "components.chart-sparkline",
       "source": "foundry",
       "sourceAddress": "./charts#Sparkline",
       "status": "draft",
-      "trust": "foundry",
-      "unmapped": [
-        "axes",
-        "legend",
-        "tooltip"
-      ]
+      "trust": "foundry"
     }
   },
   "components": {
@@ -48,7 +43,10 @@
       },
       "license": "MIT",
       "members": [
-        "series"
+        "axes",
+        "legend",
+        "series",
+        "tooltip"
       ],
       "pin": {
         "export": "./charts#Sparkline",
@@ -56,11 +54,17 @@
         "version": "0.12.0"
       },
       "propMap": {
-        "series": "./charts#Sparkline.values"
+        "axes": "./charts#Sparkline.axes",
+        "legend": "./charts#Sparkline.legend",
+        "series": "./charts#Sparkline.values",
+        "tooltip": "./charts#Sparkline.tooltip"
       },
       "props": [
+        "axes",
         "className",
+        "legend",
         "title",
+        "tooltip",
         "valueFormat",
         "values"
       ],

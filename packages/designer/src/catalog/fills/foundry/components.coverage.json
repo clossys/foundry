@@ -202,19 +202,18 @@
       ]
     },
     {
-      "missing": [
-        "axes",
-        "legend",
-        "tooltip"
-      ],
+      "missing": [],
       "notes": [
-        "Sparkline has no axes, legend or tooltip API.",
+        "Axes, legend and tooltip are opt-in (off by default, so the bare inline trend is unchanged). The tooltip reuses the shared ChartFrame.Tooltip part; accessibility and browser behavior remain unmeasured, static CSS inspection has no Escape dismissal, and long labels may clip. The complete table remains available.",
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
       ],
       "slot": "components.chart-sparkline",
-      "status": "subset",
+      "status": "candidate",
       "supported": [
-        "series"
+        "axes",
+        "legend",
+        "series",
+        "tooltip"
       ]
     },
     {
