@@ -1,0 +1,56 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/sections.filter-builder",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "export": "./blocks#FilterBuilder",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "sections.filter-builder",
+      "source": "foundry",
+      "sourceAddress": "./blocks#FilterBuilder",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "sections": {
+    "filter-builder": {
+      "configs": {},
+      "impl": {
+        "export": "FilterBuilder",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "license": "MIT",
+      "notes": [
+        "Groups are controlled records of field/operator/value conditions with an all/any match; groups combine as all. Host supplies onGroupsChange and labels and evaluates the conditions; no date-picker or tag-group value editor is claimed.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "parts": [],
+      "pin": {
+        "export": "./blocks#FilterBuilder",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {},
+      "slot": "sections.filter-builder",
+      "slotMap": {
+        "fields": "./blocks#FilterBuilder.fields",
+        "groups": "./blocks#FilterBuilder.groups",
+        "operators": "./blocks#FilterBuilder.operators"
+      },
+      "source": "foundry"
+    }
+  }
+}

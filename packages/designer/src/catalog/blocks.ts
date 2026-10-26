@@ -336,7 +336,7 @@ export const BLOCK_ENTRIES: readonly BlockEntry[] = [
   // Collect / Forms
   built(FORMS, "Form", { id: "form.form", label: "Form", stableCandidate: true, notes: [STABLE_CANDIDATE] }),
   exported(FORMS, "NewsletterBand", { id: "form.newsletter-band", label: "Newsletter band" }),
-  spec(FORMS, { id: "form.form-wizard", label: "Form wizard" }),
+  exported(FORMS, "FormWizard", { id: "form.form-wizard", label: "Form wizard" }),
 
   // Collect / Fields
   built(FIELDS, "FieldGroup", { id: "form.field-group", label: "Field group" }),
@@ -351,10 +351,10 @@ export const BLOCK_ENTRIES: readonly BlockEntry[] = [
   exported(IMPORT, "ColumnMapper", { id: "form.column-mapper", label: "Column mapper" }),
 
   // Collect / Settings
-  spec(SETTINGS, {
+  exported(SETTINGS, "SettingsSection", {
     id: "form.settings-section",
     label: "Settings section",
-    notes: ["Check the admin routes for a consumer before building."],
+    notes: ["Its saveBar region hosts the save bar; form.save-bar stays a separate spec."],
   }),
   spec(SETTINGS, {
     id: "form.save-bar",
@@ -400,7 +400,7 @@ export const BLOCK_ENTRIES: readonly BlockEntry[] = [
   spec(PAGING, { id: "form.load-more", label: "Load more" }),
 
   // Navigate / Filtering
-  spec(FILTERING, { id: "form.filter-builder", label: "Filter builder" }),
+  exported(FILTERING, "FilterBuilder", { id: "form.filter-builder", label: "Filter builder" }),
 
   // Respond / States
   built(STATES, "EmptyState", {

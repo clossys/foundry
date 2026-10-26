@@ -17,6 +17,13 @@ import { ColumnMapper } from "../blocks/ColumnMapper.js";
 import { columnMapperSample } from "../blocks/column-mapper/sample.js";
 import { DetailView } from "../blocks/DetailView.js";
 import { EmptyState } from "../blocks/EmptyState.js";
+import { FilterBuilder } from "../blocks/FilterBuilder.js";
+import { filterBuilderSample } from "../blocks/filter-builder/sample.js";
+import { FormWizard } from "../blocks/FormWizard.js";
+import { formWizardSample } from "../blocks/form-wizard/sample.js";
+import { SettingsSection } from "../blocks/SettingsSection.js";
+import { settingsSectionSample } from "../blocks/settings-section/sample.js";
+import { InspectorFrame } from "../frames/InspectorFrame.js";
 import { Faq } from "../blocks/Faq.js";
 import { FeatureGrid } from "../blocks/FeatureGrid.js";
 import { LogoCloud } from "../blocks/LogoCloud.js";
@@ -36,7 +43,7 @@ import { SiteFooter } from "../shell/SiteFooter.js";
 
 /** This designer build renders only its own package exports. Another package's export (for example a Publisher frame) is reported, not imitated. */
 const DESIGNER_PACKAGE = "@clossys/designer/";
-const BLOCKS = "@clossys/designer/blocks#", SHELL = "@clossys/designer/shell/server#";
+const BLOCKS = "@clossys/designer/blocks#", SHELL = "@clossys/designer/shell/server#", FRAMES = "@clossys/designer/frames#";
 
 const noop = () => {};
 
@@ -48,6 +55,9 @@ const BLOCK_SAMPLES: Readonly<Record<string, () => ReactNode>> = {
   DetailView: () => <DetailView title="Order 1042" fields={[{ label: "Customer", value: "Northwind" }, { label: "Status", value: "Shipped" }, { label: "Total", value: "$1,280.00" }, { label: "Placed", value: "12 March 2026" }]} />,
   EmptyState: () => <EmptyState title="No projects yet" description="Create a project to start collecting work in one place." />,
   Faq: () => <Faq heading="Questions" items={[{ id: "billing", question: "How does billing work?", answer: "You are billed monthly for the seats in use." }, { id: "cancel", question: "Can I cancel at any time?", answer: "Yes. Your workspace stays readable after cancelling." }]} />,
+  FilterBuilder: () => <FilterBuilder {...filterBuilderSample} />,
+  FormWizard: () => <FormWizard {...formWizardSample} />,
+  SettingsSection: () => <SettingsSection {...settingsSectionSample} />,
   FeatureGrid: () => <FeatureGrid heading="Why teams switch" items={[{ id: "fast", heading: "Fast setup", description: "Start from a working default in minutes." }, { id: "safe", heading: "Safe changes", description: "Every change is checked before it ships." }, { id: "shared", heading: "Shared library", description: "One source of truth for every product." }]} />,
   LogoCloud: () => <LogoCloud items={["Northwind", "Contoso", "Fabrikam"].map(name => ({ id: name.toLowerCase(), name, logo: <span>{name}</span> }))} />,
   MediaFigure: () => <MediaFigure caption="The workspace overview"><svg role="img" aria-label="Workspace overview" viewBox="0 0 16 9" width="100%"><rect width="16" height="9" fill="currentColor" opacity="0.12" /></svg></MediaFigure>,
@@ -66,9 +76,13 @@ const SHELL_SAMPLES: Readonly<Record<string, () => ReactNode>> = {
   SiteHeader: () => <SiteHeader position="static" brand={<span>Northwind</span>} nav={<a href="#product">Product</a>} />,
   SiteFooter: () => <SiteFooter secondary={<p>Northwind, sample footer</p>} />,
 };
+const FRAME_SAMPLES: Readonly<Record<string, () => ReactNode>> = {
+  InspectorFrame: () => <InspectorFrame label="Details" handleLabel="Resize details" closeLabel="Close details" openLabel="Show details" min={220} max={420} defaultValue={280}><p>Selected: Hero heading</p></InspectorFrame>,
+};
 const SAMPLES: Readonly<Record<string, () => ReactNode>> = {
   ...Object.fromEntries(Object.entries(BLOCK_SAMPLES).map(([name, sample]) => [BLOCKS + name, sample])),
   ...Object.fromEntries(Object.entries(SHELL_SAMPLES).map(([name, sample]) => [SHELL + name, sample])),
+  ...Object.fromEntries(Object.entries(FRAME_SAMPLES).map(([name, sample]) => [FRAMES + name, sample])),
 };
 
 export interface PlannedSurfacePreview {

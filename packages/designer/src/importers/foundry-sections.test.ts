@@ -17,12 +17,12 @@ const imported = () => importFoundrySections({ exports });
 const change = (leaf: string, patch: Partial<(typeof FOUNDRY_SECTION_MAP)[string]>) => ({ ...FOUNDRY_SECTION_MAP, [leaf]: { ...FOUNDRY_SECTION_MAP[leaf]!, ...patch } });
 
 describe("Foundry section package descriptors", () => {
-  it("regenerates exactly 30 descriptors and coverage for all 45 leaves", () => {
+  it("regenerates exactly 33 descriptors and coverage for all 45 leaves", () => {
     const files = generatedFoundrySectionFiles({ exports });
     if (process.env.UPDATE_FOUNDRY_SECTION_FILLS === "1") for (const [name, bytes] of Object.entries(files)) writeFileSync(resolve(directory, name), bytes);
     expect(readdirSync(directory).filter(name => name.startsWith("sections.") && name.endsWith(".json")).sort()).toEqual(Object.keys(files).sort());
     for (const [name, bytes] of Object.entries(files)) expect(readFileSync(resolve(directory, name), "utf8"), name).toBe(bytes);
-    expect(imported().fills).toHaveLength(30);
+    expect(imported().fills).toHaveLength(33);
     expect(imported().coverage.map(row => row.slot)).toEqual(slots.map(slot => slot.id).sort());
     expect(imported().coverage).toHaveLength(45);
     expect(generatedFoundrySectionFiles({ exports, slots: [...slots].reverse() })).toEqual(files);
@@ -68,7 +68,7 @@ describe("Foundry section package descriptors", () => {
 
   it("keeps unavailable sections and aggregate recipes explicit", () => {
     expect(imported().coverage.filter(row => row.status === "unavailable").map(row => row.slot)).toEqual([
-      "activity-feed", "audit-log", "call-to-action", "cards", "consent", "data-grid", "error-state", "filter-builder", "gallery", "notices", "settings", "stats", "timeline", "usage", "wizard",
+      "activity-feed", "audit-log", "call-to-action", "cards", "consent", "data-grid", "error-state", "gallery", "notices", "stats", "timeline", "usage",
     ].map(leaf => `sections.${leaf}`));
     const docs = imported().fills.flatMap(doc => Object.values(doc.sections));
     for (const name of ["EventItem", "Stat", "UsageMeter", "Items"]) expect(docs.some(doc => doc.impl.export === name)).toBe(false);

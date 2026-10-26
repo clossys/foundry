@@ -6,6 +6,9 @@ export { APP_FRAME_RIGHT_PANEL_CONFIG } from "./right-panel-config.js";
 export { AppFrameSpecimen } from "./AppFrame.specimen.js";
 export type { AppFrameSpecimenProps } from "./AppFrame.specimen.js";
 
+export { InspectorFrame } from "./InspectorFrame.js";
+export type { InspectorFrameProps, InspectorFramePresentation } from "./InspectorFrame.js";
+
 export { FrameStage, frameSectionRefKey } from "./FrameStage.js";
 export type { FrameStageProps, FrameStageSectionRef } from "./FrameStage.js";
 

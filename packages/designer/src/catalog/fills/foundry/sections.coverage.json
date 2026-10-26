@@ -404,24 +404,20 @@
     },
     {
       "missingMembers": [],
-      "missingRequiredSlots": [
-        "fields",
-        "groups",
-        "operators"
-      ],
-      "missingSlots": [
-        "fields",
-        "groups",
-        "operators"
-      ],
+      "missingRequiredSlots": [],
+      "missingSlots": [],
       "notes": [
-        "A filter model is not an exported filter-builder section.",
+        "Groups are controlled records of field/operator/value conditions with an all/any match; groups combine as all. Host supplies onGroupsChange and labels and evaluates the conditions; no date-picker or tag-group value editor is claimed.",
         "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.filter-builder",
-      "status": "unavailable",
+      "status": "candidate",
       "supportedMembers": [],
-      "supportedSlots": [],
+      "supportedSlots": [
+        "fields",
+        "groups",
+        "operators"
+      ],
       "unresolvedMemberAxes": []
     },
     {
@@ -736,22 +732,20 @@
     },
     {
       "missingMembers": [],
-      "missingRequiredSlots": [
-        "groups"
+      "missingRequiredSlots": [],
+      "missingSlots": [],
+      "notes": [
+        "Each group is a FieldGroup fieldset holding host fields; dirty is a list of group ids marked unsaved. The save bar region renders only while a group is dirty. Persistence and toasts belong to the host; the source renders its own h2 rather than shared section-header anatomy.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
-      "missingSlots": [
+      "slot": "sections.settings",
+      "status": "candidate",
+      "supportedMembers": [],
+      "supportedSlots": [
         "dirty",
         "groups",
         "save-bar"
       ],
-      "notes": [
-        "Registry row is a spec; no settings/save-bar section export.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
-      ],
-      "slot": "sections.settings",
-      "status": "unavailable",
-      "supportedMembers": [],
-      "supportedSlots": [],
       "unresolvedMemberAxes": []
     },
     {
@@ -903,25 +897,22 @@
     },
     {
       "missingMembers": [],
-      "missingRequiredSlots": [
-        "next",
-        "steps"
+      "missingRequiredSlots": [],
+      "missingSlots": [],
+      "notes": [
+        "Current step is controlled by id; the host supplies onNext/onBack and validation. Progress defaults to a ProgressBar; review shows on the last step only. No band or section-header anatomy.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
-      "missingSlots": [
+      "slot": "sections.wizard",
+      "status": "candidate",
+      "supportedMembers": [],
+      "supportedSlots": [
         "back",
         "next",
         "progress",
         "review",
         "steps"
       ],
-      "notes": [
-        "Registry row is a spec; no wizard package export.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
-      ],
-      "slot": "sections.wizard",
-      "status": "unavailable",
-      "supportedMembers": [],
-      "supportedSlots": [],
       "unresolvedMemberAxes": []
     }
   ],

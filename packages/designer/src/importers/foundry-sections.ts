@@ -74,6 +74,7 @@ export const FOUNDRY_SECTION_MAP: Readonly<Record<string, FoundrySectionMapping>
   explorer: mapping("Explorer", { tree: "tree", selection: "selectedId" }, {}, { notes: ["The tree prop is structured data, not a replaceable tree region. No list-pane region API; renderDetails is a selected-node detail callback. Host supplies label. Source implements tree keyboard handling locally."] }),
   faq: mapping("Faq", { items: "items" }, { "layout.list": "items[list]" }, { notes: ["Source has a fixed vertical disclosure list and no two-column layout API; section headings are hand-rendered."] }),
   features: mapping("FeatureGrid", { items: "items" }, { "layout.grid": "items[grid]" }, { notes: ["CompatFeatureGrid fixes the grid layout. Items have icon, heading and description but no per-item link prop; list and split layouts are absent."] }),
+  "filter-builder": mapping("FilterBuilder", { fields: "fields", operators: "operators", groups: "groups" }, {}, { notes: ["Groups are controlled records of field/operator/value conditions with an all/any match; groups combine as all. Host supplies onGroupsChange and labels and evaluates the conditions; no date-picker or tag-group value editor is claimed."] }),
   form: mapping("Form", { fields: "children", submit: "actions", "error-summary": "errorSummaryMessage" }, {}, { notes: ["Submit binds to the actions region; the host supplies the submit button. Error-summary content uses the errors and errorSummaryMessage API. Form is a block, not the unavailable components.form leaf."] }),
   hero: mapping("Hero", { media: "media", actions: "actions" }, { ...values("layout", "composition", ["editorial", "split"]), ...values("size", "size", ["display", "compact", "default"]) }, { notes: ["Host supplies required heading. Header is distributed over heading and supporting props, not a section-header region. Source composes SectionIntro; headingLevel permits h1."] }),
   "link-index": mapping("NavGrid", { links: "items" }, { "layout.cards": "items[cards]" }, { notes: ["CompatNavGrid renders fixed linked/action cards; list and plain-grid modes are absent. No generic Items recipe configuration is invented."] }),
@@ -86,11 +87,13 @@ export const FOUNDRY_SECTION_MAP: Readonly<Record<string, FoundrySectionMapping>
   pricing: mapping("PricingTable", { plans: "tiers", interval: "interval", highlight: "tiers[].isHighlighted" }, {}, { notes: ["Host supplies authored tiers and CTA nodes. Interval is displayed copy; controls is an arbitrary region, not a built-in interval toggle or checkout. Source also composes Matrix for comparison."] }),
   "record-detail": mapping("DetailView", { fields: "fields", actions: "actions" }, {}, { notes: ["No grouped ledger/status API. RecordLedger is an independent exported part, not an automatically configured DetailView composition."] }),
   "resource-list": mapping("ResourceList", { records: "items", selection: "selectionMode", toolbar: "toolbar", pagination: "footer" }, {}, { notes: ["Footer is an arbitrary host region; emptyState is required. Source includes loading, empty and error APIs, but no runtime observations are supplied."] }),
+  settings: mapping("SettingsSection", { groups: "groups", dirty: "dirty", "save-bar": "saveBar" }, {}, { notes: ["Each group is a FieldGroup fieldset holding host fields; dirty is a list of group ids marked unsaved. The save bar region renders only while a group is dirty. Persistence and toasts belong to the host; the source renders its own h2 rather than shared section-header anatomy."] }),
   "section-header": mapping("SectionHeader", { eyebrow: "eyebrow", heading: "title", description: "description", actions: "actions" }, {}, { notes: ["Heading level is configurable via level; id is inherited HTML input. No align or density members and no enforced two-action maximum."] }),
   "status-list": mapping("StatusList", { items: "items", legend: "legendLabel" }, { ...values("status", "items[].state", ["available", "partial", "planned"]), "status.not-offered": "items[].disposition=not-offered" }, { notes: ["Host supplies labels including disposition labels and legendLabel. Not-offered is a separate disposition, never a fourth readiness state."] }),
   steps: mapping("OrderedStepSequence", { steps: "items" }, {}, { notes: ["Steps require authored ordinal and heading; no per-step status member. Source owns its heading and layout."] }),
   "table-of-contents": mapping("TableOfContents", { headings: "items", "active-id": "currentId" }, {}, { notes: ["Host supplies label. Items are heading ids/labels; optional scroll tracking is source behavior, not a conformance observation."] }),
   "task-list": mapping("TaskList", { tasks: "items" }, {}, { notes: ["Tasks have status, not a done checkbox, due or assignee API. Host supplies statusLabels, progressText and emptyState. No checkbox/avatar composition is claimed."] }),
+  wizard: mapping("FormWizard", { steps: "steps", progress: "progress", back: "onBack", next: "onNext", review: "review" }, {}, { notes: ["Current step is controlled by id; the host supplies onNext/onBack and validation. Progress defaults to a ProgressBar; review shows on the last step only. No band or section-header anatomy."] }),
   testimonials: mapping("TestimonialSet", { quotes: "items" }, { "layout.single": "items.length=1", "layout.grid": "items.length[2,3,4,6]" }, { notes: ["Source selects single or grid geometry from enforced item counts; quote attribution uses attributorName/attributorRole/portrait. Root is ul with external anatomy."] }),
 };
 
@@ -101,14 +104,11 @@ const GAPS: Readonly<Record<string, string>> = {
   cards: "Items is a generic engine; the recipe row supplies no independently evidenced configured section.",
   "data-grid": "Registry row is a spec; internal PivotGrid is not a public data-grid section export.",
   "error-state": "Registry row is a spec; no error-state package export.",
-  "filter-builder": "A filter model is not an exported filter-builder section.",
   gallery: "Registry row is a spec; no gallery package export.",
   notices: "Registry row is a spec; no notices package export.",
-  settings: "Registry row is a spec; no settings/save-bar section export.",
   stats: "Stat accepts one scalar measurement; no verified configured stats-array section.",
   timeline: "A timeline model or recipe is not an exported timeline section.",
   usage: "UsageMeter accepts one meter; no verified configured meters-array section.",
-  wizard: "Registry row is a spec; no wizard package export.",
 };
 const UNMEASURED = "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters.";
 

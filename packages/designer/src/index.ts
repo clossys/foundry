@@ -500,8 +500,16 @@ export { AccessMatrix } from "./blocks/AccessMatrix.js";
 export type { AccessCellValue, AccessRole, AccessPermission, AccessGroup, AccessMatrixValue, AccessMatrixChange, AccessMatrixLabels, AccessMatrixProps } from "./blocks/AccessMatrix.js";
 export { ColumnMapper } from "./blocks/ColumnMapper.js";
 export type { ColumnMapperTarget, ColumnMapperSource, ColumnMapping, ColumnMapperIssue, ColumnMapperLabels, ColumnMapperProps } from "./blocks/ColumnMapper.js";
+export { FilterBuilder } from "./blocks/FilterBuilder.js";
+export type { FilterBuilderField, FilterBuilderOperator, FilterBuilderCondition, FilterBuilderMatch, FilterBuilderGroup, FilterBuilderLabels, FilterBuilderProps } from "./blocks/FilterBuilder.js";
+export { SettingsSection } from "./blocks/SettingsSection.js";
+export type { SettingsSectionGroup, SettingsSectionLabels, SettingsSectionProps } from "./blocks/SettingsSection.js";
+export { FormWizard } from "./blocks/FormWizard.js";
+export type { FormWizardStep, FormWizardLabels, FormWizardProps } from "./blocks/FormWizard.js";
 
 export { AppFrame, AppFrameSpecimen, APP_FRAME_CONTRACT, APP_FRAME_CONFIG_SCHEMA } from "./frames/index.js";
+export { InspectorFrame } from "./frames/index.js";
+export type { InspectorFrameProps, InspectorFramePresentation } from "./frames/index.js";
 export type { AppFrameProps, AppFrameBrand, AppFrameAccount, AppFrameRightPanel, AppFrameHeader, AppFrameHeaderNav, AppFrameHeaderActions, AppFrameNotice, AppFrameDock, AppFrameSpecimenProps } from "./frames/index.js";
 
 export { SemanticContent } from "./components/SemanticContent.js";

@@ -72,12 +72,12 @@ describe("legacy block section homes", () => {
       expect(block?.export, id).toBeNull();
       expect(block?.recipeOf, id).toBe(id === "matrix.comparison" ? "matrix.raw" : "items.raw");
     }
-    for (const id of ["items.media-gallery", "items.timeline", "matrix.data-grid", "items.activity-feed", "matrix.audit-log", "form.form-wizard", "form.settings-section", "form.save-bar", "form.filter-builder", "say.error-state", "say.notice-stack", "form.load-more"]) {
+    for (const id of ["items.media-gallery", "items.timeline", "matrix.data-grid", "items.activity-feed", "matrix.audit-log", "form.save-bar", "say.error-state", "say.notice-stack", "form.load-more"]) {
       const block = BLOCK_ENTRIES.find(block => block.id === id);
       expect(block?.export, id).toBeNull();
       expect(block?.built, id).toBe("no");
     }
-    for (const [id, name] of [["items.stat", "Stat"], ["items.usage-meter", "UsageMeter"], ["items.event-item", "EventItem"], ["say.testimonial", "Testimonial"], ["matrix.grouped-table", "GroupedTable"], ["items.record-ledger", "RecordLedger"]]) {
+    for (const [id, name] of [["items.stat", "Stat"], ["items.usage-meter", "UsageMeter"], ["items.event-item", "EventItem"], ["say.testimonial", "Testimonial"], ["matrix.grouped-table", "GroupedTable"], ["items.record-ledger", "RecordLedger"], ["form.filter-builder", "FilterBuilder"], ["form.form-wizard", "FormWizard"], ["form.settings-section", "SettingsSection"]]) {
       expect(BLOCK_ENTRIES.find(block => block.id === id)?.export, id).toBe(name);
     }
   });
