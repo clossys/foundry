@@ -394,6 +394,7 @@
   },
   "dependencies": {
     "class-variance-authority": "0.7.1",
-    "css-tree": "3.2.1"
+    "css-tree": "3.2.1",
+    "recharts": "3.8.0"
   }
 }
