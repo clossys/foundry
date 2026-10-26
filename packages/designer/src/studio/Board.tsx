@@ -3,7 +3,7 @@
 import { memo, useId, useState, type ComponentProps, type ReactElement, type Ref } from "react";
 import { Button } from "../components/Button.js";
 import { Table } from "../components/Table.js";
-import { BoardHeader, LeafCell } from "../blocks/library-board/LeafCell.js";
+import { BOARD_SURFACE_CLASS, BoardHeader, LeafCell } from "../blocks/library-board/LeafCell.js";
 import { CanvasLodLayers } from "../blocks/canvas/CanvasLod.js";
 import { Matrix } from "./Matrix.js";
 import { CandidateCell, LIBRARY_COLUMN_BOUND, LIBRARY_COLUMN_FLOW } from "./CandidateCell.js";
@@ -37,7 +37,7 @@ export const Board = memo(function Board({ board, boardRef, summary, onOpen, wor
   const chosenLine = (className: string) => summary && chosenLabel ? <BoardChosenSummary className={className} label={chosenLabel}
     chosen={summary.chosen ?? rows.filter(row => row.candidates.some(candidate => candidate.selected)).length} total={summary.total ?? rows.length} /> : null;
   const sources = matrix.sources.filter(source => rows.some(row => row.candidates.some(candidate => candidate.source === source && (candidate.fill.sourceAddress !== "" || candidate.members.length > 0))) || rows.some(row => row.candidatesReady === false));
-  return <section tabIndex={-1} id={id} ref={boardRef} data-studio-board={board.id} data-board-mode={editing ? "edit" : "view"} aria-labelledby={headingId} className="flex h-max w-max shrink-0 flex-col gap-sm rounded-surface border border-line-base bg-surface-base p-md">
+  return <section tabIndex={-1} id={id} ref={boardRef} data-studio-board={board.id} data-board-mode={editing ? "edit" : "view"} aria-labelledby={headingId} className={BOARD_SURFACE_CLASS}>
     <BoardHeader id={headingId} title={board.label} editing={editing} labels={text} onEdit={edit} onDone={() => setEditing(false)} />
     <CanvasLodLayers full={<div data-studio-zoom-full="" className="w-max">{editing ? <>
       <Matrix {...matrix} rows={rows} sources={sources} layout="wide" customCell={row => <div data-studio-edit-actions="" className={`flex items-center gap-sm ${LIBRARY_COLUMN_FLOW}`} style={LIBRARY_COLUMN_BOUND}>

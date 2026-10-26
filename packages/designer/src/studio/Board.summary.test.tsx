@@ -6,6 +6,7 @@ import { matrixBoards, matrixRows } from "./matrix-model.js";
 import { emptyChanges } from "./model.js";
 import { adopt, labels, smallCatalog } from "./__fixtures__/studio.js";
 import { CanvasLod } from "../blocks/canvas/CanvasLod.js";
+import { BOARD_SURFACE_CLASS } from "../blocks/library-board/LeafCell.js";
 import type { StudioLabels } from "./types.js";
 
 afterEach(cleanup);
@@ -64,6 +65,23 @@ it("shows the id alone, still in the mono face, when the host has no name for a 
   const label = document.querySelector<HTMLElement>("[data-studio-leaf-label]")!;
   expect(label.textContent).toBe("tokens.spacing");
   expect(label.querySelector("[data-studio-leaf-id]")).toHaveClass("font-mono", "tabular-nums");
+});
+
+it("draws the studio board on the shared raised board plate, not the canvas ground", () => {
+  board(FULL_ZOOM);
+  const plate = document.querySelector<HTMLElement>("[data-studio-board]")!;
+  expect(plate.className).toBe(BOARD_SURFACE_CLASS);
+  expect(plate).toHaveClass("bg-surface-raised", "border-line-base");
+  expect(plate).not.toHaveClass("bg-surface-base");
+});
+
+it("labels an unnamed leaf row once, with its id alone in the mono face", () => {
+  board(FULL_ZOOM, { ...named, leafName: () => undefined });
+  const header = within(layer("full")).getByRole("rowheader", { name: "tokens.surface-color" });
+  const label = header.querySelector<HTMLElement>("[data-studio-leaf-label]")!;
+  expect(label.textContent).toBe("tokens.surface-color");
+  expect(header.textContent).toBe("tokens.surface-color");
+  expect(label.querySelector("[data-studio-leaf-id]")).toHaveClass("font-mono", "tabular-nums", "text-ink-primary");
 });
 
 it("formats the chosen line only through the host label", () => {
