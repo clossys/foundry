@@ -86,4 +86,24 @@ export const componentSpecimenColor = {
 export const componentSpecimenUnavailable: Readonly<Record<string, SpecimenUnavailableReason>> = {
   "./shell#Toaster": "needs-host-queue",
   "./shell#Brandmark": "needs-brand-asset",
+  // Vendored shadcn@aria overlay surfaces: RAC renders each only once the host's own trigger opens it.
+  "components/dialog/dialog.tsx#Dialog": "needs-host-trigger",
+  "components/menu/dropdown-menu.tsx#DropdownMenu": "needs-host-trigger",
+  "components/popover/popover.tsx#Popover": "needs-host-trigger",
+  "components/tooltip/tooltip.tsx#Tooltip": "needs-host-trigger",
 };
+
+/**
+ * Neutral sample content for vendored shadcn@aria source components, keyed by the descriptor's
+ * `impl.entry#export`. Drawn with the component's own sibling parts from that module, never a stand-in.
+ */
+export const componentSpecimenSourceSamples = {
+  "components/breadcrumbs/breadcrumb.tsx#Breadcrumb": { items: [{ id: "home", label: "Home", href: "#home" }, { id: "projects", label: "Projects", href: "#projects" }, { id: "current", label: "Overview" }] },
+  "components/tabs/tabs.tsx#Tabs": { label: "Sections", items: [{ id: "summary", label: "Summary", content: "Summary content" }, { id: "activity", label: "Activity", content: "Activity content" }] },
+  "components/radio-group/radio-group.tsx#RadioGroup": { label: "Plan", defaultValue: "monthly", items: [{ id: "monthly", label: "Monthly" }, { id: "yearly", label: "Yearly" }] },
+  "components/disclosure/accordion.tsx#Accordion": { items: [{ id: "shipping", label: "Shipping", content: "Ships in two days." }, { id: "returns", label: "Returns", content: "Returns within thirty days." }] },
+  "components/avatar/avatar.tsx#Avatar": { initials: "SP" },
+  "components/card/card.tsx#Card": { title: "Card title", content: "Card content" },
+  "components/progress-bar/progress.tsx#Progress": { label: "Upload progress", value: 60 },
+  "components/slider/slider.tsx#Slider": { label: "Volume", defaultValue: 40 },
+} as const;
