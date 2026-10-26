@@ -46,3 +46,12 @@ it("never shows 100% twice: the reset is inert and hidden while the readout alre
   expect(live).not.toHaveClass("invisible");
   expect(live).not.toHaveAttribute("inert");
 });
+
+it("vf35: every zoom control carries a stable capture hook alongside its accessible name", () => {
+  setup(0.5);
+  const hook = (name: string) => screen.getByRole("button", { name }).getAttribute("data-studio-control");
+  expect(hook("Zoom out")).toBe("zoom-out");
+  expect(hook("Zoom in")).toBe("zoom-in");
+  expect(hook("Fit")).toBe("zoom-fit");
+  expect(hook("100%")).toBe("zoom-reset");
+});

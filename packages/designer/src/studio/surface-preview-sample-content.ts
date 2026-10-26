@@ -44,6 +44,28 @@ export const dataTableSample = {
   ] satisfies readonly SampleOrder[],
 };
 
+/**
+ * The sample states a host can ask every package preview for (vf35). `default` is the ordinary sample; the
+ * others render only for an export whose own props support that state, and every other export stays default.
+ */
+export const SURFACE_SAMPLE_STATES = ["default", "empty", "loading", "error", "long-content"] as const;
+export type SurfaceSampleState = typeof SURFACE_SAMPLE_STATES[number];
+
+/**
+ * Copy for the non-default sample states (vf35): empty, loading, error and long content. Only exports whose
+ * own props support a state use it (surface-preview-samples.tsx); every other export keeps its default sample.
+ */
+export const surfaceStateSample = {
+  loadingLabel: "Loading projects",
+  error: { title: "Projects could not load", description: "Check your connection, then try again." },
+  tableEmpty: { title: "No orders yet", description: "Orders appear here once a customer checks out." },
+  longTitle: "Quarterly customer research synthesis for the enterprise onboarding redesign programme",
+  longDescription: "Interview notes, survey results and usability findings from every regional team, gathered into one reviewed summary with the decisions each finding led to and the open questions still waiting on an owner.",
+  longCustomer: "Northwind Traders International Holdings and Subsidiaries",
+  longTotal: "$148,920.75",
+  longMeta: "Updated today",
+};
+
 export const formSample = {
   heading: "Contact details",
   fields: [{ id: "name", label: "Full name", type: "text" }, { id: "email", label: "Work email", type: "email" }],

@@ -36,7 +36,7 @@ import { CanvasDomain } from "./CanvasDomain.js";
 import { placedLeaves, previewComponent, wholeSignoff } from "./whole-model.js";
 import { compositeBoardPrompt } from "./prepared-library-boards.js";
 import type { StudioCanvasProps, StudioHeaderProps, CompositeStudioLabels, CompositeStudioSnapshot } from "./types.js";
-import { packageSurfacePreview } from "./planned-surface-previews.js";
+import { packageSurfacePreview, type SurfaceSampleState } from "./planned-surface-previews.js";
 
 const LAYERS: readonly LayerId[] = ["tokens", "assets", "components", "sections", "frames"];
 export function WholeStudioHeader({ className, layerHref, onLayerNavigate }: StudioHeaderProps) {
@@ -166,14 +166,17 @@ interface ContractBoardsProps {
  * export through the planned-preview samples, keyed by the same export pointer (so host-owned samples such as a
  * Publisher frame apply), and stays unavailable when no sample exists rather than imitating one.
  */
-function adoptedPackagePreview(leaf: string, profile: CompositeResolved | undefined, planned: CompositeStudioSnapshot["plannedPreviews"]): ReactNode {
+function adoptedPackagePreview(leaf: string, profile: CompositeResolved | undefined, planned: CompositeStudioSnapshot["plannedPreviews"]): { node: ReactNode; state: SurfaceSampleState } | undefined {
   // A non-surface leaf id simply finds no adopted surface fill.
   const document = profile?.surfaces?.fills[leaf as `sections.${string}`]?.document;
   if (!document) return undefined;
-  const samples = Object.fromEntries(Object.values(planned?.previews ?? {}).map(row => [row.pointer, row.render]));
-  const preview = packageSurfacePreview(document as unknown as Parameters<typeof packageSurfacePreview>[0], samples);
+  const rows = Object.values(planned?.previews ?? {});
+  const samples = Object.fromEntries(rows.map(row => [row.pointer, row.render]));
+  const preview = packageSurfacePreview(document as unknown as Parameters<typeof packageSurfacePreview>[0], samples, planned?.sampleState);
   if (!("render" in preview)) return undefined;
-  try { return preview.render(); } catch { return undefined; }
+  // A planned row's render already draws its own sample state; name that state, not the host-sample default.
+  const state = rows.find(row => row.pointer === preview.pointer)?.state ?? preview.state;
+  try { const node = preview.render(); return node == null ? undefined : { node, state }; } catch { return undefined; }
 }
 
 const ContractBoards = memo(function ContractBoards({ narrow, boards, layer, query, editing, setEditing, candidates, libraries, profile, previewLeaf, runtime, planned, slots, consumer, t, candidateWorkflow, setLeaf, edit, canEdit, open }: ContractBoardsProps) {
@@ -212,12 +215,13 @@ const ContractBoards = memo(function ContractBoards({ narrow, boards, layer, que
               const runtimeSelected = Object.keys(profile?.surfaces?.fills ?? {}).includes(leaf.id) || runtime?.manifest.fills.some(fill => fill.leaf === leaf.id);
               let preview: ReactNode;
               if (selected || runtimeSelected) try { preview = profile ? previewLeaf?.(leaf.id, profile) : undefined; } catch { /* Findings remain in the inspector; preview never fabricates a sample. */ }
-              if (preview == null && runtimeSelected) preview = adoptedPackagePreview(leaf.id, profile, planned);
+              let sampleState: SurfaceSampleState | undefined;
+              if (preview == null && runtimeSelected) { const adopted = adoptedPackagePreview(leaf.id, profile, planned); preview = adopted?.node; sampleState = adopted?.state; }
               // A planned default is previewed, never adopted: it stays out of the chosen count and keeps the choose actions.
               const plannedPreview = selected || runtimeSelected ? undefined : planned?.previews[leaf.id];
               let plannedNode: ReactNode;
               if (plannedPreview) try { plannedNode = plannedPreview.render(); } catch { /* An unrenderable sample shows the plain not-chosen cell. */ }
-              return <Table.Row key={leaf.id} id={leaf.id} data-studio-row={leaf.id}><Table.Cell><LeafLabel id={leaf.id} name={t.leafName?.(leaf.id)} /></Table.Cell><Table.Cell>{selected || runtimeSelected ? <CandidateCell labels={t} preview={preview} /> : <LeafCell data-studio-planned={plannedNode != null ? plannedPreview!.fill : undefined} preview={plannedNode} status={plannedNode != null ? t.plannedPreview ?? "Planned default, not adopted" : t.board.notChosen} actions={<><Button variant="ghost" size="sm" onPress={() => setBoardEditing(true)}>{t.board.choose}</Button><CandidatePromptDialog trigger={<Button variant="ghost" size="sm">{t.board.askAgent}</Button>} data={data(leaf.id)} labels={t} workflow={candidateWorkflow} /></>} />}</Table.Cell></Table.Row>;
+              return <Table.Row key={leaf.id} id={leaf.id} data-studio-row={leaf.id}><Table.Cell><LeafLabel id={leaf.id} name={t.leafName?.(leaf.id)} /></Table.Cell><Table.Cell>{selected || runtimeSelected ? <CandidateCell labels={t} preview={preview} sampleState={sampleState} /> : <LeafCell data-studio-planned={plannedNode != null ? plannedPreview!.fill : undefined} data-sample-state={plannedNode != null ? plannedPreview!.state ?? "default" : undefined} previewState={plannedNode != null ? "planned" : "not-chosen"} preview={plannedNode} status={plannedNode != null ? t.plannedPreview ?? "Planned default, not adopted" : t.board.notChosen} actions={<><Button variant="ghost" size="sm" onPress={() => setBoardEditing(true)}>{t.board.choose}</Button><CandidatePromptDialog trigger={<Button variant="ghost" size="sm">{t.board.askAgent}</Button>} data={data(leaf.id)} labels={t} workflow={candidateWorkflow} /></>} />}</Table.Cell></Table.Row>;
             })}</Table.Body></Table> : layer === "components" ? <Comparison arrangement="choices" aria-label={t.matrix.label} columns={[...columns.map(id => ({ id, label: id })), { id: "studio-custom-actions", label: t.board.custom }]} onFocusCell={id => setLeaf(id)}
               onChange={(id, source) => { const candidate = candidates.find(candidate => candidate.meta.slot === id && candidate.meta.source === source); if (candidate?.result?.available && !candidate.result.findings.some(f => f.severity === "error") && canEdit) edit(id, [candidate.result.change]); }}
               rows={leaves.map(leaf => ({ id: leaf.id, label: <LeafLabel id={leaf.id} name={t.leafName?.(leaf.id)} />, name: <>{t.useGroup} {leaf.id}</>, selected: profile?.components.components[leaf.id]?.descriptor.source ?? null,
@@ -235,7 +239,7 @@ const ContractBoards = memo(function ContractBoards({ narrow, boards, layer, que
               }))} /> : leaves.map(leaf => {
                 let node: ReactNode; let error: string | undefined;
                 try { node = profile ? previewLeaf?.(leaf.id, profile) : undefined; } catch (value) { error = value instanceof Error ? value.message : String(value); }
-                if (node == null && error === undefined) node = adoptedPackagePreview(leaf.id, profile, planned);
+                if (node == null && error === undefined) node = adoptedPackagePreview(leaf.id, profile, planned)?.node;
                 return <section key={leaf.id} data-studio-row={leaf.id} className="p-sm"><h4>{leaf.id}</h4><p>{t.whole.unassessed}</p>{node}{error ? <Tooltip trigger={<Button variant="ghost" aria-label={t.checkSummary(1, 0)}><Badge variant="danger"><span aria-hidden>!</span> {t.checkSummary(1, 0)}</Badge></Button>}>{error}</Tooltip> : null}{prompt(leaf.id)}</section>;
               })}</div>} />
           </section>;

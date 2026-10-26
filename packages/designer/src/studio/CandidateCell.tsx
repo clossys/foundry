@@ -6,6 +6,7 @@ import { LeafCell } from "../blocks/library-board/LeafCell.js";
 import type { StudioLabels } from "./types.js";
 import { APP_FRAME_RIGHT_PANEL_CONFIG } from "../frames/right-panel-config.js";
 import { orderTokenMembers } from "../tokens/preview/member-order.js";
+import type { SurfaceSampleState } from "./surface-preview-sample-content.js";
 
 /** Every library column and the Edit column share one cap: the frame right panel preset's maximum. */
 export const LIBRARY_COLUMN_BOUND: CSSProperties = { maxWidth: APP_FRAME_RIGHT_PANEL_CONFIG.max };
@@ -31,8 +32,8 @@ export function memberFamilies(members: readonly Member[]): { family: string; me
  * A leaf with several member families (a palette's ramps) starts each family on its own row, so a ramp reads as one
  * run instead of breaking wherever the cap falls.
  */
-export const CandidateCell = memo(function CandidateCell({ candidate, labels, preview }: { candidate?: Candidate; labels: StudioLabels; preview?: ReactNode }) {
-  if (!candidate) return <LeafCell className={LIBRARY_COLUMN_FLOW} style={LIBRARY_COLUMN_BOUND} preview={preview} status={preview == null ? labels.previewUnavailable : undefined} />;
+export const CandidateCell = memo(function CandidateCell({ candidate, labels, preview, sampleState }: { candidate?: Candidate; labels: StudioLabels; preview?: ReactNode; sampleState?: SurfaceSampleState }) {
+  if (!candidate) return <LeafCell className={LIBRARY_COLUMN_FLOW} style={LIBRARY_COLUMN_BOUND} data-sample-state={sampleState} preview={preview} previewState={preview == null ? "unavailable" : "live"} status={preview == null ? labels.previewUnavailable : undefined} />;
   const variant = (entry: Member) => <div key={entry.id} data-candidate-variant={entry.id} className="candidate-variant-min-inline token-specimen-contain">
     <p data-member-key="" className="text-caption text-ink-secondary">{memberKey(entry)}</p>
     <CompactPreview candidate={{ ...candidate, members: [entry] }} labels={labels} />
@@ -40,12 +41,12 @@ export const CandidateCell = memo(function CandidateCell({ candidate, labels, pr
   // Token members display in ordinal or value order (amber.50 before amber.100, xs .. 9xl).
   const members = candidate.previewable ? orderTokenMembers(candidate.members) : [];
   const families = memberFamilies(members);
-  return <LeafCell className={LIBRARY_COLUMN_FLOW} style={LIBRARY_COLUMN_BOUND} data-studio-candidate={candidate.index} status={candidate.previewable ? undefined : labels.previewUnavailable}
+  return <LeafCell className={LIBRARY_COLUMN_FLOW} style={LIBRARY_COLUMN_BOUND} data-studio-candidate={candidate.index} previewState={candidate.previewable ? "live" : "unavailable"} status={candidate.previewable ? undefined : labels.previewUnavailable}
     preview={!candidate.previewable ? undefined : families.length > 1
       ? families.map(({ family, members }, index) => <div key={family + index} data-candidate-family={family} className="flex basis-full flex-wrap items-start gap-md">{members.map(variant)}</div>)
       : members.map(variant)} />;
 }, (previous, next) => {
-  if (previous.labels !== next.labels || previous.preview !== next.preview) return false;
+  if (previous.labels !== next.labels || previous.preview !== next.preview || previous.sampleState !== next.sampleState) return false;
   const a = previous.candidate, b = next.candidate;
   if (a === b) return true;
   // A row demand reprojects the matrix. Unchanged resolved members still name

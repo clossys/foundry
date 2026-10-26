@@ -516,8 +516,9 @@ it("contract boards preview planned surface defaults labelled as planned, withou
   for (const line of board.querySelectorAll<HTMLElement>("[data-studio-chosen-summary]")) expect(line).toHaveTextContent(/^0 of \d+ chosen$/);
   for (const other of board.querySelectorAll<HTMLElement>("[data-studio-zoom-full] [data-studio-row]")) {
     const id = other.dataset.studioRow!;
-    if (plannedPreviews.previews[id]) expect(other.querySelector("[data-studio-planned]")).not.toBeNull();
-    else { expect(other.querySelector("[data-studio-planned]")).toBeNull(); expect(other).toHaveTextContent(labels.board.notChosen); }
+    const cellHook = other.querySelector("[data-candidate-cell]");
+    if (plannedPreviews.previews[id]) { expect(other.querySelector("[data-studio-planned]")).not.toBeNull(); expect(cellHook).toHaveAttribute("data-preview-state", "planned"); expect(cellHook).toHaveAttribute("data-sample-state", "default"); }
+    else { expect(other.querySelector("[data-studio-planned]")).toBeNull(); expect(other).toHaveTextContent(labels.board.notChosen); expect(cellHook).toHaveAttribute("data-preview-state", "not-chosen"); expect(cellHook).not.toHaveAttribute("data-sample-state"); }
   }
 });
 
