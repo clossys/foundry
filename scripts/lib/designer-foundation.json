@@ -1,6 +1,6 @@
 {
   "schema": "designer-foundation/v1",
-  "sourceTree": "329d1719ddd51970fb43fd36c48e4fbe9562062d",
+  "sourceTree": "d00f93d868f5496cd19059f14b4993cd771a0b1e",
   "files": {
     "src/backdrop/consumer-art.ts": "4845753e0a953753b6a618ead1ba3ccfa1039112cb5c9b3db0ec59be6a6ef19a",
     "src/backdrop/contract.ts": "5df9f040446b8136b33ecd52a46c4f92ba857420c15b279e8c71a0e3662f4af8",
@@ -203,7 +203,7 @@
     "src/catalog-core/body-substrate.ts": "b27593b6db88c94c936735b677575ab2a1076d323041042ccc68b89fafa56d33",
     "src/catalog-core/cell.ts": "2e34d1f5bd2146f37c83adc2000c8ed4836980c77d9561b2fbcdaa01a2c1b312",
     "src/catalog-core/changeset-components.ts": "a13476526ab5cec6b95251a3e75cc91666e51ec16efeb542161d6f95280113f9",
-    "src/catalog-core/check-components.ts": "7a9b570c3b485395dc8be53ec92254043ad83ef0f7a013ebe55c551dd9055e66",
+    "src/catalog-core/check-components.ts": "20563487eea22fb1d75ab3f1e099497aa60acb057ab2eb4a59fd32579ce90980",
     "src/catalog-core/check-guidance.ts": "27dc45de9966bbee33ab126895765ba1fc39094bd411ca7c87f06cd0073854e7",
     "src/catalog-core/check.ts": "d54f16e5aba43e9f6b196ece84baf1da14166d77784aaf7c79e5653bcaf6d5fc",
     "src/catalog-core/component-compositions.ts": "e2e6ce581d67e5ee553899a04b59fda2b3e822e2c00778e2b6c66887f312aea7",
@@ -784,9 +784,9 @@
     "src/importers/phosphor.ts": "e9a5cdaacf40f6688703b9a158aebf01504be99ea354ac7a3b9e6d82fe70d987",
     "src/importers/rac-starter.ts": "6c9a0610a8a94205fda5d7a828afb6ea2c28c5fed4fef8887b2626280ac6762e",
     "src/importers/radix-colors.ts": "4fdc35a4693942b108452bcad86f92e8cb63da9140ffa9151d3496b5312fd2e1",
-    "src/importers/rewrite.ts": "177ebaa7ea33036117de0362041ac6a17e0ede187c71e37791cb196332bc2fad",
+    "src/importers/rewrite.ts": "1d2668c51527e88a9c2b5079ac1658b618886984a4fdcb666f2dd9b1525c8ec0",
     "src/importers/selected-caption-profile.ts": "a7e4c78e2df10d46460804c6449cc3dd09ce18904d907842bedabcdce8d47a59",
-    "src/importers/shadcn-aria-components.ts": "b8173a7acd4df46519ad6b4a0b0423c66ff1f90922c000d77a00151ebe18b692",
+    "src/importers/shadcn-aria-components.ts": "b29cc4a8c67622c942969bc162ca6770036cca950ab47ac8907adc50d828c70e",
     "src/importers/shadcn-aria.ts": "8677fa12c2e7742b9c6a3f0e20ee5772781e1631fa814e19c2b479e95941eae1",
     "src/importers/shared.ts": "3b18e14e67e4e8caac1ed786d5ddd8d416bff4237e238fa1d728821b3248a79f",
     "src/importers/tailwind-default.ts": "8a62f948384329b95cdeaec88cf197117387a5f3564cb9c84d82c8a80c35e278",
