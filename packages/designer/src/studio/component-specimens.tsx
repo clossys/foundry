@@ -172,7 +172,8 @@ export function componentSpecimenPreview(options: ComponentSpecimenOptions): Com
     const render = options.specimens && Object.hasOwn(options.specimens, leaf) ? options.specimens[leaf] : undefined;
     const component = profile.components.components[leaf]!;
     // Designer samples (and the reasons sample data cannot draw an export) cover Foundry's own package exports only.
-    const samples = !render && component.descriptor.source === "foundry" && component.impl.kind === "package";
+    // The binding names the library a component came from; resolve() stamps the adopter's id on descriptor.source.
+    const samples = !render && binding.source === "foundry" && component.impl.kind === "package";
     const sample = samples ? componentSpecimenSample(sampleKey(binding.specifier, binding.exportName), binding.Component, binding.exports) : undefined;
     const unavailableOf = (row: SpecimenRow) => samples ? componentSpecimenUnavailableReason(sampleKey(row.specifier, row.exportName)) : undefined;
     const rows = render ? [] : specimenRows(binding);
