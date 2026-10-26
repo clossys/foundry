@@ -1,5 +1,6 @@
 "use client";
-import type { ComponentType, ReactNode } from "react";
+import { cloneElement, useState, type ComponentType, type ReactElement, type ReactNode } from "react";
+import { Button as TriggerButton } from "react-aria-components";
 import { componentSpecimenCollections, componentSpecimenColor, componentSpecimenField, componentSpecimenOverlays, componentSpecimenProps, componentSpecimenSourceSamples, componentSpecimenTable, componentSpecimenText, componentSpecimenUnavailable } from "./component-specimen-sample-content.js";
 import type { SpecimenUnavailableReason } from "./preview-outcome.js";
 
@@ -11,6 +12,11 @@ export interface ComponentSpecimenSample {
   readonly props: Readonly<Record<string, unknown>>;
   /** Children for every specimen of it: content, or a render function for a component that takes one (`Field`). */
   readonly children?: ReactNode | ((props: Record<string, unknown>) => ReactNode);
+  /**
+   * Wraps each drawn specimen of the export: an overlay surface is placed in its own module's trigger, held open
+   * with React Aria's controlled `isOpen`, so it draws statically without a host interaction.
+   */
+  readonly host?: (specimen: ReactNode) => ReactNode;
 }
 
 /** Inputs a sample cannot carry as data: a controlled handler that has nothing to update. */
@@ -81,6 +87,15 @@ function colorPicker(Component: unknown): ComponentSpecimenSample | undefined {
   return { props: { defaultValue }, children: <SwatchPicker aria-label={label}>{swatches.map(color => <Swatch key={color} color={color} />)}</SwatchPicker> };
 }
 
+/**
+ * Holds an open overlay in the specimen cell: React Aria portals every overlay, so it is given this host element
+ * as its portal container. Draws once mounted; a server render has no element to portal into and draws nothing.
+ */
+function OverlayHost({ children }: { readonly children: (container: HTMLElement) => ReactNode }) {
+  const [container, setContainer] = useState<HTMLElement | null>(null);
+  return <div ref={setContainer} data-specimen-overlay-host="">{container ? children(container) : null}</div>;
+}
+
 /** Vendored shadcn@aria compounds, drawn with the parts their own module exports. */
 function sourceSample(key: string, exports: Namespace): ComponentSpecimenSample | undefined {
   const parts = (...names: string[]) => { const found = names.map(name => part(exports, name)); return found.every(Boolean) ? found as Renderable[] : undefined; };
@@ -120,6 +135,26 @@ function sourceSample(key: string, exports: Namespace): ComponentSpecimenSample 
       const found = parts("ProgressTrack", "ProgressIndicator"); if (!found) return undefined;
       const [Track, Indicator] = found as [Renderable, Renderable];
       return { props: { "aria-label": s[key].label, value: s[key].value }, children: <Track><Indicator /></Track> };
+    }
+    case "components/popover/popover.tsx#Popover": {
+      const found = parts("PopoverTrigger", "PopoverTitle", "PopoverDescription"); if (!found) return undefined;
+      const [Trigger, Title, Description] = found as [Renderable, Renderable, Renderable];
+      const { trigger, title, content } = s[key];
+      // Non-modal, so holding it open never hides the rest of Studio or locks its scroll.
+      return { props: { isNonModal: true }, children: [<Title key="title">{title}</Title>, <Description key="content">{content}</Description>], host: specimen => <OverlayHost>{container => <Trigger isOpen><TriggerButton>{trigger}</TriggerButton>{cloneElement(specimen as ReactElement<Record<string, unknown>>, { UNSTABLE_portalContainer: container })}</Trigger>}</OverlayHost> };
+    }
+    case "components/menu/dropdown-menu.tsx#DropdownMenu": {
+      // The module's own InlineMenu is the same RAC Menu without the Popover: it draws open, in place, on the server too.
+      const found = parts("InlineMenu", "DropdownMenuItem"); if (!found) return undefined;
+      const [Inline, Item] = found as [Renderable, Renderable];
+      const { label, items } = s[key];
+      return { props: { "aria-label": label }, children: items.map(item => <Item key={item.id} id={item.id}>{item.label}</Item>), host: specimen => <Inline {...(specimen as ReactElement<Record<string, unknown>>).props} /> };
+    }
+    case "components/tooltip/tooltip.tsx#Tooltip": {
+      const found = parts("TooltipTrigger"); if (!found) return undefined;
+      const [Trigger] = found as [Renderable];
+      const { trigger, content } = s[key];
+      return { props: {}, children: content, host: specimen => <OverlayHost>{container => <Trigger isOpen><TriggerButton>{trigger}</TriggerButton>{cloneElement(specimen as ReactElement<Record<string, unknown>>, { UNSTABLE_portalContainer: container })}</Trigger>}</OverlayHost> };
     }
     case "components/slider/slider.tsx#Slider": return { props: { "aria-label": s[key].label, defaultValue: s[key].defaultValue } };
     default: return undefined;

@@ -86,11 +86,9 @@ export const componentSpecimenColor = {
 export const componentSpecimenUnavailable: Readonly<Record<string, SpecimenUnavailableReason>> = {
   "./shell#Toaster": "needs-host-queue",
   "./shell#Brandmark": "needs-brand-asset",
-  // Vendored shadcn@aria overlay surfaces: RAC renders each only once the host's own trigger opens it.
+  // The vendored shadcn@aria Dialog always wraps its content in ModalOverlay and Modal and exports no inner dialog
+  // part: held open in a preview, the modal would lock the page's scroll and hide the rest of Studio from assistive technology.
   "components/dialog/dialog.tsx#Dialog": "needs-host-trigger",
-  "components/menu/dropdown-menu.tsx#DropdownMenu": "needs-host-trigger",
-  "components/popover/popover.tsx#Popover": "needs-host-trigger",
-  "components/tooltip/tooltip.tsx#Tooltip": "needs-host-trigger",
 };
 
 /**
@@ -106,4 +104,7 @@ export const componentSpecimenSourceSamples = {
   "components/card/card.tsx#Card": { title: "Card title", content: "Card content" },
   "components/progress-bar/progress.tsx#Progress": { label: "Upload progress", value: 60 },
   "components/slider/slider.tsx#Slider": { label: "Volume", defaultValue: 40 },
+  "components/popover/popover.tsx#Popover": { trigger: "Open popover", title: "Popover title", content: "Popover content" },
+  "components/menu/dropdown-menu.tsx#DropdownMenu": { label: "Actions", items: [{ id: "edit", label: "Edit item" }, { id: "archive", label: "Archive item" }] },
+  "components/tooltip/tooltip.tsx#Tooltip": { trigger: "Show tooltip", content: "Tooltip content" },
 } as const;

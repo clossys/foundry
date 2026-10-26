@@ -117,7 +117,7 @@ const specimenRows = (binding: ComponentSpecimenBinding): SpecimenRow[] =>
 function defaultSpecimen(binding: ComponentSpecimenBinding, sample: ComponentSpecimenSample | undefined, unavailableOf: (row: SpecimenRow) => SpecimenUnavailableReason | undefined, onFail: (name: string) => void): ReactNode {
   return specimenRows(binding).map(row => { const unavailable = unavailableOf(row); return <div key={row.member} data-component-specimen={row.member}>
     {unavailable ? <span hidden data-specimen-unavailable={unavailable} /> : <SpecimenBoundary name={row.member} onFail={onFail}>{sample && row.Component === binding.Component
-      ? createElement(row.Component, { ...sample.props, children: sample.children, ...row.props })
+      ? (sample.host ?? (node => node))(createElement(row.Component, { ...sample.props, children: sample.children, ...row.props }))
       : createElement(row.Component, { ...row.props }, row.member)}</SpecimenBoundary>}
   </div>; });
 }
