@@ -1,5 +1,5 @@
 "use client";
-import { createContext, useContext, useLayoutEffect, useRef, type ReactNode } from "react";
+import { createContext, useContext, useLayoutEffect, useRef, type CSSProperties, type ReactNode } from "react";
 import { TOKENS } from "../../tokens/tokens.js";
 
 /** The three canvas detail tiers, from most to least detailed. */
@@ -33,8 +33,16 @@ const Tier = createContext<CanvasLodTier>("full");
  */
 export function CanvasLod({ zoom, children }: { zoom: number; children: ReactNode }) {
   const tier = canvasLodTier(zoom);
-  return <Tier.Provider value={tier}><div data-canvas-lod={tier} className="contents">{children}</div></Tier.Provider>;
+  return <Tier.Provider value={tier}><div data-canvas-lod={tier} className="contents" style={{ [CANVAS_ZOOM_VAR]: zoom } as CSSProperties}>{children}</div></Tier.Provider>;
 }
+/** The camera zoom, exposed to world content as a unitless custom property. */
+export const CANVAS_ZOOM_VAR = "--canvas-zoom";
+/**
+ * Counter-scales a canvas title: it keeps its own type-scale size and never
+ * paints smaller on screen than the caption text token at any camera zoom.
+ * Outside a canvas the zoom is 1, so the title is unchanged.
+ */
+export const CANVAS_COUNTER_SCALED_TITLE = "text-[length:max(1em,calc(var(--text-caption)/var(--canvas-zoom,1)))]";
 export const useCanvasLodTier = () => useContext(Tier);
 
 /**

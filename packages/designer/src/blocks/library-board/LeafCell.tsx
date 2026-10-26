@@ -6,6 +6,7 @@ import { Icon } from '../../components/Icon.js';
 import { Tooltip } from '../../components/Tooltip.js';
 import { Settings } from '../../icons/Settings.js';
 import { SectionHeader } from '../SectionHeader.js';
+import { CANVAS_COUNTER_SCALED_TITLE } from '../canvas/CanvasLod.js';
 
 export interface LeafCellProps extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
   /** The leaf's rendered members; absent for an unchosen leaf. */
@@ -43,7 +44,7 @@ export interface BoardHeaderProps {
 
 /** One board header on every Designer layer: heading, optional action, gear (or Done while editing). */
 export function BoardHeader({ id, title, editing, labels, onEdit, onDone, action }: BoardHeaderProps) {
-  return <SectionHeader data-board-header="" title={<span id={id}>{title}</span>} level={3} actions={<>
+  return <SectionHeader data-board-header="" title={<span id={id} data-canvas-title="" className={CANVAS_COUNTER_SCALED_TITLE}>{title}</span>} level={3} actions={<>
     {action}
     {editing ? <Button size="sm" onPress={onDone}>{labels.done}</Button> : <Tooltip trigger={<Button variant="ghost" size="sm" aria-label={labels.changeSelection} onPress={onEdit}><Icon glyph={Settings} decorative size="sm" /></Button>}>{labels.changeSelection}</Tooltip>}
   </>} />;

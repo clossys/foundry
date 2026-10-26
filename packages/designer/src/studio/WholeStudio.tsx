@@ -29,6 +29,7 @@ import { Table } from "../components/Table.js";
 import { CanvasSurface } from "../blocks/canvas/CanvasSurface.js";
 import { CanvasLod, CanvasLodLayers } from "../blocks/canvas/CanvasLod.js";
 import { useCanvasWorld } from "./useCanvasWorld.js";
+import { CanvasDomain } from "./CanvasDomain.js";
 import { placedLeaves, previewComponent, wholeSignoff } from "./whole-model.js";
 import { compositeBoardPrompt } from "./prepared-library-boards.js";
 import type { StudioCanvasProps, StudioHeaderProps, CompositeStudioLabels, CompositeStudioSnapshot } from "./types.js";
@@ -69,8 +70,8 @@ function ContractCanvas({ className, candidateWorkflow }: StudioCanvasProps) {
   const s = useWholeStudio()!; const t = s.labels; const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<import("./canvas-model.js").CanvasFilter>("all");
   const [editing, setEditing] = useState<ReadonlySet<string>>(new Set());
-  const canvas = useCanvasWorld(s.layer);
   const placement = s.contracts.placements.find(p => p.layer === s.layer);
+  const canvas = useCanvasWorld(s.layer, undefined, undefined, Boolean(placement?.nodes.length));
   const profile = s.evaluated?.value?.profile;
   const boards = useMemo(() => contractBoards(placement), [placement]);
   const candidates = useMemo(() => s.input && s.changes && s.layer === "components" ? s.adapter.catalog.components.fills.map(doc => {
@@ -94,8 +95,8 @@ function ContractCanvas({ className, candidateWorkflow }: StudioCanvasProps) {
     <CanvasSurface aria-label={t.canvas.label} viewport={canvas.pose} onViewportChange={canvas.setPose} selection={[]} onSelectionChange={() => {}}
       worldBounds={canvas.bounds} items={[]} itemInteraction="content" minZoom={.12} maxZoom={2} grid="dots"
       onSurfaceElement={canvas.onSurfaceElement} onWorldElement={canvas.onWorldElement} actionsRef={canvas.actions}
-      worldClassName="flex w-max flex-col gap-3xl p-3xl" className="absolute inset-0 rounded-none border-0">
-      <CanvasLod zoom={canvas.pose.zoom}><ContractBoards boards={boards} layer={s.layer} query={query} editing={editing} setEditing={setEditing} open={open}
+      worldClassName="flex h-max w-max flex-col gap-3xl p-3xl" className="absolute inset-0 rounded-none border-0">
+      <CanvasLod zoom={canvas.pose.zoom}><ContractBoards narrow={canvas.overlayLayout === "narrow"} boards={boards} layer={s.layer} query={query} editing={editing} setEditing={setEditing} open={open}
         candidates={candidates} libraries={libraries} profile={profile} previewLeaf={s.snapshot?.preview} runtime={s.snapshot?.runtime}
         slots={s.contracts.slots} consumer={s.input?.library.source.id} t={t} candidateWorkflow={candidateWorkflow}
         setLeaf={s.setLeaf} edit={edit} canEdit={Boolean(s.changes)} /></CanvasLod>
@@ -132,6 +133,7 @@ type ContractCandidate = {
   error: string | undefined;
 };
 interface ContractBoardsProps {
+  narrow: boolean;
   boards: ReturnType<typeof contractBoards>;
   layer: LayerId;
   query: string;
@@ -153,10 +155,9 @@ interface ContractBoardsProps {
 }
 // Session revision notifications also reach this canvas through portal blur.
 // Only actual board inputs should prepare its tables, previews and prompts again.
-const ContractBoards = memo(function ContractBoards({ boards, layer, query, editing, setEditing, candidates, libraries, profile, previewLeaf, runtime, slots, consumer, t, candidateWorkflow, setLeaf, edit, canEdit, open }: ContractBoardsProps) {
+const ContractBoards = memo(function ContractBoards({ narrow, boards, layer, query, editing, setEditing, candidates, libraries, profile, previewLeaf, runtime, slots, consumer, t, candidateWorkflow, setLeaf, edit, canEdit, open }: ContractBoardsProps) {
   const headingBase = useId();
-  return <>{boards.map(domain => <section key={domain.id} aria-label={domain.label} data-studio-domain={domain.id} className="flex items-start gap-2xl">
-        <h2 className="text-body text-ink-secondary">{domain.label}</h2>
+  return <>{boards.map(domain => <CanvasDomain key={domain.id} id={domain.id} label={domain.label} narrow={narrow}>
         {domain.boards.map(board => {
           const leaves = board.leaves.filter(leaf => !query || leaf.id.toLocaleLowerCase().includes(query.toLocaleLowerCase()));
           const columns = libraries.filter(id => layer === "components" ? candidates.some(candidate => candidate.meta.source === id && board.leaves.some(leaf => leaf.id === candidate.meta.slot)) : runtime?.manifest.fills.some(fill => fill.library === id && board.leaves.some(leaf => leaf.id === fill.leaf)));
@@ -204,5 +205,5 @@ const ContractBoards = memo(function ContractBoards({ boards, layer, query, edit
               })}</div>} />
           </section>;
         })}
-      </section>)}</>;
+      </CanvasDomain>)}</>;
 });
