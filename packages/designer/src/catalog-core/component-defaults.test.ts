@@ -63,12 +63,12 @@ const EXPECTED_DEFAULTS = {
   "chart-scatter": "foundry", "chart-sparkline": "foundry", "chart-status-strip": "foundry", "chart-waterfall": "foundry", checkbox: "foundry", "color-picker": "foundry", "combo-box": "foundry",
   "date-field": "foundry", "date-picker": "compose:date-picker@1", dialog: "foundry", disclosure: "foundry", field: "foundry", "grid-list": "foundry", "file-trigger": "foundry", form: "foundry", icon: "foundry", keyboard: "shadcn@aria", link: "foundry", logo: "foundry",
   menu: "foundry", meter: "foundry", "native-action": "foundry", "navigation-tree": "foundry", "number-field": "foundry", popover: "foundry", "progress-bar": "foundry", "radio-group": "foundry",
-  "resize-handle": "foundry", "search-field": "foundry", select: "foundry", "semantic-content": "foundry", separator: "shadcn@aria", skeleton: "foundry",
+  "resize-handle": "foundry", "search-field": "foundry", select: "foundry", "semantic-content": "foundry", separator: "shadcn@aria", skeleton: "foundry", slider: "foundry",
   spinner: "foundry", "status-mark": "foundry", switch: "foundry", table: "foundry", tabs: "foundry", "text-field": "foundry", toast: "foundry", "toggle-button": "foundry", "toggle-group": "foundry",
   toolbar: "foundry", tooltip: "shadcn@aria",
 };
 /** rac-starter is not a selectable component source (owner rule 2026-10-26); Toolbar is Foundry's again since its measured K5 craft comparison passes. */
-const NOT_CHOSEN = ["slider", "tag-group", "tree"];
+const NOT_CHOSEN = ["tag-group", "tree"];
 const reasons = (plan: ReturnType<typeof planComponentDefaults>, leaf: string) => plan.rows.find(row => row.slot === `components.${leaf}`)!.reasons.join(" || ");
 
 describe("component default fills", () => {
@@ -92,7 +92,8 @@ describe("component default fills", () => {
     }
     // Column resizing and Checkbox.Group are both mapped, so the owner-picked Foundry table now resolves.
     expect(plan.rows.find(row => row.slot === "components.table")).toMatchObject({ status: "default", basis: "owner-pick", source: "foundry", fill: "foundry/components.table", reasons: [] });
-    expect(reasons(plan, "slider")).toBe("controls coherence: one source per group, led by foundry; shadcn@aria would mix sources");
+    // The Foundry Slider keeps the foundry-led controls group coherent, so the slot is no longer left unchosen.
+    expect(plan.rows.find(row => row.slot === "components.slider")).toMatchObject({ status: "default", source: "foundry", fill: "foundry/components.slider" });
     expect(plan.rows.find(row => row.slot === "components.date-picker")).toMatchObject({ status: "default", basis: "rule", rule: "compose:date-picker@1", reasons: [] });
     expect(reasons(plan, "tree")).toBe("foundry: blocked K5 || rac-starter: not a selectable component source (shadcn-on-aria, foundry or consumer-authored only)");
     expect(plan.rows.find(row => row.slot === "components.toolbar")).toMatchObject({ status: "default", basis: "preference", source: "foundry", fill: "foundry/components.toolbar", reasons: [] });
@@ -103,8 +104,8 @@ describe("component default fills", () => {
     expect(starterSlots.length).toBeGreaterThan(0);
     const plan = planComponentDefaults(input);
     expect(plan.rows.filter(row => row.source === "rac-starter")).toEqual([]);
-    // 52 after vf15 (toolbar unchosen) + toggle-group (vf19) + color-picker and number-field (vf22) + toolbar (vf21) = 56.
-    expect(plan.rows.filter(row => row.status !== "not-chosen")).toHaveLength(56);
+    // 52 after vf15 (toolbar unchosen) + toggle-group (vf19) + color-picker and number-field (vf22) + toolbar (vf21) + slider (vf23) = 57.
+    expect(plan.rows.filter(row => row.status !== "not-chosen")).toHaveLength(57);
     expect(plan.rows).toHaveLength(59);
     const forced = Object.fromEntries(starterSlots.map(slot => [slot, "rac-starter"]));
     for (const plan of [planComponentDefaults({ ...input, picks: forced }), planComponentDefaults({ ...input, choices: forced })]) {

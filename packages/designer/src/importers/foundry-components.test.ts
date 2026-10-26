@@ -28,7 +28,7 @@ const storedMappings = Object.fromEntries(Object.entries(FOUNDRY_COMPONENT_MAP).
 const changedMap = (leaf: string, change: Partial<FoundryComponentMapping>) => ({ ...FOUNDRY_COMPONENT_MAP, [leaf]: { ...FOUNDRY_COMPONENT_MAP[leaf]!, ...change } });
 
 describe("Foundry component package descriptors", () => {
-  it("regenerates 52 stored package descriptors and keeps two dynamic blocked candidates distinct", () => {
+  it("regenerates 53 stored package descriptors and keeps two dynamic blocked candidates distinct", () => {
     const files = generatedFoundryComponentFiles({ exports, mappings: storedMappings, slots: signedSlots });
     // Explicit local regeneration writes only this generator's enumerated component artifacts.
     if (process.env.UPDATE_FOUNDRY_COMPONENT_FILLS === "1") for (const [name, bytes] of Object.entries(files)) writeFileSync(resolve(fillsDirectory, name), bytes);
@@ -38,9 +38,9 @@ describe("Foundry component package descriptors", () => {
     expect(imported().coverage.map(row => row.slot)).toEqual(slots.map(slot => slot.id).sort());
     expect(imported().coverage).toHaveLength(59);
     expect(signedSlots).toHaveLength(57);
-    expect(importFoundryComponents({ exports, mappings: storedMappings, slots: signedSlots }).fills).toHaveLength(52);
-    expect(imported().fills).toHaveLength(56);
-    expect(imported().fills.filter(doc => !["components.semantic-content", "components.native-action"].includes(doc.$extensions["com.clossys.fill"].slot))).toHaveLength(54);
+    expect(importFoundryComponents({ exports, mappings: storedMappings, slots: signedSlots }).fills).toHaveLength(53);
+    expect(imported().fills).toHaveLength(57);
+    expect(imported().fills.filter(doc => !["components.semantic-content", "components.native-action"].includes(doc.$extensions["com.clossys.fill"].slot))).toHaveLength(55);
     const blocked = imported().fills.filter(doc => Object.values(doc.components)[0]!.blockers?.length);
     expect(blocked.map(doc => doc.$extensions["com.clossys.fill"].id)).toEqual(dynamicBlockedLeaves.map(leaf => `foundry/components.${leaf}`));
     for (const doc of blocked) {
@@ -95,9 +95,10 @@ describe("Foundry component package descriptors", () => {
     }
     const rows = new Map(imported().coverage.map(row => [row.slot, row]));
     for (const leaf of dynamicBlockedLeaves) expect(rows.get(`components.${leaf}`)!.status).toBe("blocked");
-    for (const leaf of ["keyboard", "slider", "date-picker"]) expect(rows.get(`components.${leaf}`)!.status).toBe("unavailable");
+    for (const leaf of ["keyboard", "date-picker"]) expect(rows.get(`components.${leaf}`)!.status).toBe("unavailable");
     // Foundry ships ToggleGroup; the controls group no longer needs a second source for it.
     expect(rows.get("components.toggle-group")).toMatchObject({ status: "candidate", missing: [] });
+    expect(rows.get("components.slider")).toMatchObject({ status: "candidate", missing: [], supported: ["orientation.horizontal", "orientation.vertical", "selection.range", "selection.single"] });
     expect(rows.get("components.toggle-button")).toMatchObject({ status: "candidate", missing: [] });
     expect(rows.get("components.calendar")).toMatchObject({ status: "candidate", missing: [] });
     expect(rows.get("components.checkbox")!.supported).toContain("scope.group");

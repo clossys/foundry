@@ -1114,6 +1114,15 @@
 @utility control-h-sm { @apply tap-target; min-block-size: var(--ui-control-h-sm, 28px); }
 @utility control-h-md { @apply tap-target; min-block-size: var(--ui-control-h-md, 32px); }
 @utility control-h-lg { @apply tap-target; min-block-size: var(--ui-control-h-lg, 36px); }
+/* Disabled control dimming: the shared state-opacity token, for controls styled by class rather than an inline read. */
+@utility control-disabled { opacity: var(--ui-alpha-disabled, 0.5); cursor: not-allowed; }
+/* Slider geometry: rail thickness and vertical track length from the spacing scale, thumb from the control mark size. */
+@utility slider-rail { position: relative; flex: 1 1 auto; block-size: var(--spacing-xs, 4px); }
+@utility slider-rail-vertical { position: relative; flex: 1 1 auto; inline-size: var(--spacing-xs, 4px); }
+@utility slider-track-vertical { min-block-size: var(--spacing-6xl, 128px); min-inline-size: var(--ui-control-h-md, 32px); }
+@utility slider-thumb { inline-size: var(--ui-control-mark, 16px); block-size: var(--ui-control-mark, 16px); }
+/* Vertical thumb centre: the peer positions thumbs with a physical translate(-50%, -50%), so the matching cross-axis anchor is the physical centre, which is the same in either writing direction (as scroll-cue does). */
+@utility slider-thumb-vertical { left: 50%; }
 @utility control-row {
   min-block-size: var(--ui-control-row-h, 36px);
   @media (pointer: coarse) { min-block-size: var(--ui-layout-tap-target, 44px); }
