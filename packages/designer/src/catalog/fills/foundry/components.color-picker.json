@@ -1,0 +1,99 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/components.color-picker",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "export": "./components#ColorPicker",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "components.color-picker",
+      "source": "foundry",
+      "sourceAddress": "./components#ColorPicker",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "components": {
+    "color-picker": {
+      "composes": [],
+      "deps": [
+        {
+          "license": "MIT",
+          "name": "react",
+          "version": ">=18"
+        },
+        {
+          "license": "MIT",
+          "name": "tailwind-merge",
+          "version": "^3.7.0"
+        },
+        {
+          "license": "Apache-2.0",
+          "name": "react-aria-components",
+          "version": "^1.19.0"
+        }
+      ],
+      "impl": {
+        "export": "ColorPicker",
+        "kind": "package",
+        "module": "@clossys/designer/components"
+      },
+      "license": "MIT",
+      "members": [
+        "part.area",
+        "part.field",
+        "part.slider",
+        "part.swatch-picker",
+        "part.wheel"
+      ],
+      "pin": {
+        "export": "./components#ColorPicker",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {
+        "part.area": "./components#ColorPicker.Area",
+        "part.field": "./components#ColorPicker.Field",
+        "part.slider": "./components#ColorPicker.Slider",
+        "part.swatch-picker": "./components#ColorPicker.SwatchPicker",
+        "part.wheel": "./components#ColorPicker.Wheel"
+      },
+      "props": [
+        "children",
+        "defaultValue",
+        "onChange",
+        "onChangeEnd",
+        "value"
+      ],
+      "reads": {
+        "assets": [],
+        "components": [],
+        "tokens": [
+          "tokens.body-size",
+          "tokens.border-color",
+          "tokens.caption-size",
+          "tokens.control-radius",
+          "tokens.control-size",
+          "tokens.focus-shadow",
+          "tokens.spacing",
+          "tokens.state-opacity",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.touch-target",
+          "tokens.typeface"
+        ]
+      },
+      "root": "rac:ColorPicker",
+      "slot": "components.color-picker",
+      "source": "foundry"
+    }
+  }
+}
