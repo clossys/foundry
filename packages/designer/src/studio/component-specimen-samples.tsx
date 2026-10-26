@@ -1,6 +1,6 @@
 "use client";
 import type { ComponentType, ReactNode } from "react";
-import { componentSpecimenCollections, componentSpecimenColor, componentSpecimenField, componentSpecimenOverlays, componentSpecimenProps, componentSpecimenTable, componentSpecimenText, componentSpecimenUnavailable } from "./component-specimen-sample-content.js";
+import { componentSpecimenCollections, componentSpecimenColor, componentSpecimenField, componentSpecimenOverlays, componentSpecimenProps, componentSpecimenSourceSamples, componentSpecimenTable, componentSpecimenText, componentSpecimenUnavailable } from "./component-specimen-sample-content.js";
 import type { SpecimenUnavailableReason } from "./preview-outcome.js";
 
 type Renderable = ComponentType<Record<string, unknown>>;
@@ -81,16 +81,63 @@ function colorPicker(Component: unknown): ComponentSpecimenSample | undefined {
   return { props: { defaultValue }, children: <SwatchPicker aria-label={label}>{swatches.map(color => <Swatch key={color} color={color} />)}</SwatchPicker> };
 }
 
+/** Vendored shadcn@aria compounds, drawn with the parts their own module exports. */
+function sourceSample(key: string, exports: Namespace): ComponentSpecimenSample | undefined {
+  const parts = (...names: string[]) => { const found = names.map(name => part(exports, name)); return found.every(Boolean) ? found as Renderable[] : undefined; };
+  const s = componentSpecimenSourceSamples;
+  switch (key) {
+    case "components/breadcrumbs/breadcrumb.tsx#Breadcrumb": {
+      const found = parts("BreadcrumbList", "BreadcrumbItem", "BreadcrumbLink"); if (!found) return undefined;
+      const [List, Item, Link] = found as [Renderable, Renderable, Renderable];
+      return { props: {}, children: <List>{s[key].items.map(item => <Item key={item.id} id={item.id}><Link href={"href" in item ? item.href : undefined}>{item.label}</Link></Item>)}</List> };
+    }
+    case "components/tabs/tabs.tsx#Tabs": {
+      const found = parts("TabsList", "TabsTrigger", "TabsContent"); if (!found) return undefined;
+      const [List, Trigger, Content] = found as [Renderable, Renderable, Renderable];
+      return { props: {}, children: [<List key="list" aria-label={s[key].label}>{s[key].items.map(item => <Trigger key={item.id} id={item.id}>{item.label}</Trigger>)}</List>, ...s[key].items.map(item => <Content key={item.id} id={item.id}>{item.content}</Content>)] };
+    }
+    case "components/radio-group/radio-group.tsx#RadioGroup": {
+      const found = parts("RadioGroupItem"); if (!found) return undefined;
+      const [Item] = found as [Renderable];
+      return { props: { "aria-label": s[key].label, defaultValue: s[key].defaultValue }, children: s[key].items.map(item => <Item key={item.id} value={item.id}>{item.label}</Item>) };
+    }
+    case "components/disclosure/accordion.tsx#Accordion": {
+      const found = parts("AccordionItem", "AccordionTrigger", "AccordionContent"); if (!found) return undefined;
+      const [Item, Trigger, Content] = found as [Renderable, Renderable, Renderable];
+      return { props: {}, children: s[key].items.map(item => <Item key={item.id} id={item.id}><Trigger>{item.label}</Trigger><Content>{item.content}</Content></Item>) };
+    }
+    case "components/avatar/avatar.tsx#Avatar": {
+      const found = parts("AvatarFallback"); if (!found) return undefined;
+      const [Fallback] = found as [Renderable];
+      return { props: {}, children: <Fallback>{s[key].initials}</Fallback> };
+    }
+    case "components/card/card.tsx#Card": {
+      const found = parts("CardHeader", "CardTitle", "CardContent"); if (!found) return undefined;
+      const [Header, Title, Content] = found as [Renderable, Renderable, Renderable];
+      return { props: {}, children: [<Header key="header"><Title>{s[key].title}</Title></Header>, <Content key="content">{s[key].content}</Content>] };
+    }
+    case "components/progress-bar/progress.tsx#Progress": {
+      const found = parts("ProgressTrack", "ProgressIndicator"); if (!found) return undefined;
+      const [Track, Indicator] = found as [Renderable, Renderable];
+      return { props: { "aria-label": s[key].label, value: s[key].value }, children: <Track><Indicator /></Track> };
+    }
+    case "components/slider/slider.tsx#Slider": return { props: { "aria-label": s[key].label, defaultValue: s[key].defaultValue } };
+    default: return undefined;
+  }
+}
+
 /** Why sample data cannot draw this export (`./shell#Toaster`), or undefined when it can. */
 export const componentSpecimenUnavailableReason = (key: string): SpecimenUnavailableReason | undefined =>
   Object.hasOwn(componentSpecimenUnavailable, key) ? componentSpecimenUnavailable[key] : undefined;
 
 /**
- * Designer-provided sample content for a Foundry component export (`./components#Meter`), so a data-driven
+ * Designer-provided sample content for a Foundry component export (`./components#Meter`) or a vendored
+ * shadcn@aria source export (`components/tabs/tabs.tsx#Tabs`), so a data-driven
  * component draws without host data. Undefined when the export needs none or its parts are not in the
  * host's modules. A host `specimens` entry always replaces it.
  */
 export function componentSpecimenSample(key: string, Component: unknown, exports: Namespace): ComponentSpecimenSample | undefined {
+  if (!key.startsWith("./")) return sourceSample(key, exports);
   if (key === "./components#Table") return table(Component);
   if (key === "./components#Field") return { props: { ...componentSpecimenField }, children: (field: Record<string, unknown>) => <input {...field} /> };
   if (key === "./components#ColorPicker") return colorPicker(Component);

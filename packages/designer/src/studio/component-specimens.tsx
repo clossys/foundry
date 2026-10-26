@@ -39,7 +39,7 @@ export interface ComponentSpecimenBinding {
   readonly exports: ComponentSpecimenModule;
   /** Mapped contract members, in descriptor order. Unmapped members are absent. */
   readonly members: readonly ComponentSpecimenMember[];
-  /** Mapped members whose pointer the component dispatcher cannot express (a compound part or a prose note), with the reason. */
+  /** Mapped members whose pointer the component dispatcher cannot express (a compound part or a prose note) or whose export is not renderable, with the reason. */
   readonly unbound: readonly { readonly member: string; readonly detail: string }[];
 }
 
@@ -157,6 +157,8 @@ export function componentSpecimenPreview(options: ComponentSpecimenOptions): Com
       try { binding = componentMemberBinding(component, member, pointer); }
       catch (error) { unbound.push({ member, detail: error instanceof Error ? error.message : String(error) }); continue; }
       const target = exportOf(leaf, binding.module, binding.name);
+      // A member naming a non-renderable export (a props type such as `SliderPrimitiveProps`) drops that member, named.
+      if ("refusal" in target && target.refusal.code === "export-unavailable") { unbound.push({ member, detail: `export-unavailable: ${target.refusal.detail}` }); continue; }
       if ("refusal" in target) return target;
       const interaction = binding.intrinsic === true;
       const drawn = !interaction && binding.property !== undefined && (typeof binding.value === "string" || (member.startsWith("state.") && binding.value === true));
@@ -171,11 +173,13 @@ export function componentSpecimenPreview(options: ComponentSpecimenOptions): Com
     const { binding } = bound;
     const render = options.specimens && Object.hasOwn(options.specimens, leaf) ? options.specimens[leaf] : undefined;
     const component = profile.components.components[leaf]!;
-    // Designer samples (and the reasons sample data cannot draw an export) cover Foundry's own package exports only.
-    // The binding names the library a component came from; resolve() stamps the adopter's id on descriptor.source.
-    const samples = !render && binding.source === "foundry" && component.impl.kind === "package";
-    const sample = samples ? componentSpecimenSample(sampleKey(binding.specifier, binding.exportName), binding.Component, binding.exports) : undefined;
-    const unavailableOf = (row: SpecimenRow) => samples ? componentSpecimenUnavailableReason(sampleKey(row.specifier, row.exportName)) : undefined;
+    // Designer samples (and the reasons sample data cannot draw an export) cover Foundry's own package exports and
+    // the vendored shadcn@aria source, keyed by its `impl.entry#export`. The binding names the library a component
+    // came from; resolve() stamps the adopter's id on descriptor.source.
+    const samples = !render && (binding.source === "foundry" && component.impl.kind === "package" || binding.source === "shadcn@aria" && component.impl.kind === "source");
+    const keyOf = (specifier: string, exportName: string) => component.impl.kind === "package" ? sampleKey(specifier, exportName) : `${specifier}#${exportName}`;
+    const sample = samples ? componentSpecimenSample(keyOf(binding.specifier, binding.exportName), binding.Component, binding.exports) : undefined;
+    const unavailableOf = (row: SpecimenRow) => samples ? componentSpecimenUnavailableReason(keyOf(row.specifier, row.exportName)) : undefined;
     const rows = render ? [] : specimenRows(binding);
     const unavailable = rows.map(unavailableOf).filter(reason => reason !== undefined);
     const total = render ? 1 : rows.length - unavailable.length;
