@@ -69,10 +69,10 @@ describe("tokens.css dark blocks <-> src/tokens.ts `themeDependent` parity", () 
     expect(wronglyInExplicit).toEqual([]);
   });
 
-  it("the dark blocks declare exactly the 55 tokens this package's design marks theme-dependent", () => {
-    expect(tokensDarkMedia.size).toBe(55);
-    expect(tokensDarkExplicit.size).toBe(55);
-    expect(Object.values(TOKENS).filter((def) => def.themeDependent).length).toBe(55);
+  it("the dark blocks declare exactly the 56 tokens this package's design marks theme-dependent", () => {
+    expect(tokensDarkMedia.size).toBe(56);
+    expect(tokensDarkExplicit.size).toBe(56);
+    expect(Object.values(TOKENS).filter((def) => def.themeDependent).length).toBe(56);
   });
 });
 
@@ -92,11 +92,11 @@ describe("brand-template.css dark blocks cover every brandable + theme-dependent
     expect(missing).toEqual([]);
   });
 
-  it("the dark blocks contain exactly the 44 tokens that are both brandable and theme-dependent", () => {
+  it("the dark blocks contain exactly the 45 tokens that are both brandable and theme-dependent", () => {
     const media = parseDeclarationsForSelector(brandTemplateCss, BRAND_DARK_MEDIA_SELECTOR);
     const explicit = parseDeclarationsForSelector(brandTemplateCss, BRAND_DARK_EXPLICIT_SELECTOR);
-    expect(media.size).toBe(44);
-    expect(explicit.size).toBe(44);
+    expect(media.size).toBe(45);
+    expect(explicit.size).toBe(45);
     expect([...media.keys()].sort()).toEqual(brandableAndDependent.map((def) => def.property).sort());
     expect([...explicit.keys()].sort()).toEqual(brandableAndDependent.map((def) => def.property).sort());
   });

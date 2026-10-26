@@ -12,7 +12,7 @@ const BASE =
 
 const VARIANT_CLASSES: Record<Exclude<ButtonVariant, "tonal" | "quiet">, string> = {
   primary: "bg-action text-ink-on-action hover:bg-action-hover data-pressed:bg-action-pressed",
-  secondary: "bg-surface-raised text-ink-primary border border-line-base hover:bg-control-tonal-hover",
+  secondary: "bg-surface-raised text-ink-primary border border-line-control hover:bg-control-tonal-hover",
   ghost: "text-ink-primary hover:bg-control-tonal-hover",
   danger: "bg-status-danger text-ink-on-accent hover:bg-status-danger-text",
   outline:

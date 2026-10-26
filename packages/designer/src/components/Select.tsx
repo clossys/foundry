@@ -143,7 +143,7 @@ export function Select({
           cx(
             "flex w-full items-center justify-between gap-sm rounded-control border bg-surface-raised text-ink-primary outline-none disabled:cursor-not-allowed",
             SIZE_CLASSES[size],
-            isInvalid ? "border-status-danger" : "border-line-base",
+            isInvalid ? "border-status-danger" : "border-line-control",
             triggerClassName,
           )
         }

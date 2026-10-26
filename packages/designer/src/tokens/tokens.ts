@@ -145,6 +145,9 @@ export const TOKENS: Readonly<Record<string, TokenDefinition>> = {
   "--color-line-base": { property: "--color-line-base", family: "line", value: "oklch(0.8761 0 0)", brandable: true, themeDependent: true },
   "--color-line-strong": { property: "--color-line-strong", family: "line", value: "oklch(0.7763 0 0)", brandable: true, themeDependent: true },
   "--color-line-on-inverse": { property: "--color-line-on-inverse", family: "line", value: "oklch(0.9702 0 0 / 0.14)", brandable: true, themeDependent: true },
+  // Control boundary: the resting edge of a form control or outlined button,
+  // held at 3:1 (WCAG 1.4.11) on every surface a control sits on.
+  "--color-line-control": { property: "--color-line-control", family: "line", value: "oklch(0.62 0 0)", brandable: true, themeDependent: true },
   // Panel identity: the edge colour of an outlined card or product panel
   // on a light ground. An alias of the base line, so it follows the theme.
   "--color-line-panel": { property: "--color-line-panel", family: "line", value: "var(--color-line-base, oklch(0.8761 0 0))", brandable: true, themeDependent: false },

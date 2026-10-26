@@ -28,7 +28,7 @@ function bindingFindings(input: readonly Slot[], properties: readonly string[]):
   return findings.sort(compare);
 }
 const counts: Record<string, number> = {
-  "tokens.accent-color": 5, "tokens.action-color": 5, "tokens.behavior-timing": 6, "tokens.blur": 2, "tokens.body-size": 4, "tokens.border-color": 5, "tokens.border-width": 3,
+  "tokens.accent-color": 5, "tokens.action-color": 5, "tokens.behavior-timing": 6, "tokens.blur": 2, "tokens.body-size": 4, "tokens.border-color": 6, "tokens.border-width": 3,
   "tokens.brandmark-size": 6, "tokens.breakpoint": 6, "tokens.caption-size": 1, "tokens.categorical-color": 8, "tokens.chart-color": 4, "tokens.code-size": 1,
   "tokens.color-ramp": 11, "tokens.content-size": 13, "tokens.control-color": 5, "tokens.control-radius": 1, "tokens.control-size": 8, "tokens.density": 5,
   "tokens.display-face": 4, "tokens.display-size": 3, "tokens.diverging-color": 3, "tokens.duration": 5, "tokens.easing": 4, "tokens.elevation": 4,
@@ -56,10 +56,10 @@ describe("catalog token bindings", () => {
     expect(Object.fromEntries(slots.map(slot => [slot.id, Object.keys(slot.contract.emit ?? {}).length]))).toEqual(counts);
     expect(slots.map(slot => slot.id)).toEqual(Object.keys(counts).sort(compare));
   });
-  it("pins 226 bindings, 64 brandable bindings, 50 historically bound slots and fourteen dark slots", () => {
+  it("pins 227 bindings, 65 brandable bindings, 50 historically bound slots and fourteen dark slots", () => {
     const properties = slots.flatMap(slot => Object.values(slot.contract.emit ?? {}));
-    expect(properties).toHaveLength(226);
-    expect(tokens.filter(token => token.brandable && properties.includes(token.property as `--${string}`))).toHaveLength(64);
+    expect(properties).toHaveLength(227);
+    expect(tokens.filter(token => token.brandable && properties.includes(token.property as `--${string}`))).toHaveLength(65);
     expect(slots.filter(slot => Object.keys(slot.contract.emit ?? {}).length > 0)).toHaveLength(50);
     expect(slots.filter(slot => slot.contract.modes.includes("dark")).map(slot => slot.id)).toEqual([
       "tokens.accent-color", "tokens.action-color", "tokens.border-color", "tokens.categorical-color", "tokens.chart-color", "tokens.control-color", "tokens.diverging-color", "tokens.elevation", "tokens.focus-color", "tokens.scrim-color", "tokens.sequential-color", "tokens.status-color", "tokens.surface-color", "tokens.text-color",

@@ -81,7 +81,7 @@ export function SearchField({
               placeholder={placeholder}
               className={cx(
                 "w-full rounded-control border bg-surface-raised py-sm ps-md pe-2xl text-body text-ink-primary outline-hidden",
-                isInvalid ? "border-status-danger" : "border-line-base",
+                isInvalid ? "border-status-danger" : "border-line-control",
                 inputClassName,
               )}
               style={(renderProps) => ({

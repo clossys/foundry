@@ -27,7 +27,7 @@ describe("Explorer", () => {
     const view = render(<Explorer tree={tree} label="Files" selectedId="folder" onSelect={onSelect} />);
     const folder = screen.getByRole("treeitem", { name: "Folder" });
     expect(folder).toHaveAttribute("aria-selected", "true");
-    expect(folder).toHaveClass("bg-surface-raised", "border-line-base");
+    expect(folder).toHaveClass("bg-surface-raised", "border-line-control");
     await userEvent.click(folder); expect(folder).toHaveAttribute("aria-expanded", "true");
     expect(action).toHaveBeenCalledTimes(1); expect(onSelect).toHaveBeenCalledExactlyOnceWith("folder");
     await userEvent.keyboard("{ArrowLeft}{ArrowRight}"); expect(folder).toHaveAttribute("aria-expanded", "true");

@@ -51,7 +51,7 @@ export function Switch({ children, className, style, ...rest }: SwitchProps) {
             aria-hidden="true"
             className={cx(
               TRACK_BASE,
-              renderProps.isSelected ? "border-action bg-action" : "border-line-base bg-surface-sunken",
+              renderProps.isSelected ? "border-action bg-action" : "border-line-control bg-surface-sunken",
               "px-0.5",
             )}
             style={{
